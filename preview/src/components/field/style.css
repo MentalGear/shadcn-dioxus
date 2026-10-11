@@ -62,6 +62,44 @@
   --dx-label-line-height: 1.375;
 }
 
+/* Choice card: a `FieldLabel` that wraps a `Field` (shadcn `field.tsx`:
+ * `has-[>[data-slot=field]]:w-full flex-col rounded-md border`,
+ * `*:data-[slot=field]:p-4`, `has-data-[state=checked]:bg-primary/5
+ * border-primary`, `dark:...bg-primary/10`). The whole card is the label, so
+ * clicking anywhere on it toggles the control inside.
+ *
+ * The card chrome is drawn on the wrapped `.dx-field` (Field's OWN element),
+ * not on the label: the label is also `.dx-label`, and
+ * `scripts/check-cross-component-overrides.sh` forbids a non-custom property
+ * on an element wearing both. The label is already a full-width flex row, so
+ * its one `Field` child just grows to fill it; the label is only the *condition*
+ * (`:has(...)`), never the subject.
+ *
+ * Checked is read off any descendant carrying `data-state="checked"` (Radio
+ * item, Switch and Checkbox all emit it), so no control's class is named here.
+ * Dark mode is the theme's `--light`/`--dark` space toggle
+ * (dx-components-theme.css): one of the two values is the empty
+ * guaranteed-invalid token, leaving the other. */
+.dx-field-label > .dx-field {
+  min-width: 0;
+  box-sizing: border-box;
+  flex: 1 1 auto;
+  padding: var(--dx-space-4);
+  border: 1px solid var(--dx-border);
+  border-radius: var(--dx-radius-md);
+}
+
+.dx-field-label:has([data-state="checked"]) > .dx-field {
+  border-color: var(--dx-primary);
+  background-color:
+    var(--light, color-mix(in oklab, var(--dx-primary) 5%, transparent))
+    var(--dark, color-mix(in oklab, var(--dx-primary) 10%, transparent));
+}
+
+.dx-field-label:has(:focus-visible) > .dx-field {
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--dx-ring-color) 50%, transparent);
+}
+
 .dx-field[data-invalid="true"] .dx-field-label {
   --dx-label-color: var(--dx-destructive);
 }

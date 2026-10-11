@@ -58,3 +58,11 @@
   background-color: color-mix(in oklab, var(--dx-accent), var(--dx-foreground) 15%);
   color: var(--dx-foreground);
 }
+
+/* Disabled: Nova's `disabled:pointer-events-none disabled:opacity-50`. The
+ * primitive emits both the `disabled` attribute and `data-disabled="true"`. */
+.dx-toggle:disabled,
+.dx-toggle[data-disabled="true"] {
+  opacity: var(--dx-opacity-disabled);
+  pointer-events: none;
+}

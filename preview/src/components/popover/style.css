@@ -272,10 +272,13 @@
   padding: 0.3125rem 0.625rem;
   border: 1px solid transparent;
   border-color: var(--light, var(--dx-border)) var(--dark, var(--dx-input));
-  border-radius: var(--dx-radius-lg);
   background-clip: padding-box;
   background-color: var(--light, var(--dx-background))
     var(--dark, color-mix(in oklab, var(--dx-input) 30%, transparent));
+  border-end-end-radius: var(--dx-group-radius-end-end, var(--dx-radius-lg));
+  border-end-start-radius: var(--dx-group-radius-end-start, var(--dx-radius-lg));
+  border-start-end-radius: var(--dx-group-radius-start-end, var(--dx-radius-lg));
+  border-start-start-radius: var(--dx-group-radius-start-start, var(--dx-radius-lg));
   color: var(--dx-foreground);
   cursor: default;
   font-family: inherit;
