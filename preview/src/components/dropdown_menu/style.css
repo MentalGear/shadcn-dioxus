@@ -1,14 +1,24 @@
 /* Dropdown Menu Styles */
+
+/* The trigger's own chrome is `:not([data-style])`: a `DropdownMenuTrigger`
+   rendered through its `as` prop as a themed `Button` (which always sets
+   `data-style="<variant>"`) keeps `dx-dropdown-menu-trigger` next to
+   `dx-button`, because `merge_attributes` concatenates `class`; the Button's
+   own styling must win, not compete. Same exclusion signal as
+   `drawer/style.css`'s close button. */
 .dx-dropdown-menu {
   position: relative;
   display: inline-block;
 }
 
-.dx-dropdown-menu-trigger {
+.dx-dropdown-menu-trigger:not([data-style]) {
   padding: var(--dx-space-2) 18px;
   border: none;
-  border-radius: var(--dx-radius-lg);
   background-color: var(--dx-card);
+  border-end-end-radius: var(--dx-group-radius-end-end, var(--dx-radius-lg));
+  border-end-start-radius: var(--dx-group-radius-end-start, var(--dx-radius-lg));
+  border-start-end-radius: var(--dx-group-radius-start-end, var(--dx-radius-lg));
+  border-start-start-radius: var(--dx-group-radius-start-start, var(--dx-radius-lg));
   box-shadow: inset 0 0 0 1px var(--dx-border);
   color: var(--dx-foreground);
   cursor: pointer;
@@ -19,7 +29,7 @@
   transition: background-color var(--dx-motion-duration-slow) var(--dx-motion-ease), color var(--dx-motion-duration-slow) var(--dx-motion-ease);
 }
 
-.dx-dropdown-menu-trigger:hover {
+.dx-dropdown-menu-trigger:not([data-style]):hover {
   background-color: var(--dx-accent);
   color: var(--dx-accent-foreground);
 }
@@ -32,7 +42,7 @@
    element -- confirmed against the built artifact, where the wasm carries the
    hashed name. Once row 32 drops css_module hashing, this can collapse into
    the shared layer for real. */
-.dx-dropdown-menu-trigger:focus-visible {
+.dx-dropdown-menu-trigger:not([data-style]):focus-visible {
   box-shadow: var(--dx-ring);
 }
 

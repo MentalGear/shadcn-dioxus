@@ -7,19 +7,6 @@
 preview/src/components/button_group/style.css	composed:separator	.dx-button-group-separator	align-self
 preview/src/components/button_group/style.css	composed:separator	.dx-button-group-separator	margin
 preview/src/components/button_group/style.css	composed:separator	.dx-button-group[data-orientation="vertical"] .dx-button-group-separator	margin
-preview/src/components/button_group/style.css	tag	.dx-button-group > button:focus-visible	z-index
-preview/src/components/button_group/style.css	tag	.dx-button-group > button:hover	z-index
-preview/src/components/button_group/style.css	tag	.dx-button-group > button:not(:first-child)	margin-inline-start
-preview/src/components/button_group/style.css	tag	.dx-button-group:not([data-orientation="vertical"]) > button:not(:first-child)	border-end-start-radius
-preview/src/components/button_group/style.css	tag	.dx-button-group:not([data-orientation="vertical"]) > button:not(:first-child)	border-start-start-radius
-preview/src/components/button_group/style.css	tag	.dx-button-group:not([data-orientation="vertical"]) > button:not(:last-child)	border-end-end-radius
-preview/src/components/button_group/style.css	tag	.dx-button-group:not([data-orientation="vertical"]) > button:not(:last-child)	border-start-end-radius
-preview/src/components/button_group/style.css	tag	.dx-button-group[data-orientation="vertical"] > button:not(:first-child)	border-start-end-radius
-preview/src/components/button_group/style.css	tag	.dx-button-group[data-orientation="vertical"] > button:not(:first-child)	border-start-start-radius
-preview/src/components/button_group/style.css	tag	.dx-button-group[data-orientation="vertical"] > button:not(:first-child)	margin-block-start
-preview/src/components/button_group/style.css	tag	.dx-button-group[data-orientation="vertical"] > button:not(:first-child)	margin-inline-start
-preview/src/components/button_group/style.css	tag	.dx-button-group[data-orientation="vertical"] > button:not(:last-child)	border-end-end-radius
-preview/src/components/button_group/style.css	tag	.dx-button-group[data-orientation="vertical"] > button:not(:last-child)	border-end-start-radius
 preview/src/components/chart/style.css	composed:card	[data-slot="card"].dx-chart-interactive	padding-block
 preview/src/components/chart/style.css	composed:card	[data-slot="card-content"].dx-chart-interactive-content	padding
 preview/src/components/chart/style.css	composed:card	[data-slot="card-content"].dx-chart-interactive-content	padding

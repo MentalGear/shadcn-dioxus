@@ -9,8 +9,11 @@
   justify-content: center;
   padding: 0;
   border: 1px solid transparent;
-  border-radius: var(--dx-radius-lg);
   background-clip: padding-box;
+  border-end-end-radius: var(--dx-group-radius-end-end, var(--dx-button-radius, var(--dx-radius-lg)));
+  border-end-start-radius: var(--dx-group-radius-end-start, var(--dx-button-radius, var(--dx-radius-lg)));
+  border-start-end-radius: var(--dx-group-radius-start-end, var(--dx-button-radius, var(--dx-radius-lg)));
+  border-start-start-radius: var(--dx-group-radius-start-start, var(--dx-button-radius, var(--dx-radius-lg)));
   cursor: default;
   font-family: inherit;
   font-size: var(--dx-text-sm);
@@ -43,7 +46,9 @@
 .dx-button[data-size="xs"] {
   height: 1.5rem;
   padding: 0 var(--dx-space-2);
-  border-radius: min(var(--dx-radius-md), 10px);
+
+  --dx-button-radius: min(var(--dx-radius-md), 10px);
+
   font-size: var(--dx-text-xs);
   gap: var(--dx-space-1);
   line-height: 1rem;
@@ -61,7 +66,9 @@
 .dx-button[data-size="sm"] {
   height: 1.75rem;
   padding: 0 0.625rem;
-  border-radius: min(var(--dx-radius-md), 12px);
+
+  --dx-button-radius: min(var(--dx-radius-md), 12px);
+
   font-size: 0.8rem;
   gap: var(--dx-space-1);
 }
@@ -101,7 +108,8 @@
 .dx-button[data-size="icon-xs"] {
   width: 1.5rem;
   height: 1.5rem;
-  border-radius: min(var(--dx-radius-md), 10px);
+
+  --dx-button-radius: min(var(--dx-radius-md), 10px);
 }
 
 .dx-button[data-size="icon-xs"] svg:not([class*="size-"]) {
@@ -112,7 +120,8 @@
 .dx-button[data-size="icon-sm"] {
   width: 1.75rem;
   height: 1.75rem;
-  border-radius: min(var(--dx-radius-md), 12px);
+
+  --dx-button-radius: min(var(--dx-radius-md), 12px);
 }
 
 .dx-button[data-size="icon-lg"] {

@@ -9,43 +9,81 @@
 }
 
 /*
- * Targets a plain `button` ELEMENT selector, not a class -- every themed
- * control this group is meant to hold (`Button`, and `Checkbox`/`Switch`/
- * `RadioItem`/`SelectTrigger` if ever placed here, per docs/preview-
- * composition.md's note that all four render as `<button>`) already IS a
- * `<button>`, so this reaches them without this stylesheet ever having to
- * name another component's own `dx-*` class -- scripts/check-dx-class-
- * prefix.sh forbids a component's stylesheet from selecting a class outside
- * its own `dx-button-group-*` namespace, element selectors are exempt.
+ * THE JOIN SCHEME. A group never styles a child control: it publishes four
+ * inheritable corner variables on each direct child by POSITION, and every
+ * joinable control's own stylesheet reads them with its normal radius as the
+ * fallback (`.dx-button`, `.dx-input`, `.dx-select-trigger`, `.dx-native-select`,
+ * `.dx-dropdown-menu-trigger`, `.dx-popover-trigger`):
+ *
+ *   border-start-start-radius: var(--dx-group-radius-start-start, <own radius>);
+ *
+ * The names are the logical corners (`start-start` = block-start/inline-start,
+ * `end-end` = block-end/inline-end), so RTL mirrors with no extra rule, and
+ * horizontal vs vertical is only a choice of WHICH corners a seam flattens.
+ * Custom properties inherit, so it makes no difference whether the control IS
+ * the group's child (Button, Input) or sits inside a wrapper `<div>` that is
+ * (DropdownMenu, Popover, Select): the wrapper carries the variable and the
+ * control inside reads it. An unset variable falls back, so a control outside
+ * a group is untouched and no gate has to know a control is joinable.
+ *
+ * Horizontal: a non-first child flattens its inline-start corners, a non-last
+ * child its inline-end corners. Vertical: block-start / block-end instead.
  */
-.dx-button-group > button:not(:first-child) {
+.dx-button-group:not([data-orientation="vertical"]) > :not(:first-child) {
+  --dx-group-radius-start-start: 0;
+  --dx-group-radius-end-start: 0;
+}
+
+.dx-button-group:not([data-orientation="vertical"]) > :not(:last-child) {
+  --dx-group-radius-start-end: 0;
+  --dx-group-radius-end-end: 0;
+}
+
+.dx-button-group[data-orientation="vertical"] > :not(:first-child) {
+  --dx-group-radius-start-start: 0;
+  --dx-group-radius-start-end: 0;
+}
+
+.dx-button-group[data-orientation="vertical"] > :not(:last-child) {
+  --dx-group-radius-end-start: 0;
+  --dx-group-radius-end-end: 0;
+}
+
+/*
+ * Stop the variables at overlay content. A popover panel, a dropdown menu or a
+ * select list is a DOM descendant of the group child's wrapper (its top-layer
+ * promotion changes painting, not inheritance), so a Button or Input placed
+ * INSIDE one -- a popover form, say -- would otherwise inherit "flat corners"
+ * from the seam it has nothing to do with. Resetting at the content root, by
+ * role/attribute rather than by any component's class, covers every overlay,
+ * present or future. A nested ButtonGroup inside an overlay sets its own.
+ */
+.dx-button-group
+  :is([popover], dialog, [role="dialog"], [role="menu"], [role="listbox"], [role="tooltip"]) {
+  --dx-group-radius-start-start: initial;
+  --dx-group-radius-start-end: initial;
+  --dx-group-radius-end-start: initial;
+  --dx-group-radius-end-end: initial;
+}
+
+/*
+ * The seam: the next child overlaps the previous one's last pixel, so two
+ * 1px borders (or inset ring shadows) draw one line. The margin goes on the
+ * group's OWN flex item -- the wrapper when there is one -- because that is
+ * the box the group lays out, exactly like `gap`; a control inside a wrapper
+ * could only hang out of it.
+ */
+.dx-button-group:not([data-orientation="vertical"]) > :not(:first-child, .dx-button-group-separator) {
   margin-inline-start: -1px;
 }
 
-.dx-button-group[data-orientation="vertical"] > button:not(:first-child) {
-  border-start-end-radius: 0;
-  border-start-start-radius: 0;
+.dx-button-group[data-orientation="vertical"] > :not(:first-child, .dx-button-group-separator) {
   margin-block-start: -1px;
-  margin-inline-start: 0;
 }
 
-.dx-button-group:not([data-orientation="vertical"]) > button:not(:first-child) {
-  border-end-start-radius: 0;
-  border-start-start-radius: 0;
-}
-
-.dx-button-group:not([data-orientation="vertical"]) > button:not(:last-child) {
-  border-end-end-radius: 0;
-  border-start-end-radius: 0;
-}
-
-.dx-button-group[data-orientation="vertical"] > button:not(:last-child) {
-  border-end-end-radius: 0;
-  border-end-start-radius: 0;
-}
-
-.dx-button-group > button:focus-visible,
-.dx-button-group > button:hover {
+/* Raise the hovered / keyboard-focused child so its ring is not clipped by the
+ * neighbour that overlaps it. */
+.dx-button-group > :is(:hover, :focus-visible, :has(:focus-visible)) {
   z-index: var(--dx-z-raise);
 }
 
@@ -62,8 +100,11 @@
   display: flex;
   align-items: center;
   padding: 0 var(--dx-space-3);
-  border-radius: var(--dx-radius-lg);
   background-color: var(--dx-card);
+  border-end-end-radius: var(--dx-group-radius-end-end, var(--dx-radius-lg));
+  border-end-start-radius: var(--dx-group-radius-end-start, var(--dx-radius-lg));
+  border-start-end-radius: var(--dx-group-radius-start-end, var(--dx-radius-lg));
+  border-start-start-radius: var(--dx-group-radius-start-start, var(--dx-radius-lg));
   box-shadow: inset 0 0 0 1px var(--dx-input);
   color: var(--dx-muted-foreground);
   font-size: var(--dx-text-sm);
