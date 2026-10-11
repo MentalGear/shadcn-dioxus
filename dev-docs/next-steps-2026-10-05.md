@@ -13,6 +13,8 @@ Repo: `MentalGear/dioxus-components`, `main` at `001a5f0` plus whatever the 2026
 - **Row 161: IN PROGRESS.** Brand and favicon change now (no URL change). The owner also wants the repo renamed `shadcn-dioxus`: the owner renames it in GitHub Settings -> General; then one PR switches the base path `dioxus-components` -> `shadcn-dioxus` (`scripts/deploy-preview.sh`, `build-ssg` guards, spec `BASE_URL`s, the CLAUDE.md site link, docs), then rebuild and redeploy. Consequences (GitHub redirects, old Pages links 404, the cloud environment's repo scope, installer docs, a custom domain as the decoupling option) are on the row.
 - **New row 174:** home/overview scroll jank re-profiled 2026-10-10, tagged **PENDING-PROFILE** (profile results: see scratchpad report, to be summarised).
 
+- **Owner items 2026-10-11 (on the backlog as row 169's addendum and new rows 186 and 187).** (a) Row 169 now says the non-modal Popover must not engage the scroll lock (only `is_modal: true` may) and needs a non-modal page-scroll spec. (b) **Row 186, shadcn utilities** (`scroll-fade`, shimmer): both already exist in `preview/assets/dx-effects.css`, so the work is a Utilities docs section with demos, a stylesheet-only install path, and Playwright coverage; effort M; run it beside the parity wave (step 3), no shared files. (c) **Row 187, demo upgrades** (25 components, 20 S and 5 M; table in [`research/shadcn-demo-gaps-2026-10-11.md`](./research/shadcn-demo-gaps-2026-10-11.md)): after or alongside step 3; the demos for AvatarGroup/AvatarBadge, menu Shortcut/destructive, ProgressLabel/Value and Calendar `caption_layout` wait on parity groups 9, 2, 9 and 8; combobox multi-select is not in 155 and needs an owner decision.
+
 ## Round 3: done versus still next
 
 Evidence for everything below is in [`research/round3-2026-10-05.md`](./research/round3-2026-10-05.md) (modal close, first paint, the range hang, the listener inventory, the VirtualList table, the font facts, variables versus layers).
@@ -46,7 +48,7 @@ Row 135 (`playwright/computed-style-snapshot.spec.ts`: an open-state pass for ov
 
 ## Step 3 — the shadcn parity wave (row 155)
 
-Nine groups, one lane each, file sets disjoint except where noted:
+Nine groups, one lane each, file sets disjoint except where noted. **Row 169 (Popover non-modal, no scroll lock unless `is_modal`) is a tenth group; row 187 (demo upgrades) runs after or alongside these groups, and row 186 (documented scroll-fade/shimmer utilities) beside them:**
 
 | Group | Proposed file set | Wait for |
 |---|---|---|
