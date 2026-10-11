@@ -44,12 +44,14 @@
 html[data-theme="dark"] {
   --dark: initial;
   --light: ;
+
   color-scheme: dark;
 }
 
 html[data-theme="light"] {
   --dark: ;
   --light: initial;
+
   color-scheme: light;
 }
 
@@ -77,6 +79,10 @@ html[data-theme="light"] [class~="dxc-system"] {
   }
 }
 
+/* stylelint-disable-next-line no-duplicate-selectors -- deliberate second :root: the first block (color-scheme)
+ * anchors the doc comment above it, and this token ramp is kept after the data-theme and prefers-color-scheme
+ * overrides. The two blocks set disjoint properties (no color-scheme, --dark or --light here), so the
+ * duplicate changes no cascade. */
 :root {
   /* Primary colors */
   --primary-color: var(--dark, #000) var(--light, #fff);
@@ -166,6 +172,7 @@ html[data-theme="light"] [class~="dxc-system"] {
   --dx-popover-foreground: var(--popover-foreground, var(--secondary-color-4));
 
   /* Actions */
+
   /* Nova: `--primary` is pure black in light, oklch(0.922) = #e5e5e5 in dark
    (shadcn globals.css). Was the ramp's `secondary-color-1` (#000 | #fafafa);
    only the dark half moves (#fafafa -> #e5e5e5), which is also what the
@@ -328,6 +335,7 @@ html[data-theme="light"] [class~="dxc-system"] {
    * `hover_card` independently): a drop shadow is a depth cue that reads
    * as noise on a dark surface, so it turns off (`none`) in dark mode
    * rather than getting a dark-tuned replacement. */
+
   /* sm and md are Tailwind v4's own `shadow-sm` / `shadow-md` (what Nova's
    * tabs trigger and select content use); lg and up are unchanged. */
   --dx-shadow-sm: var(--dark, none) var(--light, 0 1px 3px 0 rgb(0 0 0 / 10%), 0 1px 2px -1px rgb(0 0 0 / 10%));
@@ -462,9 +470,11 @@ html[data-theme="light"] [class~="dxc-system"] {
    * valid inside a comma-separated box-shadow list). */
   --dx-ring-subtle-color: color-mix(in oklab, var(--dx-foreground) 10%, transparent);
   --dx-ring-subtle: 0 0 0 1px var(--dx-ring-subtle-color);
+
   /* Nova's focus ring: `ring-3 ring-ring/50` (the `border-ring` half is a
    * per-component `border-color`/inset shadow). */
   --dx-ring-focus: 0 0 0 3px color-mix(in oklab, var(--dx-ring-color) 50%, transparent);
+
   /* The keyboard-focus ring of every text-entry control (Input, Textarea,
    * Select trigger, Native Select, Combobox, InputGroup, InputOTP slot):
    * Nova's `focus-visible:border-ring focus-visible:ring-3 ring-ring/50` as one

@@ -101,7 +101,7 @@ gates=(
   "clippy-web|cargo clippy -p dioxus-primitives -p preview --features dioxus-primitives/web,preview/web $CLIPPY_FLAGS"
   "clippy-server|cargo clippy -p preview --features server $CLIPPY_FLAGS"
   "test|cargo test --workspace"
-  "stylelint|cd preview && npx --no-install stylelint \"src/**/*.css\""
+  "stylelint|cd preview && npx --no-install stylelint \"src/**/*.css\" \"assets/**/*.css\""
 )
 
 if [ "$list" = 1 ]; then
