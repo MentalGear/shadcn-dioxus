@@ -3,5 +3,11 @@
   "description": "A placeholder for content that hasn't loaded, doesn't exist, or was filtered to nothing.",
   "authors": ["Claude"],
   "exclude": ["variants", "docs.md", "component.json"],
+  "cargoDependencies": [
+    {
+      "name": "dioxus-primitives",
+      "git": "https://github.com/MentalGear/shadcn-dioxus"
+    }
+  ],
   "globalAssets": ["../../../assets/dx-components-theme.css"]
 }

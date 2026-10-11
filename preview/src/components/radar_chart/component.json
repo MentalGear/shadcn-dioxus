@@ -3,7 +3,12 @@
   "description": "Radar (spider) charts with polygon or circle grids, dots, fills, a legend and series icons.",
   "authors": ["Claude"],
   "exclude": ["variants", "docs.md", "component.json"],
-  "cargoDependencies": [],
+  "cargoDependencies": [
+    {
+      "name": "dioxus-primitives",
+      "git": "https://github.com/MentalGear/shadcn-dioxus"
+    }
+  ],
   "componentDependencies": [
     { "name": "chart", "git": "https://github.com/MentalGear/shadcn-dioxus" },
     { "name": "card", "git": "https://github.com/MentalGear/shadcn-dioxus" }
