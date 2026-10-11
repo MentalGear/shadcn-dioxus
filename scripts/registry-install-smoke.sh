@@ -17,6 +17,8 @@
 #      cargo dependency would be read from github.com's main, not from this tree;
 #   2. renders `templates/starter` (the app `dx new` produces) as the user's app, with the same rewrite; with
 #      `--cli BIN` the app comes from `BIN new app --path <repo>` and is diffed against the hand rendering;
+#      The app then has NO `dioxus-primitives` (nor any crate but `dioxus`), as after `init` on an existing app: the
+#      install must add every crate a component uses, which catches a `component.json` missing `cargoDependencies`;
 #   3. `dx components add <every member of the root component.json> --git file://<repo>` inside it
 #      (dioxus-cli 0.7.9), or with `--cli BIN` (the `shadcn-dioxus` binary built from `cli/`)
 #      `BIN add <names> --path <repo>`;
@@ -136,6 +138,28 @@ if [ -n "$cli" ]; then
 else
   render_ref "$app" smoke_app
 fi
+# The template pre-declares `dioxus-primitives` (so its `web` feature can switch the browser-only code on), and so did
+# this script's app: every component whose `component.json` forgot `cargoDependencies` still compiled here and
+# failed with E0433 in an app made any other way (`kbd`, `area_chart`, `bubble`, `empty`, `message`, found on
+# GitHub after the merge). The app under test therefore starts with NO crate but `dioxus`: the install itself must
+# add every other crate a component uses. (`dx new` / `shadcn-dioxus new` is not the only way in: `init` on an
+# existing app, or a bare `cargo new`, gets no primitives.)
+python3 -I - "$app/Cargo.toml" <<'PY' || { echo "registry-install-smoke: could not strip dioxus-primitives from the app's Cargo.toml" >&2; exit 2; }
+import re, sys
+p = sys.argv[1]
+lines = open(p).read().split("\n")
+out = []
+for l in lines:
+    if re.match(r"dioxus-primitives\s*=", l):
+        while out and out[-1].startswith("#"):
+            out.pop()
+        continue
+    out.append(l.replace(', "dioxus-primitives/web"', ""))
+text = "\n".join(out)
+if "primitives" in text:
+    sys.exit("dioxus-primitives is still mentioned in " + p)
+open(p, "w").write(text)
+PY
 printf '\n[workspace]\n' >> "$app/Cargo.toml"
 
 # Everything dx and cargo write goes under $work: dx's component cache is keyed on the URL text, so a stale

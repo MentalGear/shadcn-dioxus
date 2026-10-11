@@ -33,11 +33,20 @@
 #   - the dir is a member of the root `component.json` and the manifest `name` is the dir name (a dir that
 #     is deliberately not installable goes in NOT_INSTALLABLE below, with the reason);
 #   - `mod.rs` exists and is exactly `mod component; pub use component::*;`, `component.rs` exists;
+#   - no manifest repeats a key (serde in dx rejects `duplicate field`; Python's json.load would not notice);
 #   - every `exclude` and `globalAssets` entry exists, and no `exclude` covers `mod.rs`/`component.rs`/`style.css`;
 #   - every file `component.rs` needs from its own dir survives the copy: `mod x;`, `#[path = ".."]`,
 #     `asset!("/src/components/<name>/..")`, `include_str!("..")`;
 #   - every `crate::components::<other>::` it names is in its `componentDependencies` closure, so
-#     `dx components add <name>` alone brings it in.
+#     `dx components add <name>` alone brings it in;
+#   - every external crate its Rust files use (`dioxus_primitives`, `dioxus_icons`, `time`, `palette`,
+#     `dioxus_ssr`, ... anything but std/core/alloc and `dioxus`, which the app owns) is named by a
+#     `cargoDependencies` entry of the component itself or of one in its `componentDependencies` closure. Both
+#     installers run `cargo add` for the whole closure (dx: `run`, "collect all required rust dependencies";
+#     `shadcn-dioxus`: `add.rs`, `to_install`), and nothing else puts the crate in the user's Cargo.toml: an
+#     app that was not made from `templates/starter` has no `dioxus-primitives`, and `kbd`, `area_chart`,
+#     `bubble`, `empty` and `message` (no `cargoDependencies`) failed there with E0433 while the starter
+#     template, the preview and the smoke script all pre-declared it.
 # `scripts/registry-install-smoke.sh` is the definitive (slow, pre-merge) check that this approximates.
 #
 # Usage: scripts/check-installed-paths.sh
@@ -77,7 +86,18 @@ for name in sorted(dirs.keys() - members):
 for name in sorted(NOT_INSTALLABLE.keys() & members):
     problems.append(f"'{name}' is in NOT_INSTALLABLE but is also a root component.json member")
 
-manifests = {n: json.load(open(f)) for n, f in dirs.items()}
+def no_dup_keys(pairs):
+    # json.load keeps the LAST of a repeated key silently; dx's serde rejects the file ("duplicate field").
+    keys = [k for k, _ in pairs]
+    for k in sorted({k for k in keys if keys.count(k) > 1}):
+        problems.append(f"{current[0]}: key '{k}' appears more than once (dx components add fails with `duplicate field`)")
+    return dict(pairs)
+
+current = [""]
+manifests = {}
+for n, f in dirs.items():
+    current[0] = f
+    manifests[n] = json.load(open(f), object_pairs_hook=no_dup_keys)
 
 def deps(name, seen=None):
     seen = set() if seen is None else seen
@@ -146,10 +166,75 @@ for name in sorted(dirs.keys() & members):
     for other in sorted(set(re.findall(r"crate::components::([a-z_0-9]+)::", src)) - allowed):
         problems.append(f"{d}/component.rs uses crate::components::{other}::, but '{other}' is not in its componentDependencies closure (dx components add {name} would not bring it)")
 
+def known_crates():
+    """Every external crate name the workspace or any manifest mentions (underscored), plus dioxus_* siblings."""
+    k = set()
+    for f in ("Cargo.toml", "preview/Cargo.toml", "primitives/Cargo.toml"):
+        section = None
+        for line in open(f):
+            h = re.match(r"\s*\[(.*)\]", line)
+            if h:
+                section = h.group(1)
+            elif section and "dependencies" in section:
+                m2 = re.match(r"([A-Za-z0-9_-]+)\s*=", line)
+                if m2:
+                    k.add(m2.group(1).replace("-", "_"))
+    for m in manifests.values():
+        for c in m.get("cargoDependencies") or []:
+            k.add(c["name"].replace("-", "_"))
+    return k - {"dioxus"}
+
+KNOWN = known_crates()
+NOT_EXTERNAL = {"crate", "self", "super", "std", "core", "alloc", "dioxus", "r", "b", "br"}
+_STRIP = re.compile(r'/\*.*?\*/|//[^\n]*|r(#*)".*?"\1|b?"(?:\\.|[^"\\])*"|b?\'(?:\\.|[^\'\\])\'', re.S)
+
+def drop_cfg_test(text):
+    """Remove `#[cfg(test)] mod x { .. }` blocks (comments and strings are already gone, so braces balance).
+    They compile only under the user's `cargo test`, where dev-dependencies such as dioxus-ssr are theirs to add."""
+    while True:
+        m = re.search(r"#\[cfg\(test\)\]\s*(?:pub\s+)?mod\s+\w+\s*\{", text)
+        if not m:
+            return text
+        depth, i = 1, m.end()
+        while i < len(text) and depth:
+            depth += {"{": 1, "}": -1}.get(text[i], 0)
+            i += 1
+        text = text[:m.start()] + text[i:]
+
+def crates_used(path_dir, survives):
+    """External crate roots named by `use` statements and by `crate_name::` paths in the installed .rs files."""
+    text = ""
+    for dp, _, fs in os.walk(path_dir):
+        for fn in fs:
+            full = os.path.join(dp, fn)
+            rel = os.path.relpath(full, path_dir)
+            if fn.endswith(".rs") and survives(rel):
+                text += _STRIP.sub(" ", open(full).read()) + "\n"
+    text = drop_cfg_test(text)
+    local = set(re.findall(r"\bmod\s+([a-z_0-9]+)", text))
+    used = {r for r in re.findall(r"(?<![\w:])use\s+(?:::)?([a-z_][a-z0-9_]*)", text) if r not in NOT_EXTERNAL and r not in local}
+    # Paths outside `use` statements only: inside `use dioxus_primitives::{dioxus_attributes::attributes, ..}` the
+    # inner `dioxus_attributes` is a re-export of the root crate, not a crate of its own in the user's tree.
+    body = re.sub(r"(?<![\w:])use\s[^;]*;", " ", text)
+    used |= {r for r in re.findall(r"(?<![\w:])([a-z_][a-z0-9_]*)::", body) if r in KNOWN and r not in local}
+    used |= set(re.findall(r"(?<![\w:])(dioxus_[a-z_0-9]+)::", body))
+    return used
+
+for name in sorted(dirs.keys() & members):
+    d = f"{root}/{name}"
+    excluded = [os.path.normpath(e) for e in (manifests[name].get("exclude") or [])]
+    surv = lambda rel, ex=excluded: not any(os.path.normpath(rel) == e or os.path.normpath(rel).startswith(e + os.sep) for e in ex)
+    declared = set()
+    for n in deps(name) | {name}:
+        for c in manifests.get(n, {}).get("cargoDependencies") or []:
+            declared.add(c["name"].replace("-", "_"))
+    for crate in sorted(crates_used(d, surv) - declared):
+        problems.append(f"{d}: its Rust files use the crate `{crate}`, but neither its component.json nor a componentDependencies closure member lists it in cargoDependencies (an app without `{crate.replace('_', '-')}` fails with E0433 after `dx components add {name}`)")
+
 if problems:
     print("check-installed-paths: components that would not install and compile with `dx components add`:", file=sys.stderr)
     for p in problems:
         print("  " + p, file=sys.stderr)
     sys.exit(1)
-print(f"check-installed-paths: OK -- {len(members)} components each carry mod.rs + component.rs + style.css, with exclude/assets/dependencies consistent.")
+print(f"check-installed-paths: OK -- {len(members)} components each carry mod.rs + component.rs + style.css, with exclude/assets/dependencies (component and cargo) consistent.")
 PY

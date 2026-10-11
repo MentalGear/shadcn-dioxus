@@ -3,6 +3,12 @@
   "description": "Area charts: default, curves, stacking, gradients, legend, axes and an interactive range picker.",
   "authors": ["Claude"],
   "exclude": ["variants", "docs.md", "component.json"],
+  "cargoDependencies": [
+    {
+      "name": "dioxus-primitives",
+      "git": "https://github.com/MentalGear/shadcn-dioxus"
+    }
+  ],
   "componentDependencies": [
     { "name": "chart", "git": "https://github.com/MentalGear/shadcn-dioxus" }
   ],
