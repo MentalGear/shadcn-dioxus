@@ -7,8 +7,11 @@
 #
 # `create` copies a warm template (cp -a --reflink=auto) to <root>/<name> and prints
 # `export CARGO_TARGET_DIR=<abs path>` -- use `eval "$(scripts/lane-target.sh create x)"`
-# (progress goes to stderr, only the export line to stdout). The path is always
+# (progress goes to stderr, only the export lines to stdout). The path is always
 # absolute (dx --ssg breaks on relative ones, row 98) and never the shared repo `target/`.
+# It also exports `CARGO_INCREMENTAL=0` (row 168: incremental state regrew a target dir
+# by ~10-13 GB per lane-hour); `LANE_CARGO_INCREMENTAL=1` opts back in, at the cost of
+# running `prune` afterwards.
 #
 # The template must be base-path-free (row 100: a tree that ever held a
 # `--base-path shadcn-dioxus` build keeps emitting prefixed URLs even after
@@ -69,6 +72,7 @@ case "$cmd" in
     mkdir -p "$root"; cp -a --reflink=auto "$template" "$dest"
     rm -rf "$dest"/dx/*/*/web/public   # never inherit another build's served output
     echo "export CARGO_TARGET_DIR=$dest"
+    echo "export CARGO_INCREMENTAL=${LANE_CARGO_INCREMENTAL:-0}"
     ;;
   du)
     [ -d "$root" ] || die "no such root: $root"

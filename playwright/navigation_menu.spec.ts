@@ -38,6 +38,48 @@ test('hover opens the panel', async ({ page }) => {
   await expect(trigger).toHaveAttribute('aria-expanded', 'true');
 });
 
+// docs/backlog.md row 189. Hover opens the panel after the 150ms intent delay; the click a user
+// then makes on the same trigger used to TOGGLE it shut, so the panel flashed open then closed.
+// A click on a panel the pointer opened confirms it (it stays open); the click after that is an
+// ordinary toggle. (Radix itself closes here and only blocks hover re-opening; Base UI's
+// `stickIfOpen` and this primitive keep it open.)
+test('a click on a trigger whose panel hover just opened keeps it open; the next click closes it', async ({ page }) => {
+  await page.goto(URL, GOTO);
+  const trigger = nav(page).getByRole('button', { name: 'Getting started' });
+  await trigger.hover();
+  await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+
+  await trigger.click();
+  // Still open, and not merely "not yet closed": give any (wrongly) scheduled close, and the
+  // 150ms intent timer, time to land before asserting.
+  await page.waitForTimeout(400);
+  await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+  await expect(trigger).toHaveAttribute('data-state', 'open');
+
+  // The click claimed the panel: a second click is an ordinary toggle and closes it, and the
+  // pointer still resting on the trigger does not re-open it.
+  await trigger.click();
+  await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+  await page.waitForTimeout(400);
+  await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+});
+
+test('a keyboard-opened panel still toggles shut on the first click (no stale hover marker)', async ({ page }) => {
+  await page.goto(URL, GOTO);
+  const trigger = nav(page).getByRole('button', { name: 'Getting started' });
+  // Hover-open, leave and let the close grace elapse, so the hover marker had every chance
+  // to go stale; then open with the keyboard and click.
+  await trigger.hover();
+  await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+  await page.mouse.move(5, 5);
+  await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+  await trigger.focus();
+  await page.keyboard.press('Enter');
+  await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+  await trigger.click();
+  await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+});
+
 test('opening one item closes the other', async ({ page }) => {
   await page.goto(URL, GOTO);
   const gettingStarted = nav(page).getByRole('button', { name: 'Getting started' });
@@ -106,6 +148,14 @@ test.describe('Open animation never reflows the content (user-reported)', () => 
   // block asserts that construction directly, sampling every animation
   // frame rather than a fixed handful of `setTimeout` polls (which could
   // straddle the one bad frame and miss it).
+  // Samples the content's LAYOUT width (computed `width`, a border-box here), never its
+  // `getBoundingClientRect().width`: the rect is the box AFTER the element's transform, and the
+  // open motion is a `scale` .98 -> 1 entrance (shadcn's), so the rect's width swings by ~2%
+  // (backlog row 121: 815.6 -> 825 px on the old 825px panel, 6 distinct rounded widths) while the
+  // layout width -- the thing that makes text re-wrap -- stays put. A scale is not a reflow, so
+  // measuring through the transform failed this test whenever the engine happened to apply the
+  // animated transform to the rect, and passed whenever it did not (a 508px panel, in the same
+  // Chromium); the computed width is transform-independent by construction.
   async function sampleWidthEveryFrame(page: Page, forMs: number): Promise<number[]> {
     return page.evaluate((duration) => {
       return new Promise<number[]>((resolve) => {
@@ -114,7 +164,7 @@ test.describe('Open animation never reflows the content (user-reported)', () => 
         function tick() {
           const el = document.querySelector('.dx-navigation-menu-content');
           if (el) {
-            samples.push(el.getBoundingClientRect().width);
+            samples.push(parseFloat(getComputedStyle(el).width));
           }
           if (performance.now() < deadline) {
             requestAnimationFrame(tick);
@@ -240,8 +290,16 @@ test.describe('Panel layout matches shadcn (owner report: oversized panel, invis
 
   async function openPanel(page: Page, name: string) {
     const trigger = nav(page).getByRole('button', { name });
-    await trigger.click();
+    // Hover, not click: the menu's default activation is hover-intent (150ms), and
+    // `click()` moves the pointer onto the trigger first. Under load the intent timer can
+    // fire between that move and the click, which then TOGGLES the just-opened panel shut
+    // (seen once in 340 runs at --workers=4: aria-expanded stayed "false" for 5s).
+    // These tests are about the panel's layout, not its activation.
+    await trigger.hover();
     await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    // The click this replaces also focused the trigger, and the Escape handler lives inside
+    // the nav: without focus there, the Escape a caller sends to close the panel is ignored.
+    await trigger.focus();
     // Past the open animation (transform scale .98 -> 1), so rects are final.
     await expect
       .poll(() =>

@@ -112,9 +112,22 @@ CHECKER_DIR="scripts/attr-spread-collision-checker"
 export CARGO_TARGET_DIR
 
 echo "check-attr-spread-collision: building analyzer..." >&2
+# Offline first: on a warm container every dependency is already in ~/.cargo/registry, and
+# `--offline` guarantees the gate never silently reaches the network. On a FRESH container
+# (empty registry cache) that offline build cannot resolve anything -- it fails with
+# `failed to get ... as a dependency` -- so retry online, which fetches exactly what the
+# checked-in Cargo.lock pins (no re-resolution, no lockfile change). Found 2026-09-25
+# (backlog row 107): the first fresh-container run of this gate failed here.
 if ! cargo build --release --offline -p attr-spread-collision-checker >&2; then
-  echo "check-attr-spread-collision: FAILED -- could not build $CHECKER_DIR" >&2
-  exit 1
+  echo "check-attr-spread-collision: offline build failed -- the local cargo registry cache is" >&2
+  echo "  probably empty (fresh container). Retrying with network access to fetch the" >&2
+  echo "  analyzer's dependencies (the Cargo.lock pins them; nothing is re-resolved)..." >&2
+  if ! cargo build --release -p attr-spread-collision-checker >&2; then
+    echo "check-attr-spread-collision: FAILED -- could not build $CHECKER_DIR, offline or online." >&2
+    echo "  Offline: the registry cache lacks the dependencies. Online: fetching them failed" >&2
+    echo "  (no network, or the proxy refused the registry). Check the cargo output above." >&2
+    exit 1
+  fi
 fi
 
 BIN="$CARGO_TARGET_DIR/release/attr-spread-collision-checker"
@@ -182,9 +195,16 @@ check_one() {
   current="$(extract_keys "$kind")"
 
   if [[ "$update_mode" -eq 1 ]]; then
-    { baseline_header "$label"; printf '%s\n' "$current"; } >"$baseline_file"
+    # Body only when there ARE findings: `printf '%s\n' ""` for an empty set writes one
+    # blank line, which the old `grep -vc '^#'` count reported as "wrote 1 entries"
+    # (backlog row 107b). Count the same way the gate's own comparison does (`grep -c .`:
+    # non-blank lines), so the reported number is the number of entries actually written.
+    {
+      baseline_header "$label"
+      if [[ -n "$current" ]]; then printf '%s\n' "$current"; fi
+    } >"$baseline_file"
     local n
-    n="$(grep -vc '^#' "$baseline_file" || true)"
+    n="$(printf '%s\n' "$current" | grep -c . || true)"
     echo "check-attr-spread-collision: wrote $n $label entries to $baseline_file" >&2
     return 0
   fi

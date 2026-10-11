@@ -184,7 +184,18 @@ struct NavigationMenuContext {
     /// The currently open item's index, if any. One open at a time, the
     /// same shape as `NavbarContext::open_nav`.
     open: Signal<Option<usize>>,
+    /// The ONE write path for `open`. It also clears [`Self::hover_opened`],
+    /// so that marker can only ever describe the panel the hover-intent
+    /// timer opened and nothing since has re-decided (see there).
     set_open: Callback<Option<usize>>,
+    /// Whether the currently open panel was opened by the hover-intent timer
+    /// and not yet "claimed" by a click. A click on the trigger of such a
+    /// panel keeps it open (and claims it) instead of toggling it shut --
+    /// the pointer path hover -> click must not flash the panel open then
+    /// closed (`docs/backlog.md` row 189). Set only by the trigger's hover-intent timer;
+    /// cleared by every other `set_open`, so a keyboard- or click-opened
+    /// panel can never carry a stale marker.
+    hover_opened: Signal<bool>,
     disabled: ReadSignal<bool>,
     /// Top-level items only (every [`NavigationMenuTrigger`] and every
     /// top-level [`NavigationMenuLink`]), keyed by [`NavigationMenuItem`]'s
@@ -289,7 +300,11 @@ pub struct NavigationMenuProps {
 #[component]
 pub fn NavigationMenu(props: NavigationMenuProps) -> Element {
     let mut open = use_signal(|| None);
-    let set_open = use_callback(move |idx| open.set(idx));
+    let mut hover_opened = use_signal(|| false);
+    let set_open = use_callback(move |idx| {
+        hover_opened.set(false);
+        open.set(idx);
+    });
 
     // Non-looping (matches the reference implementation's clamped
     // `Math.max`/`Math.min` indices, `js/disclosureMenu.js`'s
@@ -314,6 +329,7 @@ pub fn NavigationMenu(props: NavigationMenuProps) -> Element {
     use_context_provider(|| NavigationMenuContext {
         open,
         set_open,
+        hover_opened,
         disabled: props.disabled,
         focus,
         hover_open,
@@ -594,6 +610,17 @@ pub fn NavigationMenuTrigger(props: NavigationMenuTriggerProps) -> Element {
                 }
                 ctx.hover_open.cancel();
                 ctx.hover_close.cancel();
+                // The pointer opened this panel by hovering and this is the
+                // first click since: the user is confirming it, not asking
+                // to dismiss it. Keep it open and claim it, so the NEXT
+                // click toggles it shut like any click-opened panel. Radix
+                // would toggle it shut here (its `wasClickCloseRef` only
+                // stops hover re-opening it); Base UI's `stickIfOpen` and
+                // this crate keep it open (`docs/backlog.md` row 189).
+                if is_open.cloned() && ctx.hover_opened.cloned() {
+                    ctx.hover_opened.set(false);
+                    return;
+                }
                 let want_open = !is_open.cloned();
                 ctx.set_open.call(want_open.then(|| index.cloned()));
             },
@@ -611,6 +638,9 @@ pub fn NavigationMenuTrigger(props: NavigationMenuTriggerProps) -> Element {
                 let target = index.cloned();
                 ctx.hover_open.schedule(HOVER_OPEN_INTENT_DELAY, move || {
                     ctx.set_open.call(Some(target));
+                    // After `set_open` (which clears it): this open was the
+                    // pointer's, so the first click confirms it.
+                    ctx.hover_opened.set(true);
                 });
             },
             onmouseleave: move |_| {

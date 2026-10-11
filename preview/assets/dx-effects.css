@@ -47,32 +47,32 @@
  */
 
 @property --dx-scroll-fade-t {
-  syntax: "<length-percentage>";
   inherits: false;
-  initial-value: 0px;
+  initial-value: 0;
+  syntax: "<length-percentage>";
 }
 
 @property --dx-scroll-fade-b {
-  syntax: "<length-percentage>";
   inherits: false;
-  initial-value: 0px;
+  initial-value: 0;
+  syntax: "<length-percentage>";
 }
 
 @property --dx-scroll-fade-s {
-  syntax: "<length-percentage>";
   inherits: false;
-  initial-value: 0px;
+  initial-value: 0;
+  syntax: "<length-percentage>";
 }
 
 @property --dx-scroll-fade-e {
-  syntax: "<length-percentage>";
   inherits: false;
-  initial-value: 0px;
+  initial-value: 0;
+  syntax: "<length-percentage>";
 }
 
 @property --dx-scroll-fade-mask {
-  syntax: "*";
   inherits: false;
+  syntax: "*";
 }
 
 @keyframes dx-scroll-fade-reveal-t {
@@ -82,7 +82,7 @@
 
   to {
     --dx-scroll-fade-t: var(
-      --_dx-scroll-fade-size-t,
+      --dx-internal-scroll-fade-size-t,
       var(--dx-scroll-fade-size, min(12%, var(--dx-space-10, 2.5rem)))
     );
   }
@@ -91,7 +91,7 @@
 @keyframes dx-scroll-fade-reveal-b {
   from {
     --dx-scroll-fade-b: var(
-      --_dx-scroll-fade-size-b,
+      --dx-internal-scroll-fade-size-b,
       var(--dx-scroll-fade-size, min(12%, var(--dx-space-10, 2.5rem)))
     );
   }
@@ -108,7 +108,7 @@
 
   to {
     --dx-scroll-fade-s: var(
-      --_dx-scroll-fade-size-s,
+      --dx-internal-scroll-fade-size-s,
       var(--dx-scroll-fade-size, min(12%, var(--dx-space-10, 2.5rem)))
     );
   }
@@ -117,7 +117,7 @@
 @keyframes dx-scroll-fade-reveal-e {
   from {
     --dx-scroll-fade-e: var(
-      --_dx-scroll-fade-size-e,
+      --dx-internal-scroll-fade-size-e,
       var(--dx-scroll-fade-size, min(12%, var(--dx-space-10, 2.5rem)))
     );
   }
@@ -133,11 +133,11 @@
 .dx-scroll-fade-y,
 .dx-scroll-fade-t,
 .dx-scroll-fade-b {
-  --_dx-scroll-fade-size-t: var(
+  --dx-internal-scroll-fade-size-t: var(
     --dx-scroll-fade-t-size,
     var(--dx-scroll-fade-size, min(12%, var(--dx-space-10, 2.5rem)))
   );
-  --_dx-scroll-fade-size-b: var(
+  --dx-internal-scroll-fade-size-b: var(
     --dx-scroll-fade-b-size,
     var(--dx-scroll-fade-size, min(12%, var(--dx-space-10, 2.5rem)))
   );
@@ -148,11 +148,11 @@
 .dx-scroll-fade-r,
 .dx-scroll-fade-s,
 .dx-scroll-fade-e {
-  --_dx-scroll-fade-size-s: var(
+  --dx-internal-scroll-fade-size-s: var(
     --dx-scroll-fade-s-size,
     var(--dx-scroll-fade-size, min(12%, var(--dx-space-10, 2.5rem)))
   );
-  --_dx-scroll-fade-size-e: var(
+  --dx-internal-scroll-fade-size-e: var(
     --dx-scroll-fade-e-size,
     var(--dx-scroll-fade-size, min(12%, var(--dx-space-10, 2.5rem)))
   );
@@ -170,8 +170,9 @@
     transparent 100%
   );
 
-  mask-image: var(--dx-scroll-fade-mask, var(--dx-scroll-fade-block));
+  /* stylelint-disable-next-line property-no-vendor-prefix -- Safari before 15.4 reads only the prefixed mask-image; dropping it would lose the scroll fade there */
   -webkit-mask-image: var(--dx-scroll-fade-mask, var(--dx-scroll-fade-block));
+  mask-image: var(--dx-scroll-fade-mask, var(--dx-scroll-fade-block));
 }
 
 .dx-scroll-fade-x {
@@ -183,8 +184,9 @@
     transparent 100%
   );
 
-  mask-image: var(--dx-scroll-fade-mask, var(--dx-scroll-fade-inline));
+  /* stylelint-disable-next-line property-no-vendor-prefix -- Safari before 15.4 reads only the prefixed mask-image; dropping it would lose the scroll fade there */
   -webkit-mask-image: var(--dx-scroll-fade-mask, var(--dx-scroll-fade-inline));
+  mask-image: var(--dx-scroll-fade-mask, var(--dx-scroll-fade-inline));
 }
 
 .dx-scroll-fade-x:where([dir="rtl"], [dir="rtl"] *) {
@@ -276,8 +278,9 @@
 .dx-scroll-fade-r,
 .dx-scroll-fade-s,
 .dx-scroll-fade-e {
-  mask-image: var(--dx-scroll-fade-mask);
+  /* stylelint-disable-next-line property-no-vendor-prefix -- Safari before 15.4 reads only the prefixed mask-image; dropping it would lose the scroll fade there */
   -webkit-mask-image: var(--dx-scroll-fade-mask);
+  mask-image: var(--dx-scroll-fade-mask);
 }
 
 /* The mask is the intersection of the two edge gradients. */
@@ -290,10 +293,14 @@
 .dx-scroll-fade-r,
 .dx-scroll-fade-s,
 .dx-scroll-fade-e {
-  mask-composite: intersect;
-  mask-repeat: no-repeat;
+  /* stylelint-disable-next-line property-no-vendor-prefix -- the prefixed mask-composite takes the legacy
+   * `source-in` keyword, which the standard property rejects (Safari before 15.4); where both apply, the
+   * standard `intersect` below sets the same operation */
   -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+  /* stylelint-disable-next-line property-no-vendor-prefix -- Safari before 15.4 reads only the prefixed mask-repeat */
   -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
 }
 
 /* Scroll-aware: each fade is driven by the scroller's own scroll position. */
@@ -370,8 +377,8 @@
   .dx-scroll-fade-y,
   .dx-scroll-fade-t,
   .dx-scroll-fade-b {
-    --dx-scroll-fade-t: var(--_dx-scroll-fade-size-t);
-    --dx-scroll-fade-b: var(--_dx-scroll-fade-size-b);
+    --dx-scroll-fade-t: var(--dx-internal-scroll-fade-size-t);
+    --dx-scroll-fade-b: var(--dx-internal-scroll-fade-size-b);
   }
 
   .dx-scroll-fade-x,
@@ -379,8 +386,8 @@
   .dx-scroll-fade-r,
   .dx-scroll-fade-s,
   .dx-scroll-fade-e {
-    --dx-scroll-fade-s: var(--_dx-scroll-fade-size-s);
-    --dx-scroll-fade-e: var(--_dx-scroll-fade-size-e);
+    --dx-scroll-fade-s: var(--dx-internal-scroll-fade-size-s);
+    --dx-scroll-fade-e: var(--dx-internal-scroll-fade-size-e);
   }
 }
 
@@ -412,19 +419,19 @@
  */
 
 @property --dx-shimmer-angle {
-  syntax: "<angle>";
   inherits: true;
   initial-value: 20deg;
+  syntax: "<angle>";
 }
 
 @property --dx-shimmer-image {
-  syntax: "*";
   inherits: false;
+  syntax: "*";
 }
 
 @property --dx-shimmer-text-fill {
-  syntax: "*";
   inherits: false;
+  syntax: "*";
 }
 
 @keyframes dx-shimmer-sweep {
@@ -438,9 +445,9 @@
 }
 
 .dx-shimmer {
-  --_dx-shimmer-spread: var(--dx-shimmer-spread, calc(3ch + 40px));
-  --_dx-shimmer-base: currentcolor;
-  --_dx-shimmer-highlight: var(
+  --dx-internal-shimmer-spread: var(--dx-shimmer-spread, calc(3ch + 40px));
+  --dx-internal-shimmer-base: currentcolor;
+  --dx-internal-shimmer-highlight: var(
     --dx-shimmer-color,
     var(--light, oklch(from currentcolor l c h / calc(alpha * 0.2)))
       var(
@@ -449,34 +456,36 @@
       )
   );
 
+  animation: dx-shimmer-sweep var(--dx-shimmer-duration, 2s) linear infinite;
+  /* stylelint-disable-next-line property-no-vendor-prefix -- older engines honour background-clip: text only with
+   * the prefix, and the shimmer's text fill depends on that clip */
+  -webkit-background-clip: text;
+  background-clip: text;
   background-image: var(
     --dx-shimmer-image,
     linear-gradient(
       calc(90deg + var(--dx-shimmer-angle)),
-      var(--_dx-shimmer-base) calc(50% - var(--_dx-shimmer-spread)),
+      var(--dx-internal-shimmer-base) calc(50% - var(--dx-internal-shimmer-spread)),
       color-mix(
           in oklch,
-          var(--_dx-shimmer-highlight),
-          var(--_dx-shimmer-base) 50%
+          var(--dx-internal-shimmer-highlight),
+          var(--dx-internal-shimmer-base) 50%
         )
-        calc(50% - var(--_dx-shimmer-spread) * 0.5),
-      var(--_dx-shimmer-highlight) 50%,
+        calc(50% - var(--dx-internal-shimmer-spread) * 0.5),
+      var(--dx-internal-shimmer-highlight) 50%,
       color-mix(
           in oklch,
-          var(--_dx-shimmer-highlight),
-          var(--_dx-shimmer-base) 50%
+          var(--dx-internal-shimmer-highlight),
+          var(--dx-internal-shimmer-base) 50%
         )
-        calc(50% + var(--_dx-shimmer-spread) * 0.5),
-      var(--_dx-shimmer-base) calc(50% + var(--_dx-shimmer-spread))
+        calc(50% + var(--dx-internal-shimmer-spread) * 0.5),
+      var(--dx-internal-shimmer-base) calc(50% + var(--dx-internal-shimmer-spread))
     )
   );
   background-position: 0 0;
   background-repeat: no-repeat;
-  background-size: calc(200% + var(--_dx-shimmer-spread) * 2) 100%;
-  background-clip: text;
-  -webkit-background-clip: text;
+  background-size: calc(200% + var(--dx-internal-shimmer-spread) * 2) 100%;
   -webkit-text-fill-color: var(--dx-shimmer-text-fill, transparent);
-  animation: dx-shimmer-sweep var(--dx-shimmer-duration, 2s) linear infinite;
 }
 
 .dx-shimmer:where([dir="rtl"], [dir="rtl"] *) {
@@ -498,8 +507,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .dx-shimmer {
+    animation: none;
     background-image: none;
     -webkit-text-fill-color: currentcolor;
-    animation: none;
   }
 }

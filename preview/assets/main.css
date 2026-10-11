@@ -813,9 +813,9 @@ button.dx-theme-phone-trigger {
  * keeps every rule strictly higher-specificity than the base component
  * rule it overrides, regardless of link order. */
 .dx-sidebar-wrapper.dx-docs-shell {
-  flex-direction: column;
-  height: auto;
   overflow: visible;
+  height: auto;
+  flex-direction: column;
 }
 
 /* The former `.dx-sidebar-wrapper.dx-docs-shell` geometry (width/border/
@@ -826,9 +826,9 @@ button.dx-theme-phone-trigger {
  * component rule. */
 .dx-docs-shell-body {
   display: flex;
+  overflow: visible;
   width: min(var(--dx-content-width), calc(100vw - 2rem));
   min-height: calc(100vh - var(--dx-navbar-height));
-  overflow: visible;
   border-right: 1px solid var(--dx-border);
   border-left: 1px solid var(--dx-border);
   margin: 0 auto;
@@ -841,17 +841,17 @@ button.dx-theme-phone-trigger {
 .dx-docs-shell-body .dx-sidebar-container {
   position: sticky;
   top: var(--dx-navbar-height);
-  left: auto;
   right: auto;
+  left: auto;
   width: var(--dx-sidebar-width);
   height: calc(100vh - var(--dx-navbar-height));
   transition: width var(--dx-motion-duration-slow) var(--dx-motion-ease-out);
 }
 
 .dx-docs-shell-body [data-collapsible="offcanvas"] .dx-sidebar-container {
+  overflow: hidden;
   width: 0;
   min-width: 0;
-  overflow: hidden;
   border: none;
 }
 
@@ -1252,7 +1252,7 @@ button.dx-theme-phone-trigger {
   width: 100%;
 }
 
-@media (min-width: 768px) {
+@media (width >= 768px) {
   .dx-block-demo-iframe {
     min-width: 820px;
   }
@@ -1635,6 +1635,7 @@ button.dx-theme-phone-trigger {
  * the box's padding edge, and these two boxes have no horizontal padding -- a focus ring on the
  * title link at the card's left edge (`outline-offset: 3px`) lost its left side. The margin
  * lets such ink out by 0.75rem without changing layout (not Safari: there the ring is clipped). */
+
 /* `contain-intrinsic-block-size` is the size of the CONTENT box, and both cards add padding (a component
  * card 3rem top and bottom, a widget card 3.6rem plus its 2px border) that the estimate does not include.
  * The estimate is therefore the MEAN measured border-box height minus that padding, so a never-rendered
@@ -1648,8 +1649,13 @@ button.dx-theme-phone-trigger {
  * rendered. `playwright/oracle/tier2-html/home-scroll-stability.spec.ts` fails if the first scroll changes
  * the document height by 10% or more, which is what re-measuring is for when the gallery changes. */
 .dx-component-card {
+  display: grid;
+  align-items: start;
+  padding: 3rem 0;
   contain-intrinsic-block-size: auto 290px;
   content-visibility: var(--dx-cv, auto);
+  gap: 2rem;
+  grid-template-columns: minmax(16rem, 1fr) minmax(16rem, 1fr);
   overflow-clip-margin: 0.75rem;
 }
 
@@ -1783,14 +1789,6 @@ html[data-cv-settle] {
   padding: 0;
   margin: 0;
   gap: 0;
-}
-
-.dx-component-card {
-  display: grid;
-  align-items: start;
-  padding: 3rem 0;
-  gap: 2rem;
-  grid-template-columns: minmax(16rem, 1fr) minmax(16rem, 1fr);
 }
 
 .dx-component-card-meta {
