@@ -113,6 +113,12 @@ if [ "${#not_found_routes[@]}" -gt 0 ]; then
 fi
 echo "==> OK: no route shipped the not-found shell."
 
+# dev-docs/backlog.md row 173: GitHub Pages answers every URL the SSG did not prerender
+# with /404.html (status 404). Without one, an unknown URL gets GitHub's generic page and
+# never reaches the app's router; with it, the app boots and renders its not-found page.
+echo "==> Emitting 404.html (app-shell fallback for unknown URLs) ..."
+"$repo_root/scripts/emit-404.sh" "$public_dir"
+
 echo "==> Refreshing $repo_root/docs from $public_dir ..."
 mkdir -p "$repo_root/docs"
 find "$repo_root/docs" -mindepth 1 -maxdepth 1 -exec rm -rf {} +

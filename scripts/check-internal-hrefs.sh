@@ -19,6 +19,20 @@
 #      route is `/component/<x>/`. Doc comments (`//`, `///`, `//!`) that
 #      merely describe the legacy form are fine.
 #
+#   3. No router `Link { .. }` in preview/src without a `// link-ok: <reason>`
+#      comment on the same or the preceding line, and none ever with
+#      `aria_current`. `dioxus_router::Link` computes its own `aria-current` as
+#      `href == router.full_route_string()`: our routes carry `?:dark_mode`, so
+#      the server renders `aria-current="page"` and the browser, whose route
+#      string has no `?`, drops it on hydration (every navbar/footer/sidebar
+#      link, site-wide); passing `aria_current` yourself emits it twice (Link
+#      writes its literal beside `..attributes`). Backlog row 126. Navigation
+#      links use `NavLink` (preview/src/nav_link.rs), whose single
+#      `aria-current` comes from a path comparison identical on both sides; a
+#      raw `Link` is for an external target or a content link that can never
+#      point at its own page, and says so in the marker. `document::Link`
+#      (the `<link>` tag) is not a router Link and is not matched.
+#
 # Usage: scripts/check-internal-hrefs.sh
 # Exit status: 0 when clean.
 
@@ -42,7 +56,38 @@ if [ -n "$legacy" ]; then
   fail=1
 fi
 
+# 3. Raw router `Link { .. }`: needs a `link-ok:` marker; never `aria_current`.
+# `nav_link.rs` is exempt (its doc comment names `Link {`); `//` lines are skipped.
+raw_links=$(find preview/src -name '*.rs' ! -name nav_link.rs -print0 | sort -z | xargs -0 awk '
+  FNR == 1 { depth = 0; inlink = 0; prev = "" }
+  {
+    line = $0
+    code = line; sub(/^[[:space:]]*\/\/.*/, "", code)
+    if (!inlink && code ~ /(^|[^A-Za-z0-9_:])Link[[:space:]]*\{/) {
+      inlink = 1; depth = 0; start = FNR
+      if (line !~ /link-ok:/ && prev !~ /link-ok:/) {
+        printf "%s:%d: raw router `Link` without a `// link-ok: <reason>` marker (use NavLink)\n", FILENAME, FNR
+      }
+    }
+    if (inlink) {
+      if (code ~ /aria[_-]current/) {
+        printf "%s:%d: `aria_current` on a router `Link` (opened at line %d)\n", FILENAME, FNR, start
+      }
+      n = split(code, ch, "")
+      for (i = 1; i <= n; i++) {
+        if (ch[i] == "{") depth++
+        else if (ch[i] == "}") { depth--; if (depth <= 0) { inlink = 0; break } }
+      }
+    }
+    prev = line
+  }')
+if [ -n "$raw_links" ]; then
+  echo "check-internal-hrefs: router Link misuse (dev-docs/backlog.md row 126; see preview/src/nav_link.rs):" >&2
+  echo "$raw_links" >&2
+  fail=1
+fi
+
 if [ "$fail" -ne 0 ]; then
   exit 1
 fi
-echo "check-internal-hrefs: OK -- no root-absolute href literals or legacy /component/?name= links."
+echo "check-internal-hrefs: OK -- no root-absolute href literals, legacy /component/?name= links, or unmarked/aria_current router Links."

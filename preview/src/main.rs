@@ -34,6 +34,7 @@ use dioxus_icons::lucide::{
     ChevronsUpDown, Compass, Copy, ExternalLink, FileText, Hash, House, Layers, LayoutGrid, Mail,
     Pause, Play, SkipBack, SkipForward, SquareCheck,
 };
+use nav_link::NavLink;
 use std::str::FromStr;
 use strum::{Display, EnumIter, EnumString, IntoEnumIterator};
 use unic_langid::{langid, LanguageIdentifier};
@@ -50,6 +51,7 @@ mod dashboard;
 mod eager_head;
 mod installed_source;
 mod motion_docs;
+mod nav_link;
 #[cfg(test)]
 mod polar_parity;
 mod theme;
@@ -349,6 +351,14 @@ pub enum Route {
         iframe: Option<bool>,
         dark_mode: Option<bool>,
     },
+    // Catch-all: a URL that matches no other route (a typo, a stale link, anything
+    // GitHub Pages answers with `404.html`, see `scripts/emit-404.sh`). Without it
+    // the router prints its own "Failed to parse route" debug output. Inside both
+    // layouts so it has the same header and footer as the other not-found pages.
+    // NEVER prerendered: `Route::static_routes()` drops every variant with a
+    // catch-all segment, and `server_static_routes` enumerates only real pages.
+    #[route("/:..segments")]
+    NotFound { segments: Vec<String> },
     #[end_layout]
     // Legacy query-string block-demo deep link -- same reasoning and same
     // redirect-shell construction as `ComponentDemo` above;
@@ -388,6 +398,7 @@ impl Route {
             Route::ComponentBlockDemo { .. } => None,
             Route::ComponentBlockDemoPath { .. } => None,
             Route::EmailClientDashboard { .. } => None,
+            Route::NotFound { .. } => None,
         }
     }
 
@@ -408,6 +419,7 @@ impl Route {
             Route::ComponentBlockDemo { dark_mode, .. } => *dark_mode,
             Route::ComponentBlockDemoPath { dark_mode, .. } => *dark_mode,
             Route::EmailClientDashboard { dark_mode, .. } => *dark_mode,
+            Route::NotFound { .. } => None,
         }
     }
 
@@ -600,7 +612,7 @@ fn Navbar() -> Element {
                     SidebarTrigger { class: "dx-navbar-sidebar-trigger" }
                 }
                 if in_component {
-                    Link {
+                    NavLink {
                         to: Route::home(),
                         class: "dx-navbar-brand",
                         aria_label: "Back",
@@ -626,7 +638,7 @@ fn Navbar() -> Element {
                     if has_sidebar {
                         SidebarTrigger { class: "dx-navbar-sidebar-trigger" }
                     }
-                    Link { to: Route::home(), class: "dx-navbar-brand",
+                    NavLink { to: Route::home(), class: "dx-navbar-brand",
                         img {
                             src: asset!("/assets/dioxus_color.svg"),
                             alt: "Dioxus Logo",
@@ -635,9 +647,9 @@ fn Navbar() -> Element {
                         }
                         span { "{SITE_NAME}" }
                     }
-                    Link { to: Route::docs(), class: "dx-navbar-link", "Docs" }
-                    Link { to: Route::demos(), class: "dx-navbar-link", "Demos" }
-                    Link { to: Route::charts_index(), class: "dx-navbar-link", "Charts" }
+                    NavLink { to: Route::docs(), class: "dx-navbar-link", "Docs" }
+                    NavLink { to: Route::demos(), class: "dx-navbar-link", "Demos" }
+                    NavLink { to: Route::charts_index(), class: "dx-navbar-link", "Charts" }
                 }
                 div { class: "dx-navbar-utilities",
                     // TODO: restore once the primitives crate is published
@@ -656,6 +668,7 @@ fn Navbar() -> Element {
                     //         }
                     //     }
                     // }
+                    // link-ok: external target, never the current page
                     Link {
                         to: REGISTRY_GIT_URL,
                         class: "dx-navbar-link",
@@ -693,7 +706,7 @@ fn Footer() -> Element {
         footer { class: "dx-preview-footer",
             div { class: "dx-footer-inner",
                 div { class: "dx-footer-brand",
-                    Link { to: Route::home(), class: "dx-footer-brand-link",
+                    NavLink { to: Route::home(), class: "dx-footer-brand-link",
                         img {
                             src: asset!("/assets/dioxus_color.svg"),
                             alt: "Dioxus Logo",
@@ -709,18 +722,20 @@ fn Footer() -> Element {
                 nav { class: "dx-footer-nav", aria_label: "Footer",
                     div { class: "dx-footer-nav-group",
                         span { class: "dx-footer-nav-heading", "Library" }
-                        Link { to: Route::home(), class: "dx-footer-link", "Components" }
-                        Link { to: Route::docs(), class: "dx-footer-link", "Docs" }
-                        Link { to: Route::demos(), class: "dx-footer-link", "Demos" }
-                        Link { to: Route::charts_index(), class: "dx-footer-link", "Charts" }
+                        NavLink { to: Route::home(), class: "dx-footer-link", "Components" }
+                        NavLink { to: Route::docs(), class: "dx-footer-link", "Docs" }
+                        NavLink { to: Route::demos(), class: "dx-footer-link", "Demos" }
+                        NavLink { to: Route::charts_index(), class: "dx-footer-link", "Charts" }
                     }
                     div { class: "dx-footer-nav-group",
                         span { class: "dx-footer-nav-heading", "Project" }
+                        // link-ok: external target, never the current page
                         Link {
                             to: REGISTRY_GIT_URL,
                             class: "dx-footer-link",
                             "GitHub"
                         }
+                        // link-ok: external target, never the current page
                         Link {
                             to: "https://dioxuslabs.com",
                             class: "dx-footer-link",
@@ -1516,7 +1531,7 @@ fn DocsLayout(
                                     SidebarMenuButton {
                                         is_active: active == DocsNavActive::Home,
                                         as: move |attributes: Vec<Attribute>| rsx! {
-                                            Link { to: Route::home(), attributes,
+                                            NavLink { to: Route::home(), attributes,
                                                 House { size: "1rem", "aria-hidden": "true" }
                                                 span { "Home" }
                                             }
@@ -1538,7 +1553,7 @@ fn DocsLayout(
                                     SidebarMenuButton {
                                         is_active: active == DocsNavActive::Overview,
                                         as: move |attributes: Vec<Attribute>| rsx! {
-                                            Link { to: Route::docs(), attributes,
+                                            NavLink { to: Route::docs(), attributes,
                                                 FileText { size: "1rem", "aria-hidden": "true" }
                                                 span { "Overview" }
                                             }
@@ -1591,7 +1606,7 @@ fn DocsLayout(
                                             SidebarMenuButton {
                                                 is_active: active == DocsNavActive::Component(component.name),
                                                 as: move |attributes: Vec<Attribute>| rsx! {
-                                                    Link {
+                                                    NavLink {
                                                         to: Route::component(component.name),
                                                         attributes,
                                                         {component.name.replace("_", " ")}
@@ -1662,6 +1677,7 @@ fn Demos(dark_mode: Option<bool>) -> Element {
                 ul { class: "dx-demos-grid",
                     for entry in DEMO_ENTRIES {
                         li { class: "dx-demos-item",
+                            // link-ok: a demo-app card on `/demos`, never `/demos` itself
                             Link {
                                 to: (entry.route)(),
                                 class: "dx-demos-card",
@@ -1748,6 +1764,25 @@ fn ComponentDemoPath(iframe: Option<bool>, dark_mode: Option<bool>, name: String
     };
     rsx! {
         ComponentHighlight { demo }
+    }
+}
+
+/// The catch-all (`Route::NotFound`): a URL no route matches. Same markup and
+/// class as `ComponentDemoPath`'s "Component not found" shell (no sidebar, so
+/// `Navbar {}` renders its trigger-less form), plus a way home. Client-only in
+/// practice: it is never prerendered (see the route's comment).
+#[component]
+fn NotFound(segments: Vec<String>) -> Element {
+    let path = segments.join("/");
+    rsx! {
+        document::Title { "Page not found \u{2013} {SITE_NAME}" }
+        Navbar {}
+        main { id: MAIN_ID, tabindex: "-1", class: "dx-component-demo-not-found",
+            h3 { "Page not found" }
+            p { "There is no page at \"/{path}\"." }
+            // link-ok: content link; the catch-all page is never `/`
+            Link { to: Route::home(), "Back to the home page" }
+        }
     }
 }
 
@@ -1840,6 +1875,7 @@ fn ComponentHighlight(demo: ComponentDemoData) -> Element {
                     }
                     p { "{description}" }
                     if charts_gallery::offers_gallery_link(raw_name) {
+                        // link-ok: content link on a component page, never `/charts/`
                         Link {
                             to: Route::charts_index(),
                             class: "dx-charts-gallery-link",
@@ -2543,6 +2579,7 @@ fn Home(iframe: Option<bool>, dark_mode: Option<bool>) -> Element {
                             "Dioxus components by the Dioxus team. Browse the catalog, copy the CLI command, and pull only what you need into your project. Thoughtfully designed with powerful accessibility features."
                         }
                         div { class: "dx-hero-cta",
+                            // link-ok: home-page hero button, never `/docs`
                             Link { to: Route::docs(), class: "dx-hero-cta-primary",
                                 "get started"
                                 ArrowRight { size: "18", stroke_width: "1.8" }
@@ -3393,6 +3430,7 @@ fn ComponentGalleryPreview(component: ComponentDemoData) -> Element {
             SidebarGalleryCardControls { controls }
         },
         (ComponentType::Block, None) => rsx! {
+            // link-ok: home-gallery card link, never its own component page
             Link {
                 to: Route::component(name),
                 class: "dx-component-card-block-link",
@@ -3407,6 +3445,7 @@ fn ComponentGalleryPreview(component: ComponentDemoData) -> Element {
             div { class: "dx-component-card-meta",
                 div { class: "dx-component-card-title-row",
                     h3 { class: "dx-component-card-title",
+                        // link-ok: home-gallery card link, never its own component page
                         Link {
                             to: Route::component(name),
                             class: "dx-component-card-title-link",

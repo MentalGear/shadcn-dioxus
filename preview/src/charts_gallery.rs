@@ -25,11 +25,11 @@ use crate::components::{
     tooltip::{Tooltip, TooltipContent, TooltipTrigger},
     ComponentCategory,
 };
+use crate::nav_link::NavLink;
 use crate::{
     components, installed_source, variant_title, ComponentVariantDemoData, HighlightedCode, Navbar,
     PreviewCode, Route, MAIN_ID,
 };
-use dioxus::html::input_data::MouseButton;
 use dioxus::prelude::*;
 use dioxus_icons::lucide::{
     ChartArea, ChartColumn, ChartLine, ChartPie, Check, Copy, FileCode, Gauge, MessageSquare, Radar,
@@ -284,6 +284,7 @@ pub fn ChartsKind(kind: String, dark_mode: Option<bool>) -> Element {
             main { id: MAIN_ID, tabindex: "-1", class: "dx-charts-not-found",
                 h1 { "Chart type not found" }
                 p { "There is no chart gallery called \"{kind}\"." }
+                // link-ok: content link on the not-found page of a bogus slug
                 Link { to: Route::charts(ChartKind::Area), "Browse the area charts" }
             }
         },
@@ -389,6 +390,7 @@ fn ChartsHero() -> Element {
             }
             div { class: "dx-charts-hero-actions",
                 a { class: "dx-charts-hero-button", "data-style": "primary", href: "#charts", "Browse charts" }
+                // link-ok: content link to the chart docs page, never `/charts/`
                 Link {
                     to: Route::component("chart"),
                     class: "dx-charts-hero-button",
@@ -411,35 +413,19 @@ fn ChartsTabs(active: ChartKind) -> Element {
     }
 }
 
-/// One tab link. A plain anchor with the router's own navigation, not
-/// `Link`: `Link` computes `aria-current` itself by comparing the target
-/// against the current URL, which renders on the server (SSG) but not after
-/// hydration under a base path, and passing the attribute as well makes the
-/// pair a duplicate that renders neither. Deriving it from the `active` prop
-/// alone gives the server and the client the same markup.
+/// One tab link: a [`NavLink`] (not `Link`; backlog row 126, see
+/// `nav_link.rs` for the full account), so the active tab carries exactly one
+/// `aria-current="page"` in the prerendered HTML *and* after hydration.
+/// `active` is passed explicitly because the Area tab (`/charts/area/`) is
+/// also current on `/charts/`, a different path.
 #[component]
 fn ChartsTab(kind: ChartKind, active: bool) -> Element {
-    let href = format!(
-        "{}{}",
-        router().prefix().unwrap_or_default(),
-        Route::charts(kind)
-    );
     rsx! {
-        a {
+        NavLink {
             class: "dx-charts-tab",
-            href,
-            aria_current: active.then_some("page"),
+            to: Route::charts(kind),
+            active,
             "onclick": REMEMBER_TAB_ROW,
-            onclick: move |event: MouseEvent| {
-                // Modified and non-primary clicks keep the browser's own
-                // behavior (new tab, ...), like `Link`.
-                if event.modifiers().is_empty()
-                    && event.trigger_button() == Some(MouseButton::Primary)
-                {
-                    event.prevent_default();
-                    navigator().push(Route::charts(kind));
-                }
-            },
             "{kind.tab_label()}"
         }
     }
