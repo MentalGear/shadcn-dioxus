@@ -546,6 +546,46 @@ path. Other useful exact flags (from this session's own
 `npx playwright test --help`): `--repeat-each <N>`, `--reporter=line` (both
 used in this session's own verification run above), `--grep-invert <regex>`.
 
+## Computed-style snapshot: hover and open states (backlog row 135, 2026-10-11)
+
+`playwright/computed-style-snapshot.spec.ts` (tool, skipped unless `DX_SNAPSHOT=1`; usage and env in its header) is the
+"did any computed value change at all" proof for value-preserving CSS work. Until row 135 it read only the rest state
+of what is in the DOM, so closed overlays and `:hover` were invisible to it. Format 3 adds two sections per page and
+scheme (`hover`, `open`), implemented in `playwright/computed-style-states.ts`:
+
+- **Construction: a state is a delta.** Settle, record a signature of every in-scope element, put the page in a state with
+  REAL input (`page.mouse` / `keyboard`, so `:hover` genuinely applies), record every element that is new or whose
+  computed style changed (plus `::before/::after/::placeholder/::marker/::backdrop`). Nothing knows what a dialog is: a
+  `<dialog>` in the top layer, a `[popover]`, content mounted into the page and a class flip all land in the same delta.
+- **`open`**: triggers are derived (`aria-haspopup`, `aria-expanded` (collapsed ones), `popovertarget`, `summary`, tooltip
+  `aria-describedby`, `*-trigger` classes, the first focusable inside a `data-state=closed` root); on
+  `PLAIN_TRIGGER_PAGES` (alert_dialog, command, dialog, drawer, sheet, toast: plain `onclick` buttons) every button is a
+  trigger. Each is tried with click, right-click, hover, focus until the page changes; the delta is recorded; each distinct
+  item inside (menu item, option, link; at most 8) is hovered against the open-state baseline; then it is closed (pointer
+  away, Escape, click back toggles that differ from baseline, a dismiss button, Escape) and VERIFIED closed, reloading the
+  page as the last resort.
+- **`hover`**: every distinct interactive control of the Demo frames (at most 60 per page), plus every chart plot (the
+  tooltip appears over the plot).
+- **A/A determinism is the acceptance test**, and each item below was found by it (two captures of one build must be
+  byte-identical): the legacy `/component/?name=` route renders a "Loading component..." stub until wasm hydrates (wait for
+  it to be gone, `gotoSettled`); avatars show their fallback until `load`; `content-visibility: auto` cards change the
+  document height as they are scrolled to (`--dx-cv: visible`); the baseline is re-taken when scrolling
+  moved the page; the pointer is parked right after a click (an overlay opens under it and which node is `:hover` is a hit-test race);
+  `content-visibility: auto` cards are laid out for real in the rest pass too; submenus open after a 200 ms hover-intent delay (waited out, not raced); `[tabindex]` panels are not
+  hover targets; the home music player ticks while visible (the document is reported hidden, which stops every
+  `use_motion`-gated timer, and toasts never auto-dismiss); Google Fonts requests are aborted (whether they beat
+  `font-display: optional` changed every text width).
+- **Coverage is reported, not asserted**: `<OUT>.coverage.json` (and the last lines of the run) list per page triggers
+  tried/opened and by which input, triggers that did nothing WITH THE REASON, items hovered, hover targets captured/skipped
+  and why, reloads. Read it before trusting a green diff. Not covered: `:active`, `::selection`, scrollbars, keyboard-driven
+  highlight, ordinary toggles (checkbox/switch), anything inside the block-demo iframes (`sidebar#frame*`).
+- **Cost**: 3 parallel contexts (`DX_SNAPSHOT_PARALLEL`), both schemes, ~16 min on an idle 4-core box, ~27 min at load 19. The file
+  is ~400 MB (`compare` of two of them ran in ~20 s on Playwright's default heap; if a growing page set ever hits Node's
+  512 MB string limit or the heap, capture and compare per scheme with `DX_SNAPSHOT_MODES=light` / `dark`).
+- The build under test must be served from a path with no prefix, or pass `PLAYWRIGHT_BASE_URL` with it. An SSG `public/` is
+  enough: `python3 -m http.server <port> -d .../public`. Use a release or debug build as you like, but capture "before" and
+  "after" from the same profile.
+
 ## What's still unknown / not verified this session
 
 - Hot-patch recovery: whether a server **restart** clears the "Missing
