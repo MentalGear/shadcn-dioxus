@@ -592,9 +592,10 @@ pub fn DropdownMenuTrigger(props: DropdownMenuTriggerProps) -> Element {
     // own id), for the same reason `PopoverTrigger` does (see
     // `PopoverCtx::content_id`'s doc in `popover.rs`). Folded with any
     // caller-supplied `style` by `top_layer::anchored_trigger_attributes`
-    // rather than left to plain `merge_attributes` (which only folds
-    // `class` and would otherwise let a caller's own `style` silently
-    // replace this binding); see that function's own doc.
+    // rather than left to plain `merge_attributes` (which folds a plain
+    // `style` attribute but not shorthand style props -- `padding: ".."`
+    // etc., namespace `Some("style")` -- which would still render a second
+    // `style` beside it); see that function's own doc.
     let merged = crate::top_layer::anchored_trigger_attributes(&ctx.content_id.cloned(), merged);
 
     if let Some(dynamic) = props.r#as {
@@ -1682,9 +1683,10 @@ pub fn DropdownMenuSubTrigger(props: DropdownMenuSubTriggerProps) -> Element {
     // (`DropdownMenuSubContentRendered`), the same mechanism
     // `DropdownMenuTrigger` uses for the top-level content -- folded with
     // any caller-supplied `style` by `top_layer::anchored_trigger_attributes`
-    // rather than left to plain `merge_attributes` (which only folds
-    // `class` and would otherwise let a caller's own `style` silently
-    // replace this binding); see that function's own doc.
+    // rather than left to plain `merge_attributes` (which folds a plain
+    // `style` attribute but not shorthand style props -- `padding: ".."`
+    // etc., namespace `Some("style")` -- which would still render a second
+    // `style` beside it); see that function's own doc.
     let merged = crate::top_layer::anchored_trigger_attributes(&sub.content_id.cloned(), merged);
 
     rsx! {

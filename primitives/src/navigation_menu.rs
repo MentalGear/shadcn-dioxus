@@ -582,9 +582,11 @@ pub fn NavigationMenuTrigger(props: NavigationMenuTriggerProps) -> Element {
     // `playwright/oracle/attr-synth`'s `navigation_menu:trigger:style`
     // case). Folding it into `attributes` here instead, via
     // `top_layer::anchored_trigger_attributes`, fixes that and (unlike
-    // plain `merge_attributes`, which only folds `class`) keeps the anchor
-    // binding even when the caller's `style` is present; see that
-    // function's own doc.
+    // plain `merge_attributes`, which folds a plain `style` attribute but
+    // leaves shorthand style props -- `padding: ".."`, namespace
+    // `Some("style")` -- as separate attributes) renders exactly one
+    // `style` carrying the anchor binding plus whatever the caller
+    // supplied; see that function's own doc.
     let attributes =
         crate::top_layer::anchored_trigger_attributes(&item_ctx.content_id.cloned(), attributes);
     // Owned by this component -- disclosure semantics (`aria-expanded`/
