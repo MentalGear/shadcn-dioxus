@@ -480,9 +480,14 @@ dialog.dx-drawer[data-state="closed"] {
   touch-action: pan-x;
 }
 
+/* shadcn/vaul draws the grab bar only for the bottom (and top) drawer, where it sits on the edge
+ * the panel is dragged from. A left/right panel is a side sheet: a horizontal pill pinned to its
+ * top reads as a bottom-drawer artifact. Hidden by the panel's own side attribute, so no demo has
+ * to leave `DrawerHandle` out (it stays in the DOM, aria-hidden; the panel itself still takes the
+ * drag gesture, per the `touch-action` rules above). */
 .dx-drawer[data-side="right"] .dx-drawer-handle,
 .dx-drawer[data-side="left"] .dx-drawer-handle {
-  touch-action: pan-y;
+  display: none;
 }
 
 .dx-drawer-header {

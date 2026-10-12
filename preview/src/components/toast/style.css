@@ -182,7 +182,15 @@
   color: var(--dx-success);
 }
 
+/* The error toast sits on the solid destructive fill, so its title, description and close read
+   the destructive-foreground token through the `--dx-toast-foreground` slot below instead of the
+   page foreground: near-black (#111) on #dc2626 is 3.9:1 in light mode, white is 4.8:1. In dark
+   the destructive-foreground (#dcdcdc on #a22e2e, 5.2:1) also clears 4.5:1 under the stacked-toast
+   brightness filter, where the page foreground (#d4d4d4) fell to 4.4:1. The other types use a
+   subtle tint under the page foreground (>= 8:1 in both themes). */
 .dx-toast[data-type="error"] {
+  --dx-toast-foreground: var(--dx-destructive-foreground);
+
   background-color: var(--dx-destructive);
   color: var(--dx-destructive-foreground);
 }
@@ -205,12 +213,12 @@
 
 .dx-toast-title {
   margin-bottom: var(--dx-space-1);
-  color: var(--dx-foreground);
+  color: var(--dx-toast-foreground, var(--dx-foreground));
   font-weight: 600;
 }
 
 .dx-toast-description {
-  color: var(--dx-foreground);
+  color: var(--dx-toast-foreground, var(--dx-foreground));
   font-size: var(--dx-text-sm);
 }
 
@@ -220,7 +228,7 @@
   border: none;
   margin: 0;
   background: none;
-  color: var(--dx-foreground);
+  color: var(--dx-toast-foreground, var(--dx-foreground));
   cursor: pointer;
   font-size: var(--dx-text-lg);
   line-height: 1;
@@ -230,5 +238,11 @@
 }
 
 .dx-toast-close:hover {
-  color: var(--dx-accent-foreground);
+  color: var(--dx-toast-foreground, var(--dx-accent-foreground));
+}
+
+/* The error toast keeps its foreground on hover (accent-foreground is dark on the red fill), so
+   dim the glyph instead. */
+.dx-toast[data-type="error"] .dx-toast-close:hover {
+  opacity: 0.8;
 }
