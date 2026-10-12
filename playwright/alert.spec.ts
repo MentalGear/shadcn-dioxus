@@ -4,7 +4,10 @@ import { BASE_URL } from "./base-url";
 
 test("test", async ({ page }) => {
   await page.goto(`${BASE_URL}/component/?name=alert&`, { timeout: 20 * 60 * 1000 });
-  const alerts = page.getByRole("alert");
+  // Scope to the main demo frame: the alert page also renders the other
+  // variants (e.g. no_icon) in their own frames, each with its own role="alert".
+  const frame = page.locator("#component-preview-frame");
+  const alerts = frame.getByRole("alert");
   await expect(alerts).toHaveCount(2);
   await expect(alerts.first()).toContainText("You can add components to your app");
   await expect(alerts.last()).toContainText("Unable to process your payment.");

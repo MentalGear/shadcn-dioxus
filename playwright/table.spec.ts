@@ -5,7 +5,10 @@ import { BASE_URL } from "./base-url";
 test("table renders the invoice demo: caption, header, rows, and footer total", async ({ page }) => {
   await page.goto(`${BASE_URL}/component/?name=table&`, { timeout: 20 * 60 * 1000 });
 
-  const table = page.locator('[data-slot="table"]');
+  // Scope to the main demo frame: the table page also renders other variants
+  // (e.g. rich) in their own frames, each with its own [data-slot="table"].
+  const frame = page.locator("#component-preview-frame");
+  const table = frame.locator('[data-slot="table"]');
   await expect(table).toBeVisible();
   // Scoped to the real <caption>, not an unscoped page.getByText() -- the
   // demo's own source text (including this exact caption string) is also
@@ -52,7 +55,7 @@ test.describe("Axe automated scan", () => {
   // components that reach an open/expanded/selected state).
   test("loaded has no automatically detectable a11y issues", async ({ page }) => {
     await page.goto(`${BASE_URL}/component/?name=table&`, { timeout: 20 * 60 * 1000 });
-    await expect(page.locator('[data-slot="table"]')).toBeVisible();
+    await expect(page.locator("#component-preview-frame").locator('[data-slot="table"]')).toBeVisible();
     await expectNoAxeViolations(page, "table: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 });
