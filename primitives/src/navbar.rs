@@ -622,9 +622,11 @@ pub fn NavbarTrigger(props: NavbarTriggerProps) -> Element {
     // (`docs/conformance-harness.md` hydration-parity Rule 4;
     // `scripts/check-attr-spread-collision.sh`). Folding it into
     // `attributes` here instead, via `top_layer::anchored_trigger_attributes`,
-    // fixes that and (unlike plain `merge_attributes`, which only folds
-    // `class`) keeps the anchor binding even when the caller's `style` is
-    // present; see that function's own doc.
+    // fixes that and (unlike plain `merge_attributes`, which folds a plain
+    // `style` attribute but leaves shorthand style props -- `padding:
+    // ".."`, namespace `Some("style")` -- as separate attributes) renders
+    // exactly one `style` carrying the anchor binding plus whatever the
+    // caller supplied; see that function's own doc.
     let attributes =
         crate::top_layer::anchored_trigger_attributes(&nav_ctx.content_id.cloned(), attributes);
     // Owned by this component -- role/type/roving-focus state must win

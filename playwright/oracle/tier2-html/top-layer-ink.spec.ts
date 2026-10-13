@@ -403,7 +403,11 @@ const SURFACES: Surface[] = [
       await page.getByRole("button", { name: "Info (60s)" }).click();
       await expect(page.locator(".dx-toast-title")).toBeVisible();
     },
-    wrapper: (page) => page.locator('.dx-toast-container[popover]'),
+    // Scoped to the main demo frame: the page also carries the "types" variant's own
+    // ToastProvider (its own `#component-preview-frame-types`), so a page-wide locator resolves to
+    // two containers. The container is a DOM descendant of the frame (the popover only changes
+    // where it paints), so this narrows where the check looks, not what it checks.
+    wrapper: (page) => page.locator('#component-preview-frame .dx-toast-container[popover]'),
     text: (page) => page.locator(".dx-toast-title"),
   },
 ];

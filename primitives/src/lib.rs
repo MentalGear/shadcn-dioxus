@@ -975,8 +975,21 @@ impl LocalDateExt for time::OffsetDateTime {
 ///
 /// Rules:
 /// - Later lists win for the same (name, namespace) pair.
-/// - `class` is concatenated with a single space separator (trimmed); last wins for volatility flag.
+/// - `class` is concatenated with a single space separator (trimmed); the volatility flag is OR-ed.
+/// - `style` is folded the same way, as CSS declarations: earlier declarations first, then the
+///   later ones (each side trimmed, a missing `;` between them supplied), so a later list can
+///   override individual properties but never silently drops the earlier list's other
+///   declarations. This is what keeps a primitive's own `anchor-name: --dxa-..;` alive when a
+///   caller adds `style: "border-radius: 9999px;"` -- including the common case where both
+///   sit in ONE incoming list because Dioxus appends a component call's ad-hoc `style:` key
+///   after its explicit `attributes` (`Button { style: "..", attributes }`). A later
+///   `AttributeValue::None` or empty `style` (a themed wrapper threading an unset `style`
+///   prop through) is ignored instead of erasing the earlier one.
 /// - Other attributes are overwritten by the last occurrence.
+///
+/// Only a plain `style` (namespace `None`) is folded here; CSS set the shorthand way
+/// (`padding: ".."`, namespace `Some("style")`) is a different attribute name and is handled by
+/// [`fold_style_attributes`].
 ///
 /// TODO: event handler attributes are not merged/combined yet.
 pub fn merge_attributes(mut lists: Vec<Vec<Attribute>>) -> Vec<Attribute> {
@@ -1022,6 +1035,8 @@ pub fn merge_attributes(mut lists: Vec<Vec<Attribute>>) -> Vec<Attribute> {
                             },
                             _ => attr,
                         };
+                    } else if attr.name == "style" {
+                        fold_style_into(existing, attr);
                     } else {
                         *existing = attr;
                     }
@@ -1126,6 +1141,33 @@ pub(crate) fn has_own_accessible_name(attributes: &[Attribute]) -> bool {
     })
 }
 
+/// Fold a later `style` attribute into the earlier `existing` one (see `merge_attributes`).
+fn fold_style_into(existing: &mut Attribute, attr: Attribute) {
+    use dioxus_core::AttributeValue::None as NoValue;
+    match (&existing.value, &attr.value) {
+        (Text(a), Text(b)) => {
+            let value = join_style(a, b);
+            existing.volatile |= attr.volatile;
+            existing.value = Text(value);
+        }
+        // An unset/empty later `style` must not erase the earlier one.
+        (_, NoValue) => {}
+        // Nothing to fold into: the later value wins, as for any other attribute.
+        _ => *existing = attr,
+    }
+}
+
+/// Concatenate two CSS declaration lists, `a` first so `b` can override single properties.
+fn join_style(a: &str, b: &str) -> String {
+    let (a, b) = (a.trim(), b.trim());
+    match (a.is_empty(), b.is_empty()) {
+        (true, _) => b.to_string(),
+        (_, true) => a.to_string(),
+        _ if a.ends_with(';') => format!("{a} {b}"),
+        _ => format!("{a}; {b}"),
+    }
+}
+
 fn join_class(a: &str, b: &str) -> String {
     let (a, b) = (a.trim(), b.trim());
     if !a.is_empty() && !b.is_empty() {
@@ -1189,31 +1231,161 @@ mod tests {
         assert_eq!(get_value(&result[0]), "second");
     }
 
-    /// `style` is not special-cased in `merge_attributes` the way `class`
-    /// is (see this function's own doc and the plain `if attr.name ==
-    /// "class" { .. } else { *existing = attr; }` in its implementation) --
-    /// a later list's `style` attribute REPLACES an earlier list's `style`
-    /// outright, it is never folded/concatenated the way `class` is.
-    ///
-    /// This is `later_list_overwrites` above, specialized to the one name
-    /// this repo's `top_layer::anchored_trigger_attributes`/
-    /// `anchored_content_attributes` construction depends on getting right:
-    /// both exist specifically because plain `merge_attributes` alone would
-    /// otherwise let a caller-supplied `style` silently drop an internal
-    /// `anchor-name`/`position-anchor` binding rather than combine with it
-    /// (`docs/conformance-harness.md` hydration-parity Rule 4's own
-    /// discussion). Kept as its own named, permanent test -- rather than
-    /// relying on `later_list_overwrites`'s generic "a"/"b" names to stand
-    /// in for it -- so that fact stays pinned and visible right next to the
-    /// function it is a fact about.
+    /// `style` folds the way `class` does (declarations concatenated, earlier first), so a
+    /// primitive's own `anchor-name`/`position-anchor` binding survives a caller-supplied
+    /// `style` instead of being replaced by it (the avatar dropdown demo's trigger rendered at
+    /// viewport (0,0) because `Button { style: "border-radius: 9999px;", attributes }` replaced
+    /// the trigger's anchor-name style).
     #[test]
-    fn style_attribute_is_overwritten_not_folded() {
+    fn style_attribute_is_folded_not_overwritten() {
         let result = merge_attributes(vec![
             vec![attr("style", "anchor-name: --dxa-x;")],
             vec![attr("style", "color: red;")],
         ]);
         assert_eq!(result.len(), 1);
-        assert_eq!(get_value(&result[0]), "color: red;");
+        assert_eq!(get_value(&result[0]), "anchor-name: --dxa-x; color: red;");
+    }
+
+    #[test]
+    fn style_fold_keeps_list_order_so_the_later_list_overrides() {
+        let a = merge_attributes(vec![
+            vec![attr("style", "color: red;")],
+            vec![attr("style", "anchor-name: --dxa-x;")],
+        ]);
+        assert_eq!(get_value(&a[0]), "color: red; anchor-name: --dxa-x;");
+        // A later declaration of the same property comes last, so it wins the cascade.
+        let b = merge_attributes(vec![
+            vec![attr("style", "anchor-name: --a;")],
+            vec![attr("style", "anchor-name: --b;")],
+        ]);
+        assert_eq!(get_value(&b[0]), "anchor-name: --a; anchor-name: --b;");
+    }
+
+    /// Dioxus appends a component call's ad-hoc `style:` key after its explicit `attributes`
+    /// field, so both can arrive in ONE list (`Button { style: "..", attributes }`).
+    #[test]
+    fn two_styles_inside_one_list_are_folded() {
+        let result = merge_attributes(vec![
+            vec![attr("class", "dx-button")],
+            vec![
+                attr("id", "t"),
+                attr("style", "anchor-name: --dxa-x;"),
+                attr("style", "border-radius: 9999px;"),
+            ],
+        ]);
+        assert_eq!(result.iter().filter(|a| a.name == "style").count(), 1);
+        let style = result.iter().find(|a| a.name == "style").unwrap();
+        assert_eq!(
+            get_value(style),
+            "anchor-name: --dxa-x; border-radius: 9999px;"
+        );
+    }
+
+    #[test]
+    fn style_fold_supplies_missing_semicolon_and_trims() {
+        let result = merge_attributes(vec![
+            vec![attr("style", "  anchor-name: --dxa-x  ")],
+            vec![attr("style", "  color: red  ")],
+        ]);
+        assert_eq!(get_value(&result[0]), "anchor-name: --dxa-x; color: red");
+        // The anchor declaration keeps the trailing `;` that
+        // `[style*="anchor-name: --dxa-{id};"]` selectors look for.
+        assert!(get_value(&result[0]).contains("anchor-name: --dxa-x;"));
+    }
+
+    #[test]
+    fn style_fold_with_empty_side_returns_the_other_side() {
+        let a = merge_attributes(vec![
+            vec![attr("style", "")],
+            vec![attr("style", "color: red;")],
+        ]);
+        assert_eq!(get_value(&a[0]), "color: red;");
+        let b = merge_attributes(vec![
+            vec![attr("style", "color: red;")],
+            vec![attr("style", " ")],
+        ]);
+        assert_eq!(get_value(&b[0]), "color: red;");
+        let c = merge_attributes(vec![vec![attr("style", "")], vec![attr("style", "")]]);
+        assert_eq!(c.len(), 1);
+        assert_eq!(get_value(&c[0]), "");
+    }
+
+    #[test]
+    fn style_fold_ignores_a_later_none_and_adopts_a_later_value_over_none() {
+        let none = |name: &'static str| Attribute {
+            name,
+            namespace: None,
+            volatile: false,
+            value: dioxus_core::AttributeValue::None,
+        };
+        let kept = merge_attributes(vec![
+            vec![attr("style", "anchor-name: --dxa-x;")],
+            vec![none("style")],
+        ]);
+        assert_eq!(kept.len(), 1);
+        assert_eq!(get_value(&kept[0]), "anchor-name: --dxa-x;");
+        let adopted = merge_attributes(vec![
+            vec![none("style")],
+            vec![attr("style", "color: red;")],
+        ]);
+        assert_eq!(adopted.len(), 1);
+        assert_eq!(get_value(&adopted[0]), "color: red;");
+    }
+
+    #[test]
+    fn style_fold_ors_the_volatile_flag() {
+        let mut a1 = attr("style", "a: b;");
+        a1.volatile = true;
+        let result = merge_attributes(vec![vec![a1], vec![attr("style", "c: d;")]]);
+        assert!(result[0].volatile);
+    }
+
+    /// The duplicate-attribute protections are unchanged: still exactly one attribute per
+    /// `(name, namespace)`, the shorthand `style` namespace is NOT folded into the plain
+    /// `style` (that is `fold_style_attributes`'s job), and every non-`class`/`style` name is
+    /// still overwritten by the last occurrence.
+    #[test]
+    fn duplicate_protections_still_hold() {
+        let shorthand = Attribute {
+            name: "padding",
+            namespace: Some("style"),
+            volatile: false,
+            value: Text("1rem".into()),
+        };
+        let result = merge_attributes(vec![
+            vec![attr("style", "a: b;"), attr("id", "one"), attr("role", "x")],
+            vec![attr("style", "c: d;"), attr("id", "two"), shorthand.clone()],
+            vec![attr("style", "e: f;"), attr("id", "three")],
+        ]);
+        let mut keys: Vec<_> = result.iter().map(|a| (a.name, a.namespace)).collect();
+        let total = keys.len();
+        keys.sort();
+        keys.dedup();
+        assert_eq!(keys.len(), total, "a (name, namespace) pair appeared twice");
+        let get = |n: &str| result.iter().find(|a| a.name == n).map(get_value);
+        assert_eq!(get("style"), Some("a: b; c: d; e: f;"));
+        assert_eq!(get("id"), Some("three"));
+        assert_eq!(get("padding"), Some("1rem"));
+        assert_eq!(get("role"), Some("x"));
+    }
+
+    /// `fold_style_attributes` is the other half (shorthand + plain into one string) and is
+    /// untouched by `merge_attributes` folding `style`.
+    #[test]
+    fn fold_style_attributes_still_collects_plain_and_shorthand() {
+        let shorthand = Attribute {
+            name: "padding",
+            namespace: Some("style"),
+            volatile: false,
+            value: Text("1rem".into()),
+        };
+        let (style, rest) = fold_style_attributes(vec![
+            attr("style", "color: red"),
+            shorthand,
+            attr("id", "x"),
+        ]);
+        assert_eq!(style.as_deref(), Some("color: red;padding:1rem;"));
+        assert_eq!(rest.len(), 1);
     }
 
     #[test]

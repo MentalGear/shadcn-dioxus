@@ -28,7 +28,10 @@
  * `inset`). */
 .dx-combobox-input-wrapper {
   position: relative;
-  width: 200px;
+
+  /* Slot variable: the input AND the list share one width, so a demo (or app) with richer rows
+     sets `--dx-combobox-width` on the root `Combobox` instead of overriding either box. */
+  width: var(--dx-combobox-width, 200px);
 }
 
 .dx-combobox-input {
@@ -103,7 +106,7 @@
   top: calc(100% + 0.25rem);
   display: flex;
   overflow: hidden auto;
-  width: 200px;
+  width: var(--dx-combobox-width, 200px);
   max-height: 300px;
   flex-direction: column;
   padding: var(--dx-space-1);

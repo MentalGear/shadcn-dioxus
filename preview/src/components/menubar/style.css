@@ -151,12 +151,14 @@
  * playwright/menu-indicator-gap.spec.ts. */
 .dx-menubar-item {
   position: relative;
-  display: block;
+  display: flex;
+  align-items: center;
   padding: var(--dx-space-2) var(--dx-space-3);
   border-radius: calc(var(--dx-radius-lg) - var(--dx-radius-sm));
   color: var(--dx-foreground);
   cursor: pointer;
   font-size: var(--dx-text-sm);
+  gap: var(--dx-space-2);
   overflow-wrap: anywhere;
 
   /* touch-action: manipulation -- disables iOS Safari double-tap-to-zoom on this control while still allowing pan/pinch scrolling (touch-action: none must never be used, it breaks scrolling); mirrors the shared app-layer rule in preview/assets/main.css. Copied-out components ship without main.css, so this needs to live here too. */

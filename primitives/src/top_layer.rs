@@ -1348,11 +1348,13 @@ pub(crate) fn use_popover_shown_while_mounted(
 ///    of whether anything re-ran it. Fixed by `viewportMetrics()` below:
 ///    every `vw`/`vh` read, and the trigger/content rects compared against
 ///    them, now go through `window.visualViewport` (falling back to
-///    `window.inner*` when absent, i.e. unchanged behavior on an engine
-///    without it) -- see that function's own doc for the coordinate-space
-///    bookkeeping this requires (`position: fixed` stays relative to the
-///    *layout* viewport even once the *visual* one is what the fit
-///    decision needs to reason about).
+///    `documentElement.client*` when absent, i.e. unchanged behavior on an
+///    engine without it) -- see that function's own doc for the
+///    coordinate-space bookkeeping this requires (`position: fixed` stays
+///    relative to the *layout* viewport even once the *visual* one is what
+///    the fit decision needs to reason about). Since 2026-10-11 the size is
+///    `min(visualViewport, documentElement.client*)` so a classic
+///    scrollbar is never counted as room -- see [`VIEWPORT_METRICS_JS`].
 /// 2. **Tracking installed only when already conforming-fallback at open.**
 ///    The 2026-09-01 construction attached the scroll/resize listeners only
 ///    inside the `if (usingFallback)` branch, i.e. only when the very first
@@ -1444,6 +1446,7 @@ pub(crate) fn use_anchor_position_fallback(
         // calls) is what actually guarantees the stylesheet is in effect
         // before `reposition()`'s first `getBoundingClientRect()` call.
         let inject = anchor_positioning_inject_js();
+        let viewport_metrics_js = VIEWPORT_METRICS_JS;
         // Synchronous up to and including the first `reposition()` call
         // below, not deferred to `requestAnimationFrame`: this runs from an
         // effect declared (and therefore, on Dioxus's normal mount-order
@@ -1497,8 +1500,11 @@ pub(crate) fn use_anchor_position_fallback(
             // `window.innerWidth`/`innerHeight` do NOT shrink when iOS
             // Safari's on-screen keyboard appears; `window.visualViewport`'s
             // `width`/`height` do -- so every fit/flip decision below reads
-            // through here instead of `window.inner*` directly, and this is
-            // the one thing that makes the fix keyboard-*aware* rather than
+            // through here instead of `window.inner*` directly (and the
+            // helper, `VIEWPORT_METRICS_JS`, also excludes the classic
+            // scrollbar via `documentElement.clientWidth/clientHeight`, which
+            // `window.inner*` and some engines' `visualViewport` include),
+            // and this is the one thing that makes the fix keyboard-*aware* rather than
             // merely keyboard-*re-triggered* (gap 2, fixed separately below,
             // is what makes it re-run at all). `offsetLeft`/`offsetTop` is
             // the visual viewport's own origin offset from the *layout*
@@ -1511,17 +1517,10 @@ pub(crate) fn use_anchor_position_fallback(
             // rects are shifted into visual-viewport space by this offset
             // before comparison, and shifted back out of it when writing
             // the final inline `top`/`left`. Falls back to
-            // `window.inner` width/height and `0` on an engine with no
-            // `visualViewport` at all, i.e. exactly today's behavior there.
-            function viewportMetrics() {{
-                const vv = window.visualViewport;
-                return {{
-                    width: vv ? vv.width : window.innerWidth,
-                    height: vv ? vv.height : window.innerHeight,
-                    offsetLeft: vv ? vv.offsetLeft : 0,
-                    offsetTop: vv ? vv.offsetTop : 0,
-                }};
-            }}
+            // `documentElement.client` width/height and `0` on an engine
+            // with no `visualViewport` at all. Defined once, shared with
+            // `use_point_anchor_clamp`: see `VIEWPORT_METRICS_JS`.
+            {viewport_metrics_js}
 
             function reposition() {{
                 if (!content || !trigger) return;
@@ -1965,6 +1964,58 @@ pub(crate) fn use_anchor_position_fallback(
 // no-op stub here would never be called and is dead code by construction,
 // like `PopoverKind` and `position_anchor_style` above.
 
+/// The ONE viewport measurement every JS collision/clamp script in this
+/// crate shares -- defines `viewportMetrics()` inside whatever `eval` string
+/// it is interpolated into ([`use_anchor_position_fallback`]'s
+/// `reposition()` and [`use_point_anchor_clamp`] today). Any future script
+/// that needs "how much room is there" must splice this in rather than read
+/// `window.inner{Width,Height}` or `visualViewport.{width,height}` itself
+/// (`viewport_metrics_js_is_the_only_viewport_read` below fails the build
+/// otherwise).
+///
+/// **Why not `window.innerWidth`/`visualViewport.width` alone.** What
+/// content can occupy is the viewport *minus the classic scrollbar* -- a
+/// 15px gutter on a desktop browser with always-on scrollbars, on both
+/// axes. `window.innerWidth/innerHeight` always include it, and engines
+/// disagree on whether `visualViewport.width/height` do (this sandbox's
+/// Chromium 1194 excludes it; a clamp that read the scrollbar-inclusive
+/// value landed an overlay `vw - 4` = ~11px past the content area: the
+/// navigation-menu "Reference" panel's right edge at 386 vs a 375px content
+/// width at a 390px viewport, a "Resources" panel at 1276 vs 1265 at 1280).
+/// `document.documentElement.clientWidth/clientHeight` is the layout
+/// viewport with scrollbars excluded, by definition, in every engine.
+///
+/// **Why still `visualViewport`.** It is what shrinks when iOS Safari's
+/// on-screen keyboard appears (while `clientHeight` and `innerHeight` do not)
+/// and under pinch-zoom (`width = clientWidth / scale`) -- the 2026-09-02
+/// keyboard fix (`dev-docs/backlog.md` row 28) depends on that. So the
+/// usable size is the *smaller* of the two on each axis:
+/// `min(visualViewport.size, documentElement.client size)`. Keyboard or
+/// zoom: the visual viewport is smaller and wins, exactly as before.
+/// Scrollbar on an engine whose `visualViewport` ignores it: `client*` is
+/// smaller and wins. Where both already agree (this Chromium): unchanged.
+/// `offsetLeft`/`offsetTop` stay purely `visualViewport`'s (the pan origin
+/// the callers shift rects by); `0` without it. `|| innerWidth` guards the
+/// quirks-mode/detached-root case where `clientWidth` reads `0`.
+///
+/// Spliced into the scripts as a function declaration, so it hoists and may
+/// be called anywhere in them.
+#[cfg_attr(not(feature = "web"), allow(dead_code))]
+pub(crate) const VIEWPORT_METRICS_JS: &str = r#"
+            function viewportMetrics() {
+                const vv = window.visualViewport;
+                const root = document.documentElement;
+                const clientW = root.clientWidth || window.innerWidth;
+                const clientH = root.clientHeight || window.innerHeight;
+                return {
+                    width: vv ? Math.min(vv.width, clientW) : clientW,
+                    height: vv ? Math.min(vv.height, clientH) : clientH,
+                    offsetLeft: vv ? vv.offsetLeft : 0,
+                    offsetTop: vv ? vv.offsetTop : 0,
+                };
+            }
+"#;
+
 /// Clamps a **point-anchored** overlay -- one positioned at a raw `(x, y)`
 /// coordinate with no anchor element at all -- into the viewport.
 /// `docs/backlog.md` row 10, item 5.2: the one piece of that row's
@@ -2045,13 +2096,14 @@ pub(crate) fn use_point_anchor_clamp(
         let id = id.clone();
         let _ = document::eval(&format!(
             r#"
+            {viewport_metrics_js}
             const content = document.getElementById('{id}');
             if (content) {{
-                const vv = window.visualViewport;
-                const vw = vv ? vv.width : window.innerWidth;
-                const vh = vv ? vv.height : window.innerHeight;
-                const offsetLeft = vv ? vv.offsetLeft : 0;
-                const offsetTop = vv ? vv.offsetTop : 0;
+                const vp = viewportMetrics();
+                const vw = vp.width;
+                const vh = vp.height;
+                const offsetLeft = vp.offsetLeft;
+                const offsetTop = vp.offsetTop;
                 const cw = content.offsetWidth;
                 const ch = content.offsetHeight;
 
@@ -2111,6 +2163,7 @@ pub(crate) fn use_point_anchor_clamp(
             id = id,
             x = x,
             y = y,
+            viewport_metrics_js = VIEWPORT_METRICS_JS,
         ));
     });
 }
@@ -2257,20 +2310,18 @@ pub(crate) fn anchor_name_style(_id: &str) -> String {
 /// `playwright/oracle/attr-synth` synthesizes it directly). The rest
 /// already ran their own literal through `merge_attributes` before the
 /// `rsx!` spread (`TooltipTrigger` in particular), which *does* avoid that
-/// literal HTML duplicate -- but is not enough on its own: `merge_attributes`
-/// only ever folds `class`, every other name (`style` included) is
-/// overwritten outright by whichever list is later in the `vec![...]`
-/// passed to it (confirmed by `primitives/src/lib.rs`'s own
-/// `later_list_overwrites`/`style_attribute_is_overwritten_not_folded`
-/// tests, and by this module's own tests below). Passing `vec![base,
-/// props.attributes]` -- `base` first, so a caller's own value in
-/// `props.attributes` is the one that survives the merge -- therefore lets
-/// a caller's own `style` silently overwrite, not merge with, the
-/// anchor-name binding: no duplicate attribute is left in the served HTML
-/// for Rule 4c (or anything else) to catch, CSS Anchor Positioning just
-/// silently stops working the moment any caller sets `style` on the
-/// trigger. So, exactly like the content side, this folds first instead:
-/// pull every style-contributing attribute out of `attributes` with
+/// literal HTML duplicate. `merge_attributes` itself now folds a plain
+/// `style` the way it folds `class` (earlier declarations first), so a
+/// caller's `style` no longer replaces the anchor-name binding through it.
+/// (It used to overwrite outright -- see the history in `lib.rs`'s
+/// `style_attribute_is_folded_not_overwritten` -- and CSS Anchor Positioning
+/// silently stopped working the moment any caller set `style` on the
+/// trigger.) This function stays for what `merge_attributes` still cannot
+/// do: absorb style set the *shorthand* way (`padding: ".."`, namespace
+/// `Some("style")`, a different attribute name to `merge_attributes`), so
+/// exactly one `style` reaches the element, and guarantee the anchor binding
+/// comes first regardless of which list a call site put it in. So: pull every
+/// style-contributing attribute out of `attributes` with
 /// [`crate::fold_style_attributes`], prepend the anchor-name binding, and
 /// merge the single resulting `style` back in with everything else
 /// `fold_style_attributes` left untouched.
@@ -2468,9 +2519,9 @@ mod tests {
         assert!(style.contains("color: red;"));
         // Anchor binding first, so the caller's own declaration -- listed
         // after -- can override any property it names without ever being
-        // able to drop the anchor binding itself (the exact silent-loss
-        // failure mode `merge_attributes` alone has -- see this function's
-        // own doc and `style_attribute_is_overwritten_not_folded` in
+        // able to drop the anchor binding itself (the silent-loss failure
+        // mode `merge_attributes` used to have -- see this function's own
+        // doc and `style_attribute_is_folded_not_overwritten` in
         // `primitives/src/lib.rs`).
         assert!(style.find("anchor-name").unwrap() < style.find("color").unwrap());
     }
@@ -2586,5 +2637,57 @@ mod trigger_attributes_native_tests {
         let result = anchored_trigger_attributes("x", vec![plain_style("color: red;")]);
         let style = result.iter().find(|a| a.name == "style").expect("style");
         assert!(matches!(&style.value, Text(s) if s == "color: red;"));
+    }
+}
+
+#[cfg(test)]
+mod viewport_tests {
+    use super::VIEWPORT_METRICS_JS;
+
+    /// The clamp/flip scripts must measure the viewport ONLY through
+    /// [`VIEWPORT_METRICS_JS`]: a direct `window.innerWidth` /
+    /// `visualViewport.width` read re-opens the scrollbar-overshoot bug
+    /// (overlay lands ~11px past the content area). Source-level guard so a
+    /// new collision script cannot quietly bypass the shared helper.
+    #[test]
+    fn viewport_metrics_js_is_the_only_viewport_read() {
+        let source = include_str!("top_layer.rs");
+        let rest = source.replacen(VIEWPORT_METRICS_JS, "", 1);
+        assert!(
+            rest.len() < source.len(),
+            "VIEWPORT_METRICS_JS text must appear verbatim in top_layer.rs"
+        );
+        // Only this test module's own needle strings may mention these.
+        let code = rest.split("mod viewport_tests").next().unwrap();
+        for (n, line) in code.lines().enumerate() {
+            let t = line.trim_start();
+            if t.starts_with("//") {
+                continue;
+            }
+            for needle in [
+                "window.innerWidth",
+                "window.innerHeight",
+                "vv.width",
+                "vv.height",
+                "visualViewport.width",
+                "visualViewport.height",
+            ] {
+                assert!(
+                    !line.contains(needle),
+                    "top_layer.rs:{} reads `{needle}` outside VIEWPORT_METRICS_JS; use viewportMetrics()",
+                    n + 1
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn viewport_metrics_js_takes_the_smaller_of_visual_and_client() {
+        let js = VIEWPORT_METRICS_JS;
+        assert!(js.contains("Math.min(vv.width, clientW)"));
+        assert!(js.contains("Math.min(vv.height, clientH)"));
+        assert!(js.contains("documentElement"));
+        assert!(js.contains("clientWidth"));
+        assert!(js.contains("clientHeight"));
     }
 }

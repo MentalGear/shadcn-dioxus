@@ -240,9 +240,11 @@ pub fn TooltipTrigger(props: TooltipTriggerProps) -> Element {
     // `[data-side]` CSS still resolves relative to this trigger once the
     // content is promoted to the top layer -- folded with any caller-
     // supplied `style` (rather than a bare literal beside a raw spread, or
-    // left to plain `merge_attributes`, which only folds `class` and would
-    // otherwise let a caller's own `style` silently replace this binding)
-    // by `top_layer::anchored_trigger_attributes`; see its own doc.
+    // left to plain `merge_attributes`, which folds only a plain `style`
+    // attribute and would let a caller's shorthand style props -- `padding:
+    // ".."` etc., namespace `Some("style")` -- land beside it as a second
+    // `style`) by `top_layer::anchored_trigger_attributes`, which also
+    // pulls those in via `fold_style_attributes`; see its own doc.
     let merged = crate::top_layer::anchored_trigger_attributes(&ctx.tooltip_id.cloned(), merged);
 
     if let Some(dynamic) = props.r#as {

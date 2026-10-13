@@ -1705,8 +1705,9 @@ pub fn ContextMenuSubTrigger(props: ContextMenuSubTriggerProps) -> Element {
     // See `crate::top_layer::anchor_name_style`/`anchored_trigger_attributes`:
     // ties this trigger to the submenu content's `position-anchor`, folded
     // with any caller-supplied `style` rather than left to plain
-    // `merge_attributes` (which only folds `class` and would otherwise let
-    // a caller's own `style` silently replace this binding).
+    // `merge_attributes` (which folds a plain `style` attribute but not
+    // shorthand style props -- `padding: ".."` etc., namespace
+    // `Some("style")` -- which would still render a second `style`).
     let merged = crate::top_layer::anchored_trigger_attributes(&sub.content_id.cloned(), merged);
 
     rsx! {

@@ -103,6 +103,11 @@ pub struct CommandProps<T: Clone + PartialEq + 'static = String> {
     #[props(default)]
     pub list_aria_label: Option<String>,
 
+    /// Whether the filter input focuses itself on mount. `None` (default) is dialog-aware:
+    /// focused inside a [`CommandDialog`], left alone for an inline `Command`.
+    #[props(default)]
+    pub autofocus: Option<bool>,
+
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
 
@@ -139,6 +144,7 @@ pub fn Command<T: Clone + PartialEq + 'static>(props: CommandProps<T>) -> Elemen
                     class: "dx-command-input",
                     placeholder: props.placeholder,
                     aria_label: props.input_aria_label.clone(),
+                    autofocus: props.autofocus,
                 }
             }
             command::CommandList {

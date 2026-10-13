@@ -33,8 +33,13 @@
     background-color: var(--dx-primary);
 }
 
+/* Vertical: the primitive sizes the range with inline `bottom: A%; top: B%`, so the block size
+   must stay `auto`. The horizontal rule's `height: 100%` would otherwise win over `top`/`bottom`
+   (an over-constrained box ignores `bottom`) and the filled bar would be the whole track height,
+   shifted down by `top`, escaping the slider. */
 .dx-slider[data-orientation="vertical"] .dx-slider-range {
     width: 100%;
+    height: auto;
 }
 
 .dx-slider-thumb {
@@ -69,6 +74,11 @@
 }
 
 .dx-slider[data-orientation="vertical"] .dx-slider-thumb {
+    /* The primitive positions this thumb with inline `bottom: X%`; the horizontal rule's
+       `top: 50%` would otherwise win over it (an over-constrained box ignores `bottom`) and pin
+       the thumb to the middle of the track whatever the value. */
+    top: auto;
+
     /* rtl-physical: cross-axis centering for a *vertical* slider -- `dir`
        only affects the inline (horizontal) axis's start/end mapping, and
        centering (50%) is symmetric regardless of which edge is "start", but

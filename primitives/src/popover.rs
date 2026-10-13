@@ -910,9 +910,10 @@ pub fn PopoverTrigger(props: PopoverTriggerProps) -> Element {
     // built from the content's own id, so this side has to name that same
     // id, not the trigger's. Folded with any caller-supplied `style` by
     // `top_layer::anchored_trigger_attributes` rather than left to plain
-    // `merge_attributes` (which only folds `class` and would otherwise let
-    // a caller's own `style` silently replace this binding); see that
-    // function's own doc.
+    // `merge_attributes` (which folds a plain `style` attribute but not
+    // shorthand style props -- `padding: ".."` etc., namespace
+    // `Some("style")` -- which would still render a second `style`); see
+    // that function's own doc.
     let merged = crate::top_layer::anchored_trigger_attributes(&ctx.content_id.cloned(), merged);
 
     rsx! {

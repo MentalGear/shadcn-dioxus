@@ -87,4 +87,10 @@
   display: flex;
   align-items: center;
   color: var(--dx-muted-foreground);
+
+  /* The root (`primitives/src/input_otp.rs`) is a bare `inline-flex` with no gap of its own, so
+     without this the separator's 4px dot sat flush against slot 3 and slot 4 began 4px after
+     it. Padding the separator gives the same `gap-2` on each side that shadcn's container
+     applies between groups and separators (8px + glyph + 8px). */
+  padding-inline: var(--dx-space-2);
 }

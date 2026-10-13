@@ -231,8 +231,10 @@ pub fn HoverCardTrigger(props: HoverCardTriggerProps) -> Element {
     // element (`docs/conformance-harness.md` hydration-parity Rule 4;
     // `scripts/check-attr-spread-collision.sh`). Folding it here first,
     // like every other anchored trigger, fixes that and (unlike plain
-    // `merge_attributes`, which only folds `class`) keeps the anchor
-    // binding even when the caller's `style` is present.
+    // `merge_attributes`, which folds a plain `style` attribute but leaves
+    // shorthand style props -- `padding: ".."`, namespace `Some("style")`
+    // -- as separate attributes) renders exactly one `style` carrying the
+    // anchor binding plus whatever the caller supplied.
     let attributes =
         crate::top_layer::anchored_trigger_attributes(&ctx.content_id.cloned(), props.attributes);
     // Owned by this component -- role/focusability/aria wiring must win

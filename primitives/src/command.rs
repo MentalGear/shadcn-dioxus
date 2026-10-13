@@ -106,6 +106,11 @@ use crate::{
     use_controlled, use_id_or, use_unique_id, Controlled,
 };
 
+/// Marker provided by [`CommandDialog`]: its presence tells [`CommandInput`] it is inside a
+/// modal dialog and should claim focus by default.
+#[derive(Clone, Copy)]
+struct CommandDialogContext;
+
 /// Shared state for the `Command` family. See the module doc for why this is
 /// a sibling of, not a reuse of, `combobox::ComboboxContext`.
 #[derive(Clone, Copy)]
@@ -114,6 +119,11 @@ struct CommandContext {
     query: Memo<String>,
     set_query: Callback<String>,
     filter: Callback<(String, String), bool>,
+    /// Flipped to `true` by an effect on the root, i.e. never during SSG/JS-off rendering and not
+    /// before the first client render has committed. Items register themselves in
+    /// `selectable.options` from effects too, so until this is set "not registered" means "not
+    /// registered yet", not "filtered out".
+    registered: Signal<bool>,
 }
 
 impl CommandContext {
@@ -126,18 +136,28 @@ impl CommandContext {
         self.predicate_for(self.query.cloned())
     }
 
+    /// An option that has not registered yet counts as visible, so the static (SSG / JS-off)
+    /// render and the hydration render both contain every item rather than an empty list. Once
+    /// the root's `registered` flag is set, an option that is absent is filtered out as before.
     fn is_visible(&self, tab_index: usize) -> bool {
         let predicate = self.predicate();
-        self.selectable
+        match self
+            .selectable
             .options
             .read()
             .iter()
             .find(|option| option.index == tab_index)
-            .is_some_and(predicate)
+        {
+            Some(option) => predicate(option),
+            None => !(self.registered)(),
+        }
     }
 
+    /// Whether [`CommandEmpty`] must stay hidden: either something matches, or registration has
+    /// not happened yet so "nothing matches" cannot be known (the static render shows the items,
+    /// never the empty message).
     fn has_visible_options(&self) -> bool {
-        self.selectable.options.read().iter().any(self.predicate())
+        !(self.registered)() || self.selectable.options.read().iter().any(self.predicate())
     }
 
     fn focused_option_id(&self) -> Option<String> {
@@ -248,11 +268,22 @@ fn use_command_root<T: Clone + PartialEq + 'static>(
         props.on_query_change,
     );
 
+    let mut registered = use_signal(|| false);
+    // Deferred one task past the effect batch: every `CommandItem` registers from its own effect
+    // in the same batch, and flipping this flag before they have would render one frame in which
+    // an item is "absent" (hidden) and `CommandEmpty` is shown.
+    use_effect(move || {
+        spawn(async move {
+            registered.set(true);
+        });
+    });
+
     use_context_provider(|| CommandContext {
         selectable,
         query,
         set_query,
         filter: props.filter,
+        registered,
     });
 
     selected
@@ -323,6 +354,14 @@ pub struct CommandInputProps {
     #[props(default)]
     pub aria_label: Option<String>,
 
+    /// Whether the input focuses itself on mount (the `autofocus` attribute plus an explicit
+    /// `set_focus`). `None` (the default) is dialog-aware: `true` inside a [`CommandDialog`],
+    /// whose `showModal()` focusing step needs an `autofocus` descendant, and `false` for a
+    /// `Command` placed inline in a page, which must not steal focus (or scroll) on load.
+    /// `Some(_)` overrides that either way.
+    #[props(default)]
+    pub autofocus: Option<bool>,
+
     /// Called when the input element is mounted. `CommandInput` also uses
     /// this internally to explicitly focus itself once mounted -- see this
     /// component's own doc, "First-mouse-click-open focus bug." A
@@ -340,14 +379,17 @@ pub struct CommandInputProps {
 
 /// The text input that filters [`CommandList`]'s items.
 ///
-/// Always renders with the `autofocus` attribute set. This is the platform
-/// mechanism the plan doc flagged as needing confirmation "by execution": a
+/// Renders with the `autofocus` attribute set when it is inside a [`CommandDialog`]
+/// (or `autofocus: Some(true)`), and without it otherwise -- see
+/// [`CommandInputProps::autofocus`]. An inline `Command` that grabbed focus on mount
+/// would pull the page's focus (and scroll) to itself on every load. The dialog
+/// case is the platform mechanism the plan doc flagged as needing confirmation "by execution": a
 /// `showModal()`-opened `CommandDialog` runs the browser's dialog-focusing
 /// steps (WHATWG HTML) at the moment it opens, which focus the first
 /// `autofocus` descendant found in the dialog's subtree, falling back to the
 /// dialog element itself if none exists (`dialog.rs`'s module doc describes
 /// the same algorithm for why `DialogContentModal`'s native arm needs no
-/// separate focus-trap script). Setting `autofocus` here, unconditionally,
+/// separate focus-trap script). Setting `autofocus` here, inside the dialog,
 /// is what gives `CommandDialog` that descendant to find -- `ComboboxInput`
 /// never needed this because it is never the *first* focusable content of a
 /// freshly-`showModal()`-opened dialog.
@@ -376,7 +418,8 @@ pub struct CommandInputProps {
 /// Fixed by construction regardless, rather than left to a single
 /// mechanism: `onmounted` below explicitly calls
 /// [`dioxus::prelude::MountedData::set_focus`] as soon as this element
-/// mounts, the same `onmounted` + `spawn` + `set_focus(true).await` shape
+/// mounts (again only when `autofocus` applies), the same `onmounted` + `spawn` +
+/// `set_focus(true).await` shape
 /// `Toggle`/`Slider`/`DropdownMenuTrigger` already use elsewhere in this
 /// crate for imperative focus (`toggle.rs`, `slider.rs`,
 /// `dropdown_menu.rs`) -- proven, cross-platform (works identically on the
@@ -399,6 +442,10 @@ pub fn CommandInput(props: CommandInputProps) -> Element {
     let query = ctx.query;
     let set_query = ctx.set_query;
     let user_onmounted = props.onmounted;
+    // Dialog-aware default: only a `CommandDialog` ancestor needs the input to claim focus.
+    let autofocus = props
+        .autofocus
+        .unwrap_or_else(|| try_use_context::<CommandDialogContext>().is_some());
 
     let active_descendant = use_memo(move || ctx.focused_option_id());
 
@@ -447,7 +494,7 @@ pub fn CommandInput(props: CommandInputProps) -> Element {
             autocomplete: "off",
             spellcheck: "false",
             disabled: (ctx.selectable.disabled)(),
-            autofocus: true,
+            autofocus,
             role: "combobox",
             aria_autocomplete: "list",
             aria_expanded: "true",
@@ -465,9 +512,11 @@ pub fn CommandInput(props: CommandInputProps) -> Element {
                 // Deterministic backstop for `autofocus` above -- see this
                 // component's doc, "First-mouse-click-open focus bug."
                 let data = evt.data();
-                spawn(async move {
-                    let _ = data.set_focus(true).await;
-                });
+                if autofocus {
+                    spawn(async move {
+                        let _ = data.set_focus(true).await;
+                    });
+                }
                 user_onmounted.call(evt);
             },
             oninput: move |event| {
@@ -901,6 +950,9 @@ pub struct CommandDialogProps {
 /// ```
 #[component]
 pub fn CommandDialog(props: CommandDialogProps) -> Element {
+    // Marks everything rendered below as "inside a dialog" so `CommandInput` defaults to
+    // claiming focus (see `CommandInputProps::autofocus`).
+    use_context_provider(|| CommandDialogContext);
     rsx! {
         crate::dialog::DialogRoot {
             id: props.id,
@@ -916,5 +968,123 @@ pub fn CommandDialog(props: CommandDialogProps) -> Element {
                 {props.children}
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn render(app: fn() -> Element) -> String {
+        let mut dom = VirtualDom::new(app);
+        dom.rebuild_in_place();
+        dioxus_ssr::render(&dom)
+    }
+
+    /// Like [`render`], but lets mount-time effects commit first: a dialog only puts its content
+    /// in the DOM once an effect has observed `open`.
+    async fn render_settled(app: fn() -> Element) -> String {
+        let mut dom = VirtualDom::new(app);
+        dom.rebuild_in_place();
+        // Several rounds: effects queue state writes that only render on the next pass.
+        for _ in 0..4 {
+            let _ = tokio::time::timeout(std::time::Duration::from_millis(50), dom.wait_for_work())
+                .await;
+            dom.render_immediate_to_vec();
+        }
+        dioxus_ssr::render(&dom)
+    }
+
+    #[test]
+    fn inline_input_does_not_autofocus_by_default() {
+        let html = render(|| {
+            rsx! {
+                Command::<String> { CommandInput {} }
+            }
+        });
+        assert!(html.contains("<input"), "{html}");
+        assert!(!html.contains("autofocus"), "{html}");
+    }
+
+    #[test]
+    fn explicit_autofocus_overrides_the_inline_default() {
+        let html = render(|| {
+            rsx! {
+                Command::<String> { CommandInput { autofocus: true } }
+            }
+        });
+        assert!(html.contains("autofocus"), "{html}");
+    }
+
+    #[tokio::test(flavor = "current_thread", start_paused = true)]
+    async fn dialog_input_autofocuses_by_default_and_can_opt_out() {
+        let html = render_settled(|| {
+            rsx! {
+                CommandDialog { default_open: true,
+                    Command::<String> { CommandInput {} }
+                }
+            }
+        })
+        .await;
+        assert!(html.contains("autofocus"), "{html}");
+
+        let html = render_settled(|| {
+            rsx! {
+                CommandDialog { default_open: true,
+                    Command::<String> { CommandInput { autofocus: false } }
+                }
+            }
+        })
+        .await;
+        assert!(html.contains("<input"), "{html}");
+        assert!(!html.contains("autofocus"), "{html}");
+    }
+
+    fn list_app(query: Option<String>) -> Element {
+        rsx! {
+            Command::<String> { query,
+                CommandInput {}
+                CommandList { aria_label: "Commands",
+                    CommandEmpty { "No results found." }
+                    CommandItem::<String> {
+                        index: 0usize,
+                        value: "new-file".to_string(),
+                        text_value: "New File",
+                        "New File"
+                    }
+                    CommandItem::<String> {
+                        index: 1usize,
+                        value: "open".to_string(),
+                        text_value: "Open",
+                        "Open"
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn static_render_lists_every_item_and_no_empty_message() {
+        // `rebuild_in_place` + SSR is the SSG / JS-off render: no effect has run, so no item has
+        // registered yet. Every item must still be there and the empty message must not be.
+        let html = render(|| list_app(None));
+        assert!(html.contains("New File") && html.contains("Open"), "{html}");
+        assert!(!html.contains("No results found."), "{html}");
+        assert_eq!(html.matches("role=\"option\"").count(), 2, "{html}");
+    }
+
+    #[tokio::test(flavor = "current_thread", start_paused = true)]
+    async fn registered_items_still_filter_and_empty_shows_when_nothing_matches() {
+        let html = render_settled(|| list_app(None)).await;
+        assert_eq!(html.matches("role=\"option\"").count(), 2, "{html}");
+        assert!(!html.contains("No results found."), "{html}");
+
+        let html = render_settled(|| list_app(Some("op".to_string()))).await;
+        assert_eq!(html.matches("role=\"option\"").count(), 1, "{html}");
+        assert!(!html.contains("No results found."), "{html}");
+
+        let html = render_settled(|| list_app(Some("zzz".to_string()))).await;
+        assert_eq!(html.matches("role=\"option\"").count(), 0, "{html}");
+        assert!(html.contains("No results found."), "{html}");
     }
 }
