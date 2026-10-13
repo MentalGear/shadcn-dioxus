@@ -526,8 +526,10 @@ pub fn DateRangePicker(props: DateRangePickerProps) -> Element {
 #[allow(unpredictable_function_pointer_comparisons)]
 #[derive(Props, Clone, PartialEq)]
 pub struct DatePickerPopoverProps {
-    /// Whether the popover is a modal and should capture focus.
-    #[props(default = ReadSignal::new(Signal::new(true)))]
+    /// Whether the popover is a modal and should capture focus. Defaults to `false`, like
+    /// [`PopoverRootProps::is_modal`] (which this is forwarded to) and shadcn's date picker: the
+    /// calendar is a non-modal popover, so the page behind it stays interactive and scrollable.
+    #[props(default = ReadSignal::new(Signal::new(false)))]
     pub is_modal: ReadSignal<bool>,
 
     /// Whether a **modal** popover dims the page behind it with the shared overlay scrim, like
@@ -611,7 +613,7 @@ pub fn DatePickerPopover(props: DatePickerPopoverProps) -> Element {
             // popover is a modal and should capture focus") but never
             // actually forwarded here, so it silently had no effect --
             // every `DatePickerPopover` rendered with `PopoverRoot`'s own
-            // default (`is_modal: true`) no matter what a caller passed.
+            // default (then `is_modal: true`) no matter what a caller passed.
             // See `preview/src/components/date_picker/component.rs` for why
             // this mattered in practice: `PopoverModalContent`'s DOM-
             // relative "centering trick" (`position: absolute; left: 50%;

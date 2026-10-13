@@ -33,6 +33,14 @@ Tabs {
 
 `Tabs` takes `variant: TabsVariant`. `Default` is the muted pill with a raised active tab inside a bordered card. `Ghost` is shadcn's `line` variant: a transparent list, no card around the panel, and the active tab carries a 2px underline that fades in (the docs site's DEMO/CODE tabs use it).
 
+## Sizes
+
+`Tabs` takes `size: TabsSize` (`Sm`, `Default`, `Lg`), emitted as `data-size` on the root. The list height follows the theme's shared control-height scale (`--dx-control-height-sm` / `-default` / `-lg` = 28 / 32 / 36px, the same ladder as `Button`, `Input` and `Select`), so a `Sm` tab list lines up with a `Sm` button. `Default` is shadcn's 32px list and is unchanged. `Sm` sets the triggers in `text-xs` with a 14px icon; `Lg` keeps `text-sm` and widens the trigger padding. Both variants (`Default` and `Ghost`) take every size, and a Tabs nested in another Tabs' panel keeps its own size. See the `sizes` variant.
+
+```rust
+Tabs { size: TabsSize::Sm, default_value: "a".to_string(), /* ... */ }
+```
+
 ## Direction / RTL
 
 `Tabs` accepts a `dir: Option<Direction>` prop (defaulting to the nearest `DirectionProvider`, or LTR). Under RTL, `TabTrigger`'s `ArrowLeft`/`ArrowRight` roving focus swaps: `ArrowLeft` moves to the *next* tab, `ArrowRight` to the *previous* one (matching Radix's shared `RovingFocusGroup` behavior). See the `rtl` variant.

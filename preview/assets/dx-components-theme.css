@@ -317,6 +317,24 @@ html[data-theme="light"] [class~="dxc-system"] {
   --dx-space-24: 6rem;    /* 96px */
   --dx-space-32: 8rem;    /* 128px */
 
+  /* Control height scale -- the one ladder every sized control reads, so
+   * "small", "default" and "large" mean the same pixels in a button, a tab
+   * list, an input and a select (owner decision 2026-10-13). The values are
+   * Nova's h-6 / h-7 / h-8 / h-9 and are Button's `data-size` xs / sm / default
+   * / lg exactly; `default` is shadcn's 32px field and never moves. Read these
+   * for a control's `height` (and the width of its icon-only twin); do not
+   * re-type 1.5 / 1.75 / 2 / 2.25rem in a sheet. Consumers today: Button (all
+   * four), Input, Select trigger, Combobox input (36px = `lg`), the Input
+   * Group addon button (24px = `xs`), the Tabs list (`sm` / `default` / `lg`
+   * via `TabsSize`). Native Select, Toggle and Toggle Group take their height
+   * from padding and content, not a literal. The toggle/switch sizes of the
+   * shadcn parity wave (backlog row 155, groups 3 and 7) must use these same
+   * tokens rather than introduce their own heights. */
+  --dx-control-height-xs: 1.5rem;       /* 24px */
+  --dx-control-height-sm: 1.75rem;      /* 28px */
+  --dx-control-height-default: 2rem;    /* 32px */
+  --dx-control-height-lg: 2.25rem;      /* 36px */
+
   /* Radius scale -- shadcn's, rooted at `--dx-radius` (10px at the default
    * base). The right-hand column is the default-base value; before phase B
    * the scale was xs 2 / sm 4 / md 6 / lg 8 / xl 12 / 2xl 16 / 3xl 24px.

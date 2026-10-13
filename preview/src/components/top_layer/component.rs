@@ -792,9 +792,9 @@ pub fn TopLayerFixture() -> Element {
                 p { class: Styles::dx_top_layer_hint,
                     "The modal "
                     code { "Popover" }
-                    " below (default "
-                    code { "is_modal" }
-                    ") now renders a real "
+                    " below (explicit "
+                    code { "is_modal: true" }
+                    "; the primitive's default is non-modal) now renders a real "
                     code { "<dialog>" }
                     " opened with "
                     code { "showModal()" }
@@ -822,7 +822,7 @@ pub fn TopLayerFixture() -> Element {
                     "measurably disagree with a trigger-anchored one."
                 }
                 div { id: "popover-modal-clip-box", class: Styles::dx_top_layer_clip_box,
-                    PopoverRoot { id: "popover-modal-clip-root",
+                    PopoverRoot { id: "popover-modal-clip-root", is_modal: true,
                         PopoverTrigger { id: "popover-modal-clip-trigger", "Modal popover clip trigger" }
                         PopoverContent {
                             id: "popover-modal-clip-content",
@@ -857,7 +857,7 @@ pub fn TopLayerFixture() -> Element {
                     }
                     input { id: "popover-modal-inert-bg-input", placeholder: "Background input" }
                 }
-                PopoverRoot { id: "popover-modal-inert-root",
+                PopoverRoot { id: "popover-modal-inert-root", is_modal: true,
                     PopoverTrigger { id: "popover-modal-inert-trigger", "Open inertness popover" }
                     PopoverContent { id: "popover-modal-inert-content",
                         "Modal popover inertness content."
@@ -925,7 +925,7 @@ pub fn TopLayerFixture() -> Element {
                 // Escape/focus-restore cycles depend on -- left untouched.
                 div {
                     style: "position: fixed; top: calc(var(--dx-navbar-height, 60px) + 20px); left: 40px; z-index: var(--dx-z-top, 9999);",
-                    PopoverRoot { id: "popover-modal-anchor-root",
+                    PopoverRoot { id: "popover-modal-anchor-root", is_modal: true,
                         PopoverTrigger { id: "popover-modal-anchor-trigger", "Modal popover anchor trigger" }
                         PopoverContent { id: "popover-modal-anchor-content",
                             "Modal popover anchored content."

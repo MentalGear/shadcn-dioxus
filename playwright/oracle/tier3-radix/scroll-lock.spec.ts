@@ -86,8 +86,8 @@ const NAV_TIMEOUT = 20 * 60 * 1000; // first run compiles the app
 // dev-docs/backlog.md row 109: this suite clicks/scrolls triggers right
 // after navigating, on the SSG lane -- `gotoHydrated` so those interactions
 // can't land before hydration attaches listeners.
-const goto = (page: Page, name: string) =>
-  gotoHydrated(page, `${BASE_URL}/component/?name=${name}&`, {
+const goto = (page: Page, name: string, extra = "") =>
+  gotoHydrated(page, `${BASE_URL}/component/?name=${name}&${extra}`, {
     timeout: NAV_TIMEOUT,
   });
 
@@ -278,15 +278,18 @@ test.describe("AlertDialog locks and releases page scroll", () => {
   });
 });
 
-test.describe("Popover locks and releases page scroll", () => {
-  test("scroll is locked while open (modal by default) and restored after Escape", async ({
+// Popover is NON-MODAL by default (dev-docs/backlog.md row 169): only `is_modal: true` (the
+// `modal` demo) takes the scroll lock. `popover-non-modal.spec.ts` covers the non-modal
+// default in depth; the second describe below pins the contrast on this file's own helpers.
+test.describe("Popover (is_modal: true) locks and releases page scroll", () => {
+  test("scroll is locked while open and restored after Escape", async ({
     page,
   }) => {
-    await goto(page, "popover");
+    await goto(page, "popover", "variant=modal&");
     await assertPageIsScrollable(page);
     const rightBefore = await rightEdgeMarkerRight(page);
 
-    await page.getByRole("button", { name: "Show Popover" }).click();
+    await page.getByRole("button", { name: "Open modal popover" }).click();
     await expect(page.getByRole("dialog")).toBeVisible();
     await assertNoHorizontalShift(page, rightBefore, "while the popover is open");
 
@@ -297,6 +300,31 @@ test.describe("Popover locks and releases page scroll", () => {
 
     await assertScrollIsUnlocked(page);
     await assertNoHorizontalShift(page, rightBefore, "after the popover closes and scroll unlocks");
+  });
+});
+
+test.describe("Popover (non-modal default) never takes the scroll lock", () => {
+  test("page scrolls by wheel while open, no lock marker, nothing to undo after Escape", async ({
+    page,
+  }) => {
+    await goto(page, "popover");
+    await assertPageIsScrollable(page);
+    const rightBefore = await rightEdgeMarkerRight(page);
+
+    await page.getByRole("button", { name: "Show Popover", exact: true }).click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await assertNoHorizontalShift(page, rightBefore, "while the non-modal popover is open");
+
+    await assertScrollIsUnlocked(page);
+    expect(
+      await page.evaluate(() => (window as unknown as { __dxScrollLocked?: boolean }).__dxScrollLocked === true),
+      "a non-modal popover must not engage the scroll lock",
+    ).toBe(false);
+
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await assertScrollIsUnlocked(page);
+    await assertNoHorizontalShift(page, rightBefore, "after the non-modal popover closes");
   });
 });
 
