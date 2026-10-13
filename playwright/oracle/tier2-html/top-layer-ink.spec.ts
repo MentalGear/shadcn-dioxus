@@ -98,9 +98,10 @@
  * be the general ink token, so a real regression in any of them still
  * fails this file:
  *   menubar, navbar, dropdown_menu, context_menu, popover (non-modal arm,
- *   via the `top_layer` fixture's raw `PopoverContent` -- the themed
- *   `/component/?name=popover&` demo only exercises the *modal* arm, since
- *   `PopoverRootProps::is_modal` defaults `true`), popover (modal arm),
+ *   unthemed via the `top_layer` fixture's raw `PopoverContent`, and themed via
+ *   the default `/component/?name=popover&` demo, since `PopoverRootProps::is_modal`
+ *   defaults `false` as of dev-docs/backlog.md row 169), popover (modal arm,
+ *   the explicit `variant=modal` demo),
  *   hover_card, tooltip, date_picker, select, combobox, dialog,
  *   alert_dialog, sheet, toast. Every one of these opens cleanly in this
  *   harness -- none needed to be skipped. (`date_picker`'s text case is a
@@ -133,6 +134,10 @@ const url = (name: string) => `${BASE_URL}/component/?name=${name}&`;
 // can't land before hydration attaches listeners.
 async function goto(page: Page, name: string) {
   await gotoHydrated(page, url(name), { timeout: NAV_TIMEOUT });
+}
+
+async function gotoVariant(page: Page, name: string, variant: string) {
+  await gotoHydrated(page, `${url(name)}variant=${variant}&`, { timeout: NAV_TIMEOUT });
 }
 
 /**
@@ -214,12 +219,11 @@ const SURFACES: Surface[] = [
   },
   {
     // Non-modal `Popover` arm (`popover="auto"`, not a modal `<dialog>`).
-    // The themed `/component/?name=popover&` demo only ever exercises the
-    // *modal* arm (`is_modal` defaults `true`) -- the `top_layer` fixture's
-    // `clip-popover-*` instance is a real, deliberately *unthemed*
-    // `is_modal: false` `PopoverRoot`/`PopoverContent`, which doubles as
-    // proof this fix works with zero component-authored CSS in play at
-    // all, relying only on the DOM-tree inheritance chain up to `body`.
+    // The `top_layer` fixture's `clip-popover-*` instance is a real,
+    // deliberately *unthemed* `is_modal: false` `PopoverRoot`/`PopoverContent`,
+    // which doubles as proof this fix works with zero component-authored CSS
+    // in play at all, relying only on the DOM-tree inheritance chain up to
+    // `body`. The themed default demo is the next entry.
     name: "popover (non-modal arm, unthemed)",
     open: async (page) => {
       await goto(page, "top_layer");
@@ -230,13 +234,25 @@ const SURFACES: Surface[] = [
     text: (page) => page.locator("#clip-popover-content"),
   },
   {
-    // Modal `Popover` arm: a real `<dialog>` + `showModal()` on the web arm
-    // (native-dialog engine migration) -- reaches the fix through
-    // `use_dialog_open_driver`, not `use_popover_sync`.
-    name: "popover (modal arm)",
+    // Themed non-modal `Popover` (the primitive's default since row 169): `popover="auto"`
+    // through `use_popover_shown_while_mounted`.
+    name: "popover (non-modal arm, themed default)",
     open: async (page) => {
       await goto(page, "popover");
-      await page.getByRole("button", { name: "Show Popover" }).click();
+      await page.getByRole("button", { name: "Show Popover", exact: true }).click();
+      await expect(page.locator('.dx-popover-content[data-state="open"]')).toBeVisible();
+    },
+    wrapper: (page) => page.locator('.dx-popover-content[data-state="open"]'),
+    text: (page) => page.locator(".dx-popover-content .dx-popover-title"),
+  },
+  {
+    // Modal `Popover` arm (`is_modal: true`, the `modal` demo): a real `<dialog>` +
+    // `showModal()` on the web arm (native-dialog engine migration) -- reaches the fix
+    // through `use_dialog_open_driver`, not `use_popover_sync`.
+    name: "popover (modal arm)",
+    open: async (page) => {
+      await gotoVariant(page, "popover", "modal");
+      await page.getByRole("button", { name: "Open modal popover" }).click();
       await expect(page.locator('.dx-popover-content[data-state="open"]')).toBeVisible();
     },
     wrapper: (page) => page.locator('.dx-popover-content[data-state="open"]'),

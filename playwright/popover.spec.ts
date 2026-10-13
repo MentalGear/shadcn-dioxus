@@ -4,9 +4,27 @@ import { sampleCloseFade, assertFadesOutThenUnmounts } from "./assert-fade-out";
 import { BASE_URL } from "./base-url";
 import { assertSharedBackdrop, captureBackdrop, resolveOverlayMs } from "./assert-backdrop-fade";
 
-test("opens a form of labelled fields, traps focus, Escape closes", async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=popover&`);
-  const popoverButton = page.getByRole("button", { name: "Show Popover" });
+// Popover is NON-MODAL by default (dev-docs/backlog.md row 169, shadcn / Radix / Base UI parity).
+// Three demos share the one component page, told apart by their trigger label:
+//   - `main`      "Show Popover"        the default (non-modal) Dimensions form
+//   - `non_modal` "Open popover"        `is_modal: false` spelled out, a smaller panel
+//   - `modal`     "Open modal popover"  the same form with `is_modal: true` (a `showModal()` dialog)
+// Everything below that needs the modal arm (focus trap, inert page, backdrop dismiss, the scrim)
+// runs on the `modal` demo; the non-modal contract (focus in/out, page stays interactive and
+// scrollable, outside click reaches its target) is covered by `popover-non-modal.spec.ts`.
+const MODAL_URL = `${BASE_URL}/component/?name=popover&variant=modal&`;
+const MODAL_TRIGGER = "Open modal popover";
+const DEFAULT_URL = `${BASE_URL}/component/?name=popover&`;
+const DEFAULT_TRIGGER = "Show Popover";
+// [name, url, trigger label]: the default (non-modal) popover and the explicit modal one.
+const ARMS: [string, string, string][] = [
+  ["non-modal (default)", DEFAULT_URL, DEFAULT_TRIGGER],
+  ["modal (is_modal: true)", MODAL_URL, MODAL_TRIGGER],
+];
+
+test("modal: opens a form of labelled fields, traps focus, Escape closes", async ({ page }) => {
+  await page.goto(MODAL_URL);
+  const popoverButton = page.getByRole("button", { name: MODAL_TRIGGER });
   await expect(popoverButton).toBeVisible();
   await popoverButton.click();
   const dialog = page.getByRole("dialog");
@@ -56,9 +74,10 @@ test("the trigger announces a dialog popup and mirrors the open state in aria-ex
   // would no longer find it to read the attribute back.
   await page.goto(`${BASE_URL}/component/?name=popover&`);
   const dialog = page.getByRole("dialog");
-  // The modal variant (showModal()) and the non-modal one (popover="auto"); Escape closes both.
-  for (const text of ["Show Popover", "Open popover"]) {
-    const trigger = page.locator('button[aria-haspopup="dialog"]', { hasText: text });
+  // The default non-modal popover and the explicit non-modal one (popover="auto"), and the modal
+  // variant (showModal()); Escape closes all three.
+  for (const text of [DEFAULT_TRIGGER, "Open popover", MODAL_TRIGGER]) {
+    const trigger = page.locator('button[aria-haspopup="dialog"]', { hasText: new RegExp(`^${text}$`) });
     await expect(trigger).toHaveCount(1);
     await expect(trigger).toHaveAttribute("aria-expanded", "false");
     await trigger.click();
@@ -117,18 +136,21 @@ test("the trigger is Nova's default outline button", async ({ page }) => {
   expect(box).toEqual({ height: 32, border: "1px", radius: "10px", weight: "500", size: "14px" });
 });
 
-test("popover dismisses when clicking outside", async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=popover&`);
-  const popoverButton = page.getByRole("button", { name: "Show Popover" });
-  await popoverButton.click();
-  const dialog = page.getByRole("dialog");
-  await expect(dialog).toBeVisible();
-  // Click far outside the popover (corner of the document) — should dismiss.
-  await page.mouse.click(2, 2);
-  await expect(dialog).toHaveCount(0);
-});
+for (const [arm, url, label] of ARMS) {
+  test(`${arm}: popover dismisses when clicking outside`, async ({ page }) => {
+    await page.goto(url);
+    const popoverButton = page.getByRole("button", { name: label, exact: true });
+    await popoverButton.click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    // Click far outside the popover (corner of the document) — should dismiss.
+    await page.mouse.click(2, 2);
+    await expect(dialog).toHaveCount(0);
+  });
+}
 
-test("popover stays open when clicking non-focusable content inside it", async ({ page }) => {
+for (const [arm, url, label] of ARMS) {
+test(`${arm}: popover stays open when clicking non-focusable content inside it`, async ({ page }) => {
   // Regression: `use_outside_dismiss` served pointerdown and focusin with one
   // shared handler. Clicking a non-focusable region inside the popover (e.g.
   // this demo's "Dimensions" heading) blurs the currently-focused control,
@@ -136,8 +158,8 @@ test("popover stays open when clicking non-focusable content inside it", async (
   // is outside the popover's root while still containing it. The shared
   // handler read that as focus leaving and closed the popover the user just
   // clicked into.
-  await page.goto(`${BASE_URL}/component/?name=popover&`);
-  const popoverButton = page.getByRole("button", { name: "Show Popover" });
+  await page.goto(url);
+  const popoverButton = page.getByRole("button", { name: label, exact: true });
   await popoverButton.click();
   const dialog = page.getByRole("dialog");
   await expect(dialog).toBeVisible();
@@ -148,15 +170,17 @@ test("popover stays open when clicking non-focusable content inside it", async (
   // is not an outside dismiss.
   await expect(dialog).toBeVisible();
 });
+}
 
-test("rapid open/close/open settles on the correct final state", async ({ page }) => {
+for (const [arm, url, label] of ARMS) {
+test(`${arm}: rapid open/close/open settles on the correct final state`, async ({ page }) => {
   // Regression for `use_animated_open`'s unmount race: `open` is captured by
   // value when the close effect spawns its async task. If the user reopens
   // before that task's animation settles, a naive fix can let the stale
   // task's `show_in_dom.set(false)` run after the fresh reopen already set
   // `show_in_dom.set(true)` -- the popover vanishes although it is open.
-  await page.goto(`${BASE_URL}/component/?name=popover&`);
-  const popoverButton = page.getByRole("button", { name: "Show Popover" });
+  await page.goto(url);
+  const popoverButton = page.getByRole("button", { name: label, exact: true });
   const dialog = page.getByRole("dialog");
 
   // Toggle open, closed, open again in rapid succession -- no waits, so the
@@ -182,8 +206,9 @@ test("rapid open/close/open settles on the correct final state", async ({ page }
   await page.waitForTimeout(600);
   await expect(dialog).toBeVisible();
 });
+}
 
-test("an animation cancelled with no successor cycle still unmounts", async ({ page }) => {
+test("modal: an animation cancelled with no successor cycle still unmounts", async ({ page }) => {
   // Regression for the residual leak in the upstream unmount-race fix: it
   // declines to write `show_in_dom` when the close animation's promise
   // rejects, reasoning that a rejection means a newer cycle is already in
@@ -193,8 +218,8 @@ test("an animation cancelled with no successor cycle still unmounts", async ({ p
   // `show_in_dom`, the closed (but still `opacity: 0`) node stays mounted
   // forever. The generation counter must apply the stale cycle's own result
   // in that case, since no newer generation exists to own it.
-  await page.goto(`${BASE_URL}/component/?name=popover&`);
-  const popoverButton = page.getByRole("button", { name: "Show Popover" });
+  await page.goto(MODAL_URL);
+  const popoverButton = page.getByRole("button", { name: MODAL_TRIGGER });
   const dialog = page.getByRole("dialog");
 
   await popoverButton.click();
@@ -237,7 +262,27 @@ test.describe("Axe automated scan", () => {
     await page.goto(`${BASE_URL}/component/?name=popover&`);
     await page.getByRole("button", { name: "Show Popover" }).click();
     await expect(page.getByRole("dialog")).toBeVisible();
-    await expectNoAxeViolations(page, "popover: open", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
+    await expectNoAxeViolations(page, "popover: open", {
+      excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT],
+      exclude: [
+        {
+          ids: "heading-order",
+          reason:
+            "heading-order is a page-outline rule. The modal arm made the page inert, so axe never saw the " +
+            "page's own headings; a non-modal popover leaves them in the tree, and the component page goes " +
+            "from its h1 straight to the demo, so the panel's own 'Dimensions' h3 (a title local to a " +
+            "labelled dialog, not part of the page outline) reads as a skipped level. The modal scan below " +
+            "keeps the rule on.",
+        },
+      ],
+    });
+  });
+
+  test("modal open has no automatically detectable a11y issues", async ({ page }) => {
+    await page.goto(MODAL_URL);
+    await page.getByRole("button", { name: MODAL_TRIGGER }).click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await expectNoAxeViolations(page, "popover: modal open", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 });
 
@@ -257,13 +302,11 @@ test.describe("Axe automated scan", () => {
 // defined (row 7).
 //
 // Targets the `non_modal` variant (`preview/src/components/popover/
-// variants/non_modal/mod.rs`, `is_modal: false`), not this file's own
-// `?name=popover&` *main*-variant demo above: that demo's `PopoverRoot`
-// never sets `is_modal`, so it defaults to `true`
-// (`primitives/src/popover.rs`) and renders as a real `<dialog>` +
-// `showModal()` -- a completely different code path
-// (`use_popover_modal_driver`/`use_dialog_close_sync`, no `popover`
-// attribute at all) that neither row 19 nor row 7 touches.
+// variants/non_modal/mod.rs`, `is_modal: false`). Before row 169 flipped
+// the primitive's default, this file's own `?name=popover&` *main*-variant
+// demo was modal (a real `<dialog>` + `showModal()`, a completely different
+// code path from `popover="auto"` that neither row 19 nor row 7 touches);
+// it is non-modal now too, and the modal arm has its own `modal` variant.
 //
 // This is *not* the `top_layer` oracle fixture's own `#stack-popover-*`
 // instance (an earlier version of this test used it, and that was wrong):
@@ -343,14 +386,14 @@ test.describe("Close-fade animation, non-modal arm (docs/backlog.md rows 19, 7)"
 // `overlay` prop defaults to false, which puts `data-dx-overlay="off"` on the dialog
 // and the theme's one `dialog[data-dx-overlay="off"]::backdrop` rule removes the scrim
 // (`dx-components-theme.css`; `overlay-switch.spec.ts` covers that rule on every modal
-// component). Modality is a separate axis (`is_modal`) and is unaffected: the main demo
-// is modal and still undimmed, the `overlay` variant is modal AND dimmed.
+// component). Modality is a separate axis (`is_modal`): the `modal` demo is modal and still
+// undimmed, the `overlay` variant is modal AND dimmed, and the default (`main`) is non-modal.
 const TRANSPARENT = /^(rgba\(0, 0, 0, 0\)|transparent)$/;
 
 test.describe("Scrim", () => {
   test("a modal popover dims nothing by default (overlay defaults to false) but is still modal", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=popover&`);
-    const trigger = page.getByRole("button", { name: "Show Popover", exact: true });
+    await page.goto(MODAL_URL);
+    const trigger = page.getByRole("button", { name: MODAL_TRIGGER, exact: true });
     await expect(trigger).toBeVisible();
     const capture = await captureBackdrop(
       page,
@@ -364,9 +407,9 @@ test.describe("Scrim", () => {
     expect(capture.settled.backdropFilter).toBe("none");
   });
 
-  test("the default carries data-dx-overlay=off on a dialog that is still a real modal", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=popover&`);
-    await page.getByRole("button", { name: "Show Popover", exact: true }).click();
+  test("a modal popover carries data-dx-overlay=off on a dialog that is still a real modal", async ({ page }) => {
+    await page.goto(MODAL_URL);
+    await page.getByRole("button", { name: MODAL_TRIGGER, exact: true }).click();
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
     await expect(dialog).toHaveAttribute("data-dx-overlay", "off");
@@ -398,8 +441,8 @@ test.describe("Scrim", () => {
   test("modal popover content fades out too, for as long as the scrim", async ({ page }) => {
     // The panel's own exit. Escape closes the native dialog at once, and the
     // content has to keep fading (not snap off) while its scrim fades behind it.
-    await page.goto(`${BASE_URL}/component/?name=popover&`);
-    const trigger = page.getByRole("button", { name: "Show Popover", exact: true });
+    await page.goto(MODAL_URL);
+    const trigger = page.getByRole("button", { name: MODAL_TRIGGER, exact: true });
     const content = page.getByRole("dialog");
     await trigger.click();
     await expect(content).toBeVisible();
@@ -409,18 +452,26 @@ test.describe("Scrim", () => {
     assertFadesOutThenUnmounts(capture);
   });
 
-  test("non-modal popover paints no scrim at all (shadcn's popover has no overlay)", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=popover&variant=non_modal&`);
-    const trigger = page.getByRole("button", { name: "Open popover", exact: true });
-    await expect(trigger).toBeVisible();
-    await trigger.evaluate((el) => (el as HTMLElement).click());
-    const content = page.getByRole("dialog");
-    await expect(content).toBeVisible();
-    const backdrop = await content.evaluate((el) => {
-      const cs = getComputedStyle(el, "::backdrop");
-      return { background: cs.backgroundColor, filter: cs.backdropFilter };
+  for (const [name, label] of [
+    ["the default", DEFAULT_TRIGGER],
+    ["the explicit non_modal variant", "Open popover"],
+  ]) {
+    test(`non-modal popover (${name}) paints no scrim at all (shadcn's popover has no overlay)`, async ({ page }) => {
+      await page.goto(`${BASE_URL}/component/?name=popover&variant=non_modal&`);
+      const trigger = page.getByRole("button", { name: label, exact: true });
+      await expect(trigger).toBeVisible();
+      await trigger.evaluate((el) => (el as HTMLElement).click());
+      const content = page.getByRole("dialog");
+      await expect(content).toBeVisible();
+      const backdrop = await content.evaluate((el) => {
+        const cs = getComputedStyle(el, "::backdrop");
+        return { background: cs.backgroundColor, filter: cs.backdropFilter };
+      });
+      expect(backdrop.background).toMatch(TRANSPARENT);
+      expect(backdrop.filter).toBe("none");
+      // Not a modal: a non-modal popover never matches :modal and sets no aria-modal.
+      expect(await content.evaluate((el) => el.matches(":modal"))).toBe(false);
+      await expect(content).not.toHaveAttribute("aria-modal", "true");
     });
-    expect(backdrop.background).toMatch(TRANSPARENT);
-    expect(backdrop.filter).toBe("none");
-  });
+  }
 });

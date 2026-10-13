@@ -69,7 +69,8 @@ struct PopoverCtx {
     #[allow(unused)]
     set_open: Callback<bool>,
 
-    // Whether the dialog is a modal and should capture focus.
+    // Whether the popover is a modal (default false). Only the modal arms trap focus, make the
+    // page inert and take the scroll lock.
     #[allow(unused)]
     is_modal: ReadSignal<bool>,
     // Whether a modal popover keeps its page-dimming scrim. Only the modal arms read it.
@@ -109,8 +110,14 @@ struct PopoverCtx {
 /// The props for the [`PopoverRoot`] component.
 #[derive(Props, Clone, PartialEq)]
 pub struct PopoverRootProps {
-    /// Whether the popover is a modal and should capture focus.
-    #[props(default = ReadSignal::new(Signal::new(true)))]
+    /// Whether the popover is a modal. Defaults to `false`, like shadcn's (Radix / Base UI)
+    /// popover: a non-modal popover moves focus into its content on open and returns it to the
+    /// trigger on close, but the page behind it stays interactive and scrollable (no inert page,
+    /// no scroll lock), one click outside closes it and that click still reaches its target, and
+    /// Escape closes it. Pass `true` for the modal behaviour: focus is trapped, the page behind
+    /// is inert, the page scroll is locked while it is open and a click on the backdrop only
+    /// dismisses it. Only the modal arm ever takes the scroll lock.
+    #[props(default = ReadSignal::new(Signal::new(false)))]
     pub is_modal: ReadSignal<bool>,
 
     /// Whether a **modal** popover dims the page behind it with the shared overlay scrim.
@@ -119,7 +126,7 @@ pub struct PopoverRootProps {
     /// content `<dialog>` carries `data-dx-overlay="off"`, which the theme turns into a
     /// transparent `::backdrop` (see `dx-components-theme.css`); when `true` nothing is set and
     /// the styled `::backdrop` paints. A non-modal popover has no `::backdrop` scrim either way,
-    /// so this has no effect with `is_modal: false`.
+    /// so this has no effect with the default `is_modal: false`.
     #[props(default = ReadSignal::new(Signal::new(false)))]
     pub overlay: ReadSignal<bool>,
 
@@ -192,11 +199,19 @@ pub struct PopoverRootProps {
 ///
 /// ## Modal and overlay
 ///
-/// A popover is modal by default (`is_modal`): focus is trapped, the page behind it is inert and a
-/// click outside dismisses it. That does not dim the page: `overlay` (default `false`, like
-/// shadcn's popover) controls the scrim separately. `overlay: true` lets the dialog's `::backdrop`
-/// paint the shared scrim; `overlay: false` sets `data-dx-overlay="off"` on the dialog, which the
-/// theme turns into a transparent `::backdrop`. Only the modal arm has a scrim to switch.
+/// A popover is **non-modal by default** (`is_modal: false`), like shadcn's / Radix's / Base UI's:
+/// focus moves into the content on open and returns to the trigger on Escape or close, the page
+/// stays interactive and scrollable (it is not inert and **the scroll lock is never taken**), a
+/// click outside closes it and that same click reaches its target, and the browser's own
+/// `popover="auto"` light dismiss does the closing.
+///
+/// `is_modal: true` opts into the modal behaviour: focus is trapped, the page behind it is inert,
+/// the page scroll is locked while it is open, and a click outside only dismisses it (the click
+/// does not reach the page). A modal popover still does not dim the page: `overlay` (default
+/// `false`, like shadcn's popover) controls the scrim separately. `overlay: true` lets the
+/// dialog's `::backdrop` paint the shared scrim; `overlay: false` sets `data-dx-overlay="off"` on
+/// the dialog, which the theme turns into a transparent `::backdrop`. Only the modal arm has a
+/// scrim to switch.
 ///
 /// ## Styling
 ///
@@ -205,9 +220,18 @@ pub struct PopoverRootProps {
 #[component]
 pub fn PopoverRoot(props: PopoverRootProps) -> Element {
     // See `DialogRoot`'s identical call for why this must be at the root,
-    // not only inside `use_scroll_lock` (called by
-    // `PopoverContentRendered`, which mounts lazily on open).
-    use_effect(crate::scroll_lock::ensure_scrollbar_gutter_baseline);
+    // not only inside `use_scroll_lock` (called by `PopoverModalContent`,
+    // which mounts lazily on open). Only a modal popover ever takes the
+    // scroll lock, so only a modal popover prepares for it: a non-modal one
+    // (the default) adds no scrollbar-gutter stylesheet of its own.
+    {
+        let is_modal = props.is_modal;
+        use_effect(move || {
+            if is_modal() {
+                crate::scroll_lock::ensure_scrollbar_gutter_baseline();
+            }
+        });
+    }
 
     // See `Tooltip`'s identical call (`tooltip.rs`) for why this must be at
     // the root and installed well before the first open, rather than only
@@ -392,12 +416,11 @@ pub fn PopoverContentRendered(
     let is_open = open();
     let is_modal = ctx.is_modal;
 
-    // Lock page scroll while the popover is open and modal. See
-    // docs/plan.md Phase 3.2. Safe to keep unconditional (only the
-    // *computed value* depends on `is_modal`, not the hook call itself) --
-    // see the child components below for the case that does need care.
-    let scroll_lock_active = use_memo(move || is_modal() && open());
-    crate::scroll_lock::use_scroll_lock(scroll_lock_active);
+    // The scroll lock is NOT taken here. `use_scroll_lock` lives in the
+    // modal arms (`PopoverModalContent`, both targets) so the non-modal arm
+    // -- the default, whose page must stay scrollable (docs/backlog.md row
+    // 169) -- cannot hold, or even prepare, the lock by construction rather
+    // than by a gate that a later edit could drop.
 
     // The modal/non-modal split is a real child-component boundary, not an
     // `if`/`else` inside this component's own body, and each child calls
@@ -458,6 +481,12 @@ fn PopoverModalContent(
     let ctx: PopoverCtx = use_context();
     let open = ctx.open;
     let set_open = ctx.set_open;
+    let is_modal = ctx.is_modal;
+
+    // Lock page scroll while the popover is open and modal. See
+    // docs/plan.md Phase 3.2.
+    let scroll_lock_active = use_memo(move || is_modal() && open());
+    crate::scroll_lock::use_scroll_lock(scroll_lock_active);
 
     // Add a escape key listener to the document when the popover is open. We can't
     // just add this to the popover itself because it might not be focused if the user
@@ -551,6 +580,14 @@ fn PopoverModalContent(
     let ctx: PopoverCtx = use_context();
     let open = ctx.open;
     let set_open = ctx.set_open;
+    let is_modal = ctx.is_modal;
+
+    // Lock page scroll while the popover is open and modal (docs/plan.md
+    // Phase 3.2). Must stay above `use_dialog_open_driver` below, which finds
+    // this lock through `use_modal_closed` to release it once the exit has
+    // really finished.
+    let scroll_lock_active = use_memo(move || is_modal() && open());
+    crate::scroll_lock::use_scroll_lock(scroll_lock_active);
 
     // `use_dialog_open_driver`/`use_dialog_close_sync`/
     // `use_dialog_backdrop_dismiss` all want a `Readable<Target = String>`

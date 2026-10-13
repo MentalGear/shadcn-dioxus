@@ -1,12 +1,14 @@
 use super::super::component::*;
 use dioxus::prelude::*;
 
-/// Non-modal variant -- shadcn's default. A non-modal popover does not trap
+/// Non-modal variant with `is_modal: false` spelled out -- shadcn's default, and
+/// the primitive's since the flip (dev-docs/backlog.md row 169), so this is the
+/// same behaviour as `main` in a smaller panel. A non-modal popover does not trap
 /// focus or block the rest of the page and paints no overlay at all (shadcn's
 /// `Popover` has none); it is light-dismissed by the browser (`popover="auto"`).
-/// The `main` variant above is deliberately `is_modal` (the primitive's
-/// default): it traps focus and makes the page inert, but dims nothing unless
-/// `overlay: true` (see the `overlay` variant). Content is the
+/// The `modal` variant is the opt-in `is_modal: true` arm: it traps focus, makes
+/// the page inert and locks the page scroll, but dims nothing unless `overlay:
+/// true` (see the `overlay` variant). Content is the
 /// header of shadcn's own canonical Popover example ("Dimensions" / "Set the
 /// dimensions for the layer."), without the form rows, to keep this demo small.
 ///

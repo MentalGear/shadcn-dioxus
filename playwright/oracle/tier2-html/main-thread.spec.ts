@@ -276,10 +276,11 @@ const OVERLAY_SUBJECTS: OverlaySubject[] = [
     },
   },
   {
+    // The default popover is non-modal (native `popover="auto"`, dev-docs/backlog.md row 169).
     name: "popover",
     goto: (page) => goto(page, "popover"),
     open: async (page) => {
-      await page.getByRole("button", { name: "Show Popover" }).click();
+      await page.getByRole("button", { name: "Show Popover", exact: true }).click();
       await expect(page.getByRole("dialog")).toBeVisible();
     },
     close: async (page) => {
@@ -288,9 +289,22 @@ const OVERLAY_SUBJECTS: OverlaySubject[] = [
     },
   },
   {
-    // Non-modal arm: native `popover="auto"`, not the `<dialog>` engine the
-    // main variant above uses (see popover.spec.ts's own close-fade-animation
-    // comments) -- Escape closes a light-dismissible native popover per the
+    // Modal arm (`is_modal: true`): the `<dialog>` + `showModal()` engine, with the scroll lock.
+    name: "popover_modal",
+    goto: (page) => goto(page, "popover", "variant=modal&"),
+    open: async (page) => {
+      await page.getByRole("button", { name: "Open modal popover" }).click();
+      await expect(page.getByRole("dialog")).toBeVisible();
+    },
+    close: async (page) => {
+      await page.keyboard.press("Escape");
+      await expect(page.getByRole("dialog")).toHaveCount(0);
+    },
+  },
+  {
+    // Non-modal arm with `is_modal: false` spelled out: native `popover="auto"`, not the
+    // `<dialog>` engine the `popover_modal` entry above uses (see popover.spec.ts's own
+    // close-fade-animation comments) -- Escape closes a light-dismissible native popover per the
     // HTML popover API regardless, confirmed live (2026-09-18: dialog count
     // 1 -> 0 on Escape) before being relied on here.
     name: "popover_non_modal",

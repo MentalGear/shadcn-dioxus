@@ -594,8 +594,10 @@ test.describe("Rule 7d — a keyboard activation of a control inside the dialog 
 
 /**
  * Rule 8 — the opening-gesture false positive (user device report,
- * 2026-09-03, iOS Safari touch): "Show Popover" (the home page's default,
- * modal `Popover`) shows only its `::backdrop`; the popover itself flashes
+ * 2026-09-03, iOS Safari touch): "Show Popover" (then the home page's default, a
+ * modal `Popover`; since dev-docs/backlog.md row 169 the default is non-modal, so
+ * these tests drive the explicit `modal` demo, "Open modal popover") shows only its
+ * `::backdrop`; the popover itself flashes
  * and disappears. See `use_dialog_backdrop_dismiss`'s doc
  * (primitives/src/lib.rs) for the full mechanism this rule guards.
  *
@@ -617,7 +619,7 @@ test.describe("Rule 7d — a keyboard activation of a control inside the dialog 
  * "outside" and dismisses.
  *
  * Reproduction attempted (this session): touch-emulated (`hasTouch`,
- * `locator.tap()`) opens of "Show Popover" and of every `Auto`-kind
+ * `locator.tap()`) opens of the modal popover and of every `Auto`-kind
  * `popover` this crate has (`DropdownMenu`, `Menubar`, `Select`, non-modal
  * `Popover` -- see `PopoverKind`'s doc, `primitives/src/top_layer.rs`, for
  * which components are `Auto` vs. `Manual`; `Tooltip`/`HoverCard` are
@@ -649,7 +651,7 @@ test.describe("Rule 7d — a keyboard activation of a control inside the dialog 
  * residual risk (`docs/backlog.md`), not silently dropped.
  */
 test.describe("Rule 8 — the opening-gesture false positive: a modal Popover's backdrop-dismiss listener is not attached until the frame after it opens", () => {
-  test("black-box: a touch-emulated open of the default (modal) Popover stays open for at least 1s and until a real outside tap", async ({
+  test("black-box: a touch-emulated open of the modal (is_modal: true) Popover stays open for at least 1s and until a real outside tap", async ({
     browser,
   }) => {
     // A fresh, touch-capable context (`hasTouch`), not the shared `page`
@@ -662,8 +664,8 @@ test.describe("Rule 8 — the opening-gesture false positive: a modal Popover's 
       // dev-docs/backlog.md row 109: this test taps the trigger right after
       // navigating, on the SSG lane -- `gotoHydrated` so that tap can't
       // land before hydration attaches listeners.
-      await gotoHydrated(page, `${BASE_URL}/?`, { timeout: NAV_TIMEOUT });
-      const trigger = page.getByRole("button", { name: "Show Popover" });
+      await gotoHydrated(page, `${BASE_URL}/component/?name=popover&variant=modal&`, { timeout: NAV_TIMEOUT });
+      const trigger = page.getByRole("button", { name: "Open modal popover" });
       await trigger.scrollIntoViewIfNeeded();
       await trigger.tap();
       const content = page.getByRole("dialog");
@@ -738,8 +740,8 @@ test.describe("Rule 8 — the opening-gesture false positive: a modal Popover's 
     // land before hydration attaches listeners. The `addInitScript` above
     // still instruments this same navigation: `gotoHydrated` is just
     // `page.goto` plus a wait, so init-script ordering is unchanged.
-    await gotoHydrated(page, `${BASE_URL}/?`, { timeout: NAV_TIMEOUT });
-    const trigger = page.getByRole("button", { name: "Show Popover" });
+    await gotoHydrated(page, `${BASE_URL}/component/?name=popover&variant=modal&`, { timeout: NAV_TIMEOUT });
+    const trigger = page.getByRole("button", { name: "Open modal popover" });
     await trigger.scrollIntoViewIfNeeded();
     await trigger.click();
     await expect(page.getByRole("dialog")).toBeVisible();

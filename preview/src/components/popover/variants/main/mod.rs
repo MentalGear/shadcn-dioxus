@@ -8,11 +8,12 @@ use dioxus::prelude::*;
 /// of real `Label`s wired to real `Input`s, not a stack of buttons styled like a
 /// menu -- nothing here has `role="menuitem"` because nothing here is a menu.
 ///
-/// Unlike shadcn's (non-modal) popover this one is `is_modal` (the primitive's
-/// default): focus is trapped, the page behind it is inert and a click outside
-/// dismisses it. Like shadcn's, it does not dim the page: `overlay` defaults to
-/// `false`. The `overlay` variant turns the shared modal scrim on; the `non_modal`
-/// variant shows shadcn's own default (no trap, no overlay, light-dismissed).
+/// Like shadcn's (Radix / Base UI) popover this one is non-modal, the primitive's
+/// default: focus moves into the panel on open and back to the trigger on Escape,
+/// the page behind it stays interactive and scrollable (no scroll lock), and one
+/// click outside closes it and still reaches its target. The `modal` variant is the
+/// same form with `is_modal: true` (focus trap, inert page, scroll lock); the
+/// `overlay` variant is the modal popover with the shared scrim switched on.
 #[component]
 pub fn Demo() -> Element {
     rsx! {

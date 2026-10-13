@@ -156,7 +156,8 @@ const SCENARIOS: Scenario[] = [
   { name: "sheet", url: "/component/?name=sheet&", open: click("Right"), close: escape },
   { name: "drawer", url: "/component/?name=drawer&", open: click("Move Goal"), close: escape },
   { name: "command palette", url: "/component/?name=command&", open: click("Open Command Palette"), close: escape },
-  { name: "popover (modal arm)", url: "/component/?name=popover&", open: click("Show Popover"), close: escape },
+  { name: "popover (modal arm)", url: "/component/?name=popover&variant=modal&", open: click("Open modal popover"), close: escape },
+  { name: "popover (non-modal default)", url: "/component/?name=popover&", open: click("Show Popover"), close: escape },
   {
     // `pointer.rs`: the window pointer bridge exists only while a pointer is held down on a slider.
     name: "slider drag (the pointer bridge on window)",

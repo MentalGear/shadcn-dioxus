@@ -3,15 +3,15 @@ use dioxus::prelude::*;
 
 /// Modal popover with the page-dimming overlay switched on (`overlay: true`).
 ///
-/// A popover is modal by default (focus trap, inert page, click-outside dismissal) but, like
-/// shadcn's, does not dim the page: `overlay` defaults to `false`. Setting it paints the shared
-/// modal scrim (the same one Dialog and Sheet use) behind the panel. The overlay is independent
-/// of modality: `overlay: true` with `is_modal: false` has nothing to dim, because a non-modal
-/// popover has no `::backdrop`.
+/// A modal popover (`is_modal: true`: focus trap, inert page, scroll lock, click-outside
+/// dismissal) does not dim the page by default, like shadcn's: `overlay` defaults to `false`.
+/// Setting it paints the shared modal scrim (the same one Dialog and Sheet use) behind the
+/// panel. The overlay is independent of modality but needs the modal arm: `overlay: true` on the
+/// default non-modal popover has nothing to dim, because a non-modal popover has no `::backdrop`.
 #[component]
 pub fn Demo() -> Element {
     rsx! {
-        PopoverRoot { overlay: true,
+        PopoverRoot { is_modal: true, overlay: true,
             PopoverTrigger { "Open with overlay" }
             PopoverContent {
                 PopoverHeader {
