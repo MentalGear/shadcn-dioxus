@@ -182,6 +182,7 @@ export function installStateLib(a: StateArgs) {
     S[which] = m;
     if (which === "base") {
       S.known = new Set(Array.from(document.querySelectorAll("*")));
+      S.baseRendered = S.renderedSet();
       S.probe0 = S.probe();
       S.cprobe0 = S.cprobe();
       S.baseExp = new Map<Element, string | null>();
@@ -311,6 +312,92 @@ export function installStateLib(a: StateArgs) {
       const tick = () => {
         S.settle();
         if ((S[fn || "probe"]() === target) === eq) return resolve(true);
+        if (performance.now() - start >= ms) return resolve(false);
+        setTimeout(tick, 25);
+      };
+      tick();
+    });
+
+  /** The in-scope elements that have a box right now. */
+  S.renderedSet = (): Set<Element> => {
+    const out = new Set<Element>();
+    for (const el of S.els()) if (el.getClientRects().length > 0) out.add(el);
+    return out;
+  };
+
+  /** Rendered elements that were NOT rendered at the last `take("base")` and are on their way out: inside a
+   *  `data-state="closed"` node, a `[popover]` that is not `:popover-open`, or a `<dialog>` that is not `[open]`.
+   *  A non-modal popover stays mounted (display and box intact) for its exit animation / unmount hold, ~300-600 ms,
+   *  which no mutation and no probe change marks the end of except the unmount itself. */
+  S.closingList = (): Element[] => {
+    const base: Set<Element> | undefined = S.baseRendered;
+    const out: Element[] = [];
+    for (const el of S.els()) {
+      if (el.getClientRects().length === 0 || (base && base.has(el))) continue;
+      let closing = false;
+      try {
+        const po = el.closest("[popover]");
+        closing = !!el.closest('[data-state="closed"]') || (!!po && !po.matches(":popover-open")) || !!el.closest("dialog:not([open])");
+      } catch (_) {
+        /* selector unsupported */
+      }
+      if (closing) out.push(el);
+    }
+    return out;
+  };
+
+  /** Resolve true once nothing that is closing remains rendered AND `probe()` has not changed for `stableMs`
+   *  (so a late unmount cannot land inside the next trigger's strategy window); false after `max` ms. */
+  S.quiesce = (stableMs: number, max: number) =>
+    new Promise<boolean>((resolve) => {
+      const start = performance.now();
+      let last = "";
+      let since = start;
+      const tick = () => {
+        S.settle();
+        const now = performance.now();
+        const p = S.probe();
+        if (p !== last) {
+          last = p;
+          since = now;
+        }
+        if (S.closingList().length === 0 && now - since >= stableMs) return resolve(true);
+        if (now - start >= max) return resolve(false);
+        setTimeout(tick, 40);
+      };
+      tick();
+    });
+
+  /** What "open" looks like, for telling an OPENING from a late unmount: the elements carrying an open marker
+   *  and the elements that are rendered. Opening ADDS to one of the two; a closing overlay only removes. */
+  S.openMark = () => {
+    const open = new Set<Element>();
+    try {
+      document.querySelectorAll('[aria-expanded="true"], [data-state="open"], [open], :popover-open, dialog:modal').forEach((e) => open.add(e));
+    } catch (_) {
+      /* selector unsupported */
+    }
+    return { open, rendered: S.renderedSet() };
+  };
+  S.beginTry = () => {
+    S.pre = S.openMark();
+    return S.probe();
+  };
+  S.gained = () => {
+    const pre = S.pre;
+    const cur = S.openMark();
+    if (!pre) return true;
+    for (const e of cur.open) if (!pre.open.has(e)) return true;
+    return cur.rendered.size > pre.rendered.size;
+  };
+  /** Resolve true once `probe()` differs from `target` AND the difference is an addition (see `gained`); a pure
+   *  removal (a previous overlay finishing its unmount) never counts. False after `ms`. */
+  S.waitOpen = (target: string, ms: number) =>
+    new Promise<boolean>((resolve) => {
+      const start = performance.now();
+      const tick = () => {
+        S.settle();
+        if (S.probe() !== target && S.gained()) return resolve(true);
         if (performance.now() - start >= ms) return resolve(false);
         setTimeout(tick, 25);
       };
@@ -656,6 +743,10 @@ async function ensureClosed(c: Ctx, via: string): Promise<boolean> {
   }
   await page.evaluate(() => (window as any).__snap.blur());
   if (ok) {
+    // Closed does not mean gone: a non-modal popover stays mounted for its exit animation / unmount hold. Wait
+    // for it to unmount (and the page to stop changing) BEFORE the baseline is re-taken, or its late unmount
+    // lands in the next trigger's strategy window (and the baseline would contain it).
+    await page.evaluate(() => (window as any).__snap.quiesce(150, 1500));
     await page.evaluate(() => (window as any).__snap.quiet(100, 2000));
     // Closed, but maybe not the page it was: a toggled control, nodes the overlay left behind. Re-take the
     // baseline so the next target is measured against what is really there now (the order of targets is fixed,
@@ -782,7 +873,9 @@ export async function openPass(
         break;
       }
       await page.evaluate(() => (window as any).__snap.rebase());
-      const before = await page.evaluate(() => (window as any).__snap.probe());
+      // Belt and braces for the first strategy: nothing from the previous overlay may still be unmounting.
+      await page.evaluate(() => (window as any).__snap.quiesce(0, 1500));
+      const before = await page.evaluate(() => (window as any).__snap.beginTry());
       if (strat === "click") await page.mouse.click(t.x!, t.y!);
       else if (strat === "contextmenu") await page.mouse.click(t.x!, t.y!, { button: "right" });
       else if (strat === "hover") await page.mouse.move(t.x!, t.y!);
@@ -791,7 +884,7 @@ export async function openPass(
       // renderer next hit-tests (a calendar cell was hovered in one run and not in the next). Only a hover
       // strategy needs the pointer to stay; for the others put it on the inert spot straight away.
       if (strat !== "hover") await park(page);
-      const changed = await page.evaluate(([b, ms]) => (window as any).__snap.waitProbe(b, false, ms), [before, WAIT_PROBE_MS[strat]] as const);
+      const changed = await page.evaluate(([b, ms]) => (window as any).__snap.waitOpen(b, ms), [before, WAIT_PROBE_MS[strat]] as const);
       if (changed) {
         via = strat;
         break;
