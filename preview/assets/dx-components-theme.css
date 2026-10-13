@@ -291,10 +291,18 @@ html[data-theme="light"] [class~="dxc-system"] {
    * scale (`--spacing * N`) because they resolve to the same values for
    * every step below -- deliberate, since row 32 keeps the door open to
    * Tailwind's `@theme` block, which is CSS custom properties. Only steps
-   * with real evidence are defined; gaps (11, 13, 14, ...) have none. */
+   * with real evidence are defined; gaps (11, 13, 14, ...) have none. The
+   * half steps carry the 6px gaps and 10px insets of Nova's compact controls
+   * (button, select, popover, attachment); 0.3125rem (5px) has no Tailwind step
+   * and stays a literal. Use them for padding, margin and gap only: a radius,
+   * an icon box or an offset (`top`) that happens to equal one is not spacing. */
+  --dx-space-0-5: 0.125rem; /* 2px -- the half steps (0-5, 1-5, 2-5, 3-5) are Tailwind's 0.5/1.5/2.5/3.5 */
   --dx-space-1: 0.25rem;  /* 4px */
+  --dx-space-1-5: 0.375rem; /* 6px */
   --dx-space-2: 0.5rem;   /* 8px -- the single most common spacing literal in the app */
+  --dx-space-2-5: 0.625rem; /* 10px */
   --dx-space-3: 0.75rem;  /* 12px */
+  --dx-space-3-5: 0.875rem; /* 14px */
   --dx-space-4: 1rem;     /* 16px */
   --dx-space-5: 1.25rem;  /* 20px */
   --dx-space-6: 1.5rem;   /* 24px */
@@ -534,6 +542,64 @@ html[data-theme="light"] [class~="dxc-system"] {
 }
 
 /* ============================================================================
+ * The modal scrim, once.
+ *
+ * Every native-`<dialog>` overlay (Dialog, AlertDialog, Sheet, Drawer, CommandDialog and the
+ * modal Popover) paints its scrim with the dialog's own top-layer `::backdrop`. Six stylesheets
+ * used to carry the same three-rule block each (base, open, `@starting-style`) plus a
+ * reduced-motion entry; that was one shape pasted six times, and the copy-paste is what produced
+ * the stacked-scrim drift in the first place (the Command dialog painted a second 30% scrim over
+ * the UA's). One rule keyed on the `dx-` class prefix of a `<dialog>` (the row-111 border-box
+ * precedent, ZERO specificity, so an app can restyle it with any selector) replaces all six and
+ * ships to every `dx components add` consumer through this file.
+ *
+ *   - `:not([popover])` leaves the non-modal Popover arm (`<dialog popover="auto">`) alone: it
+ *     paints no scrim, as shadcn's popover has none.
+ *   - The scrim is visible only while `[open][data-state="open"]` (never `[open]` alone: `[open]`
+ *     outlives `data-state="open"` through the exit). It fades in via `@starting-style` and out
+ *     because its `background`/`backdrop-filter` fall back to transparent/none the moment
+ *     `data-state` flips to "closed" while the dialog is STILL open and modal:
+ *     `use_dialog_open_driver` (`primitives/src/lib.rs`) calls `close()` only once the panel's and
+ *     the scrim's animations have settled, so the `::backdrop` stays in the top layer for the whole
+ *     exit on every engine. Nothing here depends on `transition: overlay allow-discrete`. In and
+ *     out are one `transition`, so they cannot differ in length.
+ *   - One token set drives it (`--dx-overlay-duration/-ease/-scrim/-blur`, defined above), so the
+ *     panel and the scrim share a duration and a curve. `data-dx-overlay="off"` (above) still wins
+ *     over all of it (`!important`). `playwright/assert-backdrop-fade.ts` pins what this resolves to.
+ *
+ * Selectors are flat, one simple selector per `:where()`, like the box-model block below.
+ * ========================================================================== */
+:where(dialog[class^="dx-"]:not([popover]))::backdrop,
+:where(dialog[class*=" dx-"]:not([popover]))::backdrop {
+  backdrop-filter: none;
+  background: transparent;
+  transition:
+    backdrop-filter var(--dx-overlay-duration) var(--dx-overlay-ease),
+    background-color var(--dx-overlay-duration) var(--dx-overlay-ease);
+}
+
+:where(dialog[class^="dx-"][open][data-state="open"]:not([popover]))::backdrop,
+:where(dialog[class*=" dx-"][open][data-state="open"]:not([popover]))::backdrop {
+  backdrop-filter: blur(var(--dx-overlay-blur));
+  background: var(--dx-overlay-scrim);
+}
+
+@starting-style {
+  :where(dialog[class^="dx-"][open][data-state="open"]:not([popover]))::backdrop,
+  :where(dialog[class*=" dx-"][open][data-state="open"]:not([popover]))::backdrop {
+    backdrop-filter: none;
+    background: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where(dialog[class^="dx-"]:not([popover]))::backdrop,
+  :where(dialog[class*=" dx-"]:not([popover]))::backdrop {
+    transition-duration: var(--dx-motion-duration-reduced);
+  }
+}
+
+/* ============================================================================
  * Box model (docs/backlog.md row 111, phase A).
  *
  * Every element we ship is `box-sizing: border-box`, so a `width`/`height`/
@@ -571,6 +637,72 @@ html[data-theme="light"] [class~="dxc-system"] {
 :where([class^="dx-"])::after,
 :where([class*=" dx-"])::after {
   box-sizing: border-box;
+}
+
+/* ============================================================================
+ * Touch: no double-tap-to-zoom on a control (docs/backlog.md row 145, lane T).
+ *
+ * `touch-action: manipulation` lets a touch pan and pinch-zoom but not double-tap-zoom
+ * (https://w3c.github.io/pointerevents/#the-touch-action-css-property). iOS Safari otherwise waits on
+ * every tap for a possible second one and ZOOMS THE PAGE when it comes, so quickly tapping two
+ * buttons zoomed instead of pressing twice (WebKit: webkit.org/blog/5610/more-responsive-tapping-on-ios/,
+ * `playwright/oracle/tier2-html/touch-double-tap.spec.ts`). `touch-action: none` is never the fix: it
+ * also blocks the one-finger pan a page or a scroll container needs.
+ *
+ * This used to be a 400-character comment plus the declaration pasted into 33 component stylesheets
+ * (50 sites), kept in step by hand with `main.css`'s `!important` app-layer backstop, which hid every
+ * stylesheet that forgot it (Input, Textarea, Native Select had no declaration at all). One rule, here,
+ * is the single source, and `scripts/check-touch-action.sh` fails a component stylesheet that declares
+ * `manipulation` again.
+ *
+ * The element list is `main.css`'s catch-all list (button, link, form controls, `summary`, anything
+ * focusable by `tabindex`, and the interactive ARIA widget roles) plus the roles our primitives render
+ * that the list lacked (`menuitemcheckbox`/`menuitemradio`, and `spinbutton`, which the date picker's
+ * segments carry at `tabindex="-1"`), intersected with the `dx-` class namespace: scoped to our own
+ * components, like the box-model rule, because this file is copied into the app of every
+ * `dx components add` user and must not change THEIR plain `<button>`s. Every `:where()` holds one
+ * compound selector, so the rule has ZERO specificity: a component or app that needs another value
+ * still wins by declaring it. The ones that do (the slider and color-area containers' `none`, the
+ * resizable handle's `none`, the drawer's `pan-x`/`pan-y`, the chart's `pan-y pinch-zoom`) keep their own
+ * declaration, with its reason, in their stylesheet. Flat list for the usual asset-pipeline reason.
+ * ========================================================================== */
+:where(button[class^="dx-"]),
+:where(button[class*=" dx-"]),
+:where([role="button"][class^="dx-"]),
+:where([role="button"][class*=" dx-"]),
+:where(a[href][class^="dx-"]),
+:where(a[href][class*=" dx-"]),
+:where(input[class^="dx-"]),
+:where(input[class*=" dx-"]),
+:where(select[class^="dx-"]),
+:where(select[class*=" dx-"]),
+:where(textarea[class^="dx-"]),
+:where(textarea[class*=" dx-"]),
+:where(summary[class^="dx-"]),
+:where(summary[class*=" dx-"]),
+:where([tabindex]:not([tabindex="-1"])[class^="dx-"]),
+:where([tabindex]:not([tabindex="-1"])[class*=" dx-"]),
+:where([role="menuitem"][class^="dx-"]),
+:where([role="menuitem"][class*=" dx-"]),
+:where([role="menuitemcheckbox"][class^="dx-"]),
+:where([role="menuitemcheckbox"][class*=" dx-"]),
+:where([role="menuitemradio"][class^="dx-"]),
+:where([role="menuitemradio"][class*=" dx-"]),
+:where([role="option"][class^="dx-"]),
+:where([role="option"][class*=" dx-"]),
+:where([role="tab"][class^="dx-"]),
+:where([role="tab"][class*=" dx-"]),
+:where([role="switch"][class^="dx-"]),
+:where([role="switch"][class*=" dx-"]),
+:where([role="checkbox"][class^="dx-"]),
+:where([role="checkbox"][class*=" dx-"]),
+:where([role="radio"][class^="dx-"]),
+:where([role="radio"][class*=" dx-"]),
+:where([role="slider"][class^="dx-"]),
+:where([role="slider"][class*=" dx-"]),
+:where([role="spinbutton"][class^="dx-"]),
+:where([role="spinbutton"][class*=" dx-"]) {
+  touch-action: manipulation;
 }
 
 /* ============================================================================

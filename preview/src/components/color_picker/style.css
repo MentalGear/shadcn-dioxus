@@ -52,6 +52,11 @@
     display: flex;
     align-items: center;
     grid-column: span 2 / span 2;
+
+    /* A drag surface (the thumb is moved by pointer events), so the browser's own pan must not
+       start on it and cancel the pointer. Effective `touch-action` is the intersection down the
+       ancestor chain, so this also keeps the thumb's `manipulation` (the theme's shared rule)
+       from re-enabling a pan. The one deliberate `none`; everything else is `manipulation`. */
     touch-action: none;
 }
 
@@ -75,9 +80,6 @@
     box-shadow: black 0 0 0 1px, black 0 0 0 1px inset;
     cursor: pointer;
     forced-color-adjust: none;
-
-    /* touch-action: manipulation -- disables iOS Safari double-tap-to-zoom on this control while still allowing pan/pinch scrolling (touch-action: none must never be used, it breaks scrolling); mirrors the shared app-layer rule in preview/assets/main.css. Copied-out components ship without main.css, so this needs to live here too. */
-    touch-action: manipulation;
 
     /* rtl-physical: this thumb's horizontal position is set inline by the
        primitive (out of this lane's ownership, like slider/style.css's
@@ -105,6 +107,8 @@
     min-height: 116px;
     aspect-ratio: 1;
     forced-color-adjust: none;
+
+    /* Drag surface: same reason as `.dx-color-picker-slider` above. */
     touch-action: none;
 }
 
@@ -124,9 +128,6 @@
     border-radius: 50%;
     box-shadow: black 0 0 0 1px, black 0 0 0 1px inset;
     cursor: pointer;
-
-    /* touch-action: manipulation -- disables iOS Safari double-tap-to-zoom on this control while still allowing pan/pinch scrolling (touch-action: none must never be used, it breaks scrolling); mirrors the shared app-layer rule in preview/assets/main.css. Copied-out components ship without main.css, so this needs to live here too. */
-    touch-action: manipulation;
 
     /* rtl-physical: this thumb's 2D position (both axes) is set inline by
        the primitive, same coordination note as `.dx-color-picker-slider-
@@ -176,9 +177,6 @@
     gap: var(--dx-space-2);
     line-height: 1.5;
     outline: 0 solid;
-
-    /* touch-action: manipulation -- disables iOS Safari double-tap-to-zoom on this control while still allowing pan/pinch scrolling (touch-action: none must never be used, it breaks scrolling); mirrors the shared app-layer rule in preview/assets/main.css. Copied-out components ship without main.css, so this needs to live here too. */
-    touch-action: manipulation;
     transition: box-shadow var(--dx-motion-duration-base), background-color var(--dx-motion-duration-base), color var(--dx-motion-duration-base);
 }
 

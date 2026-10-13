@@ -116,7 +116,7 @@
 .dx-field[data-orientation="horizontal"] > input,
 .dx-field[data-orientation="horizontal"] > select,
 .dx-field[data-orientation="horizontal"] > button {
-  margin-top: 0.125rem;
+  margin-top: var(--dx-space-0-5);
 }
 
 .dx-field-content {

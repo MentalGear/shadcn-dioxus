@@ -106,7 +106,6 @@ preview/src/components/sidebar/style.css	composed:button	.dx-sidebar-trigger	hei
 preview/src/components/sidebar/style.css	composed:button	.dx-sidebar-trigger	justify-content
 preview/src/components/sidebar/style.css	composed:button	.dx-sidebar-trigger	line-height
 preview/src/components/sidebar/style.css	composed:button	.dx-sidebar-trigger	padding
-preview/src/components/sidebar/style.css	composed:button	.dx-sidebar-trigger	touch-action
 preview/src/components/sidebar/style.css	composed:button	.dx-sidebar-trigger	width
 preview/src/components/sidebar/style.css	composed:collapsible	.dx-sidebar-menu-button.dx-sidebar-collapsible-trigger:hover	text-decoration
 preview/src/components/sidebar/style.css	composed:collapsible	.dx-sidebar-menu-button.dx-sidebar-collapsible-trigger:hover	text-decoration-line
@@ -148,7 +147,6 @@ preview/src/components/sidebar/style.css	composed:sheet	.dx-sidebar-sheet	backgr
 preview/src/components/sidebar/style.css	composed:sheet	.dx-sidebar-sheet	padding
 preview/src/components/sidebar/style.css	composed:sheet	.dx-sidebar-sheet	width
 preview/src/components/sidebar/style.css	composed:sheet	.dx-sidebar-sheet-close	display
-preview/src/components/sidebar/style.css	composed:sheet	.dx-sidebar-sheet-close	touch-action
 preview/src/components/sidebar/style.css	composed:sheet	.dx-sidebar-sr-only	border
 preview/src/components/sidebar/style.css	composed:sheet	.dx-sidebar-sr-only	clip-path
 preview/src/components/sidebar/style.css	composed:sheet	.dx-sidebar-sr-only	height

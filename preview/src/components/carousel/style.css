@@ -49,8 +49,8 @@
 /* Pointer-drag affordance (primitives/src/carousel.rs's own
    `use_carousel_drag`/`CAROUSEL_DRAG_JS`, `data-draggable`/`data-dragging`
    are that primitive's own styling hooks). `touch-action` is deliberately
-   never set here at all -- see `.dx-carousel-previous`/`-next`'s own
-   comment below for why `none` must never be used; the default `auto`
+   never set here at all -- `none` must never be used (it also blocks the
+   one-finger pan); the default `auto`
    this element already has is what lets touch keep scrolling it natively,
    completely independent of this mouse/pen-only gesture. */
 .dx-carousel-content[data-draggable="true"] {
@@ -98,14 +98,6 @@
     box-shadow: none;
     color: var(--dx-foreground);
     cursor: pointer;
-
-    /* touch-action: manipulation -- disables iOS Safari double-tap-to-zoom on
-       this control while still allowing pan/pinch scrolling of the track
-       underneath (touch-action: none must never be used, it breaks
-       scrolling); mirrors the shared app-layer rule in preview/assets/main.css.
-       Copied-out components ship without main.css, so this needs to live
-       here too. */
-    touch-action: manipulation;
 
     /* Fades the :disabled opacity change below in both directions.
        Declared here on the base rule, not inside `:disabled`, on purpose --
@@ -369,7 +361,6 @@
     box-shadow: none;
     color: var(--dx-foreground);
     cursor: pointer;
-    touch-action: manipulation;
 }
 
 .dx-carousel-rotation-control svg {
@@ -435,7 +426,6 @@
     background: var(--dx-muted-foreground);
     cursor: pointer;
     opacity: 0.5;
-    touch-action: manipulation;
 
     /* The active dot fades in (opacity) and widens into a pill (width) --
        both plain token-based transitions; no per-component
@@ -494,7 +484,6 @@
     background: var(--dx-muted-foreground);
     cursor: pointer;
     opacity: 0.5;
-    touch-action: manipulation;
 }
 
 .dx-carousel-picker-dot[data-active="true"] {

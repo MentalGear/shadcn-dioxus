@@ -108,9 +108,6 @@
   gap: var(--dx-space-2);
   outline: none;
   overflow-wrap: anywhere;
-
-  /* touch-action: manipulation -- disables iOS Safari double-tap-to-zoom on this control while still allowing pan/pinch scrolling (touch-action: none must never be used, it breaks scrolling); mirrors the shared app-layer rule in preview/assets/main.css. Copied-out components ship without main.css, so this needs to live here too. */
-  touch-action: manipulation;
   transition: background-color var(--dx-motion-duration-fast) var(--dx-motion-ease-out);
   user-select: none;
 }

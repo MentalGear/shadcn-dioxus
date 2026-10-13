@@ -190,9 +190,6 @@
 
 .dx-sidebar-sheet-close {
   display: none;
-
-  /* touch-action: manipulation -- disables iOS Safari double-tap-to-zoom on this control while still allowing pan/pinch scrolling (touch-action: none must never be used, it breaks scrolling); mirrors the shared app-layer rule in preview/assets/main.css. Copied-out components ship without main.css, so this needs to live here too. */
-  touch-action: manipulation;
 }
 
 .dx-sidebar-mobile-inner {
@@ -210,9 +207,6 @@
   justify-content: center;
   padding: 0 !important;
   line-height: 0;
-
-  /* touch-action: manipulation -- disables iOS Safari double-tap-to-zoom on this control while still allowing pan/pinch scrolling (touch-action: none must never be used, it breaks scrolling); mirrors the shared app-layer rule in preview/assets/main.css. Copied-out components ship without main.css, so this needs to live here too. */
-  touch-action: manipulation;
 }
 
 .dx-sidebar-trigger-icon {
@@ -583,9 +577,6 @@
   outline: none;
   text-align: start;
   text-decoration: none;
-
-  /* touch-action: manipulation -- disables iOS Safari double-tap-to-zoom on this control while still allowing pan/pinch scrolling (touch-action: none must never be used, it breaks scrolling); mirrors the shared app-layer rule in preview/assets/main.css. Copied-out components ship without main.css, so this needs to live here too. */
-  touch-action: manipulation;
   transition: width var(--dx-motion-duration-slow) var(--dx-motion-ease-out), height var(--dx-motion-duration-slow) var(--dx-motion-ease-out), padding var(--dx-motion-duration-slow) var(--dx-motion-ease-out);
 }
 
@@ -833,8 +824,8 @@
 .dx-sidebar-menu-sub {
   display: flex;
   flex-direction: column;
-  padding: 0.125rem 0.625rem;
-  margin: 0 0.875rem;
+  padding: var(--dx-space-0-5) var(--dx-space-2-5);
+  margin: 0 var(--dx-space-3-5);
   border-inline-start: 1px solid var(--dx-sidebar-border);
   gap: var(--dx-space-1);
   list-style: none;
@@ -878,9 +869,6 @@
   gap: var(--dx-space-2);
   outline: none;
   text-decoration: none;
-
-  /* touch-action: manipulation -- disables iOS Safari double-tap-to-zoom on this control while still allowing pan/pinch scrolling (touch-action: none must never be used, it breaks scrolling); mirrors the shared app-layer rule in preview/assets/main.css. Copied-out components ship without main.css, so this needs to live here too. */
-  touch-action: manipulation;
 
   /* rtl-physical: paired optical nudge, see `.dx-sidebar-menu-sub`'s
      identical note above; `[dir="rtl"]` override near the end of this

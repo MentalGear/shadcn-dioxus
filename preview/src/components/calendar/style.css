@@ -53,9 +53,6 @@
     color: var(--dx-muted-foreground);
     cursor: pointer;
     font-size: var(--dx-text-base);
-
-    /* touch-action: manipulation -- disables iOS Safari double-tap-to-zoom on this control while still allowing pan/pinch scrolling (touch-action: none must never be used, it breaks scrolling); mirrors the shared app-layer rule in preview/assets/main.css. Copied-out components ship without main.css, so this needs to live here too. */
-    touch-action: manipulation;
 }
 
 /* rtl-physical: matches shadcn's own calendar.tsx RTL treatment exactly
@@ -176,9 +173,6 @@
     color: var(--dx-foreground);
     cursor: pointer;
     font-size: var(--dx-text-sm);
-
-    /* touch-action: manipulation -- disables iOS Safari double-tap-to-zoom on this control while still allowing pan/pinch scrolling (touch-action: none must never be used, it breaks scrolling); mirrors the shared app-layer rule in preview/assets/main.css. Copied-out components ship without main.css, so this needs to live here too. */
-    touch-action: manipulation;
 }
 
 /* :where() by construction, not source order: a hover/interaction rule must
@@ -356,9 +350,6 @@ td:has(.dx-calendar-grid-cell[data-selection-end="true"]) {
     margin: 0;
     inset: 0;
     opacity: 0;
-
-    /* touch-action: manipulation -- disables iOS Safari double-tap-to-zoom on this control while still allowing pan/pinch scrolling (touch-action: none must never be used, it breaks scrolling); mirrors the shared app-layer rule in preview/assets/main.css. Copied-out components ship without main.css, so this needs to live here too. */
-    touch-action: manipulation;
 }
 
 /*

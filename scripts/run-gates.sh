@@ -96,6 +96,7 @@ gates=(
   "check-component-fonts|scripts/check-component-fonts.sh"
   "check-registry-url|scripts/check-registry-url.sh"
   "check-motion-gating|scripts/check-motion-gating.sh"
+  "check-theme-baseline|scripts/check-theme-baseline.sh"
   "fmt|cargo fmt --all -- --check"
   "clippy-default|cargo clippy --workspace $CLIPPY_FLAGS"
   "clippy-web|cargo clippy -p dioxus-primitives -p preview --features dioxus-primitives/web,preview/web $CLIPPY_FLAGS"

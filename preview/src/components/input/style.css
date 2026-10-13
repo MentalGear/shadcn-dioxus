@@ -13,7 +13,7 @@
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  padding: var(--dx-space-1) 0.625rem;
+  padding: var(--dx-space-1) var(--dx-space-2-5);
   border: none;
   background: none;
   background-color: var(--light, transparent)

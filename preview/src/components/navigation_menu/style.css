@@ -31,7 +31,6 @@
   font-size: var(--dx-text-sm);
   gap: var(--dx-space-1);
   text-decoration: none;
-  touch-action: manipulation;
   transition: background-color var(--dx-motion-duration-fast) var(--dx-motion-ease-out);
 }
 
@@ -304,7 +303,6 @@
   font-size: var(--dx-text-sm);
   gap: var(--dx-space-1);
   text-decoration: none;
-  touch-action: manipulation;
 }
 
 /* `background-color`, not the `background` shorthand: the featured card

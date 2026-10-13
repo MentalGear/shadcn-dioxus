@@ -62,7 +62,7 @@
     flex: 1;
     align-items: center;
     justify-content: center;
-    padding: 0.125rem 0.375rem;
+    padding: var(--dx-space-0-5) var(--dx-space-1-5);
     border: 1px solid transparent;
     border-radius: var(--dx-radius-md);
     background: none;
@@ -72,11 +72,8 @@
     font-family: inherit;
     font-size: var(--dx-text-sm);
     font-weight: 500;
-    gap: 0.375rem;
+    gap: var(--dx-space-1-5);
     outline: none;
-
-    /* touch-action: manipulation -- disables iOS Safari double-tap-to-zoom on this control while still allowing pan/pinch scrolling (touch-action: none must never be used, it breaks scrolling); mirrors the shared app-layer rule in preview/assets/main.css. Copied-out components ship without main.css, so this needs to live here too. */
-    touch-action: manipulation;
     transition-duration: var(--dx-motion-duration-base);
     transition-property: color, background-color, border-color, box-shadow;
     transition-timing-function: var(--dx-motion-ease-standard);

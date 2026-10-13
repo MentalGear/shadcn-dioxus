@@ -43,13 +43,10 @@
   cursor: pointer;
   font-family: inherit;
   font-size: var(--dx-text-sm);
-  gap: 0.375rem;
+  gap: var(--dx-space-1-5);
   outline: none;
   padding-block: 0;
-  padding-inline: 0.625rem var(--dx-space-2);
-
-  /* touch-action: manipulation -- disables iOS Safari double-tap-to-zoom on this control while still allowing pan/pinch scrolling (touch-action: none must never be used, it breaks scrolling); mirrors the shared app-layer rule in preview/assets/main.css. Copied-out components ship without main.css, so this needs to live here too. */
-  touch-action: manipulation;
+  padding-inline: var(--dx-space-2-5) var(--dx-space-2);
   transition: background-color var(--dx-motion-duration-fast) var(--dx-motion-ease-out);
 }
 
@@ -256,16 +253,13 @@
   border-radius: var(--dx-radius-md);
   cursor: pointer;
   font-size: var(--dx-text-sm);
-  gap: 0.375rem;
+  gap: var(--dx-space-1-5);
   outline: none;
   overflow-wrap: anywhere;
   padding-block: var(--dx-space-1);
   padding-inline:
-    0.375rem
+    var(--dx-space-1-5)
     calc(var(--dx-menu-item-indicator-inset) + var(--dx-menu-item-indicator-size) + var(--dx-menu-item-indicator-gap));
-
-  /* touch-action: manipulation -- disables iOS Safari double-tap-to-zoom on this control while still allowing pan/pinch scrolling (touch-action: none must never be used, it breaks scrolling); mirrors the shared app-layer rule in preview/assets/main.css. Copied-out components ship without main.css, so this needs to live here too. */
-  touch-action: manipulation;
   user-select: none;
 }
 
@@ -295,7 +289,7 @@
 }
 
 .dx-select-group-label {
-  padding: var(--dx-space-1) 0.375rem;
+  padding: var(--dx-space-1) var(--dx-space-1-5);
   color: var(--dx-muted-foreground);
   font-size: var(--dx-text-xs);
 }

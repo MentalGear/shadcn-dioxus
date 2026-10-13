@@ -212,9 +212,13 @@ main[tabindex="-1"]:focus {
 
 /*
  * App-layer catch-all: give every interactive element in the preview app
- * `touch-action: manipulation`, the second of two layers (see each themed
- * component's own `style.css` for the first) -- same construction as the
- * `@media (pointer: coarse)` font-size floor just above.
+ * `touch-action: manipulation`, the second of two layers -- same construction
+ * as the `@media (pointer: coarse)` font-size floor just above. The first layer
+ * is `dx-components-theme.css`'s one zero-specificity rule on every `dx-`
+ * control (it ships to consumers; this file does not, and the 50 per-component
+ * copies it replaced are gone, `scripts/check-theme-baseline.sh`). This layer
+ * is what covers the preview's own raw elements (footer links, copy buttons,
+ * the `top_layer`/`form` fixtures).
  *
  * WHY: the Pointer Events spec defines `touch-action: manipulation` as
  * permitting panning and pinch-zoom but NOT the UA's double-tap-to-zoom
@@ -271,10 +275,8 @@ summary,
   /* `!important`: this is the app-wide backstop and must beat any
      component stylesheet rule that has not (yet) declared its own
      `touch-action` -- same rationale as the font-size floor's
-     `!important` just above. It does not need to (and must not) beat a
-     component's own explicit, more specific `touch-action: manipulation`,
-     since both agree on the same value -- this only matters for an
-     element the component layer has not covered. */
+     `!important` just above. It only matters for an element the theme's
+     `dx-` rule does not reach (the preview's own non-`dx-` elements). */
   touch-action: manipulation !important;
 }
 

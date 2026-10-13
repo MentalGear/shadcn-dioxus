@@ -1,7 +1,7 @@
 /* Sheet Root -- the wrapper `div` around the panel. On the web arm
  * (`<dialog>` + `showModal()`, a direct child of this element --
  * primitives/src/dialog.rs's `DialogContentModal`) it paints nothing: the scrim
- * is the dialog's own `::backdrop` (the shared block below) and this element
+ * is the dialog's own `::backdrop` (the shared rule in `dx-components-theme.css`) and this element
  * only holds the `<dialog>` and its animation times `use_animated_open`'s
  * unmount hold. Every other combination (`is_modal: false`, or the non-web/Blitz
  * build) renders `.dx-sheet` as a plain `div` with no top layer and no
@@ -59,49 +59,13 @@
   }
 }
 
-/* Modal-overlay scrim: the rule shape every native-`<dialog>` overlay shares.
- * `dialog`, `alert_dialog`, `sheet`, `drawer` and `command` carry this block
- * (renamed); the modal popover's is the same rule keyed on `data-state` (see its
- * stylesheet). `playwright/assert-backdrop-fade.ts`, run from all six specs,
- * fails if one of them drifts.
- *
- * The dialog's own top-layer `::backdrop` is the only thing that paints the
- * scrim. It fades in via `@starting-style` and out because its `background` and
- * `backdrop-filter` fall back to transparent/none the moment the dialog's
- * `data-state` flips to "closed" -- while the dialog is STILL open and modal:
- * `use_dialog_open_driver` (`primitives/src/lib.rs`) calls `close()` only once the
- * panel's and the scrim's animations have settled, so the `::backdrop` stays in the
- * top layer for the whole exit on every engine. Nothing here depends on
- * `transition: overlay allow-discrete` (Chromium only); and the visible state is
- * keyed on `[open][data-state="open"]`, never `[open]` alone, because `[open]`
- * outlives `data-state="open"` through the exit. In and out are one `transition`,
- * so they cannot differ in length.
- *
- * One token set drives it (`--dx-overlay-duration/-ease/-scrim/-blur`), defined
- * once in `dx-components-theme.css`; there is no per-component fallback to drift. */
-.dx-sheet::backdrop {
-  backdrop-filter: none;
-  background: transparent;
-  transition:
-    backdrop-filter var(--dx-overlay-duration) var(--dx-overlay-ease),
-    background-color var(--dx-overlay-duration) var(--dx-overlay-ease);
-}
-
-.dx-sheet[open][data-state="open"]::backdrop {
-  backdrop-filter: blur(var(--dx-overlay-blur));
-  background: var(--dx-overlay-scrim);
-}
-
-@starting-style {
-  .dx-sheet[open][data-state="open"]::backdrop {
-    backdrop-filter: none;
-    background: transparent;
-  }
-}
+/* The scrim (this dialog's top-layer `::backdrop`) is the ONE shared rule in
+ * `dx-components-theme.css` ("The modal scrim, once"): keyed on any `<dialog>` with a `dx-`
+ * class, driven by `--dx-overlay-duration/-ease/-scrim/-blur`, fading in and out with the
+ * panel. There is no `::backdrop` rule here to drift. */
 
 @media (prefers-reduced-motion: reduce) {
-  .dx-sheet,
-  .dx-sheet::backdrop {
+  .dx-sheet {
     transition-duration: var(--dx-motion-duration-reduced);
   }
 
@@ -365,7 +329,7 @@ dialog.dx-sheet[data-state="closed"] {
   display: flex;
   flex-direction: column;
   padding: var(--dx-space-4);
-  gap: 0.375rem;
+  gap: var(--dx-space-1-5);
 }
 
 .dx-sheet-footer {
@@ -425,9 +389,6 @@ dialog.dx-sheet[data-state="closed"] {
   cursor: pointer;
   inset-inline-end: var(--dx-space-4);
   opacity: 0.7;
-
-  /* touch-action: manipulation -- disables iOS Safari double-tap-to-zoom on this control while still allowing pan/pinch scrolling (touch-action: none must never be used, it breaks scrolling); mirrors the shared app-layer rule in preview/assets/main.css. Copied-out components ship without main.css, so this needs to live here too. */
-  touch-action: manipulation;
   transition: opacity var(--dx-motion-duration-base) var(--dx-motion-ease);
 }
 

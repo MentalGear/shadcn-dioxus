@@ -21,7 +21,7 @@
 .dx-alert > svg {
   width: var(--dx-space-4);
   height: var(--dx-space-4);
-  margin-top: 0.125rem;
+  margin-top: var(--dx-space-0-5);
   color: currentcolor;
 }
 
