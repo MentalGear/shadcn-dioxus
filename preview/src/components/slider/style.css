@@ -100,7 +100,7 @@
 
 .dx-slider[data-disabled="true"] {
     cursor: not-allowed;
-    opacity: 0.5;
+    opacity: var(--dx-opacity-disabled);
 }
 
 .dx-slider[data-disabled="true"] .dx-slider-thumb {

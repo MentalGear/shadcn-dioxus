@@ -21,8 +21,14 @@
 }
 
 .dx-switch:focus-visible {
-  box-shadow: 0 0 0 3px
-    color-mix(in oklab, var(--dx-ring-color) 50%, transparent);
+  box-shadow: var(--dx-ring-field);
+}
+
+/* Nova: `aria-invalid:border-destructive ring-3 ring-destructive/20 dark:ring-destructive/40`. After the
+ * focus rule so a focused invalid switch stays red. */
+.dx-switch[aria-invalid="true"],
+.dx-switch[data-invalid="true"] {
+  box-shadow: var(--dx-ring-invalid-field);
 }
 
 .dx-switch-thumb {
@@ -62,5 +68,5 @@
 /* Only apply disabled styles when data-disabled is "true" */
 .dx-switch[data-disabled="true"] {
   cursor: not-allowed;
-  opacity: 0.5;
+  opacity: var(--dx-opacity-disabled);
 }

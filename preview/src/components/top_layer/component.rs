@@ -105,6 +105,7 @@ pub fn TopLayerFixture() -> Element {
                     PopoverRoot { id: "clip-popover-root", is_modal: false,
                         PopoverTrigger { id: "clip-popover-trigger", "Popover trigger" }
                         PopoverContent {
+                            "data-dx-surface": "floating",
                             id: "clip-popover-content",
                             style: "min-height: 100px;",
                             "Popover content for the clipping-escape rule."
@@ -305,7 +306,11 @@ pub fn TopLayerFixture() -> Element {
                     div { class: Styles::dx_top_layer_stack_row,
                         PopoverRoot { id: "stack-popover-root", is_modal: false,
                             PopoverTrigger { id: "stack-popover-trigger", "Stacking popover trigger" }
-                            PopoverContent { id: "stack-popover-content", "Stacking popover content" }
+                            PopoverContent {
+                                id: "stack-popover-content",
+                                "data-dx-surface": "floating",
+                                "Stacking popover content"
+                            }
                         }
 
                         button {
@@ -536,6 +541,7 @@ pub fn TopLayerFixture() -> Element {
                     PopoverRoot { id: "edge-bottom-popover-root", is_modal: false,
                         PopoverTrigger { id: "edge-bottom-popover-trigger", "Bottom popover" }
                         PopoverContent {
+                            "data-dx-surface": "floating",
                             id: "edge-bottom-popover-content",
                             side: ContentSide::Bottom,
                             "Flips above its trigger when the preferred side runs off-viewport."

@@ -265,7 +265,6 @@ dialog.dx-command-dialog[open][data-state="open"] {
 }
 
 .dx-command-item[data-disabled="true"] {
-  cursor: not-allowed;
   opacity: var(--dx-opacity-disabled);
   pointer-events: none;
 }

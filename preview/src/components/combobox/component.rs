@@ -92,6 +92,7 @@ pub fn Combobox<T: Clone + PartialEq + 'static>(props: ComboboxProps<T>) -> Elem
             }
             combobox::ComboboxList {
                 class: "dx-combobox-list",
+                "data-dx-surface": "floating",
                 aria_label: props.list_aria_label.clone(),
                 {props.children}
             }

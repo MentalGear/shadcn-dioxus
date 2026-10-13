@@ -66,9 +66,15 @@
   box-shadow: var(--dx-ring-field);
 }
 
+/* Invalid (the state recipe, after the focus rule so a focused invalid input stays red). */
+.dx-combobox-input[aria-invalid="true"],
+.dx-combobox-input[data-invalid="true"] {
+  box-shadow: var(--dx-ring-invalid-field);
+}
+
 .dx-combobox-input[disabled] {
   cursor: not-allowed;
-  opacity: 0.5;
+  opacity: var(--dx-opacity-disabled);
 }
 
 .dx-combobox-input::placeholder {
@@ -99,83 +105,33 @@
 
 .dx-combobox-list {
   position: absolute;
-  z-index: var(--dx-z-local-xl);
   top: calc(100% + 0.25rem);
   display: flex;
   overflow: hidden auto;
   width: var(--dx-combobox-width, 200px);
   max-height: 300px;
   flex-direction: column;
-  padding: var(--dx-space-1);
 
   /*
-   * Undoes the UA popover stylesheet's `[popover] { border: solid; ... }`
-   * (WHATWG HTML's popover section) -- on the web arm (Migration A slice
-   * 3/3), this listbox carries the `popover` attribute. This content has no
-   * border of its own (its `box-shadow` above draws the visible edge
-   * instead), so it is reset to nothing, same fix as
-   * `../dropdown_menu/style.css`'s `.dx-dropdown-menu-content`. `overflow`
-   * needs no matching reset here -- the explicit `hidden auto` above is
-   * author-origin already and beats the UA default regardless. The
-   * matching `margin`/`inset` reset, and the `@supports (anchor-name: --a)`
-   * anchor-positioning rules that keep this listbox anchored to
-   * `ComboboxInput` once promoted to the top layer, live in the shared,
-   * engine-injected stylesheet every `dx-anchor-*`-marked overlay gets for
-   * free -- see `primitives/src/top_layer.rs`'s
-   * `ensure_anchor_positioning_styles` doc.
+   * Edge, radius, `popover` fill and ink, shadow, padding, stacking and the pop-in/out come from the
+   * theme's floating-surface recipe (`data-dx-surface="floating"`, emitted by `ComboboxList`); its
+   * `border`/`padding` undo the UA popover stylesheet's `[popover] { border: solid; ... }` (WHATWG
+   * HTML's popover section): on the web arm (Migration A slice 3/3) this listbox carries the
+   * `popover` attribute. `overflow` is this list's own (`hidden auto`, a scrolling list; the
+   * recipe's `visible` loses to it). The stacking is the recipe's `--dx-z-overlay`, not the
+   * `--dx-z-local-xl` (50) it used to declare, which only mattered on the native/Blitz arm: the top
+   * layer hides it on the web. The matching `margin`/`inset` reset, and the `@supports (anchor-name:
+   * --a)` anchor-positioning rules that keep this listbox anchored to `ComboboxInput` once promoted
+   * to the top layer, live in the shared, engine-injected stylesheet every `dx-anchor-*`-marked
+   * overlay gets for free -- see `primitives/src/top_layer.rs`'s `ensure_anchor_positioning_styles`
+   * doc.
    */
-  border: none;
-  border-radius: var(--dx-radius-lg);
-  background: var(--dx-popover);
-  box-shadow: inset 0 0 0 1px var(--dx-input);
-  color: var(--dx-foreground);
   inset-inline-start: 0;
   transform-origin: top;
 }
 
-.dx-combobox-list[data-state="open"] {
-  animation: dx-picker-in var(--dx-motion-duration-base) var(--dx-motion-ease-out) forwards;
-}
-
-.dx-combobox-list[data-state="closed"] {
-  animation: dx-picker-out var(--dx-motion-duration-fast) var(--dx-motion-ease-in) forwards;
-  pointer-events: none;
-}
-
-/* `scale`/`translate`, not `transform`: an animated `transform` REPLACES the anchor's
- * own centring transform (`translateX(-50%)`, `top_layer.rs`'s engine stylesheet) for as
- * long as the animation runs, which played the popover/date picker/colour picker panels
- * off their anchor (144px, 133px). This list carries no `data-side`, so no centring
- * applies to it today; the individual properties compose with `transform` and keep it
- * safe if one ever does. (`select/style.css` and `combobox/style.css` both define these,
- * identically: keyframe names are global, so keep the two copies in step.) */
-@keyframes dx-picker-in {
-  from {
-    opacity: 0;
-    scale: 0.95;
-    translate: 0 -2px;
-  }
-
-  to {
-    opacity: 1;
-    scale: 1;
-    translate: 0 0;
-  }
-}
-
-@keyframes dx-picker-out {
-  from {
-    opacity: 1;
-    scale: 1;
-    translate: 0 0;
-  }
-
-  to {
-    opacity: 0;
-    scale: 0.95;
-    translate: 0 -2px;
-  }
-}
+/* The pop-in/out is the theme's floating-surface recipe (`dx-pop-in` / `dx-pop-out`, 150 ms), the
+ * same one Select plays. */
 
 .dx-combobox-empty {
   padding: var(--dx-space-6) 0;
@@ -216,8 +172,7 @@
 }
 
 .dx-combobox-option[data-disabled="true"] {
-  cursor: not-allowed;
-  opacity: 0.5;
+  opacity: var(--dx-opacity-disabled);
   pointer-events: none;
 }
 

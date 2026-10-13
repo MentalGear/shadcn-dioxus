@@ -68,7 +68,10 @@ pub fn NavigationMenuTrigger(props: NavigationMenuTriggerProps) -> Element {
 
 #[component]
 pub fn NavigationMenuContent(props: NavigationMenuContentProps) -> Element {
-    let base = attributes!(div { class: "dx-navigation-menu-content" });
+    let base = attributes!(div {
+        class: "dx-navigation-menu-content",
+        "data-dx-surface": "floating",
+    });
     let merged = merge_attributes(vec![base, props.attributes]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/navigation_menu/style.css") }

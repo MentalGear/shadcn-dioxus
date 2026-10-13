@@ -97,6 +97,8 @@ gates=(
   "check-registry-url|scripts/check-registry-url.sh"
   "check-motion-gating|scripts/check-motion-gating.sh"
   "check-theme-baseline|scripts/check-theme-baseline.sh"
+  "check-css-state-recipes|scripts/check-css-state-recipes.sh"
+  "check-duplicate-keyframes|scripts/check-duplicate-keyframes.sh"
   "fmt|cargo fmt --all -- --check"
   "clippy-default|cargo clippy --workspace $CLIPPY_FLAGS"
   "clippy-web|cargo clippy -p dioxus-primitives -p preview --features dioxus-primitives/web,preview/web $CLIPPY_FLAGS"

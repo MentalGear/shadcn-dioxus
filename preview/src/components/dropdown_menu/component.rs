@@ -47,6 +47,7 @@ pub fn DropdownMenuTrigger(props: DropdownMenuTriggerProps) -> Element {
 pub fn DropdownMenuContent(props: DropdownMenuContentProps) -> Element {
     let base = attributes!(div {
         class: "dx-dropdown-menu-content",
+        "data-dx-surface": "floating",
     });
     let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
@@ -62,6 +63,7 @@ pub fn DropdownMenuItem<T: Clone + PartialEq + 'static>(
 ) -> Element {
     let base = attributes!(div {
         class: "dx-dropdown-menu-item",
+        "data-dx-menu-item": "true",
     });
     let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
@@ -116,6 +118,7 @@ pub fn DropdownMenuSub(props: DropdownMenuSubProps) -> Element {
 pub fn DropdownMenuSubTrigger(props: DropdownMenuSubTriggerProps) -> Element {
     let base = attributes!(div {
         class: "dx-dropdown-menu-item dx-dropdown-menu-sub-trigger",
+        "data-dx-menu-item": "true",
     });
     let merged = merge_attributes(vec![base, props.attributes]);
 
@@ -130,6 +133,7 @@ pub fn DropdownMenuSubTrigger(props: DropdownMenuSubTriggerProps) -> Element {
             {props.children}
             ChevronRight {
                 class: "dx-dropdown-menu-item-indicator dx-dropdown-menu-sub-trigger-icon",
+                "data-dx-menu-item-indicator": "end",
                 size: "16px",
             }
         }
@@ -145,6 +149,7 @@ pub fn DropdownMenuSubTrigger(props: DropdownMenuSubTriggerProps) -> Element {
 pub fn DropdownMenuSubContent(props: DropdownMenuSubContentProps) -> Element {
     let base = attributes!(div {
         class: "dx-dropdown-menu-content dx-dropdown-menu-sub-content",
+        "data-dx-surface": "floating",
     });
     let merged = merge_attributes(vec![base, props.attributes]);
 
@@ -163,6 +168,7 @@ pub fn DropdownMenuSubItem<T: Clone + PartialEq + 'static>(
 ) -> Element {
     let base = attributes!(div {
         class: "dx-dropdown-menu-item",
+        "data-dx-menu-item": "true",
     });
     let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
@@ -194,6 +200,7 @@ pub fn DropdownMenuSubItem<T: Clone + PartialEq + 'static>(
 pub fn DropdownMenuCheckboxItem(props: DropdownMenuCheckboxItemProps) -> Element {
     let base = attributes!(div {
         class: "dx-dropdown-menu-item dx-dropdown-menu-checkable-item",
+        "data-dx-menu-item": "true",
     });
     let merged = merge_attributes(vec![base, props.attributes]);
 
@@ -209,7 +216,11 @@ pub fn DropdownMenuCheckboxItem(props: DropdownMenuCheckboxItemProps) -> Element
             close_on_select: props.close_on_select,
             attributes: merged,
             {props.children}
-            Check { class: "dx-dropdown-menu-item-indicator", size: "16px" }
+            Check {
+                class: "dx-dropdown-menu-item-indicator",
+                "data-dx-menu-item-indicator": "end",
+                size: "16px",
+            }
         }
     }
 }
@@ -243,6 +254,7 @@ pub fn DropdownMenuRadioGroup(props: DropdownMenuRadioGroupProps) -> Element {
 pub fn DropdownMenuRadioItem(props: DropdownMenuRadioItemProps) -> Element {
     let base = attributes!(div {
         class: "dx-dropdown-menu-item dx-dropdown-menu-checkable-item",
+        "data-dx-menu-item": "true",
     });
     let merged = merge_attributes(vec![base, props.attributes]);
 
@@ -256,7 +268,11 @@ pub fn DropdownMenuRadioItem(props: DropdownMenuRadioItemProps) -> Element {
             close_on_select: props.close_on_select,
             attributes: merged,
             {props.children}
-            Check { class: "dx-dropdown-menu-item-indicator", size: "16px" }
+            Check {
+                class: "dx-dropdown-menu-item-indicator",
+                "data-dx-menu-item-indicator": "end",
+                size: "16px",
+            }
         }
     }
 }
@@ -272,6 +288,7 @@ pub fn DropdownMenuLabel(
 ) -> Element {
     let base = attributes!(div {
         class: "dx-dropdown-menu-label",
+        "data-dx-menu-label": "true",
     });
     let merged = merge_attributes(vec![base, attributes]);
 

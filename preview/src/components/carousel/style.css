@@ -211,8 +211,9 @@
 
 .dx-carousel-previous:focus-visible,
 .dx-carousel-next:focus-visible {
-    outline: 2px solid var(--dx-ring-color);
-    outline-offset: 2px;
+    border-color: var(--dx-ring-color);
+    box-shadow: var(--dx-ring-focus);
+    outline: none;
 }
 
 /* Horizontal (default): centered on the block axis, pinned near the
@@ -369,8 +370,9 @@
 }
 
 .dx-carousel-rotation-control:focus-visible {
-    outline: 2px solid var(--dx-ring-color);
-    outline-offset: 2px;
+    border-color: var(--dx-ring-color);
+    box-shadow: var(--dx-ring-focus);
+    outline: none;
 }
 
 /* Indicators (dot-picker) -- APG's "tabbed" carousel style
@@ -447,8 +449,8 @@
 }
 
 .dx-carousel-indicator:focus-visible {
-    outline: 2px solid var(--dx-ring-color);
-    outline-offset: 2px;
+    box-shadow: var(--dx-ring-focus);
+    outline: none;
 }
 
 /* Custom picker (the `api` demo; docs.md's "A custom picker"): plain,
@@ -492,6 +494,6 @@
 }
 
 .dx-carousel-picker-dot:focus-visible {
-    outline: 2px solid var(--dx-ring-color);
-    outline-offset: 2px;
+    box-shadow: var(--dx-ring-focus);
+    outline: none;
 }

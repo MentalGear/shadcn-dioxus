@@ -259,6 +259,7 @@ pub fn Select<T: Clone + PartialEq + 'static>(props: SelectProps<T>) -> Element 
             }
             select::SelectList {
                 class: list_class,
+                "data-dx-surface": "floating",
                 aria_label: props.list_aria_label.clone(),
                 {props.children}
             }
@@ -310,6 +311,7 @@ pub fn SelectMulti<T: Clone + PartialEq + 'static>(props: SelectMultiProps<T>) -
             }
             select::SelectList {
                 class: list_class,
+                "data-dx-surface": "floating",
                 aria_label: props.list_aria_label.clone(),
                 {props.children}
             }

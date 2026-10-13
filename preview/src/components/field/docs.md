@@ -33,6 +33,10 @@ FieldSet {
 
 `FieldLabel` renders the themed `Label` (`<label class="dx-label dx-field-label">`) and retunes it through `Label`'s slot variables (see the Label docs): `--dx-label-line-height` always (shadcn's `FieldLabel` is `Label` plus `leading-snug`), and `--dx-label-color` while the field is `invalid`. `Field`'s stylesheet never declares `font-size`, `line-height`, or `color` on the label itself, so the label looks the same on every route regardless of which stylesheet loads first.
 
+## Invalid state
+
+`invalid` on a `Field` turns the label, description and `FieldError` text destructive. The control itself is invalid when it carries `aria-invalid="true"` (the attribute assistive technology reads), exactly as in shadcn, so set both: `Input`, `Textarea`, `NativeSelect`, `InputGroup`, `InputOtp`, `Checkbox`, `RadioItem`, `Switch`, `Toggle` and `Button` then draw the one shared invalid recipe, a destructive edge plus a destructive ring (`--dx-ring-invalid*` in the theme), and keep it while focused.
+
 ## Choice card
 
 A `FieldLabel` that wraps a `Field` renders as a "choice card": bordered and padded (the chrome is drawn on the wrapped `Field`), and the whole card is the click target for the control inside. When any descendant control is checked (`data-state="checked"`: `RadioItem`, `Switch` and `Checkbox` all emit it) the card takes a primary-tinted background and primary border, and it shows a focus ring while a control inside has keyboard focus.

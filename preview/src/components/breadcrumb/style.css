@@ -34,7 +34,7 @@
 
 .dx-breadcrumb-link:focus-visible {
   border-radius: var(--dx-radius-xs);
-  box-shadow: var(--dx-ring);
+  box-shadow: var(--dx-ring-focus);
   outline: none;
 }
 

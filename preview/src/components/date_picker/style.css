@@ -28,7 +28,7 @@
 .dx-date-picker[data-disabled="true"],
 .dx-date-picker [data-disabled="true"]:not(.dx-date-picker-popover-content *) {
     cursor: not-allowed;
-    opacity: 0.5;
+    opacity: var(--dx-opacity-disabled);
 }
 
 .dx-date-picker-group {
@@ -67,6 +67,14 @@
     outline: none;
 }
 
+/* Invalid (the state recipe, after the focus rule so a focused invalid field stays red): the group is the
+   field, so it takes the ring when it, or any control inside it (a segment, the input), is invalid. */
+.dx-date-picker-group[aria-invalid="true"],
+.dx-date-picker-group[data-invalid="true"],
+.dx-date-picker-group:has([aria-invalid="true"]) {
+    box-shadow: var(--dx-ring-invalid-field);
+}
+
 /*
  * The panel is sized by what it holds. `.dx-popover-content` (popover/style.css) gives every
  * popover a fixed one-month width (`width: 18rem`), which is why a second month used to render
@@ -78,9 +86,15 @@
  * inside the viewport -- where `top_layer.rs`'s clamp can place it.
  */
 .dx-date-picker-group .dx-date-picker-popover-content {
+    /* Slots of the theme's floating-surface recipe. This panel is a Popover panel (`dx-popover-content`
+       sets the fade and 10px padding the same way); the two classes tie at one class each, so the extra
+       ancestor here is what makes the drop and `0` win whatever order the sheets load in. */
+    --dx-floating-enter: dx-drop-in;
+    --dx-floating-exit: dx-drop-out;
+    --dx-floating-padding: 0;
+
     width: max-content;
     max-width: calc(100% - 2 * var(--dx-space-4));
-    padding: 0;
 }
 
 /* One surface: the popover panel is the card, so the calendar inside it carries no second border,
@@ -94,62 +108,18 @@
 /*
  * Historical wiring-gap fix (2026-09-01, live-site report; backlog row
  * 20/item 3): this page used to carry its own hand-copied `[popover]`
- * UA-stylesheet reset and `@supports (anchor-name: --a)` block (added the
- * same day as the analogous fix in `../color_picker/style.css`) -- both now
+ * UA-stylesheet reset and `@supports (anchor-name: --a)` block -- both now
  * live in a single, engine-injected stylesheet shared by every
- * `dx-anchor-*`-marked overlay in the app instead, closing the underlying
- * bug class rather than just this one instance of it. See
- * `primitives/src/top_layer.rs`'s `ensure_anchor_positioning_styles` doc
- * (docs/backlog.md item 1) for the full rationale.
+ * `dx-anchor-*`-marked overlay in the app instead (`primitives/src/top_layer.rs`'s
+ * `ensure_anchor_positioning_styles` doc, docs/backlog.md item 1).
  *
- * The other half of that original report -- `date_picker::DatePickerPopover`
- * (`primitives/src/date_picker.rs`) rendering every calendar popup on the
- * *modal* arm because its own `is_modal` prop was never forwarded to the
- * `PopoverRoot` it renders -- was a separate, already-fixed defect at the
- * primitive and in this page's `component.rs` (`is_modal: false`); unrelated
- * to the CSS consolidation here.
+ * The open/close motion is the theme's floating-surface recipe with the 4px drop (`dx-drop-in` /
+ * `dx-drop-out`, set through the slots above). It animates `translate`, NOT `transform`: the anchored
+ * panel centres itself on its trigger with `transform: translateX(-50%)` (top_layer.rs's engine
+ * stylesheet), and a keyframe that sets `transform` replaces that for as long as the animation runs,
+ * so the panel used to play its whole fade 144px off-centre (more for two months) and snap back on
+ * the last frame. `translate` composes with `transform`, so the centring survives.
  */
-
-.dx-date-picker-popover-content[data-state="open"] {
-    animation: dx-date-picker-popover-fade-in var(--dx-motion-duration-base) var(--dx-motion-ease-out);
-}
-
-.dx-date-picker-popover-content[data-state="closed"] {
-    animation: dx-date-picker-popover-fade-out var(--dx-motion-duration-base) var(--dx-motion-ease-out) forwards;
-    pointer-events: none;
-}
-
-/*
- * The 4px drop animates `translate`, NOT `transform`. The anchored panel centres itself on its
- * trigger with `transform: translateX(-50%)` (top_layer.rs's engine stylesheet); a keyframe that
- * sets `transform` replaces that for as long as the animation runs, so the panel played its whole
- * fade at its un-centred spot (half its width to the right of the trigger -- 144px for a one-month
- * panel, more for two) and snapped back to centre on the last frame, on every open and close.
- * `translate` is a separate property that composes with `transform`, so the centring survives.
- */
-@keyframes dx-date-picker-popover-fade-in {
-    from {
-        opacity: 0;
-        translate: 0 -4px;
-    }
-
-    to {
-        opacity: 1;
-        translate: 0 0;
-    }
-}
-
-@keyframes dx-date-picker-popover-fade-out {
-    from {
-        opacity: 1;
-        translate: 0 0;
-    }
-
-    to {
-        opacity: 0;
-        translate: 0 -4px;
-    }
-}
 
 .dx-date-picker-segment {
     caret-color: transparent;

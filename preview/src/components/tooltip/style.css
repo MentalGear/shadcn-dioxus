@@ -9,36 +9,27 @@
 }
 
 .dx-tooltip-content {
+  /* Slots of the theme's floating-surface recipe (`data-dx-surface="floating"` +
+     `data-dx-tone="inverted"`, emitted by `TooltipContent`): the fade, and the tooltip's own padding. */
+  --dx-floating-enter: dx-fade-in;
+  --dx-floating-exit: dx-fade-out;
+  --dx-floating-padding: var(--dx-space-2) var(--dx-space-3);
+
   position: absolute;
-  z-index: var(--dx-z-overlay);
-  overflow: visible;
   max-width: 250px;
-  padding: var(--dx-space-2) var(--dx-space-3);
-  border: none;
-  border-radius: var(--dx-radius-lg);
   margin: 0;
-  animation: dx-tooltip-fade-in var(--dx-motion-duration-slow) ease-in-out;
-  background-color: var(--dx-foreground);
-  color: var(--dx-background);
   font-size: var(--dx-text-sm);
 
   /*
-   * `border` and `overflow` undo the UA popover stylesheet's `[popover] {
-   * border: solid; overflow: auto; ... }` (WHATWG HTML's popover section) --
-   * this content carries the `popover` attribute on the web arm (Phase 4.4,
-   * docs/plan.md). This content has no border of its own (the visual
-   * "point" is the `::after` arrow) and never needs to scroll, so both are
-   * reset to nothing rather than to a real value. The matching `margin`/
-   * `inset` reset (undoing the same UA rule's `inset: 0; margin: auto`,
-   * which would otherwise invoke the CSS auto-margin centering algorithm and
-   * land the tooltip far from its trigger) now lives in the shared,
-   * engine-injected stylesheet every `dx-anchor-*`-marked overlay gets for
-   * free -- see `primitives/src/top_layer.rs`'s
-   * `ensure_anchor_positioning_styles` doc (docs/backlog.md item 1).
-   * `background-color`/`color` are unaffected: this rule already sets both
-   * further down, and author-origin declarations always win over the UA
-   * stylesheet regardless of specificity, so no additional reset is needed
-   * for those two.
+   * The inverted fill (`--dx-foreground` / `--dx-background`), no edge, no shadow, the radius, the
+   * `overflow` and `border` resets of the UA popover stylesheet's `[popover] { border: solid;
+   * overflow: auto; ... }` (WHATWG HTML's popover section), the stacking and the fade all come from
+   * the theme's floating-surface recipe. This content carries the `popover` attribute on the web arm
+   * (Phase 4.4, docs/plan.md); the visual "point" is the `::after` arrow. The matching `margin`/
+   * `inset` reset (undoing the same UA rule's `inset: 0; margin: auto`, which would otherwise invoke
+   * the CSS auto-margin centering algorithm and land the tooltip far from its trigger) lives in the
+   * shared, engine-injected stylesheet every `dx-anchor-*`-marked overlay gets for free -- see
+   * `primitives/src/top_layer.rs`'s `ensure_anchor_positioning_styles` doc (docs/backlog.md item 1).
    */
   line-height: 1.4;
 }
@@ -157,58 +148,13 @@
   transform: none;
 }
 
-/* Animation */
-@keyframes dx-tooltip-fade-in {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes dx-tooltip-fade-out {
-  from {
-    opacity: 1;
-  }
-
-  to {
-    opacity: 0;
-  }
-}
-
 /* State styles */
 .dx-tooltip[data-disabled="true"] .dx-tooltip-trigger {
   cursor: default;
 }
 
-.dx-tooltip-content[data-state="closed"] {
-  animation: dx-tooltip-fade-out var(--dx-motion-duration-slow) ease-in-out forwards;
-  opacity: 0;
-  pointer-events: none;
-}
-
 .dx-tooltip-content[data-state="open"] {
   display: block;
-}
-
-/*
- * row 31a's shared `prefers-reduced-motion` layer (dx-components-theme.css)
- * only covers interactive roots, not animated content -- see that file's
- * own comment and dev-docs/backlog.md row 31/27 ("Spinner carries its own
- * `prefers-reduced-motion` override, since row 31a's shared reduced-motion
- * layer covers interactive roots, not animated content"). This tooltip's
- * content is animated content (the fade-in above, unconditional on the
- * base class, and the fade-out this rule adds for docs/backlog.md row 7),
- * so it needs the same per-component override `input_otp`/`spinner`'s
- * stylesheets already carry, covering both animations this file defines.
- */
-@media (prefers-reduced-motion: reduce) {
-  .dx-tooltip-content,
-  .dx-tooltip-content[data-state="closed"] {
-    animation-duration: var(--dx-motion-duration-reduced);
-  }
 }
 
 /*

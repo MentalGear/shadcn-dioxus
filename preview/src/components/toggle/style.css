@@ -35,8 +35,13 @@
 }
 
 .dx-toggle:focus-visible {
-  outline: 2px solid var(--dx-ring-color);
-  outline-offset: 2px;
+  box-shadow: var(--dx-ring-focus);
+}
+
+/* Nova: `aria-invalid:border-destructive ring-3 ring-destructive/20 dark:ring-destructive/40`. */
+.dx-toggle[aria-invalid="true"],
+.dx-toggle[data-invalid="true"] {
+  box-shadow: var(--dx-ring-invalid-field);
 }
 
 /* Pressed. Nova paints it `data-[state=on]:bg-muted` (and `aria-pressed:bg-muted`)

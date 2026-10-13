@@ -492,6 +492,41 @@ html[data-theme="light"] [class~="dxc-system"] {
    * other way round), and a retuned ring moves them all together.
    * `playwright/focus-ring.spec.ts` asserts every field resolves to this value. */
   --dx-ring-field: inset 0 0 0 1px var(--dx-ring-color), var(--dx-ring-focus);
+
+  /* State recipes (see "State recipes: focus, invalid, disabled" at the end of this file). The
+   * inside-the-box twin of `--dx-ring-field` for containers that clip an outer halo: a 1px
+   * ring-coloured edge over the 3px ring/50 band, the two layers `--dx-ring-field` draws, mirrored
+   * inward. */
+  --dx-ring-focus-inset: inset 0 0 0 1px var(--dx-ring-color),
+    inset 0 0 0 3px color-mix(in oklab, var(--dx-ring-color) 50%, transparent);
+
+  /* The invalid edge and halo, shadcn's `aria-invalid:border-destructive ring-destructive/20
+   * dark:ring-destructive/40`. `--dx-destructive` is a fill-grade colour; here it is a 1px edge and a
+   * translucent halo, not text (row 134 is about destructive TEXT and is untouched). */
+  --dx-ring-invalid-color: var(--light, var(--dx-destructive))
+    var(--dark, color-mix(in oklab, var(--dx-destructive) 50%, transparent));
+  --dx-ring-invalid: 0 0 0 3px
+    var(--light, color-mix(in oklab, var(--dx-destructive) 20%, transparent))
+    var(--dark, color-mix(in oklab, var(--dx-destructive) 40%, transparent));
+  --dx-ring-invalid-field: inset 0 0 0 1px var(--dx-ring-invalid-color), var(--dx-ring-invalid);
+
+  /* Floating surfaces and the menu item row (see "Floating surfaces, once" below). */
+  --dx-floating-background: var(--dx-popover);
+  --dx-floating-color: var(--dx-popover-foreground);
+  --dx-floating-edge-color: var(--dx-ring-subtle-color);
+  --dx-floating-radius: var(--dx-radius-lg);
+  --dx-floating-shadow: var(--dx-shadow-md);
+  --dx-floating-duration: var(--dx-motion-duration-base);
+  --dx-floating-ease-enter: var(--dx-motion-ease-out);
+  --dx-floating-ease-exit: var(--dx-motion-ease-in);
+
+  /* The directional slide Navbar and Navigation Menu open with (a strong ease-out, 200 ms). */
+  --dx-motion-ease-emphasized: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* The menu item row, beside the `--dx-menu-item-indicator-*` tokens. */
+  --dx-menu-item-padding: var(--dx-space-2) var(--dx-space-3);
+  --dx-menu-item-radius: calc(var(--dx-radius-lg) - var(--dx-radius-sm));
+  --dx-menu-item-gap: var(--dx-space-2);
 }
 
 /* ============================================================================
@@ -706,6 +741,257 @@ html[data-theme="light"] [class~="dxc-system"] {
 }
 
 /* ============================================================================
+ * Floating surfaces, once (docs/backlog.md row 145, lane F).
+ *
+ * Twelve components draw a panel that floats over the page: Popover, Select, Combobox, Dropdown
+ * Menu, Context Menu, Menubar, Navbar, Navigation Menu, Hover Card, Tooltip, Color Picker and the
+ * Date Picker (which wears the Popover's panel). Each used to declare its own edge, radius, fill,
+ * shadow, padding, stacking and open/close motion -- six edge idioms (a 1px border, an inset
+ * 1px `box-shadow` ring in two colours, a `border` in `--dx-input`, no edge, and the UA's own 3px
+ * `dialog` border on the colour picker), open durations of 100/150/200 ms on five curves, and 21
+ * byte-identical `@keyframes` copies. This is the one recipe, shadcn's: `bg-popover
+ * text-popover-foreground`, a 1px `foreground/10` border (a real border, so it can sit beside
+ * `--dx-shadow-md`, which is `none` in dark mode and cannot share a `box-shadow` list), `rounded-lg`,
+ * `shadow-md`, `p-1`.
+ *
+ * HOW IT IS KEYED. A panel opts in with `data-dx-surface="floating"`, emitted by its themed
+ * `component.rs` wrapper, not by a class: a theme rule cannot name a component class (this file is
+ * copied into the app of every `dx components add` user, next to whichever components they picked),
+ * and a marker is what makes a NEW floating component join the recipe by construction instead of by
+ * remembering to extend a list. `data-dx-tone="inverted"` is the Tooltip: foreground fill, background
+ * ink, no edge, no shadow. Every selector is one `:where()`, so the rules have ZERO specificity: a
+ * component sheet, or the app, overrides any property by declaring it (the ink alone is one attribute
+ * selector, see below).
+ *
+ * WHAT A COMPONENT STILL OWNS: size (`width`/`min-width`/`max-width`), placement (`position`, `top`,
+ * `margin`, `inset`), the base `opacity`/`pointer-events` its renderer toggles, and anything that is
+ * really its own (Navbar and Navigation Menu keep their directional slide). The two things that
+ * differ per panel and used to be re-declared as properties are SLOT VARIABLES, so no sheet contests
+ * another's `padding` or `animation` (docs/backlog.md row 170):
+ *
+ *   --dx-floating-padding   the panel's `padding` (default `--dx-space-1`; Popover 2.5, Hover Card 2.5,
+ *                           Tooltip 2/3, Date Picker 0)
+ *   --dx-floating-enter /   the `@keyframes` name for open / close (default `dx-pop-in` / `dx-pop-out`;
+ *   --dx-floating-exit      Popover, Hover Card and Tooltip fade, Colour and Date Picker drop 4px)
+ *
+ * Both are registered below with `inherits: false`: a plain custom property is inherited, so a
+ * Select inside a Popover would otherwise read the Popover's padding and fade, not its own.
+ *
+ * MOTION. One duration and one curve pair for every open and close: `--dx-floating-duration`
+ * (150 ms), `--dx-floating-ease-enter` (ease-out) and `--dx-floating-ease-exit` (ease-in). The
+ * keyframes are shared, hold only `opacity`, `scale` and `translate` (never `transform`: it would
+ * replace an anchor's own `translateX(-50%)` centring for as long as the animation runs --
+ * `scripts/check-anchored-keyframes.sh`), and `scripts/check-duplicate-keyframes.sh` fails a
+ * component sheet that defines a body already defined here. A panel whose state attribute is `closed`
+ * gets `pointer-events: none` and rests at `opacity: 0`, so its close animation can run while it is
+ * still mounted. `prefers-reduced-motion` is covered here for every panel that uses the recipe's
+ * animation; Navbar and Navigation Menu keep their own override beside their own animation.
+ *
+ * THE MENU ITEM. Dropdown, Context and Menubar items were three near-identical blocks: one layout,
+ * one highlight, one disabled colour, one indicator slot (the menubar draws its check at the inline
+ * START, shadcn's `pl-7`, the others at the END -- `data-dx-menu-item-indicator="start|end"`). They
+ * opt in with `data-dx-menu-item` on the item and `data-dx-menu-item-indicator` on the check or
+ * chevron. The slot PADDING (`padding-inline-end` of a checkable item or a sub-trigger,
+ * `-start` of a menubar one and of `data-inset`) stays with each component: whether an item reserves
+ * a slot is its own business. `data-dx-menu-label` is the group heading.
+ * ========================================================================== */
+@property --dx-floating-padding {
+  inherits: false;
+  syntax: "*";
+}
+
+@property --dx-floating-enter {
+  inherits: false;
+  syntax: "*";
+}
+
+@property --dx-floating-exit {
+  inherits: false;
+  syntax: "*";
+}
+
+:where([data-dx-surface="floating"]) {
+  z-index: var(--dx-z-overlay);
+  overflow: visible;
+  padding: var(--dx-floating-padding, var(--dx-space-1));
+  border: 1px solid var(--dx-floating-edge-color);
+  border-radius: var(--dx-floating-radius);
+  background: var(--dx-floating-background);
+  box-shadow: var(--dx-floating-shadow);
+}
+
+:where([data-dx-surface="floating"][data-dx-tone="inverted"]) {
+  border: none;
+  background: var(--dx-foreground);
+  box-shadow: none;
+}
+
+/* The ink is the one property NOT at zero specificity: the engine's top-layer ink fix
+ * (`primitives/src/top_layer.rs`, `TOP_LAYER_INK_STYLES_INJECT_JS`) injects `:where([popover]),
+ * :where(dialog) { color: inherit }` into `<head>` at run time, AFTER this file, so at equal
+ * (zero) specificity it would win the tie and every panel would inherit the page's ink (an inverted
+ * tooltip would print dark text on its dark fill). One attribute selector out-ranks it and still
+ * loses to any component or app rule with two classes or an id; a component that needs another ink
+ * declares it with a selector of its own that outranks one attribute. */
+[data-dx-surface="floating"] {
+  color: var(--dx-floating-color);
+}
+
+[data-dx-surface="floating"][data-dx-tone="inverted"] {
+  color: var(--dx-background);
+}
+
+:where([data-dx-surface="floating"][data-state="open"]) {
+  animation: var(--dx-floating-enter, dx-pop-in) var(--dx-floating-duration) var(--dx-floating-ease-enter) forwards;
+}
+
+:where([data-dx-surface="floating"][data-state="closed"]) {
+  animation: var(--dx-floating-exit, dx-pop-out) var(--dx-floating-duration) var(--dx-floating-ease-exit) forwards;
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where([data-dx-surface="floating"][data-state="open"]),
+  :where([data-dx-surface="floating"][data-state="closed"]) {
+    animation-duration: var(--dx-motion-duration-reduced);
+  }
+}
+
+/* The shared keyframes. `scale`/`translate`, never `transform` (see above). */
+@keyframes dx-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes dx-fade-out {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes dx-pop-in {
+  from {
+    opacity: 0;
+    scale: 0.95;
+    translate: 0 -2px;
+  }
+
+  to {
+    opacity: 1;
+    scale: 1;
+    translate: 0 0;
+  }
+}
+
+@keyframes dx-pop-out {
+  from {
+    opacity: 1;
+    scale: 1;
+    translate: 0 0;
+  }
+
+  to {
+    opacity: 0;
+    scale: 0.95;
+    translate: 0 -2px;
+  }
+}
+
+/* A 4px drop (the Colour Picker and the Date Picker). */
+@keyframes dx-drop-in {
+  from {
+    opacity: 0;
+    translate: 0 -4px;
+  }
+
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@keyframes dx-drop-out {
+  from {
+    opacity: 1;
+    translate: 0 0;
+  }
+
+  to {
+    opacity: 0;
+    translate: 0 -4px;
+  }
+}
+
+/* The menu item row. */
+:where([data-dx-menu-item]) {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: var(--dx-menu-item-padding);
+  border-radius: var(--dx-menu-item-radius);
+  color: var(--dx-foreground);
+  cursor: pointer;
+  font-size: var(--dx-text-sm);
+  gap: var(--dx-menu-item-gap);
+  outline: none;
+  overflow-wrap: anywhere;
+  user-select: none;
+}
+
+:where([data-dx-menu-item][data-disabled="true"]) {
+  cursor: not-allowed;
+  opacity: var(--dx-opacity-disabled);
+}
+
+:where([data-dx-menu-item]:hover:not([data-disabled="true"])),
+:where([data-dx-menu-item]:focus-visible),
+:where([data-dx-menu-item][data-state="open"]) {
+  background: var(--dx-accent);
+  color: var(--dx-accent-foreground);
+}
+
+/* The check or chevron: out of flow, in the slot the item reserved, vertically centred. */
+:where([data-dx-menu-item-indicator]) {
+  position: absolute;
+  width: var(--dx-menu-item-indicator-size);
+  height: var(--dx-menu-item-indicator-size);
+  inset-block: 0;
+  margin-block: auto;
+  pointer-events: none;
+}
+
+:where([data-dx-menu-item-indicator="end"]) {
+  inset-inline-end: var(--dx-menu-item-indicator-inset);
+}
+
+:where([data-dx-menu-item-indicator="start"]) {
+  inset-inline-start: var(--dx-menu-item-indicator-inset);
+}
+
+/* `visibility`, not `display`: an unchecked item keeps its slot, so labels never shift on toggle. */
+:where([data-dx-menu-item][data-state="unchecked"] > [data-dx-menu-item-indicator]) {
+  visibility: hidden;
+}
+
+/* A heading for a group of items, aligned with the items' own inline padding. */
+:where([data-dx-menu-label]) {
+  padding: var(--dx-menu-item-padding);
+  color: var(--dx-muted-foreground);
+  font-size: var(--dx-text-xs);
+  font-weight: 500;
+}
+
+/* ============================================================================
  * Shared interaction-rules layer (docs/backlog.md row 31a).
  *
  * One place for the hover/focus/disabled/reduced-motion affordances that
@@ -867,3 +1153,53 @@ html[data-theme="light"] [class~="dxc-system"] {
     outline-offset: -2px !important;
   }
 }
+
+/* ============================================================================
+ * State recipes: focus, invalid, disabled (docs/backlog.md row 145, lane S).
+ *
+ * Seven focus-ring families, three invalid vocabularies and three disabled treatments had grown one
+ * stylesheet at a time. shadcn (Nova) has ONE recipe for each, and a component composes it; it does
+ * not re-derive it. The recipes live in tokens rather than in a blanket selector rule on purpose: the
+ * controls draw their edge three different ways (an inset `box-shadow` for Input/Textarea/Checkbox,
+ * a real 1px `border` for Button/Tabs/Dialog close, a `::before` circle for the Radio), so a selector
+ * rule written here would have to know the geometry of every component, and a zero-specificity one
+ * would lose to every resting `box-shadow` anyway (the lesson of this file's `[data-dx-interactive]`
+ * layer above). A token is the one value; the component says WHERE it paints it.
+ *
+ * FOCUS -- shadcn's `focus-visible:border-ring ring-3 ring-ring/50`, in the three shapes it takes:
+ *
+ *   --dx-ring-field        a control whose edge IS an inset box-shadow (Input, Textarea, Native Select,
+ *                          Select/Combobox/Date picker triggers, Input Group, OTP slot, Checkbox):
+ *                          `box-shadow: var(--dx-ring-field)` -- ring-coloured 1px edge + 3px halo.
+ *   --dx-ring-focus        a control that already has (or needs) no inset edge: `box-shadow:
+ *                          var(--dx-ring-focus)`, plus `border-color: var(--dx-ring-color)` when it
+ *                          draws a real border (Button, Tabs trigger, Dialog close, Toggle, ...).
+ *   --dx-ring-focus-inset  the same ring drawn INSIDE the box, for a trigger whose container clips an
+ *                          outer halo (`overflow: hidden`: Accordion, Collapsible).
+ *
+ * Exceptions keep their own geometry and say why in their stylesheet: the Sidebar's 2px
+ * `--dx-sidebar-ring` (shadcn's `ring-2 ring-sidebar-ring`) and the Slider thumb's 4px halo (shadcn's
+ * `ring-4`). `outline` is never the ring (`outline: none` + a token): an outset outline is clipped by any
+ * `overflow` ancestor and follows no inset geometry, where a `box-shadow` ring is the control's own box.
+ * The forced-colors rule above is the one outline, because that mode discards `box-shadow`.
+ *
+ * INVALID -- shadcn's `aria-invalid:border-destructive aria-invalid:ring-destructive/20
+ * dark:aria-invalid:ring-destructive/40`, from the same three tokens:
+ *
+ *   --dx-ring-invalid-color  the edge: destructive in light, destructive/50 in dark
+ *   --dx-ring-invalid        the 3px halo: destructive/20 in light, /40 in dark  (pairs with --dx-ring-focus)
+ *   --dx-ring-invalid-field  edge + halo as one inset-edge box-shadow            (pairs with --dx-ring-field)
+ *
+ * A control selects `[aria-invalid="true"]` (and, for the Form submit marker, `[data-invalid="true"]`)
+ * AFTER its `:focus-visible` rule, so a focused invalid control stays red, as in shadcn. `Field`'s
+ * `invalid` prop styles the label, description and error text; the control carries its own
+ * `aria-invalid` (the attribute assistive technology reads), exactly as in shadcn.
+ *
+ * DISABLED -- `opacity: var(--dx-opacity-disabled)` (defined above, 0.5, shadcn's `disabled:opacity-50`),
+ * never a literal; `pointer-events: none` OR `cursor: not-allowed`, never both in one rule (the cursor
+ * of an element that takes no pointer events is never shown).
+ *
+ * `scripts/check-css-state-recipes.sh` keeps all three from drifting back: a literal opacity in a
+ * disabled rule, a focus or invalid rule that paints something other than a recipe token, and a dead
+ * `cursor: not-allowed` fail the gate (allowlist with reasons in the script).
+ * ========================================================================== */

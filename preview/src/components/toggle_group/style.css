@@ -44,8 +44,7 @@
 .dx-toggle-group-item:focus-visible {
   position: relative;
   z-index: var(--dx-z-raise);
-  outline: 2px solid var(--dx-ring-color);
-  outline-offset: 2px;
+  box-shadow: var(--dx-ring-focus);
 }
 
 .dx-toggle-group[data-allow-multiple-pressed="true"]

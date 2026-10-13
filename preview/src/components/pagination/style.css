@@ -28,16 +28,9 @@
   transition: background-color var(--dx-motion-duration-slow) var(--dx-motion-ease), color var(--dx-motion-duration-slow) var(--dx-motion-ease);
 }
 
-/* :focus-visible ring: the shared --dx-ring token (docs/backlog.md row 31a),
-   but the RULE stays here rather than in the shared interaction layer.
-   `#[css_module]` hashes this class in both the DOM and this stylesheet
-   (`.dx-x` -> `.dx-x-<hash>`, docs/issues/css-module-supports-scoping.md), so
-   an unhashed selector in the global theme sheet can never match the rendered
-   element -- confirmed against the built artifact, where the wasm carries the
-   hashed name. Once row 32 drops css_module hashing, this can collapse into
-   the shared layer for real. */
 .dx-pagination-link:focus-visible {
-  box-shadow: var(--dx-ring);
+  border-color: var(--dx-ring-color);
+  box-shadow: var(--dx-ring-focus);
 }
 
 .dx-pagination-link[data-size="icon"] {

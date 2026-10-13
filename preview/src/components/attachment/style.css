@@ -25,8 +25,9 @@
   transition: background-color var(--dx-motion-duration-base);
 }
 
-.dx-attachment:focus-within {
-  box-shadow: 0 0 0 1px color-mix(in oklab, var(--dx-ring-color) 50%, transparent);
+.dx-attachment:has(:focus-visible) {
+  border-color: var(--dx-ring-color);
+  box-shadow: var(--dx-ring-focus);
 }
 
 /* A card with a trigger or link directly in it is clickable as a whole. */

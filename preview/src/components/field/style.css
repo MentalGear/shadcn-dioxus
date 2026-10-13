@@ -97,7 +97,7 @@
 }
 
 .dx-field-label:has(:focus-visible) > .dx-field {
-  box-shadow: 0 0 0 3px color-mix(in oklab, var(--dx-ring-color) 50%, transparent);
+  box-shadow: var(--dx-ring-focus);
 }
 
 .dx-field[data-invalid="true"] .dx-field-label {

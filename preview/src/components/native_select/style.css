@@ -49,6 +49,12 @@
   box-shadow: var(--dx-ring-field);
 }
 
+/* After the focus rule so a focused invalid select stays red. */
+.dx-native-select[aria-invalid="true"],
+.dx-native-select[data-invalid="true"] {
+  box-shadow: var(--dx-ring-invalid-field);
+}
+
 .dx-native-select:disabled {
   color: var(--dx-muted-foreground);
   cursor: not-allowed;

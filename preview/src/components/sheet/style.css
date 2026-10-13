@@ -397,5 +397,5 @@ dialog.dx-sheet[data-state="closed"] {
 }
 
 .dx-sheet-close:focus-visible {
-  box-shadow: var(--dx-ring);
+  box-shadow: var(--dx-ring-focus);
 }

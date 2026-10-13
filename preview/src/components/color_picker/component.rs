@@ -230,6 +230,7 @@ pub fn ColorPickerPopover(props: ColorPickerPopoverProps) -> Element {
         document::Link { rel: "stylesheet", href: asset!("/src/components/color_picker/style.css") }
         popover::PopoverContent {
             class: "dx-color-picker-popover".to_string(),
+            "data-dx-surface": "floating",
             attributes: props.attributes,
             {props.children}
         }

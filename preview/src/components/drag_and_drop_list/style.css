@@ -89,8 +89,7 @@
 
 .dx-drag-and-drop-list-item:focus-visible {
   border-color: var(--dx-ring-color);
-  box-shadow: 0 0 0 3px
-    var(--light, rgb(43 127 255 / 18%)) var(--dark, rgb(43 127 255 / 30%));
+  box-shadow: var(--dx-ring-focus);
 }
 
 .dx-drag-and-drop-list-item[data-is-grabbing="true"] {
@@ -109,8 +108,7 @@
 .dx-drag-and-drop-list-item[data-is-grabbing="true"][data-drop-at-origin="true"] {
   border-style: solid;
   border-color: var(--dx-ring-color);
-  box-shadow: 0 0 0 3px
-    var(--light, rgb(43 127 255 / 18%)) var(--dark, rgb(43 127 255 / 30%));
+  box-shadow: var(--dx-ring-focus);
 }
 
 .dx-drag-and-drop-list-item-icon {
@@ -165,8 +163,8 @@
 }
 
 .dx-drag-and-drop-list-remove-button:focus-visible {
-  outline: 2px solid var(--dx-ring-color);
-  outline-offset: 2px;
+  box-shadow: var(--dx-ring-focus);
+  outline: none;
 }
 
 .dx-drag-and-drop-list-drop-indicator {

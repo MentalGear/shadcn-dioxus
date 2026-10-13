@@ -34,7 +34,10 @@ pub fn HoverCardTrigger(props: HoverCardTriggerProps) -> Element {
 
 #[component]
 pub fn HoverCardContent(props: HoverCardContentProps) -> Element {
-    let base = attributes!(div { class: "dx-hover-card-content" });
+    let base = attributes!(div {
+        class: "dx-hover-card-content",
+        "data-dx-surface": "floating",
+    });
     let merged = merge_attributes(vec![base, props.attributes]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/hover_card/style.css") }

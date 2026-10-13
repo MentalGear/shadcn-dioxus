@@ -56,7 +56,10 @@ pub fn NavbarTrigger(props: NavbarTriggerProps) -> Element {
 
 #[component]
 pub fn NavbarContent(props: NavbarContentProps) -> Element {
-    let base = attributes!(div { class: "dx-navbar-content" });
+    let base = attributes!(div {
+        class: "dx-navbar-content",
+        "data-dx-surface": "floating",
+    });
     let merged = merge_attributes(vec![base, props.attributes]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/navbar/style.css") }

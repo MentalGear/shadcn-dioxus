@@ -241,9 +241,7 @@
 
 .dx-button[data-style="destructive"]:focus-visible {
   border-color: color-mix(in oklab, var(--dx-destructive) 40%, transparent);
-  box-shadow: 0 0 0 3px
-    var(--light, color-mix(in oklab, var(--dx-destructive) 20%, transparent))
-    var(--dark, color-mix(in oklab, var(--dx-destructive) 40%, transparent));
+  box-shadow: var(--dx-ring-invalid);
 }
 
 /* Nova's link is `text-primary underline-offset-4 hover:underline`; so is
@@ -275,10 +273,8 @@
 
 /* `aria-invalid:ring-3 aria-invalid:border-destructive`: the invalid ring
  * shows at rest, not only on focus. */
-.dx-button[aria-invalid="true"] {
-  border-color: var(--light, var(--dx-destructive))
-    var(--dark, color-mix(in oklab, var(--dx-destructive) 50%, transparent));
-  box-shadow: 0 0 0 3px
-    var(--light, color-mix(in oklab, var(--dx-destructive) 20%, transparent))
-    var(--dark, color-mix(in oklab, var(--dx-destructive) 40%, transparent));
+.dx-button[aria-invalid="true"],
+.dx-button[data-invalid="true"] {
+  border-color: var(--dx-ring-invalid-color);
+  box-shadow: var(--dx-ring-invalid);
 }

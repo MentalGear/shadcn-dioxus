@@ -10,35 +10,31 @@
 }
 
 .dx-popover-content {
+  /* The panel's slots, read by the floating-surface recipe in `dx-components-theme.css`. */
+  --dx-floating-enter: dx-fade-in;
+  --dx-floating-exit: dx-fade-out;
+  --dx-floating-padding: var(--dx-space-2-5);
+
   position: fixed;
-  z-index: var(--dx-z-overlay);
   display: flex;
-  overflow: visible;
   width: 18rem;
   max-width: calc(100% - 2rem);
   flex-direction: column;
-  padding: var(--dx-space-2-5);
 
   /*
-   * `border` and `overflow` reset the UA popover stylesheet's
-   * `[popover] { border: solid; overflow: auto; ... }` (WHATWG HTML's
-   * popover section) -- the *non-modal* arm of this content carries the
-   * `popover` attribute; the modal arm (a `<dialog>` opened with `showModal()`)
-   * never does and is unaffected either way. `inset`/`margin` are *not* reset
-   * unconditionally here: this rule's own `margin-top` and `transform:
-   * translate(-50%, -50%)` are the legacy DOM-relative centring the `data-side`
-   * rules below build on, so zeroing them would break that path. The
-   * non-modal arm's own `inset`/`margin` reset lives in the single,
-   * engine-injected anchor-positioning stylesheet shared by every
-   * `dx-anchor-*` overlay (`primitives/src/top_layer.rs`'s
-   * `ensure_anchor_positioning_styles`).
+   * Edge, radius, fill, shadow, ink, padding, stacking, `overflow` and the open/close fade come from
+   * the theme's floating-surface recipe (`data-dx-surface="floating"`, emitted by `PopoverContent`
+   * in `component.rs`). That recipe's `border`/`overflow`/`padding` also replace the UA popover
+   * stylesheet's `[popover] { border: solid; overflow: auto; padding: .25em }` and the UA `dialog`
+   * defaults (WHATWG HTML's popover section) -- the *non-modal* arm of this content carries the
+   * `popover` attribute; the modal arm (a `<dialog>` opened with `showModal()`) never does.
+   * `inset`/`margin` are *not* reset unconditionally here: this rule's own `margin-top` and
+   * `transform: translate(-50%, -50%)` are the legacy DOM-relative centring the `data-side` rules
+   * below build on, so zeroing them would break that path. The non-modal arm's own `inset`/`margin`
+   * reset lives in the single, engine-injected anchor-positioning stylesheet shared by every
+   * `dx-anchor-*` overlay (`primitives/src/top_layer.rs`'s `ensure_anchor_positioning_styles`).
    */
-  border: 1px solid var(--dx-ring-subtle-color);
-  border-radius: var(--dx-radius-lg);
   margin-top: var(--dx-space-2);
-  background: var(--dx-popover);
-  box-shadow: var(--dx-shadow-md);
-  color: var(--dx-popover-foreground);
   font-size: var(--dx-text-sm);
   gap: var(--dx-space-2-5);
   text-align: start;
@@ -51,35 +47,6 @@
   will-change: transform, opacity;
 }
 
-.dx-popover-content[data-state="open"] {
-  animation: dx-popover-fade-in var(--dx-overlay-duration) var(--dx-overlay-ease);
-}
-
-.dx-popover-content[data-state="closed"] {
-  animation: dx-popover-fade-out var(--dx-overlay-duration) var(--dx-overlay-ease) forwards;
-  pointer-events: none;
-}
-
-@keyframes dx-popover-fade-in {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes dx-popover-fade-out {
-  from {
-    opacity: 1;
-  }
-
-  to {
-    opacity: 0;
-  }
-}
-
 /* Modal-overlay scrim: the modal arm's `::backdrop` is the shared rule in
  * `dx-components-theme.css` ("The modal scrim, once"), the same one Dialog, AlertDialog, Sheet,
  * Drawer and CommandDialog use. Its visible state is keyed on `[open][data-state="open"]`; the
@@ -89,14 +56,8 @@
  * excluded by the theme rule's `:not([popover])`, as shadcn's popover has no overlay. The modal arm
  * paints none either unless `overlay: true`: `PopoverRoot` defaults `overlay` to false, which puts
  * `data-dx-overlay="off"` on the dialog, and the theme's one `dialog[data-dx-overlay="off"]::backdrop`
- * rule removes it. */
-
-@media (prefers-reduced-motion: reduce) {
-  .dx-popover-content[data-state="open"],
-  .dx-popover-content[data-state="closed"] {
-    animation-duration: var(--dx-motion-duration-reduced);
-  }
-}
+ * rule removes it. The panel's own fade is the floating recipe's (150 ms), the scrim's the overlay
+ * tokens' (200 ms); the dialog stays open until both have settled. */
 
 /* Positioning based on side */
 .dx-popover-content[data-side="top"] {
