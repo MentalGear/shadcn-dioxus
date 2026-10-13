@@ -38,10 +38,10 @@
 }
 
 /* Sizes. `data-size` xs/sm/default/lg and their icon-only twins are Nova's
- * h-6/h-7/h-8/h-9 (24/28/32/36px). The icon-side padding trim mirrors Nova's
+ * h-6/h-7/h-8/h-9 (24/28/32/36px), read from the theme's `--dx-control-height-*` scale. The icon-side padding trim mirrors Nova's
  * `has-data-[icon=...]:p{l,r}-*`, expressed with `:has(> svg)`. */
 .dx-button[data-size="xs"] {
-  height: 1.5rem;
+  height: var(--dx-control-height-xs);
   padding: 0 var(--dx-space-2);
 
   --dx-button-radius: min(var(--dx-radius-md), 10px);
@@ -61,7 +61,7 @@
 }
 
 .dx-button[data-size="sm"] {
-  height: 1.75rem;
+  height: var(--dx-control-height-sm);
   padding: 0 var(--dx-space-2-5);
 
   --dx-button-radius: min(var(--dx-radius-md), 12px);
@@ -80,7 +80,7 @@
 }
 
 .dx-button[data-size="default"] {
-  height: 2rem;
+  height: var(--dx-control-height-default);
   padding: 0 var(--dx-space-2-5);
 }
 
@@ -89,7 +89,7 @@
 }
 
 .dx-button[data-size="lg"] {
-  height: 2.25rem;
+  height: var(--dx-control-height-lg);
   padding: 0 var(--dx-space-2-5);
 }
 
@@ -98,13 +98,13 @@
 }
 
 .dx-button[data-size="icon"] {
-  width: 2rem;
-  height: 2rem;
+  width: var(--dx-control-height-default);
+  height: var(--dx-control-height-default);
 }
 
 .dx-button[data-size="icon-xs"] {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: var(--dx-control-height-xs);
+  height: var(--dx-control-height-xs);
 
   --dx-button-radius: min(var(--dx-radius-md), 10px);
 }
@@ -115,15 +115,15 @@
 }
 
 .dx-button[data-size="icon-sm"] {
-  width: 1.75rem;
-  height: 1.75rem;
+  width: var(--dx-control-height-sm);
+  height: var(--dx-control-height-sm);
 
   --dx-button-radius: min(var(--dx-radius-md), 12px);
 }
 
 .dx-button[data-size="icon-lg"] {
-  width: 2.25rem;
-  height: 2.25rem;
+  width: var(--dx-control-height-lg);
+  height: var(--dx-control-height-lg);
 }
 
 .dx-button:disabled {

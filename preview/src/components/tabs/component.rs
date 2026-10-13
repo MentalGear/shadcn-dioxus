@@ -41,6 +41,11 @@ pub struct TabsProps {
     #[props(default)]
     pub variant: TabsVariant,
 
+    /// The size of the tabs: the list's height follows the theme's shared control-height
+    /// scale (`--dx-control-height-sm` / `-default` / `-lg`, 28 / 32 / 36px).
+    #[props(default)]
+    pub size: TabsSize,
+
     /// Additional attributes to apply to the tabs element.
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
@@ -70,11 +75,35 @@ impl TabsVariant {
     }
 }
 
+/// The size of the tabs component. `Default` is shadcn's 32px list and never changes.
+#[derive(Clone, Copy, PartialEq, Default)]
+pub enum TabsSize {
+    /// A 28px list with `text-xs` triggers.
+    Sm,
+    /// The default 32px list.
+    #[default]
+    Default,
+    /// A 36px list with roomier triggers.
+    Lg,
+}
+
+impl TabsSize {
+    /// Convert the size to a string for use in the `data-size` attribute
+    fn to_class(self) -> &'static str {
+        match self {
+            TabsSize::Sm => "sm",
+            TabsSize::Default => "default",
+            TabsSize::Lg => "lg",
+        }
+    }
+}
+
 #[component]
 pub fn Tabs(props: TabsProps) -> Element {
     let base = attributes!(div {
         class: format!("{} {}", props.class, "dx-tabs"),
         "data-variant": props.variant.to_class(),
+        "data-size": props.size.to_class(),
     });
     let merged = merge_attributes(vec![base, props.attributes]);
 

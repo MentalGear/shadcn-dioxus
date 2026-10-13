@@ -9,7 +9,7 @@
 .dx-input {
   position: relative;
   display: flex;
-  height: 2rem;
+  height: var(--dx-control-height-default);
   flex-direction: row;
   align-items: center;
   justify-content: space-between;

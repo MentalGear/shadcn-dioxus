@@ -3,18 +3,43 @@
  * triggers `rounded-md` with a 1px transparent border, `px-1.5 py-0.5`,
  * `text-sm` medium, `foreground/60` text (muted-foreground in dark), the
  * active one on `background` with `shadow-sm` (a `border-input` + `input/30`
- * fill in dark), and `ring-3 ring-ring/50` + `border-ring` on focus. */
+ * fill in dark), and `ring-3 ring-ring/50` + `border-ring` on focus.
+ *
+ * Sizes (`TabsSize`, `data-size` on the root; Nova has no size for tabs, so
+ * this follows Button's and Select's small-control conventions): the list
+ * height is the theme's shared `--dx-control-height-*` scale (28 / 32 / 36px).
+ * The root sets slot variables for every size, the default included, so the
+ * list and trigger below read one value each, and a Tabs nested inside another
+ * Tabs' panel re-declares its own and never inherits the outer size. `sm`
+ * drops the trigger to `text-xs` with a 14px icon (the trigger's content box is
+ * 15px tall); `lg` keeps `text-sm` and widens the trigger padding. */
 .dx-tabs {
     display: flex;
     width: 100%;
     flex-direction: column;
     gap: var(--dx-space-2);
+
+    --dx-tabs-list-height: var(--dx-control-height-default);
+    --dx-tabs-trigger-font-size: var(--dx-text-sm);
+    --dx-tabs-trigger-padding-inline: var(--dx-space-1-5);
+    --dx-tabs-icon-size: 1rem;
+}
+
+.dx-tabs[data-size="sm"] {
+    --dx-tabs-list-height: var(--dx-control-height-sm);
+    --dx-tabs-trigger-font-size: var(--dx-text-xs);
+    --dx-tabs-icon-size: 0.875rem;
+}
+
+.dx-tabs[data-size="lg"] {
+    --dx-tabs-list-height: var(--dx-control-height-lg);
+    --dx-tabs-trigger-padding-inline: var(--dx-space-2-5);
 }
 
 .dx-tabs-list {
     display: flex;
     width: fit-content;
-    height: 2rem;
+    height: var(--dx-tabs-list-height);
     flex: none;
     flex-direction: row;
     align-items: center;
@@ -62,7 +87,7 @@
     flex: 1;
     align-items: center;
     justify-content: center;
-    padding: var(--dx-space-0-5) var(--dx-space-1-5);
+    padding: var(--dx-space-0-5) var(--dx-tabs-trigger-padding-inline);
     border: 1px solid transparent;
     border-radius: var(--dx-radius-md);
     background: none;
@@ -70,7 +95,7 @@
         var(--dark, var(--dx-muted-foreground));
     cursor: pointer;
     font-family: inherit;
-    font-size: var(--dx-text-sm);
+    font-size: var(--dx-tabs-trigger-font-size);
     font-weight: 500;
     gap: var(--dx-space-1-5);
     outline: none;
@@ -86,8 +111,8 @@
 }
 
 .dx-tabs-trigger svg:not([class*="size-"]) {
-    width: 1rem;
-    height: 1rem;
+    width: var(--dx-tabs-icon-size);
+    height: var(--dx-tabs-icon-size);
 }
 
 [data-variant="default"] .dx-tabs-trigger[data-state="active"] {

@@ -27,7 +27,7 @@
    * value truncates (`span[data-placeholder]` below) instead of growing the
    * trigger past it. */
   max-width: 100%;
-  height: 2rem;
+  height: var(--dx-control-height-default);
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
