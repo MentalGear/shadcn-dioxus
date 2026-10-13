@@ -50,7 +50,10 @@ pub fn MenubarTrigger(props: MenubarTriggerProps) -> Element {
 
 #[component]
 pub fn MenubarContent(props: MenubarContentProps) -> Element {
-    let base = attributes!(div { class: "dx-menubar-content" });
+    let base = attributes!(div {
+        class: "dx-menubar-content",
+        "data-dx-surface": "floating",
+    });
     let merged = merge_attributes(vec![base, props.attributes]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/menubar/style.css") }
@@ -60,7 +63,10 @@ pub fn MenubarContent(props: MenubarContentProps) -> Element {
 
 #[component]
 pub fn MenubarItem(props: MenubarItemProps) -> Element {
-    let base = attributes!(div { class: "dx-menubar-item" });
+    let base = attributes!(div {
+        class: "dx-menubar-item",
+        "data-dx-menu-item": "true",
+    });
     let merged = merge_attributes(vec![base, props.attributes]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/menubar/style.css") }
@@ -89,7 +95,10 @@ pub fn MenubarItem(props: MenubarItemProps) -> Element {
 /// primitive reports `data-state="checked"`.
 #[component]
 pub fn MenubarCheckboxItem(props: MenubarCheckboxItemProps) -> Element {
-    let base = attributes!(div { class: "dx-menubar-item dx-menubar-checkable-item" });
+    let base = attributes!(div {
+        class: "dx-menubar-item dx-menubar-checkable-item",
+        "data-dx-menu-item": "true",
+    });
     let merged = merge_attributes(vec![base, props.attributes]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/menubar/style.css") }
@@ -103,7 +112,11 @@ pub fn MenubarCheckboxItem(props: MenubarCheckboxItemProps) -> Element {
             close_on_select: props.close_on_select,
             attributes: merged,
             {props.children}
-            Check { class: "dx-menubar-item-indicator", size: "16px" }
+            Check {
+                class: "dx-menubar-item-indicator",
+                "data-dx-menu-item-indicator": "start",
+                size: "16px",
+            }
         }
     }
 }
@@ -131,7 +144,10 @@ pub fn MenubarRadioGroup(props: MenubarRadioGroupProps) -> Element {
 /// [`MenubarCheckboxItem`]; the `Check` marks the chosen item.
 #[component]
 pub fn MenubarRadioItem(props: MenubarRadioItemProps) -> Element {
-    let base = attributes!(div { class: "dx-menubar-item dx-menubar-checkable-item" });
+    let base = attributes!(div {
+        class: "dx-menubar-item dx-menubar-checkable-item",
+        "data-dx-menu-item": "true",
+    });
     let merged = merge_attributes(vec![base, props.attributes]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/menubar/style.css") }
@@ -143,7 +159,11 @@ pub fn MenubarRadioItem(props: MenubarRadioItemProps) -> Element {
             close_on_select: props.close_on_select,
             attributes: merged,
             {props.children}
-            Check { class: "dx-menubar-item-indicator", size: "16px" }
+            Check {
+                class: "dx-menubar-item-indicator",
+                "data-dx-menu-item-indicator": "start",
+                size: "16px",
+            }
         }
     }
 }
@@ -157,7 +177,10 @@ pub fn MenubarLabel(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
     children: Element,
 ) -> Element {
-    let base = attributes!(div { class: "dx-menubar-label" });
+    let base = attributes!(div {
+        class: "dx-menubar-label",
+        "data-dx-menu-label": "true",
+    });
     let merged = merge_attributes(vec![base, attributes]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/menubar/style.css") }

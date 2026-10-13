@@ -575,6 +575,14 @@ scheme (`hover`, `open`), implemented in `playwright/computed-style-states.ts`:
   hover targets; the home music player ticks while visible (the document is reported hidden, which stops every
   `use_motion`-gated timer, and toasts never auto-dismiss); Google Fonts requests are aborted (whether they beat
   `font-display: optional` changed every text width).
+- **Closing is not closed; opening is an addition.** A non-modal popover stays mounted (box intact, `data-state=closed`,
+  not `:popover-open`) for ~300-600 ms of exit animation / unmount hold after Escape. Two captures of one build differed
+  (`top_layer`, "Bottom popover" then "Bottom navbar") because, depending on CPU load, the next trigger's click either
+  landed inside that window (the late unmount changed the probe and was recorded as "opened via click" with no records) or
+  after it (no change, fall through to hover). By construction now: `ensureClosed` waits for `quiesce` (nothing new-since-
+  baseline that is closing is still rendered, and `probe()` unchanged for 150 ms, max 1.5 s) before re-taking the baseline;
+  each trigger waits for the same again; and a strategy only counts as opening the overlay (`waitOpen`) when the probe
+  changed AND something was ADDED (a new open marker or more rendered elements), never on a pure removal.
 - **Coverage is reported, not asserted**: `<OUT>.coverage.json` (and the last lines of the run) list per page triggers
   tried/opened and by which input, triggers that did nothing WITH THE REASON, items hovered, hover targets captured/skipped
   and why, reloads. Read it before trusting a green diff. Not covered: `:active`, `::selection`, scrollbars, keyboard-driven

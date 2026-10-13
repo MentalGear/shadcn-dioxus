@@ -75,11 +75,11 @@
 /* Keyboard contract (`$S/chart-api.md`, "API changes" #4): `Chart`'s own
  * `[data-slot="chart"]` wrapper div -- not `ChartContainer`'s `.dx-chart`
  * div, and not the svg -- is the focusable/roving root when `Chart`'s
- * `keyboard` prop is on. Ring token matches every other interactive root in
- * this theme (dx-components-theme.css's `[data-dx-interactive]:focus-visible`). */
+ * `keyboard` prop is on. Ring token is the shared focus halo
+ * (dx-components-theme.css, "State recipes"). */
 .dx-chart [data-slot="chart"]:focus-visible {
   border-radius: var(--dx-radius-lg);
-  box-shadow: var(--dx-ring);
+  box-shadow: var(--dx-ring-focus);
   outline: none;
 }
 

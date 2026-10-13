@@ -190,9 +190,6 @@
 
 .dx-sidebar-sheet-close {
   display: none;
-
-  /* touch-action: manipulation -- disables iOS Safari double-tap-to-zoom on this control while still allowing pan/pinch scrolling (touch-action: none must never be used, it breaks scrolling); mirrors the shared app-layer rule in preview/assets/main.css. Copied-out components ship without main.css, so this needs to live here too. */
-  touch-action: manipulation;
 }
 
 .dx-sidebar-mobile-inner {
@@ -210,9 +207,6 @@
   justify-content: center;
   padding: 0 !important;
   line-height: 0;
-
-  /* touch-action: manipulation -- disables iOS Safari double-tap-to-zoom on this control while still allowing pan/pinch scrolling (touch-action: none must never be used, it breaks scrolling); mirrors the shared app-layer rule in preview/assets/main.css. Copied-out components ship without main.css, so this needs to live here too. */
-  touch-action: manipulation;
 }
 
 .dx-sidebar-trigger-icon {
@@ -452,6 +446,11 @@
   color: var(--dx-sidebar-accent-foreground);
 }
 
+/* `outline: none` above left this button with no focus indicator at all: ring it like its siblings. */
+.dx-sidebar-group-action:focus-visible {
+  box-shadow: 0 0 0 2px var(--dx-sidebar-ring);
+}
+
 .dx-sidebar-group-action svg {
   width: 1rem;
   height: 1rem;
@@ -583,9 +582,6 @@
   outline: none;
   text-align: start;
   text-decoration: none;
-
-  /* touch-action: manipulation -- disables iOS Safari double-tap-to-zoom on this control while still allowing pan/pinch scrolling (touch-action: none must never be used, it breaks scrolling); mirrors the shared app-layer rule in preview/assets/main.css. Copied-out components ship without main.css, so this needs to live here too. */
-  touch-action: manipulation;
   transition: width var(--dx-motion-duration-slow) var(--dx-motion-ease-out), height var(--dx-motion-duration-slow) var(--dx-motion-ease-out), padding var(--dx-motion-duration-slow) var(--dx-motion-ease-out);
 }
 
@@ -594,7 +590,12 @@
   color: var(--dx-sidebar-accent-foreground);
 }
 
+/* The sidebar keeps shadcn's own `focus-visible:ring-2 ring-sidebar-ring`: a 2px ring in the
+ * sidebar's ring colour (state-recipes gate allowlist). */
 .dx-sidebar-menu-button[data-sidebar="menu-button"]:focus-visible {
+  /* Slot for a dropdown-menu trigger wearing this class too (see dropdown_menu/style.css). */
+  --dx-dropdown-menu-trigger-focus-ring: 0 0 0 2px var(--dx-sidebar-ring);
+
   box-shadow: 0 0 0 2px var(--dx-sidebar-ring);
 }
 
@@ -605,7 +606,7 @@
 
 .dx-sidebar-menu-button[data-sidebar="menu-button"]:disabled,
 .dx-sidebar-menu-button[data-sidebar="menu-button"][aria-disabled="true"] {
-  opacity: 0.5;
+  opacity: var(--dx-opacity-disabled);
   pointer-events: none;
 }
 
@@ -717,6 +718,13 @@
 .dx-sidebar-menu-action[data-sidebar="menu-action"]:hover {
   background: var(--dx-sidebar-accent);
   color: var(--dx-sidebar-accent-foreground);
+}
+
+/* `outline: none` above left this button with no focus indicator at all: ring it like its siblings. */
+.dx-sidebar-menu-action[data-sidebar="menu-action"]:focus-visible {
+  --dx-dropdown-menu-trigger-focus-ring: 0 0 0 2px var(--dx-sidebar-ring);
+
+  box-shadow: 0 0 0 2px var(--dx-sidebar-ring);
 }
 
 .dx-sidebar-menu-action[data-sidebar="menu-action"] svg {
@@ -833,8 +841,8 @@
 .dx-sidebar-menu-sub {
   display: flex;
   flex-direction: column;
-  padding: 0.125rem 0.625rem;
-  margin: 0 0.875rem;
+  padding: var(--dx-space-0-5) var(--dx-space-2-5);
+  margin: 0 var(--dx-space-3-5);
   border-inline-start: 1px solid var(--dx-sidebar-border);
   gap: var(--dx-space-1);
   list-style: none;
@@ -879,9 +887,6 @@
   outline: none;
   text-decoration: none;
 
-  /* touch-action: manipulation -- disables iOS Safari double-tap-to-zoom on this control while still allowing pan/pinch scrolling (touch-action: none must never be used, it breaks scrolling); mirrors the shared app-layer rule in preview/assets/main.css. Copied-out components ship without main.css, so this needs to live here too. */
-  touch-action: manipulation;
-
   /* rtl-physical: paired optical nudge, see `.dx-sidebar-menu-sub`'s
      identical note above; `[dir="rtl"]` override near the end of this
      file. */
@@ -905,7 +910,7 @@
 
 .dx-sidebar-menu-sub-button:disabled,
 .dx-sidebar-menu-sub-button[aria-disabled="true"] {
-  opacity: 0.5;
+  opacity: var(--dx-opacity-disabled);
   pointer-events: none;
 }
 

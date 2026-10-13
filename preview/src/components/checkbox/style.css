@@ -25,9 +25,6 @@
     box-shadow: inset 0 0 0 1px var(--dx-border-strong);
     color: var(--dx-foreground);
     cursor: pointer;
-
-    /* touch-action: manipulation -- disables iOS Safari double-tap-to-zoom on this control while still allowing pan/pinch scrolling (touch-action: none must never be used, it breaks scrolling); mirrors the shared app-layer rule in preview/assets/main.css. Copied-out components ship without main.css, so this needs to live here too. */
-    touch-action: manipulation;
 }
 
 .dx-checkbox-indicator {
@@ -50,14 +47,22 @@
     color: var(--dx-primary-foreground);
 }
 
-/* :focus-visible ring: the shared --dx-ring token (docs/backlog.md row 31a),
-   but the RULE stays here rather than in the shared interaction layer.
-   `#[css_module]` hashes this class in both the DOM and this stylesheet
-   (`.dx-x` -> `.dx-x-<hash>`, docs/issues/css-module-supports-scoping.md), so
-   an unhashed selector in the global theme sheet can never match the rendered
-   element -- confirmed against the built artifact, where the wasm carries the
-   hashed name. Once row 32 drops css_module hashing, this can collapse into
-   the shared layer for real. */
+/* Nova: `focus-visible:border-ring ring-3 ring-ring/50`. The edge is an inset box-shadow here, so the
+   field recipe (ring-coloured edge + halo) is the ring. */
 .dx-checkbox:focus-visible {
-    box-shadow: var(--dx-ring);
+    box-shadow: var(--dx-ring-field);
+}
+
+/* `aria-invalid:border-destructive ring-3 ring-destructive/20 dark:ring-destructive/40`. After the
+   focus rule so a focused invalid checkbox stays red; `[data-invalid]` is Form's blocked-submit marker. */
+.dx-checkbox[aria-invalid="true"],
+.dx-checkbox[data-invalid="true"] {
+    box-shadow: var(--dx-ring-invalid-field);
+}
+
+/* `disabled:cursor-not-allowed disabled:opacity-50`. */
+.dx-checkbox:disabled,
+.dx-checkbox[data-disabled="true"] {
+    cursor: not-allowed;
+    opacity: var(--dx-opacity-disabled);
 }

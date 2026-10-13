@@ -53,9 +53,6 @@
     color: var(--dx-muted-foreground);
     cursor: pointer;
     font-size: var(--dx-text-base);
-
-    /* touch-action: manipulation -- disables iOS Safari double-tap-to-zoom on this control while still allowing pan/pinch scrolling (touch-action: none must never be used, it breaks scrolling); mirrors the shared app-layer rule in preview/assets/main.css. Copied-out components ship without main.css, so this needs to live here too. */
-    touch-action: manipulation;
 }
 
 /* rtl-physical: matches shadcn's own calendar.tsx RTL treatment exactly
@@ -88,17 +85,11 @@
     color: var(--dx-foreground);
 }
 
-/* :focus-visible ring: the shared --dx-ring token (docs/backlog.md row 31a),
-   but the RULE stays here rather than in the shared interaction layer.
-   `#[css_module]` hashes this class in both the DOM and this stylesheet
-   (`.dx-x` -> `.dx-x-<hash>`, docs/issues/css-module-supports-scoping.md), so
-   an unhashed selector in the global theme sheet can never match the rendered
-   element -- confirmed against the built artifact, where the wasm carries the
-   hashed name. Once row 32 drops css_module hashing, this can collapse into
-   the shared layer for real. */
+/* The Button focus recipe: ring-coloured border plus the shared halo. */
 .dx-calendar-nav-prev:focus-visible,
 .dx-calendar-nav-next:focus-visible {
-    box-shadow: var(--dx-ring);
+    border-color: var(--dx-ring-color);
+    box-shadow: var(--dx-ring-focus);
 }
 
 .dx-calendar-nav-prev:disabled,
@@ -176,9 +167,6 @@
     color: var(--dx-foreground);
     cursor: pointer;
     font-size: var(--dx-text-sm);
-
-    /* touch-action: manipulation -- disables iOS Safari double-tap-to-zoom on this control while still allowing pan/pinch scrolling (touch-action: none must never be used, it breaks scrolling); mirrors the shared app-layer rule in preview/assets/main.css. Copied-out components ship without main.css, so this needs to live here too. */
-    touch-action: manipulation;
 }
 
 /* :where() by construction, not source order: a hover/interaction rule must
@@ -209,8 +197,10 @@
 }
 
 .dx-calendar-grid-cell[data-month="current"]:focus-visible {
-    outline: 2px solid var(--dx-ring-color);
-    outline-offset: 2px;
+    position: relative;
+    z-index: var(--dx-z-raise);
+    box-shadow: var(--dx-ring-focus);
+    outline: none;
 }
 
 .dx-calendar-grid-cell[data-month="last"],
@@ -332,7 +322,7 @@ td:has(.dx-calendar-grid-cell[data-selection-end="true"]) {
 
 /* Calendar states */
 .dx-calendar[data-disabled="true"] {
-    opacity: 0.6;
+    opacity: var(--dx-opacity-disabled);
     pointer-events: none;
 }
 
@@ -344,7 +334,7 @@ td:has(.dx-calendar-grid-cell[data-selection-end="true"]) {
 .dx-calendar-month-select-container:has(:focus-visible),
 .dx-calendar-year-select-container:has(:focus-visible) {
     border-radius: var(--dx-radius-lg);
-    outline: 2px solid var(--dx-ring-color);
+    box-shadow: var(--dx-ring-focus);
 }
 
 .dx-calendar-month-select,
@@ -356,9 +346,6 @@ td:has(.dx-calendar-grid-cell[data-selection-end="true"]) {
     margin: 0;
     inset: 0;
     opacity: 0;
-
-    /* touch-action: manipulation -- disables iOS Safari double-tap-to-zoom on this control while still allowing pan/pinch scrolling (touch-action: none must never be used, it breaks scrolling); mirrors the shared app-layer rule in preview/assets/main.css. Copied-out components ship without main.css, so this needs to live here too. */
-    touch-action: manipulation;
 }
 
 /*

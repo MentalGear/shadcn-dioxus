@@ -50,6 +50,7 @@ pub fn PopoverContent(props: PopoverContentProps) -> Element {
         document::Link { rel: "stylesheet", href: asset!("/src/components/popover/style.css") }
         popover::PopoverContent {
             class,
+            "data-dx-surface": "floating",
             id: props.id,
             side: props.side,
             align: props.align,

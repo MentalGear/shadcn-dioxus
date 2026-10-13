@@ -1,6 +1,6 @@
 /* Alert Dialog Backdrop -- the wrapper `div` `AlertDialogRoot` renders around the
  * content. On the web arm (`<dialog>` + `showModal()`) it paints nothing: the
- * scrim is the dialog's own `::backdrop` (the shared block below) and this
+ * scrim is the dialog's own `::backdrop` (the shared rule in `dx-components-theme.css`) and this
  * element only holds the `<dialog>` and its animation times `use_animated_open`'s
  * unmount hold. On the non-web arm the content is a plain `div` with no top
  * layer and no `::backdrop`, so there this element IS the scrim, from the same
@@ -57,45 +57,10 @@
   }
 }
 
-/* Modal-overlay scrim: the rule shape every native-`<dialog>` overlay shares.
- * `dialog`, `alert_dialog`, `sheet`, `drawer` and `command` carry this block
- * (renamed); the modal popover's is the same rule keyed on `data-state` (see its
- * stylesheet). `playwright/assert-backdrop-fade.ts`, run from all six specs,
- * fails if one of them drifts.
- *
- * The dialog's own top-layer `::backdrop` is the only thing that paints the
- * scrim. It fades in via `@starting-style` and out because its `background` and
- * `backdrop-filter` fall back to transparent/none the moment the dialog's
- * `data-state` flips to "closed" -- while the dialog is STILL open and modal:
- * `use_dialog_open_driver` (`primitives/src/lib.rs`) calls `close()` only once the
- * panel's and the scrim's animations have settled, so the `::backdrop` stays in the
- * top layer for the whole exit on every engine. Nothing here depends on
- * `transition: overlay allow-discrete` (Chromium only); and the visible state is
- * keyed on `[open][data-state="open"]`, never `[open]` alone, because `[open]`
- * outlives `data-state="open"` through the exit. In and out are one `transition`,
- * so they cannot differ in length.
- *
- * One token set drives it (`--dx-overlay-duration/-ease/-scrim/-blur`), defined
- * once in `dx-components-theme.css`; there is no per-component fallback to drift. */
-.dx-alert-dialog::backdrop {
-  backdrop-filter: none;
-  background: transparent;
-  transition:
-    backdrop-filter var(--dx-overlay-duration) var(--dx-overlay-ease),
-    background-color var(--dx-overlay-duration) var(--dx-overlay-ease);
-}
-
-.dx-alert-dialog[open][data-state="open"]::backdrop {
-  backdrop-filter: blur(var(--dx-overlay-blur));
-  background: var(--dx-overlay-scrim);
-}
-
-@starting-style {
-  .dx-alert-dialog[open][data-state="open"]::backdrop {
-    backdrop-filter: none;
-    background: transparent;
-  }
-}
+/* The scrim (this dialog's top-layer `::backdrop`) is the ONE shared rule in
+ * `dx-components-theme.css` ("The modal scrim, once"): keyed on any `<dialog>` with a `dx-`
+ * class, driven by `--dx-overlay-duration/-ease/-scrim/-blur`, fading in and out with the
+ * panel. There is no `::backdrop` rule here to drift. */
 
 /* The panel fades and zooms with the same tokens (Nova's `fade-in-0 zoom-in-95`
  * / `fade-out-0 zoom-out-95`) and is visible only while `[open][data-state="open"]`;
@@ -134,8 +99,7 @@ dialog.dx-alert-dialog[open][data-state="open"] {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  dialog.dx-alert-dialog,
-  .dx-alert-dialog::backdrop {
+  dialog.dx-alert-dialog {
     transition-duration: var(--dx-motion-duration-reduced);
   }
 
@@ -213,9 +177,6 @@ dialog.dx-alert-dialog[open][data-state="open"] {
   color: var(--dx-foreground);
   cursor: pointer;
   font-size: var(--dx-text-base);
-
-  /* touch-action: manipulation -- disables iOS Safari double-tap-to-zoom on this control while still allowing pan/pinch scrolling (touch-action: none must never be used, it breaks scrolling); mirrors the shared app-layer rule in preview/assets/main.css. Copied-out components ship without main.css, so this needs to live here too. */
-  touch-action: manipulation;
   transition: background-color var(--dx-motion-duration-slow) var(--dx-motion-ease);
 }
 
@@ -223,16 +184,10 @@ dialog.dx-alert-dialog[open][data-state="open"] {
   background-color: var(--dx-accent);
 }
 
-/* :focus-visible ring: the shared --dx-ring token (docs/backlog.md row 31a),
-   but the RULE stays here rather than in the shared interaction layer.
-   `#[css_module]` hashes this class in both the DOM and this stylesheet
-   (`.dx-x` -> `.dx-x-<hash>`, docs/issues/css-module-supports-scoping.md), so
-   an unhashed selector in the global theme sheet can never match the rendered
-   element -- confirmed against the built artifact, where the wasm carries the
-   hashed name. Once row 32 drops css_module hashing, this can collapse into
-   the shared layer for real. */
+/* The Button focus recipe (button/style.css): ring-coloured border plus the shared halo. */
 .dx-alert-dialog-cancel:focus-visible {
-  box-shadow: var(--dx-ring);
+  border-color: var(--dx-ring-color);
+  box-shadow: var(--dx-ring-focus);
 }
 
 .dx-alert-dialog-action {
@@ -243,9 +198,6 @@ dialog.dx-alert-dialog[open][data-state="open"] {
   color: var(--dx-destructive-foreground);
   cursor: pointer;
   font-size: var(--dx-text-base);
-
-  /* touch-action: manipulation -- disables iOS Safari double-tap-to-zoom on this control while still allowing pan/pinch scrolling (touch-action: none must never be used, it breaks scrolling); mirrors the shared app-layer rule in preview/assets/main.css. Copied-out components ship without main.css, so this needs to live here too. */
-  touch-action: manipulation;
   transition: background-color var(--dx-motion-duration-slow) var(--dx-motion-ease);
 }
 
@@ -253,14 +205,8 @@ dialog.dx-alert-dialog[open][data-state="open"] {
   background-color: color-mix(in oklab, var(--dx-destructive) 90%, transparent);
 }
 
-/* :focus-visible ring: the shared --dx-ring token (docs/backlog.md row 31a),
-   but the RULE stays here rather than in the shared interaction layer.
-   `#[css_module]` hashes this class in both the DOM and this stylesheet
-   (`.dx-x` -> `.dx-x-<hash>`, docs/issues/css-module-supports-scoping.md), so
-   an unhashed selector in the global theme sheet can never match the rendered
-   element -- confirmed against the built artifact, where the wasm carries the
-   hashed name. Once row 32 drops css_module hashing, this can collapse into
-   the shared layer for real. */
+/* The destructive Button's focus (button/style.css): a destructive 40% border and the destructive halo. */
 .dx-alert-dialog-action:focus-visible {
-  box-shadow: var(--dx-ring);
+  border-color: color-mix(in oklab, var(--dx-destructive) 40%, transparent);
+  box-shadow: var(--dx-ring-invalid);
 }

@@ -13,9 +13,6 @@
   border-radius: var(--dx-radius-full);
   background-color: var(--dx-input);
   cursor: pointer;
-
-  /* touch-action: manipulation -- disables iOS Safari double-tap-to-zoom on this control while still allowing pan/pinch scrolling (touch-action: none must never be used, it breaks scrolling); mirrors the shared app-layer rule in preview/assets/main.css. Copied-out components ship without main.css, so this needs to live here too. */
-  touch-action: manipulation;
   transition: background-color var(--dx-motion-duration-base), box-shadow var(--dx-motion-duration-base);
 }
 
@@ -24,8 +21,14 @@
 }
 
 .dx-switch:focus-visible {
-  box-shadow: 0 0 0 3px
-    color-mix(in oklab, var(--dx-ring-color) 50%, transparent);
+  box-shadow: var(--dx-ring-field);
+}
+
+/* Nova: `aria-invalid:border-destructive ring-3 ring-destructive/20 dark:ring-destructive/40`. After the
+ * focus rule so a focused invalid switch stays red. */
+.dx-switch[aria-invalid="true"],
+.dx-switch[data-invalid="true"] {
+  box-shadow: var(--dx-ring-invalid-field);
 }
 
 .dx-switch-thumb {
@@ -65,5 +68,5 @@
 /* Only apply disabled styles when data-disabled is "true" */
 .dx-switch[data-disabled="true"] {
   cursor: not-allowed;
-  opacity: 0.5;
+  opacity: var(--dx-opacity-disabled);
 }

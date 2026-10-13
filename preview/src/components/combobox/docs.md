@@ -40,4 +40,4 @@ Combobox::<String> {
 
 ## Motion
 
-The list fades and scales in over `--dx-motion-duration-base` (`dx-picker-in`) and out over `--dx-motion-duration-fast`. Retune with those tokens. Reduced motion swaps in `--dx-motion-duration-reduced`. Nothing loops. See [Motion](/docs#motion) for the tokens, reduced motion and the per-component table.
+The list fades and scales in and out over `--dx-floating-duration` (the shared `dx-pop-in`/`dx-pop-out`). Retune with those tokens. Reduced motion swaps in `--dx-motion-duration-reduced`. Nothing loops. See [Motion](/docs#motion) for the tokens, reduced motion and the per-component table.

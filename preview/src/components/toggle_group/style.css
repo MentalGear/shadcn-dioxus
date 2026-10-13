@@ -11,9 +11,6 @@
   color: var(--dx-foreground);
   font-size: var(--dx-text-sm);
   outline: none;
-
-  /* touch-action: manipulation -- disables iOS Safari double-tap-to-zoom on this control while still allowing pan/pinch scrolling (touch-action: none must never be used, it breaks scrolling); mirrors the shared app-layer rule in preview/assets/main.css. Copied-out components ship without main.css, so this needs to live here too. */
-  touch-action: manipulation;
   transition: background-color var(--dx-motion-duration-slow) var(--dx-motion-ease), border var(--dx-motion-duration-slow) var(--dx-motion-ease), outline-color var(--dx-motion-duration-base);
 }
 
@@ -47,8 +44,7 @@
 .dx-toggle-group-item:focus-visible {
   position: relative;
   z-index: var(--dx-z-raise);
-  outline: 2px solid var(--dx-ring-color);
-  outline-offset: 2px;
+  box-shadow: var(--dx-ring-focus);
 }
 
 .dx-toggle-group[data-allow-multiple-pressed="true"]

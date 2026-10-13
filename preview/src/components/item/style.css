@@ -26,8 +26,7 @@
 
 .dx-item:focus-visible {
   border-color: var(--dx-ring-color);
-  box-shadow: 0 0 0 3px
-    color-mix(in srgb, var(--dx-ring-color) 50%, transparent);
+  box-shadow: var(--dx-ring-focus);
 }
 
 a.dx-item {
@@ -62,7 +61,7 @@ a.dx-item:hover {
 
 .dx-item[data-size="sm"] {
   padding: var(--dx-space-3) var(--dx-space-4);
-  gap: 0.625rem;
+  gap: var(--dx-space-2-5);
 }
 
 /* Item Media */

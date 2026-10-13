@@ -4,9 +4,9 @@ use crate::components::field::{
 };
 use dioxus::prelude::*;
 
-// The themed `Checkbox` has no `[aria-invalid]` style (shadcn draws a
-// destructive border + ring on it), so only the `Field`'s label turns red
-// here; the control itself keeps its default border.
+// `aria-invalid` on the control draws the shared invalid recipe (a destructive
+// edge and ring, `--dx-ring-invalid-field` in the theme, as shadcn does);
+// `Field`'s `invalid` turns the label and the error text red.
 #[component]
 pub fn Demo() -> Element {
     rsx! {

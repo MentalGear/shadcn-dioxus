@@ -10,37 +10,33 @@
 }
 
 .dx-popover-content {
+  /* The panel's slots, read by the floating-surface recipe in `dx-components-theme.css`. */
+  --dx-floating-enter: dx-fade-in;
+  --dx-floating-exit: dx-fade-out;
+  --dx-floating-padding: var(--dx-space-2-5);
+
   position: fixed;
-  z-index: var(--dx-z-overlay);
   display: flex;
-  overflow: visible;
   width: 18rem;
   max-width: calc(100% - 2rem);
   flex-direction: column;
-  padding: 0.625rem;
 
   /*
-   * `border` and `overflow` reset the UA popover stylesheet's
-   * `[popover] { border: solid; overflow: auto; ... }` (WHATWG HTML's
-   * popover section) -- the *non-modal* arm of this content carries the
-   * `popover` attribute; the modal arm (a `<dialog>` opened with `showModal()`)
-   * never does and is unaffected either way. `inset`/`margin` are *not* reset
-   * unconditionally here: this rule's own `margin-top` and `transform:
-   * translate(-50%, -50%)` are the legacy DOM-relative centring the `data-side`
-   * rules below build on, so zeroing them would break that path. The
-   * non-modal arm's own `inset`/`margin` reset lives in the single,
-   * engine-injected anchor-positioning stylesheet shared by every
-   * `dx-anchor-*` overlay (`primitives/src/top_layer.rs`'s
-   * `ensure_anchor_positioning_styles`).
+   * Edge, radius, fill, shadow, ink, padding, stacking, `overflow` and the open/close fade come from
+   * the theme's floating-surface recipe (`data-dx-surface="floating"`, emitted by `PopoverContent`
+   * in `component.rs`). That recipe's `border`/`overflow`/`padding` also replace the UA popover
+   * stylesheet's `[popover] { border: solid; overflow: auto; padding: .25em }` and the UA `dialog`
+   * defaults (WHATWG HTML's popover section) -- the *non-modal* arm of this content carries the
+   * `popover` attribute; the modal arm (a `<dialog>` opened with `showModal()`) never does.
+   * `inset`/`margin` are *not* reset unconditionally here: this rule's own `margin-top` and
+   * `transform: translate(-50%, -50%)` are the legacy DOM-relative centring the `data-side` rules
+   * below build on, so zeroing them would break that path. The non-modal arm's own `inset`/`margin`
+   * reset lives in the single, engine-injected anchor-positioning stylesheet shared by every
+   * `dx-anchor-*` overlay (`primitives/src/top_layer.rs`'s `ensure_anchor_positioning_styles`).
    */
-  border: 1px solid var(--dx-ring-subtle-color);
-  border-radius: var(--dx-radius-lg);
   margin-top: var(--dx-space-2);
-  background: var(--dx-popover);
-  box-shadow: var(--dx-shadow-md);
-  color: var(--dx-popover-foreground);
   font-size: var(--dx-text-sm);
-  gap: 0.625rem;
+  gap: var(--dx-space-2-5);
   text-align: start;
 
   /* rtl-physical: legacy modal centring trick, paired with the implicit
@@ -51,84 +47,17 @@
   will-change: transform, opacity;
 }
 
-.dx-popover-content[data-state="open"] {
-  animation: dx-popover-fade-in var(--dx-overlay-duration) var(--dx-overlay-ease);
-}
-
-.dx-popover-content[data-state="closed"] {
-  animation: dx-popover-fade-out var(--dx-overlay-duration) var(--dx-overlay-ease) forwards;
-  pointer-events: none;
-}
-
-@keyframes dx-popover-fade-in {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes dx-popover-fade-out {
-  from {
-    opacity: 1;
-  }
-
-  to {
-    opacity: 0;
-  }
-}
-
-/* Modal-overlay scrim: the same `::backdrop` rule `dialog`, `alert_dialog`,
- * `sheet`, `drawer` and `command` carry (same tokens, same paint, same fade in and out),
- * keyed on this dialog's own `data-state` instead of `[open]`. That is the one
- * difference, and it is deliberate: the others lean on `overlay ... allow-discrete`
- * to keep a *closed* dialog in the top layer while their scrim fades, but a
- * closed popover is no longer `:modal`, and its anchored position
- * (`top_layer.rs`'s engine stylesheet) is keyed on `:modal` -- it jumped off the
- * bottom of the viewport mid-fade. So `popover.rs` keeps the dialog modal until
- * its exit animations settle (`use_popover_modal_driver`) and this scrim fades
- * out while `[open]` is still set, which also works in every engine.
- *
- * Only the modal arm is touched: the non-modal arm (`[popover]`) paints no scrim
- * at all, as shadcn's popover has no overlay. The modal arm paints none either
- * unless `overlay: true`: `PopoverRoot` defaults `overlay` to false, which puts
- * `data-dx-overlay="off"` on the dialog, and the theme's one
- * `dialog[data-dx-overlay="off"]::backdrop` rule (`dx-components-theme.css`)
- * wins over the rules below whatever their specificity -- this block is the
- * scrim `overlay: true` shows, and needs no knowledge of the switch. See
- * `dialog/style.css` for the shared block's full rationale. */
-.dx-popover-content:not([popover])::backdrop {
-  backdrop-filter: none;
-  background: transparent;
-  transition:
-    backdrop-filter var(--dx-overlay-duration) var(--dx-overlay-ease),
-    background-color var(--dx-overlay-duration) var(--dx-overlay-ease);
-}
-
-.dx-popover-content:not([popover])[data-state="open"]::backdrop {
-  backdrop-filter: blur(var(--dx-overlay-blur));
-  background: var(--dx-overlay-scrim);
-}
-
-@starting-style {
-  .dx-popover-content:not([popover])[data-state="open"]::backdrop {
-    backdrop-filter: none;
-    background: transparent;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .dx-popover-content[data-state="open"],
-  .dx-popover-content[data-state="closed"] {
-    animation-duration: var(--dx-motion-duration-reduced);
-  }
-
-  .dx-popover-content:not([popover])::backdrop {
-    transition-duration: var(--dx-motion-duration-reduced);
-  }
-}
+/* Modal-overlay scrim: the modal arm's `::backdrop` is the shared rule in
+ * `dx-components-theme.css` ("The modal scrim, once"), the same one Dialog, AlertDialog, Sheet,
+ * Drawer and CommandDialog use. Its visible state is keyed on `[open][data-state="open"]`; the
+ * modal popover keeps its dialog open (and modal) until its exit animations settle
+ * (`use_popover_modal_driver`), so `[open]` is set exactly while a scrim exists and the scrim fades
+ * out with the panel. Only the modal arm has one: the non-modal arm (`<dialog popover="auto">`) is
+ * excluded by the theme rule's `:not([popover])`, as shadcn's popover has no overlay. The modal arm
+ * paints none either unless `overlay: true`: `PopoverRoot` defaults `overlay` to false, which puts
+ * `data-dx-overlay="off"` on the dialog, and the theme's one `dialog[data-dx-overlay="off"]::backdrop`
+ * rule removes it. The panel's own fade is the floating recipe's (150 ms), the scrim's the overlay
+ * tokens' (200 ms); the dialog stays open until both have settled. */
 
 /* Positioning based on side */
 .dx-popover-content[data-side="top"] {
@@ -238,7 +167,7 @@
   display: flex;
   flex-direction: column;
   font-size: var(--dx-text-sm);
-  gap: 0.125rem;
+  gap: var(--dx-space-0-5);
 }
 
 .dx-popover-title,
@@ -269,7 +198,7 @@
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  padding: 0.3125rem 0.625rem;
+  padding: 0.3125rem var(--dx-space-2-5);
   border: 1px solid transparent;
   border-color: var(--light, var(--dx-border)) var(--dark, var(--dx-input));
   background-clip: padding-box;
@@ -284,12 +213,9 @@
   font-family: inherit;
   font-size: var(--dx-text-sm);
   font-weight: 500;
-  gap: 0.375rem;
+  gap: var(--dx-space-1-5);
   line-height: 1.25rem;
   outline: none;
-
-  /* touch-action: manipulation -- disables iOS Safari double-tap-to-zoom on this control while still allowing pan/pinch scrolling (touch-action: none must never be used, it breaks scrolling); mirrors the shared app-layer rule in preview/assets/main.css. Copied-out components ship without main.css, so this needs to live here too. */
-  touch-action: manipulation;
   transition-duration: var(--dx-motion-duration-base);
   transition-property: all;
   transition-timing-function: var(--dx-motion-ease-standard);

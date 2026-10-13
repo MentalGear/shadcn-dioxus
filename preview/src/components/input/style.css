@@ -13,7 +13,7 @@
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  padding: var(--dx-space-1) 0.625rem;
+  padding: var(--dx-space-1) var(--dx-space-2-5);
   border: none;
   background: none;
   background-color: var(--light, transparent)
@@ -59,13 +59,11 @@
   box-shadow: var(--dx-ring-field);
 }
 
-.dx-input[aria-invalid="true"] {
-  box-shadow: inset 0 0 0 1px
-      var(--light, var(--dx-destructive))
-      var(--dark, color-mix(in oklab, var(--dx-destructive) 50%, transparent)),
-    0 0 0 3px
-      var(--light, color-mix(in oklab, var(--dx-destructive) 20%, transparent))
-      var(--dark, color-mix(in oklab, var(--dx-destructive) 40%, transparent));
+/* `aria-invalid:border-destructive ring-3 ring-destructive/20 dark:ring-destructive/40`, after the focus
+ * rule so a focused invalid field stays red. `[data-invalid]` is Form's blocked-submit marker. */
+.dx-input[aria-invalid="true"],
+.dx-input[data-invalid="true"] {
+  box-shadow: var(--dx-input-invalid-shadow, var(--dx-ring-invalid-field));
 }
 
 .dx-input:disabled {
@@ -73,7 +71,7 @@
     var(--dark, color-mix(in oklab, var(--dx-input) 80%, transparent));
   color: var(--dx-muted-foreground);
   cursor: not-allowed;
-  opacity: var(--dx-opacity-disabled);
+  opacity: var(--dx-input-disabled-opacity, var(--dx-opacity-disabled));
 }
 
 /*

@@ -31,7 +31,6 @@
   font-size: var(--dx-text-sm);
   gap: var(--dx-space-1);
   text-decoration: none;
-  touch-action: manipulation;
   transition: background-color var(--dx-motion-duration-fast) var(--dx-motion-ease-out);
 }
 
@@ -44,7 +43,7 @@
 .dx-navigation-menu-link[data-disabled="true"] {
   color: var(--dx-muted-foreground);
   cursor: not-allowed;
-  opacity: 0.5;
+  opacity: var(--dx-opacity-disabled);
 }
 
 .dx-navigation-menu-trigger:hover:not([data-disabled="true"]),
@@ -66,20 +65,19 @@
 
 /* `popover="manual"` on the web arm still picks up the UA popover
  * stylesheet's `[popover] { border: solid; overflow: auto; ... }`
- * (WHATWG HTML's popover section) -- this content has no border of its
- * own (drawn by `box-shadow` below) and never needs to scroll, so both are
- * reset. Same fix as `../navbar/style.css`'s `.dx-navbar-content`. The
- * matching `margin`/`inset` reset and the anchor-positioning rules that
- * keep this panel anchored to its own trigger once promoted to the top
+ * (WHATWG HTML's popover section). The theme's floating-surface recipe
+ * (`data-dx-surface="floating"`, emitted by `NavigationMenuContent`) replaces
+ * that with the shared edge, radius, fill and ink, shadow, `p-1` padding,
+ * stacking and `overflow`; the motion is this panel's own directional slide,
+ * below. The matching `margin`/`inset` reset and the anchor-positioning rules
+ * that keep this panel anchored to its own trigger once promoted to the top
  * layer live in the shared, engine-injected stylesheet every
  * `dx-anchor-*`-marked overlay gets for free -- see
  * `primitives/src/top_layer.rs`'s `ensure_anchor_positioning_styles` doc.
  */
 .dx-navigation-menu-content {
   position: absolute;
-  z-index: var(--dx-z-overlay);
   top: 100%;
-  overflow: visible;
 
   /* Intrinsic sizing, by construction: this panel's box must never grow or
    * shrink over the course of its own open/close animation (that would
@@ -104,12 +102,7 @@
   width: max-content;
   min-width: 280px;
   max-width: calc(100vw - var(--dx-space-8));
-  padding: var(--dx-space-1);
-  border: none;
-  border-radius: var(--dx-radius-lg);
   margin-top: var(--dx-space-2);
-  background: var(--dx-popover);
-  box-shadow: inset 0 0 0 1px var(--dx-input);
   inset-inline-start: 0;
   opacity: 0;
   pointer-events: none;
@@ -169,7 +162,7 @@
  * a running `CSSAnimation` exactly like a `CSSTransition` -- both are
  * `Animation` instances -- so this swap needs no Rust-side change. */
 .dx-navigation-menu-content[data-state="closed"] {
-  animation: dx-navigation-menu-content-animate-out var(--dx-motion-duration-base) var(--dx-motion-ease-in) forwards;
+  animation: dx-navigation-menu-content-animate-out var(--dx-floating-duration) var(--dx-floating-ease-exit) forwards;
 }
 
 /* `scale`/`translate`, not `transform`: an animated `transform` REPLACES an anchor's own
@@ -193,7 +186,7 @@
 }
 
 .dx-navigation-menu-content[data-state="open"] {
-  animation: dx-navigation-menu-content-animate-in var(--dx-motion-duration-slow) cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: dx-navigation-menu-content-animate-in var(--dx-motion-duration-slow) var(--dx-motion-ease-emphasized) forwards;
   pointer-events: auto;
 }
 
@@ -304,7 +297,6 @@
   font-size: var(--dx-text-sm);
   gap: var(--dx-space-1);
   text-decoration: none;
-  touch-action: manipulation;
 }
 
 /* `background-color`, not the `background` shorthand: the featured card

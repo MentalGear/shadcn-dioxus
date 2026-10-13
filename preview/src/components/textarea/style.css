@@ -19,6 +19,7 @@
 .dx-textarea:disabled {
   color: var(--dx-muted-foreground);
   cursor: not-allowed;
+  opacity: var(--dx-opacity-disabled);
 }
 
 .dx-textarea::placeholder {
@@ -63,7 +64,12 @@
   background-color: var(--dx-card);
 }
 
-.dx-textarea[data-style="outline"]:hover:not(:disabled, :focus) {
+.dx-textarea[data-style="outline"]:hover:not(
+    :disabled,
+    :focus,
+    [aria-invalid="true"],
+    [data-invalid="true"]
+  ) {
   border-color: var(--dx-border-strong);
 }
 
@@ -74,9 +80,19 @@
   box-shadow: var(--dx-ring-focus);
 }
 
-.dx-textarea[data-style="outline"]:invalid,
-.dx-textarea[data-style="outline"][aria-invalid="true"] {
-  border-color: var(--dx-destructive);
+/* Invalid: `aria-invalid:border-destructive ring-3 ring-destructive/20 dark:ring-destructive/40`, after the
+ * focus rules so a focused invalid textarea stays red. The edge-as-shadow variants take the field
+ * recipe; the outline variant draws a real border, so it takes the Button construction (destructive
+ * border, halo around it). `[data-invalid]` is Form's blocked-submit marker. */
+.dx-textarea[data-style][aria-invalid="true"],
+.dx-textarea[data-style][data-invalid="true"] {
+  box-shadow: var(--dx-ring-invalid-field);
+}
+
+.dx-textarea[data-style="outline"][aria-invalid="true"],
+.dx-textarea[data-style="outline"][data-invalid="true"] {
+  border-color: var(--dx-ring-invalid-color);
+  box-shadow: var(--dx-ring-invalid);
 }
 
 /* Ghost Variant */

@@ -79,6 +79,19 @@
   }
 }
 
+/* Invalid: the invisible input carries `aria-invalid`, so its slots (the next sibling's descendants)
+ * take the edge, and the active slot the full recipe, as Nova's `aria-invalid:border-destructive
+ * data-[active=true]:ring-destructive/20`. After the active rule so the caret slot stays red. */
+.dx-input-otp-input[aria-invalid="true"] + div .dx-input-otp-slot,
+.dx-input-otp-input[data-invalid="true"] + div .dx-input-otp-slot {
+  box-shadow: inset 0 0 0 1px var(--dx-ring-invalid-color);
+}
+
+.dx-input-otp-input[aria-invalid="true"] + div .dx-input-otp-slot[data-active="true"],
+.dx-input-otp-input[data-invalid="true"] + div .dx-input-otp-slot[data-active="true"] {
+  box-shadow: var(--dx-ring-invalid-field);
+}
+
 .dx-input-otp-slot[data-disabled="true"] {
   opacity: var(--dx-opacity-disabled);
 }

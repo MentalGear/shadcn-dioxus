@@ -84,9 +84,16 @@
  * onto the visible control by setting `data-invalid="true"` on it (cleared
  * on the next change or on form reset); this is the only styling for that
  * marker.
+ *
+ * Every control that draws an invalid state (Input, Textarea, Native Select, Checkbox, Radio, Switch,
+ * Toggle, Button, Input OTP and Input Group) selects `[data-invalid="true"]` beside `[aria-invalid]` in
+ * its own stylesheet, with the geometry that control needs. This rule is only the fallback for a marked
+ * control that has no recipe of its own yet (the Select trigger and the other floating-surface
+ * triggers): the shared invalid look, at ZERO specificity (`:where()`), so a control's own rule always
+ * wins and no sheet order can decide it.
  */
-.dx-form [data-invalid="true"] {
-    box-shadow: 0 0 0 2px var(--dx-destructive);
+:where(.dx-form [data-invalid="true"]) {
+    box-shadow: var(--dx-ring-invalid-field);
     outline: none;
 }
 

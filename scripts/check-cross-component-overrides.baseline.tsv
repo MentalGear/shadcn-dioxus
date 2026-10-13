@@ -37,7 +37,6 @@ preview/src/components/data_table/style.css	composed:button	.dx-data-table-colum
 preview/src/components/data_table/style.css	composed:button	.dx-data-table-column-header-button	padding
 preview/src/components/data_table/style.css	composed:input	.dx-data-table-filter	max-width
 preview/src/components/date_picker/style.css	composed:popover	.dx-date-picker-group .dx-date-picker-popover-content	max-width
-preview/src/components/date_picker/style.css	composed:popover	.dx-date-picker-group .dx-date-picker-popover-content	padding
 preview/src/components/date_picker/style.css	composed:popover	.dx-date-picker-group .dx-date-picker-popover-content	width
 preview/src/components/date_picker/style.css	composed:popover	.dx-date-picker-group .dx-date-picker-popover-trigger	align-items
 preview/src/components/date_picker/style.css	composed:popover	.dx-date-picker-group .dx-date-picker-popover-trigger	background-color
@@ -50,9 +49,6 @@ preview/src/components/date_picker/style.css	composed:popover	.dx-date-picker-gr
 preview/src/components/date_picker/style.css	composed:popover	.dx-date-picker-group .dx-date-picker-popover-trigger:focus-visible	border-radius
 preview/src/components/date_picker/style.css	composed:popover	.dx-date-picker-group .dx-date-picker-popover-trigger:focus-visible	box-shadow
 preview/src/components/date_picker/style.css	composed:popover	.dx-date-picker-group .dx-date-picker-popover-trigger:focus-visible	outline
-preview/src/components/date_picker/style.css	composed:popover	.dx-date-picker-popover-content[data-state="closed"]	animation
-preview/src/components/date_picker/style.css	composed:popover	.dx-date-picker-popover-content[data-state="closed"]	pointer-events
-preview/src/components/date_picker/style.css	composed:popover	.dx-date-picker-popover-content[data-state="open"]	animation
 preview/src/components/field/style.css	composed:label	.dx-field[data-orientation="horizontal"] > .dx-field-label	margin-top
 preview/src/components/field/style.css	tag	.dx-field[data-orientation="horizontal"] > button	margin-top
 preview/src/components/field/style.css	tag	.dx-field[data-orientation="horizontal"] > input	margin-top
@@ -106,7 +102,6 @@ preview/src/components/sidebar/style.css	composed:button	.dx-sidebar-trigger	hei
 preview/src/components/sidebar/style.css	composed:button	.dx-sidebar-trigger	justify-content
 preview/src/components/sidebar/style.css	composed:button	.dx-sidebar-trigger	line-height
 preview/src/components/sidebar/style.css	composed:button	.dx-sidebar-trigger	padding
-preview/src/components/sidebar/style.css	composed:button	.dx-sidebar-trigger	touch-action
 preview/src/components/sidebar/style.css	composed:button	.dx-sidebar-trigger	width
 preview/src/components/sidebar/style.css	composed:collapsible	.dx-sidebar-menu-button.dx-sidebar-collapsible-trigger:hover	text-decoration
 preview/src/components/sidebar/style.css	composed:collapsible	.dx-sidebar-menu-button.dx-sidebar-collapsible-trigger:hover	text-decoration-line
@@ -148,7 +143,6 @@ preview/src/components/sidebar/style.css	composed:sheet	.dx-sidebar-sheet	backgr
 preview/src/components/sidebar/style.css	composed:sheet	.dx-sidebar-sheet	padding
 preview/src/components/sidebar/style.css	composed:sheet	.dx-sidebar-sheet	width
 preview/src/components/sidebar/style.css	composed:sheet	.dx-sidebar-sheet-close	display
-preview/src/components/sidebar/style.css	composed:sheet	.dx-sidebar-sheet-close	touch-action
 preview/src/components/sidebar/style.css	composed:sheet	.dx-sidebar-sr-only	border
 preview/src/components/sidebar/style.css	composed:sheet	.dx-sidebar-sr-only	clip-path
 preview/src/components/sidebar/style.css	composed:sheet	.dx-sidebar-sr-only	height

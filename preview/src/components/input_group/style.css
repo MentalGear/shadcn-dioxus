@@ -27,12 +27,29 @@
   border-radius: 0;
   background: none;
   box-shadow: none;
+
+  /* Slot variables (input/style.css reads both): the wrapper draws the invalid ring and dims once as a
+   * whole when its control is disabled (below), so the bare control draws neither a second time. */
+  --dx-input-disabled-opacity: 1;
+  --dx-input-invalid-shadow: none;
 }
 
 .dx-input-group .dx-input-group-control:hover:not(:disabled),
 .dx-input-group .dx-input-group-control:focus-visible {
   background: none;
   box-shadow: none;
+}
+
+/* Invalid: the wrapper draws the field chrome, so it draws the invalid recipe (the control is bare).
+ * After the focus rule so a focused invalid group stays red. */
+.dx-input-group:has(.dx-input-group-control[aria-invalid="true"]),
+.dx-input-group:has(.dx-input-group-control[data-invalid="true"]) {
+  box-shadow: var(--dx-ring-invalid-field);
+}
+
+/* Disabled: Nova's `has-disabled:opacity-50` on the group, so the addons dim with the control. */
+.dx-input-group:has(.dx-input-group-control:disabled) {
+  opacity: var(--dx-opacity-disabled);
 }
 
 .dx-input-group-addon {

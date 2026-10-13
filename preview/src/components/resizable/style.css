@@ -95,15 +95,14 @@
 }
 
 /* shadcn: `focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1
-   focus-visible:outline-hidden` -- translated to the shared --dx-ring token every other
-   component's own :focus-visible rule already uses (dev-docs/backlog.md row 31a). */
+   focus-visible:outline-hidden` -- translated to the shared focus halo every other
+   control draws (dx-components-theme.css, "State recipes"). */
 .dx-resizable-handle:focus-visible {
-  box-shadow: var(--dx-ring);
+  box-shadow: var(--dx-ring-focus);
 }
 
 .dx-resizable-handle[data-disabled="true"] {
-  cursor: not-allowed;
-  opacity: 0.5;
+  opacity: var(--dx-opacity-disabled);
   pointer-events: none;
 }
 

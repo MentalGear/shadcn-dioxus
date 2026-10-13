@@ -45,6 +45,8 @@ pub fn TooltipTrigger(props: TooltipTriggerProps) -> Element {
 pub fn TooltipContent(props: TooltipContentProps) -> Element {
     let base = attributes!(div {
         class: "dx-tooltip-content",
+        "data-dx-surface": "floating",
+        "data-dx-tone": "inverted",
     });
     let merged = merge_attributes(vec![base, props.attributes]);
 

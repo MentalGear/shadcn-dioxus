@@ -1,166 +1,62 @@
 .dx-context-menu-content {
-  z-index: var(--dx-z-overlay);
-
   /*
    * Migration A (slice 2/3): on the web arm this content carries
    * `popover="manual"` (`primitives/src/context_menu.rs`,
    * `ContextMenuContentRendered`) so it renders in the top layer instead of
    * clipping inside `overflow: hidden`/transformed ancestors. Unlike
-   * `../dropdown_menu/style.css`'s identical-looking reset, this one is
+   * `../dropdown_menu/style.css`'s identical-looking content, this one is
    * *not* paired with the shared `dx-anchor-*` engine stylesheet
    * (`primitives/src/top_layer.rs`'s `ensure_anchor_positioning_styles`):
    * `ContextMenu` opens at a raw click point, not next to a persistent
    * trigger, so it never sets `anchor-name`/`position-anchor` and is not
-   * `dx-anchor-*`-marked -- `overflow`/`border` here and `margin`/`inset`
-   * below are written out directly instead.
+   * `dx-anchor-*`-marked -- `margin`/`inset` are written out directly instead.
    *
-   * `overflow`/`border` undo the UA popover stylesheet's `[popover] {
-   * border: solid; overflow: auto; ... }` -- this menu draws its own edge
-   * via `box-shadow` below and never needs to scroll. `margin`/`inset`
-   * (below, with the rest of the box-model properties) undo that same
-   * stylesheet's `inset: 0; margin: auto;`, which otherwise invokes CSS's
-   * auto-margin centering algorithm and fights the `position: fixed;
-   * left/top` coordinates `ContextMenuContentRendered` sets inline from the
-   * click position -- `inset: auto` releases the `right`/`bottom` edges the
-   * UA default would otherwise pin to 0 (stretching this box edge-to-edge)
-   * while leaving the inline `top`/`left` free to still win via the
-   * ordinary cascade.
+   * Edge, radius, `popover` fill and ink, shadow, `p-1` padding, stacking, `overflow` and the
+   * pop-in/out come from the theme's floating-surface recipe (`data-dx-surface="floating"`, emitted
+   * by `ContextMenuContent`); its `border`/`overflow`/`padding` undo the UA popover stylesheet's
+   * `[popover] { border: solid; overflow: auto; ... }`. `margin`/`inset` undo that same
+   * stylesheet's `inset: 0; margin: auto;`, which otherwise invokes CSS's auto-margin centering
+   * algorithm and fights the `position: fixed; left/top` coordinates `ContextMenuContentRendered`
+   * sets inline from the click position -- `inset: auto` releases the `right`/`bottom` edges the UA
+   * default would otherwise pin to 0 (stretching this box edge-to-edge) while leaving the inline
+   * `top`/`left` free to still win via the ordinary cascade.
    */
-  overflow: visible;
   min-width: 220px;
 
   /* Clamp to the viewport so a long label wraps (items carry `overflow-wrap:
      anywhere`) instead of widening the menu past a narrow screen -- same
      rule as ../dropdown_menu/style.css and ../menubar/style.css. */
   max-width: calc(100vw - var(--dx-space-8));
-  padding: var(--dx-space-1);
-  border: none;
-  border-radius: var(--dx-radius-lg);
   margin: 0;
-  background: var(--dx-popover);
-  box-shadow: inset 0 0 0 1px var(--dx-input);
   inset: auto;
   opacity: 0;
   pointer-events: none;
   will-change: transform, opacity;
 }
 
-.dx-context-menu-content[data-state="closed"] {
-  animation: dx-context-menu-animate-out var(--dx-motion-duration-base) var(--dx-motion-ease-in) forwards;
-}
+/* The pop-in/out is the theme's floating-surface recipe (`dx-pop-in` / `dx-pop-out`, `scale`/
+ * `translate`, never `transform`: an animated `transform` REPLACES an anchor's own centring transform
+ * for as long as the animation runs -- scripts/check-anchored-keyframes.sh). The `opacity: 0` above is
+ * the hidden REST state; the recipe's `forwards` open animation lifts it. */
 
-/* `scale`/`translate`, not `transform`: an animated `transform` REPLACES an anchor's own
- * centring transform (`translateX(-50%)`, `primitives/src/top_layer.rs`'s engine stylesheet)
- * for as long as the animation runs, which played the date/colour picker panels 144px/133px
- * off their anchor. This content sets no `data-side`, so no centring applies to it today; the
- * individual properties compose with `transform` and keep it safe if one ever does.
- * Guard: scripts/check-anchored-keyframes.sh. */
-@keyframes dx-context-menu-animate-out {
-  0% {
-    opacity: 1;
-    scale: 1;
-    translate: 0 0;
-  }
-
-  100% {
-    opacity: 0;
-    scale: 0.95;
-    translate: 0 -2px;
-  }
-}
-
-.dx-context-menu-content[data-state="open"] {
-  animation: dx-context-menu-animate-in var(--dx-motion-duration-base) var(--dx-motion-ease-out) forwards;
-}
-
-@keyframes dx-context-menu-animate-in {
-  0% {
-    opacity: 0;
-    scale: 0.95;
-    translate: 0 -2px;
-  }
-
-  100% {
-    opacity: 1;
-    scale: 1;
-    translate: 0 0;
-  }
-}
-
-/* Menu-item indicator slot (the construction select/style.css documents in
- * full; mirrors `../dropdown_menu/style.css`). An item that draws a trailing
- * indicator -- today the sub-trigger's chevron -- reserves `inset + size + gap`
- * of inline-end padding (see `.dx-context-menu-sub-trigger`) and the indicator
- * is absolutely positioned inside that room, so a long label wraps
- * (`overflow-wrap: anywhere`) before it can meet the icon. The three
- * `--dx-menu-item-indicator-*` tokens are defined once in the theme and inherited
- * here (this item's inline padding matches the theme's `inset`, so nothing is
- * overridden). Guard: playwright/menu-indicator-gap.spec.ts. */
+/* The menu item row, its highlight, disabled colour, indicator geometry and unchecked-hidden rule,
+ * and the group label, are the theme's shared menu-item recipe (`data-dx-menu-item`,
+ * `data-dx-menu-item-indicator="end"`, `data-dx-menu-label`; `dx-components-theme.css`, shared with
+ * Dropdown Menu and Menubar -- `../dropdown_menu/style.css` documents the indicator slot). The one
+ * thing this item adds is the hover fade. Guard: playwright/menu-indicator-gap.spec.ts. */
 .dx-context-menu-item {
-  position: relative;
-  display: flex;
-  align-items: center;
-  padding: var(--dx-space-2) var(--dx-space-3);
-  border-radius: calc(var(--dx-radius-lg) - var(--dx-radius-sm));
-  color: var(--dx-foreground);
-  cursor: pointer;
-  font-size: var(--dx-text-sm);
-  gap: var(--dx-space-2);
-  outline: none;
-  overflow-wrap: anywhere;
-
-  /* touch-action: manipulation -- disables iOS Safari double-tap-to-zoom on this control while still allowing pan/pinch scrolling (touch-action: none must never be used, it breaks scrolling); mirrors the shared app-layer rule in preview/assets/main.css. Copied-out components ship without main.css, so this needs to live here too. */
-  touch-action: manipulation;
   transition: background-color var(--dx-motion-duration-fast) var(--dx-motion-ease-out);
-  user-select: none;
 }
 
-/* The indicator itself: out of flow, in the slot the item reserved. */
-.dx-context-menu-item-indicator {
-  position: absolute;
-  width: var(--dx-menu-item-indicator-size);
-  height: var(--dx-menu-item-indicator-size);
-  inset-block: 0;
-  inset-inline-end: var(--dx-menu-item-indicator-inset);
-  margin-block: auto;
-  pointer-events: none;
-}
-
-.dx-context-menu-item[data-disabled="true"] {
-  color: var(--dx-muted-foreground);
-  cursor: not-allowed;
-}
-
-.dx-context-menu-item:hover:not([data-disabled="true"]),
-.dx-context-menu-item:focus-visible {
-  background: var(--dx-accent);
-  color: var(--dx-accent-foreground);
-}
-
-/* Nested submenu (docs/component-backlog.md row 68) -- mirrors
-   `../dropdown_menu/style.css`'s identical rules; see that file's comments
-   for the full rationale. `.dx-context-menu-sub-trigger` layers onto
-   `.dx-context-menu-item` (always applied together, see `component.rs`). */
+/* The reserved indicator slot, for the sub-trigger's chevron and for checkable items
+   (`ContextMenuCheckboxItem`/`ContextMenuRadioItem`) -- mirrors `../dropdown_menu/style.css`'s
+   identical rule; see that file's comment for the full rationale (shadcn Nova's `pr-8` +
+   `absolute right-2`; `visibility`, not `display`, so an unchecked item keeps its slot and labels
+   never shift). `.dx-context-menu-sub-trigger` layers onto `.dx-context-menu-item` (always applied
+   together, see `component.rs`). Nested submenu: docs/component-backlog.md row 68. */
 .dx-context-menu-sub-trigger,
 .dx-context-menu-checkable-item {
   padding-inline-end: calc(var(--dx-menu-item-indicator-inset) + var(--dx-menu-item-indicator-size) + var(--dx-menu-item-indicator-gap));
-}
-
-/* Checkable items (`ContextMenuCheckboxItem`/`ContextMenuRadioItem`): the
-   same construction as the sub-trigger above, drawing a check -- see
-   `../dropdown_menu/style.css`'s identical rules for the full account
-   (shadcn Nova's `pr-8` + `absolute right-2`; `visibility`, not `display`,
-   so an unchecked item keeps its slot and labels never shift). */
-.dx-context-menu-checkable-item[data-state="unchecked"] > .dx-context-menu-item-indicator {
-  visibility: hidden;
-}
-
-/* A heading for a group of items (`ContextMenuLabel`). */
-.dx-context-menu-label {
-  padding: var(--dx-space-2) var(--dx-space-3);
-  color: var(--dx-muted-foreground);
-  font-size: var(--dx-text-xs);
-  font-weight: 500;
 }
 
 /* `ChevronRight` icon element, appended after the trigger's own content by
@@ -176,11 +72,6 @@
    that must flip to match the submenu's RTL-flipped open side. */
 [dir="rtl"] .dx-context-menu-sub-trigger-icon {
   transform: rotate(180deg);
-}
-
-.dx-context-menu-sub-trigger[data-state="open"] {
-  background: var(--dx-accent);
-  color: var(--dx-accent-foreground);
 }
 
 /* Unlike `.dx-context-menu-content` (pinned to a raw click point via inline

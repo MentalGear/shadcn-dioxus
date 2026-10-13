@@ -45,7 +45,10 @@ pub fn ContextMenuTrigger(props: ContextMenuTriggerProps) -> Element {
 
 #[component]
 pub fn ContextMenuContent(props: ContextMenuContentProps) -> Element {
-    let base = attributes!(div { class: "dx-context-menu-content" });
+    let base = attributes!(div {
+        class: "dx-context-menu-content",
+        "data-dx-surface": "floating",
+    });
     let merged = merge_attributes(vec![base, props.attributes]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/context_menu/style.css") }
@@ -55,7 +58,10 @@ pub fn ContextMenuContent(props: ContextMenuContentProps) -> Element {
 
 #[component]
 pub fn ContextMenuItem(props: ContextMenuItemProps) -> Element {
-    let base = attributes!(div { class: "dx-context-menu-item" });
+    let base = attributes!(div {
+        class: "dx-context-menu-item",
+        "data-dx-menu-item": "true",
+    });
     let merged = merge_attributes(vec![base, props.attributes]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/context_menu/style.css") }
@@ -101,7 +107,10 @@ pub fn ContextMenuSub(props: ContextMenuSubProps) -> Element {
 /// meet it.
 #[component]
 pub fn ContextMenuSubTrigger(props: ContextMenuSubTriggerProps) -> Element {
-    let base = attributes!(div { class: "dx-context-menu-item dx-context-menu-sub-trigger" });
+    let base = attributes!(div {
+        class: "dx-context-menu-item dx-context-menu-sub-trigger",
+        "data-dx-menu-item": "true",
+    });
     let merged = merge_attributes(vec![base, props.attributes]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/context_menu/style.css") }
@@ -114,6 +123,7 @@ pub fn ContextMenuSubTrigger(props: ContextMenuSubTriggerProps) -> Element {
             {props.children}
             ChevronRight {
                 class: "dx-context-menu-item-indicator dx-context-menu-sub-trigger-icon",
+                "data-dx-menu-item-indicator": "end",
                 size: "16px",
             }
         }
@@ -126,7 +136,10 @@ pub fn ContextMenuSubTrigger(props: ContextMenuSubTriggerProps) -> Element {
 /// static fallback position) -- see `style.css`.
 #[component]
 pub fn ContextMenuSubContent(props: ContextMenuSubContentProps) -> Element {
-    let base = attributes!(div { class: "dx-context-menu-content dx-context-menu-sub-content" });
+    let base = attributes!(div {
+        class: "dx-context-menu-content dx-context-menu-sub-content",
+        "data-dx-surface": "floating",
+    });
     let merged = merge_attributes(vec![base, props.attributes]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/context_menu/style.css") }
@@ -138,7 +151,10 @@ pub fn ContextMenuSubContent(props: ContextMenuSubContentProps) -> Element {
 /// plain `dx-context-menu-item` chrome.
 #[component]
 pub fn ContextMenuSubItem(props: ContextMenuSubItemProps) -> Element {
-    let base = attributes!(div { class: "dx-context-menu-item" });
+    let base = attributes!(div {
+        class: "dx-context-menu-item",
+        "data-dx-menu-item": "true",
+    });
     let merged = merge_attributes(vec![base, props.attributes]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/context_menu/style.css") }
@@ -166,7 +182,10 @@ pub fn ContextMenuSubItem(props: ContextMenuSubItemProps) -> Element {
 /// only while the primitive reports `data-state="checked"`.
 #[component]
 pub fn ContextMenuCheckboxItem(props: ContextMenuCheckboxItemProps) -> Element {
-    let base = attributes!(div { class: "dx-context-menu-item dx-context-menu-checkable-item" });
+    let base = attributes!(div {
+        class: "dx-context-menu-item dx-context-menu-checkable-item",
+        "data-dx-menu-item": "true",
+    });
     let merged = merge_attributes(vec![base, props.attributes]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/context_menu/style.css") }
@@ -180,7 +199,11 @@ pub fn ContextMenuCheckboxItem(props: ContextMenuCheckboxItemProps) -> Element {
             close_on_select: props.close_on_select,
             attributes: merged,
             {props.children}
-            Check { class: "dx-context-menu-item-indicator", size: "16px" }
+            Check {
+                class: "dx-context-menu-item-indicator",
+                "data-dx-menu-item-indicator": "end",
+                size: "16px",
+            }
         }
     }
 }
@@ -208,7 +231,10 @@ pub fn ContextMenuRadioGroup(props: ContextMenuRadioGroupProps) -> Element {
 /// [`ContextMenuCheckboxItem`]; the `Check` marks the chosen item.
 #[component]
 pub fn ContextMenuRadioItem(props: ContextMenuRadioItemProps) -> Element {
-    let base = attributes!(div { class: "dx-context-menu-item dx-context-menu-checkable-item" });
+    let base = attributes!(div {
+        class: "dx-context-menu-item dx-context-menu-checkable-item",
+        "data-dx-menu-item": "true",
+    });
     let merged = merge_attributes(vec![base, props.attributes]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/context_menu/style.css") }
@@ -220,7 +246,11 @@ pub fn ContextMenuRadioItem(props: ContextMenuRadioItemProps) -> Element {
             close_on_select: props.close_on_select,
             attributes: merged,
             {props.children}
-            Check { class: "dx-context-menu-item-indicator", size: "16px" }
+            Check {
+                class: "dx-context-menu-item-indicator",
+                "data-dx-menu-item-indicator": "end",
+                size: "16px",
+            }
         }
     }
 }
@@ -234,7 +264,10 @@ pub fn ContextMenuLabel(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
     children: Element,
 ) -> Element {
-    let base = attributes!(div { class: "dx-context-menu-label" });
+    let base = attributes!(div {
+        class: "dx-context-menu-label",
+        "data-dx-menu-label": "true",
+    });
     let merged = merge_attributes(vec![base, attributes]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/context_menu/style.css") }

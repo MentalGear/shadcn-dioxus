@@ -52,6 +52,11 @@
     display: flex;
     align-items: center;
     grid-column: span 2 / span 2;
+
+    /* A drag surface (the thumb is moved by pointer events), so the browser's own pan must not
+       start on it and cancel the pointer. Effective `touch-action` is the intersection down the
+       ancestor chain, so this also keeps the thumb's `manipulation` (the theme's shared rule)
+       from re-enabling a pan. The one deliberate `none`; everything else is `manipulation`. */
     touch-action: none;
 }
 
@@ -75,9 +80,6 @@
     box-shadow: black 0 0 0 1px, black 0 0 0 1px inset;
     cursor: pointer;
     forced-color-adjust: none;
-
-    /* touch-action: manipulation -- disables iOS Safari double-tap-to-zoom on this control while still allowing pan/pinch scrolling (touch-action: none must never be used, it breaks scrolling); mirrors the shared app-layer rule in preview/assets/main.css. Copied-out components ship without main.css, so this needs to live here too. */
-    touch-action: manipulation;
 
     /* rtl-physical: this thumb's horizontal position is set inline by the
        primitive (out of this lane's ownership, like slider/style.css's
@@ -105,6 +107,8 @@
     min-height: 116px;
     aspect-ratio: 1;
     forced-color-adjust: none;
+
+    /* Drag surface: same reason as `.dx-color-picker-slider` above. */
     touch-action: none;
 }
 
@@ -124,9 +128,6 @@
     border-radius: 50%;
     box-shadow: black 0 0 0 1px, black 0 0 0 1px inset;
     cursor: pointer;
-
-    /* touch-action: manipulation -- disables iOS Safari double-tap-to-zoom on this control while still allowing pan/pinch scrolling (touch-action: none must never be used, it breaks scrolling); mirrors the shared app-layer rule in preview/assets/main.css. Copied-out components ship without main.css, so this needs to live here too. */
-    touch-action: manipulation;
 
     /* rtl-physical: this thumb's 2D position (both axes) is set inline by
        the primitive, same coordination note as `.dx-color-picker-slider-
@@ -176,28 +177,25 @@
     gap: var(--dx-space-2);
     line-height: 1.5;
     outline: 0 solid;
-
-    /* touch-action: manipulation -- disables iOS Safari double-tap-to-zoom on this control while still allowing pan/pinch scrolling (touch-action: none must never be used, it breaks scrolling); mirrors the shared app-layer rule in preview/assets/main.css. Copied-out components ship without main.css, so this needs to live here too. */
-    touch-action: manipulation;
     transition: box-shadow var(--dx-motion-duration-base), background-color var(--dx-motion-duration-base), color var(--dx-motion-duration-base);
 }
 
 .dx-color-picker-button:focus-visible {
-    box-shadow: 0 0 0 3px
-        color-mix(in oklab, var(--dx-ring-color) 50%, transparent);
+    box-shadow: var(--dx-ring-focus);
 }
 
 .dx-color-picker-popover {
+    /* Slots of the theme's floating-surface recipe (`data-dx-surface="floating"`, emitted by
+       `ColorPickerPopover`): the 4px drop, and the recipe's own 4px padding (the UA popover padding
+       this panel always had, now a token). The recipe also supplies the edge, radius, fill, shadow and
+       stacking, and replaces the UA `dialog`'s 3px solid border that this panel used to wear. */
+    --dx-floating-enter: dx-drop-in;
+    --dx-floating-exit: dx-drop-out;
+
     position: absolute;
-    z-index: var(--dx-z-overlay);
     top: 100%;
     display: block;
-    border-radius: var(--dx-radius-lg);
     margin-top: var(--dx-space-1);
-    background: var(--dx-popover);
-    box-shadow:
-        inset 0 0 0 1px var(--dx-input),
-        0 4px 16px rgb(0 0 0 / 15%);
     inset-inline-start: 0;
 }
 
@@ -206,56 +204,21 @@
  * composed from `dioxus_primitives::popover` directly (`ColorPickerRoot`/
  * `ColorPickerPopover` in `component.rs`), not from this workspace's
  * "Popover" preview page. This page used to carry its own hand-copied
- * `[popover]` UA-stylesheet reset and `@supports (anchor-name: --a)` block
- * (the fix landed the same day this comment was first written) -- both now
- * live in a single, engine-injected stylesheet shared by every
+ * `[popover]` UA-stylesheet reset and `@supports (anchor-name: --a)` block --
+ * both now live in a single, engine-injected stylesheet shared by every
  * `dx-anchor-*`-marked overlay in the app instead, closing the underlying
  * bug class rather than just this one instance of it. See
  * `primitives/src/top_layer.rs`'s `ensure_anchor_positioning_styles` doc
  * (docs/backlog.md item 1) for the full rationale, and
  * `../tooltip/style.css`'s identical comment.
+ *
+ * The 4px drop is the theme's `dx-drop-in`/`dx-drop-out` and animates `translate`, NOT `transform`.
+ * The anchored panel centres itself on its trigger with `transform: translateX(-50%)` (top_layer.rs's
+ * engine stylesheet); a keyframe that sets `transform` replaces that for as long as the animation
+ * runs, so the panel played its whole fade 133px off-centre and snapped back on the last frame, on
+ * every open and close. `scripts/check-anchored-keyframes.sh` holds the line for every popover-family
+ * stylesheet.
  */
-
-.dx-color-picker-popover[data-state="open"] {
-    animation: dx-color-picker-popover-fade-in var(--dx-motion-duration-base) var(--dx-motion-ease-out);
-}
-
-.dx-color-picker-popover[data-state="closed"] {
-    animation: dx-color-picker-popover-fade-out var(--dx-motion-duration-base) var(--dx-motion-ease-out) forwards;
-    pointer-events: none;
-}
-
-/*
- * The 4px drop animates `translate`, NOT `transform`. The anchored panel centres itself on its trigger with
- * `transform: translateX(-50%)` (top_layer.rs's engine stylesheet); a keyframe that sets `transform`
- * replaces that for as long as the animation runs, so the panel played its whole fade 133px off-centre and
- * snapped back on the last frame, on every open and close. `translate` is a separate property that composes
- * with `transform`, so the centring survives (the date picker's panel had the same bug, same fix).
- * `scripts/check-anchored-keyframes.sh` holds the line for every popover-family stylesheet.
- */
-@keyframes dx-color-picker-popover-fade-in {
-    from {
-        opacity: 0;
-        translate: 0 -4px;
-    }
-
-    to {
-        opacity: 1;
-        translate: 0 0;
-    }
-}
-
-@keyframes dx-color-picker-popover-fade-out {
-    from {
-        opacity: 1;
-        translate: 0 0;
-    }
-
-    to {
-        opacity: 0;
-        translate: 0 -4px;
-    }
-}
 
 .dx-color-picker-dialog {
     display: flex;
@@ -274,5 +237,5 @@
 .dx-color-picker[data-disabled="true"],
 .dx-color-picker [data-disabled="true"] {
     cursor: not-allowed;
-    opacity: 0.5;
+    opacity: var(--dx-opacity-disabled);
 }

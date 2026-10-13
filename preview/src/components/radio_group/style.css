@@ -14,9 +14,6 @@
   color: var(--dx-foreground);
   font-size: var(--dx-text-sm);
   gap: var(--dx-space-3);
-
-  /* touch-action: manipulation -- disables iOS Safari double-tap-to-zoom on this control while still allowing pan/pinch scrolling (touch-action: none must never be used, it breaks scrolling); mirrors the shared app-layer rule in preview/assets/main.css. Copied-out components ship without main.css, so this needs to live here too. */
-  touch-action: manipulation;
 }
 
 .dx-radio-group-item::before {
@@ -35,7 +32,14 @@
 }
 
 .dx-radio-group-item:focus-visible::before {
-  box-shadow: var(--dx-ring);
+  box-shadow: var(--dx-ring-focus);
+}
+
+/* The ring is drawn on the circle, not on the row (see above). After the focus rule so a focused
+ * invalid radio stays red. */
+.dx-radio-group-item[aria-invalid="true"]::before,
+.dx-radio-group-item[data-invalid="true"]::before {
+  box-shadow: 0 0 0 1px var(--dx-ring-invalid-color), var(--dx-ring-invalid);
 }
 
 .dx-radio-group-item[data-state="checked"]::before {
@@ -46,7 +50,7 @@
 .dx-radio-group-item:disabled {
   color: var(--dx-muted-foreground);
   cursor: not-allowed;
-  opacity: 0.5;
+  opacity: var(--dx-opacity-disabled);
 }
 
 .dx-radio-group-item:disabled::before {

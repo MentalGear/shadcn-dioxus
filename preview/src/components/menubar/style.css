@@ -19,9 +19,6 @@
   background: none;
   color: var(--dx-foreground);
   cursor: pointer;
-
-  /* touch-action: manipulation -- disables iOS Safari double-tap-to-zoom on this control while still allowing pan/pinch scrolling (touch-action: none must never be used, it breaks scrolling); mirrors the shared app-layer rule in preview/assets/main.css. Copied-out components ship without main.css, so this needs to live here too. */
-  touch-action: manipulation;
   transition: background-color var(--dx-motion-duration-fast) var(--dx-motion-ease-out);
 }
 
@@ -33,7 +30,7 @@
 .dx-menubar-trigger[data-disabled="true"] {
   color: var(--dx-muted-foreground);
   cursor: not-allowed;
-  opacity: 0.5;
+  opacity: var(--dx-opacity-disabled);
 }
 
 .dx-menubar-trigger:hover:not([data-disabled="true"]),
@@ -45,41 +42,30 @@
 
 .dx-menubar-content {
   position: absolute;
-  z-index: var(--dx-z-overlay);
   top: 100%;
 
   /*
-   * `overflow` and `border` undo the UA popover stylesheet's `[popover] {
-   * border: solid; overflow: auto; ... }` (WHATWG HTML's popover section) --
-   * on the web arm (Migration A slice 2/3), this content carries the
-   * `popover` attribute. This content has no border of its own (its edge is
-   * drawn by the `box-shadow` below) and never needs to scroll, so both are
-   * reset to nothing -- same fix as `../dropdown_menu/style.css`'s
-   * `.dx-dropdown-menu-content`. The matching `margin`/`inset` reset, and
-   * the `@supports (anchor-name: --a)` anchor-positioning rules that keep
-   * each menu anchored to its own trigger once promoted to the top layer,
-   * live in the shared, engine-injected stylesheet every `dx-anchor-*`-
-   * marked overlay gets for free -- see `primitives/src/top_layer.rs`'s
-   * `ensure_anchor_positioning_styles` doc. On an engine without CSS
-   * Anchor Positioning, this rule's own `position: absolute; top: 100%;
-   * left: 0` stays the fallback placement -- irrelevant to whichever
-   * anchored path is actually active, since
-   * `use_anchor_position_fallback`'s JS-measured correction always
-   * overrides with inline styles, which win regardless.
+   * Edge, radius, `popover` fill and ink, shadow, `p-1` padding, stacking, `overflow` and the
+   * pop-in/out come from the theme's floating-surface recipe (`data-dx-surface="floating"`, emitted
+   * by `MenubarContent`); its `border`/`overflow`/`padding` undo the UA popover stylesheet's
+   * `[popover] { border: solid; overflow: auto; ... }` (WHATWG HTML's popover section) -- on the web
+   * arm (Migration A slice 2/3) this content carries the `popover` attribute. The matching
+   * `margin`/`inset` reset, and the `@supports (anchor-name: --a)` anchor-positioning rules that
+   * keep each menu anchored to its own trigger once promoted to the top layer, live in the shared,
+   * engine-injected stylesheet every `dx-anchor-*`-marked overlay gets for free -- see
+   * `primitives/src/top_layer.rs`'s `ensure_anchor_positioning_styles` doc. On an engine without CSS
+   * Anchor Positioning, this rule's own `position: absolute; top: 100%; left: 0` stays the fallback
+   * placement -- irrelevant to whichever anchored path is actually active, since
+   * `use_anchor_position_fallback`'s JS-measured correction always overrides with inline styles,
+   * which win regardless.
    */
-  overflow: visible;
   min-width: 200px;
 
   /* Clamp to the viewport so a menu never induces horizontal page scroll on
      narrow screens -- same reasoning as ../dropdown_menu/style.css's
      identical rule. */
   max-width: calc(100vw - var(--dx-space-8));
-  padding: var(--dx-space-1);
-  border: none;
-  border-radius: var(--dx-radius-lg);
   margin-top: var(--dx-space-2);
-  background: var(--dx-popover);
-  box-shadow: inset 0 0 0 1px var(--dx-input);
   inset-inline-start: 0;
   opacity: 0;
   pointer-events: none;
@@ -91,123 +77,28 @@
   margin-inline-start: calc(-1 * var(--dx-space-1));
 }
 
-.dx-menubar-content[data-state="closed"] {
-  animation: dx-menubar-content-animate-out var(--dx-motion-duration-base) var(--dx-motion-ease-in) forwards;
-  pointer-events: none;
-}
-
-/* `scale`/`translate`, not `transform`: an animated `transform` REPLACES an anchor's own
- * centring transform (`translateX(-50%)`, `primitives/src/top_layer.rs`'s engine stylesheet)
- * for as long as the animation runs, which played the date/colour picker panels 144px/133px
- * off their anchor. This content sets no `data-side`, so no centring applies to it today; the
- * individual properties compose with `transform` and keep it safe if one ever does.
- * Guard: scripts/check-anchored-keyframes.sh. */
-@keyframes dx-menubar-content-animate-out {
-  0% {
-    opacity: 1;
-    scale: 1;
-    translate: 0 0;
-  }
-
-  100% {
-    opacity: 0;
-    scale: 0.95;
-    translate: 0 -2px;
-  }
-}
-
+/* The pop-in/out is the theme's floating-surface recipe (`dx-pop-in` / `dx-pop-out`, `scale`/
+ * `translate`, never `transform`: an animated `transform` REPLACES an anchor's own centring transform
+ * for as long as the animation runs -- scripts/check-anchored-keyframes.sh). The `opacity: 0` above is
+ * the hidden REST state; the recipe's `forwards` open animation lifts it. */
 .dx-menubar-content[data-state="open"] {
-  animation: dx-menubar-content-animate-in var(--dx-motion-duration-base) var(--dx-motion-ease-out) forwards;
   pointer-events: auto;
 }
 
-@keyframes dx-menubar-content-animate-in {
-  0% {
-    opacity: 0;
-    scale: 0.95;
-    translate: 0 -2px;
-  }
-
-  100% {
-    opacity: 1;
-    scale: 1;
-    translate: 0 0;
-  }
-}
-
-/* Menu-item indicator slot (the construction select/style.css documents in
- * full; mirrors `../dropdown_menu/style.css`). An item that draws a check
- * reserves `inset + size + gap` of inline padding and the indicator is
- * absolutely positioned inside that room, so a long label wraps
- * (`overflow-wrap: anywhere`) before it can meet the icon. The three
- * `--dx-menu-item-indicator-*` tokens are defined once in the theme and inherited
- * here (nothing is overridden). Unlike the dropdown
- * and context menus, shadcn's menubar draws the check at the inline START
- * (Nova's `.cn-menubar-checkbox-item`: `pl-7`, indicator `left-1.5`), so
- * the slot below is `padding-inline-start`/`inset-inline-start`. A plain
- * item has no slot; `data-inset="true"` reserves one without drawing
- * anything (shadcn's `inset`), so a menu that mixes plain and checkable
- * items can keep its labels on one edge. Guard:
+/* The menu item row, its highlight, disabled colour, indicator geometry and unchecked-hidden rule,
+ * and the group label, are the theme's shared menu-item recipe (`data-dx-menu-item`,
+ * `data-dx-menu-label`; `dx-components-theme.css`, shared with Dropdown Menu and Context Menu --
+ * `../dropdown_menu/style.css` documents the indicator slot). Unlike the dropdown and context
+ * menus, shadcn's menubar draws the check at the inline START (Nova's
+ * `.cn-menubar-checkbox-item`: `pl-7`, indicator `left-1.5`), so its indicator carries
+ * `data-dx-menu-item-indicator="start"` and the slot below is `padding-inline-start`. A plain item
+ * has no slot; `data-inset="true"` reserves one without drawing anything (shadcn's `inset`), so a
+ * menu that mixes plain and checkable items can keep its labels on one edge. Guard:
  * playwright/menu-indicator-gap.spec.ts. */
-.dx-menubar-item {
-  position: relative;
-  display: flex;
-  align-items: center;
-  padding: var(--dx-space-2) var(--dx-space-3);
-  border-radius: calc(var(--dx-radius-lg) - var(--dx-radius-sm));
-  color: var(--dx-foreground);
-  cursor: pointer;
-  font-size: var(--dx-text-sm);
-  gap: var(--dx-space-2);
-  overflow-wrap: anywhere;
-
-  /* touch-action: manipulation -- disables iOS Safari double-tap-to-zoom on this control while still allowing pan/pinch scrolling (touch-action: none must never be used, it breaks scrolling); mirrors the shared app-layer rule in preview/assets/main.css. Copied-out components ship without main.css, so this needs to live here too. */
-  touch-action: manipulation;
-}
-
-/* The indicator itself: out of flow, in the slot the item reserved. */
-.dx-menubar-item-indicator {
-  position: absolute;
-  width: var(--dx-menu-item-indicator-size);
-  height: var(--dx-menu-item-indicator-size);
-  inset-block: 0;
-  inset-inline-start: var(--dx-menu-item-indicator-inset);
-  margin-block: auto;
-  pointer-events: none;
-}
-
-.dx-menubar-item[data-disabled="true"] {
-  color: var(--dx-muted-foreground);
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
-.dx-menubar-item:hover:not([data-disabled="true"]),
-.dx-menubar-item:focus-visible {
-  background: var(--dx-accent);
-  color: var(--dx-accent-foreground);
-  outline: none;
-}
 
 /* The reserved slot: checkable items always, plain items on request
-   (`data-inset`). Declared after `.dx-menubar-item`'s own `padding` so it
-   wins at equal specificity. */
+   (`data-inset`). It out-ranks the theme's zero-specificity item `padding`. */
 .dx-menubar-checkable-item,
 .dx-menubar-item[data-inset="true"] {
   padding-inline-start: calc(var(--dx-menu-item-indicator-inset) + var(--dx-menu-item-indicator-size) + var(--dx-menu-item-indicator-gap));
-}
-
-/* The check is drawn only while the item is checked; `visibility`, not
-   `display`, so an unchecked item keeps its box -- the slot is reserved
-   either way and labels never shift when an item is toggled. */
-.dx-menubar-checkable-item[data-state="unchecked"] > .dx-menubar-item-indicator {
-  visibility: hidden;
-}
-
-/* A heading for a group of items (`MenubarLabel`). */
-.dx-menubar-label {
-  padding: var(--dx-space-2) var(--dx-space-3);
-  color: var(--dx-muted-foreground);
-  font-size: var(--dx-text-xs);
-  font-weight: 500;
 }
