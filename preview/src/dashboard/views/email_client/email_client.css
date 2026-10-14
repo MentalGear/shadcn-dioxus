@@ -69,9 +69,11 @@
     font-weight: 600;
 }
 
-.ec-compose[data-sidebar="menu-button"]:hover {
-    background: color-mix(in oklab, var(--dx-primary) 90%, transparent);
-    color: var(--dx-primary-foreground);
+@media (hover: hover) and (pointer: fine) {
+    .ec-compose[data-sidebar="menu-button"]:hover {
+        background: color-mix(in oklab, var(--dx-primary) 90%, transparent);
+        color: var(--dx-primary-foreground);
+    }
 }
 
 /* Split layout */
@@ -223,9 +225,11 @@
     min-height: 1.5rem;
 }
 
-.ec-row:hover:not([data-selected="true"]) {
-    border-color: var(--dx-border);
-    background: var(--dx-muted);
+@media (hover: hover) and (pointer: fine) {
+    .ec-row:hover:not([data-selected="true"]) {
+        border-color: var(--dx-border);
+        background: var(--dx-muted);
+    }
 }
 
 .ec-row[data-selected="true"] {
@@ -330,16 +334,21 @@
     opacity: 0.72;
 }
 
-.ec-row:hover .ec-row-action,
 .ec-row:focus-within .ec-row-action,
 .ec-row .ec-row-action:focus-visible,
 .ec-row .ec-row-action[data-active="true"] {
     opacity: 1;
 }
 
-.ec-row .ec-row-action[data-style="ghost"]:hover {
-    background: var(--dx-accent);
-    color: var(--dx-accent-foreground);
+@media (hover: hover) and (pointer: fine) {
+    .ec-row:hover .ec-row-action {
+        opacity: 1;
+    }
+
+    .ec-row .ec-row-action[data-style="ghost"]:hover {
+        background: var(--dx-accent);
+        color: var(--dx-accent-foreground);
+    }
 }
 
 .ec-row .ec-row-action[data-active="true"] {
@@ -494,14 +503,24 @@
     color: inherit;
 }
 
-.ec-thread-hero-meta .ec-tag-remove[data-style="ghost"]:hover,
 .ec-thread-hero-meta .ec-tag-remove[data-style="ghost"]:focus-visible {
     background: transparent;
 }
 
-.ec-thread-hero-meta .ec-tag-remove:hover > span,
+@media (hover: hover) and (pointer: fine) {
+    .ec-thread-hero-meta .ec-tag-remove[data-style="ghost"]:hover {
+        background: transparent;
+    }
+}
+
 .ec-thread-hero-meta .ec-tag-remove:focus-visible > span {
     background: color-mix(in oklab, var(--dx-border) 65%, transparent);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .ec-thread-hero-meta .ec-tag-remove:hover > span {
+        background: color-mix(in oklab, var(--dx-border) 65%, transparent);
+    }
 }
 
 .ec-thread-hero-meta .ec-tag-edit-trigger {
@@ -514,10 +533,16 @@
     font-size: 0.75rem;
 }
 
-.ec-thread-hero-meta .ec-tag-edit-trigger:hover,
 .ec-thread-hero-meta .ec-tag-edit-trigger:focus-visible {
     border-color: var(--dx-primary);
     color: var(--dx-accent-foreground);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .ec-thread-hero-meta .ec-tag-edit-trigger:hover {
+        border-color: var(--dx-primary);
+        color: var(--dx-accent-foreground);
+    }
 }
 
 .ec-row .ec-row-tags svg {

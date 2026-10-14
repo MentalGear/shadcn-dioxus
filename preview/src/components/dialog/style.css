@@ -165,38 +165,49 @@ dialog.dx-dialog[open][data-state="open"] {
   }
 }
 
-/* Nova's close is a ghost `icon-sm` button at `top-2 right-2`: 28px square,
- * `min(radius-md, 12px)` corners, `muted` fill on hover. */
+/* `.cn-dialog-header`: the title and description in a column with `gap-2` (inside the panel's
+ * `gap-4`). The description's pull-back above is for a panel with no header; here the header's
+ * gap already is the spacing. */
+.dx-dialog-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dx-space-2);
+}
+
+.dx-dialog-header .dx-dialog-description {
+  margin-block-start: 0;
+}
+
+/* `.cn-dialog-footer` + the part's `flex flex-col-reverse gap-2 sm:flex-row sm:justify-end`:
+ * `bg-muted/50 -mx-4 -mb-4 rounded-b-xl border-t p-4`, a band across the panel's foot that
+ * cancels the panel's own padding (the panel's `--dx-space-4`). A column, reversed (the primary
+ * action ends up on top), below `sm`; a row aligned to the end from `sm` up. */
+.dx-dialog-footer {
+  display: flex;
+  flex-direction: column-reverse;
+  padding: var(--dx-space-4);
+  border-top: 1px solid var(--dx-border);
+  background: color-mix(in oklab, var(--dx-muted) 50%, transparent);
+  border-end-end-radius: var(--dx-radius-xl);
+  border-end-start-radius: var(--dx-radius-xl);
+  gap: var(--dx-space-2);
+  margin-block-end: calc(var(--dx-space-4) * -1);
+  margin-inline: calc(var(--dx-space-4) * -1);
+}
+
+@media (width >= 40rem) {
+  .dx-dialog-footer {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+}
+
+/* `.cn-dialog-close`: `absolute top-2 right-2` around a ghost `icon-sm` Button. This wrapper owns
+ * the placement and nothing else: the button inside is the real Button, so its size, radius,
+ * hover and focus ring are Button's and no property is declared on another component's element. */
 .dx-dialog-close {
   position: absolute;
   top: var(--dx-space-2);
-  display: inline-flex;
-  width: 1.75rem;
-  height: 1.75rem;
-  align-items: center;
-  align-self: flex-start;
-  justify-content: center;
-  padding: 0;
-  border: 1px solid transparent;
-  border-radius: min(var(--dx-radius-md), 12px);
-  margin: 0;
-  background: none;
-  color: var(--dx-foreground);
-  cursor: pointer;
-  font-size: var(--dx-text-lg);
+  display: flex;
   inset-inline-end: var(--dx-space-2);
-  line-height: 1;
-  outline: none;
-  transition-duration: var(--dx-motion-duration-base);
-  transition-property: background-color, border-color, box-shadow;
-}
-
-.dx-dialog-close:hover {
-  background-color: var(--light, var(--dx-muted))
-    var(--dark, color-mix(in oklab, var(--dx-muted) 50%, transparent));
-}
-
-.dx-dialog-close:focus-visible {
-  border-color: var(--dx-ring-color);
-  box-shadow: var(--dx-ring-focus);
 }

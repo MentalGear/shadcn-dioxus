@@ -13,9 +13,14 @@ DatePicker {
     },
     // Optional number of pre-composed calendar months to show in the popover.
     month_count: 1,
-    // Optional: keep the popover open after a date is picked (default `true` closes it).
+    // Optional: stage selections behind a Cancel / Apply footer (default `true`).
+    confirm: true,
+    // Optional: the footer's labels (defaults "Apply" / "Cancel").
+    apply_label: "Apply",
+    cancel_label: "Cancel",
+    // Only with `confirm: false` -- keep the popover open after a date is picked (default `true` closes it).
     close_on_select: true,
-    // Optional: how long the popover stays open after a selection (default 300 ms).
+    // Only with `confirm: false` -- how long the popover stays open after a selection (default 300 ms).
     close_delay: Duration::from_millis(300),
     // Optional placeholder formatters for the input fields.
     on_format_day_placeholder: || "D",
@@ -26,9 +31,68 @@ DatePicker {
 
 The styled `DatePicker` and `DateRangePicker` render the input, trigger, popover content, and calendar by default.
 
-## Closing after a selection
+## Apply / Cancel (`confirm`, the default)
 
-Picking a date closes the popover, but not on the same frame: the selected day stays painted for
+By default a selection is **staged**, not committed. Picking a day in the calendar highlights it in the
+panel; the input (and `on_value_change`) keep the committed value until the footer says otherwise.
+
+| Action | Result |
+| --- | --- |
+| **Apply** | Commits the staged selection (`on_value_change` fires once), closes the popover, focus returns to the trigger. |
+| **Cancel** | Discards the staged selection and closes. |
+| Escape, an outside click, the trigger | Same as Cancel: the previous value is restored and the popover closes. |
+
+- **Apply is disabled** until the staged selection differs from the committed value. In a
+  `DateRangePicker` a range is staged only once its **end** date is picked (the first click just anchors
+  it), so Apply stays disabled until both ends are chosen; starting a new range while one is committed
+  leaves the committed range untouched and Apply disabled until the new one is complete. Picking the
+  selected day again clears the selection, which can be applied like any other change.
+- Typing into the input segments is a direct edit and still commits immediately (it closes the popover,
+  which drops anything staged).
+- `close_on_select` and `close_delay` are ignored while `confirm` is on: nothing closes until Apply or Cancel.
+- `apply_label` / `cancel_label` localize the two buttons (the footer uses the real `Button`).
+- There is no multi-date mode in this calendar, so staging covers the single and the range picker.
+- The primitive (`dioxus_primitives::date_picker`) defaults `confirm` to `false` — it stages only if you
+  also render controls, which you build from `use_date_picker_confirm()` (`enabled()`, `can_apply()`,
+  `apply()`, `cancel()`); a staging picker without them would never commit. The styled `DatePicker` /
+  `DateRangePicker` default it to `true` and render the footer.
+
+`confirm: false` removes the footer and commits on select, as below.
+
+## Demos, and which shadcn demo each mirrors
+
+shadcn's date pickers never stage (no demo has Apply/Cancel; the `Calendar` selects live), so the Apply /
+Cancel footer is this library's own default. The demos that are twins of a shadcn demo switch it off
+(`confirm: false`) and copy that demo's open/close behaviour; the rest show the default.
+
+| Demo | `confirm` | After a pick | shadcn source |
+| --- | --- | --- | --- |
+| `main` | on (default) | stays open until Apply / Cancel | none (library default) |
+| `range` | on (default) | stays open until Apply (disabled until both ends) | none (library default) |
+| `unavailable_dates` | off | closes once the range's end is picked (after the 300 ms dwell) | none |
+| `keep_open` | off | stays open | `date-picker-demo` / `date-picker-basic` (uncontrolled popover) |
+| `multi_month` | off | stays open, even after both ends | `date-picker-range` (`numberOfMonths={2}`) |
+| `internationalized` | off | stays open | `date-picker-rtl` |
+| `time` | off | closes on select (after the 300 ms dwell) | `date-picker-time` (controlled `open`, closed in `onSelect`) |
+| `natural_language` | n/a (plain `Calendar` in a `Popover`) | closes on select, writes the field | `date-picker-natural-language` |
+
+shadcn's rule of thumb: demos with a controlled `open` (dob, time, input, natural language) close on select;
+uncontrolled ones never do.
+
+### Natural language
+
+A text field that understands phrases, as in shadcn's "Natural Language Picker": the label is "Schedule
+Date", the placeholder "Tomorrow or next week", it starts as "In 2 days", and the line below reads "Your
+post will be published on **October 16, 2026**." Every keystroke is parsed; text that does not parse keeps
+the previous date. ArrowDown in the field opens the calendar, whose button sits inside the field (an
+icon button labelled "Select date", popover end-aligned); picking a day writes it into the field and
+closes. shadcn parses with `chrono-node`; this demo has a small hand-written parser instead (today,
+tomorrow, yesterday, `in N days/weeks/months`, `N days ago`, `next week/month`, weekday names,
+`2026-10-20`, `October 20, 2026`, `20 Oct`). It is demo code, not part of the component.
+
+## Closing after a selection (`confirm: false`)
+
+With `confirm: false`, picking a date closes the popover, but not on the same frame: the selected day stays painted for
 `close_delay` first, so the click visibly registered, and then the popover plays its normal exit
 animation and focus returns to the trigger.
 
@@ -70,4 +134,4 @@ computes its ranges from today, so they are always inside the month the picker o
 
 ## Motion
 
-The calendar popover fades in and out over `--dx-motion-duration-base`. After a selection the popover waits `close_delay` (default 300 ms; `Duration::ZERO` closes at once, `close_on_select: false` keeps it open) so the click visibly registers, then plays its normal exit. Nothing loops. See [Motion](/docs#motion) for the tokens, reduced motion and the per-component table.
+The calendar popover fades in and out over `--dx-motion-duration-base`. With `confirm: false`, after a selection the popover waits `close_delay` (default 300 ms; `Duration::ZERO` closes at once, `close_on_select: false` keeps it open) so the click visibly registers, then plays its normal exit; with the default `confirm`, Apply / Cancel close it and play the same exit. Nothing loops. See [Motion](/docs#motion) for the tokens, reduced motion and the per-component table.

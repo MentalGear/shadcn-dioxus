@@ -92,8 +92,14 @@
 
 /* Raise the hovered / keyboard-focused child so its ring is not clipped by the
  * neighbour that overlaps it. */
-.dx-button-group > :is(:hover, :focus-visible, :has(:focus-visible)) {
+.dx-button-group > :is(:focus-visible, :has(:focus-visible)) {
   z-index: var(--dx-z-raise);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-button-group > :hover {
+    z-index: var(--dx-z-raise);
+  }
 }
 
 /* The separator's orientation is derived from the group (component.rs): in a row it is a vertical

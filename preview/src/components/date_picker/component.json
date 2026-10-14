@@ -18,6 +18,7 @@
     }
   ],
   "componentDependencies": [
+    { "name": "button", "git": "https://github.com/MentalGear/shadcn-dioxus" },
     { "name": "calendar", "git": "https://github.com/MentalGear/shadcn-dioxus" },
     { "name": "popover", "git": "https://github.com/MentalGear/shadcn-dioxus" }
   ],

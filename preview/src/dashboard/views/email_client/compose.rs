@@ -40,6 +40,8 @@ pub(super) fn ComposeModal(mut state: Store<EmailClientState>) -> Element {
             open: Some(open),
             on_open_change: move |v: bool| state.set_compose_open(v),
             class: "ec-compose-dialog",
+            // The compose head draws its own close (it discards the draft), so no corner X.
+            show_close_button: false,
             DemoForm { class: "ec-compose-form", show_status: false, onsubmit: send,
                 div { class: "ec-compose-head",
                     div { class: "ec-compose-head-text",

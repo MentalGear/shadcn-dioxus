@@ -1219,6 +1219,48 @@ pub(crate) fn use_popover_shown_while_mounted(
 /// an unrequested rewrite of a working engine's untouched code path.
 /// Regression oracle: `top-layer.spec.ts` Rule 15.
 ///
+/// ## Exclusion zone (2026-10-14, `docs/backlog.md` row 210 -- supersedes the
+/// main-axis parts of "Vertical shift + size clamp" above)
+///
+/// User report (iPhone): the open Combobox list covered its own input. The class
+/// was "the panel is clamped into the viewport along the axis `side` names",
+/// which is the axis the anchor sits on: with the keyboard up the visual
+/// viewport is short, the flip picked a side without checking it fit, and the
+/// vertical clamp (`top >= EDGE_MARGIN`) then dragged the list ONTO the input;
+/// the size clamp measured against the WHOLE viewport rather than the room beside
+/// the anchor, so it could never shrink the list far enough to avoid it. The CSS
+/// Anchor Positioning arm was not safer: its early return trusted any placement
+/// that landed on a contract spot (judged against the LAYOUT viewport, which a
+/// keyboard does not shrink) and capped nothing.
+///
+/// The construction, for every caller: **the anchor's box is an exclusion zone on
+/// the main axis**, in visual-viewport coordinates.
+///
+/// 1. *Side by room.* `room[side]` is the space between the anchor's edge (plus the gap)
+///    and the viewport edge (minus `EDGE_MARGIN`). The preferred side is kept while the
+///    panel fits there, else the opposite side if it fits or simply has more room.
+/// 2. *No main-axis shift.* Only the cross-axis clamp survives (sliding along the
+///    anchor's edge, Floating UI's `shift` on the alignment axis); nothing moves the
+///    panel across the anchor.
+/// 3. *Size to the room.* A panel taller (wider, for left/right) than the chosen side's
+///    room is capped to it and scrolls itself. The limits are published as
+///    `--dx-available-height` / `--dx-available-width` (Base UI's `--available-height`)
+///    on every call, on both arms, so a sheet can say
+///    `max-height: min(18rem, var(--dx-available-height, 18rem))`
+///    (`combobox/style.css` does). The panel's natural size is measured with those
+///    caps lifted (in the same synchronous task, so nothing paints) and its scroll
+///    offset restored.
+/// 4. *The CSS arm is trusted only while it honours the zone.* A placement that
+///    matches a contract spot is accepted only if the box is inside the visual viewport
+///    and does not intersect the anchor; otherwise the JS path above takes over.
+/// 5. *Growth while open.* A `ResizeObserver` on the panel re-places it when its
+///    content changes size (typing in a Combobox), and a panel above the anchor is
+///    pinned by its BOTTOM edge, so growth extends away from the anchor by
+///    construction rather than by a re-measure.
+///
+/// Regression oracle: `playwright/combobox-placement.spec.ts` (geometry sweep over
+/// viewports, input positions, schemes, typing and the list's own scroll).
+///
 /// ## Anchor width contract (2026-09-04, `docs/backlog.md` row 47)
 ///
 /// User report: the styled `Select` ("Choose a fruit"/"Select an option")
@@ -1524,6 +1566,14 @@ pub(crate) fn use_anchor_position_fallback(
             {viewport_metrics_js}
             {measure_js}
 
+            // Exclusion-zone placement (2026-10-14, backlog row 210, see this
+            // function's doc, "Exclusion zone"): the anchor's box is a no-go
+            // area for the panel on the MAIN axis (the one `side` names), in
+            // visual-viewport coordinates, for every caller. EDGE_MARGIN is
+            // the gap kept to the viewport edge.
+            const EDGE_MARGIN = 4;
+            const vertical = side === 'top' || side === 'bottom';
+
             function reposition() {{
                 if (!content || !trigger) return;
                 const t = trigger.getBoundingClientRect();
@@ -1533,21 +1583,26 @@ pub(crate) fn use_anchor_position_fallback(
                 // `usingFallback` below -- since this write needs to reach
                 // a themed stylesheet's `min-width: var(--dx-anchor-width,
                 // ...)` rule regardless of which positioning path this
-                // engine takes. Written here, before the `matches()`
-                // early-return further down, so it still runs (and keeps
-                // being refreshed by the scroll/resize/visualViewport
-                // tracking below, which just re-invokes this same
-                // function) even on a conforming CSS-Anchor-Positioning
-                // engine that never takes the inline-position-override
-                // branch at all -- position and width are two independent
-                // engine guarantees, and a component must not have to
-                // choose the JS fallback path just to get a correct width.
-                // See `preview/src/components/select/style.css`'s
-                // `.dx-select-list` rule for the consuming side of this
-                // contract, and this crate's other themed overlay
-                // stylesheets for why none of them currently need it (fixed
-                // pixel `min-width`s, not viewport-relative percentages).
+                // engine takes.
                 content.style.setProperty('--dx-anchor-width', t.width + 'px');
+                // Measure the panel's NATURAL size: our own caps (the
+                // published `--dx-available-*` properties a sheet may read in
+                // its `max-height`, and the inline caps the JS path sets
+                // below) feed back into the very size the side decision
+                // reasons about, so they are dropped, measured around, and
+                // written again in this same synchronous task (no frame
+                // paints the uncapped state). The panel's own scroll offset
+                // is restored because removing a cap can clamp it.
+                const keepScroll = content.scrollTop;
+                content.style.removeProperty('--dx-available-height');
+                content.style.removeProperty('--dx-available-width');
+                if (usingFallback) {{
+                    content.style.maxHeight = '';
+                    content.style.maxWidth = '';
+                    content.style.overflowY = '';
+                    content.style.overflowX = '';
+                    content.style.boxSizing = '';
+                }}
                 const c = content.getBoundingClientRect();
                 // `let`: re-measured at full width below once this call has
                 // committed to overriding the position (`measureAtFullWidth`).
@@ -1557,10 +1612,10 @@ pub(crate) fn use_anchor_position_fallback(
                 const vw = vp.width;
                 const vh = vp.height;
                 // See `viewportMetrics()`'s doc just above: re-express the
-                // two rects `getBoundingClientRect()` gave in layout-
-                // viewport coordinates as visual-viewport-relative ones, so
-                // they compare like-for-like against `vw`/`vh` (also
-                // visual-viewport-relative) in every formula below.
+                // rects `getBoundingClientRect()` gave in layout-viewport
+                // coordinates as visual-viewport-relative ones, so they
+                // compare like-for-like against `vw`/`vh` in every formula
+                // below.
                 const tTop = t.top - vp.offsetTop;
                 const tBottom = t.bottom - vp.offsetTop;
                 const tLeft = t.left - vp.offsetLeft;
@@ -1568,13 +1623,48 @@ pub(crate) fn use_anchor_position_fallback(
                 const cTop = c.top - vp.offsetTop;
                 const cLeft = c.left - vp.offsetLeft;
 
+                // Room on each side of the anchor, in visual-viewport space:
+                // from the anchor's edge (plus the gap) to the viewport edge
+                // (minus the margin). This is the space a panel on that side
+                // may occupy WITHOUT touching the anchor.
+                const room = {{
+                    bottom: vh - EDGE_MARGIN - (tBottom + gap),
+                    top: tTop - gap - EDGE_MARGIN,
+                    right: vw - EDGE_MARGIN - (tRight + gap),
+                    left: tLeft - gap - EDGE_MARGIN,
+                }};
+
+                // The side to use: the preferred one while the panel fits
+                // there, else the opposite one if it fits there or simply has
+                // more room (Floating UI's flip with a preferred-side bias).
+                // Never anything but the two sides of the `side` axis.
+                function chooseSide() {{
+                    const fits = (s) => (vertical ? ch <= room[s] : cw <= room[s]);
+                    if (fits(side)) return side;
+                    return (fits(opposite) || room[opposite] > room[side]) ? opposite : side;
+                }}
+                let chosen = chooseSide();
+
+                // The size limits the chosen side imposes, published as
+                // `--dx-available-height` / `--dx-available-width` (Base UI's
+                // `--available-height`) so a sheet can say
+                // `max-height: min(18rem, var(--dx-available-height, 18rem))`.
+                // On the main axis it is the room beside the anchor; on the
+                // cross axis it is the whole viewport minus the margins.
+                function availableFor(s) {{
+                    return vertical
+                        ? {{ h: Math.max(0, room[s]), w: Math.max(0, vw - 2 * EDGE_MARGIN) }}
+                        : {{ h: Math.max(0, vh - 2 * EDGE_MARGIN), w: Math.max(0, room[s]) }};
+                }}
+                function publish(a) {{
+                    content.style.setProperty('--dx-available-height', a.h + 'px');
+                    content.style.setProperty('--dx-available-width', a.w + 'px');
+                }}
+
                 // Same trigger-relative formula the `[data-side]`/
                 // `[data-align]` CSS contract promises, parameterised over
-                // *which* side is currently being placed -- called once for
-                // the primary side and once for its flip-axis opposite (see
-                // this function's doc, "The flip contract"). Operates
-                // entirely in visual-viewport space (the `t*` locals above),
-                // like everything else in this function.
+                // *which* side is currently being placed. Operates entirely
+                // in visual-viewport space (the `t*` locals above).
                 function place(effectiveSide) {{
                     let top;
                     let left;
@@ -1603,8 +1693,8 @@ pub(crate) fn use_anchor_position_fallback(
                     return {{ top, left }};
                 }}
 
-                let primary = place(side);
-                let flipped = place(opposite);
+                const primary = place(side);
+                const flipped = place(opposite);
 
                 // Tolerance for rounding/subpixel noise -- see this
                 // function's doc for why this checks the *outcome* rather
@@ -1614,211 +1704,111 @@ pub(crate) fn use_anchor_position_fallback(
                 }}
 
                 if (!usingFallback && (matches(primary) || matches(flipped))) {{
-                    // A working anchor-positioning engine placed this at
-                    // one of the two contract-legal spots -- its own
-                    // preferred side, or the CSS `position-try-fallbacks`
-                    // flip of it. Never override: doing so here would fight
-                    // a legitimate flip and stomp it back off-viewport (see
-                    // this function's doc). Tracking listeners are
-                    // installed unconditionally below regardless of this
-                    // branch (2026-09-02 fix, gap 2) -- this only decides
-                    // whether *this one call* overrides, not whether future
-                    // calls get a chance to.
-                    return;
+                    // A working anchor-positioning engine placed this at one
+                    // of the two contract-legal spots. It is only trusted
+                    // while that placement honours the exclusion zone: the
+                    // engine judges "fits" against the LAYOUT viewport (which
+                    // an on-screen keyboard does not shrink) and caps nothing,
+                    // so a box it placed may reach under the keyboard or off
+                    // the visual viewport. Either violation (box outside the
+                    // visual viewport, or box intersecting the anchor) hands
+                    // this call to the JS path below, which is the authority.
+                    const cBottom = cTop + ch;
+                    const cRight = cLeft + cw;
+                    const outside = cTop < -1 || cLeft < -1 || cBottom > vh + 1 || cRight > vw + 1;
+                    const overlaps = cLeft < tRight - 1 && cRight > tLeft + 1 && cTop < tBottom - 1 && cBottom > tTop + 1;
+                    if (!outside && !overlaps) {{
+                        publish(availableFor(matches(primary) ? side : opposite));
+                        return;
+                    }}
                 }}
 
-                // Neither matches (or a previous call already committed to
-                // this branch -- see `usingFallback` above): this engine's
-                // anchor-positioning integration failed outright (the
-                // pre-existing case this function exists for), or CSS
-                // Anchor Positioning support disappeared out from under an
-                // already-open overlay (2026-09-02 fix, gap 2 -- see this
-                // function's doc). Make the same flip decision from plain
-                // viewport math, so a non-anchor engine gets flip parity
-                // with the CSS path.
+                // Neither matches, or the engine's placement broke the
+                // exclusion zone (or a previous call already committed to
+                // this branch -- see `usingFallback` above): make the side
+                // decision from plain viewport math. Sticky.
                 usingFallback = true;
                 // Measure-then-move class (see `MEASURE_AT_FULL_WIDTH_JS`):
-                // `cw`/`ch` above were read wherever the panel happened to
-                // sit, and a shrink-to-fit box's width depends on that
-                // position. About to replace the position, so re-measure at
-                // the viewport origin (full available width) and redo
-                // `place()` with the true size; the final write below is in
-                // this same synchronous block, so the probe never paints.
+                // re-measure at the viewport origin (full available width)
+                // and redo the side decision with the true size; the final
+                // write below is in this same synchronous block, so the
+                // probe never paints.
                 content.style.position = 'fixed';
                 content.style.margin = '0';
                 const full = measureAtFullWidth(content, vp);
                 cw = full.width;
                 ch = full.height;
-                primary = place(side);
-                flipped = place(opposite);
-                let target = primary;
-                if (side === 'top' && primary.top < 0) {{
-                    target = flipped;
-                }} else if (side === 'bottom' && primary.top + ch > vh) {{
-                    target = flipped;
-                }} else if (side === 'left' && primary.left < 0) {{
-                    target = flipped;
-                }} else if (side === 'right' && primary.left + cw > vw) {{
-                    target = flipped;
-                }}
+                chosen = chooseSide();
+                const avail = availableFor(chosen);
 
-                // 2026-09-03 inline shift/clamp (user device report, iOS 18
-                // Safari, no CSS Anchor Positioning there at all -- see this
-                // function's doc, "Inline-axis shift (2026-09-03)"): flip
-                // alone only ever swaps `side` to its opposite on the *same*
-                // axis (block for top/bottom, inline for left/right -- the
-                // `opposite` map above). It does nothing for the *other*
-                // axis's placement -- concretely, a `side="bottom"`/
-                // `side="top"` placement's horizontal position comes only
-                // from `align` (start/center/end, computed once against the
-                // trigger in `place()` above) and never once considers the
-                // viewport at all, flip or otherwise. A center-aligned
-                // overlay wider than the room its trigger happens to have on
-                // one side (a trigger near a viewport edge, exactly the
-                // reported ColorPicker case on a narrow screen) always
-                // overflowed that edge with no correction of any kind.
-                // Clamping `target.left` into the viewport, with a small
-                // edge margin, closes that gap the same way a `position-
-                // try-fallbacks: ..., shift-inline` CSS primitive would for
-                // a conforming engine (not declared in this crate's CSS
-                // contract today -- see that doc section for why this stays
-                // JS-fallback-only for now, matching the reported engine
-                // exactly: iOS Safari has no CSS Anchor Positioning at all,
-                // so it always runs this exact path). Applied after the
-                // flip decision above, on whichever `target` that decision
-                // already picked -- shift is a final safety net on top of
-                // flip, never a replacement for it.
-                const EDGE_MARGIN = 4;
-                if (target.left < EDGE_MARGIN) {{
-                    target = {{ top: target.top, left: EDGE_MARGIN }};
-                }} else if (target.left + cw > vw - EDGE_MARGIN) {{
-                    // `Math.max`, not a bare subtraction: on a viewport too
-                    // narrow for the content at all (`cw` alone exceeds
-                    // `vw - 2 * EDGE_MARGIN`), the two clamp branches
-                    // disagree about which edge to honor -- resizing to fit
-                    // is out of scope (shift only, not size, matching the
-                    // existing flip-only scope note this replaces), so the
-                    // left edge wins and the content simply runs past the
-                    // right edge rather than past both.
-                    target = {{ top: target.top, left: Math.max(EDGE_MARGIN, vw - EDGE_MARGIN - cw) }};
+                // Size clamp: the panel shrinks (and scrolls itself) to the
+                // room of the chosen side instead of overlapping the anchor
+                // or leaving the viewport. `box-sizing: border-box` is forced
+                // alongside the caps because `ch`/`cw` are border-box
+                // `offset*` sizes while `max-height` is measured against
+                // `box-sizing`; an inline style always wins the cascade over
+                // a component's own rule, which is what a clamp that must
+                // apply to every consumer needs.
+                if (ch > avail.h || cw > avail.w) {{
+                    content.style.boxSizing = 'border-box';
                 }}
+                if (ch > avail.h) {{
+                    content.style.maxHeight = avail.h + 'px';
+                    content.style.overflowY = 'auto';
+                }}
+                if (cw > avail.w && !vertical) {{
+                    // Width is capped only when it is the MAIN axis (a
+                    // left/right placement): a top/bottom panel wider than the
+                    // viewport keeps the long-standing "left edge wins" rule.
+                    content.style.maxWidth = avail.w + 'px';
+                    content.style.overflowX = 'auto';
+                }}
+                publish(avail);
+                ch = content.offsetHeight;
+                cw = content.offsetWidth;
 
-                // 2026-09-04 vertical shift: mirrors the horizontal clamp
-                // just above onto the block axis -- see this function's
-                // doc, "Vertical shift + size clamp (2026-09-04)", gap 1,
-                // for the full reasoning (the same align-driven bug the
-                // 2026-09-03 fix closed for side="top"/"bottom", now closed
-                // for side="left"/"right"'s own vertical position, and a
-                // backstop for a side="top"/"bottom" placement whose
-                // flip-picked candidate still doesn't fit).
-                if (target.top < EDGE_MARGIN) {{
+                let target = place(chosen);
+
+                // Cross-axis shift (kept, = Floating UI's `shift` on the
+                // alignment axis): the panel may slide ALONG the anchor's
+                // edge to stay on screen, never across it. top/bottom shift
+                // horizontally, left/right vertically. The main axis is
+                // deliberately NOT clamped any more: that clamp is what used
+                // to drag a list onto its own input.
+                if (vertical) {{
+                    if (target.left < EDGE_MARGIN) {{
+                        target = {{ top: target.top, left: EDGE_MARGIN }};
+                    }} else if (target.left + cw > vw - EDGE_MARGIN) {{
+                        // `Math.max`: on a viewport too narrow for the content
+                        // the left edge wins.
+                        target = {{ top: target.top, left: Math.max(EDGE_MARGIN, vw - EDGE_MARGIN - cw) }};
+                    }}
+                }} else if (target.top < EDGE_MARGIN) {{
                     target = {{ top: EDGE_MARGIN, left: target.left }};
                 }} else if (target.top + ch > vh - EDGE_MARGIN) {{
-                    // Same `Math.max` reasoning as the horizontal clamp's
-                    // own comment above: on a viewport too short for the
-                    // content at all, the top edge wins here rather than
-                    // the two branches disagreeing about which edge to
-                    // honor -- gap 2 (size clamp) right below is what
-                    // actually prevents the resulting overflow from
-                    // reaching the screen at all, unlike the horizontal
-                    // case, which leaves that overflow in place by design
-                    // (see the flip-contract paragraph's note on why width
-                    // stays out of scope while height doesn't).
                     target = {{ top: Math.max(EDGE_MARGIN, vh - EDGE_MARGIN - ch), left: target.left }};
-                }}
-
-                // 2026-09-04 size clamp: gap 2 of the same doc section --
-                // when the content's own natural height still doesn't fit
-                // the full viewport (minus both edge margins) even after
-                // the clamp just above already gave it every pixel of
-                // vertical room this viewport has, shifting further cannot
-                // help; only shrinking the box -- and letting its own
-                // content scroll -- can. `Math.max(0, ...)` floors this at
-                // zero rather than a negative height on a viewport shorter
-                // than `2 * EDGE_MARGIN` itself.
-                const availableHeight = Math.max(0, vh - 2 * EDGE_MARGIN);
-                if (ch > availableHeight) {{
-                    // `box-sizing: border-box` is forced here too, alongside
-                    // `maxHeight` -- not merely tidy, required for the clamp
-                    // to mean what this function's own math assumes it means.
-                    // `ch` above is `content.offsetHeight`, which the
-                    // platform always reports as the *border box* height
-                    // regardless of the `box-sizing` property (a stable,
-                    // box-sizing-independent fact); `availableHeight` is
-                    // sized to match that same border-box quantity (compared
-                    // directly against `ch` on the line above, and against
-                    // it again in the vertical-shift clamp just above this
-                    // one). But `max-height` the CSS property is defined
-                    // *relative to `box-sizing`* -- under the initial
-                    // `content-box` value (never itself overridden by this
-                    // clamp, unlike this repo's few components that opt into
-                    // `border-box` in their own stylesheet, e.g.
-                    // `popover/style.css`'s `.dx-popover-content`), a
-                    // `max-height` caps only the content box, and the
-                    // element's padding and border then add on *top* of that
-                    // cap for its rendered/offset height -- so writing
-                    // `availableHeight` straight into `max-height` without
-                    // also pinning `box-sizing` under-clamps `ch` by however
-                    // much padding/border the element happens to carry,
-                    // silently reopening this same gap depending on box
-                    // model. Confirmed by execution, not merely reasoned:
-                    // `top-layer.spec.ts` Rule 15's own fixture content
-                    // (`stack-popover-content`) carries no `.dx-popover-content`
-                    // rule at all -- it renders through this crate's raw
-                    // `primitives::popover::PopoverContent` with no themed
-                    // class wired up on that page, so it measured the
-                    // browser's own UA `[popover]` padding/border (~14px
-                    // combined top+bottom in this sandbox's Chromium) with
-                    // `box-sizing` at its `content-box` initial value the
-                    // whole time -- `offsetHeight` landed 14px past
-                    // `availableHeight` before this fix, a real, measured
-                    // instance of the exact defect this paragraph describes,
-                    // not a rig artifact: any themed consumer that doesn't
-                    // separately declare `box-sizing: border-box` on its own
-                    // content (or whose declaration doesn't reach the
-                    // element, the same "component CSS didn't reach this
-                    // element" class of gap this module's own `:where(...)`
-                    // engine-stylesheet doc already documents) would hit this
-                    // identically for real. Forcing it here -- an inline
-                    // style, so it always wins the cascade over whatever the
-                    // component's own stylesheet does or doesn't declare,
-                    // the identical reasoning `maxHeight` itself is already
-                    // set this way for (see this doc section's own
-                    // "Never fights a component's own sizing" paragraph) --
-                    // makes the clamp correct by construction, independent
-                    // of any component's box-sizing choice, rather than
-                    // correct only for the subset of consumers that happen
-                    // to already declare `border-box` themselves. `border-box`
-                    // changes nothing about how padding/border are drawn,
-                    // only how the `height`/`max-height` properties are
-                    // measured against them, so this has no other visual
-                    // effect.
-                    content.style.boxSizing = 'border-box';
-                    content.style.maxHeight = availableHeight + 'px';
-                    content.style.overflowY = 'auto';
-                }} else {{
-                    // Cleared, not left alone: this re-runs on every
-                    // tracked scroll/resize/visualViewport event for the
-                    // life of the open overlay, and a viewport that grows
-                    // back (an iOS keyboard closing, a window
-                    // un-shrinking) must let a component's own sizing
-                    // govern again rather than staying pinned to a stale
-                    // cap from a smaller moment -- `boxSizing` included, the
-                    // same reasoning as `maxHeight`/`overflowY` just below.
-                    content.style.maxHeight = '';
-                    content.style.overflowY = '';
-                    content.style.boxSizing = '';
                 }}
 
                 content.style.position = 'fixed';
                 content.style.margin = '0';
                 content.style.inset = 'auto';
                 content.style.transform = 'none';
+                content.style.setProperty('position-try-fallbacks', 'none');
                 // Shift back out of visual-viewport space (see
                 // `viewportMetrics()`'s doc above): `position: fixed` is
-                // relative to the layout viewport.
-                content.style.top = (target.top + vp.offsetTop) + 'px';
+                // relative to the layout viewport. A panel above the anchor is
+                // pinned by its BOTTOM edge, so content that grows while open
+                // (typing in a Combobox) extends upward, away from the anchor,
+                // by construction rather than by a re-measure.
+                if (chosen === 'top') {{
+                    content.style.top = 'auto';
+                    content.style.bottom = (vp.cbBottom - (target.top + ch + vp.offsetTop)) + 'px';
+                }} else {{
+                    content.style.bottom = 'auto';
+                    content.style.top = (target.top + vp.offsetTop) + 'px';
+                }}
                 content.style.left = (target.left + vp.offsetLeft) + 'px';
+                if (content.scrollTop !== keepScroll) content.scrollTop = keepScroll;
             }}
 
             reposition();
@@ -1951,15 +1941,33 @@ pub(crate) fn use_anchor_position_fallback(
                     reposition();
                 }});
             }};
-            window.addEventListener('scroll', onTrack, {{ capture: true, passive: true }});
+            // A scroll INSIDE the panel (the user scrolling the list) cannot
+            // move the anchor, and `reposition()` itself briefly lifts the
+            // panel's size cap (which can nudge its scroll offset): reacting
+            // to it would be a pointless layout pass per scroll frame and
+            // could feed back on itself.
+            const onScroll = (e) => {{
+                if (e.target !== document && content && content.contains(e.target)) return;
+                onTrack();
+            }};
+            window.addEventListener('scroll', onScroll, {{ capture: true, passive: true }});
             window.addEventListener('resize', onTrack, {{ passive: true }});
             const vv = window.visualViewport;
             if (vv) {{
                 vv.addEventListener('resize', onTrack, {{ passive: true }});
                 vv.addEventListener('scroll', onTrack, {{ passive: true }});
             }}
+            // Content that grows or shrinks while open (typing in a Combobox
+            // changes the filtered list) is re-placed in the same frame the
+            // browser lays it out, so a list opened upward never extends over
+            // its anchor and one opened downward re-checks its room.
+            const resizeObserver = typeof ResizeObserver === 'function' && content
+                ? new ResizeObserver(onTrack)
+                : null;
+            if (resizeObserver) resizeObserver.observe(content);
             await dioxus.recv();
-            window.removeEventListener('scroll', onTrack, true);
+            if (resizeObserver) resizeObserver.disconnect();
+            window.removeEventListener('scroll', onScroll, true);
             window.removeEventListener('resize', onTrack);
             if (vv) {{
                 vv.removeEventListener('resize', onTrack);
@@ -2055,9 +2063,157 @@ pub(crate) const VIEWPORT_METRICS_JS: &str = r#"
                     height: vv ? Math.min(vv.height, clientH) : clientH,
                     offsetLeft: vv ? vv.offsetLeft : 0,
                     offsetTop: vv ? vv.offsetTop : 0,
+                    // The fixed containing block's own bottom edge: what a
+                    // panel pinned by `bottom:` is measured from.
+                    cbBottom: cb.bottom,
                 };
             }
 "#;
+
+// ---------------------------------------------------------------------------
+// Close a non-modal anchored panel when the page scrolls away from it
+// (backlog row 193, item 7 of `dev-docs/research/next-round-plan-2026-10-14.md`).
+// ---------------------------------------------------------------------------
+
+/// What makes [`use_close_on_scroll`] close a panel.
+#[cfg(feature = "web")]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum ScrollClose {
+    /// Any document / scroll-container scroll closes it (Tooltip, HoverCard, menus and Select
+    /// when they do not lock the page). These hold nothing a user would mind losing.
+    AnyScroll,
+    /// Only the ANCHOR leaving the viewport closes it (Popover and the DatePicker / ColorPicker
+    /// popovers built on it, Combobox): they can hold half-entered input, and a small scroll that
+    /// keeps the anchor in view must not throw it away.
+    AnchorLeavesViewport,
+}
+
+#[cfg(feature = "web")]
+impl ScrollClose {
+    const fn as_str(self) -> &'static str {
+        match self {
+            Self::AnyScroll => "any",
+            Self::AnchorLeavesViewport => "anchor",
+        }
+    }
+}
+
+/// The script behind [`use_close_on_scroll`]. Parameters, in order: the panel's id, the anchor's
+/// id (`""` for a point-anchored panel such as a context menu), the policy string.
+///
+/// Every listener goes through `listen` (`js_listener.rs`), so it is removed when the hook's
+/// scope ends or `active` goes false, and the scroll listener is `passive`
+/// (`scripts/check-blocking-scroll-listeners.sh`). The observer is released through `cleanup`.
+///
+/// **The mobile keyboard caveat.** Opening the virtual keyboard resizes and pans the VISUAL
+/// viewport and makes the browser scroll the focused field into view; if that counted as "the
+/// page scrolled", a Combobox would close the moment it is tapped. By construction it cannot:
+///  * nothing listens to `visualViewport` scroll/resize as a close signal -- they only extend a
+///    quiet window;
+///  * a scroll within `QUIET_MS` of a focus change into the panel or the anchor, a key press in
+///    them, or a visual-viewport resize/pan is ignored (the browser's focus-driven
+///    scroll-into-view lands in that window);
+///  * the `AnchorLeavesViewport` policy ignores scrolling altogether and watches the anchor with
+///    an `IntersectionObserver`: a focus-driven scroll reveals the field, it never hides it. If the
+///    anchor goes out of view inside a quiet window (a keyboard that resized the viewport before
+///    the browser scrolled the field back), the decision waits for the window to end.
+///
+/// A scroll INSIDE the panel (the user scrolling a long list) or inside the anchor (an `<input>`
+/// scrolling its own text) is never a reason to close.
+#[cfg(feature = "web")]
+const CLOSE_ON_SCROLL_JS: &str = r#"
+    const id = await dioxus.recv();
+    const anchorId = await dioxus.recv();
+    const policy = await dioxus.recv();
+    const QUIET_MS = 300;
+    const content = document.getElementById(id);
+    const trigger = anchorId
+        ? document.querySelector('[style*="anchor-name: --dxa-' + anchorId + ';"]')
+        : null;
+    let sent = false;
+    const close = () => {
+        if (sent) return;
+        sent = true;
+        dioxus.send(true);
+    };
+    // Opening a panel focuses things and may scroll them into view.
+    let quietUntil = performance.now() + QUIET_MS;
+    const quiet = () => { quietUntil = performance.now() + QUIET_MS; };
+    const mine = (node) =>
+        node instanceof Node &&
+        ((content && content.contains(node)) || (trigger && trigger.contains(node)));
+    listen(document, 'focusin', (e) => { if (mine(e.target)) quiet(); }, true);
+    listen(document, 'keydown', (e) => { if (mine(e.target)) quiet(); }, true);
+    const vv = window.visualViewport;
+    if (vv) {
+        listen(vv, 'resize', quiet, { passive: true });
+        listen(vv, 'scroll', quiet, { passive: true });
+    }
+    if (policy === 'any') {
+        // `window` + capture: `scroll` does not bubble, so this is the only way to see a nested
+        // scroll container. Document and scroll-container scrolls only -- never the visual viewport.
+        listen(window, 'scroll', (e) => {
+            if (mine(e.target)) return;
+            if (performance.now() < quietUntil) return;
+            close();
+        }, { capture: true, passive: true });
+    } else if (trigger && typeof IntersectionObserver === 'function') {
+        // Closes on the in-view -> out-of-view transition only: an anchor that is already out of
+        // view when the panel opens is not "leaving". An anchor that goes out of view inside a
+        // quiet window (a keyboard resizing the viewport before the browser has scrolled the
+        // focused field back into it) is looked at again once the window is over; re-observing
+        // delivers a fresh notification with the then-current state.
+        let seen = false;
+        let timer = 0;
+        const observer = new IntersectionObserver((entries) => {
+            for (const entry of entries) {
+                if (entry.isIntersecting) {
+                    seen = true;
+                } else if (seen) {
+                    const wait = quietUntil - performance.now();
+                    if (wait <= 0) {
+                        close();
+                    } else if (!timer) {
+                        timer = setTimeout(() => {
+                            timer = 0;
+                            observer.unobserve(trigger);
+                            observer.observe(trigger);
+                        }, wait + 50);
+                    }
+                }
+            }
+        });
+        observer.observe(trigger);
+        cleanup(() => { clearTimeout(timer); observer.disconnect(); });
+    }
+"#;
+
+/// Closes the panel `content_id` (anchored to `anchor_id`; `""` for a point-anchored one) by
+/// calling `set_open(false)` according to `policy`, for as long as `active` is true. The one
+/// helper every non-modal anchored primitive calls, so the policy cannot drift per component;
+/// modal / scroll-locking surfaces do not call it (they keep their `ScrollLockGuard`).
+/// See [`CLOSE_ON_SCROLL_JS`] for the mobile-keyboard caveat.
+#[cfg(feature = "web")]
+pub(crate) fn use_close_on_scroll(
+    content_id: String,
+    anchor_id: String,
+    active: impl Readable<Target = bool> + Copy + 'static,
+    policy: ScrollClose,
+    set_open: Callback<bool>,
+) {
+    crate::js_listener::use_js_listeners(move || {
+        if !active.cloned() {
+            return None;
+        }
+        Some(
+            crate::js_listener::JsListeners::install(CLOSE_ON_SCROLL_JS)
+                .arg(content_id.clone())
+                .arg(anchor_id.clone())
+                .arg(policy.as_str())
+                .on_message(move |_: bool| set_open.call(false)),
+        )
+    });
+}
 
 /// The ONE way a clamp script measures a panel it is about to move:
 /// defines `measureAtFullWidth(content, vp)` (returns `{ width, height }`,

@@ -21,6 +21,7 @@
   gap: var(--dx-space-1-5);
   line-height: 1.25rem;
   outline: none;
+  text-decoration: none;
   transition-duration: var(--dx-motion-duration-base);
   transition-property: all;
   transition-timing-function: var(--dx-motion-ease-standard);
@@ -146,8 +147,10 @@
 /* Nova's hover is `bg-primary/80`, kept as is for the library's own look (a
  * black / #e5e5e5 fill, where the page showing through cannot threaten the
  * text) and for a base colour alone (a near-black / near-white fill). */
-.dx-button[data-style="primary"]:not(:disabled):hover {
-  background-color: color-mix(in oklab, var(--dx-primary) 80%, transparent);
+@media (hover: hover) and (pointer: fine) {
+  .dx-button[data-style="primary"]:not(:disabled):hover {
+    background-color: color-mix(in oklab, var(--dx-primary) 80%, transparent);
+  }
 }
 
 /* Under an accent preset (`<html data-theme-accent>`, the docs site's theme
@@ -165,12 +168,14 @@
  * attribute: the theme file deliberately knows no attribute, and the library's
  * own black button must keep Nova's `/80` hover (away-from-white on black is no
  * hover at all). Guard: playwright/theme-preset-contrast.spec.ts. */
-:root[data-theme-accent] .dx-button[data-style="primary"]:not(:disabled):hover {
-  background-color: color-mix(
-    in oklab,
-    var(--dx-primary),
-    oklch(from var(--dx-primary-foreground) round(nearest, calc(1 - l), 1) 0 0) 15%
-  );
+@media (hover: hover) and (pointer: fine) {
+  :root[data-theme-accent] .dx-button[data-style="primary"]:not(:disabled):hover {
+    background-color: color-mix(
+      in oklab,
+      var(--dx-primary),
+      oklch(from var(--dx-primary-foreground) round(nearest, calc(1 - l), 1) 0 0) 15%
+    );
+  }
 }
 
 .dx-button[data-style="secondary"] {
@@ -178,12 +183,14 @@
   color: var(--dx-secondary-foreground);
 }
 
-.dx-button[data-style="secondary"]:not(:disabled):hover {
-  background-color: color-mix(
-    in oklab,
-    var(--dx-secondary),
-    var(--dx-foreground) 5%
-  );
+@media (hover: hover) and (pointer: fine) {
+  .dx-button[data-style="secondary"]:not(:disabled):hover {
+    background-color: color-mix(
+      in oklab,
+      var(--dx-secondary),
+      var(--dx-foreground) 5%
+    );
+  }
 }
 
 .dx-button[data-style="ghost"] {
@@ -191,11 +198,18 @@
   color: var(--dx-foreground);
 }
 
-.dx-button[data-style="ghost"]:not(:disabled):hover,
 .dx-button[data-style="ghost"][aria-expanded="true"] {
   background-color: var(--light, var(--dx-muted))
     var(--dark, color-mix(in oklab, var(--dx-muted) 50%, transparent));
   color: var(--dx-foreground);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-button[data-style="ghost"]:not(:disabled):hover {
+    background-color: var(--light, var(--dx-muted))
+      var(--dark, color-mix(in oklab, var(--dx-muted) 50%, transparent));
+    color: var(--dx-foreground);
+  }
 }
 
 .dx-button[data-style="outline"] {
@@ -205,11 +219,18 @@
   color: var(--dx-foreground);
 }
 
-.dx-button[data-style="outline"]:not(:disabled):hover,
 .dx-button[data-style="outline"][aria-expanded="true"] {
   background-color: var(--light, var(--dx-muted))
     var(--dark, color-mix(in oklab, var(--dx-input) 50%, transparent));
   color: var(--dx-foreground);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-button[data-style="outline"]:not(:disabled):hover {
+    background-color: var(--light, var(--dx-muted))
+      var(--dark, color-mix(in oklab, var(--dx-input) 50%, transparent));
+    color: var(--dx-foreground);
+  }
 }
 
 /* Nova tints its destructive button (`bg-destructive/10 text-destructive`).
@@ -231,12 +252,14 @@
   color: var(--dx-destructive-foreground);
 }
 
-.dx-button[data-style="destructive"]:not(:disabled):hover {
-  background-color: color-mix(
-    in oklab,
-    var(--dx-destructive-fill),
-    var(--dx-foreground) 8%
-  );
+@media (hover: hover) and (pointer: fine) {
+  .dx-button[data-style="destructive"]:not(:disabled):hover {
+    background-color: color-mix(
+      in oklab,
+      var(--dx-destructive-fill),
+      var(--dx-foreground) 8%
+    );
+  }
 }
 
 .dx-button[data-style="destructive"]:focus-visible {
@@ -262,8 +285,10 @@
   text-underline-offset: 0.25rem;
 }
 
-.dx-button[data-style="link"]:not(:disabled):hover {
-  text-decoration: underline;
+@media (hover: hover) and (pointer: fine) {
+  .dx-button[data-style="link"]:not(:disabled):hover {
+    text-decoration: underline;
+  }
 }
 
 .dx-button:focus-visible {

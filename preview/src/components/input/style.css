@@ -44,17 +44,20 @@
   margin-inline-end: var(--dx-space-2);
 }
 
-/* Same `muted` fill the other full-width fields (combobox, textarea) use for
- * hover and focus, so fields agree. Nova itself has no input hover fill. */
-.dx-input:hover:not(:disabled),
-.dx-input:focus-visible {
-  background-color: var(--dx-muted);
+@media (hover: hover) and (pointer: fine) {
+  .dx-input:hover:not(:disabled) {
+    background-color: var(--dx-muted);
+  }
 }
 
-/* The keyboard-focus ring every text field draws: `--dx-ring-field`
+/* Same `muted` fill the other full-width fields (combobox, textarea) use for
+ * hover and focus, so fields agree. Nova itself has no input hover fill.
+ *
+ * The keyboard-focus ring every text field draws: `--dx-ring-field`
  * (`dx-components-theme.css`), the ring-coloured edge plus the `--dx-ring-focus`
  * halo. `playwright/focus-ring.spec.ts` holds the other fields to this value. */
 .dx-input:focus-visible {
+  background-color: var(--dx-muted);
   box-shadow: var(--dx-ring-field);
 }
 

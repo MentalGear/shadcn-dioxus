@@ -7,8 +7,10 @@ import { assertSharedBackdrop, captureBackdrop, resolveOverlayMs } from "./asser
 test('sheet basic interactions', async ({ page }) => {
   await page.goto(`${BASE_URL}/component/?name=sheet&`, { timeout: 20 * 60 * 1000 });
 
-  // Open sheet from Right button
-  await page.getByRole('button', { name: 'Right' }).click();
+  // Open sheet from Right button. By keyboard, so the first control takes focus; a pointer/touch
+  // open focuses the panel instead (row 206, modal-initial-focus.spec.ts).
+  await page.getByRole('button', { name: 'Right' }).focus();
+  await page.keyboard.press('Enter');
 
   // Assert the sheet is open
   const sheet = page.locator('[data-slot="sheet-root"]');
@@ -300,4 +302,54 @@ test.describe("Scrim", () => {
     );
     assertSharedBackdrop(capture, await resolveOverlayMs(page), "sheet");
   });
+});
+
+// One edge panel (backlog rows 207 and 208, 197): Sheet is the theme's "Edge panel" recipe, the same one
+// Drawer wears. Its `side` is a typed prop (`SheetSide` is the shared `EdgeSide`), flush and unrounded; the
+// panel has no padding of its own (Nova pads only the header, footer and body: row 197), so a sheet's title
+// sits 16px -- one header inset -- from the panel edge, not 32.
+test('sheet is a flush, square edge panel whose header carries the only inset (Nova)', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto(`${BASE_URL}/component/?name=sheet&`, { timeout: 20 * 60 * 1000 });
+
+  await page.getByRole('button', { name: 'Right', exact: true }).click();
+  const content = page.locator('[data-slot="sheet-content"]');
+  await expect(content).toHaveAttribute('data-dx-surface', 'edge');
+  await content.evaluate((el) =>
+    Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished.catch(() => undefined))),
+  );
+
+  const style = await content.evaluate((el) => {
+    const cs = getComputedStyle(el);
+    return {
+      padding: cs.padding,
+      radius: [cs.borderTopLeftRadius, cs.borderTopRightRadius, cs.borderBottomRightRadius, cs.borderBottomLeftRadius],
+      border: [cs.borderTopWidth, cs.borderRightWidth, cs.borderBottomWidth, cs.borderLeftWidth],
+    };
+  });
+  expect(style.padding).toBe('0px');
+  expect(style.radius).toEqual(['0px', '0px', '0px', '0px']);
+  // Only the edge facing the page is bordered.
+  expect(style.border).toEqual(['0px', '0px', '0px', '1px']);
+
+  const box = (await content.boundingBox())!;
+  const titleBox = (await page.locator('[data-slot="sheet-title"]').boundingBox())!;
+  // Header padding (16px) + the panel's 1px border on its page-facing edge.
+  expect(titleBox.x - box.x).toBeGreaterThanOrEqual(16);
+  expect(titleBox.x - box.x).toBeLessThanOrEqual(18);
+});
+
+test('a sheet side is explicit at every width: right stays right on a phone', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 800 });
+  await page.goto(`${BASE_URL}/component/?name=sheet&`, { timeout: 20 * 60 * 1000 });
+  await page.getByRole('button', { name: 'Right', exact: true }).click();
+  const content = page.locator('[data-slot="sheet-content"]');
+  await expect(content).toHaveAttribute('data-side', 'right');
+  await content.evaluate((el) =>
+    Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished.catch(() => undefined))),
+  );
+  const fixedBox = await fixedViewportBox(page);
+  const box = (await content.boundingBox())!;
+  expect(Math.abs(box.x + box.width - (fixedBox.x + fixedBox.width))).toBeLessThanOrEqual(1);
+  expect(box.width).toBeCloseTo(fixedBox.width * 0.75, 0);
 });

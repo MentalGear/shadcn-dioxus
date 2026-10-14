@@ -805,6 +805,17 @@ fn DropdownMenuContentRendered(
         crate::ContentAlign::Start,
         4,
     );
+    // A menu that does NOT lock the page (`modal: false`) closes on any
+    // scroll instead (`top_layer::use_close_on_scroll`'s doc); a locking one
+    // keeps its `ScrollLockGuard` below.
+    let scroll_close_active = use_memo(move || open() && !scroll_lock_active());
+    crate::top_layer::use_close_on_scroll(
+        id.clone(),
+        id.clone(),
+        scroll_close_active,
+        crate::top_layer::ScrollClose::AnyScroll,
+        ctx.set_open,
+    );
 
     // See `tooltip.rs`'s `TooltipContentRendered` for why this hand-written,
     // never-`Styles::`-routed marker class exists: it is what the shared,

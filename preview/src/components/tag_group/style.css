@@ -69,9 +69,11 @@
     transform 80ms var(--dx-motion-ease);
 }
 
-.dx-tag-group-remove-button:hover {
-  background-color: var(--dx-muted);
-  color: var(--dx-foreground);
+@media (hover: hover) and (pointer: fine) {
+  .dx-tag-group-remove-button:hover {
+    background-color: var(--dx-muted);
+    color: var(--dx-foreground);
+  }
 }
 
 .dx-tag-group-remove-button:active {

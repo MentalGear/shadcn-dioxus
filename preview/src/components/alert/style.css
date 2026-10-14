@@ -28,6 +28,19 @@
   grid-template-columns: auto 1fr;
 }
 
+/* `.cn-alert` `has-data-[slot=alert-action]:pr-18`: an alert with an action keeps 72px clear on the end
+ * side, and `.cn-alert-action` is `absolute top-2 right-2` (`inset-inline-end`, so it mirrors in RTL). The
+ * action is out of flow, so it takes no grid cell and the icon/title/description columns are unchanged. */
+.dx-alert:has(> .dx-alert-action) {
+  padding-inline-end: var(--dx-space-18);
+}
+
+.dx-alert-action {
+  position: absolute;
+  inset-block-start: var(--dx-space-2);
+  inset-inline-end: var(--dx-space-2);
+}
+
 .dx-alert > svg {
   width: var(--dx-space-4);
   height: var(--dx-space-4);
@@ -63,21 +76,23 @@
   }
 }
 
-.dx-alert-description p:not(:last-child) {
+.dx-alert-description p:not(:last-child, :where([popover], dialog) *) {
   margin-bottom: var(--dx-space-4);
 }
 
 /* `[&_a]:underline [&_a]:underline-offset-3 [&_a]:hover:text-foreground` on
  * the title and the description. */
-.dx-alert-title a,
-.dx-alert-description a {
+.dx-alert-title a:not(:where([popover], dialog) *),
+.dx-alert-description a:not(:where([popover], dialog) *) {
   text-decoration-line: underline;
   text-underline-offset: 3px;
 }
 
-.dx-alert-title a:hover,
-.dx-alert-description a:hover {
-  color: var(--dx-foreground);
+@media (hover: hover) and (pointer: fine) {
+  .dx-alert-title a:hover:not(:where([popover], dialog) *),
+  .dx-alert-description a:hover:not(:where([popover], dialog) *) {
+    color: var(--dx-foreground);
+  }
 }
 
 .dx-alert:not(:has(> svg)) .dx-alert-description {

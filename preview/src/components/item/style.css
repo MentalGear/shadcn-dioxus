@@ -54,8 +54,10 @@ a.dx-item {
   text-decoration: none;
 }
 
-a.dx-item:hover {
-  background-color: var(--dx-muted);
+@media (hover: hover) and (pointer: fine) {
+  a.dx-item:hover {
+    background-color: var(--dx-muted);
+  }
 }
 
 /* Item Variants */
@@ -176,7 +178,7 @@ a.dx-item:hover {
   text-wrap: balance;
 }
 
-.dx-item-description a {
+.dx-item-description a:not(:where([popover], dialog) *) {
   text-decoration: underline;
   text-underline-offset: 4px;
 }
@@ -185,8 +187,10 @@ a.dx-item:hover {
   font-size: var(--dx-text-xs);
 }
 
-.dx-item-description a:hover {
-  color: var(--dx-primary-ink);
+@media (hover: hover) and (pointer: fine) {
+  .dx-item-description a:not(:where([popover], dialog) *):hover {
+    color: var(--dx-primary-ink);
+  }
 }
 
 /* Item Actions */

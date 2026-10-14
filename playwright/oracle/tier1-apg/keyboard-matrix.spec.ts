@@ -851,12 +851,14 @@ test.describe("APG Dialog (Modal) pattern — Dialog", () => {
 
   test("Dialog — Tab: \"Moves focus to the next tabbable element inside the dialog\" and wraps", async ({ page }) => {
     await goto(page, "dialog");
-    await page.getByRole("button", { name: "Show Dialog" }).click();
+    // Opened from the keyboard (a pointer open focuses the panel, row 206). The close button is
+    // last in DOM order (shadcn's), so the first control takes focus and Tab reaches the X next.
+    await page.getByRole("button", { name: "Show Dialog" }).focus();
+    await page.keyboard.press("Enter");
     const dialog = page.getByRole("dialog");
-    const closeButton = dialog.getByRole("button", { name: "Close" });
-    await expect(closeButton, "focus moves inside the dialog on open").toBeFocused();
+    await expect(dialog.getByRole("button", { name: "Open Nested Dialog" }), "focus moves inside the dialog on open").toBeFocused();
     await page.keyboard.press("Tab");
-    await expect(dialog.getByRole("button", { name: "Open Nested Dialog" })).toBeFocused();
+    await expect(dialog.getByRole("button", { name: "Close", exact: true })).toBeFocused();
   });
 });
 
@@ -945,13 +947,19 @@ test.describe("APG Tabs pattern — Tabs", () => {
 // ../reference/7e4034b/.../radio.html.
 // ============================================================================
 test.describe("APG Radio Group pattern — RadioGroup", () => {
+  // The main demo (`#component-preview-frame`) is the one radio group these
+  // tests mean; "Default" would also substring-match the description
+  // variant's "Default spacing", so every lookup is exact and scoped.
+  const radio = (page: Page, name: string) =>
+    page.locator("#component-preview-frame").getByRole("radio", { name, exact: true });
+
   test("RadioGroupItem — Right/Down Arrow: \"move focus to the next radio button ... uncheck the previously focused button, and check the newly focused button\"", async ({ page }) => {
     await goto(page, "radio_group");
-    await page.getByRole("radio", { name: "Blue" }).click();
+    await radio(page, "Default").click();
     await page.keyboard.press("ArrowDown");
-    const red = page.getByRole("radio", { name: "Red" });
-    await expect(red).toBeFocused();
-    await expect(red, "focus must also carry the checked state").toHaveAttribute(
+    const comfortable = radio(page, "Comfortable");
+    await expect(comfortable).toBeFocused();
+    await expect(comfortable, "focus must also carry the checked state").toHaveAttribute(
       "aria-checked",
       "true",
     );
@@ -959,16 +967,16 @@ test.describe("APG Radio Group pattern — RadioGroup", () => {
 
   test("RadioGroupItem — Space: \"checks the focused radio button if it is not already checked\"", async ({ page }) => {
     await goto(page, "radio_group");
-    const blue = page.getByRole("radio", { name: "Blue" });
-    const red = page.getByRole("radio", { name: "Red" });
-    await blue.click();
-    await blue.focus();
+    const dflt = radio(page, "Default");
+    const comfortable = radio(page, "Comfortable");
+    await dflt.click();
+    await dflt.focus();
     await page.keyboard.press("ArrowDown");
-    await page.keyboard.press("ArrowUp"); // back to Blue via wrap-free move
-    await expect(blue).toBeFocused();
-    await red.focus();
+    await page.keyboard.press("ArrowUp"); // back to Default via wrap-free move
+    await expect(dflt).toBeFocused();
+    await comfortable.focus();
     await page.keyboard.press("Space");
-    await expect(red).toHaveAttribute("aria-checked", "true");
+    await expect(comfortable).toHaveAttribute("aria-checked", "true");
   });
 });
 
@@ -987,7 +995,7 @@ test.describe("APG Radio Group pattern — RadioGroup", () => {
 test.describe("APG Switch pattern — Switch", () => {
   test("Switch — Space: changes the state", async ({ page }) => {
     await goto(page, "switch");
-    const el = page.getByRole("switch", { name: "Switch Demo" });
+    const el = page.locator("#component-preview-frame").getByRole("switch", { name: "Airplane Mode", exact: true });
     await expect(el).toHaveAttribute("data-state", "unchecked");
     await el.press("Space");
     await expect(el).toHaveAttribute("data-state", "checked");
@@ -995,7 +1003,7 @@ test.describe("APG Switch pattern — Switch", () => {
 
   test("Switch — Enter (Optional): changes the state", async ({ page }) => {
     await goto(page, "switch");
-    const el = page.getByRole("switch", { name: "Switch Demo" });
+    const el = page.locator("#component-preview-frame").getByRole("switch", { name: "Airplane Mode", exact: true });
     await el.focus();
     await page.keyboard.press("Enter");
     // OBSERVED (deliberate, per switch.rs's own comment: "Switches should
@@ -1017,7 +1025,7 @@ test.describe("APG Switch pattern — Switch", () => {
 test.describe("APG Checkbox pattern — Checkbox", () => {
   test("Checkbox — Space: \"changes the state of the checkbox\"", async ({ page }) => {
     await goto(page, "checkbox");
-    const el = page.getByRole("checkbox", { name: "Demo Checkbox" });
+    const el = page.locator("#component-preview-frame").getByRole("checkbox", { name: "Accept terms and conditions", exact: true });
     await expect(el).toHaveAttribute("data-state", "unchecked");
     await el.focus();
     await page.keyboard.press("Space");
@@ -1026,7 +1034,7 @@ test.describe("APG Checkbox pattern — Checkbox", () => {
 
   test("Checkbox — Enter: not specified by APG at all for checkbox (contrast with Switch's optional allowance)", async ({ page }) => {
     await goto(page, "checkbox");
-    const el = page.getByRole("checkbox", { name: "Demo Checkbox" });
+    const el = page.locator("#component-preview-frame").getByRole("checkbox", { name: "Accept terms and conditions", exact: true });
     await el.focus();
     await page.keyboard.press("Enter");
     // checkbox.rs suppresses Enter the same way switch.rs does -- correctly
@@ -1039,7 +1047,7 @@ test.describe("APG Checkbox pattern — Checkbox", () => {
 test.describe("Button pattern (toggle button) — Toggle", () => {
   test("Toggle — Space: activates the button, flipping aria-pressed", async ({ page }) => {
     await goto(page, "toggle");
-    const el = page.getByRole("button", { name: "B", exact: true });
+    const el = page.locator("#component-preview-frame").getByRole("button", { name: "Bookmark", exact: true });
     await expect(el).toHaveAttribute("data-state", "off");
     await el.focus();
     await page.keyboard.press("Space");
@@ -1048,7 +1056,7 @@ test.describe("Button pattern (toggle button) — Toggle", () => {
 
   test("Toggle — Enter: activates the button, flipping aria-pressed (unlike Switch/Checkbox, this component does NOT suppress Enter)", async ({ page }) => {
     await goto(page, "toggle");
-    const el = page.getByRole("button", { name: "B", exact: true });
+    const el = page.locator("#component-preview-frame").getByRole("button", { name: "Bookmark", exact: true });
     await el.focus();
     await page.keyboard.press("Enter");
     await expect(
@@ -1068,8 +1076,9 @@ test.describe("APG Tabs-adjacent roving widget — ToggleGroup", () => {
   // matrix cares about.
   test("ToggleGroupItem — Right Arrow: moves focus without toggling", async ({ page }) => {
     await goto(page, "toggle_group");
-    const b = page.getByRole("button", { name: "B", exact: true });
-    const i = page.getByRole("button", { name: "I", exact: true });
+    const frame = page.locator("#component-preview-frame");
+    const b = frame.getByRole("button", { name: "Toggle bold", exact: true });
+    const i = frame.getByRole("button", { name: "Toggle italic", exact: true });
     await b.click();
     await page.keyboard.press("ArrowRight");
     await expect(i).toBeFocused();
@@ -1078,8 +1087,9 @@ test.describe("APG Tabs-adjacent roving widget — ToggleGroup", () => {
 
   test("ToggleGroupItem — Enter: activates (toggles on) the focused item", async ({ page }) => {
     await goto(page, "toggle_group");
-    const b = page.getByRole("button", { name: "B", exact: true });
-    const i = page.getByRole("button", { name: "I", exact: true });
+    const frame = page.locator("#component-preview-frame");
+    const b = frame.getByRole("button", { name: "Toggle bold", exact: true });
+    const i = frame.getByRole("button", { name: "Toggle italic", exact: true });
     await b.click();
     await page.keyboard.press("ArrowRight");
     await page.keyboard.press("Enter");

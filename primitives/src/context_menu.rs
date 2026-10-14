@@ -722,6 +722,17 @@ fn ContextMenuContentRendered(
     // for itself at its own call sites), so the content is already promoted
     // to the top layer and has a real rendered size to measure.
     crate::top_layer::use_point_anchor_clamp(id.clone(), x, y, open);
+    // A context menu that does NOT lock the page (`modal: false`) closes on
+    // any scroll: it stays where it was opened, so it would otherwise float
+    // detached over the scrolled page. No anchor element (`""`).
+    let scroll_close_active = use_memo(move || open() && !scroll_lock_active());
+    crate::top_layer::use_close_on_scroll(
+        id.clone(),
+        String::new(),
+        scroll_close_active,
+        crate::top_layer::ScrollClose::AnyScroll,
+        ctx.set_open,
+    );
 
     // docs/backlog.md row 11 (Phase 6, typeahead): one buffer for this
     // menu's own items -- see `DropdownMenu`'s identical call

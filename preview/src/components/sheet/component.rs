@@ -1,39 +1,61 @@
 use dioxus::prelude::*;
 use dioxus_icons::lucide::X;
-use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::dialog::{
-    self, DialogCtx, DialogDescriptionProps, DialogRootProps, DialogTitleProps,
+    self, DialogCtx, DialogDescriptionProps, DialogTitleProps,
 };
+use dioxus_primitives::dioxus_attributes::attributes;
+use dioxus_primitives::drawer::{use_resolved_edge_side, EdgeSide};
 use dioxus_primitives::merge_attributes;
 
-#[derive(Debug, Clone, Copy, Default, PartialEq)]
-pub enum SheetSide {
-    Top,
-    #[default]
-    Right,
-    Bottom,
-    Left,
-}
+/// The side a [`Sheet`] slides in from. One type for both edge panels: this is
+/// [`EdgeSide`], the same enum `Drawer` takes (`DrawerSide` is its other alias). The
+/// default of the enum is `Auto` (bottom below the `md` breakpoint, right at and above
+/// it); `Sheet` itself defaults its `side` prop to `Right`, as shadcn's does.
+pub type SheetSide = EdgeSide;
 
-impl SheetSide {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            SheetSide::Top => "top",
-            SheetSide::Right => "right",
-            SheetSide::Bottom => "bottom",
-            SheetSide::Left => "left",
-        }
-    }
+/// The props for the [`Sheet`] component: [`dialog::DialogRootProps`] plus a typed `side`.
+#[derive(Props, Clone, PartialEq)]
+pub struct SheetProps {
+    /// The ID of the sheet root element.
+    pub id: ReadSignal<Option<String>>,
+
+    /// Whether the sheet is modal. If true, it traps focus within the sheet when open.
+    #[props(default = ReadSignal::new(Signal::new(true)))]
+    pub is_modal: ReadSignal<bool>,
+
+    /// Whether a modal sheet dims the page behind it with the shared overlay scrim.
+    /// Defaults to `true`; see [`dialog::DialogRootProps::overlay`].
+    #[props(default = ReadSignal::new(Signal::new(true)))]
+    pub overlay: ReadSignal<bool>,
+
+    /// The controlled `open` state of the sheet.
+    pub open: ReadSignal<Option<bool>>,
+
+    /// The default `open` state of the sheet if it is not controlled.
+    #[props(default)]
+    pub default_open: bool,
+
+    /// A callback that is called when the open state changes.
+    #[props(default)]
+    pub on_open_change: Callback<bool>,
+
+    /// Which edge the sheet slides in from. Defaults to [`SheetSide::Right`]. A raw
+    /// `"data-side"` attribute (the pre-typed-prop spelling, still used by `Sidebar`)
+    /// overrides it.
+    #[props(default = ReadSignal::new(Signal::new(SheetSide::Right)))]
+    pub side: ReadSignal<SheetSide>,
+
+    /// Additional attributes to apply to the sheet panel element.
+    #[props(extends = GlobalAttributes)]
+    pub attributes: Vec<Attribute>,
+
+    /// The children of the sheet.
+    pub children: Element,
 }
 
 #[component]
-pub fn Sheet(props: DialogRootProps) -> Element {
-    let content_base = attributes!(div {
-        class: "dx-sheet",
-        "data-slot": "sheet-content",
-        "data-side": SheetSide::Right.as_str(),
-    });
-    let content_attributes = merge_attributes(vec![content_base, props.attributes]);
+pub fn Sheet(props: SheetProps) -> Element {
+    let side = use_resolved_edge_side(props.side);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/sheet/style.css") }
@@ -46,12 +68,33 @@ pub fn Sheet(props: DialogRootProps) -> Element {
             open: props.open,
             default_open: props.default_open,
             on_open_change: props.on_open_change,
-            dialog::DialogContent {
-                class: None,
-                attributes: content_attributes,
-                {props.children}
-            }
+            SheetPanel { side: side(), attributes: props.attributes, {props.children} }
         }
+    }
+}
+
+/// The panel: an edge panel of the theme's recipe (`data-dx-surface="edge"` plus the resolved
+/// `data-side`). It is its own component to read the dialog's open state: the panel carries its
+/// own `data-state`, because the recipe's slide is keyed on it and the non-web/non-modal arms
+/// of the dialog primitive put none on their content element.
+#[component]
+fn SheetPanel(
+    side: SheetSide,
+    #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    children: Element,
+) -> Element {
+    let ctx: DialogCtx = use_context();
+    let content_base = attributes!(div {
+        class: "dx-sheet",
+        "data-slot": "sheet-content",
+        "data-dx-surface": "edge",
+        "data-side": side.as_str(),
+        "data-state": if ctx.is_open() { "open" } else { "closed" },
+    });
+    let content_attributes = merge_attributes(vec![content_base, attributes]);
+
+    rsx! {
+        dialog::DialogContent { class: None, attributes: content_attributes, {children} }
     }
 }
 

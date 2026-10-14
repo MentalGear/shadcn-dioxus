@@ -18,6 +18,7 @@ use time::{Date, Month};
 
 use super::super::calendar::*;
 use super::super::popover::*;
+use crate::components::button::{Button, ButtonSize, ButtonVariant};
 
 // docs/backlog.md row 32: `#[css_module]` is gone -- see checkbox/component.rs's
 // header comment for the full delivery-mechanism rationale (asset!() +
@@ -40,6 +41,16 @@ fn fixed_date(year: i32, month: Month, day: u8) -> Date {
 #[derive(Clone, Copy)]
 struct StyledDatePickerContext {
     month_count: u8,
+    apply_label: ReadSignal<String>,
+    cancel_label: ReadSignal<String>,
+}
+
+fn default_apply_label() -> ReadSignal<String> {
+    ReadSignal::new(Signal::new("Apply".to_string()))
+}
+
+fn default_cancel_label() -> ReadSignal<String> {
+    ReadSignal::new(Signal::new("Cancel".to_string()))
 }
 
 fn styled_month_count() -> u8 {
@@ -111,6 +122,22 @@ pub struct DatePickerProps {
     #[props(default = ReadSignal::new(Signal::new(date_picker::DEFAULT_CLOSE_DELAY)))]
     pub close_delay: ReadSignal<Duration>,
 
+    /// Whether picking a date is staged behind an Apply / Cancel footer. Defaults to `true`: a
+    /// selection is held in the panel (the input keeps the committed value) until Apply commits it
+    /// and closes the popover; Cancel, Escape and an outside click restore the previous value and
+    /// close. `false` removes the footer and commits on select (see `close_on_select`). While
+    /// `true`, `close_on_select` and `close_delay` are ignored.
+    #[props(default = ReadSignal::new(Signal::new(true)))]
+    pub confirm: ReadSignal<bool>,
+
+    /// The Apply button's label (localizable).
+    #[props(default = default_apply_label())]
+    pub apply_label: ReadSignal<String>,
+
+    /// The Cancel button's label (localizable).
+    #[props(default = default_cancel_label())]
+    pub cancel_label: ReadSignal<String>,
+
     /// Whether focus should loop around when reaching the end.
     #[props(default = ReadSignal::new(Signal::new(false)))]
     pub roving_loop: ReadSignal<bool>,
@@ -180,6 +207,22 @@ pub struct DateRangePickerProps {
     #[props(default = ReadSignal::new(Signal::new(date_picker::DEFAULT_CLOSE_DELAY)))]
     pub close_delay: ReadSignal<Duration>,
 
+    /// Whether picking a date is staged behind an Apply / Cancel footer. Defaults to `true`: a
+    /// selection is held in the panel (the input keeps the committed value) until Apply commits it
+    /// and closes the popover; Cancel, Escape and an outside click restore the previous value and
+    /// close. `false` removes the footer and commits on select (see `close_on_select`). While
+    /// `true`, `close_on_select` and `close_delay` are ignored.
+    #[props(default = ReadSignal::new(Signal::new(true)))]
+    pub confirm: ReadSignal<bool>,
+
+    /// The Apply button's label (localizable).
+    #[props(default = default_apply_label())]
+    pub apply_label: ReadSignal<String>,
+
+    /// The Cancel button's label (localizable).
+    #[props(default = default_cancel_label())]
+    pub cancel_label: ReadSignal<String>,
+
     /// Whether focus should loop around when reaching the end.
     #[props(default = ReadSignal::new(Signal::new(false)))]
     pub roving_loop: ReadSignal<bool>,
@@ -196,7 +239,11 @@ pub fn DatePicker(props: DatePickerProps) -> Element {
     });
     let merged = merge_attributes(vec![base, props.attributes]);
     let month_count = props.month_count.max(1);
-    use_context_provider(|| StyledDatePickerContext { month_count });
+    use_context_provider(|| StyledDatePickerContext {
+        month_count,
+        apply_label: props.apply_label,
+        cancel_label: props.cancel_label,
+    });
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/date_picker/style.css") }
@@ -219,6 +266,7 @@ pub fn DatePicker(props: DatePickerProps) -> Element {
                 roving_loop: props.roving_loop,
                 close_on_select: props.close_on_select,
                 close_delay: props.close_delay,
+                confirm: props.confirm,
                 attributes: merged,
                 date_picker::DatePickerPopover {
                     // Item 3 fix (2026-09-01, live-site report): matches
@@ -254,7 +302,11 @@ pub fn DateRangePicker(props: DateRangePickerProps) -> Element {
     });
     let merged = merge_attributes(vec![base, props.attributes]);
     let month_count = props.month_count.max(1);
-    use_context_provider(|| StyledDatePickerContext { month_count });
+    use_context_provider(|| StyledDatePickerContext {
+        month_count,
+        apply_label: props.apply_label,
+        cancel_label: props.cancel_label,
+    });
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/date_picker/style.css") }
@@ -277,6 +329,7 @@ pub fn DateRangePicker(props: DateRangePickerProps) -> Element {
                 roving_loop: props.roving_loop,
                 close_on_select: props.close_on_select,
                 close_delay: props.close_delay,
+                confirm: props.confirm,
                 attributes: merged,
                 date_picker::DatePickerPopover {
                     // See the comment on `DatePicker`'s own
@@ -331,6 +384,7 @@ pub(crate) fn DatePickerInput(props: DatePickerInputProps) -> Element {
                         CalendarMonthView { key: "{offset}", offset, month_count }
                     }
                 }
+                DatePickerFooter {}
             }
         }
     }
@@ -384,6 +438,43 @@ pub(crate) fn DateRangePickerInput(props: DatePickerInputProps) -> Element {
                         CalendarMonthView { key: "{offset}", offset, month_count }
                     }
                 }
+                DatePickerFooter {}
+            }
+        }
+    }
+}
+
+/// The Cancel / Apply footer of a `confirm` picker (the default); renders nothing when `confirm`
+/// is `false`. Both buttons are the real `Button`. Apply is disabled until a staged selection
+/// differs from the committed value -- for a range that is until BOTH ends are picked.
+#[component]
+pub(crate) fn DatePickerFooter() -> Element {
+    let confirm = date_picker::use_date_picker_confirm();
+    let labels = try_use_context::<StyledDatePickerContext>();
+    if !confirm.enabled() {
+        return rsx! {};
+    }
+    let apply = labels
+        .map(|ctx| (ctx.apply_label)())
+        .unwrap_or_else(|| "Apply".to_string());
+    let cancel = labels
+        .map(|ctx| (ctx.cancel_label)())
+        .unwrap_or_else(|| "Cancel".to_string());
+    rsx! {
+        div { class: "dx-date-picker-footer",
+            Button {
+                variant: ButtonVariant::Outline,
+                size: ButtonSize::Sm,
+                r#type: "button",
+                onclick: move |_| confirm.cancel(),
+                "{cancel}"
+            }
+            Button {
+                size: ButtonSize::Sm,
+                r#type: "button",
+                disabled: !confirm.can_apply(),
+                onclick: move |_| confirm.apply(),
+                "{apply}"
             }
         }
     }

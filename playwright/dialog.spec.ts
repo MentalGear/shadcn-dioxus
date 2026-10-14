@@ -5,38 +5,34 @@ import { assertSharedBackdrop, captureBackdrop, resolveOverlayMs } from "./asser
 
 test('test', async ({ page }) => {
   await page.goto(`${BASE_URL}/component/?name=dialog&`, { timeout: 20 * 60 * 1000 }); // Increase timeout to 20 minutes
-  await page.getByRole('button', { name: 'Show Dialog' }).click();
+  // Opened from the keyboard, so the first control takes focus. A pointer/touch open focuses the
+  // panel instead (row 206; modal-initial-focus.spec.ts) and would not pop the mobile keyboard.
+  await page.getByRole('button', { name: 'Show Dialog' }).focus();
+  await page.keyboard.press('Enter');
   // Assert the dialog is open
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
-  // Assert the close button is focused. Scoped by name -- the dialog demo
-  // also has an "Open Nested Dialog" button (see
-  // playwright/oracle/tier3-radix/scroll-lock.spec.ts) so an unscoped
-  // getByRole('button') would match more than one element here.
-  const closeButton = dialog.getByRole('button', { name: 'Close' });
-  await expect(closeButton).toBeFocused();
-  // The dialog demo now also has an "Open Nested Dialog" button (see
-  // playwright/oracle/tier3-radix/scroll-lock.spec.ts), so the focus trap's
-  // tab cycle has two stops: Tab moves off the close button, and a second
-  // Tab wraps back around to it.
-  //
-  // Phase 4.2 (docs/plan.md): the modal `Dialog` is now a native
-  // `<dialog>` on the web arm, so this cycle goes through Chromium's own
-  // focus trap rather than the vendored `FocusTrap`. Chromium's native trap
-  // parks focus on `<body>` for exactly one Tab stop after the last
-  // focusable element before wrapping to the first
-  // (docs/phase4-spike-findings.md experiment 4a) -- invisible to the user
-  // (no visible focus ring lands there) and it does not let focus escape
-  // the dialog, so this is a harness correction for the new trap's
-  // documented shape, not a behavior change under test.
-  await page.keyboard.press('Tab');
+  // The close button is the LAST child of the panel (shadcn's DOM order), so a keyboard open
+  // lands on the first control of the body ("Open Nested Dialog"), never on the X.
+  const closeButton = dialog.getByRole('button', { name: 'Close', exact: true });
   await expect(dialog.getByRole('button', { name: 'Open Nested Dialog' })).toBeFocused();
+  await expect(closeButton).not.toBeFocused();
+  // The focus trap's tab cycle has two stops: Tab moves to the close button, and the next Tab
+  // wraps back round to the first control.
+  //
+  // Phase 4.2 (docs/plan.md): the modal `Dialog` is a native `<dialog>` on the web arm, so this
+  // cycle goes through Chromium's own focus trap. Chromium's native trap parks focus on `<body>`
+  // for exactly one Tab stop after the last focusable element before wrapping to the first
+  // (docs/phase4-spike-findings.md experiment 4a) -- invisible to the user and it does not let
+  // focus escape the dialog, so this is a harness correction for the new trap's documented shape.
+  await page.keyboard.press('Tab');
+  await expect(closeButton).toBeFocused();
   await page.keyboard.press('Tab');
   await expect
     .poll(() => page.evaluate(() => document.activeElement === document.body))
     .toBe(true);
   await page.keyboard.press('Tab');
-  await expect(closeButton).toBeFocused();
+  await expect(dialog.getByRole('button', { name: 'Open Nested Dialog' })).toBeFocused();
   // Hitting escape should close the dialog
   await page.keyboard.press('Escape');
   // Assert the dialog can no longer be found
@@ -136,5 +132,92 @@ test.describe("Scrim", () => {
       () => page.keyboard.press("Escape"),
     );
     assertSharedBackdrop(capture, await resolveOverlayMs(page), "dialog");
+  });
+});
+
+test.describe('Parts (row 155, group 4)', () => {
+  const open = async (page, label: string, variant: string) => {
+    await page.goto(`${BASE_URL}/component/?name=dialog&`, { timeout: 20 * 60 * 1000 });
+    await page.getByRole('button', { name: label, exact: true }).focus();
+    await page.keyboard.press('Enter');
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    return dialog;
+  };
+
+  test('the default close button is the real Button, top-end, last in DOM order, and closes', async ({ page }) => {
+    const dialog = await open(page, 'Show Dialog', 'main');
+    const close = dialog.locator('[data-slot="dialog-close"]');
+    await expect(close).toHaveCount(1);
+    await expect(close).toHaveClass(/dx-button/);
+    await expect(close).toHaveAttribute('data-style', 'ghost');
+    await expect(close).toHaveAttribute('data-size', 'icon-sm');
+    await expect(close).toHaveAttribute('type', 'button');
+    await expect(close.locator('svg')).toHaveCount(1);
+    // Last focusable in DOM order.
+    const lastIsClose = await dialog.evaluate((el) => {
+      const f = Array.from(el.querySelectorAll<HTMLElement>('button, [tabindex="0"], input'));
+      return f[f.length - 1]?.getAttribute('data-slot') === 'dialog-close';
+    });
+    expect(lastIsClose).toBe(true);
+    // Top-end corner: 8px from the panel's top and end edges.
+    const [d, c] = await Promise.all([dialog.boundingBox(), close.boundingBox()]);
+    expect(Math.abs(c!.y - d!.y - 8)).toBeLessThanOrEqual(1);
+    expect(Math.abs(d!.x + d!.width - (c!.x + c!.width) - 8)).toBeLessThanOrEqual(1);
+    expect(Math.round(c!.width)).toBe(28);
+    await close.click();
+    await expect(dialog).toHaveCount(0);
+  });
+
+  test('show_close_button: false renders no X', async ({ page }) => {
+    const dialog = await open(page, 'No Close Button', 'no_close');
+    await expect(dialog.locator('[data-slot="dialog-close"]')).toHaveCount(0);
+    await page.keyboard.press('Escape');
+    await expect(dialog).toHaveCount(0);
+  });
+
+  test('a form dialog opened by keyboard focuses its first field, not the X', async ({ page }) => {
+    const dialog = await open(page, 'Open Dialog', 'edit_profile');
+    await expect(dialog.getByLabel('Name', { exact: true })).toBeFocused();
+    await expect(dialog.locator('[data-slot="dialog-header"]')).toHaveCount(1);
+    await expect(dialog.locator('[data-slot="dialog-footer"]')).toHaveCount(1);
+    await dialog.getByRole('button', { name: 'Cancel' }).click();
+    await expect(dialog).toHaveCount(0);
+  });
+
+  test('the footer is a muted band that cancels the panel padding; a row from sm up', async ({ page }) => {
+    const dialog = await open(page, 'Sticky Footer', 'sticky_footer');
+    const footer = dialog.locator('[data-slot="dialog-footer"]');
+    const [d, f] = await Promise.all([dialog.boundingBox(), footer.boundingBox()]);
+    expect(Math.abs(f!.x - d!.x)).toBeLessThanOrEqual(1);
+    expect(Math.abs(f!.width - d!.width)).toBeLessThanOrEqual(1);
+    expect(Math.abs(f!.y + f!.height - (d!.y + d!.height))).toBeLessThanOrEqual(1);
+    const css = await footer.evaluate((el) => {
+      const s = getComputedStyle(el);
+      return { dir: s.flexDirection, justify: s.justifyContent, top: s.borderTopWidth, bg: s.backgroundColor };
+    });
+    expect(css.dir).toBe('row');
+    expect(css.justify).toBe('flex-end');
+    expect(css.top).toBe('1px');
+    expect(css.bg).not.toBe('rgba(0, 0, 0, 0)');
+    // The body scrolls, the footer does not.
+    await expect(dialog.getByRole('region')).toBeVisible();
+    await dialog.getByRole('button', { name: 'Close', exact: true }).last().click();
+    await expect(dialog).toHaveCount(0);
+  });
+
+  test('DialogFooter column-reverses below sm', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 800 });
+    const dialog = await open(page, 'Open Dialog', 'edit_profile');
+    const dir = await dialog.locator('[data-slot="dialog-footer"]').evaluate((el) => getComputedStyle(el).flexDirection);
+    expect(dir).toBe('column-reverse');
+  });
+
+  test('the share dialog: X plus a start-aligned footer Close, both close', async ({ page }) => {
+    const dialog = await open(page, 'Share', 'share');
+    await expect(dialog.getByRole('button', { name: 'Close', exact: true })).toHaveCount(2);
+    await expect(dialog.getByLabel('Link')).toHaveValue('https://ui.shadcn.com/docs/installation');
+    await dialog.getByRole('button', { name: 'Close', exact: true }).first().click();
+    await expect(dialog).toHaveCount(0);
   });
 });

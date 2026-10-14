@@ -26,7 +26,10 @@ test("modal: opens a form of labelled fields, traps focus, Escape closes", async
   await page.goto(MODAL_URL);
   const popoverButton = page.getByRole("button", { name: MODAL_TRIGGER });
   await expect(popoverButton).toBeVisible();
-  await popoverButton.click();
+  // By keyboard: a pointer/touch open focuses the panel instead (row 206,
+  // modal-initial-focus.spec.ts), the same on every page.
+  await popoverButton.focus();
+  await page.keyboard.press("Enter");
   const dialog = page.getByRole("dialog");
   await expect(dialog).toBeVisible();
   // showModal() focuses the first field. shadcn's own demo content: four

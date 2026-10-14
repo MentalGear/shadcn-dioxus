@@ -139,6 +139,20 @@ fn ComboboxListRendered(id: String, attributes: Vec<Attribute>, children: Elemen
         crate::ContentAlign::Start,
         4,
     );
+    // Closes when the INPUT leaves the viewport, not on any scroll: the list
+    // holds a typed query, and a phone keyboard scrolls and resizes the page
+    // while it is used -- "any scroll" would close it the moment it is
+    // tapped. A focus-driven scroll reveals the input, it never hides it
+    // (`top_layer::use_close_on_scroll`'s doc).
+    crate::top_layer::use_close_on_scroll(
+        id.clone(),
+        ctx.input_id.cloned(),
+        open,
+        crate::top_layer::ScrollClose::AnchorLeavesViewport,
+        Callback::new(move |is_open: bool| {
+            selectable.set_open(is_open);
+        }),
+    );
 
     // See `dropdown_menu.rs`'s `DropdownMenuContentRendered` for why this
     // hand-written, never-`Styles::`-routed marker class exists: it is what

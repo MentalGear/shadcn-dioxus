@@ -1089,28 +1089,18 @@ test.describe("Rule 9 — point-positioned vs. anchored scroll behavior", () => 
     expect(after.left, debug).toBeCloseTo(before.left, 0);
   });
 
-  test("Menubar content tracks its trigger through a scroll", async ({ page }) => {
+  // Row 193: a menubar never locks the page, so an open menu no longer follows its trigger through a
+  // scroll -- any scroll (past the helper's 300 ms quiet window after the open) closes it
+  // (`top_layer::use_close_on_scroll`, `playwright/close-on-scroll.spec.ts` for the full policy).
+  test("Menubar content closes on a scroll instead of following its trigger", async ({ page }) => {
     await gotoFixture(page);
     await page.locator("#scroll-menubar-trigger").scrollIntoViewIfNeeded();
     await page.locator("#scroll-menubar-trigger").click();
     await expect(page.locator("#scroll-menubar-content")).toBeVisible();
+    await page.waitForTimeout(450); // past the quiet window that follows an open
 
-    const offsetOf = async () =>
-      page.evaluate(() => {
-        const c = document.getElementById("scroll-menubar-content")!.getBoundingClientRect();
-        const t = document.getElementById("scroll-menubar-trigger")!.getBoundingClientRect();
-        return { top: c.top - t.bottom, left: c.left - t.left };
-      });
-
-    const before = await offsetOf();
     await page.evaluate(() => window.scrollBy(0, 120));
-    // rAF-throttled, same as Rule 8's identical wait.
-    await page.waitForTimeout(150);
-    const after = await offsetOf();
-
-    const debug = JSON.stringify({ before, after });
-    expect(after.top, debug).toBeCloseTo(before.top, 0);
-    expect(after.left, debug).toBeCloseTo(before.left, 0);
+    await expect(page.locator("#scroll-menubar-content")).toHaveCount(0);
   });
 });
 
@@ -1618,6 +1608,21 @@ test.describe("Rule 11 — anchored-overlay self-overlap contract (2026-09-02 iO
         trigger: (page) => page.locator("#edge-bottom-popover-trigger"),
         content: (page) => page.locator("#edge-bottom-popover-content"),
         open: async (page) => {
+          // Row 210 (exclusion zone): a CSS-anchor placement that leaves the visual viewport is no
+          // longer trusted -- the JS path takes over at open. This fixture's trigger sits 16px from
+          // the left edge, so its centre-aligned 288px panel started 73px off-screen and
+          // (correctly) took the JS path from the first frame, which is not the "conforming at
+          // open" premise of this case. Moving the fixed trigger inward keeps the CSS placement
+          // inside the viewport, so the CSS arm still places it and the divergence is the test.
+          await page.locator("#edge-bottom-popover-trigger").evaluate((el) => {
+            for (let node: HTMLElement | null = el as HTMLElement; node; node = node.parentElement) {
+              if (getComputedStyle(node).position === "fixed") {
+                node.style.left = "140px";
+                node.style.right = "auto";
+                break;
+              }
+            }
+          });
           await page.locator("#edge-bottom-popover-trigger").click();
         },
       },
@@ -2223,9 +2228,15 @@ test.describe("Rule 15 — vertical shift + size clamp: an overlay taller than t
     // nav (see the `edge-bottom-popover-trigger` case above) -- bypasses
     // that actionability/visibility concern entirely, which matters here
     // since `SHORT_VIEWPORT` leaves little headroom below the nav.
+    // Row 210 (exclusion zone): the panel now takes the room BESIDE its trigger and never
+    // slides over it, so the trigger must be on screen for "within the viewport" to be
+    // possible at all (a trigger scrolled out of view keeps its panel beside it, out of view).
+    // (Scrolled AFTER the open: with the CSS-anchor block stripped the content briefly sits in
+    // flow and the open itself moves the page, so an earlier scroll does not hold.)
     await page.locator("#stack-popover-trigger").evaluate((el) => (el as HTMLElement).click());
     const content = page.locator("#stack-popover-content");
     await expect(content).toBeVisible();
+    await page.locator("#stack-popover-trigger").evaluate((el) => el.scrollIntoView({ block: "center" }));
 
     // Grow the content well past what SHORT_VIEWPORT can hold (392px of
     // room once the engine's own 4px EDGE_MARGIN is subtracted from both
@@ -2268,8 +2279,14 @@ test.describe("Rule 15 — vertical shift + size clamp: an overlay taller than t
     // constants and duplicating a single small number is clearer than
     // scraping it out at runtime.
     const EDGE_MARGIN = 4;
-    const expectedAvailableHeight = SHORT_VIEWPORT.height - 2 * EDGE_MARGIN;
-    const debug = JSON.stringify({ rect, metrics, viewport, expectedAvailableHeight });
+    // The room on the side of the trigger the engine chose (the larger one, since neither fits
+    // 550px): from the trigger's edge, past the gap, to the viewport edge less the margin.
+    const triggerRect = await rectOf(page, "#stack-popover-trigger");
+    const expectedAvailableHeight = Math.max(
+      triggerRect.top - EDGE_MARGIN,
+      SHORT_VIEWPORT.height - EDGE_MARGIN - triggerRect.bottom,
+    );
+    const debug = JSON.stringify({ rect, metrics, viewport, expectedAvailableHeight, triggerRect });
 
     // Position clamp (gap 1): fully within the viewport vertically -- not
     // run off either edge the way an unclamped 500px-tall box, positioned
@@ -2277,6 +2294,8 @@ test.describe("Rule 15 — vertical shift + size clamp: an overlay taller than t
     // be on a 400px-tall viewport.
     expect(rect.top, debug).toBeGreaterThanOrEqual(-EDGE_TOLERANCE);
     expect(rect.bottom, debug).toBeLessThanOrEqual(viewport.height + EDGE_TOLERANCE);
+    // ...and never over the trigger (the anchor is an exclusion zone).
+    expect(rect.bottom <= triggerRect.top + EDGE_TOLERANCE || rect.top >= triggerRect.bottom - EDGE_TOLERANCE, debug).toBe(true);
 
     // Size clamp (gap 2): the rendered box itself is capped at the engine's
     // computed available height, not merely "happens to end up on-screen"

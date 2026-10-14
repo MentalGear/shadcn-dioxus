@@ -163,3 +163,15 @@
         font-size: var(--dx-text-base);
     }
 }
+
+/*
+ * The Cancel / Apply footer of a `confirm` picker (the default): a hairline above, the two buttons
+ * end-aligned. The buttons are the real `Button` -- this sheet only places them.
+ */
+.dx-date-picker-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: var(--dx-space-2);
+    border-top: 1px solid var(--dx-border);
+    gap: var(--dx-space-2);
+}

@@ -21,3 +21,65 @@ test.describe("Axe automated scan", () => {
     await expectNoAxeViolations(page, "avatar: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 });
+
+// `AvatarBadge`, `AvatarGroup`, `AvatarGroupCount` (shadcn's small avatar parts, backlog row 155 group 9).
+test.describe("badge and group", () => {
+  test("the badge sits on the end-bottom corner, outside the circle, and scales with the avatar", async ({ page }) => {
+    await page.goto(`${BASE_URL}/component/?name=avatar&`, { timeout: 20 * 60 * 1000 });
+    const dot = page.getByLabel("Avery Lin, online");
+    await expect(dot).toBeVisible();
+    // The root does not clip: a clip would cut the badge, which sits on the corner of the square.
+    expect(await dot.evaluate((el) => getComputedStyle(el).overflow)).toBe("visible");
+    const badge = dot.locator(".dx-avatar-badge");
+    const a = (await dot.boundingBox())!;
+    const b = (await badge.boundingBox())!;
+    expect(Math.abs(a.x + a.width - (b.x + b.width))).toBeLessThan(1);
+    expect(Math.abs(a.y + a.height - (b.y + b.height))).toBeLessThan(1);
+    expect(Math.round(b.width)).toBe(10);
+    // Painted above the picture (hit-test the badge's centre, in the viewport).
+    await badge.scrollIntoViewIfNeeded();
+    expect(
+      await badge.evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        return document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2) === el;
+      }),
+    ).toBe(true);
+
+    const small = page.getByLabel("Small avatar with badge").locator(".dx-avatar-badge");
+    const large = page.getByLabel("Large avatar with badge").locator(".dx-avatar-badge");
+    expect(Math.round((await small.boundingBox())!.width)).toBe(8);
+    expect(Math.round((await large.boundingBox())!.width)).toBe(12);
+    // An icon is hidden in the small avatar and 8px in the others.
+    await expect(small.locator("svg")).toBeHidden();
+    expect(Math.round((await large.locator("svg").boundingBox())!.width)).toBe(8);
+  });
+
+  test("the group overlaps its avatars by 8px, rings them, and the count tile matches their size", async ({ page }) => {
+    await page.goto(`${BASE_URL}/component/?name=avatar&`, { timeout: 20 * 60 * 1000 });
+    const group = page.getByLabel("Team with a count");
+    await expect(group).toBeVisible();
+    const avatars = group.locator(".dx-avatar");
+    await expect(avatars).toHaveCount(3);
+    const first = (await avatars.nth(0).boundingBox())!;
+    const second = (await avatars.nth(1).boundingBox())!;
+    expect(Math.round(first.x + first.width - second.x)).toBe(8);
+    expect(await avatars.nth(1).evaluate((el) => getComputedStyle(el).boxShadow)).toMatch(/0px 0px 0px 2px/);
+
+    const count = group.locator(".dx-avatar-group-count");
+    await expect(count).toHaveText("+3");
+    const c = (await count.boundingBox())!;
+    expect(Math.round(c.width)).toBe(32);
+    expect(Math.round(c.height)).toBe(32);
+    const third = (await avatars.nth(2).boundingBox())!;
+    expect(Math.round(third.x + third.width - c.x)).toBe(8);
+    // The icon variant holds an svg.
+    await expect(page.getByLabel("Team with an icon tile").locator(".dx-avatar-group-count svg")).toBeVisible();
+  });
+
+  test("the picture and the fallback keep the circle (children round themselves, the root does not clip)", async ({ page }) => {
+    await page.goto(`${BASE_URL}/component/?name=avatar&`, { timeout: 20 * 60 * 1000 });
+    const image = page.getByLabel("Avery Lin, online").locator(".dx-avatar-image");
+    const radius = await image.evaluate((el) => getComputedStyle(el).borderTopLeftRadius);
+    expect(radius).toBe("50%");
+  });
+});

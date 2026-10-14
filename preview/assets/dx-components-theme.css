@@ -25,6 +25,17 @@
  *     attribute on <html> from the cookie before first paint) pins the scheme, so an
  *     OS-dark user who picked light gets light native controls and vice versa.
  * `html[data-theme]` (0,1,1) out-ranks `:root` (0,1,0), so no ordering is needed.
+ *
+ * shadcn's own spelling of the same choice is a `.dark` class on <html> (next-themes, and
+ * Tailwind's `dark:` follows it; a pasted shadcn theme is a `:root` block plus a `.dark` block).
+ * `html.dark` is therefore one more spelling of `html[data-theme="dark"]` -- the same
+ * `--dark`/`--light` toggle and `color-scheme`, in ONE selector list, never a second rule -- so a
+ * host that sets only `.dark` gets dark. The attribute is the explicit choice and wins when the
+ * two disagree: `html.dark:not([data-theme="light"])`, which keeps the dark and light rules
+ * disjoint (no source-order dependence). Disagreement cannot arise from this app, because
+ * `apply_mode` in theme.rs (and its pre-paint twin in index.html) is the only code that writes
+ * either, always together; it also keeps `.dark` in step with `prefers-color-scheme` in
+ * "system" mode, so a pasted shadcn `.dark { ... }` block activates exactly when the page is dark.
  * It is set on the root and inherited, not per component, so a control a component
  * forgot (or that a host app composes in) is correct by default. The computed value
  * is `light dark` on the no-`data-theme` path and `dark`/`light` on the other, so to
@@ -41,7 +52,9 @@
   color-scheme: light dark;
 }
 
-html[data-theme="dark"] {
+/* stylelint-disable selector-class-pattern -- `.dark` is shadcn's own class name (next-themes / Tailwind `dark:`), not ours to prefix */
+html[data-theme="dark"],
+html.dark:not([data-theme="light"]) {
   --dark: initial;
   --light: ;
 
@@ -55,10 +68,12 @@ html[data-theme="light"] {
   color-scheme: light;
 }
 
-html[data-theme="dark"] [class~="dxc-system"] {
+html[data-theme="dark"] [class~="dxc-system"],
+html.dark:not([data-theme="light"]) [class~="dxc-system"] {
   --dxc-light-on: ;
   --dxc-dark-on: initial;
 }
+/* stylelint-enable selector-class-pattern */
 
 html[data-theme="light"] [class~="dxc-system"] {
   --dxc-light-on: initial;
@@ -249,9 +264,15 @@ html[data-theme="light"] [class~="dxc-system"] {
     var(--dark, oklch(from var(--dx-primary) max(l, 0.75) c h));
 
   /* Lines and focus. shadcn's `--ring` is a colour, so it is `--dx-ring-color`
-   * here: `--dx-ring` (below) already means the focus-ring box-shadow. */
-  --dx-border: var(--border, var(--primary-color-6));
-  --dx-input: var(--input, var(--light, var(--primary-color-6)) var(--dark, var(--primary-color-7)));
+   * here: `--dx-ring` (below) already means the focus-ring box-shadow.
+   *
+   * Dark lines follow shadcn (owner decision D1, backlog row 203): a translucent
+   * white, `oklch(1 0 0 / 10%)` for `--dx-border` and `/ 15%` for `--dx-input`
+   * (written `100%` / `0deg` for the linter), so a line takes its tint from the
+   * surface it sits on instead of being one opaque ramp step. The light arm is
+   * unchanged (the ramp step). */
+  --dx-border: var(--border, var(--light, var(--primary-color-6)) var(--dark, oklch(100% 0 0deg / 10%)));
+  --dx-input: var(--input, var(--light, var(--primary-color-6)) var(--dark, oklch(100% 0 0deg / 15%)));
   --dx-ring-color: var(--ring, var(--focused-border-color));
 
   /* Non-shadcn role: a stronger line than `--dx-border` (hover borders,
@@ -428,6 +449,12 @@ html[data-theme="light"] [class~="dxc-system"] {
   --dx-motion-duration-slow: 200ms;
   --dx-motion-duration-slower: 300ms;
   --dx-motion-duration-reduced: 0.01ms;
+
+  /* Press feedback (see "Press feedback" below): the scale a pressed control
+   * takes, how long it takes to get there, and the wash laid over it. */
+  --dx-press-scale: 0.98;
+  --dx-press-duration: var(--dx-motion-duration-fast);
+  --dx-press-fill: color-mix(in oklab, var(--dx-foreground) 8%, transparent);
   --dx-motion-ease: ease;
   --dx-motion-ease-in: ease-in;
   --dx-motion-ease-out: ease-out;
@@ -840,6 +867,89 @@ html[data-theme="light"] [class~="dxc-system"] {
 }
 
 /* ============================================================================
+ * Press feedback: a pressed control answers the finger (docs/backlog.md row 205).
+ *
+ * Touch has no hover, so the only acknowledgement a tap gets is the press itself. One
+ * zero-specificity rule gives every `dx-` control a small `scale` and a wash while it is
+ * `:active`, tuned by `--dx-press-scale` / `--dx-press-fill` / `--dx-press-duration` and
+ * switchable by `<html data-dx-press-feedback="off">` (the docs site's theme picker sets it and
+ * persists it like its other preferences). `scale`, not `transform`: it composes with the
+ * `transform` a component already uses (Button's `translateY(1px)`, the tag and list remove
+ * buttons' `scale(0.92)` stack with it instead of being replaced).
+ *
+ * The list is the touch-action list above, minus what must NOT shrink under the finger: text
+ * fields (`input`, `textarea`, `select`: pressing into one is the start of editing it), drag
+ * surfaces (`slider`, `spinbutton`) and bare `tabindex` containers (`:active` also matches
+ * every ANCESTOR of the pressed element, so a focusable card or scroller would shrink with a
+ * button inside it). A disabled control does not respond. Every `:where()` holds one compound
+ * selector, so the rule has ZERO specificity: a component that styles its own `:active`
+ * (`scale`, `background-image`, a `background` shorthand) wins, and so does an app. The wash is a
+ * `background-image` layer so it sits over whatever `background-color` the control has, and is
+ * lost wherever a component writes the `background` shorthand (it resets the image).
+ *
+ * The transition belongs to the resting state (so the release animates too) and exists only under
+ * `prefers-reduced-motion: no-preference`: with reduced motion the press is instant. A component
+ * with its own `transition` list wins over it and snaps. Flat lists, for the asset-pipeline
+ * reason given above.
+ * ========================================================================== */
+:where(html:not([data-dx-press-feedback="off"]) button[class^="dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) button[class*=" dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) [role="button"][class^="dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) [role="button"][class*=" dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) a[href][class^="dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) a[href][class*=" dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) summary[class^="dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) summary[class*=" dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) [role="menuitem"][class^="dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) [role="menuitem"][class*=" dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) [role="menuitemcheckbox"][class^="dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) [role="menuitemcheckbox"][class*=" dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) [role="menuitemradio"][class^="dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) [role="menuitemradio"][class*=" dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) [role="option"][class^="dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) [role="option"][class*=" dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) [role="tab"][class^="dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) [role="tab"][class*=" dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) [role="switch"][class^="dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) [role="switch"][class*=" dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) [role="checkbox"][class^="dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) [role="checkbox"][class*=" dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) [role="radio"][class^="dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disabled], [aria-disabled="true"]):active) {
+  background-image: linear-gradient(var(--dx-press-fill), var(--dx-press-fill));
+  scale: var(--dx-press-scale);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :where(html:not([data-dx-press-feedback="off"]) button[class^="dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) button[class*=" dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) [role="button"][class^="dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) [role="button"][class*=" dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) a[href][class^="dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) a[href][class*=" dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) summary[class^="dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) summary[class*=" dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) [role="menuitem"][class^="dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) [role="menuitem"][class*=" dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) [role="menuitemcheckbox"][class^="dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) [role="menuitemcheckbox"][class*=" dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) [role="menuitemradio"][class^="dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) [role="menuitemradio"][class*=" dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) [role="option"][class^="dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) [role="option"][class*=" dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) [role="tab"][class^="dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) [role="tab"][class*=" dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) [role="switch"][class^="dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) [role="switch"][class*=" dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) [role="checkbox"][class^="dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) [role="checkbox"][class*=" dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) [role="radio"][class^="dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disabled], [aria-disabled="true"])) {
+    transition: scale var(--dx-press-duration) var(--dx-motion-ease-out);
+  }
+}
+
+/* ============================================================================
  * Floating surfaces, once (docs/backlog.md row 145, lane F).
  *
  * Twelve components draw a panel that floats over the page: Popover, Select, Combobox, Dropdown
@@ -1052,11 +1162,17 @@ html[data-theme="light"] [class~="dxc-system"] {
   opacity: var(--dx-opacity-disabled);
 }
 
-:where([data-dx-menu-item]:hover:not([data-disabled="true"])),
 :where([data-dx-menu-item]:focus-visible),
 :where([data-dx-menu-item][data-state="open"]) {
   background: var(--dx-accent);
   color: var(--dx-accent-foreground);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :where([data-dx-menu-item]:hover:not([data-disabled="true"])) {
+    background: var(--dx-accent);
+    color: var(--dx-accent-foreground);
+  }
 }
 
 /* The check or chevron: out of flow, in the slot the item reserved, vertically centred. */
@@ -1088,6 +1204,304 @@ html[data-theme="light"] [class~="dxc-system"] {
   color: var(--dx-muted-foreground);
   font-size: var(--dx-text-xs);
   font-weight: 500;
+}
+
+/* ============================================================================
+ * Edge panel, once (docs/backlog.md rows 207 and 208).
+ *
+ * Sheet and Drawer are the same thing: a modal panel docked to one edge of the viewport that slides
+ * in from it. They used to be two (two side enums, two stylesheets each re-deriving the `<dialog>`
+ * UA reset, the per-side inset, border and size, and two sets of slide keyframes), and a fix to one
+ * had to be made again in the other. This is the one recipe; Sheet is an edge panel, and Drawer is an
+ * edge panel plus a drag gesture, a handle and nested stacking (`drawer/style.css`, the Drawer
+ * primitive), none of which belongs here.
+ *
+ * HOW IT IS KEYED. A panel opts in with `data-dx-surface="edge"` and wears the side the Rust side
+ * RESOLVED, `data-side="top|right|bottom|left"` (never `auto`: `EdgeSide::Auto` -- bottom below
+ * `--dx-breakpoint-md`, right at and above it -- is decided once in `primitives/src/drawer.rs`, so no rule
+ * here, in a component sheet or in a script has to know what it means). Every selector is one `:where()`,
+ * so the rules have ZERO specificity and a component sheet or the app overrides any property by declaring
+ * it; the ink alone is one attribute selector, for the reason the Floating surfaces section gives.
+ * `data-dx-edge="floating"` floats a LEFT or RIGHT panel inset from the viewport edge with a full border
+ * and all four corners rounded (shadcn's side drawer); without it the panel is docked flush.
+ *
+ * WHAT THE RECIPE OWNS: the `<dialog>` UA reset (Chromium's `dialog:modal` ships `inset: 0`,
+ * `margin: auto`, `fit-content` sizing and a `max-width`/`max-height` cap, which together centre a
+ * panel instead of anchoring it -- every edge is reset to a known baseline and each side re-opens only
+ * the one it does not pin), the per-side inset, size (shadcn's `w-3/4`, capped at 24rem from the `sm`
+ * breakpoint up), border on the edge facing the page and the matching corners, the fill and ink
+ * (`--dx-popover`, shared with Dialog, AlertDialog and Command), the slide, and the modal exit window
+ * (`display: none` outside `[open]`, no pointer input while closing; see `use_dialog_open_driver`).
+ * A component keeps what is really its own: Sheet its shadow, gap and close button, Drawer its drag
+ * (`transform`, `touch-action`), handle, overdrag fill and nested stacking.
+ *
+ * SLOTS (registered with `inherits: false`, so a Sheet opened from a Drawer reads its own):
+ *
+ *   --dx-edge-padding          the panel's `padding` (default 0, Nova: only the header, footer and body
+ *                              carry the inset; Drawer keeps `--dx-space-4`, see its sheet)
+ *   --dx-edge-radius           the radius of the corners facing the page (default 0; Drawer `--dx-radius-xl`)
+ *   --dx-edge-inset            how far a floating panel stands off the viewport edge (default `--dx-space-2`)
+ *   --dx-edge-duration-enter / the slide's duration and curve for open / close (defaults 500 ms and 300 ms,
+ *   --dx-edge-duration-exit /  `ease-in-out`, the Sheet's; Drawer sets its own, shorter pair)
+ *   --dx-edge-ease-enter /
+ *   --dx-edge-ease-exit
+ *
+ * MOTION. The slide is a `@keyframes` pair on `translate` selected through `--dx-edge-enter/-exit`
+ * (set by the side rules), the same slot pattern as `--dx-floating-enter/-exit`: never `transform`
+ * (`scripts/check-anchored-keyframes.sh`), which also leaves `transform` free for the Drawer's live drag
+ * offset and `scale` for its nested shrink -- a held `forwards` animation would override an inline
+ * `translate`. The travel is `100%` of the panel plus `--dx-edge-travel` (0 docked, the inset when
+ * floating), so a floating panel leaves the screen completely. `prefers-reduced-motion` swaps in
+ * `--dx-motion-duration-reduced`. A closing panel stays a modal in the top layer until the exit has
+ * played, and takes no pointer input meanwhile.
+ * ========================================================================== */
+@property --dx-edge-padding {
+  inherits: false;
+  syntax: "*";
+}
+
+@property --dx-edge-radius {
+  inherits: false;
+  syntax: "*";
+}
+
+@property --dx-edge-inset {
+  inherits: false;
+  syntax: "*";
+}
+
+@property --dx-edge-duration-enter {
+  inherits: false;
+  syntax: "*";
+}
+
+@property --dx-edge-duration-exit {
+  inherits: false;
+  syntax: "*";
+}
+
+@property --dx-edge-ease-enter {
+  inherits: false;
+  syntax: "*";
+}
+
+@property --dx-edge-ease-exit {
+  inherits: false;
+  syntax: "*";
+}
+
+:where([data-dx-surface="edge"]) {
+  position: fixed;
+  z-index: var(--dx-z-overlay-raised);
+  display: flex;
+  width: auto;
+  max-width: none;
+  height: auto;
+  max-height: none;
+  flex-direction: column;
+  padding: var(--dx-edge-padding, 0);
+  border: none;
+  margin: 0;
+  background: var(--dx-popover);
+  background-clip: padding-box;
+  font-size: var(--dx-text-sm);
+  inset: 0;
+  will-change: translate;
+}
+
+/* The ink: one attribute selector, not zero (see the Floating surfaces section: the engine's top-layer
+ * ink fix is a zero-specificity `:where(dialog)` rule injected after this file). */
+[data-dx-surface="edge"] {
+  color: var(--dx-popover-foreground);
+}
+
+/* A real modal in the top layer only between `showModal()` and the final `close()`. Outside that window
+ * the UA's `dialog:not([open]) { display: none }`, which `display: flex` above overrides, is restored: a
+ * not-yet-shown or already-closed dialog is not in the top layer, where its `position: fixed` box is
+ * resolved against (and clipped to) the nearest layout-contained ancestor (the home page's
+ * `content-visibility` demo cards), so it would be drawn a card wide instead of a viewport wide. */
+:where(dialog[data-dx-surface="edge"]:not([open])) {
+  display: none;
+}
+
+/* The four placements. Each re-opens the one edge it does not pin (`inset: 0` above pins the rest),
+ * rests off screen (the slide holds `translate: 0 0` once it has played), and names its keyframes. */
+:where([data-dx-surface="edge"][data-side="bottom"]) {
+  --dx-edge-enter: dx-edge-in-bottom;
+  --dx-edge-exit: dx-edge-out-bottom;
+  --dx-edge-travel: 0px;
+
+  top: auto;
+  border-top: 1px solid var(--dx-border);
+  border-top-left-radius: var(--dx-edge-radius, 0);
+  border-top-right-radius: var(--dx-edge-radius, 0);
+  translate: 0 100%;
+}
+
+:where([data-dx-surface="edge"][data-side="top"]) {
+  --dx-edge-enter: dx-edge-in-top;
+  --dx-edge-exit: dx-edge-out-top;
+  --dx-edge-travel: 0px;
+
+  bottom: auto;
+  border-bottom: 1px solid var(--dx-border);
+  border-bottom-left-radius: var(--dx-edge-radius, 0);
+  border-bottom-right-radius: var(--dx-edge-radius, 0);
+  translate: 0 -100%;
+}
+
+:where([data-dx-surface="edge"][data-side="right"]) {
+  --dx-edge-enter: dx-edge-in-right;
+  --dx-edge-exit: dx-edge-out-right;
+  --dx-edge-travel: 0px;
+
+  left: auto;
+  width: 75%;
+  border-left: 1px solid var(--dx-border);
+  border-bottom-left-radius: var(--dx-edge-radius, 0);
+  border-top-left-radius: var(--dx-edge-radius, 0);
+  translate: calc(100% + var(--dx-edge-travel)) 0;
+}
+
+:where([data-dx-surface="edge"][data-side="left"]) {
+  --dx-edge-enter: dx-edge-in-left;
+  --dx-edge-exit: dx-edge-out-left;
+  --dx-edge-travel: 0px;
+
+  right: auto;
+  width: 75%;
+  border-right: 1px solid var(--dx-border);
+  border-bottom-right-radius: var(--dx-edge-radius, 0);
+  border-top-right-radius: var(--dx-edge-radius, 0);
+  translate: calc(-100% - var(--dx-edge-travel)) 0;
+}
+
+/* shadcn's `sm:max-w-sm`: the 24rem (384px) cap applies from Tailwind's `sm` breakpoint up, a narrower
+ * viewport gets the plain 75%. `40rem` is `--dx-breakpoint-sm`, copied because a media query cannot
+ * consume a custom property. */
+@media (width >= 40rem) {
+  :where([data-dx-surface="edge"]:is([data-side="left"], [data-side="right"])) {
+    max-width: 24rem;
+  }
+}
+
+/* Floating (a left or right panel only; a top or bottom one stays flush): stands `--dx-edge-inset` off
+ * the viewport edge on every side, with a full border and all four corners rounded. Declared after the
+ * four placements so it wins their same-specificity properties. */
+:where([data-dx-surface="edge"][data-dx-edge="floating"]:is([data-side="left"], [data-side="right"])) {
+  --dx-edge-travel: var(--dx-edge-inset, var(--dx-space-2));
+
+  top: var(--dx-edge-travel);
+  bottom: var(--dx-edge-travel);
+  border: 1px solid var(--dx-border);
+  border-radius: var(--dx-edge-radius, 0);
+}
+
+:where([data-dx-surface="edge"][data-dx-edge="floating"][data-side="right"]) {
+  right: var(--dx-edge-travel);
+}
+
+:where([data-dx-surface="edge"][data-dx-edge="floating"][data-side="left"]) {
+  left: var(--dx-edge-travel);
+}
+
+:where([data-dx-surface="edge"][data-state="open"]) {
+  animation: var(--dx-edge-enter) var(--dx-edge-duration-enter, 500ms) var(--dx-edge-ease-enter, ease-in-out) forwards;
+}
+
+:where([data-dx-surface="edge"][data-state="closed"]) {
+  animation: var(--dx-edge-exit) var(--dx-edge-duration-exit, var(--dx-motion-duration-slower)) var(--dx-edge-ease-exit, ease-in-out) forwards;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where([data-dx-surface="edge"][data-state="open"]),
+  :where([data-dx-surface="edge"][data-state="closed"]) {
+    animation-duration: var(--dx-motion-duration-reduced);
+  }
+}
+
+/* The shared slide, `translate` only (never `transform`, see above). Side is a screen-geometry fact, not a
+ * reading-direction one: a `right` panel always comes from the physical right edge, in LTR or RTL alike
+ * (each side has its own named keyframes, so there is no sign to flip). */
+@keyframes dx-edge-in-bottom {
+  from {
+    translate: 0 100%;
+  }
+
+  to {
+    translate: 0 0;
+  }
+}
+
+@keyframes dx-edge-out-bottom {
+  from {
+    translate: 0 0;
+  }
+
+  to {
+    translate: 0 100%;
+  }
+}
+
+@keyframes dx-edge-in-top {
+  from {
+    translate: 0 -100%;
+  }
+
+  to {
+    translate: 0 0;
+  }
+}
+
+@keyframes dx-edge-out-top {
+  from {
+    translate: 0 0;
+  }
+
+  to {
+    translate: 0 -100%;
+  }
+}
+
+@keyframes dx-edge-in-right {
+  from {
+    translate: calc(100% + var(--dx-edge-travel, 0px)) 0; /* rtl-physical: a right panel enters from the physical right edge */
+  }
+
+  to {
+    translate: 0 0;
+  }
+}
+
+@keyframes dx-edge-out-right {
+  from {
+    translate: 0 0;
+  }
+
+  to {
+    translate: calc(100% + var(--dx-edge-travel, 0px)) 0; /* rtl-physical: see dx-edge-in-right */
+  }
+}
+
+@keyframes dx-edge-in-left {
+  from {
+    translate: calc(-100% - var(--dx-edge-travel, 0px)) 0; /* rtl-physical: a left panel enters from the physical left edge */
+  }
+
+  to {
+    translate: 0 0;
+  }
+}
+
+@keyframes dx-edge-out-left {
+  from {
+    translate: 0 0;
+  }
+
+  to {
+    translate: calc(-100% - var(--dx-edge-travel, 0px)) 0; /* rtl-physical: see dx-edge-in-left */
+  }
 }
 
 /* ============================================================================
@@ -1139,8 +1553,10 @@ html[data-theme="light"] [class~="dxc-system"] {
  * comment for the fuller story); the same flat construction sidesteps the
  * same risk here rather than assuming `:where()` is exempt from it.
  */
-:where([data-dx-interactive]):hover {
-  opacity: var(--dx-opacity-hover);
+@media (hover: hover) and (pointer: fine) {
+  :where([data-dx-interactive]):hover {
+    opacity: var(--dx-opacity-hover);
+  }
 }
 
 :where([data-dx-interactive]):focus-visible {

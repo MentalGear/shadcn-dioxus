@@ -238,13 +238,21 @@ test.describe("Pie chart: labels", () => {
 });
 
 test.describe("Pie chart: load animation", () => {
-  test("main: the slices sweep in once measured, and not under reduced motion", async ({ page }) => {
-    await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
-    const mask = frame(page, "main").locator('[data-slot="chart-sweep-mask"] path');
-    await expect(frame(page, "main").locator('[data-slot="chart-svg"][data-animate="true"]')).toBeAttached();
-    expect(await mask.evaluate((el) => getComputedStyle(el).animationName)).toBe("dx-chart-sweep");
+  test("a chart below the fold sweeps in once seen, and not under reduced motion", async ({ page }) => {
+    // The chart in the first paint is never animated (it is the server-rendered final drawing;
+    // `chart-entry-animation.spec.ts`), so the entrance is checked on the last demo, which starts
+    // far below the first screen. The canonical, prerendered page: the legacy `/component/?name=`
+    // URL used above redirects client-side, so its charts are created in the browser (nothing was
+    // painted) and the one in view animates at once.
+    await gotoHydrated(page, `${BASE_URL}/component/pie_chart/`, { timeout: 20 * 60 * 1000 });
+    const f = frame(page, "interactive");
+    await expect(frame(page, "main").locator('[data-slot="chart-svg"]')).not.toHaveAttribute("data-animate", "true");
+    await f.scrollIntoViewIfNeeded();
+    await expect(f.locator('[data-slot="chart-svg"][data-animate="true"]')).toBeAttached();
+    const mask = f.locator('[data-slot="chart-sweep-mask"] path');
+    expect(await mask.first().evaluate((el) => getComputedStyle(el).animationName)).toBe("dx-chart-sweep");
     await page.emulateMedia({ reducedMotion: "reduce" });
-    expect(await mask.evaluate((el) => getComputedStyle(el).animationName)).toBe("none");
+    expect(await mask.first().evaluate((el) => getComputedStyle(el).animationName)).toBe("none");
   });
 });
 

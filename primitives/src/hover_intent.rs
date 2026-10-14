@@ -31,6 +31,17 @@
 //! the same two calls), and [`HoverIntent::cancel`] from every deliberate non-hover
 //! action (a click, a key) so a pending timer cannot override it.
 //!
+//! **Hover intent is a mouse's.** A tap makes the browser fire compatibility `mouseenter`/
+//! `mouseover` events AFTER its touch pointer events, so a host that listens to `mouseenter`
+//! alone would hover-open on a tap and then toggle the very panel it opened on the click that
+//! follows. Radix gates every hover handler on `pointerType === "mouse"` (`whenMouse`); here
+//! the hook watches the page's pointer events (`pointerover`/`pointerdown`, capture phase) and
+//! remembers whether the LAST pointer was a mouse, and [`HoverIntent::enter`] does nothing
+//! (neither opens nor switches, at the call and again when the open-intent timer fires) while
+//! it was a touch or a pen. A mouse event after a touch restores hover (a laptop with a
+//! touchscreen). Close-side calls are not gated: a panel a tap opened still closes on its own
+//! terms (click outside, Escape).
+//!
 //! Reference: Radix `NavigationMenu` (`radix-ui/primitives`,
 //! `packages/react/navigation-menu/src/navigation-menu.tsx`): the trigger's and the
 //! content's `onPointerLeave` both call `startCloseTimer` (150 ms), and `onPointerEnter` of
@@ -42,6 +53,7 @@ use std::time::Duration;
 
 use dioxus::prelude::*;
 
+use crate::js_listener::{use_js_listeners, JsListeners};
 use crate::menu_sub::{use_delayed_action, DelayedAction};
 
 /// Hover-intent delay before a pointer resting on a trigger opens its panel (nothing
@@ -65,6 +77,8 @@ pub(crate) struct HoverIntent {
     close_timer: DelayedAction,
     enabled: ReadSignal<bool>,
     set_open: Callback<Option<usize>>,
+    /// The last pointer event the page saw came from a touch or a pen, not a mouse.
+    non_mouse: Signal<bool>,
 }
 
 /// Create a [`HoverIntent`] around the host's `open` index signal. A hook (it calls
@@ -82,6 +96,24 @@ pub(crate) fn use_hover_intent(
     // Each `use_delayed_action()` is itself a hook, so both run here, in the body.
     let open_timer = use_delayed_action();
     let close_timer = use_delayed_action();
+    let mut non_mouse = use_signal(|| false);
+    use_js_listeners(move || {
+        Some(
+            JsListeners::install(
+                "let last = null;
+                const note = (e) => {
+                    const v = e.pointerType !== 'mouse';
+                    if (v !== last) {
+                        last = v;
+                        dioxus.send(v);
+                    }
+                };
+                listen(window, 'pointerover', note, true);
+                listen(window, 'pointerdown', note, true);",
+            )
+            .on_message(move |v: bool| non_mouse.set(v)),
+        )
+    });
     HoverIntent {
         open,
         opened_by_hover,
@@ -89,6 +121,7 @@ pub(crate) fn use_hover_intent(
         close_timer,
         enabled,
         set_open,
+        non_mouse,
     }
 }
 
@@ -119,7 +152,7 @@ impl HoverIntent {
 
     /// The pointer entered the region (trigger or panel) of item `index`.
     pub(crate) fn enter(&mut self, index: usize) {
-        if !(self.enabled)() {
+        if !(self.enabled)() || self.touch_pointer() {
             return;
         }
         // Back inside: whatever close the pointer's last exit scheduled is void.
@@ -135,8 +168,11 @@ impl HoverIntent {
             self.open_timer.cancel();
             hover.open_by_hover(index);
         } else {
-            self.open_timer
-                .schedule(HOVER_OPEN_INTENT_DELAY, move || hover.open_by_hover(index));
+            self.open_timer.schedule(HOVER_OPEN_INTENT_DELAY, move || {
+                if !hover.touch_pointer() {
+                    hover.open_by_hover(index);
+                }
+            });
         }
     }
 
@@ -172,6 +208,11 @@ impl HoverIntent {
                 set_open.call(None);
             }
         });
+    }
+
+    /// The last pointer event the page saw was a touch or a pen: no hover intent.
+    fn touch_pointer(&self) -> bool {
+        *self.non_mouse.peek()
     }
 
     /// Open `index` as the pointer's decision. After `set_open` (which clears the

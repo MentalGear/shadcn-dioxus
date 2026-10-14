@@ -3,7 +3,8 @@
  * border-input bg-transparent dark:bg-input/30 dark:hover:bg-input/50 py-1 pr-8 pl-2.5
  * text-sm`, `ring-3 ring-ring/50` + `border-ring` on focus. The height is the theme's
  * `--dx-control-height-default` (32px); the fill is Input's (transparent in light).
- * Nova's `data-[size=sm]` (h-7) has no counterpart here: this component has no size prop.
+ * Nova's `data-[size=sm]` (`h-7 py-0.5 rounded-[min(var(--radius-md),10px)]`) is `size="sm"`: the
+ * height is the ladder's `--dx-control-height-sm`, set through the two slot variables below.
  *
  * Menu-item indicator slot (the construction select/style.css documents in
  * full): the select reserves `inset + size + gap` of inline-end padding and
@@ -18,33 +19,44 @@
 }
 
 .dx-native-select {
+  --dx-native-select-height: var(--dx-control-height-default);
+  --dx-native-select-radius: var(--dx-radius-lg);
+  --dx-native-select-padding-block: var(--dx-space-1);
+
   width: 100%;
-  height: var(--dx-control-height-default);
+  height: var(--dx-native-select-height);
   border: none;
   appearance: none;
   background: none;
   background-color: var(--dx-field-fill);
-  border-end-end-radius: var(--dx-group-radius-end-end, var(--dx-radius-lg));
-  border-end-start-radius: var(--dx-group-radius-end-start, var(--dx-radius-lg));
-  border-start-end-radius: var(--dx-group-radius-start-end, var(--dx-radius-lg));
-  border-start-start-radius: var(--dx-group-radius-start-start, var(--dx-radius-lg));
+  border-end-end-radius: var(--dx-group-radius-end-end, var(--dx-native-select-radius));
+  border-end-start-radius: var(--dx-group-radius-end-start, var(--dx-native-select-radius));
+  border-start-end-radius: var(--dx-group-radius-start-end, var(--dx-native-select-radius));
+  border-start-start-radius: var(--dx-group-radius-start-start, var(--dx-native-select-radius));
   box-shadow: inset 0 0 0 1px var(--dx-input);
   color: var(--dx-foreground);
   cursor: pointer;
   font-family: inherit;
   font-size: var(--dx-text-sm);
-  padding-block: var(--dx-space-1);
+  padding-block: var(--dx-native-select-padding-block);
   padding-inline:
     var(--dx-space-2-5)
     calc(var(--dx-menu-item-indicator-inset) + var(--dx-menu-item-indicator-size) + var(--dx-menu-item-indicator-gap));
   transition: background-color var(--dx-motion-duration-fast) var(--dx-motion-ease-out);
 }
 
-.dx-native-select:hover:not(:disabled),
-.dx-native-select:focus-visible {
-  background: var(--light, var(--dx-accent)) var(--dark, color-mix(in oklab, var(--dx-input) 50%, transparent));
-  color: var(--dx-accent-foreground);
-  outline: none;
+.dx-native-select[data-size="sm"] {
+  --dx-native-select-height: var(--dx-control-height-sm);
+  --dx-native-select-radius: var(--dx-radius-md);
+  --dx-native-select-padding-block: var(--dx-space-0-5);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-native-select:hover:not(:disabled) {
+    background: var(--light, var(--dx-accent)) var(--dark, color-mix(in oklab, var(--dx-input) 50%, transparent));
+    color: var(--dx-accent-foreground);
+    outline: none;
+  }
 }
 
 /* A native select is a field, not a button: Nova gives it the same
@@ -53,7 +65,10 @@
  * draws the shared `--dx-ring-field` token rather than the 2px `--dx-ring`
  * of the button-like controls. */
 .dx-native-select:focus-visible {
+  background: var(--light, var(--dx-accent)) var(--dark, color-mix(in oklab, var(--dx-input) 50%, transparent));
   box-shadow: var(--dx-ring-field);
+  color: var(--dx-accent-foreground);
+  outline: none;
 }
 
 /* After the focus rule so a focused invalid select stays red. */

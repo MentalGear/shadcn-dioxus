@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400" role="img" aria-label="An illustrated workspace: a desk, a monitor and a plant">
+  <defs>
+    <linearGradient id="wall" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#dbeafe"/>
+      <stop offset="1" stop-color="#c7d2fe"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="400" fill="url(#wall)"/>
+  <rect y="290" width="640" height="110" fill="#a16207" opacity="0.85"/>
+  <rect x="190" y="110" width="260" height="150" rx="10" fill="#1e293b"/>
+  <rect x="202" y="122" width="236" height="126" rx="4" fill="#38bdf8"/>
+  <rect x="302" y="260" width="36" height="30" fill="#334155"/>
+  <rect x="262" y="286" width="116" height="10" rx="5" fill="#334155"/>
+  <rect x="500" y="230" width="46" height="60" rx="6" fill="#b45309"/>
+  <circle cx="523" cy="205" r="30" fill="#16a34a"/>
+  <circle cx="500" cy="225" r="20" fill="#22c55e"/>
+</svg>

@@ -39,10 +39,19 @@
    keeps its `on` background while hovered, in both themes).
    `:where(:hover)` makes that unconditional instead of order-dependent.
    `:focus-visible` is untouched, same (0,2,0) it already has. */
-.dx-toggle-group-item:where(:hover),
 .dx-toggle-group-item:focus-visible {
+  position: relative;
+  z-index: var(--dx-z-raise);
   background-color: var(--dx-accent);
+  box-shadow: var(--dx-ring-focus);
   cursor: pointer;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-toggle-group-item:where(:hover) {
+    background-color: var(--dx-accent);
+    cursor: pointer;
+  }
 }
 
 /* Pressed: the hover surface pushed 15% toward the ink, so it follows a preset
@@ -50,12 +59,6 @@
 .dx-toggle-group-item[data-state="on"] {
   background-color: color-mix(in oklab, var(--dx-accent), var(--dx-foreground) 15%);
   color: var(--dx-foreground);
-}
-
-.dx-toggle-group-item:focus-visible {
-  position: relative;
-  z-index: var(--dx-z-raise);
-  box-shadow: var(--dx-ring-focus);
 }
 
 .dx-toggle-group[data-allow-multiple-pressed="true"]

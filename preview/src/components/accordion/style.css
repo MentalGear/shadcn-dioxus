@@ -29,9 +29,11 @@
   box-shadow: var(--dx-ring-focus-inset);
 }
 
-.dx-accordion-trigger:hover:not(:disabled) {
-  cursor: pointer;
-  text-decoration-line: underline;
+@media (hover: hover) and (pointer: fine) {
+  .dx-accordion-trigger:hover:not(:disabled) {
+    cursor: pointer;
+    text-decoration-line: underline;
+  }
 }
 
 .dx-accordion-trigger:disabled {

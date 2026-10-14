@@ -36,6 +36,14 @@ AttachmentGroup {
 
 `Uploading` and `Processing` shimmer the title, `Error` switches to a destructive treatment, `Idle` draws a dashed border. `AttachmentAction` is a themed `Button` defaulting to the ghost variant and the `IconXs` size.
 
+## Examples
+
+- **States**, **Sizes**, **Image**, **Group** and **Trigger**: the five states, the three sizes, image media, a scrolling group, and a trigger rendered as a button or a link.
+- **Dialog**: an `AttachmentTrigger` that opens a real `Dialog` (a controlled `open` signal the trigger sets). The copy and remove actions sit above the trigger and stay independently clickable.
+- **Image gallery**: vertical image cards whose `AttachmentTrigger` is rendered as an `<a>` (through `as`) that opens the full image, with a remove action on each. The previews are bundled with `asset!`, so the demo needs no network.
+- **Removable group**: a scrolling group of fixed-width cards, icon media for files and image media for pictures, each with a working remove action.
+- **Composite**: a composer's tray in one place: an image group, a file that is still uploading (a `Spinner` as its media and a "Cancel upload" action), and a finished code file with a remove action.
+
 ## Accessibility
 
 - `AttachmentAction` is usually icon-only: give each one an `aria-label` naming the action and its target ("Remove sales-dashboard.pdf").

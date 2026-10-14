@@ -37,6 +37,9 @@ struct BaseDatePickerContext {
     close_on_select: ReadSignal<bool>,
     close_delay: ReadSignal<Duration>,
     dwell: CloseDwell,
+
+    // Apply/Cancel staging -- see [`DatePickerConfirm`].
+    confirm: DatePickerConfirm,
 }
 
 /// How long a picker stays open after a selection is complete, by default.
@@ -176,11 +179,151 @@ impl BaseDatePickerContext {
     }
 }
 
+/// The Apply/Cancel handle of a picker, from [`use_date_picker_confirm`].
+///
+/// With `confirm: true` a picker does not commit what the calendar selects: the selection is
+/// STAGED inside the panel (the calendar shows it, the input and `on_value_change` keep the
+/// committed value) until [`Self::apply`] commits it and closes the popover. [`Self::cancel`], and
+/// every other way of closing -- Escape, an outside click, the trigger -- drop the staged selection
+/// and leave the committed value as it was. A picker built from the primitives renders its own
+/// footer from this handle; the styled `DatePicker` renders `Cancel` / `Apply` buttons.
+///
+/// What counts as "something to apply" ([`Self::can_apply`]): the staged value exists and differs
+/// from the committed one. For a range that means BOTH ends are picked -- `RangeCalendar` reports
+/// a range only once its end date is chosen (the first click just anchors it), so a half-picked
+/// range is never staged and Apply stays disabled until it is complete. Picking the selected day
+/// again clears the selection, which is a change like any other and can be applied.
+#[derive(Copy, Clone)]
+pub struct DatePickerConfirm {
+    enabled: ReadSignal<bool>,
+    can_apply: Memo<bool>,
+    apply: Callback<()>,
+    cancel: Callback<()>,
+}
+
+impl DatePickerConfirm {
+    /// Whether the picker stages its selections (`confirm: true`). When `false`, [`Self::apply`]
+    /// and [`Self::cancel`] still work (they just close) but there is nothing to apply.
+    pub fn enabled(&self) -> bool {
+        (self.enabled)()
+    }
+
+    /// Whether a staged selection differs from the committed value, i.e. Apply has an effect.
+    pub fn can_apply(&self) -> bool {
+        (self.can_apply)()
+    }
+
+    /// Commit the staged selection and close the popover (focus returns to the trigger).
+    pub fn apply(&self) {
+        self.apply.call(());
+    }
+
+    /// Discard the staged selection and close the popover (focus returns to the trigger).
+    pub fn cancel(&self) {
+        self.cancel.call(());
+    }
+}
+
+/// The Apply/Cancel handle of the enclosing [`DatePicker`] / [`DateRangePicker`].
+pub fn use_date_picker_confirm() -> DatePickerConfirm {
+    use_context::<BaseDatePickerContext>().confirm
+}
+
+/// A picker's staged selection: `None` when nothing is staged, `Some(value)` (the value itself
+/// possibly `None`, a cleared selection) once the calendar has selected something.
+struct Staging<T: 'static> {
+    staged: Signal<Option<Option<T>>>,
+    /// What the calendar shows: the staged value when there is one, the committed value otherwise.
+    displayed: Memo<Option<T>>,
+}
+
+impl<T> Clone for Staging<T> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+impl<T> Copy for Staging<T> {}
+
+impl<T: Clone + PartialEq + 'static> Staging<T> {
+    /// A calendar selected `value`. Only a `confirm` picker stages; returns whether it did, so the
+    /// caller knows to skip the commit-and-close path.
+    fn stage(self, confirm: DatePickerConfirm, value: Option<T>) -> bool {
+        if !confirm.enabled() {
+            return false;
+        }
+        let mut staged = self.staged;
+        staged.set(Some(value));
+        true
+    }
+}
+
+/// Create a picker's staging and its [`DatePickerConfirm`]. A hook: call it unconditionally, once
+/// per render, from the picker root, before the context is provided.
+///
+/// The staged value is dropped whenever the popover opens or closes, so no way of closing it
+/// (Escape, an outside click, the trigger, a typed commit in the input) can leave a selection
+/// behind to resurface on the next open -- that is the construction behind "Cancel / Escape /
+/// outside click restore the previous value": none of them has to know about staging.
+fn use_staging<T: Clone + PartialEq + 'static>(
+    enabled: ReadSignal<bool>,
+    open: Signal<bool>,
+    dwell: CloseDwell,
+    committed: ReadSignal<Option<T>>,
+    commit: Callback<Option<T>>,
+) -> (Staging<T>, DatePickerConfirm) {
+    let mut staged = use_signal(|| None::<Option<T>>);
+    let displayed = use_memo(move || match staged() {
+        Some(value) => value,
+        None => committed(),
+    });
+    let can_apply =
+        use_memo(move || enabled() && staged().is_some_and(|value| value != committed()));
+
+    use_effect(move || {
+        let _ = open();
+        if staged.peek().is_some() {
+            staged.set(None);
+        }
+    });
+
+    let close = move || {
+        let mut open = open;
+        dwell.cancel();
+        return_focus_to_trigger();
+        open.set(false);
+    };
+    let apply = use_callback(move |_: ()| {
+        let pending = staged.peek().clone();
+        if let Some(value) = pending {
+            if *committed.peek() != value {
+                commit.call(value);
+            }
+        }
+        staged.set(None);
+        close();
+    });
+    let cancel = use_callback(move |_: ()| {
+        staged.set(None);
+        close();
+    });
+
+    (
+        Staging { staged, displayed },
+        DatePickerConfirm {
+            enabled,
+            can_apply,
+            apply,
+            cancel,
+        },
+    )
+}
+
 /// The context provided by the [`DatePicker`] component to its children.
 #[derive(Copy, Clone)]
 struct DatePickerContext {
     on_value_change: Callback<Option<Date>>,
     selected_date: ReadSignal<Option<Date>>,
+    staging: Staging<Date>,
 }
 
 impl DatePickerContext {
@@ -236,6 +379,16 @@ pub struct DatePickerProps {
     /// date restarts it. Ignored when `close_on_select` is `false`.
     #[props(default = ReadSignal::new(Signal::new(DEFAULT_CLOSE_DELAY)))]
     pub close_delay: ReadSignal<Duration>,
+
+    /// Whether selections are staged behind an Apply / Cancel footer instead of committing at
+    /// once. Defaults to `false` here: the primitive only stages if you also render the controls
+    /// ([`use_date_picker_confirm`]), and staging without them would never commit anything. The
+    /// styled `DatePicker` defaults it to `true` and renders the footer. While `true`, a calendar
+    /// selection is held in the panel (the input keeps the committed value) and
+    /// `close_on_select` / `close_delay` are ignored; Apply commits and closes, Cancel, Escape
+    /// and an outside click restore the previous value and close.
+    #[props(default = ReadSignal::new(Signal::new(false)))]
+    pub confirm: ReadSignal<bool>,
 
     /// Whether focus should loop around when reaching the end.
     #[props(default = ReadSignal::new(Signal::new(false)))]
@@ -298,6 +451,13 @@ pub fn DatePicker(props: DatePickerProps) -> Element {
     let focus = use_collection_provider(props.roving_loop);
     let available_ranges = use_memo(move || AvailableRanges::new(&props.disabled_ranges.read()));
     let dwell = use_close_dwell(open);
+    let (staging, confirm) = use_staging(
+        props.confirm,
+        open,
+        dwell,
+        props.selected_date,
+        props.on_value_change,
+    );
 
     // Create context provider for child components
     use_context_provider(|| BaseDatePickerContext {
@@ -310,11 +470,13 @@ pub fn DatePicker(props: DatePickerProps) -> Element {
         close_on_select: props.close_on_select,
         close_delay: props.close_delay,
         dwell,
+        confirm,
     });
 
     use_context_provider(|| DatePickerContext {
         on_value_change: props.on_value_change,
         selected_date: props.selected_date,
+        staging,
     });
 
     let defaults = attributes!(div { aria_label: "Date" });
@@ -344,6 +506,7 @@ pub struct DateRangePickerContext {
     // Currently selected date range
     date_range: ReadSignal<Option<DateRange>>,
     set_selected_range: Callback<Option<DateRange>>,
+    staging: Staging<DateRange>,
 }
 
 impl DateRangePickerContext {
@@ -417,6 +580,16 @@ pub struct DateRangePickerProps {
     #[props(default = ReadSignal::new(Signal::new(DEFAULT_CLOSE_DELAY)))]
     pub close_delay: ReadSignal<Duration>,
 
+    /// Whether selections are staged behind an Apply / Cancel footer instead of committing at
+    /// once. Defaults to `false` here: the primitive only stages if you also render the controls
+    /// ([`use_date_picker_confirm`]), and staging without them would never commit anything. The
+    /// styled `DatePicker` defaults it to `true` and renders the footer. While `true`, a calendar
+    /// selection is held in the panel (the input keeps the committed value) and
+    /// `close_on_select` / `close_delay` are ignored; Apply commits and closes, Cancel, Escape
+    /// and an outside click restore the previous value and close.
+    #[props(default = ReadSignal::new(Signal::new(false)))]
+    pub confirm: ReadSignal<bool>,
+
     /// Whether focus should loop around when reaching the end.
     #[props(default = ReadSignal::new(Signal::new(false)))]
     pub roving_loop: ReadSignal<bool>,
@@ -478,6 +651,13 @@ pub fn DateRangePicker(props: DateRangePickerProps) -> Element {
 
     let available_ranges = use_memo(move || AvailableRanges::new(&props.disabled_ranges.read()));
     let dwell = use_close_dwell(open);
+    let (staging, confirm) = use_staging(
+        props.confirm,
+        open,
+        dwell,
+        props.selected_range,
+        props.on_range_change,
+    );
 
     // Create context provider for child components
     use_context_provider(|| BaseDatePickerContext {
@@ -490,11 +670,13 @@ pub fn DateRangePicker(props: DateRangePickerProps) -> Element {
         close_on_select: props.close_on_select,
         close_delay: props.close_delay,
         dwell,
+        confirm,
     });
 
     use_context_provider(|| DateRangePickerContext {
         date_range: props.selected_range,
         set_selected_range: props.on_range_change,
+        staging,
     });
 
     let defaults = attributes!(div {
@@ -746,8 +928,11 @@ pub fn DatePickerCalendar(props: DatePickerCalendarProps<CalendarProps>) -> Elem
     #[allow(non_snake_case)]
     let Calendar = props.calendar;
     let mut view_date = use_signal(|| props.today);
+    // The calendar follows what it displays: the staged selection while one is pending, the
+    // committed date otherwise.
+    let displayed = ctx.staging.displayed;
     use_effect(move || {
-        if let Some(date) = (ctx.selected_date)() {
+        if let Some(date) = displayed() {
             view_date.set(date);
         }
     });
@@ -757,8 +942,13 @@ pub fn DatePickerCalendar(props: DatePickerCalendarProps<CalendarProps>) -> Elem
 
     rsx! {
         Calendar {
-            selected_date: ctx.selected_date,
+            selected_date: displayed,
             on_date_change: move |date: Option<Date>| {
+                // `confirm`: the selection is staged, nothing is committed and nothing closes --
+                // Apply (or Cancel / Escape / an outside click) decides.
+                if ctx.staging.stage(base_ctx.confirm, date) {
+                    return;
+                }
                 // While a close is pending, "no date" is a click on the day that was JUST
                 // selected (a double-click, or someone confirming what they are watching land),
                 // which the calendar reads as a toggle-off. That is not what they mean, and the
@@ -835,8 +1025,9 @@ pub fn DateRangePickerCalendar(props: DatePickerCalendarProps<RangeCalendarProps
     #[allow(non_snake_case)]
     let RangeCalendar = props.calendar;
     let mut view_date = use_signal(|| props.today);
+    let displayed = ctx.staging.displayed;
     use_effect(move || {
-        if let Some(r) = (ctx.date_range)() {
+        if let Some(r) = displayed() {
             view_date.set(r.start());
         }
     });
@@ -846,10 +1037,14 @@ pub fn DateRangePickerCalendar(props: DatePickerCalendarProps<RangeCalendarProps
 
     rsx! {
         RangeCalendar {
-            selected_range: ctx.date_range,
+            selected_range: displayed,
             // `RangeCalendar` only reports a range once its END date is picked (the first click
             // just anchors it), so this is the "range is complete" moment -- never the start.
             on_range_change: move |range| {
+                // `confirm`: stage the completed range; Apply commits it.
+                if ctx.staging.stage(base_ctx.confirm, range) {
+                    return;
+                }
                 ctx.set_range(range);
                 base_ctx.selection_complete();
             },
@@ -3089,6 +3284,10 @@ mod tests {
                     let mut emitted = emitted;
                     emitted.write().push(d);
                 }),
+                staging: Staging {
+                    staged: use_signal(|| None),
+                    displayed: use_memo(move || selected.cloned()),
+                },
             };
 
             // Same value: no-op.
@@ -3113,6 +3312,10 @@ mod tests {
                     let mut emitted = emitted;
                     emitted.write().push(r);
                 }),
+                staging: Staging {
+                    staged: use_signal(|| None),
+                    displayed: use_memo(move || date_range.cloned()),
+                },
             };
 
             ctx.set_range(initial);
@@ -3417,5 +3620,161 @@ mod tests {
                 "step {step}: the parent's range was overwritten"
             );
         }
+    }
+
+    // ---- Apply / Cancel staging (`confirm`) ---------------------------------------------------
+
+    /// What the probe hands back: the picker's staging, its confirm handle, `open`, the committed
+    /// value is the parent's, and every value reported through `on_value_change` is recorded.
+    #[derive(Clone, Default)]
+    struct StagingHarness {
+        parts: Rc<Cell<Option<StagingParts>>>,
+        reported: Rc<std::cell::RefCell<Vec<Option<Date>>>>,
+    }
+
+    #[derive(Clone, Copy)]
+    struct StagingParts {
+        staging: Staging<Date>,
+        confirm: DatePickerConfirm,
+        open: Signal<bool>,
+        enabled: Signal<bool>,
+    }
+
+    #[component]
+    fn StagingHost() -> Element {
+        let harness: StagingHarness = consume_context();
+        let open = use_signal(|| true);
+        let mut committed = use_signal(|| Some(date!(2026 - 02 - 01)));
+        let enabled = use_signal(|| true);
+        let dwell = use_close_dwell(open);
+        let reported = harness.reported.clone();
+        let commit = use_callback(move |value: Option<Date>| {
+            reported.borrow_mut().push(value);
+            committed.set(value);
+        });
+        let (staging, confirm) = use_staging(enabled.into(), open, dwell, committed.into(), commit);
+        harness.parts.set(Some(StagingParts {
+            staging,
+            confirm,
+            open,
+            enabled,
+        }));
+        rsx! { "probe" }
+    }
+
+    fn staging_dom() -> (VirtualDom, StagingHarness, StagingParts) {
+        let harness = StagingHarness::default();
+        let mut dom = VirtualDom::new(StagingHost).with_root_context(harness.clone());
+        dom.rebuild_in_place();
+        settle(&mut dom);
+        let parts = harness.parts.get().expect("probe rendered");
+        (dom, harness, parts)
+    }
+
+    fn stage(dom: &mut VirtualDom, parts: StagingParts, value: Option<Date>) -> bool {
+        let staged = dom.in_scope(ScopeId::APP, || parts.staging.stage(parts.confirm, value));
+        settle(dom);
+        staged
+    }
+
+    fn displayed(dom: &mut VirtualDom, parts: StagingParts) -> Option<Date> {
+        dom.in_scope(ScopeId::APP, || *parts.staging.displayed.peek())
+    }
+
+    fn can_apply(dom: &mut VirtualDom, parts: StagingParts) -> bool {
+        dom.in_scope(ScopeId::APP, || *parts.confirm.can_apply.peek())
+    }
+
+    #[test]
+    fn a_staged_selection_is_shown_but_not_committed_and_apply_commits_it_once() {
+        let (mut dom, harness, parts) = staging_dom();
+        assert!(
+            !can_apply(&mut dom, parts),
+            "nothing staged, nothing to apply"
+        );
+        assert_eq!(displayed(&mut dom, parts), Some(date!(2026 - 02 - 01)));
+
+        assert!(stage(&mut dom, parts, Some(date!(2026 - 02 - 09))));
+        assert_eq!(displayed(&mut dom, parts), Some(date!(2026 - 02 - 09)));
+        assert!(can_apply(&mut dom, parts));
+        assert!(
+            harness.reported.borrow().is_empty(),
+            "staging must not report: {:?}",
+            harness.reported.borrow()
+        );
+
+        dom.in_scope(ScopeId::APP, || parts.confirm.apply());
+        settle(&mut dom);
+        assert_eq!(
+            *harness.reported.borrow(),
+            vec![Some(date!(2026 - 02 - 09))]
+        );
+        assert!(!is_open_of(&mut dom, parts), "Apply closes the popover");
+        assert!(
+            !can_apply(&mut dom, parts),
+            "applied: nothing left to apply"
+        );
+        assert_eq!(displayed(&mut dom, parts), Some(date!(2026 - 02 - 09)));
+    }
+
+    fn is_open_of(dom: &mut VirtualDom, parts: StagingParts) -> bool {
+        dom.in_scope(ScopeId::APP, || *parts.open.peek())
+    }
+
+    #[test]
+    fn cancel_and_every_other_close_drop_the_staged_selection() {
+        let (mut dom, harness, parts) = staging_dom();
+        let committed = Some(date!(2026 - 02 - 01));
+
+        // Cancel.
+        stage(&mut dom, parts, Some(date!(2026 - 02 - 09)));
+        dom.in_scope(ScopeId::APP, || parts.confirm.cancel());
+        settle(&mut dom);
+        assert!(!is_open_of(&mut dom, parts));
+        assert_eq!(displayed(&mut dom, parts), committed);
+        assert!(!can_apply(&mut dom, parts));
+
+        // Escape / an outside click / the trigger all just set `open` to false.
+        let mut open = parts.open;
+        dom.in_scope(ScopeId::APP, || open.set(true));
+        settle(&mut dom);
+        stage(&mut dom, parts, Some(date!(2026 - 02 - 10)));
+        assert_eq!(displayed(&mut dom, parts), Some(date!(2026 - 02 - 10)));
+        dom.in_scope(ScopeId::APP, || open.set(false));
+        settle(&mut dom);
+        assert_eq!(
+            displayed(&mut dom, parts),
+            committed,
+            "a light dismiss restores the value"
+        );
+        assert!(
+            harness.reported.borrow().is_empty(),
+            "nothing was ever committed"
+        );
+    }
+
+    #[test]
+    fn staging_the_committed_value_again_leaves_nothing_to_apply() {
+        let (mut dom, _harness, parts) = staging_dom();
+        stage(&mut dom, parts, Some(date!(2026 - 02 - 09)));
+        assert!(can_apply(&mut dom, parts));
+        stage(&mut dom, parts, Some(date!(2026 - 02 - 01)));
+        assert!(!can_apply(&mut dom, parts));
+        // Clearing the selection is a change like any other.
+        stage(&mut dom, parts, None);
+        assert!(can_apply(&mut dom, parts));
+        assert_eq!(displayed(&mut dom, parts), None);
+    }
+
+    #[test]
+    fn without_confirm_nothing_is_staged() {
+        let (mut dom, harness, parts) = staging_dom();
+        let mut enabled = parts.enabled;
+        dom.in_scope(ScopeId::APP, || enabled.set(false));
+        settle(&mut dom);
+        assert!(!stage(&mut dom, parts, Some(date!(2026 - 02 - 09))));
+        assert!(!can_apply(&mut dom, parts));
+        assert_eq!(displayed(&mut dom, parts), Some(date!(2026 - 02 - 01)));
+        assert!(harness.reported.borrow().is_empty());
     }
 }

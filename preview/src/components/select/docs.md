@@ -19,6 +19,10 @@ Select::<String> {
 }
 ```
 
+## Size
+
+`size: SelectSize::Sm` makes the trigger 28px tall (`--dx-control-height-sm`) instead of the default 32px (`--dx-control-height-default`), shadcn's `size="sm" | "default"` on `SelectTrigger`. It sets `data-size` on the trigger of both `Select` and `SelectMulti`. See the `sizes` variant.
+
 ## Direction / RTL
 
 `Select`/`SelectMulti` accept a `dir: Option<Direction>` prop, emitted as `dir`/`data-direction` on the trigger and the listbox. The trigger/listbox's own keyboard navigation is vertical-only (`ArrowUp`/`ArrowDown`/`Home`/`End`), so there is no arrow-key behavior to flip. See the `rtl` variant.

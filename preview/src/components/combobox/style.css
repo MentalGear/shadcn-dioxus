@@ -62,10 +62,15 @@
     calc(var(--dx-menu-item-indicator-inset) + var(--dx-menu-item-indicator-size) + var(--dx-menu-item-indicator-gap));
 }
 
-.dx-combobox-input:hover:not([disabled]),
 .dx-combobox-input:focus-visible,
 .dx-combobox-input[data-state="open"] {
   background: var(--dx-muted);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-combobox-input:hover:not([disabled]) {
+    background: var(--dx-muted);
+  }
 }
 
 /* The keyboard focus ring: the shared `--dx-ring-field` token `Input` draws
@@ -120,7 +125,7 @@
   display: flex;
   overflow: hidden auto;
   width: var(--dx-combobox-width, 200px);
-  max-height: 18rem;
+  max-height: min(18rem, var(--dx-available-height, 18rem));
   flex-direction: column;
 
   /*

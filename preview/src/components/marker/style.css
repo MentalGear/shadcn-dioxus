@@ -27,8 +27,10 @@
   text-underline-offset: 3px;
 }
 
-.dx-marker:is(a, button):hover {
-  color: var(--dx-foreground);
+@media (hover: hover) and (pointer: fine) {
+  .dx-marker:is(a, button):hover {
+    color: var(--dx-foreground);
+  }
 }
 
 .dx-marker:is(a, button):focus-visible {
@@ -84,11 +86,13 @@
   text-align: center;
 }
 
-.dx-marker-content a {
+.dx-marker-content a:not(:where([popover], dialog) *) {
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 
-.dx-marker-content a:hover {
-  color: var(--dx-foreground);
+@media (hover: hover) and (pointer: fine) {
+  .dx-marker-content a:not(:where([popover], dialog) *):hover {
+    color: var(--dx-foreground);
+  }
 }

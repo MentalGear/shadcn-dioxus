@@ -222,10 +222,16 @@
   white-space: nowrap;
 }
 
-.dx-popover-trigger:hover,
 .dx-popover-trigger[aria-expanded="true"] {
   background-color: var(--light, var(--dx-muted))
     var(--dark, color-mix(in oklab, var(--dx-input) 50%, transparent));
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-popover-trigger:hover {
+    background-color: var(--light, var(--dx-muted))
+      var(--dark, color-mix(in oklab, var(--dx-input) 50%, transparent));
+  }
 }
 
 .dx-popover-trigger:focus-visible {

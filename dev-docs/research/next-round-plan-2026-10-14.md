@@ -1,6 +1,6 @@
 # Next round plan (2026-10-14): owner findings after phase C, plus the approved queue
 
-Status: **PLANNED, not started** (owner: "we tackle these in a new chat"). Backlog rows 193 and
+Status: **BATCH 1 LANDED 2026-10-14** (items 1-11, rows 193, 197, 203-212; see "Outcome" at the end; batch 2 and rows 213-216 are next). Originally: PLANNED (owner: "we tackle these in a new chat"). Backlog rows 193 and
 203-212 point here. Main at the time of writing: `dc44637` (phase C, PR #96; deploy PR #97).
 
 Read first in the new chat: `CLAUDE.md` (lanes, gates, isolated target dirs), this file, then the rows.
@@ -218,3 +218,39 @@ numbers (after D)).
 **Proof per batch:** N0 -> N1 (T0-style theme commit alone) -> N2 (all lanes), each diff classified against the
 lanes' intended-differences tables; full suite vs `pw-n0.fails`; `run-gates.sh` ALL GREEN; registry smoke;
 release deploy, link posted with the main commit.
+
+## 4. Outcome (batch 1, landed 2026-10-14)
+
+Per item (details and spec counts in the backlog rows):
+
+- Item 1, layout flicker (row 204): the reported oscillation was not reproduced at any iPad size or in a 320-1440 sweep;
+  two real re-layouts fixed (Avatar SSR != hydrated; `content-visibility` on the multicol masonry cards) and a new
+  `layout-stability.spec.ts` (red on main, green on the fix). Follow-ups: row 214 (masonry column assignment depends
+  on parse progress; the likeliest remaining cause of the iPad flicker), row 215 (`/charts/` re-lays out at hydration).
+- Item 2, hover and press feedback (rows 205, 163): all `:hover` under `(hover: hover) and (pointer: fine)`, new gate
+  `check-hover-media.sh`, switchable press feedback (tokens, one zero-specificity rule, theme-picker switch),
+  hover-intent mouse-only. Open: drift check between the press-feedback and touch-action lists.
+- Item 3, modal initial focus (row 206): one open-time rule in `use_dialog_open_driver`, 35-test spec.
+- Items 4 + 5, edge panels (rows 207, 208, 197, 155 group 7): one `EdgeSide` and theme recipe, `Auto` default,
+  floating rounded side drawers, nested drawers, typed Sheet `side`.
+- Item 6, date picker (row 209): `confirm` default with one staging hook, natural-language demo rewritten to shadcn's.
+- Item 7, close on scroll (row 193) and item 8, Combobox never covers its input (row 210): one placement fix for all
+  ten `use_anchor_position_fallback` callers, `--dx-available-height`, `use_close_on_scroll`; specs 59/59 and 26/26.
+- Item 9, chart entry (row 211): a hydrated chart that was painted in view never re-animates.
+- Item 10, small-control demos (row 212): eight demos labelled like shadcn's plus `demo-labels.spec`.
+- Item 11, dark border/input (row 203): white 10% / 15% with the derived fills lightened.
+
+**Two research corrections** (found while verifying against shadcn source, before building): shadcn's Natural
+Language date picker DOES have a text input, and NO shadcn date demo has Apply/Cancel (the `confirm` default is the
+owner's own design, not parity).
+
+**Deviations from the plan as written:**
+- Sheet panel padding is 0 (Nova), Drawer keeps 16px through `--dx-edge-padding` (the theme picker drawer and the chart
+  code drawer rely on it).
+- The Command palette keeps its input autofocus on tap (an explicit `autofocus` wins, as in shadcn), so the phone
+  keyboard still pops for the palette by design.
+- The focus construction changed from a page-level modality tracker to reading `:focus-visible` on the opener at open
+  time (the tracker had an install-order dependency).
+
+**Next:** batch 2 = the parity wave, row 155 groups 2-9 together with row 156 (Drawer snap points, non-modal mode);
+then row 213 (Message Scroller parity, pending the owner's markdown decision), rows 214 and 215, and the infra row 216.

@@ -28,7 +28,7 @@ pub fn Demo() -> Element {
             Button { variant: ButtonVariant::Outline, onclick: open_sheet(SheetSide::Bottom), "Bottom" }
             Button { variant: ButtonVariant::Outline, onclick: open_sheet(SheetSide::Left), "Left" }
         }
-        Sheet { open: open(), on_open_change: move |v| open.set(v), "data-side": side().as_str(),
+        Sheet { open: open(), on_open_change: move |v| open.set(v), side: side(),
             SheetHeader {
                 SheetTitle { "Edit profile" }
                 SheetDescription { "Make changes to your profile here. Click save when you're done." }

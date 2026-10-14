@@ -74,3 +74,20 @@ pub fn AlertDescription(
         div { ..merged, {children} }
     }
 }
+
+/// A control pinned to the alert's top-end corner (shadcn's `AlertAction`, `absolute top-2 right-2`): a
+/// small `Button`, a dismiss `X`, a link. The alert reserves room for it on the end side
+/// (`has-data-[slot=alert-action]:pr-18`) so the title and description never run underneath it. A plain
+/// `div` with no role of its own; whatever you put in it carries the semantics.
+#[component]
+pub fn AlertAction(
+    #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    children: Element,
+) -> Element {
+    let base = attributes!(div { class: "dx-alert-action" });
+    let merged = merge_attributes(vec![base, attributes]);
+    rsx! {
+        document::Link { rel: "stylesheet", href: asset!("/src/components/alert/style.css") }
+        div { ..merged, {children} }
+    }
+}

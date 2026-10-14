@@ -56,19 +56,22 @@
   opacity: var(--dx-opacity-disabled);
 }
 
-/* Hover and focus are `--dx-muted` at full strength, also while open (`data-open:hover:bg-muted`). */
-.dx-navigation-menu-trigger:hover:not([data-disabled="true"]),
-.dx-navigation-menu-trigger:focus-visible,
-.dx-navigation-menu-item > .dx-navigation-menu-link:hover:not([data-disabled="true"]),
-.dx-navigation-menu-item > .dx-navigation-menu-link:focus-visible {
-  background: var(--dx-muted);
-  outline: none;
+@media (hover: hover) and (pointer: fine) {
+  .dx-navigation-menu-trigger:hover:not([data-disabled="true"]),
+  .dx-navigation-menu-item > .dx-navigation-menu-link:hover:not([data-disabled="true"]) {
+    background: var(--dx-muted);
+    outline: none;
+  }
 }
 
-/* `focus-visible:ring-3 focus-visible:ring-ring/50`. */
+/* Hover and focus are `--dx-muted` at full strength, also while open (`data-open:hover:bg-muted`).
+ *
+ * `focus-visible:ring-3 focus-visible:ring-ring/50`. */
 .dx-navigation-menu-trigger:focus-visible,
 .dx-navigation-menu-item > .dx-navigation-menu-link:focus-visible {
+  background: var(--dx-muted);
   box-shadow: var(--dx-ring-focus);
+  outline: none;
 }
 
 .dx-navigation-menu-expand-icon {
@@ -328,10 +331,16 @@
 /* `background-color`, not the `background` shorthand: the featured card
  * paints a `background-image` gradient, and the shorthand would reset it to a
  * flat accent on hover (shadcn's `hover:bg-accent` is colour-only too). */
-.dx-navigation-menu-content .dx-navigation-menu-link:hover:not([data-disabled="true"]),
 .dx-navigation-menu-content .dx-navigation-menu-link:focus-visible {
   background-color: var(--dx-muted);
   outline: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-navigation-menu-content .dx-navigation-menu-link:hover:not([data-disabled="true"]) {
+    background-color: var(--dx-muted);
+    outline: none;
+  }
 }
 
 /* shadcn `ListItem`: title `text-sm leading-none font-medium`, description
@@ -384,9 +393,14 @@
   gap: var(--dx-space-2);
 }
 
-.dx-navigation-menu-content .dx-navigation-menu-featured:hover:not([data-disabled="true"]),
 .dx-navigation-menu-content .dx-navigation-menu-featured:focus-visible {
   --dx-navigation-menu-featured-surface: color-mix(in oklab, var(--dx-muted), var(--dx-foreground) 8%);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-navigation-menu-content .dx-navigation-menu-featured:hover:not([data-disabled="true"]) {
+    --dx-navigation-menu-featured-surface: color-mix(in oklab, var(--dx-muted), var(--dx-foreground) 8%);
+  }
 }
 
 .dx-navigation-menu-featured .dx-navigation-menu-link-title {

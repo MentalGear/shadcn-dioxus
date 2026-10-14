@@ -5,7 +5,13 @@
  * `text-muted-foreground text-sm`; `-close` is a ghost `icon-sm` Button at `top-3 right-3`. The
  * panel fill is the one modal fill (`--dx-popover`) shared with Dialog, AlertDialog, Drawer and
  * Command (owner decision 6). The slide motion is this library's own (kept; Nova's is a
- * tw-animate 40px slide + fade). */
+ * tw-animate 40px slide + fade).
+ *
+ * The PANEL is the theme's one "Edge panel" recipe (`dx-components-theme.css`, shared with Drawer): the
+ * `<dialog>` UA reset, the per-side inset, size, border and slide, keyed on the `data-dx-surface="edge"`
+ * and resolved `data-side` that `component.rs` renders. This sheet keeps only what is Sheet's own: the
+ * scrim wrapper, the shadow and gap, the header, footer, title, description and the close button. Panel
+ * padding follows Nova (0: the header, footer and the body bring their own inset) -- backlog row 197. */
 
 /* Sheet Root -- the wrapper `div` around the panel. On the web arm
  * (`<dialog>` + `showModal()`, a direct child of this element --
@@ -39,33 +45,14 @@
   background: transparent;
 }
 
+/* The wrapper's fade is the theme's shared `dx-fade-in/out` (the same opacity pair the floating surfaces use). */
 .dx-sheet-root[data-state="closed"] {
-  animation: dx-sheet-root-out var(--dx-overlay-duration) var(--dx-overlay-ease) forwards;
+  animation: dx-fade-out var(--dx-overlay-duration) var(--dx-overlay-ease) forwards;
   pointer-events: none;
 }
 
 .dx-sheet-root[data-state="open"] {
-  animation: dx-sheet-root-in var(--dx-overlay-duration) var(--dx-overlay-ease) forwards;
-}
-
-@keyframes dx-sheet-root-in {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes dx-sheet-root-out {
-  from {
-    opacity: 1;
-  }
-
-  to {
-    opacity: 0;
-  }
+  animation: dx-fade-in var(--dx-overlay-duration) var(--dx-overlay-ease) forwards;
 }
 
 /* The scrim (this dialog's top-layer `::backdrop`) is the ONE shared rule in
@@ -74,267 +61,16 @@
  * panel. There is no `::backdrop` rule here to drift. */
 
 @media (prefers-reduced-motion: reduce) {
-  .dx-sheet {
-    transition-duration: var(--dx-motion-duration-reduced);
-  }
-
   .dx-sheet-root {
     animation-duration: var(--dx-motion-duration-reduced);
   }
 }
 
-/* Chromium's UA stylesheet ships `dialog:modal { position: fixed; inset: 0;
- * margin: auto; width/height: fit-content; max-width/max-height: calc(100%
- * - 6px - 2em); }`. Two separate problems follow from that, both reset
- * below rather than patched per property:
- *
- * 1. The `max-width`/`max-height` cap: author rules always win over UA
- *    ones, but only per property, so a sheet that stretches to full
- *    height/width purely via `top`/`bottom`/`left`/`right` (below) still
- *    needs its own `max-width`/`max-height` to keep that UA cap from
- *    silently shrinking it away from the edges it's meant to span.
- * 2. `inset: 0` + `margin: auto` + `fit-content` sizing: overriding only
- *    the ONE edge a given side needs (e.g. `right: 0` below) leaves the
- *    UA's OWN `inset: 0` still supplying the opposite edge (`left: 0`)
- *    uncontested -- with `width` also definite, that makes
- *    `left`/`width`/`right` all non-auto at once, an over-constrained box
- *    the UA resolves by centering it into its own auto margins, not by
- *    anchoring it. Confirmed live: a `right`-side sheet computed
- *    `margin: … 440.5px` and sat centered instead of flush against the
- *    edge; a `top`/`bottom` sheet computed `height: 800px` (full viewport)
- *    instead of sizing to its content -- the same mechanism on the other
- *    axis (`top`/`bottom` both left at the UA's `inset: 0` with
- *    `height: auto` stretches to fill, rather than the one intended offset
- *    floating free).
- *
- * Reset every one of these to a known, non-auto baseline here, then let
- * each `[data-side]` rule below re-open (set back to `auto`) exactly the
- * one edge it doesn't pin, and only that one. */
+/* The panel. Everything about where it sits, how big it is, its edge and its slide is the theme's Edge panel
+ * recipe; what is left is Sheet's own (Nova's `.cn-sheet-content`: `shadow-lg`, `gap-4`). */
 .dx-sheet {
-  position: fixed;
-  z-index: var(--dx-z-overlay-raised);
-  display: flex;
-  width: auto;
-  max-width: none;
-  height: auto;
-  max-height: none;
-  flex-direction: column;
-  padding: var(--dx-space-4);
-  border: none;
-  margin: 0;
-  background: var(--dx-popover);
-  background-clip: padding-box;
   box-shadow: var(--dx-shadow-lg);
-  color: var(--dx-popover-foreground);
-  font-size: var(--dx-text-sm);
   gap: var(--dx-space-4);
-  inset: 0;
-  will-change: transform;
-}
-
-/* The sheet is a real modal in the top layer only between `showModal()` and the
- * final `close()`, and `use_dialog_open_driver` (`primitives/src/lib.rs`) holds the
- * `close()` until the slide-out below has played. Outside that window the UA's
- * `dialog:not([open]) { display: none }`, which this stylesheet's own `display: flex`
- * overrides, is restored: a not-yet-shown or already-closed dialog is not in the top
- * layer, where its `position: fixed` box is resolved against (and clipped to) the
- * nearest layout-contained ancestor -- the home page's `content-visibility` demo
- * cards -- so it would be drawn 75% of a card wide in the wrong place instead of
- * 75% of the viewport. The slide-in also starts when the sheet is first shown,
- * not up to a hundred milliseconds earlier, while it was still hidden behind that
- * clip. During the exit it takes no pointer input. */
-dialog.dx-sheet:not([open]) {
-  display: none;
-}
-
-dialog.dx-sheet[data-state="closed"] {
-  pointer-events: none;
-}
-
-.dx-sheet[data-side="right"],
-.dx-sheet[data-side="left"] {
-  top: 0;
-  bottom: 0;
-  width: 75%;
-}
-
-/* shadcn's `sm:max-w-sm` -- the 24rem (384px) cap only applies at Tailwind's
- * `sm` breakpoint and up; a viewport under it gets the plain `w-3/4` with no
- * cap. Only observable between roughly 512px and 640px wide (below 512px,
- * 75% is already under 384px on its own); gated to match rather than
- * capping unconditionally. `40rem` is `--dx-breakpoint-sm`'s own value --
- * copied here, not `var()`'d, per that token's own doc comment (a media
- * query can't consume a custom property). */
-@media (width >= 40rem) {
-  .dx-sheet[data-side="right"],
-  .dx-sheet[data-side="left"] {
-    max-width: 24rem;
-  }
-}
-
-.dx-sheet[data-side="right"] {
-  right: 0;
-  left: auto;
-  border-left: 1px solid var(--dx-border);
-  transform: translateX(100%);
-}
-
-.dx-sheet[data-side="left"] {
-  right: auto;
-  left: 0;
-  border-right: 1px solid var(--dx-border);
-  transform: translateX(-100%);
-}
-
-.dx-sheet[data-side="top"],
-.dx-sheet[data-side="bottom"] {
-  right: 0;
-  left: 0;
-  height: auto;
-}
-
-.dx-sheet[data-side="top"] {
-  top: 0;
-  bottom: auto;
-  border-bottom: 1px solid var(--dx-border);
-  transform: translateY(-100%);
-}
-
-.dx-sheet[data-side="bottom"] {
-  top: auto;
-  bottom: 0;
-  border-top: 1px solid var(--dx-border);
-  transform: translateY(100%);
-}
-
-/* shadcn's `SheetContent`: `transition ease-in-out data-[state=open]:duration-500
- * data-[state=closed]:duration-300` -- this repo's token set has no
- * `ease-in-out` value (only the directional `--dx-motion-ease-in`/`-out`,
- * used above for the overlay/backdrop fade) and animates the slide via
- * `animation`, not `transition`, so `ease-in-out` is written literally
- * here rather than forced onto a mismatched token. 500ms has no matching
- * token either (this scale tops out at `--dx-motion-duration-slower`,
- * 300ms) and is likewise literal; 300ms on the close side below is an exact
- * match for that token. */
-.dx-sheet-root[data-state="open"] .dx-sheet[data-side="right"] {
-  animation: dx-slide-in-right 500ms ease-in-out forwards;
-}
-
-.dx-sheet-root[data-state="open"] .dx-sheet[data-side="left"] {
-  animation: dx-slide-in-left 500ms ease-in-out forwards;
-}
-
-.dx-sheet-root[data-state="open"] .dx-sheet[data-side="top"] {
-  animation: dx-slide-in-top 500ms ease-in-out forwards;
-}
-
-.dx-sheet-root[data-state="open"] .dx-sheet[data-side="bottom"] {
-  animation: dx-slide-in-bottom 500ms ease-in-out forwards;
-}
-
-/* Exit slide. On the web arm `.dx-sheet` is the modal Dialog's real `<dialog>`; it
- * stays open, modal and in the top layer -- same containing block, same size -- while
- * these keyframes and the `::backdrop` fade above play, and `use_dialog_open_driver`
- * calls `close()` when both have finished (the slide is the longer, 300ms). */
-.dx-sheet-root[data-state="closed"] .dx-sheet[data-side="right"] {
-  animation: dx-slide-out-right var(--dx-motion-duration-slower) ease-in-out forwards;
-}
-
-.dx-sheet-root[data-state="closed"] .dx-sheet[data-side="left"] {
-  animation: dx-slide-out-left var(--dx-motion-duration-slower) ease-in-out forwards;
-}
-
-.dx-sheet-root[data-state="closed"] .dx-sheet[data-side="top"] {
-  animation: dx-slide-out-top var(--dx-motion-duration-slower) ease-in-out forwards;
-}
-
-.dx-sheet-root[data-state="closed"] .dx-sheet[data-side="bottom"] {
-  animation: dx-slide-out-bottom var(--dx-motion-duration-slower) ease-in-out forwards;
-}
-
-@keyframes dx-slide-in-right {
-  from {
-    /* rtl-physical: side (top/right/bottom/left) is a screen-geometry
-       fact, not a reading-direction one -- see this component's
-       SheetSide doc. A side="right" sheet always slides from the
-       physical right edge, in LTR or RTL alike (each side already has
-       its own named keyframes, so there is no sign to flip). */
-    transform: translateX(100%);
-  }
-
-  to {
-    transform: translateX(0);
-  }
-}
-
-@keyframes dx-slide-out-right {
-  from {
-    transform: translateX(0);
-  }
-
-  to {
-    transform: translateX(100%); /* rtl-physical: see the note above */
-  }
-}
-
-@keyframes dx-slide-in-left {
-  from {
-    transform: translateX(-100%); /* rtl-physical: see the note above */
-  }
-
-  to {
-    transform: translateX(0);
-  }
-}
-
-@keyframes dx-slide-out-left {
-  from {
-    transform: translateX(0);
-  }
-
-  to {
-    transform: translateX(-100%); /* rtl-physical: see the note above */
-  }
-}
-
-@keyframes dx-slide-in-top {
-  from {
-    transform: translateY(-100%);
-  }
-
-  to {
-    transform: translateY(0);
-  }
-}
-
-@keyframes dx-slide-out-top {
-  from {
-    transform: translateY(0);
-  }
-
-  to {
-    transform: translateY(-100%);
-  }
-}
-
-@keyframes dx-slide-in-bottom {
-  from {
-    transform: translateY(100%);
-  }
-
-  to {
-    transform: translateY(0);
-  }
-}
-
-@keyframes dx-slide-out-bottom {
-  from {
-    transform: translateY(0);
-  }
-
-  to {
-    transform: translateY(100%);
-  }
 }
 
 .dx-sheet-header {
@@ -392,9 +128,11 @@ dialog.dx-sheet[data-state="closed"] {
   transition-timing-function: var(--dx-motion-ease-standard);
 }
 
-.dx-sheet-close:hover {
-  background-color: var(--light, var(--dx-muted))
-    var(--dark, color-mix(in oklab, var(--dx-muted) 50%, transparent));
+@media (hover: hover) and (pointer: fine) {
+  .dx-sheet-close:hover {
+    background-color: var(--light, var(--dx-muted))
+      var(--dark, color-mix(in oklab, var(--dx-muted) 50%, transparent));
+  }
 }
 
 .dx-sheet-close:focus-visible {
