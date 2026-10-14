@@ -539,7 +539,34 @@ fn use_dialog_open_driver(
             if (!dialog) return;
             const gen = (dialog.__dxDialogGen = (dialog.__dxDialogGen || 0) + 1);
             if ({want_open}) {{
-                if (!dialog.open) dialog.showModal();
+                if (dialog.open) return;
+                // Initial focus follows the opening modality (backlog row 206). `showModal()`
+                // focuses the first focusable descendant, which for a field pops the mobile
+                // keyboard on a tap. The modality is read AT OPEN TIME from the element that
+                // holds focus now, the opener: opened by keyboard it matches `:focus-visible`
+                // (the browser's own focus-ring heuristic; a mouse or tap click on a button never
+                // does, and Safari does not even focus a clicked button). No listener, no global,
+                // no install order. Keyboard: the browser default, the first control. Pointer,
+                // touch, or no opener at all (`default_open`, a shortcut with focus on <body>):
+                // the panel itself takes focus, with its children `inert` for the one call so the
+                // browser's own focusing step finds no delegate and a field is never focused,
+                // not even for an instant. An `autofocus` descendant always wins.
+                const opener = document.activeElement;
+                const byKeyboard = !!opener && opener !== document.body && opener !== document.documentElement
+                    && opener.matches(':focus-visible');
+                if (!byKeyboard && !dialog.querySelector('[autofocus]')) {{
+                    dialog.setAttribute('tabindex', '-1');
+                    const held = [...dialog.children].filter((c) => !c.inert);
+                    held.forEach((c) => {{ c.inert = true; }});
+                    try {{
+                        dialog.showModal();
+                        dialog.focus({{ preventScroll: true }});
+                    }} finally {{
+                        held.forEach((c) => {{ c.inert = false; }});
+                    }}
+                }} else {{
+                    dialog.showModal();
+                }}
                 return;
             }}
             if (!dialog.open) return;

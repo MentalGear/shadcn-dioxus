@@ -42,6 +42,24 @@
 //!   the focus trap, focus restore, inertness, and top layer, and its
 //!   `cancel`/`close` events (synced above) already handle Escape.
 //!
+//! ### Initial focus follows the opening modality (backlog row 206)
+//!
+//! `showModal()` focuses the first focusable descendant, which for a field pops the mobile
+//! keyboard on a tap. `crate::use_dialog_open_driver` therefore decides at open time, from the
+//! element that holds focus when the open is requested (the opener): if it matches
+//! `:focus-visible` (the browser's own focus-ring heuristic: true after a keyboard activation,
+//! never after a mouse or tap click, and Safari does not focus a clicked button at all) the
+//! browser default stands and the first control gets focus. Otherwise -- pointer, touch, or no
+//! opener at all (`default_open`, a global shortcut with focus on `<body>`) -- the `<dialog>`
+//! panel itself takes focus (`tabindex="-1"`, set at that moment): focus still moves into the
+//! dialog and Tab reaches the first field. An `autofocus` descendant always wins. There is no
+//! listener and no install order, so every driver-backed modal (Dialog, AlertDialog, Sheet,
+//! Drawer, `CommandDialog`, the modal Popover) behaves the same on every page.
+//! Known limit of reading `:focus-visible`: a mouse click on an opener that ALREADY holds
+//! keyboard focus (a keyboard open, Escape, then a click on the same trigger with no other
+//! pointer interaction between) is still `:focus-visible`, so that open keeps the browser
+//! default (the first control), which is today's behaviour.
+//!
 //! ### Closing keeps the dialog modal until its exit has played
 //!
 //! `open` going `false` does not `close()` the `<dialog>` at once:

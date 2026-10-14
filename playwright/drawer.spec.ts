@@ -76,7 +76,10 @@ const FLUSH_TOLERANCE_PX = 1;
 test('opens and traps focus, Escape closes and restores focus to the trigger', async ({ page }) => {
   await gotoHydrated(page, URL, GOTO_OPTS);
   const trigger = page.getByRole('button', { name: 'Move Goal' });
-  await trigger.click();
+  // Opened from the keyboard, so the first control takes focus; a pointer/touch open focuses the
+  // panel instead (row 206, modal-initial-focus.spec.ts).
+  await trigger.focus();
+  await page.keyboard.press('Enter');
 
   const root = page.locator('[data-slot="drawer-root"]');
   await expect(root).toHaveAttribute('data-state', 'open');
