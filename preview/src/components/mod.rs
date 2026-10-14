@@ -443,13 +443,13 @@ examples!(
     aspect_ratio[ratios],
     attachment[states, sizes, image, group, trigger, dialog, image_gallery, removable_group, composite],
     avatar[dropdown],
-    badge[spinner, count],
+    badge[spinner, count, as_link],
     bar_chart[horizontal, multiple, stacked, stacked_legend, negative, mixed, label, label_custom, active, interactive],
     breadcrumb[separator, dropdown, ellipsis, rtl],
     bubble[alignment, group, reactions, link_button, tooltip, popover, collapsible, link_group],
     // No `spinner` variant here: the button route is the "no motion subscribers" page of
     // oracle/tier2-html/motion-gating.spec.ts; the spinner-in-a-button demo lives on `spinner`.
-    button[size, icon, group],
+    button[size, icon, group, as_link],
     button_group[orientation, nested, separator, split, with_input, dropdown, select, popover, rtl],
     calendar[simple, internationalized, range, multi_month, unavailable_dates, rtl, presets, date_time],
     card[small, image, terms],
