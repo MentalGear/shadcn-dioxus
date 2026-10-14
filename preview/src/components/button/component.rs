@@ -67,6 +67,11 @@ pub fn Button(
     onmousedown: Option<EventHandler<MouseEvent>>,
     onmouseup: Option<EventHandler<MouseEvent>>,
     onkeydown: Option<EventHandler<KeyboardEvent>>,
+    /// Renders the button as the element the callback returns, given the
+    /// button's attributes (shadcn's "As Link": an anchor, or a router link).
+    /// The callback then owns the children, and the handlers ride on the
+    /// element it renders, so a click on that element still calls `onclick`.
+    r#as: Option<Callback<Vec<Attribute>, Element>>,
     children: Element,
 ) -> Element {
     let base = attributes!(button {
@@ -74,33 +79,38 @@ pub fn Button(
         "data-style": variant.class(),
         "data-size": size.class(),
     });
-    let merged = merge_attributes(vec![base, attributes]);
+    // The handlers are attributes, not rsx on the `button`, so the `as`
+    // element receives them the same way the `button` does.
+    let handlers = attributes!(button {
+        onclick: move |event| {
+            if let Some(f) = &onclick {
+                f.call(event);
+            }
+        },
+        onmousedown: move |event| {
+            if let Some(f) = &onmousedown {
+                f.call(event);
+            }
+        },
+        onmouseup: move |event| {
+            if let Some(f) = &onmouseup {
+                f.call(event);
+            }
+        },
+        onkeydown: move |event| {
+            if let Some(f) = &onkeydown {
+                f.call(event);
+            }
+        },
+    });
+    let merged = merge_attributes(vec![base, attributes, handlers]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/button/style.css") }
-        button {
-            onclick: move |event| {
-                if let Some(f) = &onclick {
-                    f.call(event);
-                }
-            },
-            onmousedown: move |event| {
-                if let Some(f) = &onmousedown {
-                    f.call(event);
-                }
-            },
-            onmouseup: move |event| {
-                if let Some(f) = &onmouseup {
-                    f.call(event);
-                }
-            },
-            onkeydown: move |event| {
-                if let Some(f) = &onkeydown {
-                    f.call(event);
-                }
-            },
-            ..merged,
-            {children}
+        if let Some(dynamic) = r#as {
+            {dynamic.call(merged)}
+        } else {
+            button { ..merged, {children} }
         }
     }
 }
