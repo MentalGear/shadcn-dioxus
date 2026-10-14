@@ -170,3 +170,20 @@ test.describe("Dark mode: native parts follow the theme", () => {
     expect(r.select.bg).toBe(r.select.expectBgDark);
   });
 });
+
+// Backlog row 155 group 7: `size` (sm, default) reads the theme's control-height ladder.
+test.describe("size (row 155 group 7)", () => {
+  test("sm is 28px, default is 32px, on the wrapper and the select", async ({ page }) => {
+    await page.goto(`${BASE_URL}/component/?name=native_select&`, { timeout: 20 * 60 * 1000 });
+    const frame = page.locator("#component-preview-frame-sizes");
+    const sm = frame.locator("#native-select-size-sm");
+    const def = frame.locator("#native-select-size-default");
+    await expect(sm).toHaveAttribute("data-size", "sm");
+    await expect(def).toHaveAttribute("data-size", "default");
+    await expect(sm.locator("xpath=..")).toHaveAttribute("data-size", "sm");
+    expect((await sm.boundingBox())!.height).toBe(28);
+    expect((await def.boundingBox())!.height).toBe(32);
+    // The `size` prop is the shadcn size, not the HTML row-count attribute.
+    await expect(sm).not.toHaveAttribute("size", /.*/);
+  });
+});

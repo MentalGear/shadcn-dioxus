@@ -37,6 +37,15 @@
   background-color: var(--dx-primary);
 }
 
+/* Nova's `data-[size=sm]:h-[14px] w-[24px]` track with a `size-3` (12px) thumb: only the three slot
+ * variables change, the thumb travel (`width - 1px - thumb`) follows. A switch track is not a step of the
+ * control-height ladder (it is 18.4px / 14px, not a field height), so these are the component's own. */
+.dx-switch[data-size="sm"] {
+  --dx-switch-width: var(--dx-space-6);
+  --dx-switch-height: 0.875rem;
+  --dx-switch-thumb-size: 0.75rem;
+}
+
 .dx-switch:focus-visible {
   box-shadow: var(--dx-ring-field);
 }
