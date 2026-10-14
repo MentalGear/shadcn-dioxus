@@ -588,7 +588,7 @@ const FORM_CONTROL_SUBJECTS: FormControlSubject[] = [
     name: "switch",
     goto: (page) => goto(page, "switch"),
     interact: async (page) => {
-      const el = page.getByRole("switch", { name: "Switch Demo" });
+      const el = page.locator("#component-preview-frame").getByRole("switch", { name: "Airplane Mode", exact: true });
       await el.click();
       await expect(el).toBeChecked();
     },
@@ -597,7 +597,7 @@ const FORM_CONTROL_SUBJECTS: FormControlSubject[] = [
     name: "checkbox",
     goto: (page) => goto(page, "checkbox"),
     interact: async (page) => {
-      const el = page.getByRole("checkbox", { name: "Demo Checkbox" });
+      const el = page.locator("#component-preview-frame").getByRole("checkbox", { name: "Accept terms and conditions", exact: true });
       await el.click();
       await expect(el).toBeChecked();
     },
@@ -606,7 +606,7 @@ const FORM_CONTROL_SUBJECTS: FormControlSubject[] = [
     name: "radio_group",
     goto: (page) => goto(page, "radio_group"),
     interact: async (page) => {
-      const el = page.getByRole("radio", { name: "Blue" });
+      const el = page.locator("#component-preview-frame").getByRole("radio", { name: "Default", exact: true });
       await el.click();
       await expect(el).toBeChecked();
     },
@@ -628,7 +628,7 @@ const FORM_CONTROL_SUBJECTS: FormControlSubject[] = [
     name: "toggle",
     goto: (page) => goto(page, "toggle"),
     interact: async (page) => {
-      const el = page.getByRole("button", { name: "B", exact: true });
+      const el = page.locator("#component-preview-frame").getByRole("button", { name: "Bookmark", exact: true });
       await el.click();
       await expect(el).toHaveAttribute("data-state", "on");
     },
@@ -637,7 +637,7 @@ const FORM_CONTROL_SUBJECTS: FormControlSubject[] = [
     name: "toggle_group",
     goto: (page) => goto(page, "toggle_group"),
     interact: async (page) => {
-      const el = page.getByRole("button", { name: "B", exact: true });
+      const el = page.locator("#component-preview-frame").getByRole("button", { name: "Toggle bold", exact: true });
       await el.click();
       await expect(el).toHaveAttribute("data-state", "on");
     },

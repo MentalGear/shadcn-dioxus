@@ -5,7 +5,7 @@ import { gotoHydrated } from './hydration';
 
 test('test', async ({ page }) => {
   await page.goto(`${BASE_URL}/component/?name=checkbox&`, { timeout: 20 * 60 * 1000, waitUntil: 'networkidle' }); // Increase timeout to 20 minutes
-  let checkbox = page.getByRole('checkbox', { name: 'Demo Checkbox' });
+  let checkbox = page.locator('#component-preview-frame').getByRole('checkbox', { name: 'Accept terms and conditions', exact: true });
   await expect(checkbox).toBeVisible();
   // The checkbox should not be checked initially
   await expect(checkbox).toHaveAttribute('data-state', 'unchecked');
@@ -28,7 +28,7 @@ test.describe('Axe automated scan', () => {
 
   test('checked has no automatically detectable a11y issues', async ({ page }) => {
     await page.goto(`${BASE_URL}/component/?name=checkbox&`, { timeout: 20 * 60 * 1000, waitUntil: 'networkidle' });
-    await page.getByRole('checkbox', { name: 'Demo Checkbox' }).click();
+    await page.locator('#component-preview-frame').getByRole('checkbox', { name: 'Accept terms and conditions', exact: true }).click();
     await expectNoAxeViolations(page, 'checkbox: checked', { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 });
@@ -38,7 +38,7 @@ test('the box and its indicator keep one constant size whether or not it is chec
   // checked. A content-sized indicator was therefore 0x0 unchecked and 16x16 checked -- the
   // inside of the box changed shape on every toggle. The indicator now always fills the box.
   await gotoHydrated(page, `${BASE_URL}/component/?name=checkbox&`, { timeout: 20 * 60 * 1000 });
-  const checkbox = page.getByRole('checkbox', { name: 'Demo Checkbox' });
+  const checkbox = page.locator('#component-preview-frame').getByRole('checkbox', { name: 'Accept terms and conditions', exact: true });
   await expect(checkbox).toBeVisible();
 
   const boxes = () =>
