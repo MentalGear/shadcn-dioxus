@@ -32,14 +32,16 @@
   transition: color var(--dx-motion-duration-fast) var(--dx-motion-ease-out);
 }
 
-.dx-breadcrumb-link:hover,
-.dx-breadcrumb-link:focus-visible {
-  color: var(--dx-foreground);
+@media (hover: hover) and (pointer: fine) {
+  .dx-breadcrumb-link:hover {
+    color: var(--dx-foreground);
+  }
 }
 
 .dx-breadcrumb-link:focus-visible {
   border-radius: var(--dx-radius-xs);
   box-shadow: var(--dx-ring-focus);
+  color: var(--dx-foreground);
   outline: none;
 }
 

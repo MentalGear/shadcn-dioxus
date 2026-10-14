@@ -4,30 +4,33 @@ import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
+// The main demo is `#component-preview-frame`; variants carry `-<name>` suffixes.
+const mainDemo = (page: Page) => page.locator("#component-preview-frame");
+
 test("test", async ({ page }) => {
   await page.goto(`${BASE_URL}/component/?name=toggle_group&`);
-  const b_button = page.getByRole("button", { name: "B", exact: true });
-  const i_button = page.getByRole("button", { name: "I", exact: true });
-  const u_button = page.getByRole("button", { name: "U", exact: true });
+  const b_button = mainDemo(page).getByRole("button", { name: "Toggle bold", exact: true });
+  const i_button = mainDemo(page).getByRole("button", { name: "Toggle italic", exact: true });
+  const u_button = mainDemo(page).getByRole("button", { name: "Toggle strikethrough", exact: true });
 
   // The buttons should not be selected initially
   await expect(b_button).toHaveAttribute("data-state", "off");
   await expect(i_button).toHaveAttribute("data-state", "off");
   await expect(u_button).toHaveAttribute("data-state", "off");
 
-  // Click the "B" button and check its state
+  // Click the "Toggle bold" button and check its state
   await b_button.click();
   await expect(b_button).toHaveAttribute("data-state", "on");
 
-  // Pressing right arrow should select the "I" button
+  // Pressing right arrow should focus the "Toggle italic" button
   await page.keyboard.press("ArrowRight");
   await expect(i_button).toBeFocused();
 
-  // Pressing enter should focus the "I" button
+  // Pressing enter should press the "Toggle italic" button
   await page.keyboard.press("Enter");
   await expect(i_button).toHaveAttribute("data-state", "on");
 
-  // Pressing right two more times should bring us back to the "B" button
+  // Pressing right two more times should bring us back to "Toggle bold"
   await page.keyboard.press("ArrowRight");
   await page.keyboard.press("ArrowRight");
   await expect(b_button).toBeFocused();
@@ -40,7 +43,7 @@ test("test", async ({ page }) => {
 for (const dark of [false, true]) {
   test(`a pressed item keeps its "on" background while hovered (${dark ? "dark" : "light"} mode)`, async ({ page }) => {
     await page.goto(`${BASE_URL}/component/?name=toggle_group&${dark ? "dark_mode=true" : ""}`);
-    const bButton = page.getByRole("button", { name: "B", exact: true });
+    const bButton = mainDemo(page).getByRole("button", { name: "Toggle bold", exact: true });
 
     await bButton.click();
     await expect(bButton).toHaveAttribute("data-state", "on");
@@ -94,18 +97,18 @@ for (const dark of [false, true]) {
         // Settled values, not a mid-transition read.
         document.head.insertAdjacentHTML("beforeend", "<style>*{transition:none!important}</style>");
       }, base);
-      const item = (name: string) => page.getByRole("button", { name, exact: true });
+      const item = (name: string) => mainDemo(page).getByRole("button", { name, exact: true });
       const paint = async (name: string) =>
         paintedRgb(page, await item(name).evaluate((el) => getComputedStyle(el).backgroundColor));
 
-      // B pressed, I hovered, U resting: all three states at once.
-      await item("B").click();
-      await expect(item("B")).toHaveAttribute("data-state", "on");
-      await item("I").hover();
-      expect(await item("I").evaluate((el) => el.matches(":hover"))).toBe(true);
-      const pressed = await paint("B");
-      const hovered = await paint("I");
-      const rest = await paint("U");
+      // Bold pressed, italic hovered, strikethrough resting: all three states at once.
+      await item("Toggle bold").click();
+      await expect(item("Toggle bold")).toHaveAttribute("data-state", "on");
+      await item("Toggle italic").hover();
+      expect(await item("Toggle italic").evaluate((el) => el.matches(":hover"))).toBe(true);
+      const pressed = await paint("Toggle bold");
+      const hovered = await paint("Toggle italic");
+      const rest = await paint("Toggle strikethrough");
 
       const msg = `rest=${rest} hovered=${hovered} pressed=${pressed}`;
       expect(gap(pressed, hovered), msg).toBeGreaterThanOrEqual(GAP_PRESSED);
@@ -125,7 +128,7 @@ test.describe("Axe automated scan", () => {
 
   test("an item selected has no automatically detectable a11y issues", async ({ page }) => {
     await page.goto(`${BASE_URL}/component/?name=toggle_group&`);
-    await page.getByRole("button", { name: "B", exact: true }).click();
+    await mainDemo(page).getByRole("button", { name: "Toggle bold", exact: true }).click();
     await expectNoAxeViolations(page, "toggle_group: B selected", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 });

@@ -27,8 +27,10 @@
   text-underline-offset: 3px;
 }
 
-.dx-marker:is(a, button):hover {
-  color: var(--dx-foreground);
+@media (hover: hover) and (pointer: fine) {
+  .dx-marker:is(a, button):hover {
+    color: var(--dx-foreground);
+  }
 }
 
 .dx-marker:is(a, button):focus-visible {
@@ -89,6 +91,8 @@
   text-underline-offset: 3px;
 }
 
-.dx-marker-content a:hover {
-  color: var(--dx-foreground);
+@media (hover: hover) and (pointer: fine) {
+  .dx-marker-content a:hover {
+    color: var(--dx-foreground);
+  }
 }

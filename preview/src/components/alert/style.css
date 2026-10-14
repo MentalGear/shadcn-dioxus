@@ -75,9 +75,11 @@
   text-underline-offset: 3px;
 }
 
-.dx-alert-title a:hover,
-.dx-alert-description a:hover {
-  color: var(--dx-foreground);
+@media (hover: hover) and (pointer: fine) {
+  .dx-alert-title a:hover,
+  .dx-alert-description a:hover {
+    color: var(--dx-foreground);
+  }
 }
 
 .dx-alert:not(:has(> svg)) .dx-alert-description {

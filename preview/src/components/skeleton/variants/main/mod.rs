@@ -1,6 +1,8 @@
 use super::super::component::*;
 use dioxus::prelude::*;
 
+// shadcn's skeleton-demo (avatar + two lines) and skeleton-card (image +
+// two lines): sizes are shadcn's `w-[250px]` / `w-[200px]` / `h-[125px]`.
 #[component]
 pub fn Demo() -> Element {
     rsx! {
@@ -17,8 +19,8 @@ fn SkeletonInfoDemo() -> Element {
         div { style: "display: flex; align-items: center; gap: 1rem;",
             Skeleton { style: "width: 3rem; height: 3rem; border-radius: 50%;" }
             div { style: "display: flex; flex-direction: column; gap: 0.5rem;",
-                Skeleton { style: "width: 11.625rem; height: 1rem;" }
-                Skeleton { style: "width: 8.5rem; height: 1rem;" }
+                Skeleton { style: "width: 250px; height: 1rem;" }
+                Skeleton { style: "width: 200px; height: 1rem;" }
             }
         }
     }
@@ -28,10 +30,10 @@ fn SkeletonInfoDemo() -> Element {
 fn SkeletonCardDemo() -> Element {
     rsx! {
         div { style: "display: flex; flex-direction: column; gap: 0.75rem;",
-            Skeleton { style: "width: 15rem; height: 8rem; border-radius: 0.75rem;" }
+            Skeleton { style: "width: 250px; height: 125px; border-radius: 0.75rem;" }
             div { style: "display: flex; flex-direction: column; gap: 0.5rem;",
-                Skeleton { style: "width: 15.625rem; height: 1rem;" }
-                Skeleton { style: "width: 12.5rem; height: 1rem;" }
+                Skeleton { style: "width: 250px; height: 1rem;" }
+                Skeleton { style: "width: 200px; height: 1rem;" }
             }
         }
     }

@@ -149,9 +149,14 @@
   animation: dx-toast-slide-in var(--dx-motion-duration-slow) var(--dx-motion-ease-out);
 }
 
-.dx-toast-container:hover .dx-toast[data-top],
 .dx-toast-container:focus-within .dx-toast[data-top] {
   animation: dx-toast-slide-in 0 var(--dx-motion-ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-toast-container:hover .dx-toast[data-top] {
+    animation: dx-toast-slide-in 0 var(--dx-motion-ease-out);
+  }
 }
 
 @keyframes dx-toast-slide-in {
@@ -174,12 +179,20 @@
   }
 }
 
-.dx-toast-container:hover .dx-toast,
 .dx-toast-container:focus-within .dx-toast {
   margin-top: 0;
   filter: brightness(1);
   opacity: 1;
   transform: scale(calc(100%));
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-toast-container:hover .dx-toast {
+    margin-top: 0;
+    filter: brightness(1);
+    opacity: 1;
+    transform: scale(calc(100%));
+  }
 }
 
 .dx-toast[data-type="success"] {
@@ -239,12 +252,16 @@
   line-height: 1;
 }
 
-.dx-toast-close:hover {
-  color: var(--dx-toast-foreground, var(--dx-accent-foreground));
+@media (hover: hover) and (pointer: fine) {
+  .dx-toast-close:hover {
+    color: var(--dx-toast-foreground, var(--dx-accent-foreground));
+  }
 }
 
 /* The error toast keeps its foreground on hover (accent-foreground is dark on the red fill), so
    dim the glyph instead. */
-.dx-toast[data-type="error"] .dx-toast-close:hover {
-  opacity: 0.8;
+@media (hover: hover) and (pointer: fine) {
+  .dx-toast[data-type="error"] .dx-toast-close:hover {
+    opacity: 0.8;
+  }
 }

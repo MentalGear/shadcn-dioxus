@@ -100,10 +100,12 @@
     var(--dark, color-mix(in oklab, var(--dx-input) 30%, transparent));
 }
 
-.dx-pagination-link[data-active="true"]:hover {
-  background-color: var(--light, var(--dx-muted))
-    var(--dark, color-mix(in oklab, var(--dx-input) 50%, transparent));
-  color: var(--dx-foreground);
+@media (hover: hover) and (pointer: fine) {
+  .dx-pagination-link[data-active="true"]:hover {
+    background-color: var(--light, var(--dx-muted))
+      var(--dark, color-mix(in oklab, var(--dx-input) 50%, transparent));
+    color: var(--dx-foreground);
+  }
 }
 
 /* Every other page: the ghost Button. */
@@ -111,10 +113,12 @@
   background-color: transparent;
 }
 
-.dx-pagination-link[data-active="false"]:hover {
-  background-color: var(--light, var(--dx-muted))
-    var(--dark, color-mix(in oklab, var(--dx-muted) 50%, transparent));
-  color: var(--dx-foreground);
+@media (hover: hover) and (pointer: fine) {
+  .dx-pagination-link[data-active="false"]:hover {
+    background-color: var(--light, var(--dx-muted))
+      var(--dark, color-mix(in oklab, var(--dx-muted) 50%, transparent));
+    color: var(--dx-foreground);
+  }
 }
 
 /* `cn-pagination-previous` / `-next`: `pl-1.5!` / `pr-1.5!` on the icon's side. */

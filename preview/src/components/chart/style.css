@@ -271,8 +271,10 @@
 }
 
 /* Load animation (Recharts' `isAnimationActive`): `Chart` sets
- * `data-animate="true"` on its first measured render in the browser -- never
- * on the server render, so without JS the final drawing shows. Bars grow from
+ * `data-animate="true"` when a chart that was NOT in the first paint is seen
+ * entering the view -- never on the server render (without JS the final
+ * drawing shows) and never on a chart already painted in view (it would
+ * restart from zero: full -> gone -> animate, backlog row 211). Bars grow from
  * the value axis' zero (`--dx-chart-zero`, px, inline on the svg); lines and
  * areas are revealed left to right. Once: the attribute never comes back
  * off. */
@@ -713,8 +715,8 @@
   font-size: var(--dx-text-xs);
 }
 
-/* Load animation: once the chart's svg is `data-animate="true"` (set after
- * its first measured client render), each polygon and its dots grow from the
+/* Load animation: once the chart's svg is `data-animate="true"` (set when the
+ * chart is first seen entering the view, see above), each polygon and its dots grow from the
  * centre, as Recharts' radar does. The marks are drawn around the series
  * group's own origin (the chart centre), hence `transform-origin: 0 0`. */
 @media (prefers-reduced-motion: no-preference) {
@@ -823,8 +825,8 @@
   justify-content: center;
 }
 
-/* Load animation: once the chart's svg is `data-animate="true"` (set after
- * its first measured client render), the arcs sweep in from the start angle
+/* Load animation: once the chart's svg is `data-animate="true"` (set when the
+ * chart is first seen entering the view, see above), the arcs sweep in from the start angle
  * the way Recharts' pie and radial bars do. The arcs sit under a mask whose
  * one stroke runs around the centre from `start_angle` to `end_angle`
  * (`pathLength="1"`); growing its dash from 0 to 1 reveals them as a wedge.

@@ -466,7 +466,7 @@ examples!(
     date_picker[internationalized, range, multi_month, unavailable_dates, keep_open, time, natural_language],
     dialog[overlay, no_close, scrollable, sticky_footer],
     drag_and_drop_list[removable, tuning],
-    drawer[overlay, sides],
+    drawer[overlay, sides, nested],
     dropdown_menu[checkboxes, radio_group, rtl, click_only_submenu, icons, account_switcher, radio_icons],
     empty[outline, background, avatar, search, rtl],
     field[subscription],

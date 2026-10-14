@@ -70,8 +70,10 @@
     font-weight: 500;
 }
 
-.dx-form-action:hover {
-    background-color: var(--light, var(--dx-muted)) var(--dark, color-mix(in oklab, var(--dx-input) 50%, transparent));
+@media (hover: hover) and (pointer: fine) {
+    .dx-form-action:hover {
+        background-color: var(--light, var(--dx-muted)) var(--dark, color-mix(in oklab, var(--dx-input) 50%, transparent));
+    }
 }
 
 .dx-form-result {

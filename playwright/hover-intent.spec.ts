@@ -133,3 +133,40 @@ for (const menu of MENUS) {
     });
   });
 }
+
+// Hover intent is a MOUSE's (Radix gates every hover handler on `pointerType === "mouse"`): a tap makes
+// the browser fire compatibility `mouseenter`/`mouseover` events after its touch pointer events, and those
+// must not start the open-intent timer. The compat events are replayed by hand here (a real tap also clicks,
+// which opens the menu for another reason and would hide the difference): a touch `pointerover` followed by
+// the `mouseenter` the host listens to must open nothing; the same `mouseenter` after a MOUSE `pointerover`
+// must (proving the replay reaches the host's handler at all).
+for (const menu of MENUS) {
+  test.describe(`${menu.name}: hover intent requires a mouse pointer`, () => {
+    test.beforeEach(async ({ page }) => {
+      await gotoHydrated(page, menu.url, GOTO);
+      await expect(menu.trigger(page)).toBeVisible({ timeout: 60_000 });
+      await expectOpen(menu.isOpen(page), false);
+    });
+
+    /** Replays what the browser fires on the pointer reaching the trigger, on the trigger and every ancestor. */
+    async function enterWith(page: Page, pointerType: 'mouse' | 'touch') {
+      await menu.trigger(page).evaluate((el, type) => {
+        el.dispatchEvent(new PointerEvent('pointerover', { pointerType: type, bubbles: true, composed: true }));
+        for (let n: Element | null = el; n; n = n.parentElement) {
+          n.dispatchEvent(new MouseEvent('mouseenter', { bubbles: false }));
+        }
+      }, pointerType);
+    }
+
+    test('a mouseenter that follows a touch pointer opens nothing', async ({ page }) => {
+      await enterWith(page, 'touch');
+      await page.waitForTimeout(700); // well past the 150 ms open-intent delay
+      await expectOpen(menu.isOpen(page), false);
+    });
+
+    test('the same mouseenter after a mouse pointer opens it (control)', async ({ page }) => {
+      await enterWith(page, 'mouse');
+      await expectOpen(menu.isOpen(page), true, 3000);
+    });
+  });
+}

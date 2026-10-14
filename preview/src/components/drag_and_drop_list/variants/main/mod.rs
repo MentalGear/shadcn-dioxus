@@ -189,8 +189,10 @@ pub fn Demo() -> Element {
   font-weight: 500;
 }}
 
-.dx-tasks-demo .dx-drag-and-drop-list-item:hover .dx-task-code {{
-  color: var(--dx-foreground);
+@media (hover: hover) and (pointer: fine) {{
+  .dx-tasks-demo .dx-drag-and-drop-list-item:hover .dx-task-code {{
+    color: var(--dx-foreground);
+  }}
 }}"# }
         div { class: "dx-tasks-demo",
             div { class: "dx-tasks-header",

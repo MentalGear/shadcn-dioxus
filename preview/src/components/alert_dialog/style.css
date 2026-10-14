@@ -244,9 +244,11 @@ dialog.dx-alert-dialog[open][data-state="open"] {
   color: var(--dx-foreground);
 }
 
-.dx-alert-dialog-cancel:not(:disabled):hover {
-  background-color: var(--light, var(--dx-muted))
-    var(--dark, color-mix(in oklab, var(--dx-input) 50%, transparent));
+@media (hover: hover) and (pointer: fine) {
+  .dx-alert-dialog-cancel:not(:disabled):hover {
+    background-color: var(--light, var(--dx-muted))
+      var(--dark, color-mix(in oklab, var(--dx-input) 50%, transparent));
+  }
 }
 
 /* The action is the destructive Button (button/style.css `data-style="destructive"`): the shared
@@ -257,8 +259,10 @@ dialog.dx-alert-dialog[open][data-state="open"] {
   color: var(--dx-destructive-foreground);
 }
 
-.dx-alert-dialog-action:not(:disabled):hover {
-  background-color: color-mix(in oklab, var(--dx-destructive-fill), var(--dx-foreground) 8%);
+@media (hover: hover) and (pointer: fine) {
+  .dx-alert-dialog-action:not(:disabled):hover {
+    background-color: color-mix(in oklab, var(--dx-destructive-fill), var(--dx-foreground) 8%);
+  }
 }
 
 .dx-alert-dialog-action:focus-visible {

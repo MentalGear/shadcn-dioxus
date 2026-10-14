@@ -138,8 +138,10 @@
    would repaint the active tab). Hover and active now resolve to the same
    `foreground`, but the guard stays so a retuned active colour cannot
    regress. */
-:where(.dx-tabs-trigger:hover:not([data-disabled="true"])) {
-    color: var(--dx-foreground);
+@media (hover: hover) and (pointer: fine) {
+    :where(.dx-tabs-trigger:hover:not([data-disabled="true"])) {
+        color: var(--dx-foreground);
+    }
 }
 
 /* `focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50
