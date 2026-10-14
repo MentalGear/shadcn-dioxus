@@ -20,7 +20,8 @@ pub fn Demo() -> Element {
                     on_date_change: move |date| selected_date.set(date),
                     view_date: view_date(),
                     on_view_change: move |new_view: Date| view_date.set(new_view),
-                    min_date: date!(1995 - 07 - 21),
+                    caption_layout: CaptionLayout::Dropdown,
+                min_date: date!(1995 - 07 - 21),
                     max_date: date!(2035 - 09 - 11),
                 }
             }

@@ -1,4 +1,4 @@
-use crate::components::calendar::Calendar;
+use crate::components::calendar::{Calendar, CaptionLayout};
 use crate::components::field::{Field, FieldLabel};
 use crate::components::input_group::{InputGroup, InputGroupAddon, InputGroupAlign, InputGroupInput};
 use crate::components::popover::{PopoverContent, PopoverRoot};
@@ -92,6 +92,8 @@ pub fn Demo() -> Element {
                                 },
                                 view_date: view_date(),
                                 on_view_change: move |new_view: Date| view_date.set(new_view),
+                                // shadcn: `captionLayout="dropdown"`, so a far-off date is two picks.
+                                caption_layout: CaptionLayout::Dropdown,
                             }
                         }
                     }

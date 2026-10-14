@@ -19,6 +19,7 @@ pub fn Demo() -> Element {
                     tracing::info!("View changed to: {}-{}", new_view.year(), new_view.month());
                     view_date.set(new_view);
                 },
+                caption_layout: CaptionLayout::Dropdown,
                 min_date: date!(1995 - 07 - 21),
                 max_date: date!(2035 - 09 - 11),
             }

@@ -451,7 +451,7 @@ examples!(
     // oracle/tier2-html/motion-gating.spec.ts; the spinner-in-a-button demo lives on `spinner`.
     button[size, icon, group],
     button_group[orientation, nested, separator, split, with_input, dropdown, select, popover, rtl],
-    calendar[simple, internationalized, range, multi_month, unavailable_dates, rtl, presets, date_time],
+    calendar[simple, internationalized, range, multi_month, unavailable_dates, rtl, presets, date_time, caption, week_numbers],
     card[small, image, terms],
     carousel[sizes, spacing, peek, align, vertical, rtl, api, indicators, autoplay, rewind, hidden_arrows, virtual_loop, virtual_loop_rtl, virtual_many],
     chart[bar, line, stacked],

@@ -27,6 +27,35 @@ fn weekday_abbreviation(weekday: Weekday) -> &'static str {
     }
 }
 
+/// How a month's caption is drawn (react-day-picker's `captionLayout`, shadcn's `Calendar`).
+///
+/// `Label` (the default) is the plain text "October 2026" between the previous/next arrows. The
+/// three dropdown layouts swap the month and/or the year for a native `<select>` (labelled "Month"
+/// and "Year"), so a far-away date is one pick instead of many clicks on the arrows; the part that
+/// is not a dropdown stays plain text beside it.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum CaptionLayout {
+    /// Plain "Month Year" text.
+    #[default]
+    Label,
+    /// A month select and a year select.
+    Dropdown,
+    /// A month select; the year is plain text.
+    DropdownMonths,
+    /// A year select; the month is plain text.
+    DropdownYears,
+}
+
+impl CaptionLayout {
+    fn has_month_dropdown(self) -> bool {
+        matches!(self, Self::Dropdown | Self::DropdownMonths)
+    }
+
+    fn has_year_dropdown(self) -> bool {
+        matches!(self, Self::Dropdown | Self::DropdownYears)
+    }
+}
+
 #[derive(Props, Clone, PartialEq)]
 pub struct CalendarProps {
     /// The selected date
@@ -64,6 +93,15 @@ pub struct CalendarProps {
     /// First day of the week
     #[props(default = Weekday::Sunday)]
     pub first_day_of_week: Weekday,
+
+    /// How the month caption is drawn: plain text (default) or month/year dropdowns
+    #[props(default)]
+    pub caption_layout: CaptionLayout,
+
+    /// Show a week-number column (ISO weeks with a Monday `first_day_of_week`, otherwise the week
+    /// holding January 1st is week 1)
+    #[props(default)]
+    pub show_week_number: bool,
 
     /// Lower limit of the range of available dates
     #[props(default = fixed_date(1925, Month::January, 1))]
@@ -124,6 +162,15 @@ pub struct RangeCalendarProps {
     #[props(default = Weekday::Sunday)]
     pub first_day_of_week: Weekday,
 
+    /// How the month caption is drawn: plain text (default) or month/year dropdowns
+    #[props(default)]
+    pub caption_layout: CaptionLayout,
+
+    /// Show a week-number column (ISO weeks with a Monday `first_day_of_week`, otherwise the week
+    /// holding January 1st is week 1)
+    #[props(default)]
+    pub show_week_number: bool,
+
     /// Lower limit of the range of available dates
     #[props(default = fixed_date(1925, Month::January, 1))]
     pub min_date: Date,
@@ -160,12 +207,18 @@ pub fn Calendar(props: CalendarProps) -> Element {
             on_view_change: props.on_view_change,
             disabled: props.disabled,
             first_day_of_week: props.first_day_of_week,
+            show_week_number: props.show_week_number,
             min_date: props.min_date,
             max_date: props.max_date,
             disabled_ranges: props.disabled_ranges,
             attributes: props.attributes,
             for offset in 0..month_count {
-                CalendarMonthView { key: "{offset}", offset, month_count }
+                CalendarMonthView {
+                    key: "{offset}",
+                    offset,
+                    month_count,
+                    caption_layout: props.caption_layout,
+                }
             }
         }
     }
@@ -186,12 +239,18 @@ pub fn RangeCalendar(props: RangeCalendarProps) -> Element {
             on_view_change: props.on_view_change,
             disabled: props.disabled,
             first_day_of_week: props.first_day_of_week,
+            show_week_number: props.show_week_number,
             min_date: props.min_date,
             max_date: props.max_date,
             disabled_ranges: props.disabled_ranges,
             attributes: props.attributes,
             for offset in 0..month_count {
-                CalendarMonthView { key: "{offset}", offset, month_count }
+                CalendarMonthView {
+                    key: "{offset}",
+                    offset,
+                    month_count,
+                    caption_layout: props.caption_layout,
+                }
             }
         }
     }
@@ -236,6 +295,7 @@ pub(crate) fn CalendarRoot(props: calendar::CalendarProps) -> Element {
             on_view_change: props.on_view_change,
             disabled: props.disabled,
             first_day_of_week: props.first_day_of_week,
+            show_week_number: props.show_week_number,
             min_date: props.min_date,
             max_date: props.max_date,
             disabled_ranges: props.disabled_ranges,
@@ -266,6 +326,7 @@ pub(crate) fn RangeCalendarRoot(props: calendar::RangeCalendarProps) -> Element 
             on_view_change: props.on_view_change,
             disabled: props.disabled,
             first_day_of_week: props.first_day_of_week,
+            show_week_number: props.show_week_number,
             min_date: props.min_date,
             max_date: props.max_date,
             disabled_ranges: props.disabled_ranges,
@@ -276,7 +337,11 @@ pub(crate) fn RangeCalendarRoot(props: calendar::RangeCalendarProps) -> Element 
 }
 
 #[component]
-pub(crate) fn CalendarMonthView(offset: u8, month_count: u8) -> Element {
+pub(crate) fn CalendarMonthView(
+    offset: u8,
+    month_count: u8,
+    #[props(default)] caption_layout: CaptionLayout,
+) -> Element {
     let show_previous = offset == 0;
     let show_next = offset.saturating_add(1) == month_count;
 
@@ -287,8 +352,7 @@ pub(crate) fn CalendarMonthView(offset: u8, month_count: u8) -> Element {
                     if show_previous {
                         CalendarPreviousMonthButton {}
                     }
-                    CalendarSelectMonth {}
-                    CalendarSelectYear {}
+                    CalendarCaption { layout: caption_layout }
                     if show_next {
                         CalendarNextMonthButton {}
                     }
@@ -296,6 +360,44 @@ pub(crate) fn CalendarMonthView(offset: u8, month_count: u8) -> Element {
             }
             CalendarGrid {}
         }
+    }
+}
+
+// react-day-picker's `MonthCaption`: `label` is one live-region text node; the dropdown layouts put
+// a native select (or, for the part that is not a dropdown, plain text) per field and keep the full
+// "October 2026" as a visually hidden live region, because a select's own name ("Month") does not
+// say which month a prev/next click landed on.
+#[component]
+fn CalendarCaption(layout: CaptionLayout) -> Element {
+    if layout == CaptionLayout::Label {
+        let attributes = attributes!(div {
+            class: "dx-calendar-month-title",
+            role: "status",
+            aria_live: "polite",
+        });
+        return rsx! {
+            calendar::CalendarMonthTitle { attributes }
+        };
+    }
+
+    let text = attributes!(span { class: "dx-calendar-caption-text" });
+    let hidden = attributes!(div {
+        class: "dx-calendar-sr-only",
+        role: "status",
+        aria_live: "polite",
+    });
+    rsx! {
+        if layout.has_month_dropdown() {
+            CalendarSelectMonth {}
+        } else {
+            calendar::CalendarSelectMonthValue { attributes: text.clone() }
+        }
+        if layout.has_year_dropdown() {
+            CalendarSelectYear {}
+        } else {
+            calendar::CalendarSelectYearValue { attributes: text }
+        }
+        calendar::CalendarMonthTitle { attributes: hidden }
     }
 }
 
@@ -424,11 +526,18 @@ fn CalendarGrid(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
 ) -> Element {
     let grid = calendar::use_calendar_grid();
+    let show_week_number = grid.show_week_number();
+    // The root's owned `data-*` hook for the week-number column's wider grid (style.css).
+    let state = attributes!(div { "data-week-numbers": show_week_number });
+    let attributes = merge_attributes(vec![state, attributes]);
 
     rsx! {
         CalendarGridRoot { id, attributes,
             CalendarGridHead {
                 CalendarGridHeaderRow {
+                    if show_week_number {
+                        CalendarGridWeekNumberHeader {}
+                    }
                     for weekday in grid.weekdays().iter().cloned() {
                         CalendarGridDayHeader {
                             key: "{weekday.weekday():?}",
@@ -439,8 +548,11 @@ fn CalendarGrid(
                 }
             }
             CalendarGridBody {
-                for week in grid.weeks() {
+                for (week , week_number) in grid.weeks().iter().zip(grid.week_numbers().iter().copied()) {
                     CalendarGridWeek {
+                        if show_week_number {
+                            CalendarGridWeekNumber { week_number }
+                        }
                         for date in week.iter().copied() {
                             CalendarGridCell {
                                 key: "{date}",
@@ -451,6 +563,26 @@ fn CalendarGrid(
                 }
             }
         }
+    }
+}
+
+#[component]
+fn CalendarGridWeekNumberHeader() -> Element {
+    let base = attributes!(th {
+        class: "dx-calendar-grid-weeknum"
+    });
+    rsx! {
+        calendar::CalendarGridWeekNumberHeader { attributes: base }
+    }
+}
+
+#[component]
+fn CalendarGridWeekNumber(week_number: u8) -> Element {
+    let base = attributes!(td {
+        class: "dx-calendar-grid-weeknum"
+    });
+    rsx! {
+        calendar::CalendarGridWeekNumber { week_number, attributes: base }
     }
 }
 
