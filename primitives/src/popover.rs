@@ -722,6 +722,17 @@ fn PopoverNonModalContent(
         align,
         8,
     );
+    // A non-modal popover does not lock the page, and can hold half-entered
+    // input (DatePicker / ColorPicker are built on it): it closes when its
+    // anchor scrolls out of the viewport, not on any scroll
+    // (`top_layer::use_close_on_scroll`'s doc).
+    crate::top_layer::use_close_on_scroll(
+        id.clone(),
+        id.clone(),
+        ctx.open,
+        crate::top_layer::ScrollClose::AnchorLeavesViewport,
+        ctx.set_open,
+    );
 
     // See `tooltip.rs`'s `TooltipContentRendered` for why this hand-written,
     // never-`Styles::`-routed marker class exists: it is what the

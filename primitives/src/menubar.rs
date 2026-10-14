@@ -899,6 +899,19 @@ fn MenubarContentRendered(id: String, attributes: Vec<Attribute>, children: Elem
         crate::ContentAlign::Start,
         8,
     );
+    // The menubar never locks the page: any scroll closes the open menu
+    // (`top_layer::use_close_on_scroll`'s doc).
+    crate::top_layer::use_close_on_scroll(
+        id.clone(),
+        id.clone(),
+        open,
+        crate::top_layer::ScrollClose::AnyScroll,
+        Callback::new(move |_: bool| {
+            if (ctx.open_menu)() == Some(index.cloned()) {
+                ctx.set_open_menu.call(None);
+            }
+        }),
+    );
 
     // See `dropdown_menu.rs`'s `DropdownMenuContentRendered` for why this
     // hand-written, never-`Styles::`-routed marker class exists: it is what

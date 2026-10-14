@@ -412,6 +412,14 @@ fn TooltipContentRendered(
     // `anchor-name` is keyed off `ctx.tooltip_id`, which `TooltipContent`
     // (below) keeps synced to this same id.
     crate::top_layer::use_anchor_position_fallback(id.clone(), id.clone(), open, side, align, 8);
+    // Any scroll closes a tooltip (`top_layer::use_close_on_scroll`'s doc).
+    crate::top_layer::use_close_on_scroll(
+        id.clone(),
+        id.clone(),
+        open,
+        crate::top_layer::ScrollClose::AnyScroll,
+        set_open,
+    );
 
     // `dx-anchor-tooltip` is a plain, hand-written marker class -- never
     // routed through `Styles::` in any consuming app's `#[css_module(..)]`

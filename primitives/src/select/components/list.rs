@@ -298,6 +298,19 @@ fn SelectListRendered(id: String, attributes: Vec<Attribute>, children: Element)
         crate::ContentAlign::Start,
         4,
     );
+    // A Select that does NOT lock the page (`scroll_lock: false`) closes on
+    // any scroll (`top_layer::use_close_on_scroll`'s doc); a locking one
+    // keeps its `ScrollLockGuard`.
+    let scroll_close_active = use_memo(move || open() && !scroll_lock_active());
+    crate::top_layer::use_close_on_scroll(
+        id.clone(),
+        ctx.selectable.trigger_id.cloned(),
+        scroll_close_active,
+        crate::top_layer::ScrollClose::AnyScroll,
+        Callback::new(move |is_open: bool| {
+            ctx.set_open(is_open);
+        }),
+    );
 
     // See `dropdown_menu.rs`'s `DropdownMenuContentRendered` for why this
     // hand-written, never-`Styles::`-routed marker class exists: it is what

@@ -120,7 +120,7 @@
   display: flex;
   overflow: hidden auto;
   width: var(--dx-combobox-width, 200px);
-  max-height: 18rem;
+  max-height: min(18rem, var(--dx-available-height, 18rem));
   flex-direction: column;
 
   /*
