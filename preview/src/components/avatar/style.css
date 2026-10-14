@@ -22,18 +22,31 @@
  * root (`AvatarImageSize`: sm 24px, default 32px, lg 40px). */
 .dx-avatar {
     position: relative;
-    display: inline-flex;
+    display: inline-grid;
     overflow: hidden;
     width: var(--dx-avatar-size);
     height: var(--dx-avatar-size);
     flex-shrink: 0;
-    align-items: center;
-    justify-content: center;
     color: var(--dx-foreground);
     font-size: var(--dx-text-sm);
+    grid-template: minmax(0, 1fr) / minmax(0, 1fr);
     user-select: none;
 
     --dx-avatar-size: var(--dx-space-8);
+}
+
+/* The picture and the fallback share ONE grid cell, the picture on top, so neither one's box depends on whether
+ * the other exists. The prerendered page is `data-state="empty"`, which renders BOTH (the fallback only leaves
+ * once the hydrated component reaches `loaded`): as a centred flex row the picture sat ~8px left of the circle
+ * with the initials beside it, and jumped to the centre at hydration, on every avatar of the home page's
+ * masonry (`playwright/layout-stability.spec.ts`). Stacked, the prerendered and the hydrated avatar are the
+ * same picture; with no picture (error) the fallback fills the cell alone. */
+.dx-avatar > * {
+    grid-area: 1 / 1;
+}
+
+.dx-avatar > .dx-avatar-image {
+    z-index: 1;
 }
 
 .dx-avatar[data-size="sm"] {

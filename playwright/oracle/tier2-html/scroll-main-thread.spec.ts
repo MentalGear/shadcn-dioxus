@@ -36,9 +36,10 @@
  *   4. A real-touch drag that starts on the slider thumb / resizable handle / color-area thumb moves the
  *      control and does NOT scroll the page or select text, with no touchstart handler to say so
  *      (`touch-action: none` does it) -- the guard for removing those three handlers.
- *   5. The demo cards are skipped off screen (`content-visibility: auto` on `.dx-component-card` and
- *      the non-popout `.dx-widget-card`; popout cards stay `visible`, containment would clip their
- *      dropdown): >= 70% of the gallery cards are skipped at the top AND at the bottom of the page
+ *   5. The demo cards are skipped off screen (`content-visibility: auto` on `.dx-component-card`; the
+ *      `.dx-widget-card` masonry cards are contained but not skipped since row 204: a balanced multi-column
+ *      layout cannot place a card whose height is only an estimate; popout cards stay `visible`, containment
+ *      would clip their dropdown): >= 70% of the gallery cards are skipped at the top AND at the bottom of the page
  *      (`checkVisibility({ contentVisibilityAuto: true })`), and the idle page relayouts almost never
  *      (`Performance.getMetrics` LayoutCount, ceiling below). A scripted scroll's layout/recalc counts
  *      are REPORTED (annotation + console), not capped: they do not separate HEAD from the fix (see the
@@ -200,7 +201,9 @@ test.describe("scroll smoothness of / (counts)", () => {
       };
     });
     expect(cv.component, ".dx-component-card").toEqual(["auto"]);
-    expect(cv.widget, ".dx-widget-card (non-popout)").toEqual(["auto"]);
+    // Not skipped (backlog row 204): the widget masonry is balanced multi-column, so an estimated card re-balanced
+    // the columns every time one was unskipped; the containment `auto` implied stays (`contain: layout paint style`).
+    expect(cv.widget, ".dx-widget-card (non-popout)").toEqual(["visible"]);
     expect(cv.popout, ".dx-widget-card-popout keeps `visible` (paint containment would clip its dropdown)").toEqual(["visible"]);
 
     const cdp = await page.context().newCDPSession(page);
