@@ -1,6 +1,8 @@
-use crate::components::button::Button;
+use crate::components::button::{Button, ButtonVariant};
 
-use super::super::component::{Dialog, DialogDescription, DialogTitle};
+use super::super::component::{
+    Dialog, DialogClose, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+};
 use dioxus::prelude::*;
 
 // docs/backlog.md row 32: no `#[css_module]` of its own here, and no
@@ -20,43 +22,42 @@ pub fn Demo() -> Element {
     rsx! {
         Button {
             r#type: "button",
-            "data-style": "outline",
+            variant: ButtonVariant::Outline,
             onclick: move |_| open.set(true),
             "Show Dialog"
         }
+        // The panel's own close button (`show_close_button`, default on) is the X at the top end.
         Dialog { open: open(), on_open_change: move |v| open.set(v),
-            button {
-                class: "dx-dialog-close",
-                r#type: "button",
-                aria_label: "Close",
-                tabindex: if open() { "0" } else { "-1" },
-                onclick: move |_| open.set(false),
-                "×"
+            DialogHeader {
+                DialogTitle { "Item information" }
+                DialogDescription { "Here is some additional information about the item." }
             }
-            DialogTitle { "Item information" }
-            DialogDescription { "Here is some additional information about the item." }
             Button {
                 r#type: "button",
-                "data-style": "outline",
+                variant: ButtonVariant::Outline,
                 onclick: move |_| nested_open.set(true),
                 "Open Nested Dialog"
             }
             // Rendered as a child of the outer Dialog's content -- not a
             // sibling -- so a still-open outer dialog's scroll lock isn't
             // released when this one closes. See docs/plan.md Phase 3.2.
+            // No corner X: its dismissal is a footer `DialogClose`, labelled so the
+            // oracles can address it apart from the outer dialog's "Close".
             Dialog {
                 open: nested_open(),
                 on_open_change: move |v| nested_open.set(v),
-                button {
-                    class: "dx-dialog-close",
-                    r#type: "button",
-                    aria_label: "Close Nested",
-                    tabindex: if nested_open() { "0" } else { "-1" },
-                    onclick: move |_| nested_open.set(false),
-                    "×"
+                show_close_button: false,
+                DialogHeader {
+                    DialogTitle { "Nested dialog" }
+                    DialogDescription { "A second, independently-opened dialog nested inside the first." }
                 }
-                DialogTitle { "Nested dialog" }
-                DialogDescription { "A second, independently-opened dialog nested inside the first." }
+                DialogFooter {
+                    DialogClose {
+                        r#as: |attributes| rsx! {
+                            Button { variant: ButtonVariant::Outline, attributes, "Close Nested" }
+                        },
+                    }
+                }
             }
         }
     }

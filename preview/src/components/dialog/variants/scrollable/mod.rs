@@ -1,11 +1,11 @@
 use crate::components::button::{Button, ButtonVariant};
 
-use super::super::component::{Dialog, DialogDescription, DialogTitle};
+use super::super::component::{Dialog, DialogDescription, DialogHeader, DialogTitle};
 use dioxus::prelude::*;
 
-/// A dialog whose body is longer than the viewport allows: the panel stays put and only the body
-/// scrolls. The scrolling region is a plain `div` (`Dialog` has no scroll part); it is focusable so
-/// keyboard users can scroll it.
+/// shadcn's `dialog-scrollable-content`: a body taller than the viewport allows scrolls inside
+/// the panel (`-mx-4 max-h-[50vh] overflow-y-auto px-4`). The region is a plain `div`, focusable
+/// so keyboard users can scroll it.
 #[component]
 pub fn Demo() -> Element {
     let mut open = use_signal(|| false);
@@ -15,29 +15,23 @@ pub fn Demo() -> Element {
             r#type: "button",
             variant: ButtonVariant::Outline,
             onclick: move |_| open.set(true),
-            "Scrollable content"
+            "Scrollable Content"
         }
         Dialog { open: open(), on_open_change: move |v| open.set(v),
-            button {
-                class: "dx-dialog-close",
-                r#type: "button",
-                aria_label: "Close",
-                tabindex: if open() { "0" } else { "-1" },
-                onclick: move |_| open.set(false),
-                "×"
+            DialogHeader {
+                DialogTitle { "Scrollable Content" }
+                DialogDescription { "This is a dialog with scrollable content." }
             }
-            DialogTitle { "Scrollable content" }
-            DialogDescription { "This is a dialog with scrollable content." }
             div {
                 role: "region",
                 aria_label: "Scrollable dialog body",
                 tabindex: "0",
                 max_height: "50vh",
                 overflow_y: "auto",
-                style: "padding-inline-end: 0.5rem;",
-                for i in 0..8 {
-                    p { margin: "0 0 1rem",
-                        "Every dashboard starts as a handful of charts and ends as a wall of them. Group related metrics under one heading, keep the most important number at the top of each group, and let the rest scroll below the fold. Revisit the layout after the first week of real use (paragraph {i + 1} of 8)."
+                style: "margin-inline: calc(var(--dx-space-4) * -1); padding-inline: var(--dx-space-4);",
+                for i in 0..10 {
+                    p { margin: "0 0 1rem", line_height: "1.5",
+                        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat (paragraph {i + 1} of 10)."
                     }
                 }
             }

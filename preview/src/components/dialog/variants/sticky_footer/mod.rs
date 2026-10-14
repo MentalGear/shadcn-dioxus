@@ -1,11 +1,13 @@
 use crate::components::button::{Button, ButtonVariant};
 
-use super::super::component::{Dialog, DialogDescription, DialogTitle};
+use super::super::component::{
+    Dialog, DialogClose, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+};
 use dioxus::prelude::*;
 
-/// A header, a scrolling body and a footer that stays in view while the body scrolls. The body and
-/// the footer are plain `div`s (`Dialog` has no header/footer parts): only the body has an
-/// `overflow`, so the footer is never inside the scroller.
+/// shadcn's `dialog-sticky-footer`: a header, a scrolling body and a `DialogFooter` that stays in
+/// view while the body scrolls. Only the body has an `overflow`, so the footer is never inside
+/// the scroller.
 #[component]
 pub fn Demo() -> Element {
     let mut open = use_signal(|| false);
@@ -15,40 +17,34 @@ pub fn Demo() -> Element {
             r#type: "button",
             variant: ButtonVariant::Outline,
             onclick: move |_| open.set(true),
-            "Sticky footer"
+            "Sticky Footer"
         }
         Dialog { open: open(), on_open_change: move |v| open.set(v),
-            button {
-                class: "dx-dialog-close",
-                r#type: "button",
-                aria_label: "Close",
-                tabindex: if open() { "0" } else { "-1" },
-                onclick: move |_| open.set(false),
-                "×"
+            DialogHeader {
+                DialogTitle { "Sticky Footer" }
+                DialogDescription {
+                    "This dialog has a sticky footer that stays visible while the content scrolls."
+                }
             }
-            DialogTitle { "Terms of service" }
-            DialogDescription { "Scroll to read the terms. The buttons stay in view." }
             div {
                 role: "region",
-                aria_label: "Terms of service text",
+                aria_label: "Sticky footer dialog body",
                 tabindex: "0",
                 max_height: "50vh",
                 overflow_y: "auto",
-                style: "padding-inline-end: 0.5rem;",
-                for i in 0..8 {
-                    p { margin: "0 0 1rem",
-                        "By using the service you agree to keep your account details accurate, to keep your credentials private, and to tell us promptly about any unauthorised use. We may update these terms; we will give notice before a change takes effect (clause {i + 1} of 8)."
+                style: "margin-inline: calc(var(--dx-space-4) * -1); padding-inline: var(--dx-space-4);",
+                for i in 0..10 {
+                    p { margin: "0 0 1rem", line_height: "1.5",
+                        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat (paragraph {i + 1} of 10)."
                     }
                 }
             }
-            div { display: "flex", justify_content: "flex-end", gap: "0.5rem",
-                Button {
-                    r#type: "button",
-                    variant: ButtonVariant::Outline,
-                    onclick: move |_| open.set(false),
-                    "Decline"
+            DialogFooter {
+                DialogClose {
+                    r#as: |attributes| rsx! {
+                        Button { variant: ButtonVariant::Outline, attributes, "Close" }
+                    },
                 }
-                Button { r#type: "button", onclick: move |_| open.set(false), "Accept" }
             }
         }
     }
