@@ -40,11 +40,12 @@
   transition: background-color var(--dx-motion-duration-fast) var(--dx-motion-ease-out);
 }
 
-.dx-native-select:hover:not(:disabled),
-.dx-native-select:focus-visible {
-  background: var(--light, var(--dx-accent)) var(--dark, color-mix(in oklab, var(--dx-input) 50%, transparent));
-  color: var(--dx-accent-foreground);
-  outline: none;
+@media (hover: hover) and (pointer: fine) {
+  .dx-native-select:hover:not(:disabled) {
+    background: var(--light, var(--dx-accent)) var(--dark, color-mix(in oklab, var(--dx-input) 50%, transparent));
+    color: var(--dx-accent-foreground);
+    outline: none;
+  }
 }
 
 /* A native select is a field, not a button: Nova gives it the same
@@ -53,7 +54,10 @@
  * draws the shared `--dx-ring-field` token rather than the 2px `--dx-ring`
  * of the button-like controls. */
 .dx-native-select:focus-visible {
+  background: var(--light, var(--dx-accent)) var(--dark, color-mix(in oklab, var(--dx-input) 50%, transparent));
   box-shadow: var(--dx-ring-field);
+  color: var(--dx-accent-foreground);
+  outline: none;
 }
 
 /* After the focus rule so a focused invalid select stays red. */

@@ -37,13 +37,17 @@
    an extra clause the way calendar/tabs's did -- can no longer silently flip
    the winner. `:focus-visible` is untouched (kept at its own (0,2,0), same as
    today): this row is about the hover/active tie only. */
-.dx-toggle:where(:hover), .dx-toggle:focus-visible {
+.dx-toggle:focus-visible {
   background-color: var(--dx-accent);
+  box-shadow: var(--dx-ring-focus);
   cursor: pointer;
 }
 
-.dx-toggle:focus-visible {
-  box-shadow: var(--dx-ring-focus);
+@media (hover: hover) and (pointer: fine) {
+  .dx-toggle:where(:hover) {
+    background-color: var(--dx-accent);
+    cursor: pointer;
+  }
 }
 
 /* Nova: `aria-invalid:border-destructive ring-3 ring-destructive/20 dark:ring-destructive/40`. */

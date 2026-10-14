@@ -12,12 +12,14 @@
   transition: background-color var(--dx-motion-duration-fast) var(--dx-motion-ease-out);
 }
 
-.dx-input-group:has(.dx-input-group-control:hover:not(:disabled)),
-.dx-input-group:has(.dx-input-group-control:focus-visible) {
-  background-color: var(--dx-muted);
+@media (hover: hover) and (pointer: fine) {
+  .dx-input-group:has(.dx-input-group-control:hover:not(:disabled)) {
+    background-color: var(--dx-muted);
+  }
 }
 
 .dx-input-group:has(.dx-input-group-control:focus-visible) {
+  background-color: var(--dx-muted);
   box-shadow: var(--dx-ring-field);
 }
 
@@ -33,10 +35,16 @@
   --dx-input-invalid-shadow: none;
 }
 
-.dx-input-group .dx-input-group-control:hover:not(:disabled),
 .dx-input-group .dx-input-group-control:focus-visible {
   background: none;
   box-shadow: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-input-group .dx-input-group-control:hover:not(:disabled) {
+    background: none;
+    box-shadow: none;
+  }
 }
 
 /* Invalid: the wrapper draws the field chrome, so it draws the invalid recipe (the control is bare).

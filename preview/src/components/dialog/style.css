@@ -191,9 +191,11 @@ dialog.dx-dialog[open][data-state="open"] {
   transition-property: background-color, border-color, box-shadow;
 }
 
-.dx-dialog-close:hover {
-  background-color: var(--light, var(--dx-muted))
-    var(--dark, color-mix(in oklab, var(--dx-muted) 50%, transparent));
+@media (hover: hover) and (pointer: fine) {
+  .dx-dialog-close:hover {
+    background-color: var(--light, var(--dx-muted))
+      var(--dark, color-mix(in oklab, var(--dx-muted) 50%, transparent));
+  }
 }
 
 .dx-dialog-close:focus-visible {

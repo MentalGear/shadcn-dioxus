@@ -108,10 +108,16 @@
 /* `ring-ring/50 hover:ring-3 focus-visible:ring-3 active:ring-3`: the shared 3px focus halo. */
 .dx-slider-thumb:focus-visible[data-dragging="true"],
 .dx-slider-thumb:focus-visible,
-.dx-slider-thumb:hover,
 .dx-slider-thumb:active {
     box-shadow: var(--dx-ring-focus);
     transition: box-shadow var(--dx-motion-duration-base);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .dx-slider-thumb:hover {
+        box-shadow: var(--dx-ring-focus);
+        transition: box-shadow var(--dx-motion-duration-base);
+    }
 }
 
 .dx-slider[data-disabled="true"] {

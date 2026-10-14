@@ -7,7 +7,7 @@
     <!-- Applies the saved light/dark mode, theme preset and radius from their cookies to <html>
          BEFORE first paint (the SSG HTML is static, so nothing later can). Keep this script byte-identical
          to theme::PREPAINT_JS in src/theme.rs; a unit test fails if they drift. -->
-    <script>(function(){var K=['theme','theme-base','theme-accent','theme-radius'],R=document.documentElement;function A(k,v){if(K.indexOf(k)<0)return;if(v&&/^[a-z0-9.]{1,16}$/.test(v)&&(k!=='theme'||v==='dark'||v==='light'))R.setAttribute('data-'+k,v);else R.removeAttribute('data-'+k)}window.__dxTheme=A;try{var C=document.cookie.split(';');K.forEach(function(k){var n='dx_'+k.replace('-','_')+'=',v=null;C.forEach(function(c){c=c.trim();if(c.indexOf(n)===0)v=decodeURIComponent(c.slice(n.length))});A(k,v)})}catch(e){}})()</script>
+    <script>(function(){var K=['theme','theme-base','theme-accent','theme-radius','dx-press-feedback'],R=document.documentElement;function A(k,v){if(K.indexOf(k)<0)return;if(v&&/^[a-z0-9.]{1,16}$/.test(v)&&(k!=='theme'||v==='dark'||v==='light')&&(k!=='dx-press-feedback'||v==='off'))R.setAttribute('data-'+k,v);else R.removeAttribute('data-'+k)}window.__dxTheme=A;try{var C=document.cookie.split(';');K.forEach(function(k){var n='dx_'+k.replace('-','_')+'=',v=null;C.forEach(function(c){c=c.trim();if(c.indexOf(n)===0)v=decodeURIComponent(c.slice(n.length))});A(k,v)})}catch(e){}})()</script>
     <!-- Same-page anchors over `content-visibility: auto` cards (main.css `--dx-cv`; dev-docs/research/
          scroll-jank-2026-10-04.md section 8). A card that has not been rendered yet is laid out at its size
          ESTIMATE and resizes when it is rendered, so a `#fragment` scroll over such cards was computed against

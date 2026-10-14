@@ -72,8 +72,10 @@
   text-underline-offset: 4px;
 }
 
-.dx-empty-description a:hover {
-  color: var(--dx-primary-ink);
+@media (hover: hover) and (pointer: fine) {
+  .dx-empty-description a:hover {
+    color: var(--dx-primary-ink);
+  }
 }
 
 .dx-empty-content {

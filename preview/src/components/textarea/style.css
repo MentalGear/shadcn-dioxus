@@ -60,9 +60,14 @@
   box-shadow: inset 0 0 0 1px var(--dx-input);
 }
 
-.dx-textarea[data-style="default"]:hover:not(:disabled),
 .dx-textarea[data-style="default"]:focus {
   background: var(--dx-muted);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-textarea[data-style="default"]:hover:not(:disabled) {
+    background: var(--dx-muted);
+  }
 }
 
 /* Fade Variant */
@@ -70,9 +75,14 @@
   background: var(--dx-field-fill);
 }
 
-.dx-textarea[data-style="fade"]:hover:not(:disabled),
 .dx-textarea[data-style="fade"]:focus {
   background: var(--dx-muted);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-textarea[data-style="fade"]:hover:not(:disabled) {
+    background: var(--dx-muted);
+  }
 }
 
 /* Outline Variant */
@@ -81,13 +91,15 @@
   background-color: var(--dx-field-fill);
 }
 
-.dx-textarea[data-style="outline"]:hover:not(
-    :disabled,
-    :focus,
-    [aria-invalid="true"],
-    [data-invalid="true"]
-  ) {
-  border-color: var(--dx-border-strong);
+@media (hover: hover) and (pointer: fine) {
+  .dx-textarea[data-style="outline"]:hover:not(
+      :disabled,
+      :focus,
+      [aria-invalid="true"],
+      [data-invalid="true"]
+    ) {
+    border-color: var(--dx-border-strong);
+  }
 }
 
 /* `Button`'s focus construction (`../button/style.css`): the border takes the
@@ -117,9 +129,11 @@
   background-color: transparent;
 }
 
-.dx-textarea[data-style="ghost"]:hover:not(:disabled) {
-  background-color: var(--dx-muted);
-  color: var(--dx-accent-foreground);
+@media (hover: hover) and (pointer: fine) {
+  .dx-textarea[data-style="ghost"]:hover:not(:disabled) {
+    background-color: var(--dx-muted);
+    color: var(--dx-accent-foreground);
+  }
 }
 
 /*

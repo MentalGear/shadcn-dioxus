@@ -6,6 +6,7 @@ use crate::components::{
     },
     popover::{PopoverContent, PopoverRoot, PopoverTrigger},
     sidebar::{SidebarCtx, SidebarFooter, SidebarMenu, SidebarMenuButton, SidebarMenuItem},
+    switch::Switch,
 };
 use dioxus::prelude::*;
 use dioxus_icons::lucide::{Moon, Palette, Sun};
@@ -22,12 +23,16 @@ const CHANNEL_NAME: &str = "dx-theme";
 /// * `Base` / `Accent` / `Radius` are `data-theme-base` / `-accent` / `-radius`,
 ///   matched by the blocks in `preview/assets/theme-presets.css`
 ///   (absent = no preset = the library's own look).
+/// * `PressFeedback` is `data-dx-press-feedback="off"`, read by the theme's "Press feedback" rule
+///   in `dx-components-theme.css` (absent = on, the only other state; `off` is the only value the
+///   snippet accepts for it).
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Pref {
     Mode,
     Base,
     Accent,
     Radius,
+    PressFeedback,
 }
 
 impl Pref {
@@ -37,6 +42,7 @@ impl Pref {
             Pref::Base => "theme-base",
             Pref::Accent => "theme-accent",
             Pref::Radius => "theme-radius",
+            Pref::PressFeedback => "dx-press-feedback",
         }
     }
 }
@@ -91,7 +97,7 @@ const DEFAULT_RADIUS: &str = "0.625";
 /// already on `<html>` and `theme-presets.css` / `dx-components-theme.css` render-blocking in
 /// `<head>`, the first paint is already in the chosen mode, colours and radius. [`theme_seed`] runs it
 /// again for any host that has no such `index.html`.
-pub const PREPAINT_JS: &str = "(function(){var K=['theme','theme-base','theme-accent','theme-radius'],R=document.documentElement;function A(k,v){if(K.indexOf(k)<0)return;if(v&&/^[a-z0-9.]{1,16}$/.test(v)&&(k!=='theme'||v==='dark'||v==='light'))R.setAttribute('data-'+k,v);else R.removeAttribute('data-'+k)}window.__dxTheme=A;try{var C=document.cookie.split(';');K.forEach(function(k){var n='dx_'+k.replace('-','_')+'=',v=null;C.forEach(function(c){c=c.trim();if(c.indexOf(n)===0)v=decodeURIComponent(c.slice(n.length))});A(k,v)})}catch(e){}})()";
+pub const PREPAINT_JS: &str = "(function(){var K=['theme','theme-base','theme-accent','theme-radius','dx-press-feedback'],R=document.documentElement;function A(k,v){if(K.indexOf(k)<0)return;if(v&&/^[a-z0-9.]{1,16}$/.test(v)&&(k!=='theme'||v==='dark'||v==='light')&&(k!=='dx-press-feedback'||v==='off'))R.setAttribute('data-'+k,v);else R.removeAttribute('data-'+k)}window.__dxTheme=A;try{var C=document.cookie.split(';');K.forEach(function(k){var n='dx_'+k.replace('-','_')+'=',v=null;C.forEach(function(c){c=c.trim();if(c.indexOf(n)===0)v=decodeURIComponent(c.slice(n.length))});A(k,v)})}catch(e){}})()";
 
 pub fn theme_seed() {
     _ = document::eval(&format!(
@@ -204,7 +210,7 @@ fn LightModeIcon() -> Element {
     }
 }
 
-/// The picker's three axes, mirrored from the `<html data-theme-*>` attributes for `aria-pressed` and
+/// The picker's four settings, mirrored from the `<html data-theme-*>` attributes for `aria-pressed` and
 /// the selected ring. The attributes stay the single source of truth (so presets need no JS to apply and
 /// the first paint is already right, see [`PREPAINT_JS`]); these signals are only ever read back from
 /// them, on mount and whenever a panel opens ([`ThemeState::sync`]).
@@ -217,35 +223,42 @@ struct ThemeState {
     base: Signal<String>,
     accent: Signal<String>,
     radius: Signal<String>,
+    /// `"off"` or empty (on).
+    press: Signal<String>,
 }
 
 impl ThemeState {
     /// Re-reads the three attributes: another tab, the cookie or the pre-paint script may have changed
     /// them since this component last looked.
     fn sync(self) {
-        let (mut base, mut accent, mut radius) = (self.base, self.accent, self.radius);
+        let (mut base, mut accent, mut radius, mut press) =
+            (self.base, self.accent, self.radius, self.press);
         spawn(async move {
             let mut eval = document::eval(
                 r#"const r = document.documentElement;
-                dioxus.send([r.getAttribute('data-theme-base') || '', r.getAttribute('data-theme-accent') || '', r.getAttribute('data-theme-radius') || ''].join('|'));"#,
+                dioxus.send([r.getAttribute('data-theme-base') || '', r.getAttribute('data-theme-accent') || '', r.getAttribute('data-theme-radius') || '', r.getAttribute('data-dx-press-feedback') || ''].join('|'));"#,
             );
             if let Ok(state) = eval.recv::<String>().await {
                 let mut parts = state.split('|');
                 base.set(parts.next().unwrap_or_default().to_string());
                 accent.set(parts.next().unwrap_or_default().to_string());
                 radius.set(parts.next().unwrap_or_default().to_string());
+                press.set(parts.next().unwrap_or_default().to_string());
             }
         });
     }
 
     fn reset(self) {
-        let (mut base, mut accent, mut radius) = (self.base, self.accent, self.radius);
+        let (mut base, mut accent, mut radius, mut press) =
+            (self.base, self.accent, self.radius, self.press);
         base.set(String::new());
         accent.set(String::new());
         radius.set(String::new());
+        press.set(String::new());
         set_pref(Pref::Base, None);
         set_pref(Pref::Accent, None);
         set_pref(Pref::Radius, None);
+        set_pref(Pref::PressFeedback, None);
     }
 }
 
@@ -254,6 +267,7 @@ fn use_theme_state() -> ThemeState {
         base: use_signal(String::new),
         accent: use_signal(String::new),
         radius: use_signal(String::new),
+        press: use_signal(String::new),
     };
     use_effect(move || state.sync());
     state
@@ -427,7 +441,7 @@ fn ThemePickerDrawer(state: ThemeState, open: Signal<bool>) -> Element {
     }
 }
 
-/// The picker's content: reset, base colour, accent, radius. Rendered inside either the header's
+/// The picker's content: reset, base colour, accent, radius, press feedback. Rendered inside either the header's
 /// `Popover` (`scope: "popover"`) or the phone `Drawer` (`scope: "drawer"`); `scope` is also
 /// the `data-presentation` CSS hooks onto (larger touch targets in the drawer) and keeps the label ids
 /// unique per presentation.
@@ -446,6 +460,7 @@ fn ThemePickerPanel(
         mut base,
         mut accent,
         mut radius,
+        mut press,
     } = state;
 
     let base_label = label_of(BASES, &base.read());
@@ -588,6 +603,30 @@ fn ThemePickerPanel(
                     }
                 }
             }
+
+            div { class: "dx-theme-picker-section",
+                div { class: "dx-theme-picker-toggle",
+                    span {
+                        class: "dx-theme-picker-label",
+                        id: "dx-theme-press-label-{scope}",
+                        "Press feedback"
+                        span { class: "dx-theme-picker-current", "scale and wash while pressed" }
+                    }
+                    Switch {
+                        checked: press.read().is_empty(),
+                        aria_labelledby: "dx-theme-press-label-{scope}",
+                        on_checked_change: move |on: bool| {
+                            if on {
+                                press.set(String::new());
+                                set_pref(Pref::PressFeedback, None);
+                            } else {
+                                press.set("off".to_string());
+                                set_pref(Pref::PressFeedback, Some("off"));
+                            }
+                        },
+                    }
+                }
+            }
         }
     }
 }
@@ -628,7 +667,13 @@ mod tests {
     /// Every cookie key the snippet reads is a `Pref`, and vice versa.
     #[test]
     fn prepaint_snippet_handles_every_pref() {
-        for pref in [Pref::Mode, Pref::Base, Pref::Accent, Pref::Radius] {
+        for pref in [
+            Pref::Mode,
+            Pref::Base,
+            Pref::Accent,
+            Pref::Radius,
+            Pref::PressFeedback,
+        ] {
             assert!(
                 PREPAINT_JS.contains(&format!("'{}'", pref.key())),
                 "PREPAINT_JS does not list {}",

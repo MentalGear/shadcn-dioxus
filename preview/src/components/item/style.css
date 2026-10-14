@@ -54,8 +54,10 @@ a.dx-item {
   text-decoration: none;
 }
 
-a.dx-item:hover {
-  background-color: var(--dx-muted);
+@media (hover: hover) and (pointer: fine) {
+  a.dx-item:hover {
+    background-color: var(--dx-muted);
+  }
 }
 
 /* Item Variants */
@@ -185,8 +187,10 @@ a.dx-item:hover {
   font-size: var(--dx-text-xs);
 }
 
-.dx-item-description a:hover {
-  color: var(--dx-primary-ink);
+@media (hover: hover) and (pointer: fine) {
+  .dx-item-description a:hover {
+    color: var(--dx-primary-ink);
+  }
 }
 
 /* Item Actions */

@@ -103,6 +103,7 @@ gates=(
   "check-spec-viewport-bound|scripts/check-spec-viewport-bound.sh"
   "check-ssg-verify|scripts/check-ssg-verify.sh"
   "check-duplicate-keyframes|scripts/check-duplicate-keyframes.sh"
+  "check-hover-media|scripts/check-hover-media.sh"
   "fmt|cargo fmt --all -- --check"
   "clippy-default|cargo clippy --workspace $CLIPPY_FLAGS"
   "clippy-web|cargo clippy -p dioxus-primitives -p preview --features dioxus-primitives/web,preview/web $CLIPPY_FLAGS"

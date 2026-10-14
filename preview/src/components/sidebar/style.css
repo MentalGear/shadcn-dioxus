@@ -281,8 +281,10 @@
   inset-inline-start: 50%;
 }
 
-.dx-sidebar-rail:hover::after {
-  background: var(--dx-sidebar-border);
+@media (hover: hover) and (pointer: fine) {
+  .dx-sidebar-rail:hover::after {
+    background: var(--dx-sidebar-border);
+  }
 }
 
 [data-side="left"] .dx-sidebar-rail {
@@ -313,8 +315,10 @@
   inset-inline-start: 100%;
 }
 
-[data-collapsible="offcanvas"] .dx-sidebar-rail:hover {
-  background: var(--dx-sidebar-background);
+@media (hover: hover) and (pointer: fine) {
+  [data-collapsible="offcanvas"] .dx-sidebar-rail:hover {
+    background: var(--dx-sidebar-background);
+  }
 }
 
 [data-side="left"][data-collapsible="offcanvas"] .dx-sidebar-rail {
@@ -477,9 +481,11 @@
   transition: transform var(--dx-motion-duration-base) var(--dx-motion-ease-out), opacity var(--dx-motion-duration-slow) var(--dx-motion-ease-out), visibility 0ms 0ms;
 }
 
-.dx-sidebar-group-action:hover {
-  background: var(--dx-sidebar-accent);
-  color: var(--dx-sidebar-accent-foreground);
+@media (hover: hover) and (pointer: fine) {
+  .dx-sidebar-group-action:hover {
+    background: var(--dx-sidebar-accent);
+    color: var(--dx-sidebar-accent-foreground);
+  }
 }
 
 /* `outline: none` above left this button with no focus indicator at all: ring it like its siblings. */
@@ -613,9 +619,11 @@
   transition: width var(--dx-motion-duration-base) var(--dx-motion-ease-standard), height var(--dx-motion-duration-base) var(--dx-motion-ease-standard), padding var(--dx-motion-duration-base) var(--dx-motion-ease-standard);
 }
 
-.dx-sidebar-menu-button[data-sidebar="menu-button"]:hover {
-  background: var(--dx-sidebar-accent);
-  color: var(--dx-sidebar-accent-foreground);
+@media (hover: hover) and (pointer: fine) {
+  .dx-sidebar-menu-button[data-sidebar="menu-button"]:hover {
+    background: var(--dx-sidebar-accent);
+    color: var(--dx-sidebar-accent-foreground);
+  }
 }
 
 /* The sidebar keeps shadcn's own `focus-visible:ring-2 ring-sidebar-ring`: a 2px ring in the
@@ -682,9 +690,11 @@
   box-shadow: 0 0 0 1px var(--dx-sidebar-border);
 }
 
-.dx-sidebar-menu-button[data-sidebar="menu-button"][data-variant="outline"]:hover {
-  background: var(--dx-sidebar-accent);
-  box-shadow: 0 0 0 1px var(--dx-sidebar-accent);
+@media (hover: hover) and (pointer: fine) {
+  .dx-sidebar-menu-button[data-sidebar="menu-button"][data-variant="outline"]:hover {
+    background: var(--dx-sidebar-accent);
+    box-shadow: 0 0 0 1px var(--dx-sidebar-accent);
+  }
 }
 
 .dx-sidebar-desktop[data-collapsible="icon"] .dx-sidebar-menu-button[data-sidebar="menu-button"] {
@@ -747,9 +757,11 @@
   transition: transform var(--dx-motion-duration-base) var(--dx-motion-ease-out), opacity var(--dx-motion-duration-slow) var(--dx-motion-ease-out), visibility 0ms 0ms;
 }
 
-.dx-sidebar-menu-action[data-sidebar="menu-action"]:hover {
-  background: var(--dx-sidebar-accent);
-  color: var(--dx-sidebar-accent-foreground);
+@media (hover: hover) and (pointer: fine) {
+  .dx-sidebar-menu-action[data-sidebar="menu-action"]:hover {
+    background: var(--dx-sidebar-accent);
+    color: var(--dx-sidebar-accent-foreground);
+  }
 }
 
 /* `outline: none` above left this button with no focus indicator at all: ring it like its siblings. */
@@ -799,16 +811,26 @@
 }
 
 @media (width >=768px) {
-  .dx-sidebar-menu-item:hover .dx-sidebar-menu-action[data-sidebar="menu-action"][data-show-on-hover="true"],
   .dx-sidebar-menu-item:focus-within .dx-sidebar-menu-action[data-sidebar="menu-action"][data-show-on-hover="true"],
   .dx-sidebar-menu-action[data-sidebar="menu-action"][data-show-on-hover="true"][data-state="open"] {
     opacity: 1;
   }
+
+  @media (hover: hover) and (pointer: fine) {
+    .dx-sidebar-menu-item:hover .dx-sidebar-menu-action[data-sidebar="menu-action"][data-show-on-hover="true"] {
+      opacity: 1;
+    }
+  }
 }
 
-.dx-sidebar-menu-button[data-sidebar="menu-button"][data-active="true"]~.dx-sidebar-menu-action[data-sidebar="menu-action"][data-show-on-hover="true"],
-.dx-sidebar-menu-button[data-sidebar="menu-button"]:hover~.dx-sidebar-menu-action[data-sidebar="menu-action"] {
+.dx-sidebar-menu-button[data-sidebar="menu-button"][data-active="true"]~.dx-sidebar-menu-action[data-sidebar="menu-action"][data-show-on-hover="true"] {
   color: var(--dx-sidebar-accent-foreground);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-sidebar-menu-button[data-sidebar="menu-button"]:hover~.dx-sidebar-menu-action[data-sidebar="menu-action"] {
+    color: var(--dx-sidebar-accent-foreground);
+  }
 }
 
 .dx-sidebar-menu-badge {
@@ -831,9 +853,14 @@
   user-select: none;
 }
 
-.dx-sidebar-menu-button[data-sidebar="menu-button"]:hover~.dx-sidebar-menu-badge,
 .dx-sidebar-menu-button[data-sidebar="menu-button"][data-active="true"]~.dx-sidebar-menu-badge {
   color: var(--dx-sidebar-accent-foreground);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-sidebar-menu-button[data-sidebar="menu-button"]:hover~.dx-sidebar-menu-badge {
+    color: var(--dx-sidebar-accent-foreground);
+  }
 }
 
 .dx-sidebar-menu-item:has(.dx-sidebar-menu-button[data-size="sm"]) .dx-sidebar-menu-badge {
@@ -925,9 +952,11 @@
   transition: opacity var(--dx-motion-duration-slow) var(--dx-motion-ease-out);
 }
 
-.dx-sidebar-menu-sub-button:hover {
-  background: var(--dx-sidebar-accent);
-  color: var(--dx-sidebar-accent-foreground);
+@media (hover: hover) and (pointer: fine) {
+  .dx-sidebar-menu-sub-button:hover {
+    background: var(--dx-sidebar-accent);
+    color: var(--dx-sidebar-accent-foreground);
+  }
 }
 
 .dx-sidebar-menu-sub-button:focus-visible {

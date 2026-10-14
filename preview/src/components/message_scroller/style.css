@@ -125,9 +125,11 @@
   translate: 0 0;
 }
 
-.dx-message-scroller-button[data-message-scroller-button]:hover {
-  background-color: var(--dx-muted);
-  color: var(--dx-foreground);
+@media (hover: hover) and (pointer: fine) {
+  .dx-message-scroller-button[data-message-scroller-button]:hover {
+    background-color: var(--dx-muted);
+    color: var(--dx-foreground);
+  }
 }
 
 .dx-message-scroller-button[data-direction="end"] {
