@@ -67,6 +67,18 @@ Only the rows in view are mounted, over a spacer that gives the scrollbar the fu
 - Browsers cap an element's height (about 17 million px in Firefox, 33 million px in Chromium), which limits the spacer: with 100px rows that is roughly 300,000 rows.
 - The windowed bridge adds a scroll listener on the container and a resize listener on the window, and removes both when the list unmounts or the mode switches.
 
+## Edge fade
+
+`fade: ScrollFade` (`None` by default; `Y`, `X`, `Top`, `Bottom`, `Start`, `End`) puts the matching `dx-scroll-fade-*` class on the list container, which is the element that scrolls. The fade is a CSS scroll-driven mask driven by the container's own scroll offset, so it follows the scrollbar in both modes whichever rows are mounted (a windowed list of 20,000 rows fades exactly like a short one), and a list that fits has no fade.
+
+```rust
+VirtualList { count: 20_000usize, fade: ScrollFade::Y, render_item: .. }
+```
+
+- It needs `dx-effects.css` linked once at the app root next to the theme (`virtual_list`'s `component.json` lists it in `globalAssets`). Without it the prop is inert. See the `dx-scroll-fade` utility in the ScrollArea docs for the variables that tune depth and reveal distance.
+- The mask also dissolves a border or background on the container; put those on a wrapper.
+- Examples: the `fade` variant (a windowed list and a content-visibility list).
+
 ## Props
 
 - `count` (required): the number of rows.
@@ -75,3 +87,4 @@ Only the rows in view are mounted, over a spacer that gives the scrollbar the fu
 - `virtualize`: `VirtualListMode::{Auto, ContentVisibility, Windowed}`, default `Auto`.
 - `auto_threshold`: the largest `count` `Auto` keeps in `ContentVisibility`; default `1000`.
 - `buffer`: windowed mode only; default `8`.
+- `fade`: `ScrollFade::{None, Y, X, Top, Bottom, Start, End}`, default `None`; the scroll-edge fade above.

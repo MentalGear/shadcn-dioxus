@@ -116,6 +116,7 @@
 //! turns inert focus moves to the viewport rather than to `<body>`.
 
 use crate::r#virtual::{cv_chunks, ChunkSkip};
+pub use crate::scroll_area::ScrollFade;
 #[cfg(feature = "web")]
 use crate::use_effect_with_cleanup;
 use crate::{merge_attributes, use_unique_id};
@@ -570,6 +571,15 @@ pub struct MessageScrollerViewportProps {
     #[props(default = true)]
     pub preserve_scroll_on_prepend: bool,
 
+    /// A scroll-edge fade on the viewport, which is the element that scrolls (the
+    /// `dx-scroll-fade-*` classes of `dx-effects.css`; see [`ScrollFade`]). Defaults to
+    /// [`ScrollFade::Bottom`], the Nova transcript's end-edge hint; pass [`ScrollFade::Top`]
+    /// for a thread that opens at the bottom and loads history upward, [`ScrollFade::Y`] for
+    /// both edges or [`ScrollFade::None`] for none. The fade follows the scroll offset of the
+    /// viewport, so it is unaffected by `content-visibility` rows and by prepended history.
+    #[props(default = ScrollFade::Bottom)]
+    pub fade: ScrollFade,
+
     /// Additional attributes to apply to the viewport element.
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
@@ -600,7 +610,7 @@ pub fn MessageScrollerViewport(props: MessageScrollerViewportProps) -> Element {
         "data-preserve-scroll-on-prepend": if preserve { "true" } else { "false" },
         "data-pending-scroll": pending.then_some(""),
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![base, props.fade.attributes(), props.attributes]);
 
     rsx! {
         div { ..merged, {props.children} }

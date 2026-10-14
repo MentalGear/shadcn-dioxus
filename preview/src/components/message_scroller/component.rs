@@ -15,7 +15,7 @@ use dioxus_primitives::message_scroller::{
 #[allow(unused_imports)] // a consumer-facing surface; this crate's own demos use a subset
 pub use dioxus_primitives::message_scroller::{
     use_message_scroller, use_message_scroller_scrollable, DefaultScrollPosition,
-    MessageScrollerApi, MessageScrollerDirection, ScrollAlign, ScrollBehavior,
+    MessageScrollerApi, MessageScrollerDirection, ScrollAlign, ScrollBehavior, ScrollFade,
     ScrollToMessageOptions, Scrollable, Virtualization,
 };
 
@@ -50,12 +50,13 @@ pub fn MessageScroller(props: MessageScrollerProps) -> Element {
     }
 }
 
-/// The scrollable element, with a bottom edge fade (`dx-scroll-fade-b`, from
-/// `dx-effects.css`; without that file the fade is simply absent).
+/// The scrollable element. Its edge fade is the `fade` prop (default
+/// [`ScrollFade::Bottom`], `dx-scroll-fade-b` from `dx-effects.css`; without that file the fade
+/// is simply absent).
 #[component]
 pub fn MessageScrollerViewport(props: MessageScrollerViewportProps) -> Element {
     let base = attributes!(div {
-        class: "dx-message-scroller-viewport dx-scroll-fade-b",
+        class: "dx-message-scroller-viewport",
         "data-slot": "message-scroller-viewport",
     });
     let merged = merge_attributes(vec![base, props.attributes]);
@@ -64,6 +65,7 @@ pub fn MessageScrollerViewport(props: MessageScrollerViewportProps) -> Element {
         document::Link { rel: "stylesheet", href: asset!("/src/components/message_scroller/style.css") }
         message_scroller::MessageScrollerViewport {
             preserve_scroll_on_prepend: props.preserve_scroll_on_prepend,
+            fade: props.fade,
             attributes: merged,
             {props.children}
         }
