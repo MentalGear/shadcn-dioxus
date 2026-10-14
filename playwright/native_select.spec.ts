@@ -149,7 +149,10 @@ test.describe("Dark mode: native parts follow the theme", () => {
       await openThemed(page, { os });
       const r = await probe(page);
       expect(r.dataTheme).toBeNull();
-      expect(r.rootScheme).toBe("light dark");
+      // With the page's script running, "system" mode also resolves `.dark` from the OS (theme.rs `apply_mode`, row
+      // 158 a), so a dark OS computes `dark` (same scheme the UA would have picked); a light OS leaves the root
+      // untouched. The truly script-free `light dark` is covered by theme-dark-class.spec.ts's host page.
+      expect(r.rootScheme).toBe(os === "dark" ? "dark" : "light dark");
       if (os === "dark") {
         expect(r.uaCanvasLum).toBeLessThan(0.2);
         expect(r.option.bg).toBe(r.option.expectBg);

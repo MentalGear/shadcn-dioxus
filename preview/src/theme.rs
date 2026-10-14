@@ -18,8 +18,9 @@ const CHANNEL_NAME: &str = "dx-theme";
 /// attribute AND one cookie (`dx_<key with - as _>`), so adding one here, to
 /// [`PREPAINT_JS`]'s key list and to `theme-presets.css` is the whole job.
 ///
-/// * `Mode` is `data-theme="dark|light"`, switched by `dx-components-theme.css`
-///   (absent = follow `prefers-color-scheme`).
+/// * `Mode` is `data-theme="dark|light"` PLUS shadcn's `class="dark"` on `<html>`, written together
+///   by [`PREPAINT_JS`]'s one `apply_mode` and switched by `dx-components-theme.css` (absent
+///   `data-theme` = system: `.dark` then follows `prefers-color-scheme`).
 /// * `Base` / `Accent` / `Radius` are `data-theme-base` / `-accent` / `-radius`,
 ///   matched by the blocks in `preview/assets/theme-presets.css`
 ///   (absent = no preset = the library's own look).
@@ -91,13 +92,19 @@ const DEFAULT_RADIUS: &str = "0.625";
 /// the one place a value is validated and written to / removed from an attribute (the live
 /// cross-tab sync and [`set_pref`] reuse it).
 ///
+/// The mode (backlog row 158 (a)) goes through `apply_mode` (`window.__dxApplyMode`), the ONLY code
+/// that may write `data-theme` or the `dark` class: it sets `data-theme` and toggles `.dark` together,
+/// and resolves "system" (no value) from `prefers-color-scheme`, re-resolving on a page-lifetime
+/// change listener while no explicit mode is set. So a shadcn theme's `.dark { ... }` block, and
+/// Tailwind's `dark:`, follow the very same switch as `data-theme`.
+///
 /// This text is embedded VERBATIM in `preview/index.html`'s `<head>` (a unit test below enforces it),
 /// which is what makes it run before first paint: the SSG HTML is static, the server cannot read a
 /// cookie, and everything in `AppLayout`'s effect only runs after hydration. With the attributes
 /// already on `<html>` and `theme-presets.css` / `dx-components-theme.css` render-blocking in
 /// `<head>`, the first paint is already in the chosen mode, colours and radius. [`theme_seed`] runs it
 /// again for any host that has no such `index.html`.
-pub const PREPAINT_JS: &str = "(function(){var K=['theme','theme-base','theme-accent','theme-radius','dx-press-feedback'],R=document.documentElement;function A(k,v){if(K.indexOf(k)<0)return;if(v&&/^[a-z0-9.]{1,16}$/.test(v)&&(k!=='theme'||v==='dark'||v==='light')&&(k!=='dx-press-feedback'||v==='off'))R.setAttribute('data-'+k,v);else R.removeAttribute('data-'+k)}window.__dxTheme=A;try{var C=document.cookie.split(';');K.forEach(function(k){var n='dx_'+k.replace('-','_')+'=',v=null;C.forEach(function(c){c=c.trim();if(c.indexOf(n)===0)v=decodeURIComponent(c.slice(n.length))});A(k,v)})}catch(e){}})()";
+pub const PREPAINT_JS: &str = "(function(){var K=['theme','theme-base','theme-accent','theme-radius','dx-press-feedback'],R=document.documentElement,Q=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)');function M(m){if(m)R.setAttribute('data-theme',m);else R.removeAttribute('data-theme');R.classList.toggle('dark',m?m==='dark':!!(Q&&Q.matches))}function A(k,v){if(K.indexOf(k)<0)return;var ok=!!v&&/^[a-z0-9.]{1,16}$/.test(v)&&(k!=='theme'||v==='dark'||v==='light')&&(k!=='dx-press-feedback'||v==='off');if(k==='theme')M(ok?v:null);else if(ok)R.setAttribute('data-'+k,v);else R.removeAttribute('data-'+k)}window.__dxApplyMode=M;window.__dxTheme=A;if(Q&&!window.__dxModeWatch){window.__dxModeWatch=1;try{/*listener-ok: lives as long as the page*/Q.addEventListener('change',function(){if(!R.hasAttribute('data-theme'))M(null)})}catch(e){}}try{var C=document.cookie.split(';');K.forEach(function(k){var n='dx_'+k.replace('-','_')+'=',v=null;C.forEach(function(c){c=c.trim();if(c.indexOf(n)===0)v=decodeURIComponent(c.slice(n.length))});A(k,v)})}catch(e){}})()";
 
 pub fn theme_seed() {
     _ = document::eval(&format!(
