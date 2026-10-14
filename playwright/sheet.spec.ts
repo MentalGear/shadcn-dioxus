@@ -7,8 +7,10 @@ import { assertSharedBackdrop, captureBackdrop, resolveOverlayMs } from "./asser
 test('sheet basic interactions', async ({ page }) => {
   await page.goto(`${BASE_URL}/component/?name=sheet&`, { timeout: 20 * 60 * 1000 });
 
-  // Open sheet from Right button
-  await page.getByRole('button', { name: 'Right' }).click();
+  // Open sheet from Right button. By keyboard, so the first control takes focus; a pointer/touch
+  // open focuses the panel instead (row 206, modal-initial-focus.spec.ts).
+  await page.getByRole('button', { name: 'Right' }).focus();
+  await page.keyboard.press('Enter');
 
   // Assert the sheet is open
   const sheet = page.locator('[data-slot="sheet-root"]');

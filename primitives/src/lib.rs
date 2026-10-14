@@ -442,40 +442,6 @@ fn use_form_reset_listener(
     });
 }
 
-/// Records HOW the user last acted -- `'pointer'` (a `pointerdown`: mouse, touch or pen) or
-/// `'keyboard'` (a `keydown`, or a `click` with `detail === 0`: the synthetic click a screen
-/// reader or a script makes) -- in `window.__dxOpenModality`, so [`use_dialog_open_driver`]
-/// can pick a modal's initial focus by the modality that opened it (backlog row 206): the
-/// first field for a keyboard, the panel itself for a tap, so a tap on a button that opens a
-/// dialog does not pop the mobile keyboard. It is the same signal `:focus-visible` is built on.
-///
-/// It has to be on the page BEFORE the trigger is pressed -- the content that drives the
-/// open mounts only after the click -- so the roots (`DialogRoot`, `AlertDialogRoot`, which
-/// also compose Sheet, Drawer and `CommandDialog`) install it when they mount, the same
-/// "at the root, not at the first open" placement as `ensure_scrollbar_gutter_baseline`.
-/// Idempotent (a flag on `window`), three capture listeners on `document` for the life of the
-/// page; the listener-inventory spec takes its baseline after the roots have mounted.
-#[cfg(feature = "web")]
-pub(crate) fn use_open_modality_tracker() {
-    use_effect(|| {
-        document::eval(
-            "if (!window.__dxOpenModalityTracker) {
-                window.__dxOpenModalityTracker = true;
-                // listener-ok: page-lifetime -- one tracker per page, installed once (the flag above); it must outlive every overlay, since it records what happened BEFORE one opened
-                document.addEventListener('pointerdown', () => { window.__dxOpenModality = 'pointer'; }, true);
-                // listener-ok: page-lifetime -- the tracker's keyboard half, same flag
-                document.addEventListener('keydown', () => { window.__dxOpenModality = 'keyboard'; }, true);
-                // listener-ok: page-lifetime -- the tracker's synthetic-click half (detail 0: a screen reader or a script, not a pointer)
-                document.addEventListener('click', (e) => { if (e.detail === 0) window.__dxOpenModality = 'keyboard'; }, true);
-            }",
-        );
-    });
-}
-
-/// The web arm's counterpart is the tracker; without it there is no modality to read.
-#[cfg(not(feature = "web"))]
-pub(crate) fn use_open_modality_tracker() {}
-
 /// Drive `showModal()`/`close()` on the `<dialog>` element with the given
 /// `id` from `open`, guarded by the element's own `.open` DOM property.
 ///
@@ -576,13 +542,19 @@ fn use_dialog_open_driver(
                 if (dialog.open) return;
                 // Initial focus follows the opening modality (backlog row 206). `showModal()`
                 // focuses the first focusable descendant, which for a field pops the mobile
-                // keyboard on a tap. Opened by pointer/touch, with no `autofocus` inside, the
-                // panel itself takes focus instead: its children are `inert` for the one call so
-                // the browser's own focusing step finds no delegate and settles on the dialog, a
-                // field is never focused even for an instant. Opened by keyboard (or when the
-                // modality is unknown: a programmatic open, `default_open`) it is the browser's
-                // default, unchanged. An `autofocus` descendant always wins.
-                if (window.__dxOpenModality === 'pointer' && !dialog.querySelector('[autofocus]')) {{
+                // keyboard on a tap. The modality is read AT OPEN TIME from the element that
+                // holds focus now, the opener: opened by keyboard it matches `:focus-visible`
+                // (the browser's own focus-ring heuristic; a mouse or tap click on a button never
+                // does, and Safari does not even focus a clicked button). No listener, no global,
+                // no install order. Keyboard: the browser default, the first control. Pointer,
+                // touch, or no opener at all (`default_open`, a shortcut with focus on <body>):
+                // the panel itself takes focus, with its children `inert` for the one call so the
+                // browser's own focusing step finds no delegate and a field is never focused,
+                // not even for an instant. An `autofocus` descendant always wins.
+                const opener = document.activeElement;
+                const byKeyboard = !!opener && opener !== document.body && opener !== document.documentElement
+                    && opener.matches(':focus-visible');
+                if (!byKeyboard && !dialog.querySelector('[autofocus]')) {{
                     dialog.setAttribute('tabindex', '-1');
                     const held = [...dialog.children].filter((c) => !c.inert);
                     held.forEach((c) => {{ c.inert = true; }});

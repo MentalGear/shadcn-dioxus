@@ -45,12 +45,20 @@
 //! ### Initial focus follows the opening modality (backlog row 206)
 //!
 //! `showModal()` focuses the first focusable descendant, which for a field pops the mobile
-//! keyboard on a tap. `crate::use_dialog_open_driver` therefore picks the target by how the
-//! modal was opened, recorded by `crate::use_open_modality_tracker` (installed by
-//! [`DialogRoot`] and by `AlertDialogRoot`; Sheet, Drawer and `CommandDialog` compose these):
-//! keyboard (or unknown) keeps the browser default, a pointer/touch open focuses the
-//! `<dialog>` panel itself (`tabindex="-1"`, set at that moment), and an `autofocus`
-//! descendant always wins. One place, so every driver-backed modal inherits it.
+//! keyboard on a tap. `crate::use_dialog_open_driver` therefore decides at open time, from the
+//! element that holds focus when the open is requested (the opener): if it matches
+//! `:focus-visible` (the browser's own focus-ring heuristic: true after a keyboard activation,
+//! never after a mouse or tap click, and Safari does not focus a clicked button at all) the
+//! browser default stands and the first control gets focus. Otherwise -- pointer, touch, or no
+//! opener at all (`default_open`, a global shortcut with focus on `<body>`) -- the `<dialog>`
+//! panel itself takes focus (`tabindex="-1"`, set at that moment): focus still moves into the
+//! dialog and Tab reaches the first field. An `autofocus` descendant always wins. There is no
+//! listener and no install order, so every driver-backed modal (Dialog, AlertDialog, Sheet,
+//! Drawer, `CommandDialog`, the modal Popover) behaves the same on every page.
+//! Known limit of reading `:focus-visible`: a mouse click on an opener that ALREADY holds
+//! keyboard focus (a keyboard open, Escape, then a click on the same trigger with no other
+//! pointer interaction between) is still `:focus-visible`, so that open keeps the browser
+//! default (the first control), which is today's behaviour.
 //!
 //! ### Closing keeps the dialog modal until its exit has played
 //!
@@ -206,9 +214,6 @@ pub fn DialogRoot(props: DialogRootProps) -> Element {
     // open. See `scroll_lock.rs`'s module docs and
     // `ensure_scrollbar_gutter_baseline`'s doc comment.
     use_effect(crate::scroll_lock::ensure_scrollbar_gutter_baseline);
-    // Records pointer-vs-keyboard before the trigger is pressed, for the modal's initial
-    // focus (`crate::use_dialog_open_driver`, backlog row 206).
-    crate::use_open_modality_tracker();
 
     let dialog_labelledby = use_unique_id();
     let dialog_describedby = use_unique_id();

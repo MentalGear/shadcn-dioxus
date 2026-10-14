@@ -4,14 +4,15 @@
  * Owner report: tapping a demo button that opens a dialog/drawer focused its first field, which
  * pops the mobile keyboard. The construction is ONE place -- `use_dialog_open_driver`
  * (`primitives/src/lib.rs`), the driver every native-`<dialog>` modal goes through (Dialog,
- * AlertDialog, Sheet, Drawer, CommandDialog, the modal Popover) -- fed by a page-lifetime
- * `pointerdown` / `keydown` recorder (`use_open_modality_tracker`, installed by the roots):
- *   - opened by KEYBOARD (Enter/Space on the trigger): `showModal()`'s own default, the first
- *     focusable descendant;
- *   - opened by POINTER / TOUCH: the `<dialog>` panel itself (`tabindex="-1"`), no field focused
- *     and no focus ring painted on it;
- *   - an explicit `autofocus` inside the dialog always wins (the Command palette's input declares
- *     one: a search box is the point of a palette, so it keeps focus whatever opened it).
+ * AlertDialog, Sheet, Drawer, CommandDialog, the modal Popover). At open time it reads the
+ * element that holds focus (the opener): opened by KEYBOARD it matches `:focus-visible` (the
+ * browser's own focus-ring heuristic), so `showModal()`'s default stands and the first
+ * focusable descendant is focused. Anything else -- a mouse or tap click, an unfocused opener
+ * (Safari does not focus a clicked button), no opener at all (focus on <body>) -- focuses the
+ * `<dialog>` panel itself (`tabindex="-1"`). An `autofocus` inside always wins (the Command
+ * palette's input declares one: a search box is the point of a palette). No listener, no
+ * window global, no install order: the result is the same on every page, which the modal
+ * Popover case proves on a page with no Dialog/AlertDialog root.
  *
  * Unchanged and re-proved here: Tab from the panel enters the dialog, Escape closes it and the
  * trigger gets focus back, and the latest modality wins on a second open.
@@ -161,6 +162,11 @@ for (const consumer of CONSUMERS) {
       await page.keyboard.press("Escape");
       await expect(page.locator(consumer.dialogSelector)).toHaveCount(0);
 
+      // Closing hands focus back to the trigger, still :focus-visible from the keyboard open, and a
+      // mouse click on an element that is already focused does not re-evaluate that: a known limit
+      // of reading :focus-visible (that mixed case keeps today's behaviour, the first control). Any
+      // other pointer interaction first (here: a press on the page) clears it, as it does for a user.
+      await page.mouse.click(1, 1);
       await openedBy(page, trigger(page), "click");
       await expect(dialog(page)).toBeVisible();
       await expect.poll(() => whereIsFocus(page, consumer.dialogSelector)).toMatchObject({ isDialog: true });
@@ -192,5 +198,49 @@ test.describe("sheet text field is not focused by a tap", () => {
     await openedBy(page, page.getByRole("button", { name: "Right", exact: true }), "enter");
     await expect(page.locator("dialog.dx-sheet[open]")).toBeVisible();
     await expect.poll(() => whereIsFocus(page, "dialog.dx-sheet")).toMatchObject({ inDialog: true, isDialog: false });
+  });
+});
+
+test.describe("modal Popover: the same result on a page with no Dialog or AlertDialog root", () => {
+  const url = `${BASE_URL}/component/?name=popover&variant=modal&`;
+  const trigger = (page: Page) => page.getByRole("button", { name: "Open modal popover", exact: true });
+  const panel = "dialog[open]";
+
+  test("the page has no Dialog or AlertDialog", async ({ page }) => {
+    await gotoHydrated(page, url, GOTO);
+    expect(await page.locator("dialog.dx-dialog, dialog.dx-alert-dialog").count()).toBe(0);
+  });
+
+  test("mouse click focuses the panel, keyboard focuses a field", async ({ page }) => {
+    await gotoHydrated(page, url, GOTO);
+    await openedBy(page, trigger(page), "click");
+    await expect(page.locator(panel)).toBeVisible();
+    await expect.poll(() => whereIsFocus(page, panel)).toMatchObject({ isDialog: true, textEntry: false });
+    await page.keyboard.press("Escape");
+    await expect(page.locator(panel)).toHaveCount(0);
+
+    await openedBy(page, trigger(page), "enter");
+    await expect(page.locator(panel)).toBeVisible();
+    await expect.poll(() => whereIsFocus(page, panel)).toMatchObject({ inDialog: true, isDialog: false, textEntry: true });
+  });
+
+  test("touch tap focuses the panel", async ({ browser }) => {
+    const { context, page } = await touchPage(browser);
+    try {
+      await gotoHydrated(page, url, GOTO);
+      await openedBy(page, trigger(page), "tap");
+      await expect(page.locator(panel)).toBeVisible();
+      await expect.poll(() => whereIsFocus(page, panel)).toMatchObject({ isDialog: true, textEntry: false });
+    } finally {
+      await context.close();
+    }
+  });
+
+  test("an open with no opener (focus on <body>) focuses the panel", async ({ page }) => {
+    await gotoHydrated(page, url, GOTO);
+    // A synthetic click never focuses the button: activeElement stays <body>, like Safari's click.
+    await trigger(page).dispatchEvent("click");
+    await expect(page.locator(panel)).toBeVisible();
+    await expect.poll(() => whereIsFocus(page, panel)).toMatchObject({ isDialog: true, textEntry: false });
   });
 });
