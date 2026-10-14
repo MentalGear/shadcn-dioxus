@@ -42,6 +42,16 @@
 //!   the focus trap, focus restore, inertness, and top layer, and its
 //!   `cancel`/`close` events (synced above) already handle Escape.
 //!
+//! ### Initial focus follows the opening modality (backlog row 206)
+//!
+//! `showModal()` focuses the first focusable descendant, which for a field pops the mobile
+//! keyboard on a tap. `crate::use_dialog_open_driver` therefore picks the target by how the
+//! modal was opened, recorded by `crate::use_open_modality_tracker` (installed by
+//! [`DialogRoot`] and by `AlertDialogRoot`; Sheet, Drawer and `CommandDialog` compose these):
+//! keyboard (or unknown) keeps the browser default, a pointer/touch open focuses the
+//! `<dialog>` panel itself (`tabindex="-1"`, set at that moment), and an `autofocus`
+//! descendant always wins. One place, so every driver-backed modal inherits it.
+//!
 //! ### Closing keeps the dialog modal until its exit has played
 //!
 //! `open` going `false` does not `close()` the `<dialog>` at once:
@@ -196,6 +206,9 @@ pub fn DialogRoot(props: DialogRootProps) -> Element {
     // open. See `scroll_lock.rs`'s module docs and
     // `ensure_scrollbar_gutter_baseline`'s doc comment.
     use_effect(crate::scroll_lock::ensure_scrollbar_gutter_baseline);
+    // Records pointer-vs-keyboard before the trigger is pressed, for the modal's initial
+    // focus (`crate::use_dialog_open_driver`, backlog row 206).
+    crate::use_open_modality_tracker();
 
     let dialog_labelledby = use_unique_id();
     let dialog_describedby = use_unique_id();

@@ -5,7 +5,10 @@ import { assertSharedBackdrop, captureBackdrop, resolveOverlayMs } from "./asser
 
 test('test', async ({ page }) => {
   await page.goto(`${BASE_URL}/component/?name=alert_dialog&`, { timeout: 20 * 60 * 1000 }); // Increase timeout to 20 minutes
-  await page.getByRole('button', { name: 'Show Alert Dialog' }).click();
+  // Opened from the keyboard, so the first control takes focus. A pointer/touch open focuses the
+  // panel instead (row 206; modal-initial-focus.spec.ts) and would not pop the mobile keyboard.
+  await page.getByRole('button', { name: 'Show Alert Dialog' }).focus();
+  await page.keyboard.press('Enter');
   // Assert the dialog is open
   const dialog = page.getByRole('alertdialog');
   await expect(dialog).toBeVisible();

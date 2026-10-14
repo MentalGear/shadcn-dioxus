@@ -113,6 +113,9 @@ pub fn AlertDialogRoot(props: AlertDialogRootProps) -> Element {
     // not only inside `use_scroll_lock` (called by `AlertDialogContent`,
     // which mounts lazily on open).
     use_effect(crate::scroll_lock::ensure_scrollbar_gutter_baseline);
+    // Records pointer-vs-keyboard before the trigger is pressed, for the modal's initial
+    // focus (`crate::use_dialog_open_driver`, backlog row 206).
+    crate::use_open_modality_tracker();
 
     let labelledby = use_unique_id().to_string();
     let describedby = use_unique_id().to_string();
