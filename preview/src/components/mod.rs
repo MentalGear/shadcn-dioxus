@@ -471,7 +471,7 @@ examples!(
     empty[outline, background, avatar, search, rtl],
     field[subscription],
     form,
-    hover_card[placement],
+    hover_card[placement, delays],
     input[field, disabled, invalid, file, inline_button, required, grid, addons, form],
     input_group[inline_end, text, button, kbd, dropdown, spinner],
     input_otp[verify],
@@ -511,7 +511,7 @@ examples!(
     toggle[text, disabled, rtl],
     toggle_group[rtl, disabled, font_weight],
     toolbar[rtl],
-    tooltip[shortcut, disabled_button],
+    tooltip[shortcut, disabled_button, delays],
     top_layer,
     virtual_list[random_heights, content_visibility, windowed, fade],
 );
