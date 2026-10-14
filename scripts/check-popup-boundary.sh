@@ -76,6 +76,8 @@ ALLOW = [
     ("badge", r"^\.dx-badge svg$", "the ancestor is an inline label; a Badge holds text and an icon, never an interactive popup trigger"),
     ("breadcrumb", r"\.dx-breadcrumb-(separator|ellipsis) svg", LEAF),
     ("button", r"svg", "the ancestor is a <button>, which cannot contain interactive content, so no popup trigger (and no panel) is rendered inside it"),
+    ("toggle", r"^\.dx-toggle(\[[^]]*\])? svg", "the ancestor is the Toggle, a <button>, which cannot contain interactive content, so no popup trigger (and no panel) is rendered inside it"),
+    ("toggle_group", r"^\.dx-toggle-group-item svg", "the ancestor is a ToggleGroup item, a <button>, which cannot contain interactive content, so no popup trigger (and no panel) is rendered inside it"),
     ("button_group", r" > ", DIRECT),
     ("button_group", r"\.dx-button-group-text svg", LEAF),
     ("calendar", r"\.dx-calendar-(nav-(prev|next)|(month|year)-select-value) svg", LEAF),

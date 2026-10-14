@@ -29,7 +29,7 @@ Tabs {
 }
 ```
 
-## Variants
+## Styles (default and line)
 
 `Tabs` takes `variant: TabsVariant`. `Default` is the muted pill with a raised active tab inside a bordered card. `Line` is shadcn's `line` variant: a transparent list with a 4px gap, no card around the panel, and the active tab carries a 2px bar that fades in (an underline when horizontal, a bar on the panel side when vertical; the docs site's DEMO/CODE tabs use it). `Ghost` is the former name of `Line` and renders identically (`data-variant="line"`). See the `line` variant.
 
