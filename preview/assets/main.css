@@ -1671,9 +1671,17 @@ button.dx-theme-phone-trigger {
   overflow-clip-margin: 0.75rem;
 }
 
+/* NOT `content-visibility: auto` (the widget cards used to be): the masonry is CSS multi-column, which balances its
+ * columns by card HEIGHT, so a card laid out at its estimate and rendered later (it enters the range, which moves
+ * the next card into range, and so on) re-balanced the columns once per unskip -- three to six re-layouts of the
+ * gallery in the first ~300 ms, some after the first paint (`playwright/layout-stability.spec.ts`, backlog row
+ * 204). Skipping needs the card's height to be known without rendering it, and a balanced column layout is the one
+ * place where it never is. The containment that `auto` implied stays, so a card is still an independent
+ * layout/paint/style boundary and a pulse in one never re-walks its neighbours; only the skipping goes (14 cards,
+ * ~750 of the page's 4.4k nodes). `.dx-component-card` is a single stacked column, where an estimate only moves
+ * what is below it, and keeps `auto`. */
 .dx-widget-card:not(.dx-widget-card-popout) {
-  contain-intrinsic-block-size: auto 270px;
-  content-visibility: var(--dx-cv, auto);
+  contain: layout paint style;
 }
 
 /* Forced-render window, set and cleared by the anchor handler in `preview/index.html` (see the
