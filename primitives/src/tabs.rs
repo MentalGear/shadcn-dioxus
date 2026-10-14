@@ -51,8 +51,10 @@ pub struct TabsProps {
     #[props(default)]
     pub disabled: ReadSignal<bool>,
 
-    /// Whether the tabs are horizontal.
-    #[props(default)]
+    /// Whether the tabs are horizontal (the default). `false` is the vertical orientation: the
+    /// list's [`TabTrigger`]s move focus with `ArrowUp`/`ArrowDown` instead of
+    /// `ArrowLeft`/`ArrowRight`, and [`TabList`] reports `aria-orientation="vertical"`.
+    #[props(default = ReadSignal::new(Signal::new(true)))]
     pub horizontal: ReadSignal<bool>,
 
     /// Keep every inactive [`TabContent`] mounted and mark it `hidden="until-found"`, so the
@@ -200,7 +202,8 @@ pub struct TabListProps {
 ///
 /// The `TabList` component contains a list of [`TabTrigger`] components that allow users to switch between different tabs.
 ///
-/// This must be used inside a [`Tabs`] component.
+/// This must be used inside a [`Tabs`] component. It carries `role="tablist"` and
+/// `aria-orientation` (`horizontal` or `vertical`, following [`TabsProps::horizontal`]).
 ///
 /// ## Example
 ///
@@ -241,7 +244,15 @@ pub struct TabListProps {
 /// ```
 #[component]
 pub fn TabList(props: TabListProps) -> Element {
-    let owned = attributes!(div { role: "tablist" });
+    let ctx: TabsContext = use_context();
+    let owned = attributes!(div {
+        role: "tablist",
+        aria_orientation: if (ctx.horizontal)() {
+            "horizontal"
+        } else {
+            "vertical"
+        },
+    });
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);
 
     rsx! {
@@ -574,6 +585,49 @@ mod tests {
                 TabContent { index: 1usize, value: "b".to_string(), "beta text" }
             }
         }
+    }
+
+    #[component]
+    fn Oriented(horizontal: Option<bool>) -> Element {
+        match horizontal {
+            Some(h) => rsx! {
+                Tabs { default_value: "a".to_string(), horizontal: h,
+                    TabList {
+                        TabTrigger { value: "a".to_string(), index: 0usize, "A" }
+                    }
+                }
+            },
+            None => rsx! {
+                Tabs { default_value: "a".to_string(),
+                    TabList {
+                        TabTrigger { value: "a".to_string(), index: 0usize, "A" }
+                    }
+                }
+            },
+        }
+    }
+
+    /// `(root data-orientation, tablist aria-orientation)`.
+    fn orientation(horizontal: Option<bool>) -> (String, String) {
+        let mut dom = VirtualDom::new_with_props(Oriented, OrientedProps { horizontal });
+        dom.rebuild_in_place();
+        let html = dioxus_ssr::render(&dom);
+        let list = find_elements(&html, |a| {
+            a.get("role").map(String::as_str) == Some("tablist")
+        });
+        let root = find_elements(&html, |a| a.contains_key("data-orientation"));
+        (
+            root[0].attrs["data-orientation"].clone(),
+            list[0].attrs["aria-orientation"].clone(),
+        )
+    }
+
+    #[test]
+    fn tablist_reports_the_orientation_and_defaults_to_horizontal() {
+        let want = |o: &str| (o.to_string(), o.to_string());
+        assert_eq!(orientation(None), want("horizontal"));
+        assert_eq!(orientation(Some(true)), want("horizontal"));
+        assert_eq!(orientation(Some(false)), want("vertical"));
     }
 
     #[test]

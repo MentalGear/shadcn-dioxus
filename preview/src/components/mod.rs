@@ -504,7 +504,7 @@ examples!(
     spinner[button, badge, in_input, rtl],
     switch[description, choice_card, disabled, invalid, rtl],
     table[rich],
-    tabs[rtl, until_found, line, disabled, icons, sizes],
+    tabs[rtl, until_found, line, vertical, vertical_line, disabled, icons, sizes],
     tag_group[multi, states],
     textarea[outline, fade, ghost, field, button],
     toast[types],

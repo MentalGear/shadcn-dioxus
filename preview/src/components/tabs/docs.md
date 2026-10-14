@@ -29,13 +29,27 @@ Tabs {
 }
 ```
 
-## Default and Ghost styles
+## Variants
 
-`Tabs` takes `variant: TabsVariant`. `Default` is the muted pill with a raised active tab inside a bordered card. `Ghost` is shadcn's `line` variant: a transparent list, no card around the panel, and the active tab carries a 2px underline that fades in (the docs site's DEMO/CODE tabs use it).
+`Tabs` takes `variant: TabsVariant`. `Default` is the muted pill with a raised active tab inside a bordered card. `Line` is shadcn's `line` variant: a transparent list with a 4px gap, no card around the panel, and the active tab carries a 2px bar that fades in (an underline when horizontal, a bar on the panel side when vertical; the docs site's DEMO/CODE tabs use it). `Ghost` is the former name of `Line` and renders identically (`data-variant="line"`). See the `line` variant.
+
+(shadcn puts `variant` on `TabsList`; here it is on `Tabs`, because the panel's frame follows it too.)
+
+## Orientation
+
+`Tabs` takes `horizontal: bool`, `true` by default (shadcn's `orientation="horizontal"`). `horizontal: false` is shadcn's `orientation="vertical"`: the list becomes a column beside the panels (`flex-col`, as tall as its triggers, triggers full width and start-aligned), and the root reports `data-orientation="vertical"`. The list always carries `aria-orientation` (`horizontal` or `vertical`).
+
+Keyboard follows WAI-ARIA: in a horizontal list `ArrowLeft`/`ArrowRight` move focus (swapped under RTL) and `ArrowUp`/`ArrowDown` do nothing; in a vertical list `ArrowUp`/`ArrowDown` move focus (never affected by direction) and `ArrowLeft`/`ArrowRight` do nothing. `Home`/`End` work in both, and focus wraps unless `roving_loop` is false. Focus only moves; `Enter` or `Space` activates the focused tab, as in the rest of this library. The vertical `line` bar sits on the end edge, the side that faces the panel, in RTL too. See the `vertical` and `vertical_line` variants.
+
+```rust
+Tabs { horizontal: false, variant: TabsVariant::Line, default_value: "a".to_string(), /* ... */ }
+```
+
+**Behaviour change:** `horizontal` used to default to `false` (vertical) in the primitive, although the styled component always rendered a row; it now defaults to `true`, so a `Tabs` that omitted it is a horizontal tab list with `ArrowLeft`/`ArrowRight`. Pass `horizontal: false` for the old keyboard.
 
 ## Sizes
 
-`Tabs` takes `size: TabsSize` (`Sm`, `Default`, `Lg`), emitted as `data-size` on the root. The list height follows the theme's shared control-height scale (`--dx-control-height-sm` / `-default` / `-lg` = 28 / 32 / 36px, the same ladder as `Button`, `Input` and `Select`), so a `Sm` tab list lines up with a `Sm` button. `Default` is shadcn's 32px list and is unchanged. `Sm` sets the triggers in `text-xs` with a 14px icon; `Lg` keeps `text-sm` and widens the trigger padding. Both variants (`Default` and `Ghost`) take every size, and a Tabs nested in another Tabs' panel keeps its own size. See the `sizes` variant.
+`Tabs` takes `size: TabsSize` (`Sm`, `Default`, `Lg`), emitted as `data-size` on the root. The list height follows the theme's shared control-height scale (`--dx-control-height-sm` / `-default` / `-lg` = 28 / 32 / 36px, the same ladder as `Button`, `Input` and `Select`), so a `Sm` tab list lines up with a `Sm` button. `Default` is shadcn's 32px list and is unchanged. `Sm` sets the triggers in `text-xs` with a 14px icon; `Lg` keeps `text-sm` and widens the trigger padding. Both variants (`Default` and `Line`) take every size, and a Tabs nested in another Tabs' panel keeps its own size. See the `sizes` variant.
 
 ```rust
 Tabs { size: TabsSize::Sm, default_value: "a".to_string(), /* ... */ }
@@ -43,7 +57,7 @@ Tabs { size: TabsSize::Sm, default_value: "a".to_string(), /* ... */ }
 
 ## Panel padding
 
-`TabContent` has no padding of its own (shadcn's Nova `TabsContent` is `text-sm` and nothing else; the padding that used to be 2rem was this library's). Put padding on the content, or on the panel with `padding`, or let a `Card` inside it bring its own. The default (bordered) variant still draws a 1px card-coloured frame around the panel, so text placed straight in it wants about `var(--dx-space-4)` of padding; the `ghost` variant has no frame.
+`TabContent` has no padding of its own (shadcn's Nova `TabsContent` is `text-sm` and nothing else; the padding that used to be 2rem was this library's). Put padding on the content, or on the panel with `padding`, or let a `Card` inside it bring its own. The default (bordered) variant still draws a 1px card-coloured frame around the panel, so text placed straight in it wants about `var(--dx-space-4)` of padding; the `line` variant has no frame.
 
 **Breaking change:** a `TabContent` that relied on the 2rem padding now sits flush against its frame. Add `padding: "var(--dx-space-8)"` to restore the old look.
 
@@ -87,4 +101,4 @@ Inactive `until-found` panels are hidden from the accessibility tree exactly lik
 
 ## Motion
 
-Trigger colours and the `ghost` variant's underline change over `--dx-motion-duration-base` with `--dx-motion-ease-standard`; the panels switch instantly. Retune with those tokens. Reduced motion swaps in `--dx-motion-duration-reduced`. Nothing loops. See [Motion](/docs#motion) for the tokens, reduced motion and the per-component table.
+Trigger colours and the `line` variant's bar change over `--dx-motion-duration-base` with `--dx-motion-ease-standard`; the panels switch instantly. Retune with those tokens. Reduced motion swaps in `--dx-motion-duration-reduced`. Nothing loops. See [Motion](/docs#motion) for the tokens, reduced motion and the per-component table.
