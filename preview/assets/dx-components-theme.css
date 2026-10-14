@@ -434,6 +434,12 @@ html[data-theme="light"] [class~="dxc-system"] {
   --dx-motion-duration-slow: 200ms;
   --dx-motion-duration-slower: 300ms;
   --dx-motion-duration-reduced: 0.01ms;
+
+  /* Press feedback (see "Press feedback" below): the scale a pressed control
+   * takes, how long it takes to get there, and the wash laid over it. */
+  --dx-press-scale: 0.98;
+  --dx-press-duration: var(--dx-motion-duration-fast);
+  --dx-press-fill: color-mix(in oklab, var(--dx-foreground) 8%, transparent);
   --dx-motion-ease: ease;
   --dx-motion-ease-in: ease-in;
   --dx-motion-ease-out: ease-out;
@@ -843,6 +849,89 @@ html[data-theme="light"] [class~="dxc-system"] {
 :where([role="spinbutton"][class^="dx-"]),
 :where([role="spinbutton"][class*=" dx-"]) {
   touch-action: manipulation;
+}
+
+/* ============================================================================
+ * Press feedback: a pressed control answers the finger (docs/backlog.md row 205).
+ *
+ * Touch has no hover, so the only acknowledgement a tap gets is the press itself. One
+ * zero-specificity rule gives every `dx-` control a small `scale` and a wash while it is
+ * `:active`, tuned by `--dx-press-scale` / `--dx-press-fill` / `--dx-press-duration` and
+ * switchable by `<html data-dx-press-feedback="off">` (the docs site's theme picker sets it and
+ * persists it like its other preferences). `scale`, not `transform`: it composes with the
+ * `transform` a component already uses (Button's `translateY(1px)`, the tag and list remove
+ * buttons' `scale(0.92)` stack with it instead of being replaced).
+ *
+ * The list is the touch-action list above, minus what must NOT shrink under the finger: text
+ * fields (`input`, `textarea`, `select`: pressing into one is the start of editing it), drag
+ * surfaces (`slider`, `spinbutton`) and bare `tabindex` containers (`:active` also matches
+ * every ANCESTOR of the pressed element, so a focusable card or scroller would shrink with a
+ * button inside it). A disabled control does not respond. Every `:where()` holds one compound
+ * selector, so the rule has ZERO specificity: a component that styles its own `:active`
+ * (`scale`, `background-image`, a `background` shorthand) wins, and so does an app. The wash is a
+ * `background-image` layer so it sits over whatever `background-color` the control has, and is
+ * lost wherever a component writes the `background` shorthand (it resets the image).
+ *
+ * The transition belongs to the resting state (so the release animates too) and exists only under
+ * `prefers-reduced-motion: no-preference`: with reduced motion the press is instant. A component
+ * with its own `transition` list wins over it and snaps. Flat lists, for the asset-pipeline
+ * reason given above.
+ * ========================================================================== */
+:where(html:not([data-dx-press-feedback="off"]) button[class^="dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) button[class*=" dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) [role="button"][class^="dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) [role="button"][class*=" dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) a[href][class^="dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) a[href][class*=" dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) summary[class^="dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) summary[class*=" dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) [role="menuitem"][class^="dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) [role="menuitem"][class*=" dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) [role="menuitemcheckbox"][class^="dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) [role="menuitemcheckbox"][class*=" dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) [role="menuitemradio"][class^="dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) [role="menuitemradio"][class*=" dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) [role="option"][class^="dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) [role="option"][class*=" dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) [role="tab"][class^="dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) [role="tab"][class*=" dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) [role="switch"][class^="dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) [role="switch"][class*=" dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) [role="checkbox"][class^="dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) [role="checkbox"][class*=" dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) [role="radio"][class^="dx-"]:not([disabled], [aria-disabled="true"]):active),
+:where(html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disabled], [aria-disabled="true"]):active) {
+  background-image: linear-gradient(var(--dx-press-fill), var(--dx-press-fill));
+  scale: var(--dx-press-scale);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :where(html:not([data-dx-press-feedback="off"]) button[class^="dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) button[class*=" dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) [role="button"][class^="dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) [role="button"][class*=" dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) a[href][class^="dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) a[href][class*=" dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) summary[class^="dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) summary[class*=" dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) [role="menuitem"][class^="dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) [role="menuitem"][class*=" dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) [role="menuitemcheckbox"][class^="dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) [role="menuitemcheckbox"][class*=" dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) [role="menuitemradio"][class^="dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) [role="menuitemradio"][class*=" dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) [role="option"][class^="dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) [role="option"][class*=" dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) [role="tab"][class^="dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) [role="tab"][class*=" dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) [role="switch"][class^="dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) [role="switch"][class*=" dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) [role="checkbox"][class^="dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) [role="checkbox"][class*=" dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) [role="radio"][class^="dx-"]:not([disabled], [aria-disabled="true"])),
+  :where(html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disabled], [aria-disabled="true"])) {
+    transition: scale var(--dx-press-duration) var(--dx-motion-ease-out);
+  }
 }
 
 /* ============================================================================

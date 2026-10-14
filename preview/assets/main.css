@@ -678,6 +678,19 @@ button.dx-theme-phone-trigger {
   font-weight: 400;
 }
 
+/* A switch row: the label and its hint on the left, the switch on the right. */
+.dx-theme-picker-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--dx-space-3);
+}
+
+.dx-theme-picker-toggle .dx-theme-picker-label {
+  flex-direction: column;
+  gap: var(--dx-space-0-5);
+}
+
 .dx-theme-swatches,
 .dx-theme-chips {
   display: flex;
