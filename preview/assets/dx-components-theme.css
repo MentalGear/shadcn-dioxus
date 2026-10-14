@@ -249,9 +249,15 @@ html[data-theme="light"] [class~="dxc-system"] {
     var(--dark, oklch(from var(--dx-primary) max(l, 0.75) c h));
 
   /* Lines and focus. shadcn's `--ring` is a colour, so it is `--dx-ring-color`
-   * here: `--dx-ring` (below) already means the focus-ring box-shadow. */
-  --dx-border: var(--border, var(--primary-color-6));
-  --dx-input: var(--input, var(--light, var(--primary-color-6)) var(--dark, var(--primary-color-7)));
+   * here: `--dx-ring` (below) already means the focus-ring box-shadow.
+   *
+   * Dark lines follow shadcn (owner decision D1, backlog row 203): a translucent
+   * white, `oklch(1 0 0 / 10%)` for `--dx-border` and `/ 15%` for `--dx-input`
+   * (written `100%` / `0deg` for the linter), so a line takes its tint from the
+   * surface it sits on instead of being one opaque ramp step. The light arm is
+   * unchanged (the ramp step). */
+  --dx-border: var(--border, var(--light, var(--primary-color-6)) var(--dark, oklch(100% 0 0deg / 10%)));
+  --dx-input: var(--input, var(--light, var(--primary-color-6)) var(--dark, oklch(100% 0 0deg / 15%)));
   --dx-ring-color: var(--ring, var(--focused-border-color));
 
   /* Non-shadcn role: a stronger line than `--dx-border` (hover borders,
