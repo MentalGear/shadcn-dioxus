@@ -191,7 +191,7 @@
  * `inset`, mirroring shadcn Nova's `.cn-dropdown-menu-separator` (`bg-border -mx-1 my-1 h-px`), `.cn-dropdown-menu-shortcut`
  * (`text-muted-foreground ml-auto text-xs tracking-widest`, `group-focus/...:text-accent-foreground`),
  * `.cn-dropdown-menu-item[data-variant=destructive]` (`text-destructive`, `focus:bg-destructive/10`,
- * `dark:focus:bg-destructive/20`, `*:[svg]:text-destructive!`) and `data-[inset]:pl-8`. The primitive
+ * `dark:focus:bg-destructive/20`, `*:[svg]:text-destructive!`, here inherited) and `data-[inset]:pl-8`. The primitive
  * (`primitives/src/menu_item.rs`, `item_style_attributes`) is the one place `data-variant` and
  * `data-inset` are written; this sheet only paints them. */
 .dx-dropdown-menu-separator {
@@ -224,8 +224,9 @@
 
 /* Destructive text is the theme's clamped `--dx-destructive-text` (>= 4.5:1 on every surface,
  * scripts/check-destructive-text.sh); the highlight is a tint of the fill-grade `--dx-destructive`. */
-.dx-dropdown-menu-item[data-variant="destructive"],
-.dx-dropdown-menu-item[data-variant="destructive"] > svg {
+
+/* The icon inherits it (currentColor): no separate svg rule, which would also have to end at the popup boundary. */
+.dx-dropdown-menu-item[data-variant="destructive"] {
   color: var(--dx-destructive-text);
 }
 
