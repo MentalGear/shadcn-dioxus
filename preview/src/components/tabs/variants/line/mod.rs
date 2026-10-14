@@ -2,7 +2,7 @@ use super::super::component::*;
 use dioxus::prelude::*;
 
 /// shadcn's `line` tabs: a transparent list with a 2px underline under the active trigger
-/// (`TabsVariant::Ghost`). Labels avoid the `main` ("Tab N") and `until_found` ("Overview",
+/// (`TabsVariant::Line`). Labels avoid the `main` ("Tab N") and `until_found` ("Overview",
 /// "Specs", "Reviews") variants' so tab locators by name stay unambiguous on the shared page.
 #[component]
 pub fn Demo() -> Element {
@@ -10,7 +10,7 @@ pub fn Demo() -> Element {
         Tabs {
             default_value: "summary".to_string(),
             horizontal: true,
-            variant: TabsVariant::Ghost,
+            variant: TabsVariant::Line,
             max_width: "24rem",
             TabList {
                 TabTrigger { value: "summary".to_string(), index: 0usize, "Summary" }
