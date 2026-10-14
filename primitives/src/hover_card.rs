@@ -415,6 +415,14 @@ fn HoverCardContentRendered(
     // `anchor-name` is keyed off `ctx.content_id`, which this component
     // (below) keeps synced to this same id.
     crate::top_layer::use_anchor_position_fallback(id.clone(), id.clone(), open, side, align, 10);
+    // Any scroll closes a hover card (`top_layer::use_close_on_scroll`'s doc).
+    crate::top_layer::use_close_on_scroll(
+        id.clone(),
+        id.clone(),
+        open,
+        crate::top_layer::ScrollClose::AnyScroll,
+        set_open,
+    );
 
     let handle_mouse_enter = move |_: Event<MouseData>| {
         if !disabled() {

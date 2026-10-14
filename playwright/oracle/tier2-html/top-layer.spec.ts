@@ -1089,28 +1089,18 @@ test.describe("Rule 9 — point-positioned vs. anchored scroll behavior", () => 
     expect(after.left, debug).toBeCloseTo(before.left, 0);
   });
 
-  test("Menubar content tracks its trigger through a scroll", async ({ page }) => {
+  // Row 193: a menubar never locks the page, so an open menu no longer follows its trigger through a
+  // scroll -- any scroll (past the helper's 300 ms quiet window after the open) closes it
+  // (`top_layer::use_close_on_scroll`, `playwright/close-on-scroll.spec.ts` for the full policy).
+  test("Menubar content closes on a scroll instead of following its trigger", async ({ page }) => {
     await gotoFixture(page);
     await page.locator("#scroll-menubar-trigger").scrollIntoViewIfNeeded();
     await page.locator("#scroll-menubar-trigger").click();
     await expect(page.locator("#scroll-menubar-content")).toBeVisible();
+    await page.waitForTimeout(450); // past the quiet window that follows an open
 
-    const offsetOf = async () =>
-      page.evaluate(() => {
-        const c = document.getElementById("scroll-menubar-content")!.getBoundingClientRect();
-        const t = document.getElementById("scroll-menubar-trigger")!.getBoundingClientRect();
-        return { top: c.top - t.bottom, left: c.left - t.left };
-      });
-
-    const before = await offsetOf();
     await page.evaluate(() => window.scrollBy(0, 120));
-    // rAF-throttled, same as Rule 8's identical wait.
-    await page.waitForTimeout(150);
-    const after = await offsetOf();
-
-    const debug = JSON.stringify({ before, after });
-    expect(after.top, debug).toBeCloseTo(before.top, 0);
-    expect(after.left, debug).toBeCloseTo(before.left, 0);
+    await expect(page.locator("#scroll-menubar-content")).toHaveCount(0);
   });
 });
 

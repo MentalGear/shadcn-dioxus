@@ -2070,6 +2070,151 @@ pub(crate) const VIEWPORT_METRICS_JS: &str = r#"
             }
 "#;
 
+// ---------------------------------------------------------------------------
+// Close a non-modal anchored panel when the page scrolls away from it
+// (backlog row 193, item 7 of `dev-docs/research/next-round-plan-2026-10-14.md`).
+// ---------------------------------------------------------------------------
+
+/// What makes [`use_close_on_scroll`] close a panel.
+#[cfg(feature = "web")]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum ScrollClose {
+    /// Any document / scroll-container scroll closes it (Tooltip, HoverCard, menus and Select
+    /// when they do not lock the page). These hold nothing a user would mind losing.
+    AnyScroll,
+    /// Only the ANCHOR leaving the viewport closes it (Popover and the DatePicker / ColorPicker
+    /// popovers built on it, Combobox): they can hold half-entered input, and a small scroll that
+    /// keeps the anchor in view must not throw it away.
+    AnchorLeavesViewport,
+}
+
+#[cfg(feature = "web")]
+impl ScrollClose {
+    const fn as_str(self) -> &'static str {
+        match self {
+            Self::AnyScroll => "any",
+            Self::AnchorLeavesViewport => "anchor",
+        }
+    }
+}
+
+/// The script behind [`use_close_on_scroll`]. Parameters, in order: the panel's id, the anchor's
+/// id (`""` for a point-anchored panel such as a context menu), the policy string.
+///
+/// Every listener goes through `listen` (`js_listener.rs`), so it is removed when the hook's
+/// scope ends or `active` goes false, and the scroll listener is `passive`
+/// (`scripts/check-blocking-scroll-listeners.sh`). The observer is released through `cleanup`.
+///
+/// **The mobile keyboard caveat.** Opening the virtual keyboard resizes and pans the VISUAL
+/// viewport and makes the browser scroll the focused field into view; if that counted as "the
+/// page scrolled", a Combobox would close the moment it is tapped. By construction it cannot:
+///  * nothing listens to `visualViewport` scroll/resize as a close signal -- they only extend a
+///    quiet window;
+///  * a scroll within `QUIET_MS` of a focus change into the panel or the anchor, a key press in
+///    them, or a visual-viewport resize/pan is ignored (the browser's focus-driven
+///    scroll-into-view lands in that window);
+///  * the `AnchorLeavesViewport` policy ignores scrolling altogether and watches the anchor with
+///    an `IntersectionObserver`: a focus-driven scroll reveals the field, it never hides it. If the
+///    anchor goes out of view inside a quiet window (a keyboard that resized the viewport before
+///    the browser scrolled the field back), the decision waits for the window to end.
+///
+/// A scroll INSIDE the panel (the user scrolling a long list) or inside the anchor (an `<input>`
+/// scrolling its own text) is never a reason to close.
+#[cfg(feature = "web")]
+const CLOSE_ON_SCROLL_JS: &str = r#"
+    const id = await dioxus.recv();
+    const anchorId = await dioxus.recv();
+    const policy = await dioxus.recv();
+    const QUIET_MS = 300;
+    const content = document.getElementById(id);
+    const trigger = anchorId
+        ? document.querySelector('[style*="anchor-name: --dxa-' + anchorId + ';"]')
+        : null;
+    let sent = false;
+    const close = () => {
+        if (sent) return;
+        sent = true;
+        dioxus.send(true);
+    };
+    // Opening a panel focuses things and may scroll them into view.
+    let quietUntil = performance.now() + QUIET_MS;
+    const quiet = () => { quietUntil = performance.now() + QUIET_MS; };
+    const mine = (node) =>
+        node instanceof Node &&
+        ((content && content.contains(node)) || (trigger && trigger.contains(node)));
+    listen(document, 'focusin', (e) => { if (mine(e.target)) quiet(); }, true);
+    listen(document, 'keydown', (e) => { if (mine(e.target)) quiet(); }, true);
+    const vv = window.visualViewport;
+    if (vv) {
+        listen(vv, 'resize', quiet, { passive: true });
+        listen(vv, 'scroll', quiet, { passive: true });
+    }
+    if (policy === 'any') {
+        // `window` + capture: `scroll` does not bubble, so this is the only way to see a nested
+        // scroll container. Document and scroll-container scrolls only -- never the visual viewport.
+        listen(window, 'scroll', (e) => {
+            if (mine(e.target)) return;
+            if (performance.now() < quietUntil) return;
+            close();
+        }, { capture: true, passive: true });
+    } else if (trigger && typeof IntersectionObserver === 'function') {
+        // Closes on the in-view -> out-of-view transition only: an anchor that is already out of
+        // view when the panel opens is not "leaving". An anchor that goes out of view inside a
+        // quiet window (a keyboard resizing the viewport before the browser has scrolled the
+        // focused field back into it) is looked at again once the window is over; re-observing
+        // delivers a fresh notification with the then-current state.
+        let seen = false;
+        let timer = 0;
+        const observer = new IntersectionObserver((entries) => {
+            for (const entry of entries) {
+                if (entry.isIntersecting) {
+                    seen = true;
+                } else if (seen) {
+                    const wait = quietUntil - performance.now();
+                    if (wait <= 0) {
+                        close();
+                    } else if (!timer) {
+                        timer = setTimeout(() => {
+                            timer = 0;
+                            observer.unobserve(trigger);
+                            observer.observe(trigger);
+                        }, wait + 50);
+                    }
+                }
+            }
+        });
+        observer.observe(trigger);
+        cleanup(() => { clearTimeout(timer); observer.disconnect(); });
+    }
+"#;
+
+/// Closes the panel `content_id` (anchored to `anchor_id`; `""` for a point-anchored one) by
+/// calling `set_open(false)` according to `policy`, for as long as `active` is true. The one
+/// helper every non-modal anchored primitive calls, so the policy cannot drift per component;
+/// modal / scroll-locking surfaces do not call it (they keep their `ScrollLockGuard`).
+/// See [`CLOSE_ON_SCROLL_JS`] for the mobile-keyboard caveat.
+#[cfg(feature = "web")]
+pub(crate) fn use_close_on_scroll(
+    content_id: String,
+    anchor_id: String,
+    active: impl Readable<Target = bool> + Copy + 'static,
+    policy: ScrollClose,
+    set_open: Callback<bool>,
+) {
+    crate::js_listener::use_js_listeners(move || {
+        if !active.cloned() {
+            return None;
+        }
+        Some(
+            crate::js_listener::JsListeners::install(CLOSE_ON_SCROLL_JS)
+                .arg(content_id.clone())
+                .arg(anchor_id.clone())
+                .arg(policy.as_str())
+                .on_message(move |_: bool| set_open.call(false)),
+        )
+    });
+}
+
 /// The ONE way a clamp script measures a panel it is about to move:
 /// defines `measureAtFullWidth(content, vp)` (returns `{ width, height }`,
 /// the border-box `offsetWidth`/`offsetHeight`), spliced in next to
