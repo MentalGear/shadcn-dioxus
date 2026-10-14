@@ -18,7 +18,7 @@
     gap: var(--dx-space-10);
 }
 
-.dx-form-section h2 {
+.dx-form-section h2:not(:where([popover], dialog) *) {
     margin: 0 0 var(--dx-space-1);
 }
 

@@ -7,16 +7,32 @@ The dialog component can be used to display additional information or actions re
 Dialog {
     // The open prop determines if the dialog is currently open or closed.
     open: open(),
-    // The dialog title defines the heading of the dialog.
-    DialogTitle {
-        "Item information"
+    // Header: the title and description in a column (shadcn's DialogHeader).
+    DialogHeader {
+        DialogTitle { "Item information" }
+        DialogDescription { "Here is some additional information about the item." }
     }
-    // The dialog description provides additional information about the dialog.
-    DialogDescription {
-        "Here is some additional information about the item."
+    // Footer: the action row, a muted band across the foot of the panel.
+    DialogFooter {
+        DialogClose {
+            r#as: |attributes| rsx! { Button { variant: ButtonVariant::Outline, attributes, "Cancel" } },
+        }
+        Button { r#type: "submit", "Save changes" }
     }
 }
 ```
+
+## Close button
+
+`Dialog` renders its own close button, an `X` at the top end of the panel, as shadcn's `DialogContent` does (`showCloseButton`, default on). It is the real `Button` (`ghost`, `icon-sm`) named "Close", inside a wrapper that only places it. Pass `show_close_button: false` to leave it out (Escape and a click on the scrim still dismiss the dialog), as in the "No close button" example.
+
+The button is the **last** child of the panel, in shadcn's DOM order. A dialog opened from the keyboard focuses its first control (see `use_dialog_open_driver`), so a dialog with a form lands on the first field and never on the X; a dialog with no other control lands on the X. A pointer or touch open focuses the panel itself.
+
+`DialogFooter { show_close_button: true }` appends an outline "Close" button to the footer, as shadcn's. `DialogClose` is the close behaviour on its own, shadcn's `DialogClose`: a `<button type="button">` that closes the enclosing dialog, or any element through `r#as` (the attributes carry the click handler), the way `SheetClose` takes `as`.
+
+## Header and footer
+
+`DialogHeader` is a column with a `0.5rem` gap. `DialogFooter` cancels the panel's padding (`-mx-4 -mb-4`) to draw a `muted/50` band with a top border and the panel's bottom corners; it is a reversed column below `sm` (the primary action on top) and a row aligned to the end from `sm` up. A title and description placed directly in the panel (no header) keep the tighter pull-back of the previous release.
 
 ## Overlay
 

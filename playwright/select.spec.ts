@@ -473,3 +473,41 @@ test.describe("Axe automated scan", () => {
         await expectNoAxeViolations(page, "select: listbox open", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
     });
 });
+
+// Backlog row 155 group 7: the trigger `size` (sm, default) reads the theme's control-height ladder.
+test.describe("trigger size (row 155 group 7)", () => {
+    test("sm is the ladder's 28px, default its 32px", async ({ page }) => {
+        await gotoHydrated(page, `${BASE_URL}/component/?name=select&`, {
+            timeout: 20 * 60 * 1000,
+        });
+        const frame = page.locator("#component-preview-frame-sizes");
+        const sm = frame.getByRole("combobox", { name: "Small size select" });
+        const def = frame.getByRole("combobox", { name: "Default size select" });
+        await expect(sm).toHaveAttribute("data-size", "sm");
+        await expect(def).toHaveAttribute("data-size", "default");
+        const tokens = await page.evaluate(() => {
+            const probe = document.createElement("div");
+            document.body.appendChild(probe);
+            const read = (name: string) => {
+                probe.style.height = `var(${name})`;
+                return parseFloat(getComputedStyle(probe).height);
+            };
+            const out = { sm: read("--dx-control-height-sm"), def: read("--dx-control-height-default") };
+            probe.remove();
+            return out;
+        });
+        expect(tokens).toEqual({ sm: 28, def: 32 });
+        expect((await sm.boundingBox())!.height).toBe(tokens.sm);
+        expect((await def.boundingBox())!.height).toBe(tokens.def);
+    });
+
+    test("the sm trigger still opens and selects", async ({ page }) => {
+        await gotoHydrated(page, `${BASE_URL}/component/?name=select&`, {
+            timeout: 20 * 60 * 1000,
+        });
+        const sm = page.locator("#component-preview-frame-sizes").getByRole("combobox", { name: "Small size select" });
+        await sm.click();
+        await page.getByRole("option", { name: "Grapes" }).first().click();
+        await expect(sm).toContainText("Grapes");
+    });
+});

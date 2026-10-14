@@ -19,6 +19,10 @@
   font-size: var(--dx-text-xs);
   font-weight: 500;
   gap: var(--dx-space-1);
+
+  /* A badge rendered with `as` is a link: its focus is the theme's ring below, not the UA outline. */
+  outline: none;
+  text-decoration: none;
   white-space: nowrap;
 }
 
@@ -64,4 +68,47 @@
 .dx-badge[data-style="destructive"] {
   background-color: var(--dx-destructive-fill);
   color: var(--dx-destructive-foreground);
+}
+
+/* Nova's ghost is `hover:bg-muted hover:text-muted-foreground` (style-nova.css
+ * `.cn-badge-variant-ghost`). The hover text is `--dx-foreground`, not the
+ * muted foreground: `--dx-muted-foreground` on `--dx-muted` is 4.4:1 under
+ * shadcn's default light palette, under the 4.5:1 that 12px text needs. The
+ * Button's ghost hover already reads foreground for the same reason. The
+ * dark fill is `muted / 50%`, as in `dark:hover:bg-muted/50`. */
+.dx-badge[data-style="ghost"] {
+  background-color: transparent;
+  color: var(--dx-foreground);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-badge[data-style="ghost"]:hover {
+    background-color: var(--light, var(--dx-muted))
+      var(--dark, color-mix(in oklab, var(--dx-muted) 50%, transparent));
+    color: var(--dx-foreground);
+  }
+}
+
+/* Nova's link is `text-primary underline-offset-4 hover:underline`, read as
+ * text, so the ink is the clamped `--dx-primary-ink` (the same token as the
+ * Button's link). */
+.dx-badge[data-style="link"] {
+  background-color: transparent;
+  color: var(--dx-primary-ink);
+  text-decoration: none;
+  text-underline-offset: 0.25rem;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-badge[data-style="link"]:hover {
+    text-decoration: underline;
+  }
+}
+
+/* Nova's `focus-visible:border-ring focus-visible:ring-[3px]`, as the
+ * theme's focus-ring tokens (the Button's ring). Only an `as` link can take
+ * focus, but the rule is the badge's, not the link's. */
+.dx-badge:focus-visible {
+  border-color: var(--dx-ring-color);
+  box-shadow: var(--dx-ring-focus);
 }

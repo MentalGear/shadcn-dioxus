@@ -66,14 +66,14 @@
   line-height: 1.625;
 }
 
-.dx-empty-description a {
+.dx-empty-description a:not(:where([popover], dialog) *) {
   color: inherit;
   text-decoration-line: underline;
   text-underline-offset: 4px;
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .dx-empty-description a:hover {
+  .dx-empty-description a:not(:where([popover], dialog) *):hover {
     color: var(--dx-primary-ink);
   }
 }

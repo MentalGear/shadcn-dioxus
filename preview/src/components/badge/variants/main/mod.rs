@@ -16,6 +16,8 @@ pub fn Demo() -> Element {
             Badge { variant: BadgeVariant::Secondary, "Secondary" }
             Badge { variant: BadgeVariant::Destructive, "Destructive" }
             Badge { variant: BadgeVariant::Outline, "Outline" }
+            Badge { variant: BadgeVariant::Ghost, "Ghost" }
+            Badge { variant: BadgeVariant::Link, "Link" }
             // The "Verified" badge: a brand-blue fill (`--dx-ring-color`) with a
             // pinned white ink. The fill's OKLCH lightness is clamped to at most 0.5,
             // which is a no-op for a ring colour that is already deep and pulls a

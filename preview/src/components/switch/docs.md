@@ -13,3 +13,7 @@ Switch {
     }
 }
 ```
+
+## Size
+
+`size: SwitchSize::Sm` shrinks the track to 24 x 14px with a 12px thumb (`SwitchSize::Default` is 32 x 18.4px, 16px thumb), shadcn's `size="sm" | "default"`. It sets `data-size` on the switch; the style sheet changes three slot variables (`--dx-switch-width`, `--dx-switch-height`, `--dx-switch-thumb-size`), so the thumb travel follows. See the `sizes` variant.

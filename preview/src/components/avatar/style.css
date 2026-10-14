@@ -23,7 +23,6 @@
 .dx-avatar {
     position: relative;
     display: inline-grid;
-    overflow: hidden;
     width: var(--dx-avatar-size);
     height: var(--dx-avatar-size);
     flex-shrink: 0;
@@ -33,6 +32,14 @@
     user-select: none;
 
     --dx-avatar-size: var(--dx-space-8);
+}
+
+/* The root does not clip (`overflow: hidden` would cut the badge, which sits on the corner of the square, outside
+ * the circle). The picture and the fallback round themselves to the root's shape instead (`.cn-avatar-image`
+ * and `.cn-avatar-fallback` are both `rounded-full`, `inherit` here so `dx-avatar-rounded` carries over). */
+.dx-avatar > .dx-avatar-image,
+.dx-avatar > .dx-avatar-fallback {
+    border-radius: inherit;
 }
 
 /* The picture and the fallback share ONE grid cell, the picture on top, so neither one's box depends on whether
@@ -61,11 +68,13 @@
 
 .dx-avatar::after {
     position: absolute;
+    z-index: var(--dx-z-local-sm); /* above the picture (--dx-z-raise), below the badge */
     border: 1px solid var(--dx-border);
     border-radius: inherit;
     content: "";
     inset: 0;
     mix-blend-mode: var(--light, darken) var(--dark, lighten);
+    pointer-events: none;
 }
 
 .dx-avatar-image {
@@ -121,4 +130,101 @@
     background: var(--dx-muted);
     color: var(--dx-muted-foreground);
     font-size: inherit;
+}
+
+/* Nova avatar badge (registry/bases/base/ui/avatar.tsx `AvatarBadge`, style-nova.css `.cn-avatar-badge`):
+ * `absolute right-0 bottom-0 z-10 inline-flex items-center justify-center rounded-full ring-2 select-none`,
+ * `bg-primary text-primary-foreground ring-background`; `size-2` in the small avatar (an icon hidden),
+ * `size-2.5` by default and `size-3` in the large one, the icon `size-2`. Pinned with logical offsets so it
+ * moves to the left corner in RTL. */
+.dx-avatar-badge {
+    position: absolute;
+    z-index: var(--dx-z-local-md);
+    display: inline-flex;
+    width: var(--dx-space-2-5);
+    height: var(--dx-space-2-5);
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--dx-radius-full);
+    background-color: var(--dx-primary);
+    box-shadow: 0 0 0 2px var(--dx-background);
+    color: var(--dx-primary-foreground);
+    inset-block-end: 0;
+    inset-inline-end: 0;
+    user-select: none;
+}
+
+.dx-avatar-badge > svg {
+    width: var(--dx-space-2);
+    height: var(--dx-space-2);
+}
+
+.dx-avatar[data-size="sm"] > .dx-avatar-badge {
+    width: var(--dx-space-2);
+    height: var(--dx-space-2);
+}
+
+.dx-avatar[data-size="sm"] > .dx-avatar-badge > svg {
+    display: none;
+}
+
+.dx-avatar[data-size="lg"] > .dx-avatar-badge {
+    width: var(--dx-space-3);
+    height: var(--dx-space-3);
+}
+
+/* Nova avatar group (`AvatarGroup`, `AvatarGroupCount`): `flex -space-x-2`, every avatar
+ * `ring-2 ring-background`, and the count tile `bg-muted text-muted-foreground size-8 rounded-full text-sm`
+ * (`size-10` / `size-6` when the group's avatars are lg / sm, its icon `size-4` / `size-5` / `size-3`). */
+.dx-avatar-group {
+    display: flex;
+}
+
+.dx-avatar-group > * + * {
+    margin-inline-start: calc(var(--dx-space-2) * -1);
+}
+
+.dx-avatar-group > .dx-avatar {
+    box-shadow: 0 0 0 2px var(--dx-background);
+}
+
+.dx-avatar-group-count {
+    position: relative;
+    display: flex;
+    width: var(--dx-space-8);
+    height: var(--dx-space-8);
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--dx-radius-full);
+    background-color: var(--dx-muted);
+    box-shadow: 0 0 0 2px var(--dx-background);
+    color: var(--dx-muted-foreground);
+    font-size: var(--dx-text-sm);
+}
+
+.dx-avatar-group-count > svg {
+    width: var(--dx-space-4);
+    height: var(--dx-space-4);
+}
+
+.dx-avatar-group:has(> .dx-avatar[data-size="lg"]) > .dx-avatar-group-count {
+    width: var(--dx-space-10);
+    height: var(--dx-space-10);
+}
+
+.dx-avatar-group:has(> .dx-avatar[data-size="lg"]) > .dx-avatar-group-count > svg {
+    width: var(--dx-space-5);
+    height: var(--dx-space-5);
+}
+
+.dx-avatar-group:has(> .dx-avatar[data-size="sm"]) > .dx-avatar-group-count {
+    width: var(--dx-space-6);
+    height: var(--dx-space-6);
+    font-size: var(--dx-text-xs);
+}
+
+.dx-avatar-group:has(> .dx-avatar[data-size="sm"]) > .dx-avatar-group-count > svg {
+    width: var(--dx-space-3);
+    height: var(--dx-space-3);
 }

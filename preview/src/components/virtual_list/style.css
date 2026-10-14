@@ -1,1 +1,2 @@
-/* VirtualList requires no custom styles — all layout is inline. */
+/* VirtualList requires no custom styles — all layout is inline. The `fade` prop only adds a `dx-scroll-fade-*` class; the
+ * utility itself is the global `assets/dx-effects.css`, listed in this component's `globalAssets`. */

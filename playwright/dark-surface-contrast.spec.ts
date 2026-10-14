@@ -308,6 +308,8 @@ for (const mode of ["light", "dark"] as Mode[]) {
         await page.emulateMedia({ colorScheme: mode, reducedMotion: "reduce" });
         await scene.open(page);
         await expect(page.locator("html")).toHaveAttribute("data-theme", mode);
+        // shadcn's `.dark` is written together with the attribute (theme.rs `apply_mode`).
+        expect(await page.evaluate(() => document.documentElement.classList.contains("dark"))).toBe(mode === "dark");
         await page.addStyleTag({ content: "*,*::before,*::after{transition:none!important;animation:none!important}" });
 
         const problems: string[] = [];

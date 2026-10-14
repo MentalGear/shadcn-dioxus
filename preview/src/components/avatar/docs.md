@@ -43,3 +43,29 @@ The fallback is always `muted` with `muted-foreground` text (also while loading 
 ## Motion
 
 While the image is loading the placeholder pulses (`opacity`, 1.5 s, forever). The pulse is paused whenever the avatar is off-screen or the tab is hidden (`dioxus_primitives::activity::use_motion_when`), and an avatar that is not loading subscribes to nothing. Override `animation` on `.dx-avatar[data-state="loading"]` to change or remove it. See [Motion](/docs#motion) for the tokens, reduced motion and the per-component table.
+
+## Badge
+
+`AvatarBadge` is a status dot or icon on the avatar's bottom-end corner (`absolute right-0 bottom-0`, mirrored in RTL), ringed in the page background. It is a child of `Avatar`, in the same place as `AvatarFallback`. By default it is `primary` with `primary-foreground` ink; override `background-color` for a status colour. Its size follows the avatar: 8px in the small avatar (an icon is hidden there), 10px by default and 12px in the large one, the icon always 8px. The avatar root no longer clips (a clip would cut the badge, which sits outside the circle); the picture and the fallback round themselves to the root's shape.
+
+```rust
+Avatar { aria_label: "Avery Lin, online",
+    AvatarImage { src: "https://example.com/avatar.png", alt: "" }
+    AvatarFallback { "AL" }
+    AvatarBadge { style: "background-color: var(--dx-success);" }
+}
+```
+
+The badge is decorative: put the status in the avatar's `aria_label`.
+
+## Group
+
+`AvatarGroup` stacks avatars with a -8px overlap (`-space-x-2`) and rings each one in the page background, so the overlap reads as a cut. End it with `AvatarGroupCount` for a "+N" tile (or an icon); the tile is `muted`, round, and takes the size of the avatars in the group (24, 32 or 40px). Give the group an `aria_label` to name it.
+
+```rust
+AvatarGroup { aria_label: "Team",
+    ImageAvatar { src: "https://example.com/a.png", alt: "Avery Lin", "AL" }
+    ImageAvatar { src: "https://example.com/b.png", alt: "Casey Park", "CP" }
+    AvatarGroupCount { "+3" }
+}
+```

@@ -1,19 +1,16 @@
 use super::super::component::*;
 use dioxus::prelude::*;
 
-/// shadcn's labelled progress: an "Uploading..." label and a percentage readout
-/// above the bar. Both are plain text nodes; the bar is named by the label
-/// through `aria-labelledby`. (No `ProgressLabel`/`ProgressValue` parts exist
-/// yet, so this is spans and a flex row.)
+/// shadcn's `progress-label`: `ProgressLabel` ("Upload progress") and `ProgressValue` (the percent) above the
+/// bar. The bar is named by the label with no `aria-labelledby` wiring of your own.
 #[component]
 pub fn Demo() -> Element {
     rsx! {
-        div { style: "display: flex; flex-direction: column; gap: 0.5rem; width: 100%; max-width: 24rem;",
-            div { style: "display: flex; justify-content: space-between; font-size: 14px; font-weight: 500;",
-                span { id: "progress-label-uploading", "Uploading..." }
-                span { style: "color: var(--dx-muted-foreground); font-variant-numeric: tabular-nums;", "66%" }
+        div { style: "width: 100%; max-width: 24rem;",
+            Progress { value: 56.0,
+                ProgressLabel { "Upload progress" }
+                ProgressValue {}
             }
-            Progress { aria_labelledby: "progress-label-uploading", value: 66.0 }
         }
     }
 }
