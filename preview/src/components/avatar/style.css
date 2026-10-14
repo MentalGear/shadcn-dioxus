@@ -46,7 +46,7 @@
 }
 
 .dx-avatar > .dx-avatar-image {
-    z-index: 1;
+    z-index: var(--dx-z-raise);
 }
 
 .dx-avatar[data-size="sm"] {
