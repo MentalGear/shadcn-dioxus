@@ -120,6 +120,118 @@ for (const dark of [false, true]) {
   }
 }
 
+// Row 155 group 3: `variant`, `size` and `spacing` on ToggleGroup (shadcn: default spacing 2, `0` joins).
+const frameOf = (page: Page, name: string) => page.locator(`#component-preview-frame-${name}`);
+const group = (page: Page, name: string, label: string) => frameOf(page, name).getByRole("group", { name: label });
+const num = (el: import("@playwright/test").Locator, prop: string) =>
+  el.evaluate((e, p) => parseFloat(getComputedStyle(e).getPropertyValue(p)), prop);
+const box = async (el: import("@playwright/test").Locator) => (await el.boundingBox())!;
+
+test("the main demo is shadcn's: an outline, multiple-select group of icon items, spaced 8px apart", async ({ page }) => {
+  await page.goto(`${BASE_URL}/component/?name=toggle_group&`);
+  const root = mainDemo(page).locator(".dx-toggle-group");
+  await expect(root).toHaveAttribute("data-variant", "outline");
+  await expect(root).toHaveAttribute("data-spacing", "2");
+  const [b, i] = [
+    await box(mainDemo(page).getByRole("button", { name: "Toggle bold", exact: true })),
+    await box(mainDemo(page).getByRole("button", { name: "Toggle italic", exact: true })),
+  ];
+  expect(i.x - (b.x + b.width), "default spacing 2 = 8px between separate toggles").toBeCloseTo(8, 0);
+  expect(await num(mainDemo(page).getByRole("button", { name: "Toggle bold", exact: true }), "border-top-width")).toBe(1);
+});
+
+test("spacing 2 keeps separate rounded toggles; spacing 0 joins them into one bar", async ({ page }) => {
+  await page.goto(`${BASE_URL}/component/?name=toggle_group&`);
+  const spaced = group(page, "spacing", "Spaced placement").getByRole("button");
+  const joined = group(page, "spacing", "Joined placement").getByRole("button");
+  const [s0, s1] = [await box(spaced.nth(0)), await box(spaced.nth(1))];
+  expect(s1.x - (s0.x + s0.width)).toBeCloseTo(8, 0);
+  const r = (el: import("@playwright/test").Locator, p: string) => num(el, p);
+  // Spaced: every item is a full toggle with the large radius on all four corners.
+  const full = await r(spaced.nth(1), "border-top-left-radius");
+  expect(full).toBeGreaterThan(0);
+  expect(await r(spaced.nth(1), "border-top-right-radius")).toBe(full);
+
+  const [j0, j1, j2] = [await box(joined.nth(0)), await box(joined.nth(1)), await box(joined.nth(2))];
+  expect(j1.x - (j0.x + j0.width), "joined items touch").toBeCloseTo(0, 0);
+  expect(j2.x - (j1.x + j1.width), "joined items touch").toBeCloseTo(0, 0);
+  // Square inner corners, radius only on the two ends of the bar.
+  expect(await r(joined.nth(1), "border-top-left-radius")).toBe(0);
+  expect(await r(joined.nth(1), "border-top-right-radius")).toBe(0);
+  expect(await r(joined.nth(0), "border-top-left-radius")).toBeGreaterThan(0);
+  expect(await r(joined.nth(0), "border-top-right-radius")).toBe(0);
+  expect(await r(joined.nth(3), "border-top-right-radius")).toBeGreaterThan(0);
+  expect(await r(joined.nth(3), "border-top-left-radius")).toBe(0);
+  // One shared edge: all but the first drop the leading border.
+  expect(await r(joined.nth(0), "border-left-width")).toBe(1);
+  expect(await r(joined.nth(1), "border-left-width")).toBe(0);
+  expect(await r(joined.nth(1), "border-right-width")).toBe(1);
+  // Joined items use px-2 (8px) where separate ones use px-2.5 (10px).
+  expect(await r(joined.nth(1), "padding-left")).toBe(8);
+  expect(await r(spaced.nth(1), "padding-left")).toBe(10);
+});
+
+test("sizes: sm and default groups are 28 and 32px high", async ({ page }) => {
+  await page.goto(`${BASE_URL}/component/?name=toggle_group&`);
+  const sm = group(page, "sizes", "Small placement").getByRole("button");
+  const def = group(page, "sizes", "Default placement").getByRole("button");
+  expect(await num(sm.first(), "height")).toBe(28);
+  expect(await num(def.first(), "height")).toBe(32);
+  await expect(group(page, "sizes", "Small placement")).toHaveAttribute("data-size", "sm");
+  // Single-select, "Top" pressed to start with.
+  await expect(sm.first()).toHaveAttribute("data-state", "on");
+  await sm.nth(1).click();
+  await expect(sm.nth(1)).toHaveAttribute("data-state", "on");
+  await expect(sm.first()).toHaveAttribute("data-state", "off");
+});
+
+test("outline: a single-select group with All pressed", async ({ page }) => {
+  await page.goto(`${BASE_URL}/component/?name=toggle_group&`);
+  const all = frameOf(page, "outline").getByRole("button", { name: "Toggle all", exact: true });
+  const missed = frameOf(page, "outline").getByRole("button", { name: "Toggle missed", exact: true });
+  await expect(all).toHaveAttribute("data-state", "on");
+  await missed.click();
+  await expect(missed).toHaveAttribute("data-state", "on");
+  await expect(all).toHaveAttribute("data-state", "off");
+});
+
+test("vertical: a column with spacing 1 (4px), navigated with ArrowUp/ArrowDown", async ({ page }) => {
+  await page.goto(`${BASE_URL}/component/?name=toggle_group&`);
+  const root = group(page, "vertical", "Vertical text formatting");
+  await expect(root).toHaveAttribute("data-orientation", "vertical");
+  expect(await root.evaluate((e) => getComputedStyle(e).flexDirection)).toBe("column");
+  const items = root.getByRole("button");
+  const [a, b] = [await box(items.nth(0)), await box(items.nth(1))];
+  expect(a.x).toBeCloseTo(b.x, 0);
+  expect(b.y - (a.y + a.height)).toBeCloseTo(4, 0);
+  // Bold and italic start pressed.
+  await expect(items.nth(0)).toHaveAttribute("data-state", "on");
+  await expect(items.nth(1)).toHaveAttribute("data-state", "on");
+  await expect(items.nth(2)).toHaveAttribute("data-state", "off");
+  await items.nth(0).focus();
+  await page.keyboard.press("ArrowDown");
+  await expect(items.nth(1)).toBeFocused();
+  await page.keyboard.press("ArrowRight");
+  await expect(items.nth(1), "ArrowRight is not the vertical axis").toBeFocused();
+});
+
+test("font weight: a controlled single-select of 4rem tiles that names the chosen font-* class", async ({ page }) => {
+  await page.goto(`${BASE_URL}/component/?name=toggle_group&`);
+  const root = group(page, "font_weight", "Font Weight");
+  const tile = (n: string) => root.getByRole("button", { name: n, exact: true });
+  await expect(tile("Normal")).toHaveAttribute("data-state", "on");
+  expect(await num(tile("Normal"), "height")).toBe(64);
+  expect(await num(tile("Normal"), "width")).toBe(64);
+  await expect(frameOf(page, "font_weight")).toContainText("font-normal");
+  await tile("Bold").click();
+  await expect(tile("Bold")).toHaveAttribute("data-state", "on");
+  await expect(tile("Normal")).toHaveAttribute("data-state", "off");
+  await expect(frameOf(page, "font_weight")).toContainText("font-bold");
+  // Single-select: pressing the chosen tile again keeps it chosen.
+  await tile("Bold").click();
+  await expect(tile("Bold")).toHaveAttribute("data-state", "on");
+});
+
 test.describe("Axe automated scan", () => {
   test("loaded (none selected) has no automatically detectable a11y issues", async ({ page }) => {
     await page.goto(`${BASE_URL}/component/?name=toggle_group&`);

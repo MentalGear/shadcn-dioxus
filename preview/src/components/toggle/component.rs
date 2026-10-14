@@ -1,5 +1,98 @@
 use dioxus::prelude::*;
-use dioxus_primitives::toggle::{self, ToggleProps};
+use dioxus_primitives::{dioxus_attributes::attributes, merge_attributes, toggle};
+
+/// The look of a [`Toggle`] (shadcn's `variant`).
+#[derive(Copy, Clone, PartialEq, Default)]
+#[non_exhaustive]
+pub enum ToggleVariant {
+    /// No edge: the control is only visible by its content until hovered or pressed.
+    #[default]
+    Default,
+    /// A 1px `--dx-input` edge around a transparent fill.
+    Outline,
+}
+
+impl ToggleVariant {
+    /// The `data-variant` value the stylesheet keys on.
+    pub fn class(&self) -> &'static str {
+        match self {
+            ToggleVariant::Default => "default",
+            ToggleVariant::Outline => "outline",
+        }
+    }
+}
+
+/// The size of a [`Toggle`] (shadcn's `size`): the height follows the theme's
+/// `--dx-control-height-*` ladder, the same 28 / 32 / 36px as `Button`.
+#[derive(Copy, Clone, PartialEq, Default)]
+#[non_exhaustive]
+pub enum ToggleSize {
+    /// 28px high, `0.8rem` text, a 14px icon.
+    Sm,
+    /// 32px high.
+    #[default]
+    Default,
+    /// 36px high.
+    Lg,
+}
+
+impl ToggleSize {
+    /// The `data-size` value the stylesheet keys on.
+    pub fn class(&self) -> &'static str {
+        match self {
+            ToggleSize::Sm => "sm",
+            ToggleSize::Default => "default",
+            ToggleSize::Lg => "lg",
+        }
+    }
+}
+
+/// The props for the themed [`Toggle`]: the primitive's, plus `variant` and `size`.
+#[derive(Props, Clone, PartialEq)]
+pub struct ToggleProps {
+    /// The controlled pressed state of the toggle.
+    pub pressed: ReadSignal<Option<bool>>,
+
+    /// The default pressed state when uncontrolled.
+    #[props(default)]
+    pub default_pressed: bool,
+
+    /// Whether the toggle is disabled.
+    #[props(default)]
+    pub disabled: ReadSignal<bool>,
+
+    /// The look of the toggle: no edge (`Default`) or a 1px edge (`Outline`).
+    #[props(default)]
+    pub variant: ToggleVariant,
+
+    /// The size of the toggle: `Sm` (28px), `Default` (32px) or `Lg` (36px).
+    #[props(default)]
+    pub size: ToggleSize,
+
+    /// Extra class for the toggle element, appended to the theme's `dx-toggle`.
+    pub class: Option<String>,
+
+    /// Callback fired when the pressed state changes.
+    #[props(default)]
+    pub on_pressed_change: Callback<bool>,
+
+    /// Callback fired when the toggle is mounted.
+    #[props(default)]
+    pub onmounted: Callback<Event<MountedData>>,
+    /// Callback fired when the toggle receives focus.
+    #[props(default)]
+    pub onfocus: Callback<Event<FocusData>>,
+    /// Callback fired when a key is pressed on the toggle.
+    #[props(default)]
+    pub onkeydown: Callback<Event<KeyboardData>>,
+
+    /// Additional attributes to apply to the toggle element.
+    #[props(extends = GlobalAttributes)]
+    pub attributes: Vec<Attribute>,
+
+    /// The children of the toggle component.
+    pub children: Element,
+}
 
 #[component]
 pub fn Toggle(props: ToggleProps) -> Element {
@@ -13,6 +106,14 @@ pub fn Toggle(props: ToggleProps) -> Element {
     } else {
         "dx-toggle".to_string()
     };
+    // `variant` and `size` only select slot variables in the stylesheet
+    // (`data-variant` / `data-size`); they are theme state, so they win over a
+    // caller's attribute of the same name.
+    let owned = attributes!(button {
+        "data-variant": props.variant.class(),
+        "data-size": props.size.class(),
+    });
+    let merged = merge_attributes(vec![props.attributes, owned]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/toggle/style.css") }
@@ -25,7 +126,7 @@ pub fn Toggle(props: ToggleProps) -> Element {
             onmounted: props.onmounted,
             onfocus: props.onfocus,
             onkeydown: props.onkeydown,
-            attributes: props.attributes,
+            attributes: merged,
             {props.children}
         }
     }
@@ -68,5 +169,38 @@ mod tests {
         let html = dioxus_ssr::render(&dom);
 
         assert!(html.contains(r#"class="dx-toggle""#));
+    }
+
+    #[test]
+    fn variant_and_size_render_as_data_attributes() {
+        let mut dom = VirtualDom::new(|| {
+            rsx! {
+                Toggle {
+                    pressed: None,
+                    variant: ToggleVariant::Outline,
+                    size: ToggleSize::Sm,
+                    "B"
+                }
+            }
+        });
+        dom.rebuild_in_place();
+        let html = dioxus_ssr::render(&dom);
+
+        assert!(html.contains(r#"data-variant="outline""#));
+        assert!(html.contains(r#"data-size="sm""#));
+    }
+
+    #[test]
+    fn variant_and_size_default_to_default() {
+        let mut dom = VirtualDom::new(|| {
+            rsx! {
+                Toggle { pressed: None, "B" }
+            }
+        });
+        dom.rebuild_in_place();
+        let html = dioxus_ssr::render(&dom);
+
+        assert!(html.contains(r#"data-variant="default""#));
+        assert!(html.contains(r#"data-size="default""#));
     }
 }

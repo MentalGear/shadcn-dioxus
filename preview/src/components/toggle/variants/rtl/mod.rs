@@ -11,7 +11,7 @@ pub fn Demo() -> Element {
     rsx! {
         div { dir: "rtl",
             DirectionProvider { direction: Direction::Rtl,
-                Toggle { style: "gap: 0.5rem; padding-inline: 0.75rem;",
+                Toggle {
                     Italic {}
                     "مائل"
                 }

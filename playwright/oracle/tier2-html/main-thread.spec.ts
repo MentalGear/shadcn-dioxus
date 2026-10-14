@@ -628,7 +628,7 @@ const FORM_CONTROL_SUBJECTS: FormControlSubject[] = [
     name: "toggle",
     goto: (page) => goto(page, "toggle"),
     interact: async (page) => {
-      const el = page.locator("#component-preview-frame").getByRole("button", { name: "Bookmark", exact: true });
+      const el = page.locator("#component-preview-frame").locator("button[aria-pressed]").first();
       await el.click();
       await expect(el).toHaveAttribute("data-state", "on");
     },
