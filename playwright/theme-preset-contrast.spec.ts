@@ -110,7 +110,7 @@ async function sweep(page: Page, probes: Probe[], mode: "light" | "dark"): Promi
         [...document.querySelectorAll(p.selector)].find((el) => !p.text || el.textContent?.trim() === p.text) ?? null;
 
       const html = document.documentElement;
-      html.setAttribute("data-theme", mode);
+      (window as unknown as { __dxApplyMode: (m: string) => void }).__dxApplyMode(mode); // the one mode writer
       const out: Row[] = [];
       for (const base of ["none", ...bases]) {
         for (const accent of ["none", ...accents]) {
@@ -408,7 +408,11 @@ test.describe("docs-site highlight ink", () => {
     const set = (attrs: Record<string, string | null>) =>
       page.evaluate((a) => {
         document.head.insertAdjacentHTML("beforeend", "<style>*{transition:none!important}</style>");
-        for (const [k, v] of Object.entries(a)) v === null ? document.documentElement.removeAttribute(k) : document.documentElement.setAttribute(k, v);
+        for (const [k, v] of Object.entries(a)) {
+          if (k === "data-theme") (window as unknown as { __dxApplyMode: (m: string | null) => void }).__dxApplyMode(v); // the one mode writer
+          else if (v === null) document.documentElement.removeAttribute(k);
+          else document.documentElement.setAttribute(k, v);
+        }
       }, attrs);
 
     for (const [mode, today] of [["light", [0, 101, 255]], ["dark", [77, 148, 255]]] as const) {
