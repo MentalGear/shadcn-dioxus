@@ -86,12 +86,12 @@
     background-color: var(--dx-border);
 }
 
-.dx-toolbar-content p {
+.dx-toolbar-content p:not(:where([popover], dialog) *) {
     padding: 0;
     margin: 0;
 }
 
-.dx-toolbar-demo p {
+.dx-toolbar-demo p:not(:where([popover], dialog) *) {
     padding: 0;
     margin: 0;
 }
