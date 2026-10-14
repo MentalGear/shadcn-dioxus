@@ -58,6 +58,8 @@ type Probe = {
   selector: string;
   /** If set, the first match whose trimmed text equals this (several demo buttons share a selector). */
   text?: string;
+  /** Which match of `selector` (after the `text` filter), 0-based; default the first. For controls named by an aria-label. */
+  nth?: number;
 };
 type Row = {
   mode: "light" | "dark";
@@ -106,8 +108,8 @@ async function sweep(page: Page, probes: Probe[], mode: "light" | "dark"): Promi
         const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
         return (hi + 0.05) / (lo + 0.05);
       };
-      const find = (p: { selector: string; text?: string }) =>
-        [...document.querySelectorAll(p.selector)].find((el) => !p.text || el.textContent?.trim() === p.text) ?? null;
+      const find = (p: { selector: string; text?: string; nth?: number }) =>
+        [...document.querySelectorAll(p.selector)].filter((el) => !p.text || el.textContent?.trim() === p.text)[p.nth ?? 0] ?? null;
 
       const html = document.documentElement;
       (window as unknown as { __dxApplyMode: (m: string) => void }).__dxApplyMode(mode); // the one mode writer
@@ -120,7 +122,7 @@ async function sweep(page: Page, probes: Probe[], mode: "light" | "dark"): Promi
           else html.setAttribute("data-theme-accent", accent);
           for (const p of probes) {
             const el = find(p);
-            if (!el) throw new Error(`probe "${p.name}" matched nothing (${p.selector}${p.text ? ` / "${p.text}"` : ""})`);
+            if (!el) throw new Error(`probe "${p.name}" matched nothing (${p.selector}${p.text ? ` / "${p.text}"` : ""}${p.nth ? ` / #${p.nth}` : ""})`);
             // Effective background: composite every ancestor's background-color from <html> down.
             const chain: Element[] = [];
             for (let n: Element | null = el; n; n = n.parentElement) chain.unshift(n);
@@ -288,8 +290,10 @@ for (const mode of ["light", "dark"] as const) {
 
     test("Toggle: off / hovered / pressed text >= 4.5:1, and the three backgrounds differ", async ({ page }) => {
       await open(page, "/component/toggle/", ".dx-toggle");
-      const toggle = page.locator(".dx-toggle", { hasText: /^B$/ });
-      const probe: Probe[] = [{ name: "toggle", selector: ".dx-toggle", text: "B" }];
+      // The main demo's toggle is the first on the page. Not named by label or text: the demo's content
+      // (row 212 relabelled it, and it keeps being refined) is not what this sweep is about.
+      const toggle = page.locator(".dx-toggle").first();
+      const probe: Probe[] = [{ name: "toggle", selector: ".dx-toggle" }];
       const away = () => page.mouse.move(0, 0);
 
       await away();
@@ -314,17 +318,19 @@ for (const mode of ["light", "dark"] as const) {
 
     test("ToggleGroup: off / hovered / pressed text >= 4.5:1, and the three backgrounds differ", async ({ page }) => {
       await open(page, "/component/toggle_group/", ".dx-toggle-group-item");
-      const item = (t: string) => page.locator(".dx-toggle-group-item", { hasText: new RegExp(`^${t}$`) }).first();
-      const probe = (name: string, text: string): Probe => ({ name, selector: ".dx-toggle-group-item", text });
+      // The main demo's first three items (bold, italic, strikethrough), by position: the demo's glyphs and
+      // aria-labels are not what this sweep is about (row 212 relabelled them).
+      const item = (n: number) => page.locator(".dx-toggle-group-item").nth(n);
+      const probe = (name: string, nth: number): Probe => ({ name, selector: ".dx-toggle-group-item", nth });
 
-      await item("B").click();
-      await expect(item("B")).toHaveAttribute("data-state", "on");
-      await item("I").hover();
-      expect(await item("I").evaluate((el) => el.matches(":hover"))).toBe(true);
-      // B is pressed, I is hovered, U is neither: all three states in one frame, so one sweep.
+      await item(0).click();
+      await expect(item(0)).toHaveAttribute("data-state", "on");
+      await item(1).hover();
+      expect(await item(1).evaluate((el) => el.matches(":hover"))).toBe(true);
+      // Item 0 is pressed, 1 is hovered, 2 is neither: all three states in one frame, so one sweep.
       const rows = await sweep(
         page,
-        [probe("group on", "B"), probe("group hover", "I"), probe("group off", "U")],
+        [probe("group on", 0), probe("group hover", 1), probe("group off", 2)],
         mode,
       );
       logWorst(`toggle group ${mode}`, rows);
