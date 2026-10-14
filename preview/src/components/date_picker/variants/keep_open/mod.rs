@@ -3,9 +3,10 @@ use dioxus::prelude::*;
 
 use time::Date;
 
-/// `close_on_select: false`: the popover stays open after a date is picked, so several can be tried
-/// without reopening it. Escape, an outside click and the trigger still close it. `DateRangePicker`
-/// takes the same prop (it applies once the range's end date is picked).
+/// shadcn's `date-picker-demo` / `date-picker-basic`: no footer (`confirm: false`) and the popover
+/// STAYS OPEN after a date is picked (`close_on_select: false`), so several can be tried without
+/// reopening it. Escape, an outside click and the trigger still close it. `DateRangePicker` takes
+/// the same props (`close_on_select` applies once the range's end date is picked).
 #[component]
 pub fn Demo() -> Element {
     let mut selected_date = use_signal(|| None::<Date>);
@@ -18,6 +19,7 @@ pub fn Demo() -> Element {
                     tracing::info!("Selected date changed: {:?}", v);
                     selected_date.set(v);
                 },
+                confirm: false,
                 close_on_select: false,
             }
         }

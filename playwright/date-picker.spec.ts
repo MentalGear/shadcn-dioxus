@@ -1166,7 +1166,7 @@ test.describe("Completing a range selection via the calendar", () => {
   // goes through the guarded `DateRangeInputContext::set_start_date`/
   // `set_end_date` choke point. No change was needed in `calendar.rs`,
   // `popover.rs`, or `top_layer.rs`.
-  test("clicking a second, different calendar day to complete a range selection resolves, closes the popover, and syncs the segments", async ({ page }) => {
+  test("clicking a second, different calendar day to complete a range selection resolves, and Apply closes the popover and syncs the segments", async ({ page }) => {
     await gotoDatePicker(page);
     await pickerTrigger(page, "range").click();
     const dialog = pickerContent(page, "range");
@@ -1174,6 +1174,8 @@ test.describe("Completing a range selection via the calendar", () => {
 
     await dayCell(dialog, 5).click({ timeout: 5000 });
     await dayCell(dialog, 10).click({ timeout: 5000 });
+    // `range` runs on the library default (`confirm`): the range is staged until Apply commits it.
+    await dialog.getByRole("button", { name: "Apply" }).click({ timeout: 5000 });
 
     await expect(dialog).toBeHidden();
     // The calendar defaults to the current month/year (days 5 and 10 of it
@@ -1249,6 +1251,7 @@ test.describe("Completing several ranges in a row (variant=range)", () => {
       await expect(dialog).toBeVisible();
       await dayCell(dialog, first).click({ timeout: 5000 });
       await dayCell(dialog, second).click({ timeout: 5000 });
+      await dialog.getByRole("button", { name: "Apply" }).click({ timeout: 5000 });
       await expect(dialog).toBeHidden({ timeout: 5000 });
       await expectResponsive(page, label);
       await expect(start.day, label).toHaveText(pad(Math.min(first, second)));
@@ -1425,14 +1428,37 @@ test.describe("Multi-month popover panel (variant=multi_month)", () => {
  * `date_picker` unit tests) and by any press/key inside the picker, month navigation, or a reopen.
  * -----------------------------------------------------------------------
  */
+/**
+ * The Apply / Cancel footer (`confirm`) is the library default, so the demos that exercise the
+ * `confirm: false` behaviour below are the ones that opt out: `time` (single; shadcn's
+ * `date-picker-time` closes on select) and `unavailable_dates` (range; closes once the end is picked).
+ */
+const CLOSING = "time";
+const CLOSING_RANGE = "unavailable_dates";
+
+/**
+ * Three day numbers of the `unavailable_dates` demo's current month that can be picked as ranges:
+ * `a..b` is a stretch with no unavailable day inside it (a range cannot span one) and `c` a day in
+ * the next free stretch. The unavailable days are `anchor+2..4`, `+9..11` and `+16..17`
+ * (`unavailable_dates/mod.rs`), so the first unavailable day is `anchor+2`, the free stretch
+ * `anchor+5..8` and the next one starts at `anchor+12`.
+ */
+async function closingRangeDays(dialog: Locator) {
+  const first = await dialog
+    .locator('.dx-calendar-grid-cell[data-unavailable="true"][data-month="current"]')
+    .first()
+    .evaluate((el) => Number(el.textContent?.trim()));
+  return { a: first + 3, b: first + 6, c: first + 10 };
+}
+
 const DWELL_MIN_MS = 280; // 300 ms default, less a little clock slack
 const CLOSE_MAX_MS = 10_000; // "closes eventually, not stuck" -- loose on purpose, a loaded CI box stretches timers
 
 test.describe("Closing after a selection: dwell, then close", () => {
   test("a day click keeps the popover open with the day shown selected, then closes it after the dwell and returns focus to the trigger", async ({ page }) => {
     await gotoDatePicker(page);
-    await pickerTrigger(page).click();
-    const dialog = pickerContent(page);
+    await pickerTrigger(page, CLOSING).click();
+    const dialog = pickerContent(page, CLOSING);
     await expect(dialog).toBeVisible();
     await armDwellProbe(dialog);
 
@@ -1446,14 +1472,14 @@ test.describe("Closing after a selection: dwell, then close", () => {
     expect(t.held, `held open ${t.held} ms: ${debug}`).toBeGreaterThanOrEqual(DWELL_MIN_MS);
     expect(t.held, debug).toBeLessThanOrEqual(CLOSE_MAX_MS);
     // The value was committed on the click, not on close, and focus is back on the trigger.
-    await expect(segment(page, "day")).toHaveText("15");
-    await expect(pickerTrigger(page)).toBeFocused();
+    await expect(segment(page, "day", CLOSING)).toHaveText("15");
+    await expect(pickerTrigger(page, CLOSING)).toBeFocused();
   });
 
   test("keyboard selection (Enter on a day) dwells the same way", async ({ page }) => {
     await gotoDatePicker(page);
-    await pickerTrigger(page).click();
-    const dialog = pickerContent(page);
+    await pickerTrigger(page, CLOSING).click();
+    const dialog = pickerContent(page, CLOSING);
     await expect(dialog).toBeVisible();
     await armDwellProbe(dialog);
 
@@ -1466,14 +1492,14 @@ test.describe("Closing after a selection: dwell, then close", () => {
     expect(t.stateAtSelected, debug).toBe("open");
     expect(t.held, debug).toBeGreaterThanOrEqual(DWELL_MIN_MS);
     expect(t.held, debug).toBeLessThanOrEqual(CLOSE_MAX_MS);
-    await expect(segment(page, "day")).toHaveText("20");
-    await expect(pickerTrigger(page)).toBeFocused();
+    await expect(segment(page, "day", CLOSING)).toHaveText("20");
+    await expect(pickerTrigger(page, CLOSING)).toBeFocused();
   });
 
   test("Space on a day dwells the same way", async ({ page }) => {
     await gotoDatePicker(page);
-    await pickerTrigger(page).click();
-    const dialog = pickerContent(page);
+    await pickerTrigger(page, CLOSING).click();
+    const dialog = pickerContent(page, CLOSING);
     await expect(dialog).toBeVisible();
     await armDwellProbe(dialog);
 
@@ -1490,31 +1516,32 @@ test.describe("Closing after a selection: dwell, then close", () => {
 
   test("range picker: the first click (the start) never closes it; the end click completes the range, then it dwells and closes", async ({ page }) => {
     await gotoDatePicker(page);
-    await pickerTrigger(page, "range").click();
-    const dialog = pickerContent(page, "range");
+    await pickerTrigger(page, CLOSING_RANGE).click();
+    const dialog = pickerContent(page, CLOSING_RANGE);
     await expect(dialog).toBeVisible();
     await armDwellProbe(dialog);
+    const { a, b } = await closingRangeDays(dialog);
 
-    await dayCell(dialog, 5).click();
+    await dayCell(dialog, a).click();
     // Well past the dwell: an incomplete range must not close the picker.
     await page.waitForTimeout(DWELL_MIN_MS * 3);
     await expect(dialog).toHaveAttribute("data-state", "open");
 
-    await dayCell(dialog, 10).click();
+    await dayCell(dialog, b).click();
     await expect(dialog).toBeHidden({ timeout: 15000 });
     const t = await readDwell(page);
     const debug = JSON.stringify(t);
     expect(t.held, `measured from the END click: ${debug}`).toBeGreaterThanOrEqual(DWELL_MIN_MS);
     expect(t.held, debug).toBeLessThanOrEqual(CLOSE_MAX_MS);
-    await expect(rangeSegment(page, "start", "day", "range")).toHaveText("05");
-    await expect(rangeSegment(page, "end", "day", "range")).toHaveText("10");
-    await expect(pickerTrigger(page, "range")).toBeFocused();
+    await expect(rangeSegment(page, "start", "day", CLOSING_RANGE)).toHaveText(String(a).padStart(2, "0"));
+    await expect(rangeSegment(page, "end", "day", CLOSING_RANGE)).toHaveText(String(b).padStart(2, "0"));
+    await expect(pickerTrigger(page, CLOSING_RANGE)).toBeFocused();
   });
 
   test("a key pressed inside the picker during the dwell cancels the pending close (it does not close under the user)", async ({ page }) => {
     await gotoDatePicker(page);
-    await pickerTrigger(page).click();
-    const dialog = pickerContent(page);
+    await pickerTrigger(page, CLOSING).click();
+    const dialog = pickerContent(page, CLOSING);
     await expect(dialog).toBeVisible();
 
     // Select, then the user takes over 20 ms later (one page.evaluate: the gap is exactly that).
@@ -1530,28 +1557,29 @@ test.describe("Closing after a selection: dwell, then close", () => {
 
   test("clicking the day that was just selected again (a double-click) keeps the selection instead of toggling it off", async ({ page }) => {
     await gotoDatePicker(page);
-    await pickerTrigger(page).click();
-    const dialog = pickerContent(page);
+    await pickerTrigger(page, CLOSING).click();
+    const dialog = pickerContent(page, CLOSING);
     await expect(dialog).toBeVisible();
 
     await runSteps(dialog, [{ click: 17 }, { wait: 80 }, { click: 17 }]); // inside the dwell
     await expect(dayCell(dialog, 17)).toHaveAttribute("data-selected", "true");
-    await expect(segment(page, "day")).toHaveText("17");
+    await expect(segment(page, "day", CLOSING)).toHaveText("17");
     await expect(dialog).toBeHidden({ timeout: 15000 });
-    await expect(segment(page, "day")).toHaveText("17"); // and still set once it has closed
+    await expect(segment(page, "day", CLOSING)).toHaveText("17"); // and still set once it has closed
   });
 
   test("range picker: starting a NEW range during the dwell of the previous one cancels the close", async ({ page }) => {
     await gotoDatePicker(page);
-    await pickerTrigger(page, "range").click();
-    const dialog = pickerContent(page, "range");
+    await pickerTrigger(page, CLOSING_RANGE).click();
+    const dialog = pickerContent(page, CLOSING_RANGE);
     await expect(dialog).toBeVisible();
 
-    // 5..10 completes (a close is now pending); 40 ms later the user presses on 15, which only anchors a new range.
-    await runSteps(dialog, [{ click: 5 }, { wait: 20 }, { click: 10 }, { wait: 40 }, { pointerdown: 15 }, { click: 15 }]);
+    // a..b completes (a close is now pending); 40 ms later the user presses on c, which only anchors a new range.
+    const { a, b, c } = await closingRangeDays(dialog);
+    await runSteps(dialog, [{ click: a }, { wait: 20 }, { click: b }, { wait: 40 }, { pointerdown: c }, { click: c }]);
     await page.waitForTimeout(DWELL_MIN_MS * 3);
     await expect(dialog).toHaveAttribute("data-state", "open"); // not closed under a half-picked range
-    await expect(dayCell(dialog, 15)).toHaveAttribute("data-selected", "true");
+    await expect(dayCell(dialog, c)).toHaveAttribute("data-selected", "true");
 
     // Escape abandons the half-picked range (RangeCalendar), and a second Escape closes the popover.
     await page.keyboard.press("Escape");
@@ -1561,14 +1589,14 @@ test.describe("Closing after a selection: dwell, then close", () => {
 
   test("closing and reopening during the dwell: the pending close does not land on the reopened popover", async ({ page }) => {
     await gotoDatePicker(page);
-    await pickerTrigger(page).click();
-    const dialog = pickerContent(page);
+    await pickerTrigger(page, CLOSING).click();
+    const dialog = pickerContent(page, CLOSING);
     await expect(dialog).toBeVisible();
 
     // Select, then close through the trigger 20 ms later, inside the dwell.
     await runSteps(dialog, [{ click: 9 }, { wait: 20 }, { clickTrigger: true }]);
     await expect(dialog).toBeHidden({ timeout: 15000 });
-    await pickerTrigger(page).click(); // reopen: the original deadline is still to come, or has just passed
+    await pickerTrigger(page, CLOSING).click(); // reopen: the original deadline is still to come, or has just passed
     await expect(dialog).toBeVisible();
     await page.waitForTimeout(DWELL_MIN_MS * 3);
     await expect(dialog).toHaveAttribute("data-state", "open");
@@ -1576,8 +1604,8 @@ test.describe("Closing after a selection: dwell, then close", () => {
 
   test("selecting another day during the dwell restarts it, and the popover closes once, measured from the last click", async ({ page }) => {
     await gotoDatePicker(page);
-    await pickerTrigger(page).click();
-    const dialog = pickerContent(page);
+    await pickerTrigger(page, CLOSING).click();
+    const dialog = pickerContent(page, CLOSING);
     await expect(dialog).toBeVisible();
     await armDwellProbe(dialog);
 
@@ -1585,7 +1613,7 @@ test.describe("Closing after a selection: dwell, then close", () => {
     await expect(dialog).toBeHidden({ timeout: 15000 });
     const t = await readDwell(page);
     expect(t.held, `measured from the LAST click: ${JSON.stringify(t)}`).toBeGreaterThanOrEqual(DWELL_MIN_MS);
-    await expect(segment(page, "day")).toHaveText("11");
+    await expect(segment(page, "day", CLOSING)).toHaveText("11");
   });
 });
 
@@ -1676,5 +1704,386 @@ test.describe("Open/close animation", () => {
     expect(cx.length, "sampled frames across the open and the close").toBeGreaterThan(6);
     const spread = Math.max(...cx) - Math.min(...cx);
     expect(spread, `centre x moved by ${spread}px across the fade: ${JSON.stringify(cx.map(Math.round))}`).toBeLessThanOrEqual(1.5);
+  });
+});
+
+/**
+ * -----------------------------------------------------------------------
+ * Apply / Cancel (`confirm`) -- the library default, shown by `main` (single) and `range` (range).
+ *
+ * A selection is STAGED in the panel: the calendar shows it, the input and `on_value_change` keep the
+ * committed value. Apply commits and closes; Cancel, Escape and an outside click restore the previous
+ * value and close. (No shadcn date picker has this -- it is this library's own default; the demos that
+ * mirror a shadcn demo switch it off, see the last describe of this section.)
+ * -----------------------------------------------------------------------
+ */
+function footerButton(dialog: Locator, name: "Apply" | "Cancel") {
+  return dialog.getByRole("button", { name, exact: true });
+}
+
+/** The committed day segment text of `main` ("D" placeholder until something is committed). */
+async function committedDay(page: Page, variant?: string) {
+  return (await segment(page, "day", variant).textContent())?.trim();
+}
+
+test.describe("Apply / Cancel footer (confirm, the default) -- single picker (variant=main)", () => {
+  test("the footer is there with Cancel and Apply, and Apply is disabled until something is staged", async ({ page }) => {
+    await gotoDatePicker(page);
+    await pickerTrigger(page).click();
+    const dialog = pickerContent(page);
+    await expect(dialog).toBeVisible();
+    await expect(footerButton(dialog, "Cancel")).toBeEnabled();
+    await expect(footerButton(dialog, "Apply")).toBeDisabled();
+    // The real Button recipe, not a bare <button>.
+    await expect(footerButton(dialog, "Apply")).toHaveClass(/dx-button/);
+    await expect(footerButton(dialog, "Cancel")).toHaveClass(/dx-button/);
+  });
+
+  test("picking a day stages it: the calendar shows it, the input is unchanged, the popover stays open (well past the old dwell)", async ({ page }) => {
+    await gotoDatePicker(page);
+    const before = await committedDay(page);
+    await pickerTrigger(page).click();
+    const dialog = pickerContent(page);
+    await expect(dialog).toBeVisible();
+
+    await dayCell(dialog, 15).click();
+    await expect(dayCell(dialog, 15)).toHaveAttribute("data-selected", "true");
+    await expect(footerButton(dialog, "Apply")).toBeEnabled();
+    await page.waitForTimeout(DWELL_MIN_MS * 3);
+    await expect(dialog).toHaveAttribute("data-state", "open");
+    expect(await committedDay(page), "the input must keep the committed value while a selection is only staged").toBe(before);
+    await expect(segment(page, "day")).not.toHaveText("15");
+  });
+
+  test("Apply commits the staged day exactly once, closes, and returns focus to the trigger", async ({ page }) => {
+    const reported: string[] = [];
+    page.on("console", (message) => {
+      if (message.text().includes("Selected date changed:")) reported.push(message.text());
+    });
+    await gotoDatePicker(page);
+    await pickerTrigger(page).click();
+    const dialog = pickerContent(page);
+    await expect(dialog).toBeVisible();
+
+    await dayCell(dialog, 15).click();
+    expect(reported.length, "staging must not report a change").toBe(0);
+    await footerButton(dialog, "Apply").click();
+
+    await expect(dialog).toBeHidden({ timeout: 15000 });
+    await expect(segment(page, "day")).toHaveText("15");
+    await expect(pickerTrigger(page)).toBeFocused();
+    await expect.poll(() => reported.length, { timeout: 5000 }).toBe(1);
+    await page.waitForTimeout(200);
+    expect(reported.length, reported.join(" | ")).toBe(1);
+  });
+
+  test("keyboard: Enter on a day stages it, Tab reaches Apply, Enter on Apply commits", async ({ page }) => {
+    await gotoDatePicker(page);
+    await pickerTrigger(page).click();
+    const dialog = pickerContent(page);
+    await expect(dialog).toBeVisible();
+
+    await dayCell(dialog, 18).focus();
+    await page.keyboard.press("Enter");
+    await expect(dayCell(dialog, 18)).toHaveAttribute("data-selected", "true");
+    await expect(footerButton(dialog, "Apply")).toBeEnabled();
+    await footerButton(dialog, "Apply").focus();
+    await page.keyboard.press("Enter");
+    await expect(dialog).toBeHidden({ timeout: 15000 });
+    await expect(segment(page, "day")).toHaveText("18");
+  });
+
+  async function commitFifteenThenStageTwenty(page: Page) {
+    await pickerTrigger(page).click();
+    const dialog = pickerContent(page);
+    await expect(dialog).toBeVisible();
+    await dayCell(dialog, 15).click();
+    await footerButton(dialog, "Apply").click();
+    await expect(dialog).toBeHidden({ timeout: 15000 });
+    await expect(segment(page, "day")).toHaveText("15");
+
+    await pickerTrigger(page).click();
+    await expect(dialog).toBeVisible();
+    await expect(dayCell(dialog, 15)).toHaveAttribute("data-selected", "true");
+    await dayCell(dialog, 20).click();
+    await expect(dayCell(dialog, 20)).toHaveAttribute("data-selected", "true");
+    await expect(footerButton(dialog, "Apply")).toBeEnabled();
+    return dialog;
+  }
+
+  async function expectRestored(page: Page, dialog: Locator) {
+    await expect(dialog).toBeHidden({ timeout: 15000 });
+    await expect(segment(page, "day")).toHaveText("15");
+    // ...and the discarded 20 does not resurface on the next open.
+    await pickerTrigger(page).click();
+    await expect(dialog).toBeVisible();
+    await expect(dayCell(dialog, 15)).toHaveAttribute("data-selected", "true");
+    await expect(dayCell(dialog, 20)).not.toHaveAttribute("data-selected", "true");
+    await expect(footerButton(dialog, "Apply")).toBeDisabled();
+  }
+
+  test("Cancel restores the previous value and closes", async ({ page }) => {
+    await gotoDatePicker(page);
+    const dialog = await commitFifteenThenStageTwenty(page);
+    await footerButton(dialog, "Cancel").click();
+    await expectRestored(page, dialog);
+  });
+
+  test("Escape restores the previous value and closes", async ({ page }) => {
+    await gotoDatePicker(page);
+    const dialog = await commitFifteenThenStageTwenty(page);
+    await page.keyboard.press("Escape");
+    await expectRestored(page, dialog);
+  });
+
+  test("an outside click restores the previous value and closes", async ({ page }) => {
+    await gotoDatePicker(page);
+    const dialog = await commitFifteenThenStageTwenty(page);
+    await page.getByRole("heading", { level: 1 }).first().click();
+    await expectRestored(page, dialog);
+  });
+
+  test("the trigger closes it like Cancel", async ({ page }) => {
+    await gotoDatePicker(page);
+    const dialog = await commitFifteenThenStageTwenty(page);
+    await pickerTrigger(page).click();
+    await expectRestored(page, dialog);
+  });
+
+  test("picking the committed day again stages nothing new: Apply stays disabled", async ({ page }) => {
+    await gotoDatePicker(page);
+    const dialog = await commitFifteenThenStageTwenty(page);
+    // 20 -> back to 15: the calendar reads it as a fresh selection, equal to the committed value.
+    await dayCell(dialog, 15).click();
+    await expect(dayCell(dialog, 15)).toHaveAttribute("data-selected", "true");
+    await expect(footerButton(dialog, "Apply")).toBeDisabled();
+  });
+});
+
+test.describe("Apply / Cancel footer (confirm, the default) -- range picker (variant=range)", () => {
+  test("Apply stays disabled until BOTH ends are picked, then commits the range and closes", async ({ page }) => {
+    await gotoDatePicker(page);
+    await pickerTrigger(page, "range").click();
+    const dialog = pickerContent(page, "range");
+    await expect(dialog).toBeVisible();
+    await expect(footerButton(dialog, "Apply")).toBeDisabled();
+
+    await dayCell(dialog, 6).click();
+    await expect(footerButton(dialog, "Apply")).toBeDisabled(); // only the start: incomplete
+    await page.waitForTimeout(DWELL_MIN_MS * 3);
+    await expect(dialog).toHaveAttribute("data-state", "open");
+
+    await dayCell(dialog, 12).click();
+    await expect(footerButton(dialog, "Apply")).toBeEnabled();
+    await page.waitForTimeout(DWELL_MIN_MS * 3);
+    await expect(dialog).toHaveAttribute("data-state", "open"); // complete, but still staged
+    // The input keeps the committed (empty) range.
+    await expect(rangeSegment(page, "start", "day", "range")).not.toHaveText("06");
+
+    await footerButton(dialog, "Apply").click();
+    await expect(dialog).toBeHidden({ timeout: 15000 });
+    await expect(rangeSegment(page, "start", "day", "range")).toHaveText("06");
+    await expect(rangeSegment(page, "end", "day", "range")).toHaveText("12");
+    await expect(pickerTrigger(page, "range")).toBeFocused();
+  });
+
+  test("Cancel and Escape restore the committed range; a half-picked new range leaves it untouched", async ({ page }) => {
+    await gotoDatePicker(page);
+    const trigger = pickerTrigger(page, "range");
+    const dialog = pickerContent(page, "range");
+    await trigger.click();
+    await dayCell(dialog, 6).click();
+    await dayCell(dialog, 12).click();
+    await footerButton(dialog, "Apply").click();
+    await expect(dialog).toBeHidden({ timeout: 15000 });
+
+    // A complete new range, then Cancel.
+    await trigger.click();
+    await expect(dialog).toBeVisible();
+    await dayCell(dialog, 16).click();
+    await dayCell(dialog, 22).click();
+    await expect(footerButton(dialog, "Apply")).toBeEnabled();
+    await footerButton(dialog, "Cancel").click();
+    await expect(dialog).toBeHidden({ timeout: 15000 });
+    await expect(rangeSegment(page, "start", "day", "range")).toHaveText("06");
+    await expect(rangeSegment(page, "end", "day", "range")).toHaveText("12");
+
+    // Only the start of a new range, then Escape (closes the popover): still the committed range.
+    await trigger.click();
+    await expect(dialog).toBeVisible();
+    await dayCell(dialog, 16).click();
+    await expect(footerButton(dialog, "Apply")).toBeDisabled();
+    await page.keyboard.press("Escape"); // abandons the anchor (RangeCalendar)
+    await page.keyboard.press("Escape"); // closes the popover
+    await expect(dialog).toBeHidden({ timeout: 15000 });
+    await expect(rangeSegment(page, "start", "day", "range")).toHaveText("06");
+    await expect(rangeSegment(page, "end", "day", "range")).toHaveText("12");
+  });
+});
+
+/**
+ * The demos that mirror a shadcn date-picker demo switch the footer off (`confirm: false`) and copy
+ * that demo's open/close behaviour (research table: uncontrolled popover demos STAY OPEN on select;
+ * controlled-`open` demos CLOSE). See docs.md's table.
+ */
+test.describe("confirm: false demos follow their shadcn twin", () => {
+  for (const variant of ["keep_open", "multi_month", "internationalized", "time", "unavailable_dates"]) {
+    test(`${variant}: no Apply / Cancel footer`, async ({ page }) => {
+      await gotoDatePicker(page);
+      await pickerTrigger(page, variant).click();
+      const dialog = pickerContent(page, variant);
+      await expect(dialog).toBeVisible();
+      await expect(dialog.getByRole("button", { name: "Apply", exact: true })).toHaveCount(0);
+      await expect(dialog.getByRole("button", { name: "Cancel", exact: true })).toHaveCount(0);
+    });
+  }
+
+  test("date-picker-range twin (multi_month): stays open even after both ends are picked, and the range is committed live", async ({ page }) => {
+    await gotoDatePicker(page);
+    await pickerTrigger(page, "multi_month").click();
+    const dialog = pickerContent(page, "multi_month");
+    await expect(dialog).toBeVisible();
+    await dayCell(dialog, 6).first().click();
+    await dayCell(dialog, 12).first().click();
+    await page.waitForTimeout(DWELL_MIN_MS * 3);
+    await expect(dialog).toHaveAttribute("data-state", "open");
+    await expect(rangeSegment(page, "start", "day", "multi_month")).toHaveText("06");
+    await expect(rangeSegment(page, "end", "day", "multi_month")).toHaveText("12");
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden({ timeout: 15000 });
+  });
+
+  test("date-picker-rtl twin (internationalized): stays open on select", async ({ page }) => {
+    await gotoDatePicker(page);
+    await pickerTrigger(page, "internationalized").click();
+    const dialog = pickerContent(page, "internationalized");
+    await expect(dialog).toBeVisible();
+    await dayCell(dialog, 14).click();
+    await page.waitForTimeout(DWELL_MIN_MS * 3);
+    await expect(dialog).toHaveAttribute("data-state", "open");
+    await expect(segment(page, "day", "internationalized")).toHaveText("14");
+  });
+
+  test("date-picker-time twin (time): closes on select", async ({ page }) => {
+    await gotoDatePicker(page);
+    await pickerTrigger(page, "time").click();
+    const dialog = pickerContent(page, "time");
+    await expect(dialog).toBeVisible();
+    await dayCell(dialog, 14).click();
+    await expect(dialog).toBeHidden({ timeout: 15000 });
+    await expect(segment(page, "day", "time")).toHaveText("14");
+  });
+});
+
+/**
+ * -----------------------------------------------------------------------
+ * Natural language (variant=natural_language) -- shadcn's `date-picker-natural-language` (research:
+ * /home/user/tgt/research-shadcn-209-210.md part A1): label "Schedule Date", placeholder "Tomorrow or
+ * next week", initial value "In 2 days", parse on input (a miss KEEPS the previous date), ArrowDown opens
+ * the popover, the calendar button is an icon button INSIDE the input group (aria-label "Select date",
+ * popover aligned to the end), selecting writes the formatted date into the input and closes, and the
+ * sentence below reads "Your post will be published on <bold date>.".
+ * -----------------------------------------------------------------------
+ */
+test.describe("Natural language picker (variant=natural_language)", () => {
+  const VARIANT = "natural_language";
+
+  /** `toLocaleDateString("en-US", { day: "2-digit", month: "long", year: "numeric" })` of UTC-today + `days` (the demo uses UTC today). */
+  async function expectedDate(page: Page, days: number) {
+    return page.evaluate((d) => {
+      const now = new Date();
+      const utc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + d));
+      return utc.toLocaleDateString("en-US", { timeZone: "UTC", day: "2-digit", month: "long", year: "numeric" });
+    }, days);
+  }
+
+  function field(page: Page) {
+    return frame(page, VARIANT).locator("#date-picker-natural-language-input");
+  }
+  function sentence(page: Page) {
+    return frame(page, VARIANT).getByText("Your post will be published on", { exact: false });
+  }
+  function boldDate(page: Page) {
+    return sentence(page).locator("span");
+  }
+
+  test("starts as 'In 2 days' with shadcn's label and placeholder, and the sentence shows that date", async ({ page }) => {
+    await gotoDatePicker(page);
+    await expect(frame(page, VARIANT).getByText("Schedule Date", { exact: true })).toBeVisible();
+    await expect(field(page)).toHaveValue("In 2 days");
+    await expect(field(page)).toHaveAttribute("placeholder", "Tomorrow or next week");
+    await expect(boldDate(page)).toHaveText(await expectedDate(page, 2));
+    await expect(sentence(page)).toHaveText(/^Your post will be published on .+\.$/);
+  });
+
+  test("the calendar button sits INSIDE the input group, labelled 'Select date'", async ({ page }) => {
+    await gotoDatePicker(page);
+    const group = frame(page, VARIANT).locator(".dx-input-group");
+    await expect(group.locator("#date-picker-natural-language-input")).toHaveCount(1);
+    const button = group.getByRole("button", { name: "Select date" });
+    await expect(button).toBeVisible();
+    // Inside the group's box, beside (not below) the field.
+    const [g, b, f] = await Promise.all([
+      group.evaluate((el) => el.getBoundingClientRect().toJSON()),
+      button.evaluate((el) => el.getBoundingClientRect().toJSON()),
+      field(page).evaluate((el) => el.getBoundingClientRect().toJSON()),
+    ]);
+    expect(b.left).toBeGreaterThanOrEqual(g.left);
+    expect(b.right).toBeLessThanOrEqual(g.right + 0.5);
+    expect(b.top).toBeGreaterThanOrEqual(g.top - 0.5);
+    expect(b.bottom).toBeLessThanOrEqual(g.bottom + 0.5);
+    expect(b.left, "the button is at the inline end of the field").toBeGreaterThanOrEqual(f.left + f.width / 2);
+  });
+
+  test("typing 'tomorrow' sets the date and the sentence; typing garbage keeps the previous date", async ({ page }) => {
+    await gotoDatePicker(page);
+    await field(page).fill("tomorrow");
+    await expect(boldDate(page)).toHaveText(await expectedDate(page, 1));
+    await field(page).fill("asdf qwer");
+    await expect(field(page)).toHaveValue("asdf qwer");
+    await expect(boldDate(page)).toHaveText(await expectedDate(page, 1)); // unchanged
+    await field(page).fill("in 3 days");
+    await expect(boldDate(page)).toHaveText(await expectedDate(page, 3));
+    await field(page).fill("2027-03-04");
+    await expect(boldDate(page)).toHaveText("March 04, 2027");
+  });
+
+  test("ArrowDown in the field opens the calendar, which opens on the parsed date", async ({ page }) => {
+    await gotoDatePicker(page);
+    await field(page).fill("2027-03-04");
+    await field(page).press("ArrowDown");
+    const dialog = pickerContent(page, VARIANT);
+    await expect(dialog).toBeVisible();
+    await expect(dayCell(dialog, 4)).toHaveAttribute("data-selected", "true");
+  });
+
+  test("the popover is end-aligned to the calendar button", async ({ page }) => {
+    await page.setViewportSize(ROOMY_VIEWPORT);
+    await gotoDatePicker(page);
+    const button = frame(page, VARIANT).getByRole("button", { name: "Select date" });
+    await button.click();
+    const dialog = pickerContent(page, VARIANT);
+    await expect(dialog).toBeVisible();
+    await waitSettled(dialog);
+    const [d, b] = await Promise.all([
+      dialog.evaluate((el) => el.getBoundingClientRect().toJSON()),
+      button.evaluate((el) => el.getBoundingClientRect().toJSON()),
+    ]);
+    expect(Math.abs(d.right - b.right), `dialog right ${d.right} vs button right ${b.right}`).toBeLessThanOrEqual(4);
+  });
+
+  test("picking a day writes the formatted date into the field, updates the sentence and closes the popover", async ({ page }) => {
+    await gotoDatePicker(page);
+    await frame(page, VARIANT).getByRole("button", { name: "Select date" }).click();
+    const dialog = pickerContent(page, VARIANT);
+    await expect(dialog).toBeVisible();
+    await dayCell(dialog, 20).click();
+    await expect(dialog).toBeHidden({ timeout: 15000 });
+    const value = await field(page).inputValue();
+    expect(value).toMatch(/^[A-Z][a-z]+ 20, \d{4}$/);
+    await expect(boldDate(page)).toHaveText(value);
+    // The written text parses back to the same date: typing it again changes nothing.
+    await field(page).fill(value);
+    await expect(boldDate(page)).toHaveText(value);
   });
 });
