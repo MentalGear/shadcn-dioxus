@@ -7,8 +7,8 @@
  *
  * Link it once at your app root next to `dx-components-theme.css` (it reads that
  * file's `--dx-space-*` tokens, with fallbacks, and its `--light`/`--dark` mode
- * toggles for the dark-mode shimmer highlight). `attachment` and `marker` list it
- * in their `component.json` `globalAssets`, so `dx components add` copies it
+ * toggles for the dark-mode shimmer highlight). `attachment`, `marker`, `message_scroller`,
+ * `scroll_area` and `virtual_list` list it in their `component.json` `globalAssets`, so `dx components add` copies it
  * alongside the theme.
  *
  * Ported from shadcn/ui's `scroll-fade` and `shimmer` utilities
@@ -43,6 +43,12 @@
  * class on the inner scroller, so the mask dissolves the content and not the
  * card. A visible scrollbar fades with the content; pair it with
  * `scrollbar-width: none` to hide it.
+ *
+ * In Rust: `ScrollArea`, `VirtualList` and `MessageScrollerViewport` take a
+ * `fade: ScrollFade` prop (`None`, `Y`, `X`, `Top`, `Bottom`, `Start`, `End`: one
+ * class each, on the element that scrolls). It only adds the class, so this file
+ * must be linked for it to do anything; the three components list it in their
+ * `globalAssets`. Documented in `scroll_area/docs.md` ("Edge fade").
  * ---------------------------------------------------------------------------
  */
 
@@ -124,6 +130,46 @@
 
   to {
     --dx-scroll-fade-e: 0px;
+  }
+}
+
+@keyframes dx-scroll-fade-hold-t {
+  from,
+  to {
+    --dx-scroll-fade-t: var(
+      --dx-internal-scroll-fade-size-t,
+      var(--dx-scroll-fade-size, min(12%, var(--dx-space-10, 2.5rem)))
+    );
+  }
+}
+
+@keyframes dx-scroll-fade-hold-b {
+  from,
+  to {
+    --dx-scroll-fade-b: var(
+      --dx-internal-scroll-fade-size-b,
+      var(--dx-scroll-fade-size, min(12%, var(--dx-space-10, 2.5rem)))
+    );
+  }
+}
+
+@keyframes dx-scroll-fade-hold-s {
+  from,
+  to {
+    --dx-scroll-fade-s: var(
+      --dx-internal-scroll-fade-size-s,
+      var(--dx-scroll-fade-size, min(12%, var(--dx-space-10, 2.5rem)))
+    );
+  }
+}
+
+@keyframes dx-scroll-fade-hold-e {
+  from,
+  to {
+    --dx-scroll-fade-e: var(
+      --dx-internal-scroll-fade-size-e,
+      var(--dx-scroll-fade-size, min(12%, var(--dx-space-10, 2.5rem)))
+    );
   }
 }
 
@@ -303,71 +349,105 @@
   mask-repeat: no-repeat;
 }
 
-/* Scroll-aware: each fade is driven by the scroller's own scroll position. */
+/* Scroll-aware: each fade is driven by the scroller's own scroll position.
+ *
+ * No `animation-fill-mode` on purpose. Each edge is TWO animations whose ranges tile the scroll
+ * range: a reveal (0 -> full depth, or full -> 0, over `--dx-scroll-fade-reveal`) and a `hold`
+ * that pins the full depth for the rest of the range. A scroller that stops overflowing turns
+ * its scroll timeline inactive, and Chromium keeps the last value of an animation that has a
+ * fill mode (a start edge left faded at 40px over content that fits, measured in Chrome 148);
+ * with no fill, inactive means no effect, so the edges fall back to their registered initial
+ * value 0 -- "no overflow, no fade" holds after the content shrinks as well as on first paint.
+ * The hold on a start edge ends at `calc(100% + 1px)` so the very end of the range (where the
+ * hold's own end boundary sits) is still inside it. */
 @supports (animation-timeline: scroll()) {
   .dx-scroll-fade,
   .dx-scroll-fade-y {
     animation:
       dx-scroll-fade-reveal-t 1ms ease-in-out,
+      dx-scroll-fade-hold-t 1ms linear,
+      dx-scroll-fade-hold-b 1ms linear,
       dx-scroll-fade-reveal-b 1ms ease-in-out;
-    animation-fill-mode: both;
     animation-range:
       0 var(--dx-scroll-fade-reveal, var(--dx-space-24, 6rem)),
+      var(--dx-scroll-fade-reveal, var(--dx-space-24, 6rem)) calc(100% + 1px),
+      0 calc(100% - var(--dx-scroll-fade-reveal, var(--dx-space-24, 6rem))),
       calc(100% - var(--dx-scroll-fade-reveal, var(--dx-space-24, 6rem))) 100%;
-    animation-timeline: scroll(self y), scroll(self y);
+    animation-timeline: scroll(self y), scroll(self y), scroll(self y), scroll(self y);
   }
 
   .dx-scroll-fade-x {
     animation:
       dx-scroll-fade-reveal-s 1ms ease-in-out,
+      dx-scroll-fade-hold-s 1ms linear,
+      dx-scroll-fade-hold-e 1ms linear,
       dx-scroll-fade-reveal-e 1ms ease-in-out;
-    animation-fill-mode: both;
     animation-range:
       0 var(--dx-scroll-fade-reveal, var(--dx-space-24, 6rem)),
+      var(--dx-scroll-fade-reveal, var(--dx-space-24, 6rem)) calc(100% + 1px),
+      0 calc(100% - var(--dx-scroll-fade-reveal, var(--dx-space-24, 6rem))),
       calc(100% - var(--dx-scroll-fade-reveal, var(--dx-space-24, 6rem))) 100%;
-    animation-timeline: scroll(self inline), scroll(self inline);
+    animation-timeline: scroll(self inline), scroll(self inline), scroll(self inline), scroll(self inline);
   }
 
   .dx-scroll-fade-t {
-    animation: dx-scroll-fade-reveal-t 1ms ease-in-out;
-    animation-fill-mode: both;
-    animation-range: 0 var(--dx-scroll-fade-reveal, var(--dx-space-24, 6rem));
-    animation-timeline: scroll(self y);
+    animation:
+      dx-scroll-fade-reveal-t 1ms ease-in-out,
+      dx-scroll-fade-hold-t 1ms linear;
+    animation-range:
+      0 var(--dx-scroll-fade-reveal, var(--dx-space-24, 6rem)),
+      var(--dx-scroll-fade-reveal, var(--dx-space-24, 6rem)) calc(100% + 1px);
+    animation-timeline: scroll(self y), scroll(self y);
   }
 
   .dx-scroll-fade-b {
-    animation: dx-scroll-fade-reveal-b 1ms ease-in-out;
-    animation-fill-mode: both;
-    animation-range: calc(100% - var(--dx-scroll-fade-reveal, var(--dx-space-24, 6rem))) 100%;
-    animation-timeline: scroll(self y);
+    animation:
+      dx-scroll-fade-hold-b 1ms linear,
+      dx-scroll-fade-reveal-b 1ms ease-in-out;
+    animation-range:
+      0 calc(100% - var(--dx-scroll-fade-reveal, var(--dx-space-24, 6rem))),
+      calc(100% - var(--dx-scroll-fade-reveal, var(--dx-space-24, 6rem))) 100%;
+    animation-timeline: scroll(self y), scroll(self y);
   }
 
   .dx-scroll-fade-l {
-    animation: dx-scroll-fade-reveal-s 1ms ease-in-out;
-    animation-fill-mode: both;
-    animation-range: 0 var(--dx-scroll-fade-reveal, var(--dx-space-24, 6rem));
-    animation-timeline: scroll(self x);
+    animation:
+      dx-scroll-fade-reveal-s 1ms ease-in-out,
+      dx-scroll-fade-hold-s 1ms linear;
+    animation-range:
+      0 var(--dx-scroll-fade-reveal, var(--dx-space-24, 6rem)),
+      var(--dx-scroll-fade-reveal, var(--dx-space-24, 6rem)) calc(100% + 1px);
+    animation-timeline: scroll(self x), scroll(self x);
   }
 
   .dx-scroll-fade-r {
-    animation: dx-scroll-fade-reveal-e 1ms ease-in-out;
-    animation-fill-mode: both;
-    animation-range: calc(100% - var(--dx-scroll-fade-reveal, var(--dx-space-24, 6rem))) 100%;
-    animation-timeline: scroll(self x);
+    animation:
+      dx-scroll-fade-hold-e 1ms linear,
+      dx-scroll-fade-reveal-e 1ms ease-in-out;
+    animation-range:
+      0 calc(100% - var(--dx-scroll-fade-reveal, var(--dx-space-24, 6rem))),
+      calc(100% - var(--dx-scroll-fade-reveal, var(--dx-space-24, 6rem))) 100%;
+    animation-timeline: scroll(self x), scroll(self x);
   }
 
   .dx-scroll-fade-s {
-    animation: dx-scroll-fade-reveal-s 1ms ease-in-out;
-    animation-fill-mode: both;
-    animation-range: 0 var(--dx-scroll-fade-reveal, var(--dx-space-24, 6rem));
-    animation-timeline: scroll(self inline);
+    animation:
+      dx-scroll-fade-reveal-s 1ms ease-in-out,
+      dx-scroll-fade-hold-s 1ms linear;
+    animation-range:
+      0 var(--dx-scroll-fade-reveal, var(--dx-space-24, 6rem)),
+      var(--dx-scroll-fade-reveal, var(--dx-space-24, 6rem)) calc(100% + 1px);
+    animation-timeline: scroll(self inline), scroll(self inline);
   }
 
   .dx-scroll-fade-e {
-    animation: dx-scroll-fade-reveal-e 1ms ease-in-out;
-    animation-fill-mode: both;
-    animation-range: calc(100% - var(--dx-scroll-fade-reveal, var(--dx-space-24, 6rem))) 100%;
-    animation-timeline: scroll(self inline);
+    animation:
+      dx-scroll-fade-hold-e 1ms linear,
+      dx-scroll-fade-reveal-e 1ms ease-in-out;
+    animation-range:
+      0 calc(100% - var(--dx-scroll-fade-reveal, var(--dx-space-24, 6rem))),
+      calc(100% - var(--dx-scroll-fade-reveal, var(--dx-space-24, 6rem))) 100%;
+    animation-timeline: scroll(self inline), scroll(self inline);
   }
 }
 

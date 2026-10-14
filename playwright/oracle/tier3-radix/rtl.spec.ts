@@ -192,9 +192,9 @@ test.describe("Roving focus: RadioGroup", () => {
   test("control (LTR, main variant): ArrowLeft has no effect (the main fixture is vertical, not horizontal)", async ({ page }) => {
     await goto(page, "radio_group", "main");
     const scope = demoFrame(page, "main");
-    const red = scope.getByRole("radio", { name: "Red" });
-    await red.click();
-    await expect(red).toBeFocused();
+    const comfortable = scope.getByRole("radio", { name: "Comfortable" });
+    await comfortable.click();
+    await expect(comfortable).toBeFocused();
     // The `main` fixture never sets `horizontal: true` (vertical is the
     // default), so `ArrowLeft`/`ArrowRight` are not roving-focus keys for
     // it at all -- `radio_group.rs` gates that whole arm on `horizontal`
@@ -206,7 +206,7 @@ test.describe("Roving focus: RadioGroup", () => {
     // instead confirms the `horizontal` gate itself is unaffected by this
     // lane's direction work.
     await page.keyboard.press("ArrowLeft");
-    await expect(red).toBeFocused();
+    await expect(comfortable).toBeFocused();
   });
 });
 
@@ -214,7 +214,7 @@ test.describe("Roving focus: ToggleGroup", () => {
   test("RTL: ArrowLeft from the middle item moves to the NEXT item", async ({ page }) => {
     await goto(page, "toggle_group", "rtl");
     const scope = demoFrame(page, "rtl");
-    const items = scope.getByRole("button").filter({ hasText: /^[SHC]$/ });
+    const items = scope.locator("button[aria-pressed]");
     await items.nth(1).click();
     await expect(items.nth(1)).toBeFocused();
     await page.keyboard.press("ArrowLeft");
@@ -224,7 +224,7 @@ test.describe("Roving focus: ToggleGroup", () => {
   test("control (LTR, main variant): ArrowLeft from the middle item moves to the PREVIOUS item", async ({ page }) => {
     await goto(page, "toggle_group", "main");
     const scope = demoFrame(page, "main");
-    const items = scope.getByRole("button").filter({ hasText: /^[BIU]$/ });
+    const items = scope.locator("button[aria-pressed]");
     await items.nth(1).click();
     await expect(items.nth(1)).toBeFocused();
     await page.keyboard.press("ArrowLeft");

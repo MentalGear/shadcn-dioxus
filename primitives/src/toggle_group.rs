@@ -148,6 +148,8 @@ pub struct ToggleGroupProps {
 ///
 /// ## Styling
 ///
+/// The root carries `role="group"` (name it with `aria-label` or `aria-labelledby`).
+///
 /// The [`ToggleGroup`] component defines the following data attributes you can use to control styling:
 /// - `data-orientation`: Indicates the orientation of the toggle group. Values are `horizontal` or `vertical`.
 /// - `data-allow-multiple-pressed`: Indicates if multiple items can be pressed at the same time. Values are `true` or `false`.
@@ -175,6 +177,7 @@ pub fn ToggleGroup(props: ToggleGroupProps) -> Element {
     });
 
     let owned = attributes!(div {
+        role: "group",
         "data-orientation": ctx.orientation(),
         "data-allow-multiple-pressed": ctx.allow_multiple_pressed,
         "data-direction": direction.as_str(),

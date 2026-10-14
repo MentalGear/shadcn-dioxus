@@ -135,6 +135,7 @@ test("a base colour re-themes the page surfaces in both modes", async ({ page })
 
   await page.getByRole("button", { name: "Enable dark mode" }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await expect(page.locator("html")).toHaveClass(/(^|\s)dark(\s|$)/); // shadcn's `.dark`, written with data-theme
   await expectBackground(page, navbar, zinc.dark);
   // shadcn's dark background is not the library's own pure black: the preset really took over.
   await expectBackgroundNot(page, navbar, "#000");
@@ -208,6 +209,7 @@ test("light/dark toggle still flips with a preset active", async ({ page }) => {
 
   await page.getByRole("button", { name: "Enable light mode" }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await expect(page.locator("html")).not.toHaveClass(/(^|\s)dark(\s|$)/);
   await expectBackground(page, button, blue.light);
 });
 
@@ -274,7 +276,8 @@ test("with no preset --dx-border-strong is still the ramp step, in both modes", 
   // exactly what it was. Painted colours, not custom-property text.
   for (const mode of ["light", "dark"]) {
     const [strong, ramp] = await page.evaluate((m) => {
-      document.documentElement.setAttribute("data-theme", m);
+      // The mode goes through the page's one writer (theme.rs `apply_mode`), never a raw attribute write.
+      (window as unknown as { __dxApplyMode: (m: string) => void }).__dxApplyMode(m);
       const paint = (v: string) => {
         const el = document.createElement("div");
         el.style.borderTop = `1px solid var(${v})`;

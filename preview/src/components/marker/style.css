@@ -86,13 +86,13 @@
   text-align: center;
 }
 
-.dx-marker-content a {
+.dx-marker-content a:not(:where([popover], dialog) *) {
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .dx-marker-content a:hover {
+  .dx-marker-content a:not(:where([popover], dialog) *):hover {
     color: var(--dx-foreground);
   }
 }

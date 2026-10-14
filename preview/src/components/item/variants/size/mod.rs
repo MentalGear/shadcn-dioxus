@@ -1,8 +1,8 @@
 use super::super::component::*;
-use crate::components::button::{Button, ButtonVariant};
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{BadgeCheck, ChevronRight};
+use dioxus_icons::lucide::Inbox;
 
+/// shadcn's `item-size`: the three sizes, each an outline `Item` with an icon media, title and description.
 #[component]
 pub fn Demo() -> Element {
     rsx! {
@@ -14,64 +14,26 @@ pub fn Demo() -> Element {
             max_width: "28rem",
 
             Item { variant: ItemVariant::Outline,
+                ItemMedia { variant: ItemMediaVariant::Icon, Inbox {} }
                 ItemContent {
-                    ItemTitle { "Basic Item" }
-                    ItemDescription { "A simple item with title and description." }
-                }
-                ItemActions {
-                    Button { variant: ButtonVariant::Outline, "Action" }
+                    ItemTitle { "Default Size" }
+                    ItemDescription { "The standard size for most use cases." }
                 }
             }
-
-            Item {
-                variant: ItemVariant::Outline,
-                size: ItemSize::Sm,
-                as: move |attrs: Vec<Attribute>| rsx! {
-                    a { href: "#", ..attrs,
-                        ItemMedia {
-                            BadgeCheckIcon {}
-                        }
-                        ItemContent {
-                            ItemTitle { "Your profile has been verified." }
-                        }
-                        ItemActions {
-                            ChevronRightIcon {}
-                        }
-                    }
-                },
+            Item { variant: ItemVariant::Outline, size: ItemSize::Sm,
+                ItemMedia { variant: ItemMediaVariant::Icon, Inbox {} }
+                ItemContent {
+                    ItemTitle { "Small Size" }
+                    ItemDescription { "A compact size for dense layouts." }
+                }
             }
-
-            Item {
-                variant: ItemVariant::Outline,
-                size: ItemSize::Xs,
-                as: move |attrs: Vec<Attribute>| rsx! {
-                    a { href: "#", ..attrs,
-                        ItemMedia {
-                            BadgeCheckIcon {}
-                        }
-                        ItemContent {
-                            ItemTitle { "Your profile has been verified (xs)." }
-                        }
-                        ItemActions {
-                            ChevronRightIcon {}
-                        }
-                    }
-                },
+            Item { variant: ItemVariant::Outline, size: ItemSize::Xs,
+                ItemMedia { variant: ItemMediaVariant::Icon, Inbox {} }
+                ItemContent {
+                    ItemTitle { "Extra Small Size" }
+                    ItemDescription { "The most compact size available." }
+                }
             }
         }
-    }
-}
-
-#[component]
-fn BadgeCheckIcon() -> Element {
-    rsx! {
-        BadgeCheck { size: "20" }
-    }
-}
-
-#[component]
-fn ChevronRightIcon() -> Element {
-    rsx! {
-        ChevronRight { size: "16" }
     }
 }

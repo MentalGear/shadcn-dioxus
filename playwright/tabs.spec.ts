@@ -252,10 +252,10 @@ test.describe("hidden_until_found", () => {
   });
 });
 
-// The `Ghost` variant (`data-variant="ghost"`, the DEMO/CODE tabs on every component page) is shadcn's `line`
-// variant: a transparent list, and the active tab carries a 2px underline that moves with the selection.
-// Before this nothing styled `ghost`, so the active tab differed from the others by a shade of text colour.
-test.describe("ghost variant is a line: the active tab carries the underline", () => {
+// The `line` variant (`data-variant="line"`; `TabsVariant::Ghost`, the DEMO/CODE tabs on every component page,
+// is its old name and renders the same): a transparent list, and the active tab carries a 2px underline that
+// moves with the selection.
+test.describe("line variant: the active tab carries the underline", () => {
   const underline = (tab: Locator) =>
     tab.evaluate((el) => {
       const after = getComputedStyle(el, "::after");
@@ -264,7 +264,7 @@ test.describe("ghost variant is a line: the active tab carries the underline", (
 
   test("the underline follows the selected tab and the list has no fill", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/?name=button&`, { timeout: 20 * 60 * 1000 });
-    const list = page.locator('[data-variant="ghost"] .dx-tabs-list').first();
+    const list = page.locator('[data-variant="line"] .dx-tabs-list').first();
     const demo = list.getByRole("tab", { name: "DEMO" });
     const code = list.getByRole("tab", { name: "CODE" });
     await expect(demo).toHaveAttribute("aria-selected", "true");
@@ -278,5 +278,123 @@ test.describe("ghost variant is a line: the active tab carries the underline", (
     await expect(code).toHaveAttribute("aria-selected", "true");
     await expect.poll(() => underline(code)).toMatchObject({ opacity: 1 });
     await expect.poll(() => underline(demo)).toMatchObject({ opacity: 0 });
+  });
+});
+
+// Vertical orientation (backlog row 155 group 5): shadcn's `orientation="vertical"`. The `vertical` variant is
+// Account / Password / Notifications (default fill); `vertical_line` is Teams / Members / Roles (line variant).
+test.describe("vertical orientation", () => {
+  const URL = `${BASE_URL}/component/?name=tabs&`;
+  async function load(page: Page) {
+    await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
+    const vlist = page.locator('[role="tablist"][aria-orientation="vertical"]');
+    await expect(vlist).toHaveCount(2);
+    return { vlist, list: vlist.first(), lineList: vlist.last() };
+  }
+
+  test("aria-orientation and data-orientation follow the prop; horizontal is the default", async ({ page }) => {
+    const { list } = await load(page);
+    await expect(list.locator("xpath=..")).toHaveAttribute("data-orientation", "vertical");
+    const main = page.getByRole("tab", { name: "Tab 1" }).locator('xpath=ancestor::*[@role="tablist"]');
+    await expect(main).toHaveAttribute("aria-orientation", "horizontal");
+    await expect(main.locator("xpath=..")).toHaveAttribute("data-orientation", "horizontal");
+  });
+
+  test("the list is a column beside the panel, triggers fill its width start-aligned", async ({ page }) => {
+    const { list } = await load(page);
+    const root = list.locator("xpath=..");
+    await expect(root).toHaveCSS("flex-direction", "row");
+    await expect(list).toHaveCSS("flex-direction", "column");
+    const geo = await list.evaluate((el) => {
+      const l = el.getBoundingClientRect();
+      const t = [...el.querySelectorAll('[role="tab"]')].map((n) => n.getBoundingClientRect());
+      const panel = el.parentElement!.querySelector('[role="tabpanel"]:not([hidden])')!.getBoundingClientRect();
+      return { l, t, panel, justify: getComputedStyle(el.querySelector('[role="tab"]')!).justifyContent };
+    });
+    // Stacked top to bottom, each as wide as the list's content box, list to the start side of the panel.
+    expect(geo.t[1].top).toBeGreaterThan(geo.t[0].bottom - 1);
+    expect(geo.t[2].top).toBeGreaterThan(geo.t[1].bottom - 1);
+    expect(Math.abs(geo.t[0].width - geo.t[2].width)).toBeLessThan(1);
+    expect(geo.t[0].width).toBeGreaterThan(geo.l.width - 8);
+    expect(geo.panel.left).toBeGreaterThanOrEqual(geo.l.right - 1);
+    expect(geo.justify).toBe("flex-start");
+    // `h-fit`: the list is as tall as its triggers, not stretched to the panel.
+    expect(geo.l.height).toBeLessThan(geo.t[2].bottom - geo.t[0].top + 8);
+  });
+
+  test("ArrowUp/ArrowDown move focus (looping), Home/End jump, ArrowLeft/ArrowRight do nothing", async ({ page }) => {
+    const { list } = await load(page);
+    const tab = (n: string) => list.getByRole("tab", { name: n, exact: true });
+    await tab("Account").click();
+    await page.keyboard.press("ArrowDown");
+    await expect(tab("Password")).toBeFocused();
+    await page.keyboard.press("ArrowDown");
+    await expect(tab("Notifications")).toBeFocused();
+    await page.keyboard.press("ArrowDown");
+    await expect(tab("Account")).toBeFocused();
+    await page.keyboard.press("ArrowUp");
+    await expect(tab("Notifications")).toBeFocused();
+    await page.keyboard.press("Home");
+    await expect(tab("Account")).toBeFocused();
+    await page.keyboard.press("End");
+    await expect(tab("Notifications")).toBeFocused();
+
+    await page.keyboard.press("ArrowRight");
+    await expect(tab("Notifications")).toBeFocused();
+    await page.keyboard.press("ArrowLeft");
+    await expect(tab("Notifications")).toBeFocused();
+
+    // Focus moved without selecting; Enter selects.
+    await expect(tab("Account")).toHaveAttribute("aria-selected", "true");
+    await page.keyboard.press("Enter");
+    await expect(tab("Notifications")).toHaveAttribute("aria-selected", "true");
+    await expect(list.locator("xpath=..").locator(':scope > [role="tabpanel"]:not([hidden])')).toHaveText(/Choose which events email you/);
+  });
+
+  test("a horizontal list ignores ArrowUp/ArrowDown", async ({ page }) => {
+    await load(page);
+    const tab1 = page.getByRole("tab", { name: "Tab 1" });
+    await tab1.click();
+    await page.keyboard.press("ArrowDown");
+    await expect(tab1).toBeFocused();
+    await page.keyboard.press("ArrowUp");
+    await expect(tab1).toBeFocused();
+  });
+
+  test("the line variant draws a vertical 2px bar on the side facing the panel", async ({ page }) => {
+    const { lineList } = await load(page);
+    const bar = (name: string) =>
+      lineList.getByRole("tab", { name, exact: true }).evaluate((el) => {
+        const a = getComputedStyle(el, "::after");
+        const t = el.getBoundingClientRect();
+        // Pseudo-element geometry from its computed box: right edge relative to the trigger.
+        return { opacity: Number(a.opacity), width: a.width, height: a.height, right: parseFloat(a.right), triggerW: t.width };
+      });
+    await expect(lineList).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+    await expect.poll(() => bar("Teams")).toMatchObject({ opacity: 1, width: "2px", right: -4 });
+    expect((await bar("Teams")).height).toBe(
+      (await lineList.getByRole("tab", { name: "Teams", exact: true }).evaluate((el) => `${el.getBoundingClientRect().height - 2}px`)),
+    );
+    await expect.poll(() => bar("Members")).toMatchObject({ opacity: 0, width: "2px" });
+    await lineList.getByRole("tab", { name: "Members", exact: true }).click();
+    await expect.poll(() => bar("Members")).toMatchObject({ opacity: 1 });
+    await expect.poll(() => bar("Teams")).toMatchObject({ opacity: 0 });
+  });
+
+  test("a default Tabs inside the docs page's line DEMO/CODE tabs keeps its own variant (no leak)", async ({ page }) => {
+    const { list } = await load(page);
+    // The vertical demo is a `default` Tabs nested in the page's `line` Tabs: its list keeps the muted pill and
+    // its active trigger the raised fill, and no line bar is drawn; the outer line list stays transparent.
+    expect(await list.evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe("rgba(0, 0, 0, 0)");
+    const active = list.getByRole("tab", { name: "Account", exact: true });
+    expect(await active.evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe("rgba(0, 0, 0, 0)");
+    expect(await active.evaluate((el) => getComputedStyle(el, "::after").backgroundColor)).toBe("rgba(0, 0, 0, 0)");
+    const outer = page.locator('[data-variant="line"] .dx-tabs-list').first();
+    await expect(outer).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  });
+
+  test("vertical tabs have no automatically detectable a11y issues", async ({ page }) => {
+    await load(page);
+    await expectNoAxeViolations(page, "tabs: vertical", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 });

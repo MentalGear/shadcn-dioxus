@@ -1,9 +1,18 @@
 use super::super::component::*;
 use dioxus::prelude::*;
 
+/// shadcn's `toggle-disabled`: a default and an outline toggle, both disabled.
 #[component]
 pub fn Demo() -> Element {
     rsx! {
-        Toggle { disabled: true, style: "padding-inline: 0.75rem;", "Disabled" }
+        div { style: "display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem;",
+            Toggle { aria_label: "Toggle disabled", disabled: true, "Disabled" }
+            Toggle {
+                aria_label: "Toggle disabled outline",
+                variant: ToggleVariant::Outline,
+                disabled: true,
+                "Disabled"
+            }
+        }
     }
 }

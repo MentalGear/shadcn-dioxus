@@ -19,6 +19,23 @@ Accordion {
 
 `AccordionContent` supplies shadcn's Nova spacing itself (`text-sm`, no top padding, 10px below), so content needs no padding of its own. The trigger is `text-sm font-medium` with 10px of vertical padding and a 16px chevron in `muted-foreground`. Content wrapped in an extra bottom padding (the old demos used 1rem) now leaves a larger gap than Nova.
 
+## Multiple open items
+
+By default opening an item closes the one that was open. Pass `allow_multiple_open: true` on `Accordion` (shadcn's `multiple`) and each item toggles on its own; `default_open: true` on an `AccordionItem` starts it open (shadcn's `defaultValue`). See the `multiple` variant.
+
+```rust
+Accordion { allow_multiple_open: true,
+    AccordionItem { index: 0, default_open: true,
+        AccordionTrigger { "Notification Settings" }
+        AccordionContent { "..." }
+    }
+    AccordionItem { index: 1,
+        AccordionTrigger { "Privacy & Security" }
+        AccordionContent { "..." }
+    }
+}
+```
+
 ## Searchable closed content
 
 By default closed items are unmounted after their close animation, so find-in-page (Ctrl+F) cannot see their text and a `#fragment` link cannot open them. Pass `hidden_until_found: true` on `Accordion` to keep every item's content mounted and mark it `hidden="until-found"` once it is closed. The browser then searches it, and when a match is inside a closed item it reveals the content and the accordion opens that item: `on_change` is called with `true`, and with `allow_multiple_open: false` (the default) the open item closes, exactly as if the trigger had been clicked. See the `until_found` variant: try Ctrl+F for the word in its hint.

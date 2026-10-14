@@ -24,8 +24,11 @@ pub struct TabsProps {
     #[props(default)]
     pub disabled: ReadSignal<bool>,
 
-    /// Whether the tabs are horizontal.
-    #[props(default)]
+    /// Whether the tabs are horizontal (the default, shadcn's `orientation="horizontal"`).
+    /// `false` lays the list out as a column beside the panels (shadcn's
+    /// `orientation="vertical"`), moves focus with `ArrowUp`/`ArrowDown`, and sets
+    /// `aria-orientation="vertical"` on the list.
+    #[props(default = ReadSignal::new(Signal::new(true)))]
     pub horizontal: ReadSignal<bool>,
 
     /// Whether focus should loop around when reaching the end.
@@ -60,8 +63,11 @@ pub enum TabsVariant {
     /// The default variant.
     #[default]
     Default,
-    /// No pill: a transparent list, and the active tab carries a 2px underline
-    /// (shadcn's `line` variant).
+    /// No pill: a transparent list, and the active tab carries a 2px bar (an underline
+    /// when horizontal, a bar on the panel side when vertical): shadcn's `line` variant.
+    Line,
+    /// The former name of [`TabsVariant::Line`], kept as an alias: it renders identically
+    /// (`data-variant="line"`).
     Ghost,
 }
 
@@ -70,7 +76,7 @@ impl TabsVariant {
     fn to_class(self) -> &'static str {
         match self {
             TabsVariant::Default => "default",
-            TabsVariant::Ghost => "ghost",
+            TabsVariant::Line | TabsVariant::Ghost => "line",
         }
     }
 }

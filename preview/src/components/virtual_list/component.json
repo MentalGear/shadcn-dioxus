@@ -9,5 +9,8 @@
       "git": "https://github.com/MentalGear/shadcn-dioxus"
     }
   ],
-  "globalAssets": ["../../../assets/dx-components-theme.css"]
+  "globalAssets": [
+    "../../../assets/dx-components-theme.css",
+    "../../../assets/dx-effects.css"
+  ]
 }

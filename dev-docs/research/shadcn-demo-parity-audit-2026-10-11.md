@@ -44,6 +44,8 @@ Original examples we lack, by priority. Checkbox is the reference case: the orig
 
 Ours is richer than the original for carousel, data_table, sidebar and chart. Skipped: form (original has no demos). No original page: navbar, toolbar, virtual_list, drag_and_drop_list, color_picker, tag_group, message, bubble, marker, attachment, message_scroller, top_layer, chart_tooltip, and the area / line / pie / radar / radial charts.
 
+> **Correction 2026-10-14:** the "No original page" claim for `message`, `bubble`, `marker`, `attachment` and `message_scroller` in the paragraph above is wrong. shadcn/ui has chat-kit docs pages and 44 examples for them (40 docs previews + 4 examples-only; ours has 25). The original text is left unchanged; see [`chat-kit-demos-2026-10-14.md`](./chat-kit-demos-2026-10-14.md) (gap table) and backlog row 213.
+
 ## 2. Differences from the row-187 report
 
 Row 187: 25 richer / 36 equal-or-better, 61 pages. Row 188: 7 high + 23 med + 21 low = 51 components flagged. All 25 of 187's components appear in 188, so 188 is a superset; the 26 extra are below.
@@ -55,6 +57,8 @@ Row 187: 25 richer / 36 equal-or-better, 61 pages. Row 188: 7 high + 23 med + 21
 - 188 also puts `separator`, `avatar`, `context_menu`, `scroll_area`, `field`, `input_otp`, `accordion` (all in 187's 25) in its low tier; see priority below.
 
 **Components 187 called equal-or-better that 188 does not mention either way:** pagination (neither list), attachment/bubble/marker/message/message_scroller (187 "equal"; 188 "no original page", so these two agree in effect), carousel/data_table/sidebar/chart family (agree: ours richer). **187 flagged and 188 does not drop any.** 188's "skipped: form" matches 187 (not in either table).
+
+> **Correction 2026-10-14:** "188 'no original page'" for attachment/bubble/marker/message/message_scroller does not hold, so 187's "equal" and 188's silence do not "agree in effect": the originals exist and the chat kit is behind them in demo count (25 of 44 examples). See [`chat-kit-demos-2026-10-14.md`](./chat-kit-demos-2026-10-14.md).
 
 **Priority disagreements.**
 | Component | 187 | 188 |

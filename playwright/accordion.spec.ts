@@ -230,8 +230,8 @@ test.describe("hidden_until_found", () => {
       expect(await panelOf(name).evaluate((el) => getComputedStyle(el).contentVisibility)).toBe("hidden");
     }
     // The default demo's four closed items render no content element at all: only the opt-in
-    // demo's three exist.
-    await expect(page.locator(".dx-accordion-content")).toHaveCount(3);
+    // demo's three exist (scoped to that accordion: the `multiple` demo's open first item has one too).
+    await expect(page.locator(".dx-accordion:has(button:text-is('Shipping')) .dx-accordion-content")).toHaveCount(3);
     // And find-in-page reaches the opted-in text but not the unmounted text.
     expect(await page.evaluate(() => window.find("narwhal"))).toBe(true);
     expect(await page.evaluate(() => window.find("lorem ipsum lorem"))).toBe(false);
@@ -367,5 +367,45 @@ test.describe("hidden_until_found", () => {
     await expect(page).toHaveURL(/\/component\/kbd\//);
     await expect.poll(() => page.evaluate(() => (window as any).__panel.isConnected)).toBe(false);
     expect(await beforematchListeners("window.__panel")).toBe(0);
+  });
+});
+
+/**
+ * `allow_multiple_open: true` (backlog row 155 group 9), the `multiple` variant: shadcn's `accordion-multiple`
+ * with "Notification Settings" open by default. Opening a second item must leave the first open (the main demo
+ * above closes it), and each item closes on its own.
+ */
+test.describe("allow_multiple_open", () => {
+  async function load(page: Page) {
+    await gotoHydrated(page, URL, { timeout: LOAD_TIMEOUT });
+    const item = (name: string) =>
+      page.locator(".dx-accordion-item", { has: page.getByRole("button", { name, exact: true }) });
+    const trigger = (name: string) => page.getByRole("button", { name, exact: true });
+    await expect(trigger("Notification Settings")).toHaveAttribute("aria-expanded", "true");
+    return { item, trigger };
+  }
+
+  test("the first item starts open and opening another leaves it open", async ({ page }) => {
+    const { item, trigger } = await load(page);
+    await expect(trigger("Privacy & Security")).toHaveAttribute("aria-expanded", "false");
+    await trigger("Privacy & Security").click();
+    await expect(item("Privacy & Security")).toHaveAttribute("data-open", "true");
+    await expect(trigger("Notification Settings")).toHaveAttribute("aria-expanded", "true");
+    await expect(item("Notification Settings")).toHaveAttribute("data-open", "true");
+
+    await trigger("Billing & Subscription").click();
+    for (const name of ["Notification Settings", "Privacy & Security", "Billing & Subscription"]) {
+      await expect(trigger(name)).toHaveAttribute("aria-expanded", "true");
+    }
+  });
+
+  test("each item closes on its own", async ({ page }) => {
+    const { item, trigger } = await load(page);
+    await trigger("Privacy & Security").click();
+    await expect(trigger("Privacy & Security")).toHaveAttribute("aria-expanded", "true");
+    await trigger("Notification Settings").click();
+    await expect(item("Notification Settings")).toHaveAttribute("data-open", "false");
+    await expect(trigger("Notification Settings")).toHaveAttribute("aria-expanded", "false");
+    await expect(trigger("Privacy & Security")).toHaveAttribute("aria-expanded", "true");
   });
 });

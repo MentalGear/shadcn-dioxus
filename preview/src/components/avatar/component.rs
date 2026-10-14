@@ -234,3 +234,53 @@ pub fn ImageAvatar(props: ImageAvatarProps) -> Element {
         }
     }
 }
+
+/// A status dot or icon at the avatar's bottom-end corner (shadcn's `AvatarBadge`: `absolute right-0
+/// bottom-0`, `bg-primary text-primary-foreground`, a 2px ring in the page background). It must be a child
+/// of [`Avatar`] -- the size comes from the root's `data-size`: 8px in the small avatar (an icon is hidden
+/// there), 10px by default and 12px in the large one, with the icon at 8px. Colour a status by overriding
+/// `background-color` (`style: "background-color: var(--dx-success)"`). A purely decorative mark; give the
+/// avatar's `aria-label` the status if it matters.
+#[component]
+pub fn AvatarBadge(
+    #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    #[props(default)] children: Element,
+) -> Element {
+    let base = attributes!(span { class: "dx-avatar-badge" });
+    let merged = merge_attributes(vec![base, attributes]);
+    rsx! {
+        document::Link { rel: "stylesheet", href: asset!("/src/components/avatar/style.css") }
+        span { ..merged, {children} }
+    }
+}
+
+/// An overlapping stack of [`Avatar`]s (shadcn's `AvatarGroup`: `flex -space-x-2`, each avatar ringed in
+/// the page background so the overlap reads as a cut). End it with an [`AvatarGroupCount`] for the "+N"
+/// tile. A plain `div`; pass `aria_label` to name the group.
+#[component]
+pub fn AvatarGroup(
+    #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    children: Element,
+) -> Element {
+    let base = attributes!(div { class: "dx-avatar-group" });
+    let merged = merge_attributes(vec![base, attributes]);
+    rsx! {
+        document::Link { rel: "stylesheet", href: asset!("/src/components/avatar/style.css") }
+        div { ..merged, {children} }
+    }
+}
+
+/// The "+N" tile at the end of an [`AvatarGroup`]: `muted` with `muted-foreground` text, ringed like the
+/// avatars and sized to match them (it follows the group's avatars' `data-size`). Holds text or an icon.
+#[component]
+pub fn AvatarGroupCount(
+    #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
+    children: Element,
+) -> Element {
+    let base = attributes!(div { class: "dx-avatar-group-count" });
+    let merged = merge_attributes(vec![base, attributes]);
+    rsx! {
+        document::Link { rel: "stylesheet", href: asset!("/src/components/avatar/style.css") }
+        div { ..merged, {children} }
+    }
+}

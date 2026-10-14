@@ -1,35 +1,125 @@
+/* Nova toggle group (shadcn-ui/ui apps/v4/registry/styles/style-nova.css, `.cn-toggle-group` +
+ * `.cn-toggle-group-item`; registry/bases/base/ui/toggle-group.tsx for the classes).
+ *
+ * The root is `flex w-fit flex-row items-center gap-[--spacing(var(--gap))]` (vertical:
+ * `flex-col items-stretch`), `--gap` being the `spacing` prop (default 2, = 8px). `variant` and `size`
+ * reach the items as slot variables: the root's `data-variant` / `data-size` redeclare the `--dx-toggle-*`
+ * slots (same names and values as `toggle/style.css`, which a lone Toggle sets on itself) and the items
+ * inherit them, so an item is a Toggle that is sized and edged by its group, as shadcn's context does.
+ *
+ * `spacing: 0` joins the items into one bar (`group-data-[spacing=0]/toggle-group:rounded-none px-2`,
+ * `first:rounded-l-lg last:rounded-r-lg`); an outline bar shares its edges (`border-l-0` except the first,
+ * `border-t-0` for a vertical bar). */
 .dx-toggle-group {
+  display: flex;
   width: fit-content;
+  flex-direction: row;
+  align-items: center;
+  border-radius: var(--dx-radius-lg);
+  gap: calc(var(--dx-space-1) * var(--dx-toggle-group-spacing, 2));
 }
 
-/* Items are Toggles (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css, `.cn-toggle` +
- * `.cn-toggle-size-default`: `h-8 min-w-8 text-sm font-medium`), joined into one bar: the
- * `.cn-toggle-group-item` rules for `data-spacing=0` are `rounded-none px-2` with
- * `first:rounded-l-lg last:rounded-r-lg` (the end radii below). The height is the theme's control
- * ladder; the slots let a size redeclare them (spacing / variant / size props are parity group 3). */
+.dx-toggle-group[data-orientation="vertical"] {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.dx-toggle-group[data-variant="outline"] {
+  --dx-toggle-border-width: 1px;
+}
+
+.dx-toggle-group[data-size="sm"] {
+  border-radius: min(var(--dx-radius-md), 10px);
+
+  --dx-toggle-height: var(--dx-control-height-sm);
+  --dx-toggle-min-width: var(--dx-control-height-sm);
+  --dx-toggle-radius: min(var(--dx-radius-md), 0.75rem);
+  --dx-toggle-font-size: 0.8rem;
+  --dx-toggle-icon-size: 0.875rem;
+  --dx-toggle-icon-padding: var(--dx-space-1-5);
+}
+
+.dx-toggle-group[data-size="lg"] {
+  --dx-toggle-height: var(--dx-control-height-lg);
+  --dx-toggle-min-width: var(--dx-control-height-lg);
+}
+
+.dx-toggle-group[data-spacing="0"] {
+  --dx-toggle-padding-inline: var(--dx-space-2);
+  --dx-toggle-icon-padding: var(--dx-space-1-5);
+}
+
 .dx-toggle-group-item {
+  position: relative;
   display: inline-flex;
-  min-width: var(--dx-toggle-min-width, var(--dx-space-8));
+  min-width: var(--dx-toggle-min-width, var(--dx-control-height-default));
   height: var(--dx-toggle-height, var(--dx-control-height-default));
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  border: none;
-  border-radius: 0;
+  border: var(--dx-toggle-border-width, 0) solid var(--dx-input);
+  border-radius: var(--dx-toggle-radius, var(--dx-radius-lg));
   background-color: transparent;
   color: var(--dx-foreground);
-  font-size: var(--dx-text-sm);
+  font-size: var(--dx-toggle-font-size, var(--dx-text-sm));
   font-weight: 500;
   gap: var(--dx-space-1);
   outline: none;
-  padding-inline: var(--dx-toggle-group-item-padding-inline, var(--dx-space-2));
-  transition: background-color var(--dx-motion-duration-slow) var(--dx-motion-ease), border var(--dx-motion-duration-slow) var(--dx-motion-ease), outline-color var(--dx-motion-duration-base);
+  padding-inline: var(--dx-toggle-padding-inline, var(--dx-space-2-5));
+  transition: background-color var(--dx-motion-duration-slow) var(--dx-motion-ease), border-color var(--dx-motion-duration-slow) var(--dx-motion-ease), outline-color var(--dx-motion-duration-base);
+  white-space: nowrap;
 }
 
-.dx-toggle-group[data-allow-multiple-pressed="true"]
-  .dx-toggle-group-item {
-  border-top: 1px solid var(--dx-border);
-  border-bottom: 1px solid var(--dx-border);
-  border-inline-end: 1px solid var(--dx-border);
+.dx-toggle-group-item:has(> [data-icon="inline-start"]) {
+  padding-inline-start: var(--dx-toggle-icon-padding, var(--dx-space-2));
+}
+
+.dx-toggle-group-item:has(> [data-icon="inline-end"]) {
+  padding-inline-end: var(--dx-toggle-icon-padding, var(--dx-space-2));
+}
+
+.dx-toggle-group-item svg {
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
+.dx-toggle-group-item svg:not([class*="size-"]) {
+  width: var(--dx-toggle-icon-size, 1rem);
+  height: var(--dx-toggle-icon-size, 1rem);
+}
+
+/* Joined (`spacing: 0`): square items, the radius only on the two ends of the bar. */
+.dx-toggle-group[data-spacing="0"] .dx-toggle-group-item {
+  border-radius: 0;
+}
+
+.dx-toggle-group[data-spacing="0"][data-orientation="horizontal"] .dx-toggle-group-item:first-child {
+  border-end-start-radius: var(--dx-radius-lg);
+  border-start-start-radius: var(--dx-radius-lg);
+}
+
+.dx-toggle-group[data-spacing="0"][data-orientation="horizontal"] .dx-toggle-group-item:last-child {
+  border-end-end-radius: var(--dx-radius-lg);
+  border-start-end-radius: var(--dx-radius-lg);
+}
+
+.dx-toggle-group[data-spacing="0"][data-orientation="vertical"] .dx-toggle-group-item:first-child {
+  border-start-end-radius: var(--dx-radius-lg);
+  border-start-start-radius: var(--dx-radius-lg);
+}
+
+.dx-toggle-group[data-spacing="0"][data-orientation="vertical"] .dx-toggle-group-item:last-child {
+  border-end-end-radius: var(--dx-radius-lg);
+  border-end-start-radius: var(--dx-radius-lg);
+}
+
+/* An outline bar shares the edge between neighbours: every item but the first drops its leading edge. */
+.dx-toggle-group[data-variant="outline"][data-spacing="0"][data-orientation="horizontal"] .dx-toggle-group-item:not(:first-child) {
+  border-inline-start-width: 0;
+}
+
+.dx-toggle-group[data-variant="outline"][data-spacing="0"][data-orientation="vertical"] .dx-toggle-group-item:not(:first-child) {
+  border-top-width: 0;
 }
 
 /* docs/backlog.md row 89: same construction as `toggle/style.css`'s
@@ -38,10 +128,12 @@
    `.dx-toggle-group-item`, broken only by source order today (an ON item
    keeps its `on` background while hovered, in both themes).
    `:where(:hover)` makes that unconditional instead of order-dependent.
-   `:focus-visible` is untouched, same (0,2,0) it already has. */
+   `:focus-visible` is untouched, same (0,2,0) it already has. A focused item
+   rises above its neighbours (`focus-visible:z-10`) so the ring and the
+   ring-coloured edge are not covered by the next item's background. */
 .dx-toggle-group-item:focus-visible {
-  position: relative;
   z-index: var(--dx-z-raise);
+  border-color: var(--dx-ring-color);
   background-color: var(--dx-accent);
   box-shadow: var(--dx-ring-focus);
   cursor: pointer;
@@ -59,32 +151,6 @@
 .dx-toggle-group-item[data-state="on"] {
   background-color: color-mix(in oklab, var(--dx-accent), var(--dx-foreground) 15%);
   color: var(--dx-foreground);
-}
-
-.dx-toggle-group[data-allow-multiple-pressed="true"]
-  .dx-toggle-group-item[data-state="on"] {
-  border-top: 1px solid var(--dx-input);
-  border-bottom: 1px solid var(--dx-input);
-  border-inline-end: 1px solid var(--dx-input);
-}
-
-.dx-toggle-group[data-allow-multiple-pressed="true"]
-  .dx-toggle-group-item:first-child[data-state="on"] {
-  border: 1px solid var(--dx-input);
-}
-
-.dx-toggle-group-item:first-child {
-  border-end-start-radius: var(--dx-radius-lg);
-  border-start-start-radius: var(--dx-radius-lg);
-}
-
-.dx-toggle-group[data-allow-multiple-pressed="true"] .dx-toggle-group-item:first-child {
-  border: 1px solid var(--dx-border);
-}
-
-.dx-toggle-group-item:last-child {
-  border-end-end-radius: var(--dx-radius-lg);
-  border-start-end-radius: var(--dx-radius-lg);
 }
 
 /* Disabled: Nova's `disabled:pointer-events-none disabled:opacity-50`, per
