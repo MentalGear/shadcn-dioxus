@@ -32,3 +32,18 @@ test("the ellipsis is a span inside its item: no li nested in an li", async ({ p
   expect(await ellipsis.evaluate((el) => el.parentElement!.tagName)).toBe("LI");
   expect(await page.locator("#component-preview-frame li li").count()).toBe(0);
 });
+
+// The ellipsis as the face of a menu trigger (shadcn's `breadcrumb-demo`): a span inside a button inside an
+// item, so no invalid nesting, and the menu opens.
+test("the ellipsis can be a menu trigger", async ({ page }) => {
+  await page.goto(`${BASE_URL}/component/?name=breadcrumb&`, { timeout: 20 * 60 * 1000 });
+  const nav = page.getByRole("navigation", { name: "Path with a collapsed menu" });
+  await expect(nav).toBeVisible();
+  const trigger = nav.getByRole("button", { name: "Toggle menu" });
+  await expect(trigger).toBeVisible();
+  const ellipsis = trigger.locator(".dx-breadcrumb-ellipsis");
+  expect(await ellipsis.evaluate((el) => el.tagName)).toBe("SPAN");
+  expect(await trigger.evaluate((el) => el.closest("li")!.querySelector("li"))).toBeNull();
+  await trigger.click();
+  await expect(page.getByRole("menuitem", { name: "Themes" })).toBeVisible();
+});
