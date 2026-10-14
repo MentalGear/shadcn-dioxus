@@ -1,13 +1,17 @@
 use dioxus::prelude::*;
 use dioxus_icons::lucide::{Check, ChevronRight};
 use dioxus_primitives::context_menu::{
-    self, ContextMenuCheckboxItemProps, ContextMenuContentProps, ContextMenuItemProps,
+    self, ContextMenuCheckboxItemProps, ContextMenuContentProps, ContextMenuGroupProps, ContextMenuSeparatorProps, ContextMenuShortcutProps, ContextMenuItemProps,
     ContextMenuProps, ContextMenuRadioGroupProps, ContextMenuRadioItemProps,
     ContextMenuSubContentProps, ContextMenuSubItemProps, ContextMenuSubProps,
     ContextMenuSubTriggerProps, ContextMenuTriggerProps,
 };
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::merge_attributes;
+
+/// `variant` of an item (`Default` or `Destructive`), re-exported so an app that installed this
+/// component does not have to name `dioxus_primitives::menu_item`.
+pub use dioxus_primitives::menu_item::MenuItemVariant;
 
 #[component]
 pub fn ContextMenu(props: ContextMenuProps) -> Element {
@@ -66,6 +70,8 @@ pub fn ContextMenuItem(props: ContextMenuItemProps) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/context_menu/style.css") }
         context_menu::ContextMenuItem {
+            variant: props.variant,
+            inset: props.inset,
             disabled: props.disabled,
             value: props.value,
             index: props.index,
@@ -115,6 +121,7 @@ pub fn ContextMenuSubTrigger(props: ContextMenuSubTriggerProps) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/context_menu/style.css") }
         context_menu::ContextMenuSubTrigger {
+            inset: props.inset,
             index: props.index,
             id: props.id,
             disabled: props.disabled,
@@ -159,6 +166,8 @@ pub fn ContextMenuSubItem(props: ContextMenuSubItemProps) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/context_menu/style.css") }
         context_menu::ContextMenuSubItem {
+            variant: props.variant,
+            inset: props.inset,
             disabled: props.disabled,
             value: props.value,
             index: props.index,
@@ -190,6 +199,7 @@ pub fn ContextMenuCheckboxItem(props: ContextMenuCheckboxItemProps) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/context_menu/style.css") }
         context_menu::ContextMenuCheckboxItem {
+            inset: props.inset,
             index: props.index,
             checked: props.checked,
             default_checked: props.default_checked,
@@ -239,6 +249,7 @@ pub fn ContextMenuRadioItem(props: ContextMenuRadioItemProps) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/context_menu/style.css") }
         context_menu::ContextMenuRadioItem {
+            inset: props.inset,
             index: props.index,
             value: props.value,
             disabled: props.disabled,
@@ -261,6 +272,10 @@ pub fn ContextMenuRadioItem(props: ContextMenuRadioItemProps) -> Element {
 /// `aria-labelledby` at it so the group is named.
 #[component]
 pub fn ContextMenuLabel(
+    /// Reserves the leading indicator slot -- shadcn's `inset` -- so the heading
+    /// lines up with inset items. Carries `data-inset="true"`.
+    #[props(default)]
+    inset: bool,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
     children: Element,
 ) -> Element {
@@ -268,9 +283,57 @@ pub fn ContextMenuLabel(
         class: "dx-context-menu-label",
         "data-dx-menu-label": "true",
     });
-    let merged = merge_attributes(vec![base, attributes]);
+    let inset_attr = attributes!(div {
+        "data-inset": inset.then_some("true"),
+    });
+    let merged = merge_attributes(vec![base, attributes, inset_attr]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/context_menu/style.css") }
         div { ..merged, {children} }
+    }
+}
+
+/// Themed wrapper for [`context_menu::ContextMenuGroup`] -- shadcn's `ContextMenuGroup`. A
+/// `role="group"` with no chrome of its own; give it an `aria-label` when it
+/// has a visible ContextMenuLabel.
+#[component]
+pub fn ContextMenuGroup(props: ContextMenuGroupProps) -> Element {
+    let base = attributes!(div {
+        class: "dx-context-menu-group",
+    });
+    let merged = merge_attributes(vec![base, props.attributes]);
+    rsx! {
+        document::Link { rel: "stylesheet", href: asset!("/src/components/context_menu/style.css") }
+        context_menu::ContextMenuGroup { attributes: merged, {props.children} }
+    }
+}
+
+/// Themed wrapper for [`context_menu::ContextMenuSeparator`] -- shadcn's
+/// `ContextMenuSeparator`: a hairline in the `border` colour that spans the menu's
+/// padding edge to edge.
+#[component]
+pub fn ContextMenuSeparator(props: ContextMenuSeparatorProps) -> Element {
+    let base = attributes!(div {
+        class: "dx-context-menu-separator",
+    });
+    let merged = merge_attributes(vec![base, props.attributes]);
+    rsx! {
+        document::Link { rel: "stylesheet", href: asset!("/src/components/context_menu/style.css") }
+        context_menu::ContextMenuSeparator { attributes: merged }
+    }
+}
+
+/// Themed wrapper for [`context_menu::ContextMenuShortcut`] -- shadcn's
+/// `ContextMenuShortcut`: muted, small, letter-spaced text pushed to the inline
+/// end of its item (it takes the item's ink while the item is highlighted).
+#[component]
+pub fn ContextMenuShortcut(props: ContextMenuShortcutProps) -> Element {
+    let base = attributes!(span {
+        class: "dx-context-menu-shortcut",
+    });
+    let merged = merge_attributes(vec![base, props.attributes]);
+    rsx! {
+        document::Link { rel: "stylesheet", href: asset!("/src/components/context_menu/style.css") }
+        context_menu::ContextMenuShortcut { attributes: merged, {props.children} }
     }
 }

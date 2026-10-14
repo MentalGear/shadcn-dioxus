@@ -7,7 +7,7 @@ use dioxus::prelude::*;
 /// state lives in the item, and the menu content unmounts when it closes, so
 /// state that must survive a close has to be held by the caller -- and
 /// keeping the menu open after each toggle (`close_on_select: false`). The
-/// plain items carry `data-inset="true"`
+/// plain items are `inset: true`
 /// (shadcn's `inset`) so, in the one menu that mixes both, their labels sit
 /// on the same inline-start edge as the checkable items' -- the menubar
 /// draws its check at the inline start. `text_value` is set because a
@@ -50,14 +50,14 @@ pub fn Demo() -> Element {
                     MenubarItem {
                         index: 2usize,
                         value: "reload".to_string(),
-                        "data-inset": "true",
+                        inset: true,
                         "Reload"
                     }
                     MenubarItem {
                         index: 3usize,
                         value: "force-reload".to_string(),
                         disabled: true,
-                        "data-inset": "true",
+                        inset: true,
                         "Force Reload"
                     }
                 }
