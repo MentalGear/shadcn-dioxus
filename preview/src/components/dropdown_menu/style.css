@@ -43,11 +43,18 @@
   transition: background-color var(--dx-motion-duration-base) var(--dx-motion-ease-standard), color var(--dx-motion-duration-base) var(--dx-motion-ease-standard);
 }
 
-:where(.dx-dropdown-menu-trigger:not([data-style]):hover),
 :where(.dx-dropdown-menu-trigger:not([data-style])[aria-expanded="true"]) {
   background-color: var(--light, var(--dx-muted))
     var(--dark, color-mix(in oklab, var(--dx-input) 50%, transparent));
   color: var(--dx-foreground);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :where(.dx-dropdown-menu-trigger:not([data-style]):hover) {
+    background-color: var(--light, var(--dx-muted))
+      var(--dark, color-mix(in oklab, var(--dx-input) 50%, transparent));
+    color: var(--dx-foreground);
+  }
 }
 
 /* Slot variable (compose, do not override): a parent that restyles this trigger's focus ring sets

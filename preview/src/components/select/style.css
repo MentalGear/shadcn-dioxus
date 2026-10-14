@@ -49,12 +49,14 @@
   transition: background-color var(--dx-motion-duration-fast) var(--dx-motion-ease-out);
 }
 
-.dx-select-trigger:hover:not([data-disabled="true"]),
-.dx-select-trigger:focus-visible {
-  background: var(--dx-muted);
+@media (hover: hover) and (pointer: fine) {
+  .dx-select-trigger:hover:not([data-disabled="true"]) {
+    background: var(--dx-muted);
+  }
 }
 
 .dx-select-trigger:focus-visible {
+  background: var(--dx-muted);
   box-shadow: var(--dx-ring-field);
 }
 
@@ -234,10 +236,16 @@
   pointer-events: none;
 }
 
-.dx-select-option:hover:not([data-disabled="true"]),
 .dx-select-option:focus-visible {
   background: var(--dx-accent);
   color: var(--dx-accent-foreground);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-select-option:hover:not([data-disabled="true"]) {
+    background: var(--dx-accent);
+    color: var(--dx-accent-foreground);
+  }
 }
 
 .dx-select-option[data-disabled="true"] {

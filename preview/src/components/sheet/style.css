@@ -128,9 +128,11 @@
   transition-timing-function: var(--dx-motion-ease-standard);
 }
 
-.dx-sheet-close:hover {
-  background-color: var(--light, var(--dx-muted))
-    var(--dark, color-mix(in oklab, var(--dx-muted) 50%, transparent));
+@media (hover: hover) and (pointer: fine) {
+  .dx-sheet-close:hover {
+    background-color: var(--light, var(--dx-muted))
+      var(--dark, color-mix(in oklab, var(--dx-muted) 50%, transparent));
+  }
 }
 
 .dx-sheet-close:focus-visible {

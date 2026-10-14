@@ -39,10 +39,7 @@
 # is still open; any other `:hover` (a JS `matches(':hover')`) needs an RS_ALLOW entry with a reason.
 #
 # ALLOW format: (stylesheet path, fnmatch pattern on the whitespace-normalised selector ENTRY, reason). An entry
-# that matches nothing fails the run as stale, so the list cannot rot into blanket permission. The PENDING block
-# is TEMPORARY: sheets other lanes were editing when this gate landed, so their rules could not be wrapped
-# without a merge conflict. Wrap them after those lanes merge and delete the entry; it fails as stale the
-# moment the sheet no longer needs it.
+# that matches nothing fails the run as stale, so the list cannot rot into blanket permission.
 #
 # Usage: scripts/check-hover-media.sh
 # Exit 0: clean. Exit 1: a violation, with file:line detail on stderr.
@@ -67,14 +64,6 @@ ALLOW = [
      "collapsed unless focus is inside), so it stays outside the media; the expanded state is the `:hover` and "
      "`:focus-within` rules, whose hover half is wrapped"),
 ]
-
-# TEMPORARY (marker: pending-lane-merge). Remove each entry once the sheet is wrapped.
-PENDING = [
-    (f"preview/src/components/{c}/style.css", "*",
-     "pending-lane-merge: lane X edits this sheet concurrently; wrapped after merge")
-    for c in ("sheet", "drawer", "calendar", "combobox", "popover", "select", "dropdown_menu")
-]
-ALLOW += PENDING
 
 # (rust path, substring on the line, reason) for a `:hover` in a .rs file that is not CSS.
 RS_ALLOW = [

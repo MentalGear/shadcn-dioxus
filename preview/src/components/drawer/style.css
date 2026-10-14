@@ -342,9 +342,11 @@
   white-space: nowrap;
 }
 
-.dx-drawer-close:not([data-style]):hover {
-  background-color: var(--light, var(--dx-muted))
-    var(--dark, color-mix(in oklab, var(--dx-input) 50%, transparent));
+@media (hover: hover) and (pointer: fine) {
+  .dx-drawer-close:not([data-style]):hover {
+    background-color: var(--light, var(--dx-muted))
+      var(--dark, color-mix(in oklab, var(--dx-input) 50%, transparent));
+  }
 }
 
 .dx-drawer-close:not([data-style]):focus-visible {
