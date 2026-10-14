@@ -48,7 +48,7 @@
  * out-cascade the UA default (author origin always beats user-agent, at any
  * specificity) but can never out-specificity-fight a component's own
  * `color` rule. `Tooltip`'s `.dx-tooltip-content` (which sets its own,
- * intentionally *inverted* `color: var(--primary-color)` against its dark
+ * intentionally *inverted* `color: var(--dx-background)` against its dark
  * background) is the load-bearing negative case this file checks: it must
  * keep winning, not fall back to the shared rule's `inherit`.
  *
@@ -62,7 +62,7 @@
  * ## Method: assert against the resolved token, not a hardcoded literal
  *
  * `resolvedColor()` below reads `--secondary-color-4` (and, for the
- * Tooltip negative case, `--primary-color`) the only way a CSS custom
+ * Tooltip negative case, `--dx-background`) the only way a CSS custom
  * property can be read *as a color*: by assigning it to a probe element's
  * `color` and reading that element's own `getComputedStyle().color` back
  * (`getPropertyValue('--secondary-color-4')` alone would return the raw,
@@ -90,7 +90,7 @@
  * already-correct case: `.dx-navbar-item`/`.dx-toast-title`/`.dx-dialog`/
  * `.dx-alert-dialog`/`.dx-sheet` already declare their own `color: var(
  * --secondary-color-4)`; `.dx-tooltip-content` declares its own
- * *intentionally different* `color: var(--primary-color)`; `.dx-select-
+ * *intentionally different* `color: var(--dx-background)`; `.dx-select-
  * list`/`.dx-combobox-list` declare their own *intentionally different*
  * `color: var(--secondary-color-1)`. Every one of these is author-origin
  * and already wins over the UA default with no help from this fix -- each
@@ -274,11 +274,11 @@ const SURFACES: Surface[] = [
     text: (page) => page.getByText("Dioxus is", { exact: false }),
   },
   {
-    // The load-bearing negative case: `.dx-tooltip-content` declares its
-    // OWN `color: var(--primary-color)` (intentionally inverted against its
-    // dark background) -- the shared `:where()` rule must never override
-    // it. `expectedVar` below is `--primary-color`, not the ink token, on
-    // purpose.
+    // The load-bearing negative case: the tooltip is the theme's inverted floating surface
+    // (`[data-dx-surface="floating"][data-dx-tone="inverted"] { color: var(--dx-background) }`, on a
+    // `--dx-foreground` fill), so its ink is the page background token -- the shared `:where()` rule
+    // must never override it. `expectedVar` below is `--dx-background`, not the ink token, on purpose;
+    // it is READ from the page (`resolvedColor`), never a literal, so a palette change cannot break it.
     name: "tooltip",
     open: async (page) => {
       await goto(page, "tooltip");
@@ -287,7 +287,7 @@ const SURFACES: Surface[] = [
     },
     wrapper: (page) => page.locator(".dx-tooltip-content"),
     text: (page) => page.getByText("Tooltip title"),
-    expectedVar: "--primary-color",
+    expectedVar: "--dx-background",
   },
   {
     // Wrapper: `.dx-date-picker-popover-content`, a real `[popover]`

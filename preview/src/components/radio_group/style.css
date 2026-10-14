@@ -1,7 +1,18 @@
+/* Nova radio group (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css):
+ * `.cn-radio-group` is `grid gap-2`; `.cn-radio-group-item` is a `size-4`
+ * `rounded-full` circle with a 1px `border-input`, `dark:bg-input/30`, and when
+ * checked `bg-primary border-primary` around `.cn-radio-group-indicator-icon`
+ * (`size-2` `bg-primary-foreground` dot). Focus is `border-ring` +
+ * `ring-3 ring-ring/50`, invalid is `border-destructive` + `ring-3
+ * ring-destructive/20 dark:ring-destructive/40` (a checked item keeps its
+ * `border-primary`: `aria-invalid:aria-checked:border-primary`).
+ *
+ * The circle is this item's `::before`, so the 1px border is an inset
+ * box-shadow (inside the 16px box, as Nova's border is), and the checked dot is
+ * the box's own 4px border in `primary` around a `primary-foreground` fill. */
 .dx-radio-group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--dx-space-3);
+  display: grid;
+  gap: var(--dx-space-2);
 }
 
 .dx-radio-group-item {
@@ -20,31 +31,45 @@
   display: block;
   width: 1rem;
   height: 1rem;
-  border-radius: var(--dx-radius-3xl);
-  background: var(--dx-card);
-  box-shadow: 0 0 0 1px var(--dx-input);
+  flex: none;
+  border-radius: var(--dx-radius-full);
+  background-color: var(--dx-field-fill);
+  box-shadow: inset 0 0 0 1px var(--dx-input);
   content: "";
   cursor: pointer;
+}
+
+/* Checked: `bg-primary border-primary` with the `size-2` `primary-foreground` dot. The ring below
+ * is drawn outside the circle only (the edge is already `primary`). */
+.dx-radio-group-item[data-state="checked"]::before {
+  border: 0.25rem solid var(--dx-primary);
+  background: var(--dx-primary-foreground);
+  box-shadow: none;
 }
 
 .dx-radio-group-item:focus-visible {
   outline: none;
 }
 
+/* `focus-visible:border-ring ring-3 ring-ring/50`: the field recipe (ring-coloured edge + halo). */
 .dx-radio-group-item:focus-visible::before {
+  box-shadow: var(--dx-ring-field);
+}
+
+.dx-radio-group-item[data-state="checked"]:focus-visible::before {
   box-shadow: var(--dx-ring-focus);
 }
 
-/* The ring is drawn on the circle, not on the row (see above). After the focus rule so a focused
+/* The ring is drawn on the circle, not on the row (see above). After the focus rules so a focused
  * invalid radio stays red. */
 .dx-radio-group-item[aria-invalid="true"]::before,
 .dx-radio-group-item[data-invalid="true"]::before {
-  box-shadow: 0 0 0 1px var(--dx-ring-invalid-color), var(--dx-ring-invalid);
+  box-shadow: var(--dx-ring-invalid-field);
 }
 
-.dx-radio-group-item[data-state="checked"]::before {
-  border: 0.25rem solid var(--dx-card);
-  background: var(--dx-foreground);
+.dx-radio-group-item[aria-invalid="true"][data-state="checked"]::before,
+.dx-radio-group-item[data-invalid="true"][data-state="checked"]::before {
+  box-shadow: var(--dx-ring-invalid);
 }
 
 .dx-radio-group-item:disabled {

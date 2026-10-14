@@ -22,13 +22,13 @@ pub fn Demo() -> Element {
                     TabTrigger { value: "sent".to_string(), index: 1usize, "Sent" }
                     TabTrigger { value: "drafts".to_string(), index: 2usize, "Drafts" }
                 }
-                TabContent { index: 0usize, value: "inbox".to_string(),
+                TabContent { index: 0usize, value: "inbox".to_string(), padding: "var(--dx-space-4)",
                     "Small: a 28px list with text-xs triggers."
                 }
-                TabContent { index: 1usize, value: "sent".to_string(),
+                TabContent { index: 1usize, value: "sent".to_string(), padding: "var(--dx-space-4)",
                     "Messages you have already sent."
                 }
-                TabContent { index: 2usize, value: "drafts".to_string(),
+                TabContent { index: 2usize, value: "drafts".to_string(), padding: "var(--dx-space-4)",
                     "Messages you have started but not sent."
                 }
             }
@@ -41,13 +41,13 @@ pub fn Demo() -> Element {
                     TabTrigger { value: "videos".to_string(), index: 1usize, "Videos" }
                     TabTrigger { value: "files".to_string(), index: 2usize, "Files" }
                 }
-                TabContent { index: 0usize, value: "photos".to_string(),
+                TabContent { index: 0usize, value: "photos".to_string(), padding: "var(--dx-space-4)",
                     "Default: the 32px list, unchanged."
                 }
-                TabContent { index: 1usize, value: "videos".to_string(),
+                TabContent { index: 1usize, value: "videos".to_string(), padding: "var(--dx-space-4)",
                     "Clips and recordings from your library."
                 }
-                TabContent { index: 2usize, value: "files".to_string(),
+                TabContent { index: 2usize, value: "files".to_string(), padding: "var(--dx-space-4)",
                     "Documents, archives and everything else."
                 }
             }
@@ -61,13 +61,13 @@ pub fn Demo() -> Element {
                     TabTrigger { value: "weekly".to_string(), index: 1usize, "Weekly" }
                     TabTrigger { value: "monthly".to_string(), index: 2usize, "Monthly" }
                 }
-                TabContent { index: 0usize, value: "daily".to_string(),
+                TabContent { index: 0usize, value: "daily".to_string(), padding: "var(--dx-space-4)",
                     "Large: a 36px list with roomier triggers."
                 }
-                TabContent { index: 1usize, value: "weekly".to_string(),
+                TabContent { index: 1usize, value: "weekly".to_string(), padding: "var(--dx-space-4)",
                     "A summary delivered once a week."
                 }
-                TabContent { index: 2usize, value: "monthly".to_string(),
+                TabContent { index: 2usize, value: "monthly".to_string(), padding: "var(--dx-space-4)",
                     "A full report on the first of the month."
                 }
             }

@@ -5,13 +5,30 @@
   gap: 15px;
 }
 
+/* Nova switch (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css): `.cn-switch` is a
+ * `rounded-full` track, `data-[size=default]:h-[18.4px] w-[32px]`, `bg-primary` checked,
+ * `bg-input` unchecked (`dark:bg-input/80`), `focus-visible:border-ring ring-3 ring-ring/50`, invalid
+ * `border-destructive ring-3 ring-destructive/20 dark:ring-destructive/40`; `.cn-switch-thumb` is
+ * `size-4` (16px) `rounded-full` on `bg-background` (`dark:` `bg-foreground` unchecked,
+ * `bg-primary-foreground` checked), travelling `calc(100% - 2px)` (the 1px `border-transparent` each side).
+ *
+ * The size is three slot variables on the track, so the `sm` size of Nova (24 x 14, thumb 12) is a
+ * redeclaration of them and nothing else. The 1px border is the thumb's inset, not a real border: the
+ * focus and invalid rings are inset box-shadows that must sit on the track's own edge. */
 .dx-switch {
+  --dx-switch-width: var(--dx-space-8);
+  --dx-switch-height: 1.15rem;
+  --dx-switch-thumb-size: 1rem;
+
   all: unset;
   position: relative;
-  width: var(--dx-space-8);
-  height: 1.15rem;
+  display: inline-flex;
+  width: var(--dx-switch-width);
+  height: var(--dx-switch-height);
+  align-items: center;
   border-radius: var(--dx-radius-full);
-  background-color: var(--dx-input);
+  background-color: var(--light, var(--dx-input))
+    var(--dark, color-mix(in oklab, var(--dx-input) 80%, transparent));
   cursor: pointer;
   transition: background-color var(--dx-motion-duration-base), box-shadow var(--dx-motion-duration-base);
 }
@@ -33,8 +50,9 @@
 
 .dx-switch-thumb {
   display: block;
-  width: calc(1.15rem - 2px);
-  height: calc(1.15rem - 2px);
+  width: var(--dx-switch-thumb-size);
+  height: var(--dx-switch-thumb-size);
+  flex: none;
   border-radius: var(--dx-radius-full);
   background-color: var(--light, var(--dx-background)) var(--dark, var(--dx-foreground));
 
@@ -50,8 +68,8 @@
 }
 
 .dx-switch[data-state="checked"] .dx-switch-thumb {
-  background-color: var(--dx-card);
-  transform: translateX(calc(var(--dx-space-8) - 1px - (1.15rem - 2px))); /* rtl-physical: see .dx-switch-thumb's comment above */
+  background-color: var(--light, var(--dx-background)) var(--dark, var(--dx-primary-foreground));
+  transform: translateX(calc(var(--dx-switch-width) - 1px - var(--dx-switch-thumb-size))); /* rtl-physical: see .dx-switch-thumb's comment above */
 }
 
 /* rtl-physical: the RTL counterparts of the two rules above -- both signs
@@ -62,7 +80,7 @@
 }
 
 [dir="rtl"] .dx-switch[data-state="checked"] .dx-switch-thumb {
-  transform: translateX(calc(-1 * (var(--dx-space-8) - 1px - (1.15rem - 2px)))); /* rtl-physical */
+  transform: translateX(calc(-1 * (var(--dx-switch-width) - 1px - var(--dx-switch-thumb-size)))); /* rtl-physical */
 }
 
 /* Only apply disabled styles when data-disabled is "true" */

@@ -841,6 +841,18 @@ async function prepRetry(page: Page, arr: string, j: number) {
 
 const WAIT_PROBE_MS: Record<string, number> = { click: 350, contextmenu: 350, hover: 450, focus: 300 };
 
+/** HOVER-BEFORE-CLICK RULE (backlog: navbar hover-intent). A trigger may open on pointer hover (navbar, hover
+ *  cards, ...: `primitives/src/hover_intent.rs`, `HOVER_OPEN_INTENT_DELAY` = 150 ms). A bare `mouse.click` first
+ *  moves the pointer onto the trigger, so that panel opens on the hover and the click that follows TOGGLES IT
+ *  CLOSED: the open pass then saw "no change" for that trigger (S2: 2 of 6 navbar triggers produced open-state
+ *  records). So before the `click` strategy the pointer is put on the trigger and given this long (> the
+ *  hover-intent delay plus the render) to open something, judged by the same `waitOpen` (additions-only) as every
+ *  other strategy. If it opened, the trigger is recorded as opened `via: "hover"` and NOT clicked; otherwise the
+ *  click goes ahead exactly as before. The wait is skipped when the `hover` strategy already ran for this
+ *  trigger (`hoverFirst`: tooltips), so those are unchanged. A trigger that does not open on hover is unaffected
+ *  apart from this pause: the click, the park, the quiesce and the delta follow in the same order. */
+const HOVER_INTENT_WAIT_MS = 450;
+
 /** OPEN-STATE pass: put each trigger in its open state, record the delta, hover the items inside, close. */
 export async function openPass(
   page: Page,
@@ -866,7 +878,12 @@ export async function openPass(
 
     let via = "";
     let lastReason = "";
+    // set when the pre-click hover (HOVER_INTENT_WAIT_MS rule) opened the panel: the pointer is still on the
+    // trigger and the panel is open, so the items inside are hovered like after a click-open
+    let hoverIntentOpened = false;
+    const tried = new Set<string>();
     for (const strat of order) {
+      tried.add(strat);
       const t = await prepRetry(page, "cands", i);
       if (!t.ok) {
         lastReason = t.reason!;
@@ -876,8 +893,18 @@ export async function openPass(
       // Belt and braces for the first strategy: nothing from the previous overlay may still be unmounting.
       await page.evaluate(() => (window as any).__snap.quiesce(0, 1500));
       const before = await page.evaluate(() => (window as any).__snap.beginTry());
-      if (strat === "click") await page.mouse.click(t.x!, t.y!);
-      else if (strat === "contextmenu") await page.mouse.click(t.x!, t.y!, { button: "right" });
+      if (strat === "click") {
+        if (!tried.has("hover")) {
+          // HOVER_INTENT_WAIT_MS rule: hover first; if that opened the panel, do not click it shut
+          await page.mouse.move(t.x!, t.y!);
+          if (await page.evaluate(([b, ms]) => (window as any).__snap.waitOpen(b, ms), [before, HOVER_INTENT_WAIT_MS] as const)) {
+            via = "hover";
+            hoverIntentOpened = true;
+            break;
+          }
+        }
+        await page.mouse.click(t.x!, t.y!);
+      } else if (strat === "contextmenu") await page.mouse.click(t.x!, t.y!, { button: "right" });
       else if (strat === "hover") await page.mouse.move(t.x!, t.y!);
       else await page.evaluate((j) => (window as any).__snap.cands[j].focus({ focusVisible: true }), i);
       // The overlay opens UNDER the pointer, and which of its nodes is `:hover` then depends on when the
@@ -911,7 +938,7 @@ export async function openPass(
     cov.openRecords += recs.length;
 
     // hover the items inside the opened overlay (menu items, options, links, buttons)
-    if (via !== "hover") {
+    if (via !== "hover" || hoverIntentOpened) {
       await page.evaluate(() => {
         const S = (window as any).__snap;
         S.take("obase");

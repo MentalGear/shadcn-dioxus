@@ -24,6 +24,10 @@ public_dir="$target_dir/dx/preview/release/web/public"
 # Wipes public/ first (dx's asset pipeline never cleans previous content-hashed
 # wasm/js out of it), tags the tree `.base-path-build` (row 100) and verifies every
 # page is fresh. `--force-sequential=true` is passed there, see the note below.
+# It also owns the "is the site complete" postcondition (scripts/ssg-verify.sh: dx's own
+# `ssg error:` lines, every requested route present/fresh/complete, every CATALOG component
+# requested) and exits non-zero otherwise, so with `set -e` a deploy can never go on to
+# refresh /docs from a build dx itself called a success while it dropped pages.
 "$repo_root/scripts/build-ssg.sh" release --base-path shadcn-dioxus
 
 # `dx build --ssg` has a known, pre-existing race (unrelated to any one

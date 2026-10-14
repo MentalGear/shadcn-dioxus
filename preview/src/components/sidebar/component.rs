@@ -567,6 +567,8 @@ pub fn SidebarGroupAction(
         class: "dx-sidebar-group-action",
         "data-slot": "sidebar-group-action",
         "data-sidebar": "group-action",
+        // Same opt-out as `SidebarMenuButton` (see there).
+        "data-style": "sidebar",
     });
     let merged = merge_attributes(vec![base, attributes]);
 
@@ -691,6 +693,12 @@ pub fn SidebarMenuButton(
         "data-size": size.as_str(),
         "data-variant": variant.as_str(),
         "data-active": if is_active { "true" } else { "false" },
+        // The ONE opt-out from another component's default trigger recipe (`:not([data-style])` in
+        // dropdown_menu/ and collapsible/ style.css, the signal drawer/ and button/ use too): a sidebar
+        // button is composed as `DropdownMenuTrigger as` / `CollapsibleTrigger as`, which render it
+        // with that trigger's class beside `.dx-sidebar-*`, and the sidebar owns every property of its
+        // own buttons (`:where()` recipes are not a contest it should have to win).
+        "data-style": "sidebar",
     });
     let merged = merge_attributes(vec![base, attributes]);
 
@@ -747,6 +755,8 @@ pub fn SidebarMenuAction(
         "data-slot": "sidebar-menu-action",
         "data-sidebar": "menu-action",
         "data-show-on-hover": if show_on_hover { "true" } else { "false" },
+        // Same opt-out as `SidebarMenuButton` (see there).
+        "data-style": "sidebar",
     });
     let merged = merge_attributes(vec![base, attributes]);
 

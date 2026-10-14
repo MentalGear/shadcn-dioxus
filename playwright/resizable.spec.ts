@@ -112,7 +112,7 @@ async function dragFromPoint(page: Page, x: number, y: number, dx: number, dy: n
 
 test.describe('Hit area: the whole handle drags, not just the 1px line', () => {
   // Owner report: "the handle must be draggable, not just the line". The 1px `.dx-resizable-handle`
-  // div owns the drag listener; its grip (12x16) used to be `pointer-events: none` with only a 4px
+  // div owns the drag listener; its grip (then 12x16, now Nova's 4x24 pill) used to be `pointer-events: none` with only a 4px
   // `::after` strip behind it, so ~4px either side of the grip -- and the same few px beside the
   // bare line -- fell through to the panels and started nothing. shadcn's grip is a plain child
   // (its pointerdown bubbles to the handle) inside a handle with a wider invisible hit area.
@@ -276,18 +276,18 @@ test.describe('RTL', () => {
 
 test.describe('Appearance (shadcn/ui v4 translation)', () => {
   // Translates shadcn/ui v4's Resizable (react-resizable-panels) look onto this repo's own
-  // tokens (dev-docs/backlog.md's cheap-primitives-wave follow-up) -- a `w-px` handle with a
-  // `h-4 w-3` grip, replacing the old 4px-wide handle and 16x24px grip. Both values below are
-  // exact per-pixel translations of shadcn's own `w-px`/`h-4 w-3` (this repo's --dx-space-3/-4
-  // tokens), not approximations.
-  test('the handle is a 1px hairline with a ~12x16px grip', async ({ page }) => {
+  // tokens (dev-docs/backlog.md's cheap-primitives-wave follow-up) -- a `w-px` handle with a grip.
+  // Phase C (row 111) moved the grip to Nova's `.cn-resizable-handle-icon` (`bg-border h-6 w-1
+  // rounded-lg`, style-nova.css @ 295a1f1): a 4x24px pill, replacing shadcn v4's 12x16px bordered
+  // box (`h-4 w-3`). Both values below are exact translations (this repo's --dx-space-1/-6 tokens).
+  test('the handle is a 1px hairline with a 4x24px grip', async ({ page }) => {
     await page.goto(URL, { timeout: 20 * 60 * 1000 });
     const handle = page.getByRole('separator', { name: 'Sidebar' });
     await expect(handle).toHaveCSS('width', '1px');
 
     const grip = handle.locator('.dx-resizable-handle-grip');
-    await expect(grip).toHaveCSS('width', '12px');
-    await expect(grip).toHaveCSS('height', '16px');
+    await expect(grip).toHaveCSS('width', '4px');
+    await expect(grip).toHaveCSS('height', '24px');
   });
 
   test("the demo's container is a bordered, rounded, ~450px-wide box", async ({ page }) => {

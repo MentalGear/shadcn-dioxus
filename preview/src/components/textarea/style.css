@@ -1,8 +1,19 @@
+/* Nova textarea (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css `.cn-textarea`,
+ * registry/bases/base/ui/textarea.tsx): `min-h-16 rounded-lg border-input bg-transparent
+ * dark:bg-input/30 px-2.5 py-2 text-base md:text-sm`, `ring-3 ring-ring/50` +
+ * `border-ring` on focus, `disabled:bg-input/50 dark:disabled:bg-input/80`.
+ *
+ * The fill is Input's (`../input/style.css`), so a Textarea and an Input in one form row
+ * agree: transparent in light, `input` at 30% in dark, `muted` on hover and focus, `input` at
+ * 50% / 80% when disabled. The `default` and `fade` variants and the `outline` variant take it;
+ * `ghost` stays transparent. `field-sizing: content` (Nova's auto-grow) is not adopted: this
+ * textarea keeps its `resize: vertical` handle. */
+
 /* Base */
 .dx-textarea {
   width: 100%;
   min-height: var(--dx-space-16);
-  padding: var(--dx-space-2) var(--dx-space-3);
+  padding: var(--dx-space-2) var(--dx-space-2-5);
   border: none;
   border-radius: var(--dx-radius-lg);
   margin: 0;
@@ -10,7 +21,8 @@
   background: none;
   color: var(--dx-foreground);
   font-family: inherit;
-  line-height: 1.5;
+  font-size: var(--dx-text-sm);
+  line-height: 1.25rem;
   outline: none;
   resize: vertical;
   transition: background-color var(--dx-motion-duration-fast) var(--dx-motion-ease-out), border-color var(--dx-motion-duration-fast) var(--dx-motion-ease-out), box-shadow var(--dx-motion-duration-fast) var(--dx-motion-ease-out);
@@ -20,6 +32,13 @@
   color: var(--dx-muted-foreground);
   cursor: not-allowed;
   opacity: var(--dx-opacity-disabled);
+}
+
+/* Nova `disabled:bg-input/50 dark:disabled:bg-input/80`, Input's disabled fill; the ghost variant
+ * has no fill to dim. After the variants' resting fills in source order and in specificity. */
+.dx-textarea[data-style]:disabled:not([data-style="ghost"]) {
+  background: var(--light, color-mix(in oklab, var(--dx-input) 50%, transparent))
+    var(--dark, color-mix(in oklab, var(--dx-input) 80%, transparent));
 }
 
 .dx-textarea::placeholder {
@@ -37,31 +56,29 @@
 
 /* Default Variant */
 .dx-textarea[data-style="default"] {
-  background: var(--dx-card);
+  background: var(--dx-field-fill);
   box-shadow: inset 0 0 0 1px var(--dx-input);
 }
 
 .dx-textarea[data-style="default"]:hover:not(:disabled),
 .dx-textarea[data-style="default"]:focus {
   background: var(--dx-muted);
-  color: var(--dx-accent-foreground);
 }
 
 /* Fade Variant */
 .dx-textarea[data-style="fade"] {
-  background: var(--dx-card);
+  background: var(--dx-field-fill);
 }
 
 .dx-textarea[data-style="fade"]:hover:not(:disabled),
 .dx-textarea[data-style="fade"]:focus {
   background: var(--dx-muted);
-  color: var(--dx-accent-foreground);
 }
 
 /* Outline Variant */
 .dx-textarea[data-style="outline"] {
   border: 1px solid var(--dx-border);
-  background-color: var(--dx-card);
+  background-color: var(--dx-field-fill);
 }
 
 .dx-textarea[data-style="outline"]:hover:not(
@@ -106,12 +123,13 @@
 }
 
 /*
- * Floor the font-size to 16px on touch devices. iOS Safari auto-zooms when a
- * focused text field computes below 16px, and the textarea otherwise inherits a
- * smaller size. Scoped to coarse pointers so desktop sizing is unaffected.
+ * Floor the font-size to 16px on touch devices (Nova's `text-base md:text-sm`). iOS Safari
+ * auto-zooms when a focused text field computes below 16px. Scoped to coarse pointers so
+ * desktop sizing is unaffected.
  */
 @media (pointer: coarse) {
   .dx-textarea {
     font-size: var(--dx-text-base);
+    line-height: 1.5rem;
   }
 }

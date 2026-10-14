@@ -55,8 +55,8 @@ pub fn AccordionTrigger(props: AccordionTriggerProps) -> Element {
             {props.children}
             ChevronDown {
                 class: "dx-accordion-expand-icon",
-                size: "20px",
-                stroke: "var(--dx-foreground)",
+                size: "16px",
+                stroke: "var(--dx-muted-foreground)",
             }
         }
     }
@@ -87,7 +87,9 @@ pub fn AccordionContent(props: AccordionContentProps) -> Element {
             // one that `overflow: hidden` on this wrapper clips away
             // entirely once the wrapper itself reaches 0. See the
             // close-animation root-cause comment in style.css.
-            div { class: "dx-accordion-content-inner", {props.children} }
+            div { class: "dx-accordion-content-inner",
+                div { class: "dx-accordion-content-body", {props.children} }
+            }
         }
     }
 }

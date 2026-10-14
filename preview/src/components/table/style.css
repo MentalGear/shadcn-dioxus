@@ -1,8 +1,13 @@
-/* Table -- shadcn/ui catalog parity (dev-docs/component-backlog.md row 68).
- * Classes namespaced `dx-table*`, scripts/check-dx-class-prefix.sh's rule
- * for the `table` component folder. Values drawn from the design-token set
- * in preview/assets/dx-components-theme.css (scripts/check-css-literals.sh)
- * wherever a token already names the value this needs. */
+/* Nova table (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css,
+ * `.cn-table-*`): `w-full caption-bottom text-sm`; a row is `border-b
+ * hover:bg-muted/50 data-[state=selected]:bg-muted` (the last body row has no
+ * border); a head cell `h-10 px-2 text-left align-middle font-medium`, a cell
+ * `p-2 align-middle whitespace-nowrap`, the checkbox cell `pr-0`; the footer
+ * `bg-muted/50 border-t font-medium`; the caption `text-muted-foreground mt-4
+ * text-sm`. Already matched value for value; nothing to change but this note. In
+ * dark the hover (muted at 50%) and the selected row (muted) differ by
+ * construction, so the muted == accent tie does not touch this sheet. Classes
+ * namespaced `dx-table*` (scripts/check-dx-class-prefix.sh). */
 
 .dx-table-container {
   position: relative;

@@ -1,7 +1,13 @@
+/* Nova toggle (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css, `.cn-toggle` +
+ * `.cn-toggle-size-default`): `gap-1 rounded-lg text-sm font-medium`, `h-8 min-w-8 px-2.5`. The
+ * height is the theme's control ladder (`--dx-control-height-default`, 32px) and every size
+ * property is a slot variable, so a size (Nova's `sm` is `h-7 min-w-7 px-2.5`, `lg` is `h-9 min-w-9
+ * px-2.5`) redeclares the slots on the element and nothing else. */
 .dx-toggle {
   display: inline-flex;
   width: fit-content;
-  min-width: var(--dx-space-8);
+  min-width: var(--dx-toggle-min-width, var(--dx-space-8));
+  height: var(--dx-toggle-height, var(--dx-control-height-default));
   flex-direction: row;
   align-items: center;
   justify-content: center;
@@ -10,8 +16,10 @@
   background-color: transparent;
   color: var(--dx-foreground);
   font-size: var(--dx-text-sm);
+  font-weight: 500;
+  gap: var(--dx-space-1);
   outline: none;
-  padding-inline: var(--dx-space-2);
+  padding-inline: var(--dx-toggle-padding-inline, var(--dx-space-2-5));
   transition: background-color var(--dx-motion-duration-base), color var(--dx-motion-duration-base), outline-color var(--dx-motion-duration-base);
 }
 

@@ -4,6 +4,7 @@ import { BASE_URL } from './base-url';
 import { gotoHydrated } from './hydration';
 import { expectFadeKeepsTransform } from './assert-anchor-transform';
 import { awaitAnimationsSettled } from './animations';
+import { fixedViewportBox } from './viewport-box';
 
 test('pointer navigation', async ({ page }) => {
   await page.goto(`${BASE_URL}/component/?name=context_menu&`, { timeout: 20 * 60 * 1000 }); // Increase timeout to 20 minutes
@@ -112,8 +113,7 @@ test('clamps the menu into the viewport for a mouse right-click near a corner', 
   await page.goto(`${BASE_URL}/component/?name=context_menu&`, { timeout: 20 * 60 * 1000 });
   const trigger = page.getByRole('button', { name: 'right click here' });
   const contextMenu = page.getByRole('menu');
-  const viewport = page.viewportSize();
-  if (!viewport) throw new Error('no viewport size');
+  const viewport = await fixedViewportBox(page);
 
   // A synthetic `contextmenu` event dispatched directly on the trigger
   // reaches `ContextMenuTrigger`'s `oncontextmenu` handler exactly like a
@@ -134,6 +134,9 @@ test('clamps the menu into the viewport for a mouse right-click near a corner', 
   }, { x, y });
 
   await expect(contextMenu).toHaveAttribute('data-state', 'open');
+  // The SETTLED box: the open fade scales the panel about its centre (0.95 -> 1), so a mid-fade read sits
+  // up to ~3px inside its final edges and can hide a margin that is really smaller than EDGE_MARGIN.
+  await awaitAnimationsSettled(contextMenu);
   const box = await contextMenu.boundingBox();
   if (!box) throw new Error('menu has no bounding box');
 
@@ -150,8 +153,7 @@ test('clamps the menu into the viewport for a touch long-press near a corner', a
   await page.goto(`${BASE_URL}/component/?name=context_menu&`, { timeout: 20 * 60 * 1000 });
   const trigger = page.getByRole('button', { name: 'right click here' });
   const contextMenu = page.getByRole('menu');
-  const viewport = page.viewportSize();
-  if (!viewport) throw new Error('no viewport size');
+  const viewport = await fixedViewportBox(page);
 
   // Same technique as "menu lands at the tap coordinates" above, but
   // pointed at the top-left corner instead -- the long-press timer fires
@@ -175,6 +177,9 @@ test('clamps the menu into the viewport for a touch long-press near a corner', a
   }, { x, y, pointerId });
 
   await expect(contextMenu).toHaveAttribute('data-state', 'open');
+  // The SETTLED box: the open fade scales the panel about its centre (0.95 -> 1), so a mid-fade read sits
+  // up to ~3px inside its final edges and can hide a margin that is really smaller than EDGE_MARGIN.
+  await awaitAnimationsSettled(contextMenu);
   const box = await contextMenu.boundingBox();
   if (!box) throw new Error('menu has no bounding box');
 

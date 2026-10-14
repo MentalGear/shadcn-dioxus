@@ -1,3 +1,12 @@
+/* Nova sheet (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css, `.cn-sheet-*`):
+ * `.cn-sheet-content` = `bg-popover text-popover-foreground flex flex-col gap-4 bg-clip-padding
+ * text-sm shadow-lg` with a 1px `border` on the edge facing the page; `-header` `gap-0.5 p-4`;
+ * `-footer` `gap-2 p-4`; `-title` `text-foreground text-base font-medium`; `-description`
+ * `text-muted-foreground text-sm`; `-close` is a ghost `icon-sm` Button at `top-3 right-3`. The
+ * panel fill is the one modal fill (`--dx-popover`) shared with Dialog, AlertDialog, Drawer and
+ * Command (owner decision 6). The slide motion is this library's own (kept; Nova's is a
+ * tw-animate 40px slide + fade). */
+
 /* Sheet Root -- the wrapper `div` around the panel. On the web arm
  * (`<dialog>` + `showModal()`, a direct child of this element --
  * primitives/src/dialog.rs's `DialogContentModal`) it paints nothing: the scrim
@@ -110,11 +119,14 @@
   height: auto;
   max-height: none;
   flex-direction: column;
+  padding: var(--dx-space-4);
   border: none;
   margin: 0;
-  background: var(--dx-background);
+  background: var(--dx-popover);
+  background-clip: padding-box;
   box-shadow: var(--dx-shadow-lg);
-  color: var(--dx-foreground);
+  color: var(--dx-popover-foreground);
+  font-size: var(--dx-text-sm);
   gap: var(--dx-space-4);
   inset: 0;
   will-change: transform;
@@ -329,7 +341,7 @@ dialog.dx-sheet[data-state="closed"] {
   display: flex;
   flex-direction: column;
   padding: var(--dx-space-4);
-  gap: var(--dx-space-1-5);
+  gap: var(--dx-space-0-5);
 }
 
 .dx-sheet-footer {
@@ -340,20 +352,13 @@ dialog.dx-sheet[data-state="closed"] {
   gap: var(--dx-space-2);
 }
 
-/* shadcn's `SheetTitle` is `text-foreground font-semibold` only -- no
- * explicit text-size class, unlike `DialogTitle`'s `text-lg` (this repo's
- * `.dx-dialog-title` keeps that size). Tailwind's preflight resets heading
- * elements' `font-size` to `inherit`, so an unstyled shadcn `<h2>` here
- * actually renders at the surrounding base text size, not the UA default;
- * this repo has no such global reset, so the faithful translation is an
- * explicit `--dx-text-base` rather than omitting font-size altogether
- * (which would fall through to the browser's own, much larger, default
- * `h2` size instead). */
+/* `.cn-sheet-title`: `text-foreground text-base font-medium`. Tailwind's preflight resets heading
+ * elements' `font-size` to `inherit`; this repo has no such global reset, so the size is explicit. */
 .dx-sheet-title {
   margin: 0;
   color: var(--dx-foreground);
   font-size: var(--dx-text-base);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .dx-sheet-description {
@@ -362,40 +367,37 @@ dialog.dx-sheet[data-state="closed"] {
   font-size: var(--dx-text-sm);
 }
 
-/* shadcn: `absolute top-4 right-4 rounded-xs opacity-70 ... hover:opacity-100
- * focus:ring-2 ...`. The button box itself stays a fixed 24x24px hit target
- * (unchanged from before this pass, not part of the shadcn class list --
- * shadcn's own close button is sized by its `size-4` (16px) icon alone with
- * no padding of its own, under WCAG 2.5.8's 24px target-size guidance this
- * repo otherwise takes seriously, e.g. docs/backlog.md row 60's Input OTP
- * hit-target fix); the icon inside was resized to 16px
- * (`sheet/component.rs`'s `SheetContentClose`) to match `size-4` exactly.
- * Opacity replaces the previous color-swap-on-hover: shadcn dims/brightens
- * the whole control (icon and any future content alike) rather than
- * recoloring text, so `color` is no longer set here at all and the button
- * inherits `.dx-sheet`'s own `color: var(--secondary-color-4)`. */
+/* `.cn-sheet-close`: a ghost `icon-sm` Button (`../button/style.css`, `data-size="icon-sm"`
+ * `data-style="ghost"`) at `absolute top-3 right-3`: 28px square, `min(radius-md, 12px)` corners, a
+ * 16px icon, `muted` (dark: `muted/50`) fill on hover, the Button focus ring. It replaces the
+ * 24px, `opacity-70`, `rounded-xs` close of shadcn's New York sheet. */
 .dx-sheet-close {
   position: absolute;
-  top: var(--dx-space-4);
-  display: flex;
-  width: 24px;
-  height: 24px;
+  top: var(--dx-space-3);
+  display: inline-flex;
+  width: var(--dx-control-height-sm);
+  height: var(--dx-control-height-sm);
   align-items: center;
   justify-content: center;
   padding: 0;
-  border: none;
-  border-radius: var(--dx-radius-xs);
-  background: none;
+  border: 1px solid transparent;
+  border-radius: min(var(--dx-radius-md), 12px);
+  background: transparent;
+  color: var(--dx-foreground);
   cursor: pointer;
-  inset-inline-end: var(--dx-space-4);
-  opacity: 0.7;
-  transition: opacity var(--dx-motion-duration-base) var(--dx-motion-ease);
+  inset-inline-end: var(--dx-space-3);
+  outline: none;
+  transition-duration: var(--dx-motion-duration-base);
+  transition-property: all;
+  transition-timing-function: var(--dx-motion-ease-standard);
 }
 
 .dx-sheet-close:hover {
-  opacity: 1;
+  background-color: var(--light, var(--dx-muted))
+    var(--dark, color-mix(in oklab, var(--dx-muted) 50%, transparent));
 }
 
 .dx-sheet-close:focus-visible {
+  border-color: var(--dx-ring-color);
   box-shadow: var(--dx-ring-focus);
 }

@@ -1,4 +1,8 @@
 .dx-context-menu-content {
+  /* Nova `.cn-context-menu-item-indicator` `absolute right-2` (8px) beside the item's `pr-8`: the
+     theme's 12px default inset becomes 8px, the same local retune the Select sheet makes. */
+  --dx-menu-item-indicator-inset: var(--dx-space-2);
+
   /*
    * Migration A (slice 2/3): on the web arm this content carries
    * `popover="manual"` (`primitives/src/context_menu.rs`,
@@ -21,7 +25,7 @@
    * default would otherwise pin to 0 (stretching this box edge-to-edge) while leaving the inline
    * `top`/`left` free to still win via the ordinary cascade.
    */
-  min-width: 220px;
+  min-width: 9rem; /* Nova `.cn-context-menu-content` `min-w-36` */
 
   /* Clamp to the viewport so a long label wraps (items carry `overflow-wrap:
      anywhere`) instead of widening the menu past a narrow screen -- same
@@ -60,12 +64,11 @@
 }
 
 /* `ChevronRight` icon element, appended after the trigger's own content by
-   `component.rs` -- see `../dropdown_menu/style.css`'s identical rule and
+   `component.rs` -- see `../dropdown_menu/style.css`'s note on this class and
    `component.rs`'s doc for why this is a real (decorative, name-free) SVG
-   icon rather than CSS-generated `content:` text. */
-.dx-context-menu-sub-trigger-icon {
-  opacity: 0.7;
-}
+   icon rather than CSS-generated `content:` text. It carries no rule of its
+   own: Nova draws it in the item's ink (`.cn-context-menu-sub-trigger`), and
+   the theme's indicator slot places and sizes it. */
 
 /* Cross-lane handoff (rtl-rust, $S/batch3/rtl-rust/css-needs.md): same
    reasoning as `../dropdown_menu/style.css`'s identical rule -- a real SVG
@@ -87,8 +90,12 @@
    `use_anchor_position_fallback`'s JS measurement (or native CSS anchor
    positioning) takes over. */
 .dx-context-menu-content.dx-context-menu-sub-content {
+  /* Nova `.cn-context-menu-sub-content`: `min-w-32 ... shadow-lg` (the root is `min-w-36 shadow-md`). */
+  --dx-floating-shadow: var(--dx-shadow-lg);
+
   position: absolute;
   top: 0;
+  min-width: 8rem;
   margin: 0;
   inset-inline-start: 100%;
 }

@@ -47,7 +47,7 @@ Tailwind classes verbatim:
   (`primitives/src/dialog.rs`'s modal web arm), so the scrim is its native
   `::backdrop` pseudo-element; the non-web (Blitz) arm has no such element,
   so `.dx-sheet-root` paints the same scrim for that arm.
-- **Content**: `fixed z-50 flex flex-col gap-4 bg-background shadow-lg`,
+- **Content**: Nova's `.cn-sheet-content`: `fixed z-50 flex flex-col gap-4 bg-popover text-sm shadow-lg`,
   sliding in from its `data-side` with `transition ease-in-out`, a 500ms
   open / 300ms close duration (this repo's motion scale has no exact 500ms
   step, so that one value is a literal; 300ms matches
@@ -56,21 +56,15 @@ Tailwind classes verbatim:
   (384px) only from a 640px viewport up, matching shadcn's own
   breakpoint-gated cap rather than applying it unconditionally.
   `top`/`bottom` are `inset-x-0 h-auto border-b|border-t`.
-- **Header/Footer/Title/Description**: `flex flex-col gap-1.5 p-4` /
-  `mt-auto flex flex-col gap-2 p-4` / `text-foreground font-semibold` /
-  `text-muted-foreground text-sm`. Title has no explicit text-size class in
-  shadcn's own source (unlike `DialogTitle`'s `text-lg`); since this repo
-  has no global heading-reset the way Tailwind's preflight does, that
-  translates to an explicit `--dx-text-base` here rather than an omitted
-  font-size, which would otherwise fall back to the browser's own, much
-  larger, default `<h2>` size.
-- **Close button**: `absolute top-4 right-4 rounded-xs opacity-70
-  hover:opacity-100`, a `--dx-ring` focus-visible ring, and a `size-4`
-  (16px) icon with an `aria-label` (this repo's equivalent of shadcn's
-  visually-hidden "Close" span). The button's own hit target stays a fixed
-  24x24px box around that icon, larger than shadcn's own (icon-sized, no
-  padding) -- a deliberate, pre-existing choice in this codebase favoring
-  WCAG 2.5.8's 24px target-size guidance over byte-for-byte fidelity here.
+- **Header/Footer/Title/Description**: `flex flex-col gap-0.5 p-4` /
+  `mt-auto flex flex-col gap-2 p-4` / `text-foreground text-base font-medium` /
+  `text-muted-foreground text-sm` (Nova's `.cn-sheet-*`). Tailwind's preflight
+  resets heading sizes, which this repo has no equivalent of, so the title
+  size is an explicit `--dx-text-base`.
+- **Close button**: Nova's ghost `icon-sm` Button at `absolute top-3 right-3`:
+  a 28px square with `min(radius-md, 12px)` corners, a 16px icon, a `muted`
+  hover fill and the Button focus ring, with an `aria-label` (this repo's
+  equivalent of shadcn's visually-hidden "Close" span).
 - **Native `<dialog>` centering defect (shared with Drawer)**: Chromium's
   `dialog:modal` UA stylesheet ships `inset: 0; margin: auto; width/height:
   fit-content`. Overriding only the one edge a given side needs (e.g.

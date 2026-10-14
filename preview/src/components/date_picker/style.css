@@ -1,3 +1,10 @@
+/* Nova date picker (shadcn-ui/ui@295a1f1 apps/v4/registry/bases/base/ui/calendar.tsx, composed in a Popover
+ * as the date-picker examples do: `PopoverContent className="w-auto p-0"` around a `Calendar`, whose
+ * `.cn-calendar` (style-nova.css) is `p-2` with `in-data-[slot=popover-content]:bg-transparent`). The
+ * field is the Input recipe (style-nova.css `.cn-input`: `h-8 px-2.5 py-1 rounded-lg`, transparent in
+ * light and `input/30` in dark, 1px `input` edge, `ring-3 ring-ring/50` on focus, `text-sm`) read through
+ * the same tokens `input/style.css` does: `--dx-control-height-default`, `--dx-field-fill`,
+ * `--dx-ring-field`, `--dx-ring-invalid-field`. */
 .dx-date-picker {
     position: relative;
     display: inline-flex;
@@ -35,16 +42,18 @@
     display: flex;
     width: fit-content;
     min-width: 150px;
+    height: var(--dx-control-height-default);
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-    padding: var(--dx-space-2);
+    padding: var(--dx-space-1) var(--dx-space-2-5);
     border: none;
     border-radius: var(--dx-radius-lg);
     background: none;
-    background: var(--dx-card);
+    background-color: var(--dx-field-fill);
     box-shadow: inset 0 0 0 1px var(--dx-input);
     color: var(--dx-foreground);
+    font-size: var(--dx-text-sm);
     gap: var(--dx-space-1);
     transition: background-color var(--dx-motion-duration-fast) var(--dx-motion-ease-out);
 }
@@ -97,12 +106,11 @@
     max-width: calc(100% - 2 * var(--dx-space-4));
 }
 
-/* One surface: the popover panel is the card, so the calendar inside it carries no second border,
-   shadow and background of its own (calendar/style.css reads these three). */
+/* One surface: the popover panel is the card, so the calendar inside it carries no second border or
+   background of its own (calendar/style.css reads these two); its `p-2` frame is the panel's only padding. */
 .dx-date-picker-popover-content {
     --dx-calendar-border: none;
     --dx-calendar-background: transparent;
-    --dx-calendar-shadow: none;
 }
 
 /*

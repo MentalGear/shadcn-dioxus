@@ -39,7 +39,7 @@ FieldSet {
 
 ## Choice card
 
-A `FieldLabel` that wraps a `Field` renders as a "choice card": bordered and padded (the chrome is drawn on the wrapped `Field`), and the whole card is the click target for the control inside. When any descendant control is checked (`data-state="checked"`: `RadioItem`, `Switch` and `Checkbox` all emit it) the card takes a primary-tinted background and primary border, and it shows a focus ring while a control inside has keyboard focus.
+A `FieldLabel` that wraps a `Field` renders as a "choice card": bordered and padded (the chrome is drawn on the wrapped `Field`), and the whole card is the click target for the control inside. When any descendant control is checked (`data-state="checked"`: `RadioItem`, `Switch` and `Checkbox` all emit it) the card takes a primary-tinted background and border (Nova: 5% fill and 30% edge, 10% and 20% in dark), a muted hover fill, and it shows a focus ring while a control inside has keyboard focus.
 
 ```rust
 FieldLabel { html_for: "plan-pro",

@@ -6,7 +6,9 @@ use crate::{
         CollectionPlacement, CollectionState,
     },
     direction::{use_direction, Direction, HorizontalNav},
-    has_own_accessible_name, merge_attributes, use_animated_open, use_id_or, use_unique_id,
+    has_own_accessible_name,
+    hover_intent::{use_hover_intent, HoverIntent},
+    merge_attributes, use_animated_open, use_id_or, use_unique_id,
 };
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
@@ -26,10 +28,13 @@ struct NavbarContext {
     // single row) -- see `direction::Direction::resolve_horizontal`'s doc.
     direction: Direction,
 
-    // `NavbarProps::open_on_hover` -- read by `NavbarNav`'s
-    // `onmouseenter`/`onmouseleave`, the only pointer-hover behaviour a
-    // `Navbar` has.
-    open_on_hover: ReadSignal<bool>,
+    // The pointer-hover contract (`NavbarProps::open_on_hover`): when a
+    // pointer resting on a nav opens it, and -- the half that must never be
+    // missing -- when the pointer leaving it closes it again. Owns the open
+    // index's write path (`set_open_nav` is `hover.set_open()`), so the
+    // opening and closing halves cannot be wired separately; see
+    // `crate::hover_intent`.
+    hover: HoverIntent,
 }
 
 /// The props for the [`Navbar`] component.
@@ -49,9 +54,14 @@ pub struct NavbarProps {
     #[props(default)]
     pub dir: Option<Direction>,
 
-    /// Whether hovering a [`NavbarNav`] opens its dropdown (and, once one is
-    /// open, hovering another switches to it), and the pointer leaving the
-    /// nav closes it again. Defaults to `true`.
+    /// Whether hovering a [`NavbarNav`] opens its dropdown (after a short
+    /// hover-intent delay; once one is open, hovering another switches to it
+    /// at once), and the pointer leaving the nav -- its trigger and its
+    /// dropdown -- closes it again after a short grace delay, however it was
+    /// opened (hover, click or keyboard), as Radix's `NavigationMenu` does.
+    /// Moving from the trigger into the dropdown, across the gap between them,
+    /// keeps it open. Defaults to `true`. The whole contract lives in
+    /// `crate::hover_intent`.
     ///
     /// Set it to `false` for **click activation**: a dropdown then opens only
     /// when its [`NavbarTrigger`] is clicked or activated with `Enter`/
@@ -145,8 +155,9 @@ pub struct NavbarProps {
 /// - `data-direction`: The resolved text direction. Values are `ltr` or `rtl`.
 #[component]
 pub fn Navbar(props: NavbarProps) -> Element {
-    let mut open_nav = use_signal(|| None);
-    let set_open_nav = use_callback(move |idx| open_nav.set(idx));
+    let open_nav = use_signal(|| None);
+    let hover = use_hover_intent(open_nav, props.open_on_hover);
+    let set_open_nav = hover.set_open();
     let direction = use_direction(props.dir);
 
     let focus = use_collection_provider(props.roving_loop);
@@ -156,7 +167,7 @@ pub fn Navbar(props: NavbarProps) -> Element {
         disabled: props.disabled,
         focus,
         direction,
-        open_on_hover: props.open_on_hover,
+        hover,
     });
     use_effect(move || {
         let index = ctx.focus.focused_index();
@@ -443,24 +454,25 @@ pub fn NavbarNav(props: NavbarNavProps) -> Element {
 
     rsx! {
         div {
-            // Both hover handlers are no-ops when `open_on_hover` is `false`
-            // (click activation) -- see `NavbarProps::open_on_hover`.
+            // The nav wraps its trigger AND its (top-layer) content, which is a
+            // DOM descendant, so these two events cover the whole hover region:
+            // the pointer crossing the gap between the trigger and the content
+            // leaves and re-enters it, which the close-grace timer absorbs. Both
+            // are no-ops when `open_on_hover` is `false` (click activation) --
+            // `HoverIntent` checks it. See `crate::hover_intent` and
+            // `NavbarProps::open_on_hover`.
             onmouseenter: move |_| {
-                if !disabled() && (ctx.open_on_hover)() {
-                    let index = Some(nav_ctx.index.cloned());
-                    if (ctx.open_nav)().is_some() {
-                        ctx.focus.set_focus(index);
-                    } else {
-                        ctx.set_open_nav.call(index);
-                    }
+                if !disabled() {
+                    ctx.hover.enter(nav_ctx.index.cloned());
                 }
             },
             onmouseleave: move |_| {
-                if (ctx.open_on_hover)() && is_open() {
-                    ctx.focus.clear_focus();
-                }
+                ctx.hover.leave(nav_ctx.index.cloned());
             },
             onkeydown: move |event: Event<KeyboardData>| {
+                // A key press is a deliberate action: a pending hover open or
+                // close must not overrule it.
+                ctx.hover.cancel();
                 match event.key() {
                     Key::Enter if !disabled() => {
                         ctx.set_open_nav.call((!is_open()).then(&*props.index));
@@ -678,6 +690,10 @@ pub fn NavbarTrigger(props: NavbarTriggerProps) -> Element {
                 }
             },
             onclick: move |_| {
+                // A click is a deliberate action: a still-pending hover open
+                // (the pointer arrived <150ms ago) must not fire after it and
+                // a pending close must not undo it.
+                ctx.hover.cancel();
                 // `None`: a click with no preceding pointerdown (Space
                 // button activation, assistive tech) -- toggle live state.
                 let was_open = open_at_down.write().take().unwrap_or_else(&*is_open);

@@ -7,15 +7,19 @@
 # 1. EVERY COMPONENT IS CLASSIFIED (shadcn or extra).
 #    `CATALOG` in preview/src/components/mod.rs is the one list saying whether a
 #    component directory is a page of shadcn/ui's catalog (`Origin::Shadcn`) or
-#    one of our additions (`Origin::Extra`, which renders the "Extra" badge on
-#    the component page, the sidebar entry and the homepage card). The list
+#    one of our additions (`Origin::Extra("<why>")`, which renders the "Extra"
+#    badge on the component page, the sidebar entry and the homepage card, and
+#    carries the reason it is an extra as a short sentence: the badge tooltip
+#    and the explainer line under the page heading show it). The list
 #    carries BOTH kinds on purpose: a list of extras alone makes "not decided
 #    yet" look identical to "shadcn", so a new component would silently skip the
 #    badge. Here a new directory with a component.json and no row fails, and the
 #    author has to decide. Also fails on: a row with no directory (stale), two
 #    rows for one directory, and a row that is not the strict
-#    `("name", Origin::Shadcn|Extra),` shape (a typo such as `Origin::Extras`
-#    would otherwise be skipped by the extraction and look like a missing row).
+#    `("name", Origin::Shadcn),` / `("name", Origin::Extra("reason")),` shape
+#    (a typo such as `Origin::Extras`, or an `Origin::Extra` with no reason or
+#    an empty one, would otherwise be skipped by the extraction and look like a
+#    missing row or ship a badge that cannot say why).
 #    The same totality is asserted from the compiled side by the
 #    `catalog_classifies_every_demo` test, which also covers `examples!`.
 #
@@ -58,13 +62,15 @@ if [ -z "$block" ]; then
   exit 2
 fi
 
-row_re='^[[:space:]]*\("[a-z0-9_]+", Origin::(Shadcn|Extra)\),[[:space:]]*(//.*)?$'
+# The reason is a plain string literal: non-empty, no quote or backslash (it is also read, as text,
+# by playwright/component-catalog.spec.ts).
+row_re='^[[:space:]]*\("[a-z0-9_]+", Origin::(Shadcn|Extra\("[^"\\]+"\))\),[[:space:]]*(//.*)?$'
 while IFS= read -r line; do
   trimmed="${line#"${line%%[![:space:]]*}"}"
   [ -z "$trimmed" ] && continue
   case "$trimmed" in //*) continue ;; esac
   if ! [[ "$line" =~ $row_re ]]; then
-    complain "malformed CATALOG row in $mod (want \`(\"name\", Origin::Shadcn|Extra),\`): $line"
+    complain "malformed CATALOG row in $mod (want \`(\"name\", Origin::Shadcn),\` or \`(\"name\", Origin::Extra(\"why it is an extra\")),\`; an Extra needs a non-empty reason): $line"
   fi
 done <<< "$block"
 
@@ -77,7 +83,7 @@ for n in $dups; do complain "CATALOG lists \`$n\` more than once"; done
 
 unclassified="$(comm -23 <(printf '%s\n' "$dir_names") <(printf '%s\n' "$catalog_names" | uniq))"
 for n in $unclassified; do
-  complain "unclassified component \`$n\`: add \`(\"$n\", Origin::Shadcn)\` (a shadcn/ui catalog page) or \`(\"$n\", Origin::Extra)\` (our addition, gets the \"Extra\" badge) to CATALOG in $mod"
+  complain "unclassified component \`$n\`: add \`(\"$n\", Origin::Shadcn)\` (a shadcn/ui catalog page) or \`(\"$n\", Origin::Extra(\"<why>\"))\` (our addition, gets the \"Extra\" badge; say why in one short sentence) to CATALOG in $mod"
 done
 
 stale="$(comm -13 <(printf '%s\n' "$dir_names") <(printf '%s\n' "$catalog_names" | uniq))"

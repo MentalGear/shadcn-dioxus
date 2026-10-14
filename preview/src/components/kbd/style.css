@@ -1,18 +1,31 @@
+/* Nova kbd (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css): `.cn-kbd` is
+ * `bg-muted text-muted-foreground h-5 w-fit min-w-5 gap-1 rounded-sm px-1 font-sans text-xs
+ * font-medium` with `[&_svg:not([class*='size-'])]:size-3`; `.cn-kbd-group` is `gap-1`. Nova inverts
+ * the pair inside a tooltip (`in-data-[slot=tooltip-content]:bg-background/20
+ * text-background`): `--dx-kbd-background` / `--dx-kbd-color` are the slots a tooltip (or any
+ * inverted surface) sets on its content to do that; the key reads them and falls back to Nova's
+ * default pair. */
 .dx-kbd {
   display: inline-flex;
+  width: fit-content;
   min-width: 1.25rem;
   height: 1.25rem;
   align-items: center;
   justify-content: center;
   padding: 0 var(--dx-space-1);
   border-radius: var(--dx-radius-sm);
-  background-color: var(--dx-muted);
-  box-shadow: inset 0 0 0 1px var(--dx-border);
-  color: var(--dx-foreground);
+  background-color: var(--dx-kbd-background, var(--dx-muted));
+  color: var(--dx-kbd-color, var(--dx-muted-foreground));
   font-family: inherit;
   font-size: var(--dx-text-xs);
   font-weight: 500;
+  gap: var(--dx-space-1);
   line-height: 1;
+}
+
+.dx-kbd svg {
+  width: 0.75rem;
+  height: 0.75rem;
 }
 
 .dx-kbd-group {

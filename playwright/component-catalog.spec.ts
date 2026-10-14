@@ -11,7 +11,11 @@
  * against the directories; this file keeps the UI faithful to the list.)
  *
  * What is asserted, beyond "the badge is there":
- *  - the text is real ("Extra") and carries the tooltip explanation as `title`;
+ *  - the text is real ("Extra") and says WHY it is an extra: the reason is the payload of
+ *    `Origin::Extra("...")` in the list (read here too, so a reworded reason needs no edit), shown as
+ *    a visible explainer line under the page heading, as an accessible Tooltip on the page badge
+ *    (hover and keyboard focus), and as the native `title` on the sidebar and homepage-card badges
+ *    (the sidebar badge sits inside a link, so it must not be a nested interactive trigger);
  *  - it is a SIBLING of the page `h1` and the card `h3`, so those headings keep
  *    the component's own name as their accessible name;
  *  - nothing overflows at 390px (page header, mobile sidebar sheet);
@@ -19,21 +23,19 @@
  */
 import { test, expect } from "./fixtures";
 import type { Page } from "@playwright/test";
-import * as fs from "fs";
-import * as path from "path";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
+import { readCatalog } from "./catalog";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
-const TITLE = "Not part of shadcn/ui — a shadcn-dioxus addition";
-
 // --- the list, read from Rust --------------------------------------------------------------
-const MOD_RS = fs.readFileSync(path.join(__dirname, "..", "preview", "src", "components", "mod.rs"), "utf8");
-const CATALOG_BLOCK = MOD_RS.split("pub const CATALOG")[1]?.split("\n];")[0] ?? "";
-const ROWS = [...CATALOG_BLOCK.matchAll(/^\s*\("([a-z0-9_]+)", Origin::(Shadcn|Extra)\),/gm)].map((m) => ({
-  name: m[1],
-  extra: m[2] === "Extra",
-}));
+const ROWS = readCatalog().map((r) => ({ name: r.name, extra: r.origin === "Extra", reason: r.reason }));
+/** The reason an extra carries in `CATALOG`: the text every surface must show. */
+const reasonOf = (name: string) => {
+  const reason = ROWS.find((r) => r.name === name)?.reason;
+  if (!reason) throw new Error(`${name} has no Extra reason in CATALOG`);
+  return reason;
+};
 const EXTRAS = ROWS.filter((r) => r.extra).map((r) => r.name);
 const SHADCN = ROWS.filter((r) => !r.extra).map((r) => r.name);
 /** Not rendered on the homepage gallery (`ComponentGallery` filters the oracle fixture out). */
@@ -57,13 +59,16 @@ async function openComponent(page: Page, name: string) {
   await expect(page.locator(".dx-component-page-header h1")).toHaveText(display(name), { timeout: 60_000 });
 }
 
-test("the list parses: both kinds are present and the extras are the known eight", () => {
+test("the list parses: both kinds are present and every extra carries a reason", () => {
   expect(ROWS.length).toBeGreaterThan(60);
   expect(SHADCN).toContain("button");
   // The chart gallery pages are shadcn's own `chart` sections, not additions.
   expect(SHADCN).toEqual(expect.arrayContaining(["chart", "area_chart", "chart_tooltip"]));
   expect(new Set(ROWS.map((r) => r.name)).size).toBe(ROWS.length);
   expect(EXTRAS.length).toBeGreaterThan(0);
+  // `readCatalog` throws if any `Origin::` row failed to parse (playwright/catalog.ts), and an Extra without
+  // a reason: so no extra can silently become "shadcn" above.
+  for (const name of EXTRAS) expect(reasonOf(name).length, name).toBeLessThan(120);
 });
 
 test.describe("component page header", () => {
@@ -74,9 +79,24 @@ test.describe("component page header", () => {
     await expect(badge).toHaveCount(1);
     await expect(badge).toBeVisible();
     await expect(badge).toHaveText("Extra");
-    await expect(badge).toHaveAttribute("title", TITLE);
     // Real text in the accessibility tree, not an image or pseudo-element.
     await expect(header.getByText("Extra", { exact: true })).toBeVisible();
+    // The reason is printed under the heading (visible on touch, read in order by screen readers)...
+    const explainer = header.locator(".dx-extra-explainer");
+    await expect(explainer).toBeVisible();
+    await expect(explainer).toHaveText(`Extra: not in shadcn/ui. ${reasonOf("toolbar")}`);
+    // ...and the badge is a Tooltip trigger: hover or keyboard focus opens it with the same reason,
+    // wired by aria-describedby; it is not the native `title` (which keyboard users never get).
+    await expect(badge).not.toHaveAttribute("title", /.+/);
+    const trigger = header.locator(".dx-component-page-title .dx-tooltip-trigger");
+    await expect(trigger).toHaveCount(1);
+    await trigger.focus();
+    const tip = page.getByRole("tooltip");
+    await expect(tip).toBeVisible();
+    await expect(tip).toHaveText(reasonOf("toolbar"));
+    await expect(trigger).toHaveAttribute("aria-describedby", (await tip.getAttribute("id")) ?? "");
+    await page.keyboard.press("Escape");
+    await expect(tip).toBeHidden();
     // The `h1` keeps the component's own name: the badge is its sibling, not a child.
     const h1 = header.getByRole("heading", { level: 1 });
     await expect(h1).toHaveText("toolbar");
@@ -93,6 +113,7 @@ test.describe("component page header", () => {
       await openComponent(page, name);
       await expect(page.locator(".dx-component-page-header .dx-extra-badge"), name).toHaveCount(0);
       await expect(page.locator(".dx-component-page-header").getByText("Extra", { exact: true }), name).toHaveCount(0);
+      await expect(page.locator(".dx-extra-explainer"), name).toHaveCount(0);
     }
   });
 
@@ -102,6 +123,9 @@ test.describe("component page header", () => {
     for (const name of EXTRAS) {
       await openComponent(page, name);
       await expect(page.locator(".dx-component-page-header .dx-extra-badge"), name).toHaveCount(1);
+      await expect(page.locator(".dx-component-page-header .dx-extra-explainer"), name).toHaveText(
+        `Extra: not in shadcn/ui. ${reasonOf(name)}`,
+      );
     }
     for (const name of ["accordion", "message_scroller", "navigation_menu", "chart"]) {
       await openComponent(page, name);
@@ -116,7 +140,9 @@ test.describe("sidebar", () => {
     const extra = sidebarEntry(page, "toolbar");
     await expect(extra).toHaveCount(1);
     await expect(extra.locator(".dx-extra-badge")).toHaveText("Extra");
-    await expect(extra.locator(".dx-extra-badge")).toHaveAttribute("title", TITLE);
+    // Inside the link: the reason is the native `title`, never a nested focusable tooltip trigger.
+    await expect(extra.locator(".dx-extra-badge")).toHaveAttribute("title", reasonOf("toolbar"));
+    await expect(extra.locator(".dx-tooltip-trigger, [tabindex]")).toHaveCount(0);
     // The badge is part of the link, so the link's name says so.
     await expect(extra).toHaveAccessibleName(/^toolbar\s+Extra$/);
     const shadcn = sidebarEntry(page, "button");
@@ -170,7 +196,7 @@ test.describe("homepage gallery card", () => {
     await expect(extra).toHaveCount(1);
     const badge = extra.locator(".dx-component-card-title-row .dx-extra-badge");
     await expect(badge).toHaveText("Extra");
-    await expect(badge).toHaveAttribute("title", TITLE);
+    await expect(badge).toHaveAttribute("title", reasonOf("toolbar"));
     // The `h3` keeps the component's name (a heading query by that exact name found the card).
     await expect(extra.getByRole("heading", { level: 3 }).locator(".dx-extra-badge")).toHaveCount(0);
 

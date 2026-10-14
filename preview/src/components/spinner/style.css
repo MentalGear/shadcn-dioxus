@@ -1,8 +1,10 @@
+/* Nova spinner (shadcn-ui/ui@295a1f1 registry/bases/radix/ui/spinner.tsx: `size-4 animate-spin`; the
+ * style sheet has no `.cn-spinner` block). It carries no colour of its own: the ring is
+ * `currentColor`, so it takes the ink of whatever it sits in (a Button, a Badge, an input addon). */
 .dx-spinner {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--dx-muted-foreground);
 }
 
 .dx-spinner svg {

@@ -1,3 +1,13 @@
+/* Nova drawer (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css, `.cn-drawer-*`):
+ * `.cn-drawer-content` = `bg-popover text-popover-foreground flex flex-col text-sm` with a 1px
+ * `border` and `rounded-xl` on the corners of the edge facing the page, and no shadow;
+ * `.cn-drawer-handle` = `bg-muted mx-auto mt-4 h-1 w-[100px] rounded-full`; `-header`
+ * `gap-0.5 p-4`; `-footer` `gap-2 p-4`; `-title` `text-foreground text-base font-medium`;
+ * `-description` `text-muted-foreground text-sm`. DrawerClose has no rule of its own in Nova (the
+ * demos pass an outline `Button`), so the unstyled default close below is that outline Button. The
+ * panel fill is the one modal fill (`--dx-popover`) shared with Dialog, AlertDialog, Sheet and
+ * Command (owner decision 6). The slide, drag and rubber-band motion is this library's own. */
+
 /* Drawer Root -- the wrapper `div` around the panel. On the web arm
  * (`<dialog>` + `showModal()`) it paints nothing: the scrim is the dialog's own
  * `::backdrop` (the shared rule in `dx-components-theme.css`, the same one `.dx-sheet` uses) and this
@@ -129,6 +139,10 @@
  * confirmed live: this bug reproduced even with that cap already
  * removed. */
 .dx-drawer {
+  /* The panel's fill, read by `background` AND by the overdrag `filter: drop-shadow` fills below, so
+   * the strip that covers a rubber-band can never be a different colour from the panel. */
+  --dx-drawer-fill: var(--dx-popover);
+
   position: fixed;
   z-index: var(--dx-z-overlay-raised);
   display: flex;
@@ -138,11 +152,12 @@
   height: auto;
   max-height: none;
   flex-direction: column;
+  padding: var(--dx-space-4);
   border: none;
   margin: 0;
-  background: var(--dx-background);
-  box-shadow: var(--dx-shadow-xl);
-  color: var(--dx-foreground);
+  background: var(--dx-drawer-fill);
+  color: var(--dx-popover-foreground);
+  font-size: var(--dx-text-sm);
   gap: var(--dx-space-4);
   inset: 0;
 
@@ -200,8 +215,8 @@ dialog.dx-drawer[data-state="closed"] {
   max-height: 80%;
   padding-bottom: env(safe-area-inset-bottom, 0);
   border-top: 1px solid var(--dx-border);
-  border-top-left-radius: var(--dx-radius-2xl);
-  border-top-right-radius: var(--dx-radius-2xl);
+  border-top-left-radius: var(--dx-radius-xl);
+  border-top-right-radius: var(--dx-radius-xl);
 
   /* Overdrag-away-from-edge never opens a gap (see `primitives/src/
    * drawer.rs`'s `damped_display_offset`/`RUBBER_BAND_MAX_PX`): dragging
@@ -223,7 +238,7 @@ dialog.dx-drawer[data-state="closed"] {
    * 24px cap with 16px to spare. Invisible at rest (fully below the
    * viewport) and never mistaken for a drop shadow (0 blur, exact panel
    * color, no visible edge of its own). */
-  filter: drop-shadow(0 40px 0 var(--dx-background));
+  filter: drop-shadow(0 40px 0 var(--dx-drawer-fill));
   touch-action: pan-x;
   transform: translateY(100%);
 }
@@ -235,13 +250,13 @@ dialog.dx-drawer[data-state="closed"] {
   bottom: auto;
   max-height: 80%;
   border-bottom: 1px solid var(--dx-border);
-  border-bottom-left-radius: var(--dx-radius-2xl);
-  border-bottom-right-radius: var(--dx-radius-2xl);
+  border-bottom-left-radius: var(--dx-radius-xl);
+  border-bottom-right-radius: var(--dx-radius-xl);
 
   /* See "bottom" above for the full reasoning -- mirrored upward: an
    * overdrag away from the top edge is dragging DOWN, so the extension
    * bleeds further UP, past the already-flush top edge. */
-  filter: drop-shadow(0 -40px 0 var(--dx-background));
+  filter: drop-shadow(0 -40px 0 var(--dx-drawer-fill));
   touch-action: pan-x;
   transform: translateY(-100%);
 }
@@ -255,13 +270,13 @@ dialog.dx-drawer[data-state="closed"] {
   width: 100%;
   max-width: 24rem;
   border-left: 1px solid var(--dx-border);
-  border-bottom-left-radius: var(--dx-radius-2xl);
-  border-top-left-radius: var(--dx-radius-2xl);
+  border-bottom-left-radius: var(--dx-radius-xl);
+  border-top-left-radius: var(--dx-radius-xl);
 
   /* See "bottom" above (same construction, rotated 90 degrees): an
    * overdrag away from the right edge drags LEFT, so the extension
    * bleeds further RIGHT, past the already-flush right edge. */
-  filter: drop-shadow(40px 0 0 var(--dx-background));
+  filter: drop-shadow(40px 0 0 var(--dx-drawer-fill));
   touch-action: pan-y;
   transform: translateX(100%);
 }
@@ -274,13 +289,13 @@ dialog.dx-drawer[data-state="closed"] {
   width: 100%;
   max-width: 24rem;
   border-right: 1px solid var(--dx-border);
-  border-bottom-right-radius: var(--dx-radius-2xl);
-  border-top-right-radius: var(--dx-radius-2xl);
+  border-bottom-right-radius: var(--dx-radius-xl);
+  border-top-right-radius: var(--dx-radius-xl);
 
   /* See "bottom" above: an overdrag away from the left edge drags RIGHT,
    * so the extension bleeds further LEFT, past the already-flush left
    * edge. */
-  filter: drop-shadow(-40px 0 0 var(--dx-background));
+  filter: drop-shadow(-40px 0 0 var(--dx-drawer-fill));
   touch-action: pan-y;
   transform: translateX(-100%);
 }
@@ -411,12 +426,12 @@ dialog.dx-drawer[data-state="closed"] {
 
 /* Grab-bar handle -- decorative, aria-hidden (primitives/src/drawer.rs). */
 .dx-drawer-handle {
-  width: var(--dx-space-9);
+  width: 100px;
   height: var(--dx-space-1);
   flex-shrink: 0;
   border-radius: var(--dx-radius-full);
-  margin: var(--dx-space-3) auto 0;
-  background: var(--dx-input);
+  margin: var(--dx-space-4) auto 0;
+  background: var(--dx-muted);
 
   /* This bar has no text of its own, but a `mousedown`+drag starting here
    * still hits whatever's *underneath* in selection terms on some
@@ -458,7 +473,7 @@ dialog.dx-drawer[data-state="closed"] {
   display: flex;
   flex-direction: column;
   padding: var(--dx-space-4);
-  gap: var(--dx-space-1-5);
+  gap: var(--dx-space-0-5);
 }
 
 .dx-drawer-footer {
@@ -472,8 +487,8 @@ dialog.dx-drawer[data-state="closed"] {
 .dx-drawer-title {
   margin: 0;
   color: var(--dx-foreground);
-  font-size: var(--dx-text-lg);
-  font-weight: 600;
+  font-size: var(--dx-text-base);
+  font-weight: 500;
 }
 
 .dx-drawer-description {
@@ -517,20 +532,39 @@ dialog.dx-drawer[data-state="closed"] {
  * that gate outright, exactly as designed, since `.dx-button` is a
  * foreign component's namespace). */
 .dx-drawer-close:not([data-style]) {
-  padding: var(--dx-space-2) var(--dx-space-4);
-  border: 1px solid var(--dx-input);
-  border-radius: var(--dx-radius-md);
-  background-color: var(--light, var(--dx-background)) var(--dark, color-mix(in oklab, var(--dx-input) 30%, transparent));
+  display: inline-flex;
+  height: var(--dx-control-height-default);
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--dx-space-2-5);
+  border: 1px solid var(--light, var(--dx-border)) var(--dark, var(--dx-input));
+  border-radius: var(--dx-radius-lg);
+  background-clip: padding-box;
+  background-color: var(--light, var(--dx-background))
+    var(--dark, color-mix(in oklab, var(--dx-input) 30%, transparent));
   color: var(--dx-foreground);
-  cursor: pointer;
+  cursor: default;
+  font-family: inherit;
   font-size: var(--dx-text-sm);
   font-weight: 500;
-  transition: background-color var(--dx-motion-duration-base) var(--dx-motion-ease), color var(--dx-motion-duration-base) var(--dx-motion-ease);
+  gap: var(--dx-space-1-5);
+  line-height: 1.25rem;
+  outline: none;
+  transition-duration: var(--dx-motion-duration-base);
+  transition-property: all;
+  transition-timing-function: var(--dx-motion-ease-standard);
+  white-space: nowrap;
 }
 
 .dx-drawer-close:not([data-style]):hover {
-  background-color: var(--light, var(--dx-muted)) var(--dark, color-mix(in oklab, var(--dx-input) 50%, transparent));
-  color: var(--dx-accent-foreground);
+  background-color: var(--light, var(--dx-muted))
+    var(--dark, color-mix(in oklab, var(--dx-input) 50%, transparent));
+}
+
+.dx-drawer-close:not([data-style]):focus-visible {
+  border-color: var(--dx-ring-color);
+  box-shadow: var(--dx-ring-focus);
 }
 
 /* Explicit requirement (primitives/src/drawer.rs's brief): this panel's

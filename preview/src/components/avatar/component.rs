@@ -3,20 +3,33 @@ use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::avatar::{self, AvatarState};
 use dioxus_primitives::merge_attributes;
 
+/// The avatar's size, following shadcn's Nova style (`data-[size=sm]:size-6`, the
+/// default `size-8`, `data-[size=lg]:size-10`).
+///
+/// The names keep the library's old spelling so existing call sites compile, but
+/// the sizes moved to shadcn's scale:
+///
+/// | variant      | now            | shadcn `size` | before |
+/// |--------------|----------------|---------------|--------|
+/// | `ExtraSmall` | 24px (new)     | `sm`          | none   |
+/// | `Small`      | 32px (default) | `default`     | 32px   |
+/// | `Medium`     | 40px           | `lg`          | 48px   |
+/// | `Large`      | removed        | none          | 64px   |
 #[derive(Clone, Copy, PartialEq, Default)]
 pub enum AvatarImageSize {
+    ExtraSmall,
     #[default]
     Small,
     Medium,
-    Large,
 }
 
 impl AvatarImageSize {
-    fn to_class(self) -> &'static str {
+    /// The value of `data-size` on the root, shadcn's own spelling.
+    fn to_data_size(self) -> &'static str {
         match self {
-            AvatarImageSize::Small => "dx-avatar-sm",
-            AvatarImageSize::Medium => "dx-avatar-md",
-            AvatarImageSize::Large => "dx-avatar-lg",
+            AvatarImageSize::ExtraSmall => "sm",
+            AvatarImageSize::Small => "default",
+            AvatarImageSize::Medium => "lg",
         }
     }
 }
@@ -68,14 +81,10 @@ pub struct AvatarProps {
 
 #[component]
 pub fn Avatar(props: AvatarProps) -> Element {
-    let class = format!(
-        "{} {} {}",
-        "dx-avatar",
-        props.size.to_class(),
-        props.shape.to_class()
-    );
+    let class = format!("{} {}", "dx-avatar", props.shape.to_class());
     let base = attributes!(span {
-        class
+        class,
+        "data-size": props.size.to_data_size(),
     });
     let merged = merge_attributes(vec![base, props.attributes]);
 

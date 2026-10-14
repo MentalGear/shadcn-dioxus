@@ -38,6 +38,7 @@ pub mod drag_and_drop_list;
 pub mod drawer;
 pub mod dropdown_menu;
 pub mod hover_card;
+mod hover_intent;
 pub mod input_otp;
 pub mod interval;
 pub mod js_listener;

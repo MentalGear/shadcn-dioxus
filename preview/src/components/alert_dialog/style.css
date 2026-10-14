@@ -1,3 +1,14 @@
+/* Nova alert dialog (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css, `.cn-alert-dialog-*`):
+ * `.cn-alert-dialog-content` = `bg-popover text-popover-foreground gap-4 rounded-xl p-4 ring-1
+ * ring-foreground/10` (no border, no drop shadow), `max-w-xs` and `sm:max-w-sm`; `-header` centres
+ * (mobile) / starts (`sm`) with `gap-1.5`; `-title` = `text-base font-medium`; `-description` =
+ * `text-muted-foreground text-sm`; `-footer` = `bg-muted/50 -mx-4 -mb-4 rounded-b-xl border-t p-4`,
+ * `flex-col-reverse gap-2`, `sm:flex-row sm:justify-end`. Cancel and Action are Nova `Button`s
+ * (`AlertDialogCancel` = `outline`, `AlertDialogAction` = the action variant, here the destructive
+ * fill), so their rules below are `.cn-button` geometry (`../button/style.css`) with the outline and
+ * destructive variants' fills. The panel fill is the one modal fill (`--dx-popover`) shared with
+ * Dialog, Sheet, Drawer and Command (owner decision 6). */
+
 /* Alert Dialog Backdrop -- the wrapper `div` `AlertDialogRoot` renders around the
  * content. On the web arm (`<dialog>` + `showModal()`) it paints nothing: the
  * scrim is the dialog's own `::backdrop` (the shared rule in `dx-components-theme.css`) and this
@@ -108,7 +119,7 @@ dialog.dx-alert-dialog[open][data-state="open"] {
   }
 }
 
-/* Alert Dialog Container - improved for theme consistency */
+/* Alert Dialog Container */
 .dx-alert-dialog {
   position: fixed;
   z-index: var(--dx-z-overlay-raised);
@@ -123,38 +134,50 @@ dialog.dx-alert-dialog[open][data-state="open"] {
   left: 50%;
   display: flex;
   width: 100%;
-  max-width: calc(100% - 2rem);
+  max-width: min(20rem, calc(100% - var(--dx-space-8)));
   flex-direction: column;
-  padding: var(--dx-space-8) var(--dx-space-6) var(--dx-space-6);
-  border: 1px solid var(--dx-border);
-  border-radius: var(--dx-radius-lg);
+  padding: var(--dx-space-4);
+  border: none;
+  border-radius: var(--dx-radius-xl);
   margin: 0;
   animation: none;
-  background: var(--dx-background);
-  box-shadow: 0 2px 10px rgb(0 0 0 / 18%);
-  color: var(--dx-foreground);
+  background: var(--dx-popover);
+  box-shadow: var(--dx-ring-subtle);
+  color: var(--dx-popover-foreground);
   gap: var(--dx-space-4);
   text-align: center;
   transform: translate(-50%, -50%); /* rtl-physical: see comment above */
 }
 
+/* Nova groups title and description in a header with `gap-1.5` inside the panel's `gap-4`; this
+ * panel has no header wrapper, so the description pulls back by the difference. */
 .dx-alert-dialog-title {
   margin: 0;
-  color: var(--dx-foreground);
-  font-size: var(--dx-text-xl);
-  font-weight: 700;
+  color: var(--dx-popover-foreground);
+  font-size: var(--dx-text-base);
+  font-weight: 500;
+  line-height: 1.5rem;
 }
 
 .dx-alert-dialog-description {
   margin: 0;
   color: var(--dx-muted-foreground);
-  font-size: var(--dx-text-base);
+  font-size: var(--dx-text-sm);
+  line-height: 1.25rem;
+  margin-block-start: calc(var(--dx-space-1-5) - var(--dx-space-4));
 }
 
 .dx-alert-dialog-actions {
   display: flex;
   flex-direction: column-reverse;
-  gap: var(--dx-space-3);
+  padding: var(--dx-space-4);
+  border-top: 1px solid var(--dx-border);
+  background-color: color-mix(in oklab, var(--dx-muted) 50%, transparent);
+  border-end-end-radius: var(--dx-radius-xl);
+  border-end-start-radius: var(--dx-radius-xl);
+  gap: var(--dx-space-2);
+  margin-block-end: calc(var(--dx-space-4) * -1);
+  margin-inline: calc(var(--dx-space-4) * -1);
 }
 
 @media (width >= 40rem) {
@@ -164,24 +187,47 @@ dialog.dx-alert-dialog[open][data-state="open"] {
   }
 
   .dx-alert-dialog {
-    max-width: 32rem;
+    max-width: 24rem;
     text-align: start;
   }
 }
 
-.dx-alert-dialog-cancel {
-  padding: var(--dx-space-2) 18px;
-  border: 1px solid var(--dx-border);
+/* Cancel and Action share Button's box (`../button/style.css`, `.dx-button`): `h-8`, `px-2.5`,
+ * `rounded-lg`, a 1px transparent border, `text-sm font-medium`, the ring on focus. */
+.dx-alert-dialog-cancel,
+.dx-alert-dialog-action {
+  display: inline-flex;
+  height: var(--dx-control-height-default);
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--dx-space-2-5);
+  border: 1px solid transparent;
   border-radius: var(--dx-radius-lg);
-  background-color: var(--dx-card);
-  color: var(--dx-foreground);
-  cursor: pointer;
-  font-size: var(--dx-text-base);
-  transition: background-color var(--dx-motion-duration-slow) var(--dx-motion-ease);
+  background-clip: padding-box;
+  cursor: default;
+  font-family: inherit;
+  font-size: var(--dx-text-sm);
+  font-weight: 500;
+  gap: var(--dx-space-1-5);
+  line-height: 1.25rem;
+  outline: none;
+  transition-duration: var(--dx-motion-duration-base);
+  transition-property: all;
+  transition-timing-function: var(--dx-motion-ease-standard);
+  white-space: nowrap;
 }
 
-.dx-alert-dialog-cancel:hover {
-  background-color: var(--dx-accent);
+.dx-alert-dialog-cancel:disabled,
+.dx-alert-dialog-action:disabled {
+  opacity: var(--dx-opacity-disabled);
+  pointer-events: none;
+}
+
+/* `active:not-aria-[haspopup]:translate-y-px` */
+.dx-alert-dialog-cancel:not(:disabled):active,
+.dx-alert-dialog-action:not(:disabled):active {
+  transform: translateY(1px);
 }
 
 /* The Button focus recipe (button/style.css): ring-coloured border plus the shared halo. */
@@ -190,22 +236,31 @@ dialog.dx-alert-dialog[open][data-state="open"] {
   box-shadow: var(--dx-ring-focus);
 }
 
+/* `AlertDialogCancel` is Nova's `variant="outline"` Button (button/style.css `data-style="outline"`). */
+.dx-alert-dialog-cancel {
+  border-color: var(--light, var(--dx-border)) var(--dark, var(--dx-input));
+  background-color: var(--light, var(--dx-background))
+    var(--dark, color-mix(in oklab, var(--dx-input) 30%, transparent));
+  color: var(--dx-foreground);
+}
+
+.dx-alert-dialog-cancel:not(:disabled):hover {
+  background-color: var(--light, var(--dx-muted))
+    var(--dark, color-mix(in oklab, var(--dx-input) 50%, transparent));
+}
+
+/* The action is the destructive Button (button/style.css `data-style="destructive"`): the shared
+ * `--dx-destructive-fill` (solid in light, 60% over the page in dark), the Secondary hover step,
+ * and the destructive focus recipe. */
 .dx-alert-dialog-action {
-  padding: var(--dx-space-2) 18px;
-  border: 1px solid var(--dx-destructive);
-  border-radius: var(--dx-radius-lg);
-  background-color: var(--dx-destructive);
+  background-color: var(--dx-destructive-fill);
   color: var(--dx-destructive-foreground);
-  cursor: pointer;
-  font-size: var(--dx-text-base);
-  transition: background-color var(--dx-motion-duration-slow) var(--dx-motion-ease);
 }
 
-.dx-alert-dialog-action:hover {
-  background-color: color-mix(in oklab, var(--dx-destructive) 90%, transparent);
+.dx-alert-dialog-action:not(:disabled):hover {
+  background-color: color-mix(in oklab, var(--dx-destructive-fill), var(--dx-foreground) 8%);
 }
 
-/* The destructive Button's focus (button/style.css): a destructive 40% border and the destructive halo. */
 .dx-alert-dialog-action:focus-visible {
   border-color: color-mix(in oklab, var(--dx-destructive) 40%, transparent);
   box-shadow: var(--dx-ring-invalid);

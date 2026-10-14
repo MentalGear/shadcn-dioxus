@@ -163,12 +163,21 @@ html[data-theme="light"] [class~="dxc-system"] {
    * base role and deleted them (see dev-docs/research/theme-2026-10-03/).
    * ========================================================================== */
 
-  /* Page and surfaces */
-  --dx-background: var(--background, var(--primary-color));
+  /* Page and surfaces. Dark is shadcn's own surface ladder (phase C, option C; shadcn-ui/ui@295a1f1
+   * apps/v4/app/globals.css `.dark`): page `oklch(0.145)` = #0a0a0a, card and popover `oklch(0.205)` =
+   * #171717, accent / muted / secondary `oklch(0.269)` = #262626. The ramp is untouched: the page reads
+   * its step `-2` (#0a0a0a dark, #fff light, so light does not move), accent its step `-5`; card and
+   * popover have no ramp step (the ramp's #141313 / #1a1a1a / #262626 bracket it) and carry the literal.
+   * Before: page #000, card #141313, popover #262626, accent #3e3e3e. The page is now darker than
+   * every raised surface, so a floating panel (popover #171717) and its highlighted row (accent
+   * #262626) are distinct (1.19:1 apart, the same step shadcn ships) and the page no longer collapses
+   * into pure black. In dark, muted == secondary == accent (#262626), as in shadcn: a sheet whose rest
+   * state is `--dx-muted` and whose hover is `--dx-accent` must derive the second state, not assume it. */
+  --dx-background: var(--background, var(--primary-color-2));
   --dx-foreground: var(--foreground, var(--secondary-color-4));
-  --dx-card: var(--card, var(--light, var(--primary-color-2)) var(--dark, var(--primary-color-3)));
+  --dx-card: var(--card, var(--light, var(--primary-color-2)) var(--dark, #171717));
   --dx-card-foreground: var(--card-foreground, var(--secondary-color-4));
-  --dx-popover: var(--popover, var(--light, var(--primary-color)) var(--dark, var(--primary-color-5)));
+  --dx-popover: var(--popover, var(--light, var(--primary-color)) var(--dark, #171717));
   --dx-popover-foreground: var(--popover-foreground, var(--secondary-color-4));
 
   /* Actions */
@@ -183,10 +192,41 @@ html[data-theme="light"] [class~="dxc-system"] {
   --dx-secondary-foreground: var(--secondary-foreground, var(--secondary-color-1));
   --dx-muted: var(--muted, var(--primary-color-5));
   --dx-muted-foreground: var(--muted-foreground, var(--secondary-color-5));
-  --dx-accent: var(--accent, var(--light, var(--primary-color-4)) var(--dark, var(--primary-color-7)));
+  --dx-accent: var(--accent, var(--light, var(--primary-color-4)) var(--dark, var(--primary-color-5)));
   --dx-accent-foreground: var(--accent-foreground, var(--secondary-color-1));
+
+  /* The fill of a SELECTED / ACTIVE / HIGHLIGHTED state that sits on a card, popover, muted or accent
+   * rest (a chart's active toggle, a calendar's today or in-range cell, the current pagination page,
+   * an open navigation-menu trigger, a selected command or list row). Phase C option C makes dark
+   * card = popover = #171717 and muted = secondary = accent = #262626, so painting `--dx-accent` for
+   * "selected" on any of them gives 1.00 to 1.19:1: the state vanishes. Light is `--dx-accent` itself
+   * (zero change). Dark is the toggle's pressed recipe (toggle/style.css): the hover surface pushed 15%
+   * toward the ink in OKLab, so it is distinct from hover BY CONSTRUCTION (always accent plus a fixed
+   * step), follows a preset's accent and foreground, and needs no per-sheet maths. Default dark values:
+   * #3d3d3d, 1.64:1 against #171717 (card, popover, sidebar), 1.39:1 against #262626 (muted, accent,
+   * secondary) and 1.81:1 against the #0a0a0a page. Use `--dx-accent-selected-foreground` for text on
+   * it (10.5:1); `--dx-muted-foreground` on it is only 4.22:1, so do not leave secondary text on a
+   * selected fill. Plain hover and keyboard-highlight rows on a popover keep `--dx-accent` (distinct
+   * from #171717 by the same step shadcn ships). Guard: playwright/dark-surface-contrast.spec.ts. */
+  --dx-accent-selected: var(--light, var(--dx-accent))
+    var(--dark, color-mix(in oklab, var(--dx-accent), var(--dx-foreground) 15%));
+  --dx-accent-selected-foreground: var(--dx-accent-foreground);
   --dx-destructive: var(--destructive, var(--primary-error-color));
   --dx-destructive-foreground: var(--destructive-foreground, var(--contrast-error-color));
+
+  /* `--dx-destructive` kept readable AS TEXT: error messages, a destructive menu item, the destructive
+   * Alert, a required-field star. `--dx-destructive` is a FILL (dark #a22e2e, light #dc2626): as text it
+   * is 2.1-2.8:1 on every dark surface and 4.4:1 on the light muted `#f5f5f5`. Same construction as
+   * `--dx-primary-ink` below: the OKLCH lightness is clamped (at most 0.55 in light, at least 0.70 in
+   * dark; hue and chroma kept, gamut-mapped by the browser). Default values: light #dc2626 (L 0.577)
+   * -> #d2161c; dark #a22e2e (L 0.480) -> #ee746d. The clamp is a no-op for a ready-made dark
+   * `--destructive` (shadcn's `oklch(0.704 0.191 22.216)` is already above 0.70). >= 4.5:1 on background,
+   * card, popover, muted and accent in both modes (5.0 to 6.9:1; the figures are in
+   * dev-docs/research/phase-c-plan-2026-10-13.md and playwright/dark-surface-contrast.spec.ts). Text
+   * must read this, never `--dx-destructive`: scripts/check-destructive-text.sh. Fills, borders and
+   * rings keep `--dx-destructive` (and `--dx-destructive-fill`). */
+  --dx-destructive-text: var(--light, oklch(from var(--dx-destructive) min(l, 0.55) c h))
+    var(--dark, oklch(from var(--dx-destructive) max(l, 0.7) c h));
 
   /* The destructive Button's and Badge's solid fill (one definition, read by
    * both): `--dx-destructive` itself in light, 60% of it over the page in dark.
@@ -237,12 +277,17 @@ html[data-theme="light"] [class~="dxc-system"] {
    * `--sidebar-accent(-foreground)`, `--sidebar-border`, `--sidebar-ring`.
    * sidebar/style.css still re-declares the six it already had on
    * `.dx-sidebar-wrapper` (same values), which masks these until a worker
-   * lane deletes that block. */
-  --dx-sidebar-background: var(--sidebar, var(--primary-color-2));
+   * lane deletes that block.
+   *
+   * Dark (phase C owner decision 1): shadcn's sidebar is `oklch(0.205)` = #171717 with accent
+   * `oklch(0.269)` = #262626 (apps/v4/app/globals.css `.dark`), the card/popover and accent pairing
+   * above, so the sidebar stays distinct from the new #0a0a0a page (it was the ramp's `-2`, which IS
+   * #0a0a0a, and would have blended in). Was #0a0a0a / #1a1a1a. Light is unchanged. */
+  --dx-sidebar-background: var(--sidebar, var(--light, var(--primary-color-2)) var(--dark, #171717));
   --dx-sidebar-foreground: var(--sidebar-foreground, var(--secondary-color-4));
   --dx-sidebar-primary: var(--sidebar-primary, var(--secondary-color-1));
   --dx-sidebar-primary-foreground: var(--sidebar-primary-foreground, var(--primary-color));
-  --dx-sidebar-accent: var(--sidebar-accent, var(--primary-color-4));
+  --dx-sidebar-accent: var(--sidebar-accent, var(--light, var(--primary-color-4)) var(--dark, var(--primary-color-5)));
   --dx-sidebar-accent-foreground: var(--sidebar-accent-foreground, var(--secondary-color-4));
   --dx-sidebar-border: var(--sidebar-border, var(--primary-color-6));
   --dx-sidebar-ring: var(--sidebar-ring, var(--primary-color-7));
@@ -511,6 +556,14 @@ html[data-theme="light"] [class~="dxc-system"] {
    * `playwright/focus-ring.spec.ts` asserts every field resolves to this value. */
   --dx-ring-field: inset 0 0 0 1px var(--dx-ring-color), var(--dx-ring-focus);
 
+  /* The resting fill of every text-entry control (Input, Textarea, Select trigger, Native Select,
+   * Combobox, InputGroup, InputOTP slot) and of the unchecked Checkbox / Radio: Nova's
+   * `bg-transparent dark:bg-input/30`. Transparent in light, the `--dx-input` edge colour at 30% in
+   * dark. One token so a field cannot be written with one arm and forget the other, and a retuned
+   * fill moves them all together. Fills only: the hover / fade / invalid variants keep their own. */
+  --dx-field-fill: var(--light, transparent)
+    var(--dark, color-mix(in oklab, var(--dx-input) 30%, transparent));
+
   /* State recipes (see "State recipes: focus, invalid, disabled" at the end of this file). The
    * inside-the-box twin of `--dx-ring-field` for containers that clip an outer halo: a 1px
    * ring-coloured edge over the 3px ring/50 band, the two layers `--dx-ring-field` draws, mirrored
@@ -541,10 +594,14 @@ html[data-theme="light"] [class~="dxc-system"] {
   /* The directional slide Navbar and Navigation Menu open with (a strong ease-out, 200 ms). */
   --dx-motion-ease-emphasized: cubic-bezier(0.16, 1, 0.3, 1);
 
-  /* The menu item row, beside the `--dx-menu-item-indicator-*` tokens. */
-  --dx-menu-item-padding: var(--dx-space-2) var(--dx-space-3);
-  --dx-menu-item-radius: calc(var(--dx-radius-lg) - var(--dx-radius-sm));
-  --dx-menu-item-gap: var(--dx-space-2);
+  /* The menu item row, beside the `--dx-menu-item-indicator-*` tokens. Nova (shadcn-ui/ui@295a1f1
+   * registry/styles/style-nova.css, `.cn-dropdown-menu-item`, `.cn-context-menu-item`,
+   * `.cn-menubar-item`: `gap-1.5 rounded-md px-1.5 py-1 text-sm`, and `.cn-*-label`: `px-1.5 py-1`,
+   * which reads the same padding token). Was 8px 12px / radius lg - sm (4px) / gap 8px; rows are
+   * about 8px shorter (14px text, 4px + 4px padding = ~28px). */
+  --dx-menu-item-padding: var(--dx-space-1) var(--dx-space-1-5);
+  --dx-menu-item-radius: var(--dx-radius-md);
+  --dx-menu-item-gap: var(--dx-space-1-5);
 }
 
 /* ============================================================================
@@ -650,6 +707,30 @@ html[data-theme="light"] [class~="dxc-system"] {
   :where(dialog[class*=" dx-"]:not([popover]))::backdrop {
     transition-duration: var(--dx-motion-duration-reduced);
   }
+}
+
+/* ============================================================================
+ * The dialog box, once: no UA padding.
+ *
+ * The UA stylesheet gives every `<dialog>` `padding: 1em`, which is font-size dependent: Sheet and
+ * Drawer declared no padding, so their 16px inset was really the UA's `1em`, and the moment the
+ * panel got `font-size: var(--dx-text-sm)` (Nova's `text-sm`) the inset silently became 14px and the
+ * content 4px wider (S1 -> S2 snapshot, cluster U1). A `dx-` dialog's inset is therefore never the
+ * UA's: it is `0` here, at ZERO specificity, and a sheet that wants an inset declares it (Dialog,
+ * AlertDialog and Sheet/Drawer say `var(--dx-space-4)`, Command and the sidebar sheet say `0`), so
+ * the number is a token and not a function of the panel's font size.
+ *
+ * Only `padding` is reset. The other UA `dialog` box properties are each declared by every `dx-`
+ * dialog sheet already (`border`, `margin`, `background`, `color`, `width`/`height`, `inset`,
+ * `overflow` on the scroll surfaces), the modal Popover's panel gets its box from the floating-surface
+ * recipe below, and `max-width` is set by every sheet. `max-height: calc(100% - 6px - 2em)` is the one
+ * remaining `em`-sized UA value (Dialog, AlertDialog, Command take it); it only bites when the panel
+ * is taller than the viewport, so it is left as the UA's safe cap rather than guessed at here.
+ * `scripts/check-theme-baseline.sh` fails if this rule goes.
+ * ========================================================================== */
+:where(dialog[class^="dx-"]),
+:where(dialog[class*=" dx-"]) {
+  padding: 0;
 }
 
 /* ============================================================================

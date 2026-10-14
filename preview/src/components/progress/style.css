@@ -1,8 +1,11 @@
+/* Nova progress (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css): `.cn-progress` and
+ * `.cn-progress-track` are `bg-muted h-1 rounded-full` (4px, was 8px here), `.cn-progress-indicator`
+ * is `bg-primary`. */
 .dx-progress {
     position: relative;
     overflow: hidden;
     min-width: 200px;
-    height: .5rem;
+    height: var(--dx-space-1);
     border-radius: var(--dx-radius-full);
     background: var(--dx-muted);
 }

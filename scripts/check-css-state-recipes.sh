@@ -65,10 +65,6 @@ if not files:
 ALLOW = [
     ("focus-shadow", "sidebar/style.css", "--dx-sidebar-ring",
      "shadcn's sidebar buttons ring with `focus-visible:ring-2 ring-sidebar-ring` (2px, the sidebar's own ring colour)"),
-    ("focus-shadow", "slider/style.css", "0 0 0 4px",
-     "shadcn's slider thumb is `hover:ring-4 focus-visible:ring-4 ring-ring/50`: a 4px halo around a 1px primary edge"),
-    ("literal-ring", "slider/style.css", "0 0 0 4px",
-     "the slider thumb's 4px halo (shadcn `ring-4`), see the focus-shadow entry"),
     ("focus-outline", "tabs/style.css", "1px solid var(--dx-ring-color)",
      "Nova's tabs trigger is literally `focus-visible:outline-1 focus-visible:outline-ring` on top of the ring"),
     ("focus-border", "button/style.css", "--dx-destructive",

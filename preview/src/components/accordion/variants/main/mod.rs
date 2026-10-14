@@ -8,10 +8,8 @@ pub fn Demo() -> Element {
                 AccordionItem { index: i, disabled: i == 2,
                     AccordionTrigger { "the quick brown fox" }
                     AccordionContent {
-                        div { padding_bottom: "1rem",
-                            p { padding: "0",
-                                "lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum"
-                            }
+                        p { padding: "0",
+                            "lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum"
                         }
                     }
                 }

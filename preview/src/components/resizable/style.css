@@ -106,9 +106,10 @@
   pointer-events: none;
 }
 
-/* shadcn: the optional grip -- `bg-border z-10 flex h-4 w-3 items-center justify-center
-   rounded-xs border` around a `GripVerticalIcon` at `size-2.5` (the icon's own size is set
-   where it's rendered, preview/src/components/resizable/variants/main/mod.rs). */
+/* Nova (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css, `.cn-resizable-handle-icon`):
+   the optional grip is `bg-border h-6 w-1 rounded-lg` -- a bare 4 x 24px pill (the `z-10 flex shrink-0`
+   come from registry/bases/radix/ui/resizable.tsx), with no border and no glyph; it used to be shadcn
+   v4's bordered 12 x 16px box around a `GripVerticalIcon`. */
 .dx-resizable-handle-grip {
   position: absolute;
   z-index: var(--dx-z-local-sm);
@@ -119,14 +120,13 @@
      identical left:50%+translate centering note. */
   left: 50%;
   display: flex;
-  width: var(--dx-space-3);
-  height: var(--dx-space-4);
+  width: var(--dx-space-1);
+  height: var(--dx-space-6);
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--dx-input);
-  border-radius: var(--dx-radius-xs);
+  border-radius: var(--dx-radius-lg);
   background: var(--dx-border);
-  color: var(--dx-muted-foreground);
 
   /* NOT `pointer-events: none`: the grip is a child of the handle div that carries the
      role/handlers, so a pointerdown on it must BUBBLE to that div (as in shadcn, where the grip

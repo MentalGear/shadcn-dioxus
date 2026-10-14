@@ -9,7 +9,7 @@ pub fn Demo() -> Element {
     let mut progress = use_signal(|| 40.0_f64);
 
     rsx! {
-        div { style: "display: flex; flex-direction: column; gap: 1.5rem; width: 24rem;",
+        div { style: "display: flex; flex-direction: column; gap: 1.5rem; width: 100%; max-width: 24rem;",
             Progress { aria_label: "Upload progress", value: progress() }
             div { style: "display: flex; flex-direction: column; gap: 0.5rem;",
                 div { style: "display: flex; justify-content: space-between; font-size: 13px; font-weight: 500;",

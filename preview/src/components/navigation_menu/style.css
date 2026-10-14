@@ -1,3 +1,10 @@
+/* Nova navigation menu (shadcn-ui/ui@295a1f1 style-nova.css): `.cn-navigation-menu-list` `gap-0`;
+ * `.cn-navigation-menu-trigger` `hover:bg-muted focus:bg-muted data-open:hover:bg-muted
+ * data-open:bg-muted/50 focus-visible:ring-ring/50 rounded-lg px-2.5 py-1.5 text-sm font-medium
+ * transition-all focus-visible:ring-3 disabled:opacity-50`, with the `h-9` that
+ * `navigationMenuTriggerStyle()` adds in `ui/navigation-menu.tsx`; `.cn-navigation-menu-trigger-icon`
+ * `size-3 top-px duration-300 rotate-180 when open`. A link standing in the bar wears the same style
+ * (shadcn composes `navigationMenuTriggerStyle()` onto it). */
 .dx-navigation-menu {
   display: flex;
 }
@@ -6,9 +13,9 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  padding: var(--dx-space-1);
+  padding: 0;
   margin: 0;
-  gap: var(--dx-space-1);
+  gap: 0;
   list-style: none;
 }
 
@@ -20,23 +27,26 @@
 .dx-navigation-menu-trigger,
 .dx-navigation-menu-item > .dx-navigation-menu-link {
   display: flex;
+  height: var(--dx-control-height-lg);
   flex-direction: row;
   align-items: center;
-  padding: var(--dx-space-2) var(--dx-space-3);
+  padding: var(--dx-space-1-5) var(--dx-space-2-5);
   border: none;
-  border-radius: calc(var(--dx-radius-lg) - var(--dx-radius-sm));
+  border-radius: var(--dx-radius-lg);
   background: none;
   color: var(--dx-foreground);
   cursor: pointer;
   font-size: var(--dx-text-sm);
+  font-weight: 500;
   gap: var(--dx-space-1);
   text-decoration: none;
   transition: background-color var(--dx-motion-duration-fast) var(--dx-motion-ease-out);
 }
 
+/* `data-open:bg-muted/50`: an open trigger is half a hover, so open and hovered differ in dark too
+ * (`--dx-muted` is the same #262626 as `--dx-accent` there, so the pair would otherwise tie). */
 .dx-navigation-menu-item[data-state="open"] .dx-navigation-menu-trigger {
-  background-color: var(--dx-accent);
-  color: var(--dx-accent-foreground);
+  background-color: color-mix(in oklab, var(--dx-muted) 50%, transparent);
 }
 
 .dx-navigation-menu-trigger[data-disabled="true"],
@@ -46,17 +56,27 @@
   opacity: var(--dx-opacity-disabled);
 }
 
+/* Hover and focus are `--dx-muted` at full strength, also while open (`data-open:hover:bg-muted`). */
 .dx-navigation-menu-trigger:hover:not([data-disabled="true"]),
 .dx-navigation-menu-trigger:focus-visible,
 .dx-navigation-menu-item > .dx-navigation-menu-link:hover:not([data-disabled="true"]),
 .dx-navigation-menu-item > .dx-navigation-menu-link:focus-visible {
-  background: var(--dx-accent);
-  color: var(--dx-accent-foreground);
+  background: var(--dx-muted);
   outline: none;
 }
 
+/* `focus-visible:ring-3 focus-visible:ring-ring/50`. */
+.dx-navigation-menu-trigger:focus-visible,
+.dx-navigation-menu-item > .dx-navigation-menu-link:focus-visible {
+  box-shadow: var(--dx-ring-focus);
+}
+
 .dx-navigation-menu-expand-icon {
-  transition: rotate var(--dx-motion-duration-base) var(--dx-motion-ease-standard);
+  position: relative;
+  width: 0.75rem;
+  height: 0.75rem;
+  inset-block-start: 1px;
+  transition: rotate var(--dx-motion-duration-slower) var(--dx-motion-ease-standard);
 }
 
 .dx-navigation-menu-item[data-state="open"] .dx-navigation-menu-expand-icon {
@@ -76,6 +96,11 @@
  * `primitives/src/top_layer.rs`'s `ensure_anchor_positioning_styles` doc.
  */
 .dx-navigation-menu-content {
+  /* Nova `.cn-navigation-menu-content` with `group-data-[viewport=false]` (this panel is its own
+     viewport): `shadow` (= `shadow-sm`, the root menus are `shadow-md`), `rounded-lg ring-1 p-1`
+     from the floating recipe. */
+  --dx-floating-shadow: var(--dx-shadow-sm);
+
   position: absolute;
   top: 100%;
 
@@ -88,7 +113,7 @@
    * land on the same value today, confirmed by execution across 14 sampled
    * frames of a real open transition -- `rectWidth`/computed `width` never
    * changed -- but is one accidental future layout change away from no
-   * longer being guaranteed). `min-width`/`max-width` below still clamp it
+   * longer being guaranteed). `max-width` below still clamps it (Nova has no `min-width`; the grid sets the width)
    * either way; only `opacity`/`transform` are ever transitioned below --
    * never this, never `padding`.
    *
@@ -100,9 +125,8 @@
    * `.dx-navigation-menu-grid` below) and keeps `p-1` of padding (Nova) here,
    * so a 500px grid is a ~508px panel. */
   width: max-content;
-  min-width: 280px;
   max-width: calc(100vw - var(--dx-space-8));
-  margin-top: var(--dx-space-2);
+  margin-top: var(--dx-space-1-5); /* `group-data-[viewport=false]/navigation-menu:mt-1.5` */
   inset-inline-start: 0;
   opacity: 0;
   pointer-events: none;
@@ -279,8 +303,10 @@
 }
 
 /* Every link inside a panel -- shadcn's `NavigationMenuLink`
- * (`flex flex-col gap-1 rounded-sm p-2 text-sm ...`, Nova's `rounded-md` in a
- * panel). `font-size` is set HERE, on the link, so a link whose child is
+ * (`flex flex-col gap-1 rounded-sm p-2 text-sm ...`; Nova's `.cn-navigation-menu-link` is
+ * `gap-2 rounded-lg p-2 text-sm hover:bg-muted focus:bg-muted` with
+ * `in-data-[slot=navigation-menu-content]:rounded-md` inside a panel, and the panel switches the
+ * focus ring off: `**:data-[slot=navigation-menu-link]:focus:ring-0`). `font-size` is set HERE, on the link, so a link whose child is
  * bare text ("Button") renders at exactly the size of one whose child is a
  * title + description: before this, only the `-link-title`/`-description`
  * wrappers set a size and a bare-text link inherited the page's 16px/400,
@@ -304,7 +330,7 @@
  * flat accent on hover (shadcn's `hover:bg-accent` is colour-only too). */
 .dx-navigation-menu-content .dx-navigation-menu-link:hover:not([data-disabled="true"]),
 .dx-navigation-menu-content .dx-navigation-menu-link:focus-visible {
-  background-color: var(--dx-accent);
+  background-color: var(--dx-muted);
   outline: none;
 }
 
@@ -339,18 +365,13 @@
  * it beats the generic panel-link rule above on specificity: with one class
  * its `padding`/`gap`/`border-radius` silently lost to that rule's.
  *
- * The surface: shadcn's `--muted` is a step lighter than `--popover` in both
- * modes. Here `--dx-muted` and `--dx-popover` resolve to the SAME colour in
- * dark (`dx-components-theme.css`: both `--primary-color-5`), so a
- * `from-muted/50 to-muted` card is invisible on the panel. Light keeps
- * `--dx-muted`; dark mixes `--dx-accent` into `--dx-popover` (about the
- * 15-level step Nova's muted-on-popover gives, and still >= 4.5:1 for
- * `--dx-muted-foreground` text). Once the theme gives dark popover its own
- * step, the dark arm can collapse to plain `--dx-muted`. */
+ * The surface is Nova's `from-muted/50 to-muted`: `--dx-muted`, a step lighter than `--dx-popover` in
+ * both modes (dark #262626 on #171717 since the palette change; it was the SAME colour as the
+ * popover before, which is why this used to mix `--dx-accent` into it). The hover is the same
+ * surface pushed 8% toward the ink: a plain `bg-muted` hover would paint the card's own colour
+ * (a tie in dark, where muted == accent), so the card derives its second state instead. */
 .dx-navigation-menu-content .dx-navigation-menu-featured {
-  --dx-navigation-menu-featured-surface:
-    var(--light, var(--dx-muted))
-    var(--dark, color-mix(in oklab, var(--dx-accent) 60%, var(--dx-popover)));
+  --dx-navigation-menu-featured-surface: var(--dx-muted);
 
   justify-content: flex-start;
   padding: var(--dx-space-4);
@@ -361,6 +382,11 @@
     var(--dx-navigation-menu-featured-surface)
   );
   gap: var(--dx-space-2);
+}
+
+.dx-navigation-menu-content .dx-navigation-menu-featured:hover:not([data-disabled="true"]),
+.dx-navigation-menu-content .dx-navigation-menu-featured:focus-visible {
+  --dx-navigation-menu-featured-surface: color-mix(in oklab, var(--dx-muted), var(--dx-foreground) 8%);
 }
 
 .dx-navigation-menu-featured .dx-navigation-menu-link-title {

@@ -86,7 +86,9 @@ async function probe(page: Page) {
       select: {
         bg: own.backgroundColor,
         color: own.color,
-        expectBgLight: resolve("backgroundColor", "var(--dx-background)"),
+        // Nova `.cn-native-select` is `bg-transparent` (Input's light fill); phase C lane F moved it
+        // off `--dx-background`. The mode-follows-scheme assertions are unchanged.
+        expectBgLight: resolve("backgroundColor", "transparent"),
         expectBgDark: resolve("backgroundColor", "color-mix(in oklab, var(--dx-input) 30%, transparent)"),
         expectColor: resolve("color", "var(--dx-foreground)"),
       },

@@ -19,13 +19,13 @@ pub fn Demo() -> Element {
                     "Invoices"
                 }
             }
-            TabContent { index: 0usize, value: "account".to_string(),
+            TabContent { index: 0usize, value: "account".to_string(), padding: "var(--dx-space-4)",
                 "Update your name, email address and profile photo."
             }
-            TabContent { index: 1usize, value: "billing".to_string(),
+            TabContent { index: 1usize, value: "billing".to_string(), padding: "var(--dx-space-4)",
                 "Review your plan, payment method and next renewal date."
             }
-            TabContent { index: 2usize, value: "invoices".to_string(),
+            TabContent { index: 2usize, value: "invoices".to_string(), padding: "var(--dx-space-4)",
                 "Invoices are available on paid plans."
             }
         }

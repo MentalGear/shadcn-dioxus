@@ -152,9 +152,13 @@
     outline: 1px solid var(--dx-ring-color);
 }
 
+/* `.cn-tabs-content`: `text-sm` and nothing else -- no padding (row 132). A
+   panel that needs room pads its own content (a Card brings its own); the
+   bordered `-themed` frame below is this library's addition and has no Nova
+   counterpart. Nova's `text-sm` is not applied: this class also frames the
+   docs site's demo previews, whose text stays at the page size. */
 .dx-tabs-content {
     width: 100%;
-    padding: var(--dx-space-8);
 }
 
 [data-variant="default"] .dx-tabs-content-themed {

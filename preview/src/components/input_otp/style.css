@@ -16,27 +16,53 @@
   }
 }
 
+/* Nova input-otp (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css `.cn-input-otp*`,
+ * registry/bases/base/ui/input-otp.tsx): slots are `size-8 text-sm` boxes JOINED into one
+ * segmented field per group (`border-y border-r first:border-l`, `first:rounded-l-lg
+ * last:rounded-r-lg`), `dark:bg-input/30 border-input`; the active slot takes
+ * `border-ring ring-3 ring-ring/50`; invalid puts `border-destructive` on every slot and
+ * `ring-3 ring-destructive/20 dark:ring-destructive/40` on the group (`rounded-lg`); the caret
+ * is `h-4 w-px`; groups and separators sit `gap-2` apart.
+ *
+ * The edge stays an inset box-shadow (the `--dx-ring-field` family `focus-ring.spec.ts` holds
+ * every text field to), so Nova's shared `border-r` is expressed the way ButtonGroup joins its
+ * children: a slot overlaps the previous one's last pixel (`margin-inline-start: -1px`), and
+ * the group clips nothing. */
 .dx-input-otp-group {
   display: flex;
   align-items: center;
-  gap: var(--dx-space-2);
+  border-radius: var(--dx-radius-lg);
 }
 
 .dx-input-otp-slot {
   position: relative;
   display: flex;
-  width: 2.5rem;
-  height: 2.75rem;
+  width: var(--dx-control-height-default);
+  height: var(--dx-control-height-default);
   align-items: center;
   justify-content: center;
-  border-radius: var(--dx-radius-md);
-  background-color: var(--light, var(--dx-background)) var(--dark, color-mix(in oklab, #FFFFFF26 30%, transparent));
+  border-radius: 0;
+  background-color: var(--dx-field-fill);
   box-shadow: inset 0 0 0 1px var(--dx-input);
   color: var(--dx-foreground);
-  font-size: var(--dx-text-lg);
+  font-size: var(--dx-text-sm);
   font-variant-numeric: tabular-nums;
   transition: box-shadow var(--dx-motion-duration-fast) var(--dx-motion-ease-out),
     background-color var(--dx-motion-duration-fast) var(--dx-motion-ease-out);
+}
+
+.dx-input-otp-slot:first-child {
+  border-end-start-radius: var(--dx-radius-lg);
+  border-start-start-radius: var(--dx-radius-lg);
+}
+
+.dx-input-otp-slot:last-child {
+  border-end-end-radius: var(--dx-radius-lg);
+  border-start-end-radius: var(--dx-radius-lg);
+}
+
+.dx-input-otp-slot:not(:first-child) {
+  margin-inline-start: -1px;
 }
 
 /* The focused slot: the keyboard focus ring, the shared `--dx-ring-field`
@@ -52,13 +78,14 @@
    primitives/src/input_otp.rs's module doc). */
 .dx-input-otp-slot[data-active="true"]::after {
   position: absolute;
-  top: 22%;
-  bottom: 22%;
   width: 1px;
+  height: 1rem;
   animation: dx-input-otp-caret-blink 1s step-end infinite;
   background-color: var(--dx-foreground);
   content: "";
+  inset-block: 0;
   inset-inline-start: 50%;
+  margin-block: auto;
 }
 
 @keyframes dx-input-otp-caret-blink {
@@ -79,9 +106,15 @@
   }
 }
 
-/* Invalid: the invisible input carries `aria-invalid`, so its slots (the next sibling's descendants)
- * take the edge, and the active slot the full recipe, as Nova's `aria-invalid:border-destructive
- * data-[active=true]:ring-destructive/20`. After the active rule so the caret slot stays red. */
+/* Invalid: the invisible input carries `aria-invalid`, so its group and slots (the next sibling's
+ * descendants) take the recipe: every slot the destructive edge, the active slot the full recipe,
+ * and the group the 3px halo, as Nova's `has-aria-invalid:ring-3 ring-destructive/20`. After the
+ * active rule so the caret slot stays red. */
+.dx-input-otp-input[aria-invalid="true"] + div .dx-input-otp-group,
+.dx-input-otp-input[data-invalid="true"] + div .dx-input-otp-group {
+  box-shadow: var(--dx-ring-invalid);
+}
+
 .dx-input-otp-input[aria-invalid="true"] + div .dx-input-otp-slot,
 .dx-input-otp-input[data-invalid="true"] + div .dx-input-otp-slot {
   box-shadow: inset 0 0 0 1px var(--dx-ring-invalid-color);

@@ -3,6 +3,7 @@ import { type Locator } from "@playwright/test";
 import { gotoHydrated } from "./hydration";
 import { expectNoAxeViolations } from "./axe";
 import { BASE_URL } from "./base-url";
+import { fixedViewportBox } from "./viewport-box";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -444,7 +445,7 @@ test("View Code opens the source sheet and Escape closes it, returning focus", a
   await expect
     .poll(async () => {
       const box = (await dialog.boundingBox())!;
-      const vw = await page.evaluate(() => window.innerWidth);
+      const vw = (await fixedViewportBox(page)).width;
       return [Math.round(box.width), Math.abs(Math.round(box.x + box.width) - vw) <= SCROLLBAR_SLACK];
     })
     .toEqual([700, true]);
@@ -495,7 +496,7 @@ test("View Code opens a bottom drawer on phones", async ({ page }) => {
   await expect
     .poll(async () => {
       const box = (await dialog.boundingBox())!;
-      const vw = await page.evaluate(() => window.innerWidth);
+      const vw = (await fixedViewportBox(page)).width;
       return [Math.abs(Math.round(box.width) - vw) <= SCROLLBAR_SLACK, Math.round(box.y + box.height)];
     })
     .toEqual([true, 844]);

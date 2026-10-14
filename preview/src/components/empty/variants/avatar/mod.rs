@@ -12,7 +12,7 @@ pub fn Demo() -> Element {
             EmptyHeader {
                 EmptyMedia {
                     ImageAvatar {
-                        size: AvatarImageSize::Large,
+                        size: AvatarImageSize::Medium,
                         src: OFFLINE_USER.to_string(),
                         alt: "Robin Hayes",
                     }

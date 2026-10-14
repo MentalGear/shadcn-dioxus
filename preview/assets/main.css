@@ -983,6 +983,15 @@ button.dx-theme-phone-trigger {
   line-height: 1.65;
 }
 
+/* The "Extra" explainer under the component page's heading (`ExtraExplainer`,
+ * main.rs): why this component is not a shadcn/ui page, always visible so it
+ * works on touch and is read in order by screen readers. Smaller than the
+ * description below it, which it must out-rank in specificity. */
+.dx-component-page-header p.dx-extra-explainer {
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
 .dx-docs-section,
 .dx-component-section {
   padding-top: 2.25rem;
@@ -1318,7 +1327,7 @@ button.dx-theme-phone-trigger {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 1.75rem;
+  padding: var(--dx-space-8);
   border: 1px solid var(--dx-border);
   border-radius: 0.5rem;
   background-color: var(--dx-card);
@@ -1333,12 +1342,13 @@ button.dx-theme-phone-trigger {
  * (`--dx-space-3`) keeps a visible canvas edge without eating the demo.
  *
  * The frame element is ALSO a `.dx-tabs-content` (`ComponentVariantHighlight`,
- * `preview/src/main.rs`), and `components/tabs/style.css` loads after this
- * file and sets `.dx-tabs-content { padding: var(--dx-space-8) }` at the same
- * single-class specificity -- so the 1.75rem above never applied at any
- * width. The compound selector outranks that rule; it must stay ABOVE the
- * `:has(.dx-code-block)` rule below (same specificity), which keeps the CODE
- * tab at `padding: 0` by source order. */
+ * `preview/src/main.rs`). Until row 132 `components/tabs/style.css` (loaded
+ * after this file) padded every `.dx-tabs-content` 2rem and so supplied the
+ * frame's padding; Nova's tabs content has none, so the frame now owns its
+ * 2rem above. The compound selector is kept so a future tabs padding cannot
+ * win by load order; it must stay ABOVE the `:has(.dx-code-block)` rule below
+ * (same specificity), which keeps the CODE tab at `padding: 0` by source
+ * order. */
 @media (width <= 480px) {
   .dx-component-preview-frame.dx-tabs-content {
     padding: var(--dx-space-3);

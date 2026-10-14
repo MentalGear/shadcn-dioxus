@@ -81,12 +81,16 @@
 //!
 //! Opening on pointer hover (after a short delay) is, like `crate::menu_sub`'s
 //! submenu hover-intent, a widely-implemented convention (Radix, native OS
-//! menus) rather than an APG requirement -- this module's own choice of
-//! delay, not a citation. `crate::menu_sub::DelayedAction`/
-//! `crate::menu_sub::use_delayed_action` (already `pub(crate)`, already
-//! used by `DropdownMenuSub`/`ContextMenuSub`'s identical
-//! hover-open/hover-close-grace timers) is reused as-is rather than
-//! reinvented a third time.
+//! menus) rather than an APG requirement. The whole pointer contract -- the
+//! open-intent delay, the immediate switch between triggers, the close grace
+//! when the pointer leaves the trigger and its panel, and the marker that
+//! lets a click confirm a hover-opened panel -- lives in
+//! `crate::hover_intent::HoverIntent`, shared with `crate::navbar` so the
+//! opening half can never be wired without the closing half (the navbar once
+//! was: its dropdown stayed open for ever after the pointer left it). This
+//! module only reports `mouseenter`/`mouseleave` of its trigger and panel to
+//! it. The timers are `crate::menu_sub::DelayedAction`s, the same primitive
+//! `DropdownMenuSub`/`ContextMenuSub` use.
 //!
 //! Hover is an *option*, not a given: [`NavigationMenuProps::open_on_hover`]
 //! (default `true`, today's behaviour) switches the whole pointer-hover
@@ -154,23 +158,12 @@ use dioxus_attributes::attributes;
 use crate::collection::{
     collection_item, use_collection_provider, use_item, CollectionOptions, CollectionState,
 };
+use crate::hover_intent::{use_hover_intent, HoverIntent};
 use crate::menu_sub::{use_delayed_action, DelayedAction};
 use crate::{
     has_own_accessible_name, merge_attributes, use_animated_open, use_effect_with_cleanup,
     use_id_or, use_unique_id,
 };
-
-/// Hover-intent delay before a pointer hovering a trigger opens its panel.
-/// Numerically the same as this theme's `--dx-motion-duration-base` token
-/// (`preview/assets/dx-components-theme.css`) -- not read from it (this is
-/// a plain Rust constant, not CSS), but deliberately kept in step with it.
-const HOVER_OPEN_INTENT_DELAY: Duration = Duration::from_millis(150);
-
-/// Grace delay before a pointer leaving a trigger or its content (without
-/// entering the other) closes the panel. Numerically the same as this
-/// theme's `--dx-motion-duration-slower` token, for the same reason as
-/// [`HOVER_OPEN_INTENT_DELAY`].
-const HOVER_CLOSE_GRACE_DELAY: Duration = Duration::from_millis(300);
 
 /// Debounce before a blur that nothing inside the nav cancels closes the
 /// open panel -- see this module's doc, "Detecting 'focus left the nav'
@@ -184,18 +177,19 @@ struct NavigationMenuContext {
     /// The currently open item's index, if any. One open at a time, the
     /// same shape as `NavbarContext::open_nav`.
     open: Signal<Option<usize>>,
-    /// The ONE write path for `open`. It also clears [`Self::hover_opened`],
-    /// so that marker can only ever describe the panel the hover-intent
-    /// timer opened and nothing since has re-decided (see there).
+    /// The ONE write path for `open` ([`HoverIntent::set_open`]). It also
+    /// clears the hover marker in [`Self::hover`], so that marker can only
+    /// ever describe a panel the pointer opened and nothing since has
+    /// re-decided.
     set_open: Callback<Option<usize>>,
-    /// Whether the currently open panel was opened by the hover-intent timer
-    /// and not yet "claimed" by a click. A click on the trigger of such a
-    /// panel keeps it open (and claims it) instead of toggling it shut --
-    /// the pointer path hover -> click must not flash the panel open then
-    /// closed (`docs/backlog.md` row 189). Set only by the trigger's hover-intent timer;
-    /// cleared by every other `set_open`, so a keyboard- or click-opened
-    /// panel can never carry a stale marker.
-    hover_opened: Signal<bool>,
+    /// The pointer-hover contract: hover-intent open/switch, the close grace on
+    /// pointer leave, the "opened by hover, not yet claimed by a click" marker
+    /// (a click on the trigger of such a panel keeps it open and claims it
+    /// instead of toggling it shut -- the pointer path hover -> click must not
+    /// flash the panel open then closed, `docs/backlog.md` row 189), and the
+    /// `open_on_hover` gate on every one of those. `set_open` above is its
+    /// write path. Shared with `crate::navbar`; see `crate::hover_intent`.
+    hover: HoverIntent,
     disabled: ReadSignal<bool>,
     /// Top-level items only (every [`NavigationMenuTrigger`] and every
     /// top-level [`NavigationMenuLink`]), keyed by [`NavigationMenuItem`]'s
@@ -203,15 +197,8 @@ struct NavigationMenuContext {
     /// Escape uses to return focus to a trigger. Never drives `tabindex`
     /// (see this module's doc).
     focus: CollectionState,
-    /// Hover-intent timers. One pending action of each kind is enough: a
-    /// pointer can only be hovering one element at a time.
-    hover_open: DelayedAction,
-    hover_close: DelayedAction,
     /// The "focus left the nav" debounce -- see this module's doc.
     blur_close: DelayedAction,
-    /// [`NavigationMenuProps::open_on_hover`], read by every pointer-hover
-    /// handler below.
-    open_on_hover: ReadSignal<bool>,
 }
 
 /// The props for the [`NavigationMenu`] component.
@@ -299,12 +286,9 @@ pub struct NavigationMenuProps {
 ///   are `true` or `false`.
 #[component]
 pub fn NavigationMenu(props: NavigationMenuProps) -> Element {
-    let mut open = use_signal(|| None);
-    let mut hover_opened = use_signal(|| false);
-    let set_open = use_callback(move |idx| {
-        hover_opened.set(false);
-        open.set(idx);
-    });
+    let open = use_signal(|| None);
+    let hover = use_hover_intent(open, props.open_on_hover);
+    let set_open = hover.set_open();
 
     // Non-looping (matches the reference implementation's clamped
     // `Math.max`/`Math.min` indices, `js/disclosureMenu.js`'s
@@ -322,20 +306,15 @@ pub fn NavigationMenu(props: NavigationMenuProps) -> Element {
     // server (the wasm panic never surfaced in `cargo check`/`clippy`/
     // `cargo test`, since Dioxus's Rules of Hooks are enforced at runtime,
     // not by the type system).
-    let hover_open = use_delayed_action();
-    let hover_close = use_delayed_action();
     let blur_close = use_delayed_action();
 
     use_context_provider(|| NavigationMenuContext {
         open,
         set_open,
-        hover_opened,
+        hover,
         disabled: props.disabled,
         focus,
-        hover_open,
-        hover_close,
         blur_close,
-        open_on_hover: props.open_on_hover,
     });
 
     // Owned by this component -- disabled state must win over a caller's
@@ -610,8 +589,7 @@ pub fn NavigationMenuTrigger(props: NavigationMenuTriggerProps) -> Element {
                 if disabled() {
                     return;
                 }
-                ctx.hover_open.cancel();
-                ctx.hover_close.cancel();
+                ctx.hover.cancel();
                 // The pointer opened this panel by hovering and this is the
                 // first click since: the user is confirming it, not asking
                 // to dismiss it. Keep it open and claim it, so the NEXT
@@ -619,46 +597,25 @@ pub fn NavigationMenuTrigger(props: NavigationMenuTriggerProps) -> Element {
                 // would toggle it shut here (its `wasClickCloseRef` only
                 // stops hover re-opening it); Base UI's `stickIfOpen` and
                 // this crate keep it open (`docs/backlog.md` row 189).
-                if is_open.cloned() && ctx.hover_opened.cloned() {
-                    ctx.hover_opened.set(false);
+                if is_open.cloned() && ctx.hover.opened_by_hover() {
+                    ctx.hover.claim();
                     return;
                 }
                 let want_open = !is_open.cloned();
                 ctx.set_open.call(want_open.then(|| index.cloned()));
             },
             // Both hover handlers are no-ops when `open_on_hover` is
-            // `false` (click activation) -- see
-            // `NavigationMenuProps::open_on_hover`.
+            // `false` (click activation) -- `HoverIntent` checks it, see
+            // `NavigationMenuProps::open_on_hover`. The trigger and its panel
+            // are one hover region: this item's panel reports the same
+            // enter/leave pair (`NavigationMenuContentRendered`).
             onmouseenter: move |_| {
-                if disabled() || !(ctx.open_on_hover)() {
-                    return;
+                if !disabled() {
+                    ctx.hover.enter(index.cloned());
                 }
-                ctx.hover_close.cancel();
-                if (ctx.open)() == Some(index.cloned()) {
-                    return;
-                }
-                let target = index.cloned();
-                ctx.hover_open.schedule(HOVER_OPEN_INTENT_DELAY, move || {
-                    ctx.set_open.call(Some(target));
-                    // After `set_open` (which clears it): this open was the
-                    // pointer's, so the first click confirms it.
-                    ctx.hover_opened.set(true);
-                });
             },
             onmouseleave: move |_| {
-                if !(ctx.open_on_hover)() {
-                    return;
-                }
-                ctx.hover_open.cancel();
-                if (ctx.open)() != Some(index.cloned()) {
-                    return;
-                }
-                let target = index.cloned();
-                ctx.hover_close.schedule(HOVER_CLOSE_GRACE_DELAY, move || {
-                    if (ctx.open)() == Some(target) {
-                        ctx.set_open.call(None);
-                    }
-                });
+                ctx.hover.leave(index.cloned());
             },
             onfocus: move |_| {
                 ctx.blur_close.cancel();
@@ -729,8 +686,7 @@ pub fn NavigationMenuTrigger(props: NavigationMenuTriggerProps) -> Element {
                     // native `<select>`/combobox already gives ArrowDown.
                     Key::ArrowDown => {
                         if !is_open.cloned() {
-                            ctx.hover_open.cancel();
-                            ctx.hover_close.cancel();
+                            ctx.hover.cancel();
                             ctx.set_open.call(Some(index.cloned()));
                         }
                         item_ctx.focus_first_link.clone().set(true);
@@ -836,7 +792,7 @@ pub fn NavigationMenuContent(props: NavigationMenuContentProps) -> Element {
             // outside the nav is what dismisses a click-opened panel on
             // engines that don't focus a button on click (Safari, macOS
             // Firefox), where the trigger's own blur never fires.
-            if !(ctx.open_on_hover)() {
+            if !ctx.hover.enabled() {
                 NavigationMenuOutsidePressDismiss {}
             }
         }
@@ -997,21 +953,10 @@ fn NavigationMenuContentRendered(
             // No-ops when `open_on_hover` is `false`: a click-opened panel
             // is not closed by the pointer leaving it.
             onmouseenter: move |_| {
-                if !(ctx.open_on_hover)() {
-                    return;
-                }
-                ctx.hover_close.cancel();
+                ctx.hover.hold();
             },
             onmouseleave: move |_| {
-                if !(ctx.open_on_hover)() {
-                    return;
-                }
-                let target = index.cloned();
-                ctx.hover_close.schedule(HOVER_CLOSE_GRACE_DELAY, move || {
-                    if (ctx.open)() == Some(target) {
-                        ctx.set_open.call(None);
-                    }
-                });
+                ctx.hover.leave(index.cloned());
             },
             onkeydown: move |event: Event<KeyboardData>| {
                 // "closes it and sets focus on the button that controls
@@ -1090,21 +1035,10 @@ fn NavigationMenuContentRendered(
             // No-ops when `open_on_hover` is `false`: a click-opened panel
             // is not closed by the pointer leaving it.
             onmouseenter: move |_| {
-                if !(ctx.open_on_hover)() {
-                    return;
-                }
-                ctx.hover_close.cancel();
+                ctx.hover.hold();
             },
             onmouseleave: move |_| {
-                if !(ctx.open_on_hover)() {
-                    return;
-                }
-                let target = index.cloned();
-                ctx.hover_close.schedule(HOVER_CLOSE_GRACE_DELAY, move || {
-                    if (ctx.open)() == Some(target) {
-                        ctx.set_open.call(None);
-                    }
-                });
+                ctx.hover.leave(index.cloned());
             },
             onkeydown: move |event: Event<KeyboardData>| {
                 if event.key() == Key::Escape {
@@ -1248,8 +1182,7 @@ pub fn NavigationMenuLink(props: NavigationMenuLinkProps) -> Element {
                     event.prevent_default();
                     return;
                 }
-                ctx.hover_open.cancel();
-                ctx.hover_close.cancel();
+                ctx.hover.cancel();
                 ctx.set_open.call(None);
                 if let Some(onclick) = props.onclick {
                     onclick.call(event);

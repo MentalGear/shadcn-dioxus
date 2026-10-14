@@ -172,7 +172,7 @@
 /* Axis ticks are the muted tier (shadcn: `muted-foreground`), a step below
  * the values and labels the chart itself draws (`--secondary-color-4`, the
  * base rule above). `--secondary-color-5` is #707070 on the white card
- * (4.95:1) and #a1a1a1 on the dark card #141313 (7.18:1) -- both clear 4.5:1
+ * (4.95:1) and #a1a1a1 on the dark card #171717 (6.94:1) -- both clear 4.5:1
  * -- whereas the token this used to read, `--dx-chart-axis-text`, is the body
  * text colour. That token stays for the cursor, which is not a tick. */
 .dx-chart [data-slot="chart-axis"] text {
@@ -963,7 +963,8 @@
 }
 
 .dx-chart-interactive-toggle[data-active="true"] {
-  background-color: var(--dx-accent);
+  /* the selected fill, not `--dx-accent`: in dark the accent equals the card's neighbours (#262626 on #171717, 1.18:1) */
+  background-color: var(--dx-accent-selected);
 }
 
 .dx-chart-interactive-toggle-label {

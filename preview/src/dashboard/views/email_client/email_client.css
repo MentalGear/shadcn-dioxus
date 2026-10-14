@@ -878,7 +878,7 @@
 
 .ec-compose-error {
     display: none;
-    color: var(--dx-destructive);
+    color: var(--dx-destructive-text);
     font-size: 0.75rem;
 }
 

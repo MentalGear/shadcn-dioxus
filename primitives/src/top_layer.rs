@@ -1447,6 +1447,7 @@ pub(crate) fn use_anchor_position_fallback(
         // before `reposition()`'s first `getBoundingClientRect()` call.
         let inject = anchor_positioning_inject_js();
         let viewport_metrics_js = VIEWPORT_METRICS_JS;
+        let measure_js = MEASURE_AT_FULL_WIDTH_JS;
         // Synchronous up to and including the first `reposition()` call
         // below, not deferred to `requestAnimationFrame`: this runs from an
         // effect declared (and therefore, on Dioxus's normal mount-order
@@ -1521,6 +1522,7 @@ pub(crate) fn use_anchor_position_fallback(
             // with no `visualViewport` at all. Defined once, shared with
             // `use_point_anchor_clamp`: see `VIEWPORT_METRICS_JS`.
             {viewport_metrics_js}
+            {measure_js}
 
             function reposition() {{
                 if (!content || !trigger) return;
@@ -1547,8 +1549,10 @@ pub(crate) fn use_anchor_position_fallback(
                 // pixel `min-width`s, not viewport-relative percentages).
                 content.style.setProperty('--dx-anchor-width', t.width + 'px');
                 const c = content.getBoundingClientRect();
-                const cw = content.offsetWidth;
-                const ch = content.offsetHeight;
+                // `let`: re-measured at full width below once this call has
+                // committed to overriding the position (`measureAtFullWidth`).
+                let cw = content.offsetWidth;
+                let ch = content.offsetHeight;
                 const vp = viewportMetrics();
                 const vw = vp.width;
                 const vh = vp.height;
@@ -1599,8 +1603,8 @@ pub(crate) fn use_anchor_position_fallback(
                     return {{ top, left }};
                 }}
 
-                const primary = place(side);
-                const flipped = place(opposite);
+                let primary = place(side);
+                let flipped = place(opposite);
 
                 // Tolerance for rounding/subpixel noise -- see this
                 // function's doc for why this checks the *outcome* rather
@@ -1633,6 +1637,20 @@ pub(crate) fn use_anchor_position_fallback(
                 // viewport math, so a non-anchor engine gets flip parity
                 // with the CSS path.
                 usingFallback = true;
+                // Measure-then-move class (see `MEASURE_AT_FULL_WIDTH_JS`):
+                // `cw`/`ch` above were read wherever the panel happened to
+                // sit, and a shrink-to-fit box's width depends on that
+                // position. About to replace the position, so re-measure at
+                // the viewport origin (full available width) and redo
+                // `place()` with the true size; the final write below is in
+                // this same synchronous block, so the probe never paints.
+                content.style.position = 'fixed';
+                content.style.margin = '0';
+                const full = measureAtFullWidth(content, vp);
+                cw = full.width;
+                ch = full.height;
+                primary = place(side);
+                flipped = place(opposite);
                 let target = primary;
                 if (side === 'top' && primary.top < 0) {{
                     target = flipped;
@@ -1998,6 +2016,17 @@ pub(crate) fn use_anchor_position_fallback(
 /// the callers shift rects by); `0` without it. `|| innerWidth` guards the
 /// quirks-mode/detached-root case where `clientWidth` reads `0`.
 ///
+/// **Why also the fixed containing block.** The panels are `position: fixed`,
+/// so the box they are placed in is the fixed containing block, which is NOT
+/// always `clientWidth`: with `html { scrollbar-gutter: stable }` this
+/// Chromium reports `clientWidth` 390 while the containing block (and
+/// `html.getBoundingClientRect().width`) is 375, so a `clientWidth` clamp left
+/// wide panels (the multi-month date picker) 11-15px past the right edge at
+/// 390/600/900px. The clamp box is therefore also measured from a cached
+/// `position: fixed; inset: 0` probe (one invisible node, created on first
+/// use and re-attached if the page removes it; reading its rect is the same
+/// single layout read `clientWidth` costs), and the smallest of the three wins.
+///
 /// Spliced into the scripts as a function declaration, so it hoists and may
 /// be called anywhere in them.
 #[cfg_attr(not(feature = "web"), allow(dead_code))]
@@ -2005,14 +2034,60 @@ pub(crate) const VIEWPORT_METRICS_JS: &str = r#"
             function viewportMetrics() {
                 const vv = window.visualViewport;
                 const root = document.documentElement;
-                const clientW = root.clientWidth || window.innerWidth;
-                const clientH = root.clientHeight || window.innerHeight;
+                // The box a `position: fixed` panel is placed in: a cached,
+                // invisible `fixed; inset: 0` probe. `clientWidth` is NOT that
+                // box under `scrollbar-gutter: stable` (390 vs 375 in this
+                // Chromium), so it is only ever the upper bound below.
+                let probe = window.__dxFixedCb;
+                if (!probe || !probe.isConnected) {
+                    probe = document.createElement("div");
+                    probe.setAttribute("aria-hidden", "true");
+                    probe.setAttribute("data-dx-fixed-cb", "");
+                    probe.style.cssText = "position:fixed;inset:0;visibility:hidden;pointer-events:none;";
+                    root.appendChild(probe);
+                    window.__dxFixedCb = probe;
+                }
+                const cb = probe.getBoundingClientRect();
+                const clientW = Math.min(root.clientWidth || window.innerWidth, cb.width || Infinity);
+                const clientH = Math.min(root.clientHeight || window.innerHeight, cb.height || Infinity);
                 return {
                     width: vv ? Math.min(vv.width, clientW) : clientW,
                     height: vv ? Math.min(vv.height, clientH) : clientH,
                     offsetLeft: vv ? vv.offsetLeft : 0,
                     offsetTop: vv ? vv.offsetTop : 0,
                 };
+            }
+"#;
+
+/// The ONE way a clamp script measures a panel it is about to move:
+/// defines `measureAtFullWidth(content, vp)` (returns `{ width, height }`,
+/// the border-box `offsetWidth`/`offsetHeight`), spliced in next to
+/// [`VIEWPORT_METRICS_JS`].
+///
+/// **The class this closes (measure-then-move on a shrink-to-fit box).** A
+/// `position: fixed` panel with `width: auto` is sized by shrink-to-fit:
+/// `min(max-content, room between its `left` and the containing block's right
+/// edge)`. So the width a clamp reads depends on the very position the clamp is
+/// about to replace. A context menu opened 2px from the right edge measured its
+/// squeezed ~148px instead of its real 160px max-content width, was placed for
+/// 148 (`vw - 4 - 148`), then grew back to 160 at that `left` and ended flush
+/// with the edge instead of `EDGE_MARGIN` away from it. It stayed hidden only
+/// while a large `min-width` happened to exceed the content.
+///
+/// **The construction.** Park the panel at the viewport origin (`inset: auto`,
+/// `left`/`top` at the visual viewport's own origin, where it has the widest
+/// room it can ever have) and read there, so the measured size is the size it
+/// will have anywhere the clamp can put it. The caller writes its final
+/// `left`/`top` in the same synchronous block, so no frame paints the probe
+/// position. Sizes stay `offsetWidth`/`offsetHeight` (layout sizes, unaffected
+/// by an open animation's `scale`), never `getBoundingClientRect()`.
+#[cfg_attr(not(feature = "web"), allow(dead_code))]
+pub(crate) const MEASURE_AT_FULL_WIDTH_JS: &str = r#"
+            function measureAtFullWidth(content, vp) {
+                content.style.inset = 'auto';
+                content.style.left = vp.offsetLeft + 'px';
+                content.style.top = vp.offsetTop + 'px';
+                return { width: content.offsetWidth, height: content.offsetHeight };
             }
 "#;
 
@@ -2097,6 +2172,7 @@ pub(crate) fn use_point_anchor_clamp(
         let _ = document::eval(&format!(
             r#"
             {viewport_metrics_js}
+            {measure_js}
             const content = document.getElementById('{id}');
             if (content) {{
                 const vp = viewportMetrics();
@@ -2104,8 +2180,16 @@ pub(crate) fn use_point_anchor_clamp(
                 const vh = vp.height;
                 const offsetLeft = vp.offsetLeft;
                 const offsetTop = vp.offsetTop;
-                const cw = content.offsetWidth;
-                const ch = content.offsetHeight;
+                // Measured at full available width, NOT at the click point:
+                // a context menu opened near the right edge is a shrink-to-
+                // fit box with almost no room there, so `offsetWidth` at the
+                // click point is its squeezed width, and the clamp below would
+                // place it for a width it no longer has once moved. The final
+                // `left`/`top` writes at the end of this block land before any
+                // paint, so the probe position is never shown.
+                const full = measureAtFullWidth(content, vp);
+                const cw = full.width;
+                const ch = full.height;
 
                 // Same EDGE_MARGIN convention as `use_anchor_position_fallback`'s
                 // own shift clamp (`docs/backlog.md` row 10) -- see this
@@ -2164,6 +2248,7 @@ pub(crate) fn use_point_anchor_clamp(
             x = x,
             y = y,
             viewport_metrics_js = VIEWPORT_METRICS_JS,
+            measure_js = MEASURE_AT_FULL_WIDTH_JS,
         ));
     });
 }

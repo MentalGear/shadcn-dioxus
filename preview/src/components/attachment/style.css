@@ -1,15 +1,8 @@
 .dx-attachment {
   /* Text-safe destructive ink, as in bubble/style.css: `--dx-destructive` is a
    * fill colour, and as text it falls below 4.5:1 on its own tint (light) and on
-   * the card (dark). Retire once the theme has a text-safe destructive role (backlog row 134). */
-  --dx-attachment-destructive-ink: var(
-      --light,
-      color-mix(in oklab, var(--dx-destructive) 80%, var(--dx-foreground))
-    )
-    var(
-      --dark,
-      color-mix(in oklab, var(--dx-destructive) 45%, var(--dx-foreground))
-    );
+   * the card (dark). Now the theme's text-safe destructive role (`--dx-destructive-text`, backlog row 134). */
+  --dx-attachment-destructive-ink: var(--dx-destructive-text);
 
   position: relative;
   display: flex;

@@ -40,17 +40,14 @@ ResizablePanelGroup {
 
 ## Handle grip
 
-A [`ResizableHandle`] renders whatever children you give it -- typically a small grip glyph, as
-in shadcn/ui's own Resizable demo, using `.dx-resizable-handle-grip`'s built-in styling and any
-icon:
+A [`ResizableHandle`] renders whatever children you give it -- typically the grip, which in
+shadcn's Nova style is a bare 4 x 24px pill with no glyph (`.dx-resizable-handle-grip`):
 
 ```rust
-use dioxus_icons::lucide::GripVertical;
-
 ResizableHandle {
     index: 0usize,
     aria_label: "Left panel",
-    span { class: "dx-resizable-handle-grip", GripVertical { size: "0.625rem" } }
+    span { class: "dx-resizable-handle-grip" }
 }
 ```
 

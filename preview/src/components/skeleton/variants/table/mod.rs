@@ -6,7 +6,7 @@ use dioxus::prelude::*;
 #[component]
 pub fn Demo() -> Element {
     rsx! {
-        div { style: "display: flex; flex-direction: column; gap: 0.75rem; width: 24rem;",
+        div { style: "display: flex; flex-direction: column; gap: 0.75rem; width: 100%; max-width: 24rem;",
             for _ in 0..4 {
                 TableRowSkeleton {}
             }

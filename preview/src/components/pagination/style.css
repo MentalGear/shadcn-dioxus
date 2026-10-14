@@ -1,3 +1,16 @@
+/* Nova pagination (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css,
+ * `.cn-pagination-*`, structure from registry/bases/base/ui/pagination.tsx):
+ * the list is `gap-0.5`; every link IS a Button (`PaginationLink` renders
+ * `<Button variant={isActive ? "outline" : "ghost"} size="icon">`, Previous and
+ * Next `size="default"` with `pl-1.5!` / `pr-1.5!`), so the link below reads the
+ * same recipe as `.dx-button` (`.cn-button`, `.cn-button-variant-outline|ghost`,
+ * `.cn-button-size-icon|default`): the current page is the outline Button
+ * (`border-border bg-background hover:bg-muted`, dark `border-input
+ * bg-input/30 hover:bg-input/50`), every other page the ghost one
+ * (`hover:bg-muted`, dark `hover:bg-muted/50`). Dark muted and accent are the
+ * same grey, so no hover here is "muted over muted": the ghost hover is muted at
+ * 50% over the page, the outline hover is the input fill stepped from 30% to
+ * 50%. The ellipsis is `size-8` with a `size-4` icon. */
 .dx-pagination {
   display: flex;
   width: 100%;
@@ -10,22 +23,44 @@
   align-items: center;
   padding: 0;
   margin: 0;
-  gap: var(--dx-space-1);
+  gap: var(--dx-space-0-5);
   list-style: none;
 }
 
 .dx-pagination-link {
   display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
+  border: 1px solid transparent;
   border-radius: var(--dx-radius-lg);
+  background-clip: padding-box;
   color: var(--dx-foreground);
   font-size: var(--dx-text-sm);
   font-weight: 500;
-  gap: var(--dx-space-2);
-  line-height: 1;
+  gap: var(--dx-space-1-5);
+  line-height: 1.25rem;
+  outline: none;
   text-decoration: none;
-  transition: background-color var(--dx-motion-duration-slow) var(--dx-motion-ease), color var(--dx-motion-duration-slow) var(--dx-motion-ease);
+  transition-duration: var(--dx-motion-duration-base);
+  transition-property: all;
+  transition-timing-function: var(--dx-motion-ease-standard);
+  white-space: nowrap;
+}
+
+.dx-pagination-link svg {
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
+.dx-pagination-link svg:not([class*="size-"]) {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* `active:not-aria-[haspopup]:translate-y-px`, as on `.dx-button`. */
+.dx-pagination-link:active {
+  transform: translateY(1px);
 }
 
 .dx-pagination-link:focus-visible {
@@ -34,47 +69,61 @@
 }
 
 .dx-pagination-link[data-size="icon"] {
-  width: 2rem;
-  height: 2rem;
+  width: var(--dx-control-height-default);
+  height: var(--dx-control-height-default);
   padding: 0;
 }
 
 .dx-pagination-ellipsis {
   display: flex;
+  width: var(--dx-control-height-default);
+  height: var(--dx-control-height-default);
   align-items: center;
   justify-content: center;
   color: var(--dx-foreground);
 }
 
-.dx-pagination-link[data-size="icon"],
-.dx-pagination-ellipsis {
-  width: 2rem;
-  height: 2rem;
+.dx-pagination-ellipsis svg:not([class*="size-"]) {
+  width: 1rem;
+  height: 1rem;
 }
 
 .dx-pagination-link[data-size="default"] {
-  height: 2rem;
-  padding: var(--dx-space-2) var(--dx-space-4);
+  height: var(--dx-control-height-default);
+  padding: 0 var(--dx-space-2-5);
 }
 
+/* The current page: the outline Button. */
 .dx-pagination-link[data-active="true"] {
-  border: 1px solid var(--dx-border);
-  background-color: var(--dx-card);
+  border-color: var(--light, var(--dx-border)) var(--dark, var(--dx-input));
+  background-color: var(--light, var(--dx-background))
+    var(--dark, color-mix(in oklab, var(--dx-input) 30%, transparent));
 }
 
 .dx-pagination-link[data-active="true"]:hover {
-  background-color: var(--dx-accent);
+  background-color: var(--light, var(--dx-muted))
+    var(--dark, color-mix(in oklab, var(--dx-input) 50%, transparent));
+  color: var(--dx-foreground);
+}
+
+/* Every other page: the ghost Button. */
+.dx-pagination-link[data-active="false"] {
+  background-color: transparent;
 }
 
 .dx-pagination-link[data-active="false"]:hover {
-  background-color: var(--dx-muted);
-  color: var(--dx-accent-foreground);
+  background-color: var(--light, var(--dx-muted))
+    var(--dark, color-mix(in oklab, var(--dx-muted) 50%, transparent));
+  color: var(--dx-foreground);
 }
 
-.dx-pagination-link[data-kind="previous"],
+/* `cn-pagination-previous` / `-next`: `pl-1.5!` / `pr-1.5!` on the icon's side. */
+.dx-pagination-link[data-kind="previous"] {
+  padding-inline-start: var(--dx-space-1-5);
+}
+
 .dx-pagination-link[data-kind="next"] {
-  gap: var(--dx-space-1);
-  padding-inline: var(--dx-space-2-5);
+  padding-inline-end: var(--dx-space-1-5);
 }
 
 .dx-pagination-label {

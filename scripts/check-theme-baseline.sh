@@ -23,8 +23,11 @@
 #     `--dx-overlay-*` tokens. A component sheet has no `::backdrop` rule to write; to retune the
 #     scrim change the tokens, to remove it use `overlay: false` (`data-dx-overlay="off"`).
 #
-#  3. The two theme rules themselves are still there (a deleted rule would otherwise pass 1 and 2
-#     and silently drop the behaviour from every component at once).
+#  3. The theme rules themselves are still there (a deleted rule would otherwise pass 1 and 2
+#     and silently drop the behaviour from every component at once): the touch rule, the scrim, and
+#     the dialog-box rule `:where(dialog[class^="dx-"]) { padding: 0 }`, which takes away the UA's
+#     `dialog { padding: 1em }` (font-size dependent: a panel's `font-size` change silently moved
+#     Sheet's and Drawer's inset 16 -> 14px) so a dialog sheet's inset is only ever one it declares.
 #
 # Comments are stripped before scanning, so prose that mentions either is fine.
 #
@@ -97,6 +100,14 @@ if not explicit:
     scrim_open = re.search(r"\[open\]\[data-state=\"open\"\][^{}]*::backdrop[^{}]*\{[^{}]*--dx-overlay-scrim", theme)
     if not scrim or not scrim_open:
         errors.append(f"{THEME}: the shared modal-scrim `::backdrop` rules (resting + `[open][data-state=\"open\"]`) are gone")
+    # Arm 3b: the dialog box's UA padding (`1em`, font-size dependent) is reset once, at zero specificity.
+    pad_ok = all(
+        re.search(r":where\(\s*dialog\[class" + op + r"=\"" + lead + r"dx-\"\]\s*\)[^{}]*\{[^{}]*(?<![\w-])padding\s*:\s*0\s*;", theme)
+        for op, lead in (("\\^", ""), ("\\*", " "))
+    )
+    if not pad_ok:
+        errors.append(f"{THEME}: the shared dialog-box rule `:where(dialog[class^=\"dx-\"]) {{ padding: 0 }}` "
+                      f"(the UA's font-size-dependent `padding: 1em` reset, \"The dialog box, once\") is gone")
 
 if errors:
     for e in errors:

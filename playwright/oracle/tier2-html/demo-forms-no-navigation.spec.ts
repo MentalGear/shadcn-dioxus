@@ -42,15 +42,13 @@
  */
 import { test, expect } from "../../fixtures";
 import type { Locator, Page } from "@playwright/test";
-import * as fs from "fs";
-import * as path from "path";
+import { catalogNames, readModRs } from "../../catalog";
 import { BASE_URL } from "../../base-url";
 import { gotoHydrated } from "../../hydration";
 
 // --- the routes, read from Rust ------------------------------------------------------------------
-const MOD_RS = fs.readFileSync(path.join(__dirname, "..", "..", "..", "preview", "src", "components", "mod.rs"), "utf8");
-const CATALOG_BLOCK = MOD_RS.split("pub const CATALOG")[1]?.split("\n];")[0] ?? "";
-const COMPONENTS = [...CATALOG_BLOCK.matchAll(/^\s*\("([a-z0-9_]+)", Origin::(?:Shadcn|Extra)\),/gm)].map((m) => m[1]);
+const MOD_RS = readModRs();
+const COMPONENTS = catalogNames(MOD_RS);
 /** `name(block)[variant, ...]` rows of `examples!`: rendered at `/component/block/<name>/<variant>/`. */
 const BLOCKS = [...(MOD_RS.split("examples!(\n")[1] ?? "").matchAll(/^\s*([a-z0-9_]+)\(block\)(?:\[([^\]]*)\])?/gm)].flatMap((m) =>
   ["main", ...(m[2] ?? "").split(",").map((v) => v.trim()).filter(Boolean)].map((variant) => `/component/block/${m[1]}/${variant}/`),

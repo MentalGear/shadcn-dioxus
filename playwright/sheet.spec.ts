@@ -1,6 +1,7 @@
 import { test, expect } from "./fixtures";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from './axe';
 import { BASE_URL } from './base-url';
+import { fixedViewportBox } from './viewport-box';
 import { assertSharedBackdrop, captureBackdrop, resolveOverlayMs } from "./assert-backdrop-fade";
 
 test('sheet basic interactions', async ({ page }) => {
@@ -154,22 +155,19 @@ test('sheet content is anchored flush to its own edge, not centered', async ({ p
 
   const sheet = page.locator('[data-slot="sheet-root"]');
   const content = page.locator('[data-slot="sheet-content"]');
-  // The real, available layout width/height (this app reserves a permanent
+  // The box the fixed panel is placed in (this app reserves a permanent
   // scrollbar gutter -- see the geometry test above), not the raw viewport
-  // size: an edge-anchored panel's far edge lines up with THIS, not
-  // necessarily with `page.viewportSize()`.
-  const avail = await page.evaluate(() => ({
-    w: document.documentElement.clientWidth,
-    h: document.documentElement.clientHeight,
-  }));
+  // size nor `documentElement.clientWidth`: an edge-anchored panel's far edge
+  // lines up with THIS (see viewport-box.ts).
+  const fixedBox = await fixedViewportBox(page);
+  const avail = { w: fixedBox.width, h: fixedBox.height };
 
-  // Tolerance covers this app's permanent scrollbar-gutter reservation
-  // (primitives/src/scroll_lock.rs), which shifts the panel's fixed-position
-  // containing block a little short of the raw `clientWidth`/`clientHeight`
-  // read above (observed ~15px) -- not a pixel-perfect fit, but the whole
-  // point of this assertion is "flush against its own edge, not centered",
-  // a difference measured in hundreds of pixels, so a generous tolerance
-  // loses none of the check's actual power.
+  // Generous tolerance (rounding, borders): the whole point of this assertion
+  // is "flush against its own edge, not centered", a difference measured in
+  // hundreds of pixels, so it loses none of the check's actual power. (It
+  // used to also absorb the ~15px scrollbar-gutter gap between the raw
+  // `clientWidth` and the fixed containing block; `fixedViewportBox` measures
+  // the latter directly.)
   const TOLERANCE = 20;
   function closeTo(actual: number, expected: number) {
     expect(Math.abs(actual - expected)).toBeLessThan(TOLERANCE);
@@ -211,7 +209,7 @@ test('sheet content is anchored flush to its own edge, not centered', async ({ p
   expect(bottom.height).toBeLessThan(avail.h * 0.9); // h-auto: content-sized
 });
 
-test('close button matches shadcn spec: 16px icon, opacity-70, rounded-xs, top-right', async ({ page }) => {
+test('close button matches Nova spec: 16px icon, ghost icon-sm (28px, full opacity, rounded), top-right', async ({ page }) => {
   await page.goto(`${BASE_URL}/component/?name=sheet&`, { timeout: 20 * 60 * 1000 });
 
   const sheet = page.locator('[data-slot="sheet-root"]');
@@ -241,13 +239,18 @@ test('close button matches shadcn spec: 16px icon, opacity-70, rounded-xs, top-r
   expect(iconBox!.width).toBeCloseTo(16, 0);
   expect(iconBox!.height).toBeCloseTo(16, 0);
 
-  // shadcn: `opacity-70` default state, `rounded-xs` (2px) corners.
+  // Nova (`.cn-sheet-close`): a ghost `icon-sm` Button -- full opacity (no `opacity-70`), 28px square,
+  // `min(radius-md, 12px)` (8px) corners. (Was shadcn New York's opacity-70 / rounded-xs 2px / 24px.)
   const opacity = await closeButton.evaluate((el) => getComputedStyle(el).opacity);
-  expect(opacity).toBe('0.7');
+  expect(opacity).toBe('1');
   const borderRadius = await closeButton.evaluate((el) => getComputedStyle(el).borderRadius);
-  expect(borderRadius).toBe('2px');
+  expect(borderRadius).toBe('8px');
+  const buttonBox = await closeButton.boundingBox();
+  expect(buttonBox).not.toBeNull();
+  expect(buttonBox!.width).toBeCloseTo(28, 0);
+  expect(buttonBox!.height).toBeCloseTo(28, 0);
 
-  // shadcn: `absolute top-4 right-4` -- close to the content's own top-right
+  // Nova: `absolute top-3 right-3` -- close to the content's own top-right
   // corner (within one button-box's worth of margin), not flush against the
   // viewport edge or hanging off the panel.
   const contentBox = await content.boundingBox();

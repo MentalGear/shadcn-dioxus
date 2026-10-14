@@ -41,6 +41,12 @@ Tabs {
 Tabs { size: TabsSize::Sm, default_value: "a".to_string(), /* ... */ }
 ```
 
+## Panel padding
+
+`TabContent` has no padding of its own (shadcn's Nova `TabsContent` is `text-sm` and nothing else; the padding that used to be 2rem was this library's). Put padding on the content, or on the panel with `padding`, or let a `Card` inside it bring its own. The default (bordered) variant still draws a 1px card-coloured frame around the panel, so text placed straight in it wants about `var(--dx-space-4)` of padding; the `ghost` variant has no frame.
+
+**Breaking change:** a `TabContent` that relied on the 2rem padding now sits flush against its frame. Add `padding: "var(--dx-space-8)"` to restore the old look.
+
 ## Direction / RTL
 
 `Tabs` accepts a `dir: Option<Direction>` prop (defaulting to the nearest `DirectionProvider`, or LTR). Under RTL, `TabTrigger`'s `ArrowLeft`/`ArrowRight` roving focus swaps: `ArrowLeft` moves to the *next* tab, `ArrowRight` to the *previous* one (matching Radix's shared `RovingFocusGroup` behavior). See the `rtl` variant.

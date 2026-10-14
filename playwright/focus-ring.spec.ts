@@ -135,15 +135,18 @@ const FIELDS: Field[] = [
         ringIsOnAnotherElement: true,
     },
     {
-        // The input sits borderless in a bottom-ruled strip and draws the ring on its own box. It takes
-        // focus when the palette opens, which the test blurs before reading the resting ring.
-        name: "Command palette search input",
+        // The input is bare inside Nova's input-group strip (`.cn-command-input-group`); the strip is the
+        // field, so it draws the ring (`:has(.dx-command-input:focus-visible)`) and the input draws none.
+        // It takes focus when the palette opens, which the test blurs before reading the resting ring.
+        name: "Command palette search input (ring on the group)",
         url: page_("command"),
         open: async (page) => {
             await page.getByRole("button", { name: "Open Command Palette" }).first().click();
             await expect(page.getByRole("dialog")).toBeVisible();
         },
         focus: (page) => page.getByRole("combobox", { name: "Search commands" }),
+        ring: (page) => page.getByRole("dialog").locator(".dx-command-input-wrapper"),
+        ringIsOnAnotherElement: true,
     },
     {
         // The segments are the focus targets; the group is the field the ring belongs on.

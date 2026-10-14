@@ -30,9 +30,7 @@ pub fn Demo() -> Element {
                     AccordionItem { index: i,
                         AccordionTrigger { "{question}" }
                         AccordionContent {
-                            div { padding_bottom: "1rem",
-                                p { padding: "0", "{answer}" }
-                            }
+                            p { padding: "0", "{answer}" }
                         }
                     }
                 }

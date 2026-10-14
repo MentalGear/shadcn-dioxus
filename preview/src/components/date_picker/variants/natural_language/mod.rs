@@ -46,10 +46,10 @@ pub fn Demo() -> Element {
                     }
                     // One surface, as in `DatePicker`'s own popover (date_picker/style.css): the
                     // panel is the card, so it hugs the calendar and the calendar drops its own
-                    // border, background and shadow (calendar/style.css reads these three).
+                    // border and background (calendar/style.css reads these two).
                     PopoverContent {
                         align: ContentAlign::End,
-                        style: "width: max-content; padding: 0; --dx-calendar-border: none; --dx-calendar-background: transparent; --dx-calendar-shadow: none;",
+                        style: "width: max-content; padding: 0; --dx-calendar-border: none; --dx-calendar-background: transparent;",
                         Calendar {
                             selected_date: selected_date(),
                             on_date_change: move |date: Option<Date>| {

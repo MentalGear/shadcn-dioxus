@@ -3,6 +3,7 @@ import { type Page } from "@playwright/test";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from './axe';
 import { BASE_URL } from './base-url';
 import { gotoHydrated } from './hydration';
+import { fixedViewportBox } from './viewport-box';
 import { expectFadeKeepsTransform } from './assert-anchor-transform';
 
 const URL = `${BASE_URL}/component/?name=navigation_menu&`;
@@ -332,12 +333,13 @@ test.describe('Panel layout matches shadcn (owner report: oversized panel, invis
         const box = await page.evaluate((sel) => {
           const el = document.querySelector<HTMLElement>(sel)!;
           const r = el.getBoundingClientRect();
-          return { width: el.offsetWidth, left: r.left, right: r.right, vw: innerWidth };
+          return { width: el.offsetWidth, left: r.left, right: r.right };
         }, OPEN_PANEL);
+        const fixedBox = await fixedViewportBox(page);
         // shadcn's grid is `lg:w-[500px]`; plus the panel's own padding.
         expect(box.width).toBeLessThanOrEqual(520);
-        expect(box.left).toBeGreaterThanOrEqual(0);
-        expect(box.right).toBeLessThanOrEqual(box.vw);
+        expect(box.left).toBeGreaterThanOrEqual(fixedBox.x);
+        expect(box.right).toBeLessThanOrEqual(fixedBox.x + fixedBox.width);
       });
 
       test('the Components panel is shadcn-sized too (lg:w-[600px], two columns)', async ({ page }) => {

@@ -1,3 +1,10 @@
+/* Nova slider (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css): `.cn-slider-track` is
+ * `bg-muted rounded-full` and `h-1` (4px; `w-1` vertical) with `overflow-hidden` (registry/bases/radix/ui/slider.tsx),
+ * `.cn-slider-range` is `bg-primary`, and `.cn-slider-thumb` is a `size-3` (12px) `rounded-full`
+ * `border border-ring bg-white` with `ring-ring/50`, `ring-3` on hover, focus-visible and active, and
+ * an `after:-inset-2` hit area (so the 12px thumb is a 28px target). The root has no padding in Nova
+ * (its thumb is in flow); here the thumb is absolute, so the root keeps a block padding that
+ * lets it clear the thumb. */
 .dx-slider {
     position: relative;
     display: flex;
@@ -20,21 +27,21 @@
 
 .dx-slider-track {
     position: relative;
-    height: 0.5rem;
+    overflow: hidden;
+    height: var(--dx-space-1);
     flex-grow: 1;
     border-radius: var(--dx-radius-full);
     background: var(--dx-muted);
 }
 
 .dx-slider[data-orientation="vertical"] .dx-slider-track {
-    width: 4px;
+    width: var(--dx-space-1);
     height: 100%;
 }
 
 .dx-slider-range {
     position: absolute;
     height: 100%;
-    border-radius: var(--dx-radius-full);
     background-color: var(--dx-primary);
 }
 
@@ -52,13 +59,12 @@
     position: absolute;
     top: 50%;
     display: block;
-    width: 16px;
-    height: 16px;
+    width: var(--dx-space-3);
+    height: var(--dx-space-3);
     box-sizing: border-box;
-    border: 0;
+    border: 1px solid var(--dx-ring-color);
     border-radius: 50%;
-    background-color: var(--dx-background);
-    box-shadow: inset 0 0 0 1px var(--dx-primary);
+    background-color: white;
     cursor: pointer;
 
     /* rtl-physical: the thumb's horizontal position (`left: X%`, the value
@@ -73,6 +79,15 @@
     transform: translate3d(-50%, -50%, 0);
     transition: box-shadow var(--dx-motion-duration-base);
     will-change: left, bottom, transform;
+}
+
+/* `after:absolute after:-inset-2`: an invisible 8px margin around the thumb, so the 12px thumb is a
+ * 28px pointer and touch target. A pseudo-element of the thumb, so a press on it is a press on the
+ * thumb. */
+.dx-slider-thumb::after {
+    position: absolute;
+    content: "";
+    inset: calc(-1 * var(--dx-space-2));
 }
 
 .dx-slider[data-orientation="vertical"] .dx-slider-thumb {
@@ -90,11 +105,12 @@
     transform: translate3d(-50%, 50%, 0); /* rtl-physical: see comment above */
 }
 
+/* `ring-ring/50 hover:ring-3 focus-visible:ring-3 active:ring-3`: the shared 3px focus halo. */
 .dx-slider-thumb:focus-visible[data-dragging="true"],
 .dx-slider-thumb:focus-visible,
-.dx-slider-thumb:hover {
-    box-shadow: inset 0 0 0 1px var(--dx-primary),
-        0 0 0 4px color-mix(in oklab, var(--dx-ring-color) 50%, transparent);
+.dx-slider-thumb:hover,
+.dx-slider-thumb:active {
+    box-shadow: var(--dx-ring-focus);
     transition: box-shadow var(--dx-motion-duration-base);
 }
 

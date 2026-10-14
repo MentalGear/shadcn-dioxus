@@ -24,13 +24,13 @@ pub fn Demo() -> Element {
                     "Profile"
                 }
             }
-            TabContent { index: 0usize, value: "dashboard".to_string(),
+            TabContent { index: 0usize, value: "dashboard".to_string(), padding: "var(--dx-space-4)",
                 "Pin the charts and shortcuts you use every day."
             }
-            TabContent { index: 1usize, value: "alerts".to_string(),
+            TabContent { index: 1usize, value: "alerts".to_string(), padding: "var(--dx-space-4)",
                 "You are all caught up. New alerts will show up here."
             }
-            TabContent { index: 2usize, value: "profile".to_string(),
+            TabContent { index: 2usize, value: "profile".to_string(), padding: "var(--dx-space-4)",
                 "Choose how your name and avatar appear to teammates."
             }
         }

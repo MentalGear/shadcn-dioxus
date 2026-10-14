@@ -57,3 +57,64 @@ test("the input inside the group keeps its base class and shows no border of its
   expect(style.boxShadow, JSON.stringify(style)).toBe("none");
   expect(parseFloat(style.borderRadius), JSON.stringify(style)).toBe(0);
 });
+
+/*
+ * Invalid and disabled (backlog row 133). The wrapper draws the field chrome and its control is
+ * stripped bare, so the WRAPPER must carry both states: the shared invalid recipe
+ * (`--dx-ring-invalid-field`, the same token `Input` draws on itself) and Nova's
+ * `has-disabled:opacity-50` (`--dx-opacity-disabled`) so the addons dim with the control. The
+ * control itself must draw neither a second time. The demo has no invalid or disabled case, so
+ * the state is applied to the existing "Search..." group the way `Field` / a form would
+ * (`aria-invalid` / `disabled` on the control); the rules are `:has()` selectors on the
+ * attributes, so setting them directly is the same input to the stylesheet.
+ */
+test.describe("Invalid and disabled states (row 133)", () => {
+  const open = async (page: import("@playwright/test").Page) => {
+    await gotoHydrated(page, `${BASE_URL}/component/?name=input_group&`, { timeout: 20 * 60 * 1000 });
+    const search = page.getByPlaceholder("Search...");
+    await expect(search).toBeVisible();
+    const wrapper = page.locator(".dx-input-group", { has: search }).first();
+    await expect(wrapper).toBeVisible();
+    return { search, wrapper };
+  };
+
+  /** What a custom-property expression resolves to as a computed property, via a probe element. */
+  const resolved = (page: import("@playwright/test").Page, property: "boxShadow" | "opacity", expr: string) =>
+    page.evaluate(
+      ([prop, value]) => {
+        const probe = document.createElement("i");
+        (probe.style as unknown as Record<string, string>)[prop] = value;
+        document.body.append(probe);
+        const out = (getComputedStyle(probe) as unknown as Record<string, string>)[prop];
+        probe.remove();
+        return out;
+      },
+      [property, expr] as const,
+    );
+
+  test("an invalid control puts the invalid recipe on the wrapper, not on the bare control", async ({ page }) => {
+    const { search, wrapper } = await open(page);
+    const resting = await wrapper.evaluate((el) => getComputedStyle(el).boxShadow);
+    await search.evaluate((el) => el.setAttribute("aria-invalid", "true"));
+
+    const expected = await resolved(page, "boxShadow", "var(--dx-ring-invalid-field)");
+    await expect.poll(() => wrapper.evaluate((el) => getComputedStyle(el).boxShadow)).toBe(expected);
+    expect(expected, "the invalid recipe is not the resting edge").not.toBe(resting);
+    expect(await search.evaluate((el) => getComputedStyle(el).boxShadow), "the bare control draws no ring of its own").toBe(
+      "none",
+    );
+  });
+
+  test("a disabled control dims the whole wrapper once, and the control does not dim again", async ({ page }) => {
+    const { search, wrapper } = await open(page);
+    expect(await wrapper.evaluate((el) => getComputedStyle(el).opacity)).toBe("1");
+    await search.evaluate((el) => ((el as HTMLInputElement).disabled = true));
+
+    const expected = await resolved(page, "opacity", "var(--dx-opacity-disabled)");
+    await expect.poll(() => wrapper.evaluate((el) => getComputedStyle(el).opacity)).toBe(expected);
+    expect(expected).not.toBe("1");
+    expect(await search.evaluate((el) => getComputedStyle(el).opacity), "the control stays at full opacity inside the dimmed wrapper").toBe(
+      "1",
+    );
+  });
+});

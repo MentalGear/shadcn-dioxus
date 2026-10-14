@@ -52,20 +52,20 @@
 import { test, expect } from "./fixtures";
 import type { Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import * as fs from "fs";
-import * as path from "path";
 import { expectNoAxeViolations, type AxeRegionExclusion } from "./axe";
+import { readCatalog, readModRs } from "./catalog";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
+import { fixedViewportBox } from "./viewport-box";
 
 type Scheme = "light" | "dark";
 const SCHEMES: Scheme[] = ["light", "dark"];
 const NAV_TIMEOUT = 5 * 60 * 1000; // the first visit under `dx serve` can wait on a rebuild
 
 // --- the route list, read from Rust --------------------------------------------------------
-const MOD_RS = fs.readFileSync(path.join(__dirname, "..", "preview", "src", "components", "mod.rs"), "utf8");
-const CATALOG_BLOCK = MOD_RS.split("pub const CATALOG")[1]?.split("\n];")[0] ?? "";
-const COMPONENTS = [...CATALOG_BLOCK.matchAll(/^\s*\("([a-z0-9_]+)", Origin::(?:Shadcn|Extra)\),/gm)].map((m) => m[1]);
+const MOD_RS = readModRs();
+const CATALOG = readCatalog(MOD_RS);
+const COMPONENTS = CATALOG.map((r) => r.name);
 
 interface Route {
   id: string;
@@ -117,6 +117,10 @@ test("the route list parses from CATALOG", () => {
   expect(BLOCK_ROUTES.map((r) => r.path)).toEqual(expect.arrayContaining(["/component/block/sidebar/main/", "/component/block/sidebar/inset/"]));
   expect(COMPONENTS).toEqual(expect.arrayContaining(["button", "item", "badge", "resizable", "scroll_area", "top_layer"]));
   expect(new Set(COMPONENTS).size).toBe(COMPONENTS.length);
+  // The Extra pages (`Origin::Extra("reason")` rows) are swept too: `readCatalog` throws when a row does not parse.
+  const extras = CATALOG.filter((r) => r.origin === "Extra").map((r) => r.name);
+  expect(extras.length).toBeGreaterThan(0);
+  expect(COMPONENTS).toEqual(expect.arrayContaining(extras));
 });
 
 // --- known, tracked axe findings -----------------------------------------------------------
@@ -131,18 +135,6 @@ interface KnownAxe {
   row: string;
   why: string;
 }
-const DESTRUCTIVE_AS_TEXT: KnownAxe = {
-  selector: '.dx-alert[data-style="destructive"] .dx-alert-title, .dx-alert[data-style="destructive"] .dx-alert-description',
-  row: "dev-docs/backlog.md row 134 (widen it: destructive as a TEXT colour, not only the button)",
-  why:
-    "`--dx-destructive` is a fill colour in dark (#a22e2e), 2.61:1 as text on the page (`alert/style.css` " +
-    "`.dx-alert-title`/`.dx-alert-description`); the fix is one text-grade token, `--dx-destructive-text`, owned by row 134",
-};
-const FIELD_ERROR_TEXT: KnownAxe = {
-  selector: 'label[for="field-demo-email"], .dx-field-error',
-  row: "dev-docs/backlog.md row 134 (widen it: destructive as a TEXT colour, not only the button)",
-  why: "same cause as the Alert: `field/style.css` `.dx-field-label`/`.dx-field-error` use `color: var(--dx-destructive)`, 2.61:1 in dark",
-};
 const CHART_TOGGLE_LABEL: KnownAxe = {
   selector: '.dx-chart-interactive-toggle[data-active="true"] .dx-chart-interactive-toggle-label',
   row: "dev-docs/backlog.md row 111 (phase C, owner question A: the dark `--dx-accent`)",
@@ -152,8 +144,6 @@ const CHART_TOGGLE_LABEL: KnownAxe = {
     "`--dx-accent-foreground` label colour, clears it",
 };
 const KNOWN_AXE: Record<string, Partial<Record<Scheme, KnownAxe[]>>> = {
-  alert: { dark: [DESTRUCTIVE_AS_TEXT] },
-  "site-home": { dark: [DESTRUCTIVE_AS_TEXT, FIELD_ERROR_TEXT] },
   bar_chart: { dark: [CHART_TOGGLE_LABEL] },
   line_chart: { dark: [CHART_TOGGLE_LABEL] },
 };
@@ -248,9 +238,9 @@ for (const route of ROUTES) {
     test(`${route.id}: no horizontal overflow at 390px (${scheme})`, async ({ page }) => {
       test.setTimeout(NAV_TIMEOUT);
       await openRoute(page, route, scheme, () => page.setViewportSize({ width: 390, height: 844 }));
-      const result = await page.evaluate(() => {
+      const bound = (await fixedViewportBox(page)).width;
+      const result = await page.evaluate((vw) => {
         const de = document.documentElement;
-        const vw = de.clientWidth;
         const clipped = (e: Element) => {
           for (let p = e.parentElement; p && p !== document.body; p = p.parentElement) {
             if (/(auto|scroll|hidden|clip)/.test(getComputedStyle(p).overflowX)) return true;
@@ -265,8 +255,9 @@ for (const route of ROUTES) {
           const cls = (e.getAttribute("class") ?? "").split(/\s+/).slice(0, 2).join(".");
           offenders.push(`${e.tagName.toLowerCase()}${cls ? "." + cls : ""} (right ${Math.round(r.right)}, width ${Math.round(r.width)})`);
         }
-        return { vw, pageScroll: de.scrollWidth - vw, offenders };
-      });
+        // viewport-ok: page-level sideways scroll is `scrollWidth` vs the document's own `clientWidth`, not an overlay bound
+        return { vw, pageScroll: de.scrollWidth - de.clientWidth, offenders };
+      }, bound);
       expect(result.pageScroll, "page-level horizontal scroll").toBeLessThanOrEqual(0);
       expect(
         result.offenders.slice(0, 6),

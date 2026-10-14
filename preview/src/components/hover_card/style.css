@@ -16,8 +16,14 @@
   --dx-floating-padding: var(--dx-space-2-5);
 
   position: absolute;
-  min-width: 200px;
+
+  /* Nova `.cn-hover-card-content` (shadcn-ui/ui@295a1f1 style-nova.css): `w-64 rounded-lg p-2.5
+     text-sm`; the rest is the floating recipe. The viewport clamp is ours (a fixed 16rem would
+     overflow a narrower screen). */
+  width: 16rem;
+  max-width: calc(100vw - var(--dx-space-8));
   margin: 0;
+  font-size: var(--dx-text-sm);
 
   /*
    * This content carries the `popover` attribute on the web arm (Phase 4.4,
