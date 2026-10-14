@@ -116,11 +116,13 @@
     transform: rotate(180deg);
 }
 
-.dx-calendar-nav-prev:not(:disabled):hover,
-.dx-calendar-nav-next:not(:disabled):hover {
-    background-color: var(--light, var(--dx-muted))
-        var(--dark, color-mix(in oklab, var(--dx-muted) 50%, transparent));
-    color: var(--dx-foreground);
+@media (hover: hover) and (pointer: fine) {
+    .dx-calendar-nav-prev:not(:disabled):hover,
+    .dx-calendar-nav-next:not(:disabled):hover {
+        background-color: var(--light, var(--dx-muted))
+            var(--dark, color-mix(in oklab, var(--dx-muted) 50%, transparent));
+        color: var(--dx-foreground);
+    }
 }
 
 /* The Button focus recipe: ring-coloured border plus the shared halo. */
@@ -260,9 +262,11 @@
    muted == accent now, so the old accent hover and the muted today / in-range fills were one colour; the
    half-strength muted is the lighter step the Button's own ghost hover takes, and today's hover has a
    rule of its own (below). */
-:where(.dx-calendar-grid-cell[data-month="current"]:not([data-disabled="true"]):hover) {
-    background-color: var(--light, var(--dx-muted))
-        var(--dark, color-mix(in oklab, var(--dx-muted) 50%, transparent));
+@media (hover: hover) and (pointer: fine) {
+    :where(.dx-calendar-grid-cell[data-month="current"]:not([data-disabled="true"]):hover) {
+        background-color: var(--light, var(--dx-muted))
+            var(--dark, color-mix(in oklab, var(--dx-muted) 50%, transparent));
+    }
 }
 
 .dx-calendar-grid-cell[data-month="current"]:focus-visible {
@@ -367,8 +371,10 @@ td:has(.dx-calendar-grid-cell[data-selection-end="true"]) {
    drift apart is how the selected pill once vanished into the plain hover square in dark mode). Only the
    light-mode bold-on-hover nicety is worth keeping, and it is harmless at zero specificity since nothing
    else sets font-weight here. */
-:where(.dx-calendar-grid-cell[data-month="current"][data-selected="true"]:hover) {
-    font-weight: var(--light, 550) var(--dark, inherit);
+@media (hover: hover) and (pointer: fine) {
+    :where(.dx-calendar-grid-cell[data-month="current"][data-selected="true"]:hover) {
+        font-weight: var(--light, 550) var(--dark, inherit);
+    }
 }
 
 /* Nova `today`: `rounded-(--cell-radius) bg-muted text-foreground` (the day, not the button). The one
@@ -385,11 +391,13 @@ td:has(.dx-calendar-grid-cell[data-selection-end="true"]) {
     color: var(--dx-foreground);
 }
 
-.dx-calendar-grid-cell[data-month="current"][data-today="true"]:not(
-        [data-selected="true"],
-        [data-disabled="true"]
-    ):hover {
-    background-color: color-mix(in oklab, var(--dx-accent-selected), var(--dx-foreground) 6%);
+@media (hover: hover) and (pointer: fine) {
+    .dx-calendar-grid-cell[data-month="current"][data-today="true"]:not(
+            [data-selected="true"],
+            [data-disabled="true"]
+        ):hover {
+        background-color: color-mix(in oklab, var(--dx-accent-selected), var(--dx-foreground) 6%);
+    }
 }
 
 /* Nova `week_number`: `text-[0.8rem] text-muted-foreground select-none`, in a cell-sized box. Dormant
