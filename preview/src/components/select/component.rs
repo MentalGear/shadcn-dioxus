@@ -20,6 +20,26 @@ pub use dioxus_primitives::select::SelectGroup;
 // `document::Link`'s `(href, rel)` dedup makes it harmless either way if a
 // future edit adds one there too.
 
+/// The size of a [`Select`] / [`SelectMulti`] trigger: shadcn's `size="sm" | "default"`
+/// (Nova's `data-[size=default]:h-8 data-[size=sm]:h-7`), read from the theme's
+/// control-height ladder.
+#[derive(Copy, Clone, PartialEq, Default)]
+#[non_exhaustive]
+pub enum SelectSize {
+    #[default]
+    Default,
+    Sm,
+}
+
+impl SelectSize {
+    pub fn class(&self) -> &'static str {
+        match self {
+            SelectSize::Default => "default",
+            SelectSize::Sm => "sm",
+        }
+    }
+}
+
 /// Props for the themed [`Select`]. Deliberately its own struct rather than
 /// a reuse of `dioxus_primitives::select::SelectProps` (as the other
 /// wrappers in this file still do for their simpler primitives): callers
@@ -101,6 +121,10 @@ pub struct SelectProps<T: Clone + PartialEq + 'static = String> {
     /// Extra class appended alongside `"dx-select-trigger"`.
     #[props(default)]
     pub trigger_class: Option<String>,
+
+    /// Trigger size, `Default` (32px) or `Sm` (28px): `data-size` on the trigger.
+    #[props(default)]
+    pub size: SelectSize,
 
     /// Extra class appended alongside `"dx-select-list"`.
     #[props(default)]
@@ -187,6 +211,10 @@ pub struct SelectMultiProps<T: Clone + PartialEq + 'static = String> {
     #[props(default)]
     pub trigger_class: Option<String>,
 
+    /// Trigger size, `Default` (32px) or `Sm` (28px): `data-size` on the trigger.
+    #[props(default)]
+    pub size: SelectSize,
+
     /// Extra class appended alongside `"dx-select-list"`.
     #[props(default)]
     pub list_class: Option<String>,
@@ -239,6 +267,7 @@ pub fn Select<T: Clone + PartialEq + 'static>(props: SelectProps<T>) -> Element 
             attributes: merged,
             select::SelectTrigger {
                 class: trigger_class,
+                "data-size": props.size.class(),
                 aria_label: props.trigger_aria_label.clone(),
                 if let Some(trigger) = &props.trigger {
                     {trigger.clone()}
@@ -291,6 +320,7 @@ pub fn SelectMulti<T: Clone + PartialEq + 'static>(props: SelectMultiProps<T>) -
             attributes: merged,
             select::SelectTrigger {
                 class: trigger_class,
+                "data-size": props.size.class(),
                 aria_label: props.trigger_aria_label.clone(),
                 if let Some(trigger) = &props.trigger {
                     {trigger.clone()}

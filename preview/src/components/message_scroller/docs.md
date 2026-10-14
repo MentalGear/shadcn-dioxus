@@ -112,10 +112,40 @@ The root and viewport carry these attributes, written by the controller rather t
 
 The button carries `data-active` (`"true"` when there is content in its direction) and is `inert` otherwise.
 
+## Examples
+
+Besides the live transcript at the top of the page, each example isolates one behavior, mirroring shadcn/ui's `message-scroller-*` examples:
+
+- **Commands**: a "Jump to..." menu calls `use_message_scroller().scroll_to_message(id, ScrollToMessageOptions { align: ScrollAlign::Start, behavior: ScrollBehavior::Smooth })` for each user turn. The menu lives inside the provider, so it reaches the same controller as the transcript.
+- **Anchoring**: `scroll_anchor` is a per-row prop, not a role. A toggle picks whether user or assistant rows are the anchors; choosing the other role resets the thread, so you can compare where the turns settle.
+- **Opening position**: tabs for `Start`, `End` and `LastAnchor`. `default_scroll_position` is read when the transcript first renders, so the demo keys the provider and a new choice remounts it as a freshly opened thread.
+- **Previous context**: a slider drives `scroll_previous_item_peek` (64 to 128 px), together with `scroll_margin`. Send the next queued message to see how much of the previous reply stays visible above the new turn.
+- **Group chat**: a join `Marker` with `variant: MarkerVariant::Separator` is a `MessageScrollerItem` with `scroll_anchor`, so an event row can start a turn just as a user message does.
+- **Animation**: user rows enter with one of the theme's shared keyframes (`dx-fade-in`, `dx-pop-in`, `dx-drop-in`), chosen in a `Select`. The preset in force when a row is sent is stored with that row, so changing it later never replays the rows already on screen. These keyframes animate only `opacity`, `scale` and `translate`, so a row's measured height never changes while it plays and anchoring is unaffected.
+- **Full chat**: the shadcn hero approximated with the parts here: a `Card` shell, an `Empty` state, a Reset button with a `Tooltip`, and a read-only composer made of an `InputGroup` with an inline `+` menu and a send button.
+- **Last anchor**, **Load history** and **Long**: the saved-thread opening, prepending older messages, and a 2,000-row transcript through `MessageScrollerRows`.
+
+Not reproduced from shadcn: the `slide-up`, `slide-side`, `spring-bounce`, `blur-fade` and `scale-fade` animation presets (the theme has no keyframe with a slide offset, an overshoot or a blur, and this library adds none for a demo), the visibility outline (`use_message_scroller_visibility` does not exist yet), and a composer whose actions sit in a full-width bottom row (`InputGroupAlign` has `Start` and `End` only).
+
+## Edge fade
+
+`MessageScrollerViewport` takes `fade: ScrollFade`, which puts the matching `dx-scroll-fade-*` class on the viewport, the element that actually scrolls (never the root frame). The default is `ScrollFade::Bottom`, Nova's end-edge hint; `ScrollFade::Top` suits a thread that opens at its newest messages and loads history upward, `ScrollFade::Y` fades both edges and `ScrollFade::None` adds nothing.
+
+```rust
+MessageScrollerViewport { fade: ScrollFade::Top,
+    MessageScrollerContent { .. }
+}
+```
+
+- The fade is a CSS scroll-driven mask on the viewport (see the `dx-scroll-fade` utility in the ScrollArea docs), so it follows the viewport's scroll offset: it is unaffected by `content-visibility` rows and by prepended history, and a transcript that fits has no fade. A browser without scroll-driven animations gets a static edge fade.
+- It needs `dx-effects.css` linked once at the app root next to the theme; `message_scroller`'s `component.json` lists it in `globalAssets`, so `dx components add message_scroller` copies it. It cannot live in this component's `style.css`: the file also holds the `@property` registrations and keyframes every scroller shares, and a second copy would be a second set of declarations to keep in step.
+- The mask also dissolves the viewport's own border and background, so keep those on a wrapper (the demos do) and let the viewport be the inner element.
+- Examples: the `fade` variant (history above fades; the buttons switch edge and prepend earlier messages).
+
 ## Notes
 
 - Rows are always real elements (see Virtualization), so the accessibility tree sees the whole transcript, and find-in-page does too in browsers that search skipped content.
-- The styled viewport has a bottom edge fade from `dx-effects.css`. Without that file the fade is simply absent.
+- The styled viewport has a bottom edge fade from `dx-effects.css` (the `fade` prop's default, `ScrollFade::Bottom`). Without that file the fade is simply absent. See Edge fade below.
 - On a renderer without `document::eval` (native/Blitz) the shell renders as plain overflow: no auto-follow, no flash guard, and an inert button.
 
 ## Motion

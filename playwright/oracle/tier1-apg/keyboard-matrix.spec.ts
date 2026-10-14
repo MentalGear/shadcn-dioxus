@@ -851,12 +851,14 @@ test.describe("APG Dialog (Modal) pattern — Dialog", () => {
 
   test("Dialog — Tab: \"Moves focus to the next tabbable element inside the dialog\" and wraps", async ({ page }) => {
     await goto(page, "dialog");
-    await page.getByRole("button", { name: "Show Dialog" }).click();
+    // Opened from the keyboard (a pointer open focuses the panel, row 206). The close button is
+    // last in DOM order (shadcn's), so the first control takes focus and Tab reaches the X next.
+    await page.getByRole("button", { name: "Show Dialog" }).focus();
+    await page.keyboard.press("Enter");
     const dialog = page.getByRole("dialog");
-    const closeButton = dialog.getByRole("button", { name: "Close" });
-    await expect(closeButton, "focus moves inside the dialog on open").toBeFocused();
+    await expect(dialog.getByRole("button", { name: "Open Nested Dialog" }), "focus moves inside the dialog on open").toBeFocused();
     await page.keyboard.press("Tab");
-    await expect(dialog.getByRole("button", { name: "Open Nested Dialog" })).toBeFocused();
+    await expect(dialog.getByRole("button", { name: "Close", exact: true })).toBeFocused();
   });
 });
 
@@ -1045,7 +1047,7 @@ test.describe("APG Checkbox pattern — Checkbox", () => {
 test.describe("Button pattern (toggle button) — Toggle", () => {
   test("Toggle — Space: activates the button, flipping aria-pressed", async ({ page }) => {
     await goto(page, "toggle");
-    const el = page.locator("#component-preview-frame").getByRole("button", { name: "Bookmark", exact: true });
+    const el = page.locator("#component-preview-frame").locator("button[aria-pressed]").first();
     await expect(el).toHaveAttribute("data-state", "off");
     await el.focus();
     await page.keyboard.press("Space");
@@ -1054,7 +1056,7 @@ test.describe("Button pattern (toggle button) — Toggle", () => {
 
   test("Toggle — Enter: activates the button, flipping aria-pressed (unlike Switch/Checkbox, this component does NOT suppress Enter)", async ({ page }) => {
     await goto(page, "toggle");
-    const el = page.locator("#component-preview-frame").getByRole("button", { name: "Bookmark", exact: true });
+    const el = page.locator("#component-preview-frame").locator("button[aria-pressed]").first();
     await el.focus();
     await page.keyboard.press("Enter");
     await expect(

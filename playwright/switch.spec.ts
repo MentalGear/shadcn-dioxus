@@ -31,3 +31,49 @@ test.describe('Axe automated scan', () => {
     await expectNoAxeViolations(page, 'switch: checked', { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 });
+
+// Backlog row 155 group 7: `size` (sm, default) -- shadcn's `data-[size=default]:h-[18.4px] w-[32px]`,
+// `data-[size=sm]:h-[14px] w-[24px]`, thumb `size-4` / `size-3`. The sizes are three slot variables on the
+// track, so the thumb travel (`width - 1px - thumb`) follows; both are asserted.
+test.describe("size (row 155 group 7)", () => {
+  const box = (page: import("@playwright/test").Page, id: string) =>
+    page.locator("#component-preview-frame-sizes").locator(`#${id}`).evaluate((el) => {
+      const track = getComputedStyle(el);
+      const thumb = el.querySelector(".dx-switch-thumb") as HTMLElement;
+      const ts = getComputedStyle(thumb);
+      return {
+        size: el.getAttribute("data-size"),
+        w: parseFloat(track.width),
+        h: parseFloat(track.height),
+        tw: parseFloat(ts.width),
+        th: parseFloat(ts.height),
+      };
+    });
+
+  test("sm is 24 x 14 with a 12px thumb, default is 32 x 18.4 with a 16px thumb", async ({ page }) => {
+    await page.goto(`${BASE_URL}/component/?name=switch&`, { timeout: 20 * 60 * 1000, waitUntil: "networkidle" });
+    expect(await box(page, "switch-size-sm")).toEqual({ size: "sm", w: 24, h: 14, tw: 12, th: 12 });
+    const d = await box(page, "switch-size-default");
+    expect(d.size).toBe("default");
+    expect([d.w, d.tw, d.th]).toEqual([32, 16, 16]);
+    expect(d.h).toBeCloseTo(18.4, 1);
+  });
+
+  test("the checked thumb ends flush with the track end in both sizes", async ({ page }) => {
+    await page.goto(`${BASE_URL}/component/?name=switch&`, { timeout: 20 * 60 * 1000, waitUntil: "networkidle" });
+    for (const id of ["switch-size-sm", "switch-size-default"]) {
+      const sw = page.locator("#component-preview-frame-sizes").locator(`#${id}`);
+      await sw.click();
+      await expect(sw).toHaveAttribute("data-state", "checked");
+      await expect
+        .poll(async () =>
+          sw.evaluate((el) => {
+            const t = el.getBoundingClientRect();
+            const h = (el.querySelector(".dx-switch-thumb") as HTMLElement).getBoundingClientRect();
+            return Math.round((t.right - h.right) * 10) / 10;
+          }),
+        )
+        .toBe(1);
+    }
+  });
+});

@@ -28,3 +28,22 @@ BreadcrumbItem {
     BreadcrumbEllipsis {}
 }
 ```
+
+### In a menu trigger
+
+Because it is a `span`, `BreadcrumbEllipsis` can be the content of a button, so the collapsed crumbs can open a menu (shadcn's `breadcrumb-demo`). The ellipsis and its `More` text are `aria-hidden`, so name the trigger yourself:
+
+```rust
+BreadcrumbItem {
+    DropdownMenu {
+        DropdownMenuTrigger { aria_label: "Toggle menu",
+            as: move |attributes: Vec<Attribute>| rsx! {
+                Button { variant: ButtonVariant::Ghost, size: ButtonSize::IconSm, attributes,
+                    BreadcrumbEllipsis {}
+                }
+            },
+        }
+        DropdownMenuContent { /* DropdownMenuItem { .. } */ }
+    }
+}
+```

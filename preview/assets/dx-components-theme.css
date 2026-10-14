@@ -25,6 +25,17 @@
  *     attribute on <html> from the cookie before first paint) pins the scheme, so an
  *     OS-dark user who picked light gets light native controls and vice versa.
  * `html[data-theme]` (0,1,1) out-ranks `:root` (0,1,0), so no ordering is needed.
+ *
+ * shadcn's own spelling of the same choice is a `.dark` class on <html> (next-themes, and
+ * Tailwind's `dark:` follows it; a pasted shadcn theme is a `:root` block plus a `.dark` block).
+ * `html.dark` is therefore one more spelling of `html[data-theme="dark"]` -- the same
+ * `--dark`/`--light` toggle and `color-scheme`, in ONE selector list, never a second rule -- so a
+ * host that sets only `.dark` gets dark. The attribute is the explicit choice and wins when the
+ * two disagree: `html.dark:not([data-theme="light"])`, which keeps the dark and light rules
+ * disjoint (no source-order dependence). Disagreement cannot arise from this app, because
+ * `apply_mode` in theme.rs (and its pre-paint twin in index.html) is the only code that writes
+ * either, always together; it also keeps `.dark` in step with `prefers-color-scheme` in
+ * "system" mode, so a pasted shadcn `.dark { ... }` block activates exactly when the page is dark.
  * It is set on the root and inherited, not per component, so a control a component
  * forgot (or that a host app composes in) is correct by default. The computed value
  * is `light dark` on the no-`data-theme` path and `dark`/`light` on the other, so to
@@ -41,7 +52,9 @@
   color-scheme: light dark;
 }
 
-html[data-theme="dark"] {
+/* stylelint-disable selector-class-pattern -- `.dark` is shadcn's own class name (next-themes / Tailwind `dark:`), not ours to prefix */
+html[data-theme="dark"],
+html.dark:not([data-theme="light"]) {
   --dark: initial;
   --light: ;
 
@@ -55,10 +68,12 @@ html[data-theme="light"] {
   color-scheme: light;
 }
 
-html[data-theme="dark"] [class~="dxc-system"] {
+html[data-theme="dark"] [class~="dxc-system"],
+html.dark:not([data-theme="light"]) [class~="dxc-system"] {
   --dxc-light-on: ;
   --dxc-dark-on: initial;
 }
+/* stylelint-enable selector-class-pattern */
 
 html[data-theme="light"] [class~="dxc-system"] {
   --dxc-light-on: initial;

@@ -12,13 +12,45 @@
  * list and trigger below read one value each, and a Tabs nested inside another
  * Tabs' panel re-declares its own and never inherits the outer size. `sm`
  * drops the trigger to `text-xs` with a 14px icon (the trigger's content box is
- * 15px tall); `lg` keeps `text-sm` and widens the trigger padding. */
+ * 15px tall); `lg` keeps `text-sm` and widens the trigger padding.
+ *
+ * Orientation (`data-orientation` on the root, from the primitive's `horizontal`
+ * prop): shadcn's `data-horizontal:flex-col` on the root, and on the list
+ * `group-data-vertical/tabs:h-fit group-data-vertical/tabs:flex-col`, on each
+ * trigger `group-data-vertical/tabs:w-full group-data-vertical/tabs:justify-start`.
+ * Like the size, it reaches the list and triggers through slot variables the root
+ * re-declares (not `[data-orientation] .dx-tabs-list`, which a Tabs nested in a
+ * vertical Tabs' panel would inherit). */
 .dx-tabs {
     display: flex;
     width: 100%;
     flex-direction: column;
     gap: var(--dx-space-2);
 
+    /* Variant slots (`default`; `line` re-declares them below). Every root declares all of
+       them, so a Tabs nested inside another Tabs' panel -- every docs-site demo sits in the
+       DEMO/CODE `line` tabs -- never inherits the outer variant's look through a
+       `[data-variant] .dx-tabs-*` descendant selector, which used to strip the muted pill off
+       every default Tabs on a docs page and draw the line bar on its active trigger. */
+    --dx-tabs-list-background: var(--dx-muted);
+    --dx-tabs-list-gap: 0;
+    --dx-tabs-bar-color: transparent;
+    --dx-tabs-active-border-color: var(--dark, var(--dx-input));
+    --dx-tabs-active-background: var(--light, var(--dx-background))
+        var(--dark, color-mix(in oklab, var(--dx-input) 30%, transparent));
+    --dx-tabs-active-shadow: var(--dx-shadow-sm);
+    --dx-tabs-panel-border: 1px solid var(--dx-border);
+    --dx-tabs-panel-background: var(--dx-card);
+    --dx-tabs-list-direction: row;
+    --dx-tabs-list-block-size: var(--dx-tabs-list-height);
+    --dx-tabs-trigger-inline-size: auto;
+    --dx-tabs-trigger-justify: center;
+    --dx-tabs-bar-inset-block-start: auto;
+    --dx-tabs-bar-inset-block-end: -5px;
+    --dx-tabs-bar-inset-inline-start: 0;
+    --dx-tabs-bar-inset-inline-end: 0;
+    --dx-tabs-bar-block-size: 2px;
+    --dx-tabs-bar-inline-size: auto;
     --dx-tabs-list-height: var(--dx-control-height-default);
     --dx-tabs-trigger-font-size: var(--dx-text-sm);
     --dx-tabs-trigger-padding-inline: var(--dx-space-1-5);
@@ -36,57 +68,84 @@
     --dx-tabs-trigger-padding-inline: var(--dx-space-2-5);
 }
 
+/* The `line` variant: see the comment below. */
+.dx-tabs[data-variant="line"] {
+    --dx-tabs-list-background: transparent;
+    --dx-tabs-list-gap: var(--dx-space-1);
+    --dx-tabs-bar-color: var(--dx-foreground);
+    --dx-tabs-active-border-color: transparent;
+    --dx-tabs-active-background: transparent;
+    --dx-tabs-active-shadow: none;
+    --dx-tabs-panel-border: none;
+    --dx-tabs-panel-background: transparent;
+}
+
+/* Vertical: the root is a row (list beside the panel), the list is a column as tall as
+   its triggers (`h-fit`) and the triggers fill its width, start-aligned, with the bar on
+   the inline-end edge facing the panel (`after:inset-y-0 after:-right-1 after:w-0.5`;
+   logical here so that under RTL, where the list is on the right, it still faces the
+   panel). Declared after the sizes: a vertical list has no fixed height to size. */
+.dx-tabs[data-orientation="vertical"] {
+    flex-direction: row;
+
+    --dx-tabs-list-direction: column;
+    --dx-tabs-list-block-size: fit-content;
+    --dx-tabs-trigger-inline-size: 100%;
+    --dx-tabs-trigger-justify: flex-start;
+    --dx-tabs-bar-inset-block-start: 0;
+    --dx-tabs-bar-inset-block-end: 0;
+    --dx-tabs-bar-inset-inline-start: auto;
+    --dx-tabs-bar-inset-inline-end: -4px;
+    --dx-tabs-bar-block-size: auto;
+    --dx-tabs-bar-inline-size: 2px;
+}
+
 .dx-tabs-list {
     display: flex;
     width: fit-content;
-    height: var(--dx-tabs-list-height);
+    height: var(--dx-tabs-list-block-size);
     flex: none;
-    flex-direction: row;
+    flex-direction: var(--dx-tabs-list-direction);
     align-items: center;
     justify-content: center;
     padding: 3px;
     border: none;
     border-radius: var(--dx-radius-lg);
+    background: var(--dx-tabs-list-background);
     color: var(--dx-muted-foreground);
+    gap: var(--dx-tabs-list-gap);
 }
 
-[data-variant="default"] .dx-tabs-list {
-    background: var(--dx-muted);
-}
-
-/* The `ghost` variant is shadcn's `line` variant (`registry/bases/base/ui/tabs.tsx`:
+/* The `line` variant (`TabsVariant::Ghost` is its old name) is shadcn's (`registry/bases/base/ui/tabs.tsx`:
    `cn-tabs-list-variant-line gap-1 bg-transparent`; the active trigger has no fill,
    shadow or border and carries a 2px `foreground` bar, `after:bottom-[-5px] after:h-0.5`,
-   that fades in). It used to be styled by omission only -- every `default` rule is
-   keyed on `[data-variant="default"]` -- so the active tab differed from the rest by
-   a 40% shade of text colour alone. */
-[data-variant="ghost"] .dx-tabs-list {
-    background: transparent;
-    gap: var(--dx-space-1);
-}
-
-[data-variant="ghost"] .dx-tabs-trigger::after {
+   that fades in; vertical: `after:inset-y-0 after:-right-1 after:w-0.5`, see the slot
+   variables above). Everything that differs from `default` is a slot variable set on the
+   root: a transparent list, no active fill, shadow or border, no panel frame, and the bar. */
+.dx-tabs-trigger::after {
     position: absolute;
-    bottom: -5px;
-    height: 2px;
-    background: var(--dx-foreground);
+    width: var(--dx-tabs-bar-inline-size);
+    height: var(--dx-tabs-bar-block-size);
+    background: var(--dx-tabs-bar-color);
     content: "";
-    inset-inline: 0;
+    inset-block: var(--dx-tabs-bar-inset-block-start) var(--dx-tabs-bar-inset-block-end);
+    inset-inline: var(--dx-tabs-bar-inset-inline-start) var(--dx-tabs-bar-inset-inline-end);
     opacity: 0;
     transition: opacity var(--dx-motion-duration-base) var(--dx-motion-ease-standard);
 }
 
-[data-variant="ghost"] .dx-tabs-trigger[data-state="active"]::after {
+.dx-tabs-trigger[data-state="active"]::after {
     opacity: 1;
 }
 
 .dx-tabs-trigger {
     position: relative;
     display: inline-flex;
+    width: var(--dx-tabs-trigger-inline-size);
     height: calc(100% - 1px);
     flex: 1;
     align-items: center;
-    justify-content: center;
+    justify-content: var(--dx-tabs-trigger-justify);
     padding: var(--dx-space-0-5) var(--dx-tabs-trigger-padding-inline);
     border: 1px solid transparent;
     border-radius: var(--dx-radius-md);
@@ -115,14 +174,10 @@
     height: var(--dx-tabs-icon-size);
 }
 
-[data-variant="default"] .dx-tabs-trigger[data-state="active"] {
-    border-color: var(--dark, var(--dx-input));
-    background-color: var(--light, var(--dx-background))
-        var(--dark, color-mix(in oklab, var(--dx-input) 30%, transparent));
-    box-shadow: var(--dx-shadow-sm);
-}
-
 .dx-tabs-trigger[data-state="active"] {
+    border-color: var(--dx-tabs-active-border-color);
+    background-color: var(--dx-tabs-active-background);
+    box-shadow: var(--dx-tabs-active-shadow);
     color: var(--dx-foreground);
 }
 
@@ -146,7 +201,7 @@
 
 /* `focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50
    focus-visible:outline-1 focus-visible:outline-ring`. Kept out of the
-   :where() so it outranks [data-state="active"]'s border and shadow. */
+   :where(), and after [data-state="active"] at the same specificity, so it outranks that rule's border and shadow. */
 .dx-tabs-trigger:focus-visible {
     border-color: var(--dx-ring-color);
     box-shadow: var(--dx-ring-focus);
@@ -161,12 +216,13 @@
    docs site's demo previews, whose text stays at the page size. */
 .dx-tabs-content {
     width: 100%;
+    min-inline-size: 0;
 }
 
-[data-variant="default"] .dx-tabs-content-themed {
-    border: 1px solid var(--dx-border);
+.dx-tabs-content-themed {
+    border: var(--dx-tabs-panel-border);
     border-radius: var(--dx-radius-lg);
-    background: var(--dx-card);
+    background: var(--dx-tabs-panel-background);
 }
 
 /* An inactive panel is `hidden`, which the browser already renders as

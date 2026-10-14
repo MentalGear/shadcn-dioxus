@@ -1,4 +1,7 @@
 /* Scroll area doesn't require any additional styles. Nova's `.cn-scroll-area-scrollbar` (`w-2.5`/`h-2.5`)
  * and `.cn-scroll-area-thumb` (`rounded-full`, `bg-border`) style Radix's custom scrollbar; this
  * component wraps the browser's native one (primitives/src/scroll_area.rs), whose colours come from
- * the app-wide `scrollbar-color` rules in main.css, so there is no Nova block to match here. */
+ * the app-wide `scrollbar-color` rules in main.css, so there is no Nova block to match here.
+ *
+ * The `fade` prop only adds a `dx-scroll-fade-*` class; the utility itself (mask, `@property`, keyframes) is the
+ * global `assets/dx-effects.css`, listed in this component's `globalAssets`, so it is not repeated here. */

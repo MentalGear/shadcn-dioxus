@@ -21,6 +21,7 @@
   gap: var(--dx-space-1-5);
   line-height: 1.25rem;
   outline: none;
+  text-decoration: none;
   transition-duration: var(--dx-motion-duration-base);
   transition-property: all;
   transition-timing-function: var(--dx-motion-ease-standard);

@@ -28,6 +28,12 @@ MessageGroup {
 - `MessageAvatar` anchors to the bottom of the row and shifts up to stay level with the bubble when there is a footer. Leave it empty on the earlier messages of a `MessageGroup` to keep them aligned with the avatar on the last one.
 - `MessageHeader` and `MessageFooter` lose their inset next to an unframed (`Ghost`) bubble.
 
+## Examples
+
+- **Avatar**, **Group**, **Header and footer**, **Actions** and **Attachment**: avatars, grouped messages, a name and timestamp, footer actions, and files attached to a message.
+- **Demo**: the whole kit in one conversation: avatars on both sides, a "Delivered" footer, a bubble group with a reaction, and a typing indicator (a `Marker` with `role: "status"` and `dx-shimmer`).
+- **Download**: a picture goes out with the request and a document comes back; the reply's attachment carries a secondary "Download" action instead of a remove action.
+
 ## Accessibility
 
 `Message` is a presentational layout wrapper; accessibility comes from the content you place in it.

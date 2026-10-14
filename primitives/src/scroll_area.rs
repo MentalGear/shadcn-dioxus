@@ -31,11 +31,95 @@ pub struct ScrollAreaProps {
     #[props(default)]
     pub scroll_type: ReadSignal<ScrollType>,
 
+    /// A scroll-edge fade on the scrolling element: the content dissolves toward an edge
+    /// that has more to scroll to. Defaults to [`ScrollFade::None`]. See [`ScrollFade`].
+    #[props(default)]
+    pub fade: ScrollFade,
+
     /// Additional attributes to apply to the scroll area element.
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
     /// The children of the scroll area component.
     pub children: Element,
+}
+
+/// Which edges of a scroller fade out while there is more content past them.
+///
+/// Each variant is one class of the `dx-scroll-fade` utility in `dx-effects.css` (a pure-CSS
+/// scroll-driven `mask-image`, no JavaScript), put on the element that actually scrolls: the
+/// [`ScrollArea`], the `VirtualList` container and the `MessageScrollerViewport`. At rest the
+/// end edge fades to hint at more content; scrolling fades the start edge in, and at the end
+/// the end edge sharpens. No overflow, no fade. A browser without scroll-driven animations
+/// shows a static end-edge fade.
+///
+/// The class does nothing unless `dx-effects.css` is linked once at the app root, next to the
+/// theme (the `scroll_area`, `virtual_list` and `message_scroller` registry entries list it in
+/// `globalAssets`). Because the fade is a mask on the scroller, a border or background on the
+/// same element fades with the content: put those on a wrapper and let the scroller be the
+/// inner element.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub enum ScrollFade {
+    /// No fade. The default (the class is not added at all).
+    #[default]
+    None,
+    /// Both block edges of a vertical scroller (`dx-scroll-fade-y`).
+    Y,
+    /// Both inline edges of a horizontal scroller, mirrored in RTL (`dx-scroll-fade-x`).
+    X,
+    /// The top edge only (`dx-scroll-fade-t`): a transcript that opens at the bottom and
+    /// loads history upward.
+    Top,
+    /// The bottom edge only (`dx-scroll-fade-b`).
+    Bottom,
+    /// The inline-start edge only (`dx-scroll-fade-s`; the right edge in RTL).
+    Start,
+    /// The inline-end edge only (`dx-scroll-fade-e`; the left edge in RTL).
+    End,
+}
+
+impl ScrollFade {
+    /// The `dx-effects.css` class this variant puts on the scroller, or `None` for
+    /// [`ScrollFade::None`].
+    pub fn class(self) -> Option<&'static str> {
+        match self {
+            Self::None => None,
+            Self::Y => Some("dx-scroll-fade-y"),
+            Self::X => Some("dx-scroll-fade-x"),
+            Self::Top => Some("dx-scroll-fade-t"),
+            Self::Bottom => Some("dx-scroll-fade-b"),
+            Self::Start => Some("dx-scroll-fade-s"),
+            Self::End => Some("dx-scroll-fade-e"),
+        }
+    }
+
+    /// The `data-scroll-fade` value (`y`, `x`, `top`, `bottom`, `start`, `end`), or `None` for
+    /// [`ScrollFade::None`]; a styling and test hook, the same spelling as the variant.
+    pub fn as_str(self) -> Option<&'static str> {
+        match self {
+            Self::None => None,
+            Self::Y => Some("y"),
+            Self::X => Some("x"),
+            Self::Top => Some("top"),
+            Self::Bottom => Some("bottom"),
+            Self::Start => Some("start"),
+            Self::End => Some("end"),
+        }
+    }
+
+    /// The attributes a scroller carries for this fade: the class and `data-scroll-fade`
+    /// (nothing for [`ScrollFade::None`]). Merge them with the scroller's other attributes
+    /// (`class` concatenates).
+    pub fn attributes(self) -> Vec<Attribute> {
+        // Empty for `None`: a `class` of `AttributeValue::None` would replace the earlier
+        // lists' class in `merge_attributes` instead of concatenating with it.
+        let (Some(class), Some(name)) = (self.class(), self.as_str()) else {
+            return Vec::new();
+        };
+        attributes!(div {
+            class: "{class}",
+            "data-scroll-fade": "{name}",
+        })
+    }
 }
 
 /// The direction in which scrolling is allowed.
@@ -98,6 +182,13 @@ pub enum ScrollType {
 /// The [`ScrollArea`] component defines the following data attributes you can use to control styling:
 /// - `data-scroll-direction`: Indicates the scroll direction. Values are `vertical`, `horizontal`, or `both`.
 /// - `data-direction`: The resolved text direction. Values are `ltr` or `rtl`.
+/// - `data-scroll-fade`: Present with the `fade` prop; `y`, `x`, `top`, `bottom`, `start` or `end`.
+///
+/// ## Scroll fade
+///
+/// `fade: ScrollFade::Y` (or `X`, `Top`, `Bottom`, `Start`, `End`) adds the matching
+/// `dx-scroll-fade-*` class of `dx-effects.css` to this element, which is the one that scrolls.
+/// See [`ScrollFade`] for what it needs.
 #[component]
 pub fn ScrollArea(props: ScrollAreaProps) -> Element {
     let direction = props.direction;
@@ -137,6 +228,7 @@ pub fn ScrollArea(props: ScrollAreaProps) -> Element {
     let defaults = attributes!(div {
         class: "{visibility_class}"
     });
+    let fade = props.fade.attributes();
     let owned = attributes!(div {
         "scrollbar-width": scrollbar_width,
         "data-scroll-direction": match direction() {
@@ -146,7 +238,7 @@ pub fn ScrollArea(props: ScrollAreaProps) -> Element {
         },
         "data-direction": text_direction.as_str(),
     });
-    let merged = merge_attributes(vec![defaults, props.attributes.clone(), owned]);
+    let merged = merge_attributes(vec![defaults, fade, props.attributes.clone(), owned]);
 
     rsx! {
         div {
