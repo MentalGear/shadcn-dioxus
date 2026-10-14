@@ -1,6 +1,30 @@
-//! Checkable menu items -- `menuitemcheckbox` and `menuitemradio` -- built
-//! once for the whole menu family: [`crate::dropdown_menu`],
-//! [`crate::context_menu`] and [`crate::menubar`].
+//! Menu item parts -- checkable items (`menuitemcheckbox`, `menuitemradio`),
+//! the `variant`/`inset` item styling hooks, and the presentational
+//! `Separator`, `Group` and `Shortcut` -- built once for the whole menu
+//! family: [`crate::dropdown_menu`], [`crate::context_menu`] and
+//! [`crate::menubar`].
+//!
+//! # Item parts: `variant`, `inset`, separator, group, shortcut
+//!
+//! shadcn's three menus share one set of parts, and so do these hosts:
+//!
+//! - **`variant`** -- [`MenuItemVariant`]: `Default` or `Destructive`. A
+//!   destructive item is a plain `menuitem` (the role does not change); the
+//!   primitive emits `data-variant="default" | "destructive"` through
+//!   [`item_style_attributes`], the one place that attribute is written, and
+//!   the themed sheets paint it.
+//! - **`inset`** -- reserves the leading indicator slot on an item that draws
+//!   no indicator, so a menu that mixes plain and checkable items keeps its
+//!   labels on one edge. The primitive emits `data-inset="true"` only while
+//!   it is set (nothing otherwise), again through [`item_style_attributes`].
+//! - **Separator / Group / Shortcut** -- [`render_separator`]
+//!   (`role="separator"`, `aria-orientation="horizontal"`), [`render_group`]
+//!   (`role="group"`, name it with `aria-label`) and [`render_shortcut`] (a
+//!   `span`). None of them registers in a roving-focus collection, so arrow
+//!   keys, Home/End and typeahead walk straight past them; they take no
+//!   `index`.
+//!
+//! # Checkable items
 //!
 //! shadcn's `DropdownMenu`, `ContextMenu` and `Menubar` all have a
 //! `CheckboxItem` and a `RadioGroup` + `RadioItem`. Before this module none
@@ -63,6 +87,104 @@ use dioxus_attributes::attributes;
 
 use crate::{merge_attributes, use_controlled};
 
+/// Which look a menu item has: shadcn's `variant="default" | "destructive"`
+/// on `DropdownMenuItem`, `ContextMenuItem` and `MenubarItem`. The role is a
+/// plain `menuitem` either way; a destructive item only changes how it is
+/// painted (the destructive ink and a destructive-tinted highlight).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum MenuItemVariant {
+    /// An ordinary item.
+    #[default]
+    Default,
+    /// An item whose action destroys something ("Delete"): drawn in the
+    /// destructive ink.
+    Destructive,
+}
+
+impl MenuItemVariant {
+    /// The value of the `data-variant` attribute the item carries.
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Default => "default",
+            Self::Destructive => "destructive",
+        }
+    }
+}
+
+/// The `data-variant` and `data-inset` attributes of a menu item -- the one
+/// place either is written, for every item of every host (plain items,
+/// submenu triggers, checkbox and radio items), so the three sheets key
+/// their rules off one vocabulary: `[data-variant="destructive"]` and
+/// `[data-inset="true"]`.
+///
+/// `data-variant` is always present (shadcn's `data-variant={variant}`);
+/// `data-inset` only while `inset` is set, so an item that does not ask for
+/// the slot is not touched (a caller's own `"data-inset": "true"` keeps
+/// working). A host merges this *after* the caller's attributes so the
+/// primitive's value wins.
+pub(crate) fn item_style_attributes(variant: MenuItemVariant, inset: bool) -> Vec<Attribute> {
+    let mut attributes = attributes!(div {
+        "data-variant": variant.as_str(),
+    });
+    if inset {
+        attributes.extend(attributes!(div {
+            "data-inset": "true",
+        }));
+    }
+    attributes
+}
+
+/// The props for a separator in a menu: [`DropdownMenuSeparator`]
+/// (`crate::dropdown_menu`), [`ContextMenuSeparator`] (`crate::context_menu`)
+/// and [`MenubarSeparator`] (`crate::menubar`) all take exactly these.
+///
+/// [`DropdownMenuSeparator`]: crate::dropdown_menu::DropdownMenuSeparator
+/// [`ContextMenuSeparator`]: crate::context_menu::ContextMenuSeparator
+/// [`MenubarSeparator`]: crate::menubar::MenubarSeparator
+#[derive(Props, Clone, PartialEq)]
+pub struct MenuSeparatorProps {
+    /// Additional attributes to apply to the separator element.
+    #[props(extends = GlobalAttributes)]
+    pub attributes: Vec<Attribute>,
+}
+
+/// The props for a group of items in a menu: [`DropdownMenuGroup`]
+/// (`crate::dropdown_menu`), [`ContextMenuGroup`] (`crate::context_menu`) and
+/// [`MenubarGroup`] (`crate::menubar`) all take exactly these.
+///
+/// [`DropdownMenuGroup`]: crate::dropdown_menu::DropdownMenuGroup
+/// [`ContextMenuGroup`]: crate::context_menu::ContextMenuGroup
+/// [`MenubarGroup`]: crate::menubar::MenubarGroup
+#[derive(Props, Clone, PartialEq)]
+pub struct MenuGroupProps {
+    /// Additional attributes to apply to the group element. Give the group
+    /// an accessible name with `aria-label` or `aria-labelledby` when it has
+    /// a visible heading.
+    #[props(extends = GlobalAttributes)]
+    pub attributes: Vec<Attribute>,
+
+    /// The items of the group.
+    pub children: Element,
+}
+
+/// The props for the shortcut hint of an item: [`DropdownMenuShortcut`]
+/// (`crate::dropdown_menu`), [`ContextMenuShortcut`] (`crate::context_menu`)
+/// and [`MenubarShortcut`] (`crate::menubar`) all take exactly these.
+///
+/// [`DropdownMenuShortcut`]: crate::dropdown_menu::DropdownMenuShortcut
+/// [`ContextMenuShortcut`]: crate::context_menu::ContextMenuShortcut
+/// [`MenubarShortcut`]: crate::menubar::MenubarShortcut
+#[derive(Props, Clone, PartialEq)]
+pub struct MenuShortcutProps {
+    /// Additional attributes to apply to the shortcut element.
+    #[props(extends = GlobalAttributes)]
+    pub attributes: Vec<Attribute>,
+
+    /// The hint's text, for example `⌘T`.
+    pub children: Element,
+}
+
 /// The props for a checkbox item in a menu: [`DropdownMenuCheckboxItem`]
 /// (`crate::dropdown_menu`), [`ContextMenuCheckboxItem`]
 /// (`crate::context_menu`) and [`MenubarCheckboxItem`] (`crate::menubar`)
@@ -106,6 +228,11 @@ pub struct MenuCheckboxItemProps {
     #[props(default = ReadSignal::new(Signal::new(true)))]
     pub close_on_select: ReadSignal<bool>,
 
+    /// Reserves the leading indicator slot without drawing anything -- shadcn's
+    /// `inset`. See [`item_style_attributes`].
+    #[props(default)]
+    pub inset: bool,
+
     /// Additional attributes to apply to the item element.
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
@@ -147,6 +274,11 @@ pub struct MenuRadioItemProps {
     /// Radix's `onSelect` default; set `false` to keep the menu open.
     #[props(default = ReadSignal::new(Signal::new(true)))]
     pub close_on_select: ReadSignal<bool>,
+
+    /// Reserves the leading indicator slot without drawing anything -- shadcn's
+    /// `inset`. See [`item_style_attributes`].
+    #[props(default)]
+    pub inset: bool,
 
     /// Additional attributes to apply to the item element.
     #[props(extends = GlobalAttributes)]
@@ -241,17 +373,21 @@ impl CheckableState {
     pub(crate) fn owned_attributes(
         &self,
         disabled: bool,
+        inset: bool,
         tabindex: &'static str,
     ) -> Vec<Attribute> {
         let checked = self.checked();
-        attributes!(div {
-            role: self.kind.role(),
-            aria_checked: if checked { "true" } else { "false" },
-            "data-state": if checked { "checked" } else { "unchecked" },
-            aria_disabled: disabled,
-            "data-disabled": disabled,
-            tabindex: tabindex,
-        })
+        merge_attributes(vec![
+            attributes!(div {
+                role: self.kind.role(),
+                aria_checked: if checked { "true" } else { "false" },
+                "data-state": if checked { "checked" } else { "unchecked" },
+                aria_disabled: disabled,
+                "data-disabled": disabled,
+                tabindex: tabindex,
+            }),
+            item_style_attributes(MenuItemVariant::Default, inset),
+        ])
     }
 }
 
@@ -263,6 +399,7 @@ pub(crate) struct CheckableCommon {
     pub(crate) disabled: ReadSignal<bool>,
     pub(crate) text_value: ReadSignal<Option<String>>,
     pub(crate) close_on_select: ReadSignal<bool>,
+    pub(crate) inset: bool,
     pub(crate) attributes: Vec<Attribute>,
     pub(crate) children: Element,
 }
@@ -274,6 +411,7 @@ impl From<MenuCheckboxItemProps> for CheckableCommon {
             disabled: props.disabled,
             text_value: props.text_value,
             close_on_select: props.close_on_select,
+            inset: props.inset,
             attributes: props.attributes,
             children: props.children,
         }
@@ -287,6 +425,7 @@ impl From<MenuRadioItemProps> for CheckableCommon {
             disabled: props.disabled,
             text_value: props.text_value,
             close_on_select: props.close_on_select,
+            inset: props.inset,
             attributes: props.attributes,
             children: props.children,
         }
@@ -369,6 +508,49 @@ pub(crate) fn render_radio_group(props: MenuRadioGroupProps) -> Element {
     }
 }
 
+/// The separator element, shared by every host's `*Separator`: a
+/// `role="separator"` with `aria-orientation="horizontal"` between groups of
+/// items. Not focusable and not a roving-focus target.
+pub(crate) fn render_separator(props: MenuSeparatorProps) -> Element {
+    // Owned by this component -- see `CheckableState::owned_attributes`.
+    let attributes = merge_attributes(vec![
+        props.attributes,
+        attributes!(div {
+            role: crate::menu_semantics::MENU_SEPARATOR_ROLE,
+            aria_orientation: "horizontal",
+        }),
+    ]);
+
+    rsx! {
+        div { ..attributes }
+    }
+}
+
+/// The group element, shared by every host's `*Group`: a `role="group"`
+/// around related items. Presentation only -- it adds no behaviour, and its
+/// items still register in the enclosing menu's roving-focus collection.
+pub(crate) fn render_group(props: MenuGroupProps) -> Element {
+    // Owned by this component -- see `CheckableState::owned_attributes`.
+    let attributes = merge_attributes(vec![
+        props.attributes,
+        attributes!(div {
+            role: crate::menu_semantics::MENU_GROUP_ROLE,
+        }),
+    ]);
+
+    rsx! {
+        div { ..attributes, {props.children} }
+    }
+}
+
+/// The shortcut hint, shared by every host's `*Shortcut`: a `span` that sits
+/// at the inline end of an item's row. Text only; it does not bind any key.
+pub(crate) fn render_shortcut(props: MenuShortcutProps) -> Element {
+    rsx! {
+        span { ..props.attributes, {props.children} }
+    }
+}
+
 /// Whether `key` activates a menu item: Enter or Space. The one definition
 /// every checkable item's `onkeydown` reads.
 pub(crate) fn is_activation_key(key: &Key) -> bool {
@@ -379,16 +561,18 @@ pub(crate) fn is_activation_key(key: &Key) -> bool {
 mod tests {
     use super::*;
     use crate::context_menu::{
-        ContextMenu, ContextMenuCheckboxItem, ContextMenuItem, ContextMenuRadioGroup,
-        ContextMenuRadioItem, ContextMenuTrigger,
+        ContextMenu, ContextMenuCheckboxItem, ContextMenuGroup, ContextMenuItem,
+        ContextMenuRadioGroup, ContextMenuRadioItem, ContextMenuSeparator, ContextMenuShortcut,
+        ContextMenuTrigger,
     };
     use crate::dropdown_menu::{
-        DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuItem, DropdownMenuRadioGroup,
-        DropdownMenuRadioItem, DropdownMenuTrigger,
+        DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuGroup, DropdownMenuItem,
+        DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuShortcut,
+        DropdownMenuTrigger,
     };
     use crate::menubar::{
-        Menubar, MenubarCheckboxItem, MenubarItem, MenubarMenu, MenubarRadioGroup,
-        MenubarRadioItem, MenubarTrigger,
+        Menubar, MenubarCheckboxItem, MenubarGroup, MenubarItem, MenubarMenu, MenubarRadioGroup,
+        MenubarRadioItem, MenubarSeparator, MenubarShortcut, MenubarTrigger,
     };
 
     fn render(component: fn() -> Element) -> String {
@@ -532,5 +716,161 @@ mod tests {
     fn the_two_checkable_kinds_have_distinct_roles() {
         assert_eq!(CheckableKind::Checkbox.role(), "menuitemcheckbox");
         assert_eq!(CheckableKind::Radio.role(), "menuitemradio");
+    }
+
+    // ---- item parts: variant, inset, separator, group, shortcut ----
+
+    /// One menu per host holding every part: a plain default item, a
+    /// destructive inset item, an inset checkbox item, a separator and a
+    /// group around a shortcut. Same direct-under-the-root shape as the
+    /// checkable menus above.
+    #[component]
+    fn DropdownMenuWithParts() -> Element {
+        rsx! {
+            DropdownMenu {
+                DropdownMenuTrigger { "t" }
+                DropdownMenuItem::<String> { value: "plain".to_string(), index: 0usize, "Plain" }
+                DropdownMenuItem::<String> {
+                    value: "del".to_string(),
+                    index: 1usize,
+                    variant: MenuItemVariant::Destructive,
+                    inset: true,
+                    "Delete"
+                    DropdownMenuShortcut { "⌫" }
+                }
+                DropdownMenuCheckboxItem { index: 2usize, inset: true, "On" }
+                DropdownMenuSeparator {}
+                DropdownMenuGroup { aria_label: "G", "x" }
+            }
+        }
+    }
+
+    #[component]
+    fn ContextMenuWithParts() -> Element {
+        rsx! {
+            ContextMenu {
+                ContextMenuTrigger { "t" }
+                ContextMenuItem { value: "plain".to_string(), index: 0usize, "Plain" }
+                ContextMenuItem {
+                    value: "del".to_string(),
+                    index: 1usize,
+                    variant: MenuItemVariant::Destructive,
+                    inset: true,
+                    "Delete"
+                    ContextMenuShortcut { "⌫" }
+                }
+                ContextMenuCheckboxItem { index: 2usize, inset: true, "On" }
+                ContextMenuSeparator {}
+                ContextMenuGroup { aria_label: "G", "x" }
+            }
+        }
+    }
+
+    #[component]
+    fn MenubarWithParts() -> Element {
+        rsx! {
+            Menubar {
+                MenubarMenu { index: 0usize,
+                    MenubarTrigger { "t" }
+                    MenubarItem { value: "plain".to_string(), index: 0usize, "Plain" }
+                    MenubarItem {
+                        value: "del".to_string(),
+                        index: 1usize,
+                        variant: MenuItemVariant::Destructive,
+                        inset: true,
+                        "Delete"
+                        MenubarShortcut { "⌫" }
+                    }
+                    MenubarCheckboxItem { index: 2usize, inset: true, "On" }
+                    MenubarSeparator {}
+                    MenubarGroup { aria_label: "G", "x" }
+                }
+            }
+        }
+    }
+
+    /// The contract every host must render for the menu above, asserted with
+    /// this one function so a host that drifts fails here.
+    fn assert_parts_contract(host: &str, html: &str) {
+        let count = |needle: &str| html.matches(needle).count();
+        // The separator: a labelled-by-role divider, horizontal.
+        assert_eq!(count(r#"role="separator""#), 1, "{host}: {html}");
+        assert_eq!(
+            count(r#"aria-orientation="horizontal""#),
+            1,
+            "{host}: {html}"
+        );
+        // The group.
+        assert_eq!(count(r#"role="group""#), 1, "{host}: {html}");
+        assert_eq!(count(r#"aria-label="G""#), 1, "{host}: {html}");
+        // `data-variant` on every item (plain, destructive, checkbox); only
+        // the one asked for is destructive.
+        assert_eq!(count(r#"data-variant="destructive""#), 1, "{host}: {html}");
+        assert_eq!(count(r#"data-variant="default""#), 2, "{host}: {html}");
+        // `data-inset` only where asked, on the plain and checkbox items.
+        assert_eq!(count(r#"data-inset="true""#), 2, "{host}: {html}");
+        // A destructive item is still a plain menuitem.
+        assert!(count(r#"role="menuitem""#) >= 2, "{host}: {html}");
+        // The shortcut is a span inside the item.
+        assert_eq!(count("<span"), 1, "{host}: {html}");
+    }
+
+    #[test]
+    fn dropdown_menu_renders_the_item_parts() {
+        assert_parts_contract("DropdownMenu", &render(DropdownMenuWithParts));
+    }
+
+    #[test]
+    fn context_menu_renders_the_item_parts() {
+        assert_parts_contract("ContextMenu", &render(ContextMenuWithParts));
+    }
+
+    #[test]
+    fn menubar_renders_the_item_parts() {
+        assert_parts_contract("Menubar", &render(MenubarWithParts));
+    }
+
+    /// A caller cannot override the primitive-owned `data-variant`, and a
+    /// separator's role is owned too.
+    #[component]
+    fn PartsTryingToOverride() -> Element {
+        rsx! {
+            DropdownMenu {
+                DropdownMenuItem::<String> {
+                    value: "x".to_string(),
+                    index: 0usize,
+                    variant: MenuItemVariant::Destructive,
+                    "data-variant": "default",
+                    "x"
+                }
+                DropdownMenuSeparator { role: "presentation" }
+            }
+        }
+    }
+
+    #[test]
+    fn variant_and_separator_role_are_owned_by_the_primitive() {
+        let html = render(PartsTryingToOverride);
+        assert_eq!(html.matches("data-variant=").count(), 1, "{html}");
+        assert!(html.contains(r#"data-variant="destructive""#), "{html}");
+        assert_eq!(html.matches("role=\"separator\"").count(), 1, "{html}");
+        assert!(!html.contains("presentation"), "{html}");
+    }
+
+    #[test]
+    fn item_style_attributes_write_inset_only_when_asked() {
+        let names = |attributes: &[Attribute]| -> Vec<&'static str> {
+            attributes.iter().map(|a| a.name).collect()
+        };
+        assert_eq!(
+            names(&item_style_attributes(MenuItemVariant::Default, false)),
+            ["data-variant"]
+        );
+        assert_eq!(
+            names(&item_style_attributes(MenuItemVariant::Destructive, true)),
+            ["data-variant", "data-inset"]
+        );
+        assert_eq!(MenuItemVariant::default(), MenuItemVariant::Default);
+        assert_eq!(MenuItemVariant::Destructive.as_str(), "destructive");
     }
 }
