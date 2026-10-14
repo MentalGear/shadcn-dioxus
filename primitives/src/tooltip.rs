@@ -1,5 +1,6 @@
 //! Defines the [`Tooltip`] component and its sub-components, which provide contextual information when hovering or focusing on elements.
 
+use crate::hover_card::{use_hover_timers, HoverTimers};
 use crate::{
     merge_attributes, use_animated_open, use_controlled, use_id_or, use_unique_id, ContentAlign,
     ContentSide,
@@ -12,11 +13,23 @@ struct TooltipCtx {
     // State
     open: Memo<bool>,
     set_open: Callback<bool>,
-    disabled: ReadSignal<bool>,
+    // Pointer delays (`delay` / `close_delay`); focus and Escape bypass them
+    timers: HoverTimers,
 
     // ARIA attributes
     tooltip_id: Signal<String>,
 }
+
+/// Default [`TooltipProps::delay`], in milliseconds: how long the pointer must
+/// rest on the trigger before the tooltip opens. Base UI's `Tooltip.Trigger`
+/// `delay` default (`OPEN_DELAY = 600`,
+/// `packages/react/src/tooltip/utils/constants.ts`).
+pub const DEFAULT_TOOLTIP_DELAY: u64 = 600;
+
+/// Default [`TooltipProps::close_delay`], in milliseconds: Base UI's
+/// `Tooltip.Trigger` `closeDelay` default (`closeDelay ?? 0`) -- a tooltip
+/// closes the instant the pointer leaves.
+pub const DEFAULT_TOOLTIP_CLOSE_DELAY: u64 = 0;
 
 /// The props for the [`Tooltip`] component
 #[derive(Props, Clone, PartialEq)]
@@ -35,6 +48,20 @@ pub struct TooltipProps {
     /// Whether the tooltip is disabled
     #[props(default)]
     pub disabled: ReadSignal<bool>,
+
+    /// Milliseconds the pointer must rest on the trigger before the tooltip
+    /// opens (Radix `Tooltip` `delayDuration`, Base UI `Tooltip.Trigger`
+    /// `delay`). Defaults to 600, Base UI's value; `0` opens on contact.
+    /// Keyboard focus opens it at once.
+    #[props(default = ReadSignal::new(Signal::new(DEFAULT_TOOLTIP_DELAY)))]
+    pub delay: ReadSignal<u64>,
+
+    /// Milliseconds the tooltip stays open after the pointer leaves the
+    /// trigger (Base UI `Tooltip.Trigger` `closeDelay`). Defaults to 0. While
+    /// it is above 0 the pointer can move onto the tooltip itself, which
+    /// cancels the close. Blur and Escape close it at once.
+    #[props(default = ReadSignal::new(Signal::new(DEFAULT_TOOLTIP_CLOSE_DELAY)))]
+    pub close_delay: ReadSignal<u64>,
 
     /// Additional attributes for the tooltip
     #[props(extends = GlobalAttributes)]
@@ -57,9 +84,28 @@ pub struct TooltipProps {
 /// click-activated mode: hover and keyboard focus *are* its definition (WAI-ARIA
 /// tooltip: a non-interactive hint shown on hover/focus, never the only way
 /// to reach information). For a panel opened by a click, use
-/// [`crate::popover`]. (Hover *delays* -- Radix `Tooltip`'s `delayDuration`,
-/// Base UI `Tooltip.Trigger`'s `delay`/`closeDelay` -- are a possible future
-/// prop; this component opens and closes without one today.)
+/// [`crate::popover`].
+///
+/// ## Delays
+///
+/// [`TooltipProps::delay`] and [`TooltipProps::close_delay`] (milliseconds)
+/// are Radix `Tooltip`'s `delayDuration` and Base UI `Tooltip.Trigger`'s
+/// `delay`/`closeDelay`, with Base UI's defaults: 600 to open, 0 to close.
+///
+/// - Nothing opens until the pointer has rested on the trigger for `delay`
+///   (`0` opens on contact, as shadcn's `TooltipProvider delay={0}` does);
+///   leaving before then cancels the open, so sweeping across a toolbar flashes
+///   nothing.
+/// - With `close_delay` above 0 the tooltip outlives the pointer leaving the
+///   trigger by that long, and entering the tooltip (or the trigger again)
+///   cancels the close.
+/// - Keyboard focus opens the tooltip at once and blur or Escape close it at
+///   once: the delays are a pointer's, not a keyboard's.
+/// - The timers belong to the component's scope, so unmounting cancels them,
+///   and `disabled` is re-checked when one fires.
+/// - There is no provider-wide "skip the delay for the next tooltip" group
+///   (Radix `skipDelayDuration`, Base UI `Tooltip.Provider`); set `delay` per
+///   tooltip instead.
 ///
 /// ## Example
 ///
@@ -116,10 +162,18 @@ pub fn Tooltip(props: TooltipProps) -> Element {
     let (open, set_open) = use_controlled(props.open, props.default_open, props.on_open_change);
     let tooltip_id = use_unique_id();
 
+    let timers = use_hover_timers(
+        open,
+        set_open,
+        props.disabled,
+        props.delay,
+        props.close_delay,
+    );
+
     let _ctx = use_context_provider(|| TooltipCtx {
         open,
         set_open,
-        disabled: props.disabled,
+        timers,
         tooltip_id,
     });
 
@@ -191,37 +245,18 @@ pub struct TooltipTriggerProps {
 pub fn TooltipTrigger(props: TooltipTriggerProps) -> Element {
     let ctx: TooltipCtx = use_context();
 
-    // Handle mouse events
-    let handle_mouse_enter = move |_: Event<MouseData>| {
-        if !(ctx.disabled)() {
-            ctx.set_open.call(true);
-        }
-    };
-
-    let handle_mouse_leave = move |_: Event<MouseData>| {
-        if !(ctx.disabled)() {
-            ctx.set_open.call(false);
-        }
-    };
-
-    // Handle focus events
-    let handle_focus = move |_: Event<FocusData>| {
-        if !(ctx.disabled)() {
-            ctx.set_open.call(true);
-        }
-    };
-
-    let handle_blur = move |_: Event<FocusData>| {
-        if !(ctx.disabled)() {
-            ctx.set_open.call(false);
-        }
-    };
+    // Pointer events wait `delay` / `close_delay`; focus, blur and Escape are
+    // keyboard-driven and never do (`HoverTimers`' doc).
+    let handle_mouse_enter = move |_: Event<MouseData>| ctx.timers.pointer_enter();
+    let handle_mouse_leave = move |_: Event<MouseData>| ctx.timers.pointer_leave();
+    let handle_focus = move |_: Event<FocusData>| ctx.timers.focus();
+    let handle_blur = move |_: Event<FocusData>| ctx.timers.blur();
 
     // Handle keyboard events
     let handle_keydown = move |event: Event<KeyboardData>| {
         if event.key() == Key::Escape && (ctx.open)() {
             event.prevent_default();
-            ctx.set_open.call(false);
+            ctx.timers.dismiss();
         }
     };
 
@@ -462,9 +497,16 @@ fn TooltipContentRendered(
     // (`docs/conformance-harness.md` hydration-parity Rule 4).
     let attributes = crate::top_layer::anchored_content_attributes(&id, attributes);
 
+    // Hoverable content (WCAG 1.4.13): with a `close_delay` above 0 the
+    // pointer can travel onto the tooltip, which holds it open; leaving it
+    // starts the same close as leaving the trigger.
+    let timers = use_context::<TooltipCtx>().timers;
+
     rsx! {
         div {
             id: id.clone(),
+            onmouseenter: move |_| timers.hold(),
+            onmouseleave: move |_| timers.pointer_leave(),
             ..attributes,
             {children}
         }
@@ -502,9 +544,13 @@ fn TooltipContentRendered(
             "data-align": align.as_str(),
         }),
     ]);
+    let timers = use_context::<TooltipCtx>().timers;
+
     rsx! {
         div {
             id,
+            onmouseenter: move |_| timers.hold(),
+            onmouseleave: move |_| timers.pointer_leave(),
             ..attributes,
             {children}
         }

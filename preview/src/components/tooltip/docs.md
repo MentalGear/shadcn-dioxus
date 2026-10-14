@@ -22,6 +22,23 @@ Tooltip {
 }
 ```
 
+## Delays
+
+`Tooltip` takes `delay` and `close_delay` in milliseconds (Radix `delayDuration`; Base UI `Tooltip.Trigger`'s `delay` / `closeDelay`):
+
+```rust
+Tooltip {
+    // How long the pointer must rest on the trigger before the tooltip opens. Default 600 (Base UI); 0 opens on contact.
+    delay: 0,
+    // How long the tooltip stays open after the pointer leaves. Default 0; above 0 the pointer can move onto the tooltip, which holds it open.
+    close_delay: 400,
+    TooltipTrigger { "Hover" }
+    TooltipContent { "Add to library" }
+}
+```
+
+Nothing opens until `delay` has passed, so sweeping across a toolbar flashes no tooltip, and leaving the trigger before then cancels the open. **Keyboard focus is not delayed**: focusing the trigger opens the tooltip at once, and blur or Escape close it at once. The timers belong to the component, so unmounting cancels them. There is no provider that skips the delay for the next tooltip; set `delay` on each tooltip instead (shadcn's `TooltipProvider delay={0}` corresponds to `delay: 0`).
+
 ## No click-only mode
 
 Unlike the menus (`NavigationMenu`, `Navbar`, `Menubar` and the dropdown /

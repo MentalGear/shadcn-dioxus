@@ -17,6 +17,23 @@ HoverCard {
 }
 ```
 
+## Delays
+
+`HoverCard` takes `delay` and `close_delay` in milliseconds (Radix `openDelay` / `closeDelay`; Base UI `PreviewCard.Trigger`'s `delay` / `closeDelay`):
+
+```rust
+HoverCard {
+    // How long the pointer must rest on the trigger before the card opens. Default 600 (Base UI).
+    delay: 10,
+    // How long the card stays open after the pointer leaves the trigger or the card. Default 300 (Base UI).
+    close_delay: 100,
+    HoverCardTrigger { "Hover Here" }
+    HoverCardContent { "..." }
+}
+```
+
+Leaving the trigger before `delay` cancels the open. After the pointer leaves, the card closes `close_delay` later unless the pointer enters the card (or the trigger) again, so it can cross the gap between them. **Keyboard focus is not delayed**: focusing the trigger opens the card at once, and blur or Escape close it at once. The timers belong to the component, so unmounting cancels them.
+
 ## No click-only mode
 
 Unlike the menus (`NavigationMenu`, `Navbar`, `Menubar` and the dropdown /

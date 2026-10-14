@@ -1,18 +1,170 @@
 //! Defines the [`HoverCard`] component and its subcomponents.
 
+use crate::menu_sub::{use_delayed_action, DelayedAction};
 use crate::{
     merge_attributes, use_animated_open, use_controlled, use_id_or, use_unique_id, ContentAlign,
     ContentSide,
 };
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
+use std::time::Duration;
+
+/// Default [`HoverCardProps::delay`], in milliseconds: how long the pointer
+/// must rest on the trigger before the card opens. Base UI's
+/// `PreviewCard.Trigger` `delay` default (`OPEN_DELAY = 600`,
+/// `packages/react/src/preview-card/utils/constants.ts`).
+pub const DEFAULT_HOVER_CARD_DELAY: u64 = 600;
+
+/// Default [`HoverCardProps::close_delay`], in milliseconds: how long the card
+/// stays open after the pointer leaves the trigger (or the card), so it can
+/// travel across the gap. Base UI's `PreviewCard.Trigger` `closeDelay` default
+/// (`CLOSE_DELAY = 300`, same file).
+pub const DEFAULT_HOVER_CARD_CLOSE_DELAY: u64 = 300;
+
+/// The one place a hover-opened, non-modal floating hint (this card, and
+/// [`crate::tooltip`]) turns pointer and focus events into open/close writes.
+///
+/// - **Pointer enter** on the trigger opens after `delay` ms (at once when
+///   `delay` is 0, or when the surface is already open -- which only cancels a
+///   pending close). Entering the *content* calls [`Self::hold`], which cancels a pending
+///   close, so a pointer travelling from the trigger to the content across a
+///   gap does not close it on the way.
+/// - **Pointer leave** (trigger or content) closes after `close_delay` ms (at
+///   once when 0).
+/// - **Focus / blur / Escape** are keyboard-driven and never wait: they
+///   cancel both timers and write directly (Radix `HoverCard` opens on focus
+///   at once; Base UI `Tooltip` has no focus delay).
+///
+/// Both timers are [`DelayedAction`]s: tasks spawned in the scope that
+/// schedules them, so they are cancelled when that scope drops (nothing
+/// outlives an unmount), and scheduling replaces whatever the handle was
+/// waiting on. Every timer re-checks `disabled` when it fires.
+#[derive(Clone, Copy)]
+pub(crate) struct HoverTimers {
+    open: Memo<bool>,
+    set_open: Callback<bool>,
+    disabled: ReadSignal<bool>,
+    delay: ReadSignal<u64>,
+    close_delay: ReadSignal<u64>,
+    open_timer: DelayedAction,
+    close_timer: DelayedAction,
+}
+
+/// Create the [`HoverTimers`] of one root. A hook: call it unconditionally,
+/// once per render, in the root's body.
+pub(crate) fn use_hover_timers(
+    open: Memo<bool>,
+    set_open: Callback<bool>,
+    disabled: ReadSignal<bool>,
+    delay: ReadSignal<u64>,
+    close_delay: ReadSignal<u64>,
+) -> HoverTimers {
+    HoverTimers {
+        open,
+        set_open,
+        disabled,
+        delay,
+        close_delay,
+        open_timer: use_delayed_action(),
+        close_timer: use_delayed_action(),
+    }
+}
+
+impl HoverTimers {
+    /// The pointer entered the trigger.
+    pub(crate) fn pointer_enter(self) {
+        if (self.disabled)() {
+            return;
+        }
+        let mut close_timer = self.close_timer;
+        let mut open_timer = self.open_timer;
+        close_timer.cancel();
+        if *self.open.peek() {
+            open_timer.cancel();
+            return;
+        }
+        let delay = *self.delay.peek();
+        if delay == 0 {
+            open_timer.cancel();
+            self.set_open.call(true);
+        } else {
+            let (disabled, set_open) = (self.disabled, self.set_open);
+            open_timer.schedule(Duration::from_millis(delay), move || {
+                if !disabled() {
+                    set_open.call(true);
+                }
+            });
+        }
+    }
+
+    /// The pointer left the trigger or the content.
+    pub(crate) fn pointer_leave(self) {
+        if (self.disabled)() {
+            return;
+        }
+        let mut open_timer = self.open_timer;
+        let mut close_timer = self.close_timer;
+        open_timer.cancel();
+        let close_delay = *self.close_delay.peek();
+        if close_delay == 0 {
+            close_timer.cancel();
+            self.set_open.call(false);
+        } else if *self.open.peek() {
+            let (disabled, set_open) = (self.disabled, self.set_open);
+            close_timer.schedule(Duration::from_millis(close_delay), move || {
+                if !disabled() {
+                    set_open.call(false);
+                }
+            });
+        } else {
+            close_timer.cancel();
+        }
+    }
+
+    /// The pointer entered the *content*: it only cancels a pending close. Unlike
+    /// [`Self::pointer_enter`] it never opens anything, so the pointer touching
+    /// a surface that is already fading out cannot re-open it.
+    pub(crate) fn hold(self) {
+        let mut close_timer = self.close_timer;
+        close_timer.cancel();
+    }
+
+    /// Keyboard focus reached the trigger: open now, no delay.
+    pub(crate) fn focus(self) {
+        self.cancel_pending();
+        if !(self.disabled)() {
+            self.set_open.call(true);
+        }
+    }
+
+    /// Keyboard focus left the trigger: close now, no delay.
+    pub(crate) fn blur(self) {
+        self.cancel_pending();
+        if !(self.disabled)() {
+            self.set_open.call(false);
+        }
+    }
+
+    /// Escape: close now, whatever `disabled` says.
+    pub(crate) fn dismiss(self) {
+        self.cancel_pending();
+        self.set_open.call(false);
+    }
+
+    fn cancel_pending(self) {
+        let mut open_timer = self.open_timer;
+        let mut close_timer = self.close_timer;
+        open_timer.cancel();
+        close_timer.cancel();
+    }
+}
 
 #[derive(Clone, Copy)]
 struct HoverCardCtx {
     // State
     open: Memo<bool>,
     set_open: Callback<bool>,
-    disabled: ReadSignal<bool>,
+    timers: HoverTimers,
 
     // ARIA attributes
     content_id: Signal<String>,
@@ -36,6 +188,19 @@ pub struct HoverCardProps {
     #[props(default)]
     pub disabled: ReadSignal<bool>,
 
+    /// Milliseconds the pointer must rest on the trigger before the card
+    /// opens (Radix `openDelay`, Base UI `PreviewCard.Trigger` `delay`).
+    /// Defaults to 600, Base UI's value. Keyboard focus opens it at once.
+    #[props(default = ReadSignal::new(Signal::new(DEFAULT_HOVER_CARD_DELAY)))]
+    pub delay: ReadSignal<u64>,
+
+    /// Milliseconds the card stays open after the pointer leaves the trigger
+    /// or the card (Radix `closeDelay`, Base UI `closeDelay`). Entering the
+    /// card again within that time cancels the close. Defaults to 300, Base
+    /// UI's value. Blur and Escape close it at once.
+    #[props(default = ReadSignal::new(Signal::new(DEFAULT_HOVER_CARD_CLOSE_DELAY)))]
+    pub close_delay: ReadSignal<u64>,
+
     /// Additional attributes for the hover card
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
@@ -54,10 +219,25 @@ pub struct HoverCardProps {
 /// `Menubar`, the `DropdownMenu`/`ContextMenu` submenus), a hover card has no
 /// click-activated mode: hover (and focus) *is* its definition -- the content
 /// is supplementary and must never be the only way to reach anything. For a
-/// panel opened by a click, use [`crate::popover`]. (Hover/focus *delays* --
-/// Radix `HoverCard`'s `openDelay`/`closeDelay`, Base UI `PreviewCard.Trigger`'s
-/// `delay`/`closeDelay` -- are a possible future prop; this component opens
-/// and closes without one today.)
+/// panel opened by a click, use [`crate::popover`].
+///
+/// ## Delays
+///
+/// [`HoverCardProps::delay`] and [`HoverCardProps::close_delay`] (milliseconds)
+/// are Radix `HoverCard`'s `openDelay`/`closeDelay` and Base UI
+/// `PreviewCard.Trigger`'s `delay`/`closeDelay`, with Base UI's defaults: 600
+/// to open, 300 to close.
+///
+/// - Nothing opens until the pointer has rested on the trigger for `delay`;
+///   leaving before then cancels the open, so sweeping across a row of
+///   triggers flashes nothing.
+/// - Leaving the trigger (or the card) closes after `close_delay`; entering
+///   the card, or the trigger again, in that time cancels the close, so the
+///   pointer can cross the gap between them.
+/// - Keyboard focus opens the card at once and blur or Escape close it at
+///   once: the delays are a pointer's, not a keyboard's.
+/// - The timers belong to the component's scope, so unmounting cancels them,
+///   and `disabled` is re-checked when one fires.
 ///
 /// ## Example
 ///
@@ -108,11 +288,18 @@ pub fn HoverCard(props: HoverCardProps) -> Element {
     let (open, set_open) = use_controlled(props.open, props.default_open, props.on_open_change);
     // Generate a unique ID for the hover card content
     let content_id = use_unique_id();
+    let timers = use_hover_timers(
+        open,
+        set_open,
+        props.disabled,
+        props.delay,
+        props.close_delay,
+    );
 
     use_context_provider(|| HoverCardCtx {
         open,
         set_open,
-        disabled: props.disabled,
+        timers,
         content_id,
     });
 
@@ -197,19 +384,6 @@ pub fn HoverCardTrigger(props: HoverCardTriggerProps) -> Element {
     // Use use_id_or to handle the ID
     let id = use_id_or(trigger_id, props.id);
 
-    // Handle mouse events
-    let open_event = move || {
-        if !(ctx.disabled)() {
-            ctx.set_open.call(true);
-        }
-    };
-
-    let close_event = move || {
-        if !(ctx.disabled)() {
-            ctx.set_open.call(false);
-        }
-    };
-
     // Tooltip pattern: "Escape: Dismisses the Tooltip." HoverCard shares
     // Tooltip's role and show-on-focus/hide-on-blur contract (see
     // `tooltip.rs`'s identical `handle_keydown`) but previously had no
@@ -217,7 +391,7 @@ pub fn HoverCardTrigger(props: HoverCardTriggerProps) -> Element {
     let handle_keydown = move |event: Event<KeyboardData>| {
         if event.key() == Key::Escape && (ctx.open)() {
             event.prevent_default();
-            ctx.set_open.call(false);
+            ctx.timers.dismiss();
         }
     };
 
@@ -252,13 +426,13 @@ pub fn HoverCardTrigger(props: HoverCardTriggerProps) -> Element {
     rsx! {
         div {
             id,
-            // Mouse events
-            onmouseenter: move |_| open_event(),
-            onmouseleave: move |_| close_event(),
+            // Mouse events: delayed by `delay` / `close_delay`
+            onmouseenter: move |_| ctx.timers.pointer_enter(),
+            onmouseleave: move |_| ctx.timers.pointer_leave(),
 
-            // Focus events
-            onfocus: move |_| open_event(),
-            onblur: move |_| close_event(),
+            // Focus events: keyboard, so immediate
+            onfocus: move |_| ctx.timers.focus(),
+            onblur: move |_| ctx.timers.blur(),
             onkeydown: handle_keydown,
 
             ..attributes,
@@ -366,7 +540,6 @@ pub fn HoverCardContent(props: HoverCardContentProps) -> Element {
                 id: id.cloned(),
                 open: ctx.open,
                 set_open: ctx.set_open,
-                disabled: ctx.disabled,
                 is_open,
                 side: props.side,
                 align: props.align,
@@ -401,7 +574,6 @@ fn HoverCardContentRendered(
     id: String,
     open: Memo<bool>,
     set_open: Callback<bool>,
-    disabled: ReadSignal<bool>,
     is_open: bool,
     side: ContentSide,
     align: ContentAlign,
@@ -424,16 +596,13 @@ fn HoverCardContentRendered(
         set_open,
     );
 
-    let handle_mouse_enter = move |_: Event<MouseData>| {
-        if !disabled() {
-            set_open.call(true);
-        }
-    };
-    let handle_mouse_leave = move |_: Event<MouseData>| {
-        if !disabled() {
-            set_open.call(false);
-        }
-    };
+    // Entering the card holds it open (cancels a pending close); leaving it
+    // starts the same `close_delay` as leaving the trigger. Both share the
+    // root's timers, so a pointer crossing trigger -> card or card -> trigger
+    // always has exactly one close pending, never two.
+    let timers = use_context::<HoverCardCtx>().timers;
+    let handle_mouse_enter = move |_: Event<MouseData>| timers.hold();
+    let handle_mouse_leave = move |_: Event<MouseData>| timers.pointer_leave();
 
     // See `tooltip.rs`'s `TooltipContentRendered` for why this hand-written,
     // never-`Styles::`-routed marker class exists: it is what the
@@ -474,7 +643,7 @@ fn HoverCardContentRendered(
             onkeydown: move |event: Event<KeyboardData>| {
                 if event.key() == Key::Escape {
                     event.prevent_default();
-                    set_open.call(false);
+                    timers.dismiss();
                 }
             },
             ..attributes,
@@ -494,24 +663,20 @@ fn HoverCardContentRendered(
     // both arms.
     open: Memo<bool>,
     set_open: Callback<bool>,
-    disabled: ReadSignal<bool>,
     is_open: bool,
     side: ContentSide,
     align: ContentAlign,
     attributes: Vec<Attribute>,
     children: Element,
 ) -> Element {
-    let _ = open;
-    let handle_mouse_enter = move |_: Event<MouseData>| {
-        if !disabled() {
-            set_open.call(true);
-        }
-    };
-    let handle_mouse_leave = move |_: Event<MouseData>| {
-        if !disabled() {
-            set_open.call(false);
-        }
-    };
+    let _ = (open, set_open);
+    // Entering the card holds it open (cancels a pending close); leaving it
+    // starts the same `close_delay` as leaving the trigger. Both share the
+    // root's timers, so a pointer crossing trigger -> card or card -> trigger
+    // always has exactly one close pending, never two.
+    let timers = use_context::<HoverCardCtx>().timers;
+    let handle_mouse_enter = move |_: Event<MouseData>| timers.hold();
+    let handle_mouse_leave = move |_: Event<MouseData>| timers.pointer_leave();
 
     // Owned by this component -- see the web arm's identical construction
     // above (`docs/backlog.md` row 93).
@@ -533,7 +698,7 @@ fn HoverCardContentRendered(
             onkeydown: move |event: Event<KeyboardData>| {
                 if event.key() == Key::Escape {
                     event.prevent_default();
-                    set_open.call(false);
+                    timers.dismiss();
                 }
             },
             ..attributes,

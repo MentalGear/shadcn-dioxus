@@ -14,6 +14,8 @@ pub fn Tooltip(props: TooltipProps) -> Element {
         document::Link { rel: "stylesheet", href: asset!("/src/components/tooltip/style.css") }
         tooltip::Tooltip {
             disabled: props.disabled,
+            delay: props.delay,
+            close_delay: props.close_delay,
             open: props.open,
             default_open: props.default_open,
             on_open_change: props.on_open_change,
