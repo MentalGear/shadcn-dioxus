@@ -24,6 +24,9 @@ fn unavailable_ranges(today: Date) -> Vec<DateRange> {
     ]
 }
 
+/// A range picker with unavailable dates and no footer (`confirm: false`): the popover closes once
+/// the range's end date is picked, after the default 300 ms dwell. (The footer version of a range is
+/// the `range` demo.)
 #[component]
 pub fn Demo() -> Element {
     let mut selected_range = use_signal(|| None::<DateRange>);
@@ -39,6 +42,7 @@ pub fn Demo() -> Element {
                     selected_range.set(range);
                 },
                 disabled_ranges: disabled_ranges,
+                confirm: false,
             }
         }
     }

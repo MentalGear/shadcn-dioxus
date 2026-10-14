@@ -4,6 +4,8 @@ use dioxus::prelude::*;
 use dioxus_i18n::tid;
 use time::{Date, Month};
 
+/// shadcn's `date-picker-rtl` twin for the localisation side: no footer and the popover STAYS OPEN
+/// after a pick, like every uncontrolled shadcn date picker.
 #[component]
 pub fn Demo() -> Element {
     let mut selected_date = use_signal(|| None::<Date>);
@@ -16,6 +18,8 @@ pub fn Demo() -> Element {
                     tracing::info!("Selected date changed: {:?}", v);
                     selected_date.set(v);
                 },
+                confirm: false,
+                close_on_select: false,
                 on_format_day_placeholder: || tid!("D_Abbr"),
                 on_format_month_placeholder: || tid!("M_Abbr"),
                 on_format_year_placeholder: || tid!("Y_Abbr"),
