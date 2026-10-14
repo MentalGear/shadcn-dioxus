@@ -3,15 +3,23 @@ use crate::components::button::{Button, ButtonVariant};
 use dioxus::prelude::*;
 
 /// `delay` and `close_delay` on `Tooltip` (Radix `delayDuration`, Base UI `delay` / `closeDelay`):
-/// the default waits 600 ms of pointer rest, `delay: 0` is shadcn's `TooltipProvider delay={0}`, and a
-/// `close_delay` keeps the tooltip open long enough to move the pointer onto it. Keyboard focus
-/// opens each one at once.
+/// the styled tooltip opens on contact by default (shadcn's `TooltipProvider delay={0}`),
+/// `delay: 600` asks for the primitive's Base UI rest-to-open delay, and a `close_delay` keeps the
+/// tooltip open long enough to move the pointer onto it. Keyboard focus opens each one at once.
 #[component]
 pub fn Demo() -> Element {
     rsx! {
         div { style: "padding: 2rem 1rem; display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center;",
-            DelayTooltip { label: "Default (600)", note: "Opens after 600 ms of rest." }
-            DelayTooltip { label: "Instant (0)", delay: 0, note: "Opens on contact." }
+            // No `delay` prop: the styled default (0).
+            Tooltip {
+                TooltipTrigger {
+                    as: |attributes: Vec<Attribute>| rsx! {
+                        Button { variant: ButtonVariant::Outline, attributes, "Default (0)" }
+                    },
+                }
+                TooltipContent { "Opens on contact." }
+            }
+            DelayTooltip { label: "Rests (600)", delay: 600, note: "Opens after 600 ms of rest." }
             DelayTooltip {
                 label: "Lingers (0 / 600)",
                 delay: 0,
@@ -26,7 +34,7 @@ pub fn Demo() -> Element {
 fn DelayTooltip(
     label: &'static str,
     note: &'static str,
-    #[props(default = 600)] delay: u64,
+    delay: u64,
     #[props(default = 0)] close_delay: u64,
 ) -> Element {
     rsx! {

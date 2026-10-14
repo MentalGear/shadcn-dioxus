@@ -32,7 +32,7 @@ HoverCard {
 }
 ```
 
-Leaving the trigger before `delay` cancels the open. After the pointer leaves, the card closes `close_delay` later unless the pointer enters the card (or the trigger) again, so it can cross the gap between them. **Keyboard focus is not delayed**: focusing the trigger opens the card at once, and blur or Escape close it at once. The timers belong to the component, so unmounting cancels them.
+Leaving the trigger before `delay` cancels the open. After the pointer leaves, the card closes `close_delay` later unless the pointer enters the card (or the trigger) again, so it can cross the gap between them. **Defaults:** `delay` 600 and `close_delay` 300 are Base UI's `PreviewCard.Trigger` values, used by both the primitive and this styled component, because shadcn's styled `hover-card.tsx` sets no delays of its own (only its demos pass `delay={10} closeDelay={100}`), so there is no styled default to mirror. **Keyboard focus is not delayed**: focusing the trigger opens the card at once, and blur or Escape close it at once. The timers belong to the component, so unmounting cancels them.
 
 ## No click-only mode
 

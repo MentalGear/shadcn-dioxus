@@ -101,8 +101,9 @@ test.describe("Close-fade animation (docs/backlog.md rows 19, 7)", () => {
 });
 
 // dev-docs/backlog.md row 166 -- `delay` / `close_delay` (Radix `delayDuration`, Base UI
-// `Tooltip.Trigger` `delay` / `closeDelay`; defaults 600 / 0). The `delays` variant renders three
-// tooltips: "Default (600)", "Instant (0)" and "Lingers (0 / 600)". Delays are measured in the page
+// `Tooltip.Trigger` `delay` / `closeDelay`; the primitive defaults to 600 / 0, the styled tooltip to 0 / 0
+// like shadcn's `TooltipProvider`). The `delays` variant renders three tooltips: "Default (0)" (no
+// `delay` prop), "Rests (600)" and "Lingers (0 / 600)". Delays are measured in the page
 // (hover-delay-probe.ts) and only as a LOWER bound, so a slow debug build cannot turn them red.
 test.describe("delay / close_delay (backlog row 166)", () => {
   const URL = `${BASE_URL}/component/?name=tooltip&variant=delays&`;
@@ -111,10 +112,10 @@ test.describe("delay / close_delay (backlog row 166)", () => {
   const surface = (page: Page) => page.getByRole("tooltip");
   const openSurface = (page: Page) => page.locator('[role="tooltip"][data-state="open"]');
 
-  test("nothing opens before `delay`: the default tooltip waits 600 ms of pointer rest", async ({ page }) => {
+  test("nothing opens before `delay`: a `delay: 600` tooltip waits 600 ms of pointer rest", async ({ page }) => {
     await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
     await startProbe(page);
-    await button(page, "Default (600)").hover();
+    await button(page, "Rests (600)").hover();
     await expect(surface(page)).toBeVisible();
     const waited = elapsed(await readProbe(page), "mouseover", "surface:open");
     expect(waited, "the tooltip opened").not.toBeNull();
@@ -124,7 +125,7 @@ test.describe("delay / close_delay (backlog row 166)", () => {
   test("leaving before `delay` cancels the open (a sweep across triggers flashes nothing)", async ({ page }) => {
     await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
     await startProbe(page);
-    await button(page, "Default (600)").hover();
+    await button(page, "Rests (600)").hover();
     await page.waitForTimeout(150);
     await page.mouse.move(0, 0);
     // Well past the 600 ms the abandoned hover would have opened at.
@@ -133,10 +134,10 @@ test.describe("delay / close_delay (backlog row 166)", () => {
     expect((await readProbe(page)).some((e) => e.what === "surface:open")).toBe(false);
   });
 
-  test("delay 0 opens on contact (shadcn's TooltipProvider delay={0})", async ({ page }) => {
+  test("the styled default is delay 0: opens on contact (shadcn's TooltipProvider delay={0})", async ({ page }) => {
     await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
     await startProbe(page);
-    await button(page, "Instant (0)").hover();
+    await button(page, "Default (0)").hover();
     await expect(surface(page)).toBeVisible();
     // Less than the default's 600 ms; no tighter bound, which would be a debug-build timing claim.
     expect(elapsed(await readProbe(page), "mouseover", "surface:open")!).toBeLessThan(600);
@@ -145,7 +146,7 @@ test.describe("delay / close_delay (backlog row 166)", () => {
   test("keyboard focus opens at once even with a delay", async ({ page }) => {
     await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
     await startProbe(page);
-    await button(page, "Default (600)").focus();
+    await button(page, "Rests (600)").focus();
     await expect(surface(page)).toBeVisible();
     expect(elapsed(await readProbe(page), "focusin", "surface:open")!).toBeLessThan(600);
   });
