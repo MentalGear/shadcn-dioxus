@@ -76,21 +76,21 @@
   }
 }
 
-.dx-alert-description p:not(:last-child) {
+.dx-alert-description p:not(:last-child, :where([popover], dialog) *) {
   margin-bottom: var(--dx-space-4);
 }
 
 /* `[&_a]:underline [&_a]:underline-offset-3 [&_a]:hover:text-foreground` on
  * the title and the description. */
-.dx-alert-title a,
-.dx-alert-description a {
+.dx-alert-title a:not(:where([popover], dialog) *),
+.dx-alert-description a:not(:where([popover], dialog) *) {
   text-decoration-line: underline;
   text-underline-offset: 3px;
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .dx-alert-title a:hover,
-  .dx-alert-description a:hover {
+  .dx-alert-title a:hover:not(:where([popover], dialog) *),
+  .dx-alert-description a:hover:not(:where([popover], dialog) *) {
     color: var(--dx-foreground);
   }
 }

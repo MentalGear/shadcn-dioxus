@@ -70,9 +70,9 @@ SVGINNER = "the subject is an SVG-internal element (`text`, `line`, `path`, `tsp
 PENDING = "a free-content slot a user can put a link (and so a HoverCard/Popover trigger) in; sheet owned by a batch-2 lane, so the boundary is not added here -- add `:not(:where([popover], dialog) *)` to the subject when that lane merges and delete this entry"
 ALLOW = [
     ("alert", r"^\.dx-alert > svg$", DIRECT),
-    ("alert", r"\.dx-alert-description p:not\(:last-child\)|\.dx-alert-(title|description) a", PENDING),
     ("attachment", r"\.dx-attachment-media", "the ancestor is the attachment's media tile, which holds one icon or one image"),
     ("avatar", r"^\.dx-avatar > \*$", DIRECT),
+    ("avatar", r"\.dx-avatar-(badge|group-count) > svg$", "the ancestor is a leaf part (the status badge dot or the +N tile) that holds one icon; no popup trigger is ever rendered inside it"),
     ("badge", r"^\.dx-badge svg$", "the ancestor is an inline label; a Badge holds text and an icon, never an interactive popup trigger"),
     ("breadcrumb", r"\.dx-breadcrumb-(separator|ellipsis) svg", LEAF),
     ("button", r"svg", "the ancestor is a <button>, which cannot contain interactive content, so no popup trigger (and no panel) is rendered inside it"),
