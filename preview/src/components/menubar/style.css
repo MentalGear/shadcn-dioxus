@@ -40,16 +40,19 @@
   opacity: var(--dx-opacity-disabled);
 }
 
-.dx-menubar-trigger:hover:not([data-disabled="true"]),
-.dx-menubar-trigger:focus-visible {
-  background: var(--dx-muted);
-  outline: none;
+@media (hover: hover) and (pointer: fine) {
+  .dx-menubar-trigger:hover:not([data-disabled="true"]) {
+    background: var(--dx-muted);
+    outline: none;
+  }
 }
 
 /* Not in Nova (its trigger is `outline-hidden` and only fills): in dark the muted fill is the same
  * #262626 as the hover, 1.4:1 on the page, so keyboard focus also draws the shared focus halo. */
 .dx-menubar-trigger:focus-visible {
+  background: var(--dx-muted);
   box-shadow: var(--dx-ring-focus);
+  outline: none;
 }
 
 .dx-menubar-content {

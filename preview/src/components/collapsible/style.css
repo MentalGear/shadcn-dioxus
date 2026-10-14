@@ -33,9 +33,11 @@
   box-shadow: var(--dx-ring-focus-inset);
 }
 
-:where(.dx-collapsible-trigger:not([data-style]):hover) {
-  cursor: pointer;
-  text-decoration-line: underline;
+@media (hover: hover) and (pointer: fine) {
+  :where(.dx-collapsible-trigger:not([data-style]):hover) {
+    cursor: pointer;
+    text-decoration-line: underline;
+  }
 }
 
 /*

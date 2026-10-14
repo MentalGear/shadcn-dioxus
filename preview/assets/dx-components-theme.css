@@ -1058,11 +1058,17 @@ html[data-theme="light"] [class~="dxc-system"] {
   opacity: var(--dx-opacity-disabled);
 }
 
-:where([data-dx-menu-item]:hover:not([data-disabled="true"])),
 :where([data-dx-menu-item]:focus-visible),
 :where([data-dx-menu-item][data-state="open"]) {
   background: var(--dx-accent);
   color: var(--dx-accent-foreground);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :where([data-dx-menu-item]:hover:not([data-disabled="true"])) {
+    background: var(--dx-accent);
+    color: var(--dx-accent-foreground);
+  }
 }
 
 /* The check or chevron: out of flow, in the slot the item reserved, vertically centred. */
@@ -1145,8 +1151,10 @@ html[data-theme="light"] [class~="dxc-system"] {
  * comment for the fuller story); the same flat construction sidesteps the
  * same risk here rather than assuming `:where()` is exempt from it.
  */
-:where([data-dx-interactive]):hover {
-  opacity: var(--dx-opacity-hover);
+@media (hover: hover) and (pointer: fine) {
+  :where([data-dx-interactive]):hover {
+    opacity: var(--dx-opacity-hover);
+  }
 }
 
 :where([data-dx-interactive]):focus-visible {

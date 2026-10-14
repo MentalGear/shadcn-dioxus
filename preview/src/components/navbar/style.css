@@ -41,18 +41,20 @@
   opacity: var(--dx-opacity-disabled);
 }
 
-.dx-navbar-trigger:hover:not([data-disabled="true"]),
-.dx-navbar-trigger:focus-visible,
-.dx-navbar > .dx-navbar-item:hover:not([data-disabled="true"]),
-.dx-navbar > .dx-navbar-item:focus-visible {
-  background: var(--dx-muted);
-  outline: none;
+@media (hover: hover) and (pointer: fine) {
+  .dx-navbar-trigger:hover:not([data-disabled="true"]),
+  .dx-navbar > .dx-navbar-item:hover:not([data-disabled="true"]) {
+    background: var(--dx-muted);
+    outline: none;
+  }
 }
 
 /* Not in Nova (see ../menubar/style.css): the muted fill alone is a weak focus cue in dark. */
 .dx-navbar-trigger:focus-visible,
 .dx-navbar > .dx-navbar-item:focus-visible {
+  background: var(--dx-muted);
   box-shadow: var(--dx-ring-focus);
+  outline: none;
 }
 
 /* Include the top margin in the navbar content pointer events */
@@ -280,11 +282,18 @@
   opacity: var(--dx-opacity-disabled);
 }
 
-.dx-navbar-item:hover:not([data-disabled="true"]),
 .dx-navbar-item:focus-visible {
   background: var(--dx-accent);
   color: var(--dx-accent-foreground);
   outline: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-navbar-item:hover:not([data-disabled="true"]) {
+    background: var(--dx-accent);
+    color: var(--dx-accent-foreground);
+    outline: none;
+  }
 }
 
 .dx-navbar-expand-icon {

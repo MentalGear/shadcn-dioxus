@@ -305,8 +305,10 @@ summary,
     scrollbar-color: rgb(0 0 0 / 0%) rgb(0 0 0 / 0%);
   }
 
-  :hover {
-    scrollbar-color: var(--dx-foreground) rgb(0 0 0 / 0%);
+  @media (hover: hover) and (pointer: fine) {
+    :hover {
+      scrollbar-color: var(--dx-foreground) rgb(0 0 0 / 0%);
+    }
   }
 }
 
@@ -359,8 +361,10 @@ summary,
   text-decoration: none;
 }
 
-.dx-navbar-link:hover {
-  color: var(--dx-foreground);
+@media (hover: hover) and (pointer: fine) {
+  .dx-navbar-link:hover {
+    color: var(--dx-foreground);
+  }
 }
 
 .dx-navbar-primary,
@@ -706,8 +710,10 @@ button.dx-theme-phone-trigger {
   cursor: pointer;
 }
 
-.dx-theme-swatch:hover {
-  border-color: var(--dx-border-strong);
+@media (hover: hover) and (pointer: fine) {
+  .dx-theme-swatch:hover {
+    border-color: var(--dx-border-strong);
+  }
 }
 
 .dx-theme-swatch:focus-visible {
@@ -754,8 +760,10 @@ button.dx-theme-phone-trigger {
   gap: 0.5em;
 }
 
-.dx-copy-button:hover {
-  color: var(--highlight-color-tertiary);
+@media (hover: hover) and (pointer: fine) {
+  .dx-copy-button:hover {
+    color: var(--highlight-color-tertiary);
+  }
 }
 
 .dx-copy-button[data-copied="true"] {
@@ -1226,8 +1234,10 @@ button.dx-theme-phone-trigger {
   text-underline-offset: 3px;
 }
 
-.dx-docs-prose .dx-docs-section a:hover {
-  text-decoration-thickness: 2px;
+@media (hover: hover) and (pointer: fine) {
+  .dx-docs-prose .dx-docs-section a:hover {
+    text-decoration-thickness: 2px;
+  }
 }
 
 .dx-component-tabs-header {
@@ -1404,8 +1414,10 @@ button.dx-theme-phone-trigger {
   translate: 0 -4px;
 }
 
-.dx-component-manual-install summary:hover {
-  background-color: var(--dx-accent);
+@media (hover: hover) and (pointer: fine) {
+  .dx-component-manual-install summary:hover {
+    background-color: var(--dx-accent);
+  }
 }
 
 .dx-component-manual-copy {
@@ -1432,9 +1444,11 @@ button.dx-theme-phone-trigger {
   padding: 0 0 0.75rem;
 }
 
-.dx-component-manual-install-code summary:hover {
-  background-color: transparent;
-  color: var(--highlight-color-tertiary);
+@media (hover: hover) and (pointer: fine) {
+  .dx-component-manual-install-code summary:hover {
+    background-color: transparent;
+    color: var(--highlight-color-tertiary);
+  }
 }
 
 .dx-component-manual-install-code .dx-component-manual-copy {
@@ -1727,10 +1741,12 @@ html[data-cv-settle] {
   transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-.dx-demos-card:hover {
-  border-color: var(--dx-border-strong);
-  box-shadow: 0 12px 32px -20px rgb(0 0 0 / 35%);
-  transform: translateY(-2px);
+@media (hover: hover) and (pointer: fine) {
+  .dx-demos-card:hover {
+    border-color: var(--dx-border-strong);
+    box-shadow: 0 12px 32px -20px rgb(0 0 0 / 35%);
+    transform: translateY(-2px);
+  }
 }
 
 .dx-demos-card:focus-visible {
@@ -1827,8 +1843,10 @@ html[data-cv-settle] {
   text-decoration: none;
 }
 
-.dx-component-card-title-link:hover {
-  color: var(--highlight-color-tertiary);
+@media (hover: hover) and (pointer: fine) {
+  .dx-component-card-title-link:hover {
+    color: var(--highlight-color-tertiary);
+  }
 }
 
 .dx-component-card-title-link:focus-visible {
@@ -1898,8 +1916,10 @@ html[data-cv-settle] {
   text-decoration: none;
 }
 
-.dx-component-card-block-link:hover {
-  color: var(--dx-foreground);
+@media (hover: hover) and (pointer: fine) {
+  .dx-component-card-block-link:hover {
+    color: var(--dx-foreground);
+  }
 }
 
 .dx-component-card-block-link:focus-visible {
@@ -2024,8 +2044,10 @@ html[data-cv-settle] {
   transition: color 0.15s ease;
 }
 
-.dx-footer-link:hover {
-  color: var(--dx-foreground);
+@media (hover: hover) and (pointer: fine) {
+  .dx-footer-link:hover {
+    color: var(--dx-foreground);
+  }
 }
 
 .dx-footer-link:focus-visible {
@@ -2296,8 +2318,10 @@ html[data-cv-settle] {
   color: var(--dx-foreground);
 }
 
-.dx-charts-hero-button:hover {
-  opacity: 0.85;
+@media (hover: hover) and (pointer: fine) {
+  .dx-charts-hero-button:hover {
+    opacity: 0.85;
+  }
 }
 
 .dx-charts-hero-button:focus-visible,
@@ -2334,8 +2358,10 @@ html[data-cv-settle] {
   white-space: nowrap;
 }
 
-.dx-charts-tab:hover {
-  color: var(--dx-accent-foreground);
+@media (hover: hover) and (pointer: fine) {
+  .dx-charts-tab:hover {
+    color: var(--dx-accent-foreground);
+  }
 }
 
 .dx-charts-tab[aria-current="page"] {
@@ -2501,8 +2527,10 @@ html[data-cv-settle] {
   text-decoration: none;
 }
 
-.dx-charts-gallery-link:hover {
-  text-decoration: underline;
+@media (hover: hover) and (pointer: fine) {
+  .dx-charts-gallery-link:hover {
+    text-decoration: underline;
+  }
 }
 
 @media (width >= 768px) {

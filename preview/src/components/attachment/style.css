@@ -24,8 +24,10 @@
 }
 
 /* A card with a trigger or link directly in it is clickable as a whole. */
-.dx-attachment:has(> a, > button):hover {
-  background-color: color-mix(in oklab, var(--dx-muted) 50%, transparent);
+@media (hover: hover) and (pointer: fine) {
+  .dx-attachment:has(> a, > button):hover {
+    background-color: color-mix(in oklab, var(--dx-muted) 50%, transparent);
+  }
 }
 
 .dx-attachment[data-state="error"] {

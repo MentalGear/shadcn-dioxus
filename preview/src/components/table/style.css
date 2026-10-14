@@ -31,8 +31,10 @@
   border-bottom: none;
 }
 
-.dx-table-row:hover {
-  background-color: color-mix(in oklab, var(--dx-muted) 50%, transparent);
+@media (hover: hover) and (pointer: fine) {
+  .dx-table-row:hover {
+    background-color: color-mix(in oklab, var(--dx-muted) 50%, transparent);
+  }
 }
 
 .dx-table-row[data-state="selected"] {

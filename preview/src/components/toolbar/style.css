@@ -45,10 +45,16 @@
   gap: var(--dx-space-1);
 }
 
-.dx-toolbar-button:hover:not([disabled]),
 .dx-toolbar-button:focus-visible {
   background: var(--dx-accent);
   color: var(--dx-accent-foreground);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-toolbar-button:hover:not([disabled]) {
+    background: var(--dx-accent);
+    color: var(--dx-accent-foreground);
+  }
 }
 
 /* A pressed toggle button (the demo marks it `data-state="on"` / `aria-pressed="true"`). In dark mode

@@ -114,8 +114,10 @@
 }
 
 /* Zero-specificity condition, so the checked fill below still wins on a hovered checked card. */
-.dx-field-label:where(:hover:not(:has(:disabled, [data-disabled="true"]))) > .dx-field {
-  background-color: color-mix(in oklab, var(--dx-muted) 50%, transparent);
+@media (hover: hover) and (pointer: fine) {
+  .dx-field-label:where(:hover:not(:has(:disabled, [data-disabled="true"]))) > .dx-field {
+    background-color: color-mix(in oklab, var(--dx-muted) 50%, transparent);
+  }
 }
 
 .dx-field-label:has([data-state="checked"]) > .dx-field {
