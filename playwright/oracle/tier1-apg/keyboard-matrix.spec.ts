@@ -851,12 +851,14 @@ test.describe("APG Dialog (Modal) pattern — Dialog", () => {
 
   test("Dialog — Tab: \"Moves focus to the next tabbable element inside the dialog\" and wraps", async ({ page }) => {
     await goto(page, "dialog");
-    await page.getByRole("button", { name: "Show Dialog" }).click();
+    // Opened from the keyboard (a pointer open focuses the panel, row 206). The close button is
+    // last in DOM order (shadcn's), so the first control takes focus and Tab reaches the X next.
+    await page.getByRole("button", { name: "Show Dialog" }).focus();
+    await page.keyboard.press("Enter");
     const dialog = page.getByRole("dialog");
-    const closeButton = dialog.getByRole("button", { name: "Close" });
-    await expect(closeButton, "focus moves inside the dialog on open").toBeFocused();
+    await expect(dialog.getByRole("button", { name: "Open Nested Dialog" }), "focus moves inside the dialog on open").toBeFocused();
     await page.keyboard.press("Tab");
-    await expect(dialog.getByRole("button", { name: "Open Nested Dialog" })).toBeFocused();
+    await expect(dialog.getByRole("button", { name: "Close", exact: true })).toBeFocused();
   });
 });
 
