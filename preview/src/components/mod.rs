@@ -437,15 +437,15 @@ macro_rules! examples {
 
 examples!(
     accordion[until_found, faq, multiple],
-    alert[no_icon],
+    alert[no_icon, action],
     alert_dialog[overlay],
     area_chart[linear, step, stacked, stacked_expand, gradient, legend, axes, icons, interactive],
     aspect_ratio[ratios],
     attachment[states, sizes, image, group, trigger],
-    avatar[dropdown],
+    avatar[dropdown, badge, group],
     badge[spinner, count],
     bar_chart[horizontal, multiple, stacked, stacked_legend, negative, mixed, label, label_custom, active, interactive],
-    breadcrumb[separator, dropdown, ellipsis, rtl],
+    breadcrumb[separator, dropdown, ellipsis, menu, rtl],
     bubble[alignment, group, reactions, link_button],
     // No `spinner` variant here: the button route is the "no motion subscribers" page of
     // oracle/tier2-html/motion-gating.spec.ts; the spinner-in-a-button demo lives on `spinner`.
