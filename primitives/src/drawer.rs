@@ -42,7 +42,7 @@
 //!   [`FLICK_MIN_DISTANCE_PX`] of travel so jitter cannot read as one.
 //! - **The direction was decided in three places.** Orientation (down for
 //!   `Bottom`, up for `Top`, and so on) is applied once, in the script, from the
-//!   `vertical`/`sign` pair [`DrawerSide::drag_axis`] hands it; everything after
+//!   `vertical`/`sign` pair [`EdgeSide::drag_axis`] hands it; everything after
 //!   -- the live offset, the rubber band, the release decision -- works on that
 //!   one oriented number, so a drag toward the OPEN side can never be positive.
 //!   `DrawerSide`s are physical screen edges (a `Right` drawer slides in from the
@@ -65,34 +65,56 @@
 //! `pointercancel` (the browser claiming the gesture for a pan) ends it as a
 //! snap-back, never a dismissal.
 //!
-//! ## Why `translate`, not `transform`, carries the live drag offset
+//! ## Why `transform`, not `translate`, carries the live drag offset
 //!
-//! [`DrawerContent`]'s *entrance* animation (`preview/src/components/drawer/
-//! style.css`'s `.dx-drawer[data-state="open"]`) is a `@keyframes`/
-//! `animation-fill-mode: forwards` pair, mirroring `Sheet`'s -- required
-//! because a plain CSS `transition` never runs on an element's first style
-//! computation, only on a later *change*, and this panel's `data-state` is
-//! already `"open"` at the moment it is first inserted (`use_animated_open`
-//! only mounts it once `open` is true).
+//! The panel's *slide* (the theme's "Edge panel" recipe, `dx-components-theme.css`:
+//! `dx-edge-in-*`/`dx-edge-out-*`) is a `@keyframes`/`animation-fill-mode: forwards`
+//! pair on the `translate` property -- never `transform`, because a keyframe that
+//! sets `transform` replaces whatever `transform` the element already has for as long
+//! as it runs (`scripts/check-anchored-keyframes.sh`). It has to be a keyframe, not a
+//! `transition`, because a plain CSS `transition` never runs on an element's first
+//! style computation and this panel's `data-state` is already `"open"` at the moment
+//! it is first inserted (`use_animated_open` only mounts it once `open` is true).
 //!
-//! Per the CSS Animations cascade, a *running or forwards-held* animation's
-//! value for a property overrides that property's normal-origin value for as
-//! long as the animation applies to the element -- including a
-//! higher-specificity *inline* style on that same property. Driving the live
-//! drag offset through an inline `transform` would therefore be silently
-//! overridden by the held `forwards` end-state of the entrance keyframe for
-//! the entire time the drawer is open, i.e. the only time a drag can happen
-//! -- the panel would not visibly move at all. `translate` (CSS Transforms
-//! Level 2) is a separate property that *composes* with `transform` instead
-//! of competing for the same cascade slot, so the keyframe's `transform` and
-//! this module's inline `translate` both apply, combined, with no
-//! precedence conflict and no extra timing coordination needed for the
-//! drag-release-into-close handoff (the exit keyframe's `transform` and the
-//! frozen-then-reset drag `translate` simply add). See
-//! `preview/src/components/drawer/style.css` for the rest of the
-//! construction, including its own `KNOWN GAP` note on the one remaining
-//! cosmetic seam this choice leaves (a drag-triggered close and a
-//! keyboard/backdrop-triggered close ease very slightly differently).
+//! Per the CSS Animations cascade, a *running or forwards-held* animation's value for
+//! a property overrides that property's normal-origin value for as long as the
+//! animation applies to the element -- including a higher-specificity *inline* style
+//! on that same property. Driving the live drag offset through an inline `translate`
+//! would therefore be silently overridden by the held `forwards` end-state of the
+//! slide for the entire time the drawer is open, i.e. the only time a drag can happen
+//! -- the panel would not visibly move at all. `transform` is a separate property
+//! that *composes* with `translate` instead of competing for the same cascade slot,
+//! so the slide's `translate` and this module's inline `transform` both apply,
+//! combined, with no precedence conflict and no extra timing coordination needed for
+//! the drag-release-into-close handoff (the exit keyframe's `translate` and the
+//! frozen-then-reset drag `transform` simply add). The inline `transform` is present
+//! only while a drag has moved the panel (or released it into a close): at rest the
+//! attribute is absent, so a stylesheet owns `transform` (the nested-drawer offset)
+//! and `scale` (the nested-drawer shrink) without contesting it. See
+//! `preview/src/components/drawer/style.css` for the rest of the construction.
+//!
+//! ## One side type, resolved once
+//!
+//! [`EdgeSide`] is shared by [`Drawer`] and the themed `Sheet`
+//! (`SheetSide` and [`DrawerSide`] are aliases of it). Its default, [`EdgeSide::Auto`],
+//! is "like shadcn's demo": a bottom panel below the theme's `md` breakpoint
+//! (`--dx-breakpoint-md`, 768px) and a right panel at and above it. It is resolved
+//! ONCE, in Rust ([`use_resolved_edge_side`]), into a concrete side that everything
+//! downstream sees -- the `data-side` attribute the theme keys on, the drag axis
+//! [`GESTURE_JS`] runs on, the handle, the slide -- so no stylesheet or script ever
+//! has to know what `auto` means, and an explicit side is exactly that side.
+//!
+//! ## Nested drawers
+//!
+//! A [`Drawer`] rendered inside another [`DrawerContent`] is nested (Vaul's
+//! `NestedRoot`, without a separate component: the context decides). While the child
+//! is open the parent carries `data-nested-open="true"`, which the theme turns into a
+//! small scale and offset, and closing the child (the moment its close STARTS)
+//! restores it. Escape closes only the top-most because the browser's `cancel` goes
+//! to the top-most modal `<dialog>` only; a drag closes only the top-most because
+//! [`GESTURE_JS`] ignores a press whose nearest drawer is not its own (a child drawer
+//! is a DOM descendant of its parent, so its `pointerdown` bubbles through it). Scroll
+//! lock stays single because `crate::scroll_lock`'s counter nests.
 
 use crate::dialog::{
     DialogContent, DialogCtx, DialogDescription, DialogDescriptionProps, DialogRoot, DialogTitle,
@@ -102,32 +124,50 @@ use crate::{merge_attributes, use_effect_with_cleanup, use_id_or, use_unique_id}
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 
-/// Which edge of the viewport a [`Drawer`] slides in from, and is dragged
-/// toward to dismiss.
-#[derive(Debug, Clone, Copy, Default, PartialEq)]
-pub enum DrawerSide {
+/// Which edge of the viewport an edge panel ([`Drawer`], or the themed `Sheet`) slides in
+/// from -- and, for a drawer, is dragged toward to dismiss. `SheetSide` and [`DrawerSide`]
+/// are aliases of this type: one panel system has one side type.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum EdgeSide {
     /// Slides in from, and is dragged upward toward, the top edge.
     Top,
     /// Slides in from, and is dragged rightward toward, the right edge.
     Right,
     /// Slides in from, and is dragged downward toward, the bottom edge.
-    /// The default -- shadcn/ui's Drawer (Vaul) is a bottom sheet by
-    /// default.
-    #[default]
     Bottom,
     /// Slides in from, and is dragged leftward toward, the left edge.
     Left,
+    /// The bottom edge below the theme's `md` breakpoint (`--dx-breakpoint-md`, 768px:
+    /// a phone, where a bottom sheet is the thumb-reachable one) and the right edge at
+    /// and above it (where a floating side panel is). The default, as in shadcn's
+    /// drawer demo. The panel follows the viewport live, but only a CLOSED panel is
+    /// meant to change side: resizing across the breakpoint with a drawer open moves it
+    /// to the other edge. An explicit side is never changed by the viewport.
+    #[default]
+    Auto,
 }
 
-impl DrawerSide {
-    /// The lowercase name used for the `data-side` attribute (and by the
-    /// themed layer's CSS selectors).
+impl EdgeSide {
+    /// The lowercase name used for the `data-side` attribute (and by the themed layer's
+    /// CSS selectors). Panels render the RESOLVED side ([`EdgeSide::resolve`]), so a
+    /// rendered `data-side` is never `"auto"`.
     pub fn as_str(&self) -> &'static str {
         match self {
-            DrawerSide::Top => "top",
-            DrawerSide::Right => "right",
-            DrawerSide::Bottom => "bottom",
-            DrawerSide::Left => "left",
+            EdgeSide::Top => "top",
+            EdgeSide::Right => "right",
+            EdgeSide::Bottom => "bottom",
+            EdgeSide::Left => "left",
+            EdgeSide::Auto => "auto",
+        }
+    }
+
+    /// The concrete side for a viewport that is at or above the `md` breakpoint (`wide`)
+    /// or below it. Every explicit side resolves to itself.
+    pub fn resolve(self, wide: bool) -> EdgeSide {
+        match self {
+            EdgeSide::Auto if wide => EdgeSide::Right,
+            EdgeSide::Auto => EdgeSide::Bottom,
+            explicit => explicit,
         }
     }
 
@@ -139,15 +179,55 @@ impl DrawerSide {
     /// pointer delta along that axis by `sign` gives the number the whole
     /// gesture runs on: positive is toward the closing edge, negative is
     /// toward (and past) the open position. The screen sides are physical, so
-    /// this does not depend on the text direction.
+    /// this does not depend on the text direction. An unresolved `Auto` answers
+    /// as its narrow-viewport side (callers hand this the RESOLVED side).
     fn drag_axis(self) -> (bool, f64) {
         match self {
-            DrawerSide::Bottom => (true, 1.0),
-            DrawerSide::Top => (true, -1.0),
-            DrawerSide::Right => (false, 1.0),
-            DrawerSide::Left => (false, -1.0),
+            EdgeSide::Bottom | EdgeSide::Auto => (true, 1.0),
+            EdgeSide::Top => (true, -1.0),
+            EdgeSide::Right => (false, 1.0),
+            EdgeSide::Left => (false, -1.0),
         }
     }
+}
+
+/// The side type of [`Drawer`]; an alias of the shared [`EdgeSide`].
+pub type DrawerSide = EdgeSide;
+
+/// The breakpoint [`EdgeSide::Auto`] switches at: the theme's `md` token. The script reads
+/// the token itself (so a retuned theme moves the switch) and falls back to this value when
+/// the theme sheet is not loaded.
+const EDGE_AUTO_BREAKPOINT_VAR: &str = "--dx-breakpoint-md";
+const EDGE_AUTO_BREAKPOINT_FALLBACK: &str = "48rem";
+
+/// Resolves `side` ([`EdgeSide::Auto`] against the viewport) into the concrete side a panel
+/// renders. Call it once per panel root; an explicit side installs nothing.
+///
+/// The viewport is read from one `matchMedia` listener (`min-width` at
+/// `--dx-breakpoint-md`) installed through [`crate::js_listener`], so its removal is derived
+/// from the owning scope. Until its first message arrives (a few milliseconds after
+/// hydration, long before anyone can open a panel) the viewport counts as narrow.
+pub fn use_resolved_edge_side(side: ReadSignal<EdgeSide>) -> Memo<EdgeSide> {
+    let mut wide = use_signal(|| false);
+    crate::js_listener::use_js_listeners(move || {
+        if side() != EdgeSide::Auto {
+            return None;
+        }
+        Some(
+            crate::js_listener::JsListeners::install(
+                "const token = await dioxus.recv();
+                const fallback = await dioxus.recv();
+                const breakpoint = getComputedStyle(document.documentElement).getPropertyValue(token).trim() || fallback;
+                const query = window.matchMedia('(min-width: ' + breakpoint + ')');
+                dioxus.send(query.matches);
+                listen(query, 'change', (e) => dioxus.send(e.matches));",
+            )
+            .arg(EDGE_AUTO_BREAKPOINT_VAR)
+            .arg(EDGE_AUTO_BREAKPOINT_FALLBACK)
+            .on_message(move |matches: bool| wide.set(matches)),
+        )
+    });
+    use_memo(move || side().resolve(wide()))
 }
 
 /// shadcn/ui Drawer (Vaul)'s distance release heuristic: a drag past this
@@ -206,27 +286,24 @@ fn damped_display_offset(raw: f64, panel_size: Option<f64>) -> f64 {
     }
 }
 
-/// The inline `translate` (not `transform` -- see this module's doc)
-/// declaration for a dismiss-oriented `offset`, converted to this side's
-/// real screen axis and sign.
-fn translate_style(side: DrawerSide, offset: f64) -> String {
-    // Explicit fast path for the resting value, rather than always
-    // computing `offset * sign`: for `Top`/`Left`
-    // (`sign == -1.0`), `0.0 * -1.0` is IEEE 754 negative zero,
-    // which `f64`'s `Display` renders as `"-0"` -- a real, if purely
-    // cosmetic, `"translate: 0 -0px"` for those two sides every time the
-    // resting/reset value (by far the most common one -- every open and
-    // every settled drag) was rendered.
+/// The inline `transform` (not `translate` -- see this module's doc) declaration for a
+/// dismiss-oriented `offset`, converted to this side's real screen axis and sign; `None` at
+/// rest, so the attribute is absent and a stylesheet owns `transform` (the nested-drawer
+/// offset) whenever nothing is being dragged.
+fn drag_style(side: EdgeSide, offset: f64) -> Option<String> {
+    // Explicit fast path for the resting value, rather than always computing
+    // `offset * sign`: for `Top`/`Left` (`sign == -1.0`), `0.0 * -1.0` is IEEE 754
+    // negative zero, which `f64`'s `Display` renders as `"-0"`.
     if offset == 0.0 {
-        return "translate: 0 0px".to_string();
+        return None;
     }
     let (vertical, sign) = side.drag_axis();
     let signed = offset * sign;
-    if vertical {
-        format!("translate: 0 {signed}px")
+    Some(if vertical {
+        format!("transform: translateY({signed}px)")
     } else {
-        format!("translate: {signed}px 0")
-    }
+        format!("transform: translateX({signed}px)")
+    })
 }
 
 /// Whether a release should close the drawer: dragged past
@@ -269,14 +346,17 @@ const INTERACTIVE_SELECTOR: &str =
 /// `use_dialog_backdrop_dismiss`.
 ///
 /// Parameters, in order: the content element's id, `vertical`, `sign` (from
-/// [`DrawerSide::drag_axis`]), [`INTERACTIVE_SELECTOR`], [`VELOCITY_WINDOW_MS`],
+/// [`EdgeSide::drag_axis`]), [`INTERACTIVE_SELECTOR`], [`VELOCITY_WINDOW_MS`],
 /// and `enabled` (the drawer's `dismissible`).
 ///
 /// A `pointerdown` starts a drag unless
 /// 1. it is a non-primary mouse button, or
-/// 2. `event.target.closest(INTERACTIVE_SELECTOR)` matches -- the press landed on
+/// 2. its nearest `[data-dx-drawer]` is not this panel -- the press landed inside a
+///    NESTED drawer (a DOM descendant, so its `pointerdown` bubbles through this
+///    one), whose own listener owns it: only the top-most drawer drags, or
+/// 3. `event.target.closest(INTERACTIVE_SELECTOR)` matches -- the press landed on
 ///    (or inside) an interactive descendant, or
-/// 3. the nearest scrollable ancestor *along the drag axis* is scrolled away from
+/// 4. the nearest scrollable ancestor *along the drag axis* is scrolled away from
 ///    `0` (the edge nearest the drag) -- that press should scroll that region
 ///    first. [`DrawerHandle`] itself is never nested inside such a region, so a
 ///    drag started there walks no scrollable ancestor at all.
@@ -336,6 +416,7 @@ if (el && enabled) {
     const onDown = (e) => {
         if (drag) return;
         if (e.pointerType === 'mouse' && e.button !== 0) return;
+        if (e.target.closest('[data-dx-drawer]') !== el) return;
         if (e.target.closest(interactiveSelector)) return;
         let node = e.target;
         while (node && node !== el.parentElement) {
@@ -442,8 +523,18 @@ fn use_drawer_gesture(
 /// unrelated existing one.
 #[derive(Clone, Copy)]
 struct DrawerCtx {
+    /// The RESOLVED side ([`use_resolved_edge_side`]): never [`EdgeSide::Auto`].
     side: ReadSignal<DrawerSide>,
     dismissible: ReadSignal<bool>,
+}
+
+/// Provided by every [`DrawerContent`] to its subtree, so a [`Drawer`] rendered inside it
+/// knows it is nested and can tell its parent it is open.
+#[derive(Clone, Copy)]
+struct DrawerNestCtx {
+    /// How many nested drawers are open right now (open, not merely mounted: a child that
+    /// has started closing has already left the count).
+    open_children: Signal<usize>,
 }
 
 /// The props for the [`Drawer`] component.
@@ -477,9 +568,10 @@ pub struct DrawerRootProps {
     #[props(default)]
     pub on_open_change: Callback<bool>,
 
-    /// Which edge of the viewport the drawer slides in from, and is
-    /// dragged toward to dismiss. Defaults to [`DrawerSide::Bottom`].
-    #[props(default = ReadSignal::new(Signal::new(DrawerSide::Bottom)))]
+    /// Which edge of the viewport the drawer slides in from, and is dragged toward to
+    /// dismiss. Defaults to [`EdgeSide::Auto`]: the bottom below the theme's `md`
+    /// breakpoint, the right at and above it; an explicit side is exactly that side.
+    #[props(default = ReadSignal::new(Signal::new(EdgeSide::Auto)))]
     pub side: ReadSignal<DrawerSide>,
 
     /// Whether the drawer can be dismissed by dragging
@@ -536,13 +628,19 @@ pub struct DrawerRootProps {
 /// [`DrawerContent`] defines the following data attributes you can use to
 /// control styling:
 /// - `data-state`: `"open"` or `"closed"`.
-/// - `data-side`: `"top"`, `"right"`, `"bottom"`, or `"left"`.
+/// - `data-side`: `"top"`, `"right"`, `"bottom"`, or `"left"` -- the RESOLVED side
+///   (never `"auto"`; see [`EdgeSide::Auto`]).
 /// - `data-dragging`: `"true"` while an active pointer drag is in
 ///   progress, `"false"` otherwise.
+/// - `data-nested-open`: `"true"` while a drawer nested inside this one is open (the
+///   theme scales and offsets this one), `"false"` otherwise.
+/// - `data-dx-drawer`: always `"content"`; the marker [`GESTURE_JS`] uses to tell this
+///   panel's presses from a nested drawer's.
 #[component]
 pub fn Drawer(props: DrawerRootProps) -> Element {
+    let resolved = use_resolved_edge_side(props.side);
     use_context_provider(|| DrawerCtx {
-        side: props.side,
+        side: ReadSignal::from(resolved),
         dismissible: props.dismissible,
     });
 
@@ -605,6 +703,30 @@ pub fn DrawerContent(props: DrawerContentProps) -> Element {
     let id = use_id_or(gen_id, props.id);
     let id_opt = use_memo(move || Some(id()));
 
+    // Nesting. The PARENT's context is looked up BEFORE this panel provides its own (a
+    // lookup starts at the calling scope). While this drawer is open it is one of its
+    // parent's `open_children`; the count leaves it the moment it starts closing (the
+    // effect re-runs when `open` flips) and when it unmounts, so the parent is restored as
+    // soon as the child begins to go, not after its exit has played.
+    let parent_nest: Option<DrawerNestCtx> = try_use_context();
+    let open_children = use_signal(|| 0_usize);
+    use_context_provider(|| DrawerNestCtx { open_children });
+    crate::use_effect_with_cleanup(move || {
+        let counted = parent_nest.filter(|_| dialog_ctx.is_open());
+        if let Some(parent) = counted {
+            let mut count = parent.open_children;
+            *count.write() += 1;
+        }
+        move || {
+            if let Some(parent) = counted {
+                let mut count = parent.open_children;
+                if let Ok(mut open) = count.try_write() {
+                    *open = open.saturating_sub(1);
+                };
+            }
+        }
+    });
+
     let mut dragging = use_signal(|| false);
     // Cumulative offset toward the closing edge, as `GESTURE_JS` reports it
     // (negative past the open position); the panel's extent along the drag
@@ -643,10 +765,10 @@ pub fn DrawerContent(props: DrawerContentProps) -> Element {
             dragging.set(false);
             if !cancelled && should_close_on_release(raw, size, velocity) {
                 // Hold the panel where the pointer left it: the exit keyframe
-                // (`transform`) then carries it the rest of the way from HERE.
-                // Resetting the offset to 0 instead made `translate` ease back
-                // to rest while the exit slid the panel out -- a visible hitch
-                // against the release point.
+                // (`translate`) then carries it the rest of the way from HERE.
+                // Resetting the offset to 0 instead made the inline `transform`
+                // ease back to rest while the exit slid the panel out -- a
+                // visible hitch against the release point.
                 released_offset.set(Some(damped_display_offset(raw, size)));
                 dialog_ctx.set_open(false);
             } else {
@@ -668,12 +790,14 @@ pub fn DrawerContent(props: DrawerContentProps) -> Element {
     let is_open = dialog_ctx.is_open();
     let offset =
         released_offset().unwrap_or_else(|| damped_display_offset(raw_offset(), panel_size()));
-    let style = translate_style(side.cloned(), offset);
+    let style = drag_style(side.cloned(), offset);
 
     let content_base = attributes!(div {
+        "data-dx-drawer": "content",
         "data-side": side.cloned().as_str(),
         "data-state": if is_open { "open" } else { "closed" },
         "data-dragging": if dragging() { "true" } else { "false" },
+        "data-nested-open": if open_children() > 0 { "true" } else { "false" },
         style: style,
     });
     let content_attributes = merge_attributes(vec![content_base, props.attributes]);
@@ -850,8 +974,30 @@ mod tests {
     use super::*;
 
     #[test]
-    fn drawer_side_defaults_to_bottom() {
-        assert_eq!(DrawerSide::default(), DrawerSide::Bottom);
+    fn edge_side_defaults_to_auto() {
+        assert_eq!(EdgeSide::default(), EdgeSide::Auto);
+        // The alias is the same type, not a lookalike.
+        let _: DrawerSide = EdgeSide::Auto;
+    }
+
+    /// `Auto` is bottom below the `md` breakpoint and right at and above it; an explicit side is
+    /// exactly that side at every width.
+    #[test]
+    fn auto_resolves_by_viewport_and_an_explicit_side_never_changes() {
+        assert_eq!(EdgeSide::Auto.resolve(false), EdgeSide::Bottom);
+        assert_eq!(EdgeSide::Auto.resolve(true), EdgeSide::Right);
+        for side in [
+            EdgeSide::Top,
+            EdgeSide::Right,
+            EdgeSide::Bottom,
+            EdgeSide::Left,
+        ] {
+            assert_eq!(side.resolve(false), side);
+            assert_eq!(side.resolve(true), side);
+        }
+        // A resolved side is never `auto`, so `data-side` never is.
+        assert_ne!(EdgeSide::Auto.resolve(false).as_str(), "auto");
+        assert_ne!(EdgeSide::Auto.resolve(true).as_str(), "auto");
     }
 
     /// The orientation every drag runs on: `(vertical, sign)` such that a raw delta
@@ -861,10 +1007,10 @@ mod tests {
     /// right drawer RIGHT, a left drawer LEFT.
     #[test]
     fn drag_axis_points_toward_each_sides_own_closing_edge() {
-        assert_eq!(DrawerSide::Bottom.drag_axis(), (true, 1.0));
-        assert_eq!(DrawerSide::Top.drag_axis(), (true, -1.0));
-        assert_eq!(DrawerSide::Right.drag_axis(), (false, 1.0));
-        assert_eq!(DrawerSide::Left.drag_axis(), (false, -1.0));
+        assert_eq!(EdgeSide::Bottom.drag_axis(), (true, 1.0));
+        assert_eq!(EdgeSide::Top.drag_axis(), (true, -1.0));
+        assert_eq!(EdgeSide::Right.drag_axis(), (false, 1.0));
+        assert_eq!(EdgeSide::Left.drag_axis(), (false, -1.0));
     }
 
     /// Applies the script's orientation to a pointer delta, for the cases below.
@@ -876,17 +1022,17 @@ mod tests {
     #[test]
     fn movement_toward_the_closing_edge_is_positive_and_away_from_it_negative() {
         // Screen y grows downward: a bottom drawer closes with +y, a top one with -y.
-        assert!(oriented(DrawerSide::Bottom, 0.0, 10.0) > 0.0);
-        assert!(oriented(DrawerSide::Bottom, 0.0, -10.0) < 0.0);
-        assert!(oriented(DrawerSide::Top, 0.0, -10.0) > 0.0);
-        assert!(oriented(DrawerSide::Top, 0.0, 10.0) < 0.0);
-        assert!(oriented(DrawerSide::Right, 10.0, 0.0) > 0.0);
-        assert!(oriented(DrawerSide::Right, -10.0, 0.0) < 0.0);
-        assert!(oriented(DrawerSide::Left, -10.0, 0.0) > 0.0);
-        assert!(oriented(DrawerSide::Left, 10.0, 0.0) < 0.0);
+        assert!(oriented(EdgeSide::Bottom, 0.0, 10.0) > 0.0);
+        assert!(oriented(EdgeSide::Bottom, 0.0, -10.0) < 0.0);
+        assert!(oriented(EdgeSide::Top, 0.0, -10.0) > 0.0);
+        assert!(oriented(EdgeSide::Top, 0.0, 10.0) < 0.0);
+        assert!(oriented(EdgeSide::Right, 10.0, 0.0) > 0.0);
+        assert!(oriented(EdgeSide::Right, -10.0, 0.0) < 0.0);
+        assert!(oriented(EdgeSide::Left, -10.0, 0.0) > 0.0);
+        assert!(oriented(EdgeSide::Left, 10.0, 0.0) < 0.0);
         // The cross axis never counts.
-        assert_eq!(oriented(DrawerSide::Bottom, 500.0, 0.0), 0.0);
-        assert_eq!(oriented(DrawerSide::Right, 0.0, 500.0), 0.0);
+        assert_eq!(oriented(EdgeSide::Bottom, 500.0, 0.0), 0.0);
+        assert_eq!(oriented(EdgeSide::Right, 0.0, 500.0), 0.0);
     }
 
     #[test]
@@ -945,35 +1091,27 @@ mod tests {
     }
 
     #[test]
-    fn translate_style_resting_value_is_the_same_for_every_side() {
-        // Regression: `0.0 * sign` is negative zero for
-        // `Top`/`Left` (`sign == -1.0`), which `f64::Display`
-        // would otherwise render as the literal text `"-0"`.
+    fn drag_style_is_absent_at_rest_for_every_side() {
+        // Regression: `0.0 * sign` is negative zero for `Top`/`Left` (`sign == -1.0`), which
+        // `f64::Display` would otherwise render as the literal text `"-0"`. At rest there is no
+        // inline style at all, so a stylesheet owns `transform` (the nested-drawer offset).
         for side in [
-            DrawerSide::Top,
-            DrawerSide::Right,
-            DrawerSide::Bottom,
-            DrawerSide::Left,
+            EdgeSide::Top,
+            EdgeSide::Right,
+            EdgeSide::Bottom,
+            EdgeSide::Left,
         ] {
-            assert_eq!(translate_style(side, 0.0), "translate: 0 0px");
+            assert_eq!(drag_style(side, 0.0), None);
         }
     }
 
     #[test]
-    fn translate_style_orients_toward_each_sides_own_edge() {
-        assert_eq!(
-            translate_style(DrawerSide::Bottom, 40.0),
-            "translate: 0 40px"
-        );
-        assert_eq!(translate_style(DrawerSide::Top, 40.0), "translate: 0 -40px");
-        assert_eq!(
-            translate_style(DrawerSide::Right, 40.0),
-            "translate: 40px 0"
-        );
-        assert_eq!(
-            translate_style(DrawerSide::Left, 40.0),
-            "translate: -40px 0"
-        );
+    fn drag_style_orients_toward_each_sides_own_edge() {
+        let style = |side, offset| drag_style(side, offset).unwrap();
+        assert_eq!(style(EdgeSide::Bottom, 40.0), "transform: translateY(40px)");
+        assert_eq!(style(EdgeSide::Top, 40.0), "transform: translateY(-40px)");
+        assert_eq!(style(EdgeSide::Right, 40.0), "transform: translateX(40px)");
+        assert_eq!(style(EdgeSide::Left, 40.0), "transform: translateX(-40px)");
     }
 
     #[test]

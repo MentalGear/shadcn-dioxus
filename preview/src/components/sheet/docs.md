@@ -6,7 +6,7 @@ The sheet component is a panel that slides in from the edge of the screen. It ca
 Sheet {
     open: open(),
     // Which edge to slide in from. Available sides: Top, Right (default), Bottom, Left.
-    "data-side": SheetSide::Right.as_str(),
+    side: SheetSide::Right,
     SheetContentClose {}
     SheetHeader {
         SheetTitle { "Edit profile" }
@@ -17,6 +17,12 @@ Sheet {
     }
 }
 ```
+
+## One edge panel with the drawer
+
+`side` is a typed prop. `SheetSide` is an alias of `EdgeSide`, the one side type the drawer uses too (`DrawerSide` is its other alias), and the panel is the theme's "Edge panel" recipe in `dx-components-theme.css` (`data-dx-surface="edge"` plus the resolved `data-side`): the `<dialog>` reset, the per-side inset, size, border and slide are written once for both components. A sheet defaults to `Right`, as shadcn's does; `SheetSide::Auto` is available (bottom below the `md` breakpoint, right at and above it) but not the default. The old `"data-side"` attribute still works and overrides the prop (`Sidebar` still passes it).
+
+Sheet follows Nova's panel padding of 0: the header, footer and body carry the inset (16px), not the panel -- so a title sits one header inset from the edge, not two.
 
 ## SheetClose with `as` prop
 
@@ -75,7 +81,7 @@ Tailwind classes verbatim:
   sheet rendered as a floating centered card, and a top/bottom sheet
   stretched to the full viewport height instead of sizing to its content).
   Fixed by resetting `margin`/`inset`/`width`/`height` to a known, non-auto
-  baseline on `.dx-sheet` itself and letting each `[data-side]` rule reopen
+  baseline in the theme's shared Edge panel recipe (for Sheet and Drawer alike) and letting each `[data-side]` rule reopen
   (set back to `auto`) exactly the one edge it doesn't pin.
 
 ## Overlay
@@ -86,4 +92,4 @@ Closing keeps the sheet a modal -- in the top layer, at the same size and place 
 
 ## Motion
 
-The sheet slides in from its edge over 500 ms and out over `--dx-motion-duration-slower`; the durations are literals in the `dx-slide-*` rules of `sheet/style.css`, and the scrim follows `--dx-overlay-duration`, `--dx-overlay-ease`, `--dx-overlay-scrim` and `--dx-overlay-blur`. The sheet stays open until its exit settles (at most 1500 ms) and only then closes, so the slide-out is always played. Its keyframes use `transform` because an edge-docked panel carries no anchor centring (it is on the `check-anchored-keyframes.sh` allowlist). Reduced motion swaps in `--dx-motion-duration-reduced`. Nothing loops. See [Motion](/docs#motion) for the tokens, reduced motion and the per-component table.
+The sheet slides in from its edge over 500 ms and out over `--dx-motion-duration-slower`; the durations are the `--dx-edge-duration-enter/-exit` slots' defaults in the theme's Edge panel recipe, and the scrim follows `--dx-overlay-duration`, `--dx-overlay-ease`, `--dx-overlay-scrim` and `--dx-overlay-blur`. The sheet stays open until its exit settles (at most 1500 ms) and only then closes, so the slide-out is always played. Its keyframes are the shared `dx-edge-in-*`/`dx-edge-out-*` pair in the theme, on `translate` like every other keyframe (no `transform`, so nothing is on the `check-anchored-keyframes.sh` allowlist). Reduced motion swaps in `--dx-motion-duration-reduced`. Nothing loops. See [Motion](/docs#motion) for the tokens, reduced motion and the per-component table.

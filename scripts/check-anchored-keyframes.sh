@@ -52,11 +52,6 @@ from pathlib import Path
 ALLOW = [
     ("preview/src/components/chart/style.css", "dx-chart-*",
      "SVG mark grow-in (scaleX/scaleY/scale from 0 with a transform-origin on <rect>/<path>), inside the plot; never an overlay"),
-    ("preview/src/components/drawer/style.css", "dx-drawer-slide-*",
-     "edge-docked panel slides from its screen edge; its `data-side` is an edge, not an anchor side, and the drag offset "
-     "is already the separate `translate` property composing with this `transform` (see the stylesheet)"),
-    ("preview/src/components/sheet/style.css", "dx-slide-*",
-     "edge-docked sheet slides from its screen edge; positioned by inset, carries no anchor centring transform"),
     ("preview/src/components/toast/style.css", "dx-slide-up-*",
      "toast stack: each keyframe restates the stacking `scale(--toast-index)` it replaces; a fixed corner stack, not anchored"),
     ("preview/src/components/toast/style.css", "dx-toast-slide-in",

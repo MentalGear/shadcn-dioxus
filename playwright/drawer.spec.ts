@@ -30,6 +30,13 @@ import { assertSharedBackdrop, captureBackdrop, resolveOverlayMs } from "./asser
 const URL = `${BASE_URL}/component/?name=drawer&`;
 const GOTO_OPTS = { timeout: 20 * 60 * 1000 };
 
+// The demos' drawers take the default side, `EdgeSide::Auto`: the bottom below the `md` breakpoint (768px)
+// and a floating right panel at and above it. The drag, handle and flush-edge tests below are about the
+// BOTTOM drawer, so the file runs at a phone width; the `Auto` and explicit-side tests set their own.
+const PHONE = { width: 390, height: 844 };
+const DESKTOP = { width: 1280, height: 800 };
+test.use({ viewport: PHONE });
+
 // The entrance slide-in keyframe runs over `--dx-motion-duration-slow`
 // (200ms, preview/assets/dx-components-theme.css) with `animation-fill-mode:
 // forwards`; a geometry assertion taken before it finishes reads a mid-
@@ -315,10 +322,10 @@ test('a short, slow drag snaps back without closing the drawer', async ({ page }
 
   await expect(root).toHaveAttribute('data-state', 'open');
   await expect(content).toHaveCount(1);
-  // The live drag offset is carried by an inline `translate` (see
-  // primitives/src/drawer.rs's module doc for why not `transform`) --
-  // snapping back resets it to exactly 0.
-  await expect.poll(async () => content.getAttribute('style')).toContain('translate: 0 0px');
+  // The live drag offset is carried by an inline `transform` (see
+  // primitives/src/drawer.rs's module doc for why not `translate`) --
+  // snapping back removes it, so the attribute is absent at rest.
+  await expect.poll(async () => (await content.getAttribute('style')) ?? '').not.toContain('transform');
 });
 
 // ---------------------------------------------------------------------------------------
@@ -402,7 +409,7 @@ async function expectStillOpenAtRest(page: import('@playwright/test').Page) {
   await expect(page.locator(ROOT)).toHaveAttribute('data-state', 'open');
   await expect(page.locator(CONTENT)).toHaveCount(1);
   expect(await page.locator(CONTENT).evaluate((el) => (el as HTMLDialogElement).matches(':modal'))).toBe(true);
-  await expect.poll(async () => page.locator(CONTENT).getAttribute('style')).toContain('translate: 0 0px');
+  await expect.poll(async () => (await page.locator(CONTENT).getAttribute('style')) ?? '').not.toContain('transform');
 }
 
 test("a mouse drag UP on a bottom drawer's handle never closes it, however far, even released over the backdrop", async ({ page }) => {
@@ -613,5 +620,232 @@ test.describe("Scrim", () => {
       () => page.keyboard.press("Escape"),
     );
     assertSharedBackdrop(capture, await resolveOverlayMs(page), "drawer");
+  });
+});
+
+// ---------------------------------------------------------------------------------------
+// One edge panel, two drawers' worth of sides (backlog rows 207 and 208). `Auto` -- the default -- is
+// the bottom below the `md` breakpoint (768px) and the right at and above it; an explicit side is
+// exactly that side at every width. A bottom drawer is docked flush and rounds the corners facing the
+// page; a left/right one floats inset from the viewport edge with all four corners rounded. Tier 3
+// ("opinion"): shadcn's demo is a bottom Vaul drawer, the owner asked for `Auto` as the default.
+// ---------------------------------------------------------------------------------------
+
+/** The panel's resolved placement: the edge gaps to the fixed viewport box, the radii and the handle. */
+async function placement(page: import('@playwright/test').Page) {
+  const viewport = await fixedViewportBox(page);
+  return page.locator(CONTENT).evaluate((el, vp) => {
+    const r = el.getBoundingClientRect();
+    const cs = getComputedStyle(el);
+    const handle = el.querySelector('[data-slot="drawer-handle"]') as HTMLElement | null;
+    return {
+      side: el.getAttribute('data-side'),
+      top: r.top - vp.y,
+      right: vp.x + vp.width - r.right,
+      bottom: vp.y + vp.height - r.bottom,
+      left: r.left - vp.x,
+      radius: {
+        tl: parseFloat(cs.borderTopLeftRadius),
+        tr: parseFloat(cs.borderTopRightRadius),
+        br: parseFloat(cs.borderBottomRightRadius),
+        bl: parseFloat(cs.borderBottomLeftRadius),
+      },
+      handleShown: handle ? getComputedStyle(handle).display !== 'none' : null,
+    };
+  }, viewport);
+}
+
+test.describe('Auto side (the default)', () => {
+  test('is a flush bottom drawer with a rounded top edge and a handle below 768px', async ({ page }) => {
+    await page.setViewportSize(PHONE);
+    await openBottom(page);
+    const p = await placement(page);
+    expect(p.side).toBe('bottom');
+    expect(Math.abs(p.bottom)).toBeLessThanOrEqual(FLUSH_TOLERANCE_PX);
+    expect(Math.abs(p.left)).toBeLessThanOrEqual(FLUSH_TOLERANCE_PX);
+    expect(Math.abs(p.right)).toBeLessThanOrEqual(FLUSH_TOLERANCE_PX);
+    expect(p.radius.tl).toBeGreaterThan(0);
+    expect(p.radius.tr).toBeGreaterThan(0);
+    expect(p.radius.bl).toBe(0);
+    expect(p.radius.br).toBe(0);
+    expect(p.handleShown).toBe(true);
+  });
+
+  test('is a floating right drawer with all four corners rounded and no handle at 768px and above', async ({ page }) => {
+    await page.setViewportSize(DESKTOP);
+    await openBottom(page);
+    const p = await placement(page);
+    expect(p.side).toBe('right');
+    // Inset from the viewport edge on the three sides it floats off (the theme's `--dx-space-2`, 8px)...
+    for (const gap of [p.top, p.right, p.bottom]) expect(Math.abs(gap - 8)).toBeLessThanOrEqual(FLUSH_TOLERANCE_PX);
+    // ...three quarters of the viewport wide, capped at 24rem (shadcn's `w-3/4 sm:max-w-sm`).
+    expect((await page.locator(CONTENT).boundingBox())!.width).toBeLessThanOrEqual(384 + FLUSH_TOLERANCE_PX);
+    for (const r of Object.values(p.radius)) expect(r).toBeGreaterThan(0);
+    // The grab bar is the bottom drawer's.
+    expect(p.handleShown).toBe(false);
+  });
+
+  test('breaks exactly at the md breakpoint (767px bottom, 768px right) and follows a resize while closed', async ({ page }) => {
+    await page.setViewportSize({ width: 767, height: 800 });
+    await gotoHydrated(page, URL, GOTO_OPTS);
+    const trigger = page.getByRole('button', { name: 'Move Goal' });
+    await trigger.click();
+    await expect(page.locator(CONTENT)).toHaveAttribute('data-side', 'bottom');
+    await page.keyboard.press('Escape');
+    await expect(page.locator(ROOT)).toHaveCount(0);
+
+    // No reload: the listener on the media query moves the next open to the other side.
+    await page.setViewportSize({ width: 768, height: 800 });
+    await trigger.click();
+    await expect(page.locator(CONTENT)).toHaveAttribute('data-side', 'right');
+    await page.keyboard.press('Escape');
+    await expect(page.locator(ROOT)).toHaveCount(0);
+  });
+
+  test('a drag toward the right edge closes the auto-resolved right drawer; away from it never does', async ({ page }) => {
+    await page.setViewportSize(DESKTOP);
+    await openBottom(page);
+    const w = (await page.locator(CONTENT).boundingBox())!.width;
+    // The grab surface is the panel itself (the handle is hidden on a side drawer).
+    await pointerDrag(page, '[data-slot="drawer-title"]', { kind: 'mouse', dx: -300, dy: 0, steps: 6, stepMs: 8, flick: true });
+    await page.waitForTimeout(900);
+    await expect(page.locator(ROOT)).toHaveAttribute('data-state', 'open');
+    await pointerDrag(page, '[data-slot="drawer-title"]', { kind: 'mouse', dx: w * 0.5, dy: 0, steps: 8, stepMs: 60, pauseBeforeUpMs: 200 });
+    await expect(page.locator(ROOT)).toHaveCount(0);
+  });
+});
+
+test.describe('An explicit side is exactly that side', () => {
+  for (const [name, viewport] of [['phone', PHONE], ['desktop', DESKTOP]] as const) {
+    test(`Top is a flush top drawer with a rounded bottom edge and no handle (${name})`, async ({ page }) => {
+      await page.setViewportSize(viewport);
+      await openTop(page);
+      const p = await placement(page);
+      expect(p.side).toBe('top');
+      expect(Math.abs(p.top)).toBeLessThanOrEqual(FLUSH_TOLERANCE_PX);
+      expect(p.radius.bl).toBeGreaterThan(0);
+      expect(p.radius.br).toBeGreaterThan(0);
+      expect(p.radius.tl).toBe(0);
+      expect(p.radius.tr).toBe(0);
+    });
+
+    test(`Left floats inset with all corners rounded (${name})`, async ({ page }) => {
+      await page.setViewportSize(viewport);
+      await gotoHydrated(page, URL, GOTO_OPTS);
+      await page.getByRole('button', { name: 'Open from Left' }).click();
+      await awaitAnimationsSettled(page.locator(CONTENT));
+      const p = await placement(page);
+      expect(p.side).toBe('left');
+      for (const gap of [p.top, p.left, p.bottom]) expect(Math.abs(gap - 8)).toBeLessThanOrEqual(FLUSH_TOLERANCE_PX);
+      for (const r of Object.values(p.radius)) expect(r).toBeGreaterThan(0);
+    });
+  }
+});
+
+// ---------------------------------------------------------------------------------------
+// Nested drawers (Vaul's `NestedRoot`): a `Drawer` inside another `DrawerContent`. Opening the child
+// steps the parent back (a shrink + offset), closing it restores the parent; Escape, a drag and a
+// scrim tap act on the top-most only; the page's scroll lock stays one lock.
+// ---------------------------------------------------------------------------------------
+test.describe('Nested drawers', () => {
+  // The child is a DOM descendant of the parent, so its title is also "inside" the parent's content: match it
+  // by its own text.
+  const CHILD_TITLE = '[data-slot="drawer-title"]:text-is("Nested drawer")';
+  const CHILD_HANDLE = '[data-slot="drawer-content"] [data-slot="drawer-content"] [data-slot="drawer-handle"]';
+
+  const scrollLocked = (page: import('@playwright/test').Page) =>
+    page.evaluate(() => (window as unknown as { __dxScrollLocked?: boolean }).__dxScrollLocked === true);
+  const openModals = (page: import('@playwright/test').Page) =>
+    page.evaluate(() => [...document.querySelectorAll('dialog')].filter((d) => d.open && d.matches(':modal')).length);
+  const parentState = (page: import('@playwright/test').Page) =>
+    page.evaluate(() => {
+      const el = document.querySelector('dialog[data-slot="drawer-content"][data-nested-open]') as HTMLElement;
+      const cs = getComputedStyle(el);
+      return { nested: el.getAttribute('data-nested-open'), scale: cs.scale, transform: cs.transform, open: el.getAttribute('data-state') };
+    });
+
+  async function openParent(page: import('@playwright/test').Page) {
+    await gotoHydrated(page, URL, GOTO_OPTS);
+    await page.getByRole('button', { name: 'Open nested drawers' }).click();
+    await expect(page.getByText('Parent drawer', { exact: true })).toBeVisible();
+    await awaitAnimationsSettled(page.locator(CONTENT));
+  }
+  async function openChild(page: import('@playwright/test').Page) {
+    await page.getByRole('button', { name: 'Open nested drawer', exact: true }).click();
+    await expect(page.locator(CHILD_TITLE)).toBeVisible();
+    await awaitAnimationsSettled(page.locator(CHILD_HANDLE));
+  }
+
+  test('opening the child scales and offsets the parent; closing it restores the parent', async ({ page }) => {
+    await openParent(page);
+    expect(await parentState(page)).toMatchObject({ nested: 'false', scale: 'none' });
+
+    await openChild(page);
+    // The parent steps back: `scale` 0.96 and a vertical offset, once its transition has played.
+    await expect.poll(async () => (await parentState(page)).nested).toBe('true');
+    await expect.poll(async () => parseFloat((await parentState(page)).scale)).toBeCloseTo(0.96, 2);
+    await expect.poll(async () => (await parentState(page)).transform).not.toBe('none');
+    expect(await openModals(page)).toBe(2);
+
+    // Escape closes only the top-most (the child); the parent is restored the moment the child starts to go.
+    await page.keyboard.press('Escape');
+    await expect(page.locator(CHILD_TITLE)).toHaveCount(0);
+    expect(await openModals(page)).toBe(1);
+    await expect.poll(async () => parentState(page)).toMatchObject({ nested: 'false', scale: 'none', transform: 'none', open: 'open' });
+    // Focus is back on the button that opened the child, inside the still-open parent.
+    await expect(page.getByRole('button', { name: 'Open nested drawer', exact: true })).toBeFocused();
+  });
+
+  test('Escape, then Escape again: child first, parent second; the scroll lock stays one lock until the last closes', async ({ page }) => {
+    await openParent(page);
+    expect(await scrollLocked(page)).toBe(true);
+    await openChild(page);
+    expect(await scrollLocked(page)).toBe(true);
+
+    await page.keyboard.press('Escape');
+    await expect(page.locator(CHILD_TITLE)).toHaveCount(0);
+    // The parent still holds the lock: closing the child must not release it.
+    expect(await scrollLocked(page)).toBe(true);
+    await expect(page.getByText('Parent drawer', { exact: true })).toBeVisible();
+
+    await page.keyboard.press('Escape');
+    await expect(page.locator(ROOT)).toHaveCount(0);
+    expect(await scrollLocked(page)).toBe(false);
+    await expect(page.getByRole('button', { name: 'Open nested drawers' })).toBeFocused();
+  });
+
+  test('a drag on the child closes only the child, however far; the parent never starts a drag', async ({ page }) => {
+    await openParent(page);
+    await openChild(page);
+    const h = (await page.locator(CHILD_HANDLE).evaluate((el) => (el.closest('dialog') as HTMLElement).getBoundingClientRect().height));
+    // 50% of the CHILD, slowly: the same gesture would close the (taller) parent too if its listener took it.
+    await pointerDrag(page, CHILD_HANDLE, { kind: 'mouse', dx: 0, dy: h * 0.5, steps: 8, stepMs: 60, pauseBeforeUpMs: 200 });
+    await expect(page.locator(CHILD_TITLE)).toHaveCount(0);
+    await page.waitForTimeout(900);
+    await expect(page.getByText('Parent drawer', { exact: true })).toBeVisible();
+    expect(await openModals(page)).toBe(1);
+    expect(await scrollLocked(page)).toBe(true);
+    await expect.poll(async () => parentState(page)).toMatchObject({ nested: 'false', scale: 'none', open: 'open' });
+    // And now the parent, alone on top, drags normally.
+    const ph = (await page.locator(CONTENT).boundingBox())!.height;
+    await pointerDrag(page, '[data-slot="drawer-content"] > [data-slot="drawer-handle"]', { kind: 'mouse', dx: 0, dy: ph * 0.5, steps: 8, stepMs: 60, pauseBeforeUpMs: 200 });
+    await expect(page.locator(ROOT)).toHaveCount(0);
+    expect(await scrollLocked(page)).toBe(false);
+  });
+
+  test('a tap on the child scrim closes the child, not the parent', async ({ page }) => {
+    await openParent(page);
+    await openChild(page);
+    await page.mouse.click(195, 8); // far above both panels: the child's own scrim
+    await expect(page.locator(CHILD_TITLE)).toHaveCount(0);
+    await page.waitForTimeout(500);
+    await expect(page.getByText('Parent drawer', { exact: true })).toBeVisible();
+    expect(await scrollLocked(page)).toBe(true);
+  });
+
+  test('has no automatically detectable a11y issues with both drawers open', async ({ page }) => {
+    await openParent(page);
+    await openChild(page);
+    await expectNoAxeViolations(page, 'drawer: nested, open', { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 });

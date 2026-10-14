@@ -1091,6 +1091,304 @@ html[data-theme="light"] [class~="dxc-system"] {
 }
 
 /* ============================================================================
+ * Edge panel, once (docs/backlog.md rows 207 and 208).
+ *
+ * Sheet and Drawer are the same thing: a modal panel docked to one edge of the viewport that slides
+ * in from it. They used to be two (two side enums, two stylesheets each re-deriving the `<dialog>`
+ * UA reset, the per-side inset, border and size, and two sets of slide keyframes), and a fix to one
+ * had to be made again in the other. This is the one recipe; Sheet is an edge panel, and Drawer is an
+ * edge panel plus a drag gesture, a handle and nested stacking (`drawer/style.css`, the Drawer
+ * primitive), none of which belongs here.
+ *
+ * HOW IT IS KEYED. A panel opts in with `data-dx-surface="edge"` and wears the side the Rust side
+ * RESOLVED, `data-side="top|right|bottom|left"` (never `auto`: `EdgeSide::Auto` -- bottom below
+ * `--dx-breakpoint-md`, right at and above it -- is decided once in `primitives/src/drawer.rs`, so no rule
+ * here, in a component sheet or in a script has to know what it means). Every selector is one `:where()`,
+ * so the rules have ZERO specificity and a component sheet or the app overrides any property by declaring
+ * it; the ink alone is one attribute selector, for the reason the Floating surfaces section gives.
+ * `data-dx-edge="floating"` floats a LEFT or RIGHT panel inset from the viewport edge with a full border
+ * and all four corners rounded (shadcn's side drawer); without it the panel is docked flush.
+ *
+ * WHAT THE RECIPE OWNS: the `<dialog>` UA reset (Chromium's `dialog:modal` ships `inset: 0`,
+ * `margin: auto`, `fit-content` sizing and a `max-width`/`max-height` cap, which together centre a
+ * panel instead of anchoring it -- every edge is reset to a known baseline and each side re-opens only
+ * the one it does not pin), the per-side inset, size (shadcn's `w-3/4`, capped at 24rem from the `sm`
+ * breakpoint up), border on the edge facing the page and the matching corners, the fill and ink
+ * (`--dx-popover`, shared with Dialog, AlertDialog and Command), the slide, and the modal exit window
+ * (`display: none` outside `[open]`, no pointer input while closing; see `use_dialog_open_driver`).
+ * A component keeps what is really its own: Sheet its shadow, gap and close button, Drawer its drag
+ * (`transform`, `touch-action`), handle, overdrag fill and nested stacking.
+ *
+ * SLOTS (registered with `inherits: false`, so a Sheet opened from a Drawer reads its own):
+ *
+ *   --dx-edge-padding          the panel's `padding` (default 0, Nova: only the header, footer and body
+ *                              carry the inset; Drawer keeps `--dx-space-4`, see its sheet)
+ *   --dx-edge-radius           the radius of the corners facing the page (default 0; Drawer `--dx-radius-xl`)
+ *   --dx-edge-inset            how far a floating panel stands off the viewport edge (default `--dx-space-2`)
+ *   --dx-edge-duration-enter / the slide's duration and curve for open / close (defaults 500 ms and 300 ms,
+ *   --dx-edge-duration-exit /  `ease-in-out`, the Sheet's; Drawer sets its own, shorter pair)
+ *   --dx-edge-ease-enter /
+ *   --dx-edge-ease-exit
+ *
+ * MOTION. The slide is a `@keyframes` pair on `translate` selected through `--dx-edge-enter/-exit`
+ * (set by the side rules), the same slot pattern as `--dx-floating-enter/-exit`: never `transform`
+ * (`scripts/check-anchored-keyframes.sh`), which also leaves `transform` free for the Drawer's live drag
+ * offset and `scale` for its nested shrink -- a held `forwards` animation would override an inline
+ * `translate`. The travel is `100%` of the panel plus `--dx-edge-travel` (0 docked, the inset when
+ * floating), so a floating panel leaves the screen completely. `prefers-reduced-motion` swaps in
+ * `--dx-motion-duration-reduced`. A closing panel stays a modal in the top layer until the exit has
+ * played, and takes no pointer input meanwhile.
+ * ========================================================================== */
+@property --dx-edge-padding {
+  inherits: false;
+  syntax: "*";
+}
+
+@property --dx-edge-radius {
+  inherits: false;
+  syntax: "*";
+}
+
+@property --dx-edge-inset {
+  inherits: false;
+  syntax: "*";
+}
+
+@property --dx-edge-duration-enter {
+  inherits: false;
+  syntax: "*";
+}
+
+@property --dx-edge-duration-exit {
+  inherits: false;
+  syntax: "*";
+}
+
+@property --dx-edge-ease-enter {
+  inherits: false;
+  syntax: "*";
+}
+
+@property --dx-edge-ease-exit {
+  inherits: false;
+  syntax: "*";
+}
+
+:where([data-dx-surface="edge"]) {
+  position: fixed;
+  z-index: var(--dx-z-overlay-raised);
+  display: flex;
+  width: auto;
+  max-width: none;
+  height: auto;
+  max-height: none;
+  flex-direction: column;
+  padding: var(--dx-edge-padding, 0);
+  border: none;
+  margin: 0;
+  background: var(--dx-popover);
+  background-clip: padding-box;
+  font-size: var(--dx-text-sm);
+  inset: 0;
+  will-change: translate;
+}
+
+/* The ink: one attribute selector, not zero (see the Floating surfaces section: the engine's top-layer
+ * ink fix is a zero-specificity `:where(dialog)` rule injected after this file). */
+[data-dx-surface="edge"] {
+  color: var(--dx-popover-foreground);
+}
+
+/* A real modal in the top layer only between `showModal()` and the final `close()`. Outside that window
+ * the UA's `dialog:not([open]) { display: none }`, which `display: flex` above overrides, is restored: a
+ * not-yet-shown or already-closed dialog is not in the top layer, where its `position: fixed` box is
+ * resolved against (and clipped to) the nearest layout-contained ancestor (the home page's
+ * `content-visibility` demo cards), so it would be drawn a card wide instead of a viewport wide. */
+:where(dialog[data-dx-surface="edge"]:not([open])) {
+  display: none;
+}
+
+/* The four placements. Each re-opens the one edge it does not pin (`inset: 0` above pins the rest),
+ * rests off screen (the slide holds `translate: 0 0` once it has played), and names its keyframes. */
+:where([data-dx-surface="edge"][data-side="bottom"]) {
+  --dx-edge-enter: dx-edge-in-bottom;
+  --dx-edge-exit: dx-edge-out-bottom;
+  --dx-edge-travel: 0px;
+
+  top: auto;
+  border-top: 1px solid var(--dx-border);
+  border-top-left-radius: var(--dx-edge-radius, 0);
+  border-top-right-radius: var(--dx-edge-radius, 0);
+  translate: 0 100%;
+}
+
+:where([data-dx-surface="edge"][data-side="top"]) {
+  --dx-edge-enter: dx-edge-in-top;
+  --dx-edge-exit: dx-edge-out-top;
+  --dx-edge-travel: 0px;
+
+  bottom: auto;
+  border-bottom: 1px solid var(--dx-border);
+  border-bottom-left-radius: var(--dx-edge-radius, 0);
+  border-bottom-right-radius: var(--dx-edge-radius, 0);
+  translate: 0 -100%;
+}
+
+:where([data-dx-surface="edge"][data-side="right"]) {
+  --dx-edge-enter: dx-edge-in-right;
+  --dx-edge-exit: dx-edge-out-right;
+  --dx-edge-travel: 0px;
+
+  left: auto;
+  width: 75%;
+  border-left: 1px solid var(--dx-border);
+  border-bottom-left-radius: var(--dx-edge-radius, 0);
+  border-top-left-radius: var(--dx-edge-radius, 0);
+  translate: calc(100% + var(--dx-edge-travel)) 0;
+}
+
+:where([data-dx-surface="edge"][data-side="left"]) {
+  --dx-edge-enter: dx-edge-in-left;
+  --dx-edge-exit: dx-edge-out-left;
+  --dx-edge-travel: 0px;
+
+  right: auto;
+  width: 75%;
+  border-right: 1px solid var(--dx-border);
+  border-bottom-right-radius: var(--dx-edge-radius, 0);
+  border-top-right-radius: var(--dx-edge-radius, 0);
+  translate: calc(-100% - var(--dx-edge-travel)) 0;
+}
+
+/* shadcn's `sm:max-w-sm`: the 24rem (384px) cap applies from Tailwind's `sm` breakpoint up, a narrower
+ * viewport gets the plain 75%. `40rem` is `--dx-breakpoint-sm`, copied because a media query cannot
+ * consume a custom property. */
+@media (width >= 40rem) {
+  :where([data-dx-surface="edge"]:is([data-side="left"], [data-side="right"])) {
+    max-width: 24rem;
+  }
+}
+
+/* Floating (a left or right panel only; a top or bottom one stays flush): stands `--dx-edge-inset` off
+ * the viewport edge on every side, with a full border and all four corners rounded. Declared after the
+ * four placements so it wins their same-specificity properties. */
+:where([data-dx-surface="edge"][data-dx-edge="floating"]:is([data-side="left"], [data-side="right"])) {
+  --dx-edge-travel: var(--dx-edge-inset, var(--dx-space-2));
+
+  top: var(--dx-edge-travel);
+  bottom: var(--dx-edge-travel);
+  border: 1px solid var(--dx-border);
+  border-radius: var(--dx-edge-radius, 0);
+}
+
+:where([data-dx-surface="edge"][data-dx-edge="floating"][data-side="right"]) {
+  right: var(--dx-edge-travel);
+}
+
+:where([data-dx-surface="edge"][data-dx-edge="floating"][data-side="left"]) {
+  left: var(--dx-edge-travel);
+}
+
+:where([data-dx-surface="edge"][data-state="open"]) {
+  animation: var(--dx-edge-enter) var(--dx-edge-duration-enter, 500ms) var(--dx-edge-ease-enter, ease-in-out) forwards;
+}
+
+:where([data-dx-surface="edge"][data-state="closed"]) {
+  animation: var(--dx-edge-exit) var(--dx-edge-duration-exit, var(--dx-motion-duration-slower)) var(--dx-edge-ease-exit, ease-in-out) forwards;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where([data-dx-surface="edge"][data-state="open"]),
+  :where([data-dx-surface="edge"][data-state="closed"]) {
+    animation-duration: var(--dx-motion-duration-reduced);
+  }
+}
+
+/* The shared slide, `translate` only (never `transform`, see above). Side is a screen-geometry fact, not a
+ * reading-direction one: a `right` panel always comes from the physical right edge, in LTR or RTL alike
+ * (each side has its own named keyframes, so there is no sign to flip). */
+@keyframes dx-edge-in-bottom {
+  from {
+    translate: 0 100%;
+  }
+
+  to {
+    translate: 0 0;
+  }
+}
+
+@keyframes dx-edge-out-bottom {
+  from {
+    translate: 0 0;
+  }
+
+  to {
+    translate: 0 100%;
+  }
+}
+
+@keyframes dx-edge-in-top {
+  from {
+    translate: 0 -100%;
+  }
+
+  to {
+    translate: 0 0;
+  }
+}
+
+@keyframes dx-edge-out-top {
+  from {
+    translate: 0 0;
+  }
+
+  to {
+    translate: 0 -100%;
+  }
+}
+
+@keyframes dx-edge-in-right {
+  from {
+    translate: calc(100% + var(--dx-edge-travel, 0px)) 0; /* rtl-physical: a right panel enters from the physical right edge */
+  }
+
+  to {
+    translate: 0 0;
+  }
+}
+
+@keyframes dx-edge-out-right {
+  from {
+    translate: 0 0;
+  }
+
+  to {
+    translate: calc(100% + var(--dx-edge-travel, 0px)) 0; /* rtl-physical: see dx-edge-in-right */
+  }
+}
+
+@keyframes dx-edge-in-left {
+  from {
+    translate: calc(-100% - var(--dx-edge-travel, 0px)) 0; /* rtl-physical: a left panel enters from the physical left edge */
+  }
+
+  to {
+    translate: 0 0;
+  }
+}
+
+@keyframes dx-edge-out-left {
+  from {
+    translate: 0 0;
+  }
+
+  to {
+    translate: calc(-100% - var(--dx-edge-travel, 0px)) 0; /* rtl-physical: see dx-edge-in-left */
+  }
+}
+
+/* ============================================================================
  * Shared interaction-rules layer (docs/backlog.md row 31a).
  *
  * One place for the hover/focus/disabled/reduced-motion affordances that
