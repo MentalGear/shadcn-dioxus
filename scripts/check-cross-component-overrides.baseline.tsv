@@ -57,8 +57,6 @@ preview/src/components/input_group/style.css	composed:input	.dx-input-group .dx-
 preview/src/components/input_group/style.css	composed:input	.dx-input-group .dx-input-group-control:focus-visible	box-shadow
 preview/src/components/input_group/style.css	composed:input	.dx-input-group .dx-input-group-control:hover:not(:disabled)	background
 preview/src/components/input_group/style.css	composed:input	.dx-input-group .dx-input-group-control:hover:not(:disabled)	box-shadow
-preview/src/components/input_group/style.css	tag	.dx-input-group-addon button	height
-preview/src/components/input_group/style.css	tag	.dx-input-group-addon button	padding
 preview/src/components/item/style.css	composed:separator	.dx-item-separator	margin
 preview/src/components/message_scroller/style.css	composed:button	.dx-message-scroller-button[data-active="false"]	opacity
 preview/src/components/message_scroller/style.css	composed:button	.dx-message-scroller-button[data-active="false"]	pointer-events

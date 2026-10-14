@@ -251,7 +251,7 @@
 }
 
 .dx-color-picker[data-disabled="true"],
-.dx-color-picker [data-disabled="true"] {
+.dx-color-picker [data-disabled="true"]:not(:where([popover], dialog) *) {
     cursor: not-allowed;
     opacity: var(--dx-opacity-disabled);
 }
