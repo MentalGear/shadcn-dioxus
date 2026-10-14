@@ -49,17 +49,6 @@ preview/src/components/date_picker/style.css	composed:popover	.dx-date-picker-gr
 preview/src/components/date_picker/style.css	composed:popover	.dx-date-picker-group .dx-date-picker-popover-trigger:focus-visible	border-radius
 preview/src/components/date_picker/style.css	composed:popover	.dx-date-picker-group .dx-date-picker-popover-trigger:focus-visible	box-shadow
 preview/src/components/date_picker/style.css	composed:popover	.dx-date-picker-group .dx-date-picker-popover-trigger:focus-visible	outline
-preview/src/components/field/style.css	composed:label	.dx-field[data-orientation="horizontal"] > .dx-field-label	margin-top
-preview/src/components/field/style.css	tag	.dx-field[data-orientation="horizontal"] > button	margin-top
-preview/src/components/field/style.css	tag	.dx-field[data-orientation="horizontal"] > input	margin-top
-preview/src/components/field/style.css	tag	.dx-field[data-orientation="horizontal"] > select	margin-top
-preview/src/components/form/style.css	tag	.dx-form-actions button	background-color
-preview/src/components/form/style.css	tag	.dx-form-actions button	border
-preview/src/components/form/style.css	tag	.dx-form-actions button	border-radius
-preview/src/components/form/style.css	tag	.dx-form-actions button	color
-preview/src/components/form/style.css	tag	.dx-form-actions button	cursor
-preview/src/components/form/style.css	tag	.dx-form-actions button	font-size
-preview/src/components/form/style.css	tag	.dx-form-actions button	padding
 preview/src/components/input_group/style.css	composed:input	.dx-input-group .dx-input-group-control	background
 preview/src/components/input_group/style.css	composed:input	.dx-input-group .dx-input-group-control	border-radius
 preview/src/components/input_group/style.css	composed:input	.dx-input-group .dx-input-group-control	box-shadow
@@ -103,8 +92,6 @@ preview/src/components/sidebar/style.css	composed:button	.dx-sidebar-trigger	jus
 preview/src/components/sidebar/style.css	composed:button	.dx-sidebar-trigger	line-height
 preview/src/components/sidebar/style.css	composed:button	.dx-sidebar-trigger	padding
 preview/src/components/sidebar/style.css	composed:button	.dx-sidebar-trigger	width
-preview/src/components/sidebar/style.css	composed:collapsible	.dx-sidebar-menu-button.dx-sidebar-collapsible-trigger:hover	text-decoration
-preview/src/components/sidebar/style.css	composed:collapsible	.dx-sidebar-menu-button.dx-sidebar-collapsible-trigger:hover	text-decoration-line
 preview/src/components/sidebar/style.css	composed:dropdown_menu	.dx-sidebar-desktop[data-side="left"] .dx-sidebar-footer .dx-sidebar-dropdown-menu-content	bottom
 preview/src/components/sidebar/style.css	composed:dropdown_menu	.dx-sidebar-desktop[data-side="left"] .dx-sidebar-footer .dx-sidebar-dropdown-menu-content	left
 preview/src/components/sidebar/style.css	composed:dropdown_menu	.dx-sidebar-desktop[data-side="left"] .dx-sidebar-footer .dx-sidebar-dropdown-menu-content	margin-bottom
@@ -122,8 +109,6 @@ preview/src/components/sidebar/style.css	composed:dropdown_menu	.dx-sidebar-desk
 preview/src/components/sidebar/style.css	composed:dropdown_menu	.dx-sidebar-desktop[data-side="right"] :is(.dx-sidebar-header, .dx-sidebar-menu-item:has(.dx-sidebar-menu-action)) .dx-sidebar-dropdown-menu-content	margin-top
 preview/src/components/sidebar/style.css	composed:dropdown_menu	.dx-sidebar-desktop[data-side="right"] :is(.dx-sidebar-header, .dx-sidebar-menu-item:has(.dx-sidebar-menu-action)) .dx-sidebar-dropdown-menu-content	right
 preview/src/components/sidebar/style.css	composed:dropdown_menu	.dx-sidebar-desktop[data-side="right"] :is(.dx-sidebar-header, .dx-sidebar-menu-item:has(.dx-sidebar-menu-action)) .dx-sidebar-dropdown-menu-content	top
-preview/src/components/sidebar/style.css	composed:dropdown_menu	.dx-sidebar-footer .dx-sidebar-menu-button.dx-sidebar-dropdown-menu-trigger:not(:focus-visible)	box-shadow
-preview/src/components/sidebar/style.css	composed:dropdown_menu	.dx-sidebar-header .dx-sidebar-menu-button.dx-sidebar-dropdown-menu-trigger:not(:focus-visible)	box-shadow
 preview/src/components/sidebar/style.css	composed:dropdown_menu	.dx-sidebar-menu .dx-sidebar-dropdown-menu	display
 preview/src/components/sidebar/style.css	composed:dropdown_menu	.dx-sidebar-menu .dx-sidebar-dropdown-menu	width
 preview/src/components/sidebar/style.css	composed:dropdown_menu	.dx-sidebar-menu-item > .dx-sidebar-dropdown-menu:has(.dx-sidebar-menu-action)	position
@@ -159,19 +144,3 @@ preview/src/components/sidebar/style.css	composed:skeleton	.dx-sidebar-menu-skel
 preview/src/components/sidebar/style.css	composed:skeleton	.dx-sidebar-menu-skeleton-text	height
 preview/src/components/sidebar/style.css	composed:tooltip	.dx-sidebar-menu .dx-sidebar-tooltip	display
 preview/src/components/sidebar/style.css	composed:tooltip	.dx-sidebar-menu .dx-sidebar-tooltip	width
-preview/src/components/toolbar/style.css	tag	.dx-toolbar button	align-items
-preview/src/components/toolbar/style.css	tag	.dx-toolbar button	background
-preview/src/components/toolbar/style.css	tag	.dx-toolbar button	border
-preview/src/components/toolbar/style.css	tag	.dx-toolbar button	border-radius
-preview/src/components/toolbar/style.css	tag	.dx-toolbar button	color
-preview/src/components/toolbar/style.css	tag	.dx-toolbar button	cursor
-preview/src/components/toolbar/style.css	tag	.dx-toolbar button	display
-preview/src/components/toolbar/style.css	tag	.dx-toolbar button	gap
-preview/src/components/toolbar/style.css	tag	.dx-toolbar button	justify-content
-preview/src/components/toolbar/style.css	tag	.dx-toolbar button	padding
-preview/src/components/toolbar/style.css	tag	.dx-toolbar button:disabled	color
-preview/src/components/toolbar/style.css	tag	.dx-toolbar button:disabled	cursor
-preview/src/components/toolbar/style.css	tag	.dx-toolbar button:focus-visible	background
-preview/src/components/toolbar/style.css	tag	.dx-toolbar button:focus-visible	color
-preview/src/components/toolbar/style.css	tag	.dx-toolbar button:hover:not([disabled])	background
-preview/src/components/toolbar/style.css	tag	.dx-toolbar button:hover:not([disabled])	color

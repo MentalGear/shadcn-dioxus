@@ -1,37 +1,47 @@
+/* Nova alert (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css,
+ * `.cn-alert*`): `grid gap-0.5 rounded-lg border px-2.5 py-2 text-left
+ * text-sm`, with an icon `has-[>svg]:grid-cols-[auto_1fr] has-[>svg]:gap-x-2`
+ * spanning both rows (`*:[svg]:row-span-2 *:[svg]:translate-y-0.5 size-4`).
+ * `default` is `bg-card text-card-foreground`; `destructive` is `text-destructive
+ * bg-card` with the description at `text-destructive/90`, the border staying the
+ * ordinary `border`. `title` is `font-medium`, `description` is
+ * `text-muted-foreground text-sm`. The destructive ink is `--dx-destructive-text`
+ * (the role kept readable AS TEXT; `--dx-destructive` is a fill). */
 .dx-alert {
   position: relative;
   display: grid;
   width: 100%;
   align-items: start;
-  padding: var(--dx-space-4);
+  padding: var(--dx-space-2) var(--dx-space-2-5);
+  border: 1px solid var(--dx-border);
   border-radius: var(--dx-radius-lg);
   background-color: var(--dx-card);
-  box-shadow: inset 0 0 0 1px var(--dx-input);
-  color: var(--dx-foreground);
+  color: var(--dx-card-foreground);
   font-size: var(--dx-text-sm);
-  gap: var(--dx-space-1) var(--dx-space-3);
+  gap: var(--dx-space-0-5) 0;
   grid-template-columns: 1fr;
+  text-align: start;
 }
 
 .dx-alert:has(> svg) {
-  column-gap: var(--dx-space-3);
-  grid-template-columns: var(--dx-space-4) 1fr;
+  column-gap: var(--dx-space-2);
+  grid-template-columns: auto 1fr;
 }
 
 .dx-alert > svg {
   width: var(--dx-space-4);
   height: var(--dx-space-4);
-  margin-top: var(--dx-space-0-5);
   color: currentcolor;
+  grid-row: span 2;
+  translate: 0 var(--dx-space-0-5);
 }
 
 .dx-alert-title {
-  min-height: var(--dx-space-4);
-  color: var(--dx-foreground);
+  color: inherit;
   font-size: var(--dx-text-sm);
   font-weight: 500;
   grid-column-start: 2;
-  line-height: 1;
+  line-height: 1.25rem;
 }
 
 .dx-alert:not(:has(> svg)) .dx-alert-title {
@@ -43,7 +53,31 @@
   color: var(--dx-muted-foreground);
   font-size: var(--dx-text-sm);
   grid-column-start: 2;
-  line-height: 1.5;
+  line-height: 1.25rem;
+  text-wrap: balance;
+}
+
+@media (width >= 48rem) {
+  .dx-alert-description {
+    text-wrap: pretty;
+  }
+}
+
+.dx-alert-description p:not(:last-child) {
+  margin-bottom: var(--dx-space-4);
+}
+
+/* `[&_a]:underline [&_a]:underline-offset-3 [&_a]:hover:text-foreground` on
+ * the title and the description. */
+.dx-alert-title a,
+.dx-alert-description a {
+  text-decoration-line: underline;
+  text-underline-offset: 3px;
+}
+
+.dx-alert-title a:hover,
+.dx-alert-description a:hover {
+  color: var(--dx-foreground);
 }
 
 .dx-alert:not(:has(> svg)) .dx-alert-description {
@@ -51,25 +85,9 @@
 }
 
 .dx-alert[data-style="destructive"] {
-  background-color: var(--dx-card);
-  box-shadow: inset 0 0 0 1px var(--dx-destructive);
-  color: var(--dx-destructive);
-}
-
-.dx-alert[data-style="destructive"] .dx-alert-title {
-  color: var(--dx-destructive);
+  color: var(--dx-destructive-text);
 }
 
 .dx-alert[data-style="destructive"] .dx-alert-description {
-  /* --primary-error-color, not --secondary-error-color: the latter is #ef4444,
-     which is 3.76:1 on this alert's light background and fails the >= 4.5:1
-     rule this theme carries (docs/backlog.md row 39, checked by the axe
-     color-contrast scans). --primary-error-color (#dc2626) is 4.83:1 and is
-     already what the title above uses. Caught by alert.spec.ts's own axe pass
-     on this component's first run. */
-  color: var(--dx-destructive);
-}
-
-.dx-alert[data-style="destructive"] > svg {
-  color: var(--dx-destructive);
+  color: color-mix(in oklab, var(--dx-destructive-text) 90%, transparent);
 }

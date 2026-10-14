@@ -10,24 +10,29 @@
   position: relative;
 }
 
+/* The bar's own entries (a trigger, or a link sitting straight in the bar) are Nova's menubar
+ * trigger (shadcn-ui/ui@295a1f1 style-nova.css `.cn-menubar-trigger`: `hover:bg-muted
+ * aria-expanded:bg-muted rounded-sm px-1.5 py-[2px] text-sm font-medium`); the navbar is not a
+ * shadcn component, so it borrows its sibling bar's values. */
 .dx-navbar-trigger,
 .dx-navbar > .dx-navbar-item {
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  padding: var(--dx-space-2) var(--dx-space-3);
+  padding: var(--dx-space-0-5) var(--dx-space-1-5);
   border: none;
-  border-radius: calc(var(--dx-radius-lg) - var(--dx-radius-sm));
+  border-radius: var(--dx-radius-sm);
   background: none;
   color: var(--dx-foreground);
   cursor: pointer;
+  font-size: var(--dx-text-sm);
+  font-weight: 500;
   transition: background-color var(--dx-motion-duration-fast) var(--dx-motion-ease-out);
 }
 
 .dx-navbar-nav[data-state="open"] .dx-navbar-trigger {
-  background-color: var(--dx-accent);
-  color: var(--dx-accent-foreground);
+  background-color: var(--dx-muted);
 }
 
 .dx-navbar-trigger[data-disabled="true"] {
@@ -37,10 +42,17 @@
 }
 
 .dx-navbar-trigger:hover:not([data-disabled="true"]),
-.dx-navbar-trigger:focus-visible {
-  background: var(--dx-accent);
-  color: var(--dx-accent-foreground);
+.dx-navbar-trigger:focus-visible,
+.dx-navbar > .dx-navbar-item:hover:not([data-disabled="true"]),
+.dx-navbar > .dx-navbar-item:focus-visible {
+  background: var(--dx-muted);
   outline: none;
+}
+
+/* Not in Nova (see ../menubar/style.css): the muted fill alone is a weak focus cue in dark. */
+.dx-navbar-trigger:focus-visible,
+.dx-navbar > .dx-navbar-item:focus-visible {
+  box-shadow: var(--dx-ring-focus);
 }
 
 /* Include the top margin in the navbar content pointer events */
@@ -250,10 +262,12 @@
   }
 }
 
+/* An entry inside a panel is a menu item: the theme's menu-item row (`--dx-menu-item-*`, Nova
+ * `.cn-dropdown-menu-item` `gap-1.5 rounded-md px-1.5 py-1 text-sm`, hover `bg-accent`). */
 .dx-navbar-item {
   display: block;
-  padding: var(--dx-space-2) var(--dx-space-3);
-  border-radius: calc(var(--dx-radius-lg) - var(--dx-radius-sm));
+  padding: var(--dx-menu-item-padding);
+  border-radius: var(--dx-menu-item-radius);
   color: var(--dx-foreground);
   cursor: pointer;
   font-size: var(--dx-text-sm);

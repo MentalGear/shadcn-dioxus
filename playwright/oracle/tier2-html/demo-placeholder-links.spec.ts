@@ -86,10 +86,20 @@ const SCENARIOS: Record<string, Scenario[]> = {
   top_layer: ["clip", "edge-bottom"].map((which) => ({
     link: `#${which}-navigation-menu-content a[href="#"]`,
     open: async (page: Page) => {
-      if (!(await page.locator(`#${which}-navigation-menu-content a[href="#"]`).isVisible())) {
-        await page.locator(`#${which}-navigation-menu-trigger`).click();
-      }
-      await expect(page.locator(`#${which}-navigation-menu-content a[href="#"]`)).toBeVisible();
+      // The trigger opens on hover intent (primitives/src/hover_intent.rs: 150 ms open delay), and an
+      // activated link closes the panel, which stays MOUNTED and visible (`data-state="closed"`, so
+      // `isVisible()` is true) for its ~420 ms exit animation + settle hold before it is removed (row 190).
+      // So "is a link visible?" is the wrong question: asked inside that window it skips the open and the
+      // panel then vanishes under the next `focus()`/`click()`. Ask for the OPEN state, let a closing panel
+      // finish leaving, then open it the way a user does: pointer onto the trigger, from elsewhere (a
+      // pointer already resting on the trigger produces no `mouseenter`, hence no open intent).
+      const panel = page.locator(`#${which}-navigation-menu-content`);
+      const openLink = panel.and(page.locator('[data-state="open"]')).locator('a[href="#"]').first();
+      if (await openLink.isVisible()) return;
+      await expect(panel, "a closing panel finishes its exit").toHaveCount(0);
+      await page.mouse.move(1, 1);
+      await page.locator(`#${which}-navigation-menu-trigger`).hover();
+      await expect(openLink, "hover intent opens the panel").toBeVisible();
     },
   })),
 };

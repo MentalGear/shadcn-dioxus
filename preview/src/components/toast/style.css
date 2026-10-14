@@ -1,3 +1,8 @@
+/* Toast. Sonner's Nova theme (shadcn-ui/ui@295a1f1 registry/bases/base/ui/sonner.tsx
+ * and style-nova.css `.cn-toast`): the toast is `rounded-2xl`, its edge
+ * `--normal-border: var(--border)`, its raised shadow the theme's. The typed
+ * fills below (success, error, warning, info) are this library's own; the
+ * rebuild on shadcn's Sonner is backlog row 138. */
 .dx-toast-container {
   position: fixed;
   z-index: var(--dx-z-top);
@@ -75,10 +80,10 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--dx-space-3) var(--dx-space-4);
-  border: 1px solid var(--dx-input);
-  border-radius: var(--dx-radius-lg);
+  border: 1px solid var(--dx-border);
+  border-radius: var(--dx-radius-2xl);
   margin-top: calc(-1 * var(--dx-space-16));
-  box-shadow: 0 4px 12px rgb(0 0 0 / 15%);
+  box-shadow: var(--dx-shadow-lg);
   filter: var(--light, none)
     var(
       --dark,

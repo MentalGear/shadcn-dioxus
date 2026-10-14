@@ -1,3 +1,8 @@
+/* Nova checkbox (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css, `.cn-checkbox`):
+   `border-input dark:bg-input/30 data-checked:bg-primary data-checked:text-primary-foreground
+   data-checked:border-primary ... size-4 rounded-[4px] border`. The 1px border is the inset
+   box-shadow below, so the focus and invalid rings replace it (the field recipes carry their own
+   edge). */
 .dx-checkbox {
     /* A constant 1rem square that is a FLEX box, never an inline-block
        (Nova's `flex size-4 items-center justify-center`,
@@ -19,12 +24,15 @@
     justify-content: center;
     padding: 0;
     border: none;
-    border-radius: var(--dx-radius-sm);
+    border-radius: 4px;
     margin: 0;
-    background-color: var(--dx-muted);
-    box-shadow: inset 0 0 0 1px var(--dx-border-strong);
+    background-color: var(--dx-field-fill);
+    box-shadow: inset 0 0 0 1px var(--dx-input);
     color: var(--dx-foreground);
     cursor: pointer;
+
+    /* The ring is the box-shadow token on :focus-visible; the UA outline would be a second ring. */
+    outline: none;
 }
 
 .dx-checkbox-indicator {
@@ -39,6 +47,12 @@
     flex: none;
     align-items: center;
     justify-content: center;
+}
+
+/* `.cn-checkbox-indicator`: `[&>svg]:size-3.5` (14px). */
+.dx-checkbox-indicator > svg {
+    width: 0.875rem;
+    height: 0.875rem;
 }
 
 .dx-checkbox[data-state="checked"] {

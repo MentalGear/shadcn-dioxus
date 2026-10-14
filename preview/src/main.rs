@@ -23,6 +23,7 @@ use crate::components::{
     tabs::{TabContent, TabList, TabTrigger, Tabs, TabsVariant},
     textarea::{Textarea, TextareaVariant},
     toggle_group::{ToggleGroup, ToggleItem},
+    tooltip::{Tooltip, TooltipContent, TooltipTrigger},
 };
 use charts_gallery::{Charts, ChartsKind};
 use core::panic;
@@ -34,6 +35,7 @@ use dioxus_icons::lucide::{
     ChevronsUpDown, Compass, Copy, ExternalLink, FileText, Hash, House, Layers, LayoutGrid, Mail,
     Pause, Play, SkipBack, SkipForward, SquareCheck,
 };
+use dioxus_primitives::{ContentAlign, ContentSide};
 use nav_link::NavLink;
 use std::str::FromStr;
 use strum::{Display, EnumIter, EnumString, IntoEnumIterator};
@@ -1610,7 +1612,7 @@ fn DocsLayout(
                                                         to: Route::component(component.name),
                                                         attributes,
                                                         {component.name.replace("_", " ")}
-                                                        ExtraBadge { name: component.name }
+                                                        ExtraBadge { name: component.name, tip: ExtraBadgeTip::Title }
                                                     }
                                                 },
                                             }
@@ -1869,10 +1871,11 @@ fn ComponentHighlight(demo: ComponentDemoData) -> Element {
                         // heading's accessible name stays the component's name.
                         div { class: "dx-component-page-title",
                             h1 { "{name}" }
-                            ExtraBadge { name: raw_name }
+                            ExtraBadge { name: raw_name, tip: ExtraBadgeTip::Tooltip }
                         }
                         ComponentInstallCommand { name: raw_name }
                     }
+                    ExtraExplainer { name: raw_name }
                     p { "{description}" }
                     if charts_gallery::offers_gallery_link(raw_name) {
                         // link-ok: content link on a component page, never `/charts/`
@@ -1961,26 +1964,72 @@ fn ComponentInstallCommand(name: &'static str) -> Element {
     }
 }
 
+/// How an [`ExtraBadge`] carries the reason it is an extra.
+#[derive(Clone, Copy, PartialEq, Default)]
+enum ExtraBadgeTip {
+    /// The native `title` attribute: for a badge that sits inside another
+    /// interactive element (the sidebar link) or beside a link (the homepage
+    /// card), where a second focusable tooltip trigger would nest or crowd
+    /// the control. Mouse-only, which is why the component page also prints
+    /// the reason ([`ExtraExplainer`]).
+    #[default]
+    Title,
+    /// The project's `Tooltip`: the badge becomes a focusable trigger, so the
+    /// reason opens on hover and on keyboard focus. Only for a badge that is
+    /// not inside another interactive element (the component page header).
+    Tooltip,
+}
+
 /// The "Extra" badge: shown next to the name of a component that is not in
-/// shadcn/ui's catalog (`components::is_extra`, backed by `components::
+/// shadcn/ui's catalog (`components::extra_reason`, backed by `components::
 /// CATALOG`, the one list). Renders nothing for a shadcn component or one
 /// nobody has classified yet. The text is real ("Extra", so it is read out and
-/// survives copy/paste); `title` carries the explanation as a tooltip. It
-/// stays out of the heading elements (the page `h1`, the card `h3`) so those
-/// keep the component's name as their accessible name, and sits inside the
-/// sidebar link, where it extends the link's name to "<name> Extra".
+/// survives copy/paste); the reason it is an extra (`components::
+/// extra_reason`, carried by `Origin::Extra`, so it cannot be missing) is the
+/// tooltip, delivered per [`ExtraBadgeTip`]. It stays out of the heading
+/// elements (the page `h1`, the card `h3`) so those keep the component's name
+/// as their accessible name, and sits inside the sidebar link, where it
+/// extends the link's name to "<name> Extra".
 #[component]
-fn ExtraBadge(name: &'static str) -> Element {
-    if !components::is_extra(name) {
+fn ExtraBadge(name: &'static str, #[props(default)] tip: ExtraBadgeTip) -> Element {
+    let Some(reason) = components::extra_reason(name) else {
         return rsx! {};
+    };
+    match tip {
+        ExtraBadgeTip::Title => rsx! {
+            Badge {
+                variant: BadgeVariant::Outline,
+                class: "dx-extra-badge",
+                title: reason,
+                "Extra"
+            }
+        },
+        ExtraBadgeTip::Tooltip => rsx! {
+            Tooltip {
+                TooltipTrigger {
+                    Badge {
+                        variant: BadgeVariant::Outline,
+                        class: "dx-extra-badge",
+                        "Extra"
+                    }
+                }
+                TooltipContent { side: ContentSide::Bottom, align: ContentAlign::Start, "{reason}" }
+            }
+        },
     }
+}
+
+/// The visible, always-on form of the "Extra" reason, under the component
+/// page's heading: "Extra: not in shadcn/ui. <reason>". Unlike a tooltip it
+/// works on touch and is read in order by screen readers. Renders nothing for
+/// a shadcn component or an unclassified one.
+#[component]
+fn ExtraExplainer(name: &'static str) -> Element {
+    let Some(reason) = components::extra_reason(name) else {
+        return rsx! {};
+    };
     rsx! {
-        Badge {
-            variant: BadgeVariant::Outline,
-            class: "dx-extra-badge",
-            title: components::EXTRA_BADGE_TITLE,
-            "Extra"
-        }
+        p { class: "dx-extra-explainer", "Extra: not in shadcn/ui. {reason}" }
     }
 }
 
@@ -2198,6 +2247,8 @@ fn BlockComponentVariantHighlight(
                 TabContent {
                     index: 0usize,
                     id: "{frame_id}",
+                    // Nova tabs content has no padding (row 132); the Block frame keeps its 2rem.
+                    padding: "var(--dx-space-8)",
                     value: "Preview",
                     width: "100%",
                     position: "relative",
@@ -2279,6 +2330,7 @@ fn BlockComponentVariantHighlight(
                 }
                 TabContent {
                     index: 1usize,
+                    padding: "var(--dx-space-8)",
                     value: "Code",
                     width: "100%",
                     position: "relative",
@@ -3121,7 +3173,7 @@ fn BlockTabs() -> Element {
                 TabTrigger { value: "activity".to_string(), index: 1usize, "Activity" }
                 TabTrigger { value: "files".to_string(), index: 2usize, "Files" }
             }
-            TabContent { index: 0usize, value: "members".to_string(),
+            TabContent { index: 0usize, value: "members".to_string(), padding: "var(--dx-space-8)",
                 div { style: "display: grid; gap: 0.85rem;",
                     for member in members.iter() {
                         div { style: "display: flex; align-items: center; gap: 0.7rem;",
@@ -3147,7 +3199,7 @@ fn BlockTabs() -> Element {
                     }
                 }
             }
-            TabContent { index: 1usize, value: "activity".to_string(),
+            TabContent { index: 1usize, value: "activity".to_string(), padding: "var(--dx-space-8)",
                 div { style: "display: grid; gap: 0.85rem;",
                     for entry in activity.iter() {
                         div { style: "display: flex; align-items: baseline; gap: 0.45rem; font-size: 0.88rem;",
@@ -3158,7 +3210,7 @@ fn BlockTabs() -> Element {
                     }
                 }
             }
-            TabContent { index: 2usize, value: "files".to_string(),
+            TabContent { index: 2usize, value: "files".to_string(), padding: "var(--dx-space-8)",
                 div { style: "display: grid; gap: 0.6rem; color: var(--dx-foreground); font-size: 0.88rem;",
                     div { style: "display: flex; align-items: center; gap: 0.5rem;",
                         span { style: "font-family: monospace; color: var(--dx-muted-foreground);", "/" }
@@ -3453,7 +3505,7 @@ fn ComponentGalleryPreview(component: ComponentDemoData) -> Element {
                             ArrowUpRight { size: "18", stroke_width: "1.6" }
                         }
                     }
-                    ExtraBadge { name }
+                    ExtraBadge { name, tip: ExtraBadgeTip::Title }
                 }
                 p { class: "dx-component-card-description", "{description}" }
                 div { class: "dx-component-card-actions",

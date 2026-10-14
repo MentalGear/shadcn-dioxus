@@ -94,6 +94,10 @@ import type { StateCoverage } from "./computed-style-states";
  * document order), `via` (the input that opened it) and `target` (a readable description). `compare` matches
  * records by tag/class/pseudo/state, so a restyle that stops an overlay from opening, or changes any
  * recorded value, is reported.
+ *    Hover-before-click: the pointer is put on a trigger and given `HOVER_INTENT_WAIT_MS` (see
+ *    `computed-style-states.ts`) BEFORE the click strategy; a trigger that opens on hover (navbar, navigation
+ *    menu, hover cards: hover-intent) is recorded `via: "hover"` and not clicked, because the click would toggle
+ *    the hover-opened panel shut and the snapshot would see no open state. Others click exactly as before.
  *
  * Determinism (A/A; every item was found by an A/A failure): every read is preceded by `settle()` (finite
  * animations/transitions finished, infinite ones parked on frame 0) and by a DOM-quiescence wait; the pointer is

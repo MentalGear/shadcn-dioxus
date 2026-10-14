@@ -109,17 +109,18 @@ pub enum Origin {
     /// A page of shadcn/ui's catalog.
     Shadcn,
     /// A shadcn-dioxus addition that shadcn/ui does not have. Rendered
-    /// with an "Extra" badge (`ExtraBadge`, `main.rs`).
-    Extra,
+    /// with an "Extra" badge (`ExtraBadge`, `main.rs`). The payload is WHY it
+    /// is an extra: one short, user-facing sentence that says what the thing
+    /// is and why it is here. It is part of the variant, so an extra without
+    /// a reason does not compile; the badge tooltip, the sidebar/card `title`
+    /// and the explainer line under the component page's heading all read it.
+    Extra(&'static str),
 }
-
-/// Shown as the `title` of every "Extra" badge.
-pub const EXTRA_BADGE_TITLE: &str = "Not part of shadcn/ui \u{2014} a shadcn-dioxus addition";
 
 /// THE classification: one row per `preview/src/components/<dir>`, naming
 /// whether it is a shadcn/ui catalog page or one of our extras. Everything
 /// that needs to know (the "Extra" badge on the component page, the sidebar
-/// entry and the homepage card) reads it through [`origin_of`] / [`is_extra`].
+/// entry and the homepage card) reads it through [`origin_of`] / [`extra_reason`].
 ///
 /// Why both kinds are listed, not just the extras: a list of extras alone
 /// would make "unclassified" indistinguishable from "shadcn", so a new
@@ -127,14 +128,16 @@ pub const EXTRA_BADGE_TITLE: &str = "Not part of shadcn/ui \u{2014} a shadcn-dio
 /// either way, a new one is absent from this list until someone decides, and
 /// `scripts/check-component-catalog.sh` (run by `scripts/run-gates.sh`) and
 /// the `catalog_classifies_every_demo` test below both fail on it. Until it
-/// is decided [`is_extra`] is `false`, so the UI never claims "not part of
+/// is decided [`extra_reason`] is `None`, so the UI never claims "not part of
 /// shadcn/ui" for something nobody has classified.
 ///
 /// The catalog is `shadcn-ui/ui@295a1f1`, base flavour (64 pages), as audited
 /// in `dev-docs/research/shadcn-catalog-2026-10-04.md`, whose section 2
 /// is the name-by-name comparison. Directory names are the shadcn page name
 /// with `-` as `_`. `scripts/check-component-catalog.sh` reads the
-/// `("name", Origin::...)` rows of this block, so keep one tuple per row.
+/// `("name", Origin::...)` rows of this block, so keep one tuple per row
+/// (`#[rustfmt::skip]` below stops rustfmt splitting a long `Extra` reason row).
+#[rustfmt::skip] // one tuple per line: the check script and the Playwright spec read the rows
 pub const CATALOG: &[(&str, Origin)] = &[
     // shadcn/ui base catalog pages (one per component).
     ("accordion", Origin::Shadcn),
@@ -207,15 +210,15 @@ pub const CATALOG: &[(&str, Origin)] = &[
     ("pie_chart", Origin::Shadcn),
     ("radar_chart", Origin::Shadcn),
     ("radial_chart", Origin::Shadcn),
-    // NOT in shadcn/ui's catalog: these get the "Extra" badge.
-    ("color_picker", Origin::Extra), // upstream component, no shadcn counterpart
-    ("drag_and_drop_list", Origin::Extra), // upstream component, no shadcn counterpart
-    ("form", Origin::Extra), // conformance fixture (shadcn removed `Form`; `Field` replaced it)
-    ("navbar", Origin::Extra), // menubar-pattern nav; shadcn's `navigation-menu` is the separate `navigation_menu`
-    ("tag_group", Origin::Extra), // upstream component, no shadcn counterpart
-    ("toolbar", Origin::Extra), // upstream component, no shadcn counterpart
-    ("top_layer", Origin::Extra), // conformance fixture, not a component
-    ("virtual_list", Origin::Extra), // upstream component, no shadcn counterpart
+    // NOT in shadcn/ui's catalog: these get the "Extra" badge, and say why.
+    ("color_picker", Origin::Extra("A color picker from the upstream Dioxus components; shadcn/ui has no color picker.")),
+    ("drag_and_drop_list", Origin::Extra("A list you can reorder by drag, touch or keyboard, from upstream Dioxus; shadcn/ui has none.")),
+    ("form", Origin::Extra("A test fixture for native form submission; shadcn/ui replaced its Form with Field.")),
+    ("navbar", Origin::Extra("A menubar-style navigation bar from upstream Dioxus; shadcn/ui's Navigation Menu is a different component.")),
+    ("tag_group", Origin::Extra("A focusable group of tags with selection and removal, from upstream Dioxus; not in shadcn/ui.")),
+    ("toolbar", Origin::Extra("A keyboard-navigable toolbar for grouping controls, from upstream Dioxus; not in shadcn/ui.")),
+    ("top_layer", Origin::Extra("A test page for overlay stacking, not an installable component.")),
+    ("virtual_list", Origin::Extra("A long list that renders only the visible rows, from upstream Dioxus; not in shadcn/ui.")),
 ];
 
 /// The [`Origin`] of a component directory name, or `None` while it is
@@ -227,10 +230,14 @@ pub fn origin_of(name: &str) -> Option<Origin> {
         .map(|(_, origin)| *origin)
 }
 
-/// Whether `name` is an extra (not a shadcn/ui catalog page): the one
-/// predicate behind every "Extra" badge.
-pub fn is_extra(name: &str) -> bool {
-    origin_of(name) == Some(Origin::Extra)
+/// Why `name` is an extra, or `None` for a shadcn/ui page or a component
+/// nobody has classified yet: the one lookup behind every "Extra" badge and
+/// explainer.
+pub fn extra_reason(name: &str) -> Option<&'static str> {
+    match origin_of(name) {
+        Some(Origin::Extra(reason)) => Some(reason),
+        Some(Origin::Shadcn) | None => None,
+    }
 }
 
 #[cfg(test)]
@@ -263,11 +270,42 @@ mod catalog_tests {
 
     #[test]
     fn extra_badge_is_for_extras_only() {
-        assert!(is_extra("navbar"));
-        assert!(!is_extra("button"));
-        assert!(!is_extra("chart_tooltip"));
+        assert!(extra_reason("navbar").is_some());
+        assert!(extra_reason("button").is_none());
+        assert!(extra_reason("chart_tooltip").is_none());
         // Unclassified is not "extra": never claim what nobody decided.
-        assert!(!is_extra("no_such_component"));
+        assert!(extra_reason("no_such_component").is_none());
+    }
+
+    /// The reason is what the badge tooltip and the explainer line show, so it
+    /// has to be a real, short sentence (the type already forbids a missing
+    /// one; this forbids an empty or essay-length one).
+    #[test]
+    fn every_extra_has_a_short_reason() {
+        let mut extras = 0;
+        for (name, origin) in CATALOG {
+            if let Origin::Extra(reason) = origin {
+                extras += 1;
+                assert!(
+                    !reason.trim().is_empty(),
+                    "`{name}` has an empty Extra reason"
+                );
+                assert!(
+                    reason.len() < 120,
+                    "`{name}`'s Extra reason is {} characters; keep it under 120: {reason}",
+                    reason.len()
+                );
+                assert!(
+                    reason.ends_with('.'),
+                    "`{name}`'s Extra reason should be a sentence ending in a full stop: {reason}"
+                );
+                assert_eq!(extra_reason(name), Some(*reason));
+            } else {
+                assert_eq!(extra_reason(name), None, "`{name}` is a shadcn page");
+            }
+        }
+        assert!(extras > 0, "CATALOG lists no extras at all");
+        assert_eq!(extra_reason("no_such_component"), None);
     }
 }
 

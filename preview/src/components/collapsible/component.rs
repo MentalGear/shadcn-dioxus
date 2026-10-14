@@ -40,7 +40,7 @@ pub fn CollapsibleTrigger(props: CollapsibleTriggerProps) -> Element {
             if show_icon {
                 ChevronsUpDown {
                     size: "1rem",
-                    stroke: "var(--dx-foreground)",
+                    stroke: "var(--dx-muted-foreground)",
                 }
             }
         }

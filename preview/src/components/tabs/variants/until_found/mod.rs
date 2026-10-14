@@ -21,13 +21,13 @@ pub fn Demo() -> Element {
                     TabTrigger { value: "reviews".to_string(), index: 2usize, "Reviews" }
                 }
                 TabContent { index: 0usize, value: "overview".to_string(),
-                    div { "A small amphibian for small tanks." }
+                    div { padding: "var(--dx-space-4)", "A small amphibian for small tanks." }
                 }
                 TabContent { index: 1usize, value: "specs".to_string(),
-                    div { "Regenerates limbs: the axolotl is fully aquatic." }
+                    div { padding: "var(--dx-space-4)", "Regenerates limbs: the axolotl is fully aquatic." }
                 }
                 TabContent { index: 2usize, value: "reviews".to_string(),
-                    div { "Rated four stars by keepers." }
+                    div { padding: "var(--dx-space-4)", "Rated four stars by keepers." }
                 }
             }
             p { style: "margin: 0; font-size: var(--dx-text-sm); color: var(--dx-muted-foreground)",

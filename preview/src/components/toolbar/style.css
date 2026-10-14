@@ -23,28 +23,48 @@
     gap: var(--dx-space-4);
 }
 
-.dx-toolbar button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: var(--dx-space-2) var(--dx-space-3);
-    border: none;
-    border-radius: calc(var(--dx-radius-lg) - var(--dx-radius-sm));
-    background: none;
-    color: var(--dx-foreground);
-    cursor: pointer;
-    gap: var(--dx-space-1);
+/* The bar's buttons are Nova's Toggle (shadcn-ui/ui@295a1f1 style-nova.css: `.cn-toggle`
+ * `gap-1 rounded-lg text-sm font-medium`, `.cn-toggle-size-default` `h-8 min-w-8 px-2.5`); the
+ * toolbar is not a shadcn component, so it borrows its sibling's values. The rule keys on the
+ * `dx-toolbar-button` class `ToolbarButton` emits, not on any `button` below `.dx-toolbar`: a
+ * button the app places in the bar is its own component's business. */
+.dx-toolbar-button {
+  display: inline-flex;
+  min-width: var(--dx-space-8);
+  height: var(--dx-control-height-default);
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--dx-space-2-5);
+  border: none;
+  border-radius: var(--dx-radius-lg);
+  background: none;
+  color: var(--dx-foreground);
+  cursor: pointer;
+  font-size: var(--dx-text-sm);
+  font-weight: 500;
+  gap: var(--dx-space-1);
 }
 
-.dx-toolbar button:hover:not([disabled]),
-.dx-toolbar button:focus-visible {
-    background: var(--dx-accent);
-    color: var(--dx-accent-foreground);
+.dx-toolbar-button:hover:not([disabled]),
+.dx-toolbar-button:focus-visible {
+  background: var(--dx-accent);
+  color: var(--dx-accent-foreground);
 }
 
-.dx-toolbar button:disabled {
-    color: var(--dx-muted-foreground);
-    cursor: not-allowed;
+/* A pressed toggle button (the demo marks it `data-state="on"` / `aria-pressed="true"`). In dark mode
+ * muted == accent, so the old `var(--dx-muted)` fill vanished under the hover/focus accent and on the
+ * #262626 bar; `--dx-accent-selected` is the theme's selected-state fill (dark: the accent pushed 15%
+ * toward the ink, so it is distinct from hover by construction). Declared after the hover rule so a
+ * hovered pressed button keeps the selected fill. */
+.dx-toolbar-button[data-state="on"],
+.dx-toolbar-button[aria-pressed="true"] {
+  background: var(--dx-accent-selected);
+  color: var(--dx-accent-selected-foreground);
+}
+
+.dx-toolbar-button:disabled {
+  color: var(--dx-muted-foreground);
+  cursor: not-allowed;
 }
 
 .dx-toolbar-group {

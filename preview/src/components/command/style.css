@@ -1,3 +1,15 @@
+/* Nova command (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css, `.cn-command*`):
+ * `.cn-command` = `bg-popover text-popover-foreground rounded-xl p-1`; `.cn-command-dialog` =
+ * the dialog panel (`.cn-dialog-content`: `bg-popover`, `ring-1 ring-foreground/10`, no shadow,
+ * `rounded-xl`) with `top-1/3 p-0 overflow-hidden` and the dialog's `sm:max-w-sm`;
+ * `.cn-command-input-wrapper` = `p-1 pb-0` around `.cn-command-input-group`
+ * (`bg-input/30 border-input/30 h-8 rounded-lg`, the InputGroup recipe, whose focus is
+ * `border-ring ring-3 ring-ring/50` on the GROUP, `.cn-input-group`); `.cn-command-input` =
+ * `text-sm`; `.cn-command-group` = `p-1` with a `px-2 py-1.5 text-xs font-medium
+ * muted-foreground` heading; `.cn-command-item` = `rounded-sm px-2 py-1.5 text-sm gap-2`,
+ * `rounded-lg` inside a dialog, highlight `bg-muted text-foreground`. The panel fill is the one
+ * modal fill (`--dx-popover`) shared with Dialog, AlertDialog, Sheet and Drawer (owner decision 6). */
+
 /* Visually-hidden accessible name for `CommandDialog`. A command palette
  * conventionally shows no visible heading above its search input (unlike
  * `Dialog`/`AlertDialog`, whose demos always render a *visible*
@@ -139,15 +151,14 @@ dialog.dx-command-dialog[open][data-state="open"] {
   }
 }
 
-/* Content box -- positioned near the top third of the viewport (the
- * conventional command-palette placement), rather than dead-centre like
- * `.dx-dialog`: the list below the input grows downward, so centring
+/* Content box -- positioned at the top third of the viewport (Nova's
+ * `top-1/3`), rather than dead-centre like `.dx-dialog`: the list below the input grows downward, so centring
  * vertically would make the whole palette jump as filtered results
  * shrink/grow the box height. */
 .dx-command-dialog {
   position: fixed;
   z-index: var(--dx-z-overlay-raised);
-  top: 20%;
+  top: 33.333%;
 
   /* rtl-physical: viewport-centering, paired with `transform:
      translateX(-50%)` below -- see dialog/style.css's identical note. */
@@ -158,18 +169,18 @@ dialog.dx-command-dialog[open][data-state="open"] {
   max-width: calc(100% - var(--dx-space-8));
   flex-direction: column;
   padding: 0;
-  border: 1px solid var(--dx-border);
+  border: none;
   border-radius: var(--dx-radius-xl);
   margin: 0;
-  background: var(--dx-card);
-  box-shadow: var(--dx-shadow-2xl);
-  color: var(--dx-foreground);
+  background: var(--dx-popover);
+  box-shadow: var(--dx-ring-subtle);
+  color: var(--dx-popover-foreground);
   transform: translateX(-50%); /* rtl-physical: see comment above */
 }
 
 @media (width >= 40rem) {
   .dx-command-dialog {
-    max-width: 32rem;
+    max-width: 24rem;
   }
 }
 
@@ -177,16 +188,40 @@ dialog.dx-command-dialog[open][data-state="open"] {
   display: flex;
   min-height: 0;
   flex-direction: column;
+  padding: var(--dx-space-1);
+  border-radius: var(--dx-radius-xl);
+  background: var(--dx-popover);
+  color: var(--dx-popover-foreground);
 }
 
+/* `.cn-command-input-wrapper` (`p-1 pb-0`) around `.cn-command-input-group`: the wrapper is the
+ * group, so the `p-1 pb-0` is its margin. The group is Nova's InputGroup recipe (`h-8 rounded-lg`,
+ * `bg-input/30`, a `border-input/30` edge) with the search icon as its inline-start addon
+ * (`pl-2`, then the input's own `pl-1.5`).
+ *
+ * The keyboard focus ring belongs to the GROUP, as InputGroup draws it (`.cn-input-group`:
+ * `has-[...:focus-visible]:border-ring ring-3 ring-ring/50`; this library's `.dx-input-group`
+ * does the same with `--dx-ring-field`). It used to be drawn on the borderless input's own box
+ * (`box-shadow: var(--dx-ring-field)` on `.dx-command-input`), a square 1px edge plus 3px halo
+ * hugging the text with no padding, which collided with the search icon. The input itself draws
+ * nothing and resets `outline`, so no UA ring shows either. */
 .dx-command-input-wrapper {
   position: relative;
   display: flex;
+  height: var(--dx-control-height-default);
   flex-shrink: 0;
   align-items: center;
-  padding: 0 var(--dx-space-4);
-  box-shadow: inset 0 -1px 0 0 var(--dx-input);
-  gap: var(--dx-space-2);
+  padding: 0 var(--dx-space-2);
+  border-radius: var(--dx-radius-lg);
+  margin: var(--dx-space-1) var(--dx-space-1) 0;
+  background-color: color-mix(in oklab, var(--dx-input) 30%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--dx-input) 30%, transparent);
+  gap: var(--dx-space-1-5);
+  transition: box-shadow var(--dx-motion-duration-fast) var(--dx-motion-ease-out);
+}
+
+.dx-command-input-wrapper:has(.dx-command-input:focus-visible) {
+  box-shadow: var(--dx-ring-field);
 }
 
 .dx-command-search-icon {
@@ -196,45 +231,56 @@ dialog.dx-command-dialog[open][data-state="open"] {
 
 .dx-command-input {
   width: 100%;
-  padding: var(--dx-space-3) 0;
+  min-width: 0;
+  padding: 0;
   border: none;
   background: transparent;
+  box-shadow: none;
   color: var(--dx-foreground);
   font-family: inherit;
-  font-size: var(--dx-text-base);
+  font-size: var(--dx-text-sm);
   outline: none;
 }
 
-/* The keyboard focus ring: the shared `--dx-ring-field` token every text field
- * draws (`../input/style.css`'s `.dx-input:focus-visible`). The input resets
- * `outline` above and sits borderless in a bottom-ruled strip, so without this
- * nothing marks focus; the ring is drawn on the input's own box, the element
- * that has focus. `playwright/focus-ring.spec.ts` holds it to Input's. */
-.dx-command-input:focus-visible {
-  box-shadow: var(--dx-ring-field);
+/* Floor the font-size to 16px on touch devices, as `.dx-input` does: iOS Safari auto-zooms
+ * the page on focus of anything smaller. */
+@media (pointer: coarse) {
+  .dx-command-input {
+    font-size: var(--dx-text-base);
+  }
 }
 
 .dx-command-input::placeholder {
   color: var(--dx-muted-foreground);
 }
 
+/* `.cn-command-list`: `max-h-72` (18rem), no padding of its own. Nova's `.cn-command-group` is
+ * `p-1`; the group here is the primitive's `role="group"` element, so the list carries that 4px
+ * (which, with `.dx-command`'s own `p-1`, puts the items 8px from the panel edge) and a second
+ * group gets the 4 + 4px Nova's two `p-1`s would leave between them. */
 .dx-command-list {
   overflow: hidden auto;
   max-height: 18rem;
-  padding: var(--dx-space-2);
+  padding: var(--dx-space-1);
 }
 
+.dx-command-list [role="group"] + [role="group"] {
+  margin-block-start: var(--dx-space-2);
+}
+
+/* `.cn-command-empty`: `py-6 text-center text-sm`; Nova gives it no colour of its own. */
 .dx-command-empty {
   padding: var(--dx-space-6) 0;
-  color: var(--dx-muted-foreground);
   font-size: var(--dx-text-sm);
   text-align: center;
 }
 
+/* `[cmdk-group-heading]`: `px-2 py-1.5 text-xs font-medium text-muted-foreground`. */
 .dx-command-group-label {
-  padding: var(--dx-space-2) var(--dx-space-3) var(--dx-space-1);
+  padding: var(--dx-space-1-5) var(--dx-space-2);
   color: var(--dx-muted-foreground);
   font-size: var(--dx-text-xs);
+  font-weight: 500;
 }
 
 /* Menu-item indicator slot, in-flow variant (the construction
@@ -245,12 +291,16 @@ dialog.dx-command-dialog[open][data-state="open"] {
  * (`flex-shrink: 0`, below), the row's `gap` is the minimum clear space, and
  * `overflow-wrap: anywhere` lets a long label wrap in the room that is left
  * rather than push the shortcut out of the row. Guard:
- * playwright/menu-indicator-gap.spec.ts. */
+ * playwright/menu-indicator-gap.spec.ts.
+ *
+ * `.cn-command-item`: `rounded-sm px-2 py-1.5 text-sm gap-2` (the gap is that token, 8px),
+ * `in-data-[slot=dialog-content]:rounded-lg!`, highlight `data-selected:bg-muted
+ * data-selected:text-foreground data-selected:*:[svg]:text-foreground` (see the highlight rule), icons `size-4`. */
 .dx-command-item {
   display: flex;
   align-items: center;
-  padding: var(--dx-space-2) var(--dx-space-3);
-  border-radius: var(--dx-radius-md);
+  padding: var(--dx-space-1-5) var(--dx-space-2);
+  border-radius: var(--dx-radius-sm);
   cursor: default;
   font-size: var(--dx-text-sm);
   gap: var(--dx-menu-item-indicator-gap);
@@ -259,8 +309,27 @@ dialog.dx-command-dialog[open][data-state="open"] {
   user-select: none;
 }
 
+.dx-command-dialog .dx-command-item {
+  border-radius: var(--dx-radius-lg);
+}
+
+.dx-command-item svg:not([class*="size-"]) {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+
+/* Nova's highlight is `muted` + `foreground`; dark `muted` and `accent` are one colour, so the row
+ * keeps the keyboard-highlight role the other menus use (`--dx-accent`, which differs from the
+ * popover by the same step shadcn ships), and its trailing shortcut (`text-muted-foreground
+ * group-data-selected/command-item:text-foreground`) and icons take the foreground. */
 .dx-command-item[data-highlighted="true"] {
   background: var(--dx-accent);
+  color: var(--dx-accent-foreground);
+}
+
+.dx-command-item[data-highlighted="true"] > svg,
+.dx-command-item[data-highlighted="true"] [data-command-item-shortcut] {
   color: var(--dx-accent-foreground);
 }
 

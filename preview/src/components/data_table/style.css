@@ -1,3 +1,8 @@
+/* Data table has no Nova block of its own (shadcn composes it from Table, Input,
+ * Button and Select; see the table, input, button and select sheets for their
+ * `.cn-*` recipes). This sheet is layout only (gaps and flex), so phase C leaves
+ * it unchanged. */
+
 /* Data Table -- shadcn/ui catalog parity (dev-docs/component-backlog.md
  * row 69). Classes namespaced `dx-data-table*`, scripts/check-dx-class-
  * prefix.sh's rule for the `data_table` component folder (`_` -> `-`).

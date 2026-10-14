@@ -1,3 +1,6 @@
+/* Nova skeleton (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css, `.cn-skeleton`:
+ * `bg-muted rounded-md`; registry/bases/radix/ui/skeleton.tsx adds Tailwind's `animate-pulse`:
+ * `pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite`, `50% { opacity: 0.5 }`). */
 .dx-skeleton {
   border-radius: var(--dx-radius-md);
   animation: dx-skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
@@ -10,7 +13,7 @@
     opacity: 1;
   }
 
-  61.8% {
+  50% {
     opacity: 0.5;
   }
 }

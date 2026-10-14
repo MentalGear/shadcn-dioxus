@@ -174,6 +174,7 @@ import { type Page } from "@playwright/test";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "../../axe";
 import { BASE_URL } from "../../base-url";
 import { gotoHydrated } from "../../hydration";
+import { fixedViewportBox } from "../../viewport-box";
 
 const NAV_TIMEOUT = 20 * 60 * 1000; // first run compiles the app
 
@@ -720,7 +721,9 @@ async function rectOf(page: Page, selector: string) {
 }
 
 async function viewportSize(page: Page) {
-  return page.evaluate(() => ({ width: window.innerWidth, height: window.innerHeight }));
+  // The fixed containing block, not `innerWidth` (gutter-inclusive under `scrollbar-gutter: stable`).
+  const { width, height } = await fixedViewportBox(page);
+  return { width, height };
 }
 
 // A 1px tolerance throughout the flip rules below for the same

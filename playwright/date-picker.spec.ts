@@ -35,6 +35,7 @@ import { type Locator, type Page } from "@playwright/test";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
+import { fixedViewportBox } from "./viewport-box";
 
 const NAV_TIMEOUT = 20 * 60 * 1000; // first run compiles the app
 const PAGE_URL = `${BASE_URL}/component/?name=date_picker&`;
@@ -95,7 +96,7 @@ test("anchors the popup next to its trigger, not viewport-centered or offset", a
 
   const t = await rectOf(page, trigger(page));
   const c = await rectOf(page, content(page));
-  const viewport = await page.evaluate(() => ({ width: window.innerWidth, height: window.innerHeight }));
+  const viewport = await fixedViewportBox(page);
   const debug = JSON.stringify({ trigger: t, content: c, viewport });
 
   // Precondition, so a too-short viewport fails loudly as itself instead of as a confusing "not below".
@@ -1302,7 +1303,11 @@ test.describe("Calendar stylesheet before the first open", () => {
  * -----------------------------------------------------------------------
  */
 async function monthGeometry(dialog: Locator) {
-  return dialog.evaluate((d) => {
+  // The box a `position: fixed` panel is placed in (see viewport-box.ts): NOT `documentElement.clientWidth`
+  // -- under `html { scrollbar-gutter: stable }` that reads the gutter-inclusive 390 while the containing
+  // block is 375, which hid a panel landing 11-15px past the right edge (it passed against clientWidth).
+  const fixedBox = await fixedViewportBox(dialog.page());
+  return dialog.evaluate((d, vp) => {
     const rect = (e: Element) => {
       const b = e.getBoundingClientRect();
       return { left: b.left, right: b.right, top: b.top, bottom: b.bottom, width: b.width, height: b.height };
@@ -1310,14 +1315,14 @@ async function monthGeometry(dialog: Locator) {
     const cal = d.querySelector(".dx-calendar") as HTMLElement;
     const views = Array.from(d.querySelectorAll(".dx-calendar-view"));
     return {
-      viewport: { w: document.documentElement.clientWidth, h: window.innerHeight },
+      viewport: { w: vp.width, h: vp.height },
       dialog: rect(d),
       calendar: { ...rect(cal), scrollW: cal.scrollWidth, clientW: cal.clientWidth },
       views: views.map(rect),
       prevPerView: views.map((v) => v.querySelectorAll(".dx-calendar-nav-prev").length),
       nextPerView: views.map((v) => v.querySelectorAll(".dx-calendar-nav-next").length),
     };
-  });
+  }, fixedBox);
 }
 
 async function openMultiMonth(page: Page) {
@@ -1363,6 +1368,24 @@ test.describe("Multi-month popover panel (variant=multi_month)", () => {
       // And it is a real surface in this scheme (not transparent), so the months are readable on it.
       const surface = await dialog.evaluate((d) => getComputedStyle(d).backgroundColor);
       expect(surface).not.toBe("rgba(0, 0, 0, 0)");
+    });
+  }
+
+  // 390 = phone, 600 = small tablet (the months still stack), 900 = the gutter offset used to leak
+  // there too (panel right edge 896 vs a 885 containing block).
+  for (const width of [390, 600, 900]) {
+    test.describe(`at ${width}px width`, () => {
+      test.use({ viewport: { width, height: 844 } });
+
+      test(`the panel stays inside the viewport's fixed containing block (${width}px)`, async ({ page }) => {
+        const dialog = await openMultiMonth(page);
+        const g = await monthGeometry(dialog);
+        const debug = JSON.stringify(g);
+        expect(g.views, debug).toHaveLength(2);
+        expect(g.dialog.left, debug).toBeGreaterThanOrEqual(-0.5);
+        expect(g.dialog.right, debug).toBeLessThanOrEqual(g.viewport.w + 0.5);
+        expect(g.dialog.width, debug).toBeLessThanOrEqual(g.viewport.w);
+      });
     });
   }
 

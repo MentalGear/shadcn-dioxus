@@ -1,58 +1,96 @@
-/* Calendar Container
+/* Nova calendar (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css `.cn-calendar`,
+ * `.cn-calendar-dropdown-root`, `.cn-calendar-caption-label`; structure and the day/range/today recipes
+ * from registry/bases/base/ui/calendar.tsx). `.cn-calendar` is `p-2 [--cell-radius:var(--radius-md)]
+ * [--cell-size:--spacing(7)]`: an 8px frame, 28px cells, an 8px cell radius. Everything below reads those
+ * two as `--dx-calendar-cell-size` / `--dx-calendar-cell-radius`, so a retuned cell moves the month, the
+ * caption, the nav buttons and the day grid together.
  *
- * The card chrome (`border`, `background-color`, `box-shadow`) can be switched off by a container
- * that already IS the card -- a popover panel -- through `--dx-calendar-border`,
- * `--dx-calendar-background` and `--dx-calendar-shadow` (custom properties inherit, so the
- * container sets them without this stylesheet or its own naming namespace being crossed).
+ * Calendar Container
  *
- * Months (`month_count > 1`) sit side by side in this flex row with a gap, and WRAP onto their own
+ * Nova's calendar is `bg-background` with no border or shadow of its own (the docs wrap it in
+ * `rounded-lg border`), and `in-data-[slot=popover-content]:bg-transparent` inside a popover. The border
+ * and fill stay here for a bare calendar and can be switched off by a container that already IS the card
+ * -- a popover panel -- through `--dx-calendar-border` and `--dx-calendar-background` (custom properties
+ * inherit, so the container sets them without this stylesheet's namespace being crossed). The old
+ * `0 2px 10px` drop shadow is gone: Nova draws none.
+ *
+ * Months (`month_count > 1`) sit side by side in this flex row with a gap (`gap-4`), and WRAP onto their own
  * rows when the row is wider than the space it has -- a phone-width viewport, or a narrow card --
  * so two months stack instead of overflowing, without a breakpoint to keep in sync with whatever
- * contains the calendar. shadcn's `numberOfMonths` does the same with `flex-col md:flex-row`. */
+ * contains the calendar. shadcn's `numberOfMonths` does the same with `flex-col md:flex-row`.
+ *
+ * A month is ONE size, set by `--dx-calendar-cell-size` (seven fixed day columns), wherever it lands:
+ * it never grows to fill the row. The container wraps and centres its rows, so a month that wrapped
+ * onto a row of its own keeps the compact grid of the others and sits centred under them, instead of
+ * stretching across the whole card (what `flex: 1 1 auto` plus `1fr`-style day columns did). */
 .dx-calendar {
+    --dx-calendar-cell-size: var(--dx-space-7);
+    --dx-calendar-cell-radius: var(--dx-radius-md);
+
     display: flex;
     width: fit-content;
     max-width: 100%;
     flex-flow: row wrap;
+    justify-content: center;
+    padding: var(--dx-space-2);
     border: var(--dx-calendar-border, 1px solid var(--dx-border));
     border-radius: var(--dx-radius-lg);
     background-color: var(--dx-calendar-background, var(--dx-background));
-    box-shadow: var(--dx-calendar-shadow, 0 2px 10px rgb(0 0 0 / 10%));
     gap: var(--dx-space-4);
 }
 
-/* Calendar Navigation */
+/* Calendar Navigation
+ *
+ * Nova `month_caption`: `flex h-(--cell-size) w-full items-center justify-center px-(--cell-size)` -- one
+ * cell tall, with a cell of reserve on each side for the nav buttons, which are `size-(--cell-size)`
+ * ghost Buttons at the month's edges. `dropdowns` is `gap-1.5 text-sm font-medium`. */
 .dx-calendar-navigation {
     position: relative;
     display: flex;
+    height: var(--dx-calendar-cell-size);
     align-items: center;
     justify-content: center;
-    padding: var(--dx-space-3);
-    padding: var(--dx-space-3) calc(var(--dx-space-3) + var(--dx-space-7) + var(--dx-space-2)) var(--dx-space-1);
-    gap: var(--dx-space-2);
+    font-size: var(--dx-text-sm);
+    font-weight: 500;
+    gap: var(--dx-space-1-5);
+    padding-inline: var(--dx-calendar-cell-size);
 }
 
+/* Dormant title class (nothing in the component renders it today); Nova's caption is `text-sm font-medium`. */
 .dx-calendar-nav-title {
     color: var(--dx-foreground);
-    font-size: var(--dx-text-base);
-    font-weight: 600;
+    font-size: var(--dx-text-sm);
+    font-weight: 500;
 }
 
+/* Nova `button_previous` / `button_next`: `buttonVariants({ variant: "ghost" })` + `size-(--cell-size) p-0
+ * select-none aria-disabled:opacity-50`, with a `size-4` chevron. Ghost is transparent at rest and
+ * `muted` on hover (`dark:hover:bg-muted/50`), the recipe `button/style.css` draws for `data-style="ghost"`,
+ * so rest and hover differ by construction even where dark muted == accent. */
 .dx-calendar-nav-prev,
 .dx-calendar-nav-next {
     position: absolute;
+    top: 0;
     display: flex;
-    width: 1.75rem;
-    height: 1.75rem;
+    width: var(--dx-calendar-cell-size);
+    height: var(--dx-calendar-cell-size);
     align-items: center;
     justify-content: center;
-    border: 1px solid var(--dx-border);
+    padding: 0;
+    border: 1px solid transparent;
     border-radius: var(--dx-radius-lg);
-    background-color: var(--light, transparent)
-        var(--dark, var(--dx-muted));
-    color: var(--dx-muted-foreground);
+    background-color: transparent;
+    color: var(--dx-foreground);
     cursor: pointer;
-    font-size: var(--dx-text-base);
+    font-size: var(--dx-text-sm);
+    outline: none;
+    user-select: none;
+}
+
+.dx-calendar-nav-prev svg,
+.dx-calendar-nav-next svg {
+    width: var(--dx-space-4);
+    height: var(--dx-space-4);
 }
 
 /* rtl-physical: matches shadcn's own calendar.tsx RTL treatment exactly
@@ -66,11 +104,11 @@
    concrete precedent shadcn ships, so it is replicated verbatim rather
    than inventing a position-swap upstream never demonstrated. */
 .dx-calendar-nav-prev {
-    left: 0.75rem; /* rtl-physical: see comment above */
+    left: 0; /* rtl-physical: see comment above */
 }
 
 .dx-calendar-nav-next {
-    right: 0.75rem; /* rtl-physical: see comment above */
+    right: 0; /* rtl-physical: see comment above */
 }
 
 [dir="rtl"] .dx-calendar-nav-prev svg,
@@ -78,10 +116,10 @@
     transform: rotate(180deg);
 }
 
-.dx-calendar-nav-prev:hover,
-.dx-calendar-nav-next:hover {
-    border-color: var(--dx-border-strong);
-    background-color: var(--dx-accent);
+.dx-calendar-nav-prev:not(:disabled):hover,
+.dx-calendar-nav-next:not(:disabled):hover {
+    background-color: var(--light, var(--dx-muted))
+        var(--dark, color-mix(in oklab, var(--dx-muted) 50%, transparent));
     color: var(--dx-foreground);
 }
 
@@ -94,29 +132,37 @@
 
 .dx-calendar-nav-prev:disabled,
 .dx-calendar-nav-next:disabled {
-    border-color: var(--dx-border);
-    background-color: var(--dx-background);
-    color: var(--dx-muted-foreground);
     cursor: not-allowed;
+    opacity: var(--dx-opacity-disabled);
 }
 
 .dx-calendar-month-title {
     display: flex;
     width: 100%;
-    height: 1.75rem;
+    height: var(--dx-calendar-cell-size);
     align-items: center;
     justify-content: center;
 }
 
 /* Calendar Grid
  *
- * One month. `flex: 1 1 auto` (not `width: 100%`): a view must be sized by its own content so
- * several of them can share a row and wrap, while still growing to fill a calendar that is wider
- * than its content (a caller-set width, or a month alone on a wrapped row). */
+ * One month (Nova `month`: `flex w-full flex-col gap-4`), ONE width wherever it lands, so every month of a
+ * multi-month calendar is the same width and a stacked column lines up. Nova's width is the seven day
+ * columns (`7 * --cell-size` = 196px), and its caption fits inside because Nova's dropdowns print the SHORT
+ * month ("Sep"). This calendar prints the full name, and the longest English caption -- September plus
+ * the year select, 174.5px measured at Geist 14px / 500 with the 14px chevrons, borders and 6px gap -- does
+ * not fit in 196px less a cell of nav reserve on each side (140px). So the width is the larger of the
+ * Nova width and that caption plus the two reserves: `2 * cell + 11rem` = 232px, the smallest width
+ * that holds September. A longer localised caption widens it (`min-width: max-content`) rather than
+ * clip. `flex: 0 0 auto`, never `1 1 auto` or `width: 100%`: a month that wraps onto its own row must keep
+ * this width, not grow to fill the row. */
 .dx-calendar-view {
     display: flex;
-    flex: 1 1 auto;
+    width: max(calc(7 * var(--dx-calendar-cell-size)), calc(2 * var(--dx-calendar-cell-size) + 11rem));
+    min-width: max-content;
+    flex: 0 0 auto;
     flex-direction: column;
+    gap: var(--dx-space-4);
 }
 
 /* Cross-lane handoff (rtl-rust, $S/batch3/rtl-rust/css-needs.md): the day
@@ -134,39 +180,56 @@
 
 .dx-calendar-grid {
     width: 100%;
-    padding: var(--dx-space-2);
 }
 
+.dx-calendar-grid-header,
+.dx-calendar-grid-week {
+    display: grid;
+    justify-content: center;
+    grid-template-columns: repeat(7, var(--dx-calendar-cell-size));
+}
+
+/* Nova `week: mt-2`: 8px above every row, the weekday row included. */
 .dx-calendar-grid-header {
-    display: flex;
-    flex-direction: row;
     margin-bottom: var(--dx-space-2);
 }
 
+/* Nova `weekday`: `rounded-(--cell-radius) text-[0.8rem] font-normal text-muted-foreground select-none`. */
 .dx-calendar-grid-day-header {
-    flex: 1;
+    min-width: 0;
+    border-radius: var(--dx-calendar-cell-radius);
     color: var(--dx-muted-foreground);
-    font-size: var(--dx-text-xs);
-    font-weight: 300;
+    font-size: 0.8rem;
+    font-weight: 400;
     text-align: center;
+    user-select: none;
 }
 
 .dx-calendar-grid-body {
     display: flex;
     width: 100%;
     flex-direction: column;
-    gap: var(--dx-space-1);
+    gap: var(--dx-space-2);
 }
 
+/* Nova `CalendarDayButton`: a ghost icon Button, `aspect-square w-full min-w-(--cell-size)`,
+ * `border-0 font-normal`, `rounded-lg` (the Button radius) unless a range piece below says otherwise. */
 .dx-calendar-grid-cell {
-    width: 2rem;
+    width: var(--dx-calendar-cell-size);
     border: none;
     border-radius: var(--dx-radius-lg);
     aspect-ratio: 1;
-    background: none;
     color: var(--dx-foreground);
     cursor: pointer;
     font-size: var(--dx-text-sm);
+}
+
+/* The cell's own fill reset (the UA gives a `<button>` a face colour) is zero-specificity too, and sits
+   BEFORE the hover rule below: with `background: none` on the plain `.dx-calendar-grid-cell` (one class)
+   the :where() hover rule (zero) could never win, so a plain day showed no hover at all. Equal
+   specificity, later source order, wins; every state rule still outranks both. */
+:where(.dx-calendar-grid-cell) {
+    background: none;
 }
 
 /* :where() by construction, not source order: a hover/interaction rule must
@@ -192,8 +255,14 @@
    rule already carries a `:not([data-disabled="true"])` clause that pushes
    its specificity to (0,4,0), tying or beating some state rules below by
    accident), so :where() is used instead -- it needs no such invariant. */
+
+/* Nova ghost hover: `hover:bg-muted dark:hover:bg-muted/50` (the Button recipe in button/style.css). Dark
+   muted == accent now, so the old accent hover and the muted today / in-range fills were one colour; the
+   half-strength muted is the lighter step the Button's own ghost hover takes, and today's hover has a
+   rule of its own (below). */
 :where(.dx-calendar-grid-cell[data-month="current"]:not([data-disabled="true"]):hover) {
-    background-color: var(--dx-accent);
+    background-color: var(--light, var(--dx-muted))
+        var(--dark, color-mix(in oklab, var(--dx-muted) 50%, transparent));
 }
 
 .dx-calendar-grid-cell[data-month="current"]:focus-visible {
@@ -210,9 +279,12 @@
     cursor: not-allowed;
 }
 
+/* A selected day of a neighbouring month (a range spilling over): the theme's selected-on-a-surface
+   fill, not `--dx-accent`, which dark muted / accent ties with everything around it. */
 .dx-calendar-grid-cell[data-month="last"][data-selected="true"],
 .dx-calendar-grid-cell[data-month="next"][data-selected="true"] {
-    background-color: var(--dx-accent);
+    background-color: var(--dx-accent-selected);
+    color: var(--dx-accent-selected-foreground);
 }
 
 .dx-calendar-grid-cell[data-month="current"][data-selected="true"] {
@@ -221,11 +293,11 @@
 }
 
 .dx-calendar-grid-cell[data-month="current"][data-unavailable="true"] {
-    /* axe `color-contrast` (docs/backlog.md row 39, filed 2026-09-03):
-     * `--secondary-color-6`'s light value (#d0d0d0) is meant for
-     * dark-surface use, not light-mode text -- measured 1.54:1 on white.
-     * `--secondary-color-5` is this theme's actual muted-text-on-light
-     * token, already used two rules up for other-month/disabled days. */
+    /* axe `color-contrast` (docs/backlog.md row 39, filed 2026-09-03): an
+     * unavailable day is drawn with the muted-text token at FULL opacity plus
+     * the line-through, the same ink as other-month and disabled days two rules
+     * up. Nova fades a disabled day (`text-muted-foreground opacity-50`); that
+     * would drop it below 4.5:1, so the line-through carries the state instead. */
     color: var(--dx-muted-foreground);
     cursor: not-allowed;
     text-decoration: line-through;
@@ -235,14 +307,16 @@
     padding-inline: 0;
 }
 
-.dx-calendar-grid-week td:first-child .dx-calendar-grid-cell {
-    border-end-start-radius: var(--dx-radius-lg);
-    border-start-start-radius: var(--dx-radius-lg);
+/* Nova `day`: `[&:first-child[data-selected=true]_button]:rounded-l-(--cell-radius)` and the `:last-child`
+   twin -- an in-range cell at the end of a week rounds its outer edge. */
+.dx-calendar-grid-week td:first-child .dx-calendar-grid-cell[data-selection-between="true"] {
+    border-end-start-radius: var(--dx-calendar-cell-radius);
+    border-start-start-radius: var(--dx-calendar-cell-radius);
 }
 
-.dx-calendar-grid-week td:last-child .dx-calendar-grid-cell {
-    border-end-end-radius: var(--dx-radius-lg);
-    border-start-end-radius: var(--dx-radius-lg);
+.dx-calendar-grid-week td:last-child .dx-calendar-grid-cell[data-selection-between="true"] {
+    border-end-end-radius: var(--dx-calendar-cell-radius);
+    border-start-end-radius: var(--dx-calendar-cell-radius);
 }
 
 .dx-calendar-grid-cell[data-month="last"][data-selection-between="true"],
@@ -258,13 +332,15 @@
     color: var(--dx-foreground);
 }
 
+/* Nova `range_start` / `range_end`: `rounded-l/r-(--cell-radius) bg-muted` on the day, with the endpoint
+   itself `bg-primary rounded-(--cell-radius)` (the cell rule below). */
 td:has(.dx-calendar-grid-cell[data-selection-start="true"]) {
     padding: 0;
     margin-top: 1px;
     margin-bottom: 1px;
     background-color: var(--dx-muted);
-    border-end-start-radius: var(--dx-radius-lg);
-    border-start-start-radius: var(--dx-radius-lg);
+    border-end-start-radius: var(--dx-calendar-cell-radius);
+    border-start-start-radius: var(--dx-calendar-cell-radius);
 }
 
 td:has(.dx-calendar-grid-cell[data-selection-end="true"]) {
@@ -272,52 +348,67 @@ td:has(.dx-calendar-grid-cell[data-selection-end="true"]) {
     margin-top: 1px;
     margin-bottom: 1px;
     background-color: var(--dx-muted);
-    border-end-end-radius: var(--dx-radius-lg);
-    border-start-end-radius: var(--dx-radius-lg);
+    border-end-end-radius: var(--dx-calendar-cell-radius);
+    border-start-end-radius: var(--dx-calendar-cell-radius);
 }
 
-/* Bug fixed here (user report, calendar-state lane): the pointer is still
-   over a day right after clicking it -- selecting it does not teleport the
-   mouse -- so ":hover" and "just-selected" are the common case, not an edge
-   case. This rule used to re-declare background-color/color for that case
-   instead of just leaving the plain [data-selected="true"] rule above in
-   place, and its own light/dark branches had drifted apart: the light
-   branch matched that rule's --secondary-color-2/--primary-color, but the
-   dark branch substituted --primary-color-5/--secondary-color-1 -- values
-   close to this file's plain, UNselected hover color (--primary-color-4;
-   #262626 vs #1a1a1a), so in dark mode the high-contrast "selected" pill
-   (#e6e6e6 on black) visually vanished into a near-plain-hover dark square
-   the moment the pointer landed on it, i.e. exactly "active state ... not
-   visible after click". The generic hover rule above is now :where()-wrapped
-   (specificity (0,0,0)), so the plain state rules already above it in this
-   file -- [data-selected="true"], [data-selection-start/-between/-end], the
-   [data-today="true"] one below -- outrank it by construction and need no
-   hover-specific color re-declaration (or re-declaration to keep in sync)
-   at all; only the light-mode bold-on-hover nicety is worth keeping, and it
-   is harmless at zero specificity since nothing else sets font-weight here. */
+.dx-calendar-grid-cell[data-selection-start="true"],
+.dx-calendar-grid-cell[data-selection-end="true"] {
+    border-radius: var(--dx-calendar-cell-radius);
+}
+
+/* Why hover is :where() and the state rules are plain: the pointer is still over a day right after
+   clicking it -- selecting it does not teleport the mouse -- so ":hover" and "just-selected" are the
+   common case, not an edge case (user report, calendar-state lane: "active state on selected date must
+   be over hover state, otherwise active states are not visible after click"). The generic hover rule
+   above is :where()-wrapped (specificity (0,0,0)), so the plain state rules -- [data-selected="true"],
+   [data-selection-start/-between/-end], the [data-today="true"] one below -- outrank it by construction
+   and none of them re-declares a colour for its own `:hover` (a re-declaration whose light and dark arms
+   drift apart is how the selected pill once vanished into the plain hover square in dark mode). Only the
+   light-mode bold-on-hover nicety is worth keeping, and it is harmless at zero specificity since nothing
+   else sets font-weight here. */
 :where(.dx-calendar-grid-cell[data-month="current"][data-selected="true"]:hover) {
     font-weight: var(--light, 550) var(--dark, inherit);
 }
 
+/* Nova `today`: `rounded-(--cell-radius) bg-muted text-foreground` (the day, not the button). The one
+   state whose hover must be spelled out: its fill is `muted` and so is Nova's ghost hover, so the plain
+   hover cannot show on it. Its hover is the theme's selected-on-a-surface fill (`--dx-accent-selected`:
+   dark accent pushed 15% toward the ink, light accent) plus a fixed 6% step toward the ink, i.e. the
+   rest fill and a step by construction, distinct from rest in both modes (checked by
+   playwright/dark-surface-contrast.spec.ts, "calendar today cell hovered"). */
 .dx-calendar-grid-cell[data-month="current"][data-today="true"]:not(
         [data-selected="true"]
     ) {
+    border-radius: var(--dx-calendar-cell-radius);
     background-color: var(--dx-muted);
+    color: var(--dx-foreground);
 }
 
+.dx-calendar-grid-cell[data-month="current"][data-today="true"]:not(
+        [data-selected="true"],
+        [data-disabled="true"]
+    ):hover {
+    background-color: color-mix(in oklab, var(--dx-accent-selected), var(--dx-foreground) 6%);
+}
+
+/* Nova `week_number`: `text-[0.8rem] text-muted-foreground select-none`, in a cell-sized box. Dormant
+   class (the component renders no week-number column today); no fill of its own. */
 .dx-calendar-grid-weeknum {
-    border-radius: var(--dx-radius-lg);
-    background-color: var(--dx-background);
+    display: flex;
+    width: var(--dx-calendar-cell-size);
+    height: var(--dx-calendar-cell-size);
+    align-items: center;
+    justify-content: center;
     color: var(--dx-muted-foreground);
-    font-size: var(--dx-text-xs);
+    font-size: 0.8rem;
+    text-align: center;
+    user-select: none;
 }
 
 /* Calendar with week numbers */
 .dx-calendar-grid-week {
-    display: flex;
     width: 100%;
-    flex-direction: row;
-    justify-content: space-between;
 }
 
 /* Calendar states */
@@ -326,14 +417,18 @@ td:has(.dx-calendar-grid-cell[data-selection-end="true"]) {
     pointer-events: none;
 }
 
+/* Nova `dropdown_root` + `.cn-calendar-dropdown-root`: `relative rounded-(--cell-radius) border border-input`,
+   and on focus `border-ring ring-3 ring-ring/50` (the Button recipe: ring-coloured edge plus the halo). */
 .dx-calendar-month-select-container,
 .dx-calendar-year-select-container {
     position: relative;
+    border: 1px solid var(--dx-input);
+    border-radius: var(--dx-calendar-cell-radius);
 }
 
 .dx-calendar-month-select-container:has(:focus-visible),
 .dx-calendar-year-select-container:has(:focus-visible) {
-    border-radius: var(--dx-radius-lg);
+    border-color: var(--dx-ring-color);
     box-shadow: var(--dx-ring-focus);
 }
 
@@ -364,18 +459,33 @@ td:has(.dx-calendar-grid-cell[data-selection-end="true"]) {
     }
 }
 
+/* Nova `caption_label` (`.cn-calendar-caption-label`): `h-6 pr-1 pl-1.5 flex items-center gap-1
+   rounded-(--cell-radius) text-sm font-medium [&>svg]:size-3.5 [&>svg]:text-muted-foreground`. The
+   `h-6` is the control-height ladder's `xs`. */
 .dx-calendar-month-select-value,
 .dx-calendar-year-select-value {
     display: inline-flex;
+    height: var(--dx-control-height-xs);
     align-items: center;
     justify-content: center;
-    padding: var(--dx-space-1);
     border: none;
+    border-radius: var(--dx-calendar-cell-radius);
     background-color: transparent;
     color: var(--dx-foreground);
     cursor: pointer;
-    font-size: var(--dx-text-base);
+    font-size: var(--dx-text-sm);
+    font-weight: 500;
+    gap: var(--dx-space-1);
+    padding-inline: var(--dx-space-1-5) var(--dx-space-1);
     transition:
         background-color var(--dx-motion-duration-slow) var(--dx-motion-ease),
         color var(--dx-motion-duration-slow) var(--dx-motion-ease);
+    user-select: none;
+}
+
+.dx-calendar-month-select-value svg,
+.dx-calendar-year-select-value svg {
+    width: var(--dx-space-3-5);
+    height: var(--dx-space-3-5);
+    stroke: var(--dx-muted-foreground);
 }

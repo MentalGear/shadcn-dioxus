@@ -28,9 +28,7 @@ pub fn Demo() -> Element {
                     AccordionItem { index: i, default_open: i == 0,
                         AccordionTrigger { "{title}" }
                         AccordionContent {
-                            div { padding_bottom: "1rem",
-                                p { padding: "0", "{body}" }
-                            }
+                            p { padding: "0", "{body}" }
                         }
                     }
                 }

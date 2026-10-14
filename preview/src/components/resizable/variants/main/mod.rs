@@ -1,6 +1,5 @@
 use super::super::component::*;
 use dioxus::prelude::*;
-use dioxus_icons::lucide::GripVertical;
 
 // shadcn/ui v4's own demo: `flex h-[200px] items-center justify-center p-6` per panel, label
 // `font-semibold`. `height: 100%` (fill whatever the *panel* actually gives it) replaces
@@ -22,12 +21,11 @@ fn panel_content(label: &'static str) -> Element {
     }
 }
 
-// shadcn's own handle grip: `bg-border z-10 flex h-4 w-3 items-center justify-center rounded-xs
-// border` (the classes live in style.css's `.dx-resizable-handle-grip`) around a
-// `GripVerticalIcon` at `size-2.5` (0.625rem).
+// Nova's handle grip: `bg-border h-6 w-1 rounded-lg`, a bare pill with no glyph
+// (`.cn-resizable-handle-icon`; the classes live in style.css's `.dx-resizable-handle-grip`).
 fn handle_grip() -> Element {
     rsx! {
-        span { class: "dx-resizable-handle-grip", GripVertical { size: "0.625rem" } }
+        span { class: "dx-resizable-handle-grip" }
     }
 }
 

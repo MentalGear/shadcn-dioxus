@@ -9,16 +9,9 @@
   /* Text-safe destructive ink. `--dx-destructive` is a fill colour: as text it
    * measures about 4.1:1 on its own 10% tint in light and 2.5:1 on the 20% tint
    * in dark, below the 4.5:1 this theme requires (backlog row 39), so the text
-   * is darkened (light) or lightened (dark) toward `--dx-foreground`. Retire this
-   * once the theme has a text-safe destructive role (backlog row 134). */
-  --dx-bubble-destructive-ink: var(
-      --light,
-      color-mix(in oklab, var(--dx-destructive) 80%, var(--dx-foreground))
-    )
-    var(
-      --dark,
-      color-mix(in oklab, var(--dx-destructive) 45%, var(--dx-foreground))
-    );
+   * is darkened (light) or lightened (dark) toward `--dx-foreground`. Now the theme's
+   * text-safe destructive role (`--dx-destructive-text`, backlog row 134). */
+  --dx-bubble-destructive-ink: var(--dx-destructive-text);
 
   position: relative;
   display: flex;
@@ -169,7 +162,7 @@
   padding: var(--dx-space-0-5) var(--dx-space-1-5);
   border-radius: var(--dx-radius-full);
   background-color: var(--dx-muted);
-  box-shadow: 0 0 0 3px var(--dx-card);
+  box-shadow: 0 0 0 3px var(--dx-background);
   color: var(--dx-foreground);
   font-size: var(--dx-text-sm);
   gap: var(--dx-space-1);

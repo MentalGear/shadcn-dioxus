@@ -68,7 +68,7 @@ pub fn Demo() -> Element {
             div { class: "dx-avatar-item",
                 p { class: "dx-avatar-label", "Error State" }
                 ImageAvatar {
-                    size: AvatarImageSize::Medium,
+                    size: AvatarImageSize::ExtraSmall,
                     src: "https://invalid-url.example/image.jpg",
                     alt: "Jordan Reyes",
                     on_state_change: move |state| {
@@ -81,7 +81,7 @@ pub fn Demo() -> Element {
             div { class: "dx-avatar-item",
                 p { class: "dx-avatar-label", "Large Size" }
                 ImageAvatar {
-                    size: AvatarImageSize::Large,
+                    size: AvatarImageSize::Medium,
                     src: PRIYA_NAIR.to_string(),
                     alt: "Priya Nair",
                     on_state_change: move |state| {

@@ -2,6 +2,7 @@ import { test, expect } from "./fixtures";
 import { type Page } from "@playwright/test";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from './axe';
 import { BASE_URL } from './base-url';
+import { fixedViewportBox } from './viewport-box';
 
 test('test', async ({ page }) => {
   await page.goto(`${BASE_URL}/component/?name=toast&`);
@@ -72,11 +73,9 @@ test.describe('Toast bounding box (docs/backlog.md row 44)', () => {
       ),
     );
     const box = await toast.boundingBox();
-    const viewport = page.viewportSize();
-    if (!box || !viewport) {
-      throw new Error(
-        `expected both a toast bounding box and a viewport, got box=${JSON.stringify(box)} viewport=${JSON.stringify(viewport)}`,
-      );
+    const viewport = await fixedViewportBox(page);
+    if (!box) {
+      throw new Error(`expected a toast bounding box, got box=${JSON.stringify(box)}`);
     }
     const debug = `box=${JSON.stringify(box)} viewport=${JSON.stringify(viewport)}`;
     // Non-zero: a collapsed (0x0, or near-zero from an unstyled

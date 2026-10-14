@@ -11,46 +11,59 @@
     font-size: var(--dx-text-sm);
 }
 
-/* Avatar Component Styles */
+/* Nova avatar (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css,
+ * `.cn-avatar*`, with the structure of registry/bases/base/ui/avatar.tsx):
+ * `size-8` by default, `data-[size=sm]:size-6` and `data-[size=lg]:size-10`,
+ * `rounded-full`, and a 1px `border-border` ring painted over the picture
+ * (`after:absolute after:inset-0 after:border after:border-border
+ * after:mix-blend-darken dark:after:mix-blend-lighten`) so a pale photo never
+ * bleeds into a pale page. The fallback is `bg-muted text-muted-foreground`
+ * at `text-sm` (`text-xs` in the small size). The size is `data-size` on the
+ * root (`AvatarImageSize`: sm 24px, default 32px, lg 40px). */
 .dx-avatar {
     position: relative;
     display: inline-flex;
     overflow: hidden;
-    width: 64px;
-    height: 64px;
+    width: var(--dx-avatar-size);
+    height: var(--dx-avatar-size);
     flex-shrink: 0;
     align-items: center;
     justify-content: center;
     color: var(--dx-foreground);
-    font-weight: 500;
+    font-size: var(--dx-text-sm);
+    user-select: none;
+
+    --dx-avatar-size: var(--dx-space-8);
+}
+
+.dx-avatar[data-size="sm"] {
+    --dx-avatar-size: var(--dx-space-6);
+
+    font-size: var(--dx-text-xs);
+}
+
+.dx-avatar[data-size="lg"] {
+    --dx-avatar-size: var(--dx-space-10);
+}
+
+.dx-avatar::after {
+    position: absolute;
+    border: 1px solid var(--dx-border);
+    border-radius: inherit;
+    content: "";
+    inset: 0;
+    mix-blend-mode: var(--light, darken) var(--dark, lighten);
 }
 
 .dx-avatar-image {
     width: 100%;
     height: 100%;
     aspect-ratio: 1;
+    object-fit: cover;
 }
 
-/* Avatar sizes */
-.dx-avatar-sm {
-    width: 2rem;
-    height: 2rem;
-    font-size: var(--dx-text-sm);
-}
-
-.dx-avatar-md {
-    width: 3rem;
-    height: 3rem;
-    font-size: var(--dx-text-xl);
-}
-
-.dx-avatar-lg {
-    width: 4rem;
-    height: 4rem;
-    font-size: var(--dx-text-3xl);
-}
-
-/* Avatar shape */
+/* Avatar shape. `circle` is Nova's `rounded-full`; `rounded` is this
+ * library's own squarer option (no Nova counterpart). */
 .dx-avatar-circle {
     border-radius: 50%;
 }
@@ -82,23 +95,17 @@
     }
 }
 
+/* `.cn-avatar-fallback`: `bg-muted text-muted-foreground`, in every state
+ * (loading, error and empty included). The size follows the root's
+ * `data-size` through `font-size: inherit`: a fixed size overflowed and
+ * clipped two-letter initials in the small avatar. */
 .dx-avatar-fallback {
     display: flex;
     width: 100%;
     height: 100%;
     align-items: center;
     justify-content: center;
-    background: var(--dx-background);
-    color: var(--dx-foreground);
-
-    /* Follow the size class on the root (`dx-avatar-sm|md|lg` set the font
-       size): a fixed 2xl overflowed and clipped two-letter initials in the
-       2rem avatar, which is what every sender without a picture shows. */
-    font-size: inherit;
-}
-
-.dx-avatar[data-state="error"] .dx-avatar-fallback,
-.dx-avatar[data-state="empty"] .dx-avatar-fallback {
     background: var(--dx-muted);
-    color: var(--dx-foreground);
+    color: var(--dx-muted-foreground);
+    font-size: inherit;
 }

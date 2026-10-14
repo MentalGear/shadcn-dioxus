@@ -13,8 +13,7 @@ fn ToggleToolbarButton(
             index,
             on_click,
             "data-state": if is_on { "on" } else { "off" },
-            background: if is_on { "var(--dx-muted)" } else { "" },
-            color: if is_on { "var(--dx-foreground)" } else { "" },
+            "aria-pressed": if is_on { "true" } else { "false" },
             {children}
         }
     }

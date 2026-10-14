@@ -1,11 +1,14 @@
+/* Nova menubar (shadcn-ui/ui@295a1f1 style-nova.css): `.cn-menubar` `h-8 gap-0.5 rounded-lg border
+ * p-[3px]` (no fill: the bar sits on whatever surface it is placed on), `.cn-menubar-trigger`
+ * `hover:bg-muted aria-expanded:bg-muted rounded-sm px-1.5 py-[2px] text-sm font-medium`. */
 .dx-menubar {
   display: flex;
-  padding: var(--dx-space-1);
-  border: none;
+  height: var(--dx-control-height-default);
+  align-items: center;
+  padding: 3px;
+  border: 1px solid var(--dx-border);
   border-radius: var(--dx-radius-lg);
-  background: var(--dx-background);
-  box-shadow: inset 0 0 0 1px var(--dx-border);
-  gap: var(--dx-space-1);
+  gap: var(--dx-space-0-5);
 }
 
 .dx-menubar-menu {
@@ -13,18 +16,22 @@
 }
 
 .dx-menubar-trigger {
-  padding: var(--dx-space-2) var(--dx-space-3);
+  display: flex;
+  align-items: center;
+  padding: var(--dx-space-0-5) var(--dx-space-1-5);
   border: none;
-  border-radius: calc(var(--dx-radius-lg) - var(--dx-radius-sm));
+  border-radius: var(--dx-radius-sm);
   background: none;
   color: var(--dx-foreground);
   cursor: pointer;
+  font-size: var(--dx-text-sm);
+  font-weight: 500;
   transition: background-color var(--dx-motion-duration-fast) var(--dx-motion-ease-out);
+  user-select: none;
 }
 
 .dx-menubar-menu[data-state="open"] .dx-menubar-trigger {
-  background-color: var(--dx-accent);
-  color: var(--dx-accent-foreground);
+  background-color: var(--dx-muted);
 }
 
 .dx-menubar-trigger[data-disabled="true"] {
@@ -35,12 +42,22 @@
 
 .dx-menubar-trigger:hover:not([data-disabled="true"]),
 .dx-menubar-trigger:focus-visible {
-  background: var(--dx-accent);
-  color: var(--dx-accent-foreground);
+  background: var(--dx-muted);
   outline: none;
 }
 
+/* Not in Nova (its trigger is `outline-hidden` and only fills): in dark the muted fill is the same
+ * #262626 as the hover, 1.4:1 on the page, so keyboard focus also draws the shared focus halo. */
+.dx-menubar-trigger:focus-visible {
+  box-shadow: var(--dx-ring-focus);
+}
+
 .dx-menubar-content {
+  /* Nova `.cn-menubar-checkbox-item-indicator` `left-1.5` (6px) before the item's `pl-7`: the theme's
+     12px default inset becomes 6px. The slot is then 6 + 16 + 8 = 30px, not Nova's 28px: the gap
+     token stays at the 8px every menu shares (playwright/menu-indicator-gap.spec.ts). */
+  --dx-menu-item-indicator-inset: var(--dx-space-1-5);
+
   position: absolute;
   top: 100%;
 
@@ -59,7 +76,7 @@
    * `use_anchor_position_fallback`'s JS-measured correction always overrides with inline styles,
    * which win regardless.
    */
-  min-width: 200px;
+  min-width: 9rem; /* Nova `.cn-menubar-content` `min-w-36` */
 
   /* Clamp to the viewport so a menu never induces horizontal page scroll on
      narrow screens -- same reasoning as ../dropdown_menu/style.css's

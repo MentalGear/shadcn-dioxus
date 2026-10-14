@@ -1,6 +1,5 @@
 use super::super::component::*;
 use dioxus::prelude::*;
-use dioxus_icons::lucide::GripVertical;
 
 fn panel_content(label: &'static str) -> Element {
     rsx! {
@@ -13,7 +12,7 @@ fn panel_content(label: &'static str) -> Element {
 
 fn handle_grip() -> Element {
     rsx! {
-        span { class: "dx-resizable-handle-grip", GripVertical { size: "0.625rem" } }
+        span { class: "dx-resizable-handle-grip" }
     }
 }
 

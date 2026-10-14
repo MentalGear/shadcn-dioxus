@@ -74,13 +74,15 @@ for (const dark of [false, true]) {
     expect(hovered.width, JSON.stringify({ atRest, hovered })).toBe(atRest.width);
     expect(hovered.width, "the border must actually be present, not 0px").not.toBe("0px");
 
-    // A non-active link never has this border, hovered or not -- so the
+    // A non-active link never has a visible border, hovered or not -- so the
     // current page stays visually distinguishable from every other link
     // regardless of which one the pointer happens to rest on.
     await other.hover();
     await page.waitForTimeout(400);
-    const otherHoveredWidth = await other.evaluate((el) => getComputedStyle(el).borderTopWidth);
-    expect(otherHoveredWidth, "a non-active link must not gain a border on hover").toBe("0px");
+    // Nova's ghost Button carries a 1px TRANSPARENT border (`border border-transparent`), so the
+    // width is 1px now; what must hold is that the border never becomes visible.
+    const otherHoveredBorder = await other.evaluate((el) => getComputedStyle(el).borderTopColor);
+    expect(otherHoveredBorder, "a non-active link must not gain a visible border on hover").toBe("rgba(0, 0, 0, 0)");
   });
 }
 

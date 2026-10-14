@@ -1,3 +1,8 @@
+/* Nova breadcrumb (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css,
+ * `.cn-breadcrumb-*`): the list is `text-muted-foreground gap-1.5 text-sm`, an
+ * item `gap-1`, a link `hover:text-foreground transition-colors`, the current
+ * page `text-foreground font-normal`, the separator icon `size-3.5` and the
+ * ellipsis `size-5` with a `size-4` icon. */
 .dx-breadcrumb {
   display: block;
 }
@@ -10,7 +15,7 @@
   margin: 0;
   color: var(--dx-muted-foreground);
   font-size: var(--dx-text-sm);
-  gap: var(--dx-space-1);
+  gap: var(--dx-space-1-5);
   list-style: none;
   overflow-wrap: anywhere;
 }
@@ -29,7 +34,7 @@
 
 .dx-breadcrumb-link:hover,
 .dx-breadcrumb-link:focus-visible {
-  color: var(--dx-accent-foreground);
+  color: var(--dx-foreground);
 }
 
 .dx-breadcrumb-link:focus-visible {
@@ -40,7 +45,7 @@
 
 .dx-breadcrumb-page {
   color: var(--dx-foreground);
-  font-weight: 500;
+  font-weight: 400;
 }
 
 .dx-breadcrumb-separator {
@@ -55,8 +60,8 @@
 
 .dx-breadcrumb-ellipsis {
   display: inline-flex;
-  width: var(--dx-space-6);
-  height: var(--dx-space-6);
+  width: var(--dx-space-5);
+  height: var(--dx-space-5);
   align-items: center;
   justify-content: center;
 }

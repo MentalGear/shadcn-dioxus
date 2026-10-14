@@ -642,6 +642,7 @@ pub fn TopLayerFixture() -> Element {
                     PopoverRoot { id: "edge-right-popover-root", is_modal: false,
                         PopoverTrigger { id: "edge-right-popover-trigger", "Right popover" }
                         PopoverContent {
+                            "data-dx-surface": "floating",
                             id: "edge-right-popover-content",
                             side: ContentSide::Right,
                             "Flips left of its trigger when the preferred side runs off-viewport."
@@ -825,6 +826,7 @@ pub fn TopLayerFixture() -> Element {
                     PopoverRoot { id: "popover-modal-clip-root", is_modal: true,
                         PopoverTrigger { id: "popover-modal-clip-trigger", "Modal popover clip trigger" }
                         PopoverContent {
+                            "data-dx-surface": "floating",
                             id: "popover-modal-clip-content",
                             // An explicit `width` (not just `min-width`) --
                             // a native modal `<dialog>` (UA `dialog:modal {
@@ -859,7 +861,7 @@ pub fn TopLayerFixture() -> Element {
                 }
                 PopoverRoot { id: "popover-modal-inert-root", is_modal: true,
                     PopoverTrigger { id: "popover-modal-inert-trigger", "Open inertness popover" }
-                    PopoverContent { id: "popover-modal-inert-content",
+                    PopoverContent { id: "popover-modal-inert-content", "data-dx-surface": "floating",
                         "Modal popover inertness content."
                     }
                 }
@@ -927,7 +929,7 @@ pub fn TopLayerFixture() -> Element {
                     style: "position: fixed; top: calc(var(--dx-navbar-height, 60px) + 20px); left: 40px; z-index: var(--dx-z-top, 9999);",
                     PopoverRoot { id: "popover-modal-anchor-root", is_modal: true,
                         PopoverTrigger { id: "popover-modal-anchor-trigger", "Modal popover anchor trigger" }
-                        PopoverContent { id: "popover-modal-anchor-content",
+                        PopoverContent { id: "popover-modal-anchor-content", "data-dx-surface": "floating",
                             "Modal popover anchored content."
                         }
                     }

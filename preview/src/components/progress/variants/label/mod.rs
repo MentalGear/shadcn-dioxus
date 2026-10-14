@@ -8,7 +8,7 @@ use dioxus::prelude::*;
 #[component]
 pub fn Demo() -> Element {
     rsx! {
-        div { style: "display: flex; flex-direction: column; gap: 0.5rem; width: 24rem;",
+        div { style: "display: flex; flex-direction: column; gap: 0.5rem; width: 100%; max-width: 24rem;",
             div { style: "display: flex; justify-content: space-between; font-size: 14px; font-weight: 500;",
                 span { id: "progress-label-uploading", "Uploading..." }
                 span { style: "color: var(--dx-muted-foreground); font-variant-numeric: tabular-nums;", "66%" }

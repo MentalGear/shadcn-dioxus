@@ -1,3 +1,9 @@
+/* Colour picker: not a shadcn component (Nova has no `.cn-color-picker`), so there is no block to
+ * match. It follows Nova's tokens: the area track's corner is the theme's `--dx-radius-lg` (it
+ * was the literal 10px, the same value at the default radius), and the swatch / slider track /
+ * field chrome already read the role tokens. The thumbs' black ring layers are NOT theme colours
+ * on purpose: the thumb sits on an arbitrary user colour, so its outline layers are fixed black
+ * (around a `--dx-primary` ring) rather than theme colours. */
 .dx-color-picker-field-container {
     display: flex;
     flex: 1;
@@ -114,7 +120,7 @@
 
 .dx-color-picker-area-track {
     flex-grow: 1;
-    border-radius: 10px;
+    border-radius: var(--dx-radius-lg);
     background: linear-gradient(to top, black, transparent), linear-gradient(to right, white, transparent), var(--area-color);
 }
 

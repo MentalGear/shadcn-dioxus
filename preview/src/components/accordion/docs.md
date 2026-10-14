@@ -17,6 +17,7 @@ Accordion {
 }
 ```
 
+`AccordionContent` supplies shadcn's Nova spacing itself (`text-sm`, no top padding, 10px below), so content needs no padding of its own. The trigger is `text-sm font-medium` with 10px of vertical padding and a 16px chevron in `muted-foreground`. Content wrapped in an extra bottom padding (the old demos used 1rem) now leaves a larger gap than Nova.
 
 ## Searchable closed content
 

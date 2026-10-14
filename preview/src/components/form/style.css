@@ -1,3 +1,11 @@
+/* Form is a fixture page of `DemoForm`s, not a shadcn surface: Nova's `Form` is only a wrapper
+ * (its classes live in `.cn-field*`, see ../field/style.css). What this sheet draws is
+ * matched to Nova's neighbours instead: hint and status text are `text-sm` (14px,
+ * `--dx-text-sm`) in `--dx-muted-foreground`, the result `<pre>` is a `rounded-lg` card-fill box, and
+ * the action `<button class="dx-form-action">`s (own class, not a bare `button` selector) take Nova's OUTLINE button (`.cn-button` outline: `h-8 px-2.5
+ * rounded-lg text-sm font-medium`, `border-border bg-background` / `dark:border-input
+ * dark:bg-input/30`, `hover:bg-muted` / `dark:hover:bg-input/50`), the recipe `../button/style.css`
+ * draws for the real Button. No literal rem left. */
 .dx-form-fixture {
     display: flex;
 
@@ -17,7 +25,7 @@
 .dx-form-hint {
     margin: 0 0 var(--dx-space-4);
     color: var(--dx-muted-foreground);
-    font-size: 0.9rem;
+    font-size: var(--dx-text-sm);
 }
 
 .dx-form {
@@ -41,7 +49,7 @@
     padding: 0;
     border: none;
     margin: 0;
-    gap: 0.35rem;
+    gap: var(--dx-space-1-5);
 }
 
 .dx-form-actions {
@@ -50,14 +58,20 @@
     gap: var(--dx-space-3);
 }
 
-.dx-form-actions button {
-    padding: var(--dx-space-2) var(--dx-space-4);
-    border: 1px solid var(--dx-border);
-    border-radius: var(--dx-radius-sm);
-    background-color: var(--dx-card);
+.dx-form-action {
+    height: var(--dx-control-height-default);
+    padding: 0 var(--dx-space-2-5);
+    border: 1px solid var(--light, var(--dx-border)) var(--dark, var(--dx-input));
+    border-radius: var(--dx-radius-lg);
+    background-color: var(--light, var(--dx-background)) var(--dark, color-mix(in oklab, var(--dx-input) 30%, transparent));
     color: var(--dx-foreground);
     cursor: pointer;
     font-size: var(--dx-text-sm);
+    font-weight: 500;
+}
+
+.dx-form-action:hover {
+    background-color: var(--light, var(--dx-muted)) var(--dark, color-mix(in oklab, var(--dx-input) 50%, transparent));
 }
 
 .dx-form-result {
@@ -67,11 +81,11 @@
     min-height: calc(1.5rem + var(--dx-space-3) * 2 + 2px);
     padding: var(--dx-space-3) var(--dx-space-4);
     border: 1px solid var(--dx-border);
-    border-radius: var(--dx-radius-sm);
+    border-radius: var(--dx-radius-lg);
     margin: 0;
     background-color: var(--dx-card);
     color: var(--dx-foreground);
-    font-size: 0.85rem;
+    font-size: var(--dx-text-sm);
     white-space: pre-wrap;
 }
 

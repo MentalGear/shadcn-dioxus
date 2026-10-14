@@ -2,6 +2,7 @@ import { test, expect } from "./fixtures";
 import { type Locator, type Page } from "@playwright/test";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
+import { fixedViewportBox } from "./viewport-box";
 
 /**
  * Menu-item indicator slot -- the class guard.
@@ -58,21 +59,40 @@ type GapMeasure = {
 };
 
 /**
- * Wait for every finite animation on the page to finish. A menu popup opens
- * with a `scale(0.95)` -> `scale(1)` entry animation, and a box measured
- * mid-way is 5% smaller than it will be: a gap that is exactly 8px at rest
- * reads 7.6px, and two items measured a few frames apart disagree by the
- * animation's progress. Measure only a settled menu.
+ * Bring a just-opened menu to its settled geometry before measuring it.
+ *
+ * A menu popup opens with a `scale(0.95)` -> `scale(1)` entry animation
+ * (`dx-pop-in`, `forwards`). Awaiting `finished` is not enough: Chromium keeps
+ * answering `getBoundingClientRect()` with the animation's START scale (every
+ * box 5% small about the popup's centre) until something invalidates the
+ * element's style, although `getComputedStyle(popup).scale` already reads `1`,
+ * `elementFromPoint` hits the full-size box and a screenshot paints it at full
+ * size (measured on the built site: popup layout width 131.594px, rect width
+ * 125.014px = 0.95 x). A gap that is exactly Nova's 8px at rest (item `pr-8`
+ * 32px - indicator `right-2` 8px - `size-4` 16px) therefore reads 7.6px for
+ * the widest row of a menu, the row whose label sets the popup's width.
+ *
+ * So after the animations finish this bakes their end values into the popup
+ * (`commitStyles`, then drops the finished animation): that is the rest state,
+ * and it is the style change that makes the rect agree with the layout.
  */
 async function settleAnimations(page: Page): Promise<void> {
-    await page.evaluate(() =>
-        Promise.all(
-            document
-                .getAnimations()
-                .filter((a) => Number.isFinite(a.effect?.getComputedTiming().endTime as number))
-                .map((a) => a.finished.catch(() => undefined)),
-        ),
-    );
+    await page.evaluate(async () => {
+        const finite = document
+            .getAnimations()
+            .filter((a) => Number.isFinite(a.effect?.getComputedTiming().endTime as number));
+        await Promise.all(finite.map((a) => a.finished.catch(() => undefined)));
+        for (const a of finite) {
+            if (a.playState !== "finished") continue;
+            try {
+                (a as Animation & { commitStyles(): void }).commitStyles();
+                a.cancel();
+            } catch {
+                // An animation on a detached or non-rendered element has nothing to commit.
+            }
+        }
+        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    });
 }
 
 /**
@@ -252,6 +272,7 @@ test.describe("Menu-item indicator slot: label never meets the indicator", () =>
         await expect(page.getByRole("listbox")).toHaveCount(0);
 
         for (const value of [LONG_LABEL, UNBROKEN_LABEL]) {
+            const fixedBox = await fixedViewportBox(page);
             const m = await trigger.evaluate((el, text) => {
                 const span = el.querySelector("span[data-placeholder]") as HTMLElement;
                 span.textContent = text;
@@ -262,19 +283,18 @@ test.describe("Menu-item indicator slot: label never meets the indicator", () =>
                 return {
                     triggerRight: t.right,
                     triggerHeight: t.height,
-                    viewport: document.documentElement.clientWidth,
                     valueRight: v.right,
                     iconLeft: i.left,
                     truncated: span.scrollWidth > span.clientWidth,
                 };
             }, value);
-            const detail = `"${value}": ${JSON.stringify(m)}`;
+            const detail = `"${value}": ${JSON.stringify({ ...m, viewport: fixedBox.width })}`;
             // The value's box ends before the chevron's (the trigger's own
             // `gap` -- shadcn's gap-1.5 -- is the clear space)...
             expect(m.iconLeft - m.valueRight, detail).toBeGreaterThanOrEqual(6);
             // ...on one line, in a trigger that never outgrows the screen.
             expect(m.triggerHeight, detail).toBeLessThanOrEqual(33);
-            expect(m.triggerRight, detail).toBeLessThanOrEqual(m.viewport);
+            expect(m.triggerRight, detail).toBeLessThanOrEqual(fixedBox.x + fixedBox.width);
         }
     });
 

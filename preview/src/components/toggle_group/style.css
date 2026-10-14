@@ -2,15 +2,26 @@
   width: fit-content;
 }
 
+/* Items are Toggles (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css, `.cn-toggle` +
+ * `.cn-toggle-size-default`: `h-8 min-w-8 text-sm font-medium`), joined into one bar: the
+ * `.cn-toggle-group-item` rules for `data-spacing=0` are `rounded-none px-2` with
+ * `first:rounded-l-lg last:rounded-r-lg` (the end radii below). The height is the theme's control
+ * ladder; the slots let a size redeclare them (spacing / variant / size props are parity group 3). */
 .dx-toggle-group-item {
-  min-width: 35px;
-  padding: 10px;
+  display: inline-flex;
+  min-width: var(--dx-toggle-min-width, var(--dx-space-8));
+  height: var(--dx-toggle-height, var(--dx-control-height-default));
+  align-items: center;
+  justify-content: center;
   border: none;
   border-radius: 0;
   background-color: transparent;
   color: var(--dx-foreground);
   font-size: var(--dx-text-sm);
+  font-weight: 500;
+  gap: var(--dx-space-1);
   outline: none;
+  padding-inline: var(--dx-toggle-group-item-padding-inline, var(--dx-space-2));
   transition: background-color var(--dx-motion-duration-slow) var(--dx-motion-ease), border var(--dx-motion-duration-slow) var(--dx-motion-ease), outline-color var(--dx-motion-duration-base);
 }
 

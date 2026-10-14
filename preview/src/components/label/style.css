@@ -1,7 +1,8 @@
 /* Label Styles
  *
  * shadcn's `Label` is `flex items-center gap-2 text-sm leading-none
- * font-medium`; this is the same box.
+ * font-medium` (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css `.cn-label`, which adds
+ * `peer-disabled:opacity-50`); this is the same box.
  *
  * Every property a composing component may need to tune is a SLOT: the label
  * reads `--dx-label-<property>` and falls back to its own default. A parent
@@ -31,4 +32,13 @@
   font-weight: var(--dx-label-font-weight, 500);
   gap: var(--dx-label-gap, var(--dx-space-2));
   line-height: var(--dx-label-line-height, 1);
+}
+
+/* `.cn-label`'s `peer-disabled:opacity-50` and `peer-disabled:cursor-not-allowed`: a label that
+ * follows a disabled control (its `peer`) dims with it. `[data-disabled="true"]` is the marker
+ * Checkbox, Switch and Toggle emit next to the `disabled` attribute. The `group-data-[disabled=true]`
+ * half (an ancestor marks the whole row) belongs to Field, which owns that ancestor. */
+:is(:disabled, [data-disabled="true"]) ~ .dx-label {
+  cursor: not-allowed;
+  opacity: var(--dx-opacity-disabled);
 }

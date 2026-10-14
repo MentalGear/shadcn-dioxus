@@ -40,6 +40,24 @@ pub fn Demo() -> Element {
                     }
                 },
             }
+
+            Item {
+                variant: ItemVariant::Outline,
+                size: ItemSize::Xs,
+                as: move |attrs: Vec<Attribute>| rsx! {
+                    a { href: "#", ..attrs,
+                        ItemMedia {
+                            BadgeCheckIcon {}
+                        }
+                        ItemContent {
+                            ItemTitle { "Your profile has been verified (xs)." }
+                        }
+                        ItemActions {
+                            ChevronRightIcon {}
+                        }
+                    }
+                },
+            }
         }
     }
 }

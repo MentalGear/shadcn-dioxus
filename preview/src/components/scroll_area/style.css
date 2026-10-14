@@ -1,1 +1,4 @@
-/* Scroll area doesn't require any additional styles */
+/* Scroll area doesn't require any additional styles. Nova's `.cn-scroll-area-scrollbar` (`w-2.5`/`h-2.5`)
+ * and `.cn-scroll-area-thumb` (`rounded-full`, `bg-border`) style Radix's custom scrollbar; this
+ * component wraps the browser's native one (primitives/src/scroll_area.rs), whose colours come from
+ * the app-wide `scrollbar-color` rules in main.css, so there is no Nova block to match here. */

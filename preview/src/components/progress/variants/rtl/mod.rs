@@ -8,9 +8,9 @@ use dioxus_primitives::direction::{Direction, DirectionProvider};
 #[component]
 pub fn Demo() -> Element {
     rsx! {
-        div { dir: "rtl",
+        div { dir: "rtl", style: "width: 100%; max-width: 24rem;",
             DirectionProvider { direction: Direction::Rtl,
-                div { style: "display: flex; flex-direction: column; gap: 0.5rem; width: 24rem;",
+                div { style: "display: flex; flex-direction: column; gap: 0.5rem; width: 100%; max-width: 24rem;",
                     div { style: "display: flex; justify-content: space-between; font-size: 14px; font-weight: 500;",
                         span { id: "progress-rtl-label", "جارٍ الرفع..." }
                         span { style: "color: var(--dx-muted-foreground); font-variant-numeric: tabular-nums;", "66%" }

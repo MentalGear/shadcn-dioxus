@@ -28,6 +28,8 @@ pub enum ItemSize {
     #[default]
     Default,
     Sm,
+    /// Nova's `xs`: tighter padding and gap, `text-xs` description.
+    Xs,
 }
 
 impl ItemSize {
@@ -35,6 +37,7 @@ impl ItemSize {
         match self {
             ItemSize::Default => "default",
             ItemSize::Sm => "sm",
+            ItemSize::Xs => "xs",
         }
     }
 }

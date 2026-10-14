@@ -16,8 +16,7 @@
   padding: var(--dx-space-1) var(--dx-space-2-5);
   border: none;
   background: none;
-  background-color: var(--light, transparent)
-    var(--dark, color-mix(in oklab, var(--dx-input) 30%, transparent));
+  background-color: var(--dx-field-fill);
   border-end-end-radius: var(--dx-group-radius-end-end, var(--dx-radius-lg));
   border-end-start-radius: var(--dx-group-radius-end-start, var(--dx-radius-lg));
   border-start-end-radius: var(--dx-group-radius-start-end, var(--dx-radius-lg));

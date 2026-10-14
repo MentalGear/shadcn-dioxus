@@ -523,8 +523,8 @@ pub fn FormFixture() -> Element {
                     }
 
                     div { class: "dx-form-actions",
-                        button { id: "entries-submit", r#type: "submit", "Submit" }
-                        button { id: "entries-reset", r#type: "reset", "Reset" }
+                        button { class: "dx-form-action", id: "entries-submit", r#type: "submit", "Submit" }
+                        button { class: "dx-form-action", id: "entries-reset", r#type: "reset", "Reset" }
                     }
                 }
                 pre { id: "form-result", class: "dx-form-result", "data-submit-count": "0" }
@@ -656,8 +656,8 @@ pub fn FormFixture() -> Element {
                     }
 
                     div { class: "dx-form-actions",
-                        button { id: "required-submit", r#type: "submit", "Submit" }
-                        button { id: "required-reset", r#type: "reset", "Reset" }
+                        button { class: "dx-form-action", id: "required-submit", r#type: "submit", "Submit" }
+                        button { class: "dx-form-action", id: "required-reset", r#type: "reset", "Reset" }
                     }
                 }
                 pre { id: "invalid-report", class: "dx-form-result", "data-invalid-count": "0" }

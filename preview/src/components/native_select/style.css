@@ -1,4 +1,11 @@
-/* Menu-item indicator slot (the construction select/style.css documents in
+/* Nova native select (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css
+ * `.cn-native-select`, registry/bases/base/ui/native-select.tsx): `h-8 w-full rounded-lg
+ * border-input bg-transparent dark:bg-input/30 dark:hover:bg-input/50 py-1 pr-8 pl-2.5
+ * text-sm`, `ring-3 ring-ring/50` + `border-ring` on focus. The height is the theme's
+ * `--dx-control-height-default` (32px); the fill is Input's (transparent in light).
+ * Nova's `data-[size=sm]` (h-7) has no counterpart here: this component has no size prop.
+ *
+ * Menu-item indicator slot (the construction select/style.css documents in
  * full): the select reserves `inset + size + gap` of inline-end padding and
  * the chevron is absolutely positioned inside that room, so the selected
  * text is clipped before it reaches the icon. The three tokens are the
@@ -12,11 +19,11 @@
 
 .dx-native-select {
   width: 100%;
+  height: var(--dx-control-height-default);
   border: none;
   appearance: none;
   background: none;
-  background-color: var(--light, var(--dx-background))
-    var(--dark, color-mix(in oklab, var(--dx-input) 30%, transparent));
+  background-color: var(--dx-field-fill);
   border-end-end-radius: var(--dx-group-radius-end-end, var(--dx-radius-lg));
   border-end-start-radius: var(--dx-group-radius-end-start, var(--dx-radius-lg));
   border-start-end-radius: var(--dx-group-radius-start-end, var(--dx-radius-lg));
@@ -26,9 +33,9 @@
   cursor: pointer;
   font-family: inherit;
   font-size: var(--dx-text-sm);
-  padding-block: var(--dx-space-2);
+  padding-block: var(--dx-space-1);
   padding-inline:
-    var(--dx-space-3)
+    var(--dx-space-2-5)
     calc(var(--dx-menu-item-indicator-inset) + var(--dx-menu-item-indicator-size) + var(--dx-menu-item-indicator-gap));
   transition: background-color var(--dx-motion-duration-fast) var(--dx-motion-ease-out);
 }

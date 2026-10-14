@@ -24,6 +24,7 @@ import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from './axe';
 import { BASE_URL } from './base-url';
 import { gotoHydrated } from './hydration';
 import { awaitAnimationsSettled } from './animations';
+import { fixedViewportBox } from './viewport-box';
 import { assertSharedBackdrop, captureBackdrop, resolveOverlayMs } from "./assert-backdrop-fade";
 
 const URL = `${BASE_URL}/component/?name=drawer&`;
@@ -123,8 +124,7 @@ test('the panel sits flush against its own edge at rest, bottom and top variants
   // left/right margins) on an 800x1280 viewport, i.e. a floating card, not
   // a bottom sheet.
   await gotoHydrated(page, URL, GOTO_OPTS);
-  const viewport = page.viewportSize();
-  if (!viewport) throw new Error('no viewport size');
+  const viewport = await fixedViewportBox(page);
 
   await page.getByRole('button', { name: 'Move Goal' }).click();
   await awaitAnimationsSettled(page.locator('[data-slot="drawer-content"]'));
@@ -145,8 +145,7 @@ test('the panel sits flush against its own edge at rest, bottom and top variants
 
 test('a drag away from the dismiss direction never exposes the viewport edge', async ({ page }) => {
   await gotoHydrated(page, URL, GOTO_OPTS);
-  const viewport = page.viewportSize();
-  if (!viewport) throw new Error('no viewport size');
+  const viewport = await fixedViewportBox(page);
 
   await page.getByRole('button', { name: 'Move Goal' }).click();
   await awaitAnimationsSettled(page.locator('[data-slot="drawer-content"]'));

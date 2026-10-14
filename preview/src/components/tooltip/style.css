@@ -13,12 +13,25 @@
      `data-dx-tone="inverted"`, emitted by `TooltipContent`): the fade, and the tooltip's own padding. */
   --dx-floating-enter: dx-fade-in;
   --dx-floating-exit: dx-fade-out;
-  --dx-floating-padding: var(--dx-space-2) var(--dx-space-3);
+  --dx-floating-padding: var(--dx-space-1-5) var(--dx-space-3);
+  --dx-floating-radius: var(--dx-radius-md);
+
+  /* The arrow (Nova `.cn-tooltip-arrow`: `size-2.5 rounded-[2px] rotate-45`, centred on the edge
+     and pulled 2px into the body by `translate-y-[calc(-50%-2px)]`). */
+  --dx-tooltip-arrow-size: 0.625rem;
+  --dx-tooltip-arrow-shift: 2px;
+
+  /* A Kbd inside a tooltip is inverted: Nova's `**:data-[slot=kbd]` `bg-background/20 text-background`,
+     through the Kbd's own slot variables. */
+  --dx-kbd-background: color-mix(in oklab, var(--dx-background) 20%, transparent);
+  --dx-kbd-color: var(--dx-background);
 
   position: absolute;
-  max-width: 250px;
+  max-width: 20rem;
+  align-items: center;
   margin: 0;
-  font-size: var(--dx-text-sm);
+  font-size: var(--dx-text-xs);
+  gap: var(--dx-space-1-5);
 
   /*
    * The inverted fill (`--dx-foreground` / `--dx-background`), no edge, no shadow, the radius, the
@@ -31,20 +44,25 @@
    * shared, engine-injected stylesheet every `dx-anchor-*`-marked overlay gets for free -- see
    * `primitives/src/top_layer.rs`'s `ensure_anchor_positioning_styles` doc (docs/backlog.md item 1).
    */
-  line-height: 1.4;
+  line-height: calc(1 / 0.75);
 }
 
+/* Nova `.cn-tooltip-content`: `inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs`
+   (shadcn-ui/ui@295a1f1 style-nova.css); `max-w-xs bg-foreground text-background` are on the
+   tsx, `bg-foreground`/`text-background` being the recipe's inverted tone. */
 .dx-tooltip-content::after {
   position: absolute;
-  border-width: var(--dx-space-1);
-  border-style: solid;
+  width: var(--dx-tooltip-arrow-size);
+  height: var(--dx-tooltip-arrow-size);
+  border-radius: 2px;
 
   /* rtl-physical: unconditional half-arrow-width centering compensator,
      shared across all four `[data-side]` variants below -- for the
      top/bottom variants it is paired with their own physical `left: 50%`
      (see those rules), so it cannot become `margin-inline-start` without
      desyncing from that pairing. */
-  margin-left: calc(-1 * var(--dx-space-1));
+  margin-left: calc(-1 * var(--dx-tooltip-arrow-size) / 2);
+  background-color: var(--dx-foreground);
   content: " ";
   rotate: 45deg;
 }
@@ -59,10 +77,8 @@
 }
 
 .dx-tooltip-content[data-side="top"]::after {
-  top: calc(100% - var(--dx-space-1));
+  top: calc(100% - var(--dx-tooltip-arrow-size) / 2 - var(--dx-tooltip-arrow-shift));
   left: 50%;
-  border-color: var(--dx-foreground);
-  border-radius: 0 0 0.1rem;
 }
 
 .dx-tooltip-content[data-side="right"] {
@@ -74,10 +90,8 @@
 }
 
 .dx-tooltip-content[data-side="right"]::after {
-  top: calc(50% - var(--dx-space-1));
-  left: 0;
-  border-color: var(--dx-foreground);
-  border-radius: 0 0 0 0.1rem;
+  top: calc(50% - var(--dx-tooltip-arrow-size) / 2);
+  left: var(--dx-tooltip-arrow-shift);
 }
 
 .dx-tooltip-content[data-side="bottom"] {
@@ -89,10 +103,8 @@
 }
 
 .dx-tooltip-content[data-side="bottom"]::after {
-  bottom: calc(100% - var(--dx-space-1));
+  bottom: calc(100% - var(--dx-tooltip-arrow-size) / 2 - var(--dx-tooltip-arrow-shift));
   left: 50%;
-  border-color: var(--dx-foreground);
-  border-radius: 0.1rem 0 0;
 }
 
 .dx-tooltip-content[data-side="left"] {
@@ -104,10 +116,8 @@
 }
 
 .dx-tooltip-content[data-side="left"]::after {
-  top: calc(50% - var(--dx-space-1));
-  right: calc(-1 * var(--dx-space-1));
-  border-color: var(--dx-foreground);
-  border-radius: 0 0.1rem 0 0;
+  top: calc(50% - var(--dx-tooltip-arrow-size) / 2);
+  right: calc(-1 * var(--dx-tooltip-arrow-size) / 2 + var(--dx-tooltip-arrow-shift));
 }
 
 /* Alignment styles for top and bottom */
@@ -154,7 +164,7 @@
 }
 
 .dx-tooltip-content[data-state="open"] {
-  display: block;
+  display: inline-flex;
 }
 
 /*

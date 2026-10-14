@@ -11,7 +11,7 @@ pub fn Demo() -> Element {
                     "Handle"
                     span {
                         "aria-hidden": "true",
-                        style: "color: var(--dx-destructive);",
+                        style: "color: var(--dx-destructive-text);",
                         " *"
                     }
                 }

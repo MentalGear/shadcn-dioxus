@@ -8,7 +8,8 @@ ItemGroup {
         // Available variants: Default, Outline, Muted
         variant: ItemVariant::Outline,
 
-        // Available sizes: Default, Sm
+        // Available sizes: Default, Sm, Xs (Nova: Default and Sm share their
+        // padding, Xs is tighter with a text-xs description)
         size: ItemSize::Default,
 
         ItemHeader {

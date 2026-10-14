@@ -1,4 +1,13 @@
+/* Nova separator (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css, `.cn-separator`:
+ * `bg-border shrink-0`; `.cn-separator-horizontal` `h-px w-full`; `.cn-separator-vertical` `h-full
+ * w-px`, and `self-stretch` from registry/bases/radix/ui/separator.tsx so a vertical rule fills a
+ * flex row that has no height of its own). `flex-shrink: 0` keeps a rule from collapsing to 0 in a
+ * flex row. A vertical rule's height is `auto`, not `100%`: a percentage height computes to a
+ * non-`auto` value, which switches `align-self: stretch` off, and against a flex row whose height
+ * comes from its content it resolves to 0 -- the rule would be invisible. `auto` + stretch fills the
+ * row's cross size (and a definite-height row, e.g. `h-5`, exactly like `h-full` would). */
 .dx-separator {
+  flex-shrink: 0;
   background-color: var(--dx-border);
 }
 
@@ -9,5 +18,6 @@
 
 .dx-separator[data-orientation="vertical"] {
   width: 1px;
-  height: 100%;
+  height: auto;
+  align-self: stretch;
 }

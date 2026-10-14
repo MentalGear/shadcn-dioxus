@@ -1,7 +1,20 @@
+/* Nova field (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css `.cn-field*`,
+ * registry/bases/base/ui/field.tsx): group `gap-5` (a nested group `gap-4`), set `gap-4`
+ * (`gap-3` around a radio group), legend `mb-1.5 font-medium` (`text-base` as a legend, `text-sm`
+ * as a label), field `gap-2` in every orientation, content `gap-0.5`, description `text-sm
+ * text-muted-foreground`, separator `-my-2 h-5 text-sm`, error `text-destructive text-sm
+ * font-normal`, choice-card label `rounded-lg border` with `p-2.5` fields, `has-data-checked:
+ * bg-primary/5 border-primary/30` (dark `/10`, `/20`), `hover:bg-muted/50`, and the focus-visible
+ * ring. Horizontal fields centre their children (`items-center`), or top-align them beside a
+ * `FieldContent` (`has-[>[data-slot=field-content]]:items-start`, controls `mt-px`). */
 .dx-field-group {
   display: flex;
   flex-direction: column;
-  gap: var(--dx-space-6);
+  gap: var(--dx-space-5);
+}
+
+.dx-field-group > .dx-field-group {
+  gap: var(--dx-space-4);
 }
 
 .dx-field-set {
@@ -10,7 +23,11 @@
   padding: 0;
   border: none;
   margin: 0;
-  gap: var(--dx-space-6);
+  gap: var(--dx-space-4);
+}
+
+.dx-field-set:has(> [role="radiogroup"]) {
+  gap: var(--dx-space-3);
 }
 
 .dx-field-legend {
@@ -18,6 +35,7 @@
   color: var(--dx-foreground);
   font-size: var(--dx-text-sm);
   font-weight: 500;
+  margin-block-end: var(--dx-space-1-5);
 }
 
 .dx-field {
@@ -28,8 +46,11 @@
 
 .dx-field[data-orientation="horizontal"] {
   flex-direction: row;
+  align-items: center;
+}
+
+.dx-field[data-orientation="horizontal"]:has(> .dx-field-content) {
   align-items: flex-start;
-  gap: var(--dx-space-3);
 }
 
 .dx-field[data-orientation="responsive"] {
@@ -39,8 +60,11 @@
 @media (width >= 640px) {
   .dx-field[data-orientation="responsive"] {
     flex-direction: row;
+    align-items: center;
+  }
+
+  .dx-field[data-orientation="responsive"]:has(> .dx-field-content) {
     align-items: flex-start;
-    gap: var(--dx-space-3);
   }
 }
 
@@ -84,24 +108,32 @@
   min-width: 0;
   box-sizing: border-box;
   flex: 1 1 auto;
-  padding: var(--dx-space-4);
+  padding: var(--dx-space-2-5);
   border: 1px solid var(--dx-border);
-  border-radius: var(--dx-radius-md);
+  border-radius: var(--dx-radius-lg);
+}
+
+/* Zero-specificity condition, so the checked fill below still wins on a hovered checked card. */
+.dx-field-label:where(:hover:not(:has(:disabled, [data-disabled="true"]))) > .dx-field {
+  background-color: color-mix(in oklab, var(--dx-muted) 50%, transparent);
 }
 
 .dx-field-label:has([data-state="checked"]) > .dx-field {
-  border-color: var(--dx-primary);
+  border-color:
+    var(--light, color-mix(in oklab, var(--dx-primary) 30%, transparent))
+    var(--dark, color-mix(in oklab, var(--dx-primary) 20%, transparent));
   background-color:
     var(--light, color-mix(in oklab, var(--dx-primary) 5%, transparent))
     var(--dark, color-mix(in oklab, var(--dx-primary) 10%, transparent));
 }
 
 .dx-field-label:has(:focus-visible) > .dx-field {
+  border-color: var(--dx-ring-color);
   box-shadow: var(--dx-ring-focus);
 }
 
 .dx-field[data-invalid="true"] .dx-field-label {
-  --dx-label-color: var(--dx-destructive);
+  --dx-label-color: var(--dx-destructive-text);
 }
 
 /*
@@ -112,18 +144,16 @@
  * `Field` is meant to hold without this stylesheet ever selecting outside
  * its own `dx-field-*` namespace (scripts/check-dx-class-prefix.sh).
  */
-.dx-field[data-orientation="horizontal"] > .dx-field-label,
-.dx-field[data-orientation="horizontal"] > input,
-.dx-field[data-orientation="horizontal"] > select,
-.dx-field[data-orientation="horizontal"] > button {
-  margin-top: var(--dx-space-0-5);
+.dx-field[data-orientation="horizontal"]:has(> .dx-field-content) > [role="checkbox"],
+.dx-field[data-orientation="horizontal"]:has(> .dx-field-content) > [role="radio"] {
+  margin-top: 1px;
 }
 
 .dx-field-content {
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
-  gap: var(--dx-space-1);
+  gap: var(--dx-space-0-5);
 }
 
 .dx-field-description {
@@ -131,27 +161,30 @@
   color: var(--dx-muted-foreground);
   font-size: var(--dx-text-sm);
   line-height: 1.5;
+  text-align: start;
 }
 
 .dx-field-error {
   margin: 0;
-  color: var(--dx-destructive);
+  color: var(--dx-destructive-text);
   font-size: var(--dx-text-sm);
-  line-height: 1.5;
+  font-weight: 400;
+  line-height: 1.25rem;
 }
 
 .dx-field-separator {
   position: relative;
   display: flex;
+  height: var(--dx-space-5);
   align-items: center;
   justify-content: center;
+  font-size: var(--dx-text-sm);
+  margin-block: calc(var(--dx-space-2) * -1);
 }
 
 .dx-field-separator-label {
   position: absolute;
   padding: 0 var(--dx-space-2);
-  border-radius: var(--dx-radius-sm);
-  background-color: var(--dx-card);
+  background-color: var(--dx-background);
   color: var(--dx-muted-foreground);
-  font-size: var(--dx-text-xs);
 }
