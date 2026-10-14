@@ -1047,7 +1047,7 @@ test.describe("APG Checkbox pattern — Checkbox", () => {
 test.describe("Button pattern (toggle button) — Toggle", () => {
   test("Toggle — Space: activates the button, flipping aria-pressed", async ({ page }) => {
     await goto(page, "toggle");
-    const el = page.locator("#component-preview-frame").getByRole("button", { name: "Bookmark", exact: true });
+    const el = page.locator("#component-preview-frame").locator("button[aria-pressed]").first();
     await expect(el).toHaveAttribute("data-state", "off");
     await el.focus();
     await page.keyboard.press("Space");
@@ -1056,7 +1056,7 @@ test.describe("Button pattern (toggle button) — Toggle", () => {
 
   test("Toggle — Enter: activates the button, flipping aria-pressed (unlike Switch/Checkbox, this component does NOT suppress Enter)", async ({ page }) => {
     await goto(page, "toggle");
-    const el = page.locator("#component-preview-frame").getByRole("button", { name: "Bookmark", exact: true });
+    const el = page.locator("#component-preview-frame").locator("button[aria-pressed]").first();
     await el.focus();
     await page.keyboard.press("Enter");
     await expect(
