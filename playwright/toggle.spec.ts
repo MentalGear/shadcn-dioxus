@@ -6,7 +6,7 @@ import { BASE_URL } from './base-url';
 test('test', async ({ page }) => {
   await page.goto(`${BASE_URL}/component/?name=toggle&`, { timeout: 20 * 60 * 1000, waitUntil: 'networkidle' }); // Increase timeout to 20 minutes
 
-  let toggleElement = page.getByRole('button', { name: 'B', exact: true });
+  let toggleElement = page.locator('#component-preview-frame').getByRole('button', { name: 'Bookmark', exact: true });
   await expect(toggleElement).toBeVisible();
   // The toggle should not be checked initially
   await expect(toggleElement).toHaveAttribute('data-state', 'off');
@@ -36,7 +36,7 @@ test('test', async ({ page }) => {
 for (const dark of [false, true]) {
   test(`a pressed toggle keeps its "on" background while hovered (${dark ? 'dark' : 'light'} mode)`, async ({ page }) => {
     await page.goto(`${BASE_URL}/component/?name=toggle&${dark ? 'dark_mode=true' : ''}`, { waitUntil: 'networkidle' });
-    const toggle = page.getByRole('button', { name: 'B', exact: true });
+    const toggle = page.locator('#component-preview-frame').getByRole('button', { name: 'Bookmark', exact: true });
 
     await toggle.click();
     await expect(toggle).toHaveAttribute('data-state', 'on');
@@ -89,7 +89,7 @@ for (const dark of [false, true]) {
         // Settled values, not a mid-transition read.
         document.head.insertAdjacentHTML('beforeend', '<style>*{transition:none!important}</style>');
       }, base);
-      const toggle = page.getByRole('button', { name: 'B', exact: true });
+      const toggle = page.locator('#component-preview-frame').getByRole('button', { name: 'Bookmark', exact: true });
       const paint = async () => paintedRgb(page, await toggle.evaluate((el) => getComputedStyle(el).backgroundColor));
 
       await page.locator('body').hover({ position: { x: 0, y: 0 } });
@@ -120,7 +120,7 @@ test.describe('Axe automated scan', () => {
 
   test('on has no automatically detectable a11y issues', async ({ page }) => {
     await page.goto(`${BASE_URL}/component/?name=toggle&`, { timeout: 20 * 60 * 1000, waitUntil: 'networkidle' });
-    await page.getByRole('button', { name: 'B', exact: true }).click();
+    await page.locator('#component-preview-frame').getByRole('button', { name: 'Bookmark', exact: true }).click();
     await expectNoAxeViolations(page, 'toggle: on', { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 });

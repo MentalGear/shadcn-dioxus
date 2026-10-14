@@ -5,7 +5,8 @@ import { BASE_URL } from "./base-url";
 test("test", async ({ page }) => {
   await page.goto(`${BASE_URL}/component/?name=spinner&`, { timeout: 20 * 60 * 1000 });
   await expect(page.getByRole("status", { name: "Loading" })).toBeVisible();
-  await expect(page.getByRole("status", { name: "Saving" })).toBeVisible();
+  await expect(page.getByText("Processing payment...", { exact: true })).toBeVisible();
+  await expect(page.getByRole("status", { name: "Generating" })).toBeVisible();
 });
 
 test.describe("Axe automated scan", () => {

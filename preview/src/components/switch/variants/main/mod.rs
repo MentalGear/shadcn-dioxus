@@ -1,4 +1,5 @@
 use super::super::component::*;
+use crate::components::field::{Field, FieldLabel, FieldOrientation};
 use dioxus::prelude::*;
 
 // docs/backlog.md row 32: no `#[css_module]` of its own here, and no
@@ -11,12 +12,15 @@ pub fn Demo() -> Element {
     let mut checked = use_signal(|| false);
     rsx! {
         div { class: "dx-switch-example",
-            Switch {
-                checked: checked(),
-                aria_label: "Switch Demo",
-                on_checked_change: move |new_checked| {
-                    checked.set(new_checked);
-                },
+            Field { orientation: FieldOrientation::Horizontal,
+                Switch {
+                    id: "switch-main-airplane-mode",
+                    checked: checked(),
+                    on_checked_change: move |new_checked| {
+                        checked.set(new_checked);
+                    },
+                }
+                FieldLabel { html_for: "switch-main-airplane-mode", "Airplane Mode" }
             }
         }
     }
