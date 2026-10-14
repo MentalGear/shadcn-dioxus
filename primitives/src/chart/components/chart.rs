@@ -50,12 +50,13 @@
 //!    reduced data table (category + first series' value; plus a `Percent`
 //!    column for [`ChartKind::Pie`]).
 //!
-//! The first time the chart is actually in view (and measured) the svg carries
+//! The first time the chart is seen coming into view (and measured) the svg carries
 //! `data-animate="true"` (unless [`ChartProps::animate`] is off), which the
 //! themed stylesheet turns into Recharts' load animation -- bars grow from
 //! the baseline, lines and areas reveal left to right -- once, never under
 //! `prefers-reduced-motion`, and never on the server render (no JS: the
-//! final drawing).
+//! final drawing). A hydrated chart that was already on screen in the first
+//! paint never animates (it would restart from zero, full -> gone -> animate).
 
 use std::rc::Rc;
 
@@ -369,8 +370,9 @@ pub struct ChartProps {
 ///
 /// - `data-slot="chart"`: the wrapper div.
 /// - `data-slot="chart-svg"`: the SVG root; `data-measured="true"|"false"`,
-///   `data-fit="width"` (fixed-height mode), `data-animate="true"` (after
-///   the first measured client render, unless `animate` is off),
+///   `data-fit="width"` (fixed-height mode), `data-animate="true"` (once the
+///   chart has been seen entering the view; never for a chart in the first
+///   paint, nor if `animate` is off), `data-chart-key` (an opaque id),
 ///   `data-bars="horizontal"`, and an inline `--dx-chart-zero` (the value
 ///   axis' zero, px) for the bar animation's origin.
 /// - `data-slot="chart-grid"`/`"chart-axis"` (`data-axis="x"|"y"`) --
@@ -410,15 +412,24 @@ pub fn Chart(props: ChartProps) -> Element {
     // opens the tooltip (`:focus-visible` semantics -- see `onfocus` below).
     let mut pointer_focus = use_hook(|| CopyValue::new(false));
     let is_cartesian = kind.is_cartesian();
-    // The load animation plays when the chart is first actually in view (`use_entered_view_when`:
-    // at least 40% on screen, tab visible, no pre-roll margin), not when it first renders: a chart
-    // in a skipped or off-screen card measures (and so would animate) while nobody can see it, and
-    // the animation's layout work was a large share of the first-scroll cost
-    // (`dev-docs/research/scroll-profile-2026-10-10.md`, cost 3). The answer is latched here;
-    // once it is in, the observer lets go (`enabled` goes false) and `data-animate` stays set.
+    // The load animation is an ENTRANCE: it plays when the chart first comes into view, never on a
+    // chart the visitor has already been looking at. The SSG paints the final chart; if hydration
+    // then set `data-animate` on a chart that is in the first paint, the bars would be restarted
+    // from zero (full -> gone -> animate, backlog row 211). So a hydrated chart records whether it
+    // was on screen at hydration (`painted_in_view`, one read at mount); one that was never
+    // animates, one that was not animates once, when `use_entered_view_when` (at least 40% on
+    // screen, tab visible, no pre-roll margin) says it has been seen. A chart created by the
+    // client (route navigation, pure CSR: no server-cached id, `dxc-c…`) had no painted state to
+    // protect and animates as soon as it is in view. The answer is latched in `entered`; once it
+    // is in (or the chart was painted), the observer lets go (`enabled` goes false).
     let animate_prop = props.animate;
+    let paint_key = crate::use_unique_id();
+    let hydrated = !paint_key.peek().starts_with(CLIENT_ID_PREFIX);
+    let mut painted_in_view = use_signal(|| None::<bool>);
     let mut entered = use_signal(|| false);
-    let enter = crate::activity::use_entered_view_when(move || animate_prop && !*entered.read());
+    let enter = crate::activity::use_entered_view_when(move || {
+        animate_prop && !*entered.read() && !matches!(*painted_in_view.read(), Some(true))
+    });
     let in_view = enter.entered();
     use_effect(move || {
         if animate_prop && in_view() && !*entered.peek() {
@@ -626,9 +637,12 @@ pub fn Chart(props: ChartProps) -> Element {
         "aria-roledescription": wrapper_roledescription,
         tabindex: wrapper_tabindex,
         "data-direction": direction.as_str(),
+        "data-chart-key": paint_key.cloned(),
     });
     let merged = merge_attributes(vec![props.attributes, owned, enter.attributes()]);
-    let animate = (props.animate && !pending && entered()).then_some("true");
+    let animate =
+        (props.animate && !pending && plays_entrance(hydrated, painted_in_view(), entered()))
+            .then_some("true");
 
     rsx! {
         div {
@@ -649,7 +663,18 @@ pub fn Chart(props: ChartProps) -> Element {
                     }
                 }
             },
-            onmounted: move |evt: MountedEvent| mounted.set(Some(evt.data())),
+            onmounted: move |evt: MountedEvent| {
+                mounted.set(Some(evt.data()));
+                if animate_prop && hydrated {
+                    spawn(async move {
+                        let mut eval = dioxus::document::eval(PAINTED_IN_VIEW_JS);
+                        let _ = eval.send(paint_key.cloned());
+                        if let Ok(seen) = eval.recv::<bool>().await {
+                            painted_in_view.set(Some(seen));
+                        }
+                    });
+                }
+            },
             onpointermove: {
                 let hit = hit.clone();
                 move |evt| track_pointer(&evt, ctx, mounted, hit.clone())
@@ -1010,6 +1035,36 @@ fn svg_style(fixed_height: Option<f64>, zero: f64) -> String {
     }
 }
 
+/// Prefix of an id allocated by the client (`format_unique_id` in `lib.rs`): a chart whose
+/// `use_unique_id` starts with it was created in the browser, not hydrated from server HTML.
+const CLIENT_ID_PREFIX: &str = "dxc-c";
+
+/// Whether the chart whose `data-chart-key` is received was on screen when it mounted: the tab is
+/// visible, its box is laid out (not inside a skipped `content-visibility` subtree) and overlaps
+/// the viewport. One synchronous read; it registers nothing.
+const PAINTED_IN_VIEW_JS: &str = r#"
+const key = await dioxus.recv();
+const el = document.querySelector('[data-chart-key="' + key + '"]');
+let seen = false;
+if (el && document.visibilityState === 'visible') {
+    const r = el.getBoundingClientRect();
+    const laid = r.width > 0 && r.height > 0
+        && (typeof el.checkVisibility !== 'function'
+            || el.checkVisibility({ contentVisibilityAuto: true }));
+    seen = laid && r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth;
+}
+dioxus.send(seen);
+"#;
+
+/// Whether `data-animate` may be set. A chart created by the client plays its entrance once it
+/// has been seen. A hydrated one has already been painted, so it plays only if it was NOT in view
+/// at hydration (`Some(false)`) and has since been seen; `Some(true)` (it was in the first
+/// paint) and `None` (not yet known, or the read failed) never animate, so the painted chart is
+/// never restarted.
+fn plays_entrance(hydrated: bool, painted_in_view: Option<bool>, entered: bool) -> bool {
+    entered && (!hydrated || painted_in_view == Some(false))
+}
+
 /// Store a measured container width, rounded to a whole pixel and only when
 /// it changed, so sub-pixel resize jitter never re-renders the chart.
 fn adopt_measured_width(slot: &mut Signal<Option<f64>>, width: f64) {
@@ -1209,6 +1264,20 @@ mod tests {
         assert_eq!((s.width, s.height, s.fixed_height), (900.0, 222.0, true));
         let s = ChartSize::resolve(area, None, None, None, None).without_legend(500.0);
         assert_eq!(s.height, 104.0, "never below half the box");
+    }
+
+    #[test]
+    fn a_painted_chart_never_restarts_but_an_unseen_one_enters_once() {
+        // Hydrated chart that was in the first paint: never, however often it is "entered".
+        assert!(!plays_entrance(true, Some(true), true));
+        // Hydrated and unknown (read pending or failed): never, the safe default.
+        assert!(!plays_entrance(true, None, true));
+        // Hydrated, below the fold: waits for the entrance, then plays.
+        assert!(!plays_entrance(true, Some(false), false));
+        assert!(plays_entrance(true, Some(false), true));
+        // Client-created (nothing was painted): plays once seen, whatever the mount read says.
+        assert!(!plays_entrance(false, None, false));
+        assert!(plays_entrance(false, None, true));
     }
 
     #[test]
