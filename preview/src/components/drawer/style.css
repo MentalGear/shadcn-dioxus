@@ -6,7 +6,16 @@
  * `-description` `text-muted-foreground text-sm`. DrawerClose has no rule of its own in Nova (the
  * demos pass an outline `Button`), so the unstyled default close below is that outline Button. The
  * panel fill is the one modal fill (`--dx-popover`) shared with Dialog, AlertDialog, Sheet and
- * Command (owner decision 6). The slide, drag and rubber-band motion is this library's own. */
+ * Command (owner decision 6). The slide, drag and rubber-band motion is this library's own.
+ *
+ * The PANEL is the theme's one "Edge panel" recipe (`dx-components-theme.css`, shared with Sheet): the
+ * `<dialog>` UA reset, the per-side inset, size, border, corners and the slide, keyed on the
+ * `data-dx-surface="edge"` and RESOLVED `data-side` (`Auto` is bottom below `--dx-breakpoint-md`, right
+ * at and above it, decided once in `primitives/src/drawer.rs`). A bottom or top drawer is docked flush and
+ * rounds the corners facing the page; a left or right one is `data-dx-edge="floating"`: inset from the
+ * viewport edge, fully bordered, all four corners rounded (shadcn's side drawer). This sheet keeps what a
+ * DRAWER adds to an edge panel: the drag (a live inline `transform`, `touch-action`, the overdrag fill),
+ * the handle, and nested stacking. */
 
 /* Drawer Root -- the wrapper `div` around the panel. On the web arm
  * (`<dialog>` + `showModal()`) it paints nothing: the scrim is the dialog's own
@@ -37,33 +46,14 @@
   background: transparent;
 }
 
+/* The wrapper's fade is the theme's shared `dx-fade-in/out`. */
 .dx-drawer-root[data-state="closed"] {
-  animation: dx-drawer-root-out var(--dx-overlay-duration) var(--dx-overlay-ease) forwards;
+  animation: dx-fade-out var(--dx-overlay-duration) var(--dx-overlay-ease) forwards;
   pointer-events: none;
 }
 
 .dx-drawer-root[data-state="open"] {
-  animation: dx-drawer-root-in var(--dx-overlay-duration) var(--dx-overlay-ease) forwards;
-}
-
-@keyframes dx-drawer-root-in {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes dx-drawer-root-out {
-  from {
-    opacity: 1;
-  }
-
-  to {
-    opacity: 0;
-  }
+  animation: dx-fade-in var(--dx-overlay-duration) var(--dx-overlay-ease) forwards;
 }
 
 /* The scrim (this dialog's top-layer `::backdrop`) is the ONE shared rule in
@@ -81,115 +71,57 @@
   }
 }
 
-/* Drawer panel.
+/* Drawer panel = the Edge panel recipe + this.
  *
  * Two independent motion systems share this element on purpose --
  * `primitives/src/drawer.rs`'s module doc has the full reasoning:
  *
- * - `transform`, via the `@keyframes`/`data-state` pairs below, plays the
- *   programmatic (button/Escape/backdrop) slide-in/out, exactly like
- *   `.dx-sheet`'s equivalent rules.
- * - `translate`, set inline by the primitive only while a drag has moved
- *   the panel, tracks the live pointer offset. A CSS `animation`'s value
- *   for a property overrides even a higher-specificity inline style on
- *   that SAME property for as long as the animation applies -- so the
- *   live drag has to live on a property the entrance/exit keyframes never
- *   touch, or it would be invisibly overridden the entire time the
- *   drawer is open (confirmed by execution: a `transform`-only first
- *   attempt tracked the pointer in the Rust signal correctly, but the
- *   panel never visibly moved). `translate` composes with `transform`
- *   instead of competing for the same cascade slot, so both apply at
- *   once with no extra timing coordination.
+ * - `translate`, via the recipe's `dx-edge-in-*`/`dx-edge-out-*` keyframes selected by `data-state`,
+ *   plays the programmatic (button/Escape/backdrop) slide-in/out.
+ * - `transform`, set inline by the primitive only while a drag has moved the panel (and held while a
+ *   drag-triggered close plays out), tracks the live pointer offset. A CSS `animation`'s value for a
+ *   property overrides even a higher-specificity inline style on that SAME property for as long as the
+ *   animation applies, so the live drag has to live on a property the slide never touches, or it would
+ *   be invisibly overridden the entire time the drawer is open (confirmed by execution). `transform`
+ *   composes with `translate` instead of competing for the same cascade slot, so both apply at once with
+ *   no extra timing coordination. At rest there is no inline style, so this sheet owns `transform` and
+ *   `scale` for the nested-drawer stack below.
  */
-
-/* Full-bleed anchoring for a real `<dialog>` (web arm only -- the native
- * arm is a plain, unpositioned `div` and never had any of this). Chromium's
- * UA sheet gives `dialog`/`dialog:modal` FOUR things that all fight a
- * bottom/top/left/right-anchored sheet, not just the max-width/max-height
- * cap `.dx-sheet` already documents and undoes (preview/src/components/
- * sheet/style.css) -- stylelint's own required declaration order (`width`/
- * `max-width`/`height`/`max-height` up here; `margin`/`inset` are further
- * down, alphabetized in with the rest) splits the four apart in the rule
- * below, so this one comment up top covers all four together:
- *   1. `width`/`height: fit-content` (from the base, non-`:modal` `dialog`
- *      rule -- `:modal` never touches either) -- undone by `width`/
- *      `height: auto` right below.
- *   2. The max-width/max-height cap itself -- undone by `max-width`/
- *      `max-height: none` right below (pre-existing).
- *   3. `margin: auto` on every side -- undone by this rule's `margin: 0`
- *      further down.
- *   4. `inset-block: 0` (`top`/`bottom` both `0`) but NO `inset-inline` at
- *      all, so `left`/`right` are whatever position:absolute's default
- *      static-position algorithm picks -- undone by this rule's `inset: 0`
- *      further down, which gives EVERY side a real baseline so each
- *      `[data-side]` rule below only has to re-open the one edge that must
- *      float free.
- * With ALL FOUR of `top`/`right`/`bottom`/`left` simultaneously pinned to a
- * real value (per side below) but `width`/`height` still `fit-content` (a
- * definite, non-`auto` value, NOT equivalent to `auto` for the CSS2.1
- * absolute-position algorithm) and margins `auto`, the auto margins from
- * (3) don't get zeroed out -- they absorb the leftover space and CENTER
- * the content-sized box inside that full inset, on both axes. Proven by
- * execution: the pre-fix computed style for `[data-side="bottom"]` was
- * `margin: 223px 496.594px` (both axes centered, not flush to any edge) on
- * an 800px-tall/1280px-wide viewport holding a 354x271.8px panel -- a
- * floating card, not an edge-anchored sheet, on every side. (1) is
- * unrelated to (2) -- undoing the max-width/max-height cap alone, which is
- * all `.dx-sheet` already did, did nothing for (1)/(3)/(4) on its own,
- * confirmed live: this bug reproduced even with that cap already
- * removed. */
 .dx-drawer {
   /* The panel's fill, read by `background` AND by the overdrag `filter: drop-shadow` fills below, so
    * the strip that covers a rubber-band can never be a different colour from the panel. */
   --dx-drawer-fill: var(--dx-popover);
 
-  position: fixed;
-  z-index: var(--dx-z-overlay-raised);
-  display: flex;
+  /* The recipe's slots. Panel padding is NOT Nova's 0 here (backlog row 197, decided with the edge-panel
+   * lane): Nova pads only the header, footer and body and the Sheet follows it, but three consumers
+   * outside the drawer lane put content straight into a Drawer panel and lean on its inset -- the theme
+   * picker's drawer (`theme.rs`, `main.css`: the panel between the handle and the footer, with the
+   * panel's gap), the chart code drawer (`main.css`, block padding) -- so the Drawer keeps its 16px
+   * until those pad themselves; then this one slot flips to the recipe default and the `gap` below goes. */
+  --dx-edge-padding: var(--dx-space-4);
+  --dx-edge-radius: var(--dx-radius-xl);
+  --dx-edge-duration-enter: var(--dx-motion-duration-slow);
+  --dx-edge-duration-exit: var(--dx-motion-duration-base);
+  --dx-edge-ease-enter: var(--dx-motion-ease-out);
+  --dx-edge-ease-exit: var(--dx-motion-ease-in);
+
   overflow: auto;
-  width: auto;
-  max-width: none;
-  height: auto;
-  max-height: none;
-  flex-direction: column;
-  padding: var(--dx-space-4);
-  border: none;
-  margin: 0;
   background: var(--dx-drawer-fill);
-  color: var(--dx-popover-foreground);
-  font-size: var(--dx-text-sm);
   gap: var(--dx-space-4);
-  inset: 0;
 
-  /* The live drag offset (see this file's own top comment); no transition
-   * while an active drag is in progress (below) so it tracks the pointer
-   * 1:1 with zero lag. */
-  transition: translate var(--dx-motion-duration-base) var(--dx-motion-ease);
-  will-change: transform, translate;
-}
-
-/* The drawer is a real modal in the top layer only between `showModal()` and the
- * final `close()`, and `use_dialog_open_driver` (`primitives/src/lib.rs`) holds the
- * `close()` until the slide-out below and the `::backdrop` fade have played. Outside
- * that window the UA's `dialog:not([open]) { display: none }`, which this stylesheet's
- * own `display: flex` overrides, is restored: a not-yet-shown or already-closed
- * dialog is not in the top layer, where its `position: fixed` box is resolved against
- * (and clipped to) the nearest layout-contained ancestor -- the home page's
- * `content-visibility` demo cards -- so it would be drawn card-wide and 80% of a
- * card tall instead of viewport-wide. During the exit it takes no pointer input. */
-dialog.dx-drawer:not([open]) {
-  display: none;
-}
-
-dialog.dx-drawer[data-state="closed"] {
-  pointer-events: none;
+  /* The live drag offset and the nested-drawer stack (below) ease in and out; no transition while an
+   * active drag is in progress (`[data-dragging]`) so the drag tracks the pointer 1:1 with zero lag. */
+  transition:
+    transform var(--dx-motion-duration-base) var(--dx-motion-ease),
+    scale var(--dx-motion-duration-slow) var(--dx-motion-ease);
+  will-change: transform, translate, scale;
 }
 
 .dx-drawer[data-dragging="true"] {
   transition: none;
 
   /* A drag gesture starts from a `pointerdown` anywhere on the content not
-   * gated out (primitives/src/drawer.rs's `use_drawer_drag_start_gate`),
+   * gated out (primitives/src/drawer.rs's `GESTURE_JS`),
    * which very much includes ordinary text (a title, a description) --
    * unlike a `mousedown` confined to the decorative handle, there is no
    * single element to scope this to, so it applies here, to the whole
@@ -204,19 +136,11 @@ dialog.dx-drawer[data-state="closed"] {
   user-select: none;
 }
 
-/* Bottom (default): full-bleed width, rounded top corners. `right`/
- * `bottom`/`left: 0` already hold from the base `inset: 0` above --
- * `top: auto` is the ONE edge this side must re-open, letting the panel
- * hug the bottom and grow upward with its own content (bounded by
- * `max-height` below) instead of stretching (or, pre-fix, centering)
- * between two pinned edges. */
+/* Bottom (and top): docked flush, shadcn's `max-h-[80vh]`, the corners facing the page rounded by the
+ * recipe. The drag axis is vertical, so a horizontal pan stays the browser's. */
 .dx-drawer[data-side="bottom"] {
-  top: auto;
   max-height: 80%;
   padding-bottom: env(safe-area-inset-bottom, 0);
-  border-top: 1px solid var(--dx-border);
-  border-top-left-radius: var(--dx-radius-xl);
-  border-top-right-radius: var(--dx-radius-xl);
 
   /* Overdrag-away-from-edge never opens a gap (see `primitives/src/
    * drawer.rs`'s `damped_display_offset`/`RUBBER_BAND_MAX_PX`): dragging
@@ -237,195 +161,64 @@ dialog.dx-drawer[data-state="closed"] {
    * panel's own background, comfortably covers any reveal up to that
    * 24px cap with 16px to spare. Invisible at rest (fully below the
    * viewport) and never mistaken for a drop shadow (0 blur, exact panel
-   * color, no visible edge of its own). */
+   * color, no visible edge of its own). Only a FLUSH panel needs this: a
+   * floating one (left/right) stands off the edge already. */
   filter: drop-shadow(0 40px 0 var(--dx-drawer-fill));
   touch-action: pan-x;
-  transform: translateY(100%);
+  transform-origin: 50% 100%;
 }
 
-/* Top: full-bleed width, rounded bottom corners. `right`/`left: 0` already
- * hold from the base `inset: 0`; `bottom: auto` is this side's one
- * re-opened edge (mirrors "bottom" above, upside down). */
 .dx-drawer[data-side="top"] {
-  bottom: auto;
   max-height: 80%;
-  border-bottom: 1px solid var(--dx-border);
-  border-bottom-left-radius: var(--dx-radius-xl);
-  border-bottom-right-radius: var(--dx-radius-xl);
 
   /* See "bottom" above for the full reasoning -- mirrored upward: an
    * overdrag away from the top edge is dragging DOWN, so the extension
    * bleeds further UP, past the already-flush top edge. */
   filter: drop-shadow(0 -40px 0 var(--dx-drawer-fill));
   touch-action: pan-x;
-  transform: translateY(-100%);
+  transform-origin: 50% 0;
 }
 
-/* Right: full-bleed height, rounded left corners. `top`/`bottom: 0`
- * already hold from the base `inset: 0`; `left: auto` is this side's one
- * re-opened edge, so `width: 100%` (capped by `max-width`) hugs from the
- * right instead of stretching edge-to-edge. */
+/* Right and left: a floating side panel (the recipe's `data-dx-edge="floating"`), dragged along x. */
 .dx-drawer[data-side="right"] {
-  left: auto;
-  width: 100%;
-  max-width: 24rem;
-  border-left: 1px solid var(--dx-border);
-  border-bottom-left-radius: var(--dx-radius-xl);
-  border-top-left-radius: var(--dx-radius-xl);
-
-  /* See "bottom" above (same construction, rotated 90 degrees): an
-   * overdrag away from the right edge drags LEFT, so the extension
-   * bleeds further RIGHT, past the already-flush right edge. */
-  filter: drop-shadow(40px 0 0 var(--dx-drawer-fill));
   touch-action: pan-y;
-  transform: translateX(100%);
+  transform-origin: 100% 50%;
 }
 
-/* Left: full-bleed height, rounded right corners. `top`/`bottom: 0`
- * already hold from the base `inset: 0`; `right: auto` is this side's one
- * re-opened edge. */
 .dx-drawer[data-side="left"] {
-  right: auto;
-  width: 100%;
-  max-width: 24rem;
-  border-right: 1px solid var(--dx-border);
-  border-bottom-right-radius: var(--dx-radius-xl);
-  border-top-right-radius: var(--dx-radius-xl);
-
-  /* See "bottom" above: an overdrag away from the left edge drags RIGHT,
-   * so the extension bleeds further LEFT, past the already-flush left
-   * edge. */
-  filter: drop-shadow(-40px 0 0 var(--dx-drawer-fill));
   touch-action: pan-y;
-  transform: translateX(-100%);
+  transform-origin: 0 50%;
 }
 
-.dx-drawer[data-state="open"][data-side="bottom"] {
-  animation: dx-drawer-slide-in-bottom var(--dx-motion-duration-slow) var(--dx-motion-ease-out) forwards;
+/* Nested drawers (Vaul's `NestedRoot`): while a drawer opened inside this one is open, this one steps back --
+ * a slight shrink toward the edge it is docked to, and a small push away from it, so its edge still shows
+ * behind the child. Closing the child (the moment it STARTS to close) restores it. `scale` and `transform`
+ * are the two properties the slide (`translate`) does not hold; the inline drag `transform` only exists
+ * while this panel itself is dragged, which a modal child above it rules out. */
+.dx-drawer[data-nested-open="true"] {
+  scale: var(--dx-drawer-nest-scale, 0.96);
 }
 
-.dx-drawer[data-state="open"][data-side="top"] {
-  animation: dx-drawer-slide-in-top var(--dx-motion-duration-slow) var(--dx-motion-ease-out) forwards;
+.dx-drawer[data-nested-open="true"][data-side="bottom"] {
+  transform: translateY(calc(-1 * var(--dx-drawer-nest-shift, var(--dx-space-4))));
 }
 
-.dx-drawer[data-state="open"][data-side="right"] {
-  animation: dx-drawer-slide-in-right var(--dx-motion-duration-slow) var(--dx-motion-ease-out) forwards;
+.dx-drawer[data-nested-open="true"][data-side="top"] {
+  transform: translateY(var(--dx-drawer-nest-shift, var(--dx-space-4)));
 }
 
-.dx-drawer[data-state="open"][data-side="left"] {
-  animation: dx-drawer-slide-in-left var(--dx-motion-duration-slow) var(--dx-motion-ease-out) forwards;
+.dx-drawer[data-nested-open="true"][data-side="right"] {
+  transform: translateX(calc(-1 * var(--dx-drawer-nest-shift, var(--dx-space-4))));
 }
 
-/* Exit. A programmatic close (button/Escape/backdrop) plays these keyframes; a
- * drag-triggered close holds the inline `translate` at the release offset
- * (`primitives/src/drawer.rs`'s `released_offset`) so the keyframe's `transform`
- * carries the panel on from where the pointer let go, rather than the offset
- * easing back to rest while the exit slides it out. Either way the dialog stays
- * open and modal for the whole slide and `use_dialog_open_driver` calls `close()`
- * once it (and the `::backdrop` fade) has finished. */
-.dx-drawer[data-state="closed"][data-side="bottom"] {
-  animation: dx-drawer-slide-out-bottom var(--dx-motion-duration-base) var(--dx-motion-ease-in) forwards;
-}
-
-.dx-drawer[data-state="closed"][data-side="top"] {
-  animation: dx-drawer-slide-out-top var(--dx-motion-duration-base) var(--dx-motion-ease-in) forwards;
-}
-
-.dx-drawer[data-state="closed"][data-side="right"] {
-  animation: dx-drawer-slide-out-right var(--dx-motion-duration-base) var(--dx-motion-ease-in) forwards;
-}
-
-.dx-drawer[data-state="closed"][data-side="left"] {
-  animation: dx-drawer-slide-out-left var(--dx-motion-duration-base) var(--dx-motion-ease-in) forwards;
-}
-
-@keyframes dx-drawer-slide-in-bottom {
-  from {
-    transform: translateY(100%);
-  }
-
-  to {
-    transform: translateY(0);
-  }
-}
-
-@keyframes dx-drawer-slide-out-bottom {
-  from {
-    transform: translateY(0);
-  }
-
-  to {
-    transform: translateY(100%);
-  }
-}
-
-@keyframes dx-drawer-slide-in-top {
-  from {
-    transform: translateY(-100%);
-  }
-
-  to {
-    transform: translateY(0);
-  }
-}
-
-@keyframes dx-drawer-slide-out-top {
-  from {
-    transform: translateY(0);
-  }
-
-  to {
-    transform: translateY(-100%);
-  }
-}
-
-@keyframes dx-drawer-slide-in-right {
-  from {
-    /* rtl-physical: side (top/right/bottom/left) is a screen-geometry
-       fact, not a reading-direction one -- see drawer.rs's DrawerSide
-       doc. A side="right" drawer always slides from the physical right
-       edge, in LTR or RTL alike (each side already has its own named
-       keyframes, so there is no sign to flip). */
-    transform: translateX(100%);
-  }
-
-  to {
-    transform: translateX(0);
-  }
-}
-
-@keyframes dx-drawer-slide-out-right {
-  from {
-    transform: translateX(0);
-  }
-
-  to {
-    transform: translateX(100%); /* rtl-physical: see the note above */
-  }
-}
-
-@keyframes dx-drawer-slide-in-left {
-  from {
-    transform: translateX(-100%); /* rtl-physical: see the note above */
-  }
-
-  to {
-    transform: translateX(0);
-  }
-}
-
-@keyframes dx-drawer-slide-out-left {
-  from {
-    transform: translateX(0);
-  }
-
-  to {
-    transform: translateX(-100%); /* rtl-physical: see the note above */
-  }
+.dx-drawer[data-nested-open="true"][data-side="left"] {
+  transform: translateX(var(--dx-drawer-nest-shift, var(--dx-space-4)));
 }
 
 /* Grab-bar handle -- decorative, aria-hidden (primitives/src/drawer.rs). */
 .dx-drawer-handle {
+  /* Shown for a bottom drawer only (below), as in shadcn/Nova (`hidden group-data-[bottom]:block`). */
+  display: none;
   width: 100px;
   height: var(--dx-space-1);
   flex-shrink: 0;
@@ -443,30 +236,22 @@ dialog.dx-drawer[data-state="closed"] {
   user-select: none;
 }
 
-/* `touch-action` here must track the SAME per-side drag axis as `.dx-drawer`
- * itself (`pan-x` for the vertical top/bottom drag axis, `pan-y` for the
- * horizontal left/right one) -- restricting only the axis this crate's own
- * pointer-drag gesture actually reads (`primitives/src/drawer.rs`'s
- * `dismiss_oriented_delta`), same as the panel's own per-`[data-side]`
- * rules above. A blanket `touch-action: none` here previously blocked
- * BOTH axes, which -- per `preview/assets/main.css`'s own load-bearing
- * comment on this exact tradeoff ("`touch-action: none` must never be
- * used, it breaks scrolling") -- unnecessarily stopped a touch user from
- * panning the page by starting a touch on this handle at all, on either
- * axis, not just the one the drag gesture owns. */
-.dx-drawer[data-side="bottom"] .dx-drawer-handle,
-.dx-drawer[data-side="top"] .dx-drawer-handle {
+/* shadcn/Nova draw the grab bar only for the bottom drawer, where it sits on the edge the panel is dragged
+ * from (`hidden group-data-[vaul-drawer-direction=bottom]/drawer-content:block`). A top drawer is dragged
+ * by the opposite edge and a left/right panel is a floating side panel: a horizontal pill pinned to its top
+ * reads as a bottom-drawer artifact there. Shown by the panel's own (resolved) side attribute, so no demo
+ * has to leave `DrawerHandle` out (it stays in the DOM, aria-hidden; the panel itself still takes the drag
+ * gesture, per the `touch-action` rules above).
+ *
+ * `touch-action` here must track the SAME drag axis as `.dx-drawer` itself (`pan-x` for the vertical
+ * drag axis): restricting only the axis this crate's own pointer-drag gesture actually reads. A blanket
+ * `touch-action: none` previously blocked BOTH axes, which -- per `preview/assets/main.css`'s own
+ * load-bearing comment on this exact tradeoff ("`touch-action: none` must never be used, it breaks
+ * scrolling") -- unnecessarily stopped a touch user from panning the page by starting a touch on this
+ * handle at all, on either axis, not just the one the drag gesture owns. */
+.dx-drawer[data-side="bottom"] .dx-drawer-handle {
+  display: block;
   touch-action: pan-x;
-}
-
-/* shadcn/vaul draws the grab bar only for the bottom (and top) drawer, where it sits on the edge
- * the panel is dragged from. A left/right panel is a side sheet: a horizontal pill pinned to its
- * top reads as a bottom-drawer artifact. Hidden by the panel's own side attribute, so no demo has
- * to leave `DrawerHandle` out (it stays in the DOM, aria-hidden; the panel itself still takes the
- * drag gesture, per the `touch-action` rules above). */
-.dx-drawer[data-side="right"] .dx-drawer-handle,
-.dx-drawer[data-side="left"] .dx-drawer-handle {
-  display: none;
 }
 
 .dx-drawer-header {
@@ -565,19 +350,4 @@ dialog.dx-drawer[data-state="closed"] {
 .dx-drawer-close:not([data-style]):focus-visible {
   border-color: var(--dx-ring-color);
   box-shadow: var(--dx-ring-focus);
-}
-
-/* Explicit requirement (primitives/src/drawer.rs's brief): this panel's
- * own entrance/exit animation must respect prefers-reduced-motion, the
- * same way the shared `[data-dx-interactive]` layer
- * (preview/assets/dx-components-theme.css) already does for interactive
- * controls -- that layer's own comment notes it does not reach animated
- * CONTENT like this that isn't itself an interactive root, so this
- * panel covers itself. */
-@media (prefers-reduced-motion: reduce) {
-  .dx-drawer-root,
-  .dx-drawer {
-    animation-duration: var(--dx-motion-duration-reduced) !important;
-    transition-duration: var(--dx-motion-duration-reduced) !important;
-  }
 }

@@ -50,12 +50,6 @@ ALLOW = [
      "pure opacity fade, identical to the theme's dx-fade-in/out; modal-panel lane"),
     ("preview/src/components/dialog/style.css::dx-dialog-backdrop-animate-*",
      "pure opacity fade, identical to the theme's dx-fade-in/out; modal-panel lane"),
-    ("preview/src/components/drawer/style.css::dx-drawer-root-*",
-     "pure opacity fade, identical to the theme's dx-fade-in/out; modal-panel lane"),
-    ("preview/src/components/sheet/style.css::dx-sheet-root-*",
-     "pure opacity fade, identical to the theme's dx-fade-in/out; modal-panel lane"),
-    ("preview/src/components/drawer/style.css::dx-drawer-slide-*",
-     "edge slides identical to the sheet's dx-slide-*; modal-panel lane moves both to one shared set"),
     ("preview/src/components/toast/style.css::dx-slide-up-*",
      "two names on purpose: the toast swaps `-even`/`-odd` to restart the same animation on a re-triggered toast"),
 ]
