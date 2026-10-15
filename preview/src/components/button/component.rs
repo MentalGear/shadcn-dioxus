@@ -80,30 +80,27 @@ pub fn Button(
         "data-size": size.class(),
     });
     // The handlers are attributes, not rsx on the `button`, so the `as`
-    // element receives them the same way the `button` does.
-    let handlers = attributes!(button {
-        onclick: move |event| {
-            if let Some(f) = &onclick {
-                f.call(event);
-            }
-        },
-        onmousedown: move |event| {
-            if let Some(f) = &onmousedown {
-                f.call(event);
-            }
-        },
-        onmouseup: move |event| {
-            if let Some(f) = &onmouseup {
-                f.call(event);
-            }
-        },
-        onkeydown: move |event| {
-            if let Some(f) = &onkeydown {
-                f.call(event);
-            }
-        },
-    });
-    let merged = merge_attributes(vec![base, attributes, handlers]);
+    // element receives them the same way the `button` does. Only the ones the
+    // caller gave are emitted (a no-op listener would stand in the way of
+    // nothing, but there is no reason to attach one). `attributes` is the
+    // later list, the caller's, and `merge_attributes` chains a listener that
+    // also arrives through it (DialogClose, a menu trigger's `as` ...) with
+    // the prop instead of replacing it: the caller's first, then the prop,
+    // unless the caller prevented default.
+    let mut handlers = Vec::new();
+    if let Some(f) = onclick {
+        handlers.extend(attributes!(button { onclick: move |event| f.call(event) }));
+    }
+    if let Some(f) = onmousedown {
+        handlers.extend(attributes!(button { onmousedown: move |event| f.call(event) }));
+    }
+    if let Some(f) = onmouseup {
+        handlers.extend(attributes!(button { onmouseup: move |event| f.call(event) }));
+    }
+    if let Some(f) = onkeydown {
+        handlers.extend(attributes!(button { onkeydown: move |event| f.call(event) }));
+    }
+    let merged = merge_attributes(vec![base, handlers, attributes]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/button/style.css") }
