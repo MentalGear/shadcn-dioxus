@@ -313,7 +313,8 @@
 
 /* Nova `day`: `[&:first-child[data-selected=true]_button]:rounded-l-(--cell-radius)` and the `:last-child`
    twin -- an in-range cell at the end of a week rounds its outer edge. */
-.dx-calendar-grid-week td:first-child .dx-calendar-grid-cell[data-selection-between="true"] {
+.dx-calendar-grid-week td:first-child .dx-calendar-grid-cell[data-selection-between="true"],
+.dx-calendar-grid-week .dx-calendar-grid-weeknum + td .dx-calendar-grid-cell[data-selection-between="true"] {
     border-end-start-radius: var(--dx-calendar-cell-radius);
     border-start-start-radius: var(--dx-calendar-cell-radius);
 }
@@ -400,8 +401,9 @@ td:has(.dx-calendar-grid-cell[data-selection-end="true"]) {
     }
 }
 
-/* Nova `week_number`: `text-[0.8rem] text-muted-foreground select-none`, in a cell-sized box. Dormant
-   class (the component renders no week-number column today); no fill of its own. */
+/* Nova `week_number` (+ `week_number_header`): `text-[0.8rem] text-muted-foreground select-none`, in a
+   cell-sized box (`w-(--cell-size)`). `show_week_number` renders one of these first in every week row, and an
+   empty header cell above them; the column is a plain cell with no fill of its own. */
 .dx-calendar-grid-weeknum {
     display: flex;
     width: var(--dx-calendar-cell-size);
@@ -410,8 +412,25 @@ td:has(.dx-calendar-grid-cell[data-selection-end="true"]) {
     justify-content: center;
     color: var(--dx-muted-foreground);
     font-size: 0.8rem;
+    font-weight: 400;
     text-align: center;
     user-select: none;
+}
+
+/* The header cell only holds the column open; it is as tall as the weekday labels, not a cell. */
+.dx-calendar-grid-header .dx-calendar-grid-weeknum {
+    height: auto;
+}
+
+/* One more column of the same width. A month is as wide as its day columns (see `.dx-calendar-view`), so
+   the view widens by the same cell when the column is shown and never squeezes the seven days. */
+.dx-calendar-grid[data-week-numbers="true"] .dx-calendar-grid-header,
+.dx-calendar-grid[data-week-numbers="true"] .dx-calendar-grid-week {
+    grid-template-columns: repeat(8, var(--dx-calendar-cell-size));
+}
+
+.dx-calendar-view:has(> .dx-calendar-grid[data-week-numbers="true"]) {
+    width: max(calc(8 * var(--dx-calendar-cell-size)), calc(2 * var(--dx-calendar-cell-size) + 11rem));
 }
 
 /* Calendar with week numbers */
@@ -423,6 +442,29 @@ td:has(.dx-calendar-grid-cell[data-selection-end="true"]) {
 .dx-calendar[data-disabled="true"] {
     opacity: var(--dx-opacity-disabled);
     pointer-events: none;
+}
+
+/* The part of a dropdown caption that is not a dropdown (`dropdown-months` leaves the year as text,
+   `dropdown-years` the month) is a bare span in react-day-picker: it takes the caption row's `text-sm
+   font-medium` and nothing else. A dropdown's value is `h-6 pl-1.5 pr-1` (below), so the plain text gets
+   the same height and inset to sit on the same baseline and keep the same rhythm beside it. */
+.dx-calendar-caption-text {
+    display: inline-flex;
+    height: var(--dx-control-height-xs);
+    align-items: center;
+    padding-inline: var(--dx-space-1-5);
+    user-select: none;
+}
+
+/* The dropdown layouts keep the full "October 2026" as a live region (a select's own name is "Month",
+   which does not say where a prev/next click landed); same clip recipe as the other `-sr-only` classes. */
+.dx-calendar-sr-only {
+    position: absolute;
+    overflow: hidden;
+    width: 1px;
+    height: 1px;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
 }
 
 /* Nova `dropdown_root` + `.cn-calendar-dropdown-root`: `relative rounded-(--cell-radius) border border-input`,

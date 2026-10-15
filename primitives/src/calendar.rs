@@ -125,6 +125,51 @@ fn days_since(date: Date, weekday: Weekday) -> i64 {
     }
 }
 
+/// The week number of the week that starts on `week_start_date` (a date on `first_day_of_week`),
+/// numbered the way react-day-picker's `showWeekNumber` does (`date-fns` `getWeek`).
+///
+/// A Monday week start is ISO 8601: week 1 is the week that holds the year's first Thursday (the
+/// first week with at least four days in the year). Any other start day numbers from the week that
+/// holds January 1st (`en-US`: Sunday start, one day is enough), so a week that straddles the year
+/// end is week 1 of the new year when it holds January 1st, and the last week of the old year
+/// otherwise.
+pub(crate) fn week_number(week_start_date: Date, first_day_of_week: Weekday) -> u8 {
+    // The day of January that anchors week 1: the 4th (ISO) or the 1st.
+    let anchor_day = if first_day_of_week == Weekday::Monday {
+        4
+    } else {
+        1
+    };
+    let week_start = |date: Date| date.saturating_sub(days_before(date, first_day_of_week).days());
+    let first_week_start = |year: i32| {
+        Date::from_calendar_date(year, Month::January, anchor_day)
+            .map(week_start)
+            .ok()
+    };
+
+    let date = week_start(week_start_date);
+    let year = date.year();
+    // The week belongs to the year whose first week it is on or after, so December's last
+    // days can be week 1 of next year.
+    let week_year = match (first_week_start(year + 1), first_week_start(year)) {
+        (Some(next), _) if date >= next => year + 1,
+        (_, Some(this)) if date >= this => year,
+        _ => year - 1,
+    };
+    let Some(first) = first_week_start(week_year) else {
+        return 1;
+    };
+    let weeks = (date - first).whole_days().div_euclid(7) + 1;
+    u8::try_from(weeks).unwrap_or(1)
+}
+
+/// The number of days from the most recent `weekday` (inclusive) to `date`.
+fn days_before(date: Date, weekday: Weekday) -> i64 {
+    (i64::from(date.weekday().number_days_from_monday())
+        - i64::from(weekday.number_days_from_monday()))
+    .rem_euclid(7)
+}
+
 fn next_month(date: Date) -> Option<Date> {
     let next_month = date.month().next();
     let last_day = next_month.length(date.year());
@@ -359,6 +404,7 @@ pub struct BaseCalendarContext {
     disabled: ReadSignal<bool>,
     today: Date,
     first_day_of_week: Weekday,
+    show_week_number: bool,
     enabled_date_range: DateRange,
     view_registrations: Signal<Vec<CalendarViewRegistration>>,
 
@@ -392,6 +438,11 @@ impl BaseCalendarContext {
     /// Set the view date
     pub fn set_view_date(&self, date: Date) {
         (self.set_view_date)(self.enabled_date_range.clamp(date));
+    }
+
+    /// Whether the day grid renders a week-number column (`show_week_number`).
+    pub fn show_week_number(&self) -> bool {
+        self.show_week_number
     }
 
     /// Check if the calendar is disabled
@@ -537,6 +588,13 @@ pub struct CalendarProps {
     #[props(default = Weekday::Sunday)]
     pub first_day_of_week: Weekday,
 
+    /// Show a week-number column at the start of every week row (react-day-picker's
+    /// `showWeekNumber`). With a Monday week start the numbers are ISO 8601 weeks (week 1 holds the
+    /// year's first Thursday); with any other start day week 1 is the week that holds January 1st,
+    /// which is `date-fns`' `getWeek` for the `en-US` locale react-day-picker defaults to.
+    #[props(default)]
+    pub show_week_number: bool,
+
     /// Lower limit of the range of available dates
     #[props(default = date!(1925-01-01))]
     pub min_date: Date,
@@ -634,6 +692,7 @@ pub fn Calendar(props: CalendarProps) -> Element {
         disabled: props.disabled,
         today: props.today,
         first_day_of_week: props.first_day_of_week,
+        show_week_number: props.show_week_number,
         enabled_date_range: DateRange::new(props.min_date, props.max_date),
         view_registrations,
         direction,
@@ -817,6 +876,13 @@ pub struct RangeCalendarProps {
     #[props(default = Weekday::Sunday)]
     pub first_day_of_week: Weekday,
 
+    /// Show a week-number column at the start of every week row (react-day-picker's
+    /// `showWeekNumber`). With a Monday week start the numbers are ISO 8601 weeks (week 1 holds the
+    /// year's first Thursday); with any other start day week 1 is the week that holds January 1st,
+    /// which is `date-fns`' `getWeek` for the `en-US` locale react-day-picker defaults to.
+    #[props(default)]
+    pub show_week_number: bool,
+
     /// Lower limit of the range of available dates
     #[props(default = date!(1925-01-01))]
     pub min_date: Date,
@@ -916,6 +982,7 @@ pub fn RangeCalendar(props: RangeCalendarProps) -> Element {
         disabled: props.disabled,
         today: props.today,
         first_day_of_week: props.first_day_of_week,
+        show_week_number: props.show_week_number,
         enabled_date_range: DateRange::new(props.min_date, props.max_date),
         view_registrations,
         direction,
@@ -1521,11 +1588,17 @@ pub struct CalendarMonthTitleProps {
 /// ```
 #[component]
 pub fn CalendarMonthTitle(props: CalendarMonthTitleProps) -> Element {
+    let base_ctx: BaseCalendarContext = use_context();
     let view_ctx: CalendarViewContext = use_context();
-    // Format the current month and year
+    // Format the current month and year (the month through `on_format_month`, so a localised
+    // calendar prints a localised title)
     let month_year = use_memo(move || {
         let view_date = view_ctx.offset_view_date();
-        format!("{} {}", view_date.month(), view_date.year())
+        format!(
+            "{} {}",
+            base_ctx.format_month.call(view_date.month()),
+            view_date.year()
+        )
     });
 
     rsx! {
@@ -1623,6 +1696,33 @@ pub struct CalendarGridWeekProps {
     pub children: Element,
 }
 
+/// The props for the [`CalendarGridWeekNumberHeader`] component.
+#[derive(Props, Clone, PartialEq)]
+pub struct CalendarGridWeekNumberHeaderProps {
+    /// Additional attributes to apply to the header cell
+    #[props(extends = GlobalAttributes)]
+    pub attributes: Vec<Attribute>,
+
+    /// The content of the header cell (empty by default)
+    #[props(default)]
+    pub children: Element,
+}
+
+/// The props for the [`CalendarGridWeekNumber`] component.
+#[derive(Props, Clone, PartialEq)]
+pub struct CalendarGridWeekNumberProps {
+    /// The number of the week this cell labels
+    pub week_number: u8,
+
+    /// Additional attributes to apply to the week-number cell
+    #[props(extends = GlobalAttributes)]
+    pub attributes: Vec<Attribute>,
+
+    /// Replaces the number as the cell's content
+    #[props(default)]
+    pub children: Option<Element>,
+}
+
 /// The props for the [`CalendarGridCell`] component.
 #[derive(Props, Clone, PartialEq)]
 pub struct CalendarGridCellProps {
@@ -1659,6 +1759,8 @@ pub struct CalendarGridData {
     view_date: Date,
     weekdays: Vec<CalendarGridWeekday>,
     weeks: Vec<Vec<Date>>,
+    week_numbers: Vec<u8>,
+    show_week_number: bool,
 }
 
 impl CalendarGridData {
@@ -1676,6 +1778,16 @@ impl CalendarGridData {
     pub fn weeks(&self) -> &[Vec<Date>] {
         &self.weeks
     }
+
+    /// Whether the grid shows a week-number column (the calendar's `show_week_number`).
+    pub fn show_week_number(&self) -> bool {
+        self.show_week_number
+    }
+
+    /// The week number of each row of [`weeks`](Self::weeks), in the same order.
+    pub fn week_numbers(&self) -> &[u8] {
+        &self.week_numbers
+    }
 }
 
 /// Return the weekday headers and week rows for the current calendar grid view.
@@ -1685,10 +1797,17 @@ pub fn use_calendar_grid() -> CalendarGridData {
 
     use_memo(move || {
         let view_date = view_ctx.offset_view_date();
+        let weeks = calendar_grid_weeks(view_date, ctx.first_day_of_week);
+        let week_numbers = weeks
+            .iter()
+            .map(|week| week_number(week[0], ctx.first_day_of_week))
+            .collect();
         CalendarGridData {
             view_date,
             weekdays: calendar_grid_weekdays(ctx.first_day_of_week, ctx.format_weekday),
-            weeks: calendar_grid_weeks(view_date, ctx.first_day_of_week),
+            weeks,
+            week_numbers,
+            show_week_number: ctx.show_week_number,
         }
     })()
 }
@@ -1801,6 +1920,9 @@ pub fn CalendarGrid(props: CalendarGridProps) -> Element {
             attributes: props.attributes,
             CalendarGridHead {
                 CalendarGridHeaderRow {
+                    if grid.show_week_number() {
+                        CalendarGridWeekNumberHeader {}
+                    }
                     for weekday in grid.weekdays().iter().cloned() {
                         CalendarGridDayHeader {
                             key: "{weekday.weekday():?}",
@@ -1811,8 +1933,11 @@ pub fn CalendarGrid(props: CalendarGridProps) -> Element {
                 }
             }
             CalendarGridBody {
-                for week in grid.weeks() {
+                for (week , week_number) in grid.weeks().iter().zip(grid.week_numbers().iter().copied()) {
                     CalendarGridWeek {
+                        if grid.show_week_number() {
+                            CalendarGridWeekNumber { week_number }
+                        }
                         for date in week.iter().copied() {
                             CalendarGridCell {
                                 key: "{date}",
@@ -1930,6 +2055,48 @@ pub fn CalendarGridCell(props: CalendarGridCellProps) -> Element {
         td {
             ..props.attributes,
             {props.children}
+        }
+    }
+}
+
+/// The empty header cell above the week-number column (react-day-picker's `week_number_header`).
+///
+/// Render it first in the [`CalendarGridHeaderRow`] when [`CalendarGridData::show_week_number`]
+/// is set. It sits in the `aria-hidden` header, so it is purely a layout cell.
+#[component]
+pub fn CalendarGridWeekNumberHeader(props: CalendarGridWeekNumberHeaderProps) -> Element {
+    let defaults = attributes!(th {
+        aria_label: "Week number"
+    });
+    let merged = merge_attributes(vec![defaults, props.attributes.clone()]);
+
+    rsx! {
+        th {
+            ..merged,
+            {props.children}
+        }
+    }
+}
+
+/// The week-number cell that starts a week row (react-day-picker's `week_number`).
+///
+/// Render it first in the [`CalendarGridWeek`] when [`CalendarGridData::show_week_number`] is set.
+/// It is a `rowheader` labelled "Week N", so a screen reader announces the week of the day cell
+/// it is on; it is not focusable, so the grid keeps its single roving tab stop.
+#[component]
+pub fn CalendarGridWeekNumber(props: CalendarGridWeekNumberProps) -> Element {
+    let week_number = props.week_number;
+    let label = format!("Week {week_number}");
+    // `role` is the cell's owned semantics; the label is an overridable default.
+    let defaults = attributes!(td { aria_label: label });
+    let owned = attributes!(td { role: "rowheader" });
+    let merged = merge_attributes(vec![defaults, props.attributes.clone(), owned]);
+    let children = props.children.unwrap_or_else(|| rsx! { "{week_number}" });
+
+    rsx! {
+        td {
+            ..merged,
+            {children}
         }
     }
 }
@@ -2970,6 +3137,86 @@ mod tests {
         }
     }
 
+    #[test]
+    fn week_numbers_follow_react_day_picker_defaults() {
+        // Monday start: ISO 8601. 2026-01-01 is a Thursday, so ISO week 1 starts Mon 2025-12-29.
+        assert_eq!(week_number(date!(2025 - 12 - 29), Weekday::Monday), 1);
+        assert_eq!(week_number(date!(2026 - 10 - 12), Weekday::Monday), 42);
+        // 2020 had 53 ISO weeks; its last Monday-start week is week 53.
+        assert_eq!(week_number(date!(2020 - 12 - 28), Weekday::Monday), 53);
+        // 2021-01-01 is a Friday: the week of 2020-12-28 is week 53 of 2020, and 2021's week 1
+        // starts Mon 2021-01-04.
+        assert_eq!(week_number(date!(2021 - 01 - 04), Weekday::Monday), 1);
+
+        // Sunday start (en-US): the week that holds January 1st is week 1, even when most of it is
+        // in the old year. 2026-01-01 is a Thursday, so Sun 2025-12-28 starts week 1.
+        assert_eq!(week_number(date!(2025 - 12 - 28), Weekday::Sunday), 1);
+        assert_eq!(week_number(date!(2026 - 01 - 04), Weekday::Sunday), 2);
+        assert_eq!(week_number(date!(2026 - 10 - 11), Weekday::Sunday), 42);
+        // 2021-01-01 is a Friday, so the week starting Sun 2020-12-27 is week 1 of 2021.
+        assert_eq!(week_number(date!(2020 - 12 - 27), Weekday::Sunday), 1);
+        assert_eq!(week_number(date!(2020 - 12 - 20), Weekday::Sunday), 52);
+    }
+
+    #[test]
+    fn week_number_accepts_any_day_of_the_week() {
+        assert_eq!(week_number(date!(2026 - 10 - 14), Weekday::Monday), 42);
+        assert_eq!(week_number(date!(2026 - 10 - 17), Weekday::Sunday), 42);
+    }
+
+    #[component]
+    fn CalendarWithWeekNumbers() -> Element {
+        rsx! {
+            Calendar {
+                view_date: date!(2026 - 05 - 15),
+                first_day_of_week: Weekday::Monday,
+                show_week_number: true,
+                CalendarView {
+                    CalendarGrid {}
+                }
+            }
+        }
+    }
+
+    #[component]
+    fn CalendarWithoutWeekNumbers() -> Element {
+        rsx! {
+            Calendar {
+                view_date: date!(2026 - 05 - 15),
+                CalendarView {
+                    CalendarGrid {}
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn show_week_number_renders_a_labelled_row_header_per_week() {
+        let mut dom = VirtualDom::new(CalendarWithWeekNumbers);
+        dom.rebuild_in_place();
+        let html = dioxus_ssr::render(&dom);
+
+        // May 2026 starting Monday spans 2026-04-27 .. 2026-05-31: ISO weeks 18 to 22.
+        for week in 18..=22 {
+            assert!(
+                html.contains(&format!("aria-label=\"Week {week}\"")),
+                "week {week} missing in {html}"
+            );
+        }
+        assert_eq!(html.matches("role=\"rowheader\"").count(), 5);
+        assert_eq!(html.matches("aria-label=\"Week number\"").count(), 1);
+    }
+
+    #[test]
+    fn week_numbers_are_absent_by_default() {
+        let mut dom = VirtualDom::new(CalendarWithoutWeekNumbers);
+        dom.rebuild_in_place();
+        let html = dioxus_ssr::render(&dom);
+
+        assert!(!html.contains("rowheader"));
+        assert!(!html.contains("Week number"));
+    }
+
     #[component]
     fn ConsecutiveCalendarViews() -> Element {
         rsx! {
@@ -3967,6 +4214,7 @@ mod tests {
             disabled: use_signal(|| false).into(),
             today: date!(2024 - 06 - 15),
             first_day_of_week: Weekday::Monday,
+            show_week_number: false,
             enabled_date_range,
             view_registrations: use_signal(Vec::new),
             direction: Direction::Ltr,
@@ -3990,6 +4238,7 @@ mod tests {
             disabled: use_signal(|| false).into(),
             today: enabled_date_range.start(),
             first_day_of_week: Weekday::Monday,
+            show_week_number: false,
             enabled_date_range,
             view_registrations: use_signal(Vec::new),
             direction: Direction::Ltr,

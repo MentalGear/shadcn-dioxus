@@ -2072,6 +2072,30 @@ test.describe("Natural language picker (variant=natural_language)", () => {
     expect(Math.abs(d.right - b.right), `dialog right ${d.right} vs button right ${b.right}`).toBeLessThanOrEqual(4);
   });
 
+  test("the calendar uses shadcn's captionLayout=\"dropdown\": labelled Month and Year selects, and picking a year keeps the popover open", async ({ page }) => {
+    await gotoDatePicker(page);
+    await field(page).fill("2027-03-04");
+    await frame(page, VARIANT).getByRole("button", { name: "Select date" }).click();
+    const dialog = pickerContent(page, VARIANT);
+    await expect(dialog).toBeVisible();
+    const month = dialog.getByRole("combobox", { name: "Month" });
+    const year = dialog.getByRole("combobox", { name: "Year" });
+    await expect(month).toHaveCount(1);
+    await expect(year).toHaveCount(1);
+    await expect(month).toHaveValue("3");
+    await expect(year).toHaveValue("2027");
+
+    // Both are real selects: they take focus and a pick moves the grid, not the field.
+    await year.focus();
+    await expect(year).toBeFocused();
+    await year.selectOption("2030");
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator('.dx-calendar-grid-cell[data-month="current"]').first()).toHaveAttribute("aria-label", /March 1, 2030$/);
+    await month.selectOption("11");
+    await expect(dialog.locator('.dx-calendar-grid-cell[data-month="current"]').first()).toHaveAttribute("aria-label", /November 1, 2030$/);
+    await expect(field(page)).toHaveValue("2027-03-04"); // browsing does not select
+  });
+
   test("picking a day writes the formatted date into the field, updates the sentence and closes the popover", async ({ page }) => {
     await gotoDatePicker(page);
     await frame(page, VARIANT).getByRole("button", { name: "Select date" }).click();
