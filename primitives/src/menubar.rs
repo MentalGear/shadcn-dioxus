@@ -4,8 +4,8 @@ use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 
 use crate::menu_item::{
-    self, CheckableCommon, CheckableState, MenuCheckboxItemProps, MenuRadioGroupProps,
-    MenuRadioItemProps,
+    self, CheckableCommon, CheckableState, MenuCheckboxItemProps, MenuGroupProps, MenuItemVariant,
+    MenuRadioGroupProps, MenuRadioItemProps, MenuSeparatorProps, MenuShortcutProps,
 };
 use crate::merge_attributes;
 use crate::{
@@ -1046,6 +1046,18 @@ pub struct MenubarItemProps {
     #[props(default)]
     pub on_select: Callback<String>,
 
+    /// Whether the item is drawn in the destructive ink -- shadcn's
+    /// `variant="destructive"`. The role stays `menuitem`; the item carries
+    /// `data-variant`. See [`crate::menu_item::MenuItemVariant`].
+    #[props(default)]
+    pub variant: MenuItemVariant,
+
+    /// Reserves the leading indicator slot without drawing anything -- shadcn's
+    /// `inset` -- so a menu that mixes plain and checkable items keeps its
+    /// labels on one edge. The item carries `data-inset="true"`.
+    #[props(default)]
+    pub inset: bool,
+
     /// Additional attributes to apply to the item element.
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
@@ -1161,6 +1173,7 @@ pub fn MenubarItem(props: MenubarItemProps) -> Element {
             "data-disabled": disabled(),
             tabindex: if focused() { "0" } else { "-1" },
         }),
+        menu_item::item_style_attributes(props.variant, props.inset),
     ]);
 
     rsx! {
@@ -1371,6 +1384,86 @@ pub fn MenubarRadioItem(props: MenubarRadioItemProps) -> Element {
     menubar_checkable_item(state, props.into())
 }
 
+/// The props for the [`MenubarSeparator`] component. Shared by every
+/// menu-family host -- see [`crate::menu_item::MenuSeparatorProps`].
+pub type MenubarSeparatorProps = MenuSeparatorProps;
+
+/// The props for the [`MenubarGroup`] component. Shared by every
+/// menu-family host -- see [`crate::menu_item::MenuGroupProps`].
+pub type MenubarGroupProps = MenuGroupProps;
+
+/// The props for the [`MenubarShortcut`] component. Shared by every
+/// menu-family host -- see [`crate::menu_item::MenuShortcutProps`].
+pub type MenubarShortcutProps = MenuShortcutProps;
+
+/// # MenubarSeparator
+///
+/// A divider between groups of items -- shadcn's `MenubarSeparator`. Renders
+/// `role="separator"` with `aria-orientation="horizontal"`. It is not
+/// focusable and takes no `index`: arrow keys, Home/End and typeahead skip
+/// it.
+///
+/// ## Example
+/// ```rust
+/// use dioxus::prelude::*;
+/// use dioxus_primitives::menubar::{MenubarSeparator};
+/// #[component]
+/// fn Demo() -> Element {
+///     rsx! {
+///         MenubarSeparator {}
+///     }
+/// }
+/// ```
+#[component]
+pub fn MenubarSeparator(props: MenubarSeparatorProps) -> Element {
+    menu_item::render_separator(props)
+}
+
+/// # MenubarGroup
+///
+/// A `role="group"` around related items -- shadcn's `MenubarGroup`. It adds
+/// no behaviour: its items still take part in the enclosing menu's keyboard
+/// navigation and typeahead. Name it with `aria-label` when it has a visible
+/// heading (a label).
+///
+/// ## Example
+/// ```rust
+/// use dioxus::prelude::*;
+/// use dioxus_primitives::menubar::{MenubarGroup};
+/// #[component]
+/// fn Demo() -> Element {
+///     rsx! {
+///         MenubarGroup { aria_label: "File", "..." }
+///     }
+/// }
+/// ```
+#[component]
+pub fn MenubarGroup(props: MenubarGroupProps) -> Element {
+    menu_item::render_group(props)
+}
+
+/// # MenubarShortcut
+///
+/// A keyboard-shortcut hint at the inline end of an item -- shadcn's
+/// `MenubarShortcut`. Text only: it renders a `span` and does not bind any
+/// key.
+///
+/// ## Example
+/// ```rust
+/// use dioxus::prelude::*;
+/// use dioxus_primitives::menubar::{MenubarShortcut};
+/// #[component]
+/// fn Demo() -> Element {
+///     rsx! {
+///         MenubarShortcut { "⌘T" }
+///     }
+/// }
+/// ```
+#[component]
+pub fn MenubarShortcut(props: MenubarShortcutProps) -> Element {
+    menu_item::render_shortcut(props)
+}
+
 /// The body shared by [`MenubarCheckboxItem`] and [`MenubarRadioItem`]:
 /// everything that is the same for both roles lives in `crate::menu_item`;
 /// this is the host-specific half -- the item registers in its own
@@ -1387,6 +1480,7 @@ fn menubar_checkable_item(state: CheckableState, common: CheckableCommon) -> Ele
         disabled: item_disabled,
         text_value,
         close_on_select,
+        inset,
         attributes,
         children,
     } = common;
@@ -1417,7 +1511,7 @@ fn menubar_checkable_item(state: CheckableState, common: CheckableCommon) -> Ele
 
     let attributes = merge_attributes(vec![
         attributes,
-        state.owned_attributes(disabled(), if focused() { "0" } else { "-1" }),
+        state.owned_attributes(disabled(), inset, if focused() { "0" } else { "-1" }),
     ]);
 
     rsx! {

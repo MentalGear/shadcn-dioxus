@@ -16,6 +16,8 @@ pub fn HoverCard(props: HoverCardProps) -> Element {
             default_open: props.default_open,
             on_open_change: props.on_open_change,
             disabled: props.disabled,
+            delay: props.delay,
+            close_delay: props.close_delay,
             attributes: merged,
             {props.children}
         }

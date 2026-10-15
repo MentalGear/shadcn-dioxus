@@ -13,9 +13,8 @@ use dioxus_icons::lucide::{Copy as CopyIcon, Download, Eye, FileText, FolderOpen
 /// shared `oracle/tier1-apg` specs query by name on this page ("right click
 /// here", "Right click for ...", "Edit", "Share", ...).
 ///
-/// Not shown: shortcut hints, a destructive-styled "Move to trash" and
-/// separators between groups -- the component has no shortcut, destructive or
-/// separator part yet (backlog row 155 group 2).
+/// Shortcut hints, a destructive item and separators between groups are the
+/// `groups` and `destructive` variants.
 #[component]
 pub fn Demo() -> Element {
     let mut chosen = use_signal(|| None::<String>);

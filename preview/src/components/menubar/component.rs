@@ -2,10 +2,14 @@ use dioxus::prelude::*;
 use dioxus_icons::lucide::Check;
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::menubar::{
-    self, MenubarCheckboxItemProps, MenubarContentProps, MenubarItemProps, MenubarMenuProps,
+    self, MenubarCheckboxItemProps, MenubarContentProps, MenubarGroupProps, MenubarSeparatorProps, MenubarShortcutProps, MenubarItemProps, MenubarMenuProps,
     MenubarProps, MenubarRadioGroupProps, MenubarRadioItemProps, MenubarTriggerProps,
 };
 use dioxus_primitives::merge_attributes;
+
+/// `variant` of an item (`Default` or `Destructive`), re-exported so an app that installed this
+/// component does not have to name `dioxus_primitives::menu_item`.
+pub use dioxus_primitives::menu_item::MenuItemVariant;
 
 #[component]
 pub fn Menubar(props: MenubarProps) -> Element {
@@ -71,6 +75,8 @@ pub fn MenubarItem(props: MenubarItemProps) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/menubar/style.css") }
         menubar::MenubarItem {
+            variant: props.variant,
+            inset: props.inset,
             index: props.index,
             value: props.value,
             disabled: props.disabled,
@@ -103,6 +109,7 @@ pub fn MenubarCheckboxItem(props: MenubarCheckboxItemProps) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/menubar/style.css") }
         menubar::MenubarCheckboxItem {
+            inset: props.inset,
             index: props.index,
             checked: props.checked,
             default_checked: props.default_checked,
@@ -152,6 +159,7 @@ pub fn MenubarRadioItem(props: MenubarRadioItemProps) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/menubar/style.css") }
         menubar::MenubarRadioItem {
+            inset: props.inset,
             index: props.index,
             value: props.value,
             disabled: props.disabled,
@@ -174,6 +182,10 @@ pub fn MenubarRadioItem(props: MenubarRadioItemProps) -> Element {
 /// it so the group is named.
 #[component]
 pub fn MenubarLabel(
+    /// Reserves the leading indicator slot -- shadcn's `inset` -- so the heading
+    /// lines up with inset items. Carries `data-inset="true"`.
+    #[props(default)]
+    inset: bool,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
     children: Element,
 ) -> Element {
@@ -181,9 +193,57 @@ pub fn MenubarLabel(
         class: "dx-menubar-label",
         "data-dx-menu-label": "true",
     });
-    let merged = merge_attributes(vec![base, attributes]);
+    let inset_attr = attributes!(div {
+        "data-inset": inset.then_some("true"),
+    });
+    let merged = merge_attributes(vec![base, attributes, inset_attr]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/menubar/style.css") }
         div { ..merged, {children} }
+    }
+}
+
+/// Themed wrapper for [`menubar::MenubarGroup`] -- shadcn's `MenubarGroup`. A
+/// `role="group"` with no chrome of its own; give it an `aria-label` when it
+/// has a visible MenubarLabel.
+#[component]
+pub fn MenubarGroup(props: MenubarGroupProps) -> Element {
+    let base = attributes!(div {
+        class: "dx-menubar-group",
+    });
+    let merged = merge_attributes(vec![base, props.attributes]);
+    rsx! {
+        document::Link { rel: "stylesheet", href: asset!("/src/components/menubar/style.css") }
+        menubar::MenubarGroup { attributes: merged, {props.children} }
+    }
+}
+
+/// Themed wrapper for [`menubar::MenubarSeparator`] -- shadcn's
+/// `MenubarSeparator`: a hairline in the `border` colour that spans the menu's
+/// padding edge to edge.
+#[component]
+pub fn MenubarSeparator(props: MenubarSeparatorProps) -> Element {
+    let base = attributes!(div {
+        class: "dx-menubar-separator",
+    });
+    let merged = merge_attributes(vec![base, props.attributes]);
+    rsx! {
+        document::Link { rel: "stylesheet", href: asset!("/src/components/menubar/style.css") }
+        menubar::MenubarSeparator { attributes: merged }
+    }
+}
+
+/// Themed wrapper for [`menubar::MenubarShortcut`] -- shadcn's
+/// `MenubarShortcut`: muted, small, letter-spaced text pushed to the inline
+/// end of its item (it takes the item's ink while the item is highlighted).
+#[component]
+pub fn MenubarShortcut(props: MenubarShortcutProps) -> Element {
+    let base = attributes!(span {
+        class: "dx-menubar-shortcut",
+    });
+    let merged = merge_attributes(vec![base, props.attributes]);
+    rsx! {
+        document::Link { rel: "stylesheet", href: asset!("/src/components/menubar/style.css") }
+        menubar::MenubarShortcut { attributes: merged, {props.children} }
     }
 }

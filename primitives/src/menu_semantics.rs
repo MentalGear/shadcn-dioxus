@@ -120,6 +120,16 @@ pub(crate) const MENU_ITEM_RADIO_ROLE: &str = "menuitemradio";
 /// items (<https://www.w3.org/TR/wai-aria-1.2/#menuitemradio>).
 pub(crate) const MENU_GROUP_ROLE: &str = "group";
 
+/// The `role` for the divider between groups of items in a
+/// [`MENU_ROLE`] container.
+///
+/// WAI-ARIA 1.2 allows `separator` among a menu's owned elements ("`menu`
+/// ... Required Owned Elements: group, menuitem, menuitemcheckbox,
+/// menuitemradio, separator"), and a non-focusable separator is announced
+/// as a boundary instead of being skipped silently
+/// (<https://www.w3.org/TR/wai-aria-1.2/#menu>).
+pub(crate) const MENU_SEPARATOR_ROLE: &str = "separator";
+
 /// The `aria-haspopup` token for a trigger that opens a [`MENU_ROLE`] popup.
 ///
 /// APG Menu Button pattern, "WAI-ARIA Roles, States, and Properties": "The

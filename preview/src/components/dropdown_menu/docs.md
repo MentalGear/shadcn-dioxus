@@ -126,6 +126,40 @@ Click, `Enter` and `Space` all select. A disabled item cannot be selected and
 is skipped by arrow keys and typeahead. The check is drawn at the inline end, in a slot the item reserves (the same `--dx-menu-item-indicator-*` construction as the sub-trigger chevron), so a long label never meets it and an unchecked item does not shift its label. See the `checkboxes` and
 `radio_group` variants.
 
+## Item parts: separator, group, shortcut, destructive, inset
+
+Built once in `primitives/src/menu_item.rs` and shared with the other two menus, these are shadcn's `DropdownMenu` parts:
+
+```rust
+DropdownMenuContent {
+    DropdownMenuGroup {
+        DropdownMenuLabel { "My Account" }
+        DropdownMenuItem::<String> {
+            index: 0,
+            value: "profile".to_string(),
+            // Items take `variant` and `inset`, like shadcn's `variant="destructive"` / `inset`.
+            "Profile"
+            // A text-only hint pushed to the inline end of the row; it binds no key.
+            DropdownMenuShortcut { "⇧⌘P" }
+        }
+    }
+    // A divider between groups: `role="separator"`, not focusable, skipped by arrow keys and typeahead.
+    DropdownMenuSeparator {}
+    DropdownMenuItem::<String> {
+        index: 1,
+        value: "delete".to_string(),
+        variant: MenuItemVariant::Destructive,
+        "Delete"
+    }
+}
+```
+
+- **`variant`** (`MenuItemVariant::Default` or `Destructive`) paints the item in the theme's destructive text colour with a destructive-tinted highlight. The role stays `menuitem` and the item carries `data-variant`.
+- **`inset`** reserves the leading indicator slot on an item (or `DropdownMenuLabel`) that draws none, so a menu that mixes plain and checkable items keeps its labels on one edge. It also exists on the checkbox and radio items and, where the menu has submenus, on the sub-trigger. The element carries `data-inset="true"`.
+- **`DropdownMenuGroup`** is a `role="group"` with no behaviour; items inside it keep their `index` across the whole menu. Name it with `aria-label` when it has a visible heading.
+
+See the `shortcuts` and `destructive` variants.
+
 ## Direction / RTL
 
 `DropdownMenu` accepts a `dir: Option<Direction>` prop, inherited by every `DropdownMenuSub`. Under RTL: the submenu open key becomes `ArrowLeft` (was `ArrowRight`), the close key becomes `ArrowRight` (was `ArrowLeft`; `Escape` always closes regardless of direction), and each `DropdownMenuSubContent` opens to the left of its trigger instead of the right. See the `rtl` variant.

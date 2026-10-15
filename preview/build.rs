@@ -181,11 +181,14 @@ fn render_code_block_html(kind: &pulldown_cmark::CodeBlockKind<'_>, source: &str
     })
 }
 
+/// A fence with no highlighter (```html, ```text, an indented block). `.dx-docs-prose pre` scrolls
+/// sideways, so it is a scrollable region and must be keyboard-reachable (axe
+/// `scrollable-region-focusable`), exactly like the highlighted `div` above and `DocsPre` in main.rs.
 fn render_plain_code_block(source: &str) -> String {
     let source = source.trim_end_matches('\n');
 
     dioxus_ssr::render_element(rsx! {
-        pre {
+        pre { tabindex: "0",
             code { "{source}" }
         }
     })

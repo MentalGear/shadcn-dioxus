@@ -17,8 +17,9 @@ use crate::{
     direction::{use_direction, Direction},
     has_own_accessible_name,
     menu_item::{
-        self, CheckableCommon, CheckableState, MenuCheckboxItemProps, MenuRadioGroupProps,
-        MenuRadioItemProps,
+        self, CheckableCommon, CheckableState, MenuCheckboxItemProps, MenuGroupProps,
+        MenuItemVariant, MenuRadioGroupProps, MenuRadioItemProps, MenuSeparatorProps,
+        MenuShortcutProps,
     },
     merge_attributes, use_animated_open, use_controlled, use_id_or, use_outside_dismiss,
     use_unique_id,
@@ -964,6 +965,18 @@ pub struct DropdownMenuItemProps<T: Clone + PartialEq + 'static> {
     #[props(default)]
     pub on_select: Callback<T>,
 
+    /// Whether the item is drawn in the destructive ink -- shadcn's
+    /// `variant="destructive"`. The role stays `menuitem`; the item carries
+    /// `data-variant`. See [`crate::menu_item::MenuItemVariant`].
+    #[props(default)]
+    pub variant: MenuItemVariant,
+
+    /// Reserves the leading indicator slot without drawing anything -- shadcn's
+    /// `inset` -- so a menu that mixes plain and checkable items keeps its
+    /// labels on one edge. The item carries `data-inset="true"`.
+    #[props(default)]
+    pub inset: bool,
+
     /// Additional attributes to apply to the item element.
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
@@ -1061,6 +1074,7 @@ pub fn DropdownMenuItem<T: Clone + PartialEq + 'static>(
             "data-disabled": disabled(),
             tabindex: if focused() { "0" } else { "-1" },
         }),
+        menu_item::item_style_attributes(props.variant, props.inset),
     ]);
 
     rsx! {
@@ -1243,6 +1257,86 @@ pub fn DropdownMenuRadioItem(props: DropdownMenuRadioItemProps) -> Element {
     dropdown_checkable_item(state, props.into())
 }
 
+/// The props for the [`DropdownMenuSeparator`] component. Shared by every
+/// menu-family host -- see [`crate::menu_item::MenuSeparatorProps`].
+pub type DropdownMenuSeparatorProps = MenuSeparatorProps;
+
+/// The props for the [`DropdownMenuGroup`] component. Shared by every
+/// menu-family host -- see [`crate::menu_item::MenuGroupProps`].
+pub type DropdownMenuGroupProps = MenuGroupProps;
+
+/// The props for the [`DropdownMenuShortcut`] component. Shared by every
+/// menu-family host -- see [`crate::menu_item::MenuShortcutProps`].
+pub type DropdownMenuShortcutProps = MenuShortcutProps;
+
+/// # DropdownMenuSeparator
+///
+/// A divider between groups of items -- shadcn's `DropdownMenuSeparator`. Renders
+/// `role="separator"` with `aria-orientation="horizontal"`. It is not
+/// focusable and takes no `index`: arrow keys, Home/End and typeahead skip
+/// it.
+///
+/// ## Example
+/// ```rust
+/// use dioxus::prelude::*;
+/// use dioxus_primitives::dropdown_menu::{DropdownMenuSeparator};
+/// #[component]
+/// fn Demo() -> Element {
+///     rsx! {
+///         DropdownMenuSeparator {}
+///     }
+/// }
+/// ```
+#[component]
+pub fn DropdownMenuSeparator(props: DropdownMenuSeparatorProps) -> Element {
+    menu_item::render_separator(props)
+}
+
+/// # DropdownMenuGroup
+///
+/// A `role="group"` around related items -- shadcn's `DropdownMenuGroup`. It adds
+/// no behaviour: its items still take part in the enclosing menu's keyboard
+/// navigation and typeahead. Name it with `aria-label` when it has a visible
+/// heading (a label).
+///
+/// ## Example
+/// ```rust
+/// use dioxus::prelude::*;
+/// use dioxus_primitives::dropdown_menu::{DropdownMenuGroup};
+/// #[component]
+/// fn Demo() -> Element {
+///     rsx! {
+///         DropdownMenuGroup { aria_label: "File", "..." }
+///     }
+/// }
+/// ```
+#[component]
+pub fn DropdownMenuGroup(props: DropdownMenuGroupProps) -> Element {
+    menu_item::render_group(props)
+}
+
+/// # DropdownMenuShortcut
+///
+/// A keyboard-shortcut hint at the inline end of an item -- shadcn's
+/// `DropdownMenuShortcut`. Text only: it renders a `span` and does not bind any
+/// key.
+///
+/// ## Example
+/// ```rust
+/// use dioxus::prelude::*;
+/// use dioxus_primitives::dropdown_menu::{DropdownMenuShortcut};
+/// #[component]
+/// fn Demo() -> Element {
+///     rsx! {
+///         DropdownMenuShortcut { "⌘T" }
+///     }
+/// }
+/// ```
+#[component]
+pub fn DropdownMenuShortcut(props: DropdownMenuShortcutProps) -> Element {
+    menu_item::render_shortcut(props)
+}
+
 /// The body shared by [`DropdownMenuCheckboxItem`] and
 /// [`DropdownMenuRadioItem`]: everything that is the same for both roles
 /// lives in `crate::menu_item`; this is the host-specific half -- which
@@ -1265,6 +1359,7 @@ fn dropdown_checkable_item(state: CheckableState, common: CheckableCommon) -> El
         disabled: item_disabled,
         text_value,
         close_on_select,
+        inset,
         attributes,
         children,
     } = common;
@@ -1291,7 +1386,7 @@ fn dropdown_checkable_item(state: CheckableState, common: CheckableCommon) -> El
     // (`docs/backlog.md` row 93's duplicate-attribute hazard).
     let attributes = merge_attributes(vec![
         attributes,
-        state.owned_attributes(disabled(), if focused() { "0" } else { "-1" }),
+        state.owned_attributes(disabled(), inset, if focused() { "0" } else { "-1" }),
     ]);
 
     rsx! {
@@ -1527,6 +1622,12 @@ pub struct DropdownMenuSubTriggerProps {
     #[props(default)]
     pub text_value: ReadSignal<Option<String>>,
 
+    /// Reserves the leading indicator slot without drawing anything -- shadcn's
+    /// `inset` -- so a menu that mixes plain and checkable items keeps its
+    /// labels on one edge. The item carries `data-inset="true"`.
+    #[props(default)]
+    pub inset: bool,
+
     /// Additional attributes to apply to the sub-trigger element.
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
@@ -1689,7 +1790,11 @@ pub fn DropdownMenuSubTrigger(props: DropdownMenuSubTriggerProps) -> Element {
         // construction `DropdownMenuContentRendered`'s `use_outside_
         // dismiss` gives the root menu, so this handler is redundant.
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![
+        base,
+        props.attributes,
+        menu_item::item_style_attributes(MenuItemVariant::Default, props.inset),
+    ]);
     // Ties this trigger to the web-arm submenu content's `position-anchor`
     // (`DropdownMenuSubContentRendered`), the same mechanism
     // `DropdownMenuTrigger` uses for the top-level content -- folded with
@@ -2115,6 +2220,18 @@ pub struct DropdownMenuSubItemProps<T: Clone + PartialEq + 'static> {
     #[props(default)]
     pub on_select: Callback<T>,
 
+    /// Whether the item is drawn in the destructive ink -- shadcn's
+    /// `variant="destructive"`. The role stays `menuitem`; the item carries
+    /// `data-variant`. See [`crate::menu_item::MenuItemVariant`].
+    #[props(default)]
+    pub variant: MenuItemVariant,
+
+    /// Reserves the leading indicator slot without drawing anything -- shadcn's
+    /// `inset` -- so a menu that mixes plain and checkable items keeps its
+    /// labels on one edge. The item carries `data-inset="true"`.
+    #[props(default)]
+    pub inset: bool,
+
     /// Additional attributes to apply to the item element.
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
@@ -2173,6 +2290,7 @@ pub fn DropdownMenuSubItem<T: Clone + PartialEq + 'static>(
             "data-disabled": disabled(),
             tabindex: if focused() { "0" } else { "-1" },
         }),
+        menu_item::item_style_attributes(props.variant, props.inset),
     ]);
 
     rsx! {

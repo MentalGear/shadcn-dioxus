@@ -90,6 +90,40 @@ Moving the pointer across the triggers then does nothing: another menu opens
 only on click, `Enter` / `Space` or the arrow keys. Keyboard behaviour is the
 same in both modes. See the `click_only` variant.
 
+## Item parts: separator, group, shortcut, destructive, inset
+
+Built once in `primitives/src/menu_item.rs` and shared with the other two menus, these are shadcn's `Menubar` parts:
+
+```rust
+MenubarContent {
+    MenubarGroup {
+        MenubarLabel { "My Account" }
+        MenubarItem {
+            index: 0,
+            value: "profile".to_string(),
+            // Items take `variant` and `inset`, like shadcn's `variant="destructive"` / `inset`.
+            "Profile"
+            // A text-only hint pushed to the inline end of the row; it binds no key.
+            MenubarShortcut { "⇧⌘P" }
+        }
+    }
+    // A divider between groups: `role="separator"`, not focusable, skipped by arrow keys and typeahead.
+    MenubarSeparator {}
+    MenubarItem {
+        index: 1,
+        value: "delete".to_string(),
+        variant: MenuItemVariant::Destructive,
+        "Delete"
+    }
+}
+```
+
+- **`variant`** (`MenuItemVariant::Default` or `Destructive`) paints the item in the theme's destructive text colour with a destructive-tinted highlight. The role stays `menuitem` and the item carries `data-variant`.
+- **`inset`** reserves the leading indicator slot on an item (or `MenubarLabel`) that draws none, so a menu that mixes plain and checkable items keeps its labels on one edge. It also exists on the checkbox and radio items. The element carries `data-inset="true"`.
+- **`MenubarGroup`** is a `role="group"` with no behaviour; items inside it keep their `index` across the whole menu. Name it with `aria-label` when it has a visible heading.
+
+See the `shortcuts` variant.
+
 ## Direction / RTL
 
 `Menubar` accepts a `dir: Option<Direction>` prop. Its top-level trigger row is always horizontal, so `ArrowLeft`/`ArrowRight` between menus always swaps under RTL. See the `rtl` variant.

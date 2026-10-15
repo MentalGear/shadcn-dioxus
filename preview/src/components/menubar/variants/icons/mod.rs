@@ -12,9 +12,8 @@ use dioxus_icons::lucide::{Download, ListPlus, Play, Repeat, Share2, Shuffle};
 /// trigger indices are per-menubar, so this menubar's `0`/`1` do not clash with
 /// `main`'s.
 ///
-/// Not shown: shortcut hints, a destructive item and separators between groups
-/// -- the component has no shortcut, destructive or separator part yet
-/// (backlog row 155 group 2).
+/// Shortcut hints, a destructive item and separators between groups are the
+/// `shortcuts` variant.
 #[component]
 pub fn Demo() -> Element {
     let mut chosen = use_signal(|| None::<String>);

@@ -55,6 +55,7 @@ use dioxus_attributes::attributes;
 use serde::Deserialize;
 
 use crate::r#virtual::{cv_chunks, ChunkSkip, Engine, SizeEstimates, CHUNK_ROWS, DEFAULT_SIZE};
+pub use crate::scroll_area::ScrollFade;
 use crate::{merge_attributes, use_effect_with_cleanup, use_unique_id};
 
 /// The row count up to which [`VirtualListMode::Auto`] keeps every row in the DOM.
@@ -139,6 +140,12 @@ pub struct VirtualListProps {
     /// Defaults to [`DEFAULT_AUTO_THRESHOLD`] (1000).
     #[props(default = ReadSignal::new(Signal::new(DEFAULT_AUTO_THRESHOLD)))]
     pub auto_threshold: ReadSignal<usize>,
+    /// A scroll-edge fade on the container, which is the element that scrolls (the
+    /// `dx-scroll-fade-*` classes of `dx-effects.css`; see [`ScrollFade`]). Defaults to
+    /// [`ScrollFade::None`]. It follows the scroll position in both modes: in windowed mode the
+    /// container's own scroll offset drives it, whatever rows are mounted.
+    #[props(default)]
+    pub fade: ScrollFade,
     /// Additional attributes to apply to the container element.
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
@@ -206,8 +213,10 @@ pub fn VirtualList(props: VirtualListProps) -> Element {
         render_item,
         virtualize,
         auto_threshold,
+        fade,
         attributes,
     } = props;
+    let attributes = merge_attributes(vec![attributes, fade.attributes()]);
 
     // The mode body is a separate component, so switching modes (a count crossing the
     // threshold, or a new `virtualize`) drops the old body's scope and everything it owns (the

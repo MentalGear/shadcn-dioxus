@@ -214,7 +214,7 @@ test.describe("Roving focus: ToggleGroup", () => {
   test("RTL: ArrowLeft from the middle item moves to the NEXT item", async ({ page }) => {
     await goto(page, "toggle_group", "rtl");
     const scope = demoFrame(page, "rtl");
-    const items = scope.getByRole("button").filter({ hasText: /^[SHC]$/ });
+    const items = scope.locator("button[aria-pressed]");
     await items.nth(1).click();
     await expect(items.nth(1)).toBeFocused();
     await page.keyboard.press("ArrowLeft");
@@ -224,7 +224,7 @@ test.describe("Roving focus: ToggleGroup", () => {
   test("control (LTR, main variant): ArrowLeft from the middle item moves to the PREVIOUS item", async ({ page }) => {
     await goto(page, "toggle_group", "main");
     const scope = demoFrame(page, "main");
-    const items = scope.getByRole("button").filter({ hasText: /^[BIU]$/ });
+    const items = scope.locator("button[aria-pressed]");
     await items.nth(1).click();
     await expect(items.nth(1)).toBeFocused();
     await page.keyboard.press("ArrowLeft");

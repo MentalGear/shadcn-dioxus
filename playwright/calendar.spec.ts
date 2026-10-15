@@ -450,3 +450,191 @@ test.describe("aria-disabled on unavailable/disabled days -- backlog row 84 find
     await expect(may20).toHaveAttribute("aria-disabled", "false");
   });
 });
+
+/**
+ * Caption layouts and week numbers (backlog row 155 group 8: shadcn's `captionLayout` and
+ * `showWeekNumber`). The plain `simple` variant is the default caption (`label`); `caption` shows
+ * all four layouts side by side; `week_numbers` is `showWeekNumber`.
+ */
+test.describe("caption layouts (captionLayout)", () => {
+  const caption = (page: any, name: string) => page.locator(`[data-caption-layout="${name}"]`);
+
+  async function gotoCaptionVariant(page: any) {
+    await page.goto(`${BASE_URL}/component/block/?name=calendar&variant=caption&`, { timeout: 20 * 60 * 1000 });
+    await page.waitForLoadState("networkidle");
+    await expect(caption(page, "Label")).toBeVisible({ timeout: 30000 });
+  }
+
+  test("the default is a plain label: 'May 2026' between the arrows, no selects", async ({ page }) => {
+    await page.goto(`${BASE_URL}/component/block/?name=calendar&variant=simple&`, { timeout: 20 * 60 * 1000 });
+    await page.waitForLoadState("networkidle");
+    const calendar = page.locator(".dx-calendar").first();
+    await expect(calendar).toBeVisible({ timeout: 30000 });
+    await expect(calendar.locator("select")).toHaveCount(0);
+    const title = calendar.locator(".dx-calendar-month-title");
+    await expect(title).toHaveText("May 2026");
+    await expect(title).toHaveAttribute("role", "status");
+    await expect(title).toHaveAttribute("aria-live", "polite");
+    // The arrows still page it, and the label follows.
+    await calendar.locator(".dx-calendar-nav-next").click();
+    await expect(title).toHaveText("June 2026");
+    await calendar.locator(".dx-calendar-nav-prev").click();
+    await calendar.locator(".dx-calendar-nav-prev").click();
+    await expect(title).toHaveText("April 2026");
+  });
+
+  test("label: no selects; dropdown: Month + Year; dropdown-months: Month + the year as text; dropdown-years: Year + the month as text", async ({ page }) => {
+    await gotoCaptionVariant(page);
+
+    const label = caption(page, "Label");
+    await expect(label.locator("select")).toHaveCount(0);
+    await expect(label.locator(".dx-calendar-month-title")).toHaveText("May 2026");
+
+    const both = caption(page, "Dropdown");
+    await expect(both.getByRole("combobox", { name: "Month" })).toHaveValue("5");
+    await expect(both.getByRole("combobox", { name: "Year" })).toHaveValue("2026");
+    await expect(both.locator("select")).toHaveCount(2);
+
+    const months = caption(page, "Dropdown months");
+    await expect(months.getByRole("combobox", { name: "Month" })).toHaveValue("5");
+    await expect(months.getByRole("combobox", { name: "Year" })).toHaveCount(0);
+    await expect(months.locator(".dx-calendar-caption-text")).toHaveText("2026");
+
+    const years = caption(page, "Dropdown years");
+    await expect(years.getByRole("combobox", { name: "Year" })).toHaveValue("2026");
+    await expect(years.getByRole("combobox", { name: "Month" })).toHaveCount(0);
+    await expect(years.locator(".dx-calendar-caption-text")).toHaveText("May");
+  });
+
+  test("the dropdowns are real selects: focusable, they move the grid, and the live region says where it landed", async ({ page }) => {
+    await gotoCaptionVariant(page);
+    const calendar = caption(page, "Dropdown");
+    const month = calendar.getByRole("combobox", { name: "Month" });
+    const year = calendar.getByRole("combobox", { name: "Year" });
+    const firstDay = calendar.locator('.dx-calendar-grid-cell[data-month="current"]').first();
+
+    await month.focus();
+    await expect(month).toBeFocused();
+    await month.selectOption("9");
+    await expect(firstDay).toHaveAttribute("aria-label", /September 1, 2026$/);
+    await year.selectOption("2031");
+    await expect(firstDay).toHaveAttribute("aria-label", /September 1, 2031$/);
+    // The visually hidden full caption is the polite live region for a select-driven change.
+    const status = calendar.locator(".dx-calendar-sr-only");
+    await expect(status).toHaveText("September 2031");
+    await expect(status).toHaveAttribute("role", "status");
+    await expect(status).toHaveAttribute("aria-live", "polite");
+    // ...and it is not painted.
+    const box = await status.boundingBox();
+    expect(box === null || (box.width <= 1 && box.height <= 1)).toBe(true);
+
+    // The plain-text half follows the same view.
+    const months = caption(page, "Dropdown months");
+    await months.getByRole("combobox", { name: "Month" }).selectOption("2");
+    await expect(months.locator('.dx-calendar-grid-cell[data-month="current"]').first()).toHaveAttribute("aria-label", /February 1, 2026$/);
+    await months.locator(".dx-calendar-nav-next").click();
+    await expect(months.getByRole("combobox", { name: "Month" })).toHaveValue("3");
+  });
+
+  test("keyboard: Tab reaches Month then Year; a day key still moves within the grid", async ({ page }) => {
+    await gotoCaptionVariant(page);
+    const calendar = caption(page, "Dropdown");
+    await calendar.locator(".dx-calendar-nav-prev").focus();
+    await page.keyboard.press("Tab");
+    await expect(calendar.getByRole("combobox", { name: "Month" })).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(calendar.getByRole("combobox", { name: "Year" })).toBeFocused();
+    await page.keyboard.press("Tab"); // next-month arrow
+    await page.keyboard.press("Tab"); // the grid's roving tab stop
+    const focused = calendar.locator('[data-month="current"]:focus');
+    await expect(focused).toHaveCount(1);
+    const day = parseInt((await focused.textContent()) || "", 10);
+    await page.keyboard.press("ArrowRight");
+    await expect(focused).toHaveText(String(day + 1));
+  });
+
+  test("a year dropdown is limited to min_date..max_date", async ({ page }) => {
+    await gotoCaptionVariant(page);
+    const years = caption(page, "Dropdown").getByRole("combobox", { name: "Year" }).locator("option");
+    // min_date is 1995-07-21 and the view is May: May 1995 is before it, so the first pick is 1996.
+    await expect(years.first()).toHaveText("1996");
+    await expect(years.last()).toHaveText("2035");
+  });
+
+  test("axe: the caption layouts have no automatically detectable a11y issues", async ({ page }) => {
+    // The scan needs the full docs page (main + h1); its `caption` variant frame is the four layouts.
+    await page.goto(`${BASE_URL}/component/?name=calendar&`, { timeout: 20 * 60 * 1000 });
+    await page.waitForLoadState("networkidle");
+    await expect(page.locator("#component-preview-frame-caption")).toBeVisible({ timeout: 30000 });
+    await expectNoAxeViolations(page, "calendar: caption layouts", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
+  });
+});
+
+test.describe("week numbers (showWeekNumber)", () => {
+  async function gotoWeekNumbers(page: any) {
+    await page.goto(`${BASE_URL}/component/block/?name=calendar&variant=week_numbers&`, { timeout: 20 * 60 * 1000 });
+    await page.waitForLoadState("networkidle");
+    await expect(page.locator(".dx-calendar").first()).toBeVisible({ timeout: 30000 });
+  }
+
+  test("a labelled week-number cell starts every row; the first week is 1 (the week holding January 1st)", async ({ page }) => {
+    await gotoWeekNumbers(page);
+    const rows = page.locator(".dx-calendar-grid-week");
+    const count = await rows.count();
+    expect(count).toBeGreaterThanOrEqual(5);
+    for (let i = 0; i < count; i++) {
+      const number = rows.nth(i).locator(".dx-calendar-grid-weeknum");
+      await expect(number).toHaveText(String(i + 1));
+      await expect(number).toHaveAttribute("aria-label", `Week ${i + 1}`);
+      await expect(number).toHaveAttribute("role", "rowheader");
+      // The week number is the FIRST cell, then seven days.
+      await expect(rows.nth(i).locator("td")).toHaveCount(8);
+      await expect(rows.nth(i).locator("td").first()).toHaveClass(/dx-calendar-grid-weeknum/);
+    }
+    // An empty header cell holds the column open above them.
+    await expect(page.locator(".dx-calendar-grid-header .dx-calendar-grid-weeknum")).toHaveCount(1);
+  });
+
+  test("the column is a cell wide, sits in front of the days, and the month does not overflow", async ({ page }) => {
+    await gotoWeekNumbers(page);
+    const firstRow = page.locator(".dx-calendar-grid-week").first();
+    const number = await firstRow.locator(".dx-calendar-grid-weeknum").evaluate((el) => el.getBoundingClientRect().toJSON());
+    const firstDay = await firstRow.locator(".dx-calendar-grid-cell").first().evaluate((el) => el.getBoundingClientRect().toJSON());
+    expect(Math.abs(number.width - 28)).toBeLessThanOrEqual(1);
+    expect(firstDay.left, "days start after the week-number column").toBeGreaterThanOrEqual(number.right - 0.5);
+    const overflow = await page.locator(".dx-calendar-view").first().evaluate((el) => el.scrollWidth - el.clientWidth);
+    expect(overflow).toBeLessThanOrEqual(0);
+    // The seven weekday headers still line up over the seven day columns.
+    const headers = page.locator(".dx-calendar-grid-day-header");
+    await expect(headers).toHaveCount(7);
+    const h0 = await headers.first().evaluate((el) => el.getBoundingClientRect().left);
+    expect(Math.abs(h0 - firstDay.left)).toBeLessThanOrEqual(1);
+  });
+
+  test("the day grid keeps its single tab stop and arrow keys", async ({ page }) => {
+    await gotoWeekNumbers(page);
+    const day = page.locator('.dx-calendar-grid-cell[data-month="current"]').first();
+    await day.focus();
+    await page.keyboard.press("ArrowRight");
+    await expect(page.locator('[data-month="current"]:focus')).toHaveText("2");
+    await page.keyboard.press("ArrowDown");
+    await expect(page.locator('[data-month="current"]:focus')).toHaveText("9");
+    // The week-number cells are not tab stops.
+    expect(await page.locator(".dx-calendar-grid-weeknum[tabindex]").count()).toBe(0);
+  });
+
+  test("a calendar without showWeekNumber renders no column", async ({ page }) => {
+    await page.goto(`${BASE_URL}/component/block/?name=calendar&variant=simple&`, { timeout: 20 * 60 * 1000 });
+    await page.waitForLoadState("networkidle");
+    await expect(page.locator(".dx-calendar").first()).toBeVisible({ timeout: 30000 });
+    await expect(page.locator(".dx-calendar-grid-weeknum")).toHaveCount(0);
+    await expect(page.locator(".dx-calendar-grid-week").first().locator("td")).toHaveCount(7);
+  });
+
+  test("axe: week numbers have no automatically detectable a11y issues", async ({ page }) => {
+    await page.goto(`${BASE_URL}/component/?name=calendar&`, { timeout: 20 * 60 * 1000 });
+    await page.waitForLoadState("networkidle");
+    await expect(page.locator("#component-preview-frame-week_numbers .dx-calendar-grid-weeknum").first()).toBeVisible({ timeout: 30000 });
+    await expectNoAxeViolations(page, "calendar: week numbers", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
+  });
+});
