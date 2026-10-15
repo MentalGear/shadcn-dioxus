@@ -6,6 +6,7 @@ import { BASE_URL } from "./base-url";
 // navigating, on the SSG lane -- `gotoHydrated` so those interactions can't
 // land before hydration attaches listeners.
 import { gotoHydrated } from "./hydration";
+import { awaitAnimationsSettled } from "./animations";
 
 // docs/backlog.md row 8: SelectTrigger's role is now "combobox" (APG
 // select-only combobox pattern), not an implicit button -- see
@@ -340,6 +341,10 @@ test.describe("Listbox width (docs/backlog.md row 47 -- full-viewport-width regr
         trigger: ReturnType<Page["getByRole"]>,
         listbox: ReturnType<Page["getByRole"]>,
     ) {
+        // `boundingBox()` includes transforms, and the listbox plays `dx-pop-in` (scale .95 -> 1) on open: read
+        // mid-animation it was 142.16 wide against a 144.17 trigger (scale .981), at rest it is 145.89. The
+        // contract is about the box at rest, so settle first (animations.ts; same class as backlog row 115).
+        await awaitAnimationsSettled(listbox);
         const triggerBox = await trigger.boundingBox();
         const listboxBox = await listbox.boundingBox();
         const viewport = page.viewportSize();

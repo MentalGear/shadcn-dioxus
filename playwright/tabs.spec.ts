@@ -398,3 +398,28 @@ test.describe("vertical orientation", () => {
     await expectNoAxeViolations(page, "tabs: vertical", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 });
+
+// The docs site's demo frame is itself a `TabContent` (`.dx-component-preview-frame.dx-tabs-content-themed`)
+// inside a `line` Tabs. The panel's default frame (tabs/style.css, loaded after main.css) used to out-rank the
+// frame's own border, radius and dot-grid background on stylesheet order alone, so every demo on every
+// component page lost its chrome -- and with it the dotted ground that kept axe from judging text on the demo
+// background (it reports "background gradient", not a ratio; B2/B3 of the verify2 report surfaced the moment it went).
+test.describe("the docs demo frame keeps its own chrome", () => {
+  test("border, radius and dot grid come from main.css, not from the Tabs panel default", async ({ page }) => {
+    await page.goto(`${BASE_URL}/component/?name=spinner&`);
+    const frame = page.locator(".dx-component-preview-frame").first();
+    await expect(frame).toBeVisible();
+    await expect(frame).toHaveCSS("border-top-width", "1px");
+    await expect(frame).toHaveCSS("border-top-left-radius", "8px");
+    expect(await frame.evaluate((el) => getComputedStyle(el).backgroundImage)).toContain("radial-gradient");
+    expect(await frame.evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe("rgba(0, 0, 0, 0)");
+  });
+
+  test("a default Tabs panel is still framed by the zero-specificity default", async ({ page }) => {
+    await page.goto(`${BASE_URL}/component/?name=tabs&`);
+    const panel = page.locator('.dx-tabs[data-variant="default"] .dx-tabs-content-themed[data-state="active"]').first();
+    await expect(panel).toBeVisible();
+    await expect(panel).toHaveCSS("border-top-width", "1px");
+    expect(await panel.evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe("rgba(0, 0, 0, 0)");
+  });
+});
