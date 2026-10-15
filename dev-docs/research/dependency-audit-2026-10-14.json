@@ -1,0 +1,667 @@
+[
+  {
+    "name": "dioxus",
+    "declared_in": [
+      "primitives (workspace 0.7.8)",
+      "preview",
+      "test-harness (0.7.9)",
+      "labs/carousel-lab",
+      "playwright/oracle/attr-synth",
+      "templates/starter (0.7.9)"
+    ],
+    "kind": [
+      "normal",
+      "build (preview)"
+    ],
+    "req": "0.7.8 (workspace) / 0.7.9 (test-harness, starter)",
+    "locked": "0.7.9",
+    "latest": "0.7.10 (2026-07-31)",
+    "license": "MIT OR Apache-2.0",
+    "downloads_total": 3125669,
+    "usage": "framework itself; every component",
+    "transitive_wasm": 162,
+    "exclusive_wasm": null,
+    "user_pays": true,
+    "user_pays_how": "the app already owns it; never listed in component.json (installed-paths ignores it)",
+    "verdict": "KEEP",
+    "reasoning": "The platform. Not replaceable. Policy: keep the workspace req at the oldest release we test, bump lock deliberately (0.7.10 exists).",
+    "effort": "n/a"
+  },
+  {
+    "name": "dioxus-attributes",
+    "declared_in": [
+      "primitives (path)"
+    ],
+    "kind": [
+      "normal"
+    ],
+    "req": "path ../dioxus-attributes",
+    "locked": "0.1.0 (in-repo)",
+    "latest": "not on crates.io",
+    "license": "MIT OR Apache-2.0",
+    "usage": "277 lines / 64 files in primitives/src (attribute-spread macro)",
+    "transitive_wasm": 8,
+    "user_pays": true,
+    "user_pays_how": "proc-macro compiled for every primitives user (syn full+extra-traits, dioxus-rsx - already in dioxus' macro tree)",
+    "verdict": "KEEP",
+    "reasoning": "Own crate, structural to every component; its deps (syn/quote/proc-macro2/dioxus-rsx) are already in dioxus' tree.",
+    "effort": "n/a"
+  },
+  {
+    "name": "dioxus-sdk-time",
+    "declared_in": [
+      "primitives"
+    ],
+    "kind": [
+      "normal"
+    ],
+    "req": "0.7.0",
+    "locked": "0.7.0",
+    "latest": "0.7.0 (2025-11-06, only release)",
+    "license": "MIT OR Apache-2.0",
+    "downloads_total": 183619,
+    "usage": "only `sleep` (7 files, 10 call sites); crate is 520 LOC, `sleep` = 4 lines (tokio::time on host / gloo_timers on wasm)",
+    "transitive_wasm": 165,
+    "exclusive_wasm": 3,
+    "exclusive_crates_wasm": [
+      "dioxus-sdk-time",
+      "futures",
+      "futures-executor"
+    ],
+    "user_pays": true,
+    "user_pays_how": "in primitives' unconditional deps (+gloo-timers on wasm, +tokio on host, both reached only through it in primitives' tree)",
+    "verdict": "REPLACE-WITH-OWN",
+    "reasoning": "Tiny slice. Own `sleep` = tokio::time::sleep (host) + gloo_timers::future::sleep (wasm) ~15 lines, but it trades 1 crate for 2 direct deps (tokio, gloo-timers); net saving is futures+futures-executor+sdk-time (3 crates). Low priority, optional.",
+    "effort": "S (<1h, 15 LOC + cfg)"
+  },
+  {
+    "name": "time",
+    "declared_in": [
+      "primitives (features std,macros,parsing,local-offset)",
+      "preview (std,macros)"
+    ],
+    "kind": [
+      "normal"
+    ],
+    "req": "0.3.44",
+    "locked": "0.3.47",
+    "latest": "0.3.55 (2026-08-01)",
+    "license": "MIT OR Apache-2.0",
+    "downloads_total": 971909287,
+    "usage": "public API type (`time::Date`, Month, Weekday, OffsetDateTime) of Calendar/DatePicker; 12 non-doc lines in 3 primitives files; 28 lines/23 files preview",
+    "transitive_wasm": 6,
+    "exclusive_wasm": 6,
+    "exclusive_crates_wasm": [
+      "time",
+      "time-core",
+      "time-macros",
+      "deranged",
+      "num-conv",
+      "powerfmt"
+    ],
+    "user_pays": true,
+    "user_pays_how": "primitives unconditional dep (all users) + component.json of calendar, date_picker",
+    "verdict": "FEATURE-GATE",
+    "reasoning": "Hard to replace (it is our public date type, calendar math). But only Calendar/DatePicker need it, yet every primitives user compiles 6 extra crates. Gate behind a primitives feature (e.g. `calendar`) enabled by calendar/date_picker component.json `features`. `parsing` feature appears unused (no Date::parse/format_description in primitives) - candidate trim, unverified without a build.",
+    "effort": "M (2-4h: cfg-gate calendar.rs/date_picker.rs/lib.rs LocalDateExt, update 2 component.json, preview features)"
+  },
+  {
+    "name": "num-integer",
+    "declared_in": [
+      "primitives"
+    ],
+    "kind": [
+      "normal"
+    ],
+    "req": "0.1.46",
+    "locked": "0.1.46",
+    "latest": "0.1.47 (2026-08-12)",
+    "license": "MIT OR Apache-2.0",
+    "downloads_total": 749052427,
+    "usage": "1 import, used only as the trait bound `T: Integer` on the private DateSegment<T> generics in date_picker.rs",
+    "transitive_wasm": 2,
+    "exclusive_wasm": 1,
+    "user_pays": true,
+    "user_pays_how": "primitives unconditional dep",
+    "verdict": "REPLACE-WITH-OWN",
+    "reasoning": "Used as a bound only (no gcd/div_floor calls found). Replace with `Copy + Ord + FromStr + Display` or a 5-line private trait.",
+    "effort": "XS (15-30 min)"
+  },
+  {
+    "name": "tracing",
+    "declared_in": [
+      "primitives (workspace, features std)",
+      "preview"
+    ],
+    "kind": [
+      "normal"
+    ],
+    "req": "0.1 (+std)",
+    "locked": "0.1.44",
+    "latest": "0.1.44 (2025-12-18)",
+    "license": "MIT",
+    "downloads_total": 930928109,
+    "usage": "primitives: 2 real call sites (`tracing::warn!` in selection.rs, carousel.rs); ~100 more are in rustdoc examples",
+    "transitive_wasm": 9,
+    "exclusive_wasm": 0,
+    "user_pays": true,
+    "user_pays_how": "primitives dep, but dioxus already brings tracing -> 0 extra crates",
+    "verdict": "KEEP",
+    "reasoning": "Zero marginal crates (dioxus depends on it). Replacing 2 warn! calls buys nothing.",
+    "effort": "n/a"
+  },
+  {
+    "name": "serde",
+    "declared_in": [
+      "primitives (derive)",
+      "cli"
+    ],
+    "kind": [
+      "normal"
+    ],
+    "req": "1.0 (derive)",
+    "locked": "1.0.228",
+    "latest": "1.0.229 (2026-07-18)",
+    "license": "MIT OR Apache-2.0",
+    "downloads_total": 1527915930,
+    "usage": "primitives: 3 files (JSON payloads exchanged with JS via eval: virtual_list, message_scroller, js_listener); cli: manifest/lock",
+    "transitive_wasm": 8,
+    "exclusive_wasm": 0,
+    "user_pays": true,
+    "user_pays_how": "primitives dep; already in dioxus tree -> 0 extra crates",
+    "verdict": "KEEP",
+    "reasoning": "Standard; free in a Dioxus tree.",
+    "effort": "n/a"
+  },
+  {
+    "name": "palette",
+    "declared_in": [
+      "primitives",
+      "preview"
+    ],
+    "kind": [
+      "normal"
+    ],
+    "req": "0.7.6",
+    "locked": "0.7.6",
+    "latest": "0.7.7 (2026-08-02; 0.7.6 was 2024-04)",
+    "license": "MIT OR Apache-2.0",
+    "downloads_total": 28323585,
+    "usage": "primitives: color_picker.rs + color_picker/color_naming.rs only (HSV<->sRGB, sRGB->Oklch); palette types (Hsv, Srgb<u8>) are in ColorPicker's PUBLIC props; preview 3 lines",
+    "transitive_wasm": 17,
+    "exclusive_wasm": 12,
+    "exclusive_crates_wasm": [
+      "palette",
+      "palette_derive",
+      "approx",
+      "by_address",
+      "fast-srgb8",
+      "phf 0.11",
+      "phf_generator",
+      "phf_macros",
+      "phf_shared",
+      "rand 0.8",
+      "rand_core 0.6",
+      "siphasher"
+    ],
+    "user_pays": true,
+    "user_pays_how": "primitives unconditional dep (12 crates incl. rand 0.8, phf proc-macro for EVERY user) + component.json of color_picker. Note cargo add --no-default-features is applied (quirk) so palette's `std` is only on via primitives",
+    "verdict": "FEATURE-GATE",
+    "reasoning": "Largest single marginal cost (12 crates) for one component. Making `palette` optional behind a `color-picker` primitives feature (color_picker component.json adds `features:[\"color-picker\"]`) removes it from every other app. A rewrite is possible (~150-250 LOC HSV/sRGB/OKLCH) but breaks the public prop types; gating is cheaper and non-breaking.",
+    "effort": "S-M (1-3h gate; rewrite instead = L, API break)"
+  },
+  {
+    "name": "lazy-js-bundle",
+    "declared_in": [
+      "primitives (build-dependency)"
+    ],
+    "kind": [
+      "build"
+    ],
+    "req": "0.7.9",
+    "locked": "0.7.9",
+    "latest": "0.7.10 (2026-07-30)",
+    "license": "MIT OR Apache-2.0",
+    "downloads_total": 2631194,
+    "usage": "primitives/build.rs bundles ONE 112-line focus-trap.ts into a committed 1-line focus-trap.js",
+    "transitive_wasm": 0,
+    "user_pays": true,
+    "user_pays_how": "build script compiled+run in EVERY user's build of primitives (git dep)",
+    "verdict": "REPLACE-WITH-OWN",
+    "reasoning": "Read from source: build.rs hashes src/ts with std DefaultHasher (not stable across Rust versions by contract) and if it differs from src/js/hash.txt shells out to `bun` and writes into the dependency checkout. On a user's machine without bun that is a build failure; with a stable hash it is a no-op that still costs a build-script compile. Commit the JS, drop build.rs, add a repo-side gate that the .js matches the .ts. (Risk is latent, not observed; hash stability across rustc is the unverified part.)",
+    "effort": "S (1-2h incl. a check script)"
+  },
+  {
+    "name": "dioxus-ssr",
+    "declared_in": [
+      "primitives (dev)",
+      "preview (build + dev)",
+      "attr-synth"
+    ],
+    "kind": [
+      "dev",
+      "build"
+    ],
+    "req": "0.7.0",
+    "locked": "0.7.9",
+    "latest": "0.7.10",
+    "license": "MIT OR Apache-2.0",
+    "downloads_total": 1200423,
+    "usage": "76 lines/29 files in primitives tests; preview build.rs renders highlighted code blocks to HTML",
+    "transitive_wasm": 0,
+    "user_pays": false,
+    "user_pays_how": "dev/build only",
+    "verdict": "KEEP",
+    "reasoning": "Test + SSG tooling, 3 crates.",
+    "effort": "n/a"
+  },
+  {
+    "name": "tokio",
+    "declared_in": [
+      "primitives (dev)"
+    ],
+    "kind": [
+      "dev"
+    ],
+    "req": "1 (rt,macros,time,test-util)",
+    "locked": "1.52.3",
+    "latest": "1.53.3",
+    "license": "MIT",
+    "usage": "13 lines/3 files: paused-clock tests of interval.rs",
+    "user_pays": false,
+    "verdict": "KEEP",
+    "reasoning": "dev-only, already in tree via sdk-time on host.",
+    "effort": "n/a"
+  },
+  {
+    "name": "dioxus-icons",
+    "declared_in": [
+      "preview"
+    ],
+    "kind": [
+      "normal"
+    ],
+    "req": "0.1.0",
+    "locked": "0.1.0",
+    "latest": "0.1.0 (2026-05-08)",
+    "license": "MIT AND ISC (Lucide ISC)",
+    "downloads_total": 33697,
+    "usage": "153 files in preview (demos); 25 shipped component.rs use 16 distinct Lucide icons (ChevronDown, Check, ChevronRight, X, Ellipsis, ...)",
+    "transitive_wasm": 163,
+    "exclusive_wasm": 1,
+    "user_pays": true,
+    "user_pays_how": "component.json of 27 components (conditional, only when one is installed)",
+    "verdict": "KEEP-PINNED",
+    "reasoning": "Already correctly conditional. 1 crate, 1705 icon fns as static templates so wasm only carries icons used (estimate - not measured); crate source is 24 MB so first compile parses a lot (unverified cost). Replacing 16 icons with inline SVG (~200 LOC) is possible but users would lose the same icon family for their own UI. Consider exact `=0.1.0` pin (single release, young crate).",
+    "effort": "n/a (replace = M, not recommended)"
+  },
+  {
+    "name": "dioxus-code",
+    "declared_in": [
+      "preview (normal: macro,lang-css; build: runtime,lang-css)"
+    ],
+    "kind": [
+      "normal",
+      "build"
+    ],
+    "req": "0.1.0",
+    "locked": "0.1.2",
+    "latest": "0.1.2 (2026-05-11)",
+    "license": "MIT",
+    "downloads_total": 9577,
+    "usage": "25 lines in 3 files + build.rs: syntax highlighting of source for the docs site (`code!`, Code, SourceCode)",
+    "transitive_wasm": 183,
+    "exclusive_wasm": 21,
+    "transitive_host": 248,
+    "user_pays": false,
+    "user_pays_how": "preview only (not in any component.json)",
+    "verdict": "KEEP",
+    "reasoning": "Docs-site tooling; 21 exclusive crates (arborium tree-sitter, toml_edit, regex...) never reach users. Young crate (9.6k downloads): pin and move on. Do NOT reuse it for a shipped markdown code-block highlighter without measuring (tree-sitter).",
+    "effort": "n/a"
+  },
+  {
+    "name": "dioxus-i18n",
+    "declared_in": [
+      "preview (git branch bump-dioxus)"
+    ],
+    "kind": [
+      "normal"
+    ],
+    "req": "git ealmloff/dioxus-i18n branch=bump-dioxus",
+    "locked": "0.4.3 @ b1dd50b",
+    "latest": "0.6.0 on crates.io (2026-10-12, requires dioxus ^0.7)",
+    "license": "MIT",
+    "downloads_total": 76396,
+    "usage": "3 files (internationalized calendar/date_picker demos + main.rs init)",
+    "transitive_wasm": 177,
+    "exclusive_wasm": 9,
+    "exclusive_crates_wasm": [
+      "dioxus-i18n",
+      "fluent",
+      "fluent-bundle",
+      "fluent-langneg",
+      "fluent-syntax",
+      "intl-memoizer",
+      "intl_pluralrules",
+      "self_cell",
+      "type-map"
+    ],
+    "user_pays": false,
+    "user_pays_how": "preview only",
+    "verdict": "KEEP-PINNED",
+    "reasoning": "Only git dependency in the lock (a branch, mutable; also a hard network dep for building preview). crates.io 0.6.0 now declares dioxus ^0.7 - switch to it and drop the branch (API compatibility with 0.4.3 `tid!`/I18nConfig NOT verified; needs a preview build).",
+    "effort": "S (1h, needs a build to verify)"
+  },
+  {
+    "name": "unic-langid",
+    "declared_in": [
+      "preview"
+    ],
+    "kind": [
+      "normal"
+    ],
+    "req": "0.9 (macros)",
+    "locked": "0.9.6",
+    "latest": "0.9.6 (2025-05-09)",
+    "license": "MIT OR Apache-2.0",
+    "downloads_total": 26532130,
+    "usage": "10 lines in preview/src/main.rs (langid!)",
+    "transitive_wasm": 11,
+    "exclusive_wasm": 0,
+    "user_pays": false,
+    "verdict": "KEEP",
+    "reasoning": "Required by dioxus-i18n's API; no marginal crates.",
+    "effort": "n/a"
+  },
+  {
+    "name": "strum",
+    "declared_in": [
+      "preview"
+    ],
+    "kind": [
+      "normal"
+    ],
+    "req": "0.27.2 (derive)",
+    "locked": "0.27.2",
+    "latest": "0.28.0 (2026-02-22)",
+    "license": "MIT",
+    "downloads_total": 688365206,
+    "usage": "8 demo files: Display/EnumIter/EnumCount derives for demo enums",
+    "transitive_wasm": 7,
+    "exclusive_wasm": 3,
+    "exclusive_crates_wasm": [
+      "strum",
+      "strum_macros",
+      "heck"
+    ],
+    "user_pays": false,
+    "verdict": "REPLACE-WITH-OWN",
+    "reasoning": "Preview-only convenience; 3 crates. Low value either way - replace only if trimming preview build time matters (hand-written `const ALL` + Display ~ 60 LOC).",
+    "effort": "S (1-2h), priority low"
+  },
+  {
+    "name": "pulldown-cmark",
+    "declared_in": [
+      "preview (build-dependency, DEFAULT features = getopts + html)"
+    ],
+    "kind": [
+      "build"
+    ],
+    "req": "0.13.0",
+    "locked": "0.13.3",
+    "latest": "0.13.4 (2026-05-20)",
+    "license": "MIT",
+    "downloads_total": 175157186,
+    "usage": "preview/build.rs only: docs.md -> HTML for the component pages (ENABLE_GFM|TABLES|STRIKETHROUGH|TASKLISTS)",
+    "transitive_wasm": null,
+    "transitive_host": 7,
+    "user_pays": false,
+    "user_pays_how": "build-time of preview only; not compiled for wasm",
+    "verdict": "KEEP-PINNED",
+    "reasoning": "Trim to default-features=false + features=[\"html\"] (drops getopts). Bump to >=0.13.4 (fixes a parse.rs unwrap path - see research-deps.md Part B).",
+    "effort": "XS"
+  },
+  {
+    "name": "serde_json",
+    "declared_in": [
+      "preview (build+dev)",
+      "cli",
+      "attr-synth"
+    ],
+    "kind": [
+      "build",
+      "dev",
+      "normal"
+    ],
+    "req": "1",
+    "locked": "1.0.149",
+    "latest": "1.0.154",
+    "license": "MIT OR Apache-2.0",
+    "downloads_total": 1430987775,
+    "usage": "preview build.rs + parity tests; cli manifest/lock/registry",
+    "user_pays": false,
+    "verdict": "KEEP",
+    "reasoning": "Standard.",
+    "effort": "n/a"
+  },
+  {
+    "name": "anyhow",
+    "declared_in": [
+      "cli"
+    ],
+    "kind": [
+      "normal"
+    ],
+    "req": "1",
+    "locked": "1.0.102",
+    "latest": "1.0.104",
+    "license": "MIT OR Apache-2.0",
+    "downloads_total": 1047459555,
+    "usage": "error plumbing in 8 cli files",
+    "transitive_host": 1,
+    "user_pays": false,
+    "verdict": "KEEP",
+    "reasoning": "1 crate, ubiquitous.",
+    "effort": "n/a"
+  },
+  {
+    "name": "clap",
+    "declared_in": [
+      "cli"
+    ],
+    "kind": [
+      "normal"
+    ],
+    "req": "4 (derive)",
+    "locked": "4.5.61",
+    "latest": "4.6.7",
+    "license": "MIT OR Apache-2.0",
+    "downloads_total": 1225224737,
+    "usage": "CLI argument parsing (main.rs)",
+    "transitive_host": 19,
+    "user_pays": false,
+    "verdict": "KEEP",
+    "reasoning": "Installer binary only; users `cargo install` it, not a library dep.",
+    "effort": "n/a"
+  },
+  {
+    "name": "dirs",
+    "declared_in": [
+      "cli"
+    ],
+    "kind": [
+      "normal"
+    ],
+    "req": "6",
+    "locked": "6.0.0",
+    "latest": "7.0.0 (2026-09-05)",
+    "license": "MIT OR Apache-2.0 (pulls option-ext, MPL-2.0)",
+    "downloads_total": 362320633,
+    "usage": "1 call site: cache_dir().or_else(home_dir) in cli/src/registry.rs",
+    "transitive_host": 4,
+    "exclusive_crates": [
+      "dirs",
+      "dirs-sys",
+      "option-ext (MPL-2.0)",
+      "libc"
+    ],
+    "user_pays": false,
+    "verdict": "REPLACE-WITH-OWN",
+    "reasoning": "One call. XDG_CACHE_HOME / ~/.cache, ~/Library/Caches, %LOCALAPPDATA% is ~20 LOC; also removes the only MPL-2.0 crate (option-ext) in the default graph.",
+    "effort": "XS (30 min)"
+  },
+  {
+    "name": "toml_edit",
+    "declared_in": [
+      "cli"
+    ],
+    "kind": [
+      "normal"
+    ],
+    "req": "0.25",
+    "locked": "0.25.5 (+0.19/0.20 from other deps)",
+    "latest": "0.25.17",
+    "license": "MIT OR Apache-2.0",
+    "downloads_total": 904486679,
+    "usage": "3 files: format-preserving edits of the user's Cargo.toml / Dioxus.toml",
+    "transitive_host": null,
+    "user_pays": false,
+    "verdict": "KEEP",
+    "reasoning": "Format/comment-preserving TOML editing is exactly what this is for; not worth rewriting.",
+    "effort": "n/a"
+  },
+  {
+    "name": "tempfile",
+    "declared_in": [
+      "cli (dev)"
+    ],
+    "kind": [
+      "dev"
+    ],
+    "req": "3",
+    "locked": "3.27.0",
+    "latest": "3.27.0",
+    "license": "MIT OR Apache-2.0",
+    "usage": "3 tests",
+    "user_pays": false,
+    "verdict": "KEEP",
+    "reasoning": "dev only.",
+    "effort": "n/a"
+  },
+  {
+    "name": "dioxus-rsx / proc-macro2 / quote / syn",
+    "declared_in": [
+      "dioxus-attributes",
+      "scripts/attr-spread-collision-checker (syn visit, proc-macro2 span-locations)"
+    ],
+    "kind": [
+      "normal"
+    ],
+    "req": "0.7.8 / 1.0 / 1.0 / 2.0 (full, extra-traits[, visit])",
+    "locked": "0.7.9 / 1.0.106 / 1.0.45 / 2.0.117",
+    "license": "MIT OR Apache-2.0",
+    "usage": "proc-macro implementation and the attr-spread lint",
+    "user_pays": true,
+    "user_pays_how": "proc-macro crates already compiled by dioxus' own macros",
+    "verdict": "KEEP",
+    "reasoning": "No marginal crates for users.",
+    "effort": "n/a"
+  },
+  {
+    "name": "js-sys / web-sys",
+    "declared_in": [
+      "labs/carousel-lab"
+    ],
+    "kind": [
+      "normal"
+    ],
+    "req": "0.3",
+    "locked": "0.3.98",
+    "license": "MIT OR Apache-2.0",
+    "usage": "detached lab crate (own workspace, not in gates)",
+    "user_pays": false,
+    "verdict": "KEEP",
+    "reasoning": "Lab only.",
+    "effort": "n/a"
+  },
+  {
+    "name": "dioxus-core",
+    "declared_in": [
+      "playwright/oracle/attr-synth"
+    ],
+    "kind": [
+      "normal"
+    ],
+    "req": "0.7.8",
+    "locked": "0.7.9",
+    "license": "MIT OR Apache-2.0",
+    "usage": "detached oracle crate",
+    "user_pays": false,
+    "verdict": "KEEP",
+    "reasoning": "Oracle only.",
+    "effort": "n/a"
+  },
+  {
+    "name": "[component.json] dioxus-primitives",
+    "declared_in": [
+      "76 of 76 component.json (navbar adds features:[router])"
+    ],
+    "kind": [
+      "registry"
+    ],
+    "req": "git https://github.com/MentalGear/shadcn-dioxus, NO rev/tag/branch",
+    "locked": "n/a (user's lock)",
+    "usage": "every installed component",
+    "user_pays": true,
+    "user_pays_how": "all of: dioxus-attributes, sdk-time(+futures,+futures-executor,+gloo-timers/tokio), time(6), num-integer, palette(12) => ~22 crates beyond dioxus on wasm",
+    "verdict": "KEEP-PINNED",
+    "reasoning": "Floats on the registry's default-branch HEAD at the moment of `cargo add`. Stamp a `rev` at release time (dx's CargoDependency supports `rev`, not tag/branch). Note dx always passes --no-default-features, which rewrites an existing user dependency to default-features=false and so turns primitives' default `router` OFF (40 crates, ICU/url/sha2 via dioxus-router) except where navbar re-adds it.",
+    "effort": "M (release script + gate)"
+  },
+  {
+    "name": "[component.json] dioxus-icons",
+    "declared_in": [
+      "27 components"
+    ],
+    "kind": [
+      "registry"
+    ],
+    "req": "\"0.1.0\" (caret via cargo add dioxus-icons@0.1.0)",
+    "user_pays": true,
+    "user_pays_how": "only when one of the 27 is installed",
+    "verdict": "KEEP-PINNED",
+    "reasoning": "See dioxus-icons.",
+    "effort": "XS"
+  },
+  {
+    "name": "[component.json] palette",
+    "declared_in": [
+      "color_picker"
+    ],
+    "kind": [
+      "registry"
+    ],
+    "req": "\"0.7.6\" (caret)",
+    "user_pays": true,
+    "user_pays_how": "color_picker only (already in primitives anyway)",
+    "verdict": "FEATURE-GATE",
+    "reasoning": "Entry is redundant today because primitives already depends on palette; becomes meaningful once palette is gated.",
+    "effort": "see palette"
+  },
+  {
+    "name": "[component.json] time",
+    "declared_in": [
+      "calendar",
+      "date_picker"
+    ],
+    "kind": [
+      "registry"
+    ],
+    "req": "\"0.3.44\" (caret; lock has 0.3.47)",
+    "user_pays": true,
+    "user_pays_how": "calendar/date_picker (already in primitives anyway)",
+    "verdict": "FEATURE-GATE",
+    "reasoning": "Same as palette.",
+    "effort": "see time"
+  }
+]
