@@ -15,8 +15,9 @@ use crate::{
     direction::{use_direction, Direction},
     fold_style_attributes, has_own_accessible_name,
     menu_item::{
-        self, CheckableCommon, CheckableState, MenuCheckboxItemProps, MenuRadioGroupProps,
-        MenuRadioItemProps,
+        self, CheckableCommon, CheckableState, MenuCheckboxItemProps, MenuGroupProps,
+        MenuItemVariant, MenuRadioGroupProps, MenuRadioItemProps, MenuSeparatorProps,
+        MenuShortcutProps,
     },
     merge_attributes,
     selectable::{pointer_select_cancel, pointer_select_commit, pointer_select_start},
@@ -1044,6 +1045,18 @@ pub struct ContextMenuItemProps {
     #[props(default)]
     pub on_select: Callback<String>,
 
+    /// Whether the item is drawn in the destructive ink -- shadcn's
+    /// `variant="destructive"`. The role stays `menuitem`; the item carries
+    /// `data-variant`. See [`crate::menu_item::MenuItemVariant`].
+    #[props(default)]
+    pub variant: MenuItemVariant,
+
+    /// Reserves the leading indicator slot without drawing anything -- shadcn's
+    /// `inset` -- so a menu that mixes plain and checkable items keeps its
+    /// labels on one edge. The item carries `data-inset="true"`.
+    #[props(default)]
+    pub inset: bool,
+
     /// Additional attributes for the context menu item element
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
@@ -1151,6 +1164,7 @@ pub fn ContextMenuItem(props: ContextMenuItemProps) -> Element {
             aria_disabled: disabled(),
             "data-disabled": disabled(),
         }),
+        menu_item::item_style_attributes(props.variant, props.inset),
     ]);
 
     rsx! {
@@ -1327,6 +1341,86 @@ pub fn ContextMenuRadioItem(props: ContextMenuRadioItemProps) -> Element {
     context_checkable_item(state, props.into())
 }
 
+/// The props for the [`ContextMenuSeparator`] component. Shared by every
+/// menu-family host -- see [`crate::menu_item::MenuSeparatorProps`].
+pub type ContextMenuSeparatorProps = MenuSeparatorProps;
+
+/// The props for the [`ContextMenuGroup`] component. Shared by every
+/// menu-family host -- see [`crate::menu_item::MenuGroupProps`].
+pub type ContextMenuGroupProps = MenuGroupProps;
+
+/// The props for the [`ContextMenuShortcut`] component. Shared by every
+/// menu-family host -- see [`crate::menu_item::MenuShortcutProps`].
+pub type ContextMenuShortcutProps = MenuShortcutProps;
+
+/// # ContextMenuSeparator
+///
+/// A divider between groups of items -- shadcn's `ContextMenuSeparator`. Renders
+/// `role="separator"` with `aria-orientation="horizontal"`. It is not
+/// focusable and takes no `index`: arrow keys, Home/End and typeahead skip
+/// it.
+///
+/// ## Example
+/// ```rust
+/// use dioxus::prelude::*;
+/// use dioxus_primitives::context_menu::{ContextMenuSeparator};
+/// #[component]
+/// fn Demo() -> Element {
+///     rsx! {
+///         ContextMenuSeparator {}
+///     }
+/// }
+/// ```
+#[component]
+pub fn ContextMenuSeparator(props: ContextMenuSeparatorProps) -> Element {
+    menu_item::render_separator(props)
+}
+
+/// # ContextMenuGroup
+///
+/// A `role="group"` around related items -- shadcn's `ContextMenuGroup`. It adds
+/// no behaviour: its items still take part in the enclosing menu's keyboard
+/// navigation and typeahead. Name it with `aria-label` when it has a visible
+/// heading (a label).
+///
+/// ## Example
+/// ```rust
+/// use dioxus::prelude::*;
+/// use dioxus_primitives::context_menu::{ContextMenuGroup};
+/// #[component]
+/// fn Demo() -> Element {
+///     rsx! {
+///         ContextMenuGroup { aria_label: "File", "..." }
+///     }
+/// }
+/// ```
+#[component]
+pub fn ContextMenuGroup(props: ContextMenuGroupProps) -> Element {
+    menu_item::render_group(props)
+}
+
+/// # ContextMenuShortcut
+///
+/// A keyboard-shortcut hint at the inline end of an item -- shadcn's
+/// `ContextMenuShortcut`. Text only: it renders a `span` and does not bind any
+/// key.
+///
+/// ## Example
+/// ```rust
+/// use dioxus::prelude::*;
+/// use dioxus_primitives::context_menu::{ContextMenuShortcut};
+/// #[component]
+/// fn Demo() -> Element {
+///     rsx! {
+///         ContextMenuShortcut { "⌘T" }
+///     }
+/// }
+/// ```
+#[component]
+pub fn ContextMenuShortcut(props: ContextMenuShortcutProps) -> Element {
+    menu_item::render_shortcut(props)
+}
+
 /// The body shared by [`ContextMenuCheckboxItem`] and
 /// [`ContextMenuRadioItem`]: everything that is the same for both roles
 /// lives in `crate::menu_item`; this is the host-specific half -- which
@@ -1348,6 +1442,7 @@ fn context_checkable_item(state: CheckableState, common: CheckableCommon) -> Ele
         disabled: item_disabled,
         text_value,
         close_on_select,
+        inset,
         attributes,
         children,
     } = common;
@@ -1380,7 +1475,7 @@ fn context_checkable_item(state: CheckableState, common: CheckableCommon) -> Ele
 
     let attributes = merge_attributes(vec![
         attributes,
-        state.owned_attributes(disabled(), if focused() { "0" } else { "-1" }),
+        state.owned_attributes(disabled(), inset, if focused() { "0" } else { "-1" }),
     ]);
 
     rsx! {
@@ -1598,6 +1693,12 @@ pub struct ContextMenuSubTriggerProps {
     #[props(default)]
     pub text_value: ReadSignal<Option<String>>,
 
+    /// Reserves the leading indicator slot without drawing anything -- shadcn's
+    /// `inset` -- so a menu that mixes plain and checkable items keeps its
+    /// labels on one edge. The item carries `data-inset="true"`.
+    #[props(default)]
+    pub inset: bool,
+
     /// Additional attributes to apply to the sub-trigger element.
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
@@ -1712,7 +1813,11 @@ pub fn ContextMenuSubTrigger(props: ContextMenuSubTriggerProps) -> Element {
         // `crate::menu_sub::use_sub_outside_dismiss` call now gives this
         // submenu the DOM-truth-based construction instead.
     });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![
+        base,
+        props.attributes,
+        menu_item::item_style_attributes(MenuItemVariant::Default, props.inset),
+    ]);
     // See `crate::top_layer::anchor_name_style`/`anchored_trigger_attributes`:
     // ties this trigger to the submenu content's `position-anchor`, folded
     // with any caller-supplied `style` rather than left to plain
@@ -2111,6 +2216,18 @@ pub struct ContextMenuSubItemProps {
     #[props(default)]
     pub on_select: Callback<String>,
 
+    /// Whether the item is drawn in the destructive ink -- shadcn's
+    /// `variant="destructive"`. The role stays `menuitem`; the item carries
+    /// `data-variant`. See [`crate::menu_item::MenuItemVariant`].
+    #[props(default)]
+    pub variant: MenuItemVariant,
+
+    /// Reserves the leading indicator slot without drawing anything -- shadcn's
+    /// `inset` -- so a menu that mixes plain and checkable items keeps its
+    /// labels on one edge. The item carries `data-inset="true"`.
+    #[props(default)]
+    pub inset: bool,
+
     /// Additional attributes for the item element.
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
@@ -2196,6 +2313,7 @@ pub fn ContextMenuSubItem(props: ContextMenuSubItemProps) -> Element {
             aria_disabled: disabled(),
             "data-disabled": disabled(),
         }),
+        menu_item::item_style_attributes(props.variant, props.inset),
     ]);
 
     rsx! {

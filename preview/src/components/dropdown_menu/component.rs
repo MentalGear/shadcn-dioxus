@@ -2,12 +2,16 @@ use dioxus::prelude::*;
 use dioxus_icons::lucide::{Check, ChevronRight};
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::dropdown_menu::{
-    self, DropdownMenuCheckboxItemProps, DropdownMenuContentProps, DropdownMenuItemProps,
+    self, DropdownMenuCheckboxItemProps, DropdownMenuContentProps, DropdownMenuGroupProps, DropdownMenuSeparatorProps, DropdownMenuShortcutProps, DropdownMenuItemProps,
     DropdownMenuProps, DropdownMenuRadioGroupProps, DropdownMenuRadioItemProps,
     DropdownMenuSubContentProps, DropdownMenuSubItemProps, DropdownMenuSubProps,
     DropdownMenuSubTriggerProps, DropdownMenuTriggerProps,
 };
 use dioxus_primitives::merge_attributes;
+
+/// `variant` of an item (`Default` or `Destructive`), re-exported so an app that installed this
+/// component does not have to name `dioxus_primitives::menu_item`.
+pub use dioxus_primitives::menu_item::MenuItemVariant;
 
 #[component]
 pub fn DropdownMenu(props: DropdownMenuProps) -> Element {
@@ -70,6 +74,8 @@ pub fn DropdownMenuItem<T: Clone + PartialEq + 'static>(
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/dropdown_menu/style.css") }
         dropdown_menu::DropdownMenuItem {
+            variant: props.variant,
+            inset: props.inset,
             disabled: props.disabled,
             value: props.value,
             index: props.index,
@@ -125,6 +131,7 @@ pub fn DropdownMenuSubTrigger(props: DropdownMenuSubTriggerProps) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/dropdown_menu/style.css") }
         dropdown_menu::DropdownMenuSubTrigger {
+            inset: props.inset,
             index: props.index,
             id: props.id,
             disabled: props.disabled,
@@ -175,6 +182,8 @@ pub fn DropdownMenuSubItem<T: Clone + PartialEq + 'static>(
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/dropdown_menu/style.css") }
         dropdown_menu::DropdownMenuSubItem {
+            variant: props.variant,
+            inset: props.inset,
             disabled: props.disabled,
             value: props.value,
             index: props.index,
@@ -207,6 +216,7 @@ pub fn DropdownMenuCheckboxItem(props: DropdownMenuCheckboxItemProps) -> Element
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/dropdown_menu/style.css") }
         dropdown_menu::DropdownMenuCheckboxItem {
+            inset: props.inset,
             index: props.index,
             checked: props.checked,
             default_checked: props.default_checked,
@@ -261,6 +271,7 @@ pub fn DropdownMenuRadioItem(props: DropdownMenuRadioItemProps) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/dropdown_menu/style.css") }
         dropdown_menu::DropdownMenuRadioItem {
+            inset: props.inset,
             index: props.index,
             value: props.value,
             disabled: props.disabled,
@@ -283,6 +294,10 @@ pub fn DropdownMenuRadioItem(props: DropdownMenuRadioItemProps) -> Element {
 /// `aria-labelledby` at it so the group is named.
 #[component]
 pub fn DropdownMenuLabel(
+    /// Reserves the leading indicator slot -- shadcn's `inset` -- so the heading
+    /// lines up with inset items. Carries `data-inset="true"`.
+    #[props(default)]
+    inset: bool,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
     children: Element,
 ) -> Element {
@@ -290,10 +305,58 @@ pub fn DropdownMenuLabel(
         class: "dx-dropdown-menu-label",
         "data-dx-menu-label": "true",
     });
-    let merged = merge_attributes(vec![base, attributes]);
+    let inset_attr = attributes!(div {
+        "data-inset": inset.then_some("true"),
+    });
+    let merged = merge_attributes(vec![base, attributes, inset_attr]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/dropdown_menu/style.css") }
         div { ..merged, {children} }
+    }
+}
+
+/// Themed wrapper for [`dropdown_menu::DropdownMenuGroup`] -- shadcn's `DropdownMenuGroup`. A
+/// `role="group"` with no chrome of its own; give it an `aria-label` when it
+/// has a visible DropdownMenuLabel.
+#[component]
+pub fn DropdownMenuGroup(props: DropdownMenuGroupProps) -> Element {
+    let base = attributes!(div {
+        class: "dx-dropdown-menu-group",
+    });
+    let merged = merge_attributes(vec![base, props.attributes]);
+    rsx! {
+        document::Link { rel: "stylesheet", href: asset!("/src/components/dropdown_menu/style.css") }
+        dropdown_menu::DropdownMenuGroup { attributes: merged, {props.children} }
+    }
+}
+
+/// Themed wrapper for [`dropdown_menu::DropdownMenuSeparator`] -- shadcn's
+/// `DropdownMenuSeparator`: a hairline in the `border` colour that spans the menu's
+/// padding edge to edge.
+#[component]
+pub fn DropdownMenuSeparator(props: DropdownMenuSeparatorProps) -> Element {
+    let base = attributes!(div {
+        class: "dx-dropdown-menu-separator",
+    });
+    let merged = merge_attributes(vec![base, props.attributes]);
+    rsx! {
+        document::Link { rel: "stylesheet", href: asset!("/src/components/dropdown_menu/style.css") }
+        dropdown_menu::DropdownMenuSeparator { attributes: merged }
+    }
+}
+
+/// Themed wrapper for [`dropdown_menu::DropdownMenuShortcut`] -- shadcn's
+/// `DropdownMenuShortcut`: muted, small, letter-spaced text pushed to the inline
+/// end of its item (it takes the item's ink while the item is highlighted).
+#[component]
+pub fn DropdownMenuShortcut(props: DropdownMenuShortcutProps) -> Element {
+    let base = attributes!(span {
+        class: "dx-dropdown-menu-shortcut",
+    });
+    let merged = merge_attributes(vec![base, props.attributes]);
+    rsx! {
+        document::Link { rel: "stylesheet", href: asset!("/src/components/dropdown_menu/style.css") }
+        dropdown_menu::DropdownMenuShortcut { attributes: merged, {props.children} }
     }
 }

@@ -12,10 +12,8 @@ use dioxus_icons::lucide::{Download, Pencil, Pin, Share2, Star};
 /// what `dropdown-menu.spec.ts` and the shared `oracle/tier1-apg` specs query
 /// by name on this page ("Open Menu", "Actions", "Edit", ...).
 ///
-/// Not shown: shadcn's keyboard-shortcut hints, the destructive item and the
-/// separators between groups -- the component has no shortcut, destructive or
-/// separator part yet (backlog row 155 group 2), and imitating them with inline
-/// styles would fake the feature.
+/// Shortcut hints, the destructive item and separators between groups are the
+/// `shortcuts` and `destructive` variants.
 #[component]
 pub fn Demo() -> Element {
     let mut chosen = use_signal(|| None::<String>);
