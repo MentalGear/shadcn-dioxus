@@ -59,6 +59,17 @@
   inset-inline: auto var(--dx-space-5);
 }
 
+/* The region is a `popover="manual"` that the client opens once, on mount (`ToastRegionRendered`), and never
+ * closes. The UA hides a CLOSED popover with `display: none`, so the server HTML (and any JS-off load) had a
+ * `none` region that hydration flipped to `block`: a computed-style difference between the static page and the
+ * hydrated one on every page that mounts a `ToastProvider` (/component/bubble/ in the first-paint oracle).
+ * The region is only ever empty before it opens (a toast needs an event handler to exist), has no box of its
+ * own, and is `position: fixed`, so showing it in the closed state paints and moves nothing; the open state is
+ * the same `display: block`. */
+.dx-toast-container[popover]:not(:popover-open) {
+  display: block;
+}
+
 .dx-toast-container ol {
   display: flex;
   flex-direction: column-reverse;

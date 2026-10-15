@@ -409,3 +409,19 @@ test.describe("allow_multiple_open", () => {
     await expect(trigger("Privacy & Security")).toHaveAttribute("aria-expanded", "true");
   });
 });
+
+/**
+ * A default-open item is open in the server HTML, not only after hydration. `AccordionContent` used to mount its
+ * panel from `render_element()`, which turns on in an effect, so the static page (JavaScript off) drew the
+ * "Multiple" demo's first item closed (39px) and hydration then opened it (145px): a hydration mismatch the
+ * first-paint oracle caught as a computed-style difference.
+ */
+test("a default-open item renders its content with JavaScript off", async ({ browser }) => {
+  const ctx = await browser.newContext({ javaScriptEnabled: false });
+  const page = await ctx.newPage();
+  await page.goto(`${BASE_URL}/component/accordion/`, { timeout: LOAD_TIMEOUT });
+  const item = page.locator(".dx-accordion-item", { has: page.getByRole("button", { name: "Notification Settings", exact: true }) });
+  await expect(item).toHaveAttribute("data-open", "true");
+  await expect(item.locator(".dx-accordion-content")).toContainText("Manage how you receive notifications");
+  await ctx.close();
+});

@@ -455,8 +455,12 @@ pub fn AccordionContent(props: AccordionContentProps) -> Element {
     owned.push(hidden_attribute(hidden));
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);
 
+    // `open()` is part of the test, not just `render_element()` (which turns on in an effect, so it is
+    // always false in the server HTML and in a client's first render): a default-open item must render
+    // its content there too, or the server paints it closed (39px) and hydration opens it (145px) --
+    // the same fix the `hidden` computation above makes for `hidden_until_found`.
     rsx! {
-        if render_element() || until_found() {
+        if open() || render_element() || until_found() {
             div {
                 id: id,
                 ..merged,
