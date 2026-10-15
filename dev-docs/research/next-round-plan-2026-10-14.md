@@ -252,5 +252,7 @@ owner's own design, not parity).
 - The focus construction changed from a page-level modality tracker to reading `:focus-visible` on the opener at open
   time (the tracker had an install-order dependency).
 
+**Batch 2 also landed (2026-10-14/15):** row 155 groups 2-9, row 158 part (a), row 166, the scroll-fade prop (row 186) and popup style isolation (row 218); row 156's remaining items (Drawer snap points, non-modal mode) were not taken. See backlog rows 155, 156, 158, 166, 186, 217-221 and `plan.md` "Status (2026-10-15)".
+
 **Next:** batch 2 = the parity wave, row 155 groups 2-9 together with row 156 (Drawer snap points, non-modal mode);
 then row 213 (Message Scroller parity, pending the owner's markdown decision), rows 214 and 215, and the infra row 216.

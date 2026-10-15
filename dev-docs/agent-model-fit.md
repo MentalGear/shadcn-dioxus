@@ -17,6 +17,9 @@ measurements, not habit. Add a row for every delegated lane; revise the rules wh
   as the brief names the exact files and output format.
 - Small, mechanical edits with a closed list of target files and a known idiom to copy (demo variants, text changes),
   where the main loop reviews the diff afterwards.
+- Small, idiom-following component additions with their own specs (a variant or two, an `r#as` prop) WITH a reviewer and a
+  brief that says to wait in the foreground for queued work (p6badge, 2026-10-15: finished through ~4.5 h of lock waits, found
+  a real bug through its own spec; the main loop still reviewed the shared-code part, Button's handler move).
 
 **Haiku should not be used for (use Sonnet, or stronger after repeated failure):**
 - Debugging and root-causing (CLAUDE.md already routes these to Sonnet), anything needing a bisect or a new hypothesis.
@@ -26,6 +29,12 @@ measurements, not habit. Add a row for every delegated lane; revise the rules wh
 - Long-running lanes that must wait on shared resources (build lock, other lanes): a Haiku agent tended to hand
   back early with work still queued instead of waiting it out, so it needed a resume (the row 212 demo lane).
 - Lanes whose report has to separate "measured" from "inferred" carefully (e.g. pass/fail tallies across reruns).
+
+**Always, whatever the model, in the brief:** (1) before handback, merge the session branch into the lane branch and run the
+full `scripts/run-gates.sh` (gates that landed after the agent branched otherwise go red only on merge: several batch-2 agents
+did exactly that, and the brief was changed, row 221); (2) never send the user's email, name or any account identifier to an
+external service (a research agent once put the account email in a crates.io `User-Agent`, row 221); (3) take the global
+heavy-job lock and `CARGO_BUILD_JOBS=2` for every cargo/dx command.
 
 **Always, whatever the model:** the main loop reviews the diff, and lane results that ran on a shared cargo target are
 re-verified on the merged tree (the mtime hazard below makes any model's "clippy clean" untrustworthy there).
@@ -48,6 +57,20 @@ re-verified on the merged tree (the mtime hazard below makes any model's "clippy
 | 2026-10-14 | date picker lane (row 209) | Sonnet | primitive staging state + demos + parser | Clean construction (one staging hook, drop-on-open-change), 35 new tests, honest about what shadcn parts it could not port | Sonnet justified |
 | 2026-10-14 | focus lane (row 206) | Sonnet | shared dialog driver | Worked and was tested (31/31), but the first construction had an install-order dependency (a page-level listener installed by some roots only) that the main loop rejected for the `:focus-visible` signal: Sonnet needed a design review on a cross-cutting primitive | Sonnet, with main-loop design review |
 | 2026-10-14 | wrap the 7 deferred `:hover` sheets | Haiku | mechanical CSS edit with a closed file list, an existing script and a gate that verifies it | 11 wrapped + 5 split, read its own diff, fixed a stylelint duplicate-selector by folding with a correct cascade argument, kept indentation convention, all four checks + gate green, exactly 8 files; ~10 min | good fit (closed list + verifying gate) |
+| 2026-10-14 | p6badge lane (row 155 group 6: Badge ghost/link, `r#as` on Badge and Button) | Haiku (deliberate data point) | small component API additions with specs, under a long lock queue | Finished in the foreground despite ~4.5 h of lock waits; correct idiom reuse; found and fixed a real anchor-underline bug through its own spec; ran the install smoke unprompted; a justified, documented contrast deviation; honest about a load flake. Merged (3b81edf) after a main-loop review of the Button handler move | good fit for small, idiom-following component additions WITH a reviewer; the earlier early-handback problem did not recur once the brief said to wait in the foreground |
+| 2026-10-14 | dependency audit + markdown research (rows 213, 217) | research agent (model not recorded here) | read-only research: cargo tree, crates.io, dioxus-cli source, offline cargo-add experiments | A 26 KB report and a per-dependency JSON with verified/estimated/unverified marked per claim; clear priority order. **Incident:** its first batch of crates.io requests carried the owner's account email in the `User-Agent` header; it noted that in the report and used a generic string afterwards. **Rule now in force:** never send account identifiers (email, name, ids) to an external service, use a generic agent string such as `shadcn-dioxus-research`; in the lane brief since, backlog row 221 | research quality good; the leak is a brief gap, not a model verdict: put the identifier rule in every brief that allows web requests |
+| 2026-10-15 | p2menus lane (row 155 group 2: menu item Separator/Group/Shortcut/destructive/inset) | Sonnet | shared primitive (`menu_item.rs`) wired into three components + CSS | Built once in the primitive, `item_style_attributes` the single writer of the data attributes; 18/18 new + 198 existing menu specs; left the parts CSS repeated in three sheets (open) | Sonnet justified (shared code) |
+| 2026-10-15 | p3toggle lane (group 3: Toggle/ToggleGroup variant, size, spacing) | Sonnet | primitive + styled component + demos | Found and fixed a missing `role="group"` on the primitive root; 29/29 + 41/41 related; its demos broke shared oracle specs that locate by demo text (moved to positional locators, row 220); documented two deviations | Sonnet justified |
+| 2026-10-15 | p4dialog lane (group 4: close button, Header/Footer/Close) | Sonnet | primitive + styled component + demos | Close button last in DOM so a keyboard open lands on the first control; 85 related specs | Sonnet justified |
+| 2026-10-15 | p5tabs lane (group 5: line variant, vertical) | Sonnet | styled component + primitive default | `tabs.spec` 20/20; found the sibling class of row 218 (a docs-page line Tabs restyling nested Tabs demos) and fixed it by construction | Sonnet justified (found a class, not only the item) |
+| 2026-10-15 | p7sizes lane (group 7: Switch/Select/NativeSelect sizes, Item xs) | Sonnet | styled sizes via tokens, new spec | Sizes through the control-height ladder tokens; new `item.spec` | Sonnet justified |
+| 2026-10-15 | p8calendar lane (group 8: caption layout, week numbers) | Sonnet | primitive/styled Calendar + date-picker use | Decision B default honoured; calendar 21/21, date-picker 80/80; listed what it left open (DatePicker pass-through, month names, Monday ISO only unit-tested) | Sonnet justified |
+| 2026-10-15 | p9parts lane (group 9: AlertAction, AvatarBadge/Group, ProgressLabel/Value, ellipsis in a menu, accordion demo) | Sonnet | six small parts, 5 commits | 52 specs; also found and fixed the avatar ring hidden under a loaded picture (z-index since row 204). Its alert and avatar svg rules then needed integration fixes against the popup-boundary gate (rows 218, 526b51d). Small and idiom-following: a candidate for a Haiku agent with a reviewer next time (untested) | Sonnet worked; Haiku untested here |
+| 2026-10-15 | x166delays lane (row 166) | Sonnet | Rust-side timers in two primitives | Took defaults from Base UI master, kept the styled Tooltip at shadcn's 0/0, focus/Escape bypass; 13 new tests, 176 related passed | Sonnet justified (timers, cleanup rules) |
+| 2026-10-15 | x158dark lane (row 158 a: `.dark` class, single writer) | Sonnet | theme selector + `apply_mode` + new gate | Single writer by construction plus `check-theme-mode-writer.sh`; `theme-dark-class.spec` 14/14 | Sonnet justified (designs a gate) |
+| 2026-10-15 | scrollfade lane (row 186 scroll-fade `fade` prop) | Sonnet | primitive enum on three components + CSS bug | Found a utility bug (start edge stayed faded when a scroller stopped overflowing) and fixed it; 14/14 specs; the owner Q&A ruled out a wrapper component | Sonnet justified |
+| 2026-10-15 | ancestorleak lane (row 218 popup style isolation) | Sonnet | root-cause a leaking descendant rule, fix the class, new gate + spec | Traced the 24px calendar cells to `input_group`'s `button`/`svg` descendant rules, fixed them, hardened 7 more rules, added `check-popup-boundary.sh`; left alert/avatar/toggle entries to be reconciled after other lanes merged (main loop 526b51d, beaf3b0) | Sonnet justified (debugging and gate design) |
+| 2026-10-15 | fixups lane (stale specs and eyeball items from the N2 snapshot) | Sonnet | small spec/demo fixes + verification | Separator title as a styled div (heading-order), rtl RadioGroup spec fixed; verified that the `top_layer` fixture clamp was correct (N0 panels were 37-173px off-screen) and traced the 24px cells to row 218 | Sonnet justified (verification of an unexplained diff) |
 
 ## Environment hazard every lane must know (found 2026-10-14 by the charts lane; backlog row 216)
 
@@ -56,3 +79,9 @@ crate the same unit hash in every worktree and decides freshness by mtime, so a 
 another tree's artifact silently builds or lints that other tree's code. Touch the worktree's sources before every
 cargo/dx run on a shared or copied target, and verify that your change is in the built output. Tracked, with the by-construction fix, as
 [`backlog.md` row 216](./backlog.md) (it re-confirms row 68).
+
+## Batch 2 note (2026-10-15)
+
+Several batch-2 agents went red on merge because they never ran gates that landed after they branched; the brief now requires
+merging the session branch and a full `scripts/run-gates.sh` before handback. The other recurring cost was adjacent-line merge
+conflicts in `preview/src/components/mod.rs` (row 219). Process rules and constructions: [`backlog.md` row 221](./backlog.md).
