@@ -1013,12 +1013,15 @@ impl LocalDateExt for time::OffsetDateTime {
 ///   after its explicit `attributes` (`Button { style: "..", attributes }`). A later
 ///   `dioxus_core::AttributeValue::None` or empty `style` (a themed wrapper threading an unset `style`
 ///   prop through) is ignored instead of erasing the earlier one.
-/// - Event listeners of the same name are CHAINED, not replaced: the earlier list's listener runs
-///   first, then the later one's, both receiving the same event (so `stop_propagation` /
-///   `prevent_default` are shared). A primitive's own `onclick` (a close button's "close") and a
-///   caller's `onclick` arriving through the `attributes` spread therefore both fire; a callback
-///   that is identical in both lists (`==`) fires once. A later `dioxus_core::AttributeValue::None` still
-///   removes an earlier listener, and a listener replaces a non-listener value.
+/// - Event listeners of the same name are CHAINED, not replaced, the way Radix's
+///   `composeEventHandlers` (`packages/core/primitive/src/primitive.tsx`) does it: the LATER
+///   list is the caller's, so its listener runs first, and the earlier list's (the
+///   component's own, e.g. a close button's "close") runs after it unless the caller's called
+///   `prevent_default()` on the event. Both receive the same event (shared `stop_propagation` /
+///   `prevent_default`). A callback that is identical in both lists (`==`) runs once. A later
+///   `AttributeValue::None` still removes an earlier listener, and a listener replaces a
+///   non-listener value. (An event already prevented before the caller's listener ran does not
+///   skip the component's: only a `prevent_default` made BY the caller's listener does.)
 /// - Other attributes are overwritten by the last occurrence.
 ///
 /// Only a plain `style` (namespace `None`) is folded here; CSS set the shorthand way
@@ -1074,8 +1077,9 @@ pub fn merge_attributes(mut lists: Vec<Vec<Attribute>>) -> Vec<Attribute> {
                         dioxus_core::AttributeValue::Listener(later),
                     ) = (&existing.value, &attr.value)
                     {
-                        // Two listeners for one event: both run (earlier list first), never one
-                        // silently replacing the other. The same callback arriving twice (one
+                        // Two listeners for one event: both run (the later, caller's first, then
+                        // the earlier unless the caller prevented default), never one silently
+                        // replacing the other. The same callback arriving twice (one
                         // `attributes` Vec reaching a merge through two paths) runs once.
                         if earlier != later {
                             existing.value = chain_listeners(earlier.clone(), later.clone());
@@ -1095,7 +1099,8 @@ pub fn merge_attributes(mut lists: Vec<Vec<Attribute>>) -> Vec<Attribute> {
     merged
 }
 
-/// One listener that runs `earlier` and then `later` on the same event.
+/// One listener that runs `later` (the caller's) and then `earlier` (the component's own),
+/// skipping `earlier` when `later` prevented the event's default (Radix `composeEventHandlers`).
 ///
 /// Every listener an element attribute can carry (`onclick`, `onkeydown`, `onmounted`, ...) is
 /// built by `dioxus-html` as a `ListenerCallback` over `Event<PlatformEventData>` (the typed
@@ -1107,8 +1112,12 @@ fn chain_listeners(
 ) -> dioxus_core::AttributeValue {
     dioxus_core::AttributeValue::listener(
         move |event: dioxus_core::Event<dioxus::html::PlatformEventData>| {
-            earlier.call(event.clone().into_any());
-            later.call(event.into_any());
+            let was_enabled = event.default_action_enabled();
+            later.call(event.clone().into_any());
+            if was_enabled && !event.default_action_enabled() {
+                return;
+            }
+            earlier.call(event.into_any());
         },
     )
 }
@@ -1528,6 +1537,22 @@ mod tests {
         }
     }
 
+    /// Like [`listener_attr`], but the listener calls `prevent_default()` first.
+    fn preventing_listener_attr(name: &'static str, log: &Log, tag: &'static str) -> Attribute {
+        let log = log.clone();
+        Attribute {
+            name,
+            namespace: None,
+            volatile: false,
+            value: dioxus_core::AttributeValue::listener(
+                move |event: dioxus_core::Event<dioxus::html::PlatformEventData>| {
+                    event.prevent_default();
+                    log.borrow_mut().push(tag);
+                },
+            ),
+        }
+    }
+
     /// Fire the `name` listener of `attrs` the way a renderer does (an
     /// `Event<PlatformEventData>` erased to `dyn Any`).
     fn fire(attrs: &[Attribute], name: &str) {
@@ -1559,7 +1584,7 @@ mod tests {
     }
 
     #[test]
-    fn same_named_listeners_both_run_earlier_first() {
+    fn same_named_listeners_both_run_callers_first() {
         in_runtime(|| {
             let log: Log = Default::default();
             let merged = merge_attributes(vec![
@@ -1568,12 +1593,41 @@ mod tests {
             ]);
             assert_eq!(merged.len(), 1);
             fire(&merged, "onclick");
-            assert_eq!(*log.borrow(), ["primitive", "caller"]);
+            assert_eq!(*log.borrow(), ["caller", "primitive"]);
+        });
+    }
+
+    /// Radix `composeEventHandlers`: the caller's listener preventing default skips the
+    /// component's own; one that does not prevent leaves it running.
+    #[test]
+    fn caller_prevent_default_skips_the_components_own_listener() {
+        in_runtime(|| {
+            let log: Log = Default::default();
+            let merged = merge_attributes(vec![
+                vec![listener_attr("onclick", &log, "primitive")],
+                vec![preventing_listener_attr("onclick", &log, "caller")],
+            ]);
+            fire(&merged, "onclick");
+            assert_eq!(*log.borrow(), ["caller"]);
         });
     }
 
     #[test]
-    fn three_lists_chain_in_list_order() {
+    fn prevent_default_in_a_middle_list_skips_only_the_lists_before_it() {
+        in_runtime(|| {
+            let log: Log = Default::default();
+            let merged = merge_attributes(vec![
+                vec![listener_attr("onclick", &log, "a")],
+                vec![preventing_listener_attr("onclick", &log, "b")],
+                vec![listener_attr("onclick", &log, "c")],
+            ]);
+            fire(&merged, "onclick");
+            assert_eq!(*log.borrow(), ["c", "b"]);
+        });
+    }
+
+    #[test]
+    fn three_lists_run_last_list_first() {
         in_runtime(|| {
             let log: Log = Default::default();
             let merged = merge_attributes(vec![
@@ -1582,7 +1636,7 @@ mod tests {
                 vec![listener_attr("onclick", &log, "c")],
             ]);
             fire(&merged, "onclick");
-            assert_eq!(*log.borrow(), ["a", "b", "c"]);
+            assert_eq!(*log.borrow(), ["c", "b", "a"]);
         });
     }
 
@@ -1597,7 +1651,7 @@ mod tests {
                 listener_attr("onclick", &log, "prop"),
                 listener_attr("onkeydown", &log, "key"),
             ];
-            let merged = merge_attributes(vec![vec![attr("class", "b")], from_spread, own]);
+            let merged = merge_attributes(vec![vec![attr("class", "b")], own, from_spread]);
             fire(&merged, "onclick");
             assert_eq!(*log.borrow(), ["spread", "prop"]);
             fire(&merged, "onkeydown");

@@ -82,9 +82,11 @@ pub fn Button(
     // The handlers are attributes, not rsx on the `button`, so the `as`
     // element receives them the same way the `button` does. Only the ones the
     // caller gave are emitted (a no-op listener would stand in the way of
-    // nothing, but there is no reason to attach one), and `merge_attributes`
-    // chains a listener that also arrives through `attributes` (DialogClose,
-    // a menu trigger's `as` ...) with the prop instead of replacing it.
+    // nothing, but there is no reason to attach one). `attributes` is the
+    // later list, the caller's, and `merge_attributes` chains a listener that
+    // also arrives through it (DialogClose, a menu trigger's `as` ...) with
+    // the prop instead of replacing it: the caller's first, then the prop,
+    // unless the caller prevented default.
     let mut handlers = Vec::new();
     if let Some(f) = onclick {
         handlers.extend(attributes!(button { onclick: move |event| f.call(event) }));
@@ -98,7 +100,7 @@ pub fn Button(
     if let Some(f) = onkeydown {
         handlers.extend(attributes!(button { onkeydown: move |event| f.call(event) }));
     }
-    let merged = merge_attributes(vec![base, attributes, handlers]);
+    let merged = merge_attributes(vec![base, handlers, attributes]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/button/style.css") }
