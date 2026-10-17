@@ -12,6 +12,7 @@ Status: **SET UP, waiting for the owner's go** (owner 2026-10-15: "do 1 and 2 an
 | E2 | Markdown (the nine questions of the dependency audit artifact, https://claude.ai/artifact/GpaybnGgtbQTtYkebbUDwp): the recommendations, i.e. pulldown-cmark `=0.13.4` (default features off) in a separate optional `markdown` registry component; exact pin; model-output images OFF by default; links limited to http/https/mailto/tel/relative, external ones in a new tab with `noopener noreferrer nofollow`; code as plain `<pre><code>` with a highlighter slot; the streaming heal pass inside the component; bare-URL autolinks YES (own small pass), math NO; both new gates (only `markdown` may list the parser; declared versions match the lock) added; the audit follow-ups scheduled (= row 217) | row 213 (built in round 3, not this one) |
 | E3 | Row 136 Questionnaire stays ON HOLD | row 136 |
 | E4 | New backlog item: the email-client demo resets scroll to the top on a view change, or restores the user's position if they were already in that view | row 225 (backlog, not this round) |
+| E5 | **PROPOSED 2026-10-17, needs the owner's go:** owner's iOS review items join this round -- touch-open focus and ring (row 226) into lane **focus**; navigation smooth-scroll (row 228) and interactive text selection (row 229) as a new lane **baseline**. The keyboard-inset helper (227) and the docs items (230-236) stay backlog | section 2a |
 
 ## 1. Baselines (captured before the batch; they cannot be recovered afterwards)
 
@@ -43,9 +44,28 @@ touches shared code, a gate, or needs root-causing); no Haiku lane this round.
 | **charts** | 215 | `primitives/src/chart/**`, `preview/src/charts_gallery.rs`, chart component files | the theme | `/charts/` boxes identical SSG vs hydrated at every width (layout-stability spec covers `/charts/`), chart parity golden tests green |
 | **focus** | 223 | `use_dialog_open_driver` in `primitives/src/lib.rs` and the dialog primitives' close path | the `cfg` lines of lib.rs (lane deps), `merge_attributes` | spec: Enter / Escape / Enter at 0 ms reopens (Dialog, AlertDialog, Sheet, Drawer, Command, modal Popover); focus restore and modal-initial-focus specs unchanged; axe |
 
+### 2a. Proposed additions (E5, 2026-10-17; only with the owner's go)
+
+Investigations (read-only, against the `83758d5` debug SSG): `touch-open-focus-2026-10-17.md`,
+`mobile-keyboard-2026-10-17.md`, `nav-scroll-smooth-2026-10-17.md`, `user-select-inventory-2026-10-17.md`,
+`docs-audit-2026-10-17.md` (all in `dev-docs/research/`).
+
+| Lane | Rows | Owns | Must not touch | Proof |
+|---|---|---|---|---|
+| **focus** (extended) | 223 + 226 | as above, plus new `primitives/src/modality.rs` (one modality writer, installed from `PREPAINT_JS` in `preview/src/theme.rs` and `preview/index.html` and as an eval prefix), the open-focus policy shared by `use_dialog_open_driver`, `use_popover_sync` in `top_layer.rs` and Command (`command.rs`, the command component), DropdownMenu/Menubar/Checkbox/DatePicker forced pointer focus, the theme's ring rule (programmatic-focus containers `outline: none`; `--dx-ring-focus*` transparent under mouse/touch modality), `autocapitalize="off"` on the Command and Combobox inputs, new `scripts/check-open-focus.sh`, `playwright/touch-open-focus.spec.ts` | `top_layer.rs` placement code, the theme's interactive baseline block (lane baseline) | 223's proof plus: touch spec (hasTouch + iOS-like mousedown mode) green for every overlay -- active element not editable, no outline, no ring; stale-focused-input case; keyboard opens unchanged (`modal-initial-focus` with its Command tap case updated to the panel, `oracle-focus-restore`, `keyboard-matrix`, `focus-ring`, popover/select/date-picker/menubar specs) |
+| **baseline** (new) | 228 + 229 | `preview/assets/main.css` lines 90-95 (smooth scroll opt-in), the `a[href^="#"]` handler in `preview/index.html`, the theme's interactive baseline block (`dx-components-theme.css:830-867`: add `user-select: none` with its exclusions), the per-component `user-select: none` duplicates, `charts_gallery.rs:307-328` instant-scroll workaround (drop), new `scripts/check-scroll-behavior.sh`, `check-theme-baseline.sh` extension, `playwright/nav-scroll-instant.spec.ts`, a user-select spec | `PREPAINT_JS` (lane focus), masonry rules in main.css (lane masonry), chart code beyond that one workaround | nav spec fails before and passes after (push: every scrollY sample 0, Back: one step, anchor still smooth); user-select spec (buttons/triggers not selectable, inputs/textarea/prose/code still selectable); gate red on a seeded ambient smooth rule |
+
+Model: both Sonnet (shared plumbing, new gates and specs). Snapshot buckets expected from these lanes: `user-select`
+on every interactive part (baseline), ring tokens on open-state records captured after a click (focus), root
+`scroll-behavior` (baseline).
+
 Named overlaps (resolved at merge by the main loop, not by serialising): `primitives/src/lib.rs` (deps: `cfg` module
 lines; focus: the dialog driver), `scripts/run-gates.sh` and the CLAUDE.md gate sentence (deps and specs each add one
-clause), `preview/build.rs` (registry only; deps deletes `primitives/build.rs`, a different file).
+clause), `preview/build.rs` (registry only; deps deletes `primitives/build.rs`, a different file). With E5: `preview/index.html`
+(focus: the `PREPAINT_JS` copy; baseline: the anchor handler), `dx-components-theme.css` (focus: ring rule; baseline:
+interactive baseline), `preview/assets/main.css` (masonry: masonry rules; baseline: lines 90-95), `primitives/src/lib.rs`
+(focus also declares `modality`), `run-gates.sh` + the CLAUDE.md gate sentence (deps, specs, focus, baseline: one clause
+each).
 
 ## 3. Validation protocol (mandatory, row 224)
 
