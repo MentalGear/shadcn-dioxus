@@ -15,21 +15,28 @@ repository = "https://github.com/DioxusLabs/components"
 dioxus.workspace = true
 dioxus-attributes = { path = "../dioxus-attributes" }
 dioxus-sdk-time = "0.7.0"
-time = { version = "0.3.44", features = ["std", "macros", "parsing", "local-offset"] }
-num-integer = "0.1.46"
+# Optional, switched on by the `calendar` feature (Calendar, DatePicker): see `[features]`.
+time = { version = "0.3.47", optional = true, features = ["std", "macros", "local-offset"] }
+num-integer = { version = "0.1.46", optional = true }
 tracing.workspace = true
 serde = { version = "1.0", features = ["derive"] }
-palette = "0.7.6"
-
-[build-dependencies]
-lazy-js-bundle = "0.7.9"
+# Optional, switched on by the `color-picker` feature (ColorPicker).
+palette = { version = "0.7.6", optional = true }
 
 [dev-dependencies]
 dioxus-ssr = "0.7.0"
 # `interval.rs` tests drive a VirtualDom on tokio's paused clock (already in the tree via dioxus-sdk-time).
 tokio = { version = "1", features = ["rt", "macros", "time", "test-util"] }
 
+# A component pays only for the crates it uses: `dx components add <name>` runs `cargo add dioxus-primitives
+# --features <the component.json features>`, so an app without a colour picker never compiles `palette` (and
+# its 11 companions) and one without a calendar never compiles `time`. `scripts/check-primitives-features.sh`
+# proves every subset below builds on its own (the workspace build unifies them all).
 [features]
 default = ["router"]
 router = ["dioxus/router"]
-web = ["time/wasm-bindgen"]
+web = ["time?/wasm-bindgen"]
+# `calendar` and `date_picker` (they use each other's types).
+calendar = ["dep:time", "dep:num-integer"]
+# `color_picker`.
+color-picker = ["dep:palette"]

@@ -6,7 +6,8 @@
   "cargoDependencies": [
     {
       "name": "dioxus-primitives",
-      "git": "https://github.com/MentalGear/shadcn-dioxus"
+      "git": "https://github.com/MentalGear/shadcn-dioxus",
+      "features": ["color-picker"]
     },
     {
       "name": "palette",
