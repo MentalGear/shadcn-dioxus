@@ -226,7 +226,7 @@ test.describe("APG Table pattern (sortable columns) — DataTable", () => {
   // the checkbox column's own `<button>` (Checkbox's underlying element).
   const sortableHeaders = (page: Page) => table(page).locator("th[aria-sort]");
   // Default sort (variants/main/mod.rs's `Demo`): Email, ascending.
-  const emailHeader = (page: Page) => table(page).getByRole("columnheader", { name: "Email" });
+  const emailHeader = (page: Page) => table(page).getByRole("columnheader").nth(3);
   const emailButton = (page: Page) => emailHeader(page).getByRole("button");
   // Column order in the demo: select-checkbox(0), ID(1), Status(2),
   // Email(3), Amount(4).

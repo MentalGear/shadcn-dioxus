@@ -27,6 +27,7 @@ import { type Page, type Locator } from "@playwright/test";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 import { fixedViewportBox } from "./viewport-box";
+import { readAtRest } from "./animations";
 
 const URL = `${BASE_URL}/component/?name=combobox&`;
 
@@ -36,7 +37,7 @@ const input = (page: Page) => page.getByRole("combobox", { name: "Select framewo
 const list = (page: Page) => page.locator("[role='listbox'][data-state='open']");
 
 const rectOf = (l: Locator): Promise<Rect> =>
-    l.evaluate((el) => {
+    readAtRest(l, (el) => {
         const r = el.getBoundingClientRect();
         return { top: r.top, left: r.left, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
     });
@@ -100,7 +101,7 @@ async function placeInput(page: Page, where: "top" | "middle" | "bottom") {
     const box = await fixedViewportBox(page);
     const navBottom = await page.evaluate(() => {
         const nav = document.querySelector(".dx-preview-navbar, nav[aria-label='Primary']");
-        return nav ? nav.getBoundingClientRect().bottom : 0;
+        return nav ? nav.getBoundingClientRect().bottom : 0; // rest-ok: the page's fixed navbar, not an overlay
     });
     const r = await rectOf(input(page));
     const wanted =

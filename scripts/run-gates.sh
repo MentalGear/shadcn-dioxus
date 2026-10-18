@@ -106,6 +106,8 @@ gates=(
   "check-duplicate-keyframes|scripts/check-duplicate-keyframes.sh"
   "check-hover-media|scripts/check-hover-media.sh"
   "check-theme-mode-writer|scripts/check-theme-mode-writer.sh"
+  "check-demo-text-locators|scripts/check-demo-text-locators.sh"
+  "check-spec-at-rest|scripts/check-spec-at-rest.sh"
   "fmt|cargo fmt --all -- --check"
   "clippy-default|cargo clippy --workspace $CLIPPY_FLAGS"
   "clippy-web|cargo clippy -p dioxus-primitives -p preview --features dioxus-primitives/web,preview/web $CLIPPY_FLAGS"

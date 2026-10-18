@@ -34,6 +34,7 @@ import { test, expect } from "./fixtures";
 import { type Page } from "@playwright/test";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
+import { demoRole, popupItem } from "./demo-frame";
 
 const NAV_TIMEOUT = 20 * 60 * 1000; // first run compiles the app
 
@@ -59,7 +60,7 @@ async function focusReport(page: Page) {
 test("DropdownMenu returns focus to its trigger on Escape", async ({ page }) => {
   await open(page, "dropdown_menu");
 
-  const trigger = page.getByRole("button", { name: "Open Menu" });
+  const trigger = demoRole(page, "button");
   await trigger.click();
   await expect(trigger).toHaveAttribute("data-state", "open");
 
@@ -71,7 +72,7 @@ test("DropdownMenu returns focus to its trigger on Escape", async ({ page }) => 
   expect(
     await focusReport(page),
     "APG menu-button: Escape must return focus to the menu button",
-  ).toContain("Open Menu");
+  ).toContain((await trigger.innerText()).trim());
   await expect(trigger).toBeFocused();
 });
 
@@ -85,9 +86,7 @@ test("Select returns focus to its trigger on Escape", async ({ page }) => {
   // predates that change and lives in a file row 8's own lane never
   // touched, found integrating this round (2026-09-18, `getByRole("button")`
   // no longer matches the trigger, so this test could never find it).
-  const trigger = page
-    .getByRole("combobox")
-    .filter({ hasText: /Select an option|Apple|Banana/ });
+  const trigger = demoRole(page, "combobox");
   await trigger.click();
   await expect(page.getByRole("listbox")).toHaveAttribute("data-state", "open");
 
@@ -104,12 +103,9 @@ test("Select returns focus to its trigger on Escape", async ({ page }) => {
 test("Menubar returns focus to its menu item on Escape", async ({ page }) => {
   await open(page, "menubar");
 
-  const fileMenu = page.getByRole("menuitem", { name: "File" });
+  const fileMenu = demoRole(page, "menuitem", 0);
   await fileMenu.click();
-  const fileContent = page
-    .getByRole("menu")
-    .filter({ has: page.getByRole("menuitem", { name: "New" }) })
-    .last();
+  const fileContent = page.locator(".dx-menubar-content");
   await expect(fileContent).toHaveAttribute("data-state", "open");
 
   await page.keyboard.press("ArrowDown");
@@ -118,14 +114,14 @@ test("Menubar returns focus to its menu item on Escape", async ({ page }) => {
   expect(
     await focusReport(page),
     "APG menubar: Escape must return focus to the parent menubar item",
-  ).toContain("File");
+  ).toContain((await fileMenu.innerText()).trim());
   await expect(fileMenu).toBeFocused();
 });
 
 test("ContextMenu returns focus to its trigger on Escape", async ({ page }) => {
   await open(page, "context_menu");
 
-  const trigger = page.getByRole("button", { name: "right click here" });
+  const trigger = demoRole(page, "button");
   await trigger.click({ button: "right" });
   await expect(page.getByRole("menu")).toHaveAttribute("data-state", "open");
 
@@ -138,7 +134,7 @@ test("ContextMenu returns focus to its trigger on Escape", async ({ page }) => {
   expect(
     await focusReport(page),
     "Escape must return focus to the context-menu trigger, not <body>",
-  ).toContain("right click here");
+  ).toContain((await trigger.innerText()).trim());
   await expect(trigger).toBeFocused();
 });
 
@@ -166,62 +162,59 @@ test("ContextMenu returns focus to its trigger on Escape", async ({ page }) => {
 test("Menubar returns focus to its trigger after a pointer selection", async ({ page }) => {
   await open(page, "menubar");
 
-  const fileMenu = page.getByRole("menuitem", { name: "File", exact: true });
+  const fileMenu = demoRole(page, "menuitem", 0);
   await fileMenu.click();
-  const fileContent = page
-    .getByRole("menu")
-    .filter({ has: page.getByRole("menuitem", { name: "New", exact: true }) })
-    .last();
+  const fileContent = page.locator(".dx-menubar-content");
   await expect(fileContent).toHaveAttribute("data-state", "open");
 
-  await fileContent.getByRole("menuitem", { name: "Save", exact: true }).click();
+  await fileContent.getByRole("menuitem").nth(2).click(); // menubar File menu: New, Open (disabled), Save
   await expect(fileContent).toHaveCount(0);
 
   expect(
     await focusReport(page),
     "APG menubar: choosing an item closes the menu and returns focus to the menubar item, by pointer as by keyboard",
-  ).toContain("File");
+  ).toContain((await fileMenu.innerText()).trim());
   await expect(fileMenu).toBeFocused();
 });
 
 test("DropdownMenu returns focus to its trigger after a pointer selection", async ({ page }) => {
   await open(page, "dropdown_menu");
 
-  const trigger = page.getByRole("button", { name: "Open Menu" });
+  const trigger = demoRole(page, "button");
   await trigger.click();
   await expect(trigger).toHaveAttribute("data-state", "open");
 
-  await page.getByRole("menuitem", { name: "Duplicate" }).click();
+  await popupItem(page, "menu", "menuitem", 2).click(); // dropdown_menu / context_menu demos: Edit, Undo (disabled), Duplicate, ...
   await expect(trigger).toHaveAttribute("data-state", "closed");
 
   expect(
     await focusReport(page),
     "APG menu-button: choosing an item closes the menu and returns focus to the menu button",
-  ).toContain("Open Menu");
+  ).toContain((await trigger.innerText()).trim());
   await expect(trigger).toBeFocused();
 });
 
 test("ContextMenu returns focus to its trigger after a pointer selection", async ({ page }) => {
   await open(page, "context_menu");
 
-  const trigger = page.getByRole("button", { name: "right click here" });
+  const trigger = demoRole(page, "button");
   await trigger.click({ button: "right" });
   await expect(page.getByRole("menu")).toHaveAttribute("data-state", "open");
 
-  await page.getByRole("menuitem", { name: "Duplicate" }).click();
+  await popupItem(page, "menu", "menuitem", 2).click(); // dropdown_menu / context_menu demos: Edit, Undo (disabled), Duplicate, ...
   await expect(page.getByRole("menu")).toHaveCount(0);
 
   expect(
     await focusReport(page),
     "choosing an item closes the context menu and returns focus to its trigger",
-  ).toContain("right click here");
+  ).toContain((await trigger.innerText()).trim());
   await expect(trigger).toBeFocused();
 });
 
 test("CONTROL: Dialog returns focus to its trigger on close", async ({ page }) => {
   await open(page, "dialog");
 
-  const trigger = page.getByRole("button", { name: /Show Dialog|Open Dialog/i }).first();
+  const trigger = demoRole(page, "button");
   await trigger.click();
   await page.keyboard.press("Escape");
 

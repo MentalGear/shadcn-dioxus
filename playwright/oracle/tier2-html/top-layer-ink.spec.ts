@@ -124,6 +124,7 @@ import { test, expect } from "../../fixtures";
 import { type Page, type Locator } from "@playwright/test";
 import { BASE_URL } from "../../base-url";
 import { gotoHydrated } from "../../hydration";
+import { demoFrame, demoRole } from "../../demo-frame";
 
 const NAV_TIMEOUT = 20 * 60 * 1000; // first run compiles the app
 
@@ -179,27 +180,27 @@ const SURFACES: Surface[] = [
     name: "menubar",
     open: async (page) => {
       await goto(page, "menubar");
-      await page.getByRole("menuitem", { name: "File" }).click();
+      await demoRole(page, "menuitem", 0).click(); // menubar demo: File, Edit
       await expect(page.locator('.dx-menubar-content[data-state="open"]')).toBeVisible();
     },
     wrapper: (page) => page.locator('.dx-menubar-content[data-state="open"]'),
-    text: (page) => page.getByRole("menuitem", { name: "New" }),
+    text: (page) => page.locator('.dx-menubar-content[data-state="open"]').getByRole("menuitem").first(),
   },
   {
     name: "navbar",
     open: async (page) => {
       await goto(page, "navbar");
-      await page.getByRole("menuitem", { name: "Inputs" }).hover();
+      await demoRole(page, "menuitem", 0).hover(); // navbar demo: Inputs, Information, Home
       await expect(page.locator('.dx-navbar-content[data-state="open"]')).toBeVisible();
     },
     wrapper: (page) => page.locator('.dx-navbar-content[data-state="open"]'),
-    text: (page) => page.getByRole("menuitem", { name: "Calendar" }),
+    text: (page) => page.locator('.dx-navbar-content[data-state="open"]').getByRole("menuitem").first(),
   },
   {
     name: "dropdown_menu",
     open: async (page) => {
       await goto(page, "dropdown_menu");
-      await page.getByRole("button", { name: "Open Menu" }).click();
+      await demoRole(page, "button").click();
       await expect(page.locator('.dx-dropdown-menu-content[data-state="open"]')).toBeVisible();
     },
     wrapper: (page) => page.locator('.dx-dropdown-menu-content[data-state="open"]'),
@@ -210,7 +211,7 @@ const SURFACES: Surface[] = [
     name: "context_menu",
     open: async (page) => {
       await goto(page, "context_menu");
-      await page.getByRole("button", { name: "right click here" }).click({ button: "right" });
+      await demoRole(page, "button").click({ button: "right" });
       await expect(page.locator('.dx-context-menu-content[data-state="open"]')).toBeVisible();
     },
     wrapper: (page) => page.locator('.dx-context-menu-content[data-state="open"]'),
@@ -239,7 +240,7 @@ const SURFACES: Surface[] = [
     name: "popover (non-modal arm, themed default)",
     open: async (page) => {
       await goto(page, "popover");
-      await page.getByRole("button", { name: "Show Popover", exact: true }).click();
+      await demoRole(page, "button").click();
       await expect(page.locator('.dx-popover-content[data-state="open"]')).toBeVisible();
     },
     wrapper: (page) => page.locator('.dx-popover-content[data-state="open"]'),
@@ -252,7 +253,7 @@ const SURFACES: Surface[] = [
     name: "popover (modal arm)",
     open: async (page) => {
       await gotoVariant(page, "popover", "modal");
-      await page.getByRole("button", { name: "Open modal popover" }).click();
+      await demoRole(page, "button", 0, "modal").click();
       await expect(page.locator('.dx-popover-content[data-state="open"]')).toBeVisible();
     },
     wrapper: (page) => page.locator('.dx-popover-content[data-state="open"]'),
@@ -267,11 +268,11 @@ const SURFACES: Surface[] = [
     name: "hover_card",
     open: async (page) => {
       await goto(page, "hover_card");
-      await page.getByRole("button", { name: "Dioxus" }).hover();
+      await demoRole(page, "button").hover();
       await expect(page.locator(".dx-hover-card-content")).toBeVisible();
     },
     wrapper: (page) => page.locator(".dx-hover-card-content"),
-    text: (page) => page.getByText("Dioxus is", { exact: false }),
+    text: (page) => page.locator(".dx-hover-card-content div").first(),
   },
   {
     // The load-bearing negative case: the tooltip is the theme's inverted floating surface
@@ -282,11 +283,11 @@ const SURFACES: Surface[] = [
     name: "tooltip",
     open: async (page) => {
       await goto(page, "tooltip");
-      await page.locator("#component-preview-frame").first().getByText("Rich content").hover();
+      await demoFrame(page).locator(".dx-tooltip-trigger").hover();
       await expect(page.getByRole("tooltip")).toBeVisible();
     },
     wrapper: (page) => page.locator(".dx-tooltip-content"),
-    text: (page) => page.getByText("Tooltip title"),
+    text: (page) => page.locator(".dx-tooltip-content p").first(),
     expectedVar: "--dx-background",
   },
   {
@@ -305,7 +306,7 @@ const SURFACES: Surface[] = [
     name: "date_picker",
     open: async (page) => {
       await goto(page, "date_picker");
-      await page.getByRole("button", { name: "Show Calendar" }).first().click();
+      await demoRole(page, "button").click();
       await expect(page.locator(".dx-date-picker-popover-content").first()).toBeVisible();
     },
     wrapper: (page) => page.locator(".dx-date-picker-popover-content").first(),
@@ -331,14 +332,11 @@ const SURFACES: Surface[] = [
       // since row 8 landed. Same missed-locator class row 8's own account
       // already names two instances of (the initial repo-wide grep, then
       // `oracle-focus-restore.spec.ts` found separately) -- this is a third.
-      await page
-        .getByRole("combobox")
-        .filter({ hasText: /Select an option|Apple|Banana/ })
-        .click();
+      await demoRole(page, "combobox").click();
       await expect(page.locator('.dx-select-list[data-state="open"]')).toBeVisible();
     },
     wrapper: (page) => page.locator('.dx-select-list[data-state="open"]'),
-    text: (page) => page.getByRole("option", { name: "Apple" }),
+    text: (page) => page.locator('.dx-select-list[data-state="open"]').getByRole("option").first(),
     expectedVar: "--secondary-color-4",
   },
   {
@@ -348,7 +346,7 @@ const SURFACES: Surface[] = [
     name: "combobox",
     open: async (page) => {
       await goto(page, "combobox");
-      const input = page.getByRole("combobox", { name: "Select framework" });
+      const input = demoRole(page, "combobox");
       await input.focus();
       await page.keyboard.press("ArrowDown");
       await expect(page.locator('.dx-combobox-list[data-state="open"]')).toBeVisible();
@@ -364,17 +362,17 @@ const SURFACES: Surface[] = [
     name: "dialog",
     open: async (page) => {
       await goto(page, "dialog");
-      await page.getByRole("button", { name: "Show Dialog" }).click();
-      await expect(page.getByRole("dialog").filter({ hasText: "Item information" })).toBeVisible();
+      await demoRole(page, "button").click();
+      await expect(page.getByRole("dialog")).toBeVisible();
     },
-    wrapper: (page) => page.getByRole("dialog").filter({ hasText: "Item information" }),
-    text: (page) => page.locator(".dx-dialog-title").filter({ hasText: "Item information" }),
+    wrapper: (page) => page.getByRole("dialog"),
+    text: (page) => page.locator(".dx-dialog-title"),
   },
   {
     name: "alert_dialog",
     open: async (page) => {
       await goto(page, "alert_dialog");
-      await page.getByRole("button", { name: "Show Alert Dialog" }).click();
+      await demoRole(page, "button").click();
       await expect(page.getByRole("alertdialog")).toBeVisible();
     },
     wrapper: (page) => page.getByRole("alertdialog"),
@@ -396,7 +394,7 @@ const SURFACES: Surface[] = [
     name: "sheet",
     open: async (page) => {
       await goto(page, "sheet");
-      await page.getByRole("button", { name: "Right" }).click();
+      await demoRole(page, "button", 1).click(); // sheet demo: Top, Right, Bottom, Left
       await expect(page.locator('.dx-sheet[data-side="right"]')).toBeVisible();
     },
     wrapper: (page) => page.locator('.dx-sheet[data-side="right"]'),
@@ -416,7 +414,7 @@ const SURFACES: Surface[] = [
     name: "toast",
     open: async (page) => {
       await goto(page, "toast");
-      await page.getByRole("button", { name: "Info (60s)" }).click();
+      await demoRole(page, "button").click();
       await expect(page.locator(".dx-toast-title")).toBeVisible();
     },
     // Scoped to the main demo frame: the page also carries the "types" variant's own

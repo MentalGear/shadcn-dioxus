@@ -5,6 +5,7 @@ import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { sampleCloseFade, assertFadesOutThenUnmounts } from "./assert-fade-out";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
+import { measureAtRest } from "./animations";
 
 test("test", async ({ page }) => {
   await gotoHydrated(page, `${BASE_URL}/component/?name=hover_card&`);
@@ -175,7 +176,7 @@ test.describe("delay / close_delay (backlog row 166)", () => {
     await trigger(page, "Default (600 / 300)").hover();
     await expect(surface(page)).toBeVisible();
     // Trigger -> card in one move: the trigger's leave schedules the close, the card's enter cancels it.
-    const box = (await surface(page).boundingBox())!;
+    const box = (await measureAtRest(surface(page)));
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     await page.waitForTimeout(900); // 3x close_delay
     await expect(openSurface(page)).toHaveCount(1);

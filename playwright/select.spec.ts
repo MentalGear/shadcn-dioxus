@@ -6,7 +6,7 @@ import { BASE_URL } from "./base-url";
 // navigating, on the SSG lane -- `gotoHydrated` so those interactions can't
 // land before hydration attaches listeners.
 import { gotoHydrated } from "./hydration";
-import { awaitAnimationsSettled } from "./animations";
+import { awaitAnimationsSettled, measureAtRest } from "./animations";
 
 // docs/backlog.md row 8: SelectTrigger's role is now "combobox" (APG
 // select-only combobox pattern), not an implicit button -- see
@@ -345,8 +345,8 @@ test.describe("Listbox width (docs/backlog.md row 47 -- full-viewport-width regr
         // mid-animation it was 142.16 wide against a 144.17 trigger (scale .981), at rest it is 145.89. The
         // contract is about the box at rest, so settle first (animations.ts; same class as backlog row 115).
         await awaitAnimationsSettled(listbox);
-        const triggerBox = await trigger.boundingBox();
-        const listboxBox = await listbox.boundingBox();
+        const triggerBox = await measureAtRest(trigger);
+        const listboxBox = await measureAtRest(listbox);
         const viewport = page.viewportSize();
         if (!triggerBox || !listboxBox || !viewport) {
             throw new Error("expected trigger, listbox and viewport to all have a bounding box");
@@ -427,7 +427,7 @@ test.describe("Trigger minimum width (docs/backlog.md row 10's sibling fix, 2026
 
         // The trigger itself must have real width -- the actual regression
         // this guards (no min-width at all, shrink-to-fit "apple").
-        const triggerBox = await trigger.boundingBox();
+        const triggerBox = await measureAtRest(trigger);
         if (!triggerBox) throw new Error("trigger has no bounding box");
         expect(triggerBox.width, `trigger width ${triggerBox.width}px`).toBeGreaterThanOrEqual(100);
 
@@ -436,8 +436,8 @@ test.describe("Trigger minimum width (docs/backlog.md row 10's sibling fix, 2026
         const option = listbox.getByRole("option", { name: "Apple" });
         const check = option.locator("svg");
 
-        const optionBox = await option.boundingBox();
-        const checkBox = await check.boundingBox();
+        const optionBox = await measureAtRest(option);
+        const checkBox = await measureAtRest(check);
         if (!optionBox || !checkBox) throw new Error("expected option and its check icon to both have a bounding box");
         const debug = `option=${JSON.stringify(optionBox)} check=${JSON.stringify(checkBox)}`;
 
@@ -458,7 +458,7 @@ test.describe("Trigger minimum width (docs/backlog.md row 10's sibling fix, 2026
             if (!textNode) return null;
             const range = document.createRange();
             range.selectNodeContents(textNode);
-            return range.getBoundingClientRect().right;
+            return range.getBoundingClientRect().right; // rest-ok: read after measureAtRest(check) above settled the listbox
         });
         if (labelRight === null) throw new Error("expected the option to have a text-node label");
         expect(checkBox.x - labelRight, debug).toBeGreaterThan(10);
@@ -502,8 +502,8 @@ test.describe("trigger size (row 155 group 7)", () => {
             return out;
         });
         expect(tokens).toEqual({ sm: 28, def: 32 });
-        expect((await sm.boundingBox())!.height).toBe(tokens.sm);
-        expect((await def.boundingBox())!.height).toBe(tokens.def);
+        expect((await measureAtRest(sm)).height).toBe(tokens.sm);
+        expect((await measureAtRest(def)).height).toBe(tokens.def);
     });
 
     test("the sm trigger still opens and selects", async ({ page }) => {

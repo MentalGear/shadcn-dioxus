@@ -104,6 +104,7 @@ import { test, expect, devices } from "../../fixtures";
 import { type Page } from "@playwright/test";
 import { BASE_URL } from "../../base-url";
 import { gotoHydrated } from "../../hydration";
+import { demoRole } from "../../demo-frame";
 
 // Same reasoning as touch-focus-zoom.spec.ts: run the iPhone 13 device
 // descriptor on Chromium (this repo's local lanes ship no WebKit project).
@@ -228,7 +229,7 @@ test.describe("overlay-gated elements", () => {
     const route = `${BASE}/component/?name=combobox&`;
     await gotoHydrated(page, route, { timeout: 60000 });
     await page.waitForTimeout(3000);
-    const trigger = page.getByRole("combobox", { name: "Select framework" });
+    const trigger = demoRole(page, "combobox");
     await trigger.focus();
     await page.keyboard.press("ArrowDown");
     await expect(page.locator("[role='listbox'][data-state='open']")).toBeVisible();
@@ -238,7 +239,7 @@ test.describe("overlay-gated elements", () => {
   test("overlay: color_picker popover open (hue/area thumbs suppress double-tap zoom)", async ({ page }) => {
     const route = `${BASE}/component/?name=color_picker&`;
     await gotoHydrated(page, route, { timeout: 60000 });
-    const trigger = page.getByRole("button", { name: /Color picker/i }).first();
+    const trigger = demoRole(page, "button");
     await trigger.click({ timeout: 10000 });
     await expect(page.getByRole("dialog")).toBeVisible();
     assertAllManipulation(await scan(page), `${route} (popover open)`);
@@ -247,7 +248,7 @@ test.describe("overlay-gated elements", () => {
   test("overlay: date_picker calendar popover open (day cells suppress double-tap zoom)", async ({ page }) => {
     const route = `${BASE}/component/?name=date_picker&`;
     await gotoHydrated(page, route, { timeout: 60000 });
-    const trigger = page.getByRole("button", { name: "Show Calendar" }).first();
+    const trigger = demoRole(page, "button");
     await trigger.click({ timeout: 10000 });
     await expect(page.getByRole("dialog")).toBeVisible();
     assertAllManipulation(await scan(page), `${route} (calendar open)`);
@@ -256,7 +257,7 @@ test.describe("overlay-gated elements", () => {
   test("overlay: sheet open (its controls suppress double-tap zoom)", async ({ page }) => {
     const route = `${BASE}/component/?name=sheet&`;
     await gotoHydrated(page, route, { timeout: 60000 });
-    await page.getByRole("button", { name: "Right" }).first().click({ timeout: 10000 });
+    await demoRole(page, "button", 1) /* sheet demo: Top, Right, Bottom, Left */.click({ timeout: 10000 });
     await page.waitForTimeout(300);
     assertAllManipulation(await scan(page), `${route} (sheet open)`);
   });
@@ -264,7 +265,7 @@ test.describe("overlay-gated elements", () => {
   test("overlay: dropdown menu open (menu items suppress double-tap zoom)", async ({ page }) => {
     const route = `${BASE}/component/?name=dropdown_menu&`;
     await gotoHydrated(page, route, { timeout: 60000 });
-    const trigger = page.getByRole("button", { name: /Open Menu/i }).first();
+    const trigger = demoRole(page, "button");
     await trigger.click({ timeout: 10000 });
     await expect(page.locator('[role="menu"][data-state="open"]')).toBeVisible();
     assertAllManipulation(await scan(page), `${route} (menu open)`);

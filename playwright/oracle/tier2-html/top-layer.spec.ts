@@ -175,6 +175,8 @@ import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "../../ax
 import { BASE_URL } from "../../base-url";
 import { gotoHydrated } from "../../hydration";
 import { fixedViewportBox } from "../../viewport-box";
+import { readAtRest } from "../../animations";
+import { demoRole } from "../../demo-frame";
 
 const NAV_TIMEOUT = 20 * 60 * 1000; // first run compiles the app
 
@@ -263,8 +265,8 @@ async function escapesClip(
       await Promise.all(
         content.getAnimations({ subtree: true }).map((a) => a.finished.catch(() => undefined)),
       );
-      const c = content.getBoundingClientRect();
-      const a = ancestor.getBoundingClientRect();
+      const c = content.getBoundingClientRect(); // rest-ok: settled by the getAnimations().finished await directly above
+      const a = ancestor.getBoundingClientRect(); // rest-ok: the clipping ancestor, not an overlay
       // Inset each corner probe by at least the content's own border radius. A box's
       // corner is not painted where its rounded border has cut it away: a probe 2px
       // inside the corner of a 10px-radius panel (Nova's `rounded-lg`, the popover
@@ -601,7 +603,7 @@ test.describe("Rule 10 — Toast top-layer stacking (a toast renders above a max
 
     const hit = await page.evaluate(() => {
       const sibling = document.getElementById("toast-stack-sibling")!;
-      const r = sibling.getBoundingClientRect();
+      const r = sibling.getBoundingClientRect(); // rest-ok: a page sibling under the overlay, not an animated surface
       const el = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
       if (!el) return { tag: null, insideRegion: false };
       return { tag: `${el.tagName}#${el.id || "(no id)"}`, insideRegion: !!el.closest('[role="region"]') };
@@ -684,7 +686,7 @@ test.describe("Rule 4 — top-layer stacking (a popover opened after a high-z-in
 
     const hit = await page.evaluate(() => {
       const sibling = document.getElementById("stack-sibling")!;
-      const r = sibling.getBoundingClientRect();
+      const r = sibling.getBoundingClientRect(); // rest-ok: a page sibling under the overlay, not an animated surface
       const el = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
       return el ? `${el.tagName}#${el.id || "(no id)"}` : null;
     });
@@ -699,7 +701,7 @@ test.describe("Rule 4 — top-layer stacking (a popover opened after a high-z-in
 
     const hit = await page.evaluate(() => {
       const sibling = document.getElementById("stack-sibling")!;
-      const r = sibling.getBoundingClientRect();
+      const r = sibling.getBoundingClientRect(); // rest-ok: a page sibling under the overlay, not an animated surface
       const el = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
       return el ? `${el.tagName}#${el.id || "(no id)"}` : null;
     });
@@ -714,7 +716,7 @@ test.describe("Rule 4 — top-layer stacking (a popover opened after a high-z-in
  * effects, and directly comparable to `window.inner{Width,Height}`.
  */
 async function rectOf(page: Page, selector: string) {
-  return page.locator(selector).evaluate((el) => {
+  return readAtRest(page.locator(selector), (el) => {
     const r = (el as HTMLElement).getBoundingClientRect();
     return { top: r.top, left: r.left, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
   });
@@ -939,8 +941,9 @@ test.describe("Rule 8 — scroll tracking: an anchored overlay's content keeps i
 
     const offsetOf = async () =>
       page.evaluate(() => {
+        // rest-ok: the offset between two boxes read in one task after the open settled; the test is its stability under scrolling
         const c = document.getElementById("stack-popover-content")!.getBoundingClientRect();
-        const t = document.getElementById("stack-popover-trigger")!.getBoundingClientRect();
+        const t = document.getElementById("stack-popover-trigger")!.getBoundingClientRect(); // rest-ok: same task, same reason
         return { top: c.top - t.bottom, left: c.left - t.left };
       });
 
@@ -990,7 +993,7 @@ test.describe("Rule 8 — scroll tracking: an anchored overlay's content keeps i
     // 720px-tall viewport (the panel flips above it there -- see the
     // viewport note at the top of this case), which is why the viewport is
     // enlarged above rather than the flip being ignored.
-    const trigger = page.getByRole("button", { name: /Color picker/i }).first();
+    const trigger = demoRole(page, "button");
     await expect(trigger).toBeVisible();
     await trigger.evaluate((el) => (el as HTMLElement).click());
     const content = page.getByRole("dialog");
@@ -1017,8 +1020,8 @@ test.describe("Rule 8 — scroll tracking: an anchored overlay's content keeps i
     // `anchor-name`, and its own popover dialog) precedes the demo in the DOM, so those first-match selectors
     // measured the header, which does not scroll with the content.
     const offsetOf = async () => {
-      const t = await trigger.evaluate((el) => el.getBoundingClientRect().toJSON());
-      const c = await content.evaluate((el) => el.getBoundingClientRect().toJSON());
+      const t = await readAtRest(trigger, (el) => el.getBoundingClientRect().toJSON());
+      const c = await readAtRest(content, (el) => el.getBoundingClientRect().toJSON());
       return { top: c.top - t.bottom, left: c.left - t.left };
     };
 
@@ -1207,7 +1210,7 @@ function rectsIntersect(
 }
 
 async function rectOfLocator(locator: import("@playwright/test").Locator) {
-  return locator.evaluate((el) => {
+  return readAtRest(locator, (el) => {
     const r = (el as HTMLElement).getBoundingClientRect();
     return { top: r.top, left: r.left, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
   });
@@ -1290,7 +1293,7 @@ async function pinNearTop(page: Page, locator: import("@playwright/test").Locato
   // `oracle/tier2-html/global-stylesheet.spec.ts`).
   const navBottom = await page.evaluate(() => {
     const nav = document.querySelector(".dx-preview-navbar, nav[aria-label='Primary']");
-    return nav ? nav.getBoundingClientRect().bottom : 0;
+    return nav ? nav.getBoundingClientRect().bottom : 0; // rest-ok: the page's fixed navbar, not an overlay
   });
   await page.evaluate(
     ([top, offset]) => window.scrollTo({ top: window.scrollY + top - offset, left: 0 }),
@@ -1821,7 +1824,7 @@ test.describe("Rule 12 — inline-axis shift: a center-aligned overlay wider tha
     await gotoHydrated(page, `${BASE_URL}/?`, { timeout: NAV_TIMEOUT });
     await stripAnchorSupportsBlock(page);
 
-    const trigger = page.getByRole("button", { name: /Color picker/i }).first();
+    const trigger = page.getByRole("button", { name: /Color picker/i }).first(); // the home page's widget masonry, not a demo frame
     await trigger.scrollIntoViewIfNeeded();
     await trigger.evaluate((el) => (el as HTMLElement).click());
     const content = page.getByRole("dialog");
@@ -1833,7 +1836,7 @@ test.describe("Rule 12 — inline-axis shift: a center-aligned overlay wider tha
 
     // Horizontal bounds only -- see this rule's header doc for why the
     // vertical axis is deliberately not asserted for this specific case.
-    const rect = await content.evaluate((el) => {
+    const rect = await readAtRest(content, (el) => {
       const r = (el as HTMLElement).getBoundingClientRect();
       return { left: r.left, right: r.right, width: r.width };
     });
