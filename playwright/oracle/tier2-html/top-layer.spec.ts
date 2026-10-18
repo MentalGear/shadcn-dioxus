@@ -1274,14 +1274,12 @@ async function pinNearTop(page: Page, locator: import("@playwright/test").Locato
   // several hundred ms instead of landing it instantly -- `pinNearTop`'s
   // entire contract (see this function's own opening doc) is to deliver
   // the trigger at a settled, known position BEFORE `overlay.open()` runs.
-  // Simplified per dev-docs/backlog.md row 110: `../../fixtures.ts`
-  // (this repo's shared `test`/`expect`, which this file now imports)
-  // forces `scroll-behavior: auto` on `<html>` for every test in this
-  // suite, so an unqualified scroll -- one that does not name its own
-  // `behavior` -- is already instant without a per-call-site argument.
-  // Kept unqualified (not re-adding `behavior: "instant"` here) so this
-  // helper relies on the one shared construction instead of carrying its
-  // own copy of the same workaround.
+  // Simplified per dev-docs/backlog.md row 110, and kept so by row 228: the
+  // root `scroll-behavior` is `auto` unless a same-page anchor jump opts in
+  // (`html[data-anchor-scroll]`), so an unqualified scroll -- one that does
+  // not name its own `behavior` -- is already instant without a per-call-site
+  // argument. Kept unqualified (not re-adding `behavior: "instant"` here) so
+  // this helper relies on the page's own contract, not a copy of a workaround.
   await locator.evaluate((el) => el.scrollIntoView({ block: "nearest", inline: "center" }));
   const rect = await rectOfLocator(locator);
   // "Near the top" means just below the sticky navbar, not 24px from the
