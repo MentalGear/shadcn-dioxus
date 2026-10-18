@@ -112,6 +112,7 @@ gates=(
   "check-cargo-dep-versions|scripts/check-cargo-dep-versions.sh"
   "check-demo-text-locators|scripts/check-demo-text-locators.sh"
   "check-spec-at-rest|scripts/check-spec-at-rest.sh"
+  "check-backlog-index|scripts/check-backlog-index.sh"
   "fmt|cargo fmt --all -- --check"
   "check-primitives-features|scripts/check-primitives-features.sh"
   "clippy-default|cargo clippy --workspace $CLIPPY_FLAGS"

@@ -1,0 +1,26 @@
+---
+id: 170
+title: "Cross-component CSS overrides: 190 sites in 12 sheets declare, in one component's stylesheet, a property that…"
+status: "OPEN (construction started) -- recorded 2026-10-05 (round 3: the FIELD-VAR and STYLE-DELIVERY…"
+size: "M (the decision and the prototype are…"
+area: theme
+updated: 2026-10-05
+---
+
+# Row 170: Cross-component CSS overrides: 190 sites in 12 sheets declare, in one component's stylesheet, a property that…
+
+## Item
+
+Cross-component CSS overrides: 190 sites in 12 sheets declare, in one component's stylesheet, a property that another component's own rule on the same element also declares, so the winner is whichever sheet loads last
+
+## Status / trigger
+
+**OPEN (construction started)** -- recorded 2026-10-05 (round 3: the FIELD-VAR and STYLE-DELIVERY lanes); the first conversion (Field -> Label) and the gate with a shrink-only baseline landed; the burn-down and the layer prototype are scheduled in the next-session order **beside the 135 -> 145 -> 111 chain (step 2): it overlaps 145's state recipes**
+
+## Size
+
+M (the decision and the prototype are S; the burn-down is one lane per sheet group over 190 sites)
+
+## Detail
+
+**The class (found twice, so a construction and not patches).** The Field label was 14 px on the home gallery and 12.8 px on `/component/field/`: `.dx-field-label` (field sheet) and `.dx-label` (label sheet) tie at (0,1,0), the later sheet wins, and sheet order is per route. The style-delivery lane then found 208 of 2943 sheet pairs ordered both ways across routes, and `scripts/compare-ssg-styles.mjs` found the home page's Field label as the one route (1 of 83) that differs between a bundled and an unbundled build. A specificity bump (`label.dx-field-label`) only moves the contest. **Landed 2026-10-05 (round 3): slot variables.** The base component reads `--dx-<component>-<property>` with its own default and the composer sets the VARIABLE on the base's element, never the property: Label reads `--dx-label-gap`, `-color`, `-font-size`, `-font-weight` and `-line-height` (shadcn defaults; documented in label's docs "Slot variables"), and Field sets `--dx-label-line-height: 1.375` and the invalid colour. A custom property is a different property from the one the base declares, so nothing contests anything: no specificity race, no order dependence (measured order-independent). Cost: a standalone Label changes from 12.8 px / 400 to 14 px / 500, which is shadcn's own. **Gate:** `scripts/check-cross-component-overrides.sh` (in `scripts/run-gates.sh`) with the shrink-only debt register `scripts/check-cross-component-overrides.baseline.tsv`: **190 sites in 12 sheets** (149 `composed:<Y>`, where X's class sits on Y's root, derived from the Rust, and 41 `tag`, a bare `input`, `select`, `textarea`, `button` or `label` selector, the only way left to reach another component's root because `check-dx-class-prefix.sh` forbids naming its class): sidebar 65, message_scroller 25, date_picker 17, button_group 16, toolbar 16, chart 14, input_group 10, command 9, form 7, data_table 6, field 4, item 1. A site not in the baseline fails the gate; `--update-baseline` only shrinks (`--allow-grow` needs a reason in the commit). **Recommendation (the lane's; not owner-reviewed): (1) slot variables for component-to-component composition:** burn the baseline down in this order, sidebar, message_scroller, date_picker, button_group, toolbar, input_group, chart, form (then command, data_table, field, item), each sheet adding slots to the base it composes and documenting them. **(2) Later, an opt-in single `@layer dx` for the APP-override boundary** (an app's unlayered CSS beats the library whatever the specificity or order): prototype first, and diff a layered build against an unlayered one with `scripts/compare-ssg-styles.mjs` (expect 0 differing routes) before anything ships. The risks to list first (analysis from the cascade rules, not measured): unlayered app resets and element rules beat every library class rule; Tailwind v4's own layers make the position of `dx` in the order decide whether `p-4` beats a dx rule, and the library cannot know the app's layer names; `!important` reverses layer order, so a library `!important` (the overlay-off backdrop, reduced motion, the forced-colors outline) would beat an app's. Layers do not remove the contest between two library sheets inside one layer, so (2) complements (1) and never replaces it. **(3) Explicitly NOT a `dx.compose` sub-layer** (it keeps the same-property design, needs every composing rule filed by hand and an `@layer` order statement ahead of both sheets that a copied-in component cannot guarantee, and does not help the 41 `tag` sites). **Order and overlap:** 145's state recipes (focus, invalid, disabled) are the rules most likely to add new sites: build them as slot variables. `date_picker`'s sheet belongs to 145's floating-surface lane, so take that sheet after it; take the other sheets inside or after the phase C lane that repaints them. **Done when:** the baseline is empty or each remaining line has a stated exception, and the layer prototype's diff is recorded either way. Evidence and the full comparison: [round-3 note](../research/round3-2026-10-05.md), section 7.

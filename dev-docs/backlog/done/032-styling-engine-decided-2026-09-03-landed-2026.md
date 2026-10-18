@@ -1,0 +1,26 @@
+---
+id: 32
+title: "Styling engine — DECIDED 2026-09-03, LANDED 2026-09-04: (b) plain dx--prefixed CSS files without css_module…"
+status: "Landed 2026-09-04"
+size: "M (done)"
+area: build
+updated: 2026-09-04
+---
+
+# Row 32: Styling engine — DECIDED 2026-09-03, LANDED 2026-09-04: (b) plain dx--prefixed CSS files without css_module…
+
+## Item
+
+**Styling engine — DECIDED 2026-09-03, LANDED 2026-09-04: (b) plain `dx-`-prefixed CSS files without `css_module` hashing, on the row-31a tokens** (user agreed with the recommendation; the dignifiedquire comparison the same day reinforced it: their Tailwind setup ended up as a crate dependency with a hand-maintained safelist and stale copy-in manifests — the exact consumer trap this avoids). **Execution, in two commits:** a proof-of-concept on `checkbox`/`select` first, then the mechanical pass across the remaining 42 (43 total — the macro gone, `Styles::dx_x` → the literal `"dx-x"`, each component's own stylesheet delivered via `document::Link`/`asset!`, which dedupes on `(href, rel)` so mounting many instances still emits one `<link>`). `top_layer` is deliberately the one component left on `#[css_module]`: it is an oracle fixture rather than an installable component (outside the root `component.json` `members` list), and its `dx-anchor-*` markers are intentionally global coordination points with the stylesheet `primitives/src/top_layer.rs` injects, so unhashing it needs a deliberate decision, not a mechanical pass. New `scripts/check-dx-class-prefix.sh` enforces the collision-safety property hashing used to give — every class a themed component's own `style.css` defines must be `dx-<component>` or `dx-<component>-…`; a component still on `#[css_module]` is a warning, not a failure, so the check cannot itself block the (already-complete) migration, only guard against future drift — and it caught two real pre-existing collisions that hashing alone had been masking: `.dx-remove-button` meant two different things in `drag_and_drop_list` (26×26px) and `tag_group` (unsized), so both were renamed (`dx-drag-and-drop-list-remove-button`/`dx-tag-group-remove-button`) rather than merged; `.dx-sr-only` was byte-identical between `pagination` and `sidebar`, so it was left namespaced in both and flagged as a row-31a utility-sheet candidate. New `playwright/dx-class-migration.spec.ts` (two generic assertions run over all 43 components: some stylesheet reachable from the page defines `.dx-<component>`, and no element anywhere carries the `dx-…-<8 hex>` hashed shape) caught a real delivery bug on first run — `sidebar`'s stylesheet wasn't reaching its iframe-embedded demo — the exact silent-failure shape no role/name-selecting spec in the suite could otherwise see. The `dx-anchor-*` unhashed-marker workaround was deleted along with every migrated component's `@supports` scoping bug (`dev-docs/issues/css-module-supports-scoping.md` kept as the upstream report, since the bug still applies to any consumer still on an older `css_module`-hashing release). Rejected alternatives on record: Tailwind v4 (consumers must run Tailwind; copied components stop being editable; `tailwind_fuse`'s `TwClass`/`TwVariant` derives noted as good prior art if ever revisited), precompiled/prefixed Tailwind (consumers still can't regenerate CSS from the copied class strings), keeping `css_module` (the scoping bug + hashed classes for no gain). **BREAKING CHANGE**, by the row's own intent: `.dx-foo-<hash>` selectors must become `.dx-foo` for anyone selecting themed component classes externally
+
+## Status / trigger
+
+Landed 2026-09-04
+
+## Size
+
+M (done)
+
+## Detail
+
+Harness unaffected (all specs select by role/name). Blitz: unchanged from today (plain CSS through Stylo); no spike needed. Verified by execution: 43/43 on the migration oracle; the delivered-but-not-obviously-wired `sidebar` case confirmed fixed; 86/86 on the CSS-sensitive specs (`select` including row 47's width cases, `sidebar`, `toast`, `touch-double-tap`, `global-stylesheet`); `cargo check`/`cargo fmt --check`/`cargo test -p preview` (6/6) clean; prefix, composition, cfg-axis and stylelint gates all exit 0. **2026-09-04 addendum:** row 47 is a second, independently-discovered instance of this exact scoping gap — this time in a *component's own* stylesheet (`select/style.css`'s `@supports (anchor-name: --a) { .dx-select-list[popover] { min-width: anchor-size(width); } }`, dead for the same reason the shared engine snippet's copies were) rather than a hand-copied engine snippet, confirming this is a bug class every themed `@supports` block is exposed to until this row's migration lands, not a one-off. A **third** instance surfaced 2026-09-04 in row 31a's design-token round: a first attempt to consolidate component `:focus-visible` rings into a new shared interaction layer by naming component classes directly in the global theme sheet hit the identical unhashed-selector-never-matches gap (confirmed against the built artifact) — not shipped; see row 31a for the full account. All three instances are now retired for every migrated component (`top_layer` itself, the one component still on `css_module`, is not exposed to this class of bug at all — its markers are deliberately global, not scoped)

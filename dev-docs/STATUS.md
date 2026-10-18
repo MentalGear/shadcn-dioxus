@@ -1,0 +1,74 @@
+# Status: where we are
+
+**Living page. The main loop updates it at every merge batch, deploy and round change; if the date below is old, treat
+the page as stale and check `git log` and the flag files named here.** Seeded 2026-10-18 (lane docs-split) from
+[`research/next-round-plan-2026-10-15.md`](./research/next-round-plan-2026-10-15.md),
+[`research/backlog-order-2026-10-18.md`](./research/backlog-order-2026-10-18.md) and [`plan.md`](./plan.md).
+
+Last updated: **2026-10-18**. Session branch: `claude/zealous-davinci-08se9a` (head `de7059ba` at seeding).
+Preview site: https://mentalgear.github.io/shadcn-dioxus/
+
+## Current round
+
+**Round 1 of the backlog order: procedure, suite speed, test health** (started 2026-10-18 from `de7059ba`). Lanes, each
+in its own worktree `/home/user/wt/<lane>` on `lane/<lane>`:
+
+| Lane | Rows | Goal |
+|---|---|---|
+| lock | 221, 216, 92 | ticket queue for the build lock with merge gates first, a second build slot, mtime touch inside the scripts, `preview/build.rs` rerun line |
+| suite-speed | 152a | measure where the suite time goes; release-build validation; sharding; changed-files spec selector; slow-spec budget gate |
+| baseline-red | 242, 115 | the four specs red on the deployed baseline, the residual flakes |
+| specs2 | 241, 164 | block-demo mirror, hydrated `goto` everywhere |
+| docs-split | (docs) | this documentation map, `STATUS.md`, the backlog split into one file per row |
+
+Until `/home/user/tgt/DEPLOY-DONE` exists, round-1 lanes take no build lock (the previous round is being validated and
+deployed first).
+
+## Merged, not yet deployed
+
+The round planned in `next-round-plan-2026-10-15.md` (ten lanes, run 2026-10-18) is merged on the session branch:
+rows 214, 215, 217 (partly), 219, 220, 222-236, 238, plus the follow-ups 239-244 recorded as new rows. Open before
+the deploy: the full-suite validation on the merged tree (classified against the recorded baseline failures), the
+computed-style snapshot compared with N5, the registry install smoke, then PR, merge and the release deploy. Post
+the site link with the main commit once the Pages publish succeeds.
+
+## Deployed
+
+The preview site at the link above; row 242 lists the specs that are red on the deployed baseline too. The
+2026-10-18 round is not deployed yet (see above).
+
+## Backlog numbers
+
+88 open and 156 done rows at the split (see [`backlog.md`](./backlog.md)). The main loop's round-0 bookkeeping closes
+18 more rows that the backlog review found done, duplicate or obsolete and narrows 10 partly-done ones.
+
+## Next round
+
+**Round 2, planned next round:** scroller 213 (Message Scroller API gaps); markdown 213 (the optional `markdown`
+component, owner decisions E2: pulldown-cmark `=0.13.4`, images off by default); theme 239 (`all: unset` vs the
+baselines) + 243 (hover fills) + 124/125 (chart nits); chat-nav 148. Then round 3 (overlay and interaction primitives:
+focus 240, drawer 156, toast 138, carousel 237), 4 (virtualization and scrolling), 5 (docs and site), 6 (quality
+sweeps, test-suite prune last), 7 (held items 136, 157). Full table with the reasons:
+[`research/backlog-order-2026-10-18.md`](./research/backlog-order-2026-10-18.md).
+
+## Owner inputs pending
+
+- iPhone re-test right after the deploy: rows 28 and 30, plus the touch-focus and keyboard-inset checklist of the
+  2026-10-18 round (rows 226, 227).
+- Decisions before round 1 ends: CI back on (rows 4, 33); upstream engagement and the upstream filings of rows 130,
+  131, 98 (rows 6, 14: outward-facing, only with the owner's go); older WebKit (row 15); components beyond shadcn
+  (row 16, then its own round).
+- Markdown component details (E2) and the Questionnaire (row 136, no longer on hold per the 2026-10-18 order).
+
+## Rules in force
+
+- Lanes run the FAST gates only (see [`lane-rules.md`](./lane-rules.md), "Gate procedure"); the main loop runs the one
+  full `scripts/run-gates.sh` per merge batch on the merged tree, and nothing is pushed without that green on the exact
+  commit. Green = `ALL GREEN`, exit 0.
+- One global build lock; Playwright under its own lock; 4-5 lanes per batch.
+
+## Keeping this page current
+
+Edit the section that changed, bump "Last updated", commit with the change that made it true. Row-level state belongs in
+the row files under [`backlog/`](./backlog/), not here: this page says only which round runs, what is merged and
+deployed, and what waits for the owner.
