@@ -417,7 +417,7 @@ test("the language switcher sets <html lang>, and it survives navigating to anot
   await select.selectOption("German");
   await expect(lang).toHaveAttribute("lang", "de-DE");
   // A client-side navigation (a sidebar link, no reload) keeps the locale and the page's language.
-  await page.locator('a[data-sidebar="menu-button"][href*="/component/badge/"]').click();
+  await page.locator('a[data-sidebar="menu-button"][href*="/component/badge/"]:visible').click();
   await expect(page.locator(".dx-component-page-header h1")).toBeVisible();
   await expect(lang).toHaveAttribute("lang", "de-DE");
   await expect(select, "the select shows the language the page is really in").toHaveValue("German");
