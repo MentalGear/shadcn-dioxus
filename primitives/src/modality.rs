@@ -31,14 +31,21 @@
 //! * [`OPEN_FOCUS_JS`] -- `dxOpenFocus(panel, show)`, the one open-focus policy, used by
 //!   `use_dialog_open_driver` (every native-`<dialog>` modal), `use_popover_shown_while_mounted`
 //!   for a `<dialog popover>` (the non-modal Popover, hence DatePicker and ColorPicker) and, through
-//!   `data-dx-autofocus`, by the Command palette. Keyboard: the browser default (the first
-//!   control, the search input). Mouse: the panel itself, except an input marked
-//!   `data-dx-autofocus` (a palette's search box is its point). Touch and pen: the panel, never an
-//!   editable element; a plain `[autofocus]` wins only when it is not editable.
+//!   `data-dx-autofocus`, by the Command palette. Keyboard and mouse (Base UI's default open-focus
+//!   policy, owner decision 2026-10-18): the browser default -- an `[autofocus]` target, else the
+//!   first focusable control, a text field included -- and an element marked `data-dx-autofocus`
+//!   (a palette's search box) explicitly. Touch and pen: the panel, never an editable element, so
+//!   the on-screen keyboard does not rise while the panel is placed; a plain `[autofocus]` wins
+//!   only when it is not editable. Base UI's `createDefaultInitialFocus` likewise returns the
+//!   popup only for touch. Two deliberate deviations: pen is grouped with touch here (Base UI groups
+//!   pen with mouse), and the Drawer follows the same rule as every other modal (Base UI's
+//!   DrawerPopup always focuses the popup; our touch rule and `preventScroll` already cover its
+//!   mobile-keyboard and swipe-gesture reasons).
 //! * The theme (`dx-components-theme.css`, "Focus modality") reads the same attribute: the
 //!   non-field ring tokens are transparent unless the modality is `keyboard`, and a programmatic
 //!   focus container (`dialog`, `[popover]`, listbox/menu, `tabindex="-1"`) never draws the UA
-//!   outline. `--dx-ring-field` is untouched: a tapped text field still rings.
+//!   outline. `--dx-ring-field` is untouched: a focused text field still rings after a mouse open
+//!   (shadcn does the same); buttons and containers show no ring after a pointer open.
 //!
 //! `scripts/check-open-focus.sh` keeps a second hand-written `autofocus`, `.focus()` or
 //! `set_focus(true)` on an open path from coming back.
@@ -73,14 +80,16 @@ function dxEditable(el) {
 function dxOpenFocus(panel, show) {
     const m = dxModality();
     const marked = panel.querySelector('[data-dx-autofocus], [autofocus]');
-    if (m === 'keyboard') {
+    if (m === 'keyboard' || m === 'mouse') {
+        // Base UI's default: only touch (and pen) is kept off the controls. The browser's own
+        // step focuses an `[autofocus]` target or else the first focusable descendant, a text
+        // field included; `data-dx-autofocus` (a palette's search box) is focused explicitly.
         show();
         if (marked && marked.hasAttribute('data-dx-autofocus')) marked.focus({ preventScroll: true });
         return;
     }
-    // Pointer: an autofocus target wins when it is not a field; a palette's own search box
-    // (`data-dx-autofocus`) also wins for a mouse, never for touch or pen.
-    const wins = marked && (!dxEditable(marked) || (m === 'mouse' && marked.hasAttribute('data-dx-autofocus')));
+    // Touch and pen: an autofocus target wins only when it is not a field.
+    const wins = marked && !dxEditable(marked);
     if (wins) {
         show();
         marked.focus({ preventScroll: true });

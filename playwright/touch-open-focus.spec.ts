@@ -9,6 +9,10 @@
  * data-dx-modality>`), ONE open-focus policy (`dxOpenFocus`, shared by the dialog driver, the
  * non-modal Popover's show script and Command) and ONE ring rule in the theme. The keyboard half
  * (`modal-initial-focus.spec.ts`, `focus-ring.spec.ts`) is unchanged and re-proved at the bottom.
+ * Since the owner decision of 2026-10-18 (Base UI's default open-focus policy) a MOUSE open behaves
+ * like the keyboard one -- the first control, a text field included -- and only touch/pen is kept on
+ * the panel; the Drawer included. Each overlay has a mouse
+ * counterpart below.
  *
  * The emulation is what reproduced the report in plain Chromium: an iPhone 13 context (`hasTouch`,
  * `isMobile`) plus an "iOS-like" capture `mousedown` `preventDefault` on every target that is not a
@@ -254,6 +258,26 @@ for (const o of OVERLAYS) {
         expect(r.outlines).toEqual([]);
       } finally {
         await context.close();
+      }
+    });
+
+    test("the mouse counterpart focuses the first control, like a keyboard open", async ({ page }) => {
+      await open(page, o);
+      const trigger = triggerOf(page, o);
+      await trigger.scrollIntoViewIfNeeded();
+      await trigger.click();
+      await expect.poll(() => openPanelCount(page)).toBeGreaterThan(0);
+      await page.waitForTimeout(450);
+      const r = await report(page);
+      expect(r.modality).toBe("mouse");
+      if (o.keyboard === "inside") {
+        const isPanel = await page.evaluate(
+          (sel) => document.activeElement === document.querySelector(sel),
+          OPEN_PANEL,
+        );
+        expect(r.focusInPanel, `${o.name}: a mouse open puts focus inside the panel (focused ${r.active})`).toBe(true);
+        expect(isPanel, `${o.name}: a mouse open focuses a control, not the panel`).toBe(false);
+        if (o.keyboardFocusesField) expect(r.editable, `${o.name}: first control is a field`).toBe(true);
       }
     });
 

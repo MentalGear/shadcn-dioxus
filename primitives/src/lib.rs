@@ -564,7 +564,7 @@ fn use_dialog_open_driver(
                 // The element that holds focus now is the opener: remembered so the close can hand
                 // focus back the moment it starts (`DIALOG_CLOSE_FORWARD_JS`). Where focus goes
                 // INSIDE the panel is `dxOpenFocus`'s one decision (`modality.rs`): the browser
-                // default for a keyboard open, the panel for a mouse, touch or pen open, never an
+                // default for a keyboard or mouse open, the panel for a touch or pen open, never an
                 // editable element for touch. No listener of ours reads :focus-visible.
                 const opener = document.activeElement;
                 dialog.__dxOpener = opener && opener !== document.body && opener !== document.documentElement
