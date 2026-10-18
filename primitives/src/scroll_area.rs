@@ -225,8 +225,18 @@ pub fn ScrollArea(props: ScrollAreaProps) -> Element {
     // `class` always concatenates regardless of merge order; the rest is
     // this scroll area's own computed state (`scrollbar-width`/the
     // `data-*` pair).
+    //
+    // The overflow is a `style` attribute of the same list, not separate style fields next to the
+    // spread: a spread `style` placed beside explicit style fields replaces them (a group given
+    // `style: "width: 100%"` lost its `overflow-x: auto` and spilled out of the page).
+    let overflow_style = format!(
+        "overflow-x: {}; overflow-y: {};",
+        overflow_x.unwrap_or("visible"),
+        overflow_y.unwrap_or("visible")
+    );
     let defaults = attributes!(div {
-        class: "{visibility_class}"
+        class: "{visibility_class}",
+        style: "{overflow_style}",
     });
     let fade = props.fade.attributes();
     let owned = attributes!(div {
@@ -239,15 +249,43 @@ pub fn ScrollArea(props: ScrollAreaProps) -> Element {
         "data-direction": text_direction.as_str(),
     });
     let merged = merge_attributes(vec![defaults, fade, props.attributes.clone(), owned]);
+    // One `style` is built from the plain one and the shorthand-namespaced ones (`width: ".."`)
+    // a caller may pass: the DOM renderer would let a plain `style` replace the shorthands.
+    let (style, merged) = crate::fold_style_attributes(merged);
 
     rsx! {
         div {
-            overflow_x,
-            overflow_y,
             dir: text_direction.as_str(),
+            style,
             ..merged,
 
             {props.children}
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[component]
+    fn Styled() -> Element {
+        rsx! {
+            ScrollArea { direction: ScrollDirection::Horizontal, style: "width: 100%;", max_width: "20rem", "x" }
+        }
+    }
+
+    /// A caller's own `style` is added to the scroll area's overflow, never a replacement for it.
+    #[test]
+    fn a_callers_style_keeps_the_overflow() {
+        let mut dom = VirtualDom::new(Styled);
+        dom.rebuild_in_place();
+        let html = dioxus_ssr::render(&dom);
+        assert!(html.contains("overflow-x: auto"), "{html}");
+        assert!(html.contains("overflow-y: hidden"), "{html}");
+        assert!(html.contains("width: 100%"), "{html}");
+        // ... and so are the shorthand-set properties, in the one `style`.
+        assert!(html.contains("max-width:20rem"), "{html}");
+        assert_eq!(html.matches("style=").count(), 1, "{html}");
     }
 }

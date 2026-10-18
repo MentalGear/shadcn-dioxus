@@ -7,4 +7,3 @@ trigger
 dialog
 image_gallery
 removable_group
-composite

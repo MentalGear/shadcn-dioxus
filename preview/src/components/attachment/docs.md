@@ -1,6 +1,6 @@
 The Attachment component displays a file or image attachment: its media, name and metadata, with optional actions and an upload state. Use it for files and images in chat composers, message threads and upload lists.
 
-It is styled composition (there is no ARIA widget pattern, so no primitive underneath) and composes the existing `Button` for its actions. `AttachmentGroup` and the shimmering title use the `dx-scroll-fade-x` and `dx-shimmer` effects from `assets/dx-effects.css`, which the component's `component.json` ships as a global asset next to the theme.
+It is styled composition (there is no ARIA widget pattern of its own) and composes the existing `Button` for its actions and the primitives' `ScrollArea` for the group. `AttachmentGroup` is the library's `ScrollArea` (horizontal, `fade: ScrollFade::X`) with snap points, and the shimmering title uses the `dx-shimmer` effect; the fade and the shimmer both come from `assets/dx-effects.css`, which the component's `component.json` ships as a global asset next to the theme. Unlike a `Carousel` (one slide at a time, with previous/next controls) the group is a free-scrolling strip of mixed-width chips, as in shadcn.
 
 ## Component Structure
 

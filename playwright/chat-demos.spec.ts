@@ -10,7 +10,7 @@
  *   row peeks above a new turn), `group_chat` (a join marker is an anchored row), `animation` (the
  *   preset picked at send time is stored with the row), `full_chat` (the hero's Card shell, Empty
  *   state, Reset tooltip and composer).
- * - attachment: `dialog`, `image_gallery`, `removable_group`, `composite`.
+ * - attachment: `dialog`, `image_gallery`, `removable_group` (the main demo, shadcn's attachment-demo, is attachment-demo.spec.ts).
  * - bubble: `tooltip`, `popover`, `collapsible`, `link_group`.
  * - marker: `icon`. message: `demo`, `download`.
  *
@@ -521,31 +521,6 @@ test.describe("attachment: removable_group", () => {
     await open(page, "attachment", "removable_group", '[data-slot="attachment"]');
     await expectNoAxeViolations(page, "attachment/removable_group: loaded", {
       include: "#component-preview-frame-removable_group",
-    });
-  });
-});
-
-test.describe("attachment: composite", () => {
-  test("image group, an uploading file with Cancel upload, and a code file", async ({ page }) => {
-    const root = await open(page, "attachment", "composite", '[data-slot="attachment"]');
-    const cards = root.locator('[data-slot="attachment"]');
-    await expect(cards).toHaveCount(5);
-    await expect(root.locator('[data-slot="attachment"][data-orientation="vertical"]')).toHaveCount(3);
-    const uploading = root.locator('[data-slot="attachment"][data-state="uploading"]');
-    await expect(uploading).toHaveCount(1);
-    await expect(uploading).toContainText("Uploading · 64%");
-    await expect(uploading.getByRole("status")).toBeVisible(); // the spinner
-
-    await root.getByRole("button", { name: "Cancel upload" }).click();
-    await expect(uploading).toHaveCount(0);
-    await root.getByRole("button", { name: "Remove message-renderer.rs" }).click();
-    await expect(cards).toHaveCount(3);
-  });
-
-  test("has no automatically detectable a11y issues", async ({ page }) => {
-    await open(page, "attachment", "composite", '[data-slot="attachment"]');
-    await expectNoAxeViolations(page, "attachment/composite: loaded", {
-      include: "#component-preview-frame-composite",
     });
   });
 });

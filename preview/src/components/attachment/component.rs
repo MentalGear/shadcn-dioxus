@@ -3,6 +3,7 @@ use dioxus::prelude::*;
 use dioxus_primitives::activity::use_motion_when;
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::merge_attributes;
+use dioxus_primitives::scroll_area::{ScrollArea, ScrollDirection, ScrollFade};
 
 /// The upload lifecycle of an [`Attachment`]. `Uploading` and `Processing`
 /// shimmer the title, `Error` switches to a destructive treatment, `Idle`
@@ -304,23 +305,30 @@ pub fn AttachmentTrigger(
     }
 }
 
-/// Lays attachments out in a horizontally scrollable, snapping row with an
-/// edge fade (`dx-scroll-fade-x`). When its attachments are interactive (a
-/// trigger or actions), keyboard users reach the off-screen ones by tabbing.
-/// For a row of presentational attachments, make the group itself focusable:
-/// `tabindex: "0"`, `role: "group"` and an `aria-label`.
+/// Lays attachments out in a horizontally scrolling, snapping row with an
+/// edge fade. It is the library's [`ScrollArea`] (horizontal, `fade: X`), so the
+/// scroller, the fade and their RTL mirroring are the ones every other scroller
+/// uses; this component adds only the flex row and the snap points. When its
+/// attachments are interactive (a trigger or actions), keyboard users reach the
+/// off-screen ones by tabbing. For a row of presentational attachments, make the
+/// group itself focusable: `tabindex: "0"`, `role: "group"` and an `aria-label`.
 #[component]
 pub fn AttachmentGroup(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
     children: Element,
 ) -> Element {
     let base = attributes!(div {
-        class: "dx-attachment-group dx-scroll-fade-x",
+        class: "dx-attachment-group",
         "data-slot": "attachment-group",
     });
     let merged = merge_attributes(vec![base, attributes]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/attachment/style.css") }
-        div { ..merged, {children} }
+        ScrollArea {
+            direction: ScrollDirection::Horizontal,
+            fade: ScrollFade::X,
+            attributes: merged,
+            {children}
+        }
     }
 }
