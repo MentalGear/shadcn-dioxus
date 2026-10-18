@@ -1,0 +1,1 @@
+The shadcn hero approximated with the parts here: a `Card` shell, an `Empty` state, a Reset button with a `Tooltip`, and a read-only composer made of an `InputGroup` with an inline `+` menu and a send button.

@@ -114,6 +114,8 @@
 import { test, expect } from "../../fixtures";
 import { type Page, type Locator } from "@playwright/test";
 import { BASE_URL } from "./../../base-url";
+import { measureAtRest } from "../../animations";
+import { demoFrame } from "../../demo-frame";
 
 async function goto(page: Page, name: string, variant: string) {
   await page.goto(`${BASE_URL}/component/?name=${name}&variant=${variant}&`, {
@@ -124,10 +126,6 @@ async function goto(page: Page, name: string, variant: string) {
 // See this file's own header ("SCOPING -- READ BEFORE EDITING") for why
 // every locator below is rooted through this rather than through `page`
 // directly.
-function demoFrame(page: Page, variant: "main" | "rtl"): Locator {
-  const id = variant === "main" ? "component-preview-frame" : `component-preview-frame-${variant}`;
-  return page.locator(`#${id}`);
-}
 
 // See this file's own header for why a submenu's own content is looked up
 // by its trigger's `aria-controls`, not by role+text.
@@ -160,21 +158,21 @@ test.describe("Roving focus: Tabs", () => {
     await expect(root).toHaveAttribute("dir", "rtl");
     await expect(root).toHaveAttribute("data-direction", "rtl");
 
-    const tab2 = scope.getByRole("tab", { name: "Two", exact: true });
+    const tab2 = scope.getByRole("tab").nth(1);
     await tab2.click();
     await expect(tab2).toBeFocused();
     await page.keyboard.press("ArrowLeft");
-    await expect(scope.getByRole("tab", { name: "Three", exact: true })).toBeFocused();
+    await expect(scope.getByRole("tab").nth(2)).toBeFocused();
   });
 
   test("control (LTR, main variant): ArrowLeft from the middle tab moves to the PREVIOUS tab", async ({ page }) => {
     await goto(page, "tabs", "main");
     const scope = demoFrame(page, "main");
-    const tab2 = scope.getByRole("tab", { name: "Tab 2" });
+    const tab2 = scope.getByRole("tab").nth(1);
     await tab2.click();
     await expect(tab2).toBeFocused();
     await page.keyboard.press("ArrowLeft");
-    await expect(scope.getByRole("tab", { name: "Tab 1" })).toBeFocused();
+    await expect(scope.getByRole("tab").nth(0)).toBeFocused();
   });
 });
 
@@ -182,17 +180,17 @@ test.describe("Roving focus: RadioGroup", () => {
   test("RTL: ArrowLeft from the middle item moves to the NEXT item", async ({ page }) => {
     await goto(page, "radio_group", "rtl");
     const scope = demoFrame(page, "rtl");
-    const teal = scope.getByRole("radio", { name: "Teal" });
+    const teal = scope.getByRole("radio").nth(1);
     await teal.click();
     await expect(teal).toBeFocused();
     await page.keyboard.press("ArrowLeft");
-    await expect(scope.getByRole("radio", { name: "Violet" })).toBeFocused();
+    await expect(scope.getByRole("radio").nth(2)).toBeFocused();
   });
 
   test("control (LTR, main variant): ArrowLeft has no effect (the main fixture is vertical, not horizontal)", async ({ page }) => {
     await goto(page, "radio_group", "main");
     const scope = demoFrame(page, "main");
-    const comfortable = scope.getByRole("radio", { name: "Comfortable" });
+    const comfortable = scope.getByRole("radio").nth(1);
     await comfortable.click();
     await expect(comfortable).toBeFocused();
     // The `main` fixture never sets `horizontal: true` (vertical is the
@@ -236,21 +234,21 @@ test.describe("Roving focus: Toolbar", () => {
   test("RTL: ArrowLeft from the middle button moves to the NEXT button", async ({ page }) => {
     await goto(page, "toolbar", "rtl");
     const scope = demoFrame(page, "rtl");
-    const two = scope.getByRole("button", { name: "Two" });
+    const two = scope.getByRole("button").nth(1);
     await two.click();
     await expect(two).toBeFocused();
     await page.keyboard.press("ArrowLeft");
-    await expect(scope.getByRole("button", { name: "Three" })).toBeFocused();
+    await expect(scope.getByRole("button").nth(2)).toBeFocused();
   });
 
   test("control (LTR, main variant): ArrowLeft from a button moves to the PREVIOUS button", async ({ page }) => {
     await goto(page, "toolbar", "main");
     const scope = demoFrame(page, "main");
-    const italic = scope.getByRole("button", { name: "Italic" });
+    const italic = scope.getByRole("button").nth(1);
     await italic.click();
     await expect(italic).toBeFocused();
     await page.keyboard.press("ArrowLeft");
-    await expect(scope.getByRole("button", { name: "Bold" })).toBeFocused();
+    await expect(scope.getByRole("button").nth(0)).toBeFocused();
   });
 });
 
@@ -258,25 +256,25 @@ test.describe("Roving focus: Menubar (always-horizontal trigger row)", () => {
   test("RTL: ArrowLeft from the first trigger moves to the second (the next trigger)", async ({ page }) => {
     await goto(page, "menubar", "rtl");
     const scope = demoFrame(page, "rtl");
-    const options = scope.getByRole("menuitem", { name: "Options" });
+    const options = scope.getByRole("menuitem").nth(0);
     await options.click();
     await page.keyboard.press("Escape");
     await options.focus();
     await expect(options).toBeFocused();
     await page.keyboard.press("ArrowLeft");
-    await expect(scope.getByRole("menuitem", { name: "Modify" })).toBeFocused();
+    await expect(scope.getByRole("menuitem").nth(1)).toBeFocused();
   });
 
   test("control (LTR, main variant): ArrowLeft from Edit moves to File (the previous trigger)", async ({ page }) => {
     await goto(page, "menubar", "main");
     const scope = demoFrame(page, "main");
-    const edit = scope.getByRole("menuitem", { name: "Edit" });
+    const edit = scope.getByRole("menuitem").nth(1);
     await edit.click();
     await page.keyboard.press("Escape");
     await edit.focus();
     await expect(edit).toBeFocused();
     await page.keyboard.press("ArrowLeft");
-    await expect(scope.getByRole("menuitem", { name: "File" })).toBeFocused();
+    await expect(scope.getByRole("menuitem").nth(0)).toBeFocused();
   });
 });
 
@@ -294,9 +292,9 @@ test.describe("Roving focus: Navbar (always-horizontal trigger row)", () => {
     await goto(page, "navbar", "rtl");
     const scope = demoFrame(page, "rtl");
     await scope.getByRole("menubar").focus();
-    await expect(scope.getByRole("menuitem", { name: "Widgets" })).toBeFocused();
+    await expect(scope.getByRole("menuitem").nth(0)).toBeFocused();
     await page.keyboard.press("ArrowLeft");
-    await expect(scope.getByRole("menuitem", { name: "Details" })).toBeFocused();
+    await expect(scope.getByRole("menuitem").nth(1)).toBeFocused();
   });
 
   test("control (LTR, main variant): ArrowLeft from the second nav moves to the first (the previous trigger)", async ({ page }) => {
@@ -304,9 +302,9 @@ test.describe("Roving focus: Navbar (always-horizontal trigger row)", () => {
     const scope = demoFrame(page, "main");
     await scope.getByRole("menubar").focus();
     await page.keyboard.press("ArrowRight");
-    await expect(scope.getByRole("menuitem", { name: "Information" })).toBeFocused();
+    await expect(scope.getByRole("menuitem").nth(1)).toBeFocused();
     await page.keyboard.press("ArrowLeft");
-    await expect(scope.getByRole("menuitem", { name: "Inputs" })).toBeFocused();
+    await expect(scope.getByRole("menuitem").nth(0)).toBeFocused();
   });
 });
 
@@ -346,8 +344,8 @@ test.describe("Menu family: DropdownMenu.Sub", () => {
   test("RTL: ArrowLeft opens the submenu (focus -> first item), ArrowRight closes it (focus -> sub-trigger), opens to the LEFT", async ({ page }) => {
     await goto(page, "dropdown_menu", "rtl");
     const scope = demoFrame(page, "rtl");
-    await scope.getByRole("button", { name: "Launch Menu" }).click();
-    const subTrigger = scope.getByRole("menuitem", { name: "Extra tools" });
+    await scope.getByRole("button").first().click();
+    const subTrigger = scope.getByRole("menu").first().getByRole("menuitem").nth(1) /* rtl demo: Modify(0), Extra tools(1, sub-trigger), Erase(2) */;
     // Modify(0) -> Extra tools(1): 2 ArrowDowns (see this describe block's
     // own header comment).
     await page.keyboard.press("ArrowDown");
@@ -357,10 +355,10 @@ test.describe("Menu family: DropdownMenu.Sub", () => {
     await page.keyboard.press("ArrowLeft");
     const subContent = await subContentFor(subTrigger);
     await expect(subContent).toBeVisible();
-    await expect(subContent.getByRole("menuitem", { name: "Relabel" })).toBeFocused();
+    await expect(subContent.getByRole("menuitem").first()).toBeFocused();
 
-    const triggerBox = await subTrigger.boundingBox();
-    const contentBox = await subContent.boundingBox();
+    const triggerBox = await measureAtRest(subTrigger);
+    const contentBox = await measureAtRest(subContent);
     expect(triggerBox).not.toBeNull();
     expect(contentBox).not.toBeNull();
     // Opens to the left: the submenu's right edge sits at or left of the
@@ -375,8 +373,8 @@ test.describe("Menu family: DropdownMenu.Sub", () => {
   test("control (LTR, main variant): ArrowRight opens the submenu, ArrowLeft closes it, opens to the RIGHT", async ({ page }) => {
     await goto(page, "dropdown_menu", "main");
     const scope = demoFrame(page, "main");
-    await scope.getByRole("button", { name: "Open Menu" }).click();
-    const subTrigger = scope.getByRole("menuitem", { name: "More tools" });
+    await scope.getByRole("button").first().click();
+    const subTrigger = scope.getByRole("menu").first().getByRole("menuitem").nth(3);  // main dropdown_menu demo: Edit(0), Undo(1, disabled), Duplicate(2), More tools(3)
     // Edit(0) -> Undo(1, disabled, skipped) -> Duplicate(2) -> More
     // tools(3): 3 ArrowDowns.
     await page.keyboard.press("ArrowDown");
@@ -387,10 +385,10 @@ test.describe("Menu family: DropdownMenu.Sub", () => {
     await page.keyboard.press("ArrowRight");
     const subContent = await subContentFor(subTrigger);
     await expect(subContent).toBeVisible();
-    await expect(subContent.getByRole("menuitem", { name: "Rename" })).toBeFocused();
+    await expect(subContent.getByRole("menuitem").first()).toBeFocused();
 
-    const triggerBox = await subTrigger.boundingBox();
-    const contentBox = await subContent.boundingBox();
+    const triggerBox = await measureAtRest(subTrigger);
+    const contentBox = await measureAtRest(subContent);
     expect(triggerBox).not.toBeNull();
     expect(contentBox).not.toBeNull();
     // Opens to the right: the submenu's left edge sits at or right of the
@@ -407,9 +405,9 @@ test.describe("Menu family: ContextMenu.Sub", () => {
   test("RTL: ArrowLeft opens the submenu (focus -> first item), ArrowRight closes it", async ({ page }) => {
     await goto(page, "context_menu", "rtl");
     const scope = demoFrame(page, "rtl");
-    const trigger = scope.getByText("RTL context zone");
+    const trigger = scope.getByRole("button").first();
     await trigger.click({ button: "right" });
-    const subTrigger = scope.getByRole("menuitem", { name: "Extra tools" });
+    const subTrigger = scope.getByRole("menu").first().getByRole("menuitem").nth(1) /* rtl demo: Modify(0), Extra tools(1, sub-trigger), Erase(2) */;
     // Modify(0) -> Extra tools(1): 2 ArrowDowns (see the DropdownMenu.Sub
     // describe block's own header comment for why roving focus, not
     // `.focus()`).
@@ -420,7 +418,7 @@ test.describe("Menu family: ContextMenu.Sub", () => {
     await page.keyboard.press("ArrowLeft");
     const subContent = await subContentFor(subTrigger);
     await expect(subContent).toBeVisible();
-    await expect(subContent.getByRole("menuitem", { name: "Relabel" })).toBeFocused();
+    await expect(subContent.getByRole("menuitem").first()).toBeFocused();
 
     await page.keyboard.press("ArrowRight");
     await expect(subContent).toBeHidden();
@@ -430,9 +428,9 @@ test.describe("Menu family: ContextMenu.Sub", () => {
   test("control (LTR, main variant): ArrowRight opens the submenu, ArrowLeft closes it", async ({ page }) => {
     await goto(page, "context_menu", "main");
     const scope = demoFrame(page, "main");
-    const trigger = scope.getByText("right click here");
+    const trigger = scope.getByRole("button").first();
     await trigger.click({ button: "right" });
-    const subTrigger = scope.getByRole("menuitem", { name: "More tools" });
+    const subTrigger = scope.getByRole("menu").first().getByRole("menuitem").nth(4);  // main context_menu demo: Edit(0), Undo(1, disabled), Duplicate(2), Delete(3), More tools(4)
     // Edit(0) -> Undo(1, disabled, skipped) -> Duplicate(2) -> Delete(3)
     // -> More tools(4): 4 ArrowDowns.
     await page.keyboard.press("ArrowDown");
@@ -444,7 +442,7 @@ test.describe("Menu family: ContextMenu.Sub", () => {
     await page.keyboard.press("ArrowRight");
     const subContent = await subContentFor(subTrigger);
     await expect(subContent).toBeVisible();
-    await expect(subContent.getByRole("menuitem", { name: "Rename" })).toBeFocused();
+    await expect(subContent.getByRole("menuitem").first()).toBeFocused();
 
     await page.keyboard.press("ArrowLeft");
     await expect(subContent).toBeHidden();
@@ -483,7 +481,7 @@ test.describe("Slider", () => {
     // needed here; `scope.getByRole("group")` alone still keeps the
     // group itself scoped to this variant.
     const track = scope.getByRole("group").filter({ has: page.getByRole("slider") });
-    const trackBox = await track.boundingBox();
+    const trackBox = await measureAtRest(track);
     expect(trackBox).not.toBeNull();
     // A locator-rooted `.click({ position })`, not `page.mouse.click(x, y)`
     // at the box's absolute coordinates: confirmed live, the raw
@@ -525,7 +523,7 @@ test.describe("Slider", () => {
     // needed here; `scope.getByRole("group")` alone still keeps the
     // group itself scoped to this variant.
     const track = scope.getByRole("group").filter({ has: page.getByRole("slider") });
-    const trackBox = await track.boundingBox();
+    const trackBox = await measureAtRest(track);
     expect(trackBox).not.toBeNull();
     // See the RTL test above for why this is a locator-rooted
     // `.click({ position })`, not `page.mouse.click(x, y)`.
@@ -600,7 +598,7 @@ test.describe("Resizable (extrapolated, no Radix original -- see file header)", 
   test("RTL: dir/data-direction present; ArrowLeft/ArrowRight on the handle change the primary panel's size in opposite senses to LTR", async ({ page }) => {
     await goto(page, "resizable", "rtl");
     const rtlScope = demoFrame(page, "rtl");
-    const handle = rtlScope.getByRole("separator", { name: "Divider" });
+    const handle = rtlScope.getByRole("separator").first();
     const group = rtlScope.locator('[data-direction]').first();
     await expect(group).toHaveAttribute("dir", "rtl");
     await expect(group).toHaveAttribute("data-direction", "rtl");
@@ -632,6 +630,10 @@ test.describe("Resizable (extrapolated, no Radix original -- see file header)", 
  * to the NEXT day under RTL (LTR: previous day).
  * --------------------------------------------------------------------- */
 
+// The `n`th day (1-based) of the visible month: the current-month cells in order (backlog row 220: by position,
+// not by the cell's text).
+const day = (grid: Locator, n: number) => grid.locator('.dx-calendar-grid-cell[data-month="current"]').nth(n - 1);
+
 test.describe("Calendar (extrapolated, no Radix original -- see file header)", () => {
   // Day cells' accessible name is a full date ("Friday, May 15, 2026" --
   // `aria_label()`, primitives/src/calendar.rs), not the plain day number,
@@ -646,23 +648,23 @@ test.describe("Calendar (extrapolated, no Radix original -- see file header)", (
     await expect(grid).toHaveAttribute("dir", "rtl");
     await expect(grid).toHaveAttribute("data-direction", "rtl");
 
-    const day15 = grid.getByText("15", { exact: true });
+    const day15 = day(grid, 15);
     await day15.click();
     await expect(day15).toBeFocused();
     await page.keyboard.press("ArrowLeft");
-    await expect(grid.getByText("16", { exact: true })).toBeFocused();
+    await expect(day(grid, 16)).toBeFocused();
 
     await page.keyboard.press("ArrowDown");
-    await expect(grid.getByText("23", { exact: true })).toBeFocused();
+    await expect(day(grid, 23)).toBeFocused();
   });
 
   test("control (LTR, main variant): ArrowLeft moves focus to the PREVIOUS day", async ({ page }) => {
     await goto(page, "calendar", "main");
     const grid = demoFrame(page, "main").getByRole("grid");
-    const day15 = grid.getByText("15", { exact: true });
+    const day15 = day(grid, 15);
     await day15.click();
     await expect(day15).toBeFocused();
     await page.keyboard.press("ArrowLeft");
-    await expect(grid.getByText("14", { exact: true })).toBeFocused();
+    await expect(day(grid, 14)).toBeFocused();
   });
 });

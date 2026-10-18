@@ -22,7 +22,7 @@
 //! nested `component/` subdirectory), not this file. `component.rs`
 //! instead writes `#[path = "state.rs"] mod state;`, which is relative to
 //! `component.rs`'s own directory and so resolves to this file, a sibling
-//! of `component.rs` -- the same directory `dx components add data_table`
+//! of `component.rs` -- the same directory `shadcn-dioxus add data_table`
 //! copies verbatim, so the copied module keeps compiling with zero extra
 //! wiring in a consumer's project.
 

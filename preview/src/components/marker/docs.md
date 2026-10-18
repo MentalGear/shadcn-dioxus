@@ -32,11 +32,6 @@ Marker {
 }
 ```
 
-## Examples
-
-- **Variants**, **Status** and **Link button**: the three variants, streaming statuses with a spinner and shimmer, and a marker that is a link or button.
-- **Icon**: an icon beside its text in each variant, and a marker turned into a column (icon above text) with `flex-direction: column` on the root.
-
 ## Accessibility
 
 - A marker is presentational by default. Set `role: "status"` on a streaming or in-progress marker so assistive tech announces the update as it appears.

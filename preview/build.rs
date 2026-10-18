@@ -53,6 +53,7 @@ fn main() {
         let folder_path = folder.path();
         walk_markdown_dir(&folder_path, &out_dir).unwrap();
     }
+    write_variant_notes_index(&out_dir);
 
     // The component/variant registry (backlog row 219): `examples.rs` is the one `examples!(..)`
     // invocation `components/mod.rs` includes, derived from the directories instead of a list that
@@ -303,9 +304,155 @@ fn process_markdown_to_html(markdown_path: &std::path::Path) -> String {
         }
     }
 
+    // Only a component's `docs.md` is a page of sections; a variant's `notes.md` is one short note.
+    let events = if markdown_path.file_name() == Some(std::ffi::OsStr::new("docs.md")) {
+        wrap_sections_in_disclosures(events)
+    } else {
+        events
+    };
+
     let mut html_output = String::new();
     pulldown_cmark::html::push_html(&mut html_output, events.into_iter());
     html_output
+}
+
+/// The docs.md -> HTML "disclosure pass" (backlog row 233).
+///
+/// Every `##` section of a `docs.md` becomes a closed native `<details class="dx-docs-disclosure">`
+/// whose `<summary>` holds the `h2` (so the heading outline and its `id` anchor stay intact), and the
+/// text before the first `##` becomes a closed "Usage notes" disclosure. A page is then a short list of
+/// one-line rows instead of a wall of prose, and no `docs.md` has to be edited: a new section is
+/// collapsed by construction. `<details>` needs no hydration, so the closed state is the server's
+/// markup and nothing flashes. The site opens the disclosure that holds the URL fragment (`main.rs`,
+/// `use_open_disclosure_for_hash`).
+///
+/// The heading text equals `PAGE_HEADING_USAGE` in `main.rs`, which `docs_md_has_no_template_h2`
+/// reserves so a `docs.md` cannot declare the same heading.
+const USAGE_NOTES_HEADING: &str = "Usage notes";
+
+fn wrap_sections_in_disclosures(
+    events: Vec<pulldown_cmark::Event<'_>>,
+) -> Vec<pulldown_cmark::Event<'_>> {
+    use pulldown_cmark::{CowStr, Event, HeadingLevel, Tag, TagEnd};
+
+    fn is_h2_start(event: &Event<'_>) -> bool {
+        matches!(
+            event,
+            Event::Start(Tag::Heading {
+                level: HeadingLevel::H2,
+                ..
+            })
+        )
+    }
+    fn html(text: String) -> Event<'static> {
+        Event::Html(CowStr::Boxed(text.into_boxed_str()))
+    }
+    fn open(id: &str) -> Event<'static> {
+        html(format!(
+            "<details class=\"dx-docs-disclosure\"><summary><h2 id=\"docs-{id}\">"
+        ))
+    }
+    const BODY: &str = "</h2></summary><div class=\"dx-docs-disclosure-body\">\n";
+    const CLOSE: &str = "</div></details>\n";
+
+    let mut slugs: Vec<String> = Vec::new();
+    let mut unique_slug = |title: &str| {
+        let base = slugify(title);
+        let mut slug = base.clone();
+        let mut n = 2;
+        while slugs.contains(&slug) {
+            slug = format!("{base}-{n}");
+            n += 1;
+        }
+        slugs.push(slug.clone());
+        slug
+    };
+
+    let mut out = Vec::with_capacity(events.len() + 8);
+    let mut iter = events.into_iter().peekable();
+
+    // The text before the first `##`.
+    let mut intro = Vec::new();
+    while let Some(event) = iter.next_if(|event| !is_h2_start(event)) {
+        intro.push(event);
+    }
+    if !intro.is_empty() {
+        out.push(open(&unique_slug(USAGE_NOTES_HEADING)));
+        out.push(Event::Text(CowStr::Borrowed(USAGE_NOTES_HEADING)));
+        out.push(html(BODY.to_string()));
+        out.extend(intro);
+        out.push(html(CLOSE.to_string()));
+    }
+
+    while iter.peek().is_some() {
+        // `iter` is at a `##` start: take its inline events up to the matching end.
+        iter.next();
+        let mut title_events = Vec::new();
+        let mut title = String::new();
+        for event in iter.by_ref() {
+            match &event {
+                Event::End(TagEnd::Heading(_)) => break,
+                Event::Text(text) | Event::Code(text) => title.push_str(text),
+                _ => {}
+            }
+            title_events.push(event);
+        }
+        out.push(open(&unique_slug(&title)));
+        out.extend(title_events);
+        out.push(html(BODY.to_string()));
+        while let Some(event) = iter.next_if(|event| !is_h2_start(event)) {
+            out.push(event);
+        }
+        out.push(html(CLOSE.to_string()));
+    }
+    out
+}
+
+/// `Component Structure` -> `component-structure`; every run of non-alphanumerics is one dash.
+fn slugify(title: &str) -> String {
+    let mut slug = String::new();
+    for ch in title.chars() {
+        if ch.is_ascii_alphanumeric() {
+            slug.push(ch.to_ascii_lowercase());
+        } else if !slug.is_empty() && !slug.ends_with('-') {
+            slug.push('-');
+        }
+    }
+    slug.trim_end_matches('-').to_string()
+}
+
+/// Per-variant notes (backlog row 233): `variants/<variant>/notes.md` is the prose about one demo. It is
+/// rendered to `OUT_DIR/<component>/variants/<variant>/notes.html` by `walk_markdown_dir` like every
+/// other `.md`; this writes `OUT_DIR/variant_notes.rs`, a `variant_notes(component, variant)` lookup
+/// that `main.rs` `include!`s, so the page shows the note in a `<details>` under that demo. It is a
+/// generated lookup rather than a field of the `examples!` macro because the macro cannot test whether
+/// a file exists. `variants/` is excluded from the installed component (`component.json`), so a note
+/// never reaches a user's app.
+fn write_variant_notes_index(out_dir: &std::path::Path) {
+    let mut arms = Vec::new();
+    for component in std::fs::read_dir("src/components").unwrap().flatten() {
+        let variants_dir = component.path().join("variants");
+        let Ok(variants) = std::fs::read_dir(&variants_dir) else {
+            continue;
+        };
+        for variant in variants.flatten() {
+            let notes = variant.path().join("notes.md");
+            if !notes.is_file() {
+                continue;
+            }
+            let component = component.file_name().to_string_lossy().into_owned();
+            let variant = variant.file_name().to_string_lossy().into_owned();
+            arms.push(format!(
+                "        ({component:?}, {variant:?}) => Some(include_str!(concat!(env!(\"OUT_DIR\"), \"/{component}/variants/{variant}/notes.html\"))),\n"
+            ));
+        }
+    }
+    arms.sort();
+    let source = format!(
+        "/// Generated by `build.rs` (`write_variant_notes_index`): the rendered `variants/<variant>/notes.md`, if any.\nfn variant_notes(component: &str, variant: &str) -> Option<&'static str> {{\n    match (component, variant) {{\n{}        _ => None,\n    }}\n}}\n",
+        arms.concat()
+    );
+    std::fs::write(out_dir.join("variant_notes.rs"), source).unwrap();
 }
 
 fn read_component_description(component_json_path: &std::path::Path) -> String {

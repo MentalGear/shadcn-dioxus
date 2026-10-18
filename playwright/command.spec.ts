@@ -68,10 +68,10 @@ const activeElementId = (page: Page) => page.evaluate(() => document.activeEleme
 
 test("opens via CommandDialog with the input focused", async ({ page }) => {
     await open(page);
-    // WHATWG's `showModal()` dialog-focusing steps focus the first
-    // `autofocus` descendant -- `CommandInput` always carries `autofocus`
-    // (primitives/src/command.rs) specifically so this lands here rather
-    // than on the dialog element itself.
+    // A mouse click is a pointer open: the dialog driver's open-focus policy
+    // (`dxOpenFocus`, primitives/src/modality.rs) keeps the palette's search
+    // box for a mouse or keyboard open (`CommandInput`'s `data-dx-autofocus`)
+    // and leaves a touch open on the panel.
     await expect(input(page)).toBeFocused();
     await expect(list(page).getByRole("option")).toHaveCount(6);
 });
@@ -79,10 +79,8 @@ test("opens via CommandDialog with the input focused", async ({ page }) => {
 test("first mouse-click open focuses the command input, and a second open still does", async ({ page }) => {
     // Live-site user report: opening the command palette by mouse click the
     // *first* time doesn't focus the input. `primitives/src/command.rs`'s
-    // `CommandInput` doc has the full account of what this checks and why
-    // (both `autofocus` and an explicit `onmounted`-driven `set_focus` are
-    // exercised together here -- this test can't and doesn't try to isolate
-    // which one lands focus first).
+    // `CommandInput` doc has the account of the original report; focus is now
+    // set once, explicitly, by the dialog driver's open-focus policy.
     await page.goto(URL, { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState("networkidle");
 

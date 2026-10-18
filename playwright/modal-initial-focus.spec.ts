@@ -14,6 +14,12 @@
  * window global, no install order: the result is the same on every page, which the modal
  * Popover case proves on a page with no Dialog/AlertDialog root.
  *
+ * Row 226 replaced the `:focus-visible` read of the opener with the interaction modality (`<html
+ * data-dx-modality>`, written once by `primitives/src/modality.rs`; iOS keeps focus on a previously
+ * tapped field, which always matches `:focus-visible`) and the palette's `autofocus` with
+ * `data-dx-autofocus`: keyboard and mouse keep the search input, touch and pen focus the panel.
+ * `touch-open-focus.spec.ts` is the touch half (every overlay, iOS-like emulation).
+ *
  * Unchanged and re-proved here: Tab from the panel enters the dialog, Escape closes it and the
  * trigger gets focus back, and the latest modality wins on a second open.
  *
@@ -94,9 +100,12 @@ for (const consumer of CONSUMERS) {
         await open(page, consumer.component);
         await openedBy(page, trigger(page), "tap");
         await expect(dialog(page)).toBeVisible();
-        await expect.poll(() => whereIsFocus(page, consumer.dialogSelector)).toMatchObject(
-          ownAutofocus ? { inDialog: true, isDialog: false, tag: "INPUT" } : { isDialog: true, textEntry: false },
-        );
+        // The palette's search box is kept for a keyboard or a mouse, never for a tap (row 226): a
+        // tap leaves the panel focused and the user taps the field to type.
+        await expect.poll(() => whereIsFocus(page, consumer.dialogSelector)).toMatchObject({
+          isDialog: true,
+          textEntry: false,
+        });
       } finally {
         await context.close();
       }

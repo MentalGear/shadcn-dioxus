@@ -12,7 +12,7 @@
 //! mirrors that same one-family/many-demos split for this repo's
 //! `ChartKind::Line`, one `variants/<demo>/mod.rs` per shadcn source file
 //! (see each variant's own doc comment for its citation). The installable
-//! unit is still `chart` (`dx components add chart`); this gallery has
+//! unit is still `chart` (`shadcn-dioxus add chart`); this gallery has
 //! nothing of its own to install beyond what that package already ships.
 //!
 //! Re-exports `chart`'s themed pieces unchanged so every variant here
@@ -25,7 +25,7 @@
 //! component is not itself a `dioxus_primitives::` reference).
 //!
 //! Re-exports `crate::components::chart::*`, the path a user's own tree has
-//! after `dx components add chart` (there `chart/mod.rs` is `mod component;
+//! after `shadcn-dioxus add chart` (there `chart/mod.rs` is `mod component;
 //! pub use component::*;`). Never reach into `chart::component::` directly:
 //! that module is private once installed (`scripts/check-installed-paths.sh`).
 pub use crate::components::chart::*;

@@ -14,7 +14,7 @@ use crate::components::input::Input;
 
 // docs/backlog.md row 32: `#[css_module]` is gone -- see checkbox/component.rs's
 // header comment for the full delivery-mechanism rationale (asset!() +
-// document::Link, embedded in the wrapper so a `dx components add
+// document::Link, embedded in the wrapper so a `shadcn-dioxus add
 // color_picker`-copied component needs no extra wiring).
 //
 // This component is also on the row-32 "not already namespaced" lane: before

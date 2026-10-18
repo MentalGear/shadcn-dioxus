@@ -67,7 +67,8 @@ fn return_focus_to_trigger() {
     let _ = dioxus::document::eval(
         r#"const open = document.activeElement && document.activeElement.closest('[popover][aria-labelledby], dialog[aria-labelledby]');
         const trigger = open && document.getElementById(open.getAttribute('aria-labelledby'));
-        if (trigger) trigger.focus();"#,
+        // focus-ok: restore to the trigger; not after a touch or pen (modality.rs: a script-focused trigger rings on iOS)
+        if (trigger && !/^(touch|pen)$/.test(document.documentElement.getAttribute('data-dx-modality') || '')) trigger.focus();"#,
     );
 }
 

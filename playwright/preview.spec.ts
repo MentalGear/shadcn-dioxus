@@ -51,7 +51,14 @@ test.describe("style tab", () => {
     await page.goto(`${BASE_URL}/component/?name=kbd`);
 
     await page.getByRole("heading", { name: "kbd" }).waitFor({ state: "visible" });
+    // Installation and "Manual installation files" are both closed by default (rows 233, 236): the
+    // reader opens Installation, then the manual files.
+    const manual = page.locator("details.dx-component-manual-install");
+    await expect(manual).not.toHaveJSProperty("open", true);
+    await page.locator("summary", { has: page.locator("h2#installation") }).click();
+    await expect(manual).not.toHaveJSProperty("open", true);
     await page.locator("summary", { hasText: "Manual installation" }).click();
+    await expect(manual).toHaveJSProperty("open", true);
     await page.getByRole("tab", { name: "style.css" }).click();
 
     const styleCode = page.locator("pre code", { hasText: ".dx-kbd" });

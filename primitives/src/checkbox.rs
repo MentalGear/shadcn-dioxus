@@ -142,6 +142,7 @@ pub fn Checkbox(props: CheckboxProps) -> Element {
     // a mounted ref so we can explicitly focus on click, matching what
     // Radix UI / Headless UI / Material UI do for the same reason.
     let mut button_ref: Signal<Option<Rc<MountedData>>> = use_signal(|| None);
+    let press = crate::modality::use_press_kind();
 
     // `type` is an overridable default; the rest is this checkbox's own
     // functional state (role/aria-checked/aria-required define the widget,
@@ -162,13 +163,20 @@ pub fn Checkbox(props: CheckboxProps) -> Element {
             disabled: props.disabled,
 
             onmounted: move |evt| button_ref.set(Some(evt.data())),
+            onpointerdown: move |evt| press.pressed(&evt),
             onclick: move |_| {
                 let new_checked = !checked();
                 set_checked.call(new_checked);
-                if let Some(node) = button_ref() {
-                    spawn(async move {
-                        let _ = node.set_focus(true).await;
-                    });
+                // Safari does not focus a clicked button; a mouse click focuses it here. Not after a
+                // touch or pen press: a tap that script-focuses the control makes it `:focus-visible`
+                // (it rings) and dismisses the keyboard of a field the user was typing in.
+                if !press.was_touch() {
+                    if let Some(node) = button_ref() {
+                        spawn(async move {
+                            // focus-ok: Safari click-focus remedy, mouse presses only (modality.rs)
+                            let _ = node.set_focus(true).await;
+                        });
+                    }
                 }
             },
 

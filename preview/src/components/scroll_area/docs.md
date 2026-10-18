@@ -55,7 +55,7 @@ Custom properties, set inline or on a class of your own:
 
 Notes:
 
-- **Link `dx-effects.css`** once at the app root next to `dx-components-theme.css`; the `scroll_area`, `virtual_list` and `message_scroller` registry entries list it in `globalAssets`, so `dx components add` copies it. It is a global sheet rather than part of this component's `style.css` because it also registers the `@property` custom properties and keyframes that every fading scroller shares, so there is exactly one copy of them; without the sheet the prop adds a class that matches nothing.
+- **Link `dx-effects.css`** once at the app root next to `dx-components-theme.css`; the `scroll_area`, `virtual_list` and `message_scroller` registry entries list it in `globalAssets`, so `shadcn-dioxus add` copies it. It is a global sheet rather than part of this component's `style.css` because it also registers the `@property` custom properties and keyframes that every fading scroller shares, so there is exactly one copy of them; without the sheet the prop adds a class that matches nothing.
 - The fade is a mask on the scroller, so a border or background on the same element fades with the content. Put those on a wrapper (as the demo does) and the class on the inner scroller. A visible scrollbar fades too; pair the fade with `scrollbar-width: none` (`ScrollType::Hidden`) to hide it.
 - Inline fades follow the reading direction: `ScrollFade::X` and `Start`/`End` mirror when the scroller (or an ancestor) is `dir="rtl"`. The `fade` variant has a button that flips its horizontal strip.
 - The element must scroll on that axis (`ScrollDirection::Vertical` for `Y`/`Top`/`Bottom`, `Horizontal` for `X`/`Start`/`End`); the animation timeline is the element's own scroll position.

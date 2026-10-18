@@ -51,6 +51,8 @@ import { test, expect } from "../../fixtures";
 import { type Page } from "@playwright/test";
 import { BASE_URL } from "../../base-url";
 import { gotoHydrated } from "../../hydration";
+import { measureAtRest } from "../../animations";
+import { demoRole } from "../../demo-frame";
 
 const NAV_TIMEOUT = 20 * 60 * 1000; // first run compiles the app
 const MOBILE_VIEWPORT = { width: 390, height: 844 };
@@ -68,13 +70,13 @@ const CASES: {
     // pointerdown-open: the family the 2026-10-03 audit found exposed.
     name: "NavbarTrigger (opens on pointerdown)",
     url: `${BASE_URL}/component/?name=navbar&`,
-    trigger: (page) => page.getByRole("menuitem", { name: "Inputs" }),
+    trigger: (page) => demoRole(page, "menuitem", 0),
   },
   {
     // click-open control: must stay green regardless of hold length.
     name: "DropdownMenuTrigger (opens on click)",
     url: `${BASE_URL}/component/?name=dropdown_menu&`,
-    trigger: (page) => page.getByRole("button", { name: "Open Menu" }),
+    trigger: (page) => demoRole(page, "button"),
   },
 ];
 
@@ -88,7 +90,7 @@ for (const kase of CASES) {
       await gotoHydrated(page, kase.url, { timeout: NAV_TIMEOUT });
       const trigger = kase.trigger(page).first();
       await trigger.scrollIntoViewIfNeeded();
-      const box = await trigger.boundingBox();
+      const box = await measureAtRest(trigger);
       if (!box) throw new Error("trigger has no bounding box");
       const x = box.x + box.width / 2;
       const y = box.y + box.height / 2;

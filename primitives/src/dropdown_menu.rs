@@ -506,6 +506,7 @@ pub struct DropdownMenuTriggerProps {
 pub fn DropdownMenuTrigger(props: DropdownMenuTriggerProps) -> Element {
     let ctx: DropdownMenuContext = use_context();
     let mut element = use_signal(|| None::<Rc<MountedData>>);
+    let press = crate::modality::use_press_kind();
 
     let open = ctx.open;
     let disabled = ctx.disabled;
@@ -533,6 +534,7 @@ pub fn DropdownMenuTrigger(props: DropdownMenuTriggerProps) -> Element {
         onmounted: move |e: MountedEvent| {
             element.set(Some(e.data()));
         },
+        onpointerdown: move |evt: PointerEvent| press.pressed(&evt),
         onclick: move |_| {
             if disabled() {
                 return;
@@ -543,10 +545,15 @@ pub fn DropdownMenuTrigger(props: DropdownMenuTriggerProps) -> Element {
 
             // Focus the element on click. Safari does not do this automatically.
             // https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/button#clicking_and_focus
-            if let Some(data) = element() {
-                spawn(async move {
-                    _ = data.set_focus(true).await;
-                });
+            // A mouse press only: after a touch or pen press the script focus would make the
+            // trigger `:focus-visible` (it rings) and dismiss a field's software keyboard.
+            if !press.was_touch() {
+                if let Some(data) = element() {
+                    spawn(async move {
+                        // focus-ok: Safari click-focus remedy, mouse presses only (modality.rs)
+                        _ = data.set_focus(true).await;
+                    });
+                }
             }
         },
         // `docs/backlog.md` row 85: this used to carry its own `onblur`,
@@ -2038,6 +2045,7 @@ fn DropdownMenuSubContentRendered(
             sub.set_open.call(false);
             sub.focus.clear_focus();
             let trigger_id = trigger_id.cloned();
+            // focus-ok: ArrowLeft/Escape in a submenu (keyboard only) hands focus to its trigger
             dioxus::document::eval(&format!(
                 "var e=document.getElementById('{trigger_id}');if(e)e.focus()"
             ));
@@ -2151,6 +2159,7 @@ fn DropdownMenuSubContentRendered(
             sub.set_open.call(false);
             sub.focus.clear_focus();
             let trigger_id = trigger_id.cloned();
+            // focus-ok: ArrowLeft/Escape in a submenu (keyboard only) hands focus to its trigger
             dioxus::document::eval(&format!(
                 "var e=document.getElementById('{trigger_id}');if(e)e.focus()"
             ));

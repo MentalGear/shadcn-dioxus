@@ -9,7 +9,7 @@ use dioxus_primitives::tag_group::{
 // docs/backlog.md row 32: `#[css_module]` is gone -- see checkbox/component.rs's
 // header comment for the full delivery-mechanism rationale (asset!() +
 // document::Link, embedded in every exported entry point of this file so a
-// `dx components add tag_group`-copied component needs no extra wiring).
+// `shadcn-dioxus add tag_group`-copied component needs no extra wiring).
 //
 // This component is also on the row-32 "not already namespaced" lane, and
 // its `.dx-remove-button` is one of the two genuine cross-component

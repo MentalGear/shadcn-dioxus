@@ -5,7 +5,7 @@
 # HTML title tag content
 title = "{{project-name}}"
 
-# `dx components add <name>` reads this registry (shadcn-dioxus) instead of dx's default one,
-# so no `--git` flag is needed.
+# `shadcn-dioxus add <name>` reads this registry; so does a plain `dx components add <name>`
+# (instead of dx's default one), without a `--git` flag.
 [components.registry]
 git = "https://github.com/MentalGear/shadcn-dioxus"

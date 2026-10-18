@@ -5,6 +5,7 @@ import { BASE_URL } from './base-url';
 import { gotoHydrated } from './hydration';
 import { fixedViewportBox } from './viewport-box';
 import { expectFadeKeepsTransform } from './assert-anchor-transform';
+import { measureAtRest, readAtRest } from "./animations";
 
 const URL = `${BASE_URL}/component/?name=navigation_menu&`;
 const GOTO = { timeout: 20 * 60 * 1000 }; // Increase timeout to 20 minutes
@@ -330,11 +331,11 @@ test.describe('Panel layout matches shadcn (owner report: oversized panel, invis
 
       test('the panel is compact (<= 520px wide) and stays inside the viewport', async ({ page }) => {
         await openPanel(page, 'Getting started');
-        const box = await page.evaluate((sel) => {
-          const el = document.querySelector<HTMLElement>(sel)!;
+        const box = await readAtRest(page.locator(OPEN_PANEL).first(), (e) => {
+          const el = e as HTMLElement;
           const r = el.getBoundingClientRect();
           return { width: el.offsetWidth, left: r.left, right: r.right };
-        }, OPEN_PANEL);
+        });
         const fixedBox = await fixedViewportBox(page);
         // shadcn's grid is `lg:w-[500px]`; plus the panel's own padding.
         expect(box.width).toBeLessThanOrEqual(520);
@@ -393,8 +394,8 @@ test.describe('Panel layout matches shadcn (owner report: oversized panel, invis
         // Owner report: "the text [is] at the bottom" -- shadcn's `justify-end`
         // pinned the title to the foot of a card as tall as the three list rows.
         await openPanel(page, 'Getting started');
-        const m = await page.evaluate((sel) => {
-          const card = document.querySelector<HTMLElement>(`${sel} .dx-navigation-menu-featured`)!;
+        const m = await readAtRest(page.locator(OPEN_PANEL).first(), (panel) => {
+          const card = panel.querySelector<HTMLElement>('.dx-navigation-menu-featured')!;
           const title = card.querySelector<HTMLElement>('.dx-navigation-menu-link-title')!;
           const t = getComputedStyle(title);
           return {
@@ -403,7 +404,7 @@ test.describe('Panel layout matches shadcn (owner report: oversized panel, invis
             titleSize: t.fontSize,
             titleWeight: t.fontWeight,
           };
-        }, OPEN_PANEL);
+        });
         expect(m.titleOffset).toBeLessThanOrEqual(24);
         // text-lg line-height is 28px: one line, not two (a wrapped title is 56px).
         expect(m.titleHeight).toBeLessThanOrEqual(32);
@@ -578,7 +579,7 @@ test.describe('open_on_hover: false (click activation)', () => {
     await expect(link).toBeVisible();
     // pointerdown on the link must not dismiss before the click lands.
     await page.mouse.move(0, 0);
-    const box = await link.boundingBox();
+    const box = await measureAtRest(link);
     if (!box) throw new Error('no box for the panel link');
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     await page.mouse.down();

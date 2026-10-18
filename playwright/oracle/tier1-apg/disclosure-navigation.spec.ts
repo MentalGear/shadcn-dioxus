@@ -90,6 +90,7 @@ import { type Page } from "@playwright/test";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { BASE_URL } from "../../base-url";
+import { demoFrame } from "../../demo-frame";
 
 const REFERENCE_ROOT = path.resolve(__dirname, "../reference/7e4034b/content/patterns");
 const referenceUrl = pathToFileURL(
@@ -108,7 +109,7 @@ const LIBRARY_GOTO = { timeout: 20 * 60 * 1000 };
  * than one element (confirmed live: 3 page-wide vs. 1 once scoped here).
  */
 function libraryNav(page: Page) {
-  return page.getByRole("navigation", { name: "Component navigation menu" });
+  return demoFrame(page).getByRole("navigation").first();
 }
 
 test.describe("Reference: W3C's own Disclosure Navigation example", () => {
@@ -182,7 +183,7 @@ test.describe("Library: navigation_menu primitive", () => {
   test("R1: each trigger is a button with aria-expanded reflecting state and aria-controls naming the panel", async ({ page }) => {
     await page.goto(LIBRARY_URL, LIBRARY_GOTO);
 
-    const trigger = libraryNav(page).getByRole("button", { name: "Getting started" });
+    const trigger = libraryNav(page).getByRole("button").first();
     await expect(trigger).toHaveAttribute("aria-expanded", "false");
     const controls = await trigger.getAttribute("aria-controls");
     expect(controls).toBeTruthy();
@@ -195,7 +196,7 @@ test.describe("Library: navigation_menu primitive", () => {
   test("R2: Enter and Space each toggle the trigger", async ({ page }) => {
     await page.goto(LIBRARY_URL, LIBRARY_GOTO);
 
-    const trigger = libraryNav(page).getByRole("button", { name: "Getting started" });
+    const trigger = libraryNav(page).getByRole("button").first();
     await trigger.focus();
     await expect(trigger).toHaveAttribute("aria-expanded", "false");
 
@@ -209,7 +210,7 @@ test.describe("Library: navigation_menu primitive", () => {
   test("R3: Escape closes the open panel and returns focus to its trigger", async ({ page }) => {
     await page.goto(LIBRARY_URL, LIBRARY_GOTO);
 
-    const trigger = libraryNav(page).getByRole("button", { name: "Getting started" });
+    const trigger = libraryNav(page).getByRole("button").first();
     await trigger.focus();
     await trigger.click();
     await expect(trigger).toHaveAttribute("aria-expanded", "true");
@@ -229,7 +230,7 @@ test.describe("Library: navigation_menu primitive", () => {
     await expect(nav.locator('[role="menu"]')).toHaveCount(0);
     await expect(nav.locator('[role="menuitem"]')).toHaveCount(0);
 
-    await nav.getByRole("button", { name: "Getting started" }).click();
+    await nav.getByRole("button").first().click();
     // The disclosed panel is promoted to the top layer for *painting* on
     // the web arm (`primitives/src/navigation_menu.rs`'s module doc, "Top
     // layer"), via the native Popover API's `showPopover()` -- this never
@@ -242,26 +243,26 @@ test.describe("Library: navigation_menu primitive", () => {
   test("R5: Tab from an open trigger enters the panel's first link", async ({ page }) => {
     await page.goto(LIBRARY_URL, LIBRARY_GOTO);
 
-    const trigger = libraryNav(page).getByRole("button", { name: "Getting started" });
+    const trigger = libraryNav(page).getByRole("button").first();
     await trigger.focus();
     await trigger.click();
     await expect(trigger).toHaveAttribute("aria-expanded", "true");
 
     await page.keyboard.press("Tab");
-    await expect(libraryNav(page).getByRole("link", { name: "Component Library" })).toBeFocused();
+    await expect(libraryNav(page).getByRole("link").first()).toBeFocused();
   });
 
   test('R6: Home/End move focus to the first/last top-level item ("moves focus to the first/last item")', async ({ page }) => {
     await page.goto(LIBRARY_URL, LIBRARY_GOTO);
 
-    const gettingStarted = libraryNav(page).getByRole("button", { name: "Getting started" });
-    const components = libraryNav(page).getByRole("button", { name: "Components" });
+    const gettingStarted = libraryNav(page).getByRole("button").first();
+    const components = libraryNav(page).getByRole("button").nth(1);
     // The demo's own last top-level item (`preview/src/components/
     // navigation_menu/variants/main/mod.rs`'s `index: 2usize`) is a plain
     // link, not a trigger -- End moving there proves this isn't scoped to
     // triggers alone, matching the reference row's own "top-level link OR
     // button" wording.
-    const docsLink = libraryNav(page).getByRole("link", { name: "Docs" });
+    const docsLink = libraryNav(page).getByRole("link").last();
 
     await components.focus();
     await page.keyboard.press("End");
@@ -274,7 +275,7 @@ test.describe("Library: navigation_menu primitive", () => {
   test('R6: ArrowDown/ArrowUp move within an open panel\'s links and stop at the ends ("If ... not the last/first link, moves focus to the next/previous link")', async ({ page }) => {
     await page.goto(LIBRARY_URL, LIBRARY_GOTO);
 
-    const trigger = libraryNav(page).getByRole("button", { name: "Getting started" });
+    const trigger = libraryNav(page).getByRole("button").first();
     await trigger.focus();
     await trigger.click();
     await expect(trigger).toHaveAttribute("aria-expanded", "true");
@@ -283,12 +284,7 @@ test.describe("Library: navigation_menu primitive", () => {
     // "Component Library" (the featured card), "Introduction", "Button",
     // "Input" -- four links, so "Input" is the last one ArrowDown should
     // ever reach.
-    const links = [
-      libraryNav(page).getByRole("link", { name: "Component Library" }),
-      libraryNav(page).getByRole("link", { name: "Introduction" }),
-      libraryNav(page).getByRole("link", { name: "Button" }),
-      libraryNav(page).getByRole("link", { name: "Input" }),
-    ];
+    const links = [0, 1, 2, 3].map((i) => libraryNav(page).getByRole("link").nth(i));
 
     await page.keyboard.press("Tab");
     await expect(links[0]).toBeFocused();
@@ -317,12 +313,12 @@ test.describe("Library: navigation_menu primitive", () => {
   test('R6: ArrowDown on a closed trigger opens its panel and focuses the first link (this library\'s own extension of "moves focus to the first link in the dropdown")', async ({ page }) => {
     await page.goto(LIBRARY_URL, LIBRARY_GOTO);
 
-    const trigger = libraryNav(page).getByRole("button", { name: "Getting started" });
+    const trigger = libraryNav(page).getByRole("button").first();
     await trigger.focus();
     await expect(trigger).toHaveAttribute("aria-expanded", "false");
 
     await page.keyboard.press("ArrowDown");
     await expect(trigger).toHaveAttribute("aria-expanded", "true");
-    await expect(libraryNav(page).getByRole("link", { name: "Component Library" })).toBeFocused();
+    await expect(libraryNav(page).getByRole("link").first()).toBeFocused();
   });
 });
