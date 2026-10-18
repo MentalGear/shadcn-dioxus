@@ -18,7 +18,8 @@
          releases it ~300 ms after the last scroll event (4 s at most), by which time each card has recorded its
          true height for `contain-intrinsic-size: auto`. Three entry points, all fragment navigations:
            * a click on a same-page `a[href^="#"]`: capture phase, so the layout is final before the browser's own
-             (smooth) scroll runs; it is left to do the scrolling;
+             scroll runs; it is left to do the scrolling, and animates it because this handler opts that one jump in
+             (`html[data-anchor-scroll] { scroll-behavior: smooth }`, main.css; smooth is never ambient);
            * a fresh load of `<page>#id`: set from the first layout, so the browser's load-time fragment scroll of
              the static HTML is exact; and, because a client-rendered page has no target yet when the browser looks
              for it, scrolls there itself once the element exists;
@@ -28,7 +29,7 @@
          and re-aimed for up to 1 s while the layout settles; any wheel/touch/key/pointer input ends that. -->
     <script>
 (function () {
-  var R = document.documentElement, ATTR = 'data-cv-settle';
+  var R = document.documentElement, ATTR = 'data-cv-settle', SMOOTH = 'data-anchor-scroll';
   var held = false, timer = 0, t0 = 0, last = 0, skip = '', skipAt = 0, quit = null;
 
   function id(h) { try { return decodeURIComponent((h || '').replace(/^#/, '')); } catch (e) { return ''; } }
@@ -41,7 +42,7 @@
     held = true; R.setAttribute(ATTR, ''); addEventListener('scroll', bump, { passive: true });
   }
   function release() {
-    clearTimeout(timer); held = false; R.removeAttribute(ATTR); removeEventListener('scroll', bump);
+    clearTimeout(timer); held = false; R.removeAttribute(ATTR); R.removeAttribute(SMOOTH); removeEventListener('scroll', bump);
   }
   function tick() {
     var now = performance.now();
@@ -82,11 +83,15 @@
        has hydrated it as well as after, and in a block-demo iframe (same document shell). Propagation is not
        stopped, so a demo's own `onclick` still runs. (`oracle/tier2-html/demo-placeholder-links.spec.ts`) */
     if (a && a.getAttribute('href') === '#') { e.preventDefault(); return; }
+    /* Smooth scrolling is opt-in (main.css `html[data-anchor-scroll]`): any click that is not a same-page anchor
+       jump ends the previous jump's window, so the router's scrollTo(0, 0) right after it is never animated. */
+    R.removeAttribute(SMOOTH);
     if (!a || e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || (a.target && a.target !== '_self')) return;
     var n = id(a.getAttribute('href')), t = el(n);
     if (!t) return;
     skip = n; skipAt = performance.now();   /* the hashchange this click causes needs no second scroll */
     settle(t);
+    R.setAttribute(SMOOTH, '');   /* the browser's own fragment scroll, run after this handler, animates; release() clears it */
   }, true);
 
   /* listener-ok: page-lifetime by design -- Back/Forward to a #hash, installed once with the click listener above */

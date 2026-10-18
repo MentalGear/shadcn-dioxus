@@ -30,8 +30,8 @@
  * has a remembered size), and the forced-render window that makes this exact ends: `data-cv-settle` is
  * gone from `<html>` and the cards are skipped again.
  *
- * Chromium only. The fixtures' `scroll-behavior: auto !important` (see ../../fixtures.ts) is lifted after
- * load for the click cases so they run with the site's real `scroll-behavior: smooth`. Run:
+ * Chromium only. The page's own `scroll-behavior` runs (smooth only while `data-anchor-scroll` is set on
+ * `<html>`, see ../../fixtures.ts); the click cases pin `smooth`/`auto` inline per case. Run:
  *   PLAYWRIGHT_BASE_URL=http://127.0.0.1:8083 npx playwright test --config=oracle.local.config.ts \
  *     ./oracle/tier2-html/anchor-landing.spec.ts
  *
@@ -75,7 +75,7 @@ async function sectionIds(page: Page): Promise<string[]> {
   );
 }
 
-/** Real users get `html { scroll-behavior: smooth }`; the fixtures force `auto`. Restore either for the page. */
+/** Pin the root `scroll-behavior` inline for the page, so a case runs under either behavior regardless of the site's own opt-in. */
 async function scrollBehavior(page: Page, behavior: "smooth" | "auto") {
   await page.evaluate((b) => document.documentElement.style.setProperty("scroll-behavior", b, "important"), behavior);
 }

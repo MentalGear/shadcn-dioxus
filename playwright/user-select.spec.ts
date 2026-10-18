@@ -1,0 +1,177 @@
+/**
+ * Controls are not text (dev-docs/backlog.md row 229; gate `scripts/check-theme-baseline.sh`, arm 4).
+ *
+ * The owner: "interactive elements like btns etc. should not allow user text selection". The theme has ONE
+ * zero-specificity rule (`dx-components-theme.css`, "Controls are not text") giving every `dx-` button,
+ * `[role=button]`, `summary` and menu-item/option/tab/switch/checkbox/radio/slider role
+ * `-webkit-user-select: none; user-select: none`. It deliberately does NOT reach text fields, `spinbutton`
+ * date segments, the `[tabindex]` catch-all (prose, code) or `a[href]`.
+ *
+ *   1. computed style: on a sweep of component pages EVERY `dx-` control the rule names computes `none` (no
+ *      per-component list to keep in step), and the Safari spelling is declared on the same rule;
+ *   2. behaviour: a double-click and a drag that starts on a button / tab / accordion trigger leave an empty
+ *      selection, and Select All (Ctrl+A) on the page skips the control labels but keeps the prose;
+ *   3. the other side: inputs, textareas, prose, code and links stay selectable (computed style + a real
+ *      selection).
+ *
+ *   PLAYWRIGHT_BASE_URL=http://127.0.0.1:8147 npx playwright test --config=ssg.local.config.ts user-select.spec.ts
+ */
+import { test, expect } from "./fixtures";
+import type { Page } from "@playwright/test";
+import { baseUrlOr } from "./base-url";
+import { gotoHydrated } from "./hydration";
+
+const BASE = baseUrlOr("http://127.0.0.1:8080");
+
+async function open(page: Page, path: string) {
+  await page.route(
+    (url) => !["127.0.0.1", "localhost"].includes(url.hostname),
+    (route) => route.abort(),
+  );
+  await gotoHydrated(page, `${BASE}${path}`);
+}
+
+const DX = '[class^="dx-"], [class*=" dx-"]';
+/** The theme rule's list, as a selector: what MUST compute `user-select: none`. */
+const CONTROLS = [
+  "button",
+  '[role="button"]',
+  "summary",
+  ...["menuitem", "menuitemcheckbox", "menuitemradio", "option", "tab", "switch", "checkbox", "radio", "slider"].map(
+    (r) => `[role="${r}"]`,
+  ),
+]
+  .flatMap((s) => [`${s}[class^="dx-"]`, `${s}[class*=" dx-"]`])
+  .join(", ");
+
+const SWEEP = [
+  "button", "button_group", "toggle", "toggle_group", "tabs", "accordion", "collapsible", "switch", "checkbox",
+  "radio_group", "slider", "badge", "pagination", "breadcrumb", "calendar", "carousel", "tag_group", "toolbar",
+  "dropdown_menu", "menubar", "select", "combobox", "command", "navigation_menu", "dialog", "sheet", "drawer",
+  "popover", "sidebar", "field", "form", "input_group", "date_picker", "color_picker", "toast", "alert_dialog",
+];
+
+for (const name of SWEEP) {
+  test(`every control on /component/${name}/ computes user-select: none`, async ({ page }) => {
+    await open(page, `/component/${name}/`);
+    const bad = await page.evaluate((sel) => {
+      return [...document.querySelectorAll<HTMLElement>(sel)]
+        .filter((el) => getComputedStyle(el).userSelect !== "none")
+        .map((el) => `${el.tagName.toLowerCase()}${el.getAttribute("role") ? `[role=${el.getAttribute("role")}]` : ""}.${String(el.className).split(/\s+/)[0]}`);
+    }, CONTROLS);
+    expect(bad, "controls that stayed text-selectable").toEqual([]);
+    const count = await page.locator(CONTROLS).count();
+    expect(count, "the page has controls to check").toBeGreaterThan(0);
+  });
+}
+
+test("the Safari spelling is declared on the same theme rule", async ({ request }) => {
+  const html = await (await request.get(`${BASE}/`)).text();
+  const href = html.match(/href="([^"]*dx-components-theme[^"]*\.css)"/)?.[1] ?? html.match(/href="([^"]*main[^"]*\.css)"/)?.[1];
+  expect(href, "a theme stylesheet link in the prerendered head").toBeTruthy();
+  // The theme is bundled into the site's CSS; find any stylesheet that holds the rule.
+  const sheets = [...html.matchAll(/href="([^"]+\.css)"/g)].map((m) => m[1]);
+  let found = false;
+  for (const s of sheets) {
+    const css = await (await request.get(new URL(s, `${BASE}/`).toString())).text();
+    if (/-webkit-user-select:\s*none;?\s*user-select:\s*none/.test(css)) found = true;
+  }
+  expect(found, "a stylesheet declares -webkit-user-select: none beside user-select: none").toBe(true);
+});
+
+test.describe("a double-click or a drag on a control selects nothing", () => {
+  const selection = (page: Page) => page.evaluate(() => (window.getSelection()?.toString() ?? "").trim());
+
+  for (const [path, locator, what] of [
+    ["/component/button/", "button.dx-button:visible", "Button"],
+    ["/component/tabs/", '[role="tab"]:visible', "Tab"],
+    ["/component/accordion/", "button.dx-accordion-trigger:visible", "Accordion trigger"],
+  ] as const) {
+    test(`${what}: dblclick and drag`, async ({ page }) => {
+      await open(page, path);
+      const target = page.locator(locator).first();
+      await expect(target).toBeVisible();
+      const label = (await target.innerText()).trim();
+      await target.scrollIntoViewIfNeeded();
+      const box = (await target.boundingBox())!;
+
+      // A browser never starts a selection on a button itself; the visitor's real gesture is a drag that
+      // starts in the empty space beside the control (or in text above it) and sweeps across it.
+      const y = box.y + box.height / 2;
+      await page.mouse.move(Math.max(1, box.x - 40), y);
+      await page.mouse.down();
+      await page.mouse.move(box.x + box.width / 2, y, { steps: 8 });
+      await page.mouse.move(box.x + box.width + 40, y + 2, { steps: 8 });
+      await page.mouse.up();
+      expect(await selection(page), `${what} "${label}": a drag sweeping across the control`).not.toContain(label);
+
+      await page.mouse.click(box.x - 40, y); // collapse
+      await page.mouse.dblclick(box.x + box.width / 2, y);
+      expect(await selection(page), `${what} "${label}": double-click`).not.toContain(label);
+    });
+  }
+
+  test("Select All keeps the prose and skips the control labels", async ({ page }) => {
+    await open(page, "/component/button/");
+    const label = (await page.locator("button.dx-button:visible").first().innerText()).trim();
+    const prose = (await page.locator("main h1, #main-content h1").first().innerText()).trim();
+    expect(label.length).toBeGreaterThan(0);
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    await page.keyboard.press("Control+A");
+    const all = await page.evaluate(() => window.getSelection()?.toString() ?? "");
+    expect(all, "prose is selected").toContain(prose);
+    // The first Button demo's label may also appear as prose elsewhere (docs text); the controls themselves
+    // contribute nothing, so count the control's own text nodes that the selection kept.
+    const kept = await page.evaluate((sel) => {
+      const s = window.getSelection()!;
+      return [...document.querySelectorAll<HTMLElement>(sel)].filter((el) => s.containsNode(el, true) && el.innerText.trim() && s.toString().includes(el.innerText.trim()) && getComputedStyle(el).userSelect !== "none").length;
+    }, CONTROLS);
+    expect(kept).toBe(0);
+  });
+});
+
+test.describe("text fields, prose, code and links stay selectable", () => {
+  test("input and textarea select their text", async ({ page }) => {
+    for (const [path, sel] of [
+      ["/component/input/", "input.dx-input:visible"],
+      ["/component/textarea/", "textarea.dx-textarea:visible"],
+    ] as const) {
+      await open(page, path);
+      const field = page.locator(sel).first();
+      await field.fill("hello selectable world");
+      expect(await field.evaluate((el) => getComputedStyle(el).userSelect), `${path} computed`).not.toBe("none");
+      await field.dblclick({ position: { x: 12, y: 8 } });
+      const selected = await field.evaluate((el: HTMLInputElement) => el.value.slice(el.selectionStart ?? 0, el.selectionEnd ?? 0));
+      expect(selected.length, `${path}: a double-click selects a word`).toBeGreaterThan(0);
+    }
+  });
+
+  test("a native select, prose, code and links are not user-select: none", async ({ page }) => {
+    await open(page, "/component/native_select/");
+    expect(
+      await page.locator("select.dx-native-select:visible, select[class*='dx-']:visible").first().evaluate((el) => getComputedStyle(el).userSelect),
+    ).not.toBe("none");
+
+    await open(page, "/docs");
+    const result = await page.evaluate(() => {
+      const us = (el: Element | null) => (el ? getComputedStyle(el).userSelect : "missing");
+      const main = document.querySelector("main, #main-content")!;
+      return {
+        paragraph: us(main.querySelector("p")),
+        link: us(main.querySelector("a[href]:not(button *)")),
+        code: us(main.querySelector("code, pre")),
+        focusableProse: us(main.querySelector('[tabindex]:not([tabindex="-1"]):not(button):not(a):not(input)')),
+      };
+    });
+    expect(result.paragraph).not.toBe("none");
+    expect(result.link).not.toBe("none");
+    expect(result.code).not.toBe("none");
+    expect(result.focusableProse === "missing" || result.focusableProse !== "none").toBe(true);
+
+    // And a real selection: triple-click a docs paragraph.
+    const p = page.locator("main p, #main-content p").filter({ hasText: /.{60,}/ }).first();
+    await p.scrollIntoViewIfNeeded();
+    await p.click({ clickCount: 3 });
+    expect((await page.evaluate(() => window.getSelection()?.toString() ?? "")).trim().length).toBeGreaterThan(10);
+  });
+});

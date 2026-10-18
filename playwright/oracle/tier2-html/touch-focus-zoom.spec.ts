@@ -119,6 +119,7 @@ import { type Page } from "@playwright/test";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "../../axe";
 import { BASE_URL } from "../../base-url";
 import { gotoHydrated } from "../../hydration";
+import { demoRole } from "../../demo-frame";
 
 // Playwright's iPhone descriptors default to WebKit (`defaultBrowserType:
 // "webkit"`), which this repo's local lanes do not ship; the rule under test
@@ -296,7 +297,7 @@ test.describe("overlay-gated elements (coarse pointer, desktop-width viewport)",
     // Open from the keyboard, as combobox.spec.ts's keyboard test does.
     // By accessible name: the navbar's language <select> also has the
     // combobox role and precedes the Combobox input in DOM order.
-    const trigger = page.getByRole("combobox", { name: "Select framework" });
+    const trigger = demoRole(page, "combobox");
     await trigger.focus();
     await page.keyboard.press("ArrowDown");
     await expect(page.locator("[role='listbox'][data-state='open']")).toBeVisible();
@@ -334,7 +335,7 @@ for (const name of COMPONENTS) {
 test("overlay: color_picker popover open (hex field stays >= 16px)", async ({ page }) => {
   const route = `${BASE}/component/?name=color_picker&`;
   await gotoHydrated(page, route, { timeout: 60000 });
-  const trigger = page.getByRole("button", { name: /Color picker/i }).first();
+  const trigger = demoRole(page, "button");
   await trigger.click({ timeout: 10000 });
   await expect(page.getByRole("dialog")).toBeVisible();
   assertAllAtLeast16(await scan(page), `${route} (popover open)`);
@@ -343,7 +344,7 @@ test("overlay: color_picker popover open (hex field stays >= 16px)", async ({ pa
 test("overlay: date_picker calendar popover open (segments stay >= 16px)", async ({ page }) => {
   const route = `${BASE}/component/?name=date_picker&`;
   await gotoHydrated(page, route, { timeout: 60000 });
-  const trigger = page.getByRole("button", { name: "Show Calendar" }).first();
+  const trigger = demoRole(page, "button");
   await trigger.click({ timeout: 10000 });
   await expect(page.getByRole("dialog")).toBeVisible();
   assertAllAtLeast16(await scan(page), `${route} (calendar open)`);
@@ -352,7 +353,7 @@ test("overlay: date_picker calendar popover open (segments stay >= 16px)", async
 test("overlay: sheet open (its Input fields stay >= 16px)", async ({ page }) => {
   const route = `${BASE}/component/?name=sheet&`;
   await gotoHydrated(page, route, { timeout: 60000 });
-  await page.getByRole("button", { name: "Right" }).first().click({ timeout: 10000 });
+  await demoRole(page, "button", 1) /* sheet demo: Top, Right, Bottom, Left */.click({ timeout: 10000 });
   await page.waitForTimeout(300);
   assertAllAtLeast16(await scan(page), `${route} (sheet open)`);
 });

@@ -142,6 +142,12 @@ function libraryFrame(page: Page): Locator {
   return page.locator("#component-preview-frame");
 }
 
+/** The `n`th slide (1-based) of a library carousel: the slides are the `aria-roledescription="slide"` groups, in
+ * order (backlog row 220: by role and position, not by the generated "n of m" name). */
+function slide(frame: Locator, n: number): Locator {
+  return frame.locator('[role="group"][aria-roledescription="slide"]').nth(n - 1);
+}
+
 /** True if `a` precedes `b` in document order (Tab order, absent any
  * positive `tabindex` -- neither subject uses one). */
 async function precedes(a: Locator, b: Locator): Promise<boolean> {
@@ -284,7 +290,7 @@ test.describe("Library: our own carousel primitive (main variant)", () => {
     // variants/main/mod.rs) renders 5 slides.
     await expect(frame.locator('[role="group"][aria-roledescription="slide"]')).toHaveCount(5);
     for (let n = 1; n <= 5; n++) {
-      await expect(frame.getByRole("group", { name: `${n} of 5` })).toHaveAttribute(
+      await expect(slide(frame, n)).toHaveAttribute(
         "aria-roledescription",
         "slide",
       );
@@ -294,29 +300,29 @@ test.describe("Library: our own carousel primitive (main variant)", () => {
   test("R3: Previous/Next are native buttons with a real accessible name, Enter/Space page the carousel, and activating them never moves focus", async ({ page }) => {
     await gotoHydrated(page, LIBRARY_URL, LIBRARY_GOTO);
     const frame = libraryFrame(page);
-    const previous = frame.getByRole("button", { name: /previous/i });
-    const next = frame.getByRole("button", { name: /next/i });
+    const previous = frame.locator("button.dx-carousel-previous");
+    const next = frame.locator("button.dx-carousel-next");
     await expect(previous).toHaveJSProperty("tagName", "BUTTON");
     await expect(next).toHaveJSProperty("tagName", "BUTTON");
 
-    await expect(frame.getByRole("group", { name: "1 of 5" })).toBeVisible();
+    await expect(slide(frame, 1)).toBeVisible();
 
     await next.focus();
     await page.keyboard.press("Enter");
-    await expect(frame.getByRole("group", { name: "2 of 5" })).toHaveAttribute("data-selected", "true");
+    await expect(slide(frame, 2)).toHaveAttribute("data-selected", "true");
     await expect(next).toBeFocused();
 
     await page.keyboard.press("Space");
-    await expect(frame.getByRole("group", { name: "3 of 5" })).toHaveAttribute("data-selected", "true");
+    await expect(slide(frame, 3)).toHaveAttribute("data-selected", "true");
     await expect(next).toBeFocused();
   });
 
   test("R4: Previous and Next both precede the slide content in the Tab (document) order", async ({ page }) => {
     await gotoHydrated(page, LIBRARY_URL, LIBRARY_GOTO);
     const frame = libraryFrame(page);
-    const previous = frame.getByRole("button", { name: /previous/i });
-    const next = frame.getByRole("button", { name: /next/i });
-    const firstSlide = frame.getByRole("group", { name: "1 of 5" });
+    const previous = frame.locator("button.dx-carousel-previous");
+    const next = frame.locator("button.dx-carousel-next");
+    const firstSlide = slide(frame, 1);
 
     expect(await precedes(previous, next)).toBe(true);
     expect(await precedes(next, firstSlide)).toBe(true);
@@ -338,8 +344,8 @@ test.describe("Library-only: v1 has no loop, so Previous/Next reach a real, disa
   test("Previous is disabled at the first slide; Next becomes disabled at the last and Previous re-enables away from the first", async ({ page }) => {
     await gotoHydrated(page, LIBRARY_URL, LIBRARY_GOTO);
     const frame = libraryFrame(page);
-    const previous = frame.getByRole("button", { name: /previous/i });
-    const next = frame.getByRole("button", { name: /next/i });
+    const previous = frame.locator("button.dx-carousel-previous");
+    const next = frame.locator("button.dx-carousel-next");
 
     await expect(previous).toBeDisabled();
     await expect(next).toBeEnabled();

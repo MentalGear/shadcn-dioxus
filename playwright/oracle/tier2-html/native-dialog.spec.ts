@@ -81,6 +81,8 @@ import { type Page } from "@playwright/test";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "../../axe";
 import { BASE_URL } from "../../base-url";
 import { gotoHydrated } from "../../hydration";
+import { measureAtRest, awaitAnimationsSettled } from "../../animations";
+import { demoRole } from "../../demo-frame";
 
 const NAV_TIMEOUT = 20 * 60 * 1000; // first run compiles the app
 
@@ -121,6 +123,9 @@ async function escapesClip(
   contentSelector: string,
   ancestorSelector: string,
 ): Promise<{ escapes: boolean; reason?: string; x?: number; y?: number; hit?: string | null }> {
+  // Read the boxes at rest (backlog row 222): the content may still be playing its enter animation.
+  const contentLocator = page.locator(contentSelector).first();
+  if ((await contentLocator.count()) > 0) await awaitAnimationsSettled(contentLocator);
   return page.evaluate(
     ({ contentSelector, ancestorSelector }) => {
       const content = document.querySelector(contentSelector) as HTMLElement | null;
@@ -128,8 +133,8 @@ async function escapesClip(
       if (!content || !ancestor) {
         return { escapes: false, reason: `missing element(s): content=${!!content} ancestor=${!!ancestor}` };
       }
-      const c = content.getBoundingClientRect();
-      const a = ancestor.getBoundingClientRect();
+      const c = content.getBoundingClientRect(); // rest-ok: settled by the awaitAnimationsSettled(contentLocator) before this evaluate
+      const a = ancestor.getBoundingClientRect(); // rest-ok: the clipping ancestor, not an overlay
       const inset = 2;
       const candidates: [number, number][] = [
         [c.left + inset, c.top + inset],
@@ -191,7 +196,7 @@ test.describe("Rule 2 — background inertness (a real click must not reach a ba
     // Playwright's actionability checks (which would themselves refuse to
     // click an occluded element) — this is the point: does the click reach
     // the button's own handler at all.
-    const box = await bgButton.boundingBox();
+    const box = await measureAtRest(bgButton);
     expect(box, "background button must still have a layout box").not.toBeNull();
     if (box) {
       await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
@@ -214,7 +219,7 @@ test.describe("Rule 2 — background inertness (a real click must not reach a ba
 test.describe("Rule 3 — Escape closes the dialog, the Rust `open` signal syncs, and reopening works repeatedly (5 cycles)", () => {
   test("5 open → Escape → reopen cycles never strand the signal", async ({ page }) => {
     await gotoDialog(page);
-    const trigger = page.getByRole("button", { name: "Show Dialog" });
+    const trigger = demoRole(page, "button");
     const dialogEl = page.getByRole("dialog");
 
     for (let cycle = 0; cycle < 5; cycle++) {
@@ -239,7 +244,7 @@ test.describe("Rule 3 — Escape closes the dialog, the Rust `open` signal syncs
 test.describe("Rule 4 — focus restore to the trigger on close (control; must stay green through the native-dialog swap)", () => {
   test("Escape returns focus to the trigger that opened the dialog", async ({ page }) => {
     await gotoDialog(page);
-    const trigger = page.getByRole("button", { name: "Show Dialog" });
+    const trigger = demoRole(page, "button");
     await trigger.click();
     await expect(page.getByRole("dialog")).toBeVisible();
 
@@ -257,13 +262,13 @@ test.describe("Rule 5 — nested dialogs: close order and focus return", () => {
     page,
   }) => {
     await gotoDialog(page);
-    const pageTrigger = page.getByRole("button", { name: "Show Dialog" });
+    const pageTrigger = demoRole(page, "button");
     await pageTrigger.click();
 
     const outer = page.getByRole("dialog").first();
     await expect(outer).toBeVisible();
 
-    const openNested = outer.getByRole("button", { name: "Open Nested Dialog" });
+    const openNested = outer.getByRole("button").first();
     await openNested.click();
     await expect(page.getByRole("dialog")).toHaveCount(2);
 
@@ -295,10 +300,10 @@ test.describe("Rule 5 — nested dialogs: close order and focus return", () => {
 test.describe("axe: nested dialogs open", () => {
   test("outer + nested dialog both open has no automatically detectable a11y issues", async ({ page }) => {
     await gotoDialog(page);
-    await page.getByRole("button", { name: "Show Dialog" }).click();
+    await demoRole(page, "button").click();
     const outer = page.getByRole("dialog").first();
     await expect(outer).toBeVisible();
-    await outer.getByRole("button", { name: "Open Nested Dialog" }).click();
+    await outer.getByRole("button").first().click();
     await expect(page.getByRole("dialog")).toHaveCount(2);
     await expectNoAxeViolations(page, "native-dialog: outer + nested dialog open", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
@@ -388,7 +393,7 @@ test.describe("Rule 6 — modal Popover (two-engine completion)", () => {
     // its own backdrop-dismiss -- see the comment above. Only `bgCount`
     // staying "0" is asserted; this click is not expected to leave the
     // Popover open afterward.
-    const box = await bgButton.boundingBox();
+    const box = await measureAtRest(bgButton);
     expect(box, "background button must still have a layout box").not.toBeNull();
     if (box) {
       await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
@@ -445,9 +450,10 @@ test.describe("Rule 6 — modal Popover (two-engine completion)", () => {
     await trigger.click();
     await expect(content).toBeVisible();
 
+    await awaitAnimationsSettled(content);
     const measurement = await page.evaluate(() => {
-      const t = document.getElementById("popover-modal-anchor-trigger")!.getBoundingClientRect();
-      const c = document.getElementById("popover-modal-anchor-content")!.getBoundingClientRect();
+      const t = document.getElementById("popover-modal-anchor-trigger")!.getBoundingClientRect(); // rest-ok: settled by the awaitAnimationsSettled(content) above
+      const c = document.getElementById("popover-modal-anchor-content")!.getBoundingClientRect(); // rest-ok: settled by the awaitAnimationsSettled(content) above
       return {
         // The default `side="bottom"`/`align="center"` contract: content
         // top should sit a small, fixed gap below the trigger's bottom
@@ -515,7 +521,7 @@ for (const key of ["Enter", "Space"] as const) {
       page,
     }) => {
       await gotoDialog(page);
-      const pageTrigger = page.getByRole("button", { name: "Show Dialog" });
+      const pageTrigger = demoRole(page, "button");
 
       // "open the dialog by keyboard": Tab to the trigger, Enter.
       await pageTrigger.focus();
@@ -554,7 +560,7 @@ for (const key of ["Enter", "Space"] as const) {
 test.describe("Rule 7c — regression guard: a real pointer click on the backdrop still dismisses", () => {
   test("opening the dialog by keyboard, a real mouse click far outside it still dismisses", async ({ page }) => {
     await gotoDialog(page);
-    const trigger = page.getByRole("button", { name: "Show Dialog" });
+    const trigger = demoRole(page, "button");
     await trigger.focus();
     await page.keyboard.press("Enter");
     await expect(page.getByRole("dialog")).toBeVisible();
@@ -571,7 +577,7 @@ test.describe("Rule 7d — a keyboard activation of a control inside the dialog 
     page,
   }) => {
     await gotoDialog(page);
-    const trigger = page.getByRole("button", { name: "Show Dialog" });
+    const trigger = demoRole(page, "button");
     await trigger.focus();
     await page.keyboard.press("Enter");
     const outer = page.getByRole("dialog").first();
@@ -665,7 +671,7 @@ test.describe("Rule 8 — the opening-gesture false positive: a modal Popover's 
       // navigating, on the SSG lane -- `gotoHydrated` so that tap can't
       // land before hydration attaches listeners.
       await gotoHydrated(page, `${BASE_URL}/component/?name=popover&variant=modal&`, { timeout: NAV_TIMEOUT });
-      const trigger = page.getByRole("button", { name: "Open modal popover" });
+      const trigger = demoRole(page, "button", 0, "modal");
       await trigger.scrollIntoViewIfNeeded();
       await trigger.tap();
       const content = page.getByRole("dialog");
@@ -741,7 +747,7 @@ test.describe("Rule 8 — the opening-gesture false positive: a modal Popover's 
     // still instruments this same navigation: `gotoHydrated` is just
     // `page.goto` plus a wait, so init-script ordering is unchanged.
     await gotoHydrated(page, `${BASE_URL}/component/?name=popover&variant=modal&`, { timeout: NAV_TIMEOUT });
-    const trigger = page.getByRole("button", { name: "Open modal popover" });
+    const trigger = demoRole(page, "button", 0, "modal");
     await trigger.scrollIntoViewIfNeeded();
     await trigger.click();
     await expect(page.getByRole("dialog")).toBeVisible();

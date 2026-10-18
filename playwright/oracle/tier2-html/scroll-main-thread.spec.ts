@@ -60,6 +60,7 @@
 import { test, expect } from "../../fixtures";
 import type { CDPSession, Page } from "@playwright/test";
 import { BASE_URL } from "../../base-url";
+import { demoRole } from "../../demo-frame";
 
 /** Installed before any page script. Everything is kept in `window.__scrollProbe`. */
 function installTimerShim() {
@@ -168,7 +169,7 @@ test.describe("scroll smoothness of / (counts)", () => {
     // HEAD: stuck at 1:24 -- every re-render allocated a fresh signal at 84 s.
     await expect.poll(async () => seconds(await playerLabel(page)) - seconds(start), { timeout: 15_000, intervals: [500] }).toBeGreaterThanOrEqual(3);
 
-    const card = page.locator(".dx-widget-card", { hasText: "Midnight City" });
+    const card = page.locator(".dx-widget-card").filter({ has: page.getByRole("button", { name: "Play or pause" }) }).first();
     await card.getByRole("button", { name: "Play or pause" }).click();
     const paused = seconds(await playerLabel(page));
     await page.waitForTimeout(3500);
@@ -320,7 +321,7 @@ test.describe("a touch drag does not need a touchstart handler", () => {
 
   test("resizable handle", async ({ page }) => {
     const cdp = await prepare(page, "/component/?name=resizable&");
-    const handle = page.getByRole("separator", { name: "Sidebar" });
+    const handle = demoRole(page, "separator");
     await handle.scrollIntoViewIfNeeded();
     await page.evaluate(() => window.scrollTo(0, 0));
     // Same geometry as resizable.spec.ts's real-touch case: a finger on the grip's edge (coarse hit area).
@@ -335,7 +336,7 @@ test.describe("a touch drag does not need a touchstart handler", () => {
 
   test("color area thumb", async ({ page }) => {
     const cdp = await prepare(page, "/component/?name=color_picker&", { scrollable: false });
-    await page.getByRole("button", { name: /Color picker/i }).first().click();
+    await demoRole(page, "button").click();
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
     // The popover scroll-locks the page while open (a window `touchmove` preventDefault), so a "did not

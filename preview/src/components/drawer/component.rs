@@ -4,6 +4,7 @@ use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::drawer::{
     self, DrawerCloseProps, DrawerContentProps, DrawerHandleProps, DrawerRootProps,
 };
+use dioxus_primitives::keyboard_inset::{use_keyboard_panel, KeyboardInset};
 use dioxus_primitives::merge_attributes;
 
 pub use dioxus_primitives::drawer::DrawerSide;
@@ -50,14 +51,18 @@ pub fn DrawerContent(props: DrawerContentProps) -> Element {
         "data-dx-edge": "floating",
     });
     let content_attributes = merge_attributes(vec![content_base, props.attributes]);
+    // The panel follows the on-screen keyboard (`primitives/src/keyboard_inset.rs`; `style.css`
+    // consumes `--dx-keyboard-inset`). A caller's own `id` is kept.
+    let panel = use_keyboard_panel(Some(props.id));
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/drawer/style.css") }
         drawer::DrawerContent {
-            id: props.id,
+            id: panel.id(),
             class: content_class,
             attributes: content_attributes,
             {props.children}
+            KeyboardInset { panel }
         }
     }
 }

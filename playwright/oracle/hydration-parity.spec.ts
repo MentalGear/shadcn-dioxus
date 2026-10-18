@@ -755,7 +755,9 @@ test.describe("hydration parity — SSG server markup vs. wasm client", () => {
     // a plain `page.goto`.)
     await gotoHydrated(page, `${BASE}/`, { timeout: NAV_TIMEOUT });
 
-    const trigger = page.getByRole("button", { name: "Open Menu" });
+    // The home page mounts every component's gallery card, so there is no single demo frame to scope to: the
+    // dropdown menu's trigger and open content are selected by the component's own classes.
+    const trigger = page.locator("button.dx-dropdown-menu-trigger").first();
     await expect(trigger).toBeVisible();
     await expect(trigger).toHaveAttribute("data-state", "closed");
 
@@ -780,7 +782,7 @@ test.describe("hydration parity — SSG server markup vs. wasm client", () => {
     // page-wide locator hits a strict-mode "2 elements" violation across
     // the two components' items (confirmed by execution).
     await expect(
-      page.getByLabel("Open Menu").getByRole("menuitem", { name: "Edit" }),
+      page.locator('.dx-dropdown-menu-content[data-state="open"]').getByRole("menuitem").first(),
     ).toBeVisible();
   });
 
