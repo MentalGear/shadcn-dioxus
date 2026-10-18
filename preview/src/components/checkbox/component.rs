@@ -10,10 +10,10 @@ use dioxus_primitives::merge_attributes;
 // way `main.rs`'s `GlobalHead`/`LanguageSelect` already deliver theirs: an
 // `asset!()`-bundled path linked via `document::Link`. Unlike those two
 // call sites this one lives *inside* the themed wrapper itself so a
-// `dx components add checkbox`-copied component keeps working with zero
+// `shadcn-dioxus add checkbox`-copied component keeps working with zero
 // extra wiring in the consumer's own app -- `asset!()` resolves this path
 // from the crate root exactly like `#[css_module]`'s own path argument
-// used to (manganis-macro's `resolve_path`), and `dx components add`
+// used to (manganis-macro's `resolve_path`), and `shadcn-dioxus add`
 // preserves this file's `src/components/checkbox/` location verbatim in
 // the consumer project (dioxus-cli's `components_root` defaults to
 // `<crate>/src/components`), so the path keeps resolving post-copy.

@@ -1,0 +1,1 @@
+A "Jump to..." menu calls `use_message_scroller().scroll_to_message(id, ScrollToMessageOptions { align: ScrollAlign::Start, behavior: ScrollBehavior::Smooth })` for each user turn. The menu lives inside the provider, so it reaches the same controller as the transcript.

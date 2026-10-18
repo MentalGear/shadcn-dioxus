@@ -6,7 +6,7 @@ use dioxus_primitives::merge_attributes;
 // docs/backlog.md row 32: `#[css_module]` is gone -- see checkbox/component.rs's
 // header comment for the full delivery-mechanism rationale (asset!() +
 // document::Link, embedded in every exported entry point of this file so a
-// `dx components add pagination`-copied component needs no extra wiring).
+// `shadcn-dioxus add pagination`-copied component needs no extra wiring).
 //
 // This component is also on the row-32 "not already namespaced" lane: its
 // screen-reader-only helper used to be the bare `dx-sr-only`, which

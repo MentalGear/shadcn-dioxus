@@ -39,14 +39,6 @@ BubbleContent {
 }
 ```
 
-## Examples
-
-- **Alignment**, **Group**, **Reactions** and **Link button**: bubble placement, grouped bubbles, reactions on each side, and a bubble that is a real button or link.
-- **Tooltip**: a read receipt in `BubbleReactions`. `TooltipTrigger`'s `as` renders the trigger as a ghost icon `Button`, so the control is focusable and its hint shows on hover and focus.
-- **Popover**: error details on a destructive bubble. `PopoverTrigger` has no `as`, so the icon-only look (no border or fill) is set on the trigger itself.
-- **Collapsible**: a long reply folded to a preview, with a `Collapsible` inside `BubbleContent`. The trigger is rendered as a link-variant `Button` through `as`, and a chevron turns when it is open.
-- **Link group**: three tinted bubbles in one `BubbleGroup`, each a real button through `BubbleContent`'s `as`. Each press answers with a toast.
-
 ## Accessibility
 
 - A bubble is presentational; keep the conversation's semantics on the surrounding container.

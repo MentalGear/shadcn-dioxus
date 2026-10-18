@@ -1,5 +1,3 @@
-# Tag group
-
 A Tag Group is a focusable group of tags (labels, categories, filters and similar items) with keyboard navigation, optional selection and removal.
 
 ## Structure

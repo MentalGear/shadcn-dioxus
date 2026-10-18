@@ -13,7 +13,7 @@ use dioxus_primitives::{dioxus_attributes::attributes, merge_attributes};
 // attaching no class and linking no stylesheet. `style.css`
 // (`.dx-aspect-ratio-container`/`.dx-aspect-ratio-image`) was reachable only
 // through the demo-only `variants/main/mod.rs`'s own `#[css_module]`, which
-// `dx components add aspect_ratio` never copies (`component.json`'s
+// `shadcn-dioxus add aspect_ratio` never copies (`component.json`'s
 // `exclude` drops `variants`) -- so a real consumer got the CSS file on disk
 // with nothing in the shipped code that ever loaded or referenced it. Fixed
 // the same way `../separator/component.rs` (itself not yet migrated, but
