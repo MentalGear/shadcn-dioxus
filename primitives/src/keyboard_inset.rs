@@ -224,7 +224,9 @@ mod tests {
     #[test]
     fn the_script_has_no_unsubstituted_placeholder() {
         let s = script();
-        assert!(!s.contains("__THRESHOLD__") && !s.contains("__SLACK__") && !s.contains("__MARGIN__"));
+        assert!(
+            !s.contains("__THRESHOLD__") && !s.contains("__SLACK__") && !s.contains("__MARGIN__")
+        );
         assert!(s.contains("const THRESHOLD = 60;") && s.contains("const SLACK = 48;"));
     }
 
@@ -232,12 +234,22 @@ mod tests {
     #[test]
     fn the_script_publishes_the_documented_contract() {
         let s = script();
-        for name in ["--dx-keyboard-inset", "--dx-keyboard-top", "data-dx-keyboard"] {
+        for name in [
+            "--dx-keyboard-inset",
+            "--dx-keyboard-top",
+            "data-dx-keyboard",
+        ] {
             assert!(s.contains(name), "{name}");
         }
         // Both the publish and the clear of each custom property.
-        assert!(s.contains("setProperty('--dx-keyboard-inset'") && s.contains("removeProperty('--dx-keyboard-inset'"));
-        assert!(s.contains("setProperty('--dx-keyboard-top'") && s.contains("removeProperty('--dx-keyboard-top'"));
+        assert!(
+            s.contains("setProperty('--dx-keyboard-inset'")
+                && s.contains("removeProperty('--dx-keyboard-inset'")
+        );
+        assert!(
+            s.contains("setProperty('--dx-keyboard-top'")
+                && s.contains("removeProperty('--dx-keyboard-top'")
+        );
     }
 
     /// Pinch zoom suspends the logic, as Base UI's `scale === 1` check does.
