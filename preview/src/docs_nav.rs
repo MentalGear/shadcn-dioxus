@@ -200,7 +200,10 @@ mod tests {
         for js in [PREPAINT_NAV_SORT_JS, CHOOSE_AZ_JS, CHOOSE_CATEGORY_JS] {
             assert!(js.contains("'dx-nav-sort'"), "{js}");
             assert!(js.contains("data-nav-sort"), "{js}");
-            assert!(js.contains("catch(e)"), "storage access must be guarded: {js}");
+            assert!(
+                js.contains("catch(e)"),
+                "storage access must be guarded: {js}"
+            );
             assert!(!js.contains("</script"), "inlined in a <script>: {js}");
         }
         assert!(READ_NAV_SORT_JS.contains("data-nav-sort"));
@@ -210,7 +213,10 @@ mod tests {
     fn a_to_z_is_flat_sorted_and_complete() {
         let names = demos_alphabetical();
         assert_eq!(names.len(), components::DEMOS.len());
-        let shown: Vec<String> = names.iter().map(|n| n.replace('_', " ").to_lowercase()).collect();
+        let shown: Vec<String> = names
+            .iter()
+            .map(|n| n.replace('_', " ").to_lowercase())
+            .collect();
         let mut sorted = shown.clone();
         sorted.sort();
         assert_eq!(shown, sorted);
