@@ -6,15 +6,16 @@
   "cargoDependencies": [
     {
       "name": "dioxus-primitives",
-      "git": "https://github.com/MentalGear/shadcn-dioxus"
+      "git": "https://github.com/MentalGear/shadcn-dioxus",
+      "features": ["calendar"]
     },
     {
       "name": "dioxus-icons",
-      "version": "0.1.0"
+      "version": "=0.1.0"
     },
     {
       "name": "time",
-      "version": "0.3.44"
+      "version": "0.3.47"
     }
   ],
   "globalAssets": ["../../../assets/dx-components-theme.css"]
