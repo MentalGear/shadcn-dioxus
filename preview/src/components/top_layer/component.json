@@ -12,7 +12,8 @@
   "cargoDependencies": [
     {
       "name": "dioxus-primitives",
-      "git": "https://github.com/MentalGear/shadcn-dioxus"
+      "git": "https://github.com/MentalGear/shadcn-dioxus",
+      "features": ["router"]
     }
   ],
   "componentDependencies": [
