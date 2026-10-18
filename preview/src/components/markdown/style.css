@@ -14,11 +14,11 @@
 }
 
 /* The first and last block hug the container, so it can sit inside a Bubble. */
-.dx-markdown > :first-child {
+.dx-markdown > :first-child:not(:where([popover], dialog) *) {
   margin-block-start: 0;
 }
 
-.dx-markdown > :last-child {
+.dx-markdown > :last-child:not(:where([popover], dialog) *) {
   margin-block-end: 0;
 }
 
@@ -70,14 +70,14 @@ h6.dx-markdown-heading {
 }
 
 .dx-markdown-quote {
-  padding-inline-start: var(--dx-space-3);
   border-inline-start: 2px solid var(--dx-border);
   color: var(--dx-muted-foreground);
+  padding-inline-start: var(--dx-space-3);
 }
 
 .dx-markdown-rule {
-  margin: var(--dx-space-4) 0;
   border: 0;
+  margin: var(--dx-space-4) 0;
   border-block-start: 1px solid var(--dx-border);
 }
 
@@ -101,13 +101,13 @@ h6.dx-markdown-heading {
 }
 
 .dx-markdown-pre {
-  overflow-x: auto;
   padding: var(--dx-space-3);
   border-radius: var(--dx-radius-md);
   background: var(--dx-markdown-code-background);
   font-family: var(--dx-font-mono, inherit);
   font-size: var(--dx-text-xs);
   line-height: 1.6;
+  overflow-x: auto;
 }
 
 .dx-markdown-pre .dx-markdown-block {
@@ -143,22 +143,21 @@ h6.dx-markdown-heading {
   font-size: var(--dx-text-sm);
 }
 
-.dx-markdown-table th,
-.dx-markdown-table td {
+.dx-markdown-cell {
   padding: var(--dx-space-1) var(--dx-space-3);
   border: 1px solid var(--dx-border);
   text-align: start;
 }
 
-.dx-markdown-table th {
+.dx-markdown-cell[scope="col"] {
   background: var(--dx-muted);
   font-weight: 600;
 }
 
-.dx-markdown-table [data-align="center"] {
+.dx-markdown-cell[data-align="center"] {
   text-align: center;
 }
 
-.dx-markdown-table [data-align="end"] {
+.dx-markdown-cell[data-align="end"] {
   text-align: end;
 }

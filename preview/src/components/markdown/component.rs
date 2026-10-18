@@ -818,11 +818,11 @@ fn render_element(kind: &Kind, children: &[Node], ctx: Ctx) -> Element {
             };
             if *header {
                 rsx! {
-                    th { scope: "col", "data-align": align, {inner} }
+                    th { class: "dx-markdown-cell", scope: "col", "data-align": align, {inner} }
                 }
             } else {
                 rsx! {
-                    td { "data-align": align, {inner} }
+                    td { class: "dx-markdown-cell", "data-align": align, {inner} }
                 }
             }
         }
