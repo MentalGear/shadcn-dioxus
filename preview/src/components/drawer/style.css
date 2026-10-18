@@ -353,3 +353,31 @@
   border-color: var(--dx-ring-color);
   box-shadow: var(--dx-ring-focus);
 }
+
+/* On-screen keyboard (`primitives/src/keyboard_inset.rs`). While it is open the helper puts
+ * `data-dx-keyboard`, `--dx-keyboard-inset` (the keyboard's height under the layout viewport) and
+ * `--dx-keyboard-top` (the visual viewport's pan offset, normally 0) on this panel; with no keyboard, or
+ * a pinch-zoomed page, none of them exists and these rules do not match, so the panel is exactly what it
+ * was. The panel's box is pulled into the VISIBLE band `[top, 100% - inset]` and scrolls inside it (the
+ * helper scrolls the focused field to the middle). The slide uses `translate`, so `top`/`bottom` are free
+ * to move. The `0px` fallbacks are the no-keyboard values. */
+.dx-drawer[data-dx-keyboard] {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.dx-drawer[data-dx-keyboard][data-side="bottom"] {
+  bottom: var(--dx-keyboard-inset, 0);
+  max-height: min(80%, calc(100% - var(--dx-keyboard-inset, 0px) - var(--dx-keyboard-top, 0px)));
+  padding-bottom: 0; /* the home-indicator inset is under the keyboard */
+}
+
+.dx-drawer[data-dx-keyboard][data-side="top"] {
+  top: var(--dx-keyboard-top, 0);
+  max-height: min(80%, calc(100% - var(--dx-keyboard-inset, 0px) - var(--dx-keyboard-top, 0px)));
+}
+
+.dx-drawer[data-dx-keyboard]:is([data-side="left"], [data-side="right"]) {
+  top: calc(var(--dx-edge-travel, 0px) + var(--dx-keyboard-top, 0px));
+  bottom: calc(var(--dx-edge-travel, 0px) + var(--dx-keyboard-inset, 0px));
+}
