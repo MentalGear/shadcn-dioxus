@@ -8,7 +8,10 @@ edition = "2021"
 dioxus = { version = "0.7.9", features = [] }
 # The styled components copied in by `dx components add` build on these primitives. Declaring the dependency
 # up front lets the `web` feature below switch on the primitives' browser-only code paths.
-dioxus-primitives = { git = "https://github.com/MentalGear/shadcn-dioxus" }
+# `default-features = false` is what the installer writes on the first `add` anyway (`cargo add` is always run with
+# `--no-default-features`); each component then switches on only what it needs (`router` for Navbar, `calendar`,
+# `color-picker`), so an app compiles no router, date or colour crates it does not use.
+dioxus-primitives = { git = "https://github.com/MentalGear/shadcn-dioxus", default-features = false }
 
 [features]
 default = ["web"]

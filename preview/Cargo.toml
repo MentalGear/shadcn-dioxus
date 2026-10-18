@@ -8,8 +8,9 @@ rust-version = "1.88.0"
 dioxus = { workspace = true, features = ["router"] }
 dioxus-code = { version = "0.1.0", default-features = false, features = ["macro", "lang-css"] }
 dioxus-icons = "0.1.0"
-dioxus-primitives.workspace = true
-dioxus-i18n = { git = "https://github.com/ealmloff/dioxus-i18n", branch = "bump-dioxus" }
+# The two optional primitives features gate `palette` / `time` for every other consumer; the docs site demos both.
+dioxus-primitives = { workspace = true, features = ["calendar", "color-picker"] }
+dioxus-i18n = "0.6.0"
 palette = "0.7.6"
 unic-langid = { version = "0.9", features = ["macros"] }
 strum = { version = "0.27.2", features = ["derive"] }
@@ -21,7 +22,8 @@ time = { version = "0.3.44", features = ["std", "macros"] }
 dioxus = { workspace = true }
 dioxus-code = { version = "0.1.0", default-features = false, features = ["runtime", "lang-css"] }
 dioxus-ssr = "0.7.0"
-pulldown-cmark = "0.13.0"
+# docs.md -> HTML in build.rs only (no CLI `getopts`); >= 0.13.4 carries the tight-paragraph panic fix.
+pulldown-cmark = { version = "0.13.4", default-features = false, features = ["html"] }
 serde_json = "1"
 
 [dev-dependencies]
