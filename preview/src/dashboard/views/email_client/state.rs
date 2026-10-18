@@ -7,6 +7,7 @@ use crate::dashboard::common::{
 };
 
 use super::filters::{message_matches_filters, message_matches_folder};
+use super::scroll_memory::ScrollMemory;
 
 #[derive(Clone, PartialEq, Store)]
 pub(super) struct EmailClientState {
@@ -22,6 +23,8 @@ pub(super) struct EmailClientState {
     pub compose_to: String,
     pub compose_subject: String,
     pub compose_body: String,
+    /// Where each view's scroll container was left (see `scroll_memory.rs`).
+    pub scroll_memory: ScrollMemory,
 }
 
 impl EmailClientState {
@@ -46,6 +49,7 @@ impl EmailClientState {
             compose_to: String::new(),
             compose_subject: String::new(),
             compose_body: String::new(),
+            scroll_memory: ScrollMemory::default(),
         }
     }
 }
@@ -59,6 +63,27 @@ impl<Lens> Store<EmailClientState, Lens> {
             .find(|folder| folder.id == active_folder)
             .map(|folder| folder.label)
             .unwrap_or("Inbox")
+    }
+
+    /// The id of the message-list view: a folder, tab, search and tag filter is one view, and a
+    /// different combination is another (its first visit opens at the top).
+    fn list_view_id(&self) -> String {
+        let folder = self.active_folder().cloned().as_str();
+        let tab = self.active_tab().cloned().as_str();
+        let query = self.search_query().cloned();
+        let tags = self
+            .selected_tags()
+            .cloned()
+            .iter()
+            .map(|tag| tag.label())
+            .collect::<Vec<_>>()
+            .join(",");
+        format!("list:{folder}:{tab}:{query}:{tags}")
+    }
+
+    /// The id of one message's thread view.
+    fn read_view_id(&self, uid: Option<&str>) -> String {
+        format!("read:{}", uid.unwrap_or_default())
     }
 
     fn visible_message_ids(&self) -> Vec<String> {
