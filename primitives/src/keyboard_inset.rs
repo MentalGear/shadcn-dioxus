@@ -33,8 +33,8 @@
 //!
 //! **What counts as a keyboard.** Lifted from Base UI 1.6.0 (MIT),
 //! `drawer/virtual-keyboard-provider/DrawerVirtualKeyboardProvider.js`
-//! (`KEYBOARD_RESIZE_THRESHOLD = 60`, `KEYBOARD_SCROLL_SLACK = 48`): `innerHeight - visualViewport.height
-//! > 60` and `visualViewport.scale === 1`. A smaller change is browser chrome (a collapsing URL bar);
+//! (`KEYBOARD_RESIZE_THRESHOLD = 60`, `KEYBOARD_SCROLL_SLACK = 48`): the keyboard is open when
+//! `innerHeight - visualViewport.height` exceeds 60 and `visualViewport.scale === 1`. A smaller change is browser chrome (a collapsing URL bar);
 //! a pinch-zoomed page is not a keyboard, and the logic is suspended while zoomed. Adapted: the
 //! inset is published as a stylesheet contract on the panel (not on a provider's viewport element),
 //! a top offset is published beside it so a centred panel can be placed inside the visible band, the

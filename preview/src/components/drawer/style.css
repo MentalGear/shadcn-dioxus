@@ -367,13 +367,13 @@
 }
 
 .dx-drawer[data-dx-keyboard][data-side="bottom"] {
-  bottom: var(--dx-keyboard-inset, 0px);
+  bottom: var(--dx-keyboard-inset, 0);
   max-height: min(80%, calc(100% - var(--dx-keyboard-inset, 0px) - var(--dx-keyboard-top, 0px)));
   padding-bottom: 0; /* the home-indicator inset is under the keyboard */
 }
 
 .dx-drawer[data-dx-keyboard][data-side="top"] {
-  top: var(--dx-keyboard-top, 0px);
+  top: var(--dx-keyboard-top, 0);
   max-height: min(80%, calc(100% - var(--dx-keyboard-inset, 0px) - var(--dx-keyboard-top, 0px)));
 }
 

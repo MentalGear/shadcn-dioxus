@@ -221,8 +221,8 @@ dialog.dx-dialog[open][data-state="open"] {
  * `--dx-space-4` margin on each side), and it scrolls inside the cap (the helper scrolls the focused
  * field to the middle of it). The `0px` fallbacks are the no-keyboard values. */
 .dx-dialog[data-dx-keyboard] {
+  top: calc(50% + (var(--dx-keyboard-top, 0px) - var(--dx-keyboard-inset, 0px)) / 2);
   max-height: calc(100% - var(--dx-keyboard-inset, 0px) - var(--dx-keyboard-top, 0px) - var(--dx-space-8));
   overflow-y: auto;
   overscroll-behavior: contain;
-  top: calc(50% + (var(--dx-keyboard-top, 0px) - var(--dx-keyboard-inset, 0px)) / 2);
 }
