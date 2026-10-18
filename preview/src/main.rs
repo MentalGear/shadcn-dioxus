@@ -3802,7 +3802,10 @@ mod docs_tests {
     #[test]
     fn build_rs_usage_notes_heading_matches_the_reserved_one() {
         let build_rs = include_str!("../build.rs");
-        let declaration = format!("const USAGE_NOTES_HEADING: &str = \"{PAGE_HEADING_USAGE}\";");
+        let declaration = format!(
+            "const USAGE_NOTES_HEADING: &str = \"{}\";",
+            crate::PAGE_HEADING_USAGE
+        );
         assert!(
             build_rs.contains(&declaration),
             "build.rs lost `{declaration}`"
