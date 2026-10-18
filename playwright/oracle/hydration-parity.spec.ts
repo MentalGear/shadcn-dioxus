@@ -829,7 +829,7 @@ test.describe("hydration parity — SSG server markup vs. wasm client", () => {
   //
   // REPLACEMENT SUBJECT: the `avatar` component's own gallery card, always
   // mounted on `/` (avatar was never excluded). Its "Error State" example
-  // (`preview/src/components/avatar/variants/main/mod.rs`) renders
+  // (`preview/src/components/avatar/variants/states/mod.rs`) renders
   // `ImageAvatar { alt: "Jordan Reyes", aria_label: "Error avatar", ... }`.
   // `ImageAvatar` (`preview/src/components/avatar/component.rs`) computes
   // its OWN default accessible name from `alt` (`aria_label: "{alt}"` --
@@ -858,7 +858,9 @@ test.describe("hydration parity — SSG server markup vs. wasm client", () => {
   test("Rule 4b: the avatar demo's caller-overridden accessible name is served, not the alt-derived default", async ({
     request,
   }) => {
-    const response = await request.get(`${BASE}/`, { timeout: NAV_TIMEOUT });
+    // The avatar page (not the `/` gallery card, which now shows shadcn's avatar-demo): the "Error State" example lives in
+    // the `states` variant (backlog row 235).
+    const response = await request.get(`${BASE}/component/avatar/`, { timeout: NAV_TIMEOUT });
     expect(response.ok()).toBeTruthy();
     const html = await response.text();
 
@@ -876,7 +878,7 @@ test.describe("hydration parity — SSG server markup vs. wasm client", () => {
       markerImg,
       `expected the avatar demo's "Error State" example -- an <img alt="Jordan Reyes"> with an invalid-url.example src -- ` +
         `in served HTML; the avatar component's main-variant demo may have changed ` +
-        `(preview/src/components/avatar/variants/main/mod.rs)`,
+        `(preview/src/components/avatar/variants/states/mod.rs)`,
     ).toBeDefined();
 
     // The nearest preceding `<span role="img">` is this `<img>`'s own
@@ -897,7 +899,7 @@ test.describe("hydration parity — SSG server markup vs. wasm client", () => {
     expect(
       effective,
       `the avatar demo's "Error State" example's EFFECTIVE served aria-label should be the ` +
-        `caller's override ("Error avatar", from preview/src/components/avatar/variants/main/` +
+        `caller's override ("Error avatar", from preview/src/components/avatar/variants/states/` +
         `mod.rs), not ImageAvatar's own alt-derived default ("Jordan Reyes") -- raw tag: ` +
         `${avatarSpan!.raw}`,
     ).toBe("Error avatar");

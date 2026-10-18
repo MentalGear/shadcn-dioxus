@@ -135,6 +135,11 @@ pub fn AvatarImage(props: AvatarImageProps) -> Element {
 
 #[derive(Props, Clone, PartialEq)]
 pub struct AvatarFallbackProps {
+    /// Milliseconds to wait before the fallback may show (Base UI's `delay`): a picture that loads within it never
+    /// flashes the fallback. Default: none, the fallback shows immediately (also in the prerendered page).
+    #[props(default)]
+    pub delay: Option<u32>,
+
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
 
@@ -151,6 +156,7 @@ pub fn AvatarFallback(props: AvatarFallbackProps) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/avatar/style.css") }
         avatar::AvatarFallback {
+            delay: props.delay,
             attributes: merged,
             {props.children}
         }
@@ -188,6 +194,10 @@ pub struct ImageAvatarProps {
     /// Additional attributes for the avatar element.
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
+
+    /// Milliseconds to hold the fallback back while the image loads (see [`AvatarFallback`]'s `delay`).
+    #[props(default)]
+    pub fallback_delay: Option<u32>,
 
     /// The fallback content shown while the image is loading or if it fails to load.
     pub children: Element,
@@ -228,9 +238,7 @@ pub fn ImageAvatar(props: ImageAvatarProps) -> Element {
                 src: props.src,
                 alt: props.alt,
             }
-            AvatarFallback {
-                {props.children}
-            }
+            AvatarFallback { delay: props.fallback_delay, {props.children} }
         }
     }
 }

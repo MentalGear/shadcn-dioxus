@@ -94,7 +94,10 @@
     border-radius: var(--dx-radius-lg);
 }
 
-.dx-avatar[data-state="loading"] {
+/* The placeholder for a picture that is still loading and has no `AvatarFallback` to stand in for it (or whose
+ * fallback is held back by its `delay`): a pulsing muted disc. With a fallback showing, the initials are the
+ * stand-in and nothing pulses. */
+.dx-avatar[data-state="loading"]:not(:has(> .dx-avatar-fallback)) {
     animation: dx-pulse 1.5s infinite ease-in-out;
     background: var(--dx-muted);
 }
@@ -117,8 +120,9 @@
     }
 }
 
-/* `.cn-avatar-fallback`: `bg-muted text-muted-foreground`, in every state
- * (loading, error and empty included). The size follows the root's
+/* `.cn-avatar-fallback`: `bg-muted text-muted-foreground`. It is rendered in every state but `loaded`
+ * (Base UI: while the picture is loading, after an error and with no picture; only a loaded picture removes it,
+ * so there is no blank frame before the picture, `playwright/avatar-loading.spec.ts`). The size follows the root's
  * `data-size` through `font-size: inherit`: a fixed size overflowed and
  * clipped two-letter initials in the small avatar. */
 .dx-avatar-fallback {
