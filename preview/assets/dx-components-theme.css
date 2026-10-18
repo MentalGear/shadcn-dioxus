@@ -121,13 +121,16 @@ html[data-theme="light"] [class~="dxc-system"] {
    * threshold for normal text, and this token is the "muted"/secondary
    * text color used across ~28 component stylesheets (descriptions,
    * shortcuts, helper text), so it accounted for the large majority of
-   * this round's axe-coverage color-contrast findings. #707070 clears
+   * this round's axe-coverage color-contrast findings. #6e6e6e clears
    * 4.5:1 against every background it's actually measured against in
-   * this app (white 4.95:1, --primary-color-3/4's #f8f8f8 4.66:1,
-   * --primary-color-1's #fbfbfb 4.79:1). The dark value (#a1a1a1,
+   * this app (white 5.1:1, --primary-color-3/4's #f8f8f8 4.8:1,
+   * --primary-color-1's #fbfbfb 4.9:1, and the 5% ink tint #f2f2f2 of a
+   * selected choice card 4.57:1 -- #707070 was 4.42:1 there, hidden from
+   * axe while the demo frame's dot grid made every contrast inside it
+   * "incomplete"). The dark value (#a1a1a1,
    * 7.47:1+ against this theme's dark backgrounds) already passed and is
    * unchanged. */
-  --secondary-color-5: var(--dark, #a1a1a1) var(--light, #707070);
+  --secondary-color-5: var(--dark, #a1a1a1) var(--light, #6e6e6e);
   --secondary-color-6: var(--dark, #5d5d5d) var(--light, #d0d0d0);
 
   /* Highlight colors */
