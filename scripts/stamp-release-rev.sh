@@ -69,7 +69,9 @@ for f in sorted(glob.glob("preview/src/components/*/component.json")):
         if mode == "--check": return block
         block = re.sub(r',\s*"rev":\s*"[^"]*"', "", block)
         if mode == "--remove": return block
-        return re.sub(r'("git":\s*"[^"]*")', r'\1, "rev": "%s"' % rev, block, count=1)
+        m2 = re.search(r'^([ \t]*)"git":\s*"[^"]*"', block, re.M)
+        sep = (",\n" + m2.group(1)) if m2 else ", "      # keep one key per line when the manifest has that shape
+        return re.sub(r'("git":\s*"[^"]*")', lambda g: g.group(1) + sep + '"rev": "%s"' % rev, block, count=1)
     new = re.sub(r'\{[^{}]*"name":\s*"dioxus-(?:primitives|attributes)"[^{}]*\}', fix, text)
     if new != text:
         json.loads(new)
