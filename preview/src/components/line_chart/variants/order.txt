@@ -1,0 +1,10 @@
+# Display order of this component's demos after `main`; a variants/<name>/ directory not listed here follows, sorted by name.
+linear
+step
+multiple
+dots
+dots_colors
+dots_custom
+label
+label_custom
+interactive

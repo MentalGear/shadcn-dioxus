@@ -1,0 +1,12 @@
+# Display order of this component's demos after `main`; a variants/<name>/ directory not listed here follows, sorted by name.
+last_anchor
+load_history
+long
+commands
+anchoring
+opening_position
+previous_context
+group_chat
+animation
+full_chat
+fade

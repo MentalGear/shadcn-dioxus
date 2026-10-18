@@ -435,83 +435,24 @@ macro_rules! examples {
     };
 }
 
+// The component and variant registry is DERIVED, not listed (backlog row 219): `build.rs`
+// (`discover_components`) walks `src/components/<dir>/` (every directory with a `component.json`,
+// sorted by name) and each one's `variants/<name>/` directories, and writes the whole list as the
+// `with_registry!` macro in `OUT_DIR/examples.rs`. Adding a demo is a new `variants/<name>/mod.rs`
+// and touches nothing outside that component's directory; the order after `main` is that
+// directory's own `variants/order.txt` (names it does not list follow, sorted).
+// `variants/demo.css` makes a component a Block (rendered in an iframe page of its own). A new
+// COMPONENT still needs its `CATALOG` row above, which is also what re-runs `build.rs`.
+include!(concat!(env!("OUT_DIR"), "/examples.rs"));
+with_registry!(examples);
+
+// Compile-time-dead mirror of the derived BLOCK rows. The Playwright specs (`all-routes`,
+// `demo-forms-no-navigation`, `popup-style-isolation`) scrape `name(block)[variant, ..]` rows after
+// this invocation's name to build the block demo routes. `cfg(any())` removes the item before macro
+// resolution, so nothing is compiled from it; `build.rs` (`check_block_mirror`) fails the build when
+// these rows differ from the directories, so the specs' route list cannot go quietly stale. Retire it
+// when those specs read `variants/` instead.
+#[cfg(any())]
 examples!(
-    accordion[until_found, faq, multiple],
-    alert[no_icon, action],
-    alert_dialog[overlay],
-    area_chart[linear, step, stacked, stacked_expand, gradient, legend, axes, icons, interactive],
-    aspect_ratio[ratios],
-    attachment[states, sizes, image, group, trigger, dialog, image_gallery, removable_group, composite],
-    avatar[dropdown, badge, group],
-    badge[spinner, count, as_link],
-    bar_chart[horizontal, multiple, stacked, stacked_legend, negative, mixed, label, label_custom, active, interactive],
-    breadcrumb[separator, dropdown, ellipsis, menu, rtl],
-    bubble[alignment, group, reactions, link_button, tooltip, popover, collapsible, link_group],
-    // No `spinner` variant here: the button route is the "no motion subscribers" page of
-    // oracle/tier2-html/motion-gating.spec.ts; the spinner-in-a-button demo lives on `spinner`.
-    button[size, icon, group, as_link],
-    button_group[orientation, nested, separator, split, with_input, dropdown, select, popover, rtl],
-    calendar[simple, internationalized, range, multi_month, unavailable_dates, rtl, presets, date_time, caption, week_numbers],
-    card[small, image, terms],
-    carousel[sizes, spacing, peek, align, vertical, rtl, api, indicators, autoplay, rewind, hidden_arrows, virtual_loop, virtual_loop_rtl, virtual_many],
-    chart[bar, line, stacked],
-    chart_tooltip[indicator_line, indicator_none, label_none, label_custom, label_formatter, formatter, icons, advanced],
-    checkbox[description, controlled, disabled, invalid, group, table, rtl],
-    collapsible[until_found, controlled, settings, file_tree],
-    color_picker,
-    combobox[controlled, disabled, dynamic, custom_items],
-    command[overlay, inline],
-    context_menu[checkboxes, radio_group, rtl, click_only_submenu, icons, groups, destructive],
-    data_table,
-    date_picker[internationalized, range, multi_month, unavailable_dates, keep_open, time, natural_language],
-    dialog[edit_profile, share, overlay, no_close, scrollable, sticky_footer],
-    drag_and_drop_list[removable, tuning],
-    drawer[overlay, sides, nested],
-    dropdown_menu[checkboxes, radio_group, rtl, click_only_submenu, icons, account_switcher, radio_icons, shortcuts, destructive],
-    empty[outline, background, avatar, search, rtl],
-    field[subscription],
-    form,
-    hover_card[placement, delays],
-    input[field, disabled, invalid, file, inline_button, required, grid, addons, form],
-    input_group[inline_end, text, button, kbd, dropdown, spinner],
-    input_otp[verify],
-    item[variant, size, image, group, avatar, icon, link, dropdown, header, rtl],
-    kbd[in_button, in_tooltip],
-    label[with_checkbox],
-    line_chart[linear, step, multiple, dots, dots_colors, dots_custom, label, label_custom, interactive],
-    marker[variants, status, link_button, icon],
-    menubar[checkboxes, radio_group, rtl, click_only, icons, shortcuts],
-    message[avatar, group, header_footer, actions, attachment, demo, download],
-    message_scroller[last_anchor, load_history, long, commands, anchoring, opening_position, previous_context, group_chat, animation, full_chat, fade],
-    native_select[disabled, groups, sizes],
-    navigation_menu[click_only, icons],
-    navbar[rtl, click_only],
-    pagination,
-    pie_chart[separator_none, label, label_list, label_custom, legend, donut, donut_active, donut_text, stacked, interactive],
-    popover[non_modal, modal, overlay, placement],
-    progress[label, controlled, rtl],
-    radar_chart[dots, lines_only, multiple, grid_circle, grid_circle_fill, grid_circle_no_lines, grid_custom, grid_fill, grid_none, icons, label_custom, legend, radius],
-    radial_chart[label, grid, text, shape, stacked],
-    radio_group[rtl, description, choice_card, fieldset, disabled, invalid],
-    resizable[rtl, vertical],
-    scroll_area[rtl, horizontal, releases, fade],
-    select[multi, rtl, disabled, sizes],
-    separator[vertical, settings],
-    sheet[overlay, no_close],
     sidebar(block)[floating, inset],
-    skeleton[card, avatar, form, table],
-    slider[dynamic_range, range, rtl, vertical, disabled],
-    spinner[button, badge, in_input, rtl],
-    switch[description, choice_card, disabled, invalid, rtl, sizes],
-    table[rich],
-    tabs[rtl, until_found, line, vertical, vertical_line, disabled, icons, sizes],
-    tag_group[multi, states],
-    textarea[outline, fade, ghost, field, button],
-    toast[types],
-    toggle[text, outline, sizes, disabled, rtl],
-    toggle_group[outline, sizes, spacing, vertical, rtl, disabled, font_weight],
-    toolbar[rtl],
-    tooltip[shortcut, disabled_button, delays],
-    top_layer,
-    virtual_list[random_heights, content_visibility, windowed, fade],
 );
