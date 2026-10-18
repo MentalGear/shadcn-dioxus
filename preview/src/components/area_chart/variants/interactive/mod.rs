@@ -179,6 +179,8 @@ pub fn Demo() -> Element {
                         Select::<TimeRange> {
                             default_value: TimeRange::Days90,
                             trigger_aria_label: Some("Select a time range".to_string()),
+                            // shadcn's `w-[160px]`: the same trigger box before and after the selected label is written.
+                            trigger_class: "dx-chart-range-trigger",
                             on_value_change: move |value: Option<TimeRange>| {
                                 if let Some(value) = value {
                                     range.set(value);
