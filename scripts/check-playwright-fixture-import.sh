@@ -5,14 +5,15 @@
 # Every Playwright spec must take its runtime `test`/`expect` from
 # `playwright/fixtures.ts`, never straight from "@playwright/test".
 #
-# fixtures.ts overrides the worker-scoped `browser` fixture so every
-# BrowserContext gets `html { scroll-behavior: auto !important }`: the
-# site's global `scroll-behavior: smooth` otherwise animates Playwright's
-# own actionability pre-scroll and drags hover/click targets out from under
-# the cursor (dev-docs/backlog.md row 110). A fixture only reaches tests
-# declared through the extended `test` object, so a spec that imports the
-# stock one silently opts out -- which happened once already, to
-# navbar.spec.ts, the day the fixture landed. Type-only imports
+# fixtures.ts is the suite's one import point for the runtime `test`/`expect`/
+# `devices`. It used to force `html { scroll-behavior: auto !important }` on
+# every context (dev-docs/backlog.md row 110); row 228 deleted that override
+# because it hid the ambient-smooth navigation bug from every spec, so today
+# it is a plain re-export. The gate stays so a future suite-wide fixture
+# reaches every spec: a fixture only reaches tests declared through the
+# extended `test` object, so a spec that imports the stock one silently opts
+# out -- which happened once already, to navbar.spec.ts, the day the first
+# fixture landed. Type-only imports
 # (`import type { Page } ...`, `import { type Page } ...`) are fine.
 
 set -euo pipefail

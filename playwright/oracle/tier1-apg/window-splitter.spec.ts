@@ -61,24 +61,30 @@
  */
 
 import { test, expect } from "../../fixtures";
-import { type Page } from "@playwright/test";
+import { type Locator, type Page } from "@playwright/test";
 import { BASE_URL } from "../../base-url";
+import { demoRole } from "../../demo-frame";
 
 const BASE = `${BASE_URL}/component/?name=resizable&`;
 const goto = (page: Page) => page.goto(BASE, { timeout: 20 * 60 * 1000 });
 
+// resizable demo: the three handles in document order -- the side-by-side group's, the stacked group's, the
+// collapsible panel's (backlog row 220: role and position in the demo frame, never the handles' labels).
+const sidebarHandle = (page: Page) => demoRole(page, "separator", 0);
+const topHandle = (page: Page) => demoRole(page, "separator", 1);
+const collapsibleHandle = (page: Page) => demoRole(page, "separator", 2);
+
 /** The panel element a handle's `aria-controls` names (its "primary pane"). */
-async function primaryPanel(page: Page, handleName: string) {
-  const handle = page.getByRole("separator", { name: handleName });
+async function primaryPanel(page: Page, handle: Locator) {
   const id = await handle.getAttribute("aria-controls");
-  expect(id, `${handleName} handle must have a non-empty aria-controls`).toBeTruthy();
+  expect(id, "the handle must have a non-empty aria-controls").toBeTruthy();
   return page.locator(`#${id}`);
 }
 
 test.describe("R1 — role/aria contract (Roles, States, and Properties section)", () => {
   test('handle has role="separator", aria-valuenow/min/max, aria-controls pointing at a real element, and is focusable via Tab', async ({ page }) => {
     await goto(page);
-    const handle = page.getByRole("separator", { name: "Sidebar" });
+    const handle = sidebarHandle(page);
 
     // "The element that serves as the focusable splitter has role separator."
     await expect(handle).toHaveAttribute("role", "separator");
@@ -94,7 +100,7 @@ test.describe("R1 — role/aria contract (Roles, States, and Properties section)
     await expect(handle).toHaveAttribute("aria-valuemax", "100");
 
     // "The separator element has aria-controls referring to the primary pane."
-    const panel = await primaryPanel(page, "Sidebar");
+    const panel = await primaryPanel(page, sidebarHandle(page));
     await expect(panel).toHaveCount(1);
     await expect(panel).toHaveAttribute("data-panel", "true");
 
@@ -113,20 +119,21 @@ test.describe("R1 — role/aria contract (Roles, States, and Properties section)
     // aria-labelledby ... Otherwise, the separator element has a label
     // provided by aria-label." This fixture uses aria-label for all three
     // handles; each name below is exactly its primary pane's own name.
-    await expect(page.getByRole("separator", { name: "Sidebar" })).toBeVisible();
-    await expect(page.getByRole("separator", { name: "Top" })).toBeVisible();
-    await expect(page.getByRole("separator", { name: "Collapsible Panel" })).toBeVisible();
+    for (const handle of [sidebarHandle(page), topHandle(page), collapsibleHandle(page)]) {
+      await expect(handle).toBeVisible();
+      await expect(handle, "the handle carries its own aria-label").toHaveAttribute("aria-label", /\S/);
+    }
   });
 
   test("aria-orientation is the inverse of the group's own layout direction (see header derivation)", async ({ page }) => {
     await goto(page);
     // Horizontal-direction group (side-by-side panes) -> a "vertical splitter".
-    await expect(page.getByRole("separator", { name: "Sidebar" })).toHaveAttribute(
+    await expect(sidebarHandle(page)).toHaveAttribute(
       "aria-orientation",
       "vertical",
     );
     // Vertical-direction group (stacked panes) -> a "horizontal splitter".
-    await expect(page.getByRole("separator", { name: "Top" })).toHaveAttribute(
+    await expect(topHandle(page)).toHaveAttribute(
       "aria-orientation",
       "horizontal",
     );
@@ -136,8 +143,8 @@ test.describe("R1 — role/aria contract (Roles, States, and Properties section)
 test.describe("R2 — arrow keys move the boundary by a step, honoring min/max (Keyboard Interaction section)", () => {
   test('Right Arrow "Moves a vertical splitter to the right" / Left Arrow "...to the left", changing both aria-valuenow and the primary pane\'s real width', async ({ page }) => {
     await goto(page);
-    const handle = page.getByRole("separator", { name: "Sidebar" });
-    const panel = await primaryPanel(page, "Sidebar");
+    const handle = sidebarHandle(page);
+    const panel = await primaryPanel(page, sidebarHandle(page));
 
     await expect(handle).toHaveAttribute("aria-valuenow", "50");
     const before = await panel.boundingBox();
@@ -159,7 +166,7 @@ test.describe("R2 — arrow keys move the boundary by a step, honoring min/max (
 
   test("Shift+Arrow steps by 10 and the boundary clamps at the primary pane's min_size", async ({ page }) => {
     await goto(page);
-    const handle = page.getByRole("separator", { name: "Sidebar" });
+    const handle = sidebarHandle(page);
     await handle.focus();
 
     await page.keyboard.press("Shift+ArrowLeft");
@@ -174,7 +181,7 @@ test.describe("R2 — arrow keys move the boundary by a step, honoring min/max (
 
   test("Up/Down Arrow move a vertical-direction group's handle; Left/Right are ignored on it", async ({ page }) => {
     await goto(page);
-    const handle = page.getByRole("separator", { name: "Top" });
+    const handle = topHandle(page);
     await handle.focus();
 
     await expect(handle).toHaveAttribute("aria-valuenow", "25");
@@ -198,7 +205,7 @@ test.describe("R2 — arrow keys move the boundary by a step, honoring min/max (
 test.describe("R3 — Home/End (Keyboard Interaction section, both marked Optional)", () => {
   test('Home "Moves splitter to the position that gives the primary pane its smallest allowed size"', async ({ page }) => {
     await goto(page);
-    const handle = page.getByRole("separator", { name: "Sidebar" });
+    const handle = sidebarHandle(page);
     await handle.focus();
     await page.keyboard.press("Home");
     // Sidebar's own min_size is 20; Sidebar is not collapsible, so Home
@@ -208,7 +215,7 @@ test.describe("R3 — Home/End (Keyboard Interaction section, both marked Option
 
   test('End "Moves splitter to the position that gives the primary pane its largest allowed size" -- bounded by the neighbor pane\'s own min_size, not just the primary\'s nominal max', async ({ page }) => {
     await goto(page);
-    const handle = page.getByRole("separator", { name: "Sidebar" });
+    const handle = sidebarHandle(page);
     await handle.focus();
     await page.keyboard.press("End");
     // Sidebar's own registered max_size is 100 (reported as aria-valuemax,
@@ -224,7 +231,7 @@ test.describe("R3 — Home/End (Keyboard Interaction section, both marked Option
 test.describe("R4 — Enter (Keyboard Interaction section)", () => {
   test('Enter "If the primary pane is not collapsed, collapses the pane. If the pane is collapsed, restores the splitter to its previous position"', async ({ page }) => {
     await goto(page);
-    const handle = page.getByRole("separator", { name: "Collapsible Panel" });
+    const handle = collapsibleHandle(page);
     await handle.focus();
 
     await expect(handle).toHaveAttribute("aria-valuenow", "30");
@@ -239,7 +246,7 @@ test.describe("R4 — Enter (Keyboard Interaction section)", () => {
 
   test("Enter is a no-op on a non-collapsible primary pane", async ({ page }) => {
     await goto(page);
-    const handle = page.getByRole("separator", { name: "Sidebar" });
+    const handle = sidebarHandle(page);
     await handle.focus();
     await expect(handle).toHaveAttribute("aria-valuenow", "50");
     await page.keyboard.press("Enter");

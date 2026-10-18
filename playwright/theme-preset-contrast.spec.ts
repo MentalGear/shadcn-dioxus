@@ -56,7 +56,9 @@ type Probe = {
   name: string;
   /** CSS selector of the element whose text colour and background are measured. */
   selector: string;
-  /** If set, the first match whose trimmed text equals this (several demo buttons share a selector). */
+  /** If set, the first match whose trimmed text equals this. SITE CHROME ONLY (the home page's eyebrows and
+   * prompt chip, which are not component demos); a component demo's controls are selected by a variant
+   * attribute or position, never by copy (backlog row 220). */
   text?: string;
   /** Which match of `selector` (after the `text` filter), 0-based; default the first. For controls named by an aria-label. */
   nth?: number;
@@ -189,11 +191,10 @@ for (const mode of ["light", "dark"] as const) {
           ...["primary", "secondary", "destructive", "outline"].map((v) => ({
             name: `badge ${v}`,
             selector: `.dx-badge[data-style="${v}"]`,
-            text: v[0].toUpperCase() + v.slice(1),
           })),
           // The demo's "Verified" badge: an inline `--dx-ring-color` fill with white ink, which was 3.60:1
           // in dark mode before its fill was clamped.
-          { name: "badge verified", selector: ".dx-badge", text: "Verified" },
+          { name: "badge verified", selector: '.dx-badge[style*="--dx-ring-color"]' }, // the badge whose inline fill is the ring colour
         ],
         mode,
       );
@@ -205,33 +206,23 @@ for (const mode of ["light", "dark"] as const) {
       await open(page, "/component/button/", ".dx-button");
       const rows = await sweep(
         page,
-        [
-          ["default", "Primary"],
-          ["secondary", "Secondary"],
-          ["outline", "Outline"],
-          ["ghost", "Ghost"],
-          ["link", "Link"],
-          ["destructive", "Destructive"],
-        ].map(([v, text]) => ({ name: `button ${v}`, selector: ".dx-button", text })),
+        ["primary", "secondary", "outline", "ghost", "link", "destructive"].map((v) => ({
+          name: `button ${v}`,
+          selector: `.dx-button[data-style="${v}"]`,
+        })),
         mode,
       );
       logWorst(`button rest ${mode}`, rows);
       expect(failures(rows)).toEqual([]);
     });
 
-    for (const [variant, text] of [
-      ["default", "Primary"],
-      ["secondary", "Secondary"],
-      ["outline", "Outline"],
-      ["ghost", "Ghost"],
-      ["destructive", "Destructive"],
-    ]) {
+    for (const variant of ["primary", "secondary", "outline", "ghost", "destructive"]) {
       const hoverContrast = async ({ page }: { page: Page }) => {
         await open(page, "/component/button/", ".dx-button");
-        const button = page.locator(".dx-button", { hasText: new RegExp(`^${text}$`) }).first();
+        const button = page.locator(`.dx-button[data-style="${variant}"]`).first();
         await button.hover();
         expect(await button.evaluate((el) => el.matches(":hover"))).toBe(true);
-        const rows = await sweep(page, [{ name: `button ${variant} hover`, selector: ".dx-button", text }], mode);
+        const rows = await sweep(page, [{ name: `button ${variant} hover`, selector: `.dx-button[data-style="${variant}"]` }], mode);
         logWorst(`button ${variant} hover ${mode}`, rows);
         expect(failures(rows)).toEqual([]);
       };
@@ -245,8 +236,8 @@ for (const mode of ["light", "dark"] as const) {
       // hair at rest. Under an accent the hover must go the other way: darker under light text, lighter
       // under dark text. Contrast can then only rise, and the step has to be one a pointer user can see.
       await open(page, "/component/button/", ".dx-button");
-      const button = page.locator(".dx-button", { hasText: /^Primary$/ }).first();
-      const probe: Probe[] = [{ name: "button default", selector: ".dx-button", text: "Primary" }];
+      const button = page.locator('.dx-button[data-style="primary"]').first();
+      const probe: Probe[] = [{ name: "button default", selector: '.dx-button[data-style="primary"]' }];
       await page.mouse.move(0, 0);
       const rest = await sweep(page, probe, mode);
       await button.hover();
