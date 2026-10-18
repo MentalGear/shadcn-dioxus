@@ -449,7 +449,7 @@ examples!(
     bubble[alignment, group, reactions, link_button, tooltip, popover, collapsible, link_group],
     // No `spinner` variant here: the button route is the "no motion subscribers" page of
     // oracle/tier2-html/motion-gating.spec.ts; the spinner-in-a-button demo lives on `spinner`.
-    button[size, icon, group, as_link],
+    button[all_variants, size, icon, group, as_link],
     button_group[orientation, nested, separator, split, with_input, dropdown, select, popover, rtl],
     calendar[simple, internationalized, range, multi_month, unavailable_dates, rtl, presets, date_time, caption, week_numbers],
     card[small, image, terms],

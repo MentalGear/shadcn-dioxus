@@ -188,12 +188,21 @@ html[data-theme="light"] [class~="dxc-system"] {
    * #262626) are distinct (1.19:1 apart, the same step shadcn ships) and the page no longer collapses
    * into pure black. In dark, muted == secondary == accent (#262626), as in shadcn: a sheet whose rest
    * state is `--dx-muted` and whose hover is `--dx-accent` must derive the second state, not assume it. */
+
+  /* The TEXT roles are shadcn's own base-nova values (what ui.shadcn.com/docs paints with no preset: `:root`
+   * `--foreground #000`, `--primary-foreground #fafafa`, `--secondary-foreground #171717`, `--destructive
+   * #e40014`; `.dark` `--foreground #fafafa`, `--primary-foreground #171717`), so a site that sets none of the
+   * bare variables gets the same ink as shadcn's docs instead of the Dioxus ramp's greys (`--secondary-color-4`
+   * #111 / #d4d4d4 as body ink, `--primary-color` #fff as the ink on a primary fill). The ramp stays for
+   * installers that read it. Dark `--dx-destructive` keeps the ramp's #a22e2e on purpose: it is a FILL here
+   * (solid Button / Badge / AlertDialog action carry near-white text on it) and shadcn's dark salmon #ff6568
+   * is only 2.8:1 under that text -- a preset that brings it also brings `--destructive-foreground`. */
   --dx-background: var(--background, var(--primary-color-2));
-  --dx-foreground: var(--foreground, var(--secondary-color-4));
+  --dx-foreground: var(--foreground, var(--light, #000) var(--dark, #fafafa));
   --dx-card: var(--card, var(--light, var(--primary-color-2)) var(--dark, #171717));
-  --dx-card-foreground: var(--card-foreground, var(--secondary-color-4));
+  --dx-card-foreground: var(--card-foreground, var(--light, #000) var(--dark, #fafafa));
   --dx-popover: var(--popover, var(--light, var(--primary-color)) var(--dark, #171717));
-  --dx-popover-foreground: var(--popover-foreground, var(--secondary-color-4));
+  --dx-popover-foreground: var(--popover-foreground, var(--light, #000) var(--dark, #fafafa));
 
   /* Actions */
 
@@ -202,9 +211,9 @@ html[data-theme="light"] [class~="dxc-system"] {
    only the dark half moves (#fafafa -> #e5e5e5), which is also what the
    primary button/badge already rendered through `--dx-primary-alt`. */
   --dx-primary: var(--primary, var(--light, #000) var(--dark, #e5e5e5));
-  --dx-primary-foreground: var(--primary-foreground, var(--primary-color));
+  --dx-primary-foreground: var(--primary-foreground, var(--light, #fafafa) var(--dark, #171717));
   --dx-secondary: var(--secondary, var(--primary-color-5));
-  --dx-secondary-foreground: var(--secondary-foreground, var(--secondary-color-1));
+  --dx-secondary-foreground: var(--secondary-foreground, var(--light, #171717) var(--dark, #fafafa));
   --dx-muted: var(--muted, var(--primary-color-5));
   --dx-muted-foreground: var(--muted-foreground, var(--secondary-color-5));
   --dx-accent: var(--accent, var(--light, var(--primary-color-4)) var(--dark, var(--primary-color-5)));
@@ -226,7 +235,7 @@ html[data-theme="light"] [class~="dxc-system"] {
   --dx-accent-selected: var(--light, var(--dx-accent))
     var(--dark, color-mix(in oklab, var(--dx-accent), var(--dx-foreground) 15%));
   --dx-accent-selected-foreground: var(--dx-accent-foreground);
-  --dx-destructive: var(--destructive, var(--primary-error-color));
+  --dx-destructive: var(--destructive, var(--light, #e40014) var(--dark, var(--primary-error-color)));
   --dx-destructive-foreground: var(--destructive-foreground, var(--contrast-error-color));
 
   /* `--dx-destructive` kept readable AS TEXT: error messages, a destructive menu item, the destructive

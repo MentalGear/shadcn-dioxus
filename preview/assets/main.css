@@ -861,6 +861,57 @@ button.dx-theme-phone-trigger {
   display: none;
 }
 
+/* The docs sidebar lists the components twice, A-Z (the default) and by category (`preview/src/docs_nav.rs`).
+ * `<html data-nav-sort>` -- set before first paint from the remembered choice, absent = A-Z -- shows exactly one
+ * list and paints the matching toggle option, so neither the list nor the toggle is ever drawn in the wrong
+ * state, and the choice needs no Rust (the SSG is one static page for every visitor). */
+html[data-nav-sort="category"] .dx-nav-az,
+html:not([data-nav-sort="category"]) .dx-nav-category {
+  display: none;
+}
+
+.dx-nav-sort-group {
+  padding-bottom: 0;
+}
+
+.dx-nav-sort {
+  display: flex;
+  padding: 2px;
+  border-radius: var(--dx-radius-lg);
+  background-color: var(--dx-muted);
+  gap: 2px;
+}
+
+.dx-nav-sort-option {
+  height: 1.75rem;
+  flex: 1;
+  border: 0;
+  border-radius: calc(var(--dx-radius-lg) - 2px);
+  background-color: transparent;
+  color: var(--dx-muted-foreground);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--dx-text-xs);
+  font-weight: 500;
+}
+
+.dx-nav-sort-option:focus-visible {
+  box-shadow: var(--dx-ring);
+  outline: none;
+}
+
+html:not([data-nav-sort="category"]) .dx-nav-sort-option[data-nav-sort-option="az"],
+html[data-nav-sort="category"] .dx-nav-sort-option[data-nav-sort-option="category"] {
+  background-color: var(--dx-background);
+  box-shadow: var(--dx-shadow-sm);
+  color: var(--dx-foreground);
+}
+
+html:not([data-nav-sort="category"]) .dx-nav-sort-option[data-nav-sort-option="az"]:focus-visible,
+html[data-nav-sort="category"] .dx-nav-sort-option[data-nav-sort-option="category"]:focus-visible {
+  box-shadow: var(--dx-ring);
+}
+
 .dx-docs-shell-body .dx-sidebar-container {
   position: sticky;
   top: var(--dx-navbar-height);
@@ -1342,22 +1393,24 @@ button.dx-theme-phone-trigger {
   font-size: 0.75rem;
 }
 
+/* The demo frame is shadcn's preview frame (ui.shadcn.com/docs/components, `data-slot="component-preview"`:
+ * `rounded-2xl border`, inner `h-72 p-10`, centred, NO fill -- the page shows through, so a Card demo reads as
+ * a card on the page and axe judges demo text against the real page background). It used to be a card-coloured
+ * panel with a 16px dotted grid, 8px radius and 32px padding; in dark that panel was #171717 on a #0a0a0a page,
+ * which is what made every docs button look "on a different background" from shadcn's. `min-height` instead of
+ * `height`: a tall demo (a calendar, a form) grows the frame instead of overflowing it. */
 .dx-component-preview-frame {
   display: flex;
   width: 100%;
-  min-height: 11rem;
+  min-height: 18rem;
   max-height: 100%;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: var(--dx-space-8);
+  padding: var(--dx-space-10);
   border: 1px solid var(--dx-border);
-  border-radius: 0.5rem;
-  background-color: var(--dx-card);
-  background-image:
-    radial-gradient(circle, rgb(0 0 0 / 6%) 1px, transparent 1px);
-  background-position: -1px -1px;
-  background-size: 16px 16px;
+  border-radius: 1rem;
+  background-color: transparent;
 }
 
 /* At phone widths the frame's 32px-per-side padding plus a card's own 24px
@@ -1368,7 +1421,7 @@ button.dx-theme-phone-trigger {
  * `preview/src/main.rs`). Until row 132 `components/tabs/style.css` (loaded
  * after this file) padded every `.dx-tabs-content` 2rem and so supplied the
  * frame's padding; Nova's tabs content has none, so the frame now owns its
- * 2rem above. The compound selector is kept so a future tabs padding cannot
+ * padding above. The compound selector is kept so a future tabs padding cannot
  * win by load order; it must stay ABOVE the `:has(.dx-code-block)` rule below
  * (same specificity), which keeps the CODE tab at `padding: 0` by source
  * order. */
@@ -1385,7 +1438,6 @@ button.dx-theme-phone-trigger {
   padding: 0;
   border: none;
   background-color: transparent;
-  background-image: none;
 }
 
 .dx-component-manual-install {
@@ -1984,7 +2036,7 @@ html[data-cv-settle] {
   max-width: 40rem;
 }
 
-/* A bare chart sits straight on the dotted frame canvas; give it the same
+/* A bare chart sits straight on the (unfilled) frame; give it the same
  * surface the `Card`-wrapped demos have so its axis labels stay legible. */
 .dx-component-preview-frame > .dx-chart {
   padding: var(--dx-space-4);

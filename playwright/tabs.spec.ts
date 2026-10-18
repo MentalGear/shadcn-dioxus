@@ -401,18 +401,20 @@ test.describe("vertical orientation", () => {
 
 // The docs site's demo frame is itself a `TabContent` (`.dx-component-preview-frame.dx-tabs-content-themed`)
 // inside a `line` Tabs. The panel's default frame (tabs/style.css, loaded after main.css) used to out-rank the
-// frame's own border, radius and dot-grid background on stylesheet order alone, so every demo on every
-// component page lost its chrome -- and with it the dotted ground that kept axe from judging text on the demo
-// background (it reports "background gradient", not a ratio; B2/B3 of the verify2 report surfaced the moment it went).
+// frame's own border and radius on stylesheet order alone, so every demo on every component page lost its
+// chrome. The frame is shadcn's preview frame (docs-site lane, rows 231): `rounded-2xl border`, 40px padding,
+// 288px tall, and NO fill -- no card colour, no dotted grid -- so a demo sits on the page like shadcn's.
 test.describe("the docs demo frame keeps its own chrome", () => {
-  test("border, radius and dot grid come from main.css, not from the Tabs panel default", async ({ page }) => {
+  test("border, radius, padding and height come from main.css, not from the Tabs panel default", async ({ page }) => {
     await page.goto(`${BASE_URL}/component/?name=spinner&`);
     const frame = page.locator(".dx-component-preview-frame").first();
     await expect(frame).toBeVisible();
     await expect(frame).toHaveCSS("border-top-width", "1px");
-    await expect(frame).toHaveCSS("border-top-left-radius", "8px");
-    expect(await frame.evaluate((el) => getComputedStyle(el).backgroundImage)).toContain("radial-gradient");
-    expect(await frame.evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe("rgba(0, 0, 0, 0)");
+    await expect(frame).toHaveCSS("border-top-left-radius", "16px");
+    await expect(frame).toHaveCSS("padding-top", "40px");
+    await expect(frame).toHaveCSS("background-image", "none");
+    await expect(frame).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+    expect((await frame.boundingBox())!.height).toBeGreaterThanOrEqual(288);
   });
 
   test("a default Tabs panel is still framed by the zero-specificity default", async ({ page }) => {
