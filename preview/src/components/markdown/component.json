@@ -1,0 +1,17 @@
+{
+  "name": "markdown",
+  "description": "Model output as Markdown: renders from an allowlisted tree (raw HTML is text, links limited to http, https, mailto, tel and relative, images off by default), heals an unfinished streaming tail, autolinks bare URLs, and takes a highlighter slot for code blocks.",
+  "authors": ["Claude"],
+  "exclude": ["variants", "docs.md", "component.json"],
+  "cargoDependencies": [
+    {
+      "name": "dioxus-primitives",
+      "git": "https://github.com/MentalGear/shadcn-dioxus"
+    },
+    {
+      "name": "pulldown-cmark",
+      "version": "=0.13.4"
+    }
+  ],
+  "globalAssets": ["../../../assets/dx-components-theme.css"]
+}
