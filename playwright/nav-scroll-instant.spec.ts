@@ -85,10 +85,12 @@ async function lastCardLink(page: Page) {
   await expect(link).toBeAttached();
   // Cards below are `content-visibility: auto`: bring it in, let the layout settle, bring it in again.
   for (let i = 0; i < 3; i++) {
+    // viewport-ok: vertical centring of a link in the scrolling page, not an overlay bound
     const top = await link.evaluate((el) => el.getBoundingClientRect().top + window.scrollY - window.innerHeight / 2);
     await instantScroll(page, top);
     await page.waitForTimeout(400);
   }
+  // viewport-ok: the link must be inside the page's scrolling viewport, not an overlay bound
   const inView = await link.evaluate((el) => {
     const r = el.getBoundingClientRect();
     return r.top >= 0 && r.bottom <= window.innerHeight;
