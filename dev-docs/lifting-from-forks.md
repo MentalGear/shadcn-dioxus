@@ -87,7 +87,7 @@ When the source is entangled with fork-only architecture — anything depending 
 Each one comes from something that actually went wrong during the survey.
 
 1. **Never take dependency edits.** Roughly a fifth of all fork divergence is personal path pins (`path = "../dioxus/packages/dioxus"`) and personal git forks of `dioxus-sdk-time`. Drop every `Cargo.toml` hunk unless you specifically want it.
-2. **Check whether the file is generated.** `primitives/build.rs` regenerates `src/js/focus-trap.js` from `src/ts/focus-trap.ts` via `lazy_js_bundle`. One fork's otherwise-correct fix edits only the generated `.js` — the next build silently erases it. Ask what writes this file before patching it.
+2. **Check whether the file is generated.** `src/js/focus-trap.js` is generated from `src/ts/focus-trap.ts` by `scripts/build-js-bundle.sh` (committed; there is no build script since row 217) and `scripts/check-js-bundle.sh` fails on a hand-edited `.js`. One fork's otherwise-correct fix edited only the generated `.js` — the next rebuild would have erased it (and now the gate rejects it). Ask what writes this file before patching it.
 3. **`git cherry` is a filter, not a verdict.** A squash-merged branch keeps a novel patch-id. Always confirm against the current source on `main`.
 4. **Verify the bug still exists** before porting its fix. Many fork fixes target `primitives/src/focus.rs`, a file upstream deleted.
 5. **A branch named `fix-*` is not necessarily a fix.** One "simplification" strips the controlled-mode and form props `Checkbox` deliberately has; one fork's calendar patch silently reverts a shipped timezone fix.

@@ -10,6 +10,7 @@ use dioxus::prelude::*;
 #[cfg(not(feature = "web"))]
 use dioxus::prelude::{asset, manganis, Asset};
 use dioxus_core::AttributeValue::Text;
+#[cfg(feature = "calendar")]
 use time::OffsetDateTime;
 
 use crate::js_listener::{use_js_listeners, JsListeners};
@@ -21,16 +22,19 @@ pub mod activity;
 pub mod alert_dialog;
 pub mod aspect_ratio;
 pub mod avatar;
+#[cfg(feature = "calendar")]
 pub mod calendar;
 pub mod carousel;
 pub mod chart;
 pub mod checkbox;
 pub mod collapsible;
 mod collection;
+#[cfg(feature = "color-picker")]
 pub mod color_picker;
 pub mod combobox;
 pub mod command;
 pub mod context_menu;
+#[cfg(feature = "calendar")]
 pub mod date_picker;
 pub mod dialog;
 pub mod direction;
@@ -87,7 +91,8 @@ pub(crate) mod r#virtual;
 pub mod virtual_list;
 
 /// The vendored `focus-trap` JS bundle (`primitives/src/ts/focus-trap.ts`,
-/// compiled by `primitives/build.rs`'s `lazy_js_bundle` step). Native (Blitz)
+/// generated and committed by `scripts/build-js-bundle.sh`, checked by
+/// `scripts/check-js-bundle.sh`; there is no build script). Native (Blitz)
 /// modal overlays (`dialog.rs`/`alert_dialog.rs`/`popover.rs`'s
 /// `#[cfg(not(feature = "web"))]` arms) are its only remaining
 /// consumers -- every web-arm modal overlay now uses the native-dialog
@@ -986,11 +991,13 @@ impl ContentAlign {
     }
 }
 
+#[cfg(feature = "calendar")]
 pub(crate) trait LocalDateExt {
     /// A small extension method function to get the local date with a fallback to UTC date if this fails
     fn now_local_date() -> time::Date;
 }
 
+#[cfg(feature = "calendar")]
 impl LocalDateExt for time::OffsetDateTime {
     fn now_local_date() -> time::Date {
         OffsetDateTime::now_local()
