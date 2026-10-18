@@ -128,6 +128,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { BASE_URL } from "../../base-url";
 import { gotoHydrated } from "../../hydration";
+import { demoFrame, demoRole } from "../../demo-frame";
 
 const BASE = `${BASE_URL}/component/?name=`;
 // dev-docs/backlog.md row 109: this suite clicks triggers right after
@@ -250,7 +251,7 @@ test.describe("APG Menu Button pattern — DropdownMenu", () => {
   test("trigger: aria-haspopup is \"menu\" or \"true\", aria-expanded reflects open state", async ({
     page,
   }) => {
-    const trigger = page.getByRole("button", { name: "Open Menu" });
+    const trigger = demoRole(page, "button");
     const haspopup = await trigger.getAttribute("aria-haspopup");
     expect(
       haspopup,
@@ -273,7 +274,7 @@ test.describe("APG Menu Button pattern — DropdownMenu", () => {
   test('popup is role="menu" (not "listbox"), with an accessible name via aria-labelledby', async ({
     page,
   }) => {
-    const trigger = page.getByRole("button", { name: "Open Menu" });
+    const trigger = demoRole(page, "button");
     await trigger.click();
 
     const menu = page.getByRole("menu");
@@ -293,7 +294,7 @@ test.describe("APG Menu Button pattern — DropdownMenu", () => {
   test('every item is role="menuitem" (not "option"), and none carries aria-selected', async ({
     page,
   }) => {
-    await page.getByRole("button", { name: "Open Menu" }).click();
+    await demoRole(page, "button").click();
 
     const items = page.getByRole("menuitem");
     await expect(
@@ -329,14 +330,14 @@ test.describe("APG Menu pattern (context-menu invocation) — ContextMenu", () =
   test('trigger: aria-haspopup="menu" (matches the "menu" token the Menu Button pattern permits)', async ({
     page,
   }) => {
-    const trigger = page.getByRole("button", { name: "right click here" });
+    const trigger = demoRole(page, "button");
     await expect(trigger).toHaveAttribute("aria-haspopup", "menu");
   });
 
   test('popup is role="menu", every item is role="menuitem", none carries aria-selected', async ({
     page,
   }) => {
-    const trigger = page.getByRole("button", { name: "right click here" });
+    const trigger = demoRole(page, "button");
     await trigger.click({ button: "right" });
 
     const menu = page.getByRole("menu");
@@ -373,17 +374,14 @@ test.describe("APG Menu and Menubar pattern — Menubar submenus", () => {
   test('submenu popup is role="menu", every item is role="menuitem", none carries aria-selected', async ({
     page,
   }) => {
-    const fileTrigger = page.getByRole("menuitem", { name: "File" });
+    const fileTrigger = demoRole(page, "menuitem", 0);
     await fileTrigger.click();
 
     // `MenubarMenu`'s own always-rendered wrapper div is ALSO role="menu"
     // (menubar.rs) and also matches this filter, alongside the actual popup
     // content -- `.last()` picks the popup, mirroring keyboard-matrix.spec.ts's
     // identical disambiguation for the same two-elements-both-role-menu shape.
-    const fileMenu = page
-      .getByRole("menu")
-      .filter({ has: page.getByRole("menuitem", { name: "New" }) })
-      .last();
+    const fileMenu = page.locator(".dx-menubar-content");
     await expect(fileMenu).toHaveAttribute("data-state", "open");
     // docs/backlog.md row 53: `MenubarContentRendered`'s aria-labelledby
     // now comes from the shared `menu_root::content_labelledby_attributes`
@@ -420,10 +418,7 @@ test.describe("APG Menu and Menubar pattern — Navbar nav dropdowns", () => {
     // ("Inputs") is always rendered, but its sibling `NavbarContent` popup
     // only mounts once open, so the outer `NavbarNav` wrapper (itself also
     // role="menu" -- see below) is what has to be located and hovered first.
-    const inputsNav = page
-      .getByRole("menu")
-      .filter({ has: page.getByRole("menuitem", { name: "Inputs" }) })
-      .first();
+    const inputsNav = demoFrame(page).getByRole("menu").first();
     await inputsNav.hover();
     await expect(inputsNav).toHaveAttribute("data-state", "open");
 
@@ -434,10 +429,7 @@ test.describe("APG Menu and Menubar pattern — Navbar nav dropdowns", () => {
     // both-role-menu shape (both wrapper components mirror one another by
     // construction, not by coincidence -- see `menu_semantics.rs`'s module
     // doc, "Scope").
-    const navMenu = page
-      .getByRole("menu")
-      .filter({ has: page.getByRole("menuitem", { name: "Calendar" }) })
-      .last();
+    const navMenu = page.locator(".dx-navbar-content");
     await expect(navMenu).toHaveAttribute("data-state", "open");
 
     const items = navMenu.getByRole("menuitem");
@@ -460,7 +452,7 @@ test.describe("APG Menu Button pattern — DropdownMenu: checkable items", () =>
   });
 
   test("a menu of checkbox items: menuitemcheckbox (plus the sub-trigger's menuitem), aria-checked true|false on each", async ({ page }) => {
-    await page.getByRole("button", { name: "Checkboxes" }).click();
+    await demoRole(page, "button", 0, "checkboxes").click();
     const popup = page.getByRole("menu");
     await expect(popup).toHaveAttribute("data-state", "open");
     // The "More options" sub-trigger is the one plain menuitem.
@@ -469,7 +461,7 @@ test.describe("APG Menu Button pattern — DropdownMenu: checkable items", () =>
   });
 
   test("a menu of radio items: one role=group of menuitemradio with exactly one checked", async ({ page }) => {
-    await page.getByRole("button", { name: "Radio Group" }).click();
+    await demoRole(page, "button", 0, "radio_group").click();
     const popup = page.getByRole("menu");
     await expect(popup).toHaveAttribute("data-state", "open");
     await expectCheckableContract(popup, ["group", "menuitemradio"], "DropdownMenu radio group");
@@ -477,7 +469,7 @@ test.describe("APG Menu Button pattern — DropdownMenu: checkable items", () =>
   });
 
   test("ILLEGAL ELSEWHERE: the plain demo's menu has no checkable role, no group, no aria-checked", async ({ page }) => {
-    await page.getByRole("button", { name: "Open Menu" }).click();
+    await demoRole(page, "button").click();
     const popup = page.getByRole("menu");
     await expect(popup).toHaveAttribute("data-state", "open");
     await expectCheckableContract(popup, ["menuitem"], "DropdownMenu main");
@@ -490,7 +482,7 @@ test.describe("APG Menu pattern (context-menu invocation) — ContextMenu: check
   });
 
   test("a menu of checkbox items: menuitemcheckbox (plus the sub-trigger's menuitem), aria-checked true|false on each", async ({ page }) => {
-    await page.getByRole("button", { name: "Right click for checkboxes" }).click({ button: "right" });
+    await demoRole(page, "button", 0, "checkboxes").click({ button: "right" });
     const popup = page.getByRole("menu");
     await expect(popup).toHaveAttribute("data-state", "open");
     // The "More options" sub-trigger is the one plain menuitem.
@@ -499,7 +491,7 @@ test.describe("APG Menu pattern (context-menu invocation) — ContextMenu: check
   });
 
   test("a menu of radio items: two role=group sets of menuitemradio, exactly one checked in each", async ({ page }) => {
-    await page.getByRole("button", { name: "Right click for radio group" }).click({ button: "right" });
+    await demoRole(page, "button", 0, "radio_group").click({ button: "right" });
     const popup = page.getByRole("menu");
     await expect(popup).toHaveAttribute("data-state", "open");
     await expectCheckableContract(popup, ["group", "menuitemradio"], "ContextMenu radio groups");
@@ -507,7 +499,7 @@ test.describe("APG Menu pattern (context-menu invocation) — ContextMenu: check
   });
 
   test("a menu that mixes plain, checkbox and radio items has each role exactly where it was rendered", async ({ page }) => {
-    await page.getByRole("button", { name: "right click here" }).click({ button: "right" });
+    await demoRole(page, "button").click({ button: "right" });
     const popup = page.getByRole("menu");
     await expect(popup).toHaveAttribute("data-state", "open");
     await expectCheckableContract(
@@ -528,11 +520,8 @@ test.describe("APG Menu and Menubar pattern — Menubar: checkable items", () =>
   });
 
   test("a menu mixing plain and checkbox items: menuitem + menuitemcheckbox only", async ({ page }) => {
-    await page.getByRole("menuitem", { name: "View" }).click();
-    const popup = page
-      .getByRole("menu")
-      .filter({ has: page.getByRole("menuitemcheckbox", { name: "Always Show Full URLs" }) })
-      .last();
+    await demoRole(page, "menuitem", 0, "checkboxes").click();
+    const popup = page.locator(".dx-menubar-content");
     await expect(popup).toHaveAttribute("data-state", "open");
     await expectCheckableContract(popup, ["menuitem", "menuitemcheckbox"], "Menubar View");
     await expect(popup.getByRole("menuitemcheckbox")).toHaveCount(2);
@@ -540,22 +529,16 @@ test.describe("APG Menu and Menubar pattern — Menubar: checkable items", () =>
   });
 
   test("a menu of radio items: one role=group of menuitemradio with exactly one checked", async ({ page }) => {
-    await page.getByRole("menuitem", { name: "Accounts" }).click();
-    const popup = page
-      .getByRole("menu")
-      .filter({ has: page.getByRole("menuitemradio", { name: "Benoit" }) })
-      .last();
+    await demoRole(page, "menuitem", 0, "radio_group").click();
+    const popup = page.locator(".dx-menubar-content");
     await expect(popup).toHaveAttribute("data-state", "open");
     await expectCheckableContract(popup, ["group", "menuitemradio"], "Menubar Accounts");
     await expect(popup.getByRole("menuitemradio")).toHaveCount(3);
   });
 
   test("ILLEGAL ELSEWHERE: the plain File menu has no checkable role, no group, no aria-checked", async ({ page }) => {
-    await page.getByRole("menuitem", { name: "File" }).click();
-    const popup = page
-      .getByRole("menu")
-      .filter({ has: page.getByRole("menuitem", { name: "New" }) })
-      .last();
+    await demoRole(page, "menuitem", 0).click();
+    const popup = page.locator(".dx-menubar-content");
     await expect(popup).toHaveAttribute("data-state", "open");
     await expectCheckableContract(popup, ["menuitem"], "Menubar File");
   });
@@ -564,16 +547,10 @@ test.describe("APG Menu and Menubar pattern — Menubar: checkable items", () =>
 test.describe("APG Menu and Menubar pattern — Navbar nav dropdowns: no checkable items", () => {
   test("ILLEGAL ELSEWHERE: a nav dropdown has no checkable role, no group, no aria-checked", async ({ page }) => {
     await goto(page, "navbar");
-    const inputsNav = page
-      .getByRole("menu")
-      .filter({ has: page.getByRole("menuitem", { name: "Inputs" }) })
-      .first();
+    const inputsNav = demoFrame(page).getByRole("menu").first();
     await inputsNav.hover();
     await expect(inputsNav).toHaveAttribute("data-state", "open");
-    const navMenu = page
-      .getByRole("menu")
-      .filter({ has: page.getByRole("menuitem", { name: "Calendar" }) })
-      .last();
+    const navMenu = page.locator(".dx-navbar-content");
     await expect(navMenu).toHaveAttribute("data-state", "open");
     const roles = await rolesInside(navMenu);
     for (const forbidden of ["menuitemcheckbox", "menuitemradio", "group", ...STANDALONE_WIDGET_ROLES]) {

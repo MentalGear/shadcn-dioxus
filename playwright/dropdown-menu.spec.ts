@@ -3,6 +3,7 @@ import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from './axe';
 import { BASE_URL } from './base-url';
 import { gotoHydrated } from './hydration';
 import { expectFadeKeepsTransform } from './assert-anchor-transform';
+import { measureAtRest } from "./animations";
 
 test('test', async ({ page }) => {
   await page.goto(`${BASE_URL}/component/?name=dropdown_menu&`);
@@ -65,11 +66,11 @@ test('open content is fit-content width, not full page width, and sits near its 
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto(`${BASE_URL}/component/?name=dropdown_menu&`);
   const trigger = page.getByRole('button', { name: 'Open Menu' });
-  const triggerBox = await trigger.boundingBox();
+  const triggerBox = await measureAtRest(trigger);
   await trigger.click();
   const content = page.getByRole('menu');
   await expect(content).toBeVisible();
-  const box = await content.boundingBox();
+  const box = await measureAtRest(content);
   if (!triggerBox || !box) {
     throw new Error(`expected both trigger and content boxes, got trigger=${triggerBox} content=${box}`);
   }

@@ -39,9 +39,10 @@
  */
 
 import { test, expect } from "../../fixtures";
-import { type Page } from "@playwright/test";
+import { type Locator, type Page } from "@playwright/test";
 import { BASE_URL } from "../../base-url";
 import { gotoHydrated } from "../../hydration";
+import { demoFrame, demoRole, popupItem, popupItems } from "../../demo-frame";
 
 const BASE = `${BASE_URL}/component/?name=`;
 // dev-docs/backlog.md row 109: every row here presses keys right after
@@ -64,6 +65,18 @@ async function activeElement(page: Page) {
   });
 }
 
+
+// Demo controls are located by ROLE and POSITION inside the main demo frame (playwright/demo-frame.ts, backlog row
+// 220), never by the demo's copy. Positions are the demos' current order, noted where used.
+
+/** The `n`th item of the open menubar menu: `.dx-menubar-content` is the popup itself (the always-rendered
+ * `role="menu"` wrappers that hold each trigger come BEFORE it in the DOM, so "the last menu" is not reliable). */
+const menubarItem = (page: Page, n: number) => page.locator(".dx-menubar-content").getByRole("menuitem").nth(n);
+
+/** The `n`th character of an item's label, lower-cased: the key a typeahead row presses (typeahead is about
+ * labels by definition, so the key is READ from the item the row expects to land on, not typed from memory). */
+const labelChar = async (item: Locator, n: number) => ((await item.innerText()).trim()[n] ?? "").toLowerCase();
+
 // ============================================================================
 // Menu button (DropdownMenu)
 // Source: content/patterns/menu-button/menu-button-pattern.html#keyboard_interaction
@@ -78,7 +91,7 @@ async function activeElement(page: Page) {
 test.describe("APG Menu Button pattern — DropdownMenu trigger", () => {
   test("DropdownMenu trigger — Enter: \"opens the menu and places focus on the first menu item\"", async ({ page }) => {
     await goto(page, "dropdown_menu");
-    const trigger = page.getByRole("button", { name: "Open Menu" });
+    const trigger = demoRole(page, "button");
     await trigger.focus();
 
     await page.keyboard.press("Enter");
@@ -103,7 +116,7 @@ test.describe("APG Menu Button pattern — DropdownMenu trigger", () => {
 
   test("DropdownMenu trigger — Space: \"Opens the menu and places focus on the first menu item\"", async ({ page }) => {
     await goto(page, "dropdown_menu");
-    const trigger = page.getByRole("button", { name: "Open Menu" });
+    const trigger = demoRole(page, "button");
     await trigger.focus();
 
     await page.keyboard.press("Space");
@@ -126,7 +139,7 @@ test.describe("APG Menu Button pattern — DropdownMenu trigger", () => {
 
   test("DropdownMenu trigger — Down Arrow (Optional): \"opens the menu and moves focus to the first menu item\"", async ({ page }) => {
     await goto(page, "dropdown_menu");
-    const trigger = page.getByRole("button", { name: "Open Menu" });
+    const trigger = demoRole(page, "button");
     await trigger.focus();
 
     await page.keyboard.press("ArrowDown");
@@ -150,7 +163,7 @@ test.describe("APG Menu Button pattern — DropdownMenu trigger", () => {
 
   test("DropdownMenu trigger — Up Arrow (Optional): \"opens the menu and moves focus to the last menu item\"", async ({ page }) => {
     await goto(page, "dropdown_menu");
-    const trigger = page.getByRole("button", { name: "Open Menu" });
+    const trigger = demoRole(page, "button");
     await trigger.focus();
 
     await page.keyboard.press("ArrowUp");
@@ -171,13 +184,13 @@ test.describe("APG Menu Button pattern — DropdownMenu trigger", () => {
 test.describe("APG Menu (opened from a menu button) pattern — DropdownMenu content", () => {
   test.beforeEach(async ({ page }) => {
     await goto(page, "dropdown_menu");
-    await page.getByRole("button", { name: "Open Menu" }).click();
+    await demoRole(page, "button").click();
   });
 
   test("DropdownMenu item — Escape: \"Close the menu ... and return focus to the element ... from which the menu was opened\"", async ({ page }) => {
-    const trigger = page.getByRole("button", { name: "Open Menu" });
+    const trigger = demoRole(page, "button");
     await page.keyboard.press("ArrowDown");
-    await expect(page.getByRole("menuitem", { name: "Edit" })).toBeFocused();
+    await expect(popupItem(page, "menu", "menuitem", 0)).toBeFocused();
 
     await page.keyboard.press("Escape");
 
@@ -189,13 +202,13 @@ test.describe("APG Menu (opened from a menu button) pattern — DropdownMenu con
     await page.keyboard.press("ArrowDown"); // focus Edit
     await page.keyboard.press("ArrowDown"); // Undo is disabled, skipped -> Duplicate
     await page.keyboard.press("Home");
-    await expect(page.getByRole("menuitem", { name: "Edit" })).toBeFocused();
+    await expect(popupItem(page, "menu", "menuitem", 0)).toBeFocused();
   });
 
   test("DropdownMenu item — End: \"moves focus to the last item in the current menu\"", async ({ page }) => {
     await page.keyboard.press("ArrowDown");
     await page.keyboard.press("End");
-    await expect(page.getByRole("menuitem", { name: "Delete" })).toBeFocused();
+    await expect(popupItems(page, "menu", "menuitem").last()).toBeFocused();
   });
 
   test("DropdownMenu item — Down Arrow: \"moves focus to the next item, optionally wrapping from the last to the first\"", async ({ page }) => {
@@ -206,7 +219,7 @@ test.describe("APG Menu (opened from a menu button) pattern — DropdownMenu con
     // behaviour (this component's default `roving_loop: true` does wrap) so
     // the row is a meaningful check rather than a vacuous one.
     await expect(
-      page.getByRole("menuitem", { name: "Edit" }),
+      popupItem(page, "menu", "menuitem", 0),
       "roving_loop defaults to true, so ArrowDown from the last item wraps " +
         "to the first (an APG-permitted choice, not a requirement).",
     ).toBeFocused();
@@ -215,23 +228,25 @@ test.describe("APG Menu (opened from a menu button) pattern — DropdownMenu con
   test("DropdownMenu item — Enter: \"activates the item and closes the menu\"", async ({ page }) => {
     await page.keyboard.press("ArrowDown");
     await page.keyboard.press("ArrowDown"); // Duplicate
+    const chosen = (await popupItem(page, "menu", "menuitem", 2).innerText()).trim();
     await page.keyboard.press("Enter");
-    await expect(page.getByRole("button", { name: "Open Menu" })).toHaveAttribute(
+    await expect(demoRole(page, "button")).toHaveAttribute(
       "data-state",
       "closed",
     );
-    await expect(page.getByText("Selected: Duplicate")).toBeVisible();
+    await expect(demoFrame(page), "the demo reports the chosen item").toContainText(chosen);
   });
 
   test("DropdownMenu item — Space (Optional): \"activates the menuitem and closes the menu\"", async ({ page }) => {
     await page.keyboard.press("ArrowDown");
     await page.keyboard.press("ArrowDown"); // Duplicate
+    const chosen = (await popupItem(page, "menu", "menuitem", 2).innerText()).trim();
     await page.keyboard.press("Space");
-    await expect(page.getByRole("button", { name: "Open Menu" })).toHaveAttribute(
+    await expect(demoRole(page, "button")).toHaveAttribute(
       "data-state",
       "closed",
     );
-    await expect(page.getByText("Selected: Duplicate")).toBeVisible();
+    await expect(demoFrame(page), "the demo reports the chosen item").toContainText(chosen);
   });
 
   // docs/backlog.md row 11 (Phase 6, typeahead). Demo item order (see
@@ -241,39 +256,40 @@ test.describe("APG Menu (opened from a menu button) pattern — DropdownMenu con
   // and Delete are the pair sharing a first letter ("D") these rows target.
   test("DropdownMenu item — printable character (Optional): \"Move focus to the next item in the current menu whose label begins with that printable character\" (first match)", async ({ page }) => {
     await page.keyboard.press("ArrowDown"); // Edit
-    await page.keyboard.press("d");
-    await expect(page.getByRole("menuitem", { name: "Duplicate" })).toBeFocused();
+    await page.keyboard.press(await labelChar(popupItem(page, "menu", "menuitem", 2), 0)); // "d": Duplicate
+    await expect(popupItem(page, "menu", "menuitem", 2)).toBeFocused();
   });
 
   test("DropdownMenu item — printable character (Optional): \"Move focus to the next item ... whose label begins with that printable character\" (a second, different character narrows to the matching prefix)", async ({ page }) => {
     await page.keyboard.press("ArrowDown"); // Edit
-    await page.keyboard.press("d");
-    await expect(page.getByRole("menuitem", { name: "Duplicate" })).toBeFocused();
-    await page.keyboard.press("e"); // buffer "de" -- Duplicate no longer matches, Delete does
-    await expect(page.getByRole("menuitem", { name: "Delete" })).toBeFocused();
+    await page.keyboard.press(await labelChar(popupItem(page, "menu", "menuitem", 2), 0)); // "d"
+    await expect(popupItem(page, "menu", "menuitem", 2)).toBeFocused();
+    await page.keyboard.press(await labelChar(popupItems(page, "menu", "menuitem").last(), 1)); // "e": buffer "de" -- Duplicate no longer matches, Delete does
+    await expect(popupItems(page, "menu", "menuitem").last()).toBeFocused();
   });
 
   test("DropdownMenu item — printable character (Optional): \"Move focus to the next item ... whose label begins with that printable character\" (repeating the same character cycles through matches)", async ({ page }) => {
     await page.keyboard.press("ArrowDown"); // Edit
-    await page.keyboard.press("d");
-    await expect(page.getByRole("menuitem", { name: "Duplicate" })).toBeFocused();
-    await page.keyboard.press("d"); // repeat -- cycles to the next "D" item
-    await expect(page.getByRole("menuitem", { name: "Delete" })).toBeFocused();
-    await page.keyboard.press("d"); // repeat again -- wraps back to the first
-    await expect(page.getByRole("menuitem", { name: "Duplicate" })).toBeFocused();
+    const d = await labelChar(popupItem(page, "menu", "menuitem", 2), 0); // "d"
+    await page.keyboard.press(d);
+    await expect(popupItem(page, "menu", "menuitem", 2)).toBeFocused();
+    await page.keyboard.press(d); // repeat -- cycles to the next "D" item
+    await expect(popupItems(page, "menu", "menuitem").last()).toBeFocused();
+    await page.keyboard.press(d); // repeat again -- wraps back to the first
+    await expect(popupItem(page, "menu", "menuitem", 2)).toBeFocused();
   });
 
   test("DropdownMenu item — printable character (Optional): the search buffer resets after ~1000ms of inactivity", async ({ page }) => {
     await page.keyboard.press("ArrowDown"); // Edit
-    await page.keyboard.press("d");
-    await expect(page.getByRole("menuitem", { name: "Duplicate" })).toBeFocused();
+    await page.keyboard.press(await labelChar(popupItem(page, "menu", "menuitem", 2), 0)); // "d"
+    await expect(popupItem(page, "menu", "menuitem", 2)).toBeFocused();
     await page.waitForTimeout(1100);
-    await page.keyboard.press("e");
+    await page.keyboard.press(await labelChar(popupItem(page, "menu", "menuitem", 0), 0)); // "e": Edit
     // If the buffer had NOT reset, "d" then "e" would search on "de" and
     // land on "Delete" (see the narrowing row above). Landing on "Edit"
     // instead -- a fresh, single-character "e" search -- proves the
     // >1000ms gap cleared it.
-    await expect(page.getByRole("menuitem", { name: "Edit" })).toBeFocused();
+    await expect(popupItem(page, "menu", "menuitem", 0)).toBeFocused();
   });
 });
 
@@ -291,15 +307,12 @@ test.describe("APG Menu and Menubar pattern — Menubar", () => {
   });
 
   test("Menubar trigger — Enter: \"When focus is on a menuitem that has a submenu, opens the submenu and places focus on its first item\"", async ({ page }) => {
-    const fileTrigger = page.getByRole("menuitem", { name: "File" });
+    const fileTrigger = demoRole(page, "menuitem", 0);
     await fileTrigger.focus();
 
     await page.keyboard.press("Enter");
 
-    const fileMenu = page
-      .getByRole("menu")
-      .filter({ has: page.getByRole("menuitem", { name: "New" }) })
-      .last();
+    const fileMenu = page.locator(".dx-menubar-content");
     await expect(fileMenu, "Enter must open the File submenu").toHaveAttribute(
       "data-state",
       "open",
@@ -310,7 +323,7 @@ test.describe("APG Menu and Menubar pattern — Menubar", () => {
     // `menu_ctx.initial_focus` the way the ArrowDown arm two lines below it
     // does, so OBSERVED focus stays on the File trigger instead.
     await expect(
-      fileMenu.getByRole("menuitem", { name: "New" }),
+      fileMenu.getByRole("menuitem").first(),
       "APG requires Enter to place focus on the submenu's first item. " +
         "OBSERVED: focus stays on the File trigger itself, unlike ArrowDown " +
         "on the same trigger (next row), which does move focus correctly.",
@@ -318,16 +331,13 @@ test.describe("APG Menu and Menubar pattern — Menubar", () => {
   });
 
   test("Menubar trigger — Space (Optional): \"opens the submenu and places focus on its first item\"", async ({ page }) => {
-    const fileTrigger = page.getByRole("menuitem", { name: "File" });
+    const fileTrigger = demoRole(page, "menuitem", 0);
     await fileTrigger.focus();
 
     await page.keyboard.press("Space");
     await page.waitForTimeout(150);
 
-    const fileMenu = page
-      .getByRole("menu")
-      .filter({ has: page.getByRole("menuitem", { name: "New" }) })
-      .last();
+    const fileMenu = page.locator(".dx-menubar-content");
     // APG (Optional): Space should open the submenu (and place focus on its
     // first item). Source of the observed gap: MenubarMenu's onkeydown match
     // has no Key::Character(" ") arm (falls to `_ => return`), and
@@ -344,18 +354,15 @@ test.describe("APG Menu and Menubar pattern — Menubar", () => {
   });
 
   test("Menubar trigger — Down Arrow: \"opens the submenu and places focus on the first item in the submenu\"", async ({ page }) => {
-    const fileTrigger = page.getByRole("menuitem", { name: "File" });
+    const fileTrigger = demoRole(page, "menuitem", 0);
     await fileTrigger.focus();
 
     await page.keyboard.press("ArrowDown");
 
-    const fileMenu = page
-      .getByRole("menu")
-      .filter({ has: page.getByRole("menuitem", { name: "New" }) })
-      .last();
+    const fileMenu = page.locator(".dx-menubar-content");
     await expect(fileMenu).toHaveAttribute("data-state", "open");
     await expect(
-      fileMenu.getByRole("menuitem", { name: "New" }),
+      fileMenu.getByRole("menuitem").first(),
       "ArrowDown is the ONLY trigger key that fully satisfies this row " +
         "(opens AND focuses first item) -- see the Enter/Space rows above " +
         "for the same trigger failing one or both halves.",
@@ -364,8 +371,8 @@ test.describe("APG Menu and Menubar pattern — Menubar", () => {
 
   test("Menubar — Right Arrow: \"When focus is in a menubar, moves focus to the next item, optionally wrapping from the last to the first\"", async ({ page }) => {
     await page.locator("#component-preview-frame").first().getByRole("menubar").focus();
-    const fileButton = page.getByRole("menuitem", { name: "File" });
-    const editButton = page.getByRole("menuitem", { name: "Edit" });
+    const fileButton = demoRole(page, "menuitem", 0);
+    const editButton = demoRole(page, "menuitem", 1);
     await page.keyboard.press("ArrowRight");
     await expect(editButton).toBeFocused();
     await page.keyboard.press("ArrowRight");
@@ -378,7 +385,7 @@ test.describe("APG Menu and Menubar pattern — Menubar", () => {
 
   test("Menubar — Left Arrow: \"moves focus to the previous item, optionally wrapping from the first to the last\"", async ({ page }) => {
     await page.locator("#component-preview-frame").first().getByRole("menubar").focus();
-    const editButton = page.getByRole("menuitem", { name: "Edit" });
+    const editButton = demoRole(page, "menuitem", 1);
     // Focus starts on "File" (the first/default item) -- ArrowLeft from the
     // first item should wrap to the LAST item ("Edit" in this two-item demo).
     await page.keyboard.press("ArrowLeft");
@@ -386,13 +393,10 @@ test.describe("APG Menu and Menubar pattern — Menubar", () => {
   });
 
   test("MenubarMenu — Escape: \"Close the menu ... and return focus to the element ... from which the menu was opened\"", async ({ page }) => {
-    const fileTrigger = page.getByRole("menuitem", { name: "File" });
+    const fileTrigger = demoRole(page, "menuitem", 0);
     await fileTrigger.focus();
     await page.keyboard.press("ArrowDown");
-    const fileMenu = page
-      .getByRole("menu")
-      .filter({ has: page.getByRole("menuitem", { name: "New" }) })
-      .last();
+    const fileMenu = page.locator(".dx-menubar-content");
     await expect(fileMenu).toHaveAttribute("data-state", "open");
 
     await page.keyboard.press("Escape");
@@ -402,18 +406,15 @@ test.describe("APG Menu and Menubar pattern — Menubar", () => {
   });
 
   test("MenubarItem — Enter: \"activates the item and closes the menu\"", async ({ page }) => {
-    const fileTrigger = page.getByRole("menuitem", { name: "File" });
+    const fileTrigger = demoRole(page, "menuitem", 0);
     await fileTrigger.focus();
     await page.keyboard.press("ArrowDown");
     await page.keyboard.press("ArrowDown"); // Open is disabled, skip to Save
-    await expect(page.getByRole("menuitem", { name: "Save" })).toBeFocused();
+    await expect(page.locator(".dx-menubar-content").getByRole("menuitem").nth(2)).toBeFocused();
 
     await page.keyboard.press("Enter");
 
-    const fileMenu = page
-      .getByRole("menu")
-      .filter({ has: page.getByRole("menuitem", { name: "New" }) })
-      .last();
+    const fileMenu = page.locator(".dx-menubar-content");
     await expect(fileMenu).toHaveCount(0);
   });
 
@@ -423,49 +424,49 @@ test.describe("APG Menu and Menubar pattern — Menubar", () => {
   // ArrowDown on the trigger, the one trigger key that both opens the menu
   // and places focus on its first item (see the "Down Arrow" row above).
   test("MenubarItem — printable character (Optional): \"Move focus to the next item in the current menu whose label begins with that printable character\" (first match, wrapping)", async ({ page }) => {
-    const editTrigger = page.getByRole("menuitem", { name: "Edit" });
+    const editTrigger = demoRole(page, "menuitem", 1);
     await editTrigger.focus();
     await page.keyboard.press("ArrowDown"); // opens, focuses Cut
     await page.keyboard.press("ArrowDown"); // Copy
     await page.keyboard.press("ArrowDown"); // Paste
-    await page.keyboard.press("c");
+    await page.keyboard.press(await labelChar(menubarItem(page, 0), 0)); // "c"
     // From Paste (no "C" item after it), the search wraps back to the
     // first "C" item, Cut.
-    await expect(page.getByRole("menuitem", { name: "Cut" })).toBeFocused();
+    await expect(menubarItem(page, 0)).toBeFocused();
   });
 
   test("MenubarItem — printable character (Optional): \"Move focus to the next item ... whose label begins with that printable character\" (a second, different character narrows to the matching prefix)", async ({ page }) => {
-    const editTrigger = page.getByRole("menuitem", { name: "Edit" });
+    const editTrigger = demoRole(page, "menuitem", 1);
     await editTrigger.focus();
     await page.keyboard.press("ArrowDown"); // opens, focuses Cut
-    await page.keyboard.press("c"); // single-character search excludes Cut itself -> Copy
-    await expect(page.getByRole("menuitem", { name: "Copy" })).toBeFocused();
-    await page.keyboard.press("o"); // buffer "co" -- Copy still matches, focus stays
-    await expect(page.getByRole("menuitem", { name: "Copy" })).toBeFocused();
+    await page.keyboard.press(await labelChar(menubarItem(page, 0), 0)); // "c" // single-character search excludes Cut itself -> Copy
+    await expect(menubarItem(page, 1)).toBeFocused();
+    await page.keyboard.press(await labelChar(menubarItem(page, 1), 1)); // "o": buffer "co" -- Copy still matches, focus stays
+    await expect(menubarItem(page, 1)).toBeFocused();
   });
 
   test("MenubarItem — printable character (Optional): \"Move focus to the next item ... whose label begins with that printable character\" (repeating the same character cycles through matches)", async ({ page }) => {
-    const editTrigger = page.getByRole("menuitem", { name: "Edit" });
+    const editTrigger = demoRole(page, "menuitem", 1);
     await editTrigger.focus();
     await page.keyboard.press("ArrowDown"); // opens, focuses Cut
-    await page.keyboard.press("c");
-    await expect(page.getByRole("menuitem", { name: "Copy" })).toBeFocused();
-    await page.keyboard.press("c"); // repeat -- cycles past Paste (no match) to Cut
-    await expect(page.getByRole("menuitem", { name: "Cut" })).toBeFocused();
+    await page.keyboard.press(await labelChar(menubarItem(page, 0), 0)); // "c"
+    await expect(menubarItem(page, 1)).toBeFocused();
+    await page.keyboard.press(await labelChar(menubarItem(page, 0), 0)); // "c" // repeat -- cycles past Paste (no match) to Cut
+    await expect(menubarItem(page, 0)).toBeFocused();
   });
 
   test("MenubarItem — printable character (Optional): the search buffer resets after ~1000ms of inactivity", async ({ page }) => {
-    const editTrigger = page.getByRole("menuitem", { name: "Edit" });
+    const editTrigger = demoRole(page, "menuitem", 1);
     await editTrigger.focus();
     await page.keyboard.press("ArrowDown"); // opens, focuses Cut
-    await page.keyboard.press("c");
-    await expect(page.getByRole("menuitem", { name: "Copy" })).toBeFocused();
+    await page.keyboard.press(await labelChar(menubarItem(page, 0), 0)); // "c"
+    await expect(menubarItem(page, 1)).toBeFocused();
     await page.waitForTimeout(1100);
-    await page.keyboard.press("u");
+    await page.keyboard.press(await labelChar(menubarItem(page, 0), 1)); // "u"
     // If the buffer had NOT reset, "c" then "u" would search on "cu" and
     // move focus to "Cut". No item starts with "u" alone, so staying on
     // "Copy" proves the >1000ms gap cleared the buffer.
-    await expect(page.getByRole("menuitem", { name: "Copy" })).toBeFocused();
+    await expect(menubarItem(page, 1)).toBeFocused();
   });
 });
 
@@ -497,16 +498,13 @@ test.describe("APG Menu and Menubar pattern — Navbar nav dropdowns", () => {
   test("NavbarNav — Escape: \"Close the menu ... and return focus to the element ... from which the menu was opened\" (graded against MenubarMenu's identical contract)", async ({
     page,
   }) => {
-    const inputsTrigger = page.getByRole("menuitem", { name: "Inputs" });
+    const inputsTrigger = demoRole(page, "menuitem", 0);
     await inputsTrigger.focus();
     await page.keyboard.press("ArrowDown");
 
-    const inputsMenu = page
-      .getByRole("menu")
-      .filter({ has: page.getByRole("menuitem", { name: "Calendar" }) })
-      .last();
+    const inputsMenu = page.locator(".dx-navbar-content");
     await expect(inputsMenu).toHaveAttribute("data-state", "open");
-    await expect(inputsMenu.getByRole("menuitem", { name: "Calendar" })).toBeFocused();
+    await expect(inputsMenu.getByRole("menuitem").first()).toBeFocused();
 
     await page.keyboard.press("Escape");
 
@@ -547,7 +545,7 @@ test.describe("APG Menu and Menubar pattern — Navbar nav dropdowns", () => {
 // ============================================================================
 test.describe("APG Combobox pattern (select-only) — Select trigger", () => {
   const trigger = (page: Page) =>
-    page.getByRole("combobox").filter({ hasText: /Select an option|Apple|Banana/ }).first();
+    demoRole(page, "combobox");
 
   test("Select trigger — Enter: opens the popup (Combobox Keyboard Interaction)", async ({ page }) => {
     await goto(page, "select");
@@ -652,7 +650,7 @@ test.describe("APG Combobox pattern (select-only) — Select trigger", () => {
     await page.keyboard.press("ArrowDown");
     await page.keyboard.press("ArrowDown"); // Banana
     await page.keyboard.press("Home");
-    await expect(page.getByRole("listbox").getByRole("option", { name: "Apple" })).toBeFocused();
+    await expect(popupItem(page, "listbox", "option", 0)).toBeFocused();
   });
 
   test("Select listbox — End (Optional): \"moves focus to the last option\"", async ({ page }) => {
@@ -660,7 +658,7 @@ test.describe("APG Combobox pattern (select-only) — Select trigger", () => {
     await trigger(page).click();
     await page.keyboard.press("ArrowDown");
     await page.keyboard.press("End");
-    await expect(page.getByRole("listbox").getByRole("option", { name: "Other" })).toBeFocused();
+    await expect(popupItems(page, "listbox", "option").last()).toBeFocused();
   });
 
   test("Select listbox — Escape: \"Closes the popup and returns focus to the combobox\"", async ({ page }) => {
@@ -678,8 +676,11 @@ test.describe("APG Combobox pattern (select-only) — Select trigger", () => {
   test("Select listbox — printable characters: \"moves focus to the next item with a name that starts with the characters typed\"", async ({ page }) => {
     await goto(page, "select");
     await trigger(page).click();
-    await page.keyboard.type("Ban");
-    await expect(page.getByRole("listbox").getByRole("option", { name: "Banana" })).toBeFocused();
+    // The second option's own first three letters (typeahead is about labels, so the typed text is READ from the
+    // item the row expects to land on): no earlier option shares them.
+    const second = popupItem(page, "listbox", "option", 1);
+    await page.keyboard.type((await second.innerText()).trim().replace(/^[^\p{L}]+/u, "").slice(0, 3)); // the label's first letters (an emoji prefix is not typeable text)
+    await expect(second).toBeFocused();
   });
 });
 
@@ -693,7 +694,7 @@ test.describe("APG Combobox pattern (select-only) — Select trigger", () => {
 // asks for, titled per this file's convention.
 // ============================================================================
 test.describe("APG Combobox pattern (editable) — Combobox", () => {
-  const input = (page: Page) => page.getByRole("combobox", { name: "Select framework" });
+  const input = (page: Page) => demoRole(page, "combobox");
   const listbox = (page: Page) => page.locator("[role='listbox'][data-state='open']");
 
   test("Combobox input — Down Arrow: \"moves focus into the popup\" via aria-activedescendant (DOM focus stays on the combobox)", async ({ page }) => {
@@ -705,7 +706,7 @@ test.describe("APG Combobox pattern (editable) — Combobox", () => {
 
     await expect(listbox(page)).toBeVisible();
     await expect(i, "APG's combobox technique: DOM focus never leaves the input").toBeFocused();
-    await expect(listbox(page).getByRole("option", { name: "Next.js" })).toHaveAttribute(
+    await expect(listbox(page).getByRole("option").first()).toHaveAttribute(
       "data-highlighted",
       "true",
     );
@@ -750,18 +751,18 @@ test.describe("APG Disclosure pattern — Collapsible", () => {
   // native button activation; no custom onkeydown at all.
   test("CollapsibleTrigger — Enter: toggles the disclosure content", async ({ page }) => {
     await goto(page, "collapsible");
-    const trigger = page.getByRole("button", { name: "Recent Activity" });
+    const trigger = demoRole(page, "button");
     await trigger.focus();
     await page.keyboard.press("Enter");
-    await expect(page.getByText("Fixed a bug in the collapsible component")).toBeVisible();
+    await expect(trigger, "the disclosure content is toggled open").toHaveAttribute("aria-expanded", "true");
   });
 
   test("CollapsibleTrigger — Space: toggles the disclosure content", async ({ page }) => {
     await goto(page, "collapsible");
-    const trigger = page.getByRole("button", { name: "Recent Activity" });
+    const trigger = demoRole(page, "button");
     await trigger.focus();
     await page.keyboard.press("Space");
-    await expect(page.getByText("Fixed a bug in the collapsible component")).toBeVisible();
+    await expect(trigger, "the disclosure content is toggled open").toHaveAttribute("aria-expanded", "true");
   });
 });
 
@@ -826,7 +827,7 @@ test.describe("APG Accordion pattern — Accordion", () => {
 test.describe("APG Dialog (Modal) pattern — Dialog", () => {
   test("Dialog trigger — Enter: opens the dialog (Button pattern activation)", async ({ page }) => {
     await goto(page, "dialog");
-    const trigger = page.getByRole("button", { name: "Show Dialog" });
+    const trigger = demoRole(page, "button");
     await trigger.focus();
     await page.keyboard.press("Enter");
     await expect(page.getByRole("dialog")).toBeVisible();
@@ -834,7 +835,7 @@ test.describe("APG Dialog (Modal) pattern — Dialog", () => {
 
   test("Dialog trigger — Space: opens the dialog (Button pattern activation)", async ({ page }) => {
     await goto(page, "dialog");
-    const trigger = page.getByRole("button", { name: "Show Dialog" });
+    const trigger = demoRole(page, "button");
     await trigger.focus();
     await page.keyboard.press("Space");
     await expect(page.getByRole("dialog")).toBeVisible();
@@ -842,7 +843,7 @@ test.describe("APG Dialog (Modal) pattern — Dialog", () => {
 
   test("Dialog — Escape: \"Closes the dialog\"", async ({ page }) => {
     await goto(page, "dialog");
-    await page.getByRole("button", { name: "Show Dialog" }).click();
+    await demoRole(page, "button").click();
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
     await page.keyboard.press("Escape");
@@ -853,19 +854,19 @@ test.describe("APG Dialog (Modal) pattern — Dialog", () => {
     await goto(page, "dialog");
     // Opened from the keyboard (a pointer open focuses the panel, row 206). The close button is
     // last in DOM order (shadcn's), so the first control takes focus and Tab reaches the X next.
-    await page.getByRole("button", { name: "Show Dialog" }).focus();
+    await demoRole(page, "button").focus();
     await page.keyboard.press("Enter");
     const dialog = page.getByRole("dialog");
-    await expect(dialog.getByRole("button", { name: "Open Nested Dialog" }), "focus moves inside the dialog on open").toBeFocused();
+    await expect(dialog.getByRole("button").first(), "focus moves inside the dialog on open").toBeFocused();
     await page.keyboard.press("Tab");
-    await expect(dialog.getByRole("button", { name: "Close", exact: true })).toBeFocused();
+    await expect(dialog.getByRole("button").last()).toBeFocused();
   });
 });
 
 test.describe("APG Alert Dialog pattern — AlertDialog", () => {
   test("AlertDialog trigger — Enter: opens the dialog (Button pattern activation)", async ({ page }) => {
     await goto(page, "alert_dialog");
-    const trigger = page.getByRole("button", { name: "Show Alert Dialog" });
+    const trigger = demoRole(page, "button");
     await trigger.focus();
     await page.keyboard.press("Enter");
     await expect(page.getByRole("alertdialog")).toBeVisible();
@@ -873,7 +874,7 @@ test.describe("APG Alert Dialog pattern — AlertDialog", () => {
 
   test("AlertDialog — Escape: \"Closes the dialog\" (defers to modal dialog pattern)", async ({ page }) => {
     await goto(page, "alert_dialog");
-    await page.getByRole("button", { name: "Show Alert Dialog" }).click();
+    await demoRole(page, "button").click();
     const dialog = page.getByRole("alertdialog");
     await expect(dialog).toBeVisible();
     await page.keyboard.press("Escape");
@@ -891,14 +892,12 @@ test.describe("APG Alert Dialog pattern — AlertDialog", () => {
 // ============================================================================
 test.describe("APG Tabs pattern — Tabs", () => {
   const activeTabPanel = (page: Page) =>
-    page
-      .locator('[role="tabpanel"][data-state="active"]:not(#component-preview-frame)')
-      .filter({ hasText: /^Tab \d Content$/ });
+    demoFrame(page).locator('[role="tabpanel"][data-state="active"]');
 
   test("TabTrigger — Right Arrow: \"Moves focus to the next tab\" WITHOUT activating it (this component implements manual activation)", async ({ page }) => {
     await goto(page, "tabs");
-    const tab1 = page.getByRole("tab", { name: "Tab 1" });
-    const tab2 = page.getByRole("tab", { name: "Tab 2" });
+    const tab1 = demoRole(page, "tab", 0);
+    const tab2 = demoRole(page, "tab", 1);
     await tab1.click();
     await page.keyboard.press("ArrowRight");
     await expect(tab2).toBeFocused();
@@ -911,32 +910,32 @@ test.describe("APG Tabs pattern — Tabs", () => {
 
   test("TabTrigger — Enter: \"Activates the tab if it was not activated automatically on focus\"", async ({ page }) => {
     await goto(page, "tabs");
-    await page.getByRole("tab", { name: "Tab 1" }).click();
+    await demoRole(page, "tab", 0).click();
     await page.keyboard.press("ArrowRight");
     await page.keyboard.press("Enter");
-    await expect(activeTabPanel(page)).toContainText("Tab 2 Content");
+    await expect(demoRole(page, "tab", 1), "the second tab is now the selected one").toHaveAttribute("aria-selected", "true");
   });
 
   test("TabTrigger — Space: \"Activates the tab if it was not activated automatically on focus\"", async ({ page }) => {
     await goto(page, "tabs");
-    await page.getByRole("tab", { name: "Tab 1" }).click();
+    await demoRole(page, "tab", 0).click();
     await page.keyboard.press("ArrowRight");
     await page.keyboard.press("Space");
-    await expect(activeTabPanel(page)).toContainText("Tab 2 Content");
+    await expect(demoRole(page, "tab", 1), "the second tab is now the selected one").toHaveAttribute("aria-selected", "true");
   });
 
   test("TabTrigger — Home (Optional): \"Moves focus to the first tab\"", async ({ page }) => {
     await goto(page, "tabs");
-    await page.getByRole("tab", { name: "Tab 3" }).click();
+    await demoRole(page, "tab", 2).click();
     await page.keyboard.press("Home");
-    await expect(page.getByRole("tab", { name: "Tab 1" })).toBeFocused();
+    await expect(demoRole(page, "tab", 0)).toBeFocused();
   });
 
   test("TabTrigger — End (Optional): \"Moves focus to the last tab\"", async ({ page }) => {
     await goto(page, "tabs");
-    await page.getByRole("tab", { name: "Tab 1" }).click();
+    await demoRole(page, "tab", 0).click();
     await page.keyboard.press("End");
-    await expect(page.getByRole("tab", { name: "Tab 3" })).toBeFocused();
+    await expect(demoRole(page, "tab", 2)).toBeFocused();
   });
 });
 
@@ -950,14 +949,14 @@ test.describe("APG Radio Group pattern — RadioGroup", () => {
   // The main demo (`#component-preview-frame`) is the one radio group these
   // tests mean; "Default" would also substring-match the description
   // variant's "Default spacing", so every lookup is exact and scoped.
-  const radio = (page: Page, name: string) =>
-    page.locator("#component-preview-frame").getByRole("radio", { name, exact: true });
+  // radio_group demo: Default=0, Comfortable=1, Compact=2
+  const radio = (page: Page, n: number) => demoRole(page, "radio", n);
 
   test("RadioGroupItem — Right/Down Arrow: \"move focus to the next radio button ... uncheck the previously focused button, and check the newly focused button\"", async ({ page }) => {
     await goto(page, "radio_group");
-    await radio(page, "Default").click();
+    await radio(page, 0).click();
     await page.keyboard.press("ArrowDown");
-    const comfortable = radio(page, "Comfortable");
+    const comfortable = radio(page, 1);
     await expect(comfortable).toBeFocused();
     await expect(comfortable, "focus must also carry the checked state").toHaveAttribute(
       "aria-checked",
@@ -967,8 +966,8 @@ test.describe("APG Radio Group pattern — RadioGroup", () => {
 
   test("RadioGroupItem — Space: \"checks the focused radio button if it is not already checked\"", async ({ page }) => {
     await goto(page, "radio_group");
-    const dflt = radio(page, "Default");
-    const comfortable = radio(page, "Comfortable");
+    const dflt = radio(page, 0);
+    const comfortable = radio(page, 1);
     await dflt.click();
     await dflt.focus();
     await page.keyboard.press("ArrowDown");
@@ -995,7 +994,7 @@ test.describe("APG Radio Group pattern — RadioGroup", () => {
 test.describe("APG Switch pattern — Switch", () => {
   test("Switch — Space: changes the state", async ({ page }) => {
     await goto(page, "switch");
-    const el = page.locator("#component-preview-frame").getByRole("switch", { name: "Airplane Mode", exact: true });
+    const el = demoRole(page, "switch");
     await expect(el).toHaveAttribute("data-state", "unchecked");
     await el.press("Space");
     await expect(el).toHaveAttribute("data-state", "checked");
@@ -1003,7 +1002,7 @@ test.describe("APG Switch pattern — Switch", () => {
 
   test("Switch — Enter (Optional): changes the state", async ({ page }) => {
     await goto(page, "switch");
-    const el = page.locator("#component-preview-frame").getByRole("switch", { name: "Airplane Mode", exact: true });
+    const el = demoRole(page, "switch");
     await el.focus();
     await page.keyboard.press("Enter");
     // OBSERVED (deliberate, per switch.rs's own comment: "Switches should
@@ -1025,7 +1024,7 @@ test.describe("APG Switch pattern — Switch", () => {
 test.describe("APG Checkbox pattern — Checkbox", () => {
   test("Checkbox — Space: \"changes the state of the checkbox\"", async ({ page }) => {
     await goto(page, "checkbox");
-    const el = page.locator("#component-preview-frame").getByRole("checkbox", { name: "Accept terms and conditions", exact: true });
+    const el = demoRole(page, "checkbox");
     await expect(el).toHaveAttribute("data-state", "unchecked");
     await el.focus();
     await page.keyboard.press("Space");
@@ -1034,7 +1033,7 @@ test.describe("APG Checkbox pattern — Checkbox", () => {
 
   test("Checkbox — Enter: not specified by APG at all for checkbox (contrast with Switch's optional allowance)", async ({ page }) => {
     await goto(page, "checkbox");
-    const el = page.locator("#component-preview-frame").getByRole("checkbox", { name: "Accept terms and conditions", exact: true });
+    const el = demoRole(page, "checkbox");
     await el.focus();
     await page.keyboard.press("Enter");
     // checkbox.rs suppresses Enter the same way switch.rs does -- correctly
@@ -1076,9 +1075,9 @@ test.describe("APG Tabs-adjacent roving widget — ToggleGroup", () => {
   // matrix cares about.
   test("ToggleGroupItem — Right Arrow: moves focus without toggling", async ({ page }) => {
     await goto(page, "toggle_group");
-    const frame = page.locator("#component-preview-frame");
-    const b = frame.getByRole("button", { name: "Toggle bold", exact: true });
-    const i = frame.getByRole("button", { name: "Toggle italic", exact: true });
+    // toggle_group demo: bold=0, italic=1, strikethrough=2
+    const b = demoRole(page, "button", 0);
+    const i = demoRole(page, "button", 1);
     await b.click();
     await page.keyboard.press("ArrowRight");
     await expect(i).toBeFocused();
@@ -1087,9 +1086,9 @@ test.describe("APG Tabs-adjacent roving widget — ToggleGroup", () => {
 
   test("ToggleGroupItem — Enter: activates (toggles on) the focused item", async ({ page }) => {
     await goto(page, "toggle_group");
-    const frame = page.locator("#component-preview-frame");
-    const b = frame.getByRole("button", { name: "Toggle bold", exact: true });
-    const i = frame.getByRole("button", { name: "Toggle italic", exact: true });
+    // toggle_group demo: bold=0, italic=1, strikethrough=2
+    const b = demoRole(page, "button", 0);
+    const i = demoRole(page, "button", 1);
     await b.click();
     await page.keyboard.press("ArrowRight");
     await page.keyboard.press("Enter");
@@ -1102,7 +1101,7 @@ test.describe("APG Tabs-adjacent roving widget — ToggleGroup", () => {
 // Source: content/patterns/slider/slider-pattern.html#keyboard_interaction.
 // ============================================================================
 test.describe("APG Slider pattern — Slider", () => {
-  const thumb = (page: Page) => page.getByRole("slider", { name: "Demo Slider" });
+  const thumb = (page: Page) => demoRole(page, "slider");
 
   test("Slider thumb — Right/Up Arrow: \"Increase the value of the slider by one step\"", async ({ page }) => {
     await goto(page, "slider");
@@ -1261,7 +1260,7 @@ test.describe("Tooltip-class pattern — HoverCard (no dedicated APG pattern; gr
 test.describe("APG Menu pattern (context-menu invocation) — ContextMenu", () => {
   test("ContextMenu trigger — Shift+F10: opens a \"context specific menu\"", async ({ page }) => {
     await goto(page, "context_menu");
-    const trigger = page.getByRole("button", { name: "right click here" });
+    const trigger = demoRole(page, "button");
     await trigger.focus();
 
     await page.keyboard.press("Shift+F10");
@@ -1287,47 +1286,47 @@ test.describe("APG Menu pattern (context-menu invocation) — ContextMenu", () =
   // `context-menu.spec.ts`'s own "keyboard navigation" test).
   test("ContextMenu item — printable character (Optional): \"Move focus to the next item in the current menu whose label begins with that printable character\" (first match)", async ({ page }) => {
     await goto(page, "context_menu");
-    await page.getByRole("button", { name: "right click here" }).click({ button: "right" });
+    await demoRole(page, "button").click({ button: "right" });
     await page.keyboard.press("ArrowDown"); // Edit
-    await page.keyboard.press("d");
-    await expect(page.getByRole("menuitem", { name: "Duplicate" })).toBeFocused();
+    await page.keyboard.press(await labelChar(popupItem(page, "menu", "menuitem", 2), 0)); // "d"
+    await expect(popupItem(page, "menu", "menuitem", 2)).toBeFocused();
   });
 
   test("ContextMenu item — printable character (Optional): \"Move focus to the next item ... whose label begins with that printable character\" (a second, different character narrows to the matching prefix)", async ({ page }) => {
     await goto(page, "context_menu");
-    await page.getByRole("button", { name: "right click here" }).click({ button: "right" });
+    await demoRole(page, "button").click({ button: "right" });
     await page.keyboard.press("ArrowDown"); // Edit
-    await page.keyboard.press("d");
-    await expect(page.getByRole("menuitem", { name: "Duplicate" })).toBeFocused();
-    await page.keyboard.press("e"); // buffer "de" -- Duplicate no longer matches, Delete does
-    await expect(page.getByRole("menuitem", { name: "Delete" })).toBeFocused();
+    await page.keyboard.press(await labelChar(popupItem(page, "menu", "menuitem", 2), 0)); // "d"
+    await expect(popupItem(page, "menu", "menuitem", 2)).toBeFocused();
+    await page.keyboard.press(await labelChar(popupItem(page, "menu", "menuitem", 3), 1)); // "e": buffer "de" -- Duplicate no longer matches, Delete does
+    await expect(popupItem(page, "menu", "menuitem", 3)).toBeFocused();
   });
 
   test("ContextMenu item — printable character (Optional): \"Move focus to the next item ... whose label begins with that printable character\" (repeating the same character cycles through matches)", async ({ page }) => {
     await goto(page, "context_menu");
-    await page.getByRole("button", { name: "right click here" }).click({ button: "right" });
+    await demoRole(page, "button").click({ button: "right" });
     await page.keyboard.press("ArrowDown"); // Edit
-    await page.keyboard.press("d");
-    await expect(page.getByRole("menuitem", { name: "Duplicate" })).toBeFocused();
-    await page.keyboard.press("d"); // repeat -- cycles to the next "D" item
-    await expect(page.getByRole("menuitem", { name: "Delete" })).toBeFocused();
-    await page.keyboard.press("d"); // repeat again -- wraps (skipping the
+    await page.keyboard.press(await labelChar(popupItem(page, "menu", "menuitem", 2), 0)); // "d"
+    await expect(popupItem(page, "menu", "menuitem", 2)).toBeFocused();
+    await page.keyboard.press(await labelChar(popupItem(page, "menu", "menuitem", 2), 0)); // "d" // repeat -- cycles to the next "D" item
+    await expect(popupItem(page, "menu", "menuitem", 3)).toBeFocused();
+    await page.keyboard.press(await labelChar(popupItem(page, "menu", "menuitem", 2), 0)); // "d" // repeat again -- wraps (skipping the
     // unlabelled "More tools" row) back to the first
-    await expect(page.getByRole("menuitem", { name: "Duplicate" })).toBeFocused();
+    await expect(popupItem(page, "menu", "menuitem", 2)).toBeFocused();
   });
 
   test("ContextMenu item — printable character (Optional): the search buffer resets after ~1000ms of inactivity", async ({ page }) => {
     await goto(page, "context_menu");
-    await page.getByRole("button", { name: "right click here" }).click({ button: "right" });
+    await demoRole(page, "button").click({ button: "right" });
     await page.keyboard.press("ArrowDown"); // Edit
-    await page.keyboard.press("d");
-    await expect(page.getByRole("menuitem", { name: "Duplicate" })).toBeFocused();
+    await page.keyboard.press(await labelChar(popupItem(page, "menu", "menuitem", 2), 0)); // "d"
+    await expect(popupItem(page, "menu", "menuitem", 2)).toBeFocused();
     await page.waitForTimeout(1100);
-    await page.keyboard.press("e");
+    await page.keyboard.press(await labelChar(popupItem(page, "menu", "menuitem", 0), 0)); // "e"
     // If the buffer had NOT reset, "d" then "e" would search on "de" and
     // land on "Delete" (see the narrowing row above). Landing on "Edit"
     // instead -- a fresh, single-character "e" search -- proves the
     // >1000ms gap cleared it.
-    await expect(page.getByRole("menuitem", { name: "Edit" })).toBeFocused();
+    await expect(popupItem(page, "menu", "menuitem", 0)).toBeFocused();
   });
 });

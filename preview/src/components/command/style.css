@@ -306,7 +306,6 @@ dialog.dx-command-dialog[open][data-state="open"] {
   gap: var(--dx-menu-item-indicator-gap);
   outline: none;
   overflow-wrap: anywhere;
-  user-select: none;
 }
 
 .dx-command-dialog .dx-command-item {

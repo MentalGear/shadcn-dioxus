@@ -84,7 +84,6 @@
     cursor: pointer;
     font-size: var(--dx-text-sm);
     outline: none;
-    user-select: none;
 }
 
 .dx-calendar-nav-prev svg,

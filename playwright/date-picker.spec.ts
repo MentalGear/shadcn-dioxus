@@ -36,6 +36,7 @@ import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 import { fixedViewportBox } from "./viewport-box";
+import { readAtRest, measureAtRest } from "./animations";
 
 const NAV_TIMEOUT = 20 * 60 * 1000; // first run compiles the app
 const PAGE_URL = `${BASE_URL}/component/?name=date_picker&`;
@@ -56,7 +57,7 @@ function content(page: Page) {
 }
 
 async function rectOf(page: Page, locator: ReturnType<typeof trigger>) {
-  return locator.evaluate((el) => {
+  return readAtRest(locator, (el) => {
     const r = (el as HTMLElement).getBoundingClientRect();
     return { top: r.top, left: r.left, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
   });
@@ -355,7 +356,7 @@ async function waitSettled(locator: Locator) {
     .poll(
       async () => {
         const box = await locator.evaluate((el) => {
-          const b = el.getBoundingClientRect();
+          const b = el.getBoundingClientRect(); // rest-ok: this poll IS the settle check (waits until the box stops moving)
           return `${Math.round(b.x)},${Math.round(b.y)},${Math.round(b.width)},${Math.round(b.height)}`;
         });
         const stable = box === prev;
@@ -1310,7 +1311,7 @@ async function monthGeometry(dialog: Locator) {
   // -- under `html { scrollbar-gutter: stable }` that reads the gutter-inclusive 390 while the containing
   // block is 375, which hid a panel landing 11-15px past the right edge (it passed against clientWidth).
   const fixedBox = await fixedViewportBox(dialog.page());
-  return dialog.evaluate((d, vp) => {
+  return readAtRest(dialog, (d, vp) => {
     const rect = (e: Element) => {
       const b = e.getBoundingClientRect();
       return { left: b.left, right: b.right, top: b.top, bottom: b.bottom, width: b.width, height: b.height };
@@ -1683,7 +1684,7 @@ test.describe("Open/close animation", () => {
       const tick = () => {
         const d = document.querySelector(".dx-date-picker-popover-content");
         if (d) {
-          const b = d.getBoundingClientRect();
+          const b = d.getBoundingClientRect(); // rest-ok: samples the popover's centre on EVERY frame on purpose (it must not drift while it animates)
           if (b.width) w.__cx.push(b.x + b.width / 2);
         }
         if (!w.__stop) requestAnimationFrame(tick);
@@ -2024,9 +2025,9 @@ test.describe("Natural language picker (variant=natural_language)", () => {
     await expect(button).toBeVisible();
     // Inside the group's box, beside (not below) the field.
     const [g, b, f] = await Promise.all([
-      group.evaluate((el) => el.getBoundingClientRect().toJSON()),
-      button.evaluate((el) => el.getBoundingClientRect().toJSON()),
-      field(page).evaluate((el) => el.getBoundingClientRect().toJSON()),
+      readAtRest(group, (el) => el.getBoundingClientRect().toJSON()),
+      readAtRest(button, (el) => el.getBoundingClientRect().toJSON()),
+      readAtRest(field(page), (el) => el.getBoundingClientRect().toJSON()),
     ]);
     expect(b.left).toBeGreaterThanOrEqual(g.left);
     expect(b.right).toBeLessThanOrEqual(g.right + 0.5);
@@ -2066,8 +2067,8 @@ test.describe("Natural language picker (variant=natural_language)", () => {
     await expect(dialog).toBeVisible();
     await waitSettled(dialog);
     const [d, b] = await Promise.all([
-      dialog.evaluate((el) => el.getBoundingClientRect().toJSON()),
-      button.evaluate((el) => el.getBoundingClientRect().toJSON()),
+      readAtRest(dialog, (el) => el.getBoundingClientRect().toJSON()),
+      readAtRest(button, (el) => el.getBoundingClientRect().toJSON()),
     ]);
     expect(Math.abs(d.right - b.right), `dialog right ${d.right} vs button right ${b.right}`).toBeLessThanOrEqual(4);
   });

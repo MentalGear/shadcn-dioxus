@@ -46,6 +46,7 @@
 import { test, expect } from "../../fixtures";
 import type { CDPSession, Page } from "@playwright/test";
 import { BASE_URL } from "../../base-url";
+import { demoFrame, demoRole } from "../../demo-frame";
 import { gotoHydrated } from "../../hydration";
 
 type Listener = { type: string; capture: boolean; passive: boolean };
@@ -142,8 +143,9 @@ type Scenario = {
 };
 
 const escape = (page: Page) => page.keyboard.press("Escape");
-const click = (name: string | RegExp, role: "button" | "menuitem" | "combobox" = "button") => async (page: Page) => {
-  await page.getByRole(role, { name, exact: typeof name === "string" }).first().click();
+// Clicks the `n`th `role` element of a demo frame (backlog row 220: role and position, never the demo's copy).
+const click = (role: "button" | "menuitem" | "combobox" = "button", n = 0, variant = "main") => async (page: Page) => {
+  await demoRole(page, role, n, variant).click();
 };
 
 /**
@@ -151,19 +153,19 @@ const click = (name: string | RegExp, role: "button" | "menuitem" | "combobox" =
  * (dialog, alert_dialog, sheet, drawer, command); the rest are the popover and menu families.
  */
 const SCENARIOS: Scenario[] = [
-  { name: "dialog", url: "/component/?name=dialog&", open: click("Show Dialog"), close: escape },
-  { name: "alert dialog", url: "/component/?name=alert_dialog&", open: click("Show Alert Dialog"), close: escape },
-  { name: "sheet", url: "/component/?name=sheet&", open: click("Right"), close: escape },
-  { name: "drawer", url: "/component/?name=drawer&", open: click("Move Goal"), close: escape },
-  { name: "command palette", url: "/component/?name=command&", open: click("Open Command Palette"), close: escape },
-  { name: "popover (modal arm)", url: "/component/?name=popover&variant=modal&", open: click("Open modal popover"), close: escape },
-  { name: "popover (non-modal default)", url: "/component/?name=popover&", open: click("Show Popover"), close: escape },
+  { name: "dialog", url: "/component/?name=dialog&", open: click(), close: escape },
+  { name: "alert dialog", url: "/component/?name=alert_dialog&", open: click(), close: escape },
+  { name: "sheet", url: "/component/?name=sheet&", open: click("button", 1) /* sheet demo: Top, Right, Bottom, Left */, close: escape },
+  { name: "drawer", url: "/component/?name=drawer&", open: click(), close: escape },
+  { name: "command palette", url: "/component/?name=command&", open: click(), close: escape },
+  { name: "popover (modal arm)", url: "/component/?name=popover&variant=modal&", open: click("button", 0, "modal"), close: escape },
+  { name: "popover (non-modal default)", url: "/component/?name=popover&", open: click(), close: escape },
   {
     // `pointer.rs`: the window pointer bridge exists only while a pointer is held down on a slider.
     name: "slider drag (the pointer bridge on window)",
     url: "/component/?name=slider&",
     open: async (page) => {
-      const thumb = page.getByRole("slider", { name: "Demo Slider" });
+      const thumb = demoRole(page, "slider");
       const box = (await thumb.boundingBox())!;
       await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
       await page.mouse.down();
@@ -173,22 +175,22 @@ const SCENARIOS: Scenario[] = [
       await page.mouse.up();
     },
   },
-  { name: "dropdown menu", url: "/component/?name=dropdown_menu&", open: click("Open Menu"), close: escape },
+  { name: "dropdown menu", url: "/component/?name=dropdown_menu&", open: click(), close: escape },
   {
     name: "context menu",
     url: "/component/?name=context_menu&",
     open: async (page) => {
-      await page.getByRole("button", { name: "right click here" }).click({ button: "right" });
+      await demoRole(page, "button").click({ button: "right" });
       await expect(page.getByRole("menu")).toBeVisible();
     },
     close: escape,
   },
-  { name: "menubar", url: "/component/?name=menubar&", open: click("File", "menuitem"), close: escape },
+  { name: "menubar", url: "/component/?name=menubar&", open: click("menuitem"), close: escape },
   {
     name: "navigation menu",
     url: "/component/?name=navigation_menu&",
     open: async (page) => {
-      await page.getByRole("navigation", { name: "Component navigation menu" }).getByRole("button", { name: "Getting started" }).click();
+      await demoFrame(page).getByRole("navigation").first().getByRole("button").first().click();
     },
     close: escape,
   },
@@ -204,16 +206,16 @@ const SCENARIOS: Scenario[] = [
     name: "combobox",
     url: "/component/?name=combobox&",
     open: async (page) => {
-      await page.getByRole("combobox", { name: "Select framework" }).click();
+      await demoRole(page, "combobox").click();
     },
     close: escape,
   },
-  { name: "date picker", url: "/component/?name=date_picker&", open: click("Show Calendar"), close: escape },
+  { name: "date picker", url: "/component/?name=date_picker&", open: click(), close: escape },
   {
     name: "tooltip",
     url: "/component/?name=tooltip&",
     open: async (page) => {
-      await page.getByText("Rich content").first().hover();
+      await demoFrame(page).locator(".dx-tooltip-trigger").hover();
       await expect(page.getByRole("tooltip")).toBeVisible();
     },
     close: async (page) => {
@@ -224,7 +226,7 @@ const SCENARIOS: Scenario[] = [
     name: "hover card",
     url: "/component/?name=hover_card&",
     open: async (page) => {
-      await page.getByRole("button", { name: "Dioxus" }).hover();
+      await demoRole(page, "button").hover();
     },
     close: async (page) => {
       await page.mouse.move(0, 0);
@@ -341,7 +343,7 @@ test.describe("scroll lock (row 149)", () => {
     await gotoHydrated(page, `${BASE_URL}/component/?name=dialog&`, GOTO);
     await slowExit(page);
     await installTimeline(page);
-    const trigger = page.getByRole("button", { name: "Show Dialog", exact: true }).first();
+    const trigger = demoRole(page, "button");
     await trigger.click();
     await expect(page.locator("dialog[open]")).toBeVisible();
     await page.waitForTimeout(400);
@@ -401,7 +403,7 @@ test.describe("scroll lock (row 149)", () => {
         };
         f();
       });
-      await page.getByRole("button", { name: "Show Dialog", exact: true }).first().click();
+      await demoRole(page, "button").click();
       await expect(page.locator("dialog[open]")).toBeVisible();
       await page.waitForTimeout(400);
       await page.keyboard.press("Escape");

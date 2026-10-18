@@ -92,6 +92,8 @@ pub fn Demo() -> Element {
                     Select::<Month> {
                         default_value: Month::January,
                         trigger_aria_label: Some("Select a value".to_string()),
+                        // A fixed width: the same trigger box before and after the selected label is written.
+                        trigger_class: "dx-chart-range-trigger",
                         on_value_change: move |value: Option<Month>| {
                             if let Some(value) = value {
                                 active.set(value);

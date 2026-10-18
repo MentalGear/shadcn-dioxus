@@ -2,6 +2,7 @@ import { test, expect, devices } from "./fixtures";
 import { type Locator, type Page } from "@playwright/test";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
+import { measureAtRest } from "./animations";
 
 const URL = `${BASE_URL}/component/?name=combobox&`;
 const variantUrl = (variant: string) =>
@@ -115,8 +116,8 @@ test("keeps filtered options in source order", async ({ page }) => {
     await expect(svelte).toBeVisible();
     await expect(solid).toBeVisible();
 
-    const nextBox = await next.boundingBox();
-    const svelteBox = await svelte.boundingBox();
+    const nextBox = await measureAtRest(next);
+    const svelteBox = await measureAtRest(svelte);
     expect(nextBox).not.toBeNull();
     expect(svelteBox).not.toBeNull();
     expect(nextBox!.y).toBeLessThan(svelteBox!.y);
@@ -362,7 +363,7 @@ test("clicking an input that holds a selection keeps its text and puts the caret
     });
 
     // Click on the boundary between "Svel" and "teKit".
-    const box = (await trigger.boundingBox())!;
+    const box = (await measureAtRest(trigger));
     await trigger.click({ position: { x: await caretOffsetX(trigger, 4), y: box.height / 2 } });
     await expect(content(page)).toBeVisible();
     await expect(trigger).toHaveAttribute("aria-expanded", "true");
@@ -494,7 +495,7 @@ test("reopening scrolls the selected option into view", async ({ page }) => {
     await expect(trigger).toHaveValue("Dioxus");
 
     const within = async () => {
-        const [l, o] = [await list(page).boundingBox(), await dioxus.boundingBox()];
+        const [l, o] = [await measureAtRest(list(page)), await measureAtRest(dioxus)];
         return !!l && !!o && o.y >= l.y - 1 && o.y + o.height <= l.y + l.height + 1;
     };
     await expect.poll(within).toBe(true);
@@ -504,7 +505,7 @@ test("reopening scrolls the selected option into view", async ({ page }) => {
     await page.keyboard.press("Home");
     await expect(list(page).getByRole("option", { name: "Next.js" })).toHaveAttribute("data-highlighted", "true");
     await expect.poll(async () => {
-        const [l, o] = [await list(page).boundingBox(), await list(page).getByRole("option", { name: "Next.js" }).boundingBox()];
+        const [l, o] = [await measureAtRest(list(page)), await measureAtRest(list(page).getByRole("option", { name: "Next.js" }))];
         return !!l && !!o && o.y >= l.y - 1 && o.y + o.height <= l.y + l.height + 1;
     }).toBe(true);
 });

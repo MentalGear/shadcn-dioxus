@@ -3,7 +3,7 @@ import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from './axe';
 import { BASE_URL } from './base-url';
 import { gotoHydrated } from './hydration';
 import { expectFadeKeepsTransform } from './assert-anchor-transform';
-import { awaitAnimationsSettled } from './animations';
+import { awaitAnimationsSettled, measureAtRest } from './animations';
 import { fixedViewportBox } from './viewport-box';
 
 test('pointer navigation', async ({ page }) => {
@@ -61,7 +61,7 @@ test('menu lands at the tap coordinates on touch long-press', async ({ page }) =
     (el as HTMLElement).style.left = '160px';
   });
 
-  const box = await trigger.boundingBox();
+  const box = await measureAtRest(trigger);
   if (!box) throw new Error('trigger has no bounding box');
   const tapX = box.x + box.width / 2;
   const tapY = box.y + box.height / 2;
@@ -86,7 +86,7 @@ test('menu lands at the tap coordinates on touch long-press', async ({ page }) =
   // mid-fade sits up to ~5.5px right of the tap point on a 220px menu -- this failed on every load-starved
   // run, with the old `transform` keyframes and the new `scale` ones alike (dev-docs/backlog.md row 115).
   await awaitAnimationsSettled(contextMenu);
-  const menuBox = await contextMenu.boundingBox();
+  const menuBox = await measureAtRest(contextMenu);
   if (!menuBox) throw new Error('menu has no bounding box');
   // The menu's top-left should be at the tap coords (give or take a px for
   // sub-pixel rounding). If it's off by tens of pixels, a viewport coord
@@ -137,7 +137,7 @@ test('clamps the menu into the viewport for a mouse right-click near a corner', 
   // The SETTLED box: the open fade scales the panel about its centre (0.95 -> 1), so a mid-fade read sits
   // up to ~3px inside its final edges and can hide a margin that is really smaller than EDGE_MARGIN.
   await awaitAnimationsSettled(contextMenu);
-  const box = await contextMenu.boundingBox();
+  const box = await measureAtRest(contextMenu);
   if (!box) throw new Error('menu has no bounding box');
 
   // EDGE_MARGIN (top_layer.rs's `use_point_anchor_clamp`) is 4px; allow 1px
@@ -180,7 +180,7 @@ test('clamps the menu into the viewport for a touch long-press near a corner', a
   // The SETTLED box: the open fade scales the panel about its centre (0.95 -> 1), so a mid-fade read sits
   // up to ~3px inside its final edges and can hide a margin that is really smaller than EDGE_MARGIN.
   await awaitAnimationsSettled(contextMenu);
-  const box = await contextMenu.boundingBox();
+  const box = await measureAtRest(contextMenu);
   if (!box) throw new Error('menu has no bounding box');
 
   const EDGE_MARGIN = 4;
@@ -198,7 +198,7 @@ test('touch long-press opens the context menu', async ({ page }) => {
   const trigger = page.getByRole('button', { name: 'right click here' });
   const contextMenu = page.getByRole('menu');
 
-  const box = await trigger.boundingBox();
+  const box = await measureAtRest(trigger);
   if (!box) throw new Error('trigger has no bounding box');
   const x = box.x + box.width / 2;
   const y = box.y + box.height / 2;
@@ -240,7 +240,7 @@ test('pen long-press opens the context menu', async ({ page }) => {
   const trigger = page.getByRole('button', { name: 'right click here' });
   const contextMenu = page.getByRole('menu');
 
-  const box = await trigger.boundingBox();
+  const box = await measureAtRest(trigger);
   if (!box) throw new Error('trigger has no bounding box');
   const x = box.x + box.width / 2;
   const y = box.y + box.height / 2;
@@ -267,7 +267,7 @@ test('mouse pointerdown does not arm the long-press timer', async ({ page }) => 
   await page.goto(`${BASE_URL}/component/?name=context_menu&`, { timeout: 20 * 60 * 1000 });
   const trigger = page.getByRole('button', { name: 'right click here' });
 
-  const box = await trigger.boundingBox();
+  const box = await measureAtRest(trigger);
   if (!box) throw new Error('trigger has no bounding box');
   const x = box.x + box.width / 2;
   const y = box.y + box.height / 2;
@@ -351,7 +351,7 @@ test('pointerdown at the trigger location does not dismiss an open menu', async 
   await expect(contextMenu).toHaveAttribute('data-state', 'open');
 
   await trigger.evaluate((el) => {
-    const triggerRect = el.getBoundingClientRect();
+    const triggerRect = el.getBoundingClientRect(); // rest-ok: the trigger button and its root, neither animates
     if (triggerRect.width === 0 || triggerRect.height === 0) {
       throw new Error('trigger has no bounding box');
     }
@@ -370,7 +370,7 @@ test('pointerdown at the trigger location does not dismiss an open menu', async 
 
     const root = el.parentElement;
     if (!root) throw new Error('trigger has no root');
-    const rootRect = root.getBoundingClientRect();
+    const rootRect = root.getBoundingClientRect(); // rest-ok: the trigger's root, not an overlay
     if (x < rootRect.left || x > rootRect.right || y < rootRect.top || y > rootRect.bottom) {
       throw new Error('point is outside context menu root bounds');
     }
@@ -395,7 +395,7 @@ test('touch released before long-press threshold does not open the menu', async 
   await page.goto(`${BASE_URL}/component/?name=context_menu&`, { timeout: 20 * 60 * 1000 });
   const trigger = page.getByRole('button', { name: 'right click here' });
 
-  const box = await trigger.boundingBox();
+  const box = await measureAtRest(trigger);
   if (!box) throw new Error('trigger has no bounding box');
   const x = box.x + box.width / 2;
   const y = box.y + box.height / 2;

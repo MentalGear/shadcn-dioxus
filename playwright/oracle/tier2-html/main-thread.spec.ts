@@ -155,7 +155,9 @@ import {
   type GestureReport,
 } from "../../main-thread";
 import { gotoHydrated } from "../../hydration";
+import { demoFrame, demoRole, demoRoles } from "../../demo-frame";
 import { BASE_URL } from "../../base-url";
+import { measureAtRest } from "../../animations";
 
 const NAV_TIMEOUT = 20 * 60 * 1000; // first run compiles the app -- same budget every sibling oracle uses
 
@@ -212,16 +214,16 @@ interface OverlaySubject {
 }
 
 const menubarFileMenu = (page: Page) =>
-  page.getByRole("menu").filter({ has: page.getByRole("menuitem", { name: "New" }) }).last();
+  page.locator(".dx-menubar-content");
 
 const navbarInputsMenu = (page: Page) =>
-  page.getByRole("menu").filter({ has: page.getByRole("menuitem", { name: "Inputs" }) }).first();
+  demoFrame(page).getByRole("menu").first();
 
-const navigationMenuNav = (page: Page) => page.getByRole("navigation", { name: "Component navigation menu" });
+const navigationMenuNav = (page: Page) => demoFrame(page).getByRole("navigation").first();
 
-const selectTrigger = (page: Page) => page.getByRole("combobox").filter({ hasText: /Select an option|Apple|Banana/ });
+const selectTrigger = (page: Page) => demoRole(page, "combobox");
 
-const comboboxInput = (page: Page) => page.getByRole("combobox", { name: "Select framework" });
+const comboboxInput = (page: Page) => demoRole(page, "combobox");
 const comboboxListbox = (page: Page) => page.locator("[role='listbox'][data-state='open']");
 
 const toastCloseButton = (page: Page) => page.getByRole("button", { name: "close", exact: true }).first();
@@ -231,7 +233,7 @@ const OVERLAY_SUBJECTS: OverlaySubject[] = [
     name: "dialog",
     goto: (page) => goto(page, "dialog"),
     open: async (page) => {
-      await page.getByRole("button", { name: "Show Dialog" }).click();
+      await demoRole(page, "button").click();
       await expect(page.getByRole("dialog")).toBeVisible();
     },
     close: async (page) => {
@@ -243,7 +245,7 @@ const OVERLAY_SUBJECTS: OverlaySubject[] = [
     name: "alert_dialog",
     goto: (page) => goto(page, "alert_dialog"),
     open: async (page) => {
-      await page.getByRole("button", { name: "Show Alert Dialog" }).click();
+      await demoRole(page, "button").click();
       await expect(page.getByRole("alertdialog")).toBeVisible();
     },
     close: async (page) => {
@@ -255,7 +257,7 @@ const OVERLAY_SUBJECTS: OverlaySubject[] = [
     name: "sheet",
     goto: (page) => goto(page, "sheet"),
     open: async (page) => {
-      await page.getByRole("button", { name: "Right" }).click();
+      await demoRole(page, "button", 1).click(); // sheet demo: Top, Right, Bottom, Left
       await expect(page.locator('[data-slot="sheet-root"]')).toHaveAttribute("data-state", "open");
     },
     close: async (page) => {
@@ -267,7 +269,7 @@ const OVERLAY_SUBJECTS: OverlaySubject[] = [
     name: "drawer",
     goto: (page) => goto(page, "drawer"),
     open: async (page) => {
-      await page.getByRole("button", { name: "Move Goal" }).click();
+      await demoRole(page, "button").click();
       await expect(page.locator('[data-slot="drawer-root"]')).toHaveAttribute("data-state", "open");
     },
     close: async (page) => {
@@ -280,7 +282,7 @@ const OVERLAY_SUBJECTS: OverlaySubject[] = [
     name: "popover",
     goto: (page) => goto(page, "popover"),
     open: async (page) => {
-      await page.getByRole("button", { name: "Show Popover", exact: true }).click();
+      await demoRole(page, "button").click();
       await expect(page.getByRole("dialog")).toBeVisible();
     },
     close: async (page) => {
@@ -293,7 +295,7 @@ const OVERLAY_SUBJECTS: OverlaySubject[] = [
     name: "popover_modal",
     goto: (page) => goto(page, "popover", "variant=modal&"),
     open: async (page) => {
-      await page.getByRole("button", { name: "Open modal popover" }).click();
+      await demoRole(page, "button", 0, "modal").click();
       await expect(page.getByRole("dialog")).toBeVisible();
     },
     close: async (page) => {
@@ -310,7 +312,7 @@ const OVERLAY_SUBJECTS: OverlaySubject[] = [
     name: "popover_non_modal",
     goto: (page) => goto(page, "popover", "variant=non_modal&"),
     open: async (page) => {
-      await page.getByRole("button", { name: "Open popover" }).click();
+      await demoRole(page, "button", 0, "non_modal").click();
       await expect(page.getByRole("dialog")).toBeVisible();
     },
     close: async (page) => {
@@ -322,12 +324,12 @@ const OVERLAY_SUBJECTS: OverlaySubject[] = [
     name: "dropdown_menu",
     goto: (page) => goto(page, "dropdown_menu"),
     open: async (page) => {
-      const trigger = page.getByRole("button", { name: "Open Menu" });
+      const trigger = demoRole(page, "button");
       await trigger.click();
       await expect(trigger).toHaveAttribute("data-state", "open");
     },
     close: async (page) => {
-      const trigger = page.getByRole("button", { name: "Open Menu" });
+      const trigger = demoRole(page, "button");
       await page.keyboard.press("Escape");
       await expect(trigger).toHaveAttribute("data-state", "closed");
     },
@@ -336,7 +338,7 @@ const OVERLAY_SUBJECTS: OverlaySubject[] = [
     name: "context_menu",
     goto: (page) => goto(page, "context_menu"),
     open: async (page) => {
-      await page.getByRole("button", { name: "right click here" }).click({ button: "right" });
+      await demoRole(page, "button").click({ button: "right" });
       await expect(page.getByRole("menu")).toHaveAttribute("data-state", "open");
     },
     close: async (page) => {
@@ -352,7 +354,7 @@ const OVERLAY_SUBJECTS: OverlaySubject[] = [
     name: "menubar",
     goto: (page) => goto(page, "menubar"),
     open: async (page) => {
-      await page.getByRole("menuitem", { name: "File" }).click();
+      await demoRole(page, "menuitem", 0).click();
       await expect(menubarFileMenu(page)).toHaveAttribute("data-state", "open");
     },
     close: async (page) => {
@@ -392,7 +394,7 @@ const OVERLAY_SUBJECTS: OverlaySubject[] = [
     name: "command",
     goto: (page) => goto(page, "command"),
     open: async (page) => {
-      await page.getByRole("button", { name: "Open Command Palette" }).click();
+      await demoRole(page, "button").click();
       await expect(page.getByRole("dialog")).toBeVisible();
     },
     close: async (page) => {
@@ -404,7 +406,7 @@ const OVERLAY_SUBJECTS: OverlaySubject[] = [
     name: "tooltip",
     goto: (page) => goto(page, "tooltip"),
     open: async (page) => {
-      await page.locator("#component-preview-frame").first().getByText("Rich content").hover();
+      await demoFrame(page).locator(".dx-tooltip-trigger").hover();
       await expect(page.getByRole("tooltip")).toBeVisible();
     },
     close: async (page) => {
@@ -417,7 +419,7 @@ const OVERLAY_SUBJECTS: OverlaySubject[] = [
     name: "hover_card",
     goto: (page) => goto(page, "hover_card"),
     open: async (page) => {
-      await page.getByRole("button", { name: "Dioxus" }).hover();
+      await demoRole(page, "button").hover();
       await expect(page.getByRole("tooltip")).toBeVisible();
     },
     close: async (page) => {
@@ -431,12 +433,12 @@ const OVERLAY_SUBJECTS: OverlaySubject[] = [
     name: "navigation_menu",
     goto: (page) => goto(page, "navigation_menu"),
     open: async (page) => {
-      const trigger = navigationMenuNav(page).getByRole("button", { name: "Getting started" });
+      const trigger = navigationMenuNav(page).getByRole("button").first();
       await trigger.hover();
       await expect(trigger).toHaveAttribute("aria-expanded", "true");
     },
     close: async (page) => {
-      const trigger = navigationMenuNav(page).getByRole("button", { name: "Getting started" });
+      const trigger = navigationMenuNav(page).getByRole("button").first();
       await page.getByRole("heading", { level: 1 }).hover();
       await expect(trigger).toHaveAttribute("aria-expanded", "false");
     },
@@ -445,7 +447,7 @@ const OVERLAY_SUBJECTS: OverlaySubject[] = [
     name: "date_picker",
     goto: (page) => goto(page, "date_picker"),
     open: async (page) => {
-      await page.getByRole("button", { name: "Show Calendar" }).first().click();
+      await demoRole(page, "button").click();
       await expect(page.getByRole("dialog")).toBeVisible();
     },
     close: async (page) => {
@@ -457,7 +459,7 @@ const OVERLAY_SUBJECTS: OverlaySubject[] = [
     name: "color_picker",
     goto: (page) => goto(page, "color_picker"),
     open: async (page) => {
-      await page.getByRole("button", { name: /Color picker/i }).first().click();
+      await demoRole(page, "button").click();
       await expect(page.getByRole("dialog")).toBeVisible();
     },
     close: async (page) => {
@@ -471,7 +473,7 @@ const OVERLAY_SUBJECTS: OverlaySubject[] = [
     name: "toast",
     goto: (page) => goto(page, "toast"),
     open: async (page) => {
-      await page.getByRole("button", { name: "Info (60s)" }).click();
+      await demoRole(page, "button").click();
       await expect(toastCloseButton(page)).toBeVisible();
     },
     close: async (page) => {
@@ -539,17 +541,15 @@ interface FormControlSubject {
 /** Mirrors slider.spec.ts's own `sliderGroup`/`sliderTrack`/`sliderTrackPoint`
  * helpers (proven against this exact app) -- copied, not imported, per
  * this row's "keep this file independent" instruction. */
-function sliderGroup(page: Page, name: string | RegExp) {
-  return page
-    .getByRole("slider", { name })
-    .first()
+function sliderGroup(page: Page) {
+  return demoRole(page, "slider")
     .locator('xpath=ancestor::*[@role="group" and @data-orientation="horizontal"][1]');
 }
 function sliderTrack(slider: ReturnType<typeof sliderGroup>) {
   return slider.locator('div[data-orientation="horizontal"]:has([role="slider"])').first();
 }
 async function sliderTrackPoint(track: ReturnType<typeof sliderTrack>, frac: number) {
-  const box = await track.boundingBox();
+  const box = await measureAtRest(track);
   if (!box) throw new Error("slider track has no bounding box");
   return { x: box.x + box.width * frac, y: box.y + box.height / 2 };
 }
@@ -561,8 +561,8 @@ const FORM_CONTROL_SUBJECTS: FormControlSubject[] = [
     name: "slider (drag)",
     goto: (page) => goto(page, "slider"),
     interact: async (page) => {
-      const thumb = page.getByRole("slider", { name: "Demo Slider" });
-      const track = sliderTrack(sliderGroup(page, "Demo Slider"));
+      const thumb = demoRole(page, "slider");
+      const track = sliderTrack(sliderGroup(page));
       const start = await sliderTrackPoint(track, 0.5);
       const end = await sliderTrackPoint(track, 0.8);
       await page.mouse.move(start.x, start.y);
@@ -576,7 +576,7 @@ const FORM_CONTROL_SUBJECTS: FormControlSubject[] = [
     name: "slider (arrow keys)",
     goto: (page) => goto(page, "slider"),
     interact: async (page) => {
-      const thumb = page.getByRole("slider", { name: "Demo Slider" });
+      const thumb = demoRole(page, "slider");
       await thumb.focus();
       await page.keyboard.press("ArrowRight");
       await page.keyboard.press("ArrowRight");
@@ -588,7 +588,7 @@ const FORM_CONTROL_SUBJECTS: FormControlSubject[] = [
     name: "switch",
     goto: (page) => goto(page, "switch"),
     interact: async (page) => {
-      const el = page.locator("#component-preview-frame").getByRole("switch", { name: "Airplane Mode", exact: true });
+      const el = demoRole(page, "switch");
       await el.click();
       await expect(el).toBeChecked();
     },
@@ -597,7 +597,7 @@ const FORM_CONTROL_SUBJECTS: FormControlSubject[] = [
     name: "checkbox",
     goto: (page) => goto(page, "checkbox"),
     interact: async (page) => {
-      const el = page.locator("#component-preview-frame").getByRole("checkbox", { name: "Accept terms and conditions", exact: true });
+      const el = demoRole(page, "checkbox");
       await el.click();
       await expect(el).toBeChecked();
     },
@@ -606,7 +606,7 @@ const FORM_CONTROL_SUBJECTS: FormControlSubject[] = [
     name: "radio_group",
     goto: (page) => goto(page, "radio_group"),
     interact: async (page) => {
-      const el = page.locator("#component-preview-frame").getByRole("radio", { name: "Default", exact: true });
+      const el = demoRole(page, "radio");
       await el.click();
       await expect(el).toBeChecked();
     },
@@ -617,11 +617,9 @@ const FORM_CONTROL_SUBJECTS: FormControlSubject[] = [
     interact: async (page) => {
       // Scoped exactly as tabs.spec.ts's own tests are, since this page's
       // "Variants" section renders a second, unrelated Tabs instance.
-      const activeTab = page
-        .locator('[role="tabpanel"][data-state="active"]:not(#component-preview-frame)')
-        .filter({ hasText: /^Tab \d Content$/ });
-      await page.getByRole("tab", { name: "Tab 2" }).click();
-      await expect(activeTab).toContainText("Tab 2 Content");
+      const secondTab = demoRole(page, "tab", 1);
+      await secondTab.click();
+      await expect(secondTab).toHaveAttribute("aria-selected", "true");
     },
   },
   {
@@ -637,7 +635,7 @@ const FORM_CONTROL_SUBJECTS: FormControlSubject[] = [
     name: "toggle_group",
     goto: (page) => goto(page, "toggle_group"),
     interact: async (page) => {
-      const el = page.locator("#component-preview-frame").getByRole("button", { name: "Toggle bold", exact: true });
+      const el = demoRole(page, "button");
       await el.click();
       await expect(el).toHaveAttribute("data-state", "on");
     },
@@ -666,7 +664,7 @@ const FORM_CONTROL_SUBJECTS: FormControlSubject[] = [
     name: "collapsible",
     goto: (page) => goto(page, "collapsible"),
     interact: async (page) => {
-      await page.getByRole("button", { name: "Recent Activity" }).click();
+      await demoRole(page, "button").click();
     },
   },
   {
@@ -674,7 +672,7 @@ const FORM_CONTROL_SUBJECTS: FormControlSubject[] = [
     goto: (page) => goto(page, "scroll_area"),
     interact: async (page) => {
       const area = page.locator("[data-scroll-direction]").first();
-      const box = await area.boundingBox();
+      const box = await measureAtRest(area);
       if (!box) throw new Error("scroll area has no bounding box");
       await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
       await page.mouse.wheel(0, 300);
@@ -687,8 +685,8 @@ const FORM_CONTROL_SUBJECTS: FormControlSubject[] = [
     name: "resizable (handle drag)",
     goto: (page) => goto(page, "resizable"),
     interact: async (page) => {
-      const handle = page.getByRole("separator", { name: "Sidebar" });
-      const box = await handle.boundingBox();
+      const handle = demoRole(page, "separator");
+      const box = await measureAtRest(handle);
       if (!box) throw new Error("resizable handle has no bounding box");
       const startX = box.x + box.width / 2;
       const startY = box.y + box.height / 2;
@@ -715,7 +713,7 @@ const FORM_CONTROL_SUBJECTS: FormControlSubject[] = [
     name: "drag_and_drop_list (keyboard drag)",
     goto: (page) => goto(page, "drag_and_drop_list"),
     interact: async (page) => {
-      const list = page.getByRole("list", { name: "Sortable list" }).first();
+      const list = demoRole(page, "list");
       const items = list.locator('[aria-roledescription="sortable item"]');
       await items.first().click();
       await page.keyboard.press("Enter");
@@ -734,7 +732,7 @@ const FORM_CONTROL_SUBJECTS: FormControlSubject[] = [
     name: "drawer (drag)",
     goto: (page) => goto(page, "drawer"),
     interact: async (page) => {
-      await page.getByRole("button", { name: "Move Goal" }).click();
+      await demoRole(page, "button").click();
       const root = page.locator('[data-slot="drawer-root"]');
       await expect(root).toHaveAttribute("data-state", "open");
       const content = page.locator('[data-slot="drawer-content"]');
@@ -747,7 +745,7 @@ const FORM_CONTROL_SUBJECTS: FormControlSubject[] = [
       await expect
         .poll(
           async () => {
-            const box = JSON.stringify(await handle.boundingBox());
+            const box = JSON.stringify(await measureAtRest(handle));
             const settled = box === lastHandleBox && box !== "null";
             lastHandleBox = box;
             return settled;
@@ -755,8 +753,8 @@ const FORM_CONTROL_SUBJECTS: FormControlSubject[] = [
           { intervals: [100], timeout: 10_000 },
         )
         .toBe(true);
-      const contentBox = await content.boundingBox();
-      const handleBox = await handle.boundingBox();
+      const contentBox = await measureAtRest(content);
+      const handleBox = await measureAtRest(handle);
       if (!contentBox || !handleBox) throw new Error("drawer content/handle has no bounding box");
       const startX = handleBox.x + handleBox.width / 2;
       const startY = handleBox.y + handleBox.height / 2;
@@ -779,17 +777,18 @@ const FORM_CONTROL_SUBJECTS: FormControlSubject[] = [
     name: "tag_group (remove)",
     goto: (page) => goto(page, "tag_group"),
     interact: async (page) => {
-      const removeButtons = page.getByRole("button", { name: /^Remove item / });
+      // tag_group demo: every button in the frame is a tag's remove button
+      const removeButtons = demoRoles(page, "button");
       const before = await removeButtons.count();
       await removeButtons.first().click();
-      await expect(page.getByRole("button", { name: /^Remove item / })).toHaveCount(before - 1);
+      await expect(removeButtons).toHaveCount(before - 1);
     },
   },
   {
     name: "calendar (month navigation)",
     goto: (page) => goto(page, "calendar"),
     interact: async (page) => {
-      const calendar = page.locator("#component-preview-frame").first();
+      const calendar = demoFrame(page);
       const nextButton = calendar.getByRole("button").nth(1);
       const monthSelect = calendar.locator("select").first();
       const before = await monthSelect.inputValue();
@@ -801,8 +800,8 @@ const FORM_CONTROL_SUBJECTS: FormControlSubject[] = [
     name: "data_table (sort)",
     goto: (page) => goto(page, "data_table"),
     interact: async (page) => {
-      const header = page.getByRole("button", { name: "Email" });
-      const th = page.locator("th", { has: header });
+      const header = demoRole(page, "button", 0); // data_table demo: Email, Amount sort buttons
+      const th = header.locator("xpath=ancestor::th");
       const before = await th.getAttribute("aria-sort");
       await header.click();
       await expect(th).not.toHaveAttribute("aria-sort", before ?? "none");
@@ -812,7 +811,7 @@ const FORM_CONTROL_SUBJECTS: FormControlSubject[] = [
     name: "data_table (filter typing)",
     goto: (page) => goto(page, "data_table"),
     interact: async (page) => {
-      const input = page.getByRole("textbox", { name: "Filter by email" });
+      const input = demoRole(page, "textbox");
       await input.click();
       await page.keyboard.type("ken");
       await expect(input).toHaveValue("ken");
@@ -832,7 +831,7 @@ const FORM_CONTROL_SUBJECTS: FormControlSubject[] = [
     },
     interact: async (page) => {
       const container = page.locator(".dx-virtual-list-container").first();
-      const box = await container.boundingBox();
+      const box = await measureAtRest(container);
       if (!box) throw new Error("virtual list container has no bounding box");
       await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
       await page.mouse.wheel(0, 800);
