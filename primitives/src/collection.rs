@@ -350,6 +350,7 @@ impl CollectionState {
         if self.is_focused(index) && self.is_available(index) {
             if let Some(md) = controlled_ref {
                 spawn(async move {
+                    // focus-ok: roving focus moves the DOM focus with the collection's focused index
                     let _ = md.set_focus(true).await;
                 });
             }

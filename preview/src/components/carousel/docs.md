@@ -24,25 +24,6 @@ Carousel { aria_label: "Featured photos",
 - `CarouselIndicators` and `CarouselIndicator` add a row of dot pickers.
 - `CarouselAutoplay` and `CarouselRotationControl` add auto-rotation and its start/stop button.
 
-## Examples
-
-Each example is shown live under Variants below.
-
-- **Sizes.** Show two slides at once, or three on wider screens, by setting `--dx-carousel-per-view`.
-- **Spacing.** Change the gap between slides with the `gap` prop.
-- **Peek.** Show a sliver of the next slide with `--dx-carousel-peek`.
-- **Align.** Rest each slide against the start, center or end of the track with `align`.
-- **Vertical.** Page along the vertical axis with `orientation`; the track needs an explicit height.
-- **RTL.** Right-to-left layout: the arrow keys and the buttons mirror.
-- **API.** Read the selected slide and the slide count with `use_carousel()` to build a "Slide 2 of 5" label and a custom dot picker.
-- **Indicators.** A row of tab-style dots, one per slide.
-- **Autoplay.** Auto-rotation with a start/stop button.
-- **Rewind.** `loop` with `loop_mode: Rewind` jumps from the last slide back to the first.
-- **Hidden arrows.** `nav_disabled_opacity: 0.0` fades the arrow at the first or last slide out completely.
-- **Virtual loop.** A seamless endless loop over a data set, with virtualisation.
-- **Virtual loop (RTL).** The same loop in a right-to-left layout.
-- **Virtual many.** 200 slides with only a handful in the DOM at any time.
-
 ## Options
 
 ### Carousel

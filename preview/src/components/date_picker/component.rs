@@ -251,7 +251,7 @@ pub fn DatePicker(props: DatePickerProps) -> Element {
         // on first open, so the `Link` that `CalendarRoot`/`RangeCalendarRoot` carries would only
         // be inserted then -- a late, non-render-blocking `<link>`, and the calendar paints unstyled
         // for a frame or two on the first open. (The docs site's SSG CSS bundle already carries it;
-        // a `dx components add date_picker` project has no bundle.) `document::Link` dedupes on
+        // a `shadcn-dioxus add date_picker` project has no bundle.) `document::Link` dedupes on
         // `(href, rel)`, so the later one from the calendar itself is a no-op.
         document::Link { rel: "stylesheet", href: asset!("/src/components/calendar/style.css") }
         div {
@@ -314,7 +314,7 @@ pub fn DateRangePicker(props: DateRangePickerProps) -> Element {
         // on first open, so the `Link` that `CalendarRoot`/`RangeCalendarRoot` carries would only
         // be inserted then -- a late, non-render-blocking `<link>`, and the calendar paints unstyled
         // for a frame or two on the first open. (The docs site's SSG CSS bundle already carries it;
-        // a `dx components add date_picker` project has no bundle.) `document::Link` dedupes on
+        // a `shadcn-dioxus add date_picker` project has no bundle.) `document::Link` dedupes on
         // `(href, rel)`, so the later one from the calendar itself is a no-op.
         document::Link { rel: "stylesheet", href: asset!("/src/components/calendar/style.css") }
         div {

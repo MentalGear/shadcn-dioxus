@@ -998,13 +998,20 @@ html[data-nav-sort="category"] .dx-nav-sort-option[data-nav-sort-option="categor
   margin: 0;
 }
 
-.dx-component-page-title-row .dx-component-inline-command {
-  padding: 0.4rem 0.45rem 0.4rem 0.65rem;
-  border-color: var(--dx-border);
+.dx-component-install-link {
+  padding: 0.35rem 0.8rem;
+  border: 1px solid var(--dx-border);
+  border-radius: 0.4rem;
+  color: var(--dx-foreground);
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-decoration: none;
 }
 
-.dx-component-page-title-row .dx-component-inline-command code {
-  font-size: 0.85rem;
+@media (hover: hover) and (pointer: fine) {
+  .dx-component-install-link:hover {
+    background-color: var(--dx-accent);
+  }
 }
 
 /* The "Extra" badge (`ExtraBadge`, main.rs; list: `components::CATALOG`) marks
@@ -1377,26 +1384,17 @@ html[data-nav-sort="category"] .dx-nav-sort-option[data-nav-sort-option="categor
   flex-shrink: 0;
 }
 
-/* A component page shows the CLI command first and the dx equivalent under it
- * (`ComponentInstallCommand`, main.rs). The stack is a column that may shrink
- * below its content width, so each command truncates inside it at phone width
- * rather than widening the header. */
+/* The install command (`ComponentInstallCommand`, main.rs) sits in the Installation disclosure. The box
+ * may shrink below its content width, so the command truncates inside it at phone width rather than
+ * widening the page. */
 .dx-component-install-commands {
   display: flex;
   min-width: 0;
   max-width: 100%;
   flex-direction: column;
   align-items: flex-start;
+  margin-bottom: 0.75rem;
   gap: 0.4rem;
-}
-
-.dx-component-inline-command-alt {
-  background-color: transparent;
-  color: var(--dx-muted-foreground);
-}
-
-.dx-component-install-commands .dx-component-inline-command-alt code {
-  font-size: 0.75rem;
 }
 
 /* The demo frame is shadcn's preview frame (ui.shadcn.com/docs/components, `data-slot="component-preview"`:
@@ -1543,6 +1541,80 @@ html[data-nav-sort="category"] .dx-nav-sort-option[data-nav-sort-option="categor
 .dx-component-manual-install-code .dx-code-block {
   max-width: 100%;
   border-radius: 0.5rem;
+}
+
+/* Installation (written in main.rs), every docs.md `##` section (`build.rs`, `wrap_sections_in_disclosures`) and
+ * a demo's notes (`VariantNotes`) are closed native `<details class="dx-docs-disclosure">`: one list of
+ * one-line rows, the heading inside the `<summary>` so the outline and the anchors stay. No JS: the server
+ * emits the closed state and nothing re-renders it. */
+.dx-component-accordion > .dx-docs-disclosure {
+  border-top: 1px solid var(--dx-border);
+}
+
+.dx-docs-disclosure {
+  border-bottom: 1px solid var(--dx-border);
+}
+
+.dx-docs-disclosure > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 0;
+  color: var(--dx-foreground);
+  cursor: pointer;
+  gap: 1rem;
+  list-style: none;
+}
+
+.dx-docs-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+.dx-docs-disclosure > summary::after {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  flex-shrink: 0;
+  border-right: 1.5px solid var(--dx-muted-foreground);
+  border-bottom: 1.5px solid var(--dx-muted-foreground);
+  content: "";
+  transform: rotate(45deg);
+  transition: transform 0.15s ease;
+  translate: 0 -2px;
+}
+
+.dx-docs-disclosure[open] > summary::after {
+  transform: rotate(-135deg);
+  translate: 0 2px;
+}
+
+.dx-docs-disclosure > summary h2 {
+  margin: 0;
+  color: var(--dx-foreground);
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-docs-disclosure > summary:hover h2 {
+    text-decoration: underline;
+  }
+}
+
+.dx-docs-disclosure-body {
+  padding-bottom: 1rem;
+}
+
+.dx-variant-notes {
+  border-bottom: none;
+}
+
+.dx-variant-notes > summary {
+  justify-content: flex-start;
+  padding: 0.6rem 0;
+  color: var(--dx-muted-foreground);
+  font-size: 0.875rem;
 }
 
 .dx-component-description {

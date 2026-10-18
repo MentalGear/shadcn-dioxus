@@ -1,7 +1,7 @@
 The Top Layer fixture is the probe surface for the two overlay engines
 (the popover engine in `primitives/src/top_layer.rs` and the native
 `<dialog>` path in `primitives/src/dialog.rs`). It is **not an
-installable component** — there is no `dx components add top_layer` — which
+installable component** — there is no `shadcn-dioxus add top_layer` — which
 is why it is listed under Overlays in the sidebar but excluded from the
 home-page gallery. Its only job is to put every
 top-layer surface the library ships next to the browser's own native

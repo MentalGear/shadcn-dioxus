@@ -121,7 +121,7 @@ If you want to add a new component, you should:
 1. If there is any new interaction logic or accessibility features required, implement an unstyled component in the `dioxus-primitives` crate. When adding components to the primitives library, ensure:
     - It adheres to the [WAI-ARIA Authoring Practices for accessibility](https://www.w3.org/WAI/standards-guidelines/aria/).
     - All styling can be modified via props. Every element should spread attributes and children from the props
-2. In the `preview` crate, create a styled version of the component using shadcn styles. This will serve as an example of how to use the unstyled component and serve as the styled version `dx components` will add to projects.
+2. In the `preview` crate, create a styled version of the component using shadcn styles. This will serve as an example of how to use the unstyled component and serve as the styled version `shadcn-dioxus add` copies into projects.
 3. Add tests in `playwright` to ensure the component behaves as expected.
 
 ### Testing changes

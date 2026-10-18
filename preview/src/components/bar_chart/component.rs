@@ -14,7 +14,7 @@
 //! a raw `dioxus_primitives::chart::*` path.
 //!
 //! `component.json`'s `componentDependencies: ["chart", "card"]` is what
-//! actually installs those two packages for a `dx components add bar_chart`
+//! actually installs those two packages for a `shadcn-dioxus add bar_chart`
 //! consumer; this re-export is purely a same-package-as-`chart`'s-own-demos
 //! convenience for this repo's own gallery code.
 
