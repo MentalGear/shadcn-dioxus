@@ -35,7 +35,7 @@ interface Overlay {
   /** The `/component/?name=...&` query for the page that holds the demo. */
   query: string;
   /** Accessible name of the trigger, or a CSS selector. */
-  trigger: { role: "button" | "combobox"; name: string | RegExp } | { css: string };
+  trigger: { role: "button" | "combobox" | "menuitem"; name: string | RegExp } | { css: string };
   /** `true` when the first control in the panel is a text field (a keyboard open focuses it). */
   keyboardFocusesField?: boolean;
   /** What a keyboard open must do: land inside the panel, or only open it. */
@@ -71,8 +71,8 @@ const POPUPS: Overlay[] = [
     keyboard: "inside",
     keyboardFocusesField: true,
   },
-  { name: "select", query: "name=select&", trigger: { role: "combobox", name: /.*/ }, keyboard: "opens" },
-  { name: "date_picker", query: "name=date_picker&", trigger: { css: "button[aria-haspopup='dialog']" }, keyboard: "inside" },
+  { name: "select", query: "name=select&", trigger: { css: "button[role='combobox'][aria-haspopup='listbox']:visible" }, keyboard: "opens" },
+  { name: "date_picker", query: "name=date_picker&", trigger: { css: "button[aria-haspopup='dialog']:visible" }, keyboard: "inside" },
   {
     name: "dropdown_menu",
     query: "name=dropdown_menu&",
@@ -80,7 +80,7 @@ const POPUPS: Overlay[] = [
     keyboard: "opens",
     leavesFocusAlone: true,
   },
-  { name: "menubar", query: "name=menubar&", trigger: { role: "button", name: "File" }, keyboard: "opens" },
+  { name: "menubar", query: "name=menubar&", trigger: { role: "menuitem", name: "File" }, keyboard: "opens" },
 ];
 
 const OVERLAYS = [...MODALS, ...POPUPS];
@@ -153,7 +153,11 @@ async function report(page: Page): Promise<Report> {
     document.body.appendChild(probe);
     const parts = getComputedStyle(probe).boxShadow.split(/,(?![^(]*\))/).map((p) => p.trim());
     probe.remove();
-    const subjects = [active, ...Array.from(document.querySelectorAll(panelSel))].filter(Boolean) as HTMLElement[];
+    // The seeded stale field (the "iOS kept focus on a tapped input" fixture) is the test's own, and a
+    // focused text field legitimately has its field ring: it is not what the overlay drew.
+    const subjects = [active, ...Array.from(document.querySelectorAll(panelSel))].filter(
+      (e): e is HTMLElement => !!e && (e as HTMLElement).id !== "stale-field",
+    );
     const outlines: string[] = [];
     const rings: string[] = [];
     for (const el of subjects) {
