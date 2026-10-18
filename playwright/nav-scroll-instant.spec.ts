@@ -93,6 +93,7 @@ async function lastCardLink(page: Page) {
   // viewport-ok: the link must be inside the page's scrolling viewport, not an overlay bound
   const inView = await link.evaluate((el) => {
     const r = el.getBoundingClientRect();
+    // viewport-ok: inside the page's scrolling viewport, not an overlay bound
     return r.top >= 0 && r.bottom <= window.innerHeight;
   });
   expect(inView, "the last card's link is inside the viewport before the click").toBe(true);
