@@ -269,3 +269,18 @@ dialog.dx-alert-dialog[open][data-state="open"] {
   border-color: color-mix(in oklab, var(--dx-destructive) 40%, transparent);
   box-shadow: var(--dx-ring-invalid);
 }
+
+/* On-screen keyboard (`primitives/src/keyboard_inset.rs`). While it is open the helper puts
+ * `data-dx-keyboard` and `--dx-keyboard-inset` (the keyboard's height under the layout viewport) and
+ * `--dx-keyboard-top` (the visual viewport's pan offset, normally 0) on this panel; with no keyboard,
+ * or a pinch-zoomed page, none of them exists and this rule does not match, so the panel is exactly
+ * what it was. The panel is centred in the VISIBLE band `[top, 100% - inset]`, not in the layout
+ * viewport the keyboard covers, its height is capped to that band (the `--dx-space-8` is a
+ * `--dx-space-4` margin on each side), and it scrolls inside the cap (the helper scrolls the focused
+ * field to the middle of it). The `0px` fallbacks are the no-keyboard values. */
+.dx-alert-dialog[data-dx-keyboard] {
+  max-height: calc(100% - var(--dx-keyboard-inset, 0px) - var(--dx-keyboard-top, 0px) - var(--dx-space-8));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  top: calc(50% + (var(--dx-keyboard-top, 0px) - var(--dx-keyboard-inset, 0px)) / 2);
+}

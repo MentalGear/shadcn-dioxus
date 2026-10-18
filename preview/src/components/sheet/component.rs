@@ -5,6 +5,7 @@ use dioxus_primitives::dialog::{
 };
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::drawer::{use_resolved_edge_side, EdgeSide};
+use dioxus_primitives::keyboard_inset::{use_keyboard_panel, KeyboardInset};
 use dioxus_primitives::merge_attributes;
 
 /// The side a [`Sheet`] slides in from. One type for both edge panels: this is
@@ -84,6 +85,9 @@ fn SheetPanel(
     children: Element,
 ) -> Element {
     let ctx: DialogCtx = use_context();
+    // The panel follows the on-screen keyboard (`primitives/src/keyboard_inset.rs`; `style.css`
+    // consumes `--dx-keyboard-inset`).
+    let panel = use_keyboard_panel(None);
     let content_base = attributes!(div {
         class: "dx-sheet",
         "data-slot": "sheet-content",
@@ -94,7 +98,13 @@ fn SheetPanel(
     let content_attributes = merge_attributes(vec![content_base, attributes]);
 
     rsx! {
-        dialog::DialogContent { class: None, attributes: content_attributes, {children} }
+        dialog::DialogContent {
+            id: panel.id(),
+            class: None,
+            attributes: content_attributes,
+            {children}
+            KeyboardInset { panel }
+        }
     }
 }
 
