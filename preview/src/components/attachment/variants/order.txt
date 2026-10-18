@@ -1,0 +1,10 @@
+# Display order of this component's demos after `main`; a variants/<name>/ directory not listed here follows, sorted by name.
+states
+sizes
+image
+group
+trigger
+dialog
+image_gallery
+removable_group
+composite

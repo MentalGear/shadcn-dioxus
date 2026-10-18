@@ -1,0 +1,11 @@
+# Display order of this component's demos after `main`; a variants/<name>/ directory not listed here follows, sorted by name.
+variant
+size
+image
+group
+avatar
+icon
+link
+dropdown
+header
+rtl

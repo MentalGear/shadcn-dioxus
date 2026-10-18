@@ -1,0 +1,15 @@
+# Display order of this component's demos after `main`; a variants/<name>/ directory not listed here follows, sorted by name.
+sizes
+spacing
+peek
+align
+vertical
+rtl
+api
+indicators
+autoplay
+rewind
+hidden_arrows
+virtual_loop
+virtual_loop_rtl
+virtual_many
