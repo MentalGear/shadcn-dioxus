@@ -124,8 +124,19 @@ import { test, expect } from "../../fixtures";
 import { type Page } from "@playwright/test";
 import { BASE_URL } from "../../base-url";
 import { gotoHydrated } from "../../hydration";
+import { demoFrame, demoRole } from "../../demo-frame";
+import { measureAtRest } from "../../animations";
 
 const BASE = `${BASE_URL}/component/?name=`;
+// Demo items are located by role and position (backlog row 220), never by their copy.
+// dropdown_menu demo, root menu: Edit(0), Undo(1, disabled), Duplicate(2), More tools(3, the sub-trigger),
+// Delete(4); its submenu: Rename(0), Archive(1). context_menu demo: Edit(0), Undo(1, disabled), Duplicate(2),
+// Delete(3), More tools(4, the sub-trigger); same submenu. The submenu is the LAST role=menu in document order
+// (it is a descendant of the root menu, so it follows it).
+const rootItem = (page: Page, n: number) => page.getByRole("menu").first().getByRole("menuitem").nth(n);
+const submenuOf = (page: Page) => page.getByRole("menu").last();
+const submenuItem = (page: Page, n: number) => submenuOf(page).getByRole("menuitem").nth(n);
+
 // dev-docs/backlog.md row 109: this suite clicks/keys into submenus right
 // after navigating, on the SSG lane -- `gotoHydrated` so those interactions
 // can't land before hydration attaches listeners.
@@ -141,13 +152,13 @@ const PAST_INTENT_DELAY_MS = 500;
 test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
   test.beforeEach(async ({ page }) => {
     await goto(page, "dropdown_menu");
-    await page.getByRole("button", { name: "Open Menu" }).click();
+    await demoRole(page, "button").click();
   });
 
   test('sub-trigger: role="menuitem", aria-haspopup="menu" or "true", aria-expanded reflects open state', async ({
     page,
   }) => {
-    const subTrigger = page.getByRole("menuitem", { name: "More tools" });
+    const subTrigger = rootItem(page, 3);
     await expect(subTrigger, "the sub-trigger must exist as a menuitem").toBeVisible();
 
     const haspopup = await subTrigger.getAttribute("aria-haspopup");
@@ -173,7 +184,7 @@ test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
   test('sub-trigger owns its submenu via aria-controls, and the submenu popup is role="menu" with an accessible name', async ({
     page,
   }) => {
-    const subTrigger = page.getByRole("menuitem", { name: "More tools" });
+    const subTrigger = rootItem(page, 3);
     await subTrigger.click();
 
     const controlsId = await subTrigger.getAttribute("aria-controls");
@@ -183,7 +194,7 @@ test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
         "file's header): the sub-trigger names the submenu it owns",
     ).toBeTruthy();
 
-    const submenu = page.getByRole("menu", { name: "More tools" });
+    const submenu = submenuOf(page);
     await expect(submenu, "the opened submenu is role=\"menu\"").toHaveAttribute(
       "data-state",
       "open",
@@ -206,9 +217,9 @@ test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
   test('every item inside the submenu is role="menuitem", none carries aria-selected', async ({
     page,
   }) => {
-    await page.getByRole("menuitem", { name: "More tools" }).click();
+    await rootItem(page, 3).click();
 
-    const submenu = page.getByRole("menu", { name: "More tools" });
+    const submenu = submenuOf(page);
     const items = submenu.getByRole("menuitem");
     expect(await items.count(), "this submenu has 2 items (Rename/Archive)").toBe(2);
     for (const item of await items.all()) {
@@ -227,16 +238,16 @@ test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
     await page.keyboard.press("ArrowDown"); // Edit
     await page.keyboard.press("ArrowDown"); // Undo is disabled, skipped -> Duplicate
     await page.keyboard.press("ArrowDown"); // More tools
-    await expect(page.getByRole("menuitem", { name: "More tools" })).toBeFocused();
+    await expect(rootItem(page, 3)).toBeFocused();
 
     await page.keyboard.press("ArrowRight");
 
     await expect(
-      page.getByRole("menuitem", { name: "More tools" }),
+      rootItem(page, 3),
       "aria-expanded flips true",
     ).toHaveAttribute("aria-expanded", "true");
     await expect(
-      page.getByRole("menuitem", { name: "Rename" }),
+      submenuItem(page, 0),
       "focus moved to the submenu's first item",
     ).toBeFocused();
   });
@@ -247,24 +258,24 @@ test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
     await page.keyboard.press("ArrowDown");
     await page.keyboard.press("ArrowDown");
     await page.keyboard.press("ArrowDown");
-    await expect(page.getByRole("menuitem", { name: "More tools" })).toBeFocused();
+    await expect(rootItem(page, 3)).toBeFocused();
 
     await page.keyboard.press("Enter");
 
-    await expect(page.getByRole("menuitem", { name: "Rename" })).toBeFocused();
+    await expect(submenuItem(page, 0)).toBeFocused();
   });
 
   test('Left Arrow: "closes the submenu and returns focus to the parent menuitem" — and the parent menu stays open', async ({
     page,
   }) => {
-    const trigger = page.getByRole("button", { name: "Open Menu" });
-    const subTrigger = page.getByRole("menuitem", { name: "More tools" });
+    const trigger = demoRole(page, "button");
+    const subTrigger = rootItem(page, 3);
 
     await page.keyboard.press("ArrowDown");
     await page.keyboard.press("ArrowDown");
     await page.keyboard.press("ArrowDown");
     await page.keyboard.press("ArrowRight");
-    await expect(page.getByRole("menuitem", { name: "Rename" })).toBeFocused();
+    await expect(submenuItem(page, 0)).toBeFocused();
 
     await page.keyboard.press("ArrowLeft");
 
@@ -279,14 +290,14 @@ test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
   test('Escape: "closes the menu that contains focus and returns focus to ... the parent menuitem ... from which the menu was opened" — the parent menu stays open', async ({
     page,
   }) => {
-    const trigger = page.getByRole("button", { name: "Open Menu" });
-    const subTrigger = page.getByRole("menuitem", { name: "More tools" });
+    const trigger = demoRole(page, "button");
+    const subTrigger = rootItem(page, 3);
 
     await page.keyboard.press("ArrowDown");
     await page.keyboard.press("ArrowDown");
     await page.keyboard.press("ArrowDown");
     await page.keyboard.press("ArrowRight");
-    await expect(page.getByRole("menuitem", { name: "Rename" })).toBeFocused();
+    await expect(submenuItem(page, 0)).toBeFocused();
 
     await page.keyboard.press("Escape");
 
@@ -307,8 +318,8 @@ test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
   test("hover: opens after a short intent delay, not instantly; leaving to a sibling item closes it", async ({
     page,
   }) => {
-    const subTrigger = page.getByRole("menuitem", { name: "More tools" });
-    const submenu = page.getByRole("menu", { name: "More tools" });
+    const subTrigger = rootItem(page, 3);
+    const submenu = submenuOf(page);
 
     await subTrigger.hover();
     await page.waitForTimeout(BEFORE_INTENT_DELAY_MS);
@@ -326,7 +337,7 @@ test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
     await expect(submenu).toBeVisible();
 
     // Moving to a sibling item (not into the submenu itself) closes it.
-    await page.getByRole("menuitem", { name: "Edit" }).hover();
+    await rootItem(page, 0).hover();
     await expect(
       subTrigger,
       "moving to a sibling item closes the submenu (after the close-grace " +
@@ -355,11 +366,11 @@ test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
   test("hover: moving the pointer off the trigger and into the submenu content keeps it open and its item clickable", async ({
     page,
   }) => {
-    const subTrigger = page.getByRole("menuitem", { name: "More tools" });
-    const submenu = page.getByRole("menu", { name: "More tools" });
-    const renameItem = page.getByRole("menuitem", { name: "Rename" });
+    const subTrigger = rootItem(page, 3);
+    const submenu = submenuOf(page);
+    const renameItem = submenuItem(page, 0);
 
-    const triggerBox = await subTrigger.boundingBox();
+    const triggerBox = await measureAtRest(subTrigger);
     if (!triggerBox) throw new Error("sub-trigger has no bounding box");
 
     // Move the pointer onto the trigger with real intermediate mousemove
@@ -378,7 +389,7 @@ test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
     );
     await expect(submenu).toBeVisible();
 
-    const renameBox = await renameItem.boundingBox();
+    const renameBox = await measureAtRest(renameItem);
     if (!renameBox) throw new Error("Rename item has no bounding box");
 
     // Cross from the trigger into the submenu content with several
@@ -409,11 +420,12 @@ test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
 
     // The submenu must still be genuinely usable: clicking the item it's
     // resting on should select it.
+    const renamed = (await renameItem.innerText()).trim();
     await renameItem.click();
     await expect(
-      page.getByText("Selected: Rename"),
-      "the item hovered inside the submenu content is actually clickable/selectable",
-    ).toBeVisible();
+      demoFrame(page),
+      "the item hovered inside the submenu content is actually clickable/selectable (the demo reports the choice)",
+    ).toContainText(new RegExp(renamed, "i"));
   });
 
   // REGRESSION (`docs/backlog.md` row 85). "Calling .focus() directly on a
@@ -441,8 +453,8 @@ test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
   test("a raw .focus() call on the sub-trigger does not close the whole menu (row 85)", async ({
     page,
   }) => {
-    const trigger = page.getByRole("button", { name: "Open Menu" });
-    const subTrigger = page.getByRole("menuitem", { name: "More tools" });
+    const trigger = demoRole(page, "button");
+    const subTrigger = rootItem(page, 3);
     // Mouse-click-opened, deliberately with NO keyboard navigation
     // afterward -- this is exactly the precondition the bug needs:
     // `ctx.focus` (the root's own roving-focus collection) is never
@@ -466,13 +478,13 @@ test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
 test.describe("APG Menu and Menubar pattern — ContextMenu.Sub", () => {
   test.beforeEach(async ({ page }) => {
     await goto(page, "context_menu");
-    await page.getByRole("button", { name: "right click here" }).click({ button: "right" });
+    await demoRole(page, "button").click({ button: "right" });
   });
 
   test('sub-trigger: role="menuitem", aria-haspopup="menu" or "true", aria-expanded reflects open state', async ({
     page,
   }) => {
-    const subTrigger = page.getByRole("menuitem", { name: "More tools" });
+    const subTrigger = rootItem(page, 4);
     await expect(subTrigger).toBeVisible();
 
     const haspopup = await subTrigger.getAttribute("aria-haspopup");
@@ -487,10 +499,10 @@ test.describe("APG Menu and Menubar pattern — ContextMenu.Sub", () => {
   test('submenu popup is role="menu" with an accessible name, every item is role="menuitem"', async ({
     page,
   }) => {
-    const subTrigger = page.getByRole("menuitem", { name: "More tools" });
+    const subTrigger = rootItem(page, 4);
     await subTrigger.click();
 
-    const submenu = page.getByRole("menu", { name: "More tools" });
+    const submenu = submenuOf(page);
     await expect(submenu).toHaveAttribute("data-state", "open");
     expect(
       await submenu.getAttribute("aria-labelledby"),
@@ -509,8 +521,8 @@ test.describe("APG Menu and Menubar pattern — ContextMenu.Sub", () => {
   test('ArrowRight/Enter open the submenu and move focus to its first item; Left Arrow/Escape close it and return focus, leaving the root menu open', async ({
     page,
   }) => {
-    const rootMenu = page.getByRole("menu").filter({ has: page.getByRole("menuitem", { name: "Edit" }) });
-    const subTrigger = page.getByRole("menuitem", { name: "More tools" });
+    const rootMenu = page.getByRole("menu").first();
+    const subTrigger = rootItem(page, 4);
 
     // Edit(0) -> Undo(1, disabled, skipped) -> Duplicate(2) -> Delete(3) ->
     // More tools(4) -- see this demo's own top-of-file index-layout comment.
@@ -522,7 +534,7 @@ test.describe("APG Menu and Menubar pattern — ContextMenu.Sub", () => {
 
     await page.keyboard.press("ArrowRight");
     await expect(subTrigger).toHaveAttribute("aria-expanded", "true");
-    await expect(page.getByRole("menuitem", { name: "Rename" })).toBeFocused();
+    await expect(submenuItem(page, 0)).toBeFocused();
 
     await page.keyboard.press("ArrowLeft");
     await expect(subTrigger, "closes the submenu").toHaveAttribute("aria-expanded", "false");
@@ -534,7 +546,7 @@ test.describe("APG Menu and Menubar pattern — ContextMenu.Sub", () => {
 
     // Re-open and close with Enter/Escape this time, same contract.
     await page.keyboard.press("Enter");
-    await expect(page.getByRole("menuitem", { name: "Rename" })).toBeFocused();
+    await expect(submenuItem(page, 0)).toBeFocused();
     await page.keyboard.press("Escape");
     await expect(subTrigger).toHaveAttribute("aria-expanded", "false");
     await expect(subTrigger).toBeFocused();
@@ -547,8 +559,8 @@ test.describe("APG Menu and Menubar pattern — ContextMenu.Sub", () => {
   test("hover: opens after a short intent delay, not instantly; leaving to a sibling item closes it", async ({
     page,
   }) => {
-    const subTrigger = page.getByRole("menuitem", { name: "More tools" });
-    const submenu = page.getByRole("menu", { name: "More tools" });
+    const subTrigger = rootItem(page, 4);
+    const submenu = submenuOf(page);
 
     await subTrigger.hover();
     await page.waitForTimeout(BEFORE_INTENT_DELAY_MS);
@@ -558,7 +570,7 @@ test.describe("APG Menu and Menubar pattern — ContextMenu.Sub", () => {
     await expect(subTrigger).toHaveAttribute("aria-expanded", "true");
     await expect(submenu).toBeVisible();
 
-    await page.getByRole("menuitem", { name: "Edit" }).hover();
+    await rootItem(page, 0).hover();
     await expect(subTrigger).toHaveAttribute("aria-expanded", "false");
   });
 
@@ -572,11 +584,11 @@ test.describe("APG Menu and Menubar pattern — ContextMenu.Sub", () => {
   test("hover: moving the pointer off the trigger and into the submenu content keeps it open and its item clickable", async ({
     page,
   }) => {
-    const subTrigger = page.getByRole("menuitem", { name: "More tools" });
-    const submenu = page.getByRole("menu", { name: "More tools" });
-    const renameItem = page.getByRole("menuitem", { name: "Rename" });
+    const subTrigger = rootItem(page, 4);
+    const submenu = submenuOf(page);
+    const renameItem = submenuItem(page, 0);
 
-    const triggerBox = await subTrigger.boundingBox();
+    const triggerBox = await measureAtRest(subTrigger);
     if (!triggerBox) throw new Error("sub-trigger has no bounding box");
 
     await page.mouse.move(triggerBox.x + 5, triggerBox.y + triggerBox.height / 2);
@@ -592,7 +604,7 @@ test.describe("APG Menu and Menubar pattern — ContextMenu.Sub", () => {
     );
     await expect(submenu).toBeVisible();
 
-    const renameBox = await renameItem.boundingBox();
+    const renameBox = await measureAtRest(renameItem);
     if (!renameBox) throw new Error("Rename item has no bounding box");
 
     await page.mouse.move(
@@ -610,11 +622,12 @@ test.describe("APG Menu and Menubar pattern — ContextMenu.Sub", () => {
     await expect(submenu, "the submenu itself must still be visible").toBeVisible();
     await expect(renameItem, "and its item must still be visible").toBeVisible();
 
+    const renamed = (await renameItem.innerText()).trim();
     await renameItem.click();
     await expect(
-      page.getByText("Selected: rename"),
-      "the item hovered inside the submenu content is actually clickable/selectable",
-    ).toBeVisible();
+      demoFrame(page),
+      "the item hovered inside the submenu content is actually clickable/selectable (the demo reports the choice)",
+    ).toContainText(new RegExp(renamed, "i"));
   });
 
   // CONSTRUCTION-PARITY regression, not a reproduced defect. `docs/backlog.md`
@@ -639,7 +652,7 @@ test.describe("APG Menu and Menubar pattern — ContextMenu.Sub", () => {
     page,
   }) => {
     const rootMenu = page.getByRole("menu").first();
-    const subTrigger = page.getByRole("menuitem", { name: "More tools" });
+    const subTrigger = rootItem(page, 4);
     await expect(subTrigger).toBeVisible();
 
     await subTrigger.focus();

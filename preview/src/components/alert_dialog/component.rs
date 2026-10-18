@@ -4,12 +4,16 @@ use dioxus_primitives::alert_dialog::{
     AlertDialogDescriptionProps, AlertDialogRootProps, AlertDialogTitleProps,
 };
 use dioxus_primitives::dioxus_attributes::attributes;
+use dioxus_primitives::keyboard_inset::{use_keyboard_panel, KeyboardInset};
 use dioxus_primitives::merge_attributes;
 
 #[component]
 pub fn AlertDialog(props: AlertDialogRootProps) -> Element {
     let base = attributes!(div { class: "dx-alert-dialog-backdrop" });
     let merged = merge_attributes(vec![base, props.attributes]);
+    // The panel follows the on-screen keyboard (`primitives/src/keyboard_inset.rs`; `style.css`
+    // consumes `--dx-keyboard-inset`).
+    let panel = use_keyboard_panel(None);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/alert_dialog/style.css") }
         alert_dialog::AlertDialogRoot {
@@ -20,8 +24,10 @@ pub fn AlertDialog(props: AlertDialogRootProps) -> Element {
             on_open_change: props.on_open_change,
             attributes: merged,
             alert_dialog::AlertDialogContent {
+                id: panel.id(),
                 class: "dx-alert-dialog".to_string(),
                 {props.children}
+                KeyboardInset { panel }
             }
         }
     }

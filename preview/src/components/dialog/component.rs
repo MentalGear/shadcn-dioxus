@@ -2,6 +2,7 @@ use crate::components::button::{Button, ButtonSize, ButtonVariant};
 use dioxus::prelude::*;
 use dioxus_icons::lucide::X;
 use dioxus_primitives::dialog::{self, DialogCtx, DialogDescriptionProps, DialogTitleProps};
+use dioxus_primitives::keyboard_inset::{use_keyboard_panel, KeyboardInset};
 use dioxus_primitives::{dioxus_attributes::attributes, merge_attributes};
 
 /// The props for the [`Dialog`] component: [`dialog::DialogRootProps`] plus `show_close_button`.
@@ -51,6 +52,9 @@ pub fn Dialog(props: DialogProps) -> Element {
         "data-slot": "dialog-content",
     });
     let merged = merge_attributes(vec![base, props.attributes]);
+    // The panel follows the on-screen keyboard (`primitives/src/keyboard_inset.rs`; `style.css`
+    // consumes `--dx-keyboard-inset`).
+    let panel = use_keyboard_panel(None);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/dialog/style.css") }
@@ -63,12 +67,14 @@ pub fn Dialog(props: DialogProps) -> Element {
             default_open: props.default_open,
             on_open_change: props.on_open_change,
             dialog::DialogContent {
+                id: panel.id(),
                 class: None,
                 attributes: merged,
                 {props.children}
                 if props.show_close_button {
                     DialogCornerClose {}
                 }
+                KeyboardInset { panel }
             }
         }
     }

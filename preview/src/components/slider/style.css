@@ -78,6 +78,12 @@
        primitives lane rather than guessed at here. */
     transform: translate3d(-50%, -50%, 0);
     transition: box-shadow var(--dx-motion-duration-base);
+
+    /* `all: unset` above also resets the theme's zero-specificity "Controls are not text" rule
+       (`dx-components-theme.css`), so it is restated here; scripts/check-theme-baseline.sh requires it. */
+    /* stylelint-disable-next-line property-no-vendor-prefix -- Safari spelling */
+    -webkit-user-select: none;
+    user-select: none;
     will-change: left, bottom, transform;
 }
 

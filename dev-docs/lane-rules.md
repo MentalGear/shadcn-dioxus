@@ -36,16 +36,37 @@ tree's artifact silently builds or lints that other tree's code. Touch your sour
 or dx run: `find preview/src preview/assets preview/build.rs primitives/src dioxus-attributes/src -type f -exec touch {} +`.
 After a build, prove your change is in the output (grep the served HTML, CSS or wasm for a string you added).
 
-## Before handback (rows 221, 224)
+## Before handback (rows 221, 224; gate step changed 2026-10-18)
 1. Merge the current session branch into your lane branch (`git merge <session branch>`, no rebase). New gates may have
    landed since you branched; on a `preview/src/components/mod.rs` conflict keep both sides' variants on every line.
-2. Run the FULL `scripts/run-gates.sh` (fmt, three clippy arms, `cargo test --workspace`, stylelint, every
-   `check-*.sh`) under the lock, and quote its `ALL GREEN` line. A partial run is not a pass.
+2. Run the FAST gates without the lock and quote their summary line (owner decision 2026-10-18, see "Gate
+   procedure" below): `CARGO_TARGET_DIR=$LANE_TGT/check scripts/run-gates.sh --skip
+   '^(clippy-|test$|check-primitives-features$|check-attr-spread-collision$)'` -- every listed gate PASS, exit 3
+   (partial by design). That is every static `check-*.sh`, fmt and stylelint, in seconds. Do NOT run the full
+   `run-gates.sh`: the main loop runs it once on the merged tree.
 3. Run your own specs plus the existing specs of everything you touched on a `lane-ssg` build that you verified
    contains your change. A change to shared plumbing (a primitive, `merge_attributes`, the theme, a component other
    components compose such as Button) also needs the specs of its consumers: each lane green alone proves nothing about
    the merge (row 224).
 4. Wait in the foreground for queued builds (long timeouts) instead of handing back early.
+
+## Gate procedure (owner decision 2026-10-18; why: `dev-docs/backlog.md` row 221)
+One exclusive build lock serialises every compile, a full `run-gates.sh` holds it for 15-21 min, and a round of ten
+lanes that each ran it (plus reruns after a red) queued about four hours of lock time. Three rules:
+1. **Lanes run the fast gates; the full gates run once per merge batch.** A lane's compile is proven by its own
+   `lane-ssg` build and its specs; the main loop merges a batch of lanes and runs the ONE full `run-gates.sh`
+   (three clippy arms, `cargo test`, the cargo-building checks) on the merged tree through `scripts/gate-at.sh`,
+   fixes small reds itself (a clippy nit, a format line) and sends a real red back to its lane. Nothing is pushed
+   without that full green on the exact commit pushed. The late-landing-gate risk the old rule covered (row 224) is
+   caught by the merged-tree run, and by each lane merging the session branch before its fast gates.
+2. **The lock is first-come, first-served, with merge gates first.** `flock` hands the lock to a random waiter, so a
+   lane ready to hand back could lose to one mid-work for an hour. Until a ticket queue replaces bare `flock` (row
+   221), the main loop starts merge-batch gates only when no lane build is queued behind them, and lanes take the
+   lock only for a build they need now (never "just in case").
+3. **Batch size follows the lock's throughput: 4-5 lanes per batch.** One lock finishes about three full gate runs
+   or six lane builds an hour; more lanes than that do not finish sooner, they wait longer (and hold more disk and
+   memory). Split a larger round into consecutive batches with disjoint files; the next batch's editing can start
+   while the previous batch's merge gates run.
 
 ## Conventions the gates enforce
 Listeners in eval JS through `primitives/src/js_listener.rs` `listen`; passive scroll listeners; motion through

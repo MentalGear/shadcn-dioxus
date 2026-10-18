@@ -23,7 +23,7 @@ import { test, expect } from "./fixtures";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from './axe';
 import { BASE_URL } from './base-url';
 import { gotoHydrated } from './hydration';
-import { awaitAnimationsSettled } from './animations';
+import { awaitAnimationsSettled, measureAtRest, readAtRest } from './animations';
 import { fixedViewportBox } from './viewport-box';
 import { assertSharedBackdrop, captureBackdrop, resolveOverlayMs } from "./assert-backdrop-fade";
 
@@ -138,7 +138,7 @@ test('the panel sits flush against its own edge at rest, bottom and top variants
 
   await page.getByRole('button', { name: 'Move Goal' }).click();
   await awaitAnimationsSettled(page.locator('[data-slot="drawer-content"]'));
-  const bottomBox = await page.locator('[data-slot="drawer-content"]').boundingBox();
+  const bottomBox = await measureAtRest(page.locator('[data-slot="drawer-content"]'));
   if (!bottomBox) throw new Error('drawer content has no bounding box');
   // Flush with the viewport's bottom edge: no gap below.
   expect(Math.abs(viewport.height - (bottomBox.y + bottomBox.height))).toBeLessThanOrEqual(FLUSH_TOLERANCE_PX);
@@ -147,7 +147,7 @@ test('the panel sits flush against its own edge at rest, bottom and top variants
 
   await page.getByRole('button', { name: 'Open from Top' }).click();
   await awaitAnimationsSettled(page.locator('[data-slot="drawer-content"]'));
-  const topBox = await page.locator('[data-slot="drawer-content"]').boundingBox();
+  const topBox = await measureAtRest(page.locator('[data-slot="drawer-content"]'));
   if (!topBox) throw new Error('drawer content has no bounding box');
   // Flush with the viewport's top edge: no gap above.
   expect(Math.abs(topBox.y)).toBeLessThanOrEqual(FLUSH_TOLERANCE_PX);
@@ -161,7 +161,7 @@ test('a drag away from the dismiss direction never exposes the viewport edge', a
   await awaitAnimationsSettled(page.locator('[data-slot="drawer-content"]'));
 
   const content = page.locator('[data-slot="drawer-content"]');
-  const handleBox = await page.locator('[data-slot="drawer-handle"]').boundingBox();
+  const handleBox = await measureAtRest(page.locator('[data-slot="drawer-handle"]'));
   if (!handleBox) throw new Error('drawer handle has no bounding box');
   const startX = handleBox.x + handleBox.width / 2;
   const startY = handleBox.y + handleBox.height / 2;
@@ -178,7 +178,7 @@ test('a drag away from the dismiss direction never exposes the viewport edge', a
   let maxGapBelow = 0;
   for (let i = 1; i <= 6; i++) {
     await page.mouse.move(startX, startY - (rawOverdragPx * i) / 6, { steps: 2 });
-    const box = await content.boundingBox();
+    const box = await measureAtRest(content);
     if (box) maxGapBelow = Math.max(maxGapBelow, viewport.height - (box.y + box.height));
   }
   // Read while the pointer is still down, so a `getComputedStyle` cannot land on a
@@ -214,7 +214,7 @@ test('dragging over the handle or the drawer content does not select text', asyn
   // its own, so this alone can't prove much (there's nothing there TO
   // select) -- included because it's the literal case the bug report
   // named, not because it's the strongest reproduction.
-  const handleBox = await page.locator('[data-slot="drawer-handle"]').boundingBox();
+  const handleBox = await measureAtRest(page.locator('[data-slot="drawer-handle"]'));
   if (!handleBox) throw new Error('drawer handle has no bounding box');
   await page.mouse.move(handleBox.x + 2, handleBox.y + handleBox.height / 2);
   await page.mouse.down();
@@ -233,7 +233,7 @@ test('dragging over the handle or the drawer content does not select text', asyn
   // full sentence.
   await page.evaluate(() => window.getSelection()?.removeAllRanges());
   const desc = page.locator('[data-slot="drawer-description"]');
-  const descBox = await desc.boundingBox();
+  const descBox = await measureAtRest(desc);
   if (!descBox) throw new Error('drawer description has no bounding box');
   const midY = descBox.y + descBox.height / 2;
 
@@ -260,8 +260,8 @@ test('a long, slow drag past the dismiss threshold closes the drawer', async ({ 
   // starts. Measure the settled panel (backlog row 115's class; the sibling drag tests above do).
   await awaitAnimationsSettled(content);
 
-  const contentBox = await content.boundingBox();
-  const handleBox = await page.locator('[data-slot="drawer-handle"]').boundingBox();
+  const contentBox = await measureAtRest(content);
+  const handleBox = await measureAtRest(page.locator('[data-slot="drawer-handle"]'));
   if (!contentBox || !handleBox) throw new Error('drawer content/handle has no bounding box');
 
   const startX = handleBox.x + handleBox.width / 2;
@@ -302,7 +302,7 @@ test('a short, slow drag snaps back without closing the drawer', async ({ page }
   await expect(root).toHaveAttribute('data-state', 'open');
   await awaitAnimationsSettled(content); // see the long-drag test above: the handle is off-screen mid slide-in
 
-  const handleBox = await page.locator('[data-slot="drawer-handle"]').boundingBox();
+  const handleBox = await measureAtRest(page.locator('[data-slot="drawer-handle"]'));
   if (!handleBox) throw new Error('drawer handle has no bounding box');
   const startX = handleBox.x + handleBox.width / 2;
   const startY = handleBox.y + handleBox.height / 2;
@@ -362,7 +362,7 @@ async function pointerDrag(
   await page.evaluate(
     async ({ selector, kind, dx, dy, steps, stepMs, pauseBeforeUpMs, flick }) => {
       const el = document.querySelector(selector) as HTMLElement;
-      const r = el.getBoundingClientRect();
+      const r = el.getBoundingClientRect(); // rest-ok: places the pointer on a drawer the caller has already opened and settled (a drag helper, not a measurement)
       const x0 = r.x + r.width / 2;
       const y0 = r.y + r.height / 2;
       const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -417,7 +417,7 @@ async function expectStillOpenAtRest(page: import('@playwright/test').Page) {
 
 test("a mouse drag UP on a bottom drawer's handle never closes it, however far, even released over the backdrop", async ({ page }) => {
   await openBottom(page);
-  const handleBox = await page.locator(HANDLE).boundingBox();
+  const handleBox = await measureAtRest(page.locator(HANDLE));
   if (!handleBox) throw new Error('drawer handle has no bounding box');
   const startX = handleBox.x + handleBox.width / 2;
   const startY = handleBox.y + handleBox.height / 2;
@@ -448,7 +448,7 @@ test('a text selection or drag that starts inside a dialog and ends on its backd
   // ALSO began on the backdrop is a dismissal.
   await openBottom(page);
   const title = page.locator('[data-slot="drawer-title"]');
-  const box = await title.boundingBox();
+  const box = await measureAtRest(title);
   if (!box) throw new Error('drawer title has no bounding box');
   await page.mouse.move(box.x + 4, box.y + box.height / 2);
   await page.mouse.down();
@@ -471,7 +471,7 @@ for (const kind of ['mouse', 'touch', 'pen'] as const) {
 
     test(`dragging DOWN past the threshold closes it`, async ({ page }) => {
       await openBottom(page);
-      const h = (await page.locator(CONTENT).boundingBox())!.height;
+      const h = (await measureAtRest(page.locator(CONTENT))).height;
       // 40% of the panel, slowly, then held still before release: the distance rule, not a flick.
       await pointerDrag(page, HANDLE, { kind, dx: 0, dy: h * 0.4, steps: 8, stepMs: 60, pauseBeforeUpMs: 200 });
       await expect(page.locator(ROOT)).toHaveCount(0);
@@ -485,7 +485,7 @@ for (const kind of ['mouse', 'touch', 'pen'] as const) {
 
     test(`a flick DOWN closes it even though it is short`, async ({ page }) => {
       await openBottom(page);
-      const h = (await page.locator(CONTENT).boundingBox())!.height;
+      const h = (await measureAtRest(page.locator(CONTENT))).height;
       // 15% of the panel (under the 25% distance threshold) in ~12ms: only the velocity can close it.
       await pointerDrag(page, HANDLE, { kind, dx: 0, dy: h * 0.15, steps: 3, stepMs: 4, flick: true });
       await expect(page.locator(ROOT)).toHaveCount(0);
@@ -512,14 +512,14 @@ test.describe('top drawer: the closing edge is UP', () => {
 
   test('dragging UP past the threshold closes it', async ({ page }) => {
     await openTop(page);
-    const h = (await page.locator(CONTENT).boundingBox())!.height;
+    const h = (await measureAtRest(page.locator(CONTENT))).height;
     await pointerDrag(page, GRAB, { kind: 'mouse', dx: 0, dy: -h * 0.5, steps: 8, stepMs: 60, pauseBeforeUpMs: 200 });
     await expect(page.locator(ROOT)).toHaveCount(0);
   });
 
   test('a flick UP closes it', async ({ page }) => {
     await openTop(page);
-    const h = (await page.locator(CONTENT).boundingBox())!.height;
+    const h = (await measureAtRest(page.locator(CONTENT))).height;
     await pointerDrag(page, GRAB, { kind: 'touch', dx: 0, dy: -h * 0.15, steps: 3, stepMs: 4, flick: true });
     await expect(page.locator(ROOT)).toHaveCount(0);
   });
@@ -528,8 +528,8 @@ test.describe('top drawer: the closing edge is UP', () => {
 test('a real-mouse flick closes a bottom drawer; a drag-close carries on from the release point instead of easing back first', async ({ page }) => {
   await openBottom(page);
   const content = page.locator(CONTENT);
-  const box = (await content.boundingBox())!;
-  const handleBox = (await page.locator(HANDLE).boundingBox())!;
+  const box = (await measureAtRest(content));
+  const handleBox = (await measureAtRest(page.locator(HANDLE)));
   const startX = handleBox.x + handleBox.width / 2;
   const startY = handleBox.y + handleBox.height / 2;
 
@@ -550,7 +550,7 @@ test('a real-mouse flick closes a bottom drawer; a drag-close carries on from th
     const tick = () => {
       const el = document.querySelector(selector);
       // Once the exit is over the dialog is `display: none` (rect all zeros) until it unmounts: not a frame of the slide.
-      const r = el?.getBoundingClientRect();
+      const r = el?.getBoundingClientRect(); // rest-ok: samples the exit slide on every frame on purpose
       if (r && r.height > 0) w.__tops.push(r.top);
       if (w.__run) requestAnimationFrame(tick);
     };
@@ -637,7 +637,7 @@ test.describe("Scrim", () => {
 /** The panel's resolved placement: the edge gaps to the fixed viewport box, the radii and the handle. */
 async function placement(page: import('@playwright/test').Page) {
   const viewport = await fixedViewportBox(page);
-  return page.locator(CONTENT).evaluate((el, vp) => {
+  return readAtRest(page.locator(CONTENT), (el, vp) => {
     const r = el.getBoundingClientRect();
     const cs = getComputedStyle(el);
     const handle = el.querySelector('[data-slot="drawer-handle"]') as HTMLElement | null;
@@ -682,7 +682,7 @@ test.describe('Auto side (the default)', () => {
     // Inset from the viewport edge on the three sides it floats off (the theme's `--dx-space-2`, 8px)...
     for (const gap of [p.top, p.right, p.bottom]) expect(Math.abs(gap - 8)).toBeLessThanOrEqual(FLUSH_TOLERANCE_PX);
     // ...three quarters of the viewport wide, capped at 24rem (shadcn's `w-3/4 sm:max-w-sm`).
-    expect((await page.locator(CONTENT).boundingBox())!.width).toBeLessThanOrEqual(384 + FLUSH_TOLERANCE_PX);
+    expect((await measureAtRest(page.locator(CONTENT))).width).toBeLessThanOrEqual(384 + FLUSH_TOLERANCE_PX);
     for (const r of Object.values(p.radius)) expect(r).toBeGreaterThan(0);
     // The grab bar is the bottom drawer's.
     expect(p.handleShown).toBe(false);
@@ -708,7 +708,7 @@ test.describe('Auto side (the default)', () => {
   test('a drag toward the right edge closes the auto-resolved right drawer; away from it never does', async ({ page }) => {
     await page.setViewportSize(DESKTOP);
     await openBottom(page);
-    const w = (await page.locator(CONTENT).boundingBox())!.width;
+    const w = (await measureAtRest(page.locator(CONTENT))).width;
     // The grab surface is the panel itself (the handle is hidden on a side drawer).
     await pointerDrag(page, '[data-slot="drawer-title"]', { kind: 'mouse', dx: -300, dy: 0, steps: 6, stepMs: 8, flick: true });
     await page.waitForTimeout(900);
@@ -820,7 +820,7 @@ test.describe('Nested drawers', () => {
   test('a drag on the child closes only the child, however far; the parent never starts a drag', async ({ page }) => {
     await openParent(page);
     await openChild(page);
-    const h = (await page.locator(CHILD_HANDLE).evaluate((el) => (el.closest('dialog') as HTMLElement).getBoundingClientRect().height));
+    const h = await readAtRest(page.locator(CHILD_HANDLE), (el) => (el.closest('dialog') as HTMLElement).getBoundingClientRect().height);
     // 50% of the CHILD, slowly: the same gesture would close the (taller) parent too if its listener took it.
     await pointerDrag(page, CHILD_HANDLE, { kind: 'mouse', dx: 0, dy: h * 0.5, steps: 8, stepMs: 60, pauseBeforeUpMs: 200 });
     await expect(page.locator(CHILD_TITLE)).toHaveCount(0);
@@ -830,7 +830,7 @@ test.describe('Nested drawers', () => {
     expect(await scrollLocked(page)).toBe(true);
     await expect.poll(async () => parentState(page)).toMatchObject({ nested: 'false', scale: 'none', open: 'open' });
     // And now the parent, alone on top, drags normally.
-    const ph = (await page.locator(CONTENT).boundingBox())!.height;
+    const ph = (await measureAtRest(page.locator(CONTENT))).height;
     await pointerDrag(page, '[data-slot="drawer-content"] > [data-slot="drawer-handle"]', { kind: 'mouse', dx: 0, dy: ph * 0.5, steps: 8, stepMs: 60, pauseBeforeUpMs: 200 });
     await expect(page.locator(ROOT)).toHaveCount(0);
     expect(await scrollLocked(page)).toBe(false);

@@ -2706,67 +2706,99 @@ fn Home(iframe: Option<bool>, dark_mode: Option<bool>) -> Element {
     }
 }
 
+/// Which fixed column group of the masonry a card belongs to. A card's column is decided HERE, at
+/// compile time, and is the same in the prerendered HTML, in a half-parsed document and after hydration:
+/// it does not depend on the card's height or on how many of its neighbours have arrived (backlog row
+/// 214; the CSS multi-column masonry this replaces re-assigned cards to columns on every parsed card).
+///
+/// Three columns above 1100px: `Left`, `Middle`, and `RightUpper` stacked on `RightLower`. Two columns
+/// from 641 to 1100px: `Left` over `RightUpper`, and `Middle` over `RightLower` (a grid with two rows,
+/// so the row-one tops align and only the shorter of `Left`/`Middle` leaves a gap, kept under ~35px by
+/// the assignment below). One column below. See `.dx-widget-masonry` in `main.css`.
+#[derive(Clone, Copy, PartialEq)]
+enum MasonrySlot {
+    Left,
+    Middle,
+    RightUpper,
+    RightLower,
+}
+
 struct MasonryEntry {
     component: fn() -> Element,
     popout: bool,
+    slot: MasonrySlot,
 }
 
 const BLOCKS: &[MasonryEntry] = &[
     MasonryEntry {
         component: BlockSignIn,
         popout: false,
+        slot: MasonrySlot::Left,
     },
     MasonryEntry {
         component: BlockProfile,
         popout: false,
+        slot: MasonrySlot::Middle,
     },
     MasonryEntry {
         component: BlockStats,
         popout: false,
+        slot: MasonrySlot::RightUpper,
     },
     MasonryEntry {
         component: BlockInbox,
         popout: false,
+        slot: MasonrySlot::Left,
     },
     MasonryEntry {
         component: BlockTasks,
         popout: false,
+        slot: MasonrySlot::Middle,
     },
     MasonryEntry {
         component: BlockNotifications,
         popout: false,
+        slot: MasonrySlot::Middle,
     },
     MasonryEntry {
         component: BlockPlayer,
         popout: false,
+        slot: MasonrySlot::RightLower,
     },
     MasonryEntry {
         component: BlockCommand,
         popout: true,
+        slot: MasonrySlot::RightUpper,
     },
     MasonryEntry {
         component: BlockComposer,
         popout: false,
+        slot: MasonrySlot::Middle,
     },
     MasonryEntry {
         component: BlockPricing,
         popout: false,
+        slot: MasonrySlot::Left,
     },
     MasonryEntry {
         component: BlockFilters,
         popout: false,
+        slot: MasonrySlot::Left,
     },
     MasonryEntry {
         component: BlockColorPalette,
         popout: true,
+        slot: MasonrySlot::Middle,
     },
     MasonryEntry {
         component: BlockTabs,
         popout: false,
+        slot: MasonrySlot::RightUpper,
     },
     MasonryEntry {
         component: BlockSchedule,
         popout: false,
+        slot: MasonrySlot::RightLower,
     },
 ];
 
@@ -2788,13 +2820,28 @@ fn WidgetMasonry(heading_id: String) -> Element {
                 }
             }
             div { class: "dx-widget-masonry",
-                for entry in BLOCKS {
-                    MasonryCard { popout: entry.popout,
-                        // A real component, never `(entry.component)()`: see `MasonryCard`.
-                        {
-                            let Block = entry.component;
-                            rsx! { Block {} }
-                        }
+                MasonryColumn { slot: MasonrySlot::Left }
+                MasonryColumn { slot: MasonrySlot::Middle }
+                div { class: "dx-masonry-right",
+                    MasonryColumn { slot: MasonrySlot::RightUpper }
+                    MasonryColumn { slot: MasonrySlot::RightLower }
+                }
+            }
+        }
+    }
+}
+
+/// One fixed column group of the masonry: the cards whose `BLOCKS` entry names `slot`, in `BLOCKS` order.
+#[component]
+fn MasonryColumn(slot: MasonrySlot) -> Element {
+    rsx! {
+        div { class: "dx-masonry-col",
+            for entry in BLOCKS.iter().filter(|entry| entry.slot == slot) {
+                MasonryCard { popout: entry.popout,
+                    // A real component, never `(entry.component)()`: see `MasonryCard`.
+                    {
+                        let Block = entry.component;
+                        rsx! { Block {} }
                     }
                 }
             }

@@ -3,6 +3,7 @@ import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from './axe';
 import { BASE_URL } from './base-url';
 import { fixedViewportBox } from './viewport-box';
 import { assertSharedBackdrop, captureBackdrop, resolveOverlayMs } from "./assert-backdrop-fade";
+import { measureAtRest } from "./animations";
 
 test('sheet basic interactions', async ({ page }) => {
   await page.goto(`${BASE_URL}/component/?name=sheet&`, { timeout: 20 * 60 * 1000 });
@@ -108,7 +109,7 @@ test('right sheet content geometry matches shadcn spec at desktop and near-break
 
   // At 1280px, 75vw (960px) is well past the 384px cap, so the panel should
   // land exactly on min(75vw, 384px) = 384px.
-  let box = await content.boundingBox();
+  let box = await measureAtRest(content);
   expect(box).not.toBeNull();
   expect(box!.width).toBeCloseTo(384, 0);
 
@@ -129,7 +130,7 @@ test('right sheet content geometry matches shadcn spec at desktop and near-break
   await page.setViewportSize({ width: 600, height: 800 });
   await page.getByRole('button', { name: 'Right' }).click();
   await expect(sheet).toHaveAttribute('data-state', 'open');
-  box = await content.boundingBox();
+  box = await measureAtRest(content);
   expect(box).not.toBeNull();
   expect(box!.width).toBeGreaterThan(400); // clearly past the 384px cap
   expect(box!.width).toBeLessThan(460); // still recognizably ~75%, not e.g. 100%
@@ -184,7 +185,7 @@ test('sheet content is anchored flush to its own edge, not centered', async ({ p
     // measuring immediately after the `data-state` flip catches the panel
     // still near its off-screen starting `translate`, not where it settles.
     await page.waitForTimeout(700);
-    const box = (await content.boundingBox())!;
+    const box = (await measureAtRest(content));
     expect(box).not.toBeNull();
     await page.keyboard.press('Escape');
     await expect(sheet).toHaveCount(0);
@@ -236,7 +237,7 @@ test('close button matches Nova spec: 16px icon, ghost icon-sm (28px, full opaci
   );
 
   // shadcn's close icon is `size-4` (16px).
-  const iconBox = await closeButton.locator('svg').first().boundingBox();
+  const iconBox = await measureAtRest(closeButton.locator('svg').first());
   expect(iconBox).not.toBeNull();
   expect(iconBox!.width).toBeCloseTo(16, 0);
   expect(iconBox!.height).toBeCloseTo(16, 0);
@@ -247,7 +248,7 @@ test('close button matches Nova spec: 16px icon, ghost icon-sm (28px, full opaci
   expect(opacity).toBe('1');
   const borderRadius = await closeButton.evaluate((el) => getComputedStyle(el).borderRadius);
   expect(borderRadius).toBe('8px');
-  const buttonBox = await closeButton.boundingBox();
+  const buttonBox = await measureAtRest(closeButton);
   expect(buttonBox).not.toBeNull();
   expect(buttonBox!.width).toBeCloseTo(28, 0);
   expect(buttonBox!.height).toBeCloseTo(28, 0);
@@ -255,8 +256,8 @@ test('close button matches Nova spec: 16px icon, ghost icon-sm (28px, full opaci
   // Nova: `absolute top-3 right-3` -- close to the content's own top-right
   // corner (within one button-box's worth of margin), not flush against the
   // viewport edge or hanging off the panel.
-  const contentBox = await content.boundingBox();
-  const closeBox = await closeButton.boundingBox();
+  const contentBox = await measureAtRest(content);
+  const closeBox = await measureAtRest(closeButton);
   expect(contentBox).not.toBeNull();
   expect(closeBox).not.toBeNull();
   const rightGap = contentBox!.x + contentBox!.width - (closeBox!.x + closeBox!.width);
@@ -332,8 +333,8 @@ test('sheet is a flush, square edge panel whose header carries the only inset (N
   // Only the edge facing the page is bordered.
   expect(style.border).toEqual(['0px', '0px', '0px', '1px']);
 
-  const box = (await content.boundingBox())!;
-  const titleBox = (await page.locator('[data-slot="sheet-title"]').boundingBox())!;
+  const box = (await measureAtRest(content));
+  const titleBox = (await measureAtRest(page.locator('[data-slot="sheet-title"]')));
   // Header padding (16px) + the panel's 1px border on its page-facing edge.
   expect(titleBox.x - box.x).toBeGreaterThanOrEqual(16);
   expect(titleBox.x - box.x).toBeLessThanOrEqual(18);
@@ -349,7 +350,7 @@ test('a sheet side is explicit at every width: right stays right on a phone', as
     Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished.catch(() => undefined))),
   );
   const fixedBox = await fixedViewportBox(page);
-  const box = (await content.boundingBox())!;
+  const box = (await measureAtRest(content));
   expect(Math.abs(box.x + box.width - (fixedBox.x + fixedBox.width))).toBeLessThanOrEqual(1);
   expect(box.width).toBeCloseTo(fixedBox.width * 0.75, 0);
 });

@@ -84,12 +84,18 @@ html {
   scrollbar-gutter: stable;
 }
 
-/* Smooth same-page scrolling is motion: only for visitors who have not asked for less of it (WCAG 2.3.3).
-   `/docs`'s "Start" sub-items jump to an in-page `#`-anchor heading via a plain `a { href: "#..." }`, not a
-   route change -- without this, that jump is an instant cut rather than a scroll a user can follow. Scoped
-   to the whole document since any future same-page anchor jump should behave the same way. */
+/* Smooth scrolling is motion, and it is opt-in per interaction, never ambient (WCAG 2.3.3: only for visitors who
+   have not asked for less of it). `html { scroll-behavior: smooth }` makes EVERY scroll that names no `behavior`
+   animate, including the router's `scrollTo(0, 0)` after a push and its scroll restoration on Back: the long page
+   is swapped for a shorter one mid-animation, the browser clamps the scroll offset to the new page's bottom, and
+   the visitor sees the bottom of the destination and then watches it glide up (or, on Back, the mirror). An
+   ambient rule is also a trap for every future `window.scrollTo` (the scroll-lock restore, the charts tab
+   restore each had to be patched or would have been). So the document is instant by default and
+   `preview/index.html`'s same-page `a[href^="#"]` click handler sets `data-anchor-scroll` on `<html>` for exactly
+   the jump it lets the browser animate (`/docs`'s "Start" sub-items), clearing it when the jump has settled.
+   `scripts/check-scroll-behavior.sh` fails any other `scroll-behavior: smooth` on the root. */
 @media (prefers-reduced-motion: no-preference) {
-  html {
+  html[data-anchor-scroll] {
     scroll-behavior: smooth;
   }
 }
@@ -1685,10 +1691,32 @@ button.dx-theme-phone-trigger {
   line-height: 1.6;
 }
 
-/* Widget masonry */
+/* Widget masonry: the columns are FIXED GROUPS decided at build time (`MasonrySlot` in `preview/src/main.rs`), never balanced
+ * from the cards' heights. This used to be CSS multi-column, which assigns each card to a column from the
+ * height of everything laid out so far: the ~580 KB prerendered page is parsed in chunks and painted between
+ * them, so every parsed card re-balanced the columns and cards jumped between them while the page loaded
+ * (backlog row 214, seen at iPad widths). Here a card's column is a function of its DOM position only, and
+ * a card that has not arrived leaves everything already painted where it is (an element only ever grows
+ * downward into space that no later card occupies yet).
+ *
+ * Three columns: `Left`, `Middle`, and `.dx-masonry-right` = `RightUpper` over `RightLower`. Two columns
+ * (<= 1100px): `.dx-masonry-right` dissolves, so the four groups are grid items that auto-place as
+ * Left | Middle on row one and RightUpper | RightLower on row two (column one = Left + RightUpper). Row
+ * one is as tall as the taller of Left/Middle, so the groups are chosen to have near-equal height
+ * (measured 641-1440px: within ~35px). One column (<= 640px): everything stacks in DOM order. */
 .dx-widget-masonry {
-  column-count: 3;
-  column-gap: 1.5rem;
+  display: grid;
+  align-items: start;
+  gap: 1.5rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.dx-masonry-col,
+.dx-masonry-right {
+  display: grid;
+  min-width: 0;
+  align-content: start;
+  gap: 1.5rem;
 }
 
 .dx-widget-card {
@@ -1698,9 +1726,8 @@ button.dx-theme-phone-trigger {
   padding: 1.75rem 1.75rem 1.85rem;
   border: 1px solid var(--dx-border);
   border-radius: 0.5rem;
-  margin: 0 0 1.5rem;
+  margin: 0;
   background-color: var(--dx-card);
-  break-inside: avoid;
 }
 
 /* Cards whose contents include a floating popout (combobox dropdown, etc.)
@@ -1770,7 +1797,8 @@ button.dx-theme-phone-trigger {
   overflow-clip-margin: 0.75rem;
 }
 
-/* NOT `content-visibility: auto` (the widget cards used to be): the masonry is CSS multi-column, which balances its
+/* NOT `content-visibility: auto` (the widget cards used to be): the masonry was CSS multi-column (it is fixed column
+ * groups now, see `.dx-widget-masonry`), which balanced its
  * columns by card HEIGHT, so a card laid out at its estimate and rendered later (it enters the range, which moves
  * the next card into range, and so on) re-balanced the columns once per unskip -- three to six re-layouts of the
  * gallery in the first ~300 ms, some after the first paint (`playwright/layout-stability.spec.ts`, backlog row
@@ -1799,11 +1827,12 @@ html[data-cv-settle] {
 }
 
 @media (width <= 1100px) {
-  .dx-widget-masonry { column-count: 2; }
+  .dx-widget-masonry { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dx-masonry-right { display: contents; }
 }
 
 @media (width <= 640px) {
-  .dx-widget-masonry { column-count: 1; }
+  .dx-widget-masonry { grid-template-columns: minmax(0, 1fr); }
 }
 
 /* Demos hub page */

@@ -2,6 +2,7 @@ import { test, expect } from "./fixtures";
 import { type Page } from "@playwright/test";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from './axe';
 import { BASE_URL } from './base-url';
+import { measureAtRest } from "./animations";
 
 const PAGE_URL = `${BASE_URL}/component/?name=color_picker&`;
 const PAGE_TIMEOUT = 20 * 60 * 1000;
@@ -148,7 +149,7 @@ test('clicking the color area updates saturation and value', async ({ page }) =>
 
   // Initial color is rgb(155, 128, 255) → saturation ~50, value 100. Click
   // near the bottom-right; saturation should jump high, value should drop.
-  const box = await area.boundingBox();
+  const box = await measureAtRest(area);
   if (!box) throw new Error('color area has no bounding box');
   await page.mouse.click(box.x + box.width * 0.8, box.y + box.height * 0.8);
 
@@ -169,7 +170,7 @@ test('dragging the color area updates saturation and value', async ({ page }) =>
   // Drag from the top-left toward the bottom-right of the area. Top-left is
   // (saturation=0, value=100), bottom-right is (saturation=100, value=0). After
   // the drag saturation should go up and value should go down.
-  const box = await area.boundingBox();
+  const box = await measureAtRest(area);
   if (!box) throw new Error('color area has no bounding box');
   const start = { x: box.x + box.width * 0.2, y: box.y + box.height * 0.2 };
   const end = { x: box.x + box.width * 0.8, y: box.y + box.height * 0.8 };
