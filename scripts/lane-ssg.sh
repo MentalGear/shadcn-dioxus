@@ -30,7 +30,9 @@ if [ -n "$port" ]; then
   pidf="$T/serve-$lane.pid"
   [ -f "$pidf" ] && kill "$(cat "$pidf")" 2>/dev/null || true
   sleep 0.5
-  nohup python3 -m http.server "$port" --bind 127.0.0.1 -d "$pub" >/dev/null 2>&1 &
+  # Lock fds closed: a long-lived child that inherits a locked file description holds the global
+  # lock after its parent exits (an orphaned server once stalled every lane's build, row 221).
+  nohup python3 -m http.server "$port" --bind 127.0.0.1 -d "$pub" >/dev/null 2>&1 9>&- 3>&- </dev/null &
   echo $! > "$pidf"
   echo "URL=http://127.0.0.1:$port"
 fi
