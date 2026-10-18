@@ -571,7 +571,8 @@ html[data-theme="light"] [class~="dxc-system"] {
 
   /* Nova's focus ring: `ring-3 ring-ring/50` (the `border-ring` half is a
    * per-component `border-color`/inset shadow). */
-  --dx-ring-focus: 0 0 0 3px color-mix(in oklab, var(--dx-ring-color) 50%, transparent);
+  --dx-ring-focus-halo: 0 0 0 3px color-mix(in oklab, var(--dx-ring-color) 50%, transparent);
+  --dx-ring-focus: var(--dx-ring-focus-halo);
 
   /* The keyboard-focus ring of every text-entry control (Input, Textarea,
    * Select trigger, Native Select, Combobox, InputGroup, InputOTP slot):
@@ -581,7 +582,7 @@ html[data-theme="light"] [class~="dxc-system"] {
    * field can no longer be written with the halo and forget the edge (or the
    * other way round), and a retuned ring moves them all together.
    * `playwright/focus-ring.spec.ts` asserts every field resolves to this value. */
-  --dx-ring-field: inset 0 0 0 1px var(--dx-ring-color), var(--dx-ring-focus);
+  --dx-ring-field: inset 0 0 0 1px var(--dx-ring-color), var(--dx-ring-focus-halo);
 
   /* The resting fill of every text-entry control (Input, Textarea, Select trigger, Native Select,
    * Combobox, InputGroup, InputOTP slot) and of the unchecked Checkbox / Radio: Nova's
@@ -1704,6 +1705,37 @@ html[data-theme="light"] [class~="dxc-system"] {
   }
 }
 /* stylelint-enable declaration-no-important */
+
+/* Focus modality (docs/backlog.md row 226). `<html data-dx-modality="keyboard|mouse|touch|pen">` is written
+ * by ONE script (`primitives/src/modality.rs`, installed from the pre-paint script and by the overlays):
+ * the input the user last used. A focus ring says "you are driving this with the keyboard", so it is drawn
+ * only for that.
+ *
+ * 1. A programmatically focused CONTAINER is not a control and never draws the UA outline. An overlay moves
+ *    focus to its panel (`<dialog>`, a `[popover]`, a listbox or menu, a `tabindex="-1"` block) so a screen
+ *    reader and Tab start there; the UA paints `outline: auto` (the system blue on iOS) around the whole
+ *    panel when that focus counts as keyboard-ish, which no sheet reset. Flat lists and zero specificity on
+ *    purpose: a control's own rule still wins, and no selector list sits inside `:not()` (see the
+ *    `touch-action` rule in `main.css`).
+ * 2. Under a mouse, touch or pen the non-field ring tokens resolve to nothing, so a trigger that was
+ *    focused by script after a tap (Safari does not focus a tapped button; a menu, a roving menubar and a
+ *    popover's first control all move focus) cannot draw a ring. `--dx-ring-field` is deliberately NOT
+ *    touched: a text field the user tapped is still focused and still rings, as in shadcn. Keyboard modality
+ *    (or no attribute at all, no script) keeps every ring. Forced colors (below) is unaffected. */
+:where(dialog):focus,
+:where([popover]):focus,
+:where([role="listbox"]):focus,
+:where([role="menu"]):focus,
+:where(div[tabindex="-1"]:not([role])):focus,
+:where(section[tabindex="-1"]:not([role])):focus {
+  outline: none;
+}
+
+:root[data-dx-modality]:not([data-dx-modality="keyboard"]) {
+  --dx-ring: 0 0 #0000;
+  --dx-ring-focus: 0 0 #0000;
+  --dx-ring-focus-inset: 0 0 #0000;
+}
 
 /* Forced colors (Windows contrast themes, `forced-colors: active`): the UA discards `box-shadow`, and every
  * component draws its focus ring with `box-shadow` while resetting `outline` (42 `outline: none`

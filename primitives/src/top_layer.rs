@@ -603,7 +603,14 @@ pub(crate) fn ensure_top_layer_ink_styles() {
     if TOP_LAYER_INK_STYLES_INSTALLED.with(|installed| installed.replace(true)) {
         return;
     }
-    let eval = document::eval(TOP_LAYER_INK_STYLES_INJECT_JS);
+    // The modality writer (`modality.rs`) rides along: this runs when the first overlay MOUNTS, long
+    // before any user opens one, so an app without the pre-paint script still has
+    // `data-dx-modality` in place by the first interaction. Idempotent.
+    let eval = document::eval(&format!(
+        "{};{}",
+        crate::modality::MODALITY_JS,
+        TOP_LAYER_INK_STYLES_INJECT_JS
+    ));
     let _ = eval;
 }
 
@@ -975,10 +982,20 @@ pub(crate) fn use_popover_shown_while_mounted(
         // exact script rather than left to the separate `use_effect(
         // ensure_top_layer_ink_styles)` above, for the same reason.
         let inject = TOP_LAYER_INK_STYLES_INJECT_JS;
+        let modality = crate::modality::MODALITY_JS;
+        let open_focus = crate::modality::OPEN_FOCUS_JS;
         document::eval(&format!(
             "{inject}
+            {modality};
+            {open_focus}
             const el = document.getElementById('{id}');
-            if (el && !el.matches(':popover-open')) el.showPopover();"
+            if (!el || el.matches(':popover-open')) return;
+            // A `<dialog popover>` is a dialog panel (the non-modal Popover, so DatePicker and
+            // ColorPicker): where focus lands follows the opening modality like a modal's does
+            // (`dxOpenFocus`, `modality.rs`). Every other popover (tooltip, hover card, menus,
+            // select list) keeps the browser's own focusing step, or none.
+            if (el.tagName === 'DIALOG') dxOpenFocus(el, () => el.showPopover());
+            else el.showPopover();"
         ));
     });
 }

@@ -113,7 +113,9 @@ pub fn ComboboxInput(props: ComboboxInputProps) -> Element {
     // input, and role/aria-*/`data-state`/`disabled` mirror the combobox
     // widget's real state.
     let defaults = attributes!(input {
-        spellcheck: "false"
+        spellcheck: "false",
+        // A filter, not a name: iOS must not capitalise the first letter of the query.
+        autocapitalize: "off"
     });
     let owned = attributes!(input {
         // See `crate::top_layer::anchor_name_style`: ties this input to

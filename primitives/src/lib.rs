@@ -55,6 +55,7 @@ mod menu_semantics;
 mod menu_sub;
 pub mod menubar;
 pub mod message_scroller;
+pub mod modality;
 mod move_interaction;
 #[cfg(feature = "router")]
 pub mod navbar;
@@ -408,8 +409,11 @@ pub(crate) fn use_refocus_on_close_unless(
     use_effect(move || {
         if prev_open() && !open() && !interacted_outside() {
             let id = trigger_id();
+            // Never by script after a touch or pen (`data-dx-modality`, `modality.rs`): nothing was
+            // keyboard-focused to give back, and a script-focused trigger rings on iOS.
+            // focus-ok: restore focus to the trigger on close
             document::eval(&format!(
-                "var e=document.getElementById('{id}');if(e)e.focus()"
+                "var e=document.getElementById('{id}');if(e&&!/^(touch|pen)$/.test(document.documentElement.getAttribute('data-dx-modality')||''))e.focus()"
             ));
         }
     });
@@ -538,44 +542,42 @@ fn use_dialog_open_driver(
         // `use_popover_shown_while_mounted`, this hook's two siblings in
         // the fix's three exhaustive call sites.
         let inject = crate::top_layer::TOP_LAYER_INK_STYLES_INJECT_JS;
+        let modality = crate::modality::MODALITY_JS;
+        let open_focus = crate::modality::OPEN_FOCUS_JS;
+        let forward = DIALOG_CLOSE_FORWARD_JS;
         let timeout = DIALOG_EXIT_TIMEOUT_MS;
         document::eval(&format!(
             "{inject}
+            {modality};
+            {open_focus}
+            {forward}
             const dialog = document.getElementById('{id}');
             if (!dialog) return;
             const gen = (dialog.__dxDialogGen = (dialog.__dxDialogGen || 0) + 1);
             if ({want_open}) {{
+                // A reopen while the exit is still playing ends the closing state: the dialog is
+                // still a real, open modal, so there is nothing to show again.
+                dialog.__dxClosing = false;
+                dialog.__dxActivate = false;
+                dialog.__dxCancelAt = 0;
                 if (dialog.open) return;
-                // Initial focus follows the opening modality (backlog row 206). `showModal()`
-                // focuses the first focusable descendant, which for a field pops the mobile
-                // keyboard on a tap. The modality is read AT OPEN TIME from the element that
-                // holds focus now, the opener: opened by keyboard it matches `:focus-visible`
-                // (the browser's own focus-ring heuristic; a mouse or tap click on a button never
-                // does, and Safari does not even focus a clicked button). No listener, no global,
-                // no install order. Keyboard: the browser default, the first control. Pointer,
-                // touch, or no opener at all (`default_open`, a shortcut with focus on <body>):
-                // the panel itself takes focus, with its children `inert` for the one call so the
-                // browser's own focusing step finds no delegate and a field is never focused,
-                // not even for an instant. An `autofocus` descendant always wins.
+                // The element that holds focus now is the opener: remembered so the close can hand
+                // focus back the moment it starts (`DIALOG_CLOSE_FORWARD_JS`). Where focus goes
+                // INSIDE the panel is `dxOpenFocus`'s one decision (`modality.rs`): the browser
+                // default for a keyboard open, the panel for a mouse, touch or pen open, never an
+                // editable element for touch. No listener of ours reads :focus-visible.
                 const opener = document.activeElement;
-                const byKeyboard = !!opener && opener !== document.body && opener !== document.documentElement
-                    && opener.matches(':focus-visible');
-                if (!byKeyboard && !dialog.querySelector('[autofocus]')) {{
-                    dialog.setAttribute('tabindex', '-1');
-                    const held = [...dialog.children].filter((c) => !c.inert);
-                    held.forEach((c) => {{ c.inert = true; }});
-                    try {{
-                        dialog.showModal();
-                        dialog.focus({{ preventScroll: true }});
-                    }} finally {{
-                        held.forEach((c) => {{ c.inert = false; }});
-                    }}
-                }} else {{
-                    dialog.showModal();
-                }}
+                dialog.__dxOpener = opener && opener !== document.body && opener !== document.documentElement
+                    ? opener : null;
+                dxDialogForwardKeys(dialog);
+                dxOpenFocus(dialog, () => dialog.showModal());
                 return;
             }}
             if (!dialog.open) return;
+            // The close has started: Enter/Space from here on belong to the opener, not to the
+            // panel that is animating out (see `DIALOG_CLOSE_FORWARD_JS`).
+            dialog.__dxClosing = true;
+            if (dialog.__dxActivate) {{ dxDialogActivateOpener(dialog); return; }}
             requestAnimationFrame(async () => {{
                 // The exit: whatever is animating or transitioning on the dialog itself or
                 // its ::backdrop (a pseudo-element animation reports the originating
@@ -599,6 +601,58 @@ fn use_dialog_open_driver(
         ));
     });
 }
+
+/// Row 223: a modal that is animating out is still a real modal, so the page behind it (the
+/// trigger included) stays blocked and unfocusable until the native `close()` -- a `.focus()` on
+/// the opener is a no-op, and `inert` on the dialog does not unblock it (measured). Enter, Escape,
+/// Enter on a trigger therefore used to type its second Enter into the closing panel and lose the
+/// reopen. The construction: from the moment the close starts (or a `cancel` has been seen but the
+/// state has not flipped yet, up to 250 ms), an Enter or Space aimed at the closing dialog ends the
+/// exit on the spot -- the real `close()`, which returns focus -- and activates the opener the
+/// user was pressing it on. `__dxQuietClose` makes that early `close` event only release the
+/// scroll lock: it must not write `open = false` after the opener's click has written `true`.
+/// One listener per dialog element, on the element (it goes with the element).
+#[cfg(feature = "web")]
+const DIALOG_CLOSE_FORWARD_JS: &str = r#"
+function dxDialogFinish(dialog) {
+    dialog.__dxDialogGen = (dialog.__dxDialogGen || 0) + 1;
+    dialog.__dxClosing = false;
+    if (dialog.isConnected && dialog.open) {
+        dialog.__dxQuietClose = true;
+        dialog.close();
+    }
+}
+function dxDialogActivateOpener(dialog) {
+    const opener = dialog.__dxOpener;
+    dialog.__dxActivate = false;
+    dxDialogFinish(dialog);
+    if (opener && opener.isConnected) {
+        opener.focus({ preventScroll: true });
+        opener.click();
+    }
+}
+function dxDialogForwardKeys(dialog) {
+    if (dialog.__dxKeysForwarded) return;
+    dialog.__dxKeysForwarded = true;
+    /* listener-ok: on the dialog element itself, which owns it and takes it along when removed */
+    dialog.addEventListener('keydown', (e) => {
+        if ((e.key !== 'Enter' && e.key !== ' ') || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+        const closing = dialog.__dxClosing === true;
+        const cancelled = !closing && !!dialog.__dxCancelAt && performance.now() - dialog.__dxCancelAt < 250;
+        const opener = dialog.__dxOpener;
+        if ((!closing && !cancelled) || !opener || !opener.isConnected) return;
+        e.preventDefault();
+        e.stopPropagation();
+        if (closing) {
+            dxDialogActivateOpener(dialog);
+        } else {
+            // Escape was pressed but the state has not flipped yet: do it as soon as it does.
+            dialog.__dxActivate = true;
+            setTimeout(() => { dialog.__dxActivate = false; }, 400);
+        }
+    }, true);
+}
+"#;
 
 /// How long [`use_dialog_open_driver`] waits for a dialog's exit animations before
 /// closing it anyway: the bound that keeps a stuck or very long animation from
@@ -645,13 +699,26 @@ fn use_dialog_close_sync(
                 // the top layer mid-exit (see `use_dialog_open_driver`), which instead closes
                 // it once the exit has played. A controlled dialog whose owner refuses the
                 // change also stays open, rather than closing natively behind its back.
-                listen(dialog, 'close', () => dioxus.send('close'));
-                listen(dialog, 'cancel', (e) => { e.preventDefault(); dioxus.send('cancel'); });",
+                // An early close made by the driver to hand the opener back its Enter (row 223)
+                // is quiet: the state is already false, and writing it again could land after
+                // the opener's own click wrote true.
+                listen(dialog, 'close', () => {
+                    const quiet = dialog.__dxQuietClose === true;
+                    dialog.__dxQuietClose = false;
+                    dioxus.send(quiet ? 'closed' : 'close');
+                });
+                listen(dialog, 'cancel', (e) => {
+                    e.preventDefault();
+                    dialog.__dxCancelAt = performance.now();
+                    dioxus.send('cancel');
+                });",
             )
             .arg(id.cloned())
             .on_message(move |event: String| {
-                set_open.call(false);
-                if event == "close" {
+                if event != "closed" {
+                    set_open.call(false);
+                }
+                if event != "cancel" {
                     modal_closed.notify();
                 }
             }),
