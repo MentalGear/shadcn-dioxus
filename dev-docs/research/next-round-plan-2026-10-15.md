@@ -1,6 +1,6 @@
 # Next round plan (2026-10-15): dependency follow-ups, dev constructions, visible defects
 
-Status: **SET UP, waiting for the owner's go** (owner 2026-10-15: "do 1 and 2 and stop the round then before 3";
+Status: **STARTED 2026-10-18** (owner go with E5 + E6). Was: SET UP, waiting for the owner's go (owner 2026-10-15: "do 1 and 2 and stop the round then before 3";
 "setup all and document and before you are ready to start, stop and ask for my go"). Main at the time of writing:
 `3ba879c` (PR #100). Read first in a new chat: `CLAUDE.md`, `dev-docs/lane-rules.md`, this file, then the rows.
 
@@ -12,7 +12,8 @@ Status: **SET UP, waiting for the owner's go** (owner 2026-10-15: "do 1 and 2 an
 | E2 | Markdown (the nine questions of the dependency audit artifact, https://claude.ai/artifact/GpaybnGgtbQTtYkebbUDwp): the recommendations, i.e. pulldown-cmark `=0.13.4` (default features off) in a separate optional `markdown` registry component; exact pin; model-output images OFF by default; links limited to http/https/mailto/tel/relative, external ones in a new tab with `noopener noreferrer nofollow`; code as plain `<pre><code>` with a highlighter slot; the streaming heal pass inside the component; bare-URL autolinks YES (own small pass), math NO; both new gates (only `markdown` may list the parser; declared versions match the lock) added; the audit follow-ups scheduled (= row 217) | row 213 (built in round 3, not this one) |
 | E3 | Row 136 Questionnaire stays ON HOLD | row 136 |
 | E4 | New backlog item: the email-client demo resets scroll to the top on a view change, or restores the user's position if they were already in that view | row 225 (backlog, not this round) |
-| E5 | **PROPOSED 2026-10-17, needs the owner's go:** owner's iOS review items join this round -- touch-open focus and ring (row 226) into lane **focus**; navigation smooth-scroll (row 228) and interactive text selection (row 229) as a new lane **baseline**. The keyboard-inset helper (227) and the docs items (230-236) stay backlog | section 2a |
+| E5 | **ACCEPTED 2026-10-18:** touch-open focus and ring (row 226, plus `autocapitalize="off"`) into lane **focus**; navigation smooth-scroll (228) and interactive text selection (229) as lane **baseline** | section 2a |
+| E6 | **ACCEPTED 2026-10-18** ("lets also do it now rather than later, if it fits"): the keyboard-inset helper (227) as lane **keyboard**; the docs items as lanes **docs-page** (232, 233, 236) and **docs-site** (231, 234); lane **demos** (230, 235, plus row 225, the email-client scroll memory, since it is one small demo-state change). Owner question on 230 ("shouldn't the attachment group use our carousel?"): no -- Carousel is a one-slide-at-a-time control with prev/next; the attachment strip is a free-scrolling row of mixed-width chips, as in shadcn; the lane moves it onto our ScrollArea with `fade: X` instead of its own scroller, if that keeps the shadcn look | section 2b |
 
 ## 1. Baselines (captured before the batch; they cannot be recovered afterwards)
 
@@ -59,12 +60,24 @@ Model: both Sonnet (shared plumbing, new gates and specs). Snapshot buckets expe
 on every interactive part (baseline), ring tokens on open-state records captured after a click (focus), root
 `scroll-behavior` (baseline).
 
+### 2b. Added lanes (E6, 2026-10-18)
+
+| Lane | Rows | Owns | Must not touch | Proof |
+|---|---|---|---|---|
+| **keyboard** | 227 | new `primitives/src/keyboard_inset.rs` (Base UI `VirtualKeyboardProvider` mechanism: open when `innerHeight - visualViewport.height > 60` and scale 1, publishes `--dx-keyboard-inset`, scroll slack, focused field centred; listeners via `js_listener::listen`), its `mod` line in lib.rs, the styled `drawer`, `dialog`, `sheet`, `alert_dialog` `component.rs` call sites and their `style.css` consumers, a `top_layer` docs note | `use_dialog_open_driver`, `use_popover_sync`, `reposition()` (lanes focus / anchored code) | Chromium spec that shrinks the visual viewport (CDP `Emulation.setDeviceMetricsOverride` / a stubbed `visualViewport`) with a field focused in Drawer and Dialog: the field stays fully visible, panel max-height follows the inset, no change with no keyboard; a manual iPhone step written in the report |
+| **docs-page** | 232, 233, 236 | the component page template `ComponentHighlight` and the install command parts of `preview/src/main.rs` (lines ~1849-1943 and the home hero install text ~2641), the docs.md -> HTML pass in `preview/build.rs` (the `<details>` wrapping only), component `docs.md` files (CLI wording, text-only Examples), `templates/starter/src/main.rs` + `Dioxus.toml` comments, `README.md`, `component.rs` doc comments that print `dx components add`, `playwright/preview.spec.ts` | `preview/build.rs` variant discovery (lane registry), `templates/starter/Cargo.toml` (lane deps), the sidebar | one Installation section per page (the commands live there; header links to it); every `##` section of docs.md in a closed `<details>`; Installation, Usage notes, Component Structure, Accessibility collapsed; text-only Examples moved into a `<details>` under the demo they describe; "Manual installation files" closed; SSG HTML diff of all component pages reviewed; axe green on component pages |
+| **docs-site** | 231, 234 | the site's shadcn token values (where the site sets its theme: main.css or the site preset, not the shipped theme fallbacks), the demo frame rules in `preview/assets/main.css` (~1345), the Button page's first demo (shadcn's), the sidebar grouping in `preview/src/main.rs` (~1577-1620) with a category/A-Z segmented toggle (A-Z default, choice applied before paint) | the theme component sheets, `ComponentHighlight` (lane docs-page), main.css lines 90-95 and the masonry rules | computed-style table vs shadcn base-nova for every Button variant (text colours match, destructive kept per row 134 unless the owner says otherwise); frame matches shadcn's; sidebar spec (default A-Z flat list, toggle to categories, persisted, no flash on reload) |
+| **demos** | 230, 235, 225 | `preview/src/components/attachment/**` (composite content as the main demo; group strip on ScrollArea `fade: X` if the look holds), `primitives/src/avatar.rs` (fallback shown while loading; Base UI fallback `delay`), `preview/src/components/avatar/**` (shadcn's first demo; the false comment at style.css:120), `preview/src/dashboard/views/email_client/**` (per-view scroll memory) | `preview/src/components/mod.rs` beyond its own variant lines (lane registry) | avatar spec: slow image -> fallback visible until load, then image, no blank frame; broken -> fallback; `delay` honoured; attachment demo has an image; email-client spec (scroll list, open message, back -> same position; first visit -> top); install smoke for attachment and avatar |
+
+Concurrency: ten lanes. Builds hold `ssg.lock`; Playwright runs hold `pw.lock` (lane rules) so at most one browser
+batch runs beside one build.
+
 Named overlaps (resolved at merge by the main loop, not by serialising): `primitives/src/lib.rs` (deps: `cfg` module
 lines; focus: the dialog driver), `scripts/run-gates.sh` and the CLAUDE.md gate sentence (deps and specs each add one
 clause), `preview/build.rs` (registry only; deps deletes `primitives/build.rs`, a different file). With E5: `preview/index.html`
 (focus: the `PREPAINT_JS` copy; baseline: the anchor handler), `dx-components-theme.css` (focus: ring rule; baseline:
 interactive baseline), `preview/assets/main.css` (masonry: masonry rules; baseline: lines 90-95), `primitives/src/lib.rs`
-(focus also declares `modality`), `run-gates.sh` + the CLAUDE.md gate sentence (deps, specs, focus, baseline: one clause
+(focus declares `modality`, keyboard declares `keyboard_inset`), `preview/src/main.rs` (masonry: home masonry; docs-page: page template + hero install text; docs-site: sidebar), `preview/build.rs` (registry: variant discovery; docs-page: the docs `<details>` pass), `templates/starter` (deps: Cargo.toml; docs-page: comments), `run-gates.sh` + the CLAUDE.md gate sentence (deps, specs, focus, baseline: one clause
 each).
 
 ## 3. Validation protocol (mandatory, row 224)

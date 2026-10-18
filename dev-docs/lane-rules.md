@@ -24,7 +24,7 @@ Session tooling (paths below default to `LANE_TGT=/home/user/tgt`):
   OOM-killed. EVERY cargo or dx command takes the one global lock and limits jobs:
   `flock $LANE_TGT/ssg.lock env CARGO_BUILD_JOBS=2 CARGO_TARGET_DIR=$LANE_TGT/check CARGO_INCREMENTAL=0 cargo ...`
   (`scripts/lane-ssg.sh` holds the same lock for its build). Never create another target dir, never `cargo clean`.
-- Playwright: `--workers=2` at most. A crash, "Target closed" or browser-disconnected failure is checked against
+- Playwright: `--workers=2` at most, and every run under its own lock: `flock $LANE_TGT/pw.lock npx playwright test ...` (ten lanes' browsers at once would OOM). A crash, "Target closed" or browser-disconnected failure is checked against
   `dmesg | grep -i 'killed process' | tail` before it is believed.
 
 ## Shared targets judge freshness by mtime (row 216)
