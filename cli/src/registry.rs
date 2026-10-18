@@ -118,11 +118,37 @@ pub fn default_cache_root() -> PathBuf {
     if let Some(home) = std::env::var_os("SHADCN_DIOXUS_HOME") {
         return PathBuf::from(home).join("registries");
     }
-    dirs::cache_dir()
-        .or_else(dirs::home_dir)
+    platform_cache_dir()
+        .or_else(home_dir)
         .unwrap_or_else(std::env::temp_dir)
         .join("shadcn-dioxus")
         .join("registries")
+}
+
+/// An absolute path from an environment variable, ignoring an unset, empty or relative value (the rule the
+/// XDG spec and the `dirs` crate this replaces both apply).
+fn env_dir(key: &str) -> Option<PathBuf> {
+    std::env::var_os(key)
+        .map(PathBuf::from)
+        .filter(|path| path.is_absolute())
+}
+
+/// The platform user cache directory: `%LOCALAPPDATA%` on Windows, `~/Library/Caches` on macOS, else
+/// `$XDG_CACHE_HOME` or `~/.cache`. Written out instead of depending on `dirs` (one call, and `dirs` pulls the
+/// repo's only MPL-2.0 crate, `option-ext`).
+fn platform_cache_dir() -> Option<PathBuf> {
+    if cfg!(windows) {
+        env_dir("LOCALAPPDATA")
+    } else if cfg!(target_os = "macos") {
+        home_dir().map(|home| home.join("Library").join("Caches"))
+    } else {
+        env_dir("XDG_CACHE_HOME").or_else(|| home_dir().map(|home| home.join(".cache")))
+    }
+}
+
+/// The user's home directory: `%USERPROFILE%` on Windows, else `$HOME`.
+fn home_dir() -> Option<PathBuf> {
+    env_dir(if cfg!(windows) { "USERPROFILE" } else { "HOME" })
 }
 
 /// FNV-1a: stable across Rust versions, unlike `DefaultHasher` (which dx keys its cache on).
