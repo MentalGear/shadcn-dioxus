@@ -251,12 +251,15 @@ pub fn ScrollArea(props: ScrollAreaProps) -> Element {
     let merged = merge_attributes(vec![defaults, fade, props.attributes.clone(), owned]);
     // One `style` is built from the plain one and the shorthand-namespaced ones (`width: ".."`)
     // a caller may pass: the DOM renderer would let a plain `style` replace the shorthands.
+    // `merged` has had every `style` folded out, so merging the folded one back in has nothing
+    // left to collide with (the same idiom as `resizable.rs`).
     let (style, merged) = crate::fold_style_attributes(merged);
+    let style = style.unwrap_or_default();
+    let merged = merge_attributes(vec![merged, attributes!(div { style })]);
 
     rsx! {
         div {
             dir: text_direction.as_str(),
-            style,
             ..merged,
 
             {props.children}
