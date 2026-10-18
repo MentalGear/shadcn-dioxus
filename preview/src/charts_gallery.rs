@@ -303,9 +303,10 @@ const REMEMBER_TAB_ROW: &str = "if (event.button === 0 && !event.ctrlKey && !eve
 /// navigation and the clicked tab may have been unmounted with the previous
 /// page, so after a tab switch this scrolls the page back so the tab row sits
 /// where it did before the click (never under the sticky navbar, never off
-/// screen) and focuses the now-active tab. `behavior: 'instant'` also
-/// overrides the page's `scroll-behavior: smooth`: switching tabs is not a
-/// scroll to watch, and it keeps the motion-averse from seeing any.
+/// screen) and focuses the now-active tab. The scrolls name no `behavior`:
+/// the document's `scroll-behavior` is `auto` (smooth is opt-in per anchor
+/// jump, `main.css` `html[data-anchor-scroll]`), so switching tabs is not a
+/// scroll to watch.
 const RESTORE_TAB_ROW: &str = r#"
 const pending = window.__dxChartsTab;
 window.__dxChartsTab = undefined;
@@ -318,13 +319,10 @@ if (pending && Date.now() - pending.at < 5000) {
             getComputedStyle(document.documentElement).getPropertyValue('--dx-navbar-height')
         ) || 60;
         const want = typeof pending.top === 'number' ? Math.max(pending.top, navbar) : navbar;
-        window.scrollTo({
-            top: window.scrollY + row.getBoundingClientRect().top - want,
-            behavior: 'instant',
-        });
+        window.scrollTo(0, window.scrollY + row.getBoundingClientRect().top - want);
         const rect = row.getBoundingClientRect();
         if (rect.top < navbar || rect.bottom > window.innerHeight) {
-            row.scrollIntoView({ block: 'start', behavior: 'instant' });
+            row.scrollIntoView({ block: 'start' });
         }
     }
 }

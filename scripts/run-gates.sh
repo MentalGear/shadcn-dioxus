@@ -106,6 +106,7 @@ gates=(
   "check-duplicate-keyframes|scripts/check-duplicate-keyframes.sh"
   "check-hover-media|scripts/check-hover-media.sh"
   "check-theme-mode-writer|scripts/check-theme-mode-writer.sh"
+  "check-scroll-behavior|scripts/check-scroll-behavior.sh"
   "check-js-bundle|scripts/check-js-bundle.sh"
   "check-cargo-dep-versions|scripts/check-cargo-dep-versions.sh"
   "fmt|cargo fmt --all -- --check"
