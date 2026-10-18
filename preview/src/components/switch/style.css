@@ -31,6 +31,12 @@
     var(--dark, color-mix(in oklab, var(--dx-input) 80%, transparent));
   cursor: pointer;
   transition: background-color var(--dx-motion-duration-base), box-shadow var(--dx-motion-duration-base);
+
+  /* `all: unset` above also resets the theme's zero-specificity "Controls are not text" rule
+     (`dx-components-theme.css`), so it is restated here; scripts/check-theme-baseline.sh requires it. */
+  /* stylelint-disable-next-line property-no-vendor-prefix -- Safari spelling */
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .dx-switch[data-state="checked"] {

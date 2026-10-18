@@ -23,16 +23,31 @@
 #     `--dx-overlay-*` tokens. A component sheet has no `::backdrop` rule to write; to retune the
 #     scrim change the tokens, to remove it use `overlay: false` (`data-dx-overlay="off"`).
 #
-#  3. The theme rules themselves are still there (a deleted rule would otherwise pass 1 and 2
-#     and silently drop the behaviour from every component at once): the touch rule, the scrim, and
+#  3. (see 5) The theme rules themselves: the touch rule, the scrim, and
 #     the dialog-box rule `:where(dialog[class^="dx-"]) { padding: 0 }`, which takes away the UA's
 #     `dialog { padding: 1em }` (font-size dependent: a panel's `font-size` change silently moved
 #     Sheet's and Drawer's inset 16 -> 14px) so a dialog sheet's inset is only ever one it declares.
 #
+#  4. `user-select: none` on a control (row 229, the owner's review: "interactive elements like btns etc.
+#     should not allow user text selection"). Only the parts that had remembered to say so were unselectable
+#     (menu items, select options, command items, the calendar arrows: one declaration each in 12 sheets);
+#     Button, Tab, Accordion trigger, Switch, Toggle... showed a selection on a double-click. The theme now has
+#     ONE zero-specificity rule (`-webkit-user-select` + `user-select: none`) for every `dx-` button,
+#     `[role=button]`, `summary` and menu-item/option/tab/switch/checkbox/radio/slider role, and deliberately
+#     NOT for text fields, `spinbutton` segments, the `[tabindex]` catch-all or `a[href]`. A component sheet
+#     may not re-declare it for an element that rule covers (its last compound is `button`/`summary` or has a
+#     covered `[role=...]`), and, because a class selector hides what element it lands on, EVERY other
+#     `user-select: none` in a component sheet must be on USER_SELECT_ALLOW below with the reason the baseline
+#     does not reach it (a non-interactive label, a drag surface). A stale entry fails.
+#
+#  5. The theme rules themselves are still there (a deleted rule would otherwise pass 1, 2 and 4 and silently
+#     drop the behaviour from every component at once): the touch rule, the scrim, the dialog-box rule, and the
+#     `user-select` rule with its exclusions intact.
+#
 # Comments are stripped before scanning, so prose that mentions either is fine.
 #
 # Usage: scripts/check-theme-baseline.sh [FILE ...]   (default: preview/src/components/*/style.css;
-# explicit files are for self-tests, and skip arm 3)
+# explicit files are for self-tests, and skip the theme arms)
 # Exit status: 0 when clean.
 
 set -euo pipefail
@@ -58,12 +73,97 @@ def blank_comments(text):
     # Same-length whitespace, newlines kept, so reported line numbers are the file's.
     return COMMENT.sub(lambda m: re.sub(r"[^\n]", " ", m.group(0)), text)
 
+# Elements the theme's user-select rule covers: tag button/summary, or one of these roles (button included).
+BASELINE_TAGS = {"button", "summary"}
+BASELINE_ROLES = {"button", "menuitem", "menuitemcheckbox", "menuitemradio", "option", "tab", "switch",
+                  "checkbox", "radio", "slider"}
+# (stylesheet, whitespace-normalised selector entry, reason the baseline does not reach it)
+USER_SELECT_ALLOW = [
+    ("preview/src/components/avatar/style.css", ".dx-avatar",
+     "a non-interactive circle: the initials fallback is a label, not a control"),
+    ("preview/src/components/avatar/style.css", ".dx-avatar-badge",
+     "a non-interactive status dot on the avatar"),
+    ("preview/src/components/calendar/style.css", ".dx-calendar-grid-day-header",
+     "a non-interactive weekday heading (`div`), not a control"),
+    ("preview/src/components/calendar/style.css", ".dx-calendar-grid-weeknum",
+     "a non-interactive week-number cell, not a control"),
+    ("preview/src/components/calendar/style.css", ".dx-calendar-caption-text",
+     "the non-interactive month/year caption text (`span`)"),
+    ("preview/src/components/calendar/style.css", ".dx-calendar-month-select-value",
+     "the month dropdown's value readout (`div` inside the select, not a button of its own)"),
+    ("preview/src/components/calendar/style.css", ".dx-calendar-year-select-value",
+     "the year dropdown's value readout (`div` inside the select, not a button of its own)"),
+    ("preview/src/components/carousel/style.css", ".dx-carousel-content[data-draggable=\"true\"][data-dragging=\"true\"]",
+     "a drag surface (carousel content), unselectable only while the pointer drags it"),
+    ("preview/src/components/drag_and_drop_list/style.css", ".dx-drag-and-drop-list-item",
+     "a draggable `li` row: the drag gesture must not sweep a text selection (not a button/role the baseline lists)"),
+    ("preview/src/components/drawer/style.css", ".dx-drawer[data-dragging=\"true\"]",
+     "the drawer panel while the user drags it (descendants included): a drag surface"),
+    ("preview/src/components/drawer/style.css", ".dx-drawer-handle",
+     "the drag handle bar (`div`): a drag can start on it before `data-dragging` flips"),
+    ("preview/src/components/sidebar/style.css", ".dx-sidebar-menu-badge",
+     "a decorative count badge beside a menu button (`pointer-events: none`), not a control"),
+]
+
+# Component rules that reset EVERYTHING with the `all` shorthand. `all: unset` (0,1,0) beats every zero-specificity
+# theme rule on that element, so the theme's "Controls are not text" rule never reaches it; a rule that does this to a
+# control must restate `user-select: none` itself (covered=True), and one that does not (a non-control) says so here.
+# (stylesheet, whitespace-normalised selector entry, covered by the user-select rule, reason)
+ALL_RESET_ALLOW = [
+    ("preview/src/components/switch/style.css", ".dx-switch", True, "a `button[role=switch]`"),
+    ("preview/src/components/slider/style.css", ".dx-slider-thumb", True, "a `button[role=slider]` thumb"),
+    ("preview/src/components/color_picker/style.css", ".dx-color-picker-slider-thumb", True,
+     "a `button[role=slider]` thumb"),
+    ("preview/src/components/color_picker/style.css", ".dx-color-picker-area-thumb", True,
+     "a `button[role=slider]` thumb"),
+]
+ALL_RESET = re.compile(r"(?<![\w-])all\s*:\s*(unset|initial|revert|revert-layer)\b", re.I)
+WEBKIT_US = re.compile(r"(?<![\w-])-webkit-user-select\s*:\s*none\b", re.I)
+PLAIN_US = re.compile(r"(?<![\w-])user-select\s*:\s*none\b", re.I)
+
 TOUCH = re.compile(r"(?<![\w-])touch-action\s*:\s*manipulation\b", re.I)
 # A rule whose selector list mentions `::backdrop`: capture selector and body (no nested blocks inside).
 BACKDROP_RULE = re.compile(r"([^{}]*::backdrop[^{}]*)\{([^{}]*)\}", re.I)
 PAINTS = re.compile(r"(?<![\w-])(background(-color|-image)?|backdrop-filter|transition(-[a-z]+)?)\s*:", re.I)
 
+USER_SELECT = re.compile(r"(?<![\w-])(-webkit-)?user-select\s*:\s*none\b", re.I)
+RULE = re.compile(r"([^{}]*)\{([^{}]*)\}")
+
+def split_top(selector):
+    out, depth, cur = [], 0, ""
+    for ch in selector:
+        if ch in "([":
+            depth += 1
+        elif ch in ")]":
+            depth -= 1
+        if ch == "," and depth == 0:
+            out.append(cur); cur = ""
+        else:
+            cur += ch
+    out.append(cur)
+    return [" ".join(e.split()) for e in out if e.strip()]
+
+def last_compound(entry):
+    depth, start = 0, 0
+    for i, ch in enumerate(entry):
+        if ch in "([":
+            depth += 1
+        elif ch in ")]":
+            depth -= 1
+        elif depth == 0 and ch in " >+~":
+            start = i + 1
+    return entry[start:]
+
+def covered_by_baseline(entry):
+    c = last_compound(entry)
+    tag = re.match(r"^[a-z][\w-]*", c)
+    if tag and tag.group(0) in BASELINE_TAGS:
+        return True
+    return any(r in BASELINE_ROLES for r in re.findall(r"\[role=[\"']?([\w-]+)[\"']?\]", c))
+
 errors = []
+used_allow = set()
+used_all = set()
 for path in files:
     with open(path, encoding="utf-8") as fh:
         text = blank_comments(fh.read())
@@ -80,7 +180,52 @@ for path in files:
                           f"shared rule in {THEME} (\"The modal scrim, once\"), retuned by the "
                           f"--dx-overlay-* tokens")
 
+    # Arm 4: no component sheet re-declares the baseline's user-select, and every other one says why.
+    if path.replace("\\", "/").startswith("preview/src/components/"):
+        for m in RULE.finditer(text):
+            line = text.count("\n", 0, m.start(2)) + 1
+            if ALL_RESET.search(m.group(2)):
+                for entry in split_top(m.group(1)):
+                    hit = [i for i, (p, sel, _c, _r) in enumerate(ALL_RESET_ALLOW) if p == path and sel == entry]
+                    if not hit:
+                        errors.append(f"{path}:{line}: `{entry}` resets with `all:`, which beats every zero-specificity "
+                                      f"theme rule (user-select, touch-action, press feedback) on that element: add it "
+                                      f"to ALL_RESET_ALLOW in scripts/check-theme-baseline.sh (covered or not, with the "
+                                      f"reason), and for a control restate `-webkit-user-select: none; user-select: none` "
+                                      f"in the rule")
+                        continue
+                    used_all.update(hit)
+                    if ALL_RESET_ALLOW[hit[0]][2] and not (WEBKIT_US.search(m.group(2)) and PLAIN_US.search(m.group(2))):
+                        errors.append(f"{path}:{line}: `{entry}` is a control whose `all:` reset also reset the theme's "
+                                      f"\"Controls are not text\" rule; restate `-webkit-user-select: none; "
+                                      f"user-select: none` in the rule")
+                continue
+            if not USER_SELECT.search(m.group(2)):
+                continue
+            for entry in split_top(m.group(1)):
+                if covered_by_baseline(entry):
+                    errors.append(f"{path}:{line}: `{entry}` re-declares `user-select: none` for an element the "
+                                  f"theme's shared control rule already covers ({THEME}, \"Controls are not "
+                                  f"text\"); delete it")
+                    continue
+                hit = [i for i, (p, pat, _r) in enumerate(USER_SELECT_ALLOW) if p == path and entry == pat]
+                if hit:
+                    used_allow.update(hit)
+                else:
+                    errors.append(f"{path}:{line}: `{entry}` declares `user-select: none`: if the element is a "
+                                  f"button, summary or widget role the theme's shared control rule already covers it "
+                                  f"(delete this); if it is a drag surface or a non-interactive label, add it to "
+                                  f"USER_SELECT_ALLOW in scripts/check-theme-baseline.sh with that reason")
+
 if not explicit:
+    for i, (p, sel, _c, _r) in enumerate(ALL_RESET_ALLOW):
+        if i not in used_all:
+            errors.append(f"scripts/check-theme-baseline.sh: stale ALL_RESET_ALLOW entry ({p}, {sel}) matches "
+                          f"nothing -- delete it")
+    for i, (p, pat, _r) in enumerate(USER_SELECT_ALLOW):
+        if i not in used_allow:
+            errors.append(f"scripts/check-theme-baseline.sh: stale USER_SELECT_ALLOW entry ({p}, {pat}) matches "
+                          f"nothing -- delete it")
     with open(THEME, encoding="utf-8") as fh:
         theme = blank_comments(fh.read())
     # Arm 3: the theme still has both rules.
@@ -109,6 +254,27 @@ if not explicit:
         errors.append(f"{THEME}: the shared dialog-box rule `:where(dialog[class^=\"dx-\"]) {{ padding: 0 }}` "
                       f"(the UA's font-size-dependent `padding: 1em` reset, \"The dialog box, once\") is gone")
 
+    # Arm 5b: the theme's shared user-select rule is there, with its inclusions and its exclusions.
+    us_rule = re.search(r"([^{}]*)\{[^{}]*-webkit-user-select\s*:\s*none\s*;[^{}]*(?<![\w-])user-select\s*:\s*none\s*;[^{}]*\}", theme)
+    if not us_rule:
+        errors.append(f"{THEME}: the shared control rule `-webkit-user-select: none; user-select: none` is gone "
+                      f"(buttons, tabs, triggers would be text-selectable again)")
+    else:
+        sel = us_rule.group(1)
+        for needed in ['button[class^="dx-"]', '[role="button"][class^="dx-"]', 'summary[class^="dx-"]',
+                       '[role="menuitem"][class^="dx-"]', '[role="option"][class^="dx-"]', '[role="tab"][class^="dx-"]',
+                       '[role="switch"][class^="dx-"]', '[role="checkbox"][class^="dx-"]',
+                       '[role="radio"][class^="dx-"]', '[role="slider"][class^="dx-"]']:
+            if needed not in sel:
+                errors.append(f"{THEME}: the shared user-select rule no longer lists `{needed}`")
+        for banned in ["input", "textarea", "select[", "spinbutton", "[tabindex", "a[href"]:
+            if banned in sel:
+                errors.append(f"{THEME}: the shared user-select rule lists `{banned}`: text fields, spinbutton "
+                              f"segments, the [tabindex] catch-all (prose, code) and links must stay selectable")
+        if re.search(r"(^|,)\s*(button|summary|\[role=[^\]]*\])\s*(,|$)", sel):
+            errors.append(f"{THEME}: the shared user-select rule has a bare (non-`dx-`) selector; it must stay "
+                          f"scoped to the `dx-` class namespace")
+
 if errors:
     for e in errors:
         print(e)
@@ -116,6 +282,6 @@ if errors:
           file=sys.stderr)
     sys.exit(1)
 
-print(f"check-theme-baseline: OK ({len(files)} stylesheet(s): no per-component touch-action: manipulation "
-      f"or ::backdrop scrim; theme rules present)")
+print(f"check-theme-baseline: OK ({len(files)} stylesheet(s): no per-component touch-action: manipulation, "
+      f"::backdrop scrim or covered user-select: none; theme rules present)")
 PYEOF

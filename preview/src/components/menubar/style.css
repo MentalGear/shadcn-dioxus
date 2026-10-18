@@ -27,7 +27,6 @@
   font-size: var(--dx-text-sm);
   font-weight: 500;
   transition: background-color var(--dx-motion-duration-fast) var(--dx-motion-ease-out);
-  user-select: none;
 }
 
 .dx-menubar-menu[data-state="open"] .dx-menubar-trigger {

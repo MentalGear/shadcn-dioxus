@@ -84,12 +84,18 @@ html {
   scrollbar-gutter: stable;
 }
 
-/* Smooth same-page scrolling is motion: only for visitors who have not asked for less of it (WCAG 2.3.3).
-   `/docs`'s "Start" sub-items jump to an in-page `#`-anchor heading via a plain `a { href: "#..." }`, not a
-   route change -- without this, that jump is an instant cut rather than a scroll a user can follow. Scoped
-   to the whole document since any future same-page anchor jump should behave the same way. */
+/* Smooth scrolling is motion, and it is opt-in per interaction, never ambient (WCAG 2.3.3: only for visitors who
+   have not asked for less of it). `html { scroll-behavior: smooth }` makes EVERY scroll that names no `behavior`
+   animate, including the router's `scrollTo(0, 0)` after a push and its scroll restoration on Back: the long page
+   is swapped for a shorter one mid-animation, the browser clamps the scroll offset to the new page's bottom, and
+   the visitor sees the bottom of the destination and then watches it glide up (or, on Back, the mirror). An
+   ambient rule is also a trap for every future `window.scrollTo` (the scroll-lock restore, the charts tab
+   restore each had to be patched or would have been). So the document is instant by default and
+   `preview/index.html`'s same-page `a[href^="#"]` click handler sets `data-anchor-scroll` on `<html>` for exactly
+   the jump it lets the browser animate (`/docs`'s "Start" sub-items), clearing it when the jump has settled.
+   `scripts/check-scroll-behavior.sh` fails any other `scroll-behavior: smooth` on the root. */
 @media (prefers-reduced-motion: no-preference) {
-  html {
+  html[data-anchor-scroll] {
     scroll-behavior: smooth;
   }
 }

@@ -93,6 +93,12 @@
        thumb on whatever point that inline style lands it at. */
     transform: translate(-50%, -50%) scale(1);
     transition: transform var(--dx-motion-duration-base) var(--dx-motion-ease-out), box-shadow var(--dx-motion-duration-base) var(--dx-motion-ease-out), border-color var(--dx-motion-duration-base);
+
+    /* `all: unset` above also resets the theme's zero-specificity "Controls are not text" rule
+       (`dx-components-theme.css`), so it is restated here; scripts/check-theme-baseline.sh requires it. */
+    /* stylelint-disable-next-line property-no-vendor-prefix -- Safari spelling */
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 .dx-color-picker-slider-thumb:focus-visible {
@@ -145,6 +151,12 @@
        thumb` above. */
     transform: translate(-50%, -50%) scale(1);
     transition: transform var(--dx-motion-duration-base) var(--dx-motion-ease-out), box-shadow var(--dx-motion-duration-base) var(--dx-motion-ease-out), border-color var(--dx-motion-duration-base);
+
+    /* `all: unset` above also resets the theme's zero-specificity "Controls are not text" rule
+       (`dx-components-theme.css`), so it is restated here; scripts/check-theme-baseline.sh requires it. */
+    /* stylelint-disable-next-line property-no-vendor-prefix -- Safari spelling */
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 .dx-color-picker-area-thumb:focus-visible,

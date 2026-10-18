@@ -867,6 +867,65 @@ html[data-theme="light"] [class~="dxc-system"] {
 }
 
 /* ============================================================================
+ * Controls are not text: a press, a double-tap or a drag that starts on one never selects its label
+ * (docs/backlog.md row 229, the owner's review: "interactive elements like btns etc. should not allow
+ * user text selection").
+ *
+ * Before this rule only the parts that had remembered to say so were unselectable (menu items, select
+ * options, command items, the calendar's arrows -- one declaration each, in 12 stylesheets); a Button, a
+ * Tab, an Accordion trigger, a Switch or a Toggle showed a blue selection on a double-click and a text
+ * callout on a long press, and every new component had to remember again. One zero-specificity rule is
+ * the single source, and `scripts/check-theme-baseline.sh` fails a component sheet that re-declares it
+ * for an element this list covers.
+ *
+ * The list is the touch-action list above restricted to what PRESSES: a button (the element or the
+ * role), `summary`, and the widget roles whose whole content is the control's label (menu items, option,
+ * tab, switch, checkbox, radio, slider). It deliberately leaves out everything whose text the visitor
+ * may want: text fields (`input`, `textarea`, `select`) and the contenteditable date segments
+ * (`spinbutton`) are where selection is how you edit; `a[href]` stays selectable (shadcn leaves links
+ * selectable, and a long press on one is how a visitor copies the address); and the `[tabindex]`
+ * catch-all is prose, code and scrollers made focusable, which a visitor must be able to copy. A
+ * descendant of an unselectable element is unselectable too (`user-select: auto` resolves to its
+ * parent's `none`), so a label inside a button needs no rule of its own.
+ *
+ * `-webkit-user-select` is the Safari spelling (WebKit only dropped the prefix in recent releases, and
+ * an iOS device that cannot update still needs it). stylelint-config-standard's
+ * `property-no-vendor-prefix` calls it unneeded by the project's browser data, so the rule disables
+ * that one check for that one line rather than for the file. Same zero specificity and `dx-` scoping
+ * as the touch rule: a component or an app that needs a drag handle or a different value declares it. A
+ * rule that resets with the `all` shorthand (`all: unset` on Switch and the slider and colour-picker thumbs)
+ * outranks every zero-specificity rule here, so it restates this one itself; the gate requires it.
+ * ========================================================================== */
+:where(button[class^="dx-"]),
+:where(button[class*=" dx-"]),
+:where([role="button"][class^="dx-"]),
+:where([role="button"][class*=" dx-"]),
+:where(summary[class^="dx-"]),
+:where(summary[class*=" dx-"]),
+:where([role="menuitem"][class^="dx-"]),
+:where([role="menuitem"][class*=" dx-"]),
+:where([role="menuitemcheckbox"][class^="dx-"]),
+:where([role="menuitemcheckbox"][class*=" dx-"]),
+:where([role="menuitemradio"][class^="dx-"]),
+:where([role="menuitemradio"][class*=" dx-"]),
+:where([role="option"][class^="dx-"]),
+:where([role="option"][class*=" dx-"]),
+:where([role="tab"][class^="dx-"]),
+:where([role="tab"][class*=" dx-"]),
+:where([role="switch"][class^="dx-"]),
+:where([role="switch"][class*=" dx-"]),
+:where([role="checkbox"][class^="dx-"]),
+:where([role="checkbox"][class*=" dx-"]),
+:where([role="radio"][class^="dx-"]),
+:where([role="radio"][class*=" dx-"]),
+:where([role="slider"][class^="dx-"]),
+:where([role="slider"][class*=" dx-"]) {
+  /* stylelint-disable-next-line property-no-vendor-prefix -- Safari; the unprefixed form follows on the next line */
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* ============================================================================
  * Press feedback: a pressed control answers the finger (docs/backlog.md row 205).
  *
  * Touch has no hover, so the only acknowledgement a tap gets is the press itself. One
@@ -1154,7 +1213,6 @@ html[data-theme="light"] [class~="dxc-system"] {
   gap: var(--dx-menu-item-gap);
   outline: none;
   overflow-wrap: anywhere;
-  user-select: none;
 }
 
 :where([data-dx-menu-item][data-disabled="true"]) {
