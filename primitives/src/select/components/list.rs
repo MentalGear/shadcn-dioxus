@@ -246,6 +246,7 @@ fn SelectListRendered(id: String, attributes: Vec<Attribute>, children: Element)
         };
         if focused() {
             spawn(async move {
+                // focus-ok: the listbox container takes focus for its keys (a container: no outline, no editable)
                 _ = listbox_ref.set_focus(true);
             });
         }
@@ -423,6 +424,7 @@ fn SelectListRendered(id: String, attributes: Vec<Attribute>, children: Element)
         };
         if focused() {
             spawn(async move {
+                // focus-ok: the listbox container takes focus for its keys (a container: no outline, no editable)
                 _ = listbox_ref.set_focus(true);
             });
         }

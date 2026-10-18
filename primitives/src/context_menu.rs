@@ -784,6 +784,7 @@ fn ContextMenuContentRendered(
         if focused() {
             spawn(async move {
                 // Focus the menu itself to capture keyboard events
+                // focus-ok: the menu container takes focus for its keys (a container: no outline, no editable)
                 _ = menu.set_focus(true).await;
             });
         }
@@ -943,6 +944,7 @@ fn ContextMenuContentRendered(
         if focused() {
             spawn(async move {
                 // Focus the menu itself to capture keyboard events
+                // focus-ok: the menu container takes focus for its keys (a container: no outline, no editable)
                 _ = menu.set_focus(true).await;
             });
         }
@@ -2014,6 +2016,7 @@ fn ContextMenuSubContentRendered(
             sub.set_open.call(false);
             sub.focus.clear_focus();
             let trigger_id = trigger_id.cloned();
+            // focus-ok: ArrowLeft/Escape in a submenu (keyboard only) hands focus to its trigger
             dioxus::document::eval(&format!(
                 "var e=document.getElementById('{trigger_id}');if(e)e.focus()"
             ));
@@ -2144,6 +2147,7 @@ fn ContextMenuSubContentRendered(
             sub.set_open.call(false);
             sub.focus.clear_focus();
             let trigger_id = trigger_id.cloned();
+            // focus-ok: ArrowLeft/Escape in a submenu (keyboard only) hands focus to its trigger
             dioxus::document::eval(&format!(
                 "var e=document.getElementById('{trigger_id}');if(e)e.focus()"
             ));

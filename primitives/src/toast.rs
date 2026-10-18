@@ -240,6 +240,7 @@ pub fn ToastProvider(props: ToastProviderProps) -> Element {
             return;
         };
         spawn(async move {
+            // focus-ok: the hotkey moves focus to the toast region on purpose
             _ = region_ref.set_focus(true).await;
         });
     });

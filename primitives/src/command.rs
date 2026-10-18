@@ -354,17 +354,17 @@ pub struct CommandInputProps {
     #[props(default)]
     pub aria_label: Option<String>,
 
-    /// Whether the input focuses itself on mount (the `autofocus` attribute plus an explicit
-    /// `set_focus`). `None` (the default) is dialog-aware: `true` inside a [`CommandDialog`],
-    /// whose `showModal()` focusing step needs an `autofocus` descendant, and `false` for a
-    /// `Command` placed inline in a page, which must not steal focus (or scroll) on load.
+    /// Whether the input takes focus when it appears. `None` (the default) is dialog-aware:
+    /// `true` inside a [`CommandDialog`], where the open policy gives it focus for a keyboard or
+    /// mouse open and leaves the panel focused for touch (see [`CommandInput`]), and `false`
+    /// for a `Command` placed inline in a page, which must not steal focus (or scroll) on load.
     /// `Some(_)` overrides that either way.
     #[props(default)]
     pub autofocus: Option<bool>,
 
     /// Called when the input element is mounted. `CommandInput` also uses
-    /// this internally to explicitly focus itself once mounted -- see this
-    /// component's own doc, "First-mouse-click-open focus bug." A
+    /// this internally to focus itself once mounted when no dialog driver
+    /// does (see [`CommandInput`]). A
     /// caller-supplied callback here still fires, chained after that
     /// internal behavior -- the same forwarding shape `Toggle`'s own
     /// `onmounted` prop already uses (`toggle.rs`) so a caller doesn't lose
@@ -379,59 +379,20 @@ pub struct CommandInputProps {
 
 /// The text input that filters [`CommandList`]'s items.
 ///
-/// Renders with the `autofocus` attribute set when it is inside a [`CommandDialog`]
-/// (or `autofocus: Some(true)`), and without it otherwise -- see
-/// [`CommandInputProps::autofocus`]. An inline `Command` that grabbed focus on mount
-/// would pull the page's focus (and scroll) to itself on every load. The dialog
-/// case is the platform mechanism the plan doc flagged as needing confirmation "by execution": a
-/// `showModal()`-opened `CommandDialog` runs the browser's dialog-focusing
-/// steps (WHATWG HTML) at the moment it opens, which focus the first
-/// `autofocus` descendant found in the dialog's subtree, falling back to the
-/// dialog element itself if none exists (`dialog.rs`'s module doc describes
-/// the same algorithm for why `DialogContentModal`'s native arm needs no
-/// separate focus-trap script). Setting `autofocus` here, inside the dialog,
-/// is what gives `CommandDialog` that descendant to find -- `ComboboxInput`
-/// never needed this because it is never the *first* focusable content of a
-/// freshly-`showModal()`-opened dialog.
+/// ## Focus on open (backlog rows 206 and 226)
 ///
-/// ## First-mouse-click-open focus bug (live-site user report, 2026-09-18)
+/// Inside a [`CommandDialog`] on the web arm the input carries `data-dx-autofocus` (not the
+/// `autofocus` attribute), the marker the shared open-focus policy
+/// ([`crate::modality::OPEN_FOCUS_JS`]) reads when the dialog opens: opened by keyboard or mouse
+/// the search box takes focus (a palette's search box is its point); opened by touch or pen the
+/// panel does, so the software keyboard does not rise while the dialog is still being placed and
+/// the user taps the field to type. The policy focuses the element itself, so nothing here races
+/// `showModal()`'s own focusing step.
 ///
-/// A user reported that the first time the command palette is opened by a
-/// mouse click on the overview page (`/`), focus does not land on this
-/// input. Real-browser reproduction attempted this session (a Playwright
-/// script driving this crate's own `preview` build on the `dx serve` dev
-/// server, both the standalone component page and the home page's demo
-/// gallery, fresh browser context per trial, real `.click()`s, first *and*
-/// second opens, plain runs plus runs under 4x CPU-throttling and this
-/// sandbox's own multi-lane CPU contention, 40+ trials total): `autofocus`
-/// alone landed focus correctly in every trial, so the exact mount-order
-/// race the doc above originally flagged as unconfirmed did not reproduce
-/// against this build. That does not clear `autofocus` alone, though: the
-/// live report is against the deployed SSG/hydration build
-/// (`dev-docs/backlog.md` row 22), a fundamentally different first-render
-/// pipeline than the CSR `dx serve` dev server this session could exercise
-/// (row 22 already documents this exact CSR/SSG divergence as a standing,
-/// confirmed-by-incident risk class in this repo, e.g. the 2026-09-01
-/// cfg-axis production incident) -- a hydration-only timing difference
-/// cannot be ruled out from this session's tooling.
-///
-/// Fixed by construction regardless, rather than left to a single
-/// mechanism: `onmounted` below explicitly calls
-/// [`dioxus::prelude::MountedData::set_focus`] as soon as this element
-/// mounts (again only when `autofocus` applies), the same `onmounted` + `spawn` +
-/// `set_focus(true).await` shape
-/// `Toggle`/`Slider`/`DropdownMenuTrigger` already use elsewhere in this
-/// crate for imperative focus (`toggle.rs`, `slider.rs`,
-/// `dropdown_menu.rs`) -- proven, cross-platform (works identically on the
-/// native/Blitz arm, no `#[cfg(feature = "web")]` needed), and requires no
-/// change to `dialog.rs`. This does not depend on, or need to race against,
-/// `showModal()`'s own autofocus step: both mechanisms target the same
-/// element, so whichever lands first wins and the other is a redundant
-/// no-op, never a conflict. Kept *in addition to* `autofocus` rather than
-/// in its place -- `autofocus` is still the WHATWG-spec-correct, zero-cost
-/// first line, and removing it would also regress a non-JS/no-wasm-yet
-/// rendering of this content (e.g. a pre-hydration SSG paint) to no
-/// indicated focus target at all.
+/// Without a `<dialog>` to open (an inline `Command` with an explicit `autofocus: Some(true)`, or
+/// the non-web arms) the input renders the plain `autofocus` attribute and focuses itself once
+/// mounted, as before. An inline `Command` that grabbed focus on mount would pull the page's focus
+/// (and scroll) to itself on every load, so `None` is `false` there.
 #[component]
 pub fn CommandInput(props: CommandInputProps) -> Element {
     let mut ctx = use_context::<CommandContext>();
@@ -443,9 +404,12 @@ pub fn CommandInput(props: CommandInputProps) -> Element {
     let set_query = ctx.set_query;
     let user_onmounted = props.onmounted;
     // Dialog-aware default: only a `CommandDialog` ancestor needs the input to claim focus.
-    let autofocus = props
-        .autofocus
-        .unwrap_or_else(|| try_use_context::<CommandDialogContext>().is_some());
+    let in_dialog = try_use_context::<CommandDialogContext>().is_some();
+    let autofocus = props.autofocus.unwrap_or(in_dialog);
+    // On the web arm a dialog's open driver chooses the initial focus from the opening modality
+    // (`data-dx-autofocus`); everywhere else the input focuses itself the old way.
+    let driver_autofocus = autofocus && in_dialog && cfg!(feature = "web");
+    let self_autofocus = autofocus && !driver_autofocus;
 
     let active_descendant = use_memo(move || ctx.focused_option_id());
 
@@ -493,8 +457,12 @@ pub fn CommandInput(props: CommandInputProps) -> Element {
             placeholder: props.placeholder,
             autocomplete: "off",
             spellcheck: "false",
+            // A filter, not a name: iOS must not capitalise the first letter of the query.
+            autocapitalize: "off",
             disabled: (ctx.selectable.disabled)(),
-            autofocus,
+            // focus-ok: no dialog driver to choose the focus (inline Command, explicit prop)
+            autofocus: self_autofocus,
+            "data-dx-autofocus": driver_autofocus.then_some("true"),
             role: "combobox",
             aria_autocomplete: "list",
             aria_expanded: "true",
@@ -509,11 +477,11 @@ pub fn CommandInput(props: CommandInputProps) -> Element {
             aria_label: props.aria_label.clone(),
 
             onmounted: move |evt: Event<MountedData>| {
-                // Deterministic backstop for `autofocus` above -- see this
-                // component's doc, "First-mouse-click-open focus bug."
+                // Backstop for the `autofocus` attribute when no dialog driver chooses the focus.
                 let data = evt.data();
-                if autofocus {
+                if self_autofocus {
                     spawn(async move {
+                        // focus-ok: explicit `autofocus` on an inline Command or a non-web arm
                         let _ = data.set_focus(true).await;
                     });
                 }
