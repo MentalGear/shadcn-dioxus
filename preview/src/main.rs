@@ -31,9 +31,8 @@ use dioxus::prelude::{dioxus_router::LinkProps, *};
 use dioxus_code::{advanced::HighlightedSource, Code, CodeTheme, Theme};
 use dioxus_i18n::prelude::{i18n, use_init_i18n, I18nConfig};
 use dioxus_icons::lucide::{
-    ArrowRight, ArrowUpRight, Bell, BookOpen, ChartColumn, Check, ChevronDown, ChevronLeft,
-    ChevronsUpDown, Compass, Copy, ExternalLink, FileText, Hash, House, Layers, LayoutGrid, Mail,
-    Pause, Play, SkipBack, SkipForward, SquareCheck,
+    ArrowRight, ArrowUpRight, BookOpen, Check, ChevronDown, ChevronLeft, Copy, ExternalLink,
+    FileText, Hash, House, Mail, Pause, Play, SkipBack, SkipForward,
 };
 use dioxus_primitives::{ContentAlign, ContentSide};
 use nav_link::NavLink;
@@ -48,6 +47,7 @@ mod chart_tooltip_parity;
 mod charts_gallery;
 mod components;
 mod dashboard;
+mod docs_nav;
 // Client builds only: the server keeps `ServerDocument` for the SSR `<head>` (see the module's docs).
 #[cfg(not(feature = "server"))]
 mod eager_head;
@@ -1574,53 +1574,8 @@ fn DocsLayout(
                                 }
                             }
                         }
-                        for cat in components::ComponentCategory::ALL.iter().copied() {
-                            SidebarGroup { key: "{cat.label()}",
-                                SidebarGroupLabel {
-                                    match cat {
-                                        components::ComponentCategory::Forms => rsx! {
-                                            SquareCheck { size: "1rem", "aria-hidden": "true" }
-                                        },
-                                        components::ComponentCategory::Navigation => rsx! {
-                                            Compass { size: "1rem", "aria-hidden": "true" }
-                                        },
-                                        components::ComponentCategory::Overlays => rsx! {
-                                            Layers { size: "1rem", "aria-hidden": "true" }
-                                        },
-                                        components::ComponentCategory::Feedback => rsx! {
-                                            Bell { size: "1rem", "aria-hidden": "true" }
-                                        },
-                                        components::ComponentCategory::Disclosure => rsx! {
-                                            ChevronsUpDown { size: "1rem", "aria-hidden": "true" }
-                                        },
-                                        components::ComponentCategory::DataDisplay => rsx! {
-                                            LayoutGrid { size: "1rem", "aria-hidden": "true" }
-                                        },
-                                        components::ComponentCategory::Charts => rsx! {
-                                            ChartColumn { size: "1rem", "aria-hidden": "true" }
-                                        },
-                                    }
-                                    span { "{cat.label()}" }
-                                }
-                                SidebarMenu {
-                                    for component in components::demos_in_category(cat) {
-                                        SidebarMenuItem { key: "{component.name}",
-                                            SidebarMenuButton {
-                                                is_active: active == DocsNavActive::Component(component.name),
-                                                as: move |attributes: Vec<Attribute>| rsx! {
-                                                    NavLink {
-                                                        to: Route::component(component.name),
-                                                        attributes,
-                                                        {component.name.replace("_", " ")}
-                                                        ExtraBadge { name: component.name, tip: ExtraBadgeTip::Title }
-                                                    }
-                                                },
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        // A-Z by default or by category: see `docs_nav`.
+                        docs_nav::DocsComponentNav { active }
                     }
                     // The theme picker's phone entry: a "Theme" button pinned under the
                     // scrolling nav that opens the picker as a bottom `Drawer`. Always
