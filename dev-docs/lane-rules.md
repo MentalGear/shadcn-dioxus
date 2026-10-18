@@ -16,14 +16,17 @@ Session tooling (paths below default to `LANE_TGT=/home/user/tgt`):
   lane's worktree. Do not push. Symlink `playwright/node_modules` and `preview/node_modules` from the main checkout
   (never `npm install`).
 - Edit ONLY the files your prompt says you own. If you must touch another file, stop and say so in the report.
-- Commit in your worktree: Conventional Commits `type(scope): subject`, a body with the why and the evidence, and the
+- Commit with the default git identity (never `-c user.email`, `GIT_AUTHOR_*`/`GIT_COMMITTER_*` or a worktree config
+  identity: GitHub shows any other committer as Unverified). Commit in your worktree: Conventional Commits `type(scope): subject`, a body with the why and the evidence, and the
   attribution trailers your harness gives you.
 
 ## Memory and the one global lock (row 221)
 - The machine has 4 cores and 15 GB. A `preview` rustc or clippy driver is ~2.5 GB, and ten concurrent agents were
   OOM-killed. EVERY cargo or dx command takes the one global lock and limits jobs:
   `flock $LANE_TGT/ssg.lock env CARGO_BUILD_JOBS=2 CARGO_TARGET_DIR=$LANE_TGT/check CARGO_INCREMENTAL=0 cargo ...`
-  (`scripts/lane-ssg.sh` holds the same lock for its build). Never create another target dir, never `cargo clean`.
+  (`scripts/lane-ssg.sh` holds the same lock for its build). Never start a long-lived process (a server, a watcher)
+  inside `flock ... cmd`: it inherits the locked file and holds the lock for every lane after its parent exits. Serve
+  through `lane-ssg.sh`, or start the server outside the lock with `3>&- 9>&-`. Never create another target dir, never `cargo clean`.
 - Playwright: `--workers=2` at most, and every run under its own lock: `flock $LANE_TGT/pw.lock npx playwright test ...` (ten lanes' browsers at once would OOM). A crash, "Target closed" or browser-disconnected failure is checked against
   `dmesg | grep -i 'killed process' | tail` before it is believed.
 
