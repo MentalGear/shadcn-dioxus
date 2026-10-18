@@ -139,6 +139,9 @@ declare -A allowed_qualified=(
     ["calendar::DateRange"]=1     # plain type, not markup -- calendar & date_picker
                                    # range/multi_month/unavailable_dates variants
     ["scroll_area::ScrollDirection"]=1 # plain enum, not markup -- scroll_area/variants/main
+    ["modality::MODALITY_JS"]=1   # plain &str constant, not markup (the one writer of
+                                   # `<html data-dx-modality>`; only `theme.rs`'s test
+                                   # proves PREPAINT_JS embeds it verbatim)
     ["direction::Direction"]=1    # plain enum, not markup -- every RTL fixture
                                    # (preview/src/components/*/variants/rtl/mod.rs)
     ["direction::DirectionProvider"]=1 # context-provider component with no DOM
