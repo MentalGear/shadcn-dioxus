@@ -3,6 +3,7 @@ import { type Page } from "@playwright/test";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from './axe';
 import { BASE_URL } from './base-url';
 import { fixedViewportBox } from './viewport-box';
+import { measureAtRest } from "./animations";
 
 test('test', async ({ page }) => {
   await page.goto(`${BASE_URL}/component/?name=toast&`);
@@ -72,7 +73,7 @@ test.describe('Toast bounding box (docs/backlog.md row 44)', () => {
         el.getAnimations({ subtree: true }).map((a) => a.finished.catch(() => undefined)),
       ),
     );
-    const box = await toast.boundingBox();
+    const box = await measureAtRest(toast);
     const viewport = await fixedViewportBox(page);
     if (!box) {
       throw new Error(`expected a toast bounding box, got box=${JSON.stringify(box)}`);

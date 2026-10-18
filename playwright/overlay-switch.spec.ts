@@ -1,6 +1,7 @@
 import { test, expect } from "./fixtures";
 import type { Locator, Page } from "@playwright/test";
 import { BASE_URL } from "./base-url";
+import { demoRole } from "./demo-frame";
 
 /**
  * The shared modal-overlay switch (`preview/assets/dx-components-theme.css`, "Modal overlay switch"):
@@ -26,24 +27,24 @@ interface Modal {
 }
 
 const MODALS: Modal[] = [
-  { name: "Dialog", url: "dialog", open: (p) => p.getByRole("button", { name: "Show Dialog", exact: true }).click() },
+  { name: "Dialog", url: "dialog", open: (p) => demoRole(p, "button").click() },
   {
     name: "AlertDialog",
     url: "alert_dialog",
-    open: (p) => p.getByRole("button", { name: "Show Alert Dialog", exact: true }).click(),
+    open: (p) => demoRole(p, "button").click(),
   },
-  { name: "Sheet", url: "sheet", open: (p) => p.getByRole("button", { name: "Right", exact: true }).click() },
-  { name: "Drawer", url: "drawer", open: (p) => p.getByRole("button", { name: "Move Goal", exact: true }).click() },
+  { name: "Sheet", url: "sheet", open: (p) => demoRole(p, "button", 1).click() /* sheet demo: Top, Right, Bottom, Left */ },
+  { name: "Drawer", url: "drawer", open: (p) => demoRole(p, "button").click() },
   {
     name: "CommandDialog",
     url: "command",
-    open: (p) => p.getByRole("button", { name: "Open Command Palette" }).first().click(),
+    open: (p) => demoRole(p, "button").click(),
   },
   // The modal Popover opens undimmed by default; its switch is exercised below on the `overlay` variant.
   {
     name: "Popover (overlay: true)",
     url: "popover&variant=overlay",
-    open: (p) => p.getByRole("button", { name: "Open with overlay", exact: true }).click(),
+    open: (p) => demoRole(p, "button", 0, "overlay").click(),
   },
 ];
 
@@ -92,7 +93,7 @@ test.describe("the rule itself", () => {
   test.beforeEach(async ({ page }) => {
     // Any page that loads the theme; the dialog page is the one whose stylesheet is under test below.
     await page.goto(`${BASE_URL}/component/?name=dialog&`);
-    await expect(page.getByRole("button", { name: "Show Dialog", exact: true })).toBeVisible();
+    await expect(demoRole(page, "button")).toBeVisible();
   });
 
   test("a bare <dialog> carrying the attribute loses the UA's default scrim too", async ({ page }) => {

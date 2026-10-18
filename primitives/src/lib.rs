@@ -46,6 +46,7 @@ mod hover_intent;
 pub mod input_otp;
 pub mod interval;
 pub mod js_listener;
+pub mod keyboard_inset;
 pub mod label;
 mod listbox;
 pub mod menu_item;

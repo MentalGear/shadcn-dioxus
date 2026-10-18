@@ -180,7 +180,6 @@
   padding-inline:
     var(--dx-space-1-5)
     calc(var(--dx-menu-item-indicator-inset) + var(--dx-menu-item-indicator-size) + var(--dx-menu-item-indicator-gap));
-  user-select: none;
 }
 
 .dx-combobox-option[data-highlighted="true"] {

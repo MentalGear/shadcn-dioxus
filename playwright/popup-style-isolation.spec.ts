@@ -118,7 +118,7 @@ async function probe(page: Page): Promise<Probe> {
         const tag = e.tagName.toLowerCase();
         const both = BOTH_AXES.has(tag);
         if (both || HEIGHT_ONLY.has(tag) || e.getAttribute("role") === "gridcell") {
-          const r = e.getBoundingClientRect();
+          const r = e.getBoundingClientRect(); // rest-ok: motion is frozen page-wide by the addStyleTag in this spec's setup
           if (both) o["rendered-width"] = `${Math.round(r.width * 10) / 10}px`;
           o["rendered-height"] = `${Math.round(r.height * 10) / 10}px`;
         }
@@ -201,7 +201,7 @@ async function tagCandidates(page: Page): Promise<number> {
       if (e.closest("svg") || e.tagName === "A" || e.getAttribute("role") === "tab" || e.classList.contains("dx-sidebar-trigger")) continue;
       if (e.closest("[popover], dialog, pre, .dx-code-block, [data-pw-clone]")) continue;
       if ((e as HTMLButtonElement).disabled || e.getAttribute("aria-disabled") === "true") continue;
-      const r = e.getBoundingClientRect();
+      const r = e.getBoundingClientRect(); // rest-ok: motion is frozen page-wide by the addStyleTag in this spec's setup
       if (r.width === 0 || r.height === 0) continue;
       const chain: string[] = [];
       for (let a = e.parentElement; a && a !== root && chain.length < 3; a = a.parentElement) {
@@ -231,7 +231,7 @@ async function countVisibleRolePanels(page: Page): Promise<number> {
       [...document.querySelectorAll('[role="menu"], [role="listbox"], [role="tooltip"], [role="dialog"], [role="alertdialog"]')].filter(
         (e) => {
           if (e.closest("[popover], dialog")) return false;
-          const r = e.getBoundingClientRect();
+          const r = e.getBoundingClientRect(); // rest-ok: motion is frozen page-wide by the addStyleTag in this spec's setup
           return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== "hidden";
         },
       ).length,

@@ -25,10 +25,9 @@
  * Hydration is held back until the prerendered page has been painted (the wasm request waits for the first paint
  * plus 200 ms), so the prerendered-vs-hydrated differences are on screen at every width, not only on a slow one.
  *
- * "After the first paint": a frame whose rAF callback runs after `first-contentful-paint` AND after
- * DOMContentLoaded (+ one frame of grace). Frames before the first paint are never shown, so what the page
- * settles into before the user sees it is free; frames between the first paint and the end of the parse are the
- * browser painting a half-parsed document (see "Known gap" below).
+ * "After the first paint": a frame whose rAF callback runs after `first-contentful-paint` (+ 20 ms of grace). Frames
+ * before the first paint are never shown, so what the page settles into before the user sees it is free; every frame
+ * after it is on screen, including those of a half-parsed document (see "Progressive rendering" below).
  * The top group is every element of the navbar, the desktop sidebar and the first 700 elements of
  * `#main-content` that start within the first 3000 page px (the hero, the section header and the whole widget
  * masonry on `/`; the first demo card on a component page). A box counts as changed when x, width or height differs by more than 0.5 px, or the page
@@ -44,12 +43,18 @@
  *
  *   PLAYWRIGHT_BASE_URL=http://127.0.0.1:8108 npx playwright test --config=ssg.local.config.ts layout-stability.spec.ts --workers=3
  *
- * Known gap: progressive rendering. The prerendered home page is ~580 KB and is parsed in chunks; a browser that
- * paints between chunks shows the masonry with only the cards parsed so far, and every card that arrives
- * re-balances the columns (cards jump between columns). Chrome did it in 5 of 8 cold loads at 1280px, with the
- * first paint between 330 and 730 ms and the parse ending ~300 ms later. This spec starts its clock when the parse
- * has finished, so it does not see it; closing it needs a masonry whose column assignment does not depend on how
- * much of it has arrived (backlog row 204, open part).
+ * Progressive rendering (backlog row 214). The prerendered home page is ~580 KB and is parsed in chunks; a browser
+ * paints between chunks. The clock of the sweep therefore starts at the FIRST PAINT, not at DOMContentLoaded: a frame
+ * painted from a half-parsed document counts like any other. The one thing a half-parsed document may do is grow --
+ * an element whose end tag has not arrived is still being filled, so while `document.readyState` is "loading" a pure
+ * height change (same x, y and width) is not an event; anything that MOVES or RESIZES sideways is. The row 204 sweep
+ * delays only the wasm, so on a fast machine its parse ends before the first paint and this clause is idle there; the
+ * second group of tests ("progressive paint") is what makes the parse slow: Chrome's own network and CPU throttling
+ * (CDP `Network.emulateNetworkConditions` + `Emulation.setCPUThrottlingRate`), so the document really arrives in
+ * chunks and is painted between them, and it records every widget card's position from the first frame in which the
+ * card exists. A card must stay in its column and at its place: the multi-column masonry it replaced re-assigned
+ * cards to columns on every parsed card (6 to 8 cards changed column in one frame at 1280px, 3 at 768px); the
+ * construction that made it pass is that a card's column is its DOM position (`MasonrySlot` in `preview/src/main.rs`).
  *
  * Not covered, on purpose: `/charts/`. Its charts are prerendered at a default width and re-measured when the wasm
  * hydrates (the plot, its axes and the header's select all re-flow ~100-1000ms after the first paint at every
@@ -62,6 +67,7 @@
  */
 import { test, expect } from "./fixtures";
 import { BASE_URL } from "./base-url";
+import http from "node:http";
 
 type Box = { x: number; y: number; w: number; h: number };
 type BoxEvent = { t: number; f: number; id: number; cls: string; txt: string; from: Box; to: Box };
@@ -69,7 +75,7 @@ type BoxEvent = { t: number; f: number; id: number; cls: string; txt: string; fr
 /** Installed before any page script, so the very first frame is recorded. Reads boxes only. */
 const RECORDER = `
 (() => {
-  const rec = { events: [], frames: 0, hydratedAt: -1, parsedAt: -1 };
+  const rec = { events: [], frames: 0, hydratedAt: -1 };
   window.__layoutRec = rec;
   const SEL = '.dx-preview-navbar *, .dx-sidebar-desktop *, #main-content *';
   const TOP_PX = 3000;
@@ -99,7 +105,8 @@ const RECORDER = `
       // a card further down is unskipped) moves nothing that can be seen, nor does one whose bottom edge lies below the top
       // group; the children are judged on their own.
       const grew = p && !moved && Math.min(p.y + p.h, cur.y + cur.h) >= TOP_PX;
-      const silent = p && !moved && (grew || !paints(e));
+      const growing = p && !moved && document.readyState === 'loading'; // still being filled by the parser
+      const silent = p && !moved && (grew || growing || !paints(e));
       if (p && (moved || Math.abs(p.h - cur.h) > 0.5) && !silent && Math.min(p.y, cur.y) < TOP_PX) {
         if (!ids.has(e)) ids.set(e, ids.size);
         rec.events.push({ t: Math.round(now), f: rec.frames, id: ids.get(e), cls: String(e.getAttribute('class') || e.tagName).slice(0, 40), txt: (e.textContent || '').trim().slice(0, 24), from: p, to: cur });
@@ -109,7 +116,6 @@ const RECORDER = `
     requestAnimationFrame(tick);
   }
   requestAnimationFrame(tick);
-  document.addEventListener('DOMContentLoaded', () => { rec.parsedAt = Math.round(performance.now()); });
   new MutationObserver(() => {
     if (rec.hydratedAt < 0 && document.documentElement.dataset.hydrated === 'true') rec.hydratedAt = Math.round(performance.now());
   }).observe(document, { attributes: true, subtree: true, attributeFilter: ['data-hydrated'] });
@@ -169,17 +175,14 @@ for (const { route, scheme, widths } of GROUPS) {
       await page.waitForSelector('html[data-hydrated="true"]', { state: "attached", timeout: 120_000 });
       await page.evaluate(() => document.fonts.ready.then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))));
       await page.waitForTimeout(1500); // no input: whatever still moves by itself shows up in this window
-      const { events, paint, parsedAt } = await page.evaluate(() => ({
+      const { events, paint } = await page.evaluate(() => ({
         events: (window as any).__layoutRec.events as BoxEvent[],
-        parsedAt: (window as any).__layoutRec.parsedAt as number,
         paint: performance.getEntriesByType("paint").map((p) => ({ name: p.name, t: Math.round(p.startTime) })),
       }));
       const firstPaint = (paint.find((p) => p.name === "first-contentful-paint") ?? paint[0])?.t;
       expect(firstPaint, `${route} ${width}px: no paint entry`).toBeDefined();
-      // The 580 KB prerendered document is parsed in chunks and a browser may paint between them; every card parsed
-      // later re-balances the multi-column masonry. That is progressive rendering, a separate (and open) matter
-      // from a page that changes after it is complete, so the clock starts when the parse has finished too.
-      const settledAt = Math.max(firstPaint!, parsedAt);
+      // The clock starts at the first paint: a frame painted from a half-parsed document counts (see the header).
+      const settledAt = firstPaint!;
       const late = events.filter((e) => e.t > settledAt + 20);
       if (late.length === 0) continue;
       if (process.env.LS_DUMP) console.log(`${route} ${scheme} ${width}px`, JSON.stringify(late.slice(0, 40).map((e) => [e.t, e.f, e.cls, e.txt, fmt(e.from), fmt(e.to)])));
@@ -197,3 +200,125 @@ for (const { route, scheme, widths } of GROUPS) {
     expect(failures, `${route} (${scheme}): the top group changed by itself after its first paint at ${failures.length} of ${widths.length} widths`).toEqual([]);
   });
 }
+
+/**
+ * PROGRESSIVE PAINT (backlog row 214): the home page's widget cards, recorded from the first frame in which each card
+ * exists, while the document really arrives in chunks. A card may grow downward as its own content is parsed; it may
+ * never change column or width, and never move vertically. The wasm is refused so the run is about the parse alone
+ * (hydration is covered by the sweep above).
+ *
+ * Making the parse progressive deterministically: a small local server (`slowDocServer`) sits in front of the SSG
+ * site. Every asset (the render-blocking stylesheets, fonts, images) passes straight through, but the home document
+ * itself is written in `LS_PP_CHUNK` byte pieces (default 4000) `LS_PP_DELAY` ms apart (default 40) after the head
+ * and a `LS_PP_HEAD_WAIT` (default 400 ms) for its stylesheets, so the browser paints, and the hero and the widget
+ * masonry then keep arriving under a painting page. (Throttling the whole connection with CDP `Network.emulateNetworkConditions` also makes the parse progressive
+ * but delays the stylesheets as much as the body, so the first paint often comes after the document has arrived.) The
+ * CPU is throttled as well (`Emulation.setCPUThrottlingRate`, `LS_PP_CPU`, default 4) so a frame can be late the way
+ * it is on an iPad. The run first checks that the parse WAS progressive -- cards observed after the first paint in at
+ * least three different counts -- otherwise there was nothing to judge and it fails rather than passes.
+ *
+ * The widths are the iPad portrait and landscape sizes (768, 820, 834, 1024, 1180, 1194, 1366) and the desktop ones
+ * the masonry has columns at (1101, 1280, 1440), plus the 2-column / 1-column neighbours 641 and 640.
+ * `LS_PP_WIDTHS=768,1280` runs just those widths.
+ */
+/**
+ * A static front for the SSG site that streams `/` slowly and passes every other request through. The document's
+ * head (stylesheets, preloads) is sent at once and the server then waits `headWait` ms, so the render-blocking
+ * stylesheets have arrived and the first paint can happen before the body does; the body up to the "All components"
+ * section (the hero and the whole widget masonry, ~130 KB) is then written `chunk` bytes at a time, `delay` ms
+ * apart, and the rest of the page goes out at full speed.
+ */
+async function slowDocServer(chunk: number, delay: number, headWait: number): Promise<{ url: string; close: () => Promise<void> }> {
+  const server = http.createServer(async (req, res) => {
+    try {
+      const upstream = await fetch(`${BASE_URL}${req.url}`);
+      const body = Buffer.from(await upstream.arrayBuffer());
+      const headers: Record<string, string> = {};
+      upstream.headers.forEach((v, k) => { if (!/^(content-length|content-encoding|transfer-encoding|connection)$/i.test(k)) headers[k] = v; });
+      res.writeHead(upstream.status, headers);
+      const slowEnd = body.indexOf("dx-catalog-section");
+      if (req.url === "/" && /text\/html/.test(headers["content-type"] ?? "") && slowEnd > 0) {
+        const bodyStart = body.indexOf("<body");
+        res.write(body.subarray(0, bodyStart));
+        await new Promise((r) => setTimeout(r, headWait));
+        for (let i = bodyStart; i < slowEnd; i += chunk) {
+          res.write(body.subarray(i, Math.min(i + chunk, slowEnd)));
+          await new Promise((r) => setTimeout(r, delay));
+        }
+        res.end(body.subarray(slowEnd));
+      } else res.end(body);
+    } catch {
+      res.destroy();
+    }
+  });
+  await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
+  const port = (server.address() as { port: number }).port;
+  return { url: `http://127.0.0.1:${port}`, close: () => new Promise<void>((r) => { server.closeAllConnections(); server.close(() => r()); }) };
+}
+
+const PP_WIDTHS = (process.env.LS_PP_WIDTHS ?? "640,641,768,820,834,1024,1101,1180,1194,1280,1366,1440").split(",").map(Number);
+
+const CARD_RECORDER = `
+(() => {
+  const rec = { frames: [] };
+  window.__cardRec = rec;
+  function tick(now) {
+    const cards = document.querySelectorAll('.dx-widget-card');
+    const boxes = [];
+    for (const c of cards) { const b = c.getBoundingClientRect(); boxes.push([Math.round(b.x * 10) / 10, Math.round((b.y + scrollY) * 10) / 10, Math.round(b.width * 10) / 10]); }
+    rec.frames.push({ t: Math.round(now), boxes });
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})();
+`;
+
+test.describe("progressive paint (home widget masonry)", () => {
+  for (const width of PP_WIDTHS) {
+    test(`cards never change column while the page is parsed (${width}px)`, async ({ browser }) => {
+      test.skip(browser.browserType().name() !== "chromium", "CDP throttling is Chromium only");
+      test.setTimeout(5 * 60 * 1000);
+      const front = await slowDocServer(Number(process.env.LS_PP_CHUNK ?? 4000), Number(process.env.LS_PP_DELAY ?? 40), Number(process.env.LS_PP_HEAD_WAIT ?? 400));
+      const context = await browser.newContext({ viewport: { width, height: HEIGHT } });
+      await context.addCookies([{ name: "dx_theme", value: "light", url: front.url }]);
+      const page = await context.newPage();
+      await page.addInitScript(CARD_RECORDER);
+      await page.route("**/*.wasm", (route) => route.abort());
+      const cdp = await context.newCDPSession(page);
+      await cdp.send("Emulation.setCPUThrottlingRate", { rate: Number(process.env.LS_PP_CPU ?? 4) });
+      await page.goto(`${front.url}/`, { waitUntil: "commit" });
+      await page.waitForLoadState("load", { timeout: 4 * 60 * 1000 });
+      await page.waitForTimeout(1000);
+      const { frames, fcp } = await page.evaluate(() => ({
+        frames: (window as any).__cardRec.frames as { t: number; boxes: number[][] }[],
+        fcp: performance.getEntriesByType("paint").find((p) => p.name === "first-contentful-paint")?.startTime ?? -1,
+      }));
+      await context.close();
+      await front.close();
+      expect(fcp, `${width}px: no first-contentful-paint entry`).toBeGreaterThan(0);
+
+      const shown = frames.filter((f) => f.t >= fcp);
+      const counts = new Set(shown.map((f) => f.boxes.length));
+      const total = Math.max(...frames.map((f) => f.boxes.length));
+      expect(total, `${width}px: the home page has 14 widget cards`).toBe(14);
+      expect(counts.size, `${width}px: cards were seen in only ${counts.size} distinct counts after the first paint -- the parse was not progressive; raise LS_PP_DELAY or lower LS_PP_CHUNK`).toBeGreaterThanOrEqual(3);
+
+      // Each card is judged against the first box it was ever seen with (after the first paint).
+      const first = new Map<number, number[]>();
+      const problems: string[] = [];
+      const reported = new Set<number>();
+      for (const f of shown) {
+        f.boxes.forEach((b, k) => {
+          const a = first.get(k);
+          if (!a) { first.set(k, b); return; }
+          const what = Math.abs(a[0] - b[0]) > 0.5 ? "column (x)" : Math.abs(a[2] - b[2]) > 0.5 ? "width" : Math.abs(a[1] - b[1]) > 0.5 ? "y" : "";
+          if (what && !reported.has(k)) {
+            reported.add(k);
+            problems.push(`card ${k} ${what}: ${a[0]},${a[1]} w${a[2]} -> ${b[0]},${b[1]} w${b[2]} at ${f.t}ms (${f.boxes.length} cards present)`);
+          }
+        });
+      }
+      expect(problems, `${width}px: cards moved while the page was being parsed`).toEqual([]);
+    });
+  }
+});

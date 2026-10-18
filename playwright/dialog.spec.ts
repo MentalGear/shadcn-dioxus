@@ -2,6 +2,7 @@ import { test, expect } from "./fixtures";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from './axe';
 import { BASE_URL } from './base-url';
 import { assertSharedBackdrop, captureBackdrop, resolveOverlayMs } from "./assert-backdrop-fade";
+import { measureAtRest } from "./animations";
 
 test('test', async ({ page }) => {
   await page.goto(`${BASE_URL}/component/?name=dialog&`, { timeout: 20 * 60 * 1000 }); // Increase timeout to 20 minutes
@@ -66,7 +67,7 @@ test('a press inside the dialog released over its backdrop does not dismiss it (
   await expect(dialog).toBeVisible();
   const title = dialog.getByText('Item information');
   await title.waitFor();
-  const box = await title.boundingBox();
+  const box = await measureAtRest(title);
   if (!box) throw new Error('dialog title has no bounding box');
   await page.mouse.move(box.x + 4, box.y + box.height / 2);
   await page.mouse.down();
@@ -161,7 +162,7 @@ test.describe('Parts (row 155, group 4)', () => {
     });
     expect(lastIsClose).toBe(true);
     // Top-end corner: 8px from the panel's top and end edges.
-    const [d, c] = await Promise.all([dialog.boundingBox(), close.boundingBox()]);
+    const [d, c] = await Promise.all([measureAtRest(dialog), measureAtRest(close)]);
     expect(Math.abs(c!.y - d!.y - 8)).toBeLessThanOrEqual(1);
     expect(Math.abs(d!.x + d!.width - (c!.x + c!.width) - 8)).toBeLessThanOrEqual(1);
     expect(Math.round(c!.width)).toBe(28);
@@ -188,7 +189,7 @@ test.describe('Parts (row 155, group 4)', () => {
   test('the footer is a muted band that cancels the panel padding; a row from sm up', async ({ page }) => {
     const dialog = await open(page, 'Sticky Footer', 'sticky_footer');
     const footer = dialog.locator('[data-slot="dialog-footer"]');
-    const [d, f] = await Promise.all([dialog.boundingBox(), footer.boundingBox()]);
+    const [d, f] = await Promise.all([measureAtRest(dialog), measureAtRest(footer)]);
     expect(Math.abs(f!.x - d!.x)).toBeLessThanOrEqual(1);
     expect(Math.abs(f!.width - d!.width)).toBeLessThanOrEqual(1);
     expect(Math.abs(f!.y + f!.height - (d!.y + d!.height))).toBeLessThanOrEqual(1);

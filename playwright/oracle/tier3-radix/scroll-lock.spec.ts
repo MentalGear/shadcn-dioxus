@@ -80,6 +80,8 @@ import { test, expect } from "../../fixtures";
 import { type Page } from "@playwright/test";
 import { BASE_URL } from "../../base-url";
 import { gotoHydrated } from "../../hydration";
+import { measureAtRest } from "../../animations";
+import { demoRole } from "../../demo-frame";
 
 const NAV_TIMEOUT = 20 * 60 * 1000; // first run compiles the app
 
@@ -183,7 +185,7 @@ async function rightEdgeMarkerRight(page: Page): Promise<number> {
         "position:fixed; top:0; right:0; width:4px; height:4px; pointer-events:none; z-index:2147483647;";
       document.body.appendChild(marker);
     }
-    return marker.getBoundingClientRect().right;
+    return marker.getBoundingClientRect().right; // rest-ok: a 4px probe element the page appends itself; it never animates
   });
 }
 
@@ -205,7 +207,7 @@ test.describe("Dialog locks and releases page scroll", () => {
     await assertPageIsScrollable(page);
     const rightBefore = await rightEdgeMarkerRight(page);
 
-    await page.getByRole("button", { name: "Show Dialog" }).click();
+    await demoRole(page, "button").click();
     await expect(page.getByRole("dialog")).toBeVisible();
     await assertNoHorizontalShift(page, rightBefore, "while the dialog is open");
 
@@ -226,14 +228,14 @@ test.describe("Dialog locks and releases page scroll", () => {
     const rightBefore = await rightEdgeMarkerRight(page);
 
     // Open the outer dialog.
-    await page.getByRole("button", { name: "Show Dialog" }).click();
+    await demoRole(page, "button").click();
     const outer = page.getByRole("dialog").first();
     await expect(outer).toBeVisible();
     await assertScrollIsLocked(page);
     await assertNoHorizontalShift(page, rightBefore, "with the outer dialog open");
 
     // Open the nested dialog from inside the outer one's content.
-    await page.getByRole("button", { name: "Open Nested Dialog" }).click();
+    await page.getByRole("dialog").first().getByRole("button").first().click();
     await expect(page.getByRole("dialog")).toHaveCount(2);
     await assertScrollIsLocked(page);
     await assertNoHorizontalShift(page, rightBefore, "with both dialogs open");
@@ -241,7 +243,7 @@ test.describe("Dialog locks and releases page scroll", () => {
     // Close the inner dialog only -- the outer one is still open, so the
     // page must still be locked. This is the refcount case: a naive
     // "unlock whenever any modal closes" implementation fails here.
-    await page.getByRole("button", { name: "Close Nested" }).click();
+    await page.getByRole("dialog").last().getByRole("button").first().click();
     await expect(page.getByRole("dialog")).toHaveCount(1);
     await assertScrollIsLocked(page);
     await assertNoHorizontalShift(page, rightBefore, "with only the outer dialog open again");
@@ -251,7 +253,7 @@ test.describe("Dialog locks and releases page scroll", () => {
     // scroll-lock refcount, not the (separately covered, and here
     // momentarily still settling right after the inner dialog's unmount)
     // Escape-priority stack in `use_global_escape_listener` (lib.rs).
-    await page.getByRole("dialog").getByRole("button", { name: "Close" }).click();
+    await page.getByRole("dialog").locator('[data-slot="dialog-close"]').click();
     await expect(page.getByRole("dialog")).toHaveCount(0);
     await assertScrollIsUnlocked(page);
     await assertNoHorizontalShift(page, rightBefore, "after both dialogs close and scroll unlocks");
@@ -264,7 +266,7 @@ test.describe("AlertDialog locks and releases page scroll", () => {
     await assertPageIsScrollable(page);
     const rightBefore = await rightEdgeMarkerRight(page);
 
-    await page.getByRole("button", { name: "Show Alert Dialog" }).click();
+    await demoRole(page, "button").click();
     await expect(page.getByRole("alertdialog")).toBeVisible();
     await assertNoHorizontalShift(page, rightBefore, "while the alert dialog is open");
 
@@ -289,7 +291,7 @@ test.describe("Popover (is_modal: true) locks and releases page scroll", () => {
     await assertPageIsScrollable(page);
     const rightBefore = await rightEdgeMarkerRight(page);
 
-    await page.getByRole("button", { name: "Open modal popover" }).click();
+    await demoRole(page, "button", 0, "modal").click();
     await expect(page.getByRole("dialog")).toBeVisible();
     await assertNoHorizontalShift(page, rightBefore, "while the popover is open");
 
@@ -311,7 +313,7 @@ test.describe("Popover (non-modal default) never takes the scroll lock", () => {
     await assertPageIsScrollable(page);
     const rightBefore = await rightEdgeMarkerRight(page);
 
-    await page.getByRole("button", { name: "Show Popover", exact: true }).click();
+    await demoRole(page, "button").click();
     await expect(page.getByRole("dialog")).toBeVisible();
     await assertNoHorizontalShift(page, rightBefore, "while the non-modal popover is open");
 
@@ -336,7 +338,7 @@ test.describe("DropdownMenu locks and releases page scroll", () => {
     await assertPageIsScrollable(page);
     const rightBefore = await rightEdgeMarkerRight(page);
 
-    const trigger = page.getByRole("button", { name: "Open Menu" });
+    const trigger = demoRole(page, "button");
     await trigger.click();
     await expect(trigger).toHaveAttribute("data-state", "open");
     await assertNoHorizontalShift(page, rightBefore, "while the dropdown menu is open");
@@ -359,7 +361,7 @@ test.describe("ContextMenu locks and releases page scroll", () => {
     await assertPageIsScrollable(page);
     const rightBefore = await rightEdgeMarkerRight(page);
 
-    await page.getByRole("button", { name: "right click here" }).click({ button: "right" });
+    await demoRole(page, "button").click({ button: "right" });
     await expect(page.getByRole("menu")).toHaveAttribute("data-state", "open");
     await assertNoHorizontalShift(page, rightBefore, "while the context menu is open");
 
@@ -392,7 +394,7 @@ test.describe("Select locks and releases page scroll", () => {
 
     // Same role/locator convention as select.spec.ts's `singleSelectTrigger`
     // -- docs/backlog.md row 8 gave the trigger role="combobox".
-    const trigger = page.getByRole("combobox").filter({ hasText: /Select an option|Apple|Banana/ });
+    const trigger = demoRole(page, "combobox");
     await trigger.click();
     const listbox = page.getByRole("listbox");
     await expect(listbox).toHaveAttribute("data-state", "open");
@@ -513,7 +515,7 @@ test.describe("Dialog does not leave the page permanently scrolled after a lock 
 
     const before = await page.evaluate(() => window.scrollY);
 
-    await page.getByRole("button", { name: "Show Dialog" }).click();
+    await demoRole(page, "button").click();
     await expect(page.getByRole("dialog")).toBeVisible();
 
     await page.keyboard.press("Escape");
@@ -573,7 +575,7 @@ test.describe("scrollbar-gutter reservation survives the lock itself, not just i
 
     const before = await page.evaluate(() => document.documentElement.clientWidth);
 
-    await page.getByRole("button", { name: "Show Dialog" }).click();
+    await demoRole(page, "button").click();
     await expect(page.getByRole("dialog")).toBeVisible();
 
     const duringOpen = await page.evaluate(() => document.documentElement.clientWidth);
@@ -629,9 +631,9 @@ test.describe("Breakpoint-flip regression: exact 1027px viewport with a classic 
 
     const nav = page.locator("nav.dx-preview-navbar");
     const widthBefore = await page.evaluate(() => document.documentElement.clientWidth);
-    const navBefore = await nav.boundingBox();
+    const navBefore = await measureAtRest(nav);
 
-    await page.getByRole("button", { name: "Show Dialog" }).click();
+    await demoRole(page, "button").click();
     await expect(page.getByRole("dialog")).toBeVisible();
 
     expect(
@@ -639,7 +641,7 @@ test.describe("Breakpoint-flip regression: exact 1027px viewport with a classic 
       "clientWidth must not change the instant the modal locks scroll, at the exact width the user's report was measured at",
     ).toBe(widthBefore);
     expect(
-      await nav.boundingBox(),
+      await measureAtRest(nav),
       "the sticky top nav must not reflow/shift while the modal is open",
     ).toEqual(navBefore);
 
@@ -660,7 +662,7 @@ test.describe("Breakpoint-flip regression: exact 1027px viewport with a classic 
       widthBefore,
     );
     expect(
-      await nav.boundingBox(),
+      await measureAtRest(nav),
       "the sticky top nav must be back exactly where it was once the modal closes",
     ).toEqual(navBefore);
   });

@@ -127,22 +127,27 @@
   max-inline-size: 250px;
 }
 
-/* A fixed-height chart (`Chart`'s `height` prop) before the first
- * measurement (server render, pre-hydration, the first client render): the
- * initial-width viewBox is stretched to the box (`preserveAspectRatio=
- * "none"`) -- exact height, so only x is scaled, and every mark lands within
- * a few px of where the measured render puts it. What a non-uniform stretch
- * would distort is made safe: strokes keep their width (`non-scaling-stroke`)
- * and the text -- which would be stretched sideways -- is held back and fades
- * in when the measured render replaces it (`data-measured="true"`). An
- * aspect-ratio chart needs none of this: its pre-measure render is a uniform
- * scale of the final one. */
-.dx-chart [data-slot="chart-svg"][data-fit="width"] text {
+/* A chart before its first measurement (server render, pre-hydration, the
+ * first client render) is drawn at an assumed width inside a box that is
+ * already final: the svg's CSS height is the same in that render and in every
+ * measured one (`chart.rs`, `svg_style`), so nothing around the chart moves
+ * when the page hydrates (backlog row 215). Only the drawing is a stand-in:
+ * the initial-width viewBox is squeezed into the real box
+ * (`preserveAspectRatio="none"`), so every mark lands within a few px of
+ * where the measured render puts it. What that squeeze would distort is made
+ * safe: strokes keep their width (`non-scaling-stroke`) and the text -- which
+ * would be a different size, and a different set of ticks, than the measured
+ * one -- is held back and fades in when the measured render replaces it
+ * (`data-measured="true"`). Only where scripts run: without JS nothing ever
+ * replaces the stand-in, so its text stays. */
+.dx-chart [data-slot="chart-svg"] text {
   transition: opacity var(--dx-motion-duration-base) var(--dx-motion-ease);
 }
 
-.dx-chart [data-slot="chart-svg"][data-fit="width"][data-measured="false"] text {
-  opacity: 0;
+@media (scripting: enabled) {
+  .dx-chart [data-slot="chart-svg"][data-measured="false"] text {
+    opacity: 0;
+  }
 }
 
 .dx-chart [data-slot="chart-svg"][data-measured="false"] [data-slot="chart-line"],
@@ -152,7 +157,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .dx-chart [data-slot="chart-svg"][data-fit="width"] text {
+  .dx-chart [data-slot="chart-svg"] text {
     transition: none;
   }
 }
@@ -857,6 +862,14 @@
   from {
     opacity: 0;
   }
+}
+
+/* The demo cards' header select, time range or month (shadcn's `w-[160px]`). A fixed width
+ * keeps the trigger -- and the card title beside it -- the same box before
+ * and after hydration: the prerendered select has no selected label yet and
+ * would be as wide as its placeholder, then jump to the label's width. */
+.dx-chart-range-trigger {
+  inline-size: 10rem;
 }
 
 /* ---------------------------------------------------------------------- *

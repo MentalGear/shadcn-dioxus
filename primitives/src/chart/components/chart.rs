@@ -17,13 +17,17 @@
 //!   themed stylesheet caps a polar chart's container at 250px, shadcn's
 //!   `max-h-[250px] mx-auto`).
 //! - **Before measuring** (the server render and the first client render,
-//!   which therefore agree byte for byte -- no hydration mismatch) the size
-//!   is [`ChartProps::width`] (default 369 Cartesian / 250 polar: shadcn's
-//!   3-column card) by the same height rule. That render already fills its
-//!   container: in aspect mode the svg is `width: 100%; height: auto`, a
-//!   uniform scale of the final drawing; in fixed-height mode it is exactly
-//!   `height` px tall and stretched across (`preserveAspectRatio="none"`,
-//!   text hidden until measured -- `data-measured="false"`).
+//!   which therefore agree byte for byte -- no hydration mismatch) the
+//!   drawing is made at [`ChartProps::width`] (default 369 Cartesian / 250
+//!   polar: shadcn's 3-column card) by the same height rule. The svg's BOX,
+//!   though, never depends on the measurement: its CSS height is the same
+//!   declaration in the server render and in every measured render (a
+//!   fixed `height` px, or in aspect mode the wrapper's width over `aspect`
+//!   in container-query units, see `aspect_height_css`), so the page does
+//!   not re-flow when it hydrates (backlog row 215). The unmeasured
+//!   drawing is squeezed into that box (`preserveAspectRatio="none"`,
+//!   text hidden until measured -- `data-measured="false"`); the measured
+//!   one replaces it inside a box that is already final.
 //! - **A legend lives inside that box**, as in Recharts (whose `<Legend>`
 //!   shrinks the plot by its own height): with a `ChartLegend` in the same
 //!   container, the svg is the box minus the legend's block size and the
@@ -436,12 +440,7 @@ pub fn Chart(props: ChartProps) -> Element {
             entered.set(true);
         }
     });
-    let ChartSize {
-        width,
-        height,
-        fixed_height,
-        pending,
-    } = ChartSize::resolve(
+    let size = ChartSize::resolve(
         kind,
         props.width,
         props.height,
@@ -454,6 +453,13 @@ pub fn Chart(props: ChartProps) -> Element {
         (ctx.has_legend)(),
         props.legend_size,
     ));
+    let ChartSize {
+        width,
+        height,
+        fixed_height,
+        pending,
+        ..
+    } = size;
 
     // Only Area and Bar have a stacking construction -- an allow-list, so a
     // kind added later is un-stacked until someone opts it in here.
@@ -631,6 +637,12 @@ pub fn Chart(props: ChartProps) -> Element {
     // Structural/aria wiring this component owns wins over a caller's
     // same-named attribute (`merge_attributes`, owned last); `class` still
     // concatenates.
+    // The caller's own `style` is folded in after the container-type the svg's CSS height needs.
+    let (caller_style, caller_rest) = crate::fold_style_attributes(props.attributes);
+    let wrapper_style = match caller_style {
+        Some(caller) => format!("{WRAPPER_STYLE}; {caller}"),
+        None => WRAPPER_STYLE.to_string(),
+    };
     let owned = attributes!(div {
         "data-slot": "chart",
         role: wrapper_role,
@@ -638,8 +650,9 @@ pub fn Chart(props: ChartProps) -> Element {
         tabindex: wrapper_tabindex,
         "data-direction": direction.as_str(),
         "data-chart-key": paint_key.cloned(),
+        style: wrapper_style,
     });
-    let merged = merge_attributes(vec![props.attributes, owned, enter.attributes()]);
+    let merged = merge_attributes(vec![caller_rest, owned, enter.attributes()]);
     let animate =
         (props.animate && !pending && plays_entrance(hydrated, painted_in_view(), entered()))
             .then_some("true");
@@ -749,12 +762,12 @@ pub fn Chart(props: ChartProps) -> Element {
                 role: "img",
                 "aria-label": "{props.aria_label}",
                 view_box: "0 0 {fmt_num(width)} {fmt_num(height)}",
-                style: svg_style(fixed_height.then_some(height), ctx_layout.zero_y),
+                style: svg_style(&size, ctx_layout.zero_y),
                 // Fixed-height mode, pre-measure: stretch the initial-width
                 // viewBox across the container (the height is already exact,
                 // so only x is scaled; text is hidden by the stylesheet
                 // meanwhile). Measured, the viewBox IS the box.
-                preserve_aspect_ratio: (fixed_height && pending).then_some("none"),
+                preserve_aspect_ratio: pending.then_some("none"),
                 "data-fit": fixed_height.then_some("width"),
                 "data-measured": if pending { "false" } else { "true" },
                 "data-animate": animate,
@@ -946,6 +959,10 @@ struct ChartSize {
     /// No usable measurement yet (the server and the first client render):
     /// drawn at the initial width.
     pending: bool,
+    /// Width / height of the whole box (aspect mode), after the fallbacks.
+    aspect: f64,
+    /// The px the legend takes out of the box ([`ChartSize::without_legend`]).
+    reserve: f64,
 }
 
 impl ChartSize {
@@ -978,6 +995,8 @@ impl ChartSize {
             height: fixed.unwrap_or((width / aspect).round()),
             fixed_height: fixed.is_some(),
             pending: usable.is_none(),
+            aspect,
+            reserve: 0.0,
         }
     }
 }
@@ -1019,21 +1038,49 @@ impl ChartSize {
         let reserve = reserve.clamp(0.0, (self.height / 2.0).floor());
         Self {
             height: self.height - reserve,
+            reserve,
             ..self
         }
     }
 }
 
 /// The SVG's inline style: the value axis' zero (the bar animation's
-/// origin), plus -- fixed-height mode -- the CSS height that beats the
-/// stylesheet's `height: auto`.
-fn svg_style(fixed_height: Option<f64>, zero: f64) -> String {
+/// origin), plus the CSS height that beats the stylesheet's `height: auto`.
+///
+/// The svg's box is decided by CSS alone, in every state: a fixed-height
+/// chart is exactly `height` px; an aspect chart is [`aspect_height_css`] of
+/// its wrapper's width. The server render, the first client render and every
+/// measured render therefore lay the svg out identically (no box moves when
+/// the page hydrates) -- the viewBox, which is the only thing that changes
+/// with the measurement, just redraws inside a box that is already final.
+fn svg_style(size: &ChartSize, zero: f64) -> String {
     let zero = format!("--dx-chart-zero: {}px", fmt_num(zero));
-    match fixed_height {
-        Some(h) => format!("{zero}; height: {}px", fmt_num(h)),
-        None => zero,
+    if size.fixed_height {
+        format!("{zero}; height: {}px", fmt_num(size.height))
+    } else {
+        format!("{zero}; {}", aspect_height_css(size.aspect, size.reserve))
     }
 }
+
+/// CSS for the aspect-mode svg height: the same arithmetic as
+/// [`ChartSize::resolve`] + [`ChartSize::without_legend`] -- the wrapper's
+/// content width rounded to a whole px (floor [`MIN_WIDTH`]), divided by
+/// `aspect` and rounded to a whole px, minus the legend's room (at most half
+/// of it) -- expressed with container-query units, so it needs no
+/// measurement. `cqw` resolves against the wrapper (`container-type:
+/// inline-size`, [`WRAPPER_STYLE`]). A browser without CSS `round()` or
+/// `cqw` drops the whole declaration and keeps the stylesheet's
+/// `height: auto`, i.e. the viewBox's own ratio.
+fn aspect_height_css(aspect: f64, reserve: f64) -> String {
+    format!(
+        "--dx-chart-box: round(max(round(100cqw, 1px), {MIN_WIDTH}px) / {aspect}, 1px); \
+         height: calc(var(--dx-chart-box) - min({reserve}px, round(down, var(--dx-chart-box) / 2, 1px)))",
+    )
+}
+
+/// The wrapper is the size container [`aspect_height_css`] measures its
+/// width in. Inline size only: the height stays the content's.
+const WRAPPER_STYLE: &str = "container-type: inline-size";
 
 /// Prefix of an id allocated by the client (`format_unique_id` in `lib.rs`): a chart whose
 /// `use_unique_id` starts with it was created in the browser, not hydrated from server HTML.
@@ -1360,13 +1407,39 @@ mod tests {
     }
 
     #[test]
-    fn aspect_mode_ssr_is_a_uniform_scale_of_the_final_drawing() {
+    fn aspect_mode_ssr_box_is_css_sized_like_every_measured_render() {
+        // Row 215: the svg's box is the same CSS in the server render and in
+        // every measured render, so hydration cannot move it.
         for kind in [ChartKind::Area, ChartKind::Bar, ChartKind::Line] {
             let html = render(kind, false, true);
             assert!(!html.contains("data-fit"), "{kind:?}");
-            assert!(!html.contains("preserveAspectRatio"), "{kind:?}");
-            assert!(!html.contains("height: "), "{kind:?}: {html}");
+            assert!(html.contains("container-type: inline-size"), "{kind:?}");
+            assert!(html.contains("round(100cqw, 1px)"), "{kind:?}: {html}");
+            assert!(html.contains("1.7777777777777777"), "{kind:?}: {html}");
+            assert!(html.contains("height: calc("), "{kind:?}: {html}");
+            // Drawn at the initial width, squeezed into the final box.
+            assert!(html.contains(r#"preserveAspectRatio="none""#), "{kind:?}");
         }
+        let size = |measured| {
+            ChartSize::resolve(ChartKind::Area, None, None, None, measured).without_legend(28.0)
+        };
+        let (pending, measured) = (size(None), size(Some(336.0)));
+        assert_eq!(
+            svg_style(&pending, 0.0),
+            svg_style(&measured, 0.0),
+            "the svg style does not depend on the measurement"
+        );
+        // Polar: a square.
+        let polar = ChartSize::resolve(ChartKind::Pie, None, None, None, None);
+        assert!(svg_style(&polar, 0.0).contains("/ 1, 1px)"), "{polar:?}");
+    }
+
+    #[test]
+    fn the_css_height_is_the_resolved_height() {
+        // The CSS arithmetic and `resolve` + `without_legend` are one rule.
+        let css = aspect_height_css(16.0 / 9.0, 28.0);
+        assert!(css.contains("max(round(100cqw, 1px), 100px) / 1.7777777777777777, 1px)"));
+        assert!(css.contains("min(28px, round(down, var(--dx-chart-box) / 2, 1px))"));
     }
 
     #[test]

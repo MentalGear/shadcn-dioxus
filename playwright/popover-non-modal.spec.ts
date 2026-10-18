@@ -16,6 +16,7 @@ import type { Page } from "@playwright/test";
 import { test, expect } from "./fixtures";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
+import { measureAtRest } from "./animations";
 
 const NAV_TIMEOUT = 20 * 60 * 1000; // first run compiles the app
 const DEFAULT_URL = `${BASE_URL}/component/?name=popover&`;
@@ -142,8 +143,8 @@ test.describe("non-modal Popover (the default): the page behind stays interactiv
     await openDefault(page);
     await addBackgroundButton(page);
     const bg = page.locator("#pnm-bg");
-    const box = (await bg.boundingBox())!;
-    const dbox = (await dialog(page).boundingBox())!;
+    const box = (await measureAtRest(bg));
+    const dbox = (await measureAtRest(dialog(page)));
     const cx = box.x + box.width / 2;
     const cy = box.y + box.height / 2;
     expect(
