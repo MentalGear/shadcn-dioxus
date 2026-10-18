@@ -26,9 +26,10 @@ deployed first).
 
 ## Merged, not yet deployed
 
-The round planned in `next-round-plan-2026-10-15.md` (ten lanes, run 2026-10-18) is merged on the session branch:
-rows 214, 215, 217 (partly), 219, 220, 222-236, 238, plus the follow-ups 239-244 recorded as new rows. Open before
-the deploy: the full-suite validation on the merged tree (classified against the recorded baseline failures), the
+The round planned in `next-round-plan-2026-10-15.md` (twelve lanes, incl. the follow-up mousefocus: mouse opens focus the first control, run 2026-10-18) is merged on
+the session branch: rows 214, 215, 217 (partly), 219, 220, 222-236, 238, plus the follow-ups 239-244 recorded as new
+rows. The full gates went red once on the merged head 88cd93c9 (check-attr-spread-collision, ScrollArea), fixed in
+fafcb96b; its full gate run and the validation (agent on 88cd93c9) are in progress. Open before the deploy: the full-suite validation on the merged tree (classified against the recorded baseline failures), the
 computed-style snapshot compared with N5, the registry install smoke, then PR, merge and the release deploy. Post
 the site link with the main commit once the Pages publish succeeds.
 
@@ -58,7 +59,6 @@ sweeps, test-suite prune last), 7 (held items 136, 157). Full table with the rea
 - Decisions before round 1 ends: CI back on (rows 4, 33); upstream engagement and the upstream filings of rows 130,
   131, 98 (rows 6, 14: outward-facing, only with the owner's go); older WebKit (row 15); components beyond shadcn
   (row 16, then its own round).
-- Markdown component details (E2) and the Questionnaire (row 136, no longer on hold per the 2026-10-18 order).
 
 ## Rules in force
 
