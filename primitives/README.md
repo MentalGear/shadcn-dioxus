@@ -29,6 +29,17 @@ Dioxus primitives is an ARIA-accessible, unstyled, foundational component librar
 
 If you are looking for a starting point to develop a styled component library for your application, you can use our shadcn-style [dioxus components](https://dioxuslabs.github.io/components) or a community library.
 
+## Cargo features
+
+An app compiles only the crates its components use. `default` is `router`; `dx components add` always passes `--no-default-features` and then each component's own `features`.
+
+| Feature | Enables | Extra crates |
+|---|---|---|
+| `web` | the browser arm of the overlay and listener code (also `time/wasm-bindgen` when `calendar` is on) | none |
+| `router` | `navbar` (needs `dioxus-router`) | about 40 |
+| `calendar` | `calendar` and `date_picker` (their public types are `time::Date` and friends) | `time` and 5 more, `num-integer` |
+| `color-picker` | `color_picker` (its props use `palette::Hsv` / `Srgb<u8>`) | `palette` and 11 more |
+
 ## License
 
 This project is dual licensed under the [MIT](./LICENSE-MIT) and [Apache 2.0](./LICENSE-APACHE) licenses.

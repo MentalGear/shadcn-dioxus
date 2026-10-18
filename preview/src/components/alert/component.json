@@ -6,7 +6,7 @@
   "cargoDependencies": [
     {
       "name": "dioxus-icons",
-      "version": "0.1.0"
+      "version": "=0.1.0"
     },
     {
       "name": "dioxus-primitives",
