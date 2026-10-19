@@ -1,7 +1,7 @@
 ---
 id: 264
 title: "Non-modal Dialog/Drawer: aria-modal and an outside-press switch"
-status: "LANDED 2026-10-19 (aria-modal derived per arm; disable_pointer_dismissal on Dialog, forwarded by Drawer)"
+status: "LANDED 2026-10-19 (aria-modal derived per arm; disable_pointer_dismissal on Dialog, forwarded by…"
 size: "S"
 area: primitives
 updated: 2026-10-19
@@ -15,7 +15,7 @@ The non-modal Dialog arm still renders `aria-modal="true"`, and a non-modal Draw
 
 ## Status / trigger
 
-**BACKLOG (left open by row 156, 2026-10-19)**
+**LANDED 2026-10-19 (aria-modal derived per arm; disable_pointer_dismissal on Dialog, forwarded by Drawer).** Was BACKLOG (left open by row 156, 2026-10-19).
 
 ## Size
 

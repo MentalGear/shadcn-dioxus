@@ -34,7 +34,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (83)
+## Open rows (78)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -97,12 +97,9 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [153](backlog/153-native-find-in-page-for-windowed-virtual-lists.md) | Native find-in-page for WINDOWED virtual lists: keep per-item text in the DOM as hidden="until-found"… | OPEN (research) -- owner idea 2026-10-05; nothing prototyped | M | virtual |
 | [154](backlog/154-shared-virtualization-engine-one-engine-in.md) | Shared virtualization engine: ONE engine in primitives/src/virtual/ (core, strategy, DOM bridge) that every… | DESIGN NOTE -- first note recorded 2026-10-05 from the owner question whether the virtualized… | S (note); the build is not estimated | virtual |
 | [155](backlog/155-shadcn-parity-wave-group-1-the-invalid-ring.md) | shadcn parity wave (group 1, the invalid ring, LANDED 2026-10-13 with row 145's state recipes): the 27 "Add… | LANDED: group 1 2026-10-13 (with row 145's state recipes), group 7's Sheet side 2026-10-14 (rows… | M-L in total (23 of the 27 are S; four… | theme |
-| [157](backlog/157-inputotp-hard-codes-a-numeric-keypad-inputmode.md) | InputOtp hard-codes a numeric keypad: inputmode="numeric" and pattern="[0-9]*" are fixed, so alphanumeric… | COLD (owner decision 2026-10-05): not scheduled, NEEDS OWNER APPROVAL before anyone picks it up.… | S-M (the comparison rates it M) | inputs |
 | [158](backlog/158-theme-follow-ups-accept-shadcn-s-dark-class-as.md) | Theme follow-ups: accept shadcn's .dark class as an alias of data-theme="dark", and suppress transitions… | PART (a) LANDED 2026-10-15 (by construction, lane x158dark 7d16044 + 3a3a9fa; owner approved… | S + S | theme |
 | [161](backlog/161-rename-the-website-to-shadcn-dioxus-and-give-it.md) | Rename the website to "shadcn-dioxus" and give it a real favicon (an SVG that follows light/dark, a PNG… | IN PROGRESS (owner decision 2026-10-10) -- the site brand and favicon are being changed now (BRAND… | S-M | docs |
-| [162](backlog/162-self-host-the-docs-site-s-fonts-no-runtime.md) | Self-host the docs site's fonts (no runtime requests to Google) and give the library --dx-font-sans /… | OWNER DECIDED 2026-10-05: option (a), self-host Geist + Geist Mono (~52.5 KB). Not started, except… | S-M | docs |
 | [164](backlog/164-a-fixtures-goto-that-waits-for-hydration-49.md) | A fixtures goto that waits for hydration (49 spec files lack the wait), and migrate the 362 legacy ?name=… | OPEN -- recorded 2026-10-05 (audit); scheduled in the next-session order (step 4, just before row… | M (the fixture is S; the migration is… | tests |
-| [165](backlog/165-a-generated-props-reference-table-on-every.md) | A generated props reference table on every component's docs page, produced in preview/build.rs (~100 public… | OPEN -- recorded 2026-10-05 (audit); scheduled in the next-session order (step 4, after the… | M (the generator is S-M; writing ~100… | build |
 | [167](backlog/167-migrate-the-52-hand-paired-listener-sites-onto.md) | Migrate the 52 hand-paired listener sites onto use_js_listeners, shrinking PAIRED_BY_HAND in… | OPEN -- recorded 2026-10-05 (follow-up of row 159, which landed 2026-10-05 in round 3); scheduled… | M (mechanical per site, 11 files) | misc |
 | [170](backlog/170-cross-component-css-overrides-190-sites-in-12.md) | Cross-component CSS overrides: 190 sites in 12 sheets declare, in one component's stylesheet, a property that… | OPEN (construction started) -- recorded 2026-10-05 (round 3: the FIELD-VAR and STYLE-DELIVERY… | M (the decision and the prototype are… | theme |
 | [174](backlog/174-home-overview-page-scroll-jank-re-profiled-2026.md) | Home/overview page scroll jank, re-profiled 2026-10-10 | PROFILED (partial, stopped by the owner) -- 2026-10-10; causes 2 and 4 LANDED 2026-10-10 (rows 177… | S to M per fix (order below) | misc |
@@ -118,11 +115,9 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [244](backlog/244-virtualgrid-x-y-virtualization-that-windows.md) | VirtualGrid: x/y virtualization that windows rows AND columns (a data grid, an image grid) | BACKLOG (owner question 2026-10-18) | L | virtual |
 | [245](backlog/245-snapshot-harness-tooltip-and-skip-link.md) | Computed-style snapshot harness: tooltip timing nondeterminism and the skip link counted as an open-state item | BACKLOG (validation 2026-10-19) | S | tests |
 | [246](backlog/246-snapshot-buckets-too-coarse.md) | Snapshot diff buckets are page-level on some routes | BACKLOG (validation 2026-10-19) | S-M | tests |
-| [261](backlog/261-theme-mono-font-token.md) | A --dx-font-mono theme token | BACKLOG (found 2026-10-19 by lane markdown) | S | theme |
-| [264](backlog/264-non-modal-dialog-pointer-dismissal-and-aria-modal.md) | Non-modal Dialog/Drawer: aria-modal and an outside-press switch | BACKLOG (left open by row 156, 2026-10-19) | S | primitives |
 | [265](backlog/265-upstream-ai-elements-code-block-trace-chat.md) | Upstream ai-elements (chat, message, code-block, trace, checkpoint, ...) vs our chat kit | BACKLOG (found by row 213 item 10, 2026-10-19). Source… | L | chat |
 
-## Done rows (169)
+## Done rows (174)
 
 | # | Item | Updated |
 |---|---|---|
@@ -223,9 +218,12 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [149](backlog/done/149-scroll-lock-rs-installs-non-passive-wheel.md) | scroll_lock.rs installs non-passive wheel/touchmove listeners on window permanently after the first lock | 2026-10-05 |
 | [151](backlog/done/151-a-document-link-stylesheet-can-be-recorded-as.md) | A document::Link stylesheet can be recorded as present and never inserted: a subtree torn down in the turn it… | 2026-10-04 |
 | [156](backlog/done/156-drawer-has-fallen-behind-shadcn-it-moved-from.md) | Drawer has fallen behind shadcn: it moved from Vaul to Base UI Drawer (snap points, nested drawers, non-modal… | 2026-10-19 |
+| [157](backlog/done/157-inputotp-hard-codes-a-numeric-keypad-inputmode.md) | InputOtp hard-codes a numeric keypad: inputmode="numeric" and pattern="[0-9]*" are fixed, so alphanumeric… | 2026-10-19 |
 | [159](backlog/done/159-js-listeners-added-through-eval-or-shipped.md) | JS listeners added through eval (or shipped scripts) and never removed: a class, widening row 149 | 2026-10-05 |
 | [160](backlog/done/160-two-small-bugs-the-shadcn-comparison-found-tabs.md) | Two small bugs the shadcn comparison found: Tabs Ghost sets data-variant="ghost" that no CSS styles… | 2026-10-05 |
+| [162](backlog/done/162-self-host-the-docs-site-s-fonts-no-runtime.md) | Self-host the docs site's fonts (no runtime requests to Google) and give the library --dx-font-sans /… | 2026-10-19 |
 | [163](backlog/done/163-wrap-hover-styles-in-media-hover-hover-by.md) | Wrap hover styles in @media (hover: hover), by codemod plus a gate: 80 :hover blocks in 39 stylesheets leave… | 2026-10-14 |
+| [165](backlog/done/165-a-generated-props-reference-table-on-every.md) | A generated props reference table on every component's docs page, produced in preview/build.rs (~100 public… | 2026-10-05 |
 | [166](backlog/done/166-hovercard-and-tooltip-delay-close-delay-props.md) | HoverCard and Tooltip delay / close_delay props (Radix and Base UI parity) | 2026-10-15 |
 | [168](backlog/done/168-the-disk-full-class-lanes-running-raw-cargo.md) | The disk-full class: lanes running raw cargo with incremental compilation on regrow the shared gates target… | 2026-10-11 |
 | [169](backlog/done/169-open-owner-question-should-popover-be-non-modal.md) | Open owner question: should Popover be non-modal by default (shadcn / Radix parity)? | 2026-10-13 |
@@ -293,8 +291,10 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [240](backlog/done/240-base-ui-focus-model-what-to-lift-beyond-row-226.md) | Base UI focus model: what to lift beyond row 226 | 2026-10-19 |
 | [243](backlog/done/243-button-hover-fills-3-levels-off-shadcn.md) | Button hover fills 3 levels off shadcn | 2026-10-18 |
 | [260](backlog/done/260-hover-color-mix-space-one-token-everywhere.md) | Every hover color-mix reads the theme's mix space (finish row 243) | 2026-10-19 |
+| [261](backlog/done/261-theme-mono-font-token.md) | A --dx-font-mono theme token | 2026-10-19 |
 | [262](backlog/done/262-toast-f6-one-listener-per-page.md) | Toast: one F6 listener per page, not one per ToastProvider | 2026-10-19 |
 | [263](backlog/done/263-toast-remaining-base-ui-behaviour.md) | Toast: pause on hover/focus, vertical swipe, legacy keyframes on translate | 2026-10-19 |
+| [264](backlog/done/264-non-modal-dialog-pointer-dismissal-and-aria-modal.md) | Non-modal Dialog/Drawer: aria-modal and an outside-press switch | 2026-10-19 |
 
 ## Notes (8)
 
