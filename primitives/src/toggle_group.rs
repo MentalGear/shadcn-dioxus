@@ -2,7 +2,7 @@
 
 use crate::{
     collection::{collection_item, use_collection_provider, use_item, CollectionState},
-    direction::{use_direction, Direction, HorizontalNav},
+    direction::{use_direction, use_direction_signal, Direction, HorizontalNav},
     merge_attributes,
     toggle::Toggle,
     use_controlled,
@@ -30,7 +30,7 @@ struct ToggleGroupCtx {
 
     // Text direction, for `ArrowLeft`/`ArrowRight`'s roving-focus role --
     // see `direction::Direction::resolve_horizontal`'s doc.
-    direction: Direction,
+    direction: ReadSignal<Direction>,
 }
 
 impl ToggleGroupCtx {
@@ -162,6 +162,7 @@ pub fn ToggleGroup(props: ToggleGroupProps) -> Element {
         props.on_pressed_change,
     );
     let direction = use_direction(props.dir);
+    let direction_signal = use_direction_signal(direction);
 
     let focus = use_collection_provider(props.roving_loop);
     let mut ctx = use_context_provider(|| ToggleGroupCtx {
@@ -173,7 +174,7 @@ pub fn ToggleGroup(props: ToggleGroupProps) -> Element {
         focus,
         horizontal: props.horizontal,
         roving_loop: props.roving_loop,
-        direction,
+        direction: direction_signal,
     });
 
     let owned = attributes!(div {
@@ -288,7 +289,7 @@ pub fn ToggleItem(props: ToggleItemProps) -> Element {
                     Key::ArrowUp if !horizontal => ctx.focus_prev(),
                     Key::ArrowDown if !horizontal => ctx.focus_next(),
                     Key::ArrowLeft | Key::ArrowRight if horizontal => {
-                        match ctx.direction.resolve_horizontal(&key) {
+                        match (ctx.direction)().resolve_horizontal(&key) {
                             Some(HorizontalNav::Prev) => ctx.focus_prev(),
                             Some(HorizontalNav::Next) => ctx.focus_next(),
                             None => {}

@@ -169,6 +169,22 @@ pub fn DirectionProvider(props: DirectionProviderProps) -> Element {
     props.children
 }
 
+/// A reactive handle on an already-resolved direction, for a context struct.
+///
+/// A component that stores `use_direction(..)`'s plain value in a mount-time
+/// context (`use_context_provider(|| Ctx { direction, .. })`) freezes it: the
+/// closure runs once, so descendants would keep the first direction forever.
+/// Store `use_direction_signal(direction)` instead and read it with
+/// `(ctx.direction)()`; the owner updates it on every render in which the
+/// resolved direction changed.
+pub fn use_direction_signal(current: Direction) -> ReadSignal<Direction> {
+    let mut signal = use_signal(|| current);
+    if *signal.peek() != current {
+        signal.set(current);
+    }
+    signal.into()
+}
+
 /// Resolve the effective [`Direction`]: `local` if given, else the nearest
 /// [`DirectionProvider`] ancestor's, else [`Direction::Ltr`].
 ///

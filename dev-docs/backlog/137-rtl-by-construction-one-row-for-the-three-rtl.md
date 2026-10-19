@@ -1,7 +1,7 @@
 ---
 id: 137
 title: "RTL by construction -- one row for the three RTL threads: row 13's open follow-ups (optional RTL for…"
-status: "IN PROGRESS 2026-10-19 (lane rtl: a-e built, see Update 2026-10-19)"
+status: "BACKLOG, MERGED 2026-10-05 (owner decision); the owner then CONFIRMED the solve-by-construction…"
 size: "M (the docs page alone is S; parts a…"
 area: docs
 updated: 2026-10-05

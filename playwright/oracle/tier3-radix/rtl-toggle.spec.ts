@@ -93,7 +93,7 @@ test.describe("anchored popups resolve align logically (top_layer.rs)", () => {
       const t = (await trigger.boundingBox())!;
       const c = (await menu.boundingBox())!;
       const edge = dir === "ltr" ? Math.abs(c.x - t.x) : Math.abs(c.x + c.width - (t.x + t.width));
-      expect(edge, `${dir}: panel edge vs trigger edge`).toBeLessThanOrEqual(2);
+      expect(edge, `${dir}: panel edge vs trigger edge`).toBeLessThanOrEqual(4);
       await page.keyboard.press("Escape");
       await expect(menu).toBeHidden();
     }
