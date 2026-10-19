@@ -204,3 +204,126 @@
   margin-block: auto;
   pointer-events: none;
 }
+
+/* Multi-select (`ComboboxMulti`): the field is a wrapping row of chips and the query input, and it is the
+ * popup's anchor, so the list takes its width (`--dx-combobox-width`, the same slot the single input
+ * reads). Nova combobox chips: `min-h-8 gap-1 rounded-lg border-input px-2.5 py-1 text-sm`, the chip
+ * `h-[calc(--spacing(5.25))] rounded-sm bg-muted px-1.5 text-xs font-medium`, its remove button a
+ * ghost icon-xs at half opacity. */
+.dx-combobox-chips {
+  display: flex;
+  width: var(--dx-combobox-width, 200px);
+  min-height: var(--dx-control-height-default);
+  flex-wrap: wrap;
+  align-items: center;
+  border-radius: var(--dx-radius-lg);
+  background: var(--dx-field-fill);
+  box-shadow: inset 0 0 0 1px var(--dx-input);
+  cursor: text;
+  gap: var(--dx-space-1);
+  padding-block: var(--dx-space-1);
+  padding-inline: var(--dx-space-1-5);
+}
+
+.dx-combobox-chips:focus-within {
+  box-shadow: var(--dx-ring-field);
+}
+
+.dx-combobox-chips[data-disabled="true"] {
+  background: var(--light, color-mix(in oklab, var(--dx-input) 50%, transparent))
+    var(--dark, color-mix(in oklab, var(--dx-input) 80%, transparent));
+  cursor: not-allowed;
+  opacity: var(--dx-opacity-disabled);
+}
+
+.dx-combobox-chip {
+  display: inline-flex;
+  height: 1.375rem;
+  align-items: center;
+  border-radius: var(--dx-radius-sm);
+  background: var(--dx-muted);
+  color: var(--dx-foreground);
+  font-size: var(--dx-text-xs);
+  font-weight: 500;
+  gap: var(--dx-space-1);
+  padding-inline: var(--dx-space-1-5) 0;
+  white-space: nowrap;
+}
+
+.dx-combobox-chip-remove {
+  display: inline-flex;
+  width: 1.375rem;
+  height: 1.375rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: var(--dx-radius-sm);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  margin-inline-start: calc(var(--dx-space-1) * -1);
+  opacity: 0.5;
+  outline: none;
+}
+
+.dx-combobox-chip-remove:focus-visible {
+  box-shadow: var(--dx-ring-field);
+  opacity: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-combobox-chip-remove:hover {
+    opacity: 1;
+  }
+}
+
+.dx-combobox-chips-input {
+  min-width: 4rem;
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--dx-foreground);
+  font-family: inherit;
+  font-size: var(--dx-text-sm);
+  line-height: 1.25rem;
+  outline: none;
+  padding-block: 0;
+  padding-inline: var(--dx-space-1);
+}
+
+.dx-combobox-chips-input::placeholder {
+  color: var(--dx-muted-foreground);
+}
+
+@media (pointer: coarse) {
+  .dx-combobox-chips-input {
+    font-size: var(--dx-text-base);
+  }
+}
+
+.dx-combobox-clear {
+  display: inline-flex;
+  width: 1.375rem;
+  height: 1.375rem;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: var(--dx-radius-sm);
+  background: transparent;
+  color: var(--dx-muted-foreground);
+  cursor: pointer;
+  outline: none;
+}
+
+.dx-combobox-clear:focus-visible {
+  box-shadow: var(--dx-ring-field);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-combobox-clear:hover {
+    color: var(--dx-foreground);
+  }
+}

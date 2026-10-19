@@ -38,6 +38,10 @@ pub fn ComboboxList(props: ComboboxListProps) -> Element {
         if !render() && *edited.peek() {
             edited.set(false);
         }
+        // A multi-select's text is only ever a query: it does not outlive the popup.
+        if !render() && ctx.is_multi() && !ctx.query.peek().is_empty() {
+            ctx.set_query.call(String::new());
+        }
     });
 
     rsx! {
@@ -176,6 +180,7 @@ fn ComboboxListRendered(id: String, attributes: Vec<Attribute>, children: Elemen
     let owned = attributes!(div {
         role: "listbox",
         popover: crate::top_layer::PopoverKind::Manual.as_str(),
+        aria_multiselectable: ctx.is_multi().then_some("true"),
         "data-state": if open() { "open" } else { "closed" },
     });
     let attributes = merge_attributes(vec![attributes, owned]);
@@ -203,6 +208,7 @@ fn ComboboxListRendered(id: String, attributes: Vec<Attribute>, children: Elemen
 
     let owned = attributes!(div {
         role: "listbox",
+        aria_multiselectable: ctx.is_multi().then_some("true"),
         "data-state": if open() { "open" } else { "closed" },
     });
     let attributes = merge_attributes(vec![attributes, owned]);

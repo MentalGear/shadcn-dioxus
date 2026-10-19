@@ -3,7 +3,7 @@
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 
-use super::super::context::{default_combobox_filter, ComboboxContext};
+use super::super::context::{default_combobox_filter, ComboboxContext, ComboboxModel};
 use crate::{
     merge_attributes,
     selectable::{
@@ -75,7 +75,8 @@ pub struct ComboboxProps<T: Clone + PartialEq + 'static = String> {
     pub children: Element,
 }
 
-fn use_combobox_root(
+pub(in crate::combobox) fn use_combobox_root(
+    model: ComboboxModel,
     values: Memo<Vec<RcPartialEqValue>>,
     set_value: Callback<RcPartialEqValue>,
     disabled: ReadSignal<bool>,
@@ -84,10 +85,14 @@ fn use_combobox_root(
     query: Controlled<String>,
     filter: Callback<(String, String), bool>,
 ) -> Memo<bool> {
+    let selection_mode = match model {
+        ComboboxModel::Single => SelectionMode::Single,
+        ComboboxModel::Multi { .. } => SelectionMode::Multiple,
+    };
     let selectable = use_selectable_root(
         values,
         set_value,
-        SelectionMode::Single,
+        selection_mode,
         disabled,
         roving_loop,
         open,
@@ -99,8 +104,11 @@ fn use_combobox_root(
     let input_id = use_unique_id();
     let edited = use_signal(|| false);
     let label = use_signal(|| None);
+    let labels = use_signal(Vec::new);
 
     let ctx = use_context_provider(|| ComboboxContext {
+        model,
+        labels,
         selectable,
         query,
         set_query,
@@ -128,6 +136,7 @@ pub fn Combobox<T: Clone + PartialEq + 'static>(props: ComboboxProps<T>) -> Elem
     );
 
     let open = use_combobox_root(
+        ComboboxModel::Single,
         selected,
         set_value,
         props.disabled,
