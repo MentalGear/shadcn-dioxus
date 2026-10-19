@@ -3,7 +3,7 @@
 use crate::{
     collapsible::{hidden_attribute, use_beforematch, PanelHidden},
     collection::{collection_item, use_collection_provider, use_item, CollectionState},
-    direction::{use_direction, Direction, HorizontalNav},
+    direction::{use_direction, use_direction_signal, Direction, HorizontalNav},
     merge_attributes, use_controlled, use_id_or, use_unique_id,
 };
 use dioxus::prelude::*;
@@ -27,7 +27,7 @@ struct TabsContext {
 
     // Text direction, for `ArrowLeft`/`ArrowRight`'s roving-focus role --
     // see `direction::Direction::resolve_horizontal`'s doc.
-    direction: Direction,
+    direction: ReadSignal<Direction>,
 
     // ARIA attributes
     tab_content_ids: Signal<Vec<String>>,
@@ -153,6 +153,7 @@ pub fn Tabs(props: TabsProps) -> Element {
     let (value, set_value) =
         use_controlled(props.value, props.default_value, props.on_value_change);
     let direction = use_direction(props.dir);
+    let direction_signal = use_direction_signal(direction);
 
     let focus = use_collection_provider(props.roving_loop);
     let mut ctx = use_context_provider(|| TabsContext {
@@ -164,7 +165,7 @@ pub fn Tabs(props: TabsProps) -> Element {
         focus,
 
         horizontal: props.horizontal,
-        direction,
+        direction: direction_signal,
         tab_content_ids: Signal::new(Vec::new()),
     });
 
@@ -394,7 +395,7 @@ pub fn TabTrigger(props: TabTriggerProps) -> Element {
                     Key::ArrowUp if !horizontal => ctx.focus.focus_prev(),
                     Key::ArrowDown if !horizontal => ctx.focus.focus_next(),
                     Key::ArrowLeft | Key::ArrowRight if horizontal => {
-                        match ctx.direction.resolve_horizontal(&key) {
+                        match (ctx.direction)().resolve_horizontal(&key) {
                             Some(HorizontalNav::Prev) => ctx.focus.focus_prev(),
                             Some(HorizontalNav::Next) => ctx.focus.focus_next(),
                             None => {}

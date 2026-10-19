@@ -12,7 +12,7 @@ use crate::{
         collection_item, use_collection_provider, use_deferred_collection_focus, use_item,
         CollectionPlacement, CollectionState,
     },
-    direction::{use_direction, Direction},
+    direction::{use_direction, use_direction_signal, Direction},
     fold_style_attributes, has_own_accessible_name,
     menu_item::{
         self, CheckableCommon, CheckableState, MenuCheckboxItemProps, MenuGroupProps,
@@ -102,7 +102,7 @@ struct ContextMenuCtx {
     // arrow key and which side a submenu opens on -- see
     // `crate::menu_sub::is_submenu_open_arrow_key`/
     // `is_submenu_close_arrow_key`'s doc.
-    direction: Direction,
+    direction: ReadSignal<Direction>,
 }
 
 /// The props for the [`ContextMenu`] component.
@@ -204,6 +204,7 @@ pub fn ContextMenu(props: ContextMenuProps) -> Element {
 
     let (open, set_open) = use_controlled(props.open, props.default_open, props.on_open_change);
     let direction = use_direction(props.dir);
+    let direction_signal = use_direction_signal(direction);
     let position = use_signal(|| (0, 0));
     let root_id = use_unique_id();
     let trigger_id = use_unique_id();
@@ -224,7 +225,7 @@ pub fn ContextMenu(props: ContextMenuProps) -> Element {
         interacted_outside,
         long_press_just_fired,
         submenu_open_count,
-        direction,
+        direction: direction_signal,
     });
 
     // docs/backlog.md row 53 (the "open-index container" band): this effect
@@ -1797,7 +1798,7 @@ pub fn ContextMenuSubTrigger(props: ContextMenuSubTriggerProps) -> Element {
             // direction-aware.
             let opens = matches!(key, Key::Enter)
                 || matches!(&key, Key::Character(c) if c == " ")
-                || crate::menu_sub::is_submenu_open_arrow_key(&key, ctx.direction);
+                || crate::menu_sub::is_submenu_open_arrow_key(&key, (ctx.direction)());
             if !opens {
                 return;
             }
@@ -1945,7 +1946,7 @@ fn ContextMenuSubContentRendered(
     // inline axis, zero gap, flips via the shared engine stylesheet when it
     // would overflow. Side is direction-aware -- `Left` in RTL -- matching
     // Radix `menu.tsx` L1245.
-    let sub_side = if ctx.direction == Direction::Rtl {
+    let sub_side = if (ctx.direction)() == Direction::Rtl {
         crate::ContentSide::Left
     } else {
         crate::ContentSide::Right
@@ -1987,8 +1988,8 @@ fn ContextMenuSubContentRendered(
         attributes!(div {
             role: crate::menu_semantics::MENU_ROLE,
             popover: crate::top_layer::PopoverKind::Auto.as_str(),
-            dir: ctx.direction.as_str(),
-            "data-direction": ctx.direction.as_str(),
+            dir: (ctx.direction)().as_str(),
+            "data-direction": (ctx.direction)().as_str(),
             "data-state": if open() { "open" } else { "closed" },
         }),
     ]);
@@ -2011,7 +2012,7 @@ fn ContextMenuSubContentRendered(
     let onkeydown = move |event: Event<KeyboardData>| {
         let key = event.key();
         let closes = matches!(key, Key::Escape)
-            || crate::menu_sub::is_submenu_close_arrow_key(&key, ctx.direction);
+            || crate::menu_sub::is_submenu_close_arrow_key(&key, (ctx.direction)());
         if closes {
             sub.set_open.call(false);
             sub.focus.clear_focus();
@@ -2122,9 +2123,9 @@ fn ContextMenuSubContentRendered(
         // construction above (`docs/backlog.md` row 93).
         attributes!(div {
             role: crate::menu_semantics::MENU_ROLE,
-            dir: ctx.direction.as_str(),
+            dir: (ctx.direction)().as_str(),
             "data-state": if open() { "open" } else { "closed" },
-            "data-direction": ctx.direction.as_str(),
+            "data-direction": (ctx.direction)().as_str(),
         }),
     ]);
 
@@ -2142,7 +2143,7 @@ fn ContextMenuSubContentRendered(
     let onkeydown = move |event: Event<KeyboardData>| {
         let key = event.key();
         let closes = matches!(key, Key::Escape)
-            || crate::menu_sub::is_submenu_close_arrow_key(&key, ctx.direction);
+            || crate::menu_sub::is_submenu_close_arrow_key(&key, (ctx.direction)());
         if closes {
             sub.set_open.call(false);
             sub.focus.clear_focus();

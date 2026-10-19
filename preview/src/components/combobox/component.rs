@@ -7,54 +7,70 @@ use dioxus_primitives::{dioxus_attributes::attributes, merge_attributes};
 
 #[derive(Props, Clone, PartialEq)]
 pub struct ComboboxProps<T: Clone + PartialEq + 'static = String> {
+    /// The controlled selected value. A signal holding `None` means no option is selected.
     #[props(default)]
     pub value: Option<ReadSignal<Option<T>>>,
 
+    /// The initially selected value when uncontrolled.
     #[props(default)]
     pub default_value: Option<T>,
 
+    /// Called with the new value (`None` when the selection is cleared).
     #[props(default)]
     pub on_value_change: Callback<Option<T>>,
 
+    /// Whether the combobox is disabled.
     #[props(default)]
     pub disabled: ReadSignal<bool>,
 
+    /// The controlled open state of the list.
     #[props(default)]
     pub open: ReadSignal<Option<bool>>,
 
+    /// Whether the list starts open when uncontrolled.
     #[props(default)]
     pub default_open: ReadSignal<bool>,
 
+    /// Called when the list opens or closes.
     #[props(default)]
     pub on_open_change: Callback<bool>,
 
+    /// The controlled text in the input.
     #[props(default)]
     pub query: ReadSignal<Option<String>>,
 
+    /// The initial text in the input when uncontrolled.
     #[props(default)]
     pub default_query: ReadSignal<String>,
 
+    /// Called with the new text whenever the user types.
     #[props(default)]
     pub on_query_change: Callback<String>,
 
+    /// Whether arrow-key navigation wraps from the last option to the first.
     #[props(default = ReadSignal::new(Signal::new(true)))]
     pub roving_loop: ReadSignal<bool>,
 
+    /// Custom filter, called with `(query, option_text_value)`; returns whether the option stays visible.
     #[props(default = Callback::new(|(q, t): (String, String)| default_combobox_filter(&q, &t)))]
     pub filter: Callback<(String, String), bool>,
 
+    /// Placeholder text of the input.
     #[props(default)]
     pub placeholder: ReadSignal<String>,
 
+    /// Accessible name for the input.
     #[props(default)]
     pub aria_label: Option<String>,
 
+    /// Accessible name for the listbox of options.
     #[props(default)]
     pub list_aria_label: Option<String>,
 
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
 
+    /// The combobox parts: trigger, list, groups and options.
     pub children: Element,
 }
 
