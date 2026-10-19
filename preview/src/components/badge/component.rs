@@ -33,6 +33,7 @@ impl BadgeVariant {
 /// The props for the [`Badge`] component.
 #[derive(Props, Clone, PartialEq)]
 pub struct BadgeProps {
+    /// The badge's look: `Primary` (default), `Secondary`, `Destructive`, `Outline`, `Ghost` or `Link`.
     #[props(default)]
     pub variant: BadgeVariant,
 

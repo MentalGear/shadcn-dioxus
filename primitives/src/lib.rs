@@ -68,6 +68,7 @@ mod pointer;
 pub mod popover;
 pub mod portal;
 pub mod progress;
+pub mod questionnaire;
 pub mod radio_group;
 pub mod resizable;
 pub mod scroll_area;
