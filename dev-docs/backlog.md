@@ -34,7 +34,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (88)
+## Open rows (90)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -126,6 +126,8 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [242](backlog/242-spec-failures-that-are-red-on-the-deployed.md) | Spec failures that are red on the deployed baseline too (found by the 2026-10-18 lanes) | OPEN | S each | process |
 | [243](backlog/243-button-hover-fills-3-levels-off-shadcn.md) | Button hover fills 3 levels off shadcn | BACKLOG (lane docs-site 2026-10-18) | S | theme |
 | [244](backlog/244-virtualgrid-x-y-virtualization-that-windows.md) | VirtualGrid: x/y virtualization that windows rows AND columns (a data grid, an image grid) | BACKLOG (owner question 2026-10-18) | L | virtual |
+| [245](backlog/245-snapshot-harness-tooltip-and-skip-link.md) | Computed-style snapshot harness: tooltip timing nondeterminism and the skip link counted as an open-state item | BACKLOG (validation 2026-10-19) | S | tests |
+| [246](backlog/246-snapshot-buckets-too-coarse.md) | Snapshot diff buckets are page-level on some routes | BACKLOG (validation 2026-10-19) | S-M | tests |
 
 ## Done rows (156)
 
