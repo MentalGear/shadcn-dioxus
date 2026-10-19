@@ -39,7 +39,7 @@ After a build, prove your change is in the output (grep the served HTML, CSS or 
 ## Before handback (rows 221, 224; gate step changed 2026-10-18)
 1. Merge the current session branch into your lane branch (`git merge <session branch>`, no rebase). New gates may have
    landed since you branched; on a `preview/src/components/mod.rs` conflict keep both sides' variants on every line.
-2. Run the FAST gates without the lock and quote their summary line (owner decision 2026-10-18, see "Gate
+2. Push your branch (rule 1 of "Nothing lives only in the container"), then run the FAST gates without the lock and quote their summary line (owner decision 2026-10-18, see "Gate
    procedure" below): `CARGO_TARGET_DIR=$LANE_TGT/check scripts/run-gates.sh --skip
    '^(clippy-|test$|check-primitives-features$|check-attr-spread-collision$)'` -- every listed gate PASS, exit 3
    (partial by design). That is every static `check-*.sh`, fmt and stylelint, in seconds. Do NOT run the full
@@ -49,6 +49,17 @@ After a build, prove your change is in the output (grep the served HTML, CSS or 
    components compose such as Button) also needs the specs of its consumers: each lane green alone proves nothing about
    the merge (row 224).
 4. Wait in the foreground for queued builds (long timeouts) instead of handing back early.
+
+## Nothing lives only in the container (owner decision 2026-10-19)
+The container can come back as a FRESH CLONE (2026-10-19: `/home/user/tgt`, `/home/user/wt`, every worktree, every
+unpushed lane commit and every agent transcript were gone; lost were a finished lane, three half-done lanes and the
+main loop's bookkeeping). So:
+1. **Push your lane branch after every commit**: `git push -u origin lane/<name>` (WIP commits included -- commit
+   before any long build or test run so nothing is only in the working tree). The main loop deletes `lane/*` from
+   origin after the merge. Never push anywhere else.
+2. Briefs, rules and procedures live in the repo (this file, the plan docs), never only under `/home/user/tgt`;
+   scratch output there is disposable and must be reproducible.
+3. The main loop backs up its own unpushed (not yet gated) commits the same way, on `lane/main-loop`.
 
 ## Gate procedure (owner decision 2026-10-18; why: `dev-docs/backlog.md` row 221)
 One exclusive build lock serialises every compile, a full `run-gates.sh` holds it for 15-21 min, and a round of ten
