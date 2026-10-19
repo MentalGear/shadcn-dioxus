@@ -91,6 +91,44 @@ lanes that each ran it (plus reruns after a red) queued about four hours of lock
    memory). Split a larger round into consecutive batches with disjoint files; the next batch's editing can start
    while the previous batch's merge gates run.
 
+## Running the suite (row 152a, measured 2026-10-19)
+Facts, all from one debug SSG build of one tree on this 4-core / 15 GB box shared with other lanes' cargo builds
+(`playwright/durations.json` is the per-file table, `meta.release_total_seconds` the release comparison):
+- The full suite is 3,752 tests in 183 files (+68 release-only timing tests): 14,168 s of test time, i.e. **121 min** at 2
+  workers on a debug build, **82 min** on a release build of the same tree (-32 %; 3,820 tests, 9,776 s). The cost is
+  total work, not a few giants: `all-routes` (517 tests, 16 %), `first-paint-styles` (8 %), `layout-stability` (6 %),
+  `popup-style-isolation` (4 %) and `carousel` (4 %) are 38 % of it; axe-titled tests are 16 %; the median test is
+  2.7 s (debug) / 1.5 s (release), 101 tests over 10 s are 21 % of the time. The 298 fixed `waitForTimeout` calls sum to 227 s of literal
+  milliseconds (under 2 % even if every one ran once) and most are "stays closed for N ms" negatives, so they were left alone.
+- **Release vs debug**: release runs the suite 1.47x faster and also runs the timing specs (`main-thread`,
+  `scroll-main-thread`), but a cold release build took 37-50 min here (9 min for a debug build from the warm template).
+  Use release for the main loop's one full run per merge batch (saves ~40 min of `pw.lock` per run and makes the timing
+  specs valid), not for a lane's own spec runs.
+- **Workers**: 2 is the lane cap. Measured Chromium RSS: 2 workers peak 3.8 GB (mean 1.7 GB); 3 workers peak 4.3 GB (p95
+  3.2 GB), lowest `MemAvailable` 4.4 GB beside other lanes' builds, so 3 fits next to one cargo build. 3 workers ran the
+  suite 1.4x faster (7,264 s -> ~5,060 s inside the lock, with the balanced chunks and the 404 fix below) but added two
+  load flakes (`layout-stability` dark and `first-paint-styles` `/component/empty/`, both green alone at 2 and 3 workers).
+  So: 3 workers for the main loop's full run when no build is queued; lanes stay at 2.
+- **Chunks, not one run**: one run holds `pw.lock` for 1.5-2 h and every other lane's specs wait behind it (they did).
+  `playwright/tools/run-suite.sh --out DIR --chunks N --workers W` cuts the specs with `shard.mjs` (longest-first onto
+  the lightest shard, weights from `durations.json`: the 6 chunks came out at 728-968 s each, the 8 count-balanced
+  chunks of the baseline at 618-1180 s) and takes the lock once per chunk, so lanes interleave. Playwright's own
+  `--shard` balances by test count and was not used. Refresh the table after a full run:
+  `node playwright/tools/durations.mjs DIR/chunk-*.json --write playwright/durations.json` (`--merge` for a partial run;
+  a new spec needs an entry or `scripts/check-slow-spec-budget.sh` fails).
+- **Not-found routes**: `python3 -m http.server` answers an unknown URL with a bare 404, so `theme-picker-phone`'s two
+  not-found routes (4 tests) hung to the 90 s timeout (6 min of the 121 and four reds). `scripts/serve-spa.py` serves
+  `404.html` with status 404 as GitHub Pages does, `scripts/emit-404.sh` now also accepts a no-base-path build, and
+  `lane-ssg.sh` emits the page and serves through it. Serving a different build by hand: `scripts/emit-404.sh <public>`
+  then `python3 scripts/serve-spa.py <public> <port>`.
+- **External requests**: none to block. Visiting all 95 prerendered routes in a fresh Chromium makes exactly two
+  third-party requests, the deliberate `httpbin.org/delay/3600` and `invalid-url.example` of the avatar demos that
+  `avatar-loading.spec.ts` asserts on; the fonts are self-hosted.
+- Where the rest of the time is (not changed here; follow-ups for the owners of those files): `all-routes` loads each
+  route x scheme three times (axe, 390 px overflow, forced-colors) as three tests, `first-paint-styles` and the route
+  matrices (`touch-*`, `main-thread`, `dx-class-migration`) each re-navigate every route; a worker-scoped page or one
+  visit-each-route fixture (`fixtures.ts`) would cut two of the three hydrations per route in `all-routes` (a navigation-plus-hydrate is ~1.8 s on debug).
+
 ## Conventions the gates enforce
 Listeners in eval JS through `primitives/src/js_listener.rs` `listen`; passive scroll listeners; motion through
 `use_motion` / `use_interval_while`; no `transform` in component `@keyframes`; state recipes and focus rings from the
