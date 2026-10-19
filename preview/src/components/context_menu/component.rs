@@ -315,6 +315,7 @@ pub fn ContextMenuGroup(props: ContextMenuGroupProps) -> Element {
 pub fn ContextMenuSeparator(props: ContextMenuSeparatorProps) -> Element {
     let base = attributes!(div {
         class: "dx-context-menu-separator",
+        "data-dx-menu-separator": "true",
     });
     let merged = merge_attributes(vec![base, props.attributes]);
     rsx! {
@@ -330,6 +331,7 @@ pub fn ContextMenuSeparator(props: ContextMenuSeparatorProps) -> Element {
 pub fn ContextMenuShortcut(props: ContextMenuShortcutProps) -> Element {
     let base = attributes!(span {
         class: "dx-context-menu-shortcut",
+        "data-dx-menu-shortcut": "true",
     });
     let merged = merge_attributes(vec![base, props.attributes]);
     rsx! {
