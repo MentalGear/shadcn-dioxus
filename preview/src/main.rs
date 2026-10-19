@@ -2874,7 +2874,7 @@ fn demo_avatar(who: &str) -> String {
         "Robin Hayes" | "RH" => asset!("/assets/avatars/robin-hayes.svg"),
         "Sarah Chen" | "SC" => asset!("/assets/avatars/sarah-chen.svg"),
         "Marcus Wright" | "MW" => asset!("/assets/avatars/marcus-wright.svg"),
-        "Lena Park" | "LP" => asset!("/assets/avatars/lena-park.svg"),
+        "Nina Hart" | "NH" => asset!("/assets/avatars/nina-hart.svg"),
         _ => return String::new(),
     }
     .to_string()
@@ -3335,7 +3335,7 @@ fn BlockInbox() -> Element {
     let messages: &[(&str, &str, &str)] = &[
         ("Sarah Chen", "Left 3 comments on the auth flow", "2m"),
         ("Marcus Wright", "Roadmap sync notes attached", "1h"),
-        ("Lena Park", "Refactored the sidebar layout", "4h"),
+        ("Nina Hart", "Refactored the sidebar layout", "4h"),
     ];
     rsx! {
         div { style: "display: flex; align-items: center; gap: 0.55rem; margin-bottom: 0.85rem;",

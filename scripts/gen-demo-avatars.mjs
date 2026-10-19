@@ -6,7 +6,7 @@ import { writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 const OUT = fileURLToPath(new URL("../preview/assets/avatars/", import.meta.url));
-const NAMES = ["Avery Lin", "Casey Park", "Robin Hayes", "Sarah Chen", "Marcus Wright", "Lena Park", "Jordan Reyes", "Priya Nair"];
+const NAMES = ["Avery Lin", "Casey Park", "Robin Hayes", "Sarah Chen", "Marcus Wright", "Nina Hart", "Jordan Reyes", "Priya Nair"];
 // [field, shape A, shape B]: mid-tone fields (OKLCH L .76-.82, C .07-.10) with accents in the chart-token band (C .14-.17) so a disc reads on a white and on a near-black page.
 const PALETTES = [
   ["#8fc990", "#135b42", "#f0b21b"], ["#eead89", "#932d1c", "#26426c"], ["#8dbbf0", "#194292", "#f0764f"],

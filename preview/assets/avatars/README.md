@@ -25,7 +25,7 @@ by that script, so edit the script rather than the files.
 | `robin-hayes.svg` | Robin Hayes |
 | `sarah-chen.svg` | Sarah Chen |
 | `marcus-wright.svg` | Marcus Wright |
-| `lena-park.svg` | Lena Park |
+| `nina-hart.svg` | Nina Hart |
 | `jordan-reyes.svg` | Jordan Reyes |
 | `priya-nair.svg` | Priya Nair |
 

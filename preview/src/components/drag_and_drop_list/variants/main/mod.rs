@@ -23,7 +23,7 @@ const AVATARS: &[Asset] = &[
     asset!("/assets/avatars/robin-hayes.svg"),
     asset!("/assets/avatars/sarah-chen.svg"),
     asset!("/assets/avatars/marcus-wright.svg"),
-    asset!("/assets/avatars/lena-park.svg"),
+    asset!("/assets/avatars/nina-hart.svg"),
 ];
 
 const TASKS: &[TaskView] = &[
@@ -76,7 +76,7 @@ const TASKS: &[TaskView] = &[
         code: "LNC-160",
         title: "Archive legacy API endpoints",
         status: "Backlog",
-        assignee: "LP",
+        assignee: "NH",
         avatar: AVATARS[5],
         due: "Later",
         urgent: false,
