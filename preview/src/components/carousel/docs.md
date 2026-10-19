@@ -61,6 +61,12 @@ shadcn has no `gap` prop. It spaces slides with utility classes: `-ml-N` on `Car
 
 Dragging or scrolling past an end never wraps; only the buttons and the arrow keys do. A looping carousel, `Rewind` or seamless, also has no edge stretch (see Dragging and scrolling).
 
+### Free scrolling
+
+`drag_free: true` on `Carousel` turns off snapping (Embla's `dragFree`). A released mouse or pen drag coasts on its release velocity and rests wherever friction stops it, instead of settling on a slide; touch and trackpad coast natively once the snap is gone. Previous, Next and the arrow keys still page by slide and land on a slide's edge, and the selected slide is still the one nearest the start edge (or the `align` anchor). Slides may have different widths: give each `CarouselItem` its own size, for example `style: "flex: 0 0 auto; width: 12rem;"` (shadcn's `basis-auto`). Under `prefers-reduced-motion: reduce` a released drag does not coast. `CarouselVirtualContent` ignores the prop.
+
+The prop is the only switch: it renders `data-drag-free` and `data-snap` (the track's `scroll-snap-type`) on the track, and every place the carousel suspends and restores snapping reads `data-snap`.
+
 ### Disabled arrows
 
 Without `loop`, Previous is disabled on the first slide and Next on the last. The theme dims a disabled arrow to half opacity, as shadcn does. `nav_disabled_opacity` on `Carousel` changes that for both arrows at once:
@@ -200,7 +206,7 @@ Style the active dot from the `data-active` attribute in your stylesheet, not wi
 
 ## Dragging and scrolling
 
-Pressing and dragging with a mouse or pen pages the carousel, and it settles smoothly on the nearest slide when released. A drag has to move a few pixels first, so a link or button inside a slide still works as a click. Touch always scrolls natively. In RTL, the direction you drag to reach the next slide is mirrored, like a right-to-left photo gallery. Set `draggable: false` on `CarouselContent` to turn the gesture off.
+Pressing and dragging with a mouse or pen pages the carousel, and it settles smoothly on the nearest slide when released. A drag has to move a few pixels first, so a link or button inside a slide still works as a click. Touch always scrolls natively. In RTL, the direction you drag to reach the next slide is mirrored, like a right-to-left photo gallery. Set `draggable: false` on `CarouselContent` to turn the gesture off. With `drag_free`, the release coasts instead of settling (see Free scrolling).
 
 Dragging past the first or last slide stretches the track with increasing resistance and springs back when you let go. Slides never change from this.
 

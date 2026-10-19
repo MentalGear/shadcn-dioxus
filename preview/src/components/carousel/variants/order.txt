@@ -9,6 +9,8 @@ api
 indicators
 autoplay
 rewind
+drag_free
+drag_free_rtl
 hidden_arrows
 virtual_loop
 virtual_loop_rtl
