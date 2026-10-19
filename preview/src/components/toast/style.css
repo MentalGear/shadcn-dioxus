@@ -101,11 +101,15 @@
       brightness(calc(0.5 + 0.5 * (1 - ((var(--toast-index) + 1) / 4))))
     );
   opacity: calc(1 - var(--toast-hidden));
+  touch-action: pan-y;
   transform: scale(
     calc(100% - var(--toast-index) * 5%),
     calc(100% - var(--toast-index) * 2%)
   );
-  transition: transform var(--dx-motion-duration-slow) var(--dx-motion-ease), margin-top var(--dx-motion-duration-slow) var(--dx-motion-ease), opacity var(--dx-motion-duration-slow) var(--dx-motion-ease);
+  transition: transform var(--dx-motion-duration-slow) var(--dx-motion-ease), translate var(--dx-motion-duration-slow) var(--dx-motion-ease), margin-top var(--dx-motion-duration-slow) var(--dx-motion-ease), opacity var(--dx-motion-duration-slow) var(--dx-motion-ease);
+
+  /* rtl-physical: the swipe offset is a screen-space distance toward the nearest edge, signed by the gesture itself (it reads the toaster's side, RTL included) */
+  translate: var(--toast-swipe-x, 0) 0;
 
   --toast-hidden: calc(min(max(0, var(--toast-index) - 2), 1));
 }
@@ -232,6 +236,52 @@
 .dx-toast[data-type="info"] {
   background-color: var(--dx-info-subtle);
   color: var(--dx-info);
+}
+
+.dx-toast[data-type="loading"] {
+  background-color: var(--dx-card, var(--dx-background));
+  color: var(--dx-foreground);
+}
+
+.dx-toast-spinner {
+  display: inline-flex;
+  flex: none;
+  align-self: center;
+  margin-inline-end: var(--dx-space-2);
+}
+
+/* The wrapper around the library Button owns the layout; the Button itself is not restyled. */
+.dx-toast-action {
+  display: inline-flex;
+  flex: none;
+  align-self: center;
+  margin-inline-end: var(--dx-space-2);
+}
+
+/* Swipe to dismiss (primitives/src/toast.rs `use_toast_swipe`): the gesture writes `--toast-swipe-x`
+ * and `data-swiping`. `translate` (not `transform`) composes with the stacking `transform: scale()`, so
+ * the pile keeps its shape under the finger. `touch-action: pan-y` (on `.dx-toast` above) lets the
+ * browser keep vertical scrolling while horizontal drags arrive as pointer events. */
+.dx-toast[data-swiping="true"] {
+  cursor: grabbing;
+  transition: none;
+}
+
+.dx-toast[data-swiping="dismissed"] {
+  opacity: 0;
+  transition: translate var(--dx-motion-duration-slow) var(--dx-motion-ease), opacity var(--dx-motion-duration-slow) var(--dx-motion-ease);
+}
+
+/* Reduced motion: no entrance animation, no restack or fly-out transition; the pile still
+ * expands on hover/focus, instantly. */
+@media (prefers-reduced-motion: reduce) {
+  .dx-toast,
+  .dx-toast[data-top],
+  .dx-toast-container:not(:hover, :focus-within) .dx-toast[data-toast-even]:not([data-top]),
+  .dx-toast-container:not(:hover, :focus-within) .dx-toast[data-toast-odd]:not([data-top]) {
+    animation: none;
+    transition-duration: var(--dx-motion-duration-reduced);
+  }
 }
 
 .dx-toast-content {

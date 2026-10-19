@@ -5,8 +5,8 @@ use dioxus::prelude::*;
 use dioxus_primitives::toast::{use_toast, ToastOptions};
 
 /// One button per toast type the primitive offers (`success`, `info`, `warning`, `error`).
-/// The type only tints the toast (`data-type`); typed icons and a promise/loading toast are
-/// not part of the API yet (backlog row 138).
+/// The type tints the toast (`data-type`); the loading, action, promise, update, stacking and
+/// swipe demos cover the rest of row 138.
 ///
 /// A provider renders an always-present `role="region"` landmark whose default name is
 /// "N notifications", so this page's two providers (the main demo's and this one) would be
