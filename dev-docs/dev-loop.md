@@ -594,6 +594,34 @@ scheme (`hover`, `open`), implemented in `playwright/computed-style-states.ts`:
   enough: `python3 -m http.server <port> -d .../public`. Use a release or debug build as you like, but capture "before" and
   "after" from the same profile.
 
+### Harness upgrade: format 4 (rows 245, 246, 2026-10-19)
+
+- **Timer drain instead of guessed delays (245).** A tooltip / hover card / submenu opens when the pointer has rested for
+  the component's configured `delay`, and a fixed wait is a race (a tooltip chain rendered in 1 of 4 captures: dark
+  `top_layer` hover 196 vs 198 records). `movePointer` (`computed-style-states.ts`) now arms the TIMER-DRAIN RULE before
+  every pointer move: the page's `setTimeout` is wrapped, every timeout scheduled between `arm()` and the end of `drain()`
+  (delays up to 2.5 s) is remembered, and the read waits until all of them fired plus 60 ms. Whatever delay a popup is
+  configured with (0, 10, 100, 600), the opener waits it out; a popup with no timer pays nothing. The harness's own waits
+  use the raw `setTimeout`.
+- **Skip link (245).** `.dx-skip-link` is page chrome whose style changes when focus moves, so it landed in every overlay's
+  delta, was off screen (`occluded`) and took item-hover slots (item hovers 486 -> 474, skipped 12 -> 123). It is excluded
+  from the item pool (`ITEM_EXCLUDE`); main.css is untouched.
+- **New in the snapshot (246).** `user-select` joins the property set. `focusK`: the focus pass is repeated with
+  `<html data-dx-modality="keyboard">` forced (the non-field ring tokens are transparent in every other modality, so the
+  keyboard ring was invisible) and only the records that differ from the plain focus pass are kept. `open:<k>/kbd`
+  records: for each open `<dialog>` panel the on-screen-keyboard contract (`data-dx-keyboard`, `--dx-keyboard-inset:
+  280px`, `--dx-keyboard-top: 0px`) is applied by hand, the changed elements recorded with both variables, then undone.
+  `compare` of a format-3 file with a format-4 one compares the properties both have and says so; it also writes
+  `<B>.diff.json`, the machine-readable twin of `<B>.diff.txt`.
+- **One file per scheme.** A capture of both schemes no longer fits one JSON string (Node's 512 MB limit: `RangeError: Invalid string length` at the write), so `CSS_SNAPSHOT_OUT=/x/N.json` writes `/x/N.light.json` and `/x/N.dark.json`; `compare` takes the same prefix on both sides. Measured on the 87b5a260 debug build: old harness A/A light 0 / dark 27 differing values (S0, `/home/user/tgt/snap-S0/`), format 4 A/A byte-identical, ~23 min per two-scheme capture.
+- **Element-level buckets: `scripts/snapshot-classify.mjs <B>.diff.json --rules rules.json`.** Every difference is either
+  explained by a rule or UNEXPLAINED (exit 1). A rule must name an element (`cls` and/or `page`) or an exact value
+  transition (`prop` + `from` + `to`); a pixel tolerance (`maxPx`, capped at 16) needs `cls` AND `prop`; all patterns are
+  anchored. So "the cascade moves things up to 40 px" can no longer be one page-level rule: each cascade is written per
+  element class and property, and the report lists rule hits, distinct elements, the largest observed px delta, unused
+  (stale) rules, and unexplained differences grouped by element. `--self-test` proves a 1 px shift is not hidden by a rule
+  for another class or property.
+
 ## What's still unknown / not verified this session
 
 - Hot-patch recovery: whether a server **restart** clears the "Missing
