@@ -34,7 +34,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (71)
+## Open rows (70)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -62,7 +62,6 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [75](backlog/075-per-variant-component-preview-frame-duplicate.md) | Per-variant component-preview-frame duplicate id + unscoped Table caption locator (two strict-mode… | Found in integration round 2 (2026-09-18), fixed round 3 same day | S | a11y |
 | [83](backlog/083-daterangepicker-page-hang-dateelement-s-sync.md) | DateRangePicker page hang — DateElement's sync-down/sync-up effects form an unconditional two-way reactive… | Found and fixed 2026-09-19 (batch 3, date-picker + range-hang lanes) | S | inputs |
 | [92](backlog/092-new-component-landings-can-leave-preview-s-out.md) | New-component landings can leave preview's OUT_DIR stale — cargo clippy/test/doc fail until build.rs is… | Found 2026-09-20 (round 4 integration, Carousel landing onto a pre-existing target dir); recurs for… | S | build |
-| [93](backlog/093-literal-attribute-beside-an-unmerged-props.md) | Literal attribute beside an unmerged props spread with no typed field claiming it — the duplicate-attribute… | Found 2026-09-20 (round 4, f2be1d7's own ..props.attributes/..attributes sweep of primitives/src/… | S–M for the check script itself… | overlays |
 | [95](backlog/095-a-debug-ssg-build-serves-fine-but-traps-at.md) | A debug SSG build serves fine but traps at runtime, so interaction specs run against it fail like real… | Hit 2026-09-20 (round 5) running carousel.spec.ts against a local static serve of dx build --ssg… | DONE — warning added directly to the… | build |
 | [97](backlog/097-a-second-un-fragmented-rsx-sibling-renders-on.md) | A second, un-fragmented rsx sibling renders on the first pass and is silently dropped by the next one | Found 2026-09-20 (round 5) adding a scoped &lt;style&gt; tag beside CarouselContent's track | DONE for this instance (explicit… | misc |
 | [98](backlog/098-dx-build-ssg-fails-with-no-such-file-or.md) | dx build --ssg fails with No such file or directory (os error 2) when CARGO_TARGET_DIR is a relative path | NARROWED 2026-10-19 (backlog review): local fix in (build-ssg.sh absolute-path guard); filing… | Workaround is one word: make the path… | process |
@@ -110,7 +109,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [261](backlog/261-theme-mono-font-token.md) | A --dx-font-mono theme token | BACKLOG (found 2026-10-19 by lane markdown) | S | theme |
 | [264](backlog/264-non-modal-dialog-pointer-dismissal-and-aria-modal.md) | Non-modal Dialog/Drawer: aria-modal and an outside-press switch | BACKLOG (left open by row 156, 2026-10-19) | S | primitives |
 
-## Done rows (184)
+## Done rows (185)
 
 | # | Item | Updated |
 |---|---|---|
@@ -182,6 +181,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [89](backlog/done/089-selected-active-state-losing-to-hover-on-click.md) | Selected/active state losing to :hover on click — a user-reported hover-over-state specificity class, swept… | 2026-09-20 |
 | [90](backlog/done/090-chart-stage-2-per-chart-type-galleries-shadcn.md) | Chart stage 2 — per-chart-type galleries (shadcn parity), parked mid-flight (LANDED 2026-09-25) | 2026-09-25 |
 | [91](backlog/done/091-carousel-landed-css-scroll-snap-engine-tier-1.md) | Carousel landed — CSS scroll-snap engine, tier-1 APG oracle vendored, three live-verification fixes | 2026-09-20 |
+| [93](backlog/done/093-literal-attribute-beside-an-unmerged-props.md) | Literal attribute beside an unmerged props spread with no typed field claiming it — the duplicate-attribute… | 2026-09-25 |
 | [94](backlog/done/094-demo-wrappers-that-set-max-width-margin-0-auto.md) | Demo wrappers that set max-width + margin: 0 auto never reach that width — they shrink-wrap instead, so every… | 2026-10-19 |
 | [96](backlog/done/096-scroll-snap-stop-always-caps-a-browser-driven.md) | scroll-snap-stop: always caps a browser-driven scroll but NOT this crate's own pointer-drag release | 2026-09-20 |
 | [100](backlog/done/100-a-no-base-path-build-made-in-the-shared-repo.md) | A no---base-path build made in the SHARED repo-root target/ still emits /dioxus-components/ prefixed markup —… | 2026-10-19 |
