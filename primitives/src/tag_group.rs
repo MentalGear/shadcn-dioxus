@@ -1,5 +1,6 @@
 //! Defines the [`TagGroup`] and [`TagGroupMulti`] components and their sub-components.
 
+use crate::direction::{use_direction, Direction};
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 
@@ -864,12 +865,14 @@ fn tag_option_on_keydown(
     value: RcPartialEqValue,
     is_disabled: bool,
     removable: bool,
+    direction: Direction,
 ) {
     if is_disabled {
         return;
     }
 
-    let key = e.key();
+    // RTL mirrors the horizontal pair (`Direction::ltr_equivalent`).
+    let key = direction.ltr_equivalent(&e.key());
     let mut prevent_default = false;
 
     match key {
@@ -916,6 +919,7 @@ fn tag_option_on_keydown(
 #[component]
 pub fn TagOption<T: Clone + PartialEq + 'static>(props: TagOptionProps<T>) -> Element {
     let ctx: TagGroupCtx = use_context();
+    let direction = use_direction(None);
     let mut state = ctx.state;
     let index = props.index;
     let option_disabled = props.disabled;
@@ -1009,6 +1013,7 @@ pub fn TagOption<T: Clone + PartialEq + 'static>(props: TagOptionProps<T>) -> El
                     value(),
                     disabled(),
                     is_removable(),
+                    direction,
                 );
             },
             ..merged,

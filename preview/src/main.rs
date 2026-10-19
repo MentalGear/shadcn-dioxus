@@ -34,6 +34,7 @@ use dioxus_icons::lucide::{
     ArrowRight, ArrowUpRight, BookOpen, Check, ChevronDown, ChevronLeft, Copy, ExternalLink,
     FileText, Hash, House, Mail, Pause, Play, SkipBack, SkipForward,
 };
+use dioxus_primitives::direction::{Direction, DirectionProvider};
 use dioxus_primitives::{ContentAlign, ContentSide};
 use nav_link::NavLink;
 use std::str::FromStr;
@@ -1860,7 +1861,12 @@ fn ComponentHighlight(demo: ComponentDemoData) -> Element {
                         }
                         // The commands live in the Installation section below (one place); the
                         // header only points at it, and the hash handler opens that disclosure.
-                        a { class: "dx-component-install-link", href: "#installation", "Install" }
+                        div { class: "dx-component-page-actions",
+                            if matches!(r#type, ComponentType::Normal) {
+                                DirectionToggle {}
+                            }
+                            a { class: "dx-component-install-link", href: "#installation", "Install" }
+                        }
                     }
                     ExtraExplainer { name: raw_name }
                     p { "{description}" }
@@ -1932,6 +1938,39 @@ fn ComponentHighlight(demo: ComponentDemoData) -> Element {
                     }
                 }
             }
+        }
+    }
+}
+
+/// The reading direction every demo on a component page is rendered in (backlog row 137): the one
+/// switch that gives every component an RTL example. `ComponentVariantHighlight` wraps each demo in
+/// a `DirectionProvider` reading this and sets `dir` on the demo frame, so primitives that read
+/// `use_direction` and the logical-property CSS both follow it live. A global (not page state) so
+/// the choice survives navigating to another component. Defaults to LTR, which is what the
+/// prerendered pages contain.
+static PREVIEW_DIRECTION: GlobalSignal<Direction> = Signal::global(|| Direction::Ltr);
+
+/// The LTR/RTL toggle in a component page's header. A pressed button, because it is a two-state
+/// switch of the whole page's demos, not a navigation.
+#[component]
+fn DirectionToggle() -> Element {
+    let rtl = PREVIEW_DIRECTION() == Direction::Rtl;
+    rsx! {
+        Button {
+            id: "dx-direction-toggle",
+            variant: ButtonVariant::Outline,
+            r#type: "button",
+            "aria-pressed": "{rtl}",
+            "data-direction": if rtl { "rtl" } else { "ltr" },
+            onclick: move |_| {
+                let next = if PREVIEW_DIRECTION() == Direction::Rtl {
+                    Direction::Ltr
+                } else {
+                    Direction::Rtl
+                };
+                *PREVIEW_DIRECTION.write() = next;
+            },
+            "RTL"
         }
     }
 }
@@ -2143,7 +2182,10 @@ fn ComponentVariantHighlight(
                     value: "Demo",
                     width: "100%",
                     position: "relative",
-                    Comp {}
+                    // The page's LTR/RTL toggle (`PREVIEW_DIRECTION`): `dir` on the frame mirrors
+                    // layout and logical-property CSS, the provider the keyboard/positioning logic.
+                    dir: if PREVIEW_DIRECTION() == Direction::Rtl { Some("rtl") } else { None },
+                    DirectionProvider { direction: PREVIEW_DIRECTION(), Comp {} }
                 }
                 TabContent {
                     index: 1usize,
