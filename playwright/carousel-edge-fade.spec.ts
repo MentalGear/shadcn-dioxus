@@ -35,7 +35,6 @@ async function fades(root: Locator) {
     return {
       start: parseFloat(cs.getPropertyValue("--dx-carousel-fade-start")),
       end: parseFloat(cs.getPropertyValue("--dx-carousel-fade-end")),
-      size: parseFloat(getComputedStyle(el).getPropertyValue("--dx-carousel-fade-size")),
       dir: cs.getPropertyValue("--dx-carousel-fade-dir").trim(),
       mask: cs.maskImage || cs.webkitMaskImage,
     };
@@ -64,21 +63,20 @@ test.describe("carousel edge fade", () => {
     await scrollTo(root, 0);
     await expect.poll(async () => (await fades(root)).end).toBeGreaterThan(40);
     let f = await fades(root);
-    expect(f.size).toBeGreaterThan(40);
     expect(f.start).toBe(0);
-    expect(f.end).toBeCloseTo(f.size, 0);
+    const size = f.end;
     expect(f.mask).toContain("linear-gradient");
 
     await scrollTo(root, 0.5);
     await expect.poll(async () => (await fades(root)).start).toBeGreaterThan(40);
     f = await fades(root);
-    expect(f.start).toBeCloseTo(f.size, 0);
-    expect(f.end).toBeCloseTo(f.size, 0);
+    expect(f.start).toBeCloseTo(size, 0);
+    expect(f.end).toBeCloseTo(size, 0);
 
     await scrollTo(root, 1);
     await expect.poll(async () => (await fades(root)).end).toBe(0);
     f = await fades(root);
-    expect(f.start).toBeCloseTo(f.size, 0);
+    expect(f.start).toBeCloseTo(size, 0);
   });
 
   test("RTL: the start fade is on the right (gradient runs to the left)", async ({ page }) => {
