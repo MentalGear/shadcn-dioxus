@@ -9,7 +9,7 @@ import { gotoHydrated } from "./hydration";
 import { BASE_URL } from "./base-url";
 
 const PAGE = `${BASE_URL}/component/button/`;
-const CHAT = ["attachment", "bubble", "markdown", "marker", "message", "message scroller"];
+const CHAT = ["attachment", "bubble", "checkpoint", "code block", "markdown", "marker", "message", "message scroller", "trace"];
 
 const group = (page: Page, label: string) =>
   page.locator(".dx-nav-category").filter({
