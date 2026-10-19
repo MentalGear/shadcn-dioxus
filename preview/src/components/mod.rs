@@ -98,9 +98,8 @@ pub fn category_of(name: &str) -> ComponentCategory {
         | "virtual_list" | "scroll_area" | "tag_group" | "table" | "data_table" | "resizable" => {
             ComponentCategory::DataDisplay
         }
-        "message" | "bubble" | "marker" | "attachment" | "message_scroller" | "markdown" => {
-            ComponentCategory::Chat
-        }
+        "message" | "bubble" | "marker" | "attachment" | "message_scroller" | "markdown"
+        | "code_block" | "trace" | "checkpoint" => ComponentCategory::Chat,
         "chart" | "area_chart" | "bar_chart" | "line_chart" | "pie_chart" | "radar_chart"
         | "radial_chart" | "chart_tooltip" => ComponentCategory::Charts,
         _ => ComponentCategory::DataDisplay,
@@ -161,6 +160,7 @@ pub const CATALOG: &[(&str, Origin)] = &[
     ("carousel", Origin::Shadcn),
     ("chart", Origin::Shadcn),
     ("checkbox", Origin::Shadcn),
+    ("code_block", Origin::Shadcn),
     ("collapsible", Origin::Shadcn),
     ("combobox", Origin::Shadcn),
     ("command", Origin::Shadcn),
@@ -208,6 +208,7 @@ pub const CATALOG: &[(&str, Origin)] = &[
     ("toggle", Origin::Shadcn),
     ("toggle_group", Origin::Shadcn),
     ("tooltip", Origin::Shadcn),
+    ("trace", Origin::Shadcn),
     // The chart gallery pages: shadcn's own `chart` page carries these per-type sections
     // (`/charts/area`, `/charts/bar`, ...), so they are not additions.
     ("area_chart", Origin::Shadcn),
@@ -223,9 +224,11 @@ pub const CATALOG: &[(&str, Origin)] = &[
     ("form", Origin::Extra("A test fixture for native form submission; shadcn/ui replaced its Form with Field.")),
     ("markdown", Origin::Extra("Renders model output as safe, streaming-friendly Markdown; shadcn/ui has no Markdown component.")),
     ("navbar", Origin::Extra("A menubar-style navigation bar from upstream Dioxus; shadcn/ui's Navigation Menu is a different component.")),
+    ("checkpoint", Origin::Extra("shadcn/ui documents Checkpoint only as a Marker recipe; this is that recipe as a component.")),
     ("tag_group", Origin::Extra("A focusable group of tags with selection and removal, from upstream Dioxus; not in shadcn/ui.")),
     ("toolbar", Origin::Extra("A keyboard-navigable toolbar for grouping controls, from upstream Dioxus; not in shadcn/ui.")),
     ("top_layer", Origin::Extra("A test page for overlay stacking, not an installable component.")),
+    ("virtual_grid", Origin::Extra("A data grid or gallery that renders only the cells in view, rows and columns; shadcn/ui has no virtualized grid.")),
     ("virtual_list", Origin::Extra("A long list that renders only the visible rows, from upstream Dioxus; not in shadcn/ui.")),
 ];
 
@@ -371,7 +374,7 @@ macro_rules! examples {
                 stringify!($name),
                 "/description.txt"
             )),
-            docs: include_str!(concat!(env!("OUT_DIR"), "/", stringify!($name), "/docs.html")),
+            docs: include!(concat!(env!("OUT_DIR"), "/", stringify!($name), "/docs_sections.rs")),
             component: HighlightedCode {
                 source: dioxus_code::code!(concat!("/src/components/", stringify!($name), "/component.rs")),
             },
@@ -412,7 +415,7 @@ macro_rules! examples {
                 stringify!($name),
                 "/description.txt"
             )),
-            docs: include_str!(concat!(env!("OUT_DIR"), "/", stringify!($name), "/docs.html")),
+            docs: include!(concat!(env!("OUT_DIR"), "/", stringify!($name), "/docs_sections.rs")),
             component: HighlightedCode {
                 source: dioxus_code::code!(concat!("/src/components/", stringify!($name), "/component.rs")),
             },

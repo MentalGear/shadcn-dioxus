@@ -338,6 +338,7 @@ pub fn DropdownMenuGroup(props: DropdownMenuGroupProps) -> Element {
 pub fn DropdownMenuSeparator(props: DropdownMenuSeparatorProps) -> Element {
     let base = attributes!(div {
         class: "dx-dropdown-menu-separator",
+        "data-dx-menu-separator": "true",
     });
     let merged = merge_attributes(vec![base, props.attributes]);
     rsx! {
@@ -353,6 +354,7 @@ pub fn DropdownMenuSeparator(props: DropdownMenuSeparatorProps) -> Element {
 pub fn DropdownMenuShortcut(props: DropdownMenuShortcutProps) -> Element {
     let base = attributes!(span {
         class: "dx-dropdown-menu-shortcut",
+        "data-dx-menu-shortcut": "true",
     });
     let merged = merge_attributes(vec![base, props.attributes]);
     rsx! {

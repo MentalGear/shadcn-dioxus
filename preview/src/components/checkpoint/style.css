@@ -1,0 +1,7 @@
+/* The recipe's `inline-flex items-center gap-2` on the Marker content: the label and the
+ * Restore button sit on one line between the separator rules. */
+.dx-checkpoint-row {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dx-space-2);
+}

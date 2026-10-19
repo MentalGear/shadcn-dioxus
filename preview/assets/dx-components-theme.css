@@ -1301,6 +1301,69 @@ html[data-theme="light"] [class~="dxc-system"] {
   font-weight: 500;
 }
 
+/* Menu item parts (docs/backlog.md row 155 group 2, hoisted by g2): separator, shortcut,
+ * `variant="destructive"` and `inset`, mirroring shadcn Nova's `.cn-dropdown-menu-separator`
+ * (`bg-border -mx-1 my-1 h-px`), `.cn-dropdown-menu-shortcut` (`text-muted-foreground ml-auto text-xs
+ * tracking-widest`, `group-focus/...:text-accent-foreground`), `[data-variant=destructive]`
+ * (`text-destructive`, `focus:bg-destructive/10`, `dark:focus:bg-destructive/20`) and `data-[inset]:pl-8`.
+ * The primitive (`primitives/src/menu_item.rs`, `item_style_attributes`) is the one place `data-variant`
+ * and `data-inset` are written, the three themed wrappers are the one place `data-dx-menu-separator` and
+ * `data-dx-menu-shortcut` are written, and this is the one place they are painted: a part cannot drift
+ * between Dropdown, Context and Menubar because there is nothing per-component to drift. Menubar keeps only
+ * its `inset` slot (its leading slot is the check's, `padding-inline-start`). */
+:where([data-dx-menu-separator]) {
+  height: 1px;
+  background-color: var(--dx-border);
+  margin-block: var(--dx-space-1);
+
+  /* Edge to edge of the panel: undo the floating surface's own padding. */
+  margin-inline: calc(-1 * var(--dx-floating-padding, var(--dx-space-1)));
+}
+
+:where([data-dx-menu-shortcut]) {
+  color: var(--dx-muted-foreground);
+  font-size: var(--dx-text-xs);
+  letter-spacing: 0.1em; /* Nova `tracking-widest` */
+  margin-inline-start: auto;
+}
+
+/* A highlighted item takes the shortcut into its own ink (accent-foreground, or the destructive ink). */
+[data-dx-menu-item]:focus-visible [data-dx-menu-shortcut],
+[data-dx-menu-item][data-state="open"] [data-dx-menu-shortcut] {
+  color: inherit;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  [data-dx-menu-item]:hover:not([data-disabled="true"]) [data-dx-menu-shortcut] {
+    color: inherit;
+  }
+}
+
+/* Destructive text is the clamped `--dx-destructive-text` (>= 4.5:1 on every surface,
+ * scripts/check-destructive-text.sh); the highlight is a tint of the fill-grade `--dx-destructive`.
+ * The icon inherits the ink (currentColor): no separate svg rule, which would also have to end at the
+ * popup boundary. One attribute pair (not `:where`) so it out-ranks the zero-specificity highlight ink. */
+[data-dx-menu-item][data-variant="destructive"] {
+  color: var(--dx-destructive-text);
+}
+
+[data-dx-menu-item][data-variant="destructive"]:focus-visible {
+  background-color: var(--light, color-mix(in oklab, var(--dx-destructive) 10%, transparent))
+    var(--dark, color-mix(in oklab, var(--dx-destructive) 20%, transparent));
+}
+
+@media (hover: hover) and (pointer: fine) {
+  [data-dx-menu-item][data-variant="destructive"]:hover:not([data-disabled="true"]) {
+    background-color: var(--light, color-mix(in oklab, var(--dx-destructive) 10%, transparent))
+      var(--dark, color-mix(in oklab, var(--dx-destructive) 20%, transparent));
+  }
+}
+
+/* `inset`: the leading space an indicator would take, on an item or heading that draws none. */
+:where([data-dx-menu-item][data-inset="true"], [data-dx-menu-label][data-inset="true"]) {
+  padding-inline-start: var(--dx-space-8); /* Nova `pl-8` */
+}
+
 /* ============================================================================
  * Edge panel, once (docs/backlog.md rows 207 and 208).
  *

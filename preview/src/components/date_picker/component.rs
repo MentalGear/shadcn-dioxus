@@ -41,6 +41,7 @@ fn fixed_date(year: i32, month: Month, day: u8) -> Date {
 #[derive(Clone, Copy)]
 struct StyledDatePickerContext {
     month_count: u8,
+    caption_layout: CaptionLayout,
     apply_label: ReadSignal<String>,
     cancel_label: ReadSignal<String>,
 }
@@ -51,6 +52,12 @@ fn default_apply_label() -> ReadSignal<String> {
 
 fn default_cancel_label() -> ReadSignal<String> {
     ReadSignal::new(Signal::new("Cancel".to_string()))
+}
+
+fn styled_caption_layout() -> CaptionLayout {
+    try_use_context::<StyledDatePickerContext>()
+        .map(|ctx| ctx.caption_layout)
+        .unwrap_or_default()
 }
 
 fn styled_month_count() -> u8 {
@@ -103,6 +110,11 @@ pub struct DatePickerProps {
     /// `dioxus_primitives::date_picker::DateElementProps::on_format_month`.
     #[props(default = Callback::new(|month: Month| month.to_string()))]
     pub on_format_month: Callback<Month, String>,
+
+    /// How the calendar's month caption is drawn (shadcn's `captionLayout`): plain text by default,
+    /// or month and/or year dropdowns for a far-away date such as a date of birth.
+    #[props(default)]
+    pub caption_layout: CaptionLayout,
 
     /// Specify how many months are visible at once
     #[props(default = 1)]
@@ -189,6 +201,11 @@ pub struct DateRangePickerProps {
     #[props(default = Callback::new(|month: Month| month.to_string()))]
     pub on_format_month: Callback<Month, String>,
 
+    /// How the calendar's month caption is drawn (shadcn's `captionLayout`): plain text by default,
+    /// or month and/or year dropdowns for a far-away date such as a date of birth.
+    #[props(default)]
+    pub caption_layout: CaptionLayout,
+
     /// Specify how many months are visible at once
     #[props(default = 1)]
     pub month_count: u8,
@@ -241,6 +258,7 @@ pub fn DatePicker(props: DatePickerProps) -> Element {
     let month_count = props.month_count.max(1);
     use_context_provider(|| StyledDatePickerContext {
         month_count,
+        caption_layout: props.caption_layout,
         apply_label: props.apply_label,
         cancel_label: props.cancel_label,
     });
@@ -304,6 +322,7 @@ pub fn DateRangePicker(props: DateRangePickerProps) -> Element {
     let month_count = props.month_count.max(1);
     use_context_provider(|| StyledDatePickerContext {
         month_count,
+        caption_layout: props.caption_layout,
         apply_label: props.apply_label,
         cancel_label: props.cancel_label,
     });
@@ -356,6 +375,7 @@ pub(crate) fn DatePickerInput(props: DatePickerInputProps) -> Element {
     let merged = merge_attributes(vec![base, props.attributes]);
     let extra_children = props.children;
     let month_count = styled_month_count();
+    let caption_layout = styled_caption_layout();
 
     rsx! {
         date_picker::DatePickerInput {
@@ -381,7 +401,12 @@ pub(crate) fn DatePickerInput(props: DatePickerInputProps) -> Element {
             DatePickerPopoverContent { align: ContentAlign::Center,
                 date_picker::DatePickerCalendar { calendar: CalendarRoot,
                     for offset in 0..month_count {
-                        CalendarMonthView { key: "{offset}", offset, month_count }
+                        CalendarMonthView {
+                            key: "{offset}",
+                            offset,
+                            month_count,
+                            caption_layout,
+                        }
                     }
                 }
                 DatePickerFooter {}
@@ -398,6 +423,7 @@ pub(crate) fn DateRangePickerInput(props: DatePickerInputProps) -> Element {
     let merged = merge_attributes(vec![base, props.attributes]);
     let extra_children = props.children;
     let month_count = styled_month_count();
+    let caption_layout = styled_caption_layout();
 
     rsx! {
         date_picker::DateRangePickerInput {
@@ -435,7 +461,12 @@ pub(crate) fn DateRangePickerInput(props: DatePickerInputProps) -> Element {
                 date_picker::DateRangePickerCalendar {
                     calendar: RangeCalendarRoot,
                     for offset in 0..month_count {
-                        CalendarMonthView { key: "{offset}", offset, month_count }
+                        CalendarMonthView {
+                            key: "{offset}",
+                            offset,
+                            month_count,
+                            caption_layout,
+                        }
                     }
                 }
                 DatePickerFooter {}

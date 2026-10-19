@@ -180,3 +180,7 @@ The jump button slides, scales and fades with `--dx-motion-duration-slow` when i
 ## Not reproduced from shadcn/ui
 
 Not reproduced: the `slide-up` and `scale-fade` animation presets as separate classes (the theme's `dx-drop-in` and `dx-fade-in` are the same motion), and a boolean return from the scroll commands (they are fire-and-forget by design; see Commands). A composer whose actions sit in a full-width bottom row is `InputGroupAlign::BlockEnd` (see the Input Group docs).
+
+## Agent chat
+
+The Agent Chat demo is upstream's `chat-demo` agent turn in a scroller: a reasoning `Trace` that is open and shimmering while it runs, a tool-call line, an answer with a `CodeBlock`, and a `Checkpoint` after the question whose Restore drops the answer.

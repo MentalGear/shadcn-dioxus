@@ -63,6 +63,7 @@ SidebarProvider {
 - Collapse: `Offcanvas` hides the rail; `Icon` keeps a thin icon strip and hides labels/actions/badges; `None` is static.
 - Keyboard: ⌘/Ctrl+B toggles via provider. Focus rings are defined in `sidebar/style.css`; keep or replace with `:focus-visible` styles.
 - Tooltips: `tooltip: Option<Element>` on `SidebarMenuButton`; `None` skips wrapping in Tooltip.
+- Trigger icon: `icon: Option<Element>` on `SidebarTrigger` replaces the default panel icon (e.g. a hamburger `Menu`); give it the class `dx-sidebar-trigger-icon` to keep the trigger's icon sizing and RTL flip.
 
 ## Custom Rendering with `as`
 Supported components: `SidebarTrigger`, `SidebarGroupLabel`, `SidebarGroupAction`, `SidebarMenuButton`, `SidebarMenuAction`, `SidebarMenuSubButton`. Use `as: |attrs| rsx! { ... }` and spread `..attrs` to retain merged attributes, state data, and handlers.

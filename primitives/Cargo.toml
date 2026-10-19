@@ -14,18 +14,23 @@ repository = "https://github.com/DioxusLabs/components"
 [dependencies]
 dioxus.workspace = true
 dioxus-attributes = { path = "../dioxus-attributes" }
-dioxus-sdk-time = "0.7.0"
 # Optional, switched on by the `calendar` feature (Calendar, DatePicker): see `[features]`.
 time = { version = "0.3.47", optional = true, features = ["std", "macros", "local-offset"] }
-num-integer = { version = "0.1.46", optional = true }
 tracing.workspace = true
 serde = { version = "1.0", features = ["derive"] }
 # Optional, switched on by the `color-picker` feature (ColorPicker).
 palette = { version = "0.7.6", optional = true }
 
+# `src/sleep.rs`, the one timer: tokio on native, gloo-timers on wasm (what `dioxus-sdk-time::sleep` was).
+[target.'cfg(not(target_family = "wasm"))'.dependencies]
+tokio = { version = "1", features = ["time"] }
+
+[target.'cfg(target_family = "wasm")'.dependencies]
+gloo-timers = { version = "0.3", features = ["futures"] }
+
 [dev-dependencies]
 dioxus-ssr = "0.7.0"
-# `interval.rs` tests drive a VirtualDom on tokio's paused clock (already in the tree via dioxus-sdk-time).
+# `interval.rs` tests drive a VirtualDom on tokio's paused clock (tokio is a native dependency of `src/sleep.rs`).
 tokio = { version = "1", features = ["rt", "macros", "time", "test-util"] }
 
 # A component pays only for the crates it uses: `dx components add <name>` runs `cargo add dioxus-primitives
@@ -37,6 +42,6 @@ default = ["router"]
 router = ["dioxus/router"]
 web = ["time?/wasm-bindgen"]
 # `calendar` and `date_picker` (they use each other's types).
-calendar = ["dep:time", "dep:num-integer"]
+calendar = ["dep:time"]
 # `color_picker`.
 color-picker = ["dep:palette"]

@@ -19,6 +19,7 @@ struct RadioGroupCtx {
     disabled: ReadSignal<bool>,
     required: ReadSignal<bool>,
     name: ReadSignal<String>,
+    form: ReadSignal<Option<String>>,
     /// The value the group resets to on `<form reset>`. Mirrors
     /// `Checkbox`'s `default_checked` (it is the *prop*, not a live snapshot
     /// of the value at mount, so it stays correct even if `default_value`
@@ -110,6 +111,12 @@ pub struct RadioGroupProps {
     #[props(default)]
     pub name: ReadSignal<String>,
 
+    /// The `id` of a `<form>` the hidden input belongs to (the HTML `form` attribute), so a control
+    /// rendered outside its `<form>` still submits and resets with it. `None` leaves the input's
+    /// owner to the DOM ancestor.
+    #[props(default)]
+    pub form: ReadSignal<Option<String>>,
+
     /// Whether the radio group is horizontal.
     #[props(default)]
     pub horizontal: ReadSignal<bool>,
@@ -200,6 +207,7 @@ pub fn RadioGroup(props: RadioGroupProps) -> Element {
         disabled: props.disabled,
         required: props.required,
         name: props.name,
+        form: props.form,
         default_value: default_value.into(),
 
         values: Signal::new(Default::default()),
@@ -410,6 +418,7 @@ pub fn RadioItem(props: RadioItemProps) -> Element {
             transform: "translateX(-100%)",
 
             name: ctx.name,
+            form: ctx.form,
             value: (props.value)(),
             required: ctx.required,
             disabled: disabled(),

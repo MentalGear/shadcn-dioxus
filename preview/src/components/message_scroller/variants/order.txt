@@ -11,3 +11,4 @@ animation
 full_chat
 fade
 visibility
+agent_chat

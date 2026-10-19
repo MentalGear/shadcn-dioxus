@@ -1,7 +1,7 @@
 use super::super::component::AspectRatio;
 use dioxus::prelude::*;
 
-const COVER: Asset = asset!("/assets/avatars/lena-park.svg");
+const COVER: Asset = asset!("/assets/avatars/nina-hart.svg");
 
 fn ratio_box(ratio: f64, label: &'static str) -> Element {
     rsx! {
