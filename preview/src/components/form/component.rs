@@ -832,8 +832,8 @@ mod tests {
             .collect();
         assert_eq!(
             forms.len(),
-            2,
-            "the fixture has exactly two forms: {forms:?}"
+            3,
+            "the fixture has exactly three forms (entries, outside-form for rule 8, required): {forms:?}"
         );
         for tag in forms {
             assert_eq!(

@@ -10,9 +10,9 @@ use crate::{
     use_unique_id, LocalDateExt as _,
 };
 
+use crate::sleep::sleep;
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
-use crate::sleep::sleep;
 use std::{fmt::Display, str::FromStr, time::Duration};
 use time::{macros::date, Date, Month, OffsetDateTime, Weekday};
 

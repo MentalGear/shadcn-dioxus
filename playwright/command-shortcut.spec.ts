@@ -3,6 +3,7 @@ import type { Page } from "@playwright/test";
 import { expectNoAxeViolations } from "./axe";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
+import { readAtRest } from "./animations";
 
 /** `CommandShortcut` (backlog row 188): the hint at the end of a command row. */
 const GOTO_OPTS = { timeout: 20 * 60 * 1000 };
@@ -23,7 +24,7 @@ test("CommandShortcut sits at the inline end, muted, and takes the foreground wh
   await expect(option.locator("span", { hasText: "⌘B" })).toHaveCount(1);
 
   const read = () =>
-    option.evaluate((el) => {
+    readAtRest(option, (el) => {
       const h = [...el.querySelectorAll("span")].find((s) => s.textContent === "⌘B") as HTMLElement;
       const hs = getComputedStyle(h);
       const s = getComputedStyle(el);
