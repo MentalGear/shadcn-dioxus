@@ -362,7 +362,8 @@ test.describe("2. hard load: the static page is the page", () => {
         const page = await ctx.newPage();
         await noWebFonts(page);
         if (js) await page.addInitScript(OBSERVE_INIT);
-        await gotoHydrated(page, `${BASE}/component/${slug}/`, { waitUntil: "load" });
+        // goto-ok: the JavaScript-off variant never hydrates; the hydrated variant waits for it below (hydrated(page))
+        await page.goto(`${BASE}/component/${slug}/`, { waitUntil: "load" });
         if (js) {
           await hydrated(page);
           await page.waitForTimeout(500);
