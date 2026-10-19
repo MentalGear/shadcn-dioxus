@@ -31,6 +31,11 @@ impl Month {
         }
     }
 
+    /// The slice's color: `chart_data`'s, by position.
+    fn color(self) -> String {
+        format!("var(--dx-chart-{})", self.index() + 1)
+    }
+
     fn index(self) -> usize {
         Self::ALL.iter().position(|m| *m == self).unwrap_or(0)
     }
@@ -94,6 +99,17 @@ pub fn Demo() -> Element {
                         trigger_aria_label: Some("Select a value".to_string()),
                         // A fixed width: the same trigger box before and after the selected label is written.
                         trigger_class: "dx-chart-range-trigger",
+                        // shadcn's trigger shows the selected slice's swatch beside its name.
+                        trigger: rsx! {
+                            span { class: "dx-chart-select-value",
+                                span {
+                                    "data-slot": "chart-swatch",
+                                    "data-testid": "pie-select-swatch",
+                                    style: "--series-color: {active().color()}",
+                                }
+                                span { {active().label()} }
+                            }
+                        },
                         on_value_change: move |value: Option<Month>| {
                             if let Some(value) = value {
                                 active.set(value);
@@ -105,7 +121,13 @@ pub fn Demo() -> Element {
                                 index: month.index(),
                                 value: month,
                                 text_value: month.label(),
-                                {month.label()}
+                                span { class: "dx-chart-select-value",
+                                    span {
+                                        "data-slot": "chart-swatch",
+                                        style: "--series-color: {month.color()}",
+                                    }
+                                    span { {month.label()} }
+                                }
                             }
                         }
                     }
