@@ -313,13 +313,18 @@ pub fn ToastProvider(props: ToastProviderProps) -> Element {
     let region_id = use_unique_id();
 
     // F6: this provider only REGISTERS its region (and how many toasts it holds) with the one
-    // page-lifetime handler (`TOAST_F6_JS`); it never listens itself, so N providers on a page
-    // are still one listener and F6 can pick the right region.
+    // shared handler (`TOAST_F6_JS`); it never listens itself, so N providers on a page are
+    // still one listener and F6 can pick the right region. Declared before the effect that
+    // reports, so the shared registry exists by the time the first report arrives.
+    crate::js_listener::use_js_listeners(move || {
+        let id = region_id.cloned();
+        Some(crate::js_listener::JsListeners::install(TOAST_F6_JS).arg(id))
+    });
     use_effect(move || {
         let newest = toast_list.read().last().map_or(0, |t| t.id.0);
         let length = toast_list.read().len();
         let _ = document::eval(&format!(
-            "{TOAST_F6_JS};window.__dxToastF6.set({:?},{length},{newest})",
+            "window.__dxToastF6&&window.__dxToastF6.set({:?},{length},{newest})",
             region_id.cloned()
         ));
     });
@@ -397,15 +402,56 @@ pub fn ToastProvider(props: ToastProviderProps) -> Element {
     }
 }
 
-/// The ONE F6 ("jump to notifications") handler of the page. Installed once per page by whichever
-/// provider registers first (idempotent through `window.__dxToastF6`) and kept for the life of
-/// the page, like the modality writer; providers register `(region id, toast count, newest toast
-/// id)` through `window.__dxToastF6.set`. F6 moves focus to the region of the toast that arrived
-/// last (`ToastId`s come from one process-wide counter, so "newest" needs no clock); pressed
-/// again from inside a region it goes on to the next one, most recent first, and wraps. Regions
-/// without toasts, or no longer in the document, are never candidates, and with no candidate F6
-/// is left to the browser.
-const TOAST_F6_JS: &str = r#"(function(){var W=window;if(!W.__dxToastF6){var regs=new Map();W.__dxToastF6={set:function(id,n,newest){if(n>0)regs.set(id,newest);else regs.delete(id)}};/*listener-ok: the one F6 handler lives as long as the page*/document.addEventListener('keydown',function(e){if(e.key!=='F6')return;var live=[];regs.forEach(function(newest,id){var el=document.getElementById(id);if(el)live.push({el:el,newest:newest});else regs.delete(id)});if(!live.length)return;live.sort(function(a,b){return b.newest-a.newest});var cur=-1;for(var i=0;i<live.length;i++){if(live[i].el.contains(document.activeElement))cur=i}e.preventDefault();/* focus-ok: the hotkey moves focus to the toast region on purpose */live[(cur+1)%live.length].el.focus()})}})()"#;
+/// The ONE F6 ("jump to notifications") handler of the page, shared by every provider.
+///
+/// Each provider runs this script through `use_js_listeners` (so it ends with the provider). The
+/// first one creates `window.__dxToastF6` and the single `keydown` listener behind it; every
+/// provider takes a reference, and the last one to leave removes the listener again (the
+/// registry is reference-counted, like `activity.rs`'s, so a page without a toaster holds no
+/// listener at all and `listener-inventory.spec.ts` stays at its baseline). Providers report
+/// `(region id, toast count, newest toast id)` through `window.__dxToastF6.set`. F6 moves focus to
+/// the region of the toast that arrived last (`ToastId`s come from one process-wide counter, so
+/// "newest" needs no clock); pressed again from inside a region it goes on to the next one,
+/// most recent first, and wraps. Regions without toasts, or no longer in the document, are never
+/// candidates, and with no candidate F6 is left to the browser.
+const TOAST_F6_JS: &str = r#"
+const id = await dioxus.recv();
+let R = window.__dxToastF6;
+if (!R) {
+  const regs = new Map();
+  const onKey = (e) => {
+    if (e.key !== 'F6') return;
+    const live = [];
+    regs.forEach((newest, rid) => {
+      const el = document.getElementById(rid);
+      if (el) live.push({ el, newest });
+    });
+    if (!live.length) return;
+    live.sort((a, b) => b.newest - a.newest);
+    let cur = -1;
+    live.forEach((r, i) => { if (r.el.contains(document.activeElement)) cur = i; });
+    e.preventDefault();
+    // focus-ok: the hotkey moves focus to the toast region on purpose
+    live[(cur + 1) % live.length].el.focus();
+  };
+  // listener-ok: the ONE F6 handler, reference-counted below and removed with the last provider
+  document.addEventListener('keydown', onKey);
+  R = window.__dxToastF6 = {
+    refs: 0,
+    regs,
+    set(rid, n, newest) { if (n > 0) regs.set(rid, newest); else regs.delete(rid); },
+    off() { document.removeEventListener('keydown', onKey); },
+  };
+}
+R.refs++;
+cleanup(() => {
+  R.regs.delete(id);
+  if (--R.refs === 0) {
+    R.off();
+    if (window.__dxToastF6 === R) delete window.__dxToastF6;
+  }
+});
+"#;
 
 /// Reports whether the pointer is over the toaster (a mouse or pen; a touch tap is not a hover)
 /// or focus is inside it, as `true`/`false` on every change. The same condition the stylesheet
