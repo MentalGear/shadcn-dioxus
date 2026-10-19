@@ -30,6 +30,7 @@ const ROUTES = [
 
 for (const url of ROUTES) {
   test(`global stylesheet (main.css) is applied on ${new URL(url).pathname}${new URL(url).search}`, async ({ page }) => {
+    // goto-ok: asserts the stylesheet applied at first paint (prerendered CSS), not interactive behaviour
     await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60_000 });
     await page.waitForTimeout(3000);
     const state = await page.evaluate(() => {

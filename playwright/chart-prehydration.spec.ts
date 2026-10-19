@@ -63,6 +63,7 @@ for (const route of ROUTES) {
       // Pre-hydration: no JavaScript at all.
       const noJs = await browser.newContext({ viewport, javaScriptEnabled: false });
       const p1 = await noJs.newPage();
+      // goto-ok: JavaScript disabled in this context: the page can never hydrate
       await p1.goto(`${BASE_URL}${route}`, { waitUntil: "load" });
       await p1.waitForSelector('svg[data-slot="chart-svg"]');
       const before: Card[] = await p1.evaluate(`(${COLLECT.toString()})()`);

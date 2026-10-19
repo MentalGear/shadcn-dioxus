@@ -172,6 +172,7 @@ test("the preset is on <html> before the app boots (no flash)", async ({ page, c
   ]);
   // Stop the wasm bundle: whatever is on <html> now came from the head script, not from the app.
   await page.route(/\.wasm(\?.*)?$/, (route) => route.abort());
+  // goto-ok: wasm is aborted on purpose (the head script alone must have applied the theme), so hydration never happens
   await page.goto(`${BASE_URL}/component/button/`, { waitUntil: "domcontentloaded" });
   const attrs = await page.evaluate(() => ({
     accent: document.documentElement.getAttribute("data-theme-accent"),
@@ -188,6 +189,7 @@ test("junk in a preset cookie is ignored, not applied", async ({ page, context }
     { name: "dx_theme_accent", value: "blue%22%20onload%3Dx", url: BASE_URL },
     { name: "dx_theme", value: "purple", url: BASE_URL },
   ]);
+  // goto-ok: wasm is aborted on purpose (the head script alone must have applied the theme), so hydration never happens
   await page.goto(`${BASE_URL}/component/button/`, { waitUntil: "domcontentloaded" });
   expect(await attr(page, "data-theme-accent")).toBeNull();
   expect(await attr(page, "data-theme")).toBeNull();

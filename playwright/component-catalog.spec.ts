@@ -60,7 +60,7 @@ async function openHome(page: Page) {
 
 async function openComponent(page: Page, name: string) {
   await gotoHydrated(page, componentUrl(name), { timeout: 20 * 60 * 1000 });
-  // The legacy `?name=` route redirects to the canonical path route once mounted.
+  // Navigate to the canonical path route (the legacy `?name=` form redirects client-side after hydration).
   await expect(page.locator(".dx-component-page-header h1")).toHaveText(display(name), { timeout: 60_000 });
 }
 

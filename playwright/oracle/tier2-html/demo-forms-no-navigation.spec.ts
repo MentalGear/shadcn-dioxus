@@ -273,6 +273,7 @@ test.describe("demo forms never navigate", () => {
           for (const route of withForms) {
             const page = await context.newPage();
             const tracker = track(page);
+            // goto-ok: includes wasm-blocked and scripting-disabled contexts where the flag never appears; the spec settles itself
             await page.goto(BASE_URL + route, { waitUntil: "domcontentloaded", timeout: 120_000 });
             tracker.reset();
             const r = await exerciseForms(page, tracker, route, variant !== "scripting disabled");

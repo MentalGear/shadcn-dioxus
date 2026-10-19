@@ -171,6 +171,7 @@ for (const { route, scheme, widths } of GROUPS) {
 
     for (const width of ONLY.length ? ONLY : widths) {
       await page.setViewportSize({ width, height: HEIGHT });
+      // goto-ok: measures layout from the first committed byte through hydration; waiting for hydration first would hide the shift
       await page.goto(`${BASE_URL}${route}`, { waitUntil: "commit" });
       await page.waitForSelector('html[data-hydrated="true"]', { state: "attached", timeout: 120_000 });
       await page.evaluate(() => document.fonts.ready.then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))));
@@ -286,6 +287,7 @@ test.describe("progressive paint (home widget masonry)", () => {
       await page.route("**/*.wasm", (route) => route.abort());
       const cdp = await context.newCDPSession(page);
       await cdp.send("Emulation.setCPUThrottlingRate", { rate: Number(process.env.LS_PP_CPU ?? 4) });
+      // goto-ok: measures layout from the first committed byte through hydration; waiting for hydration first would hide the shift
       await page.goto(`${front.url}/`, { waitUntil: "commit" });
       await page.waitForLoadState("load", { timeout: 4 * 60 * 1000 });
       await page.waitForTimeout(1000);

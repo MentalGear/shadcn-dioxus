@@ -25,6 +25,7 @@ async function answerSlowImageAfter(page: Page, ms: number) {
 
 /** Navigate without waiting for the network to go idle (the slow image keeps it busy on purpose). */
 async function open(page: Page) {
+  // goto-ok: commit then its own hydration wait; networkidle never settles (the slow image is the subject)
   await page.goto(URL, { waitUntil: "commit", timeout: 20 * 60 * 1000 });
   await page.waitForSelector('html[data-hydrated="true"]', { state: "attached", timeout: 5 * 60 * 1000 });
 }

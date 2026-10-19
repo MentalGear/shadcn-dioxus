@@ -30,6 +30,7 @@ test("every component page has one closed Installation section with one CLI comm
   test.setTimeout(10 * 60 * 1000);
   const problems: string[] = [];
   for (const name of NAMES) {
+    // goto-ok: reads prerendered markup only (no interaction), faster than waiting for hydration on every component
     await page.goto(page_url(name), { waitUntil: "domcontentloaded" });
     const facts = await page.evaluate(() => {
       const article = document.querySelector("article.dx-component-page")!;
@@ -77,6 +78,7 @@ test("every docs.md section is a closed disclosure with its h2 inside the summar
   const problems: string[] = [];
   let sections = 0;
   for (const name of NAMES) {
+    // goto-ok: reads prerendered markup only (no interaction), faster than waiting for hydration on every component
     await page.goto(page_url(name), { waitUntil: "domcontentloaded" });
     const facts = await page.evaluate(() => {
       // The page's own docs.md prose, not a demo's "About this example" disclosure body: that one wears
@@ -111,6 +113,7 @@ test("every docs.md section is a closed disclosure with its h2 inside the summar
 });
 
 test("a demo's prose is a closed 'About this example' disclosure under the demo", async ({ page }) => {
+  // goto-ok: reads prerendered markup only (no interaction), faster than waiting for hydration on every component
   await page.goto(page_url("attachment"), { waitUntil: "domcontentloaded" });
   const notes = page.locator("details.dx-variant-notes");
   // One per attachment variant that has a notes.md (nine), each closed, each right after its own demo.

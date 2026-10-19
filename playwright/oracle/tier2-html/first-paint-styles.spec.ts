@@ -405,6 +405,7 @@ test.describe("3. client-side navigation: no route is painted with late styles",
       await noWebFonts(page);
       const css = await delayCssFetches(page);
       await page.addInitScript(OBSERVE_INIT);
+      // goto-ok: first-paint oracle: samples styles before hydration by construction
       await page.goto(`${BASE}/docs`, { waitUntil: "domcontentloaded" });
       await hydrated(page);
       await page.waitForTimeout(500);
@@ -460,6 +461,7 @@ test.describe("4. a popover's content is styled the moment it first mounts", () 
       await page.setViewportSize({ width: 1280, height: 900 });
       await noWebFonts(page);
       const css = await delayCssFetches(page);
+      // goto-ok: first-paint oracle: samples styles before hydration by construction
       await page.goto(`${BASE}/component/${slug}/`, { waitUntil: "domcontentloaded" });
       await hydrated(page);
       await page.waitForTimeout(500);

@@ -114,6 +114,7 @@ gates=(
   "check-markdown-parser|scripts/check-markdown-parser.sh"
   "check-demo-text-locators|scripts/check-demo-text-locators.sh"
   "check-spec-at-rest|scripts/check-spec-at-rest.sh"
+  "check-spec-goto-hydrated|scripts/check-spec-goto-hydrated.sh"
   "check-backlog-index|scripts/check-backlog-index.sh"
   "fmt|cargo fmt --all -- --check"
   "check-primitives-features|scripts/check-primitives-features.sh"
