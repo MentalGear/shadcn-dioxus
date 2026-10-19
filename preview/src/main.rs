@@ -129,10 +129,23 @@ struct ComponentDemoData {
     name: &'static str,
     r#type: ComponentType,
     description: &'static str,
-    docs: &'static str,
+    /// The page's docs sections (docs.md `##` sections, "Usage notes", "Props reference"), generated
+    /// by `build.rs` (`render_docs_sections`) and rendered by `ComponentHighlight` as Accordion items.
+    docs: &'static [DocsSection],
     component: HighlightedCode,
     style: CssHighlight,
     variants: &'static [ComponentVariantDemoData],
+}
+
+/// One section of a component page's docs, as `build.rs` generates it (its `DocsSection`).
+#[derive(Clone, Copy, PartialEq)]
+struct DocsSection {
+    /// The `h2` id, the anchor target (`docs-<slug>`).
+    id: &'static str,
+    /// The heading's inline HTML.
+    title_html: &'static str,
+    /// The section body's HTML (root-absolute hrefs not yet prefixed).
+    html: &'static str,
 }
 
 #[allow(unpredictable_function_pointer_comparisons)]
@@ -1751,7 +1764,7 @@ fn NotFound(segments: Vec<String>) -> Element {
 const PAGE_HEADING_INSTALLATION: &str = "Installation";
 #[cfg(test)]
 const PAGE_HEADING_USAGE: &str = "Usage notes";
-const PAGE_HEADING_VARIANTS: &str = "Variants";
+const PAGE_HEADING_VARIANTS: &str = "Examples";
 /// "Usage" is reserved too: the text before a docs.md's first `##` is rendered under "Usage notes", so
 /// a docs h2 called "Usage" would read as a nested duplicate of it.
 #[cfg(test)]
@@ -1804,11 +1817,22 @@ fn prefix_root_absolute_hrefs(html: &str, prefix: &str) -> String {
     out
 }
 
-/// Opens the closed `<details>` (docs.md sections, Installation, a demo's notes) that holds the URL
-/// fragment's target, on load and on every `hashchange`, then scrolls to the target. A fragment that
-/// points at an `h2` inside a `<summary>` scrolls by itself (the heading is always visible), but a
-/// fragment that points at something inside a closed section would otherwise land on nothing.
-fn use_open_disclosure_for_hash() {
+/// Opens the closed Accordion item or Collapsible (docs.md sections, Installation, "Manual installation
+/// files", a demo's notes) that holds the URL fragment's target, on load and on every `hashchange`, then
+/// scrolls to the target.
+///
+/// - A fragment naming a section's `h2` (`#installation`, `#docs-<slug>`: the h2 wraps the trigger, so it
+///   is always visible) clicks that item's trigger: an ordinary, animated open.
+/// - A fragment naming something inside closed content: every closed panel around it is mounted as
+///   `hidden="until-found"` (`hidden_until_found`), and the browser reveals it itself for a fresh load or
+///   a fragment navigation, then fires `beforematch`, which the primitive turns into an open without the
+///   open animation. A hydrating page can miss that event, and a `hashchange` the router handles may never
+///   cause it, so this dispatches the same `beforematch` on each closed panel around the target: one path,
+///   the primitive's own (`use_beforematch`), whichever came first.
+///
+/// Runs two frames after install, so the panels' own `beforematch` listeners (effects of the child
+/// components, installed in the same flush) exist when it dispatches.
+fn use_open_section_for_hash() {
     use dioxus_primitives::js_listener::{use_js_listeners, JsListeners};
     use_js_listeners(move || {
         Some(JsListeners::install(
@@ -1817,14 +1841,22 @@ fn use_open_disclosure_for_hash() {
                  try { id = decodeURIComponent(location.hash.slice(1)); } catch (_) {}
                  const target = id && document.getElementById(id);
                  if (!target) return;
-                 let d = target.closest('details');
-                 while (d) {
-                     d.open = true;
-                     d = d.parentElement && d.parentElement.closest('details');
+                 const trigger = target.matches('h2') && target.querySelector('button[aria-expanded=\"false\"]');
+                 if (trigger) trigger.click();
+                 const closed = [];
+                 for (let p = target.parentElement; p; p = p.parentElement) {
+                     if (p.id && (p.getAttribute('hidden') === 'until-found' || p.getAttribute('data-open') === 'false')) closed.push(p);
                  }
-                 target.scrollIntoView();
+                 closed.forEach((p) => p.dispatchEvent(new Event('beforematch')));
+                 let frames = 0;
+                 const settle = () => {
+                     const waiting = closed.some((p) => p.hasAttribute('hidden'));
+                     if (waiting && frames++ < 60) { requestAnimationFrame(settle); return; }
+                     target.scrollIntoView();
+                 };
+                 settle();
              };
-             open();
+             requestAnimationFrame(() => requestAnimationFrame(open));
              listen(window, 'hashchange', open);",
         ))
     });
@@ -1832,7 +1864,9 @@ fn use_open_disclosure_for_hash() {
 
 #[component]
 fn ComponentHighlight(demo: ComponentDemoData) -> Element {
-    use_open_disclosure_for_hash();
+    use components::accordion::{Accordion, AccordionContent, AccordionItem, AccordionTrigger};
+    use components::collapsible::{Collapsible, CollapsibleContent, CollapsibleTrigger};
+    use_open_section_for_hash();
     let ComponentDemoData {
         name: raw_name,
         r#type,
@@ -1890,35 +1924,67 @@ fn ComponentHighlight(demo: ComponentDemoData) -> Element {
                         },
                     }
                 }
-                // Installation and the docs.md sections are ONE accordion of closed native
-                // `<details>` (backlog rows 232/233): no hydration, so the server's closed markup is
-                // what the reader sees. The docs.md rows are produced by `build.rs`
-                // (`wrap_sections_in_disclosures`), this one is written here.
+                // Installation and the docs.md sections are ONE `Accordion` of the library's own (owner
+                // 2026-10-19: the docs are built from its components, so they look and move like them):
+                // several may be open, every item starts closed, and closed content stays in the server
+                // markup as `hidden="until-found"`, so find-in-page and `#fragment` links still reach it
+                // and hydration changes nothing the reader sees. Each `h2` wraps its trigger (shadcn's
+                // heading-around-trigger shape), so the outline and the anchors stay. The docs.md items
+                // are `build.rs` data (`render_docs_sections`), Installation is written here.
                 section { class: "dx-component-section dx-component-accordion dx-docs-prose",
-                    details { class: "dx-docs-disclosure",
-                        summary {
-                            h2 { id: "installation", "{PAGE_HEADING_INSTALLATION}" }
-                        }
-                        div { class: "dx-docs-disclosure-body",
-                            ComponentInstallCommand { name: raw_name }
-                            p { class: "dx-docs-muted",
-                                "Also adds the components and crates this one needs. First time in this app? "
-                                // link-ok: content link to the Docs page, never to a component page
-                                Link { to: Route::docs(), "Set up the CLI and your app" }
-                                " first."
+                    // The Table component's sheet, for the docs.md and props-reference tables
+                    // `build.rs` emits with its classes (they are HTML, not `Table` elements).
+                    document::Link { rel: "stylesheet", href: asset!("/src/components/table/style.css") }
+                    Accordion {
+                        class: "dx-docs-accordion",
+                        width: "100%",
+                        allow_multiple_open: true,
+                        collapsible: true,
+                        hidden_until_found: true,
+                        AccordionItem { index: 0usize,
+                            h2 { id: "installation", class: "dx-docs-accordion-heading",
+                                AccordionTrigger { class: "dx-docs-accordion-trigger",
+                                    "{PAGE_HEADING_INSTALLATION}"
+                                }
                             }
-                            details { class: "dx-component-manual-install dx-component-manual-install-code",
-                                summary { "Manual installation files" }
-                                ManualComponentInstallation { component, style }
+                            AccordionContent {
+                                ComponentInstallCommand { name: raw_name }
+                                p { class: "dx-docs-muted",
+                                    "Also adds the components and crates this one needs. First time in this app? "
+                                    // link-ok: content link to the Docs page, never to a component page
+                                    Link { to: Route::docs(), "Set up the CLI and your app" }
+                                    " first."
+                                }
+                                Collapsible { class: "dx-component-manual-install", hidden_until_found: true,
+                                    CollapsibleTrigger { class: "dx-docs-collapsible-trigger",
+                                        "Manual installation files"
+                                    }
+                                    CollapsibleContent {
+                                        ManualComponentInstallation { component, style }
+                                    }
+                                }
                             }
                         }
-                    }
-                    div { class: "dx-component-description",
-                        div { dangerous_inner_html: prefix_internal_hrefs(docs) }
+                        for (i , section) in docs.iter().enumerate() {
+                            AccordionItem { key: "{section.id}", index: i + 1,
+                                h2 { id: section.id, class: "dx-docs-accordion-heading",
+                                    AccordionTrigger { class: "dx-docs-accordion-trigger",
+                                        span { dangerous_inner_html: section.title_html }
+                                    }
+                                }
+                                AccordionContent {
+                                    div {
+                                        class: "dx-component-description",
+                                        dangerous_inner_html: prefix_internal_hrefs(section.html),
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
                 if !variants.is_empty() {
-                    section { class: "dx-component-section",
+                    // A new section after the docs accordion: `.dx-component-examples` adds the space above.
+                    section { class: "dx-component-section dx-component-examples",
                         div { class: "dx-component-section-heading",
                             h2 { "{PAGE_HEADING_VARIANTS}" }
                             p { "Alternative examples for common configurations." }
@@ -2127,7 +2193,7 @@ fn ComponentVariantHighlight(
     } = variant;
     let highlighted = installed_source::installed(owner, name, &rs_highlighted);
     // Every variant of a "Normal" component renders on the SAME page (the
-    // "Variants" section below loops over all of them, main included --
+    // "Examples" section below loops over all of them, main included --
     // see `ComponentHighlight` above), so a literal `"component-preview-
     // frame"` id can't be shared across more than one of these `TabContent`s
     // without producing duplicate ids -- confirmed by execution: adding
@@ -2202,18 +2268,26 @@ fn ComponentVariantHighlight(
 }
 
 /// The prose about one demo (`variants/<variant>/notes.md`, rendered by `build.rs`), in a closed
-/// `<details>` under that demo, so a long explanation costs one line until the reader asks for it. It
+/// `Collapsible` under that demo, so a long explanation costs one line until the reader asks for it. It
 /// replaces the text-only "Examples" lists that described the demos from a section away (row 233).
+/// `hidden_until_found` keeps the closed note in the server markup, searchable and reachable by a
+/// `#fragment` (`use_open_section_for_hash`).
 #[component]
 fn VariantNotes(owner: &'static str, name: &'static str) -> Element {
+    use components::collapsible::{Collapsible, CollapsibleContent, CollapsibleTrigger};
     let Some(notes) = variant_notes(owner, name) else {
         return VNode::empty();
     };
     rsx! {
-        details { class: "dx-docs-disclosure dx-variant-notes dx-docs-prose",
-            summary { "About this example" }
-            div { class: "dx-docs-disclosure-body dx-component-description",
-                div { dangerous_inner_html: prefix_internal_hrefs(notes) }
+        Collapsible { class: "dx-variant-notes dx-docs-prose", hidden_until_found: true,
+            CollapsibleTrigger { class: "dx-docs-collapsible-trigger dx-variant-notes-trigger",
+                "About this example"
+            }
+            CollapsibleContent {
+                div {
+                    class: "dx-component-description",
+                    dangerous_inner_html: prefix_internal_hrefs(notes),
+                }
             }
         }
     }
@@ -3838,7 +3912,7 @@ mod docs_tests {
         );
     }
 
-    /// `build.rs` cannot import `main.rs`, so the "Usage notes" it writes into every docs.html is
+    /// `build.rs` cannot import `main.rs`, so the "Usage notes" it writes into every docs page is
     /// pinned to this file's constant here.
     #[test]
     fn build_rs_usage_notes_heading_matches_the_reserved_one() {

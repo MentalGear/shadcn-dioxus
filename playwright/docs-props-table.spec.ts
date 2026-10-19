@@ -5,7 +5,7 @@ import { catalogNames } from "./catalog";
 import { gotoHydrated } from "./hydration";
 
 /**
- * Row 165: every component docs page ends with a "Props reference" disclosure that `preview/build.rs`
+ * Row 165: every component docs page ends with a "Props reference" accordion item that `preview/build.rs`
  * generates from the `#[derive(Props)]` structs (`preview/props_scan.rs`), and `scripts/check-props-docs.sh`
  * keeps every field documented. This spec is the browser half: the section exists on every component
  * page, a known prop shows its type, default and doc, and the opened section passes axe.
@@ -29,13 +29,15 @@ test("every component page carries the Props reference section", async ({ reques
 
 test("a known prop shows its display type, default and doc comment", async ({ page }) => {
   await gotoHydrated(page, `${BASE_URL}/component/switch/`, NAV);
-  const section = page.locator("details.dx-docs-disclosure", { has: page.locator("#docs-props-reference") });
-  await expect(section.locator("summary h2")).toHaveText("Props reference");
-  await section.locator("summary").click();
-  await expect(section).toHaveAttribute("open", "");
+  const section = page.locator(".dx-docs-accordion > .dx-accordion-item", { has: page.locator("#docs-props-reference") });
+  await expect(section.locator("> h2")).toHaveText("Props reference");
+  await section.locator("> h2 > button").click();
+  await expect(section).toHaveAttribute("data-open", "true");
 
   // The styled wrapper's table, then the primitive's: both list the same prop.
-  const table = section.locator('table[class~="dx-docs-props-table"]').first();
+  // The library's Table classes, so the docs table looks like the Table component.
+  const table = section.locator('table[class~="dx-docs-props-table"][class~="dx-table"]').first();
+  await expect(table.locator("thead.dx-table-header th.dx-table-head").first()).toHaveText("Prop");
   const row = table.locator('tr[data-prop="default_checked"]');
   await expect(row.locator("td").nth(1)).toHaveText("bool"); // type
   await expect(row.locator("td").nth(2)).toHaveText("false"); // `#[props(default = false)]`
@@ -55,11 +57,11 @@ test("a known prop shows its display type, default and doc comment", async ({ pa
 test("the opened Props reference passes axe on a derive-struct and fn-argument components", async ({ page }) => {
   for (const name of ["select", "badge", "button"]) {
     await gotoHydrated(page, `${BASE_URL}/component/${name}/`, NAV);
-    const section = page.locator("details.dx-docs-disclosure", { has: page.locator("#docs-props-reference") });
-    await section.locator("summary").click();
+    const section = page.locator(".dx-docs-accordion > .dx-accordion-item", { has: page.locator("#docs-props-reference") });
+    await section.locator("> h2 > button").click();
     await expect(section.locator("table").first()).toBeVisible();
     await expectNoAxeViolations(page, `${name}: props reference open`, {
-      include: "details.dx-docs-disclosure:has(#docs-props-reference)",
+      include: ".dx-docs-accordion > .dx-accordion-item:has(#docs-props-reference)",
     });
   }
 });
