@@ -194,8 +194,8 @@ const ROUTES: { url: string; settled?: RegExp }[] = [
   { url: "/component/button/" },
   // The legacy query-string routes: they render the shell, then redirect, which is the teardown that
   // used to lose the header's stylesheets.
-  { url: "/component/popover/", settled: /\/component\/popover\// }, // legacy-route-ok: this test IS the legacy redirect
-  { url: "/component/select/", settled: /\/component\/select\// }, // legacy-route-ok: this test IS the legacy redirect
+  { url: "/component/?name=popover&", settled: /\/component\/popover\// }, // legacy-route-ok: this test IS the legacy redirect
+  { url: "/component/?name=select&", settled: /\/component\/select\// }, // legacy-route-ok: this test IS the legacy redirect
   // The block demos render inside the docs page's iframe, outside the docs layout: their own document,
   // their own de-duplication set, and their own legacy redirect shell.
   { url: "/component/block/sidebar/main/" },
@@ -306,7 +306,7 @@ test("the theme picker's popover panel is styled on the legacy component route",
     });
   };
   const home = await panel("/");
-  const legacy = await panel("/component/select/", /\/component\/select\//); // legacy-route-ok: this test IS the legacy redirect
+  const legacy = await panel("/component/?name=select&", /\/component\/select\//); // legacy-route-ok: this test IS the legacy redirect
   expect(legacy).toEqual(home);
   expect(legacy.border).not.toBe("3px");
 });

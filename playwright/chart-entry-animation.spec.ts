@@ -206,7 +206,7 @@ test.describe("Chart entry animation: a chart the client creates has nothing pai
   test("the legacy /component/?name= redirect builds the chart in the browser, so it enters with an animation", async ({ // legacy-route-ok: this test IS the legacy redirect
     page,
   }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/bar_chart/`, NAV); // legacy-route-ok: this test IS the legacy redirect
+    await gotoHydrated(page, `${BASE_URL}/component/?name=bar_chart&`, NAV); // legacy-route-ok: this test IS the legacy redirect
     await page.waitForTimeout(2000);
     const visible = await onScreenIndexes(page);
     expect(visible.length, "a chart is on the first screen").toBeGreaterThan(0);
