@@ -518,15 +518,15 @@
    linked, not time-based, so `prefers-reduced-motion` has nothing to turn
    off. */
 @property --dx-carousel-fade-start {
-    syntax: "<length>";
     inherits: false;
-    initial-value: 0px;
+    initial-value: 0;
+    syntax: "<length>";
 }
 
 @property --dx-carousel-fade-end {
-    syntax: "<length>";
     inherits: false;
-    initial-value: 0px;
+    initial-value: 0;
+    syntax: "<length>";
 }
 
 @supports (animation-timeline: scroll()) and (timeline-scope: --dx-carousel-scroll) {
@@ -547,6 +547,13 @@
     .dx-carousel-fade [data-slot="carousel-viewport"] {
         --dx-carousel-fade-dir: to right;
 
+        animation-duration: 1ms, 1ms;
+        animation-fill-mode: both, both;
+        animation-name: dx-carousel-fade-start, dx-carousel-fade-end;
+        animation-range:
+            0 var(--dx-carousel-fade-size),
+            calc(100% - var(--dx-carousel-fade-size)) 100%;
+        animation-timing-function: linear, linear;
         mask-image: linear-gradient(
             var(--dx-carousel-fade-dir),
             transparent,
@@ -554,13 +561,6 @@
             #000 calc(100% - var(--dx-carousel-fade-end)),
             transparent
         );
-        animation-name: dx-carousel-fade-start, dx-carousel-fade-end;
-        animation-duration: 1ms, 1ms;
-        animation-timing-function: linear, linear;
-        animation-fill-mode: both, both;
-        animation-range:
-            0 var(--dx-carousel-fade-size),
-            calc(100% - var(--dx-carousel-fade-size)) 100%;
     }
 
     .dx-carousel-fade[data-orientation="horizontal"] [data-slot="carousel-viewport"] {
