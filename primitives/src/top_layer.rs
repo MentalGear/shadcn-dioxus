@@ -417,6 +417,59 @@ const ANCHOR_POSITIONING_CSS_JS_LITERAL: &str = r#"`
     transform: translateX(-100%);
   }
 
+  /* RTL (backlog row 137): align is logical -- start is the INLINE start
+     edge, so under dir=rtl a top/bottom panel aligned to start hangs from the
+     trigger's right edge and one aligned to end from its left. The panel is a
+     DOM descendant of its trigger, so :dir() sees the page direction even in
+     the top layer. (left/right sides align on the block axis: unchanged.) */
+  .dx-anchor-tooltip[popover][data-side="top"][data-align="start"]:dir(rtl),
+  .dx-anchor-hover-card[popover][data-side="top"][data-align="start"]:dir(rtl),
+  .dx-anchor-popover[popover][data-side="top"][data-align="start"]:dir(rtl),
+  .dx-anchor-popover:modal[popover][data-side="top"][data-align="start"]:dir(rtl),
+  .dx-anchor-dropdown-menu[popover][data-side="top"][data-align="start"]:dir(rtl),
+  .dx-anchor-menubar[popover][data-side="top"][data-align="start"]:dir(rtl),
+  .dx-anchor-navbar[popover][data-side="top"][data-align="start"]:dir(rtl),
+  .dx-anchor-navigation-menu[popover][data-side="top"][data-align="start"]:dir(rtl),
+  .dx-anchor-select[popover][data-side="top"][data-align="start"]:dir(rtl),
+  .dx-anchor-combobox[popover][data-side="top"][data-align="start"]:dir(rtl),
+  .dx-anchor-tooltip[popover][data-side="bottom"][data-align="start"]:dir(rtl),
+  .dx-anchor-hover-card[popover][data-side="bottom"][data-align="start"]:dir(rtl),
+  .dx-anchor-popover[popover][data-side="bottom"][data-align="start"]:dir(rtl),
+  .dx-anchor-popover:modal[popover][data-side="bottom"][data-align="start"]:dir(rtl),
+  .dx-anchor-dropdown-menu[popover][data-side="bottom"][data-align="start"]:dir(rtl),
+  .dx-anchor-menubar[popover][data-side="bottom"][data-align="start"]:dir(rtl),
+  .dx-anchor-navbar[popover][data-side="bottom"][data-align="start"]:dir(rtl),
+  .dx-anchor-navigation-menu[popover][data-side="bottom"][data-align="start"]:dir(rtl),
+  .dx-anchor-select[popover][data-side="bottom"][data-align="start"]:dir(rtl),
+  .dx-anchor-combobox[popover][data-side="bottom"][data-align="start"]:dir(rtl) {
+    left: anchor(right);
+    transform: translateX(-100%);
+  }
+
+  .dx-anchor-tooltip[popover][data-side="top"][data-align="end"]:dir(rtl),
+  .dx-anchor-hover-card[popover][data-side="top"][data-align="end"]:dir(rtl),
+  .dx-anchor-popover[popover][data-side="top"][data-align="end"]:dir(rtl),
+  .dx-anchor-popover:modal[popover][data-side="top"][data-align="end"]:dir(rtl),
+  .dx-anchor-dropdown-menu[popover][data-side="top"][data-align="end"]:dir(rtl),
+  .dx-anchor-menubar[popover][data-side="top"][data-align="end"]:dir(rtl),
+  .dx-anchor-navbar[popover][data-side="top"][data-align="end"]:dir(rtl),
+  .dx-anchor-navigation-menu[popover][data-side="top"][data-align="end"]:dir(rtl),
+  .dx-anchor-select[popover][data-side="top"][data-align="end"]:dir(rtl),
+  .dx-anchor-combobox[popover][data-side="top"][data-align="end"]:dir(rtl),
+  .dx-anchor-tooltip[popover][data-side="bottom"][data-align="end"]:dir(rtl),
+  .dx-anchor-hover-card[popover][data-side="bottom"][data-align="end"]:dir(rtl),
+  .dx-anchor-popover[popover][data-side="bottom"][data-align="end"]:dir(rtl),
+  .dx-anchor-popover:modal[popover][data-side="bottom"][data-align="end"]:dir(rtl),
+  .dx-anchor-dropdown-menu[popover][data-side="bottom"][data-align="end"]:dir(rtl),
+  .dx-anchor-menubar[popover][data-side="bottom"][data-align="end"]:dir(rtl),
+  .dx-anchor-navbar[popover][data-side="bottom"][data-align="end"]:dir(rtl),
+  .dx-anchor-navigation-menu[popover][data-side="bottom"][data-align="end"]:dir(rtl),
+  .dx-anchor-select[popover][data-side="bottom"][data-align="end"]:dir(rtl),
+  .dx-anchor-combobox[popover][data-side="bottom"][data-align="end"]:dir(rtl) {
+    left: anchor(left);
+    transform: none;
+  }
+
   .dx-anchor-tooltip[popover][data-side="left"][data-align="start"],
   .dx-anchor-hover-card[popover][data-side="left"][data-align="start"],
   .dx-anchor-popover[popover][data-side="left"][data-align="start"],
@@ -1682,6 +1735,10 @@ pub(crate) fn use_anchor_position_fallback(
                 // `[data-align]` CSS contract promises, parameterised over
                 // *which* side is currently being placed. Operates entirely
                 // in visual-viewport space (the `t*` locals above).
+                // `align` is logical: under RTL the inline start edge is the
+                // right one (the panel inherits `direction` from its trigger).
+                const rtl = getComputedStyle(content).direction === 'rtl';
+                const hAlign = rtl && align === 'start' ? 'end' : (rtl && align === 'end' ? 'start' : align);
                 function place(effectiveSide) {{
                     let top;
                     let left;
@@ -1700,9 +1757,9 @@ pub(crate) fn use_anchor_position_fallback(
                         left = tLeft - gap - cw;
                     }} else if (effectiveSide === 'right') {{
                         left = tRight + gap;
-                    }} else if (align === 'start') {{
+                    }} else if (hAlign === 'start') {{
                         left = tLeft;
-                    }} else if (align === 'end') {{
+                    }} else if (hAlign === 'end') {{
                         left = tRight - cw;
                     }} else {{
                         left = tLeft + (tRight - tLeft) / 2 - cw / 2;
@@ -1969,6 +2026,15 @@ pub(crate) fn use_anchor_position_fallback(
             }};
             window.addEventListener('scroll', onScroll, {{ capture: true, passive: true }});
             window.addEventListener('resize', onTrack, {{ passive: true }});
+            // An anchor inside an ANIMATING ancestor (a submenu's trigger inside its root menu's
+            // `dx-pop-in`, scale .95 -> 1) is measured at the animation's current scale by
+            // `getBoundingClientRect()`, so a panel opened inside that window is placed against a
+            // stale, shrunken box (rtl.spec's Sub "opens to the LEFT" overlapped its trigger by
+            // 1.1px). Re-place once the ancestor's animation ends: the anchor is then at rest.
+            const onAnimEnd = (e) => {{
+                if (trigger && e.target !== content && e.target.contains && e.target.contains(trigger)) onTrack();
+            }};
+            document.addEventListener('animationend', onAnimEnd, {{ capture: true, passive: true }});
             const vv = window.visualViewport;
             if (vv) {{
                 vv.addEventListener('resize', onTrack, {{ passive: true }});
@@ -1986,6 +2052,7 @@ pub(crate) fn use_anchor_position_fallback(
             if (resizeObserver) resizeObserver.disconnect();
             window.removeEventListener('scroll', onScroll, true);
             window.removeEventListener('resize', onTrack);
+            document.removeEventListener('animationend', onAnimEnd, true);
             if (vv) {{
                 vv.removeEventListener('resize', onTrack);
                 vv.removeEventListener('scroll', onTrack);

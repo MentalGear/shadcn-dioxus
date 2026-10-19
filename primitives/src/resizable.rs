@@ -8,7 +8,7 @@
 //! the exact pinned-commit source its quotes were read from; the doc comments below cite the same
 //! pattern's "Keyboard Interaction" and "WAI-ARIA Roles, States, and Properties" sections by name.
 
-use crate::direction::{use_direction, Direction};
+use crate::direction::{use_direction, use_direction_signal, Direction};
 use crate::merge_attributes;
 use crate::move_interaction::{use_move_interaction, MoveEvent, MoveInteraction};
 use crate::{use_controlled, use_unique_id};
@@ -199,7 +199,7 @@ struct ResizableGroupContext {
     /// `$S/batch3/rtl-rust/reference.md`'s Resizable row for the
     /// extrapolation this is based on (no Radix/shadcn original exists to
     /// cite directly).
-    text_direction: Direction,
+    text_direction: ReadSignal<Direction>,
     disabled: ReadSignal<bool>,
     group_id: Signal<String>,
     panels: Signal<Vec<PanelConstraints>>,
@@ -380,10 +380,11 @@ pub fn ResizablePanelGroup(props: ResizablePanelGroupProps) -> Element {
     let group_dragging_unused = use_signal(|| false);
     let mut group_movement = use_move_interaction(group_dragging_unused);
     let text_direction = use_direction(props.dir);
+    let text_direction_signal = use_direction_signal(text_direction);
 
     let ctx = use_context_provider(|| ResizableGroupContext {
         direction: props.direction,
-        text_direction,
+        text_direction: text_direction_signal,
         disabled: props.disabled,
         group_id,
         panels,
@@ -659,7 +660,7 @@ pub fn ResizableHandle(props: ResizableHandleProps) -> Element {
         let Some(move_event) = movement.pointer_move() else {
             return;
         };
-        let delta_axis = primary_delta((direction)(), ctx.text_direction, &move_event);
+        let delta_axis = primary_delta((direction)(), (ctx.text_direction)(), &move_event);
         let delta_pct = delta_axis / size * 100.0;
 
         let mut d = raw_delta.cloned();
@@ -760,7 +761,7 @@ pub fn ResizableHandle(props: ResizableHandleProps) -> Element {
                         // pointer drag, so it can't disagree with this key
                         // path). A vertical handle never flips -- see
                         // `ResizableGroupContext::text_direction`'s doc.
-                        let delta = primary_delta(dir, ctx.text_direction, &move_event);
+                        let delta = primary_delta(dir, (ctx.text_direction)(), &move_event);
                         let new_sizes = resize_pair(&full, index, delta, &constraints);
                         ctx.commit(new_sizes);
                     }

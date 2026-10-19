@@ -1,0 +1,16 @@
+{
+  "name": "questionnaire",
+  "description": "A multi-step question flow for agent clarification prompts, onboarding and surveys: single and multiple choice on native radios and checkboxes, a freeform answer, explicit skip, previous/next/submit, required and external validation, resume, conditional items, answer shortcut keys and native form serialization.",
+  "authors": ["Claude"],
+  "exclude": ["variants", "docs.md", "component.json"],
+  "cargoDependencies": [
+    {
+      "name": "dioxus-primitives",
+      "git": "https://github.com/MentalGear/shadcn-dioxus"
+    }
+  ],
+  "componentDependencies": [
+    { "name": "button", "git": "https://github.com/MentalGear/shadcn-dioxus" }
+  ],
+  "globalAssets": ["../../../assets/dx-components-theme.css"]
+}
