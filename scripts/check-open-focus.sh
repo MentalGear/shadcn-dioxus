@@ -29,7 +29,8 @@
 # `focus-ok` marker that no longer sits on or just above such a call is STALE and fails too.
 # `primitives/src/modality.rs` is the helper itself and is not scanned.
 #
-# Also checked: the three copies of the modality writer (`MODALITY_JS` in modality.rs, inside
+# Also checked: `__dxOpener` is assigned only inside `dxOpenFocus` (modality.rs), the author's
+# `initial_focus`/`final_focus` props are read only through `dxFocusSpec` there (row 240), the three copies of the modality writer (`MODALITY_JS` in modality.rs, inside
 # `PREPAINT_JS` in preview/src/theme.rs, inside the `<script>` of preview/index.html) are identical, the
 # attribute is written nowhere else, and the theme still holds the two halves of the ring rule (the
 # non-field ring tokens resolve to nothing outside the keyboard modality, a programmatically focused
@@ -141,6 +142,29 @@ if not explicit:
             errors.append("preview/index.html: the pre-paint <script> does not contain MODALITY_JS verbatim")
     if "dxOpenFocus" not in mod:
         errors.append(f"{HELPER}: `dxOpenFocus` (the one open-focus policy) is gone")
+
+    # The opener (the element to give focus back to) is remembered in ONE place too: `dxOpenFocus`.
+    # A second `__dxOpener =` assignment is a second, private copy of the open-focus bookkeeping
+    # (backlog row 240: a programmatic open of any overlay returns to the previously focused element).
+    opener_rx = re.compile(r"__dxOpener\s*=[^=]")
+    for p in sorted(glob.glob("primitives/src/**/*.rs", recursive=True) + glob.glob("preview/src/**/*.rs", recursive=True)):
+        if p == HELPER:
+            continue
+        for i, line in enumerate(read(p).split("\n")):
+            if opener_rx.search(line) and not re.match(r"\s*//", line):
+                errors.append(f"{p}:{i + 1}: assigns __dxOpener; the opener is remembered ONLY by dxOpenFocus "
+                              f"in {HELPER} (one mechanism for every overlay)")
+    spec_rx = re.compile(r"data-dx-(initial|final)-focus")
+    for p in sorted(glob.glob("primitives/src/**/*.rs", recursive=True) + glob.glob("preview/src/**/*.rs", recursive=True)):
+        if p == HELPER:
+            continue
+        for i, line in enumerate(read(p).split("\n")):
+            if spec_rx.search(line) and not re.match(r"\s*(//|///|//!)", line):
+                errors.append(f"{p}:{i + 1}: reads or writes data-dx-initial/final-focus; the props are encoded by "
+                              f"focus_attributes and read by dxFocusSpec, both in {HELPER}")
+    for needed in ("dxCloseFocus", "dxFocusSpec"):
+        if needed not in mod:
+            errors.append(f"{HELPER}: `{needed}` (part of the one open/close focus policy) is gone")
 
     # The attribute has ONE writer.
     write_rx = re.compile(r"""setAttribute\(\s*['"]data-dx-modality|dataset\.dxModality\s*=|"data-dx-modality"\s*:""")

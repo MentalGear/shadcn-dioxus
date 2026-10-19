@@ -84,6 +84,23 @@ impl SelectContext {
         self.selectable.initial_focus.set(target);
     }
 
+    /// The pointer (click or tap) open: the currently selected option is highlighted and focused,
+    /// and scrolled into view, exactly as a keyboard open does (Base UI: a Select opens on its
+    /// `selectedIndex` for every modality; a Menu, by contrast, highlights its first item for a
+    /// keyboard open only). With nothing selected, or in a multi-select, a pointer open stays as it was: no highlight,
+    /// DOM focus on the listbox container.
+    pub fn open_for_pointer(&mut self) {
+        // Single-select only: a multi-select has no one selected option to open on, and its
+        // pointer open keeps its focus on the listbox (ArrowDown then reaches the first option).
+        let target = (!self.multi())
+            .then(|| self.selectable.collection.selected_available_index())
+            .flatten();
+        if target.is_some() {
+            self.selectable.initial_focus.set(target);
+        }
+        self.set_open(true);
+    }
+
     pub fn multi(&self) -> bool {
         self.selectable.selection_mode.is_multiple()
     }
