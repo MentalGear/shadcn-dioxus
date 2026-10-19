@@ -67,6 +67,18 @@ sweeps, test-suite prune last), 7 (held items 136, 157). Full table with the rea
   commit. Green = `ALL GREEN`, exit 0.
 - One global build lock; Playwright under its own lock; 4-5 lanes per batch.
 
+## Second session: rounds 2 and 3 (owner split 2026-10-18)
+
+Owner decision 2026-10-18 ("Split, plus queue"): session `session_01QoX93TwsKJ9GtMXWUXXfKw` takes rounds 2 and 3 of the
+backlog order on its own branch `claude/rounds-2-3` (separate container, so its build locks are its own); this session
+keeps rounds 0 and 1. Later rounds and new row ids are claimed on the `claims` branch (`CLAIMS.md`, fast-forward-only
+pushes, so two sessions cannot claim the same round or mint the same row id). Each session PRs and merges its own
+rounds to main after a full green; the second merger resolves shared files (`CLAUDE.md`, `scripts/run-gates.sh`, this page).
+
+Round 2 merged on `claude/rounds-2-3` (2026-10-19): rows 213 (API items 1, 2, 4-9 and the `markdown` component), 148,
+239, 243, 124, 125; follow-ups recorded as rows 260 and 261. Round 3 lanes running: carousel 237, focus 240, toast 138;
+drawer 156 follows focus (it composes Dialog).
+
 ## Keeping this page current
 
 Edit the section that changed, bump "Last updated", commit with the change that made it true. Row-level state belongs in
