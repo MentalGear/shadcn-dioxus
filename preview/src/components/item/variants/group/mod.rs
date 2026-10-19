@@ -20,10 +20,10 @@ const PEOPLE: &[(&str, &str, &str, Asset)] = &[
         asset!("/assets/avatars/marcus-wright.svg"),
     ),
     (
-        "Lena Park",
-        "lena.park@example.com",
-        "LP",
-        asset!("/assets/avatars/lena-park.svg"),
+        "Nina Hart",
+        "nina.hart@example.com",
+        "NH",
+        asset!("/assets/avatars/nina-hart.svg"),
     ),
 ];
 

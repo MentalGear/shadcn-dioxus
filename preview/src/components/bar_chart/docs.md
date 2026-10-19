@@ -32,21 +32,6 @@ Bar-specific settings live in `bar: BarOptions { .. }` on `Chart`:
 
 For per-bar colors, set `ChartDatum::color` on each datum, for example one color for positive values and another for negative ones; the value axis then spans both signs, with round ticks on either side of zero.
 
-## Demos
-
-Each demo is a port of the shadcn/ui chart of the same name -- same data, series order, radius, margins, axes, labels and tooltip -- checked against shadcn's own source by a test.
-
-- **Default** — one series, 8px-rounded bars.
-- **Multiple** — two series grouped side by side.
-- **Stacked** and **Stacked with legend** — the same two series stacked, rounding only the stack's outer ends.
-- **Horizontal** — `horizontal: true` with the months on the y axis.
-- **Mixed** — a horizontal chart where every bar has its own color through `ChartDatum::color`, with full browser names on the y axis.
-- **Label** — `value_labels: true`.
-- **Custom label** — `inside_labels: true` on a horizontal chart with no axes.
-- **Active** — one highlighted bar through `active_index`.
-- **Negative** — positive and negative values colored per datum, each labelled with its month (`category_labels: true`) instead of an x axis.
-- **Interactive** — a header lets the reader switch which of two series is drawn. To build the same, keep the full dataset in a signal, build a one-series `ChartConfig` for the chosen series, and map each `ChartDatum` down to that series' value before passing both to `ChartContainer`.
-
 ## Accessibility
 
 Bar charts follow the shared [Chart](/component/chart/) behavior: a named SVG image, a hidden data table with every value, and arrow-key, `Home`, `End` and `Escape` stepping through bars on the focusable wrapper.

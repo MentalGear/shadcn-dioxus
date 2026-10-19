@@ -92,6 +92,7 @@ pub mod tooltip;
 mod top_layer;
 mod typeahead;
 pub(crate) mod r#virtual;
+pub mod virtual_grid;
 pub mod virtual_list;
 
 /// The vendored `focus-trap` JS bundle (`primitives/src/ts/focus-trap.ts`,

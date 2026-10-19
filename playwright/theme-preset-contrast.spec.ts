@@ -283,8 +283,8 @@ for (const mode of ["light", "dark"] as const) {
       await open(page, "/component/toggle/", ".dx-toggle");
       // The main demo's toggle is the first on the page. Not named by label or text: the demo's content
       // (row 212 relabelled it, and it keeps being refined) is not what this sweep is about.
-      const toggle = page.locator(".dx-toggle").first();
-      const probe: Probe[] = [{ name: "toggle", selector: ".dx-toggle" }];
+      const toggle = page.locator(".dx-component-preview-frame .dx-toggle").first();
+      const probe: Probe[] = [{ name: "toggle", selector: ".dx-component-preview-frame .dx-toggle" }];
       const away = () => page.mouse.move(0, 0);
 
       await away();
@@ -311,8 +311,10 @@ for (const mode of ["light", "dark"] as const) {
       await open(page, "/component/toggle_group/", ".dx-toggle-group-item");
       // The main demo's first three items (bold, italic, strikethrough), by position: the demo's glyphs and
       // aria-labels are not what this sweep is about (row 212 relabelled them).
-      const item = (n: number) => page.locator(".dx-toggle-group-item").nth(n);
-      const probe = (name: string, nth: number): Probe => ({ name, selector: ".dx-toggle-group-item", nth });
+      // Scoped to the demo frame: the docs sidebar carries its own ToggleGroup (the A-Z / Category sort), which
+      // comes first on the page and is not the component under test.
+      const item = (n: number) => page.locator(".dx-component-preview-frame .dx-toggle-group-item").nth(n);
+      const probe = (name: string, nth: number): Probe => ({ name, selector: ".dx-component-preview-frame .dx-toggle-group-item", nth });
 
       await item(0).click();
       await expect(item(0)).toHaveAttribute("data-state", "on");

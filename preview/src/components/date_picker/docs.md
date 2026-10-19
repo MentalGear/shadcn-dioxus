@@ -59,37 +59,6 @@ panel; the input (and `on_value_change`) keep the committed value until the foot
 
 `confirm: false` removes the footer and commits on select, as below.
 
-## Demos, and which shadcn demo each mirrors
-
-shadcn's date pickers never stage (no demo has Apply/Cancel; the `Calendar` selects live), so the Apply /
-Cancel footer is this library's own default. The demos that are twins of a shadcn demo switch it off
-(`confirm: false`) and copy that demo's open/close behaviour; the rest show the default.
-
-| Demo | `confirm` | After a pick | shadcn source |
-| --- | --- | --- | --- |
-| `main` | on (default) | stays open until Apply / Cancel | none (library default) |
-| `range` | on (default) | stays open until Apply (disabled until both ends) | none (library default) |
-| `unavailable_dates` | off | closes once the range's end is picked (after the 300 ms dwell) | none |
-| `keep_open` | off | stays open | `date-picker-demo` / `date-picker-basic` (uncontrolled popover) |
-| `multi_month` | off | stays open, even after both ends | `date-picker-range` (`numberOfMonths={2}`) |
-| `internationalized` | off | stays open | `date-picker-rtl` |
-| `time` | off | closes on select (after the 300 ms dwell) | `date-picker-time` (controlled `open`, closed in `onSelect`) |
-| `natural_language` | n/a (plain `Calendar` in a `Popover`) | closes on select, writes the field | `date-picker-natural-language` |
-
-shadcn's rule of thumb: demos with a controlled `open` (dob, time, input, natural language) close on select;
-uncontrolled ones never do.
-
-### Natural language
-
-A text field that understands phrases, as in shadcn's "Natural Language Picker": the label is "Schedule
-Date", the placeholder "Tomorrow or next week", it starts as "In 2 days", and the line below reads "Your
-post will be published on **October 16, 2026**." Every keystroke is parsed; text that does not parse keeps
-the previous date. ArrowDown in the field opens the calendar, whose button sits inside the field (an
-icon button labelled "Select date", popover end-aligned); picking a day writes it into the field and
-closes. shadcn parses with `chrono-node`; this demo has a small hand-written parser instead (today,
-tomorrow, yesterday, `in N days/weeks/months`, `N days ago`, `next week/month`, weekday names,
-`2026-10-20`, `October 20, 2026`, `20 Oct`). It is demo code, not part of the component.
-
 ## Closing after a selection (`confirm: false`)
 
 With `confirm: false`, picking a date closes the popover, but not on the same frame: the selected day stays painted for

@@ -29,9 +29,10 @@ fn inline_code(text: &str) -> Element {
     }
 }
 
-/// A prose table (`.dx-docs-table-scroll` is the scroll container, so a wide table scrolls inside
-/// its own box at phone widths instead of overflowing the page).
+/// A prose table: the library's `Table` (its container scrolls a wide table sideways at phone widths
+/// instead of overflowing the page); `.dx-docs-table-scroll` only spaces it like a docs.md table.
 fn docs_table(head: &[&str], rows: &[&[&str]]) -> Element {
+    use crate::components::table::{Table, TableBody, TableCell, TableHead, TableHeader, TableRow};
     let head: Vec<String> = head.iter().map(|h| h.to_string()).collect();
     let rows: Vec<Vec<String>> = rows
         .iter()
@@ -39,19 +40,19 @@ fn docs_table(head: &[&str], rows: &[&[&str]]) -> Element {
         .collect();
     rsx! {
         div { class: "dx-docs-table-scroll",
-            table {
-                thead {
-                    tr {
+            Table {
+                TableHeader {
+                    TableRow {
                         for h in head {
-                            th { key: "{h}", "{h}" }
+                            TableHead { key: "{h}", "{h}" }
                         }
                     }
                 }
-                tbody {
+                TableBody {
                     for (ri , row) in rows.into_iter().enumerate() {
-                        tr { key: "{ri}",
+                        TableRow { key: "{ri}",
                             for (ci , cell) in row.into_iter().enumerate() {
-                                td { key: "{ci}", {inline_code(&cell)} }
+                                TableCell { key: "{ci}", {inline_code(&cell)} }
                             }
                         }
                     }

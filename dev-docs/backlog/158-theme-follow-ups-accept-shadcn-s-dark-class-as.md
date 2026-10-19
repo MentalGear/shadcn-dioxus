@@ -4,7 +4,7 @@ title: "Theme follow-ups: accept shadcn's .dark class as an alias of data-theme=
 status: "PART (a) LANDED 2026-10-15 (by construction, lane x158dark 7d16044 + 3a3a9fa; owner approved…"
 size: "S + S"
 area: theme
-updated: 2026-10-15
+updated: 2026-10-19
 ---
 
 # Row 158: Theme follow-ups: accept shadcn's .dark class as an alias of data-theme="dark", and suppress transitions…
@@ -15,7 +15,7 @@ Theme follow-ups: accept shadcn's `.dark` class as an alias of `data-theme="dark
 
 ## Status / trigger
 
-**PART (a) LANDED 2026-10-15 (by construction, lane `x158dark` 7d16044 + 3a3a9fa; owner approved 2026-10-10); PART (b) BACKLOG, conditional (cold, not scheduled)** -- proposed 2026-10-05, together with the evaluated-and-rejected `light-dark()` option (below). (b) waits on its trigger.
+**PART (a) LANDED 2026-10-15 (by construction, lane `x158dark` 7d16044 + 3a3a9fa; owner approved 2026-10-10); PART (b) BACKLOG, conditional (cold, not scheduled)** -- proposed 2026-10-05, together with the evaluated-and-rejected `light-dark()` option (below). (b) waits on its trigger. **Owner 2026-10-19: keep (b) on hold; the page may be fine with the transitions.**
 
 ## Size
 
