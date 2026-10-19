@@ -9,8 +9,11 @@
 //! - [`virtualizer`]: `VirtualList`'s windowed engine, plain Rust with no Dioxus types: the
 //!   mounted range (quantised so a scroll re-renders only when it must), the frozen scroll
 //!   canvas, and the scroll corrections for rows that resize above the viewport.
+//! - [`grid`]: the second axis. `VirtualGrid`'s engine is one [`Engine`] per axis, plus the
+//!   sticky edges, the always-rendered focused cell and the grid pattern's key map.
 
 mod cv_chunks;
+mod grid;
 mod size_index;
 pub(crate) mod types;
 mod utils;
@@ -18,6 +21,7 @@ mod virtualizer;
 mod window;
 
 pub(crate) use cv_chunks::{cv_chunks, ChunkSkip, CHUNK_ROWS};
+pub(crate) use grid::{with_pinned, GridEngine, GridKey, GridScroll, GridShape};
 pub(crate) use size_index::{SizeEstimates, DEFAULT_SIZE};
 pub(crate) use virtualizer::Engine;
 // Not yet consumed within this lane: `default_range_extractor` reaches the module

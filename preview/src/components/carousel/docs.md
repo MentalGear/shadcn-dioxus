@@ -101,6 +101,16 @@ The prop only sets two CSS custom properties on the carousel's root element, whi
 
 With only the opacity variable at `0` the arrow is invisible but a screen reader still finds it, disabled. A `style` you pass to `Carousel` wins over the prop.
 
+### Edge fade
+
+Add `class: "dx-carousel-fade"` to `Carousel` and the slides fade out toward the track's edges, which shows there is more to scroll. Each fade is gone once the track reaches that end, so the first and last slide are fully visible at rest, and a track that does not overflow is not faded at all.
+
+```rust
+Carousel { class: "dx-carousel-fade", /* ... */ }
+```
+
+`--dx-carousel-fade-size` sets the fade length (default `3rem`). It is a mask on the viewport driven by the track's scroll position, with no script, so it follows right-to-left and vertical carousels. Browsers without scroll-driven animations show no fade.
+
 ### Autoplay
 
 ```rust
