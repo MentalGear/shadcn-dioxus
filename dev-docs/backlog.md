@@ -34,7 +34,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (85)
+## Open rows (84)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -117,14 +117,13 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [218](backlog/218-popup-style-isolation-top-layer-popups-stay-dom.md) | Popup style isolation: top-layer popups stay DOM descendants of their trigger, so free-content rules in an… | PARTLY LANDED 2026-10-15 (lane ancestorleak 900f394 + main-loop 526b51d, beaf3b0); open: the… | M | overlays |
 | [221](backlog/221-infra-session-process-lessons-from-the-2026-10.md) | Infra: session process lessons from the 2026-10-14/15 batch (memory, lock fairness, gate worktree… | OPEN 2026-10-15 (rules in force in the lane brief; constructions proposed) | S-M | process |
 | [237](backlog/237-carousel-a-free-scrolling-switch-embla-dragfree.md) | Carousel: a free-scrolling switch (Embla dragFree parity) | BACKLOG (owner 2026-10-18) | M | carousel |
-| [240](backlog/240-base-ui-focus-model-what-to-lift-beyond-row-226.md) | Base UI focus model: what to lift beyond row 226 | BACKLOG (research 2026-10-18) | S-M each | a11y |
 | [241](backlog/241-specs-still-read-block-demo-rows-from-a-mirror.md) | Specs still read block-demo rows from a mirror in components/mod.rs | BACKLOG (lane registry 2026-10-18) | S | tests |
 | [242](backlog/242-spec-failures-that-are-red-on-the-deployed.md) | Spec failures that are red on the deployed baseline too (found by the 2026-10-18 lanes) | OPEN | S each | process |
 | [244](backlog/244-virtualgrid-x-y-virtualization-that-windows.md) | VirtualGrid: x/y virtualization that windows rows AND columns (a data grid, an image grid) | BACKLOG (owner question 2026-10-18) | L | virtual |
 | [260](backlog/260-hover-color-mix-space-one-token-everywhere.md) | Every hover color-mix reads the theme's mix space (finish row 243) | BACKLOG (found 2026-10-19 by lane theme, row 243) | S | theme |
 | [261](backlog/261-theme-mono-font-token.md) | A --dx-font-mono theme token | BACKLOG (found 2026-10-19 by lane markdown) | S | theme |
 
-## Done rows (161)
+## Done rows (162)
 
 | # | Item | Updated |
 |---|---|---|
@@ -288,6 +287,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [236](backlog/done/236-docs-manual-installation-files-closed-by-default.md) | Docs: "Manual installation files" closed by default | 2026-10-18 |
 | [238](backlog/done/238-playwright-fixtures-force-scroll-behavior-auto.md) | Playwright fixtures force scroll-behavior: auto !important on every context | 2026-10-18 |
 | [239](backlog/done/239-all-unset-outranks-the-theme-s-zero-specificity.md) | all: unset outranks the theme's zero-specificity baselines | 2026-10-18 |
+| [240](backlog/done/240-base-ui-focus-model-what-to-lift-beyond-row-226.md) | Base UI focus model: what to lift beyond row 226 | 2026-10-19 |
 | [243](backlog/done/243-button-hover-fills-3-levels-off-shadcn.md) | Button hover fills 3 levels off shadcn | 2026-10-18 |
 
 ## Notes (8)
