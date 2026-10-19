@@ -1,5 +1,5 @@
 use dioxus::prelude::*;
-use dioxus_icons::lucide::Check;
+use dioxus_icons::lucide::{Check, Minus};
 use dioxus_primitives::checkbox::{self, CheckboxProps};
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::merge_attributes;
@@ -37,7 +37,10 @@ pub fn Checkbox(props: CheckboxProps) -> Element {
             on_checked_change: props.on_checked_change,
             attributes: merged,
             checkbox::CheckboxIndicator { class: "dx-checkbox-indicator",
-                Check { size: "1rem" }
+                // The primitive mounts these for checked AND indeterminate; CSS shows the
+                // glyph that matches the indicator's `data-state` (never both).
+                Check { class: "dx-checkbox-glyph-check", size: "1rem" }
+                Minus { class: "dx-checkbox-glyph-minus", size: "1rem" }
             }
         }
     }

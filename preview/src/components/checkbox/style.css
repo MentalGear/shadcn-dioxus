@@ -55,7 +55,14 @@
     height: 0.875rem;
 }
 
-.dx-checkbox[data-state="checked"] {
+.dx-checkbox-indicator[data-state="checked"] > .dx-checkbox-glyph-minus,
+.dx-checkbox-indicator[data-state="indeterminate"] > .dx-checkbox-glyph-check {
+    display: none;
+}
+
+/* Indeterminate is filled like checked (shadcn: `data-[state=indeterminate]`), with the minus glyph. */
+.dx-checkbox[data-state="checked"],
+.dx-checkbox[data-state="indeterminate"] {
     background-color: var(--dx-primary);
     box-shadow: none;
     color: var(--dx-primary-foreground);

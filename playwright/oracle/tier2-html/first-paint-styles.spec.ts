@@ -160,9 +160,15 @@ function diffSnaps(a: Snap, b: Snap): string[] {
 const summarize = (diffs: string[]) =>
   `${diffs.length} difference(s); first: ${diffs.slice(0, Number(process.env.FIRST_PAINT_DIFFS ?? 6)).join(" | ")}`;
 
-/** Fonts come from Google: unreachable in the sandbox and a source of nondeterminism, so both loads use the fallback. */
+/**
+ * Both loads use the fallback face. Geist is self-hosted now (`font-display: optional`: it is used only if it lands inside the
+ * ~100ms block window, else not at all for this page), so with the woff2 reachable the JS-off page and the hydrated page race the
+ * font independently and one of them gets Geist's metrics (a ~3px width difference, 198 differing boxes on /component/tabs/).
+ * That is font timing, not a style difference, so the woff2 files are aborted too (and Google's hosts, from before the self-hosting).
+ * `fonts-self-hosted.spec.ts` owns "the font really loads".
+ */
 async function noWebFonts(page: Page) {
-  await page.route(/https:\/\/fonts\.(googleapis|gstatic)\.com\//, (r) => r.abort());
+  await page.route(/https:\/\/fonts\.(googleapis|gstatic)\.com\/|\.woff2(\?|$)/, (r) => r.abort());
 }
 
 /** Delay every stylesheet fetched from now on: on loopback a late sheet lands in a few ms and the unstyled frame is invisible. */
@@ -290,9 +296,10 @@ test.describe("1. every prerendered page's head carries the complete stylesheet 
         if (!/\scrossorigin/.test(t)) problems.push(`${url}: a font preload without crossorigin is fetched twice and never matched: ${t}`);
         if (!/\stype="font\/woff2"/.test(t)) problems.push(`${url}: a font preload should say type="font/woff2": ${t}`);
       }
-      const css = links.find((t) => /fonts\.googleapis\.com\/css2/.test(t));
-      if (!css) problems.push(`${url}: no Google font stylesheet link`);
-      else if (!/display=optional/.test(css)) problems.push(`${url}: the font stylesheet must say display=optional (swap re-wraps the page when Geist arrives): ${css}`);
+      // Self-hosted (row 162): the `@font-face` rules are an inline <style>, and no head link may name Google.
+      const faces = head.match(/<style\b[^>]*>[^<]*@font-face[^<]*<\/style>/)?.[0] ?? "";
+      if ((faces.match(/font-display:\s*optional/g) ?? []).length < 2) problems.push(`${url}: both @font-face rules must say font-display:optional (swap re-wraps the page when Geist arrives)`);
+      if (/fonts\.(googleapis|gstatic)\.com/.test(head)) problems.push(`${url}: the head still names a Google font host`);
       const firstPreload = head.search(/<link\b[^>]*\srel="preload"[^>]*\sas="font"/);
       const firstSheet = head.search(/<link\b[^>]*\srel="stylesheet"/);
       if (firstPreload < 0 || (firstSheet >= 0 && firstPreload > firstSheet)) problems.push(`${url}: the font preloads must come before the first stylesheet so the fetch starts with the page`);

@@ -401,6 +401,7 @@ fn ColorSwatch(props: ColorSwatchProps) -> Element {
 /// The props for the [`ColorSlider`] component.
 #[derive(Props, Clone, PartialEq)]
 pub struct ColorSliderProps {
+    /// The slider's accessible name (for example "Hue" or "Alpha").
     pub title: ReadSignal<String>,
 
     /// Additional attributes to extend the color slider element
