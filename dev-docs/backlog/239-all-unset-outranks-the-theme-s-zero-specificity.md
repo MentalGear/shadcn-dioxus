@@ -1,7 +1,7 @@
 ---
 id: 239
 title: "all: unset outranks the theme's zero-specificity baselines"
-status: "LANDED 2026-10-19 (lane theme: every `all:` removed, gate bans it)"
+status: "LANDED 2026-10-19 (lane theme: every all: reset removed, gate bans it)"
 size: "S-M"
 area: theme
 updated: 2026-10-18
@@ -15,7 +15,7 @@ updated: 2026-10-18
 
 ## Status / trigger
 
-**LANDED 2026-10-19 (lane theme: every `all:` removed, gate bans it)**
+**LANDED 2026-10-19 (lane theme: every all: reset removed, gate bans it)**
 
 ## Size
 
