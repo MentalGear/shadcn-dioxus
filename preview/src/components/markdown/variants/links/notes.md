@@ -1,0 +1,1 @@
+Only `http`, `https`, `mailto`, `tel` and relative targets become links. Everything else (`javascript:`, `data:`, `vbscript:`, `file:`, a scheme split by a tab, a backslash host) is rendered as its label without a target.

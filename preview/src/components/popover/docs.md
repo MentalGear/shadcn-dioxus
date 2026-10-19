@@ -35,3 +35,19 @@ PopoverRoot {
 ## Motion
 
 The panel fades in and out over `--dx-overlay-duration` (default `--dx-motion-duration-slow`) with `--dx-overlay-ease`. A modal popover uses the shared dialog exit driver, staying open until its exit settles (at most 1500 ms) before it closes. The keyframes animate `opacity` only, so the anchor's own `transform` centring is never replaced. Reduced motion swaps in `--dx-motion-duration-reduced`. Nothing loops. See [Motion](/docs#motion) for the tokens, reduced motion and the per-component table.
+
+## Initial and final focus
+
+`initial_focus` and `final_focus` take a function of the open modality (`OpenModality::{Keyboard, Mouse, Touch, Pen}`, Base UI's `initialFocus(openType)`) that returns a `FocusTarget`: `Default`, `Panel`, `Selector("#id")` or, for `final_focus`, `None`. They are inputs to the one open-focus policy (`dxOpenFocus` / `dxCloseFocus`, `primitives/src/modality.rs`), not a second code path: the function is called once per modality at render, the answers ride on the panel as `data-dx-initial-focus` / `data-dx-final-focus`, and the policy reads the entry for the modality of the open. A selector that matches nothing falls back to the built-in policy (keyboard and mouse: the first control; touch and pen: the panel, so no software keyboard rises). An explicit target is honoured as given, so return `Panel` for `Touch` yourself when it names a field.
+
+```rust
+PopoverContent {
+    initial_focus: Callback::new(|m: OpenModality| match m {
+        OpenModality::Touch => FocusTarget::Panel,
+        _ => FocusTarget::selector("#name"),
+    }),
+    final_focus: Callback::new(|_| FocusTarget::Default),
+}
+```
+
+`final_focus` defaults to the element that held focus when the panel opened: the trigger for a click open, the previously focused element for a programmatic open. The opener is remembered in exactly one place (`dxOpenFocus`), for every overlay kind. See the `focus_target` variant.

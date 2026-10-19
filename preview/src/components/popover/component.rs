@@ -54,6 +54,8 @@ pub fn PopoverContent(props: PopoverContentProps) -> Element {
             id: props.id,
             side: props.side,
             align: props.align,
+            initial_focus: props.initial_focus,
+            final_focus: props.final_focus,
             attributes: props.attributes,
             {props.children}
         }
@@ -66,7 +68,9 @@ pub fn PopoverHeader(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
     children: Element,
 ) -> Element {
-    let base = attributes!(div { class: "dx-popover-header" });
+    let base = attributes!(div {
+        class: "dx-popover-header"
+    });
     let merged = merge_attributes(vec![base, attributes]);
 
     rsx! {
@@ -83,7 +87,9 @@ pub fn PopoverTitle(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
     children: Element,
 ) -> Element {
-    let base = attributes!(h3 { class: "dx-popover-title" });
+    let base = attributes!(h3 {
+        class: "dx-popover-title"
+    });
     let merged = merge_attributes(vec![base, attributes]);
 
     rsx! {
@@ -98,7 +104,9 @@ pub fn PopoverDescription(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
     children: Element,
 ) -> Element {
-    let base = attributes!(p { class: "dx-popover-description" });
+    let base = attributes!(p {
+        class: "dx-popover-description"
+    });
     let merged = merge_attributes(vec![base, attributes]);
 
     rsx! {

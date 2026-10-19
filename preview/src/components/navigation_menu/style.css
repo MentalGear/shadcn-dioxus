@@ -394,12 +394,12 @@
 }
 
 .dx-navigation-menu-content .dx-navigation-menu-featured:focus-visible {
-  --dx-navigation-menu-featured-surface: color-mix(in oklab, var(--dx-muted), var(--dx-foreground) 8%);
+  --dx-navigation-menu-featured-surface: color-mix(in var(--dx-hover-mix-space), var(--dx-muted), var(--dx-foreground) 8%);
 }
 
 @media (hover: hover) and (pointer: fine) {
   .dx-navigation-menu-content .dx-navigation-menu-featured:hover:not([data-disabled="true"]) {
-    --dx-navigation-menu-featured-surface: color-mix(in oklab, var(--dx-muted), var(--dx-foreground) 8%);
+    --dx-navigation-menu-featured-surface: color-mix(in var(--dx-hover-mix-space), var(--dx-muted), var(--dx-foreground) 8%);
   }
 }
 

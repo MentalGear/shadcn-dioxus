@@ -50,6 +50,7 @@ pub enum ComponentCategory {
     Feedback,
     Disclosure,
     DataDisplay,
+    Chat,
     Charts,
 }
 
@@ -61,6 +62,7 @@ impl ComponentCategory {
         Self::Feedback,
         Self::Disclosure,
         Self::DataDisplay,
+        Self::Chat,
         Self::Charts,
     ];
 
@@ -72,6 +74,7 @@ impl ComponentCategory {
             Self::Feedback => "Feedback",
             Self::Disclosure => "Disclosure",
             Self::DataDisplay => "Data display",
+            Self::Chat => "Chat",
             Self::Charts => "Charts",
         }
     }
@@ -92,9 +95,11 @@ pub fn category_of(name: &str) -> ComponentCategory {
         }
         "accordion" | "collapsible" => ComponentCategory::Disclosure,
         "avatar" | "card" | "separator" | "aspect_ratio" | "item" | "drag_and_drop_list"
-        | "virtual_list" | "scroll_area" | "tag_group" | "table" | "data_table" | "resizable"
-        | "message" | "bubble" | "marker" | "attachment" | "message_scroller" => {
+        | "virtual_list" | "scroll_area" | "tag_group" | "table" | "data_table" | "resizable" => {
             ComponentCategory::DataDisplay
+        }
+        "message" | "bubble" | "marker" | "attachment" | "message_scroller" | "markdown" => {
+            ComponentCategory::Chat
         }
         "chart" | "area_chart" | "bar_chart" | "line_chart" | "pie_chart" | "radar_chart"
         | "radial_chart" | "chart_tooltip" => ComponentCategory::Charts,
@@ -214,6 +219,7 @@ pub const CATALOG: &[(&str, Origin)] = &[
     ("color_picker", Origin::Extra("A color picker from the upstream Dioxus components; shadcn/ui has no color picker.")),
     ("drag_and_drop_list", Origin::Extra("A list you can reorder by drag, touch or keyboard, from upstream Dioxus; shadcn/ui has none.")),
     ("form", Origin::Extra("A test fixture for native form submission; shadcn/ui replaced its Form with Field.")),
+    ("markdown", Origin::Extra("Renders model output as safe, streaming-friendly Markdown; shadcn/ui has no Markdown component.")),
     ("navbar", Origin::Extra("A menubar-style navigation bar from upstream Dioxus; shadcn/ui's Navigation Menu is a different component.")),
     ("tag_group", Origin::Extra("A focusable group of tags with selection and removal, from upstream Dioxus; not in shadcn/ui.")),
     ("toolbar", Origin::Extra("A keyboard-navigable toolbar for grouping controls, from upstream Dioxus; not in shadcn/ui.")),

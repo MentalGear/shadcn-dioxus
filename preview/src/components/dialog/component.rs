@@ -37,6 +37,15 @@ pub struct DialogProps {
     #[props(default = true)]
     pub show_close_button: bool,
 
+    /// Where focus lands on open, as a function of the open modality
+    /// ([`dioxus_primitives::modality::OpenModality`]); see [`dialog::DialogContentProps::initial_focus`].
+    #[props(default)]
+    pub initial_focus: Option<dioxus_primitives::modality::FocusTargetFn>,
+
+    /// Where focus goes on close; see [`dialog::DialogContentProps::final_focus`].
+    #[props(default)]
+    pub final_focus: Option<dioxus_primitives::modality::FocusTargetFn>,
+
     /// Additional attributes to apply to the dialog panel element.
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
@@ -69,6 +78,8 @@ pub fn Dialog(props: DialogProps) -> Element {
             dialog::DialogContent {
                 id: panel.id(),
                 class: None,
+                initial_focus: props.initial_focus,
+                final_focus: props.final_focus,
                 attributes: merged,
                 {props.children}
                 if props.show_close_button {

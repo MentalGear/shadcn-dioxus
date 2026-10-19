@@ -12,8 +12,9 @@
 // preservation and the opening-position rules are theirs; what changed is
 // the host: React refs and `useSyncExternalStore` are replaced by DOM
 // discovery (`data-message-*` attributes), and state is written back as
-// `data-*` attributes. Stage 1 omits the visibility store
-// (`useMessageScrollerVisibility`, an IntersectionObserver).
+// `data-*` attributes. The visibility store (`useMessageScrollerVisibility`)
+// is an IntersectionObserver that runs only while Rust has a subscriber
+// (`observe` messages).
 //
 // Deliberate deviations from the reference, each a small refinement:
 //   * a wheel / touch / key gesture that cannot move the reader away from the
@@ -57,8 +58,10 @@
 // `{ start, end }` scrollability CHANGES, never per scroll event or token.
 //
 // Messages in  (Rust -> JS): { t: "init" | "config" | "end" | "start" |
-//                              "message" | "sync" | "teardown", ... }
+//                              "message" | "sync" | "observe" | "teardown", ... }
 // Messages out (JS -> Rust): ["scrollable", start, end]
+//                            ["visibility", anchorId | "", [visible message ids]]
+//                            (the latter only while observing, only on change)
 
 const EPS = 0.5;
 const AUTOSCROLL_CLEAR_MS = 180;
@@ -122,6 +125,14 @@ let touchY = null;
 let jumpTarget = null;
 let kept = new Set();
 let keepFrame = 0;
+// Visibility (only while Rust has a subscriber): row -> whether it intersects the
+// reading area, the observer, and the last published key.
+let visibilityOn = false;
+let visIO = null;
+const visRows = new Set();
+const visHit = new Map();
+let visFrame = 0;
+let visPublished = null;
 
 const reducedMotion = () =>
   !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
@@ -187,6 +198,107 @@ function scheduleKeepSync() {
     keepFrame = 0;
     syncKeepRendered();
   });
+}
+
+// -------------------------------------------------------------- visibility
+
+// Observe the rows that carry a message id. The root margin pulls the top edge
+// of the viewport down to the reading line (margin + peek), as shadcn does, so
+// a row hidden under the previous-item peek does not count as visible.
+function startVisibility() {
+  if (!bound) return;
+  stopVisibilityObserver();
+  visIO = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) visHit.set(entry.target, entry.isIntersecting);
+      scheduleVisibility();
+    },
+    {
+      root: viewport,
+      rootMargin: "-" + Math.max(0, cfg.margin + cfg.peek) + "px 0px 0px 0px",
+      threshold: [0, 0.01, 0.5, 1],
+    },
+  );
+  syncVisibilityRows(items());
+  scheduleVisibility();
+}
+
+function stopVisibilityObserver() {
+  if (visIO) visIO.disconnect();
+  visIO = null;
+  visRows.clear();
+  visHit.clear();
+}
+
+function stopVisibility() {
+  visibilityOn = false;
+  stopVisibilityObserver();
+  cancelAnimationFrame(visFrame);
+  visFrame = 0;
+  visPublished = null;
+}
+
+function syncVisibilityRows(list) {
+  if (!visIO) return;
+  const now = new Set();
+  for (const row of list) {
+    if (!row.dataset.messageId) continue;
+    now.add(row);
+    if (!visRows.has(row)) {
+      visRows.add(row);
+      visIO.observe(row);
+    }
+  }
+  for (const row of visRows) {
+    if (!now.has(row)) {
+      visRows.delete(row);
+      visHit.delete(row);
+      visIO.unobserve(row);
+    }
+  }
+}
+
+function scheduleVisibility() {
+  if (visFrame || !visIO) return;
+  visFrame = requestAnimationFrame(() => {
+    visFrame = 0;
+    publishVisibility();
+  });
+}
+
+// The last anchor whose top has reached the reading line. Anchors are in
+// document order, so their tops are monotonic: a binary search reads O(log n)
+// boxes instead of laying out every skipped chunk.
+function currentAnchorId(list) {
+  const anchors = list.filter((row) => row.dataset.scrollAnchor === "true" && row.dataset.messageId);
+  const line = cfg.margin + cfg.peek + EPS;
+  let lo = 0;
+  let hi = anchors.length - 1;
+  let found = -1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (elementViewportTop(anchors[mid]) <= line) {
+      found = mid;
+      lo = mid + 1;
+    } else {
+      hi = mid - 1;
+    }
+  }
+  return found >= 0 ? anchors[found].dataset.messageId : "";
+}
+
+function publishVisibility() {
+  if (!visIO || !bound) return;
+  const list = items();
+  const ids = [];
+  for (const row of list) {
+    if (row.dataset.messageId && visHit.get(row)) ids.push(row.dataset.messageId);
+  }
+  const anchor = currentAnchorId(list);
+  const key = anchor + "\u0000" + ids.join("\u0000");
+  if (key === visPublished) return;
+  visPublished = key;
+  dioxus.send(["visibility", anchor, ids]);
 }
 
 // ---------------------------------------------------------------- geometry
@@ -557,25 +669,28 @@ function clearPending() {
   if (viewport) viewport.removeAttribute("data-pending-scroll");
 }
 
-function jumpToMessage(id, align, behavior) {
+// `margin` is the per-call scroll margin (null: the provider's).
+function jumpToMessage(id, align, behavior, margin) {
   const el = bound ? findMessage(id) : null;
   if (!el) {
     if (itemCount === 0) {
-      pendingJump = { id, align, behavior };
+      pendingJump = { id, align, behavior, margin };
       markApplied();
     }
     return;
   }
   markApplied();
-  if (scrollToElement(el, align, behavior, null, false)) pendingJump = null;
-  else pendingJump = { id, align, behavior };
+  if (scrollToElement(el, align, behavior, margin, false)) pendingJump = null;
+  else pendingJump = { id, align, behavior, margin };
 }
 
 function flushPendingJump() {
   if (!pendingJump) return false;
   const el = findMessage(pendingJump.id);
   if (!el) return false;
-  if (!scrollToElement(el, pendingJump.align, pendingJump.behavior, null, false)) return false;
+  if (!scrollToElement(el, pendingJump.align, pendingJump.behavior, pendingJump.margin, false)) {
+    return false;
+  }
   pendingJump = null;
   markApplied();
   return true;
@@ -657,6 +772,10 @@ function handleContentChange() {
   // real size, not at the skipped estimate.
   syncKeepRendered();
   const list = items();
+  if (visIO) {
+    syncVisibilityRows(list);
+    scheduleVisibility();
+  }
   const previousCount = itemCount;
   const previousFirst = firstItem;
   itemCount = list.length;
@@ -744,6 +863,7 @@ function userScrollIntent() {
 // ------------------------------------------------------------------ events
 
 function onScroll() {
+  if (visIO) scheduleVisibility();
   commitScrollState();
   capturePrependAnchor();
 }
@@ -823,6 +943,7 @@ function teardown() {
   cancelAnimationFrame(resizeFrame);
   cancelAnimationFrame(openFrame);
   cancelAnimationFrame(keepFrame);
+  stopVisibility();
   clearTimeout(autoscrollingTimer);
   document.removeEventListener("selectionchange", scheduleKeepSync);
   resizeObserver.disconnect();
@@ -856,11 +977,23 @@ function handle(msg) {
       const wasFollowing = cfg.autoScroll;
       cfg.autoScroll = msg.autoScroll;
       cfg.edge = msg.edge;
+      const reaim = cfg.peek !== msg.peek || cfg.margin !== msg.margin;
       cfg.peek = msg.peek;
       cfg.margin = msg.margin;
+      const positionChanged =
+        !!msg.defaultScrollPosition && msg.defaultScrollPosition !== cfg.defaultScrollPosition;
+      if (positionChanged) cfg.defaultScrollPosition = msg.defaultScrollPosition;
       const virtualizeChanged = cfg.virtualize !== msg.virtualize;
       cfg.virtualize = msg.virtualize;
       if (bound && virtualizeChanged) syncKeepRendered();
+      if (bound && visibilityOn && reaim) startVisibility();
+      if (bound && positionChanged) {
+        // A live change of the opening position applies it again (without
+        // re-hiding the viewport: the flash guard is for the first paint).
+        defaultApplied = false;
+        openFrames = 0;
+        if (!applyDefaultScrollPosition()) pollOpen();
+      }
       if (bound) {
         // Turning auto-scroll on while the reader is at the end starts following.
         if (cfg.autoScroll && !wasFollowing && atEnd() && mode !== "settling-jump" && mode !== "anchored-to-message") {
@@ -883,7 +1016,16 @@ function handle(msg) {
       break;
     case "message":
       bind();
-      jumpToMessage(msg.id, msg.align, msg.behavior);
+      jumpToMessage(msg.id, msg.align, msg.behavior, msg.margin == null ? null : msg.margin);
+      break;
+    case "observe":
+      if (msg.on) {
+        visibilityOn = true;
+        bind();
+        startVisibility();
+      } else {
+        stopVisibility();
+      }
       break;
     case "sync":
       if (bound) commitScrollState(true);

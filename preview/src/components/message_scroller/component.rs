@@ -14,9 +14,9 @@ use dioxus_primitives::message_scroller::{
 // `dioxus_primitives` -- the same convention `carousel`'s wrapper follows.
 #[allow(unused_imports)] // a consumer-facing surface; this crate's own demos use a subset
 pub use dioxus_primitives::message_scroller::{
-    use_message_scroller, use_message_scroller_scrollable, DefaultScrollPosition,
-    MessageScrollerApi, MessageScrollerDirection, ScrollAlign, ScrollBehavior, ScrollFade,
-    ScrollToMessageOptions, Scrollable, Virtualization,
+    use_message_scroller, use_message_scroller_scrollable, use_message_scroller_visibility,
+    DefaultScrollPosition, MessageScrollerApi, MessageScrollerDirection, ScrollAlign,
+    ScrollBehavior, ScrollFade, ScrollToMessageOptions, Scrollable, Virtualization, Visibility,
 };
 
 /// The headless root: owns the scroll controller and renders no element.

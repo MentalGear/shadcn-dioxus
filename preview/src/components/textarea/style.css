@@ -103,10 +103,13 @@
 }
 
 /* `Button`'s focus construction (`../button/style.css`): the border takes the
- * ring colour and the halo goes around it. */
+ * ring colour and the halo goes around it. The halo is `--dx-ring-focus-halo`, the field ring's own
+ * outer layer: `--dx-ring-focus` is zeroed outside keyboard modality, but a text field the user
+ * clicked or tapped is still focused and still rings (`scripts/check-css-state-recipes.sh`
+ * `text-entry-ring`). */
 .dx-textarea[data-style="outline"]:focus-visible {
   border-color: var(--dx-ring-color);
-  box-shadow: var(--dx-ring-focus);
+  box-shadow: var(--dx-ring-focus-halo);
 }
 
 /* Invalid: `aria-invalid:border-destructive ring-3 ring-destructive/20 dark:ring-destructive/40`, after the

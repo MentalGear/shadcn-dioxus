@@ -5,3 +5,4 @@ overlay
 no_close
 scrollable
 sticky_footer
+focus_target

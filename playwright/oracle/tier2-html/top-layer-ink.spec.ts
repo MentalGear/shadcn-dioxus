@@ -28,7 +28,7 @@
  * top-layer content already wins with no help needed -- but a top-layer
  * wrapper that declares no `color` of its own falls straight to the UA
  * default instead of quietly inheriting the app's ink token
- * (`--secondary-color-4`) the way every other element on the page does.
+ * (`--dx-foreground`) the way every other element on the page does.
  *
  * ## The fix under test
  *
@@ -61,17 +61,17 @@
  *
  * ## Method: assert against the resolved token, not a hardcoded literal
  *
- * `resolvedColor()` below reads `--secondary-color-4` (and, for the
+ * `resolvedColor()` below reads `--dx-foreground` (and, for the
  * Tooltip negative case, `--dx-background`) the only way a CSS custom
  * property can be read *as a color*: by assigning it to a probe element's
  * `color` and reading that element's own `getComputedStyle().color` back
- * (`getPropertyValue('--secondary-color-4')` alone would return the raw,
- * unresolved token text -- literally `"var(--dark, #d4d4d4) var(--light,
- * #111)"` per `preview/assets/dx-components-theme.css`, not a color). Every
+ * (`getPropertyValue('--dx-foreground')` alone would return the raw,
+ * unresolved token text -- literally `"var(--foreground, var(--light, #000)
+ * var(--dark, #fafafa))"` per `preview/assets/dx-components-theme.css`, not a color). Every
  * assertion below compares a surface's own computed `color` against that
  * resolved value, so this file survives a theme retune untouched.
  *
- * `--secondary-color-4` is set once, as `color`, on `body`
+ * `--dx-foreground` is set once, as `color`, on `body`
  * (`preview/assets/main.css`) -- and top-layer promotion (`showPopover()`/
  * `showModal()`) never moves an element in the *DOM tree*, only how it is
  * *painted*; CSS inheritance follows the DOM tree, not paint order. So
@@ -89,7 +89,7 @@
  * *masked* siblings kept as living proof the fix doesn't regress an
  * already-correct case: `.dx-navbar-item`/`.dx-toast-title`/`.dx-dialog`/
  * `.dx-alert-dialog`/`.dx-sheet` already declare their own `color: var(
- * --secondary-color-4)`; `.dx-tooltip-content` declares its own
+ * --dx-foreground)`; `.dx-tooltip-content` declares its own
  * *intentionally different* `color: var(--dx-background)`; `.dx-select-
  * list`/`.dx-combobox-list` declare their own *intentionally different*
  * `color: var(--secondary-color-1)`. Every one of these is author-origin
@@ -127,6 +127,11 @@ import { gotoHydrated } from "../../hydration";
 import { demoFrame, demoRole } from "../../demo-frame";
 
 const NAV_TIMEOUT = 20 * 60 * 1000; // first run compiles the app
+
+// The page ink: `body { color: var(--dx-foreground) }` (`preview/assets/main.css`). Read as a token at
+// runtime by `resolvedColor`, never as a literal, so a retune of the ink (row 231 moved it from the
+// ramp's `--secondary-color-4` #111 to shadcn's `--foreground` #000) cannot stale this file again.
+const INK_TOKEN = "--dx-foreground";
 
 const url = (name: string) => `${BASE_URL}/component/?name=${name}&`;
 
@@ -317,7 +322,7 @@ const SURFACES: Surface[] = [
     // directly (author origin, already winning over the UA default with no
     // help needed from this file's fix). Row 111 moved it from the ramp's
     // `--secondary-color-1` to the popover role, which resolves to
-    // `--secondary-color-4` (#111 | #d4d4d4), so `expectedVar` names that
+    // `--dx-popover-foreground`, so `expectedVar` names that
     // token; it is still the surface's OWN declared colour, not an instance
     // of the bug. This case exists
     // to prove the shared `:where()` rule leaves it alone, the same
@@ -337,12 +342,12 @@ const SURFACES: Surface[] = [
     },
     wrapper: (page) => page.locator('.dx-select-list[data-state="open"]'),
     text: (page) => page.locator('.dx-select-list[data-state="open"]').getByRole("option").first(),
-    expectedVar: "--secondary-color-4",
+    expectedVar: "--dx-popover-foreground",
   },
   {
     // Same shape as `select` immediately above: `.dx-combobox-list` also
     // declares its own `color: var(--dx-foreground)` directly
-    // (`--secondary-color-4`, row 111; was `--secondary-color-1`).
+    // (the popover role, row 111; was `--secondary-color-1`).
     name: "combobox",
     open: async (page) => {
       await goto(page, "combobox");
@@ -356,7 +361,7 @@ const SURFACES: Surface[] = [
     // (its own, deliberate colour since row 111); the first un-highlighted one inherits the list's.
     text: (page) =>
       page.locator('.dx-combobox-list[data-state="open"] .dx-combobox-option:not([data-highlighted="true"])').first(),
-    expectedVar: "--secondary-color-4",
+    expectedVar: "--dx-popover-foreground",
   },
   {
     name: "dialog",
@@ -430,14 +435,14 @@ function runSurfaceChecks() {
   for (const surface of SURFACES) {
     test(surface.name, async ({ page }) => {
       await surface.open(page);
-      const expected = await resolvedColor(page, surface.expectedVar ?? "--secondary-color-4");
+      const expected = await resolvedColor(page, surface.expectedVar ?? INK_TOKEN);
       await expect(
         surface.wrapper(page),
-        `${surface.name}: content wrapper's color must resolve to ${surface.expectedVar ?? "--secondary-color-4"}, not the UA [popover]/dialog default`,
+        `${surface.name}: content wrapper's color must resolve to ${surface.expectedVar ?? INK_TOKEN}, not the UA [popover]/dialog default`,
       ).toHaveCSS("color", expected);
       await expect(
         surface.text(page),
-        `${surface.name}: text must resolve to ${surface.expectedVar ?? "--secondary-color-4"}, not the UA [popover]/dialog default`,
+        `${surface.name}: text must resolve to ${surface.expectedVar ?? INK_TOKEN}, not the UA [popover]/dialog default`,
       ).toHaveCSS("color", expected);
     });
   }

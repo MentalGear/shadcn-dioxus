@@ -236,23 +236,31 @@ html[data-theme="light"] [class~="dxc-system"] {
    * selected fill. Plain hover and keyboard-highlight rows on a popover keep `--dx-accent` (distinct
    * from #171717 by the same step shadcn ships). Guard: playwright/dark-surface-contrast.spec.ts. */
   --dx-accent-selected: var(--light, var(--dx-accent))
-    var(--dark, color-mix(in oklab, var(--dx-accent), var(--dx-foreground) 15%));
+    var(--dark, color-mix(in var(--dx-hover-mix-space), var(--dx-accent), var(--dx-foreground) 15%));
   --dx-accent-selected-foreground: var(--dx-accent-foreground);
   --dx-destructive: var(--destructive, var(--light, #e40014) var(--dark, var(--primary-error-color)));
   --dx-destructive-foreground: var(--destructive-foreground, var(--contrast-error-color));
 
   /* `--dx-destructive` kept readable AS TEXT: error messages, a destructive menu item, the destructive
-   * Alert, a required-field star. `--dx-destructive` is a FILL (dark #a22e2e, light #dc2626): as text it
+   * Alert, a required-field star. `--dx-destructive` is a FILL (dark #a22e2e, light #e40014): as text it
    * is 2.1-2.8:1 on every dark surface and 4.4:1 on the light muted `#f5f5f5`. Same construction as
-   * `--dx-primary-ink` below: the OKLCH lightness is clamped (at most 0.55 in light, at least 0.70 in
-   * dark; hue and chroma kept, gamut-mapped by the browser). Default values: light #dc2626 (L 0.577)
-   * -> #d2161c; dark #a22e2e (L 0.480) -> #ee746d. The clamp is a no-op for a ready-made dark
-   * `--destructive` (shadcn's `oklch(0.704 0.191 22.216)` is already above 0.70). >= 4.5:1 on background,
-   * card, popover, muted and accent in both modes (5.0 to 6.9:1; the figures are in
-   * dev-docs/research/phase-c-plan-2026-10-13.md and playwright/dark-surface-contrast.spec.ts). Text
-   * must read this, never `--dx-destructive`: scripts/check-destructive-text.sh. Fills, borders and
-   * rings keep `--dx-destructive` (and `--dx-destructive-fill`). */
-  --dx-destructive-text: var(--light, oklch(from var(--dx-destructive) min(l, 0.55) c h))
+   * `--dx-primary-ink` below: the OKLCH lightness is clamped (at most 0.48 in light, at least 0.70 in
+   * dark; hue and chroma kept, gamut-mapped by the browser). Default values: light #e40014 (L 0.578)
+   * -> #c00000; dark #a22e2e (L 0.480) -> #ee746d. The clamp is a no-op for a ready-made dark
+   * `--destructive` (shadcn's `oklch(0.704 0.191 22.216)` is already above 0.70).
+   * The light bound is the WORST surface, not the plain page: ink on the destructive tint that the
+   * Bubble, Attachment error state and every menu's highlighted destructive item paint is the binding
+   * case (`color-mix(in oklab, --dx-destructive 10%, transparent)` over white; 20% for the Bubble's
+   * hover). Measured in Chromium for the default red, light, bound -> ratio: white 6.5, muted/accent
+   * `#f5f5f5` 5.9, 10% tint on white 5.4, 20% tint on white 4.51, 10% tint on `#f5f5f5` 5.0. The old 0.55 gave
+   * only 4.395:1 on the 10% tint once `--dx-destructive` became the redder #e40014, so the bound
+   * is re-derived from that list, not from the plain surfaces. Dark: 5.0 to 6.9:1 on background, card,
+   * popover, muted, accent (dev-docs/research/phase-c-plan-2026-10-13.md and
+   * playwright/dark-surface-contrast.spec.ts). Guards: playwright/menu-item-parts.spec.ts, bubble,
+   * attachment, theme-preset-contrast. Text must read this, never `--dx-destructive`:
+   * scripts/check-destructive-text.sh. Fills, borders and rings keep `--dx-destructive` (and
+   * `--dx-destructive-fill`). */
+  --dx-destructive-text: var(--light, oklch(from var(--dx-destructive) min(l, 0.48) c h))
     var(--dark, oklch(from var(--dx-destructive) max(l, 0.7) c h));
 
   /* The destructive Button's and Badge's solid fill (one definition, read by
@@ -568,6 +576,13 @@ html[data-theme="light"] [class~="dxc-system"] {
    * so `--dx-opacity-hover` is a new value, not a survey result -- a
    * conventional subtle default, easy to retune globally later. */
   --dx-opacity-hover: 0.8;
+
+  /* The hover "step toward the ink" recipe's interpolation space, once. shadcn base-nova writes the secondary
+   * hover as `color-mix(in oklch, var(--secondary), var(--foreground) 5%)`; ours was `in oklab`, which lands
+   * 3 levels off (#e8e8e8 vs #e5e5e5 light, #2d2d2d vs #2f2f2f dark, row 243). Every hover fill that steps a
+   * fill toward `--dx-foreground` reads this token (`color-mix(in var(--dx-hover-mix-space), <fill>,
+   * var(--dx-foreground) <weight>)`), so they all follow shadcn's space by construction. */
+  --dx-hover-mix-space: oklch;
   --dx-opacity-disabled: 0.5;
   --dx-ring-width: 2px;
   --dx-ring: 0 0 0 var(--dx-ring-width) var(--dx-ring-color);
@@ -906,8 +921,8 @@ html[data-theme="light"] [class~="dxc-system"] {
  * `property-no-vendor-prefix` calls it unneeded by the project's browser data, so the rule disables
  * that one check for that one line rather than for the file. Same zero specificity and `dx-` scoping
  * as the touch rule: a component or an app that needs a drag handle or a different value declares it. A
- * rule that resets with the `all` shorthand (`all: unset` on Switch and the slider and colour-picker thumbs)
- * outranks every zero-specificity rule here, so it restates this one itself; the gate requires it.
+ * rule that resets with the `all` shorthand would outrank every zero-specificity rule here, so the gate bans
+ * `all:` in component stylesheets (row 239).
  * ========================================================================== */
 :where(button[class^="dx-"]),
 :where(button[class*=" dx-"]),

@@ -16,6 +16,9 @@ unic-langid = { version = "0.9", features = ["macros"] }
 strum = { version = "0.27.2", features = ["derive"] }
 tracing = { workspace = true }
 time = { version = "0.3.44", features = ["std", "macros"] }
+# The `markdown` component's parser. Exact pin, no default features and no `html`: the component renders
+# parser events into its own allowlisted tree (scripts/check-markdown-parser.sh).
+pulldown-cmark = { version = "=0.13.4", default-features = false }
 
 
 [build-dependencies]

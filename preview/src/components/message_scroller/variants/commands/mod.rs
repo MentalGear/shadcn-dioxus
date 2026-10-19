@@ -83,6 +83,7 @@ fn CommandMenu() -> Element {
                                     ScrollToMessageOptions {
                                         align: ScrollAlign::Start,
                                         behavior: ScrollBehavior::Smooth,
+                                        scroll_margin: None,
                                     },
                                 );
                         },

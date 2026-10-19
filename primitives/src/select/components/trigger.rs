@@ -242,7 +242,11 @@ pub fn SelectTrigger(props: SelectTriggerProps) -> Element {
     rsx! {
         button {
             onclick: move |_| {
-                ctx.set_open(!open());
+                if open() {
+                    ctx.set_open(false);
+                } else {
+                    ctx.open_for_pointer();
+                }
             },
             onkeydown: move |event| {
                 match event.key() {
