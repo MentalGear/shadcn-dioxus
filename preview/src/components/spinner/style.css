@@ -5,12 +5,28 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+
+  --dx-spinner-size: 1rem;
 }
 
 .dx-spinner svg {
-  width: 1rem;
-  height: 1rem;
+  width: var(--dx-spinner-size, 1rem);
+  height: var(--dx-spinner-size, 1rem);
   animation: dx-spinner-spin 1s linear infinite;
+}
+
+/* Typed `size`: the ring's edge is one slot variable (default 1rem, set on the base rule above), so
+ * the four sizes cannot drift apart. */
+.dx-spinner[data-size="sm"] {
+  --dx-spinner-size: 0.75rem;
+}
+
+.dx-spinner[data-size="lg"] {
+  --dx-spinner-size: 1.5rem;
+}
+
+.dx-spinner[data-size="xl"] {
+  --dx-spinner-size: 2rem;
 }
 
 @keyframes dx-spinner-spin {

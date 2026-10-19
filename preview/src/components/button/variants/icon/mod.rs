@@ -23,7 +23,7 @@ pub fn Demo() -> Element {
             Button {
                 variant: ButtonVariant::Outline,
                 size: ButtonSize::Icon,
-                border_radius: "50%",
+                radius: ButtonRadius::Full,
                 aria_label: "Open in new tab",
                 ArrowUpRight { size: "16px" }
             }

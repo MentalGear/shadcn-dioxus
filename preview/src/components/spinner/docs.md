@@ -16,3 +16,7 @@ The ring spins forever, so it pauses whenever nobody can see it: while it is out
 This is built in. `Spinner` calls `dioxus_primitives::activity::use_motion()` and spreads `motion.attributes()` on its root; the one `[data-dx-motion="paused"]` rule in `dx-components-theme.css` does the pausing for the element and everything under it. A page of spinners shares one `IntersectionObserver`. If you build your own looping indicator, do the same two lines rather than writing a pause rule. Users who prefer reduced motion are handled by your stylesheet's `prefers-reduced-motion` query, not by this.
 
 The spin is `transform: rotate`, 1 s linear; override `animation-duration` on `.dx-spinner svg` to change it. See [Motion](/docs#motion) for the tokens, reduced motion and the per-component table.
+
+## Size
+
+`Spinner { size }` takes `SpinnerSize::Sm` (12px), `Default` (16px), `Lg` (24px) and `Xl` (32px). The spinner carries `data-size`; the ring's edge is the one slot variable `--dx-spinner-size`, which a parent can also set.
