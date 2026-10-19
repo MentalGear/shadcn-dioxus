@@ -1,7 +1,7 @@
 ---
 id: 266
 title: "Repo cleanup: archive historical dev-docs, trim CLAUDE.md and the big dev docs, split backlog.md"
-status: "BACKLOG (owner request 2026-10-19; plan approval pending; scheduled with the Round 6 sweep). Owner…"
+status: "APPROVED 2026-10-19 (owner: run it when safe, in the Round 6 sweep); starts once no feature lane…"
 size: "M-L"
 area: process
 updated: 2026-10-19
@@ -17,7 +17,7 @@ properly refactor them."
 
 ## Status / trigger
 
-**BACKLOG (owner request 2026-10-19; plan approval pending; scheduled with the Round 6 sweep). Owner: the cleanup thread**
+**APPROVED 2026-10-19 (owner: run it when safe, in the Round 6 sweep); starts once no feature lane, Round 4 or Round 1 work is unmerged; before row 267 and the 152b prune. Owner: the cleanup thread**
 
 ## Size
 
@@ -29,4 +29,4 @@ Proposed by the cleanup thread (plan: https://claude.ai/code/artifact/19769a0d-6
 archive historical dev-docs (fork research, round logs, research for done rows); delete duplicates and superseded notes;
 trim `CLAUDE.md` (~30 KB to ~6 KB) via a generated `dev-docs/gates.md`; rewrite `STATUS.md`; trim `plan.md`,
 `conformance-harness.md`, `dev-loop.md` and `agent-model-fit.md`; split `backlog.md` into open and done; fix 36 dead
-`docs/...` comment links. Runs in Round 6 after the open lanes merge, so no lane edits a file that is being moved.
+`docs/...` comment links. Runs in Round 6 after the open lanes merge, so no lane edits a file that is being moved. Owner approval 2026-10-19: "I generally approve, but make sure it is executed when it's safe and cant conflict with running lanes/agents - so maybe best in the area of the sweep". When Round 6 starts, the backlog thread messages the cleanup thread to run it.
