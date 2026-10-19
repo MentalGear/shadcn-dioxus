@@ -2066,11 +2066,9 @@ pub(crate) fn use_anchor_position_fallback(
                 : null;
             if (resizeObserver) resizeObserver.observe(content);
             await dioxus.recv();
-            if (content) {{
-                content.removeAttribute('data-placed-side');
-                content.style.removeProperty('--dx-anchor-offset-x');
-                content.style.removeProperty('--dx-anchor-offset-y');
-            }}
+            // No cleanup of data-placed-side / --dx-anchor-offset-*: a superseded run's teardown
+            // resolves AFTER its successor's first (synchronous) publish and would erase it; the
+            // next open republishes before paint, and a closed panel is display:none.
             if (resizeObserver) resizeObserver.disconnect();
             window.removeEventListener('scroll', onScroll, true);
             window.removeEventListener('resize', onTrack);
