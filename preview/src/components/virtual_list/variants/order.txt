@@ -3,3 +3,4 @@ random_heights
 content_visibility
 windowed
 fade
+find_in_page

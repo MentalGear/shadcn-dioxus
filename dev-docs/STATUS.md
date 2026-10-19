@@ -5,7 +5,7 @@ the page as stale and check `git log` and the flag files named here.** Seeded 20
 [`research/next-round-plan-2026-10-15.md`](./research/next-round-plan-2026-10-15.md),
 [`research/backlog-order-2026-10-18.md`](./research/backlog-order-2026-10-18.md) and [`plan.md`](./plan.md).
 
-Last updated: **2026-10-18**. Session branch: `claude/zealous-davinci-08se9a` (head `de7059ba` at seeding).
+Last updated: **2026-10-19**. Session branch: `claude/zealous-davinci-08se9a` (head `de7059ba` at seeding).
 Preview site: https://mentalgear.github.io/shadcn-dioxus/
 
 ## Current round
@@ -88,6 +88,8 @@ Rounds 5 and 7 (claimed on `claims` 2026-10-19; 7 taken before 6 because its fil
 landed there, and so did row 136 (Questionnaire, owner lifted the hold 2026-10-18). Round 6 (a sweep) follows.
 The archived first session's unpushed round 1 work (152a spec budget/shard planner, two-slot build lock) and its round 4
 claim stay with that session (owner chose to restore it, 2026-10-19).
+
+Round 4 (owner moved it to its own project thread 2026-10-19; session_019CSAknzLi1PvcaAvfgpych, branch `claude/round-4`, claimed on `claims`): row 244 (`VirtualGrid`/`VirtualWrapGrid` on the shared engine, own docs page with an image gallery and a 10k x 50 data grid), row 186's remaining items (a Utilities section on `/docs` for scroll-fade and shimmer, `utilities.spec`; installing `dx-effects.css` alone still needs a CLI option), row 153 prototyped (opt-in `hidden="until-found"` find-in-page placeholders on windowed VirtualList; Ctrl+F find-next still needs a manual check per engine), row 174 closed on the owner's word. Round 6 (the sweep) stays last.
 
 ## Keeping this page current
 
