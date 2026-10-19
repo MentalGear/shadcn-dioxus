@@ -1,0 +1,20 @@
+{
+  "name": "trace",
+  "description": "A quiet step line for an agent turn (thinking, a tool call, a file read) that can expand to show its detail.",
+  "authors": ["Claude"],
+  "exclude": ["variants", "docs.md", "component.json"],
+  "cargoDependencies": [
+    {
+      "name": "dioxus-primitives",
+      "git": "https://github.com/MentalGear/shadcn-dioxus"
+    },
+    {
+      "name": "dioxus-icons",
+      "version": "=0.1.0"
+    }
+  ],
+  "globalAssets": [
+    "../../../assets/dx-components-theme.css",
+    "../../../assets/dx-effects.css"
+  ]
+}

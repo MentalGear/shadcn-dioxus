@@ -1,0 +1,1 @@
+An agent turn in a scroller: a reasoning `Trace` that is open and shimmering while it runs, a tool-call line, an answer with a `CodeBlock` and a `Checkpoint`. Restore drops what came after the marked turn; Run again replays it.
