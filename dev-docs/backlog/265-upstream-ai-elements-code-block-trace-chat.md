@@ -1,7 +1,7 @@
 ---
 id: 265
 title: "Upstream ai-elements (chat, message, code-block, trace, checkpoint, ...) vs our chat kit"
-status: "PARTIAL 2026-10-19 (items 1-2 landed: code_block, trace, checkpoint and chat demos; item 3 is an\u2026"
+status: "PARTIAL 2026-10-19 (items 1-2 landed: code_block, trace, checkpoint and chat demos; item 3 is an…"
 size: "L"
 area: chat
 updated: 2026-10-19
