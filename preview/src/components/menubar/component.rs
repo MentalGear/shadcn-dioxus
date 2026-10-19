@@ -225,6 +225,7 @@ pub fn MenubarGroup(props: MenubarGroupProps) -> Element {
 pub fn MenubarSeparator(props: MenubarSeparatorProps) -> Element {
     let base = attributes!(div {
         class: "dx-menubar-separator",
+        "data-dx-menu-separator": "true",
     });
     let merged = merge_attributes(vec![base, props.attributes]);
     rsx! {
@@ -240,6 +241,7 @@ pub fn MenubarSeparator(props: MenubarSeparatorProps) -> Element {
 pub fn MenubarShortcut(props: MenubarShortcutProps) -> Element {
     let base = attributes!(span {
         class: "dx-menubar-shortcut",
+        "data-dx-menu-shortcut": "true",
     });
     let merged = merge_attributes(vec![base, props.attributes]);
     rsx! {

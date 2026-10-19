@@ -2,3 +2,4 @@
 overlay
 inline
 scrollable
+shortcuts
