@@ -38,8 +38,6 @@ use dioxus_icons::lucide::{
 use dioxus_primitives::direction::{Direction, DirectionProvider};
 use dioxus_primitives::{ContentAlign, ContentSide};
 use nav_link::NavLink;
-use std::str::FromStr;
-use strum::{Display, EnumIter, EnumString, IntoEnumIterator};
 use unic_langid::{langid, LanguageIdentifier};
 
 #[cfg(test)]
@@ -980,7 +978,7 @@ fn CopyButton(#[props(extends=GlobalAttributes)] attributes: Vec<Attribute>) -> 
     }
 }
 
-#[derive(PartialEq, Display, EnumIter, EnumString)]
+#[derive(Clone, Copy, PartialEq)]
 enum Language {
     English,
     French,
@@ -989,10 +987,36 @@ enum Language {
 }
 
 impl Language {
+    /// Every entry, in the order the dropdown lists them.
+    const ALL: [Language; 4] = [
+        Language::English,
+        Language::French,
+        Language::Spanish,
+        Language::German,
+    ];
+
+    /// The variant name, also the `<option>` value (the old strum `Display`).
+    const fn as_str(&self) -> &'static str {
+        match self {
+            Language::English => "English",
+            Language::French => "French",
+            Language::Spanish => "Spanish",
+            Language::German => "German",
+        }
+    }
+
+    /// The inverse of `as_str` (the old strum `EnumString`).
+    fn from_name(name: &str) -> Option<Self> {
+        Language::ALL
+            .into_iter()
+            .find(|language| language.as_str() == name)
+    }
+
     /// The entry for the active locale, so a `LanguageSelect` that remounts on a route change (the
     /// whole docs layout does) shows the language the page is really in, not always English.
     fn from_id(id: &LanguageIdentifier) -> Self {
-        Language::iter()
+        Language::ALL
+            .into_iter()
             .find(|language| language.id() == *id)
             .unwrap_or(Language::English)
     }
@@ -1041,8 +1065,8 @@ fn LanguageSelect() -> Element {
                     class: "dx-language-select",
                     aria_label: "Language",
                     onchange: move |e| {
-                        let name = e.value().parse().unwrap_or(current_lang.to_string());
-                        if let Ok(lang) = Language::from_str(&name) {
+                        let name = e.value().parse().unwrap_or(current_lang.read().as_str().to_string());
+                        if let Some(lang) = Language::from_name(&name) {
                             current_lang.set(lang);
                         }
                         let id = current_lang.read().id();
@@ -1064,9 +1088,9 @@ fn LanguageSelect() -> Element {
                         // translated string, not just future ones.
                         i18n().set_language(id);
                     },
-                    for lang in Language::iter() {
+                    for lang in Language::ALL {
                         option {
-                            value: lang.to_string(),
+                            value: lang.as_str(),
                             selected: lang == *current_lang.read(),
                             {lang.display_name()}
                         }
