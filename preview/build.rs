@@ -333,10 +333,15 @@ fn render_props_section(name: &str, docs_html: &str) -> String {
         "src/components/{name}/docs.md declares `## {PROPS_HEADING}`, which build.rs adds itself"
     );
     let mut body = String::new();
+    // A `#[cfg(web)]`/`#[cfg(not(web))]` pair declares the same component twice: the first one is the page's.
+    let mut seen = std::collections::HashSet::new();
     for (label, path) in props_sources(name) {
         println!("cargo:rerun-if-changed={}", path.display());
         let source = std::fs::read_to_string(&path).unwrap();
         for item in props_scan::scan_props(&source) {
+            if !seen.insert((label, item.name.clone())) {
+                continue;
+            }
             let rows: Vec<&props_scan::PropField> =
                 item.fields.iter().filter(|f| f.extends.is_none()).collect();
             let spreads: Vec<String> = item
