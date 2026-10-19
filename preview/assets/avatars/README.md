@@ -2,8 +2,11 @@
 
 Eight abstract, geometric avatars for the component demos (avatar, item,
 dashboard, chat kit). Each is a flat 80 x 80 SVG of two to four shapes (circles,
-rects, arcs, a triangle) on a muted field, in a shared palette that reads on the
-light and the dark page. There are no faces, gradients, text or photos, and the
+rects, arcs, a triangle) on a mid-tone field, in a shared palette that reads on the
+light and the dark page. The palette is tuned in OKLCH to sit near the theme's chart
+tokens (`--dx-chart-1..5`: L 0.58-0.76, C 0.13-0.18): fields at L 0.76-0.82 and C 0.07-0.10,
+dark shapes at L 0.38-0.45 and C 0.07-0.15, accents at L 0.58-0.83 and C 0.14-0.17, one hue
+per avatar so they stay distinguishable. There are no faces, gradients, text or photos, and the
 names they stand for are invented.
 
 They are bundled so the demos work offline and on GitHub Pages, and so no demo
