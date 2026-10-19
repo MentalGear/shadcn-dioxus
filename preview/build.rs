@@ -355,7 +355,7 @@ fn render_props_section(name: &str, docs_html: &str) -> String {
                 })
                 .collect();
             body.push_str(&format!(
-                "<section class=\"dx-docs-props\" aria-label=\"{label} props: {n}\">\n<h3><code>{n}</code> <span class=\"dx-docs-props-kind\">{label}</span></h3>\n",
+                "<section class=\"dx-docs-props\">\n<h3><code>{n}</code> <span class=\"dx-docs-props-kind\">{label}</span></h3>\n",
                 n = html_escape(&item.name),
             ));
             if !item.doc.trim().is_empty() {
@@ -375,7 +375,7 @@ fn render_props_section(name: &str, docs_html: &str) -> String {
                 ));
             } else {
                 body.push_str(&format!(
-                    "<div class=\"dx-docs-table-scroll\" role=\"region\" aria-label=\"{n} props\" tabindex=\"0\"><table class=\"dx-docs-props-table\"><thead><tr><th scope=\"col\">Prop</th><th scope=\"col\">Type</th><th scope=\"col\">Default</th><th scope=\"col\">Description</th></tr></thead><tbody>\n",
+                    "<div class=\"dx-docs-table-scroll\" role=\"region\" aria-label=\"{label}: {n} props\" tabindex=\"0\"><table class=\"dx-docs-props-table\"><thead><tr><th scope=\"col\">Prop</th><th scope=\"col\">Type</th><th scope=\"col\">Default</th><th scope=\"col\">Description</th></tr></thead><tbody>\n",
                     n = html_escape(&item.name)
                 ));
                 for field in rows {
