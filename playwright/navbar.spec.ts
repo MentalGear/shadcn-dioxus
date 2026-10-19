@@ -328,6 +328,9 @@ test.describe('Open/close animation', () => {
     // nav reverses the row beneath a stationary pointer, which hovers a SIBLING nav, closes this one and opens
     // that one (observed in about half of the runs, and the sibling then stays open).
     const slideEndX = async (rtl: boolean, direction: string): Promise<string> => {
+      // The pointer from the previous load still rests on the trigger's coordinates; park it away first, or the
+      // hydrated page starts with its nav hovered and the later `hover()` is no enter at all.
+      await page.mouse.move(0, 0);
       await gotoHydrated(page, `${BASE_URL}/component/navbar/`, { timeout: 20 * 60 * 1000 });
       const trigger = page.getByRole('menuitem', { name: 'Inputs' });
       await expect(trigger).toHaveCSS('border-width', '0px');
