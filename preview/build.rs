@@ -391,7 +391,7 @@ fn render_props_section(name: &str, docs_html: &str) -> String {
                         name = html_escape(&field.name),
                         ty = html_escape(&ty),
                         default = default_cell,
-                        doc = doc_html(&field.doc),
+                        doc = if field.doc.trim().is_empty() { "&mdash;".to_string() } else { doc_html(&field.doc) },
                     ));
                 }
                 body.push_str("</tbody></table></div>\n");

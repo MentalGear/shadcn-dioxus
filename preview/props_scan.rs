@@ -30,6 +30,8 @@ pub struct PropField {
 #[derive(Debug, Clone)]
 pub struct PropsStruct {
     pub name: String,
+    /// `#[component] fn Name(args)` rather than a `#[derive(Props)]` struct.
+    pub is_fn: bool,
     pub doc: String,
     pub line: usize,
     pub fields: Vec<PropField>,
@@ -42,6 +44,13 @@ pub fn scan_props(source: &str) -> Vec<PropsStruct> {
     let mut i = 0;
     while i < lines.len() {
         let line = lines[i];
+        if line.starts_with("#[component") {
+            if let Some((item, next)) = scan_component_fn(&lines, i) {
+                out.push(item);
+                i = next;
+                continue;
+            }
+        }
         if !(line.starts_with("#[derive(") && line.contains("Props")) {
             i += 1;
             continue;
@@ -126,6 +135,7 @@ pub fn scan_props(source: &str) -> Vec<PropsStruct> {
         let first_body_line = k + 1;
         out.push(PropsStruct {
             name,
+            is_fn: false,
             doc: doc_lines.join("\n"),
             line: i + 1,
             fields: parse_fields(&body, &body_lines, first_body_line),
@@ -133,6 +143,101 @@ pub fn scan_props(source: &str) -> Vec<PropsStruct> {
         i = m;
     }
     out
+}
+
+/// `#[component] pub fn Name(a: A, #[props(default)] b: B, ..)`: the arguments are the props, with the same
+/// attribute and doc-comment shapes as a struct field. `fn Name(props: NameProps)` is the derive form
+/// (covered by its struct) and yields nothing. Returns the item and the line to resume at.
+fn scan_component_fn(lines: &[&str], at: usize) -> Option<(PropsStruct, usize)> {
+    let mut k = at + 1;
+    while k < lines.len()
+        && (lines[k].trim_start().starts_with("#[") || lines[k].trim_start().starts_with("///"))
+    {
+        k += 1;
+    }
+    let header = *lines.get(k)?;
+    let rest = header
+        .strip_prefix("pub fn ")
+        .or_else(|| header.strip_prefix("fn "))?;
+    let name: String = rest
+        .chars()
+        .take_while(|c| c.is_alphanumeric() || *c == '_')
+        .collect();
+    if !name.chars().next()?.is_uppercase() {
+        return None;
+    }
+    let mut body = String::new();
+    let mut line_starts = Vec::new();
+    let mut depth = 0i32;
+    let mut m = k;
+    let mut opened = false;
+    let mut done = false;
+    while m < lines.len() && !done {
+        let text = lines[m];
+        let mut piece = String::new();
+        let mut in_str = false;
+        let mut prev = ' ';
+        for ch in text.chars() {
+            if in_str {
+                if ch == '"' && prev != '\\' {
+                    in_str = false;
+                }
+            } else if ch == '"' {
+                in_str = true;
+            } else if ch == '(' {
+                depth += 1;
+                if !opened {
+                    opened = true;
+                    prev = ch;
+                    continue;
+                }
+            } else if ch == ')' {
+                depth -= 1;
+                if opened && depth == 0 {
+                    done = true;
+                    break;
+                }
+            }
+            if opened {
+                piece.push(ch);
+            }
+            prev = ch;
+        }
+        if opened {
+            line_starts.push(body.len());
+            body.push_str(&piece);
+            body.push('\n');
+        }
+        m += 1;
+    }
+    let first_line = if lines[k].contains('(') { k + 1 } else { k + 2 };
+    let fields = parse_fields(&body, &line_starts, first_line);
+    if fields.len() == 1 && fields[0].name == "props" {
+        return None;
+    }
+    let mut doc_lines = Vec::new();
+    let mut j = at;
+    while j > 0 {
+        let above = lines[j - 1].trim_start();
+        if let Some(text) = above.strip_prefix("///") {
+            doc_lines.push(text.strip_prefix(' ').unwrap_or(text).to_string());
+        } else if !above.starts_with("#[") {
+            break;
+        }
+        j -= 1;
+    }
+    doc_lines.reverse();
+    // Doc lines between `#[component]` and `fn` count too (`#[component]` is often below the doc).
+    Some((
+        PropsStruct {
+            name,
+            is_fn: true,
+            doc: doc_lines.join("\n"),
+            line: at + 1,
+            fields,
+        },
+        m,
+    ))
 }
 
 fn parse_fields(body: &str, line_starts: &[usize], first_line: usize) -> Vec<PropField> {

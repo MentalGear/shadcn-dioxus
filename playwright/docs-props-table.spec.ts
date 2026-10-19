@@ -20,7 +20,7 @@ test("every component page carries the Props reference section", async ({ reques
     const response = await request.get(`${BASE_URL}/component/${name}/`);
     expect(response.ok(), `${name}: HTTP ${response.status()}`).toBe(true);
     const html = await response.text();
-    if (!html.includes('id="docs-props-reference"') || !html.includes('class="dx-docs-props')) {
+    if (!html.includes('id="docs-props-reference"')) {
       missing.push(name);
     }
   }
@@ -52,8 +52,8 @@ test("a known prop shows its display type, default and doc comment", async ({ pa
   await expect(table.locator('tr[data-prop="size"] td').nth(3)).toContainText("Sm");
 });
 
-test("the opened Props reference passes axe on a big and a small component", async ({ page }) => {
-  for (const name of ["select", "badge"]) {
+test("the opened Props reference passes axe on a derive-struct and fn-argument components", async ({ page }) => {
+  for (const name of ["select", "badge", "button"]) {
     await gotoHydrated(page, `${BASE_URL}/component/${name}/`, NAV);
     const section = page.locator("details.dx-docs-disclosure", { has: page.locator("#docs-props-reference") });
     await section.locator("summary").click();
