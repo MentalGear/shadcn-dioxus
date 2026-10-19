@@ -14,7 +14,7 @@ pub fn Demo() -> Element {
     let mut time = use_signal(|| "10:30".to_string());
 
     rsx! {
-        div { style: "display: grid; gap: 0.75rem; justify-items: start; padding: 20px;",
+        div { style: "display: grid; gap: 0.75rem; justify-items: start;",
             Calendar {
                 selected_date: selected_date(),
                 on_date_change: move |date| selected_date.set(date),

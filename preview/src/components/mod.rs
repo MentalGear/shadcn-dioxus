@@ -168,6 +168,7 @@ pub const CATALOG: &[(&str, Origin)] = &[
     ("data_table", Origin::Shadcn),
     ("date_picker", Origin::Shadcn),
     ("dialog", Origin::Shadcn),
+    ("direction", Origin::Shadcn),
     ("drawer", Origin::Shadcn),
     ("dropdown_menu", Origin::Shadcn),
     ("empty", Origin::Shadcn),

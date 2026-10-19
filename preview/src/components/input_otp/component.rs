@@ -4,6 +4,7 @@ use dioxus_primitives::input_otp::{
     self, InputOtpGroupProps, InputOtpProps, InputOtpSeparatorProps, InputOtpSlotProps,
 };
 use dioxus_primitives::merge_attributes;
+pub use dioxus_primitives::input_otp::{OtpInputMode, OtpPattern};
 
 /// Composes [`input_otp::InputOtp`] (`dioxus_primitives`), attaching this
 /// crate's `dx-input-otp-input` theming class to the primitive's real
@@ -23,6 +24,7 @@ pub fn InputOtp(props: InputOtpProps) -> Element {
             on_value_change: props.on_value_change,
             on_complete: props.on_complete,
             max_length: props.max_length,
+            pattern: props.pattern,
             disabled: props.disabled,
             required: props.required,
             name: props.name,

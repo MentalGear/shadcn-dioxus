@@ -4,7 +4,7 @@ use core::panic;
 use std::time::Duration;
 
 use crate::{
-    direction::{use_direction, Direction},
+    direction::{use_direction, use_direction_signal, Direction},
     merge_attributes,
     selectable::{
         use_selectable_root, use_single_selectable_value, RcPartialEqValue, SelectionMode,
@@ -165,7 +165,7 @@ struct SelectRootConfig {
     /// See `SelectContext::scroll_lock`'s doc.
     scroll_lock: ReadSignal<bool>,
     /// See `SelectContext::direction`'s doc.
-    direction: Direction,
+    direction: ReadSignal<Direction>,
 }
 
 /// Sets up the shared signals, focus, and context that both [`Select`] and
@@ -300,6 +300,7 @@ pub fn Select<T: Clone + PartialEq + 'static>(props: SelectProps<T>) -> Element 
         "select",
     );
     let direction = use_direction(props.dir);
+    let direction_signal = use_direction_signal(direction);
 
     let (ctx, open) = use_select_root(
         values,
@@ -316,7 +317,7 @@ pub fn Select<T: Clone + PartialEq + 'static>(props: SelectProps<T>) -> Element 
             typeahead_timeout: props.typeahead_timeout,
             required: props.required,
             scroll_lock: props.scroll_lock,
-            direction,
+            direction: direction_signal,
         },
     );
 
@@ -344,13 +345,13 @@ pub fn Select<T: Clone + PartialEq + 'static>(props: SelectProps<T>) -> Element 
     let owned = attributes!(div {
         "data-state": if open() { "open" } else { "closed" },
         "data-disabled": (props.disabled)(),
-        "data-direction": ctx.direction.as_str(),
+        "data-direction": (ctx.direction)().as_str(),
     });
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);
 
     rsx! {
         div {
-            dir: ctx.direction.as_str(),
+            dir: (ctx.direction)().as_str(),
             ..merged,
             {props.children}
         }
@@ -497,6 +498,8 @@ pub fn SelectMulti<T: Clone + PartialEq + 'static>(props: SelectMultiProps<T>) -
 
     let direction = use_direction(props.dir);
 
+    let direction_signal = use_direction_signal(direction);
+
     // SelectMulti has no `required` prop: a native <select multiple> can't
     // express "at least one selected" via a single `required` attribute the
     // way a single-select can, and multi-select form participation is out of
@@ -519,20 +522,20 @@ pub fn SelectMulti<T: Clone + PartialEq + 'static>(props: SelectMultiProps<T>) -
             // anything forwarded from `props`.
             required: ReadSignal::new(Signal::new(false)),
             scroll_lock: props.scroll_lock,
-            direction,
+            direction: direction_signal,
         },
     );
 
     let owned = attributes!(div {
         "data-state": if open() { "open" } else { "closed" },
         "data-disabled": (props.disabled)(),
-        "data-direction": ctx.direction.as_str(),
+        "data-direction": (ctx.direction)().as_str(),
     });
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);
 
     rsx! {
         div {
-            dir: ctx.direction.as_str(),
+            dir: (ctx.direction)().as_str(),
             ..merged,
             {props.children}
         }

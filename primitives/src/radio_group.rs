@@ -6,7 +6,7 @@ use crate::{
     collection::{
         collection_item, use_collection_provider_with, use_item, CollectionOptions, CollectionState,
     },
-    direction::{use_direction, Direction, HorizontalNav},
+    direction::{use_direction, use_direction_signal, Direction, HorizontalNav},
     merge_attributes, use_controlled, use_effect_with_cleanup, use_form_reset_listener,
     use_unique_id,
 };
@@ -36,7 +36,7 @@ struct RadioGroupCtx {
 
     // Text direction, for `ArrowLeft`/`ArrowRight`'s roving-focus role --
     // see `direction::Direction::resolve_horizontal`'s doc.
-    direction: Direction,
+    direction: ReadSignal<Direction>,
 }
 
 impl RadioGroupCtx {
@@ -176,6 +176,7 @@ pub struct RadioGroupProps {
 #[component]
 pub fn RadioGroup(props: RadioGroupProps) -> Element {
     let direction = use_direction(props.dir);
+    let direction_signal = use_direction_signal(direction);
     // Snapshot the default before `use_controlled` consumes it -- each
     // RadioItem's hidden radio needs it (for `initial_checked`) and the
     // group's own form-reset listener needs it (to restore the Rust-side
@@ -204,7 +205,7 @@ pub fn RadioGroup(props: RadioGroupProps) -> Element {
         values: Signal::new(Default::default()),
         focus,
         horizontal: props.horizontal,
-        direction,
+        direction: direction_signal,
     });
 
     let owned = attributes!(div {
@@ -378,7 +379,7 @@ pub fn RadioItem(props: RadioItemProps) -> Element {
                     Key::ArrowUp if !horizontal => ctx.focus_prev(),
                     Key::ArrowDown if !horizontal => ctx.focus_next(),
                     Key::ArrowLeft | Key::ArrowRight if horizontal => {
-                        match ctx.direction.resolve_horizontal(&key) {
+                        match (ctx.direction)().resolve_horizontal(&key) {
                             Some(HorizontalNav::Prev) => ctx.focus_prev(),
                             Some(HorizontalNav::Next) => ctx.focus_next(),
                             None => {}
