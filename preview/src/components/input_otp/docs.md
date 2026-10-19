@@ -33,7 +33,7 @@ InputOtp {
 
 ```rust
 InputOtp { max_length: 6, pattern: OtpPattern::Alphanumeric, aria_label: "Code", /* slots */ }
-InputOtp { max_length: 4, pattern: OtpPattern::Custom { class: "0-9a-f".into(), inputmode: OtpInputMode::Text }, /* slots */ }
+InputOtp { max_length: 4, pattern: OtpPattern::Custom { class: "0-9a-f".into(), inputmode: dioxus_primitives::input_otp::OtpInputMode::Text }, /* slots */ }
 ```
 
 Rejected characters are removed as they arrive (a pasted `A1-B2` into an alphanumeric code becomes `A1B2`). The browser applies `maxlength` to a paste before the filter runs, so a pasted code with separators may be truncated first; paste the bare code. Raw `inputmode` or `pattern` attributes passed to `InputOtp` are overridden by the typed prop: it is the only way to set them. Letters keep their case.

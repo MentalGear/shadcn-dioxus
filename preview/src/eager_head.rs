@@ -257,7 +257,7 @@ mod tests {
         let doc = EagerHeadDocument::new(Rc::new(platform));
 
         doc.create_link(link("preconnect", "https://cdn.example"));
-        doc.create_link(link("stylesheet", "https://cdn.example/fonts.css"));
+        doc.create_link(link("stylesheet", "https://cdn.example/css2?family=Inter"));
         doc.create_link(link("icon", "/assets/favicon.css"));
 
         let evals = evals.borrow();
