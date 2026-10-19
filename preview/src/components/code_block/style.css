@@ -1,0 +1,247 @@
+/* Ported from shadcn/ui's Nova `.cn-code-block*` (registry/styles/style-nova.css, upstream
+ * #12307): a bordered rounded frame, an optional header and footer, a scrollable mono `<pre>`,
+ * CSS-counter line numbers and added/removed/highlighted line variants. */
+.dx-code-block {
+  position: relative;
+  display: flex;
+  overflow: hidden;
+  width: 100%;
+  min-width: 0;
+  flex-direction: column;
+  border: 1px solid var(--dx-input);
+  border-radius: var(--dx-radius-lg);
+  color: var(--dx-foreground);
+  font-size: var(--dx-text-sm);
+
+  /* Slot variables: the header, footer, content and lines read these, so one declaration on
+   * the root sizes the whole block. */
+  --dx-code-block-inset: var(--dx-space-3);
+}
+
+.dx-code-block[data-size="sm"] {
+  --dx-code-block-inset: var(--dx-space-2-5);
+
+  font-size: var(--dx-text-xs);
+}
+
+.dx-code-block[data-variant="destructive"] {
+  border-color: color-mix(in oklab, var(--dx-destructive) 30%, transparent);
+  color: var(--dx-destructive-text);
+}
+
+.dx-code-block:has(> .dx-code-block-content:focus-visible) {
+  border-color: var(--dx-ring-color);
+  box-shadow: var(--dx-ring-focus);
+}
+
+.dx-code-block-header,
+.dx-code-block-footer {
+  display: flex;
+  min-width: 0;
+  flex-shrink: 0;
+  align-items: center;
+  color: var(--dx-muted-foreground);
+  gap: var(--dx-space-2);
+  padding-inline: var(--dx-code-block-inset);
+}
+
+.dx-code-block-header {
+  padding-top: var(--dx-code-block-inset);
+}
+
+.dx-code-block-footer {
+  padding-bottom: var(--dx-code-block-inset);
+}
+
+.dx-code-block[data-variant="destructive"] .dx-code-block-header,
+.dx-code-block[data-variant="destructive"] .dx-code-block-footer {
+  color: var(--dx-destructive-text);
+}
+
+.dx-code-block-title {
+  overflow: hidden;
+  min-width: 0;
+  color: var(--dx-foreground);
+  font-family: var(--dx-font-sans);
+  font-size: var(--dx-text-sm);
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dx-code-block[data-size="sm"] .dx-code-block-title {
+  font-size: var(--dx-text-xs);
+}
+
+.dx-code-block[data-variant="destructive"] .dx-code-block-title {
+  color: var(--dx-destructive-text);
+}
+
+.dx-code-block-title svg:not(:where([popover], dialog) *) {
+  display: inline-block;
+  width: 0.875rem;
+  height: 0.875rem;
+  margin-inline-end: var(--dx-space-1-5);
+  pointer-events: none;
+  vertical-align: middle;
+}
+
+.dx-code-block-actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--dx-space-1);
+  margin-inline-start: auto;
+}
+
+/* In the header the actions sit on the row; as a direct child of the block (no header) they
+ * float over the top corner, hidden until the block is hovered or holds focus. */
+.dx-code-block > .dx-code-block-actions {
+  position: absolute;
+  z-index: var(--dx-z-raise);
+  padding: var(--dx-space-0-5);
+  border-radius: var(--dx-radius-md);
+  margin: 0;
+  background-color: var(--dx-background);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--dx-foreground) 10%, transparent);
+  inset-block-start: var(--dx-space-2);
+  inset-inline-end: var(--dx-space-2);
+  opacity: 0;
+  transition: opacity var(--dx-motion-duration-base);
+}
+
+.dx-code-block[data-size="sm"] > .dx-code-block-actions {
+  inset-block-start: var(--dx-space-1-5);
+  inset-inline-end: var(--dx-space-1-5);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-code-block:hover > .dx-code-block-actions {
+    opacity: 1;
+  }
+}
+
+.dx-code-block:focus-within > .dx-code-block-actions {
+  opacity: 1;
+}
+
+@media (pointer: coarse) {
+  .dx-code-block > .dx-code-block-actions {
+    opacity: 1;
+  }
+}
+
+.dx-code-block-sr-only {
+  position: absolute;
+  overflow: hidden;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  margin: -1px;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.dx-code-block-content {
+  overflow: auto;
+  min-width: 0;
+  min-height: 0;
+  padding: var(--dx-code-block-inset);
+  margin: 0;
+  font-family: var(--dx-font-mono);
+  line-height: 1.625;
+  outline: none;
+  tab-size: 2;
+  text-align: start;
+}
+
+.dx-code-block-header + .dx-code-block-content {
+  padding-top: var(--dx-space-2);
+}
+
+.dx-code-block-content:has(+ .dx-code-block-footer) {
+  padding-bottom: var(--dx-space-2);
+}
+
+.dx-code-block-content[data-wrap] {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.dx-code-block-code {
+  display: grid;
+  min-width: max-content;
+  min-height: 1lh;
+  align-content: start;
+  font-family: inherit;
+}
+
+.dx-code-block-content[data-wrap] .dx-code-block-code {
+  min-width: 0;
+}
+
+.dx-code-block-content[data-numbered] .dx-code-block-code {
+  grid-template-columns: auto 1fr;
+}
+
+.dx-code-block-line {
+  position: relative;
+  display: block;
+  min-height: 1lh;
+  margin-inline: calc(var(--dx-code-block-inset) * -1);
+  padding-inline: var(--dx-code-block-inset);
+}
+
+.dx-code-block-line-content {
+  min-width: 0;
+}
+
+.dx-code-block-content[data-numbered] .dx-code-block-line {
+  display: grid;
+  column-gap: var(--dx-space-3);
+  counter-increment: line;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+}
+
+.dx-code-block-content[data-numbered] .dx-code-block-line::before {
+  min-width: 1.5rem;
+  color: var(--dx-muted-foreground);
+  content: counter(line);
+  text-align: end;
+}
+
+/* The counter is decoration: an empty alt text keeps it out of the accessibility tree where
+ * `content: x / ""` is understood. */
+@supports (content: counter(line) / "") {
+  .dx-code-block-content[data-numbered] .dx-code-block-line::before {
+    content: counter(line) / "";
+  }
+}
+
+.dx-code-block-line[data-variant="highlighted"],
+.dx-code-block-line[data-variant="added"] {
+  background-color: var(--dx-muted);
+}
+
+.dx-code-block-line[data-variant="removed"] {
+  background-color: color-mix(in oklab, var(--dx-destructive) 10%, transparent);
+}
+
+.dx-code-block-line[data-variant="added"]::after,
+.dx-code-block-line[data-variant="removed"]::after {
+  position: absolute;
+  top: 0;
+  color: var(--dx-muted-foreground);
+  inset-inline-start: var(--dx-space-1);
+}
+
+.dx-code-block-line[data-variant="added"]::after {
+  content: "+";
+}
+
+.dx-code-block-line[data-variant="removed"]::after {
+  color: var(--dx-destructive-text);
+  content: "\2212";
+}

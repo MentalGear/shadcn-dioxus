@@ -1,0 +1,1 @@
+`confirm: false`: stays open after a pick. Mirrors shadcn's `date-picker-demo` / `date-picker-basic` (uncontrolled popover). shadcn's rule of thumb: demos with a controlled `open` (dob, time, input, natural language) close on select; uncontrolled ones never do.

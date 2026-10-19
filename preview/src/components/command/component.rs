@@ -219,3 +219,27 @@ pub fn CommandItem<T: Clone + PartialEq + 'static>(props: CommandItemProps<T>) -
         }
     }
 }
+
+/// Props for [`CommandShortcut`].
+#[derive(Props, Clone, PartialEq)]
+pub struct CommandShortcutProps {
+    /// Extra attributes spread onto the shortcut `<span>`.
+    #[props(extends = GlobalAttributes)]
+    pub attributes: Vec<Attribute>,
+
+    /// The shortcut text, for example `⌘P`.
+    pub children: Element,
+}
+
+/// shadcn's `CommandShortcut`: muted, small, letter-spaced text pushed to the inline end of its
+/// [`CommandItem`] (it takes the foreground ink while the item is highlighted). Put it in the
+/// item's children; for a key-cap look pass a `KbdGroup` through `CommandItem`'s `shortcut` slot
+/// instead. Presentation only: it does not bind the key.
+#[component]
+pub fn CommandShortcut(props: CommandShortcutProps) -> Element {
+    let base = attributes!(span { class: "dx-command-shortcut" });
+    let merged = merge_attributes(vec![base, props.attributes]);
+    rsx! {
+        span { ..merged, {props.children} }
+    }
+}

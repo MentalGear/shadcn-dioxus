@@ -9,22 +9,38 @@
 //! `display: none`, so it is out of the accessibility tree and the tab order; the A-Z list comes first in the
 //! source, so with no script at all the page is the default.
 //!
+//! The switch is our own [`ToggleGroup`] (controlled, radio-style: pressing the pressed item is ignored). Its
+//! items' `data-state` / `aria-pressed` are Rust state, so the pressed LOOK is not read from `data-state`:
+//! `main.css` paints it from `<html data-nav-sort>` at a higher specificity than the component's `[data-state=on]`
+//! rule, so it is right on the first frame even though the SSG's `data-state` is the A-Z default. The switch is
+//! `position: sticky` at the top of the sidebar's scroller over an opaque sidebar background; in Category order
+//! each group label sticks right under it while its group scrolls. A chevron beside the switch opens a
+//! `DropdownMenu` of the categories (`ComponentCategory::ALL`): picking one runs the Category click path
+//! ([`CHOOSE_CATEGORY_JS`] + the same signal) and scrolls that group's `#dx-nav-cat-<slug>` under the switch.
+//!
 //! `aria-pressed` is the one piece Rust owns: it starts as the SSG default and is synced from the attribute
 //! once after mount, and on each click (which also writes `localStorage`, wrapped in try/catch, and moves the
 //! attribute). The current page's link is scrolled into view inside the sidebar's own scroller after mount and
 //! after a toggle, by arithmetic on `scrollTop`: `Element.scrollIntoView` would also scroll the page and every
 //! other ancestor (the carousel's row-91 incident).
 
+use crate::components::dropdown_menu::{
+    DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+};
 use crate::components::sidebar::{
     SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
 };
+use crate::components::toggle::ToggleSize;
+use crate::components::toggle_group::{ToggleGroup, ToggleItem};
 use crate::components::{self, ComponentCategory};
 use crate::nav_link::NavLink;
 use crate::{DocsNavActive, ExtraBadge, ExtraBadgeTip, Route};
 use dioxus::prelude::*;
 use dioxus_icons::lucide::{
-    Bell, ChartColumn, ChevronsUpDown, Compass, Layers, LayoutGrid, MessageSquare, SquareCheck,
+    Bell, ChartColumn, ChevronDown, ChevronsUpDown, Compass, Layers, LayoutGrid, MessageSquare,
+    SquareCheck,
 };
+use std::collections::HashSet;
 
 /// Runs inline, inside the sidebar, before the lists. Copies the remembered order onto `<html>` (an unknown or
 /// missing value leaves the attribute off, which is A-Z). Idempotent; `localStorage` can throw (blocked site
@@ -50,11 +66,41 @@ for (const a of links) {
   while (box && !(box.scrollHeight > box.clientHeight && /(auto|scroll)/.test(getComputedStyle(box).overflowY))) box = box.parentElement;
   if (!box) break;
   const b = box.getBoundingClientRect(), r = a.getBoundingClientRect();
-  if (r.top >= b.top && r.bottom <= b.bottom) break;
-  box.scrollTop += (r.top - b.top) - (b.height - r.height) / 2;
+  // The sticky switch (and, in Category order, the group's sticky label) cover the top of the scroller.
+  const sw = document.querySelector('.dx-nav-sort-group');
+  const lab = a.closest('.dx-nav-category')?.querySelector('.dx-sidebar-group-label');
+  const cover = (sw ? sw.offsetHeight : 0) + (lab ? lab.offsetHeight : 0);
+  const top = b.top + cover, h = b.height - cover;
+  if (r.top >= top && r.bottom <= b.bottom) break;
+  box.scrollTop += (r.top - top) - (h - r.height) / 2;
   break;
 }
 "#;
+
+/// Scrolls the sidebar's scroller (only it, never the window) so that group `id`'s label sits right under the
+/// sticky switch. Runs after [`CHOOSE_CATEGORY_JS`] in one eval, so the group is already displayed (reading its
+/// rect forces the layout). The browser clamps the offset for the last groups, which cannot reach the top.
+fn jump_to_category_js(id: &str) -> String {
+    format!(
+        r#"(function(){{
+const g = document.getElementById('{id}'), sw = document.querySelector('.dx-nav-sort-group');
+if (!g || !sw) return;
+let box = g.parentElement;
+while (box && !(box.scrollHeight > box.clientHeight && /(auto|scroll)/.test(getComputedStyle(box).overflowY))) box = box.parentElement;
+if (!box) return;
+const pad = parseFloat(getComputedStyle(g).paddingTop) || 0;
+box.scrollTop += (g.getBoundingClientRect().top + pad) - (box.getBoundingClientRect().top + sw.offsetHeight);
+}})();"#
+    )
+}
+
+/// The stable id of a category's group (`Data display` is `dx-nav-cat-data-display`).
+fn category_id(cat: ComponentCategory) -> String {
+    format!(
+        "dx-nav-cat-{}",
+        cat.label().to_lowercase().replace(' ', "-")
+    )
+}
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum NavSort {
@@ -141,29 +187,70 @@ pub(crate) fn DocsComponentNav(active: DocsNavActive) -> Element {
         document::eval(SCROLL_CURRENT_JS);
     };
 
+    // Controlled, radio-style: the pressed item is the order, and pressing it again (an empty set) is ignored.
+    let pressed = use_memo(move || {
+        Some(HashSet::from([match sort() {
+            NavSort::Az => 0usize,
+            NavSort::Category => 1usize,
+        }]))
+    });
+
     let names = demos_alphabetical();
 
     rsx! {
         SidebarGroup { class: "dx-nav-sort-group",
-            div { class: "dx-nav-sort", role: "group", aria_label: "Order components by",
+            div { class: "dx-nav-sort",
                 script { dangerous_inner_html: PREPAINT_NAV_SORT_JS }
-                button {
-                    r#type: "button",
-                    class: "dx-nav-sort-option",
-                    "data-nav-sort-option": "az",
-                    "onclick": CHOOSE_AZ_JS,
-                    aria_pressed: if sort() == NavSort::Az { "true" } else { "false" },
-                    onclick: move |_| choose(NavSort::Az),
-                    "A-Z"
+                ToggleGroup {
+                    class: "dx-nav-sort-toggles",
+                    aria_label: "Order components by",
+                    pressed,
+                    size: ToggleSize::Sm,
+                    spacing: 1u8,
+                    on_pressed_change: move |set: HashSet<usize>| {
+                        if set.contains(&0) {
+                            choose(NavSort::Az);
+                        } else if set.contains(&1) {
+                            choose(NavSort::Category);
+                        }
+                    },
+                    ToggleItem {
+                        index: 0usize,
+                        class: "dx-nav-sort-option",
+                        "data-nav-sort-option": "az",
+                        "onclick": CHOOSE_AZ_JS,
+                        "A-Z"
+                    }
+                    ToggleItem {
+                        index: 1usize,
+                        class: "dx-nav-sort-option",
+                        "data-nav-sort-option": "category",
+                        "onclick": CHOOSE_CATEGORY_JS,
+                        "Category"
+                    }
                 }
-                button {
-                    r#type: "button",
-                    class: "dx-nav-sort-option",
-                    "data-nav-sort-option": "category",
-                    "onclick": CHOOSE_CATEGORY_JS,
-                    aria_pressed: if sort() == NavSort::Category { "true" } else { "false" },
-                    onclick: move |_| choose(NavSort::Category),
-                    "Category"
+                DropdownMenu {
+                    DropdownMenuTrigger { class: "dx-nav-sort-jump", aria_label: "Jump to category",
+                        ChevronDown { size: "1rem", "aria-hidden": "true" }
+                    }
+                    DropdownMenuContent {
+                        for (i , cat) in ComponentCategory::ALL.iter().copied().enumerate() {
+                            DropdownMenuItem::<ComponentCategory> {
+                                key: "{cat.label()}",
+                                value: cat,
+                                index: i,
+                                text_value: cat.label(),
+                                on_select: move |cat: ComponentCategory| {
+                                    sort.set(NavSort::Category);
+                                    document::eval(
+                                        &format!("{CHOOSE_CATEGORY_JS};{}", jump_to_category_js(&category_id(cat))),
+                                    );
+                                },
+                                {category_icon(cat)}
+                                "{cat.label()}"
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -179,7 +266,10 @@ pub(crate) fn DocsComponentNav(active: DocsNavActive) -> Element {
             }
         }
         for cat in ComponentCategory::ALL.iter().copied() {
-            SidebarGroup { class: "dx-nav-list dx-nav-category", key: "{cat.label()}",
+            SidebarGroup {
+                class: "dx-nav-list dx-nav-category",
+                id: category_id(cat),
+                key: "{cat.label()}",
                 SidebarGroupLabel {
                     {category_icon(cat)}
                     span { "{cat.label()}" }
@@ -210,6 +300,24 @@ mod tests {
             assert!(!js.contains("</script"), "inlined in a <script>: {js}");
         }
         assert!(READ_NAV_SORT_JS.contains("data-nav-sort"));
+    }
+
+    #[test]
+    fn every_category_has_a_distinct_stable_id_the_jump_script_targets() {
+        let ids: Vec<String> = ComponentCategory::ALL
+            .iter()
+            .map(|c| category_id(*c))
+            .collect();
+        let mut unique = ids.clone();
+        unique.sort();
+        unique.dedup();
+        assert_eq!(unique.len(), ids.len());
+        assert!(ids.contains(&"dx-nav-cat-data-display".to_string()));
+        for id in &ids {
+            assert!(jump_to_category_js(id).contains(&format!("getElementById('{id}')")));
+        }
+        // Picking a category is the Category click path plus the scroll, in one eval.
+        assert!(CHOOSE_CATEGORY_JS.contains("'category'"));
     }
 
     #[test]

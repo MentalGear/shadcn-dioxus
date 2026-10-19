@@ -3,7 +3,7 @@ use dioxus::prelude::*;
 
 const AVERY_LIN: Asset = asset!("/assets/avatars/avery-lin.svg");
 const CASEY_PARK: Asset = asset!("/assets/avatars/casey-park.svg");
-const LENA_PARK: Asset = asset!("/assets/avatars/lena-park.svg");
+const NINA_HART: Asset = asset!("/assets/avatars/nina-hart.svg");
 const PRIYA_NAIR: Asset = asset!("/assets/avatars/priya-nair.svg");
 
 /// shadcn's `avatar-demo`: a grayscale avatar, an avatar with a green status badge, and a grayscale
@@ -29,8 +29,8 @@ pub fn Demo() -> Element {
                 AvatarFallback { "AL" }
             }
             Avatar { aria_label: "Online avatar",
-                AvatarImage { src: LENA_PARK.to_string(), alt: "Lena Park" }
-                AvatarFallback { "LP" }
+                AvatarImage { src: NINA_HART.to_string(), alt: "Nina Hart" }
+                AvatarFallback { "NH" }
                 AvatarBadge { style: "background-color: var(--dx-success);" }
             }
             AvatarGroup { style: "filter: grayscale(1);", aria_label: "Team",

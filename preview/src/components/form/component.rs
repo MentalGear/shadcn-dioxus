@@ -531,6 +531,80 @@ pub fn FormFixture() -> Element {
             }
 
             section { class: "dx-form-section",
+                h2 { "Form attribute" }
+                p { class: "dx-form-hint",
+                    "The controls below are NOT inside the form: each names it with "
+                    code { "form: \"outside-form\"" }
+                    " (the HTML "
+                    code { "form" }
+                    " attribute, forwarded to the hidden mirror input), so they still submit and reset with it."
+                }
+                div { class: "dx-form-row",
+                    div { class: "dx-form-field",
+                        label { r#for: "chk-outside", "Accept terms (library, outside the form)" }
+                        Checkbox {
+                            id: "chk-outside",
+                            name: "terms-outside-lib",
+                            value: "accepted",
+                            form: "outside-form".to_string(),
+                            default_checked: CheckboxState::Checked,
+                        }
+                    }
+                    div { class: "dx-form-field",
+                        label { r#for: "chk-outside-native", "Accept terms (native, outside the form)" }
+                        input {
+                            id: "chk-outside-native",
+                            r#type: "checkbox",
+                            name: "terms-outside-native",
+                            value: "accepted",
+                            form: "outside-form",
+                            initial_checked: true,
+                        }
+                    }
+                    div { class: "dx-form-field",
+                        label { r#for: "switch-outside", "Notifications (library, outside the form)" }
+                        Switch {
+                            id: "switch-outside",
+                            name: "notify-outside-lib",
+                            value: "subscribed",
+                            form: "outside-form".to_string(),
+                            default_checked: true,
+                        }
+                    }
+                    fieldset { class: "dx-form-field",
+                        legend { "Plan (library radio group, outside the form)" }
+                        RadioGroup {
+                            name: "plan-outside-lib",
+                            form: "outside-form".to_string(),
+                            default_value: "starter".to_string(),
+                            aria_label: "Plan (library, outside the form)",
+                            label { r#for: "plan-outside-starter",
+                                RadioItem { id: "plan-outside-starter", value: "starter".to_string(), index: 0usize }
+                                "Starter"
+                            }
+                            label { r#for: "plan-outside-pro",
+                                RadioItem { id: "plan-outside-pro", value: "pro".to_string(), index: 1usize }
+                                "Pro"
+                            }
+                        }
+                    }
+                }
+                DemoForm {
+                    id: "outside-form",
+                    class: "dx-form",
+                    show_status: false,
+                    onsubmit: move |_: FormEvent| {
+                        let _ = document::eval(&read_form_data_js("outside-form", "outside-result"));
+                    },
+                    div { class: "dx-form-actions",
+                        button { class: "dx-form-action", id: "outside-submit", r#type: "submit", "Submit" }
+                        button { class: "dx-form-action", id: "outside-reset", r#type: "reset", "Reset" }
+                    }
+                }
+                pre { id: "outside-result", class: "dx-form-result", "data-submit-count": "0" }
+            }
+
+            section { class: "dx-form-section",
                 h2 { "Required blocking" }
                 p { class: "dx-form-hint",
                     "Demonstrates that "
@@ -758,8 +832,8 @@ mod tests {
             .collect();
         assert_eq!(
             forms.len(),
-            2,
-            "the fixture has exactly two forms: {forms:?}"
+            3,
+            "the fixture has exactly three forms (entries, outside-form for rule 8, required): {forms:?}"
         );
         for tag in forms {
             assert_eq!(

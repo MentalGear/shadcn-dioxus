@@ -28,6 +28,7 @@ pub fn RadioGroup(props: RadioGroupProps) -> Element {
             disabled: props.disabled,
             required: props.required,
             name: props.name,
+            form: props.form,
             horizontal: props.horizontal,
             roving_loop: props.roving_loop,
             attributes: merged,

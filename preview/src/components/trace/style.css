@@ -1,0 +1,146 @@
+/* Ported from shadcn/ui's Nova `.cn-trace*` (registry/styles/style-nova.css, upstream #12307):
+ * a muted one-line step with a leading icon, a shimmering title while it runs and a chevron
+ * trigger that opens an indented, ruled detail block. */
+.dx-trace {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--dx-space-2);
+}
+
+.dx-trace-line {
+  display: flex;
+  width: fit-content;
+  min-width: 0;
+  max-width: 100%;
+  align-items: center;
+  color: var(--dx-muted-foreground);
+  font-size: var(--dx-text-sm);
+  gap: var(--dx-space-2);
+  transition: color var(--dx-motion-duration-base);
+}
+
+.dx-trace-line[data-status="error"] {
+  color: var(--dx-destructive-text);
+}
+
+/* Pending is dimmed on the icon only: dimming the title (upstream's opacity) drops text below
+ * 4.5:1, and inactive static text is not exempt from WCAG contrast. */
+.dx-trace-line[data-status="pending"] .dx-trace-icon {
+  opacity: 0.6;
+}
+
+.dx-trace-icon {
+  display: flex;
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.dx-trace-icon svg:not(:where([popover], dialog) *) {
+  display: block;
+  width: 1rem;
+  height: 1rem;
+}
+
+.dx-trace-title {
+  overflow: hidden;
+  min-width: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The chevron follows the title: pull it in so the pair reads as one unit. */
+.dx-trace-title ~ .dx-trace-icon {
+  margin-inline-start: calc(var(--dx-space-1) * -1);
+}
+
+.dx-trace-description {
+  flex-shrink: 0;
+  color: var(--dx-muted-foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+.dx-trace-collapsible {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.dx-trace-collapsible-trigger {
+  display: flex;
+  width: fit-content;
+  min-width: 0;
+  max-width: 100%;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--dx-radius-md);
+  background: transparent;
+  color: var(--dx-muted-foreground);
+  cursor: pointer;
+  font: inherit;
+  gap: var(--dx-space-1);
+  outline: none;
+  text-align: start;
+  transition: color var(--dx-motion-duration-base);
+}
+
+.dx-trace-collapsible-trigger:focus-visible {
+  box-shadow: var(--dx-ring-focus);
+}
+
+.dx-trace-collapsible-trigger:has([data-status="error"]) {
+  color: var(--dx-destructive-text);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-trace-collapsible-trigger:hover {
+    color: var(--dx-foreground);
+  }
+
+  .dx-trace-collapsible-trigger:has([data-status="error"]):hover {
+    color: var(--dx-destructive-text);
+  }
+}
+
+.dx-trace-collapsible-trigger .dx-trace-line {
+  color: inherit;
+}
+
+.dx-trace-chevron {
+  transition: rotate var(--dx-motion-duration-base);
+}
+
+.dx-trace-collapsible-trigger[aria-expanded="true"] .dx-trace-chevron {
+  rotate: 90deg;
+}
+
+/* A right-pointing chevron mirrors in RTL so it still points toward the detail. */
+:dir(rtl) .dx-trace-chevron svg:not(:where([popover], dialog) *) {
+  scale: -1 1;
+}
+
+/* The wrapper is the primitive's own element: it is not a box while open (or empty and
+ * unmounted), so the ruled block below exists only when there is detail to show. A
+ * `keep_mounted` panel is `hidden` and the browser's own rule hides it. */
+.dx-trace-collapsible-content:where(:not([hidden])) {
+  display: contents;
+}
+
+.dx-trace-collapsible-content-inner {
+  min-width: 0;
+  border-inline-start: 1px solid var(--dx-border);
+  color: var(--dx-muted-foreground);
+  font-size: var(--dx-text-sm);
+  line-height: 1.625;
+  margin-block: var(--dx-space-2) var(--dx-space-1);
+  margin-inline-start: calc(var(--dx-space-2) - 1px);
+  overflow-wrap: break-word;
+  padding-inline: var(--dx-space-4) var(--dx-space-1);
+}

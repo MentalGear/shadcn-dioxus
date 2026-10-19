@@ -7,10 +7,13 @@ use crate::components::{
     popover::{PopoverContent, PopoverRoot, PopoverTrigger},
     sidebar::{SidebarCtx, SidebarFooter, SidebarMenu, SidebarMenuButton, SidebarMenuItem},
     switch::Switch,
+    toggle::ToggleVariant,
+    toggle_group::{ToggleGroup, ToggleItem},
 };
 use dioxus::prelude::*;
 use dioxus_icons::lucide::{Moon, Palette, Sun};
 use dioxus_primitives::ContentAlign;
+use std::collections::HashSet;
 
 const CHANNEL_NAME: &str = "dx-theme";
 
@@ -185,15 +188,21 @@ pub fn set_theme(dark_mode: bool) {
 
 #[component]
 pub fn DarkModeToggle() -> Element {
+    // Two buttons, one per mode, swapped by CSS (`.dx-dark-mode-only` / `.dx-light-mode-only`) so the
+    // SSG output is right before hydration; the click only asks `set_pref`, never writes `data-theme`.
     rsx! {
-        button {
+        Button {
+            variant: ButtonVariant::Ghost,
+            size: ButtonSize::Icon,
             class: "dx-dark-mode-toggle dx-dark-mode-only",
             onclick: move |_| set_theme(false),
             r#type: "button",
             aria_label: "Enable light mode",
             DarkModeIcon {}
         }
-        button {
+        Button {
+            variant: ButtonVariant::Ghost,
+            size: ButtonSize::Icon,
             class: "dx-dark-mode-toggle dx-light-mode-only",
             onclick: move |_| set_theme(true),
             r#type: "button",
@@ -206,14 +215,14 @@ pub fn DarkModeToggle() -> Element {
 #[component]
 fn DarkModeIcon() -> Element {
     rsx! {
-        Moon { size: "24px" }
+        Moon {}
     }
 }
 
 #[component]
 fn LightModeIcon() -> Element {
     rsx! {
-        Sun { size: "24px" }
+        Sun {}
     }
 }
 
@@ -494,35 +503,39 @@ fn ThemePickerPanel(
                     "Base colour"
                     span { class: "dx-theme-picker-current", "{base_label}" }
                 }
-                div {
+                ToggleGroup {
                     class: "dx-theme-swatches",
-                    role: "group",
                     aria_labelledby: "dx-theme-base-label-{scope}",
-                    button {
-                        class: "dx-theme-swatch",
-                        r#type: "button",
-                        aria_label: "Default base colour",
-                        title: "Default",
-                        aria_pressed: pressed(base.read().is_empty()),
-                        onclick: move |_| {
-                            base.set(String::new());
-                            set_pref(Pref::Base, None);
-                        },
-                        span { class: "dx-theme-swatch-dot", "data-none": "true" }
-                    }
-                    for (slug , label) in BASES.iter().copied() {
-                        button {
-                            key: "{slug}",
-                            class: "dx-theme-swatch",
-                            r#type: "button",
-                            aria_label: "{label}",
-                            title: "{label}",
-                            aria_pressed: pressed(*base.read() == slug),
-                            "data-theme-base": slug,
-                            onclick: move |_| {
+                    pressed: Some(single(swatch_index(&base.read(), BASES))),
+                    on_pressed_change: move |next: HashSet<usize>| {
+                        // Index 0 is "Default"; the presets follow in list order.
+                        match next.into_iter().next().and_then(|i| i.checked_sub(1)) {
+                            None => {
+                                base.set(String::new());
+                                set_pref(Pref::Base, None);
+                            }
+                            Some(i) => {
+                                let slug = BASES[i].0;
                                 base.set(slug.to_string());
                                 set_pref(Pref::Base, Some(slug));
-                            },
+                            }
+                        }
+                    },
+                    ToggleItem {
+                        index: 0usize,
+                        class: "dx-theme-swatch",
+                        aria_label: "Default base colour",
+                        title: "Default",
+                        span { class: "dx-theme-swatch-dot", "data-none": "true" }
+                    }
+                    for (i , (slug , label)) in BASES.iter().copied().enumerate() {
+                        ToggleItem {
+                            key: "{slug}",
+                            index: i + 1,
+                            class: "dx-theme-swatch",
+                            aria_label: "{label}",
+                            title: "{label}",
+                            "data-theme-base": slug,
                             span { class: "dx-theme-swatch-dot" }
                         }
                     }
@@ -534,35 +547,39 @@ fn ThemePickerPanel(
                     "Accent"
                     span { class: "dx-theme-picker-current", "{accent_label}" }
                 }
-                div {
+                ToggleGroup {
                     class: "dx-theme-swatches",
-                    role: "group",
                     aria_labelledby: "dx-theme-accent-label-{scope}",
-                    button {
-                        class: "dx-theme-swatch",
-                        r#type: "button",
-                        aria_label: "Default accent",
-                        title: "Default",
-                        aria_pressed: pressed(accent.read().is_empty()),
-                        onclick: move |_| {
-                            accent.set(String::new());
-                            set_pref(Pref::Accent, None);
-                        },
-                        span { class: "dx-theme-swatch-dot", "data-none": "true" }
-                    }
-                    for (slug , label) in ACCENTS.iter().copied() {
-                        button {
-                            key: "{slug}",
-                            class: "dx-theme-swatch",
-                            r#type: "button",
-                            aria_label: "{label}",
-                            title: "{label}",
-                            aria_pressed: pressed(*accent.read() == slug),
-                            "data-theme-accent": slug,
-                            onclick: move |_| {
+                    pressed: Some(single(swatch_index(&accent.read(), ACCENTS))),
+                    on_pressed_change: move |next: HashSet<usize>| {
+                        // Index 0 is "Default"; the presets follow in list order.
+                        match next.into_iter().next().and_then(|i| i.checked_sub(1)) {
+                            None => {
+                                accent.set(String::new());
+                                set_pref(Pref::Accent, None);
+                            }
+                            Some(i) => {
+                                let slug = ACCENTS[i].0;
                                 accent.set(slug.to_string());
                                 set_pref(Pref::Accent, Some(slug));
-                            },
+                            }
+                        }
+                    },
+                    ToggleItem {
+                        index: 0usize,
+                        class: "dx-theme-swatch",
+                        aria_label: "Default accent",
+                        title: "Default",
+                        span { class: "dx-theme-swatch-dot", "data-none": "true" }
+                    }
+                    for (i , (slug , label)) in ACCENTS.iter().copied().enumerate() {
+                        ToggleItem {
+                            key: "{slug}",
+                            index: i + 1,
+                            class: "dx-theme-swatch",
+                            aria_label: "{label}",
+                            title: "{label}",
+                            "data-theme-accent": slug,
                             span { class: "dx-theme-swatch-dot" }
                         }
                     }
@@ -574,38 +591,28 @@ fn ThemePickerPanel(
                     "Radius"
                     span { class: "dx-theme-picker-current", "rem" }
                 }
-                div {
+                ToggleGroup {
                     class: "dx-theme-chips",
-                    role: "group",
+                    variant: ToggleVariant::Outline,
                     aria_labelledby: "dx-theme-radius-label-{scope}",
-                    for value in RADII.iter().copied() {
-                        {
-                            let is_default = value == DEFAULT_RADIUS;
-                            let selected = if is_default {
-                                radius.read().is_empty()
+                    pressed: Some(single(chip_index(&radius.read()))),
+                    on_pressed_change: move |next: HashSet<usize>| {
+                        if let Some(value) = next.into_iter().next().and_then(|i| RADII.get(i).copied()) {
+                            if value == DEFAULT_RADIUS {
+                                radius.set(String::new());
+                                set_pref(Pref::Radius, None);
                             } else {
-                                *radius.read() == value
-                            };
-                            rsx! {
-                                Button {
-                                    key: "{value}",
-                                    variant: if selected { ButtonVariant::Primary } else { ButtonVariant::Outline },
-                                    size: ButtonSize::Xs,
-                                    r#type: "button",
-                                    title: if is_default { "0.625 (default)" } else { value },
-                                    aria_pressed: pressed(selected),
-                                    onclick: move |_| {
-                                        if is_default {
-                                            radius.set(String::new());
-                                            set_pref(Pref::Radius, None);
-                                        } else {
-                                            radius.set(value.to_string());
-                                            set_pref(Pref::Radius, Some(value));
-                                        }
-                                    },
-                                    "{value}"
-                                }
+                                radius.set(value.to_string());
+                                set_pref(Pref::Radius, Some(value));
                             }
+                        }
+                    },
+                    for (i , value) in RADII.iter().copied().enumerate() {
+                        ToggleItem {
+                            key: "{value}",
+                            index: i,
+                            title: if value == DEFAULT_RADIUS { "0.625 (default)" } else { value },
+                            "{value}"
                         }
                     }
                 }
@@ -638,12 +645,32 @@ fn ThemePickerPanel(
     }
 }
 
-fn pressed(on: bool) -> &'static str {
-    if on {
-        "true"
-    } else {
-        "false"
-    }
+/// The one pressed item of a single-select [`ToggleGroup`]. The groups are controlled: `on_pressed_change`
+/// writes the preference and the pressed set is read back from it, so pressing the pressed item again
+/// (an empty next set) changes nothing, a radio rather than a toggle.
+fn single(index: usize) -> HashSet<usize> {
+    HashSet::from([index])
+}
+
+/// Item index of a swatch group: 0 is "Default" (no preset), the presets follow in list order.
+fn swatch_index(current: &str, list: &[(&str, &str)]) -> usize {
+    list.iter()
+        .position(|(slug, _)| *slug == current)
+        .map_or(0, |i| i + 1)
+}
+
+/// Item index of the radius chips: the default radius is stored as "no attribute" (empty).
+fn chip_index(current: &str) -> usize {
+    RADII
+        .iter()
+        .position(|r| {
+            if *r == DEFAULT_RADIUS {
+                current.is_empty()
+            } else {
+                *r == current
+            }
+        })
+        .unwrap_or(0)
 }
 
 fn label_of(list: &[(&'static str, &'static str)], slug: &str) -> &'static str {
