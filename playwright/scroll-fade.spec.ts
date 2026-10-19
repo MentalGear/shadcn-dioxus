@@ -306,11 +306,13 @@ test.describe("MessageScroller fade", () => {
     const vp = viewportOf(page);
     await scrollBlockTo(vp, "start");
     await expectEdges(vp, "block", { start: "crisp", end: "crisp" });
-    const before = await metrics(vp);
+    const items = vp.locator('[data-slot="message-scroller-item"]');
+    const rowsBefore = await items.count();
     await button(page, "Load earlier messages").click();
     // Prepending keeps the reader's place: the viewport moves down by the prepended height, so the
-    // top edge is no longer the start of the scroll range and fades in.
-    await expect.poll(async () => (await metrics(vp)).sh, { timeout: 10_000 }).toBeGreaterThan(before.sh + 100);
+    // top edge is no longer the start of the scroll range and fades in. The loaded signal is more rows in the
+    // DOM, not a taller scrollHeight: rows use content-visibility: auto, so scrollHeight is not monotonic.
+    await expect.poll(async () => items.count(), { timeout: 10_000 }).toBeGreaterThan(rowsBefore);
     await expect.poll(async () => (await metrics(vp)).st, { timeout: 10_000 }).toBeGreaterThan(96);
     await expectEdges(vp, "block", { start: "faded", end: "crisp" });
     // Scrolling back to the new top: crisp again.

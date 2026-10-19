@@ -144,13 +144,32 @@ test("keeps filtered options during keyboard close animation", async ({ page }) 
     await page.keyboard.press("ArrowDown");
     await expect(svelte).toHaveAttribute("data-highlighted", "true");
 
-    await page.keyboard.press("Enter");
+    // The close animation is short and a poll can miss it entirely, so record it in the page: an observer notes
+    // (state, option names) of the listbox on every DOM change from the moment Enter is pressed.
+    await page.evaluate(() => {
+      const seen: { state: string; options: string[] }[] = [];
+      (window as unknown as { __closeSeen: typeof seen }).__closeSeen = seen;
+      const snap = () => {
+        const lb = document.querySelector("[role='listbox']");
+        const state = lb ? (lb.getAttribute("data-state") ?? "none") : "gone";
+        const options = lb ? [...lb.querySelectorAll("[role='option']")].map((o) => (o.textContent ?? "").trim()) : [];
+        const last = seen[seen.length - 1];
+        if (!last || last.state !== state || last.options.join("|") !== options.join("|")) seen.push({ state, options });
+      };
+      new MutationObserver(snap).observe(document.body, { subtree: true, childList: true, attributes: true, characterData: true });
+      snap();
+    });
 
-    const closingContent = page.locator("[role='listbox'][data-state='closed']");
-    await expect(closingContent).toBeVisible();
-    await expect(closingContent.getByRole("option", { name: "SvelteKit" })).toBeVisible();
-    await expect(closingContent.getByRole("option")).toHaveCount(1);
-    await expect(content(page)).toHaveCount(0);
+    await page.keyboard.press("Enter");
+    await expect(page.locator("[role='listbox']")).toHaveCount(0);
+
+    const seen = await page.evaluate(() => (window as unknown as { __closeSeen: { state: string; options: string[] }[] }).__closeSeen);
+    const closed = seen.filter((e) => e.state === "closed");
+    expect(closed.length, `a closed state was observed: ${JSON.stringify(seen)}`).toBeGreaterThan(0);
+    for (const e of closed) {
+      expect(e.options, `the closing list keeps only the filtered option: ${JSON.stringify(seen)}`).toEqual([expect.stringContaining("SvelteKit")]);
+    }
+    expect(seen[seen.length - 1].state, "the list is gone at the end").toBe("gone");
 });
 
 test("clicking an option commits and closes", async ({ page }) => {
