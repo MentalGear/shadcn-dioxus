@@ -15,7 +15,7 @@ Carousel: a free-scrolling switch (Embla `dragFree` parity)
 
 ## Status / trigger
 
-**LANDED 2026-10-19**
+**LANDED 2026-10-19 (drag_free prop, carousel-drag-free demos, carousel-drag-free.spec.ts)**
 
 ## Size
 
