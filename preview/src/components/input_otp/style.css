@@ -30,7 +30,8 @@
  * (A full edge per slot overlapped by -1px put two translucent layers on the shared pixel:
  * the dark fill is `--dx-input` at 30% and the dark edge is 15% white, so the divider read
  * about twice as strong as the outer border.) The inline sides are physical offsets, so RTL
- * swaps them in `:dir(rtl)`. */
+ * swaps them under `[dir="rtl"]` (not `:dir(rtl)`: the build's CSS transform lowers it to a
+ * `:lang(ar, ...)` list, which never matches a page that sets `dir` without `lang`). */
 .dx-input-otp-group {
   display: flex;
   align-items: center;
@@ -60,7 +61,7 @@
     background-color var(--dx-motion-duration-fast) var(--dx-motion-ease-out);
 }
 
-.dx-input-otp-slot:dir(rtl) {
+[dir="rtl"] .dx-input-otp-slot {
   --dx-input-otp-end: 1px;
   --dx-input-otp-start: -1px;
 }

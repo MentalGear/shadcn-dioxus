@@ -430,10 +430,15 @@ test.describe("Slot dividers are a single border width", () => {
   for (const dir of ["ltr", "rtl"] as const) {
     test(`dir=${dir}`, async ({ page }) => {
       await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
-      await page.evaluate(
-        (d) => document.documentElement.setAttribute("dir", d),
-        dir,
-      );
+      // Set the direction on the group itself: the docs page wraps every demo in a Tabs that carries its own
+      // explicit `dir="ltr"` (the primitive's default), so `<html dir>` never reaches the slots.
+      await page.evaluate((d) => {
+        document
+          .querySelectorAll<HTMLElement>("#otp-main + div .dx-input-otp-group")[0]
+          .setAttribute("dir", d);
+      }, dir);
+      // The slots' `box-shadow` transitions when the direction flips the edge offsets: measure at rest.
+      await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => {}))));
 
       const result = await page.evaluate(() => {
         const slots = Array.from(

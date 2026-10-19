@@ -12,9 +12,10 @@
 :root {
   /* Demo preview card fill: a soft step between the page and a card. Dark mixes the page with `--dx-card`
    * (#0a0a0a / #171717); in light `--dx-card` equals the page (#fff), so it mixes with `--dx-muted` instead
-   * (#f5f5f5), only 25% of it: a 50% mix (#fafafa) left a hovered Pagination page (#f5f5f5) within 5/255 of its
-   * surface (dark-surface-contrast needs 6). */
-  --dx-docs-preview-surface: color-mix(in var(--dx-hover-mix-space), var(--dx-background) var(--dark, 50%) var(--light, 75%), var(--dark, var(--dx-card)) var(--light, var(--dx-muted)));
+   * (#f5f5f5), only 15% of it: a 50% mix (#fafafa) left a hovered Pagination page (#f5f5f5) within 5/255 of its
+   * surface (dark-surface-contrast needs 6), and 25% (#fcfcfc) left a hovered Toggle (#f8f8f8) 5/255 from it
+   * (theme-preset-contrast needs 6). */
+  --dx-docs-preview-surface: color-mix(in var(--dx-hover-mix-space), var(--dx-background) var(--dark, 50%) var(--light, 85%), var(--dark, var(--dx-card)) var(--light, var(--dx-muted)));
   --dx-font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --dx-font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", "Menlo", "Monaco", "Consolas", monospace;
   --highlight-color-main: #dd7230;
