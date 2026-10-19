@@ -23,7 +23,7 @@ const AVATARS: &[Asset] = &[
     asset!("/assets/avatars/robin-hayes.svg"),
     asset!("/assets/avatars/sarah-chen.svg"),
     asset!("/assets/avatars/marcus-wright.svg"),
-    asset!("/assets/avatars/lena-park.svg"),
+    asset!("/assets/avatars/nina-hart.svg"),
 ];
 
 const TASKS: &[TaskView] = &[
@@ -76,7 +76,7 @@ const TASKS: &[TaskView] = &[
         code: "LNC-160",
         title: "Archive legacy API endpoints",
         status: "Backlog",
-        assignee: "LP",
+        assignee: "NH",
         avatar: AVATARS[5],
         due: "Later",
         urgent: false,
@@ -170,7 +170,7 @@ pub fn Demo() -> Element {
    * "muted text on light surfaces" token, used the same way in ~28 other
    * component stylesheets) is the correct token for this role. */
   color: var(--dx-muted-foreground);
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  font-family: var(--dx-font-mono);
   font-size: 10.5px;
   font-weight: 500;
   letter-spacing: 0.03em;

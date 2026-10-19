@@ -3,7 +3,7 @@ use dioxus::prelude::*;
 use dioxus_primitives::scroll_area::ScrollDirection;
 
 const AVATAR_CARDS: [(Asset, &str); 5] = [
-    (asset!("/assets/avatars/lena-park.svg"), "Lena Park"),
+    (asset!("/assets/avatars/nina-hart.svg"), "Nina Hart"),
     (asset!("/assets/avatars/sarah-chen.svg"), "Sarah Chen"),
     (asset!("/assets/avatars/priya-nair.svg"), "Priya Nair"),
     (asset!("/assets/avatars/marcus-wright.svg"), "Marcus Wright"),

@@ -1,0 +1,1 @@
+Custom validation: the submit handler runs a schema over the submitted values, marks the failing items `invalid` and returns to the first one. Choose "Concise summary" and "Public audience", then validate.

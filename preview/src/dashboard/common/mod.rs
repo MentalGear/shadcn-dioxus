@@ -45,9 +45,9 @@ pub const AVATAR_PROFILE_OPTIONS: &[AvatarProfile] = &[
         src: asset!("/assets/avatars/marcus-wright.svg"),
     },
     AvatarProfile {
-        name: "Lena Park",
-        initials: "LP",
-        src: asset!("/assets/avatars/lena-park.svg"),
+        name: "Nina Hart",
+        initials: "NH",
+        src: asset!("/assets/avatars/nina-hart.svg"),
     },
     AvatarProfile {
         name: "Jordan Reyes",

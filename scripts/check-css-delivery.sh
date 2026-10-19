@@ -13,7 +13,7 @@
 #   1. scripts/ssg-css-bundle.mjs puts every component stylesheet in every page's <head> as ONE render-blocking bundle;
 #   2. scripts/build-ssg.sh runs it by default (guard 4b) and scripts/deploy-preview.sh never turns it off;
 #   3. preview/src/eager_head.rs skips a stylesheet link whose file the bundle already carries (data-covers);
-#   4. GlobalHead preloads the two latin Geist woff2 files and asks Google for display=optional, so the font swap cannot
+#   4. GlobalHead preloads the two self-hosted latin Geist woff2 files and its @font-face rules say font-display: optional, so the font swap cannot
 #      re-wrap text after first paint (CLS 0.117 -> 0.000 on /component/form/).
 #
 # Usage: scripts/check-css-delivery.sh
@@ -77,9 +77,10 @@ else
     [ "$n" -ge 2 ] || fail "GlobalHead must preload the Geist and Geist Mono latin woff2 files (found $n preload links): without them the face arrives after first paint"
     printf '%s\n' "$head" | grep -q 'r#as: "font"' || fail "GlobalHead's font preloads must say r#as: \"font\""
     printf '%s\n' "$head" | grep -q 'crossorigin: "anonymous"' || fail "GlobalHead's font preloads need crossorigin (a font preload without it is fetched twice and never used)"
-    printf '%s\n' "$head" | grep -q 'display=optional' || fail "GlobalHead's Google font stylesheet must use display=optional (display=swap re-wraps the page when Geist arrives: CLS 0.117 measured)"
-    if printf '%s\n' "$head" | grep -q 'display=swap'; then
-      fail "GlobalHead still asks for display=swap"
+    printf '%s\n' "$head" | grep -q 'font-display:optional' || fail "GlobalHead's @font-face rules must say font-display:optional (swap re-wraps the page when Geist arrives: CLS 0.117 measured)"
+    printf '%s\n' "$head" | grep -q '@font-face' || fail "GlobalHead must write the @font-face rules from the same asset! URLs as the preloads"
+    if printf '%s\n' "$head" | grep -qE 'display[=:]swap|https?://'; then
+      fail "GlobalHead asks for display swap or names a remote URL (fonts are self-hosted, row 162)"
     fi
   fi
 fi

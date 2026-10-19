@@ -33,14 +33,12 @@
 //! swap. See `$S/batch3/rtl-rust/reference.md` (this lane's own report) for
 //! the full per-component table this was derived from.
 //!
-//! Deliberately **not reactive**: like upstream's own
-//! `use_context_provider(|| props.dir)`, [`DirectionProvider`] captures its
-//! `direction` prop once, at mount — a later render with a *different*
-//! `direction` value does not update already-mounted descendants' context
-//! read. This matches every fixture this lane's own oracle needs (a fixed
-//! direction for that page's lifetime); a "toggle direction live" demo
-//! would need a `Signal`-based variant instead, not built here (see the
-//! reference doc's §1 for the full tradeoff).
+//! **Reactive**: [`DirectionProvider`] provides a `Signal<Direction>` and
+//! writes its `direction` prop into it on every render, and
+//! [`use_direction`] reads that signal, so a consumer re-renders when the
+//! direction changes live (the preview's LTR/RTL toggle relies on this). A
+//! consumer that captures the value at mount into its own state would not
+//! follow; none in this crate does.
 
 use dioxus::prelude::*;
 
@@ -99,6 +97,21 @@ impl Direction {
     }
 }
 
+impl Direction {
+    /// The LTR-equivalent of `key`: under RTL `ArrowLeft` and `ArrowRight`
+    /// swap (via [`Direction::resolve_horizontal`]), every other key and
+    /// every LTR key is returned unchanged. For handlers that already match
+    /// on `Key::ArrowLeft` = previous / `Key::ArrowRight` = next and only
+    /// need the key mirrored first.
+    pub fn ltr_equivalent(self, key: &Key) -> Key {
+        match self.resolve_horizontal(key) {
+            Some(HorizontalNav::Prev) => Key::ArrowLeft,
+            Some(HorizontalNav::Next) => Key::ArrowRight,
+            None => key.clone(),
+        }
+    }
+}
+
 /// The navigation intent a horizontal arrow key expresses, after resolving
 /// [`Direction`]. See [`Direction::resolve_horizontal`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -124,8 +137,8 @@ pub struct DirectionProviderProps {
 ///
 /// Every RTL-aware component in this crate resolves its effective direction
 /// via [`use_direction`], which checks this context only after its own
-/// local `dir` prop. See the module doc for why this provider is not
-/// reactive to a later change of its `direction` prop.
+/// local `dir` prop. The provider is reactive: a later change of its
+/// `direction` prop updates every descendant that reads it.
 ///
 /// ## Example
 /// ```rust
@@ -149,8 +162,27 @@ pub struct DirectionProviderProps {
 /// ```
 #[component]
 pub fn DirectionProvider(props: DirectionProviderProps) -> Element {
-    use_context_provider(|| props.direction);
+    let mut signal = use_context_provider(|| Signal::new(props.direction));
+    if *signal.peek() != props.direction {
+        signal.set(props.direction);
+    }
     props.children
+}
+
+/// A reactive handle on an already-resolved direction, for a context struct.
+///
+/// A component that stores `use_direction(..)`'s plain value in a mount-time
+/// context (`use_context_provider(|| Ctx { direction, .. })`) freezes it: the
+/// closure runs once, so descendants would keep the first direction forever.
+/// Store `use_direction_signal(direction)` instead and read it with
+/// `(ctx.direction)()`; the owner updates it on every render in which the
+/// resolved direction changed.
+pub fn use_direction_signal(current: Direction) -> ReadSignal<Direction> {
+    let mut signal = use_signal(|| current);
+    if *signal.peek() != current {
+        signal.set(current);
+    }
+    signal.into()
 }
 
 /// Resolve the effective [`Direction`]: `local` if given, else the nearest
@@ -161,7 +193,9 @@ pub fn use_direction(local: Option<Direction>) -> Direction {
     if let Some(direction) = local {
         return direction;
     }
-    try_consume_context::<Direction>().unwrap_or_default()
+    try_consume_context::<Signal<Direction>>()
+        .map(|signal| signal())
+        .unwrap_or_default()
 }
 
 #[cfg(test)]
@@ -208,6 +242,23 @@ mod tests {
                 None
             );
         }
+    }
+
+    #[test]
+    fn ltr_equivalent_mirrors_horizontal_keys_under_rtl_only() {
+        assert_eq!(
+            Direction::Ltr.ltr_equivalent(&Key::ArrowLeft),
+            Key::ArrowLeft
+        );
+        assert_eq!(
+            Direction::Rtl.ltr_equivalent(&Key::ArrowLeft),
+            Key::ArrowRight
+        );
+        assert_eq!(
+            Direction::Rtl.ltr_equivalent(&Key::ArrowRight),
+            Key::ArrowLeft
+        );
+        assert_eq!(Direction::Rtl.ltr_equivalent(&Key::ArrowUp), Key::ArrowUp);
     }
 
     #[test]
