@@ -768,27 +768,16 @@ button.dx-theme-phone-trigger {
   background: linear-gradient(to top right, transparent calc(50% - 1px), var(--dx-muted-foreground) 50%, transparent calc(50% + 1px));
 }
 
-.dx-copy-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  border: none;
-  border-radius: 0.5rem;
-  margin: 0;
-  background: none;
-  color: var(--dx-foreground);
-  cursor: pointer;
-  gap: 0.5em;
+/* The docs' copy buttons are the library's ghost icon `Button` (`CopyButton`, `CopyCommandButton` in
+ * `main.rs`); only the icon swap is ours. The button's inline `onclick` sets `data-copied`, which
+ * works before hydration. */
+.dx-copy-button .dx-check-icon,
+.dx-copy-button[data-copied="true"] .dx-copy-icon {
+  display: none;
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .dx-copy-button:hover {
-    color: var(--highlight-color-tertiary);
-  }
-}
-
-.dx-copy-button[data-copied="true"] {
+.dx-copy-button[data-copied="true"] .dx-check-icon {
+  display: block;
   color: var(--dx-success);
 }
 
@@ -1777,20 +1766,19 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
   gap: 1.5rem;
 }
 
-.dx-widget-card {
-  display: block;
+/* A `Card` (`MasonryCard`, main.rs): the ring, fill and radius are the library's; this is the layout and the roomier
+ * inset. The doubled class outranks `.dx-card` whatever order the stylesheets load in. */
+.dx-card.dx-widget-card {
+  --dx-card-spacing: 1.75rem;
+
   overflow: hidden;
   width: 100%;
-  padding: 1.75rem 1.75rem 1.85rem;
-  border: 1px solid var(--dx-border);
-  border-radius: 0.5rem;
   margin: 0;
-  background-color: var(--dx-card);
 }
 
 /* Cards whose contents include a floating popout (combobox dropdown, etc.)
  * need to escape the card's overflow clip. */
-.dx-widget-card-popout {
+.dx-card.dx-widget-card-popout {
   overflow: visible;
 }
 
@@ -1840,19 +1828,37 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
  * shrank 38.5k -> 32.0k px, -17%, and the scrollbar thumb jumped). The MEAN, not the median (256 px: most
  * cards are one demo row, a few -- form 2,020, bubble 836 -- are very tall), because it is the sum over the
  * 75 cards that keeps the scrollbar's length steady; the running error stays under ~5% of the page.
- * Measured 1280 / 1024 px: 384 / 393 px (-> 288 / 297); 390 px: 466 px (-> 418, the 24 px padding of the
+ * Re-measured with the `Card` markup (2026-10-19, content-box means over 78 cards, all rendered): 1280 px 376, 1024 px
+ * (gallery narrower than 67rem, so stacked) 448, 390 px 444. Earlier, for the bare grid: 384 / 393 px (-> 288 / 297); 390 px: 466 px (-> 418, the 24 px padding of the
  * narrow layout); widgets 327 px (-> 267) at every width. `auto` keeps the real height once a card has been
  * rendered. `playwright/oracle/tier2-html/home-scroll-stability.spec.ts` fails if the first scroll changes
  * the document height by 10% or more, which is what re-measuring is for when the gallery changes. */
 .dx-component-card {
+  padding: 3rem 0;
+  contain-intrinsic-block-size: auto 376px;
+  content-visibility: var(--dx-cv, auto);
+  overflow-clip-margin: 0.75rem;
+}
+
+/* Header on the left, the live demo on the right, the install command as the footer across the bottom. */
+.dx-card.dx-component-card-body {
   display: grid;
   align-items: start;
-  padding: 3rem 0;
-  contain-intrinsic-block-size: auto 290px;
-  content-visibility: var(--dx-cv, auto);
-  gap: 2rem;
-  grid-template-columns: minmax(16rem, 1fr) minmax(16rem, 1fr);
-  overflow-clip-margin: 0.75rem;
+  gap: 1.5rem 2rem;
+  grid-template: "header content" 1fr "footer footer" auto / minmax(16rem, 1fr) minmax(16rem, 1fr);
+}
+
+.dx-component-card-body > [data-slot="card-header"] {
+  grid-area: header;
+}
+
+.dx-component-card-body > [data-slot="card-content"] {
+  align-self: stretch;
+  grid-area: content;
+}
+
+.dx-component-card-body > [data-slot="card-footer"] {
+  grid-area: footer;
 }
 
 /* NOT `content-visibility: auto` (the widget cards used to be): the masonry was CSS multi-column (it is fixed column
@@ -1880,7 +1886,7 @@ html[data-cv-settle] {
   /* Narrow cards stack and wrap (component cards mean 466 px border-box at 390 px wide, less the 48 px of
    * padding; variants 427 px). */
   .dx-component-card {
-    contain-intrinsic-block-size: auto 418px;
+    contain-intrinsic-block-size: auto 444px;
   }
 }
 
@@ -1896,9 +1902,8 @@ html[data-cv-settle] {
 /* A 320px phone: the Schedule card's 250px calendar is 7px wider than the content box left by the
  * desktop 1.75rem inset (backlog row 280, `playwright/card-fit.spec.ts`). */
 @media (width <= 400px) {
-  .dx-widget-card {
-    padding-right: 1.25rem;
-    padding-left: 1.25rem;
+  .dx-card.dx-widget-card {
+    --dx-card-spacing: 1.25rem;
   }
 }
 
@@ -2019,16 +2024,12 @@ html[data-cv-settle] {
  * content is wider than it. */
 @container (width < 67rem) {
   .dx-component-card {
-    grid-template-columns: minmax(0, 1fr);
+    contain-intrinsic-block-size: auto 448px;
   }
-}
 
-.dx-component-card-meta {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.75rem;
+  .dx-card.dx-component-card-body {
+    grid-template: "header" auto "content" auto "footer" auto / minmax(0, 1fr);
+  }
 }
 
 .dx-component-card-title {
@@ -2059,32 +2060,11 @@ html[data-cv-settle] {
   outline-offset: 3px;
 }
 
-.dx-component-card-description {
-  max-width: 36rem;
-  margin: 0;
-  color: var(--dx-muted-foreground);
-  font-size: 0.95rem;
-  line-height: 1.55;
-}
-
-.dx-component-card-actions {
-  display: flex;
-  max-width: 100%;
-  flex-wrap: wrap;
-  align-items: center;
-  margin-top: 0.5rem;
-  gap: 0.75rem;
-}
-
 .dx-component-card-command {
   display: inline-flex;
+  min-width: 0;
   max-width: 100%;
   align-items: center;
-  padding: 0.375rem 0.375rem 0.375rem 0.5rem;
-  border: 1px solid var(--dx-border);
-  border-radius: 0.25rem;
-  background-color: var(--dx-background);
-  color: var(--dx-foreground);
   gap: 1rem;
 }
 
@@ -2094,18 +2074,6 @@ html[data-cv-settle] {
   font-size: 0.875rem;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.dx-component-card-copy {
-  width: 1rem;
-  height: 1rem;
-  flex: 0 0 auto;
-  color: var(--dx-muted-foreground);
-}
-
-.dx-component-card-copy svg {
-  width: 10px;
-  height: 10px;
 }
 
 .dx-component-card-block-link {
@@ -2132,7 +2100,7 @@ html[data-cv-settle] {
   outline-offset: 3px;
 }
 
-.dx-component-card-preview {
+.dx-card-content.dx-component-card-preview {
   display: flex;
   overflow: visible;
   min-width: 0;
@@ -2140,9 +2108,6 @@ html[data-cv-settle] {
   align-items: center;
   justify-content: center;
   padding: 2rem;
-  border: 1px solid var(--dx-border);
-  border-radius: 0.25rem;
-  background-color: var(--dx-card);
 }
 
 .dx-component-card-preview > * {
@@ -2345,15 +2310,17 @@ html[data-cv-settle] {
 
   .dx-component-card {
     padding: 1.5rem 0;
+  }
+
+  .dx-card.dx-component-card-body {
     gap: 1.25rem;
-    grid-template-columns: 1fr;
   }
 
   /* `overflow: hidden`: a thumbnail whose demo has a fixed inline `min-width`
    * wider than the card (the Resizable demo's 450px group) must clip inside
    * its own box, not widen the page. Desktop keeps the base `overflow:
    * visible`. */
-  .dx-component-card-preview {
+  .dx-card-content.dx-component-card-preview {
     overflow: hidden;
     min-height: 7rem;
     padding: 1.25rem;

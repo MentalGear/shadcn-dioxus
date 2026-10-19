@@ -1,7 +1,8 @@
 use crate::components::{
     avatar::{AvatarImageSize, ImageAvatar},
     badge::{Badge, BadgeVariant, VerifiedIcon},
-    button::{Button, ButtonVariant},
+    button::{Button, ButtonSize, ButtonVariant},
+    card::{Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle},
     checkbox::Checkbox,
     color_picker::ColorPicker,
     combobox::{Combobox, ComboboxEmpty, ComboboxOption},
@@ -32,7 +33,7 @@ use dioxus_code::{advanced::HighlightedSource, Code, CodeTheme, Theme};
 use dioxus_i18n::prelude::{i18n, use_init_i18n, I18nConfig};
 use dioxus_icons::lucide::{
     ArrowRight, ArrowUpRight, BookOpen, Check, ChevronDown, ChevronLeft, Copy, ExternalLink,
-    FileText, Hash, House, Mail, Pause, Play, SkipBack, SkipForward,
+    FileText, Hash, House, Mail, Menu, Pause, Play, SkipBack, SkipForward,
 };
 use dioxus_primitives::direction::{Direction, DirectionProvider};
 use dioxus_primitives::{ContentAlign, ContentSide};
@@ -625,7 +626,12 @@ fn Navbar() -> Element {
                 padding: "1rem",
                 justify_content: "flex-start",
                 if has_sidebar {
-                    SidebarTrigger { class: "dx-navbar-sidebar-trigger" }
+                    SidebarTrigger {
+                        class: "dx-navbar-sidebar-trigger",
+                        icon: rsx! {
+                            Menu { class: "dx-sidebar-trigger-icon", size: "1rem" }
+                        },
+                    }
                 }
                 if in_component {
                     NavLink {
@@ -652,7 +658,12 @@ fn Navbar() -> Element {
             div { class: "dx-navbar-inner",
                 div { class: "dx-navbar-primary",
                     if has_sidebar {
-                        SidebarTrigger { class: "dx-navbar-sidebar-trigger" }
+                        SidebarTrigger {
+                        class: "dx-navbar-sidebar-trigger",
+                        icon: rsx! {
+                            Menu { class: "dx-sidebar-trigger-icon", size: "1rem" }
+                        },
+                    }
                     }
                     NavLink { to: Route::home(), class: "dx-navbar-brand",
                         img {
@@ -944,44 +955,26 @@ async fn fetch_asset_text(url: String) -> Option<String> {
     eval.recv::<Option<String>>().await.ok().flatten()
 }
 
+/// The docs' copy-to-clipboard button for a code block: the library's own ghost icon `Button`.
+///
+/// The copy runs from an inline `onclick` attribute (not a Rust handler) so it works before the
+/// wasm hydrates, as the `<button>` this replaces did. The same script flips `data-copied`, and
+/// `main.css` swaps the two icons on it (a Rust-side signal would need its own `onclick`, which
+/// `merge_attributes` would let the inline string replace). Placement over the code block comes
+/// from the caller's `attributes` (`position`/`top`/`right`).
 #[component]
 fn CopyButton(#[props(extends=GlobalAttributes)] attributes: Vec<Attribute>) -> Element {
-    let mut copied = use_signal(|| false);
-
     rsx! {
-        button {
+        Button {
+            variant: ButtonVariant::Ghost,
+            size: ButtonSize::IconSm,
+            attributes,
             class: "dx-copy-button",
             r#type: "button",
             aria_label: "Copy code",
-            "data-copied": copied,
-            "onclick": "const visiblePre = Array.from(this.parentNode.querySelectorAll('pre:not(.dx-code-gutter)')).find((pre) => pre.offsetParent !== null); navigator.clipboard.writeText(visiblePre ? visiblePre.innerText : Array.from(this.parentNode.childNodes).filter((node) => node !== this).map((node) => node.textContent).join('').trim());",
-            onclick: move |_| copied.set(true),
-            ..attributes,
-            if copied() {
-                CheckIcon {}
-            } else {
-                CopyIcon {}
-            }
-        }
-    }
-}
-
-#[component]
-fn CopyIcon() -> Element {
-    rsx! {
-        Copy {
-            width: "24px",
-            height: "24px",
-        }
-    }
-}
-
-#[component]
-fn CheckIcon() -> Element {
-    rsx! {
-        Check {
-            width: "24px",
-            height: "24px",
+            "onclick": "const b = this; const visiblePre = Array.from(b.parentNode.querySelectorAll('pre:not(.dx-code-gutter)')).find((pre) => pre.offsetParent !== null); navigator.clipboard.writeText(visiblePre ? visiblePre.innerText : Array.from(b.parentNode.childNodes).filter((node) => node !== b).map((node) => node.textContent).join('').trim()); b.dataset.copied = 'true';",
+            Copy { class: "dx-copy-icon" }
+            Check { class: "dx-check-icon" }
         }
     }
 }
@@ -2944,7 +2937,7 @@ fn MasonryCard(#[props(default)] popout: bool, children: Element) -> Element {
         "dx-widget-card"
     };
     rsx! {
-        div { class, {children} }
+        Card { class, CardContent { {children} } }
     }
 }
 
@@ -3654,29 +3647,36 @@ fn ComponentGalleryPreview(component: ComponentDemoData) -> Element {
     };
 
     rsx! {
+        // The `article` stays the layout/perf wrapper (`content-visibility`, the row spacing); the
+        // card itself is the library's `Card` (header: title + description, content: the live demo,
+        // footer: the install command).
         article { class: "dx-component-card",
-            div { class: "dx-component-card-meta",
-                div { class: "dx-component-card-title-row",
-                    h3 { class: "dx-component-card-title",
-                        // link-ok: home-gallery card link, never its own component page
-                        Link {
-                            to: Route::component(name),
-                            class: "dx-component-card-title-link",
-                            "{display_name}"
-                            ArrowUpRight { size: "18", stroke_width: "1.6" }
+            Card { class: "dx-component-card-body",
+                CardHeader {
+                    div { class: "dx-component-card-title-row",
+                        CardTitle {
+                            h3 { class: "dx-component-card-title",
+                                // link-ok: home-gallery card link, never its own component page
+                                Link {
+                                    to: Route::component(name),
+                                    class: "dx-component-card-title-link",
+                                    "{display_name}"
+                                    ArrowUpRight { size: "18", stroke_width: "1.6" }
+                                }
+                            }
                         }
+                        ExtraBadge { name, tip: ExtraBadgeTip::Title }
                     }
-                    ExtraBadge { name, tip: ExtraBadgeTip::Title }
+                    CardDescription { "{description}" }
                 }
-                p { class: "dx-component-card-description", "{description}" }
-                div { class: "dx-component-card-actions",
+                CardContent { class: "dx-component-card-preview", {preview} }
+                CardFooter { class: "dx-component-card-footer",
                     div { class: "dx-component-card-command",
                         code { "{install_command}" }
                         CopyCommandButton { command: install_command.clone() }
                     }
                 }
             }
-            div { class: "dx-component-card-preview", {preview} }
         }
     }
 }
@@ -3750,22 +3750,19 @@ fn CopyCommandButton(
     #[props(default = "Copy install command".to_string())]
     label: String,
 ) -> Element {
-    let mut copied = use_signal(|| false);
-
+    // Inline `onclick`, as in `CopyButton`: works before hydration, and `main.css` swaps the icons
+    // on the `data-copied` it sets.
     rsx! {
-        button {
-            class: "dx-copy-button dx-component-card-copy",
+        Button {
+            variant: ButtonVariant::Ghost,
+            size: ButtonSize::IconXs,
+            class: "dx-copy-button",
             r#type: "button",
             aria_label: "{label}",
             "data-command": "{command}",
-            "data-copied": copied,
-            "onclick": "navigator.clipboard.writeText(this.dataset.command);",
-            onclick: move |_| copied.set(true),
-            if copied() {
-                CheckIcon {}
-            } else {
-                CopyIcon {}
-            }
+            "onclick": "navigator.clipboard.writeText(this.dataset.command); this.dataset.copied = 'true';",
+            Copy { class: "dx-copy-icon" }
+            Check { class: "dx-check-icon" }
         }
     }
 }
