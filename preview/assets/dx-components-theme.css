@@ -236,7 +236,7 @@ html[data-theme="light"] [class~="dxc-system"] {
    * selected fill. Plain hover and keyboard-highlight rows on a popover keep `--dx-accent` (distinct
    * from #171717 by the same step shadcn ships). Guard: playwright/dark-surface-contrast.spec.ts. */
   --dx-accent-selected: var(--light, var(--dx-accent))
-    var(--dark, color-mix(in oklab, var(--dx-accent), var(--dx-foreground) 15%));
+    var(--dark, color-mix(in var(--dx-hover-mix-space), var(--dx-accent), var(--dx-foreground) 15%));
   --dx-accent-selected-foreground: var(--dx-accent-foreground);
   --dx-destructive: var(--destructive, var(--light, #e40014) var(--dark, var(--primary-error-color)));
   --dx-destructive-foreground: var(--destructive-foreground, var(--contrast-error-color));

@@ -396,7 +396,7 @@ td:has(.dx-calendar-grid-cell[data-selection-end="true"]) {
             [data-selected="true"],
             [data-disabled="true"]
         ):hover {
-        background-color: color-mix(in oklab, var(--dx-accent-selected), var(--dx-foreground) 6%);
+        background-color: color-mix(in var(--dx-hover-mix-space), var(--dx-accent-selected), var(--dx-foreground) 6%);
     }
 }
 

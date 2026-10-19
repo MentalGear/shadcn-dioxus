@@ -83,6 +83,7 @@ gates=(
   "check-internal-hrefs|scripts/check-internal-hrefs.sh"
   "check-installed-paths|scripts/check-installed-paths.sh"
   "check-css-vars-defined|scripts/check-css-vars-defined.sh"
+  "check-hover-mix-space|scripts/check-hover-mix-space.sh"
   "check-uncleared-intervals|scripts/check-uncleared-intervals.sh"
   "check-blocking-scroll-listeners|scripts/check-blocking-scroll-listeners.sh"
   "check-js-listeners|scripts/check-js-listeners.sh"

@@ -88,7 +88,7 @@
 @media (hover: hover) and (pointer: fine) {
   .dx-bubble[data-variant="secondary"] > .dx-bubble-content:is(button, a):hover {
     background-color: color-mix(
-      in oklch,
+      in var(--dx-hover-mix-space),
       var(--dx-secondary),
       var(--dx-foreground) 5%
     );
@@ -102,7 +102,7 @@
 @media (hover: hover) and (pointer: fine) {
   .dx-bubble[data-variant="muted"] > .dx-bubble-content:is(button, a):hover {
     background-color: color-mix(
-      in oklch,
+      in var(--dx-hover-mix-space),
       var(--dx-muted),
       var(--dx-foreground) 5%
     );
