@@ -57,7 +57,7 @@ pub fn Demo() -> Element {
                         radar: RadarOptions { fill_opacity: vec![0.6], ..Default::default() },
                     }
                     ChartTooltip { indicator: TooltipIndicator::Line }
-                    ChartLegend {}
+                    ChartLegend { overhang: 10.0 }
                 }
             }
             CardFooter { class: "dx-chart-footer",
