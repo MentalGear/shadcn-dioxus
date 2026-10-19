@@ -252,7 +252,7 @@ test.describe("Carousel wheel replay: reference (the bench's own mode D, rev 40)
 /* ------------------------------------------------------------------------ */
 
 async function openComponent(page: Page): Promise<{ content: Locator }> {
-  await gotoHydrated(page, `${BASE_URL}/component/?name=carousel&variant=main&`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/carousel/`, { timeout: 20 * 60 * 1000 });
   const frame = page.locator("#component-preview-frame");
   // The same element carousel.spec.ts's `readContentTransform` reads: it is
   // the scroll-snap track AND the element the band's transform is written to.

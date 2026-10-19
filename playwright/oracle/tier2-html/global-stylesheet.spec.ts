@@ -24,7 +24,7 @@ import { BASE_URL } from "../../base-url";
 
 const ROUTES = [
   `${BASE_URL}/`,
-  `${BASE_URL}/component/?name=select&`,
+  `${BASE_URL}/component/select/`,
   `${BASE_URL}/dashboard/email-client`,
 ];
 

@@ -61,6 +61,7 @@ import { test, expect } from "../../fixtures";
 import type { CDPSession, Page } from "@playwright/test";
 import { BASE_URL } from "../../base-url";
 import { demoRole } from "../../demo-frame";
+import { gotoHydrated } from "../../hydration";
 
 /** Installed before any page script. Everything is kept in `window.__scrollProbe`. */
 function installTimerShim() {
@@ -120,7 +121,7 @@ async function metrics(cdp: CDPSession) {
 
 async function openHome(page: Page) {
   await page.addInitScript(installTimerShim);
-  await page.goto(`${BASE_URL}/`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/`, { timeout: 20 * 60 * 1000 });
   // Hydrated and fully rendered: the masonry blocks and every gallery card are mounted.
   await expect(page.locator(".dx-component-card").first()).toBeVisible({ timeout: 5 * 60 * 1000 });
   await expect(page.locator(".dx-widget-card").first()).toBeVisible();
@@ -259,7 +260,7 @@ test.describe("scroll smoothness of / (counts)", () => {
     // (main.css): a skipped subtree has no layout box, so a carousel or a chart measured 0 at mount and
     // never recovered -- carousel-virtual-wheel / carousel / chart_tooltip `default_index` went red
     // (round-2 verification, 2026-10-04). The home cards DO keep the skip (tests 1-5).
-    await page.goto(`${BASE_URL}/component/area_chart/?`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/area_chart/?`, { timeout: 20 * 60 * 1000 });
     await page.waitForFunction(() => document.querySelectorAll(".dx-component-variant").length >= 5, undefined, { timeout: 5 * 60 * 1000 });
     await page.waitForTimeout(1500);
     const r = await page.evaluate(() => {
@@ -289,7 +290,7 @@ test.describe("a touch drag does not need a touchstart handler", () => {
   }
 
   async function prepare(page: Page, url: string, { scrollable = true } = {}) {
-    await page.goto(`${BASE_URL}${url}`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}${url}`, { timeout: 20 * 60 * 1000 });
     // Make the page scrollable by plenty, so "it did not scroll" is a real statement. (Not for the
     // color picker: its popover scroll-locks the page anyway, and a taller page moves where the
     // anchored popover, and so the thumb, lands.)
@@ -308,7 +309,7 @@ test.describe("a touch drag does not need a touchstart handler", () => {
   };
 
   test("slider thumb", async ({ page }) => {
-    const cdp = await prepare(page, "/component/?name=slider&");
+    const cdp = await prepare(page, "/component/slider/");
     const thumb = page.getByRole("slider").first();
     await thumb.scrollIntoViewIfNeeded();
     await page.evaluate(() => window.scrollTo(0, 0));
@@ -320,7 +321,7 @@ test.describe("a touch drag does not need a touchstart handler", () => {
   });
 
   test("resizable handle", async ({ page }) => {
-    const cdp = await prepare(page, "/component/?name=resizable&");
+    const cdp = await prepare(page, "/component/resizable/");
     const handle = demoRole(page, "separator");
     await handle.scrollIntoViewIfNeeded();
     await page.evaluate(() => window.scrollTo(0, 0));
@@ -335,7 +336,7 @@ test.describe("a touch drag does not need a touchstart handler", () => {
   });
 
   test("color area thumb", async ({ page }) => {
-    const cdp = await prepare(page, "/component/?name=color_picker&", { scrollable: false });
+    const cdp = await prepare(page, "/component/color_picker/", { scrollable: false });
     await demoRole(page, "button").click();
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();

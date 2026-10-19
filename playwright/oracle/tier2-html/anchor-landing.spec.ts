@@ -43,6 +43,7 @@
 import { test, expect } from "../../fixtures";
 import type { Page } from "@playwright/test";
 import { BASE_URL } from "../../base-url";
+import { gotoHydrated } from "../../hydration";
 
 const TOLERANCE_PX = 2;
 const LOAD = { timeout: 20 * 60 * 1000 } as const;
@@ -63,8 +64,8 @@ async function waitReady(page: Page, p: PageSpec) {
 }
 
 async function open(page: Page, p: PageSpec, hash = "") {
-  await page.goto("about:blank"); // a real navigation every time, never a same-document hash jump
-  await page.goto(`${BASE_URL}${p.path}${hash}`, LOAD);
+  await gotoHydrated(page, "about:blank"); // a real navigation every time, never a same-document hash jump
+  await gotoHydrated(page, `${BASE_URL}${p.path}${hash}`, LOAD);
   await waitReady(page, p);
 }
 

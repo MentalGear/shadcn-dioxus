@@ -42,7 +42,7 @@ const NAV_TIMEOUT = 20 * 60 * 1000; // first run compiles the app
 // Escape right after navigating, on the SSG lane -- `gotoHydrated` so those
 // interactions can't land before hydration attaches listeners.
 const open = (page: Page, name: string) =>
-  gotoHydrated(page, `${BASE_URL}/component/?name=${name}&`, {
+  gotoHydrated(page, `${BASE_URL}/component/${name}/`, {
     timeout: NAV_TIMEOUT,
   });
 

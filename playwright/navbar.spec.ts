@@ -3,9 +3,10 @@ import type { Page } from '@playwright/test';
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from './axe';
 import { BASE_URL } from './base-url';
 import { expectFadeKeepsTransform, probeAnimations } from './assert-anchor-transform';
+import { gotoHydrated } from "./hydration";
 
 test('hover navigation', async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=navbar&`, { timeout: 20 * 60 * 1000 }); // Increase timeout to 20 minutes
+  await gotoHydrated(page, `${BASE_URL}/component/navbar/`, { timeout: 20 * 60 * 1000 }); // Increase timeout to 20 minutes
   // wait for the styles to load
   await expect(page.getByRole('menuitem', { name: 'Inputs' })).toHaveCSS('border-width', '0px');
   const inputsNav = page.getByRole('menu').filter({ has: page.getByRole('menuitem', { name: 'Inputs' }) }).first();
@@ -26,7 +27,7 @@ test('hover navigation', async ({ page }) => {
 });
 
 test('mobile navigation', async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=navbar&`, { timeout: 20 * 60 * 1000 }); // Increase timeout to 20 minutes
+  await gotoHydrated(page, `${BASE_URL}/component/navbar/`, { timeout: 20 * 60 * 1000 }); // Increase timeout to 20 minutes
   await page.getByRole('menuitem', { name: 'Inputs' }).tap();
   await page.getByRole('menuitem', { name: 'Calendar' }).tap();
   // Assert the url changed to the calendar component (path-segment form,
@@ -35,7 +36,7 @@ test('mobile navigation', async ({ page }) => {
 });
 
 test('keyboard navigation', async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=navbar&`, { timeout: 20 * 60 * 1000 }); // Increase timeout to 20 minutes
+  await gotoHydrated(page, `${BASE_URL}/component/navbar/`, { timeout: 20 * 60 * 1000 }); // Increase timeout to 20 minutes
   await page.locator('#component-preview-frame').first().getByRole('menubar').focus();
   // Go right with the keyboard
   await page.keyboard.press('ArrowRight');
@@ -124,7 +125,7 @@ test.describe('Close animation is not skipped (docs/backlog.md row 77 follow-up)
   }
 
   test('the panel stays mounted and connected while its close animation plays', async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=navbar&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/navbar/`, { timeout: 20 * 60 * 1000 });
     const trigger = page.getByRole('menuitem', { name: 'Inputs' });
     await expect(trigger).toHaveCSS('border-width', '0px');
     await trigger.hover();
@@ -187,7 +188,7 @@ test.describe('Close animation is not skipped (docs/backlog.md row 77 follow-up)
 
 test.describe('Axe automated scan', () => {
   test('loaded (dropdown closed) has no automatically detectable a11y issues', async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=navbar&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/navbar/`, { timeout: 20 * 60 * 1000 });
     // Wait for render before scanning -- see input.spec.ts's identical
     // comment for why (avoids a false pre-hydration "no main"/"no h1").
     await expect(page.getByRole('menuitem', { name: 'Inputs' })).toBeVisible();
@@ -195,7 +196,7 @@ test.describe('Axe automated scan', () => {
   });
 
   test('Inputs dropdown open has no automatically detectable a11y issues', async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=navbar&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/navbar/`, { timeout: 20 * 60 * 1000 });
     const inputsNav = page.getByRole('menu').filter({ has: page.getByRole('menuitem', { name: 'Inputs' }) }).first();
     await inputsNav.hover();
     await expect(inputsNav).toHaveAttribute('data-state', 'open');
@@ -224,7 +225,7 @@ test.describe('open_on_hover: false (click activation)', () => {
   }
 
   test('hovering a trigger for a second does not open it; a click does', async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=navbar&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/navbar/`, { timeout: 20 * 60 * 1000 });
     // Wait for the app to render (and its styles to load) before reading
     // state -- `goto` only waits for the document, not the wasm app.
     await expect(page.getByRole('menuitem', { name: 'Layout', exact: true })).toBeVisible({ timeout: 60_000 });
@@ -241,7 +242,7 @@ test.describe('open_on_hover: false (click activation)', () => {
   });
 
   test('the pointer leaving a click-opened dropdown does not close it', async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=navbar&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/navbar/`, { timeout: 20 * 60 * 1000 });
     const layout = clickNav(page, 'Layout');
     await page.getByRole('menuitem', { name: 'Layout', exact: true }).click();
     await expect(layout).toHaveAttribute('data-state', 'open');
@@ -252,7 +253,7 @@ test.describe('open_on_hover: false (click activation)', () => {
   });
 
   test('hovering another trigger while one is open does not switch; clicking it does', async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=navbar&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/navbar/`, { timeout: 20 * 60 * 1000 });
     const layout = clickNav(page, 'Layout');
     const overlays = clickNav(page, 'Overlays');
     await page.getByRole('menuitem', { name: 'Layout', exact: true }).click();
@@ -269,7 +270,7 @@ test.describe('open_on_hover: false (click activation)', () => {
   });
 
   test('keyboard still opens and Escape closes', async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=navbar&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/navbar/`, { timeout: 20 * 60 * 1000 });
     const layout = clickNav(page, 'Layout');
     await page.getByRole('menuitem', { name: 'Layout', exact: true }).focus();
     await page.keyboard.press('ArrowDown');
@@ -280,7 +281,7 @@ test.describe('open_on_hover: false (click activation)', () => {
   });
 
   test('a press outside closes a click-opened dropdown', async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=navbar&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/navbar/`, { timeout: 20 * 60 * 1000 });
     const layout = clickNav(page, 'Layout');
     await page.getByRole('menuitem', { name: 'Layout', exact: true }).click();
     await expect(layout).toHaveAttribute('data-state', 'open');
@@ -301,7 +302,7 @@ test.describe('open_on_hover: false (click activation)', () => {
 // ---------------------------------------------------------------------------
 test.describe('Open/close animation', () => {
   test('the fade animates translate/scale and leaves transform alone (open, and every close direction)', async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=navbar&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/navbar/`, { timeout: 20 * 60 * 1000 });
     const trigger = page.getByRole('menuitem', { name: 'Inputs' });
     await expect(trigger).toHaveCSS('border-width', '0px');
     await trigger.hover();
@@ -327,7 +328,7 @@ test.describe('Open/close animation', () => {
     // nav reverses the row beneath a stationary pointer, which hovers a SIBLING nav, closes this one and opens
     // that one (observed in about half of the runs, and the sibling then stays open).
     const slideEndX = async (rtl: boolean, direction: string): Promise<string> => {
-      await page.goto(`${BASE_URL}/component/?name=navbar&`, { timeout: 20 * 60 * 1000 });
+      await gotoHydrated(page, `${BASE_URL}/component/navbar/`, { timeout: 20 * 60 * 1000 });
       const trigger = page.getByRole('menuitem', { name: 'Inputs' });
       await expect(trigger).toHaveCSS('border-width', '0px');
       if (rtl) await page.evaluate(() => document.documentElement.setAttribute('dir', 'rtl'));

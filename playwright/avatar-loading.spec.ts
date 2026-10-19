@@ -10,7 +10,7 @@ import { BASE_URL } from "./base-url";
 //
 // The `states` demo's slow avatars all request `https://httpbin.org/delay/3600`, which never resolves offline;
 // each test answers it itself, after the delay it wants.
-const URL = `${BASE_URL}/component/?name=avatar&`;
+const URL = `${BASE_URL}/component/avatar/`;
 const SLOW_SRC = "https://httpbin.org/delay/3600";
 const WITH_FALLBACK = "Loading avatar with fallback";
 const DELAYED_FALLBACK = "Loading avatar with delayed fallback";

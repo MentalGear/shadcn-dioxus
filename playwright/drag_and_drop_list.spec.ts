@@ -1,15 +1,16 @@
 import { test, expect } from "./fixtures";
 import { expectNoAxeViolations } from "./axe";
 import { BASE_URL as BASE } from "./base-url";
+import { gotoHydrated } from "./hydration";
 
-const URL = `${BASE}/component/?name=drag_and_drop_list&`;
-const REMOVABLE_URL = `${BASE}/component/block/?name=drag_and_drop_list&variant=removable&`;
-const TUNING_URL = `${BASE}/component/block/?name=drag_and_drop_list&variant=tuning&`;
+const URL = `${BASE}/component/drag_and_drop_list/`;
+const REMOVABLE_URL = `${BASE}/component/block/drag_and_drop_list/removable/`;
+const TUNING_URL = `${BASE}/component/block/drag_and_drop_list/tuning/`;
 const LOAD_TIMEOUT = 20 * 60 * 1000;
 
 /** Navigate to the DnD page and return the first (main) variant list. */
 async function loadMainList(page: import("@playwright/test").Page) {
-  await page.goto(URL, { timeout: LOAD_TIMEOUT });
+  await gotoHydrated(page, URL, { timeout: LOAD_TIMEOUT });
   const list = page.getByRole("list", { name: "Sortable list" }).first();
   await expect(list).toBeVisible({ timeout: 30000 });
   return list;
@@ -17,7 +18,7 @@ async function loadMainList(page: import("@playwright/test").Page) {
 
 /** Navigate to the DnD page and return the second (removable) variant list. */
 async function loadRemovableList(page: import("@playwright/test").Page) {
-  await page.goto(REMOVABLE_URL, { timeout: LOAD_TIMEOUT });
+  await gotoHydrated(page, REMOVABLE_URL, { timeout: LOAD_TIMEOUT });
   const list = page.getByRole("list", { name: "Sortable list" }).first();
   await expect(list).toBeVisible({ timeout: 30000 });
   return list;
@@ -25,7 +26,7 @@ async function loadRemovableList(page: import("@playwright/test").Page) {
 
 /** Navigate to the slider-driven (tuning) variant and return its list. */
 async function loadTuningList(page: import("@playwright/test").Page) {
-  await page.goto(TUNING_URL, { timeout: LOAD_TIMEOUT });
+  await gotoHydrated(page, TUNING_URL, { timeout: LOAD_TIMEOUT });
   const list = page.getByRole("list", { name: "Sortable list" }).first();
   await expect(list).toBeVisible({ timeout: 30000 });
   return list;
@@ -649,7 +650,7 @@ test.describe("Home page lists", () => {
 
   for (const { name, index } of HOME_LISTS) {
     test(`${name}: default ghost opacity and drop gap, room not clipped`, async ({ page }) => {
-      await page.goto(`${BASE}/`, { timeout: LOAD_TIMEOUT });
+      await gotoHydrated(page, `${BASE}/`, { timeout: LOAD_TIMEOUT });
       const list = page.locator('ul[aria-roledescription="sortable list"]').nth(index);
       await expect(list).toBeAttached({ timeout: 30000 });
       // The cards are `content-visibility: auto`: render this one for real.
@@ -694,7 +695,7 @@ test.describe("Home page lists", () => {
   }
 
   test("a mouse drag on the masonry card dims the ghost and opens the gap", async ({ page }) => {
-    await page.goto(`${BASE}/`, { timeout: LOAD_TIMEOUT });
+    await gotoHydrated(page, `${BASE}/`, { timeout: LOAD_TIMEOUT });
     const list = page.locator('ul[aria-roledescription="sortable list"]').first();
     await expect(list).toBeAttached({ timeout: 30000 });
     await list.evaluate((el) => el.scrollIntoView({ block: "center" }));

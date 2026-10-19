@@ -30,7 +30,7 @@ const SCHEMES = ["light", "dark"] as const;
 async function open(page: Page, variant: "indicators" | "api") {
   await gotoHydrated(
     page,
-    `${BASE_URL}/component/?name=carousel&variant=${variant}&`,
+    `${BASE_URL}/component/carousel/`,
     GOTO_OPTS,
   );
   await page.locator(`#component-preview-frame-${variant} .dx-carousel`).first().scrollIntoViewIfNeeded();

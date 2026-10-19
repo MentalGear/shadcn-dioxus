@@ -2,8 +2,9 @@ import { test, expect } from "./fixtures";
 import type { Page } from "@playwright/test";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
+import { gotoHydrated } from "./hydration";
 
-const URL = `${BASE_URL}/component/?name=badge&`;
+const URL = `${BASE_URL}/component/badge/`;
 const GOTO = { timeout: 20 * 60 * 1000 };
 
 // Scope to a demo frame. The component page also renders each demo's own source
@@ -23,7 +24,7 @@ async function styled(page: Page) {
 }
 
 test("the main demo renders the seven variants, Ghost and Link included", async ({ page }) => {
-  await page.goto(URL, GOTO);
+  await gotoHydrated(page, URL, GOTO);
   await styled(page);
   const badges = main(page).locator("span.dx-badge");
   await expect(badges).toHaveCount(7);
@@ -34,7 +35,7 @@ test("the main demo renders the seven variants, Ghost and Link included", async 
 });
 
 test("Ghost is transparent at rest and fills with muted on hover", async ({ page }) => {
-  await page.goto(URL, GOTO);
+  await gotoHydrated(page, URL, GOTO);
   await styled(page);
   const ghost = main(page).locator('.dx-badge[data-style="ghost"]');
   await expect(ghost).toBeVisible();
@@ -46,7 +47,7 @@ test("Ghost is transparent at rest and fills with muted on hover", async ({ page
 });
 
 test("Link is primary-coloured text and underlines only on hover", async ({ page }) => {
-  await page.goto(URL, GOTO);
+  await gotoHydrated(page, URL, GOTO);
   await styled(page);
   const link = main(page).locator('.dx-badge[data-style="link"]');
   await expect(link).toBeVisible();
@@ -59,7 +60,7 @@ test("Link is primary-coloured text and underlines only on hover", async ({ page
 });
 
 test("as renders the badge as a real link that keeps the badge's look", async ({ page }) => {
-  await page.goto(URL, GOTO);
+  await gotoHydrated(page, URL, GOTO);
   await styled(page);
   const demo = variant(page, "as_link");
   const link = demo.getByRole("link", { name: "Open Link" });
@@ -73,7 +74,7 @@ test("as renders the badge as a real link that keeps the badge's look", async ({
 });
 
 test("as: the link is focusable and takes the theme's focus ring, not the UA outline", async ({ page }) => {
-  await page.goto(URL, GOTO);
+  await gotoHydrated(page, URL, GOTO);
   await styled(page);
   const link = variant(page, "as_link").getByRole("link", { name: "Open Link" });
   await link.focus();
@@ -88,7 +89,7 @@ test("as: the link is focusable and takes the theme's focus ring, not the UA out
 
 test.describe("Axe automated scan", () => {
   test("loaded has no automatically detectable a11y issues", async ({ page }) => {
-    await page.goto(URL, GOTO);
+    await gotoHydrated(page, URL, GOTO);
     await styled(page);
     await expectNoAxeViolations(page, "badge: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });

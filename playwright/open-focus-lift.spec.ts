@@ -18,7 +18,7 @@ import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
 const GOTO = { timeout: 20 * 60 * 1000 };
-const url = (q: string) => `${BASE_URL}/component/?${q}&`;
+const url = (q: string) => `${BASE_URL}/component/${q}`;
 
 const activeId = (page: Page) => page.evaluate(() => (document.activeElement as HTMLElement | null)?.id ?? "");
 const panelFocused = (page: Page, sel: string) =>
@@ -40,9 +40,9 @@ async function touchPage(browser: Browser, q: string) {
   return { context, page };
 }
 
-const DIALOG = { q: "name=dialog&variant=focus_target", trigger: "Open Focus Dialog", panel: "dialog.dx-dialog[open]" };
-const POPOVER = { q: "name=popover&variant=focus_target", trigger: "Open Focus Popover", panel: "dialog[popover]:popover-open" };
-const ALERT = { q: "name=alert_dialog&variant=focus_target", trigger: "Show Focus Alert", panel: "dialog.dx-alert-dialog[open]" };
+const DIALOG = { q: "dialog/", trigger: "Open Focus Dialog", panel: "dialog.dx-dialog[open]" };
+const POPOVER = { q: "popover/", trigger: "Open Focus Popover", panel: "dialog[popover]:popover-open" };
+const ALERT = { q: "alert_dialog/", trigger: "Show Focus Alert", panel: "dialog.dx-alert-dialog[open]" };
 
 const trig = (page: Page, name: string) => page.getByRole("button", { name, exact: true }).first();
 
@@ -193,7 +193,7 @@ test.describe("a programmatic open returns focus to the previously focused eleme
   }
 
   test("Dialog: Escape after a script open", async ({ page }) => {
-    await gotoHydrated(page, url("name=dialog&variant=edit_profile"), GOTO);
+    await gotoHydrated(page, url("dialog/"), GOTO);
     await addX(page);
     // A script click does not move focus: X still holds it when the dialog opens.
     await trig(page, "Open Dialog").evaluate((el) => (el as HTMLElement).click());
@@ -204,7 +204,7 @@ test.describe("a programmatic open returns focus to the previously focused eleme
   });
 
   test("Popover closed by state (not by the browser): focus inside the panel goes back to X", async ({ page }) => {
-    await gotoHydrated(page, url("name=popover"), GOTO);
+    await gotoHydrated(page, url("popover/"), GOTO);
     await addX(page);
     const t = trig(page, "Show Popover");
     await t.evaluate((el) => (el as HTMLElement).click());
@@ -218,7 +218,7 @@ test.describe("a programmatic open returns focus to the previously focused eleme
   });
 
   test("the opener is remembered by one mechanism (dxOpenFocus), for the modal Popover too", async ({ page }) => {
-    await gotoHydrated(page, url("name=popover&variant=modal"), GOTO);
+    await gotoHydrated(page, url("popover/"), GOTO);
     await addX(page);
     await trig(page, "Open modal popover").evaluate((el) => (el as HTMLElement).click());
     const panel = page.locator("dialog[open]");
@@ -232,7 +232,7 @@ test.describe("a programmatic open returns focus to the previously focused eleme
 
 test.describe("pointer open: Select highlights the selected option, Menu highlights nothing", () => {
   test("Select: a click open with nothing selected leaves focus on the listbox; once selected, a click open focuses it", async ({ page }) => {
-    await gotoHydrated(page, url("name=select"), GOTO);
+    await gotoHydrated(page, url("select/"), GOTO);
     const trigger = page.getByRole("combobox").filter({ hasText: /Select an option|Apple|Banana/ });
     await trigger.click();
     const list = page.getByRole("listbox");
@@ -256,7 +256,7 @@ test.describe("pointer open: Select highlights the selected option, Menu highlig
   });
 
   test("DropdownMenu: a click open highlights no item, a keyboard open the first", async ({ page }) => {
-    await gotoHydrated(page, url("name=dropdown_menu"), GOTO);
+    await gotoHydrated(page, url("dropdown_menu/"), GOTO);
     const trigger = page.getByRole("button", { name: "Open Menu", exact: true });
     await trigger.click();
     const menu = page.getByRole("menu").first();
@@ -274,7 +274,7 @@ test.describe("pointer open: Select highlights the selected option, Menu highlig
 
 test.describe("modality writer", () => {
   test("a click with detail 0 is a keyboard activation; a real click is a mouse one", async ({ page }) => {
-    await gotoHydrated(page, url("name=button"), GOTO);
+    await gotoHydrated(page, url("button/"), GOTO);
     const b = page.getByRole("button").first();
     await b.click();
     expect(await modality(page)).toBe("mouse");
@@ -286,7 +286,7 @@ test.describe("modality writer", () => {
   });
 
   test("a field focused by a mouse open still matches :focus-visible (no focusVisible:false in the policy)", async ({ page }) => {
-    await gotoHydrated(page, url("name=dialog&variant=edit_profile"), GOTO);
+    await gotoHydrated(page, url("dialog/"), GOTO);
     await trig(page, "Open Dialog").click();
     await ready(page, "dialog.dx-dialog[open]");
     expect(await modality(page)).toBe("mouse");

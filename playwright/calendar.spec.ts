@@ -1,9 +1,10 @@
 import { test, expect } from "./fixtures";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
+import { gotoHydrated } from "./hydration";
 
 test("test", async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=calendar&`, {
+  await gotoHydrated(page, `${BASE_URL}/component/calendar/`, {
     timeout: 20 * 60 * 1000,
   }); // Increase timeout to 20 minutes
   await page.waitForLoadState('networkidle');
@@ -79,7 +80,7 @@ test("test", async ({ page }) => {
 });
 
 test("year navigation by moving 52 weeks with arrow keys", async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=calendar&`, {
+  await gotoHydrated(page, `${BASE_URL}/component/calendar/`, {
     timeout: 20 * 60 * 1000,
   });
 
@@ -143,7 +144,7 @@ test("year navigation by moving 52 weeks with arrow keys", async ({ page }) => {
 });
 
 test("shift + arrow keys navigation", async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=calendar&`, {
+  await gotoHydrated(page, `${BASE_URL}/component/calendar/`, {
     timeout: 20 * 60 * 1000,
   });
 
@@ -193,7 +194,7 @@ async function testArrowKeyNavigation(
   startPosition: "first" | "last",
   expectedOrder: "ascending" | "descending"
 ) {
-  await page.goto(`${BASE_URL}/component/?name=calendar&`, {
+  await gotoHydrated(page, `${BASE_URL}/component/calendar/`, {
     timeout: 20 * 60 * 1000,
   });
 
@@ -276,13 +277,13 @@ test.describe("Axe automated scan", () => {
   // Calendar renders inline (no overlay); a day is focused/"selected" by
   // keyboard, so that state, plus the plain loaded state, are scanned.
   test("loaded has no automatically detectable a11y issues", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=calendar&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/calendar/`, { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState("networkidle");
     await expectNoAxeViolations(page, "calendar: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 
   test("a day focused via keyboard has no automatically detectable a11y issues", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=calendar&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/calendar/`, { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState("networkidle");
     const calendar = page.locator("#component-preview-frame").first();
     // Click the prev/next nav buttons first, exactly as the file's own main
@@ -312,7 +313,7 @@ test.describe("selected/range state outranks :hover (user report, calendar-state
   // plain selected color already. Light mode alone would stay green on the
   // unfixed code and not actually guard against a regression.
   test("a selected day keeps its selected background while the pointer is still over it (dark mode)", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=calendar&dark_mode=true`, {
+    await gotoHydrated(page, `${BASE_URL}/component/calendar/?dark_mode=true`, {
       timeout: 20 * 60 * 1000,
     });
     await page.waitForLoadState("networkidle");
@@ -385,7 +386,7 @@ test.describe("selected/range state outranks :hover (user report, calendar-state
   //     message, instead of burning the timeout.
   test("a range's in-between day keeps its muted look while hovered, not the endpoint look", async ({ page }) => {
     await page.clock.setFixedTime(new Date("2026-09-26T12:00:00Z"));
-    await page.goto(`${BASE_URL}/component/block/?name=calendar&variant=range&`, {
+    await gotoHydrated(page, `${BASE_URL}/component/block/calendar/range/`, {
       timeout: 20 * 60 * 1000,
     });
     await page.waitForLoadState("networkidle");
@@ -432,7 +433,7 @@ test.describe("aria-disabled on unavailable/disabled days -- backlog row 84 find
     // 2026-05-15..2026-05-18 disabled, so no navigation is needed and
     // "Friday, May 15, 2026" is a fixed, known-unavailable date (matches
     // date-picker.spec.ts's own already-verified value for the same date).
-    await page.goto(`${BASE_URL}/component/?name=calendar&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/calendar/`, { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState("networkidle");
 
     const frame = page.locator("#component-preview-frame-unavailable_dates");
@@ -460,13 +461,13 @@ test.describe("caption layouts (captionLayout)", () => {
   const caption = (page: any, name: string) => page.locator(`[data-caption-layout="${name}"]`);
 
   async function gotoCaptionVariant(page: any) {
-    await page.goto(`${BASE_URL}/component/block/?name=calendar&variant=caption&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/block/calendar/caption/`, { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState("networkidle");
     await expect(caption(page, "Label")).toBeVisible({ timeout: 30000 });
   }
 
   test("the default is a plain label: 'May 2026' between the arrows, no selects", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/block/?name=calendar&variant=simple&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/block/calendar/simple/`, { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState("networkidle");
     const calendar = page.locator(".dx-calendar").first();
     await expect(calendar).toBeVisible({ timeout: 30000 });
@@ -563,7 +564,7 @@ test.describe("caption layouts (captionLayout)", () => {
 
   test("axe: the caption layouts have no automatically detectable a11y issues", async ({ page }) => {
     // The scan needs the full docs page (main + h1); its `caption` variant frame is the four layouts.
-    await page.goto(`${BASE_URL}/component/?name=calendar&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/calendar/`, { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState("networkidle");
     await expect(page.locator("#component-preview-frame-caption")).toBeVisible({ timeout: 30000 });
     await expectNoAxeViolations(page, "calendar: caption layouts", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
@@ -572,7 +573,7 @@ test.describe("caption layouts (captionLayout)", () => {
 
 test.describe("week numbers (showWeekNumber)", () => {
   async function gotoWeekNumbers(page: any) {
-    await page.goto(`${BASE_URL}/component/block/?name=calendar&variant=week_numbers&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/block/calendar/week_numbers/`, { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState("networkidle");
     await expect(page.locator(".dx-calendar").first()).toBeVisible({ timeout: 30000 });
   }
@@ -624,7 +625,7 @@ test.describe("week numbers (showWeekNumber)", () => {
   });
 
   test("a calendar without showWeekNumber renders no column", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/block/?name=calendar&variant=simple&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/block/calendar/simple/`, { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState("networkidle");
     await expect(page.locator(".dx-calendar").first()).toBeVisible({ timeout: 30000 });
     await expect(page.locator(".dx-calendar-grid-weeknum")).toHaveCount(0);
@@ -632,7 +633,7 @@ test.describe("week numbers (showWeekNumber)", () => {
   });
 
   test("axe: week numbers have no automatically detectable a11y issues", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=calendar&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/calendar/`, { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState("networkidle");
     await expect(page.locator("#component-preview-frame-week_numbers .dx-calendar-grid-weeknum").first()).toBeVisible({ timeout: 30000 });
     await expectNoAxeViolations(page, "calendar: week numbers", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });

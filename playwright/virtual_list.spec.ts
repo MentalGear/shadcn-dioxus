@@ -9,7 +9,7 @@ async function testScrollHeightStability(
   page: import("@playwright/test").Page,
   tolerancePx: number
 ) {
-  await page.goto(`${BASE_URL}/component/?name=virtual_list&`, {
+  await gotoHydrated(page, `${BASE_URL}/component/virtual_list/`, {
     timeout: 20 * 60 * 1000,
   });
 
@@ -98,7 +98,7 @@ test("scrollHeight remains stable during continuous scroll", async ({ page }) =>
 // Test with random_heights variant which has highly variable item sizes
 // This reproduces production failure where adaptive estimation struggles
 test("scrollHeight stable with random heights variant", async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/block/?name=virtual_list&variant=random_heights`, {
+  await gotoHydrated(page, `${BASE_URL}/component/block/virtual_list/random_heights/`, {
     timeout: 20 * 60 * 1000,
   });
 
@@ -171,7 +171,7 @@ test("scrollHeight stable with random heights variant", async ({ page }) => {
 });
 
 test("virtual list virtualizes rows and updates on scroll", async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=virtual_list&`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/virtual_list/`, { timeout: 20 * 60 * 1000 });
 
   // The `main` demo pins the windowed mode; the page also carries a content-visibility demo
   // that keeps every row in the DOM, so scope to the windowed lists.
@@ -223,7 +223,7 @@ test("resize churn while scrolling does not panic (holds no borrow across resize
   page.on("console", (msg) => consoleMessages.push(msg.text()));
   page.on("pageerror", (err) => consoleMessages.push(`pageerror: ${err.message}`));
 
-  await page.goto(`${BASE_URL}/component/block/?name=virtual_list&variant=random_heights`, {
+  await gotoHydrated(page, `${BASE_URL}/component/block/virtual_list/random_heights/`, {
     timeout: 20 * 60 * 1000,
   });
 
@@ -259,7 +259,7 @@ test("resize churn while scrolling does not panic (holds no borrow across resize
 test.describe("Axe automated scan", () => {
   // Virtual list has no overlay/expand/select interaction -- one state to scan.
   test("loaded has no automatically detectable a11y issues", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=virtual_list&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/virtual_list/`, { timeout: 20 * 60 * 1000 });
     await expect(page.locator(".dx-virtual-list-container").first()).toBeVisible({ timeout: 30000 });
     // The page carries every variant, so this scans the content-visibility list (1,000 rows in
     // the DOM) and the 100,000-row windowed list too. (The bare `/component/block/` pages have
@@ -276,8 +276,8 @@ test.describe("Axe automated scan", () => {
 // `Auto` mode switches modes at 1,000 rows) and unmount the list.
 // ---------------------------------------------------------------------------
 
-const CV_URL = `${BASE_URL}/component/block/?name=virtual_list&variant=content_visibility`;
-const WINDOWED_URL = `${BASE_URL}/component/block/?name=virtual_list&variant=windowed`;
+const CV_URL = `${BASE_URL}/component/block/virtual_list/content_visibility/`;
+const WINDOWED_URL = `${BASE_URL}/component/block/virtual_list/windowed/`;
 
 const cvList = (page: Page) => page.locator('[data-vl-demo="content-visibility"] [role="list"]');
 const windowedList = (page: Page) => page.locator('[data-vl-demo="windowed"] [role="list"]');

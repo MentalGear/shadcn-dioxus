@@ -97,7 +97,7 @@ const comboboxSelectOnlyUrl = pathToFileURL(
   path.join(REFERENCE_ROOT, "combobox/examples/combobox-select-only.html"),
 ).href;
 
-const BASE = `${BASE_URL}/component/?name=`;
+const BASE = `${BASE_URL}/component/`;
 // dev-docs/backlog.md row 109: this suite clicks/types into the combobox
 // right after navigating, on the SSG lane -- `gotoHydrated` so those
 // interactions can't land before hydration attaches listeners.
@@ -105,7 +105,7 @@ const BASE = `${BASE_URL}/component/?name=`;
 // not this app, so its own `page.goto` stays plain -- no hydration signal
 // exists there.
 const goto = (page: Page, name: string) =>
-  gotoHydrated(page, `${BASE}${name}&`, { timeout: 20 * 60 * 1000 });
+  gotoHydrated(page, `${BASE}${name}/`, { timeout: 20 * 60 * 1000 });
 
 // Same role/locator convention as select.spec.ts's `singleSelectTrigger` --
 // docs/backlog.md row 8 gave the trigger role="combobox".
@@ -113,7 +113,7 @@ const librarySelectTrigger = (page: Page) => demoRole(page, "combobox");
 
 test.describe("R1 -- combobox role/aria-haspopup/aria-expanded/aria-controls contract", () => {
   test("CALIBRATION: W3C's own select-only combobox example carries the role contract", async ({ page }) => {
-    await page.goto(comboboxSelectOnlyUrl);
+    await gotoHydrated(page, comboboxSelectOnlyUrl);
     const combo = page.locator("#combo1");
     const listbox = page.locator("#listbox1");
 

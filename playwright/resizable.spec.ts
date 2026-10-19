@@ -2,8 +2,9 @@ import { test, expect } from "./fixtures";
 import { type Locator, type Page } from "@playwright/test";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from './axe';
 import { BASE_URL } from './base-url';
+import { gotoHydrated } from "./hydration";
 
-const URL = `${BASE_URL}/component/?name=resizable&`;
+const URL = `${BASE_URL}/component/resizable/`;
 
 /** The panel a handle's `aria-controls` names -- its "primary pane". */
 async function primaryPanel(page: Page, handleName: string) {
@@ -33,7 +34,7 @@ async function dragHandleBy(page: Page, handle: Locator, dx: number, dy: number)
 }
 
 test('dragging the Sidebar handle resizes both adjacent panels while the group\'s total width stays constant', async ({ page }) => {
-  await page.goto(URL, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
   const handle = page.getByRole('separator', { name: 'Sidebar' });
   const left = await primaryPanel(page, 'Sidebar');
   const right = secondaryPanel(handle);
@@ -63,7 +64,7 @@ test('dragging the Sidebar handle resizes both adjacent panels while the group\'
 });
 
 test('the nested vertical group\'s handle drags independently of the outer horizontal group', async ({ page }) => {
-  await page.goto(URL, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
   const outerHandle = page.getByRole('separator', { name: 'Sidebar' });
   const sidebar = await primaryPanel(page, 'Sidebar');
   const innerHandle = page.getByRole('separator', { name: 'Top' });
@@ -120,7 +121,7 @@ test.describe('Hit area: the whole handle drags, not just the 1px line', () => {
   const BESIDE_LINE = 4; // px from the line's centre: inside the hit area, outside the old 4px strip
 
   test('grabbing the grip anywhere on its footprint drags the handle, not just its centre line', async ({ page }) => {
-    await page.goto(URL, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
     const handle = page.getByRole('separator', { name: 'Sidebar' });
     const grip = handle.locator('.dx-resizable-handle-grip');
     const left = await primaryPanel(page, 'Sidebar');
@@ -143,7 +144,7 @@ test.describe('Hit area: the whole handle drags, not just the 1px line', () => {
   });
 
   test('grabbing the vertical (nested) grip by its top or bottom edge drags the row handle', async ({ page }) => {
-    await page.goto(URL, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
     const handle = page.getByRole('separator', { name: 'Top' });
     const grip = handle.locator('.dx-resizable-handle-grip');
     const top = await primaryPanel(page, 'Top');
@@ -164,7 +165,7 @@ test.describe('Hit area: the whole handle drags, not just the 1px line', () => {
   });
 
   test('a few px beside the 1px line, clear of the grip, still drags -- and well outside the hit area does not', async ({ page }) => {
-    await page.goto(URL, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
     const handle = page.getByRole('separator', { name: 'Sidebar' });
     const left = await primaryPanel(page, 'Sidebar');
     for (const side of [-1, 1]) {
@@ -190,7 +191,7 @@ test.describe('Hit area: the whole handle drags, not just the 1px line', () => {
   });
 
   test('the grip shows the resize cursor, like the line does', async ({ page }) => {
-    await page.goto(URL, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
     const sidebar = page.getByRole('separator', { name: 'Sidebar' });
     await expect(sidebar.locator('.dx-resizable-handle-grip')).toHaveCSS('cursor', 'col-resize');
     const top = page.getByRole('separator', { name: 'Top' });
@@ -214,7 +215,7 @@ test.describe('Hit area: the whole handle drags, not just the 1px line', () => {
       ['10px beside the line, clear of the grip', 10, false],
     ] as const) {
       test(`a finger on ${name} drags the handle (real touch events)`, async ({ page }) => {
-        await page.goto(URL, { timeout: 20 * 60 * 1000 });
+        await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
         const handle = page.getByRole('separator', { name: 'Sidebar' });
         await handle.scrollIntoViewIfNeeded();
         await expect.poll(() => page.evaluate(() => matchMedia('(pointer: coarse)').matches)).toBe(true);
@@ -243,7 +244,7 @@ test.describe('RTL', () => {
   // its handle. The arrow keys already flipped for that; the pointer drag did not, so the handle
   // slid the OPPOSITE way to the pointer. Both now share `primary_delta` (primitives/src/resizable.rs).
   test('dragging the handle moves it with the pointer, from the line or a few px beside it', async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/block?name=resizable&variant=rtl&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/block/resizable/rtl/`, { timeout: 20 * 60 * 1000 });
     const handle = page.getByRole('separator', { name: 'Divider' });
     await expect(handle).toBeVisible();
 
@@ -262,7 +263,7 @@ test.describe('RTL', () => {
   });
 
   test('keyboard still moves the divider in the physical direction of the arrow key', async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/block?name=resizable&variant=rtl&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/block/resizable/rtl/`, { timeout: 20 * 60 * 1000 });
     const handle = page.getByRole('separator', { name: 'Divider' });
     await handle.focus();
     const before = (await handle.boundingBox())!.x;
@@ -281,7 +282,7 @@ test.describe('Appearance (shadcn/ui v4 translation)', () => {
   // rounded-lg`, style-nova.css @ 295a1f1): a 4x24px pill, replacing shadcn v4's 12x16px bordered
   // box (`h-4 w-3`). Both values below are exact translations (this repo's --dx-space-1/-6 tokens).
   test('the handle is a 1px hairline with a 4x24px grip', async ({ page }) => {
-    await page.goto(URL, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
     const handle = page.getByRole('separator', { name: 'Sidebar' });
     await expect(handle).toHaveCSS('width', '1px');
 
@@ -291,7 +292,7 @@ test.describe('Appearance (shadcn/ui v4 translation)', () => {
   });
 
   test("the demo's container is a bordered, rounded, ~450px-wide box", async ({ page }) => {
-    await page.goto(URL, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
     const handle = page.getByRole('separator', { name: 'Sidebar' });
     // The handle's own direct parent is the outer ResizablePanelGroup div (panels and handles
     // are direct siblings inside it -- see primitives/src/resizable.rs's markup doc comment).
@@ -315,7 +316,7 @@ test.describe('Axe automated scan', () => {
   // once, at load"), matching slider.spec.ts's own identical single-state
   // scan.
   test('loaded has no automatically detectable a11y issues', async ({ page }) => {
-    await page.goto(URL, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
     // Wait for render before scanning -- see input.spec.ts's identical
     // comment for why (avoids a false pre-hydration "no main"/"no h1").
     await expect(page.getByRole('separator', { name: 'Sidebar' })).toBeVisible();

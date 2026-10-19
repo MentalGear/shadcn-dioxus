@@ -41,7 +41,7 @@ async function openHost(page: Page, htmlAttrs: string, pasted = "") {
 <body><div id="probe" style="background: var(--dx-background); width: 10px; height: 10px"></div></body></html>`,
     }),
   );
-  await page.goto(`${HOST}/`);
+  await gotoHydrated(page, `${HOST}/`);
 }
 
 const probe = (page: Page) =>

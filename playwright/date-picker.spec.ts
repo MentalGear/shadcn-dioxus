@@ -39,7 +39,7 @@ import { fixedViewportBox } from "./viewport-box";
 import { readAtRest, measureAtRest } from "./animations";
 
 const NAV_TIMEOUT = 20 * 60 * 1000; // first run compiles the app
-const PAGE_URL = `${BASE_URL}/component/?name=date_picker&`;
+const PAGE_URL = `${BASE_URL}/component/date_picker/`;
 
 // dev-docs/backlog.md row 109: this suite clicks the trigger and types into
 // segments right after navigating, on the SSG lane -- `gotoHydrated` so

@@ -20,7 +20,7 @@ import { awaitAnimationsSettled, measureAtRest } from "./animations";
 import { fixedViewportBox } from "./viewport-box";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 
-const URL = `${BASE_URL}/component/?name=drawer&`;
+const URL = `${BASE_URL}/component/drawer/`;
 const GOTO_OPTS = { timeout: 20 * 60 * 1000 };
 const PHONE = { width: 390, height: 844 };
 test.use({ viewport: PHONE });

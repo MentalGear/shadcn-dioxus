@@ -1,9 +1,10 @@
 import { test, expect } from "./fixtures";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
+import { gotoHydrated } from "./hydration";
 
 test("table renders the invoice demo: caption, header, rows, and footer total", async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=table&`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/table/`, { timeout: 20 * 60 * 1000 });
 
   // Scope to the main demo frame: the table page also renders other variants
   // (e.g. rich) in their own frames, each with its own [data-slot="table"].
@@ -54,7 +55,7 @@ test.describe("Axe automated scan", () => {
   // state to scan (the two-state convention in ./axe.ts applies only to
   // components that reach an open/expanded/selected state).
   test("loaded has no automatically detectable a11y issues", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=table&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/table/`, { timeout: 20 * 60 * 1000 });
     await expect(page.locator("#component-preview-frame").locator('[data-slot="table"]')).toBeVisible();
     await expectNoAxeViolations(page, "table: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });

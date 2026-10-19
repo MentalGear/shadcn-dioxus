@@ -9,7 +9,7 @@ import { gotoHydrated } from "./hydration";
 // truth for the sort/filter/page expectations below is that file's own
 // header comment, not re-derived here.
 const goto = (page: Page) =>
-  page.goto(`${BASE_URL}/component/?name=data_table&`, { timeout: 20 * 60 * 1000 });
+  gotoHydrated(page, `${BASE_URL}/component/data_table/`, { timeout: 20 * 60 * 1000 });
 
 const table = (page: Page) => page.locator('[data-slot="table"]');
 const filterInput = (page: Page) => page.getByRole("textbox", { name: "Filter by email" });
@@ -172,7 +172,7 @@ const expectSameBoxes = (before: Record<string, object>, after: Record<string, o
 };
 
 const gotoStable = async (page: Page) => {
-  await gotoHydrated(page, `${BASE_URL}/component/?name=data_table&`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/data_table/`, { timeout: 20 * 60 * 1000 });
   await expect(table(page)).toBeVisible();
   // Geist loads from Google Fonts; metrics (and so the line box) change when it lands.
   await page.evaluate(() => document.fonts.ready);

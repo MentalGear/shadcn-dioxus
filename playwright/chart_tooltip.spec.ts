@@ -22,7 +22,7 @@ const VARIANTS = [
   "advanced",
 ] as const;
 
-const URL = `${BASE_URL}/component/?name=chart_tooltip&`;
+const URL = `${BASE_URL}/component/chart_tooltip/`;
 
 // Same convention as `playwright/oracle/tier3-radix/chart.spec.ts`'s own
 // `frameOf`: the un-suffixed `#component-preview-frame` belongs to the

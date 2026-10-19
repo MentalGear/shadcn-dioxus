@@ -25,13 +25,14 @@
 import { test, expect } from "../../fixtures";
 import type { Page } from "@playwright/test";
 import { BASE_URL } from "../../base-url";
+import { gotoHydrated } from "../../hydration";
 
 test.describe("overview page scroll height", () => {
   test.skip(({ browserName }) => browserName !== "chromium", "content-visibility estimates are measured in Chromium");
 
   async function openHome(page: Page) {
     await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto(`${BASE_URL}/`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/`, { timeout: 20 * 60 * 1000 });
     await expect(page.locator(".dx-component-card").first()).toBeVisible({ timeout: 5 * 60 * 1000 });
     await page.waitForFunction(() => document.querySelectorAll(".dx-component-card").length >= 60, undefined, { timeout: 120_000 });
     await page.waitForTimeout(2500); // hydration and the first measured renders settle

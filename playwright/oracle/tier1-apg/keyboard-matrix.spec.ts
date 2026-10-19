@@ -44,12 +44,12 @@ import { BASE_URL } from "../../base-url";
 import { gotoHydrated } from "../../hydration";
 import { demoFrame, demoRole, popupItem, popupItems } from "../../demo-frame";
 
-const BASE = `${BASE_URL}/component/?name=`;
+const BASE = `${BASE_URL}/component/`;
 // dev-docs/backlog.md row 109: every row here presses keys right after
 // navigating, on the SSG lane -- `gotoHydrated` so those keypresses can't
 // land before hydration attaches listeners.
 const goto = (page: Page, name: string) =>
-  gotoHydrated(page, `${BASE}${name}&`, { timeout: 20 * 60 * 1000 });
+  gotoHydrated(page, `${BASE}${name}/`, { timeout: 20 * 60 * 1000 });
 
 /** `document.activeElement`'s role/text, for assertions Playwright's own
  * locator-based `toBeFocused()` can't phrase (e.g. "focus is still on X, not

@@ -116,9 +116,10 @@ import { type Page, type Locator } from "@playwright/test";
 import { BASE_URL } from "./../../base-url";
 import { measureAtRest } from "../../animations";
 import { demoFrame } from "../../demo-frame";
+import { gotoHydrated } from "../../hydration";
 
 async function goto(page: Page, name: string, variant: string) {
-  await page.goto(`${BASE_URL}/component/?name=${name}&variant=${variant}&`, {
+  await gotoHydrated(page, `${BASE_URL}/component/${name}/`, {
     timeout: 20 * 60 * 1000,
   });
 }

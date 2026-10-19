@@ -28,7 +28,7 @@ const AA = 4.5;
 type Mode = "light" | "dark";
 type RGB = [number, number, number];
 
-const block = (name: string, variant: string) => `${BASE_URL}/component/block/?name=${name}&variant=${variant}&`;
+const block = (name: string, variant: string) => `${BASE_URL}/component/block/${name}/${variant}/`;
 
 type Host = {
   label: string;

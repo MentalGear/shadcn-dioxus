@@ -130,14 +130,14 @@ import { BASE_URL } from "../../base-url";
 import { gotoHydrated } from "../../hydration";
 import { demoFrame, demoRole } from "../../demo-frame";
 
-const BASE = `${BASE_URL}/component/?name=`;
+const BASE = `${BASE_URL}/component/`;
 // dev-docs/backlog.md row 109: this suite clicks triggers right after
 // navigating, on the SSG lane -- `gotoHydrated` so those clicks can't land
 // before hydration attaches listeners. (`menuButtonActionsUrl` below is a
 // vendored static W3C reference page, not this app, so it keeps a plain
 // `page.goto` -- there is no hydration signal to wait for there.)
 const goto = (page: Page, name: string) =>
-  gotoHydrated(page, `${BASE}${name}&`, { timeout: 20 * 60 * 1000 });
+  gotoHydrated(page, `${BASE}${name}/`, { timeout: 20 * 60 * 1000 });
 
 /** Every distinct `role` attribute on a descendant of `popup`, sorted. */
 const rolesInside = (popup: Locator): Promise<string[]> =>
@@ -207,7 +207,7 @@ test.describe("CALIBRATION — APG Menu Button pattern's own vendored example", 
   test("W3C's own example carries the exact role/haspopup/labelledby contract asserted below", async ({
     page,
   }) => {
-    await page.goto(menuButtonActionsUrl);
+    await gotoHydrated(page, menuButtonActionsUrl);
 
     const button = page.locator("#menubutton1");
     await expect(button, 'trigger: aria-haspopup="true"').toHaveAttribute(

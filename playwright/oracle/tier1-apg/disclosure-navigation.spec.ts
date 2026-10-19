@@ -91,13 +91,14 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { BASE_URL } from "../../base-url";
 import { demoFrame } from "../../demo-frame";
+import { gotoHydrated } from "../../hydration";
 
 const REFERENCE_ROOT = path.resolve(__dirname, "../reference/7e4034b/content/patterns");
 const referenceUrl = pathToFileURL(
   path.join(REFERENCE_ROOT, "disclosure/examples/disclosure-navigation.html"),
 ).href;
 
-const LIBRARY_URL = `${BASE_URL}/component/?name=navigation_menu&`;
+const LIBRARY_URL = `${BASE_URL}/component/navigation_menu/`;
 const LIBRARY_GOTO = { timeout: 20 * 60 * 1000 };
 
 /**
@@ -114,7 +115,7 @@ function libraryNav(page: Page) {
 
 test.describe("Reference: W3C's own Disclosure Navigation example", () => {
   test("R1: each trigger is a button with aria-expanded reflecting state and aria-controls naming the panel", async ({ page }) => {
-    await page.goto(referenceUrl);
+    await gotoHydrated(page, referenceUrl);
 
     const trigger = page.getByRole("button", { name: "About" });
     await expect(trigger).toHaveAttribute("aria-expanded", "false");
@@ -127,7 +128,7 @@ test.describe("Reference: W3C's own Disclosure Navigation example", () => {
   });
 
   test("R2: Enter and Space each toggle the trigger", async ({ page }) => {
-    await page.goto(referenceUrl);
+    await gotoHydrated(page, referenceUrl);
 
     const trigger = page.getByRole("button", { name: "About" });
     await trigger.focus();
@@ -141,7 +142,7 @@ test.describe("Reference: W3C's own Disclosure Navigation example", () => {
   });
 
   test("R3: Escape closes the open panel and returns focus to its trigger", async ({ page }) => {
-    await page.goto(referenceUrl);
+    await gotoHydrated(page, referenceUrl);
 
     const trigger = page.getByRole("button", { name: "About" });
     await trigger.click();
@@ -155,7 +156,7 @@ test.describe("Reference: W3C's own Disclosure Navigation example", () => {
   });
 
   test("R4: no role=menu/menuitem anywhere in the widget", async ({ page }) => {
-    await page.goto(referenceUrl);
+    await gotoHydrated(page, referenceUrl);
 
     const nav = page.getByRole("navigation", { name: "Mythical University" });
     await expect(nav.locator('[role="menu"]')).toHaveCount(0);
@@ -167,7 +168,7 @@ test.describe("Reference: W3C's own Disclosure Navigation example", () => {
   });
 
   test("R5: Tab from an open trigger enters the panel's first link", async ({ page }) => {
-    await page.goto(referenceUrl);
+    await gotoHydrated(page, referenceUrl);
 
     const trigger = page.getByRole("button", { name: "About" });
     await trigger.focus();
@@ -181,7 +182,7 @@ test.describe("Reference: W3C's own Disclosure Navigation example", () => {
 
 test.describe("Library: navigation_menu primitive", () => {
   test("R1: each trigger is a button with aria-expanded reflecting state and aria-controls naming the panel", async ({ page }) => {
-    await page.goto(LIBRARY_URL, LIBRARY_GOTO);
+    await gotoHydrated(page, LIBRARY_URL, LIBRARY_GOTO);
 
     const trigger = libraryNav(page).getByRole("button").first();
     await expect(trigger).toHaveAttribute("aria-expanded", "false");
@@ -194,7 +195,7 @@ test.describe("Library: navigation_menu primitive", () => {
   });
 
   test("R2: Enter and Space each toggle the trigger", async ({ page }) => {
-    await page.goto(LIBRARY_URL, LIBRARY_GOTO);
+    await gotoHydrated(page, LIBRARY_URL, LIBRARY_GOTO);
 
     const trigger = libraryNav(page).getByRole("button").first();
     await trigger.focus();
@@ -208,7 +209,7 @@ test.describe("Library: navigation_menu primitive", () => {
   });
 
   test("R3: Escape closes the open panel and returns focus to its trigger", async ({ page }) => {
-    await page.goto(LIBRARY_URL, LIBRARY_GOTO);
+    await gotoHydrated(page, LIBRARY_URL, LIBRARY_GOTO);
 
     const trigger = libraryNav(page).getByRole("button").first();
     await trigger.focus();
@@ -224,7 +225,7 @@ test.describe("Library: navigation_menu primitive", () => {
   });
 
   test("R4: no role=menu/menuitem anywhere in the widget", async ({ page }) => {
-    await page.goto(LIBRARY_URL, LIBRARY_GOTO);
+    await gotoHydrated(page, LIBRARY_URL, LIBRARY_GOTO);
 
     const nav = libraryNav(page);
     await expect(nav.locator('[role="menu"]')).toHaveCount(0);
@@ -241,7 +242,7 @@ test.describe("Library: navigation_menu primitive", () => {
   });
 
   test("R5: Tab from an open trigger enters the panel's first link", async ({ page }) => {
-    await page.goto(LIBRARY_URL, LIBRARY_GOTO);
+    await gotoHydrated(page, LIBRARY_URL, LIBRARY_GOTO);
 
     const trigger = libraryNav(page).getByRole("button").first();
     await trigger.focus();
@@ -253,7 +254,7 @@ test.describe("Library: navigation_menu primitive", () => {
   });
 
   test('R6: Home/End move focus to the first/last top-level item ("moves focus to the first/last item")', async ({ page }) => {
-    await page.goto(LIBRARY_URL, LIBRARY_GOTO);
+    await gotoHydrated(page, LIBRARY_URL, LIBRARY_GOTO);
 
     const gettingStarted = libraryNav(page).getByRole("button").first();
     const components = libraryNav(page).getByRole("button").nth(1);
@@ -273,7 +274,7 @@ test.describe("Library: navigation_menu primitive", () => {
   });
 
   test('R6: ArrowDown/ArrowUp move within an open panel\'s links and stop at the ends ("If ... not the last/first link, moves focus to the next/previous link")', async ({ page }) => {
-    await page.goto(LIBRARY_URL, LIBRARY_GOTO);
+    await gotoHydrated(page, LIBRARY_URL, LIBRARY_GOTO);
 
     const trigger = libraryNav(page).getByRole("button").first();
     await trigger.focus();
@@ -311,7 +312,7 @@ test.describe("Library: navigation_menu primitive", () => {
   });
 
   test('R6: ArrowDown on a closed trigger opens its panel and focuses the first link (this library\'s own extension of "moves focus to the first link in the dropdown")', async ({ page }) => {
-    await page.goto(LIBRARY_URL, LIBRARY_GOTO);
+    await gotoHydrated(page, LIBRARY_URL, LIBRARY_GOTO);
 
     const trigger = libraryNav(page).getByRole("button").first();
     await trigger.focus();

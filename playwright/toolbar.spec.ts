@@ -1,9 +1,10 @@
 import { test, expect } from "./fixtures";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
+import { gotoHydrated } from "./hydration";
 
 test("test", async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=toolbar&`);
+  await gotoHydrated(page, `${BASE_URL}/component/toolbar/`);
   let bold = page.getByRole("button", { name: "Bold" });
   let italic = page.getByRole("button", { name: "Italic" });
   let underline = page.getByRole("button", { name: "Underline" });
@@ -29,7 +30,7 @@ test("test", async ({ page }) => {
 test.describe("Axe automated scan", () => {
   // Toolbar has no overlay/expand/select interaction -- one state to scan.
   test("loaded has no automatically detectable a11y issues", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=toolbar&`);
+    await gotoHydrated(page, `${BASE_URL}/component/toolbar/`);
     await expectNoAxeViolations(page, "toolbar: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 });

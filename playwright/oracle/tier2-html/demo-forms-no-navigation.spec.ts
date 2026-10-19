@@ -303,7 +303,7 @@ test.describe("demo forms never navigate", () => {
             const page = await context.newPage();
             await page.route(`${URL_OF(name)}`, (r) => r.fulfill({ contentType: "text/html", body: REF(attrs) }));
             const tracker = track(page);
-            await page.goto(URL_OF(name));
+            await gotoHydrated(page, URL_OF(name));
             tracker.reset();
             const out = await probe(page, tracker, name, "#go", "click", () => page.locator("#go").click(), scripting);
             results[name] = out.navigated;

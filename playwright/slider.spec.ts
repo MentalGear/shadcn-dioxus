@@ -2,6 +2,7 @@ import { test, expect } from "./fixtures";
 import { type Locator, type Page } from "@playwright/test";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from './axe';
 import { BASE_URL } from './base-url';
+import { gotoHydrated } from "./hydration";
 
 async function sliderTrackPoint(track: Locator, frac: number) {
   const box = await track.boundingBox();
@@ -26,7 +27,7 @@ function sliderTrack(slider: Locator) {
 }
 
 test('test', async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=slider&`, { timeout: 20 * 60 * 1000 }); // Increase timeout to 20 minutes
+  await gotoHydrated(page, `${BASE_URL}/component/slider/`, { timeout: 20 * 60 * 1000 }); // Increase timeout to 20 minutes
   const thumb = page.getByRole('slider', { name: 'Demo Slider' });
   // The initial aria-valuenow should be 50
   await expect(thumb).toHaveAttribute('aria-valuenow', '50');
@@ -53,7 +54,7 @@ test('drag survives pointercancel (iPad system gesture)', async ({ page }) => {
   // gesture interrupts a drag. Regression: the slider didn't listen for
   // `pointercancel`, so its internal "active pointer" state stayed set and
   // every subsequent tap was ignored.
-  await page.goto(`${BASE_URL}/component/?name=slider&`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/slider/`, { timeout: 20 * 60 * 1000 });
   const slider = sliderGroup(page, 'Demo Slider');
   const thumb = page.getByRole('slider', { name: 'Demo Slider' });
 
@@ -117,7 +118,7 @@ test('drag ignores pageX/clientX mismatch (iPad pinch-zoom analog)', async ({ pa
   // global POINTERS table while the window pointermove listener wrote pageX —
   // so the very first pointermove produced a delta equal to that offset and
   // jammed the value at 100%. Reproduce by forging pageX on synthetic events.
-  await page.goto(`${BASE_URL}/component/?name=slider&`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/slider/`, { timeout: 20 * 60 * 1000 });
 
   const slider = sliderGroup(page, 'Demo Slider');
   const thumb = page.getByRole('slider', { name: 'Demo Slider' });
@@ -186,7 +187,7 @@ test('drag ignores pageX/clientX mismatch (iPad pinch-zoom analog)', async ({ pa
 });
 
 test('dynamic min/max', async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/block?name=slider&variant=dynamic_range&`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/block/slider/dynamic_range/`, { timeout: 20 * 60 * 1000 });
   const thumb = page.getByRole('slider', { name: 'Dynamic Range Slider' });
 
   // Initial state: percentage mode (0-100)
@@ -209,7 +210,7 @@ test('dynamic min/max', async ({ page }) => {
 });
 
 test('range two thumbs', async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/block?name=slider&variant=range&`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/block/slider/range/`, { timeout: 20 * 60 * 1000 });
   const thumbs = page.getByRole('slider', { name: 'Range Slider' });
   await expect(thumbs).toHaveCount(2);
   const t0 = thumbs.nth(0);
@@ -237,7 +238,7 @@ test('range two thumbs', async ({ page }) => {
 });
 
 test('range thumbs recover from collision', async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/block?name=slider&variant=range&`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/block/slider/range/`, { timeout: 20 * 60 * 1000 });
   const thumbs = page.getByRole('slider', { name: 'Range Slider' });
   const t0 = thumbs.nth(0);
   const t1 = thumbs.nth(1);
@@ -262,7 +263,7 @@ test('range thumbs recover from collision', async ({ page }) => {
 });
 
 test('range track click activates closest thumb', async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/block?name=slider&variant=range&`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/block/slider/range/`, { timeout: 20 * 60 * 1000 });
   const thumbs = page.getByRole('slider', { name: 'Range Slider' });
   const t0 = thumbs.nth(0);
   const t1 = thumbs.nth(1);
@@ -283,7 +284,7 @@ test('range track click activates closest thumb', async ({ page }) => {
 });
 
 test('range collided thumbs split by click direction', async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/block?name=slider&variant=range&`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/block/slider/range/`, { timeout: 20 * 60 * 1000 });
   const thumbs = page.getByRole('slider', { name: 'Range Slider' });
   const t0 = thumbs.nth(0);
   const t1 = thumbs.nth(1);
@@ -304,7 +305,7 @@ test('range collided thumbs split by click direction', async ({ page }) => {
 });
 
 test('range collided thumbs drag left from just below collision', async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/block?name=slider&variant=range&`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/block/slider/range/`, { timeout: 20 * 60 * 1000 });
   const thumbs = page.getByRole('slider', { name: 'Range Slider' });
   const t0 = thumbs.nth(0);
   const t1 = thumbs.nth(1);
@@ -335,7 +336,7 @@ test('range dragged thumb keeps its identity past the other thumb', async ({ pag
   // ordered_range, so dragging thumb 0 past thumb 1 silently reassigned which
   // thumb was "start" and which was "end" -- the thumb under the user's
   // pointer swapped identity mid-drag and the untouched thumb visibly jumped.
-  await page.goto(`${BASE_URL}/component/block?name=slider&variant=range&`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/block/slider/range/`, { timeout: 20 * 60 * 1000 });
   const thumbs = page.getByRole('slider', { name: 'Range Slider' });
   const t0 = thumbs.nth(0);
   const t1 = thumbs.nth(1);
@@ -366,7 +367,7 @@ test.describe('Axe automated scan', () => {
   // Slider has no overlay/expand interaction -- loaded (default value) and
   // a value changed via keyboard are the two meaningful states.
   test('loaded has no automatically detectable a11y issues', async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=slider&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/slider/`, { timeout: 20 * 60 * 1000 });
     // Wait for render before scanning -- see input.spec.ts's identical
     // comment for why (avoids a false pre-hydration "no main"/"no h1").
     await expect(page.getByRole('slider', { name: 'Demo Slider' })).toBeVisible();
@@ -374,7 +375,7 @@ test.describe('Axe automated scan', () => {
   });
 
   test('value changed has no automatically detectable a11y issues', async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=slider&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/slider/`, { timeout: 20 * 60 * 1000 });
     const thumb = page.getByRole('slider', { name: 'Demo Slider' });
     await thumb.focus();
     await page.keyboard.press('ArrowRight');

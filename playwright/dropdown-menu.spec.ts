@@ -6,7 +6,7 @@ import { expectFadeKeepsTransform } from './assert-anchor-transform';
 import { measureAtRest } from "./animations";
 
 test('test', async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=dropdown_menu&`);
+  await gotoHydrated(page, `${BASE_URL}/component/dropdown_menu/`);
   let menuElement = page.getByRole('button', { name: 'Open Menu' });
   // The menu should not be open initially
   await expect(menuElement).toHaveAttribute('data-state', 'closed');
@@ -64,7 +64,7 @@ test('test', async ({ page }) => {
 // stylesheet authors `min-width` only, never `width`.
 test('open content is fit-content width, not full page width, and sits near its trigger', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
-  await page.goto(`${BASE_URL}/component/?name=dropdown_menu&`);
+  await gotoHydrated(page, `${BASE_URL}/component/dropdown_menu/`);
   const trigger = page.getByRole('button', { name: 'Open Menu' });
   const triggerBox = await measureAtRest(trigger);
   await trigger.click();
@@ -105,7 +105,7 @@ test('open content is fit-content width, not full page width, and sits near its 
 // (`oracle/tier1-apg/menu-submenu.spec.ts`) for the sub-trigger instance
 // of the same class.
 test('a raw .focus() call on a plain item does not close the menu (row 85)', async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=dropdown_menu&`);
+  await gotoHydrated(page, `${BASE_URL}/component/dropdown_menu/`);
   const trigger = page.getByRole('button', { name: 'Open Menu' });
   // Mouse-click-opened, deliberately with NO keyboard navigation
   // afterward -- this leaves `ctx.focus` (the root's own roving-focus
@@ -141,7 +141,7 @@ test('a raw .focus() call on a plain item does not close the menu (row 85)', asy
 // menu", menu-and-menubar-pattern.html, "Keyboard Interaction"). The `rtl`
 // variant's "Pinned"/"Ascending" items use the primitive's default, Radix's
 // `onSelect` default: selecting closes the menu.
-const block = (variant: string) => `${BASE_URL}/component/block/?name=dropdown_menu&variant=${variant}&`;
+const block = (variant: string) => `${BASE_URL}/component/block/dropdown_menu/${variant}/`;
 
 test.describe('Checkable items', () => {
   test('checkbox items: menuitemcheckbox with an always-present aria-checked; a click toggles, a disabled item does not, the menu stays open', async ({ page }) => {
@@ -370,7 +370,7 @@ test.describe('Checkable items', () => {
 
 test.describe('Axe automated scan', () => {
   test('loaded (menu closed) has no automatically detectable a11y issues', async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=dropdown_menu&`);
+    await gotoHydrated(page, `${BASE_URL}/component/dropdown_menu/`);
     // Wait for render before scanning -- see input.spec.ts's identical
     // comment for why (avoids a false pre-hydration "no main"/"no h1").
     await expect(page.getByRole('button', { name: 'Open Menu' })).toBeVisible();
@@ -378,7 +378,7 @@ test.describe('Axe automated scan', () => {
   });
 
   test('menu open has no automatically detectable a11y issues', async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=dropdown_menu&`);
+    await gotoHydrated(page, `${BASE_URL}/component/dropdown_menu/`);
     await page.getByRole('button', { name: 'Open Menu' }).click();
     await expect(page.getByRole('menu')).toBeVisible();
     await expectNoAxeViolations(page, 'dropdown-menu: menu open', { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
@@ -387,14 +387,14 @@ test.describe('Axe automated scan', () => {
   // Checkable items: role="menuitemcheckbox"/"menuitemradio" need aria-checked
   // and a menu/group context; a radio group needs to be a real `group`.
   test('menu with checkbox items open has no automatically detectable a11y issues', async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=dropdown_menu&`);
+    await gotoHydrated(page, `${BASE_URL}/component/dropdown_menu/`);
     await page.getByRole('button', { name: 'Checkboxes' }).click();
     await expect(page.getByRole('menuitemcheckbox', { name: 'Status Bar' })).toBeVisible();
     await expectNoAxeViolations(page, 'dropdown-menu: checkboxes open', { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 
   test('menu with a radio group open has no automatically detectable a11y issues', async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=dropdown_menu&`);
+    await gotoHydrated(page, `${BASE_URL}/component/dropdown_menu/`);
     await page.getByRole('button', { name: 'Radio Group' }).click();
     await expect(page.getByRole('menuitemradio', { name: 'Top' })).toBeVisible();
     await expectNoAxeViolations(page, 'dropdown-menu: radio group open', { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
@@ -412,7 +412,7 @@ test.describe('DropdownMenuSub open_on_hover: false (click activation)', () => {
   const HOVER_SETTLE_MS = 1000; // >> SUBMENU_OPEN_INTENT_DELAY / SUBMENU_CLOSE_GRACE_DELAY (200ms each)
 
   async function openMenu(page: import('@playwright/test').Page) {
-    await page.goto(`${BASE_URL}/component/?name=dropdown_menu&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/dropdown_menu/`, { timeout: 20 * 60 * 1000 });
     const trigger = page.getByRole('button', { name: 'Actions', exact: true });
     await trigger.click();
     await expect(trigger).toHaveAttribute('data-state', 'open');
@@ -492,7 +492,7 @@ test.describe('DropdownMenuSub open_on_hover: false (click activation)', () => {
   });
 
   test('default (open_on_hover: true) is unchanged: hovering More tools still opens it', async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=dropdown_menu&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/dropdown_menu/`, { timeout: 20 * 60 * 1000 });
     await page.getByRole('button', { name: 'Open Menu' }).click();
     const sub = page.getByRole('menuitem', { name: 'More tools' });
     await sub.hover();
@@ -512,7 +512,7 @@ test.describe('DropdownMenuSub open_on_hover: false (click activation)', () => {
 // ---------------------------------------------------------------------------
 test.describe('Open/close animation', () => {
   test('the fade animates translate/scale and leaves transform alone (root content and submenu, open and close)', async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=dropdown_menu&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/dropdown_menu/`, { timeout: 20 * 60 * 1000 });
     await page.getByRole('button', { name: 'Open Menu' }).click();
     const content = page.locator('.dx-dropdown-menu-content[data-state="open"]:not(.dx-dropdown-menu-sub-content)').first();
     await expect(content).toBeVisible();

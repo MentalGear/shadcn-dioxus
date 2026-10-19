@@ -226,7 +226,7 @@ test("dashboard email client: every interactive element suppresses double-tap zo
 // plain page load, so they need their own scan after opening.
 test.describe("overlay-gated elements", () => {
   test('overlay: combobox listbox open ("Switch workspace" options suppress double-tap zoom)', async ({ page }) => {
-    const route = `${BASE}/component/?name=combobox&`;
+    const route = `${BASE}/component/combobox/`;
     await gotoHydrated(page, route, { timeout: 60000 });
     await page.waitForTimeout(3000);
     const trigger = demoRole(page, "combobox");
@@ -237,7 +237,7 @@ test.describe("overlay-gated elements", () => {
   });
 
   test("overlay: color_picker popover open (hue/area thumbs suppress double-tap zoom)", async ({ page }) => {
-    const route = `${BASE}/component/?name=color_picker&`;
+    const route = `${BASE}/component/color_picker/`;
     await gotoHydrated(page, route, { timeout: 60000 });
     const trigger = demoRole(page, "button");
     await trigger.click({ timeout: 10000 });
@@ -246,7 +246,7 @@ test.describe("overlay-gated elements", () => {
   });
 
   test("overlay: date_picker calendar popover open (day cells suppress double-tap zoom)", async ({ page }) => {
-    const route = `${BASE}/component/?name=date_picker&`;
+    const route = `${BASE}/component/date_picker/`;
     await gotoHydrated(page, route, { timeout: 60000 });
     const trigger = demoRole(page, "button");
     await trigger.click({ timeout: 10000 });
@@ -255,7 +255,7 @@ test.describe("overlay-gated elements", () => {
   });
 
   test("overlay: sheet open (its controls suppress double-tap zoom)", async ({ page }) => {
-    const route = `${BASE}/component/?name=sheet&`;
+    const route = `${BASE}/component/sheet/`;
     await gotoHydrated(page, route, { timeout: 60000 });
     await demoRole(page, "button", 1) /* sheet demo: Top, Right, Bottom, Left */.click({ timeout: 10000 });
     await page.waitForTimeout(300);
@@ -263,7 +263,7 @@ test.describe("overlay-gated elements", () => {
   });
 
   test("overlay: dropdown menu open (menu items suppress double-tap zoom)", async ({ page }) => {
-    const route = `${BASE}/component/?name=dropdown_menu&`;
+    const route = `${BASE}/component/dropdown_menu/`;
     await gotoHydrated(page, route, { timeout: 60000 });
     const trigger = demoRole(page, "button");
     await trigger.click({ timeout: 10000 });
@@ -275,7 +275,7 @@ test.describe("overlay-gated elements", () => {
   // surface in the app -- the same fixture top-layer.spec.ts's own Rule 1
   // opens every one of, reused here rather than re-deriving open steps.
   test("top_layer fixture: clipping-escape popovers open (content suppresses double-tap zoom)", async ({ page }) => {
-    const route = `${BASE}/component/?name=top_layer&`;
+    const route = `${BASE}/component/top_layer/`;
     await gotoHydrated(page, route, { timeout: 60000 });
     await page.locator("#clip-popover-trigger").click();
     await expect(page.locator("#clip-popover-content")).toBeVisible();
@@ -300,7 +300,7 @@ const COMPONENTS = [
 
 for (const name of COMPONENTS) {
   test(`component "${name}": every interactive element suppresses double-tap zoom`, async ({ page }) => {
-    const route = `${BASE}/component/?name=${name}&`;
+    const route = `${BASE}/component/${name}/`;
     await gotoHydrated(page, route, { timeout: 60000 });
     assertAllManipulation(await scan(page), route);
   });

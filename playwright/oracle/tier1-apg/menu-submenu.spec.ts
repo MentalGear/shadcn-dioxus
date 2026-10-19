@@ -127,7 +127,7 @@ import { gotoHydrated } from "../../hydration";
 import { demoFrame, demoRole } from "../../demo-frame";
 import { measureAtRest } from "../../animations";
 
-const BASE = `${BASE_URL}/component/?name=`;
+const BASE = `${BASE_URL}/component/`;
 // Demo items are located by role and position (backlog row 220), never by their copy.
 // dropdown_menu demo, root menu: Edit(0), Undo(1, disabled), Duplicate(2), More tools(3, the sub-trigger),
 // Delete(4); its submenu: Rename(0), Archive(1). context_menu demo: Edit(0), Undo(1, disabled), Duplicate(2),
@@ -141,7 +141,7 @@ const submenuItem = (page: Page, n: number) => submenuOf(page).getByRole("menuit
 // after navigating, on the SSG lane -- `gotoHydrated` so those interactions
 // can't land before hydration attaches listeners.
 const goto = (page: Page, name: string) =>
-  gotoHydrated(page, `${BASE}${name}&`, { timeout: 20 * 60 * 1000 });
+  gotoHydrated(page, `${BASE}${name}/`, { timeout: 20 * 60 * 1000 });
 
 // `crate::menu_sub::SUBMENU_OPEN_INTENT_DELAY`/`SUBMENU_CLOSE_GRACE_DELAY`
 // are both 200ms (`primitives/src/menu_sub.rs`) -- generous margins below

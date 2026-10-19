@@ -56,7 +56,7 @@ test("prerendered HTML has at most one aria-current per anchor, and the marks ar
     for (const tag of (await res.text()).match(/<a\b[^>]*>/g) ?? []) {
       expect((tag.match(/\baria-current=/g) ?? []).length, `${p.path}: ${tag.slice(0, 160)}`).toBeLessThanOrEqual(1);
     }
-    await page.goto(`${BASE_URL}${p.path}`);
+    await gotoHydrated(page, `${BASE_URL}${p.path}`);
     await expectMarks(page, p);
   }
   await context.close();

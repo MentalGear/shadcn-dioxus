@@ -80,6 +80,7 @@ import { type Page, type Locator } from "@playwright/test";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { BASE_URL } from "../../base-url";
+import { gotoHydrated } from "../../hydration";
 
 const sortableTableUrl = pathToFileURL(
   path.resolve(
@@ -89,7 +90,7 @@ const sortableTableUrl = pathToFileURL(
 ).href;
 
 const gotoDataTable = (page: Page) =>
-  page.goto(`${BASE_URL}/component/?name=data_table&`, { timeout: 20 * 60 * 1000 });
+  gotoHydrated(page, `${BASE_URL}/component/data_table/`, { timeout: 20 * 60 * 1000 });
 
 /**
  * R1: every locator in `sortableHeaders` exposes a valid `aria-sort` state,
@@ -182,14 +183,14 @@ test.describe("CALIBRATION — APG Table pattern's own vendored sortable-table e
   const firstRowLastName = (page: Page) => table(page).locator("tbody tr").first().locator("td").nth(1);
 
   test("R1: every sortable header exposes aria-sort; exactly one is active", async ({ page }) => {
-    await page.goto(sortableTableUrl);
+    await gotoHydrated(page, sortableTableUrl);
     await assertExactlyOneActiveSort(sortableHeaders(page), "reference");
   });
 
   test("R2: activating the sorted column's button toggles ascending -> descending and reorders the first row", async ({
     page,
   }) => {
-    await page.goto(sortableTableUrl);
+    await gotoHydrated(page, sortableTableUrl);
 
     await expect(lastNameHeader(page), "starts ascending (the page's own static markup)").toHaveAttribute(
       "aria-sort",
@@ -207,7 +208,7 @@ test.describe("CALIBRATION — APG Table pattern's own vendored sortable-table e
   });
 
   test("R3: the sort control is a real <button> inside the <th>, operable by keyboard", async ({ page }) => {
-    await page.goto(sortableTableUrl);
+    await gotoHydrated(page, sortableTableUrl);
     await assertKeyboardOperableButtonInHeader(page, lastNameButton(page), lastNameHeader(page), "reference");
     // Enter from the ascending default must land on descending, the same
     // direction R2's click produces.
