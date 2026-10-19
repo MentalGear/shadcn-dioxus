@@ -56,6 +56,12 @@ pub struct CarouselProps {
     #[props(default)]
     pub loop_mode: ReadSignal<LoopMode>,
 
+    /// Free scrolling (Embla `dragFree`): no snap, a released drag coasts.
+    /// Previous/Next and the arrow keys still page by slide. See
+    /// [`carousel::Carousel`]'s own doc.
+    #[props(default)]
+    pub drag_free: ReadSignal<bool>,
+
     /// Called whenever the selected slide changes.
     #[props(default)]
     pub on_value_change: Callback<usize>,
@@ -96,6 +102,7 @@ pub fn Carousel(props: CarouselProps) -> Element {
             default_value: props.default_value,
             r#loop: props.r#loop,
             loop_mode: props.loop_mode,
+            drag_free: props.drag_free,
             on_value_change: props.on_value_change,
             dir: props.dir,
             nav_disabled_opacity: props.nav_disabled_opacity,

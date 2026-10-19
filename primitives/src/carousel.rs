@@ -815,12 +815,13 @@ const CAROUSEL_SCROLL_TO_JS: &str = concat!(carousel_trace_js!(), "\
     // what keeps an explicit `scrollBy`-by-delta paging call consistent
     // with wherever the browser's own native snapping would have already
     // landed.
+    const rtlAxis = orientation === 'horizontal' && !!scroller && getComputedStyle(scroller).direction === 'rtl';
     const anchorOf = (rect) => {
         const start = orientation === 'horizontal' ? rect.left : rect.top;
         const end = orientation === 'horizontal' ? rect.right : rect.bottom;
         if (align === 'center') return (start + end) / 2;
-        if (align === 'end') return end;
-        return start;
+        if (align === 'end') return rtlAxis ? start : end;
+        return rtlAxis ? end : start;
     };
     // A real drag (CAROUSEL_DRAG_JS) already owns the scroll position and
     // `scroll-snap-type` for as long as `data-dragging` is set -- found
@@ -893,7 +894,7 @@ const CAROUSEL_SCROLL_TO_JS: &str = concat!(carousel_trace_js!(), "\
             scroller.scrollBy({ top: delta, behavior });
         }
         const restoreSnap = () => {
-            scroller.style.scrollSnapType = orientation === 'horizontal' ? 'x mandatory' : 'y mandatory';
+            scroller.style.scrollSnapType = scroller.getAttribute('data-snap') || (orientation === 'horizontal' ? 'x mandatory' : 'y mandatory');
             scroller.__dxCancelSnapRestore = null;
         };
         if ('onscrollend' in window) {
@@ -962,10 +963,16 @@ const CAROUSEL_SCROLL_TRACKING_JS: &str = concat!(carousel_true_end_js!(), carou
     // slide counts as 'nearest' (and therefore `selected`) must anchor on
     // the same point `align` snaps to, so this agrees with wherever the
     // browser's own native scroll-snap settling already landed.
+    // Logical start/end: under `dir=rtl` the leading edge is the physical
+    // right (what `scroll-snap-align: start` means there), so a free
+    // (unsnapped) position finds the same 'nearest' slide the snap would.
+    const rtlAxis = orientation === 'horizontal' && getComputedStyle(container).direction === 'rtl';
     const anchorOf = (start, end) => {
+        const lead = rtlAxis ? end : start;
+        const trail = rtlAxis ? start : end;
         if (align === 'center') return (start + end) / 2;
-        if (align === 'end') return end;
-        return start;
+        if (align === 'end') return trail;
+        return lead;
     };
     let lastNearest = null;
     let lastNearestPos = null;
@@ -1545,10 +1552,16 @@ const CAROUSEL_DRAG_JS: &str = concat!(carousel_true_end_js!(), carousel_trace_j
     // settle below finds the 'nearest' slide (and the delta to it) by the
     // same align-aware anchor point, so a drag lands consistently with
     // wherever a button/keyboard/native scroll would have.
+    // Logical start/end: under `dir=rtl` the leading edge is the physical
+    // right (what `scroll-snap-align: start` means there), so a free
+    // (unsnapped) position finds the same 'nearest' slide the snap would.
+    const rtlAxis = orientation === 'horizontal' && getComputedStyle(el).direction === 'rtl';
     const anchorOf = (start, end) => {
+        const lead = rtlAxis ? end : start;
+        const trail = rtlAxis ? start : end;
         if (align === 'center') return (start + end) / 2;
-        if (align === 'end') return end;
-        return start;
+        if (align === 'end') return trail;
+        return lead;
     };
     const thresholdSq = thresholdPx * thresholdPx;
     let pointerId = null;
@@ -1558,6 +1571,12 @@ const CAROUSEL_DRAG_JS: &str = concat!(carousel_true_end_js!(), carousel_trace_j
     let lastY = 0;
     let dragging = false;
     let suppressNextClick = false;
+    // `drag_free` release: recent pointer samples ({t, p} along the axis)
+    // feed the fling velocity, and `coastToken` supersedes a coast still
+    // running when a new gesture starts (same idea as `bounceToken`).
+    let samples = [];
+    let coastToken = 0;
+    const axisPos = (e) => (orientation === 'horizontal' ? e.clientX : e.clientY);
     // Cancels whichever of `endDrag`'s two release-settle mechanisms
     // (the `scrollend` listener or its timeout fallback) is currently
     // pending, or null if neither is. See `onPointerDown`'s own comment.
@@ -1765,6 +1784,8 @@ const CAROUSEL_DRAG_JS: &str = concat!(carousel_true_end_js!(), carousel_trace_j
         // start writing `rawOver` again, and a stale `bounceHome` loop must
         // stop touching it rather than race those writes.
         bounceToken++;
+        coastToken++;
+        samples = [{ t: e.timeStamp, p: axisPos(e) }];
         if (cancelPendingSnapRestore !== null) {
             // The previous gesture's own scroll-snap-type restore never
             // got to run -- harmless to abandon: this new drag's own
@@ -1816,6 +1837,13 @@ const CAROUSEL_DRAG_JS: &str = concat!(carousel_true_end_js!(), carousel_trace_j
         e.preventDefault();
         const dx = e.clientX - lastX;
         const dy = e.clientY - lastY;
+        {
+            // The event's own timestamp, not the handler's run time: a busy
+            // main thread delays handlers but not the input times.
+            const now = e.timeStamp;
+            samples.push({ t: now, p: axisPos(e) });
+            while (samples.length > 2 && now - samples[0].t > 100) samples.shift();
+        }
         lastX = e.clientX;
         lastY = e.clientY;
         // scrollBy's own delta is always physical-pixel, regardless of
@@ -1863,6 +1891,7 @@ const CAROUSEL_DRAG_JS: &str = concat!(carousel_true_end_js!(), carousel_trace_j
             return;
         }
         if (dragging) {
+            const releaseT = e.timeStamp;
             suppressNextClick = true;
             el.removeAttribute('data-dragging');
             try { el.releasePointerCapture(pointerId); } catch (err) {}
@@ -1876,6 +1905,61 @@ const CAROUSEL_DRAG_JS: &str = concat!(carousel_true_end_js!(), carousel_trace_j
             // this port. This never restarts an in-flight ease (invariant
             // 4) -- see `bounceHome`'s own doc.
             bounceHome(() => {
+            // `drag_free` (`data-drag-free`, the one switch the CSS and
+            // Rust also read): no settle onto a slide -- coast on the
+            // release velocity and rest wherever friction stops it.
+            if (el.getAttribute('data-drag-free') === 'true') {
+                const TAU = 325; // ms: velocity decay constant
+                const MIN_V = 0.03; // px/ms: below this the coast is over
+                const MAX_V = 2.5; // px/ms: fling velocity cap (about 800px of coast)
+                const now = releaseT;
+                const last = samples[samples.length - 1];
+                const first = samples[0];
+                let v = 0; // scroll velocity, px/ms (content follows the pointer, so scroll opposes it)
+                if (last && first && last.t > first.t && now - last.t < 80) {
+                    v = -(last.p - first.p) / (last.t - first.t);
+                }
+                v = Math.max(-MAX_V, Math.min(MAX_V, v));
+                samples = [];
+                const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                if (reduced || Math.abs(v) < MIN_V * 4) {
+                    dxTrace(el, 'drag-release', { coast: false, reduced, v });
+                    announceRest();
+                    return;
+                }
+                const myCoast = ++coastToken;
+                let prevT = performance.now();
+                let carry = 0;
+                dxTrace(el, 'drag-release', { coast: true, v });
+                (function step() {
+                    if (myCoast !== coastToken) return;
+                    const t = performance.now();
+                    const dt = Math.min(48, t - prevT);
+                    prevT = t;
+                    // Whole pixels only: a sub-pixel scrollBy can round to
+                    // nothing and would read as a refused (edge) write.
+                    carry += v * dt;
+                    const delta = Math.trunc(carry);
+                    carry -= delta;
+                    let moved = 0;
+                    if (delta !== 0) {
+                        const before = contentOffset();
+                        if (orientation === 'horizontal') {
+                            el.scrollBy({ left: delta, behavior: 'instant' });
+                        } else {
+                            el.scrollBy({ top: delta, behavior: 'instant' });
+                        }
+                        moved = Math.abs(contentOffset() - before);
+                    }
+                    v *= Math.exp(-dt / TAU);
+                    if (Math.abs(v) < MIN_V || (delta !== 0 && moved < Math.abs(delta) / 2)) {
+                        announceRest();
+                        return;
+                    }
+                    window.requestAnimationFrame(step);
+                })();
+                return;
+            }
             // This element's own 'Release settle' doc has the full
             // reasoning; short version: find the slide nearest the raw
             // drag position -- the same getBoundingClientRect-based
@@ -1915,7 +1999,7 @@ const CAROUSEL_DRAG_JS: &str = concat!(carousel_true_end_js!(), carousel_trace_j
             }
 
             const restoreSnap = () => {
-                el.style.scrollSnapType = orientation === 'horizontal' ? 'x mandatory' : 'y mandatory';
+                el.style.scrollSnapType = el.getAttribute('data-snap') || (orientation === 'horizontal' ? 'x mandatory' : 'y mandatory');
                 cancelPendingSnapRestore = null;
             };
             if (nearest) {
@@ -2715,6 +2799,13 @@ struct CarouselContext {
     loop_enabled: ReadSignal<bool>,
     /// See [`CarouselProps::loop_mode`].
     loop_mode: ReadSignal<LoopMode>,
+    /// See [`CarouselProps::drag_free`].
+    drag_free: ReadSignal<bool>,
+    /// Drag-free only: the index the track's own scroll settle just selected.
+    /// The scroll-into-view effect skips exactly that change (the user
+    /// already put the track there, and "scrolling to" the slide would snap a
+    /// free position onto its edge); every other source clears it first.
+    scroll_origin: Signal<Option<usize>>,
     /// Published (`true`) by [`CarouselVirtualContent`] exactly when its
     /// own seamless-loop path (windowed AND `r#loop` on) is genuinely
     /// active -- see that component's own "Seamless loop" doc. Always
@@ -2967,6 +3058,22 @@ pub struct CarouselProps {
     #[props(default)]
     pub r#loop: ReadSignal<bool>,
 
+    /// Free scrolling (Embla `dragFree`): the track drops `scroll-snap-type`
+    /// and a released mouse/pen drag coasts on its release velocity instead
+    /// of settling on a slide (touch and trackpad coast natively once the
+    /// snap is gone). Previous/Next and the keyboard still page by slide and
+    /// land on a slide edge, `selected` is still the slide nearest the
+    /// anchor, and variable-width items (`basis-auto`) work. One switch: the
+    /// prop renders `data-drag-free` and `data-snap` (the track's
+    /// `scroll-snap-type` value, also what the inline style carries) on
+    /// [`CarouselContent`], and the script's snap restores read `data-snap`
+    /// -- no second code path decides snap vs. no snap. Reduced motion: the
+    /// release does not coast (the track stays where it was let go). Not
+    /// supported by [`CarouselVirtualContent`] (ignored there). Defaults to
+    /// `false`.
+    #[props(default)]
+    pub drag_free: ReadSignal<bool>,
+
     /// How `r#loop` wraps at the ends -- see [`LoopMode`]'s own doc.
     /// Defaults to [`LoopMode::Seamless`].
     #[props(default)]
@@ -3111,11 +3218,15 @@ pub fn Carousel(props: CarouselProps) -> Element {
     let item_ids: Signal<Vec<String>> = use_signal(Vec::new);
     let count = use_memo(move || item_ids.len());
     let selected = use_memo(move || clamp_selected(raw_selected(), count()));
+    let mut scroll_origin: Signal<Option<usize>> = use_signal(|| None);
     let set_selected = use_callback(move |index: usize| {
+        // Any selection that is not the track's own settle must scroll.
+        scroll_origin.set(None);
         set_raw_selected.call(clamp_selected(index, *count.peek()));
     });
     let content_id: Signal<String> = use_signal(String::new);
     let loop_enabled = props.r#loop;
+    let drag_free = props.drag_free;
 
     // Autoplay state -- always created (see `AutoplayContext`'s own doc
     // for why: `CarouselContent` reads `autoplay.present`/`autoplay.rotating`
@@ -3168,6 +3279,8 @@ pub fn Carousel(props: CarouselProps) -> Element {
         content_id,
         loop_enabled,
         loop_mode,
+        drag_free,
+        scroll_origin,
         virtualized_loop_active,
         direction,
         autoplay,
@@ -3240,6 +3353,12 @@ pub fn Carousel(props: CarouselProps) -> Element {
     use_effect(move || {
         let index = selected();
         let has_items = count() > 0;
+        if drag_free() && *scroll_origin.peek() == Some(index) {
+            // The track's own scroll settle selected this slide: it is
+            // already where the user left it.
+            scroll_origin.set(None);
+            return;
+        }
         let first = is_mount_settle(*is_first.peek(), has_items);
         if has_items {
             is_first.set(false);
@@ -3515,6 +3634,18 @@ pub struct CarouselContentProps {
 
 /// # CarouselContent
 ///
+/// The track's `scroll-snap-type` value: the single place the snap / no-snap
+/// decision is made. Rendered into the inline style AND `data-snap`, which
+/// the scripts read when they restore a suspended snap
+/// ([`CarouselProps::drag_free`]).
+fn snap_type_value(orientation: CarouselOrientation, drag_free: bool) -> &'static str {
+    match (drag_free, orientation) {
+        (true, _) => "none",
+        (false, CarouselOrientation::Horizontal) => "x mandatory",
+        (false, CarouselOrientation::Vertical) => "y mandatory",
+    }
+}
+
 /// The scroll-snap track: a native `overflow-{x,y}: auto;
 /// scroll-snap-type` element containing every [`CarouselItem`]. This
 /// element itself already clips its own overflowing children (that is
@@ -3940,11 +4071,20 @@ pub fn CarouselContent(props: CarouselContentProps) -> Element {
         ctx.content_id.set(id());
     });
 
+    let mut scroll_origin = ctx.scroll_origin;
+    let tracked_set_selected = use_callback(move |index: usize| {
+        ctx.set_selected.call(index);
+        // After `set_selected` (which clears it): mark this one change as
+        // the track's own, for drag-free's scroll-into-view skip.
+        if (ctx.drag_free)() {
+            scroll_origin.set(Some(index));
+        }
+    });
     use_carousel_scroll_tracking(
         id,
         ctx.orientation,
         ctx.align,
-        ctx.set_selected,
+        tracked_set_selected,
         ctx.count,
         ctx.visible_range,
         None,
@@ -3979,18 +4119,18 @@ pub fn CarouselContent(props: CarouselContentProps) -> Element {
     let gap_var = content_gap_var(props.gap.as_deref());
     // Plain content renders every slide: both ends are true unless it loops.
     let overscroll = content_overscroll_style(orientation, !(ctx.loop_enabled)());
+    let drag_free = (ctx.drag_free)();
+    let snap_type = snap_type_value(orientation, drag_free);
     let axis_style = match orientation {
         CarouselOrientation::Horizontal => {
-            "display:flex;flex-direction:row;overflow-x:auto;overflow-y:hidden;\
-             scroll-snap-type:x mandatory;"
+            "display:flex;flex-direction:row;overflow-x:auto;overflow-y:hidden;"
         }
         CarouselOrientation::Vertical => {
-            "display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;\
-             scroll-snap-type:y mandatory;"
+            "display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;"
         }
     };
     let style = format!(
-        "{axis_style}{gap_margin}{gap_var}{overscroll}{}",
+        "{axis_style}scroll-snap-type:{snap_type};{gap_margin}{gap_var}{overscroll}{}",
         caller_style.map(|s| format!(" {s}")).unwrap_or_default()
     );
 
@@ -4012,6 +4152,8 @@ pub fn CarouselContent(props: CarouselContentProps) -> Element {
             aria_live: aria_live,
             "data-orientation": orientation.as_str(),
             "data-draggable": draggable,
+            "data-drag-free": drag_free,
+            "data-snap": snap_type,
             // Read per gesture by the wheel band's `isTrueEnd` (the band only
             // engages at a true end of the data -- see "Edge rubber-band").
             // Both come from props/registration state, never an effect-only
@@ -4863,6 +5005,7 @@ pub fn CarouselVirtualContent<T: Clone + PartialEq + 'static>(
             aria_live: aria_live,
             "data-orientation": orientation_now.as_str(),
             "data-draggable": draggable,
+            "data-snap": snap_type_value(orientation_now, false),
             // Read per gesture by the wheel band's `isTrueEnd` (the band only
             // engages at a true end of the data). `n` is `items().len()`, known
             // from props on the very first render, so SSR and hydration agree.
@@ -6315,6 +6458,15 @@ mod ssr_tests {
         // by execution (the quoted form fails against this same markup).
         let html = render(ThreeSlideCarousel);
         assert!(html.contains("data-draggable=true"));
+    }
+
+    #[test]
+    fn drag_free_is_the_only_snap_switch() {
+        use CarouselOrientation::{Horizontal, Vertical};
+        assert_eq!(snap_type_value(Horizontal, false), "x mandatory");
+        assert_eq!(snap_type_value(Vertical, false), "y mandatory");
+        assert_eq!(snap_type_value(Horizontal, true), "none");
+        assert_eq!(snap_type_value(Vertical, true), "none");
     }
 
     #[test]

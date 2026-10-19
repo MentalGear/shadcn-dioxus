@@ -104,6 +104,35 @@
 //! [`GESTURE_JS`] runs on, the handle, the slide -- so no stylesheet or script ever
 //! has to know what `auto` means, and an explicit side is exactly that side.
 //!
+//! ## Snap points
+//!
+//! `snap_points` (Base UI Drawer's `snapPoints`) lets the panel rest at partial extents: a
+//! [`SnapPoint`] is a fraction of the viewport along the drawer's axis or a pixel length. The panel is
+//! as tall (wide, for a left/right drawer) as the LARGEST snap point and rests translated toward its
+//! closing edge by the difference, so the resting offset has ONE source of truth: the active snap point
+//! writes two inline custom properties (`--dx-drawer-snap`, `--dx-drawer-snap-max`), the stylesheet
+//! derives `--dx-drawer-rest` from them and the panel's own `transform` reads it (and so does the live
+//! drag's inline `transform`, which adds the drag delta to it). Nothing measures the panel to find where
+//! it rests; a snap change is a custom-property change, so the same `transform` transition that eases a
+//! release settles it. The live drag is the one custom property `--dx-drawer-drag`, added by the same
+//! stylesheet formula (always present while snapped, `0px` at rest: the web renderer applies a changed `style`
+//! per declaration and never removes one that left the string). The release decision runs on the same numbers in Rust ([`snap_rests`], from the
+//! viewport a resize listener reports), picked by [`settle_on_release`]: the panel closes by the one
+//! existing rule ([`should_close_on_release`], applied to the travel below the LOWEST snap point) and
+//! otherwise settles on the snap point nearest the release position projected by the release velocity.
+//! `active_snap_point` / `default_active_snap_point` / `on_active_snap_point_change` make the active point
+//! controlled or not; a controlled value the parent does not change snaps the panel back. Without
+//! `snap_points` the same code runs on the one rest `0` (the old behaviour, unchanged).
+//!
+//! ## Non-modal
+//!
+//! `is_modal: false` composes the dialog primitive's non-modal arm (a `div`, no top layer, no focus
+//! trap, no scroll lock, no inert page) and turns the scrim off in ONE place, the root wrapper's
+//! `overlay` (`scrim = overlay && is_modal`), so no stylesheet has to know a non-modal drawer has no
+//! scrim. The wrapper is full-viewport, so `data-dx-modal="false"` on it is what the theme keys
+//! `pointer-events: none` on: only the panel catches the pointer. Dismissal is the dialog arm's own
+//! (Escape, a press or focus outside).
+//!
 //! ## Nested drawers
 //!
 //! A [`Drawer`] rendered inside another [`DrawerContent`] is nested (Vaul's
@@ -121,6 +150,7 @@ use crate::dialog::{
     DialogTitleProps,
 };
 use crate::{merge_attributes, use_effect_with_cleanup, use_id_or, use_unique_id};
+use dioxus::core::use_drop;
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 
@@ -230,6 +260,110 @@ pub fn use_resolved_edge_side(side: ReadSignal<EdgeSide>) -> Memo<EdgeSide> {
     use_memo(move || side().resolve(wide()))
 }
 
+/// One snap point of a [`Drawer`]: how much of the viewport (along the drawer's axis: the height of a
+/// top/bottom drawer, the width of a left/right one) is visible when the panel rests there.
+/// `Fraction(1.0)` is fully open. Values past the viewport are clamped to it.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum SnapPoint {
+    /// A fraction of the viewport extent, `0.0..=1.0` (`0.5` is half the viewport).
+    Fraction(f64),
+    /// A length in CSS pixels.
+    Px(f64),
+}
+
+impl SnapPoint {
+    /// The visible extent in px for a viewport extent of `viewport` px.
+    fn visible_px(self, viewport: f64) -> f64 {
+        match self {
+            SnapPoint::Fraction(f) => f.clamp(0.0, 1.0) * viewport,
+            SnapPoint::Px(px) => px.min(viewport),
+        }
+        .max(0.0)
+    }
+
+    /// The same extent as a CSS length (`100dvh`/`100dvw` is the viewport extent, exactly what
+    /// [`SnapPoint::visible_px`] is given by the resize listener).
+    fn css(self, vertical: bool) -> String {
+        let unit = if vertical { "dvh" } else { "dvw" };
+        match self {
+            SnapPoint::Fraction(f) => format!("calc({} * 100{unit})", f.clamp(0.0, 1.0)),
+            SnapPoint::Px(px) => format!("min({}px, 100{unit})", px.max(0.0)),
+        }
+    }
+}
+
+/// The resting offset of every snap point, in px toward the closing edge: the panel is as large as the
+/// largest snap point, so a point's rest is `largest - its own extent` (`0` for the largest). With no
+/// snap points the drawer has the single rest `0`. `viewport` is the viewport extent along the axis;
+/// `None` (the resize listener has not reported yet) reads as all points at rest `0`.
+fn snap_rests(points: &[SnapPoint], viewport: Option<f64>) -> Vec<f64> {
+    let Some(viewport) = viewport.filter(|_| !points.is_empty()) else {
+        return vec![0.0; points.len().max(1)];
+    };
+    let visible: Vec<f64> = points.iter().map(|p| p.visible_px(viewport)).collect();
+    let largest = visible.iter().cloned().fold(0.0_f64, f64::max);
+    visible.into_iter().map(|v| largest - v).collect()
+}
+
+/// The index of the active snap point: the position of `active` in `points`, or the first when it is
+/// unset or not one of them.
+fn active_snap_index(points: &[SnapPoint], active: Option<SnapPoint>) -> usize {
+    active
+        .and_then(|a| points.iter().position(|p| *p == a))
+        .unwrap_or(0)
+}
+
+/// Where a released drag goes.
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum Settle {
+    /// Rest on snap point `index` (the active one when the drag did not reach another).
+    Snap(usize),
+    /// Close the drawer.
+    Close,
+}
+
+/// How far ahead (ms) the release velocity projects the release position when picking the snap point:
+/// a flick of 1px/ms reaches 150px past where the pointer let go. Tier-3 "opinion".
+const SNAP_PROJECTION_MS: f64 = 150.0;
+/// The release velocity used for that projection is capped, so one wild sample cannot skip every point.
+const SNAP_PROJECTION_MAX_VELOCITY: f64 = 3.0;
+
+/// The release decision for every drawer, with or without snap points (without, `rests` is `[0.0]`).
+/// `rests` are the resting offsets ([`snap_rests`]), `active_rest` the active one's, `raw` the
+/// dismiss-oriented drag offset since the press, `panel_size` the panel's extent along the axis and
+/// `velocity` the release velocity toward the closing edge.
+///
+/// Closing is the ONE existing rule ([`should_close_on_release`]) applied to the travel below the lowest
+/// snap point (the largest rest) against that point's visible extent, so a drawer without snap points
+/// closes exactly as before and a snap drawer closes only by being dragged below its lowest point. Else
+/// the panel settles on the snap point nearest the release position projected by the velocity, kept
+/// within the range of the points (a flick may skip points; it never overshoots the ends).
+fn settle_on_release(
+    rests: &[f64],
+    active_rest: f64,
+    raw: f64,
+    panel_size: Option<f64>,
+    velocity: f64,
+) -> Settle {
+    let lowest = rests.iter().cloned().fold(0.0_f64, f64::max);
+    let position = active_rest + raw;
+    let lowest_extent = panel_size.map(|size| size - lowest);
+    if should_close_on_release(position - lowest, lowest_extent, velocity) {
+        return Settle::Close;
+    }
+    let projected = (position
+        + velocity.clamp(-SNAP_PROJECTION_MAX_VELOCITY, SNAP_PROJECTION_MAX_VELOCITY)
+            * SNAP_PROJECTION_MS)
+        .clamp(0.0, lowest);
+    let nearest = rests
+        .iter()
+        .enumerate()
+        .min_by(|(_, a), (_, b)| (**a - projected).abs().total_cmp(&(**b - projected).abs()))
+        .map(|(i, _)| i)
+        .unwrap_or(0);
+    Settle::Snap(nearest)
+}
+
 /// shadcn/ui Drawer (Vaul)'s distance release heuristic: a drag past this
 /// fraction of the panel's own size along its axis counts as "mostly
 /// dismissed" and completes the close. Tier-3 "opinion" (see
@@ -265,44 +399,53 @@ const RUBBER_BAND_RATIO: f64 = 0.25;
 const RUBBER_BAND_MAX_PX: f64 = 24.0;
 
 /// The dismiss-oriented `raw` accumulated offset, converted to what should
-/// actually be displayed: unchanged (up to the panel's own measured size,
-/// once known) while dragging toward dismissal, or rubber-banded toward --
-/// but never snapped to -- `0` while dragging the other way, past the
-/// fully-open resting position.
+/// actually be displayed: unchanged (up to `travel`, the room left before the panel is fully out)
+/// while dragging toward dismissal, free up to `room` (how far the active snap point rests from fully
+/// open, `0` without snap points) while dragging toward open, and rubber-banded -- but never snapped
+/// to -- the fully-open position beyond it.
 ///
 /// A pure function of the *cumulative* raw offset (not of the previous
 /// display value) on purpose: damping the already-damped display value
-/// again each frame would make the panel visibly creep back toward `0`
-/// while the pointer kept moving further into the overshoot, which is
+/// again each frame would make the panel visibly creep back toward the
+/// open position while the pointer kept moving further into the overshoot, which is
 /// wrong -- the damping curve must only ever be a function of how far off
 /// the resting position the gesture has *actually* travelled.
-fn damped_display_offset(raw: f64, panel_size: Option<f64>) -> f64 {
-    if raw < 0.0 {
-        (raw * RUBBER_BAND_RATIO).max(-RUBBER_BAND_MAX_PX)
-    } else if let Some(size) = panel_size {
-        raw.min(size)
+fn damped_display_offset(raw: f64, travel: Option<f64>, room: f64) -> f64 {
+    if raw < -room {
+        -room + ((raw + room) * RUBBER_BAND_RATIO).max(-RUBBER_BAND_MAX_PX)
+    } else if let Some(travel) = travel {
+        raw.min(travel)
     } else {
         raw
     }
 }
 
-/// The inline `transform` (not `translate` -- see this module's doc) declaration for a
-/// dismiss-oriented `offset`, converted to this side's real screen axis and sign; `None` at
-/// rest, so the attribute is absent and a stylesheet owns `transform` (the nested-drawer
+/// The inline style declaration for a dismiss-oriented `offset`, converted to this side's real
+/// screen axis and sign.
+///
+/// Without snap points it is the panel's `transform` (not `translate` -- see this module's doc), and
+/// `None` at rest, so the attribute is absent and a stylesheet owns `transform` (the nested-drawer
 /// offset) whenever nothing is being dragged.
-fn drag_style(side: EdgeSide, offset: f64) -> Option<String> {
+///
+/// With `snapped` it is ALWAYS the custom property `--dx-drawer-drag` (`0px` at rest) and the
+/// stylesheet's one `transform` formula adds it to the resting offset. A declaration is never
+/// dropped from the inline style, only its value changes: the web renderer applies a changed `style`
+/// per declaration and does not remove one that has left the string, so a `transform` that came and
+/// went would stay on the panel after the drag.
+fn drag_style(side: EdgeSide, offset: f64, snapped: bool) -> Option<String> {
+    let (vertical, sign) = side.drag_axis();
     // Explicit fast path for the resting value, rather than always computing
     // `offset * sign`: for `Top`/`Left` (`sign == -1.0`), `0.0 * -1.0` is IEEE 754
     // negative zero, which `f64`'s `Display` renders as `"-0"`.
     if offset == 0.0 {
-        return None;
+        return snapped.then(|| "--dx-drawer-drag: 0px".to_string());
     }
-    let (vertical, sign) = side.drag_axis();
     let signed = offset * sign;
-    Some(if vertical {
-        format!("transform: translateY({signed}px)")
+    Some(if snapped {
+        format!("--dx-drawer-drag: {signed}px")
     } else {
-        format!("transform: translateX({signed}px)")
+        let axis = if vertical { "Y" } else { "X" };
+        format!("transform: translate{axis}({signed}px)")
     })
 }
 
@@ -356,7 +499,8 @@ const INTERACTIVE_SELECTOR: &str =
 ///    one), whose own listener owns it: only the top-most drawer drags, or
 /// 3. `event.target.closest(INTERACTIVE_SELECTOR)` matches -- the press landed on
 ///    (or inside) an interactive descendant, or
-/// 4. the nearest scrollable ancestor *along the drag axis* is scrolled away from
+/// 4. (not at a partial snap point, where content does not scroll) the nearest scrollable
+///    ancestor *along the drag axis* is scrolled away from
 ///    `0` (the edge nearest the drag) -- that press should scroll that region
 ///    first. [`DrawerHandle`] itself is never nested inside such a region, so a
 ///    drag started there walks no scrollable ancestor at all.
@@ -418,7 +562,9 @@ if (el && enabled) {
         if (e.pointerType === 'mouse' && e.button !== 0) return;
         if (e.target.closest('[data-dx-drawer]') !== el) return;
         if (e.target.closest(interactiveSelector)) return;
-        let node = e.target;
+        // At a partial snap point the panel's content does not scroll (the stylesheet clips it): a
+        // press anywhere drags it toward the next snap point, whatever it was scrolled to before.
+        let node = el.dataset.snap === 'partial' ? null : e.target;
         while (node && node !== el.parentElement) {
             const style = getComputedStyle(node);
             const overflow = vertical ? style.overflowY : style.overflowX;
@@ -526,6 +672,17 @@ struct DrawerCtx {
     /// The RESOLVED side ([`use_resolved_edge_side`]): never [`EdgeSide::Auto`].
     side: ReadSignal<DrawerSide>,
     dismissible: ReadSignal<bool>,
+    /// The snap points (empty: no snapping, the panel rests fully open).
+    snap_points: ReadSignal<Vec<SnapPoint>>,
+    /// The active snap point (controlled, else the last one a drag settled on, else the default).
+    active_snap_point: Memo<Option<SnapPoint>>,
+    /// Makes `point` the active snap point and tells the owner.
+    set_active_snap_point: Callback<SnapPoint>,
+    /// Puts an uncontrolled active snap point back to its default (the drawer was unmounted).
+    reset_active_snap_point: Callback<()>,
+    /// The viewport `(width, height)`, reported by a resize listener that exists only while there
+    /// are snap points; `None` until its first message.
+    viewport: ReadSignal<Option<(f64, f64)>>,
 }
 
 /// Provided by every [`DrawerContent`] to its subtree, so a [`Drawer`] rendered inside it
@@ -543,9 +700,12 @@ pub struct DrawerRootProps {
     /// The ID of the drawer root element.
     pub id: ReadSignal<Option<String>>,
 
-    /// Whether the drawer is modal. If true, it will trap focus within the
-    /// drawer when open. Forwarded unchanged to
-    /// [`crate::dialog::DialogRoot`].
+    /// Whether the drawer is modal (the default). A modal drawer traps focus, makes the page
+    /// inert, locks page scroll and dims the page. `false` (Base UI's `modal: false`) is the
+    /// non-modal arm of [`crate::dialog::DialogRoot`]: no scrim (`overlay` is ignored), no top
+    /// layer, no focus trap, no scroll lock, the page stays interactive and scrollable. Escape, a
+    /// press outside the panel and focus moving outside it still dismiss it (the dialog
+    /// primitive's light dismissal); the root carries `data-dx-modal="false"`.
     #[props(default = ReadSignal::new(Signal::new(true)))]
     pub is_modal: ReadSignal<bool>,
 
@@ -581,6 +741,28 @@ pub struct DrawerRootProps {
     /// prop.
     #[props(default = ReadSignal::new(Signal::new(true)))]
     pub dismissible: ReadSignal<bool>,
+
+    /// The partial extents the panel can rest at (Base UI's `snapPoints`), smallest first by
+    /// convention. The panel is as large as the largest and rests translated by the difference;
+    /// a drag settles on the nearest point (the release velocity projects the release position),
+    /// and dragging below the LOWEST point closes the drawer. Empty (the default): no snapping,
+    /// the panel is as large as its content (up to 80% of the viewport) and a drag only closes it.
+    #[props(default = ReadSignal::new(Signal::new(Vec::new())))]
+    pub snap_points: ReadSignal<Vec<SnapPoint>>,
+
+    /// The controlled active snap point (Base UI's `snapPoint`). `None` leaves it uncontrolled.
+    /// A value that is not one of `snap_points` reads as the first.
+    #[props(default)]
+    pub active_snap_point: ReadSignal<Option<SnapPoint>>,
+
+    /// The initial active snap point when uncontrolled; the first of `snap_points` by default. A
+    /// closed drawer is back at it when it opens again.
+    #[props(default)]
+    pub default_active_snap_point: Option<SnapPoint>,
+
+    /// Called with the new active snap point when a drag settles on another one.
+    #[props(default)]
+    pub on_active_snap_point_change: Callback<SnapPoint>,
 
     /// Additional attributes to apply to the drawer root element.
     #[props(extends = GlobalAttributes)]
@@ -634,25 +816,77 @@ pub struct DrawerRootProps {
 ///   progress, `"false"` otherwise.
 /// - `data-nested-open`: `"true"` while a drawer nested inside this one is open (the
 ///   theme scales and offsets this one), `"false"` otherwise.
+/// - `data-snap`: with `snap_points`, `"partial"` while the active snap point is not the largest
+///   (the content does not scroll and a press anywhere drags) and `"full"` at the largest; absent
+///   without snap points.
 /// - `data-dx-drawer`: always `"content"`; the marker [`GESTURE_JS`] uses to tell this
 ///   panel's presses from a nested drawer's.
 #[component]
 pub fn Drawer(props: DrawerRootProps) -> Element {
     let resolved = use_resolved_edge_side(props.side);
+
+    // Snap state. Uncontrolled it lives here (outliving the content, which unmounts on close);
+    // controlled it is the prop. The panel's resting offset is derived from it in
+    // `DrawerContent`, never stored beside it.
+    let default_active = props.default_active_snap_point;
+    let mut internal_active = use_signal(move || default_active);
+    let controlled = props.active_snap_point;
+    let active_snap_point = use_memo(move || controlled().or_else(|| internal_active()));
+    let on_active_change = props.on_active_snap_point_change;
+    let set_active_snap_point = use_callback(move |point: SnapPoint| {
+        internal_active.set(Some(point));
+        on_active_change.call(point);
+    });
+    let reset_active_snap_point = use_callback(move |_: ()| internal_active.set(default_active));
+
+    // The viewport, for the release decision's px numbers. Only while there are snap points.
+    let mut viewport = use_signal(|| None::<(f64, f64)>);
+    let snap_points = props.snap_points;
+    crate::js_listener::use_js_listeners(move || {
+        if snap_points().is_empty() {
+            return None;
+        }
+        Some(
+            crate::js_listener::JsListeners::install(
+                "const report = () => dioxus.send([window.innerWidth, window.innerHeight]);
+                report();
+                listen(window, 'resize', report);",
+            )
+            .on_message(move |size: (f64, f64)| viewport.set(Some(size))),
+        )
+    });
+
     use_context_provider(|| DrawerCtx {
         side: ReadSignal::from(resolved),
         dismissible: props.dismissible,
+        snap_points,
+        active_snap_point,
+        set_active_snap_point,
+        reset_active_snap_point,
+        viewport: ReadSignal::from(viewport),
     });
+
+    // A non-modal drawer has no scrim, whatever `overlay` says: with no top layer the root
+    // wrapper is what paints it (and blocks the page), so it is switched off here, once.
+    let is_modal = props.is_modal;
+    let overlay = props.overlay;
+    let scrim = use_memo(move || overlay() && is_modal());
+    let attributes = merge_attributes(vec![
+        props.attributes,
+        attributes!(div {
+            "data-dx-modal": (!is_modal()).then_some("false"),
+        }),
+    ]);
 
     rsx! {
         DialogRoot {
             id: props.id,
             is_modal: props.is_modal,
-            overlay: props.overlay,
+            overlay: ReadSignal::from(scrim),
             open: props.open,
             default_open: props.default_open,
             on_open_change: props.on_open_change,
-            attributes: props.attributes,
+            attributes,
             {props.children}
         }
     }
@@ -727,13 +961,33 @@ pub fn DrawerContent(props: DrawerContentProps) -> Element {
         }
     });
 
+    // Snap geometry. The resting offset itself is never computed here for the panel (the stylesheet
+    // derives it from the active snap point's custom properties, below); these numbers exist only
+    // for the live drag's clamps and the release decision, and come from the same snap list.
+    let snap_points = drawer_ctx.snap_points;
+    let active_snap_point = drawer_ctx.active_snap_point;
+    let viewport = drawer_ctx.viewport;
+    let set_active_snap_point = drawer_ctx.set_active_snap_point;
+    let reset_active_snap_point = drawer_ctx.reset_active_snap_point;
+    let rests = use_memo(move || {
+        let (vertical, _) = side.cloned().drag_axis();
+        let extent = viewport().map(|(w, h)| if vertical { h } else { w });
+        snap_rests(&snap_points(), extent)
+    });
+    let active_index = use_memo(move || active_snap_index(&snap_points(), active_snap_point()));
+    let active_rest = move || rests().get(active_index()).copied().unwrap_or(0.0);
+    // An uncontrolled snap point is back at its default when the drawer closes and unmounts.
+    use_drop(move || reset_active_snap_point.call(()));
+
     let mut dragging = use_signal(|| false);
     // Cumulative offset toward the closing edge, as `GESTURE_JS` reports it
     // (negative past the open position); the panel's extent along the drag
-    // axis, measured by the script when the drag starts; and, once a drag has
+    // axis, measured by the script when the drag starts; the active snap point's rest when the
+    // drag started (the room to drag toward open); and, once a drag has
     // CLOSED the drawer, the offset the panel was released at.
     let mut raw_offset = use_signal(|| 0.0_f64);
     let mut panel_size = use_signal(|| None::<f64>);
+    let mut drag_room = use_signal(|| 0.0_f64);
     let mut released_offset = use_signal(|| None::<f64>);
 
     // Gesture: see this module's doc for why it is a real DOM script rather
@@ -745,6 +999,7 @@ pub fn DrawerContent(props: DrawerContentProps) -> Element {
             }
             raw_offset.set(0.0);
             panel_size.set(Some(size));
+            drag_room.set(active_rest());
             released_offset.set(None);
             dragging.set(true);
         }
@@ -762,17 +1017,39 @@ pub fn DrawerContent(props: DrawerContentProps) -> Element {
             }
             let raw = *raw_offset.peek();
             let size = *panel_size.peek();
+            let room = *drag_room.peek();
             dragging.set(false);
-            if !cancelled && should_close_on_release(raw, size, velocity) {
-                // Hold the panel where the pointer left it: the exit keyframe
-                // (`translate`) then carries it the rest of the way from HERE.
-                // Resetting the offset to 0 instead made the inline `transform`
-                // ease back to rest while the exit slid the panel out -- a
-                // visible hitch against the release point.
-                released_offset.set(Some(damped_display_offset(raw, size)));
-                dialog_ctx.set_open(false);
+            let settle = if cancelled {
+                Settle::Snap(active_index())
             } else {
-                raw_offset.set(0.0);
+                settle_on_release(&rests(), room, raw, size, velocity)
+            };
+            match settle {
+                Settle::Close => {
+                    // Hold the panel where the pointer left it: the exit keyframe
+                    // (`translate`) then carries it the rest of the way from HERE.
+                    // Resetting the offset to 0 instead made the inline `transform` ease back
+                    // to rest while the exit slid the panel out -- a visible hitch against the
+                    // release point.
+                    released_offset.set(Some(damped_display_offset(
+                        raw,
+                        size.map(|s| s - room),
+                        room,
+                    )));
+                    dialog_ctx.set_open(false);
+                }
+                Settle::Snap(index) => {
+                    // The new rest is the new active point's custom properties; the panel eases
+                    // from the drag offset to it through the `transform` transition.
+                    // The drag offset is cleared FIRST and the point is copied out of the list
+                    // before the callback runs: the owner's handler re-renders the props this list
+                    // is read from, so no borrow of it may be alive across the call.
+                    raw_offset.set(0.0);
+                    let point = snap_points.peek().get(index).copied();
+                    if let Some(point) = point.filter(|_| index != active_index()) {
+                        set_active_snap_point.call(point);
+                    }
+                }
             }
         }
     });
@@ -788,9 +1065,47 @@ pub fn DrawerContent(props: DrawerContentProps) -> Element {
     });
 
     let is_open = dialog_ctx.is_open();
-    let offset =
-        released_offset().unwrap_or_else(|| damped_display_offset(raw_offset(), panel_size()));
-    let style = drag_style(side.cloned(), offset);
+    let room = if dragging() {
+        drag_room()
+    } else {
+        active_rest()
+    };
+    // The panel is displaced only WHILE a drag is live, or held where a drag-close released it: at
+    // every other moment the drag offset is zero by construction, whatever `raw_offset` last held.
+    let offset = match released_offset() {
+        Some(released) => released,
+        None if dragging() => {
+            damped_display_offset(raw_offset(), panel_size().map(|s| s - room), room)
+        }
+        None => 0.0,
+    };
+    let points = snap_points();
+    let snapped = !points.is_empty();
+    let mut style = Vec::new();
+    if snapped {
+        let (vertical, _) = side.cloned().drag_axis();
+        let active = points[active_index().min(points.len() - 1)];
+        let largest = points
+            .iter()
+            .map(|p| p.css(vertical))
+            .collect::<Vec<_>>()
+            .join(", ");
+        style.push(format!(
+            "--dx-drawer-snap: {}; --dx-drawer-snap-max: max({largest})",
+            active.css(vertical)
+        ));
+    }
+    style.extend(drag_style(side.cloned(), offset, snapped));
+    let style = (!style.is_empty()).then(|| style.join("; "));
+    // `partial` while the active point is not the largest: the content does not scroll there and a
+    // press anywhere drags (Base UI), `full` once it is fully extended.
+    let snap_state = snapped.then(|| {
+        if active_rest() > 0.5 {
+            "partial"
+        } else {
+            "full"
+        }
+    });
 
     let content_base = attributes!(div {
         "data-dx-drawer": "content",
@@ -798,6 +1113,7 @@ pub fn DrawerContent(props: DrawerContentProps) -> Element {
         "data-state": if is_open { "open" } else { "closed" },
         "data-dragging": if dragging() { "true" } else { "false" },
         "data-nested-open": if open_children() > 0 { "true" } else { "false" },
+        "data-snap": snap_state,
         style: style,
     });
     let content_attributes = merge_attributes(vec![content_base, props.attributes]);
@@ -1057,23 +1373,23 @@ mod tests {
 
     #[test]
     fn damped_display_offset_passes_through_toward_dismissal_up_to_panel_size() {
-        assert_eq!(damped_display_offset(50.0, Some(400.0)), 50.0);
+        assert_eq!(damped_display_offset(50.0, Some(400.0), 0.0), 50.0);
         // Clamped at the panel's own measured size, not left to overshoot.
-        assert_eq!(damped_display_offset(500.0, Some(400.0)), 400.0);
+        assert_eq!(damped_display_offset(500.0, Some(400.0), 0.0), 400.0);
         // No measurement yet -- pass through unclamped rather than stall
         // the drag.
-        assert_eq!(damped_display_offset(500.0, None), 500.0);
+        assert_eq!(damped_display_offset(500.0, None, 0.0), 500.0);
     }
 
     #[test]
     fn damped_display_offset_rubber_bands_overshoot_instead_of_hard_clamping_to_zero() {
-        let damped = damped_display_offset(-40.0, Some(400.0));
+        let damped = damped_display_offset(-40.0, Some(400.0), 0.0);
         // Neither the raw overshoot (a hard "no resistance") nor exactly
         // 0.0 (a dead stop) -- a damped value strictly between them.
         assert!(damped < 0.0 && damped > -40.0);
         // Capped at the rubber band's own maximum travel.
         assert_eq!(
-            damped_display_offset(-1000.0, Some(400.0)),
+            damped_display_offset(-1000.0, Some(400.0), 0.0),
             -RUBBER_BAND_MAX_PX
         );
     }
@@ -1084,9 +1400,9 @@ mod tests {
         // re-damping an already-damped *display* value each frame would
         // make two equal cumulative raw offsets, reached via different
         // paths, disagree -- they must not.
-        let via_one_big_step = damped_display_offset(-40.0, Some(400.0));
+        let via_one_big_step = damped_display_offset(-40.0, Some(400.0), 0.0);
         let raw_after_two_steps = -20.0 + -20.0;
-        let via_two_small_steps = damped_display_offset(raw_after_two_steps, Some(400.0));
+        let via_two_small_steps = damped_display_offset(raw_after_two_steps, Some(400.0), 0.0);
         assert_eq!(via_one_big_step, via_two_small_steps);
     }
 
@@ -1101,13 +1417,13 @@ mod tests {
             EdgeSide::Bottom,
             EdgeSide::Left,
         ] {
-            assert_eq!(drag_style(side, 0.0), None);
+            assert_eq!(drag_style(side, 0.0, false), None);
         }
     }
 
     #[test]
     fn drag_style_orients_toward_each_sides_own_edge() {
-        let style = |side, offset| drag_style(side, offset).unwrap();
+        let style = |side, offset| drag_style(side, offset, false).unwrap();
         assert_eq!(style(EdgeSide::Bottom, 40.0), "transform: translateY(40px)");
         assert_eq!(style(EdgeSide::Top, 40.0), "transform: translateY(-40px)");
         assert_eq!(style(EdgeSide::Right, 40.0), "transform: translateX(40px)");
@@ -1156,5 +1472,153 @@ mod tests {
         // however far, however fast -- is never a dismissal.
         assert!(!should_close_on_release(-300.0, Some(400.0), 2.0));
         assert!(!should_close_on_release(-300.0, Some(400.0), -2.0));
+    }
+
+    // ---- snap points ----
+
+    const HALF_AND_FULL: [SnapPoint; 2] = [SnapPoint::Fraction(0.5), SnapPoint::Fraction(1.0)];
+
+    #[test]
+    fn rests_are_the_distance_below_the_largest_point_and_zero_without_points() {
+        assert_eq!(snap_rests(&[], Some(800.0)), vec![0.0]);
+        assert_eq!(snap_rests(&HALF_AND_FULL, Some(800.0)), vec![400.0, 0.0]);
+        // Px points, a point past the viewport clamps to it.
+        let points = [
+            SnapPoint::Px(148.0),
+            SnapPoint::Px(355.0),
+            SnapPoint::Px(5000.0),
+        ];
+        assert_eq!(snap_rests(&points, Some(800.0)), vec![652.0, 445.0, 0.0]);
+        // Unknown viewport: every point at rest zero rather than a guess.
+        assert_eq!(snap_rests(&HALF_AND_FULL, None), vec![0.0, 0.0]);
+    }
+
+    #[test]
+    fn the_active_snap_point_is_found_in_the_list_else_the_first() {
+        assert_eq!(
+            active_snap_index(&HALF_AND_FULL, Some(SnapPoint::Fraction(1.0))),
+            1
+        );
+        assert_eq!(active_snap_index(&HALF_AND_FULL, None), 0);
+        assert_eq!(
+            active_snap_index(&HALF_AND_FULL, Some(SnapPoint::Px(10.0))),
+            0
+        );
+    }
+
+    #[test]
+    fn snap_points_render_as_css_lengths_on_the_drag_axis() {
+        assert_eq!(SnapPoint::Fraction(0.5).css(true), "calc(0.5 * 100dvh)");
+        assert_eq!(SnapPoint::Fraction(0.5).css(false), "calc(0.5 * 100dvw)");
+        assert_eq!(SnapPoint::Px(355.0).css(true), "min(355px, 100dvh)");
+    }
+
+    /// Rests for a 800px viewport with 0.25 / 0.5 / 1.0: 600, 400, 0 (panel 800 tall).
+    const REST: [f64; 3] = [600.0, 400.0, 0.0];
+
+    #[test]
+    fn a_slow_release_settles_on_the_nearest_snap_point_by_distance() {
+        // From the middle point dragged 60px toward open: nearer 400 than 0.
+        assert_eq!(
+            settle_on_release(&REST, 400.0, -60.0, Some(800.0), 0.0),
+            Settle::Snap(1)
+        );
+        // 250px toward open: nearer 0 (position 150).
+        assert_eq!(
+            settle_on_release(&REST, 400.0, -250.0, Some(800.0), 0.0),
+            Settle::Snap(2)
+        );
+        // 120px toward closing from the middle (position 520): nearer 600.
+        assert_eq!(
+            settle_on_release(&REST, 400.0, 120.0, Some(800.0), 0.0),
+            Settle::Snap(0)
+        );
+    }
+
+    #[test]
+    fn a_flick_projects_the_release_position_to_another_point() {
+        // 30px toward open, flung up at 1.2px/ms: projects 180px further, to ~190 -> full.
+        assert_eq!(
+            settle_on_release(&REST, 400.0, -30.0, Some(800.0), -1.2),
+            Settle::Snap(2)
+        );
+        // The same 30px with no velocity stays.
+        assert_eq!(
+            settle_on_release(&REST, 400.0, -30.0, Some(800.0), 0.0),
+            Settle::Snap(1)
+        );
+        // A flick down from the top lands on the middle, not past the lowest.
+        assert_eq!(
+            settle_on_release(&REST, 0.0, 40.0, Some(800.0), 1.4),
+            Settle::Snap(1)
+        );
+    }
+
+    #[test]
+    fn only_dragging_below_the_lowest_point_closes() {
+        // From the lowest (rest 600, 200px visible): 40px down is 20%: stays; 80px is 40%: closes.
+        assert_eq!(
+            settle_on_release(&REST, 600.0, 40.0, Some(800.0), 0.0),
+            Settle::Snap(0)
+        );
+        assert_eq!(
+            settle_on_release(&REST, 600.0, 80.0, Some(800.0), 0.0),
+            Settle::Close
+        );
+        // A flick from the lowest closes (the one existing flick rule).
+        assert_eq!(
+            settle_on_release(&REST, 600.0, 20.0, Some(800.0), 0.9),
+            Settle::Close
+        );
+        // A long drag from the TOP that stays above the lowest point never closes.
+        assert_eq!(
+            settle_on_release(&REST, 0.0, 500.0, Some(800.0), 0.0),
+            Settle::Snap(0)
+        );
+    }
+
+    #[test]
+    fn without_snap_points_the_release_is_the_old_close_or_stay() {
+        assert_eq!(
+            settle_on_release(&[0.0], 0.0, 120.0, Some(400.0), 0.0),
+            Settle::Close
+        );
+        assert_eq!(
+            settle_on_release(&[0.0], 0.0, 80.0, Some(400.0), 0.0),
+            Settle::Snap(0)
+        );
+        assert_eq!(
+            settle_on_release(&[0.0], 0.0, -80.0, Some(400.0), -3.0),
+            Settle::Snap(0)
+        );
+    }
+
+    #[test]
+    fn dragging_toward_open_is_free_up_to_the_snap_rest_then_rubber_banded() {
+        // 400px of room: a 300px drag toward open moves 1:1, the overshoot is damped.
+        assert_eq!(damped_display_offset(-300.0, Some(400.0), 400.0), -300.0);
+        let over = damped_display_offset(-440.0, Some(400.0), 400.0);
+        assert!(over < -400.0 && over > -440.0);
+        assert_eq!(
+            damped_display_offset(-5000.0, Some(400.0), 400.0),
+            -400.0 - RUBBER_BAND_MAX_PX
+        );
+    }
+
+    #[test]
+    fn a_snapped_drag_writes_the_drag_variable_and_never_drops_it() {
+        let style = |side, offset| drag_style(side, offset, true).unwrap();
+        assert_eq!(style(EdgeSide::Bottom, 40.0), "--dx-drawer-drag: 40px");
+        assert_eq!(style(EdgeSide::Left, 40.0), "--dx-drawer-drag: -40px");
+        assert_eq!(style(EdgeSide::Top, -12.5), "--dx-drawer-drag: 12.5px");
+        // At rest the declaration stays (value 0), for every side, so it is never removed.
+        for side in [
+            EdgeSide::Top,
+            EdgeSide::Right,
+            EdgeSide::Bottom,
+            EdgeSide::Left,
+        ] {
+            assert_eq!(style(side, 0.0), "--dx-drawer-drag: 0px");
+        }
     }
 }
