@@ -34,7 +34,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (77)
+## Open rows (76)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -88,7 +88,6 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [126](backlog/126-link-s-aria-current-can-emit-a-duplicated.md) | Link's aria_current can emit a duplicated attribute under a base path; the charts gallery tab row uses plain… | LANDED 2026-10-11 (root-caused and fixed by construction; one library residue below) -- the… | S (diagnosis) | charts |
 | [130](backlog/130-arborium-2-17-0-s-wasm-libc-shim-lacks-the-data.md) | arborium 2.17.0's wasm libc shim lacks the data symbol stderr that tree-sitter's stack.c… | OPEN (upstream) -- local fix 7ad8421 (a stderr definition in preview); an upstream issue is worth… | S | upstream |
 | [131](backlog/131-dioxus-cli-0-7-9-ssg-leaves-every-pre-rendered.md) | dioxus-cli 0.7.9 --ssg leaves every pre-rendered route except index.html stale when public/ already exists | OPEN (upstream) -- locally closed by construction (150e97b, scripts/build-ssg.sh); upstream issue… | S | build |
-| [136](backlog/136-questionnaire-shadcn-s-multi-step-question-flow.md) | Questionnaire: shadcn's multi-step question flow (single/multiple choice, freeform "other", skippable… | ON HOLD (owner 2026-10-14: not started, no schedule). BACKLOG -- recorded 2026-10-04 from the… | L | inputs |
 | [146](backlog/146-message-scroller-stage-2-visibility-hook-per.md) | message_scroller stage 2: visibility hook, per-call scroll_margin, RTL pass, release-build timing spec | FOLDED INTO ROW 213 (2026-10-14) -- stage 1 built 2026-10-04 (own lane, component-backlog.md)… | M | tests |
 | [147](backlog/147-safari-18-25-cannot-find-in-page-text-inside.md) | Safari 18-25 cannot find-in-page text inside content-visibility: auto-skipped content (WebKit bug 283846) | NOTE -- no behaviour change proposed; recorded 2026-10-04 from the virtualization survey (section 5) | S | virtual |
 | [150](backlog/150-home-page-blocks-registered-their-hooks-on-the.md) | Home-page blocks registered their hooks on the parent scope: MasonryCard called component.call(()), so… | FIXED 2026-10-04, merged (b83640a, PR #84 / 001a5f0, SCROLL-FIX lane); the candidate .call(()) gate… | M | docs |
@@ -116,7 +115,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [246](backlog/246-snapshot-buckets-too-coarse.md) | Snapshot diff buckets are page-level on some routes | BACKLOG (validation 2026-10-19) | S-M | tests |
 | [265](backlog/265-upstream-ai-elements-code-block-trace-chat.md) | Upstream ai-elements (chat, message, code-block, trace, checkpoint, ...) vs our chat kit | BACKLOG (found by row 213 item 10, 2026-10-19). Source… | L | chat |
 
-## Done rows (176)
+## Done rows (177)
 
 | # | Item | Updated |
 |---|---|---|
@@ -205,6 +204,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [133](backlog/done/133-inputgroup-has-no-invalid-or-disabled-styling.md) | InputGroup has no invalid or disabled styling | 2026-10-13 |
 | [134](backlog/done/134-nova-s-tinted-destructive-button-is-contrast.md) | Nova's tinted destructive button is contrast-failing in dark; ours deliberately is not Nova's. Widened… | 2026-10-13 |
 | [135](backlog/done/135-the-computed-style-snapshot-cannot-see-closed.md) | The computed-style snapshot cannot see closed overlays or hover/focus/open states, so phase C's proof has… | 2026-10-12 |
+| [136](backlog/done/136-questionnaire-shadcn-s-multi-step-question-flow.md) | Questionnaire: shadcn's multi-step question flow (single/multiple choice, freeform "other", skippable… | 2026-10-19 |
 | [137](backlog/done/137-rtl-by-construction-one-row-for-the-three-rtl.md) | RTL by construction -- one row for the three RTL threads: row 13's open follow-ups (optional RTL for… | 2026-10-05 |
 | [138](backlog/done/138-toast-depth-parity-loading-type-action-button.md) | Toast depth parity: loading type, action button, promise helper, update/close by id, stacking and… | 2026-10-19 |
 | [139](backlog/done/139-pr-83-s-all-gates-green-was-wrong-main-was.md) | PR #83's "all gates green" was wrong: main was clippy-red from d9bcfda (primitives/src/navbar.rs:655… | 2026-10-04 |
