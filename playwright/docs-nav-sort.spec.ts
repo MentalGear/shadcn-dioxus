@@ -192,3 +192,160 @@ test("clicking a link in the A-Z list navigates and keeps the chosen order", asy
   await expect(az(page)).toBeVisible();
   await expect(page.locator('.dx-nav-az a[aria-current="page"]')).toHaveText(/badge/);
 });
+
+// --- sticky switch, category jump menu, sticky group labels (docs-nav lane) ---------------------------------
+
+const content = (page: Page) => page.locator('[data-slot="sidebar-content"]');
+const switchGroup = (page: Page) => page.locator(".dx-nav-sort-group");
+const jumpTrigger = (page: Page) => page.getByRole("button", { name: "Jump to category" });
+
+/** Vertical box of an element, in viewport coordinates. */
+async function vbox(loc: ReturnType<Page["locator"]>) {
+  return loc.evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    return { top: r.top, bottom: r.bottom };
+  });
+}
+
+for (const mode of ["az", "category"] as const) {
+  test(`${mode}: the switch is sticky at the top of the sidebar scroller, over an opaque background`, async ({ page }) => {
+    await remember(page, mode);
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await gotoHydrated(page, PAGE);
+
+    await content(page).evaluate((el) => {
+      el.scrollTop = el.scrollHeight;
+    });
+    await expect.poll(() => content(page).evaluate((el) => el.scrollTop)).toBeGreaterThan(300);
+
+    const box = await vbox(content(page));
+    const sw = await vbox(switchGroup(page));
+    expect(Math.abs(sw.top - box.top)).toBeLessThan(1.5);
+    await expect(page.locator(".dx-nav-sort")).toBeInViewport();
+
+    // Opaque: the sidebar background, and the topmost element at the switch's centre is the switch itself.
+    const bg = await switchGroup(page).evaluate((el) => getComputedStyle(el).backgroundColor);
+    expect(bg).not.toMatch(/rgba\(.*, 0\)$|^transparent$/);
+    const hit = await page.locator(".dx-nav-sort").evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      const top = document.elementFromPoint(r.left + 4, r.top + r.height / 2);
+      return !!top && !!top.closest(".dx-nav-sort-group");
+    });
+    expect(hit).toBe(true);
+    // The switch still works while scrolled.
+    await option(page, mode === "az" ? "category" : "az").click();
+    await expect(option(page, mode === "az" ? "category" : "az")).toHaveAttribute("aria-pressed", "true");
+  });
+}
+
+test("the switch is a ToggleGroup: a named group, one pressed item, the pressed item stays pressed when pressed again", async ({ page }) => {
+  await gotoHydrated(page, PAGE);
+  const group = page.getByRole("group", { name: "Order components by" });
+  await expect(group).toHaveCount(1);
+  await expect(group).toHaveClass(/dx-toggle-group/);
+  await expect(group.locator(".dx-toggle-group-item")).toHaveCount(2);
+  await option(page, "az").click(); // already pressed: must not un-press
+  await expect(option(page, "az")).toHaveAttribute("aria-pressed", "true");
+  await expect(option(page, "category")).toHaveAttribute("aria-pressed", "false");
+  expect(await page.evaluate((k) => localStorage.getItem(k), KEY)).toBe("az");
+  // Keyboard: arrow keys rove between the two items.
+  await option(page, "az").focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(option(page, "category")).toBeFocused();
+  await page.keyboard.press("Space");
+  await expect(option(page, "category")).toHaveAttribute("aria-pressed", "true");
+});
+
+test("the category menu lists all eight categories with icons under an accessible trigger", async ({ page }) => {
+  await gotoHydrated(page, PAGE);
+  await expect(jumpTrigger(page)).toHaveAttribute("aria-haspopup", "menu");
+  await jumpTrigger(page).click();
+  const items = page.getByRole("menuitem");
+  await expect(items).toHaveCount(8);
+  expect((await items.allTextContents()).map((t) => t.trim())).toEqual([
+    "Forms",
+    "Navigation",
+    "Overlays",
+    "Feedback",
+    "Disclosure",
+    "Data display",
+    "Chat",
+    "Charts",
+  ]);
+  await expect(items.first().locator("svg")).toHaveCount(1);
+  await page.keyboard.press("Escape");
+  await expect(jumpTrigger(page)).toBeFocused();
+});
+
+test("picking a category switches to Category order and puts that group's label right under the switch", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await gotoHydrated(page, PAGE);
+  await expect(az(page)).toBeVisible();
+
+  await jumpTrigger(page).click();
+  await page.getByRole("menuitem", { name: "Overlays" }).click();
+
+  await expect(option(page, "category")).toHaveAttribute("aria-pressed", "true");
+  await expect(option(page, "az")).toHaveAttribute("aria-pressed", "false");
+  expect(await page.evaluate((k) => localStorage.getItem(k), KEY)).toBe("category");
+  await expect(az(page)).toBeHidden();
+
+  const group = page.locator("#dx-nav-cat-overlays");
+  await expect(group).toHaveCount(1);
+  await expect(group).toHaveClass(/dx-nav-category/);
+  const label = group.locator(".dx-sidebar-group-label");
+  await expect
+    .poll(async () => {
+      const sw = await vbox(switchGroup(page));
+      const l = await vbox(label);
+      return Math.abs(l.top - sw.bottom) < 2;
+    })
+    .toBe(true);
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
+
+  // Another category, picked from the keyboard, replaces it.
+  await jumpTrigger(page).focus();
+  await page.keyboard.press("Enter");
+  await page.getByRole("menuitem", { name: "Forms" }).press("Enter");
+  const forms = page.locator("#dx-nav-cat-forms .dx-sidebar-group-label");
+  await expect
+    .poll(async () => Math.abs((await vbox(forms)).top - (await vbox(switchGroup(page))).bottom) < 2)
+    .toBe(true);
+});
+
+test("Category order: the label of the group being read stays under the switch while its group scrolls", async ({ page }) => {
+  await remember(page, "category");
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await gotoHydrated(page, PAGE);
+
+  const group = page.locator("#dx-nav-cat-forms");
+  const label = group.locator(".dx-sidebar-group-label");
+  // Scroll to the middle of the (long) Forms group.
+  await content(page).evaluate((el) => {
+    const g = document.getElementById("dx-nav-cat-forms")!;
+    el.scrollTop += g.getBoundingClientRect().top - el.getBoundingClientRect().top + g.offsetHeight / 2;
+  });
+  await expect
+    .poll(async () => {
+      const sw = await vbox(switchGroup(page));
+      const l = await vbox(label);
+      const g = await vbox(group);
+      return g.top < sw.bottom - 4 && Math.abs(l.top - sw.bottom) < 2;
+    })
+    .toBe(true);
+  // Opaque: list items scroll under the label, not through it.
+  const bg = await label.evaluate((el) => getComputedStyle(el).backgroundColor);
+  expect(bg).not.toMatch(/rgba\(.*, 0\)$|^transparent$/);
+});
+
+test("the order chosen through the menu survives a reload and the jump target still exists", async ({ page }) => {
+  await gotoHydrated(page, PAGE);
+  await jumpTrigger(page).click();
+  await page.getByRole("menuitem", { name: "Feedback" }).click();
+  await expect(az(page)).toBeHidden();
+  await page.reload();
+  await gotoHydrated(page, PAGE);
+  await expect(az(page)).toBeHidden();
+  await expect(option(page, "category")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("#dx-nav-cat-feedback")).toBeVisible();
+});
