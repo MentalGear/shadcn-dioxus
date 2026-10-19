@@ -20,6 +20,7 @@ pub fn VirtualList(props: VirtualListProps) -> Element {
             virtualize: props.virtualize,
             auto_threshold: props.auto_threshold,
             fade: props.fade,
+            text_value: props.text_value,
             attributes: merged,
         }
     }

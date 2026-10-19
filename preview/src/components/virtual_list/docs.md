@@ -67,6 +67,15 @@ Only the rows in view are mounted, over a spacer that gives the scrollbar the fu
 - Browsers cap an element's height (about 17 million px in Firefox, 33 million px in Chromium), which limits the spacer: with 100px rows that is roughly 300,000 rows.
 - The windowed bridge adds a scroll listener on the container and a resize listener on the window, and removes both when the list unmounts or the mode switches.
 
+### Find-in-page in windowed mode (experimental)
+
+`text_value: |idx| String` keeps every row's plain text in the DOM as a `hidden="until-found"` placeholder, so the browser's find-in-page and `#:~:text=` links can match rows that are not mounted. When the browser reveals a match it fires `beforematch`, and the list scrolls the real row into view.
+
+- It costs about one element and one text node per row, mounted after hydration (100,000 rows: ~101,000 elements and ~10 MB more JS heap); scrolling costs the same as without it, because the placeholders are skipped in `content-visibility: auto` chunks.
+- A mounted row's text is in the DOM twice, so its match counts twice.
+- Placeholders are not in the accessibility tree; browsers without `until-found` (Firefox before 139, Safari before 26.2) treat it as `hidden`, so those rows stay unfindable, as without the prop.
+- Example: the `find_in_page` variant. Findings and open checks: `dev-docs/backlog/153-native-find-in-page-for-windowed-virtual-lists.md`.
+
 ## Edge fade
 
 `fade: ScrollFade` (`None` by default; `Y`, `X`, `Top`, `Bottom`, `Start`, `End`) puts the matching `dx-scroll-fade-*` class on the list container, which is the element that scrolls. The fade is a CSS scroll-driven mask driven by the container's own scroll offset, so it follows the scrollbar in both modes whichever rows are mounted (a windowed list of 20,000 rows fades exactly like a short one), and a list that fits has no fade.
@@ -88,3 +97,4 @@ VirtualList { count: 20_000usize, fade: ScrollFade::Y, render_item: .. }
 - `auto_threshold`: the largest `count` `Auto` keeps in `ContentVisibility`; default `1000`.
 - `buffer`: windowed mode only; default `8`.
 - `fade`: `ScrollFade::{None, Y, X, Top, Bottom, Start, End}`, default `None`; the scroll-edge fade above.
+- `text_value`: windowed mode only, experimental; the find-in-page placeholders above.
