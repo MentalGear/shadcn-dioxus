@@ -86,6 +86,7 @@ gates=(
   "check-hover-mix-space|scripts/check-hover-mix-space.sh"
   "check-uncleared-intervals|scripts/check-uncleared-intervals.sh"
   "check-blocking-scroll-listeners|scripts/check-blocking-scroll-listeners.sh"
+  "check-props-docs|scripts/check-props-docs.sh"
   "check-js-listeners|scripts/check-js-listeners.sh"
   "check-eager-head-document|scripts/check-eager-head-document.sh"
   "check-css-delivery|scripts/check-css-delivery.sh"
