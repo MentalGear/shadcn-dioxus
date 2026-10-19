@@ -7,13 +7,11 @@
    The faces do NOT swap in after first paint: preloaded latin files plus `font-display: optional`
    (hard-load CLS 0.117 -> 0.000 on /component/form/). The docs site picks its fonts by overriding the
    theme's two tokens below; everything else reads `var(--dx-font-sans)` / `var(--dx-font-mono)`. */
-:root {
-  --dx-font-sans: Geist, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --dx-font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-}
 
 /* Theme style variables */
 :root {
+  --dx-font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --dx-font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", "Menlo", "Monaco", "Consolas", monospace;
   --highlight-color-main: #dd7230;
   --highlight-color-secondary: #eb5160;
 

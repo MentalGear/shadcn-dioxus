@@ -15,7 +15,7 @@
  * family (`scripts/check-component-fonts.sh`). */
 :where(:root) {
   --dx-font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --dx-font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace;
+  --dx-font-mono: ui-monospace, "SFMono-Regular", "SF Mono", "Menlo", "Monaco", "Consolas", monospace;
 }
 
 /* Native controls follow the mode: `color-scheme` is what makes the browser draw its

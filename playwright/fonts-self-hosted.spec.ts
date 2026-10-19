@@ -3,7 +3,8 @@
  * makes no request to Google, reads the fonts through the theme's two tokens, and keeps the
  * preload + `font-display: optional` pair that holds the hard-load CLS at 0.
  */
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
+import { BASE_URL } from "./base-url";
 
 const ROUTES = ["/", "/component/form/", "/component/markdown/"];
 const GOOGLE = /(^|\.)(fonts\.googleapis\.com|fonts\.gstatic\.com)$/;
@@ -18,7 +19,7 @@ for (const route of ROUTES) {
         /* data: / blob: */
       }
     });
-    await page.goto(route, { waitUntil: "networkidle" });
+    await page.goto(`${BASE_URL}${route}`, { waitUntil: "networkidle" });
     expect(hosts.filter((h) => GOOGLE.test(h))).toEqual([]);
   });
 }
@@ -28,7 +29,7 @@ test("fonts come from our origin and the tokens drive body and code", async ({ p
   page.on("response", (r) => {
     if (/\.woff2(\?|$)/.test(r.url())) fontUrls.push(r.url());
   });
-  await page.goto("/component/markdown/", { waitUntil: "networkidle" });
+  await page.goto(`${BASE_URL}/component/markdown/`, { waitUntil: "networkidle" });
   const origin = new URL(page.url()).origin;
   expect(fontUrls.length).toBeGreaterThanOrEqual(1);
   for (const u of fontUrls) expect(new URL(u).origin).toBe(origin);
@@ -44,7 +45,7 @@ test("fonts come from our origin and the tokens drive body and code", async ({ p
       loaded: [...document.fonts].filter((f) => f.status === "loaded").map((f) => f.family.replace(/"/g, "")),
     };
   });
-  expect(r.sans).toMatch(/^Geist,/);
+  expect(r.sans).toMatch(/^"?Geist"?,/);
   expect(r.mono).toMatch(/^"Geist Mono",/);
   expect(r.body).toBe(r.sans);
   expect(r.code).not.toBeNull();
@@ -53,7 +54,7 @@ test("fonts come from our origin and the tokens drive body and code", async ({ p
 });
 
 test("the head preloads both self-hosted woff2 files (crossorigin) with font-display: optional", async ({ page }) => {
-  await page.goto("/component/form/", { waitUntil: "domcontentloaded" });
+  await page.goto(`${BASE_URL}/component/form/`, { waitUntil: "domcontentloaded" });
   const info = await page.evaluate(() => {
     const links = [...document.querySelectorAll<HTMLLinkElement>('link[rel="preload"][as="font"]')];
     return {
@@ -82,7 +83,7 @@ test("hard-load CLS stays under 0.01 on /component/form/", async ({ page }) => {
       }
     }).observe({ type: "layout-shift", buffered: true });
   });
-  await page.goto("/component/form/", { waitUntil: "networkidle" });
+  await page.goto(`${BASE_URL}/component/form/`, { waitUntil: "networkidle" });
   await page.waitForTimeout(500);
   const cls = await page.evaluate(() => (window as unknown as { __cls: number }).__cls);
   expect(cls).toBeLessThan(0.01);
