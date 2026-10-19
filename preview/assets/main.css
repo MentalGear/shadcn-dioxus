@@ -10,6 +10,11 @@
 
 /* Theme style variables */
 :root {
+  /* Demo preview card fill: a soft step between the page and a card. Dark mixes the page with `--dx-card`
+   * (#0a0a0a / #171717); in light `--dx-card` equals the page (#fff), so it mixes with `--dx-muted` instead
+   * (#f5f5f5), only 25% of it: a 50% mix (#fafafa) left a hovered Pagination page (#f5f5f5) within 5/255 of its
+   * surface (dark-surface-contrast needs 6). */
+  --dx-docs-preview-surface: color-mix(in var(--dx-hover-mix-space), var(--dx-background) var(--dark, 50%) var(--light, 75%), var(--dark, var(--dx-card)) var(--light, var(--dx-muted)));
   --dx-font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --dx-font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", "Menlo", "Monaco", "Consolas", monospace;
   --highlight-color-main: #dd7230;
@@ -347,9 +352,6 @@ summary,
   align-items: center;
   justify-content: space-between;
   padding: 0.5rem 4.5rem;
-  border-right: 1px solid var(--dx-border);
-  border-bottom: 1px solid var(--dx-border);
-  border-left: 1px solid var(--dx-border);
 }
 
 .dx-navbar-link {
@@ -859,9 +861,12 @@ button.dx-theme-phone-trigger {
   overflow: visible;
   width: min(var(--dx-content-width), calc(100vw - 2rem));
   min-height: calc(100vh - var(--dx-navbar-height));
-  border-right: 1px solid var(--dx-border);
-  border-left: 1px solid var(--dx-border);
   margin: 0 auto;
+
+  /* The docs sidebar is 17rem; the Sidebar component's own default stays shadcn's 16rem. The provider sets the
+   * variable inline on `.dx-docs-shell`, and an inline style beats any selector on that element, but a custom
+   * property is inherited, so redeclaring it one level down (every sidebar part is inside this body) wins. */
+  --dx-sidebar-width: 17rem;
 }
 
 .dx-docs-shell-body .dx-sidebar-gap {
@@ -1484,9 +1489,9 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
   align-items: center;
   justify-content: center;
   padding: var(--dx-space-10);
-  border: 1px solid var(--dx-border);
+  border: 0;
   border-radius: 1rem;
-  background-color: transparent;
+  background-color: var(--dx-docs-preview-surface);
 }
 
 /* At phone widths the frame's 32px-per-side padding plus a card's own 24px
@@ -2445,8 +2450,6 @@ html[data-cv-settle] {
   .dx-docs-shell-body {
     width: 100%;
     min-height: 0;
-    border-right: none;
-    border-left: none;
   }
 
   /* Keep a 16px side gutter: with `0` inline padding the h1 and prose sat
