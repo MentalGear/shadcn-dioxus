@@ -110,7 +110,7 @@ pub fn TraceTitle(
     let running = try_use_context::<TraceLineRunning>()
         .map(|ctx| ctx.0)
         .unwrap_or_else(|| use_memo(|| false));
-    let motion = use_motion_when(move || running());
+    let motion = use_motion_when(move || *running.read());
     let base = attributes!(span {
         class: "dx-trace-title",
         "data-slot": "trace-title",
