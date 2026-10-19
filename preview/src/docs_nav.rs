@@ -23,7 +23,7 @@ use crate::nav_link::NavLink;
 use crate::{DocsNavActive, ExtraBadge, ExtraBadgeTip, Route};
 use dioxus::prelude::*;
 use dioxus_icons::lucide::{
-    Bell, ChartColumn, ChevronsUpDown, Compass, Layers, LayoutGrid, SquareCheck,
+    Bell, ChartColumn, ChevronsUpDown, Compass, Layers, LayoutGrid, MessageSquare, SquareCheck,
 };
 
 /// Runs inline, inside the sidebar, before the lists. Copies the remembered order onto `<html>` (an unknown or
@@ -89,6 +89,9 @@ fn category_icon(cat: ComponentCategory) -> Element {
         },
         ComponentCategory::DataDisplay => rsx! {
             LayoutGrid { size: "1rem", "aria-hidden": "true" }
+        },
+        ComponentCategory::Chat => rsx! {
+            MessageSquare { size: "1rem", "aria-hidden": "true" }
         },
         ComponentCategory::Charts => rsx! {
             ChartColumn { size: "1rem", "aria-hidden": "true" }

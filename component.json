@@ -58,6 +58,7 @@
     "preview/src/components/marker",
     "preview/src/components/attachment",
     "preview/src/components/message_scroller",
+    "preview/src/components/markdown",
     "preview/src/components/field",
     "preview/src/components/input_group",
     "preview/src/components/input_otp",

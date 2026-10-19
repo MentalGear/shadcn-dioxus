@@ -1,0 +1,1 @@
+Injection attempts rendered inert: the markup appears as text and the script links lose their targets. There is no code path from the text to `dangerous_inner_html`, and a link target exists only as a `SafeHref`.

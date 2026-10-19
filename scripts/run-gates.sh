@@ -110,6 +110,7 @@ gates=(
   "check-scroll-behavior|scripts/check-scroll-behavior.sh"
   "check-js-bundle|scripts/check-js-bundle.sh"
   "check-cargo-dep-versions|scripts/check-cargo-dep-versions.sh"
+  "check-markdown-parser|scripts/check-markdown-parser.sh"
   "check-demo-text-locators|scripts/check-demo-text-locators.sh"
   "check-spec-at-rest|scripts/check-spec-at-rest.sh"
   "check-backlog-index|scripts/check-backlog-index.sh"
