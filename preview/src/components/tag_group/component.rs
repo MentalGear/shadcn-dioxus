@@ -97,16 +97,22 @@ pub fn TagList(props: TagListProps) -> Element {
 
 #[derive(Props, Clone, PartialEq)]
 pub struct TagProps {
+    /// The tag's value, reported when it is selected or removed.
     pub value: ReadSignal<String>,
+    /// Plain text used for typeahead when the tag's content is not text.
     #[props(default)]
     pub text_value: ReadSignal<Option<String>>,
+    /// The tag's position in the list; keeps keyboard order stable.
     pub index: ReadSignal<usize>,
+    /// The `id` of the tag element.
     #[props(default)]
     pub id: ReadSignal<Option<String>>,
+    /// Whether the tag is disabled.
     #[props(default)]
     pub disabled: ReadSignal<bool>,
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
+    /// The tag's content.
     pub children: Element,
 }
 
