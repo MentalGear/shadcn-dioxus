@@ -207,7 +207,8 @@ test.describe("CALIBRATION — APG Menu Button pattern's own vendored example", 
   test("W3C's own example carries the exact role/haspopup/labelledby contract asserted below", async ({
     page,
   }) => {
-    await gotoHydrated(page, menuButtonActionsUrl);
+    // goto-ok: vendored W3C APG reference page, not the app: it never sets html[data-hydrated]
+    await page.goto(menuButtonActionsUrl);
 
     const button = page.locator("#menubutton1");
     await expect(button, 'trigger: aria-haspopup="true"').toHaveAttribute(

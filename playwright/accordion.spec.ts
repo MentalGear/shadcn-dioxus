@@ -419,7 +419,8 @@ test.describe("allow_multiple_open", () => {
 test("a default-open item renders its content with JavaScript off", async ({ browser }) => {
   const ctx = await browser.newContext({ javaScriptEnabled: false });
   const page = await ctx.newPage();
-  await gotoHydrated(page, `${BASE_URL}/component/accordion/`, { timeout: LOAD_TIMEOUT });
+  // goto-ok: JavaScript is disabled in this context: nothing hydrates, the spec reads the prerendered HTML
+  await page.goto(`${BASE_URL}/component/accordion/`, { timeout: LOAD_TIMEOUT });
   const item = page.locator(".dx-accordion-item", { has: page.getByRole("button", { name: "Notification Settings", exact: true }) });
   await expect(item).toHaveAttribute("data-open", "true");
   await expect(item.locator(".dx-accordion-content")).toContainText("Manage how you receive notifications");

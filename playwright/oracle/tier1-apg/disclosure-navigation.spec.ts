@@ -115,7 +115,8 @@ function libraryNav(page: Page) {
 
 test.describe("Reference: W3C's own Disclosure Navigation example", () => {
   test("R1: each trigger is a button with aria-expanded reflecting state and aria-controls naming the panel", async ({ page }) => {
-    await gotoHydrated(page, referenceUrl);
+    // goto-ok: vendored W3C APG reference page, not the app: it never sets html[data-hydrated]
+    await page.goto(referenceUrl);
 
     const trigger = page.getByRole("button", { name: "About" });
     await expect(trigger).toHaveAttribute("aria-expanded", "false");
@@ -128,7 +129,8 @@ test.describe("Reference: W3C's own Disclosure Navigation example", () => {
   });
 
   test("R2: Enter and Space each toggle the trigger", async ({ page }) => {
-    await gotoHydrated(page, referenceUrl);
+    // goto-ok: vendored W3C APG reference page, not the app: it never sets html[data-hydrated]
+    await page.goto(referenceUrl);
 
     const trigger = page.getByRole("button", { name: "About" });
     await trigger.focus();
@@ -142,7 +144,8 @@ test.describe("Reference: W3C's own Disclosure Navigation example", () => {
   });
 
   test("R3: Escape closes the open panel and returns focus to its trigger", async ({ page }) => {
-    await gotoHydrated(page, referenceUrl);
+    // goto-ok: vendored W3C APG reference page, not the app: it never sets html[data-hydrated]
+    await page.goto(referenceUrl);
 
     const trigger = page.getByRole("button", { name: "About" });
     await trigger.click();
@@ -156,7 +159,8 @@ test.describe("Reference: W3C's own Disclosure Navigation example", () => {
   });
 
   test("R4: no role=menu/menuitem anywhere in the widget", async ({ page }) => {
-    await gotoHydrated(page, referenceUrl);
+    // goto-ok: vendored W3C APG reference page, not the app: it never sets html[data-hydrated]
+    await page.goto(referenceUrl);
 
     const nav = page.getByRole("navigation", { name: "Mythical University" });
     await expect(nav.locator('[role="menu"]')).toHaveCount(0);
@@ -168,7 +172,8 @@ test.describe("Reference: W3C's own Disclosure Navigation example", () => {
   });
 
   test("R5: Tab from an open trigger enters the panel's first link", async ({ page }) => {
-    await gotoHydrated(page, referenceUrl);
+    // goto-ok: vendored W3C APG reference page, not the app: it never sets html[data-hydrated]
+    await page.goto(referenceUrl);
 
     const trigger = page.getByRole("button", { name: "About" });
     await trigger.focus();

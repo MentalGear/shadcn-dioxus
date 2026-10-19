@@ -113,7 +113,8 @@ const librarySelectTrigger = (page: Page) => demoRole(page, "combobox");
 
 test.describe("R1 -- combobox role/aria-haspopup/aria-expanded/aria-controls contract", () => {
   test("CALIBRATION: W3C's own select-only combobox example carries the role contract", async ({ page }) => {
-    await gotoHydrated(page, comboboxSelectOnlyUrl);
+    // goto-ok: vendored W3C APG reference page, not the app: it never sets html[data-hydrated]
+    await page.goto(comboboxSelectOnlyUrl);
     const combo = page.locator("#combo1");
     const listbox = page.locator("#listbox1");
 

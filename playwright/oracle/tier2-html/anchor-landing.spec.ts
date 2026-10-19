@@ -64,7 +64,8 @@ async function waitReady(page: Page, p: PageSpec) {
 }
 
 async function open(page: Page, p: PageSpec, hash = "") {
-  await gotoHydrated(page, "about:blank"); // a real navigation every time, never a same-document hash jump
+  // goto-ok: about:blank is not the app
+  await page.goto("about:blank"); // a real navigation every time, never a same-document hash jump
   await gotoHydrated(page, `${BASE_URL}${p.path}${hash}`, LOAD);
   await waitReady(page, p);
 }

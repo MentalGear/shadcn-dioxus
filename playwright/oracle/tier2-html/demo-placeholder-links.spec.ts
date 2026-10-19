@@ -171,7 +171,8 @@ for (const { id, path: route } of PAGES) {
 test("before hydration (wasm blocked): a placeholder link in the served HTML goes nowhere", async ({ page }) => {
   test.setTimeout(NAV_TIMEOUT);
   await page.route(/\.wasm(\?.*)?$/, (r) => r.abort());
-  await gotoHydrated(page, `${BASE_URL}/component/pagination/`, { waitUntil: "load", timeout: NAV_TIMEOUT });
+  // goto-ok: wasm is aborted on purpose: this spec acts on the prerendered HTML before hydration
+  await page.goto(`${BASE_URL}/component/pagination/`, { waitUntil: "load", timeout: NAV_TIMEOUT });
   const prerendered = await page.locator(LINKS).count();
   test.skip(prerendered === 0, "client-rendered build (dx serve): there is no prerendered HTML to click before hydration");
   const { count, moved } = await activateAll(page, { link: LINKS });

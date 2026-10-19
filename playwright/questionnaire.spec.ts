@@ -85,7 +85,8 @@ const submits = (page: Page) => page.evaluate(() => (window as unknown as { __qS
 test("the server-rendered page is the complete initial state (JavaScript off)", async ({ browser }) => {
   const ctx = await browser.newContext({ javaScriptEnabled: false });
   const page = await ctx.newPage();
-  await gotoHydrated(page, `${BASE_URL}/component/questionnaire/`, { waitUntil: "load", ...GOTO });
+  // goto-ok: JavaScript is disabled in this context: nothing hydrates, the spec reads the prerendered HTML
+  await page.goto(`${BASE_URL}/component/questionnaire/`, { waitUntil: "load", ...GOTO });
   const root = frame(page, "main");
   await expect(items(root)).toHaveCount(3);
   await expect(items(root).nth(0)).toBeVisible();
