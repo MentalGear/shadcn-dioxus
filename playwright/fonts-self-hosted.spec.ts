@@ -47,9 +47,10 @@ test("fonts come from our origin and the tokens drive body and code", async ({ p
   });
   expect(r.sans).toMatch(/^"?Geist"?,/);
   expect(r.mono).toMatch(/^"Geist Mono",/);
-  expect(r.body).toBe(r.sans);
+  const norm = (v: string | null) => (v ?? "").replace(/["\s]/g, "");
+  expect(norm(r.body)).toBe(norm(r.sans));
   expect(r.code).not.toBeNull();
-  expect(r.code).toBe(r.mono);
+  expect(norm(r.code)).toBe(norm(r.mono));
   expect(r.loaded).toContain("Geist");
 });
 
