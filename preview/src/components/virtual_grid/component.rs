@@ -12,6 +12,7 @@ pub fn VirtualGrid(props: VirtualGridProps) -> Element {
     let merged = merge_attributes(vec![base, props.attributes]);
 
     rsx! {
+        document::Link { rel: "stylesheet", href: asset!("/src/components/virtual_grid/style.css") }
         dioxus_primitives::virtual_grid::VirtualGrid {
             row_count: props.row_count,
             column_count: props.column_count,
@@ -40,6 +41,7 @@ pub fn VirtualWrapGrid(props: VirtualWrapGridProps) -> Element {
     let merged = merge_attributes(vec![base, props.attributes]);
 
     rsx! {
+        document::Link { rel: "stylesheet", href: asset!("/src/components/virtual_grid/style.css") }
         dioxus_primitives::virtual_grid::VirtualWrapGrid {
             count: props.count,
             columns: props.columns,
