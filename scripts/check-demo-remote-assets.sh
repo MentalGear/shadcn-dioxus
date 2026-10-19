@@ -2,7 +2,7 @@
 #
 # check-demo-remote-assets.sh
 #
-# No demo may hot-link a remote image. Every image the preview shows is either bundled
+# No demo may hot-link a remote image, and the site loads no remote font or stylesheet (row 162: Geist is self-hosted). Every image the preview shows is either bundled
 # (`asset!(..)`, e.g. preview/assets/avatars) or self-contained (a `data:` URI, a CSS gradient), so each
 # demo and docs page renders the same offline, in a sandbox with an egress proxy, and on GitHub Pages --
 # deterministically, and without sending a visitor's request to a third party.
@@ -23,9 +23,12 @@
 #   3. a `const` / `static` string with a remote URL whose name says it is an image (`..._SRC`, `AVATAR`,
 #      `IMAGE`, `PHOTO`, `COVER`, `LOGO`, ...), because `src: SOME_CONST` hides the literal from rule 1;
 #   4. any string literal that is a remote URL ending in an image extension, or on a well-known image/avatar
-#      host (githubusercontent, avatar.vercel.sh, gravatar, unsplash, picsum, placehold, dicebear, ...).
+#      host (githubusercontent, avatar.vercel.sh, gravatar, unsplash, picsum, placehold, dicebear, ...);
+#   5. any remote URL on a font host (fonts.googleapis.com, fonts.gstatic.com, Bunny, Typekit, fontawesome, ...),
+#      a remote CSS `@import`, or a `document::Stylesheet` with a remote `href`: fonts and stylesheets are bundled
+#      (`asset!`, `preview/assets/fonts/`), never fetched from a CDN at runtime.
 # Not flagged: `data:` URIs (they only *contain* `http://www.w3.org/2000/svg`, never start with it), links
-# (`href:` to docs or GitHub), fonts, and comments. `.md` is not scanned: a docs page may show
+# (`href:` to docs or GitHub) and comments. `.md` is not scanned: a docs page may show
 # `src: "https://example.com/avatar.png"` as illustrative code, which renders nothing.
 #
 # THE ALLOWLIST below is only for demos whose whole point is a request that cannot succeed or must stay
@@ -72,6 +75,8 @@ IMG_EXT = r'(?:png|jpe?g|gif|webp|avif|svg|ico|bmp|apng)'
 IMG_HOSTS = (r'(?:avatars\.githubusercontent\.com|raw\.githubusercontent\.com|user-images\.githubusercontent\.com|'
              r'avatar\.vercel\.sh|(?:www\.)?gravatar\.com|(?:i\.)?pravatar\.cc|picsum\.photos|(?:images|source)\.unsplash\.com|'
              r'placehold\.(?:co|it)|via\.placeholder\.com|randomuser\.me|ui-avatars\.com|api\.dicebear\.com|loremflickr\.com)')
+FONT_HOSTS = (r'(?:fonts\.googleapis\.com|fonts\.gstatic\.com|fonts\.bunny\.net|use\.typekit\.net|p\.typekit\.net|'
+              r'use\.fontawesome\.com|kit\.fontawesome\.com|fonts\.adobe\.com|rsms\.me/inter)')
 IMAGE_NAME = re.compile(r'SRC|IMG|IMAGE|AVATAR|PHOTO|PICTURE|COVER|POSTER|LOGO|ICON|THUMB|BANNER|BACKGROUND')
 
 rules = [
@@ -79,6 +84,9 @@ rules = [
     ("CSS url()", re.compile(r'url\(\s*[\'"]?(' + REMOTE + ')')),
     ("image-named const/static", re.compile(r'\b(?:const|static)\s+([A-Z0-9_]+)\s*:[^=;]*=\s*r?#*"(https?://[^"]+)"')),
     ("remote image file", re.compile(r'"(https?://[^"\s]*\.' + IMG_EXT + r'(?:[?#][^"\s]*)?)"', re.I)),
+    ("remote font host", re.compile(r'((?:https?:)?//' + FONT_HOSTS + r'[^\s"\'`)<>\\]*)', re.I)),
+    ("remote CSS @import", re.compile(r'@import\s+(?:url\(\s*)?[\'"]?(' + REMOTE + ')')),
+    ("remote Stylesheet href", re.compile(r'Stylesheet\s*\{[^}]*\bhref\s*:\s*r?#*"(' + REMOTE + ')')),
     ("known image/avatar host", re.compile(r'"(https?://' + IMG_HOSTS + r'[^"\s]*)"', re.I)),
 ]
 
@@ -117,7 +125,7 @@ for (path, n, url), label in sorted(found.items()):
     if hit:
         used.add(hit)
     else:
-        bad.append(f"{path}:{n}: remote image {url} ({label})")
+        bad.append(f"{path}:{n}: remote asset {url} ({label})")
 
 stale = [a for a in allow if a not in used] if check_stale else []
 for line in bad:
@@ -125,8 +133,8 @@ for line in bad:
 for path, url in stale:
     print(f"check-demo-remote-assets: stale allowlist entry (no longer matches anything): {path}|{url}", file=sys.stderr)
 if bad or stale:
-    print(f"check-demo-remote-assets: FAILED -- {len(bad)} remote image reference(s), {len(stale)} stale allowlist entr{'y' if len(stale) == 1 else 'ies'}. "
+    print(f"check-demo-remote-assets: FAILED -- {len(bad)} remote asset reference(s), {len(stale)} stale allowlist entr{'y' if len(stale) == 1 else 'ies'}. "
           "Bundle the image (asset!) or inline it (data: URI / CSS gradient); see this script's header.", file=sys.stderr)
     sys.exit(1)
-print(f"check-demo-remote-assets: OK -- no remote image in {', '.join(roots)} ({len(allow)} allowlisted deliberate demo URL(s) still in use).")
+print(f"check-demo-remote-assets: OK -- no remote image, font or stylesheet in {', '.join(roots)} ({len(allow)} allowlisted deliberate demo URL(s) still in use).")
 PY

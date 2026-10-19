@@ -59,3 +59,7 @@ Dialog {
 ```
 
 `final_focus` defaults to the element that held focus when the panel opened: the trigger for a click open, the previously focused element for a programmatic open. The opener is remembered in exactly one place (`dxOpenFocus`), for every overlay kind. See the `focus_target` variant.
+
+## Non-modal and pointer dismissal
+
+`is_modal: false` renders a plain panel beside the page (no top layer, no trap, no inert page). It reports `role="dialog"` but no `aria-modal`: the attribute is derived from the arm in one helper, so only a modal panel ever tells assistive tech the page behind it is inert. By default a press or focus outside the panel dismisses it. `disable_pointer_dismissal: true` (Base UI's `disablePointerDismissal`) turns that off: an outside press only acts on the page (on a modal, a backdrop click no longer closes it). Escape and the dialog's own close controls still close it.
