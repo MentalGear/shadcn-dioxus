@@ -1,10 +1,10 @@
 ---
 id: 39
 title: "axe color-contrast — landed 2026-09-03 (row 34 follow-up), one residue filed. Measuring across 49 routes…"
-status: "Residue FIXED 2026-09-26 (1e85dfa, a comment-token override in main.css) -- was: a decision to swap…"
+status: "CLOSED 2026-10-19 (bookkeeping: status already said done). Residue FIXED 2026-09-26 (1e85dfa, a…"
 size: "S (done)"
 area: tests
-updated: 2026-09-26
+updated: 2026-10-19
 ---
 
 # Row 39: axe color-contrast — landed 2026-09-03 (row 34 follow-up), one residue filed. Measuring across 49 routes…
@@ -15,7 +15,7 @@ updated: 2026-09-26
 
 ## Status / trigger
 
-**Residue FIXED 2026-09-26 (`1e85dfa`, a comment-token override in `main.css`)** -- was: a decision to swap the vendored highlighter theme, or to accept the region exclusion long-term
+CLOSED 2026-10-19 (bookkeeping: status already said done). **Residue FIXED 2026-09-26 (`1e85dfa`, a comment-token override in `main.css`)** -- was: a decision to swap the vendored highlighter theme, or to accept the region exclusion long-term
 
 ## Size
 

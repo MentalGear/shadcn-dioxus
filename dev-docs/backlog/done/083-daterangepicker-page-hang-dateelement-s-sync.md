@@ -1,10 +1,10 @@
 ---
 id: 83
 title: "DateRangePicker page hang — DateElement's sync-down/sync-up effects form an unconditional two-way reactive…"
-status: "Found and fixed 2026-09-19 (batch 3, date-picker + range-hang lanes)"
+status: "CLOSED 2026-10-19 (bookkeeping: status already said done). Found and fixed 2026-09-19 (batch 3…"
 size: "S"
 area: inputs
-updated: 2026-09-19
+updated: 2026-10-19
 ---
 
 # Row 83: DateRangePicker page hang — DateElement's sync-down/sync-up effects form an unconditional two-way reactive…
@@ -15,7 +15,7 @@ DateRangePicker page hang — `DateElement`'s sync-down/sync-up effects form an 
 
 ## Status / trigger
 
-Found and fixed 2026-09-19 (batch 3, date-picker + range-hang lanes)
+CLOSED 2026-10-19 (bookkeeping: status already said done). Found and fixed 2026-09-19 (batch 3, date-picker + range-hang lanes)
 
 ## Size
 

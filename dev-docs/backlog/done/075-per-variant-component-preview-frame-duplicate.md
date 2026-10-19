@@ -1,10 +1,10 @@
 ---
 id: 75
 title: "Per-variant component-preview-frame duplicate id + unscoped Table caption locator (two strict-mode…"
-status: "Found in integration round 2 (2026-09-18), fixed round 3 same day"
+status: "CLOSED 2026-10-19 (bookkeeping: status already said done). Found in integration round 2…"
 size: "S"
 area: a11y
-updated: 2026-09-18
+updated: 2026-10-19
 ---
 
 # Row 75: Per-variant component-preview-frame duplicate id + unscoped Table caption locator (two strict-mode…
@@ -15,7 +15,7 @@ Per-variant `component-preview-frame` duplicate id + unscoped Table caption loca
 
 ## Status / trigger
 
-Found in integration round 2 (2026-09-18), fixed round 3 same day
+CLOSED 2026-10-19 (bookkeeping: status already said done). Found in integration round 2 (2026-09-18), fixed round 3 same day
 
 ## Size
 

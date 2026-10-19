@@ -1,10 +1,10 @@
 ---
 id: 42
 title: "iOS 18 Safari device review, item 1 — double-tap-to-zoom on rapid button taps — landed 2026-09-03. Every…"
-status: "— (landed)"
+status: "CLOSED 2026-10-19 (bookkeeping: status already said done). — (landed)"
 size: "S–M"
 area: tests
-updated: 2026-09-03
+updated: 2026-10-19
 ---
 
 # Row 42: iOS 18 Safari device review, item 1 — double-tap-to-zoom on rapid button taps — landed 2026-09-03. Every…
@@ -15,7 +15,7 @@ updated: 2026-09-03
 
 ## Status / trigger
 
-— (landed)
+CLOSED 2026-10-19 (bookkeeping: status already said done). — (landed)
 
 ## Size
 

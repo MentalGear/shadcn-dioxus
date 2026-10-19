@@ -1,10 +1,10 @@
 ---
 id: 101
 title: "oracle/tier1-apg/carousel.spec.ts:224 axe scan fails on the W3C REFERENCE fixture, not on our component"
-status: "Seen 2026-09-22 (round 7) in a combined 68-test run; carousel.spec.ts alone is 57/57 green. FIXED…"
+status: "CLOSED 2026-10-19 (bookkeeping: status already said done). Seen 2026-09-22 (round 7) in a combined…"
 size: "Unknown; not yet triaged"
 area: tests
-updated: 2026-09-25
+updated: 2026-10-19
 ---
 
 # Row 101: oracle/tier1-apg/carousel.spec.ts:224 axe scan fails on the W3C REFERENCE fixture, not on our component
@@ -15,7 +15,7 @@ updated: 2026-09-25
 
 ## Status / trigger
 
-Seen 2026-09-22 (round 7) in a combined 68-test run; `carousel.spec.ts` alone is 57/57 green. **FIXED 2026-09-25 (round 8, `1280a7f`)**
+CLOSED 2026-10-19 (bookkeeping: status already said done). Seen 2026-09-22 (round 7) in a combined 68-test run; `carousel.spec.ts` alone is 57/57 green. **FIXED 2026-09-25 (round 8, `1280a7f`)**
 
 ## Size
 

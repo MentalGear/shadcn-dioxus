@@ -1,10 +1,10 @@
 ---
 id: 74
 title: "Navigation Menu first-render panic (hook called inside another hook's closure) + demo/site-chrome…"
-status: "Found in integration round 2 (2026-09-18), fixed round 3 same day"
+status: "CLOSED 2026-10-19 (bookkeeping: status already said done). Found in integration round 2…"
 size: "S"
 area: menus
-updated: 2026-09-18
+updated: 2026-10-19
 ---
 
 # Row 74: Navigation Menu first-render panic (hook called inside another hook's closure) + demo/site-chrome…
@@ -15,7 +15,7 @@ Navigation Menu first-render panic (hook called inside another hook's closure) +
 
 ## Status / trigger
 
-Found in integration round 2 (2026-09-18), fixed round 3 same day
+CLOSED 2026-10-19 (bookkeeping: status already said done). Found in integration round 2 (2026-09-18), fixed round 3 same day
 
 ## Size
 

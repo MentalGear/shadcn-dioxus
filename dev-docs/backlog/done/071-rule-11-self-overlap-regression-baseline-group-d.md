@@ -1,10 +1,10 @@
 ---
 id: 71
 title: "Rule 11 self-overlap regression, baseline group D"
-status: "Found + fixed 2026-09-18; live re-run against the integration server confirmed round 2"
+status: "CLOSED 2026-10-19 (bookkeeping: status already said done). Found + fixed 2026-09-18; live re-run…"
 size: "S"
 area: tests
-updated: 2026-09-18
+updated: 2026-10-19
 ---
 
 # Row 71: Rule 11 self-overlap regression, baseline group D
@@ -15,7 +15,7 @@ Rule 11 self-overlap regression, baseline group D
 
 ## Status / trigger
 
-Found + fixed 2026-09-18; live re-run against the integration server confirmed round 2
+CLOSED 2026-10-19 (bookkeeping: status already said done). Found + fixed 2026-09-18; live re-run against the integration server confirmed round 2
 
 ## Size
 

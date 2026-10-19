@@ -1,10 +1,10 @@
 ---
 id: 69
 title: "Axe scan readiness race (playwright/axe.ts), baseline group B"
-status: "Found + fixed 2026-09-18 (construction); live verification confirmed round 2"
+status: "CLOSED 2026-10-19 (bookkeeping: status already said done). Found + fixed 2026-09-18 (construction)…"
 size: "S"
 area: tests
-updated: 2026-09-18
+updated: 2026-10-19
 ---
 
 # Row 69: Axe scan readiness race (playwright/axe.ts), baseline group B
@@ -15,7 +15,7 @@ Axe scan readiness race (`playwright/axe.ts`), baseline group B
 
 ## Status / trigger
 
-Found + fixed 2026-09-18 (construction); live verification confirmed round 2
+CLOSED 2026-10-19 (bookkeeping: status already said done). Found + fixed 2026-09-18 (construction); live verification confirmed round 2
 
 ## Size
 

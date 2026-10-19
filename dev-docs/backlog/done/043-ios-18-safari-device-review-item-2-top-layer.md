@@ -1,10 +1,10 @@
 ---
 id: 43
 title: "iOS 18 Safari device review, item 2 — top_layer oracle fixture removed from the / home-page gallery — landed…"
-status: "— (landed)"
+status: "CLOSED 2026-10-19 (bookkeeping: status already said done). — (landed)"
 size: "S"
 area: tests
-updated: 2026-09-03
+updated: 2026-10-19
 ---
 
 # Row 43: iOS 18 Safari device review, item 2 — top_layer oracle fixture removed from the / home-page gallery — landed…
@@ -15,7 +15,7 @@ updated: 2026-09-03
 
 ## Status / trigger
 
-— (landed)
+CLOSED 2026-10-19 (bookkeeping: status already said done). — (landed)
 
 ## Size
 

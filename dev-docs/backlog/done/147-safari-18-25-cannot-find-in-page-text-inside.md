@@ -1,10 +1,10 @@
 ---
 id: 147
 title: "Safari 18-25 cannot find-in-page text inside content-visibility: auto-skipped content (WebKit bug 283846)"
-status: "NOTE -- no behaviour change proposed; recorded 2026-10-04 from the virtualization survey (section 5)"
+status: "CLOSED 2026-10-19 (bookkeeping: status already said done). NOTE -- no behaviour change proposed…"
 size: "S"
 area: virtual
-updated: 2026-10-04
+updated: 2026-10-19
 ---
 
 # Row 147: Safari 18-25 cannot find-in-page text inside content-visibility: auto-skipped content (WebKit bug 283846)
@@ -15,7 +15,7 @@ Safari 18-25 cannot find-in-page text inside `content-visibility: auto`-skipped 
 
 ## Status / trigger
 
-**NOTE** -- no behaviour change proposed; recorded 2026-10-04 from the virtualization survey (section 5)
+CLOSED 2026-10-19 (bookkeeping: status already said done). **NOTE** -- no behaviour change proposed; recorded 2026-10-04 from the virtualization survey (section 5)
 
 ## Size
 

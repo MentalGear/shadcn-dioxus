@@ -1,10 +1,10 @@
 ---
 id: 70
 title: "top_layer oracle fixture probes intercepted by the docs Sidebar, baseline group C"
-status: "Found + fixed 2026-09-18 (construction); live verification confirmed round 2"
+status: "CLOSED 2026-10-19 (bookkeeping: status already said done). Found + fixed 2026-09-18 (construction)…"
 size: "S"
 area: tests
-updated: 2026-09-18
+updated: 2026-10-19
 ---
 
 # Row 70: top_layer oracle fixture probes intercepted by the docs Sidebar, baseline group C
@@ -15,7 +15,7 @@ updated: 2026-09-18
 
 ## Status / trigger
 
-Found + fixed 2026-09-18 (construction); live verification confirmed round 2
+CLOSED 2026-10-19 (bookkeeping: status already said done). Found + fixed 2026-09-18 (construction); live verification confirmed round 2
 
 ## Size
 

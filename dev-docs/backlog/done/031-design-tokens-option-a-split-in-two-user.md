@@ -1,10 +1,10 @@
 ---
 id: 31
 title: "Design tokens (option A) — split in two (user decision 2026-09-03). 31a — LANDED 2026-09-04. Token set added…"
-status: "31a: landed 2026-09-04. 31b: landed 2026-09-04"
+status: "CLOSED 2026-10-19 (bookkeeping: status already said done). 31a: landed 2026-09-04. 31b: landed…"
 size: "31a S–M (done); 31b M (done)"
 area: tests
-updated: 2026-09-04
+updated: 2026-10-19
 ---
 
 # Row 31: Design tokens (option A) — split in two (user decision 2026-09-03). 31a — LANDED 2026-09-04. Token set added…
@@ -15,7 +15,7 @@ updated: 2026-09-04
 
 ## Status / trigger
 
-**31a: landed 2026-09-04. 31b: landed 2026-09-04**
+CLOSED 2026-10-19 (bookkeeping: status already said done). **31a: landed 2026-09-04. 31b: landed 2026-09-04**
 
 ## Size
 

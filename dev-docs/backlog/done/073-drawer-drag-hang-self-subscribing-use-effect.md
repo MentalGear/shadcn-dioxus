@@ -1,10 +1,10 @@
 ---
 id: 73
 title: "Drawer drag hang — self-subscribing use_effect wedged the main thread on drag"
-status: "Found in integration round 2 (2026-09-18), fixed round 3 same day"
+status: "CLOSED 2026-10-19 (bookkeeping: status already said done). Found in integration round 2…"
 size: "S"
 area: overlays
-updated: 2026-09-18
+updated: 2026-10-19
 ---
 
 # Row 73: Drawer drag hang — self-subscribing use_effect wedged the main thread on drag
@@ -15,7 +15,7 @@ Drawer drag hang — self-subscribing `use_effect` wedged the main thread on dra
 
 ## Status / trigger
 
-Found in integration round 2 (2026-09-18), fixed round 3 same day
+CLOSED 2026-10-19 (bookkeeping: status already said done). Found in integration round 2 (2026-09-18), fixed round 3 same day
 
 ## Size
 

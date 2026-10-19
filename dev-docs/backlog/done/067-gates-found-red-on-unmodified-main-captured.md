@@ -1,10 +1,10 @@
 ---
 id: 67
 title: "Gates found red on unmodified main, captured 2026-09-18 before any lane started"
-status: "Found 2026-09-18; all four red gates FIXED (stylelint beb7cae, clippy fe066c6, rustdoc b01bcd5, the…"
+status: "CLOSED 2026-10-19 (bookkeeping: status already said done). Found 2026-09-18; all four red gates…"
 size: "S–M"
 area: process
-updated: 2026-09-18
+updated: 2026-10-19
 ---
 
 # Row 67: Gates found red on unmodified main, captured 2026-09-18 before any lane started
@@ -15,7 +15,7 @@ Gates found red on unmodified `main`, captured 2026-09-18 before any lane starte
 
 ## Status / trigger
 
-Found 2026-09-18; **all four red gates FIXED** (stylelint `beb7cae`, clippy `fe066c6`, rustdoc `b01bcd5`, the two preview warnings `5f815bf` and `5245149`; rounds 1-2, 2026-09-18). The class's root cause is row 33 (CI freeze, user-gated), mitigated since by `scripts/run-gates.sh` (row 139)
+CLOSED 2026-10-19 (bookkeeping: status already said done). Found 2026-09-18; **all four red gates FIXED** (stylelint `beb7cae`, clippy `fe066c6`, rustdoc `b01bcd5`, the two preview warnings `5f815bf` and `5245149`; rounds 1-2, 2026-09-18). The class's root cause is row 33 (CI freeze, user-gated), mitigated since by `scripts/run-gates.sh` (row 139)
 
 ## Size
 

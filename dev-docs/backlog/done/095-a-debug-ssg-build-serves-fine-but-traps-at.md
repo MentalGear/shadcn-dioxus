@@ -1,10 +1,10 @@
 ---
 id: 95
 title: "A debug SSG build serves fine but traps at runtime, so interaction specs run against it fail like real…"
-status: "Hit 2026-09-20 (round 5) running carousel.spec.ts against a local static serve of dx build --ssg…"
+status: "CLOSED 2026-10-19 (bookkeeping: status already said done). Hit 2026-09-20 (round 5) running…"
 size: "DONE — warning added directly to the…"
 area: build
-updated: 2026-09-20
+updated: 2026-10-19
 ---
 
 # Row 95: A debug SSG build serves fine but traps at runtime, so interaction specs run against it fail like real…
@@ -15,7 +15,7 @@ A debug SSG build serves fine but traps at runtime, so interaction specs run aga
 
 ## Status / trigger
 
-Hit 2026-09-20 (round 5) running `carousel.spec.ts` against a local static serve of `dx build --ssg` output
+CLOSED 2026-10-19 (bookkeeping: status already said done). Hit 2026-09-20 (round 5) running `carousel.spec.ts` against a local static serve of `dx build --ssg` output
 
 ## Size
 

@@ -1,10 +1,10 @@
 ---
 id: 41
 title: "NavbarContent migrated onto the top-layer engine (2026-09-03, finding C) without also picking up two…"
-status: "41a: landed 2026-09-04. 41b: CLOSED 2026-10-03 as a documented non-claim (no device needed; see the…"
+status: "CLOSED 2026-10-19 (bookkeeping: status already said done). 41a: landed 2026-09-04. 41b: CLOSED…"
 size: "S"
 area: tests
-updated: 2026-10-03
+updated: 2026-10-19
 ---
 
 # Row 41: NavbarContent migrated onto the top-layer engine (2026-09-03, finding C) without also picking up two…
@@ -15,7 +15,7 @@ updated: 2026-10-03
 
 ## Status / trigger
 
-41a: landed 2026-09-04. **41b: CLOSED 2026-10-03 as a documented non-claim (no device needed; see the 2026-10-03 re-audit in the notes).** Was: the entry exists but is skipped at runtime — still needs either a real device or an engine-simulation change that lets Navbar's hover-driven case reach the critical shape before it can be called execution-confirmed
+CLOSED 2026-10-19 (bookkeeping: status already said done). 41a: landed 2026-09-04. **41b: CLOSED 2026-10-03 as a documented non-claim (no device needed; see the 2026-10-03 re-audit in the notes).** Was: the entry exists but is skipped at runtime — still needs either a real device or an engine-simulation change that lets Navbar's hover-driven case reach the critical shape before it can be called execution-confirmed
 
 ## Size
 

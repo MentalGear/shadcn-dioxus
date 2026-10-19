@@ -1,10 +1,10 @@
 ---
 id: 40
 title: "Auto-kind popovers' exposure to the opening-gesture light-dismiss false positive — audited 2026-09-03; Navbar…"
-status: "Navbar half FIXED 2026-10-04 (d9bcfda, verified on the release build of b9e9580); the rest CLOSED…"
+status: "CLOSED 2026-10-19 (bookkeeping: status already said done). Navbar half FIXED 2026-10-04 (d9bcfda…"
 size: "M (done)"
 area: tests
-updated: 2026-10-04
+updated: 2026-10-19
 ---
 
 # Row 40: Auto-kind popovers' exposure to the opening-gesture light-dismiss false positive — audited 2026-09-03; Navbar…
@@ -15,7 +15,7 @@ updated: 2026-10-04
 
 ## Status / trigger
 
-**Navbar half FIXED 2026-10-04 (`d9bcfda`, verified on the release build of `b9e9580`); the rest CLOSED as refuted 2026-10-03, so no device is needed any more.** Original trigger: A real device confirming this actually happens (unlike the modal-arm case, no construction fix was applied here this round — see below for why), or a report against one of these four specifically
+CLOSED 2026-10-19 (bookkeeping: status already said done). **Navbar half FIXED 2026-10-04 (`d9bcfda`, verified on the release build of `b9e9580`); the rest CLOSED as refuted 2026-10-03, so no device is needed any more.** Original trigger: A real device confirming this actually happens (unlike the modal-arm case, no construction fix was applied here this round — see below for why), or a report against one of these four specifically
 
 ## Size
 

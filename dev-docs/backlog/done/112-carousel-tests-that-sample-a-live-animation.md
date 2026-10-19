@@ -1,10 +1,10 @@
 ---
 id: 112
 title: "Carousel tests that sample a live animation across an async gap -- both fixed; plus the B3 wheel release…"
-status: "Found 2026-09-26 while verifying the carousel shadcn-parity merge (22d4c95). Instance 1, FIXED…"
+status: "CLOSED 2026-10-19 (bookkeeping: status already said done). Found 2026-09-26 while verifying the…"
 size: "done (instance 2 fixed d44a12d; the…"
 area: theme
-updated: 2026-09-26
+updated: 2026-10-19
 ---
 
 # Row 112: Carousel tests that sample a live animation across an async gap -- both fixed; plus the B3 wheel release…
@@ -15,7 +15,7 @@ Carousel tests that sample a live animation across an async gap -- both fixed; p
 
 ## Status / trigger
 
-Found 2026-09-26 while verifying the carousel shadcn-parity merge (`22d4c95`). Instance 1, FIXED: `carousel.spec.ts` "a sustained constant wheel stream at the start boundary..." failed 15/15 at `22d4c95` (release SSG, `--workers=1 --repeat-each=15`) and passed 15/15 at `c2dd9d7` (debug SSG) -- an in-page MutationObserver trace showed the same release/spring-back sawtooth at both revisions; the test read the transform across CDP round trips while a spring-back was in flight. Fixed by dispatching both bursts and both reads in one synchronous in-page turn. Instance 2, FIXED 2026-09-26 (`d44a12d`; was OPEN): `carousel.spec.ts:687` "ArrowDown/ArrowUp page the vertical carousel..." fails ~1/5 under `--workers=2`, 5/5 green under `--workers=1`; not root-caused -- check it against row 110's smooth-scroll pre-scroll class first
+CLOSED 2026-10-19 (bookkeeping: status already said done). Found 2026-09-26 while verifying the carousel shadcn-parity merge (`22d4c95`). Instance 1, FIXED: `carousel.spec.ts` "a sustained constant wheel stream at the start boundary..." failed 15/15 at `22d4c95` (release SSG, `--workers=1 --repeat-each=15`) and passed 15/15 at `c2dd9d7` (debug SSG) -- an in-page MutationObserver trace showed the same release/spring-back sawtooth at both revisions; the test read the transform across CDP round trips while a spring-back was in flight. Fixed by dispatching both bursts and both reads in one synchronous in-page turn. Instance 2, FIXED 2026-09-26 (`d44a12d`; was OPEN): `carousel.spec.ts:687` "ArrowDown/ArrowUp page the vertical carousel..." fails ~1/5 under `--workers=2`, 5/5 green under `--workers=1`; not root-caused -- check it against row 110's smooth-scroll pre-scroll class first
 
 ## Size
 
