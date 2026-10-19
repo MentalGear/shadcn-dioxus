@@ -420,3 +420,90 @@ test.describe("Axe automated scan", () => {
     await expectNoAxeViolations(page, "input_otp: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 });
+
+// Every internal divider is ONE border width, in both text directions. The slot edge is an inset
+// box-shadow (no computed border), so the width at a shared edge is the sum of the two
+// neighbours' facing inset offsets. A full edge on every slot, overlapped by -1px, put two
+// translucent layers on the shared pixel (the dark fill is the edge colour at 30%), which read
+// about twice as thick as the outer border.
+test.describe("Slot dividers are a single border width", () => {
+  for (const dir of ["ltr", "rtl"] as const) {
+    test(`dir=${dir}`, async ({ page }) => {
+      await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
+      await page.evaluate(
+        (d) => document.documentElement.setAttribute("dir", d),
+        dir,
+      );
+
+      const result = await page.evaluate(() => {
+        const slots = Array.from(
+          document
+            .querySelectorAll<HTMLElement>(
+              "#otp-main + div .dx-input-otp-group",
+            )[0]
+            .querySelectorAll<HTMLElement>(".dx-input-otp-slot"),
+        );
+        // Facing widths of an inset, blur-0, spread-0, y-0 shadow list: [left edge, right edge].
+        const edges = (el: HTMLElement) => {
+          const out = { left: 0, right: 0 };
+          const bs = getComputedStyle(el).boxShadow;
+          const parts: string[] = [];
+          let depth = 0;
+          let cur = "";
+          for (const ch of bs) {
+            if (ch === "(") depth++;
+            if (ch === ")") depth--;
+            if (ch === "," && depth === 0) {
+              parts.push(cur);
+              cur = "";
+            } else cur += ch;
+          }
+          parts.push(cur);
+          for (const p of parts) {
+            if (!/inset/.test(p)) continue;
+            const nums = (
+              p
+                .replace(
+                  /rgba?\([^)]*\)|oklab\([^)]*\)|oklch\([^)]*\)|color\([^)]*\)/g,
+                  "",
+                )
+                .match(/-?\d+(\.\d+)?px/g) ?? []
+            ).map(parseFloat);
+            const [x, y] = nums;
+            if (y === 0 && x < 0) out.right = Math.max(out.right, -x);
+            if (y === 0 && x > 0) out.left = Math.max(out.left, x);
+          }
+          return out;
+        };
+        const boxes = slots.map((s) => s.getBoundingClientRect());
+        const rtl = getComputedStyle(slots[0]).direction === "rtl";
+        const dividers = slots.slice(0, -1).map((s, i) => {
+          const a = edges(s);
+          const b = edges(slots[i + 1]);
+          // The visually left slot's right edge + the visually right slot's left edge.
+          const [l, r] = rtl ? [b, a] : [a, b];
+          const lBox = rtl ? boxes[i + 1] : boxes[i];
+          const rBox = rtl ? boxes[i] : boxes[i + 1];
+          return { width: l.right + r.left, gap: rBox.left - lBox.right };
+        });
+        const first = edges(slots[0]);
+        const last = edges(slots[slots.length - 1]);
+        return {
+          dividers,
+          outer: rtl ? first.right : first.left,
+          outerEnd: rtl ? last.left : last.right,
+          rtl,
+        };
+      });
+
+      expect(result.rtl).toBe(dir === "rtl");
+      expect(result.dividers.length).toBeGreaterThan(1);
+      for (const d of result.dividers) {
+        expect(d.width).toBe(1);
+        expect(d.gap).toBeCloseTo(0, 1); // abutting, no overlap
+      }
+      expect(result.outer).toBe(1);
+      expect(result.outerEnd).toBe(1);
+    });
+  }
+});
