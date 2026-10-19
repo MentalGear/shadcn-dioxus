@@ -12,3 +12,7 @@ Checkbox {
     }
 }
 ```
+
+## Indeterminate
+
+Pass `CheckboxState::Indeterminate` (`checked` or `default_checked`) for a "some selected" parent box: it is filled like a checked box and shows a minus instead of the tick, with `aria-checked="mixed"`. Clicking it unchecks it.

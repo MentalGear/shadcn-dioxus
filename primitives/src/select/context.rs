@@ -57,7 +57,7 @@ pub(super) struct SelectContext {
     /// for why Radix's own RTL-specific positioning math does not apply
     /// here either (this crate's `SelectList` always uses anchor
     /// positioning, never Radix's "item-aligned" mode that math is for).
-    pub direction: Direction,
+    pub direction: ReadSignal<Direction>,
 }
 
 impl SelectContext {

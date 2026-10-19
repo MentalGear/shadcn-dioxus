@@ -1,7 +1,7 @@
 //! Defines the [`Toolbar`] component and its sub-components, which provide a container to group related buttons and controls with keyboard navigation.
 
 use crate::collection::{collection_item, use_collection_provider, use_item, CollectionState};
-use crate::direction::{use_direction, Direction, HorizontalNav};
+use crate::direction::{use_direction, use_direction_signal, Direction, HorizontalNav};
 use crate::merge_attributes;
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
@@ -19,7 +19,7 @@ struct ToolbarCtx {
 
     // Text direction, for `ArrowLeft`/`ArrowRight`'s roving-focus role --
     // see `direction::Direction::resolve_horizontal`'s doc.
-    direction: Direction,
+    direction: ReadSignal<Direction>,
 }
 
 impl ToolbarCtx {
@@ -103,12 +103,13 @@ pub struct ToolbarProps {
 #[component]
 pub fn Toolbar(props: ToolbarProps) -> Element {
     let direction = use_direction(props.dir);
+    let direction_signal = use_direction_signal(direction);
     let focus = use_collection_provider(ReadSignal::new(Signal::new(false)));
     let mut ctx = use_context_provider(|| ToolbarCtx {
         disabled: props.disabled,
         focus,
         horizontal: props.horizontal,
-        direction,
+        direction: direction_signal,
     });
 
     let owned = attributes!(div {
@@ -236,7 +237,7 @@ pub fn ToolbarButton(props: ToolbarButtonProps) -> Element {
                     }
                     Key::ArrowLeft | Key::ArrowRight if horizontal => {
                         let index = (props.index)();
-                        match ctx.direction.resolve_horizontal(&key) {
+                        match (ctx.direction)().resolve_horizontal(&key) {
                             Some(HorizontalNav::Prev) => {
                                 if index > 0 {
                                     ctx.set_focus(Some(index - 1));
