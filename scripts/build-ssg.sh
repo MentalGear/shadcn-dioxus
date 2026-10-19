@@ -44,6 +44,7 @@
 #     asset bundling, so the pages link a hash the manifest lacks) rebuilds from a wiped public/ and
 #     manifest; guard 4 then runs again on the second build. Anything else fails at once. A second
 #     failure fails the build.
+#  0. Sources are touched before the build (BUILD_SSG_TOUCH=always|auto|never, default auto): see "Mtime discipline" below.
 #  5. Output matches the requested base path: with `--base-path P` the root page must reference
 #     `/P/...`; without it NO page may reference `/shadcn-dioxus/...` or the pre-rename `/dioxus-components/...` (same pattern as
 #     scripts/lane-target.sh's contamination grep).
@@ -257,6 +258,18 @@ build_once() {
   route_count="$(sed -nE 's/^ssg-verify: OK -- ([0-9]+) routes.*/\1/p' "$bundle_log")"
   return 0
 }
+
+# --- Mtime discipline (row 216): cargo judges a workspace crate's freshness by mtime and gives it the same unit
+# hash in every worktree, so a target another tree built in can look "fresh" against OLDER files here and
+# the build would ship that tree's code. BUILD_SSG_TOUCH=auto (default) touches the sources unless this
+# target's `.tree-owner` stamp already names this worktree; `always` forces it; `never` is for a caller that
+# already did (scripts/lane-ssg.sh).
+case "${BUILD_SSG_TOUCH:-auto}" in
+  auto)   (cd "$repo_root" && scripts/lane-touch.sh "$target_dir") ;;
+  always) (cd "$repo_root" && scripts/lane-touch.sh "$target_dir" --force) ;;
+  never)  ;;
+  *) fail "BUILD_SSG_TOUCH must be always, auto or never, got '${BUILD_SSG_TOUCH}'" ;;
+esac
 
 for attempt in 1 2; do
   if build_once; then break; fi

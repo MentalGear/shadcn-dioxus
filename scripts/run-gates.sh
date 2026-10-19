@@ -115,6 +115,7 @@ gates=(
   "check-demo-text-locators|scripts/check-demo-text-locators.sh"
   "check-spec-at-rest|scripts/check-spec-at-rest.sh"
   "check-backlog-index|scripts/check-backlog-index.sh"
+  "check-lane-lock|scripts/check-lane-lock.sh"
   "fmt|cargo fmt --all -- --check"
   "check-primitives-features|scripts/check-primitives-features.sh"
   "clippy-default|cargo clippy --workspace $CLIPPY_FLAGS"
@@ -171,11 +172,22 @@ echo "run-gates: $(cargo --version), $(cargo clippy --version)"
 
 now() { date +%s.%N; }
 
+# Row 216: the cargo gates build in a target other worktrees may also have used, and cargo judges freshness by
+# mtime, so touch this worktree's sources once, right before the first cargo gate that actually runs (a
+# fast-gates-only run builds nothing and must not stamp the target). lane-touch skips it when the target's
+# `.tree-owner` stamp already names this worktree.
+CARGO_GATES='^(clippy-|test$|check-primitives-features$|check-attr-spread-collision$)'
+touched=0
+
 red=() ran=0 hidden=0
 for g in "${gates[@]}"; do
   name="${g%%|*}"; cmd="${g#*|}"
   if { [ -n "$only" ] && ! [[ "$name" =~ $only ]]; } || { [ -n "$skip" ] && [[ "$name" =~ $skip ]]; }; then
     hidden=$((hidden + 1)); continue
+  fi
+  if [ "$touched" = 0 ] && [[ "$name" =~ $CARGO_GATES ]]; then
+    scripts/lane-touch.sh "$CARGO_TARGET_DIR" || die "lane-touch failed"
+    touched=1
   fi
   log="$log_dir/$name.log"
   printf '>> %-34s ' "$name"
