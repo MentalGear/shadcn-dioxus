@@ -25,18 +25,19 @@
      rounded edge (corner radius plus the half-diagonal of the rotated square). */
   --dx-tooltip-arrow-inset: calc(var(--dx-floating-radius) + var(--dx-tooltip-arrow-size) * 0.71);
 
-  /* Where the arrow's centre sits along the cross axis: `--dx-tooltip-arrow-x` / `-y` are published
-     by `TooltipContent` (px from the panel's left / top edge to the trigger's centre, measured on
-     the final placement), clamped to stay inside the body; 50% until the first measurement. The
-     physical `left`/`top` is right for RTL too: the offset is a measured physical distance. */
+  /* Where the arrow's centre sits along the cross axis: `--dx-anchor-offset-x` / `-y` are published
+     by the shared placement engine (`top_layer.rs`, px from the panel's left / top edge to the
+     anchor's centre, on the final placement), clamped to stay inside the body; 50% before the
+     first placement. The physical `left`/`top` is right for RTL too: the offset is a physical
+     distance. */
   --dx-tooltip-arrow-cross-x: clamp(
     var(--dx-tooltip-arrow-inset),
-    var(--dx-tooltip-arrow-x, 50%),
+    var(--dx-anchor-offset-x, 50%),
     calc(100% - var(--dx-tooltip-arrow-inset))
   );
   --dx-tooltip-arrow-cross-y: clamp(
     var(--dx-tooltip-arrow-inset),
-    var(--dx-tooltip-arrow-y, 50%),
+    var(--dx-anchor-offset-y, 50%),
     calc(100% - var(--dx-tooltip-arrow-inset))
   );
 
@@ -96,7 +97,7 @@
   transform: translateX(-50%);
 }
 
-.dx-tooltip-content[data-side="top"]::after {
+.dx-tooltip-content:is([data-placed-side="top"], :not([data-placed-side])[data-side="top"])::after {
   top: calc(100% - var(--dx-tooltip-arrow-size) / 2 - var(--dx-tooltip-arrow-shift));
   left: var(--dx-tooltip-arrow-cross-x);
 }
@@ -109,12 +110,12 @@
   transform: translateY(-50%);
 }
 
-.dx-tooltip-content[data-side="right"]::after,
-.dx-tooltip-content[data-side="left"]::after {
+.dx-tooltip-content:is([data-placed-side="right"], :not([data-placed-side])[data-side="right"])::after,
+.dx-tooltip-content:is([data-placed-side="left"], :not([data-placed-side])[data-side="left"])::after {
   margin-top: calc(-1 * var(--dx-tooltip-arrow-size) / 2);
 }
 
-.dx-tooltip-content[data-side="right"]::after {
+.dx-tooltip-content:is([data-placed-side="right"], :not([data-placed-side])[data-side="right"])::after {
   top: var(--dx-tooltip-arrow-cross-y);
   left: var(--dx-tooltip-arrow-shift);
 }
@@ -127,7 +128,7 @@
   transform: translateX(-50%);
 }
 
-.dx-tooltip-content[data-side="bottom"]::after {
+.dx-tooltip-content:is([data-placed-side="bottom"], :not([data-placed-side])[data-side="bottom"])::after {
   bottom: calc(100% - var(--dx-tooltip-arrow-size) / 2 - var(--dx-tooltip-arrow-shift));
   left: var(--dx-tooltip-arrow-cross-x);
 }
@@ -140,7 +141,7 @@
   transform: translateY(-50%);
 }
 
-.dx-tooltip-content[data-side="left"]::after {
+.dx-tooltip-content:is([data-placed-side="left"], :not([data-placed-side])[data-side="left"])::after {
   top: var(--dx-tooltip-arrow-cross-y);
   right: calc(-1 * var(--dx-tooltip-arrow-size) / 2 + var(--dx-tooltip-arrow-shift));
 }
