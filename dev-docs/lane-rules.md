@@ -40,6 +40,11 @@ Session tooling (paths below default to `LANE_TGT=/home/user/tgt`):
 - A killed waiter or holder never blocks the queue (liveness = the owner still holds its ticket flock). Known gap:
   SIGKILL of the wrapper ALONE frees its slot while the command, a separate session, may run on; stop a build with
   TERM/INT (the whole group stops) or kill the group (`kill -- -<pid>`).
+- Two SSG pre-renders must never share a network namespace: `dx build --ssg` fetches every route from the built server
+  on the FIXED port 127.0.0.1:9999, and the second of two concurrent builds talks to the first one's server, prints
+  `SSG complete` in 0.4 s with no error line and writes no page (95 of 96 routes missing, measured 2026-10-19).
+  `lane-ssg.sh` therefore builds inside `scripts/lane-netns.sh` (a private loopback, `BUILD_SSG_NETNS=1`); a hand-run
+  `build-ssg.sh` concurrent with another SSG build needs `BUILD_SSG_NETNS=1` too.
 - A server or watcher is never started inside the lock (it would be killed with the group anyway); serve through
   `lane-ssg.sh`, or start it outside the queue. Never create another target dir by hand, never `cargo clean`.
 - Playwright: `--workers=2` at most, and every run under its own lock: `flock $LANE_TGT/pw.lock npx playwright test ...` (ten lanes' browsers at once would OOM). A crash, "Target closed" or browser-disconnected failure is checked against
