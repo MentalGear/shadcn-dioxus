@@ -40,6 +40,10 @@
 #     `user-select: none` in a component sheet must be on USER_SELECT_ALLOW below with the reason the baseline
 #     does not reach it (a non-interactive label, a drag surface). A stale entry fails.
 #
+#  4b. `all:` (unset/initial/revert) is banned in component stylesheets (row 239): at (0,1,0) it beats every
+#     zero-specificity rule above on the element it lands on (Switch and the slider and colour-picker thumbs lost
+#     user-select, touch-action and press feedback to it). Write the resets out instead.
+#
 #  5. The theme rules themselves are still there (a deleted rule would otherwise pass 1, 2 and 4 and silently
 #     drop the behaviour from every component at once): the touch rule, the scrim, the dialog-box rule, and the
 #     `user-select` rule with its exclusions intact.
@@ -97,6 +101,8 @@ USER_SELECT_ALLOW = [
      "a drag surface (carousel content), unselectable only while the pointer drags it"),
     ("preview/src/components/drag_and_drop_list/style.css", ".dx-drag-and-drop-list-item",
      "a draggable `li` row: the drag gesture must not sweep a text selection (not a button/role the baseline lists)"),
+    ("preview/src/components/color_picker/style.css", ".dx-color-picker-area-thumb",
+     "the area's draggable thumb is a `div` (not a button or widget role): a drag must not sweep a text selection"),
     ("preview/src/components/drawer/style.css", ".dx-drawer[data-dragging=\"true\"]",
      "the drawer panel while the user drags it (descendants included): a drag surface"),
     ("preview/src/components/drawer/style.css", ".dx-drawer-handle",
@@ -105,21 +111,10 @@ USER_SELECT_ALLOW = [
      "a decorative count badge beside a menu button (`pointer-events: none`), not a control"),
 ]
 
-# Component rules that reset EVERYTHING with the `all` shorthand. `all: unset` (0,1,0) beats every zero-specificity
-# theme rule on that element, so the theme's "Controls are not text" rule never reaches it; a rule that does this to a
-# control must restate `user-select: none` itself (covered=True), and one that does not (a non-control) says so here.
-# (stylesheet, whitespace-normalised selector entry, covered by the user-select rule, reason)
-ALL_RESET_ALLOW = [
-    ("preview/src/components/switch/style.css", ".dx-switch", True, "a `button[role=switch]`"),
-    ("preview/src/components/slider/style.css", ".dx-slider-thumb", True, "a `button[role=slider]` thumb"),
-    ("preview/src/components/color_picker/style.css", ".dx-color-picker-slider-thumb", True,
-     "a `button[role=slider]` thumb"),
-    ("preview/src/components/color_picker/style.css", ".dx-color-picker-area-thumb", True,
-     "a `button[role=slider]` thumb"),
-]
+# No component rule may reset with the `all` shorthand: `all: unset` (0,1,0) beats every zero-specificity theme
+# baseline on that element (user-select, touch-action, press feedback, box-sizing), so the class is banned outright
+# (row 239). Spell the resets out (appearance, background, border, padding, margin, font, color, outline).
 ALL_RESET = re.compile(r"(?<![\w-])all\s*:\s*(unset|initial|revert|revert-layer)\b", re.I)
-WEBKIT_US = re.compile(r"(?<![\w-])-webkit-user-select\s*:\s*none\b", re.I)
-PLAIN_US = re.compile(r"(?<![\w-])user-select\s*:\s*none\b", re.I)
 
 TOUCH = re.compile(r"(?<![\w-])touch-action\s*:\s*manipulation\b", re.I)
 # A rule whose selector list mentions `::backdrop`: capture selector and body (no nested blocks inside).
@@ -163,7 +158,6 @@ def covered_by_baseline(entry):
 
 errors = []
 used_allow = set()
-used_all = set()
 for path in files:
     with open(path, encoding="utf-8") as fh:
         text = blank_comments(fh.read())
@@ -186,19 +180,10 @@ for path in files:
             line = text.count("\n", 0, m.start(2)) + 1
             if ALL_RESET.search(m.group(2)):
                 for entry in split_top(m.group(1)):
-                    hit = [i for i, (p, sel, _c, _r) in enumerate(ALL_RESET_ALLOW) if p == path and sel == entry]
-                    if not hit:
-                        errors.append(f"{path}:{line}: `{entry}` resets with `all:`, which beats every zero-specificity "
-                                      f"theme rule (user-select, touch-action, press feedback) on that element: add it "
-                                      f"to ALL_RESET_ALLOW in scripts/check-theme-baseline.sh (covered or not, with the "
-                                      f"reason), and for a control restate `-webkit-user-select: none; user-select: none` "
-                                      f"in the rule")
-                        continue
-                    used_all.update(hit)
-                    if ALL_RESET_ALLOW[hit[0]][2] and not (WEBKIT_US.search(m.group(2)) and PLAIN_US.search(m.group(2))):
-                        errors.append(f"{path}:{line}: `{entry}` is a control whose `all:` reset also reset the theme's "
-                                      f"\"Controls are not text\" rule; restate `-webkit-user-select: none; "
-                                      f"user-select: none` in the rule")
+                    errors.append(f"{path}:{line}: `{entry}` resets with `all:`, which beats every zero-specificity "
+                                  f"theme baseline (user-select, touch-action, press feedback, box-sizing) on that "
+                                  f"element; spell the resets out (appearance, background, border, padding, margin, "
+                                  f"font, color, outline) -- `all:` is banned in component stylesheets (row 239)")
                 continue
             if not USER_SELECT.search(m.group(2)):
                 continue
@@ -218,10 +203,6 @@ for path in files:
                                   f"USER_SELECT_ALLOW in scripts/check-theme-baseline.sh with that reason")
 
 if not explicit:
-    for i, (p, sel, _c, _r) in enumerate(ALL_RESET_ALLOW):
-        if i not in used_all:
-            errors.append(f"scripts/check-theme-baseline.sh: stale ALL_RESET_ALLOW entry ({p}, {sel}) matches "
-                          f"nothing -- delete it")
     for i, (p, pat, _r) in enumerate(USER_SELECT_ALLOW):
         if i not in used_allow:
             errors.append(f"scripts/check-theme-baseline.sh: stale USER_SELECT_ALLOW entry ({p}, {pat}) matches "
