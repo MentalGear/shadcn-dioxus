@@ -3482,7 +3482,7 @@ fn BlockComposer() -> Element {
             placeholder: "Share an update…",
             style: "width: 100%; min-height: 5.5rem; resize: vertical;",
         }
-        div { style: "display: flex; align-items: center; gap: 0.55rem; margin-top: 0.85rem;",
+        div { style: "display: flex; flex-wrap: wrap; align-items: center; gap: 0.55rem; margin-top: 0.85rem;",
             ToggleGroup { horizontal: true, allow_multiple_pressed: true, aria_label: "Text formatting",
                 ToggleItem { index: 0usize, aria_label: "Bold",
                     b { "B" }

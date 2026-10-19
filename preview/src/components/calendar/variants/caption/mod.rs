@@ -14,7 +14,7 @@ pub fn Demo() -> Element {
         ("Dropdown years", CaptionLayout::DropdownYears),
     ];
     rsx! {
-        div { style: "display: flex; flex-wrap: wrap; gap: 24px; padding: 20px;",
+        div { style: "display: flex; flex-wrap: wrap; gap: 24px;",
             for (name , layout) in layouts {
                 CaptionExample { key: "{name}", name, layout }
             }
