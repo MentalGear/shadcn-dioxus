@@ -57,12 +57,12 @@ test.describe("toast: one F6 handler per page (row 262)", () => {
     const { listeners } = await cdp.send("DOMDebugger.getEventListeners", { objectId: doc.result.objectId! });
     let f6 = 0;
     for (const l of listeners.filter((x) => x.type === "keydown")) {
-      const src = await cdp.send("Runtime.callFunctionOn", {
-        objectId: l.handler!.objectId!,
-        functionDeclaration: "function(){ return Function.prototype.toString.call(this); }",
-        returnByValue: true,
-      });
-      if (String(src.result.value).includes("'F6'")) f6++;
+      try {
+        const { scriptSource } = await cdp.send("Debugger.getScriptSource", { scriptId: l.scriptId });
+        if (scriptSource.includes("__dxToastF6") && scriptSource.includes("'F6'")) f6++;
+      } catch {
+        // script gone: not ours
+      }
     }
     // Eight providers are mounted on this page: a per-provider handler would make this 8.
     expect(f6).toBe(1);
