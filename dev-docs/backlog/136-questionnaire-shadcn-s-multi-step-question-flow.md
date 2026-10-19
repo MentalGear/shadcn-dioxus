@@ -1,7 +1,7 @@
 ---
 id: 136
 title: "Questionnaire: shadcn's multi-step question flow (single/multiple choice, freeform \"other\", skippable…"
-status: "LANDED 2026-10-19 (lane questionnaire: headless primitive + styled component, 11 demos; hold lifted by the owner 2026-10-18)"
+status: "LANDED 2026-10-19 (see the update below; the owner lifted the hold on 2026-10-18). Was: ON HOLD…"
 size: "L"
 area: inputs
 updated: 2026-10-19
@@ -34,7 +34,9 @@ Construction choices, each closing a class instead of an instance:
 - **Serialization is the DOM.** A skipped or disabled item's controls carry no `name`, and an unselected freeform input has no `name` and `form=""`, so the browser's `FormData` is the answer set.
 - **Every `display` rule on a part that can be `hidden` is written `:not([hidden])`.** The navigation buttons sit in a `hidden` wrapper because `.dx-button` sets `display`.
 
-Evidence: unit 31/31 (30 model + SSR); clippy for primitives, default and `web` arms, `--all-targets -D warnings`, clean; `playwright/questionnaire.spec.ts` 16/16 on a lane SSG build (JS-off SSR state, focus and error wiring, shortcuts, arrows, Mod+Enter, skip, freeform draft, submit `FormData`, conditional, resume/reset, validation, controlled, navigation state, axe on every demo plus the error state, light and dark); first-paint-styles, all-routes, popup-style-isolation and docs-structure filtered to questionnaire 9/9; component-catalog and docs-nav-sort 24/24.
+Evidence: unit 32/32 (30 model, 2 SSR/RTL); clippy for primitives, default and `web` arms, `--all-targets -D warnings`, clean; `playwright/questionnaire.spec.ts` 17/17 on a lane SSG build. It covers the JS-off SSR state, focus and error wiring, shortcuts, arrows, RTL mirroring through the page toggle, Mod+Enter, skip, the freeform draft, submit `FormData`, conditional, resume/reset, validation, controlled, navigation state, and axe on every demo plus the error state, light and dark. With `--grep questionnaire`, first-paint-styles, all-routes, popup-style-isolation, docs-structure and rtl-toggle pass 10/10; component-catalog and docs-nav-sort pass 24/24; `registry-install-smoke.sh --only questionnaire` is OK 1/1.
+
+RTL (row 137's `check-direction-keys` arrived with the merge): the root reads `use_direction` and hands the model the LTR-equivalent key, so the model only reasons in LTR. The item's `aria-keyshortcuts` names the mirrored key.
 
 Found on the way: a styled wrapper that forwards `{props.children}` into a primitive whose default text depends on "no children" hides that default, because the forwarded fragment is never the empty placeholder. Progress and Error rendered empty until the wrapper passed `children: props.children` instead.
 

@@ -66,7 +66,7 @@ The navigation buttons take `variant`, `size` (the `Button` props), `disabled` a
 | `Command`/`Control` + `Enter` | Confirm from anywhere in the form. |
 | `A`-`Z` or `1`-`9` | With `shortcuts`: select (or toggle) the answer with that key. |
 
-Composition (IME) keystrokes and held-key repeats are ignored. The active item lists its keys in `aria-keyshortcuts`, each answer lists its own.
+Under RTL (a `DirectionProvider`, or the page's RTL toggle) `ArrowLeft` and `ArrowRight` swap, in `aria-keyshortcuts` too. Composition (IME) keystrokes and held-key repeats are ignored. The active item lists its keys in `aria-keyshortcuts`, each answer lists its own.
 
 ## Form submission
 

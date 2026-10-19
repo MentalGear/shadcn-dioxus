@@ -172,6 +172,23 @@ test("letter shortcuts select, Enter confirms, horizontal arrows move between it
   await expect(radios(second).nth(0)).not.toBeChecked();
 });
 
+test("under RTL the horizontal arrows swap, in aria-keyshortcuts too (page toggle, row 137)", async ({ page }) => {
+  const root = await open(page);
+  const toggle = page.locator("#dx-direction-toggle");
+  await toggle.click();
+  await expect(root).toHaveAttribute("dir", "rtl");
+  const [first, second] = [items(root).nth(0), items(root).nth(1)];
+  await first.focus();
+  await page.keyboard.press("b");
+  await expect(first).toHaveAttribute("aria-keyshortcuts", "Meta+Enter Control+Enter ArrowUp ArrowDown ArrowLeft");
+  await first.focus();
+  await page.keyboard.press("ArrowLeft");
+  await expect(second).toBeFocused();
+  await expect(second).toHaveAttribute("aria-keyshortcuts", /ArrowRight/);
+  await page.keyboard.press("ArrowRight");
+  await expect(first).toBeFocused();
+});
+
 test("Command/Control+Enter validates from anywhere and Skip records a skip", async ({ page }) => {
   const root = await open(page);
   const [first, second, third] = [items(root).nth(0), items(root).nth(1), items(root).nth(2)];

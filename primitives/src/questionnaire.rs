@@ -32,6 +32,7 @@
 
 use std::collections::HashSet;
 
+use crate::direction::{use_direction, Direction};
 use crate::{merge_attributes, use_id_or, use_unique_id};
 use dioxus::core::use_drop;
 use dioxus::prelude::*;
@@ -255,13 +256,32 @@ fn focus_dom_id(form_id: &str, cfg: &QuestionnaireConfig, target: &FocusTarget) 
     }
 }
 
+/// An `aria-keyshortcuts` list with the horizontal pair named as the user presses it: the model speaks LTR,
+/// so under RTL its "ArrowLeft" (previous) is the key labelled ArrowRight.
+fn rtl_keys(keys: String, direction: Direction) -> String {
+    keys.split(' ')
+        .map(|key| match key {
+            "ArrowLeft" => direction.ltr_equivalent(&Key::ArrowLeft),
+            "ArrowRight" => direction.ltr_equivalent(&Key::ArrowRight),
+            _ => Key::Character(key.to_string()),
+        })
+        .map(|key| match key {
+            Key::Character(text) => text,
+            other => other.to_string(),
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
 fn is_empty(children: &Element) -> bool {
     children.as_ref().ok() == VNode::empty().as_ref().ok()
 }
 
-fn key_input(event: &KeyboardEvent) -> KeyInput {
+/// The model's key, with the horizontal pair mirrored under RTL (`ArrowLeft` is "next" there), so the model
+/// only ever reasons in LTR terms.
+fn key_input(event: &KeyboardEvent, direction: Direction) -> KeyInput {
     let modifiers = event.modifiers();
-    let key = match event.key() {
+    let key = match direction.ltr_equivalent(&event.key()) {
         Key::Enter => KeyName::Enter,
         Key::ArrowUp => KeyName::ArrowUp,
         Key::ArrowDown => KeyName::ArrowDown,
@@ -342,6 +362,8 @@ pub fn Questionnaire(props: QuestionnaireProps) -> Element {
     let controlled = props.item;
     let default_item = props.default_item;
     let shortcuts = props.shortcuts;
+    // The nearest `DirectionProvider`'s direction (LTR without one): under RTL the horizontal arrows swap.
+    let direction = use_direction(None);
     let state = use_signal(|| {
         let items = items.peek();
         let default_item = default_item.peek();
@@ -507,7 +529,7 @@ pub fn Questionnaire(props: QuestionnaireProps) -> Element {
         },
         onkeydown: move |event: KeyboardEvent| {
             let target = ctx.focused.cloned();
-            let outcome = ctx.with_peek(|s, cfg| s.key_down(cfg, &key_input(&event), &target));
+            let outcome = ctx.with_peek(|s, cfg| s.key_down(cfg, &key_input(&event, direction), &target));
             if outcome.prevent_default {
                 event.prevent_default();
             }
@@ -667,6 +689,7 @@ pub fn QuestionnaireItem(props: QuestionnaireItemProps) -> Element {
     });
 
     let item = name();
+    let direction = use_direction(None);
     let form_id = ctx.form_id.read().clone();
     let (known, active, disabled, invalid, status, required, multiple, key_shortcuts) =
         ctx.with(|s, cfg| {
@@ -679,7 +702,8 @@ pub fn QuestionnaireItem(props: QuestionnaireItemProps) -> Element {
                 s.status(cfg, &item),
                 def.is_some_and(|d| d.required),
                 def.is_some_and(|d| d.multiple),
-                s.item_key_shortcuts(cfg, &item),
+                s.item_key_shortcuts(cfg, &item)
+                    .map(|keys| rtl_keys(keys, direction)),
             )
         });
     if !known {
@@ -1230,6 +1254,16 @@ pub fn QuestionnaireSubmit(props: QuestionnaireActionProps) -> Element {
 mod ssr_tests {
     use super::*;
     use crate::test_support::find_elements;
+
+    #[test]
+    fn rtl_mirrors_only_the_horizontal_pair_of_aria_keyshortcuts() {
+        let keys = "Meta+Enter Control+Enter ArrowUp ArrowDown ArrowLeft ArrowRight".to_string();
+        assert_eq!(rtl_keys(keys.clone(), Direction::Ltr), keys);
+        assert_eq!(
+            rtl_keys(keys, Direction::Rtl),
+            "Meta+Enter Control+Enter ArrowUp ArrowDown ArrowRight ArrowLeft"
+        );
+    }
 
     fn render(app: fn() -> Element) -> String {
         let mut dom = VirtualDom::new(app);
