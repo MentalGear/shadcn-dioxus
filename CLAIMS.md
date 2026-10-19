@@ -13,6 +13,7 @@ unclaimed round. Owner decision 2026-10-18 ("Split, plus queue").
 | 2 | session_01QoX93TwsKJ9GtMXWUXXfKw | 2026-10-18T23:28 |
 | 3 | session_01QoX93TwsKJ9GtMXWUXXfKw | 2026-10-18T23:28 |
 | 4 | session_01PJCSoqAo9bCWeVLpz61Wdy | 2026-10-19T06:50 |
+| 5 | session_01QoX93TwsKJ9GtMXWUXXfKw | 2026-10-19T06:52 |
 
 ## New backlog row ids (reserved blocks, so two sessions never mint the same id)
 
