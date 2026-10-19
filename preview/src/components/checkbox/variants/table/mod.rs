@@ -32,13 +32,18 @@ const MEMBERS: &[Member] = &[
     },
 ];
 
-// The themed `Checkbox` has no indeterminate styling (the indicator draws the
-// check icon for it), so the header box is checked only when every row is and
-// unchecked otherwise, instead of showing a misleading check for "some".
 #[component]
 pub fn Demo() -> Element {
     let mut selected = use_signal(|| vec![false, true, false, false]);
     let all = selected().iter().all(|s| *s);
+    let some = selected().iter().any(|s| *s);
+    let header = if all {
+        CheckboxState::Checked
+    } else if some {
+        CheckboxState::Indeterminate
+    } else {
+        CheckboxState::Unchecked
+    };
     let to_state = |on: bool| {
         if on {
             CheckboxState::Checked
@@ -54,10 +59,10 @@ pub fn Demo() -> Element {
                         TableHead { style: "width: 2rem;",
                             Checkbox {
                                 aria_label: "Select every member",
-                                checked: Some(to_state(all)),
-                                on_checked_change: move |next| {
-                                    let on = next == CheckboxState::Checked;
-                                    selected.write().iter_mut().for_each(|s| *s = on);
+                                checked: Some(header),
+                                on_checked_change: move |_| {
+                                    // Indeterminate -> select all, as in shadcn's data table.
+                                    selected.write().iter_mut().for_each(|s| *s = !all);
                                 },
                             }
                         }
