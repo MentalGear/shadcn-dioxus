@@ -1,0 +1,1 @@
+A header lets the reader switch which of two series is drawn. To build the same, keep the full dataset in a signal, build a one-series `ChartConfig` for the chosen series, and map each `ChartDatum` down to that series' value before passing both to `ChartContainer`.

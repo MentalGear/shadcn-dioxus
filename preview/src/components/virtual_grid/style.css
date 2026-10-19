@@ -1,0 +1,70 @@
+/* VirtualGrid / VirtualWrapGrid. The primitive places rows and cells with inline styles (absolute
+ * positions, sticky header and first column); this sheet only paints them, in the Nova table's
+ * terms (`table/style.css`): `text-sm`, a `border-b` per row, a medium-weight header. The
+ * primitive renders no classes inside the grid, so every descendant rule selects the grid's own
+ * `data-grid-*` parts and ends with the popup boundary (`check-popup-boundary.sh`): a popup
+ * opened from a cell keeps its own styles. */
+
+.dx-virtual-grid {
+  position: relative;
+  overflow: auto;
+  border: 1px solid var(--dx-border);
+  border-radius: var(--dx-radius-lg);
+  background-color: var(--dx-background);
+  color: var(--dx-foreground);
+  font-size: var(--dx-text-sm);
+  font-variant-numeric: tabular-nums;
+  overscroll-behavior: contain;
+}
+
+.dx-virtual-grid [data-grid-cell]:not(:where([popover], dialog) *) {
+  display: block;
+  overflow: hidden;
+  align-content: center;
+  border-block-end: 1px solid var(--dx-border);
+  outline: none;
+  padding-inline: var(--dx-space-2);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The sticky header and column cover the cells that scroll under them. */
+.dx-virtual-grid [data-grid-header]:not(:where([popover], dialog) *),
+.dx-virtual-grid [data-grid-sticky]:not(:where([popover], dialog) *) {
+  background-color: var(--dx-background);
+}
+
+.dx-virtual-grid [data-grid-header] [data-grid-cell]:not(:where([popover], dialog) *) {
+  color: var(--dx-foreground);
+  font-weight: 500;
+}
+
+.dx-virtual-grid [data-grid-sticky]:not(:where([popover], dialog) *) {
+  border-inline-end: 1px solid var(--dx-border);
+  color: var(--dx-muted-foreground);
+}
+
+/* The active cell is the grid's one tab stop; the ring is inset because neighbouring cells
+ * would paint over an outer one. */
+.dx-virtual-grid [data-grid-cell]:focus-visible:not(:where([popover], dialog) *) {
+  box-shadow: var(--dx-ring-focus-inset);
+  outline: none;
+}
+
+/* The gallery: rows are CSS grids of equal tracks; the gap is part of the measured row. */
+.dx-virtual-grid-wrap {
+  overflow: hidden auto;
+  padding: var(--dx-space-2);
+}
+
+.dx-virtual-grid-wrap [role="row"]:not(:where([popover], dialog) *) {
+  column-gap: var(--dx-space-2);
+  padding-block-end: var(--dx-space-2);
+}
+
+.dx-virtual-grid-wrap [data-grid-cell]:not(:where([popover], dialog) *) {
+  padding: 0;
+  border: none;
+  border-radius: var(--dx-radius-md);
+  white-space: normal;
+}

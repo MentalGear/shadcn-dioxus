@@ -71,6 +71,8 @@ landed there, and so did row 136 (Questionnaire, owner lifted the hold 2026-10-1
 The archived first session's unpushed round 1 work (152a spec budget/shard planner, two-slot build lock) and its round 4
 claim stay with that session (owner chose to restore it, 2026-10-19).
 
+Round 4 (owner moved it to its own project thread 2026-10-19; session_019CSAknzLi1PvcaAvfgpych, branch `claude/round-4`, claimed on `claims`): row 244 (`VirtualGrid`/`VirtualWrapGrid` on the shared engine, own docs page with an image gallery and a 10k x 50 data grid), row 186's remaining items (a Utilities section on `/docs` for scroll-fade and shimmer, `utilities.spec`; installing `dx-effects.css` alone still needs a CLI option), row 153 prototyped (opt-in `hidden="until-found"` find-in-page placeholders on windowed VirtualList; Ctrl+F find-next still needs a manual check per engine), row 174 closed on the owner's word. Round 6 (the sweep) stays last.
+
 ## Keeping this page current
 
 Edit the section that changed, bump "Last updated", commit with the change that made it true. Row-level state belongs in

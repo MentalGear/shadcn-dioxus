@@ -89,7 +89,7 @@ test.describe("Axe automated scan", () => {
     await page.goto(`${BASE_URL}/component/?name=tabs&`);
     await page.getByRole("tab", { name: "Tab 2" }).click();
     // Scoped with the same `.filter(...)` the file's own "test" test uses
-    // above -- this page's "Variants" section renders a second, unrelated
+    // above -- this page's "Examples" section renders a second, unrelated
     // Tabs instance with its own active tabpanel, so the bare selector
     // resolves to two elements (a Playwright strict-mode violation).
     await expect(

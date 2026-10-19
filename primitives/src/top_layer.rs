@@ -1767,6 +1767,20 @@ pub(crate) fn use_anchor_position_fallback(
                     return {{ top, left }};
                 }}
 
+                // Placement contract (published at EVERY exit below, CSS-anchor path and JS
+                // fallback alike, so a stylesheet never re-measures or guesses): the side the
+                // panel actually sits on (`data-placed-side`, which differs from the requested
+                // `data-side` after a flip) and the anchor's centre in the panel's own space
+                // (`--dx-anchor-offset-x/-y`, px from the panel's left/top edge; physical, so
+                // right for RTL too). `left`/`top` are the panel's final position in the same
+                // visual-viewport space as `tLeft`/`tTop`.
+                function publishPlacement(placedSide, left, top) {{
+                    const r1 = (n) => Math.round(n * 10) / 10;
+                    content.setAttribute('data-placed-side', placedSide);
+                    content.style.setProperty('--dx-anchor-offset-x', r1(tLeft + (tRight - tLeft) / 2 - left) + 'px');
+                    content.style.setProperty('--dx-anchor-offset-y', r1(tTop + (tBottom - tTop) / 2 - top) + 'px');
+                }}
+
                 const primary = place(side);
                 const flipped = place(opposite);
 
@@ -1792,7 +1806,9 @@ pub(crate) fn use_anchor_position_fallback(
                     const outside = cTop < -1 || cLeft < -1 || cBottom > vh + 1 || cRight > vw + 1;
                     const overlaps = cLeft < tRight - 1 && cRight > tLeft + 1 && cTop < tBottom - 1 && cBottom > tTop + 1;
                     if (!outside && !overlaps) {{
-                        publish(availableFor(matches(primary) ? side : opposite));
+                        const cssSide = matches(primary) ? side : opposite;
+                        publish(availableFor(cssSide));
+                        publishPlacement(cssSide, cLeft, cTop);
                         return;
                     }}
                 }}
@@ -1882,6 +1898,7 @@ pub(crate) fn use_anchor_position_fallback(
                     content.style.top = (target.top + vp.offsetTop) + 'px';
                 }}
                 content.style.left = (target.left + vp.offsetLeft) + 'px';
+                publishPlacement(chosen, target.left, target.top);
                 if (content.scrollTop !== keepScroll) content.scrollTop = keepScroll;
             }}
 
@@ -2049,6 +2066,9 @@ pub(crate) fn use_anchor_position_fallback(
                 : null;
             if (resizeObserver) resizeObserver.observe(content);
             await dioxus.recv();
+            // No cleanup of data-placed-side / --dx-anchor-offset-*: a superseded run's teardown
+            // resolves AFTER its successor's first (synchronous) publish and would erase it; the
+            // next open republishes before paint, and a closed panel is display:none.
             if (resizeObserver) resizeObserver.disconnect();
             window.removeEventListener('scroll', onScroll, true);
             window.removeEventListener('resize', onTrack);
