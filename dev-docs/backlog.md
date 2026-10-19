@@ -34,7 +34,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (76)
+## Open rows (75)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -100,7 +100,6 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [164](backlog/164-a-fixtures-goto-that-waits-for-hydration-49.md) | A fixtures goto that waits for hydration (49 spec files lack the wait), and migrate the 362 legacy ?name=… | OPEN -- recorded 2026-10-05 (audit); scheduled in the next-session order (step 4, just before row… | M (the fixture is S; the migration is… | tests |
 | [167](backlog/167-migrate-the-52-hand-paired-listener-sites-onto.md) | Migrate the 52 hand-paired listener sites onto use_js_listeners, shrinking PAIRED_BY_HAND in… | OPEN -- recorded 2026-10-05 (follow-up of row 159, which landed 2026-10-05 in round 3); scheduled… | M (mechanical per site, 11 files) | misc |
 | [170](backlog/170-cross-component-css-overrides-190-sites-in-12.md) | Cross-component CSS overrides: 190 sites in 12 sheets declare, in one component's stylesheet, a property that… | OPEN (construction started) -- recorded 2026-10-05 (round 3: the FIELD-VAR and STYLE-DELIVERY… | M (the decision and the prototype are… | theme |
-| [174](backlog/174-home-overview-page-scroll-jank-re-profiled-2026.md) | Home/overview page scroll jank, re-profiled 2026-10-10 | PROFILED (partial, stopped by the owner) -- 2026-10-10; causes 2 and 4 LANDED 2026-10-10 (rows 177… | S to M per fix (order below) | misc |
 | [186](backlog/186-shadcn-utilities-scroll-fade-and-shimmer-are.md) | shadcn utilities: scroll-fade and shimmer are built but not shipped as documented, public utilities | PART LANDED 2026-10-15 (the scroll-fade fade prop, owner-approved 2026-10-14); BACKLOG: the /docs… | M | docs |
 | [187](backlog/187-demo-upgrades-25-components-whose-shadcn-demo.md) | Demo upgrades: 25 components whose shadcn demo is clearly richer than ours | BACKLOG -- owner item 2026-10-11, from a comparison of 61 shadcn pages (25 richer there, 36 equal… | S mostly (20 of 25 S; 5 M: combobox… | docs |
 | [188](backlog/188-demo-parity-second-audit-the-owner-s-per.md) | Demo parity, second audit: the owner's per-example list against the original shadcn demos (51 components; row… | DEMO-ONLY ITEMS DONE 2026-10-19 (batch 2: every section-5 demo exists; what remains needs component… | M per batch | docs |
@@ -115,7 +114,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [246](backlog/246-snapshot-buckets-too-coarse.md) | Snapshot diff buckets are page-level on some routes | BACKLOG (validation 2026-10-19) | S-M | tests |
 | [265](backlog/265-upstream-ai-elements-code-block-trace-chat.md) | Upstream ai-elements (chat, message, code-block, trace, checkpoint, ...) vs our chat kit | BACKLOG (found by row 213 item 10, 2026-10-19). Source… | L | chat |
 
-## Done rows (177)
+## Done rows (178)
 
 | # | Item | Updated |
 |---|---|---|
@@ -230,6 +229,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [171](backlog/done/171-drag-and-drop-list-axe-heading-order-finding-on.md) | drag_and_drop_list axe heading-order finding on an h3 | 2026-10-05 |
 | [172](backlog/done/172-date-picker-spec-ts-73-and-144-anchor-placement.md) | date-picker.spec.ts :73 and :144 anchor placement (the panel opened above the trigger at 1280x720; offset… | 2026-10-05 |
 | [173](backlog/done/173-the-deployed-site-has-no-404-html-unknown-urls.md) | The deployed site has no 404.html: unknown URLs (e.g. /dioxus-components/charts/no-such-chart/) get GitHub… | 2026-10-11 |
+| [174](backlog/done/174-home-overview-page-scroll-jank-re-profiled-2026.md) | Home/overview page scroll jank, re-profiled 2026-10-10 | 2026-10-19 |
 | [175](backlog/done/175-the-component-installer-dx-components-add.md) | The component installer: dx components add resolved dependencies in dx's upstream default registry, not ours | 2026-10-10 |
 | [176](backlog/done/176-reduced-motion-has-a-gap-the-infinite-loops-of.md) | Reduced motion has a gap: the infinite loops of Skeleton (pulse), Progress (indeterminate sweep) and Avatar… | 2026-10-10 |
 | [177](backlog/done/177-motion-nobody-can-see-must-not-run-visibility.md) | Motion nobody can see must not run: visibility gating for CSS loops, timers and entrances, by construction | 2026-10-10 |
