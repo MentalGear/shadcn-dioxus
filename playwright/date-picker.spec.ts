@@ -2102,10 +2102,13 @@ test.describe("Natural language picker (variant=natural_language)", () => {
     await frame(page, VARIANT).getByRole("button", { name: "Select date" }).click();
     const dialog = pickerContent(page, VARIANT);
     await expect(dialog).toBeVisible();
-    await dayCell(dialog, 20).click();
+    // The demo opens on a relative date ("In 2 days"), so which day is already selected depends on the run date:
+    // clicking the selected day deselects it (field ""). Pick a day that is not selected.
+    const target = (await dayCell(dialog, 20).getAttribute("data-selected")) === "true" ? 21 : 20;
+    await dayCell(dialog, target).click();
     await expect(dialog).toBeHidden({ timeout: 15000 });
     const value = await field(page).inputValue();
-    expect(value).toMatch(/^[A-Z][a-z]+ 20, \d{4}$/);
+    expect(value).toMatch(new RegExp(`^[A-Z][a-z]+ ${target}, \\d{4}$`));
     await expect(boldDate(page)).toHaveText(value);
     // The written text parses back to the same date: typing it again changes nothing.
     await field(page).fill(value);

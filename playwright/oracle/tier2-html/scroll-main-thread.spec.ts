@@ -164,6 +164,9 @@ test.describe("scroll smoothness of / (counts)", () => {
 
   test("2. the player block's readout advances and its play/pause works", async ({ page }) => {
     await openHome(page);
+    // The block's tick is motion-gated (use_motion / use_interval_while): it only runs while the card is on
+    // screen, so bring the card into view before reading the readout.
+    await page.locator(".dx-widget-card").filter({ has: page.getByRole("button", { name: "Play or pause" }) }).first().scrollIntoViewIfNeeded();
     const start = await playerLabel(page);
     expect(start, "the player block is on the page").toMatch(/^\d+:\d\d$/);
     // HEAD: stuck at 1:24 -- every re-render allocated a fresh signal at 84 s.
