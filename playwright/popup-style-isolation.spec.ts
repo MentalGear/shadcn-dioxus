@@ -34,16 +34,13 @@
  */
 import { test, expect } from "./fixtures";
 import type { Page } from "@playwright/test";
-import { readCatalog, readModRs } from "./catalog";
+import { readBlockDemos, readCatalog } from "./catalog";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
-const MOD_RS = readModRs();
-const COMPONENTS = readCatalog(MOD_RS).map((r) => r.name);
-/** Block demos (`name(block)[variant, ..]` rows of `examples!`) are pages of their own, `/component/block/<name>/<variant>/`. */
-const BLOCKS = [...(MOD_RS.split("examples!(\n")[1] ?? "").matchAll(/^\s*([a-z0-9_]+)\(block\)(?:\[([^\]]*)\])?/gm)].flatMap((m) =>
-  ["main", ...(m[2] ?? "").split(",").map((v) => v.trim()).filter(Boolean)].map((v) => ({ id: `block-${m[1]}-${v}`, path: `/component/block/${m[1]}/${v}/` })),
-);
+const COMPONENTS = readCatalog().map((r) => r.name);
+/** Block demos (`variants/demo.css` components) are pages of their own, `/component/block/<name>/<variant>/`. */
+const BLOCKS = readBlockDemos().map((b) => ({ id: `block-${b.name}-${b.variant}`, path: b.path }));
 /** Every page a popup can be nested on: each component page, the block demos, and the site pages that compose several components. */
 const ROUTES = [
   ...COMPONENTS.map((name) => ({ id: name, path: `/component/${name}/` })),

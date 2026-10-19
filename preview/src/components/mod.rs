@@ -451,14 +451,3 @@ macro_rules! examples {
 // COMPONENT still needs its `CATALOG` row above, which is also what re-runs `build.rs`.
 include!(concat!(env!("OUT_DIR"), "/examples.rs"));
 with_registry!(examples);
-
-// Compile-time-dead mirror of the derived BLOCK rows. The Playwright specs (`all-routes`,
-// `demo-forms-no-navigation`, `popup-style-isolation`) scrape `name(block)[variant, ..]` rows after
-// this invocation's name to build the block demo routes. `cfg(any())` removes the item before macro
-// resolution, so nothing is compiled from it; `build.rs` (`check_block_mirror`) fails the build when
-// these rows differ from the directories, so the specs' route list cannot go quietly stale. Retire it
-// when those specs read `variants/` instead.
-#[cfg(any())]
-examples!(
-    sidebar(block)[floating, inset],
-);
