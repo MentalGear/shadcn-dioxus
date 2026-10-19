@@ -45,7 +45,19 @@ After a build, prove your change is in the output (grep the served HTML, CSS or 
    (partial by design). That is every static `check-*.sh`, fmt and stylelint, in seconds. Do NOT run the full
    `run-gates.sh`: the main loop runs it once on the merged tree.
 3. Run your own specs plus the existing specs of everything you touched on a `lane-ssg` build that you verified
-   contains your change. A change to shared plumbing (a primitive, `merge_attributes`, the theme, a component other
+   contains your change. Do not pick the specs by hand: `node playwright/tools/select.mjs --explain` lists the specs
+   that cover your diff (default range `origin/main...HEAD` plus uncommitted files; `--range A..B`, `--files f...`).
+   Map: a component directory -> the specs about that component (file named for it, or naming its page); a primitive
+   -> the specs of every component that uses it, directly or through another primitive (more than 30 components =
+   shared plumbing, the broad set is added); theme CSS, `main.rs`, `eager_head.rs`, `index.html`, `components/mod.rs` ->
+   the broad set (every spec that names more than 12 components, i.e. the route and subject matrices
+   `hydration-parity`, `dx-class-migration`, `keyboard-matrix`, ..., plus the cheap cross-cutting guards listed in
+   `BROAD_EXTRA`); a changed spec -> itself; a changed helper -> the specs importing it; `fixtures.ts`, `base-url.ts`
+   or a config -> every spec. A single-component change leaves the matrix specs out (add `--matrix`, or run them with
+   `--grep <component>`). Run the list with
+   `PW_SPECS_FILE=<file> npx playwright test --config=suite.local.config.ts` (`select.mjs > <file>`) under
+   `flock $LANE_TGT/pw.lock`. The full suite is the main loop's, run as duration-balanced chunks
+   (`playwright/tools/run-suite.sh`, "Running the suite" below). A change to shared plumbing (a primitive, `merge_attributes`, the theme, a component other
    components compose such as Button) also needs the specs of its consumers: each lane green alone proves nothing about
    the merge (row 224).
 4. Wait in the foreground for queued builds (long timeouts) instead of handing back early.

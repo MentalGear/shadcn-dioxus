@@ -4,7 +4,7 @@
 // spec files by the measured seconds in playwright/durations.json and deals them greedily (longest first) onto the
 // currently lightest shard (LPT), so the shards finish within a few percent of each other.
 //
-//   node playwright/tools/shard.mjs <index>/<count> [--out FILE] [--print-loads]
+//   node playwright/tools/shard.mjs <index>/<count> [--out FILE] [--print-loads] [--table FILE]
 //   PW_SPECS_FILE=FILE npx playwright test --config=suite.local.config.ts     (the config reads the list)
 //
 // A spec file missing from durations.json is dealt with the median measured duration (the budget gate,
@@ -30,7 +30,19 @@ const walk = (dir, acc = []) => {
   return acc;
 };
 const specs = walk(PW);
-const table = JSON.parse(fs.readFileSync(path.join(PW, "durations.json"), "utf8")).files;
+// --table FILE: a durations.json (default) or a `playwright test --list --reporter=json` file (weight = test count x 2.5 s,
+// the bootstrap before any durations exist).
+const tablePath = rest.includes("--table") ? rest[rest.indexOf("--table") + 1] : path.join(PW, "durations.json");
+const raw = JSON.parse(fs.readFileSync(tablePath, "utf8"));
+let table = raw.files;
+if (!table) {
+  table = {};
+  const visit = (suite) => {
+    for (const sp of suite.specs ?? []) { const f = sp.file.replace(/\\/g, "/"); (table[f] ??= { seconds: 0 }).seconds += 2.5 * (sp.tests?.length ?? 1); }
+    for (const x of suite.suites ?? []) visit(x);
+  };
+  for (const x of raw.suites) visit(x);
+}
 const known = specs.map((f) => table[f]?.seconds).filter((x) => x != null).sort((a, b) => a - b);
 const median = known.length ? known[Math.floor(known.length / 2)] : 10;
 const weight = (f) => table[f]?.seconds ?? median;

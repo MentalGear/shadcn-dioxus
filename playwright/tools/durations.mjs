@@ -11,8 +11,10 @@
 import fs from "node:fs";
 import path from "node:path";
 
-const [, , reportPath, ...rest] = process.argv;
-if (!reportPath) { console.error("usage: durations.mjs report.json [--write out.json] [--top N] [--meta k=v ...]"); process.exit(2); }
+const argv = process.argv.slice(2);
+const reportPaths = []; while (argv.length && !argv[0].startsWith("--")) reportPaths.push(argv.shift());
+const rest = argv; const reportPath = reportPaths[0];
+if (!reportPath) { console.error("usage: durations.mjs report.json... [--write out.json] [--top N] [--meta k=v ...]"); process.exit(2); }
 let write = null, top = 30, merge = false; const meta = {};
 for (let i = 0; i < rest.length; i++) {
   if (rest[i] === "--write") write = rest[++i];
@@ -20,7 +22,9 @@ for (let i = 0; i < rest.length; i++) {
   else if (rest[i] === "--top") top = Number(rest[++i]);
   else if (rest[i] === "--meta") { while (i + 1 < rest.length && /^[\w.-]+=/.test(rest[i + 1])) { const [k, ...v] = rest[++i].split("="); meta[k] = v.join("="); } }
 }
-const report = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+// several reports (a chunked run) are one run: their suites are concatenated, wall time is the sum of the chunks
+const reports = reportPaths.map((p) => JSON.parse(fs.readFileSync(p, "utf8")));
+const report = { suites: reports.flatMap((r) => r.suites), stats: { duration: reports.reduce((a, r) => a + (r.stats?.duration ?? 0), 0) } };
 const files = {};
 const tests = [];
 function visit(suite) {
