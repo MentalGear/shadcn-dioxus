@@ -23,9 +23,19 @@ Preview site: https://mentalgear.github.io/shadcn-dioxus/ (deployed from main `4
 Rounds 2-3 (PR #102), Rounds 5 and 7 (PR #105: rows 188 demo items, 213, 162, 261, 264, 165, 157, 137, 136), the
 card-overflow fix (PR #104, row 280); preview redeployed from `404e7175` (PR #106).
 
+## Features batch (2026-10-19)
+
+Merged lanes: hygiene (row 5 landed: the `form` attribute on the Switch/RadioGroup/Checkbox hidden inputs; one primitives
+sleep helper), menus (theme `data-dx-menu-*` hoist, `CommandShortcut`), calendar (`caption_layout`, ISO week numbers, cell
+size, date of birth; `num-integer` and `dioxus-sdk-time` removed), chatkit (CodeBlock, Trace, Checkpoint, agent chat demos;
+row 265 partial, item 3 is the owner's decision), snapshot (rows 245/246 landed: timer-drain opener, skip-link exclusion,
+element-level classifier `scripts/snapshot-classify.mjs`, format 4), combobox (`ComboboxMulti` with chips and clear, row 187
+item 6), parts (typed AlertDialog size/media/action variant, Card size, Spinner size, Button radius; rows 187/188 updated;
+the Select scroll buttons and item-aligned position split out to row 268). `strum` is also gone from preview.
+
 ## Backlog numbers
 
-48 open and 206 done rows on 2026-10-19 (see [`backlog.md`](./backlog.md)), after the bookkeeping pass closed 29 rows
+45 open and 211 done rows on 2026-10-19 (see [`backlog.md`](./backlog.md)), after the bookkeeping pass closed 29 rows
 whose status already said done.
 
 ## Next round

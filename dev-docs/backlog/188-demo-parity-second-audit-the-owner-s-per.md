@@ -36,3 +36,5 @@ M per batch
 **Update 2026-10-19 (menus lane):** command shortcuts done. New themed `CommandShortcut` part (shadcn's `CommandShortcut`: muted, `text-xs`, `tracking-widest`, pushed to the inline end, foreground ink on the highlighted row) in `command/component.rs` + `style.css`, documented in `docs.md`, with a `shortcuts` demo (`variants/shortcuts`, listed in `order.txt`). Spec: `playwright/command-shortcut.spec.ts` (geometry, muted/highlight ink, axe light and dark). Removes "command shortcuts (no `CommandShortcut`)" from the parts-blocked list.
 
 **Update 2026-10-19 (lane calendar):** the DOB dropdown layouts demo (`date_picker/variants/date_of_birth`) and the calendar cell size (`calendar/variants/cell_size`; `--dx-calendar-cell-size` was already the slot behind shadcn's `--cell-size`, so only a demo and docs were missing) landed. Calendar docs carry the `caption_layout` and cell-size notes (date_picker docs.md belongs to another thread).
+
+Select scroll buttons and `position=item-aligned` were split out to [row 268](268-select-scroll-buttons-and-item-aligned-position.md).

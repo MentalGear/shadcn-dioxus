@@ -34,12 +34,11 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (47)
+## Open rows (45)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
 | [4](backlog/004-first-3-browser-ci-run-treat-as-calibration-not.md) | First 3-browser CI run — treat as calibration. Not done — see 2026-09-04 Notes below for what's now known and… | A manual dispatch of playwright.yml on a GitHub-hosted runner: all workflows are… | S–M | ci |
-| [5](backlog/005-tier-2-harness-completion-rules-5-checkvalidity.md) | Tier-2 harness completion — rules 5 (checkValidity/reportValidity/willValidate), 7 (label association), 8… | LANDED 2026-10-19 (rule 8: form attribute forwarded by Switch, RadioGroup, Checkbox; rule 7… | S (rule 8 remaining) | tests |
 | [6](backlog/006-upstream-engagement-where-fixes-land-open.md) | Upstream engagement — where fixes land (open decision #1) + talking to upstream/fork authors (decision #4) | User decision | S to start | upstream |
 | [10](backlog/010-phase-5-collision-detection.md) | Phase 5 — collision detection | 5.1 REFRAMED by the 2026-09-01 bits-ui/Radix source comparison, FLIP sub-problem landed same day… | S (flip, done) + S (JS-fallback shift… | theme |
 | [14](backlog/014-nudge-dioxus-framework-issues-2962-onclose-4319.md) | Nudge Dioxus framework issues: #2962 (onclose), #4319 (dialog methods), ancestor-traversal gap (complaints.md) | User decision (outward-facing) | S | overlays |
@@ -80,19 +79,19 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [221](backlog/221-infra-session-process-lessons-from-the-2026-10.md) | Infra: session process lessons from the 2026-10-14/15 batch (memory, lock fairness, gate worktree… | OPEN 2026-10-15 (rules in force in the lane brief; constructions proposed) | S-M | process |
 | [241](backlog/241-specs-still-read-block-demo-rows-from-a-mirror.md) | Specs still read block-demo rows from a mirror in components/mod.rs | BACKLOG (lane registry 2026-10-18) | S | tests |
 | [242](backlog/242-spec-failures-that-are-red-on-the-deployed.md) | Spec failures that are red on the deployed baseline too (found by the 2026-10-18 lanes) | OPEN | S each | process |
-| [245](backlog/245-snapshot-harness-tooltip-and-skip-link.md) | Computed-style snapshot harness: tooltip timing nondeterminism and the skip link counted as an open-state item | LANDED 2026-10-19 (harness timer drain + skip-link exclusion; A/A byte-identical) | S | tests |
-| [246](backlog/246-snapshot-buckets-too-coarse.md) | Snapshot diff buckets are page-level on some routes | LANDED 2026-10-19 (element-level classifier, user-select, focusK, kbd records) | S-M | tests |
 | [265](backlog/265-upstream-ai-elements-code-block-trace-chat.md) | Upstream ai-elements (chat, message, code-block, trace, checkpoint, ...) vs our chat kit | PARTIAL 2026-10-19 (items 1-2 landed: code_block, trace, checkpoint and chat demos; item 3 is an… | L | chat |
 | [266](backlog/266-repo-cleanup-archive-historical-dev-docs.md) | Repo cleanup: archive historical dev-docs, trim CLAUDE.md and the big dev docs, split backlog.md | APPROVED 2026-10-19 (owner: run it when safe, in the Round 6 sweep); starts once no feature lane… | M-L | process |
 | [267](backlog/267-split-oversized-source-files-into-modules.md) | Split oversized source files into modules (carousel.rs, carousel.spec.ts, main.rs, top_layer.rs, calendar.rs, date_picker.rs) | BACKLOG (owner approved 2026-10-19 on the cleanup plan; Round 6, before the 152b suite prune).… | M | process |
+| [268](backlog/268-select-scroll-buttons-and-item-aligned-position.md) | Select scroll buttons and position=item-aligned | OPEN. Not started; no owner decision needed. | S-M (scroll buttons), M-L (item-aligned) | select |
 
-## Done rows (208)
+## Done rows (211)
 
 | # | Item | Updated |
 |---|---|---|
 | [1](backlog/done/001-scroll-lock-scrollbar-gutter-fix-permanent.md) | Scroll-lock scrollbar-gutter fix (permanent scrollbar-gutter: stable baseline) | 2026-08-31 |
 | [2](backlog/done/002-phase-4-4-popover-popover-auto-top-layer-for.md) | Phase 4.4 — popover/popover="auto" top layer for non-modal overlays | unknown |
 | [3](backlog/done/003-phase-4-2-native-dialog-showmodal-for-dialog.md) | Phase 4.2 — native &lt;dialog&gt;+showModal() for Dialog and AlertDialog | 2026-09-01 |
+| [5](backlog/done/005-tier-2-harness-completion-rules-5-checkvalidity.md) | Tier-2 harness completion — rules 5 (checkValidity/reportValidity/willValidate), 7 (label association), 8… | 2026-09-19 |
 | [7](backlog/done/007-wervice-tooltip-fade-out-a704c517-upstream-pr.md) | Wervice tooltip fade-out (a704c517, upstream PR #293) | 2026-09-18 |
 | [8](backlog/done/008-select-trigger-apg-select-only-combobox-role.md) | Select trigger → APG select-only-combobox role (role="combobox") | 2026-09-18 |
 | [9](backlog/done/009-select-listbox-scroll-lock.md) | Select listbox scroll lock | 2026-09-18 |
@@ -292,6 +291,8 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [240](backlog/done/240-base-ui-focus-model-what-to-lift-beyond-row-226.md) | Base UI focus model: what to lift beyond row 226 | 2026-10-19 |
 | [243](backlog/done/243-button-hover-fills-3-levels-off-shadcn.md) | Button hover fills 3 levels off shadcn | 2026-10-18 |
 | [244](backlog/done/244-virtualgrid-x-y-virtualization-that-windows.md) | VirtualGrid: x/y virtualization that windows rows AND columns (a data grid, an image grid) | 2026-10-19 |
+| [245](backlog/done/245-snapshot-harness-tooltip-and-skip-link.md) | Computed-style snapshot harness: tooltip timing nondeterminism and the skip link counted as an open-state item | 2026-10-19 |
+| [246](backlog/done/246-snapshot-buckets-too-coarse.md) | Snapshot diff buckets are page-level on some routes | 2026-10-19 |
 | [260](backlog/done/260-hover-color-mix-space-one-token-everywhere.md) | Every hover color-mix reads the theme's mix space (finish row 243) | 2026-10-19 |
 | [261](backlog/done/261-theme-mono-font-token.md) | A --dx-font-mono theme token | 2026-10-19 |
 | [262](backlog/done/262-toast-f6-one-listener-per-page.md) | Toast: one F6 listener per page, not one per ToastProvider | 2026-10-19 |
