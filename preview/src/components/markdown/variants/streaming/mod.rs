@@ -85,7 +85,12 @@ pub fn Demo() -> Element {
                 }
             }
             div { style: "display: flex; flex-wrap: wrap; align-items: center; gap: var(--dx-space-2);",
-                Button { disabled: busy(), onclick: stream, "Stream a reply" }
+                Button {
+                    disabled: busy(),
+                    onclick: stream,
+                    "data-testid": "stream-reply",
+                    "Stream a reply"
+                }
                 Button {
                     variant: ButtonVariant::Outline,
                     disabled: busy(),

@@ -12,7 +12,7 @@ const PAGE = `${BASE_URL}/component/button/`;
 const CHAT = ["attachment", "bubble", "markdown", "marker", "message", "message scroller"];
 
 const group = (page: Page, label: string) =>
-  page.locator(".dx-nav-category [data-slot=sidebar-group]").filter({
+  page.locator(".dx-nav-category").filter({
     has: page.locator(".dx-sidebar-group-label", { hasText: new RegExp(`^\\s*${label}\\s*$`) }),
   });
 
@@ -46,5 +46,5 @@ test("a chat component's page links work from the Chat group", async ({ page }) 
   await gotoHydrated(page, PAGE);
   await page.locator('.dx-nav-sort-option[data-nav-sort-option="category"]').click();
   await group(page, "Chat").getByRole("link", { name: "bubble" }).click();
-  await expect(page).toHaveURL(/component\/(\?name=)?bubble/);
+  await expect(page).toHaveURL(/\/component\/bubble/);
 });

@@ -32,10 +32,23 @@ async function open(page: Page, frame: (page: Page) => Locator = main) {
   const root = frame(page);
   await root.scrollIntoViewIfNeeded();
   await expect(prose(root)).toBeVisible({ timeout: 60_000 });
-  // The component's stylesheet is linked after mount.
+  await stylesApplied(root);
+  return root;
+}
+
+/** The component's stylesheet is linked after mount: wait until it has applied. */
+async function stylesApplied(root: Locator) {
   await expect
     .poll(() => prose(root).evaluate((el) => getComputedStyle(el).overflowWrap), { timeout: 60_000 })
     .toBe("anywhere");
+}
+
+/** The streaming demo has no text until a reply is streamed: its "stream-reply" button starts one. */
+async function openStreaming(page: Page) {
+  await gotoHydrated(page, URL, GOTO);
+  const root = variant(page, "streaming");
+  await root.scrollIntoViewIfNeeded();
+  await expect(root.getByTestId("stream-reply")).toBeEnabled({ timeout: 60_000 });
   return root;
 }
 
@@ -43,7 +56,7 @@ test("the main demo renders headings, lists, task checkboxes, a table and a code
   const root = await open(page);
   await expect(root.locator("h2")).toHaveText("Release notes");
   await expect(root.locator("ol > li")).toHaveCount(2);
-  await expect(root.locator("ul ul > li")).toHaveCount(2);
+  await expect(root.locator("ol ul > li")).toHaveCount(2);
   const tasks = root.locator('input[type="checkbox"]');
   await expect(tasks).toHaveCount(2);
   await expect(tasks.first()).toBeChecked();
@@ -82,7 +95,7 @@ test("link policy: new tab for web links with noopener, none for relative, no ta
   const [popup] = await Promise.all([page.waitForEvent("popup"), web.click()]);
   expect(await popup.evaluate(() => window.opener)).toBeNull();
   await popup.close();
-  await expect(page).toHaveURL(URL);
+  await expect(page).toHaveURL(/\/component\/markdown/);
 });
 
 test("images are off by default and load only after the opt-in; a script source never loads", async ({ page }) => {
@@ -138,8 +151,10 @@ test("an XSS attempt renders inert: the markup is text and nothing runs", async 
         ).length,
     ),
   ).toBe(0);
-  // The three markdown script links are inert labels.
-  await expect(text.locator('[data-blocked="link"]')).toHaveCount(3);
+  // The two well-formed script links are inert labels. A destination with a tab or space is not a link to
+  // the parser at all, so that one stays literal text (`safe_href` also refuses it, unit-tested).
+  await expect(text.locator('[data-blocked="link"]')).toHaveCount(2);
+  await expect(text).toContainText("[tab](java");
   // Give any injected handler time to fire, then prove nothing ran.
   await page.waitForTimeout(500);
   expect(await page.evaluate(() => (window as unknown as { __pwned?: boolean }).__pwned)).toBeUndefined();
@@ -171,7 +186,7 @@ async function streamAndSample(page: Page, root: Locator): Promise<string[]> {
       if (t && w.__samples[w.__samples.length - 1] !== t) w.__samples.push(t);
     }).observe(el, { subtree: true, childList: true, characterData: true });
   });
-  const run = root.getByRole("button").first();
+  const run = root.getByTestId("stream-reply");
   await run.click();
   await expect(run).toBeDisabled();
   await expect(run).toBeEnabled({ timeout: 60_000 });
@@ -181,7 +196,7 @@ async function streamAndSample(page: Page, root: Locator): Promise<string[]> {
 test("streaming: the heal pass keeps raw markers out of every frame, and the scroller follows the end", async ({
   page,
 }) => {
-  const root = await open(page, (p) => variant(p, "streaming"));
+  const root = await openStreaming(page);
   const samples = await streamAndSample(page, root);
   expect(samples.length, "the reply arrived in many frames").toBeGreaterThan(20);
   const raw = samples.filter((t) => t.includes("**") || t.includes("`") || t.includes("]("));
@@ -202,7 +217,7 @@ test("streaming: the heal pass keeps raw markers out of every frame, and the scr
 test("streaming: with the heal switched off the markers do show (the heal claim is not vacuous)", async ({
   page,
 }) => {
-  const root = await open(page, (p) => variant(p, "streaming"));
+  const root = await openStreaming(page);
   await root.getByRole("switch").click();
   await expect(root.getByRole("switch")).not.toBeChecked();
   const samples = await streamAndSample(page, root);
@@ -218,12 +233,13 @@ for (const scheme of ["light", "dark"] as const) {
     for (const name of ["main", "streaming", "links", "images", "code_slot", "xss"]) {
       const frame = name === "main" ? main(page) : variant(page, name);
       await frame.scrollIntoViewIfNeeded();
-      await expect(prose(frame)).toBeVisible();
       if (name === "streaming") {
-        const run = frame.getByRole("button").first();
+        const run = frame.getByTestId("stream-reply");
         await run.click();
         await expect(run).toBeEnabled({ timeout: 60_000 });
       }
+      await expect(prose(frame)).toBeVisible();
+      await stylesApplied(frame);
       await expectNoAxeViolations(page, `markdown: ${name} demo, ${scheme}`, {
         include: name === "main" ? "#component-preview-frame" : `#component-preview-frame-${name}`,
         excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT],
