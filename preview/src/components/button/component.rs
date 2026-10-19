@@ -56,10 +56,32 @@ impl ButtonSize {
     }
 }
 
+/// The button's corner radius: the size's own (default) or fully rounded (shadcn's `rounded-full`).
+#[derive(Copy, Clone, PartialEq, Eq, Default, Debug)]
+#[non_exhaustive]
+pub enum ButtonRadius {
+    #[default]
+    Default,
+    Full,
+}
+
+impl ButtonRadius {
+    /// The `data-radius` value the stylesheet keys on.
+    pub fn class(&self) -> &'static str {
+        match self {
+            ButtonRadius::Default => "default",
+            ButtonRadius::Full => "full",
+        }
+    }
+}
+
 #[component]
 pub fn Button(
     #[props(default)] variant: ButtonVariant,
     #[props(default)] size: ButtonSize,
+    /// The corner radius. `Full` makes a pill (or, on an icon size, a circle).
+    #[props(default)]
+    radius: ButtonRadius,
     #[props(extends=GlobalAttributes)]
     #[props(extends=button)]
     attributes: Vec<Attribute>,
@@ -78,6 +100,7 @@ pub fn Button(
         class: "dx-button",
         "data-style": variant.class(),
         "data-size": size.class(),
+        "data-radius": radius.class(),
     });
     // The handlers are attributes, not rsx on the `button`, so the `as`
     // element receives them the same way the `button` does. Only the ones the

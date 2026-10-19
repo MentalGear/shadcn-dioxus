@@ -26,3 +26,7 @@ Button {
 ```
 
 The Secondary and Destructive hover fills step the fill toward `--dx-foreground` in the interpolation space of the theme token `--dx-hover-mix-space` (`oklch`, shadcn base-nova's), so they match shadcn's `color-mix(in oklch, ...)` hover. Retune the space once, in the theme.
+
+## Radius
+
+`Button { radius: ButtonRadius::Full }` (shadcn's `rounded-full`) makes a pill on a text size and a circle on an icon size; the default keeps each size's own radius. It sets the one `--dx-button-radius` slot every corner reads, so a ButtonGroup's per-position corners still win inside a group.

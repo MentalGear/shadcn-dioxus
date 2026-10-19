@@ -30,3 +30,7 @@ Card {
 ## Layout Notes
 
 - When `CardAction` is present inside `CardHeader`, the header automatically switches to a two-column grid layout.
+
+## Size
+
+`Card { size: CardSize::Sm }` (shadcn's `size="sm"`) tightens the spacing from 16px to 12px and the title to `text-sm`. The card always carries `data-size` (`default` or `sm`); it is the typed prop's value, so a raw `"data-size"` attribute cannot disagree with it.

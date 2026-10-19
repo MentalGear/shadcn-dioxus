@@ -3,3 +3,4 @@ button
 badge
 in_input
 rtl
+size

@@ -36,3 +36,5 @@ and the roots differ in type (`Option<T>` vs `Vec<T>`), so single-select paths c
 chips/clear/Backspace operations exist only inside `Multi`. New demos: `multiple`, `multiple_clear`, `multiple_form`,
 `rtl`. Spec: `playwright/combobox-multiple.spec.ts`. Remaining for #6: groups inside the multi demo and an
 input-group addon variant (shadcn's other demos), and a `name` for the single `Combobox`.
+
+**Update 2026-10-19 (parts):** the card event/terms cards, spinner-in-button/badge and the input_group block addons are demoed (see row 188's parts update); the remaining 187 items are outside the parts lane's components.
