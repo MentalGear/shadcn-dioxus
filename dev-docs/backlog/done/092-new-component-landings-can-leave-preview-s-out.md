@@ -4,7 +4,7 @@ title: "New-component landings can leave preview's OUT_DIR stale — cargo clipp
 status: "Found 2026-09-20 (round 4 integration, Carousel landing onto a pre-existing target dir); recurs for…"
 size: "S"
 area: build
-updated: 2026-09-20
+updated: 2026-10-19
 ---
 
 # Row 92: New-component landings can leave preview's OUT_DIR stale — cargo clippy/test/doc fail until build.rs is…

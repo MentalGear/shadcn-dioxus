@@ -34,7 +34,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (63)
+## Open rows (60)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -61,7 +61,6 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [74](backlog/074-navigation-menu-first-render-panic-hook-called.md) | Navigation Menu first-render panic (hook called inside another hook's closure) + demo/site-chrome… | Found in integration round 2 (2026-09-18), fixed round 3 same day | S | menus |
 | [75](backlog/075-per-variant-component-preview-frame-duplicate.md) | Per-variant component-preview-frame duplicate id + unscoped Table caption locator (two strict-mode… | Found in integration round 2 (2026-09-18), fixed round 3 same day | S | a11y |
 | [83](backlog/083-daterangepicker-page-hang-dateelement-s-sync.md) | DateRangePicker page hang — DateElement's sync-down/sync-up effects form an unconditional two-way reactive… | Found and fixed 2026-09-19 (batch 3, date-picker + range-hang lanes) | S | inputs |
-| [92](backlog/092-new-component-landings-can-leave-preview-s-out.md) | New-component landings can leave preview's OUT_DIR stale — cargo clippy/test/doc fail until build.rs is… | Found 2026-09-20 (round 4 integration, Carousel landing onto a pre-existing target dir); recurs for… | S | build |
 | [95](backlog/095-a-debug-ssg-build-serves-fine-but-traps-at.md) | A debug SSG build serves fine but traps at runtime, so interaction specs run against it fail like real… | Hit 2026-09-20 (round 5) running carousel.spec.ts against a local static serve of dx build --ssg… | DONE — warning added directly to the… | build |
 | [97](backlog/097-a-second-un-fragmented-rsx-sibling-renders-on.md) | A second, un-fragmented rsx sibling renders on the first pass and is silently dropped by the next one | Found 2026-09-20 (round 5) adding a scoped &lt;style&gt; tag beside CarouselContent's track | DONE for this instance (explicit… | misc |
 | [98](backlog/098-dx-build-ssg-fails-with-no-such-file-or.md) | dx build --ssg fails with No such file or directory (os error 2) when CARGO_TARGET_DIR is a relative path | NARROWED 2026-10-19 (backlog review): local fix in (build-ssg.sh absolute-path guard); filing… | Workaround is one word: make the path… | process |
@@ -87,10 +86,8 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [174](backlog/174-home-overview-page-scroll-jank-re-profiled-2026.md) | Home/overview page scroll jank, re-profiled 2026-10-10 | PROFILED (partial, stopped by the owner) -- 2026-10-10; causes 2 and 4 LANDED 2026-10-10 (rows 177… | S to M per fix (order below) | misc |
 | [186](backlog/186-shadcn-utilities-scroll-fade-and-shimmer-are.md) | shadcn utilities: scroll-fade and shimmer are built but not shipped as documented, public utilities | PART LANDED 2026-10-15 (the scroll-fade fade prop, owner-approved 2026-10-14); BACKLOG: the /docs… | M | docs |
 | [188](backlog/188-demo-parity-second-audit-the-owner-s-per.md) | Demo parity, second audit: the owner's per-example list against the original shadcn demos (51 components; row… | DEMO-ONLY ITEMS DONE 2026-10-19 (batch 2: every section-5 demo exists; what remains needs component… | M per batch | docs |
-| [216](backlog/216-infra-worktrees-sharing-or-copying-one-cargo.md) | Infra: worktrees sharing or copying one CARGO_TARGET_DIR build and lint another tree's code (re-confirms row… | OPEN 2026-10-14 (workaround in CLAUDE.md; by-construction fix proposed) | S-M | process |
 | [217](backlog/217-dependency-audit-follow-ups-what-users-pay-for.md) | Dependency audit follow-ups (what users pay for in compile time and supply chain) | PARTLY LANDED 2026-10-18 (lane deps 04ad7ddf): features calendar/color-picker, no build script… | S-M each | build |
 | [218](backlog/218-popup-style-isolation-top-layer-popups-stay-dom.md) | Popup style isolation: top-layer popups stay DOM descendants of their trigger, so free-content rules in an… | NARROWED 2026-10-19 (backlog review): PARTLY LANDED 2026-10-15 (lane ancestorleak 900f394 +… | M | overlays |
-| [221](backlog/221-infra-session-process-lessons-from-the-2026-10.md) | Infra: session process lessons from the 2026-10-14/15 batch (memory, lock fairness, gate worktree… | OPEN 2026-10-15 (rules in force in the lane brief; constructions proposed) | S-M | process |
 | [241](backlog/241-specs-still-read-block-demo-rows-from-a-mirror.md) | Specs still read block-demo rows from a mirror in components/mod.rs | BACKLOG (lane registry 2026-10-18) | S | tests |
 | [242](backlog/242-spec-failures-that-are-red-on-the-deployed.md) | Spec failures that are red on the deployed baseline too (found by the 2026-10-18 lanes) | OPEN | S each | process |
 | [244](backlog/244-virtualgrid-x-y-virtualization-that-windows.md) | VirtualGrid: x/y virtualization that windows rows AND columns (a data grid, an image grid) | BACKLOG (owner question 2026-10-18) | L | virtual |
@@ -102,7 +99,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [250](backlog/250-container-reset-loses-unpushed-work.md) | A container reset to a fresh clone loses every unpushed lane commit and all session scratch | CONSTRUCTION LANDED 2026-10-19 (lane-rules: push lane/* after every commit); redo of the lost work… | S | infra |
 | [265](backlog/265-upstream-ai-elements-code-block-trace-chat.md) | Upstream ai-elements (chat, message, code-block, trace, checkpoint, ...) vs our chat kit | BACKLOG (found by row 213 item 10, 2026-10-19). Source… | L | chat |
 
-## Done rows (194)
+## Done rows (197)
 
 | # | Item | Updated |
 |---|---|---|
@@ -174,6 +171,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [89](backlog/done/089-selected-active-state-losing-to-hover-on-click.md) | Selected/active state losing to :hover on click — a user-reported hover-over-state specificity class, swept… | 2026-09-20 |
 | [90](backlog/done/090-chart-stage-2-per-chart-type-galleries-shadcn.md) | Chart stage 2 — per-chart-type galleries (shadcn parity), parked mid-flight (LANDED 2026-09-25) | 2026-09-25 |
 | [91](backlog/done/091-carousel-landed-css-scroll-snap-engine-tier-1.md) | Carousel landed — CSS scroll-snap engine, tier-1 APG oracle vendored, three live-verification fixes | 2026-09-20 |
+| [92](backlog/done/092-new-component-landings-can-leave-preview-s-out.md) | New-component landings can leave preview's OUT_DIR stale — cargo clippy/test/doc fail until build.rs is… | 2026-10-19 |
 | [93](backlog/done/093-literal-attribute-beside-an-unmerged-props.md) | Literal attribute beside an unmerged props spread with no typed field claiming it — the duplicate-attribute… | 2026-09-25 |
 | [94](backlog/done/094-demo-wrappers-that-set-max-width-margin-0-auto.md) | Demo wrappers that set max-width + margin: 0 auto never reach that width — they shrink-wrap instead, so every… | 2026-10-19 |
 | [96](backlog/done/096-scroll-snap-stop-always-caps-a-browser-driven.md) | scroll-snap-stop: always caps a browser-driven scroll but NOT this crate's own pointer-drag release | 2026-09-20 |
@@ -272,8 +270,10 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [213](backlog/done/213-message-scroller-parity-with-the-original-folds.md) | Message Scroller parity with the original (folds row 146) | 2026-10-19 |
 | [214](backlog/done/214-home-masonry-column-assignment-depends-on-how.md) | Home masonry column assignment depends on how much of the ~580 KB prerendered page has been parsed | 2026-10-18 |
 | [215](backlog/done/215-charts-re-lays-out-at-hydration-at-every-width.md) | /charts/ re-lays out at hydration at every width | 2026-10-18 |
+| [216](backlog/done/216-infra-worktrees-sharing-or-copying-one-cargo.md) | Infra: worktrees sharing or copying one CARGO_TARGET_DIR build and lint another tree's code (re-confirms row… | 2026-10-19 |
 | [219](backlog/done/219-preview-src-components-mod-rs-variant-registry.md) | preview/src/components/mod.rs variant registry is one shared macro list that every demo-adding lane edits | 2026-10-18 |
 | [220](backlog/done/220-shared-oracle-specs-locate-demo-controls-by.md) | Shared oracle specs locate demo controls by their visible demo text, so every demo that mirrors shadcn more… | 2026-10-18 |
+| [221](backlog/done/221-infra-session-process-lessons-from-the-2026-10.md) | Infra: session process lessons from the 2026-10-14/15 batch (memory, lock fairness, gate worktree… | 2026-10-19 |
 | [222](backlog/done/222-specs-that-measure-geometry-while-an-enter.md) | Specs that measure geometry while an enter animation is still running | 2026-10-18 |
 | [223](backlog/done/223-a-modal-returns-focus-to-its-trigger-only-after.md) | A modal returns focus to its trigger only after its exit animation, so a quick keyboard reopen is lost | 2026-10-18 |
 | [224](backlog/done/224-merge-attributes-dropped-one-of-two-same-named.md) | merge_attributes dropped one of two same-named event listeners | 2026-10-15 |
