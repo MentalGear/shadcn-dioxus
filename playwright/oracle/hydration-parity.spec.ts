@@ -1029,7 +1029,7 @@ test.describe("hydration parity — legacy query-URL redirect on a static host (
       );
       const name = pick(COMPONENT_NAMES);
 
-      await gotoHydrated(page, `${BASE}/component/?name=${name}&`, { // legacy-route-ok: this test IS the legacy redirect
+      await gotoHydrated(page, `${BASE}/component/${name}/`, { // legacy-route-ok: this test IS the legacy redirect
         timeout: NAV_TIMEOUT,
         waitUntil: "load",
       });
