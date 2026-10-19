@@ -26,8 +26,13 @@
 //!   in container-query units, see `aspect_height_css`), so the page does
 //!   not re-flow when it hydrates (backlog row 215). The unmeasured
 //!   drawing is squeezed into that box (`preserveAspectRatio="none"`,
-//!   text hidden until measured -- `data-measured="false"`); the measured
-//!   one replaces it inside a box that is already final.
+//!   text hidden until measured -- `data-measured="false"`, and only on a
+//!   server-rendered chart, `data-prerendered="true"`); the measured one
+//!   replaces it inside a box that is already final. A chart the client
+//!   creates (route change) has no prerender to match and its first
+//!   measurement lands before the first paint (the resize observer reports
+//!   between layout and paint, and the render loop does not wait for a
+//!   frame), so its text is never hidden: there is nothing to fade back in.
 //! - **A legend lives inside that box**, as in Recharts (whose `<Legend>`
 //!   shrinks the plot by its own height): with a `ChartLegend` in the same
 //!   container, the svg is the box minus the legend's block size and the
@@ -770,6 +775,10 @@ pub fn Chart(props: ChartProps) -> Element {
                 preserve_aspect_ratio: pending.then_some("none"),
                 "data-fit": fixed_height.then_some("width"),
                 "data-measured": if pending { "false" } else { "true" },
+                // Server-rendered (prerendered, then hydrated) as opposed to created by the
+                // client: only the former has a painted stand-in whose text the stylesheet holds
+                // back (see `hydrated` above and the chart stylesheet).
+                "data-prerendered": hydrated.then_some("true"),
                 "data-animate": animate,
                 // Which way touch may scrub (`touch-action` in the themed
                 // stylesheet): a horizontal bar chart scrubs along y.

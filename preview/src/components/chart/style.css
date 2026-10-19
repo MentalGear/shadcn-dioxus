@@ -135,17 +135,22 @@
  * the initial-width viewBox is squeezed into the real box
  * (`preserveAspectRatio="none"`), so every mark lands within a few px of
  * where the measured render puts it. What that squeeze would distort is made
- * safe: strokes keep their width (`non-scaling-stroke`) and the text -- which
- * would be a different size, and a different set of ticks, than the measured
- * one -- is held back and fades in when the measured render replaces it
+ * safe: strokes keep their width (`non-scaling-stroke`) and, on a chart the
+ * server rendered (`data-prerendered`), the text -- which would be a
+ * different size, and a different set of ticks, than the measured one -- is
+ * held back and fades in when the measured render replaces it
  * (`data-measured="true"`). Only where scripts run: without JS nothing ever
- * replaces the stand-in, so its text stays. */
-.dx-chart [data-slot="chart-svg"] text {
+ * replaces the stand-in, so its text stays. A chart the CLIENT creates (a
+ * route change) is never held back: it has no prerender to stay identical to,
+ * and its first measurement (the resize observer's first report) is applied
+ * before the first paint, so hiding its text would only add a fade the
+ * visitor can see (first-paint-styles: radar_chart, radial_chart). */
+.dx-chart [data-slot="chart-svg"][data-prerendered="true"] text {
   transition: opacity var(--dx-motion-duration-base) var(--dx-motion-ease);
 }
 
 @media (scripting: enabled) {
-  .dx-chart [data-slot="chart-svg"][data-measured="false"] text {
+  .dx-chart [data-slot="chart-svg"][data-prerendered="true"][data-measured="false"] text {
     opacity: 0;
   }
 }
@@ -157,7 +162,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .dx-chart [data-slot="chart-svg"] text {
+  .dx-chart [data-slot="chart-svg"][data-prerendered="true"] text {
     transition: none;
   }
 }
