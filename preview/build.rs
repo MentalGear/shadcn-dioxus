@@ -1,5 +1,9 @@
 use dioxus::prelude::*;
 
+// The `#[derive(Props)]` scanner shared with the `scripts/check-props-docs.sh` gate (backlog row 165).
+#[path = "props_scan.rs"]
+mod props_scan;
+
 fn main() {
     let out_dir = std::env::var("OUT_DIR").unwrap();
     let out_dir = std::path::PathBuf::from(out_dir);
@@ -237,7 +241,13 @@ fn walk_markdown_dir(dir: &std::path::Path, out_dir: &std::path::Path) -> std::i
             continue;
         }
         if file.path().extension() == Some(std::ffi::OsStr::new("md")) {
-            let markdown = process_markdown_to_html(&file.path());
+            let mut markdown = process_markdown_to_html(&file.path());
+            // A component's own `docs.md` (not a variant note) ends with its props reference.
+            if file.file_name() == "docs.md"
+                && dir.parent() == Some(std::path::Path::new("src/components"))
+            {
+                markdown.push_str(&render_props_section(&folder_name, &markdown));
+            }
             let out_file_path = out_folder.join(file.file_name()).with_extension("html");
             write_if_changed(&out_file_path, &markdown);
             continue;
@@ -249,6 +259,178 @@ fn walk_markdown_dir(dir: &std::path::Path, out_dir: &std::path::Path) -> std::i
         }
     }
     Ok(())
+}
+
+/// The text of the props disclosure's heading. The id is `docs-props-reference`, like every
+/// `wrap_sections_in_disclosures` row, and a `docs.md` that declares the same `##` fails the build.
+const PROPS_HEADING: &str = "Props reference";
+
+/// Where a component's props structs live: its primitive (`primitives/src/<name>.rs` and/or the
+/// `primitives/src/<name>/` module directory) and its styled wrapper (`src/components/<name>/component.rs`).
+/// Each file is registered with `cargo:rerun-if-changed`, so editing a prop or its doc comment re-runs this
+/// script (row 92's stale-`OUT_DIR` class); a brand-new primitive file is picked up by the next run, like a
+/// new `.md`.
+fn props_sources(name: &str) -> Vec<(&'static str, std::path::PathBuf)> {
+    fn rs_files(dir: &std::path::Path, out: &mut Vec<std::path::PathBuf>) {
+        let Ok(entries) = std::fs::read_dir(dir) else {
+            return;
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                rs_files(&path, out);
+            } else if path.extension() == Some(std::ffi::OsStr::new("rs")) {
+                out.push(path);
+            }
+        }
+    }
+    let mut sources = Vec::new();
+    let wrapper = std::path::PathBuf::from(format!("src/components/{name}/component.rs"));
+    if wrapper.is_file() {
+        sources.push(("Styled component", wrapper));
+    }
+    let mut primitive = Vec::new();
+    let file = std::path::PathBuf::from(format!("../primitives/src/{name}.rs"));
+    if file.is_file() {
+        primitive.push(file);
+    }
+    rs_files(
+        &std::path::PathBuf::from(format!("../primitives/src/{name}")),
+        &mut primitive,
+    );
+    primitive.sort();
+    sources.extend(primitive.into_iter().map(|path| ("Primitive", path)));
+    sources
+}
+
+fn html_escape(text: &str) -> String {
+    text.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+}
+
+/// A doc comment as inline HTML: markdown, with rustdoc's intra-doc links (`[`Foo`]`) reduced to code.
+fn doc_html(doc: &str) -> String {
+    let doc = doc.replace("[`", "`").replace("`]", "`");
+    let mut out = String::new();
+    // A doc comment is content under the page's own `<h3>` (struct) or inside a table cell: its `# Example` /
+    // `## Styling` headings must never join the page outline (they rendered an `<h1>` and `<h2>`s in the docs
+    // prose), so every heading level is demoted to `<h4>`.
+    use pulldown_cmark::{Event, HeadingLevel, Tag, TagEnd};
+    let events = pulldown_cmark::Parser::new(&doc).map(|event| match event {
+        Event::Start(Tag::Heading {
+            id, classes, attrs, ..
+        }) => Event::Start(Tag::Heading {
+            level: HeadingLevel::H4,
+            id,
+            classes,
+            attrs,
+        }),
+        Event::End(TagEnd::Heading(_)) => Event::End(TagEnd::Heading(HeadingLevel::H4)),
+        other => other,
+    });
+    pulldown_cmark::html::push_html(&mut out, events);
+    out
+}
+
+/// The "Props reference" disclosure appended to a component's docs page: one table per
+/// `#[derive(Props)]` struct of the component's primitive and styled wrapper (name, type, default,
+/// description), built from the source by `props_scan`, so the page cannot disagree with the code.
+/// `scripts/check-props-docs.sh` fails a prop with no doc comment, so no Description cell is empty.
+///
+/// Display rules: `ReadSignal<T>` and `Option<T>` show `T` (a plain `T` is accepted for a
+/// `ReadSignal<T>`; an optional prop defaults to `None`); `#[props(default)]` shows the type's default;
+/// a `#[props(extends = ..)]` spread is not a row but the sentence "plus the global attributes".
+fn render_props_section(name: &str, docs_html: &str) -> String {
+    let id = "docs-props-reference";
+    assert!(
+        !docs_html.contains(&format!("id=\"{id}\"")),
+        "src/components/{name}/docs.md declares `## {PROPS_HEADING}`, which build.rs adds itself"
+    );
+    let mut body = String::new();
+    // A `#[cfg(web)]`/`#[cfg(not(web))]` pair declares the same component twice: the first one is the page's.
+    let mut seen = std::collections::HashSet::new();
+    for (label, path) in props_sources(name) {
+        println!("cargo:rerun-if-changed={}", path.display());
+        let source = std::fs::read_to_string(&path).unwrap();
+        for item in props_scan::scan_props(&source) {
+            if !seen.insert((label, item.name.clone())) {
+                continue;
+            }
+            let rows: Vec<&props_scan::PropField> =
+                item.fields.iter().filter(|f| f.extends.is_none()).collect();
+            let spreads: Vec<String> = item
+                .fields
+                .iter()
+                .filter_map(|f| f.extends.as_deref())
+                .map(|target| {
+                    if target == "GlobalAttributes" {
+                        "the global attributes".to_string()
+                    } else {
+                        format!(
+                            "the <code>&lt;{}&gt;</code> element's attributes",
+                            html_escape(target)
+                        )
+                    }
+                })
+                .collect();
+            body.push_str(&format!(
+                "<section class=\"dx-docs-props\">\n<h3><code>{n}</code> <span class=\"dx-docs-props-kind\">{label}</span></h3>\n",
+                n = html_escape(&item.name),
+            ));
+            if !item.doc.trim().is_empty() {
+                body.push_str(&format!(
+                    "<div class=\"dx-docs-props-intro\">{}</div>\n",
+                    doc_html(&item.doc)
+                ));
+            }
+            let plus = if spreads.is_empty() {
+                String::new()
+            } else {
+                format!("Plus {}.", spreads.join(" and "))
+            };
+            if rows.is_empty() {
+                body.push_str(&format!(
+                    "<p class=\"dx-docs-muted\">No props of its own. {plus}</p>\n"
+                ));
+            } else {
+                body.push_str(&format!(
+                    "<div class=\"dx-docs-table-scroll\" role=\"region\" aria-label=\"{label}: {n} props\" tabindex=\"0\"><table class=\"dx-docs-props-table\"><thead><tr><th scope=\"col\">Prop</th><th scope=\"col\">Type</th><th scope=\"col\">Default</th><th scope=\"col\">Description</th></tr></thead><tbody>\n",
+                    n = html_escape(&item.name)
+                ));
+                for field in rows {
+                    let (ty, _) = props_scan::display_type(&field.ty);
+                    let default = props_scan::display_default(field);
+                    let default_cell = if default == "required" {
+                        "<span class=\"dx-docs-props-required\">required</span>".to_string()
+                    } else {
+                        format!("<code>{}</code>", html_escape(&default))
+                    };
+                    body.push_str(&format!(
+                        "<tr data-prop=\"{name}\"><td><code>{name}</code></td><td><code>{ty}</code></td><td>{default}</td><td>{doc}</td></tr>\n",
+                        name = html_escape(&field.name),
+                        ty = html_escape(&ty),
+                        default = default_cell,
+                        doc = if field.doc.trim().is_empty() { "&mdash;".to_string() } else { doc_html(&field.doc) },
+                    ));
+                }
+                body.push_str("</tbody></table></div>\n");
+                if !plus.is_empty() {
+                    body.push_str(&format!("<p class=\"dx-docs-muted\">{plus}</p>\n"));
+                }
+            }
+            body.push_str("</section>\n");
+        }
+    }
+    if body.is_empty() {
+        body.push_str(
+            "<p class=\"dx-docs-muted\">This component declares no props struct of its own; see Usage notes.</p>\n",
+        );
+    }
+    format!(
+        "<details class=\"dx-docs-disclosure\"><summary><h2 id=\"{id}\">{PROPS_HEADING}</h2></summary><div class=\"dx-docs-disclosure-body\">\n{body}</div></details>\n"
+    )
 }
 
 fn process_markdown_to_html(markdown_path: &std::path::Path) -> String {

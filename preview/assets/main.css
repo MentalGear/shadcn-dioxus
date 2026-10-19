@@ -1,19 +1,12 @@
-/* Typography: the Geist / Geist Mono web fonts are loaded from the document
-   head (`GlobalHead` in `preview/src/main.rs`, <link rel="preconnect"> +
-   <link rel="stylesheet">), NOT via `@import` here. Found by execution
-   (2026-09-02): a stylesheet whose `@import` has not finished loading is
-   never applied by the browser at all -- `link.sheet` exists and parses,
-   but the sheet stays out of `document.styleSheets` -- so with the font
-   CDN slow or unreachable this ENTIRE file was inert (body fell back to
-   Times New Roman, every rule below was dead). A separate <link> lets this
-   file apply immediately. The oracle for this is
-   `playwright/oracle/tier2-html/global-stylesheet.spec.ts`.
+/* Typography: Geist / Geist Mono are self-hosted (row 162, `preview/assets/fonts/`, SIL OFL). The
+   `@font-face` rules and the preloads are written by `GlobalHead` in `preview/src/main.rs`, because
+   `asset!` hashes the font file names and a stylesheet `url()` is not rewritten; NEVER `@import` a font
+   here (found by execution 2026-09-02: a stylesheet whose `@import` has not finished loading is never
+   applied, so the whole file was inert; oracle: `global-stylesheet.spec.ts`).
 
-   The faces do NOT swap in after first paint: `GlobalHead` preloads the two latin
-   woff2 files and asks for `display=optional`, so text never re-wraps when Geist
-   arrives (hard-load CLS 0.117 -> 0.000 on /component/form/). Every
-   `font-family: Geist ...` / `"Geist Mono" ...` below therefore renders in the
-   face that is ready at first paint, or in its fallback for that whole view. */
+   The faces do NOT swap in after first paint: preloaded latin files plus `font-display: optional`
+   (hard-load CLS 0.117 -> 0.000 on /component/form/). The docs site picks its fonts by overriding the
+   theme's two tokens below; everything else reads `var(--dx-font-sans)` / `var(--dx-font-mono)`. */
 
 /* Theme style variables */
 :root {
@@ -22,6 +15,8 @@
    * (#f5f5f5), only 25% of it: a 50% mix (#fafafa) left a hovered Pagination page (#f5f5f5) within 5/255 of its
    * surface (dark-surface-contrast needs 6). */
   --dx-docs-preview-surface: color-mix(in var(--dx-hover-mix-space), var(--dx-background) var(--dark, 50%) var(--light, 75%), var(--dark, var(--dx-card)) var(--light, var(--dx-muted)));
+  --dx-font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --dx-font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", "Menlo", "Monaco", "Consolas", monospace;
   --highlight-color-main: #dd7230;
   --highlight-color-secondary: #eb5160;
 
@@ -117,7 +112,7 @@ body {
   margin: 0;
   background-color: var(--dx-background);
   color: var(--dx-foreground);
-  font-family: Geist, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: var(--dx-font-sans);
   font-optical-sizing: auto;
   font-style: normal;
   font-weight: 400;
@@ -387,7 +382,7 @@ summary,
   align-items: center;
   color: var(--dx-foreground);
   font-size: 0.98rem;
-  font-weight: 400;
+  font-weight: 700;
   gap: 0.55rem;
   text-decoration: none;
 }
@@ -422,7 +417,7 @@ summary,
   padding: 1rem 1.1rem;
   margin: 0;
   background: transparent;
-  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--dx-font-mono);
   font-size: 0.875rem;
   line-height: 1.55;
   tab-size: 4;
@@ -442,7 +437,7 @@ summary,
   background-color: var(--dx-card);
   border-inline-end: 1px solid var(--dx-border);
   color: var(--dx-muted-foreground);
-  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--dx-font-mono);
   font-size: 0.875rem;
   font-variant-numeric: tabular-nums;
   inset-inline-start: 0;
@@ -881,46 +876,111 @@ html:not([data-nav-sort="category"]) .dx-nav-category {
   display: none;
 }
 
-.dx-nav-sort-group {
-  padding-bottom: 0;
+/* The switch is sticky at the top of the sidebar's scroller over an opaque sidebar background. Its height is a
+ * variable because the category labels stick right under it (`top`) and `docs_nav.rs`'s jump script aligns a
+ * group under it: 0.5rem group padding + the 2rem pill (28px items + 2 x 2px) + 0.25rem breathing room. */
+.dx-nav-sort-group,
+.dx-nav-list {
+  --dx-nav-sort-height: 2.75rem;
+}
+
+/* Doubled with `.dx-sidebar-group` (`position: relative`, padding): at one class apiece the winner would be
+ * whichever sheet this route loads last. */
+.dx-sidebar-group.dx-nav-sort-group {
+  position: sticky;
+  z-index: calc(var(--dx-z-raise) + 1);
+  top: 0;
+  height: var(--dx-nav-sort-height);
+  box-sizing: border-box;
+  flex-shrink: 0;
+  padding-bottom: var(--dx-space-1);
+  background-color: var(--dx-sidebar-background);
 }
 
 .dx-nav-sort {
   display: flex;
+  align-items: center;
   padding: 2px;
   border-radius: var(--dx-radius-lg);
   background-color: var(--dx-muted);
   gap: 2px;
 }
 
-.dx-nav-sort-option {
-  height: 1.75rem;
+/* The ToggleGroup (A-Z / Category) fills the pill; the chevron menu trigger sits after it. */
+.dx-nav-sort-toggles {
+  min-width: 0;
   flex: 1;
-  border: 0;
-  border-radius: calc(var(--dx-radius-lg) - 2px);
+}
+
+.dx-nav-sort .dx-nav-sort-option {
+  min-width: 0;
+  flex: 1;
+}
+
+/* The pressed look comes from `<html data-nav-sort>` (set before first paint), never from the item's
+ * `data-state`, which is Rust state and still the SSG default (A-Z) on the first frame. Specificity: the
+ * component's `[data-state="on"]` and `:focus-visible` rules are (0,2,0); these are above them. */
+.dx-nav-sort .dx-nav-sort-option[data-state] {
   background-color: transparent;
   color: var(--dx-muted-foreground);
-  cursor: pointer;
-  font: inherit;
-  font-size: var(--dx-text-xs);
-  font-weight: 500;
 }
 
-.dx-nav-sort-option:focus-visible {
-  box-shadow: var(--dx-ring);
-  outline: none;
-}
-
-html:not([data-nav-sort="category"]) .dx-nav-sort-option[data-nav-sort-option="az"],
-html[data-nav-sort="category"] .dx-nav-sort-option[data-nav-sort-option="category"] {
+html:not([data-nav-sort="category"]) .dx-nav-sort .dx-nav-sort-option[data-nav-sort-option="az"],
+html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-option="category"] {
   background-color: var(--dx-background);
   box-shadow: var(--dx-shadow-sm);
   color: var(--dx-foreground);
 }
 
-html:not([data-nav-sort="category"]) .dx-nav-sort-option[data-nav-sort-option="az"]:focus-visible,
-html[data-nav-sort="category"] .dx-nav-sort-option[data-nav-sort-option="category"]:focus-visible {
-  box-shadow: var(--dx-ring);
+.dx-nav-sort .dx-nav-sort-option[data-state]:focus-visible {
+  background-color: var(--dx-accent);
+  color: var(--dx-foreground);
+}
+
+html:not([data-nav-sort="category"]) .dx-nav-sort .dx-nav-sort-option[data-nav-sort-option="az"]:focus-visible,
+html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-option="category"]:focus-visible {
+  box-shadow: var(--dx-ring-focus);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-nav-sort .dx-nav-sort-option[data-state]:hover {
+    background-color: var(--dx-accent);
+    color: var(--dx-foreground);
+  }
+}
+
+/* The jump-to-category trigger: a quiet icon button in the pill (its default outline-button look is a
+ * zero-specificity `:where()` rule, so these simply win). */
+.dx-nav-sort-jump {
+  width: var(--dx-control-height-sm);
+  height: var(--dx-control-height-sm);
+  flex-shrink: 0;
+  padding: 0;
+  border-radius: min(var(--dx-radius-md), 0.75rem);
+  background-color: transparent;
+  box-shadow: none;
+  color: var(--dx-muted-foreground);
+}
+
+.dx-nav-sort-jump[aria-expanded="true"] {
+  background-color: var(--dx-accent);
+  color: var(--dx-foreground);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-nav-sort-jump:hover {
+    background-color: var(--dx-accent);
+    color: var(--dx-foreground);
+  }
+}
+
+/* Category order: the label of the group being read sticks directly under the switch while its group scrolls
+ * (the group is the label's containing block, so it releases when the group ends). */
+.dx-nav-category .dx-sidebar-group-label {
+  position: sticky;
+  z-index: var(--dx-z-raise);
+  top: var(--dx-nav-sort-height);
+  background-color: var(--dx-sidebar-background);
 }
 
 .dx-docs-shell-body .dx-sidebar-container {
@@ -1003,6 +1063,12 @@ html[data-nav-sort="category"] .dx-nav-sort-option[data-nav-sort-option="categor
   margin: 0;
 }
 
+.dx-component-page-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .dx-component-install-link {
   padding: 0.35rem 0.8rem;
   border: 1px solid var(--dx-border);
@@ -1045,7 +1111,7 @@ html[data-nav-sort="category"] .dx-nav-sort-option[data-nav-sort-option="categor
 .dx-docs-eyebrow {
   margin: 0;
   color: var(--highlight-color-tertiary);
-  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--dx-font-mono);
   font-size: 0.8rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -1143,7 +1209,7 @@ html[data-nav-sort="category"] .dx-nav-sort-option[data-nav-sort-option="categor
   background-color: var(--dx-card);
   color: var(--dx-muted-foreground);
   content: counter(dx-docs-steps);
-  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--dx-font-mono);
   font-size: 0.75rem;
 }
 
@@ -1163,7 +1229,7 @@ html[data-nav-sort="category"] .dx-nav-sort-option[data-nav-sort-option="categor
 
 .dx-docs-command code {
   overflow: hidden;
-  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--dx-font-mono);
   font-size: 0.88rem;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1227,7 +1293,7 @@ html[data-nav-sort="category"] .dx-nav-sort-option[data-nav-sort-option="categor
   border-radius: 0.25rem;
   background-color: var(--dx-muted);
   color: var(--dx-foreground);
-  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--dx-font-mono);
   font-size: 0.875em;
 }
 
@@ -1239,7 +1305,7 @@ html[data-nav-sort="category"] .dx-nav-sort-option[data-nav-sort-option="categor
   margin: 0 0 1.1rem;
   background-color: var(--dx-card);
   color: var(--dx-foreground);
-  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--dx-font-mono);
   font-size: 0.875rem;
   line-height: 1.5;
   overflow-x: auto;
@@ -1305,7 +1371,7 @@ html[data-nav-sort="category"] .dx-nav-sort-option[data-nav-sort-option="categor
   border-radius: 0.25rem;
   background-color: var(--dx-muted);
   color: var(--dx-foreground);
-  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--dx-font-mono);
   font-size: 0.875em;
 }
 
@@ -1376,7 +1442,7 @@ html[data-nav-sort="category"] .dx-nav-sort-option[data-nav-sort-option="categor
 .dx-component-inline-command code {
   overflow: hidden;
   min-width: 0;
-  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--dx-font-mono);
   font-size: 0.8rem;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1611,6 +1677,56 @@ html[data-nav-sort="category"] .dx-nav-sort-option[data-nav-sort-option="categor
   padding-bottom: 1rem;
 }
 
+/* Props reference (generated by `preview/build.rs` from the `#[derive(Props)]` structs, backlog row 165):
+ * docs-site chrome appended inside the docs prose, so tables, code and the scroll wrapper inherit the
+ * `.dx-docs-prose` rules above. One section per props struct. */
+.dx-docs-props {
+  margin-top: 1.25rem;
+}
+
+.dx-docs-props h3 {
+  display: flex;
+  align-items: baseline;
+  margin: 0 0 0.5rem;
+  color: var(--dx-foreground);
+  font-size: 0.95rem;
+  font-weight: 600;
+  gap: 0.6rem;
+}
+
+.dx-docs-props-kind {
+  color: var(--dx-muted-foreground);
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+
+.dx-docs-props-intro {
+  margin: 0 0 0.6rem;
+  color: var(--dx-muted-foreground);
+  font-size: 0.9rem;
+}
+
+.dx-docs-props-intro p {
+  margin: 0;
+}
+
+.dx-docs-props-table td:first-child {
+  white-space: nowrap;
+}
+
+.dx-docs-props-table td p {
+  margin: 0;
+}
+
+.dx-docs-props-table td p + p {
+  margin-top: 0.4rem;
+}
+
+.dx-docs-props-required {
+  color: var(--dx-muted-foreground);
+  font-size: 0.85rem;
+}
+
 .dx-variant-notes {
   border-bottom: none;
 }
@@ -1659,7 +1775,7 @@ html[data-nav-sort="category"] .dx-nav-sort-option[data-nav-sort-option="categor
   border-radius: 0.25rem;
   background-color: var(--dx-muted);
   color: var(--dx-foreground);
-  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--dx-font-mono);
   font-size: 0.875em;
 }
 
@@ -2089,7 +2205,7 @@ html[data-cv-settle] {
 
 .dx-component-card-command code {
   overflow: hidden;
-  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--dx-font-mono);
   font-size: 0.875rem;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2688,7 +2804,7 @@ html[data-cv-settle] {
   flex: 1 1 auto;
   margin: 0;
   color: var(--dx-foreground);
-  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--dx-font-mono);
   font-size: var(--dx-text-sm);
   font-weight: 500;
   line-height: 1.25rem;

@@ -116,6 +116,7 @@ pub struct TableRowProps {
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
 
+    /// The row's cells.
     pub children: Element,
 }
 

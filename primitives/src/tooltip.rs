@@ -447,6 +447,16 @@ fn TooltipContentRendered(
     // `anchor-name` is keyed off `ctx.tooltip_id`, which `TooltipContent`
     // (below) keeps synced to this same id.
     crate::top_layer::use_anchor_position_fallback(id.clone(), id.clone(), open, side, align, 8);
+    // The arrow points at the trigger's centre by construction: the final rects of trigger and
+    // panel (after align, collision shift or flip, by whichever engine placed it) are read back
+    // and published as `--dx-tooltip-arrow-x` / `--dx-tooltip-arrow-y` (px from the panel's
+    // left / top edge) for the stylesheet's `::after`.
+    {
+        let arrow_id = id.clone();
+        crate::js_listener::use_js_listeners(move || {
+            Some(crate::js_listener::JsListeners::install(ARROW_OFFSET_JS).arg(arrow_id.clone()))
+        });
+    }
     // Any scroll closes a tooltip (`top_layer::use_close_on_scroll`'s doc).
     crate::top_layer::use_close_on_scroll(
         id.clone(),
@@ -512,6 +522,49 @@ fn TooltipContentRendered(
         }
     }
 }
+
+/// Publishes where the trigger's centre lies in the panel's own coordinate space. Re-measured
+/// every frame for a short settle window after open (the engine's placement may land a frame
+/// later) and on resize, scroll and panel resize; a write happens only when the value changed.
+#[cfg(feature = "web")]
+const ARROW_OFFSET_JS: &str = r#"
+const id = await dioxus.recv();
+const content = document.getElementById(id);
+const trigger = document.querySelector('[style*="anchor-name: --dxa-' + id + ';"]');
+if (!content || !trigger) return;
+let lastX = null, lastY = null;
+const measure = () => {
+    const t = trigger.getBoundingClientRect();
+    const c = content.getBoundingClientRect();
+    const x = Math.round((t.left + t.width / 2 - c.left) * 10) / 10;
+    const y = Math.round((t.top + t.height / 2 - c.top) * 10) / 10;
+    if (x === lastX && y === lastY) return;
+    lastX = x; lastY = y;
+    content.style.setProperty('--dx-tooltip-arrow-x', x + 'px');
+    content.style.setProperty('--dx-tooltip-arrow-y', y + 'px');
+};
+measure();
+let frames = 0;
+let raf = requestAnimationFrame(function tick() {
+    measure();
+    if (++frames < 30) raf = requestAnimationFrame(tick);
+});
+cleanup(() => cancelAnimationFrame(raf));
+let queued = false;
+const track = () => {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(() => { queued = false; measure(); });
+};
+listen(window, 'scroll', track, { capture: true, passive: true });
+listen(window, 'resize', track, { passive: true });
+if (typeof ResizeObserver === 'function') {
+    const ro = new ResizeObserver(track);
+    ro.observe(content);
+    ro.observe(trigger);
+    cleanup(() => ro.disconnect());
+}
+"#;
 
 /// Native (Blitz) arm: unchanged from before this slice. Blitz implements
 /// neither the `popover` attribute nor `document::eval`

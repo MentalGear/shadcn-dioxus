@@ -1,0 +1,2 @@
+/* Direction renders no element, so it has nothing to style. Layout mirrors through the logical
+ * properties in every other component's sheet (check-css-logical-properties.sh). */

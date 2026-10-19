@@ -17,6 +17,7 @@ use num_integer::Integer;
 use std::{fmt::Display, str::FromStr, time::Duration};
 use time::{macros::date, Date, Month, OffsetDateTime, Weekday};
 
+use crate::direction::use_direction;
 use crate::merge_attributes;
 
 /// The context provided by the [`DatePicker`] component to its children.
@@ -1431,8 +1432,11 @@ fn DateSegment<T: Clone + Copy + Integer + FromStr + Display + 'static>(
         }
     });
 
+    let direction = use_direction(None);
     let handle_keydown = move |event: Event<KeyboardData>| {
-        let key = event.key();
+        // RTL mirrors the horizontal pair (`Direction::ltr_equivalent`): the
+        // segments sit in a row that mirrors with `dir`.
+        let key = direction.ltr_equivalent(&event.key());
         let modifiers = event.modifiers();
         let effects = date_segment_key_effects(
             &key,

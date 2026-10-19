@@ -5,7 +5,7 @@ use crate::{
         collection_item, use_collection_provider, use_deferred_collection_focus, use_item,
         CollectionPlacement, CollectionState,
     },
-    direction::{use_direction, Direction, HorizontalNav},
+    direction::{use_direction, use_direction_signal, Direction, HorizontalNav},
     has_own_accessible_name,
     hover_intent::{use_hover_intent, HoverIntent},
     merge_attributes, use_animated_open, use_id_or, use_unique_id,
@@ -26,7 +26,7 @@ struct NavbarContext {
     // Text direction, for `ArrowLeft`/`ArrowRight`'s roving-focus role
     // between top-level nav triggers -- always horizontal (a navbar is a
     // single row) -- see `direction::Direction::resolve_horizontal`'s doc.
-    direction: Direction,
+    direction: ReadSignal<Direction>,
 
     // The pointer-hover contract (`NavbarProps::open_on_hover`): when a
     // pointer resting on a nav opens it, and -- the half that must never be
@@ -159,6 +159,7 @@ pub fn Navbar(props: NavbarProps) -> Element {
     let hover = use_hover_intent(open_nav, props.open_on_hover);
     let set_open_nav = hover.set_open();
     let direction = use_direction(props.dir);
+    let direction_signal = use_direction_signal(direction);
 
     let focus = use_collection_provider(props.roving_loop);
     let mut ctx = use_context_provider(|| NavbarContext {
@@ -166,7 +167,7 @@ pub fn Navbar(props: NavbarProps) -> Element {
         set_open_nav,
         disabled: props.disabled,
         focus,
-        direction,
+        direction: direction_signal,
         hover,
     });
     use_effect(move || {
@@ -252,7 +253,7 @@ pub fn Navbar(props: NavbarProps) -> Element {
                             }
                         }
                         Key::ArrowLeft | Key::ArrowRight => {
-                            match ctx.direction.resolve_horizontal(&event.key()) {
+                            match (ctx.direction)().resolve_horizontal(&event.key()) {
                                 Some(HorizontalNav::Prev) => ctx.focus.focus_prev(),
                                 Some(HorizontalNav::Next) => ctx.focus.focus_next(),
                                 None => {}

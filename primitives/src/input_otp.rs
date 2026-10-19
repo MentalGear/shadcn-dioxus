@@ -62,6 +62,156 @@ use crate::{
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 
+/// The on-screen keyboard a touch device shows for an [`InputOtp`] (the
+/// `<input>`'s `inputmode`). Derived from the [`OtpPattern`], never set on its
+/// own, so the keypad and the accepted characters cannot disagree.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum OtpInputMode {
+    /// Digits keypad (`inputmode="numeric"`).
+    #[default]
+    Numeric,
+    /// Full keyboard (`inputmode="text"`).
+    Text,
+}
+
+impl OtpInputMode {
+    /// The `inputmode` attribute value.
+    pub fn as_attr(self) -> &'static str {
+        match self {
+            OtpInputMode::Numeric => "numeric",
+            OtpInputMode::Text => "text",
+        }
+    }
+}
+
+/// Which characters an [`InputOtp`] accepts. ONE typed value from which the
+/// `<input>`'s `inputmode` attribute, its `pattern` attribute AND the Rust-side
+/// filter applied to every typed or pasted value are all derived, so the three
+/// can never disagree (shadcn's `REGEXP_ONLY_DIGITS`,
+/// `REGEXP_ONLY_DIGITS_AND_CHARS` and `REGEXP_ONLY_CHARS`, plus a custom set).
+///
+/// There is deliberately no way to set `inputmode`/`pattern` as raw
+/// attributes: the control's own attributes are applied after the caller's, so
+/// the typed prop always wins.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub enum OtpPattern {
+    /// `0-9` (the default): numeric keypad.
+    #[default]
+    Digits,
+    /// `A-Z`, `a-z`, `0-9`: full keyboard.
+    Alphanumeric,
+    /// `A-Z`, `a-z`: full keyboard.
+    Letters,
+    /// A caller-chosen character set written as the inside of a regular
+    /// expression character class (no brackets), e.g. `"A-Z0-9"` or
+    /// `"0-9a-f"`. Ranges (`a-z`) and literal characters are supported; escape a
+    /// literal `-`, `]`, `\` or `^` with a backslash. The same string
+    /// becomes the HTML `pattern` (`[<class>]*`) and the Rust filter.
+    Custom {
+        /// The character-class body.
+        class: String,
+        /// The keyboard to show.
+        inputmode: OtpInputMode,
+    },
+}
+
+impl OtpPattern {
+    /// The keyboard for this pattern.
+    pub fn inputmode(&self) -> OtpInputMode {
+        match self {
+            OtpPattern::Digits => OtpInputMode::Numeric,
+            OtpPattern::Alphanumeric | OtpPattern::Letters => OtpInputMode::Text,
+            OtpPattern::Custom { inputmode, .. } => *inputmode,
+        }
+    }
+
+    fn ranges(&self) -> Vec<(char, char)> {
+        match self {
+            OtpPattern::Digits => vec![('0', '9')],
+            OtpPattern::Alphanumeric => vec![('A', 'Z'), ('a', 'z'), ('0', '9')],
+            OtpPattern::Letters => vec![('A', 'Z'), ('a', 'z')],
+            OtpPattern::Custom { class, .. } => parse_class(class),
+        }
+    }
+
+    /// The HTML `pattern` attribute: `[...]*`, serialised from the same
+    /// ranges [`accepts`](Self::accepts) tests, so they cannot drift.
+    pub fn html_pattern(&self) -> String {
+        let mut out = String::from("[");
+        for (lo, hi) in self.ranges() {
+            push_class_char(&mut out, lo);
+            if hi != lo {
+                out.push('-');
+                push_class_char(&mut out, hi);
+            }
+        }
+        out.push_str("]*");
+        out
+    }
+
+    /// A JavaScript regular-expression source matching one REJECTED
+    /// character (`[^...]`), built from the same ranges as the HTML pattern.
+    fn js_reject_source(&self) -> String {
+        let html = self.html_pattern();
+        format!("[^{}]", &html[1..html.len() - 2])
+    }
+
+    /// Whether `c` is an accepted character.
+    pub fn accepts(&self, c: char) -> bool {
+        self.ranges().iter().any(|&(lo, hi)| lo <= c && c <= hi)
+    }
+
+    /// `value` with every rejected character removed.
+    pub fn filter(&self, value: &str) -> String {
+        let ranges = self.ranges();
+        value
+            .chars()
+            .filter(|&c| ranges.iter().any(|&(lo, hi)| lo <= c && c <= hi))
+            .collect()
+    }
+}
+
+/// Parses a character-class body into inclusive ranges. Infallible: a
+/// dangling `-` is a literal, a reversed range is dropped.
+fn parse_class(class: &str) -> Vec<(char, char)> {
+    let chars: Vec<char> = class.chars().collect();
+    let mut out = Vec::new();
+    let mut i = 0;
+    // Reads one (possibly escaped) literal at `i`, returning it and the next index.
+    let atom = |i: usize| -> Option<(char, usize)> {
+        match chars.get(i)? {
+            '\\' => chars
+                .get(i + 1)
+                .map(|&c| (c, i + 2))
+                .or(Some(('\\', i + 1))),
+            &c => Some((c, i + 1)),
+        }
+    };
+    while let Some((lo, next)) = atom(i) {
+        if chars.get(next) == Some(&'-') {
+            if let Some((hi, after)) = atom(next + 1) {
+                if lo <= hi {
+                    out.push((lo, hi));
+                }
+                i = after;
+                continue;
+            }
+        }
+        out.push((lo, lo));
+        i = next;
+    }
+    out
+}
+
+fn push_class_char(out: &mut String, c: char) {
+    // Characters that are syntax or reserved punctuation inside a `v`-flag
+    // character class (the flag browsers compile `pattern` with).
+    if "()[]{}/-\\|&!#%,:;<=>@`~^".contains(c) {
+        out.push('\\');
+    }
+    out.push(c);
+}
+
 #[derive(Clone, Copy)]
 struct InputOtpCtx {
     value: Memo<String>,
@@ -96,6 +246,12 @@ pub struct InputOtpProps {
     /// clamped up to 1.
     #[props(default = 6)]
     pub max_length: usize,
+
+    /// Which characters are accepted. The `<input>`'s `inputmode` and
+    /// `pattern` and the filter applied to typed/pasted text all derive from
+    /// this one value ([`OtpPattern`]); default digits.
+    #[props(default)]
+    pub pattern: OtpPattern,
 
     /// Whether the whole control is disabled.
     #[props(default)]
@@ -200,6 +356,43 @@ pub fn InputOtp(props: InputOtpProps) -> Element {
     let mut selection_start = use_signal(|| 0usize);
     let mut has_focus = use_signal(|| false);
     use_caret_sync(id, selection_start);
+    // Filters the DOM value synchronously, in the capture phase of the
+    // input's own `input` event, so rejected characters never reach the
+    // Rust handler, the slots or the next keystroke (no async write-back to
+    // race with fast typing). The caret keeps its place after the accepted
+    // characters that preceded it.
+    let reject = props.pattern.js_reject_source();
+    crate::js_listener::use_js_listeners(move || {
+        Some(
+            crate::js_listener::JsListeners::install(
+                "const id = await dioxus.recv();
+                const source = await dioxus.recv();
+                const el = document.getElementById(id);
+                if (!el) return;
+                let re;
+                try { re = new RegExp(source, 'gv'); } catch (_) { re = new RegExp(source, 'gu'); }
+                // A typed character the pattern rejects is cancelled before it
+                // lands, so it cannot replace a selected slot's character
+                // (click-to-slot) and lose it.
+                listen(el, 'beforeinput', (e) => {
+                    if (typeof e.data === 'string' && e.data !== '' && e.data.replace(re, '') === '') {
+                        e.preventDefault();
+                    }
+                }, true);
+                listen(el, 'input', () => {
+                    const raw = el.value;
+                    const filtered = raw.replace(re, '');
+                    if (filtered === raw) return;
+                    const caret = el.selectionStart ?? raw.length;
+                    const kept = raw.slice(0, caret).replace(re, '').length;
+                    el.value = filtered;
+                    el.setSelectionRange(kept, kept);
+                }, true);",
+            )
+            .arg(id.cloned())
+            .arg(reject.clone()),
+        )
+    });
 
     let active_index = use_memo(move || {
         if !has_focus() || disabled() {
@@ -222,10 +415,11 @@ pub fn InputOtp(props: InputOtpProps) -> Element {
         spellcheck: "false",
         autocapitalize: "off",
     });
+    let otp_pattern = props.pattern.clone();
     let owned = attributes!(input {
         r#type: "text",
-        inputmode: "numeric",
-        pattern: "[0-9]*",
+        inputmode: otp_pattern.inputmode().as_attr(),
+        pattern: otp_pattern.html_pattern(),
         autocomplete: "one-time-code",
         maxlength: "{max_length}",
     });
@@ -269,7 +463,14 @@ pub fn InputOtp(props: InputOtpProps) -> Element {
 
                 onfocus: move |_| has_focus.set(true),
                 onblur: move |_| has_focus.set(false),
-                oninput: move |e: FormEvent| set_value.call(e.value()),
+                // The DOM value is already filtered by the capture-phase
+                // listener below (synchronously, before this handler reads
+                // it); the Rust filter is the same rule again as the
+                // authority for the signal.
+                oninput: {
+                    let otp_pattern = props.pattern.clone();
+                    move |e: FormEvent| set_value.call(otp_pattern.filter(&e.value()))
+                },
 
                 // Overrides the browser's own click-to-caret placement,
                 // which is wrong here (see `snap_caret_to_slot` and this
@@ -576,5 +777,37 @@ pub fn InputOtpSeparator(props: InputOtpSeparatorProps) -> Element {
     let children = props.children.unwrap_or_else(|| rsx! { "\u{2022}" });
     rsx! {
         div { ..props.attributes, {children} }
+    }
+}
+
+#[cfg(test)]
+mod pattern_tests {
+    use super::*;
+
+    #[test]
+    fn presets_derive_attribute_and_filter_from_one_source() {
+        assert_eq!(OtpPattern::Digits.html_pattern(), "[0-9]*");
+        assert_eq!(OtpPattern::Alphanumeric.html_pattern(), "[A-Za-z0-9]*");
+        assert_eq!(OtpPattern::Letters.html_pattern(), "[A-Za-z]*");
+        assert_eq!(OtpPattern::Digits.filter("1a2-3"), "123");
+        assert_eq!(OtpPattern::Alphanumeric.filter("A1 b-2"), "A1b2");
+        assert_eq!(OtpPattern::Letters.filter("A1b2"), "Ab");
+        assert_eq!(OtpPattern::Digits.inputmode(), OtpInputMode::Numeric);
+        assert_eq!(OtpPattern::Letters.inputmode(), OtpInputMode::Text);
+    }
+
+    #[test]
+    fn custom_class_ranges_literals_and_escapes() {
+        let p = OtpPattern::Custom {
+            class: "0-9a-f\\-_".into(),
+            inputmode: OtpInputMode::Text,
+        };
+        assert_eq!(p.filter("0fg-_Z9"), "0f-_9");
+        assert_eq!(p.html_pattern(), "[0-9a-f\\-_]*");
+        let dangling = OtpPattern::Custom {
+            class: "ab-".into(),
+            inputmode: OtpInputMode::Text,
+        };
+        assert_eq!(dangling.filter("a-bc"), "a-b");
     }
 }

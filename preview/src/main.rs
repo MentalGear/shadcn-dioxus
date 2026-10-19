@@ -34,6 +34,7 @@ use dioxus_icons::lucide::{
     ArrowRight, ArrowUpRight, BookOpen, Check, ChevronDown, ChevronLeft, Copy, ExternalLink,
     FileText, Hash, House, Mail, Pause, Play, SkipBack, SkipForward,
 };
+use dioxus_primitives::direction::{Direction, DirectionProvider};
 use dioxus_primitives::{ContentAlign, ContentSide};
 use nav_link::NavLink;
 use std::str::FromStr;
@@ -1860,7 +1861,12 @@ fn ComponentHighlight(demo: ComponentDemoData) -> Element {
                         }
                         // The commands live in the Installation section below (one place); the
                         // header only points at it, and the hash handler opens that disclosure.
-                        a { class: "dx-component-install-link", href: "#installation", "Install" }
+                        div { class: "dx-component-page-actions",
+                            if matches!(r#type, ComponentType::Normal) {
+                                DirectionToggle {}
+                            }
+                            a { class: "dx-component-install-link", href: "#installation", "Install" }
+                        }
                     }
                     ExtraExplainer { name: raw_name }
                     p { "{description}" }
@@ -1932,6 +1938,39 @@ fn ComponentHighlight(demo: ComponentDemoData) -> Element {
                     }
                 }
             }
+        }
+    }
+}
+
+/// The reading direction every demo on a component page is rendered in (backlog row 137): the one
+/// switch that gives every component an RTL example. `ComponentVariantHighlight` wraps each demo in
+/// a `DirectionProvider` reading this and sets `dir` on the demo frame, so primitives that read
+/// `use_direction` and the logical-property CSS both follow it live. A global (not page state) so
+/// the choice survives navigating to another component. Defaults to LTR, which is what the
+/// prerendered pages contain.
+static PREVIEW_DIRECTION: GlobalSignal<Direction> = Signal::global(|| Direction::Ltr);
+
+/// The LTR/RTL toggle in a component page's header. A pressed button, because it is a two-state
+/// switch of the whole page's demos, not a navigation.
+#[component]
+fn DirectionToggle() -> Element {
+    let rtl = PREVIEW_DIRECTION() == Direction::Rtl;
+    rsx! {
+        Button {
+            id: "dx-direction-toggle",
+            variant: ButtonVariant::Outline,
+            r#type: "button",
+            "aria-pressed": "{rtl}",
+            "data-direction": if rtl { "rtl" } else { "ltr" },
+            onclick: move |_| {
+                let next = if PREVIEW_DIRECTION() == Direction::Rtl {
+                    Direction::Ltr
+                } else {
+                    Direction::Rtl
+                };
+                *PREVIEW_DIRECTION.write() = next;
+            },
+            "RTL"
         }
     }
 }
@@ -2143,7 +2182,10 @@ fn ComponentVariantHighlight(
                     value: "Demo",
                     width: "100%",
                     position: "relative",
-                    Comp {}
+                    // The page's LTR/RTL toggle (`PREVIEW_DIRECTION`): `dir` on the frame mirrors
+                    // layout and logical-property CSS, the provider the keyboard/positioning logic.
+                    dir: if PREVIEW_DIRECTION() == Direction::Rtl { Some("rtl") } else { None },
+                    DirectionProvider { direction: PREVIEW_DIRECTION(), Comp {} }
                 }
                 TabContent {
                     index: 1usize,
@@ -2350,33 +2392,26 @@ fn BlockComponentVariantHighlight(
     }
 }
 
+/// Self-hosted Latin-subset variable fonts (SIL OFL, licence beside them), Geist 29 KB + Geist Mono 23 KB.
+const GEIST_WOFF2: Asset = asset!("/assets/fonts/Geist-Latin-Variable.woff2");
+const GEIST_MONO_WOFF2: Asset = asset!("/assets/fonts/GeistMono-Latin-Variable.woff2");
+const LATIN_RANGE: &str = "U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD";
+
 /// The head links every route shares, in one place so the three route roots
 /// cannot drift apart (they used to repeat this block by hand).
 ///
-/// The Geist web fonts are loaded here as `<link>`s rather than via
-/// `@import` inside `main.css`: a stylesheet whose `@import` is still
-/// loading is not applied by the browser at all (the sheet parses but stays
-/// out of `document.styleSheets`), so with the font CDN slow or blocked the
-/// whole of `main.css` was inert -- found by execution 2026-09-02, see the
-/// comment at the top of `assets/main.css` and
-/// `playwright/oracle/tier2-html/global-stylesheet.spec.ts`. Separate links
-/// let `main.css` apply immediately.
+/// The Geist fonts are self-hosted (row 162): no request leaves the origin, and the preloads and the
+/// `@font-face` rules are written here from the same `asset!` URLs (they cannot be in `main.css`, which
+/// does not rewrite `url()` to the hashed names). Never `@import` a font from `main.css`: a stylesheet
+/// whose `@import` is still loading is not applied at all (found 2026-09-02, see the top of
+/// `assets/main.css` and `playwright/oracle/tier2-html/global-stylesheet.spec.ts`).
 ///
-/// **No font-swap layout shift (measured 2026-10-05, css +100 ms / files +200 ms
-/// after the page, hard load, CLS summed over the load):** with the usual
-/// `display=swap` the page paints in the fallback face and re-wraps when Geist
-/// arrives -- 0.117 on /component/form/, 0.048 on /carousel/ (0.0001 on a short page).
-/// Two things, together: the two LATIN woff2 files (Geist and Geist Mono; every
-/// weight of Mono shares one file) are `preload`ed from the head, so they are
-/// ready by the first paint (Geist is in use at first contentful paint, CLS 0.0000
-/// on all three pages); and the stylesheet asks for `display=optional`, so if a
-/// face is ever NOT ready in time (a cold, slow connection, or Google bumping the
-/// versioned file URL below so the preload 404s) the page keeps the fallback for
-/// that view instead of swapping late (preload 404 + `swap` measured 0.117 again,
-/// 404 + `optional` 0.0000). The preload URLs are copied from the
-/// `css2?family=Geist...` response (`latin` blocks); if they go stale the cost is a
-/// fallback face on a cold visit, never a shift. `crossorigin` is required on a
-/// font preload or the browser fetches the file twice.
+/// **No font-swap layout shift (measured 2026-10-05, hard load, CLS summed):** with `display=swap` the
+/// page paints in the fallback face and re-wraps when Geist arrives (0.117 on /component/form/). Two
+/// things, together: the two LATIN woff2 files are `preload`ed from the head so they are ready by first
+/// paint, and the faces say `font-display: optional`, so a face that is not ready in time keeps the
+/// fallback for that view instead of swapping late. `crossorigin` is required on a font preload or the
+/// browser fetches the file twice. `check-css-delivery.sh` holds this pair.
 #[component]
 fn GlobalHead() -> Element {
     // The `og:image` URL: the 512 px icon, absolute (see `SITE_ORIGIN`). `asset!()` already carries the
@@ -2387,6 +2422,13 @@ fn GlobalHead() -> Element {
     } else {
         icon
     };
+    // `@font-face` cannot live in `main.css`: `asset!` hashes the font file names and does not rewrite a
+    // stylesheet's `url()`, so the rules are written here from the same `asset!` URLs as the preloads.
+    // `font-display: optional` is the CLS fix (see above); the tokens that name the families are in main.css.
+    let font_face_css = format!(
+        "@font-face{{font-family:Geist;font-style:normal;font-weight:100 900;font-display:optional;src:url({GEIST_WOFF2}) format(\"woff2\");unicode-range:{LATIN_RANGE}}}\
+         @font-face{{font-family:\"Geist Mono\";font-style:normal;font-weight:100 900;font-display:optional;src:url({GEIST_MONO_WOFF2}) format(\"woff2\");unicode-range:{LATIN_RANGE}}}"
+    );
     rsx! {
         // Icons go through `asset!()` (a static `<link>` in `index.html` is not prefixed with the base
         // path). The PNG comes first and the SVG last, so an engine that understands both takes the SVG,
@@ -2419,26 +2461,23 @@ fn GlobalHead() -> Element {
         document::Meta { name: "twitter:title", content: SITE_NAME }
         document::Meta { name: "twitter:description", content: SITE_DESCRIPTION }
         document::Meta { name: "twitter:image", content: "{og_image}" }
+        // Self-hosted fonts (row 162): the two preloads and the `@font-face` rules name the SAME hashed
+        // `asset!` URLs, so the preload is always the file the face asks for. No request leaves the origin.
         document::Link {
             rel: "preload",
             r#as: "font",
             r#type: "font/woff2",
             crossorigin: "anonymous",
-            href: "https://fonts.gstatic.com/s/geist/v5/gyByhwUxId8gMEwcGFU.woff2",
+            href: GEIST_WOFF2,
         }
         document::Link {
             rel: "preload",
             r#as: "font",
             r#type: "font/woff2",
             crossorigin: "anonymous",
-            href: "https://fonts.gstatic.com/s/geistmono/v6/or3nQ6H-1_WfwkMZI_qYFrcdmg.woff2",
+            href: GEIST_MONO_WOFF2,
         }
-        document::Link { rel: "preconnect", href: "https://fonts.googleapis.com" }
-        document::Link { rel: "preconnect", href: "https://fonts.gstatic.com", crossorigin: "anonymous" }
-        document::Link {
-            rel: "stylesheet",
-            href: "https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono:wght@400;500;700&display=optional",
-        }
+        document::Style { "{font_face_css}" }
         document::Link { rel: "stylesheet", href: asset!("/assets/main.css") }
         document::Link { rel: "stylesheet", href: asset!("/assets/dx-components-theme.css") }
         // Optional effects (`dx-scroll-fade`, `dx-shimmer`) the chat kit (attachment, marker) uses.
@@ -2874,7 +2913,7 @@ fn demo_avatar(who: &str) -> String {
         "Robin Hayes" | "RH" => asset!("/assets/avatars/robin-hayes.svg"),
         "Sarah Chen" | "SC" => asset!("/assets/avatars/sarah-chen.svg"),
         "Marcus Wright" | "MW" => asset!("/assets/avatars/marcus-wright.svg"),
-        "Lena Park" | "LP" => asset!("/assets/avatars/lena-park.svg"),
+        "Nina Hart" | "NH" => asset!("/assets/avatars/nina-hart.svg"),
         _ => return String::new(),
     }
     .to_string()
@@ -3261,16 +3300,16 @@ fn BlockTabs() -> Element {
             TabContent { index: 2usize, value: "files".to_string(), padding: "var(--dx-space-8)",
                 div { style: "display: grid; gap: 0.6rem; color: var(--dx-foreground); font-size: 0.88rem;",
                     div { style: "display: flex; align-items: center; gap: 0.5rem;",
-                        span { style: "font-family: monospace; color: var(--dx-muted-foreground);", "/" }
+                        span { style: "font-family: var(--dx-font-mono); color: var(--dx-muted-foreground);", "/" }
                         span { "Roadmap Q2.md" }
                         Badge { variant: BadgeVariant::Outline, style: "margin-left: auto;", "Draft" }
                     }
                     div { style: "display: flex; align-items: center; gap: 0.5rem;",
-                        span { style: "font-family: monospace; color: var(--dx-muted-foreground);", "/" }
+                        span { style: "font-family: var(--dx-font-mono); color: var(--dx-muted-foreground);", "/" }
                         span { "Brand guidelines.pdf" }
                     }
                     div { style: "display: flex; align-items: center; gap: 0.5rem;",
-                        span { style: "font-family: monospace; color: var(--dx-muted-foreground);", "/" }
+                        span { style: "font-family: var(--dx-font-mono); color: var(--dx-muted-foreground);", "/" }
                         span { "Onboarding deck.key" }
                     }
                 }
@@ -3335,7 +3374,7 @@ fn BlockInbox() -> Element {
     let messages: &[(&str, &str, &str)] = &[
         ("Sarah Chen", "Left 3 comments on the auth flow", "2m"),
         ("Marcus Wright", "Roadmap sync notes attached", "1h"),
-        ("Lena Park", "Refactored the sidebar layout", "4h"),
+        ("Nina Hart", "Refactored the sidebar layout", "4h"),
     ];
     rsx! {
         div { style: "display: flex; align-items: center; gap: 0.55rem; margin-bottom: 0.85rem;",
@@ -3388,7 +3427,7 @@ fn BlockTasks() -> Element {
                             "{t.1}"
                         }
                         div { style: "display: flex; align-items: center; gap: 0.45rem; color: var(--dx-muted-foreground); font-size: 0.78rem;",
-                            span { style: "font-family: monospace;", "{t.0}" }
+                            span { style: "font-family: var(--dx-font-mono);", "{t.0}" }
                             span { style: "width: 3px; height: 3px; border-radius: 999px; background-color: var(--dx-muted-foreground);" }
                             span { "{t.2}" }
                         }
