@@ -1,10 +1,10 @@
 ---
 id: 188
 title: "Demo parity, second audit: the owner's per-example list against the original shadcn demos (51 components; row…"
-status: "BATCHES 1 AND 2 LANDED (2026-10-11: 86 demos in 20 components; 2026-10-12: 43 demos in 30…"
+status: "DEMO-ONLY ITEMS DONE 2026-10-19 (batch 2: every section-5 demo exists; what remains needs component…"
 size: "M per batch"
 area: docs
-updated: 2026-10-12
+updated: 2026-10-19
 ---
 
 # Row 188: Demo parity, second audit: the owner's per-example list against the original shadcn demos (51 components; row…
@@ -14,6 +14,8 @@ updated: 2026-10-12
 **Demo parity, second audit: the owner's per-example list against the original shadcn demos (51 components; row 187's 25 are a subset)**
 
 ## Status / trigger
+
+**DEMO-ONLY ITEMS DONE 2026-10-19 (batch 2: every section-5 demo exists; what remains needs component parts, listed)** -- the 2026-10-19 re-audit (lanes demos-a/demos-b) found every demo-only item already built; it added tooltip sides, a scrollable drawer, a scrollable command and an indeterminate checkbox (plus the indeterminate glyph fix). What is left needs new parts: see the two 2026-10-19 updates below.
 
 **BATCHES 1 AND 2 LANDED (2026-10-11: 86 demos in 20 components; 2026-10-12: 43 demos in 30 components -- menus with icons and an account switcher, dialog/sheet/drawer variants, toast types, hover-card and popover placement, calendar presets and date+time, a natural-language date picker, disabled and grouped selects, combobox custom items, the small primitives, a subscription form, an OTP verify card, FAQ and multiple accordions, an inline command, a rich table; batch 2's library findings are row 191); the parts-blocked rest BACKLOG** -- owner item 2026-10-11. The diff against row 187, the HEAD check of the "main may hold more" caveat, and the demo-only vs needs-a-part classification of every remaining gap are in [`research/shadcn-demo-parity-audit-2026-10-11.md`](../research/shadcn-demo-parity-audit-2026-10-11.md)
 
@@ -27,3 +29,5 @@ M per batch
 
 
 **Update 2026-10-19 (demos-a):** batch 2 part A (menus, overlays, floating) found nearly all of section 5's lanes A-C already at HEAD (icons, account switcher, radio icons, destructive/shortcuts/groups on the three menus; dialog no_close/scrollable/sticky_footer/share/edit_profile; sheet no_close; drawer sides; hover_card and popover placement; toast types; tooltip shortcut/disabled_button; command inline; navigation_menu icons). Added the three demo-only gaps that remained, as new `variants/*` dirs (`main` untouched): `tooltip/sides` (`side` on `TooltipContent`, four buttons), `drawer/scrollable_content` (right drawer, 30-row body scrolling between a fixed header and footer), `command/scrollable` (inline Command, 24 time zones, filter). Spec: `playwright/demos-batch2-a.spec.ts` (opens each demo, checks side placement / scroll + footer visible / list scroll + filter + empty state, axe in light and dark). Skipped, needs a part: command shortcuts (no `CommandShortcut`), alert_dialog small/media/non-destructive action, dialog built-in close, sheet typed `side`, RTL for popover/sheet/command/navigation_menu (137).
+
+**Update 2026-10-19 (demos-b):** batch 2 part B (dates, pickers, small primitives, compositions): a HEAD check found every demo-only item of the research doc's section 5 lanes D-G already landed (calendar presets/date_time, date_picker time/natural_language, select disabled, combobox custom_items, native_select disabled/groups, separator, label, slider, aspect_ratio, scroll_area, kbd, badge, resizable, field subscription, input_otp verify, accordion faq/multiple, avatar group/badge/dropdown, command inline, navigation_menu icons, alert, table rich), so nothing was rebuilt; the remainder is class (b) and needs parts (combobox multi-select/clear/groups, select scroll, DOB dropdown layouts, calendar cell size, input_otp patterns). **Bug (a) fixed by construction:** the styled `CheckboxIndicator` now holds both a Check and a Minus glyph and `checkbox/style.css` shows the one matching the indicator's `data-state`; the filled surface covers `checked` and `indeterminate`, so an indeterminate box can no longer show a tick on an empty box. New `checkbox/variants/indeterminate`; the table demo's header is now indeterminate for a partial selection (click selects all). Specs: `playwright/checkbox-indeterminate.spec.ts` (glyph and fill per state, table header, axe light+dark) and `playwright/demos-batch2-b.spec.ts` (every part-B demo opens, key control, axe light+dark).
