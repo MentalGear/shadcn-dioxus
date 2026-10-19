@@ -19,6 +19,7 @@ pub fn Drawer(props: DrawerRootProps) -> Element {
             id: props.id,
             is_modal: props.is_modal,
             overlay: props.overlay,
+            disable_pointer_dismissal: props.disable_pointer_dismissal,
             open: props.open,
             default_open: props.default_open,
             on_open_change: props.on_open_change,
