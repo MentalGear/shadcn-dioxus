@@ -62,7 +62,8 @@ pub fn scan_props(source: &str) -> Vec<PropsStruct> {
         // Walk to the `pub struct` line.
         let mut k = i + 1;
         while k < lines.len() && !lines[k].starts_with("pub struct ") {
-            if !lines[k].trim_start().starts_with("#[") && !lines[k].trim_start().starts_with("///") {
+            if !lines[k].trim_start().starts_with("#[") && !lines[k].trim_start().starts_with("///")
+            {
                 break;
             }
             k += 1;
@@ -171,7 +172,10 @@ fn parse_fields(body: &str, line_starts: &[usize], first_line: usize) -> Vec<Pro
             break;
         }
         if chars[p] == '/' && chars.get(p + 1) == Some(&'/') {
-            let end = chars[p..].iter().position(|c| *c == '\n').map_or(chars.len(), |n| p + n);
+            let end = chars[p..]
+                .iter()
+                .position(|c| *c == '\n')
+                .map_or(chars.len(), |n| p + n);
             let text: String = chars[p..end].iter().collect();
             if let Some(d) = text.strip_prefix("///") {
                 doc.push(d.strip_prefix(' ').unwrap_or(d).to_string());
@@ -182,7 +186,10 @@ fn parse_fields(body: &str, line_starts: &[usize], first_line: usize) -> Vec<Pro
         if chars[p] == '#' && chars.get(p + 1) == Some(&'[') {
             let (text, end) = read_balanced(&chars, p + 1, '[', ']');
             let inner = text.trim();
-            if let Some(args) = inner.strip_prefix("props(").and_then(|s| s.strip_suffix(')')) {
+            if let Some(args) = inner
+                .strip_prefix("props(")
+                .and_then(|s| s.strip_suffix(')'))
+            {
                 for part in split_top_level(args, ',') {
                     let part = part.trim();
                     if part == "default" {
@@ -339,8 +346,15 @@ pub fn display_type(ty: &str) -> (String, bool) {
     loop {
         let before = ty.clone();
         for wrapper in ["ReadSignal", "ReadOnlySignal", "Option"] {
-            if let Some(inner) = ty.strip_prefix(wrapper).and_then(|r| r.strip_prefix('<')).and_then(|r| r.strip_suffix('>')) {
-                let inner = split_top_level_angle(inner).into_iter().next().unwrap_or_default();
+            if let Some(inner) = ty
+                .strip_prefix(wrapper)
+                .and_then(|r| r.strip_prefix('<'))
+                .and_then(|r| r.strip_suffix('>'))
+            {
+                let inner = split_top_level_angle(inner)
+                    .into_iter()
+                    .next()
+                    .unwrap_or_default();
                 if wrapper == "Option" {
                     optional = true;
                 }
@@ -414,7 +428,8 @@ fn bare_default(inner: &str, optional: bool) -> &'static str {
         "bool" => "false",
         "String" => "\"\"",
         "Element" => "empty",
-        "f32" | "f64" | "i8" | "i16" | "i32" | "i64" | "u8" | "u16" | "u32" | "u64" | "usize" | "isize" => "0",
+        "f32" | "f64" | "i8" | "i16" | "i32" | "i64" | "u8" | "u16" | "u32" | "u64" | "usize"
+        | "isize" => "0",
         t if t.starts_with("Callback<") => "no-op",
         t if t.starts_with("Vec<") => "empty",
         _ => "Default::default()",

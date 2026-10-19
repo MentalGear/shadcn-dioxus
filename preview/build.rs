@@ -243,7 +243,9 @@ fn walk_markdown_dir(dir: &std::path::Path, out_dir: &std::path::Path) -> std::i
         if file.path().extension() == Some(std::ffi::OsStr::new("md")) {
             let mut markdown = process_markdown_to_html(&file.path());
             // A component's own `docs.md` (not a variant note) ends with its props reference.
-            if file.file_name() == "docs.md" && dir.parent() == Some(std::path::Path::new("src/components")) {
+            if file.file_name() == "docs.md"
+                && dir.parent() == Some(std::path::Path::new("src/components"))
+            {
                 markdown.push_str(&render_props_section(&folder_name, &markdown));
             }
             let out_file_path = out_folder.join(file.file_name()).with_extension("html");
@@ -292,14 +294,20 @@ fn props_sources(name: &str) -> Vec<(&'static str, std::path::PathBuf)> {
     if file.is_file() {
         primitive.push(file);
     }
-    rs_files(&std::path::PathBuf::from(format!("../primitives/src/{name}")), &mut primitive);
+    rs_files(
+        &std::path::PathBuf::from(format!("../primitives/src/{name}")),
+        &mut primitive,
+    );
     primitive.sort();
     sources.extend(primitive.into_iter().map(|path| ("Primitive", path)));
     sources
 }
 
 fn html_escape(text: &str) -> String {
-    text.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('"', "&quot;")
+    text.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
 }
 
 /// A doc comment as inline HTML: markdown, with rustdoc's intra-doc links (`[`Foo`]`) reduced to code.
@@ -329,7 +337,8 @@ fn render_props_section(name: &str, docs_html: &str) -> String {
         println!("cargo:rerun-if-changed={}", path.display());
         let source = std::fs::read_to_string(&path).unwrap();
         for item in props_scan::scan_props(&source) {
-            let rows: Vec<&props_scan::PropField> = item.fields.iter().filter(|f| f.extends.is_none()).collect();
+            let rows: Vec<&props_scan::PropField> =
+                item.fields.iter().filter(|f| f.extends.is_none()).collect();
             let spreads: Vec<String> = item
                 .fields
                 .iter()
@@ -338,7 +347,10 @@ fn render_props_section(name: &str, docs_html: &str) -> String {
                     if target == "GlobalAttributes" {
                         "the global attributes".to_string()
                     } else {
-                        format!("the <code>&lt;{}&gt;</code> element's attributes", html_escape(target))
+                        format!(
+                            "the <code>&lt;{}&gt;</code> element's attributes",
+                            html_escape(target)
+                        )
                     }
                 })
                 .collect();
@@ -347,11 +359,20 @@ fn render_props_section(name: &str, docs_html: &str) -> String {
                 n = html_escape(&item.name),
             ));
             if !item.doc.trim().is_empty() {
-                body.push_str(&format!("<div class=\"dx-docs-props-intro\">{}</div>\n", doc_html(&item.doc)));
+                body.push_str(&format!(
+                    "<div class=\"dx-docs-props-intro\">{}</div>\n",
+                    doc_html(&item.doc)
+                ));
             }
-            let plus = if spreads.is_empty() { String::new() } else { format!("Plus {}.", spreads.join(" and ")) };
+            let plus = if spreads.is_empty() {
+                String::new()
+            } else {
+                format!("Plus {}.", spreads.join(" and "))
+            };
             if rows.is_empty() {
-                body.push_str(&format!("<p class=\"dx-docs-muted\">No props of its own. {plus}</p>\n"));
+                body.push_str(&format!(
+                    "<p class=\"dx-docs-muted\">No props of its own. {plus}</p>\n"
+                ));
             } else {
                 body.push_str(&format!(
                     "<div class=\"dx-docs-table-scroll\" role=\"region\" aria-label=\"{n} props\" tabindex=\"0\"><table class=\"dx-docs-props-table\"><thead><tr><th scope=\"col\">Prop</th><th scope=\"col\">Type</th><th scope=\"col\">Default</th><th scope=\"col\">Description</th></tr></thead><tbody>\n",

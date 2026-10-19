@@ -15,7 +15,7 @@ A generated props reference table on every component's docs page, produced in `p
 
 ## Status / trigger
 
-**LANDED 2026-10-19** -- see the update below (recorded 2026-10-05, audit)
+**LANDED 2026-10-19** (generator + gate + spec; props structs only, events and parts stay in docs.md)
 
 ## Size
 
