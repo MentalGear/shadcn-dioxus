@@ -80,6 +80,12 @@ pub struct CheckboxProps {
     #[props(default)]
     pub name: ReadSignal<String>,
 
+    /// The `id` of a `<form>` the hidden input belongs to (the HTML `form` attribute), so a control
+    /// rendered outside its `<form>` still submits and resets with it. `None` leaves the input's
+    /// owner to the DOM ancestor.
+    #[props(default)]
+    pub form: ReadSignal<Option<String>>,
+
     /// The value of the checkbox, which can be used in forms.
     #[props(default = ReadSignal::new(Signal::new(String::from("on"))))]
     pub value: ReadSignal<String>,
@@ -197,6 +203,7 @@ pub fn Checkbox(props: CheckboxProps) -> Element {
 
             required: props.required,
             name: props.name,
+            form: props.form,
             value: props.value,
             disabled: props.disabled,
         }

@@ -46,6 +46,10 @@ pub struct SwitchProps {
     #[props(default)]
     pub name: ReadSignal<String>,
 
+    /// The `id` of the `<form>` the hidden input belongs to (HTML `form` attribute), for a switch outside its form.
+    #[props(default)]
+    pub form: ReadSignal<Option<String>>,
+
     /// The value attribute for form submission.
     #[props(default = ReadSignal::new(Signal::new(String::from("on"))))]
     pub value: ReadSignal<String>,
@@ -81,6 +85,7 @@ pub fn Switch(props: SwitchProps) -> Element {
             disabled: props.disabled,
             required: props.required,
             name: props.name,
+            form: props.form,
             value: props.value,
             on_checked_change: props.on_checked_change,
             attributes: merged,

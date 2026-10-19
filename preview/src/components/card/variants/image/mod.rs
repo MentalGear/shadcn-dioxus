@@ -5,7 +5,7 @@ use dioxus::prelude::*;
 
 // Bundled abstract illustration (`preview/assets/avatars`); the card's own CSS
 // rounds a first-child `img`, and `object-fit: cover` crops it to the banner.
-const EVENT_COVER: Asset = asset!("/assets/avatars/lena-park.svg");
+const EVENT_COVER: Asset = asset!("/assets/avatars/nina-hart.svg");
 
 #[component]
 pub fn Demo() -> Element {

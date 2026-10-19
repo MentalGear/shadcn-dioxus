@@ -1,0 +1,1 @@
+Apply / Cancel is on (the default): the popover stays open until Apply or Cancel. shadcn's date pickers never stage (no demo has Apply/Cancel; the `Calendar` selects live), so this footer is this library's own default and there is no shadcn source for this demo. The demos that are twins of a shadcn demo switch it off (`confirm: false`) and copy that demo's open/close behaviour.

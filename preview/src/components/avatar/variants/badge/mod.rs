@@ -3,7 +3,7 @@ use dioxus::prelude::*;
 use dioxus_icons::lucide::Plus;
 
 const AVERY_LIN: Asset = asset!("/assets/avatars/avery-lin.svg");
-const LENA_PARK: Asset = asset!("/assets/avatars/lena-park.svg");
+const NINA_HART: Asset = asset!("/assets/avatars/nina-hart.svg");
 
 /// shadcn's `avatar-badge` and `avatar-badge-icon`: a status dot (green here) and a default-coloured badge
 /// holding an icon, then the three sizes to show how the badge scales (8px with no icon in the small avatar,
@@ -28,9 +28,9 @@ pub fn Demo() -> Element {
             }
             div { class: "dx-avatar-item",
                 p { class: "dx-avatar-label", "Icon" }
-                Avatar { style: "filter: grayscale(1);", aria_label: "Lena Park, add",
-                    AvatarImage { src: LENA_PARK.to_string(), alt: "" }
-                    AvatarFallback { "LP" }
+                Avatar { style: "filter: grayscale(1);", aria_label: "Nina Hart, add",
+                    AvatarImage { src: NINA_HART.to_string(), alt: "" }
+                    AvatarFallback { "NH" }
                     AvatarBadge {
                         Plus {}
                     }

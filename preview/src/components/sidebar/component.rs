@@ -367,6 +367,10 @@ pub fn Sidebar(
 #[component]
 pub fn SidebarTrigger(
     #[props(default)] onclick: Option<EventHandler<MouseEvent>>,
+    /// Replaces the default panel icon (e.g. a hamburger `Menu`). Give it the class
+    /// `dx-sidebar-trigger-icon` to keep the trigger's icon sizing and RTL flip.
+    #[props(default)]
+    icon: Option<Element>,
     #[props(extends = GlobalAttributes)]
     #[props(extends = button)]
     attributes: Vec<Attribute>,
@@ -391,9 +395,13 @@ pub fn SidebarTrigger(
                 ctx.toggle();
             },
             attributes: merged,
-            PanelLeft {
-                class: "dx-sidebar-trigger-icon",
-                size: "1rem",
+            if let Some(icon) = icon {
+                {icon}
+            } else {
+                PanelLeft {
+                    class: "dx-sidebar-trigger-icon",
+                    size: "1rem",
+                }
             }
             span { class: "dx-sidebar-sr-only", "Toggle Sidebar" }
         }

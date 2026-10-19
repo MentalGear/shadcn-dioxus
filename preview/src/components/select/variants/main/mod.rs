@@ -1,8 +1,7 @@
 use super::super::component::*;
 use dioxus::prelude::*;
-use strum::{EnumCount, IntoEnumIterator};
 
-#[derive(Debug, Clone, Copy, PartialEq, strum::EnumCount, strum::EnumIter, strum::Display)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 enum Fruit {
     Apple,
     Banana,
@@ -10,6 +9,16 @@ enum Fruit {
     Orangeade,
     Strawberry,
     Watermelon,
+}
+
+impl Fruit {
+    const ALL: [Fruit; 6] = [Fruit::Apple, Fruit::Banana, Fruit::Orange, Fruit::Orangeade, Fruit::Strawberry, Fruit::Watermelon];
+}
+
+impl std::fmt::Display for Fruit {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{self:?}")
+    }
 }
 
 impl Fruit {
@@ -27,7 +36,7 @@ impl Fruit {
 
 #[component]
 pub fn Demo() -> Element {
-    let fruits = Fruit::iter().enumerate().map(|(i, f)| {
+    let fruits = Fruit::ALL.into_iter().enumerate().map(|(i, f)| {
         rsx! {
             SelectOption::<Option<Fruit>> { index: i, value: f, text_value: "{f}",
                 disabled: matches!(f, Fruit::Orange),
@@ -46,7 +55,7 @@ pub fn Demo() -> Element {
             SelectGroup {
                 SelectGroupLabel { "Other" }
                 SelectOption::<Option<Fruit>> {
-                    index: Fruit::COUNT,
+                    index: Fruit::ALL.len(),
                     value: None,
                     text_value: "Other",
                     "Other"

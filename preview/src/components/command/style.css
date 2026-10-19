@@ -347,3 +347,18 @@ dialog.dx-command-dialog[open][data-state="open"] {
   flex-shrink: 0;
   margin-inline-start: auto;
 }
+
+/* `CommandShortcut` (shadcn `.cn-command-shortcut`: `text-muted-foreground group-data-selected/command-item:text-foreground
+ * ml-auto text-xs tracking-widest`): the same muted, letter-spaced hint the menus' shortcut part uses, pushed to the
+ * trailing edge, never shrunk by a long label. */
+.dx-command-shortcut {
+  flex-shrink: 0;
+  color: var(--dx-muted-foreground);
+  font-size: var(--dx-text-xs);
+  letter-spacing: 0.1em;
+  margin-inline-start: auto;
+}
+
+.dx-command-item[data-highlighted="true"] .dx-command-shortcut {
+  color: var(--dx-accent-foreground);
+}
