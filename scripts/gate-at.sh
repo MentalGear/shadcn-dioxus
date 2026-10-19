@@ -21,12 +21,14 @@ cd "$wt"
 # Class `gate` in the lane-lock queue (row 221): a merge gate goes before every waiting lane build, and the
 # wrapper script paths are the MAIN checkout's, because an older commit under test may not have them.
 # Inside the slot: this slot's gates target dir (slot 0 = $T/gates), then touch the worktree (row 216).
-LANE_REPO="$repo" "$repo/scripts/lane-lock.sh" gate --label "gate-at ${c:0:12}" -- sh -c '
+# The queue's own chatter (queued/acquired) goes to "$log.queue": line 1 of "$log" must be the tested HEAD.
+LANE_REPO="$repo" GATE_LOG="$log" "$repo/scripts/lane-lock.sh" gate --label "gate-at ${c:0:12}" -- sh -c '
+  exec >"$GATE_LOG" 2>&1
   git rev-parse --short HEAD
   CARGO_TARGET_DIR="$("$LANE_REPO/scripts/lane-slot-target.sh" dir gates)" || exit 1
   export CARGO_TARGET_DIR CARGO_BUILD_JOBS=2
   "$LANE_REPO/scripts/lane-touch.sh" "$CARGO_TARGET_DIR" || exit 1
-  exec scripts/run-gates.sh' > "$log" 2>&1
+  exec scripts/run-gates.sh' 2> "$log.queue"
 rc=$?
 got="$(head -1 "$log")"
 if [ "$got" != "${c:0:${#got}}" ] || [ -z "$got" ]; then echo "gate-at: ran on '$got', not $c -- NOT a pass for $c" >> "$log"; rc=9; fi
