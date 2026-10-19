@@ -6,7 +6,7 @@ use dioxus_primitives::radio_group::{self, RadioGroupProps, RadioItemProps};
 // docs/backlog.md row 32: `#[css_module]` is gone -- see checkbox/component.rs's
 // header comment for the full delivery-mechanism rationale (asset!() +
 // document::Link, embedded in both exported entry points so a
-// `dx components add radio_group`-copied component needs no extra wiring).
+// `shadcn-dioxus add radio_group`-copied component needs no extra wiring).
 //
 // This component is also on the row-32 "not already namespaced" lane: its
 // item class used to be the bare `dx-radio-item`, not `dx-radio-group-item`.

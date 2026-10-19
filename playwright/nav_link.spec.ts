@@ -21,9 +21,13 @@ const PAGES: { path: string; nav: string[]; footer: string[]; sidebar: string[] 
   { path: "/component/button/", nav: [], footer: [], sidebar: ["button"] },
 ];
 
-/** The text of every `a[aria-current]` inside `scope`. */
+/**
+ * The text of every `a[aria-current]` inside `scope`. The docs sidebar holds its component list twice (A-Z and by
+ * category, `preview/src/docs_nav.rs`) and hides one with CSS, so the sidebar's marks are the VISIBLE ones: exactly
+ * one list shows, and it carries exactly one mark.
+ */
 async function current(page: Page, scope: string): Promise<string[]> {
-  return page.locator(`${scope} a[aria-current]`).evaluateAll((els) =>
+  return page.locator(`${scope} a[aria-current]:visible`).evaluateAll((els) =>
     els.map((el) => (el.textContent ?? "").trim().toLowerCase()),
   );
 }

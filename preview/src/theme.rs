@@ -104,7 +104,7 @@ const DEFAULT_RADIUS: &str = "0.625";
 /// already on `<html>` and `theme-presets.css` / `dx-components-theme.css` render-blocking in
 /// `<head>`, the first paint is already in the chosen mode, colours and radius. [`theme_seed`] runs it
 /// again for any host that has no such `index.html`.
-pub const PREPAINT_JS: &str = "(function(){var K=['theme','theme-base','theme-accent','theme-radius','dx-press-feedback'],R=document.documentElement,Q=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)');function M(m){if(m)R.setAttribute('data-theme',m);else R.removeAttribute('data-theme');R.classList.toggle('dark',m?m==='dark':!!(Q&&Q.matches))}function A(k,v){if(K.indexOf(k)<0)return;var ok=!!v&&/^[a-z0-9.]{1,16}$/.test(v)&&(k!=='theme'||v==='dark'||v==='light')&&(k!=='dx-press-feedback'||v==='off');if(k==='theme')M(ok?v:null);else if(ok)R.setAttribute('data-'+k,v);else R.removeAttribute('data-'+k)}window.__dxApplyMode=M;window.__dxTheme=A;if(Q&&!window.__dxModeWatch){window.__dxModeWatch=1;try{/*listener-ok: lives as long as the page*/Q.addEventListener('change',function(){if(!R.hasAttribute('data-theme'))M(null)})}catch(e){}}try{var C=document.cookie.split(';');K.forEach(function(k){var n='dx_'+k.replace('-','_')+'=',v=null;C.forEach(function(c){c=c.trim();if(c.indexOf(n)===0)v=decodeURIComponent(c.slice(n.length))});A(k,v)})}catch(e){}})()";
+pub const PREPAINT_JS: &str = "(function(){var K=['theme','theme-base','theme-accent','theme-radius','dx-press-feedback'],R=document.documentElement,Q=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)');function M(m){if(m)R.setAttribute('data-theme',m);else R.removeAttribute('data-theme');R.classList.toggle('dark',m?m==='dark':!!(Q&&Q.matches))}function A(k,v){if(K.indexOf(k)<0)return;var ok=!!v&&/^[a-z0-9.]{1,16}$/.test(v)&&(k!=='theme'||v==='dark'||v==='light')&&(k!=='dx-press-feedback'||v==='off');if(k==='theme')M(ok?v:null);else if(ok)R.setAttribute('data-'+k,v);else R.removeAttribute('data-'+k)}window.__dxApplyMode=M;window.__dxTheme=A;if(Q&&!window.__dxModeWatch){window.__dxModeWatch=1;try{/*listener-ok: lives as long as the page*/Q.addEventListener('change',function(){if(!R.hasAttribute('data-theme'))M(null)})}catch(e){}}try{var C=document.cookie.split(';');K.forEach(function(k){var n='dx_'+k.replace('-','_')+'=',v=null;C.forEach(function(c){c=c.trim();if(c.indexOf(n)===0)v=decodeURIComponent(c.slice(n.length))});A(k,v)})}catch(e){}})();(function(){var W=window,R=document.documentElement;if(W.__dxModality)return;W.__dxModality=1;function S(m){if(R.getAttribute('data-dx-modality')!==m)R.setAttribute('data-dx-modality',m)}var Q=W.matchMedia&&W.matchMedia('(any-pointer: coarse) and (hover: none)');if(!R.hasAttribute('data-dx-modality'))S(Q&&Q.matches?'touch':'mouse');var K={Shift:1,Control:1,Alt:1,Meta:1,AltGraph:1,CapsLock:1,Fn:1,FnLock:1,Hyper:1,Super:1,OS:1};function P(t){return t==='touch'||t==='pen'?t:'mouse'}try{/*listener-ok: the modality writer lives as long as the page*/W.addEventListener('pointerdown',function(e){S(P(e.pointerType))},true);/*listener-ok: the modality writer lives as long as the page*/W.addEventListener('keydown',function(e){if(!K[e.key])S('keyboard')},true);/*listener-ok: the modality writer lives as long as the page*/W.addEventListener('click',function(e){if(e.detail>0&&R.getAttribute('data-dx-modality')==='keyboard')S(P(e.pointerType||(Q&&Q.matches?'touch':'mouse')))},true)}catch(x){}})()";
 
 pub fn theme_seed() {
     _ = document::eval(&format!(
@@ -669,6 +669,17 @@ mod tests {
             "preview/index.html must contain `<script>` + theme::PREPAINT_JS + `</script>` exactly"
         );
         assert!(!PREPAINT_JS.contains("</script"));
+    }
+
+    /// The interaction-modality writer (`dioxus_primitives::modality::MODALITY_JS`, the one writer of
+    /// `<html data-dx-modality>`) is part of the pre-paint snippet, so the attribute is right from the
+    /// first frame and the open-focus policy and the ring tokens never see it missing.
+    #[test]
+    fn prepaint_snippet_embeds_the_modality_writer() {
+        assert!(
+            PREPAINT_JS.contains(dioxus_primitives::modality::MODALITY_JS),
+            "PREPAINT_JS must contain dioxus_primitives::modality::MODALITY_JS verbatim"
+        );
     }
 
     /// Every cookie key the snippet reads is a `Pref`, and vice versa.

@@ -226,13 +226,13 @@
   outline: none;
 }
 
-/* A horizontally scrolling, snapping row. The fade is the `dx-scroll-fade-x`
- * utility (assets/dx-effects.css), applied in the markup. */
+/* A snapping flex row. The scroller itself is the library's `ScrollArea`
+ * (horizontal, `fade: X`: `overflow-x: auto`, the `dx-scroll-fade-x` edge fade of
+ * assets/dx-effects.css, `dir`), so only the layout and the snap points live here. */
 .dx-attachment-group {
   display: flex;
   min-width: 0;
   gap: var(--dx-space-3);
-  overflow-x: auto;
   overscroll-behavior-x: contain;
   padding-block: var(--dx-space-1);
   scroll-padding-inline: var(--dx-space-1);

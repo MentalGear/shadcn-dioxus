@@ -11,12 +11,14 @@ mod compose;
 mod filters;
 mod list_pane;
 mod read_pane;
+mod scroll_memory;
 mod sidebar;
 mod state;
 
 use compose::ComposeModal;
 use list_pane::ListPane;
 use read_pane::ReadPane;
+use scroll_memory::use_scroll_memory;
 use sidebar::EmailSidebar;
 use state::{EmailClientState, EmailClientStateStoreExt, EmailClientStateStoreImplExt};
 
@@ -30,6 +32,21 @@ pub fn EmailClient() -> Element {
     let selected_index = use_memo(move || {
         state.selected_message_index(selected_uid.read().as_deref(), &visible_ids.read())
     });
+
+    // Each view keeps its own scroll offset: the list per folder/tab/filter, the thread per message.
+    let memory = state.scroll_memory().cloned();
+    use_scroll_memory(
+        memory.clone(),
+        ".ec-list-scroll",
+        move || state.list_view_id(),
+        move || state.read_open().cloned(),
+    );
+    use_scroll_memory(
+        memory,
+        ".ec-read-body",
+        move || state.read_view_id(selected_uid.read().as_deref()),
+        move || state.read_open().cloned(),
+    );
 
     let folder_label = state.active_folder_label();
     let read_open = state.read_open().cloned() && selected_uid.read().is_some();

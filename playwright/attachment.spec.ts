@@ -22,41 +22,30 @@ async function open(page: Page) {
     .toBe("flex");
 }
 
-test("the main demo lists files, each with a named remove action", async ({ page }) => {
-  await open(page);
-  const demo = main(page);
-  const cards = demo.locator('[data-slot="attachment"]');
-  await expect(cards).toHaveCount(3);
-  await expect(demo.getByText("sales-dashboard.pdf")).toBeVisible();
-  await expect(demo.getByText("PDF · 2.4 MB")).toBeVisible();
-  for (const name of ["sales-dashboard.pdf", "q3-forecast.xlsx", "design-assets.zip"]) {
-    await expect(demo.getByRole("button", { name: `Remove ${name}` })).toBeVisible();
-  }
-  // A presentational card: no role of its own, state/size/orientation exposed as data attributes.
-  await expect(cards.first()).toHaveAttribute("data-state", "done");
-  await expect(cards.first()).toHaveAttribute("data-size", "default");
-  await expect(cards.first()).toHaveAttribute("data-orientation", "horizontal");
-});
-
+// The main demo (shadcn's `attachment-demo`: image group, an uploading file, a finished code file) is covered
+// by attachment-demo.spec.ts. The removable behaviour is checked on the `removable_group` variant.
 test("remove actions work by mouse and by keyboard (Enter, Space)", async ({ page }) => {
   await open(page);
-  const demo = main(page);
-  await demo.getByRole("button", { name: "Remove sales-dashboard.pdf" }).click();
-  await expect(demo.getByText("sales-dashboard.pdf")).toHaveCount(0);
-  const second = demo.getByRole("button", { name: "Remove q3-forecast.xlsx" });
+  const demo = variant(page, "removable_group");
+  const status = demo.getByRole("status");
+  await expect(status).toHaveText("4 of 4 attachments");
+  await demo.getByRole("button", { name: "Remove briefing-notes.pdf" }).click();
+  await expect(demo.getByText("briefing-notes.pdf")).toHaveCount(0);
+  await expect(status).toHaveText("3 of 4 attachments");
+  const second = demo.getByRole("button", { name: "Remove workspace.svg" });
   await second.focus();
   await page.keyboard.press("Enter");
-  await expect(demo.getByText("q3-forecast.xlsx")).toHaveCount(0);
-  const third = demo.getByRole("button", { name: "Remove design-assets.zip" });
+  await expect(demo.getByText("workspace.svg")).toHaveCount(0);
+  const third = demo.getByRole("button", { name: "Remove customers.csv" });
   await third.focus();
   await page.keyboard.press("Space");
-  await expect(demo.locator('[data-slot="attachment"]')).toHaveCount(0);
-  await expect(demo.getByRole("status")).toHaveText("All attachments removed");
+  await expect(demo.locator('[data-slot="attachment"]')).toHaveCount(1);
+  await expect(status).toHaveText("1 of 4 attachments");
 });
 
 test("the action is the library Button (ghost, icon-xs) inside the actions slot", async ({ page }) => {
   await open(page);
-  const action = main(page).getByRole("button", { name: "Remove sales-dashboard.pdf" });
+  const action = main(page).getByRole("button", { name: "Remove message-renderer.rs" });
   await expect(action).toHaveClass(/dx-button/);
   await expect(action).toHaveClass(/dx-attachment-action/);
   await expect(action).toHaveAttribute("data-style", "ghost");
@@ -172,6 +161,9 @@ test("group: a labelled, focusable, snapping row that scrolls from the keyboard"
   expect(s.scrollable).toBe(true);
   expect(s.scrollbar).toBe("none");
   expect(s.mask).toContain("linear-gradient");
+  // The strip is the library's ScrollArea (horizontal, fade X), not a scroller of its own.
+  await expect(group).toHaveAttribute("data-scroll-direction", "horizontal");
+  await expect(group).toHaveAttribute("data-scroll-fade", "x");
 
   await group.focus();
   await expect(group).toBeFocused();

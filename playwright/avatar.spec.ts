@@ -6,9 +6,15 @@ test("test", async ({ page }) => {
   await page.goto(`${BASE_URL}/component/?name=avatar&`, { timeout: 20 * 60 * 1000 }); // Increase timeout to 20 minutes
   // The demo avatars are bundled geometric SVGs (preview/assets/avatars), not
   // hot-linked photos: the src is the hashed local asset and it must actually load.
-  const image = page.getByRole("img", { name: "Avery Lin" }).first();
+  const image = page.locator('img[alt="Avery Lin"]').first();
   await expect(image).toHaveAttribute("src", /\/avery-lin[^/]*\.svg$/);
   await expect(page.getByLabel("Basic avatar")).toHaveAttribute("data-state", "loaded");
+
+  // The main demo is shadcn's avatar-demo: a grayscale avatar, one with a green badge, a grayscale group ending in "+3".
+  const demo = page.locator("#component-preview-frame").first();
+  await expect(demo.locator(".dx-avatar-badge")).toHaveCount(1);
+  expect(await demo.locator(".dx-avatar-image").first().evaluate((el) => getComputedStyle(el).filter)).toBe("grayscale(1)");
+  await expect(demo.getByLabel("Team").locator(".dx-avatar-group-count")).toHaveText("+3");
 
   // A broken image falls back to the initials.
   await expect(page.getByLabel("Error avatar").getByText("JR")).toBeVisible();

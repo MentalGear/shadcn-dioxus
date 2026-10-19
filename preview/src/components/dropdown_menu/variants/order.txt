@@ -1,0 +1,10 @@
+# Display order of this component's demos after `main`; a variants/<name>/ directory not listed here follows, sorted by name.
+checkboxes
+radio_group
+rtl
+click_only_submenu
+icons
+account_switcher
+radio_icons
+shortcuts
+destructive

@@ -1,11 +1,18 @@
 //! Defines the [`Avatar`] component and its subcomponents, which manage user profile images with fallback options.
 
+use std::time::Duration;
+
 use dioxus::{document, prelude::*};
 use dioxus_attributes::attributes;
 
+use crate::interval::use_timeout_while;
 use crate::{merge_attributes, use_id_or, use_unique_id};
 
-/// Represents the different states an Avatar can be in
+/// Represents the different states an Avatar can be in.
+///
+/// The fallback follows Base UI: it is shown in every state but [`AvatarState::Loaded`] (so
+/// while the picture is still loading it is the picture's stand-in, and there is never a blank
+/// frame between the two), and only a loaded picture replaces it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AvatarState {
     /// Initial loading state
@@ -129,7 +136,8 @@ pub fn Avatar(props: AvatarProps) -> Element {
         on_state_change: props.on_state_change,
     });
 
-    // Determine if fallback should be shown
+    // The built-in "??" stand-in (used only when no `AvatarFallback` was given) is for a picture that
+    // failed or was never given; while loading, the root's `data-state="loading"` placeholder shows.
     let show_fallback =
         use_memo(move || matches!(state(), AvatarState::Error | AvatarState::Empty));
 
@@ -168,6 +176,13 @@ pub fn Avatar(props: AvatarProps) -> Element {
 /// The props for the [`AvatarFallback`] component.
 #[derive(Props, Clone, PartialEq)]
 pub struct AvatarFallbackProps {
+    /// How long to wait, in milliseconds, before the fallback may show (Base UI's `delay`). A
+    /// picture that loads within it never flashes the fallback. `None` (the default) shows the
+    /// fallback straight away, including in the server-rendered markup; with a delay the server
+    /// markup has no fallback (the timer only exists in the browser), and the root's loading
+    /// placeholder stands in until it passes. Read once, when the fallback mounts.
+    #[props(default)]
+    pub delay: Option<u32>,
     /// Additional attributes for the fallback element
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
@@ -177,8 +192,10 @@ pub struct AvatarFallbackProps {
 
 /// # AvatarFallback
 ///
-/// A component that displays a fallback avatar when the image fails to load. The contents will only
-/// be rendered if the avatar is in an error or empty state.
+/// A component that stands in for the picture: it is rendered in every state except `loaded`
+/// (so while the picture is loading, if it fails, or if there is none) and replaced by the picture
+/// once it has loaded, as in Base UI. Give it a `delay` to hold it back for a moment so a fast
+/// load never shows it.
 ///
 /// This component must be used inside an [`Avatar`] component.
 ///
@@ -197,7 +214,7 @@ pub struct AvatarFallbackProps {
 ///                 src: "https://avatars.githubusercontent.com/u/66571940?s=96&v=4",
 ///                 alt: "ealmloff user avatar",
 ///             }
-///             AvatarFallback { class: "dx-avatar-fallback", "EA" }
+///             AvatarFallback { delay: 600, class: "dx-avatar-fallback", "EA" }
 ///         }
 ///     }
 /// }
@@ -211,10 +228,18 @@ pub fn AvatarFallback(props: AvatarFallbackProps) -> Element {
         ctx.has_fallback_child.set(true);
     });
 
-    let show_fallback =
-        use_memo(move || matches!((ctx.state)(), AvatarState::Error | AvatarState::Empty));
+    // The delay gate. With no delay it starts open (so the server markup holds the fallback);
+    // with one it starts closed on the server and the client alike (no hydration mismatch) and
+    // opens when the timer fires, which only runs in the browser.
+    let mut delay_passed = use_signal(|| props.delay.is_none());
+    let waiting = use_memo(move || !delay_passed());
+    let delay = Duration::from_millis(u64::from(props.delay.unwrap_or(0)));
+    use_timeout_while(waiting, delay, move || delay_passed.set(true));
 
-    if !show_fallback() {
+    // Everything but a loaded picture shows the fallback (Base UI).
+    let show_fallback = use_memo(move || (ctx.state)() != AvatarState::Loaded);
+
+    if !show_fallback() || !delay_passed() {
         return rsx!({});
     }
 
@@ -244,8 +269,9 @@ pub struct AvatarImageProps {
 
 /// # AvatarImage
 ///
-/// A component that displays a user profile image. If the image fails to load, it will stop rendering
-/// and the Avatar will switch to the error state, which can be handled by an [`AvatarFallback`] component.
+/// A component that displays a user profile image. While it loads the [`AvatarFallback`] stands in
+/// for it; if the image fails to load, it will stop rendering and the Avatar will switch to the error
+/// state, which the fallback keeps covering.
 ///
 /// ## Example
 ///
@@ -417,5 +443,89 @@ pub fn AvatarImage(props: AvatarImageProps) -> Element {
             onerror: handle_error,
             ..merged,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn render(app: fn() -> Element) -> String {
+        let mut dom = VirtualDom::new(app);
+        dom.rebuild_in_place();
+        dioxus_ssr::render(&dom)
+    }
+
+    /// An `AvatarFallback` under a context whose status is `state`.
+    #[component]
+    fn FallbackIn(state: AvatarState) -> Element {
+        let state = use_signal(|| state);
+        let has_fallback_child = use_signal(|| false);
+        let has_image_child = use_signal(|| false);
+        use_context_provider(|| AvatarCtx {
+            state,
+            has_fallback_child,
+            has_image_child,
+            on_load: None,
+            on_error: None,
+            on_state_change: None,
+        });
+        rsx! {
+            AvatarFallback { "FB" }
+        }
+    }
+
+    fn rendered_in(state: AvatarState) -> bool {
+        let mut dom = VirtualDom::new_with_props(FallbackIn, FallbackInProps { state });
+        dom.rebuild_in_place();
+        dioxus_ssr::render(&dom).contains("FB")
+    }
+
+    /// Base UI: the fallback is shown in every status but `loaded`, so there is no blank frame while the
+    /// picture loads (the old rule removed it as soon as the status became `loading`).
+    #[test]
+    fn the_fallback_shows_in_every_state_but_loaded() {
+        assert!(rendered_in(AvatarState::Empty));
+        assert!(rendered_in(AvatarState::Loading));
+        assert!(rendered_in(AvatarState::Error));
+        assert!(!rendered_in(AvatarState::Loaded));
+    }
+
+    #[component]
+    fn Plain() -> Element {
+        rsx! {
+            Avatar {
+                AvatarImage { src: "/a.png", alt: "A" }
+                AvatarFallback { "AB" }
+            }
+        }
+    }
+
+    #[component]
+    fn Delayed() -> Element {
+        rsx! {
+            Avatar {
+                AvatarImage { src: "/a.png", alt: "A" }
+                AvatarFallback { delay: 500, "AB" }
+            }
+        }
+    }
+
+    /// The server markup holds both the picture and the fallback, so hydration (which starts in the same
+    /// status) finds exactly what the server sent.
+    #[test]
+    fn the_server_markup_holds_the_picture_and_the_fallback() {
+        let html = render(Plain);
+        assert!(html.contains("<img"), "{html}");
+        assert!(html.contains("AB"), "{html}");
+    }
+
+    /// With a `delay` the fallback is closed on the server and on the first client render alike (the timer
+    /// only exists in the browser), so there is nothing to mismatch.
+    #[test]
+    fn a_delayed_fallback_is_not_in_the_server_markup() {
+        let html = render(Delayed);
+        assert!(html.contains("<img"), "{html}");
+        assert!(!html.contains("AB"), "{html}");
     }
 }

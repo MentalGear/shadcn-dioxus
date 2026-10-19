@@ -1,0 +1,1 @@
+Vertical image cards whose `AttachmentTrigger` is rendered as an `<a>` (through `as`) that opens the full image, with a remove action on each. The previews are bundled with `asset!`, so the demo needs no network.

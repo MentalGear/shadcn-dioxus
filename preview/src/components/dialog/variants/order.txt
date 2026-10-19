@@ -1,0 +1,7 @@
+# Display order of this component's demos after `main`; a variants/<name>/ directory not listed here follows, sorted by name.
+edit_profile
+share
+overlay
+no_close
+scrollable
+sticky_footer

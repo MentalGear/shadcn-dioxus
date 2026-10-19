@@ -36,6 +36,7 @@
 import { test, expect } from "../../fixtures";
 import type { Page } from "@playwright/test";
 import { BASE_URL } from "../../base-url";
+import { demoRole } from "../../demo-frame";
 
 const NAV = { timeout: 20 * 60 * 1000 };
 
@@ -111,7 +112,7 @@ test.describe("motion gating", () => {
   test("carousel autoplay: no slide change off-screen or in a hidden tab, then a fresh countdown", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto(`${BASE_URL}/component/?name=carousel&variant=autoplay&`, NAV);
-    const root = '[aria-label="Autoplay gallery"]';
+    const root = "#component-preview-frame-autoplay";
     const label = () =>
       page
         .locator(`${root} [role="group"][aria-roledescription="slide"][data-selected="true"]`)
@@ -172,7 +173,7 @@ test.describe("motion gating", () => {
     });
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto(`${BASE_URL}/component/?name=progress&`, NAV);
-    const bar = page.getByRole("progressbar", { name: "Progressbar Demo" }).first();
+    const bar = demoRole(page, "progressbar");
     await expect(bar).toBeVisible({ timeout: 5 * 60 * 1000 });
     const value = () => bar.getAttribute("aria-valuenow");
     const v0 = await value();
@@ -196,7 +197,7 @@ test.describe("motion gating", () => {
     await page.goto(`${BASE_URL}/component/?name=toast&`, NAV);
     // The demo's own toast lasts 60 s: use the provider's default duration (5 s) through the
     // top-layer fixture instead if it exists, else shorten with the page-level API.
-    const trigger = page.getByRole("button", { name: "Info (60s)" });
+    const trigger = demoRole(page, "button");
     await expect(trigger).toBeVisible({ timeout: 5 * 60 * 1000 });
     // 60 s is too long to wait for; speed the toast's own sleep up by scaling setTimeout for the
     // toast's duration only (the Rust task sleeps through `setTimeout(60000)`).

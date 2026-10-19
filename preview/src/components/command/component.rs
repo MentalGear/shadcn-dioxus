@@ -144,6 +144,7 @@ pub fn Command<T: Clone + PartialEq + 'static>(props: CommandProps<T>) -> Elemen
                     class: "dx-command-input",
                     placeholder: props.placeholder,
                     aria_label: props.input_aria_label.clone(),
+                    // focus-ok: forwards the caller's `autofocus` prop to the primitive, which owns the policy
                     autofocus: props.autofocus,
                 }
             }

@@ -140,7 +140,9 @@ pub(super) fn ReadPane(
                 }
             }
 
-            article { class: "ec-read-body ec-thread",
+            article {
+                class: "ec-read-body ec-thread",
+                "data-scroll-view": state.read_view_id(Some(selected_uid_value.as_str())),
                 Card { class: "ec-thread-hero",
                     CardHeader {
                         div { class: "ec-thread-hero-main",

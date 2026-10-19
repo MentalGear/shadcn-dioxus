@@ -839,7 +839,26 @@ async function prepRetry(page: Page, arr: string, j: number) {
   return t;
 }
 
-const WAIT_PROBE_MS: Record<string, number> = { click: 350, contextmenu: 350, hover: 450, focus: 300 };
+/** HOVER-DELAY RULE (backlog: the hover_card opener race). A hover card or tooltip opens only after the pointer
+ *  has RESTED on its trigger for the component's `delay` (`primitives/src/hover_card.rs`: Base UI's
+ *  `PreviewCard.Trigger` default, 600 ms; `tooltip.rs`: 600 ms; the styled Tooltip and the demos' explicit
+ *  `delay`s are shorter). The `hover` strategy used to wait 450 ms, which is SHORTER than that default: every
+ *  default-delay trigger reported "no change" under the hover strategy, and which strategy then opened it
+ *  (the click's mousedown focus, or the focus strategy after the click came up empty) was a race against the
+ *  600 ms timer and the render -- so two captures of one build recorded `via: click` in one and `via: focus`
+ *  in the other, with different open-state records (focus ring on the trigger, a pointer parked elsewhere).
+ *  One opener per candidate, by construction: the hover strategy waits out the default delay plus the render
+ *  margin the other hover waits use (450 ms), so every trigger that opens on hover opens by HOVER, at the same
+ *  point, with the pointer still on it. A trigger that does not open on hover pays this wait once per capture
+ *  and falls through to click/focus exactly as before. A demo with an explicit `delay` ABOVE the default would
+ *  need this raised (the delays demo uses 10, 0, 100). */
+export const HOVER_OPEN_DEFAULT_DELAY_MS = 600;
+const WAIT_PROBE_MS: Record<string, number> = {
+  click: 350,
+  contextmenu: 350,
+  hover: HOVER_OPEN_DEFAULT_DELAY_MS + 450,
+  focus: 300,
+};
 
 /** HOVER-BEFORE-CLICK RULE (backlog: navbar hover-intent). A trigger may open on pointer hover (navbar, hover
  *  cards, ...: `primitives/src/hover_intent.rs`, `HOVER_OPEN_INTENT_DELAY` = 150 ms). A bare `mouse.click` first

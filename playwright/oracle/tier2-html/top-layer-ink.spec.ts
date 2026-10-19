@@ -28,7 +28,7 @@
  * top-layer content already wins with no help needed -- but a top-layer
  * wrapper that declares no `color` of its own falls straight to the UA
  * default instead of quietly inheriting the app's ink token
- * (`--secondary-color-4`) the way every other element on the page does.
+ * (`--dx-foreground`) the way every other element on the page does.
  *
  * ## The fix under test
  *
@@ -61,17 +61,17 @@
  *
  * ## Method: assert against the resolved token, not a hardcoded literal
  *
- * `resolvedColor()` below reads `--secondary-color-4` (and, for the
+ * `resolvedColor()` below reads `--dx-foreground` (and, for the
  * Tooltip negative case, `--dx-background`) the only way a CSS custom
  * property can be read *as a color*: by assigning it to a probe element's
  * `color` and reading that element's own `getComputedStyle().color` back
- * (`getPropertyValue('--secondary-color-4')` alone would return the raw,
- * unresolved token text -- literally `"var(--dark, #d4d4d4) var(--light,
- * #111)"` per `preview/assets/dx-components-theme.css`, not a color). Every
+ * (`getPropertyValue('--dx-foreground')` alone would return the raw,
+ * unresolved token text -- literally `"var(--foreground, var(--light, #000)
+ * var(--dark, #fafafa))"` per `preview/assets/dx-components-theme.css`, not a color). Every
  * assertion below compares a surface's own computed `color` against that
  * resolved value, so this file survives a theme retune untouched.
  *
- * `--secondary-color-4` is set once, as `color`, on `body`
+ * `--dx-foreground` is set once, as `color`, on `body`
  * (`preview/assets/main.css`) -- and top-layer promotion (`showPopover()`/
  * `showModal()`) never moves an element in the *DOM tree*, only how it is
  * *painted*; CSS inheritance follows the DOM tree, not paint order. So
@@ -89,7 +89,7 @@
  * *masked* siblings kept as living proof the fix doesn't regress an
  * already-correct case: `.dx-navbar-item`/`.dx-toast-title`/`.dx-dialog`/
  * `.dx-alert-dialog`/`.dx-sheet` already declare their own `color: var(
- * --secondary-color-4)`; `.dx-tooltip-content` declares its own
+ * --dx-foreground)`; `.dx-tooltip-content` declares its own
  * *intentionally different* `color: var(--dx-background)`; `.dx-select-
  * list`/`.dx-combobox-list` declare their own *intentionally different*
  * `color: var(--secondary-color-1)`. Every one of these is author-origin
@@ -124,8 +124,14 @@ import { test, expect } from "../../fixtures";
 import { type Page, type Locator } from "@playwright/test";
 import { BASE_URL } from "../../base-url";
 import { gotoHydrated } from "../../hydration";
+import { demoFrame, demoRole } from "../../demo-frame";
 
 const NAV_TIMEOUT = 20 * 60 * 1000; // first run compiles the app
+
+// The page ink: `body { color: var(--dx-foreground) }` (`preview/assets/main.css`). Read as a token at
+// runtime by `resolvedColor`, never as a literal, so a retune of the ink (row 231 moved it from the
+// ramp's `--secondary-color-4` #111 to shadcn's `--foreground` #000) cannot stale this file again.
+const INK_TOKEN = "--dx-foreground";
 
 const url = (name: string) => `${BASE_URL}/component/?name=${name}&`;
 
@@ -179,27 +185,27 @@ const SURFACES: Surface[] = [
     name: "menubar",
     open: async (page) => {
       await goto(page, "menubar");
-      await page.getByRole("menuitem", { name: "File" }).click();
+      await demoRole(page, "menuitem", 0).click(); // menubar demo: File, Edit
       await expect(page.locator('.dx-menubar-content[data-state="open"]')).toBeVisible();
     },
     wrapper: (page) => page.locator('.dx-menubar-content[data-state="open"]'),
-    text: (page) => page.getByRole("menuitem", { name: "New" }),
+    text: (page) => page.locator('.dx-menubar-content[data-state="open"]').getByRole("menuitem").first(),
   },
   {
     name: "navbar",
     open: async (page) => {
       await goto(page, "navbar");
-      await page.getByRole("menuitem", { name: "Inputs" }).hover();
+      await demoRole(page, "menuitem", 0).hover(); // navbar demo: Inputs, Information, Home
       await expect(page.locator('.dx-navbar-content[data-state="open"]')).toBeVisible();
     },
     wrapper: (page) => page.locator('.dx-navbar-content[data-state="open"]'),
-    text: (page) => page.getByRole("menuitem", { name: "Calendar" }),
+    text: (page) => page.locator('.dx-navbar-content[data-state="open"]').getByRole("menuitem").first(),
   },
   {
     name: "dropdown_menu",
     open: async (page) => {
       await goto(page, "dropdown_menu");
-      await page.getByRole("button", { name: "Open Menu" }).click();
+      await demoRole(page, "button").click();
       await expect(page.locator('.dx-dropdown-menu-content[data-state="open"]')).toBeVisible();
     },
     wrapper: (page) => page.locator('.dx-dropdown-menu-content[data-state="open"]'),
@@ -210,7 +216,7 @@ const SURFACES: Surface[] = [
     name: "context_menu",
     open: async (page) => {
       await goto(page, "context_menu");
-      await page.getByRole("button", { name: "right click here" }).click({ button: "right" });
+      await demoRole(page, "button").click({ button: "right" });
       await expect(page.locator('.dx-context-menu-content[data-state="open"]')).toBeVisible();
     },
     wrapper: (page) => page.locator('.dx-context-menu-content[data-state="open"]'),
@@ -239,7 +245,7 @@ const SURFACES: Surface[] = [
     name: "popover (non-modal arm, themed default)",
     open: async (page) => {
       await goto(page, "popover");
-      await page.getByRole("button", { name: "Show Popover", exact: true }).click();
+      await demoRole(page, "button").click();
       await expect(page.locator('.dx-popover-content[data-state="open"]')).toBeVisible();
     },
     wrapper: (page) => page.locator('.dx-popover-content[data-state="open"]'),
@@ -252,7 +258,7 @@ const SURFACES: Surface[] = [
     name: "popover (modal arm)",
     open: async (page) => {
       await gotoVariant(page, "popover", "modal");
-      await page.getByRole("button", { name: "Open modal popover" }).click();
+      await demoRole(page, "button", 0, "modal").click();
       await expect(page.locator('.dx-popover-content[data-state="open"]')).toBeVisible();
     },
     wrapper: (page) => page.locator('.dx-popover-content[data-state="open"]'),
@@ -267,11 +273,11 @@ const SURFACES: Surface[] = [
     name: "hover_card",
     open: async (page) => {
       await goto(page, "hover_card");
-      await page.getByRole("button", { name: "Dioxus" }).hover();
+      await demoRole(page, "button").hover();
       await expect(page.locator(".dx-hover-card-content")).toBeVisible();
     },
     wrapper: (page) => page.locator(".dx-hover-card-content"),
-    text: (page) => page.getByText("Dioxus is", { exact: false }),
+    text: (page) => page.locator(".dx-hover-card-content div").first(),
   },
   {
     // The load-bearing negative case: the tooltip is the theme's inverted floating surface
@@ -282,11 +288,11 @@ const SURFACES: Surface[] = [
     name: "tooltip",
     open: async (page) => {
       await goto(page, "tooltip");
-      await page.locator("#component-preview-frame").first().getByText("Rich content").hover();
+      await demoFrame(page).locator(".dx-tooltip-trigger").hover();
       await expect(page.getByRole("tooltip")).toBeVisible();
     },
     wrapper: (page) => page.locator(".dx-tooltip-content"),
-    text: (page) => page.getByText("Tooltip title"),
+    text: (page) => page.locator(".dx-tooltip-content p").first(),
     expectedVar: "--dx-background",
   },
   {
@@ -305,7 +311,7 @@ const SURFACES: Surface[] = [
     name: "date_picker",
     open: async (page) => {
       await goto(page, "date_picker");
-      await page.getByRole("button", { name: "Show Calendar" }).first().click();
+      await demoRole(page, "button").click();
       await expect(page.locator(".dx-date-picker-popover-content").first()).toBeVisible();
     },
     wrapper: (page) => page.locator(".dx-date-picker-popover-content").first(),
@@ -316,7 +322,7 @@ const SURFACES: Surface[] = [
     // directly (author origin, already winning over the UA default with no
     // help needed from this file's fix). Row 111 moved it from the ramp's
     // `--secondary-color-1` to the popover role, which resolves to
-    // `--secondary-color-4` (#111 | #d4d4d4), so `expectedVar` names that
+    // `--dx-popover-foreground`, so `expectedVar` names that
     // token; it is still the surface's OWN declared colour, not an instance
     // of the bug. This case exists
     // to prove the shared `:where()` rule leaves it alone, the same
@@ -331,24 +337,21 @@ const SURFACES: Surface[] = [
       // since row 8 landed. Same missed-locator class row 8's own account
       // already names two instances of (the initial repo-wide grep, then
       // `oracle-focus-restore.spec.ts` found separately) -- this is a third.
-      await page
-        .getByRole("combobox")
-        .filter({ hasText: /Select an option|Apple|Banana/ })
-        .click();
+      await demoRole(page, "combobox").click();
       await expect(page.locator('.dx-select-list[data-state="open"]')).toBeVisible();
     },
     wrapper: (page) => page.locator('.dx-select-list[data-state="open"]'),
-    text: (page) => page.getByRole("option", { name: "Apple" }),
-    expectedVar: "--secondary-color-4",
+    text: (page) => page.locator('.dx-select-list[data-state="open"]').getByRole("option").first(),
+    expectedVar: "--dx-popover-foreground",
   },
   {
     // Same shape as `select` immediately above: `.dx-combobox-list` also
     // declares its own `color: var(--dx-foreground)` directly
-    // (`--secondary-color-4`, row 111; was `--secondary-color-1`).
+    // (the popover role, row 111; was `--secondary-color-1`).
     name: "combobox",
     open: async (page) => {
       await goto(page, "combobox");
-      const input = page.getByRole("combobox", { name: "Select framework" });
+      const input = demoRole(page, "combobox");
       await input.focus();
       await page.keyboard.press("ArrowDown");
       await expect(page.locator('.dx-combobox-list[data-state="open"]')).toBeVisible();
@@ -358,23 +361,23 @@ const SURFACES: Surface[] = [
     // (its own, deliberate colour since row 111); the first un-highlighted one inherits the list's.
     text: (page) =>
       page.locator('.dx-combobox-list[data-state="open"] .dx-combobox-option:not([data-highlighted="true"])').first(),
-    expectedVar: "--secondary-color-4",
+    expectedVar: "--dx-popover-foreground",
   },
   {
     name: "dialog",
     open: async (page) => {
       await goto(page, "dialog");
-      await page.getByRole("button", { name: "Show Dialog" }).click();
-      await expect(page.getByRole("dialog").filter({ hasText: "Item information" })).toBeVisible();
+      await demoRole(page, "button").click();
+      await expect(page.getByRole("dialog")).toBeVisible();
     },
-    wrapper: (page) => page.getByRole("dialog").filter({ hasText: "Item information" }),
-    text: (page) => page.locator(".dx-dialog-title").filter({ hasText: "Item information" }),
+    wrapper: (page) => page.getByRole("dialog"),
+    text: (page) => page.locator(".dx-dialog-title"),
   },
   {
     name: "alert_dialog",
     open: async (page) => {
       await goto(page, "alert_dialog");
-      await page.getByRole("button", { name: "Show Alert Dialog" }).click();
+      await demoRole(page, "button").click();
       await expect(page.getByRole("alertdialog")).toBeVisible();
     },
     wrapper: (page) => page.getByRole("alertdialog"),
@@ -396,7 +399,7 @@ const SURFACES: Surface[] = [
     name: "sheet",
     open: async (page) => {
       await goto(page, "sheet");
-      await page.getByRole("button", { name: "Right" }).click();
+      await demoRole(page, "button", 1).click(); // sheet demo: Top, Right, Bottom, Left
       await expect(page.locator('.dx-sheet[data-side="right"]')).toBeVisible();
     },
     wrapper: (page) => page.locator('.dx-sheet[data-side="right"]'),
@@ -416,7 +419,7 @@ const SURFACES: Surface[] = [
     name: "toast",
     open: async (page) => {
       await goto(page, "toast");
-      await page.getByRole("button", { name: "Info (60s)" }).click();
+      await demoRole(page, "button").click();
       await expect(page.locator(".dx-toast-title")).toBeVisible();
     },
     // Scoped to the main demo frame: the page also carries the "types" variant's own
@@ -432,14 +435,14 @@ function runSurfaceChecks() {
   for (const surface of SURFACES) {
     test(surface.name, async ({ page }) => {
       await surface.open(page);
-      const expected = await resolvedColor(page, surface.expectedVar ?? "--secondary-color-4");
+      const expected = await resolvedColor(page, surface.expectedVar ?? INK_TOKEN);
       await expect(
         surface.wrapper(page),
-        `${surface.name}: content wrapper's color must resolve to ${surface.expectedVar ?? "--secondary-color-4"}, not the UA [popover]/dialog default`,
+        `${surface.name}: content wrapper's color must resolve to ${surface.expectedVar ?? INK_TOKEN}, not the UA [popover]/dialog default`,
       ).toHaveCSS("color", expected);
       await expect(
         surface.text(page),
-        `${surface.name}: text must resolve to ${surface.expectedVar ?? "--secondary-color-4"}, not the UA [popover]/dialog default`,
+        `${surface.name}: text must resolve to ${surface.expectedVar ?? INK_TOKEN}, not the UA [popover]/dialog default`,
       ).toHaveCSS("color", expected);
     });
   }

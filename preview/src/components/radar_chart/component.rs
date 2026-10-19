@@ -6,7 +6,7 @@
 //! already gives you everything below.
 //!
 //! Re-exports `crate::components::chart::*`, the path a user's own tree has
-//! after `dx components add chart` (there `chart/mod.rs` is `mod component;
+//! after `shadcn-dioxus add chart` (there `chart/mod.rs` is `mod component;
 //! pub use component::*;`). Never reach into `chart::component::` directly:
 //! that module is private once installed (`scripts/check-installed-paths.sh`).
 pub use crate::components::chart::*;

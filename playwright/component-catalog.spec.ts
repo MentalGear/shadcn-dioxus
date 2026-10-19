@@ -44,8 +44,13 @@ const NOT_IN_GALLERY = new Set(["top_layer"]);
 const display = (name: string) => name.replace(/_/g, " ");
 const componentUrl = (name: string) => `${BASE_URL}/component/?name=${name}&`;
 
-/** The docs sidebar's entry for a component (`Route::component` -> `/component/<name>/`). */
-const sidebarEntry = (page: Page, name: string) => page.locator(`a[data-sidebar="menu-button"][href*="/component/${name}/"]`);
+/**
+ * The docs sidebar's entry for a component (`Route::component` -> `/component/<name>/`). The sidebar lists every
+ * component twice (A-Z and by category, `preview/src/docs_nav.rs`) and hides one list with CSS, so an entry is the
+ * VISIBLE link.
+ */
+const sidebarEntry = (page: Page, name: string) =>
+  page.locator(`a[data-sidebar="menu-button"][href*="/component/${name}/"]:visible`);
 
 /** The homepage renders every demo (75 cards); wait until the gallery is really there. */
 async function openHome(page: Page) {
@@ -156,7 +161,7 @@ test.describe("sidebar", () => {
     const sidebar = page.locator('[data-slot="sidebar"]:not([data-mobile="true"])');
     // One entry per component, and a badge in precisely the extras' entries.
     const withBadge = await sidebar
-      .locator('a[data-sidebar="menu-button"]')
+      .locator('a[data-sidebar="menu-button"]:visible')
       .evaluateAll((links) =>
         links
           .filter((a) => a.querySelector(".dx-extra-badge"))
@@ -236,7 +241,7 @@ test.describe("phone width (390px)", () => {
     await page.getByRole("button", { name: "Toggle Sidebar" }).click();
     const sheet = page.locator(".dx-sidebar-sheet");
     await expect(sheet).toBeVisible();
-    const link = sheet.locator('a[data-sidebar="menu-button"][href*="/component/drag_and_drop_list/"]');
+    const link = sheet.locator('a[data-sidebar="menu-button"][href*="/component/drag_and_drop_list/"]:visible');
     const badge = link.locator(".dx-extra-badge");
     await badge.scrollIntoViewIfNeeded();
     await expect(badge).toBeVisible();

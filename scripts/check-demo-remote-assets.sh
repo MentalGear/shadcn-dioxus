@@ -46,11 +46,11 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 ALLOW=(
   # avatar "Error State": the image must fail to load so the initials fallback shows. `.example` is
   # reserved (RFC 2606) and never resolves, so it fails the same way online and offline.
-  "components/avatar/variants/main/mod.rs|https://invalid-url.example/image.jpg"
+  "components/avatar/variants/states/mod.rs|https://invalid-url.example/image.jpg"
   # avatar "Loading": the primitive's `loading` state is only reached while an `<img>` request is in
   # flight, and any local src settles at once (loaded or error), so this demo needs a request that stays
   # pending. Offline or behind a blocking proxy it settles as `error` and shows the fallback instead.
-  "components/avatar/variants/main/mod.rs|https://httpbin.org/delay/3600"
+  "components/avatar/variants/states/mod.rs|https://httpbin.org/delay/3600"
 )
 
 if [ "$#" -gt 0 ]; then ROOTS=("$@"); CHECK_STALE=0; else ROOTS=(preview/src preview/assets); CHECK_STALE=1; fi

@@ -1,65 +1,72 @@
-# Fork-network research
+# dev-docs: the map
 
-What exists in the 81 forks of `DioxusLabs/dioxus-components` that upstream does not have, what is worth taking, and how to take it.
+Everything here is for the people and agents who work on this repository. Start with **[`STATUS.md`](./STATUS.md)**
+(where we are right now), then the rules ([`lane-rules.md`](./lane-rules.md), `../CLAUDE.md`), then pick a row from the
+[backlog](./backlog.md). **Living** = kept current as work lands; **reference** = stable, read when the topic comes up;
+**historical** = a record of a past round or the research behind it, left as written (check the date before acting on it).
 
-**Baseline:** `bf007c1` — upstream `main`, unchanged since 2026-06-29. This repo tracked it exactly at scan time (2026-08-29).
+## Status, order, backlog (living)
 
-**Point-in-time research index.** Everything below reflects the state of the codebase at the 2026-08-29 scan date, before any of this research was acted on. As of 2026-09-02, Phases 0–4 of [`plan.md`](./plan.md) have landed on `main` — start there for current status; the documents below remain the record of the research that led to them.
-
-**2026-09-18:** a fresh session evaluated `plan.md`/`backlog.md`'s queue and concurred, with three corrections (six idled "Ready" rows released into parallel lanes, an unstated row 7→19 dependency sequenced, the cheap-primitives wave's two cheapest members — Table, Data Table — added ahead of it). Ten parallel lanes then landed: Phase 6 rows 11 (typeahead) and 12 (`pub mod portal`, `Toggle`'s `class` prop, `CalendarDayState`); `backlog.md` rows 7, 8, 9 and 19 (the Wervice tooltip fade-out and its `use_popover_shown_while_mounted` dependency, the Select combobox role, and Select's scroll lock); the upstream cherry-pick (row 66); two harness fixes (axe scan readiness, a `top_layer` fixture z-index collision with the docs Sidebar); a scroll-animation regression fix; and five `component-backlog.md` catalog components (Table, Data Table, Drawer, Navigation Menu, Resizable). See `backlog.md`'s "2026-09-18 — queue evaluation and what was taken" for the full account and its "What a fresh session should pick up next" list for what remains open.
-
-**2026-10-03:** chart shadcn/Recharts parity landed (PRs #79-#81, `main` @ `62de3cb`; `backlog.md` rows 117-119, open follow-ups rows 120-127; row 128, a gate PR #81 left red, fixed in the follow-up). Next: row 116 (build/dev loop), then row 111 (theme) -- see [`next-steps-2026-10-03.md`](./next-steps-2026-10-03.md).
-
-**2026-10-04:** build loop and theme foundations landed (`main` @ `d9bcfda`; `backlog.md` rows 116 and 111, with 122/123 landed, 29 resolved and 40's Navbar half fixed). Release SSG cold 1166 -> 904 s and warm 723 -> 411 s; `scripts/build-ssg.sh`, `scripts/lane-target.sh` and a SessionStart hook make the loop safe by construction; shadcn role tokens, the Nova foundations for seven components and a scoped global border-box are in, proven value-preserving by a 0-difference computed-style snapshot. Next: row 111 phase C and the small open rows -- see [`next-steps-2026-10-04.md`](./next-steps-2026-10-04.md); measurements and per-site evidence in [`research/theme-2026-10-03/`](./research/theme-2026-10-03/role-token-map.md).
-
-**2026-10-04 (round 2):** menus, overlays, theme picker, chat kit and scroll jank (branch `claude/zealous-davinci-mtusif`, base `main` @ `44a103e`; `backlog.md` rows 139-151). One menu-item indicator construction and one overlay scrim construction replace per-component copies; dropdown, context-menu and menubar gained checkbox and radio items from a shared `menu_item.rs`; the docs site got a shadcn preset picker (9 bases x 17 accents x 6 radii) with a contrast sweep; the chat kit (message, bubble, marker, attachment) and `message_scroller` stage 1 landed. Three classes were closed by construction: a Dioxus stylesheet-link drop (`preview/src/eager_head.rs`), a clippy gate that never linted the `web`/`server` arms (`scripts/run-gates.sh`, now the one pre-commit entry point), and a leaked 100 ms interval on `/` from hooks registered on the parent scope (`use_interval`). Four research notes under [`research/`](./research/) (scroll jank, shadcn catalog, unification audit, virtualization survey) feed the open rows. Next: the unification top 3, then `VirtualList`'s content-visibility mode -- see [`next-steps-2026-10-04.md`](./next-steps-2026-10-04.md) ("Round 2 outcome").
-
-| Document | Answers |
+| Path | What it is |
 |---|---|
-| [`plan.md`](./plan.md) | **The single authoritative sequence** — phases, dependencies, open decisions, and the definition of done. Start here. Where another document's ordering differs, the plan wins. |
-| [`adopt-fork-fixes.md`](./adopt-fork-fixes.md) | The **task brief** (from `chore/fork-fix-mining`) — scope, classification scheme, and requested output. |
-| [`adopt-fork-fixes-results.md`](./adopt-fork-fixes-results.md) | The **results**: §0 is the brief's categorized + batched table; then the full mining report. Four fixes still live on `main`; ~11 conditional; ~45 rejected with reasons. |
-| [`capability-gaps.md`](./capability-gaps.md) | Which **capabilities** upstream is missing — form submission, focus restore, scroll lock, `aria-hidden`, collision detection, typeahead, RTL — and which fork closed each. |
-| [`lifting-from-forks.md`](./lifting-from-forks.md) | **How to port** any of it: licensing, the three lift shapes, name mapping, the traps, and per-item recipes. |
-| [`recommended-implementations.md`](./recommended-implementations.md) | **What to build** for each gap, assembled from the best part of each source rather than copying any one wholesale. |
-| [`motion.md`](./motion.md) | **How animation works**: the motion tokens, reduced motion, compositor-only infinite animations, visibility gating (`use_motion`, `use_interval_while`, `use_entered_view_when`, `use_document_visible`) and its gates, anchored keyframes, modal exits, how to add your own animated component, and a per-component table of what moves and what it does while unseen. Also on the site's `/docs` page. |
-| [`conformance-harness.md`](./conformance-harness.md) | The **harness design**: three labelled rule tiers (APG / HTML / Radix-opinion), verified sources for each, and how each tier calibrates itself against a known-correct reference. |
-| [`next-steps-2026-10-03.md`](./next-steps-2026-10-03.md) | **Paste-ready thread briefs** written after the chart-parity round: row 116 (build/dev loop) first, then row 111 (theme migration). |
-| [`next-steps-2026-10-04.md`](./next-steps-2026-10-04.md) | **Paste-ready thread briefs** after the build-loop and theme-foundations round: row 111 phase C first, then the open small rows (quick ones marked). |
-| [`research/{scroll-jank,shadcn-catalog,unification-audit,virtualization-survey}-2026-10-04.md`](./research/) | The **2026-10-04 round-2 research notes**: why the overview page scrolls badly (and the fixes, section 7), the shadcn catalog audit (`backlog.md` rows 136-138), the 15-concern unification audit (row 145) and the virtualization / `content-visibility` survey (rows 143, 144, 147). |
-| [`research/chart-parity-2026-10-03/`](./research/chart-parity-2026-10-03/README.md) | The **2026-10-03 snapshot** behind `backlog.md` rows 117-119: shadcn `/charts` UX spec, our audit, area/line/bar and pie/radar/radial parity reports, the sizing contract, and the final visual comparison. |
-| `../playwright/oracle-focus-restore.spec.ts` | The **executable oracle**: APG conformance tests that turn a claim into a reproducible result. |
+| [`STATUS.md`](./STATUS.md) | One page: current round, what is merged / deployed, what is running, the next round, owner inputs pending. The main loop keeps it current. |
+| [`backlog.md`](./backlog.md) | The **index** of the backlog (generated; "`backlog.md` row N" in code and docs resolves here). Open and done tables, links to the notes. |
+| [`backlog/`](./backlog/) | The backlog itself, **one file per row**: `<NNN>-<slug>.md` (open), `done/` (landed, fixed, resolved, superseded), `notes/` (the old file's narrative sections, verbatim). Edit a row file, run `scripts/backlog-index.sh`, commit both; `scripts/check-backlog-index.sh` is the gate. |
+| [`research/backlog-order-2026-10-18.md`](./research/backlog-order-2026-10-18.md) | **The execution order** of the open rows (rounds 0-7 and why), owner 2026-10-18. Supersedes the order blocks in the backlog notes. |
+| [`research/next-round-plan-2026-10-15.md`](./research/next-round-plan-2026-10-15.md) | The lane plan of the round that ran 2026-10-18 (lanes, owned files, proof protocol, baselines). |
+| [`plan.md`](./plan.md) | The original phased plan (phases 0-6, open decisions, definition of done) and its landing log. Authoritative for phases 0-6; the rows after them live in the backlog. |
 
-## The short version
+## Rules for sessions and lanes (living)
 
-Three findings outrank everything else, all confirmed against the current source:
+| Path | What it is |
+|---|---|
+| `../CLAUDE.md` | Project instructions: delegation, the gate list and the one gate entry point (`scripts/run-gates.sh`), build rules. |
+| [`lane-rules.md`](./lane-rules.md) | The brief every delegated lane gets: worktree, the global build lock, mtime touch, merge-then-fast-gates before handback, the gate procedure. |
+| [`agent-model-fit.md`](./agent-model-fit.md) | Which agent model (Haiku / Sonnet) fits which lane; a running log, one row per delegated lane. |
+| [`dev-loop.md`](./dev-loop.md) | The measured fast dev loop: edit, wait, inspect, one spec, suite. |
+| [`dx-serve-hot-reload.md`](./dx-serve-hot-reload.md) | How to trust (and not trust) a `dx serve` result when verifying a UI fix. |
+| [`preview-composition.md`](./preview-composition.md) | The one architectural rule of `preview/` (themed wrappers only), enforced by `scripts/check-preview-composition.sh`. |
+| [`motion.md`](./motion.md) | How animation works: tokens, reduced motion, compositor-only loops, visibility gating, and the gates behind them. Also on the site's `/docs`. |
 
-1. **`RadioGroup` and `Select` accept `name`/`required`, document them as being for form submission, and silently ignore them.** A developer following the documented API ships a broken form. `Checkbox` does it correctly and shows the pattern.
-2. **No overlay does collision detection.** Placement is static CSS keyed off `data-side`, so anything near a viewport edge renders off-screen.
-3. **Closing a `DropdownMenu`, `ContextMenu`, `Menubar` or `Select` never returns focus to the trigger** — confirmed by execution, four failing tests against a passing `Dialog` control.
+## Reference (stable)
 
-Beyond those: no body scroll lock, no `aria-hidden` on background content while a modal is open (a WCAG-class defect), no typeahead outside `select/`, no RTL.
+| Path | What it is |
+|---|---|
+| [`conformance-harness.md`](./conformance-harness.md) | The Playwright conformance harness: three rule tiers (APG / HTML / Radix-opinion), sources, calibration, current inventory. |
+| [`component-backlog.md`](./component-backlog.md) | The component catalog harvest (upstream PRs, forks, shadcn gaps), re-rated; ranked queue of components. |
+| [`capability-gaps.md`](./capability-gaps.md) | Capabilities upstream lacks (form participation, focus restore, scroll lock, collision, typeahead, RTL) and which fork closed each. |
+| [`lifting-from-forks.md`](./lifting-from-forks.md), [`recommended-implementations.md`](./recommended-implementations.md) | How to port from forks (licensing, lift shapes, traps) and what to build per gap. |
+| [`fork-network-research.md`](./fork-network-research.md) | The former `README.md`: summary of the 81-fork research with its document index and confidence notes. |
+| [`mutants-baseline.md`](./mutants-baseline.md), [`baseline.md`](./baseline.md) | One-off baselines (cargo-mutants 2026-08-31; the Phase 0 green baseline 2026-08-29). |
 
-One fork, `dignifiedquire/dx-components`, is the source for most of it, and its accessibility modules are standalone files by design. It is **not** a superset of upstream, though — it lacks `color_picker`, `tag_group`, all virtualization, and the current `selectable`/`selection` machinery — so forking it wholesale trades one set of gaps for another.
+## Issues and upstream drafts
 
-## Confidence
+| Path | What it is |
+|---|---|
+| [`issues/`](./issues/) | Records of defects found while working: duplicate-attribute root cause, findings and guard prototype (backlog row 93), the `@supports` scoping bug, chart stage 2 handoff (resolved). |
+| [`issues/drafts/`](./issues/drafts/) | Drafts for upstream Dioxus / dioxus-components filings. Outward-facing: nothing here is filed without the owner's go (backlog rows 6, 14). |
 
-Read this before acting on any of it.
+## Research (`research/`; historical unless it says otherwise)
 
-- **Executed:** focus restore. The oracle ran against the app built from this commit — four failures, one passing control. It also *corrected* the static analysis: focus falls to `<body>` only in `ContextMenu`; `DropdownMenu` and `Menubar` keep focus on the closed menu's item.
-- **Verified statically:** everything else. Claims are backed by reading current source and fork refs, and every cherry-pick result in `adopt-fork-fixes-results.md` §8 was executed. Nothing else was compiled or run.
-- **Point-in-time:** PR states and fork contents were read on the scan date. Re-check before acting.
-- **Reviewed:** four adversarial review rounds across the set — three on the fix report, one on the capability, harness and recommendation documents — catching six factual errors and two broken commands, including a fabricated line reference propagated from a sub-agent summary.
-- **Inferred, not measured:** that the `eval` no-op leaves several behaviours broken on `dioxus-native`. Read from the implementation, never run on that renderer.
+Dated evidence behind rows and decisions; the backlog rows link to the file that has the numbers.
 
-## Where the layers are
+| Path | Topic |
+|---|---|
+| `backlog-order-2026-10-18.md`, `next-round-plan-2026-10-15.md` | **Living:** see above. `next-round-plan-2026-10-14.md` is the earlier draft of it. |
+| `round3-2026-10-05.md` | Round 3 evidence: modal close glitch, stylesheet delivery, listener inventory, VirtualList numbers, fonts. |
+| `phase-c-plan-2026-10-13.md`, `theme-2026-09-26/`, `theme-2026-10-03/` (with `tools/`) | Theme migration to shadcn's system (row 111): role-token map, border-box, Nova vs base, generators. |
+| `chart-2026-09-19.md`, `chart-forks-2026-09-19.md`, `chart-parity-2026-10-03/` | Chart engine decisions and the shadcn / Recharts parity snapshot (rows 88, 117-119). |
+| `carousel-*.md`, `carousel-loop-2026-09-25/`, `carousel-overscroll-bench.html` | Carousel engine, overscroll, loop research (rows 91, 96, 102, 103). |
+| `scroll-jank`, `shadcn-catalog`, `unification-audit`, `virtualization-survey` (all `-2026-10-04.md`) | Round-2 research notes feeding rows 136-154. |
+| `message-scroller-parity-2026-10-14.md`, `chat-kit-demos-2026-10-14.md` | Chat kit and Message Scroller parity (rows 146, 213). |
+| `shadcn-demo-gaps-2026-10-11.md`, `shadcn-demo-parity-audit-2026-10-11.md`, `docs-audit-2026-10-17.md` | Demo and docs parity audits. |
+| `dependency-audit-2026-10-14.{md,json}` | Compile-time and supply-chain audit (row 217, markdown decisions). |
+| `touch-open-focus`, `mobile-keyboard`, `nav-scroll-smooth`, `user-select-inventory` (`-2026-10-17.md`), `baseui-focus-2026-10-18.md` | Touch, keyboard, scroll and focus investigations (rows 226-229, 240). |
 
-```
-DioxusLabs/dioxus  (framework — main is on 0.8.0-alpha.1)
-        ↓
-dioxus-primitives  ← primitives/ IN THIS REPO. All accessibility behaviour lives here.
-        ↓
-preview/           (styled showcase)
-```
+## Historical one-offs (left in place so links keep working)
 
-There is no separate primitives repository. The framework offers no body/scroll API and no portal support, so `document::eval` is the only mechanism available for scroll lock and `aria-hidden` — which is why both forks implement them in JavaScript.
+| Path | What it is |
+|---|---|
+| [`next-steps-2026-10-03.md`](./next-steps-2026-10-03.md), [`next-steps-2026-10-04.md`](./next-steps-2026-10-04.md), [`next-steps-2026-10-05.md`](./next-steps-2026-10-05.md) | Paste-ready thread briefs written after those rounds. Superseded by the backlog order and STATUS. |
+| [`phase4-spike-findings.md`](./phase4-spike-findings.md) | The native `<dialog>` spike (Phase 4); the decision is recorded in `plan.md`. |
+| [`adopt-fork-fixes.md`](./adopt-fork-fixes.md), [`adopt-fork-fixes-results.md`](./adopt-fork-fixes-results.md) | The fork-fix mining brief and its results (four fixes adopted, ~11 conditional, ~45 rejected). |

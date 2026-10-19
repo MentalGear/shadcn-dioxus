@@ -84,12 +84,18 @@ html {
   scrollbar-gutter: stable;
 }
 
-/* Smooth same-page scrolling is motion: only for visitors who have not asked for less of it (WCAG 2.3.3).
-   `/docs`'s "Start" sub-items jump to an in-page `#`-anchor heading via a plain `a { href: "#..." }`, not a
-   route change -- without this, that jump is an instant cut rather than a scroll a user can follow. Scoped
-   to the whole document since any future same-page anchor jump should behave the same way. */
+/* Smooth scrolling is motion, and it is opt-in per interaction, never ambient (WCAG 2.3.3: only for visitors who
+   have not asked for less of it). `html { scroll-behavior: smooth }` makes EVERY scroll that names no `behavior`
+   animate, including the router's `scrollTo(0, 0)` after a push and its scroll restoration on Back: the long page
+   is swapped for a shorter one mid-animation, the browser clamps the scroll offset to the new page's bottom, and
+   the visitor sees the bottom of the destination and then watches it glide up (or, on Back, the mirror). An
+   ambient rule is also a trap for every future `window.scrollTo` (the scroll-lock restore, the charts tab
+   restore each had to be patched or would have been). So the document is instant by default and
+   `preview/index.html`'s same-page `a[href^="#"]` click handler sets `data-anchor-scroll` on `<html>` for exactly
+   the jump it lets the browser animate (`/docs`'s "Start" sub-items), clearing it when the jump has settled.
+   `scripts/check-scroll-behavior.sh` fails any other `scroll-behavior: smooth` on the root. */
 @media (prefers-reduced-motion: no-preference) {
-  html {
+  html[data-anchor-scroll] {
     scroll-behavior: smooth;
   }
 }
@@ -861,6 +867,57 @@ button.dx-theme-phone-trigger {
   display: none;
 }
 
+/* The docs sidebar lists the components twice, A-Z (the default) and by category (`preview/src/docs_nav.rs`).
+ * `<html data-nav-sort>` -- set before first paint from the remembered choice, absent = A-Z -- shows exactly one
+ * list and paints the matching toggle option, so neither the list nor the toggle is ever drawn in the wrong
+ * state, and the choice needs no Rust (the SSG is one static page for every visitor). */
+html[data-nav-sort="category"] .dx-nav-az,
+html:not([data-nav-sort="category"]) .dx-nav-category {
+  display: none;
+}
+
+.dx-nav-sort-group {
+  padding-bottom: 0;
+}
+
+.dx-nav-sort {
+  display: flex;
+  padding: 2px;
+  border-radius: var(--dx-radius-lg);
+  background-color: var(--dx-muted);
+  gap: 2px;
+}
+
+.dx-nav-sort-option {
+  height: 1.75rem;
+  flex: 1;
+  border: 0;
+  border-radius: calc(var(--dx-radius-lg) - 2px);
+  background-color: transparent;
+  color: var(--dx-muted-foreground);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--dx-text-xs);
+  font-weight: 500;
+}
+
+.dx-nav-sort-option:focus-visible {
+  box-shadow: var(--dx-ring);
+  outline: none;
+}
+
+html:not([data-nav-sort="category"]) .dx-nav-sort-option[data-nav-sort-option="az"],
+html[data-nav-sort="category"] .dx-nav-sort-option[data-nav-sort-option="category"] {
+  background-color: var(--dx-background);
+  box-shadow: var(--dx-shadow-sm);
+  color: var(--dx-foreground);
+}
+
+html:not([data-nav-sort="category"]) .dx-nav-sort-option[data-nav-sort-option="az"]:focus-visible,
+html[data-nav-sort="category"] .dx-nav-sort-option[data-nav-sort-option="category"]:focus-visible {
+  box-shadow: var(--dx-ring);
+}
+
 .dx-docs-shell-body .dx-sidebar-container {
   position: sticky;
   top: var(--dx-navbar-height);
@@ -941,13 +998,20 @@ button.dx-theme-phone-trigger {
   margin: 0;
 }
 
-.dx-component-page-title-row .dx-component-inline-command {
-  padding: 0.4rem 0.45rem 0.4rem 0.65rem;
-  border-color: var(--dx-border);
+.dx-component-install-link {
+  padding: 0.35rem 0.8rem;
+  border: 1px solid var(--dx-border);
+  border-radius: 0.4rem;
+  color: var(--dx-foreground);
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-decoration: none;
 }
 
-.dx-component-page-title-row .dx-component-inline-command code {
-  font-size: 0.85rem;
+@media (hover: hover) and (pointer: fine) {
+  .dx-component-install-link:hover {
+    background-color: var(--dx-accent);
+  }
 }
 
 /* The "Extra" badge (`ExtraBadge`, main.rs; list: `components::CATALOG`) marks
@@ -1320,44 +1384,37 @@ button.dx-theme-phone-trigger {
   flex-shrink: 0;
 }
 
-/* A component page shows the CLI command first and the dx equivalent under it
- * (`ComponentInstallCommand`, main.rs). The stack is a column that may shrink
- * below its content width, so each command truncates inside it at phone width
- * rather than widening the header. */
+/* The install command (`ComponentInstallCommand`, main.rs) sits in the Installation disclosure. The box
+ * may shrink below its content width, so the command truncates inside it at phone width rather than
+ * widening the page. */
 .dx-component-install-commands {
   display: flex;
   min-width: 0;
   max-width: 100%;
   flex-direction: column;
   align-items: flex-start;
+  margin-bottom: 0.75rem;
   gap: 0.4rem;
 }
 
-.dx-component-inline-command-alt {
-  background-color: transparent;
-  color: var(--dx-muted-foreground);
-}
-
-.dx-component-install-commands .dx-component-inline-command-alt code {
-  font-size: 0.75rem;
-}
-
+/* The demo frame is shadcn's preview frame (ui.shadcn.com/docs/components, `data-slot="component-preview"`:
+ * `rounded-2xl border`, inner `h-72 p-10`, centred, NO fill -- the page shows through, so a Card demo reads as
+ * a card on the page and axe judges demo text against the real page background). It used to be a card-coloured
+ * panel with a 16px dotted grid, 8px radius and 32px padding; in dark that panel was #171717 on a #0a0a0a page,
+ * which is what made every docs button look "on a different background" from shadcn's. `min-height` instead of
+ * `height`: a tall demo (a calendar, a form) grows the frame instead of overflowing it. */
 .dx-component-preview-frame {
   display: flex;
   width: 100%;
-  min-height: 11rem;
+  min-height: 18rem;
   max-height: 100%;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: var(--dx-space-8);
+  padding: var(--dx-space-10);
   border: 1px solid var(--dx-border);
-  border-radius: 0.5rem;
-  background-color: var(--dx-card);
-  background-image:
-    radial-gradient(circle, rgb(0 0 0 / 6%) 1px, transparent 1px);
-  background-position: -1px -1px;
-  background-size: 16px 16px;
+  border-radius: 1rem;
+  background-color: transparent;
 }
 
 /* At phone widths the frame's 32px-per-side padding plus a card's own 24px
@@ -1368,7 +1425,7 @@ button.dx-theme-phone-trigger {
  * `preview/src/main.rs`). Until row 132 `components/tabs/style.css` (loaded
  * after this file) padded every `.dx-tabs-content` 2rem and so supplied the
  * frame's padding; Nova's tabs content has none, so the frame now owns its
- * 2rem above. The compound selector is kept so a future tabs padding cannot
+ * padding above. The compound selector is kept so a future tabs padding cannot
  * win by load order; it must stay ABOVE the `:has(.dx-code-block)` rule below
  * (same specificity), which keeps the CODE tab at `padding: 0` by source
  * order. */
@@ -1385,7 +1442,6 @@ button.dx-theme-phone-trigger {
   padding: 0;
   border: none;
   background-color: transparent;
-  background-image: none;
 }
 
 .dx-component-manual-install {
@@ -1485,6 +1541,80 @@ button.dx-theme-phone-trigger {
 .dx-component-manual-install-code .dx-code-block {
   max-width: 100%;
   border-radius: 0.5rem;
+}
+
+/* Installation (written in main.rs), every docs.md `##` section (`build.rs`, `wrap_sections_in_disclosures`) and
+ * a demo's notes (`VariantNotes`) are closed native `<details class="dx-docs-disclosure">`: one list of
+ * one-line rows, the heading inside the `<summary>` so the outline and the anchors stay. No JS: the server
+ * emits the closed state and nothing re-renders it. */
+.dx-component-accordion > .dx-docs-disclosure {
+  border-top: 1px solid var(--dx-border);
+}
+
+.dx-docs-disclosure {
+  border-bottom: 1px solid var(--dx-border);
+}
+
+.dx-docs-disclosure > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 0;
+  color: var(--dx-foreground);
+  cursor: pointer;
+  gap: 1rem;
+  list-style: none;
+}
+
+.dx-docs-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+.dx-docs-disclosure > summary::after {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  flex-shrink: 0;
+  border-right: 1.5px solid var(--dx-muted-foreground);
+  border-bottom: 1.5px solid var(--dx-muted-foreground);
+  content: "";
+  transform: rotate(45deg);
+  transition: transform 0.15s ease;
+  translate: 0 -2px;
+}
+
+.dx-docs-disclosure[open] > summary::after {
+  transform: rotate(-135deg);
+  translate: 0 2px;
+}
+
+.dx-docs-disclosure > summary h2 {
+  margin: 0;
+  color: var(--dx-foreground);
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-docs-disclosure > summary:hover h2 {
+    text-decoration: underline;
+  }
+}
+
+.dx-docs-disclosure-body {
+  padding-bottom: 1rem;
+}
+
+.dx-variant-notes {
+  border-bottom: none;
+}
+
+.dx-variant-notes > summary {
+  justify-content: flex-start;
+  padding: 0.6rem 0;
+  color: var(--dx-muted-foreground);
+  font-size: 0.875rem;
 }
 
 .dx-component-description {
@@ -1613,10 +1743,32 @@ button.dx-theme-phone-trigger {
   line-height: 1.6;
 }
 
-/* Widget masonry */
+/* Widget masonry: the columns are FIXED GROUPS decided at build time (`MasonrySlot` in `preview/src/main.rs`), never balanced
+ * from the cards' heights. This used to be CSS multi-column, which assigns each card to a column from the
+ * height of everything laid out so far: the ~580 KB prerendered page is parsed in chunks and painted between
+ * them, so every parsed card re-balanced the columns and cards jumped between them while the page loaded
+ * (backlog row 214, seen at iPad widths). Here a card's column is a function of its DOM position only, and
+ * a card that has not arrived leaves everything already painted where it is (an element only ever grows
+ * downward into space that no later card occupies yet).
+ *
+ * Three columns: `Left`, `Middle`, and `.dx-masonry-right` = `RightUpper` over `RightLower`. Two columns
+ * (<= 1100px): `.dx-masonry-right` dissolves, so the four groups are grid items that auto-place as
+ * Left | Middle on row one and RightUpper | RightLower on row two (column one = Left + RightUpper). Row
+ * one is as tall as the taller of Left/Middle, so the groups are chosen to have near-equal height
+ * (measured 641-1440px: within ~35px). One column (<= 640px): everything stacks in DOM order. */
 .dx-widget-masonry {
-  column-count: 3;
-  column-gap: 1.5rem;
+  display: grid;
+  align-items: start;
+  gap: 1.5rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.dx-masonry-col,
+.dx-masonry-right {
+  display: grid;
+  min-width: 0;
+  align-content: start;
+  gap: 1.5rem;
 }
 
 .dx-widget-card {
@@ -1626,9 +1778,8 @@ button.dx-theme-phone-trigger {
   padding: 1.75rem 1.75rem 1.85rem;
   border: 1px solid var(--dx-border);
   border-radius: 0.5rem;
-  margin: 0 0 1.5rem;
+  margin: 0;
   background-color: var(--dx-card);
-  break-inside: avoid;
 }
 
 /* Cards whose contents include a floating popout (combobox dropdown, etc.)
@@ -1698,7 +1849,8 @@ button.dx-theme-phone-trigger {
   overflow-clip-margin: 0.75rem;
 }
 
-/* NOT `content-visibility: auto` (the widget cards used to be): the masonry is CSS multi-column, which balances its
+/* NOT `content-visibility: auto` (the widget cards used to be): the masonry was CSS multi-column (it is fixed column
+ * groups now, see `.dx-widget-masonry`), which balanced its
  * columns by card HEIGHT, so a card laid out at its estimate and rendered later (it enters the range, which moves
  * the next card into range, and so on) re-balanced the columns once per unskip -- three to six re-layouts of the
  * gallery in the first ~300 ms, some after the first paint (`playwright/layout-stability.spec.ts`, backlog row
@@ -1727,11 +1879,12 @@ html[data-cv-settle] {
 }
 
 @media (width <= 1100px) {
-  .dx-widget-masonry { column-count: 2; }
+  .dx-widget-masonry { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dx-masonry-right { display: contents; }
 }
 
 @media (width <= 640px) {
-  .dx-widget-masonry { column-count: 1; }
+  .dx-widget-masonry { grid-template-columns: minmax(0, 1fr); }
 }
 
 /* Demos hub page */
@@ -1984,7 +2137,7 @@ html[data-cv-settle] {
   max-width: 40rem;
 }
 
-/* A bare chart sits straight on the dotted frame canvas; give it the same
+/* A bare chart sits straight on the (unfilled) frame; give it the same
  * surface the `Card`-wrapped demos have so its axis labels stay legible. */
 .dx-component-preview-frame > .dx-chart {
   padding: var(--dx-space-4);

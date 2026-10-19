@@ -31,9 +31,8 @@ use dioxus::prelude::{dioxus_router::LinkProps, *};
 use dioxus_code::{advanced::HighlightedSource, Code, CodeTheme, Theme};
 use dioxus_i18n::prelude::{i18n, use_init_i18n, I18nConfig};
 use dioxus_icons::lucide::{
-    ArrowRight, ArrowUpRight, Bell, BookOpen, ChartColumn, Check, ChevronDown, ChevronLeft,
-    ChevronsUpDown, Compass, Copy, ExternalLink, FileText, Hash, House, Layers, LayoutGrid, Mail,
-    Pause, Play, SkipBack, SkipForward, SquareCheck,
+    ArrowRight, ArrowUpRight, BookOpen, Check, ChevronDown, ChevronLeft, Copy, ExternalLink,
+    FileText, Hash, House, Mail, Pause, Play, SkipBack, SkipForward,
 };
 use dioxus_primitives::{ContentAlign, ContentSide};
 use nav_link::NavLink;
@@ -48,6 +47,7 @@ mod chart_tooltip_parity;
 mod charts_gallery;
 mod components;
 mod dashboard;
+mod docs_nav;
 // Client builds only: the server keeps `ServerDocument` for the SSR `<head>` (see the module's docs).
 #[cfg(not(feature = "server"))]
 mod eager_head;
@@ -101,8 +101,8 @@ fn cli_install_command() -> String {
 }
 
 /// The CLI command that installs `name` (a component directory name), its component dependencies and
-/// its crates. The command every copy button shows first; `dx_add_command` is the same install through
-/// dx.
+/// its crates. The command on every component page's Installation section; `dx_add_command` is the same
+/// install through dx, documented once on the Docs page.
 fn cli_add_command(name: &str) -> String {
     format!("shadcn-dioxus add {name}")
 }
@@ -1392,7 +1392,7 @@ fn Docs(dark_mode: Option<bool>) -> Element {
                     ol {
                         li { "Pick a component from the sidebar or catalog." }
                         li { "Preview the default example and variants." }
-                        li { "Run the install command shown on the component page (the CLI command, with the dx equivalent under it)." }
+                        li { "Open Installation on the component page and run its CLI command." }
                         li { "Customize the generated Rust and CSS to fit your app." }
                         li { "Run the update command now and then; it keeps your edits." }
                     }
@@ -1574,53 +1574,8 @@ fn DocsLayout(
                                 }
                             }
                         }
-                        for cat in components::ComponentCategory::ALL.iter().copied() {
-                            SidebarGroup { key: "{cat.label()}",
-                                SidebarGroupLabel {
-                                    match cat {
-                                        components::ComponentCategory::Forms => rsx! {
-                                            SquareCheck { size: "1rem", "aria-hidden": "true" }
-                                        },
-                                        components::ComponentCategory::Navigation => rsx! {
-                                            Compass { size: "1rem", "aria-hidden": "true" }
-                                        },
-                                        components::ComponentCategory::Overlays => rsx! {
-                                            Layers { size: "1rem", "aria-hidden": "true" }
-                                        },
-                                        components::ComponentCategory::Feedback => rsx! {
-                                            Bell { size: "1rem", "aria-hidden": "true" }
-                                        },
-                                        components::ComponentCategory::Disclosure => rsx! {
-                                            ChevronsUpDown { size: "1rem", "aria-hidden": "true" }
-                                        },
-                                        components::ComponentCategory::DataDisplay => rsx! {
-                                            LayoutGrid { size: "1rem", "aria-hidden": "true" }
-                                        },
-                                        components::ComponentCategory::Charts => rsx! {
-                                            ChartColumn { size: "1rem", "aria-hidden": "true" }
-                                        },
-                                    }
-                                    span { "{cat.label()}" }
-                                }
-                                SidebarMenu {
-                                    for component in components::demos_in_category(cat) {
-                                        SidebarMenuItem { key: "{component.name}",
-                                            SidebarMenuButton {
-                                                is_active: active == DocsNavActive::Component(component.name),
-                                                as: move |attributes: Vec<Attribute>| rsx! {
-                                                    NavLink {
-                                                        to: Route::component(component.name),
-                                                        attributes,
-                                                        {component.name.replace("_", " ")}
-                                                        ExtraBadge { name: component.name, tip: ExtraBadgeTip::Title }
-                                                    }
-                                                },
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        // A-Z by default or by category: see `docs_nav`.
+                        docs_nav::DocsComponentNav { active }
                     }
                     // The theme picker's phone entry: a "Theme" button pinned under the
                     // scrolling nav that opens the picker as a bottom `Drawer`. Always
@@ -1788,16 +1743,16 @@ fn NotFound(segments: Vec<String>) -> Element {
     }
 }
 
-/// The `h2` headings `ComponentHighlight` renders itself around each
-/// component's `docs.md`. A `docs.md` must not add an `h2` with one of these
+/// The `h2` headings the component page renders itself (`ComponentHighlight`) or that `build.rs` adds
+/// around a component's `docs.md` ("Usage notes" wraps the text before its first `##`). A `docs.md` must not add an `h2` with one of these
 /// texts (the page would show it twice); `docs_md_has_no_template_h2` below
 /// enforces that, so the list is the single source for both.
 const PAGE_HEADING_INSTALLATION: &str = "Installation";
+#[cfg(test)]
 const PAGE_HEADING_USAGE: &str = "Usage notes";
 const PAGE_HEADING_VARIANTS: &str = "Variants";
-/// "Usage" is reserved too: the docs are rendered inside the template's own
-/// "Usage notes" section, so a docs h2 called "Usage" would read as a nested
-/// duplicate of it.
+/// "Usage" is reserved too: the text before a docs.md's first `##` is rendered under "Usage notes", so
+/// a docs h2 called "Usage" would read as a nested duplicate of it.
 #[cfg(test)]
 const TEMPLATE_H2_HEADINGS: [&str; 4] = [
     PAGE_HEADING_INSTALLATION,
@@ -1805,6 +1760,9 @@ const TEMPLATE_H2_HEADINGS: [&str; 4] = [
     "Usage",
     PAGE_HEADING_VARIANTS,
 ];
+
+// `variant_notes(component, variant)`: generated by `build.rs` from `variants/<variant>/notes.md`.
+include!(concat!(env!("OUT_DIR"), "/variant_notes.rs"));
 
 /// Prefixes the app base path (`dx --base-path`, e.g. `/shadcn-dioxus`)
 /// onto root-absolute `href="/..."` links in the build-time rendered
@@ -1845,8 +1803,35 @@ fn prefix_root_absolute_hrefs(html: &str, prefix: &str) -> String {
     out
 }
 
+/// Opens the closed `<details>` (docs.md sections, Installation, a demo's notes) that holds the URL
+/// fragment's target, on load and on every `hashchange`, then scrolls to the target. A fragment that
+/// points at an `h2` inside a `<summary>` scrolls by itself (the heading is always visible), but a
+/// fragment that points at something inside a closed section would otherwise land on nothing.
+fn use_open_disclosure_for_hash() {
+    use dioxus_primitives::js_listener::{use_js_listeners, JsListeners};
+    use_js_listeners(move || {
+        Some(JsListeners::install(
+            "const open = () => {
+                 let id = '';
+                 try { id = decodeURIComponent(location.hash.slice(1)); } catch (_) {}
+                 const target = id && document.getElementById(id);
+                 if (!target) return;
+                 let d = target.closest('details');
+                 while (d) {
+                     d.open = true;
+                     d = d.parentElement && d.parentElement.closest('details');
+                 }
+                 target.scrollIntoView();
+             };
+             open();
+             listen(window, 'hashchange', open);",
+        ))
+    });
+}
+
 #[component]
 fn ComponentHighlight(demo: ComponentDemoData) -> Element {
+    use_open_disclosure_for_hash();
     let ComponentDemoData {
         name: raw_name,
         r#type,
@@ -1873,7 +1858,9 @@ fn ComponentHighlight(demo: ComponentDemoData) -> Element {
                             h1 { "{name}" }
                             ExtraBadge { name: raw_name, tip: ExtraBadgeTip::Tooltip }
                         }
-                        ComponentInstallCommand { name: raw_name }
+                        // The commands live in the Installation section below (one place); the
+                        // header only points at it, and the hash handler opens that disclosure.
+                        a { class: "dx-component-install-link", href: "#installation", "Install" }
                     }
                     ExtraExplainer { name: raw_name }
                     p { "{description}" }
@@ -1890,26 +1877,35 @@ fn ComponentHighlight(demo: ComponentDemoData) -> Element {
                 section { class: "dx-component-section",
                     match r#type {
                         ComponentType::Normal => rsx! {
-                            ComponentVariantHighlight { variant: main.clone(), main_variant: true, component_name: None, owner: raw_name }
+                            ComponentVariantHighlight { variant: main.clone(), main_variant: true, owner: raw_name }
                         },
                         ComponentType::Block => rsx! {
-                            BlockComponentVariantHighlight { variant: main.clone(), main_variant: true, component_name: raw_name, show_install: false }
+                            BlockComponentVariantHighlight { variant: main.clone(), main_variant: true, component_name: raw_name }
                         },
                     }
                 }
-                section { class: "dx-component-section",
-                    div { class: "dx-component-section-heading",
-                        h2 { "{PAGE_HEADING_INSTALLATION}" }
-                        p { "Use the CLI command for the common path, or copy the component files manually." }
-                    }
-                    details { class: "dx-component-manual-install dx-component-manual-install-code",
-                        summary { "Manual installation files" }
-                        ManualComponentInstallation { component, style }
-                    }
-                }
-                section { class: "dx-component-section dx-docs-prose",
-                    div { class: "dx-component-section-heading",
-                        h2 { "{PAGE_HEADING_USAGE}" }
+                // Installation and the docs.md sections are ONE accordion of closed native
+                // `<details>` (backlog rows 232/233): no hydration, so the server's closed markup is
+                // what the reader sees. The docs.md rows are produced by `build.rs`
+                // (`wrap_sections_in_disclosures`), this one is written here.
+                section { class: "dx-component-section dx-component-accordion dx-docs-prose",
+                    details { class: "dx-docs-disclosure",
+                        summary {
+                            h2 { id: "installation", "{PAGE_HEADING_INSTALLATION}" }
+                        }
+                        div { class: "dx-docs-disclosure-body",
+                            ComponentInstallCommand { name: raw_name }
+                            p { class: "dx-docs-muted",
+                                "Also adds the components and crates this one needs. First time in this app? "
+                                // link-ok: content link to the Docs page, never to a component page
+                                Link { to: Route::docs(), "Set up the CLI and your app" }
+                                " first."
+                            }
+                            details { class: "dx-component-manual-install dx-component-manual-install-code",
+                                summary { "Manual installation files" }
+                                ManualComponentInstallation { component, style }
+                            }
+                        }
                     }
                     div { class: "dx-component-description",
                         div { dangerous_inner_html: prefix_internal_hrefs(docs) }
@@ -1925,10 +1921,10 @@ fn ComponentHighlight(demo: ComponentDemoData) -> Element {
                             div { class: "dx-component-variant",
                                 match r#type {
                                     ComponentType::Normal => rsx! {
-                                        ComponentVariantHighlight { variant: variant.clone(), main_variant: false, component_name: None, owner: raw_name }
+                                        ComponentVariantHighlight { variant: variant.clone(), main_variant: false, owner: raw_name }
                                     },
                                     ComponentType::Block => rsx! {
-                                        BlockComponentVariantHighlight { variant: variant.clone(), main_variant: false, component_name: raw_name, show_install: false }
+                                        BlockComponentVariantHighlight { variant: variant.clone(), main_variant: false, component_name: raw_name }
                                     },
                                 }
                             }
@@ -1940,25 +1936,18 @@ fn ComponentHighlight(demo: ComponentDemoData) -> Element {
     }
 }
 
+/// The component's install command: the CLI line with its copy button. It is rendered once per page,
+/// inside the Installation disclosure. The `dx components add --git` alternative is documented once, on
+/// the Docs page ("Without the CLI"), not repeated on every component page.
 #[component]
 fn ComponentInstallCommand(name: &'static str) -> Element {
-    // The CLI command is the primary one; the dx equivalent (which needs `--git`, because a bare
-    // `dx components add` reads upstream's registry) sits under it.
     let command = cli_add_command(name);
-    let dx_command = dx_add_command(name);
 
     rsx! {
         div { class: "dx-component-install-commands",
             div { class: "dx-component-inline-command",
                 code { "{command}" }
                 CopyCommandButton { command: command.clone() }
-            }
-            div { class: "dx-component-inline-command dx-component-inline-command-alt",
-                code { "{dx_command}" }
-                CopyCommandButton {
-                    command: dx_command.clone(),
-                    label: "Copy dx install command",
-                }
             }
         }
     }
@@ -2087,7 +2076,6 @@ fn variant_title(name: &str) -> String {
 fn ComponentVariantHighlight(
     variant: ComponentVariantDemoData,
     main_variant: bool,
-    component_name: Option<&'static str>,
     /// The component the variant belongs to (its folder name): the code tab
     /// shows the source as it reads once that component is installed.
     owner: &'static str,
@@ -2140,9 +2128,6 @@ fn ComponentVariantHighlight(
                     TabTrigger { value: "Demo", index: 0usize, "DEMO" }
                     TabTrigger { value: "Code", index: 1usize, "CODE" }
                 }
-                if let Some(component_name) = component_name {
-                    ComponentInstallCommand { name: component_name }
-                }
             }
             div {
                 width: "100%",
@@ -2170,6 +2155,25 @@ fn ComponentVariantHighlight(
                 }
             }
         }
+        VariantNotes { owner, name }
+    }
+}
+
+/// The prose about one demo (`variants/<variant>/notes.md`, rendered by `build.rs`), in a closed
+/// `<details>` under that demo, so a long explanation costs one line until the reader asks for it. It
+/// replaces the text-only "Examples" lists that described the demos from a section away (row 233).
+#[component]
+fn VariantNotes(owner: &'static str, name: &'static str) -> Element {
+    let Some(notes) = variant_notes(owner, name) else {
+        return VNode::empty();
+    };
+    rsx! {
+        details { class: "dx-docs-disclosure dx-variant-notes dx-docs-prose",
+            summary { "About this example" }
+            div { class: "dx-docs-disclosure-body dx-component-description",
+                div { dangerous_inner_html: prefix_internal_hrefs(notes) }
+            }
+        }
     }
 }
 
@@ -2178,7 +2182,6 @@ fn BlockComponentVariantHighlight(
     component_name: &'static str,
     variant: ComponentVariantDemoData,
     main_variant: bool,
-    show_install: bool,
 ) -> Element {
     let ComponentVariantDemoData {
         name,
@@ -2232,9 +2235,6 @@ fn BlockComponentVariantHighlight(
                 TabList {
                     TabTrigger { value: "Preview", index: 0usize, "PREVIEW" }
                     TabTrigger { value: "Code", index: 1usize, "CODE" }
-                }
-                if show_install {
-                    ComponentInstallCommand { name: component_name }
                 }
             }
             div {
@@ -2346,6 +2346,7 @@ fn BlockComponentVariantHighlight(
                 }
             }
         }
+        VariantNotes { owner: component_name, name }
     }
 }
 
@@ -2628,7 +2629,7 @@ fn Home(iframe: Option<bool>, dark_mode: Option<bool>) -> Element {
                             }
                         }
                         p { class: "dx-hero-summary",
-                            "Dioxus components by the Dioxus team. Browse the catalog, copy the CLI command, and pull only what you need into your project. Thoughtfully designed with powerful accessibility features."
+                            "Accessible Dioxus components in the shadcn/ui style. Browse the catalog, install the CLI, and pull only what you need into your project."
                         }
                         div { class: "dx-hero-cta",
                             // link-ok: home-page hero button, never `/docs`
@@ -2638,8 +2639,8 @@ fn Home(iframe: Option<bool>, dark_mode: Option<bool>) -> Element {
                             }
                             div { class: "dx-hero-command",
                                 span { class: "dx-hero-prompt", "$" }
-                                code { "{dx_list_command()}" }
-                                CopyCommandButton { command: dx_list_command() }
+                                code { "{cli_install_command()}" }
+                                CopyCommandButton { command: cli_install_command() }
                             }
                         }
                     }
@@ -2660,67 +2661,99 @@ fn Home(iframe: Option<bool>, dark_mode: Option<bool>) -> Element {
     }
 }
 
+/// Which fixed column group of the masonry a card belongs to. A card's column is decided HERE, at
+/// compile time, and is the same in the prerendered HTML, in a half-parsed document and after hydration:
+/// it does not depend on the card's height or on how many of its neighbours have arrived (backlog row
+/// 214; the CSS multi-column masonry this replaces re-assigned cards to columns on every parsed card).
+///
+/// Three columns above 1100px: `Left`, `Middle`, and `RightUpper` stacked on `RightLower`. Two columns
+/// from 641 to 1100px: `Left` over `RightUpper`, and `Middle` over `RightLower` (a grid with two rows,
+/// so the row-one tops align and only the shorter of `Left`/`Middle` leaves a gap, kept under ~35px by
+/// the assignment below). One column below. See `.dx-widget-masonry` in `main.css`.
+#[derive(Clone, Copy, PartialEq)]
+enum MasonrySlot {
+    Left,
+    Middle,
+    RightUpper,
+    RightLower,
+}
+
 struct MasonryEntry {
     component: fn() -> Element,
     popout: bool,
+    slot: MasonrySlot,
 }
 
 const BLOCKS: &[MasonryEntry] = &[
     MasonryEntry {
         component: BlockSignIn,
         popout: false,
+        slot: MasonrySlot::Left,
     },
     MasonryEntry {
         component: BlockProfile,
         popout: false,
+        slot: MasonrySlot::Middle,
     },
     MasonryEntry {
         component: BlockStats,
         popout: false,
+        slot: MasonrySlot::RightUpper,
     },
     MasonryEntry {
         component: BlockInbox,
         popout: false,
+        slot: MasonrySlot::Left,
     },
     MasonryEntry {
         component: BlockTasks,
         popout: false,
+        slot: MasonrySlot::Middle,
     },
     MasonryEntry {
         component: BlockNotifications,
         popout: false,
+        slot: MasonrySlot::Middle,
     },
     MasonryEntry {
         component: BlockPlayer,
         popout: false,
+        slot: MasonrySlot::RightLower,
     },
     MasonryEntry {
         component: BlockCommand,
         popout: true,
+        slot: MasonrySlot::RightUpper,
     },
     MasonryEntry {
         component: BlockComposer,
         popout: false,
+        slot: MasonrySlot::Middle,
     },
     MasonryEntry {
         component: BlockPricing,
         popout: false,
+        slot: MasonrySlot::Left,
     },
     MasonryEntry {
         component: BlockFilters,
         popout: false,
+        slot: MasonrySlot::Left,
     },
     MasonryEntry {
         component: BlockColorPalette,
         popout: true,
+        slot: MasonrySlot::Middle,
     },
     MasonryEntry {
         component: BlockTabs,
         popout: false,
+        slot: MasonrySlot::RightUpper,
     },
     MasonryEntry {
         component: BlockSchedule,
         popout: false,
+        slot: MasonrySlot::RightLower,
     },
 ];
 
@@ -2742,13 +2775,28 @@ fn WidgetMasonry(heading_id: String) -> Element {
                 }
             }
             div { class: "dx-widget-masonry",
-                for entry in BLOCKS {
-                    MasonryCard { popout: entry.popout,
-                        // A real component, never `(entry.component)()`: see `MasonryCard`.
-                        {
-                            let Block = entry.component;
-                            rsx! { Block {} }
-                        }
+                MasonryColumn { slot: MasonrySlot::Left }
+                MasonryColumn { slot: MasonrySlot::Middle }
+                div { class: "dx-masonry-right",
+                    MasonryColumn { slot: MasonrySlot::RightUpper }
+                    MasonryColumn { slot: MasonrySlot::RightLower }
+                }
+            }
+        }
+    }
+}
+
+/// One fixed column group of the masonry: the cards whose `BLOCKS` entry names `slot`, in `BLOCKS` order.
+#[component]
+fn MasonryColumn(slot: MasonrySlot) -> Element {
+    rsx! {
+        div { class: "dx-masonry-col",
+            for entry in BLOCKS.iter().filter(|entry| entry.slot == slot) {
+                MasonryCard { popout: entry.popout,
+                    // A real component, never `(entry.component)()`: see `MasonryCard`.
+                    {
+                        let Block = entry.component;
+                        rsx! { Block {} }
                     }
                 }
             }
@@ -3748,6 +3796,21 @@ mod docs_tests {
                 "/shadcn-dioxus"
             ),
             r#"<a href="/shadcn-dioxus/shadcn-dioxus-x/">x</a>"#
+        );
+    }
+
+    /// `build.rs` cannot import `main.rs`, so the "Usage notes" it writes into every docs.html is
+    /// pinned to this file's constant here.
+    #[test]
+    fn build_rs_usage_notes_heading_matches_the_reserved_one() {
+        let build_rs = include_str!("../build.rs");
+        let declaration = format!(
+            "const USAGE_NOTES_HEADING: &str = \"{}\";",
+            crate::PAGE_HEADING_USAGE
+        );
+        assert!(
+            build_rs.contains(&declaration),
+            "build.rs lost `{declaration}`"
         );
     }
 

@@ -22,6 +22,11 @@ fn main() {
     // removes the compounding, on top of the primary fix in `main.rs`/
     // `components/mod.rs`.
     //
+    // (Row 219 update: this script now also registers `src/components/mod.rs` and every
+    // component's `variants/` directory, so adding a component -- which edits `CATALOG` in
+    // `mod.rs` -- or a variant re-runs it. The trade-off below still holds for a new `.md` file
+    // alone.)
+    //
     // Known, accepted trade-off: a brand new `.md`/`component.json` file
     // (one this script has never seen) isn't watched until something else
     // causes it to rerun -- cargo has no "watch this directory for new
@@ -48,6 +53,174 @@ fn main() {
         let folder_path = folder.path();
         walk_markdown_dir(&folder_path, &out_dir).unwrap();
     }
+    write_variant_notes_index(&out_dir);
+
+    // The component/variant registry (backlog row 219): `examples.rs` is the one `examples!(..)`
+    // invocation `components/mod.rs` includes, derived from the directories instead of a list that
+    // every demo-adding change edited. Editing `mod.rs` (a CATALOG row is how a new component starts)
+    // re-runs this script, so a new component directory is picked up without a manual `touch`.
+    println!("cargo:rerun-if-changed=src/components/mod.rs");
+    let components = discover_components(std::path::Path::new("src/components"));
+    check_block_mirror(&components);
+    write_if_changed(&out_dir.join("examples.rs"), &render_examples(&components));
+}
+
+/// One component directory as the registry sees it.
+struct Component {
+    name: String,
+    /// `variants/demo.css` exists: a Block component, rendered in an iframe page of its own.
+    block: bool,
+    /// The variants after the implicit `main`, in display order.
+    variants: Vec<String>,
+}
+
+/// Every `src/components/<dir>` that holds a `component.json`, sorted by name, with its variants.
+///
+/// A variant is a `variants/<name>/` directory (`main` is always first and implicit). Display order
+/// is `variants/order.txt` (one name per line, `#` comments) for the names it lists; a variant it
+/// does not list follows, sorted by name. So a new demo is one new directory and no shared line,
+/// and a curated order is a file inside the component's own directory. A name in `order.txt`
+/// with no directory, or a directory with no `mod.rs`, fails the build instead of dropping a demo.
+fn discover_components(root: &std::path::Path) -> Vec<Component> {
+    let mut components = Vec::new();
+    for entry in std::fs::read_dir(root).unwrap().flatten() {
+        let dir = entry.path();
+        if !dir.join("component.json").is_file() {
+            continue;
+        }
+        let name = entry.file_name().to_string_lossy().into_owned();
+        let variants_dir = dir.join("variants");
+        // Cargo rescans this directory recursively: a new `variants/<x>/` or an `order.txt`
+        // edit re-runs the script. (`write_if_changed` keeps an unrelated edit under it, e.g. a
+        // block's `demo.css`, from bumping the mtime of the generated files.)
+        println!("cargo:rerun-if-changed={}", variants_dir.display());
+        let mut found = Vec::new();
+        for variant in std::fs::read_dir(&variants_dir)
+            .unwrap_or_else(|e| panic!("{} has no variants/ directory: {e}", dir.display()))
+            .flatten()
+        {
+            if !variant.file_type().unwrap().is_dir() {
+                continue;
+            }
+            let variant_name = variant.file_name().to_string_lossy().into_owned();
+            assert!(
+                variant.path().join("mod.rs").is_file(),
+                "{}/variants/{variant_name} has no mod.rs (a variant is a directory with a `Demo` component in mod.rs)",
+                dir.display()
+            );
+            assert!(
+                variant_name.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_')
+                    && !variant_name.starts_with(|c: char| c.is_ascii_digit()),
+                "{}/variants/{variant_name}: a variant directory name must be a snake_case Rust module name",
+                dir.display()
+            );
+            found.push(variant_name);
+        }
+        assert!(
+            found.iter().any(|v| v == "main"),
+            "{}/variants/main is missing: every component's first demo is `main`",
+            dir.display()
+        );
+        found.retain(|v| v != "main");
+        found.sort();
+
+        let mut variants = Vec::new();
+        if let Ok(order) = std::fs::read_to_string(variants_dir.join("order.txt")) {
+            for line in order.lines() {
+                let line = line.split('#').next().unwrap().trim();
+                if line.is_empty() {
+                    continue;
+                }
+                let at = found.iter().position(|v| v == line).unwrap_or_else(|| {
+                    panic!(
+                        "{}/variants/order.txt lists `{line}`, which is `main`, listed twice or has no variants/{line}/ directory",
+                        dir.display()
+                    )
+                });
+                variants.push(found.remove(at));
+            }
+        }
+        variants.extend(found);
+
+        components.push(Component {
+            name,
+            block: variants_dir.join("demo.css").is_file(),
+            variants,
+        });
+    }
+    components.sort_by(|a, b| a.name.cmp(&b.name));
+    components
+}
+
+/// The generated file: one `with_registry!` macro that hands the whole component list to the macro
+/// named by its caller (`examples!` in `components/mod.rs`), one `name(block)[a, b],` row per
+/// component (`name[a, b],` or a bare `name,` when it has no variant beyond `main`).
+///
+/// A macro, not the invocation itself, because the `mod component;` declarations `examples!`
+/// expands to are resolved relative to the file the expansion is rooted in: written out in an
+/// `include!`d `OUT_DIR` file they would look for `OUT_DIR/accordion/component.rs`, while expanded
+/// from a call in `mod.rs` they resolve against `src/components/`.
+fn render_examples(components: &[Component]) -> String {
+    let mut out = String::from(
+        "// Generated by preview/build.rs (discover_components). Do not edit.\n\
+         macro_rules! with_registry {\n    ($callback:ident) => {\n        $callback!(\n",
+    );
+    for component in components {
+        out.push_str("            ");
+        out.push_str(&block_row(component));
+        out.push('\n');
+    }
+    out.push_str("        );\n    };\n}\n");
+    out
+}
+
+fn block_row(component: &Component) -> String {
+    let kind = if component.block { "(block)" } else { "" };
+    let variants = if component.variants.is_empty() {
+        String::new()
+    } else {
+        format!("[{}]", component.variants.join(", "))
+    };
+    format!("{}{kind}{variants},", component.name)
+}
+
+/// The Playwright specs (`all-routes`, `demo-forms-no-navigation`, `popup-style-isolation`) still
+/// find the block demo pages by reading `name(block)[variant, ..]` rows after the text
+/// `examples` + `!(` + newline in `components/mod.rs`. Those rows are kept there as a cfg'd-out mirror
+/// of the derived block components, and this check fails the build when they drift, so the specs'
+/// route list cannot go quietly stale. Delete the mirror together with the specs' text-scrape (a spec
+/// that reads `variants/` would not need it).
+fn check_block_mirror(components: &[Component]) {
+    let source = std::fs::read_to_string("src/components/mod.rs").unwrap();
+    let mirror = source
+        .split("examples!(\n")
+        .nth(1)
+        .and_then(|rest| rest.split("\n);").next())
+        .unwrap_or_default();
+    let mirrored: Vec<&str> = mirror
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty())
+        .collect();
+    let derived: Vec<String> = components
+        .iter()
+        .filter(|c| c.block)
+        .map(block_row)
+        .collect();
+    assert!(
+        mirrored == derived.iter().map(String::as_str).collect::<Vec<_>>(),
+        "the block-demo mirror in src/components/mod.rs is out of date.\n  mirror:  {mirrored:?}\n  derived: {derived:?}\n  \
+         Edit the rows inside the cfg'd-out invocation near the end of mod.rs to match."
+    );
+}
+
+/// Write only when the bytes differ: a re-run that changed nothing must not bump the mtime of a
+/// file the crate `include_str!`s (that alone makes cargo rebuild `preview`).
+fn write_if_changed(path: &std::path::Path, contents: &str) {
+    if std::fs::read_to_string(path).is_ok_and(|existing| existing == contents) {
+        return;
+    }
+    std::fs::write(path, contents).unwrap();
 }
 
 fn walk_markdown_dir(dir: &std::path::Path, out_dir: &std::path::Path) -> std::io::Result<()> {
@@ -66,13 +239,13 @@ fn walk_markdown_dir(dir: &std::path::Path, out_dir: &std::path::Path) -> std::i
         if file.path().extension() == Some(std::ffi::OsStr::new("md")) {
             let markdown = process_markdown_to_html(&file.path());
             let out_file_path = out_folder.join(file.file_name()).with_extension("html");
-            std::fs::write(out_file_path, markdown).unwrap();
+            write_if_changed(&out_file_path, &markdown);
             continue;
         }
         if file.file_name() == "component.json" {
             let description = read_component_description(&file.path());
             let out_file_path = out_folder.join("description.txt");
-            std::fs::write(out_file_path, description).unwrap();
+            write_if_changed(&out_file_path, &description);
         }
     }
     Ok(())
@@ -131,9 +304,155 @@ fn process_markdown_to_html(markdown_path: &std::path::Path) -> String {
         }
     }
 
+    // Only a component's `docs.md` is a page of sections; a variant's `notes.md` is one short note.
+    let events = if markdown_path.file_name() == Some(std::ffi::OsStr::new("docs.md")) {
+        wrap_sections_in_disclosures(events)
+    } else {
+        events
+    };
+
     let mut html_output = String::new();
     pulldown_cmark::html::push_html(&mut html_output, events.into_iter());
     html_output
+}
+
+/// The docs.md -> HTML "disclosure pass" (backlog row 233).
+///
+/// Every `##` section of a `docs.md` becomes a closed native `<details class="dx-docs-disclosure">`
+/// whose `<summary>` holds the `h2` (so the heading outline and its `id` anchor stay intact), and the
+/// text before the first `##` becomes a closed "Usage notes" disclosure. A page is then a short list of
+/// one-line rows instead of a wall of prose, and no `docs.md` has to be edited: a new section is
+/// collapsed by construction. `<details>` needs no hydration, so the closed state is the server's
+/// markup and nothing flashes. The site opens the disclosure that holds the URL fragment (`main.rs`,
+/// `use_open_disclosure_for_hash`).
+///
+/// The heading text equals `PAGE_HEADING_USAGE` in `main.rs`, which `docs_md_has_no_template_h2`
+/// reserves so a `docs.md` cannot declare the same heading.
+const USAGE_NOTES_HEADING: &str = "Usage notes";
+
+fn wrap_sections_in_disclosures(
+    events: Vec<pulldown_cmark::Event<'_>>,
+) -> Vec<pulldown_cmark::Event<'_>> {
+    use pulldown_cmark::{CowStr, Event, HeadingLevel, Tag, TagEnd};
+
+    fn is_h2_start(event: &Event<'_>) -> bool {
+        matches!(
+            event,
+            Event::Start(Tag::Heading {
+                level: HeadingLevel::H2,
+                ..
+            })
+        )
+    }
+    fn html(text: String) -> Event<'static> {
+        Event::Html(CowStr::Boxed(text.into_boxed_str()))
+    }
+    fn open(id: &str) -> Event<'static> {
+        html(format!(
+            "<details class=\"dx-docs-disclosure\"><summary><h2 id=\"docs-{id}\">"
+        ))
+    }
+    const BODY: &str = "</h2></summary><div class=\"dx-docs-disclosure-body\">\n";
+    const CLOSE: &str = "</div></details>\n";
+
+    let mut slugs: Vec<String> = Vec::new();
+    let mut unique_slug = |title: &str| {
+        let base = slugify(title);
+        let mut slug = base.clone();
+        let mut n = 2;
+        while slugs.contains(&slug) {
+            slug = format!("{base}-{n}");
+            n += 1;
+        }
+        slugs.push(slug.clone());
+        slug
+    };
+
+    let mut out = Vec::with_capacity(events.len() + 8);
+    let mut iter = events.into_iter().peekable();
+
+    // The text before the first `##`.
+    let mut intro = Vec::new();
+    while let Some(event) = iter.next_if(|event| !is_h2_start(event)) {
+        intro.push(event);
+    }
+    if !intro.is_empty() {
+        out.push(open(&unique_slug(USAGE_NOTES_HEADING)));
+        out.push(Event::Text(CowStr::Borrowed(USAGE_NOTES_HEADING)));
+        out.push(html(BODY.to_string()));
+        out.extend(intro);
+        out.push(html(CLOSE.to_string()));
+    }
+
+    while iter.peek().is_some() {
+        // `iter` is at a `##` start: take its inline events up to the matching end.
+        iter.next();
+        let mut title_events = Vec::new();
+        let mut title = String::new();
+        for event in iter.by_ref() {
+            match &event {
+                Event::End(TagEnd::Heading(_)) => break,
+                Event::Text(text) | Event::Code(text) => title.push_str(text),
+                _ => {}
+            }
+            title_events.push(event);
+        }
+        out.push(open(&unique_slug(&title)));
+        out.extend(title_events);
+        out.push(html(BODY.to_string()));
+        while let Some(event) = iter.next_if(|event| !is_h2_start(event)) {
+            out.push(event);
+        }
+        out.push(html(CLOSE.to_string()));
+    }
+    out
+}
+
+/// `Component Structure` -> `component-structure`; every run of non-alphanumerics is one dash.
+fn slugify(title: &str) -> String {
+    let mut slug = String::new();
+    for ch in title.chars() {
+        if ch.is_ascii_alphanumeric() {
+            slug.push(ch.to_ascii_lowercase());
+        } else if !slug.is_empty() && !slug.ends_with('-') {
+            slug.push('-');
+        }
+    }
+    slug.trim_end_matches('-').to_string()
+}
+
+/// Per-variant notes (backlog row 233): `variants/<variant>/notes.md` is the prose about one demo. It is
+/// rendered to `OUT_DIR/<component>/variants/<variant>/notes.html` by `walk_markdown_dir` like every
+/// other `.md`; this writes `OUT_DIR/variant_notes.rs`, a `variant_notes(component, variant)` lookup
+/// that `main.rs` `include!`s, so the page shows the note in a `<details>` under that demo. It is a
+/// generated lookup rather than a field of the `examples!` macro because the macro cannot test whether
+/// a file exists. `variants/` is excluded from the installed component (`component.json`), so a note
+/// never reaches a user's app.
+fn write_variant_notes_index(out_dir: &std::path::Path) {
+    let mut arms = Vec::new();
+    for component in std::fs::read_dir("src/components").unwrap().flatten() {
+        let variants_dir = component.path().join("variants");
+        let Ok(variants) = std::fs::read_dir(&variants_dir) else {
+            continue;
+        };
+        for variant in variants.flatten() {
+            let notes = variant.path().join("notes.md");
+            if !notes.is_file() {
+                continue;
+            }
+            let component = component.file_name().to_string_lossy().into_owned();
+            let variant = variant.file_name().to_string_lossy().into_owned();
+            arms.push(format!(
+                "        ({component:?}, {variant:?}) => Some(include_str!(concat!(env!(\"OUT_DIR\"), \"/{component}/variants/{variant}/notes.html\"))),\n"
+            ));
+        }
+    }
+    arms.sort();
+    let source = format!(
+        "/// Generated by `build.rs` (`write_variant_notes_index`): the rendered `variants/<variant>/notes.md`, if any.\nfn variant_notes(component: &str, variant: &str) -> Option<&'static str> {{\n    match (component, variant) {{\n{}        _ => None,\n    }}\n}}\n",
+        arms.concat()
+    );
+    std::fs::write(out_dir.join("variant_notes.rs"), source).unwrap();
 }
 
 fn read_component_description(component_json_path: &std::path::Path) -> String {

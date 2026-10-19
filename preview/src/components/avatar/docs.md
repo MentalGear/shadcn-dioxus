@@ -38,11 +38,24 @@ ImageAvatar { size: AvatarImageSize::Medium, src: "https://example.com/avatar.pn
 
 **Breaking change (Nova migration).** The names are the old ones, the scale is shadcn's. `Small` is unchanged (32px, still the default), so most call sites need nothing. `Medium` went from 48px to 40px, `Large` (64px) is gone because shadcn's scale ends at 40px (use `Medium`, or set `width`/`height` on the avatar yourself for a larger one), and `ExtraSmall` (24px) is new. The `dx-avatar-sm|md|lg` classes no longer exist: select a size with `[data-size="sm|default|lg"]`, or override `--dx-avatar-size` on the root.
 
-The fallback is always `muted` with `muted-foreground` text (also while loading and after an error), and a 1px `border` ring is painted over the picture, as in Nova.
+The fallback is always `muted` with `muted-foreground` text, and a 1px `border` ring is painted over the picture, as in Nova.
+
+## Loading and the fallback
+
+The fallback follows Base UI: it is rendered in every state except `loaded` (while the picture is loading, after it failed, and when there is no picture) and is replaced only by a picture that has loaded, so there is no blank frame between the two. The prerendered page holds both the `<img>` and the fallback, and hydration starts from the same state, so nothing mismatches.
+
+`AvatarFallback { delay: 600 }` (`ImageAvatar { fallback_delay: 600 }`) holds the fallback back for that many milliseconds, so a picture that loads within it never flashes the fallback. While it is held back the avatar shows its loading placeholder, and the prerendered page has no fallback for it (the timer exists only in the browser). An avatar with no `AvatarFallback` shows a pulsing placeholder while it loads.
+
+```rust
+Avatar { aria_label: "Jane Doe",
+    AvatarImage { src: "https://example.com/avatar.png", alt: "Jane Doe" }
+    AvatarFallback { delay: 600, "JD" }
+}
+```
 
 ## Motion
 
-While the image is loading the placeholder pulses (`opacity`, 1.5 s, forever). The pulse is paused whenever the avatar is off-screen or the tab is hidden (`dioxus_primitives::activity::use_motion_when`), and an avatar that is not loading subscribes to nothing. Override `animation` on `.dx-avatar[data-state="loading"]` to change or remove it. See [Motion](/docs#motion) for the tokens, reduced motion and the per-component table.
+While the image is loading and there is no fallback standing in for it, the placeholder pulses (`opacity`, 1.5 s, forever). The pulse is paused whenever the avatar is off-screen or the tab is hidden (`dioxus_primitives::activity::use_motion_when`), and an avatar that is not loading subscribes to nothing. Override `animation` on `.dx-avatar[data-state="loading"]` to change or remove it. See [Motion](/docs#motion) for the tokens, reduced motion and the per-component table.
 
 ## Badge
 

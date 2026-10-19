@@ -2428,8 +2428,9 @@ dependencies = [
 
 [[package]]
 name = "dioxus-i18n"
-version = "0.4.3"
-source = "git+https://github.com/ealmloff/dioxus-i18n?branch=bump-dioxus#b1dd50b0c73fdaee183b125d8b7b9690db444f74"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6a14946b7d1d239d8f0430111574d820bb133989b14552503990cba3000c93d2"
 dependencies = [
  "dioxus",
  "fluent",
@@ -2563,7 +2564,6 @@ dependencies = [
  "dioxus-attributes",
  "dioxus-sdk-time",
  "dioxus-ssr",
- "lazy-js-bundle",
  "num-integer",
  "palette",
  "serde",
@@ -3547,15 +3547,6 @@ checksum = "1bd49230192a3797a9a4d6abe9b3eed6f7fa4c8a8a4947977c6f80025f92cbd8"
 dependencies = [
  "rustix 1.1.4",
  "windows-link 0.2.1",
-]
-
-[[package]]
-name = "getopts"
-version = "0.2.24"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cfe4fbac503b8d1f88e6676011885f34b7174f46e59956bba534ba83abded4df"
-dependencies = [
- "unicode-width 0.2.2",
 ]
 
 [[package]]
@@ -6531,12 +6522,11 @@ dependencies = [
 
 [[package]]
 name = "pulldown-cmark"
-version = "0.13.3"
+version = "0.13.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7c3a14896dfa883796f1cb410461aef38810ea05f2b2c33c5aded3649095fdad"
+checksum = "e9f068eba8e7071c5f9511831b44f32c740d5adf574e990f946ddb53db2f314e"
 dependencies = [
  "bitflags 2.11.1",
- "getopts",
  "memchr",
  "pulldown-cmark-escape",
  "unicase",
@@ -7447,7 +7437,6 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
- "dirs",
  "serde",
  "serde_json",
  "tempfile",

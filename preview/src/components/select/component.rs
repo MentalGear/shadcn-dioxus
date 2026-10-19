@@ -8,7 +8,7 @@ pub use dioxus_primitives::select::SelectGroup;
 
 // docs/backlog.md row 32: `#[css_module]` is gone -- see checkbox/component.rs's
 // header comment for the full delivery-mechanism rationale (asset!() +
-// document::Link, embedded in the wrapper so a `dx components add
+// document::Link, embedded in the wrapper so a `shadcn-dioxus add
 // select`-copied component needs no extra wiring). This file has TWO
 // independent entry components (`Select` and `SelectMulti` -- callers use
 // exactly one, never both), so the stylesheet Link is placed in both of

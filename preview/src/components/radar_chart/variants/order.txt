@@ -1,0 +1,14 @@
+# Display order of this component's demos after `main`; a variants/<name>/ directory not listed here follows, sorted by name.
+dots
+lines_only
+multiple
+grid_circle
+grid_circle_fill
+grid_circle_no_lines
+grid_custom
+grid_fill
+grid_none
+icons
+label_custom
+legend
+radius

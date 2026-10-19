@@ -259,7 +259,7 @@ async function openComponent(page: Page): Promise<{ content: Locator }> {
   const content = frame.locator(".dx-carousel-content");
   await expect(frame.getByRole("group", { name: "1 of 5" })).toHaveAttribute("data-selected", "true");
   // Scrolling the demo into view is left to the browser's own instant scroll
-  // (fixtures.ts forces `scroll-behavior: auto`).
+  // (the root `scroll-behavior` is `auto` unless an anchor jump opts in).
   await content.scrollIntoViewIfNeeded();
   return { content };
 }

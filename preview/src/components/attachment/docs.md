@@ -1,6 +1,6 @@
 The Attachment component displays a file or image attachment: its media, name and metadata, with optional actions and an upload state. Use it for files and images in chat composers, message threads and upload lists.
 
-It is styled composition (there is no ARIA widget pattern, so no primitive underneath) and composes the existing `Button` for its actions. `AttachmentGroup` and the shimmering title use the `dx-scroll-fade-x` and `dx-shimmer` effects from `assets/dx-effects.css`, which the component's `component.json` ships as a global asset next to the theme.
+It is styled composition (there is no ARIA widget pattern of its own) and composes the existing `Button` for its actions and the primitives' `ScrollArea` for the group. `AttachmentGroup` is the library's `ScrollArea` (horizontal, `fade: ScrollFade::X`) with snap points, and the shimmering title uses the `dx-shimmer` effect; the fade and the shimmer both come from `assets/dx-effects.css`, which the component's `component.json` ships as a global asset next to the theme. Unlike a `Carousel` (one slide at a time, with previous/next controls) the group is a free-scrolling strip of mixed-width chips, as in shadcn.
 
 ## Component Structure
 
@@ -35,14 +35,6 @@ AttachmentGroup {
 ```
 
 `Uploading` and `Processing` shimmer the title, `Error` switches to a destructive treatment, `Idle` draws a dashed border. `AttachmentAction` is a themed `Button` defaulting to the ghost variant and the `IconXs` size.
-
-## Examples
-
-- **States**, **Sizes**, **Image**, **Group** and **Trigger**: the five states, the three sizes, image media, a scrolling group, and a trigger rendered as a button or a link.
-- **Dialog**: an `AttachmentTrigger` that opens a real `Dialog` (a controlled `open` signal the trigger sets). The copy and remove actions sit above the trigger and stay independently clickable.
-- **Image gallery**: vertical image cards whose `AttachmentTrigger` is rendered as an `<a>` (through `as`) that opens the full image, with a remove action on each. The previews are bundled with `asset!`, so the demo needs no network.
-- **Removable group**: a scrolling group of fixed-width cards, icon media for files and image media for pictures, each with a working remove action.
-- **Composite**: a composer's tray in one place: an image group, a file that is still uploading (a `Spinner` as its media and a "Cancel upload" action), and a finished code file with a remove action.
 
 ## Accessibility
 

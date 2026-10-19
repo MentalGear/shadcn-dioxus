@@ -112,6 +112,7 @@ pub(super) fn ListPane(
 
             VirtualList {
                 class: "ec-list-scroll",
+                "data-scroll-view": state.list_view_id(),
                 count: row_count,
                 buffer: 6usize,
                 estimate_size: move |idx: usize| match &rows.read()[idx] {

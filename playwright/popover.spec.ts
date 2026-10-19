@@ -129,7 +129,7 @@ test("the trigger is Nova's default outline button", async ({ page }) => {
   const box = await trigger.evaluate((el) => {
     const cs = getComputedStyle(el);
     return {
-      height: el.getBoundingClientRect().height,
+      height: el.getBoundingClientRect().height, // rest-ok: the trigger button, not the popover surface
       border: cs.borderTopWidth,
       radius: cs.borderTopLeftRadius,
       weight: cs.fontWeight,

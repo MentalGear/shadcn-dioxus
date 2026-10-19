@@ -1,0 +1,26 @@
+---
+id: 158
+title: "Theme follow-ups: accept shadcn's .dark class as an alias of data-theme=\"dark\", and suppress transitions…"
+status: "PART (a) LANDED 2026-10-15 (by construction, lane x158dark 7d16044 + 3a3a9fa; owner approved…"
+size: "S + S"
+area: theme
+updated: 2026-10-15
+---
+
+# Row 158: Theme follow-ups: accept shadcn's .dark class as an alias of data-theme="dark", and suppress transitions…
+
+## Item
+
+Theme follow-ups: accept shadcn's `.dark` class as an alias of `data-theme="dark"`, and suppress transitions during a theme switch
+
+## Status / trigger
+
+**PART (a) LANDED 2026-10-15 (by construction, lane `x158dark` 7d16044 + 3a3a9fa; owner approved 2026-10-10); PART (b) BACKLOG, conditional (cold, not scheduled)** -- proposed 2026-10-05, together with the evaluated-and-rejected `light-dark()` option (below). (b) waits on its trigger.
+
+## Size
+
+S + S
+
+## Detail
+
+**(a) `.dark` as an alias.** shadcn themes key dark mode on a `.dark` class (`:root` + `.dark` blocks, toggled by next-themes) and Tailwind's `dark:` follows it. Ours keys on `html[data-theme="dark"\|"light"]` (`theme.rs` sets it from the cookie before first paint) plus `prefers-color-scheme`, so a pasted shadcn theme block or a `dark:` utility does nothing here. **Proposal:** `preview/assets/dx-components-theme.css` accepts `.dark` as an alias of `data-theme="dark"` (the same `--dark`/`--light` toggle and `color-scheme`), and the theme switch sets both, so pasted shadcn themes and Tailwind `dark:` work unchanged. A host that sets only `.dark` gets dark; if the switch is the only writer the two cannot disagree. Spec: set `.dark` alone, expect the dark tokens and `color-scheme: dark`. **(b) No transitions during a switch,** like next-themes' `disableTransitionOnChange`: while the mode (and a preset) flips, a transient rule disables `transition` everywhere and is removed after a forced reflow, so every component's colour transition does not animate at once. Lives next to the switch in `theme.rs`. **Evaluated and rejected: migrating the tokens to CSS `light-dark()`.** (1) The values would be identical, and shadcn itself does not use it (`:root` + `.dark` blocks + next-themes), so it would diverge from the system we track and from pasted themes. (2) It is Baseline only since 2024, and an engine without it DROPS the colour declaration instead of falling back: a risk for Dioxus desktop on older Linux WebKitGTK and for the native renderer. (3) Our `data-theme` attribute already drives the `--dark`/`--light` space toggle and `color-scheme` from the same selectors, so there is no second source of truth to remove. **OWNER DECISIONS 2026-10-10 (the row is split in two).** **(a) APPROVED: shadcn's `.dark` class, built by construction.** One `apply_mode(mode)` writer, shared by `preview/src/theme.rs` and the pre-paint script in `preview/index.html` (the existing `PREPAINT_JS` drift test covers the pair), is the ONLY code allowed to change the mode. It sets `data-theme` and toggles the `.dark` class together. "System" mode is resolved from `prefers-color-scheme` inside it, with a page-lifetime change listener (marked `listener-ok: lives as long as the page`, per `check-js-listeners.sh`). The theme CSS treats `html.dark` and `html[data-theme="dark"]` as one selector list. **Gate:** a `check-*.sh` that fails if any other code writes `data-theme` or the `.dark` class (add it to `scripts/run-gates.sh` and CLAUDE.md's gate sentence). **Spec:** paste a real shadcn theme (`:root` + `.dark` blocks) and assert the light, dark and system colours. **Why this matters today:** a pasted shadcn theme's dark block never activates (nothing sets `.dark`), and its `:root` light values win even in dark mode, because our tokens read the shadcn variables first; so the paste is wrong in dark, not merely inert. This supersedes the "alias" proposal in (a) above, which is the same goal without the single-writer guarantee. **(b) BACKLOG, conditional: transitions off during a theme switch** (next-themes' `disableTransitionOnChange`), via a "switching" flag that disables transitions for one frame inside `apply_mode`. **The owner wants to KEEP the colour transition for now, so (b) is NOT scheduled and stays cold.** Trigger: if the switch wash (every component's colour transition animating at once) causes problems. Build it only inside `apply_mode`, never as a second writer. **LANDED 2026-10-15, part (a):** `html.dark:not([data-theme="light"])` joins the dark selector list in `dx-components-theme.css` (an explicit `data-theme` wins, so a class-only host page is dark with no script); `PREPAINT_JS` `apply_mode` is the single writer of `data-theme` and the `dark` class (shared with `preview/src/theme.rs`); new gate `scripts/check-theme-mode-writer.sh` fails on any other writer (in `run-gates.sh` and the CLAUDE.md gate sentence); `theme-dark-class.spec` 14/14. **Part (b) stays backlog** (the owner keeps the colour transition; build it only inside `apply_mode`).
