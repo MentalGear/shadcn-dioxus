@@ -75,17 +75,33 @@
 }
 
 .dx-color-picker-slider-thumb {
-    all: unset;
     position: absolute;
     top: 50%;
     display: block;
     width: 16px;
     height: 16px;
+    box-sizing: content-box;
+    padding: 0;
     border: 2px solid var(--dx-primary);
     border-radius: 50%;
+    margin: 0;
+
+    /* The native-button reset this rule used to take from `all: unset`, spelled out: `all:` (0,1,0) beat
+       every zero-specificity theme baseline (user-select, touch-action, press feedback, box-sizing), and
+       scripts/check-theme-baseline.sh now bans it. The resets are the ones a native button needs and this rule does not set itself. */
+    appearance: none;
+    background-color: transparent;
     box-shadow: black 0 0 0 1px, black 0 0 0 1px inset;
+    color: inherit;
     cursor: pointer;
+    font: inherit;
     forced-color-adjust: none;
+    letter-spacing: inherit;
+    outline: none;
+    text-align: inherit;
+    text-indent: 0;
+    text-shadow: none;
+    text-transform: none;
 
     /* rtl-physical: this thumb's horizontal position is set inline by the
        primitive (out of this lane's ownership, like slider/style.css's
@@ -93,12 +109,7 @@
        thumb on whatever point that inline style lands it at. */
     transform: translate(-50%, -50%) scale(1);
     transition: transform var(--dx-motion-duration-base) var(--dx-motion-ease-out), box-shadow var(--dx-motion-duration-base) var(--dx-motion-ease-out), border-color var(--dx-motion-duration-base);
-
-    /* `all: unset` above also resets the theme's zero-specificity "Controls are not text" rule
-       (`dx-components-theme.css`), so it is restated here; scripts/check-theme-baseline.sh requires it. */
-    /* stylelint-disable-next-line property-no-vendor-prefix -- Safari spelling */
-    -webkit-user-select: none;
-    user-select: none;
+    word-spacing: inherit;
 }
 
 .dx-color-picker-slider-thumb:focus-visible {
@@ -136,15 +147,31 @@
 }
 
 .dx-color-picker-area-thumb {
-    all: unset;
     position: absolute;
     display: block;
     width: 16px;
     height: 16px;
+    box-sizing: content-box;
+    padding: 0;
     border: 2px solid var(--dx-primary);
     border-radius: 50%;
+    margin: 0;
+
+    /* The native-button reset this rule used to take from `all: unset`, spelled out: `all:` (0,1,0) beat
+       every zero-specificity theme baseline (user-select, touch-action, press feedback, box-sizing), and
+       scripts/check-theme-baseline.sh now bans it. The resets are the ones a native button needs and this rule does not set itself. */
+    appearance: none;
+    background-color: transparent;
     box-shadow: black 0 0 0 1px, black 0 0 0 1px inset;
+    color: inherit;
     cursor: pointer;
+    font: inherit;
+    letter-spacing: inherit;
+    outline: none;
+    text-align: inherit;
+    text-indent: 0;
+    text-shadow: none;
+    text-transform: none;
 
     /* rtl-physical: this thumb's 2D position (both axes) is set inline by
        the primitive, same coordination note as `.dx-color-picker-slider-
@@ -152,11 +179,11 @@
     transform: translate(-50%, -50%) scale(1);
     transition: transform var(--dx-motion-duration-base) var(--dx-motion-ease-out), box-shadow var(--dx-motion-duration-base) var(--dx-motion-ease-out), border-color var(--dx-motion-duration-base);
 
-    /* `all: unset` above also resets the theme's zero-specificity "Controls are not text" rule
-       (`dx-components-theme.css`), so it is restated here; scripts/check-theme-baseline.sh requires it. */
+    /* A `div` drag surface (the theme's control rule covers buttons and widget roles, not this): a drag must not sweep a text selection. */
     /* stylelint-disable-next-line property-no-vendor-prefix -- Safari spelling */
     -webkit-user-select: none;
     user-select: none;
+    word-spacing: inherit;
 }
 
 .dx-color-picker-area-thumb:focus-visible,
