@@ -34,7 +34,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (85)
+## Open rows (86)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -90,7 +90,6 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [131](backlog/131-dioxus-cli-0-7-9-ssg-leaves-every-pre-rendered.md) | dioxus-cli 0.7.9 --ssg leaves every pre-rendered route except index.html stale when public/ already exists | OPEN (upstream) -- locally closed by construction (150e97b, scripts/build-ssg.sh); upstream issue… | S | build |
 | [136](backlog/136-questionnaire-shadcn-s-multi-step-question-flow.md) | Questionnaire: shadcn's multi-step question flow (single/multiple choice, freeform "other", skippable… | ON HOLD (owner 2026-10-14: not started, no schedule). BACKLOG -- recorded 2026-10-04 from the… | L | inputs |
 | [137](backlog/137-rtl-by-construction-one-row-for-the-three-rtl.md) | RTL by construction -- one row for the three RTL threads: row 13's open follow-ups (optional RTL for… | BACKLOG, MERGED 2026-10-05 (owner decision); the owner then CONFIRMED the solve-by-construction… | M (the docs page alone is S; parts a… | docs |
-| [138](backlog/138-toast-depth-parity-loading-type-action-button.md) | Toast depth parity: loading type, action button, promise helper, update/close by id, stacking and… | BACKLOG -- recorded 2026-10-04 from the catalog audit (§6.4); depth, not a catalog gap (toast is… | M-L (was M; the folded-in items add an… | overlays |
 | [146](backlog/146-message-scroller-stage-2-visibility-hook-per.md) | message_scroller stage 2: visibility hook, per-call scroll_margin, RTL pass, release-build timing spec | FOLDED INTO ROW 213 (2026-10-14) -- stage 1 built 2026-10-04 (own lane, component-backlog.md)… | M | tests |
 | [147](backlog/147-safari-18-25-cannot-find-in-page-text-inside.md) | Safari 18-25 cannot find-in-page text inside content-visibility: auto-skipped content (WebKit bug 283846) | NOTE -- no behaviour change proposed; recorded 2026-10-04 from the virtualization survey (section 5) | S | virtual |
 | [150](backlog/150-home-page-blocks-registered-their-hooks-on-the.md) | Home-page blocks registered their hooks on the parent scope: MasonryCard called component.call(()), so… | FIXED 2026-10-04, merged (b83640a, PR #84 / 001a5f0, SCROLL-FIX lane); the candidate .call(()) gate… | M | docs |
@@ -123,8 +122,10 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [245](backlog/245-snapshot-harness-tooltip-and-skip-link.md) | Computed-style snapshot harness: tooltip timing nondeterminism and the skip link counted as an open-state item | BACKLOG (validation 2026-10-19) | S | tests |
 | [246](backlog/246-snapshot-buckets-too-coarse.md) | Snapshot diff buckets are page-level on some routes | BACKLOG (validation 2026-10-19) | S-M | tests |
 | [261](backlog/261-theme-mono-font-token.md) | A --dx-font-mono theme token | BACKLOG (found 2026-10-19 by lane markdown) | S | theme |
+| [262](backlog/262-toast-f6-one-listener-per-page.md) | Toast: one F6 listener per page, not one per ToastProvider | BACKLOG (found 2026-10-19 by lane toast) | S | primitives |
+| [263](backlog/263-toast-remaining-base-ui-behaviour.md) | Toast: pause on hover/focus, vertical swipe, legacy keyframes on translate | BACKLOG (left open by row 138, 2026-10-19) | S-M | primitives |
 
-## Done rows (163)
+## Done rows (164)
 
 | # | Item | Updated |
 |---|---|---|
@@ -213,6 +214,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [133](backlog/done/133-inputgroup-has-no-invalid-or-disabled-styling.md) | InputGroup has no invalid or disabled styling | 2026-10-13 |
 | [134](backlog/done/134-nova-s-tinted-destructive-button-is-contrast.md) | Nova's tinted destructive button is contrast-failing in dark; ours deliberately is not Nova's. Widened… | 2026-10-13 |
 | [135](backlog/done/135-the-computed-style-snapshot-cannot-see-closed.md) | The computed-style snapshot cannot see closed overlays or hover/focus/open states, so phase C's proof has… | 2026-10-12 |
+| [138](backlog/done/138-toast-depth-parity-loading-type-action-button.md) | Toast depth parity: loading type, action button, promise helper, update/close by id, stacking and… | 2026-10-19 |
 | [139](backlog/done/139-pr-83-s-all-gates-green-was-wrong-main-was.md) | PR #83's "all gates green" was wrong: main was clippy-red from d9bcfda (primitives/src/navbar.rs:655… | 2026-10-04 |
 | [140](backlog/done/140-menubar-a-pointer-selection-leaves-dom-focus-on.md) | Menubar: a pointer selection leaves DOM focus on &lt;body&gt;; the keyboard path restores it to the trigger | 2026-10-05 |
 | [141](backlog/done/141-dialog-alertdialog-sheet-and-drawer-exit.md) | Dialog, AlertDialog, Sheet and Drawer exit animations play only where transition: overlay allow-discrete… | 2026-10-05 |
