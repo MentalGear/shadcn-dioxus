@@ -21,6 +21,7 @@
 use crate::components::{
     button::{Button, ButtonSize, ButtonVariant},
     drawer::{Drawer, DrawerContent, DrawerDescription, DrawerHandle, DrawerSide, DrawerTitle},
+    separator::Separator,
     sheet::{Sheet, SheetContentClose, SheetDescription, SheetTitle},
     tooltip::{Tooltip, TooltipContent, TooltipTrigger},
     ComponentCategory,
@@ -486,7 +487,11 @@ fn ChartsCard(
                         source: code.source.source().to_string(),
                         label: format!("Copy code ({title})"),
                     }
-                    span { class: "dx-charts-toolbar-separator", aria_hidden: "true" }
+                    Separator {
+                        class: "dx-charts-toolbar-separator",
+                        horizontal: false,
+                        decorative: true,
+                    }
                     Button {
                         variant: ButtonVariant::Outline,
                         size: ButtonSize::Sm,
