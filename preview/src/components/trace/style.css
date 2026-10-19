@@ -25,7 +25,9 @@
   color: var(--dx-destructive-text);
 }
 
-.dx-trace-line[data-status="pending"] {
+/* Pending is dimmed on the icon only: dimming the title (upstream's opacity) drops text below
+ * 4.5:1, and inactive static text is not exempt from WCAG contrast. */
+.dx-trace-line[data-status="pending"] .dx-trace-icon {
   opacity: 0.6;
 }
 

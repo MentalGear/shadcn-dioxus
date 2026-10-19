@@ -16,7 +16,7 @@ pub enum TraceStatus {
     /// Failed: the line reads in the destructive text colour. Colour is not the only cue:
     /// say it in the title ("Failed to read file").
     Error,
-    /// Not started yet: dimmed.
+    /// Not started yet: the icon is dimmed (the text keeps its contrast).
     Pending,
 }
 

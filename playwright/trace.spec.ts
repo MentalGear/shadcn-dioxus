@@ -56,7 +56,7 @@ test("icons are decorative and statuses are marked", async ({ page }) => {
   await expect(demo.locator('[data-slot="trace-line"][data-status="running"] .dx-shimmer')).toHaveCount(1);
   await expect(demo.locator('[data-slot="trace-line"][data-status="error"]')).toContainText("Failed to read");
   expect(
-    await demo.locator('[data-status="pending"]').evaluate((el) => getComputedStyle(el).opacity),
+    await demo.locator('[data-status="pending"] [data-slot="trace-icon"]').evaluate((el) => getComputedStyle(el).opacity),
   ).toBe("0.6");
 });
 
