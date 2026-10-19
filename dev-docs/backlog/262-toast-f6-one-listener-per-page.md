@@ -1,7 +1,7 @@
 ---
 id: 262
 title: "Toast: one F6 listener per page, not one per ToastProvider"
-status: "BACKLOG (found 2026-10-19 by lane toast)"
+status: "LANDED 2026-10-19 (lane toast2: one page-lifetime F6 handler, providers register)"
 size: "S"
 area: primitives
 updated: 2026-10-19
@@ -15,7 +15,7 @@ Every `ToastProvider` registers its own global F6 listener, so on a page with se
 
 ## Status / trigger
 
-**BACKLOG (found 2026-10-19 by lane toast)**
+**LANDED 2026-10-19 (lane toast2: one page-lifetime F6 handler, providers register)**
 
 ## Size
 
@@ -27,3 +27,9 @@ The toast docs page now mounts eight toast demos, each with its own provider; F6
 region mounted last, not the one with toasts. Construction: one page-lifetime F6 handler (installed once, like the modality
 writer) that cycles through the regions that currently hold toasts, most recent first; providers register their region with
 it instead of listening themselves. Spec: two providers, toasts in the first, F6 focuses the first.
+
+## Update 2026-10-19
+
+Landed in lane `toast2`. `ToastProvider` no longer listens for F6 (`use_global_keydown_listener` is gone from `toast.rs`). The ONE handler is `TOAST_F6_JS`, installed once per page by whichever provider registers first (idempotent through `window.__dxToastF6`, a `listener-ok` page-lifetime listener like the modality writer); each provider's effect registers `(region id, toast count, newest ToastId)` whenever its list changes. F6 focuses the region holding the most recent toast (`ToastId` is one process-wide monotonic counter, so recency needs no clock), pressing it again from inside a region goes on to the next region with toasts (wrapping), a region that is empty or gone from the document is never a candidate, and with no candidate F6 is left to the browser. Construction: listener count is independent of provider count, and "which region" is decided in one place, so the bug class (N providers, last-mounted wins) cannot recur.
+
+Evidence: `playwright/toast-f6.spec.ts` (4 tests): F6 lands on the first region when only it holds a toast on the eight-provider docs page, is a no-op with no toasts, cycles most-recent-first and wraps across two regions, and a CDP listener inventory finds exactly one `F6` keydown handler on `document` with eight providers mounted. Results are in the row 263 update (same build). Nothing remains.

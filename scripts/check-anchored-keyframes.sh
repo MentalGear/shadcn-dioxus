@@ -52,10 +52,6 @@ from pathlib import Path
 ALLOW = [
     ("preview/src/components/chart/style.css", "dx-chart-*",
      "SVG mark grow-in (scaleX/scaleY/scale from 0 with a transform-origin on <rect>/<path>), inside the plot; never an overlay"),
-    ("preview/src/components/toast/style.css", "dx-slide-up-*",
-     "toast stack: each keyframe restates the stacking `scale(--toast-index)` it replaces; a fixed corner stack, not anchored"),
-    ("preview/src/components/toast/style.css", "dx-toast-slide-in",
-     "toast stack entrance, same as dx-slide-up-*: fixed corner stack, not anchored"),
     ("preview/src/components/progress/style.css", "dx-indeterminate*",
      "indeterminate bar sweeps inside its own clipped track (translateX with an explicit RTL twin); not an overlay"),
     ("preview/src/components/spinner/style.css", "dx-spinner-spin",

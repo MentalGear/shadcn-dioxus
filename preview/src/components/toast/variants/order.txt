@@ -5,3 +5,5 @@ promise
 update
 stacking
 swipe
+pause
+swipe_top

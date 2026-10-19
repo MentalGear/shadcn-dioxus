@@ -3,7 +3,7 @@
 use crate::{
     merge_attributes,
     portal::{use_portal, PortalIn, PortalOut},
-    use_global_keydown_listener, use_unique_id,
+    use_unique_id,
 };
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
@@ -152,6 +152,8 @@ struct ToastCtx {
     add_toast: AddToastCallback,
     remove_toast: Callback<ToastId>,
     focus_region: Callback,
+    /// `true` while the pointer is over the toaster or focus is inside it: every countdown waits.
+    paused: ReadSignal<bool>,
 }
 
 /// Removes the record `id`, if it still exists. `try_write`: a promise that settles after its
@@ -306,8 +308,33 @@ pub fn ToastProvider(props: ToastProviderProps) -> Element {
         });
     });
 
-    // Focus the first toast when the user presses f6
-    use_global_keydown_listener("F6", move || focus_region(()));
+    // A stable id for the region: `ToastRegionRendered`'s popover wiring, the F6 registry and the
+    // pause listener all address the element by it.
+    let region_id = use_unique_id();
+
+    // F6: this provider only REGISTERS its region (and how many toasts it holds) with the one
+    // page-lifetime handler (`TOAST_F6_JS`); it never listens itself, so N providers on a page
+    // are still one listener and F6 can pick the right region.
+    use_effect(move || {
+        let newest = toast_list.read().last().map_or(0, |t| t.id.0);
+        let length = toast_list.read().len();
+        let _ = document::eval(&format!(
+            "{TOAST_F6_JS};window.__dxToastF6.set({:?},{length},{newest})",
+            region_id.cloned()
+        ));
+    });
+
+    // Pause the countdowns while the pointer is over the toaster or focus is inside it.
+    let mut paused = use_signal(|| false);
+    crate::js_listener::use_js_listeners(move || {
+        region_ref()?;
+        let id = region_id.cloned();
+        Some(
+            crate::js_listener::JsListeners::install(TOAST_PAUSE_JS)
+                .arg(id)
+                .on_message(move |p: bool| paused.set(p)),
+        )
+    });
 
     // Provide the context
     let ctx = use_context_provider(|| ToastCtx {
@@ -315,14 +342,8 @@ pub fn ToastProvider(props: ToastProviderProps) -> Element {
         add_toast,
         remove_toast,
         focus_region,
+        paused: paused.into(),
     });
-
-    // A stable id for the region -- needed on the web arm so
-    // `ToastRegionRendered`'s popover wiring can address this element by
-    // id (`document.getElementById`, matching every other `dx-anchor-*`/
-    // `popover` consumer's shape); harmless additive attribute on the
-    // native arm, which never reads it.
-    let region_id = use_unique_id();
 
     rsx! {
         // Render children
@@ -375,6 +396,34 @@ pub fn ToastProvider(props: ToastProviderProps) -> Element {
         PortalOut { portal }
     }
 }
+
+/// The ONE F6 ("jump to notifications") handler of the page. Installed once per page by whichever
+/// provider registers first (idempotent through `window.__dxToastF6`) and kept for the life of
+/// the page, like the modality writer; providers register `(region id, toast count, newest toast
+/// id)` through `window.__dxToastF6.set`. F6 moves focus to the region of the toast that arrived
+/// last (`ToastId`s come from one process-wide counter, so "newest" needs no clock); pressed
+/// again from inside a region it goes on to the next one, most recent first, and wraps. Regions
+/// without toasts, or no longer in the document, are never candidates, and with no candidate F6
+/// is left to the browser.
+const TOAST_F6_JS: &str = r#"(function(){var W=window;if(!W.__dxToastF6){var regs=new Map();W.__dxToastF6={set:function(id,n,newest){if(n>0)regs.set(id,newest);else regs.delete(id)}};/*listener-ok: the one F6 handler lives as long as the page*/document.addEventListener('keydown',function(e){if(e.key!=='F6')return;var live=[];regs.forEach(function(newest,id){var el=document.getElementById(id);if(el)live.push({el:el,newest:newest});else regs.delete(id)});if(!live.length)return;live.sort(function(a,b){return b.newest-a.newest});var cur=-1;for(var i=0;i<live.length;i++){if(live[i].el.contains(document.activeElement))cur=i}e.preventDefault();/* focus-ok: the hotkey moves focus to the toast region on purpose */live[(cur+1)%live.length].el.focus()})}})()"#;
+
+/// Reports whether the pointer is over the toaster (a mouse or pen; a touch tap is not a hover)
+/// or focus is inside it, as `true`/`false` on every change. The same condition the stylesheet
+/// expands the pile on (`:hover`, `:focus-within`), so the pile and the countdowns agree.
+const TOAST_PAUSE_JS: &str = r#"
+const id = await dioxus.recv();
+const el = document.getElementById(id);
+if (!el) return;
+let hover = false, focus = false, last = false;
+const report = () => {
+  const p = hover || focus;
+  if (p !== last) { last = p; dioxus.send(p); }
+};
+listen(el, 'pointerenter', (e) => { if (e.pointerType !== 'touch') { hover = true; report(); } });
+listen(el, 'pointerleave', () => { hover = false; report(); });
+listen(el, 'focusin', () => { focus = true; report(); });
+listen(el, 'focusout', (e) => { focus = !!e.relatedTarget && el.contains(e.relatedTarget); report(); });
+"#;
 
 #[cfg(feature = "web")]
 thread_local! {
@@ -902,7 +951,7 @@ struct ToastRenderCtx {
 /// - `data-top`: Present on the topmost toast.
 /// - `data-swiping`: `true` while a pointer drags the toast, `dismissed` while it flies out after a swipe.
 ///
-/// While dragged, the toast sets `--toast-swipe-x` (px, toward the dismiss edge); map it to the `translate` property.
+/// While dragged, the toast sets `--toast-swipe-x` or `--toast-swipe-y` (px, toward the dismiss edge of the axis the drag took); map them to the `translate` property.
 ///
 /// The [`Toast`] component renders toasts with the following css variables you can use to control styling:
 /// - `--toast-index`: The index of the toast in the list, used for z-indexing and positioning.
@@ -1038,25 +1087,45 @@ pub fn Toast(props: ToastProps) -> Element {
     }
 }
 
-/// Counts a toast down and removes it. The countdown runs while the TAB is visible and nothing
-/// else. A toast the user cannot see (hidden tab, minimized window) would otherwise be gone
-/// when they come back, so the countdown is dropped and restarted in full on return. It is
-/// deliberately NOT tied to the toast's position on the page (`use_motion`): a toast is a
-/// message the user is waiting on, not decoration, and scrolling must not change how long it
-/// stays (`crate::activity`, "Timers that carry meaning").
+/// Counts a toast down and removes it. The countdown runs while the TAB is visible and the
+/// toaster is not hovered or focused, and nothing else.
+///
+/// Hidden tab: the countdown is dropped and restarted in full on return, so a toast the user
+/// could not see (hidden tab, minimized window) is still there when they come back. Hover or
+/// focus inside the toaster: the countdown WAITS and resumes with the time that was left
+/// (WCAG 2.2.1, timing adjustable; Base UI does the same). Remaining time is counted down in
+/// `TICK` steps that only run while active, so a pause needs no clock. It is deliberately NOT
+/// tied to the toast's position on the page (`use_motion`): a toast is a message the user is
+/// waiting on, not decoration, and scrolling must not change how long it stays
+/// (`crate::activity`, "Timers that carry meaning").
 #[component]
 fn ToastTimer(id: ToastId, duration: Duration) -> Element {
+    const TICK: Duration = Duration::from_millis(50);
     let ctx = use_context::<ToastCtx>();
     let remove_toast = ctx.remove_toast;
+    let paused = ctx.paused;
     let visible = crate::activity::use_document_visible();
-    crate::interval::use_timeout_while(visible, duration, move || remove_toast.call(id));
+    let mut remaining = use_hook(|| CopyValue::new(duration));
+    use_effect(move || {
+        if !visible() {
+            remaining.set(duration);
+        }
+    });
+    let running = use_memo(move || visible() && !paused());
+    crate::interval::use_interval_while(running, TICK, move || {
+        let left = remaining.peek().saturating_sub(TICK);
+        remaining.set(left);
+        if left.is_zero() {
+            remove_toast.call(id);
+        }
+    });
     rsx! {}
 }
 
 /// Swipe to dismiss, with pointer events (mouse, touch and pen alike).
 ///
 /// All of the gesture runs in the page (`listen`, so the listeners are removed with the
-/// component): the drag writes `--toast-swipe-x` on the toast (the stylesheet maps it to the
+/// component): the drag writes `--toast-swipe-x` (horizontal) or `--toast-swipe-y` (vertical, toward the top or bottom edge) on the toast (the stylesheet maps it to the
 /// `translate` property, so the stacking `scale` is untouched) and marks `data-swiping`, and
 /// only the final decision crosses into Rust. A swipe dismisses when it travelled at least
 /// `THRESHOLD` px toward the dismiss edge, or was a flick: at least `MIN_FLICK` px at
@@ -1082,31 +1151,39 @@ fn use_toast_swipe(dom_id: ReadSignal<String>, on_dismiss: impl FnMut() + 'stati
 
 /// The swipe gesture's script. See [`use_toast_swipe`].
 const TOAST_SWIPE_JS: &str = r#"
-const THRESHOLD = 45, MIN_FLICK = 10, VELOCITY = 0.11, WINDOW_MS = 100;
+const THRESHOLD = 45, MIN_FLICK = 10, VELOCITY = 0.11, WINDOW_MS = 100, SLOP = 3;
 const id = await dioxus.recv();
 const el = document.getElementById(id);
 if (!el) return;
 let drag = null;
+const prop = (axis) => '--toast-swipe-' + axis;
 const reset = () => {
   el.style.removeProperty('--toast-swipe-x');
+  el.style.removeProperty('--toast-swipe-y');
   delete el.dataset.swiping;
   el.style.removeProperty('user-select');
 };
+const pos = (e, axis) => (axis === 'x' ? e.clientX : e.clientY);
+// How far the pointer is from the press, toward the dismiss edge of `axis` (0 the other way).
+const toward = (e, d, axis) => Math.max(0, (pos(e, axis) - d.start[axis]) * d.dir[axis]);
 const end = (e) => {
   if (!drag || e.pointerId !== drag.pointer) return;
   const d = drag;
   drag = null;
   try { el.releasePointerCapture(e.pointerId); } catch (_) {}
-  const travelled = Math.max(0, (e.clientX - d.x0) * d.dir);
+  const axis = d.axis;
+  if (!axis) { reset(); return; }
+  const travelled = toward(e, d, axis);
   const recent = d.samples.filter((s) => e.timeStamp - s.t <= WINDOW_MS);
   const first = recent[0];
   const dt = first ? e.timeStamp - first.t : 0;
-  const speed = dt > 0 ? ((e.clientX - first.x) * d.dir) / dt : 0;
+  const speed = dt > 0 ? ((pos(e, axis) - first[axis]) * d.dir[axis]) / dt : 0;
   const dismiss = e.type === 'pointerup' &&
     (travelled >= THRESHOLD || (travelled >= MIN_FLICK && speed >= VELOCITY));
   if (!dismiss) { reset(); return; }
   el.dataset.swiping = 'dismissed';
-  el.style.setProperty('--toast-swipe-x', d.dir * (el.offsetWidth + 48) + 'px');
+  const size = axis === 'x' ? el.offsetWidth : el.offsetHeight;
+  el.style.setProperty(prop(axis), d.dir[axis] * (size + 48) + 'px');
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const timer = setTimeout(() => dioxus.send(true), reduced ? 0 : 160);
   cleanup(() => clearTimeout(timer));
@@ -1115,18 +1192,34 @@ listen(el, 'pointerdown', (e) => {
   if (drag || (e.pointerType === 'mouse' && e.button !== 0)) return;
   if (e.target.closest('button, a, input, textarea, select, [role="button"]')) return;
   const rect = el.getBoundingClientRect();
-  const dir = rect.left + rect.width / 2 > innerWidth / 2 ? 1 : -1;
-  drag = { pointer: e.pointerId, x0: e.clientX, dir, samples: [{ x: e.clientX, t: e.timeStamp }] };
+  // The dismiss edge on each axis is the one the toast sits nearest to: the left or right edge
+  // by the half of the viewport it is in (so RTL, where the toaster is on the left, flips by
+  // itself), and the top or bottom edge likewise. Which axis a drag uses is decided by its
+  // first movement.
+  const dir = {
+    x: rect.left + rect.width / 2 > innerWidth / 2 ? 1 : -1,
+    y: rect.top + rect.height / 2 > innerHeight / 2 ? 1 : -1,
+  };
+  drag = {
+    pointer: e.pointerId, axis: null, dir,
+    start: { x: e.clientX, y: e.clientY },
+    samples: [{ x: e.clientX, y: e.clientY, t: e.timeStamp }],
+  };
   el.dataset.swiping = 'true';
   el.style.userSelect = 'none';
   try { el.setPointerCapture(e.pointerId); } catch (_) {}
 });
 listen(el, 'pointermove', (e) => {
   if (!drag || e.pointerId !== drag.pointer) return;
-  drag.samples.push({ x: e.clientX, t: e.timeStamp });
+  drag.samples.push({ x: e.clientX, y: e.clientY, t: e.timeStamp });
   if (drag.samples.length > 32) drag.samples.shift();
-  const dx = Math.max(0, (e.clientX - drag.x0) * drag.dir) * drag.dir;
-  el.style.setProperty('--toast-swipe-x', dx + 'px');
+  if (!drag.axis) {
+    const ax = Math.abs(e.clientX - drag.start.x), ay = Math.abs(e.clientY - drag.start.y);
+    if (Math.max(ax, ay) < SLOP) return;
+    drag.axis = ax >= ay ? 'x' : 'y';
+  }
+  const axis = drag.axis;
+  el.style.setProperty(prop(axis), toward(e, drag, axis) * drag.dir[axis] + 'px');
 });
 listen(el, 'pointerup', end);
 listen(el, 'pointercancel', end);
