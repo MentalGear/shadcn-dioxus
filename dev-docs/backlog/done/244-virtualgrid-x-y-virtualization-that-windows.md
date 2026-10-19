@@ -1,7 +1,7 @@
 ---
 id: 244
 title: "VirtualGrid: x/y virtualization that windows rows AND columns (a data grid, an image grid)"
-status: "BUILT 2026-10-19 on lane/virtual-grid (round 4), awaiting the merge batch -- owner question…"
+status: "LANDED 2026-10-19 (Round 4: VirtualGrid + VirtualWrapGrid on the shared engine; image gallery and…"
 size: "L"
 area: virtual
 updated: 2026-10-19
@@ -15,7 +15,7 @@ updated: 2026-10-19
 
 ## Status / trigger
 
-**BUILT 2026-10-19 on `lane/virtual-grid` (round 4), awaiting the merge batch** -- owner question 2026-10-18
+**LANDED 2026-10-19 (Round 4: VirtualGrid + VirtualWrapGrid on the shared engine; image gallery and 10k x 50 data grid demos; virtual-grid.spec)**
 
 ## Size
 

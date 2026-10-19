@@ -34,7 +34,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (75)
+## Open rows (74)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -109,12 +109,11 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [221](backlog/221-infra-session-process-lessons-from-the-2026-10.md) | Infra: session process lessons from the 2026-10-14/15 batch (memory, lock fairness, gate worktree… | OPEN 2026-10-15 (rules in force in the lane brief; constructions proposed) | S-M | process |
 | [241](backlog/241-specs-still-read-block-demo-rows-from-a-mirror.md) | Specs still read block-demo rows from a mirror in components/mod.rs | BACKLOG (lane registry 2026-10-18) | S | tests |
 | [242](backlog/242-spec-failures-that-are-red-on-the-deployed.md) | Spec failures that are red on the deployed baseline too (found by the 2026-10-18 lanes) | OPEN | S each | process |
-| [244](backlog/244-virtualgrid-x-y-virtualization-that-windows.md) | VirtualGrid: x/y virtualization that windows rows AND columns (a data grid, an image grid) | BUILT 2026-10-19 on lane/virtual-grid (round 4), awaiting the merge batch -- owner question… | L | virtual |
 | [245](backlog/245-snapshot-harness-tooltip-and-skip-link.md) | Computed-style snapshot harness: tooltip timing nondeterminism and the skip link counted as an open-state item | BACKLOG (validation 2026-10-19) | S | tests |
 | [246](backlog/246-snapshot-buckets-too-coarse.md) | Snapshot diff buckets are page-level on some routes | BACKLOG (validation 2026-10-19) | S-M | tests |
 | [265](backlog/265-upstream-ai-elements-code-block-trace-chat.md) | Upstream ai-elements (chat, message, code-block, trace, checkpoint, ...) vs our chat kit | BACKLOG (found by row 213 item 10, 2026-10-19). Source… | L | chat |
 
-## Done rows (178)
+## Done rows (179)
 
 | # | Item | Updated |
 |---|---|---|
@@ -290,6 +289,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [239](backlog/done/239-all-unset-outranks-the-theme-s-zero-specificity.md) | all: unset outranks the theme's zero-specificity baselines | 2026-10-18 |
 | [240](backlog/done/240-base-ui-focus-model-what-to-lift-beyond-row-226.md) | Base UI focus model: what to lift beyond row 226 | 2026-10-19 |
 | [243](backlog/done/243-button-hover-fills-3-levels-off-shadcn.md) | Button hover fills 3 levels off shadcn | 2026-10-18 |
+| [244](backlog/done/244-virtualgrid-x-y-virtualization-that-windows.md) | VirtualGrid: x/y virtualization that windows rows AND columns (a data grid, an image grid) | 2026-10-19 |
 | [260](backlog/done/260-hover-color-mix-space-one-token-everywhere.md) | Every hover color-mix reads the theme's mix space (finish row 243) | 2026-10-19 |
 | [261](backlog/done/261-theme-mono-font-token.md) | A --dx-font-mono theme token | 2026-10-19 |
 | [262](backlog/done/262-toast-f6-one-listener-per-page.md) | Toast: one F6 listener per page, not one per ToastProvider | 2026-10-19 |
