@@ -17,7 +17,6 @@ dioxus-attributes = { path = "../dioxus-attributes" }
 dioxus-sdk-time = "0.7.0"
 # Optional, switched on by the `calendar` feature (Calendar, DatePicker): see `[features]`.
 time = { version = "0.3.47", optional = true, features = ["std", "macros", "local-offset"] }
-num-integer = { version = "0.1.46", optional = true }
 tracing.workspace = true
 serde = { version = "1.0", features = ["derive"] }
 # Optional, switched on by the `color-picker` feature (ColorPicker).
@@ -37,6 +36,6 @@ default = ["router"]
 router = ["dioxus/router"]
 web = ["time?/wasm-bindgen"]
 # `calendar` and `date_picker` (they use each other's types).
-calendar = ["dep:time", "dep:num-integer"]
+calendar = ["dep:time"]
 # `color_picker`.
 color-picker = ["dep:palette"]

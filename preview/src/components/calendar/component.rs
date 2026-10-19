@@ -74,6 +74,11 @@ pub struct CalendarProps {
     #[props(default = Callback::new(|month: Month| month.to_string()))]
     pub on_format_month: Callback<Month, String>,
 
+    /// Callback when displaying a month inside a month dropdown ("Oct"); `None` keeps the first
+    /// three characters of `on_format_month`
+    #[props(default)]
+    pub on_format_month_short: Option<Callback<Month, String>>,
+
     /// The month being viewed
     #[props(default = ReadSignal::new(Signal::new(UtcDateTime::now().date())))]
     pub view_date: ReadSignal<Date>,
@@ -142,6 +147,11 @@ pub struct RangeCalendarProps {
     #[props(default = Callback::new(|month: Month| month.to_string()))]
     pub on_format_month: Callback<Month, String>,
 
+    /// Callback when displaying a month inside a month dropdown ("Oct"); `None` keeps the first
+    /// three characters of `on_format_month`
+    #[props(default)]
+    pub on_format_month_short: Option<Callback<Month, String>>,
+
     /// The month being viewed
     #[props(default = ReadSignal::new(Signal::new(UtcDateTime::now().date())))]
     pub view_date: ReadSignal<Date>,
@@ -202,6 +212,7 @@ pub fn Calendar(props: CalendarProps) -> Element {
             on_date_change: props.on_date_change,
             on_format_weekday: props.on_format_weekday,
             on_format_month: props.on_format_month,
+            on_format_month_short: props.on_format_month_short,
             view_date: props.view_date,
             today: props.today,
             on_view_change: props.on_view_change,
@@ -234,6 +245,7 @@ pub fn RangeCalendar(props: RangeCalendarProps) -> Element {
             on_range_change: props.on_range_change,
             on_format_weekday: props.on_format_weekday,
             on_format_month: props.on_format_month,
+            on_format_month_short: props.on_format_month_short,
             view_date: props.view_date,
             today: props.today,
             on_view_change: props.on_view_change,
@@ -290,6 +302,7 @@ pub(crate) fn CalendarRoot(props: calendar::CalendarProps) -> Element {
             on_date_change: props.on_date_change,
             on_format_weekday: props.on_format_weekday,
             on_format_month: props.on_format_month,
+            on_format_month_short: props.on_format_month_short,
             view_date: props.view_date,
             today: props.today,
             on_view_change: props.on_view_change,
@@ -321,6 +334,7 @@ pub(crate) fn RangeCalendarRoot(props: calendar::RangeCalendarProps) -> Element 
             on_range_change: props.on_range_change,
             on_format_weekday: props.on_format_weekday,
             on_format_month: props.on_format_month,
+            on_format_month_short: props.on_format_month_short,
             view_date: props.view_date,
             today: props.today,
             on_view_change: props.on_view_change,
@@ -460,7 +474,7 @@ fn CalendarSelectMonth(props: CalendarSelectMonthProps) -> Element {
         calendar::CalendarSelectMonth {
             attributes: merged,
             CalendarSelectMonthSelect {}
-            CalendarSelectMonthValue {
+            CalendarSelectMonthValue { short: true,
                 DropDownIcon { }
                 {props.children}
             }
@@ -482,7 +496,11 @@ fn CalendarSelectMonthValue(props: CalendarSelectMonthValueProps) -> Element {
     let base = attributes!(div { class: "dx-calendar-month-select-value" });
     let merged = merge_attributes(vec![base, props.attributes]);
     rsx! {
-        calendar::CalendarSelectMonthValue { attributes: merged, {props.children} }
+        calendar::CalendarSelectMonthValue {
+            attributes: merged,
+            short: props.short,
+            {props.children}
+        }
     }
 }
 

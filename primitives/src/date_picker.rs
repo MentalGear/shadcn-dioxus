@@ -13,7 +13,6 @@ use crate::{
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 use dioxus_sdk_time::sleep;
-use num_integer::Integer;
 use std::{fmt::Display, str::FromStr, time::Duration};
 use time::{macros::date, Date, Month, OffsetDateTime, Weekday};
 
@@ -1069,9 +1068,35 @@ pub fn DateRangePickerCalendar(props: DatePickerCalendarProps<RangeCalendarProps
     }
 }
 
+/// The integer types a [`DateSegment`] edits (`i32` years, `u8` months and days): ordered,
+/// copyable, with `+` and `-` for the arrow-key step. A local trait instead of the
+/// `num-integer` crate, which this module used for its bound alone.
+trait SegmentInt: Copy + Ord + std::ops::Add<Output = Self> + std::ops::Sub<Output = Self> {
+    const ONE: Self;
+
+    /// Step up by one.
+    fn inc(&mut self) {
+        *self = *self + Self::ONE;
+    }
+
+    /// Step down by one.
+    fn dec(&mut self) {
+        *self = *self - Self::ONE;
+    }
+}
+
+macro_rules! impl_segment_int {
+    ($($t:ty),*) => {$(
+        impl SegmentInt for $t {
+            const ONE: Self = 1;
+        }
+    )*};
+}
+impl_segment_int!(i32, u8);
+
 // The props for the [`DateSegment`] component
 #[derive(Props, Clone, PartialEq)]
-struct DateSegmentProps<T: Clone + Integer + 'static> {
+struct DateSegmentProps<T: Clone + SegmentInt + 'static> {
     // The index of the segment
     pub index: ReadSignal<usize>,
 
@@ -1174,7 +1199,7 @@ fn clamp_value<T: PartialOrd>(value: T, min: T, max: T) -> T {
 /// Compute the effects of committing a new raw text buffer to a `DateSegment`
 /// (shared by the Character/Backspace/Delete handlers, which all end by
 /// re-deriving the segment's value from its updated text buffer).
-fn push_commit_text_effects<T: Integer + Copy + FromStr>(
+fn push_commit_text_effects<T: SegmentInt + Copy + FromStr>(
     effects: &mut Vec<DateSegmentEffect<T>>,
     text: &str,
     min: T,
@@ -1252,7 +1277,7 @@ struct SegmentValueBounds<T> {
 /// reference is adjacent to day 1 of the next), so wrapping matches both
 /// user expectation and the native platform control; a year is not
 /// cyclical, so clamping is the correct default for it specifically.
-fn date_segment_key_effects<T: Integer + Copy + FromStr>(
+fn date_segment_key_effects<T: SegmentInt + Copy + FromStr>(
     key: &Key,
     modifiers: SegmentKeyModifiers,
     text_state: SegmentTextState,
@@ -1371,7 +1396,7 @@ fn date_segment_key_effects<T: Integer + Copy + FromStr>(
 }
 
 #[component]
-fn DateSegment<T: Clone + Copy + Integer + FromStr + Display + 'static>(
+fn DateSegment<T: Clone + Copy + SegmentInt + FromStr + Display + 'static>(
     props: DateSegmentProps<T>,
 ) -> Element {
     let mut text_value = use_signal(|| "".to_string());
