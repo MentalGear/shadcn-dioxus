@@ -12,7 +12,7 @@ use crate::{
 
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
-use dioxus_sdk_time::sleep;
+use crate::sleep::sleep;
 use std::{fmt::Display, str::FromStr, time::Duration};
 use time::{macros::date, Date, Month, OffsetDateTime, Weekday};
 
@@ -98,7 +98,7 @@ fn selection_close(close_on_select: bool, close_delay: Duration) -> SelectionClo
 /// Scope-owned, following `crate::interval::use_interval`: the timer is a Dioxus task spawned
 /// in the PICKER's own scope (not whichever scope happened to call [`Self::schedule`] -- the
 /// calendar inside the popover unmounts when the popover does), so it is dropped with the picker
-/// and there is no JS `setTimeout` for anything to forget to clear (`dioxus_sdk_time::sleep`:
+/// and there is no JS `setTimeout` for anything to forget to clear (`crate::sleep::sleep`:
 /// `tokio` on native, `gloo_timers` on wasm, whose timeout is cleared when its future is
 /// dropped). At most one is pending at a time: scheduling replaces, and [`Self::cancel`] drops
 /// it, so every interaction, reopen or new selection during the dwell restarts or cancels it

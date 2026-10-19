@@ -37,7 +37,7 @@ An app compiles only the crates its components use. `default` is `router`; `dx c
 |---|---|---|
 | `web` | the browser arm of the overlay and listener code (also `time/wasm-bindgen` when `calendar` is on) | none |
 | `router` | `navbar` (needs `dioxus-router`) | about 40 |
-| `calendar` | `calendar` and `date_picker` (their public types are `time::Date` and friends) | `time` and 5 more, `num-integer` |
+| `calendar` | `calendar` and `date_picker` (their public types are `time::Date` and friends) | `time` and 5 more |
 | `color-picker` | `color_picker` (its props use `palette::Hsv` / `Srgb<u8>`) | `palette` and 11 more |
 
 ## License
