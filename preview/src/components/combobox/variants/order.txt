@@ -3,3 +3,7 @@ controlled
 disabled
 dynamic
 custom_items
+multiple
+multiple_clear
+multiple_form
+rtl

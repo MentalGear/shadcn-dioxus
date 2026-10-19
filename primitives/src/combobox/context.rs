@@ -9,8 +9,30 @@ pub fn default_combobox_filter(query: &str, text: &str) -> bool {
     query.is_empty() || text.to_lowercase().contains(&query)
 }
 
+/// What a combobox holds, by construction.
+///
+/// `Single` carries nothing: a single-select root has no way to remove one
+/// value or clear them all, so no chip, clear button or Backspace path can be
+/// reached from it, and its `on_value_change` only ever sees `Option<T>`.
+/// `Multi` carries the only two operations that exist on a set of values;
+/// they are built next to the root's `Vec<T>` model (`multi.rs`), so a value
+/// that reaches a single-select root's callback cannot be a list.
+#[derive(Clone, Copy)]
+pub(super) enum ComboboxModel {
+    Single,
+    Multi {
+        /// Remove one selected value (a chip's remove button, Backspace).
+        remove: Callback<RcPartialEqValue>,
+        /// Remove every selected value (the clear button).
+        clear: Callback<()>,
+    },
+}
+
 #[derive(Clone, Copy)]
 pub(super) struct ComboboxContext {
+    pub model: ComboboxModel,
+    /// Last label seen per selected value, for chips (see [`Self::label_of`]).
+    pub labels: Signal<Vec<(RcPartialEqValue, String)>>,
     pub selectable: SelectableContext,
     pub query: Memo<String>,
     pub set_query: Callback<String>,
@@ -46,6 +68,84 @@ pub(super) struct ComboboxContext {
 }
 
 impl ComboboxContext {
+    pub fn is_multi(&self) -> bool {
+        matches!(self.model, ComboboxModel::Multi { .. })
+    }
+
+    /// Pick an option: the selectable's own select (which closes a
+    /// single-select popup) plus, for a multi-select, ending the text edit --
+    /// the picked option's text is spent, so the next pick starts from the
+    /// full list. The popup stays open.
+    pub fn select_value(&mut self, value: RcPartialEqValue) {
+        self.selectable.select_value(value);
+        if self.is_multi() {
+            self.reset_query();
+        }
+    }
+
+    pub fn reset_query(&mut self) {
+        if *self.edited.peek() {
+            self.edited.set(false);
+        }
+        if !self.query.peek().is_empty() {
+            self.set_query.call(String::new());
+        }
+    }
+
+    /// Remove the last selected value (Backspace on an empty input). No-op for `Single`.
+    pub fn remove_last(&self) {
+        let last = self.selectable.values.peek().last().cloned();
+        if let (ComboboxModel::Multi { remove, .. }, Some(last)) = (self.model, last) {
+            remove.call(last);
+        }
+    }
+
+    /// Chips' text for a selected value: the live option's, else the last seen.
+    pub fn label_of(&self, value: &RcPartialEqValue) -> String {
+        let live = self
+            .selectable
+            .options
+            .read()
+            .iter()
+            .find(|option| &option.value == value)
+            .map(|option| option.text_value.clone());
+        live.or_else(|| {
+            self.labels
+                .read()
+                .iter()
+                .find(|(seen, _)| seen == value)
+                .map(|(_, label)| label.clone())
+        })
+        .unwrap_or_default()
+    }
+
+    /// Record the labels of the selected values while the registry can supply them.
+    pub fn remember_labels(&mut self) {
+        let values = self.selectable.values.read().clone();
+        let options = self.selectable.options.read();
+        let mut next: Vec<(RcPartialEqValue, String)> = Vec::with_capacity(values.len());
+        for value in &values {
+            let live = options
+                .iter()
+                .find(|option| &option.value == value)
+                .map(|option| option.text_value.clone());
+            let kept = || {
+                self.labels
+                    .peek()
+                    .iter()
+                    .find(|(seen, _)| seen == value)
+                    .map(|(_, label)| label.clone())
+            };
+            if let Some(label) = live.or_else(kept) {
+                next.push((value.clone(), label));
+            }
+        }
+        drop(options);
+        if *self.labels.peek() != next {
+            self.labels.set(next);
+        }
+    }
+
     pub fn set_open(&mut self, open: bool) {
         if open {
             self.selectable.collection.clear_focus();
@@ -69,6 +169,10 @@ impl ComboboxContext {
     /// position this component promises to keep. So fall back to the last label
     /// seen for the *same* value ([`Self::remember_label`]).
     fn selected_label(&self) -> Option<String> {
+        // A multi-select shows its values as chips; the input is only ever the query.
+        if self.is_multi() {
+            return None;
+        }
         if let Some(label) = self.selectable.selected_text() {
             return Some(label);
         }
@@ -82,6 +186,9 @@ impl ComboboxContext {
 
     /// Record the selected value's label while the registry can supply it.
     pub fn remember_label(&mut self) {
+        if self.is_multi() {
+            return;
+        }
         let value = self.selectable.values.read().first().cloned();
         let (Some(value), Some(label)) = (value, self.selectable.selected_text()) else {
             return;
@@ -139,12 +246,7 @@ impl ComboboxContext {
 
     /// Start a fresh editing session: no edit yet, no query.
     fn begin_session(&mut self) {
-        if *self.edited.peek() {
-            self.edited.set(false);
-        }
-        if !self.query.peek().is_empty() {
-            self.set_query.call(String::new());
-        }
+        self.reset_query();
     }
 
     /// The registration index of the selected option, if any. Read from the
@@ -211,6 +313,12 @@ impl ComboboxContext {
     }
 
     pub fn select_focused(&mut self) {
+        // The values memo has not recomputed yet at this point, so "did the pick change them" cannot
+        // be read back; a highlighted option is what makes Enter a pick.
+        let picks = self.selectable.collection.focused_index().is_some();
         self.selectable.select_focused();
+        if self.is_multi() && picks {
+            self.reset_query();
+        }
     }
 }

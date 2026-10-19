@@ -4,7 +4,11 @@ use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 
 use super::super::context::ComboboxContext;
-use crate::{merge_attributes, use_id_or, use_unique_id};
+use super::super::multi::chip_nav;
+use crate::{
+    direction::{use_direction, HorizontalNav},
+    merge_attributes, use_id_or, use_unique_id,
+};
 
 /// Props for [`ComboboxInput`].
 #[derive(Props, Clone, PartialEq)]
@@ -26,6 +30,7 @@ pub struct ComboboxInputProps {
 #[component]
 pub fn ComboboxInput(props: ComboboxInputProps) -> Element {
     let mut ctx = use_context::<ComboboxContext>();
+    let direction = use_direction(None);
 
     let id = use_unique_id();
     let id = use_id_or(id, props.id);
@@ -85,6 +90,20 @@ pub fn ComboboxInput(props: ComboboxInputProps) -> Element {
             event.prevent_default();
             event.stop_propagation();
         }
+        // Multi-select: Backspace in an empty input removes the last chip, and
+        // the "previous" arrow (direction-aware) steps back onto the chips.
+        Key::Backspace if ctx.is_multi() && ctx.query.peek().is_empty() => {
+            ctx.remove_last();
+            event.prevent_default();
+        }
+        ref key
+            if ctx.is_multi()
+                && ctx.query.peek().is_empty()
+                && direction.resolve_horizontal(key) == Some(HorizontalNav::Prev) =>
+        {
+            chip_nav(String::new(), HorizontalNav::Prev, ctx.input_id.cloned());
+            event.prevent_default();
+        }
         Key::Escape if open() => {
             // No wasm carve-out here, unlike `Select`/`DropdownMenu`:
             // `ComboboxListRendered`'s web arm renders `popover="manual"`
@@ -126,7 +145,8 @@ pub fn ComboboxInput(props: ComboboxInputProps) -> Element {
         // this element's own id above), the same reason
         // `DropdownMenuTrigger` keys off `ctx.content_id` -- see that
         // doc. Inert (empty) off the web arm.
-        style: crate::top_layer::anchor_name_style(&ctx.input_id.cloned()),
+        // A multi-select's popup anchors to the chips field instead (`ComboboxChips`).
+        style: if ctx.is_multi() { String::new() } else { crate::top_layer::anchor_name_style(&ctx.input_id.cloned()) },
         r#type: "text",
         value: display_value(),
         autocomplete: "off",
