@@ -34,7 +34,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (48)
+## Open rows (49)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -86,6 +86,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [246](backlog/246-snapshot-buckets-too-coarse.md) | Snapshot diff buckets are page-level on some routes | BACKLOG (validation 2026-10-19) | S-M | tests |
 | [265](backlog/265-upstream-ai-elements-code-block-trace-chat.md) | Upstream ai-elements (chat, message, code-block, trace, checkpoint, ...) vs our chat kit | BACKLOG (found by row 213 item 10, 2026-10-19). Source… | L | chat |
 | [266](backlog/266-repo-cleanup-archive-historical-dev-docs.md) | Repo cleanup: archive historical dev-docs, trim CLAUDE.md and the big dev docs, split backlog.md | BACKLOG (owner request 2026-10-19; plan approval pending; scheduled with the Round 6 sweep). Owner… | M-L | process |
+| [267](backlog/267-split-oversized-source-files-into-modules.md) | Split oversized source files into modules (carousel.rs, carousel.spec.ts, main.rs, top_layer.rs, calendar.rs, date_picker.rs) | BACKLOG (owner approved 2026-10-19 on the cleanup plan; Round 6, before the 152b suite prune).… | M | process |
 
 ## Done rows (206)
 
