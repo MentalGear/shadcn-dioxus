@@ -58,6 +58,7 @@ mod nav_link;
 #[cfg(test)]
 mod polar_parity;
 mod theme;
+mod utilities_docs;
 mod wasm_libc_shim;
 
 /// The site's display name: the header brand, the footer, the home hero, the docs intro, every
@@ -1155,6 +1156,7 @@ const DOCS_SECTIONS: &[&str] = &[
     "Add a component",
     "Recommended workflow",
     "Motion",
+    "Utilities",
 ];
 
 /// Turns a heading's visible text into a same-page anchor id: lowercased,
@@ -1401,6 +1403,10 @@ fn Docs(dark_mode: Option<bool>) -> Element {
                 section { class: "dx-docs-section",
                     h2 { id: "{docs_section_slug(DOCS_SECTIONS[4])}", "{DOCS_SECTIONS[4]}" }
                     crate::motion_docs::MotionDocs {}
+                }
+                section { class: "dx-docs-section",
+                    h2 { id: "{docs_section_slug(DOCS_SECTIONS[5])}", "{DOCS_SECTIONS[5]}" }
+                    crate::utilities_docs::UtilitiesDocs {}
                 }
             }
         }
