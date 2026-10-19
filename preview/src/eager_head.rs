@@ -256,11 +256,8 @@ mod tests {
         let evals = platform.evals.clone();
         let doc = EagerHeadDocument::new(Rc::new(platform));
 
-        doc.create_link(link("preconnect", "https://fonts.googleapis.com"));
-        doc.create_link(link(
-            "stylesheet",
-            "https://fonts.googleapis.com/css2?family=Geist",
-        ));
+        doc.create_link(link("preconnect", "https://cdn.example"));
+        doc.create_link(link("stylesheet", "https://cdn.example/fonts.css"));
         doc.create_link(link("icon", "/assets/favicon.css"));
 
         let evals = evals.borrow();

@@ -46,7 +46,7 @@ pub fn Demo() -> Element {
     };
 
     rsx! {
-        div { style: "display: flex; width: 100%; max-width: 36rem; min-width: 0; flex-direction: column; gap: var(--dx-space-3); --dx-font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;",
+        div { style: "display: flex; width: 100%; max-width: 36rem; min-width: 0; flex-direction: column; gap: var(--dx-space-3);",
             div { style: "height: 24rem; overflow: hidden; border: 1px solid var(--dx-border); border-radius: var(--dx-radius-lg);",
                 MessageScrollerProvider { auto_scroll: true,
                     MessageScroller {
