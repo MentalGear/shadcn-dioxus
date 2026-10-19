@@ -5,52 +5,34 @@ the page as stale and check `git log` and the flag files named here.** Seeded 20
 [`research/next-round-plan-2026-10-15.md`](./research/next-round-plan-2026-10-15.md),
 [`research/backlog-order-2026-10-18.md`](./research/backlog-order-2026-10-18.md) and [`plan.md`](./plan.md).
 
-Last updated: **2026-10-18**. Session branch: `claude/zealous-davinci-08se9a` (head `de7059ba` at seeding).
-Preview site: https://mentalgear.github.io/shadcn-dioxus/
+Last updated: **2026-10-19**. Several sessions work in parallel; who holds what is on the `claims` branch (`CLAIMS.md`).
+Preview site: https://mentalgear.github.io/shadcn-dioxus/ (deployed from main `404e7175`, PR #106).
 
-## Current round
+## Current work (2026-10-19)
 
-**Round 1 of the backlog order: procedure, suite speed, test health** (started 2026-10-18 from `de7059ba`). Lanes, each
-in its own worktree `/home/user/wt/<lane>` on `lane/<lane>`:
+| Lane holder | Work |
+|---|---|
+| backlog thread (`session_01QoX93TwsKJ9GtMXWUXXfKw`, branch `claude/features-1`) | the features group: menus (155 g2 + Command shortcuts), calendar (155 g8, DOB layouts, num-integer), parts (188/187 component parts, Select scroll), chatkit (265: CodeBlock, Trace, Checkpoint), hygiene (217 sleep/strum, row 5 rule 8), snapshot (245, 246), combobox (187 multi-select); plus the bookkeeping close of rows already done |
+| earlier session (`session_01PJCSoqAo9bCWeVLpz61Wdy`) | Round 1 (lock 221/216/92, suite speed 152a, baseline reds 242/115, specs 241/164), redone after a container restart lost its unpushed work |
+| Round 4 thread | VirtualGrid 244, find-in-page 153, home scroll jank 174, utilities 186 |
+| docs-review thread | the owner's docs-site review (rows 285-289) |
+| cleanup thread | repo cleanup plan (row 266), runs with the Round 6 sweep |
 
-| Lane | Rows | Goal |
-|---|---|---|
-| lock | 221, 216, 92 | ticket queue for the build lock with merge gates first, a second build slot, mtime touch inside the scripts, `preview/build.rs` rerun line |
-| suite-speed | 152a | measure where the suite time goes; release-build validation; sharding; changed-files spec selector; slow-spec budget gate |
-| baseline-red | 242, 115 | the four specs red on the deployed baseline, the residual flakes |
-| specs2 | 241, 164 | block-demo mirror, hydrated `goto` everywhere |
-| docs-split | (docs) | this documentation map, `STATUS.md`, the backlog split into one file per row |
+## Merged and deployed
 
-Until `/home/user/tgt/DEPLOY-DONE` exists, round-1 lanes take no build lock (the previous round is being validated and
-deployed first).
-
-## Merged, not yet deployed
-
-The round planned in `next-round-plan-2026-10-15.md` (twelve lanes, incl. the follow-up mousefocus: mouse opens focus the first control, run 2026-10-18) is merged on
-the session branch: rows 214, 215, 217 (partly), 219, 220, 222-236, 238, plus the follow-ups 239-244 recorded as new
-rows. The full gates went red once on the merged head 88cd93c9 (check-attr-spread-collision, ScrollArea), fixed in
-fafcb96b; its full gate run and the validation (agent on 88cd93c9) are in progress. Open before the deploy: the full-suite validation on the merged tree (classified against the recorded baseline failures), the
-computed-style snapshot compared with N5, the registry install smoke, then PR, merge and the release deploy. Post
-the site link with the main commit once the Pages publish succeeds.
-
-## Deployed
-
-The preview site at the link above; row 242 lists the specs that are red on the deployed baseline too. The
-2026-10-18 round is not deployed yet (see above).
+Rounds 2-3 (PR #102), Rounds 5 and 7 (PR #105: rows 188 demo items, 213, 162, 261, 264, 165, 157, 137, 136), the
+card-overflow fix (PR #104, row 280); preview redeployed from `404e7175` (PR #106).
 
 ## Backlog numbers
 
-88 open and 156 done rows at the split (see [`backlog.md`](./backlog.md)). The main loop's round-0 bookkeeping closes
-18 more rows that the backlog review found done, duplicate or obsolete and narrows 10 partly-done ones.
+48 open and 206 done rows on 2026-10-19 (see [`backlog.md`](./backlog.md)), after the bookkeeping pass closed 29 rows
+whose status already said done.
 
 ## Next round
 
-**Round 2, planned next round:** scroller 213 (Message Scroller API gaps); markdown 213 (the optional `markdown`
-component, owner decisions E2: pulldown-cmark `=0.13.4`, images off by default); theme 239 (`all: unset` vs the
-baselines) + 243 (hover fills) + 124/125 (chart nits); chat-nav 148. Then round 3 (overlay and interaction primitives:
-focus 240, drawer 156, toast 138, carousel 237), 4 (virtualization and scrolling), 5 (docs and site), 6 (quality
-sweeps, test-suite prune last), 7 (held items 136, 157). Full table with the reasons:
-[`research/backlog-order-2026-10-18.md`](./research/backlog-order-2026-10-18.md).
+The Round 6 quality sweep (167 listeners, 170 cross-component overrides, 218 popup isolation, then the 152b suite prune
+last) and the repo cleanup (row 266) wait until every component and feature row has landed (owner decision
+2026-10-19). Full order: [`research/backlog-order-2026-10-18.md`](./research/backlog-order-2026-10-18.md).
 
 ## Owner inputs pending
 

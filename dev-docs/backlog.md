@@ -34,7 +34,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (47)
+## Open rows (48)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -85,6 +85,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [245](backlog/245-snapshot-harness-tooltip-and-skip-link.md) | Computed-style snapshot harness: tooltip timing nondeterminism and the skip link counted as an open-state item | BACKLOG (validation 2026-10-19) | S | tests |
 | [246](backlog/246-snapshot-buckets-too-coarse.md) | Snapshot diff buckets are page-level on some routes | BACKLOG (validation 2026-10-19) | S-M | tests |
 | [265](backlog/265-upstream-ai-elements-code-block-trace-chat.md) | Upstream ai-elements (chat, message, code-block, trace, checkpoint, ...) vs our chat kit | BACKLOG (found by row 213 item 10, 2026-10-19). Source… | L | chat |
+| [266](backlog/266-repo-cleanup-archive-historical-dev-docs.md) | Repo cleanup: archive historical dev-docs, trim CLAUDE.md and the big dev docs, split backlog.md | BACKLOG (owner request 2026-10-19; plan approval pending; scheduled with the Round 6 sweep). Owner… | M-L | process |
 
 ## Done rows (206)
 
