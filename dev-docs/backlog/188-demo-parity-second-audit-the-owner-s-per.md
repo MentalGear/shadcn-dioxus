@@ -1,10 +1,10 @@
 ---
 id: 188
 title: "Demo parity, second audit: the owner's per-example list against the original shadcn demos (51 components; row…"
-status: "DEMO-ONLY ITEMS DONE 2026-10-19 (batch 2: every section-5 demo exists; what remains needs component parts, listed)"
+status: "DEMO-ONLY ITEMS DONE 2026-10-19 (batch 2: every section-5 demo exists; what remains needs component…"
 size: "M per batch"
 area: docs
-updated: 2026-10-12
+updated: 2026-10-19
 ---
 
 # Row 188: Demo parity, second audit: the owner's per-example list against the original shadcn demos (51 components; row…
@@ -14,6 +14,8 @@ updated: 2026-10-12
 **Demo parity, second audit: the owner's per-example list against the original shadcn demos (51 components; row 187's 25 are a subset)**
 
 ## Status / trigger
+
+**DEMO-ONLY ITEMS DONE 2026-10-19 (batch 2: every section-5 demo exists; what remains needs component parts, listed)** -- the 2026-10-19 re-audit (lanes demos-a/demos-b) found every demo-only item already built; it added tooltip sides, a scrollable drawer, a scrollable command and an indeterminate checkbox (plus the indeterminate glyph fix). What is left needs new parts: see the two 2026-10-19 updates below.
 
 **BATCHES 1 AND 2 LANDED (2026-10-11: 86 demos in 20 components; 2026-10-12: 43 demos in 30 components -- menus with icons and an account switcher, dialog/sheet/drawer variants, toast types, hover-card and popover placement, calendar presets and date+time, a natural-language date picker, disabled and grouped selects, combobox custom items, the small primitives, a subscription form, an OTP verify card, FAQ and multiple accordions, an inline command, a rich table; batch 2's library findings are row 191); the parts-blocked rest BACKLOG** -- owner item 2026-10-11. The diff against row 187, the HEAD check of the "main may hold more" caveat, and the demo-only vs needs-a-part classification of every remaining gap are in [`research/shadcn-demo-parity-audit-2026-10-11.md`](../research/shadcn-demo-parity-audit-2026-10-11.md)
 
