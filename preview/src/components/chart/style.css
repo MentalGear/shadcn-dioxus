@@ -620,6 +620,10 @@
 .dx-chart-legend [data-slot="chart-icon"] {
   width: 12px;
   height: 12px;
+
+  /* shadcn's legend glyphs are foreground (measured, row 125); the tooltip's
+   * stay muted. */
+  color: var(--dx-foreground);
 }
 
 /* A ChartTooltipProps::formatter-built total row (chart_tooltip gallery's
@@ -875,6 +879,24 @@
  * would be as wide as its placeholder, then jump to the label's width. */
 .dx-chart-range-trigger {
   inline-size: 10rem;
+}
+
+/* A select value (trigger and options) led by a slice's color swatch --
+ * shadcn's `flex h-3 w-3 shrink-0 rounded-xs` square and `gap-2`. */
+.dx-chart-select-value {
+  display: flex;
+  align-items: center;
+  gap: var(--dx-space-2);
+  min-inline-size: 0;
+}
+
+.dx-chart-select-value > [data-slot="chart-swatch"] {
+  display: inline-block;
+  flex-shrink: 0;
+  border-radius: var(--dx-radius-xs);
+  background-color: var(--series-color);
+  block-size: 0.75rem;
+  inline-size: 0.75rem;
 }
 
 /* ---------------------------------------------------------------------- *

@@ -7,7 +7,7 @@ use dioxus_primitives::drawer::{
 use dioxus_primitives::keyboard_inset::{use_keyboard_panel, KeyboardInset};
 use dioxus_primitives::merge_attributes;
 
-pub use dioxus_primitives::drawer::DrawerSide;
+pub use dioxus_primitives::drawer::{DrawerSide, SnapPoint};
 
 #[component]
 pub fn Drawer(props: DrawerRootProps) -> Element {
@@ -24,6 +24,10 @@ pub fn Drawer(props: DrawerRootProps) -> Element {
             on_open_change: props.on_open_change,
             side: props.side,
             dismissible: props.dismissible,
+            snap_points: props.snap_points,
+            active_snap_point: props.active_snap_point,
+            default_active_snap_point: props.default_active_snap_point,
+            on_active_snap_point_change: props.on_active_snap_point_change,
             {props.children}
         }
     }

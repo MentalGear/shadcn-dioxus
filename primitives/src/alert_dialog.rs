@@ -172,6 +172,20 @@ pub struct AlertDialogContentProps {
     #[props(default)]
     pub class: Option<String>,
 
+    /// Where focus lands when the panel opens, as a function of how it was opened
+    /// ([`OpenModality`](crate::modality::OpenModality)). An input to the one open-focus policy
+    /// (`dxOpenFocus`), not a second path: with none, keyboard and mouse opens focus the first
+    /// control and touch and pen opens focus the panel (no software keyboard). A selector that
+    /// matches nothing falls back to that default.
+    #[props(default)]
+    pub initial_focus: Option<crate::modality::FocusTargetFn>,
+
+    /// Where focus goes when the panel closes, as a function of the modality of the close.
+    /// Default: the element that held focus when it opened (the trigger for a click open, the
+    /// previously focused element for a programmatic one).
+    #[props(default)]
+    pub final_focus: Option<crate::modality::FocusTargetFn>,
+
     /// Additional attributes to extend the content element.
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
@@ -262,8 +276,13 @@ pub fn AlertDialogContent(props: AlertDialogContentProps) -> Element {
     // Owned by this component -- dialog role/aria wiring must win over a
     // caller's own attributes (`docs/backlog.md` row 93's
     // duplicate-attribute hazard).
+    let mut caller_attributes = props.attributes.clone();
+    caller_attributes.extend(crate::modality::focus_attributes(
+        props.initial_focus,
+        props.final_focus,
+    ));
     let attributes = merge_attributes(vec![
-        props.attributes,
+        caller_attributes,
         attributes!(div {
             role: "alertdialog",
             aria_modal: "true",
@@ -316,8 +335,13 @@ pub fn AlertDialogContent(props: AlertDialogContentProps) -> Element {
 
     // Owned by this component -- see the native arm's identical
     // construction above (`docs/backlog.md` row 93).
+    let mut caller_attributes = props.attributes.clone();
+    caller_attributes.extend(crate::modality::focus_attributes(
+        props.initial_focus,
+        props.final_focus,
+    ));
     let attributes = merge_attributes(vec![
-        props.attributes,
+        caller_attributes,
         attributes!(dialog {
             role: "alertdialog",
             aria_modal: "true",

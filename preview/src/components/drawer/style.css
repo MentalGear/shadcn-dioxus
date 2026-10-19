@@ -62,10 +62,6 @@
  * panel. There is no `::backdrop` rule here to drift. */
 
 @media (prefers-reduced-motion: reduce) {
-  .dx-drawer {
-    transition-duration: var(--dx-motion-duration-reduced);
-  }
-
   .dx-drawer-root {
     animation-duration: var(--dx-motion-duration-reduced);
   }
@@ -115,6 +111,14 @@
     transform var(--dx-motion-duration-base) var(--dx-motion-ease),
     scale var(--dx-motion-duration-slow) var(--dx-motion-ease);
   will-change: transform, translate, scale;
+}
+
+/* Reduced motion: after the base rule above (same specificity, so the later one wins). The release settle, the
+ * snap change and the nested step-back all run on this transition. */
+@media (prefers-reduced-motion: reduce) {
+  .dx-drawer {
+    transition-duration: var(--dx-motion-duration-reduced);
+  }
 }
 
 .dx-drawer[data-dragging="true"] {
@@ -213,6 +217,82 @@
 
 .dx-drawer[data-nested-open="true"][data-side="left"] {
   transform: translateX(var(--dx-drawer-nest-shift, var(--dx-space-4)));
+}
+
+/* Snap points (`snap_points`, `primitives/src/drawer.rs` "Snap points"). The panel is as large as the LARGEST
+ * snap point and rests translated toward its closing edge by the difference: the primitive writes only the
+ * active point's extent and the largest one as two custom properties, and the resting offset is derived HERE,
+ * once, as `--dx-drawer-rest`. Everything that places the panel reads that variable (this rest, the nested
+ * stack below, the primitive's live drag `transform`), so a snap change is one custom-property change and the
+ * ordinary `transform` transition settles it. The live drag is `--dx-drawer-drag` (always set while snapped, 0px
+ * at rest), added in the same formula; the primitive never puts a `transform` of its own on a snapped panel. */
+.dx-drawer[data-snap] {
+  --dx-drawer-rest: calc(var(--dx-drawer-snap-max) - var(--dx-drawer-snap));
+}
+
+.dx-drawer[data-snap]:is([data-side="bottom"], [data-side="top"]) {
+  height: var(--dx-drawer-snap-max);
+  max-height: none;
+}
+
+.dx-drawer[data-snap]:is([data-side="left"], [data-side="right"]) {
+  width: var(--dx-drawer-snap-max);
+  max-width: none;
+}
+
+.dx-drawer[data-snap][data-side="bottom"] {
+  transform: translateY(calc(var(--dx-drawer-rest) + var(--dx-drawer-drag, 0px)));
+}
+
+.dx-drawer[data-snap][data-side="top"] {
+  transform: translateY(calc(-1 * var(--dx-drawer-rest) + var(--dx-drawer-drag, 0px)));
+}
+
+.dx-drawer[data-snap][data-side="right"] {
+  transform: translateX(calc(var(--dx-drawer-rest) + var(--dx-drawer-drag, 0px)));
+}
+
+.dx-drawer[data-snap][data-side="left"] {
+  transform: translateX(calc(-1 * var(--dx-drawer-rest) + var(--dx-drawer-drag, 0px)));
+}
+
+/* Below the largest point the content does not scroll and a press anywhere drags toward the next point (Base
+ * UI); at the largest it scrolls and a vertical drawer's content may pan (a touch drag then starts from the
+ * handle, which keeps its own `touch-action`). */
+.dx-drawer[data-snap="partial"] {
+  overflow: hidden;
+}
+
+.dx-drawer[data-snap="full"]:is([data-side="bottom"], [data-side="top"]) {
+  touch-action: pan-x pan-y;
+}
+
+/* The nested stack on top of the snap rest. */
+.dx-drawer[data-snap][data-nested-open="true"][data-side="bottom"] {
+  transform: translateY(calc(var(--dx-drawer-rest) - var(--dx-drawer-nest-shift, var(--dx-space-4)) + var(--dx-drawer-drag, 0px)));
+}
+
+.dx-drawer[data-snap][data-nested-open="true"][data-side="top"] {
+  transform: translateY(calc(-1 * var(--dx-drawer-rest) + var(--dx-drawer-nest-shift, var(--dx-space-4)) + var(--dx-drawer-drag, 0px)));
+}
+
+.dx-drawer[data-snap][data-nested-open="true"][data-side="right"] {
+  transform: translateX(calc(var(--dx-drawer-rest) - var(--dx-drawer-nest-shift, var(--dx-space-4)) + var(--dx-drawer-drag, 0px)));
+}
+
+.dx-drawer[data-snap][data-nested-open="true"][data-side="left"] {
+  transform: translateX(calc(-1 * var(--dx-drawer-rest) + var(--dx-drawer-nest-shift, var(--dx-space-4)) + var(--dx-drawer-drag, 0px)));
+}
+
+/* Non-modal (`is_modal: false`): no scrim (the primitive switches `overlay` off) and no top layer, so the
+ * full-viewport wrapper must not catch the page's pointer: only the panel does, and the page stays
+ * interactive and scrollable around it. */
+.dx-drawer-root[data-dx-modal="false"] {
+  pointer-events: none;
+}
+
+.dx-drawer-root[data-dx-modal="false"] .dx-drawer:not([data-state="closed"]) {
+  pointer-events: auto;
 }
 
 /* Grab-bar handle -- decorative, aria-hidden (primitives/src/drawer.rs). */

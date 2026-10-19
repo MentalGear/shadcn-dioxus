@@ -5,3 +5,4 @@ button
 kbd
 dropdown
 spinner
+block

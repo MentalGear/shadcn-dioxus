@@ -113,7 +113,7 @@
  * 20/255 or more from hover and 40/255 or more from rest, and the ink on it
  * stays at 5.2:1 or better (playwright/theme-preset-contrast.spec.ts). */
 .dx-toggle[data-state="on"] {
-  background-color: color-mix(in oklab, var(--dx-accent), var(--dx-foreground) 15%);
+  background-color: color-mix(in var(--dx-hover-mix-space), var(--dx-accent), var(--dx-foreground) 15%);
   color: var(--dx-foreground);
 }
 

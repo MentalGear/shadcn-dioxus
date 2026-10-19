@@ -55,17 +55,32 @@
 }
 
 .dx-slider-thumb {
-    all: unset;
     position: absolute;
     top: 50%;
     display: block;
     width: var(--dx-space-3);
     height: var(--dx-space-3);
     box-sizing: border-box;
+    padding: 0;
     border: 1px solid var(--dx-ring-color);
     border-radius: 50%;
+    margin: 0;
+
+    /* The native-button reset this rule used to take from `all: unset`, spelled out: `all:` (0,1,0) beat
+       every zero-specificity theme baseline (user-select, touch-action, press feedback, box-sizing), and
+       scripts/check-theme-baseline.sh now bans it. The resets are the ones a native button needs and this rule does not set itself. */
+    appearance: none;
+    background-color: transparent;
     background-color: white;
+    color: inherit;
     cursor: pointer;
+    font: inherit;
+    letter-spacing: inherit;
+    outline: none;
+    text-align: inherit;
+    text-indent: 0;
+    text-shadow: none;
+    text-transform: none;
 
     /* rtl-physical: the thumb's horizontal position (`left: X%`, the value
        -> track-position mapping) is set inline by the primitive
@@ -78,13 +93,8 @@
        primitives lane rather than guessed at here. */
     transform: translate3d(-50%, -50%, 0);
     transition: box-shadow var(--dx-motion-duration-base);
-
-    /* `all: unset` above also resets the theme's zero-specificity "Controls are not text" rule
-       (`dx-components-theme.css`), so it is restated here; scripts/check-theme-baseline.sh requires it. */
-    /* stylelint-disable-next-line property-no-vendor-prefix -- Safari spelling */
-    -webkit-user-select: none;
-    user-select: none;
     will-change: left, bottom, transform;
+    word-spacing: inherit;
 }
 
 /* `after:absolute after:-inset-2`: an invisible 8px margin around the thumb, so the 12px thumb is a

@@ -67,6 +67,20 @@ sweeps, test-suite prune last), 7 (held items 136, 157). Full table with the rea
   commit. Green = `ALL GREEN`, exit 0.
 - One global build lock; Playwright under its own lock; 4-5 lanes per batch.
 
+## Second session: rounds 2 and 3 (owner split 2026-10-18)
+
+Owner decision 2026-10-18 ("Split, plus queue"): session `session_01QoX93TwsKJ9GtMXWUXXfKw` takes rounds 2 and 3 of the
+backlog order on its own branch `claude/rounds-2-3` (separate container, so its build locks are its own); this session
+keeps rounds 0 and 1. Later rounds and new row ids are claimed on the `claims` branch (`CLAIMS.md`, fast-forward-only
+pushes, so two sessions cannot claim the same round or mint the same row id). Each session PRs and merges its own
+rounds to main after a full green; the second merger resolves shared files (`CLAUDE.md`, `scripts/run-gates.sh`, this page).
+
+Rounds 2 and 3 are merged on `claude/rounds-2-3` (2026-10-19, PR #102): rows 213 (API items 1, 2, 4-9 and the
+`markdown` component), 148, 239, 243, 124, 125 (round 2); 240, 138, 237, 156 (round 3); follow-ups found on the way and
+landed in the same PR: 260 (hover mix space + gate), 262 and 263 (toast F6, pause, vertical swipe). Still open from these
+rounds: row 213 item 10 (upstream diff), 261 (`--dx-font-mono` token), 264 (non-modal Dialog `aria-modal` and outside-press
+switch). Next unclaimed round on the `claims` branch: 4.
+
 ## Keeping this page current
 
 Edit the section that changed, bump "Last updated", commit with the change that made it true. Row-level state belongs in

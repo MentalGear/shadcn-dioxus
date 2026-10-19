@@ -261,7 +261,7 @@ dialog.dx-alert-dialog[open][data-state="open"] {
 
 @media (hover: hover) and (pointer: fine) {
   .dx-alert-dialog-action:not(:disabled):hover {
-    background-color: color-mix(in oklab, var(--dx-destructive-fill), var(--dx-foreground) 8%);
+    background-color: color-mix(in var(--dx-hover-mix-space), var(--dx-destructive-fill), var(--dx-foreground) 8%);
   }
 }
 

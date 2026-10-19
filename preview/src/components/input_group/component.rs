@@ -3,13 +3,17 @@ use dioxus::prelude::*;
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::merge_attributes;
 
-/// Which edge of the group an [`InputGroupAddon`] sits against.
+/// Which edge of the group an [`InputGroupAddon`] sits against. `Start` / `End` are the inline
+/// edges (beside the control); `BlockStart` / `BlockEnd` are full-width rows above / below it
+/// (shadcn's `block-start` / `block-end`, e.g. a composer's toolbar under its text).
 #[derive(Copy, Clone, PartialEq, Default)]
 #[non_exhaustive]
 pub enum InputGroupAlign {
     #[default]
     Start,
     End,
+    BlockStart,
+    BlockEnd,
 }
 
 impl InputGroupAlign {
@@ -17,6 +21,8 @@ impl InputGroupAlign {
         match self {
             InputGroupAlign::Start => "start",
             InputGroupAlign::End => "end",
+            InputGroupAlign::BlockStart => "block-start",
+            InputGroupAlign::BlockEnd => "block-end",
         }
     }
 }
@@ -31,7 +37,9 @@ pub fn InputGroup(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
     children: Element,
 ) -> Element {
-    let base = attributes!(div { class: "dx-input-group" });
+    let base = attributes!(div {
+        class: "dx-input-group"
+    });
     let merged = merge_attributes(vec![base, attributes]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/input_group/style.css") }
@@ -79,7 +87,9 @@ pub fn InputGroupAddon(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
     children: Element,
 ) -> Element {
-    let base = attributes!(div { class: "dx-input-group-addon" });
+    let base = attributes!(div {
+        class: "dx-input-group-addon"
+    });
     // `data-align` reflects this wrapper's own typed `align` prop, not a
     // caller default -- owned-wins.
     let owned = attributes!(div { "data-align": align.class() });
@@ -97,7 +107,9 @@ pub fn InputGroupText(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
     children: Element,
 ) -> Element {
-    let base = attributes!(span { class: "dx-input-group-text" });
+    let base = attributes!(span {
+        class: "dx-input-group-text"
+    });
     let merged = merge_attributes(vec![base, attributes]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/input_group/style.css") }

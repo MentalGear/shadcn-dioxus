@@ -142,6 +142,9 @@ declare -A allowed_qualified=(
     ["modality::MODALITY_JS"]=1   # plain &str constant, not markup (the one writer of
                                    # `<html data-dx-modality>`; only `theme.rs`'s test
                                    # proves PREPAINT_JS embeds it verbatim)
+    ["modality::FocusTarget"]=1   # plain enums, not markup -- the `initial_focus` /
+    ["modality::OpenModality"]=1  # `final_focus` functions of the focus_target variants
+                                   # (dialog, alert_dialog, popover; backlog row 240)
     ["direction::Direction"]=1    # plain enum, not markup -- every RTL fixture
                                    # (preview/src/components/*/variants/rtl/mod.rs)
     ["direction::DirectionProvider"]=1 # context-provider component with no DOM

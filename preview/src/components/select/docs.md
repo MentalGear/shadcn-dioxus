@@ -19,6 +19,10 @@ Select::<String> {
 }
 ```
 
+## Open focus
+
+A click or tap opens a single `Select` on its selected option, focused and scrolled into view, the same as a keyboard open (Base UI opens on the selected index for every modality). With nothing selected, or in `SelectMulti`, a pointer open leaves focus on the listbox and ArrowDown reaches the first option. A `DropdownMenu` / `ContextMenu` does the opposite on purpose: a keyboard open focuses the first item, a pointer open highlights none.
+
 ## Size
 
 `size: SelectSize::Sm` makes the trigger 28px tall (`--dx-control-height-sm`) instead of the default 32px (`--dx-control-height-default`), shadcn's `size="sm" | "default"` on `SelectTrigger`. It sets `data-size` on the trigger of both `Select` and `SelectMulti`. See the `sizes` variant.

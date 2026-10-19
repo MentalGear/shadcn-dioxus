@@ -297,6 +297,20 @@ pub struct PopoverContentProps {
     #[props(default = ContentAlign::Center)]
     pub align: ContentAlign,
 
+    /// Where focus lands when the panel opens, as a function of how it was opened
+    /// ([`OpenModality`](crate::modality::OpenModality)). An input to the one open-focus policy
+    /// (`dxOpenFocus`), not a second path: with none, keyboard and mouse opens focus the first
+    /// control and touch and pen opens focus the panel (no software keyboard). A selector that
+    /// matches nothing falls back to that default.
+    #[props(default)]
+    pub initial_focus: Option<crate::modality::FocusTargetFn>,
+
+    /// Where focus goes when the panel closes, as a function of the modality of the close.
+    /// Default: the element that held focus when it opened (the trigger for a click open, the
+    /// previously focused element for a programmatic one).
+    #[props(default)]
+    pub final_focus: Option<crate::modality::FocusTargetFn>,
+
     /// Additional attributes to apply to the content element.
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
@@ -373,6 +387,11 @@ pub fn PopoverContent(props: PopoverContentProps) -> Element {
     }
 
     let render = use_animated_open(id, ctx.open);
+    let mut attributes = props.attributes.clone();
+    attributes.extend(crate::modality::focus_attributes(
+        props.initial_focus,
+        props.final_focus,
+    ));
 
     // The vendored focus-trap eval used to live here, installed whenever
     // `is_modal()` was true regardless of target -- that was correct before
@@ -393,7 +412,7 @@ pub fn PopoverContent(props: PopoverContentProps) -> Element {
                 class: props.class,
                 side: props.side,
                 align: props.align,
-                attributes: props.attributes,
+                attributes,
                 children: props.children
             }
         }
@@ -709,6 +728,7 @@ fn PopoverNonModalContent(
 ) -> Element {
     let ctx: PopoverCtx = use_context();
     crate::top_layer::use_popover_shown_while_mounted(id.clone(), ctx.open, ctx.set_open);
+    crate::modality::use_close_focus(id.clone(), ctx.open);
     // JS-measured static positioning fallback for Firefox/WebKit (no CSS
     // Anchor Positioning) -- see `top_layer::use_anchor_position_fallback`'s
     // doc. `anchor_id` is this content's own `id`: `PopoverTrigger`'s

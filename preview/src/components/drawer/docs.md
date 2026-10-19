@@ -59,6 +59,36 @@ Dragging [`DrawerHandle`] or anywhere on [`DrawerContent`] itself toward `side` 
 
 A drag never starts from an interactive descendant (a button, link, or form control), or from content that is scrolled away from the drag edge -- either is read as "interact with (or scroll) this instead," not "dismiss the drawer."
 
+## Snap points
+
+`snap_points` (Base UI's `snapPoints`) makes the drawer rest at partial extents instead of fully open. A `SnapPoint` is a fraction of the viewport along the drawer's axis (`Fraction(0.5)`: half the height of a top/bottom drawer, half the width of a left/right one; measured against the layout viewport) or a length (`Px(355.0)`); `Fraction(1.0)` is fully open.
+
+```rust
+Drawer {
+    side: DrawerSide::Bottom,
+    snap_points: vec![SnapPoint::Px(148.0), SnapPoint::Px(355.0), SnapPoint::Fraction(1.0)],
+    // Optional: control the active point (default: the first of `snap_points`).
+    active_snap_point: active(),
+    on_active_snap_point_change: move |point| active.set(Some(point)),
+    DrawerContent { DrawerHandle {} /* ... */ }
+}
+```
+
+- **One resting offset.** The panel is as large as the **largest** snap point and rests translated toward its closing edge by the difference. The active point writes two custom properties on the panel (`--dx-drawer-snap`, `--dx-drawer-snap-max`); the stylesheet derives `--dx-drawer-rest` from them and the panel's `transform` reads it (the live drag adds its delta to it, the nested-drawer step-back adds to it). Nothing measures the panel to place it, and a snap change is a custom-property change that the ordinary `transform` transition settles. `data-snap` is `partial` or `full` (absent without snap points).
+- **Settling.** Releasing a drag settles on the snap point **nearest the release position projected by the release velocity** (150ms of it, capped at 3px/ms): a slow drag goes to the nearest point, a fast flick may skip one, and nothing overshoots the ends. Drag toward the open side tracks 1:1 up to the largest point, then rubber-bands.
+- **Closing.** Only a drag **below the lowest point** closes the drawer, by the drawer's one closing rule: past 25% of the lowest point's visible extent, or a flick (0.5px/ms, after 10px). From a higher point a drag, however far or fast, lands on the lowest point at most. Escape and `DrawerClose` close from anywhere.
+- **Controlled.** `active_snap_point` controls the active point; a drag reports the new point through `on_active_snap_point_change` and a controlled value the parent does not change snaps the panel back. Uncontrolled, `default_active_snap_point` (else the first point) is where it opens, and a drawer opened again is back at it. A value that is not one of `snap_points` reads as the first.
+- **Content and drag.** Below the largest point the content does not scroll (it is clipped) and a press anywhere on the panel drags toward the next point; at the largest point the content scrolls, and a press in content that is scrolled away from the top does not drag. On touch, a top/bottom drawer at its largest point lets content pan vertically, so its drag starts from the handle.
+- **Keyboard.** Base UI's Drawer has no keyboard stepping between snap points, and neither has this one: Escape closes, and a control of your own (a button that sets the controlled `active_snap_point`, as the demo's Expand does) moves between points.
+
+## Non-modal drawer
+
+`is_modal: false` (Base UI's `modal: false`) turns the drawer into a panel beside the page, not over it: **no scrim** (`overlay` is ignored), **no top layer and no inert page**, **no scroll lock** (the page scrolls and every control stays interactive), and **no focus trap**. It is the non-modal arm of the dialog primitive, so Escape, the close button and a press (or focus moving) outside the panel still dismiss it (Base UI's default light dismissal); drag-to-dismiss, handle, snap points and the slide are unchanged. The root wrapper carries `data-dx-modal="false"` and lets pointer events through, so only the panel itself catches them. The panel keeps the dialog primitive's `role="dialog"` markup. Not covered: a non-modal drawer that ignores outside presses (Base UI's `disablePointerDismissal`) needs a switch on the dialog primitive; it has none yet.
+
+## Responsive Dialog to Drawer
+
+shadcn's "Responsive Dialog": render a `Dialog` at and above the mobile breakpoint and a `Drawer` below it, with the same form inside both. The Sidebar's `use_is_mobile()` is the viewport signal (`window.innerWidth < 768`, a resize listener owned by the calling component); the demo branches on it and shares the form as one component.
+
 ## DrawerClose with `as` prop
 
 The `as` prop allows you to render a custom element while preserving the close behavior, similar to shadcn/ui's `asChild` pattern.

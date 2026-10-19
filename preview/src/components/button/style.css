@@ -186,7 +186,7 @@
 @media (hover: hover) and (pointer: fine) {
   .dx-button[data-style="secondary"]:not(:disabled):hover {
     background-color: color-mix(
-      in oklab,
+      in var(--dx-hover-mix-space),
       var(--dx-secondary),
       var(--dx-foreground) 5%
     );
@@ -255,7 +255,7 @@
 @media (hover: hover) and (pointer: fine) {
   .dx-button[data-style="destructive"]:not(:disabled):hover {
     background-color: color-mix(
-      in oklab,
+      in var(--dx-hover-mix-space),
       var(--dx-destructive-fill),
       var(--dx-foreground) 8%
     );

@@ -1,1 +1,1 @@
-Tabs for `Start`, `End` and `LastAnchor`. `default_scroll_position` is read when the transcript first renders, so the demo keys the provider and a new choice remounts it as a freshly opened thread.
+Tabs for `Start`, `End` and `LastAnchor`. `default_scroll_position` is live: a new choice changes the provider's prop and the mounted transcript re-applies the opening position (the flash guard only covers the first paint, so the viewport is not hidden again).

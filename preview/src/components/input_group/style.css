@@ -76,6 +76,33 @@
   padding-inline-start: 0;
 }
 
+/* Block addons: a full-width row above (`block-start`) or below (`block-end`) the control. A group that
+ * holds one stacks its children in a column and sizes to them (shadcn: `has-[>[data-align=block-end]]:h-auto
+ * flex-col`); `order` places the row whatever its source position, so the markup order stays reading order
+ * for the inline addons. */
+.dx-input-group:has(> .dx-input-group-addon[data-align="block-start"], > .dx-input-group-addon[data-align="block-end"]) {
+  height: auto;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.dx-input-group-addon[data-align="block-start"],
+.dx-input-group-addon[data-align="block-end"] {
+  width: 100%;
+  justify-content: flex-start;
+  padding: var(--dx-space-2);
+}
+
+.dx-input-group-addon[data-align="block-start"] {
+  order: -1;
+  padding-block-end: 0;
+}
+
+.dx-input-group-addon[data-align="block-end"] {
+  order: 1;
+  padding-block-start: 0;
+}
+
 /* Icons the addon holds directly. Stop at a popup boundary: an addon's trigger renders its popover/dialog
  * panel INSIDE the addon (top-layer promotion changes painting, not the DOM), so a bare `svg` selector also
  * reached every chevron and icon in a Date Picker's calendar and shrank them to 16px. The boundary is the

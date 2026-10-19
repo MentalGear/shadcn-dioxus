@@ -561,14 +561,12 @@ fn use_dialog_open_driver(
                 dialog.__dxActivate = false;
                 dialog.__dxCancelAt = 0;
                 if (dialog.open) return;
-                // The element that holds focus now is the opener: remembered so the close can hand
-                // focus back the moment it starts (`DIALOG_CLOSE_FORWARD_JS`). Where focus goes
-                // INSIDE the panel is `dxOpenFocus`'s one decision (`modality.rs`): the browser
-                // default for a keyboard or mouse open, the panel for a touch or pen open, never an
-                // editable element for touch. No listener of ours reads :focus-visible.
-                const opener = document.activeElement;
-                dialog.__dxOpener = opener && opener !== document.body && opener !== document.documentElement
-                    ? opener : null;
+                // `dxOpenFocus` (`modality.rs`) remembers the opener (`dialog.__dxOpener`, so the
+                // close can hand focus back the moment it starts, `DIALOG_CLOSE_FORWARD_JS`) and
+                // makes the one decision where focus goes INSIDE the panel: the author's
+                // `initial_focus`, else the browser default for a keyboard or mouse open and the
+                // panel for a touch or pen open, never an editable element for touch. No listener
+                // of ours reads :focus-visible.
                 dxDialogForwardKeys(dialog);
                 dxOpenFocus(dialog, () => dialog.showModal());
                 return;
@@ -596,7 +594,12 @@ fn use_dialog_open_driver(
                         new Promise((resolve) => setTimeout(resolve, Math.max(0, deadline - performance.now()))),
                     ]);
                 }}
-                if (dialog.__dxDialogGen === gen && dialog.isConnected && dialog.open) dialog.close();
+                if (dialog.__dxDialogGen === gen && dialog.isConnected && dialog.open) {{
+                    dialog.close();
+                    // The native close just returned focus to the element focused before the
+                    // open; `final_focus` (or a lost focus) is settled by the one close policy.
+                    dxCloseFocus(dialog);
+                }}
             }});"
         ));
     });

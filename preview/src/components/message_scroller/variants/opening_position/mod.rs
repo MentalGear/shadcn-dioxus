@@ -39,13 +39,11 @@ fn position_of(value: &str) -> DefaultScrollPosition {
     }
 }
 
-/// `default_scroll_position` is read when the transcript first renders. To show each position on
-/// demand, the provider is keyed: choosing a tab bumps the key, which remounts the scroller as a
-/// freshly opened thread.
+/// `default_scroll_position` is live: choosing a tab changes the provider's prop, and the scroller
+/// re-applies the new opening position to the thread that is already mounted (no remount).
 #[component]
 pub fn Demo() -> Element {
     let mut position = use_signal(|| "last-anchor".to_string());
-    let mut position_key = use_signal(|| 0u32);
 
     rsx! {
         div { style: "display: flex; width: 100%; max-width: 24rem; flex-direction: column; gap: var(--dx-space-4);",
@@ -56,7 +54,6 @@ pub fn Demo() -> Element {
                 }
                 CardContent { style: "flex: 1; min-height: 0; padding: 0;",
                     MessageScrollerProvider {
-                        key: "{position_key}",
                         default_scroll_position: position_of(&position()),
                         MessageScroller {
                             MessageScrollerViewport { "aria-label": "Opening position conversation",
@@ -92,7 +89,6 @@ pub fn Demo() -> Element {
                         value: Some(position()),
                         on_value_change: move |value: String| {
                             position.set(value);
-                            position_key += 1;
                         },
                         horizontal: true,
                         style: "width: 100%;",

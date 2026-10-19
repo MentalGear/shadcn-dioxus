@@ -34,7 +34,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (90)
+## Open rows (83)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -85,23 +85,18 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [111](backlog/111-migrate-the-theme-to-shadcn-s-system-semantic.md) | Migrate the theme to shadcn's system: semantic role tokens, then the Nova style | PHASE C LANDED 2026-10-14; decision 2 APPROVED 2026-10-14 (shadcn white 10%/15%; row 203, not yet… | M (phase A) + S/M (phase B foundations)… | theme |
 | [112](backlog/112-carousel-tests-that-sample-a-live-animation.md) | Carousel tests that sample a live animation across an async gap -- both fixed; plus the B3 wheel release… | Found 2026-09-26 while verifying the carousel shadcn-parity merge (22d4c95). Instance 1, FIXED… | done (instance 2 fixed d44a12d; the… | theme |
 | [115](backlog/115-tooltip-spec-ts-6-tabbing-out-of-the-trigger.md) | tooltip.spec.ts:6 "tabbing out of the trigger element should hide the tooltip" failed once in a full-suite… | Seen 2026-09-28 in the mode-D integration run (--workers=4, SSG release build): the tooltip was… | S (diagnosis, when it recurs) | tests |
-| [124](backlog/124-charts-a-small-pre-hydration-layout-jump-on-the.md) | Charts: a small pre-hydration layout jump on the legend cards, and on pie-interactive's Select (SSR renders… | OPEN -- measured 2026-10-03 in dev-docs/research/chart-parity-2026-10-03/visual-parity.md (SSR… | S-M | charts |
-| [125](backlog/125-charts-visual-nits-left-after-the-parity-round.md) | Charts visual nits left after the parity round: radar legend ~12px lower than shadcn; pie-interactive Select… | OPEN -- cosmetic, listed in dev-docs/research/chart-parity-2026-10-03/visual-parity.md; not covered… | S | charts |
 | [126](backlog/126-link-s-aria-current-can-emit-a-duplicated.md) | Link's aria_current can emit a duplicated attribute under a base path; the charts gallery tab row uses plain… | LANDED 2026-10-11 (root-caused and fixed by construction; one library residue below) -- the… | S (diagnosis) | charts |
 | [130](backlog/130-arborium-2-17-0-s-wasm-libc-shim-lacks-the-data.md) | arborium 2.17.0's wasm libc shim lacks the data symbol stderr that tree-sitter's stack.c… | OPEN (upstream) -- local fix 7ad8421 (a stderr definition in preview); an upstream issue is worth… | S | upstream |
 | [131](backlog/131-dioxus-cli-0-7-9-ssg-leaves-every-pre-rendered.md) | dioxus-cli 0.7.9 --ssg leaves every pre-rendered route except index.html stale when public/ already exists | OPEN (upstream) -- locally closed by construction (150e97b, scripts/build-ssg.sh); upstream issue… | S | build |
 | [136](backlog/136-questionnaire-shadcn-s-multi-step-question-flow.md) | Questionnaire: shadcn's multi-step question flow (single/multiple choice, freeform "other", skippable… | ON HOLD (owner 2026-10-14: not started, no schedule). BACKLOG -- recorded 2026-10-04 from the… | L | inputs |
 | [137](backlog/137-rtl-by-construction-one-row-for-the-three-rtl.md) | RTL by construction -- one row for the three RTL threads: row 13's open follow-ups (optional RTL for… | BACKLOG, MERGED 2026-10-05 (owner decision); the owner then CONFIRMED the solve-by-construction… | M (the docs page alone is S; parts a… | docs |
-| [138](backlog/138-toast-depth-parity-loading-type-action-button.md) | Toast depth parity: loading type, action button, promise helper, update/close by id, stacking and… | BACKLOG -- recorded 2026-10-04 from the catalog audit (§6.4); depth, not a catalog gap (toast is… | M-L (was M; the folded-in items add an… | overlays |
 | [146](backlog/146-message-scroller-stage-2-visibility-hook-per.md) | message_scroller stage 2: visibility hook, per-call scroll_margin, RTL pass, release-build timing spec | FOLDED INTO ROW 213 (2026-10-14) -- stage 1 built 2026-10-04 (own lane, component-backlog.md)… | M | tests |
 | [147](backlog/147-safari-18-25-cannot-find-in-page-text-inside.md) | Safari 18-25 cannot find-in-page text inside content-visibility: auto-skipped content (WebKit bug 283846) | NOTE -- no behaviour change proposed; recorded 2026-10-04 from the virtualization survey (section 5) | S | virtual |
-| [148](backlog/148-a-chat-sidebar-category-for-the-chat-kit-and.md) | A "Chat" sidebar category for the chat kit and message_scroller | OPEN -- recorded 2026-10-04 | S | virtual |
 | [150](backlog/150-home-page-blocks-registered-their-hooks-on-the.md) | Home-page blocks registered their hooks on the parent scope: MasonryCard called component.call(()), so… | FIXED 2026-10-04, merged (b83640a, PR #84 / 001a5f0, SCROLL-FIX lane); the candidate .call(()) gate… | M | docs |
 | [152](backlog/152-test-suite-review-revisit-the-playwright-suite.md) | Test-suite review: revisit the Playwright suite (~1,786 tests, ~21 min on a release build with 4 workers) for… | OPEN -- owner note 2026-10-05; nothing was run for this row, the evidence below is read from the… | M | tests |
 | [153](backlog/153-native-find-in-page-for-windowed-virtual-lists.md) | Native find-in-page for WINDOWED virtual lists: keep per-item text in the DOM as hidden="until-found"… | OPEN (research) -- owner idea 2026-10-05; nothing prototyped | M | virtual |
 | [154](backlog/154-shared-virtualization-engine-one-engine-in.md) | Shared virtualization engine: ONE engine in primitives/src/virtual/ (core, strategy, DOM bridge) that every… | DESIGN NOTE -- first note recorded 2026-10-05 from the owner question whether the virtualized… | S (note); the build is not estimated | virtual |
 | [155](backlog/155-shadcn-parity-wave-group-1-the-invalid-ring.md) | shadcn parity wave (group 1, the invalid ring, LANDED 2026-10-13 with row 145's state recipes): the 27 "Add… | LANDED: group 1 2026-10-13 (with row 145's state recipes), group 7's Sheet side 2026-10-14 (rows… | M-L in total (23 of the 27 are S; four… | theme |
-| [156](backlog/156-drawer-has-fallen-behind-shadcn-it-moved-from.md) | Drawer has fallen behind shadcn: it moved from Vaul to Base UI Drawer (snap points, nested drawers, non-modal… | 2026-10-15: batch 2 did NOT take the rest; still open: snapPoints, the non-modal mode and the… | L | overlays |
 | [157](backlog/157-inputotp-hard-codes-a-numeric-keypad-inputmode.md) | InputOtp hard-codes a numeric keypad: inputmode="numeric" and pattern="[0-9]*" are fixed, so alphanumeric… | COLD (owner decision 2026-10-05): not scheduled, NEEDS OWNER APPROVAL before anyone picks it up.… | S-M (the comparison rates it M) | inputs |
 | [158](backlog/158-theme-follow-ups-accept-shadcn-s-dark-class-as.md) | Theme follow-ups: accept shadcn's .dark class as an alias of data-theme="dark", and suppress transitions… | PART (a) LANDED 2026-10-15 (by construction, lane x158dark 7d16044 + 3a3a9fa; owner approved… | S + S | theme |
 | [161](backlog/161-rename-the-website-to-shadcn-dioxus-and-give-it.md) | Rename the website to "shadcn-dioxus" and give it a real favicon (an SVG that follows light/dark, a PNG… | IN PROGRESS (owner decision 2026-10-10) -- the site brand and favicon are being changed now (BRAND… | S-M | docs |
@@ -114,22 +109,20 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [186](backlog/186-shadcn-utilities-scroll-fade-and-shimmer-are.md) | shadcn utilities: scroll-fade and shimmer are built but not shipped as documented, public utilities | PART LANDED 2026-10-15 (the scroll-fade fade prop, owner-approved 2026-10-14); BACKLOG: the /docs… | M | docs |
 | [187](backlog/187-demo-upgrades-25-components-whose-shadcn-demo.md) | Demo upgrades: 25 components whose shadcn demo is clearly richer than ours | BACKLOG -- owner item 2026-10-11, from a comparison of 61 shadcn pages (25 richer there, 36 equal… | S mostly (20 of 25 S; 5 M: combobox… | docs |
 | [188](backlog/188-demo-parity-second-audit-the-owner-s-per.md) | Demo parity, second audit: the owner's per-example list against the original shadcn demos (51 components; row… | BATCHES 1 AND 2 LANDED (2026-10-11: 86 demos in 20 components; 2026-10-12: 43 demos in 30… | M per batch | docs |
-| [213](backlog/213-message-scroller-parity-with-the-original-folds.md) | Message Scroller parity with the original (folds row 146) | OWNER DECISIONS 2026-10-15 (markdown, the nine questions): the recommendations -- pulldown-cmark… | M-L | virtual |
+| [213](backlog/213-message-scroller-parity-with-the-original-folds.md) | Message Scroller parity with the original (folds row 146) | API ITEMS LANDED 2026-10-19 (items 1, 2, 4-9; item 10 upstream diff remains; markdown is another… | M-L | virtual |
 | [216](backlog/216-infra-worktrees-sharing-or-copying-one-cargo.md) | Infra: worktrees sharing or copying one CARGO_TARGET_DIR build and lint another tree's code (re-confirms row… | OPEN 2026-10-14 (workaround in CLAUDE.md; by-construction fix proposed) | S-M | process |
 | [217](backlog/217-dependency-audit-follow-ups-what-users-pay-for.md) | Dependency audit follow-ups (what users pay for in compile time and supply chain) | PARTLY LANDED 2026-10-18 (lane deps 04ad7ddf): features calendar/color-picker, no build script… | S-M each | build |
 | [218](backlog/218-popup-style-isolation-top-layer-popups-stay-dom.md) | Popup style isolation: top-layer popups stay DOM descendants of their trigger, so free-content rules in an… | PARTLY LANDED 2026-10-15 (lane ancestorleak 900f394 + main-loop 526b51d, beaf3b0); open: the… | M | overlays |
 | [221](backlog/221-infra-session-process-lessons-from-the-2026-10.md) | Infra: session process lessons from the 2026-10-14/15 batch (memory, lock fairness, gate worktree… | OPEN 2026-10-15 (rules in force in the lane brief; constructions proposed) | S-M | process |
-| [237](backlog/237-carousel-a-free-scrolling-switch-embla-dragfree.md) | Carousel: a free-scrolling switch (Embla dragFree parity) | BACKLOG (owner 2026-10-18) | M | carousel |
-| [239](backlog/239-all-unset-outranks-the-theme-s-zero-specificity.md) | all: unset outranks the theme's zero-specificity baselines | BACKLOG (found 2026-10-18 by lane baseline) | S-M | theme |
-| [240](backlog/240-base-ui-focus-model-what-to-lift-beyond-row-226.md) | Base UI focus model: what to lift beyond row 226 | BACKLOG (research 2026-10-18) | S-M each | a11y |
 | [241](backlog/241-specs-still-read-block-demo-rows-from-a-mirror.md) | Specs still read block-demo rows from a mirror in components/mod.rs | BACKLOG (lane registry 2026-10-18) | S | tests |
 | [242](backlog/242-spec-failures-that-are-red-on-the-deployed.md) | Spec failures that are red on the deployed baseline too (found by the 2026-10-18 lanes) | OPEN | S each | process |
-| [243](backlog/243-button-hover-fills-3-levels-off-shadcn.md) | Button hover fills 3 levels off shadcn | BACKLOG (lane docs-site 2026-10-18) | S | theme |
 | [244](backlog/244-virtualgrid-x-y-virtualization-that-windows.md) | VirtualGrid: x/y virtualization that windows rows AND columns (a data grid, an image grid) | BACKLOG (owner question 2026-10-18) | L | virtual |
 | [245](backlog/245-snapshot-harness-tooltip-and-skip-link.md) | Computed-style snapshot harness: tooltip timing nondeterminism and the skip link counted as an open-state item | BACKLOG (validation 2026-10-19) | S | tests |
 | [246](backlog/246-snapshot-buckets-too-coarse.md) | Snapshot diff buckets are page-level on some routes | BACKLOG (validation 2026-10-19) | S-M | tests |
+| [261](backlog/261-theme-mono-font-token.md) | A --dx-font-mono theme token | BACKLOG (found 2026-10-19 by lane markdown) | S | theme |
+| [264](backlog/264-non-modal-dialog-pointer-dismissal-and-aria-modal.md) | Non-modal Dialog/Drawer: aria-modal and an outside-press switch | BACKLOG (left open by row 156, 2026-10-19) | S | primitives |
 
-## Done rows (156)
+## Done rows (168)
 
 | # | Item | Updated |
 |---|---|---|
@@ -209,6 +202,8 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [121](backlog/done/121-navigation-menu-spec-ts-128-the-content-s-width.md) | navigation_menu.spec.ts:128 "the content's width never changes while its open animation plays" fails on every… | 2026-10-11 |
 | [122](backlog/done/122-scripts-deploy-preview-sh-hard-codes-repo-root.md) | scripts/deploy-preview.sh hard-codes $repo_root/target/dx/preview/release/web/public and ignores… | 2026-10-04 |
 | [123](backlog/done/123-oracle-hydration-parity-spec-ts-hard-codes-base.md) | oracle/hydration-parity.spec.ts hard-codes BASE = "http://127.0.0.1:8090"; 5 cases fail when a base-path… | 2026-10-04 |
+| [124](backlog/done/124-charts-a-small-pre-hydration-layout-jump-on-the.md) | Charts: a small pre-hydration layout jump on the legend cards, and on pie-interactive's Select (SSR renders… | 2026-10-03 |
+| [125](backlog/done/125-charts-visual-nits-left-after-the-parity-round.md) | Charts visual nits left after the parity round: radar legend ~12px lower than shadcn; pie-interactive Select… | 2026-10-03 |
 | [127](backlog/done/127-preview-assets-main-css-is-outside-the.md) | preview/assets/main.css is outside the stylelint gate's glob; 7 pre-existing errors | 2026-10-11 |
 | [128](backlog/done/128-scripts-check-dx-class-prefix-sh-is-red-on-main.md) | scripts/check-dx-class-prefix.sh is red on main @ 62de3cb: bar_chart/style.css and line_chart/style.css… | 2026-10-03 |
 | [129](backlog/done/129-preview-src-components-navbar-component-json.md) | preview/src/components/navbar/component.json lacks the theme globalAssets entry every other component has | 2026-10-05 |
@@ -216,6 +211,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [133](backlog/done/133-inputgroup-has-no-invalid-or-disabled-styling.md) | InputGroup has no invalid or disabled styling | 2026-10-13 |
 | [134](backlog/done/134-nova-s-tinted-destructive-button-is-contrast.md) | Nova's tinted destructive button is contrast-failing in dark; ours deliberately is not Nova's. Widened… | 2026-10-13 |
 | [135](backlog/done/135-the-computed-style-snapshot-cannot-see-closed.md) | The computed-style snapshot cannot see closed overlays or hover/focus/open states, so phase C's proof has… | 2026-10-12 |
+| [138](backlog/done/138-toast-depth-parity-loading-type-action-button.md) | Toast depth parity: loading type, action button, promise helper, update/close by id, stacking and… | 2026-10-19 |
 | [139](backlog/done/139-pr-83-s-all-gates-green-was-wrong-main-was.md) | PR #83's "all gates green" was wrong: main was clippy-red from d9bcfda (primitives/src/navbar.rs:655… | 2026-10-04 |
 | [140](backlog/done/140-menubar-a-pointer-selection-leaves-dom-focus-on.md) | Menubar: a pointer selection leaves DOM focus on &lt;body&gt;; the keyboard path restores it to the trigger | 2026-10-05 |
 | [141](backlog/done/141-dialog-alertdialog-sheet-and-drawer-exit.md) | Dialog, AlertDialog, Sheet and Drawer exit animations play only where transition: overlay allow-discrete… | 2026-10-05 |
@@ -223,8 +219,10 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [143](backlog/done/143-virtuallist-add-a-content-visibility-mode.md) | VirtualList: add a content-visibility mode (default up to ~5k rows), quantize the scroll signal, drop the… | 2026-10-05 |
 | [144](backlog/done/144-opt-in-hidden-until-found-for-collapsible.md) | Opt-in hidden="until-found" for Collapsible, Accordion and Tabs | 2026-10-05 |
 | [145](backlog/done/145-unification-refactors-top-3-theme-baseline.md) | Unification refactors, top 3: theme baseline, floating-surface recipe, state recipes (incl. Combobox and… | 2026-10-13 |
+| [148](backlog/done/148-a-chat-sidebar-category-for-the-chat-kit-and.md) | A "Chat" sidebar category for the chat kit and message_scroller | 2026-10-19 |
 | [149](backlog/done/149-scroll-lock-rs-installs-non-passive-wheel.md) | scroll_lock.rs installs non-passive wheel/touchmove listeners on window permanently after the first lock | 2026-10-05 |
 | [151](backlog/done/151-a-document-link-stylesheet-can-be-recorded-as.md) | A document::Link stylesheet can be recorded as present and never inserted: a subtree torn down in the turn it… | 2026-10-04 |
+| [156](backlog/done/156-drawer-has-fallen-behind-shadcn-it-moved-from.md) | Drawer has fallen behind shadcn: it moved from Vaul to Base UI Drawer (snap points, nested drawers, non-modal… | 2026-10-19 |
 | [159](backlog/done/159-js-listeners-added-through-eval-or-shipped.md) | JS listeners added through eval (or shipped scripts) and never removed: a class, widening row 149 | 2026-10-05 |
 | [160](backlog/done/160-two-small-bugs-the-shadcn-comparison-found-tabs.md) | Two small bugs the shadcn comparison found: Tabs Ghost sets data-variant="ghost" that no CSS styles… | 2026-10-05 |
 | [163](backlog/done/163-wrap-hover-styles-in-media-hover-hover-by.md) | Wrap hover styles in @media (hover: hover), by codemod plus a gate: 80 :hover blocks in 39 stylesheets leave… | 2026-10-14 |
@@ -288,7 +286,14 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [234](backlog/done/234-docs-sidebar-toggle-category-a-z-a-z-default.md) | Docs sidebar: toggle category / A-Z, A-Z default | 2026-10-18 |
 | [235](backlog/done/235-avatar-shadcn-s-first-demo-loading-state-flashes.md) | Avatar: shadcn's first demo; loading state flashes | 2026-10-18 |
 | [236](backlog/done/236-docs-manual-installation-files-closed-by-default.md) | Docs: "Manual installation files" closed by default | 2026-10-18 |
+| [237](backlog/done/237-carousel-a-free-scrolling-switch-embla-dragfree.md) | Carousel: a free-scrolling switch (Embla dragFree parity) | 2026-10-18 |
 | [238](backlog/done/238-playwright-fixtures-force-scroll-behavior-auto.md) | Playwright fixtures force scroll-behavior: auto !important on every context | 2026-10-18 |
+| [239](backlog/done/239-all-unset-outranks-the-theme-s-zero-specificity.md) | all: unset outranks the theme's zero-specificity baselines | 2026-10-18 |
+| [240](backlog/done/240-base-ui-focus-model-what-to-lift-beyond-row-226.md) | Base UI focus model: what to lift beyond row 226 | 2026-10-19 |
+| [243](backlog/done/243-button-hover-fills-3-levels-off-shadcn.md) | Button hover fills 3 levels off shadcn | 2026-10-18 |
+| [260](backlog/done/260-hover-color-mix-space-one-token-everywhere.md) | Every hover color-mix reads the theme's mix space (finish row 243) | 2026-10-19 |
+| [262](backlog/done/262-toast-f6-one-listener-per-page.md) | Toast: one F6 listener per page, not one per ToastProvider | 2026-10-19 |
+| [263](backlog/done/263-toast-remaining-base-ui-behaviour.md) | Toast: pause on hover/focus, vertical swipe, legacy keyframes on translate | 2026-10-19 |
 
 ## Notes (8)
 

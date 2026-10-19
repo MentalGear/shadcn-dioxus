@@ -70,9 +70,33 @@
   display: block;
 }
 
+/* A toaster at the TOP of the viewport (`data-toaster-side="top"` on the provider): the pile grows downward
+ * from the top edge instead of upward from the bottom one. Toasts swipe toward the nearest vertical edge
+ * (primitives/src/toast.rs `use_toast_swipe`), so this one dismisses upward. */
+.dx-toast-container[popover][data-toaster-side="top"] {
+  inset-block: var(--dx-space-5) auto;
+
+  --toast-list-direction: column;
+}
+
+.dx-toast-container[data-toaster-side="top"] .dx-toast {
+  margin-top: 0;
+  margin-bottom: calc(-1 * var(--dx-space-16));
+}
+
+.dx-toast-container[data-toaster-side="top"]:focus-within .dx-toast {
+  margin-bottom: 0;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-toast-container[data-toaster-side="top"]:hover .dx-toast {
+    margin-bottom: 0;
+  }
+}
+
 .dx-toast-container ol {
   display: flex;
-  flex-direction: column-reverse;
+  flex-direction: var(--toast-list-direction, column-reverse);
   padding: 0;
   margin: 0;
   gap: var(--dx-space-3);
@@ -101,11 +125,15 @@
       brightness(calc(0.5 + 0.5 * (1 - ((var(--toast-index) + 1) / 4))))
     );
   opacity: calc(1 - var(--toast-hidden));
+  touch-action: none;
   transform: scale(
     calc(100% - var(--toast-index) * 5%),
     calc(100% - var(--toast-index) * 2%)
   );
-  transition: transform var(--dx-motion-duration-slow) var(--dx-motion-ease), margin-top var(--dx-motion-duration-slow) var(--dx-motion-ease), opacity var(--dx-motion-duration-slow) var(--dx-motion-ease);
+  transition: transform var(--dx-motion-duration-slow) var(--dx-motion-ease), translate var(--dx-motion-duration-slow) var(--dx-motion-ease), margin-top var(--dx-motion-duration-slow) var(--dx-motion-ease), opacity var(--dx-motion-duration-slow) var(--dx-motion-ease);
+
+  /* rtl-physical: the swipe offset is a screen-space distance toward the nearest edge, signed by the gesture itself (it reads the toaster's side, RTL included) */
+  translate: var(--toast-swipe-x, 0) var(--toast-swipe-y, 0);
 
   --toast-hidden: calc(min(max(0, var(--toast-index) - 2), 1));
 }
@@ -120,39 +148,25 @@
   animation: dx-slide-up-odd var(--dx-motion-duration-slow) var(--dx-motion-ease-out);
 }
 
+/* Entrance keyframes animate `translate` (and `scale`), never `transform`: the stack's own
+ * `transform: scale(...)` stays in force underneath, so the keyframes do not restate it. */
 @keyframes dx-slide-up-even {
   from {
-    transform: translateY(var(--dx-space-2))
-      scale(
-        calc(100% - var(--toast-index) * 5%),
-        calc(100% - var(--toast-index) * 2%)
-      );
+    translate: 0 var(--dx-space-2);
   }
 
   to {
-    transform: translateY(0)
-      scale(
-        calc(100% - var(--toast-index) * 5%),
-        calc(100% - var(--toast-index) * 2%)
-      );
+    translate: 0 0;
   }
 }
 
 @keyframes dx-slide-up-odd {
   from {
-    transform: translateY(var(--dx-space-2))
-      scale(
-        calc(100% - var(--toast-index) * 5%),
-        calc(100% - var(--toast-index) * 2%)
-      );
+    translate: 0 var(--dx-space-2);
   }
 
   to {
-    transform: translateY(0)
-      scale(
-        calc(100% - var(--toast-index) * 5%),
-        calc(100% - var(--toast-index) * 2%)
-      );
+    translate: 0 0;
   }
 }
 
@@ -173,20 +187,14 @@
 @keyframes dx-toast-slide-in {
   from {
     opacity: 0;
-    transform: translateY(100%)
-      scale(
-        calc(110% - var(--toast-index) * 5%),
-        calc(110% - var(--toast-index) * 2%)
-      );
+    scale: 110%;
+    translate: 0 100%;
   }
 
   to {
     opacity: 1;
-    transform: translateY(0)
-      scale(
-        calc(100% - var(--toast-index) * 5%),
-        calc(100% - var(--toast-index) * 2%)
-      );
+    scale: 100%;
+    translate: 0 0;
   }
 }
 
@@ -232,6 +240,52 @@
 .dx-toast[data-type="info"] {
   background-color: var(--dx-info-subtle);
   color: var(--dx-info);
+}
+
+.dx-toast[data-type="loading"] {
+  background-color: var(--dx-card, var(--dx-background));
+  color: var(--dx-foreground);
+}
+
+.dx-toast-spinner {
+  display: inline-flex;
+  flex: none;
+  align-self: center;
+  margin-inline-end: var(--dx-space-2);
+}
+
+/* The wrapper around the library Button owns the layout; the Button itself is not restyled. */
+.dx-toast-action {
+  display: inline-flex;
+  flex: none;
+  align-self: center;
+  margin-inline-end: var(--dx-space-2);
+}
+
+/* Swipe to dismiss (primitives/src/toast.rs `use_toast_swipe`): the gesture writes `--toast-swipe-x` or
+ * `--toast-swipe-y` (the axis the drag took) and `data-swiping`. `translate` (not `transform`) composes with the stacking `transform: scale()`, so
+ * the pile keeps its shape under the finger. `touch-action: none` (on `.dx-toast` above) hands every
+ * drag that starts on a toast to the gesture (it can go either way), so the page does not scroll from there. */
+.dx-toast[data-swiping="true"] {
+  cursor: grabbing;
+  transition: none;
+}
+
+.dx-toast[data-swiping="dismissed"] {
+  opacity: 0;
+  transition: translate var(--dx-motion-duration-slow) var(--dx-motion-ease), opacity var(--dx-motion-duration-slow) var(--dx-motion-ease);
+}
+
+/* Reduced motion: no entrance animation, no restack or fly-out transition; the pile still
+ * expands on hover/focus, instantly. */
+@media (prefers-reduced-motion: reduce) {
+  .dx-toast,
+  .dx-toast[data-top],
+  .dx-toast-container:not(:hover, :focus-within) .dx-toast[data-toast-even]:not([data-top]),
+  .dx-toast-container:not(:hover, :focus-within) .dx-toast[data-toast-odd]:not([data-top]) {
+    animation: none;
+    transition-duration: var(--dx-motion-duration-reduced);
+  }
 }
 
 .dx-toast-content {

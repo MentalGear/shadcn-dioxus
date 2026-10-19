@@ -1,0 +1,1 @@
+The text arrives four characters at a time and `Markdown` re-parses it on every chunk. With "Heal unfinished text" on (`streaming: true` while the reply is arriving) an unclosed `**`, `` ` `` or `[label](https://exa` renders as finished text instead of flashing its markers; turn it off to see them. `MessageScroller` keeps the live edge in view.

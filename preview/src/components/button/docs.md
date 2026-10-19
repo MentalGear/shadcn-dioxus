@@ -24,3 +24,5 @@ Button {
     },
 }
 ```
+
+The Secondary and Destructive hover fills step the fill toward `--dx-foreground` in the interpolation space of the theme token `--dx-hover-mix-space` (`oklch`, shadcn base-nova's), so they match shadcn's `color-mix(in oklch, ...)` hover. Retune the space once, in the theme.

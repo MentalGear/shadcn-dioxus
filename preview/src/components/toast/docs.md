@@ -1,4 +1,4 @@
-The Toast component is used to display brief messages to the user, typically for notifications or alerts. The toast messages can be focused with the keyboard with the `f6` key.
+The Toast component is used to display brief messages to the user, typically for notifications or alerts. The toast messages can be focused with the keyboard with the `f6` key: one handler per page, however many providers it mounts. It goes to the region of the most recent toast, pressing it again cycles through the other regions that hold toasts (wrapping), and with no toast anywhere it does nothing. Providers only register their region with that handler; they never listen themselves.
 
 ## Component Structure
 
@@ -24,8 +24,47 @@ ToastProvider {
 }
 ```
 
+## Handles: `update` and `close`
+
+`show` (and `success`, `error`, `warning`, `info`, `loading`) returns a `ToastId`. Keep it to change or dismiss that toast later:
+
+```rust
+let id = toast_api.info("Syncing...".to_string(), ToastOptions::new().permanent(true));
+toast_api.update(id, ToastUpdate::new().toast_type(ToastType::Success).title("Synced").permanent(false));
+toast_api.close(id);
+```
+
+The toast is updated in place (same element, same place in the stack). A `ToastId` is an opaque newtype from one monotonic counter: it cannot be built from a number, never repeats, and cannot be mixed up with another toast's. `update` and `close` on a toast that is already closed do nothing (`update` returns `false`), so a late callback can never touch a different toast.
+
+## Loading and promise
+
+`ToastType::Loading` (`toast_api.loading(..)`) shows a spinner and is never auto-dismissed while it is loading; move it on with `update`. `promise` does that for a future:
+
+```rust
+toast_api.promise(
+    save(),
+    PromiseMessages::new("Saving...", |v| format!("{v} saved"), |e| format!("Failed: {e}")),
+);
+```
+
+One toast goes loading -> success or error in place. Its live region is `role="status"` (polite) and, for an error, `role="alert"` (assertive); the text change is announced once and never a second toast. The future runs to completion even if the component that started it unmounts; if the user closed the toast first the settling update is a no-op.
+
+## Action button
+
+`ToastOptions::new().action("Undo", |_| ..)` adds a real `Button` to the toast. It is in the tab order (F6 focuses the region, Tab reaches it), activates with click, Enter or Space, runs the callback and dismisses the toast. A custom skin reads it with `use_toast_action()` or renders the primitive's `ToastActionButton`.
+
+## Stacking and swipe
+
+Several toasts collapse into a pile; hovering or focusing the stack (or F6) expands it. Under `prefers-reduced-motion: reduce` there is no entrance animation and no restack transition (the pile still expands, instantly).
+
+A toast can be swiped away with the mouse, a finger or a pen (pointer events). It dismisses after 45 px toward the edge it sits at, or a flick (at least 10 px at 0.11 px/ms or more over the last 100 ms); a shorter, slower drag springs back, and a drag the other way is resisted. The direction is the screen edge nearest the toast, so it follows wherever the stylesheet puts the toaster and flips in RTL. A drag can also go vertical, toward the nearest top or bottom edge (up for a toaster at the top, down for one at the bottom); the axis is decided by the first few pixels of the drag, and the toast moves along that axis only. A press on the close or action button is a click, never a swipe. Toasts set `touch-action: none`, so a finger that starts on a toast drags the toast, not the page. While dragging, the toast carries `data-swiping="true"` and `--toast-swipe-x` or `--toast-swipe-y`, which the stylesheet maps to `translate` (not `transform`, so the stack's `scale` is kept).
+
+## Pause on hover and focus
+
+While the pointer is over the toaster (mouse or pen; a touch tap does not count) or focus is inside it, every countdown waits, and it resumes with the time that was left when you move away or focus leaves (WCAG 2.2.1, timing adjustable). It is the same condition that expands the pile (`:hover`, `:focus-within`), so what you can see expanded is what is held. Loading and permanent toasts have no countdown to pause.
+
 ## Motion and visibility
 
-A toast's auto-dismiss is a timer the user is waiting on, so it follows the tab and nothing else. While the tab is hidden (another tab, a minimized window) the countdown is dropped, and when you come back it starts over with the full duration, so a toast you could not see is still there. Scrolling the page never changes how long a toast stays. The visibility-gated timers for decoration (spinners, tickers, autoplay) are the opposite: they stop when merely scrolled away. See `dioxus_primitives::activity::use_document_visible`.
+A toast's auto-dismiss is a timer the user is waiting on, so it follows the tab and nothing else. While the tab is hidden (another tab, a minimized window) the countdown is dropped, and when you come back it starts over with the full duration, so a toast you could not see is still there (a pause by hover or focus keeps the remaining time instead). Scrolling the page never changes how long a toast stays. The visibility-gated timers for decoration (spinners, tickers, autoplay) are the opposite: they stop when merely scrolled away. See `dioxus_primitives::activity::use_document_visible`.
 
-The slide-in and restack transitions use `--dx-motion-duration-slow`; `duration` and `permanent` on the toast control how long it stays. See [Motion](/docs#motion) for the tokens, reduced motion and the per-component table.
+The entrance keyframes animate `translate` (and `scale`), never `transform`, so the stack's own `transform: scale()` stays in force underneath. The slide-in and restack transitions use `--dx-motion-duration-slow`; `duration` and `permanent` on the toast control how long it stays. See [Motion](/docs#motion) for the tokens, reduced motion and the per-component table.

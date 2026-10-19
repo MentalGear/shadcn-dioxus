@@ -63,14 +63,14 @@ test("the prerendered HTML is the default and carries both lists", async ({ requ
   expect(html).not.toMatch(/<html[^>]*data-nav-sort/);
 });
 
-test("toggle to Category: seven groups, A-Z list hidden, choice stored; back to A-Z", async ({ page }) => {
+test("toggle to Category: eight groups, A-Z list hidden, choice stored; back to A-Z", async ({ page }) => {
   await gotoHydrated(page, PAGE);
   await option(page, "category").click();
 
   await expect(option(page, "category")).toHaveAttribute("aria-pressed", "true");
   await expect(option(page, "az")).toHaveAttribute("aria-pressed", "false");
   await expect(az(page)).toBeHidden();
-  await expect(category(page)).toHaveCount(7);
+  await expect(category(page)).toHaveCount(8);
   for (const group of await category(page).all()) await expect(group).toBeVisible();
   const labels = await category(page).locator(".dx-sidebar-group-label").allTextContents();
   expect(labels.map((l) => l.trim())).toEqual([
@@ -80,6 +80,7 @@ test("toggle to Category: seven groups, A-Z list hidden, choice stored; back to 
     "Feedback",
     "Disclosure",
     "Data display",
+    "Chat",
     "Charts",
   ]);
   expect(await page.evaluate((k) => localStorage.getItem(k), KEY)).toBe("category");
