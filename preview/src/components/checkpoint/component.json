@@ -1,0 +1,17 @@
+{
+  "name": "checkpoint",
+  "description": "A labeled separator after a conversation turn with a Restore button: a point in the thread you can return to.",
+  "authors": ["Claude"],
+  "exclude": ["variants", "docs.md", "component.json"],
+  "cargoDependencies": [
+    {
+      "name": "dioxus-primitives",
+      "git": "https://github.com/MentalGear/shadcn-dioxus"
+    }
+  ],
+  "componentDependencies": [
+    { "name": "marker", "git": "https://github.com/MentalGear/shadcn-dioxus" },
+    { "name": "button", "git": "https://github.com/MentalGear/shadcn-dioxus" }
+  ],
+  "globalAssets": ["../../../assets/dx-components-theme.css"]
+}
