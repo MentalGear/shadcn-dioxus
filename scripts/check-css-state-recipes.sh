@@ -26,6 +26,16 @@
 #   focus-outline      such a rule declares an `outline` other than `none`/`0`. The ring is a token, not an
 #                      outline (the forced-colors outline is the theme's one).
 #   focus-border       such a rule declares a `border-color` that is not `--dx-ring-color`/the invalid edge.
+#   text-entry-ring    a `:focus-visible` / `:focus-within` rule on a TEXT-ENTRY control (a selector naming
+#                      `input`, `textarea`, `[contenteditable]`, or a `.dx-...-input|-textarea|-segment|-search`
+#                      class: Input, Textarea, Input Group, Input OTP, Combobox/Command input, Date Picker
+#                      segment, ...) declares a `box-shadow` that reads `--dx-ring-focus` or
+#                      `--dx-ring-focus-inset`. Those two are zeroed outside keyboard modality
+#                      (`:root[data-dx-modality]:not([data-dx-modality="keyboard"])` in the theme), but a text
+#                      field the user clicked or tapped is still focused and must still ring, as in shadcn:
+#                      a field takes `--dx-ring-field` (inset edge + halo) or, when its edge is a real
+#                      border (Textarea outline), `--dx-ring-focus-halo` beside `border-color`. The outline
+#                      Textarea lost its halo after a click for exactly this (verify4, 2026-10-19).
 #   legacy-ring        `var(--dx-ring)` (the old 2px solid ring) anywhere: use `--dx-ring-focus`, or
 #                      `--dx-ring-focus-inset`. (The token stays defined for `[data-dx-interactive]`.)
 #   literal-ring       `color-mix(... var(--dx-ring-color) 50% ...)` written out: that is `--dx-ring-focus`.
@@ -105,6 +115,13 @@ DISABLED = re.compile(r":disabled|\[disabled|\[data-disabled|\[aria-disabled")
 FOCUS = re.compile(r":focus-visible|:focus-within")
 INVALID = re.compile(r"\[aria-invalid|\[data-invalid")
 FOCUS_TOKENS = ("--dx-ring-field", "--dx-ring-focus", "--dx-ring-invalid")
+# A selector that names a text-entry control (see the text-entry-ring rule in the header).
+TEXT_ENTRY = re.compile(
+    r"(?<![\w.#-])(?:input|textarea)(?![\w-])|\[contenteditable"
+    r"|\.dx-(?:[a-z0-9]+-)*(?:input|textarea|segment|search)(?:-[a-z0-9]+)*(?![\w-])"
+)
+# `--dx-ring-focus` / `--dx-ring-focus-inset` as a var() argument, but not `--dx-ring-focus-halo`.
+MODALITY_RING = re.compile(r"var\(\s*--dx-ring-focus(?:-inset)?\s*[,)]")
 
 def allowed(check, path, selector, value):
     for entry in ALLOW:
@@ -155,6 +172,10 @@ for path in files:
             if v is not None and v != "none" and not any(t in v for t in FOCUS_TOKENS):
                 fail("focus-shadow", path, line, selector, v,
                      f"focus `box-shadow: {v}` is not a recipe token (--dx-ring-field / --dx-ring-focus / --dx-ring-focus-inset)")
+            if v is not None and TEXT_ENTRY.search(bare) and MODALITY_RING.search(v):
+                fail("text-entry-ring", path, line, selector, v,
+                     f"text-entry focus `box-shadow: {v}` is zeroed outside keyboard modality, so a clicked or tapped "
+                     "field loses its ring; use var(--dx-ring-field), or var(--dx-ring-focus-halo) beside the border-color")
             v = decls.get("outline")
             if v is not None and v not in ("none", "0") and not v.startswith("0 "):
                 fail("focus-outline", path, line, selector, v,
