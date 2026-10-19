@@ -161,7 +161,7 @@ test("keeps filtered options during keyboard close animation", async ({ page }) 
     });
 
     await page.keyboard.press("Enter");
-    await expect(content(page)).toHaveCount(0);
+    await expect(page.locator("[role='listbox']")).toHaveCount(0);
 
     const seen = await page.evaluate(() => (window as unknown as { __closeSeen: { state: string; options: string[] }[] }).__closeSeen);
     const closed = seen.filter((e) => e.state === "closed");
