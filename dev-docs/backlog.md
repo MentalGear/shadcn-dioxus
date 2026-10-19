@@ -34,7 +34,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (45)
+## Open rows (60)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -83,6 +83,21 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [266](backlog/266-repo-cleanup-archive-historical-dev-docs.md) | Repo cleanup: archive historical dev-docs, trim CLAUDE.md and the big dev docs, split backlog.md | APPROVED 2026-10-19 (owner: run it when safe, in the Round 6 sweep); starts once no feature lane… | M-L | process |
 | [267](backlog/267-split-oversized-source-files-into-modules.md) | Split oversized source files into modules (carousel.rs, carousel.spec.ts, main.rs, top_layer.rs, calendar.rs, date_picker.rs) | BACKLOG (owner approved 2026-10-19 on the cleanup plan; Round 6, before the 152b suite prune).… | M | process |
 | [268](backlog/268-select-scroll-buttons-and-item-aligned-position.md) | Select scroll buttons and position=item-aligned | OPEN. Not started; no owner decision needed. | S-M (scroll buttons), M-L (item-aligned) | select |
+| [290](backlog/290-toast-exit-animation-a-real-visible-cap-and-enter.md) | Toast: exit animation, a real visible cap, and enter from the toaster's edge (Sonner parity) | OPEN (owner review 2026-10-19). New work: the landed rows 138, 262 and 263 cover stacking, swipe… | M | primitives |
+| [291](backlog/291-coarse-pointer-sizing-for-menus-and-option-lists.md) | Coarse-pointer sizing for menus and option lists | OPEN (owner review 2026-10-19). I concur. Today the only coarse rules are the 16 px text-entry font… | S–M | theme |
+| [292](backlog/292-tooltip-rich-content-demo-lays-title-and-body.md) | Tooltip: rich-content demo lays title and body side by side | OPEN (owner review 2026-10-19). | S | preview |
+| [293](backlog/293-slider-thumb-clipped-to-a-sliver.md) | Slider thumb clipped to a sliver | OPEN (owner review 2026-10-19). New bug; row 239 only touched the thumb's all: unset. | S | primitives |
+| [294](backlog/294-charts-and-leftovers-still-allow-text-selection.md) | Charts (and leftovers) still allow text selection | OPEN, a follow-up to row 229 (landed 2026-10-18), which covered buttons and ARIA control roles but… | S | preview |
+| [295](backlog/295-press-feedback-on-touch-taps-already-on-by.md) | Press feedback on touch taps: already on by default, so check why taps don't show it | OPEN. Row 205 (LANDED 2026-10-14) already ships press feedback on by default, for every pointer.… | S (or none) | theme |
+| [296](backlog/296-combobox-list-drifts-from-its-input-on-ios-after.md) | Combobox list drifts from its input on iOS after long scrolling | OPEN (owner report 2026-10-19), needs device verification. Related rows: 28 (iOS keyboard anchor… | M + device check | overlays |
+| [297](backlog/297-overview-page-sidebar-demo-drop-the-none-option.md) | Overview page sidebar demo: drop the "None" option | OPEN (owner review 2026-10-19). | S | preview |
+| [298](backlog/298-overview-demo-cards-vertical-divider-between.md) | Overview demo cards: vertical divider between description and example | OPEN (owner review 2026-10-19). | S | preview |
+| [299](backlog/299-accordion-no-hover-underline-on-collapsed-headers.md) | Accordion: no hover underline on collapsed headers; optional left chevron, used on the docs component page | OPEN (owner review 2026-10-19). | M | primitives |
+| [300](backlog/300-home-hero-title-shadcn-dioxus-in-bold.md) | Home hero title "shadcn-dioxus" in bold | OPEN. This is a different element from PR #105: that PR made the navbar brand bold (700… | S | preview |
+| [301](backlog/301-component-card-title-hover-colour-follows-the.md) | Component-card title hover colour follows the theme; offer the default blue in the palette picker | OPEN (owner review 2026-10-19), partly already true (see below). | S | theme |
+| [302](backlog/302-charts-page-tab-bar-keep-the-pill-on-the-active.md) | Charts page tab bar: keep the pill on the active tab | OPEN (owner review 2026-10-19). | S (static) / M (animated) | preview |
+| [303](backlog/303-charts-and-demos-pages-have-no-docs-sidebar.md) | Charts and Demos pages have no docs sidebar | OPEN (owner question 2026-10-19). | S–M | preview |
+| [304](backlog/304-radial-chart-tooltips-share-the-gap-split-equally.md) | Radial chart tooltips share the gap, split equally per ring (lowest priority) | PARKED (lowest priority; ask the owner before starting), owner 2026-10-19. Ask the owner whether… | S–M (to scope) | primitives |
 
 ## Done rows (211)
 
