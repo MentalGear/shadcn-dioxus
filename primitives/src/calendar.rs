@@ -16,7 +16,7 @@ use time::{ext::NumericalDuration, macros::date, Date, Month, OffsetDateTime, We
 
 use crate::{
     date_picker::DefaultCalendarProps,
-    direction::{use_direction, Direction, HorizontalNav},
+    direction::{use_direction, use_direction_signal, Direction, HorizontalNav},
     merge_attributes, use_effect_cleanup, LocalDateExt as _,
 };
 
@@ -410,7 +410,7 @@ pub struct BaseCalendarContext {
 
     /// Text direction, for the day grid's `ArrowLeft`/`ArrowRight` step --
     /// see [`horizontal_day_step`]'s doc.
-    direction: Direction,
+    direction: ReadSignal<Direction>,
 }
 
 #[derive(Clone, Copy, PartialEq)]
@@ -680,6 +680,7 @@ pub fn Calendar(props: CalendarProps) -> Element {
     let available_ranges = use_memo(move || AvailableRanges::new(&props.disabled_ranges.read()));
     let view_registrations = use_signal(Vec::new);
     let direction = use_direction(props.dir);
+    let direction_signal = use_direction_signal(direction);
 
     // Create base context provider for child components
     let mut base_ctx = use_context_provider(|| BaseCalendarContext {
@@ -695,7 +696,7 @@ pub fn Calendar(props: CalendarProps) -> Element {
         show_week_number: props.show_week_number,
         enabled_date_range: DateRange::new(props.min_date, props.max_date),
         view_registrations,
-        direction,
+        direction: direction_signal,
     });
     // Create Calendar context provider for child components
     use_context_provider(|| CalendarContext {
@@ -970,6 +971,7 @@ pub fn RangeCalendar(props: RangeCalendarProps) -> Element {
     let available_ranges = use_memo(move || AvailableRanges::new(&props.disabled_ranges.read()));
     let view_registrations = use_signal(Vec::new);
     let direction = use_direction(props.dir);
+    let direction_signal = use_direction_signal(direction);
 
     // Create base context provider for child components
     let mut base_ctx = use_context_provider(|| BaseCalendarContext {
@@ -985,7 +987,7 @@ pub fn RangeCalendar(props: RangeCalendarProps) -> Element {
         show_week_number: props.show_week_number,
         enabled_date_range: DateRange::new(props.min_date, props.max_date),
         view_registrations,
-        direction,
+        direction: direction_signal,
     });
 
     // Create RangeCalendar context provider for child components
@@ -1965,8 +1967,8 @@ pub fn CalendarGridRoot(props: CalendarGridRootProps) -> Element {
     // override on the same element (backlog row 93).
     let owned = attributes!(table {
         role: "grid",
-        dir: base_ctx.direction.as_str(),
-        "data-direction": base_ctx.direction.as_str(),
+        dir: (base_ctx.direction)().as_str(),
+        "data-direction": (base_ctx.direction)().as_str(),
     });
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);
 
@@ -4217,7 +4219,7 @@ mod tests {
             show_week_number: false,
             enabled_date_range,
             view_registrations: use_signal(Vec::new),
-            direction: Direction::Ltr,
+            direction: use_signal(|| Direction::Ltr).into(),
         }
     }
 
@@ -4241,7 +4243,7 @@ mod tests {
             show_week_number: false,
             enabled_date_range,
             view_registrations: use_signal(Vec::new),
-            direction: Direction::Ltr,
+            direction: use_signal(|| Direction::Ltr).into(),
         }
     }
 

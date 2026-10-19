@@ -170,7 +170,7 @@ pub fn Demo() -> Element {
    * "muted text on light surfaces" token, used the same way in ~28 other
    * component stylesheets) is the correct token for this role. */
   color: var(--dx-muted-foreground);
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  font-family: var(--dx-font-mono);
   font-size: 10.5px;
   font-weight: 500;
   letter-spacing: 0.03em;

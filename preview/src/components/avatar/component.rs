@@ -65,9 +65,11 @@ pub struct AvatarProps {
     #[props(default)]
     pub on_state_change: Option<EventHandler<AvatarState>>,
 
+    /// The avatar's size: `ExtraSmall`, `Small` (default) or `Medium`.
     #[props(default)]
     pub size: AvatarImageSize,
 
+    /// The avatar's outline: see `AvatarShape` (default `Circle`).
     #[props(default)]
     pub shape: AvatarShape,
 
@@ -102,11 +104,14 @@ pub fn Avatar(props: AvatarProps) -> Element {
 
 #[derive(Props, Clone, PartialEq)]
 pub struct AvatarImageProps {
+    /// The `id` of the `<img>` element.
     #[props(default)]
     pub id: ReadSignal<Option<String>>,
 
+    /// The image URL. While it loads (or if it fails) the sibling `AvatarFallback` shows.
     pub src: String,
 
+    /// Alternative text for the image; leave empty only for a purely decorative avatar.
     #[props(default)]
     pub alt: String,
 
@@ -143,6 +148,7 @@ pub struct AvatarFallbackProps {
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
 
+    /// What shows while the image loads or after it fails: initials, an icon.
     pub children: Element,
 }
 
@@ -185,9 +191,11 @@ pub struct ImageAvatarProps {
     #[props(default)]
     pub on_state_change: Option<EventHandler<AvatarState>>,
 
+    /// The avatar's size: `ExtraSmall`, `Small` (default) or `Medium`.
     #[props(default)]
     pub size: AvatarImageSize,
 
+    /// The avatar's outline: see `AvatarShape` (default `Circle`).
     #[props(default)]
     pub shape: AvatarShape,
 

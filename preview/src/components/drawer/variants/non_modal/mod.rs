@@ -10,11 +10,13 @@ use dioxus::prelude::*;
 /// A non-modal drawer (Base UI `modal: false`): no scrim, no focus trap, no scroll lock, and the page
 /// behind it stays interactive. Escape and the close button still close it, and so does a press outside
 /// the panel (Base UI's default light dismissal), so the page control below is pressed once, then the
-/// drawer goes.
+/// drawer goes. The second drawer sets `disable_pointer_dismissal` (Base UI's `disablePointerDismissal`),
+/// so a press outside only acts on the page and Escape or Close dismisses it.
 #[component]
 pub fn Demo() -> Element {
     let mut open = use_signal(|| false);
     let mut count = use_signal(|| 0);
+    let mut pinned = use_signal(|| false);
 
     rsx! {
         div { display: "flex", gap: "0.5rem",
@@ -27,6 +29,36 @@ pub fn Demo() -> Element {
                 variant: ButtonVariant::Secondary,
                 onclick: move |_| count += 1,
                 "Page button: {count}"
+            }
+        }
+        div { display: "flex", gap: "0.5rem", margin_top: "0.5rem",
+            Button {
+                variant: ButtonVariant::Outline,
+                onclick: move |_| pinned.set(true),
+                "Open drawer that ignores outside presses"
+            }
+        }
+        Drawer {
+            open: pinned(),
+            on_open_change: move |v| pinned.set(v),
+            side: DrawerSide::Bottom,
+            is_modal: false,
+            disable_pointer_dismissal: true,
+            DrawerContent {
+                DrawerHandle {}
+                DrawerHeader {
+                    DrawerTitle { "Pinned non-modal drawer" }
+                    DrawerDescription {
+                        "A press on the page acts on the page and leaves this drawer open. Escape or Close dismisses it."
+                    }
+                }
+                DrawerFooter {
+                    DrawerClose {
+                        as: |attributes| rsx! {
+                            Button { variant: ButtonVariant::Outline, attributes, "Close" }
+                        },
+                    }
+                }
             }
         }
         Drawer {

@@ -9,6 +9,15 @@
  * scan before landing.
  */
 
+/* Font families (rows 162, 261). `where(:root)` has zero specificity, so an app (or the docs site's
+ * `main.css`) overrides either token from any `:root` rule, whatever the stylesheet order. The library
+ * ships no font file: system stacks by default. Components read these tokens or inherit, never a literal
+ * family (`scripts/check-component-fonts.sh`). */
+:where(:root) {
+  --dx-font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --dx-font-mono: ui-monospace, "SFMono-Regular", "SF Mono", "Menlo", "Monaco", "Consolas", monospace;
+}
+
 /* Native controls follow the mode: `color-scheme` is what makes the browser draw its
  * own widgets in the active scheme -- a native `<select>`'s popup, scrollbars, the
  * date/time inputs and the checkbox/radio/range parts nobody styled, and the system

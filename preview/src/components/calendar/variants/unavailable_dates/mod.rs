@@ -20,7 +20,7 @@ pub fn Demo() -> Element {
     });
 
     rsx! {
-        div { style: "padding: 20px;",
+        div {
             RangeCalendar {
                 selected_range: selected_range(),
                 on_range_change: move |range| {

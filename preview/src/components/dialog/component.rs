@@ -20,6 +20,10 @@ pub struct DialogProps {
     #[props(default = ReadSignal::new(Signal::new(true)))]
     pub overlay: ReadSignal<bool>,
 
+    /// Base UI's `disablePointerDismissal`; see [`dialog::DialogRootProps::disable_pointer_dismissal`].
+    #[props(default = ReadSignal::new(Signal::new(false)))]
+    pub disable_pointer_dismissal: ReadSignal<bool>,
+
     /// The controlled `open` state of the dialog.
     pub open: ReadSignal<Option<bool>>,
 
@@ -72,6 +76,7 @@ pub fn Dialog(props: DialogProps) -> Element {
             id: props.id,
             is_modal: props.is_modal,
             overlay: props.overlay,
+            disable_pointer_dismissal: props.disable_pointer_dismissal,
             open: props.open,
             default_open: props.default_open,
             on_open_change: props.on_open_change,
