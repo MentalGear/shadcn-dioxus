@@ -247,9 +247,13 @@ impl FocusTarget {
 /// How the open (or close) was made: the value of `<html data-dx-modality>` when it happened.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum OpenModality {
+    /// Opened from the keyboard (`data-dx-modality="keyboard"`, or a click with `detail === 0`).
     Keyboard,
+    /// Opened with a mouse.
     Mouse,
+    /// Opened with a touch.
     Touch,
+    /// Opened with a pen.
     Pen,
 }
 
@@ -392,6 +396,9 @@ mod tests {
         assert!(!MODALITY_JS.contains("focus-visible"));
         assert!(!MODALITY_JS.contains("activeElement"));
         assert!(!OPEN_FOCUS_JS.contains("focus-visible"));
-        assert!(!OPEN_FOCUS_JS.contains("activeElement"));
+        // Row 240: the open policy reads `activeElement` exactly twice, never to decide the
+        // modality -- once to remember the opener (`dxOpenFocus`) and once to see where focus is
+        // on close (`dxCloseFocus`).
+        assert_eq!(OPEN_FOCUS_JS.matches("activeElement").count(), 2);
     }
 }

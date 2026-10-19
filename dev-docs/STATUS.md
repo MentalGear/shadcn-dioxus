@@ -75,9 +75,11 @@ keeps rounds 0 and 1. Later rounds and new row ids are claimed on the `claims` b
 pushes, so two sessions cannot claim the same round or mint the same row id). Each session PRs and merges its own
 rounds to main after a full green; the second merger resolves shared files (`CLAUDE.md`, `scripts/run-gates.sh`, this page).
 
-Round 2 merged on `claude/rounds-2-3` (2026-10-19): rows 213 (API items 1, 2, 4-9 and the `markdown` component), 148,
-239, 243, 124, 125; follow-ups recorded as rows 260 and 261. Round 3 lanes running: carousel 237, focus 240, toast 138;
-drawer 156 follows focus (it composes Dialog).
+Rounds 2 and 3 are merged on `claude/rounds-2-3` (2026-10-19, PR #102): rows 213 (API items 1, 2, 4-9 and the
+`markdown` component), 148, 239, 243, 124, 125 (round 2); 240, 138, 237, 156 (round 3); follow-ups found on the way and
+landed in the same PR: 260 (hover mix space + gate), 262 and 263 (toast F6, pause, vertical swipe). Still open from these
+rounds: row 213 item 10 (upstream diff), 261 (`--dx-font-mono` token), 264 (non-modal Dialog `aria-modal` and outside-press
+switch). Next unclaimed round on the `claims` branch: 4.
 
 ## Keeping this page current
 

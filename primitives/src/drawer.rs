@@ -831,7 +831,7 @@ pub fn Drawer(props: DrawerRootProps) -> Element {
     let default_active = props.default_active_snap_point;
     let mut internal_active = use_signal(move || default_active);
     let controlled = props.active_snap_point;
-    let active_snap_point = use_memo(move || controlled().or_else(|| internal_active()));
+    let active_snap_point = use_memo(move || controlled().or_else(&*internal_active));
     let on_active_change = props.on_active_snap_point_change;
     let set_active_snap_point = use_callback(move |point: SnapPoint| {
         internal_active.set(Some(point));
