@@ -26,7 +26,7 @@
 //! already wins one"). This module only reuses that file's *buffer/timeout
 //! idiom* -- a `Signal<String>` buffer plus a self-cancelling
 //! `Signal<Option<Task>>` clear-after-timeout task, backed by
-//! `dioxus_sdk_time::sleep` -- never its matcher: dignifiedquire's much
+//! `crate::sleep::sleep` -- never its matcher: dignifiedquire's much
 //! smaller `typeahead.rs` (78 lines, plain prefix matching) is the concept
 //! ported here instead, per `docs/recommended-implementations.md` §8's own
 //! citation.
@@ -66,7 +66,7 @@ use std::time::Duration;
 
 use dioxus::prelude::*;
 use dioxus_core::Task;
-use dioxus_sdk_time::sleep;
+use crate::sleep::sleep;
 
 use crate::collection::CollectionState;
 

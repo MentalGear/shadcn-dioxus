@@ -1,14 +1,23 @@
 use super::super::component::*;
 use dioxus::prelude::*;
-use strum::IntoEnumIterator;
 
-#[derive(Debug, Clone, Copy, PartialEq, strum::EnumIter, strum::Display)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 enum Topping {
     Pepperoni,
     Mushroom,
     Onion,
     Olive,
     Pineapple,
+}
+
+impl Topping {
+    const ALL: [Topping; 5] = [Topping::Pepperoni, Topping::Mushroom, Topping::Onion, Topping::Olive, Topping::Pineapple];
+}
+
+impl std::fmt::Display for Topping {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{self:?}")
+    }
 }
 
 impl Topping {
@@ -25,7 +34,7 @@ impl Topping {
 
 #[component]
 pub fn Demo() -> Element {
-    let toppings = Topping::iter().enumerate().map(|(i, t)| {
+    let toppings = Topping::ALL.into_iter().enumerate().map(|(i, t)| {
         rsx! {
             SelectOption::<Topping> { index: i, value: t, text_value: "{t}",
                 "{t.emoji()} {t}"

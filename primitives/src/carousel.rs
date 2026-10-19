@@ -87,7 +87,7 @@ use crate::{
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 use dioxus_core::Task;
-use dioxus_sdk_time::sleep;
+use crate::sleep::sleep;
 use std::time::Duration;
 
 /// The axis a [`Carousel`] pages along.
@@ -7208,7 +7208,7 @@ mod ssr_tests {
     fn AutoplayCarouselNotPlaying() -> Element {
         // `default_playing: false` -- deliberately never `true` in this
         // fixture. The `rotating=true` (ticking) case needs a real
-        // `sleep().await` registration, which `dioxus_sdk_time::sleep`
+        // `sleep().await` registration, which `crate::sleep::sleep`
         // asserts requires "a Tokio 1.x runtime" (confirmed by execution,
         // panicking `render_immediate` under a plain `#[test]`, no reactor
         // present) -- a synchronous SSR unit test has none, and adding one

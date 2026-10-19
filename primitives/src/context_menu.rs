@@ -27,7 +27,7 @@ use crate::{
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 use dioxus_core::Task;
-use dioxus_sdk_time::sleep;
+use crate::sleep::sleep;
 use std::time::Duration;
 
 /// How long a touch must be held before the context menu opens.

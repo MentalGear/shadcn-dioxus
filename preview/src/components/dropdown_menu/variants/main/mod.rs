@@ -3,7 +3,6 @@ use super::super::component::{
     DropdownMenuSubItem, DropdownMenuSubTrigger, DropdownMenuTrigger,
 };
 use dioxus::prelude::*;
-use strum::IntoEnumIterator;
 
 // docs/backlog.md row 32: no `#[css_module]` of its own here, and no
 // `document::Link` needed either -- this `Demo` always renders the
@@ -25,21 +24,41 @@ use strum::IntoEnumIterator;
 // so Delete keeps index 4 (bumped up from its old 3) precisely so it stays
 // the highest index -- and therefore still "last" -- with the submenu
 // trigger sliding in at index 3, between Duplicate and it.
-#[derive(Clone, Copy, strum::Display, strum::EnumIter, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 enum Operation {
     Edit,
     Undo,
     Duplicate,
 }
 
+impl Operation {
+    const ALL: [Operation; 3] = [Operation::Edit, Operation::Undo, Operation::Duplicate];
+}
+
+impl std::fmt::Display for Operation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{self:?}")
+    }
+}
+
 // The nested-submenu-only items (docs/component-backlog.md row 68), kept
 // as their own small enum so the submenu's own indices -- scoped to
 // `DropdownMenuSubContent`'s own roving-focus collection, never the root
 // menu's -- read as obviously independent of `Operation` above.
-#[derive(Clone, Copy, strum::Display, strum::EnumIter, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 enum ToolOperation {
     Rename,
     Archive,
+}
+
+impl ToolOperation {
+    const ALL: [ToolOperation; 2] = [ToolOperation::Rename, ToolOperation::Archive];
+}
+
+impl std::fmt::Display for ToolOperation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{self:?}")
+    }
 }
 
 #[component]
@@ -53,7 +72,7 @@ pub fn Demo() -> Element {
     // from `value` alone here the way it can for a `String`-valued item --
     // an explicit `text_value` is required for these rows to be
     // typeahead-searchable at all, not just a nicety.
-    let operations = Operation::iter().enumerate().map(|(i, o)| {
+    let operations = Operation::ALL.into_iter().enumerate().map(|(i, o)| {
         rsx! {
             DropdownMenuItem::<Operation> {
                 class: "dx-dropdown-menu-item",
@@ -69,7 +88,7 @@ pub fn Demo() -> Element {
         }
     });
 
-    let tool_operations = ToolOperation::iter().enumerate().map(|(i, o)| {
+    let tool_operations = ToolOperation::ALL.into_iter().enumerate().map(|(i, o)| {
         rsx! {
             DropdownMenuSubItem::<ToolOperation> {
                 value: o,
