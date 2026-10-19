@@ -1,9 +1,11 @@
+use crate::components::button::{Button, ButtonSize, ButtonVariant};
+use crate::components::spinner::Spinner;
 use dioxus::prelude::*;
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::merge_attributes;
 use dioxus_primitives::toast::{
-    self, Toast, ToastCloseButtonProps, ToastContentProps, ToastDescriptionProps, ToastProps,
-    ToastTitleProps,
+    self, use_toast_action, Toast, ToastActionButtonProps, ToastCloseButtonProps,
+    ToastContentProps, ToastDescriptionProps, ToastProps, ToastTitleProps,
 };
 use std::time::Duration;
 
@@ -15,6 +17,8 @@ fn StyledToast(props: ToastProps) -> Element {
         Toast {
             id: props.id,
             index: props.index,
+            revision: props.revision,
+            action: props.action,
             title: props.title,
             description: props.description,
             toast_type: props.toast_type,
@@ -22,11 +26,39 @@ fn StyledToast(props: ToastProps) -> Element {
             permanent: props.permanent,
             duration: props.duration,
             attributes: merged,
+            if props.toast_type == ToastType::Loading {
+                // Hidden from assistive tech: the toast's own live region announces the title,
+                // and the spinner's `role="status"` would be a second announcement.
+                span { class: "dx-toast-spinner", aria_hidden: "true",
+                    Spinner {}
+                }
+            }
             ToastContent {
                 ToastTitle {}
                 ToastDescription {}
             }
+            ToastActionButton {}
             ToastCloseButton {}
+        }
+    }
+}
+
+/// The toast's action: the library's own `Button`, wired to the primitive's action handle, so
+/// activation (click, Enter, Space) runs the callback and dismisses in every skin.
+#[component]
+fn ToastActionButton(props: ToastActionButtonProps) -> Element {
+    let Some(action) = use_toast_action() else {
+        return rsx! {};
+    };
+    rsx! {
+        span { class: "dx-toast-action",
+            Button {
+                variant: ButtonVariant::Outline,
+                size: ButtonSize::Sm,
+                attributes: props.attributes,
+                onclick: move |_| action.activate(),
+                {action.label()}
+            }
         }
     }
 }
@@ -66,6 +98,9 @@ fn ToastCloseButton(props: ToastCloseButtonProps) -> Element {
         toast::ToastCloseButton { attributes: merged, children: props.children }
     }
 }
+
+// Non-markup API types, re-exported so demos compose them through this wrapper.
+pub use dioxus_primitives::toast::{PromiseMessages, ToastId, ToastType, ToastUpdate};
 
 #[component]
 pub fn ToastProvider(

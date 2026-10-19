@@ -338,10 +338,11 @@ test.describe("1. every prerendered page's head carries the complete stylesheet 
  * delivery, so the style-parity comparisons skip these routes; the "no uncovered stylesheet" and CLS checks still apply to them
  * (the CLS bound is what holds them to "reserved space"). A route that starts differing fails until somebody looks and adds it
  * here with a reason; the list is not a place to hide a late stylesheet (that is test 1 and the late-sheet checks).
+ * markdown (2026-10-19): its streaming demo composes a MessageScroller, which stays `visibility: hidden` until the client reveals it.
  */
 const CLIENT_MEASURED = new Set([
   "area_chart", "avatar", "bar_chart", "carousel", "chart", "chart_tooltip", "data_table", "drag_and_drop_list", "form", "item",
-  "line_chart", "message_scroller", "pie_chart", "progress", "resizable", "select", "toast", "top_layer", "virtual_list",
+  "line_chart", "markdown", "message_scroller", "pie_chart", "progress", "resizable", "select", "toast", "top_layer", "virtual_list",
 ]);
 
 test.describe("2. hard load: the static page is the page", () => {

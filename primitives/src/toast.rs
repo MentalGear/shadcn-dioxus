@@ -30,6 +30,9 @@ pub enum ToastType {
     Warning,
     /// An info toast
     Info,
+    /// A toast for work in progress: it shows a spinner and is never auto-dismissed while it
+    /// is loading. Move it on with [`Toasts::update`] (or let [`Toasts::promise`] do it).
+    Loading,
 }
 
 impl ToastType {
@@ -39,32 +42,127 @@ impl ToastType {
             ToastType::Error => "error",
             ToastType::Warning => "warning",
             ToastType::Info => "info",
+            ToastType::Loading => "loading",
         }
+    }
+
+    /// The ARIA live-region role of a toast of this type: an error interrupts (`alert`), every
+    /// other type is polite (`status`). The ONE place the mapping lives.
+    fn live_role(&self) -> &'static str {
+        match self {
+            ToastType::Error => "alert",
+            _ => "status",
+        }
+    }
+}
+
+/// The handle of one toast, returned by [`Toasts::show`] and the typed shortcuts.
+///
+/// Correct by construction: the id is an opaque newtype (no public constructor, no arithmetic,
+/// no conversion from or to an integer) allocated from one process-wide monotonic counter, so
+/// it cannot be confused with the id of any other toast (not even one of a second
+/// [`ToastProvider`]) and an id is never reused. A closed toast's id stays dead for good:
+/// [`Toasts::update`] and [`Toasts::close`] on it are no-ops, never a hit on a newer toast.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct ToastId(u64);
+
+impl ToastId {
+    fn next() -> Self {
+        use std::sync::atomic::{AtomicU64, Ordering};
+        static NEXT_ID: AtomicU64 = AtomicU64::new(0);
+        ToastId(NEXT_ID.fetch_add(1, Ordering::Relaxed))
+    }
+}
+
+/// Lets an event handler end in `toast.info(..)` without a semicolon, as it could before `show`
+/// returned a handle: a `ToastId` is a plain value, so "returning it from a handler" does nothing.
+impl crate::dioxus_core::SpawnIfAsync<()> for ToastId {
+    fn spawn(self) {}
+}
+
+impl std::fmt::Display for ToastId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+/// An action button on a toast (shadcn's `actionProps`, e.g. "Undo"). Activating it (click,
+/// Enter or Space on the focused button) runs `on_click` and then dismisses the toast.
+#[derive(Clone, PartialEq)]
+pub struct ToastAction {
+    /// The button's label.
+    pub label: String,
+    /// Called when the button is activated.
+    pub on_click: Callback<()>,
+}
+
+impl ToastAction {
+    /// An action with a label and a callback.
+    pub fn new(label: impl ToString, on_click: impl FnMut(()) + 'static) -> Self {
+        Self {
+            label: label.to_string(),
+            on_click: Callback::new(on_click),
+        }
+    }
+}
+
+impl std::fmt::Debug for ToastAction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ToastAction")
+            .field("label", &self.label)
+            .finish_non_exhaustive()
     }
 }
 
 // A single toast item
 #[derive(Debug, Clone, PartialEq)]
 struct ToastRecord {
-    id: usize,
+    id: ToastId,
+    /// Bumped by every [`Toasts::update`]: restarts the auto-dismiss countdown.
+    revision: u32,
     title: String,
     description: Option<String>,
     toast_type: ToastType,
+    /// The caller's own duration; the provider default fills in at render.
     duration: Option<Duration>,
     permanent: bool,
+    action: Option<ToastAction>,
 }
 
-// Type alias for the complex callback type
-type AddToastCallback = Callback<(String, Option<String>, ToastType, Option<Duration>, bool)>;
+impl ToastRecord {
+    /// How long the toast stays, or `None` for "until closed". A loading toast is never
+    /// auto-dismissed (derived here, from the type, so an update from loading to success
+    /// starts the countdown by itself), and neither is a permanent one.
+    fn effective_duration(&self, default: Option<Duration>) -> Option<Duration> {
+        if self.permanent || self.toast_type == ToastType::Loading {
+            None
+        } else {
+            self.duration.or(default)
+        }
+    }
+}
+
+// Type alias for the add callback
+type AddToastCallback = Callback<ToastRecord>;
 
 // Context for managing toasts
 #[derive(Clone)]
 struct ToastCtx {
-    #[allow(dead_code)]
     toasts: Signal<VecDeque<ToastRecord>>,
     add_toast: AddToastCallback,
-    remove_toast: Callback<usize>,
+    remove_toast: Callback<ToastId>,
     focus_region: Callback,
+}
+
+/// Removes the record `id`, if it still exists. `try_write`: a promise that settles after its
+/// provider is gone must not panic.
+fn remove_record(mut toasts: Signal<VecDeque<ToastRecord>>, id: ToastId) {
+    let Ok(mut toasts_vec) = toasts.try_write() else {
+        return;
+    };
+    if let Some(pos) = toasts_vec.iter().position(|t| t.id == id) {
+        toasts_vec.remove(pos);
+    }
 }
 
 // Toast provider props
@@ -165,66 +263,29 @@ pub fn ToastProvider(props: ToastProviderProps) -> Element {
     let portal = use_portal();
 
     // Remove toast callback
-    let remove_toast = use_callback(move |id: usize| {
-        let mut toasts_vec = toasts.write();
-        if let Some(pos) = toasts_vec.iter().position(|t: &ToastRecord| t.id == id) {
-            toasts_vec.remove(pos);
-        }
-    });
+    let remove_toast = use_callback(move |id: ToastId| remove_record(toasts, id));
 
     // Add toast callback
-    let add_toast = use_callback(
-        move |(title, description, toast_type, duration, permanent): (
-            String,
-            Option<String>,
-            ToastType,
-            Option<Duration>,
-            bool,
-        )| {
-            // Generate a unique ID for the toast
-            // Use a static atomic counter to ensure unique IDs
-            use std::sync::atomic::{AtomicUsize, Ordering};
-            static NEXT_ID: AtomicUsize = AtomicUsize::new(0);
+    let add_toast = use_callback(move |toast: ToastRecord| {
+        // Add the toast directly to the queue
+        // This is safe because we're in an event handler, not during render
+        let mut toasts_vec = toasts.write();
+        toasts_vec.push_back(toast);
 
-            // Get the current ID and increment it atomically
-            let id = NEXT_ID.fetch_add(1, Ordering::SeqCst);
-
-            // Only use default duration for non-permanent toasts
-            let duration = if permanent {
-                None
+        // Limit the number of toasts, but prioritize keeping permanent toasts
+        let max = (props.max_toasts)();
+        while toasts_vec.len() > max {
+            // Try to find a non-permanent toast to remove first
+            if let Some(pos) = toasts_vec.iter().position(|t| !t.permanent) {
+                toasts_vec.remove(pos);
             } else {
-                duration.or_else(|| (props.default_duration)())
-            };
-
-            let toast = ToastRecord {
-                id,
-                title,
-                description,
-                toast_type,
-                duration,
-                permanent,
-            };
-
-            // Add the toast directly to the queue
-            // This is safe because we're in an event handler, not during render
-            let mut toasts_vec = toasts.write();
-            toasts_vec.push_back(toast.clone());
-
-            // Limit the number of toasts, but prioritize keeping permanent toasts
-            let max = (props.max_toasts)();
-            while toasts_vec.len() > max {
-                // Try to find a non-permanent toast to remove first
-                if let Some(pos) = toasts_vec.iter().position(|t| !t.permanent) {
-                    toasts_vec.remove(pos);
-                } else {
-                    // If all toasts are permanent, remove the oldest one
-                    toasts_vec.pop_front();
-                }
+                // If all toasts are permanent, remove the oldest one
+                toasts_vec.pop_front();
             }
+        }
 
-            // We'll handle auto-dismissal in the Toast component
-        },
-    );
+        // We'll handle auto-dismissal in the Toast component
+    });
 
     // Create a stable list of toasts for rendering outside of RSX
     let toast_list = use_memo(move || {
@@ -285,10 +346,12 @@ pub fn ToastProvider(props: ToastProviderProps) -> Element {
                             {
                                 props.render_toast.call(ToastProps::builder().id(toast.id)
                                     .index(index)
+                                    .revision(toast.revision)
                                     .title(toast.title.clone())
                                     .description(toast.description.clone())
                                     .toast_type(toast.toast_type)
                                     .permanent(toast.permanent)
+                                    .action(toast.action.clone())
                                     .on_close({
                                         let toast_id = toast.id;
                                         let remove_toast = ctx.remove_toast;
@@ -296,8 +359,8 @@ pub fn ToastProvider(props: ToastProviderProps) -> Element {
                                             remove_toast.call(toast_id);
                                         }
                                     })
-                                    // Only pass duration to non-permanent toasts
-                                    .duration(if toast.permanent { None } else { toast.duration })
+                                    // A loading or permanent toast gets no duration
+                                    .duration(toast.effective_duration((props.default_duration)()))
                                     .attributes(vec![])
                                     .build()
                                 )
@@ -694,10 +757,13 @@ pub fn ToastListItem(props: ToastListItemProps) -> Element {
 /// The props for the [`Toast`] component
 #[derive(Props, Clone, PartialEq)]
 pub struct ToastProps {
-    /// The unique identifier for the toast.
-    pub id: usize,
+    /// The toast's handle (see [`ToastId`]).
+    pub id: ToastId,
     /// The index of the toast in the list.
     pub index: usize,
+    /// How many times the toast has been updated; restarts its auto-dismiss countdown.
+    #[props(default)]
+    pub revision: u32,
     /// The title of the toast.
     pub title: String,
     /// An optional description for the toast.
@@ -709,6 +775,9 @@ pub struct ToastProps {
     /// Whether the toast is permanent (not auto-dismissed).
     #[props(default = false)]
     pub permanent: bool,
+    /// The toast's action button, if any (see [`ToastAction`]).
+    #[props(default)]
+    pub action: Option<ToastAction>,
 
     /// The duration for which the toast is displayed.
     pub duration: Option<Duration>,
@@ -771,10 +840,13 @@ pub struct ToastCloseButtonProps {
 
 #[derive(Clone)]
 struct ToastRenderCtx {
+    toast_id: ToastId,
     label_id: String,
-    description_id: Option<String>,
-    title: String,
-    description: Option<String>,
+    description_id: String,
+    /// The live record: the title, description, type and action follow every update. Falls
+    /// back to the first render's snapshot in the instant between the record's removal and the
+    /// toast's unmount.
+    record: Memo<ToastRecord>,
     on_close: Callback<MouseEvent>,
 }
 
@@ -823,53 +895,57 @@ struct ToastRenderCtx {
 /// ## Styling
 ///
 /// The [`Toast`] component defines the following data attributes you can use to control styling:
-/// - `data-type`: The type of toast. Values are `success`, `error`, `warning`, or `info`.
+/// - `data-type`: The type of toast. Values are `success`, `error`, `warning`, `info`, or `loading`.
 /// - `data-permanent`: Indicates if the toast is permanent. Values are `true` or `false`.
 /// - `data-toast-even`: Present on even-indexed toasts for alternating styles.
 /// - `data-toast-odd`: Present on odd-indexed toasts for alternating styles.
 /// - `data-top`: Present on the topmost toast.
+/// - `data-swiping`: `true` while a pointer drags the toast, `dismissed` while it flies out after a swipe.
+///
+/// While dragged, the toast sets `--toast-swipe-x` (px, toward the dismiss edge); map it to the `translate` property.
 ///
 /// The [`Toast`] component renders toasts with the following css variables you can use to control styling:
 /// - `--toast-index`: The index of the toast in the list, used for z-indexing and positioning.
 #[component]
 pub fn Toast(props: ToastProps) -> Element {
-    let toast_id = use_unique_id();
-    let id = use_memo(move || format!("toast-{toast_id}"));
+    let dom_id = use_unique_id();
+    let id = use_memo(move || format!("toast-{dom_id}"));
     let label_id = format!("{id}-label");
-    let description_id = props
-        .description
-        .as_ref()
-        .map(|_| format!("{id}-description"));
+    let description_id = format!("{id}-description");
 
     // Get the context at the top level of the component
     let ctx = use_context::<ToastCtx>();
-    use_context_provider(|| ToastRenderCtx {
-        label_id: label_id.clone(),
-        description_id: description_id.clone(),
+    let snapshot = ToastRecord {
+        id: props.id,
+        revision: props.revision,
         title: props.title.clone(),
         description: props.description.clone(),
+        toast_type: props.toast_type,
+        duration: props.duration,
+        permanent: props.permanent,
+        action: props.action.clone(),
+    };
+    let toast_key = props.id;
+    let toasts = ctx.toasts;
+    let record = use_memo(move || {
+        toasts
+            .read()
+            .iter()
+            .find(|t| t.id == toast_key)
+            .cloned()
+            .unwrap_or_else(|| snapshot.clone())
+    });
+    use_context_provider(|| ToastRenderCtx {
+        toast_id: props.id,
+        label_id: label_id.clone(),
+        description_id: description_id.clone(),
+        record,
         on_close: props.on_close,
     });
 
-    // Handle auto-dismissal for non-permanent toasts with a duration
-    // Double-check that the toast is not permanent and has a duration
-    if !props.permanent && props.duration.is_some() {
-        let duration = props.duration.unwrap();
-        let toast_id = props.id;
-        let remove_toast = ctx.remove_toast;
-
-        // The countdown runs while the TAB is visible and nothing else. A toast the user
-        // cannot see (hidden tab, minimized window) would otherwise be gone when they come back,
-        // so the countdown is dropped and restarted in full on return. It is deliberately NOT
-        // tied to the toast's position on the page (`use_motion`): a toast is a message the
-        // user is waiting on, not decoration, and scrolling must not change how long it stays
-        // (`crate::activity`, "Timers that carry meaning").
-        let visible = crate::activity::use_document_visible();
-        crate::interval::use_timeout_while(visible, duration, move || {
-            // Call the remove_toast function directly with the toast ID
-            remove_toast.call(toast_id);
-        });
-    }
+    // Swipe to dismiss (pointer events, threshold + velocity; see `use_toast_swipe`).
+    let remove_toast = ctx.remove_toast;
+    use_toast_swipe(id.into(), move || remove_toast.call(toast_key));
 
     let children = props.children.unwrap_or_else(|| {
         rsx! {
@@ -877,9 +953,24 @@ pub fn Toast(props: ToastProps) -> Element {
                 ToastTitle {}
                 ToastDescription {}
             }
+            ToastActionButton {}
             ToastCloseButton {}
         }
     });
+
+    // Auto-dismissal. A child component rather than a hook here: whether a toast has a
+    // countdown changes during its life (loading -> success), and a hook behind a condition
+    // would change the hook order. Keyed on the duration and the revision, so an update
+    // restarts the countdown with the new duration.
+    let timer = match props.duration {
+        Some(duration) if !props.permanent && props.toast_type != ToastType::Loading => {
+            let key = format!("{}-{}", duration.as_millis(), props.revision);
+            rsx! {
+                ToastTimer { key: "{key}", id: props.id, duration }
+            }
+        }
+        _ => rsx! {},
+    };
 
     // `dx-toast-base-item` -- see `ensure_toast_base_styles`'s doc: the
     // plain marker class the web arm's engine-injected fallback stylesheet
@@ -925,7 +1016,7 @@ pub fn Toast(props: ToastProps) -> Element {
         attributes!(div {
             role: "alertdialog",
             aria_labelledby: "{label_id}",
-            aria_describedby: description_id,
+            aria_describedby: props.description.as_ref().map(|_| description_id),
             aria_modal: "false",
             tabindex: "0",
             "data-type": props.toast_type.as_str(),
@@ -942,9 +1033,104 @@ pub fn Toast(props: ToastProps) -> Element {
             ..attributes,
 
             {children}
+            {timer}
         }
     }
 }
+
+/// Counts a toast down and removes it. The countdown runs while the TAB is visible and nothing
+/// else. A toast the user cannot see (hidden tab, minimized window) would otherwise be gone
+/// when they come back, so the countdown is dropped and restarted in full on return. It is
+/// deliberately NOT tied to the toast's position on the page (`use_motion`): a toast is a
+/// message the user is waiting on, not decoration, and scrolling must not change how long it
+/// stays (`crate::activity`, "Timers that carry meaning").
+#[component]
+fn ToastTimer(id: ToastId, duration: Duration) -> Element {
+    let ctx = use_context::<ToastCtx>();
+    let remove_toast = ctx.remove_toast;
+    let visible = crate::activity::use_document_visible();
+    crate::interval::use_timeout_while(visible, duration, move || remove_toast.call(id));
+    rsx! {}
+}
+
+/// Swipe to dismiss, with pointer events (mouse, touch and pen alike).
+///
+/// All of the gesture runs in the page (`listen`, so the listeners are removed with the
+/// component): the drag writes `--toast-swipe-x` on the toast (the stylesheet maps it to the
+/// `translate` property, so the stacking `scale` is untouched) and marks `data-swiping`, and
+/// only the final decision crosses into Rust. A swipe dismisses when it travelled at least
+/// `THRESHOLD` px toward the dismiss edge, or was a flick: at least `MIN_FLICK` px at
+/// `VELOCITY` px/ms or more over the last 100 ms.
+///
+/// The dismiss direction is NOT a prop: it is the edge the toast is nearest to (the half of the
+/// viewport the toast is in), so it follows wherever the stylesheet puts the toaster, and RTL
+/// (`inset-inline-end` is the left edge there) with no second source of truth to keep in step.
+/// A drag the other way is resisted to zero. A press that starts on a button or link is left
+/// alone (the close and action buttons keep their click).
+fn use_toast_swipe(dom_id: ReadSignal<String>, on_dismiss: impl FnMut() + 'static) {
+    let mut on_dismiss = on_dismiss;
+    let on_dismiss = use_callback(move |()| on_dismiss());
+    crate::js_listener::use_js_listeners(move || {
+        let id = dom_id.cloned();
+        Some(
+            crate::js_listener::JsListeners::install(TOAST_SWIPE_JS)
+                .arg(id)
+                .on_message(move |_: bool| on_dismiss.call(())),
+        )
+    });
+}
+
+/// The swipe gesture's script. See [`use_toast_swipe`].
+const TOAST_SWIPE_JS: &str = r#"
+const THRESHOLD = 45, MIN_FLICK = 10, VELOCITY = 0.11, WINDOW_MS = 100;
+const id = await dioxus.recv();
+const el = document.getElementById(id);
+if (!el) return;
+let drag = null;
+const reset = () => {
+  el.style.removeProperty('--toast-swipe-x');
+  delete el.dataset.swiping;
+  el.style.removeProperty('user-select');
+};
+const end = (e) => {
+  if (!drag || e.pointerId !== drag.pointer) return;
+  const d = drag;
+  drag = null;
+  try { el.releasePointerCapture(e.pointerId); } catch (_) {}
+  const travelled = Math.max(0, (e.clientX - d.x0) * d.dir);
+  const recent = d.samples.filter((s) => e.timeStamp - s.t <= WINDOW_MS);
+  const first = recent[0];
+  const dt = first ? e.timeStamp - first.t : 0;
+  const speed = dt > 0 ? ((e.clientX - first.x) * d.dir) / dt : 0;
+  const dismiss = e.type === 'pointerup' &&
+    (travelled >= THRESHOLD || (travelled >= MIN_FLICK && speed >= VELOCITY));
+  if (!dismiss) { reset(); return; }
+  el.dataset.swiping = 'dismissed';
+  el.style.setProperty('--toast-swipe-x', d.dir * (el.offsetWidth + 48) + 'px');
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const timer = setTimeout(() => dioxus.send(true), reduced ? 0 : 160);
+  cleanup(() => clearTimeout(timer));
+};
+listen(el, 'pointerdown', (e) => {
+  if (drag || (e.pointerType === 'mouse' && e.button !== 0)) return;
+  if (e.target.closest('button, a, input, textarea, select, [role="button"]')) return;
+  const rect = el.getBoundingClientRect();
+  const dir = rect.left + rect.width / 2 > innerWidth / 2 ? 1 : -1;
+  drag = { pointer: e.pointerId, x0: e.clientX, dir, samples: [{ x: e.clientX, t: e.timeStamp }] };
+  el.dataset.swiping = 'true';
+  el.style.userSelect = 'none';
+  try { el.setPointerCapture(e.pointerId); } catch (_) {}
+});
+listen(el, 'pointermove', (e) => {
+  if (!drag || e.pointerId !== drag.pointer) return;
+  drag.samples.push({ x: e.clientX, t: e.timeStamp });
+  if (drag.samples.length > 32) drag.samples.shift();
+  const dx = Math.max(0, (e.clientX - drag.x0) * drag.dir) * drag.dir;
+  el.style.setProperty('--toast-swipe-x', dx + 'px');
+});
+listen(el, 'pointerup', end);
+listen(el, 'pointercancel', end);
+"#;
 
 /// The content wrapper inside a toast.
 #[component]
@@ -952,16 +1138,31 @@ pub fn ToastContent(props: ToastContentProps) -> Element {
     // Owned by this component -- role/aria wiring must win over a
     // caller's own attributes (`docs/backlog.md` row 93's
     // duplicate-attribute hazard).
+    //
+    // The live region: `status` (polite) for every type, `alert` (assertive) for an error.
+    // The element is keyed on its role: a toast that moves from loading to error gets a NEW
+    // `role="alert"` region (a region inserted with its content is announced; flipping the
+    // `role` of a live one is not reliably), and a move between polite types keeps the same
+    // `status` region whose text change is announced once. Either way it is the one toast.
+    let role = use_context::<ToastRenderCtx>()
+        .record
+        .read()
+        .toast_type
+        .live_role();
     let attributes = merge_attributes(vec![
         props.attributes,
         attributes!(div {
-            role: "alert",
+            role: role,
             aria_atomic: "true",
         }),
     ]);
 
+    // A one-item keyed list: Dioxus diffs lists by key, so a new role replaces the element (a
+    // `key` on a lone root element would be patched in place).
     rsx! {
-        div { ..attributes, {props.children} }
+        for r in [role] {
+            div { key: "{r}", ..attributes.clone(), {props.children.clone()} }
+        }
     }
 }
 
@@ -970,7 +1171,7 @@ pub fn ToastContent(props: ToastContentProps) -> Element {
 pub fn ToastTitle(props: ToastTitleProps) -> Element {
     let ctx = use_context::<ToastRenderCtx>();
     let children = props.children.unwrap_or_else(|| {
-        let title = ctx.title.clone();
+        let title = ctx.record.read().title.clone();
         rsx! { {title} }
     });
 
@@ -980,7 +1181,9 @@ pub fn ToastTitle(props: ToastTitleProps) -> Element {
     // (`docs/backlog.md` row 93 names this exact site).
     let attributes = merge_attributes(vec![
         props.attributes,
-        attributes!(div { id: ctx.label_id }),
+        attributes!(div {
+            id: ctx.label_id.clone()
+        }),
     ]);
 
     rsx! {
@@ -992,13 +1195,11 @@ pub fn ToastTitle(props: ToastTitleProps) -> Element {
 #[component]
 pub fn ToastDescription(props: ToastDescriptionProps) -> Element {
     let ctx = use_context::<ToastRenderCtx>();
-    let Some(id) = ctx.description_id else {
+    let id = ctx.description_id.clone();
+    let Some(description) = ctx.record.read().description.clone() else {
         return rsx! {};
     };
-    let children = props.children.unwrap_or_else(|| {
-        let description = ctx.description.unwrap_or_default();
-        rsx! { {description} }
-    });
+    let children = props.children.unwrap_or_else(|| rsx! { {description} });
 
     // Owned by this component -- see `ToastTitle`'s identical
     // construction above (`docs/backlog.md` row 93 names this exact site).
@@ -1042,21 +1243,94 @@ pub fn ToastCloseButton(props: ToastCloseButtonProps) -> Element {
 }
 
 /// Options for customizing the behavior of toasts dispatched from the [`Toasts`] context.
+/// The props for [`ToastActionButton`].
+#[derive(Props, Clone, PartialEq)]
+pub struct ToastActionButtonProps {
+    /// Additional attributes to apply to the button.
+    #[props(extends = GlobalAttributes)]
+    pub attributes: Vec<Attribute>,
+}
+
+/// What a toast's action button needs: its label and what activating it does. A themed wrapper
+/// that renders its own button component (the preview's `Button`) reads this through
+/// [`use_toast_action`] so activation is the same thing in every skin.
+#[derive(Clone, Copy)]
+pub struct ToastActionHandle {
+    record: Memo<ToastRecord>,
+    toast_id: ToastId,
+    remove_toast: Callback<ToastId>,
+    focus_region: Callback,
+}
+
+impl ToastActionHandle {
+    /// The action's label.
+    pub fn label(&self) -> String {
+        self.record
+            .read()
+            .action
+            .as_ref()
+            .map(|a| a.label.clone())
+            .unwrap_or_default()
+    }
+
+    /// Runs the action's callback, then dismisses the toast.
+    pub fn activate(&self) {
+        let action = self.record.peek().action.clone();
+        if let Some(action) = action {
+            action.on_click.call(());
+        }
+        self.focus_region.call(());
+        self.remove_toast.call(self.toast_id);
+    }
+}
+
+/// The action of the current toast, or `None` when it has none. Call inside a toast.
+pub fn use_toast_action() -> Option<ToastActionHandle> {
+    let render = use_context::<ToastRenderCtx>();
+    let ctx = use_context::<ToastCtx>();
+    render.record.read().action.as_ref()?;
+    Some(ToastActionHandle {
+        record: render.record,
+        toast_id: render.toast_id,
+        remove_toast: ctx.remove_toast,
+        focus_region: ctx.focus_region,
+    })
+}
+
+/// The toast's action button (see [`ToastAction`]): a real `<button>`, in the tab order,
+/// activated by click, Enter or Space; it runs the action and dismisses the toast. Renders
+/// nothing when the toast has no action.
+#[component]
+pub fn ToastActionButton(props: ToastActionButtonProps) -> Element {
+    let Some(handle) = use_toast_action() else {
+        return rsx! {};
+    };
+    let attributes = merge_attributes(vec![
+        attributes!(button { type: "button" }),
+        props.attributes,
+    ]);
+    rsx! {
+        button {
+            onclick: move |_| handle.activate(),
+            ..attributes,
+            {handle.label()}
+        }
+    }
+}
+
+/// Options for a new toast: description, duration, permanence and an action button.
 #[derive(Clone, Default)]
 pub struct ToastOptions {
     description: Option<String>,
     duration: Option<Duration>,
     permanent: bool,
+    action: Option<ToastAction>,
 }
 
 impl ToastOptions {
     /// Create a new `ToastOptions` with an empty description, no duration, that is not permanent.
     pub fn new() -> Self {
-        Self {
-            description: None,
-            duration: None,
-            permanent: false,
-        }
+        Self::default()
     }
 
     /// Set the description for the toast.
@@ -1076,52 +1350,226 @@ impl ToastOptions {
         self.permanent = permanent;
         self
     }
+
+    /// Adds an action button (e.g. "Undo"); activating it runs `on_click` and dismisses the
+    /// toast.
+    pub fn action(mut self, label: impl ToString, on_click: impl FnMut(()) + 'static) -> Self {
+        self.action = Some(ToastAction::new(label, on_click));
+        self
+    }
+}
+
+/// A change to a live toast, for [`Toasts::update`]. Only what is set changes.
+#[derive(Clone, Default)]
+pub struct ToastUpdate {
+    title: Option<String>,
+    description: Option<Option<String>>,
+    toast_type: Option<ToastType>,
+    duration: Option<Duration>,
+    permanent: Option<bool>,
+    action: Option<Option<ToastAction>>,
+}
+
+impl ToastUpdate {
+    /// An update that changes nothing yet.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Replace the title.
+    pub fn title(mut self, title: impl ToString) -> Self {
+        self.title = Some(title.to_string());
+        self
+    }
+
+    /// Replace the description.
+    pub fn description(mut self, description: impl ToString) -> Self {
+        self.description = Some(Some(description.to_string()));
+        self
+    }
+
+    /// Removes the description.
+    pub fn clear_description(mut self) -> Self {
+        self.description = Some(None);
+        self
+    }
+
+    /// Change the type (e.g. `Loading` to `Success`).
+    pub fn toast_type(mut self, toast_type: ToastType) -> Self {
+        self.toast_type = Some(toast_type);
+        self
+    }
+
+    /// Set the auto-dismiss duration.
+    pub fn duration(mut self, duration: Duration) -> Self {
+        self.duration = Some(duration);
+        self
+    }
+
+    /// Set whether the toast is permanent.
+    pub fn permanent(mut self, permanent: bool) -> Self {
+        self.permanent = Some(permanent);
+        self
+    }
+
+    /// Replace the action button.
+    pub fn action(mut self, label: impl ToString, on_click: impl FnMut(()) + 'static) -> Self {
+        self.action = Some(Some(ToastAction::new(label, on_click)));
+        self
+    }
+
+    /// Removes the action button.
+    pub fn clear_action(mut self) -> Self {
+        self.action = Some(None);
+        self
+    }
+}
+
+/// The three messages of [`Toasts::promise`]: shown while the future runs, and on how it ends.
+/// `success` and `error` get the outcome, so the title can name it.
+pub struct PromiseMessages<T, E> {
+    loading: String,
+    success: Box<dyn Fn(&T) -> String>,
+    error: Box<dyn Fn(&E) -> String>,
+}
+
+impl<T, E> PromiseMessages<T, E> {
+    /// Messages for [`Toasts::promise`]: `loading` while it runs, `success` and `error` for the outcome.
+    pub fn new(
+        loading: impl ToString,
+        success: impl Fn(&T) -> String + 'static,
+        error: impl Fn(&E) -> String + 'static,
+    ) -> Self {
+        Self {
+            loading: loading.to_string(),
+            success: Box::new(success),
+            error: Box::new(error),
+        }
+    }
 }
 
 /// The toast context provided by the [`use_toast`] hook.
 #[derive(Clone, Copy)]
 pub struct Toasts {
     add_toast: AddToastCallback,
-    // We keep remove_toast for potential future use
-    #[allow(dead_code)]
-    remove_toast: Callback<usize>,
+    toasts: Signal<VecDeque<ToastRecord>>,
 }
 
 impl Toasts {
     /// Send a toast to the associated [`ToastProvider`] with the given title, type, and options.
-    pub fn show(&self, title: String, toast_type: ToastType, options: ToastOptions) {
-        self.add_toast.call((
+    /// Returns its handle for [`update`](Self::update) and
+    /// [`close`](Self::close).
+    pub fn show(&self, title: String, toast_type: ToastType, options: ToastOptions) -> ToastId {
+        let id = ToastId::next();
+        self.add_toast.call(ToastRecord {
+            id,
+            revision: 0,
             title,
-            options.description,
+            description: options.description,
             toast_type,
-            // If permanent, force duration to None
-            if options.permanent {
+            duration: if options.permanent {
                 None
             } else {
                 options.duration
             },
-            options.permanent,
-        ));
+            permanent: options.permanent,
+            action: options.action,
+        });
+        id
+    }
+
+    /// Changes a live toast in place (same element, same position in the stack). Returns whether
+    /// anything was updated: an id whose toast is closed (or was trimmed by `max_toasts`) is a
+    /// no-op, and since ids are never reused it cannot reach another toast.
+    pub fn update(&self, id: ToastId, update: ToastUpdate) -> bool {
+        let mut toasts = self.toasts;
+        let Ok(mut toasts) = toasts.try_write() else {
+            return false;
+        };
+        let Some(toast) = toasts.iter_mut().find(|t| t.id == id) else {
+            return false;
+        };
+        if let Some(title) = update.title {
+            toast.title = title;
+        }
+        if let Some(description) = update.description {
+            toast.description = description;
+        }
+        if let Some(toast_type) = update.toast_type {
+            toast.toast_type = toast_type;
+        }
+        if let Some(duration) = update.duration {
+            toast.duration = Some(duration);
+        }
+        if let Some(permanent) = update.permanent {
+            toast.permanent = permanent;
+        }
+        if let Some(action) = update.action {
+            toast.action = action;
+        }
+        toast.revision = toast.revision.wrapping_add(1);
+        true
+    }
+
+    /// Closes a toast. Closing a closed toast does nothing.
+    pub fn close(&self, id: ToastId) {
+        remove_record(self.toasts, id);
+    }
+
+    /// Shows one loading toast and moves that SAME toast to success or error when `future`
+    /// finishes (never a second toast). The live region announces the loading text, then the
+    /// outcome once: polite (`role="status"`) for success, assertive (`role="alert"`) for an
+    /// error. The future runs on the app root, so it finishes (and the toast settles) even if
+    /// the component that started it unmounts. If the user closes the toast first, the
+    /// settling update is a no-op.
+    pub fn promise<T, E, F>(&self, future: F, messages: PromiseMessages<T, E>) -> ToastId
+    where
+        T: 'static,
+        E: 'static,
+        F: std::future::Future<Output = Result<T, E>> + 'static,
+    {
+        let id = self.loading(messages.loading.clone(), ToastOptions::new());
+        let this = *self;
+        // The task awaits the caller's future and ends with it; it must outlive the component
+        // that started it (else a toast stays "loading" forever).
+        // interval-ok: not a timer, bounded by the future
+        crate::dioxus_core::spawn_forever(async move {
+            let settle = match future.await {
+                Ok(value) => ToastUpdate::new()
+                    .toast_type(ToastType::Success)
+                    .title((messages.success)(&value)),
+                Err(error) => ToastUpdate::new()
+                    .toast_type(ToastType::Error)
+                    .title((messages.error)(&error)),
+            };
+            this.update(id, settle.clear_description().clear_action());
+        });
+        id
     }
 
     /// Create a new success toast with the given title and options.
-    pub fn success(&self, title: String, options: ToastOptions) {
-        self.show(title, ToastType::Success, options);
+    pub fn success(&self, title: String, options: ToastOptions) -> ToastId {
+        self.show(title, ToastType::Success, options)
     }
 
     /// Create a new error toast with the given title and options.
-    pub fn error(&self, title: String, options: ToastOptions) {
-        self.show(title, ToastType::Error, options);
+    pub fn error(&self, title: String, options: ToastOptions) -> ToastId {
+        self.show(title, ToastType::Error, options)
     }
 
     /// Create a new warning toast with the given title and options.
-    pub fn warning(&self, title: String, options: ToastOptions) {
-        self.show(title, ToastType::Warning, options);
+    pub fn warning(&self, title: String, options: ToastOptions) -> ToastId {
+        self.show(title, ToastType::Warning, options)
     }
 
     /// Create a new info toast with the given title and options.
-    pub fn info(&self, title: String, options: ToastOptions) {
-        self.show(title, ToastType::Info, options);
+    pub fn info(&self, title: String, options: ToastOptions) -> ToastId {
+        self.show(title, ToastType::Info, options)
+    }
+
+    /// A loading toast: spinner, never auto-dismissed until updated to another type.
+    pub fn loading(&self, title: String, options: ToastOptions) -> ToastId {
+        self.show(title, ToastType::Loading, options)
     }
 }
 
@@ -1168,11 +1616,8 @@ pub fn use_toast() -> Toasts {
 /// This must be called under a [`ToastProvider`] component.
 pub fn consume_toast() -> Toasts {
     let ctx = consume_context::<ToastCtx>();
-    let add_toast = ctx.add_toast;
-    let remove_toast = ctx.remove_toast;
-
     Toasts {
-        add_toast,
-        remove_toast,
+        add_toast: ctx.add_toast,
+        toasts: ctx.toasts,
     }
 }
