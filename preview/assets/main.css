@@ -512,18 +512,16 @@ summary,
   box-sizing: border-box;
 }
 
-.dx-dark-mode-toggle {
-  padding: 0;
-  border: none;
-  background: none;
-  color: var(--dx-foreground);
-  cursor: pointer;
+/* The header's sun/moon toggle is two Ghost icon `Button`s (preview/src/theme.rs `DarkModeToggle`), one per
+ * mode, so the SSG output is right before hydration. The theme's `.dx-dark-mode-only` /
+ * `.dx-light-mode-only` swap sets `display` at the same specificity as `.dx-button`'s own, so the two
+ * classes together say which one shows, with the button's `inline-flex` as the visible value. */
+.dx-button.dx-dark-mode-toggle.dx-dark-mode-only {
+  display: var(--dark, inline-flex) var(--light, none);
 }
 
-.dx-dark-mode-toggle svg {
-  display: block;
-  width: 24px;
-  height: 24px;
+.dx-button.dx-dark-mode-toggle.dx-light-mode-only {
+  display: var(--dark, none) var(--light, inline-flex);
 }
 
 /* Theme picker (preview/src/theme.rs `ThemePicker`): an icon button that opens a popover of swatches.
@@ -621,12 +619,12 @@ button.dx-theme-phone-trigger {
   padding: 0 var(--dx-space-4);
 }
 
-.dx-theme-picker-panel[data-presentation="drawer"] .dx-theme-swatch {
+.dx-theme-picker-panel[data-presentation="drawer"] .dx-theme-swatches .dx-theme-swatch {
   width: 2.25rem;
   height: 2.25rem;
 }
 
-.dx-theme-picker-panel[data-presentation="drawer"] .dx-theme-swatch-dot {
+.dx-theme-picker-panel[data-presentation="drawer"] .dx-theme-swatches .dx-theme-swatch-dot {
   width: 1.5rem;
   height: 1.5rem;
 }
@@ -635,14 +633,13 @@ button.dx-theme-phone-trigger {
   gap: var(--dx-space-2);
 }
 
-.dx-theme-picker-panel[data-presentation="drawer"] .dx-button[data-size="xs"] {
-  min-width: 2.75rem;
-  height: 2.25rem;
+.dx-theme-picker-panel[data-presentation="drawer"] .dx-theme-chips {
+  --dx-toggle-height: 2.25rem;
+  --dx-toggle-min-width: 2.5rem;
 }
 
 /* The six radius chips share the row evenly instead of wrapping one orphan onto a second line at 360px. */
-.dx-theme-picker-panel[data-presentation="drawer"] .dx-theme-chips .dx-button[data-size="xs"] {
-  min-width: 2.5rem;
+.dx-theme-picker-panel[data-presentation="drawer"] .dx-theme-chips .dx-toggle-group-item {
   flex: 1 1 0%;
   padding-inline: var(--dx-space-1);
 }
@@ -697,50 +694,59 @@ button.dx-theme-phone-trigger {
   gap: var(--dx-space-0-5);
 }
 
-.dx-theme-swatches,
-.dx-theme-chips {
-  display: flex;
+/* Both groups are single-select `ToggleGroup`s (preview/src/theme.rs). The group sets only the gap and
+ * the wrap; a chip is a small outline toggle sized through the toggle's own slot variables, the
+ * pressed look being the toggle's. */
+.dx-toggle-group.dx-theme-swatches,
+.dx-toggle-group.dx-theme-chips {
   flex-wrap: wrap;
   gap: 0.375rem;
 }
 
-.dx-theme-chips {
+.dx-toggle-group.dx-theme-chips {
+  --dx-toggle-height: var(--dx-control-height-xs, 1.5rem);
+  --dx-toggle-min-width: 1.75rem;
+  --dx-toggle-font-size: var(--dx-text-xs);
+  --dx-toggle-padding-inline: var(--dx-space-2);
+
   gap: var(--dx-space-1);
 }
 
-/* A swatch paints its dot from the SAME `[data-theme-base]` / `[data-theme-accent]` block the preset
- * applies (theme-presets.css), read back as the bare variable on the swatch itself -- the colour data
- * lives in one file. Forcing the light half of the space toggle on the swatch shows each preset's
- * canonical (light-mode) colour in both modes, so a dark popover does not turn every accent into its
- * muted dark primary. */
-.dx-theme-swatch {
+/* A swatch is a round toggle item (`.dx-toggle-group-item`) that paints its dot from the SAME
+ * `[data-theme-base]` / `[data-theme-accent]` block the preset applies (theme-presets.css), read back as
+ * the bare variable on the swatch itself -- the colour data lives in one file. Forcing the light half of
+ * the space toggle on the swatch shows each preset's canonical (light-mode) colour in both modes, so a
+ * dark popover does not turn every accent into its muted dark primary. Three classes outrank the toggle
+ * item's own rules whatever the stylesheet order. */
+.dx-theme-swatches .dx-toggle-group-item.dx-theme-swatch {
   --dark: ;
   --light: initial;
 
-  display: inline-flex;
   width: 1.5rem;
+  min-width: 0;
   height: 1.5rem;
-  align-items: center;
-  justify-content: center;
   padding: 0;
   border: 1px solid var(--dx-border);
   border-radius: var(--dx-radius-full);
   background: var(--dx-popover);
-  cursor: pointer;
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .dx-theme-swatch:hover {
+  .dx-theme-swatches .dx-toggle-group-item.dx-theme-swatch:hover {
     border-color: var(--dx-border-strong);
+    background: var(--dx-popover);
   }
 }
 
-.dx-theme-swatch:focus-visible {
+.dx-theme-swatches .dx-toggle-group-item.dx-theme-swatch:focus-visible {
+  border-color: var(--dx-ring-color);
+  background: var(--dx-popover);
   box-shadow: var(--dx-ring);
 }
 
-.dx-theme-swatch[aria-pressed="true"] {
+.dx-theme-swatches .dx-toggle-group-item.dx-theme-swatch[data-state="on"] {
   border-color: var(--dx-foreground);
+  background: var(--dx-popover);
   box-shadow: 0 0 0 1px var(--dx-foreground);
 }
 
@@ -2605,11 +2611,9 @@ html[data-cv-settle] {
   gap: var(--dx-space-2);
 }
 
-.dx-charts-toolbar-separator {
+/* The `Separator` supplies the rule (1px, `--dx-border`, stretched); the toolbar only hides it when narrow. */
+.dx-charts-toolbar-actions .dx-charts-toolbar-separator {
   display: none;
-  width: 1px;
-  height: 1rem;
-  background: var(--dx-border);
 }
 
 .dx-charts-toolbar-actions .dx-button[data-copied="true"] {
@@ -2745,7 +2749,7 @@ html[data-cv-settle] {
     grid-column: 1 / -1;
   }
 
-  .dx-charts-toolbar-separator {
+  .dx-charts-toolbar-actions .dx-charts-toolbar-separator {
     display: block;
   }
 }
