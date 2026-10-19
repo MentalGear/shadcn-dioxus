@@ -454,10 +454,7 @@ fn TooltipContentRendered(
     {
         let arrow_id = id.clone();
         crate::js_listener::use_js_listeners(move || {
-            Some(
-                crate::js_listener::JsListeners::install(ARROW_OFFSET_JS)
-                    .arg(arrow_id.clone()),
-            )
+            Some(crate::js_listener::JsListeners::install(ARROW_OFFSET_JS).arg(arrow_id.clone()))
         });
     }
     // Any scroll closes a tooltip (`top_layer::use_close_on_scroll`'s doc).

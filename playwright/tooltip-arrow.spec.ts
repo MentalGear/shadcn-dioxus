@@ -1,7 +1,7 @@
 import { test, expect } from "./fixtures";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
-import { readAtRest } from "./animations";
+import { measureAtRest, readAtRest } from "./animations";
 
 // The tooltip's arrow points at the trigger's centre for every side x align (the bug: `::after { left: 50% }`
 // drew it at the bubble's centre, so a start-aligned bubble pointed at empty space). The arrow is a pseudo
@@ -33,8 +33,7 @@ test.describe("tooltip arrow points at the trigger centre", () => {
       const tip = page.getByRole("tooltip");
       await expect(tip).toBeVisible();
       await expect(tip).toHaveAttribute("data-side", side);
-      const tb = await trigger.boundingBox();
-      if (!tb) throw new Error("trigger has no box");
+      const tb = await measureAtRest(trigger);
       // Retry until the measured centre settles within tolerance (placement lands a frame after open).
       await expect
         .poll(async () => Math.abs((await arrowCentreX(tip)) - (tb.x + tb.width / 2)), { timeout: 5000 })
@@ -44,12 +43,11 @@ test.describe("tooltip arrow points at the trigger centre", () => {
 
   test("the Extra badge on /component/markdown/ (bottom, start)", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/markdown/`);
-    const badge = page.getByText("Extra", { exact: true }).first();
+    const badge = page.locator(".dx-component-page-header .dx-extra-badge");
     await badge.hover();
     const tip = page.getByRole("tooltip");
     await expect(tip).toBeVisible();
-    const tb = await badge.boundingBox();
-    if (!tb) throw new Error("badge has no box");
+    const tb = await measureAtRest(badge);
     await expect
       .poll(async () => Math.abs((await arrowCentreX(tip)) - (tb.x + tb.width / 2)), { timeout: 5000 })
       .toBeLessThanOrEqual(2);

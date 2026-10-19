@@ -74,14 +74,14 @@
   width: var(--dx-tooltip-arrow-size);
   height: var(--dx-tooltip-arrow-size);
   border-radius: 2px;
+  margin-top: 0;
 
   /* rtl-physical: unconditional half-arrow-width centering compensator,
      shared across all four `[data-side]` variants below -- for the
-     top/bottom variants it is paired with their own physical `left: 50%`
+     top/bottom variants it is paired with their own physical `left`
      (see those rules), so it cannot become `margin-inline-start` without
      desyncing from that pairing. */
   margin-left: calc(-1 * var(--dx-tooltip-arrow-size) / 2);
-  margin-top: 0;
   background-color: var(--dx-foreground);
   content: " ";
   rotate: 45deg;
