@@ -497,3 +497,103 @@
     box-shadow: var(--dx-ring-focus);
     outline: none;
 }
+
+/* Edge fade: `class: "dx-carousel-fade"` on `Carousel`. The slides fade out
+   toward the track's edges to show there is more to scroll, and each fade
+   disappears once the track reaches that end, so the first and last slide
+   are fully visible at rest.
+
+   Construction: a mask on the stationary `carousel-viewport` wrapper (never
+   the scroller, so the fade does not move with a rubber-band overshoot),
+   whose two stop lengths are animated by the track's own scroll position
+   (a scroll-driven animation, no script and no state). The first
+   `--dx-carousel-fade-size` of scroll ramps the leading fade in; the last
+   `--dx-carousel-fade-size` ramps the trailing one out. A track that does
+   not overflow never starts the timeline, so both stops stay at their
+   registered initial `0px` and nothing is masked. Engines without
+   scroll-driven animations (the `@supports` guard) simply show no fade.
+   Direction comes from the root's `data-orientation`/`data-direction`, so
+   RTL (the scroll origin is the right edge) and vertical are mirrored by
+   the gradient axis, not by separate timelines. The animation is scroll-
+   linked, not time-based, so `prefers-reduced-motion` has nothing to turn
+   off. */
+@property --dx-carousel-fade-start {
+    syntax: "<length>";
+    inherits: false;
+    initial-value: 0px;
+}
+
+@property --dx-carousel-fade-end {
+    syntax: "<length>";
+    inherits: false;
+    initial-value: 0px;
+}
+
+@supports (animation-timeline: scroll()) and (timeline-scope: --dx-carousel-scroll) {
+    .dx-carousel-fade {
+        --dx-carousel-fade-size: var(--dx-space-12);
+
+        timeline-scope: --dx-carousel-scroll-x, --dx-carousel-scroll-y;
+    }
+
+    .dx-carousel-fade[data-orientation="horizontal"] .dx-carousel-content {
+        scroll-timeline: --dx-carousel-scroll-x inline;
+    }
+
+    .dx-carousel-fade[data-orientation="vertical"] .dx-carousel-content {
+        scroll-timeline: --dx-carousel-scroll-y block;
+    }
+
+    .dx-carousel-fade [data-slot="carousel-viewport"] {
+        --dx-carousel-fade-dir: to right;
+
+        mask-image: linear-gradient(
+            var(--dx-carousel-fade-dir),
+            transparent,
+            #000 var(--dx-carousel-fade-start),
+            #000 calc(100% - var(--dx-carousel-fade-end)),
+            transparent
+        );
+        animation-name: dx-carousel-fade-start, dx-carousel-fade-end;
+        animation-duration: 1ms, 1ms;
+        animation-timing-function: linear, linear;
+        animation-fill-mode: both, both;
+        animation-range:
+            0 var(--dx-carousel-fade-size),
+            calc(100% - var(--dx-carousel-fade-size)) 100%;
+    }
+
+    .dx-carousel-fade[data-orientation="horizontal"] [data-slot="carousel-viewport"] {
+        animation-timeline: --dx-carousel-scroll-x, --dx-carousel-scroll-x;
+    }
+
+    .dx-carousel-fade[data-orientation="vertical"] [data-slot="carousel-viewport"] {
+        --dx-carousel-fade-dir: to bottom;
+
+        animation-timeline: --dx-carousel-scroll-y, --dx-carousel-scroll-y;
+    }
+
+    .dx-carousel-fade[data-orientation="horizontal"][data-direction="rtl"] [data-slot="carousel-viewport"] {
+        --dx-carousel-fade-dir: to left;
+    }
+}
+
+@keyframes dx-carousel-fade-start {
+    from {
+        --dx-carousel-fade-start: 0px;
+    }
+
+    to {
+        --dx-carousel-fade-start: var(--dx-carousel-fade-size);
+    }
+}
+
+@keyframes dx-carousel-fade-end {
+    from {
+        --dx-carousel-fade-end: var(--dx-carousel-fade-size);
+    }
+
+    to {
+        --dx-carousel-fade-end: 0px;
+    }
+}
