@@ -18,7 +18,7 @@ const SNAP_POINTS: [SnapPoint; 3] = [
 
 fn label(point: Option<SnapPoint>) -> &'static str {
     match point {
-        Some(SnapPoint::Px(px)) if px == 355.0 => "355px",
+        Some(SnapPoint::Px(355.0)) => "355px",
         Some(SnapPoint::Fraction(_)) => "full",
         _ => "148px",
     }

@@ -1,13 +1,13 @@
 use dioxus::prelude::*;
 use dioxus_primitives::alert_dialog::{
     self, AlertDialogActionProps, AlertDialogActionsProps, AlertDialogCancelProps,
-    AlertDialogDescriptionProps, AlertDialogRootProps, AlertDialogTitleProps,
+    AlertDialogDescriptionProps, AlertDialogTitleProps,
 };
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::keyboard_inset::{use_keyboard_panel, KeyboardInset};
 use dioxus_primitives::merge_attributes;
 
-/// The props for the [`AlertDialog`] component: [`AlertDialogRootProps`] plus the panel's
+/// The props for the [`AlertDialog`] component: [`AlertDialogRootProps`](alert_dialog::AlertDialogRootProps) plus the panel's
 /// `initial_focus` / `final_focus` (an alert dialog's panel is rendered by this wrapper).
 #[derive(Props, Clone, PartialEq)]
 pub struct AlertDialogProps {
@@ -19,7 +19,7 @@ pub struct AlertDialogProps {
     /// The controlled open state.
     #[props(default)]
     pub open: ReadSignal<Option<bool>>,
-    /// Whether the scrim is drawn; see [`AlertDialogRootProps::overlay`].
+    /// Whether the scrim is drawn; see [`AlertDialogRootProps::overlay`](alert_dialog::AlertDialogRootProps::overlay).
     #[props(default = ReadSignal::new(Signal::new(true)))]
     pub overlay: ReadSignal<bool>,
     /// Called when the open state changes.
