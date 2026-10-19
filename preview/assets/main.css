@@ -876,46 +876,111 @@ html:not([data-nav-sort="category"]) .dx-nav-category {
   display: none;
 }
 
-.dx-nav-sort-group {
-  padding-bottom: 0;
+/* The switch is sticky at the top of the sidebar's scroller over an opaque sidebar background. Its height is a
+ * variable because the category labels stick right under it (`top`) and `docs_nav.rs`'s jump script aligns a
+ * group under it: 0.5rem group padding + the 2rem pill (28px items + 2 x 2px) + 0.25rem breathing room. */
+.dx-nav-sort-group,
+.dx-nav-list {
+  --dx-nav-sort-height: 2.75rem;
+}
+
+/* Doubled with `.dx-sidebar-group` (`position: relative`, padding): at one class apiece the winner would be
+ * whichever sheet this route loads last. */
+.dx-sidebar-group.dx-nav-sort-group {
+  position: sticky;
+  z-index: calc(var(--dx-z-raise) + 1);
+  top: 0;
+  height: var(--dx-nav-sort-height);
+  box-sizing: border-box;
+  flex-shrink: 0;
+  padding-bottom: var(--dx-space-1);
+  background-color: var(--dx-sidebar-background);
 }
 
 .dx-nav-sort {
   display: flex;
+  align-items: center;
   padding: 2px;
   border-radius: var(--dx-radius-lg);
   background-color: var(--dx-muted);
   gap: 2px;
 }
 
-.dx-nav-sort-option {
-  height: 1.75rem;
+/* The ToggleGroup (A-Z / Category) fills the pill; the chevron menu trigger sits after it. */
+.dx-nav-sort-toggles {
+  min-width: 0;
   flex: 1;
-  border: 0;
-  border-radius: calc(var(--dx-radius-lg) - 2px);
+}
+
+.dx-nav-sort .dx-nav-sort-option {
+  min-width: 0;
+  flex: 1;
+}
+
+/* The pressed look comes from `<html data-nav-sort>` (set before first paint), never from the item's
+ * `data-state`, which is Rust state and still the SSG default (A-Z) on the first frame. Specificity: the
+ * component's `[data-state="on"]` and `:focus-visible` rules are (0,2,0); these are above them. */
+.dx-nav-sort .dx-nav-sort-option[data-state] {
   background-color: transparent;
   color: var(--dx-muted-foreground);
-  cursor: pointer;
-  font: inherit;
-  font-size: var(--dx-text-xs);
-  font-weight: 500;
 }
 
-.dx-nav-sort-option:focus-visible {
-  box-shadow: var(--dx-ring);
-  outline: none;
-}
-
-html:not([data-nav-sort="category"]) .dx-nav-sort-option[data-nav-sort-option="az"],
-html[data-nav-sort="category"] .dx-nav-sort-option[data-nav-sort-option="category"] {
+html:not([data-nav-sort="category"]) .dx-nav-sort .dx-nav-sort-option[data-nav-sort-option="az"],
+html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-option="category"] {
   background-color: var(--dx-background);
   box-shadow: var(--dx-shadow-sm);
   color: var(--dx-foreground);
 }
 
-html:not([data-nav-sort="category"]) .dx-nav-sort-option[data-nav-sort-option="az"]:focus-visible,
-html[data-nav-sort="category"] .dx-nav-sort-option[data-nav-sort-option="category"]:focus-visible {
-  box-shadow: var(--dx-ring);
+.dx-nav-sort .dx-nav-sort-option[data-state]:focus-visible {
+  background-color: var(--dx-accent);
+  color: var(--dx-foreground);
+}
+
+html:not([data-nav-sort="category"]) .dx-nav-sort .dx-nav-sort-option[data-nav-sort-option="az"]:focus-visible,
+html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-option="category"]:focus-visible {
+  box-shadow: var(--dx-ring-focus);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-nav-sort .dx-nav-sort-option[data-state]:hover {
+    background-color: var(--dx-accent);
+    color: var(--dx-foreground);
+  }
+}
+
+/* The jump-to-category trigger: a quiet icon button in the pill (its default outline-button look is a
+ * zero-specificity `:where()` rule, so these simply win). */
+.dx-nav-sort-jump {
+  width: var(--dx-control-height-sm);
+  height: var(--dx-control-height-sm);
+  flex-shrink: 0;
+  padding: 0;
+  border-radius: min(var(--dx-radius-md), 0.75rem);
+  background-color: transparent;
+  box-shadow: none;
+  color: var(--dx-muted-foreground);
+}
+
+.dx-nav-sort-jump[aria-expanded="true"] {
+  background-color: var(--dx-accent);
+  color: var(--dx-foreground);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-nav-sort-jump:hover {
+    background-color: var(--dx-accent);
+    color: var(--dx-foreground);
+  }
+}
+
+/* Category order: the label of the group being read sticks directly under the switch while its group scrolls
+ * (the group is the label's containing block, so it releases when the group ends). */
+.dx-nav-category .dx-sidebar-group-label {
+  position: sticky;
+  z-index: var(--dx-z-raise);
+  top: var(--dx-nav-sort-height);
+  background-color: var(--dx-sidebar-background);
 }
 
 .dx-docs-shell-body .dx-sidebar-container {
