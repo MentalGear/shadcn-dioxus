@@ -3,12 +3,13 @@
   "build": "debug",
   "workers": "2",
   "date": "2026-10-19",
-  "tests": 3752,
-  "files": 183,
-  "total_seconds": 14168,
-  "budget_seconds": 16000,
+  "tests": 3820,
+  "files": 185,
+  "total_seconds": 14314,
+  "budget_seconds": 17000,
   "max_file_seconds": 3000,
-  "note": "seconds = sum of test durations (worker time); debug SSG build, 2 workers, 4-core box shared with other lanes. Refresh: playwright/tools/run-suite.sh, then durations.mjs chunk-*.json --write"
+  "note": "seconds = sum of test durations (worker time) on the DEBUG SSG build, 2 workers, 4-core box shared with other lanes; main-thread.spec.ts and scroll-main-thread.spec.ts are release-only (skipped on debug) and carry their RELEASE seconds. release_total_seconds = the same run on a release build. Refresh: playwright/tools/run-suite.sh, then durations.mjs chunk-*.json --write",
+  "release_total_seconds": 9776
  },
  "files": {
   "accordion-animation.spec.ts": {
@@ -1473,6 +1474,22 @@
    "passed": 16,
    "failed": 0,
    "skipped": 1,
+   "retried": 0
+  },
+  "oracle/tier2-html/main-thread.spec.ts": {
+   "tests": 60,
+   "seconds": 91.2,
+   "passed": 59,
+   "failed": 1,
+   "skipped": 0,
+   "retried": 0
+  },
+  "oracle/tier2-html/scroll-main-thread.spec.ts": {
+   "tests": 8,
+   "seconds": 55.2,
+   "passed": 7,
+   "failed": 1,
+   "skipped": 0,
    "retried": 0
   }
  }
