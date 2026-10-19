@@ -54,15 +54,6 @@ A polar chart is a square at most 250px wide, centred in its container. Lengths 
 
 In a stacked chart, each segment covers its own share of the stack total, so the segments fill the sweep exactly. Recharts keeps the angle scale at the largest *single* value and cuts the overflowing stack off at `end_angle`. Its stacked demo (570 mobile, 1,260 desktop) therefore splits the half turn 45/55, where the real shares are 31/69. This chart draws 31/69.
 
-## Demos
-
-- **Simple**: five rings from three o'clock over muted tracks.
-- **Label**: rings from six o'clock over 470 degrees, each named along its arc.
-- **Grid**: rings over circles and spokes.
-- **Text**: a 250-degree gauge with rounded ends over a full muted ring, the value in the centre.
-- **Shape**: a thick 100-degree gauge over a thinner full ring.
-- **Stacked**: two series stacked into one half-turn ring with rounded segments.
-
 ## Accessibility
 
 Radial charts share the [Chart](/component/chart/) behavior: the SVG is a named image (`role="img"`), and a visually hidden data table lists every ring's category and value for assistive technology. The chart's wrapper is focusable, and `ArrowLeft`, `ArrowRight`, `Home`, `End` and `Escape` move through the rings.
