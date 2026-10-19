@@ -39,7 +39,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
 | [4](backlog/004-first-3-browser-ci-run-treat-as-calibration-not.md) | First 3-browser CI run — treat as calibration. Not done — see 2026-09-04 Notes below for what's now known and… | A manual dispatch of playwright.yml on a GitHub-hosted runner: all workflows are… | S–M | ci |
-| [5](backlog/005-tier-2-harness-completion-rules-5-checkvalidity.md) | Tier-2 harness completion — rules 5 (checkValidity/reportValidity/willValidate), 7 (label association), 8… | Rule 7 landed 2026-09-19 (batch 3); rule 5 closed as subsumed; rule 8 re-scoped, still open | S (rule 8 remaining) | tests |
+| [5](backlog/005-tier-2-harness-completion-rules-5-checkvalidity.md) | Tier-2 harness completion — rules 5 (checkValidity/reportValidity/willValidate), 7 (label association), 8… | LANDED 2026-10-19 (rule 8: form attribute forwarded by Switch, RadioGroup, Checkbox; rule 7… | S (rule 8 remaining) | tests |
 | [6](backlog/006-upstream-engagement-where-fixes-land-open.md) | Upstream engagement — where fixes land (open decision #1) + talking to upstream/fork authors (decision #4) | User decision | S to start | upstream |
 | [10](backlog/010-phase-5-collision-detection.md) | Phase 5 — collision detection | 5.1 REFRAMED by the 2026-09-01 bits-ui/Radix source comparison, FLIP sub-problem landed same day… | S (flip, done) + S (JS-fallback shift… | theme |
 | [14](backlog/014-nudge-dioxus-framework-issues-2962-onclose-4319.md) | Nudge Dioxus framework issues: #2962 (onclose), #4319 (dialog methods), ancestor-traversal gap (complaints.md) | User decision (outward-facing) | S | overlays |
