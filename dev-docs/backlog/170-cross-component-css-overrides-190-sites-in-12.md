@@ -1,10 +1,10 @@
 ---
 id: 170
 title: "Cross-component CSS overrides: 190 sites in 12 sheets declare, in one component's stylesheet, a property that…"
-status: "OPEN (construction started) -- recorded 2026-10-05 (round 3: the FIELD-VAR and STYLE-DELIVERY…"
+status: "NARROWED 2026-10-19 (backlog review): baseline is now 138 sites in 9 sheets (was 190 in 12)"
 size: "M (the decision and the prototype are…"
 area: theme
-updated: 2026-10-05
+updated: 2026-10-19
 ---
 
 # Row 170: Cross-component CSS overrides: 190 sites in 12 sheets declare, in one component's stylesheet, a property that…
@@ -15,7 +15,7 @@ Cross-component CSS overrides: 190 sites in 12 sheets declare, in one component'
 
 ## Status / trigger
 
-**OPEN (construction started)** -- recorded 2026-10-05 (round 3: the FIELD-VAR and STYLE-DELIVERY lanes); the first conversion (Field -> Label) and the gate with a shrink-only baseline landed; the burn-down and the layer prototype are scheduled in the next-session order **beside the 135 -> 145 -> 111 chain (step 2): it overlaps 145's state recipes**
+**NARROWED 2026-10-19 (backlog review): baseline is now 138 sites in 9 sheets (was 190 in 12)**
 
 ## Size
 

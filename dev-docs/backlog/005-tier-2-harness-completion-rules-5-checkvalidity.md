@@ -1,10 +1,10 @@
 ---
 id: 5
 title: "Tier-2 harness completion — rules 5 (checkValidity/reportValidity/willValidate), 7 (label association), 8…"
-status: "Rule 7 landed 2026-09-19 (batch 3); rule 5 closed as subsumed; rule 8 re-scoped, still open"
+status: "NARROWED 2026-10-19 (backlog review): only rule 8 remains, blocked on form attribute forwarding in…"
 size: "S (rule 8 remaining)"
 area: tests
-updated: 2026-09-19
+updated: 2026-10-19
 ---
 
 # Row 5: Tier-2 harness completion — rules 5 (checkValidity/reportValidity/willValidate), 7 (label association), 8…
@@ -15,7 +15,7 @@ Tier-2 harness completion — rules 5 (`checkValidity`/`reportValidity`/`willVal
 
 ## Status / trigger
 
-**Rule 7 landed 2026-09-19 (batch 3); rule 5 closed as subsumed; rule 8 re-scoped, still open**
+**NARROWED 2026-10-19 (backlog review): only rule 8 remains, blocked on `form` attribute forwarding in the primitives**
 
 ## Size
 

@@ -1,10 +1,10 @@
 ---
 id: 218
 title: "Popup style isolation: top-layer popups stay DOM descendants of their trigger, so free-content rules in an…"
-status: "PARTLY LANDED 2026-10-15 (lane ancestorleak 900f394 + main-loop 526b51d, beaf3b0); open: the…"
+status: "NARROWED 2026-10-19 (backlog review): PARTLY LANDED 2026-10-15 (lane ancestorleak 900f394 +…"
 size: "M"
 area: overlays
-updated: 2026-10-15
+updated: 2026-10-19
 ---
 
 # Row 218: Popup style isolation: top-layer popups stay DOM descendants of their trigger, so free-content rules in an…
@@ -15,7 +15,7 @@ Popup style isolation: top-layer popups stay DOM descendants of their trigger, s
 
 ## Status / trigger
 
-**PARTLY LANDED 2026-10-15 (lane `ancestorleak` 900f394 + main-loop 526b51d, beaf3b0); open: the typography reset and the same-component-nesting generalisation**
+**NARROWED 2026-10-19 (backlog review): PARTLY LANDED 2026-10-15 (lane `ancestorleak` 900f394 + main-loop 526b51d, beaf3b0); open: the typography reset and the same-component-nesting generalisation; remaining: the typography reset for popup roots and the variant-slot gate**
 
 ## Size
 

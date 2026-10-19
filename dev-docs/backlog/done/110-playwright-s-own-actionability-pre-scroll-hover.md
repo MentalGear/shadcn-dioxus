@@ -1,10 +1,10 @@
 ---
 id: 110
 title: "Playwright's own actionability pre-scroll (.hover()/.focus()/.click()'s auto-scroll) animates under the…"
-status: "Instance 2, 2026-09-25 (round 8b): carousel.spec.ts's \"hovering the carousel stops rotation…\"…"
+status: "CLOSED 2026-10-19 (backlog review 2026-10-18): done in the code"
 size: "Diagnosis M (two hypotheses tried and…"
 area: tests
-updated: 2026-09-25
+updated: 2026-10-19
 ---
 
 # Row 110: Playwright's own actionability pre-scroll (.hover()/.focus()/.click()'s auto-scroll) animates under the…
@@ -15,7 +15,7 @@ Playwright's own actionability pre-scroll (`.hover()`/`.focus()`/`.click()`'s au
 
 ## Status / trigger
 
-Instance 2, 2026-09-25 (round 8b): `carousel.spec.ts`'s "hovering the carousel stops rotation…" failed roughly 3-4 times per 5-10 runs on the SSG build. Instance 1, 2026-09-18 (`daebe40`, confirmed by reading that commit: its own message states verbatim "html gets scroll-behavior: smooth so the jump animates"): `oracle/tier2-html/top-layer.spec.ts`'s `pinNearTop` helper (~line 1212)
+**CLOSED 2026-10-19 (backlog review 2026-10-18): done in the code**
 
 ## Size
 
