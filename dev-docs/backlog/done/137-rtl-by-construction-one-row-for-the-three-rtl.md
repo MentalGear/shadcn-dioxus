@@ -1,7 +1,7 @@
 ---
 id: 137
 title: "RTL by construction -- one row for the three RTL threads: row 13's open follow-ups (optional RTL for…"
-status: "BACKLOG, MERGED 2026-10-05 (owner decision); the owner then CONFIRMED the solve-by-construction…"
+status: "LANDED 2026-10-19 (items a-e: reactive DirectionProvider, preview RTL toggle, check-direction-keys…"
 size: "M (the docs page alone is S; parts a…"
 area: docs
 updated: 2026-10-05
@@ -15,7 +15,7 @@ updated: 2026-10-05
 
 ## Status / trigger
 
-**BACKLOG, MERGED 2026-10-05 (owner decision); the owner then CONFIRMED the solve-by-construction version the same day: a reactive `DirectionProvider`, a preview-level LTR/RTL toggle, the `scripts/check-direction-keys.sh` gate, logical-properties CSS and an RTL oracle (pieces a-e below)**; scheduled in the next-session order (features, after 138, 146-148, 161, 162 and 165; it shares `preview/src/main.rs` with 148, 161 and 162, so it goes after them). Was: **BACKLOG** -- recorded 2026-10-04 from the catalog audit (§3.7); low value, optional
+**LANDED 2026-10-19 (items a-e: reactive DirectionProvider, preview RTL toggle, check-direction-keys gate, logical popup align).** Was: **BACKLOG, MERGED 2026-10-05 (owner decision); the owner then CONFIRMED the solve-by-construction version the same day: a reactive `DirectionProvider`, a preview-level LTR/RTL toggle, the `scripts/check-direction-keys.sh` gate, logical-properties CSS and an RTL oracle (pieces a-e below)**; scheduled in the next-session order (features, after 138, 146-148, 161, 162 and 165; it shares `preview/src/main.rs` with 148, 161 and 162, so it goes after them). Was: **BACKLOG** -- recorded 2026-10-04 from the catalog audit (§3.7); low value, optional
 
 ## Size
 
