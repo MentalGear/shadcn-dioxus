@@ -239,7 +239,7 @@ async function expectCheckableSlot(
 }
 
 const block = (name: string, variant = "main") =>
-    `${BASE_URL}/component/block/${name}/${variant}/`;
+    `${BASE_URL}/component/block/?name=${name}&variant=${variant}&`;
 
 test.describe("Menu-item indicator slot: label never meets the indicator", () => {
     test.beforeEach(async ({ page }) => {

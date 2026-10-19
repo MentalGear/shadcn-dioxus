@@ -4,8 +4,8 @@ import { BASE_URL as BASE } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
 const URL = `${BASE}/component/drag_and_drop_list/`;
-const REMOVABLE_URL = `${BASE}/component/block/drag_and_drop_list/removable/`;
-const TUNING_URL = `${BASE}/component/block/drag_and_drop_list/tuning/`;
+const REMOVABLE_URL = `${BASE}/component/block/?name=drag_and_drop_list&variant=removable&`;
+const TUNING_URL = `${BASE}/component/block/?name=drag_and_drop_list&variant=tuning&`;
 const LOAD_TIMEOUT = 20 * 60 * 1000;
 
 /** Navigate to the DnD page and return the first (main) variant list. */

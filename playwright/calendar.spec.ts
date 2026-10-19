@@ -386,7 +386,7 @@ test.describe("selected/range state outranks :hover (user report, calendar-state
   //     message, instead of burning the timeout.
   test("a range's in-between day keeps its muted look while hovered, not the endpoint look", async ({ page }) => {
     await page.clock.setFixedTime(new Date("2026-09-26T12:00:00Z"));
-    await gotoHydrated(page, `${BASE_URL}/component/block/calendar/range/`, {
+    await gotoHydrated(page, `${BASE_URL}/component/block/?name=calendar&variant=range&`, {
       timeout: 20 * 60 * 1000,
     });
     await page.waitForLoadState("networkidle");
@@ -461,13 +461,13 @@ test.describe("caption layouts (captionLayout)", () => {
   const caption = (page: any, name: string) => page.locator(`[data-caption-layout="${name}"]`);
 
   async function gotoCaptionVariant(page: any) {
-    await gotoHydrated(page, `${BASE_URL}/component/block/calendar/caption/`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/block/?name=calendar&variant=caption&`, { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState("networkidle");
     await expect(caption(page, "Label")).toBeVisible({ timeout: 30000 });
   }
 
   test("the default is a plain label: 'May 2026' between the arrows, no selects", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/block/calendar/simple/`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/block/?name=calendar&variant=simple&`, { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState("networkidle");
     const calendar = page.locator(".dx-calendar").first();
     await expect(calendar).toBeVisible({ timeout: 30000 });
@@ -573,7 +573,7 @@ test.describe("caption layouts (captionLayout)", () => {
 
 test.describe("week numbers (showWeekNumber)", () => {
   async function gotoWeekNumbers(page: any) {
-    await gotoHydrated(page, `${BASE_URL}/component/block/calendar/week_numbers/`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/block/?name=calendar&variant=week_numbers&`, { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState("networkidle");
     await expect(page.locator(".dx-calendar").first()).toBeVisible({ timeout: 30000 });
   }
@@ -625,7 +625,7 @@ test.describe("week numbers (showWeekNumber)", () => {
   });
 
   test("a calendar without showWeekNumber renders no column", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/block/calendar/simple/`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/block/?name=calendar&variant=simple&`, { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState("networkidle");
     await expect(page.locator(".dx-calendar").first()).toBeVisible({ timeout: 30000 });
     await expect(page.locator(".dx-calendar-grid-weeknum")).toHaveCount(0);

@@ -77,7 +77,7 @@ for (const scheme of ["light", "dark"] as const) {
     // The range demo fixes its view to May 2026; pin "today" inside it (and out of the 5..12 range) so a today cell exists.
     await page.clock.setFixedTime(new Date("2026-05-15T12:00:00Z"));
     await page.emulateMedia({ colorScheme: scheme });
-    await gotoHydrated(page, `${BASE_URL}/component/block/calendar/range/${scheme === "dark" ? "?dark_mode=true" : ""}`, GOTO);
+    await gotoHydrated(page, `${BASE_URL}/component/block/?name=calendar&variant=range&${scheme === "dark" ? "dark_mode=true" : ""}`, GOTO);
     await page.waitForLoadState("networkidle");
     const cell = page
       .locator('.dx-calendar-grid-cell[data-month="current"][data-today="true"]:not([data-selected="true"],[data-disabled="true"])')

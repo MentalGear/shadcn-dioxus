@@ -483,7 +483,7 @@ test('keyboard navigation', async ({ page }) => {
 // ("changes the state without closing the menu", menu-and-menubar-pattern.html,
 // "Keyboard Interaction"). `main`'s "Show Bookmarks"/"Pedro Duarte" items use
 // the primitive's default, Radix's `onSelect` default: selecting closes the menu.
-const block = (variant: string) => `${BASE_URL}/component/block/context_menu/${variant}/`;
+const block = (variant: string) => `${BASE_URL}/component/block/?name=context_menu&variant=${variant}&`;
 
 test.describe('Checkable items', () => {
   test('checkbox items: menuitemcheckbox with an always-present aria-checked; a click toggles, a disabled item does not, the menu stays open', async ({ page }) => {

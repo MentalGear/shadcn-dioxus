@@ -187,7 +187,7 @@ test('drag ignores pageX/clientX mismatch (iPad pinch-zoom analog)', async ({ pa
 });
 
 test('dynamic min/max', async ({ page }) => {
-  await gotoHydrated(page, `${BASE_URL}/component/block/slider/dynamic_range/`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/block/?name=slider&variant=dynamic_range&`, { timeout: 20 * 60 * 1000 });
   const thumb = page.getByRole('slider', { name: 'Dynamic Range Slider' });
 
   // Initial state: percentage mode (0-100)
@@ -210,7 +210,7 @@ test('dynamic min/max', async ({ page }) => {
 });
 
 test('range two thumbs', async ({ page }) => {
-  await gotoHydrated(page, `${BASE_URL}/component/block/slider/range/`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/block/?name=slider&variant=range&`, { timeout: 20 * 60 * 1000 });
   const thumbs = page.getByRole('slider', { name: 'Range Slider' });
   await expect(thumbs).toHaveCount(2);
   const t0 = thumbs.nth(0);
@@ -238,7 +238,7 @@ test('range two thumbs', async ({ page }) => {
 });
 
 test('range thumbs recover from collision', async ({ page }) => {
-  await gotoHydrated(page, `${BASE_URL}/component/block/slider/range/`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/block/?name=slider&variant=range&`, { timeout: 20 * 60 * 1000 });
   const thumbs = page.getByRole('slider', { name: 'Range Slider' });
   const t0 = thumbs.nth(0);
   const t1 = thumbs.nth(1);
@@ -263,7 +263,7 @@ test('range thumbs recover from collision', async ({ page }) => {
 });
 
 test('range track click activates closest thumb', async ({ page }) => {
-  await gotoHydrated(page, `${BASE_URL}/component/block/slider/range/`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/block/?name=slider&variant=range&`, { timeout: 20 * 60 * 1000 });
   const thumbs = page.getByRole('slider', { name: 'Range Slider' });
   const t0 = thumbs.nth(0);
   const t1 = thumbs.nth(1);
@@ -284,7 +284,7 @@ test('range track click activates closest thumb', async ({ page }) => {
 });
 
 test('range collided thumbs split by click direction', async ({ page }) => {
-  await gotoHydrated(page, `${BASE_URL}/component/block/slider/range/`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/block/?name=slider&variant=range&`, { timeout: 20 * 60 * 1000 });
   const thumbs = page.getByRole('slider', { name: 'Range Slider' });
   const t0 = thumbs.nth(0);
   const t1 = thumbs.nth(1);
@@ -305,7 +305,7 @@ test('range collided thumbs split by click direction', async ({ page }) => {
 });
 
 test('range collided thumbs drag left from just below collision', async ({ page }) => {
-  await gotoHydrated(page, `${BASE_URL}/component/block/slider/range/`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/block/?name=slider&variant=range&`, { timeout: 20 * 60 * 1000 });
   const thumbs = page.getByRole('slider', { name: 'Range Slider' });
   const t0 = thumbs.nth(0);
   const t1 = thumbs.nth(1);
@@ -336,7 +336,7 @@ test('range dragged thumb keeps its identity past the other thumb', async ({ pag
   // ordered_range, so dragging thumb 0 past thumb 1 silently reassigned which
   // thumb was "start" and which was "end" -- the thumb under the user's
   // pointer swapped identity mid-drag and the untouched thumb visibly jumped.
-  await gotoHydrated(page, `${BASE_URL}/component/block/slider/range/`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/block/?name=slider&variant=range&`, { timeout: 20 * 60 * 1000 });
   const thumbs = page.getByRole('slider', { name: 'Range Slider' });
   const t0 = thumbs.nth(0);
   const t1 = thumbs.nth(1);

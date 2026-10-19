@@ -122,7 +122,7 @@ test("a raw .focus() call on the trigger does not close its own open content (ro
 // ("changes the state without closing the menu", menu-and-menubar-pattern.html,
 // "Keyboard Interaction"). The `rtl` variant's "Pinned"/"Ascending" items use
 // the primitive's default, Radix's `onSelect` default: selecting closes the menu.
-const block = (variant: string) => `${BASE_URL}/component/block/menubar/${variant}/`;
+const block = (variant: string) => `${BASE_URL}/component/block/?name=menubar&variant=${variant}&`;
 
 /** The open popup of the menu that contains `inner` (the popup, not its always-rendered `role="menu"` wrapper). */
 const popupHaving = (page: Page, inner: Locator) => page.getByRole("menu").filter({ has: inner }).last();

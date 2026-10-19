@@ -98,7 +98,7 @@ test("scrollHeight remains stable during continuous scroll", async ({ page }) =>
 // Test with random_heights variant which has highly variable item sizes
 // This reproduces production failure where adaptive estimation struggles
 test("scrollHeight stable with random heights variant", async ({ page }) => {
-  await gotoHydrated(page, `${BASE_URL}/component/block/virtual_list/random_heights/`, {
+  await gotoHydrated(page, `${BASE_URL}/component/block/?name=virtual_list&variant=random_heights&`, {
     timeout: 20 * 60 * 1000,
   });
 
@@ -223,7 +223,7 @@ test("resize churn while scrolling does not panic (holds no borrow across resize
   page.on("console", (msg) => consoleMessages.push(msg.text()));
   page.on("pageerror", (err) => consoleMessages.push(`pageerror: ${err.message}`));
 
-  await gotoHydrated(page, `${BASE_URL}/component/block/virtual_list/random_heights/`, {
+  await gotoHydrated(page, `${BASE_URL}/component/block/?name=virtual_list&variant=random_heights&`, {
     timeout: 20 * 60 * 1000,
   });
 
@@ -276,8 +276,8 @@ test.describe("Axe automated scan", () => {
 // `Auto` mode switches modes at 1,000 rows) and unmount the list.
 // ---------------------------------------------------------------------------
 
-const CV_URL = `${BASE_URL}/component/block/virtual_list/content_visibility/`;
-const WINDOWED_URL = `${BASE_URL}/component/block/virtual_list/windowed/`;
+const CV_URL = `${BASE_URL}/component/block/?name=virtual_list&variant=content_visibility&`;
+const WINDOWED_URL = `${BASE_URL}/component/block/?name=virtual_list&variant=windowed&`;
 
 const cvList = (page: Page) => page.locator('[data-vl-demo="content-visibility"] [role="list"]');
 const windowedList = (page: Page) => page.locator('[data-vl-demo="windowed"] [role="list"]');

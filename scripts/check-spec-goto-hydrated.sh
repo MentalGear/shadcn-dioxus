@@ -21,13 +21,16 @@
 # `goto-ok: <reason>` -- a navigation that must not wait for hydration (a first-paint or pre-hydration oracle, a
 # JavaScript-disabled or wasm-blocked context, a static fixture page that never sets the flag).
 #
-# Rule 2. A spec names a component by its PATH route (`/component/<name>/`, `/component/block/<name>/<variant>/`),
-# never the legacy query form (`/component/?name=<x>&`, `/component/block/?name=<x>&variant=<y>`). The legacy
-# route renders a name-agnostic "Loading component..." shell and redirects client-side once mounted
-# (`preview/src/main.rs` `ComponentDemo`), so `html[data-hydrated]` is already true on the SHELL: even
-# `gotoHydrated` returns before the real page exists. It also drops every query parameter except `iframe` and
-# `dark_mode` and builds client-created (not prerendered) charts. A spec that tests the redirect itself carries
-# `legacy-route-ok: <reason>` on the line or the line above.
+# Rule 2. A spec names a component page by its PATH route (`/component/<name>/`), never the legacy query form
+# `/component/?name=<x>&`. Every component has a prerendered file at the path route; the legacy route renders a
+# name-agnostic "Loading component..." shell and redirects client-side once mounted (`preview/src/main.rs`
+# `ComponentDemo`), so `html[data-hydrated]` is already true on the SHELL before the real page exists. It also
+# drops every query parameter except `iframe` and `dark_mode` and builds client-created (not prerendered)
+# charts. A spec that tests the redirect itself carries `legacy-route-ok: <reason>` on the line or the line
+# above. NOT covered: `/component/block/?name=<x>&variant=<y>&`. The server prerenders
+# `/component/block/<name>/<variant>/` for Block components only (sidebar), so on a static host the legacy
+# block shell is the only entry to any other component's variant page (the path form is a 404 there);
+# `gotoHydrated` waits for that redirect to land.
 #
 # Usage: scripts/check-spec-goto-hydrated.sh [FILE ...]   (default: every spec under playwright/)
 # Exit status: 0 when clean.
@@ -65,7 +68,7 @@ def blank(m):
     return re.sub(r"[^\n]", " ", m.group(0))
 
 GOTO = re.compile(r"\.\s*goto\s*\(\s*(?!page\s*\))")
-LEGACY = re.compile(r"/component/(?:block/?)?\?name=|[\"'`]name=[A-Za-z_$\{]")
+LEGACY = re.compile(r"/component/\?name=|[\"'`]name=[A-Za-z_$\{]")
 GOTO_OK = re.compile(r"goto-ok:\s*\S")
 LEGACY_OK = re.compile(r"legacy-route-ok:\s*\S")
 

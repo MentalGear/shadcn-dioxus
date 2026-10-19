@@ -244,7 +244,7 @@ test.describe('RTL', () => {
   // its handle. The arrow keys already flipped for that; the pointer drag did not, so the handle
   // slid the OPPOSITE way to the pointer. Both now share `primary_delta` (primitives/src/resizable.rs).
   test('dragging the handle moves it with the pointer, from the line or a few px beside it', async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/block/resizable/rtl/`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/block/?name=resizable&variant=rtl&`, { timeout: 20 * 60 * 1000 });
     const handle = page.getByRole('separator', { name: 'Divider' });
     await expect(handle).toBeVisible();
 
@@ -263,7 +263,7 @@ test.describe('RTL', () => {
   });
 
   test('keyboard still moves the divider in the physical direction of the arrow key', async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/block/resizable/rtl/`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/block/?name=resizable&variant=rtl&`, { timeout: 20 * 60 * 1000 });
     const handle = page.getByRole('separator', { name: 'Divider' });
     await handle.focus();
     const before = (await handle.boundingBox())!.x;

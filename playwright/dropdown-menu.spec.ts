@@ -141,7 +141,7 @@ test('a raw .focus() call on a plain item does not close the menu (row 85)', asy
 // menu", menu-and-menubar-pattern.html, "Keyboard Interaction"). The `rtl`
 // variant's "Pinned"/"Ascending" items use the primitive's default, Radix's
 // `onSelect` default: selecting closes the menu.
-const block = (variant: string) => `${BASE_URL}/component/block/dropdown_menu/${variant}/`;
+const block = (variant: string) => `${BASE_URL}/component/block/?name=dropdown_menu&variant=${variant}&`;
 
 test.describe('Checkable items', () => {
   test('checkbox items: menuitemcheckbox with an always-present aria-checked; a click toggles, a disabled item does not, the menu stays open', async ({ page }) => {
