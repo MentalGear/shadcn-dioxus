@@ -273,6 +273,26 @@ impl Engine {
             canvas_height: key.canvas_height,
         }
     }
+
+    /// Item `index` at its current position, whether or not it is mounted: what a consumer
+    /// needs to draw one extra item outside the window (the grid's focused cell).
+    pub(crate) fn item(&self, index: usize) -> Option<VirtualItem> {
+        self.index.item(index)
+    }
+
+    /// Drop every measured size, keeping the scroll state: for a consumer whose item geometry
+    /// changed meaning (a wrapping grid whose column count changed, so row `i` holds other
+    /// items). The next [`sync`](Self::sync) rebuilds the index from the estimates alone.
+    pub(crate) fn forget_measurements(&mut self) {
+        self.index = SizeIndex::new(SizeEstimates::evaluate(0, None), HashMap::new());
+        self.rendered = None;
+    }
+
+    /// How many items the viewport shows now (at least 1 once the viewport is known, 0 before):
+    /// the step of PageUp / PageDown.
+    pub(crate) fn visible_len(&self) -> usize {
+        self.visible().map_or(0, |(first, last)| last - first + 1)
+    }
 }
 
 // ---------------------------------------------------------------------------
