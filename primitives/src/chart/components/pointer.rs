@@ -185,17 +185,20 @@ impl HitTest {
                     return Hit::Index(s.index);
                 }
                 if *nearest_ring {
-                    let lo = sectors.iter().map(|s| s.r0.min(s.r1)).fold(f64::MAX, f64::min);
-                    let hi = sectors.iter().map(|s| s.r0.max(s.r1)).fold(f64::MIN, f64::max);
+                    let lo = sectors
+                        .iter()
+                        .map(|s| s.r0.min(s.r1))
+                        .fold(f64::MAX, f64::min);
+                    let hi = sectors
+                        .iter()
+                        .map(|s| s.r0.max(s.r1))
+                        .fold(f64::MIN, f64::max);
                     if r >= lo && r <= hi {
                         let gap = |s: &&Sector| {
                             let (a, b) = (s.r0.min(s.r1), s.r0.max(s.r1));
                             (a - r).max(r - b).max(0.0)
                         };
-                        if let Some(s) = sectors
-                            .iter()
-                            .min_by(|a, b| gap(a).total_cmp(&gap(b)))
-                        {
+                        if let Some(s) = sectors.iter().min_by(|a, b| gap(a).total_cmp(&gap(b))) {
                             return Hit::Index(s.index);
                         }
                     }
