@@ -23,6 +23,14 @@ serde = { version = "1.0", features = ["derive"] }
 # Optional, switched on by the `color-picker` feature (ColorPicker).
 palette = { version = "0.7.6", optional = true }
 
+# `src/sleep.rs`, the one timer: tokio on native, gloo-timers on wasm (what `dioxus-sdk-time::sleep` was).
+# `dioxus-sdk-time` above stays only until `date_picker.rs` swaps its import (the last user), then goes.
+[target.'cfg(not(target_family = "wasm"))'.dependencies]
+tokio = { version = "1", features = ["time"] }
+
+[target.'cfg(target_family = "wasm")'.dependencies]
+gloo-timers = { version = "0.3", features = ["futures"] }
+
 [dev-dependencies]
 dioxus-ssr = "0.7.0"
 # `interval.rs` tests drive a VirtualDom on tokio's paused clock (already in the tree via dioxus-sdk-time).

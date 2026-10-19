@@ -2564,6 +2564,7 @@ dependencies = [
  "dioxus-attributes",
  "dioxus-sdk-time",
  "dioxus-ssr",
+ "gloo-timers",
  "num-integer",
  "palette",
  "serde",

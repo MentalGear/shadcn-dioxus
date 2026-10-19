@@ -33,6 +33,7 @@ pub fn Checkbox(props: CheckboxProps) -> Element {
             required: props.required,
             disabled: props.disabled,
             name: props.name,
+            form: props.form,
             value: props.value,
             on_checked_change: props.on_checked_change,
             attributes: merged,

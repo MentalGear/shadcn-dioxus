@@ -21,7 +21,7 @@
 # The Progress demo had the same shape at 1 s. Fixed by construction, not
 # per instance: the one sanctioned timer is `use_interval`
 # (`primitives/src/interval.rs`), a task spawned in the calling component's
-# scope (`dioxus_sdk_time`: `tokio::time::interval` on native, `gloo_timers`
+# scope (`primitives/src/sleep.rs`: `tokio::time::sleep` on native, `gloo_timers`
 # on wasm). It is cancelled with the scope on unmount, so there is nothing to
 # forget to clear, and there is no JS timer in it at all. This script keeps
 # the old shape from coming back: it fails on any
