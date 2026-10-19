@@ -373,9 +373,9 @@ fn SelectListRendered(id: String, attributes: Vec<Attribute>, children: Element)
         tabindex: if focused() { "0" } else { "-1" },
         aria_multiselectable: ctx.multi(),
         popover: crate::top_layer::PopoverKind::Auto.as_str(),
-        dir: ctx.direction.as_str(),
+        dir: (ctx.direction)().as_str(),
         "data-state": if open() { "open" } else { "closed" },
-        "data-direction": ctx.direction.as_str(),
+        "data-direction": (ctx.direction)().as_str(),
     });
     let attributes = merge_attributes(vec![attributes, owned]);
 
@@ -448,9 +448,9 @@ fn SelectListRendered(id: String, attributes: Vec<Attribute>, children: Element)
         role: "listbox",
         tabindex: if focused() { "0" } else { "-1" },
         aria_multiselectable: ctx.multi(),
-        dir: ctx.direction.as_str(),
+        dir: (ctx.direction)().as_str(),
         "data-state": if open() { "open" } else { "closed" },
-        "data-direction": ctx.direction.as_str(),
+        "data-direction": (ctx.direction)().as_str(),
     });
     let attributes = merge_attributes(vec![attributes, labelledby, owned]);
 

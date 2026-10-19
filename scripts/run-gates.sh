@@ -75,6 +75,7 @@ gates=(
   "check-css-literals|scripts/check-css-literals.sh"
   "check-hooks-in-closures|scripts/check-hooks-in-closures.sh"
   "check-self-subscribing-effects|scripts/check-self-subscribing-effects.sh"
+  "check-direction-keys|scripts/check-direction-keys.sh"
   "check-css-logical-properties|scripts/check-css-logical-properties.sh"
   "check-attr-spread-collision|scripts/check-attr-spread-collision.sh"
   "check-demo-wrapper-width|scripts/check-demo-wrapper-width.sh"

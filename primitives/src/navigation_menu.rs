@@ -158,6 +158,7 @@ use dioxus_attributes::attributes;
 use crate::collection::{
     collection_item, use_collection_provider, use_item, CollectionOptions, CollectionState,
 };
+use crate::direction::use_direction;
 use crate::hover_intent::{use_hover_intent, HoverIntent};
 use crate::menu_sub::{use_delayed_action, DelayedAction};
 use crate::{
@@ -531,6 +532,7 @@ pub struct NavigationMenuTriggerProps {
 pub fn NavigationMenuTrigger(props: NavigationMenuTriggerProps) -> Element {
     let mut ctx: NavigationMenuContext = use_context();
     let item_ctx: NavigationMenuItemContext = use_context();
+    let direction = use_direction(None);
     let index = item_ctx.index;
     let disabled = move || (ctx.disabled)() || (item_ctx.disabled)();
     let is_open = item_ctx.is_open;
@@ -643,7 +645,8 @@ pub fn NavigationMenuTrigger(props: NavigationMenuTriggerProps) -> Element {
                 });
             },
             onkeydown: move |event: Event<KeyboardData>| {
-                match event.key() {
+                // RTL mirrors the horizontal pair (`Direction::ltr_equivalent`).
+                match direction.ltr_equivalent(&event.key()) {
                     // "If a dropdown is open ... pressing Esc will close the
                     // dropdown" -- disclosure-navigation.html's own
                     // accessibility-features note. Closes whatever is open
@@ -1142,6 +1145,7 @@ pub fn NavigationMenuLink(props: NavigationMenuLinkProps) -> Element {
     let mut item_ctx: NavigationMenuItemContext = use_context();
     let content_ctx: Option<NavigationMenuContentContext> = try_use_context();
     let is_top_level = content_ctx.is_none();
+    let direction = use_direction(None);
     let disabled = move || (ctx.disabled)() || (item_ctx.disabled)() || (props.disabled)();
 
     // `use_item` is always called (Rules of Hooks: this component's hook
@@ -1220,7 +1224,7 @@ pub fn NavigationMenuLink(props: NavigationMenuLinkProps) -> Element {
             },
             onkeydown: move |event: Event<KeyboardData>| {
                 if is_top_level {
-                    match event.key() {
+                    match direction.ltr_equivalent(&event.key()) {
                         Key::ArrowLeft => ctx.focus.focus_prev(),
                         Key::ArrowRight => ctx.focus.focus_next(),
                         // disclosure-navigation-hybrid.html's own keyboard

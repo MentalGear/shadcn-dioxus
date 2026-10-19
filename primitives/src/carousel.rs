@@ -80,7 +80,7 @@
 
 use crate::{
     collection::{collection_item, use_collection_provider, use_item, CollectionState},
-    direction::{use_direction, Direction, HorizontalNav},
+    direction::{use_direction, use_direction_signal, Direction, HorizontalNav},
     fold_style_attributes, has_own_accessible_name, merge_attributes, use_controlled,
     use_effect_cleanup, use_id_or, use_previous, use_unique_id,
 };
@@ -2819,7 +2819,7 @@ struct CarouselContext {
     /// silently disagree with the root's own resolution whenever a caller
     /// passes an explicit `dir` prop on [`Carousel`] itself rather than
     /// relying on an ambient [`crate::direction::DirectionProvider`].
-    direction: Direction,
+    direction: ReadSignal<Direction>,
     /// Autoplay/rotation-control state -- always present, every field
     /// initialized to an inert "no autoplay" value, so [`CarouselContent`]
     /// can read `autoplay.present`/`autoplay.rotating` unconditionally for
@@ -3212,6 +3212,7 @@ pub fn Carousel(props: CarouselProps) -> Element {
     let (raw_selected, set_raw_selected) =
         use_controlled(props.value, props.default_value, props.on_value_change);
     let direction = use_direction(props.dir);
+    let direction_signal = use_direction_signal(direction);
     let orientation = props.orientation;
     let align = props.align;
 
@@ -3282,7 +3283,7 @@ pub fn Carousel(props: CarouselProps) -> Element {
         drag_free,
         scroll_origin,
         virtualized_loop_active,
-        direction,
+        direction: direction_signal,
         autoplay,
         tablist_present,
         visible_range,
@@ -5581,7 +5582,7 @@ struct CarouselIndicatorsContext {
     /// Reused verbatim from [`CarouselContext::direction`] -- see that
     /// field's own doc for why a fresh `use_direction(None)` call here
     /// would risk disagreeing with the [`Carousel`] root's own resolution.
-    direction: Direction,
+    direction: ReadSignal<Direction>,
 }
 
 /// The props for the [`CarouselIndicators`] component.
@@ -5772,7 +5773,7 @@ pub fn CarouselIndicator(props: CarouselIndicatorProps) -> Element {
                 let mut prevent_default = true;
                 match key {
                     Key::ArrowLeft | Key::ArrowRight => {
-                        match tablist_ctx.direction.resolve_horizontal(&key) {
+                        match (tablist_ctx.direction)().resolve_horizontal(&key) {
                             Some(HorizontalNav::Prev) => focus.focus_prev(),
                             Some(HorizontalNav::Next) => focus.focus_next(),
                             None => {}

@@ -63,6 +63,7 @@
     "preview/src/components/input_group",
     "preview/src/components/input_otp",
     "preview/src/components/kbd",
+    "preview/src/components/direction",
     "preview/src/components/spinner",
     "preview/src/components/native_select",
     "preview/src/components/table",

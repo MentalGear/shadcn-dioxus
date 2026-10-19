@@ -13,7 +13,7 @@ use crate::{
         collection_item, use_collection_provider, use_deferred_collection_focus, use_item,
         CollectionPlacement, CollectionState,
     },
-    direction::{use_direction, Direction, HorizontalNav},
+    direction::{use_direction, use_direction_signal, Direction, HorizontalNav},
     use_id_or, use_outside_dismiss, use_unique_id,
 };
 
@@ -30,7 +30,7 @@ struct MenubarContext {
     // Text direction, for `ArrowLeft`/`ArrowRight`'s roving-focus role
     // between top-level `MenubarMenu`s -- always horizontal (a menubar is a
     // single row) -- see `direction::Direction::resolve_horizontal`'s doc.
-    direction: Direction,
+    direction: ReadSignal<Direction>,
 
     // `MenubarProps::open_on_hover` -- read by `MenubarTrigger`'s
     // `onmouseenter`, the only pointer-hover behaviour a `Menubar` has.
@@ -150,6 +150,7 @@ pub fn Menubar(props: MenubarProps) -> Element {
     let mut open_menu = use_signal(|| None);
     let set_open_menu = use_callback(move |idx| open_menu.set(idx));
     let direction = use_direction(props.dir);
+    let direction_signal = use_direction_signal(direction);
 
     let focus = use_collection_provider(props.roving_loop);
     let mut ctx = use_context_provider(|| MenubarContext {
@@ -157,7 +158,7 @@ pub fn Menubar(props: MenubarProps) -> Element {
         set_open_menu,
         disabled: props.disabled,
         focus,
-        direction,
+        direction: direction_signal,
         open_on_hover: props.open_on_hover,
     });
     use_effect(move || {
@@ -446,7 +447,7 @@ pub fn MenubarMenu(props: MenubarMenuProps) -> Element {
                         ctx.focus.set_focus(Some(props.index.cloned()));
                     }
                     Key::ArrowLeft | Key::ArrowRight => {
-                        match ctx.direction.resolve_horizontal(&event.key()) {
+                        match (ctx.direction)().resolve_horizontal(&event.key()) {
                             Some(HorizontalNav::Prev) => ctx.focus.focus_prev(),
                             Some(HorizontalNav::Next) => ctx.focus.focus_next(),
                             None => {}
