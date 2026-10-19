@@ -371,7 +371,7 @@ macro_rules! examples {
                 stringify!($name),
                 "/description.txt"
             )),
-            docs: include_str!(concat!(env!("OUT_DIR"), "/", stringify!($name), "/docs.html")),
+            docs: include!(concat!(env!("OUT_DIR"), "/", stringify!($name), "/docs_sections.rs")),
             component: HighlightedCode {
                 source: dioxus_code::code!(concat!("/src/components/", stringify!($name), "/component.rs")),
             },
@@ -412,7 +412,7 @@ macro_rules! examples {
                 stringify!($name),
                 "/description.txt"
             )),
-            docs: include_str!(concat!(env!("OUT_DIR"), "/", stringify!($name), "/docs.html")),
+            docs: include!(concat!(env!("OUT_DIR"), "/", stringify!($name), "/docs_sections.rs")),
             component: HighlightedCode {
                 source: dioxus_code::code!(concat!("/src/components/", stringify!($name), "/component.rs")),
             },

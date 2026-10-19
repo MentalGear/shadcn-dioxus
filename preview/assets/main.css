@@ -1345,31 +1345,13 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
   overflow-x: auto;
 }
 
-.dx-docs-prose table {
-  min-width: 100%;
-  border-collapse: collapse;
-  color: var(--dx-foreground);
-  font-size: 0.9rem;
-  line-height: 1.5;
-}
-
-.dx-docs-prose th,
-.dx-docs-prose td {
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--dx-border);
-  text-align: start;
+/* Docs tables are the Table component: `build.rs` gives the docs.md and props-reference tables its part
+ * classes and `motion_docs.rs` renders `Table` itself, so they look like the library's Table. Prose cells
+ * wrap (a description is a paragraph, not a data value), so the docs undo the cell's one-line truncation. */
+.dx-docs-prose .dx-table-cell {
+  overflow: visible;
   vertical-align: top;
-}
-
-.dx-docs-prose th {
-  background-color: var(--dx-muted);
-  color: var(--dx-foreground);
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.dx-docs-prose tbody tr:nth-child(even) td {
-  background-color: color-mix(in oklab, var(--dx-muted) 50%, transparent);
+  white-space: normal;
 }
 
 .dx-docs-prose td code {
@@ -1521,51 +1503,6 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
   background-color: transparent;
 }
 
-.dx-component-manual-install {
-  overflow: hidden;
-  border: 1px solid var(--dx-border);
-  border-radius: 0.5rem;
-  background-color: var(--dx-card);
-}
-
-.dx-component-manual-install summary {
-  display: flex;
-  align-items: center;
-  padding: 0.85rem 1rem;
-  color: var(--dx-foreground);
-  cursor: pointer;
-  font-weight: 600;
-  gap: 0.6rem;
-  list-style: none;
-}
-
-.dx-component-manual-install summary::-webkit-details-marker {
-  display: none;
-}
-
-.dx-component-manual-install summary::before {
-  display: inline-block;
-  width: 0.5rem;
-  height: 0.5rem;
-  border-right: 1.5px solid var(--dx-muted-foreground);
-  border-bottom: 1.5px solid var(--dx-muted-foreground);
-  content: "";
-  transform: rotate(-45deg);
-  transition: transform 0.15s ease;
-  translate: -2px -2px;
-}
-
-.dx-component-manual-install[open] summary::before {
-  transform: rotate(45deg);
-  translate: 0 -4px;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .dx-component-manual-install summary:hover {
-    background-color: var(--dx-accent);
-  }
-}
-
 .dx-component-manual-copy {
   padding: 0 1rem 1rem;
 }
@@ -1579,108 +1516,55 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
   width: 100%;
 }
 
-.dx-component-manual-install-code {
-  overflow: visible;
-  border: none;
-  border-radius: 0;
-  background-color: transparent;
-}
-
-.dx-component-manual-install-code summary {
+.dx-component-manual-install .dx-component-manual-copy {
   padding: 0 0 0.75rem;
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .dx-component-manual-install-code summary:hover {
-    background-color: transparent;
-    color: var(--highlight-color-tertiary);
-  }
-}
-
-.dx-component-manual-install-code .dx-component-manual-copy {
-  padding: 0 0 0.75rem;
-}
-
-.dx-component-manual-install-code .dx-component-manual-code {
+.dx-component-manual-install .dx-component-manual-code {
   padding: 0;
 }
 
-.dx-component-manual-install-code .dx-tabs-content {
+.dx-component-manual-install .dx-tabs-content {
   padding: 0;
 }
 
-.dx-component-manual-install-code .dx-tabs-content-themed {
+.dx-component-manual-install .dx-tabs-content-themed {
   border: none;
   background-color: transparent;
   box-shadow: none;
 }
 
-.dx-component-manual-install-code .dx-code-block {
+.dx-component-manual-install .dx-code-block {
   max-width: 100%;
   border-radius: 0.5rem;
 }
 
-/* Installation (written in main.rs), every docs.md `##` section (`build.rs`, `wrap_sections_in_disclosures`) and
- * a demo's notes (`VariantNotes`) are closed native `<details class="dx-docs-disclosure">`: one list of
- * one-line rows, the heading inside the `<summary>` so the outline and the anchors stay. No JS: the server
- * emits the closed state and nothing re-renders it. */
-.dx-component-accordion > .dx-docs-disclosure {
-  border-top: 1px solid var(--dx-border);
-}
-
-.dx-docs-disclosure {
-  border-bottom: 1px solid var(--dx-border);
-}
-
-.dx-docs-disclosure > summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.9rem 0;
-  color: var(--dx-foreground);
-  cursor: pointer;
-  gap: 1rem;
-  list-style: none;
-}
-
-.dx-docs-disclosure > summary::-webkit-details-marker {
-  display: none;
-}
-
-.dx-docs-disclosure > summary::after {
-  display: inline-block;
-  width: 0.5rem;
-  height: 0.5rem;
-  flex-shrink: 0;
-  border-right: 1.5px solid var(--dx-muted-foreground);
-  border-bottom: 1.5px solid var(--dx-muted-foreground);
-  content: "";
-  transform: rotate(45deg);
-  transition: transform 0.15s ease;
-  translate: 0 -2px;
-}
-
-.dx-docs-disclosure[open] > summary::after {
-  transform: rotate(-135deg);
-  translate: 0 2px;
-}
-
-.dx-docs-disclosure > summary h2 {
+/* The component page's docs accordion (`ComponentHighlight`): the library's `Accordion`, each item's `h2`
+ * wrapping its trigger so the outline and the anchors stay. The heading is only a container here: the
+ * trigger draws the row (its padding, chevron, hover underline and focus ring); the docs set the heading's
+ * size. The page's own Collapsibles ("Manual installation files", a demo's "About this example") take the
+ * same text treatment. */
+.dx-docs-accordion-heading {
   margin: 0;
-  color: var(--dx-foreground);
   font-size: 1rem;
   font-weight: 500;
   line-height: 1.4;
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .dx-docs-disclosure > summary:hover h2 {
-    text-decoration: underline;
-  }
+.dx-docs-accordion-heading > .dx-docs-accordion-trigger {
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
 }
 
-.dx-docs-disclosure-body {
-  padding-bottom: 1rem;
+.dx-docs-collapsible-trigger {
+  width: auto;
+  justify-content: flex-start;
+  gap: var(--dx-space-2);
+}
+
+.dx-variant-notes-trigger {
+  color: var(--dx-muted-foreground);
 }
 
 /* Props reference (generated by `preview/build.rs` from the `#[derive(Props)]` structs, backlog row 165):
@@ -1731,17 +1615,6 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
 .dx-docs-props-required {
   color: var(--dx-muted-foreground);
   font-size: 0.85rem;
-}
-
-.dx-variant-notes {
-  border-bottom: none;
-}
-
-.dx-variant-notes > summary {
-  justify-content: flex-start;
-  padding: 0.6rem 0;
-  color: var(--dx-muted-foreground);
-  font-size: 0.875rem;
 }
 
 .dx-component-description {
@@ -1804,6 +1677,12 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
   color: var(--highlight-color-tertiary);
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+
+/* "Examples" follows the docs accordion: more room above it than between two sections, so it reads as
+ * the start of a new part of the page. */
+.dx-component-section.dx-component-examples {
+  padding-top: 4rem;
 }
 
 .dx-component-variant + .dx-component-variant {
