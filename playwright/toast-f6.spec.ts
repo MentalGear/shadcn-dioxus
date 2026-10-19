@@ -52,6 +52,7 @@ test.describe("toast: one F6 handler per page (row 262)", () => {
     await open(page);
     await page.waitForTimeout(800);
     const cdp = await page.context().newCDPSession(page);
+    await cdp.send("Debugger.enable"); // handler object ids are only handed out with the debugger on
     const doc = await cdp.send("Runtime.evaluate", { expression: "document" });
     const { listeners } = await cdp.send("DOMDebugger.getEventListeners", { objectId: doc.result.objectId! });
     let f6 = 0;

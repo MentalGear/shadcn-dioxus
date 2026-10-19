@@ -12,7 +12,7 @@ pub fn Demo() -> Element {
     rsx! {
         ToastProvider {
             aria_label: "Top toast notifications",
-            style: "inset-block: var(--dx-space-5) auto;",
+            "data-toaster-side": "top",
             TopButton {}
         }
     }

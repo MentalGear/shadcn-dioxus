@@ -70,9 +70,33 @@
   display: block;
 }
 
+/* A toaster at the TOP of the viewport (`data-toaster-side="top"` on the provider): the pile grows downward
+ * from the top edge instead of upward from the bottom one. Toasts swipe toward the nearest vertical edge
+ * (primitives/src/toast.rs `use_toast_swipe`), so this one dismisses upward. */
+.dx-toast-container[popover][data-toaster-side="top"] {
+  inset-block: var(--dx-space-5) auto;
+
+  --toast-list-direction: column;
+}
+
+.dx-toast-container[data-toaster-side="top"] .dx-toast {
+  margin-top: 0;
+  margin-bottom: calc(-1 * var(--dx-space-16));
+}
+
+.dx-toast-container[data-toaster-side="top"]:focus-within .dx-toast {
+  margin-bottom: 0;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-toast-container[data-toaster-side="top"]:hover .dx-toast {
+    margin-bottom: 0;
+  }
+}
+
 .dx-toast-container ol {
   display: flex;
-  flex-direction: column-reverse;
+  flex-direction: var(--toast-list-direction, column-reverse);
   padding: 0;
   margin: 0;
   gap: var(--dx-space-3);
