@@ -31,7 +31,7 @@ fn number_lines(block: CodeBlock) -> Element {
 #[component]
 pub fn Demo() -> Element {
     rsx! {
-        div { style: "width: 100%; max-width: 36rem; --dx-font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;",
+        div { style: "width: 100%; max-width: 36rem;",
             Markdown { source: SOURCE, highlight: Callback::new(number_lines) }
         }
     }

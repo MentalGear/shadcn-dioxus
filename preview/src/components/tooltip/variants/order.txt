@@ -2,3 +2,4 @@
 shortcut
 disabled_button
 delays
+sides

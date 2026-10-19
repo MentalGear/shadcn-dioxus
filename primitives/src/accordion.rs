@@ -3,6 +3,7 @@
 use crate::collapsible::{hidden_attribute, use_beforematch, PanelHidden};
 use crate::collection::{collection_item, use_item, CollectionOptions, CollectionState};
 use crate::dioxus_elements::Key;
+use crate::direction::use_direction;
 use crate::{merge_attributes, use_animated_open, use_id_or, use_unique_id};
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
@@ -518,6 +519,7 @@ pub struct AccordionTriggerProps {
 pub fn AccordionTrigger(props: AccordionTriggerProps) -> Element {
     let mut ctx: AccordionContext = use_context();
     let item: Item = use_context();
+    let direction = use_direction(None);
 
     let disabled = move || ctx.is_disabled() || item.is_disabled();
     // The trigger is the focusable element, so it registers this accordion item.
@@ -545,7 +547,8 @@ pub fn AccordionTrigger(props: AccordionTriggerProps) -> Element {
                 ctx.focus.set_focus(Some(item.id));
             },
             onkeydown: move |event| {
-                let key = event.key();
+                // RTL mirrors the horizontal pair (`Direction::ltr_equivalent`).
+                let key = direction.ltr_equivalent(&event.key());
                 let horizontal = ctx.is_horizontal();
                 let mut prevent_default = true;
 

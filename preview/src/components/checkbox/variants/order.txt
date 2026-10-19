@@ -5,4 +5,5 @@ disabled
 invalid
 group
 table
+indeterminate
 rtl

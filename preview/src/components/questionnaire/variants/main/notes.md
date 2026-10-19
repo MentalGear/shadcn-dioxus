@@ -1,0 +1,1 @@
+The agent-plan flow from shadcn: a required choice with a freeform answer, an optional multiple choice you can skip, and a required choice. Letters select answers, Enter confirms the selected answer, Command or Control + Enter confirms from anywhere, and the arrow keys move between answers and items.

@@ -99,6 +99,9 @@ pub struct DialogCtx {
     // Whether the dialog dims the page behind it -- see `DialogRootProps::overlay`.
     #[allow(unused)]
     overlay: ReadSignal<bool>,
+    // See `DialogRootProps::disable_pointer_dismissal`.
+    #[allow(unused)]
+    disable_pointer_dismissal: ReadSignal<bool>,
     dialog_labelledby: Signal<String>,
     dialog_describedby: Signal<String>,
 }
@@ -121,6 +124,13 @@ pub(crate) fn overlay_off(overlay: ReadSignal<bool>) -> Option<&'static str> {
     (!overlay()).then_some("off")
 }
 
+/// The `aria-modal` value of a panel: `"true"` only for the modal arms, no attribute at all for
+/// the non-modal arm. Every arm builds its attribute through this, so a non-modal panel can never
+/// tell assistive tech that the page behind it is inert when it is not.
+pub(crate) fn aria_modal(is_modal: bool) -> Option<&'static str> {
+    is_modal.then_some("true")
+}
+
 /// The props for the [`DialogRoot`] component
 #[derive(Props, Clone, PartialEq)]
 pub struct DialogRootProps {
@@ -140,6 +150,13 @@ pub struct DialogRootProps {
     /// attribute and the browser's own `::backdrop`.
     #[props(default = ReadSignal::new(Signal::new(true)))]
     pub overlay: ReadSignal<bool>,
+
+    /// Base UI's `disablePointerDismissal`: when `true`, a press outside the panel and focus
+    /// moving outside it no longer close the dialog (a modal's backdrop click included), so the
+    /// first press on the page of a non-modal dialog only acts on the page. Escape and the
+    /// dialog's own close controls still close it. Defaults to `false`.
+    #[props(default = ReadSignal::new(Signal::new(false)))]
+    pub disable_pointer_dismissal: ReadSignal<bool>,
 
     /// The controlled `open` state of the dialog.
     pub open: ReadSignal<Option<bool>>,
@@ -232,6 +249,7 @@ pub fn DialogRoot(props: DialogRootProps) -> Element {
         set_open,
         is_modal: props.is_modal,
         overlay: props.overlay,
+        disable_pointer_dismissal: props.disable_pointer_dismissal,
         dialog_labelledby,
         dialog_describedby,
     });
@@ -415,7 +433,11 @@ fn DialogContentNonModal(
     // just add this to the dialog itself because it might not be focused if the user
     // is highlighting text or interacting with another element.
     use_global_escape_listener(move || set_open.call(false));
-    use_outside_dismiss(id, move || set_open.call(false));
+    use_outside_dismiss(id, move || {
+        if !ctx.disable_pointer_dismissal.cloned() {
+            set_open.call(false);
+        }
+    });
 
     // Owned by this component -- dialog role/aria wiring must win over a
     // caller's own attributes (`docs/backlog.md` row 93's
@@ -424,7 +446,7 @@ fn DialogContentNonModal(
         attributes,
         attributes!(div {
             role: "dialog",
-            aria_modal: "true",
+            aria_modal: aria_modal(false),
             aria_labelledby: labelledby,
             aria_describedby: describedby,
             // See `DialogRootProps::overlay`: set on every arm so the DOM contract is the same.
@@ -462,7 +484,11 @@ fn DialogContentModal(
     // just add this to the dialog itself because it might not be focused if the user
     // is highlighting text or interacting with another element.
     use_global_escape_listener(move || set_open.call(false));
-    use_outside_dismiss(id, move || set_open.call(false));
+    use_outside_dismiss(id, move || {
+        if !ctx.disable_pointer_dismissal.cloned() {
+            set_open.call(false);
+        }
+    });
 
     use_effect(move || {
         let eval = document::eval(
@@ -488,7 +514,7 @@ fn DialogContentModal(
         attributes,
         attributes!(div {
             role: "dialog",
-            aria_modal: "true",
+            aria_modal: aria_modal(true),
             aria_labelledby: labelledby,
             aria_describedby: describedby,
             // See `DialogRootProps::overlay`: set on every arm so the DOM contract is the same.
@@ -535,7 +561,11 @@ fn DialogContentModal(
     // `popover=` does -- reproduces dialog.spec.ts's "clicking far outside
     // the dialog dismisses it" behaviour. See this module's doc comment for
     // why `use_outside_dismiss` itself can't be reused here.
-    crate::use_dialog_backdrop_dismiss(id, move || set_open.call(false));
+    crate::use_dialog_backdrop_dismiss(id, move || {
+        if !ctx.disable_pointer_dismissal.cloned() {
+            set_open.call(false);
+        }
+    });
 
     // Owned by this component -- see `DialogContentNonModal`'s identical
     // construction above (`docs/backlog.md` row 93).
@@ -543,7 +573,7 @@ fn DialogContentModal(
         attributes,
         attributes!(dialog {
             role: "dialog",
-            aria_modal: "true",
+            aria_modal: aria_modal(true),
             aria_labelledby: labelledby,
             aria_describedby: describedby,
             // The dialog's own state, not just the root wrapper's: closing keeps the
