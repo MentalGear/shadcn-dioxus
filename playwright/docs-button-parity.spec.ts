@@ -97,14 +97,17 @@ test("the first demo is shadcn's button-demo: one outline Button and an icon-onl
   await expect(buttons.nth(1)).toHaveAttribute("data-size", "icon");
 });
 
-test("the demo frame is shadcn's preview frame: rounded-2xl border, 40px padding, 288px tall, unfilled", async ({
+test("the demo frame is shadcn's preview frame: rounded-2xl, no border, 40px padding, 288px tall, soft surface fill", async ({
   page,
 }) => {
   await gotoHydrated(page, `${BASE_URL}/component/button/`);
   const frame = page.locator("#component-preview-frame");
   await expect(frame).toHaveCSS("border-top-left-radius", "16px");
   await expect(frame).toHaveCSS("padding-top", "40px");
-  await expect(frame).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  // Owner request (docs-css lane): no border, a soft fill between the page and the card token
+  // (`--dx-docs-preview-surface`), so the frame is no longer transparent.
+  await expect(frame).toHaveCSS("border-top-width", "0px");
+  await expect(frame).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   await expect(frame).toHaveCSS("background-image", "none");
   expect((await frame.boundingBox())!.height).toBe(288);
 });

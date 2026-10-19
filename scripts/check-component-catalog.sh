@@ -30,6 +30,14 @@
 #    without the role tokens, the scoped box-sizing rule or the radius scale.
 #    navbar was the one component that lacked it.
 #
+# 2b. EVERY STYLED COMPONENT LINKS ITS OWN SHEET.
+#    A style.css with rules must be named by an `asset!("/src/components/<dir>/style.css")` in the
+#    component's own Rust files (`document::Link`), because only that ships it. A debug build also puts
+#    every style.css in dx's asset manifest (`css_highlight!` under `debug_assertions`), and the SSG
+#    bundle then includes it, so a forgotten Link is invisible in every debug build and spec run and
+#    shows only in the release preview: virtual_grid shipped unstyled (overflow: visible, nothing
+#    scrolled) from PR #107. A comment-only sheet (scroll_area, virtual_list) is exempt.
+#
 # 3. EVERY SIBLING COMPONENT A COMPONENT IMPORTS IS A DECLARED DEPENDENCY.
 #    `dx components add <name>` installs the component's own files plus the
 #    `componentDependencies` of its component.json, and nothing else. A
@@ -97,6 +105,18 @@ for f in "$comp_root"/*/component.json; do
   [ -f "$d/style.css" ] || continue
   if ! grep -q "\"$theme\"" "$f"; then
     complain "$f has a style.css but no \"globalAssets\": [\"$theme\"] (row 129: \`dx components add\` would ship the component without the theme)"
+  fi
+done
+
+# --- rule 2b: a style.css with rules is linked by the component itself ---------------------------
+for f in "$comp_root"/*/component.json; do
+  d="$(dirname "$f")"
+  [ -f "$d/style.css" ] || continue
+  # drop /* */ comments (multi-line too); any `{` left is a rule
+  if python3 -c 'import re,sys; sys.exit(0 if "{" in re.sub(r"/\*.*?\*/","",open(sys.argv[1]).read(),flags=re.S) else 1)' "$d/style.css"; then
+    if ! grep -rqF "/src/components/$(basename "$d")/style.css" --include=*.rs "$d" 2>/dev/null; then
+      complain "$d/style.css has rules but no component Rust file links it (\`document::Link { rel: \"stylesheet\", href: asset!(\"/src/components/$(basename "$d")/style.css\") }): only a debug build hides the omission (rule 2b)"
+    fi
   fi
 done
 

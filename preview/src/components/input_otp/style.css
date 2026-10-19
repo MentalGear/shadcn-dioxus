@@ -25,9 +25,13 @@
  * is `h-4 w-px`; groups and separators sit `gap-2` apart.
  *
  * The edge stays an inset box-shadow (the `--dx-ring-field` family `focus-ring.spec.ts` holds
- * every text field to), so Nova's shared `border-r` is expressed the way ButtonGroup joins its
- * children: a slot overlaps the previous one's last pixel (`margin-inline-start: -1px`), and
- * the group clips nothing. */
+ * every text field to), drawn exactly as Nova draws borders: every slot paints top, bottom and
+ * inline-end, the first slot adds inline-start, so each internal divider is ONE 1px line.
+ * (A full edge per slot overlapped by -1px put two translucent layers on the shared pixel:
+ * the dark fill is `--dx-input` at 30% and the dark edge is 15% white, so the divider read
+ * about twice as strong as the outer border.) The inline sides are physical offsets, so RTL
+ * swaps them under `[dir="rtl"]` (not `:dir(rtl)`: the build's CSS transform lowers it to a
+ * `:lang(ar, ...)` list, which never matches a page that sets `dir` without `lang`). */
 .dx-input-otp-group {
   display: flex;
   align-items: center;
@@ -41,9 +45,15 @@
   height: var(--dx-control-height-default);
   align-items: center;
   justify-content: center;
+
+  --dx-input-otp-edge: var(--dx-input);
+  --dx-input-otp-end: -1px;
+  --dx-input-otp-start: 1px;
+
   border-radius: 0;
   background-color: var(--dx-field-fill);
-  box-shadow: inset 0 0 0 1px var(--dx-input);
+  box-shadow: inset 0 1px 0 var(--dx-input-otp-edge), inset 0 -1px 0 var(--dx-input-otp-edge),
+    inset var(--dx-input-otp-end) 0 0 var(--dx-input-otp-edge);
   color: var(--dx-foreground);
   font-size: var(--dx-text-sm);
   font-variant-numeric: tabular-nums;
@@ -51,9 +61,17 @@
     background-color var(--dx-motion-duration-fast) var(--dx-motion-ease-out);
 }
 
+[dir="rtl"] .dx-input-otp-slot {
+  --dx-input-otp-end: 1px;
+  --dx-input-otp-start: -1px;
+}
+
 .dx-input-otp-slot:first-child {
   border-end-start-radius: var(--dx-radius-lg);
   border-start-start-radius: var(--dx-radius-lg);
+  box-shadow: inset 0 1px 0 var(--dx-input-otp-edge), inset 0 -1px 0 var(--dx-input-otp-edge),
+    inset var(--dx-input-otp-end) 0 0 var(--dx-input-otp-edge),
+    inset var(--dx-input-otp-start) 0 0 var(--dx-input-otp-edge);
 }
 
 .dx-input-otp-slot:last-child {
@@ -61,14 +79,11 @@
   border-start-end-radius: var(--dx-radius-lg);
 }
 
-.dx-input-otp-slot:not(:first-child) {
-  margin-inline-start: -1px;
-}
-
 /* The focused slot: the keyboard focus ring, the shared `--dx-ring-field`
  * token `Input` draws (`../input/style.css`'s `.dx-input:focus-visible`). (The
  * real input is invisible, so the active slot is where focus shows.) */
-.dx-input-otp-slot[data-active="true"] {
+.dx-input-otp-slot[data-active="true"],
+.dx-input-otp-slot[data-active="true"]:first-child {
   z-index: var(--dx-z-raise);
   box-shadow: var(--dx-ring-field);
 }
@@ -117,11 +132,13 @@
 
 .dx-input-otp-input[aria-invalid="true"] + div .dx-input-otp-slot,
 .dx-input-otp-input[data-invalid="true"] + div .dx-input-otp-slot {
-  box-shadow: inset 0 0 0 1px var(--dx-ring-invalid-color);
+  --dx-input-otp-edge: var(--dx-ring-invalid-color);
 }
 
 .dx-input-otp-input[aria-invalid="true"] + div .dx-input-otp-slot[data-active="true"],
-.dx-input-otp-input[data-invalid="true"] + div .dx-input-otp-slot[data-active="true"] {
+.dx-input-otp-input[data-invalid="true"] + div .dx-input-otp-slot[data-active="true"],
+.dx-input-otp-input[aria-invalid="true"] + div .dx-input-otp-slot[data-active="true"]:first-child,
+.dx-input-otp-input[data-invalid="true"] + div .dx-input-otp-slot[data-active="true"]:first-child {
   box-shadow: var(--dx-ring-invalid-field);
 }
 

@@ -10,6 +10,12 @@
 
 /* Theme style variables */
 :root {
+  /* Demo preview card fill: a soft step between the page and a card. Dark mixes the page with `--dx-card`
+   * (#0a0a0a / #171717); in light `--dx-card` equals the page (#fff), so it mixes with `--dx-muted` instead
+   * (#f5f5f5), only 15% of it: a 50% mix (#fafafa) left a hovered Pagination page (#f5f5f5) within 5/255 of its
+   * surface (dark-surface-contrast needs 6), and 25% (#fcfcfc) left a hovered Toggle (#f8f8f8) 5/255 from it
+   * (theme-preset-contrast needs 6). */
+  --dx-docs-preview-surface: color-mix(in var(--dx-hover-mix-space), var(--dx-background) var(--dark, 50%) var(--light, 85%), var(--dark, var(--dx-card)) var(--light, var(--dx-muted)));
   --dx-font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --dx-font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", "Menlo", "Monaco", "Consolas", monospace;
   --highlight-color-main: #dd7230;
@@ -347,9 +353,6 @@ summary,
   align-items: center;
   justify-content: space-between;
   padding: 0.5rem 4.5rem;
-  border-right: 1px solid var(--dx-border);
-  border-bottom: 1px solid var(--dx-border);
-  border-left: 1px solid var(--dx-border);
 }
 
 .dx-navbar-link {
@@ -507,18 +510,16 @@ summary,
   box-sizing: border-box;
 }
 
-.dx-dark-mode-toggle {
-  padding: 0;
-  border: none;
-  background: none;
-  color: var(--dx-foreground);
-  cursor: pointer;
+/* The header's sun/moon toggle is two Ghost icon `Button`s (preview/src/theme.rs `DarkModeToggle`), one per
+ * mode, so the SSG output is right before hydration. The theme's `.dx-dark-mode-only` /
+ * `.dx-light-mode-only` swap sets `display` at the same specificity as `.dx-button`'s own, so the two
+ * classes together say which one shows, with the button's `inline-flex` as the visible value. */
+.dx-button.dx-dark-mode-toggle.dx-dark-mode-only {
+  display: var(--dark, inline-flex) var(--light, none);
 }
 
-.dx-dark-mode-toggle svg {
-  display: block;
-  width: 24px;
-  height: 24px;
+.dx-button.dx-dark-mode-toggle.dx-light-mode-only {
+  display: var(--dark, none) var(--light, inline-flex);
 }
 
 /* Theme picker (preview/src/theme.rs `ThemePicker`): an icon button that opens a popover of swatches.
@@ -616,12 +617,12 @@ button.dx-theme-phone-trigger {
   padding: 0 var(--dx-space-4);
 }
 
-.dx-theme-picker-panel[data-presentation="drawer"] .dx-theme-swatch {
+.dx-theme-picker-panel[data-presentation="drawer"] .dx-theme-swatches .dx-theme-swatch {
   width: 2.25rem;
   height: 2.25rem;
 }
 
-.dx-theme-picker-panel[data-presentation="drawer"] .dx-theme-swatch-dot {
+.dx-theme-picker-panel[data-presentation="drawer"] .dx-theme-swatches .dx-theme-swatch-dot {
   width: 1.5rem;
   height: 1.5rem;
 }
@@ -630,14 +631,13 @@ button.dx-theme-phone-trigger {
   gap: var(--dx-space-2);
 }
 
-.dx-theme-picker-panel[data-presentation="drawer"] .dx-button[data-size="xs"] {
-  min-width: 2.75rem;
-  height: 2.25rem;
+.dx-theme-picker-panel[data-presentation="drawer"] .dx-theme-chips {
+  --dx-toggle-height: 2.25rem;
+  --dx-toggle-min-width: 2.5rem;
 }
 
 /* The six radius chips share the row evenly instead of wrapping one orphan onto a second line at 360px. */
-.dx-theme-picker-panel[data-presentation="drawer"] .dx-theme-chips .dx-button[data-size="xs"] {
-  min-width: 2.5rem;
+.dx-theme-picker-panel[data-presentation="drawer"] .dx-theme-chips .dx-toggle-group-item {
   flex: 1 1 0%;
   padding-inline: var(--dx-space-1);
 }
@@ -692,50 +692,59 @@ button.dx-theme-phone-trigger {
   gap: var(--dx-space-0-5);
 }
 
-.dx-theme-swatches,
-.dx-theme-chips {
-  display: flex;
+/* Both groups are single-select `ToggleGroup`s (preview/src/theme.rs). The group sets only the gap and
+ * the wrap; a chip is a small outline toggle sized through the toggle's own slot variables, the
+ * pressed look being the toggle's. */
+.dx-toggle-group.dx-theme-swatches,
+.dx-toggle-group.dx-theme-chips {
   flex-wrap: wrap;
   gap: 0.375rem;
 }
 
-.dx-theme-chips {
+.dx-toggle-group.dx-theme-chips {
+  --dx-toggle-height: var(--dx-control-height-xs, 1.5rem);
+  --dx-toggle-min-width: 1.75rem;
+  --dx-toggle-font-size: var(--dx-text-xs);
+  --dx-toggle-padding-inline: var(--dx-space-2);
+
   gap: var(--dx-space-1);
 }
 
-/* A swatch paints its dot from the SAME `[data-theme-base]` / `[data-theme-accent]` block the preset
- * applies (theme-presets.css), read back as the bare variable on the swatch itself -- the colour data
- * lives in one file. Forcing the light half of the space toggle on the swatch shows each preset's
- * canonical (light-mode) colour in both modes, so a dark popover does not turn every accent into its
- * muted dark primary. */
-.dx-theme-swatch {
+/* A swatch is a round toggle item (`.dx-toggle-group-item`) that paints its dot from the SAME
+ * `[data-theme-base]` / `[data-theme-accent]` block the preset applies (theme-presets.css), read back as
+ * the bare variable on the swatch itself -- the colour data lives in one file. Forcing the light half of
+ * the space toggle on the swatch shows each preset's canonical (light-mode) colour in both modes, so a
+ * dark popover does not turn every accent into its muted dark primary. Three classes outrank the toggle
+ * item's own rules whatever the stylesheet order. */
+.dx-theme-swatches .dx-toggle-group-item.dx-theme-swatch {
   --dark: ;
   --light: initial;
 
-  display: inline-flex;
   width: 1.5rem;
+  min-width: 0;
   height: 1.5rem;
-  align-items: center;
-  justify-content: center;
   padding: 0;
   border: 1px solid var(--dx-border);
   border-radius: var(--dx-radius-full);
   background: var(--dx-popover);
-  cursor: pointer;
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .dx-theme-swatch:hover {
+  .dx-theme-swatches .dx-toggle-group-item.dx-theme-swatch:hover {
     border-color: var(--dx-border-strong);
+    background: var(--dx-popover);
   }
 }
 
-.dx-theme-swatch:focus-visible {
+.dx-theme-swatches .dx-toggle-group-item.dx-theme-swatch:focus-visible {
+  border-color: var(--dx-ring-color);
+  background: var(--dx-popover);
   box-shadow: var(--dx-ring);
 }
 
-.dx-theme-swatch[aria-pressed="true"] {
+.dx-theme-swatches .dx-toggle-group-item.dx-theme-swatch[data-state="on"] {
   border-color: var(--dx-foreground);
+  background: var(--dx-popover);
   box-shadow: 0 0 0 1px var(--dx-foreground);
 }
 
@@ -760,27 +769,16 @@ button.dx-theme-phone-trigger {
   background: linear-gradient(to top right, transparent calc(50% - 1px), var(--dx-muted-foreground) 50%, transparent calc(50% + 1px));
 }
 
-.dx-copy-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  border: none;
-  border-radius: 0.5rem;
-  margin: 0;
-  background: none;
-  color: var(--dx-foreground);
-  cursor: pointer;
-  gap: 0.5em;
+/* The docs' copy buttons are the library's ghost icon `Button` (`CopyButton`, `CopyCommandButton` in
+ * `main.rs`); only the icon swap is ours. The button's inline `onclick` sets `data-copied`, which
+ * works before hydration. */
+.dx-copy-button .dx-check-icon,
+.dx-copy-button[data-copied="true"] .dx-copy-icon {
+  display: none;
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .dx-copy-button:hover {
-    color: var(--highlight-color-tertiary);
-  }
-}
-
-.dx-copy-button[data-copied="true"] {
+.dx-copy-button[data-copied="true"] .dx-check-icon {
+  display: block;
   color: var(--dx-success);
 }
 
@@ -853,9 +851,12 @@ button.dx-theme-phone-trigger {
   overflow: visible;
   width: min(var(--dx-content-width), calc(100vw - 2rem));
   min-height: calc(100vh - var(--dx-navbar-height));
-  border-right: 1px solid var(--dx-border);
-  border-left: 1px solid var(--dx-border);
   margin: 0 auto;
+
+  /* The docs sidebar is 17rem; the Sidebar component's own default stays shadcn's 16rem. The provider sets the
+   * variable inline on `.dx-docs-shell`, and an inline style beats any selector on that element, but a custom
+   * property is inherited, so redeclaring it one level down (every sidebar part is inside this body) wins. */
+  --dx-sidebar-width: 17rem;
 }
 
 .dx-docs-shell-body .dx-sidebar-gap {
@@ -871,46 +872,111 @@ html:not([data-nav-sort="category"]) .dx-nav-category {
   display: none;
 }
 
-.dx-nav-sort-group {
-  padding-bottom: 0;
+/* The switch is sticky at the top of the sidebar's scroller over an opaque sidebar background. Its height is a
+ * variable because the category labels stick right under it (`top`) and `docs_nav.rs`'s jump script aligns a
+ * group under it: 0.5rem group padding + the 2rem pill (28px items + 2 x 2px) + 0.25rem breathing room. */
+.dx-nav-sort-group,
+.dx-nav-list {
+  --dx-nav-sort-height: 2.75rem;
+}
+
+/* Doubled with `.dx-sidebar-group` (`position: relative`, padding): at one class apiece the winner would be
+ * whichever sheet this route loads last. */
+.dx-sidebar-group.dx-nav-sort-group {
+  position: sticky;
+  z-index: calc(var(--dx-z-raise) + 1);
+  top: 0;
+  height: var(--dx-nav-sort-height);
+  box-sizing: border-box;
+  flex-shrink: 0;
+  padding-bottom: var(--dx-space-1);
+  background-color: var(--dx-sidebar-background);
 }
 
 .dx-nav-sort {
   display: flex;
+  align-items: center;
   padding: 2px;
   border-radius: var(--dx-radius-lg);
   background-color: var(--dx-muted);
   gap: 2px;
 }
 
-.dx-nav-sort-option {
-  height: 1.75rem;
+/* The ToggleGroup (A-Z / Category) fills the pill; the chevron menu trigger sits after it. */
+.dx-nav-sort-toggles {
+  min-width: 0;
   flex: 1;
-  border: 0;
-  border-radius: calc(var(--dx-radius-lg) - 2px);
+}
+
+.dx-nav-sort .dx-nav-sort-option {
+  min-width: 0;
+  flex: 1;
+}
+
+/* The pressed look comes from `<html data-nav-sort>` (set before first paint), never from the item's
+ * `data-state`, which is Rust state and still the SSG default (A-Z) on the first frame. Specificity: the
+ * component's `[data-state="on"]` and `:focus-visible` rules are (0,2,0); these are above them. */
+.dx-nav-sort .dx-nav-sort-option[data-state] {
   background-color: transparent;
   color: var(--dx-muted-foreground);
-  cursor: pointer;
-  font: inherit;
-  font-size: var(--dx-text-xs);
-  font-weight: 500;
 }
 
-.dx-nav-sort-option:focus-visible {
-  box-shadow: var(--dx-ring);
-  outline: none;
-}
-
-html:not([data-nav-sort="category"]) .dx-nav-sort-option[data-nav-sort-option="az"],
-html[data-nav-sort="category"] .dx-nav-sort-option[data-nav-sort-option="category"] {
+html:not([data-nav-sort="category"]) .dx-nav-sort .dx-nav-sort-option[data-nav-sort-option="az"],
+html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-option="category"] {
   background-color: var(--dx-background);
   box-shadow: var(--dx-shadow-sm);
   color: var(--dx-foreground);
 }
 
-html:not([data-nav-sort="category"]) .dx-nav-sort-option[data-nav-sort-option="az"]:focus-visible,
-html[data-nav-sort="category"] .dx-nav-sort-option[data-nav-sort-option="category"]:focus-visible {
-  box-shadow: var(--dx-ring);
+.dx-nav-sort .dx-nav-sort-option[data-state]:focus-visible {
+  background-color: var(--dx-accent);
+  color: var(--dx-foreground);
+}
+
+html:not([data-nav-sort="category"]) .dx-nav-sort .dx-nav-sort-option[data-nav-sort-option="az"]:focus-visible,
+html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-option="category"]:focus-visible {
+  box-shadow: var(--dx-ring-focus);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-nav-sort .dx-nav-sort-option[data-state]:hover {
+    background-color: var(--dx-accent);
+    color: var(--dx-foreground);
+  }
+}
+
+/* The jump-to-category trigger: a quiet icon button in the pill (its default outline-button look is a
+ * zero-specificity `:where()` rule, so these simply win). */
+.dx-nav-sort-jump {
+  width: var(--dx-control-height-sm);
+  height: var(--dx-control-height-sm);
+  flex-shrink: 0;
+  padding: 0;
+  border-radius: min(var(--dx-radius-md), 0.75rem);
+  background-color: transparent;
+  box-shadow: none;
+  color: var(--dx-muted-foreground);
+}
+
+.dx-nav-sort-jump[aria-expanded="true"] {
+  background-color: var(--dx-accent);
+  color: var(--dx-foreground);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-nav-sort-jump:hover {
+    background-color: var(--dx-accent);
+    color: var(--dx-foreground);
+  }
+}
+
+/* Category order: the label of the group being read sticks directly under the switch while its group scrolls
+ * (the group is the label's containing block, so it releases when the group ends). */
+.dx-nav-category .dx-sidebar-group-label {
+  position: sticky;
+  z-index: var(--dx-z-raise);
+  top: var(--dx-nav-sort-height);
+  background-color: var(--dx-sidebar-background);
 }
 
 .dx-docs-shell-body .dx-sidebar-container {
@@ -1269,31 +1335,13 @@ html[data-nav-sort="category"] .dx-nav-sort-option[data-nav-sort-option="categor
   overflow-x: auto;
 }
 
-.dx-docs-prose table {
-  min-width: 100%;
-  border-collapse: collapse;
-  color: var(--dx-foreground);
-  font-size: 0.9rem;
-  line-height: 1.5;
-}
-
-.dx-docs-prose th,
-.dx-docs-prose td {
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--dx-border);
-  text-align: start;
+/* Docs tables are the Table component: `build.rs` gives the docs.md and props-reference tables its part
+ * classes and `motion_docs.rs` renders `Table` itself, so they look like the library's Table. Prose cells
+ * wrap (a description is a paragraph, not a data value), so the docs undo the cell's one-line truncation. */
+.dx-docs-prose .dx-table-cell {
+  overflow: visible;
   vertical-align: top;
-}
-
-.dx-docs-prose th {
-  background-color: var(--dx-muted);
-  color: var(--dx-foreground);
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.dx-docs-prose tbody tr:nth-child(even) td {
-  background-color: color-mix(in oklab, var(--dx-muted) 50%, transparent);
+  white-space: normal;
 }
 
 .dx-docs-prose td code {
@@ -1413,9 +1461,9 @@ html[data-nav-sort="category"] .dx-nav-sort-option[data-nav-sort-option="categor
   align-items: center;
   justify-content: center;
   padding: var(--dx-space-10);
-  border: 1px solid var(--dx-border);
+  border: 0;
   border-radius: 1rem;
-  background-color: transparent;
+  background-color: var(--dx-docs-preview-surface);
 }
 
 /* At phone widths the frame's 32px-per-side padding plus a card's own 24px
@@ -1445,51 +1493,6 @@ html[data-nav-sort="category"] .dx-nav-sort-option[data-nav-sort-option="categor
   background-color: transparent;
 }
 
-.dx-component-manual-install {
-  overflow: hidden;
-  border: 1px solid var(--dx-border);
-  border-radius: 0.5rem;
-  background-color: var(--dx-card);
-}
-
-.dx-component-manual-install summary {
-  display: flex;
-  align-items: center;
-  padding: 0.85rem 1rem;
-  color: var(--dx-foreground);
-  cursor: pointer;
-  font-weight: 600;
-  gap: 0.6rem;
-  list-style: none;
-}
-
-.dx-component-manual-install summary::-webkit-details-marker {
-  display: none;
-}
-
-.dx-component-manual-install summary::before {
-  display: inline-block;
-  width: 0.5rem;
-  height: 0.5rem;
-  border-right: 1.5px solid var(--dx-muted-foreground);
-  border-bottom: 1.5px solid var(--dx-muted-foreground);
-  content: "";
-  transform: rotate(-45deg);
-  transition: transform 0.15s ease;
-  translate: -2px -2px;
-}
-
-.dx-component-manual-install[open] summary::before {
-  transform: rotate(45deg);
-  translate: 0 -4px;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .dx-component-manual-install summary:hover {
-    background-color: var(--dx-accent);
-  }
-}
-
 .dx-component-manual-copy {
   padding: 0 1rem 1rem;
 }
@@ -1503,108 +1506,55 @@ html[data-nav-sort="category"] .dx-nav-sort-option[data-nav-sort-option="categor
   width: 100%;
 }
 
-.dx-component-manual-install-code {
-  overflow: visible;
-  border: none;
-  border-radius: 0;
-  background-color: transparent;
-}
-
-.dx-component-manual-install-code summary {
+.dx-component-manual-install .dx-component-manual-copy {
   padding: 0 0 0.75rem;
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .dx-component-manual-install-code summary:hover {
-    background-color: transparent;
-    color: var(--highlight-color-tertiary);
-  }
-}
-
-.dx-component-manual-install-code .dx-component-manual-copy {
-  padding: 0 0 0.75rem;
-}
-
-.dx-component-manual-install-code .dx-component-manual-code {
+.dx-component-manual-install .dx-component-manual-code {
   padding: 0;
 }
 
-.dx-component-manual-install-code .dx-tabs-content {
+.dx-component-manual-install .dx-tabs-content {
   padding: 0;
 }
 
-.dx-component-manual-install-code .dx-tabs-content-themed {
+.dx-component-manual-install .dx-tabs-content-themed {
   border: none;
   background-color: transparent;
   box-shadow: none;
 }
 
-.dx-component-manual-install-code .dx-code-block {
+.dx-component-manual-install .dx-code-block {
   max-width: 100%;
   border-radius: 0.5rem;
 }
 
-/* Installation (written in main.rs), every docs.md `##` section (`build.rs`, `wrap_sections_in_disclosures`) and
- * a demo's notes (`VariantNotes`) are closed native `<details class="dx-docs-disclosure">`: one list of
- * one-line rows, the heading inside the `<summary>` so the outline and the anchors stay. No JS: the server
- * emits the closed state and nothing re-renders it. */
-.dx-component-accordion > .dx-docs-disclosure {
-  border-top: 1px solid var(--dx-border);
-}
-
-.dx-docs-disclosure {
-  border-bottom: 1px solid var(--dx-border);
-}
-
-.dx-docs-disclosure > summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.9rem 0;
-  color: var(--dx-foreground);
-  cursor: pointer;
-  gap: 1rem;
-  list-style: none;
-}
-
-.dx-docs-disclosure > summary::-webkit-details-marker {
-  display: none;
-}
-
-.dx-docs-disclosure > summary::after {
-  display: inline-block;
-  width: 0.5rem;
-  height: 0.5rem;
-  flex-shrink: 0;
-  border-right: 1.5px solid var(--dx-muted-foreground);
-  border-bottom: 1.5px solid var(--dx-muted-foreground);
-  content: "";
-  transform: rotate(45deg);
-  transition: transform 0.15s ease;
-  translate: 0 -2px;
-}
-
-.dx-docs-disclosure[open] > summary::after {
-  transform: rotate(-135deg);
-  translate: 0 2px;
-}
-
-.dx-docs-disclosure > summary h2 {
+/* The component page's docs accordion (`ComponentHighlight`): the library's `Accordion`, each item's `h2`
+ * wrapping its trigger so the outline and the anchors stay. The heading is only a container here: the
+ * trigger draws the row (its padding, chevron, hover underline and focus ring); the docs set the heading's
+ * size. The page's own Collapsibles ("Manual installation files", a demo's "About this example") take the
+ * same text treatment. */
+.dx-docs-accordion-heading {
   margin: 0;
-  color: var(--dx-foreground);
   font-size: 1rem;
   font-weight: 500;
   line-height: 1.4;
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .dx-docs-disclosure > summary:hover h2 {
-    text-decoration: underline;
-  }
+.dx-docs-accordion-heading > .dx-docs-accordion-trigger {
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
 }
 
-.dx-docs-disclosure-body {
-  padding-bottom: 1rem;
+.dx-docs-collapsible-trigger {
+  width: auto;
+  justify-content: flex-start;
+  gap: var(--dx-space-2);
+}
+
+.dx-variant-notes-trigger {
+  color: var(--dx-muted-foreground);
 }
 
 /* Props reference (generated by `preview/build.rs` from the `#[derive(Props)]` structs, backlog row 165):
@@ -1655,17 +1605,6 @@ html[data-nav-sort="category"] .dx-nav-sort-option[data-nav-sort-option="categor
 .dx-docs-props-required {
   color: var(--dx-muted-foreground);
   font-size: 0.85rem;
-}
-
-.dx-variant-notes {
-  border-bottom: none;
-}
-
-.dx-variant-notes > summary {
-  justify-content: flex-start;
-  padding: 0.6rem 0;
-  color: var(--dx-muted-foreground);
-  font-size: 0.875rem;
 }
 
 .dx-component-description {
@@ -1728,6 +1667,12 @@ html[data-nav-sort="category"] .dx-nav-sort-option[data-nav-sort-option="categor
   color: var(--highlight-color-tertiary);
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+
+/* "Examples" follows the docs accordion: more room above it than between two sections, so it reads as
+ * the start of a new part of the page. */
+.dx-component-section.dx-component-examples {
+  padding-top: 4rem;
 }
 
 .dx-component-variant + .dx-component-variant {
@@ -1822,20 +1767,19 @@ html[data-nav-sort="category"] .dx-nav-sort-option[data-nav-sort-option="categor
   gap: 1.5rem;
 }
 
-.dx-widget-card {
-  display: block;
+/* A `Card` (`MasonryCard`, main.rs): the ring, fill and radius are the library's; this is the layout and the roomier
+ * inset. The doubled class outranks `.dx-card` whatever order the stylesheets load in. */
+.dx-card.dx-widget-card {
+  --dx-card-spacing: 1.75rem;
+
   overflow: hidden;
   width: 100%;
-  padding: 1.75rem 1.75rem 1.85rem;
-  border: 1px solid var(--dx-border);
-  border-radius: 0.5rem;
   margin: 0;
-  background-color: var(--dx-card);
 }
 
 /* Cards whose contents include a floating popout (combobox dropdown, etc.)
  * need to escape the card's overflow clip. */
-.dx-widget-card-popout {
+.dx-card.dx-widget-card-popout {
   overflow: visible;
 }
 
@@ -1885,19 +1829,37 @@ html[data-nav-sort="category"] .dx-nav-sort-option[data-nav-sort-option="categor
  * shrank 38.5k -> 32.0k px, -17%, and the scrollbar thumb jumped). The MEAN, not the median (256 px: most
  * cards are one demo row, a few -- form 2,020, bubble 836 -- are very tall), because it is the sum over the
  * 75 cards that keeps the scrollbar's length steady; the running error stays under ~5% of the page.
- * Measured 1280 / 1024 px: 384 / 393 px (-> 288 / 297); 390 px: 466 px (-> 418, the 24 px padding of the
+ * Re-measured with the `Card` markup (2026-10-19, content-box means over 78 cards, all rendered): 1280 px 376, 1024 px
+ * (gallery narrower than 67rem, so stacked) 448, 390 px 444. Earlier, for the bare grid: 384 / 393 px (-> 288 / 297); 390 px: 466 px (-> 418, the 24 px padding of the
  * narrow layout); widgets 327 px (-> 267) at every width. `auto` keeps the real height once a card has been
  * rendered. `playwright/oracle/tier2-html/home-scroll-stability.spec.ts` fails if the first scroll changes
  * the document height by 10% or more, which is what re-measuring is for when the gallery changes. */
 .dx-component-card {
+  padding: 3rem 0;
+  contain-intrinsic-block-size: auto 376px;
+  content-visibility: var(--dx-cv, auto);
+  overflow-clip-margin: 0.75rem;
+}
+
+/* Header on the left, the live demo on the right, the install command as the footer across the bottom. */
+.dx-card.dx-component-card-body {
   display: grid;
   align-items: start;
-  padding: 3rem 0;
-  contain-intrinsic-block-size: auto 290px;
-  content-visibility: var(--dx-cv, auto);
-  gap: 2rem;
-  grid-template-columns: minmax(16rem, 1fr) minmax(16rem, 1fr);
-  overflow-clip-margin: 0.75rem;
+  gap: 1.5rem 2rem;
+  grid-template: "header content" 1fr "footer footer" auto / minmax(16rem, 1fr) minmax(16rem, 1fr);
+}
+
+.dx-component-card-body > [data-slot="card-header"] {
+  grid-area: header;
+}
+
+.dx-component-card-body > [data-slot="card-content"] {
+  align-self: stretch;
+  grid-area: content;
+}
+
+.dx-component-card-body > [data-slot="card-footer"] {
+  grid-area: footer;
 }
 
 /* NOT `content-visibility: auto` (the widget cards used to be): the masonry was CSS multi-column (it is fixed column
@@ -1925,7 +1887,7 @@ html[data-cv-settle] {
   /* Narrow cards stack and wrap (component cards mean 466 px border-box at 390 px wide, less the 48 px of
    * padding; variants 427 px). */
   .dx-component-card {
-    contain-intrinsic-block-size: auto 418px;
+    contain-intrinsic-block-size: auto 444px;
   }
 }
 
@@ -1941,9 +1903,8 @@ html[data-cv-settle] {
 /* A 320px phone: the Schedule card's 250px calendar is 7px wider than the content box left by the
  * desktop 1.75rem inset (backlog row 280, `playwright/card-fit.spec.ts`). */
 @media (width <= 400px) {
-  .dx-widget-card {
-    padding-right: 1.25rem;
-    padding-left: 1.25rem;
+  .dx-card.dx-widget-card {
+    --dx-card-spacing: 1.25rem;
   }
 }
 
@@ -2064,16 +2025,12 @@ html[data-cv-settle] {
  * content is wider than it. */
 @container (width < 67rem) {
   .dx-component-card {
-    grid-template-columns: minmax(0, 1fr);
+    contain-intrinsic-block-size: auto 448px;
   }
-}
 
-.dx-component-card-meta {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.75rem;
+  .dx-card.dx-component-card-body {
+    grid-template: "header" auto "content" auto "footer" auto / minmax(0, 1fr);
+  }
 }
 
 .dx-component-card-title {
@@ -2104,32 +2061,11 @@ html[data-cv-settle] {
   outline-offset: 3px;
 }
 
-.dx-component-card-description {
-  max-width: 36rem;
-  margin: 0;
-  color: var(--dx-muted-foreground);
-  font-size: 0.95rem;
-  line-height: 1.55;
-}
-
-.dx-component-card-actions {
-  display: flex;
-  max-width: 100%;
-  flex-wrap: wrap;
-  align-items: center;
-  margin-top: 0.5rem;
-  gap: 0.75rem;
-}
-
 .dx-component-card-command {
   display: inline-flex;
+  min-width: 0;
   max-width: 100%;
   align-items: center;
-  padding: 0.375rem 0.375rem 0.375rem 0.5rem;
-  border: 1px solid var(--dx-border);
-  border-radius: 0.25rem;
-  background-color: var(--dx-background);
-  color: var(--dx-foreground);
   gap: 1rem;
 }
 
@@ -2139,18 +2075,6 @@ html[data-cv-settle] {
   font-size: 0.875rem;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.dx-component-card-copy {
-  width: 1rem;
-  height: 1rem;
-  flex: 0 0 auto;
-  color: var(--dx-muted-foreground);
-}
-
-.dx-component-card-copy svg {
-  width: 10px;
-  height: 10px;
 }
 
 .dx-component-card-block-link {
@@ -2177,7 +2101,7 @@ html[data-cv-settle] {
   outline-offset: 3px;
 }
 
-.dx-component-card-preview {
+.dx-card-content.dx-component-card-preview {
   display: flex;
   overflow: visible;
   min-width: 0;
@@ -2185,9 +2109,6 @@ html[data-cv-settle] {
   align-items: center;
   justify-content: center;
   padding: 2rem;
-  border: 1px solid var(--dx-border);
-  border-radius: 0.25rem;
-  background-color: var(--dx-card);
 }
 
 .dx-component-card-preview > * {
@@ -2235,8 +2156,6 @@ html[data-cv-settle] {
   display: grid;
   width: min(var(--dx-content-width), calc(100vw - 2rem));
   padding: 3rem 4.5rem 2.5rem;
-  border-right: 1px solid var(--dx-border);
-  border-left: 1px solid var(--dx-border);
   gap: 3rem;
   grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
 }
@@ -2311,9 +2230,6 @@ html[data-cv-settle] {
   align-items: center;
   justify-content: flex-start;
   padding: 1rem 4.5rem 1.5rem;
-  border-right: 1px solid var(--dx-border);
-  border-bottom: 1px solid var(--dx-border);
-  border-left: 1px solid var(--dx-border);
 }
 
 .dx-footer-copy {
@@ -2374,8 +2290,6 @@ html[data-cv-settle] {
   .dx-docs-shell-body {
     width: 100%;
     min-height: 0;
-    border-right: none;
-    border-left: none;
   }
 
   /* Keep a 16px side gutter: with `0` inline padding the h1 and prose sat
@@ -2397,15 +2311,17 @@ html[data-cv-settle] {
 
   .dx-component-card {
     padding: 1.5rem 0;
+  }
+
+  .dx-card.dx-component-card-body {
     gap: 1.25rem;
-    grid-template-columns: 1fr;
   }
 
   /* `overflow: hidden`: a thumbnail whose demo has a fixed inline `min-width`
    * wider than the card (the Resizable demo's 450px group) must clip inside
    * its own box, not widen the page. Desktop keeps the base `overflow:
    * visible`. */
-  .dx-component-card-preview {
+  .dx-card-content.dx-component-card-preview {
     overflow: hidden;
     min-height: 7rem;
     padding: 1.25rem;
@@ -2656,11 +2572,9 @@ html[data-cv-settle] {
   gap: var(--dx-space-2);
 }
 
-.dx-charts-toolbar-separator {
+/* The `Separator` supplies the rule (1px, `--dx-border`, stretched); the toolbar only hides it when narrow. */
+.dx-charts-toolbar-actions .dx-charts-toolbar-separator {
   display: none;
-  width: 1px;
-  height: 1rem;
-  background: var(--dx-border);
 }
 
 .dx-charts-toolbar-actions .dx-button[data-copied="true"] {
@@ -2796,7 +2710,7 @@ html[data-cv-settle] {
     grid-column: 1 / -1;
   }
 
-  .dx-charts-toolbar-separator {
+  .dx-charts-toolbar-actions .dx-charts-toolbar-separator {
     display: block;
   }
 }
