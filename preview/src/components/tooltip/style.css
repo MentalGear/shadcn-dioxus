@@ -21,6 +21,25 @@
   --dx-tooltip-arrow-size: 0.625rem;
   --dx-tooltip-arrow-shift: 2px;
 
+  /* Distance the arrow's centre keeps from the body's ends so it stays on the straight part of the
+     rounded edge (corner radius plus the half-diagonal of the rotated square). */
+  --dx-tooltip-arrow-inset: calc(var(--dx-floating-radius) + var(--dx-tooltip-arrow-size) * 0.71);
+
+  /* Where the arrow's centre sits along the cross axis: `--dx-tooltip-arrow-x` / `-y` are published
+     by `TooltipContent` (px from the panel's left / top edge to the trigger's centre, measured on
+     the final placement), clamped to stay inside the body; 50% until the first measurement. The
+     physical `left`/`top` is right for RTL too: the offset is a measured physical distance. */
+  --dx-tooltip-arrow-cross-x: clamp(
+    var(--dx-tooltip-arrow-inset),
+    var(--dx-tooltip-arrow-x, 50%),
+    calc(100% - var(--dx-tooltip-arrow-inset))
+  );
+  --dx-tooltip-arrow-cross-y: clamp(
+    var(--dx-tooltip-arrow-inset),
+    var(--dx-tooltip-arrow-y, 50%),
+    calc(100% - var(--dx-tooltip-arrow-inset))
+  );
+
   /* A Kbd inside a tooltip is inverted: Nova's `**:data-[slot=kbd]` `bg-background/20 text-background`,
      through the Kbd's own slot variables. */
   --dx-kbd-background: color-mix(in oklab, var(--dx-background) 20%, transparent);
@@ -62,6 +81,7 @@
      (see those rules), so it cannot become `margin-inline-start` without
      desyncing from that pairing. */
   margin-left: calc(-1 * var(--dx-tooltip-arrow-size) / 2);
+  margin-top: 0;
   background-color: var(--dx-foreground);
   content: " ";
   rotate: 45deg;
@@ -78,7 +98,7 @@
 
 .dx-tooltip-content[data-side="top"]::after {
   top: calc(100% - var(--dx-tooltip-arrow-size) / 2 - var(--dx-tooltip-arrow-shift));
-  left: 50%;
+  left: var(--dx-tooltip-arrow-cross-x);
 }
 
 .dx-tooltip-content[data-side="right"] {
@@ -89,8 +109,13 @@
   transform: translateY(-50%);
 }
 
+.dx-tooltip-content[data-side="right"]::after,
+.dx-tooltip-content[data-side="left"]::after {
+  margin-top: calc(-1 * var(--dx-tooltip-arrow-size) / 2);
+}
+
 .dx-tooltip-content[data-side="right"]::after {
-  top: calc(50% - var(--dx-tooltip-arrow-size) / 2);
+  top: var(--dx-tooltip-arrow-cross-y);
   left: var(--dx-tooltip-arrow-shift);
 }
 
@@ -104,7 +129,7 @@
 
 .dx-tooltip-content[data-side="bottom"]::after {
   bottom: calc(100% - var(--dx-tooltip-arrow-size) / 2 - var(--dx-tooltip-arrow-shift));
-  left: 50%;
+  left: var(--dx-tooltip-arrow-cross-x);
 }
 
 .dx-tooltip-content[data-side="left"] {
@@ -116,7 +141,7 @@
 }
 
 .dx-tooltip-content[data-side="left"]::after {
-  top: calc(50% - var(--dx-tooltip-arrow-size) / 2);
+  top: var(--dx-tooltip-arrow-cross-y);
   right: calc(-1 * var(--dx-tooltip-arrow-size) / 2 + var(--dx-tooltip-arrow-shift));
 }
 
