@@ -110,7 +110,8 @@ test.describe("every component under the toggle", () => {
       if ((await page.locator(TOGGLE).count()) === 0) test.skip(true, "block component: demos are iframes");
       await setDirection(page, "rtl");
       // keyboard smoke: Tab into the demo and press both horizontal arrows and Escape.
-      await demoFrame(page).locator("button, [tabindex='0'], input, a[href]").first().focus().catch(() => {});
+      const focusable = demoFrame(page).locator("button, [tabindex='0'], input, a[href]").first();
+      if ((await focusable.count()) > 0) await focusable.focus({ timeout: 5000 }).catch(() => {});
       await page.keyboard.press("ArrowLeft");
       await page.keyboard.press("ArrowRight");
       await page.keyboard.press("Escape");
