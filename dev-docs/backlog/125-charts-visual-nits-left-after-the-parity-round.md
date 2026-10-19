@@ -15,7 +15,7 @@ Charts visual nits left after the parity round: radar legend ~12px lower than sh
 
 ## Status / trigger
 
-**OPEN** -- cosmetic, listed in `dev-docs/research/chart-parity-2026-10-03/visual-parity.md`; not covered by the parity tests
+**LANDED 2026-10-19 (radar legend overhang, pie-interactive swatch, area icons glyph color)**
 
 ## Size
 

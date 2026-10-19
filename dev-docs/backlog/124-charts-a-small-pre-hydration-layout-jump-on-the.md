@@ -15,7 +15,7 @@ Charts: a small pre-hydration layout jump on the legend cards, and on pie-intera
 
 ## Status / trigger
 
-**OPEN** -- measured 2026-10-03 in `dev-docs/research/chart-parity-2026-10-03/visual-parity.md` (SSR no-JS vs hydrated + measured); cosmetic, actionable when the owner minds the jump or Select SSR is touched
+**LANDED 2026-10-19 (already gone since row 215; guarded by chart-prehydration.spec.ts)**
 
 ## Size
 
