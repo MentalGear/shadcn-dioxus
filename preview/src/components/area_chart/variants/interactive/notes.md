@@ -1,0 +1,1 @@
+91 days of two-series data in a fixed 250px-tall chart (`height: 250.0`), with a `Select` that narrows it to the last 3 months, 30 or 7 days (shadcn keeps the dates on or after June 30 minus the range: 91, 31 or 8 days). With this many points, `min_tick_gap` thins the x-axis labels (keeping the last one), as in shadcn.

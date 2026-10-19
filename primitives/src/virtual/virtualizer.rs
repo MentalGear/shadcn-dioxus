@@ -273,6 +273,36 @@ impl Engine {
             canvas_height: key.canvas_height,
         }
     }
+
+    /// Item `index` at its current position, whether or not it is mounted: what a consumer
+    /// needs to draw one extra item outside the window (the grid's focused cell).
+    pub(crate) fn item(&self, index: usize) -> Option<VirtualItem> {
+        self.index.item(index)
+    }
+
+    /// Drop every measured size, keeping the scroll state: for a consumer whose item geometry
+    /// changed meaning (a wrapping grid whose column count changed, so row `i` holds other
+    /// items). The next [`sync`](Self::sync) rebuilds the index from the estimates alone.
+    pub(crate) fn forget_measurements(&mut self) {
+        self.index = SizeIndex::new(SizeEstimates::evaluate(0, None), HashMap::new());
+        self.rendered = None;
+    }
+
+    /// The scroll offset that centres item `index` in the viewport, clamped to the scroll range:
+    /// the core's `scroll_to(index)` (row 154 layer 1). `None` past the end. Before the viewport
+    /// is known it is the item's start.
+    pub(crate) fn scroll_target(&self, index: usize) -> Option<u32> {
+        let item = self.index.item(index)?;
+        let centre = (item.start() + item.size() / 2).saturating_sub(self.viewport / 2);
+        let max = self.index.total().saturating_sub(self.viewport);
+        Some(centre.min(max))
+    }
+
+    /// How many items the viewport shows now (at least 1 once the viewport is known, 0 before):
+    /// the step of PageUp / PageDown.
+    pub(crate) fn visible_len(&self) -> usize {
+        self.visible().map_or(0, |(first, last)| last - first + 1)
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -460,6 +490,28 @@ mod tests {
             "{renders} renders for {} events",
             events.len()
         );
+    }
+
+    #[test]
+    fn scroll_target_centres_the_item_and_clamps_to_the_scroll_range() {
+        // 100 rows of 50px, 600px viewport: row 40 (2000..2050) centred is 2025 - 300.
+        let engine = engine(100, 50, 0, 8);
+        assert_eq!(engine.scroll_target(40), Some(1725));
+        // Near the ends the target is clamped to 0 and to total - viewport.
+        assert_eq!(engine.scroll_target(2), Some(0));
+        assert_eq!(engine.scroll_target(99), Some(4400));
+        assert_eq!(engine.scroll_target(100), None);
+    }
+
+    #[test]
+    fn forget_measurements_keeps_the_scroll_state_and_drops_the_sizes() {
+        let mut engine = engine(100, 50, 1000, 8);
+        engine.resize_item(30, 150);
+        engine.forget_measurements();
+        engine.sync(&uniform(100, 50));
+        assert_eq!(engine.item(31).map(|i| i.start()), Some(1550));
+        assert_eq!(engine.scroll_offset(), 1000);
+        assert_eq!(engine.visible_len(), 12);
     }
 
     #[test]

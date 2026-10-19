@@ -226,6 +226,7 @@ pub const CATALOG: &[(&str, Origin)] = &[
     ("tag_group", Origin::Extra("A focusable group of tags with selection and removal, from upstream Dioxus; not in shadcn/ui.")),
     ("toolbar", Origin::Extra("A keyboard-navigable toolbar for grouping controls, from upstream Dioxus; not in shadcn/ui.")),
     ("top_layer", Origin::Extra("A test page for overlay stacking, not an installable component.")),
+    ("virtual_grid", Origin::Extra("A data grid or gallery that renders only the cells in view, rows and columns; shadcn/ui has no virtualized grid.")),
     ("virtual_list", Origin::Extra("A long list that renders only the visible rows, from upstream Dioxus; not in shadcn/ui.")),
 ];
 
@@ -371,7 +372,7 @@ macro_rules! examples {
                 stringify!($name),
                 "/description.txt"
             )),
-            docs: include_str!(concat!(env!("OUT_DIR"), "/", stringify!($name), "/docs.html")),
+            docs: include!(concat!(env!("OUT_DIR"), "/", stringify!($name), "/docs_sections.rs")),
             component: HighlightedCode {
                 source: dioxus_code::code!(concat!("/src/components/", stringify!($name), "/component.rs")),
             },
@@ -412,7 +413,7 @@ macro_rules! examples {
                 stringify!($name),
                 "/description.txt"
             )),
-            docs: include_str!(concat!(env!("OUT_DIR"), "/", stringify!($name), "/docs.html")),
+            docs: include!(concat!(env!("OUT_DIR"), "/", stringify!($name), "/docs_sections.rs")),
             component: HighlightedCode {
                 source: dioxus_code::code!(concat!("/src/components/", stringify!($name), "/component.rs")),
             },

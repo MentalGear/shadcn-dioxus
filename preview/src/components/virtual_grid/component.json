@@ -1,0 +1,15 @@
+{
+  "name": "virtual_grid",
+  "description": "A grid for large datasets that mounts only the cells in view: a data grid with rows and columns windowed, or a gallery of items wrapping into rows.",
+  "authors": ["Claude"],
+  "exclude": ["variants", "docs.md", "component.json"],
+  "cargoDependencies": [
+    {
+      "name": "dioxus-primitives",
+      "git": "https://github.com/MentalGear/shadcn-dioxus"
+    }
+  ],
+  "globalAssets": [
+    "../../../assets/dx-components-theme.css"
+  ]
+}

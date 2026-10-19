@@ -132,18 +132,9 @@ interface KnownAxe {
   row: string;
   why: string;
 }
-const CHART_TOGGLE_LABEL: KnownAxe = {
-  selector: '.dx-chart-interactive-toggle[data-active="true"] .dx-chart-interactive-toggle-label',
-  row: "dev-docs/backlog.md row 111 (phase C, owner question A: the dark `--dx-accent`)",
-  why:
-    "the active toggle is `--dx-accent` (#3e3e3e in dark) with a `--dx-muted-foreground` label, 4.13:1 " +
-    "(`chart/style.css` `.dx-chart-interactive-toggle-label`); question A's accent value, or a local " +
-    "`--dx-accent-foreground` label colour, clears it",
-};
-const KNOWN_AXE: Record<string, Partial<Record<Scheme, KnownAxe[]>>> = {
-  bar_chart: { dark: [CHART_TOGGLE_LABEL] },
-  line_chart: { dark: [CHART_TOGGLE_LABEL] },
-};
+// Empty: the chart toggle label finding (row 111, dark `--dx-accent` 4.13:1) went away when the active toggle moved to
+// `--dx-accent-selected` (phase C). Add an entry here only for a finding that is real and tracked.
+const KNOWN_AXE: Record<string, Partial<Record<Scheme, KnownAxe[]>>> = {};
 
 // --- helpers -------------------------------------------------------------------------------
 /**

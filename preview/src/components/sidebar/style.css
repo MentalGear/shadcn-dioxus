@@ -5,7 +5,7 @@
  *   inner        `bg-sidebar`; floating: `rounded-lg ring-1 ring-sidebar-border shadow-sm`
  *   rail         `hover:after:bg-sidebar-border`
  *   inset        `bg-background`; md peer-inset: `m-2 ml-0 rounded-xl shadow-sm`, `ml-2` collapsed
- *   header/footer `gap-2 p-2`;  content `gap-0`;  menu `gap-0`;  group `p-2`;  group-content `text-sm`
+ *   header/footer `gap-2 p-2`;  content `gap-0`;  menu `gap-0` (here `gap-1`, see `.dx-sidebar-menu`);  group `p-2`;  group-content `text-sm`
  *   separator    `bg-sidebar-border mx-2`
  *   group-label  `text-sidebar-foreground/70 h-8 rounded-md px-2 text-xs font-medium`,
  *                `transition-[margin,opacity] duration-200 ease-linear`, `focus-visible:ring-2 ring-sidebar-ring`
@@ -531,7 +531,10 @@
   flex-direction: column;
   padding: 0;
   margin: 0;
-  gap: 0;
+
+  /* Owner 2026-10-19: new-york-v4's `gap-1` between items, not Nova's `gap-0`, so the docs shell and
+     every demo show the same visible spacing (playwright/docs-sidebar-spacing.spec.ts keeps them equal). */
+  gap: var(--dx-space-1);
   list-style: none;
 }
 

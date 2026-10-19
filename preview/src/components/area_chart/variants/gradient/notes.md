@@ -1,0 +1,1 @@
+`AreaOptions { gradient: true, .. }`.

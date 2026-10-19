@@ -45,7 +45,7 @@
  * SCOPING -- READ BEFORE EDITING (found live, the hard way): every variant
  * of a "Normal"-kind component renders on the SAME page at once, `main`
  * inside the page's own top section and every other variant (including
- * "rtl") inside a separate, always-mounted "Variants" section further down
+ * "rtl") inside a separate, always-mounted "Examples" section further down
  * -- see `preview/src/main.rs`'s `ComponentHighlight`
  * (`let [main, variants @ ..] = variants`, two separate render blocks). A
  * bare, unscoped `page.getByRole(...)`/`getByText(...)` therefore risks a

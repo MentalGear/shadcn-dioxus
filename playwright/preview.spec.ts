@@ -52,14 +52,16 @@ test.describe("style tab", () => {
     await gotoHydrated(page, `${BASE_URL}/component/kbd/`);
 
     await page.getByRole("heading", { name: "kbd" }).waitFor({ state: "visible" });
+    // The sections are the library's Accordion/Collapsible: their triggers work once hydrated.
+    await page.waitForSelector('html[data-hydrated="true"]', { state: "attached" });
     // Installation and "Manual installation files" are both closed by default (rows 233, 236): the
     // reader opens Installation, then the manual files.
-    const manual = page.locator("details.dx-component-manual-install");
-    await expect(manual).not.toHaveJSProperty("open", true);
-    await page.locator("summary", { has: page.locator("h2#installation") }).click();
-    await expect(manual).not.toHaveJSProperty("open", true);
-    await page.locator("summary", { hasText: "Manual installation" }).click();
-    await expect(manual).toHaveJSProperty("open", true);
+    const manual = page.locator(".dx-component-manual-install");
+    await expect(manual).toHaveAttribute("data-open", "false");
+    await page.locator("h2#installation > button").click();
+    await expect(manual).toHaveAttribute("data-open", "false");
+    await manual.locator("> .dx-collapsible-trigger").click();
+    await expect(manual).toHaveAttribute("data-open", "true");
     await page.getByRole("tab", { name: "style.css" }).click();
 
     const styleCode = page.locator("pre code", { hasText: ".dx-kbd" });

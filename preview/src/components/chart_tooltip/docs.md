@@ -71,17 +71,3 @@ The icon is wrapped in a `role="graphics-symbol"` element named after the series
 ## Legend options
 
 `ChartLegend` shows one swatch (or icon) and label per series. `vertical_align` (`LegendAlign::Top` or `LegendAlign::Bottom`, the default) sets which side of the chart it belongs on through a `data-align` attribute, and `hide_icon` is described above. A single-series pie or radial chart lists one entry per slice or ring instead.
-
-## Demos
-
-- **Default** — dot indicator, label and every value.
-- **Line indicator** — `indicator: TooltipIndicator::Line`.
-- **No indicator** — `hide_indicator: true`.
-- **No label** — `hide_indicator: true, hide_label: true`.
-- **Custom label** — `label_key` as a fixed heading.
-- **Label formatter** — `label_format` spelling the date out in full.
-- **Formatter** — `formatter` showing each value as "N kcal".
-- **Icons** — per-series icons instead of swatches.
-- **Advanced** — `formatter` again, adding a computed total row after the last series.
-
-All demos use a six-day running and swimming calorie dataset drawn as a stacked bar chart.

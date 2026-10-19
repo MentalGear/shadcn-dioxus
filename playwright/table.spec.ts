@@ -16,7 +16,7 @@ test("table renders the invoice demo: caption, header, rows, and footer total", 
   // always in the DOM in the page's syntax-highlighted "Code" tab
   // (ComponentVariantHighlight's TabContent for "Code" renders next to the
   // "Demo" one, both mounted regardless of which tab is active) and in the
-  // "Manual installation" <details> section's component.rs source, so an
+  // "Manual installation files" Collapsible's component.rs source, so an
   // unscoped text/name lookup for a string that also appears in either
   // resolves 2+ elements and fails Playwright's strict mode. `table` is
   // scoped by data-slot="table", an attribute the highlighted/copied
