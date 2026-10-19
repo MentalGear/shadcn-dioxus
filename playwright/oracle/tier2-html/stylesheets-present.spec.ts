@@ -194,12 +194,12 @@ const ROUTES: { url: string; settled?: RegExp }[] = [
   { url: "/component/button/" },
   // The legacy query-string routes: they render the shell, then redirect, which is the teardown that
   // used to lose the header's stylesheets.
-  { url: "/component/?name=popover&", settled: /\/component\/popover\// },
-  { url: "/component/?name=select&", settled: /\/component\/select\// },
+  { url: "/component/?name=popover&", settled: /\/component\/popover\// }, // legacy-route-ok: this test IS the legacy redirect
+  { url: "/component/?name=select&", settled: /\/component\/select\// }, // legacy-route-ok: this test IS the legacy redirect
   // The block demos render inside the docs page's iframe, outside the docs layout: their own document,
   // their own de-duplication set, and their own legacy redirect shell.
   { url: "/component/block/sidebar/main/" },
-  { url: "/component/block/?name=sidebar", settled: /\/component\/block\/sidebar\/main\// },
+  { url: "/component/block/?name=sidebar", settled: /\/component\/block\/sidebar\/main\// }, // legacy-route-ok: this test IS the legacy redirect
   { url: "/dashboard/email-client" },
 ];
 
@@ -220,6 +220,7 @@ test("the class -> stylesheet map is not empty (the sources were found)", () => 
 
 for (const { url, settled } of ROUTES) {
   test(`every rendered component has its stylesheet on a fresh load of ${url}`, async ({ page }) => {
+    // goto-ok: stylesheet-presence oracle samples at domcontentloaded and across the redirect; no interaction
     await page.goto(`${BASE_URL}${url}`, { waitUntil: "domcontentloaded", timeout: 60_000 });
     await settle(page, settled);
 
@@ -252,6 +253,7 @@ test("the oracle is not vacuous: a component stylesheet missing from the page is
   // Without this, a mistake in the class -> sheet maps (wrong path, a fingerprint that matches
   // everywhere) would leave every route test above green whatever the page loaded. Take the header's
   // language select (it renders on every route) and drop ITS stylesheet, the way the lost insertion did.
+  // goto-ok: stylesheet-presence oracle samples at domcontentloaded and across the redirect; no interaction
   await page.goto(`${BASE_URL}/docs`, { waitUntil: "domcontentloaded", timeout: 60_000 });
   await settle(page);
   await expect.poll(() => missingStylesheets(page), { timeout: 10_000 }).toEqual({});
@@ -292,6 +294,7 @@ test("the theme picker's popover panel is styled on the legacy component route",
   // The symptom the popover lane saw: on `/component/?name=...` the panel computed border 3px /
   // radius 0 (the UA `<dialog>`-ish default) instead of the themed 1px / 10px it has on `/`.
   const panel = async (url: string, settled?: RegExp) => {
+    // goto-ok: stylesheet-presence oracle samples at domcontentloaded and across the redirect; no interaction
     await page.goto(`${BASE_URL}${url}`, { waitUntil: "domcontentloaded", timeout: 60_000 });
     await settle(page, settled);
     await page.getByRole("button", { name: "Theme", exact: true }).click();
@@ -303,7 +306,7 @@ test("the theme picker's popover panel is styled on the legacy component route",
     });
   };
   const home = await panel("/");
-  const legacy = await panel("/component/?name=select&", /\/component\/select\//);
+  const legacy = await panel("/component/?name=select&", /\/component\/select\//); // legacy-route-ok: this test IS the legacy redirect
   expect(legacy).toEqual(home);
   expect(legacy.border).not.toBe("3px");
 });

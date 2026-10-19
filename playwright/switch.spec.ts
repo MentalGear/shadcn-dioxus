@@ -1,9 +1,10 @@
 import { test, expect } from "./fixtures";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from './axe';
 import { BASE_URL } from './base-url';
+import { gotoHydrated } from "./hydration";
 
 test('test', async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=switch&`, { timeout: 20 * 60 * 1000 }); // Increase timeout to 20 minutes
+  await gotoHydrated(page, `${BASE_URL}/component/switch/`, { timeout: 20 * 60 * 1000 }); // Increase timeout to 20 minutes
   await page.waitForLoadState('networkidle');
   let switchElement = page.locator('#component-preview-frame').getByRole('switch', { name: 'Airplane Mode', exact: true });
   await expect(switchElement).toBeVisible();
@@ -21,12 +22,12 @@ test('test', async ({ page }) => {
 
 test.describe('Axe automated scan', () => {
   test('loaded (unchecked) has no automatically detectable a11y issues', async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=switch&`, { timeout: 20 * 60 * 1000, waitUntil: 'networkidle' });
+    await gotoHydrated(page, `${BASE_URL}/component/switch/`, { timeout: 20 * 60 * 1000, waitUntil: 'networkidle' });
     await expectNoAxeViolations(page, 'switch: unchecked', { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 
   test('checked has no automatically detectable a11y issues', async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=switch&`, { timeout: 20 * 60 * 1000, waitUntil: 'networkidle' });
+    await gotoHydrated(page, `${BASE_URL}/component/switch/`, { timeout: 20 * 60 * 1000, waitUntil: 'networkidle' });
     await page.locator('#component-preview-frame').getByRole('switch', { name: 'Airplane Mode', exact: true }).click();
     await expectNoAxeViolations(page, 'switch: checked', { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
@@ -51,7 +52,7 @@ test.describe("size (row 155 group 7)", () => {
     });
 
   test("sm is 24 x 14 with a 12px thumb, default is 32 x 18.4 with a 16px thumb", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=switch&`, { timeout: 20 * 60 * 1000, waitUntil: "networkidle" });
+    await gotoHydrated(page, `${BASE_URL}/component/switch/`, { timeout: 20 * 60 * 1000, waitUntil: "networkidle" });
     expect(await box(page, "switch-size-sm")).toEqual({ size: "sm", w: 24, h: 14, tw: 12, th: 12 });
     const d = await box(page, "switch-size-default");
     expect(d.size).toBe("default");
@@ -60,7 +61,7 @@ test.describe("size (row 155 group 7)", () => {
   });
 
   test("the checked thumb ends flush with the track end in both sizes", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=switch&`, { timeout: 20 * 60 * 1000, waitUntil: "networkidle" });
+    await gotoHydrated(page, `${BASE_URL}/component/switch/`, { timeout: 20 * 60 * 1000, waitUntil: "networkidle" });
     for (const id of ["switch-size-sm", "switch-size-default"]) {
       const sw = page.locator("#component-preview-frame-sizes").locator(`#${id}`);
       await sw.click();

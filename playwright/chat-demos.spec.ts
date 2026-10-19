@@ -24,7 +24,7 @@ import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
 const GOTO_OPTS = { timeout: 20 * 60 * 1000 };
-const url = (name: string) => `${BASE_URL}/component/?name=${name}&`;
+const url = (name: string) => `${BASE_URL}/component/${name}/`;
 
 const frame = (page: Page, variant: string) => page.locator(`#component-preview-frame-${variant}`).first();
 const viewportOf = (page: Page, variant: string) => frame(page, variant).locator("[data-message-scroller-viewport]");

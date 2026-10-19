@@ -1,9 +1,10 @@
 import { test, expect } from "./fixtures";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
+import { gotoHydrated } from "./hydration";
 
 test("test", async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=alert&`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/alert/`, { timeout: 20 * 60 * 1000 });
   // Scope to the main demo frame: the alert page also renders the other
   // variants (e.g. no_icon) in their own frames, each with its own role="alert".
   const frame = page.locator("#component-preview-frame");
@@ -16,7 +17,7 @@ test("test", async ({ page }) => {
 test.describe("Axe automated scan", () => {
   // Alert has no overlay/expand/select interaction -- one state to scan.
   test("loaded has no automatically detectable a11y issues", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=alert&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/alert/`, { timeout: 20 * 60 * 1000 });
     await expectNoAxeViolations(page, "alert: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 });
@@ -24,7 +25,7 @@ test.describe("Axe automated scan", () => {
 // `AlertAction` (shadcn's fourth Alert part): pinned to the top-end corner, the alert keeps room on the end side
 // so its text never runs under the button, and the layout mirrors in RTL.
 test("AlertAction is pinned top-end and the text stays clear of it", async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=alert&`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/alert/`, { timeout: 20 * 60 * 1000 });
   const alert = page.locator(".dx-alert:has(> .dx-alert-action)").first();
   await expect(alert).toBeVisible();
   const action = alert.locator("> .dx-alert-action");

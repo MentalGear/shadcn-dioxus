@@ -36,8 +36,8 @@ const GOTO = { timeout: 20 * 60 * 1000 };
 
 interface Overlay {
   name: string;
-  /** The `/component/?name=...&` query for the page that holds the demo. */
-  query: string;
+  /** The `/component/<name>/` path of the page that holds the demo. */
+  path: string;
   /** Accessible name of the trigger, or a CSS selector. */
   trigger: { role: "button" | "combobox" | "menuitem"; name: string | RegExp } | { css: string };
   /** `true` when the first control in the panel is a text field (a keyboard open focuses it). */
@@ -54,7 +54,7 @@ interface Overlay {
 
 const MODALS: Overlay[] = CONSUMERS.map((c) => ({
   name: c.component,
-  query: `name=${c.component}&`,
+  path: `${c.component}/`,
   trigger: { role: "button", name: c.variants[0].trigger },
   keyboard: "inside",
   keyboardFocusesField: c.component === "command",
@@ -63,28 +63,28 @@ const MODALS: Overlay[] = CONSUMERS.map((c) => ({
 const POPUPS: Overlay[] = [
   {
     name: "popover (non-modal)",
-    query: "name=popover&",
+    path: "popover/",
     trigger: { role: "button", name: "Show Popover" },
     keyboard: "inside",
     keyboardFocusesField: true,
   },
   {
     name: "popover (modal)",
-    query: "name=popover&variant=modal&",
+    path: "popover/",
     trigger: { role: "button", name: "Open modal popover" },
     keyboard: "inside",
     keyboardFocusesField: true,
   },
-  { name: "select", query: "name=select&", trigger: { css: "button[role='combobox'][aria-haspopup='listbox']:visible" }, keyboard: "opens" },
-  { name: "date_picker", query: "name=date_picker&", trigger: { css: "button[aria-haspopup='dialog']:visible" }, keyboard: "inside" },
+  { name: "select", path: "select/", trigger: { css: "button[role='combobox'][aria-haspopup='listbox']:visible" }, keyboard: "opens" },
+  { name: "date_picker", path: "date_picker/", trigger: { css: "button[aria-haspopup='dialog']:visible" }, keyboard: "inside" },
   {
     name: "dropdown_menu",
-    query: "name=dropdown_menu&",
+    path: "dropdown_menu/",
     trigger: { role: "button", name: "Open Menu" },
     keyboard: "opens",
     leavesFocusAlone: true,
   },
-  { name: "menubar", query: "name=menubar&", trigger: { role: "menuitem", name: "File" }, keyboard: "opens" },
+  { name: "menubar", path: "menubar/", trigger: { role: "menuitem", name: "File" }, keyboard: "opens" },
 ];
 
 const OVERLAYS = [...MODALS, ...POPUPS];
@@ -194,7 +194,7 @@ async function expectQuietOpen(page: Page, what: string) {
 }
 
 async function open(page: Page, o: Overlay) {
-  await gotoHydrated(page, `${BASE_URL}/component/?${o.query}`, GOTO);
+  await gotoHydrated(page, `${BASE_URL}/component/${o.path}`, GOTO);
 }
 
 for (const o of OVERLAYS) {
@@ -306,7 +306,7 @@ for (const o of OVERLAYS) {
 
 test.describe("modality writer", () => {
   test("pointer type and key presses write <html data-dx-modality>", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/?name=button&`, GOTO);
+    await gotoHydrated(page, `${BASE_URL}/component/button/`, GOTO);
     const modality = () => page.evaluate(() => document.documentElement.getAttribute("data-dx-modality"));
     // Before any event the desktop fallback is `mouse` (no coarse pointer).
     expect(["mouse", "keyboard"]).toContain(await modality());
@@ -324,7 +324,7 @@ test.describe("modality writer", () => {
     const context = await iosLikeContext(browser);
     try {
       const page = await context.newPage();
-      await gotoHydrated(page, `${BASE_URL}/component/?name=button&`, GOTO);
+      await gotoHydrated(page, `${BASE_URL}/component/button/`, GOTO);
       expect(await page.evaluate(() => document.documentElement.getAttribute("data-dx-modality"))).toBe("touch");
       await page.keyboard.press("Tab");
       expect(await page.evaluate(() => document.documentElement.getAttribute("data-dx-modality"))).toBe("keyboard");
@@ -339,7 +339,7 @@ test.describe("modality writer", () => {
     const context = await iosLikeContext(browser);
     try {
       const page = await context.newPage();
-      await gotoHydrated(page, `${BASE_URL}/component/?name=input&`, GOTO);
+      await gotoHydrated(page, `${BASE_URL}/component/input/`, GOTO);
       const input = page.locator("input.dx-input, input[class*='dx-input']").first();
       await input.scrollIntoViewIfNeeded();
       await input.tap();

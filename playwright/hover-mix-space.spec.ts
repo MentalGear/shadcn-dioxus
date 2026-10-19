@@ -1,6 +1,7 @@
 import { test, expect } from "./fixtures";
 import type { Locator, Page } from "@playwright/test";
 import { BASE_URL } from "./base-url";
+import { gotoHydrated } from "./hydration";
 
 // Row 260 (finishing row 243): every hover / pressed fill that steps a colour toward the ink reads the theme's
 // `--dx-hover-mix-space` (shadcn's `in oklch`), so each one must equal the formula evaluated IN THE PAGE from the
@@ -10,7 +11,7 @@ const GOTO = { timeout: 20 * 60 * 1000 };
 
 async function open(page: Page, name: string, scheme: "light" | "dark") {
   await page.emulateMedia({ colorScheme: scheme });
-  await page.goto(`${BASE_URL}/component/?name=${name}&${scheme === "dark" ? "dark_mode=true" : ""}`, GOTO);
+  await gotoHydrated(page, `${BASE_URL}/component/${name}/${scheme === "dark" ? "?dark_mode=true" : ""}`, GOTO);
   await page.waitForLoadState("networkidle");
 }
 
@@ -76,7 +77,7 @@ for (const scheme of ["light", "dark"] as const) {
     // The range demo fixes its view to May 2026; pin "today" inside it (and out of the 5..12 range) so a today cell exists.
     await page.clock.setFixedTime(new Date("2026-05-15T12:00:00Z"));
     await page.emulateMedia({ colorScheme: scheme });
-    await page.goto(`${BASE_URL}/component/block/?name=calendar&variant=range&${scheme === "dark" ? "dark_mode=true" : ""}`, GOTO);
+    await gotoHydrated(page, `${BASE_URL}/component/block/?name=calendar&variant=range&${scheme === "dark" ? "dark_mode=true" : ""}`, GOTO);
     await page.waitForLoadState("networkidle");
     const cell = page
       .locator('.dx-calendar-grid-cell[data-month="current"][data-today="true"]:not([data-selected="true"],[data-disabled="true"])')

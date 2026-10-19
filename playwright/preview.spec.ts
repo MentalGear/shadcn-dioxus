@@ -1,12 +1,13 @@
 import { test, expect } from "./fixtures";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
+import { gotoHydrated } from "./hydration";
 
 test.describe("homepage", () => {
   test("should not have any automatically detectable accessibility issues", async ({
     page,
   }) => {
-    await page.goto(`${BASE_URL}/`, { timeout: 20 * 60 * 1000 }); // Increase timeout to 20 minutes
+    await gotoHydrated(page, `${BASE_URL}/`, { timeout: 20 * 60 * 1000 }); // Increase timeout to 20 minutes
 
     // Wait for the page to fully load
     let heroSection = page.locator("#hero");
@@ -24,7 +25,7 @@ test.describe("details", () => {
   test("should not have any automatically detectable accessibility issues", async ({
     page,
   }) => {
-    await page.goto(`${BASE_URL}/component/?name=calendar`, { timeout: 20 * 60 * 1000 }); // Increase timeout to 20 minutes
+    await gotoHydrated(page, `${BASE_URL}/component/calendar/`, { timeout: 20 * 60 * 1000 }); // Increase timeout to 20 minutes
 
     // Wait for the page to fully load
     let componentSection = page.getByRole("heading", { name: "calendar" });
@@ -48,7 +49,7 @@ test.describe("style tab", () => {
     // rebuild on every edit); it fetches the file's own `asset!()` URL at
     // runtime instead. This asserts that fetch actually lands real CSS
     // text, not a blank/loading/error placeholder.
-    await page.goto(`${BASE_URL}/component/?name=kbd`);
+    await gotoHydrated(page, `${BASE_URL}/component/kbd/`);
 
     await page.getByRole("heading", { name: "kbd" }).waitFor({ state: "visible" });
     // The sections are the library's Accordion/Collapsible: their triggers work once hydrated.

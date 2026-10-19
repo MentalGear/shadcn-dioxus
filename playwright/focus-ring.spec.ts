@@ -25,7 +25,7 @@ import { gotoHydrated } from "./hydration";
 const NAV = { timeout: 20 * 60 * 1000 };
 
 const page_ = (name: string, variant?: string) =>
-    `${BASE_URL}/component/?name=${name}&${variant ? `variant=${variant}&` : ""}`;
+    `${BASE_URL}/component/${name}/${variant ? `?variant=${variant}&` : ""}`;
 
 /** The computed `box-shadow`, read once it has stopped changing (the ring transitions in). */
 async function settledBoxShadow(locator: Locator): Promise<string> {

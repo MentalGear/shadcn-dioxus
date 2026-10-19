@@ -8,7 +8,7 @@ import { gotoHydrated } from "./hydration";
 const mainDemo = (page: Page) => page.locator("#component-preview-frame");
 
 test("test", async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=toggle_group&`);
+  await gotoHydrated(page, `${BASE_URL}/component/toggle_group/`);
   const b_button = mainDemo(page).getByRole("button", { name: "Toggle bold", exact: true });
   const i_button = mainDemo(page).getByRole("button", { name: "Toggle italic", exact: true });
   const u_button = mainDemo(page).getByRole("button", { name: "Toggle strikethrough", exact: true });
@@ -42,7 +42,7 @@ test("test", async ({ page }) => {
 // now correct via specificity" story).
 for (const dark of [false, true]) {
   test(`a pressed item keeps its "on" background while hovered (${dark ? "dark" : "light"} mode)`, async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=toggle_group&${dark ? "dark_mode=true" : ""}`);
+    await gotoHydrated(page, `${BASE_URL}/component/toggle_group/${dark ? "?dark_mode=true" : ""}`);
     const bButton = mainDemo(page).getByRole("button", { name: "Toggle bold", exact: true });
 
     await bButton.click();
@@ -91,7 +91,7 @@ for (const dark of [false, true]) {
   for (const base of ["slate", "gray"]) {
     test(`resting, hovered and pressed items are three different backgrounds under a ${base} base (${dark ? "dark" : "light"} mode)`, async ({ page }) => {
       // Settled first: a late (re)render of the page would drop the attribute set below.
-      await gotoHydrated(page, `${BASE_URL}/component/?name=toggle_group&${dark ? "dark_mode=true" : ""}`);
+      await gotoHydrated(page, `${BASE_URL}/component/toggle_group/${dark ? "?dark_mode=true" : ""}`);
       await page.evaluate((b) => {
         document.documentElement.setAttribute("data-theme-base", b);
         // Settled values, not a mid-transition read.
@@ -128,7 +128,7 @@ const num = (el: import("@playwright/test").Locator, prop: string) =>
 const box = async (el: import("@playwright/test").Locator) => (await el.boundingBox())!;
 
 test("the main demo is shadcn's: an outline, multiple-select group of icon items, spaced 8px apart", async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=toggle_group&`);
+  await gotoHydrated(page, `${BASE_URL}/component/toggle_group/`);
   const root = mainDemo(page).locator(".dx-toggle-group");
   await expect(root).toHaveAttribute("data-variant", "outline");
   await expect(root).toHaveAttribute("data-spacing", "2");
@@ -141,7 +141,7 @@ test("the main demo is shadcn's: an outline, multiple-select group of icon items
 });
 
 test("spacing 2 keeps separate rounded toggles; spacing 0 joins them into one bar", async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=toggle_group&`);
+  await gotoHydrated(page, `${BASE_URL}/component/toggle_group/`);
   const spaced = group(page, "spacing", "Spaced placement").getByRole("button");
   const joined = group(page, "spacing", "Joined placement").getByRole("button");
   const [s0, s1] = [await box(spaced.nth(0)), await box(spaced.nth(1))];
@@ -172,7 +172,7 @@ test("spacing 2 keeps separate rounded toggles; spacing 0 joins them into one ba
 });
 
 test("sizes: sm and default groups are 28 and 32px high", async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=toggle_group&`);
+  await gotoHydrated(page, `${BASE_URL}/component/toggle_group/`);
   const sm = group(page, "sizes", "Small placement").getByRole("button");
   const def = group(page, "sizes", "Default placement").getByRole("button");
   expect(await num(sm.first(), "height")).toBe(28);
@@ -186,7 +186,7 @@ test("sizes: sm and default groups are 28 and 32px high", async ({ page }) => {
 });
 
 test("outline: a single-select group with All pressed", async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=toggle_group&`);
+  await gotoHydrated(page, `${BASE_URL}/component/toggle_group/`);
   const all = frameOf(page, "outline").getByRole("button", { name: "Toggle all", exact: true });
   const missed = frameOf(page, "outline").getByRole("button", { name: "Toggle missed", exact: true });
   await expect(all).toHaveAttribute("data-state", "on");
@@ -196,7 +196,7 @@ test("outline: a single-select group with All pressed", async ({ page }) => {
 });
 
 test("vertical: a column with spacing 1 (4px), navigated with ArrowUp/ArrowDown", async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=toggle_group&`);
+  await gotoHydrated(page, `${BASE_URL}/component/toggle_group/`);
   const root = group(page, "vertical", "Vertical text formatting");
   await expect(root).toHaveAttribute("data-orientation", "vertical");
   expect(await root.evaluate((e) => getComputedStyle(e).flexDirection)).toBe("column");
@@ -216,7 +216,7 @@ test("vertical: a column with spacing 1 (4px), navigated with ArrowUp/ArrowDown"
 });
 
 test("font weight: a controlled single-select of 4rem tiles that names the chosen font-* class", async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=toggle_group&`);
+  await gotoHydrated(page, `${BASE_URL}/component/toggle_group/`);
   const root = group(page, "font_weight", "Font Weight");
   const tile = (n: string) => root.getByRole("button", { name: n, exact: true });
   await expect(tile("Normal")).toHaveAttribute("data-state", "on");
@@ -234,12 +234,12 @@ test("font weight: a controlled single-select of 4rem tiles that names the chose
 
 test.describe("Axe automated scan", () => {
   test("loaded (none selected) has no automatically detectable a11y issues", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=toggle_group&`);
+    await gotoHydrated(page, `${BASE_URL}/component/toggle_group/`);
     await expectNoAxeViolations(page, "toggle_group: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 
   test("an item selected has no automatically detectable a11y issues", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=toggle_group&`);
+    await gotoHydrated(page, `${BASE_URL}/component/toggle_group/`);
     await mainDemo(page).getByRole("button", { name: "Toggle bold", exact: true }).click();
     await expectNoAxeViolations(page, "toggle_group: B selected", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });

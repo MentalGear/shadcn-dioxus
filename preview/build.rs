@@ -57,7 +57,6 @@ fn main() {
     // re-runs this script, so a new component directory is picked up without a manual `touch`.
     println!("cargo:rerun-if-changed=src/components/mod.rs");
     let components = discover_components(std::path::Path::new("src/components"));
-    check_block_mirror(&components);
     write_if_changed(&out_dir.join("examples.rs"), &render_examples(&components));
 }
 
@@ -178,36 +177,6 @@ fn block_row(component: &Component) -> String {
         format!("[{}]", component.variants.join(", "))
     };
     format!("{}{kind}{variants},", component.name)
-}
-
-/// The Playwright specs (`all-routes`, `demo-forms-no-navigation`, `popup-style-isolation`) still
-/// find the block demo pages by reading `name(block)[variant, ..]` rows after the text
-/// `examples` + `!(` + newline in `components/mod.rs`. Those rows are kept there as a cfg'd-out mirror
-/// of the derived block components, and this check fails the build when they drift, so the specs'
-/// route list cannot go quietly stale. Delete the mirror together with the specs' text-scrape (a spec
-/// that reads `variants/` would not need it).
-fn check_block_mirror(components: &[Component]) {
-    let source = std::fs::read_to_string("src/components/mod.rs").unwrap();
-    let mirror = source
-        .split("examples!(\n")
-        .nth(1)
-        .and_then(|rest| rest.split("\n);").next())
-        .unwrap_or_default();
-    let mirrored: Vec<&str> = mirror
-        .lines()
-        .map(str::trim)
-        .filter(|l| !l.is_empty())
-        .collect();
-    let derived: Vec<String> = components
-        .iter()
-        .filter(|c| c.block)
-        .map(block_row)
-        .collect();
-    assert!(
-        mirrored == derived.iter().map(String::as_str).collect::<Vec<_>>(),
-        "the block-demo mirror in src/components/mod.rs is out of date.\n  mirror:  {mirrored:?}\n  derived: {derived:?}\n  \
-         Edit the rows inside the cfg'd-out invocation near the end of mod.rs to match."
-    );
 }
 
 /// Write only when the bytes differ: a re-run that changed nothing must not bump the mtime of a

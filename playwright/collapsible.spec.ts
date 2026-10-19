@@ -5,7 +5,7 @@ import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
 test("test", async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=collapsible&`, { timeout: 20 * 60 * 1000 }); // Increase timeout to 20 minutes
+  await gotoHydrated(page, `${BASE_URL}/component/collapsible/`, { timeout: 20 * 60 * 1000 }); // Increase timeout to 20 minutes
   const preview = page.locator("#component-preview-frame").first();
   await page.getByRole("button", { name: "Recent Activity" }).click();
   await expect(preview.getByText("Fixed a bug in the collapsible component")).toBeVisible();
@@ -13,12 +13,12 @@ test("test", async ({ page }) => {
 
 test.describe("Axe automated scan", () => {
   test("loaded (collapsed) has no automatically detectable a11y issues", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=collapsible&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/collapsible/`, { timeout: 20 * 60 * 1000 });
     await expectNoAxeViolations(page, "collapsible: collapsed", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 
   test("expanded has no automatically detectable a11y issues", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=collapsible&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/collapsible/`, { timeout: 20 * 60 * 1000 });
     const preview = page.locator("#component-preview-frame").first();
     await page.getByRole("button", { name: "Recent Activity" }).click();
     await expect(preview.getByText("Fixed a bug in the collapsible component")).toBeVisible();
@@ -38,7 +38,7 @@ test.describe("Axe automated scan", () => {
  * in a headed browser takes the same code path as the fragment; that part is checked by hand.
  */
 test.describe("hidden_until_found", () => {
-  const URL = `${BASE_URL}/component/?name=collapsible&`;
+  const URL = `${BASE_URL}/component/collapsible/`;
   const TEXT = "Shipped the quokka tracker inside the closed panel";
 
   async function load(page: Page) {
@@ -180,7 +180,7 @@ test.describe("hidden_until_found", () => {
  */
 test.describe("styled content wrapper honours hidden", () => {
   test("plain hidden is display:none even though the wrapper is display:contents", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/?name=collapsible&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/collapsible/`, { timeout: 20 * 60 * 1000 });
     const computed = await page.evaluate(() => {
       const make = (hidden: string | null) => {
         const el = document.createElement("div");

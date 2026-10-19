@@ -64,6 +64,7 @@ import { test, expect } from "../../fixtures";
 import { type Page } from "@playwright/test";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "../../axe";
 import { BASE_URL } from "../../base-url";
+import { gotoHydrated } from "../../hydration";
 
 // `?variant=` has no effect on this route: every registered variant
 // renders inline, all at once, further down the SAME page (a "Variants"
@@ -77,15 +78,15 @@ import { BASE_URL } from "../../base-url";
 // (its DEMO tab's own `aria-controls` target, read live from the page).
 // This file uses the `bar` variant throughout (three series, a legend, a
 // small fixed six-row dataset) for every rule below.
-const URL = `${BASE_URL}/component/?name=chart&`;
-const DARK_URL = `${BASE_URL}/component/?name=chart&dark_mode=true&`;
+const URL = `${BASE_URL}/component/chart/`;
+const DARK_URL = `${BASE_URL}/component/chart/?dark_mode=true&`;
 
 function frameOf(page: Page) {
   return page.locator("#component-preview-frame-bar").first();
 }
 
 async function goto(page: Page, url: string = URL) {
-  await page.goto(url, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, url, { timeout: 20 * 60 * 1000 });
   await frameOf(page).locator("svg[role=\"img\"]").first().waitFor({ state: "attached" });
 }
 

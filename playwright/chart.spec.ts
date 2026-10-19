@@ -1,9 +1,10 @@
 import { test, expect } from "./fixtures";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
+import { gotoHydrated } from "./hydration";
 
 test("test", async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=chart&`);
+  await gotoHydrated(page, `${BASE_URL}/component/chart/`);
   const frame = page.locator("#component-preview-frame").first();
 
   // the chart renders as a single accessible image. An attribute selector,
@@ -30,12 +31,12 @@ test("test", async ({ page }) => {
 
 test.describe("Axe automated scan", () => {
   test("loaded (tooltip closed) has no automatically detectable a11y issues", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=chart&`);
+    await gotoHydrated(page, `${BASE_URL}/component/chart/`);
     await expectNoAxeViolations(page, "chart: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 
   test("tooltip open has no automatically detectable a11y issues", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=chart&`);
+    await gotoHydrated(page, `${BASE_URL}/component/chart/`);
     const frame = page.locator("#component-preview-frame").first();
     await frame.locator('[data-slot="chart-hit-band"]').first().hover();
     await expect(frame.locator('[data-slot="chart-tooltip"]')).toHaveAttribute("data-state", "open");
@@ -92,7 +93,7 @@ test.describe("Legend never overlaps the chart's axis labels, svg box, or open t
 
   for (const { frame: frameSel, chartCount } of VARIANTS) {
     test(`${frameSel}: x-axis labels and the svg box don't overlap the legend`, async ({ page }) => {
-      await page.goto(`${BASE_URL}/component/?name=chart&`);
+      await gotoHydrated(page, `${BASE_URL}/component/chart/`);
       const charts = page.locator(frameSel).first().locator(".dx-chart");
       await expect(charts).toHaveCount(chartCount);
       for (let i = 0; i < chartCount; i++) {
@@ -109,7 +110,7 @@ test.describe("Legend never overlaps the chart's axis labels, svg box, or open t
     });
 
     test(`${frameSel}: the open tooltip doesn't overlap the legend, for every data point`, async ({ page }) => {
-      await page.goto(`${BASE_URL}/component/?name=chart&`);
+      await gotoHydrated(page, `${BASE_URL}/component/chart/`);
       const charts = page.locator(frameSel).first().locator(".dx-chart");
       for (let i = 0; i < chartCount; i++) {
         const chart = charts.nth(i);
@@ -159,14 +160,14 @@ test.describe("Legend never overlaps the chart's axis labels, svg box, or open t
 // `style` attribute on the container (no `<style>` element at all).
 test.describe("Series colors resolve (no dead --color-<slot> rule)", () => {
   test("the container carries its --color declarations inline, with no <style> child", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=chart&`);
+    await gotoHydrated(page, `${BASE_URL}/component/chart/`);
     const container = page.locator("#component-preview-frame-bar").first().locator("[data-chart]").first();
     await expect(container).toHaveAttribute("style", /--color-desktop:\s*var\(--dx-chart-1\)/);
     await expect(container.locator("style")).toHaveCount(0);
   });
 
   test("a bar's computed fill is the resolved --dx-chart-1 color, not the black fallback", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=chart&`);
+    await gotoHydrated(page, `${BASE_URL}/component/chart/`);
     const frame = page.locator("#component-preview-frame-bar").first();
     const bar = frame.locator('[data-slot="chart-series"][data-series="desktop"] [data-slot="chart-bar"]').first();
     await expect(bar).toBeVisible();

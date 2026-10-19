@@ -4,9 +4,10 @@ import { BASE_URL } from './base-url';
 import { fixedViewportBox } from './viewport-box';
 import { assertSharedBackdrop, captureBackdrop, resolveOverlayMs } from "./assert-backdrop-fade";
 import { measureAtRest } from "./animations";
+import { gotoHydrated } from "./hydration";
 
 test('sheet basic interactions', async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=sheet&`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/sheet/`, { timeout: 20 * 60 * 1000 });
 
   // Open sheet from Right button. By keyboard, so the first control takes focus; a pointer/touch
   // open focuses the panel instead (row 206, modal-initial-focus.spec.ts).
@@ -68,7 +69,7 @@ test('sheet basic interactions', async ({ page }) => {
 });
 
 test('sheet opens from different sides', async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=sheet&`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/sheet/`, { timeout: 20 * 60 * 1000 });
 
   const sheet = page.locator('[data-slot="sheet-root"]');
   const sheetContent = page.locator('[data-slot="sheet-content"]');
@@ -99,7 +100,7 @@ test('right sheet content geometry matches shadcn spec at desktop and near-break
   // shadcn: `inset-y-0 h-full w-3/4 border-l sm:max-w-sm` -- 384px (24rem)
   // only from a 640px viewport up; below that, plain 75% with no cap.
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto(`${BASE_URL}/component/?name=sheet&`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/sheet/`, { timeout: 20 * 60 * 1000 });
 
   const sheet = page.locator('[data-slot="sheet-root"]');
   const content = page.locator('[data-slot="sheet-content"]');
@@ -154,7 +155,7 @@ test('right sheet content geometry matches shadcn spec at desktop and near-break
 // dimension is content-sized, not a full-viewport stretch.
 test('sheet content is anchored flush to its own edge, not centered', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto(`${BASE_URL}/component/?name=sheet&`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/sheet/`, { timeout: 20 * 60 * 1000 });
 
   const sheet = page.locator('[data-slot="sheet-root"]');
   const content = page.locator('[data-slot="sheet-content"]');
@@ -213,7 +214,7 @@ test('sheet content is anchored flush to its own edge, not centered', async ({ p
 });
 
 test('close button matches Nova spec: 16px icon, ghost icon-sm (28px, full opacity, rounded), top-right', async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=sheet&`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/sheet/`, { timeout: 20 * 60 * 1000 });
 
   const sheet = page.locator('[data-slot="sheet-root"]');
   await page.getByRole('button', { name: 'Right' }).click();
@@ -270,7 +271,7 @@ test('close button matches Nova spec: 16px icon, ghost icon-sm (28px, full opaci
 
 test.describe('Axe automated scan', () => {
   test('loaded (sheet closed) has no automatically detectable a11y issues', async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=sheet&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/sheet/`, { timeout: 20 * 60 * 1000 });
     // Wait for render before scanning -- see input.spec.ts's identical
     // comment for why (avoids a false pre-hydration "no main"/"no h1").
     await expect(page.getByRole('button', { name: 'Right' })).toBeVisible();
@@ -278,7 +279,7 @@ test.describe('Axe automated scan', () => {
   });
 
   test('open has no automatically detectable a11y issues', async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=sheet&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/sheet/`, { timeout: 20 * 60 * 1000 });
     await page.getByRole('button', { name: 'Right' }).click();
     await expect(page.locator('[data-slot="sheet-root"]')).toHaveAttribute('data-state', 'open');
     await expectNoAxeViolations(page, 'sheet: open', { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
@@ -293,7 +294,7 @@ test.describe('Axe automated scan', () => {
 // exit snapped.
 test.describe("Scrim", () => {
   test("Sheet paints the shared scrim and fades it in and out", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=sheet&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/sheet/`, { timeout: 20 * 60 * 1000 });
     const trigger = page.getByRole("button", { name: "Right", exact: true });
     await expect(trigger).toBeVisible();
     const capture = await captureBackdrop(
@@ -311,7 +312,7 @@ test.describe("Scrim", () => {
 // sits 16px -- one header inset -- from the panel edge, not 32.
 test('sheet is a flush, square edge panel whose header carries the only inset (Nova)', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto(`${BASE_URL}/component/?name=sheet&`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/sheet/`, { timeout: 20 * 60 * 1000 });
 
   await page.getByRole('button', { name: 'Right', exact: true }).click();
   const content = page.locator('[data-slot="sheet-content"]');
@@ -342,7 +343,7 @@ test('sheet is a flush, square edge panel whose header carries the only inset (N
 
 test('a sheet side is explicit at every width: right stays right on a phone', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 800 });
-  await page.goto(`${BASE_URL}/component/?name=sheet&`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/sheet/`, { timeout: 20 * 60 * 1000 });
   await page.getByRole('button', { name: 'Right', exact: true }).click();
   const content = page.locator('[data-slot="sheet-content"]');
   await expect(content).toHaveAttribute('data-side', 'right');

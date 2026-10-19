@@ -133,7 +133,7 @@ const NAV_TIMEOUT = 20 * 60 * 1000; // first run compiles the app
 // ramp's `--secondary-color-4` #111 to shadcn's `--foreground` #000) cannot stale this file again.
 const INK_TOKEN = "--dx-foreground";
 
-const url = (name: string) => `${BASE_URL}/component/?name=${name}&`;
+const url = (name: string) => `${BASE_URL}/component/${name}/`;
 
 // dev-docs/backlog.md row 109: this suite clicks/hovers triggers right
 // after navigating, on the SSG lane -- `gotoHydrated` so those interactions

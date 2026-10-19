@@ -153,17 +153,17 @@ const click = (role: "button" | "menuitem" | "combobox" = "button", n = 0, varia
  * (dialog, alert_dialog, sheet, drawer, command); the rest are the popover and menu families.
  */
 const SCENARIOS: Scenario[] = [
-  { name: "dialog", url: "/component/?name=dialog&", open: click(), close: escape },
-  { name: "alert dialog", url: "/component/?name=alert_dialog&", open: click(), close: escape },
-  { name: "sheet", url: "/component/?name=sheet&", open: click("button", 1) /* sheet demo: Top, Right, Bottom, Left */, close: escape },
-  { name: "drawer", url: "/component/?name=drawer&", open: click(), close: escape },
-  { name: "command palette", url: "/component/?name=command&", open: click(), close: escape },
-  { name: "popover (modal arm)", url: "/component/?name=popover&variant=modal&", open: click("button", 0, "modal"), close: escape },
-  { name: "popover (non-modal default)", url: "/component/?name=popover&", open: click(), close: escape },
+  { name: "dialog", url: "/component/dialog/", open: click(), close: escape },
+  { name: "alert dialog", url: "/component/alert_dialog/", open: click(), close: escape },
+  { name: "sheet", url: "/component/sheet/", open: click("button", 1) /* sheet demo: Top, Right, Bottom, Left */, close: escape },
+  { name: "drawer", url: "/component/drawer/", open: click(), close: escape },
+  { name: "command palette", url: "/component/command/", open: click(), close: escape },
+  { name: "popover (modal arm)", url: "/component/popover/", open: click("button", 0, "modal"), close: escape },
+  { name: "popover (non-modal default)", url: "/component/popover/", open: click(), close: escape },
   {
     // `pointer.rs`: the window pointer bridge exists only while a pointer is held down on a slider.
     name: "slider drag (the pointer bridge on window)",
-    url: "/component/?name=slider&",
+    url: "/component/slider/",
     open: async (page) => {
       const thumb = demoRole(page, "slider");
       const box = (await thumb.boundingBox())!;
@@ -175,20 +175,20 @@ const SCENARIOS: Scenario[] = [
       await page.mouse.up();
     },
   },
-  { name: "dropdown menu", url: "/component/?name=dropdown_menu&", open: click(), close: escape },
+  { name: "dropdown menu", url: "/component/dropdown_menu/", open: click(), close: escape },
   {
     name: "context menu",
-    url: "/component/?name=context_menu&",
+    url: "/component/context_menu/",
     open: async (page) => {
       await demoRole(page, "button").click({ button: "right" });
       await expect(page.getByRole("menu")).toBeVisible();
     },
     close: escape,
   },
-  { name: "menubar", url: "/component/?name=menubar&", open: click("menuitem"), close: escape },
+  { name: "menubar", url: "/component/menubar/", open: click("menuitem"), close: escape },
   {
     name: "navigation menu",
-    url: "/component/?name=navigation_menu&",
+    url: "/component/navigation_menu/",
     open: async (page) => {
       await demoFrame(page).getByRole("navigation").first().getByRole("button").first().click();
     },
@@ -196,7 +196,7 @@ const SCENARIOS: Scenario[] = [
   },
   {
     name: "select",
-    url: "/component/?name=select&",
+    url: "/component/select/",
     open: async (page) => {
       await page.getByRole("combobox").first().click();
     },
@@ -204,16 +204,16 @@ const SCENARIOS: Scenario[] = [
   },
   {
     name: "combobox",
-    url: "/component/?name=combobox&",
+    url: "/component/combobox/",
     open: async (page) => {
       await demoRole(page, "combobox").click();
     },
     close: escape,
   },
-  { name: "date picker", url: "/component/?name=date_picker&", open: click(), close: escape },
+  { name: "date picker", url: "/component/date_picker/", open: click(), close: escape },
   {
     name: "tooltip",
-    url: "/component/?name=tooltip&",
+    url: "/component/tooltip/",
     open: async (page) => {
       await demoFrame(page).locator(".dx-tooltip-trigger").hover();
       await expect(page.getByRole("tooltip")).toBeVisible();
@@ -224,7 +224,7 @@ const SCENARIOS: Scenario[] = [
   },
   {
     name: "hover card",
-    url: "/component/?name=hover_card&",
+    url: "/component/hover_card/",
     open: async (page) => {
       await demoRole(page, "button").hover();
     },
@@ -289,7 +289,7 @@ test.describe("listener inventory: every overlay returns window/document to its 
 });
 
 test("self-check: the detector sees a listener that nothing removes (and the blocking-listener rule fires on it)", async ({ page }) => {
-  await gotoHydrated(page, `${BASE_URL}/component/?name=dialog&`, GOTO);
+  await gotoHydrated(page, `${BASE_URL}/component/dialog/`, GOTO);
   await page.waitForTimeout(500);
   const cdp = await openCdp(page);
   const before = await inventory(cdp);
@@ -340,7 +340,7 @@ test.describe("scroll lock (row 149)", () => {
   const timeline = (page: Page) => page.evaluate(() => (window as unknown as { __tl: [number, string][] }).__tl);
 
   test("the lock holds through the exit and lets go at the dialog's real close()", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/?name=dialog&`, GOTO);
+    await gotoHydrated(page, `${BASE_URL}/component/dialog/`, GOTO);
     await slowExit(page);
     await installTimeline(page);
     const trigger = demoRole(page, "button");
@@ -390,7 +390,7 @@ test.describe("scroll lock (row 149)", () => {
     const browser = await playwright.chromium.launch({ executablePath, args: ["--no-sandbox"], ignoreDefaultArgs: ["--hide-scrollbars"] });
     try {
       const page = await (await browser.newContext({ viewport: { width: 1280, height: 800 } })).newPage();
-      await gotoHydrated(page, `${BASE_URL}/component/?name=dialog&`, GOTO);
+      await gotoHydrated(page, `${BASE_URL}/component/dialog/`, GOTO);
       await slowExit(page);
       const gutter = await page.evaluate(() => innerWidth - document.documentElement.clientWidth);
       expect(gutter, "this launch must render a classic scrollbar, or the test proves nothing").toBeGreaterThan(0);

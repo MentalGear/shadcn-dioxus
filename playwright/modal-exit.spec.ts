@@ -74,7 +74,7 @@ for (const consumer of CONSUMERS) {
   }
 
   test(`${consumer.component} paints the shared scrim and fades it in and out`, async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/?name=${consumer.component}&`, GOTO_OPTS);
+    await gotoHydrated(page, `${BASE_URL}/component/${consumer.component}/`, GOTO_OPTS);
     const trigger = page.getByRole("button", { name: consumer.variants[0].trigger, exact: true });
     await expect(trigger).toBeVisible();
     const capture = await captureBackdrop(
@@ -93,7 +93,7 @@ for (const consumer of CONSUMERS) {
 // renders it with the prop off.
 for (const consumer of CONSUMERS) {
   test(`${consumer.component}: overlay: false marks the dialog, paints no scrim, and stays a modal`, async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/?name=${consumer.component}&`, GOTO_OPTS);
+    await gotoHydrated(page, `${BASE_URL}/component/${consumer.component}/`, GOTO_OPTS);
     await page.getByRole("button", { name: consumer.overlayOffTrigger, exact: true }).click();
     const dialog = page.locator(`${consumer.dialogSelector}[open]`);
     await expect(dialog).toBeVisible();
@@ -117,7 +117,7 @@ for (const consumer of CONSUMERS) {
   });
 
   test(`${consumer.component}: the default (overlay: true) carries no data-dx-overlay and paints the shared scrim`, async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/?name=${consumer.component}&`, GOTO_OPTS);
+    await gotoHydrated(page, `${BASE_URL}/component/${consumer.component}/`, GOTO_OPTS);
     await page.getByRole("button", { name: consumer.variants[0].trigger, exact: true }).click();
     const dialog = page.locator(`${consumer.dialogSelector}[open]`);
     await expect(dialog).toBeVisible();
@@ -129,7 +129,7 @@ for (const consumer of CONSUMERS) {
 }
 
 test("Dialog's non-web/non-modal wrapper scrim follows overlay too (a plain div has no ::backdrop for the theme rule to reach)", async ({ page }) => {
-  await gotoHydrated(page, `${BASE_URL}/component/?name=dialog&`, GOTO_OPTS);
+  await gotoHydrated(page, `${BASE_URL}/component/dialog/`, GOTO_OPTS);
   // A non-modal dialog is a plain `div` in the page: no top layer, no `::backdrop`. Its root wrapper is the scrim.
   const wrapperScrim = () =>
     page.locator(".dx-dialog-backdrop:not(:has(> dialog))").evaluate((el) => {

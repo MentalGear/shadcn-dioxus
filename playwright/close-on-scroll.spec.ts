@@ -27,7 +27,7 @@ import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
 const NAV_TIMEOUT = 20 * 60 * 1000;
-const FIXTURE = `${BASE_URL}/component/?name=top_layer&`;
+const FIXTURE = `${BASE_URL}/component/top_layer/`;
 /** Longer than the helper's quiet window (300 ms) that follows an open and every focus change. */
 const PAST_QUIET = 450;
 
@@ -113,13 +113,13 @@ const ANCHOR: Surface[] = [
   fixtureSurface("Combobox", "clip-combobox-trigger", "clip-combobox-content", "click"),
   demoSurface(
     "ColorPicker popover",
-    `${BASE_URL}/component/?name=color_picker&`,
+    `${BASE_URL}/component/color_picker/`,
     (page) => page.getByRole("button", { name: /Color picker/i }).first(),
     (page) => page.getByRole("dialog"),
   ),
   demoSurface(
     "DatePicker popover",
-    `${BASE_URL}/component/?name=date_picker&`,
+    `${BASE_URL}/component/date_picker/`,
     (page) => page.getByRole("button", { name: /calendar|date/i }).first(),
     (page) => page.getByRole("dialog"),
   ),

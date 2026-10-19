@@ -150,7 +150,7 @@ async function measure(target: Locator, surface: Locator): Promise<Measure> {
 
 const hover = (page: Page, target: Locator) => target.hover().then(() => page.waitForTimeout(50));
 const away = (page: Page) => page.mouse.move(1, 1).then(() => page.waitForTimeout(50));
-const gotoComponent = (page: Page, name: string) => gotoHydrated(page, `${BASE_URL}/component/?name=${name}&`, { timeout: NAV_TIMEOUT });
+const gotoComponent = (page: Page, name: string) => gotoHydrated(page, `${BASE_URL}/component/${name}/`, { timeout: NAV_TIMEOUT });
 
 const preview = (page: Page) => page.locator("#component-preview-frame").first();
 

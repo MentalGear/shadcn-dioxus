@@ -62,7 +62,7 @@ async function whereIsFocus(page: Page, selector: string): Promise<Where> {
 }
 
 async function open(page: Page, component: string): Promise<void> {
-  await gotoHydrated(page, `${BASE_URL}/component/?name=${component}&`, GOTO);
+  await gotoHydrated(page, `${BASE_URL}/component/${component}/`, GOTO);
 }
 
 async function openedBy(page: Page, trigger: Locator, how: "click" | "tap" | "enter" | "space") {
@@ -234,7 +234,7 @@ test.describe("sheet text field: a tap leaves it alone, a mouse or keyboard open
 });
 
 test.describe("modal Popover: the same result on a page with no Dialog or AlertDialog root", () => {
-  const url = `${BASE_URL}/component/?name=popover&variant=modal&`;
+  const url = `${BASE_URL}/component/popover/`;
   const trigger = (page: Page) => page.getByRole("button", { name: "Open modal popover", exact: true });
   const panel = "dialog[open]";
 

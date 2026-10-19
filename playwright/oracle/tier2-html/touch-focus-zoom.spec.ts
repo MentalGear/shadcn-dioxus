@@ -291,7 +291,7 @@ test.describe("overlay-gated elements (coarse pointer, desktop-width viewport)",
   });
 
   test('overlay: combobox listbox open ("Switch workspace" input stays >= 16px)', async ({ page }) => {
-    const route = `${BASE}/component/?name=combobox&`;
+    const route = `${BASE}/component/combobox/`;
     await gotoHydrated(page, route, { timeout: 60000 });
     await page.waitForTimeout(3000);
     // Open from the keyboard, as combobox.spec.ts's keyboard test does.
@@ -323,7 +323,7 @@ const COMPONENTS = [
 
 for (const name of COMPONENTS) {
   test(`component "${name}": every text-entry element is >= 16px`, async ({ page }) => {
-    const route = `${BASE}/component/?name=${name}&`;
+    const route = `${BASE}/component/${name}/`;
     await gotoHydrated(page, route, { timeout: 60000 });
     assertAllAtLeast16(await scan(page), route);
   });
@@ -333,7 +333,7 @@ for (const name of COMPONENTS) {
 // spec does (combobox.spec.ts, color-picker.spec.ts, sheet is opened via
 // its own "Right" trigger button in its preview demo).
 test("overlay: color_picker popover open (hex field stays >= 16px)", async ({ page }) => {
-  const route = `${BASE}/component/?name=color_picker&`;
+  const route = `${BASE}/component/color_picker/`;
   await gotoHydrated(page, route, { timeout: 60000 });
   const trigger = demoRole(page, "button");
   await trigger.click({ timeout: 10000 });
@@ -342,7 +342,7 @@ test("overlay: color_picker popover open (hex field stays >= 16px)", async ({ pa
 });
 
 test("overlay: date_picker calendar popover open (segments stay >= 16px)", async ({ page }) => {
-  const route = `${BASE}/component/?name=date_picker&`;
+  const route = `${BASE}/component/date_picker/`;
   await gotoHydrated(page, route, { timeout: 60000 });
   const trigger = demoRole(page, "button");
   await trigger.click({ timeout: 10000 });
@@ -351,7 +351,7 @@ test("overlay: date_picker calendar popover open (segments stay >= 16px)", async
 });
 
 test("overlay: sheet open (its Input fields stay >= 16px)", async ({ page }) => {
-  const route = `${BASE}/component/?name=sheet&`;
+  const route = `${BASE}/component/sheet/`;
   await gotoHydrated(page, route, { timeout: 60000 });
   await demoRole(page, "button", 1) /* sheet demo: Top, Right, Bottom, Left */.click({ timeout: 10000 });
   await page.waitForTimeout(300);

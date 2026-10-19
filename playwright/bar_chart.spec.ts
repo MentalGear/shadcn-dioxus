@@ -24,8 +24,9 @@ import { test, expect } from "./fixtures";
 import { type Page, type Locator } from "@playwright/test";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
+import { gotoHydrated } from "./hydration";
 
-const URL = `${BASE_URL}/component/?name=bar_chart&`;
+const URL = `${BASE_URL}/component/bar_chart/`;
 
 function frame(page: Page, variant?: string): Locator {
   const id = variant ? `#component-preview-frame-${variant}` : "#component-preview-frame";
@@ -33,7 +34,7 @@ function frame(page: Page, variant?: string): Locator {
 }
 
 async function goto(page: Page) {
-  await page.goto(URL, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
   await page.waitForLoadState("networkidle");
   // Every variant's svg is present as soon as the page has loaded (Normal
   // components render every variant unconditionally) -- wait on the `main`

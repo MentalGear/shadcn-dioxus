@@ -10,7 +10,7 @@ import { gotoHydrated } from "./hydration";
 import { demoRole, demoFrame } from "./demo-frame";
 import { awaitAnimationsSettled } from "./animations";
 
-const URL = `${BASE_URL}/component/?name=drawer&`;
+const URL = `${BASE_URL}/component/drawer/`;
 const GOTO_OPTS = { timeout: 20 * 60 * 1000 };
 const VARIANT = "responsive_dialog";
 const DIALOG = '[data-slot="dialog-content"]';

@@ -26,7 +26,7 @@ import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
 const APP_URL =
-  process.env.ACCORDION_URL ?? `${BASE_URL}/component/?name=accordion&`;
+  process.env.ACCORDION_URL ?? `${BASE_URL}/component/accordion/`;
 const MODE = process.env.ACCORDION_MODE ?? "app";
 const LOAD_TIMEOUT = 20 * 60 * 1000;
 
@@ -76,7 +76,7 @@ async function sampleCloseInApp(page: Page): Promise<Sample[]> {
 
 /** Repro-lane: drive the standalone buggy.html/fixed.html harness. */
 async function sampleCloseInRepro(page: Page): Promise<Sample[]> {
-  await page.goto(APP_URL);
+  await gotoHydrated(page, APP_URL);
   await page.waitForFunction(() => typeof (window as any).closeAccordion === "function");
   await page.evaluate(() => (window as any).closeAccordion());
   await page.waitForFunction(() => (window as any).closeDone === true, undefined, { timeout: 5000 });

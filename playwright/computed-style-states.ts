@@ -100,6 +100,7 @@ export function emptyCoverage(): StateCoverage {
  * its fallback until `load`), then for the DOM to be quiet.
  */
 export async function gotoSettled(page: Page, url: string) {
+  // goto-ok: gotoSettled is its own settle (waits out the legacy redirect stub, images and DOM quiet); a hydration flag is not the signal
   await page.goto(url, { waitUntil: "domcontentloaded" });
   await page.waitForFunction(() => !document.querySelector(".dx-component-demo-redirect"), null, { timeout: 60000 });
   await page.waitForTimeout(1000);

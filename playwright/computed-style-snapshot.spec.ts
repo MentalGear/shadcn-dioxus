@@ -464,7 +464,7 @@ test.describe("computed style snapshot", () => {
       type Job = { url: string; key: string; selector: string; scope: string; plain: boolean };
       const jobs: Job[] = [
         ...names.map((name) => ({
-          url: `${BASE_URL}/component/?name=${name}&`,
+          url: `${BASE_URL}/component/${name}/`,
           key: name,
           selector: '[class*="dx-"], [class*="dx-"] svg, [class*="dx-"] svg *',
           scope: COMPONENT_SCOPE,

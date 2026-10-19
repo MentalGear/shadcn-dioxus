@@ -2,9 +2,10 @@ import { test, expect } from "./fixtures";
 import type { Page } from "@playwright/test";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
+import { gotoHydrated } from "./hydration";
 
 test("test", async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=native_select&`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/native_select/`, { timeout: 20 * 60 * 1000 });
   const select = page.locator("#component-preview-frame").first().getByRole("combobox");
   await expect(select).toHaveValue("apple");
   await select.selectOption("banana");
@@ -16,7 +17,7 @@ test.describe("Axe automated scan", () => {
   // Native Select has no overlay/expand/select interaction -- it's a plain
   // native <select>, one state to scan.
   test("loaded has no automatically detectable a11y issues", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=native_select&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/native_select/`, { timeout: 20 * 60 * 1000 });
     await expectNoAxeViolations(page, "native_select: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 });
@@ -33,7 +34,7 @@ test.describe("Axe automated scan", () => {
 // toggle writes (`dx_theme` -> `<html data-theme>`, set before first paint), the OS preference with no
 // choice made (`prefers-color-scheme`, the no-JS path), and a cookie that overrides the OS.
 const SELECT = "#component-preview-frame .dx-native-select";
-const ROUTE = `${BASE_URL}/component/?name=native_select&`;
+const ROUTE = `${BASE_URL}/component/native_select/`;
 
 type Mode = "light" | "dark";
 
@@ -43,7 +44,7 @@ async function openThemed(page: Page, opts: { os: Mode; cookie?: Mode; base?: st
   if (opts.cookie) cookies.push({ name: "dx_theme", value: opts.cookie, url: BASE_URL });
   if (opts.base) cookies.push({ name: "dx_theme_base", value: opts.base, url: BASE_URL });
   if (cookies.length) await page.context().addCookies(cookies);
-  await page.goto(ROUTE, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, ROUTE, { timeout: 20 * 60 * 1000 });
   await expect(page.locator(SELECT).first()).toBeVisible();
 }
 
@@ -177,7 +178,7 @@ test.describe("Dark mode: native parts follow the theme", () => {
 // Backlog row 155 group 7: `size` (sm, default) reads the theme's control-height ladder.
 test.describe("size (row 155 group 7)", () => {
   test("sm is 28px, default is 32px, on the wrapper and the select", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=native_select&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/native_select/`, { timeout: 20 * 60 * 1000 });
     const frame = page.locator("#component-preview-frame-sizes");
     const sm = frame.locator("#native-select-size-sm");
     const def = frame.locator("#native-select-size-default");

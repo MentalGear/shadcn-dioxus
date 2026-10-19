@@ -21,7 +21,7 @@ import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
 const GOTO = { timeout: 20 * 60 * 1000 };
-const URL = `${BASE_URL}/component/?name=markdown&`;
+const URL = `${BASE_URL}/component/markdown/`;
 
 const main = (page: Page) => page.locator("#component-preview-frame").first();
 const variant = (page: Page, name: string) => page.locator(`#component-preview-frame-${name}`).first();

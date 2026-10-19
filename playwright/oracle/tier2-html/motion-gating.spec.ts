@@ -37,6 +37,7 @@ import { test, expect } from "../../fixtures";
 import type { Page } from "@playwright/test";
 import { BASE_URL } from "../../base-url";
 import { demoRole } from "../../demo-frame";
+import { gotoHydrated } from "../../hydration";
 
 const NAV = { timeout: 20 * 60 * 1000 };
 
@@ -65,7 +66,7 @@ test.describe("motion gating", () => {
 
   test("a spinner and a skeleton far off-screen are paused, and run again once scrolled in", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto(`${BASE_URL}/component/?name=spinner&`, NAV);
+    await gotoHydrated(page, `${BASE_URL}/component/spinner/`, NAV);
     const spinner = page.locator(".dx-spinner").first();
     await expect(spinner).toBeVisible({ timeout: 5 * 60 * 1000 });
     const state = () =>
@@ -86,7 +87,7 @@ test.describe("motion gating", () => {
     expect((await state()).states.includes("running")).toBe(true);
 
     // Same for the skeleton (a different component, same construction).
-    await page.goto(`${BASE_URL}/component/?name=skeleton&`, NAV);
+    await gotoHydrated(page, `${BASE_URL}/component/skeleton/`, NAV);
     const skeleton = page.locator(".dx-skeleton").first();
     await expect(skeleton).toBeVisible({ timeout: 5 * 60 * 1000 });
     await park(page, ".dx-skeleton");
@@ -99,7 +100,7 @@ test.describe("motion gating", () => {
   });
 
   test("a hidden tab pauses a visible spinner", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=spinner&`, NAV);
+    await gotoHydrated(page, `${BASE_URL}/component/spinner/`, NAV);
     const spinner = page.locator(".dx-spinner").first();
     await expect(spinner).toBeVisible({ timeout: 5 * 60 * 1000 });
     await expect.poll(() => spinner.getAttribute("data-dx-motion")).toBeNull();
@@ -111,7 +112,7 @@ test.describe("motion gating", () => {
 
   test("carousel autoplay: no slide change off-screen or in a hidden tab, then a fresh countdown", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto(`${BASE_URL}/component/?name=carousel&variant=autoplay&`, NAV);
+    await gotoHydrated(page, `${BASE_URL}/component/carousel/`, NAV);
     const root = "#component-preview-frame-autoplay";
     const label = () =>
       page
@@ -172,7 +173,7 @@ test.describe("motion gating", () => {
       };
     });
     await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto(`${BASE_URL}/component/?name=progress&`, NAV);
+    await gotoHydrated(page, `${BASE_URL}/component/progress/`, NAV);
     const bar = demoRole(page, "progressbar");
     await expect(bar).toBeVisible({ timeout: 5 * 60 * 1000 });
     const value = () => bar.getAttribute("aria-valuenow");
@@ -194,7 +195,7 @@ test.describe("motion gating", () => {
   test("toast auto-dismiss ignores scrolling but not a hidden tab", async ({ page }) => {
     test.setTimeout(120_000);
     await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto(`${BASE_URL}/component/?name=toast&`, NAV);
+    await gotoHydrated(page, `${BASE_URL}/component/toast/`, NAV);
     // The demo's own toast lasts 60 s: use the provider's default duration (5 s) through the
     // top-layer fixture instead if it exists, else shorten with the page-level API.
     const trigger = demoRole(page, "button");
@@ -236,7 +237,7 @@ test.describe("motion gating", () => {
 
   test("a chart below the fold has not animated; it animates once when it is actually in view", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto(`${BASE_URL}/component/?name=bar_chart&`, NAV);
+    await gotoHydrated(page, `${BASE_URL}/component/bar_chart/`, NAV);
     const svgs = page.locator('[data-slot="chart-svg"]');
     await expect(svgs.first()).toBeAttached({ timeout: 5 * 60 * 1000 });
     await page.waitForTimeout(2500); // measured renders settle
@@ -280,7 +281,7 @@ test.describe("motion gating", () => {
       Object.defineProperty(document, "visibilityState", { configurable: true, get: () => "hidden" });
       Object.defineProperty(document, "hidden", { configurable: true, get: () => true });
     });
-    await page.goto(`${BASE_URL}/component/?name=bar_chart&`, NAV);
+    await gotoHydrated(page, `${BASE_URL}/component/bar_chart/`, NAV);
     const first = page.locator('[data-slot="chart-svg"]').first();
     await expect(first).toBeAttached({ timeout: 5 * 60 * 1000 });
     await page.waitForTimeout(2500);
@@ -294,7 +295,7 @@ test.describe("motion gating", () => {
     // components that call `use_motion`; the sheets of the others carry their own block. Row 176.
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto(`${BASE_URL}/component/?name=spinner&`, NAV);
+    await gotoHydrated(page, `${BASE_URL}/component/spinner/`, NAV);
     const spinner = page.locator(".dx-spinner").first();
     await expect(spinner).toBeVisible({ timeout: 5 * 60 * 1000 });
     await page.waitForTimeout(500);
@@ -319,7 +320,7 @@ test.describe("motion gating", () => {
       { page: "avatar", html: '<div id="zz" class="dx-avatar" data-state="loading" data-dx-motion-key="zz3" style="height:2rem;width:2rem"></div>', target: "#zz" },
     ];
     for (const c of cases) {
-      await page.goto(`${BASE_URL}/component/?name=${c.page}&`, NAV);
+      await gotoHydrated(page, `${BASE_URL}/component/${c.page}/`, NAV);
       await expect(page.locator("main").first()).toBeVisible({ timeout: 5 * 60 * 1000 });
       await page.waitForTimeout(800);
       const r = await page.evaluate(({ html, target }) => {
@@ -344,7 +345,7 @@ test.describe("motion gating", () => {
   });
 
   test("the listener inventory returns to its baseline after the subscribers unmount", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=button&`, NAV);
+    await gotoHydrated(page, `${BASE_URL}/component/button/`, NAV);
     await expect(page.locator("main").first()).toBeVisible({ timeout: 5 * 60 * 1000 });
     await page.waitForTimeout(1500);
     const client = await page.context().newCDPSession(page);
@@ -359,7 +360,7 @@ test.describe("motion gating", () => {
     const baseline = await inventory();
 
     // In-app navigation (no reload) to a page whose components subscribe, and back.
-    await page.goto(`${BASE_URL}/component/?name=spinner&`, NAV);
+    await gotoHydrated(page, `${BASE_URL}/component/spinner/`, NAV);
     await expect(page.locator(".dx-spinner").first()).toBeVisible({ timeout: 5 * 60 * 1000 });
     await expect.poll(inventory).toEqual(["contentvisibilityautostatechange", "visibilitychange"]);
     await expect.poll(() => page.evaluate(() => (window as any).__dxActivity?.subs.size ?? 0)).toBeGreaterThan(0);

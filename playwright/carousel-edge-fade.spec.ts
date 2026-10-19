@@ -20,7 +20,7 @@ import { gotoHydrated } from "./hydration";
 const GOTO_OPTS = { timeout: 20 * 60 * 1000 };
 
 async function open(page: Page, variant: string): Promise<Locator> {
-  await gotoHydrated(page, `${BASE_URL}/component/?name=carousel&variant=${variant}&`, GOTO_OPTS);
+  await gotoHydrated(page, `${BASE_URL}/component/carousel/`, GOTO_OPTS);
   const id = variant === "main" ? "component-preview-frame" : `component-preview-frame-${variant}`;
   const root = page.locator(`#${id} .dx-carousel`).first();
   await root.scrollIntoViewIfNeeded();

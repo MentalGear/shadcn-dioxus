@@ -24,32 +24,32 @@ const GOTO = { timeout: 20 * 60 * 1000 };
 
 interface Case {
   name: string;
-  query: string;
+  path: string;
   trigger: string;
   panel: string;
 }
 
 const DIALOG: Case = {
   name: "dialog with a form",
-  query: "name=dialog&variant=edit_profile&",
+  path: "dialog/",
   trigger: "Open Dialog",
   panel: "dialog.dx-dialog[open]",
 };
 const POPOVER: Case = {
   name: "popover with fields",
-  query: "name=popover&",
+  path: "popover/",
   trigger: "Show Popover",
   panel: "dialog[popover]:popover-open",
 };
 const COMMAND: Case = {
   name: "command palette",
-  query: "name=command&",
+  path: "command/",
   trigger: "Open Command Palette",
   panel: "dialog.dx-command-dialog[open]",
 };
 const DRAWER: Case = {
   name: "drawer",
-  query: "name=drawer&",
+  path: "drawer/",
   trigger: "Move Goal",
   panel: "dialog.dx-drawer[open]",
 };
@@ -76,7 +76,7 @@ async function focusState(page: Page, panel: string) {
 }
 
 async function openByMouse(page: Page, c: Case) {
-  await gotoHydrated(page, `${BASE_URL}/component/?${c.query}`, GOTO);
+  await gotoHydrated(page, `${BASE_URL}/component/${c.path}`, GOTO);
   const trigger = page.getByRole("button", { name: c.trigger, exact: true }).first();
   await trigger.scrollIntoViewIfNeeded();
   await trigger.click();
@@ -87,7 +87,7 @@ async function openByMouse(page: Page, c: Case) {
 async function openByTouch(browser: Browser, c: Case) {
   const context = await browser.newContext({ hasTouch: true });
   const page = await context.newPage();
-  await gotoHydrated(page, `${BASE_URL}/component/?${c.query}`, GOTO);
+  await gotoHydrated(page, `${BASE_URL}/component/${c.path}`, GOTO);
   const trigger = page.getByRole("button", { name: c.trigger, exact: true }).first();
   await trigger.scrollIntoViewIfNeeded();
   await trigger.tap();
@@ -147,7 +147,7 @@ test.describe("mouse open focuses the first control", () => {
     // The alert dialog has no field: its first control is a button, focused by the mouse open.
     await openByMouse(page, {
       name: "alert dialog",
-      query: "name=alert_dialog&",
+      path: "alert_dialog/",
       trigger: "Show Alert Dialog",
       panel: "dialog.dx-alert-dialog[open]",
     });

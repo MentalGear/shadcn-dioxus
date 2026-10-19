@@ -34,7 +34,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (56)
+## Open rows (55)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -79,23 +79,22 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [154](backlog/154-shared-virtualization-engine-one-engine-in.md) | Shared virtualization engine: ONE engine in primitives/src/virtual/ (core, strategy, DOM bridge) that every… | DESIGN NOTE -- first note recorded 2026-10-05 from the owner question whether the virtualized… | S (note); the build is not estimated | virtual |
 | [155](backlog/155-shadcn-parity-wave-group-1-the-invalid-ring.md) | shadcn parity wave (group 1, the invalid ring, LANDED 2026-10-13 with row 145's state recipes): the 27 "Add… | LANDED: group 1 2026-10-13 (with row 145's state recipes), group 7's Sheet side 2026-10-14 (rows… | M-L in total (23 of the 27 are S; four… | theme |
 | [158](backlog/158-theme-follow-ups-accept-shadcn-s-dark-class-as.md) | Theme follow-ups: accept shadcn's .dark class as an alias of data-theme="dark", and suppress transitions… | PART (a) LANDED 2026-10-15 (by construction, lane x158dark 7d16044 + 3a3a9fa; owner approved… | S + S | theme |
-| [164](backlog/164-a-fixtures-goto-that-waits-for-hydration-49.md) | A fixtures goto that waits for hydration (49 spec files lack the wait), and migrate the 362 legacy ?name=… | OPEN -- recorded 2026-10-05 (audit); scheduled in the next-session order (step 4, just before row… | M (the fixture is S; the migration is… | tests |
 | [167](backlog/167-migrate-the-52-hand-paired-listener-sites-onto.md) | Migrate the 52 hand-paired listener sites onto use_js_listeners, shrinking PAIRED_BY_HAND in… | OPEN -- recorded 2026-10-05 (follow-up of row 159, which landed 2026-10-05 in round 3); scheduled… | M (mechanical per site, 11 files) | misc |
 | [170](backlog/170-cross-component-css-overrides-190-sites-in-12.md) | Cross-component CSS overrides: 190 sites in 12 sheets declare, in one component's stylesheet, a property that… | NARROWED 2026-10-19 (backlog review): baseline is now 138 sites in 9 sheets (was 190 in 12) | M (the decision and the prototype are… | theme |
 | [186](backlog/186-shadcn-utilities-scroll-fade-and-shimmer-are.md) | shadcn utilities: scroll-fade and shimmer are built but not shipped as documented, public utilities | PART LANDED 2026-10-15 (the scroll-fade fade prop, owner-approved 2026-10-14); BACKLOG: the /docs… | M | docs |
 | [188](backlog/188-demo-parity-second-audit-the-owner-s-per.md) | Demo parity, second audit: the owner's per-example list against the original shadcn demos (51 components; row… | DEMO-ONLY ITEMS DONE 2026-10-19 (batch 2: every section-5 demo exists; what remains needs component… | M per batch | docs |
 | [217](backlog/217-dependency-audit-follow-ups-what-users-pay-for.md) | Dependency audit follow-ups (what users pay for in compile time and supply chain) | PARTLY LANDED 2026-10-18 (lane deps 04ad7ddf): features calendar/color-picker, no build script… | S-M each | build |
 | [218](backlog/218-popup-style-isolation-top-layer-popups-stay-dom.md) | Popup style isolation: top-layer popups stay DOM descendants of their trigger, so free-content rules in an… | NARROWED 2026-10-19 (backlog review): PARTLY LANDED 2026-10-15 (lane ancestorleak 900f394 +… | M | overlays |
-| [241](backlog/241-specs-still-read-block-demo-rows-from-a-mirror.md) | Specs still read block-demo rows from a mirror in components/mod.rs | BACKLOG (lane registry 2026-10-18) | S | tests |
 | [245](backlog/245-snapshot-harness-tooltip-and-skip-link.md) | Computed-style snapshot harness: tooltip timing nondeterminism and the skip link counted as an open-state item | BACKLOG (validation 2026-10-19) | S | tests |
 | [246](backlog/246-snapshot-buckets-too-coarse.md) | Snapshot diff buckets are page-level on some routes | BACKLOG (validation 2026-10-19) | S-M | tests |
 | [247](backlog/247-avatar-loading-spec-450ms-floor.md) | avatar-loading spec has a 450 ms floor too tight for this machine | BACKLOG (2026-10-19) | S | tests |
 | [248](backlog/248-select-placeholder-until-mount-hydration-shift.md) | Select renders its placeholder until mount, so a Select with a default value shifts layout at hydration | BACKLOG (2026-10-19) | S-M | components |
 | [249](backlog/249-navigationmenu-indicator.md) | NavigationMenuIndicator (the leftover of closed row 72) | BACKLOG (2026-10-19) | S | components |
 | [250](backlog/250-container-reset-loses-unpushed-work.md) | A container reset to a fresh clone loses every unpushed lane commit and all session scratch | CONSTRUCTION LANDED 2026-10-19 (lane-rules: push lane/* after every commit); redo of the lost work… | S | infra |
+| [251](backlog/251-native-checkbox-ssr-initial-checked.md) | Native checkbox in the prerendered /component/form/ ignores initial_checked until the page is client-created | BACKLOG (lane specs2 2026-10-19) | S | components |
 | [265](backlog/265-upstream-ai-elements-code-block-trace-chat.md) | Upstream ai-elements (chat, message, code-block, trace, checkpoint, ...) vs our chat kit | BACKLOG (found by row 213 item 10, 2026-10-19). Source… | L | chat |
 
-## Done rows (201)
+## Done rows (203)
 
 | # | Item | Updated |
 |---|---|---|
@@ -221,6 +220,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [161](backlog/done/161-rename-the-website-to-shadcn-dioxus-and-give-it.md) | Rename the website to "shadcn-dioxus" and give it a real favicon (an SVG that follows light/dark, a PNG… | 2026-10-19 |
 | [162](backlog/done/162-self-host-the-docs-site-s-fonts-no-runtime.md) | Self-host the docs site's fonts (no runtime requests to Google) and give the library --dx-font-sans /… | 2026-10-19 |
 | [163](backlog/done/163-wrap-hover-styles-in-media-hover-hover-by.md) | Wrap hover styles in @media (hover: hover), by codemod plus a gate: 80 :hover blocks in 39 stylesheets leave… | 2026-10-14 |
+| [164](backlog/done/164-a-fixtures-goto-that-waits-for-hydration-49.md) | A fixtures goto that waits for hydration (49 spec files lack the wait), and migrate the 362 legacy ?name=… | 2026-10-19 |
 | [165](backlog/done/165-a-generated-props-reference-table-on-every.md) | A generated props reference table on every component's docs page, produced in preview/build.rs (~100 public… | 2026-10-05 |
 | [166](backlog/done/166-hovercard-and-tooltip-delay-close-delay-props.md) | HoverCard and Tooltip delay / close_delay props (Radix and Base UI parity) | 2026-10-15 |
 | [168](backlog/done/168-the-disk-full-class-lanes-running-raw-cargo.md) | The disk-full class: lanes running raw cargo with incremental compilation on regrow the shared gates target… | 2026-10-11 |
@@ -291,6 +291,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [238](backlog/done/238-playwright-fixtures-force-scroll-behavior-auto.md) | Playwright fixtures force scroll-behavior: auto !important on every context | 2026-10-18 |
 | [239](backlog/done/239-all-unset-outranks-the-theme-s-zero-specificity.md) | all: unset outranks the theme's zero-specificity baselines | 2026-10-18 |
 | [240](backlog/done/240-base-ui-focus-model-what-to-lift-beyond-row-226.md) | Base UI focus model: what to lift beyond row 226 | 2026-10-19 |
+| [241](backlog/done/241-specs-still-read-block-demo-rows-from-a-mirror.md) | Specs still read block-demo rows from a mirror in components/mod.rs | 2026-10-19 |
 | [242](backlog/done/242-spec-failures-that-are-red-on-the-deployed.md) | Spec failures that are red on the deployed baseline too (found by the 2026-10-18 lanes) | 2026-10-19 |
 | [243](backlog/done/243-button-hover-fills-3-levels-off-shadcn.md) | Button hover fills 3 levels off shadcn | 2026-10-18 |
 | [244](backlog/done/244-virtualgrid-x-y-virtualization-that-windows.md) | VirtualGrid: x/y virtualization that windows rows AND columns (a data grid, an image grid) | 2026-10-19 |

@@ -4,7 +4,7 @@ import { expectNoAxeViolations } from "./axe";
 import { BASE_URL as BASE } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
-const URL = `${BASE}/component/?name=tag_group&`;
+const URL = `${BASE}/component/tag_group/`;
 const LOAD_TIMEOUT = 20 * 60 * 1000;
 
 function multiVariant(page: Page) {

@@ -15,7 +15,7 @@ const GOTO_OPTS = { timeout: 20 * 60 * 1000 };
 const frame = (page: Page, variant: string) => page.locator(`#component-preview-frame-${variant}`).first();
 
 async function open(page: Page, name: string, variant: string, mode: "light" | "dark") {
-  await gotoHydrated(page, `${BASE_URL}/component/?name=${name}&`, GOTO_OPTS);
+  await gotoHydrated(page, `${BASE_URL}/component/${name}/`, GOTO_OPTS);
   await page.evaluate((m) => (window as unknown as { __dxApplyMode: (m: string) => void }).__dxApplyMode(m), mode);
   const root = frame(page, variant);
   await root.scrollIntoViewIfNeeded();
