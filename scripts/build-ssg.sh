@@ -176,7 +176,10 @@ build_once() {
   echo "==> Building preview ($profile, ssg, fullstack${base_path:+, base-path $base_path}) ... (dx log: $dx_log)"
   local dx_rc=0
   set +e
-  ( cd "$repo_root/preview" && exec dx "${dx_args[@]}" ) 2>&1 | tee "$dx_log"
+  # BUILD_SSG_NETNS=1 (scripts/lane-ssg.sh): dx pre-renders through a server on the fixed port 9999, so two
+  # concurrent builds collide silently; a private loopback per build removes that (scripts/lane-netns.sh).
+  local netns=(); [ "${BUILD_SSG_NETNS:-0}" = 1 ] && netns=("$repo_root/scripts/lane-netns.sh")
+  ( cd "$repo_root/preview" && exec "${netns[@]}" dx "${dx_args[@]}" ) 2>&1 | tee "$dx_log"
   dx_rc=${PIPESTATUS[0]}
   set -e
   if [ "$dx_rc" -ne 0 ]; then

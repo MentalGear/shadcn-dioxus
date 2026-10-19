@@ -22,7 +22,7 @@ if [ "${1:-}" = "--locked-build" ]; then
   rm -f "$scratch/.tree-owner"   # a fresh copy is always touched (row 216)
   cd "$wt"
   "$here/lane-touch.sh" "$scratch" --force
-  if ! CARGO_BUILD_JOBS=2 CARGO_TARGET_DIR="$scratch" CARGO_INCREMENTAL=0 BUILD_SSG_TOUCH=never scripts/build-ssg.sh debug >"$log" 2>&1; then
+  if ! CARGO_BUILD_JOBS=2 CARGO_TARGET_DIR="$scratch" CARGO_INCREMENTAL=0 BUILD_SSG_TOUCH=never BUILD_SSG_NETNS=1 scripts/build-ssg.sh debug >"$log" 2>&1; then
     rm -rf "$scratch"; tail -30 "$log" >&2; echo "lane-ssg: BUILD FAILED (full log $log)" >&2; exit 1
   fi
   rm -rf "$pub"; cp -a "$scratch/dx/preview/debug/web/public" "$pub"; rm -rf "$scratch"
