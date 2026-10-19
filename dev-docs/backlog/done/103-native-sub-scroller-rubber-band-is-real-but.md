@@ -1,10 +1,10 @@
 ---
 id: 103
 title: "Native sub-scroller rubber-band is real but composited, so it is invisible to…"
-status: "Measured 2026-09-23 with a script-free scroll-snap control added to the bench; the owner corrected…"
+status: "CLOSED 2026-10-19 (main-loop review: the fix or lesson is in place, see Size/Detail). Measured…"
 size: "N/A — a measurement limit to know, not…"
 area: inputs
-updated: 2026-09-23
+updated: 2026-10-19
 ---
 
 # Row 103: Native sub-scroller rubber-band is real but composited, so it is invisible to…
@@ -15,7 +15,7 @@ Native sub-scroller rubber-band is real but **composited**, so it is invisible t
 
 ## Status / trigger
 
-Measured 2026-09-23 with a script-free scroll-snap control added to the bench; the owner corrected two wrong conclusions I drew from its silence
+**CLOSED 2026-10-19 (main-loop review: the fix or lesson is in place, see Size/Detail).** Measured 2026-09-23 with a script-free scroll-snap control added to the bench; the owner corrected two wrong conclusions I drew from its silence
 
 ## Size
 

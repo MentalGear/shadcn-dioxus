@@ -34,7 +34,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (55)
+## Open rows (47)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -55,16 +55,8 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [92](backlog/092-new-component-landings-can-leave-preview-s-out.md) | New-component landings can leave preview's OUT_DIR stale — cargo clippy/test/doc fail until build.rs is… | Found 2026-09-20 (round 4 integration, Carousel landing onto a pre-existing target dir); recurs for… | S | build |
 | [97](backlog/097-a-second-un-fragmented-rsx-sibling-renders-on.md) | A second, un-fragmented rsx sibling renders on the first pass and is silently dropped by the next one | Found 2026-09-20 (round 5) adding a scoped &lt;style&gt; tag beside CarouselContent's track | DONE for this instance (explicit… | misc |
 | [98](backlog/098-dx-build-ssg-fails-with-no-such-file-or.md) | dx build --ssg fails with No such file or directory (os error 2) when CARGO_TARGET_DIR is a relative path | Hit 2026-09-20 (round 5) by a lane following this repo's own CARGO_TARGET_DIR=target-lane-&lt;name&gt;… | Workaround is one word: make the path… | process |
-| [99](backlog/099-anchor-name-style-set-as-a-bare-literal-beside.md) | anchor_name_style set as a bare literal beside a spread — a duplicate-style class across the anchored-trigger… | Found 2026-09-21 by Rule 4c on its first run (NavigationMenuTrigger), then widened to the whole… | DONE — all 9 sites now route through… | overlays |
-| [100](backlog/100-a-no-base-path-build-made-in-the-shared-repo.md) | A no---base-path build made in the SHARED repo-root target/ still emits /dioxus-components/ prefixed markup —… | Hit 2026-09-22 (round 7): all 51 carousel.spec.ts tests reached went red on code that was green an… | Three rebuilds wasted on a stale-output… | misc |
-| [103](backlog/103-native-sub-scroller-rubber-band-is-real-but.md) | Native sub-scroller rubber-band is real but composited, so it is invisible to… | Measured 2026-09-23 with a script-free scroll-snap control added to the bench; the owner corrected… | N/A — a measurement limit to know, not… | inputs |
-| [104](backlog/104-instrumentation-that-keys-off-the-wrong-event.md) | Instrumentation that keys off the wrong event, or records a threshold after it is reset, lies exactly where… | Two telemetry defects found 2026-09-22 (bench v22) while chasing a B2 glitch that the data appeared… | Done for the bench; worth remembering… | misc |
-| [105](backlog/105-playwright-baseline-local-config-ts-and-xvfb.md) | playwright/baseline.local.config.ts (and xvfb.local.config.ts/oracle.local.config.ts/ssg.local.config.ts)… | Found 2026-09-25 (round 8) in every full local run this session; reproduced identically on f103bbd… | DONE 2026-09-25 (round 8) | ci |
-| [106](backlog/106-this-container-s-chromium-is-1194-no-1223.md) | This container's Chromium is 1194 (no 1223, unlike some earlier sandboxes this repo's docs mention) — 15… | Found 2026-09-25 (round 8) running the full gate suite | Environment/engine class, not a product… | tests |
-| [108](backlog/108-tests-that-locate-rendered-content-by-slicing.md) | Tests that locate rendered content by slicing an HTML string from a specific attribute-string match break… | Found 2026-09-25 (round 8) while landing row 93; two occurrences in one round makes it a class per… | BUILT 2026-09-26 (dab751c); was… | tests |
 | [109](backlog/109-ssg-interaction-tests-race-hydration-a-click.md) | SSG interaction tests race hydration — a click can land before wasm attaches Dioxus's delegated listeners; a… | Found 2026-09-25 (round 8b) in the final integrated verification at b557dfa: an SSG run of… | S — one client-side effect, one shared… | build |
 | [110](backlog/110-playwright-s-own-actionability-pre-scroll-hover.md) | Playwright's own actionability pre-scroll (.hover()/.focus()/.click()'s auto-scroll) animates under the… | Instance 2, 2026-09-25 (round 8b): carousel.spec.ts's "hovering the carousel stops rotation…"… | Diagnosis M (two hypotheses tried and… | tests |
-| [111](backlog/111-migrate-the-theme-to-shadcn-s-system-semantic.md) | Migrate the theme to shadcn's system: semantic role tokens, then the Nova style | PHASE C LANDED 2026-10-14; decision 2 APPROVED 2026-10-14 (shadcn white 10%/15%; row 203, not yet… | M (phase A) + S/M (phase B foundations)… | theme |
 | [115](backlog/115-tooltip-spec-ts-6-tabbing-out-of-the-trigger.md) | tooltip.spec.ts:6 "tabbing out of the trigger element should hide the tooltip" failed once in a full-suite… | Seen 2026-09-28 in the mode-D integration run (--workers=4, SSG release build): the tooltip was… | S (diagnosis, when it recurs) | tests |
 | [126](backlog/126-link-s-aria-current-can-emit-a-duplicated.md) | Link's aria_current can emit a duplicated attribute under a base path; the charts gallery tab row uses plain… | LANDED 2026-10-11 (root-caused and fixed by construction; one library residue below) -- the… | S (diagnosis) | charts |
 | [130](backlog/130-arborium-2-17-0-s-wasm-libc-shim-lacks-the-data.md) | arborium 2.17.0's wasm libc shim lacks the data symbol stderr that tree-sitter's stack.c… | OPEN (upstream) -- local fix 7ad8421 (a stderr definition in preview); an upstream issue is worth… | S | upstream |
@@ -94,7 +86,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [246](backlog/246-snapshot-buckets-too-coarse.md) | Snapshot diff buckets are page-level on some routes | BACKLOG (validation 2026-10-19) | S-M | tests |
 | [265](backlog/265-upstream-ai-elements-code-block-trace-chat.md) | Upstream ai-elements (chat, message, code-block, trace, checkpoint, ...) vs our chat kit | BACKLOG (found by row 213 item 10, 2026-10-19). Source… | L | chat |
 
-## Done rows (198)
+## Done rows (206)
 
 | # | Item | Updated |
 |---|---|---|
@@ -179,9 +171,17 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [94](backlog/done/094-demo-wrappers-that-set-max-width-margin-0-auto.md) | Demo wrappers that set max-width + margin: 0 auto never reach that width — they shrink-wrap instead, so every… | 2026-10-19 |
 | [95](backlog/done/095-a-debug-ssg-build-serves-fine-but-traps-at.md) | A debug SSG build serves fine but traps at runtime, so interaction specs run against it fail like real… | 2026-10-19 |
 | [96](backlog/done/096-scroll-snap-stop-always-caps-a-browser-driven.md) | scroll-snap-stop: always caps a browser-driven scroll but NOT this crate's own pointer-drag release | 2026-09-20 |
+| [99](backlog/done/099-anchor-name-style-set-as-a-bare-literal-beside.md) | anchor_name_style set as a bare literal beside a spread — a duplicate-style class across the anchored-trigger… | 2026-10-19 |
+| [100](backlog/done/100-a-no-base-path-build-made-in-the-shared-repo.md) | A no---base-path build made in the SHARED repo-root target/ still emits /dioxus-components/ prefixed markup —… | 2026-10-19 |
 | [101](backlog/done/101-oracle-tier1-apg-carousel-spec-ts-224-axe-scan.md) | oracle/tier1-apg/carousel.spec.ts:224 axe scan fails on the W3C REFERENCE fixture, not on our component | 2026-10-19 |
 | [102](backlog/done/102-port-the-carousel-edge-rubber-band-into.md) | Port the carousel edge rubber-band into primitives/ as mode B3 (edge transform) — LANDED 2026-09-25 (round… | 2026-09-28 |
+| [103](backlog/done/103-native-sub-scroller-rubber-band-is-real-but.md) | Native sub-scroller rubber-band is real but composited, so it is invisible to… | 2026-10-19 |
+| [104](backlog/done/104-instrumentation-that-keys-off-the-wrong-event.md) | Instrumentation that keys off the wrong event, or records a threshold after it is reset, lies exactly where… | 2026-10-19 |
+| [105](backlog/done/105-playwright-baseline-local-config-ts-and-xvfb.md) | playwright/baseline.local.config.ts (and xvfb.local.config.ts/oracle.local.config.ts/ssg.local.config.ts)… | 2026-10-19 |
+| [106](backlog/done/106-this-container-s-chromium-is-1194-no-1223.md) | This container's Chromium is 1194 (no 1223, unlike some earlier sandboxes this repo's docs mention) — 15… | 2026-10-19 |
 | [107](backlog/done/107-two-fresh-container-cold-start-traps-in-scripts.md) | Two fresh-container cold-start traps in scripts/check-attr-spread-collision.sh and its --update-baseline mode | 2026-10-11 |
+| [108](backlog/done/108-tests-that-locate-rendered-content-by-slicing.md) | Tests that locate rendered content by slicing an HTML string from a specific attribute-string match break… | 2026-10-19 |
+| [111](backlog/done/111-migrate-the-theme-to-shadcn-s-system-semantic.md) | Migrate the theme to shadcn's system: semantic role tokens, then the Nova style | 2026-10-19 |
 | [112](backlog/done/112-carousel-tests-that-sample-a-live-animation.md) | Carousel tests that sample a live animation across an async gap -- both fixed; plus the B3 wheel release… | 2026-10-19 |
 | [113](backlog/done/113-calendar-spec-ts-364-a-range-s-in-between-day.md) | calendar.spec.ts:364 "a range's in-between day keeps its muted look while hovered" times out (90s) on every… | 2026-10-05 |
 | [114](backlog/done/114-drag-and-drop-list-spec-ts-lifecycle-tests-284.md) | drag_and_drop_list.spec.ts lifecycle tests (:284 mouse drop to the side, :300 cancelled mouse drag) compare… | 2026-10-05 |

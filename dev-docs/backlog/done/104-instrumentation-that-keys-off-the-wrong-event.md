@@ -1,10 +1,10 @@
 ---
 id: 104
 title: "Instrumentation that keys off the wrong event, or records a threshold after it is reset, lies exactly where…"
-status: "Two telemetry defects found 2026-09-22 (bench v22) while chasing a B2 glitch that the data appeared…"
+status: "CLOSED 2026-10-19 (main-loop review: the fix or lesson is in place, see Size/Detail). Two telemetry…"
 size: "Done for the bench; worth remembering…"
 area: misc
-updated: 2026-09-22
+updated: 2026-10-19
 ---
 
 # Row 104: Instrumentation that keys off the wrong event, or records a threshold after it is reset, lies exactly where…
@@ -15,7 +15,7 @@ Instrumentation that keys off the wrong event, or records a threshold after it i
 
 ## Status / trigger
 
-Two telemetry defects found 2026-09-22 (bench v22) while chasing a B2 glitch that the data appeared to show nothing about
+**CLOSED 2026-10-19 (main-loop review: the fix or lesson is in place, see Size/Detail).** Two telemetry defects found 2026-09-22 (bench v22) while chasing a B2 glitch that the data appeared to show nothing about
 
 ## Size
 

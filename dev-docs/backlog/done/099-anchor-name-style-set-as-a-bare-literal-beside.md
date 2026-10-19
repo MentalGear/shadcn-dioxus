@@ -1,10 +1,10 @@
 ---
 id: 99
 title: "anchor_name_style set as a bare literal beside a spread — a duplicate-style class across the anchored-trigger…"
-status: "Found 2026-09-21 by Rule 4c on its first run (NavigationMenuTrigger), then widened to the whole…"
+status: "CLOSED 2026-10-19 (main-loop review: the fix or lesson is in place, see Size/Detail). Found…"
 size: "DONE — all 9 sites now route through…"
 area: overlays
-updated: 2026-09-21
+updated: 2026-10-19
 ---
 
 # Row 99: anchor_name_style set as a bare literal beside a spread — a duplicate-style class across the anchored-trigger…
@@ -15,7 +15,7 @@ updated: 2026-09-21
 
 ## Status / trigger
 
-Found 2026-09-21 by Rule 4c on its first run (`NavigationMenuTrigger`), then widened to the whole family before fixing
+**CLOSED 2026-10-19 (main-loop review: the fix or lesson is in place, see Size/Detail).** Found 2026-09-21 by Rule 4c on its first run (`NavigationMenuTrigger`), then widened to the whole family before fixing
 
 ## Size
 

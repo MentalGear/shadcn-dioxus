@@ -1,10 +1,10 @@
 ---
 id: 105
 title: "playwright/baseline.local.config.ts (and xvfb.local.config.ts/oracle.local.config.ts/ssg.local.config.ts)…"
-status: "Found 2026-09-25 (round 8) in every full local run this session; reproduced identically on f103bbd…"
+status: "CLOSED 2026-10-19 (main-loop review: the fix or lesson is in place, see Size/Detail). Found…"
 size: "DONE 2026-09-25 (round 8)"
 area: ci
-updated: 2026-09-25
+updated: 2026-10-19
 ---
 
 # Row 105: playwright/baseline.local.config.ts (and xvfb.local.config.ts/oracle.local.config.ts/ssg.local.config.ts)…
@@ -15,7 +15,7 @@ updated: 2026-09-25
 
 ## Status / trigger
 
-Found 2026-09-25 (round 8) in every full local run this session; reproduced identically on `f103bbd` (pre-existing, not caused by this round's own work)
+**CLOSED 2026-10-19 (main-loop review: the fix or lesson is in place, see Size/Detail).** Found 2026-09-25 (round 8) in every full local run this session; reproduced identically on `f103bbd` (pre-existing, not caused by this round's own work)
 
 ## Size
 

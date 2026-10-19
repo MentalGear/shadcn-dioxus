@@ -1,10 +1,10 @@
 ---
 id: 108
 title: "Tests that locate rendered content by slicing an HTML string from a specific attribute-string match break…"
-status: "Found 2026-09-25 (round 8) while landing row 93; two occurrences in one round makes it a class per…"
+status: "CLOSED 2026-10-19 (main-loop review: the fix or lesson is in place, see Size/Detail). Found…"
 size: "BUILT 2026-09-26 (dab751c); was…"
 area: tests
-updated: 2026-09-25
+updated: 2026-10-19
 ---
 
 # Row 108: Tests that locate rendered content by slicing an HTML string from a specific attribute-string match break…
@@ -15,7 +15,7 @@ Tests that locate rendered content by slicing an HTML string from a specific att
 
 ## Status / trigger
 
-Found 2026-09-25 (round 8) while landing row 93; two occurrences in one round makes it a class per `CLAUDE.md`'s own rule, not two coincidences
+**CLOSED 2026-10-19 (main-loop review: the fix or lesson is in place, see Size/Detail).** Found 2026-09-25 (round 8) while landing row 93; two occurrences in one round makes it a class per `CLAUDE.md`'s own rule, not two coincidences
 
 ## Size
 

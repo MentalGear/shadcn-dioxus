@@ -1,10 +1,10 @@
 ---
 id: 106
 title: "This container's Chromium is 1194 (no 1223, unlike some earlier sandboxes this repo's docs mention) — 15…"
-status: "Found 2026-09-25 (round 8) running the full gate suite"
+status: "CLOSED 2026-10-19 (main-loop review: the fix or lesson is in place, see Size/Detail). Found…"
 size: "Environment/engine class, not a product…"
 area: tests
-updated: 2026-09-25
+updated: 2026-10-19
 ---
 
 # Row 106: This container's Chromium is 1194 (no 1223, unlike some earlier sandboxes this repo's docs mention) — 15…
@@ -15,7 +15,7 @@ This container's Chromium is `1194` (no `1223`, unlike some earlier sandboxes th
 
 ## Status / trigger
 
-Found 2026-09-25 (round 8) running the full gate suite
+**CLOSED 2026-10-19 (main-loop review: the fix or lesson is in place, see Size/Detail).** Found 2026-09-25 (round 8) running the full gate suite
 
 ## Size
 

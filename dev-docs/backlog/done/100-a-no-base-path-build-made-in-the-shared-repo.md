@@ -1,10 +1,10 @@
 ---
 id: 100
 title: "A no---base-path build made in the SHARED repo-root target/ still emits /dioxus-components/ prefixed markup —…"
-status: "Hit 2026-09-22 (round 7): all 51 carousel.spec.ts tests reached went red on code that was green an…"
+status: "CLOSED 2026-10-19 (main-loop review: the fix or lesson is in place, see Size/Detail). Hit…"
 size: "Three rebuilds wasted on a stale-output…"
 area: misc
-updated: 2026-09-22
+updated: 2026-10-19
 ---
 
 # Row 100: A no---base-path build made in the SHARED repo-root target/ still emits /dioxus-components/ prefixed markup —…
@@ -15,7 +15,7 @@ A no-`--base-path` build made in the SHARED repo-root `target/` still emits `/di
 
 ## Status / trigger
 
-Hit 2026-09-22 (round 7): all 51 `carousel.spec.ts` tests reached went red on code that was green an hour earlier
+**CLOSED 2026-10-19 (main-loop review: the fix or lesson is in place, see Size/Detail).** Hit 2026-09-22 (round 7): all 51 `carousel.spec.ts` tests reached went red on code that was green an hour earlier
 
 ## Size
 
