@@ -67,10 +67,26 @@ async function inGridView(grid: Locator, row: number, column: number) {
   );
 }
 
+/**
+ * The grid's own sheet reached the page: the scroll container IS a scroll container. Without `style.css`
+ * the grid is `overflow: visible`, nothing scrolls and the windowing never advances (the 2026-10 preview:
+ * a release build embeds a component's CSS source instead of linking it, so only a `document::Link` in the
+ * wrapper ships it -- a debug build masks the omission, so `check-component-catalog.sh` rule 2b guards the
+ * source and this guards a release build the spec is run against).
+ */
+async function expectStyled(grid: Locator) {
+  const style = await grid.evaluate((el) => {
+    const s = getComputedStyle(el);
+    return { overflowY: s.overflowY, position: s.position };
+  });
+  expect(style).toEqual({ overflowY: "auto", position: "relative" });
+}
+
 test.describe("data grid (rows and columns windowed)", () => {
   test("mounts a few hundred of 500,000 cells and announces the whole grid", async ({ page }) => {
     await gotoHydrated(page, PAGE_URL);
     const grid = dataGrid(page);
+    await expectStyled(grid);
     await expect(grid).toHaveAttribute("aria-rowcount", "10001"); // + the header row
     await expect(grid).toHaveAttribute("aria-colcount", "50");
     await expect(cell(grid, 0, 1)).toBeVisible();
@@ -204,6 +220,7 @@ test.describe("gallery (items wrap into rows)", () => {
   test("windows the rows of 5,000 images and renders the last one when scrolled to", async ({ page }) => {
     await gotoHydrated(page, PAGE_URL);
     const grid = gallery(page);
+    await expectStyled(grid);
     await expect(grid).toHaveAttribute("aria-colcount", "4");
     await expect(grid).toHaveAttribute("aria-rowcount", "1250");
     await expect(grid.locator('[data-grid-index="0"]')).toBeVisible();

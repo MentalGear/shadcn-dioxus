@@ -119,6 +119,7 @@ gates=(
   "check-spec-goto-hydrated|scripts/check-spec-goto-hydrated.sh"
   "check-backlog-index|scripts/check-backlog-index.sh"
   "check-lane-lock|scripts/check-lane-lock.sh"
+  "check-slow-spec-budget|scripts/check-slow-spec-budget.sh"
   "check-docs-no-demo-list|scripts/check-docs-no-demo-list.sh"
   "check-docs-own-components|scripts/check-docs-own-components.sh"
   "fmt|cargo fmt --all -- --check"

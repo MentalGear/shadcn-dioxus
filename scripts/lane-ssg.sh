@@ -26,6 +26,8 @@ if [ "${1:-}" = "--locked-build" ]; then
     rm -rf "$scratch"; tail -30 "$log" >&2; echo "lane-ssg: BUILD FAILED (full log $log)" >&2; exit 1
   fi
   rm -rf "$pub"; cp -a "$scratch/dx/preview/debug/web/public" "$pub"; rm -rf "$scratch"
+  # The site's unknown-URL behaviour, as GitHub Pages serves it (row 152a): 404.html + serve-spa.py.
+  "$here/emit-404.sh" "$pub" >/dev/null
   exit 0
 fi
 
@@ -39,7 +41,8 @@ if [ -n "$port" ]; then
   sleep 0.5
   # Outside the lock, and with any inherited lock fd closed: a long-lived child that inherits a locked
   # file description holds the lock after its parent exits (an orphaned server once stalled every lane's build, row 221).
-  nohup python3 -m http.server "$port" --bind 127.0.0.1 -d "$pub" >/dev/null 2>&1 9>&- 3>&- </dev/null &
+  # serve-spa.py answers unknown URLs with 404.html and status 404, as GitHub Pages does (row 152a).
+  nohup python3 "$here/serve-spa.py" "$pub" "$port" >/dev/null 2>&1 9>&- 3>&- </dev/null &
   echo $! > "$pidf"
   echo "URL=http://127.0.0.1:$port"
 fi
