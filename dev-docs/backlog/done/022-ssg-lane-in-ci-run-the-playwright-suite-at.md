@@ -1,10 +1,10 @@
 ---
 id: 22
 title: "SSG lane in CI — run the Playwright suite (at minimum oracle/hydration-parity.spec.ts) against the…"
-status: "Executed for the first time 2026-09-19 (batch 3); CI job added, workflow_dispatch-only per the…"
+status: "CLOSED 2026-10-19 (backlog review 2026-10-18): done in the code -- the SSG lane is in…"
 size: "S"
 area: ci
-updated: 2026-09-19
+updated: 2026-10-19
 ---
 
 # Row 22: SSG lane in CI — run the Playwright suite (at minimum oracle/hydration-parity.spec.ts) against the…
@@ -15,7 +15,7 @@ SSG lane in CI — run the Playwright suite (at minimum `oracle/hydration-parity
 
 ## Status / trigger
 
-**Executed for the first time 2026-09-19 (batch 3); CI job added, `workflow_dispatch`-only per the standing freeze**
+**CLOSED 2026-10-19 (backlog review 2026-10-18): done in the code -- the SSG lane is in playwright.yml and preview/src/main.rs; the commit hashes the row cites do not resolve in this clone**
 
 ## Size
 

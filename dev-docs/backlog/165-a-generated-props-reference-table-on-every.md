@@ -1,10 +1,10 @@
 ---
 id: 165
 title: "A generated props reference table on every component's docs page, produced in preview/build.rs (~100 public…"
-status: "OPEN -- recorded 2026-10-05 (audit); scheduled in the next-session order (step 4, after the…"
+status: "NARROWED 2026-10-19 (backlog review): primitives Props are fully documented (missing_docs on)…"
 size: "M (the generator is S-M; writing ~100…"
 area: build
-updated: 2026-10-05
+updated: 2026-10-19
 ---
 
 # Row 165: A generated props reference table on every component's docs page, produced in preview/build.rs (~100 public…
@@ -15,7 +15,7 @@ A generated props reference table on every component's docs page, produced in `p
 
 ## Status / trigger
 
-**OPEN** -- recorded 2026-10-05 (audit); scheduled in the next-session order (step 4, after the site-shell rows 161 and 162)
+**NARROWED 2026-10-19 (backlog review): primitives Props are fully documented (missing_docs on); about 63 of 334 preview wrapper props lack docs; the generated table is still to build**
 
 ## Size
 

@@ -1,10 +1,10 @@
 ---
 id: 146
 title: "message_scroller stage 2: visibility hook, per-call scroll_margin, RTL pass, release-build timing spec"
-status: "FOLDED INTO ROW 213 (2026-10-14) -- stage 1 built 2026-10-04 (own lane, component-backlog.md)…"
+status: "CLOSED 2026-10-19 (duplicate of row 213)"
 size: "M"
 area: tests
-updated: 2026-10-14
+updated: 2026-10-19
 ---
 
 # Row 146: message_scroller stage 2: visibility hook, per-call scroll_margin, RTL pass, release-build timing spec
@@ -15,7 +15,7 @@ updated: 2026-10-14
 
 ## Status / trigger
 
-**FOLDED INTO ROW 213 (2026-10-14)** -- stage 1 built 2026-10-04 (own lane, `component-backlog.md`); **windowing deferred by the owner**
+**CLOSED 2026-10-19 (duplicate of row 213)**
 
 ## Size
 
