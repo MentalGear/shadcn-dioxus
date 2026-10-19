@@ -73,7 +73,11 @@ for (const scheme of ["light", "dark"] as const) {
   });
 
   test(`Calendar today-cell hover is accent-selected stepped 6% toward the ink (${scheme})`, async ({ page }) => {
-    await open(page, "calendar", scheme);
+    // The range demo fixes its view to May 2026; pin "today" inside it (and out of the 5..12 range) so a today cell exists.
+    await page.clock.setFixedTime(new Date("2026-05-15T12:00:00Z"));
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.goto(`${BASE_URL}/component/block/?name=calendar&variant=range&${scheme === "dark" ? "dark_mode=true" : ""}`, GOTO);
+    await page.waitForLoadState("networkidle");
     const cell = page
       .locator('.dx-calendar-grid-cell[data-month="current"][data-today="true"]:not([data-selected="true"],[data-disabled="true"])')
       .first();
