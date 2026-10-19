@@ -45,7 +45,7 @@ ChartContainer {
 }
 ```
 
-`Chart`, `ChartTooltip` and `ChartLegend` are independent siblings inside the container. Leave out whichever you do not need; a single-series chart often wants no legend. As in shadcn/ui, a legend takes its room from the chart's own box rather than adding to it: an area, bar, line or pie chart with a legend is exactly as tall as one without, and its plot is shorter by the legend's height. A legend that wraps onto more rows tells `Chart` its size up front with `legend_size` (in px), so the server render already reserves the right amount.
+`Chart`, `ChartTooltip` and `ChartLegend` are independent siblings inside the container. Leave out whichever you do not need; a single-series chart often wants no legend. As in shadcn/ui, a legend takes its room from the chart's own box rather than adding to it: an area, bar, line or pie chart with a legend is exactly as tall as one without, and its plot is shorter by the legend's height. A legend that wraps onto more rows tells `Chart` its size up front with `legend_size` (in px), so the server render already reserves the right amount. Radar and radial-bar charts keep their full square and the legend follows it; `ChartLegend { overhang: 10.0 }` pulls the legend up over the square so it hangs 10px past the box without taking any room (shadcn's `mt-8` plus a `-10` bottom margin), whatever its own height.
 
 ## Props you will use most
 

@@ -46,6 +46,17 @@ pub struct ChartLegendProps {
     #[props(default)]
     pub hide_icon: bool,
 
+    /// How far (CSS px) the legend hangs past the chart box's end edge
+    /// (below it for [`LegendAlign::Bottom`]), without taking any room in the
+    /// layout: shadcn's radar demos give their legend `mt-8` and a Recharts
+    /// `margin: { bottom: -10 }`, so it overlaps the plot's square and ends
+    /// 10px below it while the container stays that square. Radar and
+    /// RadialBar keep their full square for the plot (`legend_reserve`), so
+    /// they are the charts this is for. `None` (the default) leaves the
+    /// legend in the flow below the chart.
+    #[props(default)]
+    pub overhang: Option<f64>,
+
     /// Additional attributes to apply to the legend's root `<ul>`.
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
@@ -115,9 +126,22 @@ pub fn ChartLegend(props: ChartLegendProps) -> Element {
     // check-attr-spread-collision.sh`'s own fix, replacing a raw
     // `..props.attributes` beside these as plain literals) makes "owned
     // wins" explicit and SSR/CSR-consistent instead of accidental.
+    // The overhang is two block margins that cancel to zero net room: the
+    // legend ends `overhang` px past the box whatever its own height is (its
+    // measured height once known, one row before that).
+    let overhang_style = props.overhang.filter(|o| o.is_finite()).map(|o| {
+        let height = legend_box().unwrap_or(crate::chart::DEFAULT_LEGEND_SIZE);
+        let (inner, outer) = (o - height, -o);
+        match props.vertical_align {
+            LegendAlign::Bottom => format!("margin-block: {inner}px {outer}px"),
+            LegendAlign::Top => format!("margin-block: {outer}px {inner}px"),
+        }
+    });
     let owned = attributes!(ul {
         "data-slot": "chart-legend",
         "data-align": props.vertical_align.as_str(),
+        "data-overhang": props.overhang.is_some().then_some("true"),
+        style: overhang_style,
     });
     let merged = merge_attributes(vec![props.attributes, owned]);
 
