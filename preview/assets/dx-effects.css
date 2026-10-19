@@ -592,3 +592,85 @@
     -webkit-text-fill-color: currentcolor;
   }
 }
+
+/* ---------------------------------------------------------------------------
+ * message entrances -- one-shot entrance presets for a transcript row
+ * (`message_scroller`'s Animation demo). Ported from shadcn's
+ * `apps/v4/lib/message-animations.ts`, whose `spring-bounce`, `blur-fade` and
+ * `slide-side` are spring / filter / x-offset tweens on `motion/react`.
+ *
+ *   .dx-enter-spring-bounce   rises 12px and settles from .96 with a spring overshoot
+ *   .dx-enter-blur-fade       fades in from a 4px blur, rising 6px
+ *   .dx-enter-slide-side      slides in 18px from the inline-end edge (a user row)
+ *
+ *   --dx-enter-slide-x        the slide's start offset (default 18px; flipped in RTL)
+ *
+ * Put the class on the row's OWN element, never an inner wrapper: the keyframes
+ * animate only `opacity`, `scale`, `translate` and `filter`, none of which
+ * changes layout, so the row's measured height (what turn anchoring reads) is
+ * the same on every frame. They are finite (`backwards` holds the first frame
+ * until the animation starts), play only under `prefers-reduced-motion:
+ * no-preference` (reduced motion shows the row at once), and are named once here:
+ * `scale`/`translate`, never `transform` (an anchored overlay owns `transform`).
+ * The spring is a CSS `linear()` easing with a ~8% overshoot, so no script runs.
+ * ------------------------------------------------------------------------- */
+@keyframes dx-enter-spring-bounce {
+  from {
+    opacity: 0;
+    scale: 0.96;
+    translate: 0 12px;
+  }
+
+  to {
+    opacity: 1;
+    scale: 1;
+    translate: 0 0;
+  }
+}
+
+@keyframes dx-enter-blur-fade {
+  from {
+    filter: blur(4px);
+    opacity: 0;
+    translate: 0 6px;
+  }
+
+  to {
+    filter: blur(0);
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@keyframes dx-enter-slide-side {
+  from {
+    opacity: 0;
+    translate: var(--dx-enter-slide-x, 18px) 0;
+  }
+
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .dx-enter-spring-bounce {
+    animation: dx-enter-spring-bounce 520ms
+      linear(0, 0.38 8%, 0.77 16%, 1 25%, 1.07 33%, 1.08 38%, 1.05 46%, 1.01 58%, 0.995 70%, 1)
+      backwards;
+    transform-origin: bottom right;
+  }
+
+  .dx-enter-blur-fade {
+    animation: dx-enter-blur-fade 280ms ease-out backwards;
+  }
+
+  .dx-enter-slide-side {
+    animation: dx-enter-slide-side 280ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  }
+
+  .dx-enter-slide-side:where([dir="rtl"], [dir="rtl"] *) {
+    --dx-enter-slide-x: -18px;
+  }
+}

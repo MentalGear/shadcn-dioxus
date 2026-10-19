@@ -19,14 +19,26 @@
 //! a `data-pending-scroll` flash guard; prepend preservation; the commands
 //! [`MessageScrollerApi::scroll_to_end`], [`MessageScrollerApi::scroll_to_start`]
 //! and [`MessageScrollerApi::scroll_to_message`]; the `data-scrollable` /
-//! `data-autoscrolling` styling hooks and [`use_message_scroller_scrollable`].
+//! `data-autoscrolling` styling hooks, [`use_message_scroller_scrollable`], the
+//! IntersectionObserver-backed [`use_message_scroller_visibility`] (the reader's
+//! current anchor and the visible rows), a per-call `scroll_margin`, and a live
+//! `default_scroll_position`.
 //!
-//! Deferred to stage 2 (not a silent gap): the IntersectionObserver-backed
-//! `use_message_scroller_visibility` hook (`currentAnchorId` /
-//! `visibleMessageIds`), a per-call `scroll_margin`, an RTL pass over the
-//! button placement, a release-build timing spec, and handing the viewport to
+//! Still deferred (not a silent gap): handing the viewport to
 //! [`crate::virtual_list`]. See "Virtualization" below for how long
 //! transcripts stay cheap.
+//!
+//! # Commands are fire-and-forget
+//!
+//! [`MessageScrollerApi`]'s commands return `()` on purpose. They travel to the
+//! controller over a one-way `document::eval` channel and run there on a later
+//! turn of the event loop, so a `bool` ("did the row exist?") could only be a
+//! guess made before the answer exists -- a return value that can lie. The
+//! outcomes a caller can actually observe are the signals the controller
+//! publishes back: [`use_message_scroller_scrollable`] and
+//! [`use_message_scroller_visibility`] (a jump that landed makes the target row
+//! visible and its turn current). A missing id in a populated transcript is a
+//! no-op; in an empty one the jump is queued until rows mount.
 //!
 //! # Architecture: Rust renders the shell, one JS controller owns scrolling
 //!
@@ -41,10 +53,13 @@
 //! per-token message in either direction.
 //!
 //! Rust -> JS messages are rare and cheap: one `init`, a `config` when a
-//! provider prop changes, a command (`end`/`start`/`message`), and `sync` when
-//! a button mounts. JS -> Rust is **change-only**: one
+//! provider prop changes, a command (`end`/`start`/`message`), `sync` when
+//! a button mounts, and `observe` when the first (or last) visibility
+//! subscriber mounts (unmounts). JS -> Rust is **change-only**: one
 //! `["scrollable", start, end]` message when the published scrollability
-//! changes, which feeds [`use_message_scroller_scrollable`]. While the reader
+//! changes, which feeds [`use_message_scroller_scrollable`], and, only while a
+//! [`use_message_scroller_visibility`] subscriber exists, one
+//! `["visibility", anchorId, [ids]]` message when that state changes. While the reader
 //! is following the stream `end` is published as `false`, so the jump button
 //! does not strobe once per chunk.
 //!
@@ -94,8 +109,10 @@
 //! identical on both sides), and the styled viewport is `visibility: hidden`
 //! while it is present. The controller removes it as soon as the position is
 //! applied; it also removes it for an empty transcript, and after a bounded
-//! wait if the viewport never becomes a scroll container. It is mount-only:
-//! changing `default_scroll_position` later does not hide the viewport again.
+//! wait if the viewport never becomes a scroll container. The guard itself is
+//! mount-only: changing `default_scroll_position` later re-applies the new
+//! opening position (the next `config` carries it) but does not hide the
+//! viewport again.
 //!
 //! # Renderer arms
 //!
@@ -123,7 +140,7 @@ use crate::{merge_attributes, use_unique_id};
 use dioxus::document::Eval;
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 /// The controller, run as one `document::eval` per provider. See the module
 /// doc for the message protocol.
@@ -193,9 +210,11 @@ impl Virtualization {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ScrollBehavior {
-    /// Jump (or follow the viewport's own CSS `scroll-behavior`).
+    /// Jump, or follow the viewport's own CSS `scroll-behavior`.
     #[default]
     Auto,
+    /// Jump now, whatever the viewport's CSS `scroll-behavior` says.
+    Instant,
     /// Animate.
     Smooth,
 }
@@ -216,12 +235,15 @@ pub enum ScrollAlign {
 }
 
 /// Options for [`MessageScrollerApi::scroll_to_message`].
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub struct ScrollToMessageOptions {
     /// Where in the viewport the row lands.
     pub align: ScrollAlign,
     /// How the viewport moves there.
     pub behavior: ScrollBehavior,
+    /// Pixels of margin on the aligned edge for this jump only; `None` uses
+    /// the provider's `scroll_margin`.
+    pub scroll_margin: Option<f64>,
 }
 
 /// Which transcript edge a [`MessageScrollerButton`] scrolls toward.
@@ -255,6 +277,33 @@ pub struct Scrollable {
     pub end: bool,
 }
 
+/// The reader's position in the transcript, from
+/// [`use_message_scroller_visibility`].
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct Visibility {
+    /// The `message_id` of the last turn anchor (a row with `scroll_anchor`)
+    /// whose top has reached the reading line (the viewport top plus
+    /// `scroll_margin` plus `scroll_previous_item_peek`). It stays set after the
+    /// anchor scrolls off the top; `None` before the first anchor is reached.
+    pub current_anchor_id: Option<String>,
+    /// The `message_id`s of the rows at least partly below the reading line and
+    /// inside the viewport, in document order. Rows without an id are not listed.
+    pub visible_message_ids: Vec<String>,
+}
+
+/// Controller -> Rust messages (JS arrays). Untagged: the first element of each
+/// array is also a discriminant string, which Rust ignores because the shapes
+/// differ.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[cfg_attr(not(feature = "web"), allow(dead_code))]
+#[serde(untagged)]
+enum Out {
+    /// `["scrollable", start, end]`.
+    Scrollable(String, bool, bool),
+    /// `["visibility", anchorId ("" for none), [ids]]`.
+    Visibility(String, String, Vec<String>),
+}
+
 /// Rust -> controller messages. `t` is the discriminant the controller
 /// switches on. `Init`, `Config` and `Teardown` are only built by the `web`
 /// arm's controller wiring.
@@ -277,6 +326,7 @@ enum Msg {
     #[serde(rename_all = "camelCase")]
     Config {
         auto_scroll: bool,
+        default_scroll_position: &'static str,
         edge: f64,
         peek: f64,
         margin: f64,
@@ -297,7 +347,11 @@ enum Msg {
         id: String,
         align: ScrollAlign,
         behavior: ScrollBehavior,
+        margin: Option<f64>,
     },
+    /// Start (`on`) or stop watching which rows are visible; sent when the
+    /// first visibility subscriber mounts and the last one unmounts.
+    Observe { on: bool },
     /// A button mounted: rewrite the JS-owned button state.
     Sync,
     /// The provider unmounted.
@@ -319,6 +373,13 @@ struct MessageScrollerCtx {
     queue: CopyValue<Vec<Msg>>,
     /// The last `scrollable` state the controller reported.
     scrollable: Signal<Scrollable>,
+    /// The last visibility state the controller reported (only while a
+    /// subscriber exists).
+    visibility: Signal<Visibility>,
+    /// How many [`use_message_scroller_visibility`] subscribers are mounted;
+    /// the controller observes rows only while this is above zero.
+    #[cfg_attr(not(feature = "web"), allow(dead_code))]
+    observers: CopyValue<usize>,
     /// Whether the root and viewport render `data-pending-scroll`.
     pending_scroll: bool,
     /// The provider's `virtualize` prop, mirrored on the content as
@@ -341,6 +402,25 @@ impl MessageScrollerCtx {
             None => self.queue.write().push(msg),
         }
     }
+
+    /// [`send`](Self::send) for a cleanup that may run after the provider's
+    /// own scope dropped: does nothing if the provider's state is gone.
+    #[cfg(feature = "web")]
+    fn send_if_alive(mut self, msg: Msg) {
+        let Ok(eval) = self.eval.try_peek().map(|eval| *eval) else {
+            return;
+        };
+        match eval {
+            Some(eval) => {
+                let _ = eval.send(msg);
+            }
+            None => {
+                if let Ok(mut queue) = self.queue.try_write() {
+                    queue.push(msg);
+                }
+            }
+        }
+    }
 }
 
 /// The props for the [`MessageScrollerProvider`] component.
@@ -354,10 +434,11 @@ pub struct MessageScrollerProviderProps {
     pub auto_scroll: ReadSignal<bool>,
 
     /// Where a saved transcript opens, applied once on the first non-empty
-    /// render. Read at mount (it also decides whether the flash guard
-    /// renders).
+    /// render. The value at mount also decides whether the flash guard
+    /// renders; a later change re-applies the new opening position (without
+    /// hiding the viewport again).
     #[props(default)]
-    pub default_scroll_position: DefaultScrollPosition,
+    pub default_scroll_position: ReadSignal<DefaultScrollPosition>,
 
     /// Distance in pixels from an edge that still counts as "at" that edge.
     #[props(default = ReadSignal::new(Signal::new(8.0)))]
@@ -427,8 +508,10 @@ pub fn MessageScrollerProvider(props: MessageScrollerProviderProps) -> Element {
     let eval = use_signal(|| None::<Eval>);
     let queue = use_hook(|| CopyValue::new(Vec::<Msg>::new()));
     let scrollable = use_signal(Scrollable::default);
+    let visibility = use_signal(Visibility::default);
+    let observers = use_hook(|| CopyValue::new(0usize));
     let position = props.default_scroll_position;
-    let pending_scroll = use_hook(|| cfg!(feature = "web") && position.holds_pending());
+    let pending_scroll = use_hook(|| cfg!(feature = "web") && position.peek().holds_pending());
 
     let virtualize = props.virtualize;
 
@@ -437,6 +520,8 @@ pub fn MessageScrollerProvider(props: MessageScrollerProviderProps) -> Element {
         eval,
         queue,
         scrollable,
+        visibility,
+        observers,
         pending_scroll,
         virtualize,
     };
@@ -465,7 +550,7 @@ pub fn MessageScrollerProvider(props: MessageScrollerProviderProps) -> Element {
 #[cfg(feature = "web")]
 fn use_message_scroller_controller(
     ctx: MessageScrollerCtx,
-    position: DefaultScrollPosition,
+    position: ReadSignal<DefaultScrollPosition>,
     auto_scroll: ReadSignal<bool>,
     edge: ReadSignal<f64>,
     peek: ReadSignal<f64>,
@@ -474,6 +559,7 @@ fn use_message_scroller_controller(
 ) {
     let mut eval_slot = ctx.eval;
     let mut scrollable = ctx.scrollable;
+    let mut visibility = ctx.visibility;
     let mut queue = ctx.queue;
     let id = ctx.id;
 
@@ -482,7 +568,7 @@ fn use_message_scroller_controller(
         let _ = eval.send(Msg::Init {
             id: id.peek().clone(),
             auto_scroll: *auto_scroll.peek(),
-            default_scroll_position: position.as_str(),
+            default_scroll_position: position.peek().as_str(),
             edge: *edge.peek(),
             peek: *peek.peek(),
             margin: *margin.peek(),
@@ -493,9 +579,13 @@ fn use_message_scroller_controller(
         }
         eval_slot.set(Some(eval));
         spawn(async move {
-            while let Ok((kind, start, end)) = eval.recv::<(String, bool, bool)>().await {
-                if kind == "scrollable" {
-                    scrollable.set(Scrollable { start, end });
+            while let Ok(out) = eval.recv::<Out>().await {
+                match out {
+                    Out::Scrollable(_, start, end) => scrollable.set(Scrollable { start, end }),
+                    Out::Visibility(_, anchor, ids) => visibility.set(Visibility {
+                        current_anchor_id: (!anchor.is_empty()).then_some(anchor),
+                        visible_message_ids: ids,
+                    }),
                 }
             }
         });
@@ -507,6 +597,7 @@ fn use_message_scroller_controller(
     use_effect(move || {
         ctx.send(Msg::Config {
             auto_scroll: auto_scroll(),
+            default_scroll_position: position().as_str(),
             edge: edge(),
             peek: peek(),
             margin: margin(),
@@ -520,7 +611,7 @@ fn use_message_scroller_controller(
 #[cfg(not(feature = "web"))]
 fn use_message_scroller_controller(
     _ctx: MessageScrollerCtx,
-    _position: DefaultScrollPosition,
+    _position: ReadSignal<DefaultScrollPosition>,
     _auto_scroll: ReadSignal<bool>,
     _edge: ReadSignal<f64>,
     _peek: ReadSignal<f64>,
@@ -925,15 +1016,18 @@ impl MessageScrollerApi {
         });
     }
 
-    /// Scroll to the row with this `message_id`. If the transcript is still
+    /// Scroll to the row with this `message_id`, with `options.scroll_margin`
+    /// (or the provider's) on the aligned edge. If the transcript is still
     /// empty the jump is queued until rows mount (and replaces the opening
     /// position); a missing id in a populated transcript is ignored. An
-    /// explicit jump releases following. A no-op without the `web` feature.
+    /// explicit jump releases following. Fire-and-forget (see the module doc).
+    /// A no-op without the `web` feature.
     pub fn scroll_to_message(&self, id: impl Into<String>, options: ScrollToMessageOptions) {
         self.ctx.send(Msg::Message {
             id: id.into(),
             align: options.align,
             behavior: options.behavior,
+            margin: options.scroll_margin,
         });
     }
 }
@@ -959,6 +1053,42 @@ pub fn use_message_scroller() -> MessageScrollerApi {
 /// Panics outside a [`MessageScrollerProvider`].
 pub fn use_message_scroller_scrollable() -> ReadSignal<Scrollable> {
     use_context::<MessageScrollerCtx>().scrollable.into()
+}
+
+/// Where the reader is in the transcript: the current turn anchor and the
+/// visible rows, as a signal fed by change-only messages from an
+/// IntersectionObserver in the controller (never per scroll event or token).
+///
+/// The controller observes rows only while at least one subscriber is mounted,
+/// so a page that never calls this hook pays nothing. Always the default on
+/// the native arm and before the controller reports.
+///
+/// # Panics
+///
+/// Panics outside a [`MessageScrollerProvider`].
+pub fn use_message_scroller_visibility() -> ReadSignal<Visibility> {
+    let ctx = use_context::<MessageScrollerCtx>();
+    #[cfg(feature = "web")]
+    {
+        let mut observers = ctx.observers;
+        use_effect_with_cleanup(move || {
+            let count = *observers.read() + 1;
+            observers.set(count);
+            if count == 1 {
+                ctx.send(Msg::Observe { on: true });
+            }
+            move || {
+                let remaining = observers.try_write().map(|mut n| {
+                    *n = n.saturating_sub(1);
+                    *n
+                });
+                if matches!(remaining, Ok(0)) {
+                    ctx.send_if_alive(Msg::Observe { on: false });
+                }
+            }
+        });
+    }
+    ctx.visibility.into()
 }
 
 #[cfg(test)]

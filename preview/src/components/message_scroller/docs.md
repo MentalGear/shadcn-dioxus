@@ -47,9 +47,11 @@ Mark the row that starts a turn with `scroll_anchor` (usually the user's message
 
 `default_scroll_position` picks where the transcript opens on its first non-empty render: `End` (the default), `Start`, or `LastAnchor`: the user's latest message with its reply below it, falling back to the end when that turn already fits.
 
+The prop is live. Change it on a mounted provider (it is a `ReadSignal`, so a signal or a plain value both work) and the transcript applies the new opening position to the thread that is already on screen, with no remount; the `opening_position` example does exactly that from its tabs. Only the first paint is guarded (below): a later change never hides the viewport again.
+
 ### Avoiding a flash on load
 
-A scroll container always opens at the top, so a server-rendered transcript would show its oldest messages and then jump. When the position is `End` or `LastAnchor`, the root and viewport render `data-pending-scroll` (identically on the server and on the hydrating client) and the styled viewport stays hidden until the position is applied. The attribute is removed for an empty transcript too, and a few seconds after load as a failsafe, so a transcript can never stay hidden. It is applied once and never hides the viewport again.
+A scroll container always opens at the top, so a server-rendered transcript would show its oldest messages and then jump. When the position is `End` or `LastAnchor`, the root and viewport render `data-pending-scroll` (identically on the server and on the hydrating client) and the styled viewport stays hidden until the position is applied. The attribute is removed for an empty transcript too, and a few seconds after load as a failsafe, so a transcript can never stay hidden. The guard covers the first paint only and never hides the viewport again, not even when `default_scroll_position` later changes.
 
 ## Loading earlier messages
 
@@ -98,9 +100,47 @@ let scroller = use_message_scroller();
 scroller.scroll_to_end(ScrollBehavior::Smooth);
 scroller.scroll_to_start(ScrollBehavior::Auto);
 scroller.scroll_to_message("m42", ScrollToMessageOptions::default());
+scroller.scroll_to_message(
+    "m42",
+    ScrollToMessageOptions {
+        align: ScrollAlign::Center,
+        behavior: ScrollBehavior::Instant,
+        scroll_margin: Some(24.0),
+    },
+);
 ```
 
+`ScrollBehavior` is `Auto` (jump, or follow the viewport's CSS `scroll-behavior`), `Instant` (jump now whatever that CSS says) or `Smooth` (animated; `Smooth` becomes `Auto` under `prefers-reduced-motion`). `scroll_margin` is the margin on the aligned edge for that one call; `None` uses the provider's `scroll_margin`. `align` is `Start`, `Center`, `End` or `Nearest`.
+
+**The commands are fire-and-forget and return nothing.** They travel to the scroll controller over a one-way channel and run there on a later turn of the event loop, so a `bool` ("did that row exist?") could only be a guess made before the answer exists. A return value that can lie is worse than none, so there is none. Observe the outcome instead: `use_message_scroller_visibility` lists the target among the visible rows (and makes its turn current) once the jump has landed. A jump to an id that is not in a populated transcript does nothing; in an empty transcript it is queued until rows mount and replaces the opening position.
+
+## Reading scroll state
+
 `use_message_scroller_scrollable()` is a signal of which edges still have content (`Scrollable { start, end }`), fed by a message only when the value changes, never per scroll event or per token. While you are following the stream, `end` stays `false`, so a "new messages" affordance does not flicker on every chunk.
+
+## Tracking the reader's position
+
+`use_message_scroller_visibility()` is a signal of `Visibility { current_anchor_id, visible_message_ids }`, for a table of contents, an "active turn" highlight or a "you are here" outline:
+
+```rust
+let visibility = use_message_scroller_visibility();
+let current = visibility().current_anchor_id; // Option<String>: the turn being read
+```
+
+- `current_anchor_id` is the `message_id` of the last `scroll_anchor` row whose top has reached the reading line: the top of the viewport plus `scroll_margin` plus `scroll_previous_item_peek`. It stays set after that turn scrolls off the top, so a table of contents does not flicker between turns; it is `None` before the first anchor is reached.
+- `visible_message_ids` lists, in document order, the rows with a `message_id` that are at least partly inside the viewport and below the reading line. A row hidden under the previous-turn peek is not listed, which matches what the reader can read.
+- It costs nothing until used. The controller starts an `IntersectionObserver` only when the first component calls the hook and stops it when the last one unmounts, and it reports only when the value changes, never per scroll event or per streamed token. A transcript that never calls the hook runs no observer.
+- The `visibility` example shows a header that follows the turn being read.
+
+## Animating new messages
+
+Entrances are plain CSS, not a scroller feature: put an entrance class on the row's own element (the `Message` inside the `MessageScrollerItem`) and it plays once when the row mounts. `dx-effects.css` ships three, ported from shadcn's presets, next to the theme's `dx-fade-in`, `dx-pop-in` and `dx-drop-in`:
+
+- `dx-enter-spring-bounce`: rises 12px and settles from a 0.96 scale with a spring overshoot (a CSS `linear()` easing; no script).
+- `dx-enter-blur-fade`: fades in from a 4px blur while rising 6px.
+- `dx-enter-slide-side`: slides in 18px from the inline-end edge (flipped in RTL; the distance is `--dx-enter-slide-x`).
+
+They animate only `opacity`, `scale`, `translate` and `filter` (never `transform`, and never height, margin or padding), so the row's measured height is identical on every frame and turn anchoring keeps working while it plays. They play only under `prefers-reduced-motion: no-preference`; with reduced motion the row appears at once. Store the preset with the row when it is sent (as the `animation` example does) so changing it later does not replay rows already on screen. `slide-up` and `scale-fade` are not shipped: the theme's `dx-drop-in` and `dx-fade-in` cover them.
 
 ## Styling
 
@@ -139,4 +179,4 @@ The jump button slides, scales and fades with `--dx-motion-duration-slow` when i
 
 ## Not reproduced from shadcn/ui
 
-Not reproduced: the `slide-up`, `slide-side`, `spring-bounce`, `blur-fade` and `scale-fade` animation presets (the theme has no keyframe with a slide offset, an overshoot or a blur, and this library adds none for a demo), the visibility outline (`use_message_scroller_visibility` does not exist yet), and a composer whose actions sit in a full-width bottom row (`InputGroupAlign` has `Start` and `End` only).
+Not reproduced: the `slide-up` and `scale-fade` animation presets as separate classes (the theme's `dx-drop-in` and `dx-fade-in` are the same motion), and a boolean return from the scroll commands (they are fire-and-forget by design; see Commands). A composer whose actions sit in a full-width bottom row is `InputGroupAlign::BlockEnd` (see the Input Group docs).

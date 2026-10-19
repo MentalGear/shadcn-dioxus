@@ -26,10 +26,28 @@ const SCRIPT: [(&str, &str); 3] = [
     ),
 ];
 
-/// The presets: `(id, name)`. Each plays one of the theme's shared entrance keyframes
-/// (`dx-fade-in`, `dx-pop-in`, `dx-drop-in`), which animate only `opacity`, `scale` and
-/// `translate`, so a row's measured height never changes while it plays.
-const PRESETS: [(&str, &str); 3] = [("fade", "Fade"), ("pop", "Pop"), ("drop", "Drop")];
+/// The presets: `(id, name)`. Each plays one entrance keyframes (the theme's `dx-fade-in`,
+/// `dx-pop-in`, `dx-drop-in`, and `dx-effects.css`'s `dx-enter-*` for the last three), which
+/// animate only `opacity`, `scale`, `translate` and `filter`, so a row's measured height never
+/// changes while it plays.
+const PRESETS: [(&str, &str); 6] = [
+    ("fade", "Fade"),
+    ("pop", "Pop"),
+    ("drop", "Drop"),
+    ("spring-bounce", "Spring bounce"),
+    ("blur-fade", "Blur fade"),
+    ("slide-side", "Slide side"),
+];
+
+/// The class that plays `preset` on a row: the three `dx-effects.css` presets are theme classes,
+/// the first three are scoped to this demo's stylesheet below.
+fn preset_class(preset: &str) -> String {
+    match preset {
+        "" => String::new(),
+        "spring-bounce" | "blur-fade" | "slide-side" => format!("dx-enter-{preset}"),
+        _ => format!("dx-demo-enter-{preset}"),
+    }
+}
 
 #[derive(Clone, PartialEq)]
 struct Turn {
@@ -158,7 +176,7 @@ pub fn Demo() -> Element {
                                                 message_id: "m{turn.id}",
                                                 scroll_anchor: turn.mine,
                                                 Message {
-                                                    class: if turn.preset.is_empty() { String::new() } else { format!("dx-demo-enter-{}", turn.preset) },
+                                                    class: preset_class(turn.preset),
                                                     align: if turn.mine { MessageAlign::End } else { MessageAlign::Start },
                                                     MessageContent {
                                                         Bubble { variant: if turn.mine { BubbleVariant::Muted } else { BubbleVariant::Ghost },
