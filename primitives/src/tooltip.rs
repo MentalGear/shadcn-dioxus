@@ -447,6 +447,8 @@ fn TooltipContentRendered(
     // `anchor-name` is keyed off `ctx.tooltip_id`, which `TooltipContent`
     // (below) keeps synced to this same id.
     crate::top_layer::use_anchor_position_fallback(id.clone(), id.clone(), open, side, align, 8);
+    // The arrow reads the engine's placement contract (`data-placed-side`, `--dx-anchor-offset-x/-y`,
+    // published by `use_anchor_position_fallback` at every reposition): no measurement of its own.
     // Any scroll closes a tooltip (`top_layer::use_close_on_scroll`'s doc).
     crate::top_layer::use_close_on_scroll(
         id.clone(),

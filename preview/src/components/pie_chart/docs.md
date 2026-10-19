@@ -53,20 +53,6 @@ With a single series, each datum is one slice and `ChartLegend` lists one entry 
 - Each slice is a `path[data-slot="chart-arc"]` with `data-index`, `data-start-angle` and `data-end-angle` (degrees, as above), and `data-inner-radius` and `data-outer-radius` (pixels).
 - The slices sweep in when the chart first appears, and the labels fade in after them. Nothing animates under `prefers-reduced-motion: reduce`.
 
-## Demos
-
-- **Simple**: a plain five-slice pie.
-- **Separator none**: the same pie; slices are drawn without a separator stroke.
-- **Label**: each slice's value outside the rim with a leader line.
-- **Custom label**: the values outside the rim without leader lines.
-- **Label list**: each browser's name inside its slice.
-- **Legend**: a swatch and name per slice below the chart.
-- **Donut**: a 60px hole.
-- **Donut active**: the first slice held active.
-- **Donut with text**: the total in the hole.
-- **Stacked**: two series as two concentric pies, a disc and a ring around it.
-- **Interactive**: a `Select` drives `active_index` and the center text together.
-
 ## Accessibility
 
 A pie chart has the same accessibility behavior as every [Chart](/component/chart/): the SVG is a named image, and the visually hidden data table lists each slice's category, its value and its percent of the total, so screen reader users read the numbers instead of an attempt to describe wedges. The chart's wrapper is focusable, and `ArrowLeft`, `ArrowRight`, `Home`, `End` and `Escape` move through the slices.
