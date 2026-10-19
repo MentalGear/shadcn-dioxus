@@ -79,7 +79,10 @@ test("every docs.md section is a closed disclosure with its h2 inside the summar
   for (const name of NAMES) {
     await page.goto(page_url(name), { waitUntil: "domcontentloaded" });
     const facts = await page.evaluate(() => {
-      const prose = document.querySelector("article.dx-component-page .dx-component-description")!;
+      // The page's own docs.md prose, not a demo's "About this example" disclosure body: that one wears
+      // `.dx-component-description` on purpose (the prose typography in main.css) and precedes the page
+      // description in the DOM on pages whose first demo has notes (attachment, avatar).
+      const prose = document.querySelector("article.dx-component-page .dx-component-description:not(.dx-variant-notes *)")!;
       const disclosures = [...prose.querySelectorAll(":scope > div > details.dx-docs-disclosure")];
       return {
         disclosures: disclosures.length,
