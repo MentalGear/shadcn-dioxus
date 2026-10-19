@@ -111,6 +111,11 @@ case "$target_dir" in
     ;;
 esac
 export CARGO_TARGET_DIR="$target_dir"
+# The target root must EXIST before dx starts: the dx log is `tee`d into it, and tee opens its file at once,
+# racing dx/cargo, which create a cold root a moment later. Losing that race left no log, and guard 4 then
+# failed a complete cold build with "dx log .../build-ssg.dx.log not found" (row 216, round 4; reproduced with
+# a stub dx that creates the root after 0.5 s). Intermittent, hence "a warm rerun passed".
+mkdir -p "$target_dir"
 marker_file="$target_dir/.base-path-build"
 public_dir="$target_dir/dx/preview/$profile/web/public"
 manifest="$(dirname "$public_dir")/.manifest.json"
