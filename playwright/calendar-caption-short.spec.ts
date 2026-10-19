@@ -36,7 +36,7 @@ test.describe("ISO week numbers (variant=iso_week_numbers)", () => {
   test("Monday-first: January 2027 opens with week 53 of 2026, then 1..4", async ({ page }) => {
     await goto(page, "iso_week_numbers");
     const numbers = page.locator(".dx-calendar-grid-week .dx-calendar-grid-weeknum");
-    await expect(numbers).toHaveText(["53", "1", "2", "3", "4", "5"]);
+    await expect(numbers).toHaveText(["53", "1", "2", "3", "4"]);
     await expect(numbers.first()).toHaveAttribute("aria-label", "Week 53");
     // Monday leads the weekday header.
     await expect(page.locator(".dx-calendar-grid-day-header").first()).toHaveText("Mo");
