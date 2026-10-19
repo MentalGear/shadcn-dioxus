@@ -191,7 +191,8 @@ test.describe("Carousel: disabled arrow opacity -- the default look is unchanged
 
     await expect(prev).toBeDisabled();
     expect(await look(prev)).toEqual({ opacity: 0.5, visibility: "visible", disabled: true });
-    expect(await look(next)).toEqual({ opacity: 1, visibility: "visible", disabled: false });
+    // Poll: the enabled arrow is still fading in from the disabled look for a few frames after hydration.
+    await expect.poll(() => look(next)).toEqual({ opacity: 1, visibility: "visible", disabled: false });
 
     // Neither variable is declared anywhere: the stylesheet's own fallbacks
     // are what produced 0.5 / visible.

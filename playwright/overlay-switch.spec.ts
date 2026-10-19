@@ -44,7 +44,7 @@ const MODALS: Modal[] = [
   // The modal Popover opens undimmed by default; its switch is exercised below on the `overlay` variant.
   {
     name: "Popover (overlay: true)",
-    url: "popover&variant=overlay",
+    url: "popover",
     open: (p) => demoRole(p, "button", 0, "overlay").click(),
   },
 ];

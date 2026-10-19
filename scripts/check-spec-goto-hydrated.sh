@@ -32,6 +32,10 @@
 # block shell is the only entry to any other component's variant page (the path form is a 404 there);
 # `gotoHydrated` waits for that redirect to land.
 #
+# Rule 3. A path route carries no query text in its `<name>` segment: `/component/popover&variant=overlay/` is a 404
+# (a migration from the legacy `?name=popover&variant=overlay&` produced exactly that, and the legacy route had
+# silently dropped the `variant`).
+#
 # Usage: scripts/check-spec-goto-hydrated.sh [FILE ...]   (default: every spec under playwright/)
 # Exit status: 0 when clean.
 
@@ -69,6 +73,7 @@ def blank(m):
 
 GOTO = re.compile(r"\.\s*goto\s*\(\s*(?!page\s*\))")
 LEGACY = re.compile(r"/component/\?name=|[\"'`]name=[A-Za-z_$\{]")
+BAD_PATH = re.compile(r"/component/(?!block/)[A-Za-z0-9_${}.]+[&=]")
 GOTO_OK = re.compile(r"goto-ok:\s*\S")
 LEGACY_OK = re.compile(r"legacy-route-ok:\s*\S")
 
@@ -87,6 +92,8 @@ for path in files:
             if not GOTO_OK.search(near):
                 errors.append(f"{path}:{i + 1}: `{line.strip()[:90]}` is a bare `.goto(`: a click or hover issued before "
                               f"hydration is dropped")
+        if BAD_PATH.search(line):
+            errors.append(f"{path}:{i + 1}: `{line.strip()[:90]}` puts query text in a `/component/<name>/` path segment (a 404)")
         if LEGACY.search(line):
             n_legacy += 1
             if not LEGACY_OK.search(near):

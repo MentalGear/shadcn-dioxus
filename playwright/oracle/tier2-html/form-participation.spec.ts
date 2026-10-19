@@ -116,7 +116,7 @@ const NAV_TIMEOUT = 20 * 60 * 1000; // first run compiles the app
 // right after navigating, on the SSG lane -- `gotoHydrated` so those
 // interactions can't land before hydration attaches listeners.
 const gotoForm = (page: Page) =>
-  gotoHydrated(page, `${BASE_URL}/component/form/`, {
+  gotoHydrated(page, `${BASE_URL}/component/?name=form&`, { // legacy-route-ok: the prerendered page emits the native checkbox as `initial_checked`, which hydration does not apply (finding): the spec needs the client-created form
     timeout: NAV_TIMEOUT,
   });
 

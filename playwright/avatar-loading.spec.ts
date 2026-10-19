@@ -126,7 +126,9 @@ test("delay: the fallback is held back that long, and a picture that loads withi
   await expect(avatar.locator(".dx-avatar-fallback")).toHaveText("DF", { timeout: 10_000 });
   const { hydratedAt } = await page.evaluate(() => ({ hydratedAt: (window as unknown as { __hydratedAt: number }).__hydratedAt }));
   const waited = (await shownAt())! - hydratedAt;
-  expect(waited).toBeGreaterThanOrEqual(450); // 600 ms from mount, which is at or just before the hydrated flag
+  // 600 ms from mount. The prerendered page mounts the avatar while it hydrates, up to ~200 ms before the hydrated
+  // flag (the legacy client-created route mounted after it), so the floor is 600 minus that slack, not the delay itself.
+  expect(waited).toBeGreaterThanOrEqual(350);
   expect(waited).toBeLessThan(4_000);
 });
 
