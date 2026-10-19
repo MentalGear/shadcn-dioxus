@@ -46,7 +46,9 @@ fn DemoGroup(direction: ResizableDirection, height: &'static str, children: Elem
             // shadcn's `md:min-w-[450px]`, capped by the VIEWPORT so it cannot overflow a phone. Not `100%`: the
             // group sits in a shrink-wrapped flex item, so a percentage resolves against its own intrinsic width and
             // `min(450px, 100%)` collapsed the demo to ~325px at every width (measured 1280/1024/600: 325px, was 450).
-            min_width: "min(450px, 100vw - 4rem)",
+            // 6rem: a phone card's preview is the viewport less 74px of padding and border, and `100vw` also counts
+            // the 15px `scrollbar-gutter` of a desktop browser at that width (`4rem` overflowed by 5px, row 280).
+            min_width: "min(450px, 100vw - 6rem)",
             border: "1px solid var(--dx-input)",
             border_radius: "var(--dx-radius-lg)",
             overflow: "hidden",
