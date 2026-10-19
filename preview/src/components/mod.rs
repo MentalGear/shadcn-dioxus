@@ -85,7 +85,7 @@ pub fn category_of(name: &str) -> ComponentCategory {
         "button" | "input" | "textarea" | "label" | "checkbox" | "switch" | "radio_group"
         | "toggle" | "toggle_group" | "select" | "slider" | "calendar" | "date_picker"
         | "color_picker" | "form" | "button_group" | "field" | "input_group" | "input_otp"
-        | "native_select" => ComponentCategory::Forms,
+        | "native_select" | "questionnaire" => ComponentCategory::Forms,
         "navbar" | "sidebar" | "tabs" | "pagination" | "menubar" | "toolbar" | "context_menu"
         | "dropdown_menu" | "breadcrumb" | "navigation_menu" => ComponentCategory::Navigation,
         "dialog" | "alert_dialog" | "sheet" | "drawer" | "popover" | "tooltip" | "hover_card"
@@ -189,6 +189,7 @@ pub const CATALOG: &[(&str, Origin)] = &[
     ("pagination", Origin::Shadcn),
     ("popover", Origin::Shadcn),
     ("progress", Origin::Shadcn),
+    ("questionnaire", Origin::Shadcn),
     ("radio_group", Origin::Shadcn),
     ("resizable", Origin::Shadcn),
     ("scroll_area", Origin::Shadcn),
