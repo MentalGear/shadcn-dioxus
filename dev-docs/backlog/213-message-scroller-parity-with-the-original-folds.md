@@ -1,7 +1,7 @@
 ---
 id: 213
 title: "Message Scroller parity with the original (folds row 146)"
-status: "API ITEMS LANDED 2026-10-19 (items 1, 2, 4-9; item 3 done earlier; item 10 upstream diff remains; markdown is another lane)"
+status: "API ITEMS LANDED 2026-10-19 (items 1, 2, 4-9; item 10 upstream diff remains; markdown is another…"
 size: "M-L"
 area: virtual
 updated: 2026-10-19
@@ -15,7 +15,9 @@ Message Scroller parity with the original (folds row 146)
 
 ## Status / trigger
 
-**OWNER DECISIONS 2026-10-15 (markdown, the nine questions): the recommendations** -- pulldown-cmark `=0.13.4` (default features off) in a separate optional `markdown` component; exact pin; model-output images off by default; links http/https/mailto/tel/relative only, external in a new tab with noopener; plain code block with a highlighter slot; streaming heal pass in the component; bare-URL autolinks yes (own pass), math no; both gates (parser allowlist, versions match the lock) added. **Round 3: after the 2026-10-15 round (row 217 first).** **OPEN 2026-10-14 (batch 2 did not take the API items; the demo half landed earlier; markdown decision PENDING the owner: nine questions in the published analysis, https://claude.ai/artifact/GpaybnGgtbQTtYkebbUDwp)**
+**API ITEMS LANDED 2026-10-19 (items 1, 2, 4-9; item 10 upstream diff remains; markdown is another lane)**
+
+Earlier status: **OWNER DECISIONS 2026-10-15 (markdown, the nine questions): the recommendations** -- pulldown-cmark `=0.13.4` (default features off) in a separate optional `markdown` component; exact pin; model-output images off by default; links http/https/mailto/tel/relative only, external in a new tab with noopener; plain code block with a highlighter slot; streaming heal pass in the component; bare-URL autolinks yes (own pass), math no; both gates (parser allowlist, versions match the lock) added. **Round 3: after the 2026-10-15 round (row 217 first).** **OPEN 2026-10-14 (batch 2 did not take the API items; the demo half landed earlier; markdown decision PENDING the owner: nine questions in the published analysis, https://claude.ai/artifact/GpaybnGgtbQTtYkebbUDwp)**
 
 ## Size
 
