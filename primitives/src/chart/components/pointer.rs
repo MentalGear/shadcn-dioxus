@@ -120,6 +120,11 @@ pub(crate) enum HitTest {
         /// The polar center in the chart's px (the plot rect's center).
         center: (f64, f64),
         sectors: Rc<[Sector]>,
+        /// Recharts' RadialBarChart keeps the tooltip up anywhere between
+        /// the innermost and outermost ring (the gaps, a ring's empty
+        /// remainder), showing the ring nearest in radius; a Pie or Radar
+        /// closes it off a sector. `true` selects the radial behaviour.
+        nearest_ring: bool,
     },
 }
 
@@ -170,15 +175,32 @@ impl HitTest {
                 view,
                 center,
                 sectors,
+                nearest_ring,
             } => {
                 let dx = px * view.0 / box_size.0 - center.0;
                 let dy = py * view.1 / box_size.1 - center.1;
                 let r = dx.hypot(dy);
                 let theta = dx.atan2(-dy);
-                sectors
-                    .iter()
-                    .find(|s| s.contains(r, theta))
-                    .map_or(Hit::Outside, |s| Hit::Index(s.index))
+                if let Some(s) = sectors.iter().find(|s| s.contains(r, theta)) {
+                    return Hit::Index(s.index);
+                }
+                if *nearest_ring {
+                    let lo = sectors.iter().map(|s| s.r0.min(s.r1)).fold(f64::MAX, f64::min);
+                    let hi = sectors.iter().map(|s| s.r0.max(s.r1)).fold(f64::MIN, f64::max);
+                    if r >= lo && r <= hi {
+                        let gap = |s: &&Sector| {
+                            let (a, b) = (s.r0.min(s.r1), s.r0.max(s.r1));
+                            (a - r).max(r - b).max(0.0)
+                        };
+                        if let Some(s) = sectors
+                            .iter()
+                            .min_by(|a, b| gap(a).total_cmp(&gap(b)))
+                        {
+                            return Hit::Index(s.index);
+                        }
+                    }
+                }
+                Hit::Outside
             }
         }
     }
@@ -478,6 +500,7 @@ mod tests {
                     a1: TAU,
                 },
             ]),
+            nearest_ring: false,
         };
         let b = (300.0, 300.0);
         assert_eq!(t.resolve(200.0, 150.0, b), Hit::Index(0), "3 o'clock");
@@ -486,5 +509,31 @@ mod tests {
         assert_eq!(t.resolve(290.0, 150.0, b), Hit::Outside, "beyond the rim");
         // Half-size box: the same bearings/radii after rescaling.
         assert_eq!(t.resolve(100.0, 75.0, (150.0, 150.0)), Hit::Index(0));
+    }
+
+    #[test]
+    fn radial_charts_keep_the_nearest_ring_between_rings() {
+        let ring = |index, r0, r1| Sector {
+            index,
+            r0,
+            r1,
+            a0: 0.0,
+            a1: FRAC_PI_2,
+        };
+        let t = HitTest::Sectors {
+            view: (300.0, 300.0),
+            center: (150.0, 150.0),
+            sectors: Rc::from(vec![ring(0, 20.0, 40.0), ring(1, 50.0, 70.0)]),
+            nearest_ring: true,
+        };
+        let b = (300.0, 300.0);
+        // Gap between rings (r 43 -> ring 0, r 47 -> ring 1), and the empty
+        // remainder of a ring on the far side (9 o'clock, r 30).
+        assert_eq!(t.resolve(150.0 + 43.0, 150.0, b), Hit::Index(0));
+        assert_eq!(t.resolve(150.0 + 47.0, 150.0, b), Hit::Index(1));
+        assert_eq!(t.resolve(150.0 - 30.0, 150.0, b), Hit::Index(0));
+        // The hole and beyond the outer ring still close.
+        assert_eq!(t.resolve(150.0 + 10.0, 150.0, b), Hit::Outside);
+        assert_eq!(t.resolve(150.0 + 80.0, 150.0, b), Hit::Outside);
     }
 }

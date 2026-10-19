@@ -270,8 +270,10 @@ pub(crate) fn anchors(ctx: &SeriesRenderContext, opts: &RadialOptions) -> Vec<(f
 
 /// The hit regions the pointer is resolved against (see
 /// `components::pointer`): each bar, or -- stacked -- the whole stack. The
-/// empty remainder of a ring (and the gaps between rings) is outside every
-/// sector, so the tooltip shows only over a bar, as in shadcn.
+/// empty remainder of a ring and the gaps between rings are outside every
+/// sector; `HitTest::Sectors { nearest_ring: true }` resolves them to the
+/// nearest ring by radius so the tooltip stays up inside the rings' radial
+/// extent, as in shadcn/Recharts.
 pub(crate) fn sectors(ctx: &SeriesRenderContext, opts: &RadialOptions) -> Vec<Sector> {
     let l = layout(ctx, opts);
     if opts.stacked {

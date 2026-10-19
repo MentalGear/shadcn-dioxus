@@ -531,10 +531,11 @@ pub fn Chart(props: ChartProps) -> Element {
             0.0
         }
     };
-    let polar_hit = |sectors: Vec<Sector>| HitTest::Sectors {
+    let polar_hit = |sectors: Vec<Sector>, nearest_ring: bool| HitTest::Sectors {
         view: (width, height),
         center: ((plot.0 + plot.2) / 2.0, (plot.1 + plot.3) / 2.0),
         sectors: sectors.into(),
+        nearest_ring,
     };
     let (anchors, follow, hit): (Vec<(f64, f64)>, Follow, HitTest) = if width > 0.0 && height > 0.0
     {
@@ -572,17 +573,17 @@ pub fn Chart(props: ChartProps) -> Element {
                 } else {
                     Follow::Anchor
                 },
-                polar_hit(series::pie::sectors(&ctx_layout, &props.pie)),
+                polar_hit(series::pie::sectors(&ctx_layout, &props.pie), false),
             ),
             ChartKind::Radar => (
                 series::radar::anchors(&ctx_layout, &props.radar),
                 Follow::Pointer,
-                polar_hit(series::radar::sectors(&ctx_layout, &props.radar)),
+                polar_hit(series::radar::sectors(&ctx_layout, &props.radar), false),
             ),
             ChartKind::RadialBar => (
                 series::radial::anchors(&ctx_layout, &props.radial),
                 Follow::Pointer,
-                polar_hit(series::radial::sectors(&ctx_layout, &props.radial)),
+                polar_hit(series::radial::sectors(&ctx_layout, &props.radial), true),
             ),
         }
     } else {

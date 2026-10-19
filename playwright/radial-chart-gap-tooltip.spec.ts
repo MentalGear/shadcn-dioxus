@@ -3,11 +3,12 @@ import { type Page } from "@playwright/test";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
-// shadcn's Recharts RadialBarChart + ChartTooltip only activates the tooltip
-// while the pointer is over a bar sector: the empty remainder of a ring and
-// the gap between two rings are outside every sector, so the tooltip hides
-// there. This spec pins that behaviour (hover resolves from coordinates in
-// `primitives/src/chart/components/pointer.rs`, sectors from `series/radial.rs`).
+// shadcn's Recharts RadialBarChart + ChartTooltip keeps the tooltip up while
+// the pointer is anywhere between the innermost and outermost ring: the gap
+// between two rings and a ring's empty remainder keep the nearest ring active
+// (by radius). It closes only when the pointer leaves the chart. Pie and Radar
+// still close off a sector. Hover resolves from coordinates in
+// `primitives/src/chart/components/pointer.rs` (`nearest_ring`).
 // The `main` variant has no background track, so `elementFromPoint` tells a
 // bar from a gap.
 
@@ -51,7 +52,7 @@ async function ringRuns(page: Page): Promise<{ bar: Pt[]; gap: Pt[] }> {
 }
 
 for (const variant of ["", "-label", "-grid"]) {
-  test(`radial${variant || "-main"}: tooltip shows over a bar and hides over the gap between rings`, async ({ page }) => {
+  test(`radial${variant || "-main"}: tooltip stays open over the gap between rings and closes after leaving the chart`, async ({ page }) => {
     FRAME = `#component-preview-frame${variant}`;
   await page.emulateMedia({ reducedMotion: "reduce" });
   await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
@@ -64,10 +65,18 @@ for (const variant of ["", "-label", "-grid"]) {
     await page.mouse.move(bar[i].x, bar[i].y);
     await expect(tooltip, `bar ${i}`).toHaveAttribute("data-state", "open");
     await page.mouse.move(gap[i].x, gap[i].y, { steps: 6 });
-    await expect(tooltip, `gap after ring ${i}`).toHaveAttribute("data-state", "closed");
-    // Back on the next ring's bar it reopens.
+    // Let a (wrongly) closing tooltip settle before asserting it stayed.
+    await page.waitForTimeout(150);
+    await expect(tooltip, `gap after ring ${i}`).toHaveAttribute("data-state", "open");
     await page.mouse.move(bar[i + 1].x, bar[i + 1].y);
     await expect(tooltip, `bar ${i + 1}`).toHaveAttribute("data-state", "open");
   }
+  // Leaving the chart closes it.
+  const box = (await page.locator(`${FRAME} [data-slot="chart-arc"]`).first().evaluate((el) => {
+    const r = el.closest("svg")!.getBoundingClientRect();
+    return { x: r.left, y: r.top };
+  }));
+  await page.mouse.move(Math.max(1, box.x - 40), Math.max(1, box.y - 40), { steps: 6 });
+  await expect(tooltip, "after leaving the chart").toHaveAttribute("data-state", "closed");
 });
 }
