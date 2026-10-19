@@ -1,7 +1,7 @@
 ---
 id: 213
 title: "Message Scroller parity with the original (folds row 146)"
-status: "LANDED 2026-10-19 (all ten items; markdown landed by its own lane; upstream scroller unchanged since 295a1f1)"
+status: "LANDED 2026-10-19 (all ten items; markdown landed by its own lane; upstream scroller unchanged…"
 size: "M-L"
 area: virtual
 updated: 2026-10-19

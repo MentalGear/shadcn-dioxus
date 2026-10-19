@@ -1,7 +1,7 @@
 ---
 id: 265
 title: "Upstream ai-elements (chat, message, code-block, trace, checkpoint, ...) vs our chat kit"
-status: "BACKLOG (found by row 213 item 10, 2026-10-19)"
+status: "BACKLOG (found by row 213 item 10, 2026-10-19). Source…"
 size: "L"
 area: chat
 updated: 2026-10-19
@@ -19,7 +19,7 @@ shadcn-ui/ui landed an `ai-elements` docs section and two new base UI components
 
 ## Size
 
-L (scoping first; each component M)
+L
 
 ## Detail
 
