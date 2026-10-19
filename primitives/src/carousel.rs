@@ -78,6 +78,7 @@
 //! (shadcn's `handleKeyDown` never swaps; it relies on embla's engine
 //! silently compensating underneath it, which this crate does not have).
 
+use crate::sleep::sleep;
 use crate::{
     collection::{collection_item, use_collection_provider, use_item, CollectionState},
     direction::{use_direction, use_direction_signal, Direction, HorizontalNav},
@@ -87,7 +88,6 @@ use crate::{
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 use dioxus_core::Task;
-use crate::sleep::sleep;
 use std::time::Duration;
 
 /// The axis a [`Carousel`] pages along.

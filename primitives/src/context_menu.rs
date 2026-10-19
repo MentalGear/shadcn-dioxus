@@ -7,6 +7,7 @@
 //! host-independent state machine (`crate::menu_sub`) both this file and
 //! `dropdown_menu.rs`'s equivalent build on.
 
+use crate::sleep::sleep;
 use crate::{
     collection::{
         collection_item, use_collection_provider, use_deferred_collection_focus, use_item,
@@ -27,7 +28,6 @@ use crate::{
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 use dioxus_core::Task;
-use crate::sleep::sleep;
 use std::time::Duration;
 
 /// How long a touch must be held before the context menu opens.

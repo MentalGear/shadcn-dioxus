@@ -57,6 +57,9 @@ ALLOWLIST=(
   # "primitives/src/top_layer.rs"
   # "primitives/src/lib.rs"
   # "primitives/src/scroll_lock.rs"
+  # Not markup: `tokio` (native) and `gloo-timers` (wasm) are target-gated dependencies in
+  # primitives/Cargo.toml, so the two arms of `sleep` must split on the same predicate.
+  "primitives/src/sleep.rs"
 )
 
 is_allowlisted() {

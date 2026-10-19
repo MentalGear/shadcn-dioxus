@@ -1,7 +1,7 @@
 ---
 id: 5
 title: "Tier-2 harness completion — rules 5 (checkValidity/reportValidity/willValidate), 7 (label association), 8…"
-status: "LANDED 2026-10-19 (rule 8: `form` attribute forwarded by Switch, RadioGroup, Checkbox; rule 7 earlier; rule 5 subsumed)"
+status: "LANDED 2026-10-19 (rule 8: form attribute forwarded by Switch, RadioGroup, Checkbox; rule 7…"
 size: "S (rule 8 remaining)"
 area: tests
 updated: 2026-09-19
@@ -15,7 +15,7 @@ Tier-2 harness completion — rules 5 (`checkValidity`/`reportValidity`/`willVal
 
 ## Status / trigger
 
-**Rule 7 landed 2026-09-19 (batch 3); rule 5 closed as subsumed; rule 8 re-scoped, still open**
+**LANDED 2026-10-19 (rule 8: `form` attribute forwarded by Switch, RadioGroup, Checkbox; rule 7 earlier; rule 5 subsumed)**
 
 ## Size
 

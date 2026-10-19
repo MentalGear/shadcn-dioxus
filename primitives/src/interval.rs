@@ -26,9 +26,9 @@
 
 use std::time::Duration;
 
+use crate::sleep::sleep;
 use dioxus::prelude::*;
 use dioxus_core::Task;
-use crate::sleep::sleep;
 
 /// Calls `on_tick` once every `period` for as long as the calling component is mounted.
 ///

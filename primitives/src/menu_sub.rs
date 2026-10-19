@@ -76,9 +76,9 @@
 
 use std::time::Duration;
 
+use crate::sleep::sleep;
 use dioxus::prelude::*;
 use dioxus_core::Task;
-use crate::sleep::sleep;
 
 use crate::collection::{use_collection_provider, CollectionPlacement, CollectionState};
 use crate::direction::{Direction, HorizontalNav};

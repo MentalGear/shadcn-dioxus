@@ -1,8 +1,8 @@
 //! Context types and implementations for the select component.
 
+use crate::sleep::sleep;
 use dioxus::prelude::*;
 use dioxus_core::Task;
-use crate::sleep::sleep;
 
 use std::time::Duration;
 
