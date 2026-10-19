@@ -314,7 +314,23 @@ fn html_escape(text: &str) -> String {
 fn doc_html(doc: &str) -> String {
     let doc = doc.replace("[`", "`").replace("`]", "`");
     let mut out = String::new();
-    pulldown_cmark::html::push_html(&mut out, pulldown_cmark::Parser::new(&doc));
+    // A doc comment is content under the page's own `<h3>` (struct) or inside a table cell: its `# Example` /
+    // `## Styling` headings must never join the page outline (they rendered an `<h1>` and `<h2>`s in the docs
+    // prose), so every heading level is demoted to `<h4>`.
+    use pulldown_cmark::{Event, HeadingLevel, Tag, TagEnd};
+    let events = pulldown_cmark::Parser::new(&doc).map(|event| match event {
+        Event::Start(Tag::Heading {
+            id, classes, attrs, ..
+        }) => Event::Start(Tag::Heading {
+            level: HeadingLevel::H4,
+            id,
+            classes,
+            attrs,
+        }),
+        Event::End(TagEnd::Heading(_)) => Event::End(TagEnd::Heading(HeadingLevel::H4)),
+        other => other,
+    });
+    pulldown_cmark::html::push_html(&mut out, events);
     out
 }
 

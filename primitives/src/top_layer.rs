@@ -2026,6 +2026,15 @@ pub(crate) fn use_anchor_position_fallback(
             }};
             window.addEventListener('scroll', onScroll, {{ capture: true, passive: true }});
             window.addEventListener('resize', onTrack, {{ passive: true }});
+            // An anchor inside an ANIMATING ancestor (a submenu's trigger inside its root menu's
+            // `dx-pop-in`, scale .95 -> 1) is measured at the animation's current scale by
+            // `getBoundingClientRect()`, so a panel opened inside that window is placed against a
+            // stale, shrunken box (rtl.spec's Sub "opens to the LEFT" overlapped its trigger by
+            // 1.1px). Re-place once the ancestor's animation ends: the anchor is then at rest.
+            const onAnimEnd = (e) => {{
+                if (trigger && e.target !== content && e.target.contains && e.target.contains(trigger)) onTrack();
+            }};
+            document.addEventListener('animationend', onAnimEnd, {{ capture: true, passive: true }});
             const vv = window.visualViewport;
             if (vv) {{
                 vv.addEventListener('resize', onTrack, {{ passive: true }});
@@ -2043,6 +2052,7 @@ pub(crate) fn use_anchor_position_fallback(
             if (resizeObserver) resizeObserver.disconnect();
             window.removeEventListener('scroll', onScroll, true);
             window.removeEventListener('resize', onTrack);
+            document.removeEventListener('animationend', onAnimEnd, true);
             if (vv) {{
                 vv.removeEventListener('resize', onTrack);
                 vv.removeEventListener('scroll', onTrack);
