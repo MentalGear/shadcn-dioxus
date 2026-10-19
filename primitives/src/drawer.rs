@@ -709,6 +709,12 @@ pub struct DrawerRootProps {
     #[props(default = ReadSignal::new(Signal::new(true)))]
     pub is_modal: ReadSignal<bool>,
 
+    /// Base UI's `disablePointerDismissal`; forwarded unchanged to
+    /// [`crate::dialog::DialogRoot`]. When `true` a press or focus outside the panel does not
+    /// dismiss the drawer (Escape and the close controls still do).
+    #[props(default = ReadSignal::new(Signal::new(false)))]
+    pub disable_pointer_dismissal: ReadSignal<bool>,
+
     /// Whether the drawer dims the page behind it with the shared overlay scrim.
     /// Defaults to `true`. Forwarded unchanged to [`crate::dialog::DialogRoot`]:
     /// `false` puts `data-dx-overlay="off"` on the `<dialog>`, which the theme
@@ -883,6 +889,7 @@ pub fn Drawer(props: DrawerRootProps) -> Element {
             id: props.id,
             is_modal: props.is_modal,
             overlay: ReadSignal::from(scrim),
+            disable_pointer_dismissal: props.disable_pointer_dismissal,
             open: props.open,
             default_open: props.default_open,
             on_open_change: props.on_open_change,

@@ -81,6 +81,14 @@ landed in the same PR: 260 (hover mix space + gate), 262 and 263 (toast F6, paus
 rounds: row 213 item 10 (upstream diff), 261 (`--dx-font-mono` token), 264 (non-modal Dialog `aria-modal` and outside-press
 switch). Next unclaimed round on the `claims` branch: 4.
 
+Rounds 5 and 7 (claimed on `claims` 2026-10-19; 7 taken before 6 because its files were disjoint) run on
+`claude/round-5`: rows 188 (demo-only items), 213 item 10 (upstream diff: new row 265), 162 and 261 (self-hosted Geist,
+`--dx-font-mono` token), 165 (generated props tables + `check-props-docs.sh`), 137 (reactive direction, RTL toggle,
+`check-direction-keys.sh`), 264 (non-modal `aria-modal`, `disable_pointer_dismissal`) and 157 (InputOtp `OtpPattern`)
+landed there, and so did row 136 (Questionnaire, owner lifted the hold 2026-10-18). Round 6 (a sweep) follows.
+The archived first session's unpushed round 1 work (152a spec budget/shard planner, two-slot build lock) and its round 4
+claim stay with that session (owner chose to restore it, 2026-10-19).
+
 ## Keeping this page current
 
 Edit the section that changed, bump "Last updated", commit with the change that made it true. Row-level state belongs in

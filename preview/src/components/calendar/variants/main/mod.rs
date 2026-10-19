@@ -7,7 +7,7 @@ pub fn Demo() -> Element {
     let mut selected_date = use_signal(|| None::<Date>);
     let mut view_date = use_signal(|| date!(2026 - 05 - 15));
     rsx! {
-        div { style: "padding: 20px;",
+        div {
             Calendar {
                 selected_date: selected_date(),
                 on_date_change: move |date| {

@@ -92,18 +92,25 @@ pub fn PaginationItem(
 
 #[derive(Props, Clone, PartialEq)]
 pub struct PaginationLinkProps {
+    /// Marks the link as the current page (`aria-current="page"`).
     #[props(default)]
     pub is_active: bool,
+    /// The link's size, as for a `Button`.
     #[props(default)]
     pub size: PaginationLinkSize,
+    /// Marks a previous or next link so the theme can style it (`data-kind`).
     #[props(default)]
     pub data_kind: Option<PaginationLinkKind>,
+    /// Called on `click`.
     onclick: Option<EventHandler<MouseEvent>>,
+    /// Called on `mousedown`.
     onmousedown: Option<EventHandler<MouseEvent>>,
+    /// Called on `mouseup`.
     onmouseup: Option<EventHandler<MouseEvent>>,
     #[props(extends = GlobalAttributes)]
     #[props(extends = a)]
     pub attributes: Vec<Attribute>,
+    /// The link's content: the page number or label.
     pub children: Element,
 }
 

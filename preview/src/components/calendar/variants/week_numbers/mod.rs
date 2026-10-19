@@ -13,7 +13,7 @@ pub fn Demo() -> Element {
     let mut selected_date = use_signal(move || Some(january_12));
     let mut view_date = use_signal(move || january_12);
     rsx! {
-        div { style: "display: flex; justify-content: center; padding: 20px;",
+        div { style: "display: flex; justify-content: center;",
             Calendar {
                 selected_date: selected_date(),
                 on_date_change: move |date| selected_date.set(date),

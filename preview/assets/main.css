@@ -1,22 +1,17 @@
-/* Typography: the Geist / Geist Mono web fonts are loaded from the document
-   head (`GlobalHead` in `preview/src/main.rs`, <link rel="preconnect"> +
-   <link rel="stylesheet">), NOT via `@import` here. Found by execution
-   (2026-09-02): a stylesheet whose `@import` has not finished loading is
-   never applied by the browser at all -- `link.sheet` exists and parses,
-   but the sheet stays out of `document.styleSheets` -- so with the font
-   CDN slow or unreachable this ENTIRE file was inert (body fell back to
-   Times New Roman, every rule below was dead). A separate <link> lets this
-   file apply immediately. The oracle for this is
-   `playwright/oracle/tier2-html/global-stylesheet.spec.ts`.
+/* Typography: Geist / Geist Mono are self-hosted (row 162, `preview/assets/fonts/`, SIL OFL). The
+   `@font-face` rules and the preloads are written by `GlobalHead` in `preview/src/main.rs`, because
+   `asset!` hashes the font file names and a stylesheet `url()` is not rewritten; NEVER `@import` a font
+   here (found by execution 2026-09-02: a stylesheet whose `@import` has not finished loading is never
+   applied, so the whole file was inert; oracle: `global-stylesheet.spec.ts`).
 
-   The faces do NOT swap in after first paint: `GlobalHead` preloads the two latin
-   woff2 files and asks for `display=optional`, so text never re-wraps when Geist
-   arrives (hard-load CLS 0.117 -> 0.000 on /component/form/). Every
-   `font-family: Geist ...` / `"Geist Mono" ...` below therefore renders in the
-   face that is ready at first paint, or in its fallback for that whole view. */
+   The faces do NOT swap in after first paint: preloaded latin files plus `font-display: optional`
+   (hard-load CLS 0.117 -> 0.000 on /component/form/). The docs site picks its fonts by overriding the
+   theme's two tokens below; everything else reads `var(--dx-font-sans)` / `var(--dx-font-mono)`. */
 
 /* Theme style variables */
 :root {
+  --dx-font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --dx-font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", "Menlo", "Monaco", "Consolas", monospace;
   --highlight-color-main: #dd7230;
   --highlight-color-secondary: #eb5160;
 
@@ -112,7 +107,7 @@ body {
   margin: 0;
   background-color: var(--dx-background);
   color: var(--dx-foreground);
-  font-family: Geist, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: var(--dx-font-sans);
   font-optical-sizing: auto;
   font-style: normal;
   font-weight: 400;
@@ -385,7 +380,7 @@ summary,
   align-items: center;
   color: var(--dx-foreground);
   font-size: 0.98rem;
-  font-weight: 400;
+  font-weight: 700;
   gap: 0.55rem;
   text-decoration: none;
 }
@@ -420,7 +415,7 @@ summary,
   padding: 1rem 1.1rem;
   margin: 0;
   background: transparent;
-  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--dx-font-mono);
   font-size: 0.875rem;
   line-height: 1.55;
   tab-size: 4;
@@ -440,7 +435,7 @@ summary,
   background-color: var(--dx-card);
   border-inline-end: 1px solid var(--dx-border);
   color: var(--dx-muted-foreground);
-  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--dx-font-mono);
   font-size: 0.875rem;
   font-variant-numeric: tabular-nums;
   inset-inline-start: 0;
@@ -998,6 +993,12 @@ html[data-nav-sort="category"] .dx-nav-sort-option[data-nav-sort-option="categor
   margin: 0;
 }
 
+.dx-component-page-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .dx-component-install-link {
   padding: 0.35rem 0.8rem;
   border: 1px solid var(--dx-border);
@@ -1040,7 +1041,7 @@ html[data-nav-sort="category"] .dx-nav-sort-option[data-nav-sort-option="categor
 .dx-docs-eyebrow {
   margin: 0;
   color: var(--highlight-color-tertiary);
-  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--dx-font-mono);
   font-size: 0.8rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -1138,7 +1139,7 @@ html[data-nav-sort="category"] .dx-nav-sort-option[data-nav-sort-option="categor
   background-color: var(--dx-card);
   color: var(--dx-muted-foreground);
   content: counter(dx-docs-steps);
-  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--dx-font-mono);
   font-size: 0.75rem;
 }
 
@@ -1158,7 +1159,7 @@ html[data-nav-sort="category"] .dx-nav-sort-option[data-nav-sort-option="categor
 
 .dx-docs-command code {
   overflow: hidden;
-  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--dx-font-mono);
   font-size: 0.88rem;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1222,7 +1223,7 @@ html[data-nav-sort="category"] .dx-nav-sort-option[data-nav-sort-option="categor
   border-radius: 0.25rem;
   background-color: var(--dx-muted);
   color: var(--dx-foreground);
-  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--dx-font-mono);
   font-size: 0.875em;
 }
 
@@ -1234,7 +1235,7 @@ html[data-nav-sort="category"] .dx-nav-sort-option[data-nav-sort-option="categor
   margin: 0 0 1.1rem;
   background-color: var(--dx-card);
   color: var(--dx-foreground);
-  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--dx-font-mono);
   font-size: 0.875rem;
   line-height: 1.5;
   overflow-x: auto;
@@ -1300,7 +1301,7 @@ html[data-nav-sort="category"] .dx-nav-sort-option[data-nav-sort-option="categor
   border-radius: 0.25rem;
   background-color: var(--dx-muted);
   color: var(--dx-foreground);
-  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--dx-font-mono);
   font-size: 0.875em;
 }
 
@@ -1371,7 +1372,7 @@ html[data-nav-sort="category"] .dx-nav-sort-option[data-nav-sort-option="categor
 .dx-component-inline-command code {
   overflow: hidden;
   min-width: 0;
-  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--dx-font-mono);
   font-size: 0.8rem;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1606,6 +1607,56 @@ html[data-nav-sort="category"] .dx-nav-sort-option[data-nav-sort-option="categor
   padding-bottom: 1rem;
 }
 
+/* Props reference (generated by `preview/build.rs` from the `#[derive(Props)]` structs, backlog row 165):
+ * docs-site chrome appended inside the docs prose, so tables, code and the scroll wrapper inherit the
+ * `.dx-docs-prose` rules above. One section per props struct. */
+.dx-docs-props {
+  margin-top: 1.25rem;
+}
+
+.dx-docs-props h3 {
+  display: flex;
+  align-items: baseline;
+  margin: 0 0 0.5rem;
+  color: var(--dx-foreground);
+  font-size: 0.95rem;
+  font-weight: 600;
+  gap: 0.6rem;
+}
+
+.dx-docs-props-kind {
+  color: var(--dx-muted-foreground);
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+
+.dx-docs-props-intro {
+  margin: 0 0 0.6rem;
+  color: var(--dx-muted-foreground);
+  font-size: 0.9rem;
+}
+
+.dx-docs-props-intro p {
+  margin: 0;
+}
+
+.dx-docs-props-table td:first-child {
+  white-space: nowrap;
+}
+
+.dx-docs-props-table td p {
+  margin: 0;
+}
+
+.dx-docs-props-table td p + p {
+  margin-top: 0.4rem;
+}
+
+.dx-docs-props-required {
+  color: var(--dx-muted-foreground);
+  font-size: 0.85rem;
+}
+
 .dx-variant-notes {
   border-bottom: none;
 }
@@ -1654,7 +1705,7 @@ html[data-nav-sort="category"] .dx-nav-sort-option[data-nav-sort-option="categor
   border-radius: 0.25rem;
   background-color: var(--dx-muted);
   color: var(--dx-foreground);
-  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--dx-font-mono);
   font-size: 0.875em;
 }
 
@@ -1887,6 +1938,15 @@ html[data-cv-settle] {
   .dx-widget-masonry { grid-template-columns: minmax(0, 1fr); }
 }
 
+/* A 320px phone: the Schedule card's 250px calendar is 7px wider than the content box left by the
+ * desktop 1.75rem inset (backlog row 280, `playwright/card-fit.spec.ts`). */
+@media (width <= 400px) {
+  .dx-widget-card {
+    padding-right: 1.25rem;
+    padding-left: 1.25rem;
+  }
+}
+
 /* Demos hub page */
 .dx-demos-grid {
   display: grid;
@@ -1990,7 +2050,22 @@ html[data-cv-settle] {
   width: 100%;
   padding: 0;
   margin: 0;
+  container-type: inline-size;
   gap: 0;
+}
+
+/* A card shows its meta and its preview side by side only when the GALLERY (not the viewport: the
+ * docs sidebar takes ~175px of it when open) is wide enough for the widest demo to fit its preview
+ * column. Below that it stacks, as on a phone. A viewport breakpoint gave 286px preview columns at
+ * 780px (two columns of a 605px gallery) and clipped Field, Input Group, Pagination, Skeleton, Chart
+ * Tooltip and Resizable between 780 and 1160px (backlog row 280). 67rem: Resizable's 450px group plus
+ * the preview's 2rem padding a side is 516px, twice that plus the 2rem column gap is 1064px.
+ * `playwright/card-fit.spec.ts` sweeps the widths and fails on any preview or showcase card whose
+ * content is wider than it. */
+@container (width < 67rem) {
+  .dx-component-card {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .dx-component-card-meta {
@@ -2060,7 +2135,7 @@ html[data-cv-settle] {
 
 .dx-component-card-command code {
   overflow: hidden;
-  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--dx-font-mono);
   font-size: 0.875rem;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2661,7 +2736,7 @@ html[data-cv-settle] {
   flex: 1 1 auto;
   margin: 0;
   color: var(--dx-foreground);
-  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--dx-font-mono);
   font-size: var(--dx-text-sm);
   font-weight: 500;
   line-height: 1.25rem;

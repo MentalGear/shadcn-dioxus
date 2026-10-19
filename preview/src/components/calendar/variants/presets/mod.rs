@@ -20,7 +20,7 @@ pub fn Demo() -> Element {
     };
 
     rsx! {
-        div { style: "display: grid; gap: 0.75rem; justify-items: start; padding: 20px;",
+        div { style: "display: grid; gap: 0.75rem; justify-items: start;",
             div { style: "display: flex; flex-wrap: wrap; gap: 0.5rem;",
                 Button {
                     r#type: "button",

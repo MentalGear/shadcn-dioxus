@@ -14,7 +14,7 @@ use crate::{
         collection_item, use_collection_provider, use_deferred_collection_focus, use_item,
         CollectionPlacement, CollectionState,
     },
-    direction::{use_direction, Direction},
+    direction::{use_direction, use_direction_signal, Direction},
     has_own_accessible_name,
     menu_item::{
         self, CheckableCommon, CheckableState, MenuCheckboxItemProps, MenuGroupProps,
@@ -108,7 +108,7 @@ struct DropdownMenuContext {
     // arrow key and which side a submenu opens on -- see
     // `crate::menu_sub::is_submenu_open_arrow_key`/
     // `is_submenu_close_arrow_key`'s doc.
-    direction: Direction,
+    direction: ReadSignal<Direction>,
 }
 
 impl DropdownMenuContext {
@@ -235,6 +235,7 @@ pub fn DropdownMenu(props: DropdownMenuProps) -> Element {
 
     let (open, set_open) = use_controlled(props.open, props.default_open, props.on_open_change);
     let direction = use_direction(props.dir);
+    let direction_signal = use_direction_signal(direction);
 
     let disabled = props.disabled;
     let root_id = use_unique_id();
@@ -258,7 +259,7 @@ pub fn DropdownMenu(props: DropdownMenuProps) -> Element {
         modal: props.modal,
         interacted_outside,
         submenu_open_count,
-        direction,
+        direction: direction_signal,
     });
 
     // docs/backlog.md row 53 (the "open-index container" band): this effect
@@ -419,10 +420,10 @@ pub fn DropdownMenu(props: DropdownMenuProps) -> Element {
     let attributes = merge_attributes(vec![
         attributes!(div {
             id: root_id.cloned(),
-            dir: ctx.direction.as_str(),
+            dir: (ctx.direction)().as_str(),
             "data-state": if open() { "open" } else { "closed" },
             "data-disabled": (props.disabled)(),
-            "data-direction": ctx.direction.as_str(),
+            "data-direction": (ctx.direction)().as_str(),
         }),
         props.attributes,
     ]);
@@ -1767,7 +1768,7 @@ pub fn DropdownMenuSubTrigger(props: DropdownMenuSubTriggerProps) -> Element {
             // `crate::menu_sub::is_submenu_open_arrow_key`'s doc.
             let opens = matches!(key, Key::Enter)
                 || matches!(&key, Key::Character(c) if c == " ")
-                || crate::menu_sub::is_submenu_open_arrow_key(&key, ctx.direction);
+                || crate::menu_sub::is_submenu_open_arrow_key(&key, (ctx.direction)());
             if !opens {
                 return;
             }
@@ -1952,7 +1953,7 @@ fn DropdownMenuSubContentRendered(
     // RTL (Radix `menu.tsx` L1245: `side={dir===RTL?'left':'right'}`). The
     // position-try-fallbacks flip (see the comment above) still applies on
     // top of whichever side this resolves to, for viewport overflow.
-    let sub_side = if ctx.direction == Direction::Rtl {
+    let sub_side = if (ctx.direction)() == Direction::Rtl {
         crate::ContentSide::Left
     } else {
         crate::ContentSide::Right
@@ -2001,9 +2002,9 @@ fn DropdownMenuSubContentRendered(
         attributes!(div {
             role: crate::menu_semantics::MENU_ROLE,
             popover: crate::top_layer::PopoverKind::Auto.as_str(),
-            dir: ctx.direction.as_str(),
+            dir: (ctx.direction)().as_str(),
             "data-state": if open() { "open" } else { "closed" },
-            "data-direction": ctx.direction.as_str(),
+            "data-direction": (ctx.direction)().as_str(),
         }),
     ]);
     let attributes = crate::top_layer::anchored_content_attributes(&id, attributes);
@@ -2040,7 +2041,7 @@ fn DropdownMenuSubContentRendered(
         // (folded into the same arm as a pre-existing, unrelated design
         // choice this lane preserves rather than changes).
         let closes = matches!(key, Key::Escape)
-            || crate::menu_sub::is_submenu_close_arrow_key(&key, ctx.direction);
+            || crate::menu_sub::is_submenu_close_arrow_key(&key, (ctx.direction)());
         if closes {
             sub.set_open.call(false);
             sub.focus.clear_focus();
@@ -2141,9 +2142,9 @@ fn DropdownMenuSubContentRendered(
         // construction above (`docs/backlog.md` row 93).
         attributes!(div {
             role: crate::menu_semantics::MENU_ROLE,
-            dir: ctx.direction.as_str(),
+            dir: (ctx.direction)().as_str(),
             "data-state": if open() { "open" } else { "closed" },
-            "data-direction": ctx.direction.as_str(),
+            "data-direction": (ctx.direction)().as_str(),
         }),
     ]);
 
@@ -2154,7 +2155,7 @@ fn DropdownMenuSubContentRendered(
     let onkeydown = move |event: Event<KeyboardData>| {
         let key = event.key();
         let closes = matches!(key, Key::Escape)
-            || crate::menu_sub::is_submenu_close_arrow_key(&key, ctx.direction);
+            || crate::menu_sub::is_submenu_close_arrow_key(&key, (ctx.direction)());
         if closes {
             sub.set_open.call(false);
             sub.focus.clear_focus();
