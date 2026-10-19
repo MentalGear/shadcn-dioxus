@@ -60,10 +60,6 @@ The polygons grow from the centre when the chart first appears; nothing animates
 
 Each category owns an angular wedge reaching from the center to the outer edge. Hovering anywhere in a wedge activates that category, and the tooltip shows every series' value for it. Keyboard stepping activates categories in order.
 
-## Demos
-
-The gallery shows the default polygon grid, `dots`, `lines_only`, `multiple` series, a `legend`, series icons, custom two-line labels (`label_custom`), the radius axis (`radius`), and each grid type (`grid_circle`, `grid_circle_fill`, `grid_circle_no_lines`, `grid_fill`, `grid_none`, `grid_custom`).
-
 ## Accessibility
 
 The hidden data table lists every category and every series' exact value regardless of the visual options above. The SVG is a named image and the wrapper is keyboard focusable; see [Chart](/component/chart/) for the full behavior.

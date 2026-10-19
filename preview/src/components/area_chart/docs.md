@@ -35,20 +35,6 @@ ChartContainer { config, data, kind: ChartKind::Area,
 - `show_y_axis: true` and `y_tick_count` show the y-axis and set how many ticks it gets (exactly that many round values, as Recharts picks them). The y-axis is off by default; the tooltip and the data table carry exact values.
 - A series can have an icon: set `icon: Some(ChartIcon(Callback::new(|()| rsx! { TrendingUp {} })))` on a `ChartSeries`. `ChartLegend` and `ChartTooltip` show it in place of the color swatch.
 
-## Demos
-
-Each demo is a port of the shadcn/ui chart of the same name -- same data, series order, curve, margins, axes and tooltip -- checked against shadcn's own source by a test.
-
-- **Default** — one series on a natural curve.
-- **Linear** and **Step** — the same data with `Curve::Linear` and `Curve::Step`.
-- **Stacked** — two series with `stacked: true`.
-- **Legend** — a stacked chart with a `ChartLegend` below it.
-- **Axes** — both axes shown, with `y_tick_count: 3`.
-- **Interactive** — 91 days of two-series data in a fixed 250px-tall chart (`height: 250.0`), with a `Select` that narrows it to the last 3 months, 30 or 7 days (shadcn keeps the dates on or after June 30 minus the range: 91, 31 or 8 days). With this many points, `min_tick_gap` thins the x-axis labels (keeping the last one), as in shadcn.
-- **Stacked, expand** — three series stacked as percentages with `StackMode::Expand`.
-- **Gradient** — `AreaOptions { gradient: true, .. }`.
-- **Icons** — per-series icons shown in the legend and tooltip.
-
 ## Accessibility
 
 Area charts have the same accessibility behavior as every [Chart](/component/chart/): the SVG is a named image (`role="img"` with a `<title>`), a visually hidden data table lists every value, and a focusable wrapper lets keyboard users step through points with the arrow keys, `Home`, `End` and `Escape`. Legend swatches have `role="graphics-symbol"` and the series label as their name. See the Chart page for details.

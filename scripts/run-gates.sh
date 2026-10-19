@@ -117,6 +117,7 @@ gates=(
   "check-demo-text-locators|scripts/check-demo-text-locators.sh"
   "check-spec-at-rest|scripts/check-spec-at-rest.sh"
   "check-backlog-index|scripts/check-backlog-index.sh"
+  "check-docs-no-demo-list|scripts/check-docs-no-demo-list.sh"
   "check-docs-own-components|scripts/check-docs-own-components.sh"
   "fmt|cargo fmt --all -- --check"
   "check-primitives-features|scripts/check-primitives-features.sh"
