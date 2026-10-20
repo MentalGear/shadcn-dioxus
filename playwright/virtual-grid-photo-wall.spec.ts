@@ -4,12 +4,18 @@ import { BASE_URL } from "./base-url";
 import { demoFrame, demoRole } from "./demo-frame";
 import { gotoHydrated } from "./hydration";
 
-// VirtualGrid page, `photo_wall` demo: a wall of 90,000 mixed-aspect photos in uniform cells of the two-axis VirtualGrid, with drag-to-pan, a minimap, a random jump and a Dialog preview.
+// VirtualGrid page, `photo_wall` demo: a wall of 90,000 mixed-aspect photos, with a Grid / Justified layout toggle:
+// uniform cells of the two-axis VirtualGrid (contain/cover switch), or VirtualJustifiedGrid over the same photos on a
+// canvas wide enough to scroll both ways. Drag-to-pan, a minimap, a random jump and a Dialog preview work in both.
 // Controls are found by role, position and data attributes, never by demo copy (row 220).
 
 const PAGE_URL = `${BASE_URL}/component/virtual_grid/`;
 const VARIANT = "photo_wall";
 const MAX_TILES = 400;
+// photo_wall demo, button order: the layout toggle's Grid and Justified items, then "jump to random photo".
+const GRID_TOGGLE = 0;
+const JUSTIFIED_TOGGLE = 1;
+const JUMP = 2;
 
 const wall = (page: Page) => demoFrame(page, VARIANT).getByRole("grid");
 const tiles = (grid: Locator) => grid.locator("[data-grid-cell]");
@@ -104,8 +110,7 @@ test.describe("virtual_grid photo_wall", () => {
 
   test("jump to random photo focuses a rendered cell", async ({ page }) => {
     const grid = await open(page);
-    // photo_wall demo: the first button is "jump to random photo" (the switch has role switch)
-    await demoRole(page, "button", 0, VARIANT).click();
+    await demoRole(page, "button", JUMP, VARIANT).click();
     await expect
       .poll(() => page.evaluate(() => document.activeElement?.getAttribute("data-grid-cell") ?? null))
       .not.toBeNull();
@@ -153,5 +158,115 @@ test.describe("virtual_grid photo_wall", () => {
     await grid.locator('[data-grid-cell="0:100"]').focus();
     await page.keyboard.press("ArrowLeft");
     await expect(grid.locator('[data-grid-cell="0:101"]')).toBeFocused();
+  });
+  test("the photos fill their cells: each image's intrinsic ratio is its photo's, on a thin mat", async ({ page }) => {
+    const grid = await open(page);
+    const fills = await grid.locator("[data-photo-img]").evaluateAll((els) =>
+      els.slice(0, 40).map((img) => {
+        const [w, h] = img.getAttribute("data-photo-img")!.split(":").map(Number);
+        const i = img as HTMLImageElement;
+        const cell = img.closest("[data-grid-cell]")!.getBoundingClientRect();
+        // object-fit: contain draws the photo at its natural ratio inside the img box.
+        const box = img.getBoundingClientRect();
+        const ratio = i.naturalWidth / i.naturalHeight;
+        const drawnLong = Math.max(Math.min(box.width, box.height * ratio), Math.min(box.height, box.width / ratio));
+        return { natural: ratio, want: w / h, fill: drawnLong / cell.height, complete: i.complete };
+      }),
+    );
+    expect(fills.length).toBeGreaterThan(10);
+    for (const f of fills) {
+      expect(f.complete).toBe(true);
+      expect(Math.abs(f.natural / f.want - 1)).toBeLessThan(0.01);
+      expect(f.fill).toBeGreaterThan(0.85);
+      expect(f.fill).toBeLessThanOrEqual(1);
+    }
+  });
+
+  test("the layout toggle switches to justified rows over the same photos, and back", async ({ page }) => {
+    const grid = await open(page);
+    await demoRole(page, "button", JUSTIFIED_TOGGLE, VARIANT).click();
+    await expect(wall(page)).toHaveAttribute("data-virtual-grid", "justified");
+    const justified = wall(page);
+    await expect(justified).toHaveAttribute("data-justified-axes", "both");
+    await expect(tiles(justified).first()).toBeVisible();
+    // The contain/cover switch belongs to the grid layout.
+    await expect(demoFrame(page, VARIANT).getByRole("switch")).toHaveCount(0);
+    const n = await tiles(justified).count();
+    expect(n).toBeGreaterThan(10);
+    expect(n).toBeLessThan(MAX_TILES);
+    await expect.poll(() => counted(page)).toBe(n);
+    // Every tile IS its photo's aspect (no mat, nothing cropped).
+    const aspects = await justified.locator("[data-photo-img]").evaluateAll((els) =>
+      els.map((img) => {
+        const [w, h] = img.getAttribute("data-photo-img")!.split(":").map(Number);
+        const r = img.closest("[data-grid-cell]")!.getBoundingClientRect();
+        return r.width / r.height / (w / h);
+      }),
+    );
+    for (const a of aspects) expect(Math.abs(a - 1)).toBeLessThan(0.01);
+    // Both axes scroll and window; the counter and the minimap follow.
+    await justified.evaluate((el) => {
+      el.scrollLeft = el.scrollWidth * 0.6;
+      el.scrollTop = el.scrollHeight * 0.6;
+    });
+    await expect.poll(async () => {
+      const idx = await tiles(justified).evaluateAll((els) => els.map((e) => Number(e.getAttribute("data-grid-index"))));
+      return Math.max(...idx);
+    }).toBeGreaterThan(40_000);
+    expect(await tiles(justified).count()).toBeLessThan(MAX_TILES);
+    await expect.poll(async () => (await counted(page)) === (await tiles(justified).count())).toBe(true);
+    const box = demoFrame(page, VARIANT).locator("[data-photo-wall-viewport]");
+    await expect.poll(() => box.evaluate((el) => parseFloat(getComputedStyle(el).top))).toBeGreaterThan(30);
+    // The minimap moves the justified wall too.
+    const m = (await minimap(page).boundingBox())!;
+    await page.mouse.click(m.x + m.width * 0.2, m.y + m.height * 0.2);
+    await expect.poll(async () => (await scrollOf(justified)).top).toBeLessThan(
+      await justified.evaluate((el) => el.scrollHeight * 0.4),
+    );
+    // Back to the grid.
+    await demoRole(page, "button", GRID_TOGGLE, VARIANT).click();
+    await expect(wall(page)).toHaveAttribute("aria-colcount", "300");
+    await expect(demoFrame(page, VARIANT).getByRole("switch")).toHaveCount(1);
+    await expect(tiles(grid).first()).toBeVisible();
+  });
+
+  test("justified: drag pans, a still press opens the photo, jump focuses it, Enter opens it", async ({ page }) => {
+    await open(page);
+    await demoRole(page, "button", JUSTIFIED_TOGGLE, VARIANT).click();
+    const justified = wall(page);
+    await expect(justified).toHaveAttribute("data-virtual-grid", "justified");
+    await expect(tiles(justified).first()).toBeVisible();
+    await justified.evaluate((el) => {
+      el.scrollLeft = 2000;
+      el.scrollTop = 2000;
+    });
+    const b = (await justified.boundingBox())!;
+    const x = b.x + b.width / 2;
+    const y = b.y + 200;
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x - 150, y - 90, { steps: 8 });
+    await page.mouse.up();
+    const after = await scrollOf(justified);
+    expect(after.left).toBeGreaterThan(2100);
+    expect(after.top).toBeGreaterThan(2060);
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await page.mouse.click(x, y);
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+
+    await demoRole(page, "button", JUMP, VARIANT).click();
+    await expect
+      .poll(() => page.evaluate(() => document.activeElement?.closest('[data-virtual-grid="justified"]') != null && document.activeElement?.hasAttribute("data-grid-index")))
+      .toBe(true);
+    const focused = await page.evaluate(() => document.activeElement!.getAttribute("data-grid-index")!);
+    await expect(justified.locator(`[data-grid-index="${focused}"]`)).toBeInViewport();
+    expect(await tiles(justified).count()).toBeLessThan(MAX_TILES);
+    await page.keyboard.press("Enter");
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator("[data-photo-preview]")).toBeVisible();
+    await page.keyboard.press("Escape");
   });
 });

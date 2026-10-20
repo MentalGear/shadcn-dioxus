@@ -99,5 +99,6 @@
   box-shadow: var(--dx-ring-focus-inset);
   content: "";
   inset: 0;
+  outline: none;
   pointer-events: none;
 }

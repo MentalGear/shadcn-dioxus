@@ -18,7 +18,7 @@ import { demoFrame } from "./demo-frame";
 import { gotoHydrated } from "./hydration";
 
 const GOTO_OPTS = { timeout: 20 * 60 * 1000 };
-const GRID_URL = `${BASE_URL}/component/?name=virtual_grid&`;
+const GRID_URL = `${BASE_URL}/component/virtual_grid/`;
 const LIST_URL = `${BASE_URL}/component/block/?name=virtual_list&variant=windowed`;
 
 type Edge = "crisp" | "faded";
