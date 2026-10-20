@@ -686,8 +686,11 @@ if (!document.getElementById('dx-top-layer-ink-styles')) {
     const style = document.createElement('style');
     style.id = 'dx-top-layer-ink-styles';
     style.textContent = `
+      /* The theme's popup-root rule (dx-components-theme.css, "Popup root") gives a \`dx-\` popup the
+         ROOT ink instead of its host's; this later, equally weak rule would out-rank it with
+         \`inherit\`, so it reads the same token and only an app without the theme inherits. */
       :where([popover]), :where(dialog) {
-        color: inherit;
+        color: var(--dx-foreground, inherit);
       }
 
       /* The same defect, one level deeper. Neutralising the wrapper's own
