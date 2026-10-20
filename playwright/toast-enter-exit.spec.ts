@@ -2,6 +2,7 @@ import { test, expect } from "./fixtures";
 import { type Locator, type Page } from "@playwright/test";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
+import { measureAtRest } from "./animations";
 
 /**
  * Toast exit animation, the visible cap and the two entry cases (backlog row 290, Sonner parity).
@@ -77,7 +78,7 @@ test.describe("toast: enter, exit and visible cap (row 290)", () => {
     await addStack(page, 1);
     const [y] = await inserted(page);
     expect(y, "starts below its resting place").toBeGreaterThan(8);
-    await expect.poll(async () => toasts(page, R).first().evaluate((el) => getComputedStyle(el).translate)).toMatch(/^(none|0px 0px)$/);
+    await expect.poll(async () => toasts(page, R).first().evaluate((el) => getComputedStyle(el).translate)).toMatch(/^(none|0px|0px 0px)$/);
   });
 
   test("a brand-new toast enters from the toaster's edge: from above at the top", async ({ page }) => {
@@ -123,8 +124,8 @@ test.describe("toast: enter, exit and visible cap (row 290)", () => {
     for (let i = 0; i < 3; i++) await expect(t.nth(i)).toHaveAttribute("data-visible", "true");
     await expect(t.nth(3)).toHaveAttribute("data-visible", "false");
     await expect(t.nth(3)).toHaveCSS("opacity", "0");
-    const box = await t.first().boundingBox();
-    await page.mouse.move(box!.x + 20, box!.y + box!.height / 2);
+    const box = await measureAtRest(t.first());
+    await page.mouse.move(box.x + 20, box.y + box.height / 2);
     await expect(region(page, R)).toHaveCSS("display", "block");
     await page.waitForTimeout(500);
     await expect(t.nth(3), "still hidden while the pile is expanded").toHaveCSS("opacity", "0");
@@ -135,7 +136,8 @@ test.describe("toast: enter, exit and visible cap (row 290)", () => {
     await open(page);
     await page.mouse.move(2, 2);
     await addStack(page, 4);
-    const queued = toasts(page, R).nth(3);
+    const queued = toasts(page, R).filter({ hasText: "Notification 1" });
+    await expect(queued).toHaveAttribute("data-visible", "false");
     // A dispatched click: no hover or focus, so the pile stays collapsed.
     await toasts(page, R).first().getByRole("button", { name: "close" }).dispatchEvent("click");
     await expect(toasts(page, R)).toHaveCount(3);
@@ -147,12 +149,12 @@ test.describe("toast: enter, exit and visible cap (row 290)", () => {
     await page.mouse.move(2, 2);
     await addStack(page, 4);
     const t = toasts(page, R);
-    const queued = t.nth(3);
+    const queued = t.filter({ hasText: "Notification 1" });
     await expect(queued).toHaveAttribute("data-visible", "false");
 
     // Hold the pointer over the pile (expanded).
-    const box = await t.first().boundingBox();
-    await page.mouse.move(box!.x + 20, box!.y + box!.height / 2);
+    const box = await measureAtRest(t.first());
+    await page.mouse.move(box.x + 20, box.y + box.height / 2);
     await expect.poll(() => region(page, R).evaluate((el) => el.matches(":hover"))).toBe(true);
     await page.waitForTimeout(400); // the restack settles; the queued toast rests shifted away from the edge
 
