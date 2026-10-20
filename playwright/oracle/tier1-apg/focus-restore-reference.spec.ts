@@ -48,6 +48,7 @@ const comboboxSelectOnlyUrl = pathToFileURL(
 
 test.describe("APG Menu Button pattern — Actions Menu Button Example", () => {
   test("CALIBRATION: W3C's own example returns focus to the menu button on Escape", async ({ page }) => {
+    // goto-ok: vendored W3C APG reference page, not the app: it never sets html[data-hydrated]
     await page.goto(menuButtonActionsUrl);
 
     const button = page.locator("#menubutton1");
@@ -82,6 +83,7 @@ test.describe("APG Menu Button pattern — Actions Menu Button Example", () => {
 
 test.describe("APG Combobox pattern — Select-Only Combobox Example", () => {
   test("CALIBRATION: W3C's own example keeps/returns focus on the combobox on Escape", async ({ page }) => {
+    // goto-ok: vendored W3C APG reference page, not the app: it never sets html[data-hydrated]
     await page.goto(comboboxSelectOnlyUrl);
 
     const combo = page.locator("#combo1");

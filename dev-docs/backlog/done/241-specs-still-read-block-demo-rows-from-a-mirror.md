@@ -1,10 +1,10 @@
 ---
 id: 241
 title: "Specs still read block-demo rows from a mirror in components/mod.rs"
-status: "BACKLOG (lane registry 2026-10-18)"
+status: "DONE 2026-10-19 (lane specs2): all-routes, demo-forms-no-navigation and popup-style-isolation read…"
 size: "S"
 area: tests
-updated: 2026-10-18
+updated: 2026-10-19
 ---
 
 # Row 241: Specs still read block-demo rows from a mirror in components/mod.rs
@@ -15,7 +15,7 @@ Specs still read block-demo rows from a mirror in `components/mod.rs`
 
 ## Status / trigger
 
-**BACKLOG (lane registry 2026-10-18)**
+**DONE 2026-10-19 (lane specs2): all-routes, demo-forms-no-navigation and popup-style-isolation read the block demos from variants/ via playwright/catalog.ts readBlockDemos(); the cfg'd-out mirror in components/mod.rs and check_block_mirror in build.rs are deleted**
 
 ## Size
 

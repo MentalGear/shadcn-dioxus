@@ -4,7 +4,7 @@ import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
-const URL = `${BASE_URL}/component/?name=progress&`;
+const URL = `${BASE_URL}/component/progress/`;
 const LOAD_TIMEOUT = 20 * 60 * 1000;
 
 // The `label` variant's bar (the `controlled` variant also has an `aria-label="Upload progress"` bar, without parts).

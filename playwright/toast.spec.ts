@@ -4,9 +4,10 @@ import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from './axe';
 import { BASE_URL } from './base-url';
 import { fixedViewportBox } from './viewport-box';
 import { measureAtRest } from "./animations";
+import { gotoHydrated } from "./hydration";
 
 test('test', async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=toast&`);
+  await gotoHydrated(page, `${BASE_URL}/component/toast/`);
   // Create a toast
   await page.getByRole('button', { name: 'Info (60s)' }).click();
   // Create another toast
@@ -95,13 +96,13 @@ test.describe('Toast bounding box (docs/backlog.md row 44)', () => {
   }
 
   test('themed demo: the toast renders a real, on-screen box', async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=toast&`);
+    await gotoHydrated(page, `${BASE_URL}/component/toast/`);
     await page.getByRole('button', { name: 'Info (60s)' }).click();
     await assertToastOnScreen(page);
   });
 
   test('top_layer fixture: "Add toast" renders a real, on-screen box', async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=top_layer&`);
+    await gotoHydrated(page, `${BASE_URL}/component/top_layer/`);
     // The trigger is a normal in-flow element well down this fixture page
     // (see `preview/src/components/top_layer/component.rs`'s own comment
     // on this section) -- scroll it into view before clicking, mirroring
@@ -123,7 +124,7 @@ test.describe('Toast bounding box (docs/backlog.md row 44)', () => {
   // sandbox's own Chromium before the fix, not just on the unavailable-here
   // WebKit lane.
   test('top_layer fixture: --toast-count survives the fixture\'s own style override', async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=top_layer&`);
+    await gotoHydrated(page, `${BASE_URL}/component/top_layer/`);
     await page.locator('#toast-stack-trigger').scrollIntoViewIfNeeded();
     await page.locator('#toast-stack-trigger').click();
     const toastCount = await page.evaluate(() => {
@@ -136,12 +137,12 @@ test.describe('Toast bounding box (docs/backlog.md row 44)', () => {
 
 test.describe('Axe automated scan', () => {
   test('loaded (no toast) has no automatically detectable a11y issues', async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=toast&`);
+    await gotoHydrated(page, `${BASE_URL}/component/toast/`);
     await expectNoAxeViolations(page, 'toast: loaded', { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 
   test('a toast shown has no automatically detectable a11y issues', async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=toast&`);
+    await gotoHydrated(page, `${BASE_URL}/component/toast/`);
     await page.getByRole('button', { name: 'Info (60s)' }).click();
     await expect(page.getByRole('button', { name: 'close', exact: true }).first()).toBeVisible();
     await expectNoAxeViolations(page, 'toast: toast shown', { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });

@@ -1,10 +1,10 @@
 ---
 id: 68
 title: "Cross-worktree cargo build-directory hazard"
-status: "Found 2026-09-18, four independent occurrences"
+status: "CLOSED 2026-10-19 (duplicate of row 216)"
 size: "—"
 area: process
-updated: 2026-09-18
+updated: 2026-10-19
 ---
 
 # Row 68: Cross-worktree cargo build-directory hazard
@@ -15,7 +15,7 @@ Cross-worktree cargo build-directory hazard
 
 ## Status / trigger
 
-Found 2026-09-18, four independent occurrences
+**CLOSED 2026-10-19 (duplicate of row 216)**
 
 ## Size
 

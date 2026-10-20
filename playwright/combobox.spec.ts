@@ -3,10 +3,11 @@ import { type Locator, type Page } from "@playwright/test";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
 import { measureAtRest } from "./animations";
+import { gotoHydrated } from "./hydration";
 
-const URL = `${BASE_URL}/component/?name=combobox&`;
+const URL = `${BASE_URL}/component/combobox/`;
 const variantUrl = (variant: string) =>
-    `${BASE_URL}/component/?name=combobox&variant=${variant}&`;
+    `${BASE_URL}/component/combobox/`;
 
 const input = (page: Page) =>
     page.getByRole("combobox", { name: "Select framework" });
@@ -18,7 +19,7 @@ const list = (page: Page) =>
     page.locator("[role='listbox'][data-state='open']");
 
 test("opens from the focused input with the keyboard", async ({ page }) => {
-    await page.goto(URL, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState('networkidle');
 
     const trigger = input(page);
@@ -36,7 +37,7 @@ test("opens from the focused input with the keyboard", async ({ page }) => {
 });
 
 test("filters and selects with the keyboard", async ({ page }) => {
-    await page.goto(URL, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState('networkidle');
 
     const trigger = input(page);
@@ -63,7 +64,7 @@ test("filters and selects with the keyboard", async ({ page }) => {
 });
 
 test("shows an empty state when no options match", async ({ page }) => {
-    await page.goto(URL, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState('networkidle');
 
     const trigger = input(page);
@@ -75,7 +76,7 @@ test("shows an empty state when no options match", async ({ page }) => {
 });
 
 test("arrow keys stay on visible filtered options", async ({ page }) => {
-    await page.goto(URL, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState('networkidle');
 
     const trigger = input(page);
@@ -101,7 +102,7 @@ test("arrow keys stay on visible filtered options", async ({ page }) => {
 });
 
 test("keeps filtered options in source order", async ({ page }) => {
-    await page.goto(URL, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState('networkidle');
 
     const trigger = input(page);
@@ -133,7 +134,7 @@ test("keeps filtered options in source order", async ({ page }) => {
 });
 
 test("keeps filtered options during keyboard close animation", async ({ page }) => {
-    await page.goto(URL, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState('networkidle');
 
     const trigger = input(page);
@@ -144,17 +145,36 @@ test("keeps filtered options during keyboard close animation", async ({ page }) 
     await page.keyboard.press("ArrowDown");
     await expect(svelte).toHaveAttribute("data-highlighted", "true");
 
-    await page.keyboard.press("Enter");
+    // The close animation is short and a poll can miss it entirely, so record it in the page: an observer notes
+    // (state, option names) of the listbox on every DOM change from the moment Enter is pressed.
+    await page.evaluate(() => {
+      const seen: { state: string; options: string[] }[] = [];
+      (window as unknown as { __closeSeen: typeof seen }).__closeSeen = seen;
+      const snap = () => {
+        const lb = document.querySelector("[role='listbox']");
+        const state = lb ? (lb.getAttribute("data-state") ?? "none") : "gone";
+        const options = lb ? [...lb.querySelectorAll("[role='option']")].map((o) => (o.textContent ?? "").trim()) : [];
+        const last = seen[seen.length - 1];
+        if (!last || last.state !== state || last.options.join("|") !== options.join("|")) seen.push({ state, options });
+      };
+      new MutationObserver(snap).observe(document.body, { subtree: true, childList: true, attributes: true, characterData: true });
+      snap();
+    });
 
-    const closingContent = page.locator("[role='listbox'][data-state='closed']");
-    await expect(closingContent).toBeVisible();
-    await expect(closingContent.getByRole("option", { name: "SvelteKit" })).toBeVisible();
-    await expect(closingContent.getByRole("option")).toHaveCount(1);
-    await expect(content(page)).toHaveCount(0);
+    await page.keyboard.press("Enter");
+    await expect(page.locator("[role='listbox']")).toHaveCount(0);
+
+    const seen = await page.evaluate(() => (window as unknown as { __closeSeen: { state: string; options: string[] }[] }).__closeSeen);
+    const closed = seen.filter((e) => e.state === "closed");
+    expect(closed.length, `a closed state was observed: ${JSON.stringify(seen)}`).toBeGreaterThan(0);
+    for (const e of closed) {
+      expect(e.options, `the closing list keeps only the filtered option: ${JSON.stringify(seen)}`).toEqual([expect.stringContaining("SvelteKit")]);
+    }
+    expect(seen[seen.length - 1].state, "the list is gone at the end").toBe("gone");
 });
 
 test("clicking an option commits and closes", async ({ page }) => {
-    await page.goto(URL, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState('networkidle');
 
     const trigger = input(page);
@@ -166,7 +186,7 @@ test("clicking an option commits and closes", async ({ page }) => {
 });
 
 test("tabbing away closes the list", async ({ page }) => {
-    await page.goto(URL, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState('networkidle');
 
     const trigger = input(page);
@@ -178,7 +198,7 @@ test("tabbing away closes the list", async ({ page }) => {
 });
 
 test("disabled options are exposed but skipped by keyboard selection", async ({ page }) => {
-    await page.goto(variantUrl("disabled"), { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, variantUrl("disabled"), { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState('networkidle');
 
     await expect(page.getByRole("combobox", { name: "Disabled combobox" })).toBeDisabled();
@@ -207,7 +227,7 @@ test("disabled options are exposed but skipped by keyboard selection", async ({ 
 });
 
 test("controlled value and controlled open stay in sync", async ({ page }) => {
-    await page.goto(variantUrl("controlled"), { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, variantUrl("controlled"), { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState('networkidle');
 
     const trigger = page.getByRole("combobox", { name: "Controlled framework" });
@@ -235,7 +255,7 @@ test("controlled value and controlled open stay in sync", async ({ page }) => {
 });
 
 test("dynamic option removal updates filtering and keyboard selection", async ({ page }) => {
-    await page.goto(variantUrl("dynamic"), { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, variantUrl("dynamic"), { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState('networkidle');
 
     const trigger = page.getByRole("combobox", { name: "Dynamic framework" });
@@ -277,7 +297,7 @@ test("touch selection commits and closes", async ({ browser, browserName }) => {
     const context = await browser.newContext(iphone);
     try {
         const page = await context.newPage();
-        await page.goto(URL, { timeout: 20 * 60 * 1000 });
+        await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
         await page.waitForLoadState('networkidle');
 
         const trigger = input(page);
@@ -293,13 +313,13 @@ test("touch selection commits and closes", async ({ browser, browserName }) => {
 
 test.describe("Axe automated scan", () => {
     test("loaded (listbox closed) has no automatically detectable a11y issues", async ({ page }) => {
-        await page.goto(URL, { timeout: 20 * 60 * 1000 });
+        await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
         await page.waitForLoadState('networkidle');
         await expectNoAxeViolations(page, "combobox: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
     });
 
     test("listbox open has no automatically detectable a11y issues", async ({ page }) => {
-        await page.goto(URL, { timeout: 20 * 60 * 1000 });
+        await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
         await page.waitForLoadState('networkidle');
         const trigger = input(page);
         await trigger.focus();
@@ -345,7 +365,7 @@ async function selectSvelte(page: Page) {
 }
 
 test("clicking an input that holds a selection keeps its text and puts the caret where clicked", async ({ page }) => {
-    await page.goto(URL, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState('networkidle');
     const trigger = await selectSvelte(page);
 
@@ -390,7 +410,7 @@ test("clicking an input that holds a selection keeps its text and puts the caret
 });
 
 test("focusing an input that holds a selection and pressing ArrowDown keeps its text", async ({ page }) => {
-    await page.goto(URL, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState('networkidle');
     const trigger = await selectSvelte(page);
 
@@ -402,7 +422,7 @@ test("focusing an input that holds a selection and pressing ArrowDown keeps its 
 });
 
 test("filtering starts on the first edit, not on open", async ({ page }) => {
-    await page.goto(URL, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState('networkidle');
     const trigger = await selectSvelte(page);
 
@@ -425,7 +445,7 @@ test("filtering starts on the first edit, not on open", async ({ page }) => {
 });
 
 test("typing into a closed input that holds a selection edits the text in place", async ({ page }) => {
-    await page.goto(URL, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState('networkidle');
     const trigger = await selectSvelte(page);
 
@@ -440,7 +460,7 @@ test("typing into a closed input that holds a selection edits the text in place"
 });
 
 test("Escape restores the selected label after editing", async ({ page }) => {
-    await page.goto(URL, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState('networkidle');
     const trigger = await selectSvelte(page);
 
@@ -456,7 +476,7 @@ test("Escape restores the selected label after editing", async ({ page }) => {
 });
 
 test("blurring without a new pick restores the selected label", async ({ page }) => {
-    await page.goto(URL, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState('networkidle');
     const trigger = await selectSvelte(page);
 
@@ -476,7 +496,7 @@ test("blurring without a new pick restores the selected label", async ({ page })
 });
 
 test("reopening scrolls the selected option into view", async ({ page }) => {
-    await page.goto(URL, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState('networkidle');
     // Force the list to overflow: three rows tall, so the last option starts out of sight.
     await page.addStyleTag({ content: ".dx-combobox-list { max-height: 6.5rem !important; }" });
@@ -511,7 +531,7 @@ test("reopening scrolls the selected option into view", async ({ page }) => {
 });
 
 test("an externally opened (controlled) combobox keeps the selected label", async ({ page }) => {
-    await page.goto(variantUrl("controlled"), { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, variantUrl("controlled"), { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState('networkidle');
 
     const trigger = page.getByRole("combobox", { name: "Controlled framework" });
@@ -551,7 +571,7 @@ const boxShadowOf = async (locator: Locator) => {
 };
 
 test("the input shows the same visible focus ring as Input on keyboard focus", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=input&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/input/`, { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState('networkidle');
     const plain = page.getByRole("textbox", { name: "Enter your name" });
     await plain.focus();
@@ -559,7 +579,7 @@ test("the input shows the same visible focus ring as Input on keyboard focus", a
     const reference = await boxShadowOf(plain);
     expect(reference).not.toBe("none");
 
-    await page.goto(URL, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState('networkidle');
     const trigger = input(page);
     const resting = await trigger.evaluate((el) => getComputedStyle(el).boxShadow);

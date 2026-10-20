@@ -90,12 +90,12 @@ const NAV_TIMEOUT = 20 * 60 * 1000; // first run compiles the app
 // navigating, on the SSG lane -- `gotoHydrated` so those interactions
 // can't land before hydration attaches listeners.
 const gotoTopLayer = (page: Page) =>
-  gotoHydrated(page, `${BASE_URL}/component/?name=top_layer&`, {
+  gotoHydrated(page, `${BASE_URL}/component/top_layer/`, {
     timeout: NAV_TIMEOUT,
   });
 
 const gotoDialog = (page: Page) =>
-  gotoHydrated(page, `${BASE_URL}/component/?name=dialog&`, {
+  gotoHydrated(page, `${BASE_URL}/component/dialog/`, {
     timeout: NAV_TIMEOUT,
   });
 
@@ -670,7 +670,7 @@ test.describe("Rule 8 — the opening-gesture false positive: a modal Popover's 
       // dev-docs/backlog.md row 109: this test taps the trigger right after
       // navigating, on the SSG lane -- `gotoHydrated` so that tap can't
       // land before hydration attaches listeners.
-      await gotoHydrated(page, `${BASE_URL}/component/?name=popover&variant=modal&`, { timeout: NAV_TIMEOUT });
+      await gotoHydrated(page, `${BASE_URL}/component/popover/`, { timeout: NAV_TIMEOUT });
       const trigger = demoRole(page, "button", 0, "modal");
       await trigger.scrollIntoViewIfNeeded();
       await trigger.tap();
@@ -746,7 +746,7 @@ test.describe("Rule 8 — the opening-gesture false positive: a modal Popover's 
     // land before hydration attaches listeners. The `addInitScript` above
     // still instruments this same navigation: `gotoHydrated` is just
     // `page.goto` plus a wait, so init-script ordering is unchanged.
-    await gotoHydrated(page, `${BASE_URL}/component/?name=popover&variant=modal&`, { timeout: NAV_TIMEOUT });
+    await gotoHydrated(page, `${BASE_URL}/component/popover/`, { timeout: NAV_TIMEOUT });
     const trigger = demoRole(page, "button", 0, "modal");
     await trigger.scrollIntoViewIfNeeded();
     await trigger.click();

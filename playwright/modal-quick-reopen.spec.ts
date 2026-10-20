@@ -24,13 +24,13 @@ const GOTO = { timeout: 20 * 60 * 1000 };
 const TARGETS = [
   ...CONSUMERS.map((c) => ({
     name: c.component,
-    url: `${BASE_URL}/component/?name=${c.component}&`,
+    url: `${BASE_URL}/component/${c.component}/`,
     trigger: c.variants[0].trigger,
     panel: `${c.dialogSelector}[open]`,
   })),
   {
     name: "popover (modal)",
-    url: `${BASE_URL}/component/?name=popover&variant=modal&`,
+    url: `${BASE_URL}/component/popover/`,
     trigger: "Open modal popover",
     panel: "dialog[open]",
   },

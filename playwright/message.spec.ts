@@ -2,8 +2,9 @@ import { test, expect } from "./fixtures";
 import type { Page } from "@playwright/test";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
+import { gotoHydrated } from "./hydration";
 
-const URL = `${BASE_URL}/component/?name=message&`;
+const URL = `${BASE_URL}/component/message/`;
 const GOTO = { timeout: 20 * 60 * 1000 };
 
 // Scope to a demo frame. The component page also renders each demo's own source
@@ -20,7 +21,7 @@ const styled = (page: Page) =>
     .toBe("flex");
 
 async function open(page: Page) {
-  await page.goto(URL, GOTO);
+  await gotoHydrated(page, URL, GOTO);
   await styled(page);
 }
 

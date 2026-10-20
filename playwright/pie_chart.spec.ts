@@ -36,7 +36,7 @@ const VARIANTS = [
   "interactive",
 ] as const;
 
-const URL = `${BASE_URL}/component/?name=pie_chart&`;
+const URL = `${BASE_URL}/component/pie_chart/`;
 
 function frame(page: Page, variant: (typeof VARIANTS)[number]): Locator {
   const suffix = variant === "main" ? "" : `-${variant}`;

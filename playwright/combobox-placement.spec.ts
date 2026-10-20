@@ -29,7 +29,7 @@ import { gotoHydrated } from "./hydration";
 import { fixedViewportBox } from "./viewport-box";
 import { readAtRest } from "./animations";
 
-const URL = `${BASE_URL}/component/?name=combobox&`;
+const URL = `${BASE_URL}/component/combobox/`;
 
 type Rect = { top: number; left: number; right: number; bottom: number; width: number; height: number };
 

@@ -8,7 +8,7 @@ import { gotoHydrated } from "./hydration";
 import { measureAtRest } from "./animations";
 
 test("test", async ({ page }) => {
-  await gotoHydrated(page, `${BASE_URL}/component/?name=tooltip&`);
+  await gotoHydrated(page, `${BASE_URL}/component/tooltip/`);
   let tooltip = page.getByRole("tooltip");
   // tabbing to the trigger element should show the tooltip
   await page.locator("#component-preview-frame").focus();
@@ -38,7 +38,7 @@ test("test", async ({ page }) => {
 // blurring synchronously inside `showPopover()`, i.e. strictly before its
 // `toggle` task can run.
 test("a focus-out in the same beat as the open stays closed (no stale toggle echo reopening it)", async ({ page }) => {
-  await gotoHydrated(page, `${BASE_URL}/component/?name=tooltip&`);
+  await gotoHydrated(page, `${BASE_URL}/component/tooltip/`);
   await page.evaluate(() => {
     const original = HTMLElement.prototype.showPopover;
     HTMLElement.prototype.showPopover = function (...args) {
@@ -54,12 +54,12 @@ test("a focus-out in the same beat as the open stays closed (no stale toggle ech
 
 test.describe("Axe automated scan", () => {
   test("loaded (tooltip closed) has no automatically detectable a11y issues", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/?name=tooltip&`);
+    await gotoHydrated(page, `${BASE_URL}/component/tooltip/`);
     await expectNoAxeViolations(page, "tooltip: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 
   test("tooltip open has no automatically detectable a11y issues", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/?name=tooltip&`);
+    await gotoHydrated(page, `${BASE_URL}/component/tooltip/`);
     await page.locator("#component-preview-frame").first().getByText("Rich content").hover();
     await expect(page.getByRole("tooltip")).toBeVisible();
     await expectNoAxeViolations(page, "tooltip: open", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
@@ -81,7 +81,7 @@ test.describe("Axe automated scan", () => {
 // through the animation that CSS defines (row 7).
 test.describe("Close-fade animation (docs/backlog.md rows 19, 7)", () => {
   test("content fades out (opacity -> 0, still popover-open) before unmounting", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/?name=tooltip&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/tooltip/`, { timeout: 20 * 60 * 1000 });
     const trigger = page.locator("#component-preview-frame").first().getByText("Rich content");
     await trigger.hover();
     const tooltip = page.getByRole("tooltip");
@@ -107,7 +107,7 @@ test.describe("Close-fade animation (docs/backlog.md rows 19, 7)", () => {
 // `delay` prop), "Rests (600)" and "Lingers (0 / 600)". Delays are measured in the page
 // (hover-delay-probe.ts) and only as a LOWER bound, so a slow debug build cannot turn them red.
 test.describe("delay / close_delay (backlog row 166)", () => {
-  const URL = `${BASE_URL}/component/?name=tooltip&variant=delays&`;
+  const URL = `${BASE_URL}/component/tooltip/`;
   const SLOP = 40; // timer clamping / clock granularity between two performance.now() stamps
   const button = (page: Page, name: string) => page.getByRole("button", { name, exact: true });
   const surface = (page: Page) => page.getByRole("tooltip");

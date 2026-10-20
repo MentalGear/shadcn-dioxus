@@ -1,10 +1,10 @@
 ---
 id: 109
 title: "SSG interaction tests race hydration — a click can land before wasm attaches Dioxus's delegated listeners; a…"
-status: "Found 2026-09-25 (round 8b) in the final integrated verification at b557dfa: an SSG run of…"
+status: "FIXED 2026-09-25/26 (2235815 the hydration signal, bb51a02 carousel specs on gotoHydrated, c0df941…"
 size: "S — one client-side effect, one shared…"
 area: build
-updated: 2026-09-25
+updated: 2026-10-20
 ---
 
 # Row 109: SSG interaction tests race hydration — a click can land before wasm attaches Dioxus's delegated listeners; a…
@@ -15,7 +15,7 @@ SSG interaction tests race hydration — a click can land before wasm attaches D
 
 ## Status / trigger
 
-Found 2026-09-25 (round 8b) in the final integrated verification at `b557dfa`: an SSG run of `carousel.spec.ts` + the tier-1 carousel oracle + `hydration-parity.spec.ts` came back 146 passed / 3 failed — the deliberately-red `selftest:unfixed:id` plus two carousel tests that passed on `dx serve` but failed against the SSG build
+**FIXED 2026-09-25/26** (2235815 the hydration signal, bb51a02 carousel specs on `gotoHydrated`, c0df941 every other SSG interaction spec migrated). Closed in the 2026-10-20 backlog sync.
 
 ## Size
 

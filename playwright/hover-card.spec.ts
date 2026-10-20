@@ -8,7 +8,7 @@ import { gotoHydrated } from "./hydration";
 import { measureAtRest } from "./animations";
 
 test("test", async ({ page }) => {
-  await gotoHydrated(page, `${BASE_URL}/component/?name=hover_card&`);
+  await gotoHydrated(page, `${BASE_URL}/component/hover_card/`);
   let tooltip = page.getByRole("tooltip");
   // tabbing to the trigger element should show the tooltip
   await page.locator("#component-preview-frame").focus();
@@ -38,7 +38,7 @@ test("test", async ({ page }) => {
 // blurring synchronously inside `showPopover()`, i.e. strictly before its
 // `toggle` task can run.
 test("a focus-out in the same beat as the open stays closed (no stale toggle echo reopening it)", async ({ page }) => {
-  await gotoHydrated(page, `${BASE_URL}/component/?name=hover_card&`);
+  await gotoHydrated(page, `${BASE_URL}/component/hover_card/`);
   await page.evaluate(() => {
     const original = HTMLElement.prototype.showPopover;
     HTMLElement.prototype.showPopover = function (...args) {
@@ -54,7 +54,7 @@ test("a focus-out in the same beat as the open stays closed (no stale toggle ech
 
 test.describe("Axe automated scan", () => {
   test("loaded (card closed) has no automatically detectable a11y issues", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/?name=hover_card&`);
+    await gotoHydrated(page, `${BASE_URL}/component/hover_card/`);
     // Wait for render before scanning -- see input.spec.ts's identical
     // comment for why (avoids a false pre-hydration "no main"/"no h1").
     await expect(page.getByRole("button", { name: "Dioxus" })).toBeVisible();
@@ -62,7 +62,7 @@ test.describe("Axe automated scan", () => {
   });
 
   test("card open (hover) has no automatically detectable a11y issues", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/?name=hover_card&`);
+    await gotoHydrated(page, `${BASE_URL}/component/hover_card/`);
     await page.getByRole("button", { name: "Dioxus" }).hover();
     await expect(page.getByRole("tooltip")).toBeVisible();
     await expectNoAxeViolations(page, "hover-card: open", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
@@ -84,7 +84,7 @@ test.describe("Axe automated scan", () => {
 // (row 7).
 test.describe("Close-fade animation (docs/backlog.md rows 19, 7)", () => {
   test("content fades out (opacity -> 0, still popover-open) before unmounting", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/?name=hover_card&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/hover_card/`, { timeout: 20 * 60 * 1000 });
     const trigger = page.getByRole("button", { name: "Dioxus" });
     await trigger.hover();
     const card = page.getByRole("tooltip");
@@ -109,7 +109,7 @@ test.describe("Close-fade animation (docs/backlog.md rows 19, 7)", () => {
 // "Default (600 / 300)", "Quick (10 / 100)" and "Instant (0 / 0)". Delays are measured in the page
 // (hover-delay-probe.ts) and only as a LOWER bound, so a slow debug build cannot turn them red.
 test.describe("delay / close_delay (backlog row 166)", () => {
-  const URL = `${BASE_URL}/component/?name=hover_card&variant=delays&`;
+  const URL = `${BASE_URL}/component/hover_card/`;
   const SLOP = 40; // timer clamping / clock granularity between two performance.now() stamps
   const trigger = (page: Page, name: string) => page.getByRole("button", { name, exact: true });
   const surface = (page: Page) => page.getByRole("tooltip");

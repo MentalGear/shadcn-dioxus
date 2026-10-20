@@ -1,10 +1,10 @@
 ---
 id: 186
 title: "shadcn utilities: scroll-fade and shimmer are built but not shipped as documented, public utilities"
-status: "PART LANDED 2026-10-15 (the scroll-fade fade prop, owner-approved 2026-10-14); BACKLOG: the /docs…"
+status: "LANDED 2026-10-19 (PR #107, round 4: e3ffda0c /docs Utilities section and utilities.spec.ts…"
 size: "M"
 area: docs
-updated: 2026-10-19
+updated: 2026-10-20
 ---
 
 # Row 186: shadcn utilities: scroll-fade and shimmer are built but not shipped as documented, public utilities
@@ -15,7 +15,7 @@ updated: 2026-10-19
 
 ## Status / trigger
 
-**PART LANDED 2026-10-15 (the scroll-fade `fade` prop, owner-approved 2026-10-14); BACKLOG: the `/docs` Utilities page, a `dx components add` path for `dx-effects.css`, the shimmer `use_motion` recipe** -- owner item 2026-10-11; **correction to the premise found while scoping it: both already exist** (`preview/assets/dx-effects.css`, row 85 of `component-backlog.md`, built 2026-10-04 with the chat kit, ported from `packages/shadcn/src/tailwind.css`), so this row is documentation, packaging and tests, not a build.
+**LANDED 2026-10-19** (PR #107, round 4: e3ffda0c `/docs` Utilities section and `utilities.spec.ts`; 3ba8d59f the scroll-fade `fade` prop 2026-10-14). Not built, no owner request: a components-free install of `dx-effects.css` (`shadcn-dioxus add scroll_area` or a hand copy is the documented path). Closed in the 2026-10-20 backlog sync.
 
 ## Size
 

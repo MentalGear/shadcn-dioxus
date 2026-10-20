@@ -161,7 +161,7 @@ import { measureAtRest } from "../../animations";
 
 const NAV_TIMEOUT = 20 * 60 * 1000; // first run compiles the app -- same budget every sibling oracle uses
 
-const url = (name: string, extra = "") => `${BASE_URL}/component/?name=${name}&${extra}`;
+const url = (name: string, extra = "") => `${BASE_URL}/component/${name}/${extra ? `?${extra}` : ""}`;
 
 // dev-docs/backlog.md row 109: every gesture this file measures is issued
 // right after navigating, on the SSG lane -- `gotoHydrated` so it can't

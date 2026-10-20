@@ -38,7 +38,7 @@ import { BASE_URL } from "./base-url";
 // before hydration attaches listeners.
 import { gotoHydrated } from "./hydration";
 
-const URL = `${BASE_URL}/component/?name=radar_chart&`;
+const URL = `${BASE_URL}/component/radar_chart/`;
 
 // Every registered variant, in `preview/src/components/mod.rs`'s own
 // `examples!` order ("main" first, matching every other component's demo

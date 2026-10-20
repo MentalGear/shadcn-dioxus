@@ -2,11 +2,12 @@ import { test, expect } from "./fixtures";
 import { type Page } from "@playwright/test";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
+import { gotoHydrated } from "./hydration";
 
 const SIDEBAR_RENDER_TIMEOUT = 30 * 1000;
 
 async function gotoSidebarBlock(page: Page) {
-  await page.goto(`${BASE_URL}/component/block/?name=sidebar&variant=main&`, {
+  await gotoHydrated(page, `${BASE_URL}/component/block/sidebar/main/`, {
     timeout: 20 * 60 * 1000,
     waitUntil: 'load'
   });
@@ -17,7 +18,7 @@ async function gotoSidebarBlock(page: Page) {
 }
 
 test("sidebar: preview page renders block", async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=sidebar&`, {
+  await gotoHydrated(page, `${BASE_URL}/component/sidebar/`, {
     timeout: 20 * 60 * 1000,
     waitUntil: 'load'
   });

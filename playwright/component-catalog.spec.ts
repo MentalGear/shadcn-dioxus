@@ -42,7 +42,7 @@ const SHADCN = ROWS.filter((r) => !r.extra).map((r) => r.name);
 const NOT_IN_GALLERY = new Set(["top_layer"]);
 
 const display = (name: string) => name.replace(/_/g, " ");
-const componentUrl = (name: string) => `${BASE_URL}/component/?name=${name}&`;
+const componentUrl = (name: string) => `${BASE_URL}/component/${name}/`;
 
 /**
  * The docs sidebar's entry for a component (`Route::component` -> `/component/<name>/`). The sidebar lists every
@@ -59,8 +59,8 @@ async function openHome(page: Page) {
 }
 
 async function openComponent(page: Page, name: string) {
-  await page.goto(componentUrl(name), { timeout: 20 * 60 * 1000 });
-  // The legacy `?name=` route redirects to the canonical path route once mounted.
+  await gotoHydrated(page, componentUrl(name), { timeout: 20 * 60 * 1000 });
+  // Navigate to the canonical path route (the legacy `?name=` form redirects client-side after hydration).
   await expect(page.locator(".dx-component-page-header h1")).toHaveText(display(name), { timeout: 60_000 });
 }
 

@@ -1,9 +1,10 @@
 import { test, expect } from "./fixtures";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
+import { gotoHydrated } from "./hydration";
 
 test("test", async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=avatar&`, { timeout: 20 * 60 * 1000 }); // Increase timeout to 20 minutes
+  await gotoHydrated(page, `${BASE_URL}/component/avatar/`, { timeout: 20 * 60 * 1000 }); // Increase timeout to 20 minutes
   // The demo avatars are bundled geometric SVGs (preview/assets/avatars), not
   // hot-linked photos: the src is the hashed local asset and it must actually load.
   const image = page.locator('img[alt="Avery Lin"]').first();
@@ -23,7 +24,7 @@ test("test", async ({ page }) => {
 test.describe("Axe automated scan", () => {
   // Avatar has no overlay/expand/select interaction -- one state to scan.
   test("loaded has no automatically detectable a11y issues", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=avatar&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/avatar/`, { timeout: 20 * 60 * 1000 });
     await expectNoAxeViolations(page, "avatar: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 });
@@ -31,7 +32,7 @@ test.describe("Axe automated scan", () => {
 // `AvatarBadge`, `AvatarGroup`, `AvatarGroupCount` (shadcn's small avatar parts, backlog row 155 group 9).
 test.describe("badge and group", () => {
   test("the badge sits on the end-bottom corner, outside the circle, and scales with the avatar", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=avatar&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/avatar/`, { timeout: 20 * 60 * 1000 });
     const dot = page.getByLabel("Avery Lin, online");
     await expect(dot).toBeVisible();
     // The root does not clip: a clip would cut the badge, which sits on the corner of the square.
@@ -61,7 +62,7 @@ test.describe("badge and group", () => {
   });
 
   test("the group overlaps its avatars by 8px, rings them, and the count tile matches their size", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=avatar&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/avatar/`, { timeout: 20 * 60 * 1000 });
     const group = page.getByLabel("Team with a count");
     await expect(group).toBeVisible();
     const avatars = group.locator(".dx-avatar");
@@ -83,7 +84,7 @@ test.describe("badge and group", () => {
   });
 
   test("the picture and the fallback keep the circle (children round themselves, the root does not clip)", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=avatar&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/avatar/`, { timeout: 20 * 60 * 1000 });
     const image = page.getByLabel("Avery Lin, online").locator(".dx-avatar-image");
     const radius = await image.evaluate((el) => getComputedStyle(el).borderTopLeftRadius);
     expect(radius).toBe("50%");

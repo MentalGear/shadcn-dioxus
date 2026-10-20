@@ -4,7 +4,7 @@ title: "shadcn parity wave (group 1, the invalid ring, LANDED 2026-10-13 with ro
 status: "LANDED: group 1 2026-10-13 (with row 145's state recipes), group 7's Sheet side 2026-10-14 (rows…"
 size: "M-L in total (23 of the 27 are S; four…"
 area: theme
-updated: 2026-10-14
+updated: 2026-10-20
 ---
 
 # Row 155: shadcn parity wave (group 1, the invalid ring, LANDED 2026-10-13 with row 145's state recipes): the 27 "Add…
@@ -15,7 +15,7 @@ shadcn parity wave (group 1, the invalid ring, LANDED 2026-10-13 with row 145's 
 
 ## Status / trigger
 
-**LANDED: group 1 2026-10-13 (with row 145's state recipes), group 7's Sheet `side` 2026-10-14 (rows 207/208), groups 2-9 2026-10-14/15 (batch 2: merged on the session branch, gates ALL GREEN on each pushed head); open follow-ups at the end of the Notes** -- recorded 2026-10-05 from the published comparison (claude.ai artifact "shadcn Config Gaps": 68 shadcn-catalog components read against ours plus the cross-cutting rows, 131 gaps = 27 Add now / 53 Add later / 51 Skip; the 27 are copied below, the artifact keeps the rest); owner decisions A and B APPROVED 2026-10-10 (follow shadcn).
+**LANDED: group 1 2026-10-13 (with row 145's state recipes), group 7's Sheet `side` 2026-10-14 (rows 207/208), groups 2-9 2026-10-14/15 (batch 2: merged on the session branch, gates ALL GREEN on each pushed head); open follow-ups at the end of the Notes** -- recorded 2026-10-05 from the published comparison (claude.ai artifact "shadcn Config Gaps": 68 shadcn-catalog components read against ours plus the cross-cutting rows, 131 gaps = 27 Add now / 53 Add later / 51 Skip; the 27 are copied below, the artifact keeps the rest); owner decisions A and B APPROVED 2026-10-10 (follow shadcn). **2026-10-20 sync: follow-ups g2 (menu-item hoist, 6b61cbda) and g8 (picker `caption_layout`, short month names, ISO weeks, cda20026) LANDED 2026-10-19 in PR #112; still open: `on_format_month_short` pass-through on the pickers, g3 (row 220).**
 
 ## Size
 

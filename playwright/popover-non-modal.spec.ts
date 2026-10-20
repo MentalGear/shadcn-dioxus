@@ -19,8 +19,8 @@ import { gotoHydrated } from "./hydration";
 import { measureAtRest } from "./animations";
 
 const NAV_TIMEOUT = 20 * 60 * 1000; // first run compiles the app
-const DEFAULT_URL = `${BASE_URL}/component/?name=popover&`;
-const MODAL_URL = `${BASE_URL}/component/?name=popover&variant=modal&`;
+const DEFAULT_URL = `${BASE_URL}/component/popover/`;
+const MODAL_URL = `${BASE_URL}/component/popover/`;
 
 const trigger = (page: Page) => page.getByRole("button", { name: "Show Popover", exact: true });
 const dialog = (page: Page) => page.getByRole("dialog");

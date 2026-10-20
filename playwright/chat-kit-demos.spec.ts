@@ -8,7 +8,7 @@ const GOTO = { timeout: 20 * 60 * 1000 };
 const variant = (page: Page, name: string) => page.locator(`#component-preview-frame-${name}`).first();
 
 test("message code_block_chat: framed block with filename and copy button inside a reply", async ({ page }) => {
-  await gotoHydrated(page, `${BASE_URL}/component/?name=message&`, GOTO);
+  await gotoHydrated(page, `${BASE_URL}/component/message/`, GOTO);
   const demo = variant(page, "code_block_chat");
   await expect(demo.getByText("app/api/chat/route.ts")).toBeVisible({ timeout: 60_000 });
   await expect(demo.getByRole("button", { name: "Copy" })).toBeVisible();
@@ -16,7 +16,7 @@ test("message code_block_chat: framed block with filename and copy button inside
 });
 
 test("message message_pattern: pressed-state feedback toggles and copy says Copied", async ({ page }) => {
-  await gotoHydrated(page, `${BASE_URL}/component/?name=message&`, GOTO);
+  await gotoHydrated(page, `${BASE_URL}/component/message/`, GOTO);
   const demo = variant(page, "message_pattern");
   const good = demo.getByRole("button", { name: "Good response" });
   await expect(good).toHaveAttribute("aria-pressed", "false", { timeout: 60_000 });
@@ -30,7 +30,7 @@ test("message message_pattern: pressed-state feedback toggles and copy says Copi
 });
 
 test("scroller agent_chat: replay streams trace, answer; restore drops the answer", async ({ page }) => {
-  await gotoHydrated(page, `${BASE_URL}/component/?name=message_scroller&`, GOTO);
+  await gotoHydrated(page, `${BASE_URL}/component/message_scroller/`, GOTO);
   const demo = variant(page, "agent_chat");
   await expect(demo.locator('[data-slot="code-block"]')).toHaveCount(1, { timeout: 60_000 });
   const restore = demo.getByRole("button", { name: /Restore checkpoint: Before the answer/ });
@@ -50,7 +50,7 @@ for (const mode of ["light", "dark"] as const) {
       ["message", "message_pattern"],
       ["message_scroller", "agent_chat"],
     ]) {
-      await gotoHydrated(page, `${BASE_URL}/component/?name=${name}&`, GOTO);
+      await gotoHydrated(page, `${BASE_URL}/component/${name}/`, GOTO);
       await expect(variant(page, v)).toBeVisible({ timeout: 60_000 });
       await page.evaluate((m) => (window as unknown as { __dxApplyMode: (m: string) => void }).__dxApplyMode(m), mode);
       await expectNoAxeViolations(page, `${name} ${v} ${mode}`, { include: `#component-preview-frame-${v}` });

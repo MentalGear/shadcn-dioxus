@@ -18,7 +18,7 @@ test("appending 1,000 rows to a 2,000-row transcript while following costs the m
     buildProfile() !== "release",
     "per-frame main-thread time is only measured on a release build (PW_BUILD_PROFILE=release)",
   );
-  await gotoHydrated(page, `${BASE_URL}/component/?name=message_scroller&`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/message_scroller/`, { timeout: 20 * 60 * 1000 });
   const frame = page.locator("#component-preview-frame-long").first();
   await frame.scrollIntoViewIfNeeded();
   const vp = frame.locator("[data-message-scroller-viewport]");

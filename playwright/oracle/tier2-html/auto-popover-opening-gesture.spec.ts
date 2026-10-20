@@ -69,13 +69,13 @@ const CASES: {
   {
     // pointerdown-open: the family the 2026-10-03 audit found exposed.
     name: "NavbarTrigger (opens on pointerdown)",
-    url: `${BASE_URL}/component/?name=navbar&`,
+    url: `${BASE_URL}/component/navbar/`,
     trigger: (page) => demoRole(page, "menuitem", 0),
   },
   {
     // click-open control: must stay green regardless of hold length.
     name: "DropdownMenuTrigger (opens on click)",
-    url: `${BASE_URL}/component/?name=dropdown_menu&`,
+    url: `${BASE_URL}/component/dropdown_menu/`,
     trigger: (page) => demoRole(page, "button"),
   },
 ];

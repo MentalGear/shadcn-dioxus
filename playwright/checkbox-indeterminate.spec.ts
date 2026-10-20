@@ -10,7 +10,7 @@ import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 import { demoRole } from "./demo-frame";
 
-const URL_ = `${BASE_URL}/component/?name=checkbox&`;
+const URL_ = `${BASE_URL}/component/checkbox/`;
 const GOTO = { timeout: 20 * 60 * 1000 };
 
 const glyphs = (box: ReturnType<typeof demoRole>) =>

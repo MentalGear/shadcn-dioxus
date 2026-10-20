@@ -14,7 +14,7 @@ const GOTO_OPTS = { timeout: 20 * 60 * 1000 };
 type Variant = "drag_free" | "drag_free_rtl";
 
 async function goto(page: Page, variant: Variant) {
-  await gotoHydrated(page, `${BASE_URL}/component/?name=carousel&variant=${variant}&`, GOTO_OPTS);
+  await gotoHydrated(page, `${BASE_URL}/component/carousel/`, GOTO_OPTS);
 }
 
 const frameOf = (page: Page, variant: Variant) => page.locator(`#component-preview-frame-${variant}`);
@@ -164,7 +164,7 @@ for (const variant of ["drag_free", "drag_free_rtl"] as const) {
 }
 
 test("a normal carousel still snaps (control: drag_free is off by default)", async ({ page }) => {
-  await gotoHydrated(page, `${BASE_URL}/component/?name=carousel&variant=sizes&`, GOTO_OPTS);
+  await gotoHydrated(page, `${BASE_URL}/component/carousel/`, GOTO_OPTS);
   const track = page.locator("#component-preview-frame-sizes .dx-carousel-content");
   await expect(track).toHaveAttribute("data-drag-free", "false");
   await expect(track).toHaveAttribute("data-snap", "x mandatory");

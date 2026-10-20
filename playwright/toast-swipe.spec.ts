@@ -3,11 +3,12 @@ import { type Page } from "@playwright/test";
 import { BASE_URL } from "./base-url";
 import { measureAtRest } from "./animations";
 import { fixedViewportBox } from "./viewport-box";
+import { gotoHydrated } from "./hydration";
 
 /** Each toast demo owns one provider whose region carries a distinct name (axe landmark-unique). */
 const region = (page: Page, name: string) => page.getByRole("region", { name });
 const toasts = (page: Page, name: string) => region(page, name).getByRole("alertdialog");
-const open = (page: Page) => page.goto(`${BASE_URL}/component/?name=toast&`);
+const open = (page: Page) => gotoHydrated(page, `${BASE_URL}/component/toast/`);
 
 const R = "Swipe toast notifications";
 

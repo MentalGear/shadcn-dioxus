@@ -4,7 +4,7 @@ title: "Dependency audit follow-ups (what users pay for in compile time and supp
 status: "PARTLY LANDED 2026-10-18 (lane deps 04ad7ddf): features calendar/color-picker, no build script…"
 size: "S-M each"
 area: build
-updated: 2026-10-18
+updated: 2026-10-20
 ---
 
 # Row 217: Dependency audit follow-ups (what users pay for in compile time and supply chain)
@@ -15,7 +15,7 @@ Dependency audit follow-ups (what users pay for in compile time and supply chain
 
 ## Status / trigger
 
-**PARTLY LANDED 2026-10-18 (lane deps 04ad7ddf): features `calendar`/`color-picker`, no build script (committed JS + `check-js-bundle.sh`), `check-cargo-dep-versions.sh`, `check-primitives-features.sh`, `stamp-release-rev.sh`, dioxus-i18n 0.6.0 from crates.io, cli without `dirs`; a Button-only wasm app 187 -> 167 crates. Left: replace `strum` and `dioxus-sdk-time` (they edit other components' files)** -- was: **Scheduled 2026-10-15 in `dev-docs/research/next-round-plan-2026-10-15.md`** (set up, waiting for the owner's go). **PARTLY LANDED 2026-10-18 (lane `deps`; open: the replace-with-own items num-integer, strum, dioxus-sdk-time, and the cargo-deny/vet suggestion)**
+**PARTLY LANDED 2026-10-18 (lane deps 04ad7ddf): features `calendar`/`color-picker`, no build script (committed JS + `check-js-bundle.sh`), `check-cargo-dep-versions.sh`, `check-primitives-features.sh`, `stamp-release-rev.sh`, dioxus-i18n 0.6.0 from crates.io, cli without `dirs`; a Button-only wasm app 187 -> 167 crates. Left: replace `strum` and `dioxus-sdk-time` (they edit other components' files)** -- was: **Scheduled 2026-10-15 in `dev-docs/research/next-round-plan-2026-10-15.md`** (set up, waiting for the owner's go). **PARTLY LANDED 2026-10-18 (lane `deps`; open: the replace-with-own items num-integer, strum, dioxus-sdk-time, and the cargo-deny/vet suggestion)** **2026-10-20 sync: replace-with-own items all LANDED 2026-10-19 (PR #112: 5d1937b8 own `sleep.rs`, 98e7ca1b `dioxus-sdk-time` out, cda20026 `num-integer` out, f9c82e8c `strum` out). Only the cargo-deny/vet suggestion stays open (tools not installed).**
 
 ## Size
 

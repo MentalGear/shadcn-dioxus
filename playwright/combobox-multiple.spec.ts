@@ -10,7 +10,7 @@ const frame = (page: Page, variant: string) =>
     page.locator(`#component-preview-frame-${variant}`).first();
 
 async function open(page: Page, variant: string, mode: "light" | "dark" = "light") {
-    await gotoHydrated(page, `${BASE_URL}/component/?name=combobox&`, GOTO_OPTS);
+    await gotoHydrated(page, `${BASE_URL}/component/combobox/`, GOTO_OPTS);
     await page.evaluate(
         (m) => (window as unknown as { __dxApplyMode: (m: string) => void }).__dxApplyMode(m),
         mode,
@@ -64,7 +64,7 @@ test("keyboard: type, Enter toggles and keeps the popup open, text is cleared", 
 });
 
 test("only the multi-select list is aria-multiselectable", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/?name=combobox&`, GOTO_OPTS);
+    await gotoHydrated(page, `${BASE_URL}/component/combobox/`, GOTO_OPTS);
     const single = page.getByRole("combobox", { name: "Select framework", exact: true });
     await single.click();
     await expect(listbox(page)).toBeVisible();

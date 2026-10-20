@@ -180,7 +180,7 @@ type Case = {
 const CASES: Case[] = [
   {
     name: "Dialog (centred)",
-    url: `${BASE_URL}/component/?name=dialog&variant=edit_profile&`,
+    url: `${BASE_URL}/component/dialog/`,
     open: async (page) => {
       await page.locator("#component-preview-frame-edit_profile").getByRole("button", { name: "Open Dialog" }).click();
     },
@@ -188,7 +188,7 @@ const CASES: Case[] = [
   },
   {
     name: "Sheet (right)",
-    url: `${BASE_URL}/component/?name=sheet&`,
+    url: `${BASE_URL}/component/sheet/`,
     open: async (page) => {
       await page.getByRole("button", { name: "Right", exact: true }).first().click();
     },
@@ -196,7 +196,7 @@ const CASES: Case[] = [
   },
   {
     name: "Sheet (bottom)",
-    url: `${BASE_URL}/component/?name=sheet&`,
+    url: `${BASE_URL}/component/sheet/`,
     open: async (page) => {
       await page.getByRole("button", { name: "Bottom", exact: true }).first().click();
     },
@@ -204,7 +204,7 @@ const CASES: Case[] = [
   },
   {
     name: "Drawer (bottom)",
-    url: `${BASE_URL}/component/?name=drawer&`,
+    url: `${BASE_URL}/component/drawer/`,
     open: async (page) => {
       await page.getByRole("button", { name: "Move Goal" }).click();
     },
@@ -224,7 +224,7 @@ const CASES: Case[] = [
   },
   {
     name: "AlertDialog (centred)",
-    url: `${BASE_URL}/component/?name=alert_dialog&`,
+    url: `${BASE_URL}/component/alert_dialog/`,
     role: "alertdialog",
     open: async (page) => {
       await page.getByRole("button", { name: "Show Alert Dialog" }).first().click();
