@@ -1,11 +1,12 @@
 use crate::components::button::{Button, ButtonSize, ButtonVariant};
 use dioxus::prelude::*;
 use dioxus_primitives::dioxus_attributes::attributes;
+use dioxus_primitives::js_listener::{use_js_listeners, JsListeners};
 use dioxus_primitives::merge_attributes;
 use dioxus_primitives::questionnaire::{
     self as primitive, use_questionnaire_action, QuestionnaireAction, QuestionnaireChoiceProps,
     QuestionnaireErrorProps, QuestionnaireInputProps, QuestionnaireItemProps,
-    QuestionnairePartProps, QuestionnaireProgressProps, QuestionnaireProps,
+    QuestionnairePartProps, QuestionnaireProgressProps,
 };
 // The model types a caller builds `items` from and reads answers with; not all are used by the demos.
 #[allow(unused_imports)]
@@ -14,12 +15,110 @@ pub use dioxus_primitives::questionnaire::{
     ProgressState, QuestionnaireHandle, ShortcutMode,
 };
 
+/// The props of the styled [`Questionnaire`]: the primitive's, plus `animate_height`.
+#[derive(Props, Clone, PartialEq)]
+pub struct StyledQuestionnaireProps {
+    /// The items, in order: the one place each item's behaviour is declared (see [`ItemDef`]).
+    pub items: ReadSignal<Vec<ItemDef>>,
+    /// The item to start on and to return to on reset (resume).
+    #[props(default)]
+    pub default_item: ReadSignal<Option<String>>,
+    /// The controlled active item.
+    #[props(default)]
+    pub item: ReadSignal<Option<String>>,
+    /// Called with the item to activate after a navigation.
+    #[props(default)]
+    pub on_item_change: Option<Callback<String>>,
+    /// Called after an item's answer changes.
+    #[props(default)]
+    pub on_answer_change: Option<Callback<AnswerChange>>,
+    /// Letter or number keys that select answers.
+    #[props(default)]
+    pub shortcuts: ReadSignal<Option<ShortcutMode>>,
+    /// Use the browser's constraint validation for filled answers.
+    #[props(default)]
+    pub native_validation: ReadSignal<bool>,
+    /// Called on a submit that passed validation.
+    #[props(default)]
+    pub on_submit: Option<Callback<FormEvent>>,
+    /// Called after a reset restored the default answers and the initial item.
+    #[props(default)]
+    pub on_reset: Option<Callback<()>>,
+    /// Glide the height between items with a CSS transition instead of snapping (default `true`).
+    /// Skipped under `prefers-reduced-motion: reduce`. `false` keeps the snap.
+    #[props(default = true)]
+    pub animate_height: bool,
+    /// The form's id; generated when absent.
+    #[props(default)]
+    pub id: ReadSignal<Option<String>>,
+    /// Additional attributes for the `form`.
+    #[props(extends = GlobalAttributes)]
+    pub attributes: Vec<Attribute>,
+    /// The progress, the items and the navigation buttons, in any layout.
+    pub children: Element,
+}
+
+/// Height animation. Items swap with `hidden`, so the form jumps from one item's natural height to the
+/// next. `height: auto` cannot transition (`interpolate-size` is Chromium-only), and `grid-template-rows:
+/// 0fr/1fr` animates one collapsing child, not a swap. So a ResizeObserver (which runs after layout,
+/// before paint: no flash) pins the old height inline, then sets the new one in pixels and lets the CSS
+/// `transition: height` in `style.css` run; the pins are cleared when it ends. Works in every engine.
+const HEIGHT_JS: &str = r#"
+const id = await dioxus.recv();
+const el = document.getElementById(id);
+if (!el) return;
+const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+const h = () => el.getBoundingClientRect().height;
+let last = h();
+let busy = false;
+let timer = 0;
+cleanup(() => { clearTimeout(timer); el.style.height = ''; el.style.overflow = ''; });
+const ro = new ResizeObserver(() => {
+  if (busy) return;
+  const next = h();
+  const from = last;
+  last = next;
+  if (reduce.matches || Math.abs(next - from) < 1 || !el.isConnected) return;
+  const ms = (() => {
+    const d = getComputedStyle(el).transitionDuration.split(',')[0].trim();
+    return d.endsWith('ms') ? parseFloat(d) : parseFloat(d) * 1000;
+  })();
+  if (!(ms > 1)) return;
+  busy = true;
+  el.style.overflow = 'hidden';
+  el.style.height = from + 'px';
+  void el.offsetHeight;
+  el.style.height = next + 'px';
+  timer = setTimeout(() => {
+    el.style.height = '';
+    el.style.overflow = '';
+    busy = false;
+    last = h();
+  }, ms + 60);
+});
+ro.observe(el);
+cleanup(() => ro.disconnect());
+"#;
+
+/// Installs the height animation for the enclosing form (a child, so it can read the form's id).
+#[component]
+fn HeightAnimation() -> Element {
+    let q = use_questionnaire();
+    use_js_listeners(move || Some(JsListeners::install(HEIGHT_JS).arg(q.form_id())));
+    rsx! {}
+}
+
 /// A multi-step questionnaire: a native `<form>` that shows one item at a time (Nova's `cn-questionnaire`,
 /// `flex flex-col gap-4`). `items` declares every item's behaviour; the parts below render them.
 #[component]
-pub fn Questionnaire(props: QuestionnaireProps) -> Element {
+pub fn Questionnaire(props: StyledQuestionnaireProps) -> Element {
+    let animate = props.animate_height;
     let base = attributes!(div { class: "dx-questionnaire", "data-slot": "questionnaire" });
-    let merged = merge_attributes(vec![base, props.attributes]);
+    let merged = merge_attributes(vec![
+        base,
+        attributes!(div { "data-animate-height": animate.then_some("true") }),
+        props.attributes,
+    ]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/questionnaire/style.css") }
         primitive::Questionnaire {
@@ -34,6 +133,9 @@ pub fn Questionnaire(props: QuestionnaireProps) -> Element {
             on_reset: props.on_reset,
             id: props.id,
             attributes: merged,
+            if animate {
+                HeightAnimation {}
+            }
             {props.children}
         }
     }

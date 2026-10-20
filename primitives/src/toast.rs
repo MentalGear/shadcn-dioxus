@@ -127,6 +127,9 @@ struct ToastRecord {
     duration: Option<Duration>,
     permanent: bool,
     action: Option<ToastAction>,
+    /// Set by [`close_record`]: the toast is on its way out (its exit animation plays) and is
+    /// removed [`TOAST_EXIT`] later. A closing toast no longer counts toward the pile.
+    closing: bool,
 }
 
 impl ToastRecord {
@@ -154,6 +157,35 @@ struct ToastCtx {
     focus_region: Callback,
     /// `true` while the pointer is over the toaster or focus is inside it: every countdown waits.
     paused: ReadSignal<bool>,
+    /// How many toasts of the pile are shown; the rest wait, hidden, for a slot to free up.
+    visible_toasts: ReadSignal<usize>,
+}
+
+/// How long a closed toast stays mounted so its exit animation can play (Sonner's
+/// `TIME_BEFORE_UNMOUNT`). It is also written on the toast as `--toast-exit-ms`, which the
+/// stylesheet's exit transition reads, so the Rust constant is the one source of the duration.
+const TOAST_EXIT: Duration = Duration::from_millis(200);
+
+/// Closes the toast `id` with its exit animation: marks it `closing` (so it gets `data-removed`,
+/// leaves the pile at once and is inert) and removes it after [`TOAST_EXIT`]. Closing a toast
+/// that is closing or gone does nothing. Every dismissal that has not animated itself already
+/// (close button, action, countdown, [`Toasts::close`]) goes through here; a swipe flies out on
+/// its own and removes directly.
+fn close_record(mut toasts: Signal<VecDeque<ToastRecord>>, id: ToastId) {
+    {
+        let Ok(mut list) = toasts.try_write() else {
+            return;
+        };
+        let Some(toast) = list.iter_mut().find(|t| t.id == id && !t.closing) else {
+            return;
+        };
+        toast.closing = true;
+    }
+    // interval-ok: one bounded wait, dropped with the app
+    crate::dioxus_core::spawn_forever(async move {
+        crate::sleep::sleep(TOAST_EXIT).await;
+        remove_record(toasts, id);
+    });
 }
 
 /// Removes the record `id`, if it still exists. `try_write`: a promise that settles after its
@@ -178,6 +210,12 @@ pub struct ToastProviderProps {
     /// The maximum number of toasts to display at once. Defaults to 10.
     #[props(default = ReadSignal::new(Signal::new(10)))]
     pub max_toasts: ReadSignal<usize>,
+
+    /// How many toasts the pile shows (Sonner's `visibleToasts`). Defaults to 3. A toast past
+    /// the cap stays mounted but hidden (`data-visible="false"`), expanded or not, and shows up
+    /// when a slot frees.
+    #[props(default = ReadSignal::new(Signal::new(3)))]
+    pub visible_toasts: ReadSignal<usize>,
 
     /// The callback to render a toast. Defaults to rendering the [`Toast`] component.
     #[props(default = Callback::new(|props: ToastPropsWithOwner| rsx! { Toast { ..props } }))]
@@ -265,7 +303,7 @@ pub fn ToastProvider(props: ToastProviderProps) -> Element {
     let portal = use_portal();
 
     // Remove toast callback
-    let remove_toast = use_callback(move |id: ToastId| remove_record(toasts, id));
+    let remove_toast = use_callback(move |id: ToastId| close_record(toasts, id));
 
     // Add toast callback
     let add_toast = use_callback(move |toast: ToastRecord| {
@@ -348,6 +386,7 @@ pub fn ToastProvider(props: ToastProviderProps) -> Element {
         remove_toast,
         focus_region,
         paused: paused.into(),
+        visible_toasts: props.visible_toasts,
     });
 
     rsx! {
@@ -366,7 +405,15 @@ pub fn ToastProvider(props: ToastProviderProps) -> Element {
 
                 ToastList {
                     // Render all toasts
-                    for (index, toast) in toast_list.read().iter().rev().enumerate() {
+                    for (index, toast) in toast_list.read().iter().rev().scan(0usize, |live, toast| {
+                        // The pile position counts the toasts that are not closing: a closing
+                        // toast leaves the pile at once (the others restack under its exit).
+                        let index = *live;
+                        if !toast.closing {
+                            *live += 1;
+                        }
+                        Some((index, toast))
+                    }) {
                         ToastListItem {
                             key: "{toast.id}",
                             {
@@ -995,12 +1042,15 @@ struct ToastRenderCtx {
 /// - `data-toast-even`: Present on even-indexed toasts for alternating styles.
 /// - `data-toast-odd`: Present on odd-indexed toasts for alternating styles.
 /// - `data-top`: Present on the topmost toast.
+/// - `data-visible`: `true` while the toast is within the provider's `visible_toasts` cap, `false` while it waits hidden behind it (also when the pile is expanded).
+/// - `data-removed`: `true` while a closed toast plays its exit animation (it is inert and no longer counts toward the pile); it unmounts 200 ms later.
 /// - `data-swiping`: `true` while a pointer drags the toast, `dismissed` while it flies out after a swipe.
 ///
 /// While dragged, the toast sets `--toast-swipe-x` or `--toast-swipe-y` (px, toward the dismiss edge of the axis the drag took); map them to the `translate` property.
 ///
 /// The [`Toast`] component renders toasts with the following css variables you can use to control styling:
-/// - `--toast-index`: The index of the toast in the list, used for z-indexing and positioning.
+/// - `--toast-index`: The index of the toast in the pile (closing toasts do not count), used for z-indexing and positioning.
+/// - `--toast-exit-ms`: How long a closed toast stays mounted (`200ms`); the exit transition should last that long.
 #[component]
 pub fn Toast(props: ToastProps) -> Element {
     let dom_id = use_unique_id();
@@ -1019,6 +1069,7 @@ pub fn Toast(props: ToastProps) -> Element {
         duration: props.duration,
         permanent: props.permanent,
         action: props.action.clone(),
+        closing: false,
     };
     let toast_key = props.id;
     let toasts = ctx.toasts;
@@ -1039,8 +1090,15 @@ pub fn Toast(props: ToastProps) -> Element {
     });
 
     // Swipe to dismiss (pointer events, threshold + velocity; see `use_toast_swipe`).
-    let remove_toast = ctx.remove_toast;
-    use_toast_swipe(id.into(), move || remove_toast.call(toast_key));
+    let toasts_for_swipe = ctx.toasts;
+    use_toast_swipe(id.into(), move || {
+        remove_record(toasts_for_swipe, toast_key)
+    });
+
+    // Derived here, from the record and the provider's cap, so no themed wrapper has to pass them:
+    // `closing` while the exit animation plays, `visible` while the toast is within the cap.
+    let closing = record.read().closing;
+    let visible = props.index < (ctx.visible_toasts)();
 
     let children = props.children.unwrap_or_else(|| {
         rsx! {
@@ -1096,8 +1154,16 @@ pub fn Toast(props: ToastProps) -> Element {
     // can override any property but never drop the counter.
     let (caller_style, props_attributes) = crate::fold_style_attributes(props.attributes);
     let item_style = match caller_style {
-        Some(caller_style) => format!("--toast-index: {}; {caller_style}", props.index),
-        None => format!("--toast-index: {}", props.index),
+        Some(caller_style) => format!(
+            "--toast-index: {}; --toast-exit-ms: {}ms; {caller_style}",
+            props.index,
+            TOAST_EXIT.as_millis()
+        ),
+        None => format!(
+            "--toast-index: {}; --toast-exit-ms: {}ms",
+            props.index,
+            TOAST_EXIT.as_millis()
+        ),
     };
     let attributes = merge_attributes(vec![
         attributes!(div {
@@ -1119,6 +1185,9 @@ pub fn Toast(props: ToastProps) -> Element {
             "data-toast-even": (props.index % 2 == 0).then_some("true"),
             "data-toast-odd": (props.index % 2 == 1).then_some("true"),
             "data-top": (props.index == 0).then_some("true"),
+            "data-visible": visible.to_string(),
+            "data-removed": closing.then_some("true"),
+            "inert": closing.then_some("true"),
         }),
     ]);
 
@@ -1613,6 +1682,7 @@ impl Toasts {
             },
             permanent: options.permanent,
             action: options.action,
+            closing: false,
         });
         id
     }
@@ -1652,7 +1722,7 @@ impl Toasts {
 
     /// Closes a toast. Closing a closed toast does nothing.
     pub fn close(&self, id: ToastId) {
-        remove_record(self.toasts, id);
+        close_record(self.toasts, id);
     }
 
     /// Shows one loading toast and moves that SAME toast to success or error when `future`

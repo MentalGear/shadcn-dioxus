@@ -9,6 +9,13 @@
   bottom: var(--dx-space-5);
   max-width: 350px;
   inset-inline-end: var(--dx-space-5);
+
+  /* The ONE source of every toast's motion direction: which way the toaster's own edge lies, as a sign
+   * on the y axis (+1 the bottom edge is below the pile, -1 the top edge is above it). A brand-new toast
+   * enters FROM that edge and a closed one leaves TOWARD it (`* var(--toast-edge)`); a queued toast
+   * that becomes visible at the far end of the expanded pile arrives from the opposite side
+   * (`* -1 * var(--toast-edge)`), as in Sonner. Only `data-toaster-side="top"` below flips it. */
+  --toast-edge: 1;
 }
 
 /*
@@ -77,6 +84,7 @@
   inset-block: var(--dx-space-5) auto;
 
   --toast-list-direction: column;
+  --toast-edge: -1;
 }
 
 .dx-toast-container[data-toaster-side="top"] .dx-toast {
@@ -132,10 +140,54 @@
   );
   transition: transform var(--dx-motion-duration-slow) var(--dx-motion-ease), translate var(--dx-motion-duration-slow) var(--dx-motion-ease), margin-top var(--dx-motion-duration-slow) var(--dx-motion-ease), opacity var(--dx-motion-duration-slow) var(--dx-motion-ease);
 
-  /* rtl-physical: the swipe offset is a screen-space distance toward the nearest edge, signed by the gesture itself (it reads the toaster's side, RTL included) */
-  translate: var(--toast-swipe-x, 0) var(--toast-swipe-y, 0);
+  /* rtl-physical: the swipe offset is a screen-space distance toward the nearest edge, signed by the gesture itself (it reads the toaster's side, RTL included).
+     The y offset adds the slot shift (a hidden or closing toast's displacement, below) to the swipe. */
+  translate: var(--toast-swipe-x, 0) calc(var(--toast-swipe-y, 0px) + var(--toast-slot-shift, 0px));
 
-  --toast-hidden: calc(min(max(0, var(--toast-index) - 2), 1));
+  /* 1 for a toast past the provider's `visible_toasts` cap (`data-visible="false"`), expanded or not */
+  --toast-hidden: 0;
+}
+
+/* Past the cap: hidden and inert, on hover and focus too (the expanded rules below never restore it). */
+.dx-toast[data-visible="false"] {
+  pointer-events: none;
+
+  --toast-hidden: 1;
+}
+
+/* A queued toast waits at the far end of the EXPANDED pile, shifted away from the toaster's edge; when a
+ * slot frees and `data-visible` turns true the shift transitions to 0 with the opacity, so it slides in
+ * from the far end (from above for a bottom toaster) with a fade. Collapsed, it only fades: it sits
+ * behind the pile, so there is nothing to slide past. */
+.dx-toast-container:focus-within .dx-toast[data-visible="false"] {
+  --toast-slot-shift: calc(-1 * var(--toast-edge) * var(--dx-space-8));
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-toast-container:hover .dx-toast[data-visible="false"] {
+    --toast-slot-shift: calc(-1 * var(--toast-edge) * var(--dx-space-8));
+  }
+}
+
+/* Exit (primitives/src/toast.rs `close_record`): the closed toast fades and slides toward the toaster's
+ * edge for `--toast-exit-ms` (the primitive writes it: the time the toast stays mounted), inert meanwhile.
+ * Declared after the expanded and hidden rules so it wins over their slot shift. */
+.dx-toast[data-removed="true"] {
+  opacity: 0;
+  pointer-events: none;
+  transition-duration: var(--toast-exit-ms, var(--dx-motion-duration-slow));
+
+  --toast-slot-shift: calc(var(--toast-edge) * 100%);
+}
+
+.dx-toast-container:focus-within .dx-toast[data-removed="true"] {
+  --toast-slot-shift: calc(var(--toast-edge) * 100%);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-toast-container:hover .dx-toast[data-removed="true"] {
+    --toast-slot-shift: calc(var(--toast-edge) * 100%);
+  }
 }
 
 .dx-toast-container:not(:hover, :focus-within)
@@ -152,7 +204,7 @@
  * `transform: scale(...)` stays in force underneath, so the keyframes do not restate it. */
 @keyframes dx-slide-up-even {
   from {
-    translate: 0 var(--dx-space-2);
+    translate: 0 calc(var(--toast-edge) * var(--dx-space-2));
   }
 
   to {
@@ -162,7 +214,7 @@
 
 @keyframes dx-slide-up-odd {
   from {
-    translate: 0 var(--dx-space-2);
+    translate: 0 calc(var(--toast-edge) * var(--dx-space-2));
   }
 
   to {
@@ -188,7 +240,7 @@
   from {
     opacity: 0;
     scale: 110%;
-    translate: 0 100%;
+    translate: 0 calc(var(--toast-edge) * 100%);
   }
 
   to {
@@ -201,7 +253,6 @@
 .dx-toast-container:focus-within .dx-toast {
   margin-top: 0;
   filter: brightness(1);
-  opacity: 1;
   transform: scale(calc(100%));
 }
 
@@ -209,7 +260,6 @@
   .dx-toast-container:hover .dx-toast {
     margin-top: 0;
     filter: brightness(1);
-    opacity: 1;
     transform: scale(calc(100%));
   }
 }
@@ -281,6 +331,7 @@
 @media (prefers-reduced-motion: reduce) {
   .dx-toast,
   .dx-toast[data-top],
+  .dx-toast[data-removed="true"],
   .dx-toast-container:not(:hover, :focus-within) .dx-toast[data-toast-even]:not([data-top]),
   .dx-toast-container:not(:hover, :focus-within) .dx-toast[data-toast-odd]:not([data-top]) {
     animation: none;

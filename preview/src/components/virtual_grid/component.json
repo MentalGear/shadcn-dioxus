@@ -10,6 +10,7 @@
     }
   ],
   "globalAssets": [
-    "../../../assets/dx-components-theme.css"
+    "../../../assets/dx-components-theme.css",
+    "../../../assets/dx-effects.css"
   ]
 }

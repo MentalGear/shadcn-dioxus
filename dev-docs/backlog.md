@@ -34,7 +34,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (54)
+## Open rows (56)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -74,7 +74,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [267](backlog/267-split-oversized-source-files-into-modules.md) | Split oversized source files into modules (carousel.rs, carousel.spec.ts, main.rs, top_layer.rs, calendar.rs, date_picker.rs) | BACKLOG (owner approved 2026-10-19 on the cleanup plan; Round 6, before the 152b suite prune).… | M | process |
 | [268](backlog/268-select-scroll-buttons-and-item-aligned-position.md) | Select scroll buttons and position=item-aligned | OPEN. Not started; no owner decision needed. | S-M (scroll buttons), M-L (item-aligned) | select |
 | [285](backlog/285-docs-preview-card-light-mode-tint.md) | Docs preview card: a visible light-mode tint without breaking Toggle hover contrast | OPEN. Needs the owner's call on the light-mode tint strength once the Toggle/Pagination hover is… | S | preview |
-| [290](backlog/290-toast-exit-animation-a-real-visible-cap-and-enter.md) | Toast: exit animation, a real visible cap, and enter from the toaster's edge (Sonner parity) | OPEN (owner review 2026-10-19). New work: the landed rows 138, 262 and 263 cover stacking, swipe… | M | primitives |
+| [290](backlog/290-toast-exit-animation-a-real-visible-cap-and-enter.md) | Toast: exit animation, a real visible cap, and enter from the toaster's edge (Sonner parity) | LANDED 2026-10-20 (exit animation, visible_toasts cap, edge-derived enter, queued slide-in; spec… | M | primitives |
 | [291](backlog/291-coarse-pointer-sizing-for-menus-and-option-lists.md) | Coarse-pointer sizing for menus and option lists | OPEN (owner review 2026-10-19). I concur. Today the only coarse rules are the 16 px text-entry font… | S–M | theme |
 | [292](backlog/292-tooltip-rich-content-demo-lays-title-and-body.md) | Tooltip: rich-content demo lays title and body side by side | OPEN (owner review 2026-10-19). | S | preview |
 | [293](backlog/293-slider-thumb-clipped-to-a-sliver.md) | Slider thumb clipped to a sliver | OPEN (owner review 2026-10-19). New bug; row 239 only touched the thumb's all: unset. | S | primitives |
@@ -92,6 +92,8 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [305](backlog/305-side-drawer-scrolling-its-content-also-drags-the.md) | Side drawer: scrolling its content also drags the drawer sideways (iOS) | BACKLOG (owner report 2026-10-19, iOS device) | S–M | primitives |
 | [306](backlog/306-select-and-combobox-show-no-selected-label-before.md) | Select and Combobox show no selected label before hydration | OPEN. Found 2026-10-19 by the features-batch validation; pre-existing on main. | M | select |
 | [307](backlog/307-ios-color-panel-does-not-pick-colors.md) | iOS: the Color Panel opens but tapping its color box does not change the color | OPEN (owner report 2026-10-20, iOS device; being investigated in the 'iOS Color Panel won't pick… | M | overlays |
+| [309](backlog/309-virtuallist-and-virtualgrid-share-one-engine.md) | VirtualList and VirtualGrid share one engine: DOM bridge, pinned focus, fade (two components, one engine) | LANDED 2026-10-20 on lane/vgrid-justified (owner go), pending the merge batch -- shared DOM bridge… | M | virtual |
+| [310](backlog/310-questionnaire-height-transition.md) | Questionnaire: animate the height between items instead of snapping | OPEN (owner review 2026-10-20; implemented on lane/b-quest, awaiting merge) | S | questionnaire |
 
 ## Done rows (229)
 
