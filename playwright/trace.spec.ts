@@ -4,7 +4,7 @@ import { expectNoAxeViolations } from "./axe";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
-const URL_ = `${BASE_URL}/component/?name=trace&`;
+const URL_ = `${BASE_URL}/component/trace/`;
 const GOTO = { timeout: 20 * 60 * 1000 };
 const frame = (page: Page, name?: string) =>
   page.locator(name ? `#component-preview-frame-${name}` : "#component-preview-frame").first();

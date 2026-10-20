@@ -1,5 +1,6 @@
 import { test, expect } from "./fixtures";
 import { BASE_URL } from "./base-url";
+import { gotoHydrated } from "./hydration";
 
 /**
  * Backlog row 155 g8 follow-ups: the month dropdown prints the SHORT month name ("Oct") while the
@@ -7,8 +8,7 @@ import { BASE_URL } from "./base-url";
  * slot (shadcn's `--cell-size`).
  */
 const goto = async (page: any, variant: string) => {
-  await page.goto(`${BASE_URL}/component/block/?name=calendar&variant=${variant}&`, { timeout: 20 * 60 * 1000 });
-  await page.waitForLoadState("networkidle");
+  await gotoHydrated(page, `${BASE_URL}/component/block/?name=calendar&variant=${variant}&`, { timeout: 20 * 60 * 1000 });
   await expect(page.locator(".dx-calendar").first()).toBeVisible({ timeout: 30000 });
 };
 
