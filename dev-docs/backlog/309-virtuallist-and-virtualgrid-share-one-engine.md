@@ -11,7 +11,7 @@ updated: 2026-10-20
 
 ## Item
 
-Owner decision 2026-10-20: keep `VirtualList` and `VirtualGrid` as two components (list vs grid ARIA semantics: a grid has 2-D arrow keys and one tab stop; a list reads top to bottom with variable row heights), but share as many parts of the engine between them as possible and sensible, taking the best of each. This is the second step of [row 154](./154-shared-virtualization-engine-one-engine-in.md)'s three-layer outline (core / strategy / DOM bridge) after [row 244](./done/244-virtualgrid-x-y-virtualization-that-windows.md) made a grid two copies of the one-axis `Engine`. Related: [row 153](./153-native-find-in-page-for-windowed-virtual-lists.md) (find-in-page placeholders), [row 186](./186-shadcn-utilities-scroll-fade-and-shimmer-are.md) (the `fade` prop), row 308 (VirtualGrid scroll chaining, `overscroll-behavior`, filed separately).
+Owner decision 2026-10-20: keep `VirtualList` and `VirtualGrid` as two components (list vs grid ARIA semantics: a grid has 2-D arrow keys and one tab stop; a list reads top to bottom with variable row heights), but share as many parts of the engine between them as possible and sensible, taking the best of each. This is the second step of [row 154](./154-shared-virtualization-engine-one-engine-in.md)'s three-layer outline (core / strategy / DOM bridge) after [row 244](./done/244-virtualgrid-x-y-virtualization-that-windows.md) made a grid two copies of the one-axis `Engine`. Related: [row 153](./153-native-find-in-page-for-windowed-virtual-lists.md) (find-in-page placeholders), [row 186](./186-shadcn-utilities-scroll-fade-and-shimmer-are.md) (the `fade` prop), [row 308](./308-virtualgrid-scroll-trap-at-the-edges.md) (VirtualGrid scroll trap at the edges, `overscroll-behavior`).
 
 ## Status / trigger
 
@@ -36,7 +36,7 @@ M
 | ScrollFade `fade` prop | yes | no | **VirtualGrid and VirtualWrapGrid gained it** (+ `dx-effects.css` in `globalAssets`, a `fade` demo) |
 | Content-visibility strategy | `cv_chunks` mode + `Auto` threshold | none | stays list-only for now: a grid CV mode needs its own keyboard/pinning story over flow rows (open item below) |
 | Find-in-page placeholders | opt-in `text_value` (row 153) | none | stays list-only (a grid's cell text would need 2-D placeholders); the reveal half is shared (`Bridge::reveal`) |
-| Overscroll / scroll chaining | none (chains to the page) | `overscroll-behavior: contain` in its sheet (row 308 changes it) | no engine policy: it is CSS on each component's container, reconciled with row 308 |
+| Overscroll / scroll chaining | none (chains to the page) | `overscroll-behavior: contain` in its sheet (row 308 changes it) | no engine policy: it is CSS on each component's container, reconciled with [row 308](./308-virtualgrid-scroll-trap-at-the-edges.md) |
 | RTL | n/a (vertical) | `use_direction` key map, `\|scrollLeft\|` | the report's RTL-neutral `left` is shared; the key map stays grid-only |
 | Keyboard model, ARIA, sticky edges | list semantics | grid pattern, sticky header/column | per component (the reason there are two) |
 

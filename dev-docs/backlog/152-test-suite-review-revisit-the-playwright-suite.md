@@ -4,7 +4,7 @@ title: "Test-suite review: revisit the Playwright suite (~1,786 tests, ~21 min o
 status: "OPEN -- owner note 2026-10-05; nothing was run for this row, the evidence below is read from the…"
 size: "M"
 area: tests
-updated: 2026-10-05
+updated: 2026-10-20
 ---
 
 # Row 152: Test-suite review: revisit the Playwright suite (~1,786 tests, ~21 min on a release build with 4 workers) for…
@@ -15,7 +15,7 @@ Test-suite review: revisit the Playwright suite (~1,786 tests, ~21 min on a rele
 
 ## Status / trigger
 
-**OPEN** -- owner note 2026-10-05; nothing was run for this row, the evidence below is read from the round-2 full-suite report
+**OPEN** -- owner note 2026-10-05; nothing was run for this row, the evidence below is read from the round-2 full-suite report **2026-10-20 sync: not started; part of Round 6 (152b suite prune).**
 
 ## Size
 

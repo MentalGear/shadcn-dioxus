@@ -1,10 +1,10 @@
 ---
 id: 161
 title: "Rename the website to \"shadcn-dioxus\" and give it a real favicon (an SVG that follows light/dark, a PNG…"
-status: "IN PROGRESS (owner decision 2026-10-10) -- the site brand and favicon are being changed now (BRAND…"
+status: "LANDED 2026-10-10 (c6a80af6 brand and favicon with site-brand.spec.ts; owner renamed the repo…"
 size: "S-M"
 area: docs
-updated: 2026-10-10
+updated: 2026-10-20
 ---
 
 # Row 161: Rename the website to "shadcn-dioxus" and give it a real favicon (an SVG that follows light/dark, a PNG…
@@ -15,7 +15,7 @@ Rename the website to "shadcn-dioxus" and give it a real favicon (an SVG that fo
 
 ## Status / trigger
 
-**IN PROGRESS (owner decision 2026-10-10)** -- the site brand and favicon are being changed now (BRAND lane, no URL change). The owner also wants the REPO renamed to shadcn-dioxus: that part waits on the owner renaming it in GitHub (Settings -> General), then a base-path follow-up PR (below). Was OPEN (owner decision 2026-10-05); still step 4 in the next-session order for the follow-up
+**LANDED 2026-10-10** (c6a80af6 brand and favicon with `site-brand.spec.ts`; owner renamed the repo; 5682701b base path switched to `/shadcn-dioxus/`; 2e245ae8 owner decisions; install docs lead with the `shadcn-dioxus` CLI, row 184). Closed in the 2026-10-20 backlog sync after checking the commits.
 
 ## Size
 
