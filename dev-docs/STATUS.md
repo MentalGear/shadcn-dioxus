@@ -35,8 +35,7 @@ the Select scroll buttons and item-aligned position split out to row 268). `stru
 
 ## Backlog numbers
 
-45 open and 211 done rows on 2026-10-19 (see [`backlog.md`](./backlog.md)), after the bookkeeping pass closed 29 rows
-whose status already said done.
+62 open and 211 done rows on 2026-10-19 (see [`backlog.md`](./backlog.md)): the bookkeeping pass closed 29 rows whose status already said done, the owner review added rows 290-305, and the features-batch validation added row 306 (Select and Combobox show no selected label before hydration).
 
 ## Next round
 
