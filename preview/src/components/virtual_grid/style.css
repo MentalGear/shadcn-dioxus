@@ -14,7 +14,10 @@
   color: var(--dx-foreground);
   font-size: var(--dx-text-sm);
   font-variant-numeric: tabular-nums;
-  overscroll-behavior: contain;
+
+  /* Only the inline axis is contained (a sideways swipe at the edge must not trigger browser
+   * back/forward); the block axis chains to the page at the edges, like VirtualList. */
+  overscroll-behavior-x: contain;
 }
 
 .dx-virtual-grid [data-grid-cell]:not(:where([popover], dialog) *) {
