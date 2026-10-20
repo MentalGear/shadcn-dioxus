@@ -14,6 +14,7 @@
 
 mod cv_chunks;
 mod grid;
+pub(crate) mod layout;
 mod size_index;
 pub(crate) mod types;
 mod utils;
