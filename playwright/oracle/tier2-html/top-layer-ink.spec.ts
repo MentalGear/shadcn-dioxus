@@ -142,12 +142,6 @@ async function goto(page: Page, name: string) {
   await gotoHydrated(page, url(name), { timeout: NAV_TIMEOUT });
 }
 
-async function gotoVariant(page: Page, name: string, variant: string) {
-  // A non-Block component's variant page is not prerendered (`/component/popover/variant=modal&` is a 404 that never sets
-  // data-hydrated, the 90 s timeout): the legacy block shell is the one static-host entry, and gotoHydrated waits for its redirect.
-  await gotoHydrated(page, `${BASE_URL}/component/block/?name=${name}&variant=${variant}&`, { timeout: NAV_TIMEOUT });
-}
-
 /**
  * Reads a CSS custom property's *resolved color* -- the only way to read
  * one as a color at all -- by assigning it to a throwaway probe element's
@@ -259,7 +253,9 @@ const SURFACES: Surface[] = [
     // through `use_dialog_open_driver`, not `use_popover_sync`.
     name: "popover (modal arm)",
     open: async (page) => {
-      await gotoVariant(page, "popover", "modal");
+      // Every variant has its own `#component-preview-frame-<variant>` on the canonical page (`demoRole(.., "modal")`);
+      // `/component/popover/variant=modal&` (query text glued to a path route) is a 404 that never sets data-hydrated.
+      await goto(page, "popover");
       await demoRole(page, "button", 0, "modal").click();
       await expect(page.locator('.dx-popover-content[data-state="open"]')).toBeVisible();
     },
