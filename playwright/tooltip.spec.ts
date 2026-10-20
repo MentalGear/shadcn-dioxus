@@ -5,7 +5,7 @@ import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { sampleCloseFade, assertFadesOutThenUnmounts } from "./assert-fade-out";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
-import { measureAtRest } from "./animations";
+import { awaitAnimationsSettled, measureAtRest, readAtRest } from "./animations";
 
 test("test", async ({ page }) => {
   await gotoHydrated(page, `${BASE_URL}/component/tooltip/`);
@@ -204,5 +204,42 @@ test.describe("delay / close_delay (backlog row 166)", () => {
     // Sooner than close_delay (600 ms) could have elapsed even if the scroll had moved the pointer
     // off the trigger at once: the close is the scroll's, not the timer's.
     await expect(openSurface(page)).toHaveCount(0, { timeout: 500 });
+  });
+});
+
+// dev-docs/backlog.md row 292 -- the "Rich content" demo laid its title and body side by side. The
+// body is a flex row (icon-plus-text and Kbd tooltips rely on it), and `display: inline-flex` was
+// keyed on `[data-state="open"]` alone, so the paragraphs stacked ONLY during the closing fade, when
+// the rule stopped matching. Two invariants: the demo stacks them at rest, and a tooltip lays out
+// the same in the closed (fading) state as in the open one.
+test.describe("Rich content layout (row 292)", () => {
+  test("title and body are stacked (title above body) at rest, not side by side", async ({ page }) => {
+    await gotoHydrated(page, `${BASE_URL}/component/tooltip/`);
+    await page.locator("#component-preview-frame").first().getByText("Rich content").hover();
+    const tooltip = page.getByRole("tooltip");
+    await expect(tooltip).toBeVisible();
+    const rects = await readAtRest(tooltip, (el) => {
+      const [title, body] = Array.from(el.querySelectorAll("p")).map((p) => p.getBoundingClientRect());
+      return { title: { top: title.top, bottom: title.bottom, left: title.left }, body: { top: body.top, left: body.left } };
+    });
+    expect(rects.title.bottom).toBeLessThanOrEqual(rects.body.top + 0.5);
+    expect(Math.abs(rects.title.left - rects.body.left)).toBeLessThan(1);
+  });
+
+  test("the display (and so the layout) is the same while the closing fade plays", async ({ page }) => {
+    await gotoHydrated(page, `${BASE_URL}/component/tooltip/`);
+    await page.locator("#component-preview-frame").first().getByText("Rich content").hover();
+    const tooltip = page.getByRole("tooltip");
+    await expect(tooltip).toBeVisible();
+    const contentId = await tooltip.getAttribute("id");
+    if (!contentId) throw new Error("tooltip content has no id to sample");
+    await awaitAnimationsSettled(tooltip);
+    const openDisplay = await tooltip.evaluate((el) => getComputedStyle(el).display);
+    expect(openDisplay).toBe("inline-flex");
+
+    const capture = await sampleCloseFade(page, contentId, () => page.mouse.move(0, 0));
+    const mounted = capture.samples.filter((s) => s.exists);
+    expect(mounted.length).toBeGreaterThan(0);
+    for (const s of mounted) expect(s.display).toBe(openDisplay);
   });
 });

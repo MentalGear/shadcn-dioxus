@@ -189,7 +189,13 @@
   cursor: default;
 }
 
-.dx-tooltip-content[data-state="open"] {
+/* Laid out the same in BOTH states, so a tooltip never changes layout while it fades out (row 292):
+   keyed on `[data-state="open"]` alone, the closing fade fell back to the UA's block layout and a
+   rich tooltip's paragraphs stacked only then. A plain `display` on `.dx-tooltip-content` would beat
+   the UA's `[popover]:not(:popover-open) { display: none }`, so the closed state is keyed on the
+   popover still being shown (the primitive keeps it shown through the fade) or, on the non-popover
+   arm, on there being no popover to hide. */
+.dx-tooltip-content:is([data-state="open"], [data-state="closed"]:is(:popover-open, :not([popover]))) {
   display: inline-flex;
 }
 
