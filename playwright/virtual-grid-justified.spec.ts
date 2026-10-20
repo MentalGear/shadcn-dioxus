@@ -291,12 +291,20 @@ test.describe("virtual_grid justified", () => {
 
   test("the target row height control re-packs the rows", async ({ page }) => {
     const g = await open(page);
+    const meanRowHeight = () =>
+      g.evaluate((el) => {
+        const hs = [...el.querySelectorAll('[role="row"]')].map((r) => r.getBoundingClientRect().height);
+        return hs.reduce((a, b) => a + b, 0) / hs.length;
+      });
     const rowsBefore = Number(await g.getAttribute("aria-rowcount"));
-    // justified demo: the one slider is the target row height
+    const heightBefore = await meanRowHeight();
+    // justified demo: the one slider is the target row height (80..320, starts at 160)
     const slider = demoRole(page, "slider", 0, VARIANT);
     await slider.focus();
     await page.keyboard.press("End");
-    await expect.poll(async () => Number(await g.getAttribute("aria-rowcount"))).toBeLessThan(rowsBefore / 1.5);
+    // Taller rows hold fewer photos each, so the wall has more of them.
+    await expect.poll(async () => Number(await g.getAttribute("aria-rowcount"))).toBeGreaterThan(rowsBefore * 1.3);
+    expect(await meanRowHeight()).toBeGreaterThan(heightBefore * 1.3);
     await expectRowsFill(g);
   });
 
