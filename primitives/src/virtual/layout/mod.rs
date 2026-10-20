@@ -30,8 +30,8 @@
 //! A box meets a band when the two half-open intervals overlap; the optional overscan widens the
 //! band by that many pixels on each side.
 
-// The consumer (the windowed wall component) lands separately, so nothing in this tree is reached
-// from the crate root yet; the unit tests exercise all of it.
+// `VirtualJustifiedGrid` (through `super::justified_engine`) consumes the justified packer; the
+// sectioned model and the strip arithmetic have no consumer yet, and the unit tests exercise all of it.
 #![allow(dead_code)]
 
 use std::ops::Range;
