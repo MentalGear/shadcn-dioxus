@@ -1,7 +1,7 @@
 ---
 id: 290
 title: "Toast: exit animation, a real visible cap, and enter from the toaster's edge (Sonner parity)"
-status: "LANDED 2026-10-20 (exit animation, visible_toasts cap, edge-derived enter, queued slide-in; spec toast-enter-exit)"
+status: "LANDED 2026-10-20 (exit animation, visible_toasts cap, edge-derived enter, queued slide-in; spec…"
 size: "M"
 area: primitives
 updated: 2026-10-20
@@ -15,7 +15,7 @@ Toasts should dismiss with an animation, show at most 3 in the pile, and fade or
 
 ## Status / trigger
 
-OPEN (owner review 2026-10-19). New work: the landed rows 138, 262 and 263 cover stacking, swipe, pause and F6, but none of this.
+LANDED 2026-10-20 (exit animation, `visible_toasts` cap, edge-derived enter, queued slide-in; spec toast-enter-exit). Opened 2026-10-19 on owner review: the landed rows 138, 262 and 263 cover stacking, swipe, pause and F6, but none of this.
 
 ## Size
 
