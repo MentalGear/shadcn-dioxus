@@ -66,7 +66,11 @@ it, and `lane-target.sh create` clears the stamp. After a build, prove your chan
    (partial by design). That is every static `check-*.sh`, fmt and stylelint, in seconds. Do NOT run the full
    `run-gates.sh`: the main loop runs it once on the merged tree.
 3. Run your own specs plus the existing specs of everything you touched on a `lane-ssg` build that you verified
-   contains your change. Do not pick the specs by hand: `node playwright/tools/select.mjs --explain` lists the specs
+   contains your change, with ONE command: `cd playwright && PLAYWRIGHT_BASE_URL=http://127.0.0.1:<port> flock
+   /home/user/tgt/pw.lock npm run test:changed -- --workers=2` (`tools/test-changed.sh`: runs exactly the specs
+   `tools/select.mjs` maps your diff to, on `ssg.local.config.ts`; `CHANGED_RANGE=A..B` for another range,
+   `CHANGED_MATRIX=1` to add the route-matrix specs; "no spec covers the diff" means docs/gates/tooling only).
+   Quote its summary line in your report. Do not pick the specs by hand: `node playwright/tools/select.mjs --explain` lists the specs
    that cover your diff (default range `origin/main...HEAD` plus uncommitted files; `--range A..B`, `--files f...`).
    Map: a component directory -> the specs about that component (file named for it, or naming its page); a primitive
    -> the specs of every component that uses it, directly or through another primitive (more than 30 components =

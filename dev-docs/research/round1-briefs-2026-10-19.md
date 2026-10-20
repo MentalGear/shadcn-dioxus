@@ -19,6 +19,8 @@ bookkeeping, kept in the repo because a container reset destroyed the first run 
   instead of building cold yourself). Then `scripts/lane-ssg.sh /home/user/wt/<lane> <lane> <port>`. Playwright under
   `flock /home/user/tgt/pw.lock`, `--workers=2`, `ssg.local.config.ts` with `PLAYWRIGHT_BASE_URL` (and
   `SSG_SITE_DIR=/home/user/tgt/pub-<lane>` if needed). Never start a long-lived process inside a lock.
+- Spec runs: `cd playwright && PLAYWRIGHT_BASE_URL=... flock /home/user/tgt/pw.lock npm run test:changed -- --workers=2`
+  (only the specs covering your diff; lane-rules "Before handback" step 3).
 - Before handback: merge `origin/main`, fast gates, push. Do not edit `dev-docs/backlog/` (except lane round0): put
   the status text for your rows in your report.
 - Shared with the other session (rounds 2, 3, 5, 7): message_scroller, carousel, toast, drawer, modality code and the
