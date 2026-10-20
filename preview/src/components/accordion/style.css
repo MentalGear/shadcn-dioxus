@@ -29,9 +29,14 @@
   box-shadow: var(--dx-ring-focus-inset);
 }
 
+/* Deliberate deviation from shadcn (`hover:underline` on every trigger, row 299, owner 2026-10-20): a
+ * collapsed header does not underline on hover, an open one does. */
 @media (hover: hover) and (pointer: fine) {
   .dx-accordion-trigger:hover:not(:disabled) {
     cursor: pointer;
+  }
+
+  .dx-accordion-trigger[aria-expanded="true"]:hover:not(:disabled) {
     text-decoration-line: underline;
   }
 }
@@ -212,4 +217,22 @@
 
 .dx-accordion-item[data-open="true"] .dx-accordion-expand-icon {
   rotate: 180deg;
+}
+
+/* `chevron: AccordionChevron::Start` (`data-chevron="start"` on each trigger): the chevron leads the label
+ * and points right when closed (-90deg), down when open, instead of down/up. */
+.dx-accordion-trigger[data-chevron="start"] {
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--dx-space-2);
+}
+
+.dx-accordion-trigger[data-chevron="start"] > .dx-accordion-expand-icon {
+  flex-shrink: 0;
+  order: -1;
+  rotate: -90deg;
+}
+
+.dx-accordion-trigger[data-chevron="start"][aria-expanded="true"] > .dx-accordion-expand-icon {
+  rotate: 0deg;
 }

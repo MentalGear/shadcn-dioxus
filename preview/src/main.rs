@@ -1887,7 +1887,9 @@ fn use_open_section_for_hash() {
 
 #[component]
 fn ComponentHighlight(demo: ComponentDemoData) -> Element {
-    use components::accordion::{Accordion, AccordionContent, AccordionItem, AccordionTrigger};
+    use components::accordion::{
+        Accordion, AccordionChevron, AccordionContent, AccordionItem, AccordionTrigger,
+    };
     use components::collapsible::{Collapsible, CollapsibleContent, CollapsibleTrigger};
     use_open_section_for_hash();
     let ComponentDemoData {
@@ -1964,6 +1966,7 @@ fn ComponentHighlight(demo: ComponentDemoData) -> Element {
                         allow_multiple_open: true,
                         collapsible: true,
                         hidden_until_found: true,
+                        chevron: AccordionChevron::Start,
                         AccordionItem { index: 0usize,
                             h2 { id: "installation", class: "dx-docs-accordion-heading",
                                 AccordionTrigger { class: "dx-docs-accordion-trigger",
@@ -1979,8 +1982,24 @@ fn ComponentHighlight(demo: ComponentDemoData) -> Element {
                                     " first."
                                 }
                                 Collapsible { class: "dx-component-manual-install", hidden_until_found: true,
-                                    CollapsibleTrigger { class: "dx-docs-collapsible-trigger",
-                                        "Manual installation files"
+                                    // Same leading chevron as the accordion rows around it (row 299): the
+                                    // trigger wears the accordion's start-chevron recipe (`data-style` opts
+                                    // out of the Collapsible's own), and `as` puts the icon first instead of
+                                    // the Collapsible's trailing one.
+                                    CollapsibleTrigger {
+                                        class: "dx-docs-collapsible-trigger dx-accordion-trigger",
+                                        "data-style": "accordion",
+                                        "data-chevron": "start",
+                                        r#as: move |attrs: Vec<Attribute>| rsx! {
+                                            button { ..attrs,
+                                                ChevronDown {
+                                                    class: "dx-accordion-expand-icon",
+                                                    size: "16px",
+                                                    stroke: "var(--dx-muted-foreground)",
+                                                }
+                                                "Manual installation files"
+                                            }
+                                        },
                                     }
                                     CollapsibleContent {
                                         ManualComponentInstallation { component, style }
