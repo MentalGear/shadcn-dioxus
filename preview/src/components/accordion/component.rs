@@ -1,5 +1,6 @@
 use dioxus::prelude::*;
 use dioxus_icons::lucide::ChevronDown;
+pub use dioxus_primitives::accordion::AccordionChevron;
 use dioxus_primitives::accordion::{
     self, AccordionContentProps, AccordionItemProps, AccordionProps, AccordionTriggerProps,
 };
@@ -19,6 +20,7 @@ pub fn Accordion(props: AccordionProps) -> Element {
             collapsible: props.collapsible,
             horizontal: props.horizontal,
             hidden_until_found: props.hidden_until_found,
+            chevron: props.chevron,
             attributes: merged,
             {props.children}
         }
