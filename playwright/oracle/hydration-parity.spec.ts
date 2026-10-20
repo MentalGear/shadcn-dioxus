@@ -756,8 +756,11 @@ test.describe("hydration parity — SSG server markup vs. wasm client", () => {
     await gotoHydrated(page, `${BASE}/`, { timeout: NAV_TIMEOUT });
 
     // The home page mounts every component's gallery card, so there is no single demo frame to scope to: the
-    // dropdown menu's trigger and open content are selected by the component's own classes.
-    const trigger = page.locator("button.dx-dropdown-menu-trigger").first();
+    // dropdown menu's trigger and open content are selected by the component's own classes, inside ITS card --
+    // the docs chrome's own "Jump to category" menu (6be1887d) is a dropdown-menu trigger too and comes first.
+    const trigger = page
+      .locator('article.dx-component-card:has(a[href^="/component/dropdown_menu/"]) button.dx-dropdown-menu-trigger')
+      .first();
     await expect(trigger).toBeVisible();
     await expect(trigger).toHaveAttribute("data-state", "closed");
 

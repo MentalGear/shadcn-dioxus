@@ -402,18 +402,32 @@ test.describe("vertical orientation", () => {
 // The docs site's demo frame is itself a `TabContent` (`.dx-component-preview-frame.dx-tabs-content-themed`)
 // inside a `line` Tabs. The panel's default frame (tabs/style.css, loaded after main.css) used to out-rank the
 // frame's own border and radius on stylesheet order alone, so every demo on every component page lost its
-// chrome. The frame is shadcn's preview frame (docs-site lane, rows 231): `rounded-2xl border`, 40px padding,
-// 288px tall, and NO fill -- no card colour, no dotted grid -- so a demo sits on the page like shadcn's.
+// chrome. The frame is the docs preview card (736e9600, row 285): `rounded-2xl`, 40px padding, 288px tall, NO border
+// and no dotted grid, filled with the soft `--dx-docs-preview-surface` (a mix of page and card) -- the Tabs panel
+// default would give it a 1px border and the card colour.
 test.describe("the docs demo frame keeps its own chrome", () => {
   test("border, radius, padding and height come from main.css, not from the Tabs panel default", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/spinner/`);
     const frame = page.locator(".dx-component-preview-frame").first();
     await expect(frame).toBeVisible();
-    await expect(frame).toHaveCSS("border-top-width", "1px");
+    await expect(frame).toHaveCSS("border-top-width", "0px");
     await expect(frame).toHaveCSS("border-top-left-radius", "16px");
     await expect(frame).toHaveCSS("padding-top", "40px");
     await expect(frame).toHaveCSS("background-image", "none");
-    await expect(frame).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+    // The fill is the docs surface token resolved in the frame's own scope, not the Tabs panel's card colour.
+    const [fill, surface, card] = await frame.evaluate((el) => {
+      const probe = (value: string) => {
+        const p = document.createElement("div");
+        p.style.backgroundColor = value;
+        el.appendChild(p);
+        const c = getComputedStyle(p).backgroundColor;
+        p.remove();
+        return c;
+      };
+      return [getComputedStyle(el).backgroundColor, probe("var(--dx-docs-preview-surface)"), probe("var(--dx-card)")];
+    });
+    expect(fill, "the frame is filled with --dx-docs-preview-surface").toBe(surface);
+    expect(fill, "not the Tabs panel's card colour").not.toBe(card);
     expect((await frame.boundingBox())!.height).toBeGreaterThanOrEqual(288);
   });
 
