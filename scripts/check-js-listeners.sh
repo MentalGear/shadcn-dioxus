@@ -94,7 +94,6 @@ PAIRED_BY_HAND = {
     "primitives/src/message_scroller.js": "viewport/document listeners installed by attach() and removed by the function it returns",
     "primitives/src/navigation_menu.rs": "document `pointerdown`, removed after the recv-sentinel",
     "primitives/src/top_layer.rs": "`toggle` and window scroll/resize trackers, removed after the recv-sentinel",
-    "primitives/src/virtual_list.rs": "container scroll + window resize bridge, removed after the recv-sentinel",
 }
 
 # Registrations that are NOT hand-paired but still legitimate, in files whose owner has not

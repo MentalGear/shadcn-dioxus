@@ -28,8 +28,9 @@
 //!   10k to millions of rows, rows may have any height (measured, with `estimate_size` as the
 //!   first guess), and the cost is that rows outside the window do not exist: native find-in-page
 //!   cannot reach them, the accessibility tree holds only the window (each row announces
-//!   `aria-posinset` of `aria-setsize`), the server renders no rows, and a focused element in a
-//!   row that scrolls out of the window is unmounted with it. Browsers also cap an element's
+//!   `aria-posinset` of `aria-setsize`) and the server renders no rows. The row that last
+//!   received focus is never unmounted: when the window leaves it, it stays drawn at its own
+//!   position (`data-virtual-pinned`), as the grids keep their active cell. Browsers also cap an element's
 //!   height (about 17M px in Firefox, 33M px in Chromium), which bounds a single scroll canvas
 //!   to roughly 300k rows of 100px.
 //! - [`VirtualListMode::Auto`] (the default): `ContentVisibility` while
@@ -52,12 +53,14 @@
 
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
-use serde::Deserialize;
 
 use crate::js_listener::{use_js_listeners, JsListeners};
-use crate::r#virtual::{cv_chunks, ChunkSkip, Engine, SizeEstimates, CHUNK_ROWS, DEFAULT_SIZE};
+use crate::r#virtual::{
+    cv_chunks, measured_px, pin_in_flow, use_virtual_bridge, Bridge, ChunkSkip, Engine,
+    SizeEstimates, CHUNK_ROWS, DEFAULT_SIZE,
+};
 pub use crate::scroll_area::ScrollFade;
-use crate::{merge_attributes, use_effect_with_cleanup, use_unique_id};
+use crate::{merge_attributes, use_unique_id};
 
 /// The row count up to which [`VirtualListMode::Auto`] keeps every row in the DOM.
 ///
@@ -328,11 +331,11 @@ fn VirtualListWindowed(props: ListBodyProps) -> Element {
 
     let container_id = use_unique_id();
 
-    // Non-reactive state: scroll position, measured sizes, the mounted range. `rev` is the one
-    // reactive signal, bumped by `publish` only when the engine says a render would draw
-    // something different.
-    let engine = use_hook(|| CopyValue::new(Engine::new()));
-    let rev = use_signal(|| 0u64);
+    // The shared DOM bridge (`primitives/src/virtual/bridge.rs`): one passive scroll listener,
+    // one ResizeObserver, removed with this scope; the engine is non-reactive state and a render
+    // runs only when it says the window moved.
+    let bridge = use_virtual_bridge(container_id, Engine::new, Bridge::scroll_axis);
+    let engine = bridge.engine();
 
     // The estimates are evaluated in a memo so that signals the `estimate_size` callback reads
     // are tracked, as they always were. Measurements are *not* an input: they update the engine
@@ -345,45 +348,10 @@ fn VirtualListWindowed(props: ListBodyProps) -> Element {
         )
     });
 
-    let publish = move || {
-        let (mut engine, mut rev) = (engine, rev);
-        if engine.with_mut(|engine| engine.needs_render()) {
-            let next = rev.peek().wrapping_add(1);
-            rev.set(next);
-        }
-    };
-
-    // Subscribe to scroll events via a JS bridge, and unsubscribe when the list unmounts.
-    use_effect_with_cleanup(move || {
-        let mut eval = document::eval(SCROLL_BRIDGE_JS);
-        let _ = eval.send(container_id.peek().clone());
-
-        spawn(async move {
-            while let Ok(scroll_msg) = eval.recv::<ScrollMsg>().await {
-                let mut engine = engine;
-                let correction = engine.with_mut(|engine| {
-                    engine.scroll(
-                        scroll_msg.offset,
-                        scroll_msg.viewport,
-                        scroll_msg.is_scrolling,
-                    )
-                });
-
-                if let Some(delta) = correction {
-                    let new_scroll = (scroll_msg.offset as i32 + delta).max(0) as u32;
-                    sync_container_scroll(container_id.peek().clone(), new_scroll).await;
-                    engine.with_mut(|engine| engine.set_scroll_offset(new_scroll));
-                }
-                publish();
-            }
-        });
-
-        // The bridge holds the container's scroll listener and the window's resize listener,
-        // both owned by the page, not by this scope: one message tells it to remove them.
-        move || {
-            let _ = eval.send("teardown");
-        }
-    });
+    // The row that last received focus stays mounted when the window leaves it (the grids keep
+    // their active cell the same way, `virtual/pin.rs`): unmounting it would drop focus to
+    // `<body>` mid-interaction.
+    let mut focused = use_signal(|| None::<usize>);
 
     // Find-in-page placeholders (opt-in, row 153): one capturing `beforematch` listener on the
     // container names the item whose placeholder the browser is about to reveal; the list then
@@ -398,59 +366,38 @@ fn VirtualListWindowed(props: ListBodyProps) -> Element {
         Some(
             JsListeners::install(BEFOREMATCH_BRIDGE_JS)
                 .arg(container_id.cloned())
-                .on_message(move |index: usize| {
-                    let mut engine = engine;
-                    let target = engine.with_mut(|engine| {
-                        let target = engine.scroll_target(index)?;
-                        engine.set_scroll_offset(target);
-                        Some(target)
-                    });
-                    if let Some(target) = target {
-                        publish();
-                        spawn(async move {
-                            sync_container_scroll(container_id.peek().clone(), target).await;
-                        });
-                    }
-                }),
+                .on_message(move |index: usize| bridge.reveal(index)),
         )
     });
 
     let onresize = move |idx| {
         move |event: Event<ResizeData>| {
             let rect = event.data().get_content_box_size().unwrap_or_default();
-            let measured = rect.height.max(1.0).round() as u32;
-
-            let mut engine = engine;
-            let (adjustment, current) = engine
-                .with_mut(|engine| (engine.resize_item(idx, measured), engine.scroll_offset()));
-            publish();
-
-            if let Some(delta) = adjustment {
-                let new_scroll = (current as i32 + delta).max(0) as u32;
-                spawn(async move {
-                    sync_container_scroll(container_id.peek().clone(), new_scroll).await;
-                });
-            }
+            bridge.measure(idx, measured_px(rect.height));
         }
     };
 
-    // Subscribe: this render runs again whenever `publish` bumps `rev`.
-    let _ = rev();
-    let plan = {
+    // Subscribe: this render runs again whenever the bridge publishes a new window.
+    bridge.track();
+    let pinned_index = focused();
+    let (plan, items, detached) = {
         let estimates = estimates.read();
         let mut engine = engine;
         engine.with_mut(|engine| {
             engine.sync(&estimates);
-            engine.plan(buffer())
+            let mut plan = engine.plan(buffer());
+            let pinned = pinned_index.and_then(|index| engine.item(index));
+            let (items, detached) =
+                pin_in_flow(std::mem::take(&mut plan.items), pinned, plan.top_offset);
+            (plan, items, detached)
         })
     };
     let set_size = count.to_string();
     let rows_total = count();
 
-    // `id` is owned: `sync_container_scroll` above looks this element up by
-    // id (a JS eval), so a caller override would silently break scroll sync
-    // (backlog row 93 names this site explicitly). `role`/`tabindex` are
-    // this container's own widget semantics, also owned.
+    // `id` is owned: the bridge looks this element up by id (a JS eval), so a caller override
+    // would silently break scroll sync (backlog row 93 names this site explicitly).
+    // `role`/`tabindex` are this container's own widget semantics, also owned.
     let owned = attributes!(div {
         id: container_id,
         role: "list",
@@ -470,17 +417,30 @@ fn VirtualListWindowed(props: ListBodyProps) -> Element {
                 }
                 div {
                     style: "position: absolute; inset: 0 auto auto 0; width: 100%; transform: translateY({plan.top_offset}px); will-change: transform;",
-                    {plan.items.iter().map(move |item| {
+                    {items.into_iter().map(move |item| {
                         let idx = item.index();
+                        // The focused row, when the window has left it: drawn at its own
+                        // position without pushing the rows in flow (same parent, same key, so
+                        // it rejoins the flow without remounting).
+                        let detached_style = detached
+                            .filter(|(index, _)| *index == idx)
+                            .map(|(_, top)| format!("position: absolute; inset-inline: 0; top: {top}px;"));
 
                         rsx! {
                             div {
                                 key: "{item.key()}",
                                 role: "listitem",
                                 "data-virtual-index": "{idx}",
+                                "data-virtual-pinned": detached_style.is_some().then_some("true"),
                                 "aria-setsize": "{set_size}",
                                 "aria-posinset": "{idx + 1}",
+                                style: detached_style,
                                 onresize: onresize(idx),
+                                onfocusin: move |_| {
+                                    if *focused.peek() != Some(idx) {
+                                        focused.set(Some(idx));
+                                    }
+                                },
                                 {render_item(idx)}
                             }
                         }
@@ -583,100 +543,6 @@ const BEFOREMATCH_BRIDGE_JS: &str = r#"
         if (holder) dioxus.send(Number(holder.dataset.findIndex));
     }, true);
 "#;
-
-/// The scroll bridge for windowed mode: reports the container's scroll state to Rust and, on
-/// the second message from Rust, removes every listener and timer it installed.
-const SCROLL_BRIDGE_JS: &str = r#"
-    const container = document.getElementById(await dioxus.recv());
-    if (!container) return;
-
-    let scrollEndTimer = null;
-    let lastOffset = null;
-    let lastViewport = null;
-    let lastIsScrolling = null;
-
-    function publish(isScrolling) {
-        const scroll = Math.round(container.scrollTop);
-        const viewport = Math.min(container.clientHeight, window.innerHeight) || 600;
-        // Deduplicate only if the full scroll state is unchanged.
-        if (
-            scroll === lastOffset &&
-            viewport === lastViewport &&
-            isScrolling === lastIsScrolling
-        ) {
-            return;
-        }
-        lastOffset = scroll;
-        lastViewport = viewport;
-        lastIsScrolling = isScrolling;
-        dioxus.send({
-            offset: scroll,
-            viewport: viewport,
-            isScrolling: isScrolling
-        });
-    }
-
-    function onScroll() {
-        // Clear any pending scroll-end detection
-        if (scrollEndTimer !== null) {
-            clearTimeout(scrollEndTimer);
-        }
-
-        // Send scroll event immediately (no RAF batching)
-        // This ensures Rust receives the event before the next render.
-        // Rust turns most of these into no render at all (see virtual/virtualizer.rs).
-        publish(true);
-
-        // Debounce scroll-end detection. Firefox in CI can take long
-        // enough between scroll events and measurement reads that a
-        // shorter timeout unfreezes the scroll canvas mid-scroll.
-        scrollEndTimer = setTimeout(() => {
-            scrollEndTimer = null;
-            publish(false);
-        }, 600);
-    }
-
-    // Named, so it can be removed below.
-    function onResize() {
-        publish(false);
-    }
-
-    // Initial publish
-    publish(false);
-
-    container.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onResize, { passive: true });
-
-    // Held until the list unmounts: Rust sends one message from its cleanup.
-    await dioxus.recv();
-    if (scrollEndTimer !== null) clearTimeout(scrollEndTimer);
-    container.removeEventListener("scroll", onScroll);
-    window.removeEventListener("resize", onResize);
-"#;
-
-/// Parsed scroll message from JS bridge.
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct ScrollMsg {
-    offset: u32,
-    viewport: u32,
-    is_scrolling: bool,
-}
-
-async fn sync_container_scroll(container_id: String, scroll_top: u32) {
-    let eval = document::eval(
-        r#"
-        const id = await dioxus.recv();
-        const targetScroll = await dioxus.recv();
-        const container = document.getElementById(id);
-        if (container) {
-            container.scrollTop = targetScroll;
-        }
-        "#,
-    );
-    let _ = eval.send(container_id);
-    let _ = eval.send(scroll_top);
-}
 
 #[cfg(test)]
 mod tests {

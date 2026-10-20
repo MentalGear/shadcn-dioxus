@@ -1,7 +1,8 @@
-//! Defines [`VirtualGrid`] (rows AND columns windowed) and [`VirtualWrapGrid`] (items flowing
-//! into a fixed number of columns, rows windowed): grids too large to mount whole.
+//! Defines [`VirtualGrid`] (rows AND columns windowed), [`VirtualWrapGrid`] (items flowing
+//! into a fixed number of columns, rows windowed) and [`VirtualJustifiedGrid`] (a photo wall of
+//! justified rows): grids too large to mount whole.
 //!
-//! # Two layouts
+//! # Layouts
 //!
 //! - [`VirtualGrid`] is a data grid: `row_count x column_count` cells, every row
 //!   `row_height(row)` px tall and every column `column_width(column)` px wide (both known up
@@ -13,8 +14,22 @@
 //! - [`VirtualWrapGrid`] is a gallery: `count` items in rows of `columns` equal tracks (CSS grid),
 //!   only the rows axis windowed. Rows are measured as they render (an image tile's height
 //!   follows its width), with `estimate_row_height` as the first guess.
+//! - [`VirtualJustifiedGrid`] is a photo wall: items of mixed aspect ratios packed into justified
+//!   rows that fill the width edge to edge, each tile exactly its item's aspect (uncropped). The
+//!   structure depends on the content (a row holds as many items as fit), so it has no columns
+//!   and its own spatial keyboard model (`ArrowUp`/`ArrowDown` pick the nearest tile by
+//!   horizontal centre). Rows fill the grid's width (vertical scrolling), or a fixed
+//!   `canvas_width` wider than the grid for a wall that scrolls both ways, windowed by row and,
+//!   within a row, by tile.
 //!
-//! Both are built on the shared engine (`primitives/src/virtual/`): each axis is the same
+//! The data grid's model is the default for a reason: its structure never depends on content,
+//! so non-uniform content (a photo of any aspect) is a presentation concern inside a uniform cell
+//! (`object-fit`), and both axes window independently. Use the justified grid when the gapless,
+//! uncropped look matters more than aligned columns.
+//!
+//! Both are built on the shared engine (`primitives/src/virtual/`), and share its DOM bridge with
+//! `VirtualList` (one passive scroll listener, one ResizeObserver, a render only when the window
+//! moves) and its pinning of the focused item: each axis is the same
 //! [`Engine`](crate::r#virtual) `VirtualList` uses (a Fenwick tree of item positions, a mounted
 //! range re-centred only once the viewport comes within `buffer / 2` items of its edge, the
 //! canvas size frozen while a scroll runs), so a scroll re-renders Rust about once per few rows
@@ -44,13 +59,13 @@
 
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
-use serde::Deserialize;
 
 use crate::direction::{use_direction, Direction, HorizontalNav};
-use crate::js_listener::{use_js_listeners, JsListeners};
 use crate::r#virtual::{
-    with_pinned, Engine, GridEngine, GridKey, GridScroll, GridShape, SizeEstimates,
+    justified_navigate, measured_px, use_virtual_bridge, with_pinned, Bridge, Engine, GridEngine,
+    GridKey, GridShape, JustifiedEngine, JustifiedOptions, RowPlan, ScrollReport, SizeEstimates,
 };
+pub use crate::scroll_area::ScrollFade;
 use crate::{merge_attributes, use_unique_id};
 
 /// The row height [`VirtualGrid`] uses without `row_height`, in px.
@@ -96,6 +111,14 @@ pub struct VirtualGridProps {
     pub dir: Option<Direction>,
     /// Called with `(row, column)` when the active cell changes (by keyboard, click or focus).
     pub on_active_change: Option<Callback<(usize, usize)>>,
+    /// A scroll-edge fade on the container, which is the element that scrolls (the
+    /// `dx-scroll-fade-*` classes of `dx-effects.css`; see [`ScrollFade`]). Defaults to
+    /// [`ScrollFade::None`]. It follows the container's own scroll offset, whatever cells are
+    /// mounted. The fade is a mask, so it also fades a sticky header (prefer
+    /// [`ScrollFade::Bottom`] / [`ScrollFade::End`] with `render_header`) and a border or
+    /// background on the container: put those on a wrapper.
+    #[props(default)]
+    pub fade: ScrollFade,
     /// Additional attributes to apply to the container element.
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
@@ -152,13 +175,24 @@ pub fn VirtualGrid(props: VirtualGridProps) -> Element {
         column_buffer,
         dir,
         on_active_change,
+        fade,
         attributes,
     } = props;
+    let attributes = merge_attributes(vec![attributes, fade.attributes()]);
 
     let direction = use_direction(dir);
     let container_id = use_unique_id();
-    let engine = use_hook(|| CopyValue::new(GridEngine::new()));
-    let rev = use_signal(|| 0u64);
+    // The shared DOM bridge (`primitives/src/virtual/bridge.rs`); both axes read each report.
+    let bridge = use_virtual_bridge(
+        container_id,
+        GridEngine::new,
+        |bridge: Bridge<GridEngine>, report: ScrollReport| {
+            let mut engine = bridge.engine();
+            engine.with_mut(|engine| engine.scroll(report));
+            bridge.publish();
+        },
+    );
+    let engine = bridge.engine();
     let active = use_signal(|| (0usize, 0usize));
     let focus_request = use_signal(|| 0u64);
 
@@ -185,28 +219,6 @@ pub fn VirtualGrid(props: VirtualGridProps) -> Element {
     } else {
         0
     };
-
-    let publish = move || {
-        let (mut engine, mut rev) = (engine, rev);
-        if engine.with_mut(|engine| engine.needs_render()) {
-            let next = rev.peek().wrapping_add(1);
-            rev.set(next);
-        }
-    };
-
-    // One passive scroll listener and one ResizeObserver on the container, removed with the
-    // scope (`js_listener.rs`).
-    use_js_listeners(move || {
-        Some(
-            JsListeners::install(SCROLL_BRIDGE_JS)
-                .arg(container_id.cloned())
-                .on_message(move |message: ScrollMsg| {
-                    let mut engine = engine;
-                    engine.with_mut(|engine| engine.scroll(message.into()));
-                    publish();
-                }),
-        )
-    });
 
     let (sticky_width, sticky) = {
         let geometry = column_geometry.read();
@@ -238,8 +250,8 @@ pub fn VirtualGrid(props: VirtualGridProps) -> Element {
         focus_request += 1;
     };
 
-    // Subscribe: this render runs again whenever `publish` bumps `rev`.
-    let _ = rev();
+    // Subscribe: this render runs again whenever the bridge publishes a new window.
+    bridge.track();
     let plan = {
         let rows = row_estimates.read();
         let geometry = column_geometry.read();
@@ -370,6 +382,12 @@ pub struct VirtualWrapGridProps {
     pub dir: Option<Direction>,
     /// Called with the item index when the active item changes (by keyboard, click or focus).
     pub on_active_change: Option<Callback<usize>>,
+    /// A scroll-edge fade on the container (the `dx-scroll-fade-*` classes of
+    /// `dx-effects.css`; see [`ScrollFade`]). Defaults to [`ScrollFade::None`]. It follows the
+    /// container's own scroll offset, whatever rows are mounted; a border or background on the
+    /// container fades with it, so put those on a wrapper.
+    #[props(default)]
+    pub fade: ScrollFade,
     /// Additional attributes to apply to the container element.
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
@@ -418,14 +436,18 @@ pub fn VirtualWrapGrid(props: VirtualWrapGridProps) -> Element {
         buffer,
         dir,
         on_active_change,
+        fade,
         attributes,
     } = props;
+    let attributes = merge_attributes(vec![attributes, fade.attributes()]);
 
     let direction = use_direction(dir);
     let container_id = use_unique_id();
-    let engine = use_hook(|| CopyValue::new(Engine::new()));
+    // The shared DOM bridge with the one-axis flow `VirtualList` uses: the rows axis, with the
+    // anchoring correction for rows measured above the viewport.
+    let bridge = use_virtual_bridge(container_id, Engine::new, Bridge::scroll_axis);
+    let engine = bridge.engine();
     let laid_out_for = use_hook(|| CopyValue::new(0usize));
-    let rev = use_signal(|| 0u64);
     // The active item, as an index: it keeps its item when the column count changes.
     let active = use_signal(|| 0usize);
     let focus_request = use_signal(|| 0u64);
@@ -436,33 +458,6 @@ pub fn VirtualWrapGrid(props: VirtualWrapGridProps) -> Element {
         SizeEstimates::evaluate(
             shape.rows(),
             estimate.as_ref().map(|f| f as &dyn Fn(usize) -> u32),
-        )
-    });
-
-    let publish = move || {
-        let (mut engine, mut rev) = (engine, rev);
-        if engine.with_mut(|engine| engine.needs_render()) {
-            let next = rev.peek().wrapping_add(1);
-            rev.set(next);
-        }
-    };
-
-    use_js_listeners(move || {
-        Some(
-            JsListeners::install(SCROLL_BRIDGE_JS)
-                .arg(container_id.cloned())
-                .on_message(move |message: ScrollMsg| {
-                    let mut engine = engine;
-                    let correction = engine.with_mut(|engine| {
-                        engine.scroll(message.top, message.height, message.is_scrolling)
-                    });
-                    if let Some(delta) = correction {
-                        let top = (message.top as i32 + delta).max(0) as u32;
-                        set_scroll_top(container_id.peek().clone(), top);
-                        engine.with_mut(|engine| engine.set_scroll_offset(top));
-                    }
-                    publish();
-                }),
         )
     });
 
@@ -498,21 +493,11 @@ pub fn VirtualWrapGrid(props: VirtualWrapGridProps) -> Element {
     let onresize = move |row: usize| {
         move |event: Event<ResizeData>| {
             let size = event.data().get_border_box_size().unwrap_or_default();
-            let measured = size.height.max(1.0).round() as u32;
-            let mut engine = engine;
-            let (adjustment, current) = engine
-                .with_mut(|engine| (engine.resize_item(row, measured), engine.scroll_offset()));
-            publish();
-            if let Some(delta) = adjustment {
-                set_scroll_top(
-                    container_id.peek().clone(),
-                    (current as i32 + delta).max(0) as u32,
-                );
-            }
+            bridge.measure(row, measured_px(size.height));
         }
     };
 
-    let _ = rev();
+    bridge.track();
     let rows = {
         let estimates = estimates.read();
         let (mut engine, mut laid_out_for) = (engine, laid_out_for);
@@ -572,6 +557,331 @@ pub fn VirtualWrapGrid(props: VirtualWrapGridProps) -> Element {
     }
 }
 
+/// The target row height [`VirtualJustifiedGrid`] uses without `target_row_height`, in px.
+pub const DEFAULT_TARGET_ROW_HEIGHT: f64 = 200.0;
+/// The gap [`VirtualJustifiedGrid`] uses without `gap`, in px.
+pub const DEFAULT_TILE_GAP: f64 = 4.0;
+/// How far beyond the viewport [`VirtualJustifiedGrid`] mounts tiles without `overscan`, in px.
+pub const DEFAULT_OVERSCAN: f64 = 320.0;
+
+/// Where a [`VirtualJustifiedGrid`] tile sits: its box in the grid's canvas, in px, `x` measured
+/// from the inline start (the right edge in RTL) and `y` from the top. The tile already has this
+/// size; the size is passed so a renderer can pick an image resolution.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct TileRect {
+    /// Distance of the tile's inline-start edge from the canvas's.
+    pub x: f64,
+    /// Distance of the tile's top edge from the canvas's.
+    pub y: f64,
+    /// The tile's width, which is `height * aspect`.
+    pub width: f64,
+    /// The tile's height, its row's height.
+    pub height: f64,
+}
+
+/// The props for the [`VirtualJustifiedGrid`] component.
+#[derive(Props, Clone, PartialEq)]
+pub struct VirtualJustifiedGridProps {
+    /// The aspect ratio (width / height) of every item, in order; the item count is its length.
+    /// Each tile has exactly its item's aspect, so a photo shown in it is never cropped. A zero,
+    /// negative or non-finite aspect is drawn as a 1:20 sliver.
+    pub aspects: ReadSignal<Vec<f64>>,
+    /// Renders item `index` inside its tile, given the tile's box (see [`TileRect`]). The tile
+    /// is sized and placed already: fill it, e.g. with an `img` at `width: 100%; height: 100%`.
+    pub render_tile: Callback<(usize, TileRect), Element>,
+    /// The row height, in px, that rows are packed toward: a full row takes items until they
+    /// would overflow the width at this height, then shrinks to fill the width exactly, so it is
+    /// never taller (unless `min_tile_width` backs it off). Defaults to
+    /// [`DEFAULT_TARGET_ROW_HEIGHT`] (200). The last row keeps this height and may end short.
+    #[props(default = ReadSignal::new(Signal::new(DEFAULT_TARGET_ROW_HEIGHT)))]
+    pub target_row_height: ReadSignal<f64>,
+    /// The space between tiles and between rows, in px. Defaults to [`DEFAULT_TILE_GAP`] (4).
+    #[props(default = ReadSignal::new(Signal::new(DEFAULT_TILE_GAP)))]
+    pub gap: ReadSignal<f64>,
+    /// The narrowest a tile may be squeezed, in px: a row whose narrowest tile would fall below it
+    /// gives up items to the next row and grows taller (best effort, bounded at three times the
+    /// target height). `0` (the default) disables it.
+    #[props(default)]
+    pub min_tile_width: ReadSignal<f64>,
+    /// The width the rows fill, in px. `None` (the default) fills the grid's own width and lays
+    /// out again when it resizes: the grid scrolls vertically only. A width larger than the grid
+    /// makes a two-axis wall: the grid scrolls both ways and windows the tiles of each row by
+    /// their horizontal position too.
+    #[props(default)]
+    pub canvas_width: ReadSignal<Option<f64>>,
+    /// How far beyond each edge of the viewport tiles are mounted, in px (the window is moved
+    /// once fewer than half of them remain). Defaults to [`DEFAULT_OVERSCAN`] (320).
+    #[props(default = ReadSignal::new(Signal::new(DEFAULT_OVERSCAN)))]
+    pub overscan: ReadSignal<f64>,
+    /// The reading direction for the horizontal arrow keys. Defaults to the nearest
+    /// `DirectionProvider`, else left-to-right. Set the matching `dir` attribute (or inherit one)
+    /// so the tiles flip with it.
+    pub dir: Option<Direction>,
+    /// Called with the item index when the active tile changes (by keyboard, click or focus).
+    pub on_active_change: Option<Callback<usize>>,
+    /// The active tile (the grid's one tab stop) as a signal the caller owns, both ways: the
+    /// grid writes every keyboard, click or focus move into it, and a write from outside moves
+    /// the active tile there, scrolls it into view and focuses it (a "jump to photo" button, or
+    /// keeping one selection across a switch between layouts). Without it the grid keeps its own.
+    pub active: Option<Signal<usize>>,
+    /// A scroll-edge fade on the container (the `dx-scroll-fade-*` classes of `dx-effects.css`;
+    /// see [`ScrollFade`]). Defaults to [`ScrollFade::None`].
+    #[props(default)]
+    pub fade: ScrollFade,
+    /// Additional attributes to apply to the container element.
+    #[props(extends = GlobalAttributes)]
+    pub attributes: Vec<Attribute>,
+}
+
+/// The layout options for a width, from the props (read reactively in a render, peeked in a
+/// handler, through `read`).
+fn justified_options(
+    width: Option<f64>,
+    target_row_height: f64,
+    gap: f64,
+    min_tile_width: f64,
+) -> Option<JustifiedOptions> {
+    width.map(|width| {
+        JustifiedOptions::new(width, target_row_height, gap).with_min_tile_width(min_tile_width)
+    })
+}
+
+/// # VirtualJustifiedGrid
+///
+/// A photo wall that mounts only the tiles in view: items of mixed aspect ratios packed into
+/// justified rows (each row as tall as it must be for its tiles to fill the width edge to edge,
+/// every tile exactly its item's aspect, nothing cropped). Unlike [`VirtualGrid`], a row's
+/// composition depends on the content, so there are no columns.
+///
+/// ## Example
+///
+/// ```rust
+/// use dioxus::prelude::*;
+/// use dioxus_primitives::virtual_grid::{TileRect, VirtualJustifiedGrid};
+///
+/// #[component]
+/// fn Demo() -> Element {
+///     let aspects = use_signal(|| (0..10_000).map(|i| [1.5, 0.75, 1.0][i % 3]).collect::<Vec<f64>>());
+///     rsx! {
+///         VirtualJustifiedGrid {
+///             aspects,
+///             target_row_height: 180.0,
+///             render_tile: |(index, _rect): (usize, TileRect)| rsx! { "Photo {index}" },
+///             style: "height: 30rem; overflow: auto;",
+///             "aria-label": "Photos",
+///         }
+///     }
+/// }
+/// ```
+///
+/// ## Keyboard and focus
+///
+/// The grid pattern with spatial rows: one tab stop (the active tile), `ArrowLeft`/`ArrowRight`
+/// move in reading order (past a row's end to the next row's start), `ArrowUp`/`ArrowDown` move
+/// to the tile of the adjacent row whose horizontal centre is closest, `Home`/`End` to the row's
+/// ends, `Ctrl+Home`/`Ctrl+End` to the first/last tile, `PageUp`/`PageDown` a viewport up/down.
+/// The horizontal arrows mirror in RTL. The active tile stays rendered wherever the grid
+/// scrolls, and a re-layout that re-creates it gives focus back to it.
+///
+/// ## Styling
+///
+/// The container is the scroll container (give it a height and `overflow: auto`, plus
+/// `scrollbar-gutter: stable` so a scrollbar appearing does not re-flow the rows); it owns `id`,
+/// `role` and `aria-rowcount`. A fluid grid carries `data-justified-axes="block"`, a wall
+/// `"both"`. Rows are `[role=row]`, tiles `[role=gridcell]` with `data-grid-index` and
+/// `data-grid-cell="row:column"`; positions and sizes are inline styles. Do not pad the container:
+/// the rows fill its content box.
+#[component]
+pub fn VirtualJustifiedGrid(props: VirtualJustifiedGridProps) -> Element {
+    let VirtualJustifiedGridProps {
+        aspects,
+        render_tile,
+        target_row_height,
+        gap,
+        min_tile_width,
+        canvas_width,
+        overscan,
+        dir,
+        on_active_change,
+        active: active_prop,
+        fade,
+        attributes,
+    } = props;
+    let attributes = merge_attributes(vec![attributes, fade.attributes()]);
+
+    let direction = use_direction(dir);
+    let container_id = use_unique_id();
+    let own_active = use_signal(|| 0usize);
+    let active = active_prop.unwrap_or(own_active);
+    let mut focus_request = use_signal(|| 0u64);
+    // The active index the grid itself last set or saw, so a write from outside is told apart.
+    let mut seen_active = use_hook(|| CopyValue::new(*active.peek()));
+    // Whether focus is inside the grid, so a re-layout that re-creates the focused tile under
+    // another row can hand focus back to it.
+    let mut focus_inside = use_hook(|| CopyValue::new(false));
+
+    // The shared DOM bridge. A fluid grid lays out for the measured width; when that changes the
+    // tile at the top of the viewport is kept in place (the scroll position is corrected).
+    let bridge = use_virtual_bridge(
+        container_id,
+        JustifiedEngine::new,
+        move |bridge: Bridge<JustifiedEngine>, report: ScrollReport| {
+            let mut engine = bridge.engine();
+            let fluid = canvas_width.peek().is_none();
+            let corrected = engine.with_mut(|engine| {
+                let resized = fluid && engine.measured_width() != Some(f64::from(report.width));
+                let anchor = engine.anchor();
+                engine.scroll(report);
+                if !resized {
+                    return None;
+                }
+                let options = justified_options(
+                    Some(f64::from(report.width)),
+                    *target_row_height.peek(),
+                    *gap.peek(),
+                    *min_tile_width.peek(),
+                );
+                engine.sync(&aspects.peek(), options);
+                let top = anchor.and_then(|index| engine.tile_top(index))?;
+                let top = top.round().clamp(0.0, f64::from(u32::MAX)) as u32;
+                engine.set_top(top);
+                Some(top)
+            });
+            if let Some(top) = corrected {
+                if top != report.top {
+                    bridge.set_scroll_top(top);
+                }
+                if *focus_inside.peek() {
+                    focus_request += 1;
+                }
+            }
+            bridge.publish();
+        },
+    );
+    let engine = bridge.engine();
+    use_focus_active_tile(container_id, active, focus_request);
+
+    let set_active = move |index: usize| {
+        let (mut active, mut seen_active) = (active, seen_active);
+        seen_active.set(index);
+        if *active.peek() != index {
+            active.set(index);
+            if let Some(callback) = on_active_change {
+                callback.call(index);
+            }
+        }
+    };
+    // A write from outside: reveal and focus the new active tile (it is pinned, so the render
+    // that follows mounts it).
+    use_effect(move || {
+        let current = active();
+        if current != *seen_active.peek() {
+            seen_active.set(current);
+            focus_request += 1;
+        }
+    });
+
+    let onkeydown = move |event: KeyboardEvent| {
+        let Some(key) = grid_key(&event.data(), direction) else {
+            return;
+        };
+        event.prevent_default();
+        let from = *active.peek();
+        let to = engine.with(|engine| {
+            let page = f64::from(engine.viewport().height);
+            justified_navigate(engine.layout(), from, key, page)
+        });
+        set_active(to);
+        focus_request += 1;
+    };
+
+    // Subscribe: this render runs again whenever the bridge publishes a new window.
+    bridge.track();
+    let fixed_width = canvas_width();
+    let count = aspects.read().len();
+    let tab_stop = (count > 0).then(|| active().min(count - 1));
+    let (rows, row_count, width, height) = {
+        let aspects = aspects.read();
+        let mut engine = engine;
+        engine.with_mut(|engine| {
+            let width = fixed_width.or_else(|| engine.measured_width());
+            let options = justified_options(width, target_row_height(), gap(), min_tile_width());
+            engine.sync(&aspects, options);
+            let rows = engine.plan(overscan(), tab_stop);
+            let layout = engine.layout();
+            (
+                rows,
+                layout.rows.len(),
+                layout.container_width,
+                layout.total_height,
+            )
+        })
+    };
+    let measured = fixed_width.is_some() || engine.read().measured_width().is_some();
+    let canvas_width_style = if fixed_width.is_some() {
+        format!("{width:.3}px")
+    } else {
+        "100%".to_string()
+    };
+
+    let owned = attributes!(div {
+        id: container_id,
+        role: "grid",
+        "aria-rowcount": if measured { row_count as i64 } else { -1 },
+        "aria-busy": (!measured).then_some("true"),
+        "data-virtual-grid": "justified",
+        "data-justified-axes": if fixed_width.is_some() { "both" } else { "block" },
+    });
+    let merged = merge_attributes(vec![attributes, owned]);
+
+    let tile = move |plan: &RowPlan, tile: crate::r#virtual::layout::justified::Tile| {
+        let index = tile.index;
+        let column = index - plan.start;
+        let focusable = tab_stop == Some(index);
+        let rect = TileRect {
+            x: tile.x,
+            y: tile.y,
+            width: tile.width,
+            height: tile.height,
+        };
+        rsx! {
+            div {
+                key: "{index}",
+                role: "gridcell",
+                "aria-colindex": column + 1,
+                "data-grid-index": index,
+                "data-grid-cell": "{plan.row}:{column}",
+                tabindex: if focusable { "0" } else { "-1" },
+                style: "position: absolute; top: 0; inset-inline-start: {tile.x:.3}px; box-sizing: border-box; width: {tile.width:.3}px; height: 100%;",
+                onfocus: move |_| set_active(index),
+                {render_tile((index, rect))}
+            }
+        }
+    };
+
+    rsx! {
+        div {
+            onkeydown,
+            onfocusin: move |_| focus_inside.set(true),
+            onfocusout: move |_| focus_inside.set(false),
+            ..merged,
+            div { style: "position: relative; width: {canvas_width_style}; height: {height:.3}px;",
+                for plan in rows {
+                    div {
+                        key: "{plan.row}",
+                        role: "row",
+                        "aria-rowindex": plan.row + 1,
+                        style: "position: absolute; inset-inline-start: 0; top: {plan.y:.3}px; width: 100%; height: {plan.height:.3}px;",
+                        // Keyed items straight from an iterator (see `VirtualGrid`): a window
+                        // move then keeps every tile's DOM node.
+                        {plan.tiles.iter().map(|t| tile(&plan, *t))}
+                    }
+                }
+            }
+        }
+    }
+}
+
 /// `index` as `(row, column)` in rows of `columns`.
 fn index_to_cell(index: usize, columns: usize) -> (usize, usize) {
     let columns = columns.max(1);
@@ -587,8 +897,12 @@ fn use_active_cell(active: Signal<usize>, columns: ReadSignal<usize>) -> Memo<(u
 /// keeps its default action). The horizontal arrows go through `direction.rs`, so they mirror in
 /// RTL.
 fn grid_key(event: &KeyboardData, direction: Direction) -> Option<GridKey> {
-    let key = event.key();
     let ctrl = event.modifiers().ctrl() || event.modifiers().meta();
+    key_to_grid_key(event.key(), ctrl, direction)
+}
+
+/// [`grid_key`] on a bare key and the Ctrl (or Cmd) state.
+fn key_to_grid_key(key: Key, ctrl: bool, direction: Direction) -> Option<GridKey> {
     if let Some(horizontal) = direction.resolve_horizontal(&key) {
         return Some(match horizontal {
             HorizontalNav::Prev => GridKey::Prev,
@@ -622,73 +936,51 @@ fn use_focus_active_cell(
             return;
         }
         let (row, column) = *active.peek();
-        let eval = document::eval(FOCUS_CELL_JS);
-        let _ = eval.send((
+        focus_and_reveal(
             container_id.peek().clone(),
-            format!("{row}:{column}"),
+            format!(r#"[data-grid-cell="{row}:{column}"]"#),
             header,
             sticky_width,
-        ));
+        );
     });
 }
 
-/// Moves the container's scroll position (a measured row above the viewport changed size).
-fn set_scroll_top(container_id: String, top: u32) {
-    let eval = document::eval(
-        r#"
-        const [id, top] = await dioxus.recv();
-        const container = document.getElementById(id);
-        if (container) container.scrollTop = top;
-        "#,
-    );
-    let _ = eval.send((container_id, top));
+/// After a keyboard move (or a re-layout that may have re-created the focused tile) has
+/// rendered, focus a justified grid's active tile and scroll it into view on both axes.
+fn use_focus_active_tile(
+    container_id: Signal<String>,
+    active: Signal<usize>,
+    focus_request: Signal<u64>,
+) {
+    use_effect(move || {
+        if focus_request() == 0 {
+            return;
+        }
+        let index = *active.peek();
+        focus_and_reveal(
+            container_id.peek().clone(),
+            format!(r#"[data-grid-index="{index}"]"#),
+            0,
+            0,
+        );
+    });
 }
 
-/// Reports the container's scroll position and size: one passive `scroll` listener (through
-/// `listen`) and one ResizeObserver, both undone when the scope ends. `left` is the distance from
-/// the inline start (`scrollLeft` is negative in RTL).
-const SCROLL_BRIDGE_JS: &str = r#"
-    const el = document.getElementById(await dioxus.recv());
-    if (!el) return;
-    let timer = null;
-    let last = "";
-    const publish = (isScrolling) => {
-        const width = Math.min(el.clientWidth, window.innerWidth) || 800;
-        const height = Math.min(el.clientHeight, window.innerHeight) || 600;
-        const top = Math.round(el.scrollTop);
-        const left = Math.round(Math.abs(el.scrollLeft));
-        const key = top + " " + left + " " + width + " " + height + " " + isScrolling;
-        if (key === last) return;
-        last = key;
-        dioxus.send({ top, left, width, height, isScrolling });
-    };
-    listen(el, "scroll", () => {
-        if (timer !== null) clearTimeout(timer);
-        publish(true);
-        // The canvas size stays frozen until the scroll has been quiet this long.
-        timer = setTimeout(() => {
-            timer = null;
-            publish(false);
-        }, 600);
-    }, { passive: true });
-    const observer = new ResizeObserver(() => publish(false));
-    observer.observe(el);
-    cleanup(() => {
-        observer.disconnect();
-        if (timer !== null) clearTimeout(timer);
-    });
-    publish(false);
-"#;
+/// Runs [`FOCUS_CELL_JS`] for the cell `selector` names inside the grid `container_id`.
+fn focus_and_reveal(container_id: String, selector: String, header: u32, sticky_width: u32) {
+    let eval = document::eval(FOCUS_CELL_JS);
+    let _ = eval.send((container_id, selector, header, sticky_width));
+}
 
 /// Focuses the active cell once it is in the DOM (it is pinned, so the render that made it
 /// active mounts it) and scrolls the container just enough to show it beside the sticky edges.
 const FOCUS_CELL_JS: &str = r#"
-    const [id, key, header, stickyWidth] = await dioxus.recv();
+    const [id, selector, header, stickyWidth] = await dioxus.recv();
     let tries = 0;
     const go = () => {
         const grid = document.getElementById(id);
         if (!grid) return;
-        const cell = grid.querySelector('[data-grid-cell="' + key + '"]');
+        const cell = grid.querySelector(selector);
         if (!cell) {
             if (tries++ < 10) requestAnimationFrame(go);
             return;
@@ -711,47 +1003,47 @@ const FOCUS_CELL_JS: &str = r#"
     go();
 "#;
 
-/// One report from [`SCROLL_BRIDGE_JS`].
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct ScrollMsg {
-    top: u32,
-    left: u32,
-    width: u32,
-    height: u32,
-    is_scrolling: bool,
-}
-
-impl From<ScrollMsg> for GridScroll {
-    fn from(message: ScrollMsg) -> Self {
-        GridScroll {
-            top: message.top,
-            left: message.left,
-            width: message.width,
-            height: message.height,
-            is_scrolling: message.is_scrolling,
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_horizontal_arrows_mirror_in_rtl_and_ctrl_picks_the_grid_ends() {
+        let map =
+            |key: Key, ctrl: bool, direction: Direction| key_to_grid_key(key, ctrl, direction);
+        assert_eq!(
+            map(Key::ArrowRight, false, Direction::Ltr),
+            Some(GridKey::Next)
+        );
+        assert_eq!(
+            map(Key::ArrowLeft, false, Direction::Ltr),
+            Some(GridKey::Prev)
+        );
+        assert_eq!(
+            map(Key::ArrowLeft, false, Direction::Rtl),
+            Some(GridKey::Next)
+        );
+        assert_eq!(
+            map(Key::ArrowRight, false, Direction::Rtl),
+            Some(GridKey::Prev)
+        );
+        assert_eq!(
+            map(Key::ArrowDown, false, Direction::Rtl),
+            Some(GridKey::Down)
+        );
+        assert_eq!(
+            map(Key::Home, false, Direction::Ltr),
+            Some(GridKey::RowStart)
+        );
+        assert_eq!(map(Key::Home, true, Direction::Ltr), Some(GridKey::First));
+        assert_eq!(map(Key::End, true, Direction::Rtl), Some(GridKey::Last));
+        assert_eq!(map(Key::Enter, false, Direction::Ltr), None);
+    }
 
     #[test]
     fn index_and_cell_round_trip() {
         assert_eq!(index_to_cell(0, 4), (0, 0));
         assert_eq!(index_to_cell(9, 4), (2, 1));
         assert_eq!(index_to_cell(9, 0), (9, 0));
-    }
-
-    /// The bridge registers its listener through `listen` (removed with the scope), never with
-    /// a raw `addEventListener`, and keeps it passive.
-    #[test]
-    fn the_scroll_bridge_uses_listen_and_is_passive() {
-        assert!(SCROLL_BRIDGE_JS.contains(r#"listen(el, "scroll""#));
-        assert!(SCROLL_BRIDGE_JS.contains("{ passive: true }"));
-        assert!(!SCROLL_BRIDGE_JS.contains("addEventListener"));
-        assert!(SCROLL_BRIDGE_JS.contains("observer.disconnect()"));
     }
 }

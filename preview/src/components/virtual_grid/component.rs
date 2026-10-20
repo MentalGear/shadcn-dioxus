@@ -1,6 +1,8 @@
 use dioxus::prelude::*;
 #[allow(unused_imports)] // a consumer-facing surface; this crate's own demos use a subset
-pub use dioxus_primitives::virtual_grid::{VirtualGridProps, VirtualWrapGridProps};
+pub use dioxus_primitives::virtual_grid::{
+    ScrollFade, TileRect, VirtualGridProps, VirtualJustifiedGridProps, VirtualWrapGridProps,
+};
 use dioxus_primitives::{dioxus_attributes::attributes, merge_attributes};
 
 /// Styled wrapper around the primitive `VirtualGrid` (rows and columns windowed).
@@ -26,6 +28,7 @@ pub fn VirtualGrid(props: VirtualGridProps) -> Element {
             column_buffer: props.column_buffer,
             dir: props.dir,
             on_active_change: props.on_active_change,
+            fade: props.fade,
             attributes: merged,
         }
     }
@@ -50,6 +53,35 @@ pub fn VirtualWrapGrid(props: VirtualWrapGridProps) -> Element {
             buffer: props.buffer,
             dir: props.dir,
             on_active_change: props.on_active_change,
+            fade: props.fade,
+            attributes: merged,
+        }
+    }
+}
+
+/// Styled wrapper around the primitive `VirtualJustifiedGrid` (a photo wall of justified rows:
+/// every tile its item's aspect, rows filling the width, rows and tiles windowed).
+#[component]
+pub fn VirtualJustifiedGrid(props: VirtualJustifiedGridProps) -> Element {
+    let base = attributes!(div {
+        class: "dx-virtual-grid dx-virtual-grid-justified"
+    });
+    let merged = merge_attributes(vec![base, props.attributes]);
+
+    rsx! {
+        document::Link { rel: "stylesheet", href: asset!("/src/components/virtual_grid/style.css") }
+        dioxus_primitives::virtual_grid::VirtualJustifiedGrid {
+            aspects: props.aspects,
+            render_tile: props.render_tile,
+            target_row_height: props.target_row_height,
+            gap: props.gap,
+            min_tile_width: props.min_tile_width,
+            canvas_width: props.canvas_width,
+            overscan: props.overscan,
+            dir: props.dir,
+            on_active_change: props.on_active_change,
+            active: props.active,
+            fade: props.fade,
             attributes: merged,
         }
     }
