@@ -4,7 +4,7 @@ title: "Demo upgrades: 25 components whose shadcn demo is clearly richer than ou
 status: "BACKLOG -- owner item 2026-10-11, from a comparison of 61 shadcn pages (25 richer there, 36 equal…"
 size: "S mostly (20 of 25 S; 5 M: combobox…"
 area: docs
-updated: 2026-10-11
+updated: 2026-10-20
 ---
 
 # Row 187: Demo upgrades: 25 components whose shadcn demo is clearly richer than ours
@@ -15,7 +15,7 @@ updated: 2026-10-11
 
 ## Status / trigger
 
-**BACKLOG** -- owner item 2026-10-11, from a comparison of 61 shadcn pages (25 richer there, 36 equal or better). Next-session list: after or alongside the parity wave (row 155), same step; the demo-only items have no dependency and can start earlier
+**BACKLOG** -- owner item 2026-10-11, from a comparison of 61 shadcn pages (25 richer there, 36 equal or better). Next-session list: after or alongside the parity wave (row 155), same step; the demo-only items have no dependency and can start earlier **2026-10-20 sync: landed in PR #112 (merge 2ea6e19f): item 6 combobox multi-select (37175a3f, `ComboboxMulti`; chips label fix 1299d89d) and the typed AlertDialog/Card/Spinner/Button props (0894746c); calendar `caption_layout` for date_picker #7 (cda20026). Still open: multi demo groups and input-group addon variant, a `name` for the single Combobox, row 306 (selected label at SSG).**
 
 ## Size
 

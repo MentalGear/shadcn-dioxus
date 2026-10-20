@@ -34,7 +34,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (63)
+## Open rows (59)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -49,13 +49,9 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [28](backlog/028-verify-the-2026-09-02-ios-keyboard-anchor.md) | Verify the 2026-09-02 iOS-keyboard anchor-tracking fix (use_anchor_position_fallback… | User re-test after deploy — the sandbox has no WebKit, and page.setViewportSize() cannot reproduce… | S to verify | overlays |
 | [30](backlog/030-verify-the-2026-09-02-touch-text-entry-font.md) | Verify the 2026-09-02 touch text-entry font-size floor… | User re-test after deploy — the sandbox has no WebKit, and while Playwright's iPhone 13 emulation… | S to verify | tests |
 | [33](backlog/033-3-browser-playwright-on-every-push-pr-sharded.md) | 3-browser Playwright on every push/PR, sharded — dignifiedquire/dx-components runs chromium+firefox+webkit… | CI reactivation (user: off until further notice, 2026-08-30) — then it is a workflow-trigger… | S | ci |
-| [68](backlog/068-cross-worktree-cargo-build-directory-hazard.md) | Cross-worktree cargo build-directory hazard | Found 2026-09-18, four independent occurrences | — | process |
-| [72](backlog/072-follow-ups-surfaced-by-the-2026-09-18-lanes-not.md) | Follow-ups surfaced by the 2026-09-18 lanes, not built this round | Surfaced 2026-09-18 across lanes C, E, B and integration round 1 | — | process |
-| [92](backlog/092-new-component-landings-can-leave-preview-s-out.md) | New-component landings can leave preview's OUT_DIR stale — cargo clippy/test/doc fail until build.rs is… | Found 2026-09-20 (round 4 integration, Carousel landing onto a pre-existing target dir); recurs for… | S | build |
-| [97](backlog/097-a-second-un-fragmented-rsx-sibling-renders-on.md) | A second, un-fragmented rsx sibling renders on the first pass and is silently dropped by the next one | Found 2026-09-20 (round 5) adding a scoped &lt;style&gt; tag beside CarouselContent's track | DONE for this instance (explicit… | misc |
-| [98](backlog/098-dx-build-ssg-fails-with-no-such-file-or.md) | dx build --ssg fails with No such file or directory (os error 2) when CARGO_TARGET_DIR is a relative path | Hit 2026-09-20 (round 5) by a lane following this repo's own CARGO_TARGET_DIR=target-lane-&lt;name&gt;… | Workaround is one word: make the path… | process |
-| [109](backlog/109-ssg-interaction-tests-race-hydration-a-click.md) | SSG interaction tests race hydration — a click can land before wasm attaches Dioxus's delegated listeners; a… | Found 2026-09-25 (round 8b) in the final integrated verification at b557dfa: an SSG run of… | S — one client-side effect, one shared… | build |
-| [110](backlog/110-playwright-s-own-actionability-pre-scroll-hover.md) | Playwright's own actionability pre-scroll (.hover()/.focus()/.click()'s auto-scroll) animates under the… | Instance 2, 2026-09-25 (round 8b): carousel.spec.ts's "hovering the carousel stops rotation…"… | Diagnosis M (two hypotheses tried and… | tests |
+| [68](backlog/068-cross-worktree-cargo-build-directory-hazard.md) | Cross-worktree cargo build-directory hazard | Found 2026-09-18, four independent occurrences 2026-10-20 sync: still the rule of record; the… | — | process |
+| [72](backlog/072-follow-ups-surfaced-by-the-2026-09-18-lanes-not.md) | Follow-ups surfaced by the 2026-09-18 lanes, not built this round | Surfaced 2026-09-18 across lanes C, E, B and integration round 1 2026-10-20 sync: every item in… | — | process |
+| [97](backlog/097-a-second-un-fragmented-rsx-sibling-renders-on.md) | A second, un-fragmented rsx sibling renders on the first pass and is silently dropped by the next one | Found 2026-09-20 (round 5) adding a scoped &lt;style&gt; tag beside CarouselContent's track 2026-10-20… | DONE for this instance (explicit… | misc |
 | [115](backlog/115-tooltip-spec-ts-6-tabbing-out-of-the-trigger.md) | tooltip.spec.ts:6 "tabbing out of the trigger element should hide the tooltip" failed once in a full-suite… | Seen 2026-09-28 in the mode-D integration run (--workers=4, SSG release build): the tooltip was… | S (diagnosis, when it recurs) | tests |
 | [126](backlog/126-link-s-aria-current-can-emit-a-duplicated.md) | Link's aria_current can emit a duplicated attribute under a base path; the charts gallery tab row uses plain… | LANDED 2026-10-11 (root-caused and fixed by construction; one library residue below) -- the… | S (diagnosis) | charts |
 | [130](backlog/130-arborium-2-17-0-s-wasm-libc-shim-lacks-the-data.md) | arborium 2.17.0's wasm libc shim lacks the data symbol stderr that tree-sitter's stack.c… | OPEN (upstream) -- local fix 7ad8421 (a stderr definition in preview); an upstream issue is worth… | S | upstream |
@@ -66,11 +62,9 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [154](backlog/154-shared-virtualization-engine-one-engine-in.md) | Shared virtualization engine: ONE engine in primitives/src/virtual/ (core, strategy, DOM bridge) that every… | DESIGN NOTE -- first note recorded 2026-10-05 from the owner question whether the virtualized… | S (note); the build is not estimated | virtual |
 | [155](backlog/155-shadcn-parity-wave-group-1-the-invalid-ring.md) | shadcn parity wave (group 1, the invalid ring, LANDED 2026-10-13 with row 145's state recipes): the 27 "Add… | LANDED: group 1 2026-10-13 (with row 145's state recipes), group 7's Sheet side 2026-10-14 (rows… | M-L in total (23 of the 27 are S; four… | theme |
 | [158](backlog/158-theme-follow-ups-accept-shadcn-s-dark-class-as.md) | Theme follow-ups: accept shadcn's .dark class as an alias of data-theme="dark", and suppress transitions… | PART (a) LANDED 2026-10-15 (by construction, lane x158dark 7d16044 + 3a3a9fa; owner approved… | S + S | theme |
-| [161](backlog/161-rename-the-website-to-shadcn-dioxus-and-give-it.md) | Rename the website to "shadcn-dioxus" and give it a real favicon (an SVG that follows light/dark, a PNG… | IN PROGRESS (owner decision 2026-10-10) -- the site brand and favicon are being changed now (BRAND… | S-M | docs |
 | [164](backlog/164-a-fixtures-goto-that-waits-for-hydration-49.md) | A fixtures goto that waits for hydration (49 spec files lack the wait), and migrate the 362 legacy ?name=… | OPEN -- recorded 2026-10-05 (audit); scheduled in the next-session order (step 4, just before row… | M (the fixture is S; the migration is… | tests |
 | [167](backlog/167-migrate-the-52-hand-paired-listener-sites-onto.md) | Migrate the 52 hand-paired listener sites onto use_js_listeners, shrinking PAIRED_BY_HAND in… | OPEN -- recorded 2026-10-05 (follow-up of row 159, which landed 2026-10-05 in round 3); scheduled… | M (mechanical per site, 11 files) | misc |
 | [170](backlog/170-cross-component-css-overrides-190-sites-in-12.md) | Cross-component CSS overrides: 190 sites in 12 sheets declare, in one component's stylesheet, a property that… | OPEN (construction started) -- recorded 2026-10-05 (round 3: the FIELD-VAR and STYLE-DELIVERY… | M (the decision and the prototype are… | theme |
-| [186](backlog/186-shadcn-utilities-scroll-fade-and-shimmer-are.md) | shadcn utilities: scroll-fade and shimmer are built but not shipped as documented, public utilities | PART LANDED 2026-10-15 (the scroll-fade fade prop, owner-approved 2026-10-14); BACKLOG: the /docs… | M | docs |
 | [187](backlog/187-demo-upgrades-25-components-whose-shadcn-demo.md) | Demo upgrades: 25 components whose shadcn demo is clearly richer than ours | BACKLOG -- owner item 2026-10-11, from a comparison of 61 shadcn pages (25 richer there, 36 equal… | S mostly (20 of 25 S; 5 M: combobox… | docs |
 | [188](backlog/188-demo-parity-second-audit-the-owner-s-per.md) | Demo parity, second audit: the owner's per-example list against the original shadcn demos (51 components; row… | DEMO-ONLY ITEMS DONE 2026-10-19 (batch 2: every section-5 demo exists; what remains needs component… | M per batch | docs |
 | [216](backlog/216-infra-worktrees-sharing-or-copying-one-cargo.md) | Infra: worktrees sharing or copying one CARGO_TARGET_DIR build and lint another tree's code (re-confirms row… | OPEN 2026-10-14 (workaround in CLAUDE.md; by-construction fix proposed) | S-M | process |
@@ -101,8 +95,10 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [304](backlog/304-radial-chart-tooltips-share-the-gap-split-equally.md) | Radial chart tooltips share the gap, split equally per ring (lowest priority) | PARKED (lowest priority; ask the owner before starting), owner 2026-10-19. Ask the owner whether… | S–M (to scope) | primitives |
 | [305](backlog/305-side-drawer-scrolling-its-content-also-drags-the.md) | Side drawer: scrolling its content also drags the drawer sideways (iOS) | BACKLOG (owner report 2026-10-19, iOS device) | S–M | primitives |
 | [306](backlog/306-select-and-combobox-show-no-selected-label-before.md) | Select and Combobox show no selected label before hydration | OPEN. Found 2026-10-19 by the features-batch validation; pre-existing on main. | M | select |
+| [307](backlog/307-ios-color-panel-does-not-pick-colors.md) | iOS: the Color Panel opens but tapping its color box does not change the color | OPEN (owner report 2026-10-20, iOS device; being investigated in the 'iOS Color Panel won't pick… | M | overlays |
+| [308](backlog/308-virtualgrid-scroll-trap-at-the-edges.md) | VirtualGrid traps page scroll at its edges; should VirtualList and VirtualGrid be unified? | OPEN (owner report 2026-10-20; with the Round 4 thread) | S | virtual |
 
-## Done rows (211)
+## Done rows (217)
 
 | # | Item | Updated |
 |---|---|---|
@@ -184,10 +180,12 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [89](backlog/done/089-selected-active-state-losing-to-hover-on-click.md) | Selected/active state losing to :hover on click — a user-reported hover-over-state specificity class, swept… | 2026-09-20 |
 | [90](backlog/done/090-chart-stage-2-per-chart-type-galleries-shadcn.md) | Chart stage 2 — per-chart-type galleries (shadcn parity), parked mid-flight (LANDED 2026-09-25) | 2026-09-25 |
 | [91](backlog/done/091-carousel-landed-css-scroll-snap-engine-tier-1.md) | Carousel landed — CSS scroll-snap engine, tier-1 APG oracle vendored, three live-verification fixes | 2026-09-20 |
+| [92](backlog/done/092-new-component-landings-can-leave-preview-s-out.md) | New-component landings can leave preview's OUT_DIR stale — cargo clippy/test/doc fail until build.rs is… | 2026-10-20 |
 | [93](backlog/done/093-literal-attribute-beside-an-unmerged-props.md) | Literal attribute beside an unmerged props spread with no typed field claiming it — the duplicate-attribute… | 2026-10-19 |
 | [94](backlog/done/094-demo-wrappers-that-set-max-width-margin-0-auto.md) | Demo wrappers that set max-width + margin: 0 auto never reach that width — they shrink-wrap instead, so every… | 2026-10-19 |
 | [95](backlog/done/095-a-debug-ssg-build-serves-fine-but-traps-at.md) | A debug SSG build serves fine but traps at runtime, so interaction specs run against it fail like real… | 2026-10-19 |
 | [96](backlog/done/096-scroll-snap-stop-always-caps-a-browser-driven.md) | scroll-snap-stop: always caps a browser-driven scroll but NOT this crate's own pointer-drag release | 2026-09-20 |
+| [98](backlog/done/098-dx-build-ssg-fails-with-no-such-file-or.md) | dx build --ssg fails with No such file or directory (os error 2) when CARGO_TARGET_DIR is a relative path | 2026-10-20 |
 | [99](backlog/done/099-anchor-name-style-set-as-a-bare-literal-beside.md) | anchor_name_style set as a bare literal beside a spread — a duplicate-style class across the anchored-trigger… | 2026-10-19 |
 | [100](backlog/done/100-a-no-base-path-build-made-in-the-shared-repo.md) | A no---base-path build made in the SHARED repo-root target/ still emits /dioxus-components/ prefixed markup —… | 2026-10-19 |
 | [101](backlog/done/101-oracle-tier1-apg-carousel-spec-ts-224-axe-scan.md) | oracle/tier1-apg/carousel.spec.ts:224 axe scan fails on the W3C REFERENCE fixture, not on our component | 2026-10-19 |
@@ -198,6 +196,8 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [106](backlog/done/106-this-container-s-chromium-is-1194-no-1223.md) | This container's Chromium is 1194 (no 1223, unlike some earlier sandboxes this repo's docs mention) — 15… | 2026-10-19 |
 | [107](backlog/done/107-two-fresh-container-cold-start-traps-in-scripts.md) | Two fresh-container cold-start traps in scripts/check-attr-spread-collision.sh and its --update-baseline mode | 2026-10-11 |
 | [108](backlog/done/108-tests-that-locate-rendered-content-by-slicing.md) | Tests that locate rendered content by slicing an HTML string from a specific attribute-string match break… | 2026-10-19 |
+| [109](backlog/done/109-ssg-interaction-tests-race-hydration-a-click.md) | SSG interaction tests race hydration — a click can land before wasm attaches Dioxus's delegated listeners; a… | 2026-10-20 |
+| [110](backlog/done/110-playwright-s-own-actionability-pre-scroll-hover.md) | Playwright's own actionability pre-scroll (.hover()/.focus()/.click()'s auto-scroll) animates under the… | 2026-10-20 |
 | [111](backlog/done/111-migrate-the-theme-to-shadcn-s-system-semantic.md) | Migrate the theme to shadcn's system: semantic role tokens, then the Nova style | 2026-10-19 |
 | [112](backlog/done/112-carousel-tests-that-sample-a-live-animation.md) | Carousel tests that sample a live animation across an async gap -- both fixed; plus the B3 wheel release… | 2026-10-19 |
 | [113](backlog/done/113-calendar-spec-ts-364-a-range-s-in-between-day.md) | calendar.spec.ts:364 "a range's in-between day keeps its muted look while hovered" times out (90s) on every… | 2026-10-05 |
@@ -238,6 +238,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [157](backlog/done/157-inputotp-hard-codes-a-numeric-keypad-inputmode.md) | InputOtp hard-codes a numeric keypad: inputmode="numeric" and pattern="[0-9]*" are fixed, so alphanumeric… | 2026-10-19 |
 | [159](backlog/done/159-js-listeners-added-through-eval-or-shipped.md) | JS listeners added through eval (or shipped scripts) and never removed: a class, widening row 149 | 2026-10-05 |
 | [160](backlog/done/160-two-small-bugs-the-shadcn-comparison-found-tabs.md) | Two small bugs the shadcn comparison found: Tabs Ghost sets data-variant="ghost" that no CSS styles… | 2026-10-05 |
+| [161](backlog/done/161-rename-the-website-to-shadcn-dioxus-and-give-it.md) | Rename the website to "shadcn-dioxus" and give it a real favicon (an SVG that follows light/dark, a PNG… | 2026-10-20 |
 | [162](backlog/done/162-self-host-the-docs-site-s-fonts-no-runtime.md) | Self-host the docs site's fonts (no runtime requests to Google) and give the library --dx-font-sans /… | 2026-10-19 |
 | [163](backlog/done/163-wrap-hover-styles-in-media-hover-hover-by.md) | Wrap hover styles in @media (hover: hover), by codemod plus a gate: 80 :hover blocks in 39 stylesheets leave… | 2026-10-14 |
 | [165](backlog/done/165-a-generated-props-reference-table-on-every.md) | A generated props reference table on every component's docs page, produced in preview/build.rs (~100 public… | 2026-10-05 |
@@ -259,6 +260,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [183](backlog/done/183-the-home-page-card-estimate-contain-intrinsic.md) | The home page card estimate: contain-intrinsic-block-size ignored the cards' padding | 2026-10-10 |
 | [184](backlog/done/184-docs-a-motion-section-and-cli-first-install.md) | Docs: a Motion section and CLI-first install | 2026-10-10 |
 | [185](backlog/done/185-component-json-cargodependencies-were-missing.md) | component.json cargoDependencies were missing for 14 components; the gate and the smoke app both hid it | 2026-10-11 |
+| [186](backlog/done/186-shadcn-utilities-scroll-fade-and-shimmer-are.md) | shadcn utilities: scroll-fade and shimmer are built but not shipped as documented, public utilities | 2026-10-20 |
 | [189](backlog/done/189-navigationmenu-a-click-on-a-trigger-whose-panel.md) | NavigationMenu: a click on a trigger whose panel hover just opened CLOSED it | 2026-10-11 |
 | [190](backlog/done/190-oracle-tier2-html-demo-placeholder-links-spec.md) | oracle/tier2-html/demo-placeholder-links.spec.ts:146 (top_layer) is flaky: link.focus() times out | 2026-10-14 |
 | [191](backlog/done/191-batch-2-of-the-demo-parity-work-surfaced-four.md) | Batch 2 of the demo-parity work surfaced four library classes; all fixed by construction | 2026-10-12 |

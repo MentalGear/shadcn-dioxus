@@ -4,7 +4,7 @@ title: "Migrate the 52 hand-paired listener sites onto use_js_listeners, shrinki
 status: "OPEN -- recorded 2026-10-05 (follow-up of row 159, which landed 2026-10-05 in round 3); scheduled…"
 size: "M (mechanical per site, 11 files)"
 area: misc
-updated: 2026-10-05
+updated: 2026-10-20
 ---
 
 # Row 167: Migrate the 52 hand-paired listener sites onto use_js_listeners, shrinking PAIRED_BY_HAND in…
@@ -15,7 +15,7 @@ Migrate the 52 hand-paired listener sites onto `use_js_listeners`, shrinking `PA
 
 ## Status / trigger
 
-**OPEN** -- recorded 2026-10-05 (follow-up of row 159, which landed 2026-10-05 in round 3); scheduled late in the next-session order (step 4, after rows 137, 146, 155's menu group and 154's Carousel research, because they edit the same files)
+**OPEN** -- recorded 2026-10-05 (follow-up of row 159, which landed 2026-10-05 in round 3); scheduled late in the next-session order (step 4, after rows 137, 146, 155's menu group and 154's Carousel research, because they edit the same files) **2026-10-20 sync: `PAIRED_BY_HAND` in `scripts/check-js-listeners.sh` still non-empty; queued for the Round 6 sweep.**
 
 ## Size
 
