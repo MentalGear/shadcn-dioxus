@@ -111,12 +111,13 @@ pub struct VirtualGridProps {
     pub dir: Option<Direction>,
     /// Called with `(row, column)` when the active cell changes (by keyboard, click or focus).
     pub on_active_change: Option<Callback<(usize, usize)>>,
-    /// A scroll-edge fade on the container, which is the element that scrolls (the
-    /// `dx-scroll-fade-*` classes of `dx-effects.css`; see [`ScrollFade`]). Defaults to
-    /// [`ScrollFade::None`]. It follows the container's own scroll offset, whatever cells are
-    /// mounted. The fade is a mask, so it also fades a sticky header (prefer
-    /// [`ScrollFade::Bottom`] / [`ScrollFade::End`] with `render_header`) and a border or
-    /// background on the container: put those on a wrapper.
+    /// A scroll-edge fade on the container, which is the element that scrolls (the `dx-scroll-fade-*`
+    /// classes of `dx-effects.css`; see [`ScrollFade`]). Defaults to [`ScrollFade::None`]. It follows
+    /// the container's own scroll offset, whatever rows or cells are mounted, and a container whose
+    /// content fits has no fade. The fade is a mask, so it also fades a border or background on the
+    /// container (put those on a wrapper) and a `VirtualGrid`'s sticky header (prefer
+    /// [`ScrollFade::Bottom`] / [`ScrollFade::End`] with `render_header`); [`ScrollFade::Both`] masks
+    /// all four edges of a two-axis scroller.
     #[props(default)]
     pub fade: ScrollFade,
     /// Additional attributes to apply to the container element.
@@ -363,7 +364,7 @@ pub fn VirtualGrid(props: VirtualGridProps) -> Element {
 /// The props for the [`VirtualWrapGrid`] component.
 #[derive(Props, Clone, PartialEq)]
 pub struct VirtualWrapGridProps {
-    /// The number of items.
+    /// The total number of items.
     pub count: ReadSignal<usize>,
     /// How many items each row holds (equal-width tracks). At least 1. Changing it forgets the
     /// measured row heights (row `i` then holds other items).
@@ -373,8 +374,11 @@ pub struct VirtualWrapGridProps {
     pub estimate_row_height: Option<Callback<usize, u32>>,
     /// Renders the item at an absolute index.
     pub render_item: Callback<usize, Element>,
-    /// How many rows to mount beyond each edge of the viewport (the window is re-centred once
-    /// fewer than half of them remain).
+    /// How many rows to mount beyond each edge of the viewport, so a scroll never shows a blank edge
+    /// (the window is re-centred once fewer than half of them remain, so between `buffer / 2` and
+    /// `buffer` rows are always mounted beyond each edge). Only a windowed layout reads it:
+    /// `VirtualList` in content-visibility mode ignores it. Defaults to 8 rows for `VirtualList` and 4
+    /// for `VirtualWrapGrid`.
     #[props(default = ReadSignal::new(Signal::new(4)))]
     pub buffer: ReadSignal<usize>,
     /// The reading direction for the horizontal arrow keys. Defaults to the nearest
@@ -382,10 +386,13 @@ pub struct VirtualWrapGridProps {
     pub dir: Option<Direction>,
     /// Called with the item index when the active item changes (by keyboard, click or focus).
     pub on_active_change: Option<Callback<usize>>,
-    /// A scroll-edge fade on the container (the `dx-scroll-fade-*` classes of
-    /// `dx-effects.css`; see [`ScrollFade`]). Defaults to [`ScrollFade::None`]. It follows the
-    /// container's own scroll offset, whatever rows are mounted; a border or background on the
-    /// container fades with it, so put those on a wrapper.
+    /// A scroll-edge fade on the container, which is the element that scrolls (the `dx-scroll-fade-*`
+    /// classes of `dx-effects.css`; see [`ScrollFade`]). Defaults to [`ScrollFade::None`]. It follows
+    /// the container's own scroll offset, whatever rows or cells are mounted, and a container whose
+    /// content fits has no fade. The fade is a mask, so it also fades a border or background on the
+    /// container (put those on a wrapper) and a `VirtualGrid`'s sticky header (prefer
+    /// [`ScrollFade::Bottom`] / [`ScrollFade::End`] with `render_header`); [`ScrollFade::Both`] masks
+    /// all four edges of a two-axis scroller.
     #[props(default)]
     pub fade: ScrollFade,
     /// Additional attributes to apply to the container element.
@@ -632,8 +639,13 @@ pub struct VirtualJustifiedGridProps {
     /// the active tile there, scrolls it into view and focuses it (a "jump to photo" button, or
     /// keeping one selection across a switch between layouts). Without it the grid keeps its own.
     pub active: Option<Signal<usize>>,
-    /// A scroll-edge fade on the container (the `dx-scroll-fade-*` classes of `dx-effects.css`;
-    /// see [`ScrollFade`]). Defaults to [`ScrollFade::None`].
+    /// A scroll-edge fade on the container, which is the element that scrolls (the `dx-scroll-fade-*`
+    /// classes of `dx-effects.css`; see [`ScrollFade`]). Defaults to [`ScrollFade::None`]. It follows
+    /// the container's own scroll offset, whatever rows or cells are mounted, and a container whose
+    /// content fits has no fade. The fade is a mask, so it also fades a border or background on the
+    /// container (put those on a wrapper) and a `VirtualGrid`'s sticky header (prefer
+    /// [`ScrollFade::Bottom`] / [`ScrollFade::End`] with `render_header`); [`ScrollFade::Both`] masks
+    /// all four edges of a two-axis scroller.
     #[props(default)]
     pub fade: ScrollFade,
     /// Additional attributes to apply to the container element.
