@@ -115,6 +115,10 @@
   position: absolute;
   top: 100%;
 
+  /* A long list scrolls inside the popup (the scroll buttons below show while it can); the
+     recipe's `overflow: visible` loses to this, the same as the combobox list. */
+  overflow: hidden auto;
+
   /*
    * Edge (Nova's `ring-1 ring-foreground/10`, a border so it can sit beside `--dx-shadow-md`, which
    * is `none` in dark mode), radius, `popover` fill and ink, shadow, padding, stacking, `overflow`
@@ -129,14 +133,10 @@
    */
   min-width: var(--dx-anchor-width, 100%);
 
-  /* A long list scrolls inside the popup (the scroll buttons below show while it can); the
-     recipe's `overflow: visible` loses to this, the same as the combobox list. */
-  overflow: hidden auto;
-  max-height: min(18rem, var(--dx-available-height, 18rem));
-
   /* Clamp to the viewport so the list never induces horizontal page scroll on
      narrow screens. Collision-aware flip/shift positioning belongs upstream. */
   max-width: calc(100vw - 2rem);
+  max-height: min(18rem, var(--dx-available-height, 18rem));
   margin-top: var(--dx-space-1);
   inset-inline-start: 0;
   opacity: 0;
