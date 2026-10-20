@@ -65,7 +65,8 @@ test.describe("virtual_grid photo_wall", () => {
       el.scrollTop = 128 * 150;
     });
     await expect(grid.locator('[data-grid-cell="150:200"]')).toBeAttached();
-    await expect(grid.locator('[data-grid-cell="0:0"]')).toHaveCount(0);
+    // (0:0 would stay mounted as the grid's tab stop; 0:1 is not)
+    await expect(grid.locator('[data-grid-cell="0:1"]')).toHaveCount(0);
     expect(await tiles(grid).count()).toBeLessThan(MAX_TILES);
     await expect.poll(async () => (await counted(page)) === (await tiles(grid).count())).toBe(true);
     const box = demoFrame(page, VARIANT).locator("[data-photo-wall-viewport]");
@@ -144,7 +145,8 @@ test.describe("virtual_grid photo_wall", () => {
 
   test("mirrors in RTL: the inline-start scroll offset windows columns and ArrowLeft moves on", async ({ page }) => {
     const grid = await open(page);
-    await page.evaluate(() => document.documentElement.setAttribute("dir", "rtl"));
+    await page.locator("#dx-direction-toggle").click();
+    await expect(demoFrame(page, VARIANT)).toHaveAttribute("dir", "rtl");
     await grid.evaluate((el) => (el.scrollLeft = -128 * 100));
     await expect(grid.locator('[data-grid-cell="0:100"]')).toBeAttached();
     expect(await tiles(grid).count()).toBeLessThan(MAX_TILES);
