@@ -1,10 +1,10 @@
 ---
 id: 68
 title: "Cross-worktree cargo build-directory hazard"
-status: "Found 2026-09-18, four independent occurrences"
+status: "Found 2026-09-18, four independent occurrences 2026-10-20 sync: still the rule of record; the…"
 size: "—"
 area: process
-updated: 2026-09-18
+updated: 2026-10-20
 ---
 
 # Row 68: Cross-worktree cargo build-directory hazard
@@ -15,7 +15,7 @@ Cross-worktree cargo build-directory hazard
 
 ## Status / trigger
 
-Found 2026-09-18, four independent occurrences
+Found 2026-09-18, four independent occurrences **2026-10-20 sync: still the rule of record; the by-construction fix is tracked by row 216 (`scripts/lane-target.sh` exists). Round 1 ownership text unchanged; no work in flight on this row.**
 
 ## Size
 

@@ -4,7 +4,7 @@ title: "A fixtures goto that waits for hydration (49 spec files lack the wait), 
 status: "OPEN -- recorded 2026-10-05 (audit); scheduled in the next-session order (step 4, just before row…"
 size: "M (the fixture is S; the migration is…"
 area: tests
-updated: 2026-10-05
+updated: 2026-10-20
 ---
 
 # Row 164: A fixtures goto that waits for hydration (49 spec files lack the wait), and migrate the 362 legacy ?name=…
@@ -15,7 +15,7 @@ A fixtures `goto` that waits for hydration (49 spec files lack the wait), and mi
 
 ## Status / trigger
 
-**OPEN** -- recorded 2026-10-05 (audit); scheduled in the next-session order (step 4, just before row 152, which touches the same specs)
+**OPEN** -- recorded 2026-10-05 (audit); scheduled in the next-session order (step 4, just before row 152, which touches the same specs) **2026-10-20 sync: not in flight (the 2026-10-05 next-session order is superseded by the Round 6 plan in `STATUS.md`); the Round 1 hold is not active.**
 
 ## Size
 
