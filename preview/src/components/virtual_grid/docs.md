@@ -110,3 +110,16 @@ VirtualWrapGrid { count: 5_000usize, columns: 4usize, fade: ScrollFade::Y, rende
 ## Styling
 
 Rows are `[role=row]`; cells carry `data-grid-cell="row:column"` (the header's is `"header:column"`), and the sticky header and column carry `data-grid-header` / `data-grid-sticky`. Positions and sizes are inline styles; this component's `style.css` paints borders, the header, the sticky column's background and the focus ring. In `VirtualWrapGrid` each row is a CSS grid of equal tracks: set `column-gap` and `padding-block-end` on `[role=row]` for the gaps (they are part of the measured row).
+
+## Photo wall demo
+
+The `photo_wall` demo is a 300 x 300 wall of 90,000 photos on the two-axis `VirtualGrid`, scrolling on both axes, with a few hundred cells in the DOM wherever you are (the counter under the wall, "N of 90,000 photos rendered", shows how many).
+
+The photos have mixed aspect ratios (portrait 2:3 and 3:4, square, landscape 4:3, 3:2 and 16:9, and 3:1 panoramas), but the grid does not care: its structure, cells aligned in rows and columns of a fixed size, never depends on content. That is why both axes window independently and the keyboard model stays the plain grid one. The shape of a photo is a presentation concern inside its cell: each photo is an `<img>` filling a cell-sized mat, and CSS `object-fit` decides the rest. By default (`contain`) the whole photo is visible, letterboxed on the mat; the switch above the wall changes it to `cover` (a tight wall, photos cropped). Each photo is a single `<img src="data:image/svg+xml,...">` generated from its index, one DOM node per cell instead of the dozen of an inline `<svg>`, and nothing is fetched.
+
+- **Pan** by scrolling or a trackpad on both axes, or by dragging the wall with a mouse or pen (touch keeps its native scroll). A press that does not move stays a click, which opens the photo.
+- **Minimap**: the small square shows the whole wall and an outlined box for what the grid shows. Press or drag it to move the viewport there (it sets the grid container's scroll position, which the grid already follows).
+- **Jump to random photo** scrolls a random cell to the middle of the wall and focuses it.
+- **Preview**: clicking a cell, or `Enter`/`Space` on the focused one, opens the photo in a `Dialog` at its real aspect ratio. The arrow keys, `Home`/`End` and `PageUp`/`PageDown` are the grid's own.
+
+One script installed with `JsListeners` reads the scroll position and the mounted cell count (passive scroll listener, MutationObserver, ResizeObserver, all removed with the demo).
