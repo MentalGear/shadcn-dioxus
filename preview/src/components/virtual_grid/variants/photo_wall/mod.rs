@@ -439,13 +439,21 @@ pub fn Demo() -> Element {
                     }
                 }
                 // The whole wall, scaled: the outlined box is what the grid shows. Press or drag it to move there.
-                div {
-                    "data-photo-wall-minimap": "true",
-                    "aria-hidden": "true",
-                    style: "position: relative; flex: none; width: 7.5rem; height: 7.5rem; border: 1px solid var(--dx-border); border-radius: var(--dx-radius-md); background: var(--dx-muted); cursor: pointer; touch-action: none; overflow: hidden;",
+                div { style: "display: flex; flex: none; flex-direction: column; gap: var(--dx-space-1);",
+                    span {
+                        style: "color: var(--dx-muted-foreground); font-size: var(--dx-text-xs); font-weight: 500;",
+                        "Minimap"
+                    }
                     div {
-                        "data-photo-wall-viewport": "true",
-                        style: "position: absolute; box-sizing: border-box; inset-inline-start: {view_left}%; top: {view_top}%; width: {view_width}%; height: {view_height}%; min-width: 4px; min-height: 4px; pointer-events: none;",
+                        "data-photo-wall-minimap": "true",
+                        // A picture of the wall for the accessibility tree (the grid itself is the keyboard path).
+                        role: "img",
+                        "aria-label": "Minimap of the whole wall; the outlined box is the visible area. Press or drag to move there.",
+                        style: "position: relative; flex: none; width: 7.5rem; height: 7.5rem; border: 1px solid var(--dx-border); border-radius: var(--dx-radius-md); background: var(--dx-muted); cursor: pointer; touch-action: none; overflow: hidden;",
+                        div {
+                            "data-photo-wall-viewport": "true",
+                            style: "position: absolute; box-sizing: border-box; inset-inline-start: {view_left}%; top: {view_top}%; width: {view_width}%; height: {view_height}%; min-width: 4px; min-height: 4px; pointer-events: none;",
+                        }
                     }
                 }
             }
