@@ -34,3 +34,8 @@ MessageGroup {
 
 - Give every icon-only footer action (copy, retry, feedback) an `aria-label`.
 - For an in-progress message, use a `Marker` with `role: "status"` so the update is announced as it appears.
+
+## Patterns
+
+- Code Block Chat: prose around a framed `CodeBlock` with a filename and a copy button.
+- Message Pattern: footer actions on both sides (copy and edit on your message; copy with a "Copied" state, a pressed-state thumbs pair and retry on the reply).

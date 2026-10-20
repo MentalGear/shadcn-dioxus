@@ -52,10 +52,16 @@ panel grows to fit the months. See the `multi_month` variant.
 
 The selects are native `<select>` elements named "Month" and "Year", so they keep the platform keyboard and touch behaviour (the options are limited by `min_date` / `max_date`). The caption text is a polite live region; in the dropdown layouts the full "October 2026" is kept as a visually hidden live region too, so a screen reader hears where an arrow click landed. The label (and the dropdown option text) goes through `on_format_month`. See the `caption` variant for all four side by side.
 
-The default changed from "always both dropdowns" to `Label`, following shadcn: pass `caption_layout: CaptionLayout::Dropdown` to keep the old look. `DatePicker` and `DateRangePicker` use the default.
+In a month dropdown the options and the shown value print the short month name ("Oct"), as shadcn does; the plain-text caption keeps "October". The short name is `on_format_month_short`, or, when that is `None`, the first three characters of `on_format_month`, so a localised calendar gets a localised short name; pass the callback for a language where a three-character cut is wrong.
+
+The default changed from "always both dropdowns" to `Label`, following shadcn: pass `caption_layout: CaptionLayout::Dropdown` to keep the old look. `DatePicker` and `DateRangePicker` take the same `caption_layout` prop (default `Label`) and hand it to the calendar in their popover; the `date_of_birth` variant of the Date Picker page shows the three dropdown layouts for a date of birth.
+
+## Cell size
+
+shadcn's `--cell-size` is `--dx-calendar-cell-size` (default `--dx-space-7`, 28px). The day cells, weekday row, caption height, nav buttons and month width all read it, so setting it on the `Calendar` (for example `style: "--dx-calendar-cell-size: 2.5rem;"`) retunes the whole month. See the `cell_size` variant.
 
 ## Week numbers
 
-`show_week_number: true` adds a column of week numbers in front of every week row, and an empty header cell above it (react-day-picker's `showWeekNumber`). With `first_day_of_week: Weekday::Monday` the numbers are ISO 8601 weeks (week 1 holds the year's first Thursday); with any other first day, week 1 is the week that holds January 1st, which is what react-day-picker prints for `en-US`. Each number is a `rowheader` cell labelled "Week N" and is not focusable, so the day grid keeps its single tab stop and its arrow keys. See the `week_numbers` variant.
+`show_week_number: true` adds a column of week numbers in front of every week row, and an empty header cell above it (react-day-picker's `showWeekNumber`). With `first_day_of_week: Weekday::Monday` the numbers are ISO 8601 weeks (week 1 holds the year's first Thursday); with any other first day, week 1 is the week that holds January 1st, which is what react-day-picker prints for `en-US`. Each number is a `rowheader` cell labelled "Week N" and is not focusable, so the day grid keeps its single tab stop and its arrow keys. See the `week_numbers` variant (Sunday start) and the `iso_week_numbers` variant (Monday start, opening on January 2027, whose first row is week 53 of 2026).
 
 On the primitive, `use_calendar_grid()` returns `show_week_number()` and `week_numbers()` (one number per row of `weeks()`), and `CalendarGridWeekNumberHeader` / `CalendarGridWeekNumber` render the two cells when you compose your own grid.

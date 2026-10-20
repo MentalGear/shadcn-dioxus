@@ -77,6 +77,7 @@ pub mod select;
 mod selectable;
 mod selection;
 pub mod separator;
+mod sleep;
 pub mod slider;
 pub mod switch;
 pub mod tabs;

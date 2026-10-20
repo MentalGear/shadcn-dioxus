@@ -399,6 +399,7 @@ pub struct BaseCalendarContext {
     set_view_date: Callback<Date>,
     format_weekday: Callback<Weekday, String>,
     format_month: Callback<Month, String>,
+    format_month_short: Option<Callback<Month, String>>,
 
     // Configuration
     disabled: ReadSignal<bool>,
@@ -411,6 +412,17 @@ pub struct BaseCalendarContext {
     /// Text direction, for the day grid's `ArrowLeft`/`ArrowRight` step --
     /// see [`horizontal_day_step`]'s doc.
     direction: ReadSignal<Direction>,
+}
+
+impl BaseCalendarContext {
+    /// The month's name as a month dropdown prints it: `on_format_month_short`, else the first
+    /// three characters of `on_format_month` ("October" -> "Oct").
+    fn month_short_name(&self, month: Month) -> String {
+        match self.format_month_short {
+            Some(short) => short.call(month),
+            None => self.format_month.call(month).chars().take(3).collect(),
+        }
+    }
 }
 
 #[derive(Clone, Copy, PartialEq)]
@@ -568,6 +580,13 @@ pub struct CalendarProps {
     #[props(default = Callback::new(|month: Month| month.to_string()))]
     pub on_format_month: Callback<Month, String>,
 
+    /// Callback when displaying a month inside a month dropdown (shadcn prints "Oct" there while
+    /// the caption label keeps "October"). `None` derives it from `on_format_month` by keeping
+    /// the first three characters, so a localised calendar gets a localised short name too; pass
+    /// a callback for a language where that cut is wrong.
+    #[props(default)]
+    pub on_format_month_short: Option<Callback<Month, String>>,
+
     /// The month being viewed
     #[props(default = ReadSignal::new(Signal::new(OffsetDateTime::now_local_date())))]
     pub view_date: ReadSignal<Date>,
@@ -690,6 +709,7 @@ pub fn Calendar(props: CalendarProps) -> Element {
         available_ranges,
         format_weekday: props.on_format_weekday,
         format_month: props.on_format_month,
+        format_month_short: props.on_format_month_short,
         disabled: props.disabled,
         today: props.today,
         first_day_of_week: props.first_day_of_week,
@@ -857,6 +877,13 @@ pub struct RangeCalendarProps {
     #[props(default = Callback::new(|month: Month| month.to_string()))]
     pub on_format_month: Callback<Month, String>,
 
+    /// Callback when displaying a month inside a month dropdown (shadcn prints "Oct" there while
+    /// the caption label keeps "October"). `None` derives it from `on_format_month` by keeping
+    /// the first three characters, so a localised calendar gets a localised short name too; pass
+    /// a callback for a language where that cut is wrong.
+    #[props(default)]
+    pub on_format_month_short: Option<Callback<Month, String>>,
+
     /// The month being viewed
     #[props(default = ReadSignal::new(Signal::new(OffsetDateTime::now_local_date())))]
     pub view_date: ReadSignal<Date>,
@@ -981,6 +1008,7 @@ pub fn RangeCalendar(props: RangeCalendarProps) -> Element {
         available_ranges,
         format_weekday: props.on_format_weekday,
         format_month: props.on_format_month,
+        format_month_short: props.on_format_month_short,
         disabled: props.disabled,
         today: props.today,
         first_day_of_week: props.first_day_of_week,
@@ -2148,6 +2176,12 @@ pub struct CalendarSelectMonthValueProps {
     /// The children of the displayed month value element.
     #[props(default)]
     pub children: Element,
+
+    /// Print the short month name ("Oct", as the month dropdown's options do) instead of the
+    /// full one. Used by the value that sits in a dropdown; the plain-text caption keeps the full
+    /// name.
+    #[props(default)]
+    pub short: bool,
 }
 
 /// # CalendarSelectMonth
@@ -2270,7 +2304,7 @@ pub fn CalendarSelectMonthOption(props: CalendarSelectMonthOptionProps) -> Eleme
     let view_ctx: CalendarViewContext = use_context();
     let children = props
         .children
-        .unwrap_or_else(|| rsx! { {base_ctx.format_month.call(props.month)} });
+        .unwrap_or_else(|| rsx! { {base_ctx.month_short_name(props.month)} });
 
     // `value`/`selected` are this option's own functional state, owned.
     let owned = attributes!(option {
@@ -2297,7 +2331,11 @@ pub fn CalendarSelectMonthValue(props: CalendarSelectMonthValueProps) -> Element
     rsx! {
         span {
             ..props.attributes,
-            {base_ctx.format_month.call(month)}
+            if props.short {
+                {base_ctx.month_short_name(month)}
+            } else {
+                {base_ctx.format_month.call(month)}
+            }
             {props.children}
         }
     }
@@ -4213,6 +4251,7 @@ mod tests {
             set_view_date: Callback::new(|_: Date| {}),
             format_weekday: Callback::new(|w: Weekday| format!("{w:?}")),
             format_month: Callback::new(|m: Month| m.to_string()),
+            format_month_short: None,
             disabled: use_signal(|| false).into(),
             today: date!(2024 - 06 - 15),
             first_day_of_week: Weekday::Monday,
@@ -4237,6 +4276,7 @@ mod tests {
             }),
             format_weekday: Callback::new(|w: Weekday| format!("{w:?}")),
             format_month: Callback::new(|m: Month| m.to_string()),
+            format_month_short: None,
             disabled: use_signal(|| false).into(),
             today: enabled_date_range.start(),
             first_day_of_week: Weekday::Monday,

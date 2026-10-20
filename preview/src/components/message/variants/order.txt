@@ -6,3 +6,5 @@ actions
 attachment
 demo
 download
+code_block_chat
+message_pattern

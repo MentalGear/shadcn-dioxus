@@ -5,6 +5,7 @@
 
 mod components;
 mod context;
+mod multi;
 
 pub use components::{
     Combobox, ComboboxEmpty, ComboboxEmptyProps, ComboboxInput, ComboboxInputProps,
@@ -13,3 +14,8 @@ pub use components::{
 };
 
 pub use context::default_combobox_filter;
+
+pub use multi::{
+    ComboboxChips, ComboboxChipsProps, ComboboxClear, ComboboxClearProps, ComboboxMulti,
+    ComboboxMultiProps,
+};

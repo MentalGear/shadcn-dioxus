@@ -1,0 +1,1 @@
+`caption_layout` on `DatePicker` and `DateRangePicker` is passed to the calendar in the popover (default `CaptionLayout::Label`). In the dropdown layouts the month select prints the short name ("Oct"), as shadcn does; the picker's own month segment keeps the full name.

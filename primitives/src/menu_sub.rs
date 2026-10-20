@@ -37,7 +37,7 @@
 //!   every `*SubContent`/`*SubTrigger` needs to close on leaving without
 //!   entering the other. This crate's only prior art for a timed
 //!   pointer-driven open/close is `context_menu.rs`'s long-press timer
-//!   (`LONG_PRESS_DURATION`, `dioxus_sdk_time::sleep` + `spawn`/`Task`) --
+//!   (`LONG_PRESS_DURATION`, `crate::sleep::sleep` + `spawn`/`Task`) --
 //!   [`DelayedAction`] is that same primitive, factored out so it isn't
 //!   reinvented a third and fourth time for `DropdownMenuSubTrigger`/
 //!   `ContextMenuSubTrigger`.
@@ -76,9 +76,9 @@
 
 use std::time::Duration;
 
+use crate::sleep::sleep;
 use dioxus::prelude::*;
 use dioxus_core::Task;
-use dioxus_sdk_time::sleep;
 
 use crate::collection::{use_collection_provider, CollectionPlacement, CollectionState};
 use crate::direction::{Direction, HorizontalNav};
@@ -148,7 +148,7 @@ pub(crate) fn is_submenu_close_arrow_key(key: &Key, direction: Direction) -> boo
     direction.resolve_horizontal(key) == Some(HorizontalNav::Prev)
 }
 
-/// A single cancellable delayed action, backed by `dioxus_sdk_time::sleep`
+/// A single cancellable delayed action, backed by `crate::sleep::sleep`
 /// + `spawn`/`Task` -- the same primitive `ContextMenuTrigger`'s long-press
 ///   timer already uses (`context_menu.rs`'s `long_press_task`/
 ///   `LONG_PRESS_DURATION`), not a new mechanism. Scheduling a new action

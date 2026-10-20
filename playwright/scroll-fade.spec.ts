@@ -306,6 +306,16 @@ test.describe("MessageScroller fade", () => {
     const vp = viewportOf(page);
     await scrollBlockTo(vp, "start");
     await expectEdges(vp, "block", { start: "crisp", end: "crisp" });
+    // content-visibility rows swap their estimated height for the measured one as they lay out, so
+    // scrollHeight shrinks (6.6k -> 4.9k on a debug build) after the first paint: `before` is read only
+    // once it has held still, or the prepend's growth is compared with a stale, larger baseline.
+    let last = -1;
+    await expect.poll(async () => {
+      const sh = (await metrics(vp)).sh;
+      const settled = sh === last;
+      last = sh;
+      return settled;
+    }, { timeout: 10_000, intervals: [300] }).toBe(true);
     const before = await metrics(vp);
     await button(page, "Load earlier messages").click();
     // Prepending keeps the reader's place: the viewport moves down by the prepended height, so the

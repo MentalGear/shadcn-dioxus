@@ -1,0 +1,1 @@
+Footer actions on both sides, after upstream's `message-pattern`: copy and edit on the user message; copy with a "Copied" state, a pressed-state thumbs pair and retry on the reply (rendered with `Markdown`).

@@ -45,6 +45,10 @@ CommandDialog {
 `Kbd`/`KbdGroup` pair, above) but does not bind a keyboard shortcut for you. Wire up a global
 keyboard listener yourself if you want the displayed shortcut to actually fire the action.
 
+## Shortcut
+
+`CommandShortcut` is shadcn's part for the hint at the end of a row: put `CommandShortcut { "⌘P" }` inside a `CommandItem` and it sits at the inline end in muted, letter-spaced text, taking the foreground ink while the row is highlighted. It is presentation only; wire the key yourself. For key caps use `CommandItem`'s `shortcut` slot with `Kbd`/`KbdGroup`.
+
 ## Overlay
 
 A modal command palette dims the page behind it with the shared overlay scrim: the dialog's own `::backdrop`, the same 10% black and 4px blur on every modal overlay. Pass `overlay: false` to keep the modality (focus trap, inert page, click-outside dismissal) without the dim and the blur; the `<dialog>` then carries `data-dx-overlay="off"`.

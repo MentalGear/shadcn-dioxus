@@ -2,13 +2,12 @@ use super::super::component::*;
 use crate::components::button::{Button, ButtonVariant};
 use dioxus::prelude::*;
 
-// `Card` has no typed `size` prop; the stylesheet's `.dx-card[data-size="sm"]`
-// hook (12px spacing, `text-sm` title) is reached through the passthrough
-// attribute, the same way shadcn's `size="sm"` renders `data-size="sm"`.
+// The typed `size: CardSize::Sm` prop renders `data-size="sm"` (12px spacing, `text-sm` title),
+// as shadcn's `size="sm"` does.
 #[component]
 pub fn Demo() -> Element {
     rsx! {
-        Card { "data-size": "sm", style: "width: 100%; max-width: 24rem;",
+        Card { size: CardSize::Sm, style: "width: 100%; max-width: 24rem;",
             CardHeader {
                 CardTitle { "Storage almost full" }
                 CardDescription { "You have used 92% of your 15 GB plan." }
