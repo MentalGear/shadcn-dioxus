@@ -42,7 +42,7 @@ Questionnaire { items, on_submit: move |event: FormEvent| save(event.values()),
 | `item` / `on_item_change` | uncontrolled | Controlled active item: navigation calls `on_item_change` and waits for `item`. |
 | `on_answer_change` | none | `AnswerChange { item, values, status }` after an answer changes. |
 | `shortcuts` | none | `ShortcutMode::Letters` (`A`-`Z`) or `ShortcutMode::Numbers` (`1`-`9`). |
-| `animate_height` | `true` | Glide the height between items with a CSS transition instead of snapping; off under `prefers-reduced-motion`. `false` keeps the snap. |
+| `animate_height` | `true` | Glide the height between items with a CSS transition instead of snapping; off under `prefers-reduced-motion`. `false` keeps the snap. The Animate height demo flips it live. |
 | `native_validation` | `false` | Validate filled answers with the browser (an invalid `email` input blocks Next). |
 | `on_submit` | none | A submit that passed validation, with the `FormEvent` (`values()`, `get(name)`). |
 | `on_reset` | none | After a `type="reset"` button restored the saved answers and item. |
@@ -55,6 +55,7 @@ The navigation buttons take `variant`, `size` (the `Button` props), `disabled` a
 - **Validation.** A required item needs an answer; an optional item needs an answer or an explicit skip. An item's error shows once validation was attempted and stays live: answering clears it, unchecking the last answer brings it back. `invalid(true)` is an external error (for example from a schema run in `on_submit`) that blocks the item until you clear it.
 - **Freeform answer.** Typing selects the input; in a single-choice item it unchecks the radios. Choosing a radio keeps the text as a draft that is neither submitted nor validated.
 - **Conditional items.** A `disabled` item leaves the progress count, the navigation and validation, and submits nothing.
+- **Height glide.** `animate_height` pins the form's old and new height inline and lets a CSS `height` transition run between them, so items of different heights do not make the page jump. The Animate height demo has a switch to compare it with the snap; `data-animate-height` on the form shows the current state.
 - **Resume and reset.** `default_item` and each item's defaults restore a saved draft. A reset button returns to them.
 
 ## Keyboard

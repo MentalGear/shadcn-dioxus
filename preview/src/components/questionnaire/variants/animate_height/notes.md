@@ -1,0 +1,1 @@
+`animate_height` glides the form's height between items of different heights with a CSS transition instead of snapping (on by default, off under `prefers-reduced-motion`). Use the switch to turn it on and off while you move between the three items.
