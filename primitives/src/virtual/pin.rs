@@ -23,11 +23,23 @@ pub(crate) fn with_pinned(
     pinned: Option<VirtualItem>,
 ) -> Vec<VirtualItem> {
     if let Some(pinned) = pinned {
-        if let Err(at) = items.binary_search_by_key(&pinned.index(), VirtualItem::index) {
-            items.insert(at, pinned);
-        }
+        pin_sorted(&mut items, pinned, VirtualItem::index);
     }
     items
+}
+
+/// The one pinning rule for any window kept sorted by `key` without duplicates: inserts `pinned`
+/// at its sorted place unless an item with its key is already there, and returns that item's
+/// position. `with_pinned` is it for one-axis windows; the justified grid applies it twice (the
+/// active tile's row into the rows, then the tile into that row's tiles).
+pub(crate) fn pin_sorted<T>(items: &mut Vec<T>, pinned: T, key: impl Fn(&T) -> usize) -> usize {
+    match items.binary_search_by_key(&key(&pinned), &key) {
+        Ok(at) => at,
+        Err(at) => {
+            items.insert(at, pinned);
+            at
+        }
+    }
 }
 
 /// A flow-layout window with a pinned item: the items to draw, and, when the pinned item is not
@@ -87,6 +99,18 @@ mod tests {
             indices(&with_pinned(window, Some(item(90)))),
             vec![10, 11, 12, 90]
         );
+    }
+
+    #[test]
+    fn pin_sorted_inserts_once_and_reports_the_position() {
+        let mut rows = vec![2usize, 5, 9];
+        assert_eq!(pin_sorted(&mut rows, 5, |r| *r), 1);
+        assert_eq!(rows, vec![2, 5, 9]);
+        assert_eq!(pin_sorted(&mut rows, 7, |r| *r), 2);
+        assert_eq!(rows, vec![2, 5, 7, 9]);
+        assert_eq!(pin_sorted(&mut rows, 0, |r| *r), 0);
+        assert_eq!(pin_sorted(&mut rows, 40, |r| *r), 5);
+        assert_eq!(rows, vec![0, 2, 5, 7, 9, 40]);
     }
 
     #[test]

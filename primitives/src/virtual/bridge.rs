@@ -1,5 +1,6 @@
 //! The DOM bridge (backlog row 154, layer 3): the one place where a windowed component meets
-//! the page. `VirtualList` (windowed mode), `VirtualGrid` and `VirtualWrapGrid` all consume it.
+//! the page. `VirtualList` (windowed mode), `VirtualGrid`, `VirtualWrapGrid` and
+//! `VirtualJustifiedGrid` all consume it.
 //!
 //! [`use_virtual_bridge`] gives a component, by construction:
 //!
@@ -25,6 +26,7 @@
 use dioxus::prelude::*;
 
 use super::grid::GridEngine;
+use super::justified_engine::JustifiedEngine;
 use super::types::ScrollReport;
 use super::virtualizer::Engine;
 use crate::js_listener::{use_js_listeners, JsListeners};
@@ -45,6 +47,12 @@ impl Windowing for Engine {
 impl Windowing for GridEngine {
     fn needs_render(&mut self) -> bool {
         GridEngine::needs_render(self)
+    }
+}
+
+impl Windowing for JustifiedEngine {
+    fn needs_render(&mut self) -> bool {
+        JustifiedEngine::needs_render(self)
     }
 }
 

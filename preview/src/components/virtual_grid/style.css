@@ -71,3 +71,33 @@
   border-radius: var(--dx-radius-md);
   white-space: normal;
 }
+
+/* The justified photo wall: tiles fill their rows edge to edge, so the container has no padding
+ * (the rows fill its content box) and keeps its scrollbar gutter, so a scrollbar appearing never
+ * changes the width the rows were laid out for. A fluid wall scrolls vertically only. */
+.dx-virtual-grid-justified {
+  scrollbar-gutter: stable;
+}
+
+.dx-virtual-grid-justified[data-justified-axes="block"] {
+  overflow: hidden auto;
+}
+
+.dx-virtual-grid-justified [data-grid-cell]:not(:where([popover], dialog) *) {
+  padding: 0;
+  border: none;
+  border-radius: var(--dx-radius-sm);
+  background-color: var(--dx-muted);
+  white-space: normal;
+}
+
+/* The photo fills the whole tile and would cover the inset ring of the rule above, so a justified
+ * tile draws the same ring on a layer above its content. */
+.dx-virtual-grid-justified [data-grid-cell]:focus-visible:not(:where([popover], dialog) *)::after {
+  position: absolute;
+  border-radius: inherit;
+  box-shadow: var(--dx-ring-focus-inset);
+  content: "";
+  inset: 0;
+  pointer-events: none;
+}

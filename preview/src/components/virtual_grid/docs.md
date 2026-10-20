@@ -1,4 +1,4 @@
-The VirtualGrid component keeps a very large grid cheap by mounting only the cells in view. It comes in two layouts: `VirtualGrid`, a data grid whose rows AND columns are windowed (with an optional sticky header row and sticky first column), and `VirtualWrapGrid`, a gallery whose items wrap into rows of a fixed column count (only the rows are windowed).
+The VirtualGrid component keeps a very large grid cheap by mounting only the cells in view. It comes in three layouts: `VirtualGrid`, a data grid whose rows AND columns are windowed (with an optional sticky header row and sticky first column), `VirtualWrapGrid`, a gallery whose items wrap into rows of a fixed column count (only the rows are windowed), and `VirtualJustifiedGrid`, a photo wall of justified rows (every photo uncropped at its own aspect ratio, rows filling the width edge to edge).
 
 ## Component Structure
 
@@ -30,6 +30,33 @@ VirtualWrapGrid {
 ```
 
 Give the grid a height (or `max-height`): it is the scroll container. The grid owns its `id` and `role="grid"`; every other attribute is spread onto it. Name it with `aria-label` (or `aria-labelledby`).
+
+## Grid or Justified
+
+Two models for showing many photos of mixed shapes:
+
+- **Grid** (`VirtualGrid`, `VirtualWrapGrid`; the default): cells aligned in rows and columns, and the structure never depends on the content. A photo of any aspect is a presentation concern inside a uniform cell: `object-fit: contain` shows it whole on a mat, `cover` crops it to fill. Because rows and columns are independent, both axes window independently, `aria-colcount` is exact and the arrow keys move along straight columns. Pick it for anything tabular, for thumbnails where alignment and predictable scanning matter, and whenever items have no meaningful aspect ratio.
+- **Justified** (`VirtualJustifiedGrid`): the gapless, uncropped photo-wall look. Each row takes as many photos as fit at `target_row_height` and then shrinks to fill the width exactly, so a row's composition depends on the photos' aspect ratios and every tile IS its photo's aspect. There are no columns: `ArrowUp`/`ArrowDown` move to the tile of the next row whose horizontal centre is closest. Pick it when the photos themselves are the content and cropping or letterboxing would hurt.
+
+```rust
+// 20,000 photos; the aspect ratios (width / height) are all the layout needs.
+VirtualJustifiedGrid {
+    aspects,                       // ReadSignal<Vec<f64>>
+    target_row_height: 160.0,      // px a full row is packed toward (default 200)
+    gap: 4.0,                      // px between tiles and rows (default 4)
+    // Optional: a canvas wider than the grid makes a wall that scrolls both ways.
+    canvas_width: Some(4800.0),
+    render_tile: |(index, rect): (usize, TileRect)| rsx! {
+        img { src: photo_url(index), alt: "Photo {index}", style: "width: 100%; height: 100%;" }
+    },
+    "aria-label": "Photos",
+    style: "height: 28rem;",
+}
+```
+
+Without `canvas_width` the rows fill the grid's own width, the grid scrolls vertically only and lays the rows out again when it is resized (keeping the row at the top of the viewport in place). With a `canvas_width` larger than the grid, the rows fill that canvas: the grid scrolls both ways and mounts only the rows that meet the viewport and, within each, only the tiles that meet it horizontally. The full row of a few dozen tiles is never mounted whole. `min_tile_width` keeps a narrow container from squeezing a portrait photo to a sliver (the row gives up photos to the next one and grows taller). Each tile is placed with `inset-inline-start`, so in a right-to-left page the wall mirrors (rows start at the right) and `ArrowLeft` moves to the next photo. The example is the `justified` variant: a target-row-height slider and a "Wall (both axes)" switch that sets `canvas_width` to six times the demo's width.
+
+Keyboard: one tab stop; `ArrowLeft`/`ArrowRight` move in reading order and continue into the previous/next row, `ArrowUp`/`ArrowDown` move to the nearest tile by horizontal centre, `Home`/`End` go to the row's ends, `Ctrl+Home`/`Ctrl+End` to the first/last photo, `PageUp`/`PageDown` a viewport up/down. The active tile stays rendered wherever you scroll. The container is `role="grid"` with the whole wall's `aria-rowcount`; every row carries `aria-rowindex` and every tile its position in its row as `aria-colindex`. `aria-colcount` is omitted: rows hold different numbers of tiles, so no column count would be true.
 
 ## Layouts
 
