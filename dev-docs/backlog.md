@@ -97,7 +97,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [306](backlog/306-select-and-combobox-show-no-selected-label-before.md) | Select and Combobox show no selected label before hydration | OPEN. Found 2026-10-19 by the features-batch validation; pre-existing on main. | M | select |
 | [307](backlog/307-ios-color-panel-does-not-pick-colors.md) | iOS: the Color Panel opens but tapping its color box does not change the color | OPEN (owner report 2026-10-20, iOS device; being investigated in the 'iOS Color Panel won't pick… | M | overlays |
 | [308](backlog/308-virtualgrid-scroll-trap-at-the-edges.md) | VirtualGrid traps page scroll at its edges; should VirtualList and VirtualGrid be unified? | OPEN (owner report 2026-10-20; with the Round 4 thread) | S | virtual |
-| [309](backlog/309-virtuallist-and-virtualgrid-share-one-engine.md) | VirtualList and VirtualGrid share one engine: DOM bridge, pinned focus, fade (two components, one engine) | IN PROGRESS 2026-10-20 (owner go; lane virtual-engine) | M | virtual |
+| [309](backlog/309-virtuallist-and-virtualgrid-share-one-engine.md) | VirtualList and VirtualGrid share one engine: DOM bridge, pinned focus, fade (two components, one engine) | LANDED 2026-10-20 on lane/virtual-engine (owner go), pending the merge batch -- shared DOM bridge… | M | virtual |
 
 ## Done rows (217)
 

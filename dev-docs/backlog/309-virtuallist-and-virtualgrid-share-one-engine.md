@@ -1,7 +1,7 @@
 ---
 id: 309
 title: "VirtualList and VirtualGrid share one engine: DOM bridge, pinned focus, fade (two components, one engine)"
-status: "IN PROGRESS 2026-10-20 (owner go; lane virtual-engine)"
+status: "LANDED 2026-10-20 on lane/virtual-engine (owner go), pending the merge batch -- shared DOM bridge…"
 size: "M"
 area: virtual
 updated: 2026-10-20
@@ -11,11 +11,11 @@ updated: 2026-10-20
 
 ## Item
 
-Owner decision 2026-10-20: keep `VirtualList` and `VirtualGrid` as two components (list vs grid ARIA semantics: a grid has 2-D arrow keys and one tab stop; a list reads top to bottom with variable row heights), but share as many parts of the engine between them as possible and sensible, taking the best of each. This is the second step of [row 154](./154-shared-virtualization-engine-one-engine-in.md)'s three-layer outline (core / strategy / DOM bridge) after [row 244](./done/244-virtualgrid-x-y-virtualization-that-windows.md) made a grid two copies of the one-axis `Engine`. Related: [row 153](./153-native-find-in-page-for-windowed-virtual-lists.md) (find-in-page placeholders), [row 186](./186-shadcn-utilities-scroll-fade-and-shimmer-are.md) (the `fade` prop), [row 308](./308-virtualgrid-scroll-trap-at-the-edges.md) (VirtualGrid scroll trap at the edges, `overscroll-behavior`).
+Owner decision 2026-10-20: keep `VirtualList` and `VirtualGrid` as two components (list vs grid ARIA semantics: a grid has 2-D arrow keys and one tab stop; a list reads top to bottom with variable row heights), but share as many parts of the engine between them as possible and sensible, taking the best of each. This is the second step of [row 154](./154-shared-virtualization-engine-one-engine-in.md)'s three-layer outline (core / strategy / DOM bridge) after [row 244](./done/244-virtualgrid-x-y-virtualization-that-windows.md) made a grid two copies of the one-axis `Engine`. Related: [row 153](./153-native-find-in-page-for-windowed-virtual-lists.md) (find-in-page placeholders), [row 186](./done/186-shadcn-utilities-scroll-fade-and-shimmer-are.md) (the `fade` prop), [row 308](./308-virtualgrid-scroll-trap-at-the-edges.md) (VirtualGrid scroll trap at the edges, `overscroll-behavior`).
 
 ## Status / trigger
 
-**IN PROGRESS 2026-10-20 (owner go; lane virtual-engine)**
+**LANDED 2026-10-20 on lane/virtual-engine (owner go), pending the merge batch** -- shared DOM bridge and pinned-focus strategy; the grids gained `fade`, the windowed list keeps its focused row; open items in the notes.
 
 ## Size
 
@@ -46,4 +46,8 @@ M
 
 ## Notes
 
-Evidence and the lane report are recorded when the lane lands.
+**Built (lane virtual-engine, 2026-10-20).** `primitives/src/virtual/bridge.rs` (`use_virtual_bridge`, `Bridge`, the `Windowing` trait, `corrected`, `measured_px`), `primitives/src/virtual/pin.rs` (`with_pinned` moved from `grid.rs`, new `pin_in_flow`), `ScrollReport` in `types.rs` (replaces `GridScroll`). `virtual_list.rs` and `virtual_grid.rs` lost their own bridge JS, `publish`, correction and measure code. New props: `VirtualGrid::fade`, `VirtualWrapGrid::fade`; new DOM hook `data-virtual-pinned` on a windowed list's detached focused row; new `fade` demo on the VirtualGrid page.
+
+**Evidence.** `cargo test -p dioxus-primitives --lib virtual`: 90 passed (new: 5 bridge, 4 pin tests). `cargo clippy -p dioxus-primitives --features web --all-targets -- -D warnings`: clean. Fast gates (`run-gates.sh --skip` the cargo ones): 52/52 PASS. Debug lane-ssg build containing the change: `playwright/virtual-engine.spec.ts` 3/3 (wrap-grid and data-grid fade, list focused row kept as the same node and rejoining the flow); `virtual-grid`, `virtual_list`, `virtual-list-find`, `scroll-fade`: 43 passed, 1 skipped (CDP timing, debug). `registry-install-smoke.sh --only virtual_grid,virtual_list`: OK, 2/2.
+
+**Open.** (1) `scripts/check-js-listeners.sh`'s `PAIRED_BY_HAND` entry for `primitives/src/virtual_list.rs` is now stale (no raw `addEventListener` left there); delete it (outside this lane's files). (2) A content-visibility mode for the grids (needs flow rows plus the grid's keyboard/pinning story) and find-in-page placeholders for grids were not built. (3) No engine-level overscroll policy: each container's sheet decides ([row 308](./308-virtualgrid-scroll-trap-at-the-edges.md)); the list has none and chains to the page.
