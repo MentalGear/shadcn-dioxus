@@ -1,7 +1,7 @@
 use super::super::component::*;
 use dioxus::prelude::*;
 
-/// `fade` on both layouts. The fade is a mask on the grid's own scroll container, driven by its
+/// `fade` on both layouts: `Y` on the wrapping gallery, `Both` on the two-axis data grid. The fade is a mask on the grid's own scroll container, driven by its
 /// scroll offset, so it follows the scrollbar whatever cells are mounted. A mask also fades the
 /// container's border, so the border sits on a wrapper and the grid drops its own.
 #[component]
@@ -14,7 +14,9 @@ pub fn Demo() -> Element {
                 VirtualWrapGrid {
                     count: 2_000usize,
                     columns: 4usize,
-                    estimate_row_height: |_| 72,
+                    // A tile (4rem + 2 x 4px margin) plus the row's 8px bottom padding: exact, so the canvas is the
+                    // same height before and after the rows are measured.
+                    estimate_row_height: |_| 80,
                     fade: ScrollFade::Y,
                     render_item: |index: usize| rsx! {
                         div { style: "display: grid; place-items: center; height: 4rem; margin: var(--dx-space-1); border-radius: var(--dx-radius-md); background: var(--dx-muted); color: var(--dx-muted-foreground);",
@@ -28,14 +30,14 @@ pub fn Demo() -> Element {
             div {
                 "data-demo": "fade-grid",
                 style: "border: 1px solid var(--dx-border); border-radius: var(--dx-radius-lg); overflow: hidden;",
+                // Rows AND columns scroll, so all four edges fade (each only while there is more past it).
+                // No sticky header: the mask covers everything inside the container, header included.
                 VirtualGrid {
                     row_count: 1_000usize,
                     column_count: 30usize,
-                    // The sticky header would fade with a top edge, so only the far edges fade.
-                    render_header: |column: usize| rsx! { "Column {column + 1}" },
                     render_cell: |(row, column): (usize, usize)| rsx! { "R{row + 1} C{column + 1}" },
-                    fade: ScrollFade::Bottom,
-                    "aria-label": "Readings, faded at the bottom edge",
+                    fade: ScrollFade::Both,
+                    "aria-label": "Readings, faded at all four edges",
                     style: "height: 16rem; border: none; border-radius: 0;",
                 }
             }

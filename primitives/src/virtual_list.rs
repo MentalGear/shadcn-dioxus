@@ -59,6 +59,7 @@ use crate::r#virtual::{
     cv_chunks, measured_px, pin_in_flow, use_virtual_bridge, Bridge, ChunkSkip, Engine,
     SizeEstimates, CHUNK_ROWS, DEFAULT_SIZE,
 };
+use crate::scroll_area::use_scroll_fade;
 pub use crate::scroll_area::ScrollFade;
 use crate::{merge_attributes, use_unique_id};
 
@@ -121,11 +122,13 @@ impl VirtualListMode {
 /// The props for the [`VirtualList`] component.
 #[derive(Props, Clone, PartialEq)]
 pub struct VirtualListProps {
-    /// The total number of items in the list.
+    /// The total number of items.
     pub count: ReadSignal<usize>,
-    /// Windowed mode: how many rows to mount beyond each edge of the viewport (the window is
-    /// re-centred once fewer than half of them remain, so between `buffer / 2` and `buffer`
-    /// rows are always mounted beyond each edge). Ignored by content-visibility mode.
+    /// How many rows to mount beyond each edge of the viewport, so a scroll never shows a blank edge
+    /// (the window is re-centred once fewer than half of them remain, so between `buffer / 2` and
+    /// `buffer` rows are always mounted beyond each edge). Only a windowed layout reads it:
+    /// `VirtualList` in content-visibility mode ignores it. Defaults to 8 rows for `VirtualList` and 4
+    /// for `VirtualWrapGrid`.
     #[props(default = ReadSignal::new(Signal::new(8)))]
     pub buffer: ReadSignal<usize>,
     /// Estimates the height of an item by index, in px. Windowed mode uses it until a row is
@@ -135,7 +138,7 @@ pub struct VirtualListProps {
     /// windowed mode estimates from the average of the measured rows and content-visibility
     /// mode assumes 100px.
     pub estimate_size: Option<Callback<usize, u32>>,
-    /// Renders a single item by its absolute index.
+    /// Renders the item at an absolute index.
     pub render_item: Callback<usize, Element>,
     /// Windowed mode, opt-in (experimental, backlog row 153): the searchable text of item `idx`,
     /// plain text without markup. When given, every row's text is also kept in the DOM inside a
@@ -154,10 +157,13 @@ pub struct VirtualListProps {
     /// Defaults to [`DEFAULT_AUTO_THRESHOLD`] (1000).
     #[props(default = ReadSignal::new(Signal::new(DEFAULT_AUTO_THRESHOLD)))]
     pub auto_threshold: ReadSignal<usize>,
-    /// A scroll-edge fade on the container, which is the element that scrolls (the
-    /// `dx-scroll-fade-*` classes of `dx-effects.css`; see [`ScrollFade`]). Defaults to
-    /// [`ScrollFade::None`]. It follows the scroll position in both modes: in windowed mode the
-    /// container's own scroll offset drives it, whatever rows are mounted.
+    /// A scroll-edge fade on the container, which is the element that scrolls (the `dx-scroll-fade-*`
+    /// classes of `dx-effects.css`; see [`ScrollFade`]). Defaults to [`ScrollFade::None`]. It follows
+    /// the container's own scroll offset, whatever rows or cells are mounted, and a container whose
+    /// content fits has no fade. The fade is a mask, so it also fades a border or background on the
+    /// container (put those on a wrapper) and a `VirtualGrid`'s sticky header (prefer
+    /// [`ScrollFade::Bottom`] / [`ScrollFade::End`] with `render_header`); [`ScrollFade::Both`] masks
+    /// all four edges of a two-axis scroller.
     #[props(default)]
     pub fade: ScrollFade,
     /// Additional attributes to apply to the container element.
@@ -232,7 +238,7 @@ pub fn VirtualList(props: VirtualListProps) -> Element {
         fade,
         attributes,
     } = props;
-    let attributes = merge_attributes(vec![attributes, fade.attributes()]);
+    let attributes = merge_attributes(vec![attributes, use_scroll_fade(fade)]);
 
     // The mode body is a separate component, so switching modes (a count crossing the
     // threshold, or a new `virtualize`) drops the old body's scope and everything it owns (the

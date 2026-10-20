@@ -1,7 +1,8 @@
 //! Defines the [`ScrollArea`] component for creating scrollable areas with customizable scrollbars.
 
 use crate::direction::{use_direction, Direction};
-use crate::merge_attributes;
+use crate::js_listener::{use_js_listeners, JsListeners};
+use crate::{merge_attributes, use_unique_id};
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 
@@ -66,6 +67,11 @@ pub enum ScrollFade {
     Y,
     /// Both inline edges of a horizontal scroller, mirrored in RTL (`dx-scroll-fade-x`).
     X,
+    /// All four edges of a scroller that scrolls on both axes (`dx-scroll-fade-xy`): the block
+    /// and inline masks intersected, each edge fading only while there is content past it, the
+    /// inline edges mirrored in RTL. For a two-axis `VirtualGrid`, or a [`ScrollArea`] with
+    /// `ScrollDirection::Both`.
+    Both,
     /// The top edge only (`dx-scroll-fade-t`): a transcript that opens at the bottom and
     /// loads history upward.
     Top,
@@ -85,6 +91,7 @@ impl ScrollFade {
             Self::None => None,
             Self::Y => Some("dx-scroll-fade-y"),
             Self::X => Some("dx-scroll-fade-x"),
+            Self::Both => Some("dx-scroll-fade-xy"),
             Self::Top => Some("dx-scroll-fade-t"),
             Self::Bottom => Some("dx-scroll-fade-b"),
             Self::Start => Some("dx-scroll-fade-s"),
@@ -92,13 +99,14 @@ impl ScrollFade {
         }
     }
 
-    /// The `data-scroll-fade` value (`y`, `x`, `top`, `bottom`, `start`, `end`), or `None` for
+    /// The `data-scroll-fade` value (`y`, `x`, `both`, `top`, `bottom`, `start`, `end`), or `None` for
     /// [`ScrollFade::None`]; a styling and test hook, the same spelling as the variant.
     pub fn as_str(self) -> Option<&'static str> {
         match self {
             Self::None => None,
             Self::Y => Some("y"),
             Self::X => Some("x"),
+            Self::Both => Some("both"),
             Self::Top => Some("top"),
             Self::Bottom => Some("bottom"),
             Self::Start => Some("start"),
@@ -120,6 +128,53 @@ impl ScrollFade {
             "data-scroll-fade": "{name}",
         })
     }
+}
+
+/// Where a browser has no scroll-driven animations (`animation-timeline: scroll()`), `dx-effects.css`
+/// can only draw every fade edge statically, so a faded scroller showed a fade past which there was
+/// nothing to scroll to. This script sets the four depth properties itself from the scroll position
+/// and the distance left (`|scrollLeft|`, so RTL reads like LTR), once per frame at most, and does
+/// nothing where the animations exist (the CSS drives them there).
+const SCROLL_FADE_FALLBACK_JS: &str = r#"
+    if (CSS.supports('animation-timeline: scroll()')) return;
+    const el = document.querySelector('[data-scroll-fade-key="' + (await dioxus.recv()) + '"]');
+    if (!el) return;
+    const depth = (past, edge) => (past > 1 ? 'var(--dx-internal-scroll-fade-size-' + edge + ')' : '0px');
+    let raf = 0;
+    const update = () => {
+        raf = 0;
+        const top = el.scrollTop, start = Math.abs(el.scrollLeft);
+        const set = (name, past, edge) => el.style.setProperty('--dx-scroll-fade-' + name, depth(past, edge));
+        set('t', top, 't');
+        set('b', el.scrollHeight - el.clientHeight - top, 'b');
+        set('s', start, 's');
+        set('e', el.scrollWidth - el.clientWidth - start, 'e');
+    };
+    const schedule = () => { if (!raf) raf = requestAnimationFrame(update); };
+    listen(el, 'scroll', schedule, { passive: true });
+    const resizes = new ResizeObserver(schedule);
+    resizes.observe(el);
+    if (el.firstElementChild) resizes.observe(el.firstElementChild);
+    cleanup(() => { resizes.disconnect(); if (raf) cancelAnimationFrame(raf); });
+    update();
+"#;
+
+/// The attributes a scroller carries for `fade` (see [`ScrollFade::attributes`]) plus, in a browser
+/// without scroll-driven animations, the listener that makes an edge show only while there is more
+/// content past it. Every component with a `fade` prop calls this instead of `fade.attributes()`, so
+/// the fallback is one mechanism for all of them. Nothing is installed for [`ScrollFade::None`] or
+/// where the CSS animations are supported.
+pub(crate) fn use_scroll_fade(fade: ScrollFade) -> Vec<Attribute> {
+    let key = use_unique_id();
+    use_js_listeners(move || {
+        (fade != ScrollFade::None)
+            .then(|| JsListeners::install(SCROLL_FADE_FALLBACK_JS).arg(key.cloned()))
+    });
+    let mut attributes = fade.attributes();
+    if fade != ScrollFade::None {
+        attributes.extend(attributes!(div { "data-scroll-fade-key": key }));
+    }
+    attributes
 }
 
 /// The direction in which scrolling is allowed.
@@ -182,11 +237,11 @@ pub enum ScrollType {
 /// The [`ScrollArea`] component defines the following data attributes you can use to control styling:
 /// - `data-scroll-direction`: Indicates the scroll direction. Values are `vertical`, `horizontal`, or `both`.
 /// - `data-direction`: The resolved text direction. Values are `ltr` or `rtl`.
-/// - `data-scroll-fade`: Present with the `fade` prop; `y`, `x`, `top`, `bottom`, `start` or `end`.
+/// - `data-scroll-fade`: Present with the `fade` prop; `y`, `x`, `both`, `top`, `bottom`, `start` or `end`.
 ///
 /// ## Scroll fade
 ///
-/// `fade: ScrollFade::Y` (or `X`, `Top`, `Bottom`, `Start`, `End`) adds the matching
+/// `fade: ScrollFade::Y` (or `X`, `Both`, `Top`, `Bottom`, `Start`, `End`) adds the matching
 /// `dx-scroll-fade-*` class of `dx-effects.css` to this element, which is the one that scrolls.
 /// See [`ScrollFade`] for what it needs.
 #[component]
@@ -238,7 +293,7 @@ pub fn ScrollArea(props: ScrollAreaProps) -> Element {
         class: "{visibility_class}",
         style: "{overflow_style}",
     });
-    let fade = props.fade.attributes();
+    let fade = use_scroll_fade(props.fade);
     let owned = attributes!(div {
         "scrollbar-width": scrollbar_width,
         "data-scroll-direction": match direction() {
@@ -276,6 +331,17 @@ mod tests {
         rsx! {
             ScrollArea { direction: ScrollDirection::Horizontal, style: "width: 100%;", max_width: "20rem", "x" }
         }
+    }
+
+    /// `ScrollFade::Both` is its own class (`dx-scroll-fade-xy`) and data value (`both`), distinct
+    /// from `Y` and `X`.
+    #[test]
+    fn both_axes_fade_has_its_own_class_and_value() {
+        assert_eq!(ScrollFade::Both.class(), Some("dx-scroll-fade-xy"));
+        assert_eq!(ScrollFade::Both.as_str(), Some("both"));
+        assert_ne!(ScrollFade::Both.class(), ScrollFade::Y.class());
+        assert_ne!(ScrollFade::Both.class(), ScrollFade::X.class());
+        assert_eq!(ScrollFade::Both.attributes().len(), 2);
     }
 
     /// A caller's own `style` is added to the scroll area's overflow, never a replacement for it.

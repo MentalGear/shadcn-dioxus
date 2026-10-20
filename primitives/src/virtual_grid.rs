@@ -65,6 +65,7 @@ use crate::r#virtual::{
     justified_navigate, measured_px, use_virtual_bridge, with_pinned, Bridge, Engine, GridEngine,
     GridKey, GridShape, JustifiedEngine, JustifiedOptions, RowPlan, ScrollReport, SizeEstimates,
 };
+use crate::scroll_area::use_scroll_fade;
 pub use crate::scroll_area::ScrollFade;
 use crate::{merge_attributes, use_unique_id};
 
@@ -111,12 +112,13 @@ pub struct VirtualGridProps {
     pub dir: Option<Direction>,
     /// Called with `(row, column)` when the active cell changes (by keyboard, click or focus).
     pub on_active_change: Option<Callback<(usize, usize)>>,
-    /// A scroll-edge fade on the container, which is the element that scrolls (the
-    /// `dx-scroll-fade-*` classes of `dx-effects.css`; see [`ScrollFade`]). Defaults to
-    /// [`ScrollFade::None`]. It follows the container's own scroll offset, whatever cells are
-    /// mounted. The fade is a mask, so it also fades a sticky header (prefer
-    /// [`ScrollFade::Bottom`] / [`ScrollFade::End`] with `render_header`) and a border or
-    /// background on the container: put those on a wrapper.
+    /// A scroll-edge fade on the container, which is the element that scrolls (the `dx-scroll-fade-*`
+    /// classes of `dx-effects.css`; see [`ScrollFade`]). Defaults to [`ScrollFade::None`]. It follows
+    /// the container's own scroll offset, whatever rows or cells are mounted, and a container whose
+    /// content fits has no fade. The fade is a mask, so it also fades a border or background on the
+    /// container (put those on a wrapper) and a `VirtualGrid`'s sticky header (prefer
+    /// [`ScrollFade::Bottom`] / [`ScrollFade::End`] with `render_header`); [`ScrollFade::Both`] masks
+    /// all four edges of a two-axis scroller.
     #[props(default)]
     pub fade: ScrollFade,
     /// Additional attributes to apply to the container element.
@@ -178,7 +180,7 @@ pub fn VirtualGrid(props: VirtualGridProps) -> Element {
         fade,
         attributes,
     } = props;
-    let attributes = merge_attributes(vec![attributes, fade.attributes()]);
+    let attributes = merge_attributes(vec![attributes, use_scroll_fade(fade)]);
 
     let direction = use_direction(dir);
     let container_id = use_unique_id();
@@ -363,7 +365,7 @@ pub fn VirtualGrid(props: VirtualGridProps) -> Element {
 /// The props for the [`VirtualWrapGrid`] component.
 #[derive(Props, Clone, PartialEq)]
 pub struct VirtualWrapGridProps {
-    /// The number of items.
+    /// The total number of items.
     pub count: ReadSignal<usize>,
     /// How many items each row holds (equal-width tracks). At least 1. Changing it forgets the
     /// measured row heights (row `i` then holds other items).
@@ -373,8 +375,11 @@ pub struct VirtualWrapGridProps {
     pub estimate_row_height: Option<Callback<usize, u32>>,
     /// Renders the item at an absolute index.
     pub render_item: Callback<usize, Element>,
-    /// How many rows to mount beyond each edge of the viewport (the window is re-centred once
-    /// fewer than half of them remain).
+    /// How many rows to mount beyond each edge of the viewport, so a scroll never shows a blank edge
+    /// (the window is re-centred once fewer than half of them remain, so between `buffer / 2` and
+    /// `buffer` rows are always mounted beyond each edge). Only a windowed layout reads it:
+    /// `VirtualList` in content-visibility mode ignores it. Defaults to 8 rows for `VirtualList` and 4
+    /// for `VirtualWrapGrid`.
     #[props(default = ReadSignal::new(Signal::new(4)))]
     pub buffer: ReadSignal<usize>,
     /// The reading direction for the horizontal arrow keys. Defaults to the nearest
@@ -382,10 +387,13 @@ pub struct VirtualWrapGridProps {
     pub dir: Option<Direction>,
     /// Called with the item index when the active item changes (by keyboard, click or focus).
     pub on_active_change: Option<Callback<usize>>,
-    /// A scroll-edge fade on the container (the `dx-scroll-fade-*` classes of
-    /// `dx-effects.css`; see [`ScrollFade`]). Defaults to [`ScrollFade::None`]. It follows the
-    /// container's own scroll offset, whatever rows are mounted; a border or background on the
-    /// container fades with it, so put those on a wrapper.
+    /// A scroll-edge fade on the container, which is the element that scrolls (the `dx-scroll-fade-*`
+    /// classes of `dx-effects.css`; see [`ScrollFade`]). Defaults to [`ScrollFade::None`]. It follows
+    /// the container's own scroll offset, whatever rows or cells are mounted, and a container whose
+    /// content fits has no fade. The fade is a mask, so it also fades a border or background on the
+    /// container (put those on a wrapper) and a `VirtualGrid`'s sticky header (prefer
+    /// [`ScrollFade::Bottom`] / [`ScrollFade::End`] with `render_header`); [`ScrollFade::Both`] masks
+    /// all four edges of a two-axis scroller.
     #[props(default)]
     pub fade: ScrollFade,
     /// Additional attributes to apply to the container element.
@@ -426,6 +434,9 @@ pub struct VirtualWrapGridProps {
 /// `id` and `role`. Each `[role=row]` is a CSS grid of `columns` equal tracks; set
 /// `column-gap` and a `padding-block-end` on it for the gaps (they are part of the measured
 /// row). Items are `[role=gridcell]` with `data-grid-cell="row:column"` and `data-grid-index`.
+/// The canvas inside the container carries `data-measured="false"` while its height is the
+/// estimates' sum (the server's markup and the client's first frame) and `"true"` once a row
+/// has been measured, so a stylesheet or a test can tell an estimated canvas from a measured one.
 #[component]
 pub fn VirtualWrapGrid(props: VirtualWrapGridProps) -> Element {
     let VirtualWrapGridProps {
@@ -439,7 +450,7 @@ pub fn VirtualWrapGrid(props: VirtualWrapGridProps) -> Element {
         fade,
         attributes,
     } = props;
-    let attributes = merge_attributes(vec![attributes, fade.attributes()]);
+    let attributes = merge_attributes(vec![attributes, use_scroll_fade(fade)]);
 
     let direction = use_direction(dir);
     let container_id = use_unique_id();
@@ -513,6 +524,9 @@ pub fn VirtualWrapGrid(props: VirtualWrapGridProps) -> Element {
         })
     };
     let (rows, height) = rows;
+    // Whether the canvas height comes from measured rows (the client, after mount) or from the
+    // estimates alone (the server, and the client's first frame).
+    let measured = engine.read().has_measurements();
 
     let owned = attributes!(div {
         id: container_id,
@@ -525,7 +539,9 @@ pub fn VirtualWrapGrid(props: VirtualWrapGridProps) -> Element {
 
     rsx! {
         div { onkeydown, ..merged,
-            div { style: "position: relative; height: {height}px;",
+            div {
+                "data-measured": "{measured}",
+                style: "position: relative; height: {height}px;",
                 for row in rows {
                     div {
                         key: "{row.index()}",
@@ -558,7 +574,7 @@ pub fn VirtualWrapGrid(props: VirtualWrapGridProps) -> Element {
 }
 
 /// The target row height [`VirtualJustifiedGrid`] uses without `target_row_height`, in px.
-pub const DEFAULT_TARGET_ROW_HEIGHT: f64 = 200.0;
+pub const DEFAULT_TARGET_ROW_HEIGHT: f64 = 150.0;
 /// The gap [`VirtualJustifiedGrid`] uses without `gap`, in px.
 pub const DEFAULT_TILE_GAP: f64 = 4.0;
 /// How far beyond the viewport [`VirtualJustifiedGrid`] mounts tiles without `overscan`, in px.
@@ -592,7 +608,7 @@ pub struct VirtualJustifiedGridProps {
     /// The row height, in px, that rows are packed toward: a full row takes items until they
     /// would overflow the width at this height, then shrinks to fill the width exactly, so it is
     /// never taller (unless `min_tile_width` backs it off). Defaults to
-    /// [`DEFAULT_TARGET_ROW_HEIGHT`] (200). The last row keeps this height and may end short.
+    /// [`DEFAULT_TARGET_ROW_HEIGHT`] (150). The last row keeps this height and may end short.
     #[props(default = ReadSignal::new(Signal::new(DEFAULT_TARGET_ROW_HEIGHT)))]
     pub target_row_height: ReadSignal<f64>,
     /// The space between tiles and between rows, in px. Defaults to [`DEFAULT_TILE_GAP`] (4).
@@ -624,8 +640,13 @@ pub struct VirtualJustifiedGridProps {
     /// the active tile there, scrolls it into view and focuses it (a "jump to photo" button, or
     /// keeping one selection across a switch between layouts). Without it the grid keeps its own.
     pub active: Option<Signal<usize>>,
-    /// A scroll-edge fade on the container (the `dx-scroll-fade-*` classes of `dx-effects.css`;
-    /// see [`ScrollFade`]). Defaults to [`ScrollFade::None`].
+    /// A scroll-edge fade on the container, which is the element that scrolls (the `dx-scroll-fade-*`
+    /// classes of `dx-effects.css`; see [`ScrollFade`]). Defaults to [`ScrollFade::None`]. It follows
+    /// the container's own scroll offset, whatever rows or cells are mounted, and a container whose
+    /// content fits has no fade. The fade is a mask, so it also fades a border or background on the
+    /// container (put those on a wrapper) and a `VirtualGrid`'s sticky header (prefer
+    /// [`ScrollFade::Bottom`] / [`ScrollFade::End`] with `render_header`); [`ScrollFade::Both`] masks
+    /// all four edges of a two-axis scroller.
     #[props(default)]
     pub fade: ScrollFade,
     /// Additional attributes to apply to the container element.
@@ -688,7 +709,9 @@ fn justified_options(
 /// The container is the scroll container (give it a height and `overflow: auto`, plus
 /// `scrollbar-gutter: stable` so a scrollbar appearing does not re-flow the rows); it owns `id`,
 /// `role` and `aria-rowcount`. A fluid grid carries `data-justified-axes="block"`, a wall
-/// `"both"`. Rows are `[role=row]`, tiles `[role=gridcell]` with `data-grid-index` and
+/// `"both"`. The canvas inside it carries `data-measured="false"` until a fluid grid knows its
+/// width (the server's markup: no rows yet, `aria-busy`), `"true"` once rows are laid out. Rows
+/// are `[role=row]`, tiles `[role=gridcell]` with `data-grid-index` and
 /// `data-grid-cell="row:column"`; positions and sizes are inline styles. Do not pad the container:
 /// the rows fill its content box.
 #[component]
@@ -707,7 +730,7 @@ pub fn VirtualJustifiedGrid(props: VirtualJustifiedGridProps) -> Element {
         fade,
         attributes,
     } = props;
-    let attributes = merge_attributes(vec![attributes, fade.attributes()]);
+    let attributes = merge_attributes(vec![attributes, use_scroll_fade(fade)]);
 
     let direction = use_direction(dir);
     let container_id = use_unique_id();
@@ -865,7 +888,9 @@ pub fn VirtualJustifiedGrid(props: VirtualJustifiedGridProps) -> Element {
             onfocusin: move |_| focus_inside.set(true),
             onfocusout: move |_| focus_inside.set(false),
             ..merged,
-            div { style: "position: relative; width: {canvas_width_style}; height: {height:.3}px;",
+            div {
+                "data-measured": "{measured}",
+                style: "position: relative; width: {canvas_width_style}; height: {height:.3}px;",
                 for plan in rows {
                     div {
                         key: "{plan.row}",
