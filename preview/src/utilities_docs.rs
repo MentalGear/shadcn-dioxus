@@ -69,6 +69,10 @@ const SCROLL_FADE_CLASSES: &[[&str; 2]] = &[
         "both inline edges of an `overflow-x` box; follows the reading direction",
     ],
     [
+        "`dx-scroll-fade-xy`",
+        "all four edges of a box that scrolls on both axes (the block and inline masks intersected); inline edges follow the reading direction",
+    ],
+    [
         "`dx-scroll-fade-t`, `dx-scroll-fade-b`",
         "one physical block edge (top, bottom)",
     ],

@@ -18,7 +18,7 @@ ScrollArea {
 
 ## Edge fade (the `dx-scroll-fade` utility)
 
-`fade: ScrollFade` (`None` by default; `Y`, `X`, `Top`, `Bottom`, `Start`, `End`) fades the edges of the scroller where there is more to scroll to:
+`fade: ScrollFade` (`None` by default; `Y`, `X`, `Both`, `Top`, `Bottom`, `Start`, `End`) fades the edges of the scroller where there is more to scroll to:
 
 ```rust
 div { style: "border: 1px solid var(--dx-border); border-radius: var(--dx-radius-lg);",
@@ -38,6 +38,7 @@ The prop is a thin wrapper over a plain-CSS utility in `assets/dx-effects.css`, 
 |---|---|
 | `dx-scroll-fade` / `dx-scroll-fade-y` | both block edges of an `overflow-y` box (`ScrollFade::Y`) |
 | `dx-scroll-fade-x` | both inline edges of an `overflow-x` box; follows the reading direction (`ScrollFade::X`) |
+| `dx-scroll-fade-xy` | all four edges of a box that scrolls on both axes: the block and inline masks intersected, each edge only while there is content past it; the inline edges follow the reading direction (`ScrollFade::Both`) |
 | `dx-scroll-fade-t` / `-b` | one physical block edge (`ScrollFade::Top` / `Bottom`) |
 | `dx-scroll-fade-l` / `-r` | one physical inline edge |
 | `dx-scroll-fade-s` / `-e` | one logical inline edge, mirrored in RTL (`ScrollFade::Start` / `End`) |
@@ -57,5 +58,5 @@ Notes:
 
 - **Link `dx-effects.css`** once at the app root next to `dx-components-theme.css`; the `scroll_area`, `virtual_list` and `message_scroller` registry entries list it in `globalAssets`, so `shadcn-dioxus add` copies it. It is a global sheet rather than part of this component's `style.css` because it also registers the `@property` custom properties and keyframes that every fading scroller shares, so there is exactly one copy of them; without the sheet the prop adds a class that matches nothing.
 - The fade is a mask on the scroller, so a border or background on the same element fades with the content. Put those on a wrapper (as the demo does) and the class on the inner scroller. A visible scrollbar fades too; pair the fade with `scrollbar-width: none` (`ScrollType::Hidden`) to hide it.
-- Inline fades follow the reading direction: `ScrollFade::X` and `Start`/`End` mirror when the scroller (or an ancestor) is `dir="rtl"`. The `fade` variant has a button that flips its horizontal strip.
-- The element must scroll on that axis (`ScrollDirection::Vertical` for `Y`/`Top`/`Bottom`, `Horizontal` for `X`/`Start`/`End`); the animation timeline is the element's own scroll position.
+- Inline fades follow the reading direction: `ScrollFade::X`, `Both` and `Start`/`End` mirror when the scroller (or an ancestor) is `dir="rtl"`. The `fade` variant has a button that flips its horizontal strip.
+- The element must scroll on that axis (`ScrollDirection::Vertical` for `Y`/`Top`/`Bottom`, `Horizontal` for `X`/`Start`/`End`, `Both` for `Both`: a corner is masked by both gradients, so it is as faded as its two edges together); the animation timeline is the element's own scroll position.
