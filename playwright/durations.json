@@ -3,9 +3,9 @@
   "build": "debug",
   "workers": "2",
   "date": "2026-10-19",
-  "tests": 3861,
-  "files": 193,
-  "total_seconds": 14410,
+  "tests": 3942,
+  "files": 204,
+  "total_seconds": 14689,
   "budget_seconds": 17000,
   "max_file_seconds": 3000,
   "note": "seconds = sum of test durations (worker time) on the DEBUG SSG build, 2 workers, 4-core box shared with other lanes; main-thread.spec.ts and scroll-main-thread.spec.ts are release-only (skipped on debug) and carry their RELEASE seconds. release_total_seconds = the same run on a release build. Refresh: playwright/tools/run-suite.sh, then durations.mjs chunk-*.json --write",
@@ -151,6 +151,14 @@
   "button.spec.ts": {
    "tests": 3,
    "seconds": 8.7,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "retried": 0
+  },
+  "calendar-caption-short.spec.ts": {
+   "tests": 3,
+   "seconds": 7.1,
    "passed": 3,
    "failed": 0,
    "skipped": 0,
@@ -316,6 +324,14 @@
    "skipped": 0,
    "retried": 0
   },
+  "chat-kit-demos.spec.ts": {
+   "tests": 5,
+   "seconds": 37.1,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "retried": 0
+  },
   "checkbox-indeterminate.spec.ts": {
    "tests": 4,
    "seconds": 8.6,
@@ -332,10 +348,26 @@
    "skipped": 0,
    "retried": 0
   },
+  "checkpoint.spec.ts": {
+   "tests": 5,
+   "seconds": 13.5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "retried": 0
+  },
   "close-on-scroll.spec.ts": {
    "tests": 26,
    "seconds": 91.6,
    "passed": 26,
+   "failed": 0,
+   "skipped": 0,
+   "retried": 0
+  },
+  "code-block.spec.ts": {
+   "tests": 8,
+   "seconds": 31.4,
+   "passed": 8,
    "failed": 0,
    "skipped": 0,
    "retried": 0
@@ -356,6 +388,14 @@
    "skipped": 0,
    "retried": 0
   },
+  "combobox-multiple.spec.ts": {
+   "tests": 12,
+   "seconds": 47.1,
+   "passed": 12,
+   "failed": 0,
+   "skipped": 0,
+   "retried": 0
+  },
   "combobox-placement.spec.ts": {
    "tests": 59,
    "seconds": 161.9,
@@ -368,6 +408,14 @@
    "tests": 23,
    "seconds": 69.8,
    "passed": 23,
+   "failed": 0,
+   "skipped": 0,
+   "retried": 0
+  },
+  "command-shortcut.spec.ts": {
+   "tests": 3,
+   "seconds": 13.6,
+   "passed": 3,
    "failed": 0,
    "skipped": 0,
    "retried": 0
@@ -420,6 +468,14 @@
    "skipped": 0,
    "retried": 0
   },
+  "date-picker-caption-layout.spec.ts": {
+   "tests": 4,
+   "seconds": 7.8,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "retried": 0
+  },
   "date-picker.spec.ts": {
    "tests": 80,
    "seconds": 210.5,
@@ -448,6 +504,14 @@
    "tests": 30,
    "seconds": 93,
    "passed": 30,
+   "failed": 0,
+   "skipped": 0,
+   "retried": 0
+  },
+  "demos-batch3.spec.ts": {
+   "tests": 20,
+   "seconds": 72.9,
+   "passed": 20,
    "failed": 0,
    "skipped": 0,
    "retried": 0
@@ -732,6 +796,14 @@
    "skipped": 0,
    "retried": 0
   },
+  "menu-item-hoist.spec.ts": {
+   "tests": 10,
+   "seconds": 18.5,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "retried": 0
+  },
   "menu-item-parts.spec.ts": {
    "tests": 18,
    "seconds": 27.6,
@@ -985,6 +1057,14 @@
    "seconds": 1086,
    "passed": 166,
    "failed": 0,
+   "skipped": 0,
+   "retried": 0
+  },
+  "oracle/tier2-html/form-attribute.spec.ts": {
+   "tests": 5,
+   "seconds": 11.7,
+   "passed": 3,
+   "failed": 2,
    "skipped": 0,
    "retried": 0
   },
@@ -1512,6 +1592,14 @@
    "tests": 47,
    "seconds": 113.8,
    "passed": 47,
+   "failed": 0,
+   "skipped": 0,
+   "retried": 0
+  },
+  "trace.spec.ts": {
+   "tests": 6,
+   "seconds": 17.9,
+   "passed": 6,
    "failed": 0,
    "skipped": 0,
    "retried": 0
