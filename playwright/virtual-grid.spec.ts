@@ -266,6 +266,52 @@ test.describe("gallery (items wrap into rows)", () => {
   });
 });
 
+// Scroll chaining: at a grid's top or bottom edge the wheel must scroll the page (the grid once set
+// `overscroll-behavior: contain` and trapped it); only the inline axis stays contained.
+for (const [name, pick] of [["data grid", dataGrid], ["gallery", gallery]] as const) {
+  test.describe(`${name} scroll chaining`, () => {
+    test.use({ viewport: { width: 1280, height: 600 } });
+
+    test("the block axis chains to the page at both edges", async ({ page }) => {
+      await gotoHydrated(page, PAGE_URL);
+      const grid = pick(page);
+      await expectStyled(grid);
+      const overscroll = await grid.evaluate((el) => {
+        const s = getComputedStyle(el);
+        return [s.overscrollBehaviorX, s.overscrollBehaviorY];
+      });
+      expect(overscroll).toEqual(["contain", "auto"]);
+      const pageScrollable = await page.evaluate(
+        // viewport-ok: page scroll extent, not an overlay box
+        () => document.documentElement.scrollHeight - window.innerHeight,
+      );
+      expect(pageScrollable).toBeGreaterThan(1000);
+
+      const hover = async () => {
+        const box = (await grid.boundingBox())!;
+        await page.mouse.move(box.x + box.width / 2, box.y + Math.min(box.height / 2, 150));
+      };
+
+      // Bottom edge: wheel down scrolls the page.
+      await grid.scrollIntoViewIfNeeded();
+      await scrollGrid(grid, 1e9, 0);
+      await expect.poll(() => grid.evaluate((el) => el.scrollHeight - el.clientHeight - el.scrollTop)).toBeLessThan(2);
+      const before = await page.evaluate(() => window.scrollY);
+      await hover();
+      await page.mouse.wheel(0, 400);
+      await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(before);
+
+      // Top edge: wheel up scrolls the page back.
+      await grid.scrollIntoViewIfNeeded();
+      await scrollGrid(grid, 0, 0);
+      const mid = await page.evaluate(() => window.scrollY);
+      await hover();
+      await page.mouse.wheel(0, -400);
+      await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(mid);
+    });
+  });
+}
+
 test.describe("Axe automated scan", () => {
   test("loaded has no automatically detectable a11y issues", async ({ page }) => {
     await gotoHydrated(page, PAGE_URL);
