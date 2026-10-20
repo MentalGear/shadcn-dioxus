@@ -61,6 +61,11 @@ pub struct SelectProps<T: Clone + PartialEq + 'static = String> {
     #[props(default)]
     pub default_value: Option<T>,
 
+    /// A selected value's display text, shown in the trigger. Required: it is read at render time, so a
+    /// preselected value has its text in the server-rendered HTML (the option registry is filled by a
+    /// client-only effect and can never supply it).
+    pub item_to_label: Callback<T, String>,
+
     /// Callback fired when the selected value changes.
     #[props(default)]
     pub on_value_change: Callback<Option<T>>,
@@ -154,6 +159,11 @@ pub struct SelectMultiProps<T: Clone + PartialEq + 'static = String> {
     /// The default list of selected values.
     #[props(default)]
     pub default_values: Vec<T>,
+
+    /// A selected value's (the trigger joins several with a comma) display text, shown in the trigger. Required: it is read at render time, so a
+    /// preselected value has its text in the server-rendered HTML (the option registry is filled by a
+    /// client-only effect and can never supply it).
+    pub item_to_label: Callback<T, String>,
 
     /// Callback when the list of selected values changes.
     #[props(default)]
@@ -254,6 +264,7 @@ pub fn Select<T: Clone + PartialEq + 'static>(props: SelectProps<T>) -> Element 
         select::Select {
             value: props.value,
             default_value: props.default_value,
+            item_to_label: props.item_to_label,
             on_value_change: props.on_value_change,
             disabled: props.disabled,
             open: props.open,
@@ -308,6 +319,7 @@ pub fn SelectMulti<T: Clone + PartialEq + 'static>(props: SelectMultiProps<T>) -
         select::SelectMulti {
             values: props.values,
             default_values: props.default_values,
+            item_to_label: props.item_to_label,
             on_values_change: props.on_values_change,
             disabled: props.disabled,
             open: props.open,

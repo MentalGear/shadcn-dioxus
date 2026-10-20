@@ -37,6 +37,7 @@
 //! fn Demo() -> Element {
 //!     rsx! {
 //!         Select::<String> {
+//!             item_to_label: |value: String| value,
 //!             SelectTrigger{
 //!                 aria_label: "Select Trigger",
 //!                 width: "12rem",

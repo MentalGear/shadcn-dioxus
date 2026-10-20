@@ -15,6 +15,11 @@ pub struct ComboboxProps<T: Clone + PartialEq + 'static = String> {
     #[props(default)]
     pub default_value: Option<T>,
 
+    /// A selected value's display text, shown in the input. Required: it is read at render time, so a
+    /// preselected value's text is in the server-rendered HTML (the option registry is filled by a
+    /// client-only effect and can never supply it).
+    pub item_to_label: Callback<T, String>,
+
     /// Called with the new value (`None` when the selection is cleared).
     #[props(default)]
     pub on_value_change: Callback<Option<T>>,
@@ -84,6 +89,7 @@ pub fn Combobox<T: Clone + PartialEq + 'static>(props: ComboboxProps<T>) -> Elem
         combobox::Combobox {
             value: props.value,
             default_value: props.default_value,
+            item_to_label: props.item_to_label,
             on_value_change: props.on_value_change,
             disabled: props.disabled,
             open: props.open,

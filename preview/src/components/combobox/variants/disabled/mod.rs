@@ -13,6 +13,12 @@ pub fn Demo() -> Element {
     rsx! {
         div { class: "dx-combobox-demo", style: "display: grid; gap: 1rem;",
             Combobox::<String> {
+                item_to_label: move |value: String| {
+                    frameworks
+                        .iter()
+                        .find(|(id, _, _)| *id == value)
+                        .map_or(value.clone(), |(_, label, _)| label.to_string())
+                },
                 placeholder: "Select framework...",
                 aria_label: "Framework with disabled option",
                 list_aria_label: "Frameworks with disabled option",
@@ -28,6 +34,7 @@ pub fn Demo() -> Element {
                 }
             }
             Combobox::<String> {
+                item_to_label: |_: String| "Disabled option".to_string(),
                 disabled: true,
                 placeholder: "Disabled combobox",
                 aria_label: "Disabled combobox",

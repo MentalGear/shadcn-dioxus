@@ -20,6 +20,7 @@ let mut query = use_signal(String::new);
 
 Combobox::<String> {
     value: Some(value.into()),
+    item_to_label: |value: String| label_of(&value), // required: the input's text for the value, read at render time
     on_value_change: move |next: Option<String>| {
         value.set(next);
     },
@@ -37,6 +38,11 @@ Combobox::<String> {
     }
 }
 ```
+
+`item_to_label` (required on `Combobox` and `ComboboxMulti`, like Base UI's `itemToStringLabel`) is the selected
+value's display text. The input's value reads it at render time, never the option registry (which fills in a
+client-only effect), so a preselected `Combobox` carries `value="Next.js"` in the server-rendered HTML instead of
+an empty input until hydration, and the input cannot flash empty while the list re-registers its options.
 
 ## Multiple selection
 

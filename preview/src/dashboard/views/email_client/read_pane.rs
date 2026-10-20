@@ -155,6 +155,7 @@ pub(super) fn ReadPane(
                                         }
                                         SelectMulti::<MessageTag> {
                                             values: Some(selected_tags.clone()),
+                                            item_to_label: |tag: MessageTag| tag.label().to_string(),
                                             default_values: selected_tags.clone(),
                                             on_values_change: move |values: Vec<MessageTag>| {
                                                 state.set_message_tags(tag_edit_uid.clone(), values);

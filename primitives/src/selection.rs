@@ -78,24 +78,6 @@ pub(crate) fn option_text_value<T: 'static>(
     })
 }
 
-/// Display text for selected values in selection order.
-pub(crate) fn selected_text<'a>(
-    values: impl IntoIterator<Item = &'a RcPartialEqValue>,
-    options: &[OptionState],
-) -> Option<String> {
-    let parts: Vec<String> = values
-        .into_iter()
-        .filter_map(|value| {
-            options
-                .iter()
-                .find(|option| &option.value == value)
-                .map(|option| option.text_value.clone())
-        })
-        .collect();
-
-    (!parts.is_empty()).then(|| parts.join(", "))
-}
-
 /// Insert or update a registered option.
 pub(crate) fn sync_option(mut options: Signal<Vec<OptionState>>, option_state: OptionState) {
     sync_option_state(&mut options.write(), option_state);
@@ -244,37 +226,6 @@ mod tests {
         let value = 42i32;
         let text = option_text_value(&value, None, "Select");
         assert_eq!(text, "");
-    }
-
-    #[test]
-    fn selected_text_joins_matching_options_in_selection_order() {
-        let options = vec![option("a", 0), option("b", 1), option("c", 2)];
-        let a_value = RcPartialEqValue::new("a".to_string());
-        let c_value = RcPartialEqValue::new("c".to_string());
-
-        // Selection order (c, a) is preserved, not option registration order.
-        let text = selected_text([&c_value, &a_value], &options);
-        assert_eq!(text, Some("c, a".to_string()));
-    }
-
-    #[test]
-    fn selected_text_skips_values_with_no_matching_option() {
-        let options = vec![option("a", 0)];
-        let stale_value = RcPartialEqValue::new("gone".to_string());
-
-        let text = selected_text([&stale_value], &options);
-        assert_eq!(
-            text, None,
-            "no matching option means no text, not an empty joined string"
-        );
-    }
-
-    #[test]
-    fn selected_text_returns_none_for_no_values() {
-        let options = vec![option("a", 0)];
-        let values: Vec<&RcPartialEqValue> = Vec::new();
-
-        assert_eq!(selected_text(values, &options), None);
     }
 
     /// Run a closure inside a Dioxus runtime context so `Signal` is available

@@ -5,6 +5,7 @@ The Select component is used to create a dropdown menu that allows users to sele
 ```rust
 Select::<String> {
     value: "option1",
+    item_to_label: |value: String| label_of(&value), // required: the trigger's text, read at render time
     on_value_change: |value: String| {
         // Handle the change in selected value.
     },
@@ -18,6 +19,17 @@ Select::<String> {
     }
 }
 ```
+
+## Selected label
+
+`item_to_label: Callback<T, String>` is required on `Select` and `SelectMulti` (like Base UI's `itemToStringLabel`
+and `ComboboxMulti`'s). `SelectValue` and the trigger's fallback accessible name read it at render time, never the
+option registry: options register in a client-only effect and come after the trigger in tree order, so a
+registry-derived label is empty in the server HTML (a preselected `Select` showed its placeholder until hydration).
+A required prop, not a `T: Display` default, because select values are often `&str`, numbers or enums with no
+`Display`, and a default that falls back to the registry would reintroduce the empty first paint. `SelectMulti`
+joins its values' labels with a comma. A label that differs from an option's own text is fine; keep them equal so the
+trigger reads like the row that was picked.
 
 ## Open focus
 
