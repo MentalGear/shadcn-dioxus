@@ -27,7 +27,12 @@
 
 .dx-slider-track {
     position: relative;
-    overflow: hidden;
+
+    /* Never clipping: the thumb is a child of the track (the primitive renders `SliderThumb` inside
+       `SliderTrack`) and is taller than the 4px track, so an `overflow: hidden` here cut it to a
+       sliver, along with its focus ring and hit area (row 293). Nova's track clips because its
+       thumb is a sibling outside it; ours is not. The rounded clip moves to `.dx-slider-range`. */
+    overflow: visible;
     height: var(--dx-space-1);
     flex-grow: 1;
     border-radius: var(--dx-radius-full);
@@ -42,6 +47,9 @@
 .dx-slider-range {
     position: absolute;
     height: 100%;
+
+    /* What the track's `overflow: hidden` did to the range's ends, without clipping the thumb. */
+    border-radius: inherit;
     background-color: var(--dx-primary);
 }
 
@@ -119,6 +127,19 @@
        `left` (see alert_dialog/style.css's identical centering note). */
     left: 50%;
     transform: translate3d(-50%, 50%, 0); /* rtl-physical: see comment above */
+}
+
+/* Coarse pointer (row 291's step): a 20px thumb with a 44px target (`-inset-3` around it), the
+ * minimum a finger needs; the fine-pointer 12px / 28px sizes are Nova's. */
+@media (pointer: coarse) {
+    .dx-slider-thumb {
+        width: var(--dx-space-5);
+        height: var(--dx-space-5);
+    }
+
+    .dx-slider-thumb::after {
+        inset: calc(-1 * var(--dx-space-3));
+    }
 }
 
 /* `ring-ring/50 hover:ring-3 focus-visible:ring-3 active:ring-3`: the shared 3px focus halo. */

@@ -15,8 +15,13 @@ pub fn Demo() -> Element {
                 // skipped straight from 1 to 4. A tooltip's ephemeral popup
                 // content is not part of the document's heading outline
                 // anyway -- a styled `p`, same visual weight, not a heading.
-                p { style: "margin: 0 0 8px; font-weight: 660;", "Tooltip title" }
-                p { style: "margin: 0;", "This tooltip contains rich HTML content with styling." }
+                //
+                // The tooltip body is a flex row (icon-plus-text and Kbd tooltips rely on that), so
+                // rich content that must stack is wrapped in its own column.
+                div { style: "display: flex; flex-direction: column; gap: 8px; min-width: 0;",
+                    p { style: "margin: 0; font-weight: 660;", "Tooltip title" }
+                    p { style: "margin: 0;", "This tooltip contains rich HTML content with styling." }
+                }
             }
         }
     }
