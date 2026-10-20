@@ -1,10 +1,10 @@
 ---
 id: 290
 title: "Toast: exit animation, a real visible cap, and enter from the toaster's edge (Sonner parity)"
-status: "OPEN (owner review 2026-10-19). New work: the landed rows 138, 262 and 263 cover stacking, swipe…"
+status: "LANDED 2026-10-20 (exit animation, visible_toasts cap, edge-derived enter, queued slide-in; spec toast-enter-exit)"
 size: "M"
 area: primitives
-updated: 2026-10-19
+updated: 2026-10-20
 ---
 
 # Row 290: Toast: exit animation, a real visible cap, and enter from the toaster's edge (Sonner parity)
@@ -43,3 +43,10 @@ M
   - When the stack is expanded and a toast closes, the next queued toast (index 3 becoming visible) appears at the far end of the pile. It **slides in from above with a fade**, as on shadcn.
   - That second case needs a `translate` plus `opacity` transition on `data-visible` going from false to true. Today only the opacity changes.
   - Spec both cases: one with the pile collapsed and one with it expanded (hover held).
+
+## Update 2026-10-20
+
+Landed. Construction: **the toaster's side is the one source of direction** (`--toast-edge`, `1` bottom / `-1` for `data-toaster-side="top"`, on the container). A new toast enters from that edge and a closed one leaves toward it (`* var(--toast-edge)`); a queued toast that becomes visible at the far end of the expanded pile arrives from the opposite side (`* -1 * var(--toast-edge)`). The restack nudge keyframes read the same variable, so a top toaster no longer nudges the wrong way.
+
+- Primitive (`primitives/src/toast.rs`): `ToastRecord.closing` and `close_record` (marks closing, `spawn_forever` removes after `TOAST_EXIT` = 200 ms). Close button, action, countdown and `Toasts::close` use it; a swipe (already flown out) and `max_toasts` eviction remove directly. The pile index counts only non-closing toasts, so the others restack at once. New `visible_toasts` provider prop (default 3). `Toast` derives `data-visible` (index < cap) and `data-removed`/`inert` (closing) itself from the record and the provider, so a themed wrapper passes nothing; `--toast-exit-ms` is written from the Rust constant and the exit transition reads it (one source for the unmount delay).
+- Stylesheet: `--toast-hidden` is now `1` only for `data-visible="false"` (also inert), and the hover/focus rules no longer force
