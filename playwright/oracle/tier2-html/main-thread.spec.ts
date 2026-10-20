@@ -730,7 +730,14 @@ const FORM_CONTROL_SUBJECTS: FormControlSubject[] = [
     // which is the exact test that hung at `page.mouse.down()` before the
     // fix (dev-docs/backlog.md row 73).
     name: "drawer (drag)",
-    goto: (page) => goto(page, "drawer"),
+    // The demo drawer takes `EdgeSide::Auto`: the bottom below the `md` breakpoint (768px), a floating right panel (no
+    // grab handle, dragged sideways) at and above it. This gesture is the BOTTOM drawer's vertical handle drag, so it
+    // runs at a phone width, as drawer.spec.ts does (`PHONE`); at the default 1280x720 `drawer-handle` is
+    // `display: none` and `measureAtRest(handle)` rightly throws.
+    goto: async (page) => {
+      await page.setViewportSize({ width: 390, height: 844 });
+      await goto(page, "drawer");
+    },
     interact: async (page) => {
       await demoRole(page, "button").click();
       const root = page.locator('[data-slot="drawer-root"]');

@@ -196,43 +196,44 @@ test.describe("motion gating", () => {
     test.setTimeout(120_000);
     await page.setViewportSize({ width: 1280, height: 800 });
     await gotoHydrated(page, `${BASE_URL}/component/toast/`, NAV);
-    // The demo's own toast lasts 60 s: use the provider's default duration (5 s) through the
-    // top-layer fixture instead if it exists, else shorten with the page-level API.
-    const trigger = demoRole(page, "button");
+    // The `pause` variant's toast lasts a real 3 s (the main demo's lasts 60 s, too long to wait for). The countdown is
+    // the provider's visibility- and pause-gated 50 ms tick (`ToastTimer`), not one long `setTimeout`, so the old way of
+    // speeding a 60 s toast up -- shimming `setTimeout(60000)` -- no longer touches anything (backlog row 255).
+    const DURATION = 3000;
+    const trigger = demoRole(page, "button", 0, "pause");
     await expect(trigger).toBeVisible({ timeout: 5 * 60 * 1000 });
-    // 60 s is too long to wait for; speed the toast's own sleep up by scaling setTimeout for the
-    // toast's duration only (the Rust task sleeps through `setTimeout(60000)`).
-    await page.evaluate(() => {
-      const real = window.setTimeout.bind(window);
-      (window as any).setTimeout = (fn: any, ms?: number, ...rest: any[]) =>
-        real(fn, ms === 60000 ? 4000 : ms, ...rest);
-    });
     const toasts = page.locator('[role="alertdialog"]');
+    // The variant pauses on hover and focus; a pointer parked in the corner and a blurred button keep the countdown running.
+    const run = async () => {
+      await trigger.click();
+      await page.mouse.move(0, 0);
+      await trigger.evaluate((el) => (el as HTMLElement).blur());
+    };
 
-    // 1. Scrolling does not shorten or extend it: it is gone ~4 s after it appeared.
-    await trigger.click();
+    // 1. Scrolling does not shorten or extend it: it is gone ~3 s after it appeared.
+    await run();
     await expect(toasts).toHaveCount(1);
     const t0 = Date.now();
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
     await expect(toasts).toHaveCount(0, { timeout: 8000 });
     const elapsed = Date.now() - t0;
-    expect(elapsed, "dismissed on schedule although the page was scrolled").toBeGreaterThan(3000);
-    expect(elapsed).toBeLessThan(6500);
+    expect(elapsed, "dismissed on schedule although the page was scrolled").toBeGreaterThan(DURATION - 1000);
+    expect(elapsed).toBeLessThan(DURATION + 2500);
 
     // 2. A hidden tab holds it; on return the countdown starts over.
     await page.evaluate(() => window.scrollTo(0, 0));
-    await trigger.click();
+    await run();
     await expect(toasts).toHaveCount(1);
     await page.waitForTimeout(1000);
     await setHidden(page, true);
-    await page.waitForTimeout(6000); // longer than the whole duration
+    await page.waitForTimeout(DURATION + 2000); // longer than the whole duration
     await expect(toasts, "still there after a hidden tab outlasted its duration").toHaveCount(1);
     await setHidden(page, false);
     const back = Date.now();
-    await page.waitForTimeout(2500);
-    await expect(toasts, "fresh countdown: not yet gone 2.5 s after return").toHaveCount(1);
+    await page.waitForTimeout(DURATION - 1200);
+    await expect(toasts, "fresh countdown: not yet gone shortly before its full duration after return").toHaveCount(1);
     await expect(toasts).toHaveCount(0, { timeout: 6000 });
-    expect(Date.now() - back).toBeGreaterThan(3000);
+    expect(Date.now() - back).toBeGreaterThan(DURATION - 500);
   });
 
   test("a chart below the fold has not animated; it animates once when it is actually in view", async ({ page }) => {
