@@ -201,7 +201,7 @@ test.describe("a chart selects no text", () => {
     await open(page, "/component/bar_chart/");
     const chart = page.locator(".dx-chart").first();
     await chart.scrollIntoViewIfNeeded();
-    const labels = await chart.locator("svg text").allInnerTexts();
+    const labels = await chart.locator("svg text").evaluateAll((els) => els.map((el) => el.textContent ?? ""));
     expect(labels.length, "the chart has axis text").toBeGreaterThan(0);
     const box = (await chart.boundingBox())!;
     const y = box.y + box.height / 2;

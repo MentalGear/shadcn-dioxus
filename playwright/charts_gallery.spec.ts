@@ -538,7 +538,8 @@ test("no horizontal page overflow; the tab row scrolls inside itself", async ({ 
     [1440, 3], // 1360px shell - 272px sidebar - 80px padding = 1008px of content
     [1280, 2], // 1248 - 272 - 80 = 896px
     [1024, 2], // 992 - 272 - 80 = 640px
-    [768, 2], // sidebar is the phone drawer: 768 - 48 = 720px
+    [768, 1], // the sidebar is still docked at 768px: 768 - 272 - 80 = ~416px, one column
+    [700, 2], // below 768px the sidebar is the phone drawer: 700 - 48 = 652px
     [390, 1],
     [320, 1],
   ] as const) {

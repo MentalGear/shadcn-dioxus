@@ -1631,7 +1631,11 @@ fn DocsLayout(
                                     SidebarMenuButton {
                                         is_active: active == DocsNavActive::Charts,
                                         as: move |attributes: Vec<Attribute>| rsx! {
-                                            NavLink { to: Route::charts_index(), attributes,
+                                            // Current on every chart type (`/charts/bar/` ...), not only on `/charts/`.
+                                            NavLink {
+                                                to: Route::charts_index(),
+                                                active: active == DocsNavActive::Charts,
+                                                attributes,
                                                 ChartColumn { size: "1rem", "aria-hidden": "true" }
                                                 span { "Charts" }
                                             }
