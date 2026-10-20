@@ -43,7 +43,7 @@ async function open(page: import('@playwright/test').Page, side: Side) {
   await page.locator(CONTENT).evaluate((el, v) => {
     const spacer = document.createElement('div');
     spacer.setAttribute('data-test-spacer', '');
-    spacer.style.cssText = v ? 'width: 3000px; height: 10px' : 'height: 3000px; width: 10px';
+    spacer.style.cssText = v ? 'width: 3000px; height: 10px; flex: none' : 'height: 3000px; width: 10px; flex: none';
     el.appendChild(spacer);
   }, vertical(side));
 }
