@@ -3761,12 +3761,6 @@ fn SidebarGalleryCardControls(controls: HomeSidebarControls) -> Element {
                         style: "padding: 0.4rem 0.6rem; font-size: 0.75rem;",
                         "Icon"
                     }
-                    Button {
-                        variant: if collapsible() == SidebarCollapsible::None { ButtonVariant::Primary } else { ButtonVariant::Outline },
-                        onclick: move |_| collapsible.set(SidebarCollapsible::None),
-                        style: "padding: 0.4rem 0.6rem; font-size: 0.75rem;",
-                        "None"
-                    }
                 }
             }
         }
