@@ -212,7 +212,8 @@ test("the class -> stylesheet map is not empty (the sources were found)", () => 
   expect(DEFS["dx-language-select"], "the header language select is owned by assets/language-select.css").toEqual([
     path.join("assets", "language-select.css"),
   ]);
-  for (const sheet of ["src/components/popover/style.css", "src/components/button/style.css", "assets/language-select.css"]) {
+  // Not button: `main.css` leads two rules with `.dx-button` (the dark-mode toggle, c7a52a9c), so no class tells button/style.css apart.
+  for (const sheet of ["src/components/popover/style.css", "src/components/tabs/style.css", "assets/language-select.css"]) {
     const { marks, leads } = FINGERPRINTS[path.normalize(sheet)];
     expect(marks.length + leads.length, `${sheet} can be told apart from every other sheet`).toBeGreaterThan(0);
   }
