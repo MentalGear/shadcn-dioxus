@@ -1,10 +1,10 @@
 ---
 id: 303
 title: "Charts and Demos pages have no docs sidebar"
-status: "OPEN (owner question 2026-10-19)."
+status: "LANDED 2026-10-20 (lane charts-page, branch lane/charts-page). ChartsPage and Demos are DocsLayout…"
 size: "S–M"
 area: preview
-updated: 2026-10-19
+updated: 2026-10-20
 ---
 
 # Row 303: Charts and Demos pages have no docs sidebar
@@ -15,7 +15,7 @@ Why is the docs menu different on the charts page (and the demos page)?
 
 ## Status / trigger
 
-OPEN (owner question 2026-10-19).
+**LANDED 2026-10-20 (lane `charts-page`, branch `lane/charts-page`).** `ChartsPage` and `Demos` are `DocsLayout` children (`DocsNavActive::Charts` / `::Demos`); the sidebar's "Start" group gained "Demos" and "Charts" items (Charts is current on every chart type via `NavLink`'s `active`), the shell's `SidebarInset` is the one `<main>`, and the "No sidebar on this page" comments are gone. The chart grid's columns now follow the page's own width (`@container charts-page`: 2 from 640px of content, 3 from 960px) because the sidebar takes 272px at 1280px. Specs: `charts_gallery.spec.ts` ("the charts and demos pages have the docs sidebar", the column test), `nav_link.spec.ts`. Screenshots: `/home/user/tgt/shots-charts-page/{before,after}-{charts,demos}-{1280,390}.png`. Originally: OPEN (owner question 2026-10-19).
 
 ## Size
 

@@ -258,12 +258,14 @@ test.describe("listener inventory: every overlay returns window/document to its 
     });
   }
 
-  // The home page mounts the form fixture (its demo card) and the sidebar; `/charts/` has neither.
+  // The home page mounts the form fixture (its demo card); `/charts/` does not. Every docs-shell page (since row 303
+  // that includes `/charts/`) mounts the sidebar provider, so that scenario hops between two docs-shell routes: each
+  // hop unmounts one provider and mounts the next, and the inventory must still end where it began.
   // Link hrefs carry the deployment's base path (`/shadcn-dioxus/...` on the Pages build); BASE_URL does too.
   const BASE_PATH = new URL(BASE_URL).pathname.replace(/\/$/, "");
   for (const route of [
-    { name: "the form fixture (document click/keyup, form invalid/reset)", from: "/charts/?", to: "/?", mounted: "#form-required" },
-    { name: "the sidebar provider (window resize + keydown)", from: "/charts/?", to: "/docs?", mounted: '[data-slot="sidebar-wrapper"]' },
+    { name: "the form fixture (document click/keyup, form invalid/reset)", from: "/charts/?", to: "/?", mounted: "#form-required", goneAfter: true },
+    { name: "the sidebar provider (window resize + keydown)", from: "/charts/?", to: "/docs?", mounted: '[data-slot="sidebar-wrapper"]', goneAfter: false },
   ]) {
     test(`route: entering and leaving ${route.name} leaves no listener behind`, async ({ page }) => {
       test.setTimeout(300_000);
@@ -278,7 +280,8 @@ test.describe("listener inventory: every overlay returns window/document to its 
         await expect(page.locator(route.mounted).first()).toBeVisible({ timeout: 60_000 });
         await page.waitForTimeout(500);
         await page.locator(`a[href="${BASE_PATH}${route.from}"]`).first().click();
-        await expect(page.locator(route.mounted)).toHaveCount(0, { timeout: 60_000 });
+        if (route.goneAfter) await expect(page.locator(route.mounted)).toHaveCount(0, { timeout: 60_000 });
+        else await expect(page.locator(route.mounted).first()).toBeVisible({ timeout: 60_000 });
         await page.waitForTimeout(500);
       }
 

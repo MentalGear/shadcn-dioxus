@@ -32,8 +32,8 @@ use dioxus::prelude::{dioxus_router::LinkProps, *};
 use dioxus_code::{advanced::HighlightedSource, Code, CodeTheme, Theme};
 use dioxus_i18n::prelude::{i18n, use_init_i18n, I18nConfig};
 use dioxus_icons::lucide::{
-    ArrowRight, ArrowUpRight, BookOpen, Check, ChevronDown, ChevronLeft, Copy, ExternalLink,
-    FileText, Hash, House, Mail, Menu, Pause, Play, SkipBack, SkipForward,
+    ArrowRight, ArrowUpRight, BookOpen, ChartColumn, Check, ChevronDown, ChevronLeft, Copy,
+    ExternalLink, FileText, Hash, House, Mail, Menu, Monitor, Pause, Play, SkipBack, SkipForward,
 };
 use dioxus_primitives::direction::{Direction, DirectionProvider};
 use dioxus_primitives::{ContentAlign, ContentSide};
@@ -1456,6 +1456,10 @@ enum DocsNavActive {
     /// meant "on Docs", so a bare `Option<&'static str>` would have wrongly
     /// lit up "Overview" while browsing the gallery too.
     Home,
+    /// The demo-apps index (`/demos`): "Start" > "Demos" (backlog row 303).
+    Demos,
+    /// The chart gallery (`/charts/...`, every chart type): "Start" > "Charts".
+    Charts,
 }
 
 /// The heading-derived sub-item list nested under whichever "Start" nav
@@ -1609,6 +1613,35 @@ fn DocsLayout(
                                         }
                                     }
                                 }
+                                // The two standalone galleries the top nav also links to
+                                // (backlog row 303): they render inside this same shell, so
+                                // the sidebar and its trigger are the same on every page.
+                                SidebarMenuItem {
+                                    SidebarMenuButton {
+                                        is_active: active == DocsNavActive::Demos,
+                                        as: move |attributes: Vec<Attribute>| rsx! {
+                                            NavLink { to: Route::demos(), attributes,
+                                                Monitor { size: "1rem", "aria-hidden": "true" }
+                                                span { "Demos" }
+                                            }
+                                        },
+                                    }
+                                }
+                                SidebarMenuItem {
+                                    SidebarMenuButton {
+                                        is_active: active == DocsNavActive::Charts,
+                                        as: move |attributes: Vec<Attribute>| rsx! {
+                                            // Current on every chart type (`/charts/bar/` ...), not only on `/charts/`.
+                                            NavLink {
+                                                to: Route::charts_index(),
+                                                active: active == DocsNavActive::Charts,
+                                                attributes,
+                                                ChartColumn { size: "1rem", "aria-hidden": "true" }
+                                                span { "Charts" }
+                                            }
+                                        },
+                                    }
+                                }
                             }
                         }
                         // A-Z by default or by category: see `docs_nav`.
@@ -1655,34 +1688,34 @@ const DEMO_ENTRIES: &[DemoEntry] = &[DemoEntry {
 #[component]
 fn Demos(dark_mode: Option<bool>) -> Element {
     rsx! {
-        // No sidebar on this page -- `Navbar`'s own `try_consume_context`
-        // check (see its doc comment) means the trigger just doesn't
-        // render here, rather than panicking on a missing `SidebarCtx`.
-        Navbar {}
-        main { id: MAIN_ID, tabindex: "-1", class: "dx-home-page", role: "main",
-            section { class: "dx-home-section",
-                header { class: "dx-section-header",
-                    span { class: "dx-section-eyebrow", "Demos" }
-                    h1 { class: "dx-section-title", "Demo apps" }
-                    p { class: "dx-section-summary",
-                        "End-to-end app demos assembled from these primitives. Open one to explore the layout and try it live."
+        // The same docs shell as every other page (backlog row 303): its `SidebarInset`
+        // renders the page's one `<main>`, so the content is a plain `div` here.
+        DocsLayout { active: DocsNavActive::Demos,
+            div { class: "dx-home-page",
+                section { class: "dx-home-section",
+                    header { class: "dx-section-header",
+                        span { class: "dx-section-eyebrow", "Demos" }
+                        h1 { class: "dx-section-title", "Demo apps" }
+                        p { class: "dx-section-summary",
+                            "End-to-end app demos assembled from these primitives. Open one to explore the layout and try it live."
+                        }
                     }
-                }
-                ul { class: "dx-demos-grid",
-                    for entry in DEMO_ENTRIES {
-                        li { class: "dx-demos-item",
-                            // link-ok: a demo-app card on `/demos`, never `/demos` itself
-                            Link {
-                                to: (entry.route)(),
-                                class: "dx-demos-card",
-                                div { class: "dx-demos-card-thumb", {(entry.thumb)()} }
-                                div { class: "dx-demos-card-meta",
-                                    span { class: "dx-demos-card-tag", "{entry.tag}" }
-                                    h2 { class: "dx-demos-card-title", "{entry.title}" }
-                                    p { class: "dx-demos-card-description", "{entry.description}" }
-                                    span { class: "dx-demos-card-cta",
-                                        "Open demo"
-                                        ArrowRight { size: "16", stroke_width: "1.6" }
+                    ul { class: "dx-demos-grid",
+                        for entry in DEMO_ENTRIES {
+                            li { class: "dx-demos-item",
+                                // link-ok: a demo-app card on `/demos`, never `/demos` itself
+                                Link {
+                                    to: (entry.route)(),
+                                    class: "dx-demos-card",
+                                    div { class: "dx-demos-card-thumb", {(entry.thumb)()} }
+                                    div { class: "dx-demos-card-meta",
+                                        span { class: "dx-demos-card-tag", "{entry.tag}" }
+                                        h2 { class: "dx-demos-card-title", "{entry.title}" }
+                                        p { class: "dx-demos-card-description", "{entry.description}" }
+                                        span { class: "dx-demos-card-cta",
+                                            "Open demo"
+                                            ArrowRight { size: "16", stroke_width: "1.6" }
+                                        }
                                     }
                                 }
                             }
