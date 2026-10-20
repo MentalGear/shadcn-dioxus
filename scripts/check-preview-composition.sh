@@ -130,6 +130,9 @@ declare -A allowed_qualified=(
     ["js_listener::use_js_listeners"]=1 # hook, not markup (scope-owned JS listeners,
                                    # renders nothing) -- components/form/component.rs;
                                    # themed wrappers (sidebar) are exempt and import it freely
+    ["default_checked::use_default_checked"]=1 # hook, not markup (sets .defaultChecked on
+                                   # the client, renders nothing, row 253) --
+                                   # components/form/component.rs
     ["js_listener::JsListeners"]=1 # plain handle type, not markup -- same call sites
     ["toast::ToastOptions"]=1     # plain builder struct, not markup -- same call sites
     ["checkbox::CheckboxState"]=1 # plain enum, not markup -- main.rs,
