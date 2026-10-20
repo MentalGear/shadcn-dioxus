@@ -27,6 +27,12 @@ pub struct SwitchProps {
     #[props(default)]
     pub name: ReadSignal<String>,
 
+    /// The `id` of a `<form>` the hidden input belongs to (the HTML `form` attribute), so a control
+    /// rendered outside its `<form>` still submits and resets with it. `None` leaves the input's
+    /// owner to the DOM ancestor.
+    #[props(default)]
+    pub form: ReadSignal<Option<String>>,
+
     /// The value attribute for form submission.
     #[props(default = ReadSignal::new(Signal::new(String::from("on"))))]
     pub value: ReadSignal<String>,
@@ -145,6 +151,7 @@ pub fn Switch(props: SwitchProps) -> Element {
             aria_hidden: true,
             tabindex: -1,
             name: props.name,
+            form: props.form,
             value: props.value,
             required: props.required,
             // Live sync (-> `.checked` IDL property) and default (->

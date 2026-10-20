@@ -1,7 +1,7 @@
 ---
 id: 94
 title: "Demo wrappers that set max-width + margin: 0 auto never reach that width — they shrink-wrap instead, so every…"
-status: "CLOSED 2026-10-19 (backlog review 2026-10-18): done in the code"
+status: "CLOSED 2026-10-19 (bookkeeping: status already said done). Found 2026-09-20 while bringing Carousel…"
 size: "S per wrapper (add width: 100%); all…"
 area: charts
 updated: 2026-10-19
@@ -15,7 +15,7 @@ Demo wrappers that set `max-width` + `margin: 0 auto` never reach that width —
 
 ## Status / trigger
 
-**CLOSED 2026-10-19 (backlog review 2026-10-18): done in the code**
+CLOSED 2026-10-19 (bookkeeping: status already said done). Found 2026-09-20 while bringing Carousel to shadcn visual parity (round 5). Surfaced by a parity lane, but its proposed cause and fix were both wrong and are recorded here so they are not retried: it blamed `.dx-component-preview-frame`'s `align-items: center` and proposed `align-items: stretch`
 
 ## Size
 

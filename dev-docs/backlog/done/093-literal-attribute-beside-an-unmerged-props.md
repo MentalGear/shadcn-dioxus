@@ -1,10 +1,10 @@
 ---
 id: 93
 title: "Literal attribute beside an unmerged props spread with no typed field claiming it — the duplicate-attribute…"
-status: "Found 2026-09-20 (round 4, f2be1d7's own ..props.attributes/..attributes sweep of primitives/src/…"
+status: "CLOSED 2026-10-19 (bookkeeping: status already said done). Found 2026-09-20 (round 4, f2be1d7's own…"
 size: "S–M for the check script itself…"
 area: overlays
-updated: 2026-09-25
+updated: 2026-10-19
 ---
 
 # Row 93: Literal attribute beside an unmerged props spread with no typed field claiming it — the duplicate-attribute…
@@ -15,7 +15,7 @@ Literal attribute beside an unmerged props spread with no typed field claiming i
 
 ## Status / trigger
 
-Found 2026-09-20 (round 4, `f2be1d7`'s own `..props.attributes`/`..attributes` sweep of `primitives/src/**` and `preview/src/components/**`); **awaiting the repo owner's go-ahead** — the proposed fix-by-construction (a new static `check-*.sh` gate) touches dozens of files across primitives and themed wrappers, so it is deliberately not bundled into this round's PR. **CLOSED 2026-09-25 (round 8)** — the gate (`scripts/check-attr-spread-collision.sh`) had already landed (`ed0ea61`, `f8c2dec`); this round burned its debt register down 788 → 1, see this row's own dated addendum below
+CLOSED 2026-10-19 (bookkeeping: status already said done). Found 2026-09-20 (round 4, `f2be1d7`'s own `..props.attributes`/`..attributes` sweep of `primitives/src/**` and `preview/src/components/**`); **awaiting the repo owner's go-ahead** — the proposed fix-by-construction (a new static `check-*.sh` gate) touches dozens of files across primitives and themed wrappers, so it is deliberately not bundled into this round's PR. **CLOSED 2026-09-25 (round 8)** — the gate (`scripts/check-attr-spread-collision.sh`) had already landed (`ed0ea61`, `f8c2dec`); this round burned its debt register down 788 → 1, see this row's own dated addendum below
 
 ## Size
 

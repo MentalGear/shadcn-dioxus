@@ -1,0 +1,20 @@
+{
+  "name": "code_block",
+  "description": "A code block with a filename header, a copy button, optional line numbers and line highlights; takes pre-highlighted lines, so no highlighter is bundled.",
+  "authors": ["Claude"],
+  "exclude": ["variants", "docs.md", "component.json"],
+  "cargoDependencies": [
+    {
+      "name": "dioxus-primitives",
+      "git": "https://github.com/MentalGear/shadcn-dioxus"
+    },
+    {
+      "name": "dioxus-icons",
+      "version": "=0.1.0"
+    }
+  ],
+  "componentDependencies": [
+    { "name": "button", "git": "https://github.com/MentalGear/shadcn-dioxus" }
+  ],
+  "globalAssets": ["../../../assets/dx-components-theme.css"]
+}

@@ -251,23 +251,93 @@ dialog.dx-alert-dialog[open][data-state="open"] {
   }
 }
 
-/* The action is the destructive Button (button/style.css `data-style="destructive"`): the shared
+/* The action is the destructive Button by default (button/style.css `data-style="destructive"`): the shared
  * `--dx-destructive-fill` (solid in light, 60% over the page in dark), the Secondary hover step,
- * and the destructive focus recipe. */
-.dx-alert-dialog-action {
+ * and the destructive focus recipe. `data-style="primary"` is the ordinary Button fill below. */
+.dx-alert-dialog-action:not([data-style="primary"]) {
   background-color: var(--dx-destructive-fill);
   color: var(--dx-destructive-foreground);
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .dx-alert-dialog-action:not(:disabled):hover {
+  .dx-alert-dialog-action:not([data-style="primary"], :disabled):hover {
     background-color: color-mix(in var(--dx-hover-mix-space), var(--dx-destructive-fill), var(--dx-foreground) 8%);
   }
 }
 
-.dx-alert-dialog-action:focus-visible {
+.dx-alert-dialog-action:not([data-style="primary"]):focus-visible {
   border-color: color-mix(in oklab, var(--dx-destructive) 40%, transparent);
   box-shadow: var(--dx-ring-invalid);
+}
+
+/* The primary action: Button's `primary` fill, hover step and focus recipe. */
+.dx-alert-dialog-action[data-style="primary"] {
+  background-color: var(--dx-primary);
+  color: var(--dx-primary-foreground);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-alert-dialog-action[data-style="primary"]:not(:disabled):hover {
+    background-color: color-mix(in oklab, var(--dx-primary) 80%, transparent);
+  }
+}
+
+.dx-alert-dialog-action[data-style="primary"]:focus-visible {
+  border-color: var(--dx-ring-color);
+  box-shadow: var(--dx-ring-focus);
+}
+
+/* The media's icon rules use the popup boundary with TWO popup ancestors: the tile is itself inside this
+ * `<dialog>`, so the usual single `:not(:where([popover], dialog) *)` would exclude it; two ancestors
+ * excludes only an svg inside a popup nested within the alert dialog. */
+
+/* Media (`AlertDialogMedia`): Nova's `size-16 rounded-md bg-muted` tile around a 32px icon, centred on
+ * mobile and start-aligned from `sm` up, like the rest of the panel's text. `size="sm"` shrinks it to
+ * `size-10` / 24px and keeps it centred. */
+.dx-alert-dialog-media {
+  display: inline-flex;
+  width: var(--dx-space-16);
+  height: var(--dx-space-16);
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--dx-radius-md);
+  background-color: var(--dx-muted);
+  color: var(--dx-foreground);
+  margin-inline: auto;
+}
+
+.dx-alert-dialog-media svg:not(:where([popover], dialog) :where([popover], dialog) *) {
+  width: var(--dx-space-8);
+  height: var(--dx-space-8);
+}
+
+@media (width >= 40rem) {
+  .dx-alert-dialog:not([data-size="sm"]) .dx-alert-dialog-media {
+    margin-inline: 0;
+  }
+}
+
+.dx-alert-dialog[data-size="sm"] .dx-alert-dialog-media {
+  width: var(--dx-space-10);
+  height: var(--dx-space-10);
+}
+
+.dx-alert-dialog[data-size="sm"] .dx-alert-dialog-media svg:not(:where([popover], dialog) :where([popover], dialog) *) {
+  width: var(--dx-space-6);
+  height: var(--dx-space-6);
+}
+
+/* `size="sm"`: `max-w-xs` and centred text at every width, the actions in one two-column row
+ * (`group-data-[size=sm]/alert-dialog-content:grid grid-cols-2`). Declared after the `40rem`
+ * default-size block so it wins at the same specificity. */
+.dx-alert-dialog[data-size="sm"] {
+  max-width: min(20rem, calc(100% - var(--dx-space-8)));
+  text-align: center;
+}
+
+.dx-alert-dialog[data-size="sm"] .dx-alert-dialog-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
 }
 
 /* On-screen keyboard (`primitives/src/keyboard_inset.rs`). While it is open the helper puts

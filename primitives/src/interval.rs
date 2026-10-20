@@ -11,7 +11,7 @@
 //!
 //! This hook has no JS interval at all. The tick loop is a Dioxus task spawned in the calling
 //! component's scope that sleeps one `period` between ticks
-//! (`dioxus_sdk_time::sleep`: `tokio` on native, `gloo_timers` on wasm), so it is dropped with the
+//! (`crate::sleep::sleep`: `tokio` on native, `gloo_timers` on wasm), so it is dropped with the
 //! scope on unmount, there is nothing to "forget to clear", it works on every renderer (an
 //! `eval`-based timer needs a webview), and a tick does not cross the JS/wasm boundary. Sleeping
 //! between ticks, rather than `tokio::time::interval`, also means a stalled main thread (a debug
@@ -26,9 +26,9 @@
 
 use std::time::Duration;
 
+use crate::sleep::sleep;
 use dioxus::prelude::*;
 use dioxus_core::Task;
-use dioxus_sdk_time::sleep;
 
 /// Calls `on_tick` once every `period` for as long as the calling component is mounted.
 ///

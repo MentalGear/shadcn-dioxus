@@ -82,13 +82,15 @@ export type StateCoverage = {
   /** Records written. */
   openRecords: number;
   hoverRecords: number;
+  /** Records of the keyboard-inset pass (included in `openRecords`). */
+  kbdRecords: number;
 };
 
 export function emptyCoverage(): StateCoverage {
   return {
     candidates: 0, opened: 0, via: {}, unopened: [], itemHovers: 0, itemHoverSkipped: 0,
     hoverTargets: 0, hoverCaptured: 0, hoverSkipped: {}, hoverCapped: 0, reloads: 0,
-    openRecords: 0, hoverRecords: 0,
+    openRecords: 0, hoverRecords: 0, kbdRecords: 0,
   };
 }
 
@@ -124,6 +126,10 @@ export const PLAIN_TRIGGER_PAGES = ["alert_dialog", "command", "dialog", "drawer
 export const MAX_TRIGGERS = 30;
 export const MAX_HOVER_TARGETS = 60;
 export const MAX_ITEM_HOVERS = 8;
+/** `drain()` bounds: at least this long after a pointer move (a handler that schedules its timer a task later),
+ *  at most this long (a timer chain that never ends must not hang the capture). */
+const DRAIN_MIN_MS = 80;
+const DRAIN_MAX_MS = 3000;
 
 // ---------------------------------------------------------------------------------------------------------------
 // In-page library. Serialised by Playwright: self-contained, no module-scope closure, promises not async/await.
@@ -134,6 +140,67 @@ export function installStateLib(a: StateArgs) {
   const SKIP = ["SCRIPT", "STYLE", "LINK", "META", "TITLE", "HEAD", "NOSCRIPT"];
   const S: any = {};
   w.__snap = S;
+
+  // TIMER-DRAIN RULE (row 245). A tooltip / hover card / submenu opens only after the pointer RESTED for the
+  // component's configured `delay` (600 ms default, a demo may set any other), and no fixed wait can know it:
+  // a tooltip chain rendered in 1 of 4 captures because the read raced the timer. The delay IS a `setTimeout`,
+  // so instead of guessing it the harness watches it: between `arm()` (just before a pointer move) and the end
+  // of `drain()`, every timeout the page schedules (delays up to DRAIN_MAX_DELAY_MS) is remembered, and
+  // `drain()` resolves only once all of them have fired. Whatever delay a popup is configured with, the opener
+  // waits it out, and a popup with no timer pays nothing. The harness's own waits use the raw `setTimeout`,
+  // never the tracked one.
+  const rawST: typeof window.setTimeout = w.__rawST ?? (w.__rawST = window.setTimeout.bind(window));
+  const rawCT: typeof window.clearTimeout = w.__rawCT ?? (w.__rawCT = window.clearTimeout.bind(window));
+  const setTimeout = (f: () => void, ms?: number) => rawST(f, ms);
+  const DRAIN_MAX_DELAY_MS = 2500;
+  if (!w.__timersTracked) {
+    w.__timersTracked = true;
+    w.__armed = false;
+    w.__pending = new Set<number>();
+    w.__maxPendingDelay = 0;
+    (window as any).setTimeout = (handler: any, ms?: number, ...rest: any[]) => {
+      const d = Number(ms) || 0;
+      if (!w.__armed || typeof handler !== "function" || d > DRAIN_MAX_DELAY_MS) return rawST(handler, ms, ...rest);
+      let id = 0;
+      id = rawST(() => {
+        w.__pending.delete(id);
+        handler(...rest);
+      }, ms) as unknown as number;
+      w.__pending.add(id);
+      if (d > w.__maxPendingDelay) w.__maxPendingDelay = d;
+      return id;
+    };
+    (window as any).clearTimeout = (id?: number) => {
+      if (id !== undefined) w.__pending.delete(id as number);
+      return rawCT(id);
+    };
+  }
+  S.arm = () => {
+    w.__pending.clear();
+    w.__armed = true;
+  };
+  /** Resolve once every timeout scheduled since `arm()` has fired and none was scheduled for `quietMs` more
+   *  (a handler that schedules the render), but never before `minMs`, and at most after `maxMs`. */
+  S.drain = (minMs: number, maxMs: number) =>
+    new Promise<boolean>((resolve) => {
+      const start = performance.now();
+      let emptySince = -1;
+      const done = (ok: boolean) => {
+        w.__armed = false;
+        w.__pending.clear();
+        resolve(ok);
+      };
+      const tick = () => {
+        S.settle();
+        const now = performance.now();
+        if (w.__pending.size > 0) emptySince = -1;
+        else if (emptySince < 0) emptySince = now;
+        if (now - start >= minMs && emptySince >= 0 && now - emptySince >= 60) return done(true);
+        if (now - start >= maxMs) return done(false);
+        setTimeout(tick, 20);
+      };
+      setTimeout(tick, 20);
+    });
 
   S.settle = () => {
     for (const an of document.getAnimations()) {
@@ -437,6 +504,42 @@ export function installStateLib(a: StateArgs) {
     return out;
   };
 
+  /** KEYBOARD-INSET pass (row 246). On a phone the on-screen keyboard makes `keyboard_inset.rs` publish
+   *  `data-dx-keyboard="open"`, `--dx-keyboard-inset` and `--dx-keyboard-top` on the open modal panel, and the
+   *  dialog / sheet / drawer sheets answer with `top`/`bottom`/`max-height` rules. A desktop capture never has a
+   *  keyboard, so those rules were invisible to the harness. The CONTRACT is a stylesheet's input, so it can be
+   *  supplied by hand: for each open `<dialog>` panel set the three exactly as the script does (a 280px keyboard,
+   *  no pan), record every element whose style changed (with the two variables included), then undo. Run
+   *  right after the open delta, while `lastDelta` is still the open delta. */
+  S.kbdCapture = (extra: Record<string, any>) => {
+    const panels: Element[] = (S.lastDelta as { el: Element; n: number }[])
+      .map((d) => d.el)
+      .filter((el) => el.matches('dialog[open][class*="dx-"]'));
+    if (panels.length === 0) return [];
+    S.settle();
+    const before = new Map<Element, string>();
+    for (const el of S.els()) before.set(el, S.sig(el));
+    for (const p of panels as HTMLElement[]) {
+      p.setAttribute("data-dx-keyboard", "open");
+      p.style.setProperty("--dx-keyboard-inset", "280px");
+      p.style.setProperty("--dx-keyboard-top", "0px");
+    }
+    S.settle();
+    const props = a.props.concat(["--dx-keyboard-inset", "--dx-keyboard-top"]);
+    const out: Record<string, any>[] = [];
+    S.els().forEach((el: Element, n: number) => {
+      if (before.get(el) !== undefined && before.get(el) === S.sig(el)) return;
+      out.push(rec(getComputedStyle(el), el, props, { ...extra, n }));
+    });
+    for (const p of panels as HTMLElement[]) {
+      p.removeAttribute("data-dx-keyboard");
+      p.style.removeProperty("--dx-keyboard-inset");
+      p.style.removeProperty("--dx-keyboard-top");
+    }
+    S.settle();
+    return out;
+  };
+
   /** Elements new since baseline `which` or whose signature changed. */
   S.delta = (which: string) => {
     S.settle();
@@ -473,6 +576,9 @@ export function installStateLib(a: StateArgs) {
    *  those is arbitrary (where in a 1000 px panel?), so a tabindex-only element must be a leaf. */
   const isControl = (e: Element) =>
     e.matches(HOVERABLE.replace(", [tabindex]", "")) || (e.matches("[tabindex]") && e.children.length === 0);
+
+  /** Page chrome that can show up in an overlay's delta but is never one of its items. */
+  const ITEM_EXCLUDE = ".dx-skip-link";
 
   const short = (el: Element) => {
     const cls = Array.from(el.classList).sort().join(".");
@@ -609,7 +715,9 @@ export function installStateLib(a: StateArgs) {
     const pool: Element[] = [];
     const trig = S.cands[trigger];
     for (const { el } of S.lastDelta as { el: Element; n: number }[]) {
-      if (el !== trig && el.matches(HOVERABLE) && isControl(el)) pool.push(el);
+      // `.dx-skip-link` is page chrome, not part of any overlay: it is in the delta because its style changes
+      // when focus moves (row 245), sits off screen (`occluded`) and used to take hover slots.
+      if (el !== trig && el.matches(HOVERABLE) && isControl(el) && !el.closest(ITEM_EXCLUDE)) pool.push(el);
     }
     const picked = pickHover(pool, max, trig);
     // Items that open something on hover (a submenu, after its hover-intent delay) go last: opening one
@@ -680,6 +788,14 @@ type Ctx = {
   cov: StateCoverage;
   verbose: boolean;
 };
+
+/** Move the pointer onto a target and wait out every timer the move schedules (the TIMER-DRAIN RULE in
+ *  `installStateLib`): a popup's configured open delay is then over before anything is read. */
+async function movePointer(page: Page, x: number, y: number) {
+  await page.evaluate(() => (window as any).__snap.arm());
+  await page.mouse.move(x, y);
+  await page.evaluate(([min, max]) => (window as any).__snap.drain(min, max), [DRAIN_MIN_MS, DRAIN_MAX_MS] as const);
+}
 
 async function park(page: Page) {
   const vs = page.viewportSize() ?? { width: 1280, height: 720 };
@@ -795,7 +911,7 @@ export async function hoverPass(
       continue;
     }
     await page.evaluate(() => (window as any).__snap.rebase());
-    await page.mouse.move(t.x!, t.y!);
+    await movePointer(page, t.x!, t.y!);
     await settleAfterHover(page, list.pop[j], 120, "probe0");
     const r = await page.evaluate(
       ([k, desc]) => (window as any).__snap.hoverCapture("hov", k, "base", { state: `hover:${k}`, target: desc }),
@@ -840,24 +956,21 @@ async function prepRetry(page: Page, arr: string, j: number) {
   return t;
 }
 
-/** HOVER-DELAY RULE (backlog: the hover_card opener race). A hover card or tooltip opens only after the pointer
- *  has RESTED on its trigger for the component's `delay` (`primitives/src/hover_card.rs`: Base UI's
- *  `PreviewCard.Trigger` default, 600 ms; `tooltip.rs`: 600 ms; the styled Tooltip and the demos' explicit
- *  `delay`s are shorter). The `hover` strategy used to wait 450 ms, which is SHORTER than that default: every
- *  default-delay trigger reported "no change" under the hover strategy, and which strategy then opened it
- *  (the click's mousedown focus, or the focus strategy after the click came up empty) was a race against the
- *  600 ms timer and the render -- so two captures of one build recorded `via: click` in one and `via: focus`
- *  in the other, with different open-state records (focus ring on the trigger, a pointer parked elsewhere).
- *  One opener per candidate, by construction: the hover strategy waits out the default delay plus the render
- *  margin the other hover waits use (450 ms), so every trigger that opens on hover opens by HOVER, at the same
- *  point, with the pointer still on it. A trigger that does not open on hover pays this wait once per capture
- *  and falls through to click/focus exactly as before. A demo with an explicit `delay` ABOVE the default would
- *  need this raised (the delays demo uses 10, 0, 100). */
-export const HOVER_OPEN_DEFAULT_DELAY_MS = 600;
+/** HOVER-DELAY RULE (backlog: the hover_card opener race; row 245). A hover card or tooltip opens only after the
+ *  pointer has RESTED on its trigger for the component's configured `delay` (600 ms default in
+ *  `primitives/src/hover_card.rs` and `tooltip.rs`, any other value per demo). The harness used to guess that
+ *  delay with a fixed wait (450, then 1050 ms), and a guess is a race: a tooltip chain rendered in 1 of 4
+ *  captures, and earlier two captures recorded `via: click` vs `via: focus` for one trigger.
+ *  Now the delay is not guessed at all: `movePointer` arms the TIMER-DRAIN RULE (`installStateLib`) before the
+ *  pointer move and waits until every timeout the move scheduled has fired, so the opener waits out whatever
+ *  delay the popup is configured with (the delays demos use 0, 10, 100, 600). The numbers below are only the
+ *  short margin `waitOpen` then allows for the render after the timer, plus the click/contextmenu/focus
+ *  strategies' own windows. A trigger that does not open on hover pays its configured delay (not more) and
+ *  falls through to click/focus exactly as before. */
 const WAIT_PROBE_MS: Record<string, number> = {
   click: 350,
   contextmenu: 350,
-  hover: HOVER_OPEN_DEFAULT_DELAY_MS + 450,
+  hover: 450,
   focus: 300,
 };
 
@@ -916,7 +1029,7 @@ export async function openPass(
       if (strat === "click") {
         if (!tried.has("hover")) {
           // HOVER_INTENT_WAIT_MS rule: hover first; if that opened the panel, do not click it shut
-          await page.mouse.move(t.x!, t.y!);
+          await movePointer(page, t.x!, t.y!);
           if (await page.evaluate(([b, ms]) => (window as any).__snap.waitOpen(b, ms), [before, HOVER_INTENT_WAIT_MS] as const)) {
             via = "hover";
             hoverIntentOpened = true;
@@ -925,7 +1038,7 @@ export async function openPass(
         }
         await page.mouse.click(t.x!, t.y!);
       } else if (strat === "contextmenu") await page.mouse.click(t.x!, t.y!, { button: "right" });
-      else if (strat === "hover") await page.mouse.move(t.x!, t.y!);
+      else if (strat === "hover") await movePointer(page, t.x!, t.y!);
       else await page.evaluate((j) => (window as any).__snap.cands[j].focus({ focusVisible: true }), i);
       // The overlay opens UNDER the pointer, and which of its nodes is `:hover` then depends on when the
       // renderer next hit-tests (a calendar cell was hovered in one run and not in the next). Only a hover
@@ -956,6 +1069,17 @@ export async function openPass(
     )) as Rec[];
     out.push(...recs);
     cov.openRecords += recs.length;
+    // the open modal panel as the on-screen keyboard shows it (row 246; `kbdCapture`)
+    const krecs = (await page.evaluate(
+      ([e]) => (window as any).__snap.kbdCapture(e),
+      [{ state: `open:${i}/kbd`, via, target: cd.desc }] as const,
+    )) as Rec[];
+    if (krecs.length) {
+      await page.evaluate(() => (window as any).__snap.quiet(100, 1500));
+      out.push(...krecs);
+      cov.openRecords += krecs.length;
+      cov.kbdRecords += krecs.length;
+    }
 
     // hover the items inside the opened overlay (menu items, options, links, buttons)
     if (via !== "hover" || hoverIntentOpened) {
@@ -971,7 +1095,7 @@ export async function openPass(
           cov.itemHoverSkipped++;
           continue;
         }
-        await page.mouse.move(t.x!, t.y!);
+        await movePointer(page, t.x!, t.y!);
         await settleAfterHover(page, items.pop[j], 150, "probeOpen");
         const r = await page.evaluate(
           ([k, i0, desc]) => (window as any).__snap.hoverCapture("items", k, "obase", { state: `open:${i0}/hover:${k}`, via: "hover", target: desc }),

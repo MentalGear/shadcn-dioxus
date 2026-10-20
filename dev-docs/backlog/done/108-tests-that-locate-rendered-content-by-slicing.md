@@ -1,7 +1,7 @@
 ---
 id: 108
 title: "Tests that locate rendered content by slicing an HTML string from a specific attribute-string match break…"
-status: "CLOSED 2026-10-19 (backlog review 2026-10-18): done in the code"
+status: "CLOSED 2026-10-19 (main-loop review: the fix or lesson is in place, see Size/Detail). Found…"
 size: "BUILT 2026-09-26 (dab751c); was…"
 area: tests
 updated: 2026-10-19
@@ -15,7 +15,7 @@ Tests that locate rendered content by slicing an HTML string from a specific att
 
 ## Status / trigger
 
-**CLOSED 2026-10-19 (backlog review 2026-10-18): done in the code**
+**CLOSED 2026-10-19 (main-loop review: the fix or lesson is in place, see Size/Detail).** Found 2026-09-25 (round 8) while landing row 93; two occurrences in one round makes it a class per `CLAUDE.md`'s own rule, not two coincidences
 
 ## Size
 

@@ -4,14 +4,21 @@ use crate::components::select::{Select, SelectOption};
 use dioxus::prelude::*;
 
 /// The ranges the select offers; each shows the tail of a fixed 90-day series.
-#[derive(Debug, Clone, Copy, PartialEq, strum::Display)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 enum TimeRange {
-    #[strum(to_string = "Last 3 months")]
     Days90,
-    #[strum(to_string = "Last 30 days")]
     Days30,
-    #[strum(to_string = "Last 7 days")]
     Days7,
+}
+
+impl std::fmt::Display for TimeRange {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            TimeRange::Days90 => "Last 3 months",
+            TimeRange::Days30 => "Last 30 days",
+            TimeRange::Days7 => "Last 7 days",
+        })
+    }
 }
 
 impl TimeRange {

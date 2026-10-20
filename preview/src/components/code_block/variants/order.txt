@@ -1,0 +1,7 @@
+# Display order of this component's demos after `main`; a variants/<name>/ directory not listed here follows, sorted by name.
+line_numbers
+diff
+highlighted
+wrap_and_footer
+floating_actions
+destructive

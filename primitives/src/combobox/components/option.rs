@@ -152,7 +152,7 @@ pub fn ComboboxOption<T: PartialEq + Clone + 'static>(props: ComboboxOptionProps
                 },
                 onpointerup: move |event| {
                     if pointer_select_commit(&event, (option.disabled)(), option.down_pos) {
-                        ctx.selectable.select_value(RcPartialEqValue::new(option.value.cloned()));
+                        ctx.select_value(RcPartialEqValue::new(option.value.cloned()));
                     }
                 },
                 onpointercancel: move |_| {

@@ -36,7 +36,9 @@ import type { StateCoverage } from "./computed-style-states";
  * (compare), so it never runs as part of the suite.
  *
  * Env:
- *   CSS_SNAPSHOT_OUT   output path (alias: DX_SNAPSHOT_OUT; default /tmp/dx-computed.json)
+ *   CSS_SNAPSHOT_OUT   output path (alias: DX_SNAPSHOT_OUT; default /tmp/dx-computed.json). With both schemes
+ *                      one file per scheme is written, `<OUT minus .json>.light.json` / `.dark.json` (one string for
+ *                      both exceeded Node's 512 MB limit); `compare` takes the same `<OUT>` prefix on both sides
  *   DX_SNAPSHOT_CHROME=0   skip the non-component chrome routes (home, docs, ...)
  *   DX_SNAPSHOT_FOCUS=0    skip the `:focus-visible` pass
  *   DX_SNAPSHOT_HOVER=0    skip the HOVER pass
@@ -53,8 +55,8 @@ import type { StateCoverage } from "./computed-style-states";
  * not part of the snapshot, so the byte-identical gate never depends on it; read it to see what a green
  * diff actually covers. The last lines of the run print the same totals.
  *
- * OUTPUT FORMAT (version 3, row 135; NOT compatible with version 2: it adds 14 properties and two sections,
- * and `compare` refuses to mix files with different property sets):
+ * OUTPUT FORMAT (version 4, rows 135/246: version 3 plus `user-select`, the `focusK` section and `open:<k>/kbd`
+ * records; `compare` of files with different property sets compares the common ones and says so):
  *
  *   { "meta": { format, modes, properties, focusProperties, sections, ... },
  *     "light": { "<page>": { "base": [..], "pseudo": [..], "focus": [..], "hover": [..], "open": [..] }, ... },
@@ -189,6 +191,7 @@ const LAYOUT_PROPERTIES = [
   // Added with format 3 (row 135): what an open overlay / hovered control changes is often not a colour at
   // all -- it is `display`, where it sits (`position`/`top`/`left`/`transform`/`translate`/`scale`) or whether
   // it takes the pointer. Without them a delta against a closed baseline could not even see content appear.
+  // Row 246: `user-select` (a control's text must not be selectable by a drag, user-select-inventory-2026-10-17).
   "bottom", "cursor", "display", "left", "overflow-x", "overflow-y", "pointer-events", "position", "right",
   "scale", "top", "transform", "translate", "visibility",
   "border-radius", "border-width",
@@ -196,7 +199,7 @@ const LAYOUT_PROPERTIES = [
   "margin-bottom", "margin-left", "margin-right", "margin-top",
   "padding-bottom", "padding-left", "padding-right", "padding-top",
   "transition-duration", "transition-property", "transition-timing-function",
-  "width", "z-index",
+  "user-select", "width", "z-index",
 ];
 
 const PROPERTIES = Array.from(new Set([...COLOR_PROPERTIES, ...LAYOUT_PROPERTIES])).sort();
@@ -211,9 +214,9 @@ type CaptureArgs = {
 };
 
 type Rec = Record<string, string | number>;
-type Section = { base: Rec[]; pseudo: Rec[]; focus: Rec[]; hover?: Rec[]; open?: Rec[] };
-/** Sections compared, in order. `hover`/`open` exist from format 3. */
-const SECTIONS = ["base", "pseudo", "focus", "hover", "open"] as const;
+type Section = { base: Rec[]; pseudo: Rec[]; focus: Rec[]; focusK?: Rec[]; hover?: Rec[]; open?: Rec[] };
+/** Sections compared, in order. `hover`/`open` exist from format 3, `focusK` from format 4. */
+const SECTIONS = ["base", "pseudo", "focus", "focusK", "hover", "open"] as const;
 
 /**
  * Runs IN the page (serialised by Playwright: keep it self-contained, no
@@ -316,21 +319,48 @@ function settleAndCapture(args: CaptureArgs) {
     els.forEach((el, n) => {
       if (el.matches(focusable) && !el.matches(":disabled")) targets.push([el, n]);
     });
-    const step = (k: number): Promise<typeof result> => {
-      if (k >= targets.length) return Promise.resolve(result);
-      const [el, n] = targets[k];
-      if (!el.isConnected) return step(k + 1);
-      const h = el as HTMLElement;
-      h.focus({ preventScroll: true, focusVisible: true } as FocusOptions);
-      if (document.activeElement === h) {
-        finishTransitions();
-        focus.push(sorted(getComputedStyle(el), el, args.focusProps, { n, state: h.matches(":focus-visible") ? "focus-visible" : "focus" }));
-        h.blur();
-        finishTransitions();
-      }
-      return new Promise<void>((r) => setTimeout(r, 0)).then(() => step(k + 1));
+    // Pass 1 (`focus`): as the page is. Pass 2 (`focusK`, format 4, row 246): the same targets with the
+    // interaction modality forced to `keyboard` (`<html data-dx-modality>`, primitives/src/modality.rs, the
+    // theme's "Focus modality" section): the non-field ring tokens are TRANSPARENT unless the modality is
+    // `keyboard`, so pass 1 never saw the keyboard ring of a button, tab or menu item. Only the records whose
+    // focus style differs from pass 1 are kept (what the modality changes), so a restyle that loses or moves a
+    // keyboard ring is a changed or missing record. Focus is moved with `focus()` (no pointer event), so the
+    // page's own modality writer cannot overwrite the forced value; the attribute is restored afterwards.
+    const focusOnce = (into: Rec[], base: Map<string, Rec> | null): Promise<void> => {
+      const step = (k: number): Promise<void> => {
+        if (k >= targets.length) return Promise.resolve();
+        const [el, n] = targets[k];
+        if (!el.isConnected) return step(k + 1);
+        const h = el as HTMLElement;
+        h.focus({ preventScroll: true, focusVisible: true } as FocusOptions);
+        if (document.activeElement === h) {
+          finishTransitions();
+          const state = h.matches(":focus-visible") ? "focus-visible" : "focus";
+          const r = sorted(getComputedStyle(el), el, args.focusProps, { n, state });
+          const before = base ? base.get(`${n}|${state}`) : null;
+          const same = before ? args.focusProps.every((p) => before[p] === r[p]) : false;
+          if (!base || !same) into.push(r);
+          h.blur();
+          finishTransitions();
+        }
+        return new Promise<void>((res) => setTimeout(res, 0)).then(() => step(k + 1));
+      };
+      return step(0);
     };
-    return step(0);
+    return focusOnce(focus, null).then(() => {
+      const byKey = new Map<string, Rec>();
+      for (const r of focus) byKey.set(`${r.n}|${r.state}`, r);
+      const prevMod = root.getAttribute("data-dx-modality");
+      root.setAttribute("data-dx-modality", "keyboard");
+      const focusK: Rec[] = [];
+      return focusOnce(focusK, byKey).then(() => {
+        if (prevMod === null) root.removeAttribute("data-dx-modality");
+        else root.setAttribute("data-dx-modality", prevMod);
+        finishTransitions();
+        (result.section as Section).focusK = focusK;
+        return result;
+      });
+    });
   });
 }
 
@@ -382,6 +412,7 @@ async function capturePage(
       base: sec.base.map(stable),
       pseudo: sec.pseudo.map(stable),
       focus: sec.focus.map(stable),
+      focusK: sec.focusK ? sec.focusK.map(stable) : undefined,
     };
   }
 
@@ -411,16 +442,17 @@ test.describe("computed style snapshot", () => {
       .sort();
     const chrome = (DO_CHROME ? [...CHROME_ROUTES].sort() : []).filter((r) => !ONLY || ONLY.includes(`route:${r}`) || ONLY.length === 0);
 
+    const outFor = (mode: string) => (MODES.length === 1 ? OUT : `${OUT.replace(/\.json$/, "")}.${mode}.json`);
     const all: Record<string, unknown> = {
       meta: {
-        format: 3,
+        format: 4,
         modes: [...MODES],
         pages: [...names, ...chrome.map((r) => `route:${r}`)],
         componentSelector: '[class*="dx-"], [class*="dx-"] svg, [class*="dx-"] svg *',
         chromeSelector: "body [class], body svg, body svg *",
         properties: PROPERTIES,
         focusProperties: DO_FOCUS ? FOCUS_PROPERTIES : [],
-        sections: SECTIONS.filter((x) => (x === "hover" ? DO_HOVER : x === "open" ? DO_OPEN : true)),
+        sections: SECTIONS.filter((x) => (x === "hover" ? DO_HOVER : x === "open" ? DO_OPEN : x === "focusK" ? DO_FOCUS : true)),
         componentScope: COMPONENT_SCOPE,
         plainTriggerPages: PLAIN_TRIGGER_PAGES,
       },
@@ -509,14 +541,14 @@ test.describe("computed style snapshot", () => {
       // Stable page order regardless of insertion order.
       const sortedPages: Record<string, Section> = {};
       for (const k of Object.keys(pages).sort()) sortedPages[k] = pages[k];
-      all[mode] = sortedPages;
+      // One file per scheme when both are captured (see `outFor`); the page maps are not kept in memory.
+      fs.writeFileSync(outFor(mode), JSON.stringify({ ...all, [mode]: sortedPages }, null, 1));
       const sortedCov: Record<string, StateCoverage> = {};
       for (const k of Object.keys(modeCov).sort()) sortedCov[k] = modeCov[k];
       coverageAll[mode] = sortedCov;
       total += Object.values(sortedPages).reduce((n, s) => n + s.base.length, 0);
     }
 
-    fs.writeFileSync(OUT, JSON.stringify(all, null, 1));
     // Coverage is NOT part of the snapshot (timing-derived reasons must not enter the byte-identical gate);
     // it is the answer to "what did the hover and open-state passes actually reach?".
     const covOut = `${OUT}.coverage.json`;
@@ -532,26 +564,45 @@ test.describe("computed style snapshot", () => {
       );
     }
     console.log(`elapsed ${Math.round((Date.now() - t0) / 1000)}s; coverage detail: ${covOut}`);
-    console.log(`wrote ${OUT} (${names.length} component pages + ${chrome.length} routes, ${MODES.length} modes, ${total} base records)`);
+    console.log(`wrote ${MODES.map(outFor).join(", ")} (${names.length} component pages + ${chrome.length} routes, ${MODES.length} modes, ${total} base records)`);
   });
 
   test("compare two snapshots (empty diff == value-preserving)", async () => {
     test.skip(!(CMP_A && CMP_B), "set CSS_SNAPSHOT_A and CSS_SNAPSHOT_B to compare");
-    const a = JSON.parse(fs.readFileSync(CMP_A!, "utf8"));
-    const b = JSON.parse(fs.readFileSync(CMP_B!, "utf8"));
+    // A capture of both schemes is too big for one JSON string (Node's 512 MB limit), so a multi-scheme capture
+    // writes one file per scheme (`<OUT>.light.json`, `<OUT>.dark.json`, see `outFor`); give compare the same
+    // `<OUT>` prefix and it reads the pair of each scheme in turn. An existing file is read as is (single-scheme
+    // captures and older files), compared on the schemes in DX_SNAPSHOT_MODES.
+    const load = (p: string, mode: string) => JSON.parse(fs.readFileSync(fs.existsSync(p) ? p : `${p.replace(/\.json$/, "")}.${mode}.json`, "utf8"));
+    const a = load(CMP_A!, MODES[0]);
+    const b = load(CMP_B!, MODES[0]);
     const lines: string[] = [];
+    // Machine-readable twin of the report (row 246): one object per differing value / record, with the element
+    // identity split into fields. `scripts/snapshot-classify.mjs` buckets THIS (the text line cannot be parsed
+    // back reliably: `cls` is a space-separated class list inside a space-separated line).
+    const diffs: Record<string, unknown>[] = [];
 
-    if (JSON.stringify(a.meta?.properties) !== JSON.stringify(b.meta?.properties)) {
-      lines.push("meta.properties differ: the two files captured different property sets");
+    // A property set that differs (a harness upgrade between the two captures: S0 was taken by format 3, a later
+    // capture by format 4) is not a style difference: compare the properties both files have and say so. The
+    // `compare` still fails on any value difference, and on any section/record one side lacks.
+    const pa0: string[] = a.meta?.properties ?? [];
+    const pb0: string[] = b.meta?.properties ?? [];
+    const common = new Set(pa0.filter((p) => pb0.includes(p)));
+    if (JSON.stringify(pa0) !== JSON.stringify(pb0)) {
+      console.log(
+        `NOTE: property sets differ (A ${pa0.length}, B ${pb0.length}); comparing the ${common.size} common ones. ` +
+          `Only in A: ${pa0.filter((p) => !common.has(p)).join(",") || "-"}; only in B: ${pb0.filter((p) => !common.has(p)).join(",") || "-"}`,
+      );
     }
 
     // Identity of a record: tag|cls|pseudo|state + its occurrence count, so an
     // unrelated inserted element does not shift every later comparison.
+    const idOf = (r: Rec) => `${r.tag}.${stripHash(String(r.cls))}${r.pseudo ?? ""}${r.state ? `:${r.state}` : ""}`;
     const index = (recs: Rec[]) => {
       const seen = new Map<string, number>();
       const m = new Map<string, Rec>();
       for (const r of recs) {
-        const id = `${r.tag}.${stripHash(String(r.cls))}${r.pseudo ?? ""}${r.state ? `:${r.state}` : ""}`;
+        const id = idOf(r);
         const k = (seen.get(id) ?? 0) + 1;
         seen.set(id, k);
         m.set(`${id}#${k}`, r);
@@ -567,8 +618,10 @@ test.describe("computed style snapshot", () => {
     const norm = (v: unknown) => String(v).replace(/\bdxc-\d+-/g, "dxc-#-");
 
     for (const mode of MODES) {
-      const pa: Record<string, Section> = a[mode] ?? {};
-      const pb: Record<string, Section> = b[mode] ?? {};
+      const fa = mode === MODES[0] ? a : load(CMP_A!, mode);
+      const fb = mode === MODES[0] ? b : load(CMP_B!, mode);
+      const pa: Record<string, Section> = fa[mode] ?? {};
+      const pb: Record<string, Section> = fb[mode] ?? {};
       for (const pg of Array.from(new Set([...Object.keys(pa), ...Object.keys(pb)])).sort()) {
         if (!pa[pg] || !pb[pg]) {
           lines.push(`${mode} ${pg}: page only in ${pa[pg] ? "A" : "B"}`);
@@ -589,10 +642,15 @@ test.describe("computed style snapshot", () => {
             const rb = mb.get(id);
             if (!ra || !rb) {
               lines.push(`${mode} ${pg} ${sec} ${id}: only in ${ra ? "A" : "B"}`);
+              const r = (ra ?? rb)!;
+              diffs.push({ mode, page: pg, section: sec, id, kind: ra ? "removed" : "added", tag: r.tag, cls: stripHash(String(r.cls)), pseudo: r.pseudo ?? "", state: r.state ?? "", target: r.target ?? "" });
               continue;
             }
-            for (const p of Object.keys(ra).filter((k) => !IDENT.has(k)).sort()) {
-              if (norm(ra[p]) !== norm(rb[p])) lines.push(`${mode} ${pg} ${sec} ${id} ${p}: ${JSON.stringify(ra[p])} -> ${JSON.stringify(rb[p])}`);
+            for (const p of Object.keys(ra).filter((k) => !IDENT.has(k) && (common.size === 0 || common.has(k) || k.startsWith("--"))).sort()) {
+              if (norm(ra[p]) !== norm(rb[p])) {
+                lines.push(`${mode} ${pg} ${sec} ${id} ${p}: ${JSON.stringify(ra[p])} -> ${JSON.stringify(rb[p])}`);
+                diffs.push({ mode, page: pg, section: sec, id, kind: "changed", tag: ra.tag, cls: stripHash(String(ra.cls)), pseudo: ra.pseudo ?? "", state: ra.state ?? "", target: ra.target ?? "", prop: p, a: norm(ra[p]), b: norm(rb[p]) });
+              }
             }
           }
         }
@@ -601,6 +659,7 @@ test.describe("computed style snapshot", () => {
 
     const report = `${CMP_B}.diff.txt`;
     fs.writeFileSync(report, lines.join("\n") + (lines.length ? "\n" : ""));
+    fs.writeFileSync(`${CMP_B}.diff.json`, JSON.stringify(diffs));
     console.log(`${lines.length} differing value(s); full report: ${report}`);
     for (const l of lines.slice(0, 200)) console.log(l);
     if (lines.length) throw new Error(`${lines.length} computed-style difference(s) between A and B (see ${report})`);

@@ -49,7 +49,7 @@
  *      needs its own click/focus assertions rather than entry-list ones, and
  *      mixing "which element received focus" assertions into this file would
  *      blur it with the tier-1 focus-restore oracle. Left for a follow-up file.
- *   8. The `form` attribute (a control rendered outside the <form>). The
+ *   8. (LANDED: see form-attribute.spec.ts.) The `form` attribute (a control rendered outside the <form>). The
  *      fixture has no such control today; adding one is a fixture change with
  *      no bearing on the defects rules 1-4/6 already surface. Left for later.
  *

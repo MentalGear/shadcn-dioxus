@@ -1,3 +1,4 @@
+// chatkit lane: new components code_block, trace, checkpoint (retrigger)
 use dioxus::prelude::*;
 
 // The `#[derive(Props)]` scanner shared with the `scripts/check-props-docs.sh` gate (backlog row 165).
