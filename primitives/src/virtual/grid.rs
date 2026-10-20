@@ -13,18 +13,19 @@
 //!   (column `c` of the data is item `c - sticky_columns` of the columns engine);
 //! - **the pinned cell**: the cell that holds keyboard focus is always rendered, even far
 //!   outside the window (a `Ctrl+End` jump, or a reader who scrolled away), see
-//!   [`with_pinned`]. A cell that is unmounted while it has focus loses it, and the grid pattern
+//!   [`with_pinned`](super::pin::with_pinned). A cell that is unmounted while it has focus loses it, and the grid pattern
 //!   needs exactly one cell in the tab order;
 //! - **navigation**: [`GridShape::navigate`] is the WAI-ARIA grid pattern's key map (arrows,
 //!   Home/End, Ctrl+Home/End, PageUp/PageDown), with no wrapping at an edge. Horizontal keys
 //!   arrive here already resolved to `Prev`/`Next` by `direction.rs`, so RTL needs nothing.
 //!
 //! The wrapping "gallery" layout (a fixed number of columns, items flowing into rows) windows
-//! only the rows: it uses one [`Engine`] over `ceil(count / columns)` rows, plus [`with_pinned`]
+//! only the rows: it uses one [`Engine`] over `ceil(count / columns)` rows, plus [`with_pinned`](super::pin::with_pinned)
 //! and [`GridShape::wrapping`] from this module.
 
+use super::pin::with_pinned;
 use super::size_index::SizeEstimates;
-use super::types::VirtualItem;
+use super::types::{ScrollReport, VirtualItem};
 use super::virtualizer::Engine;
 
 /// A navigation intent from the keyboard, already direction-resolved.
@@ -133,36 +134,6 @@ impl GridShape {
     }
 }
 
-/// `items` with `pinned` added in index order when it is not already there. The window stays a
-/// sorted, duplicate-free list, so keyed rendering moves the pinned item's DOM node into the
-/// window (rather than re-creating it) when a scroll reaches it.
-pub(crate) fn with_pinned(
-    mut items: Vec<VirtualItem>,
-    pinned: Option<VirtualItem>,
-) -> Vec<VirtualItem> {
-    if let Some(pinned) = pinned {
-        if let Err(at) = items.binary_search_by_key(&pinned.index(), VirtualItem::index) {
-            items.insert(at, pinned);
-        }
-    }
-    items
-}
-
-/// One scroll report from the grid's container.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) struct GridScroll {
-    /// `scrollTop`.
-    pub(crate) top: u32,
-    /// `|scrollLeft|`: the distance from the inline start, positive in LTR and RTL alike.
-    pub(crate) left: u32,
-    /// The container's visible width.
-    pub(crate) width: u32,
-    /// The container's visible height.
-    pub(crate) height: u32,
-    /// Whether a scroll is in progress (the canvas size stays frozen until it ends).
-    pub(crate) is_scrolling: bool,
-}
-
 /// The rows and columns to draw now.
 #[derive(Debug)]
 pub(crate) struct GridPlan {
@@ -220,7 +191,7 @@ impl GridEngine {
 
     /// Handle a scroll report. Both axes see only the part of the viewport the sticky edges do
     /// not cover.
-    pub(crate) fn scroll(&mut self, scroll: GridScroll) {
+    pub(crate) fn scroll(&mut self, scroll: ScrollReport) {
         self.rows.scroll(
             scroll.top,
             scroll.height.saturating_sub(self.header),
@@ -308,7 +279,7 @@ mod tests {
     }
 
     fn at(grid: &mut GridEngine, top: u32, left: u32) {
-        grid.scroll(GridScroll {
+        grid.scroll(ScrollReport {
             top,
             left,
             width: 800,
@@ -422,28 +393,6 @@ mod tests {
         grid.plan(6, 3, None);
         at(&mut grid, 36 * 6, 120 * 3);
         assert!(grid.needs_render());
-    }
-
-    #[test]
-    fn with_pinned_keeps_the_list_sorted_and_unique() {
-        let item = |i: usize| VirtualItem::new(i, i, i as u32 * 10, 10);
-        let window: Vec<_> = (10..=12).map(item).collect();
-        assert_eq!(
-            indices(&with_pinned(window.clone(), None)),
-            vec![10, 11, 12]
-        );
-        assert_eq!(
-            indices(&with_pinned(window.clone(), Some(item(11)))),
-            vec![10, 11, 12]
-        );
-        assert_eq!(
-            indices(&with_pinned(window.clone(), Some(item(2)))),
-            vec![2, 10, 11, 12]
-        );
-        assert_eq!(
-            indices(&with_pinned(window, Some(item(90)))),
-            vec![10, 11, 12, 90]
-        );
     }
 
     #[test]

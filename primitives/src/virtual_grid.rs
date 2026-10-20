@@ -14,7 +14,9 @@
 //!   only the rows axis windowed. Rows are measured as they render (an image tile's height
 //!   follows its width), with `estimate_row_height` as the first guess.
 //!
-//! Both are built on the shared engine (`primitives/src/virtual/`): each axis is the same
+//! Both are built on the shared engine (`primitives/src/virtual/`), and share its DOM bridge with
+//! `VirtualList` (one passive scroll listener, one ResizeObserver, a render only when the window
+//! moves) and its pinning of the focused item: each axis is the same
 //! [`Engine`](crate::r#virtual) `VirtualList` uses (a Fenwick tree of item positions, a mounted
 //! range re-centred only once the viewport comes within `buffer / 2` items of its edge, the
 //! canvas size frozen while a scroll runs), so a scroll re-renders Rust about once per few rows
@@ -44,13 +46,13 @@
 
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
-use serde::Deserialize;
 
 use crate::direction::{use_direction, Direction, HorizontalNav};
-use crate::js_listener::{use_js_listeners, JsListeners};
 use crate::r#virtual::{
-    with_pinned, Engine, GridEngine, GridKey, GridScroll, GridShape, SizeEstimates,
+    measured_px, use_virtual_bridge, with_pinned, Bridge, Engine, GridEngine, GridKey, GridShape,
+    ScrollReport, SizeEstimates,
 };
+pub use crate::scroll_area::ScrollFade;
 use crate::{merge_attributes, use_unique_id};
 
 /// The row height [`VirtualGrid`] uses without `row_height`, in px.
@@ -96,6 +98,14 @@ pub struct VirtualGridProps {
     pub dir: Option<Direction>,
     /// Called with `(row, column)` when the active cell changes (by keyboard, click or focus).
     pub on_active_change: Option<Callback<(usize, usize)>>,
+    /// A scroll-edge fade on the container, which is the element that scrolls (the
+    /// `dx-scroll-fade-*` classes of `dx-effects.css`; see [`ScrollFade`]). Defaults to
+    /// [`ScrollFade::None`]. It follows the container's own scroll offset, whatever cells are
+    /// mounted. The fade is a mask, so it also fades a sticky header (prefer
+    /// [`ScrollFade::Bottom`] / [`ScrollFade::End`] with `render_header`) and a border or
+    /// background on the container: put those on a wrapper.
+    #[props(default)]
+    pub fade: ScrollFade,
     /// Additional attributes to apply to the container element.
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
@@ -152,13 +162,24 @@ pub fn VirtualGrid(props: VirtualGridProps) -> Element {
         column_buffer,
         dir,
         on_active_change,
+        fade,
         attributes,
     } = props;
+    let attributes = merge_attributes(vec![attributes, fade.attributes()]);
 
     let direction = use_direction(dir);
     let container_id = use_unique_id();
-    let engine = use_hook(|| CopyValue::new(GridEngine::new()));
-    let rev = use_signal(|| 0u64);
+    // The shared DOM bridge (`primitives/src/virtual/bridge.rs`); both axes read each report.
+    let bridge = use_virtual_bridge(
+        container_id,
+        GridEngine::new,
+        |bridge: Bridge<GridEngine>, report: ScrollReport| {
+            let mut engine = bridge.engine();
+            engine.with_mut(|engine| engine.scroll(report));
+            bridge.publish();
+        },
+    );
+    let engine = bridge.engine();
     let active = use_signal(|| (0usize, 0usize));
     let focus_request = use_signal(|| 0u64);
 
@@ -185,28 +206,6 @@ pub fn VirtualGrid(props: VirtualGridProps) -> Element {
     } else {
         0
     };
-
-    let publish = move || {
-        let (mut engine, mut rev) = (engine, rev);
-        if engine.with_mut(|engine| engine.needs_render()) {
-            let next = rev.peek().wrapping_add(1);
-            rev.set(next);
-        }
-    };
-
-    // One passive scroll listener and one ResizeObserver on the container, removed with the
-    // scope (`js_listener.rs`).
-    use_js_listeners(move || {
-        Some(
-            JsListeners::install(SCROLL_BRIDGE_JS)
-                .arg(container_id.cloned())
-                .on_message(move |message: ScrollMsg| {
-                    let mut engine = engine;
-                    engine.with_mut(|engine| engine.scroll(message.into()));
-                    publish();
-                }),
-        )
-    });
 
     let (sticky_width, sticky) = {
         let geometry = column_geometry.read();
@@ -238,8 +237,8 @@ pub fn VirtualGrid(props: VirtualGridProps) -> Element {
         focus_request += 1;
     };
 
-    // Subscribe: this render runs again whenever `publish` bumps `rev`.
-    let _ = rev();
+    // Subscribe: this render runs again whenever the bridge publishes a new window.
+    bridge.track();
     let plan = {
         let rows = row_estimates.read();
         let geometry = column_geometry.read();
@@ -370,6 +369,12 @@ pub struct VirtualWrapGridProps {
     pub dir: Option<Direction>,
     /// Called with the item index when the active item changes (by keyboard, click or focus).
     pub on_active_change: Option<Callback<usize>>,
+    /// A scroll-edge fade on the container (the `dx-scroll-fade-*` classes of
+    /// `dx-effects.css`; see [`ScrollFade`]). Defaults to [`ScrollFade::None`]. It follows the
+    /// container's own scroll offset, whatever rows are mounted; a border or background on the
+    /// container fades with it, so put those on a wrapper.
+    #[props(default)]
+    pub fade: ScrollFade,
     /// Additional attributes to apply to the container element.
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
@@ -418,14 +423,18 @@ pub fn VirtualWrapGrid(props: VirtualWrapGridProps) -> Element {
         buffer,
         dir,
         on_active_change,
+        fade,
         attributes,
     } = props;
+    let attributes = merge_attributes(vec![attributes, fade.attributes()]);
 
     let direction = use_direction(dir);
     let container_id = use_unique_id();
-    let engine = use_hook(|| CopyValue::new(Engine::new()));
+    // The shared DOM bridge with the one-axis flow `VirtualList` uses: the rows axis, with the
+    // anchoring correction for rows measured above the viewport.
+    let bridge = use_virtual_bridge(container_id, Engine::new, Bridge::scroll_axis);
+    let engine = bridge.engine();
     let laid_out_for = use_hook(|| CopyValue::new(0usize));
-    let rev = use_signal(|| 0u64);
     // The active item, as an index: it keeps its item when the column count changes.
     let active = use_signal(|| 0usize);
     let focus_request = use_signal(|| 0u64);
@@ -436,33 +445,6 @@ pub fn VirtualWrapGrid(props: VirtualWrapGridProps) -> Element {
         SizeEstimates::evaluate(
             shape.rows(),
             estimate.as_ref().map(|f| f as &dyn Fn(usize) -> u32),
-        )
-    });
-
-    let publish = move || {
-        let (mut engine, mut rev) = (engine, rev);
-        if engine.with_mut(|engine| engine.needs_render()) {
-            let next = rev.peek().wrapping_add(1);
-            rev.set(next);
-        }
-    };
-
-    use_js_listeners(move || {
-        Some(
-            JsListeners::install(SCROLL_BRIDGE_JS)
-                .arg(container_id.cloned())
-                .on_message(move |message: ScrollMsg| {
-                    let mut engine = engine;
-                    let correction = engine.with_mut(|engine| {
-                        engine.scroll(message.top, message.height, message.is_scrolling)
-                    });
-                    if let Some(delta) = correction {
-                        let top = (message.top as i32 + delta).max(0) as u32;
-                        set_scroll_top(container_id.peek().clone(), top);
-                        engine.with_mut(|engine| engine.set_scroll_offset(top));
-                    }
-                    publish();
-                }),
         )
     });
 
@@ -498,21 +480,11 @@ pub fn VirtualWrapGrid(props: VirtualWrapGridProps) -> Element {
     let onresize = move |row: usize| {
         move |event: Event<ResizeData>| {
             let size = event.data().get_border_box_size().unwrap_or_default();
-            let measured = size.height.max(1.0).round() as u32;
-            let mut engine = engine;
-            let (adjustment, current) = engine
-                .with_mut(|engine| (engine.resize_item(row, measured), engine.scroll_offset()));
-            publish();
-            if let Some(delta) = adjustment {
-                set_scroll_top(
-                    container_id.peek().clone(),
-                    (current as i32 + delta).max(0) as u32,
-                );
-            }
+            bridge.measure(row, measured_px(size.height));
         }
     };
 
-    let _ = rev();
+    bridge.track();
     let rows = {
         let estimates = estimates.read();
         let (mut engine, mut laid_out_for) = (engine, laid_out_for);
@@ -632,54 +604,6 @@ fn use_focus_active_cell(
     });
 }
 
-/// Moves the container's scroll position (a measured row above the viewport changed size).
-fn set_scroll_top(container_id: String, top: u32) {
-    let eval = document::eval(
-        r#"
-        const [id, top] = await dioxus.recv();
-        const container = document.getElementById(id);
-        if (container) container.scrollTop = top;
-        "#,
-    );
-    let _ = eval.send((container_id, top));
-}
-
-/// Reports the container's scroll position and size: one passive `scroll` listener (through
-/// `listen`) and one ResizeObserver, both undone when the scope ends. `left` is the distance from
-/// the inline start (`scrollLeft` is negative in RTL).
-const SCROLL_BRIDGE_JS: &str = r#"
-    const el = document.getElementById(await dioxus.recv());
-    if (!el) return;
-    let timer = null;
-    let last = "";
-    const publish = (isScrolling) => {
-        const width = Math.min(el.clientWidth, window.innerWidth) || 800;
-        const height = Math.min(el.clientHeight, window.innerHeight) || 600;
-        const top = Math.round(el.scrollTop);
-        const left = Math.round(Math.abs(el.scrollLeft));
-        const key = top + " " + left + " " + width + " " + height + " " + isScrolling;
-        if (key === last) return;
-        last = key;
-        dioxus.send({ top, left, width, height, isScrolling });
-    };
-    listen(el, "scroll", () => {
-        if (timer !== null) clearTimeout(timer);
-        publish(true);
-        // The canvas size stays frozen until the scroll has been quiet this long.
-        timer = setTimeout(() => {
-            timer = null;
-            publish(false);
-        }, 600);
-    }, { passive: true });
-    const observer = new ResizeObserver(() => publish(false));
-    observer.observe(el);
-    cleanup(() => {
-        observer.disconnect();
-        if (timer !== null) clearTimeout(timer);
-    });
-    publish(false);
-"#;
-
 /// Focuses the active cell once it is in the DOM (it is pinned, so the render that made it
 /// active mounts it) and scrolls the container just enough to show it beside the sticky edges.
 const FOCUS_CELL_JS: &str = r#"
@@ -711,29 +635,6 @@ const FOCUS_CELL_JS: &str = r#"
     go();
 "#;
 
-/// One report from [`SCROLL_BRIDGE_JS`].
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct ScrollMsg {
-    top: u32,
-    left: u32,
-    width: u32,
-    height: u32,
-    is_scrolling: bool,
-}
-
-impl From<ScrollMsg> for GridScroll {
-    fn from(message: ScrollMsg) -> Self {
-        GridScroll {
-            top: message.top,
-            left: message.left,
-            width: message.width,
-            height: message.height,
-            is_scrolling: message.is_scrolling,
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -743,15 +644,5 @@ mod tests {
         assert_eq!(index_to_cell(0, 4), (0, 0));
         assert_eq!(index_to_cell(9, 4), (2, 1));
         assert_eq!(index_to_cell(9, 0), (9, 0));
-    }
-
-    /// The bridge registers its listener through `listen` (removed with the scope), never with
-    /// a raw `addEventListener`, and keeps it passive.
-    #[test]
-    fn the_scroll_bridge_uses_listen_and_is_passive() {
-        assert!(SCROLL_BRIDGE_JS.contains(r#"listen(el, "scroll""#));
-        assert!(SCROLL_BRIDGE_JS.contains("{ passive: true }"));
-        assert!(!SCROLL_BRIDGE_JS.contains("addEventListener"));
-        assert!(SCROLL_BRIDGE_JS.contains("observer.disconnect()"));
     }
 }

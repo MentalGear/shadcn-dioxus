@@ -41,7 +41,7 @@ Give the grid a height (or `max-height`): it is the scroll container. The grid o
 | Sticky edges | optional header row and first column | none |
 | Cell renderer | `render_cell((row, column))` | `render_item(index)` |
 
-Both use the shared engine of `VirtualList`'s windowed mode, one per axis: positions are kept in a Fenwick tree, the mounted range is re-centred only once the viewport comes within half a buffer of its edge (so a scroll re-renders about once every few rows or columns, not once per scroll event), and the scroll canvas keeps its size while a scroll is running. `row_buffer` (default 6) and `column_buffer` (default 4) set how many rows and columns are mounted beyond each edge; `VirtualWrapGrid` has `buffer` (default 4 rows).
+Both use the shared engine of `VirtualList`'s windowed mode, one per axis, and the same DOM bridge (one passive scroll listener and one ResizeObserver on the container, removed on unmount): positions are kept in a Fenwick tree, the mounted range is re-centred only once the viewport comes within half a buffer of its edge (so a scroll re-renders about once every few rows or columns, not once per scroll event), and the scroll canvas keeps its size while a scroll is running. `row_buffer` (default 6) and `column_buffer` (default 4) set how many rows and columns are mounted beyond each edge; `VirtualWrapGrid` has `buffer` (default 4 rows).
 
 In the 10,000 x 50 demo about 300 of the 500,000 cells are in the DOM at any time, wherever you scroll.
 
@@ -67,6 +67,18 @@ The container is `role="grid"` with `aria-rowcount` and `aria-colcount` of the w
 ## What windowing costs
 
 Cells outside the window do not exist: the browser's find-in-page cannot reach them, the accessibility tree holds only the window, and the server renders only the active cell. A `VirtualGrid` cell taller than its row overflows it (rows are not measured). For a grid of a few thousand cells, a plain CSS grid with `content-visibility: auto` on each row may be the simpler answer: everything stays in the DOM and the browser skips the rows that are off-screen.
+
+## Edge fade
+
+`fade: ScrollFade` (`None` by default; `Y`, `X`, `Top`, `Bottom`, `Start`, `End`) puts the matching `dx-scroll-fade-*` class on the grid container, which is the element that scrolls, exactly as on `VirtualList` and `ScrollArea`. The fade is a CSS scroll-driven mask driven by the container's own scroll offset, so it follows the scrollbar whichever cells are mounted.
+
+```rust
+VirtualWrapGrid { count: 5_000usize, columns: 4usize, fade: ScrollFade::Y, render_item: .. }
+```
+
+- The mask covers everything inside the container: with `render_header` a top fade dims the sticky header once you scroll, so prefer `ScrollFade::Bottom` (or `End` for the inline axis). The grid's own border and background fade too: put them on a wrapper and set `border: none` on the grid.
+- It needs `dx-effects.css` linked once at the app root next to the theme (`virtual_grid`'s `component.json` lists it in `globalAssets`). Without it the prop is inert.
+- Example: the `fade` variant.
 
 ## Styling
 

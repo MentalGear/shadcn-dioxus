@@ -65,7 +65,8 @@ Only the rows in view are mounted, over a spacer that gives the scrollbar the fu
 - Row positions are kept in a Fenwick tree: measuring a row and finding the row at a pixel are `O(log N)`, and nothing is copied per measurement.
 - Rows that are not mounted do not exist for native find-in-page, the accessibility tree (each mounted row announces its position, `3 of 100000`) or the server: the server renders no rows, and the first client render is empty until the container has been measured.
 - Browsers cap an element's height (about 17 million px in Firefox, 33 million px in Chromium), which limits the spacer: with 100px rows that is roughly 300,000 rows.
-- The windowed bridge adds a scroll listener on the container and a resize listener on the window, and removes both when the list unmounts or the mode switches.
+- The row that last received focus (a link or button inside it, say) stays mounted when you scroll away from it: it is drawn at its own position outside the window (with `data-virtual-pinned`), so focus never falls to the page and Tab continues from where it was. `VirtualGrid` keeps its active cell the same way.
+- The windowed bridge, shared with `VirtualGrid`, adds a passive scroll listener and a ResizeObserver on the container and a resize listener on the window, and removes all three when the list unmounts or the mode switches.
 
 ### Find-in-page in windowed mode (experimental)
 

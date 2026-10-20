@@ -1,6 +1,6 @@
 use dioxus::prelude::*;
 #[allow(unused_imports)] // a consumer-facing surface; this crate's own demos use a subset
-pub use dioxus_primitives::virtual_grid::{VirtualGridProps, VirtualWrapGridProps};
+pub use dioxus_primitives::virtual_grid::{ScrollFade, VirtualGridProps, VirtualWrapGridProps};
 use dioxus_primitives::{dioxus_attributes::attributes, merge_attributes};
 
 /// Styled wrapper around the primitive `VirtualGrid` (rows and columns windowed).
@@ -26,6 +26,7 @@ pub fn VirtualGrid(props: VirtualGridProps) -> Element {
             column_buffer: props.column_buffer,
             dir: props.dir,
             on_active_change: props.on_active_change,
+            fade: props.fade,
             attributes: merged,
         }
     }
@@ -50,6 +51,7 @@ pub fn VirtualWrapGrid(props: VirtualWrapGridProps) -> Element {
             buffer: props.buffer,
             dir: props.dir,
             on_active_change: props.on_active_change,
+            fade: props.fade,
             attributes: merged,
         }
     }
