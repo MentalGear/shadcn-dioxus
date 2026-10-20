@@ -11,6 +11,20 @@
   gap: var(--dx-space-4);
 }
 
+/* Height glide between items (`animate_height`, on by default). `component.rs` pins the old and the new
+ * height inline and this transition runs between them; `height: auto` itself cannot transition. */
+.dx-questionnaire[data-animate-height] {
+  transition-duration: var(--dx-motion-duration-slower);
+  transition-property: height;
+  transition-timing-function: var(--dx-motion-ease-standard);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dx-questionnaire[data-animate-height] {
+    transition-duration: var(--dx-motion-duration-reduced);
+  }
+}
+
 /* `min-h-[1lh] w-fit min-w-[14ch] font-medium text-muted-foreground tabular-nums text-xs`. */
 .dx-questionnaire-progress {
   width: fit-content;
