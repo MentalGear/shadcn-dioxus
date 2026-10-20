@@ -25,6 +25,11 @@
  *   .dx-scroll-fade / .dx-scroll-fade-y   both block edges of an `overflow-y` box
  *   .dx-scroll-fade-x                     both inline edges of an `overflow-x`
  *                                         box; follows the reading direction
+ *   .dx-scroll-fade-xy                    all four edges of a box that scrolls on
+ *                                         both axes: the block and inline masks
+ *                                         intersected, each edge only while there
+ *                                         is content past it; inline edges follow
+ *                                         the reading direction
  *   .dx-scroll-fade-t / -b                one physical block edge
  *   .dx-scroll-fade-l / -r                one physical inline edge
  *   .dx-scroll-fade-s / -e                one logical inline edge (mirrors in RTL)
@@ -45,7 +50,7 @@
  * `scrollbar-width: none` to hide it.
  *
  * In Rust: `ScrollArea`, `VirtualList` and `MessageScrollerViewport` take a
- * `fade: ScrollFade` prop (`None`, `Y`, `X`, `Top`, `Bottom`, `Start`, `End`: one
+ * `fade: ScrollFade` prop (`None`, `Y`, `X`, `Both`, `Top`, `Bottom`, `Start`, `End`: one
  * class each, on the element that scrolls). It only adds the class, so this file
  * must be linked for it to do anything; the three components list it in their
  * `globalAssets`. Documented in `scroll_area/docs.md` ("Edge fade").
@@ -177,6 +182,7 @@
  * the default. Declared on every utility so each one is self-contained. */
 .dx-scroll-fade,
 .dx-scroll-fade-y,
+.dx-scroll-fade-xy,
 .dx-scroll-fade-t,
 .dx-scroll-fade-b {
   --dx-internal-scroll-fade-size-t: var(
@@ -190,6 +196,7 @@
 }
 
 .dx-scroll-fade-x,
+.dx-scroll-fade-xy,
 .dx-scroll-fade-l,
 .dx-scroll-fade-r,
 .dx-scroll-fade-s,
@@ -236,6 +243,40 @@
 }
 
 .dx-scroll-fade-x:where([dir="rtl"], [dir="rtl"] *) {
+  --dx-scroll-fade-inline: linear-gradient(
+    to left,
+    transparent 0,
+    #000 var(--dx-scroll-fade-s, 0px),
+    #000 calc(100% - var(--dx-scroll-fade-e, 0px)),
+    transparent 100%
+  );
+}
+
+/* Both axes: the block and inline gradients are two mask layers, intersected by the
+ * shared `mask-composite` below, so a corner is as faded as its two edges together.
+ * `.dx-scroll-fade-none` still wins through `--dx-scroll-fade-mask`. */
+.dx-scroll-fade-xy {
+  --dx-scroll-fade-block: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 var(--dx-scroll-fade-t, 0px),
+    #000 calc(100% - var(--dx-scroll-fade-b, 0px)),
+    transparent 100%
+  );
+  --dx-scroll-fade-inline: linear-gradient(
+    to right,
+    transparent 0,
+    #000 var(--dx-scroll-fade-s, 0px),
+    #000 calc(100% - var(--dx-scroll-fade-e, 0px)),
+    transparent 100%
+  );
+
+  /* stylelint-disable-next-line property-no-vendor-prefix -- Safari before 15.4 reads only the prefixed mask-image; dropping it would lose the scroll fade there */
+  -webkit-mask-image: var(--dx-scroll-fade-mask, var(--dx-scroll-fade-block), var(--dx-scroll-fade-inline));
+  mask-image: var(--dx-scroll-fade-mask, var(--dx-scroll-fade-block), var(--dx-scroll-fade-inline));
+}
+
+.dx-scroll-fade-xy:where([dir="rtl"], [dir="rtl"] *) {
   --dx-scroll-fade-inline: linear-gradient(
     to left,
     transparent 0,
@@ -333,6 +374,7 @@
 .dx-scroll-fade,
 .dx-scroll-fade-y,
 .dx-scroll-fade-x,
+.dx-scroll-fade-xy,
 .dx-scroll-fade-t,
 .dx-scroll-fade-b,
 .dx-scroll-fade-l,
@@ -388,6 +430,31 @@
       0 calc(100% - var(--dx-scroll-fade-reveal, var(--dx-space-24, 6rem))),
       calc(100% - var(--dx-scroll-fade-reveal, var(--dx-space-24, 6rem))) 100%;
     animation-timeline: scroll(self inline), scroll(self inline), scroll(self inline), scroll(self inline);
+  }
+
+  /* Both axes: the block four on the y timeline, the inline four on the inline one. */
+  .dx-scroll-fade-xy {
+    animation:
+      dx-scroll-fade-reveal-t 1ms ease-in-out,
+      dx-scroll-fade-hold-t 1ms linear,
+      dx-scroll-fade-hold-b 1ms linear,
+      dx-scroll-fade-reveal-b 1ms ease-in-out,
+      dx-scroll-fade-reveal-s 1ms ease-in-out,
+      dx-scroll-fade-hold-s 1ms linear,
+      dx-scroll-fade-hold-e 1ms linear,
+      dx-scroll-fade-reveal-e 1ms ease-in-out;
+    animation-range:
+      0 var(--dx-scroll-fade-reveal, var(--dx-space-24, 6rem)),
+      var(--dx-scroll-fade-reveal, var(--dx-space-24, 6rem)) calc(100% + 1px),
+      0 calc(100% - var(--dx-scroll-fade-reveal, var(--dx-space-24, 6rem))),
+      calc(100% - var(--dx-scroll-fade-reveal, var(--dx-space-24, 6rem))) 100%,
+      0 var(--dx-scroll-fade-reveal, var(--dx-space-24, 6rem)),
+      var(--dx-scroll-fade-reveal, var(--dx-space-24, 6rem)) calc(100% + 1px),
+      0 calc(100% - var(--dx-scroll-fade-reveal, var(--dx-space-24, 6rem))),
+      calc(100% - var(--dx-scroll-fade-reveal, var(--dx-space-24, 6rem))) 100%;
+    animation-timeline:
+      scroll(self y), scroll(self y), scroll(self y), scroll(self y),
+      scroll(self inline), scroll(self inline), scroll(self inline), scroll(self inline);
   }
 
   .dx-scroll-fade-t {
@@ -455,6 +522,7 @@
 @supports not (animation-timeline: scroll()) {
   .dx-scroll-fade,
   .dx-scroll-fade-y,
+  .dx-scroll-fade-xy,
   .dx-scroll-fade-t,
   .dx-scroll-fade-b {
     --dx-scroll-fade-t: var(--dx-internal-scroll-fade-size-t);
@@ -462,6 +530,7 @@
   }
 
   .dx-scroll-fade-x,
+  .dx-scroll-fade-xy,
   .dx-scroll-fade-l,
   .dx-scroll-fade-r,
   .dx-scroll-fade-s,

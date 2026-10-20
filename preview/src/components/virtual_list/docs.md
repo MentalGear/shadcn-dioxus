@@ -61,12 +61,9 @@ Why chunks: the browser does per-frame work for every element it may skip, so sk
 
 Only the rows in view are mounted, over a spacer that gives the scrollbar the full height. Rows may have any height: each is measured once mounted, and `estimate_size` is the first guess (without it, the list estimates from the average of the rows it has measured). While you scroll, the scrollbar's total is held fixed, and a row that resizes above the viewport adjusts the scroll position so content does not jump.
 
-- `buffer` (default 8) is how many rows to mount beyond each edge of the viewport. The window is re-centred once fewer than half of them remain, so a scroll re-renders about once per `buffer / 2` rows rather than once per scroll event, and between `buffer / 2` and `buffer` rows are always ready beyond each edge.
-- Row positions are kept in a Fenwick tree: measuring a row and finding the row at a pixel are `O(log N)`, and nothing is copied per measurement.
 - Rows that are not mounted do not exist for native find-in-page, the accessibility tree (each mounted row announces its position, `3 of 100000`) or the server: the server renders no rows, and the first client render is empty until the container has been measured.
+- `buffer` (default 8) is the overscan; the focused row stays mounted; see "The shared windowing engine" and "Focus stays mounted" below, which `VirtualGrid` documents in the same words.
 - Browsers cap an element's height (about 17 million px in Firefox, 33 million px in Chromium), which limits the spacer: with 100px rows that is roughly 300,000 rows.
-- The row that last received focus (a link or button inside it, say) stays mounted when you scroll away from it: it is drawn at its own position outside the window (with `data-virtual-pinned`), so focus never falls to the page and Tab continues from where it was. `VirtualGrid` keeps its active cell the same way.
-- The windowed bridge, shared with `VirtualGrid`, adds a passive scroll listener and a ResizeObserver on the container and a resize listener on the window, and removes all three when the list unmounts or the mode switches.
 
 ### Find-in-page in windowed mode (experimental)
 
@@ -77,17 +74,48 @@ Only the rows in view are mounted, over a spacer that gives the scrollbar the fu
 - Placeholders are not in the accessibility tree; browsers without `until-found` (Firefox before 139, Safari before 26.2) treat it as `hidden`, so those rows stay unfindable, as without the prop.
 - Example: the `find_in_page` variant. Findings and open checks: `dev-docs/backlog/153-native-find-in-page-for-windowed-virtual-lists.md`.
 
+<!-- shared:virtual-engine:engine -->
+## The shared windowing engine
+
+`VirtualList` (windowed mode), `VirtualGrid`, `VirtualWrapGrid` and `VirtualJustifiedGrid` mount only what is in view, on one engine and one DOM bridge (`primitives/src/virtual/`).
+
+- **Overscan.** Items beyond each edge of the viewport are mounted too, so a scroll never shows a blank edge: `buffer` rows for `VirtualList` (default 8) and `VirtualWrapGrid` (default 4), `row_buffer` (default 6) and `column_buffer` (default 4) for `VirtualGrid`, and `overscan` px (default 320) for `VirtualJustifiedGrid`. The window is re-centred only once fewer than half of that margin remains, so between half and all of it is always ready beyond each edge, and a steady scroll re-renders about once per half margin rather than once per scroll event.
+- **Positions.** Sizes are kept in a Fenwick tree: measuring an item and finding the item at a pixel are `O(log N)`, and nothing is copied per measurement. Where items are measured (a list's rows, a wrapping grid's rows) an estimate is used until then; an item that resizes above the viewport adjusts the scroll position so content does not jump, and the scroll canvas keeps its size while a scroll is running.
+- **Listeners.** One passive `scroll` listener and one `ResizeObserver` on the container, plus a `resize` listener on the window, all removed when the component unmounts. Scrolling costs Rust nothing unless the window moves.
+<!-- /shared:virtual-engine:engine -->
+
+<!-- shared:virtual-engine:focus -->
+## Focus stays mounted
+
+The item that last received focus (a link or button inside a row, or the active cell or tile of a grid) stays mounted when you scroll away from it: it is drawn at its own position outside the window (`VirtualList` marks it `data-virtual-pinned`), so focus never falls to the page and Tab or the arrow keys continue from where they were. Moving focus elsewhere releases it, and when a scroll brings the window back to it the same DOM node rejoins the flow without remounting. (`VirtualList` in content-visibility mode keeps every row in the DOM, so there is nothing to pin.)
+<!-- /shared:virtual-engine:focus -->
+
+<!-- shared:virtual-engine:scroll-chaining -->
+## Scroll chaining
+
+None of the virtual components traps the page's scroll: at the top or bottom edge of the container a wheel or touch scroll continues on the page (the block axis keeps `overscroll-behavior: auto`). A container that also scrolls sideways contains only the inline axis (`overscroll-behavior-x: contain`), so a swipe at its edge does not trigger the browser's back and forward navigation.
+<!-- /shared:virtual-engine:scroll-chaining -->
+
+<!-- shared:virtual-engine:find-in-page -->
+## Find-in-page and the windowed DOM
+
+Items outside the window do not exist: the browser's find-in-page and `#:~:text=` links cannot reach them, the accessibility tree holds only what is mounted (each mounted row or cell announces its position in the whole, with `aria-posinset` or `aria-rowindex`), and the server renders none of them or only the active one. The opt-in `text_value` of a windowed `VirtualList` keeps every row's plain text in the DOM as a `hidden="until-found"` placeholder, so find-in-page can match rows that are not mounted (the `find_in_page` variant); the grids have no such placeholders, because a cell is not a line of text. Where findability matters more than a flat cost, a plain list or CSS grid of a few thousand items with `content-visibility: auto` keeps everything findable while the browser skips the off-screen work (`VirtualList`'s content-visibility mode is exactly that).
+<!-- /shared:virtual-engine:find-in-page -->
+
+<!-- shared:virtual-engine:fade -->
 ## Edge fade
 
-`fade: ScrollFade` (`None` by default; `Y`, `X`, `Top`, `Bottom`, `Start`, `End`) puts the matching `dx-scroll-fade-*` class on the list container, which is the element that scrolls. The fade is a CSS scroll-driven mask driven by the container's own scroll offset, so it follows the scrollbar in both modes whichever rows are mounted (a windowed list of 20,000 rows fades exactly like a short one), and a list that fits has no fade.
+`fade: ScrollFade` (`None` by default; `Y`, `X`, `Both`, `Top`, `Bottom`, `Start`, `End`) puts the matching `dx-scroll-fade-*` class on the container, which is the element that scrolls, exactly as on `ScrollArea`. The fade is a CSS scroll-driven mask driven by the container's own scroll offset, so it follows the scrollbar whichever rows or cells are mounted (a windowed list of 20,000 rows or a grid of 500,000 cells fades exactly like a short one), and a container whose content fits has no fade. `Both` masks all four edges of a container that scrolls on both axes (a `VirtualGrid`, or a justified wall with a `canvas_width`), each edge only while there is content past it.
 
 ```rust
 VirtualList { count: 20_000usize, fade: ScrollFade::Y, render_item: .. }
+VirtualGrid { row_count: 1_000usize, column_count: 30usize, fade: ScrollFade::Both, render_cell: .. }
 ```
 
-- It needs `dx-effects.css` linked once at the app root next to the theme (`virtual_list`'s `component.json` lists it in `globalAssets`). Without it the prop is inert. See the `dx-scroll-fade` utility in the ScrollArea docs for the variables that tune depth and reveal distance.
-- The mask also dissolves a border or background on the container; put those on a wrapper.
-- Examples: the `fade` variant (a windowed list and a content-visibility list).
+- It needs `dx-effects.css` linked once at the app root next to the theme (the `virtual_list` and `virtual_grid` `component.json` list it in `globalAssets`). Without it the prop is inert. See the `dx-scroll-fade` utility in the ScrollArea docs for the variables that tune depth and reveal distance.
+- The mask covers everything inside the container: a border or background on it fades with the content (put those on a wrapper and set `border: none` on the container), and so does a `VirtualGrid`'s sticky header, which a top fade dims once you scroll (prefer `ScrollFade::Bottom` or `End` with `render_header`).
+- Examples: the `fade` variants (a windowed list and a content-visibility list; a wrapping gallery and a two-axis data grid).
+<!-- /shared:virtual-engine:fade -->
 
 ## Props
 
@@ -97,5 +125,5 @@ VirtualList { count: 20_000usize, fade: ScrollFade::Y, render_item: .. }
 - `virtualize`: `VirtualListMode::{Auto, ContentVisibility, Windowed}`, default `Auto`.
 - `auto_threshold`: the largest `count` `Auto` keeps in `ContentVisibility`; default `1000`.
 - `buffer`: windowed mode only; default `8`.
-- `fade`: `ScrollFade::{None, Y, X, Top, Bottom, Start, End}`, default `None`; the scroll-edge fade above.
+- `fade`: `ScrollFade::{None, Y, X, Both, Top, Bottom, Start, End}`, default `None`; the scroll-edge fade above.
 - `text_value`: windowed mode only, experimental; the find-in-page placeholders above.

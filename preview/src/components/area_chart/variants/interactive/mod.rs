@@ -185,6 +185,7 @@ pub fn Demo() -> Element {
                     CardAction {
                         Select::<TimeRange> {
                             default_value: TimeRange::Days90,
+                            item_to_label: |range: TimeRange| range.to_string(),
                             trigger_aria_label: Some("Select a time range".to_string()),
                             // shadcn's `w-[160px]`: the same trigger box before and after the selected label is written.
                             trigger_class: "dx-chart-range-trigger",

@@ -6,7 +6,7 @@ use dioxus::prelude::*;
 use crate::{
     collection::{use_collection_provider, CollectionState},
     listbox::{use_listbox_option, ListboxOptionContext},
-    selection, use_controlled, use_unique_id, Controlled,
+    use_controlled, use_unique_id, Controlled,
 };
 
 pub(crate) use crate::selection::{OptionState, RcPartialEqValue};
@@ -78,12 +78,6 @@ pub(crate) struct SelectableOptionConfig<T: Clone + PartialEq + 'static> {
 impl SelectableContext {
     pub(crate) fn set_open(&mut self, open: bool) {
         self.set_open.call(open);
-    }
-
-    pub(crate) fn selected_text(&self) -> Option<String> {
-        let values = self.values.read();
-        let options = self.options.read();
-        selection::selected_text(values.iter(), &options)
     }
 
     pub(crate) fn is_selected(&self, value: &RcPartialEqValue) -> bool {

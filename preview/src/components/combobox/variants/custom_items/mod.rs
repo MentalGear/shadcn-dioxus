@@ -52,8 +52,17 @@ pub fn Demo() -> Element {
         },
     ];
 
+    let names: Vec<(&'static str, &'static str)> =
+        teammates.iter().map(|teammate| (teammate.value, teammate.name)).collect();
+
     rsx! {
         Combobox::<String> {
+            item_to_label: move |value: String| {
+                names
+                    .iter()
+                    .find(|(id, _)| *id == value)
+                    .map_or(value.clone(), |(_, name)| name.to_string())
+            },
             // Two-line rows with an avatar and an email are wider than the stock 200px
             // input/list, so the email wrapped mid-word; widen both through the slot variable.
             style: "--dx-combobox-width: 18rem;",

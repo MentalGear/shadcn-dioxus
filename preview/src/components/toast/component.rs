@@ -107,6 +107,9 @@ pub fn ToastProvider(
     #[props(default = ReadSignal::new(Signal::new(Some(Duration::from_secs(5)))))]
     default_duration: ReadSignal<Option<Duration>>,
     #[props(default = ReadSignal::new(Signal::new(10)))] max_toasts: ReadSignal<usize>,
+    /// How many toasts the pile shows; the rest wait hidden until a slot frees (default 3).
+    #[props(default = ReadSignal::new(Signal::new(3)))]
+    visible_toasts: ReadSignal<usize>,
     #[props(default)] render_toast: Option<Callback<toast::ToastPropsWithOwner, Element>>,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
     children: Element,
@@ -135,6 +138,7 @@ pub fn ToastProvider(
         toast::ToastProvider {
             default_duration,
             max_toasts,
+            visible_toasts,
             render_toast,
             attributes: merged,
             {children}

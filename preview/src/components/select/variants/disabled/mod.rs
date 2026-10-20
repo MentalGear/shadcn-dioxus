@@ -15,6 +15,15 @@ use dioxus::prelude::*;
 pub fn Demo() -> Element {
     rsx! {
         Select::<String> {
+            item_to_label: |value: String| {
+                match value.as_str() {
+                    "blueberry" => "Blueberry",
+                    "grapes" => "Grapes",
+                    "mango" => "Mango",
+                    other => other,
+                }
+                .to_string()
+            },
             width: "12rem",
             disabled: true,
             placeholder: "Select a fruit",

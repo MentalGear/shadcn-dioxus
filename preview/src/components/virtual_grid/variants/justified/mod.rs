@@ -76,7 +76,7 @@ pub fn Demo() -> Element {
             })
             .collect::<Vec<f64>>()
     });
-    let mut row_height = use_signal(|| 160.0_f64);
+    let mut row_height = use_signal(|| 150.0_f64);
     let mut wall = use_signal(|| false);
     let mut demo_width = use_signal(|| 800.0_f64);
     let canvas_width = use_memo(move || wall().then(|| (demo_width() * WALL_FACTOR).round()));
@@ -105,7 +105,7 @@ pub fn Demo() -> Element {
                         min: 80.0,
                         max: 320.0,
                         step: 10.0,
-                        default_value: 160.0,
+                        default_value: 150.0,
                         on_value_change: move |value: f64| row_height.set(value),
                     }
                 }
@@ -125,11 +125,20 @@ pub fn Demo() -> Element {
                 render_tile: |(index, _rect): (usize, TileRect)| {
                     let (w, h) = aspect(index);
                     rsx! {
-                        img {
-                            src: photo_src(index),
-                            alt: "Generated photo {index + 1}, {w}:{h}",
-                            draggable: "false",
-                            style: "display: block; width: 100%; height: 100%; border-radius: inherit;",
+                        // The accessible name is on a wrapper and the image has an empty alt: while a photo loads the
+                        // browser paints its alt text in the tile, which flashed "Generated photo N" during a fast
+                        // scroll. (`alt=""` on an element that also carries an aria-label is an axe
+                        // presentation-role-conflict, so the label cannot sit on the image itself.)
+                        div {
+                            role: "img",
+                            "aria-label": "Generated photo {index + 1}, {w}:{h}",
+                            style: "width: 100%; height: 100%; border-radius: inherit;",
+                            img {
+                                src: photo_src(index),
+                                alt: "",
+                                draggable: "false",
+                                style: "display: block; width: 100%; height: 100%; border-radius: inherit;",
+                            }
                         }
                     }
                 },

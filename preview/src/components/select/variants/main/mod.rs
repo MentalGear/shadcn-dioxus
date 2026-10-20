@@ -47,6 +47,11 @@ pub fn Demo() -> Element {
 
     rsx! {
         Select::<Option<Fruit>> {
+            // The trigger's text, read at render time (matches each option's `text_value`).
+            item_to_label: |fruit: Option<Fruit>| match fruit {
+                Some(fruit) => fruit.to_string(),
+                None => "Other".to_string(),
+            },
             width: "12rem",
             SelectGroup {
                 SelectGroupLabel { "Fruits" }

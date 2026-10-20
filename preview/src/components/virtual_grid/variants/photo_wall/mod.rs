@@ -306,8 +306,12 @@ pub fn Demo() -> Element {
             "data-photo-wall-layout": if justified { "justified" } else { "grid" },
             style: "display: flex; flex-direction: column; gap: var(--dx-space-2); width: 100%; min-width: 0;",
             // How a photo fits its cell: `contain` (the whole photo on a mat) or `cover` (cropped to fill).
+            // The `var()` shorthands of the minimap box and the preview live here, not in their inline
+            // `style`: those strings change with the scroll position and the chosen photo, and Dioxus's
+            // web renderer drops a `var()` shorthand from an inline `style` the first time it is re-set
+            // (the box lost its border and fill once the wall mounted its first tiles).
             style {
-                "[data-photo-img] {{ display: block; width: 100%; height: 100%; object-fit: contain; }} [data-fit=\"cover\"] [data-photo-img] {{ object-fit: cover; }}"
+                "[data-photo-img] {{ display: block; width: 100%; height: 100%; object-fit: contain; }} [data-fit=\"cover\"] [data-photo-img] {{ object-fit: cover; }} [data-photo-wall-viewport] {{ border: 2px solid var(--dx-primary); background: var(--dx-accent); }} [data-photo-preview] {{ border-radius: var(--dx-radius-md); }}"
             }
             div { style: "display: flex; flex-wrap: wrap; align-items: center; gap: var(--dx-space-2) var(--dx-space-4);",
                 ToggleGroup {
@@ -353,13 +357,19 @@ pub fn Demo() -> Element {
                         canvas_width: Some(JUSTIFIED_CANVAS),
                         active: active_index,
                         render_tile: move |(index, _rect): (usize, TileRect)| rsx! {
-                            img {
-                                "data-photo-img": "{aspect(index).0}:{aspect(index).1}",
-                                src: photo_src(index),
-                                alt: "Generated landscape {index + 1}",
-                                draggable: "false",
-                                style: "cursor: pointer; border-radius: inherit;",
-                                onclick: move |_| open_photo(index),
+                            div {
+                                // The name is on the wrapper, the image has an empty alt (a loading photo would paint its alt text).
+                                role: "img",
+                                "aria-label": "Generated landscape {index + 1}",
+                                style: "width: 100%; height: 100%; border-radius: inherit;",
+                                img {
+                                    "data-photo-img": "{aspect(index).0}:{aspect(index).1}",
+                                    src: photo_src(index),
+                                    alt: "",
+                                    draggable: "false",
+                                    style: "cursor: pointer; border-radius: inherit;",
+                                    onclick: move |_| open_photo(index),
+                                }
                             }
                         },
                         "aria-label": "Justified photo wall, 90,000 photos",
@@ -379,10 +389,13 @@ pub fn Demo() -> Element {
                                     // (6px of 128: the long side of every photo fills about 90% of the cell).
                                     style: "box-sizing: border-box; width: calc(100% + 2 * var(--dx-space-2)); height: 100%; margin-inline: calc(-1 * var(--dx-space-2)); padding: 6px; background: var(--dx-muted); cursor: pointer; user-select: none; -webkit-user-select: none;",
                                     onclick: move |_| open_photo(index),
+                                    // The name is on the mat, the image has an empty alt (a loading photo would paint its alt text).
+                                    role: "img",
+                                    "aria-label": "Generated landscape {index + 1}",
                                     img {
                                         "data-photo-img": "{aspect(index).0}:{aspect(index).1}",
                                         src: photo_src(index),
-                                        alt: "Generated landscape {index + 1}",
+                                        alt: "",
                                         draggable: "false",
                                     }
                                 }
@@ -420,7 +433,8 @@ pub fn Demo() -> Element {
                     }
                     p {
                         "data-photo-wall-count": "true",
-                        style: "margin: 0; font-size: var(--dx-text-sm); font-variant-numeric: tabular-nums;",
+                        // Wide enough for the longest count, so the number arriving after mount moves nothing.
+                        style: "margin: 0; min-width: 30ch; font-size: var(--dx-text-sm); font-variant-numeric: tabular-nums;",
                         "{state.count} of 90,000 photos rendered"
                     }
                     p { style: "margin: 0; color: var(--dx-muted-foreground); font-size: var(--dx-text-sm);",
@@ -432,13 +446,21 @@ pub fn Demo() -> Element {
                     }
                 }
                 // The whole wall, scaled: the outlined box is what the grid shows. Press or drag it to move there.
-                div {
-                    "data-photo-wall-minimap": "true",
-                    "aria-hidden": "true",
-                    style: "position: relative; flex: none; width: 7.5rem; height: 7.5rem; border: 1px solid var(--dx-border); border-radius: var(--dx-radius-md); background: var(--dx-muted); cursor: pointer; touch-action: none; overflow: hidden;",
+                div { style: "display: flex; flex: none; flex-direction: column; gap: var(--dx-space-1);",
+                    span {
+                        style: "color: var(--dx-muted-foreground); font-size: var(--dx-text-xs); font-weight: 500;",
+                        "Minimap"
+                    }
                     div {
-                        "data-photo-wall-viewport": "true",
-                        style: "position: absolute; box-sizing: border-box; inset-inline-start: {view_left}%; top: {view_top}%; width: {view_width}%; height: {view_height}%; min-width: 4px; min-height: 4px; border: 2px solid var(--dx-primary); background: var(--dx-accent); pointer-events: none;",
+                        "data-photo-wall-minimap": "true",
+                        // A picture of the wall for the accessibility tree (the grid itself is the keyboard path).
+                        role: "img",
+                        "aria-label": "Minimap of the whole wall; the outlined box is the visible area. Press or drag to move there.",
+                        style: "position: relative; flex: none; width: 7.5rem; height: 7.5rem; border: 1px solid var(--dx-border); border-radius: var(--dx-radius-md); background: var(--dx-muted); cursor: pointer; touch-action: none; overflow: hidden;",
+                        div {
+                            "data-photo-wall-viewport": "true",
+                            style: "position: absolute; box-sizing: border-box; inset-inline-start: {view_left}%; top: {view_top}%; width: {view_width}%; height: {view_height}%; min-width: 4px; min-height: 4px; pointer-events: none;",
+                        }
                     }
                 }
             }
@@ -454,7 +476,7 @@ pub fn Demo() -> Element {
                     "data-photo-preview": "{aw}:{ah}",
                     src: photo_src(chosen),
                     alt: "Generated landscape {chosen + 1}",
-                    style: "display: block; width: 100%; max-width: 28rem; max-height: 60vh; aspect-ratio: {aw} / {ah}; object-fit: contain; margin-inline: auto; border-radius: var(--dx-radius-md);",
+                    style: "display: block; width: 100%; max-width: 28rem; max-height: 60vh; aspect-ratio: {aw} / {ah}; object-fit: contain; margin-inline: auto;",
                 }
             }
         }

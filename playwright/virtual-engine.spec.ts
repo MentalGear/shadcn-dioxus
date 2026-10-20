@@ -4,7 +4,8 @@
  *
  *  - VirtualGrid / VirtualWrapGrid take the `fade: ScrollFade` prop VirtualList and ScrollArea
  *    have: the `dx-scroll-fade-*` mask lands on the grid's scroll container and follows its scroll
- *    offset whatever cells are mounted (the grid's `fade` demo).
+ *    offset whatever cells are mounted (the grid's `fade` demo); `ScrollFade::Both` masks all four
+ *    edges of a two-axis grid at once (`dx-scroll-fade-xy`: the block and inline gradients intersected).
  *  - A windowed VirtualList keeps the row that last received focus mounted when the window leaves
  *    it (as the grids keep their active cell): the same DOM node, drawn at its own position, and
  *    focus never falls to <body>.
@@ -76,6 +77,58 @@ async function settleAtEnd(el: Locator) {
     .toBe(true);
 }
 
+type Four = { t: Edge; b: Edge; s: Edge; e: Edge };
+
+/** The four fade depths in px (block edges against the box height, inline edges against its width). */
+function readFour(el: Locator) {
+  return el.evaluate((node) => {
+    const cs = getComputedStyle(node);
+    const rect = node.getBoundingClientRect();
+    const toPx = (value: string, extent: number, prop: "height" | "width") => {
+      const outer = document.createElement("div");
+      outer.style.cssText = `position:absolute;visibility:hidden;pointer-events:none;${prop}:${extent}px;`;
+      const inner = document.createElement("div");
+      inner.style[prop] = value.trim() || "0px";
+      outer.appendChild(inner);
+      document.body.appendChild(outer);
+      const px = inner.getBoundingClientRect()[prop];
+      outer.remove();
+      return px;
+    };
+    return {
+      t: toPx(cs.getPropertyValue("--dx-scroll-fade-t"), rect.height, "height"),
+      b: toPx(cs.getPropertyValue("--dx-scroll-fade-b"), rect.height, "height"),
+      s: toPx(cs.getPropertyValue("--dx-scroll-fade-s"), rect.width, "width"),
+      e: toPx(cs.getPropertyValue("--dx-scroll-fade-e"), rect.width, "width"),
+      fullBlock: Math.min(rect.height * 0.12, 40),
+      fullInline: Math.min(rect.width * 0.12, 40),
+    };
+  });
+}
+
+async function expectFour(el: Locator, want: Four) {
+  await expect
+    .poll(
+      async () => {
+        const f = await readFour(el);
+        const kind = (px: number, full: number) => (px < 1 ? "crisp" : Math.abs(px - full) <= 1.5 ? "faded" : `partial(${px.toFixed(1)}/${full.toFixed(1)})`);
+        return `t:${kind(f.t, f.fullBlock)} b:${kind(f.b, f.fullBlock)} s:${kind(f.s, f.fullInline)} e:${kind(f.e, f.fullInline)}`;
+      },
+      { timeout: 10_000, message: "the four edges of the two-axis fade" },
+    )
+    .toBe(`t:${want.t} b:${want.b} s:${want.s} e:${want.e}`);
+}
+
+const scrollBothTo = (el: Locator, block: "start" | "middle" | "end", inline: "start" | "middle" | "end") =>
+  el.evaluate(
+    (n, [block, inline]) => {
+      const at = (max: number, where: string) => (where === "start" ? 0 : where === "middle" ? max / 2 : max + 10_000);
+      n.scrollTop = at(n.scrollHeight - n.clientHeight, block);
+      n.scrollLeft = at(n.scrollWidth - n.clientWidth, inline);
+    },
+    [block, inline] as const,
+  );
+
 const gridIn = (page: Page, demo: string) => demoFrame(page, "fade").locator(`[data-demo="${demo}"] [role="grid"]`);
 
 test.describe("VirtualGrid fade (shared with VirtualList and ScrollArea)", () => {
@@ -108,21 +161,89 @@ test.describe("VirtualGrid fade (shared with VirtualList and ScrollArea)", () =>
     await expect(grid.locator('[data-grid-index="1999"]')).toBeVisible();
   });
 
-  test("data grid: a bottom-only fade leaves the sticky header crisp and sharpens at the end", async ({ page }) => {
+  test("data grid: fade Both masks all four edges, each only while there is content past it", async ({ page }) => {
     const grid = gridIn(page, "fade-grid");
-    await expect(grid).toHaveAttribute("data-scroll-fade", "bottom");
-    await expect(grid).toHaveClass(/dx-scroll-fade-b/);
+    await expect(grid).toHaveAttribute("data-scroll-fade", "both");
+    await expect(grid).toHaveClass(/dx-scroll-fade-xy/);
+    await expect(grid).toHaveClass(/dx-virtual-grid/); // merged, not replaced
     await expect(grid.locator('[data-grid-cell="0:0"]')).toBeVisible({ timeout: 60_000 });
-    expect((await readFade(grid)).mask).toContain("linear-gradient");
 
-    await scrollBlockTo(grid, "middle");
-    await expectEdges(grid, { end: "faded" });
-    await expect.poll(() => readFade(grid).then((f) => f.start), { timeout: 10_000 }).toBeLessThan(1);
-    // Rows and columns are still windowed under the mask.
+    // One mask of two intersected layers: the block gradient and the inline gradient.
+    const mask = await grid.evaluate((n) => {
+      const cs = getComputedStyle(n);
+      return { image: cs.maskImage || cs.webkitMaskImage || "", composite: cs.maskComposite };
+    });
+    expect((mask.image.match(/linear-gradient/g) ?? []).length).toBe(2);
+    expect(mask.image).toContain("to right"); // the inline layer; the block layer is the default direction, to bottom
+    expect(mask.composite).toMatch(/^intersect(, intersect)*$/); // one operation per layer
+
+    // At the origin: top and inline-start crisp, bottom and inline-end faded.
+    await scrollBothTo(grid, "start", "start");
+    await expectFour(grid, { t: "crisp", b: "faded", s: "crisp", e: "faded" });
+    // Scrolled on one axis only: that axis' start edge fades in, the other axis is untouched.
+    await scrollBothTo(grid, "middle", "start");
+    await expectFour(grid, { t: "faded", b: "faded", s: "crisp", e: "faded" });
+    await scrollBothTo(grid, "start", "middle");
+    await expectFour(grid, { t: "crisp", b: "faded", s: "faded", e: "faded" });
+    // In the middle of both: all four faded. Rows and columns are still windowed under the mask.
+    await scrollBothTo(grid, "middle", "middle");
+    await expectFour(grid, { t: "faded", b: "faded", s: "faded", e: "faded" });
     expect(await grid.locator("[data-grid-cell]").count()).toBeLessThan(600);
+    // At the far corner: the end edges sharpen, the start edges stay faded.
+    await scrollBothTo(grid, "end", "end");
+    await expectFour(grid, { t: "faded", b: "crisp", s: "faded", e: "crisp" });
+  });
 
-    await settleAtEnd(grid);
-    await expectEdges(grid, { end: "crisp" });
+  test("fade Both follows the reading direction: RTL mirrors the inline gradient", async ({ page }) => {
+    const grid = gridIn(page, "fade-grid");
+    await expect(grid.locator('[data-grid-cell="0:0"]')).toBeVisible({ timeout: 60_000 });
+    const ltr = await grid.evaluate((n) => getComputedStyle(n).maskImage || "");
+    expect(ltr).toContain("to right");
+    expect(ltr).not.toContain("to left");
+    const rtl = await grid.evaluate((n) => {
+      const wrapper = n.parentElement!;
+      wrapper.setAttribute("dir", "rtl");
+      const mask = getComputedStyle(n).maskImage || "";
+      wrapper.removeAttribute("dir");
+      return mask;
+    });
+    expect((rtl.match(/linear-gradient/g) ?? []).length).toBe(2);
+    expect(rtl).toContain("to left");
+    expect(rtl).not.toContain("to right");
+  });
+});
+
+// Where a browser has no scroll-driven animations, an edge must still show only while there is more content
+// past it: the one fallback script (`use_scroll_fade`) sets the depth properties from the scroll position.
+// Forced here on Chromium: `CSS.supports` says no for that query, and the CSS animations are switched off so
+// the script's inline values are what is read (the `@supports not` stylesheet branch is only the static default).
+test.describe("scroll fade without scroll-driven animations (the fallback script)", () => {
+  test("every edge of a two-axis grid and of a wrapping gallery tracks the scroll position", async ({ page }) => {
+    await page.addInitScript(() => {
+      const supports = CSS.supports.bind(CSS);
+      CSS.supports = ((...args: string[]) => (String(args[0]).includes("animation-timeline") ? false : (supports as (...a: string[]) => boolean)(...args))) as typeof CSS.supports;
+    });
+    await gotoHydrated(page, GRID_URL, GOTO_OPTS);
+    await page.addStyleTag({ content: '[class*="dx-scroll-fade"] { animation: none !important; }' });
+    await demoFrame(page, "fade").scrollIntoViewIfNeeded();
+
+    const grid = gridIn(page, "fade-grid");
+    await expect(grid.locator('[data-grid-cell="0:0"]')).toBeVisible({ timeout: 60_000 });
+    await scrollBothTo(grid, "start", "start");
+    await expectFour(grid, { t: "crisp", b: "faded", s: "crisp", e: "faded" });
+    await scrollBothTo(grid, "middle", "middle");
+    await expectFour(grid, { t: "faded", b: "faded", s: "faded", e: "faded" });
+    await scrollBothTo(grid, "end", "end");
+    await expectFour(grid, { t: "faded", b: "crisp", s: "faded", e: "crisp" });
+
+    const wrap = gridIn(page, "fade-wrap");
+    await expect(wrap.locator('[role="gridcell"]').first()).toBeVisible({ timeout: 60_000 });
+    await scrollBlockTo(wrap, "start");
+    await expectEdges(wrap, { start: "crisp", end: "faded" });
+    await scrollBlockTo(wrap, "middle");
+    await expectEdges(wrap, { start: "faded", end: "faded" });
+    await settleAtEnd(wrap);
+    await expectEdges(wrap, { start: "faded", end: "crisp" });
   });
 });
 

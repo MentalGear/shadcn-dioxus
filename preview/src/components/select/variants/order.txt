@@ -3,3 +3,4 @@ multi
 rtl
 disabled
 sizes
+scroll

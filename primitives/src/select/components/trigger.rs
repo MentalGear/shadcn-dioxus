@@ -39,6 +39,7 @@ pub struct SelectTriggerProps {
 /// fn Demo() -> Element {
 ///     rsx! {
 ///         Select::<String> {
+///             item_to_label: |value: String| value,
 ///             SelectTrigger {
 ///                 aria_label: "Select Trigger",
 ///                 width: "12rem",
@@ -201,7 +202,7 @@ pub fn SelectTrigger(props: SelectTriggerProps) -> Element {
         // that unconditionally works, since it needs no further
         // computation at all.
         //
-        // `ctx.selectable.selected_text()` (`selectable.rs`, already used
+        // `ctx.selected_text()` (`context.rs`, already used
         // for this exact "what should the trigger show" question by
         // `SelectValue`, `value.rs`) is the best available fallback text:
         // the selected option's own text when something is selected,
@@ -230,7 +231,6 @@ pub fn SelectTrigger(props: SelectTriggerProps) -> Element {
             Vec::new()
         } else {
             let fallback_label = ctx
-                .selectable
                 .selected_text()
                 .unwrap_or_else(|| "Select an option".to_string());
             attributes!(button {
