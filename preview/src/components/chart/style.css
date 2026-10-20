@@ -66,6 +66,18 @@
   display: grid;
   grid-template-areas: "legend-before" "chart" "legend-after";
   grid-template-rows: auto auto auto;
+
+  /* A chart is a picture, not prose: a drag or double-tap across it must not select the axis labels, the
+   * legend or the tooltip, and a long press must not raise the iOS text callout. The theme's one
+   * `user-select` rule is for controls and deliberately skips this root (a focusable `[tabindex]`
+   * container is where prose and code live), so the chart says it for its own subtree: one declaration
+   * on the container reaches every descendant (`user-select: auto` resolves to the parent's `none`).
+   * Backlog row 294; the reason is on `USER_SELECT_ALLOW` in `scripts/check-theme-baseline.sh`. */
+  -webkit-touch-callout: none;
+
+  /* stylelint-disable-next-line property-no-vendor-prefix -- Safari; the unprefixed form follows on the next line */
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .dx-chart > [data-slot="chart"] {

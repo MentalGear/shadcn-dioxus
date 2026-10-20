@@ -532,19 +532,35 @@ test("the code block scrolls horizontally inside the scroll-locked drawer", asyn
 });
 
 test("no horizontal page overflow; the tab row scrolls inside itself", async ({ page }) => {
-  for (const width of [1440, 1024, 768, 390, 320]) {
+  // The columns follow the room the page has beside the docs sidebar (row 303), not the viewport:
+  // 2 from 640px of page content, 3 from 960px (`@container charts-page`, main.css).
+  for (const [width, expected] of [
+    [1440, 3], // 1360px shell - 272px sidebar - 80px padding = 1008px of content
+    [1280, 2], // 1248 - 272 - 80 = 896px
+    [1024, 2], // 992 - 272 - 80 = 640px
+    [768, 2], // sidebar is the phone drawer: 768 - 48 = 720px
+    [390, 1],
+    [320, 1],
+  ] as const) {
     await page.setViewportSize({ width, height: 900 });
     await gotoHydrated(page, `${BASE_URL}/charts/area/`);
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
     );
     expect(overflow, `page overflows horizontally at ${width}px`).toBeLessThanOrEqual(0);
-    const columns = await page.evaluate(
-      () =>
-        getComputedStyle(document.querySelector(".dx-charts-grid")!).gridTemplateColumns.split(" ")
-          .length,
+    const { columns, content } = await page.evaluate(() => {
+      const grid = document.querySelector(".dx-charts-grid")!;
+      const page = document.querySelector<HTMLElement>(".dx-charts-page")!;
+      const cs = getComputedStyle(page);
+      return {
+        columns: getComputedStyle(grid).gridTemplateColumns.split(" ").length,
+        content: page.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight),
+      };
+    });
+    expect(columns, `${width}px viewport, ${content}px of page content`).toBe(expected);
+    expect(columns, `${width}px: columns derive from the container width`).toBe(
+      content >= 960 ? 3 : content >= 640 ? 2 : 1,
     );
-    expect(columns).toBe(width >= 1024 ? 3 : width >= 768 ? 2 : 1);
   }
   const tabs = page.locator(".dx-charts-tabs");
   const scrolls = await tabs.evaluate((el) => el.scrollWidth > el.clientWidth);
@@ -571,5 +587,117 @@ test.describe("Axe automated scan", () => {
       .click();
     await expect(page.locator('[data-slot="sheet-root"]')).toHaveAttribute("data-state", "open");
     await expectNoAxeViolations(page, "charts gallery: code sheet open");
+  });
+});
+
+// Row 302: the pill on a chart-type tab. The theme's press feedback paints a rounded wash while a link is
+// `:active`, which read as "the pill that does not stay"; the active tab now keeps a `muted` pill, a hovered
+// one shows a lighter pill, and the focus ring is keyboard-only.
+test.describe("chart-type tabs keep the pill on the active tab", () => {
+  const rgba = (el: Element) => getComputedStyle(el).backgroundColor;
+  const isClear = (c: string) => c === "rgba(0, 0, 0, 0)" || c === "transparent";
+
+  test("the active tab has a filled pill, the others none, and it follows a tab switch", async ({ page }) => {
+    await gotoHydrated(page, `${BASE_URL}/charts/area/`);
+    const nav = page.getByRole("navigation", { name: "Chart types" });
+    const area = nav.getByRole("link", { name: "Area Charts" });
+    const pie = nav.getByRole("link", { name: "Pie Charts" });
+
+    const filled = await area.evaluate(rgba);
+    expect(isClear(filled), `active tab background ${filled}`).toBe(false);
+    expect(isClear(await pie.evaluate(rgba)), "an inactive tab has no pill").toBe(true);
+    // The pill is the pill shape, not a square wash.
+    expect(await area.evaluate((el) => parseFloat(getComputedStyle(el).borderTopLeftRadius))).toBeGreaterThan(
+      (await area.boundingBox())!.height / 2 - 1,
+    );
+
+    await pie.click();
+    await expect(page).toHaveURL(/\/charts\/pie\/\??$/);
+    const active = nav.getByRole("link", { name: "Pie Charts" });
+    await expect(active).toHaveAttribute("aria-current", "page");
+    // The transition is a short colour fade; wait for it to settle, then the pill is on the new tab.
+    await expect.poll(async () => isClear(await active.evaluate(rgba))).toBe(false);
+    await expect.poll(async () => isClear(await nav.getByRole("link", { name: "Area Charts" }).evaluate(rgba))).toBe(true);
+  });
+
+  test("the pill stays while the pointer is held down, and a clicked tab draws no focus ring", async ({ page }) => {
+    await gotoHydrated(page, `${BASE_URL}/charts/area/`);
+    const nav = page.getByRole("navigation", { name: "Chart types" });
+    const area = nav.getByRole("link", { name: "Area Charts" });
+    const box = (await area.boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    expect(isClear(await area.evaluate(rgba)), "pressed active tab keeps its pill").toBe(false);
+    await page.mouse.up();
+
+    // Switch with the mouse: the router focuses the new active tab by script; under a mouse that is no ring.
+    await nav.getByRole("link", { name: "Bar Charts" }).click();
+    await expect(page).toHaveURL(/\/charts\/bar\/\??$/);
+    const bar = nav.getByRole("link", { name: "Bar Charts" });
+    await expect(bar).toBeFocused();
+    expect(await bar.evaluate((el) => getComputedStyle(el).boxShadow), "no ring after a click").toMatch(
+      /^none$|rgba\(0, 0, 0, 0\) 0px 0px 0px 0px/,
+    );
+
+    // Keyboard: the ring is back.
+    await page.keyboard.press("Tab");
+    await page.keyboard.press("Shift+Tab");
+    await expect(bar).toBeFocused();
+    expect(await bar.evaluate((el) => getComputedStyle(el).boxShadow), "a ring for the keyboard").not.toMatch(
+      /^none$|rgba\(0, 0, 0, 0\) 0px 0px 0px 0px$/,
+    );
+  });
+
+  test("hover shows a lighter pill on an inactive tab (fine pointers only)", async ({ page }) => {
+    await gotoHydrated(page, `${BASE_URL}/charts/area/`);
+    const nav = page.getByRole("navigation", { name: "Chart types" });
+    const pie = nav.getByRole("link", { name: "Pie Charts" });
+    await pie.hover();
+    await expect.poll(async () => isClear(await pie.evaluate(rgba))).toBe(false);
+    const hovered = await pie.evaluate(rgba);
+    const active = await nav.getByRole("link", { name: "Area Charts" }).evaluate(rgba);
+    expect(hovered, "hover is not the active pill").not.toBe(active);
+    // Only compositor-cheap properties animate.
+    const props = await pie.evaluate((el) => getComputedStyle(el).transitionProperty);
+    expect(props).toContain("background-color");
+    expect(props).not.toMatch(/\ball\b|width|height|padding/);
+  });
+});
+
+// Row 303: the gallery wears the docs shell like every component page.
+test.describe("the charts and demos pages have the docs sidebar", () => {
+  for (const [path, label] of [
+    ["/charts/", "Charts"],
+    ["/charts/pie/", "Charts"],
+    ["/demos/", "Demos"],
+  ] as const) {
+    test(`${path} renders the sidebar, its trigger, and marks "${label}"`, async ({ page }) => {
+      await page.setViewportSize({ width: 1280, height: 900 });
+      await gotoHydrated(page, `${BASE_URL}${path}`);
+      const sidebar = page.locator('[data-slot="sidebar-inner"]');
+      await expect(sidebar).toBeVisible();
+      await expect(page.locator(".dx-navbar-sidebar-trigger")).toBeVisible();
+      await expect(sidebar.locator("a[aria-current]:visible")).toHaveText(label);
+      // One landmark: the shell's inset is the page's <main>, and the skip link still lands on it.
+      await expect(page.locator("main")).toHaveCount(1);
+      await expect(page.locator("main#main-content")).toHaveCount(1);
+      // The page content sits beside the sidebar, not under it.
+      const sidebarBox = (await sidebar.boundingBox())!;
+      const contentBox = (await page.locator(path.startsWith("/charts") ? ".dx-charts-page" : ".dx-home-page").boundingBox())!;
+      expect(contentBox.x).toBeGreaterThanOrEqual(sidebarBox.x + sidebarBox.width - 1);
+    });
+  }
+
+  test("at a phone width the trigger opens the sidebar as a drawer and nothing overflows", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    for (const path of ["/charts/", "/demos/"]) {
+      await gotoHydrated(page, `${BASE_URL}${path}`);
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      );
+      expect(overflow, `${path} overflows horizontally at 390px`).toBeLessThanOrEqual(0);
+      await page.locator(".dx-navbar-sidebar-trigger").click();
+      await expect(page.getByRole("dialog").getByRole("link", { name: "Charts", exact: true })).toBeVisible();
+    }
   });
 });

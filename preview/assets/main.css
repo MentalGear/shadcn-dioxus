@@ -2418,6 +2418,7 @@ html[data-cv-settle] {
 .dx-charts-page {
   width: 100%;
   max-width: var(--dx-content-width);
+  container: charts-page / inline-size;
   margin-inline: auto;
   padding-block: 0 var(--dx-space-24);
   padding-inline: var(--dx-space-6);
@@ -2495,7 +2496,10 @@ html[data-cv-settle] {
   outline: none;
 }
 
-/* Chart-type links: plain text, the current one in the foreground colour.
+/* Chart-type links. The current one keeps a `muted` pill (shadcn's ExamplesNav: `data-[active=true]:bg-muted`)
+ * and a hovered one shows a lighter pill, so the pill you see while pressing a tab is the tab's own resting
+ * look and not just the press wash of the theme's press-feedback rule (backlog row 302). The focus ring is the
+ * theme's keyboard-only token, so a tab you clicked (and the script focus after the switch) draws none.
  * The row scrolls inside itself on narrow screens (the page never does). */
 .dx-charts-tabs {
   display: flex;
@@ -2514,22 +2518,28 @@ html[data-cv-settle] {
   flex-shrink: 0;
   align-items: center;
   border-radius: var(--dx-radius-full);
+  background-color: transparent;
   color: var(--dx-muted-foreground);
   font-size: var(--dx-text-base);
   font-weight: 500;
   padding-inline: var(--dx-space-4);
   text-decoration: none;
-  transition: color var(--dx-motion-duration-base) var(--dx-motion-ease);
+  transition:
+    color var(--dx-motion-duration-base) var(--dx-motion-ease),
+    background-color var(--dx-motion-duration-base) var(--dx-motion-ease),
+    scale var(--dx-press-duration) var(--dx-motion-ease-out);
   white-space: nowrap;
 }
 
 @media (hover: hover) and (pointer: fine) {
   .dx-charts-tab:hover {
+    background-color: color-mix(in var(--dx-hover-mix-space), var(--dx-muted) 50%, transparent);
     color: var(--dx-accent-foreground);
   }
 }
 
 .dx-charts-tab[aria-current="page"] {
+  background-color: var(--dx-muted);
   color: var(--dx-accent-foreground);
 }
 
@@ -2701,15 +2711,6 @@ html[data-cv-settle] {
     font-size: 3rem;
   }
 
-  .dx-charts-grid {
-    gap: var(--dx-space-6);
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .dx-charts-cell[data-span="full"] {
-    grid-column: 1 / -1;
-  }
-
   .dx-charts-toolbar-actions .dx-charts-toolbar-separator {
     display: block;
   }
@@ -2723,15 +2724,27 @@ html[data-cv-settle] {
   .dx-charts-hero {
     padding-block: var(--dx-space-16) var(--dx-space-12);
   }
+}
 
+/* The grid's columns follow the room the PAGE has, not the viewport: the gallery sits beside the docs sidebar
+ * (backlog row 303), so a 1280px window leaves ~1000px, and three viewport-driven columns would be ~270px
+ * cards. A container query measures the content box (the page's padding is already out): 2 columns from 640px
+ * (a 768px window), 3 from 960px (a 1392px window with the sidebar open, any 1280px window with it closed). */
+@container charts-page (width >= 640px) {
   .dx-charts-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--dx-space-6);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dx-charts-cell[data-span="full"] {
+    grid-column: 1 / -1;
   }
 }
 
-@media (width >= 1280px) {
+@container charts-page (width >= 960px) {
   .dx-charts-grid {
     gap: var(--dx-space-10);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
