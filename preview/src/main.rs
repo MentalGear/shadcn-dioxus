@@ -3467,6 +3467,12 @@ fn BlockCommand() -> Element {
             p { style: "margin: 0; color: var(--dx-muted-foreground); font-size: 0.85rem;", "Jump between projects your team owns." }
         }
         Combobox::<String> {
+            item_to_label: move |value: String| {
+                workspaces
+                    .iter()
+                    .find(|(id, _)| *id == value)
+                    .map_or(value.clone(), |(_, label)| label.to_string())
+            },
             query: Some(query()),
             on_query_change: move |next| query.set(next),
             placeholder: "Search workspaces...",

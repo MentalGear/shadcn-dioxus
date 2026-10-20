@@ -214,6 +214,7 @@ pub fn DataTablePagination(props: DataTablePaginationProps) -> Element {
                         "data-slot": "data-table-page-size",
                         trigger_aria_label: "Rows per page",
                         default_value: page_size,
+                        item_to_label: |size: usize| size.to_string(),
                         // Static trigger text: the default `SelectValue` prints "Select an option" until the options
                         // register, then "5" (~18 px narrower), which re-flowed the footer (CLS 0.0131 > 0.01).
                         trigger: rsx! {

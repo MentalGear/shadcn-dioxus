@@ -23,6 +23,16 @@ pub fn Demo() -> Element {
                 }
             }
             Combobox::<String> {
+                item_to_label: |value: String| {
+                    match value.as_str() {
+                        "next" => "Next.js",
+                        "svelte" => "SvelteKit",
+                        "solid" => "SolidStart",
+                        "dioxus" => "Dioxus",
+                        other => other,
+                    }
+                    .to_string()
+                },
                 placeholder: "Select framework...",
                 aria_label: "Dynamic framework",
                 list_aria_label: "Dynamic frameworks",

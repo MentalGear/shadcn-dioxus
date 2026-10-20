@@ -4,6 +4,8 @@ Filtering preserves the order defined by the rendered `ComboboxOption` elements 
 props. If you want query-dependent ranking, control `query`, sort your item data in user code,
 render the options in that sorted order, and assign indexes from the sorted list.
 
+Selecting several options (chips, clear button, form value) is `ComboboxMulti`: its demos come first under Examples below, and its API is in "Multiple selection".
+
 ## Behavior
 
 The input shows the selected option's label. Clicking, focusing or arrowing into it never rewrites
@@ -20,6 +22,7 @@ let mut query = use_signal(String::new);
 
 Combobox::<String> {
     value: Some(value.into()),
+    item_to_label: |value: String| label_of(&value), // required: the input's text for the value, read at render time
     on_value_change: move |next: Option<String>| {
         value.set(next);
     },
@@ -37,6 +40,11 @@ Combobox::<String> {
     }
 }
 ```
+
+`item_to_label` (required on `Combobox` and `ComboboxMulti`, like Base UI's `itemToStringLabel`) is the selected
+value's display text. The input's value reads it at render time, never the option registry (which fills in a
+client-only effect), so a preselected `Combobox` carries `value="Next.js"` in the server-rendered HTML instead of
+an empty input until hydration, and the input cannot flash empty while the list re-registers its options.
 
 ## Multiple selection
 

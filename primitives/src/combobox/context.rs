@@ -11,26 +11,27 @@ pub fn default_combobox_filter(query: &str, text: &str) -> bool {
 
 /// What a combobox holds, by construction.
 ///
-/// `Single` carries nothing: a single-select root has no way to remove one
+/// `Single` carries nothing but the label: a single-select root has no way to remove one
 /// value or clear them all, so no chip, clear button or Backspace path can be
 /// reached from it, and its `on_value_change` only ever sees `Option<T>`.
 /// `Multi` carries the only two operations that exist on a set of values;
 /// they are built next to the root's `Vec<T>` model (`multi.rs`), so a value
 /// that reaches a single-select root's callback cannot be a list.
+///
+/// Both carry `label`, the root's required `item_to_label`: a selected value's display text
+/// (the chips and their remove buttons' accessible names; the single input's text). It is read at
+/// render time, never from the option registry: the registry fills in a client-only effect, so
+/// registry-derived text renders empty in the server HTML until hydration.
 #[derive(Clone, Copy)]
 pub(super) enum ComboboxModel {
-    Single,
+    Single {
+        label: Callback<RcPartialEqValue, String>,
+    },
     Multi {
         /// Remove one selected value (a chip's remove button, Backspace).
         remove: Callback<RcPartialEqValue>,
         /// Remove every selected value (the clear button).
         clear: Callback<()>,
-        /// A selected value's display text (the root's required `item_to_label`).
-        ///
-        /// Chips and their remove buttons' accessible names read it, never the option
-        /// registry: the registry fills in a client-only effect and `ComboboxChips`
-        /// precedes the options in tree order, so a registry-derived chip renders empty
-        /// in the server HTML until hydration.
         label: Callback<RcPartialEqValue, String>,
     },
 }
@@ -67,9 +68,6 @@ pub(super) struct ComboboxContext {
     /// finished closing (not at close: the closing list keeps its filter
     /// through its exit animation).
     pub edited: Signal<bool>,
-
-    /// The last label seen for the selected value -- see [`Self::selected_label`].
-    pub label: Signal<Option<(RcPartialEqValue, String)>>,
 }
 
 impl ComboboxContext {
@@ -105,11 +103,12 @@ impl ComboboxContext {
         }
     }
 
-    /// Chips' text for a selected value: the root's `item_to_label`, available at render time.
+    /// A selected value's text: the root's `item_to_label`, available at render time.
     pub fn label_of(&self, value: &RcPartialEqValue) -> String {
         match self.model {
-            ComboboxModel::Multi { label, .. } => label.call(value.clone()),
-            ComboboxModel::Single => String::new(),
+            ComboboxModel::Single { label } | ComboboxModel::Multi { label, .. } => {
+                label.call(value.clone())
+            }
         }
     }
 
@@ -125,47 +124,15 @@ impl ComboboxContext {
         move |option| filter.call((query.clone(), option.text_value.clone()))
     }
 
-    /// The selected option's label.
-    ///
-    /// Read from the option registry, which is briefly empty every time the
-    /// list mounts or unmounts: `ComboboxList` renders its options in two
-    /// different places (inline while closed, inside the popup while open), so
-    /// each one's cleanup removes it before its replacement has registered.
-    /// For that moment the input would flash empty -- and a write to a text
-    /// input's `value` throws the caret to the end, which is exactly the click
-    /// position this component promises to keep. So fall back to the last label
-    /// seen for the *same* value ([`Self::remember_label`]).
+    /// The selected value's label, from the root's `item_to_label` (never the option registry, so it
+    /// is present in the server HTML and cannot flash empty while the list's options re-register).
     fn selected_label(&self) -> Option<String> {
         // A multi-select shows its values as chips; the input is only ever the query.
         if self.is_multi() {
             return None;
         }
-        if let Some(label) = self.selectable.selected_text() {
-            return Some(label);
-        }
-        let values = self.selectable.values.read();
-        let cached = self.label.read();
-        (*cached)
-            .as_ref()
-            .filter(|(value, _)| values.iter().any(|selected| selected == value))
-            .map(|(_, label)| label.clone())
-    }
-
-    /// Record the selected value's label while the registry can supply it.
-    pub fn remember_label(&mut self) {
-        if self.is_multi() {
-            return;
-        }
-        let value = self.selectable.values.read().first().cloned();
-        let (Some(value), Some(label)) = (value, self.selectable.selected_text()) else {
-            return;
-        };
-        let unchanged = (*self.label.peek())
-            .as_ref()
-            .is_some_and(|(seen, text)| *seen == value && *text == label);
-        if !unchanged {
-            self.label.set(Some((value, label)));
-        }
+        let value = self.selectable.values.read().first().cloned()?;
+        Some(self.label_of(&value))
     }
 
     /// The text the options are filtered by: the query once the user has
