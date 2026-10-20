@@ -96,6 +96,73 @@ test.describe("touch", () => {
     await expect.poll(() => style(button, "scale")).toBe("none");
   });
 
+  // Backlog row 295. A tap on a phone is 40-100ms. These pin the two reasons it used to show nothing.
+
+  test("the press lands instantly even where a component has its own transition (a tap is 40-100ms)", async ({ page }) => {
+    const button = page.locator('.dx-button[data-style="secondary"]:not([disabled])').first();
+    await button.scrollIntoViewIfNeeded();
+    // Button owns `transition: all 150ms`, which a zero-specificity theme rule cannot override.
+    expect(await style(button, "transition-duration")).toBe("0.15s");
+    const release = await press(page, button);
+    await expect.poll(() => style(button, "transition-duration")).toBe("0s");
+    // At the first frame of :active the scale is already the full press scale, not a 150ms ramp toward it.
+    expect(await style(button, "scale")).toBe("0.98");
+    await release();
+    await expect.poll(() => style(button, "transition-duration")).toBe("0.15s");
+  });
+
+  test("a short press leaves a visible tail: the scale eases back over frames, not in one", async ({ page }) => {
+    const button = page.locator('.dx-button[data-style="secondary"]:not([disabled])').first();
+    await button.scrollIntoViewIfNeeded();
+    await button.evaluate((el) => {
+      const w = window as unknown as { __s: number[]; __on: boolean };
+      w.__s = [];
+      w.__on = true;
+      (function f() {
+        if (!w.__on) return;
+        const v = getComputedStyle(el).scale;
+        w.__s.push(v === "none" ? 1 : parseFloat(v));
+        requestAnimationFrame(f);
+      })();
+    });
+    const release = await press(page, button);
+    await page.waitForTimeout(40);
+    await release();
+    await page.waitForTimeout(400);
+    const frames = await page.evaluate(() => {
+      const w = window as unknown as { __s: number[]; __on: boolean };
+      w.__on = false;
+      return w.__s;
+    });
+    const full = frames.indexOf(Math.min(...frames));
+    expect(Math.min(...frames), "the press reached the full scale even though the touch was 40ms").toBeCloseTo(0.98, 3);
+    const tail = frames.slice(full).filter((v) => v > 0.98 && v < 0.999);
+    expect(tail.length, `frames between pressed and rest after release: ${frames.join(",")}`).toBeGreaterThanOrEqual(2);
+  });
+
+  // The wash used to be a zero-specificity `background-image`, wiped by any component that writes the `background`
+  // shorthand: 23 control families (Tabs, Menubar / Navbar / Navigation Menu triggers, Toolbar, ...) showed only a
+  // sub-pixel scale. These are the ones the audit found; the gate-free guard is that each paints the wash.
+  for (const [route, selector] of [
+    ["tabs", ".dx-tabs-trigger"],
+    ["menubar", ".dx-menubar-trigger"],
+    ["toolbar", ".dx-toolbar-button"],
+    ["navigation_menu", ".dx-navigation-menu-trigger"],
+    ["carousel", ".dx-carousel-next"],
+  ] as const) {
+    test(`the wash paints on ${selector} although its sheet writes a background shorthand`, async ({ page }) => {
+      await gotoHydrated(page, `${BASE_URL}/component/${route}/`);
+      const control = page.locator(`${selector}:not([disabled])`).first();
+      await control.scrollIntoViewIfNeeded();
+      expect(await style(control, "background-image")).toBe("none");
+      const release = await press(page, control);
+      await expect.poll(() => style(control, "background-image")).toContain("linear-gradient");
+      expect(await style(control, "scale")).toBe("0.98");
+      await release();
+      await expect.poll(() => style(control, "background-image")).toBe("none");
+    });
+  }
+
   test("the switch removes it: with data-dx-press-feedback=off a press changes nothing", async ({ page }) => {
     await page.evaluate(() => document.documentElement.setAttribute("data-dx-press-feedback", "off"));
     const button = page.locator('.dx-button[data-style="secondary"]:not([disabled])').first();

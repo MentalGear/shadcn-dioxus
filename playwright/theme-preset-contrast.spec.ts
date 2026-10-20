@@ -178,7 +178,7 @@ const open = async (page: Page, route: string, ready: string) => {
 
 test("the sweep covers every base and accent the stylesheet defines", () => {
   expect(BASES).toHaveLength(9);
-  expect(ACCENTS).toHaveLength(17);
+  expect(ACCENTS).toHaveLength(18);
 });
 
 for (const mode of ["light", "dark"] as const) {
@@ -428,5 +428,65 @@ test.describe("docs-site highlight ink", () => {
       const violet = await ink();
       expect(violet, `${mode}: violet differs from orange`).not.toEqual(orange);
     }
+  });
+});
+
+/**
+ * Backlog row 301. The component-card title's hover colour is the docs site's accent ink
+ * (`--highlight-color-tertiary`), so it follows the picker; "Docs blue" is the default blue offered as a
+ * swatch, and picking it gives exactly the default ink, in both modes.
+ */
+test.describe("component-card title hover (row 301)", () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  const rgb = (page: Page) =>
+    page.evaluate(() => {
+      const el = document.getElementById("card-title-probe")!;
+      const cv = document.createElement("canvas");
+      cv.width = cv.height = 1;
+      const cx = cv.getContext("2d", { willReadFrequently: true })!;
+      cx.fillStyle = getComputedStyle(el).color;
+      cx.fillRect(0, 0, 1, 1);
+      return Array.from(cx.getImageData(0, 0, 1, 1).data.slice(0, 3));
+    });
+
+  for (const [mode, today] of [["light", [0, 101, 255]], ["dark", [77, 148, 255]]] as const) {
+    test(`hovered card title: default blue, Docs blue and another accent (${mode})`, async ({ page }) => {
+      await open(page, "/", ".dx-hero-prompt");
+      await page.evaluate((m) => {
+        document.head.insertAdjacentHTML("beforeend", "<style>*{transition:none!important}</style>");
+        (window as unknown as { __dxApplyMode: (m: string) => void }).__dxApplyMode(m);
+        const a = document.createElement("a");
+        a.id = "card-title-probe";
+        a.href = "#";
+        a.className = "dx-component-card-title-link";
+        a.textContent = "Probe";
+        a.style.cssText = "position:fixed;left:40px;top:300px;z-index:99999";
+        document.body.append(a);
+      }, mode);
+      const probe = page.locator("#card-title-probe");
+      await probe.hover();
+      expect(await rgb(page), `${mode}: default`).toEqual(today);
+
+      await page.evaluate(() => document.documentElement.setAttribute("data-theme-accent", "docs"));
+      expect(await rgb(page), `${mode}: Docs blue is the default ink`).toEqual(today);
+
+      await page.evaluate(() => document.documentElement.setAttribute("data-theme-accent", "orange"));
+      const orange = await rgb(page);
+      expect(orange, `${mode}: orange accent moves the hover colour`).not.toEqual(today);
+      expect(orange[0]).toBeGreaterThan(orange[2]);
+    });
+  }
+
+  test("the picker offers Docs blue and its swatch is the default blue's fill", async ({ page }) => {
+    await open(page, "/", ".dx-hero-prompt");
+    await page.evaluate(() => (window as unknown as { __dxApplyMode: (m: string) => void }).__dxApplyMode("light"));
+    // copy-ok: the site's own theme picker (site chrome), not a component demo
+    await page.getByRole("button", { name: "Theme", exact: true }).click();
+    // copy-ok: the picker's swatch is named by its label (site chrome)
+    const swatch = page.locator(".dx-theme-picker").getByRole("button", { name: "Docs blue", exact: true });
+    await expect(swatch).toBeVisible();
+    const dot = swatch.locator(".dx-theme-swatch-dot");
+    await expect.poll(() => dot.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(0, 101, 255)");
   });
 });

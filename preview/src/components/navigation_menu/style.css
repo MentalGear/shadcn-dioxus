@@ -28,6 +28,7 @@
 .dx-navigation-menu-item > .dx-navigation-menu-link {
   display: flex;
   height: var(--dx-control-height-lg);
+  min-height: var(--dx-menu-trigger-min-height);
   flex-direction: row;
   align-items: center;
   padding: var(--dx-space-1-5) var(--dx-space-2-5);

@@ -3,7 +3,7 @@
  * `hover:bg-muted aria-expanded:bg-muted rounded-sm px-1.5 py-[2px] text-sm font-medium`. */
 .dx-menubar {
   display: flex;
-  height: var(--dx-control-height-default);
+  min-height: var(--dx-control-height-default);
   align-items: center;
   padding: 3px;
   border: 1px solid var(--dx-border);
@@ -17,14 +17,15 @@
 
 .dx-menubar-trigger {
   display: flex;
+  min-height: var(--dx-menu-trigger-min-height);
   align-items: center;
-  padding: var(--dx-space-0-5) var(--dx-space-1-5);
+  padding: var(--dx-menu-trigger-padding);
   border: none;
   border-radius: var(--dx-radius-sm);
   background: none;
   color: var(--dx-foreground);
   cursor: pointer;
-  font-size: var(--dx-text-sm);
+  font-size: var(--dx-menu-item-font-size);
   font-weight: 500;
   transition: background-color var(--dx-motion-duration-fast) var(--dx-motion-ease-out);
 }
