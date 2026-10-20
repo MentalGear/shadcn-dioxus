@@ -15,7 +15,7 @@ When a VirtualGrid's own scroll reaches its top or bottom edge, further wheel or
 
 ## Status / trigger
 
-**LANDED 2026-10-20 (fix 7f172201, PR #115 merge 1ec049f3; gate 58/58 green): only the inline axis is contained now (`overscroll-behavior-x: contain`), so block-axis scroll chains to the page at the grid's top and bottom edges; two new tests in `playwright/virtual-grid.spec.ts`. The open unification question below moved to [row 154](../154-shared-virtualization-engine-one-engine-in.md).** Originally: OPEN (owner report 2026-10-20; with the Round 4 thread)
+**LANDED 2026-10-20 (fix 7f172201, PR #115 merge 1ec049f3; gate 58/58 green): only the inline axis is contained now (`overscroll-behavior-x: contain`), so block-axis scroll chains to the page at the grid's top and bottom edges; two new tests in `playwright/virtual-grid.spec.ts`. The unification question below (owner decision 2026-10-20: two components, shared engine) is recorded in [row 154](../154-shared-virtualization-engine-one-engine-in.md).** Originally: OPEN (owner report 2026-10-20; with the Round 4 thread)
 
 ## Size
 
