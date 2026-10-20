@@ -566,7 +566,7 @@ pub fn VirtualWrapGrid(props: VirtualWrapGridProps) -> Element {
 }
 
 /// The target row height [`VirtualJustifiedGrid`] uses without `target_row_height`, in px.
-pub const DEFAULT_TARGET_ROW_HEIGHT: f64 = 200.0;
+pub const DEFAULT_TARGET_ROW_HEIGHT: f64 = 150.0;
 /// The gap [`VirtualJustifiedGrid`] uses without `gap`, in px.
 pub const DEFAULT_TILE_GAP: f64 = 4.0;
 /// How far beyond the viewport [`VirtualJustifiedGrid`] mounts tiles without `overscan`, in px.
@@ -600,7 +600,7 @@ pub struct VirtualJustifiedGridProps {
     /// The row height, in px, that rows are packed toward: a full row takes items until they
     /// would overflow the width at this height, then shrinks to fill the width exactly, so it is
     /// never taller (unless `min_tile_width` backs it off). Defaults to
-    /// [`DEFAULT_TARGET_ROW_HEIGHT`] (200). The last row keeps this height and may end short.
+    /// [`DEFAULT_TARGET_ROW_HEIGHT`] (150). The last row keeps this height and may end short.
     #[props(default = ReadSignal::new(Signal::new(DEFAULT_TARGET_ROW_HEIGHT)))]
     pub target_row_height: ReadSignal<f64>,
     /// The space between tiles and between rows, in px. Defaults to [`DEFAULT_TILE_GAP`] (4).

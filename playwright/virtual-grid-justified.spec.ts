@@ -298,7 +298,7 @@ test.describe("virtual_grid justified", () => {
       });
     const rowsBefore = Number(await g.getAttribute("aria-rowcount"));
     const heightBefore = await meanRowHeight();
-    // justified demo: the one slider is the target row height (80..320, starts at 160)
+    // justified demo: the one slider is the target row height (80..320, starts at 150)
     const slider = demoRole(page, "slider", 0, VARIANT);
     await slider.focus();
     await page.keyboard.press("End");

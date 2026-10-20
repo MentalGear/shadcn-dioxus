@@ -42,7 +42,7 @@ Two models for showing many photos of mixed shapes:
 // 20,000 photos; the aspect ratios (width / height) are all the layout needs.
 VirtualJustifiedGrid {
     aspects,                       // ReadSignal<Vec<f64>>
-    target_row_height: 160.0,      // px a full row is packed toward (default 200)
+    target_row_height: 150.0,      // px a full row is packed toward (default 150)
     gap: 4.0,                      // px between tiles and rows (default 4)
     // Optional: a canvas wider than the grid makes a wall that scrolls both ways.
     canvas_width: Some(4800.0),

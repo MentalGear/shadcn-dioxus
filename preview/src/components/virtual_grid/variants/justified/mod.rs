@@ -76,7 +76,7 @@ pub fn Demo() -> Element {
             })
             .collect::<Vec<f64>>()
     });
-    let mut row_height = use_signal(|| 160.0_f64);
+    let mut row_height = use_signal(|| 150.0_f64);
     let mut wall = use_signal(|| false);
     let mut demo_width = use_signal(|| 800.0_f64);
     let canvas_width = use_memo(move || wall().then(|| (demo_width() * WALL_FACTOR).round()));
@@ -105,7 +105,7 @@ pub fn Demo() -> Element {
                         min: 80.0,
                         max: 320.0,
                         step: 10.0,
-                        default_value: 160.0,
+                        default_value: 150.0,
                         on_value_change: move |value: f64| row_height.set(value),
                     }
                 }
