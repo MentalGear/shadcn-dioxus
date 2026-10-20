@@ -127,7 +127,10 @@ pub fn Demo() -> Element {
                     rsx! {
                         img {
                             src: photo_src(index),
-                            alt: "Generated photo {index + 1}, {w}:{h}",
+                            // Empty alt, accessible name on the image itself: while a photo loads the browser paints
+                            // its alt text in the tile, which flashed "Generated photo N" during a fast scroll.
+                            alt: "",
+                            "aria-label": "Generated photo {index + 1}, {w}:{h}",
                             draggable: "false",
                             style: "display: block; width: 100%; height: 100%; border-radius: inherit;",
                         }

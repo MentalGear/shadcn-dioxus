@@ -360,7 +360,8 @@ pub fn Demo() -> Element {
                             img {
                                 "data-photo-img": "{aspect(index).0}:{aspect(index).1}",
                                 src: photo_src(index),
-                                alt: "Generated landscape {index + 1}",
+                                alt: "",
+                                "aria-label": "Generated landscape {index + 1}",
                                 draggable: "false",
                                 style: "cursor: pointer; border-radius: inherit;",
                                 onclick: move |_| open_photo(index),
@@ -386,7 +387,8 @@ pub fn Demo() -> Element {
                                     img {
                                         "data-photo-img": "{aspect(index).0}:{aspect(index).1}",
                                         src: photo_src(index),
-                                        alt: "Generated landscape {index + 1}",
+                                        alt: "",
+                                        "aria-label": "Generated landscape {index + 1}",
                                         draggable: "false",
                                     }
                                 }
