@@ -487,6 +487,19 @@ test.describe("component-card title hover (row 301)", () => {
     const swatch = page.locator(".dx-theme-picker").getByRole("button", { name: "Docs blue", exact: true });
     await expect(swatch).toBeVisible();
     const dot = swatch.locator(".dx-theme-swatch-dot");
-    await expect.poll(() => dot.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(0, 101, 255)");
+    // The dot reads `--primary`, an oklch() value: resolve it to sRGB through a canvas.
+    const rgb = () =>
+      dot.evaluate((el) => {
+        const cv = document.createElement("canvas");
+        cv.width = cv.height = 1;
+        const cx = cv.getContext("2d", { willReadFrequently: true })!;
+        cx.fillStyle = getComputedStyle(el).backgroundColor;
+        cx.fillRect(0, 0, 1, 1);
+        return Array.from(cx.getImageData(0, 0, 1, 1).data.slice(0, 3));
+      });
+    const [r, g, b] = await rgb();
+    expect(r).toBeLessThanOrEqual(6);
+    expect(Math.abs(g - 101)).toBeLessThanOrEqual(6);
+    expect(Math.abs(b - 255)).toBeLessThanOrEqual(6);
   });
 });

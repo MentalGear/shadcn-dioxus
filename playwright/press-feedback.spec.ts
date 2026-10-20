@@ -49,9 +49,14 @@ async function press(page: Page, el: Locator) {
   const c = await center(el);
   const [x, y] = [Math.round(c.x), Math.round(c.y)]; // the protocol takes integers
   await client.send("Input.emulateTouchFromMouseEvent", { type: "mousePressed", x, y, button: "left", clickCount: 1 });
+  const down = Date.now();
   return async () => {
+    // A real touch lasts 40-100ms. Headless Chromium can leave `:active` set when the up lands within the
+    // frame of the down (now that the press applies at once, a poll can be satisfied that fast).
+    await page.waitForTimeout(Math.max(0, 60 - (Date.now() - down)));
     await client.send("Input.emulateTouchFromMouseEvent", { type: "mouseReleased", x, y, button: "left", clickCount: 1 });
-    await client.detach();
+    // No `client.detach()` here: detaching straight after the up event drops it and leaves `:active` set
+    // (measured: 1 in 3 releases stuck). The session dies with the test's context.
   };
 }
 
@@ -126,8 +131,7 @@ test.describe("touch", () => {
       })();
     });
     const release = await press(page, button);
-    await page.waitForTimeout(40);
-    await release();
+    await release(); // holds the touch to a realistic 60ms
     await page.waitForTimeout(400);
     const frames = await page.evaluate(() => {
       const w = window as unknown as { __s: number[]; __on: boolean };
@@ -135,7 +139,7 @@ test.describe("touch", () => {
       return w.__s;
     });
     const full = frames.indexOf(Math.min(...frames));
-    expect(Math.min(...frames), "the press reached the full scale even though the touch was 40ms").toBeCloseTo(0.98, 3);
+    expect(Math.min(...frames), "the press reached the full scale even though the touch was short").toBeCloseTo(0.98, 3);
     const tail = frames.slice(full).filter((v) => v > 0.98 && v < 0.999);
     expect(tail.length, `frames between pressed and rest after release: ${frames.join(",")}`).toBeGreaterThanOrEqual(2);
   });
@@ -199,7 +203,7 @@ test.describe("transition and reduced motion", () => {
     await gotoHydrated(page, BUTTON_PAGE);
     const probe = await addProbe(page);
     expect(await style(probe, "transition-property")).toBe("scale");
-    expect(await style(probe, "transition-duration")).toBe("0.1s");
+    expect(await style(probe, "transition-duration")).toBe("0.2s");
 
     await page.emulateMedia({ reducedMotion: "reduce" });
     expect(await style(probe, "transition-property")).toBe("all");
