@@ -352,7 +352,7 @@ pub fn RadioItem(props: RadioItemProps) -> Element {
     });
     let is_default = use_memo(move || (ctx.default_value)() == (props.value)());
     // `<form reset>` restores the hidden radio from `.defaultChecked`; see `default_checked.rs`.
-    use_default_checked(move || hidden_input_id.cloned(), move || is_default());
+    use_default_checked(move || hidden_input_id.cloned(), move || *is_default.read());
 
     // `type` is an overridable default; the rest is this item's own
     // functional state (role/tabindex define the widget and its
