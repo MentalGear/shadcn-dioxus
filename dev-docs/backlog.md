@@ -34,7 +34,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (54)
+## Open rows (53)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -75,17 +75,16 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [268](backlog/268-select-scroll-buttons-and-item-aligned-position.md) | Select scroll buttons and position=item-aligned | OPEN. Not started; no owner decision needed. | S-M (scroll buttons), M-L (item-aligned) | select |
 | [285](backlog/285-docs-preview-card-light-mode-tint.md) | Docs preview card: a visible light-mode tint without breaking Toggle hover contrast | OPEN. Needs the owner's call on the light-mode tint strength once the Toggle/Pagination hover is… | S | preview |
 | [290](backlog/290-toast-exit-animation-a-real-visible-cap-and-enter.md) | Toast: exit animation, a real visible cap, and enter from the toaster's edge (Sonner parity) | OPEN (owner review 2026-10-19). New work: the landed rows 138, 262 and 263 cover stacking, swipe… | M | primitives |
-| [291](backlog/291-coarse-pointer-sizing-for-menus-and-option-lists.md) | Coarse-pointer sizing for menus and option lists | OPEN (owner review 2026-10-19). I concur. Today the only coarse rules are the 16 px text-entry font… | S–M | theme |
+| [291](backlog/291-coarse-pointer-sizing-for-menus-and-option-lists.md) | Coarse-pointer sizing for menus and option lists | PARTLY LANDED 2026-10-20 (theme-touch lane 1ba0b2e5). Select and combobox are the remaining open… | S–M | theme |
 | [292](backlog/292-tooltip-rich-content-demo-lays-title-and-body.md) | Tooltip: rich-content demo lays title and body side by side | OPEN (owner review 2026-10-19). | S | preview |
 | [293](backlog/293-slider-thumb-clipped-to-a-sliver.md) | Slider thumb clipped to a sliver | OPEN (owner review 2026-10-19). New bug; row 239 only touched the thumb's all: unset. | S | primitives |
 | [294](backlog/294-charts-and-leftovers-still-allow-text-selection.md) | Charts (and leftovers) still allow text selection | OPEN, a follow-up to row 229 (landed 2026-10-18), which covered buttons and ARIA control roles but… | S | preview |
-| [295](backlog/295-press-feedback-on-touch-taps-already-on-by.md) | Press feedback on touch taps: already on by default, so check why taps don't show it | OPEN. Row 205 (LANDED 2026-10-14) already ships press feedback on by default, for every pointer.… | S (or none) | theme |
+| [295](backlog/295-press-feedback-on-touch-taps-already-on-by.md) | Press feedback on touch taps: already on by default, so check why taps don't show it | PARTLY LANDED 2026-10-20 (theme-touch lane 1ba0b2e5, cf64037a); device re-test open. Row 205… | S (or none) | theme |
 | [296](backlog/296-combobox-list-drifts-from-its-input-on-ios-after.md) | Combobox list drifts from its input on iOS after long scrolling | OPEN (owner report 2026-10-19), needs device verification. Related rows: 28 (iOS keyboard anchor… | M + device check | overlays |
 | [297](backlog/297-overview-page-sidebar-demo-drop-the-none-option.md) | Overview page sidebar demo: drop the "None" option | OPEN (owner review 2026-10-19). | S | preview |
 | [298](backlog/298-overview-demo-cards-vertical-divider-between.md) | Overview demo cards: vertical divider between description and example | OPEN (owner review 2026-10-19). | S | preview |
 | [299](backlog/299-accordion-no-hover-underline-on-collapsed-headers.md) | Accordion: no hover underline on collapsed headers; optional left chevron, used on the docs component page | OPEN (owner review 2026-10-19). | M | primitives |
 | [300](backlog/300-home-hero-title-shadcn-dioxus-in-bold.md) | Home hero title "shadcn-dioxus" in bold | OPEN. This is a different element from PR #105: that PR made the navbar brand bold (700… | S | preview |
-| [301](backlog/301-component-card-title-hover-colour-follows-the.md) | Component-card title hover colour follows the theme; offer the default blue in the palette picker | OPEN (owner review 2026-10-19), partly already true (see below). | S | theme |
 | [302](backlog/302-charts-page-tab-bar-keep-the-pill-on-the-active.md) | Charts page tab bar: keep the pill on the active tab | OPEN (owner review 2026-10-19). | S (static) / M (animated) | preview |
 | [303](backlog/303-charts-and-demos-pages-have-no-docs-sidebar.md) | Charts and Demos pages have no docs sidebar | OPEN (owner question 2026-10-19). | S–M | preview |
 | [304](backlog/304-radial-chart-tooltips-share-the-gap-split-equally.md) | Radial chart tooltips share the gap, split equally per ring (lowest priority) | PARKED (lowest priority; ask the owner before starting), owner 2026-10-19. Ask the owner whether… | S–M (to scope) | primitives |
@@ -93,7 +92,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [306](backlog/306-select-and-combobox-show-no-selected-label-before.md) | Select and Combobox show no selected label before hydration | OPEN. Found 2026-10-19 by the features-batch validation; pre-existing on main. | M | select |
 | [307](backlog/307-ios-color-panel-does-not-pick-colors.md) | iOS: the Color Panel opens but tapping its color box does not change the color | OPEN (owner report 2026-10-20, iOS device; being investigated in the 'iOS Color Panel won't pick… | M | overlays |
 
-## Done rows (229)
+## Done rows (230)
 
 | # | Item | Updated |
 |---|---|---|
@@ -325,6 +324,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [263](backlog/done/263-toast-remaining-base-ui-behaviour.md) | Toast: pause on hover/focus, vertical swipe, legacy keyframes on translate | 2026-10-19 |
 | [264](backlog/done/264-non-modal-dialog-pointer-dismissal-and-aria-modal.md) | Non-modal Dialog/Drawer: aria-modal and an outside-press switch | 2026-10-19 |
 | [280](backlog/done/280-cards-fit-their-content-at-every-width.md) | Home-page cards fit their content at every width | 2026-10-19 |
+| [301](backlog/done/301-component-card-title-hover-colour-follows-the.md) | Component-card title hover colour follows the theme; offer the default blue in the palette picker | 2026-10-20 |
 | [308](backlog/done/308-virtualgrid-scroll-trap-at-the-edges.md) | VirtualGrid traps page scroll at its edges; should VirtualList and VirtualGrid be unified? | 2026-10-20 |
 
 ## Notes (8)
