@@ -36,6 +36,11 @@
 # (a migration from the legacy `?name=popover&variant=overlay&` produced exactly that, and the legacy route had
 # silently dropped the `variant`).
 #
+# Rule 4. Query text is never glued to a path route: `${url(name)}variant=${variant}&` and `${URL}dark_mode=true` (with
+# `URL` = `/component/drawer/`) build `/component/popover/variant=modal&`, a 404 that never sets `data-hydrated` and so
+# times the test out at 90 s (round 1's migration of `?name=drawer&dark_mode=true` left two of them, 2026-10-20). A
+# `dark_mode`/`variant`/`iframe` key must follow a `?` or `&`.
+#
 # Usage: scripts/check-spec-goto-hydrated.sh [FILE ...]   (default: every spec under playwright/)
 # Exit status: 0 when clean.
 
@@ -74,6 +79,7 @@ def blank(m):
 GOTO = re.compile(r"\.\s*goto\s*\(\s*(?!page\s*\))")
 LEGACY = re.compile(r"/component/\?name=|[\"'`]name=[A-Za-z_$\{]")
 BAD_PATH = re.compile(r"/component/(?!block/)[A-Za-z0-9_${}.]+[&=]")
+GLUED_QUERY = re.compile(r"[}/](?:dark_mode|variant|iframe)=")
 GOTO_OK = re.compile(r"goto-ok:\s*\S")
 LEGACY_OK = re.compile(r"legacy-route-ok:\s*\S")
 
@@ -94,6 +100,9 @@ for path in files:
                               f"hydration is dropped")
         if BAD_PATH.search(line):
             errors.append(f"{path}:{i + 1}: `{line.strip()[:90]}` puts query text in a `/component/<name>/` path segment (a 404)")
+        if GLUED_QUERY.search(line):
+            errors.append(f"{path}:{i + 1}: `{line.strip()[:90]}` glues a query key to a path route without `?` or `&` (a 404 that "
+                          f"never sets data-hydrated)")
         if LEGACY.search(line):
             n_legacy += 1
             if not LEGACY_OK.search(near):

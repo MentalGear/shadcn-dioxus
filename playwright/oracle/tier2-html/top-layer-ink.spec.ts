@@ -143,7 +143,9 @@ async function goto(page: Page, name: string) {
 }
 
 async function gotoVariant(page: Page, name: string, variant: string) {
-  await gotoHydrated(page, `${url(name)}variant=${variant}&`, { timeout: NAV_TIMEOUT });
+  // A non-Block component's variant page is not prerendered (`/component/popover/variant=modal&` is a 404 that never sets
+  // data-hydrated, the 90 s timeout): the legacy block shell is the one static-host entry, and gotoHydrated waits for its redirect.
+  await gotoHydrated(page, `${BASE_URL}/component/block/?name=${name}&variant=${variant}&`, { timeout: NAV_TIMEOUT });
 }
 
 /**
