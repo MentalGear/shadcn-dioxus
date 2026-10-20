@@ -1628,6 +1628,14 @@
    "skipped": 1,
    "retried": 0
   },
+  "virtual-grid-photo-wall.spec.ts": {
+    "tests": 9,
+    "seconds": 30,
+    "passed": 9,
+    "failed": 0,
+    "skipped": 0,
+    "retried": 0
+  },
   "virtual-grid.spec.ts": {
    "tests": 9,
    "seconds": 21,

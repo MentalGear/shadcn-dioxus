@@ -7,7 +7,7 @@ import { gotoHydrated } from "./hydration";
 // VirtualGrid page, `photo_wall` demo: a wall of 90,000 mixed-aspect photos in uniform cells of the two-axis VirtualGrid, with drag-to-pan, a minimap, a random jump and a Dialog preview.
 // Controls are found by role, position and data attributes, never by demo copy (row 220).
 
-const PAGE_URL = `${BASE_URL}/component/?name=virtual_grid&`;
+const PAGE_URL = `${BASE_URL}/component/virtual_grid/`;
 const VARIANT = "photo_wall";
 const MAX_TILES = 400;
 
