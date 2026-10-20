@@ -80,6 +80,7 @@ pub fn VirtualJustifiedGrid(props: VirtualJustifiedGridProps) -> Element {
             overscan: props.overscan,
             dir: props.dir,
             on_active_change: props.on_active_change,
+            active: props.active,
             fade: props.fade,
             attributes: merged,
         }

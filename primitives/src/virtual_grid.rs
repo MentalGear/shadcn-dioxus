@@ -619,6 +619,11 @@ pub struct VirtualJustifiedGridProps {
     pub dir: Option<Direction>,
     /// Called with the item index when the active tile changes (by keyboard, click or focus).
     pub on_active_change: Option<Callback<usize>>,
+    /// The active tile (the grid's one tab stop) as a signal the caller owns, both ways: the
+    /// grid writes every keyboard, click or focus move into it, and a write from outside moves
+    /// the active tile there, scrolls it into view and focuses it (a "jump to photo" button, or
+    /// keeping one selection across a switch between layouts). Without it the grid keeps its own.
+    pub active: Option<Signal<usize>>,
     /// A scroll-edge fade on the container (the `dx-scroll-fade-*` classes of `dx-effects.css`;
     /// see [`ScrollFade`]). Defaults to [`ScrollFade::None`].
     #[props(default)]
@@ -698,6 +703,7 @@ pub fn VirtualJustifiedGrid(props: VirtualJustifiedGridProps) -> Element {
         overscan,
         dir,
         on_active_change,
+        active: active_prop,
         fade,
         attributes,
     } = props;
@@ -705,8 +711,11 @@ pub fn VirtualJustifiedGrid(props: VirtualJustifiedGridProps) -> Element {
 
     let direction = use_direction(dir);
     let container_id = use_unique_id();
-    let active = use_signal(|| 0usize);
+    let own_active = use_signal(|| 0usize);
+    let active = active_prop.unwrap_or(own_active);
     let mut focus_request = use_signal(|| 0u64);
+    // The active index the grid itself last set or saw, so a write from outside is told apart.
+    let mut seen_active = use_hook(|| CopyValue::new(*active.peek()));
     // Whether focus is inside the grid, so a re-layout that re-creates the focused tile under
     // another row can hand focus back to it.
     let mut focus_inside = use_hook(|| CopyValue::new(false));
@@ -754,6 +763,7 @@ pub fn VirtualJustifiedGrid(props: VirtualJustifiedGridProps) -> Element {
 
     let set_active = move |index: usize| {
         let mut active = active;
+        seen_active.set(index);
         if *active.peek() != index {
             active.set(index);
             if let Some(callback) = on_active_change {
@@ -761,6 +771,15 @@ pub fn VirtualJustifiedGrid(props: VirtualJustifiedGridProps) -> Element {
             }
         }
     };
+    // A write from outside: reveal and focus the new active tile (it is pinned, so the render
+    // that follows mounts it).
+    use_effect(move || {
+        let current = active();
+        if current != *seen_active.peek() {
+            seen_active.set(current);
+            focus_request += 1;
+        }
+    });
 
     let onkeydown = move |event: KeyboardEvent| {
         let Some(key) = grid_key(&event.data(), direction) else {
