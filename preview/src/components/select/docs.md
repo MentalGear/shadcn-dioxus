@@ -31,6 +31,17 @@ A required prop, not a `T: Display` default, because select values are often `&s
 joins its values' labels with a comma. A label that differs from an option's own text is fine; keep them equal so the
 trigger reads like the row that was picked.
 
+## Scroll buttons
+
+The list scrolls inside the popup (`max-height: min(18rem, var(--dx-available-height))`). `Select` and `SelectMulti`
+put a `SelectScrollUpButton` first and a `SelectScrollDownButton` last in the list (shadcn's `SelectScrollUpButton` /
+`SelectScrollDownButton`); a primitive-level caller places them the same way. Each is sticky at its edge, out of flow
+(showing one never moves an option), hidden from assistive technology, and visible only while the list can scroll that
+way (`data-visible`): a passive `scroll` listener through `js_listener.rs` reports the position. Hovering one with a
+mouse scrolls the list (6 px per 16 ms tick) through `use_interval_while`, gated by `use_motion`, so a hidden tab or a
+skipped card pauses it; leaving, or reaching the end, stops it. `position="item-aligned"` is not implemented (row 268).
+See the `scroll` variant.
+
 ## Open focus
 
 A click or tap opens a single `Select` on its selected option, focused and scrolled into view, the same as a keyboard open (Base UI opens on the selected index for every modality). With nothing selected, or in `SelectMulti`, a pointer open leaves focus on the listbox and ArrowDown reaches the first option. A `DropdownMenu` / `ContextMenu` does the opposite on purpose: a keyboard open focuses the first item, a pointer open highlights none.

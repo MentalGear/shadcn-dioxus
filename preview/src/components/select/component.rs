@@ -1,5 +1,5 @@
 use dioxus::prelude::*;
-use dioxus_icons::lucide::{Check, ChevronDown};
+use dioxus_icons::lucide::{Check, ChevronDown, ChevronUp};
 use dioxus_primitives::select::{self, SelectGroupLabelProps, SelectOptionProps};
 use dioxus_primitives::{dioxus_attributes::attributes, merge_attributes};
 use std::time::Duration;
@@ -301,7 +301,9 @@ pub fn Select<T: Clone + PartialEq + 'static>(props: SelectProps<T>) -> Element 
                 class: list_class,
                 "data-dx-surface": "floating",
                 aria_label: props.list_aria_label.clone(),
+                select::SelectScrollUpButton { class: "dx-select-scroll-button", ChevronUp { size: "16px" } }
                 {props.children}
+                select::SelectScrollDownButton { class: "dx-select-scroll-button", ChevronDown { size: "16px" } }
             }
         }
     }
@@ -355,7 +357,9 @@ pub fn SelectMulti<T: Clone + PartialEq + 'static>(props: SelectMultiProps<T>) -
                 class: list_class,
                 "data-dx-surface": "floating",
                 aria_label: props.list_aria_label.clone(),
+                select::SelectScrollUpButton { class: "dx-select-scroll-button", ChevronUp { size: "16px" } }
                 {props.children}
+                select::SelectScrollDownButton { class: "dx-select-scroll-button", ChevronDown { size: "16px" } }
             }
         }
     }

@@ -7,6 +7,7 @@ use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 
 use super::super::context::SelectContext;
+use super::scroll_button::InRenderedList;
 
 /// The props for the [`SelectList`] component
 #[derive(Props, Clone, PartialEq)]
@@ -225,6 +226,8 @@ fn select_list_onkeydown(mut ctx: SelectContext) -> impl FnMut(KeyboardEvent) {
 #[component]
 fn SelectListRendered(id: String, attributes: Vec<Attribute>, children: Element) -> Element {
     let mut ctx: SelectContext = use_context();
+    // Scroll buttons render only inside this subtree (`scroll_button.rs`).
+    use_context_provider(|| InRenderedList);
     let open = ctx.selectable.open;
     // axe `aria-input-field-name` (docs/backlog.md row 34's own round): an
     // ARIA `listbox` is an input field and needs an accessible name.
@@ -411,6 +414,8 @@ fn SelectListRendered(id: String, attributes: Vec<Attribute>, children: Element)
 #[component]
 fn SelectListRendered(id: String, attributes: Vec<Attribute>, children: Element) -> Element {
     let mut ctx: SelectContext = use_context();
+    // Scroll buttons render only inside this subtree (`scroll_button.rs`).
+    use_context_provider(|| InRenderedList);
     let open = ctx.selectable.open;
     let mut listbox_ref: Signal<Option<std::rc::Rc<MountedData>>> = use_signal(|| None);
     // See `SelectContext::keep_trigger_focus`'s doc: an Alt+ArrowDown open

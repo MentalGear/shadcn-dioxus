@@ -129,6 +129,11 @@
    */
   min-width: var(--dx-anchor-width, 100%);
 
+  /* A long list scrolls inside the popup (the scroll buttons below show while it can); the
+     recipe's `overflow: visible` loses to this, the same as the combobox list. */
+  overflow: hidden auto;
+  max-height: min(18rem, var(--dx-available-height, 18rem));
+
   /* Clamp to the viewport so the list never induces horizontal page scroll on
      narrow screens. Collision-aware flip/shift positioning belongs upstream. */
   max-width: calc(100vw - 2rem);
@@ -198,6 +203,37 @@
  * also lifts the base `opacity: 0` above. Only the listbox's pointer-events are its own. */
 .dx-select-list[data-state="open"] {
   pointer-events: auto;
+}
+
+/*
+ * Scroll buttons: sticky at the list's top and bottom edge and out of flow (the negative margin
+ * cancels their height), so showing one never moves an option. Hidden unless the list can scroll
+ * that way (`data-visible`, set by the primitive's passive scroll listener).
+ */
+.dx-select-scroll-button {
+  position: sticky;
+  z-index: var(--dx-z-raise);
+  display: flex;
+  height: var(--dx-select-scroll-button-height, 1.5rem);
+  align-items: center;
+  justify-content: center;
+  background: var(--dx-floating-background);
+  color: var(--dx-muted-foreground);
+  visibility: hidden;
+}
+
+.dx-select-scroll-button[data-visible="true"] {
+  visibility: visible;
+}
+
+.dx-select-scroll-button[data-direction="up"] {
+  top: 0;
+  margin-bottom: calc(-1 * var(--dx-select-scroll-button-height, 1.5rem));
+}
+
+.dx-select-scroll-button[data-direction="down"] {
+  bottom: 0;
+  margin-top: calc(-1 * var(--dx-select-scroll-button-height, 1.5rem));
 }
 
 /* Menu-item indicator slot -- ONE construction shared by every menu-like
