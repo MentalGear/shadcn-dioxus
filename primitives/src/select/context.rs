@@ -8,13 +8,18 @@ use std::time::Duration;
 
 use super::text_search::AdaptiveKeyboard;
 use crate::direction::Direction;
-use crate::selectable::SelectableContext;
+use crate::selectable::{RcPartialEqValue, SelectableContext};
 
 /// Main context for the select component containing all shared state
 #[derive(Clone, Copy)]
 pub(super) struct SelectContext {
     /// Shared selectable listbox state.
     pub selectable: SelectableContext,
+    /// A selected value's display text: the root's required `item_to_label`.
+    ///
+    /// Read at render time, never from the option registry (which fills in a client-only
+    /// effect and is empty in the server HTML): see [`Self::selected_text`].
+    pub label: Callback<RcPartialEqValue, String>,
     /// Adaptive keyboard system for multi-language support
     pub adaptive_keyboard: Signal<AdaptiveKeyboard>,
     /// The typeahead buffer for searching options
@@ -99,6 +104,19 @@ impl SelectContext {
             self.selectable.initial_focus.set(target);
         }
         self.set_open(true);
+    }
+
+    /// The selected values' text in selection order, joined by `", "`; `None` while nothing is selected.
+    ///
+    /// Built from the root's `item_to_label`, so it is the same on the server and the client and no
+    /// registry state can blank it.
+    pub fn selected_text(&self) -> Option<String> {
+        let values = self.selectable.values.read();
+        let parts: Vec<String> = values
+            .iter()
+            .map(|value| self.label.call(value.clone()))
+            .collect();
+        (!parts.is_empty()).then(|| parts.join(", "))
     }
 
     pub fn multi(&self) -> bool {

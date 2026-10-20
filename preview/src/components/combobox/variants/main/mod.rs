@@ -16,6 +16,12 @@ pub fn Demo() -> Element {
 
     rsx! {
         Combobox::<String> {
+            item_to_label: move |value: String| {
+                frameworks
+                    .iter()
+                    .find(|(id, _)| *id == value)
+                    .map_or(value.clone(), |(_, label)| label.to_string())
+            },
             query: Some(query()),
             on_query_change: move |next| query.set(next),
             placeholder: "Select framework...",

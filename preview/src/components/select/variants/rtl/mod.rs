@@ -30,6 +30,15 @@ pub fn Demo() -> Element {
         div { dir: "rtl",
             DirectionProvider { direction: Direction::Rtl,
                 Select::<String> {
+                    item_to_label: |value: String| {
+                        match value.as_str() {
+                            "first" => "First",
+                            "second" => "Second",
+                            "third" => "Third",
+                            other => other,
+                        }
+                        .to_string()
+                    },
                     width: "12rem",
                     default_value: "first".to_string(),
                     SelectOption::<String> { index: 0usize, value: "first", "First" }

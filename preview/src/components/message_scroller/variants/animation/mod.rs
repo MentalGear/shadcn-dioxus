@@ -202,6 +202,9 @@ pub fn Demo() -> Element {
                 CardFooter { style: "gap: var(--dx-space-2);",
                     Select::<String> {
                         default_value: "fade".to_string(),
+                        item_to_label: |id: String| {
+                            PRESETS.iter().find(|(preset, _)| *preset == id).map_or(id.clone(), |(_, name)| name.to_string())
+                        },
                         trigger_aria_label: "Animation preset",
                         on_value_change: move |value: Option<String>| {
                             if let Some(value) = value {

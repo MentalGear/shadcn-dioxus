@@ -34,6 +34,7 @@ pub struct SelectValueProps {
 /// fn Demo() -> Element {
 ///     rsx! {
 ///         Select::<String> {
+///             item_to_label: |value: String| value,
 ///             SelectTrigger {
 ///                 aria_label: "Select Trigger",
 ///                 width: "12rem",
@@ -72,7 +73,6 @@ pub fn SelectValue(props: SelectValueProps) -> Element {
 
     let is_empty = move || ctx.selectable.is_empty();
     let display_value = ctx
-        .selectable
         .selected_text()
         .unwrap_or_else(|| props.placeholder.cloned());
 

@@ -11,6 +11,26 @@ use dioxus_attributes::attributes;
 // TODO: controlled version
 // TODO: rewrite this to use collapsible
 
+/// Which end of an [`AccordionTrigger`] row the expand chevron sits on.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum AccordionChevron {
+    /// After the label (shadcn's layout).
+    #[default]
+    End,
+    /// Before the label.
+    Start,
+}
+
+impl AccordionChevron {
+    /// The `data-chevron` value: `"start"` or `"end"`.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::End => "end",
+            Self::Start => "start",
+        }
+    }
+}
+
 /// Internal accordion context.
 #[derive(Clone, Copy)]
 struct AccordionContext {
@@ -35,6 +55,9 @@ struct AccordionContext {
     /// Whether closed content stays mounted as `hidden="until-found"`.
     hidden_until_found: ReadSignal<bool>,
 
+    /// Which end of each trigger the chevron sits on.
+    chevron: ReadSignal<AccordionChevron>,
+
     /// Roving focus state, keyed by the per-item runtime id.
     focus: CollectionState,
 }
@@ -46,6 +69,7 @@ impl AccordionContext {
         collapsible: ReadSignal<bool>,
         horizontal: ReadSignal<bool>,
         hidden_until_found: ReadSignal<bool>,
+        chevron: ReadSignal<AccordionChevron>,
     ) -> Self {
         Self {
             next_id: Signal::new(0),
@@ -55,6 +79,7 @@ impl AccordionContext {
             collapsible,
             horizontal,
             hidden_until_found,
+            chevron,
             focus: CollectionState::new(
                 ReadSignal::new(Signal::new(true)),
                 CollectionOptions::default(),
@@ -153,6 +178,14 @@ pub struct AccordionProps {
     #[props(default)]
     pub hidden_until_found: ReadSignal<bool>,
 
+    /// Which end of every trigger row the expand chevron sits on: [`AccordionChevron::End`]
+    /// (default, after the label) or [`AccordionChevron::Start`] (before it). Emitted as
+    /// `data-chevron` (`"start"` / `"end"`) on the root and on every [`AccordionTrigger`], so the
+    /// theme places and rotates the chevron from one attribute. The primitive draws no chevron
+    /// itself; the styled component reads this.
+    #[props(default)]
+    pub chevron: ReadSignal<AccordionChevron>,
+
     /// Attributes to extend the root element.
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
@@ -210,6 +243,7 @@ pub struct AccordionProps {
 ///
 /// The [`Accordion`] component defines the following data attributes you can use to control styling:
 /// - `data-disabled`: Indicates if the accordion is disabled. values are `true` or `false`.
+/// - `data-chevron`: Which end of each trigger the chevron sits on, `start` or `end`.
 #[component]
 pub fn Accordion(props: AccordionProps) -> Element {
     let mut ctx = use_context_provider(|| {
@@ -219,10 +253,14 @@ pub fn Accordion(props: AccordionProps) -> Element {
             props.collapsible,
             props.horizontal,
             props.hidden_until_found,
+            props.chevron,
         )
     });
 
-    let owned = attributes!(div { "data-disabled": (props.disabled)() });
+    let owned = attributes!(div {
+        "data-disabled": (props.disabled)(),
+        "data-chevron": (props.chevron)().as_str(),
+    });
     let merged = merge_attributes(vec![props.attributes.clone(), owned]);
 
     rsx! {
@@ -535,6 +573,7 @@ pub fn AccordionTrigger(props: AccordionTriggerProps) -> Element {
         tabindex: "0",
         aria_controls: item.aria_id(),
         aria_expanded: ctx.is_open(item.id),
+        "data-chevron": (ctx.chevron)().as_str(),
     });
     let merged = merge_attributes(vec![defaults, props.attributes.clone(), owned]);
 

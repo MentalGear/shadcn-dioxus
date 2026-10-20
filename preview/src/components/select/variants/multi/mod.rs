@@ -44,6 +44,7 @@ pub fn Demo() -> Element {
 
     rsx! {
         SelectMulti::<Topping> {
+            item_to_label: |topping: Topping| topping.to_string(),
             default_values: vec![Topping::Pepperoni, Topping::Mushroom],
             width: "16rem",
             SelectGroup {
