@@ -174,8 +174,7 @@ test.describe("VirtualGrid fade (shared with VirtualList and ScrollArea)", () =>
       return { image: cs.maskImage || cs.webkitMaskImage || "", composite: cs.maskComposite };
     });
     expect((mask.image.match(/linear-gradient/g) ?? []).length).toBe(2);
-    expect(mask.image).toContain("to bottom");
-    expect(mask.image).toContain("to right");
+    expect(mask.image).toContain("to right"); // the inline layer; the block layer is the default direction, to bottom
     expect(mask.composite).toBe("intersect");
 
     // At the origin: top and inline-start crisp, bottom and inline-end faded.
@@ -208,7 +207,7 @@ test.describe("VirtualGrid fade (shared with VirtualList and ScrollArea)", () =>
       wrapper.removeAttribute("dir");
       return mask;
     });
-    expect(rtl).toContain("to bottom");
+    expect((rtl.match(/linear-gradient/g) ?? []).length).toBe(2);
     expect(rtl).toContain("to left");
     expect(rtl).not.toContain("to right");
   });

@@ -361,6 +361,7 @@ pub fn Demo() -> Element {
                                 "data-photo-img": "{aspect(index).0}:{aspect(index).1}",
                                 src: photo_src(index),
                                 alt: "",
+                                role: "img",
                                 "aria-label": "Generated landscape {index + 1}",
                                 draggable: "false",
                                 style: "cursor: pointer; border-radius: inherit;",
@@ -388,6 +389,7 @@ pub fn Demo() -> Element {
                                         "data-photo-img": "{aspect(index).0}:{aspect(index).1}",
                                         src: photo_src(index),
                                         alt: "",
+                                        role: "img",
                                         "aria-label": "Generated landscape {index + 1}",
                                         draggable: "false",
                                     }
