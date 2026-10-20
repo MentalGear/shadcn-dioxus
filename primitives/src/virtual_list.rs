@@ -59,6 +59,7 @@ use crate::r#virtual::{
     cv_chunks, measured_px, pin_in_flow, use_virtual_bridge, Bridge, ChunkSkip, Engine,
     SizeEstimates, CHUNK_ROWS, DEFAULT_SIZE,
 };
+use crate::scroll_area::use_scroll_fade;
 pub use crate::scroll_area::ScrollFade;
 use crate::{merge_attributes, use_unique_id};
 
@@ -237,7 +238,7 @@ pub fn VirtualList(props: VirtualListProps) -> Element {
         fade,
         attributes,
     } = props;
-    let attributes = merge_attributes(vec![attributes, fade.attributes()]);
+    let attributes = merge_attributes(vec![attributes, use_scroll_fade(fade)]);
 
     // The mode body is a separate component, so switching modes (a count crossing the
     // threshold, or a new `virtualize`) drops the old body's scope and everything it owns (the

@@ -1,7 +1,8 @@
 //! Defines the [`ScrollArea`] component for creating scrollable areas with customizable scrollbars.
 
 use crate::direction::{use_direction, Direction};
-use crate::merge_attributes;
+use crate::js_listener::{use_js_listeners, JsListeners};
+use crate::{merge_attributes, use_unique_id};
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 
@@ -129,6 +130,53 @@ impl ScrollFade {
     }
 }
 
+/// Where a browser has no scroll-driven animations (`animation-timeline: scroll()`), `dx-effects.css`
+/// can only draw every fade edge statically, so a faded scroller showed a fade past which there was
+/// nothing to scroll to. This script sets the four depth properties itself from the scroll position
+/// and the distance left (`|scrollLeft|`, so RTL reads like LTR), once per frame at most, and does
+/// nothing where the animations exist (the CSS drives them there).
+const SCROLL_FADE_FALLBACK_JS: &str = r#"
+    if (CSS.supports('animation-timeline: scroll()')) return;
+    const el = document.querySelector('[data-scroll-fade-key="' + (await dioxus.recv()) + '"]');
+    if (!el) return;
+    const depth = (past, edge) => (past > 1 ? 'var(--dx-internal-scroll-fade-size-' + edge + ')' : '0px');
+    let raf = 0;
+    const update = () => {
+        raf = 0;
+        const top = el.scrollTop, start = Math.abs(el.scrollLeft);
+        const set = (name, past, edge) => el.style.setProperty('--dx-scroll-fade-' + name, depth(past, edge));
+        set('t', top, 't');
+        set('b', el.scrollHeight - el.clientHeight - top, 'b');
+        set('s', start, 's');
+        set('e', el.scrollWidth - el.clientWidth - start, 'e');
+    };
+    const schedule = () => { if (!raf) raf = requestAnimationFrame(update); };
+    listen(el, 'scroll', schedule, { passive: true });
+    const resizes = new ResizeObserver(schedule);
+    resizes.observe(el);
+    if (el.firstElementChild) resizes.observe(el.firstElementChild);
+    cleanup(() => { resizes.disconnect(); if (raf) cancelAnimationFrame(raf); });
+    update();
+"#;
+
+/// The attributes a scroller carries for `fade` (see [`ScrollFade::attributes`]) plus, in a browser
+/// without scroll-driven animations, the listener that makes an edge show only while there is more
+/// content past it. Every component with a `fade` prop calls this instead of `fade.attributes()`, so
+/// the fallback is one mechanism for all of them. Nothing is installed for [`ScrollFade::None`] or
+/// where the CSS animations are supported.
+pub(crate) fn use_scroll_fade(fade: ScrollFade) -> Vec<Attribute> {
+    let key = use_unique_id();
+    use_js_listeners(move || {
+        (fade != ScrollFade::None)
+            .then(|| JsListeners::install(SCROLL_FADE_FALLBACK_JS).arg(key.cloned()))
+    });
+    let mut attributes = fade.attributes();
+    if fade != ScrollFade::None {
+        attributes.extend(attributes!(div { "data-scroll-fade-key": key }));
+    }
+    attributes
+}
+
 /// The direction in which scrolling is allowed.
 #[derive(Clone, Copy, PartialEq, Default)]
 pub enum ScrollDirection {
@@ -245,7 +293,7 @@ pub fn ScrollArea(props: ScrollAreaProps) -> Element {
         class: "{visibility_class}",
         style: "{overflow_style}",
     });
-    let fade = props.fade.attributes();
+    let fade = use_scroll_fade(props.fade);
     let owned = attributes!(div {
         "scrollbar-width": scrollbar_width,
         "data-scroll-direction": match direction() {

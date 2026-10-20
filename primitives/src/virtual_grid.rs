@@ -65,6 +65,7 @@ use crate::r#virtual::{
     justified_navigate, measured_px, use_virtual_bridge, with_pinned, Bridge, Engine, GridEngine,
     GridKey, GridShape, JustifiedEngine, JustifiedOptions, RowPlan, ScrollReport, SizeEstimates,
 };
+use crate::scroll_area::use_scroll_fade;
 pub use crate::scroll_area::ScrollFade;
 use crate::{merge_attributes, use_unique_id};
 
@@ -179,7 +180,7 @@ pub fn VirtualGrid(props: VirtualGridProps) -> Element {
         fade,
         attributes,
     } = props;
-    let attributes = merge_attributes(vec![attributes, fade.attributes()]);
+    let attributes = merge_attributes(vec![attributes, use_scroll_fade(fade)]);
 
     let direction = use_direction(dir);
     let container_id = use_unique_id();
@@ -449,7 +450,7 @@ pub fn VirtualWrapGrid(props: VirtualWrapGridProps) -> Element {
         fade,
         attributes,
     } = props;
-    let attributes = merge_attributes(vec![attributes, fade.attributes()]);
+    let attributes = merge_attributes(vec![attributes, use_scroll_fade(fade)]);
 
     let direction = use_direction(dir);
     let container_id = use_unique_id();
@@ -729,7 +730,7 @@ pub fn VirtualJustifiedGrid(props: VirtualJustifiedGridProps) -> Element {
         fade,
         attributes,
     } = props;
-    let attributes = merge_attributes(vec![attributes, fade.attributes()]);
+    let attributes = merge_attributes(vec![attributes, use_scroll_fade(fade)]);
 
     let direction = use_direction(dir);
     let container_id = use_unique_id();

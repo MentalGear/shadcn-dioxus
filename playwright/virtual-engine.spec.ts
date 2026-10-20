@@ -213,6 +213,40 @@ test.describe("VirtualGrid fade (shared with VirtualList and ScrollArea)", () =>
   });
 });
 
+// Where a browser has no scroll-driven animations, an edge must still show only while there is more content
+// past it: the one fallback script (`use_scroll_fade`) sets the depth properties from the scroll position.
+// Forced here on Chromium: `CSS.supports` says no for that query, and the CSS animations are switched off so
+// the script's inline values are what is read (the `@supports not` stylesheet branch is only the static default).
+test.describe("scroll fade without scroll-driven animations (the fallback script)", () => {
+  test("every edge of a two-axis grid and of a wrapping gallery tracks the scroll position", async ({ page }) => {
+    await page.addInitScript(() => {
+      const supports = CSS.supports.bind(CSS);
+      CSS.supports = ((...args: string[]) => (String(args[0]).includes("animation-timeline") ? false : (supports as (...a: string[]) => boolean)(...args))) as typeof CSS.supports;
+    });
+    await gotoHydrated(page, GRID_URL, GOTO_OPTS);
+    await page.addStyleTag({ content: '[class*="dx-scroll-fade"] { animation: none !important; }' });
+    await demoFrame(page, "fade").scrollIntoViewIfNeeded();
+
+    const grid = gridIn(page, "fade-grid");
+    await expect(grid.locator('[data-grid-cell="0:0"]')).toBeVisible({ timeout: 60_000 });
+    await scrollBothTo(grid, "start", "start");
+    await expectFour(grid, { t: "crisp", b: "faded", s: "crisp", e: "faded" });
+    await scrollBothTo(grid, "middle", "middle");
+    await expectFour(grid, { t: "faded", b: "faded", s: "faded", e: "faded" });
+    await scrollBothTo(grid, "end", "end");
+    await expectFour(grid, { t: "faded", b: "crisp", s: "faded", e: "crisp" });
+
+    const wrap = gridIn(page, "fade-wrap");
+    await expect(wrap.locator('[role="gridcell"]').first()).toBeVisible({ timeout: 60_000 });
+    await scrollBlockTo(wrap, "start");
+    await expectEdges(wrap, { start: "crisp", end: "faded" });
+    await scrollBlockTo(wrap, "middle");
+    await expectEdges(wrap, { start: "faded", end: "faded" });
+    await settleAtEnd(wrap);
+    await expectEdges(wrap, { start: "faded", end: "crisp" });
+  });
+});
+
 test.describe("VirtualList keeps its focused row rendered (shared with the grids' active cell)", () => {
   test("a focused row survives the window leaving it, as the same node, and rejoins the flow", async ({ page }) => {
     await gotoHydrated(page, LIST_URL, GOTO_OPTS);

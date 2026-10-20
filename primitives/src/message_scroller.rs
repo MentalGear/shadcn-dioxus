@@ -701,7 +701,11 @@ pub fn MessageScrollerViewport(props: MessageScrollerViewportProps) -> Element {
         "data-preserve-scroll-on-prepend": if preserve { "true" } else { "false" },
         "data-pending-scroll": pending.then_some(""),
     });
-    let merged = merge_attributes(vec![base, props.fade.attributes(), props.attributes]);
+    let merged = merge_attributes(vec![
+        base,
+        crate::scroll_area::use_scroll_fade(props.fade),
+        props.attributes,
+    ]);
 
     rsx! {
         div { ..merged, {props.children} }
