@@ -24,7 +24,7 @@ const TOLERANCE = 1.5; // px: half-pixel pointer rounding + border-box rounding
 
 type Box = { x: number; y: number; width: number; height: number };
 
-const area = `${BASE_URL}/component/?name=area_chart&`;
+const area = `${BASE_URL}/component/area_chart/`;
 
 function chartOf(page: Page, frameSel = "#component-preview-frame"): Locator {
   return page.locator(frameSel).first().locator('.dx-chart [data-slot="chart"]').first();
@@ -343,7 +343,7 @@ test.describe("Tooltip motion", () => {
 test.describe("Horizontal bars follow the pointer along x and snap along y", () => {
   test.beforeEach(async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
-    await gotoHydrated(page, `${BASE_URL}/component/?name=bar_chart&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/bar_chart/`, { timeout: 20 * 60 * 1000 });
   });
 
   test("x is the pointer's, y snaps to the row", async ({ page }) => {
@@ -365,7 +365,7 @@ test.describe("Horizontal bars follow the pointer along x and snap along y", () 
 test.describe("Pie tooltip", () => {
   test.beforeEach(async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
-    await gotoHydrated(page, `${BASE_URL}/component/?name=pie_chart&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/pie_chart/`, { timeout: 20 * 60 * 1000 });
   });
 
   test("shows the slice's name, value and color -- not the series label", async ({ page }) => {
@@ -437,7 +437,7 @@ test.describe("Pie tooltip", () => {
 test.describe("Radar and radial tooltips follow the pointer", () => {
   test("radar: both axes follow the pointer", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
-    await gotoHydrated(page, `${BASE_URL}/component/?name=radar_chart&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/radar_chart/`, { timeout: 20 * 60 * 1000 });
     const tooltip = tooltipOf(page);
     const wedge = page.locator('#component-preview-frame [data-slot="chart-hit-band"]').nth(1);
     const pts = await pointsOn(wedge);
@@ -453,7 +453,7 @@ test.describe("Radar and radial tooltips follow the pointer", () => {
 
   test("radial: shows the ring's datum and follows the pointer", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
-    await gotoHydrated(page, `${BASE_URL}/component/?name=radial_chart&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/radial_chart/`, { timeout: 20 * 60 * 1000 });
     const tooltip = tooltipOf(page);
     const arc = page.locator('#component-preview-frame [data-slot="chart-arc"][data-index="0"]');
     const pts = await pointsOn(arc);
@@ -492,7 +492,7 @@ test.describe("Polar tooltips do not blink while hovering", () => {
   });
 
   test("pie: sweeping a full circle across every slice boundary opens once and never closes", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/?name=pie_chart&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/pie_chart/`, { timeout: 20 * 60 * 1000 });
     await chartOf(page).scrollIntoViewIfNeeded();
     const c = await box(chartOf(page));
     const states = await recordStates(page);
@@ -508,7 +508,7 @@ test.describe("Polar tooltips do not blink while hovering", () => {
   });
 
   test("radial: wandering over one ring's edges never closes the tooltip", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/?name=radial_chart&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/radial_chart/`, { timeout: 20 * 60 * 1000 });
     const arc = page.locator('#component-preview-frame [data-slot="chart-arc"][data-index="0"]');
     const pts = await pointsOn(arc);
     expect(pts.length).toBeGreaterThan(40);
@@ -638,7 +638,7 @@ test.describe("Touch", () => {
   });
 });
 
-const tooltipsGallery = `${BASE_URL}/component/?name=chart_tooltip&`;
+const tooltipsGallery = `${BASE_URL}/component/chart_tooltip/`;
 
 /** Every chart_tooltip demo, as `[variant, preview-frame selector]` (`main` owns the un-suffixed frame). */
 const TOOLTIP_VARIANTS = [
@@ -755,7 +755,7 @@ test.describe("Active dot on the hovered point", () => {
   const dotsOf = (page: Page, frame: string) => page.locator(frame).first().locator('[data-slot="chart-active-dot"]');
 
   test("area: one r=4 dot per series at the hovered category, ringed, gone when the pointer leaves", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/?name=area_chart&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/area_chart/`, { timeout: 20 * 60 * 1000 });
     const frame = "#component-preview-frame-stacked"; // two series
     const m = await measure(page, frame);
     const dots = dotsOf(page, frame);
@@ -786,7 +786,7 @@ test.describe("Active dot on the hovered point", () => {
   });
 
   test("line: a dot on the hovered point; none beside it; a chart with its own dots keeps its own", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/?name=line_chart&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/line_chart/`, { timeout: 20 * 60 * 1000 });
     const frame = "#component-preview-frame";
     const m = await measure(page, frame);
     const dots = dotsOf(page, frame);

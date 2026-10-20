@@ -172,7 +172,7 @@ for (const name of MIGRATED) {
     // exactly that class; 0 of 7 once `data-hydrated` was set. Under
     // `--workers=4` the `load` event routinely fires before hydration, so
     // this failed tabs/sidebar/navbar 5 times in ~1400 runs.
-    await gotoHydrated(page, `${BASE_URL}/component/?name=${name}&`);
+    await gotoHydrated(page, `${BASE_URL}/component/${name}/`);
     // The page's own demo must have rendered before the sheet is meaningful.
     await expect(page.locator("body")).toBeVisible();
 

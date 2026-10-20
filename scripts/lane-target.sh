@@ -71,6 +71,7 @@ case "$cmd" in
     echo "lane-target: copying $template -> $dest ($((need_kb/1024)) MiB) ..." >&2
     mkdir -p "$root"; cp -a --reflink=auto "$template" "$dest"
     rm -rf "$dest"/dx/*/*/web/public   # never inherit another build's served output
+    rm -f "$dest/.tree-owner"           # the first run in a new target always touches the sources (row 216)
     echo "export CARGO_TARGET_DIR=$dest"
     echo "export CARGO_INCREMENTAL=${LANE_CARGO_INCREMENTAL:-0}"
     ;;

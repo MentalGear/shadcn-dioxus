@@ -114,6 +114,7 @@ const BENCH_URL = "file://" + path.resolve(__dirname, "fixtures", "carousel-over
 async function openBench(page: Page): Promise<{ track: Locator }> {
   // The bench links a Google Fonts stylesheet; keep the run hermetic and fast.
   await page.route("https://fonts.googleapis.com/**", (route) => route.abort());
+  // goto-ok: static benchmark fixture page, not the app: it never sets html[data-hydrated]
   await page.goto(BENCH_URL, { waitUntil: "domcontentloaded" });
   await page.locator('button.mode[data-mode="onewriter"]').click();
   await expect(page.locator('button.mode[data-mode="onewriter"]')).toHaveAttribute("aria-pressed", "true");
@@ -252,7 +253,7 @@ test.describe("Carousel wheel replay: reference (the bench's own mode D, rev 40)
 /* ------------------------------------------------------------------------ */
 
 async function openComponent(page: Page): Promise<{ content: Locator }> {
-  await gotoHydrated(page, `${BASE_URL}/component/?name=carousel&variant=main&`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/carousel/`, { timeout: 20 * 60 * 1000 });
   const frame = page.locator("#component-preview-frame");
   // The same element carousel.spec.ts's `readContentTransform` reads: it is
   // the scroll-snap track AND the element the band's transform is written to.

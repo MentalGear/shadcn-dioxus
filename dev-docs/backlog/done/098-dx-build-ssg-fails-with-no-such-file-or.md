@@ -1,10 +1,10 @@
 ---
 id: 98
 title: "dx build --ssg fails with No such file or directory (os error 2) when CARGO_TARGET_DIR is a relative path"
-status: "Hit 2026-09-20 (round 5) by a lane following this repo's own CARGO_TARGET_DIR=target-lane-<name>…"
+status: "FIXED locally by construction 2026-10-18 (150e97b scripts/build-ssg.sh enforces an absolute…"
 size: "Workaround is one word: make the path…"
 area: process
-updated: 2026-09-20
+updated: 2026-10-20
 ---
 
 # Row 98: dx build --ssg fails with No such file or directory (os error 2) when CARGO_TARGET_DIR is a relative path
@@ -15,7 +15,7 @@ updated: 2026-09-20
 
 ## Status / trigger
 
-Hit 2026-09-20 (round 5) by a lane following this repo's own `CARGO_TARGET_DIR=target-lane-<name>` convention
+**FIXED locally by construction 2026-10-18** (150e97b `scripts/build-ssg.sh` enforces an absolute isolated `CARGO_TARGET_DIR` and refuses mixed output; CLAUDE.md states the rule; row 131 tracks the upstream dx report). Closed in the 2026-10-20 backlog sync.
 
 ## Size
 

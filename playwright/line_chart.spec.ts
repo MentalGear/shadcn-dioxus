@@ -2,8 +2,9 @@ import { test, expect } from "./fixtures";
 import { type Page } from "@playwright/test";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
+import { gotoHydrated } from "./hydration";
 
-const URL = `${BASE_URL}/component/?name=line_chart&`;
+const URL = `${BASE_URL}/component/line_chart/`;
 
 /**
  * Variant name -> its own preview frame id, per `preview/src/main.rs`'s own
@@ -35,7 +36,7 @@ function frame(page: Page, variant: keyof typeof FRAME_IDS) {
 
 test.describe("Line chart", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto(URL);
+    await gotoHydrated(page, URL);
   });
 
   for (const variant of Object.keys(FRAME_IDS) as (keyof typeof FRAME_IDS)[]) {

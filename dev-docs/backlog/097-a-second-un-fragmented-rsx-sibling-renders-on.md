@@ -1,10 +1,10 @@
 ---
 id: 97
 title: "A second, un-fragmented rsx sibling renders on the first pass and is silently dropped by the next one"
-status: "Found 2026-09-20 (round 5) adding a scoped <style> tag beside CarouselContent's track"
+status: "Found 2026-09-20 (round 5) adding a scoped <style> tag beside CarouselContent's track 2026-10-20…"
 size: "DONE for this instance (explicit…"
 area: misc
-updated: 2026-09-20
+updated: 2026-10-20
 ---
 
 # Row 97: A second, un-fragmented rsx sibling renders on the first pass and is silently dropped by the next one
@@ -15,7 +15,7 @@ A second, un-fragmented rsx sibling renders on the first pass and is silently dr
 
 ## Status / trigger
 
-Found 2026-09-20 (round 5) adding a scoped `<style>` tag beside `CarouselContent`'s track
+Found 2026-09-20 (round 5) adding a scoped `<style>` tag beside `CarouselContent`'s track **2026-10-20 sync: checked, no guard script for un-fragmented rsx siblings exists; a second instance would make it a class. No work in flight.**
 
 ## Size
 

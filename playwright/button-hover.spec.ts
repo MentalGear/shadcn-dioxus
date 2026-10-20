@@ -1,6 +1,7 @@
 import { test, expect } from "./fixtures";
 import type { Locator, Page } from "@playwright/test";
 import { BASE_URL } from "./base-url";
+import { gotoHydrated } from "./hydration";
 
 // Row 243: a Button hover fill must be shadcn base-nova's, by construction. shadcn writes the secondary hover as
 // `color-mix(in oklch, var(--secondary), var(--foreground) 5%)`; the theme's `--dx-hover-mix-space` carries that
@@ -11,7 +12,7 @@ const GOTO = { timeout: 20 * 60 * 1000 };
 
 async function open(page: Page, scheme: "light" | "dark") {
   await page.emulateMedia({ colorScheme: scheme });
-  await page.goto(`${BASE_URL}/component/?name=button&`, GOTO);
+  await gotoHydrated(page, `${BASE_URL}/component/button/`, GOTO);
   await page.waitForLoadState("networkidle");
 }
 

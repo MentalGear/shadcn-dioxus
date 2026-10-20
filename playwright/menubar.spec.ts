@@ -6,7 +6,7 @@ import { gotoHydrated } from "./hydration";
 import { expectFadeKeepsTransform } from "./assert-anchor-transform";
 
 test("pointer navigation", async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=menubar&`, { timeout: 20 * 60 * 1000 }); // Increase timeout to 20 minutes
+  await gotoHydrated(page, `${BASE_URL}/component/menubar/`, { timeout: 20 * 60 * 1000 }); // Increase timeout to 20 minutes
   const fileMenuButton = page.getByRole("menuitem", { name: "File" });
   await fileMenuButton.click();
   // Assert the menu is open
@@ -30,7 +30,7 @@ test("pointer navigation", async ({ page }) => {
 });
 
 test("keyboard navigation", async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=menubar&`, { timeout: 20 * 60 * 1000 }); // Increase timeout to 20 minutes
+  await gotoHydrated(page, `${BASE_URL}/component/menubar/`, { timeout: 20 * 60 * 1000 }); // Increase timeout to 20 minutes
   await page.locator("#component-preview-frame").first().getByRole("menubar").focus();
   const fileMenuButton = page.getByRole("menuitem", { name: "File" });
   // Go right with the keyboard
@@ -79,7 +79,7 @@ test("keyboard navigation", async ({ page }) => {
 // `MenubarContent` -- and `MenubarTrigger`'s/`MenubarItem`'s fragile
 // `onblur` branches are removed.
 test("a raw .focus() call on the trigger does not close its own open content (row 85)", async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=menubar&`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/menubar/`, { timeout: 20 * 60 * 1000 });
   const fileMenuButton = page.getByRole("menuitem", { name: "File" });
   const fileMenuContent = page.getByRole("menu").filter({ has: page.getByRole("menuitem", { name: "New" }) }).last();
 
@@ -307,7 +307,7 @@ test.describe("Checkable items", () => {
 
 test.describe("Axe automated scan", () => {
   test("loaded (menus closed) has no automatically detectable a11y issues", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=menubar&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/menubar/`, { timeout: 20 * 60 * 1000 });
     // Wait for render before scanning -- see input.spec.ts's identical
     // comment for why (avoids a false pre-hydration "no main"/"no h1").
     await expect(page.getByRole("menuitem", { name: "File" })).toBeVisible();
@@ -320,21 +320,21 @@ test.describe("Axe automated scan", () => {
   // Checkable items: role="menuitemcheckbox"/"menuitemradio" need aria-checked
   // and a menu/group context; a radio group needs to be a real `group`.
   test("View menu (checkbox items) open has no automatically detectable a11y issues", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=menubar&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/menubar/`, { timeout: 20 * 60 * 1000 });
     await page.getByRole("menuitem", { name: "View" }).click();
     await expect(page.getByRole("menuitemcheckbox", { name: "Always Show Full URLs" })).toBeVisible();
     await expectNoAxeViolations(page, "menubar: View menu open", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 
   test("Accounts menu (radio group) open has no automatically detectable a11y issues", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=menubar&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/menubar/`, { timeout: 20 * 60 * 1000 });
     await page.getByRole("menuitem", { name: "Accounts" }).click();
     await expect(page.getByRole("menuitemradio", { name: "Benoit" })).toBeVisible();
     await expectNoAxeViolations(page, "menubar: Accounts menu open", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 
   test("File menu open has no automatically detectable a11y issues", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=menubar&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/menubar/`, { timeout: 20 * 60 * 1000 });
     await page.getByRole("menuitem", { name: "File" }).click();
     const fileMenuContent = page.getByRole("menu").filter({ has: page.getByRole("menuitem", { name: "New" }) }).last();
     await expect(fileMenuContent).toHaveAttribute("data-state", "open");
@@ -360,7 +360,7 @@ test.describe("open_on_hover: false (click activation)", () => {
   }
 
   test("hovering another trigger while a menu is open does not switch; clicking it does", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=menubar&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/menubar/`, { timeout: 20 * 60 * 1000 });
     const insert = page.getByRole("menuitem", { name: "Insert", exact: true });
     const tools = page.getByRole("menuitem", { name: "Tools", exact: true });
 
@@ -378,14 +378,14 @@ test.describe("open_on_hover: false (click activation)", () => {
   });
 
   test("hovering a trigger with nothing open never opens a menu", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=menubar&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/menubar/`, { timeout: 20 * 60 * 1000 });
     await page.getByRole("menuitem", { name: "Insert", exact: true }).hover();
     await page.waitForTimeout(HOVER_SETTLE_MS);
     await expect(menuNamed(page, "Insert")).toHaveCount(0);
   });
 
   test("keyboard: ArrowDown still opens the menu and focuses its first item", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=menubar&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/menubar/`, { timeout: 20 * 60 * 1000 });
     const insert = page.getByRole("menuitem", { name: "Insert", exact: true });
     await insert.focus();
     await page.keyboard.press("ArrowDown");
@@ -406,7 +406,7 @@ test.describe("open_on_hover: false (click activation)", () => {
 // ---------------------------------------------------------------------------
 test.describe("Open/close animation", () => {
   test("the fade animates translate/scale and leaves transform alone (open and close)", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=menubar&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/menubar/`, { timeout: 20 * 60 * 1000 });
     await page.getByRole("menuitem", { name: "File" }).click();
     const content = page.locator('.dx-menubar-content[data-state="open"]').last();
     await expect(content).toBeVisible();

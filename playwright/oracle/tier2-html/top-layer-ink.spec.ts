@@ -133,17 +133,13 @@ const NAV_TIMEOUT = 20 * 60 * 1000; // first run compiles the app
 // ramp's `--secondary-color-4` #111 to shadcn's `--foreground` #000) cannot stale this file again.
 const INK_TOKEN = "--dx-foreground";
 
-const url = (name: string) => `${BASE_URL}/component/?name=${name}&`;
+const url = (name: string) => `${BASE_URL}/component/${name}/`;
 
 // dev-docs/backlog.md row 109: this suite clicks/hovers triggers right
 // after navigating, on the SSG lane -- `gotoHydrated` so those interactions
 // can't land before hydration attaches listeners.
 async function goto(page: Page, name: string) {
   await gotoHydrated(page, url(name), { timeout: NAV_TIMEOUT });
-}
-
-async function gotoVariant(page: Page, name: string, variant: string) {
-  await gotoHydrated(page, `${url(name)}variant=${variant}&`, { timeout: NAV_TIMEOUT });
 }
 
 /**
@@ -257,7 +253,9 @@ const SURFACES: Surface[] = [
     // through `use_dialog_open_driver`, not `use_popover_sync`.
     name: "popover (modal arm)",
     open: async (page) => {
-      await gotoVariant(page, "popover", "modal");
+      // Every variant has its own `#component-preview-frame-<variant>` on the canonical page (`demoRole(.., "modal")`);
+      // `/component/popover/variant=modal&` (query text glued to a path route) is a 404 that never sets data-hydrated.
+      await goto(page, "popover");
       await demoRole(page, "button", 0, "modal").click();
       await expect(page.locator('.dx-popover-content[data-state="open"]')).toBeVisible();
     },

@@ -89,7 +89,7 @@ async function open(page: Page, variant: Variant): Promise<{ frame: Locator; con
   // scroll-end path under test depends on that preference (the re-align
   // is always instant, and the wheel band is off on these demos anyway).
   if (AUTOPLAY.includes(variant)) await page.emulateMedia({ reducedMotion: "reduce" });
-  await gotoHydrated(page, `${BASE_URL}/component/?name=carousel&variant=${variant}&`, GOTO_OPTS);
+  await gotoHydrated(page, `${BASE_URL}/component/carousel/`, GOTO_OPTS);
   const frame = page.locator(variant === "main" ? "#component-preview-frame" : `#component-preview-frame-${variant}`);
   const content = frame.locator(".dx-carousel-content").first();
   await content.scrollIntoViewIfNeeded();
@@ -616,6 +616,7 @@ test.describe("Carousel wheel band: only at a true end of the data", () => {
       ["rtl", "x", "max"],
       ["vertical", "y", "min"],
     ] as const) {
+      // goto-ok: about:blank is not the app
       await page.goto("about:blank");
       const { content } = await open(page, variant);
       // Slide 1 rests at the physical right under RTL, at the top when vertical.
@@ -661,6 +662,7 @@ test.describe("Carousel wheel band: only at a true end of the data", () => {
       ["virtual_loop", false],
       ["rewind", false],
     ] as const) {
+      // goto-ok: about:blank is not the app
       await page.goto("about:blank");
       const { content } = await open(page, variant);
       const r = await replayWheel(content, rec, {
@@ -894,6 +896,7 @@ test.describe("Carousel drag band: only at a true end of the data", () => {
       ["rtl", "x", "max"],
       ["vertical", "y", "min"],
     ] as const) {
+      // goto-ok: about:blank is not the app
       await page.goto("about:blank");
       const { content } = await open(page, variant);
       const pitch = await content.evaluate((el) =>

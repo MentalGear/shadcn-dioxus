@@ -12,7 +12,7 @@ import { gotoHydrated } from "./hydration";
 import { demoRole } from "./demo-frame";
 import { awaitAnimationsSettled, measureAtRest } from "./animations";
 
-const URL = `${BASE_URL}/component/?name=drawer&`;
+const URL = `${BASE_URL}/component/drawer/`;
 const GOTO_OPTS = { timeout: 20 * 60 * 1000 };
 test.use({ viewport: { width: 390, height: 844 } });
 

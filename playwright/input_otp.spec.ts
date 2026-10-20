@@ -6,7 +6,7 @@ import { BASE_URL } from "./base-url";
 // land before hydration attaches listeners.
 import { gotoHydrated } from "./hydration";
 
-const URL = `${BASE_URL}/component/?name=input_otp&`;
+const URL = `${BASE_URL}/component/input_otp/`;
 
 test("typing fills the boxes and the real input's value matches", async ({ page }) => {
   await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });

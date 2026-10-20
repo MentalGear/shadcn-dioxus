@@ -41,6 +41,7 @@ async function openHost(page: Page, htmlAttrs: string, pasted = "") {
 <body><div id="probe" style="background: var(--dx-background); width: 10px; height: 10px"></div></body></html>`,
     }),
   );
+  // goto-ok: HOST is a route-fulfilled static page, not the app: it never sets html[data-hydrated]
   await page.goto(`${HOST}/`);
 }
 

@@ -20,7 +20,7 @@ const multiSelectTrigger = (page: Page) =>
     page.getByRole("combobox").filter({ hasText: /Pepperoni|Mushroom|Onion/ });
 
 test("test", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/?name=select&`, {
+    await gotoHydrated(page, `${BASE_URL}/component/select/`, {
         timeout: 20 * 60 * 1000,
     }); // Increase timeout to 20 minutes
     // Find Select a fruit...
@@ -81,7 +81,7 @@ test("test", async ({ page }) => {
 });
 
 test("tabbing out of menu closes the select menu", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/?name=select&`);
+    await gotoHydrated(page, `${BASE_URL}/component/select/`);
     // Find Select a fruit...
     let selectTrigger = singleSelectTrigger(page);
     await selectTrigger.click();
@@ -97,7 +97,7 @@ test("tabbing out of menu closes the select menu", async ({ page }) => {
 });
 
 test("multi-select toggles options and stays open", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/?name=select&variant=multi&`, {
+    await gotoHydrated(page, `${BASE_URL}/component/select/`, {
         timeout: 20 * 60 * 1000,
     });
     const selectTrigger = multiSelectTrigger(page);
@@ -135,7 +135,7 @@ test("multi-select toggles options and stays open", async ({ page }) => {
 });
 
 test("mobile: multi-select tapping options keeps the dropdown open", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/?name=select&variant=multi&`, {
+    await gotoHydrated(page, `${BASE_URL}/component/select/`, {
         timeout: 20 * 60 * 1000,
     });
     const selectTrigger = multiSelectTrigger(page);
@@ -160,7 +160,7 @@ test("mobile: multi-select tapping options keeps the dropdown open", async ({ pa
 });
 
 test("multi-select keyboard toggles and exposes aria-multiselectable", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/?name=select&variant=multi&`, {
+    await gotoHydrated(page, `${BASE_URL}/component/select/`, {
         timeout: 20 * 60 * 1000,
     });
     const selectTrigger = multiSelectTrigger(page);
@@ -198,7 +198,7 @@ test("multi-select keyboard toggles and exposes aria-multiselectable", async ({ 
 });
 
 test("tabbing out of item closes the select menu", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/?name=select&`);
+    await gotoHydrated(page, `${BASE_URL}/component/select/`);
     // Find Select a fruit...
     let selectTrigger = singleSelectTrigger(page);
     await selectTrigger.click();
@@ -219,7 +219,7 @@ test("tabbing out of item closes the select menu", async ({ page }) => {
 });
 
 test("options selected", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/?name=select&`);
+    await gotoHydrated(page, `${BASE_URL}/component/select/`);
     // Find Select a fruit...
     let selectTrigger = singleSelectTrigger(page);
     await selectTrigger.click();
@@ -248,7 +248,7 @@ test("options selected", async ({ page }) => {
 });
 
 test("down arrow selects first element", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/?name=select&`);
+    await gotoHydrated(page, `${BASE_URL}/component/select/`);
     // Find Select a fruit...
     let selectTrigger = singleSelectTrigger(page);
     const selectMenu = page.getByRole("listbox");
@@ -261,7 +261,7 @@ test("down arrow selects first element", async ({ page }) => {
 });
 
 test("up arrow selects last element", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/?name=select&`);
+    await gotoHydrated(page, `${BASE_URL}/component/select/`);
     // Find Select a fruit...
     let selectTrigger = singleSelectTrigger(page);
     const selectMenu = page.getByRole("listbox");
@@ -274,7 +274,7 @@ test("up arrow selects last element", async ({ page }) => {
 });
 
 test("keyboard navigation skips disabled options", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/?name=select&`);
+    await gotoHydrated(page, `${BASE_URL}/component/select/`);
     const selectTrigger = singleSelectTrigger(page);
     await selectTrigger.click();
 
@@ -293,7 +293,7 @@ test("keyboard navigation skips disabled options", async ({ page }) => {
 });
 
 test("typeahead skips disabled options", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/?name=select&`);
+    await gotoHydrated(page, `${BASE_URL}/component/select/`);
     const selectTrigger = singleSelectTrigger(page);
     await selectTrigger.click();
 
@@ -370,7 +370,7 @@ test.describe("Listbox width (docs/backlog.md row 47 -- full-viewport-width regr
 
     test("component page: listbox tracks trigger width, not viewport width", async ({ page }) => {
         await page.setViewportSize({ width: 1280, height: 800 });
-        await gotoHydrated(page, `${BASE_URL}/component/?name=select&`);
+        await gotoHydrated(page, `${BASE_URL}/component/select/`);
         const trigger = singleSelectTrigger(page);
         await trigger.click();
         const listbox = page.getByRole("listbox");
@@ -418,7 +418,7 @@ test.describe("Listbox width (docs/backlog.md row 47 -- full-viewport-width regr
  */
 test.describe("Trigger minimum width (docs/backlog.md row 10's sibling fix, 2026-09-14)", () => {
     test("a selected option's checkmark reaches the row's own right edge, not just the label", async ({ page }) => {
-        await gotoHydrated(page, `${BASE_URL}/component/?name=form&`);
+        await gotoHydrated(page, `${BASE_URL}/component/form/`);
         const trigger = page.getByRole("combobox", { name: "Fruit, required (library)" });
         await trigger.click();
         const listbox = page.getByRole("listbox", { name: "Fruit options, required (library)" });
@@ -467,12 +467,12 @@ test.describe("Trigger minimum width (docs/backlog.md row 10's sibling fix, 2026
 
 test.describe("Axe automated scan", () => {
     test("loaded (listbox closed) has no automatically detectable a11y issues", async ({ page }) => {
-        await gotoHydrated(page, `${BASE_URL}/component/?name=select&`);
+        await gotoHydrated(page, `${BASE_URL}/component/select/`);
         await expectNoAxeViolations(page, "select: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
     });
 
     test("listbox open has no automatically detectable a11y issues", async ({ page }) => {
-        await gotoHydrated(page, `${BASE_URL}/component/?name=select&`);
+        await gotoHydrated(page, `${BASE_URL}/component/select/`);
         await singleSelectTrigger(page).click();
         await expect(page.getByRole("listbox")).toHaveAttribute("data-state", "open");
         await expectNoAxeViolations(page, "select: listbox open", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
@@ -482,7 +482,7 @@ test.describe("Axe automated scan", () => {
 // Backlog row 155 group 7: the trigger `size` (sm, default) reads the theme's control-height ladder.
 test.describe("trigger size (row 155 group 7)", () => {
     test("sm is the ladder's 28px, default its 32px", async ({ page }) => {
-        await gotoHydrated(page, `${BASE_URL}/component/?name=select&`, {
+        await gotoHydrated(page, `${BASE_URL}/component/select/`, {
             timeout: 20 * 60 * 1000,
         });
         const frame = page.locator("#component-preview-frame-sizes");
@@ -507,7 +507,7 @@ test.describe("trigger size (row 155 group 7)", () => {
     });
 
     test("the sm trigger still opens and selects", async ({ page }) => {
-        await gotoHydrated(page, `${BASE_URL}/component/?name=select&`, {
+        await gotoHydrated(page, `${BASE_URL}/component/select/`, {
             timeout: 20 * 60 * 1000,
         });
         const sm = page.locator("#component-preview-frame-sizes").getByRole("combobox", { name: "Small size select" });

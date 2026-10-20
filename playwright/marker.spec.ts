@@ -2,8 +2,9 @@ import { test, expect } from "./fixtures";
 import type { Page } from "@playwright/test";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
+import { gotoHydrated } from "./hydration";
 
-const URL = `${BASE_URL}/component/?name=marker&`;
+const URL = `${BASE_URL}/component/marker/`;
 const GOTO = { timeout: 20 * 60 * 1000 };
 
 // Scope to a demo frame. The component page also renders each demo's own source
@@ -20,7 +21,7 @@ const styled = (page: Page) =>
 const variant = (page: Page, name: string) => page.locator(`#component-preview-frame-${name}`).first();
 
 test("markers render their content, icons are decorative, status markers are live regions", async ({ page }) => {
-  await page.goto(URL, GOTO);
+  await gotoHydrated(page, URL, GOTO);
   await styled(page);
   const demo = main(page);
   await expect(demo.getByText("A default marker")).toBeVisible();
@@ -39,7 +40,7 @@ test("markers render their content, icons are decorative, status markers are liv
 });
 
 test("a marker rendered as a link or button is a real, focusable control", async ({ page }) => {
-  await page.goto(URL, GOTO);
+  await gotoHydrated(page, URL, GOTO);
   await styled(page);
   const demo = main(page);
   const link = demo.getByRole("link", { name: "Marker as a link" });
@@ -59,7 +60,7 @@ test("a marker rendered as a link or button is a real, focusable control", async
 });
 
 test("the as-button marker acts on click and Enter (link_button variant)", async ({ page }) => {
-  await page.goto(URL, GOTO);
+  await gotoHydrated(page, URL, GOTO);
   await styled(page);
   const demo = variant(page, "link_button");
   const button = demo.getByRole("button", { name: /Show earlier activity/ });
@@ -72,7 +73,7 @@ test("the as-button marker acts on click and Enter (link_button variant)", async
 });
 
 test("variants: a labeled separator has divider lines and is not role=separator", async ({ page }) => {
-  await page.goto(URL, GOTO);
+  await gotoHydrated(page, URL, GOTO);
   await styled(page);
   const demo = variant(page, "variants");
   const markers = demo.locator('[data-slot="marker"]');
@@ -108,7 +109,7 @@ test("variants: a labeled separator has divider lines and is not role=separator"
 });
 
 test("status variant: spinner markers announce, the shimmer animates", async ({ page }) => {
-  await page.goto(URL, GOTO);
+  await gotoHydrated(page, URL, GOTO);
   await styled(page);
   const demo = variant(page, "status");
   await expect(demo.locator('[data-slot="marker"][role="status"]')).toHaveCount(3);
@@ -124,7 +125,7 @@ test("status variant: spinner markers announce, the shimmer animates", async ({ 
 
 test("the shimmer is off under prefers-reduced-motion", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.goto(URL, GOTO);
+  await gotoHydrated(page, URL, GOTO);
   await styled(page);
   const shimmer = variant(page, "status").locator(".dx-shimmer").first();
   await expect(shimmer).toBeVisible();
@@ -141,7 +142,7 @@ for (const scheme of ["light", "dark"] as const) {
   test.describe(`${scheme} colour roles`, () => {
     test.beforeEach(async ({ page }) => {
       await page.emulateMedia({ colorScheme: scheme });
-      await page.goto(URL, GOTO);
+      await gotoHydrated(page, URL, GOTO);
       await styled(page);
       // The emulation must reach the theme's `--light`/`--dark` toggle, or the
       // dark half of this block silently re-tests light.
@@ -193,7 +194,7 @@ test.describe("Axe automated scan", () => {
   // A marker has no overlay/expand/select interaction -- one state to scan (the
   // page holds the main demo and every variant, so this covers all of them).
   test("loaded has no automatically detectable a11y issues", async ({ page }) => {
-    await page.goto(URL, GOTO);
+    await gotoHydrated(page, URL, GOTO);
   await styled(page);
     await expectNoAxeViolations(page, "marker: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });

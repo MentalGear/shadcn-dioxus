@@ -2,8 +2,9 @@ import { test, expect } from "./fixtures";
 import type { Page } from "@playwright/test";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
+import { gotoHydrated } from "./hydration";
 
-const URL = `${BASE_URL}/component/?name=button&`;
+const URL = `${BASE_URL}/component/button/`;
 const GOTO = { timeout: 20 * 60 * 1000 };
 
 const variant = (page: Page, name: string) => page.locator(`#component-preview-frame-${name}`).first();
@@ -19,7 +20,7 @@ async function styled(page: Page) {
 }
 
 test("as renders the button as an anchor that keeps the button's attributes", async ({ page }) => {
-  await page.goto(URL, GOTO);
+  await gotoHydrated(page, URL, GOTO);
   await styled(page);
   const link = variant(page, "as_link").getByRole("link", { name: "Login" });
   await expect(link).toHaveAttribute("href", "#");
@@ -31,7 +32,7 @@ test("as renders the button as an anchor that keeps the button's attributes", as
 });
 
 test("the onclick handler reaches the rendered anchor", async ({ page }) => {
-  await page.goto(URL, GOTO);
+  await gotoHydrated(page, URL, GOTO);
   await styled(page);
   const demo = variant(page, "as_link");
   await expect(demo.getByText("Clicked 0 time(s)")).toBeVisible();
@@ -41,7 +42,7 @@ test("the onclick handler reaches the rendered anchor", async ({ page }) => {
 
 test.describe("Axe automated scan", () => {
   test("as link has no automatically detectable a11y issues", async ({ page }) => {
-    await page.goto(URL, GOTO);
+    await gotoHydrated(page, URL, GOTO);
     await styled(page);
     await expectNoAxeViolations(page, "button: as link", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });

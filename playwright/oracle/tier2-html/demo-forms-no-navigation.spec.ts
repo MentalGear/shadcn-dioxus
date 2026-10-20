@@ -17,7 +17,7 @@
  * enforced statically by scripts/check-demo-forms.sh; this is the behavioural half.
  *
  * ORACLE, by property rather than by instance: for EVERY route the preview serves (the component catalog read
- * from `CATALOG`/`examples!` in preview/src/components/mod.rs, plus the app's own pages, so a new component is
+ * from `CATALOG` in preview/src/components/mod.rs and the block demos from `variants/demo.css`, plus the app's own pages, so a new component is
  * covered the day it lands), every submit control that is on screen is clicked and Enter is pressed in the
  * first text field of every form; nothing may navigate. "Navigate" is any of: a main-frame navigation
  * request, a `framenavigated`, a URL change, or a JS marker set on `window` before the action being gone
@@ -42,17 +42,14 @@
  */
 import { test, expect } from "../../fixtures";
 import type { Locator, Page } from "@playwright/test";
-import { catalogNames, readModRs } from "../../catalog";
+import { catalogNames, readBlockDemos } from "../../catalog";
 import { BASE_URL } from "../../base-url";
 import { gotoHydrated } from "../../hydration";
 
 // --- the routes, read from Rust ------------------------------------------------------------------
-const MOD_RS = readModRs();
-const COMPONENTS = catalogNames(MOD_RS);
-/** `name(block)[variant, ...]` rows of `examples!`: rendered at `/component/block/<name>/<variant>/`. */
-const BLOCKS = [...(MOD_RS.split("examples!(\n")[1] ?? "").matchAll(/^\s*([a-z0-9_]+)\(block\)(?:\[([^\]]*)\])?/gm)].flatMap((m) =>
-  ["main", ...(m[2] ?? "").split(",").map((v) => v.trim()).filter(Boolean)].map((variant) => `/component/block/${m[1]}/${variant}/`),
-);
+const COMPONENTS = catalogNames();
+/** Block demos (`variants/demo.css` components): rendered at `/component/block/<name>/<variant>/`. */
+const BLOCKS = readBlockDemos().map((b) => b.path);
 /** The app's own pages: not under `/component/<name>/`, but several embed demos (`/` and `/demos` render the galleries). */
 const APP_PAGES = ["/", "/demos", "/docs", "/charts/", "/dashboard/email-client"];
 const COMPONENT_ROUTES = COMPONENTS.map((name) => `/component/${name}/`);
@@ -273,6 +270,7 @@ test.describe("demo forms never navigate", () => {
           for (const route of withForms) {
             const page = await context.newPage();
             const tracker = track(page);
+            // goto-ok: includes wasm-blocked and scripting-disabled contexts where the flag never appears; the spec settles itself
             await page.goto(BASE_URL + route, { waitUntil: "domcontentloaded", timeout: 120_000 });
             tracker.reset();
             const r = await exerciseForms(page, tracker, route, variant !== "scripting disabled");
@@ -303,6 +301,7 @@ test.describe("demo forms never navigate", () => {
             const page = await context.newPage();
             await page.route(`${URL_OF(name)}`, (r) => r.fulfill({ contentType: "text/html", body: REF(attrs) }));
             const tracker = track(page);
+            // goto-ok: the scripting-off context never hydrates; the spec settles itself
             await page.goto(URL_OF(name));
             tracker.reset();
             const out = await probe(page, tracker, name, "#go", "click", () => page.locator("#go").click(), scripting);

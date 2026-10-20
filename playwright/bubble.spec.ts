@@ -2,8 +2,9 @@ import { test, expect } from "./fixtures";
 import type { Locator, Page } from "@playwright/test";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
+import { gotoHydrated } from "./hydration";
 
-const URL = `${BASE_URL}/component/?name=bubble&`;
+const URL = `${BASE_URL}/component/bubble/`;
 const GOTO = { timeout: 20 * 60 * 1000 };
 
 // Scope to a demo frame. The component page also renders each demo's own source
@@ -15,7 +16,7 @@ const content = (bubble: Locator) => bubble.locator('[data-slot="bubble-content"
 // The component's stylesheet is linked after mount: wait until it has applied
 // before any test reads a computed style or a position.
 async function open(page: Page) {
-  await page.goto(URL, GOTO);
+  await gotoHydrated(page, URL, GOTO);
   await expect
     .poll(() => content(main(page).locator('[data-variant="default"]')).evaluate((el) => getComputedStyle(el).backgroundColor), {
       timeout: 60_000,

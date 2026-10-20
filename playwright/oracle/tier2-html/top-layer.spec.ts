@@ -184,7 +184,7 @@ const NAV_TIMEOUT = 20 * 60 * 1000; // first run compiles the app
 // after navigating, on the SSG lane -- `gotoHydrated` so those interactions
 // can't land before hydration attaches listeners.
 const gotoFixture = (page: Page) =>
-  gotoHydrated(page, `${BASE_URL}/component/?name=top_layer&`, {
+  gotoHydrated(page, `${BASE_URL}/component/top_layer/`, {
     timeout: NAV_TIMEOUT,
   });
 
@@ -970,7 +970,7 @@ test.describe("Rule 8 — scroll tracking: an anchored overlay's content keeps i
     await page.setViewportSize({ width: 1280, height: 1000 });
     // dev-docs/backlog.md row 109: SSG lane -- `gotoHydrated`, see this
     // file's own `gotoFixture` doc.
-    await gotoHydrated(page, `${BASE_URL}/component/?name=color_picker&`, {
+    await gotoHydrated(page, `${BASE_URL}/component/color_picker/`, {
       timeout: NAV_TIMEOUT,
     });
 

@@ -150,7 +150,11 @@ async function measure(target: Locator, surface: Locator): Promise<Measure> {
 
 const hover = (page: Page, target: Locator) => target.hover().then(() => page.waitForTimeout(50));
 const away = (page: Page) => page.mouse.move(1, 1).then(() => page.waitForTimeout(50));
-const gotoComponent = (page: Page, name: string) => gotoHydrated(page, `${BASE_URL}/component/?name=${name}&`, { timeout: NAV_TIMEOUT });
+const gotoComponent = (page: Page, name: string) => gotoHydrated(page, `${BASE_URL}/component/${name}/`, { timeout: NAV_TIMEOUT });
+// A prerendered page is hydrated, not re-rendered: its "today" was baked in at build time, so `page.clock` cannot move it.
+// The legacy route builds the page on the client, where the pinned clock decides which cell is today.
+const gotoComponentClientRendered = (page: Page, name: string) =>
+  gotoHydrated(page, `${BASE_URL}/component/?name=${name}&`, { timeout: NAV_TIMEOUT }); // legacy-route-ok: client-created page honours the pinned clock
 
 const preview = (page: Page) => page.locator("#component-preview-frame").first();
 
@@ -244,7 +248,7 @@ const SCENES: Record<string, Scene> = {
     open: async (page) => {
       // The calendar demo opens on May 2026; pin "today" inside it so the today-cell probe has a target.
       await page.clock.setFixedTime(new Date("2026-05-15T12:00:00Z"));
-      await gotoComponent(page, "calendar");
+      await gotoComponentClientRendered(page, "calendar");
       await expect(preview(page)).toBeVisible({ timeout: 30_000 });
     },
     probes: [

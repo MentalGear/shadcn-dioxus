@@ -136,6 +136,7 @@ for (const { route, scheme, widths } of GROUPS) {
 
     for (const width of ONLY.length ? ONLY : widths) {
       await page.setViewportSize({ width, height: HEIGHT });
+      // goto-ok: observes the page from commit to hydration, so it must not wait for the flag first
       await page.goto(`${BASE_URL}${route}`, { waitUntil: "commit" });
       await page.waitForSelector('html[data-hydrated="true"]', { state: "attached", timeout: 120_000 });
       await page.evaluate(() => document.fonts.ready.then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))));

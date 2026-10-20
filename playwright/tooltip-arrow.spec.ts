@@ -27,7 +27,7 @@ async function arrowCentreX(tip: import("@playwright/test").Locator): Promise<nu
 test.describe("tooltip arrow points at the trigger centre", () => {
   for (const [name, side] of CASES) {
     test(`${name}`, async ({ page }) => {
-      await gotoHydrated(page, `${BASE_URL}/component/?name=tooltip`);
+      await gotoHydrated(page, `${BASE_URL}/component/tooltip/`);
       const trigger = page.getByRole("button", { name, exact: true });
       await trigger.hover();
       const tip = page.getByRole("tooltip");
@@ -44,7 +44,7 @@ test.describe("tooltip arrow points at the trigger centre", () => {
   // The engine flips a panel that does not fit on the requested side; the arrow must follow the
   // PLACED side (`data-placed-side`), not the requested `data-side`.
   test("flips top when there is no room below: arrow on the bottom edge, pointing at the trigger", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/?name=tooltip`);
+    await gotoHydrated(page, `${BASE_URL}/component/tooltip/`);
     const trigger = page.getByRole("button", { name: "Bottom center", exact: true });
     await trigger.evaluate((el) => el.scrollIntoView({ block: "end" }));
     await page.waitForTimeout(100);

@@ -4,5 +4,12 @@
     "@playwright/test": "^1.60.0",
     "axe-playwright": "^2.1.0",
     "playwright": "^1.60.0"
+  },
+  "scripts": {
+    "select": "node tools/select.mjs --explain",
+    "shard": "node tools/shard.mjs",
+    "durations": "node tools/durations.mjs",
+    "suite": "tools/run-suite.sh",
+    "test:changed": "tools/test-changed.sh"
   }
 }

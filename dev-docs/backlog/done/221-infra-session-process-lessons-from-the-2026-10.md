@@ -1,10 +1,10 @@
 ---
 id: 221
 title: "Infra: session process lessons from the 2026-10-14/15 batch (memory, lock fairness, gate worktree…"
-status: "OPEN 2026-10-15 (rules in force in the lane brief; constructions proposed)"
+status: "DONE 2026-10-19 (lane lock 08b2966d): FIFO ticket queue scripts/lane-lock.sh (gate before lane…"
 size: "S-M"
 area: process
-updated: 2026-10-15
+updated: 2026-10-19
 ---
 
 # Row 221: Infra: session process lessons from the 2026-10-14/15 batch (memory, lock fairness, gate worktree…
@@ -15,7 +15,7 @@ Infra: session process lessons from the 2026-10-14/15 batch (memory, lock fairne
 
 ## Status / trigger
 
-**OPEN 2026-10-15 (rules in force in the lane brief; constructions proposed)**
+**DONE 2026-10-19 (lane lock 08b2966d): FIFO ticket queue scripts/lane-lock.sh (gate before lane, LANE_SLOTS slots, MemAvailable guard, legacy ssg.lock interop on slot 0, killed holders and waiters never block), wired into lane-ssg, gate-at and lane-cargo, gate check-lane-lock; proven with real contention (two concurrent 96-route builds, marker in both). Lessons: dx's SSG pre-render port 9999 is a hidden single-holder resource, now isolated per build in its own network namespace (scripts/lane-netns.sh); the SIGKILL-of-wrapper gap is documented; old-style flock callers can still starve queued slot-0 waiters; Playwright beside 2 slots is risky (LANE_SLOTS=1 while it runs)**
 
 ## Size
 

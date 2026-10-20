@@ -9,7 +9,7 @@ import { readAtRest } from "./animations";
 const GOTO_OPTS = { timeout: 20 * 60 * 1000 };
 
 async function open(page: Page, mode: "light" | "dark") {
-  await gotoHydrated(page, `${BASE_URL}/component/?name=command&`, GOTO_OPTS);
+  await gotoHydrated(page, `${BASE_URL}/component/command/`, GOTO_OPTS);
   await page.evaluate((m) => (window as unknown as { __dxApplyMode: (m: string) => void }).__dxApplyMode(m), mode);
   const root = page.locator("#component-preview-frame-shortcuts").first();
   await root.scrollIntoViewIfNeeded();

@@ -35,7 +35,7 @@ the Select scroll buttons and item-aligned position split out to row 268). `stru
 
 ## Backlog numbers
 
-63 open and 211 done rows on 2026-10-19 (see [`backlog.md`](./backlog.md)): the bookkeeping pass closed 29 rows whose status already said done, the owner review added rows 290-305, the docs review added row 285, and the features-batch validation added row 306 (Select and Combobox show no selected label before hydration).
+59 open and 217 done rows on 2026-10-20 (see [`backlog.md`](./backlog.md)): the 2026-10-20 sync closed rows 92, 98, 109, 110, 161 and 186 after checking their commits, refreshed the status of 155, 187, 188 and 217 for PR #112, and added rows 307 (iOS Color Panel does not pick colors) and 308 (VirtualGrid scroll trap, plus the VirtualList/VirtualGrid unification question); earlier: the 2026-10-19 bookkeeping pass closed 29 rows, the owner review added rows 290-305, the docs review row 285, and the features-batch validation row 306.
 
 ## Next round
 

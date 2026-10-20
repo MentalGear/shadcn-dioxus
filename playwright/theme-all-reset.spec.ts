@@ -1,6 +1,7 @@
 import { test, expect } from "./fixtures";
 import type { Page } from "@playwright/test";
 import { BASE_URL } from "./base-url";
+import { gotoHydrated } from "./hydration";
 
 // Row 239: `all: unset` (0,1,0) outranked every zero-specificity theme baseline on Switch, the Slider thumb and both
 // ColorPicker thumbs. The `all:` resets are gone (scripts/check-theme-baseline.sh bans them) and spelled out; this
@@ -142,7 +143,7 @@ const BEFORE: Record<string, Record<string, string>> = {
 };
 
 async function open(page: Page, name: string) {
-  await page.goto(`${BASE_URL}/component/?name=${name}&`, GOTO);
+  await gotoHydrated(page, `${BASE_URL}/component/${name}/`, GOTO);
   await page.waitForLoadState("networkidle");
 }
 

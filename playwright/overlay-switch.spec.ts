@@ -2,6 +2,7 @@ import { test, expect } from "./fixtures";
 import type { Locator, Page } from "@playwright/test";
 import { BASE_URL } from "./base-url";
 import { demoRole } from "./demo-frame";
+import { gotoHydrated } from "./hydration";
 
 /**
  * The shared modal-overlay switch (`preview/assets/dx-components-theme.css`, "Modal overlay switch"):
@@ -43,7 +44,7 @@ const MODALS: Modal[] = [
   // The modal Popover opens undimmed by default; its switch is exercised below on the `overlay` variant.
   {
     name: "Popover (overlay: true)",
-    url: "popover&variant=overlay",
+    url: "popover",
     open: (p) => demoRole(p, "button", 0, "overlay").click(),
   },
 ];
@@ -61,7 +62,7 @@ const scrim = (dialog: Locator) =>
 
 for (const modal of MODALS) {
   test(`${modal.name}: data-dx-overlay="off" removes the scrim and removing it brings it back`, async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=${modal.url}&`);
+    await gotoHydrated(page, `${BASE_URL}/component/${modal.url}/`);
     await modal.open(page);
     const dialog = page.locator("dialog[open]");
     await expect(dialog).toBeVisible();
@@ -92,7 +93,7 @@ for (const modal of MODALS) {
 test.describe("the rule itself", () => {
   test.beforeEach(async ({ page }) => {
     // Any page that loads the theme; the dialog page is the one whose stylesheet is under test below.
-    await page.goto(`${BASE_URL}/component/?name=dialog&`);
+    await gotoHydrated(page, `${BASE_URL}/component/dialog/`);
     await expect(demoRole(page, "button")).toBeVisible();
   });
 

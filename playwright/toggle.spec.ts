@@ -2,9 +2,10 @@ import { test, expect } from "./fixtures";
 import type { Page } from "@playwright/test";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from './axe';
 import { BASE_URL } from './base-url';
+import { gotoHydrated } from "./hydration";
 
 test('test', async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=toggle&`, { timeout: 20 * 60 * 1000, waitUntil: 'networkidle' }); // Increase timeout to 20 minutes
+  await gotoHydrated(page, `${BASE_URL}/component/toggle/`, { timeout: 20 * 60 * 1000, waitUntil: 'networkidle' }); // Increase timeout to 20 minutes
 
   let toggleElement = page.locator('#component-preview-frame').getByRole('button', { name: 'Toggle bookmark', exact: true });
   await expect(toggleElement).toBeVisible();
@@ -35,7 +36,7 @@ test('test', async ({ page }) => {
 // tokens differ per theme.
 for (const dark of [false, true]) {
   test(`a pressed toggle keeps its "on" background while hovered (${dark ? 'dark' : 'light'} mode)`, async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=toggle&${dark ? 'dark_mode=true' : ''}`, { waitUntil: 'networkidle' });
+    await gotoHydrated(page, `${BASE_URL}/component/toggle/${dark ? '?dark_mode=true' : ''}`, { waitUntil: 'networkidle' });
     const toggle = page.locator('#component-preview-frame').getByRole('button', { name: 'Toggle bookmark', exact: true });
 
     await toggle.click();
@@ -83,7 +84,7 @@ const gap = (a: number[], b: number[]) => Math.max(...a.map((v, i) => Math.abs(v
 for (const dark of [false, true]) {
   for (const base of ['slate', 'gray']) {
     test(`resting, hovered and pressed toggles are three different backgrounds under a ${base} base (${dark ? 'dark' : 'light'} mode)`, async ({ page }) => {
-      await page.goto(`${BASE_URL}/component/?name=toggle&${dark ? 'dark_mode=true' : ''}`, { waitUntil: 'networkidle' });
+      await gotoHydrated(page, `${BASE_URL}/component/toggle/${dark ? '?dark_mode=true' : ''}`, { waitUntil: 'networkidle' });
       await page.evaluate((b) => {
         document.documentElement.setAttribute('data-theme-base', b);
         // Settled values, not a mid-transition read.
@@ -119,7 +120,7 @@ const px = (el: import('@playwright/test').Locator, prop: string) =>
   el.evaluate((e, p) => parseFloat(getComputedStyle(e).getPropertyValue(p)), prop);
 
 test('the main demo is shadcn\'s: an outline, small Bookmark toggle', async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=toggle&`, { waitUntil: 'networkidle' });
+  await gotoHydrated(page, `${BASE_URL}/component/toggle/`, { waitUntil: 'networkidle' });
   const toggle = page.locator('#component-preview-frame').getByRole('button', { name: 'Toggle bookmark', exact: true });
   await expect(toggle).toHaveAttribute('data-variant', 'outline');
   await expect(toggle).toHaveAttribute('data-size', 'sm');
@@ -134,7 +135,7 @@ test('the main demo is shadcn\'s: an outline, small Bookmark toggle', async ({ p
 });
 
 test('the default variant has no edge, the outline variant a 1px one', async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=toggle&`, { waitUntil: 'networkidle' });
+  await gotoHydrated(page, `${BASE_URL}/component/toggle/`, { waitUntil: 'networkidle' });
   const plain = variantFrame(page, 'text').getByRole('button', { name: 'Toggle italic', exact: true });
   const outline = variantFrame(page, 'outline').getByRole('button', { name: 'Toggle italic outline', exact: true });
   await expect(plain).toHaveAttribute('data-variant', 'default');
@@ -147,7 +148,7 @@ test('the default variant has no edge, the outline variant a 1px one', async ({ 
 });
 
 test('sizes: sm, default and lg are 28, 32 and 36px high with a matching minimum width', async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=toggle&`, { waitUntil: 'networkidle' });
+  await gotoHydrated(page, `${BASE_URL}/component/toggle/`, { waitUntil: 'networkidle' });
   const frame = variantFrame(page, 'sizes');
   for (const [name, h] of [['Toggle small', 28], ['Toggle default', 32], ['Toggle large', 36]] as const) {
     const t = frame.getByRole('button', { name, exact: true });
@@ -157,14 +158,14 @@ test('sizes: sm, default and lg are 28, 32 and 36px high with a matching minimum
 });
 
 test('an item marked data-icon trims the padding on that side (Nova has-data-[icon])', async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=toggle&`, { waitUntil: 'networkidle' });
+  await gotoHydrated(page, `${BASE_URL}/component/toggle/`, { waitUntil: 'networkidle' });
   const textOnly = variantFrame(page, 'sizes').getByRole('button', { name: 'Toggle default', exact: true });
   expect(await px(textOnly, 'padding-left')).toBe(10);
   expect(await px(textOnly, 'padding-right')).toBe(10);
 });
 
 test('disabled toggles (default and outline) ignore clicks', async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=toggle&`, { waitUntil: 'networkidle' });
+  await gotoHydrated(page, `${BASE_URL}/component/toggle/`, { waitUntil: 'networkidle' });
   for (const name of ['Toggle disabled', 'Toggle disabled outline']) {
     const t = variantFrame(page, 'disabled').getByRole('button', { name, exact: true });
     await expect(t).toBeDisabled();
@@ -174,12 +175,12 @@ test('disabled toggles (default and outline) ignore clicks', async ({ page }) =>
 
 test.describe('Axe automated scan', () => {
   test('loaded (off) has no automatically detectable a11y issues', async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=toggle&`, { timeout: 20 * 60 * 1000, waitUntil: 'networkidle' });
+    await gotoHydrated(page, `${BASE_URL}/component/toggle/`, { timeout: 20 * 60 * 1000, waitUntil: 'networkidle' });
     await expectNoAxeViolations(page, 'toggle: off', { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 
   test('on has no automatically detectable a11y issues', async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=toggle&`, { timeout: 20 * 60 * 1000, waitUntil: 'networkidle' });
+    await gotoHydrated(page, `${BASE_URL}/component/toggle/`, { timeout: 20 * 60 * 1000, waitUntil: 'networkidle' });
     await page.locator('#component-preview-frame').getByRole('button', { name: 'Toggle bookmark', exact: true }).click();
     await expectNoAxeViolations(page, 'toggle: on', { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });

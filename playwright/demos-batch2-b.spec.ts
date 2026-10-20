@@ -15,7 +15,7 @@ import { gotoHydrated } from "./hydration";
 import { demoFrame, demoRole } from "./demo-frame";
 
 const GOTO = { timeout: 20 * 60 * 1000 };
-const url = (name: string) => `${BASE_URL}/component/?name=${name}&`;
+const url = (name: string) => `${BASE_URL}/component/${name}/`;
 const setMode = (page: Page, m: string) =>
   page.evaluate((mode) => (window as unknown as { __dxApplyMode: (m: string) => void }).__dxApplyMode(mode), m);
 

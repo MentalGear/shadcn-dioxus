@@ -1,10 +1,10 @@
 ---
 id: 216
 title: "Infra: worktrees sharing or copying one CARGO_TARGET_DIR build and lint another tree's code (re-confirms row…"
-status: "OPEN 2026-10-14 (workaround in CLAUDE.md; by-construction fix proposed)"
+status: "DONE 2026-10-19 (lane lock): scripts/lane-touch.sh with a .tree-owner stamp, called by build-ssg…"
 size: "S-M"
 area: process
-updated: 2026-10-14
+updated: 2026-10-19
 ---
 
 # Row 216: Infra: worktrees sharing or copying one CARGO_TARGET_DIR build and lint another tree's code (re-confirms row…
@@ -15,7 +15,7 @@ Infra: worktrees sharing or copying one `CARGO_TARGET_DIR` build and lint anothe
 
 ## Status / trigger
 
-**OPEN 2026-10-14 (workaround in CLAUDE.md; by-construction fix proposed)**
+**DONE 2026-10-19 (lane lock): scripts/lane-touch.sh with a .tree-owner stamp, called by build-ssg, run-gates, lane-cargo, lane-ssg and gate-at; lane-target.sh create clears it. The cold-build lost-dx-log observation is closed: a tee/dx race on a not-yet-created target root, fixed by creating the root before dx**
 
 ## Size
 
