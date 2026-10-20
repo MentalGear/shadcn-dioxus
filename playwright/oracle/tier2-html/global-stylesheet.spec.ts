@@ -24,12 +24,13 @@ import { BASE_URL } from "../../base-url";
 
 const ROUTES = [
   `${BASE_URL}/`,
-  `${BASE_URL}/component/?name=select&`,
+  `${BASE_URL}/component/select/`,
   `${BASE_URL}/dashboard/email-client`,
 ];
 
 for (const url of ROUTES) {
   test(`global stylesheet (main.css) is applied on ${new URL(url).pathname}${new URL(url).search}`, async ({ page }) => {
+    // goto-ok: asserts the stylesheet applied at first paint (prerendered CSS), not interactive behaviour
     await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60_000 });
     await page.waitForTimeout(3000);
     const state = await page.evaluate(() => {

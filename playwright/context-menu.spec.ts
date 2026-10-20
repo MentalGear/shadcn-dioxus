@@ -7,7 +7,7 @@ import { awaitAnimationsSettled, measureAtRest } from './animations';
 import { fixedViewportBox } from './viewport-box';
 
 test('pointer navigation', async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=context_menu&`, { timeout: 20 * 60 * 1000 }); // Increase timeout to 20 minutes
+  await gotoHydrated(page, `${BASE_URL}/component/context_menu/`, { timeout: 20 * 60 * 1000 }); // Increase timeout to 20 minutes
   await page.getByRole('button', { name: 'right click here' }).click({
     button: 'right'
   });
@@ -22,7 +22,7 @@ test('pointer navigation', async ({ page }) => {
 });
 
 test('menu lands at the tap coordinates on touch long-press', async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=context_menu&`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/context_menu/`, { timeout: 20 * 60 * 1000 });
 
   const trigger = page.getByRole('button', { name: 'right click here' });
   const contextMenu = page.getByRole('menu');
@@ -110,7 +110,7 @@ test('menu lands at the tap coordinates on touch long-press', async ({ page }) =
 // coordinates" test above already uses to control click coordinates
 // independent of the trigger element's own on-screen position.
 test('clamps the menu into the viewport for a mouse right-click near a corner', async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=context_menu&`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/context_menu/`, { timeout: 20 * 60 * 1000 });
   const trigger = page.getByRole('button', { name: 'right click here' });
   const contextMenu = page.getByRole('menu');
   const viewport = await fixedViewportBox(page);
@@ -150,7 +150,7 @@ test('clamps the menu into the viewport for a mouse right-click near a corner', 
 });
 
 test('clamps the menu into the viewport for a touch long-press near a corner', async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=context_menu&`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/context_menu/`, { timeout: 20 * 60 * 1000 });
   const trigger = page.getByRole('button', { name: 'right click here' });
   const contextMenu = page.getByRole('menu');
   const viewport = await fixedViewportBox(page);
@@ -194,7 +194,7 @@ test('clamps the menu into the viewport for a touch long-press near a corner', a
 test('touch long-press opens the context menu', async ({ page }) => {
   // iOS Safari does not fire `contextmenu` on long press, so the menu must
   // open from a held touch instead. Reproduces issue #262.
-  await page.goto(`${BASE_URL}/component/?name=context_menu&`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/context_menu/`, { timeout: 20 * 60 * 1000 });
   const trigger = page.getByRole('button', { name: 'right click here' });
   const contextMenu = page.getByRole('menu');
 
@@ -236,7 +236,7 @@ test('touch long-press opens the context menu', async ({ page }) => {
 });
 
 test('pen long-press opens the context menu', async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=context_menu&`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/context_menu/`, { timeout: 20 * 60 * 1000 });
   const trigger = page.getByRole('button', { name: 'right click here' });
   const contextMenu = page.getByRole('menu');
 
@@ -264,7 +264,7 @@ test('pen long-press opens the context menu', async ({ page }) => {
 });
 
 test('mouse pointerdown does not arm the long-press timer', async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=context_menu&`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/context_menu/`, { timeout: 20 * 60 * 1000 });
   const trigger = page.getByRole('button', { name: 'right click here' });
 
   const box = await measureAtRest(trigger);
@@ -294,7 +294,7 @@ test('mouse pointerdown does not arm the long-press timer', async ({ page }) => 
 });
 
 test('touch tap outside closes the open menu', async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=context_menu&`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/context_menu/`, { timeout: 20 * 60 * 1000 });
   const trigger = page.getByRole('button', { name: 'right click here' });
   const contextMenu = page.getByRole('menu');
 
@@ -343,7 +343,7 @@ test('pointerdown at the trigger location does not dismiss an open menu', async 
   // menu opened (either from a topology-change re-dispatch under the active
   // touch, or from compat-mouse promotion). The dismiss listener must treat
   // the trigger as "inside" the menu's root and ignore it.
-  await page.goto(`${BASE_URL}/component/?name=context_menu&`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/context_menu/`, { timeout: 20 * 60 * 1000 });
   const trigger = page.getByRole('button', { name: 'right click here' });
   const contextMenu = page.getByRole('menu');
 
@@ -392,7 +392,7 @@ test('pointerdown at the trigger location does not dismiss an open menu', async 
 });
 
 test('touch released before long-press threshold does not open the menu', async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=context_menu&`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/context_menu/`, { timeout: 20 * 60 * 1000 });
   const trigger = page.getByRole('button', { name: 'right click here' });
 
   const box = await measureAtRest(trigger);
@@ -434,7 +434,7 @@ test('touch released before long-press threshold does not open the menu', async 
 });
 
 test('keyboard navigation', async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=context_menu&`, { timeout: 20 * 60 * 1000 }); // Increase timeout to 20 minutes
+  await gotoHydrated(page, `${BASE_URL}/component/context_menu/`, { timeout: 20 * 60 * 1000 }); // Increase timeout to 20 minutes
   await page.getByRole('button', { name: 'right click here' }).click({
     button: 'right'
   });
@@ -694,7 +694,7 @@ test.describe('Checkable items', () => {
 
 test.describe('Axe automated scan', () => {
   test('loaded (menu closed) has no automatically detectable a11y issues', async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=context_menu&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/context_menu/`, { timeout: 20 * 60 * 1000 });
     // Wait for render before scanning -- see input.spec.ts's identical
     // comment for why (avoids a false pre-hydration "no main"/"no h1").
     await expect(page.getByRole('button', { name: 'right click here' })).toBeVisible();
@@ -706,7 +706,7 @@ test.describe('Axe automated scan', () => {
   // name (APG menu-and-menubar pattern requires one) -- this is exactly the
   // class of defect this round's axe coverage is meant to surface.
   test('menu open has no automatically detectable a11y issues', async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=context_menu&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/context_menu/`, { timeout: 20 * 60 * 1000 });
     await page.getByRole('button', { name: 'right click here' }).click({ button: 'right' });
     await expect(page.getByRole('menu')).toBeVisible();
     await expectNoAxeViolations(page, 'context-menu: menu open', { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
@@ -715,14 +715,14 @@ test.describe('Axe automated scan', () => {
   // Checkable items: role="menuitemcheckbox"/"menuitemradio" need aria-checked
   // and a menu/group context; a radio group needs to be a real `group`.
   test('menu with checkbox items open has no automatically detectable a11y issues', async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=context_menu&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/context_menu/`, { timeout: 20 * 60 * 1000 });
     await page.getByRole('button', { name: 'Right click for checkboxes' }).click({ button: 'right' });
     await expect(page.getByRole('menuitemcheckbox', { name: 'Show Bookmarks Bar' })).toBeVisible();
     await expectNoAxeViolations(page, 'context-menu: checkboxes open', { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 
   test('menu with radio groups open has no automatically detectable a11y issues', async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=context_menu&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/context_menu/`, { timeout: 20 * 60 * 1000 });
     await page.getByRole('button', { name: 'Right click for radio group' }).click({ button: 'right' });
     await expect(page.getByRole('menuitemradio', { name: 'Pedro Duarte' })).toBeVisible();
     await expectNoAxeViolations(page, 'context-menu: radio groups open', { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
@@ -740,7 +740,7 @@ test.describe('ContextMenuSub open_on_hover: false (click activation)', () => {
   const HOVER_SETTLE_MS = 1000; // >> SUBMENU_OPEN_INTENT_DELAY / SUBMENU_CLOSE_GRACE_DELAY (200ms each)
 
   async function openMenu(page: import('@playwright/test').Page) {
-    await page.goto(`${BASE_URL}/component/?name=context_menu&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/context_menu/`, { timeout: 20 * 60 * 1000 });
     await page.getByRole('button', { name: 'secondary-click this zone' }).click({ button: 'right' });
     const menu = page.getByRole('menu').filter({ has: page.getByRole('menuitem', { name: 'Share' }) });
     await expect(menu).toBeVisible();
@@ -811,7 +811,7 @@ test.describe('ContextMenuSub open_on_hover: false (click activation)', () => {
   });
 
   test('default (open_on_hover: true) is unchanged: hovering More tools still opens it', async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=context_menu&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/context_menu/`, { timeout: 20 * 60 * 1000 });
     await page.getByRole('button', { name: 'right click here' }).click({ button: 'right' });
     const sub = page.getByRole('menuitem', { name: 'More tools' });
     await sub.hover();
@@ -831,7 +831,7 @@ test.describe('ContextMenuSub open_on_hover: false (click activation)', () => {
 // ---------------------------------------------------------------------------
 test.describe('Open/close animation', () => {
   test('the fade animates translate/scale and leaves transform alone (open and close)', async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=context_menu&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/context_menu/`, { timeout: 20 * 60 * 1000 });
     await page.getByRole('button', { name: 'right click here' }).click({ button: 'right' });
     const content = page.locator('.dx-context-menu-content[data-state="open"]').first();
     await expect(content).toBeVisible();

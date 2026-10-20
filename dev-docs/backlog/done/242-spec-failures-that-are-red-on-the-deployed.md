@@ -1,10 +1,10 @@
 ---
 id: 242
 title: "Spec failures that are red on the deployed baseline too (found by the 2026-10-18 lanes)"
-status: "OPEN"
+status: "FIXED 2026-10-19 (lane baseline-red a9564042): three stale specs -- date-picker natural-language…"
 size: "S each"
 area: process
-updated: 2026-10-18
+updated: 2026-10-19
 ---
 
 # Row 242: Spec failures that are red on the deployed baseline too (found by the 2026-10-18 lanes)
@@ -15,7 +15,7 @@ Spec failures that are red on the deployed baseline too (found by the 2026-10-18
 
 ## Status / trigger
 
-**OPEN**
+**FIXED 2026-10-19 (lane baseline-red a9564042): three stale specs -- date-picker natural-language now clicks a day that is not the pre-selected one; scroll-main-thread test 2 scrolls the motion-gated player into view; scroll-fade prepend waits for more rows, not scrollHeight -- and one product shift: the data_table page-size Select trigger is static text (CLS 0.0131 gone; the primitive-level class is row 248); all green on a lane build, first-paint-styles green on all routes**
 
 ## Size
 

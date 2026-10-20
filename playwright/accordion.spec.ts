@@ -4,11 +4,11 @@ import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
-const URL = `${BASE_URL}/component/?name=accordion&`;
+const URL = `${BASE_URL}/component/accordion/`;
 const LOAD_TIMEOUT = 20 * 60 * 1000;
 
 async function loadAccordion(page: Page) {
-  await page.goto(URL, { timeout: LOAD_TIMEOUT, waitUntil: 'networkidle' });
+  await gotoHydrated(page, URL, { timeout: LOAD_TIMEOUT, waitUntil: 'networkidle' });
   const accordionItems = page.locator("[data-open]").filter({ has: page.getByRole("button") });
   await expect(accordionItems.first()).toHaveAttribute("data-disabled", "false", {
     timeout: 30000,
@@ -419,6 +419,7 @@ test.describe("allow_multiple_open", () => {
 test("a default-open item renders its content with JavaScript off", async ({ browser }) => {
   const ctx = await browser.newContext({ javaScriptEnabled: false });
   const page = await ctx.newPage();
+  // goto-ok: JavaScript is disabled in this context: nothing hydrates, the spec reads the prerendered HTML
   await page.goto(`${BASE_URL}/component/accordion/`, { timeout: LOAD_TIMEOUT });
   const item = page.locator(".dx-accordion-item", { has: page.getByRole("button", { name: "Notification Settings", exact: true }) });
   await expect(item).toHaveAttribute("data-open", "true");

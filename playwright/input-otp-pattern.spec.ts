@@ -3,7 +3,7 @@ import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
-const URL = `${BASE_URL}/component/?name=input_otp&`;
+const URL = `${BASE_URL}/component/input_otp/`;
 
 test("alphanumeric: letters and digits fill the slots; attributes derive from the pattern", async ({ page }) => {
   await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });

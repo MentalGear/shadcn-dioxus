@@ -72,7 +72,7 @@ const NAV_TIMEOUT = 20 * 60 * 1000; // first run compiles the app
 // right after navigating, on the SSG lane -- `gotoHydrated` so those
 // interactions can't land before hydration attaches listeners.
 const gotoForm = (page: Page) =>
-  gotoHydrated(page, `${BASE_URL}/component/?name=form&`, {
+  gotoHydrated(page, `${BASE_URL}/component/form/`, {
     timeout: NAV_TIMEOUT,
   });
 

@@ -45,4 +45,4 @@ M
 
 **Verdict:** workable as an opt-in in Chromium (find, text-fragment links, `beforematch` -> index -> scroll all verified; scroll cost unchanged with the cv chunks). Before it is promoted from "experimental": the manual Ctrl+F find-next check per engine (risk 1), a Firefox/Safari run, and a release-build mount timing for 100k rows. Placeholder positions use the estimates, so with poor estimates the browser's own scroll lands near, not on, the row; the `beforematch` scroll then corrects it, but `window.find` (no `beforematch`) does not.
 
-See also [row 308](308-virtualgrid-scroll-trap-at-the-edges.md): VirtualGrid does not pass wheel/touch scroll to the page at its edges, and the open VirtualList/VirtualGrid unification question.
+See also [row 308](done/308-virtualgrid-scroll-trap-at-the-edges.md): VirtualGrid does not pass wheel/touch scroll to the page at its edges, and the open VirtualList/VirtualGrid unification question.

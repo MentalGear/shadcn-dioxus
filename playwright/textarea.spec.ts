@@ -2,8 +2,9 @@ import { test, expect } from "./fixtures";
 import { type Locator, type Page } from "@playwright/test";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
+import { gotoHydrated } from "./hydration";
 
-const url = (variant: string) => `${BASE_URL}/component/?name=textarea&variant=${variant}&`;
+const url = (variant: string) => `${BASE_URL}/component/textarea/`;
 
 // id -> variant URL, per `preview/src/components/textarea/variants/*`.
 const VARIANTS = [
@@ -29,7 +30,7 @@ async function settledBoxShadow(locator: Locator): Promise<string> {
 
 /** What `Input` draws on keyboard focus: the reference every text field's ring is built to match. */
 async function inputFocusRing(page: Page): Promise<string> {
-    await page.goto(`${BASE_URL}/component/?name=input&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/input/`, { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState("networkidle");
     const input = page.getByRole("textbox", { name: "Enter your name" });
     await input.focus();
@@ -40,7 +41,7 @@ async function inputFocusRing(page: Page): Promise<string> {
 }
 
 test("typing updates the bound value", async ({ page }) => {
-    await page.goto(url("main"), { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, url("main"), { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState("networkidle");
     await page.locator("#default").fill("hello");
     await expect(page.locator("#textarea-message").first()).toContainText("Description here: hello");
@@ -50,7 +51,7 @@ for (const { variant, id } of VARIANTS) {
     test(`the ${variant} variant shows a visible focus ring on keyboard focus, built like Input's`, async ({ page }) => {
         const reference = await inputFocusRing(page);
 
-        await page.goto(url(variant), { timeout: 20 * 60 * 1000 });
+        await gotoHydrated(page, url(variant), { timeout: 20 * 60 * 1000 });
         await page.waitForLoadState("networkidle");
         const textarea = page.locator(`#${id}`);
         await expect(textarea).toBeVisible();
@@ -92,14 +93,14 @@ for (const { variant, id } of VARIANTS) {
 
 test.describe("Axe automated scan", () => {
     test("loaded has no automatically detectable a11y issues", async ({ page }) => {
-        await page.goto(url("main"), { timeout: 20 * 60 * 1000 });
+        await gotoHydrated(page, url("main"), { timeout: 20 * 60 * 1000 });
         await page.waitForLoadState("networkidle");
         await expect(page.locator("#default")).toBeVisible();
         await expectNoAxeViolations(page, "textarea: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
     });
 
     test("focused has no automatically detectable a11y issues", async ({ page }) => {
-        await page.goto(url("main"), { timeout: 20 * 60 * 1000 });
+        await gotoHydrated(page, url("main"), { timeout: 20 * 60 * 1000 });
         await page.waitForLoadState("networkidle");
         const textarea = page.locator("#default");
         await textarea.focus();

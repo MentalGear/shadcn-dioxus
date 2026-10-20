@@ -3,12 +3,13 @@ import { type Page } from "@playwright/test";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from './axe';
 import { BASE_URL } from './base-url';
 import { measureAtRest } from "./animations";
+import { gotoHydrated } from "./hydration";
 
-const PAGE_URL = `${BASE_URL}/component/?name=color_picker&`;
+const PAGE_URL = `${BASE_URL}/component/color_picker/`;
 const PAGE_TIMEOUT = 20 * 60 * 1000;
 
 async function openPicker(page: Page) {
-  await page.goto(PAGE_URL, { timeout: PAGE_TIMEOUT });
+  await gotoHydrated(page, PAGE_URL, { timeout: PAGE_TIMEOUT });
   await page.waitForLoadState('networkidle');
 
   // The color picker button's aria-label contains the current hex.
@@ -186,7 +187,7 @@ test('dragging the color area updates saturation and value', async ({ page }) =>
 
 test.describe('Axe automated scan', () => {
   test('loaded (popover closed) has no automatically detectable a11y issues', async ({ page }) => {
-    await page.goto(PAGE_URL, { timeout: PAGE_TIMEOUT });
+    await gotoHydrated(page, PAGE_URL, { timeout: PAGE_TIMEOUT });
     await page.waitForLoadState('networkidle');
     await expectNoAxeViolations(page, 'color-picker: loaded', { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });

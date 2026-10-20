@@ -64,6 +64,13 @@ pub(crate) fn track_pointer_down(pointer_id: i32, position: ClientPoint) {
     add_pointer(pointer_id, position);
 }
 
+/// Forgets a pointer whose release was never seen, so it stops being tracked (and the bridge goes
+/// idle if it was the last one). `MoveInteraction::start_pointer` calls it when a new primary
+/// pointer goes down while an older one is still recorded as held.
+pub(crate) fn release_pointer(pointer_id: i32) {
+    remove_pointer(pointer_id);
+}
+
 pub(crate) fn pointer_position(pointer_id: i32) -> Option<ClientPoint> {
     POINTERS
         .read()

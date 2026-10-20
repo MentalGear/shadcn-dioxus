@@ -1,6 +1,7 @@
 import { test, expect } from "./fixtures";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
+import { gotoHydrated } from "./hydration";
 
 // `area_chart` is a shadcn/ui `chart-area-*` demo gallery -- see
 // `preview/src/components/area_chart/component.rs`'s own doc comment. Every
@@ -26,7 +27,7 @@ test.describe("area_chart variants render an accessible chart", () => {
     test(`${variant.name}: svg has role=img, an accessible name, and one area+line per series`, async ({
       page,
     }) => {
-      await page.goto(`${BASE_URL}/component/?name=area_chart&`);
+      await gotoHydrated(page, `${BASE_URL}/component/area_chart/`);
       const frame = page.locator(`#${variant.frameId}`).first();
 
       const svg = frame.locator('svg[role="img"]').first();
@@ -56,7 +57,7 @@ test.describe("area_chart variants render an accessible chart", () => {
 test.describe("Axe automated scan", () => {
   for (const variant of VARIANTS) {
     test(`${variant.name} has no automatically detectable a11y issues`, async ({ page }) => {
-      await page.goto(`${BASE_URL}/component/?name=area_chart&`);
+      await gotoHydrated(page, `${BASE_URL}/component/area_chart/`);
       await expectNoAxeViolations(page, `area_chart: ${variant.name}`, {
         include: `#${variant.frameId}`,
         excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT],
@@ -80,7 +81,7 @@ test.describe("Behavioural: variant-specific rendering", () => {
   test("stacked: the two series sum, not overlap (the second series' whole span sits under the first's)", async ({
     page,
   }) => {
-    await page.goto(`${BASE_URL}/component/?name=area_chart&`);
+    await gotoHydrated(page, `${BASE_URL}/component/area_chart/`);
     const frame = page.locator("#component-preview-frame-stacked").first();
     // A stacked chart's hidden table still lists every series' own raw
     // value (stacking is a drawing concern, not a data concern), in config
@@ -93,7 +94,7 @@ test.describe("Behavioural: variant-specific rendering", () => {
   test("step: the line path is a staircase -- every segment after the initial M is purely horizontal or purely vertical", async ({
     page,
   }) => {
-    await page.goto(`${BASE_URL}/component/?name=area_chart&`);
+    await gotoHydrated(page, `${BASE_URL}/component/area_chart/`);
     const frame = page.locator("#component-preview-frame-step").first();
     const d = await frame.locator('[data-slot="chart-line"]').first().getAttribute("d");
     expect(d).toBeTruthy();
@@ -127,7 +128,7 @@ test.describe("Behavioural: variant-specific rendering", () => {
   test("stacked_expand: the topmost stacked area reaches the plot top (y close to the margin)", async ({
     page,
   }) => {
-    await page.goto(`${BASE_URL}/component/?name=area_chart&`);
+    await gotoHydrated(page, `${BASE_URL}/component/area_chart/`);
     const frame = page.locator("#component-preview-frame-stacked_expand").first();
     // Config order is other, mobile, desktop (shadcn's JSX order, which is
     // Recharts' stacking order): each series stacks on top of the previous
@@ -147,7 +148,7 @@ test.describe("Behavioural: variant-specific rendering", () => {
   test("gradient: every series' area fill references its own <linearGradient> def", async ({
     page,
   }) => {
-    await page.goto(`${BASE_URL}/component/?name=area_chart&`);
+    await gotoHydrated(page, `${BASE_URL}/component/area_chart/`);
     const frame = page.locator("#component-preview-frame-gradient").first();
 
     const areaPaths = frame.locator('[data-slot="chart-area"]');
@@ -170,7 +171,7 @@ test.describe("Behavioural: variant-specific rendering", () => {
   });
 
   test('interactive: switching to "Last 7 days" shows shadcn\'s 8 days', async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=area_chart&`);
+    await gotoHydrated(page, `${BASE_URL}/component/area_chart/`);
     const frame = page.locator("#component-preview-frame-interactive").first();
     // shadcn keeps every date on or after June 30 minus the range: 91 rows
     // for 90 days, 8 for 7.

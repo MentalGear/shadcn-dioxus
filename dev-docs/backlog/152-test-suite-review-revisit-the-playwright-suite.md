@@ -1,10 +1,10 @@
 ---
 id: 152
 title: "Test-suite review: revisit the Playwright suite (~1,786 tests, ~21 min on a release build with 4 workers) for…"
-status: "OPEN -- owner note 2026-10-05; nothing was run for this row, the evidence below is read from the…"
+status: "NARROWED 2026-10-19: speed half 152a DONE (lane suite-speed badc56d7): measured (3,752 tests, 183…"
 size: "M"
 area: tests
-updated: 2026-10-20
+updated: 2026-10-19
 ---
 
 # Row 152: Test-suite review: revisit the Playwright suite (~1,786 tests, ~21 min on a release build with 4 workers) for…
@@ -15,7 +15,7 @@ Test-suite review: revisit the Playwright suite (~1,786 tests, ~21 min on a rele
 
 ## Status / trigger
 
-**OPEN** -- owner note 2026-10-05; nothing was run for this row, the evidence below is read from the round-2 full-suite report **2026-10-20 sync: not started; part of Round 6 (152b suite prune).**
+**NARROWED 2026-10-19: speed half 152a DONE (lane suite-speed badc56d7): measured (3,752 tests, 183 files, 14,168 s test time on debug; all-routes 16%, first-paint 7.7%; fixed sleeps < 2%, no external waits), duration-balanced shards + 3 workers about 1.4x faster on the same build, release about 1.47x faster than debug and runs the timing specs, changed-files spec selector playwright/tools/select.mjs, slow-spec budget gate check-slow-spec-budget on playwright/durations.json, serve-spa.py serves 404.html like Pages (four not-found specs no longer hang). Remaining: per-file page reuse via a shared-page fixture (all-routes loads each route three times), then 152b (prune, merge, re-tier specs)** -- owner note 2026-10-05; nothing was run for this row, the evidence below is read from the round-2 full-suite report
 
 ## Size
 

@@ -126,7 +126,7 @@ for (const width of [1280, 390]) {
     test.use({ viewport: { width, height: 900 } });
 
     test("whole cards, inside their slide and the clip, no overlap, buttons clear", async ({ page }) => {
-      await gotoHydrated(page, `${BASE_URL}/component/?name=carousel&variant=vertical&`, GOTO_OPTS);
+      await gotoHydrated(page, `${BASE_URL}/component/carousel/`, GOTO_OPTS);
       const frame = page.locator("#component-preview-frame-vertical");
       await frame.scrollIntoViewIfNeeded();
 
@@ -152,12 +152,12 @@ for (const width of [1280, 390]) {
     });
 
     test("vertical gap equals the horizontal default (the `sizes` demo)", async ({ page }) => {
-      await gotoHydrated(page, `${BASE_URL}/component/?name=carousel&variant=vertical&`, GOTO_OPTS);
+      await gotoHydrated(page, `${BASE_URL}/component/carousel/`, GOTO_OPTS);
       await page.locator("#component-preview-frame-vertical").scrollIntoViewIfNeeded();
       await expect.poll(async () => (await cardSpacing(page, "vertical", "y")).length).toBeGreaterThan(0);
       const vertical = (await cardSpacing(page, "vertical", "y"))[0];
 
-      await gotoHydrated(page, `${BASE_URL}/component/?name=carousel&variant=sizes&`, GOTO_OPTS);
+      await gotoHydrated(page, `${BASE_URL}/component/carousel/`, GOTO_OPTS);
       await page.locator("#component-preview-frame-sizes").scrollIntoViewIfNeeded();
       await expect.poll(async () => (await cardSpacing(page, "sizes", "x")).length).toBeGreaterThan(0);
       const horizontal = (await cardSpacing(page, "sizes", "x"))[0];

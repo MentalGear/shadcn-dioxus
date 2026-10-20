@@ -86,7 +86,7 @@ function collectControls(): Control[] {
 }
 
 async function openComponent(page: Page, name: string) {
-  await gotoHydrated(page, `${BASE_URL}/component/?name=${name}&`, { timeout: NAV_TIMEOUT });
+  await gotoHydrated(page, `${BASE_URL}/component/${name}/`, { timeout: NAV_TIMEOUT });
   await expect(page.locator("#component-preview-frame")).toBeAttached();
 }
 

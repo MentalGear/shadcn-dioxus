@@ -18,7 +18,7 @@ const CONTENT = '[data-slot="drawer-content"]';
 const ROOT = '[data-slot="drawer-root"]';
 
 async function openNonModal(page: Page, index: number) {
-  await gotoHydrated(page, `${BASE_URL}/component/?name=drawer&`, GOTO_OPTS);
+  await gotoHydrated(page, `${BASE_URL}/component/drawer/`, GOTO_OPTS);
   await demoRole(page, "button", index, "non_modal").click();
   await expect(page.locator(ROOT)).toHaveAttribute("data-state", "open");
   await awaitAnimationsSettled(page.locator(CONTENT));
@@ -33,7 +33,7 @@ test("a non-modal panel has no aria-modal and passes axe", async ({ page }) => {
 });
 
 test("a modal dialog still has aria-modal=true", async ({ page }) => {
-  await gotoHydrated(page, `${BASE_URL}/component/?name=dialog&`, GOTO_OPTS);
+  await gotoHydrated(page, `${BASE_URL}/component/dialog/`, GOTO_OPTS);
   await demoRole(page, "button", 0).click();
   await expect(page.locator('dialog[open][role="dialog"]')).toHaveAttribute("aria-modal", "true");
 });

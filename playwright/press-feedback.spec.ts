@@ -18,7 +18,7 @@ import { gotoHydrated } from "./hydration";
  *   PLAYWRIGHT_BASE_URL=http://127.0.0.1:8106 npx playwright test --config=ssg.local.config.ts press-feedback.spec.ts
  */
 
-const BUTTON_PAGE = `${BASE_URL}/component/?name=button`;
+const BUTTON_PAGE = `${BASE_URL}/component/button/`;
 
 /** A `dx-` control with no component sheet: only the theme's own rules apply to it. */
 async function addProbe(page: Page): Promise<Locator> {
@@ -110,7 +110,7 @@ test.describe("touch", () => {
 
   test("a tap does not hover-open a navbar or navigation menu by hover intent", async ({ page }) => {
     // The compat mouse events a tap produces must not start the 150 ms open-intent timer.
-    await gotoHydrated(page, `${BASE_URL}/component/?name=navigation_menu&`);
+    await gotoHydrated(page, `${BASE_URL}/component/navigation_menu/`);
     const trigger = page
       .getByRole("navigation", { name: "Component navigation menu" })
       .getByRole("button", { name: "Getting started" });

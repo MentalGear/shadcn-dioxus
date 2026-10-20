@@ -20,7 +20,7 @@ import { gotoHydrated } from "./hydration";
 // exact shadcn source file.
 const VARIANTS = ["main", "label", "grid", "text", "shape", "stacked"] as const;
 
-const URL = `${BASE_URL}/component/?name=radial_chart&`;
+const URL = `${BASE_URL}/component/radial_chart/`;
 
 function frame(page: Page, variant: (typeof VARIANTS)[number]): Locator {
   const suffix = variant === "main" ? "" : `-${variant}`;

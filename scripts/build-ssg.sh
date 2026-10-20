@@ -44,6 +44,7 @@
 #     asset bundling, so the pages link a hash the manifest lacks) rebuilds from a wiped public/ and
 #     manifest; guard 4 then runs again on the second build. Anything else fails at once. A second
 #     failure fails the build.
+#  0. Sources are touched before the build (BUILD_SSG_TOUCH=always|auto|never, default auto): see "Mtime discipline" below.
 #  5. Output matches the requested base path: with `--base-path P` the root page must reference
 #     `/P/...`; without it NO page may reference `/shadcn-dioxus/...` or the pre-rename `/dioxus-components/...` (same pattern as
 #     scripts/lane-target.sh's contamination grep).
@@ -110,6 +111,11 @@ case "$target_dir" in
     ;;
 esac
 export CARGO_TARGET_DIR="$target_dir"
+# The target root must EXIST before dx starts: the dx log is `tee`d into it, and tee opens its file at once,
+# racing dx/cargo, which create a cold root a moment later. Losing that race left no log, and guard 4 then
+# failed a complete cold build with "dx log .../build-ssg.dx.log not found" (row 216, round 4; reproduced with
+# a stub dx that creates the root after 0.5 s). Intermittent, hence "a warm rerun passed".
+mkdir -p "$target_dir"
 marker_file="$target_dir/.base-path-build"
 public_dir="$target_dir/dx/preview/$profile/web/public"
 manifest="$(dirname "$public_dir")/.manifest.json"
@@ -175,7 +181,10 @@ build_once() {
   echo "==> Building preview ($profile, ssg, fullstack${base_path:+, base-path $base_path}) ... (dx log: $dx_log)"
   local dx_rc=0
   set +e
-  ( cd "$repo_root/preview" && exec dx "${dx_args[@]}" ) 2>&1 | tee "$dx_log"
+  # BUILD_SSG_NETNS=1 (scripts/lane-ssg.sh): dx pre-renders through a server on the fixed port 9999, so two
+  # concurrent builds collide silently; a private loopback per build removes that (scripts/lane-netns.sh).
+  local netns=(); [ "${BUILD_SSG_NETNS:-0}" = 1 ] && netns=("$repo_root/scripts/lane-netns.sh")
+  ( cd "$repo_root/preview" && exec "${netns[@]}" dx "${dx_args[@]}" ) 2>&1 | tee "$dx_log"
   dx_rc=${PIPESTATUS[0]}
   set -e
   if [ "$dx_rc" -ne 0 ]; then
@@ -257,6 +266,18 @@ build_once() {
   route_count="$(sed -nE 's/^ssg-verify: OK -- ([0-9]+) routes.*/\1/p' "$bundle_log")"
   return 0
 }
+
+# --- Mtime discipline (row 216): cargo judges a workspace crate's freshness by mtime and gives it the same unit
+# hash in every worktree, so a target another tree built in can look "fresh" against OLDER files here and
+# the build would ship that tree's code. BUILD_SSG_TOUCH=auto (default) touches the sources unless this
+# target's `.tree-owner` stamp already names this worktree; `always` forces it; `never` is for a caller that
+# already did (scripts/lane-ssg.sh).
+case "${BUILD_SSG_TOUCH:-auto}" in
+  auto)   (cd "$repo_root" && scripts/lane-touch.sh "$target_dir") ;;
+  always) (cd "$repo_root" && scripts/lane-touch.sh "$target_dir" --force) ;;
+  never)  ;;
+  *) fail "BUILD_SSG_TOUCH must be always, auto or never, got '${BUILD_SSG_TOUCH}'" ;;
+esac
 
 for attempt in 1 2; do
   if build_once; then break; fi

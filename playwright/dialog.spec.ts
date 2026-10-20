@@ -3,9 +3,10 @@ import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from './axe';
 import { BASE_URL } from './base-url';
 import { assertSharedBackdrop, captureBackdrop, resolveOverlayMs } from "./assert-backdrop-fade";
 import { measureAtRest } from "./animations";
+import { gotoHydrated } from "./hydration";
 
 test('test', async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=dialog&`, { timeout: 20 * 60 * 1000 }); // Increase timeout to 20 minutes
+  await gotoHydrated(page, `${BASE_URL}/component/dialog/`, { timeout: 20 * 60 * 1000 }); // Increase timeout to 20 minutes
   // Opened from the keyboard, so the first control takes focus. A pointer/touch open focuses the
   // panel instead (row 206; modal-initial-focus.spec.ts) and would not pop the mobile keyboard.
   await page.getByRole('button', { name: 'Show Dialog' }).focus();
@@ -61,7 +62,7 @@ test('a press inside the dialog released over its backdrop does not dismiss it (
   // the dialog itself, outside its box -- identical, by target and coordinates, to a backdrop click.
   // `use_dialog_backdrop_dismiss` (primitives/src/lib.rs) now also requires the PRESS to have begun
   // on the backdrop (the Drawer's "drag up on the handle closes it" report was this).
-  await page.goto(`${BASE_URL}/component/?name=dialog&`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/dialog/`, { timeout: 20 * 60 * 1000 });
   await page.getByRole('button', { name: 'Show Dialog', exact: true }).click();
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
@@ -89,7 +90,7 @@ test('dialog stays open when clicking non-focusable content inside it', async ({
   // focused control, and the browser moves focus to the nearest focusable
   // *ancestor* -- outside the dialog's root while still containing it. The
   // shared handler read that as focus leaving and closed the dialog.
-  await page.goto(`${BASE_URL}/component/?name=dialog&`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/dialog/`, { timeout: 20 * 60 * 1000 });
   await page.getByRole('button', { name: 'Show Dialog' }).click();
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
@@ -101,7 +102,7 @@ test('dialog stays open when clicking non-focusable content inside it', async ({
 
 test.describe('Axe automated scan', () => {
   test('loaded (dialog closed) has no automatically detectable a11y issues', async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=dialog&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/dialog/`, { timeout: 20 * 60 * 1000 });
     // Wait for render before scanning -- see input.spec.ts's identical
     // comment for why (avoids a false pre-hydration "no main"/"no h1").
     await expect(page.getByRole('button', { name: 'Show Dialog' })).toBeVisible();
@@ -109,7 +110,7 @@ test.describe('Axe automated scan', () => {
   });
 
   test('open has no automatically detectable a11y issues', async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=dialog&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/dialog/`, { timeout: 20 * 60 * 1000 });
     await page.getByRole('button', { name: 'Show Dialog' }).click();
     await expect(page.getByRole('dialog')).toBeVisible();
     await expectNoAxeViolations(page, 'dialog: open', { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
@@ -124,7 +125,7 @@ test.describe('Axe automated scan', () => {
 // exit snapped.
 test.describe("Scrim", () => {
   test("Dialog paints the shared scrim and fades it in and out", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=dialog&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/dialog/`, { timeout: 20 * 60 * 1000 });
     const trigger = page.getByRole("button", { name: "Show Dialog", exact: true });
     await expect(trigger).toBeVisible();
     const capture = await captureBackdrop(
@@ -138,7 +139,7 @@ test.describe("Scrim", () => {
 
 test.describe('Parts (row 155, group 4)', () => {
   const open = async (page, label: string, variant: string) => {
-    await page.goto(`${BASE_URL}/component/?name=dialog&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/dialog/`, { timeout: 20 * 60 * 1000 });
     await page.getByRole('button', { name: label, exact: true }).focus();
     await page.keyboard.press('Enter');
     const dialog = page.getByRole('dialog');

@@ -729,7 +729,7 @@ test.describe("hydration parity — SSG server markup vs. wasm client", () => {
     page.on("console", (msg) => consoleMessages.push(msg.text()));
     page.on("pageerror", (err) => pageErrors.push(err.message));
 
-    await page.goto(`${BASE}/`, { timeout: NAV_TIMEOUT, waitUntil: "networkidle" });
+    await gotoHydrated(page, `${BASE}/`, { timeout: NAV_TIMEOUT, waitUntil: "networkidle" });
     // Settle window: hydration mismatch recovery/errors can surface a tick
     // or two after the initial load event, not necessarily synchronously.
     await page.waitForTimeout(2000);
@@ -756,8 +756,11 @@ test.describe("hydration parity — SSG server markup vs. wasm client", () => {
     await gotoHydrated(page, `${BASE}/`, { timeout: NAV_TIMEOUT });
 
     // The home page mounts every component's gallery card, so there is no single demo frame to scope to: the
-    // dropdown menu's trigger and open content are selected by the component's own classes.
-    const trigger = page.locator("button.dx-dropdown-menu-trigger").first();
+    // dropdown menu's trigger and open content are selected by the component's own classes, inside ITS card --
+    // the docs chrome's own "Jump to category" menu (6be1887d) is a dropdown-menu trigger too and comes first.
+    const trigger = page
+      .locator('article.dx-component-card:has(a[href^="/component/dropdown_menu/"]) button.dx-dropdown-menu-trigger')
+      .first();
     await expect(trigger).toBeVisible();
     await expect(trigger).toHaveAttribute("data-state", "closed");
 
@@ -959,7 +962,7 @@ test.describe("hydration parity — per-component pages (row 46)", () => {
       // synchronous hydration walk right after `load`, not from later
       // background network activity, so "load" is both sufficient for what
       // this rule checks and immune to a fixture page's own idle timers.
-      await page.goto(`${BASE}/component/${name}/`, { timeout: NAV_TIMEOUT, waitUntil: "load" });
+      await gotoHydrated(page, `${BASE}/component/${name}/`, { timeout: NAV_TIMEOUT, waitUntil: "load" });
       // Shorter settle window than Rule 2's own 2s: this loop already pays
       // one full navigation per component, and a hydration-mismatch
       // recovery (the defect class this guards) surfaces within a tick or
@@ -1029,7 +1032,7 @@ test.describe("hydration parity — legacy query-URL redirect on a static host (
       );
       const name = pick(COMPONENT_NAMES);
 
-      await page.goto(`${BASE}/component/?name=${name}&`, {
+      await gotoHydrated(page, `${BASE}/component/?name=${name}&`, { // legacy-route-ok: this test IS the legacy redirect
         timeout: NAV_TIMEOUT,
         waitUntil: "load",
       });

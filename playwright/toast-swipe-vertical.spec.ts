@@ -2,13 +2,14 @@ import { test, expect } from "./fixtures";
 import { type Page } from "@playwright/test";
 import { BASE_URL } from "./base-url";
 import { measureAtRest } from "./animations";
+import { gotoHydrated } from "./hydration";
 
 const TOP = "Top toast notifications"; // toaster at the top of the viewport
 const BOTTOM = "Swipe toast notifications"; // toaster at the bottom (the default)
 const toasts = (page: Page, name: string) => page.getByRole("region", { name }).getByRole("alertdialog");
 
 async function show(page: Page, button: string, region: string) {
-  await page.goto(`${BASE_URL}/component/?name=toast&`);
+  await gotoHydrated(page, `${BASE_URL}/component/toast/`);
   await page.getByRole("button", { name: button }).click();
   const t = toasts(page, region);
   await expect(t).toHaveCount(1);

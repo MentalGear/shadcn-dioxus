@@ -43,6 +43,7 @@ fail() { echo "error: emit-404: $1" >&2; rm -f "$out"; exit 1; }
 grep -q 'id="dx-404-pending"' "$out" || fail "the pending-content style was not injected"
 grep -q 'initial_dioxus_hydration_data' "$out" || fail "no hydration data (the client throws without it)"
 grep -q '<script type="module"' "$out" || fail "no wasm bootstrap <script type=\"module\">"
-grep -q 'rel="stylesheet" href="/shadcn-dioxus/assets/' "$out" || fail "no base-path-absolute stylesheet"
+# `/<base>/assets/` on the deploy, `/assets/` on a no-base-path build (the lane/spec builds, row 152a).
+grep -Eq 'rel="stylesheet" href="(/[A-Za-z0-9_-]+)?/assets/' "$out" || fail "no base-path-absolute stylesheet"
 grep -Eq '(href|src)="(\.|[A-Za-z0-9_-]+/)' "$out" && fail "a relative asset URL would break when served at depth"
 echo "==> OK: $out ($(wc -c < "$out") bytes) is the app shell for unknown URLs."

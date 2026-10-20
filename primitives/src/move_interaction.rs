@@ -120,10 +120,23 @@ impl MoveInteraction {
         event.prevent_default();
         event.stop_propagation();
 
-        if self.active_pointer_id.read().is_some()
-            || event.trigger_button() != Some(MouseButton::Primary)
-        {
+        if event.trigger_button() != Some(MouseButton::Primary) {
             return false;
+        }
+
+        // A drag ends when the window bridge sees the pointer's `pointerup`/`pointercancel`. If that
+        // release is ever lost (a window listener that never ran, a touch the OS took over), the
+        // pointer would stay "active" and reject every later pointerdown on this control: the panel
+        // is open and no tap changes anything. A new PRIMARY pointer cannot go down while the previous
+        // primary one is still held, so the old one is by definition over: forget it and take the new
+        // one. A non-primary pointer (a second finger during a drag) is still rejected.
+        let stale = *self.active_pointer_id.read();
+        if let Some(stale) = stale {
+            if !event.data().is_primary() {
+                return false;
+            }
+            pointer::release_pointer(stale);
+            self.last_pointer_position.set(None);
         }
 
         let pointer_id = event.data().pointer_id();

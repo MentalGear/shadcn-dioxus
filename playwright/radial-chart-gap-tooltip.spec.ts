@@ -12,7 +12,7 @@ import { gotoHydrated } from "./hydration";
 // The `main` variant has no background track, so `elementFromPoint` tells a
 // bar from a gap.
 
-const URL = `${BASE_URL}/component/?name=radial_chart&`;
+const URL = `${BASE_URL}/component/radial_chart/`;
 let FRAME = "#component-preview-frame";
 
 type Pt = { x: number; y: number };

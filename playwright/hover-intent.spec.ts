@@ -33,7 +33,7 @@ type Menu = {
 const MENUS: Menu[] = [
   {
     name: 'navbar',
-    url: `${BASE_URL}/component/?name=navbar&`,
+    url: `${BASE_URL}/component/navbar/`,
     trigger: (page) => page.getByRole('menuitem', { name: 'Inputs', exact: true }),
     isOpen: (page) =>
       page
@@ -44,7 +44,7 @@ const MENUS: Menu[] = [
   },
   {
     name: 'navigation_menu',
-    url: `${BASE_URL}/component/?name=navigation_menu&`,
+    url: `${BASE_URL}/component/navigation_menu/`,
     trigger: (page) =>
       page
         .getByRole('navigation', { name: 'Component navigation menu' })

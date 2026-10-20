@@ -28,7 +28,7 @@ import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
 const GOTO_OPTS = { timeout: 20 * 60 * 1000 };
-const url = (name: string) => `${BASE_URL}/component/?name=${name}&`;
+const url = (name: string) => `${BASE_URL}/component/${name}/`;
 const frame = (page: Page) => page.locator("#component-preview-frame-fade").first();
 
 type Axis = "block" | "inline";
@@ -306,21 +306,13 @@ test.describe("MessageScroller fade", () => {
     const vp = viewportOf(page);
     await scrollBlockTo(vp, "start");
     await expectEdges(vp, "block", { start: "crisp", end: "crisp" });
-    // content-visibility rows swap their estimated height for the measured one as they lay out, so
-    // scrollHeight shrinks (6.6k -> 4.9k on a debug build) after the first paint: `before` is read only
-    // once it has held still, or the prepend's growth is compared with a stale, larger baseline.
-    let last = -1;
-    await expect.poll(async () => {
-      const sh = (await metrics(vp)).sh;
-      const settled = sh === last;
-      last = sh;
-      return settled;
-    }, { timeout: 10_000, intervals: [300] }).toBe(true);
-    const before = await metrics(vp);
+    const items = vp.locator('[data-slot="message-scroller-item"]');
+    const rowsBefore = await items.count();
     await button(page, "Load earlier messages").click();
     // Prepending keeps the reader's place: the viewport moves down by the prepended height, so the
-    // top edge is no longer the start of the scroll range and fades in.
-    await expect.poll(async () => (await metrics(vp)).sh, { timeout: 10_000 }).toBeGreaterThan(before.sh + 100);
+    // top edge is no longer the start of the scroll range and fades in. The loaded signal is more rows in the
+    // DOM, not a taller scrollHeight: rows use content-visibility: auto, so scrollHeight is not monotonic.
+    await expect.poll(async () => items.count(), { timeout: 10_000 }).toBeGreaterThan(rowsBefore);
     await expect.poll(async () => (await metrics(vp)).st, { timeout: 10_000 }).toBeGreaterThan(96);
     await expectEdges(vp, "block", { start: "faded", end: "crisp" });
     // Scrolling back to the new top: crisp again.

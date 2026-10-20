@@ -21,6 +21,7 @@
 mod bridge;
 mod cv_chunks;
 mod grid;
+pub(crate) mod layout;
 mod pin;
 mod size_index;
 pub(crate) mod types;

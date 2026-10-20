@@ -52,6 +52,7 @@ import type { Page } from "@playwright/test";
 import * as fs from "fs";
 import * as path from "path";
 import { baseUrlOr } from "../../base-url";
+import { gotoHydrated } from "../../hydration";
 
 const BASE = baseUrlOr("http://127.0.0.1:8090");
 const PREVIEW = path.join(__dirname, "..", "..", "..", "preview");
@@ -361,6 +362,7 @@ test.describe("2. hard load: the static page is the page", () => {
         const page = await ctx.newPage();
         await noWebFonts(page);
         if (js) await page.addInitScript(OBSERVE_INIT);
+        // goto-ok: the JavaScript-off variant never hydrates; the hydrated variant waits for it below (hydrated(page))
         await page.goto(`${BASE}/component/${slug}/`, { waitUntil: "load" });
         if (js) {
           await hydrated(page);
@@ -411,6 +413,7 @@ test.describe("3. client-side navigation: no route is painted with late styles",
       await noWebFonts(page);
       const css = await delayCssFetches(page);
       await page.addInitScript(OBSERVE_INIT);
+      // goto-ok: first-paint oracle: samples styles before hydration by construction
       await page.goto(`${BASE}/docs`, { waitUntil: "domcontentloaded" });
       await hydrated(page);
       await page.waitForTimeout(500);
@@ -466,6 +469,7 @@ test.describe("4. a popover's content is styled the moment it first mounts", () 
       await page.setViewportSize({ width: 1280, height: 900 });
       await noWebFonts(page);
       const css = await delayCssFetches(page);
+      // goto-ok: first-paint oracle: samples styles before hydration by construction
       await page.goto(`${BASE}/component/${slug}/`, { waitUntil: "domcontentloaded" });
       await hydrated(page);
       await page.waitForTimeout(500);
@@ -524,7 +528,7 @@ test.describe("5. an explicit theme is on <html> before first paint and never fl
             if (e.name === "first-contentful-paint" && !w.__atFcp) w.__atFcp = { theme: document.documentElement.getAttribute("data-theme"), bg: getComputedStyle(document.body).backgroundColor };
         }).observe({ type: "paint", buffered: true });
       });
-      await page.goto(`${BASE}/component/field/`, { waitUntil: "load" });
+      await gotoHydrated(page, `${BASE}/component/field/`, { waitUntil: "load" });
       await hydrated(page);
       await page.waitForTimeout(300);
       const r = await page.evaluate(() => {
@@ -548,7 +552,7 @@ test.describe("5. an explicit theme is on <html> before first paint and never fl
 test("the oracle is not vacuous: a page whose stylesheet is removed is reported", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await noWebFonts(page);
-  await page.goto(`${BASE}/component/field/`, { waitUntil: "load" });
+  await gotoHydrated(page, `${BASE}/component/field/`, { waitUntil: "load" });
   await hydrated(page);
   await installSnap(page);
   const styled = await snapOf(page, "main");

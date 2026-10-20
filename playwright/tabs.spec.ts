@@ -5,7 +5,7 @@ import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
 test("test", async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=tabs&`);
+  await gotoHydrated(page, `${BASE_URL}/component/tabs/`);
   let activeTab = page.locator('[role="tabpanel"][data-state="active"]:not(#component-preview-frame)')
     .filter({ hasText: /^Tab \d Content$/ });
   let tab1Button = page.getByRole("tab", { name: "Tab 1" });
@@ -45,7 +45,7 @@ test.describe("active tab keeps its color under the pointer (calendar-state lane
   // --secondary-color-1 and --secondary-color-3 differ in both.
   for (const dark of [false, true]) {
     test(`clicking a tab keeps its active text color while still hovered (${dark ? "dark" : "light"} mode)`, async ({ page }) => {
-      await page.goto(`${BASE_URL}/component/?name=tabs&${dark ? "dark_mode=true" : ""}`);
+      await gotoHydrated(page, `${BASE_URL}/component/tabs/${dark ? "?dark_mode=true" : ""}`);
       const tab2Button = page.getByRole("tab", { name: "Tab 2" });
       const tab3Button = page.getByRole("tab", { name: "Tab 3" });
 
@@ -81,12 +81,12 @@ test.describe("active tab keeps its color under the pointer (calendar-state lane
 
 test.describe("Axe automated scan", () => {
   test("loaded (tab 1 active) has no automatically detectable a11y issues", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=tabs&`);
+    await gotoHydrated(page, `${BASE_URL}/component/tabs/`);
     await expectNoAxeViolations(page, "tabs: tab 1 active", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 
   test("tab 2 selected has no automatically detectable a11y issues", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=tabs&`);
+    await gotoHydrated(page, `${BASE_URL}/component/tabs/`);
     await page.getByRole("tab", { name: "Tab 2" }).click();
     // Scoped with the same `.filter(...)` the file's own "test" test uses
     // above -- this page's "Examples" section renders a second, unrelated
@@ -112,7 +112,7 @@ test.describe("Axe automated scan", () => {
  * hand in a headed browser.
  */
 test.describe("hidden_until_found", () => {
-  const URL = `${BASE_URL}/component/?name=tabs&`;
+  const URL = `${BASE_URL}/component/tabs/`;
   const PANEL_TEXT: Record<string, string> = {
     Overview: "A small amphibian",
     Specs: "Regenerates limbs",
@@ -263,7 +263,7 @@ test.describe("line variant: the active tab carries the underline", () => {
     });
 
   test("the underline follows the selected tab and the list has no fill", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/?name=button&`, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, `${BASE_URL}/component/button/`, { timeout: 20 * 60 * 1000 });
     const list = page.locator('[data-variant="line"] .dx-tabs-list').first();
     const demo = list.getByRole("tab", { name: "DEMO" });
     const code = list.getByRole("tab", { name: "CODE" });
@@ -284,7 +284,7 @@ test.describe("line variant: the active tab carries the underline", () => {
 // Vertical orientation (backlog row 155 group 5): shadcn's `orientation="vertical"`. The `vertical` variant is
 // Account / Password / Notifications (default fill); `vertical_line` is Teams / Members / Roles (line variant).
 test.describe("vertical orientation", () => {
-  const URL = `${BASE_URL}/component/?name=tabs&`;
+  const URL = `${BASE_URL}/component/tabs/`;
   async function load(page: Page) {
     await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
     const vlist = page.locator('[role="tablist"][aria-orientation="vertical"]');
@@ -402,23 +402,37 @@ test.describe("vertical orientation", () => {
 // The docs site's demo frame is itself a `TabContent` (`.dx-component-preview-frame.dx-tabs-content-themed`)
 // inside a `line` Tabs. The panel's default frame (tabs/style.css, loaded after main.css) used to out-rank the
 // frame's own border and radius on stylesheet order alone, so every demo on every component page lost its
-// chrome. The frame is shadcn's preview frame (docs-site lane, rows 231): `rounded-2xl border`, 40px padding,
-// 288px tall, and NO fill -- no card colour, no dotted grid -- so a demo sits on the page like shadcn's.
+// chrome. The frame is the docs preview card (736e9600, row 285): `rounded-2xl`, 40px padding, 288px tall, NO border
+// and no dotted grid, filled with the soft `--dx-docs-preview-surface` (a mix of page and card) -- the Tabs panel
+// default would give it a 1px border and the card colour.
 test.describe("the docs demo frame keeps its own chrome", () => {
   test("border, radius, padding and height come from main.css, not from the Tabs panel default", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=spinner&`);
+    await gotoHydrated(page, `${BASE_URL}/component/spinner/`);
     const frame = page.locator(".dx-component-preview-frame").first();
     await expect(frame).toBeVisible();
-    await expect(frame).toHaveCSS("border-top-width", "1px");
+    await expect(frame).toHaveCSS("border-top-width", "0px");
     await expect(frame).toHaveCSS("border-top-left-radius", "16px");
     await expect(frame).toHaveCSS("padding-top", "40px");
     await expect(frame).toHaveCSS("background-image", "none");
-    await expect(frame).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+    // The fill is the docs surface token resolved in the frame's own scope, not the Tabs panel's card colour.
+    const [fill, surface, card] = await frame.evaluate((el) => {
+      const probe = (value: string) => {
+        const p = document.createElement("div");
+        p.style.backgroundColor = value;
+        el.appendChild(p);
+        const c = getComputedStyle(p).backgroundColor;
+        p.remove();
+        return c;
+      };
+      return [getComputedStyle(el).backgroundColor, probe("var(--dx-docs-preview-surface)"), probe("var(--dx-card)")];
+    });
+    expect(fill, "the frame is filled with --dx-docs-preview-surface").toBe(surface);
+    expect(fill, "not the Tabs panel's card colour").not.toBe(card);
     expect((await frame.boundingBox())!.height).toBeGreaterThanOrEqual(288);
   });
 
   test("a default Tabs panel is still framed by the zero-specificity default", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=tabs&`);
+    await gotoHydrated(page, `${BASE_URL}/component/tabs/`);
     const panel = page.locator('.dx-tabs[data-variant="default"] .dx-tabs-content-themed[data-state="active"]').first();
     await expect(panel).toBeVisible();
     await expect(panel).toHaveCSS("border-top-width", "1px");

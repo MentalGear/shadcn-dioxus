@@ -4,7 +4,7 @@ title: "tooltip.spec.ts:6 \"tabbing out of the trigger element should hide the t
 status: "Seen 2026-09-28 in the mode-D integration run (--workers=4, SSG release build): the tooltip was…"
 size: "S (diagnosis, when it recurs)"
 area: tests
-updated: 2026-09-28
+updated: 2026-10-19
 ---
 
 # Row 115: tooltip.spec.ts:6 "tabbing out of the trigger element should hide the tooltip" failed once in a full-suite…

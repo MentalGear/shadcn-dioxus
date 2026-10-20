@@ -7,7 +7,7 @@ import { fixedViewportBox } from './viewport-box';
 import { expectFadeKeepsTransform } from './assert-anchor-transform';
 import { measureAtRest, readAtRest } from "./animations";
 
-const URL = `${BASE_URL}/component/?name=navigation_menu&`;
+const URL = `${BASE_URL}/component/navigation_menu/`;
 const GOTO = { timeout: 20 * 60 * 1000 }; // Increase timeout to 20 minutes
 
 /**
@@ -27,7 +27,7 @@ function nav(page: Page) {
 }
 
 test('hover opens the panel', async ({ page }) => {
-  await page.goto(URL, GOTO);
+  await gotoHydrated(page, URL, GOTO);
   const trigger = nav(page).getByRole('button', { name: 'Getting started' });
   await expect(trigger).toHaveAttribute('aria-expanded', 'false');
   await trigger.hover();
@@ -46,7 +46,7 @@ test('hover opens the panel', async ({ page }) => {
 // ordinary toggle. (Radix itself closes here and only blocks hover re-opening; Base UI's
 // `stickIfOpen` and this primitive keep it open.)
 test('a click on a trigger whose panel hover just opened keeps it open; the next click closes it', async ({ page }) => {
-  await page.goto(URL, GOTO);
+  await gotoHydrated(page, URL, GOTO);
   const trigger = nav(page).getByRole('button', { name: 'Getting started' });
   await trigger.hover();
   await expect(trigger).toHaveAttribute('aria-expanded', 'true');
@@ -67,7 +67,7 @@ test('a click on a trigger whose panel hover just opened keeps it open; the next
 });
 
 test('a keyboard-opened panel still toggles shut on the first click (no stale hover marker)', async ({ page }) => {
-  await page.goto(URL, GOTO);
+  await gotoHydrated(page, URL, GOTO);
   const trigger = nav(page).getByRole('button', { name: 'Getting started' });
   // Hover-open, leave and let the close grace elapse, so the hover marker had every chance
   // to go stale; then open with the keyboard and click.
@@ -83,7 +83,7 @@ test('a keyboard-opened panel still toggles shut on the first click (no stale ho
 });
 
 test('opening one item closes the other', async ({ page }) => {
-  await page.goto(URL, GOTO);
+  await gotoHydrated(page, URL, GOTO);
   const gettingStarted = nav(page).getByRole('button', { name: 'Getting started' });
   const components = nav(page).getByRole('button', { name: 'Components' });
 
@@ -96,7 +96,7 @@ test('opening one item closes the other', async ({ page }) => {
 });
 
 test('pointer leaving the trigger and its content closes the panel', async ({ page }) => {
-  await page.goto(URL, GOTO);
+  await gotoHydrated(page, URL, GOTO);
   const trigger = nav(page).getByRole('button', { name: 'Getting started' });
 
   await trigger.hover();
@@ -110,7 +110,7 @@ test('pointer leaving the trigger and its content closes the panel', async ({ pa
 });
 
 test('pointer entering the content cancels the close', async ({ page }) => {
-  await page.goto(URL, GOTO);
+  await gotoHydrated(page, URL, GOTO);
   const trigger = nav(page).getByRole('button', { name: 'Getting started' });
 
   await trigger.hover();
@@ -129,7 +129,7 @@ test('pointer entering the content cancels the close', async ({ page }) => {
 });
 
 test('the plain top-level link is a real link', async ({ page }) => {
-  await page.goto(URL, GOTO);
+  await gotoHydrated(page, URL, GOTO);
   const docsLink = nav(page).getByRole('link', { name: 'Docs' });
   // The demo prefixes the router's base path (`/shadcn-dioxus` on
   // Pages, empty on a root-served `dx serve`), so derive it from BASE_URL.
@@ -180,7 +180,7 @@ test.describe('Open animation never reflows the content (user-reported)', () => 
   }
 
   test("the content's width never changes while its open animation plays", async ({ page }) => {
-    await page.goto(URL, GOTO);
+    await gotoHydrated(page, URL, GOTO);
     const trigger = nav(page).getByRole('button', { name: 'Getting started' });
     await expect(trigger).toHaveAttribute('aria-expanded', 'false');
 
@@ -216,7 +216,7 @@ test.describe('Open animation never reflows the content (user-reported)', () => 
     // panel popped to its own full (and differently sized) box instantly,
     // with no easing to make the size difference read as one continuous
     // animation rather than a jump.
-    await page.goto(URL, GOTO);
+    await gotoHydrated(page, URL, GOTO);
     const trigger = nav(page).getByRole('button', { name: 'Getting started' });
     await trigger.hover();
     await expect(trigger).toHaveAttribute('aria-expanded', 'true');
@@ -446,7 +446,7 @@ test.describe('Panel layout matches shadcn (owner report: oversized panel, invis
 
 test.describe('Axe automated scan', () => {
   test('loaded (panel closed) has no automatically detectable a11y issues', async ({ page }) => {
-    await page.goto(URL, GOTO);
+    await gotoHydrated(page, URL, GOTO);
     // Wait for render before scanning -- see input.spec.ts's identical
     // comment for why (avoids a false pre-hydration "no main"/"no h1").
     await expect(nav(page).getByRole('button', { name: 'Getting started' })).toBeVisible();
@@ -456,7 +456,7 @@ test.describe('Axe automated scan', () => {
   });
 
   test('panel open has no automatically detectable a11y issues', async ({ page }) => {
-    await page.goto(URL, GOTO);
+    await gotoHydrated(page, URL, GOTO);
     const trigger = nav(page).getByRole('button', { name: 'Getting started' });
     await trigger.click();
     await expect(trigger).toHaveAttribute('aria-expanded', 'true');
@@ -482,7 +482,7 @@ test.describe('open_on_hover: false (click activation)', () => {
   }
 
   test('hovering a trigger for a second does not open its panel; a click does', async ({ page }) => {
-    await page.goto(URL, GOTO);
+    await gotoHydrated(page, URL, GOTO);
     const guides = clickNav(page).getByRole('button', { name: 'Guides' });
     await expect(guides).toHaveAttribute('aria-expanded', 'false');
 
@@ -501,7 +501,7 @@ test.describe('open_on_hover: false (click activation)', () => {
   });
 
   test('the pointer leaving a click-opened panel does not close it', async ({ page }) => {
-    await page.goto(URL, GOTO);
+    await gotoHydrated(page, URL, GOTO);
     const guides = clickNav(page).getByRole('button', { name: 'Guides' });
     await guides.click();
     await expect(guides).toHaveAttribute('aria-expanded', 'true');
@@ -515,7 +515,7 @@ test.describe('open_on_hover: false (click activation)', () => {
   });
 
   test('hovering the other trigger while one is open does not switch; clicking it does', async ({ page }) => {
-    await page.goto(URL, GOTO);
+    await gotoHydrated(page, URL, GOTO);
     const guides = clickNav(page).getByRole('button', { name: 'Guides' });
     const reference = clickNav(page).getByRole('button', { name: 'Reference' });
     await guides.click();
@@ -532,7 +532,7 @@ test.describe('open_on_hover: false (click activation)', () => {
   });
 
   test('Enter / Space open it, Escape closes it and returns focus to the trigger', async ({ page }) => {
-    await page.goto(URL, GOTO);
+    await gotoHydrated(page, URL, GOTO);
     const guides = clickNav(page).getByRole('button', { name: 'Guides' });
 
     await guides.focus();
@@ -547,7 +547,7 @@ test.describe('open_on_hover: false (click activation)', () => {
   });
 
   test('a pointer press outside the navigation menu closes the open panel', async ({ page }) => {
-    await page.goto(URL, GOTO);
+    await gotoHydrated(page, URL, GOTO);
     const guides = clickNav(page).getByRole('button', { name: 'Guides' });
     await guides.click();
     await expect(guides).toHaveAttribute('aria-expanded', 'true');
@@ -559,7 +559,7 @@ test.describe('open_on_hover: false (click activation)', () => {
   });
 
   test('an outside pointerdown that moves no focus (Safari-style: a button is not focused on click) still closes it', async ({ page }) => {
-    await page.goto(URL, GOTO);
+    await gotoHydrated(page, URL, GOTO);
     const guides = clickNav(page).getByRole('button', { name: 'Guides' });
     await guides.click();
     await expect(guides).toHaveAttribute('aria-expanded', 'true');
@@ -572,7 +572,7 @@ test.describe('open_on_hover: false (click activation)', () => {
   });
 
   test('a press inside the panel (on a link) is not an outside press', async ({ page }) => {
-    await page.goto(URL, GOTO);
+    await gotoHydrated(page, URL, GOTO);
     const guides = clickNav(page).getByRole('button', { name: 'Guides' });
     await guides.click();
     const link = clickNav(page).getByRole('link', { name: 'Theming' });
@@ -588,7 +588,7 @@ test.describe('open_on_hover: false (click activation)', () => {
   });
 
   test('has no axe violations', async ({ page }) => {
-    await page.goto(URL, GOTO);
+    await gotoHydrated(page, URL, GOTO);
     const guides = clickNav(page).getByRole('button', { name: 'Guides' });
     await guides.click();
     await expect(guides).toHaveAttribute('aria-expanded', 'true');
@@ -610,7 +610,7 @@ test.describe('open_on_hover: false (click activation)', () => {
 // ---------------------------------------------------------------------------
 test.describe('Open/close animation', () => {
   test('the fade animates translate/scale and leaves transform alone (open and close)', async ({ page }) => {
-    await page.goto(URL, GOTO);
+    await gotoHydrated(page, URL, GOTO);
     const trigger = nav(page).getByRole('button', { name: 'Getting started' });
     await trigger.hover();
     await expect(trigger).toHaveAttribute('aria-expanded', 'true');
