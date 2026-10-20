@@ -1,10 +1,10 @@
 ---
 id: 297
 title: "Overview page sidebar demo: drop the \"None\" option"
-status: "OPEN (owner review 2026-10-19)."
+status: "LANDED 2026-10-20. Overview-page Sidebar card drops the \"None\" button (c49ebdca); the component and…"
 size: "S"
 area: preview
-updated: 2026-10-19
+updated: 2026-10-20
 ---
 
 # Row 297: Overview page sidebar demo: drop the "None" option
@@ -15,7 +15,9 @@ Remove the "None" collapsible choice from the sidebar card on the docs overview.
 
 ## Status / trigger
 
-OPEN (owner review 2026-10-19).
+LANDED 2026-10-20. Overview-page Sidebar card drops the "None" button (c49ebdca); the component and the three variant demos keep it (owner default). Spec: home-overview.spec.ts (94a78461).
+
+Previous status: OPEN (owner review 2026-10-19).
 
 ## Size
 

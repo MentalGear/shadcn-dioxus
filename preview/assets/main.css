@@ -1853,8 +1853,14 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
   grid-area: header;
 }
 
+/* The vertical rule between the description column and the example column (backlog row 298): the content
+ * column's leading edge, so it spans the header/content row and stops above the footer, follows the theme's
+ * `--dx-border` in both modes and flips for RTL. It only exists in the two-column layout (the stacked one,
+ * `@container (width < 67rem)` below, drops it). The preview's own 2rem padding is the space after the rule and the
+ * grid's column gap the space before it, so no extra padding is added; the 1px is what `card-fit.spec.ts` allows. */
 .dx-component-card-body > [data-slot="card-content"] {
   align-self: stretch;
+  border-inline-start: 1px solid var(--dx-border);
   grid-area: content;
 }
 
@@ -2030,6 +2036,12 @@ html[data-cv-settle] {
 
   .dx-card.dx-component-card-body {
     grid-template: "header" auto "content" auto "footer" auto / minmax(0, 1fr);
+  }
+
+  /* Stacked, the example sits under its description with no column to divide, so no rule (not a horizontal one:
+   * the cards are already separated by the row spacing and the preview's own padding). */
+  .dx-component-card-body > [data-slot="card-content"] {
+    border-inline-start: 0;
   }
 }
 

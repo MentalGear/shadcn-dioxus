@@ -86,8 +86,10 @@
     text-wrap: balance;
 }
 
+/* Bold like the navbar brand (`.dx-navbar-brand`, 700); the subtitle keeps the heading's 300 (backlog row 300). */
 .dx-hero-title {
     color: var(--dx-foreground);
+    font-weight: 700;
 }
 
 .dx-hero-subtitle {

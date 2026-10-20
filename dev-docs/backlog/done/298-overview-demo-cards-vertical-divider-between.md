@@ -1,10 +1,10 @@
 ---
 id: 298
 title: "Overview demo cards: vertical divider between description and example"
-status: "OPEN (owner review 2026-10-19)."
+status: "LANDED 2026-10-20. 1px --dx-border rule on the content column leading edge, two-column layout only…"
 size: "S"
 area: preview
-updated: 2026-10-19
+updated: 2026-10-20
 ---
 
 # Row 298: Overview demo cards: vertical divider between description and example
@@ -15,7 +15,9 @@ Add a vertical rule between the description column and the example column of the
 
 ## Status / trigger
 
-OPEN (owner review 2026-10-19).
+LANDED 2026-10-20. 1px --dx-border rule on the content column leading edge, two-column layout only, stacked layout has none (c49ebdca). Spec: home-overview.spec.ts (94a78461); card-fit.spec.ts re-run green.
+
+Previous status: OPEN (owner review 2026-10-19).
 
 ## Size
 
