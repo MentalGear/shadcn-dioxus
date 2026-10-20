@@ -252,7 +252,7 @@ enum Layout {
 #[component]
 pub fn Demo() -> Element {
     let mut wall = use_signal(WallState::default);
-    let mut selected = use_signal(|| 0usize);
+    let selected = use_signal(|| 0usize);
     let mut preview_open = use_signal(|| false);
     // The active photo by index, shared by both layouts (the justified grid owns it two-way).
     let mut active_index = use_signal(|| 0usize);
@@ -294,6 +294,7 @@ pub fn Demo() -> Element {
     let (aw, ah) = aspect(chosen);
     let justified = layout() == Layout::Justified;
     let open_photo = move |index: usize| {
+        let (mut selected, mut preview_open) = (selected, preview_open);
         selected.set(index);
         preview_open.set(true);
     };

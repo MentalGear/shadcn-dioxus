@@ -762,7 +762,7 @@ pub fn VirtualJustifiedGrid(props: VirtualJustifiedGridProps) -> Element {
     use_focus_active_tile(container_id, active, focus_request);
 
     let set_active = move |index: usize| {
-        let mut active = active;
+        let (mut active, mut seen_active) = (active, seen_active);
         seen_active.set(index);
         if *active.peek() != index {
             active.set(index);
