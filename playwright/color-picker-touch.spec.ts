@@ -2,6 +2,7 @@ import { test, expect } from "./fixtures";
 import { type Page } from "@playwright/test";
 import { BASE_URL } from "./base-url";
 import { measureAtRest } from "./animations";
+import { gotoHydrated } from "./hydration";
 
 // Touch taps on the Color Picker panel (owner report: on iOS the panel opened but a tap on the color
 // area, and on other controls in it, never changed the color). The color area and the hue slider share
@@ -9,13 +10,12 @@ import { measureAtRest } from "./animations";
 // share is a pointer that stays "active" after its release was never seen, which makes every later
 // pointerdown on that control be ignored. Real touch input only (`touchscreen.tap`, CDP touch events).
 
-const PAGE_URL = `${BASE_URL}/component/?name=color_picker&`;
+const PAGE_URL = `${BASE_URL}/component/color_picker/`;
 
 test.use({ hasTouch: true, isMobile: true, viewport: { width: 390, height: 844 }, deviceScaleFactor: 3 });
 
 async function openPicker(page: Page) {
-  await page.goto(PAGE_URL, { timeout: 20 * 60 * 1000 });
-  await page.waitForLoadState("networkidle");
+  await gotoHydrated(page, PAGE_URL, { timeout: 20 * 60 * 1000 });
   const button = page.getByRole("button", { name: /Color picker/i }).first();
   await button.tap();
   await expect(button).toHaveAttribute("aria-expanded", "true");
