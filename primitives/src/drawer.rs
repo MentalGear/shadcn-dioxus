@@ -513,7 +513,9 @@ const INTERACTIVE_SELECTOR: &str =
 /// has travelled [`AXIS_LOCK_PX`] and that first decisive movement is predominantly along the
 /// drag axis (and the scrollable ancestor from rule 4 cannot scroll that way). If the cross axis
 /// wins (a scroll with sideways wobble), or the content can scroll, the press is abandoned for
-/// that pointer and the browser scrolls undisturbed. Only then is `start` sent.
+/// that pointer and the browser scrolls undisturbed. Only then is `start` sent. A mouse press has
+/// no scroll gesture to protect, so it commits at once (and `data-dragging` keeps text from
+/// being selected under the drag).
 ///
 /// Then, once committed and until that pointer is released or cancelled, every `pointermove` updates
 /// the oriented offset (`raw delta * sign`, positive toward the closing edge) and
@@ -629,6 +631,12 @@ if (el && enabled) {
             pointerId: e.pointerId, startX: e.clientX, startY: e.clientY, offset: 0,
             samples: [[e.timeStamp, 0]], committed: false, scroller, rect: el.getBoundingClientRect(),
         };
+        // A mouse press has no scroll gesture to protect, and `data-dragging` is what suppresses
+        // text selection during the drag, so it commits at once; only touch and pen wait for the lock.
+        if (e.pointerType === 'mouse') {
+            drag.committed = true;
+            dioxus.send(['start', vertical ? drag.rect.height : drag.rect.width, 0]);
+        }
         window.addEventListener('pointermove', onMove);
         window.addEventListener('pointerup', onUp);
         window.addEventListener('pointercancel', onCancel);

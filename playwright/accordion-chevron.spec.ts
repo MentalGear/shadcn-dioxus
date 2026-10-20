@@ -11,13 +11,11 @@ const GOTO_OPTS = { timeout: 20 * 60 * 1000 };
 
 test('a collapsed accordion header does not underline on hover; an open one does', async ({ page }) => {
   await gotoHydrated(page, `${BASE_URL}/component/accordion/`, GOTO_OPTS);
-  const closed = page.locator('.dx-component-examples button.dx-accordion-trigger[aria-expanded="false"]').first();
-  await expect(closed).toBeVisible();
-  const trigger = page.locator(`#${await closed.getAttribute('id')}`);
+  const trigger = page.locator('.dx-component-examples .dx-accordion-item button.dx-accordion-trigger').nth(1);
+  await expect(trigger).toBeVisible();
   const decoration = () => trigger.evaluate((el) => getComputedStyle(el).textDecorationLine);
   await trigger.hover();
-  const collapsed = await trigger.getAttribute('aria-expanded');
-  expect(collapsed).toBe('false');
+  await expect(trigger).toHaveAttribute('aria-expanded', 'false');
   expect(await decoration()).toBe('none');
   await trigger.click();
   await expect(trigger).toHaveAttribute('aria-expanded', 'true');
