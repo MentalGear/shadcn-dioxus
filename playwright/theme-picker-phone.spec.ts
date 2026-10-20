@@ -9,8 +9,8 @@ import { gotoHydrated } from "./hydration";
  * header, not only on the ones with a navigation sheet to host it.
  *
  * `theme::ThemePickerSidebarFooter` (the phone entry the picker has always had) lives at the foot of the
- * docs sidebar's sheet, so a route with no sidebar (`/demos`, the `/charts/` gallery, the "not found"
- * pages) had no picker at <= 760px: the header's popover trigger is hidden there and there was no sheet.
+ * docs sidebar's sheet, so a route with no sidebar (the "not found"
+ * pages; `/demos` and the `/charts/` gallery were two until row 303 gave them the docs shell) had no picker at <= 760px: the header's popover trigger is hidden there and there was no sheet.
  * The header's own `theme::ThemePicker` now renders `ThemePickerPhoneTrigger` when (and only when) the
  * route has no `SidebarCtx`, so this spec is a SWEEP over every route type: whichever entry a page has,
  * it must have exactly one "Theme" entry reachable at phone width, that entry must open the SAME drawer,
@@ -28,9 +28,6 @@ const SHOTS = process.env.THEME_SHOTS_DIR;
 
 /** Routes whose header has no navigation sheet: the picker's phone entry is the header's own button. */
 const HEADER_ENTRY_ROUTES = [
-  { name: "demos", url: "/demos" },
-  { name: "charts", url: "/charts/" },
-  { name: "charts tab", url: "/charts/bar/" },
   { name: "charts not found", url: "/charts/no-such-chart/" },
   { name: "component not found", url: "/component/no-such-component/" },
 ];
@@ -40,6 +37,10 @@ const SHEET_ENTRY_ROUTES = [
   { name: "home", url: "/" },
   { name: "docs", url: "/docs" },
   { name: "component page", url: "/component/button/" },
+  // Row 303: the demos index and the chart gallery render inside the docs shell, so they have the sheet too.
+  { name: "demos", url: "/demos" },
+  { name: "charts", url: "/charts/" },
+  { name: "charts tab", url: "/charts/bar/" },
 ];
 
 const PHONES = [
@@ -202,8 +203,8 @@ for (const { width, height } of PHONES) {
       });
     }
 
-    test("/demos: a preset and the light/dark toggle both apply to the page, from the header's entry", async ({ page }) => {
-      await gotoHydrated(page, `${BASE_URL}/demos`);
+    test("a no-sidebar page: a preset and the light/dark toggle both apply to the page, from the header's entry", async ({ page }) => {
+      await gotoHydrated(page, `${BASE_URL}/charts/no-such-chart/`);
 
       // Light/dark: still in the header beside the new entry, still switches the page.
       expect(await attr(page, "data-theme")).toBeNull();
@@ -242,23 +243,23 @@ for (const { width, height } of PHONES) {
       await expect(drawer(page)).toHaveCount(0);
 
       // It persists, and a hard reload of a DIFFERENT no-sidebar route re-applies it and reads it back.
-      await gotoHydrated(page, `${BASE_URL}/charts/`);
+      await gotoHydrated(page, `${BASE_URL}/component/no-such-component/`);
       expect(await attr(page, "data-theme-accent")).toBe("blue");
       await headerThemeButton(page).tap();
       await expect(drawer(page).getByRole("button", { name: "Blue", exact: true })).toHaveAttribute("aria-pressed", "true");
     });
 
-    test("/charts/: a preset recolours the charts page too", async ({ page }) => {
+    test("/charts/: a preset recolours the charts page too, from the navigation sheet's entry", async ({ page }) => {
       await gotoHydrated(page, `${BASE_URL}/charts/`);
       const before = await primaryToken(page);
-      await headerThemeButton(page).tap();
+      await page.getByRole("button", { name: "Toggle Sidebar" }).tap();
+      await expect(navSheet(page)).toBeVisible();
+      await navSheet(page).getByRole("button", { name: "Theme", exact: true }).tap();
       await drawer(page).getByRole("button", { name: "Rose", exact: true }).tap();
       expect(await attr(page, "data-theme-accent")).toBe("rose");
       await expect.poll(() => primaryToken(page)).not.toBe(before);
       await drawer(page).getByRole("button", { name: "Done" }).tap();
       await expect(drawer(page)).toHaveCount(0);
-      await expectNoHorizontalOverflow(page, width);
-      await expectHeaderItemsClear(page, width);
     });
   });
 }
@@ -287,8 +288,8 @@ test.describe("desktop is unchanged on the routes that had no phone entry", () =
     });
   }
 
-  test("760px is a phone, 761px is not, on /demos: exactly one 'Theme' button at each", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/demos`);
+  test("760px is a phone, 761px is not, on a no-sidebar page: exactly one 'Theme' button at each", async ({ page }) => {
+    await gotoHydrated(page, `${BASE_URL}/charts/no-such-chart/`);
 
     await page.setViewportSize({ width: 761, height: 800 });
     await expect(themeButtons(page)).toHaveCount(1);
@@ -309,7 +310,7 @@ test.describe("desktop is unchanged on the routes that had no phone entry", () =
  * header-entry routes at 390/360. Every route type x every phone width, down to 320px (the narrowest phone), with
  * ZERO tolerance: items may touch their neighbours' gaps but never their boxes.
  */
-const ALL_ROUTES = [...SHEET_ENTRY_ROUTES, { name: "demos", url: "/demos" }, { name: "charts", url: "/charts/" }];
+const ALL_ROUTES = [...SHEET_ENTRY_ROUTES];
 
 for (const { width, height } of [...PHONES, { width: 320, height: 568 }]) {
   test.describe(`the header row fits at ${width}px`, () => {

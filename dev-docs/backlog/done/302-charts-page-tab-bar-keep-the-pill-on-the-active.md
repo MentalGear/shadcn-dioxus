@@ -1,10 +1,10 @@
 ---
 id: 302
 title: "Charts page tab bar: keep the pill on the active tab"
-status: "OPEN (owner review 2026-10-19)."
+status: "LANDED 2026-10-20 (lane charts-page). Corrected cause: the pill seen while pressing is the theme's…"
 size: "S (static) / M (animated)"
 area: preview
-updated: 2026-10-19
+updated: 2026-10-20
 ---
 
 # Row 302: Charts page tab bar: keep the pill on the active tab
@@ -15,7 +15,7 @@ On `/charts/` the rounded highlight you see on a tab while pressing doesn't stay
 
 ## Status / trigger
 
-OPEN (owner review 2026-10-19).
+**LANDED 2026-10-20 (lane `charts-page`).** Corrected cause: the pill seen while pressing is the theme's **press-feedback wash** (`background-image` + `scale` on `a[href].dx-*:active`, row 205) on a `border-radius: full` link, not the focus ring (measured: after a mouse click the ring token resolves to `0 0 #0000` under `data-dx-modality="mouse"`, no ring is drawn; screenshots in `/home/user/tgt/shots-charts-page/before-tabs-*`). It vanished on release because the resting tab had no background. Fix in `main.css` (`.dx-charts-tab`): active (`aria-current="page"`) gets `background-color: var(--dx-muted)` as in shadcn's ExamplesNav (`data-[active=true]:bg-muted`), hover (inside `@media (hover: hover) and (pointer: fine)`) a 50% `color-mix(in var(--dx-hover-mix-space), muted, transparent)` pill, transition on `color`/`background-color` (plus the press `scale` so the press stays smooth). No sliding pill (the owner's sub-item, left out: needs measuring JS or anchor positioning). The shared Tabs component is untouched. Spec: `charts_gallery.spec.ts` "chart-type tabs keep the pill on the active tab" (3 tests). Originally: OPEN (owner review 2026-10-19).
 
 ## Size
 
