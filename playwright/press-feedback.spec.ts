@@ -167,6 +167,27 @@ test.describe("touch", () => {
     });
   }
 
+  // The wash replaces a pressed element's own `background-image`; a control that paints one hands it over through
+  // `--dx-press-under`, so the wash layers over it (scripts/check-press-under.sh keeps the class closed).
+  test("a pressed card keeps its own gradient under the wash (Navigation Menu featured card)", async ({ page }) => {
+    await gotoHydrated(page, `${BASE_URL}/component/navigation_menu/`);
+    const trigger = page.getByRole("navigation", { name: "Component navigation menu" }).getByRole("button", { name: "Getting started" });
+    await expect(trigger).toBeVisible({ timeout: 60_000 });
+    await trigger.tap();
+    const card = page.locator(".dx-navigation-menu-featured").first();
+    await expect(card).toBeVisible();
+    await page.waitForTimeout(500); // past the panel's enter
+    const rest = await style(card, "background-image");
+    expect(rest).toContain("linear-gradient");
+    await press(page, card); // never released: the up would follow the link
+    await expect.poll(() => style(card, "background-image")).not.toBe(rest);
+    const pressed = await style(card, "background-image");
+    // Two layers: the wash first, the card's own gradient intact underneath.
+    expect(pressed.endsWith(rest), `pressed: ${pressed}\nrest: ${rest}`).toBe(true);
+    expect(pressed.startsWith("linear-gradient(")).toBe(true);
+    expect(pressed.length).toBeGreaterThan(rest.length);
+  });
+
   test("the switch removes it: with data-dx-press-feedback=off a press changes nothing", async ({ page }) => {
     await page.evaluate(() => document.documentElement.setAttribute("data-dx-press-feedback", "off"));
     const button = page.locator('.dx-button[data-style="secondary"]:not([disabled])').first();

@@ -1031,6 +1031,13 @@ html[data-theme="light"] [class~="dxc-system"] {
  * `:where()` out-rank any single component rule; retune or silence the wash with `--dx-press-fill`
  * (`transparent`), not with a selector.
  *
+ * The wash REPLACES the pressed element's own `background-image`, so a pressable control that paints
+ * an image or gradient hands it over through the slot `--dx-press-under`: it declares the image once
+ * as `--dx-press-under: <image>; background-image: var(--dx-press-under);` and the pressed state
+ * layers the wash over that very image (the wash rule ends `..., var(--dx-press-under, none)`).
+ * `scripts/check-press-under.sh` fails a component sheet that declares an image or gradient any
+ * other way, unless the element can never be pressed (a reasoned allowlist).
+ *
  * Timing (also row 295): the press lands INSTANTLY (`--dx-press-in-duration`, `!important` because a
  * component's own `transition` shorthand would otherwise win by specificity, and 77 sheets have one)
  * and releases over the component's own transition, or `--dx-press-duration` where it has none. A tap
@@ -1096,7 +1103,7 @@ html:not([data-dx-press-feedback="off"]) [role="checkbox"][class^="dx-"]:not([di
 html:not([data-dx-press-feedback="off"]) [role="checkbox"][class*=" dx-"]:not([disabled], [aria-disabled="true"]):active,
 html:not([data-dx-press-feedback="off"]) [role="radio"][class^="dx-"]:not([disabled], [aria-disabled="true"]):active,
 html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disabled], [aria-disabled="true"]):active {
-  background-image: linear-gradient(var(--dx-press-fill), var(--dx-press-fill));
+  background-image: linear-gradient(var(--dx-press-fill), var(--dx-press-fill)), var(--dx-press-under, none);
 }
 
 @media (prefers-reduced-motion: no-preference) {

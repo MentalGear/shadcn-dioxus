@@ -85,6 +85,7 @@ gates=(
   "check-installed-paths|scripts/check-installed-paths.sh"
   "check-css-vars-defined|scripts/check-css-vars-defined.sh"
   "check-hover-mix-space|scripts/check-hover-mix-space.sh"
+  "check-press-under|scripts/check-press-under.sh"
   "check-uncleared-intervals|scripts/check-uncleared-intervals.sh"
   "check-blocking-scroll-listeners|scripts/check-blocking-scroll-listeners.sh"
   "check-props-docs|scripts/check-props-docs.sh"
