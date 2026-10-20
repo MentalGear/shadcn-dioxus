@@ -30,7 +30,10 @@ use dioxus::{document::eval, prelude::*};
 /// Pair it with a plain `checked` attribute on the same input (see the module docs). `id` and
 /// `default` are read inside an effect, so a signal passed through either closure re-runs it. The
 /// server renders no effect, so this adds nothing to prerendered HTML.
-pub fn use_default_checked(id: impl Fn() -> String + 'static, default: impl Fn() -> bool + 'static) {
+pub fn use_default_checked(
+    id: impl Fn() -> String + 'static,
+    default: impl Fn() -> bool + 'static,
+) {
     use_effect(move || {
         let js = eval(
             r#"
@@ -64,5 +67,74 @@ pub(crate) mod test_support {
             .into_iter()
             .map(|el| (el.attrs.contains_key("checked"), el.tag))
             .collect()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    /// No primitive may render a Dioxus `initial_*` attribute (`initial_checked`, `initial_value`,
+    /// `initial_selected`): `dioxus-ssr` writes it as a literal attribute and `dioxus-web`
+    /// hydration never applies it, so the default it carries is lost on every prerendered page
+    /// (backlog row 253). A default is the plain content attribute plus the client-side
+    /// `use_default_checked`. Each allowlist entry is `(file, reason)`; a stale one fails.
+    #[test]
+    fn no_primitive_renders_an_initial_attribute() {
+        const ALLOW: &[(&str, &str)] = &[(
+            "select/components/select.rs",
+            "the hidden <select>'s options also render `selected`, which SSR writes as a content \
+             attribute, so the server HTML is right; the literal `initial_selected` is inert junk \
+             (row 253 follow-up: a `use_default_selected` twin of this module removes it)",
+        )];
+        fn walk(dir: &std::path::Path, out: &mut Vec<std::path::PathBuf>) {
+            for entry in std::fs::read_dir(dir).unwrap().flatten() {
+                let path = entry.path();
+                if path.is_dir() {
+                    walk(&path, out);
+                } else if path.extension().is_some_and(|e| e == "rs") {
+                    out.push(path);
+                }
+            }
+        }
+        let src = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+        let mut files = Vec::new();
+        walk(&src, &mut files);
+        let mut hits = Vec::new();
+        let mut used = Vec::new();
+        for file in files {
+            let rel = file
+                .strip_prefix(&src)
+                .unwrap()
+                .to_string_lossy()
+                .replace('\\', "/");
+            if rel == "default_checked.rs" {
+                continue; // this guard names the attributes it forbids
+            }
+            let text = std::fs::read_to_string(&file).unwrap();
+            // An rsx attribute is `initial_xxx:` outside a comment (docs and `//` notes name them).
+            let has_attr = text.lines().any(|line| {
+                let code = line.trim_start();
+                !code.starts_with("//")
+                    && ["initial_checked:", "initial_value:", "initial_selected:"]
+                        .iter()
+                        .any(|attr| code.contains(attr))
+            });
+            if !has_attr {
+                continue;
+            }
+            match ALLOW.iter().find(|(allowed, _)| *allowed == rel) {
+                Some(_) => used.push(rel),
+                None => hits.push(rel),
+            }
+        }
+        assert!(
+            hits.is_empty(),
+            "`initial_*` attribute rendered in {hits:?} (row 253, default_checked.rs)"
+        );
+        for (allowed, _) in ALLOW {
+            assert!(
+                used.iter().any(|u| u == allowed),
+                "stale allowlist entry {allowed}"
+            );
+        }
     }
 }

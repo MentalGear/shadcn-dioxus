@@ -286,7 +286,10 @@ fn BubbleInput(
 
     // The reset algorithm restores checkedness from `.defaultChecked`; see `default_checked.rs`
     // for why that is set here, on the client, and never through `initial_checked` (row 253).
-    use_default_checked(move || id.cloned(), move || default_checked != CheckboxState::Unchecked);
+    use_default_checked(
+        move || id.cloned(),
+        move || default_checked != CheckboxState::Unchecked,
+    );
 
     // Update the actual input state to match our virtual state.
     use_effect(move || {
