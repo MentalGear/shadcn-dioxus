@@ -280,6 +280,12 @@ impl Engine {
         self.index.item(index)
     }
 
+    /// Whether any item has been measured: until one is, the canvas height is the estimates' sum,
+    /// the same on the server as on the client's first frame.
+    pub(crate) fn has_measurements(&self) -> bool {
+        self.index.has_measured()
+    }
+
     /// Drop every measured size, keeping the scroll state: for a consumer whose item geometry
     /// changed meaning (a wrapping grid whose column count changed, so row `i` holds other
     /// items). The next [`sync`](Self::sync) rebuilds the index from the estimates alone.

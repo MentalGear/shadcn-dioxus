@@ -117,6 +117,7 @@ gates=(
   "check-demo-text-locators|scripts/check-demo-text-locators.sh"
   "check-spec-at-rest|scripts/check-spec-at-rest.sh"
   "check-spec-goto-hydrated|scripts/check-spec-goto-hydrated.sh"
+  "check-dynamic-style-shorthand|scripts/check-dynamic-style-shorthand.sh"
   "check-backlog-index|scripts/check-backlog-index.sh"
   "check-lane-lock|scripts/check-lane-lock.sh"
   "check-slow-spec-budget|scripts/check-slow-spec-budget.sh"

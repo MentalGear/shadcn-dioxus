@@ -306,8 +306,12 @@ pub fn Demo() -> Element {
             "data-photo-wall-layout": if justified { "justified" } else { "grid" },
             style: "display: flex; flex-direction: column; gap: var(--dx-space-2); width: 100%; min-width: 0;",
             // How a photo fits its cell: `contain` (the whole photo on a mat) or `cover` (cropped to fill).
+            // The `var()` shorthands of the minimap box and the preview live here, not in their inline
+            // `style`: those strings change with the scroll position and the chosen photo, and Dioxus's
+            // web renderer drops a `var()` shorthand from an inline `style` the first time it is re-set
+            // (the box lost its border and fill once the wall mounted its first tiles).
             style {
-                "[data-photo-img] {{ display: block; width: 100%; height: 100%; object-fit: contain; }} [data-fit=\"cover\"] [data-photo-img] {{ object-fit: cover; }}"
+                "[data-photo-img] {{ display: block; width: 100%; height: 100%; object-fit: contain; }} [data-fit=\"cover\"] [data-photo-img] {{ object-fit: cover; }} [data-photo-wall-viewport] {{ border: 2px solid var(--dx-primary); background: var(--dx-accent); }} [data-photo-preview] {{ border-radius: var(--dx-radius-md); }}"
             }
             div { style: "display: flex; flex-wrap: wrap; align-items: center; gap: var(--dx-space-2) var(--dx-space-4);",
                 ToggleGroup {
@@ -420,7 +424,8 @@ pub fn Demo() -> Element {
                     }
                     p {
                         "data-photo-wall-count": "true",
-                        style: "margin: 0; font-size: var(--dx-text-sm); font-variant-numeric: tabular-nums;",
+                        // Wide enough for the longest count, so the number arriving after mount moves nothing.
+                        style: "margin: 0; min-width: 30ch; font-size: var(--dx-text-sm); font-variant-numeric: tabular-nums;",
                         "{state.count} of 90,000 photos rendered"
                     }
                     p { style: "margin: 0; color: var(--dx-muted-foreground); font-size: var(--dx-text-sm);",
@@ -438,7 +443,7 @@ pub fn Demo() -> Element {
                     style: "position: relative; flex: none; width: 7.5rem; height: 7.5rem; border: 1px solid var(--dx-border); border-radius: var(--dx-radius-md); background: var(--dx-muted); cursor: pointer; touch-action: none; overflow: hidden;",
                     div {
                         "data-photo-wall-viewport": "true",
-                        style: "position: absolute; box-sizing: border-box; inset-inline-start: {view_left}%; top: {view_top}%; width: {view_width}%; height: {view_height}%; min-width: 4px; min-height: 4px; border: 2px solid var(--dx-primary); background: var(--dx-accent); pointer-events: none;",
+                        style: "position: absolute; box-sizing: border-box; inset-inline-start: {view_left}%; top: {view_top}%; width: {view_width}%; height: {view_height}%; min-width: 4px; min-height: 4px; pointer-events: none;",
                     }
                 }
             }
@@ -454,7 +459,7 @@ pub fn Demo() -> Element {
                     "data-photo-preview": "{aw}:{ah}",
                     src: photo_src(chosen),
                     alt: "Generated landscape {chosen + 1}",
-                    style: "display: block; width: 100%; max-width: 28rem; max-height: 60vh; aspect-ratio: {aw} / {ah}; object-fit: contain; margin-inline: auto; border-radius: var(--dx-radius-md);",
+                    style: "display: block; width: 100%; max-width: 28rem; max-height: 60vh; aspect-ratio: {aw} / {ah}; object-fit: contain; margin-inline: auto;",
                 }
             }
         }

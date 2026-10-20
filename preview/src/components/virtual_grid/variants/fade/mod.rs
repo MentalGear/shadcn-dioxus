@@ -14,7 +14,9 @@ pub fn Demo() -> Element {
                 VirtualWrapGrid {
                     count: 2_000usize,
                     columns: 4usize,
-                    estimate_row_height: |_| 72,
+                    // A tile (4rem + 2 x 4px margin) plus the row's 8px bottom padding: exact, so the canvas is the
+                    // same height before and after the rows are measured.
+                    estimate_row_height: |_| 80,
                     fade: ScrollFade::Y,
                     render_item: |index: usize| rsx! {
                         div { style: "display: grid; place-items: center; height: 4rem; margin: var(--dx-space-1); border-radius: var(--dx-radius-md); background: var(--dx-muted); color: var(--dx-muted-foreground);",

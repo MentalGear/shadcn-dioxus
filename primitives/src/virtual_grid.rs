@@ -426,6 +426,9 @@ pub struct VirtualWrapGridProps {
 /// `id` and `role`. Each `[role=row]` is a CSS grid of `columns` equal tracks; set
 /// `column-gap` and a `padding-block-end` on it for the gaps (they are part of the measured
 /// row). Items are `[role=gridcell]` with `data-grid-cell="row:column"` and `data-grid-index`.
+/// The canvas inside the container carries `data-measured="false"` while its height is the
+/// estimates' sum (the server's markup and the client's first frame) and `"true"` once a row
+/// has been measured, so a stylesheet or a test can tell an estimated canvas from a measured one.
 #[component]
 pub fn VirtualWrapGrid(props: VirtualWrapGridProps) -> Element {
     let VirtualWrapGridProps {
@@ -513,6 +516,9 @@ pub fn VirtualWrapGrid(props: VirtualWrapGridProps) -> Element {
         })
     };
     let (rows, height) = rows;
+    // Whether the canvas height comes from measured rows (the client, after mount) or from the
+    // estimates alone (the server, and the client's first frame).
+    let measured = engine.read().has_measurements();
 
     let owned = attributes!(div {
         id: container_id,
@@ -525,7 +531,9 @@ pub fn VirtualWrapGrid(props: VirtualWrapGridProps) -> Element {
 
     rsx! {
         div { onkeydown, ..merged,
-            div { style: "position: relative; height: {height}px;",
+            div {
+                "data-measured": "{measured}",
+                style: "position: relative; height: {height}px;",
                 for row in rows {
                     div {
                         key: "{row.index()}",
@@ -688,7 +696,9 @@ fn justified_options(
 /// The container is the scroll container (give it a height and `overflow: auto`, plus
 /// `scrollbar-gutter: stable` so a scrollbar appearing does not re-flow the rows); it owns `id`,
 /// `role` and `aria-rowcount`. A fluid grid carries `data-justified-axes="block"`, a wall
-/// `"both"`. Rows are `[role=row]`, tiles `[role=gridcell]` with `data-grid-index` and
+/// `"both"`. The canvas inside it carries `data-measured="false"` until a fluid grid knows its
+/// width (the server's markup: no rows yet, `aria-busy`), `"true"` once rows are laid out. Rows
+/// are `[role=row]`, tiles `[role=gridcell]` with `data-grid-index` and
 /// `data-grid-cell="row:column"`; positions and sizes are inline styles. Do not pad the container:
 /// the rows fill its content box.
 #[component]
@@ -865,7 +875,9 @@ pub fn VirtualJustifiedGrid(props: VirtualJustifiedGridProps) -> Element {
             onfocusin: move |_| focus_inside.set(true),
             onfocusout: move |_| focus_inside.set(false),
             ..merged,
-            div { style: "position: relative; width: {canvas_width_style}; height: {height:.3}px;",
+            div {
+                "data-measured": "{measured}",
+                style: "position: relative; width: {canvas_width_style}; height: {height:.3}px;",
                 for plan in rows {
                     div {
                         key: "{plan.row}",

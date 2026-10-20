@@ -151,6 +151,11 @@ impl SizeIndex {
         self.source.count
     }
 
+    /// Whether any item has been measured: until one is, every size is the estimate.
+    pub(crate) fn has_measured(&self) -> bool {
+        !self.measured.is_empty()
+    }
+
     /// The measured size of item `index`, if it has been measured.
     pub(crate) fn measured_size(&self, index: usize) -> Option<u32> {
         self.measured.get(&index).copied()
