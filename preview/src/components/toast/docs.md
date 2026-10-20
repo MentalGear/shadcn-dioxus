@@ -63,6 +63,19 @@ A toast can be swiped away with the mouse, a finger or a pen (pointer events). I
 
 While the pointer is over the toaster (mouse or pen; a touch tap does not count) or focus is inside it, every countdown waits, and it resumes with the time that was left when you move away or focus leaves (WCAG 2.2.1, timing adjustable). It is the same condition that expands the pile (`:hover`, `:focus-within`), so what you can see expanded is what is held. Loading and permanent toasts have no countdown to pause.
 
+## Enter, exit and the visible cap
+
+The pile shows at most `visible_toasts` toasts (default 3, Sonner's `visibleToasts`); a toast past the cap stays mounted but carries `data-visible="false"`, which keeps it transparent and inert, on hover and focus too, until a slot frees. `max_toasts` still bounds how many are kept at all.
+
+Closing a toast (close button, action, countdown, `Toasts::close`) does not unmount it at once: it gets `data-removed="true"`, becomes `inert`, stops counting toward the pile (the others restack immediately) and unmounts 200 ms later, while the stylesheet fades it out and slides it toward the toaster's edge. The 200 ms is a constant in the primitive, written on each toast as `--toast-exit-ms`, which the exit transition reads, so the two cannot drift. A swipe flies out by itself and unmounts directly.
+
+Every direction comes from one place, the toaster's side (`--toast-edge` on the container: `1` at the bottom, `-1` for `data-toaster-side="top"`):
+
+- a brand-new toast enters from the toaster's own edge (from below at the bottom, from above at the top) and a closed one leaves toward it;
+- with the pile expanded, a queued toast that becomes visible because another closed appears at the far end of the pile: it slides in from the opposite side (from above for a bottom toaster) with a fade. Collapsed, it only fades in.
+
+`playwright/toast-enter-exit.spec.ts` covers both entry cases, the exit, and the cap.
+
 ## Motion and visibility
 
 A toast's auto-dismiss is a timer the user is waiting on, so it follows the tab and nothing else. While the tab is hidden (another tab, a minimized window) the countdown is dropped, and when you come back it starts over with the full duration, so a toast you could not see is still there (a pause by hover or focus keeps the remaining time instead). Scrolling the page never changes how long a toast stays. The visibility-gated timers for decoration (spinners, tickers, autoplay) are the opposite: they stop when merely scrolled away. See `dioxus_primitives::activity::use_document_visible`.

@@ -30,6 +30,13 @@ pub struct SelectProps<T: Clone + PartialEq + 'static = String> {
     #[props(default)]
     pub default_value: Option<T>,
 
+    /// A selected value's display text, shown by [`SelectValue`](super::value::SelectValue) and used for
+    /// the trigger's fallback accessible name. Required, like Base UI's `itemToStringLabel`: it is read at
+    /// render time, so a preselected value has its text in the server-rendered HTML. The option registry
+    /// fills in a client-only effect (and the trigger precedes the options in tree order), so it can
+    /// never supply this text.
+    pub item_to_label: Callback<T, String>,
+
     /// Callback fired when the selected value changes.
     #[props(default)]
     pub on_value_change: Callback<Option<T>>,
@@ -103,6 +110,13 @@ pub struct SelectMultiProps<T: Clone + PartialEq + 'static = String> {
     #[props(default)]
     pub default_values: Vec<T>,
 
+    /// A selected value (the trigger joins them with ", ")'s display text, shown by [`SelectValue`](super::value::SelectValue) and used for
+    /// the trigger's fallback accessible name. Required, like Base UI's `itemToStringLabel`: it is read at
+    /// render time, so a preselected value has its text in the server-rendered HTML. The option registry
+    /// fills in a client-only effect (and the trigger precedes the options in tree order), so it can
+    /// never supply this text.
+    pub item_to_label: Callback<T, String>,
+
     /// Callback when the list of selected values changes.
     #[props(default)]
     pub on_values_change: Callback<Vec<T>>,
@@ -158,6 +172,8 @@ pub struct SelectMultiProps<T: Clone + PartialEq + 'static = String> {
 /// grouped by an existing type (like [`Controlled`]) -- bundled together so
 /// the function stays under clippy's argument-count lint.
 struct SelectRootConfig {
+    /// See `SelectContext::label`'s doc.
+    label: Callback<RcPartialEqValue, String>,
     typeahead_timeout: ReadSignal<Duration>,
     /// See `SelectContext::required`'s doc -- `SelectMulti` (no `required`
     /// prop of its own) wires a constant `false` signal in here.
@@ -166,6 +182,20 @@ struct SelectRootConfig {
     scroll_lock: ReadSignal<bool>,
     /// See `SelectContext::direction`'s doc.
     direction: ReadSignal<Direction>,
+}
+
+/// Adapts the root's typed `item_to_label` to the type-erased values the shared context holds.
+fn use_label_callback<T: Clone + PartialEq + 'static>(
+    item_to_label: Callback<T, String>,
+    component_name: &'static str,
+) -> Callback<RcPartialEqValue, String> {
+    use_callback(move |value: RcPartialEqValue| {
+        let value = value
+            .as_ref::<T>()
+            .unwrap_or_else(|| panic!("{component_name} and option value types must match"))
+            .clone();
+        item_to_label.call(value)
+    })
 }
 
 /// Sets up the shared signals, focus, and context that both [`Select`] and
@@ -180,6 +210,7 @@ fn use_select_root(
     config: SelectRootConfig,
 ) -> (SelectContext, Memo<bool>) {
     let SelectRootConfig {
+        label,
         typeahead_timeout,
         required,
         scroll_lock,
@@ -213,6 +244,7 @@ fn use_select_root(
     });
     let ctx = use_context_provider(|| SelectContext {
         selectable,
+        label,
         adaptive_keyboard,
         typeahead_buffer,
         typeahead_clear_task,
@@ -244,6 +276,7 @@ fn use_select_root(
 /// fn Demo() -> Element {
 ///     rsx! {
 ///         Select::<String> {
+///             item_to_label: |value: String| value,
 ///             SelectTrigger {
 ///                 aria_label: "Select Trigger",
 ///                 width: "12rem",
@@ -314,6 +347,7 @@ pub fn Select<T: Clone + PartialEq + 'static>(props: SelectProps<T>) -> Element 
             on_change: props.on_open_change,
         },
         SelectRootConfig {
+            label: use_label_callback(props.item_to_label, "select"),
             typeahead_timeout: props.typeahead_timeout,
             required: props.required,
             scroll_lock: props.scroll_lock,
@@ -434,6 +468,7 @@ pub fn Select<T: Clone + PartialEq + 'static>(props: SelectProps<T>) -> Element 
 /// fn Demo() -> Element {
 ///     rsx! {
 ///         SelectMulti::<String> {
+///             item_to_label: |value: String| value,
 ///             default_values: vec!["pepperoni".into()],
 ///             SelectTrigger {
 ///                 aria_label: "Select Trigger",
@@ -516,6 +551,7 @@ pub fn SelectMulti<T: Clone + PartialEq + 'static>(props: SelectMultiProps<T>) -
             on_change: props.on_open_change,
         },
         SelectRootConfig {
+            label: use_label_callback(props.item_to_label, "select"),
             typeahead_timeout: props.typeahead_timeout,
             // See `SelectContext::required`'s doc: `SelectMulti` has no
             // `required` prop, so this is a constant `false` rather than

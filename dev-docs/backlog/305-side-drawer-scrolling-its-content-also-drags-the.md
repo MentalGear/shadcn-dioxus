@@ -4,7 +4,7 @@ title: "Side drawer: scrolling its content also drags the drawer sideways (iOS)"
 status: "BACKLOG (owner report 2026-10-19, iOS device)"
 size: "S–M"
 area: primitives
-updated: 2026-10-19
+updated: 2026-10-20
 ---
 
 # Row 305: Side drawer: scrolling its content also drags the drawer sideways (iOS)
@@ -45,3 +45,6 @@ S–M
 Re-check on an iOS device, alongside rows 28/30.
 
 **Files:** `primitives/src/drawer.rs` (`GESTURE_JS`), the drawer specs and `docs.md`. Row 73 (drag hang) touched the same listener.
+
+## Resolution (lane b-accdrawer, 2026-10-20)
+Implemented; see the backlog.md row and the new Playwright spec named there.

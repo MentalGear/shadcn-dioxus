@@ -36,6 +36,21 @@ Accordion { allow_multiple_open: true,
 }
 ```
 
+## Chevron placement and hover
+
+Pass `chevron: AccordionChevron::Start` on `Accordion` to put the chevron before the label (default `AccordionChevron::End`, shadcn's layout). It points right when closed and down when open, instead of down and up. The prop is emitted as `data-chevron` (`start` / `end`) on the root and on every trigger, so a custom trigger can read it from its own element.
+
+A collapsed trigger does not underline on hover; an open one does. That is a deliberate deviation from shadcn, which underlines every trigger.
+
+```rust
+Accordion { chevron: AccordionChevron::Start,
+    AccordionItem { index: 0,
+        AccordionTrigger { "Installation" }
+        AccordionContent { "..." }
+    }
+}
+```
+
 ## Searchable closed content
 
 By default closed items are unmounted after their close animation, so find-in-page (Ctrl+F) cannot see their text and a `#fragment` link cannot open them. Pass `hidden_until_found: true` on `Accordion` to keep every item's content mounted and mark it `hidden="until-found"` once it is closed. The browser then searches it, and when a match is inside a closed item it reveals the content and the accordion opens that item: `on_change` is called with `true`, and with `allow_multiple_open: false` (the default) the open item closes, exactly as if the trigger had been clicked. See the `until_found` variant: try Ctrl+F for the word in its hint.

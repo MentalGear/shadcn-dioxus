@@ -35,6 +35,12 @@ pub fn Demo() -> Element {
                 "{value().unwrap_or_else(|| \"none\".to_string())}"
             }
             Combobox::<String> {
+                item_to_label: move |value: String| {
+                    frameworks
+                        .iter()
+                        .find(|(id, _)| *id == value)
+                        .map_or(value.clone(), |(_, label)| label.to_string())
+                },
                 value: Some(value.into()),
                 open,
                 on_value_change: move |next| value.set(next),

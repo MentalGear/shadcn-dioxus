@@ -81,6 +81,7 @@ pub(super) fn ListPane(
                 }
                 SelectMulti::<MessageTag> {
                     values: Some(tags.clone()),
+                    item_to_label: |tag: MessageTag| tag.label().to_string(),
                     default_values: vec![],
                     on_values_change: move |values| {
                         state.set_selected_tags(values);

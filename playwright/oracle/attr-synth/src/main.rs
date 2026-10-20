@@ -503,6 +503,7 @@ fn tooltip_content_style() -> Element {
 fn select_trigger_style() -> Element {
     rsx! {
         Select::<String> {
+            item_to_label: |value: String| value,
             SelectTrigger {
                 attributes: vec![attr("style", "--attr-synth-marker: select-trigger-style;")],
                 SelectValue { placeholder: "Select a fruit..." }
@@ -514,7 +515,7 @@ fn select_trigger_style() -> Element {
 
 fn select_list_style() -> Element {
     rsx! {
-        Select::<String> { default_open: true,
+        Select::<String> { default_open: true, item_to_label: |value: String| value,
             SelectTrigger { SelectValue { placeholder: "Select a fruit..." } }
             SelectList {
                 aria_label: "Select Demo",
@@ -556,7 +557,7 @@ fn hover_card_content_style() -> Element {
 
 fn combobox_list_style() -> Element {
     rsx! {
-        Combobox::<String> { default_open: true,
+        Combobox::<String> { default_open: true, item_to_label: |value: String| value,
             ComboboxInput {}
             ComboboxList {
                 attributes: vec![attr("style", "--attr-synth-marker: combobox-list-style;")],

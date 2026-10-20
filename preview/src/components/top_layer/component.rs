@@ -183,7 +183,7 @@ pub fn TopLayerFixture() -> Element {
                     // Written RED first against the pre-migration plain div
                     // (confirmed by execution: it clipped at the 60px
                     // ancestor exactly like the others did pre-migration).
-                    Select::<String> { id: "clip-select-root",
+                    Select::<String> { id: "clip-select-root", item_to_label: |value: String| value,
                         SelectTrigger { id: "clip-select-trigger", SelectValue { placeholder: "Select trigger" } }
                         SelectList {
                             id: "clip-select-content",
@@ -201,7 +201,7 @@ pub fn TopLayerFixture() -> Element {
                     // Written RED first against the pre-migration plain div
                     // (confirmed by execution: it clipped at the 60px
                     // ancestor exactly like the others did pre-migration).
-                    Combobox::<String> { id: "clip-combobox-root",
+                    Combobox::<String> { id: "clip-combobox-root", item_to_label: |value: String| value,
                         ComboboxInput { id: "clip-combobox-trigger", aria_label: "Combobox trigger" }
                         ComboboxList {
                             id: "clip-combobox-content",
@@ -960,6 +960,7 @@ pub fn TopLayerFixture() -> Element {
                 }
                 Select::<String> {
                     id: "scroll-lock-select-root",
+                    item_to_label: |value: String| value,
                     scroll_lock: ReadSignal::new(Signal::new(false)),
                     SelectTrigger {
                         id: "scroll-lock-select-trigger",

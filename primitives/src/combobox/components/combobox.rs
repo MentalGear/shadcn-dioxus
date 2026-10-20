@@ -24,6 +24,11 @@ pub struct ComboboxProps<T: Clone + PartialEq + 'static = String> {
     #[props(default)]
     pub default_value: Option<T>,
 
+    /// A selected value's display text, shown in the input. Required, like Base UI's `itemToStringLabel`:
+    /// it is read at render time, so a preselected value's text is in the server-rendered HTML (the
+    /// option registry fills in a client-only effect and can never supply it).
+    pub item_to_label: Callback<T, String>,
+
     /// Callback fired when the value changes.
     #[props(default)]
     pub on_value_change: Callback<Option<T>>,
@@ -87,7 +92,7 @@ pub(in crate::combobox) fn use_combobox_root(
     filter: Callback<(String, String), bool>,
 ) -> Memo<bool> {
     let selection_mode = match model {
-        ComboboxModel::Single => SelectionMode::Single,
+        ComboboxModel::Single { .. } => SelectionMode::Single,
         ComboboxModel::Multi { .. } => SelectionMode::Multiple,
     };
     let selectable = use_selectable_root(
@@ -104,9 +109,8 @@ pub(in crate::combobox) fn use_combobox_root(
     // in -- see `ComboboxContext::input_id`'s doc.
     let input_id = use_unique_id();
     let edited = use_signal(|| false);
-    let label = use_signal(|| None);
 
-    let ctx = use_context_provider(|| ComboboxContext {
+    use_context_provider(|| ComboboxContext {
         model,
         selectable,
         query,
@@ -114,11 +118,6 @@ pub(in crate::combobox) fn use_combobox_root(
         filter,
         input_id,
         edited,
-        label,
-    });
-    use_effect(move || {
-        let mut ctx = ctx;
-        ctx.remember_label();
     });
 
     open
@@ -134,8 +133,16 @@ pub fn Combobox<T: Clone + PartialEq + 'static>(props: ComboboxProps<T>) -> Elem
         "combobox",
     );
 
+    let item_to_label = props.item_to_label;
+    let label = use_callback(move |value: RcPartialEqValue| {
+        let value = value
+            .as_ref::<T>()
+            .unwrap_or_else(|| panic!("combobox and option value types must match"))
+            .clone();
+        item_to_label.call(value)
+    });
     let open = use_combobox_root(
-        ComboboxModel::Single,
+        ComboboxModel::Single { label },
         selected,
         set_value,
         props.disabled,

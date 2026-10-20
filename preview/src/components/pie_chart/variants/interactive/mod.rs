@@ -96,6 +96,7 @@ pub fn Demo() -> Element {
                 CardAction {
                     Select::<Month> {
                         default_value: Month::January,
+                        item_to_label: |month: Month| month.label().to_string(),
                         trigger_aria_label: Some("Select a value".to_string()),
                         // A fixed width: the same trigger box before and after the selected label is written.
                         trigger_class: "dx-chart-range-trigger",

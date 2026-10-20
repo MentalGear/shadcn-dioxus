@@ -142,6 +142,12 @@ pub fn DemoForm(
     }
 }
 
+/// The library selects' trigger text for a fruit value (`Select`'s required `item_to_label`).
+fn fruit_label(value: String) -> String {
+    let mut chars = value.chars();
+    chars.next().map_or(String::new(), |first| first.to_uppercase().chain(chars).collect())
+}
+
 /// Builds JS that reads `new FormData(form)` and writes one `name=value` line
 /// per entry, in insertion order, into the result element -- this is the
 /// tier 2 (HTML) entry-list rule from `docs/conformance-harness.md`, read
@@ -501,6 +507,7 @@ pub fn FormFixture() -> Element {
                         div { class: "dx-form-field",
                             span { "Fruit (library select)" }
                             Select::<String> {
+                                item_to_label: fruit_label,
                                 name: "fruit-lib",
                                 default_value: Some("apple".to_string()),
                                 trigger_aria_label: "Fruit (library)",
@@ -708,6 +715,7 @@ pub fn FormFixture() -> Element {
                         div { class: "dx-form-field",
                             span { "Fruit, required (library select)" }
                             Select::<String> {
+                                item_to_label: fruit_label,
                                 name: "fruit-required-lib",
                                 required: true,
                                 trigger_aria_label: "Fruit, required (library)",
