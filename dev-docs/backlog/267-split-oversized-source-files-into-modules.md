@@ -30,3 +30,8 @@ https://claude.ai/code/artifact/19769a0d-67cd-4794-acb3-bc078458b8cb). Order: af
 files have merged (the 2026-10-19 calendar lane edits calendar.rs and date_picker.rs; the Round 4 thread may touch
 main.rs and top_layer.rs), inside the Round 6 sweep and before the 152b suite prune, so the prune reviews the split spec
 files. One file per commit, full gates green after each, `git log --follow`-friendly moves (no edits in the move commit).
+
+**Extension, owner approved 2026-10-20** (cleanup thread, same approval as row 266's playbook steps): while splitting,
+rewrite history comments in the ~50 files that have the most (~530 lines; `carousel.rs`, `top_layer.rs`,
+`top-layer.spec.ts` and `carousel.spec.ts` lead) to "current reason + row N". Leave explanatory blocks alone. Keep these
+rewrites in commits separate from the pure moves.
