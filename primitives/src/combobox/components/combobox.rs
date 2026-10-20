@@ -105,11 +105,9 @@ pub(in crate::combobox) fn use_combobox_root(
     let input_id = use_unique_id();
     let edited = use_signal(|| false);
     let label = use_signal(|| None);
-    let labels = use_signal(Vec::new);
 
     let ctx = use_context_provider(|| ComboboxContext {
         model,
-        labels,
         selectable,
         query,
         set_query,

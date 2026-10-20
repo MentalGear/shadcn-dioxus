@@ -50,6 +50,7 @@ options and empty state.
 ```rust
 ComboboxMulti::<String> {
     default_values: vec!["next".to_string()],
+    item_to_label: |value: String| label_of(&value), // required: the chip's text, read at render time
     name: Some("frameworks".to_string()), // one form entry per selected value
     show_clear: true,                     // a clear button while anything is selected
     placeholder: "Choose frameworks...",
@@ -59,6 +60,9 @@ ComboboxMulti::<String> {
 }
 ```
 
+- `item_to_label` (required, like Base UI's `itemToStringLabel`) is a selected value's display text. Chips and their
+  remove buttons' accessible names read it, never the option registry, so a preselected chip carries its text in
+  the server-rendered HTML instead of rendering empty until hydration.
 - The list stays open while options are toggled; picking a selected option removes it. The typed text is the
   query only and is cleared after each pick and when the popup closes.
 - The listbox carries `aria-multiselectable="true"` (the single list never does); every option keeps

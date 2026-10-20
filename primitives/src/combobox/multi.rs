@@ -64,6 +64,13 @@ pub struct ComboboxMultiProps<T: Clone + PartialEq + ToString + 'static> {
     #[props(default)]
     pub default_values: Vec<T>,
 
+    /// A selected value's display text, shown in its chip and named by its remove button.
+    ///
+    /// Required, like Base UI's `itemToStringLabel`: it is called at render time, so the
+    /// chips of preselected values carry their text in the server-rendered HTML. The option
+    /// registry cannot supply it (it fills in a client-only effect, after the chips).
+    pub item_to_label: Callback<T, String>,
+
     /// Called with the full list of selected values after every change.
     #[props(default)]
     pub on_values_change: Callback<Vec<T>>,
@@ -156,9 +163,15 @@ pub fn ComboboxMulti<T: Clone + PartialEq + ToString + 'static>(
         set_values.call(next);
     });
     let clear = use_callback(move |()| set_values.call(Vec::new()));
+    let item_to_label = props.item_to_label;
+    let label = use_callback(move |value: RcPartialEqValue| item_to_label.call(typed(&value)));
 
     let open = use_combobox_root(
-        ComboboxModel::Multi { remove, clear },
+        ComboboxModel::Multi {
+            remove,
+            clear,
+            label,
+        },
         values,
         set_value,
         props.disabled,
@@ -246,14 +259,10 @@ pub struct ComboboxChipsProps {
 /// A click on the empty part of the field focuses the input.
 #[component]
 pub fn ComboboxChips(props: ComboboxChipsProps) -> Element {
-    let mut ctx = use_context::<ComboboxContext>();
+    let ctx = use_context::<ComboboxContext>();
     let direction = use_direction(None);
     let generated = use_unique_id();
     let id = use_id_or(generated, props.id);
-
-    use_effect(move || {
-        ctx.remember_labels();
-    });
 
     let multi = ctx.is_multi();
     let selected: Vec<RcPartialEqValue> = ctx.selectable.values.read().clone();

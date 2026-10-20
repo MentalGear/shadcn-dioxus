@@ -10,6 +10,12 @@ pub fn Demo() -> Element {
         div { class: "dx-combobox-demo", dir: "rtl",
             DirectionProvider { direction: Direction::Rtl,
                 ComboboxMulti::<String> {
+                    item_to_label: |value: String| match value.as_str() {
+                        "next" => "Next.js".to_string(),
+                        "nuxt" => "Nuxt.js".to_string(),
+                        "remix" => "Remix".to_string(),
+                        _ => value,
+                    },
                     default_values: vec!["next".to_string(), "nuxt".to_string()],
                     style: "--dx-combobox-width: 20rem;",
                     placeholder: "Choose frameworks...",

@@ -3,7 +3,7 @@ use dioxus::prelude::*;
 
 #[component]
 pub fn Demo() -> Element {
-    let frameworks: &[(&str, &str)] = &[
+    let frameworks: &'static [(&str, &str)] = &[
         ("next", "Next.js"),
         ("svelte", "SvelteKit"),
         ("nuxt", "Nuxt.js"),
@@ -16,6 +16,9 @@ pub fn Demo() -> Element {
     rsx! {
         div { class: "dx-combobox-demo",
             ComboboxMulti::<String> {
+                item_to_label: move |value: String| {
+                    frameworks.iter().find(|(v, _)| *v == value).map_or(value.clone(), |(_, label)| label.to_string())
+                },
                 default_values: vec!["svelte".to_string(), "remix".to_string(), "dioxus".to_string()],
                 show_clear: true,
                 style: "--dx-combobox-width: 20rem;",

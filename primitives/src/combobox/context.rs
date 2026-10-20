@@ -25,14 +25,19 @@ pub(super) enum ComboboxModel {
         remove: Callback<RcPartialEqValue>,
         /// Remove every selected value (the clear button).
         clear: Callback<()>,
+        /// A selected value's display text (the root's required `item_to_label`).
+        ///
+        /// Chips and their remove buttons' accessible names read it, never the option
+        /// registry: the registry fills in a client-only effect and `ComboboxChips`
+        /// precedes the options in tree order, so a registry-derived chip renders empty
+        /// in the server HTML until hydration.
+        label: Callback<RcPartialEqValue, String>,
     },
 }
 
 #[derive(Clone, Copy)]
 pub(super) struct ComboboxContext {
     pub model: ComboboxModel,
-    /// Last label seen per selected value, for chips (see [`Self::label_of`]).
-    pub labels: Signal<Vec<(RcPartialEqValue, String)>>,
     pub selectable: SelectableContext,
     pub query: Memo<String>,
     pub set_query: Callback<String>,
@@ -100,49 +105,11 @@ impl ComboboxContext {
         }
     }
 
-    /// Chips' text for a selected value: the live option's, else the last seen.
+    /// Chips' text for a selected value: the root's `item_to_label`, available at render time.
     pub fn label_of(&self, value: &RcPartialEqValue) -> String {
-        let live = self
-            .selectable
-            .options
-            .read()
-            .iter()
-            .find(|option| &option.value == value)
-            .map(|option| option.text_value.clone());
-        live.or_else(|| {
-            self.labels
-                .read()
-                .iter()
-                .find(|(seen, _)| seen == value)
-                .map(|(_, label)| label.clone())
-        })
-        .unwrap_or_default()
-    }
-
-    /// Record the labels of the selected values while the registry can supply them.
-    pub fn remember_labels(&mut self) {
-        let values = self.selectable.values.read().clone();
-        let options = self.selectable.options.read();
-        let mut next: Vec<(RcPartialEqValue, String)> = Vec::with_capacity(values.len());
-        for value in &values {
-            let live = options
-                .iter()
-                .find(|option| &option.value == value)
-                .map(|option| option.text_value.clone());
-            let kept = || {
-                self.labels
-                    .peek()
-                    .iter()
-                    .find(|(seen, _)| seen == value)
-                    .map(|(_, label)| label.clone())
-            };
-            if let Some(label) = live.or_else(kept) {
-                next.push((value.clone(), label));
-            }
-        }
-        drop(options);
-        if *self.labels.peek() != next {
-            self.labels.set(next);
+        match self.model {
+            ComboboxModel::Multi { label, .. } => label.call(value.clone()),
+            ComboboxModel::Single => String::new(),
         }
     }
 

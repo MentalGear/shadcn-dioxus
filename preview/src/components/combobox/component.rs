@@ -167,6 +167,10 @@ pub struct ComboboxMultiProps<T: Clone + PartialEq + ToString + 'static = String
     #[props(default)]
     pub default_values: Vec<T>,
 
+    /// A selected value's display text, shown in its chip and named by its remove button. Required: it
+    /// is read at render time, so preselected chips have their text in the server-rendered HTML.
+    pub item_to_label: Callback<T, String>,
+
     /// Called with the full list of selected values after every change.
     #[props(default)]
     pub on_values_change: Callback<Vec<T>>,
@@ -249,6 +253,7 @@ pub fn ComboboxMulti<T: Clone + PartialEq + ToString + 'static>(
         combobox::ComboboxMulti {
             values: props.values,
             default_values: props.default_values,
+            item_to_label: props.item_to_label,
             on_values_change: props.on_values_change,
             name: props.name,
             disabled: props.disabled,

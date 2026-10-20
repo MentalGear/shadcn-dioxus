@@ -4,7 +4,7 @@ use dioxus::prelude::*;
 #[component]
 pub fn Demo() -> Element {
     let mut selected = use_signal(|| vec!["next".to_string(), "astro".to_string()]);
-    let frameworks: &[(&str, &str)] = &[
+    let frameworks: &'static [(&str, &str)] = &[
         ("next", "Next.js"),
         ("svelte", "SvelteKit"),
         ("nuxt", "Nuxt.js"),
@@ -18,6 +18,9 @@ pub fn Demo() -> Element {
         div { class: "dx-combobox-demo", style: "display: grid; gap: 0.75rem;",
             div { "data-testid": "combobox-multiple-value", "{selected().join(\",\")}" }
             ComboboxMulti::<String> {
+                item_to_label: move |value: String| {
+                    frameworks.iter().find(|(v, _)| *v == value).map_or(value.clone(), |(_, label)| label.to_string())
+                },
                 values: Some(selected()),
                 on_values_change: move |next| selected.set(next),
                 style: "--dx-combobox-width: 20rem;",
