@@ -357,15 +357,19 @@ pub fn Demo() -> Element {
                         canvas_width: Some(JUSTIFIED_CANVAS),
                         active: active_index,
                         render_tile: move |(index, _rect): (usize, TileRect)| rsx! {
-                            img {
-                                "data-photo-img": "{aspect(index).0}:{aspect(index).1}",
-                                src: photo_src(index),
-                                alt: "",
+                            div {
+                                // The name is on the wrapper, the image has an empty alt (a loading photo would paint its alt text).
                                 role: "img",
                                 "aria-label": "Generated landscape {index + 1}",
-                                draggable: "false",
-                                style: "cursor: pointer; border-radius: inherit;",
-                                onclick: move |_| open_photo(index),
+                                style: "width: 100%; height: 100%; border-radius: inherit;",
+                                img {
+                                    "data-photo-img": "{aspect(index).0}:{aspect(index).1}",
+                                    src: photo_src(index),
+                                    alt: "",
+                                    draggable: "false",
+                                    style: "cursor: pointer; border-radius: inherit;",
+                                    onclick: move |_| open_photo(index),
+                                }
                             }
                         },
                         "aria-label": "Justified photo wall, 90,000 photos",
@@ -385,12 +389,13 @@ pub fn Demo() -> Element {
                                     // (6px of 128: the long side of every photo fills about 90% of the cell).
                                     style: "box-sizing: border-box; width: calc(100% + 2 * var(--dx-space-2)); height: 100%; margin-inline: calc(-1 * var(--dx-space-2)); padding: 6px; background: var(--dx-muted); cursor: pointer; user-select: none; -webkit-user-select: none;",
                                     onclick: move |_| open_photo(index),
+                                    // The name is on the mat, the image has an empty alt (a loading photo would paint its alt text).
+                                    role: "img",
+                                    "aria-label": "Generated landscape {index + 1}",
                                     img {
                                         "data-photo-img": "{aspect(index).0}:{aspect(index).1}",
                                         src: photo_src(index),
                                         alt: "",
-                                        role: "img",
-                                        "aria-label": "Generated landscape {index + 1}",
                                         draggable: "false",
                                     }
                                 }

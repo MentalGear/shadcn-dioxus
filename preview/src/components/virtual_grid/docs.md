@@ -47,8 +47,10 @@ VirtualJustifiedGrid {
     // Optional: a canvas wider than the grid makes a wall that scrolls both ways.
     canvas_width: Some(4800.0),
     render_tile: |(index, rect): (usize, TileRect)| rsx! {
-        // Empty alt + role + aria-label: a loading photo paints its alt text in the tile.
-        img { src: photo_url(index), alt: "", role: "img", "aria-label": "Photo {index}", style: "width: 100%; height: 100%;" }
+        // Empty alt (a loading photo paints its alt text in the tile), the name on a wrapper.
+        div { role: "img", "aria-label": "Photo {index}", style: "width: 100%; height: 100%;",
+            img { src: photo_url(index), alt: "", style: "width: 100%; height: 100%;" }
+        }
     },
     "aria-label": "Photos",
     style: "height: 28rem;",

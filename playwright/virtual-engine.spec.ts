@@ -175,7 +175,7 @@ test.describe("VirtualGrid fade (shared with VirtualList and ScrollArea)", () =>
     });
     expect((mask.image.match(/linear-gradient/g) ?? []).length).toBe(2);
     expect(mask.image).toContain("to right"); // the inline layer; the block layer is the default direction, to bottom
-    expect(mask.composite).toBe("intersect");
+    expect(mask.composite).toMatch(/^intersect(, intersect)*$/); // one operation per layer
 
     // At the origin: top and inline-start crisp, bottom and inline-end faded.
     await scrollBothTo(grid, "start", "start");

@@ -35,7 +35,7 @@ async function open(page: Page) {
 /**
  * For every mounted row that meets the grid's visible box (an off-screen row may hold only the pinned active tile):
  * the gap between its first tile and the content box's inline-start edge, between its last tile and the inline-end
- * edge, whether it is the last row, and each tile's width/height against the photo's aspect (from its `aria-label`, which
+ * edge, whether it is the last row, and each tile's width/height against the photo's aspect (from the photo's `aria-label`, which
  * ends in "w:h").
  */
 function rowGeometry(g: Locator) {
@@ -62,7 +62,7 @@ function rowGeometry(g: Locator) {
         startGap: rtl ? right - first.right : first.left - left,
         endGap: rtl ? last.left - left : right - last.right,
         aspects: cells.map((c, i) => {
-          const m = c.querySelector("img")!.getAttribute("aria-label")!.match(/(\d+):(\d+)$/)!;
+          const m = c.querySelector('[role="img"]')!.getAttribute("aria-label")!.match(/(\d+):(\d+)$/)!;
           return { want: Number(m[1]) / Number(m[2]), got: rects[i].width / rects[i].height };
         }),
       });

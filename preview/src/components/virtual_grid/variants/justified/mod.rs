@@ -125,17 +125,20 @@ pub fn Demo() -> Element {
                 render_tile: |(index, _rect): (usize, TileRect)| {
                     let (w, h) = aspect(index);
                     rsx! {
-                        img {
-                            src: photo_src(index),
-                            // Empty alt, accessible name on the image itself: while a photo loads the browser paints
-                            // its alt text in the tile, which flashed "Generated photo N" during a fast scroll.
-                            // `role="img"` because `alt=""` alone marks the image presentational, and a
-                            // presentational element must not carry an aria-label (axe presentation-role-conflict).
-                            alt: "",
+                        // The accessible name is on a wrapper and the image has an empty alt: while a photo loads the
+                        // browser paints its alt text in the tile, which flashed "Generated photo N" during a fast
+                        // scroll. (`alt=""` on an element that also carries an aria-label is an axe
+                        // presentation-role-conflict, so the label cannot sit on the image itself.)
+                        div {
                             role: "img",
                             "aria-label": "Generated photo {index + 1}, {w}:{h}",
-                            draggable: "false",
-                            style: "display: block; width: 100%; height: 100%; border-radius: inherit;",
+                            style: "width: 100%; height: 100%; border-radius: inherit;",
+                            img {
+                                src: photo_src(index),
+                                alt: "",
+                                draggable: "false",
+                                style: "display: block; width: 100%; height: 100%; border-radius: inherit;",
+                            }
                         }
                     }
                 },
