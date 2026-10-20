@@ -3,7 +3,6 @@ import { type Page } from "@playwright/test";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
-import { readAtRest } from "./animations";
 
 // Fixture mirrors preview/src/components/data_table/variants/main/mod.rs's
 // `PAYMENTS` (12 rows, id/status/email/amount) exactly -- single source of
@@ -139,34 +138,28 @@ test("Next/Previous move pages and disable at the ends", async ({ page }) => {
 
 type Box = { x: number; y: number; width: number; height: number };
 
-// Everything that must not move when a checkbox is toggled, as live DOM rects, read AT REST: a click leaves the
-// control in its `:active` release (the theme's press feedback scales it to 0.98 and eases back over
-// `--dx-press-duration`), and `getBoundingClientRect()` includes `scale`, so a read right after the click saw the
-// checkbox 0.3 px smaller and 0.1 px right of its layout box. This test is about LAYOUT, which the press never
-// changes, so it waits for the checkbox's (and its ancestors') transitions to finish first (`readAtRest`).
+// Everything that must not move when a checkbox is toggled, as live DOM rects.
 const layoutBoxes = (page: Page, label: string) =>
-  readAtRest(
-    page.getByRole("checkbox", { name: label, exact: true }),
-    (checkbox) => {
-      const box = (el: Element | null): Box => {
-        if (!el) throw new Error("missing element");
-        const r = el.getBoundingClientRect();
-        return { x: r.x, y: r.y, width: r.width, height: r.height };
-      };
-      const cell = checkbox.closest("td,th")!;
-      return {
-        checkbox: box(checkbox),
-        cell: box(cell),
-        row: box(cell.closest("tr")),
-        table: box(document.querySelector('[data-slot="table"]')),
-        toolbar: box(document.querySelector('[data-slot="data-table-toolbar"]')),
-        pagination: box(document.querySelector('[data-slot="data-table-pagination"]')),
-        // The count's own width legitimately follows its text; its origin must not move.
-        selectedOrigin: (({ x, y }) => ({ x, y }))(box(document.querySelector(".dx-data-table-pagination-selected"))),
-        controls: box(document.querySelector(".dx-data-table-pagination-controls")),
-      };
-    },
-  );
+  page.evaluate((label) => {
+    const box = (el: Element | null): Box => {
+      if (!el) throw new Error("missing element");
+      const r = el.getBoundingClientRect();
+      return { x: r.x, y: r.y, width: r.width, height: r.height };
+    };
+    const checkbox = document.querySelector(`[role="checkbox"][aria-label="${label}"]`)!;
+    const cell = checkbox.closest("td,th")!;
+    return {
+      checkbox: box(checkbox),
+      cell: box(cell),
+      row: box(cell.closest("tr")),
+      table: box(document.querySelector('[data-slot="table"]')),
+      toolbar: box(document.querySelector('[data-slot="data-table-toolbar"]')),
+      pagination: box(document.querySelector('[data-slot="data-table-pagination"]')),
+      // The count's own width legitimately follows its text; its origin must not move.
+      selectedOrigin: (({ x, y }) => ({ x, y }))(box(document.querySelector(".dx-data-table-pagination-selected"))),
+      controls: box(document.querySelector(".dx-data-table-pagination-controls")),
+    };
+  }, label);
 
 const expectSameBoxes = (before: Record<string, object>, after: Record<string, object>, what: string) => {
   for (const key of Object.keys(before)) {

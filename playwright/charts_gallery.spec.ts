@@ -621,32 +621,36 @@ test.describe("chart-type tabs keep the pill on the active tab", () => {
     await expect.poll(async () => isClear(await nav.getByRole("link", { name: "Area Charts" }).evaluate(rgba))).toBe(true);
   });
 
-  test("the pill stays while the pointer is held down, and a clicked tab draws no focus ring", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/charts/area/`);
-    const nav = page.getByRole("navigation", { name: "Chart types" });
-    const area = nav.getByRole("link", { name: "Area Charts" });
-    const box = (await area.boundingBox())!;
-    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-    await page.mouse.down();
-    expect(isClear(await area.evaluate(rgba)), "pressed active tab keeps its pill").toBe(false);
-    await page.mouse.up();
+  // The held pointer is the point: keep the press feedback the fixtures switch off by default (row 256).
+  test.describe("pressed", () => {
+    test.use({ pressFeedback: true });
+    test("the pill stays while the pointer is held down, and a clicked tab draws no focus ring", async ({ page }) => {
+      await gotoHydrated(page, `${BASE_URL}/charts/area/`);
+      const nav = page.getByRole("navigation", { name: "Chart types" });
+      const area = nav.getByRole("link", { name: "Area Charts" });
+      const box = (await area.boundingBox())!;
+      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+      await page.mouse.down();
+      expect(isClear(await area.evaluate(rgba)), "pressed active tab keeps its pill").toBe(false);
+      await page.mouse.up();
 
-    // Switch with the mouse: the router focuses the new active tab by script; under a mouse that is no ring.
-    await nav.getByRole("link", { name: "Bar Charts" }).click();
-    await expect(page).toHaveURL(/\/charts\/bar\/\??$/);
-    const bar = nav.getByRole("link", { name: "Bar Charts" });
-    await expect(bar).toBeFocused();
-    expect(await bar.evaluate((el) => getComputedStyle(el).boxShadow), "no ring after a click").toMatch(
-      /^none$|rgba\(0, 0, 0, 0\) 0px 0px 0px 0px/,
-    );
+      // Switch with the mouse: the router focuses the new active tab by script; under a mouse that is no ring.
+      await nav.getByRole("link", { name: "Bar Charts" }).click();
+      await expect(page).toHaveURL(/\/charts\/bar\/\??$/);
+      const bar = nav.getByRole("link", { name: "Bar Charts" });
+      await expect(bar).toBeFocused();
+      expect(await bar.evaluate((el) => getComputedStyle(el).boxShadow), "no ring after a click").toMatch(
+        /^none$|rgba\(0, 0, 0, 0\) 0px 0px 0px 0px/,
+      );
 
-    // Keyboard: the ring is back.
-    await page.keyboard.press("Tab");
-    await page.keyboard.press("Shift+Tab");
-    await expect(bar).toBeFocused();
-    expect(await bar.evaluate((el) => getComputedStyle(el).boxShadow), "a ring for the keyboard").not.toMatch(
-      /^none$|rgba\(0, 0, 0, 0\) 0px 0px 0px 0px$/,
-    );
+      // Keyboard: the ring is back.
+      await page.keyboard.press("Tab");
+      await page.keyboard.press("Shift+Tab");
+      await expect(bar).toBeFocused();
+      expect(await bar.evaluate((el) => getComputedStyle(el).boxShadow), "a ring for the keyboard").not.toMatch(
+        /^none$|rgba\(0, 0, 0, 0\) 0px 0px 0px 0px$/,
+      );
+    });
   });
 
   test("hover shows a lighter pill on an inactive tab (fine pointers only)", async ({ page }) => {

@@ -193,18 +193,22 @@ for (const which of Object.keys(BEFORE)) {
   });
 }
 
-test("Switch gets the theme's press feedback while pressed", async ({ page }) => {
-  const sw = await pick(page, "switch");
-  await expect(sw).toBeVisible();
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  expect(await sw.evaluate((e) => getComputedStyle(e).scale)).toBe("none");
-  const box = (await sw.boundingBox())!;
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-  await page.mouse.down();
-  try {
-    await expect.poll(() => sw.evaluate((e) => getComputedStyle(e).scale)).not.toBe("none");
-    expect(await sw.evaluate((e) => getComputedStyle(e).backgroundImage)).toContain("linear-gradient");
-  } finally {
-    await page.mouse.up();
-  }
+// Reads the pressed switch's `scale` and wash: keeps the feedback the fixtures switch off by default (row 256).
+test.describe("press feedback", () => {
+  test.use({ pressFeedback: true });
+  test("Switch gets the theme's press feedback while pressed", async ({ page }) => {
+    const sw = await pick(page, "switch");
+    await expect(sw).toBeVisible();
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    expect(await sw.evaluate((e) => getComputedStyle(e).scale)).toBe("none");
+    const box = (await sw.boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    try {
+      await expect.poll(() => sw.evaluate((e) => getComputedStyle(e).scale)).not.toBe("none");
+      expect(await sw.evaluate((e) => getComputedStyle(e).backgroundImage)).toContain("linear-gradient");
+    } finally {
+      await page.mouse.up();
+    }
+  });
 });

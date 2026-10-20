@@ -18,6 +18,9 @@ import { gotoHydrated } from "./hydration";
  *   PLAYWRIGHT_BASE_URL=http://127.0.0.1:8106 npx playwright test --config=ssg.local.config.ts press-feedback.spec.ts
  */
 
+// This file is about the feedback itself: opt out of the fixtures' default of switching it off (fixtures.ts, row 256).
+test.use({ pressFeedback: true });
+
 const BUTTON_PAGE = `${BASE_URL}/component/button/`;
 
 /** A `dx-` control with no component sheet: only the theme's own rules apply to it. */

@@ -15,7 +15,7 @@ Release suite on 3fd7844b: `data_table.spec.ts` "toggling a checkbox moves and r
 
 ## Status / trigger
 
-LANDED 2026-10-20 (lane/triageA): caused by batch A (row 295 press feedback), reproduced 3 of 3 on the batch and 0 of 3 on main; the specs now read at rest
+LANDED 2026-10-20 (lane/triageA): caused by batch A (row 295 press feedback), reproduced 3 of 3 on the batch and 0 of 3 on main; fixed for the whole class by a `fixtures.ts` default (press feedback off in every spec, opt-in per spec)
 
 ## Size
 
@@ -31,8 +31,13 @@ The `y 446.80 -> 59.84` read in the suite is the second symptom, and it is a Pla
 
 **Decision: the specs were wrong, the product is right.**
 
-`scale` never changes layout; the 300 ms release is the intended row 295 behaviour (a visible tail for every tap, however short). These three tests are about LAYOUT, so they read at rest: `readAtRest(checkbox, ...)` (`playwright/animations.ts`) waits for the checkbox's and its ancestors' transitions (a `CSSTransition` is in `document.getAnimations()`) before reading, and so also before the next click starts. 80 of 80 green over 5 repeats at 2 workers on the batch build; 12 of 12 with 3 CPU burners at 4 workers on the release build.
+`scale` never changes layout; the 300 ms release is the intended row 295 behaviour (a visible tail for every tap, however short). These three tests are about LAYOUT.
 
-**Class, and what it does not cover.**
+**Construction (second commit): press feedback is off by default in every spec.** `playwright/fixtures.ts` overrides the `context` fixture and, unless a spec says `test.use({ pressFeedback: true })`, adds a context init script that stores the visitor preference the product itself uses: the cookie `dx_dx_press-feedback=off`, which `PREPAINT_JS` (the only writer of `data-dx-press-feedback`) reads before first paint and turns into `<html data-dx-press-feedback="off">`. It does not write the attribute: with no cookie PREPAINT_JS removes it again, so an attribute-writing init script would lose to the app, while the cookie goes through the app's own path and survives reloads, SPA navigations and a "Reset all". Specs that test the feedback opt back in with one line: `press-feedback.spec.ts` (file), `theme-all-reset.spec.ts` "Switch gets the theme's press feedback while pressed" and `charts_gallery.spec.ts` "the pill stays while the pointer is held down" (a `describe`). The per-spec `readAtRest` reads of the first commit were reverted: with the feedback off the plain reads in `data_table.spec.ts` and `checkbox.spec.ts` are exact.
 
-Any spec that reads a rect right after clicking a pressable control, or clicks it twice in quick succession, can hit this. Only these three did in a full run. No gate was added: `check-spec-at-rest.sh` covers overlay specs; widening it to every `getBoundingClientRect()` after a `click()` would flag hundreds of reads that measure things a press cannot move. If a fourth case shows up, the construction is a `clickAndSettle` helper in `playwright/animations.ts` (click, then `awaitAnimationsSettled`) for layout-stability specs, enforced the same way as `spec-at-rest`. Not done on two occurrences in two spec files.
+**What the construction covers.** Every spec read of a rect, `boundingBox()` or "is the element stable" check taken after a click on a `dx-` control, in any component, including the Playwright actionability retry that scrolled the page (`y 446.8 -> 59.8`): the `:active` rule is simply never applied, so no `scale` tail exists. This subsumes the three observed instances and the unobserved ones in the other pressable controls.
+
+**What it does not cover.**
+- A user: a visitor who double-clicks or clicks twice in a row still sees the tail, and nothing is wrong (the tail is the feature; a transform never moves layout or the hit target by more than 1 px). Nothing in the product changed.
+- Contexts a spec builds itself with `browser.newContext()` (the JavaScript-off first-paint contexts, touch-emulation specs): they do not pass through the fixture and keep the feedback. They do not read post-click geometry today.
+- A regression in the feedback itself is caught only by the opted-in specs (`press-feedback.spec.ts`, the two above), not by the other ~200 files; that is the cost of the default, and the reason the opt-in is one visible line instead of a global mask. The row 228 lesson (a context-wide override of a property the page's bug lived in hid a navigation bug) is why the fixture sets the preference rather than the property, and why `fixtures.ts` documents it.
