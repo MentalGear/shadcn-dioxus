@@ -4,7 +4,7 @@ title: "Upstream ai-elements (chat, message, code-block, trace, checkpoint, ...)
 status: "PARTIAL 2026-10-19 (items 1-2 landed: code_block, trace, checkpoint and chat demos; item 3 is an…"
 size: "L"
 area: chat
-updated: 2026-10-19
+updated: 2026-10-20
 ---
 
 # Row 265: Upstream ai-elements vs our chat kit
@@ -15,7 +15,7 @@ shadcn-ui/ui landed an `ai-elements` docs section and two new base UI components
 
 ## Status / trigger
 
-**PARTIAL 2026-10-19 (items 1-2 landed: code_block, trace, checkpoint and chat demos; item 3 is an owner decision)**. Found by row 213 item 10. Source: `dev-docs/research/message-scroller-upstream-2026-10-19.md`.
+**PARTIAL 2026-10-19 (items 1-2 landed: code_block, trace, checkpoint and chat demos; item 3 is an owner decision)**. Found by row 213 item 10. Source: `dev-docs/research/message-scroller-upstream-2026-10-19.md`. **2026-10-20 sync: items 1-2 verified merged in PR #112 (7cd70e72 code_block, trace, checkpoint and chat demos; b16d860f merge); item 3 still waits on the owner.**
 
 ## Size
 

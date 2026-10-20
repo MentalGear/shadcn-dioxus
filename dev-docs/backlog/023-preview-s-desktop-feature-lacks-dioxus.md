@@ -4,7 +4,7 @@ title: "preview's desktop feature lacks dioxus-primitives/web — a webview-back
 status: "FIXED 2026-09-26 (3633b20), verified at feature-resolution level only; the one remaining check is a…"
 size: "S"
 area: overlays
-updated: 2026-09-26
+updated: 2026-10-20
 ---
 
 # Row 23: preview's desktop feature lacks dioxus-primitives/web — a webview-backed desktop build would render the…
@@ -15,7 +15,7 @@ updated: 2026-09-26
 
 ## Status / trigger
 
-**FIXED 2026-09-26 (`3633b20`)**, verified at feature-resolution level only; the one remaining check is a real desktop build being exercised (none is today)
+**FIXED 2026-09-26 (`3633b20`)**, verified at feature-resolution level only; the one remaining check is a real desktop build being exercised (none is today) **2026-10-20 sync: checked, no desktop build exists in the repo; still unverified beyond feature resolution.**
 
 ## Size
 

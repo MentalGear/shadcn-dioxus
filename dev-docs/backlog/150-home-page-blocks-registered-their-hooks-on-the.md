@@ -4,7 +4,7 @@ title: "Home-page blocks registered their hooks on the parent scope: MasonryCard
 status: "FIXED 2026-10-04, merged (b83640a, PR #84 / 001a5f0, SCROLL-FIX lane); the candidate .call(()) gate…"
 size: "M"
 area: docs
-updated: 2026-10-04
+updated: 2026-10-20
 ---
 
 # Row 150: Home-page blocks registered their hooks on the parent scope: MasonryCard called component.call(()), so…
@@ -15,7 +15,7 @@ Home-page blocks registered their hooks on the parent scope: `MasonryCard` calle
 
 ## Status / trigger
 
-**FIXED 2026-10-04, merged** (`b83640a`, PR #84 / `001a5f0`, SCROLL-FIX lane); the candidate `.call(())` gate in the notes stays OPEN (measure false positives first)
+**FIXED 2026-10-04, merged** (`b83640a`, PR #84 / `001a5f0`, SCROLL-FIX lane); the candidate `.call(())` gate in the notes stays OPEN (measure false positives first) **2026-10-20 sync: checked, the candidate `.call(())` gate still does not exist in `scripts/`; row stays open for it only.**
 
 ## Size
 

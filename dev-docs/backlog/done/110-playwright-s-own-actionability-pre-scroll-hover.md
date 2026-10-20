@@ -1,10 +1,10 @@
 ---
 id: 110
 title: "Playwright's own actionability pre-scroll (.hover()/.focus()/.click()'s auto-scroll) animates under the…"
-status: "CLOSED 2026-10-19 (backlog review 2026-10-18): done in the code"
+status: "FIXED 2026-09-25/26 (62183b3 scrollIntoViewInstant() before hover; a8849a70 the by-construction…"
 size: "Diagnosis M (two hypotheses tried and…"
 area: tests
-updated: 2026-10-19
+updated: 2026-10-20
 ---
 
 # Row 110: Playwright's own actionability pre-scroll (.hover()/.focus()/.click()'s auto-scroll) animates under the…
@@ -15,7 +15,7 @@ Playwright's own actionability pre-scroll (`.hover()`/`.focus()`/`.click()`'s au
 
 ## Status / trigger
 
-**CLOSED 2026-10-19 (backlog review 2026-10-18): done in the code**
+**FIXED 2026-09-25/26** (62183b3 `scrollIntoViewInstant()` before hover; a8849a70 the by-construction fix, `scroll-behavior: auto` forced through the shared Playwright fixtures, subsumes both instances). Closed in the 2026-10-20 backlog sync.
 
 ## Size
 

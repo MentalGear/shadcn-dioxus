@@ -1,10 +1,10 @@
 ---
 id: 109
 title: "SSG interaction tests race hydration — a click can land before wasm attaches Dioxus's delegated listeners; a…"
-status: "CLOSED 2026-10-19 (backlog review 2026-10-18): done in the code"
+status: "FIXED 2026-09-25/26 (2235815 the hydration signal, bb51a02 carousel specs on gotoHydrated, c0df941…"
 size: "S — one client-side effect, one shared…"
 area: build
-updated: 2026-10-19
+updated: 2026-10-20
 ---
 
 # Row 109: SSG interaction tests race hydration — a click can land before wasm attaches Dioxus's delegated listeners; a…
@@ -15,7 +15,7 @@ SSG interaction tests race hydration — a click can land before wasm attaches D
 
 ## Status / trigger
 
-**CLOSED 2026-10-19 (backlog review 2026-10-18): done in the code**
+**FIXED 2026-09-25/26** (2235815 the hydration signal, bb51a02 carousel specs on `gotoHydrated`, c0df941 every other SSG interaction spec migrated). Closed in the 2026-10-20 backlog sync.
 
 ## Size
 

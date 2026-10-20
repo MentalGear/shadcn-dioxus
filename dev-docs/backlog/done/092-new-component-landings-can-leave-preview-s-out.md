@@ -1,10 +1,10 @@
 ---
 id: 92
 title: "New-component landings can leave preview's OUT_DIR stale — cargo clippy/test/doc fail until build.rs is…"
-status: "Found 2026-09-20 (round 4 integration, Carousel landing onto a pre-existing target dir); recurs for…"
+status: "FIXED 2026-10-18 (ceb7d722, row 219: preview/build.rs now emits…"
 size: "S"
 area: build
-updated: 2026-10-19
+updated: 2026-10-20
 ---
 
 # Row 92: New-component landings can leave preview's OUT_DIR stale — cargo clippy/test/doc fail until build.rs is…
@@ -15,7 +15,7 @@ New-component landings can leave `preview`'s `OUT_DIR` stale — `cargo clippy`/
 
 ## Status / trigger
 
-Found 2026-09-20 (round 4 integration, Carousel landing onto a pre-existing `target` dir); recurs for any future new component landed onto a `target` dir that predates it — remedy known, no construction fix pending
+**FIXED 2026-10-18** (ceb7d722, row 219: `preview/build.rs` now emits `cargo:rerun-if-changed=src/components/mod.rs`, so adding a CATALOG row re-runs the script and a new component directory no longer meets a stale `OUT_DIR`). The `dx serve` watcher caveat (rewrite `build.rs` bytes) stays documented in CLAUDE.md. Closed in the 2026-10-20 backlog sync.
 
 ## Size
 

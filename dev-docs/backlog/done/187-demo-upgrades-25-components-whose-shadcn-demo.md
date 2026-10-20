@@ -38,3 +38,5 @@ chips/clear/Backspace operations exist only inside `Multi`. New demos: `multiple
 input-group addon variant (shadcn's other demos), and a `name` for the single `Combobox`.
 
 **Update 2026-10-19 (parts):** the card event/terms cards, spinner-in-button/badge and the input_group block addons are demoed (see row 188's parts update); the remaining 187 items are outside the parts lane's components.
+
+**2026-10-20 sync (main, PR #114):** landed in PR #112 (merge 2ea6e19f): item 6 combobox multi-select (37175a3f, `ComboboxMulti`; chips label fix 1299d89d) and the typed AlertDialog/Card/Spinner/Button props (0894746c); calendar `caption_layout` for date_picker #7 (cda20026). Still open (tracked by row 188): multi demo groups and input-group addon variant, a `name` for the single Combobox, row 306 (selected label at SSG).
