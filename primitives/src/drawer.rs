@@ -389,6 +389,10 @@ const FLICK_MIN_DISTANCE_PX: f64 = 10.0;
 /// quick wrist flick is read for what the hand did last.
 const VELOCITY_WINDOW_MS: f64 = 100.0;
 
+/// How far (px) a press must travel before the drag decides its axis: along the drag axis it
+/// becomes a drag, along the other it is abandoned and the content scrolls (see [`GESTURE_JS`]).
+const AXIS_LOCK_PX: f64 = 6.0;
+
 /// How much a drag *away* from the dismiss direction -- past the
 /// fully-open resting position -- is damped, instead of hard-clamped to
 /// exactly `0`: gives a small, springy "rubber band" resistance rather
@@ -490,7 +494,7 @@ const INTERACTIVE_SELECTOR: &str =
 ///
 /// Parameters, in order: the content element's id, `vertical`, `sign` (from
 /// [`EdgeSide::drag_axis`]), [`INTERACTIVE_SELECTOR`], [`VELOCITY_WINDOW_MS`],
-/// and `enabled` (the drawer's `dismissible`).
+/// [`AXIS_LOCK_PX`], and `enabled` (the drawer's `dismissible`).
 ///
 /// A `pointerdown` starts a drag unless
 /// 1. it is a non-primary mouse button, or
@@ -505,7 +509,13 @@ const INTERACTIVE_SELECTOR: &str =
 ///    first. [`DrawerHandle`] itself is never nested inside such a region, so a
 ///    drag started there walks no scrollable ancestor at all.
 ///
-/// Then, until that pointer is released or cancelled, every `pointermove` updates
+/// Such a press is only *pending*: nothing is sent, and the panel never moves, until the pointer
+/// has travelled [`AXIS_LOCK_PX`] and that first decisive movement is predominantly along the
+/// drag axis (and the scrollable ancestor from rule 4 cannot scroll that way). If the cross axis
+/// wins (a scroll with sideways wobble), or the content can scroll, the press is abandoned for
+/// that pointer and the browser scrolls undisturbed. Only then is `start` sent.
+///
+/// Then, once committed and until that pointer is released or cancelled, every `pointermove` updates
 /// the oriented offset (`raw delta * sign`, positive toward the closing edge) and
 /// one timestamped sample; the offset is forwarded at most once a frame, and the
 /// release forwards the last offset, then the velocity over the final
@@ -517,6 +527,7 @@ const vertical = await dioxus.recv();
 const sign = await dioxus.recv();
 const interactiveSelector = await dioxus.recv();
 const windowMs = await dioxus.recv();
+const lockPx = await dioxus.recv();
 const enabled = await dioxus.recv();
 const el = document.getElementById(id);
 if (el && enabled) {
@@ -534,9 +545,38 @@ if (el && enabled) {
         const [t1, o1] = recent[recent.length - 1];
         return t1 > t0 ? (o1 - o0) / (t1 - t0) : 0;
     };
+    // The axis lock (vaul / Base UI): a press is only PENDING until the pointer has moved
+    // `lockPx`. If that first decisive movement is predominantly along the dismiss axis (and the
+    // scrollable ancestor found at press time cannot itself scroll that way) the drag commits and
+    // `start` is sent; if the cross axis wins, or the content can scroll, the press is abandoned
+    // for this pointer, so a scroll's sideways wobble can never translate the panel.
+    const canScroll = (node, delta) => {
+        // The finger moving by `delta` moves the content's scroll position by `-delta`.
+        const max = vertical ? node.scrollHeight - node.clientHeight : node.scrollWidth - node.clientWidth;
+        const pos = vertical ? node.scrollTop : node.scrollLeft;
+        const rtl = !vertical && getComputedStyle(node).direction === 'rtl';
+        const lo = rtl ? -max : 0;
+        const hi = rtl ? 0 : max;
+        return delta > 0 ? pos > lo + 1 : pos < hi - 1;
+    };
     const onMove = (e) => {
         if (!drag || e.pointerId !== drag.pointerId) return;
-        drag.offset = ((vertical ? e.clientY - drag.startY : e.clientX - drag.startX)) * sign;
+        const dx = e.clientX - drag.startX;
+        const dy = e.clientY - drag.startY;
+        const along = vertical ? dy : dx;
+        const cross = vertical ? dx : dy;
+        if (!drag.committed) {
+            if (Math.max(Math.abs(along), Math.abs(cross)) < lockPx) return;
+            if (Math.abs(along) <= Math.abs(cross)
+                || (drag.scroller && canScroll(drag.scroller, along))) {
+                drag = null;
+                stop();
+                return;
+            }
+            drag.committed = true;
+            dioxus.send(['start', vertical ? drag.rect.height : drag.rect.width, 0]);
+        }
+        drag.offset = along * sign;
         drag.samples.push([e.timeStamp, drag.offset]);
         if (!raf) raf = requestAnimationFrame(flush);
     };
@@ -548,6 +588,11 @@ if (el && enabled) {
     };
     const end = (e, cancelled) => {
         if (!drag || e.pointerId !== drag.pointerId) return;
+        if (!drag.committed) {
+            drag = null;
+            stop();
+            return;
+        }
         const velocity = cancelled ? 0 : finite(velocityAt(e.timeStamp));
         const offset = finite(drag.offset);
         drag = null;
@@ -565,6 +610,7 @@ if (el && enabled) {
         // At a partial snap point the panel's content does not scroll (the stylesheet clips it): a
         // press anywhere drags it toward the next snap point, whatever it was scrolled to before.
         let node = el.dataset.snap === 'partial' ? null : e.target;
+        let scroller = null;
         while (node && node !== el.parentElement) {
             const style = getComputedStyle(node);
             const overflow = vertical ? style.overflowY : style.overflowX;
@@ -573,17 +619,19 @@ if (el && enabled) {
             if (scrollable) {
                 const offset = vertical ? node.scrollTop : node.scrollLeft;
                 if (offset !== 0) return;
+                scroller = node;
                 break;
             }
             if (node === el) break;
             node = node.parentElement;
         }
-        const rect = el.getBoundingClientRect();
-        drag = { pointerId: e.pointerId, startX: e.clientX, startY: e.clientY, offset: 0, samples: [[e.timeStamp, 0]] };
+        drag = {
+            pointerId: e.pointerId, startX: e.clientX, startY: e.clientY, offset: 0,
+            samples: [[e.timeStamp, 0]], committed: false, scroller, rect: el.getBoundingClientRect(),
+        };
         window.addEventListener('pointermove', onMove);
         window.addEventListener('pointerup', onUp);
         window.addEventListener('pointercancel', onCancel);
-        dioxus.send(['start', vertical ? rect.height : rect.width, 0]);
     };
     el.addEventListener('pointerdown', onDown);
     await dioxus.recv();
@@ -643,6 +691,7 @@ fn use_drawer_gesture(
         let _ = eval.send(sign);
         let _ = eval.send(INTERACTIVE_SELECTOR);
         let _ = eval.send(VELOCITY_WINDOW_MS);
+        let _ = eval.send(AXIS_LOCK_PX);
         let _ = eval.send(enabled);
         let mut on_event = on_event.clone();
         spawn(async move {
