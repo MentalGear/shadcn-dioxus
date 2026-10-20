@@ -53,7 +53,7 @@ import { test, expect } from "./fixtures";
 import type { Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { expectNoAxeViolations, type AxeRegionExclusion } from "./axe";
-import { readCatalog, readModRs } from "./catalog";
+import { readBlockDemos, readCatalog } from "./catalog";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 import { fixedViewportBox } from "./viewport-box";
@@ -63,8 +63,7 @@ const SCHEMES: Scheme[] = ["light", "dark"];
 const NAV_TIMEOUT = 5 * 60 * 1000; // the first visit under `dx serve` can wait on a rebuild
 
 // --- the route list, read from Rust --------------------------------------------------------
-const MOD_RS = readModRs();
-const CATALOG = readCatalog(MOD_RS);
+const CATALOG = readCatalog();
 const COMPONENTS = CATALOG.map((r) => r.name);
 
 interface Route {
@@ -73,14 +72,12 @@ interface Route {
   /** `block`: a block demo's own page (`/component/block/<name>/<variant>/`), no site chrome around it. */
   kind: "page" | "block";
 }
-/** `name(block)[variant, ...]` rows of `examples!`: rendered at `/component/block/<name>/<variant>/`. */
-const BLOCK_ROUTES: Route[] = [...(MOD_RS.split("examples!(\n")[1] ?? "").matchAll(/^\s*([a-z0-9_]+)\(block\)(?:\[([^\]]*)\])?/gm)].flatMap((m) =>
-  ["main", ...(m[2] ?? "").split(",").map((v) => v.trim()).filter(Boolean)].map((variant) => ({
-    id: `block-${m[1]}-${variant}`,
-    path: `/component/block/${m[1]}/${variant}/`,
-    kind: "block" as const,
-  })),
-);
+/** Block demos (`variants/demo.css` components) render at `/component/block/<name>/<variant>/`; read from the directories. */
+const BLOCK_ROUTES: Route[] = readBlockDemos().map((b) => ({
+  id: `block-${b.name}-${b.variant}`,
+  path: b.path,
+  kind: "block" as const,
+}));
 const ROUTES: Route[] = [
   ...COMPONENTS.map((name) => ({ id: name, path: `/component/${name}/`, kind: "page" as const })),
   { id: "site-home", path: "/", kind: "page" },

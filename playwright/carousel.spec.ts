@@ -43,7 +43,7 @@ import { gotoHydrated } from "./hydration";
 const GOTO_OPTS = { timeout: 20 * 60 * 1000 };
 
 async function goto(page: Page, variant: string) {
-  await gotoHydrated(page, `${BASE_URL}/component/?name=carousel&variant=${variant}&`, GOTO_OPTS);
+  await gotoHydrated(page, `${BASE_URL}/component/carousel/`, GOTO_OPTS);
   if (variant === "autoplay" || variant === "virtual_loop" || variant === "virtual_loop_rtl") {
     // Autoplay only runs while the carousel can be seen (`primitives/src/activity.rs`: off-screen or
     // hidden-tab autoplay is stopped and restarts with a fresh countdown), and this variant sits
@@ -585,7 +585,7 @@ test.describe("Carousel: arrows never overflow their frame (carousel-narrow regr
         // debug build with 4 workers, 4-10 of 12 red; row 109's class).
         await gotoHydrated(
           page,
-          `${BASE_URL}/component/?name=carousel&variant=main&${dark ? "dark_mode=true" : ""}`,
+          `${BASE_URL}/component/carousel/${dark ? "?dark_mode=true" : ""}`,
           GOTO_OPTS,
         );
 
@@ -797,8 +797,8 @@ test.describe("Carousel: a custom picker built on use_carousel()'s CarouselApi",
 test.describe("Carousel: light and dark mode render without error", () => {
   for (const dark of [false, true]) {
     test(`main variant loads in ${dark ? "dark" : "light"} mode`, async ({ page }) => {
-      await page.goto(
-        `${BASE_URL}/component/?name=carousel&variant=main&${dark ? "dark_mode=true" : ""}`,
+      await gotoHydrated(page, 
+        `${BASE_URL}/component/carousel/${dark ? "?dark_mode=true" : ""}`,
         GOTO_OPTS,
       );
       const frame = demoFrame(page, "main");

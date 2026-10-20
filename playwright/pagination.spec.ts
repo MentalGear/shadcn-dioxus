@@ -13,7 +13,7 @@ import { gotoHydrated } from "./hydration";
 // navigation" test uses the same scoping for the identical reason).
 
 test("current page is marked aria-current=\"page\"; Previous/Next have accessible names", async ({ page }) => {
-  await page.goto(`${BASE_URL}/component/?name=pagination&`, { waitUntil: "networkidle" });
+  await gotoHydrated(page, `${BASE_URL}/component/pagination/`, { waitUntil: "networkidle" });
   const preview = page.locator("#component-preview-frame").first();
 
   const current = preview.locator('a[aria-current="page"]');
@@ -45,7 +45,7 @@ for (const dark of [false, true]) {
     // dev-docs/backlog.md row 109: this test hovers right after navigating,
     // on the SSG lane -- `gotoHydrated` so that hover can't land before
     // hydration attaches listeners.
-    await gotoHydrated(page, `${BASE_URL}/component/?name=pagination&${dark ? "dark_mode=true" : ""}`);
+    await gotoHydrated(page, `${BASE_URL}/component/pagination/${dark ? "?dark_mode=true" : ""}`);
     const preview = page.locator("#component-preview-frame").first();
     const current = preview.locator('a[aria-current="page"]');
     const other = preview.getByRole("link", { name: "1", exact: true });
@@ -88,7 +88,7 @@ for (const dark of [false, true]) {
 
 test.describe("Axe automated scan", () => {
   test("loaded has no automatically detectable a11y issues", async ({ page }) => {
-    await page.goto(`${BASE_URL}/component/?name=pagination&`, { waitUntil: "networkidle" });
+    await gotoHydrated(page, `${BASE_URL}/component/pagination/`, { waitUntil: "networkidle" });
     await expectNoAxeViolations(page, "pagination: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 });

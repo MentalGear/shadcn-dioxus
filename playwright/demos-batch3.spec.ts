@@ -15,7 +15,7 @@ const GOTO_OPTS = { timeout: 20 * 60 * 1000 };
 const frame = (page: Page, variant: string) => page.locator(variant === "main" ? "#component-preview-frame" : `#component-preview-frame-${variant}`).first();
 
 async function open(page: Page, name: string, variant: string, mode: "light" | "dark") {
-  await gotoHydrated(page, `${BASE_URL}/component/?name=${name}&`, GOTO_OPTS);
+  await gotoHydrated(page, `${BASE_URL}/component/${name}/`, GOTO_OPTS);
   await page.evaluate((m) => (window as unknown as { __dxApplyMode: (m: string) => void }).__dxApplyMode(m), mode);
   const root = frame(page, variant);
   await root.scrollIntoViewIfNeeded();
@@ -96,7 +96,7 @@ for (const mode of ["light", "dark"] as const) {
     });
 
     test(`card/small: typed size renders data-size and tighter spacing`, async ({ page }) => {
-      await gotoHydrated(page, `${BASE_URL}/component/?name=card&`, GOTO_OPTS);
+      await gotoHydrated(page, `${BASE_URL}/component/card/`, GOTO_OPTS);
       const small = frame(page, "small").locator(".dx-card").first();
       await expect(small).toHaveAttribute("data-size", "sm");
       expect(await small.evaluate((e) => getComputedStyle(e).rowGap)).toBe("12px");

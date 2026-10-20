@@ -29,7 +29,7 @@ import { gotoHydrated } from "./hydration";
 const GOTO_OPTS = { timeout: 20 * 60 * 1000 };
 // The demos' `MessageScrollerContent` start padding (`--dx-space-4`).
 const CONTENT_PADDING = 16;
-const URL = `${BASE_URL}/component/?name=message_scroller&`;
+const URL = `${BASE_URL}/component/message_scroller/`;
 
 type Variant = "main" | "last_anchor" | "load_history" | "long";
 

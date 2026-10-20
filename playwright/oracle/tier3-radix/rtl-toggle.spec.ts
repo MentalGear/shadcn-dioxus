@@ -20,7 +20,7 @@ import { readCatalog } from "../../catalog";
 const TOGGLE = "#dx-direction-toggle";
 
 async function open(page: Page, name: string) {
-  await gotoHydrated(page, `${BASE_URL}/component/?name=${name}&`, { timeout: 20 * 60 * 1000 });
+  await gotoHydrated(page, `${BASE_URL}/component/${name}/`, { timeout: 20 * 60 * 1000 });
 }
 
 async function setDirection(page: Page, dir: "ltr" | "rtl") {

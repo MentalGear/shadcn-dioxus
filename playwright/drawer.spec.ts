@@ -27,7 +27,7 @@ import { awaitAnimationsSettled, measureAtRest, readAtRest } from './animations'
 import { fixedViewportBox } from './viewport-box';
 import { assertSharedBackdrop, captureBackdrop, resolveOverlayMs } from "./assert-backdrop-fade";
 
-const URL = `${BASE_URL}/component/?name=drawer&`;
+const URL = `${BASE_URL}/component/drawer/`;
 const GOTO_OPTS = { timeout: 20 * 60 * 1000 };
 
 // The demos' drawers take the default side, `EdgeSide::Auto`: the bottom below the `md` breakpoint (768px)
@@ -597,7 +597,7 @@ test.describe('Axe automated scan', () => {
     // inverted, inherited from `.dx-drawer`) on `background-color: rgb(239,
     // 239, 239)` (NOT inverted, the same value as light mode) -- light text
     // on a near-white background.
-    await page.goto(`${URL}dark_mode=true`, GOTO_OPTS);
+    await gotoHydrated(page, `${URL}?dark_mode=true`, GOTO_OPTS);
     await page.getByRole('button', { name: 'Open from Top' }).click();
     await expect(page.locator('[data-slot="drawer-root"]')).toHaveAttribute('data-state', 'open');
     await expectNoAxeViolations(page, 'drawer: top variant, dark mode, open', {

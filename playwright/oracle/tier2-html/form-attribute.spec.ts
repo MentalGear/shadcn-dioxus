@@ -18,7 +18,7 @@ import { gotoHydrated } from "../../hydration";
 
 const NAV_TIMEOUT = 20 * 60 * 1000;
 const gotoForm = (page: Page) =>
-  gotoHydrated(page, `${BASE_URL}/component/?name=form&`, { timeout: NAV_TIMEOUT });
+  gotoHydrated(page, `${BASE_URL}/component/form/`, { timeout: NAV_TIMEOUT });
 
 async function submitAndRead(page: Page): Promise<string[]> {
   const result = page.locator("#outside-result");

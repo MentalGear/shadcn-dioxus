@@ -121,13 +121,13 @@
  */
 
 import { test, expect } from "../../fixtures";
-import { type Page } from "@playwright/test";
+import { type Locator, type Page } from "@playwright/test";
 import { BASE_URL } from "../../base-url";
 import { gotoHydrated } from "../../hydration";
 import { demoFrame, demoRole } from "../../demo-frame";
 import { measureAtRest } from "../../animations";
 
-const BASE = `${BASE_URL}/component/?name=`;
+const BASE = `${BASE_URL}/component/`;
 // Demo items are located by role and position (backlog row 220), never by their copy.
 // dropdown_menu demo, root menu: Edit(0), Undo(1, disabled), Duplicate(2), More tools(3, the sub-trigger),
 // Delete(4); its submenu: Rename(0), Archive(1). context_menu demo: Edit(0), Undo(1, disabled), Duplicate(2),
@@ -141,13 +141,52 @@ const submenuItem = (page: Page, n: number) => submenuOf(page).getByRole("menuit
 // after navigating, on the SSG lane -- `gotoHydrated` so those interactions
 // can't land before hydration attaches listeners.
 const goto = (page: Page, name: string) =>
-  gotoHydrated(page, `${BASE}${name}&`, { timeout: 20 * 60 * 1000 });
+  gotoHydrated(page, `${BASE}${name}/`, { timeout: 20 * 60 * 1000 });
 
 // `crate::menu_sub::SUBMENU_OPEN_INTENT_DELAY`/`SUBMENU_CLOSE_GRACE_DELAY`
 // are both 200ms (`primitives/src/menu_sub.rs`) -- generous margins below
 // so this file's own timing never races the implementation's.
-const BEFORE_INTENT_DELAY_MS = 80;
 const PAST_INTENT_DELAY_MS = 500;
+
+/**
+ * Hover a submenu trigger and measure, IN THE PAGE, from its `mouseover` to the `aria-expanded="true"` flip
+ * (`performance.now()` stamps, the pattern of `hover-delay-probe.ts`). Timing from the spec process adds the
+ * protocol round trip to both ends and, on a slow debug build, made the "opens only after the intent delay" test
+ * flaky (backlog row 115); a delay is a lower bound the product promises, so only that bound is asserted.
+ */
+async function hoverAndTimeOpen(subTrigger: Locator): Promise<{ elapsedMs: number }> {
+  await subTrigger.evaluate((el) => {
+    const w = window as unknown as { __intentProbe?: { over: number | null; open: number | null; stop: () => void } };
+    w.__intentProbe?.stop();
+    const probe = { over: null as number | null, open: null as number | null, stop: () => {} };
+    const onOver = () => {
+      if (probe.over === null) probe.over = performance.now();
+    };
+    const obs = new MutationObserver(() => {
+      if (probe.open === null && el.getAttribute("aria-expanded") === "true") probe.open = performance.now();
+    });
+    el.addEventListener("mouseover", onOver, true);
+    obs.observe(el, { attributes: true, attributeFilter: ["aria-expanded"] });
+    probe.stop = () => {
+      el.removeEventListener("mouseover", onOver, true);
+      obs.disconnect();
+    };
+    w.__intentProbe = probe;
+  });
+  await subTrigger.hover();
+  await expect(subTrigger, "opens once the intent delay elapses").toHaveAttribute("aria-expanded", "true");
+  const r = await subTrigger.evaluate(() => {
+    const w = window as unknown as { __intentProbe: { over: number | null; open: number | null; stop: () => void } };
+    const { over, open } = w.__intentProbe;
+    w.__intentProbe.stop();
+    return { over, open };
+  });
+  expect(r.over, "the page saw the pointer enter the trigger").not.toBeNull();
+  expect(r.open, "the page saw aria-expanded flip to true").not.toBeNull();
+  return { elapsedMs: (r.open as number) - (r.over as number) };
+}
+// A little under crate::menu_sub::SUBMENU_OPEN_INTENT_DELAY (200 ms) for timer granularity.
+const MIN_INTENT_DELAY_MS = 180;
 
 test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
   test.beforeEach(async ({ page }) => {
@@ -321,19 +360,12 @@ test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
     const subTrigger = rootItem(page, 3);
     const submenu = submenuOf(page);
 
-    await subTrigger.hover();
-    await page.waitForTimeout(BEFORE_INTENT_DELAY_MS);
-    await expect(
-      subTrigger,
+    const { elapsedMs } = await hoverAndTimeOpen(subTrigger);
+    expect(
+      elapsedMs,
       "a pointer merely passing over the trigger must not flash the " +
         "submenu open instantly (crate::menu_sub::SUBMENU_OPEN_INTENT_DELAY)",
-    ).toHaveAttribute("aria-expanded", "false");
-
-    await page.waitForTimeout(PAST_INTENT_DELAY_MS - BEFORE_INTENT_DELAY_MS);
-    await expect(subTrigger, "opens once the intent delay elapses").toHaveAttribute(
-      "aria-expanded",
-      "true",
-    );
+    ).toBeGreaterThanOrEqual(MIN_INTENT_DELAY_MS);
     await expect(submenu).toBeVisible();
 
     // Moving to a sibling item (not into the submenu itself) closes it.
@@ -562,12 +594,8 @@ test.describe("APG Menu and Menubar pattern — ContextMenu.Sub", () => {
     const subTrigger = rootItem(page, 4);
     const submenu = submenuOf(page);
 
-    await subTrigger.hover();
-    await page.waitForTimeout(BEFORE_INTENT_DELAY_MS);
-    await expect(subTrigger).toHaveAttribute("aria-expanded", "false");
-
-    await page.waitForTimeout(PAST_INTENT_DELAY_MS - BEFORE_INTENT_DELAY_MS);
-    await expect(subTrigger).toHaveAttribute("aria-expanded", "true");
+    const { elapsedMs } = await hoverAndTimeOpen(subTrigger);
+    expect(elapsedMs, "no instant flash: opens only after the intent delay").toBeGreaterThanOrEqual(MIN_INTENT_DELAY_MS);
     await expect(submenu).toBeVisible();
 
     await rootItem(page, 0).hover();

@@ -38,8 +38,9 @@ import { type Page } from "@playwright/test";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
 import { assertSharedBackdrop, captureBackdrop, resolveOverlayMs } from "./assert-backdrop-fade";
+import { gotoHydrated } from "./hydration";
 
-const URL = `${BASE_URL}/component/?name=command&`;
+const URL = `${BASE_URL}/component/command/`;
 const HOME_URL = `${BASE_URL}/`;
 
 const openButton = (page: Page) => page.getByRole("button", { name: "Open Command Palette" });
@@ -55,7 +56,7 @@ const commandCard = (page: Page) =>
     page.locator("article.dx-component-card").filter({ has: page.getByRole("heading", { name: "command", exact: true }) });
 
 async function open(page: Page) {
-    await page.goto(URL, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState("networkidle");
     await openButton(page).click();
     await expect(dialog(page)).toBeVisible();
@@ -81,7 +82,7 @@ test("first mouse-click open focuses the command input, and a second open still 
     // *first* time doesn't focus the input. `primitives/src/command.rs`'s
     // `CommandInput` doc has the account of the original report; focus is now
     // set once, explicitly, by the dialog driver's open-focus policy.
-    await page.goto(URL, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState("networkidle");
 
     // First open: a real mouse click (not keyboard) on a fresh page load --
@@ -115,7 +116,7 @@ test("first mouse-click open focuses the command input on the overview page", as
     // overview/home page's demo gallery (`preview/src/main.rs`'s
     // `ComponentGallery`), which mounts every demo -- including this one --
     // alongside dozens of others, unlike the isolated component page above.
-    await page.goto(HOME_URL, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, HOME_URL, { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState("networkidle");
 
     const card = commandCard(page);
@@ -146,7 +147,7 @@ test("first mouse-click open focuses the command input on the overview page", as
 test("keyboard-activated open (Enter on the trigger) still focuses the command input", async ({ page }) => {
     // The fix for the mouse-click focus bug (see the test above) must not
     // regress the keyboard-open path, which already worked.
-    await page.goto(URL, { timeout: 20 * 60 * 1000 });
+    await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState("networkidle");
 
     await openButton(page).focus();
@@ -233,7 +234,7 @@ test("Escape closes CommandDialog", async ({ page }) => {
 // over 150ms while every other overlay took 200ms.
 test.describe("Scrim", () => {
     test("CommandDialog paints the shared scrim and fades it in and out", async ({ page }) => {
-        await page.goto(URL, { timeout: 20 * 60 * 1000 });
+        await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
         await page.waitForLoadState("networkidle");
         const trigger = openButton(page);
         await expect(trigger).toBeVisible();
@@ -267,7 +268,7 @@ test.describe("Scrim", () => {
 
 test.describe("Axe automated scan", () => {
     test("loaded (dialog closed) has no automatically detectable a11y issues", async ({ page }) => {
-        await page.goto(URL, { timeout: 20 * 60 * 1000 });
+        await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
         await page.waitForLoadState("networkidle");
         await expectNoAxeViolations(page, "command: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
     });

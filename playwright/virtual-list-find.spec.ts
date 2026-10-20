@@ -72,7 +72,7 @@ test.describe("windowed find-in-page placeholders (row 153 prototype)", () => {
         true,
       );
     });
-    await page.goto(`${URL}#:~:text=Row%207777%20of%2010000`, { waitUntil: "networkidle" });
+    await gotoHydrated(page, `${URL}#:~:text=Row%207777%20of%2010000`, { waitUntil: "networkidle" });
     await page.waitForSelector('html[data-hydrated="true"]', { state: "attached" });
     await page.waitForTimeout(1500);
     const inView = await rowInView(page, 7776);

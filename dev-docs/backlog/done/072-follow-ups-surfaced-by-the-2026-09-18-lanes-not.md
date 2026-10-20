@@ -1,10 +1,10 @@
 ---
 id: 72
 title: "Follow-ups surfaced by the 2026-09-18 lanes, not built this round"
-status: "Surfaced 2026-09-18 across lanes C, E, B and integration round 1 2026-10-20 sync: every item in…"
+status: "CLOSED 2026-10-19 (backlog review 2026-10-18): done in the code -- its one leftover, the…"
 size: "—"
 area: process
-updated: 2026-10-20
+updated: 2026-10-19
 ---
 
 # Row 72: Follow-ups surfaced by the 2026-09-18 lanes, not built this round
@@ -15,7 +15,7 @@ Follow-ups surfaced by the 2026-09-18 lanes, not built this round
 
 ## Status / trigger
 
-Surfaced 2026-09-18 across lanes C, E, B and integration round 1 **2026-10-20 sync: every item in Detail is marked Done or Superseded except `NavigationMenuIndicator` (not built) and the Drawer native arm (row 23); nothing is in flight.**
+**CLOSED 2026-10-19 (backlog review 2026-10-18): done in the code -- its one leftover, the NavigationMenu indicator, moves to the new row 249**
 
 ## Size
 

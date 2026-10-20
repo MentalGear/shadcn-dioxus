@@ -64,9 +64,10 @@ import { test, expect } from "../../fixtures";
 import { type Locator, type Page } from "@playwright/test";
 import { BASE_URL } from "../../base-url";
 import { demoRole } from "../../demo-frame";
+import { gotoHydrated } from "../../hydration";
 
-const BASE = `${BASE_URL}/component/?name=resizable&`;
-const goto = (page: Page) => page.goto(BASE, { timeout: 20 * 60 * 1000 });
+const BASE = `${BASE_URL}/component/resizable/`;
+const goto = (page: Page) => gotoHydrated(page, BASE, { timeout: 20 * 60 * 1000 });
 
 // resizable demo: the three handles in document order -- the side-by-side group's, the stacked group's, the
 // collapsible panel's (backlog row 220: role and position in the demo frame, never the handles' labels).

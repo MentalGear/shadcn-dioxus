@@ -1,10 +1,10 @@
 ---
 id: 131
 title: "dioxus-cli 0.7.9 --ssg leaves every pre-rendered route except index.html stale when public/ already exists"
-status: "OPEN (upstream) -- locally closed by construction (150e97b, scripts/build-ssg.sh); upstream issue…"
+status: "NARROWED 2026-10-19 (backlog review): local fix 150e97b in (build-ssg.sh wipes public/); filing…"
 size: "S"
 area: build
-updated: 2026-10-04
+updated: 2026-10-19
 ---
 
 # Row 131: dioxus-cli 0.7.9 --ssg leaves every pre-rendered route except index.html stale when public/ already exists
@@ -15,7 +15,7 @@ dioxus-cli 0.7.9 `--ssg` leaves every pre-rendered route except `index.html` sta
 
 ## Status / trigger
 
-**OPEN (upstream)** -- locally closed by construction (`150e97b`, `scripts/build-ssg.sh`); upstream issue not filed
+**NARROWED 2026-10-19 (backlog review): local fix 150e97b in (build-ssg.sh wipes public/); filing upstream is the owner's decision (row 6)**
 
 ## Size
 

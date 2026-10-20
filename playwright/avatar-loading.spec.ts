@@ -10,7 +10,7 @@ import { BASE_URL } from "./base-url";
 //
 // The `states` demo's slow avatars all request `https://httpbin.org/delay/3600`, which never resolves offline;
 // each test answers it itself, after the delay it wants.
-const URL = `${BASE_URL}/component/?name=avatar&`;
+const URL = `${BASE_URL}/component/avatar/`;
 const SLOW_SRC = "https://httpbin.org/delay/3600";
 const WITH_FALLBACK = "Loading avatar with fallback";
 const DELAYED_FALLBACK = "Loading avatar with delayed fallback";
@@ -25,6 +25,7 @@ async function answerSlowImageAfter(page: Page, ms: number) {
 
 /** Navigate without waiting for the network to go idle (the slow image keeps it busy on purpose). */
 async function open(page: Page) {
+  // goto-ok: commit then its own hydration wait; networkidle never settles (the slow image is the subject)
   await page.goto(URL, { waitUntil: "commit", timeout: 20 * 60 * 1000 });
   await page.waitForSelector('html[data-hydrated="true"]', { state: "attached", timeout: 5 * 60 * 1000 });
 }
@@ -125,7 +126,9 @@ test("delay: the fallback is held back that long, and a picture that loads withi
   await expect(avatar.locator(".dx-avatar-fallback")).toHaveText("DF", { timeout: 10_000 });
   const { hydratedAt } = await page.evaluate(() => ({ hydratedAt: (window as unknown as { __hydratedAt: number }).__hydratedAt }));
   const waited = (await shownAt())! - hydratedAt;
-  expect(waited).toBeGreaterThanOrEqual(450); // 600 ms from mount, which is at or just before the hydrated flag
+  // 600 ms from mount. The prerendered page mounts the avatar while it hydrates, up to ~200 ms before the hydrated
+  // flag (the legacy client-created route mounted after it), so the floor is 600 minus that slack, not the delay itself.
+  expect(waited).toBeGreaterThanOrEqual(350);
   expect(waited).toBeLessThan(4_000);
 });
 

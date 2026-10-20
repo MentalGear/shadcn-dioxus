@@ -1,13 +1,14 @@
 import { test, expect } from "./fixtures";
 import { type Page } from "@playwright/test";
 import { BASE_URL } from "./base-url";
+import { gotoHydrated } from "./hydration";
 
 const R = "Pausing toast notifications"; // each toast demo owns one provider; the demo's toast lasts 3 s
 const region = (page: Page) => page.getByRole("region", { name: R });
 const toast = (page: Page) => region(page).getByRole("alertdialog");
 
 async function show(page: Page) {
-  await page.goto(`${BASE_URL}/component/?name=toast&`);
+  await gotoHydrated(page, `${BASE_URL}/component/toast/`);
   await page.getByRole("button", { name: "Show timed toast" }).click();
   await expect(toast(page)).toHaveCount(1);
 }

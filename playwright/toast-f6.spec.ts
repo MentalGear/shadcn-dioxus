@@ -1,10 +1,11 @@
 import { test, expect } from "./fixtures";
 import { type Page } from "@playwright/test";
 import { BASE_URL } from "./base-url";
+import { gotoHydrated } from "./hydration";
 
 /** The toast docs page mounts one provider per demo, each with its own named region. */
 const region = (page: Page, name: string) => page.getByRole("region", { name });
-const open = (page: Page) => page.goto(`${BASE_URL}/component/?name=toast&`);
+const open = (page: Page) => gotoHydrated(page, `${BASE_URL}/component/toast/`);
 
 const SWIPE = "Swipe toast notifications";
 const TOP = "Top toast notifications"; // mounted after SWIPE

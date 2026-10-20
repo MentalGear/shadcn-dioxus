@@ -146,11 +146,16 @@ for (const [label, use] of [
       const home = frames.filter((f) => f.path === "/");
       const finalY = home[home.length - 1].y;
       expect(finalY, "Back restored the scroll position").toBeGreaterThan(5000);
-      const between = home.filter((f) => f.y > 2 && Math.abs(f.y - finalY) > 2);
+      // A glide shows a run of distinct offsets (dozens of frames over the ~500 ms a smooth scroll takes). The
+      // overview's `content-visibility: auto` cards are laid out at their `contain-intrinsic-block-size` estimate until
+      // they are rendered, so on a phone viewport the restored offset can be corrected ONCE (43161 -> 43006, 155 px,
+      // measured on main 1353a5a0, so not a round-1 effect): that is a layout settle, not an animation, so up to two distinct
+      // intermediate offsets are tolerated.
+      const between = [...new Set(home.filter((f) => f.y > 2 && Math.abs(f.y - finalY) > 2).map((f) => f.y))];
       expect(
-        between.map((f) => f.y),
-        "no frame between the top and the restored offset: the restore is not an animation",
-      ).toEqual([]);
+        between.length,
+        `no run of frames between the top and the restored offset: the restore is not an animation (saw ${between.slice(0, 8)})`,
+      ).toBeLessThanOrEqual(2);
     });
   });
 }

@@ -10,7 +10,7 @@ import { gotoHydrated } from "./hydration";
 // images in rows of a selectable column count. Both window their rows; the data grid also windows
 // its columns. Controls are located by role and position inside the demo frames (row 220).
 
-const PAGE_URL = `${BASE_URL}/component/?name=virtual_grid&`;
+const PAGE_URL = `${BASE_URL}/component/virtual_grid/`;
 
 const dataGrid = (page: Page) => demoFrame(page).getByRole("grid");
 const gallery = (page: Page) => demoFrame(page, "gallery").getByRole("grid");

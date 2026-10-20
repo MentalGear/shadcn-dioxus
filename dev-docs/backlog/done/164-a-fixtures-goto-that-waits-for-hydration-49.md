@@ -1,10 +1,10 @@
 ---
 id: 164
 title: "A fixtures goto that waits for hydration (49 spec files lack the wait), and migrate the 362 legacy ?name=…"
-status: "OPEN -- recorded 2026-10-05 (audit); scheduled in the next-session order (step 4, just before row…"
+status: "FIXED 2026-10-19 (lane specs2 b3d0ef14): gate check-spec-goto-hydrated (a bare goto, a legacy…"
 size: "M (the fixture is S; the migration is…"
 area: tests
-updated: 2026-10-20
+updated: 2026-10-19
 ---
 
 # Row 164: A fixtures goto that waits for hydration (49 spec files lack the wait), and migrate the 362 legacy ?name=…
@@ -15,7 +15,7 @@ A fixtures `goto` that waits for hydration (49 spec files lack the wait), and mi
 
 ## Status / trigger
 
-**OPEN** -- recorded 2026-10-05 (audit); scheduled in the next-session order (step 4, just before row 152, which touches the same specs) **2026-10-20 sync: not in flight (the 2026-10-05 next-session order is superseded by the Round 6 plan in `STATUS.md`); the Round 1 hold is not active.**
+**FIXED 2026-10-19 (lane specs2 b3d0ef14): gate check-spec-goto-hydrated (a bare goto, a legacy /component/?name= route or a bad path segment fails without a reasoned marker); 412 gotos moved to gotoHydrated and ~500 legacy routes to path routes; gotoHydrated also waits for the block-variant redirect. Open: the native-checkbox SSR hydration finding (row 251); the rounds 4/5/7 specs got the mechanical change only, not a run** -- recorded 2026-10-05 (audit); scheduled in the next-session order (step 4, just before row 152, which touches the same specs)
 
 ## Size
 
