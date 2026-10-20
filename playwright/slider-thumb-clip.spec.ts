@@ -63,7 +63,7 @@ test("the focused thumb's ring is not cut off", async ({ page }) => {
   const thumb = page.getByRole("slider", { name: "Demo Slider" });
   await thumb.focus();
   await page.keyboard.press("ArrowRight"); // keyboard modality: :focus-visible
-  await expect(thumb).toHaveCSS("box-shadow", /rgba?\(.+\) 0px 0px 0px 3px/);
+  await expect(thumb).toHaveCSS("box-shadow", / 0px 0px 0px 3px$/);
   const clipped = await thumb.evaluate((el, ring) => {
     const r = el.getBoundingClientRect();
     for (let a = el.parentElement; a && a !== document.body; a = a.parentElement) {

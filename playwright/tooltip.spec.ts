@@ -235,7 +235,8 @@ test.describe("Rich content layout (row 292)", () => {
     if (!contentId) throw new Error("tooltip content has no id to sample");
     await awaitAnimationsSettled(tooltip);
     const openDisplay = await tooltip.evaluate((el) => getComputedStyle(el).display);
-    expect(openDisplay).toBe("inline-flex");
+    // `inline-flex` computes to `flex` on an absolutely positioned box; what matters is that it is a flex row.
+    expect(openDisplay).toBe("flex");
 
     const capture = await sampleCloseFade(page, contentId, () => page.mouse.move(0, 0));
     const mounted = capture.samples.filter((s) => s.exists);
