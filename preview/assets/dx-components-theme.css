@@ -482,7 +482,13 @@ html[data-theme="light"] [class~="dxc-system"] {
   /* Press feedback (see "Press feedback" below): the scale a pressed control
    * takes, how long it takes to get there, and the wash laid over it. */
   --dx-press-scale: 0.98;
-  --dx-press-duration: var(--dx-motion-duration-fast);
+
+  /* The press lands instantly and RELEASES over `--dx-press-duration`. A tap is 40-100ms on a phone, and
+   * the old symmetric 100ms transition never reached the target scale before the finger was up
+   * (measured on a 60ms press: 0.9965, i.e. no visible change); landing at once and easing back gives
+   * every tap a visible 150ms+ tail however short the touch (backlog row 295). */
+  --dx-press-in-duration: 0s;
+  --dx-press-duration: var(--dx-motion-duration-slow);
   --dx-press-fill: color-mix(in oklab, var(--dx-foreground) 8%, transparent);
   --dx-motion-ease: ease;
   --dx-motion-ease-in: ease-in;
@@ -663,9 +669,46 @@ html[data-theme="light"] [class~="dxc-system"] {
    * `.cn-menubar-item`: `gap-1.5 rounded-md px-1.5 py-1 text-sm`, and `.cn-*-label`: `px-1.5 py-1`,
    * which reads the same padding token). Was 8px 12px / radius lg - sm (4px) / gap 8px; rows are
    * about 8px shorter (14px text, 4px + 4px padding = ~28px). */
-  --dx-menu-item-padding: var(--dx-space-1) var(--dx-space-1-5);
+  --dx-menu-item-padding-block: var(--dx-space-1);
+  --dx-menu-item-padding-inline: var(--dx-space-1-5);
+  --dx-menu-item-padding: var(--dx-menu-item-padding-block) var(--dx-menu-item-padding-inline);
   --dx-menu-item-radius: var(--dx-radius-md);
   --dx-menu-item-gap: var(--dx-space-1-5);
+
+  /* The touch step (docs/backlog.md row 291), one set of slots every menu and option-list sheet
+   * reads, so a sheet never carries its own `@media (pointer: coarse)` copy of a row size:
+   *  - `--dx-menu-item-min-height` / `--dx-menu-item-font-size`: a row of a menu, listbox or
+   *    command palette (dropdown, context menu, menubar, navbar and navigation-menu panels, select,
+   *    combobox, command). Rows centre their content, so a taller row needs no padding of its own.
+   *  - `--dx-menu-trigger-min-height` / `--dx-menu-trigger-padding`: an entry in a menu BAR
+   *    (menubar, navbar and navigation-menu triggers), which sits in the bar rather than in a panel.
+   * The desktop values are the Nova sizes above (`0` = no floor); the coarse block just below this
+   * `:root` rule replaces them. */
+  --dx-menu-item-min-height: 0px;
+  --dx-menu-item-font-size: var(--dx-text-sm);
+  --dx-menu-trigger-min-height: 0px;
+  --dx-menu-trigger-padding: var(--dx-space-0-5) var(--dx-space-1-5);
+}
+
+/* ============================================================================
+ * Touch targets for menus and option lists (docs/backlog.md row 291).
+ *
+ * A finger needs ~44px (Apple HIG; WCAG 2.5.5 AAA is 44 CSS px, 2.5.8 AA's 24px is a floor), and
+ * Nova's menu row is ~28px. The query is the one `modality.rs` uses for its first-paint guess,
+ * `(any-pointer: coarse) and (hover: none)`: a laptop with a touchscreen has a fine pointer that can
+ * hover, so it keeps the dense desktop menus. Only the slots change here, never a selector, so
+ * every sheet that reads them follows and an app can retune one value (`--dx-menu-item-min-height`).
+ * The inline padding grows with the font so the label stays optically centred in the taller row;
+ * the vertical padding stays, the row's `min-height` and `align-items: center` do the sizing.
+ * ========================================================================== */
+@media (any-pointer: coarse) and (hover: none) {
+  :root {
+    --dx-menu-item-padding-inline: var(--dx-space-3);
+    --dx-menu-item-min-height: 2.75rem;
+    --dx-menu-item-font-size: var(--dx-text-base);
+    --dx-menu-trigger-min-height: 2.75rem;
+    --dx-menu-trigger-padding: var(--dx-space-2) var(--dx-space-3);
+  }
 }
 
 /* ============================================================================
@@ -978,10 +1021,29 @@ html[data-theme="light"] [class~="dxc-system"] {
  * surfaces (`slider`, `spinbutton`) and bare `tabindex` containers (`:active` also matches
  * every ANCESTOR of the pressed element, so a focusable card or scroller would shrink with a
  * button inside it). A disabled control does not respond. Every `:where()` holds one compound
- * selector, so the rule has ZERO specificity: a component that styles its own `:active`
- * (`scale`, `background-image`, a `background` shorthand) wins, and so does an app. The wash is a
- * `background-image` layer so it sits over whatever `background-color` the control has, and is
- * lost wherever a component writes the `background` shorthand (it resets the image).
+ * selector, so the `scale` rule has ZERO specificity: a component that styles its own `:active`
+ * `scale`, and an app, wins. The wash is a `background-image` layer so it sits over whatever
+ * `background-color` the control has, and it is NOT zero-specificity (backlog row 295): a component
+ * that writes the `background` shorthand at rest (23 control families did: Tabs, Select trigger,
+ * Menubar / Navbar / Navigation Menu triggers, Calendar cells, Carousel buttons, Toolbar, ...) resets
+ * `background-image` at a higher specificity than a `:where()` rule has, so on those the wash never
+ * painted and a tap showed only a 2% scale (under 1px on a 24px trigger). The same selectors without
+ * `:where()` out-rank any single component rule; retune or silence the wash with `--dx-press-fill`
+ * (`transparent`), not with a selector.
+ *
+ * The wash REPLACES the pressed element's own `background-image`, so a pressable control that paints
+ * an image or gradient hands it over through the slot `--dx-press-under`: it declares the image once
+ * as `--dx-press-under: <image>; background-image: var(--dx-press-under);` and the pressed state
+ * layers the wash over that very image (the wash rule ends `..., var(--dx-press-under, none)`).
+ * `scripts/check-press-under.sh` fails a component sheet that declares an image or gradient any
+ * other way, unless the element can never be pressed (a reasoned allowlist).
+ *
+ * Timing (also row 295): the press lands INSTANTLY (`--dx-press-in-duration`, `!important` because a
+ * component's own `transition` shorthand would otherwise win by specificity, and 77 sheets have one)
+ * and releases over the component's own transition, or `--dx-press-duration` where it has none. A tap
+ * is 40-100ms on a phone; the old symmetric 100ms ramp never reached the target scale before the
+ * finger lifted (60ms press: scale 0.9965, nothing to see). A control whose own `transition` list names
+ * neither `all` nor `scale` (29 families) still snaps back on release; the press itself is now seen.
  *
  * The transition belongs to the resting state (so the release animates too) and exists only under
  * `prefers-reduced-motion: no-preference`: with reduced motion the press is instant. A component
@@ -1012,8 +1074,36 @@ html[data-theme="light"] [class~="dxc-system"] {
 :where(html:not([data-dx-press-feedback="off"]) [role="checkbox"][class*=" dx-"]:not([disabled], [aria-disabled="true"]):active),
 :where(html:not([data-dx-press-feedback="off"]) [role="radio"][class^="dx-"]:not([disabled], [aria-disabled="true"]):active),
 :where(html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disabled], [aria-disabled="true"]):active) {
-  background-image: linear-gradient(var(--dx-press-fill), var(--dx-press-fill));
   scale: var(--dx-press-scale);
+  transition-duration: var(--dx-press-in-duration) !important;
+}
+
+/* The wash: the same selectors WITHOUT `:where()`, see the block comment above. */
+html:not([data-dx-press-feedback="off"]) button[class^="dx-"]:not([disabled], [aria-disabled="true"]):active,
+html:not([data-dx-press-feedback="off"]) button[class*=" dx-"]:not([disabled], [aria-disabled="true"]):active,
+html:not([data-dx-press-feedback="off"]) [role="button"][class^="dx-"]:not([disabled], [aria-disabled="true"]):active,
+html:not([data-dx-press-feedback="off"]) [role="button"][class*=" dx-"]:not([disabled], [aria-disabled="true"]):active,
+html:not([data-dx-press-feedback="off"]) a[href][class^="dx-"]:not([disabled], [aria-disabled="true"]):active,
+html:not([data-dx-press-feedback="off"]) a[href][class*=" dx-"]:not([disabled], [aria-disabled="true"]):active,
+html:not([data-dx-press-feedback="off"]) summary[class^="dx-"]:not([disabled], [aria-disabled="true"]):active,
+html:not([data-dx-press-feedback="off"]) summary[class*=" dx-"]:not([disabled], [aria-disabled="true"]):active,
+html:not([data-dx-press-feedback="off"]) [role="menuitem"][class^="dx-"]:not([disabled], [aria-disabled="true"]):active,
+html:not([data-dx-press-feedback="off"]) [role="menuitem"][class*=" dx-"]:not([disabled], [aria-disabled="true"]):active,
+html:not([data-dx-press-feedback="off"]) [role="menuitemcheckbox"][class^="dx-"]:not([disabled], [aria-disabled="true"]):active,
+html:not([data-dx-press-feedback="off"]) [role="menuitemcheckbox"][class*=" dx-"]:not([disabled], [aria-disabled="true"]):active,
+html:not([data-dx-press-feedback="off"]) [role="menuitemradio"][class^="dx-"]:not([disabled], [aria-disabled="true"]):active,
+html:not([data-dx-press-feedback="off"]) [role="menuitemradio"][class*=" dx-"]:not([disabled], [aria-disabled="true"]):active,
+html:not([data-dx-press-feedback="off"]) [role="option"][class^="dx-"]:not([disabled], [aria-disabled="true"]):active,
+html:not([data-dx-press-feedback="off"]) [role="option"][class*=" dx-"]:not([disabled], [aria-disabled="true"]):active,
+html:not([data-dx-press-feedback="off"]) [role="tab"][class^="dx-"]:not([disabled], [aria-disabled="true"]):active,
+html:not([data-dx-press-feedback="off"]) [role="tab"][class*=" dx-"]:not([disabled], [aria-disabled="true"]):active,
+html:not([data-dx-press-feedback="off"]) [role="switch"][class^="dx-"]:not([disabled], [aria-disabled="true"]):active,
+html:not([data-dx-press-feedback="off"]) [role="switch"][class*=" dx-"]:not([disabled], [aria-disabled="true"]):active,
+html:not([data-dx-press-feedback="off"]) [role="checkbox"][class^="dx-"]:not([disabled], [aria-disabled="true"]):active,
+html:not([data-dx-press-feedback="off"]) [role="checkbox"][class*=" dx-"]:not([disabled], [aria-disabled="true"]):active,
+html:not([data-dx-press-feedback="off"]) [role="radio"][class^="dx-"]:not([disabled], [aria-disabled="true"]):active,
+html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disabled], [aria-disabled="true"]):active {
+  background-image: linear-gradient(var(--dx-press-fill), var(--dx-press-fill)), var(--dx-press-under, none);
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -1241,12 +1331,13 @@ html[data-theme="light"] [class~="dxc-system"] {
 :where([data-dx-menu-item]) {
   position: relative;
   display: flex;
+  min-height: var(--dx-menu-item-min-height);
   align-items: center;
   padding: var(--dx-menu-item-padding);
   border-radius: var(--dx-menu-item-radius);
   color: var(--dx-foreground);
   cursor: pointer;
-  font-size: var(--dx-text-sm);
+  font-size: var(--dx-menu-item-font-size);
   gap: var(--dx-menu-item-gap);
   outline: none;
   overflow-wrap: anywhere;
@@ -1295,7 +1386,7 @@ html[data-theme="light"] [class~="dxc-system"] {
 
 /* A heading for a group of items, aligned with the items' own inline padding. */
 :where([data-dx-menu-label]) {
-  padding: var(--dx-menu-item-padding);
+  padding: var(--dx-menu-item-padding-block) var(--dx-menu-item-padding-inline);
   color: var(--dx-muted-foreground);
   font-size: var(--dx-text-xs);
   font-weight: 500;

@@ -142,5 +142,28 @@ for (const t of accents) {
   css += block(`[data-theme-accent="${t.name}"]`, t, t.title) + "\n";
 }
 
+// Not shadcn data: the docs site's own blue as a swatch (backlog row 301). Kept verbatim here so a regeneration
+// reproduces the committed file.
+const SITE_ACCENTS = `/* Docs blue -- NOT shadcn data: the docs site's own link blue (\`--highlight-color-tertiary\`, #0065ff in light, #4d94ff
+ * in dark; main.css), offered as a swatch so the colour the site shows by default can be picked back. The fill is
+ * the light-mode blue in both modes because white ink on #4d94ff is 2.9:1; the ink for TEXT in this accent is the
+ * site's pair itself (main.css \`:root[data-theme-accent="docs"]\`). Secondary and charts are shadcn's blue. Emitted by
+ * gen_presets.mjs (SITE_ACCENTS), after shadcn's accents. */
+[data-theme-accent="docs"] {
+  --primary: oklch(0.562 0.242 260);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: var(--dark, oklch(0.274 0.006 286.033)) var(--light, oklch(0.967 0.001 286.375));
+  --secondary-foreground: var(--dark, oklch(0.985 0 0)) var(--light, oklch(0.21 0.006 285.885));
+  --chart-1: oklch(0.809 0.105 251.813);
+  --chart-2: oklch(0.623 0.214 259.815);
+  --chart-3: oklch(0.546 0.245 262.881);
+  --chart-4: oklch(0.488 0.243 264.376);
+  --chart-5: oklch(0.424 0.199 265.638);
+  --sidebar-primary: oklch(0.562 0.242 260);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+}
+`;
+css += "\n" + SITE_ACCENTS;
+
 fs.writeFileSync(out, css.replace(/\n+$/, "\n"));
 console.error(`wrote ${out}: ${bases.length} bases (${bases.map((b) => b.name).join(" ")}), ${accents.length} accents, ${css.split("\n").length} lines`);

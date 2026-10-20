@@ -265,7 +265,7 @@ test("every swatch is named and the panel opens from the keyboard", async ({ pag
   await expect(panel).toBeVisible();
   const swatches = panel.locator(".dx-theme-swatch");
   const count = await swatches.count();
-  expect(count).toBe(1 + 9 + 1 + 17);
+  expect(count).toBe(1 + 9 + 1 + 18);
   for (let i = 0; i < count; i++) {
     await expect(swatches.nth(i)).toHaveAccessibleName(/\S/);
   }
@@ -565,7 +565,7 @@ test.describe("phone keyboard (390x844, no touch)", () => {
     const accent = panel.getByRole("group", { name: /^Accent/ });
     const radius = panel.getByRole("group", { name: /^Radius/ });
     await expect(base.locator(".dx-theme-swatch")).toHaveCount(1 + 9);
-    await expect(accent.locator(".dx-theme-swatch")).toHaveCount(1 + 17);
+    await expect(accent.locator(".dx-theme-swatch")).toHaveCount(1 + 18);
     await expect(radius.getByRole("button")).toHaveCount(6);
     const swatches = panel.locator(".dx-theme-swatch");
     for (let i = 0, n = await swatches.count(); i < n; i++) {

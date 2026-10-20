@@ -32,7 +32,8 @@
    * the other direction. The `--light`/`--dark` pair keeps light as-is and
    * uses the lighter #4d94ff in dark (7.00:1 on #000, 6.18:1 on #141313,
    * 5.04:1 on #262626). */
-  --highlight-color-tertiary: var(--dark, #4d94ff) var(--light, #0065ff);
+  --dx-docs-blue: var(--dark, #4d94ff) var(--light, #0065ff);
+  --highlight-color-tertiary: var(--dx-docs-blue);
   --dx-content-width: 1360px;
 
   /* Comfortably >= .dx-preview-navbar's tallest steady-state rendered
@@ -57,6 +58,12 @@
 :root[data-theme-accent] {
   --highlight-color-tertiary: var(--light, oklch(from var(--dx-primary) min(l, 0.5) c h))
     var(--dark, oklch(from var(--dx-primary) max(l, 0.75) c h));
+}
+
+/* The "Docs blue" swatch (`theme.rs` ACCENTS, `theme-presets.css`) is the default ink itself, not a clamped
+ * copy of its fill: the pair above is already contrast-tuned for text on every surface. */
+:root[data-theme-accent="docs"] {
+  --highlight-color-tertiary: var(--dx-docs-blue);
 }
 
 html {
