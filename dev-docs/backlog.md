@@ -34,7 +34,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (54)
+## Open rows (55)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -92,6 +92,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [305](backlog/305-side-drawer-scrolling-its-content-also-drags-the.md) | Side drawer: scrolling its content also drags the drawer sideways (iOS) | BACKLOG (owner report 2026-10-19, iOS device) | S–M | primitives |
 | [306](backlog/306-select-and-combobox-show-no-selected-label-before.md) | Select and Combobox show no selected label before hydration | DONE 2026-10-20 (claude/batch-b). Found 2026-10-19 by the features-batch validation; pre-existing… | M | select |
 | [307](backlog/307-ios-color-panel-does-not-pick-colors.md) | iOS: the Color Panel opens but tapping its color box does not change the color | OPEN (owner report 2026-10-20, iOS device; being investigated in the 'iOS Color Panel won't pick… | M | overlays |
+| [309](backlog/309-combobox-multiple-demo-higher-on-the-page.md) | Combobox multiple demo higher on the component page | DONE 2026-10-20 (claude/batch-b). Owner request. | S | combobox |
 
 ## Done rows (229)
 

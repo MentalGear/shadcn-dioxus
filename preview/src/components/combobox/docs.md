@@ -4,6 +4,8 @@ Filtering preserves the order defined by the rendered `ComboboxOption` elements 
 props. If you want query-dependent ranking, control `query`, sort your item data in user code,
 render the options in that sorted order, and assign indexes from the sorted list.
 
+Selecting several options (chips, clear button, form value) is `ComboboxMulti`: its demos come first under Examples below, and its API is in "Multiple selection".
+
 ## Behavior
 
 The input shows the selected option's label. Clicking, focusing or arrowing into it never rewrites
