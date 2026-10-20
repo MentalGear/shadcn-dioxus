@@ -566,6 +566,11 @@ pub struct QuestionnaireHandle {
 }
 
 impl QuestionnaireHandle {
+    /// The DOM id of the `form` (the caller's `id`, or the generated one).
+    pub fn form_id(&self) -> String {
+        self.ctx.form_id.peek().clone()
+    }
+
     /// The progress values.
     pub fn progress(&self) -> ProgressState {
         self.ctx.with(|s, cfg| s.progress(cfg))
