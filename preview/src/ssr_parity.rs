@@ -29,7 +29,7 @@ use std::collections::BTreeMap;
 use std::panic::{catch_unwind, AssertUnwindSafe};
 
 /// Rounds of `render_immediate` allowed before a demo counts as never settling.
-const MAX_ROUNDS: usize = 12;
+const MAX_ROUNDS: usize = 300;
 
 /// The two frames of one component.
 pub(crate) struct Frames {
@@ -64,8 +64,71 @@ fn Root(props: RootProps) -> Element {
     rsx! { Demo {} }
 }
 
+/// Runs the dom the way the browser's first animation frames do: `render_immediate` again and again
+/// (each one runs the effects that are due, then re-renders what they dirtied) until three rounds in a
+/// row write nothing -- one quiet round is not enough, because a round that only re-runs a dirty scope
+/// can write no mutation while the effects queued behind it have not run yet. Returns the number of
+/// rounds that wrote mutations, at most [`MAX_ROUNDS`].
+pub(crate) fn settle(dom: &mut VirtualDom) -> usize {
+    let (mut active, mut quiet) = (0, 0);
+    while active < MAX_ROUNDS && quiet < 3 {
+        if dom.render_immediate_to_vec().edits.is_empty() {
+            quiet += 1;
+        } else {
+            quiet = 0;
+            active += 1;
+        }
+    }
+    active
+}
+
+/// The root of a whole page: the app's i18n context, the memory history the server gives each request
+/// (`dioxus-server-0.7.9/src/ssr.rs:177`) and the site's `Route` router.
+#[derive(Props, Clone, PartialEq)]
+struct RouteRootProps {
+    /// The URL to render, as `Route::to_string` writes it.
+    path: String,
+}
+
+#[component]
+fn RouteRoot(props: RouteRootProps) -> Element {
+    use dioxus::history::{History, MemoryHistory};
+    use dioxus_i18n::prelude::*;
+    use unic_langid::langid;
+    use_init_i18n(|| {
+        I18nConfig::new(langid!("en-US"))
+            .with_locale((langid!("en-US"), include_str!("i18n/en-US.ftl")))
+            .with_locale((langid!("fr-FR"), include_str!("i18n/fr-FR.ftl")))
+            .with_locale((langid!("es-ES"), include_str!("i18n/es-ES.ftl")))
+            .with_locale((langid!("de-DE"), include_str!("i18n/de-DE.ftl")))
+    });
+    let path = props.path.clone();
+    use_hook(|| {
+        provide_context(
+            std::rc::Rc::new(MemoryHistory::with_initial_path(path)) as std::rc::Rc<dyn History>
+        )
+    });
+    rsx! { Router::<crate::Route> {} }
+}
+
+/// Renders the page at `path` both ways.
+pub(crate) fn route_frames(path: &str) -> Frames {
+    frames_of(|| {
+        VirtualDom::new_with_props(
+            RouteRoot,
+            RouteRootProps {
+                path: path.to_string(),
+            },
+        )
+    })
+}
+
 /// Renders `app` both ways.
 pub(crate) fn frames(app: fn() -> Element) -> Frames {
+    frames_of(|| VirtualDom::new_with_props(Root, RootProps { demo: app }))
+}
+
+fn frames_of(make: impl Fn() -> VirtualDom) -> Frames {
     // Tasks may hold a tokio timer (`primitives/src/sleep.rs`), which panics on its first poll outside a runtime.
     let rt = tokio::runtime::Builder::new_current_thread()
         .enable_time()
@@ -73,21 +136,14 @@ pub(crate) fn frames(app: fn() -> Element) -> Frames {
         .expect("tokio runtime");
     let _guard = rt.enter();
 
-    let mut server = VirtualDom::new_with_props(Root, RootProps { demo: app });
+    let mut server = make();
     server.rebuild_in_place();
-    let server = canonical_ids(&dioxus_ssr::render(&server));
+    let server = dioxus_ssr::render(&server);
 
-    let mut client = VirtualDom::new_with_props(Root, RootProps { demo: app });
+    let mut client = make();
     client.rebuild_in_place();
-    let mut rounds = 0;
-    while rounds < MAX_ROUNDS {
-        let mutations = client.render_immediate_to_vec();
-        if mutations.edits.is_empty() {
-            break;
-        }
-        rounds += 1;
-    }
-    let client = canonical_ids(&dioxus_ssr::render(&client));
+    let rounds = settle(&mut client);
+    let client = dioxus_ssr::render(&client);
 
     Frames {
         server,
@@ -141,8 +197,33 @@ const WIRING_ATTRIBUTES: &[&str] = &[
     "data-dx-motion-key",
 ];
 
-/// `html` with the [`WIRING_ATTRIBUTES`] removed from every start tag.
+/// What the comparison looks at: [`paint_view`], then the generated ids renamed ([`canonical_ids`]) --
+/// in that order, so an id that only a dropped element carried cannot shift the numbering.
+pub(crate) fn view(html: &str) -> String {
+    canonical_ids(&paint_view(html))
+}
+
+/// `html` without its `<option ...>...</option>` elements.
+fn without_options(html: &str) -> String {
+    let mut out = String::with_capacity(html.len());
+    let mut rest = html;
+    while let Some(at) = rest.find("<option") {
+        out.push_str(&rest[..at]);
+        let after = &rest[at..];
+        rest = after
+            .find("</option>")
+            .map_or("", |end| &after[end + "</option>".len()..]);
+    }
+    out.push_str(rest);
+    out
+}
+
+/// `html` as it is painted: the [`WIRING_ATTRIBUTES`] removed from every start tag, and the `<option>`
+/// elements gone (the hidden native `<select>` that Select, SelectMulti and friends keep for form
+/// values and reset is filled from the option registry in a client effect and has no box; a visible
+/// trigger's text is not an `<option>`, so a missing selected label still shows, row 306).
 pub(crate) fn paint_view(html: &str) -> String {
+    let html = &without_options(html);
     let b = html.as_bytes();
     let mut out = String::with_capacity(html.len());
     let mut i = 0;
@@ -259,56 +340,76 @@ fn demo_list() -> Vec<(String, fn() -> Element)> {
     out
 }
 
-/// What happened to one demo.
+/// What happened to one demo or page.
 pub(crate) enum Outcome {
-    /// Panicked natively (needs a browser or a router context).
+    /// Panicked natively (needs a browser-only piece).
     Panicked,
+    /// Still writing mutations after [`MAX_ROUNDS`] rounds (an effect loop).
+    Unsettled,
     /// Server and client frames are identical.
     Same,
     /// They differ.
-    Differs {
-        rounds: usize,
-        server: String,
-        client: String,
-    },
+    Differs { server: String, client: String },
+}
+
+fn classify(frames: std::thread::Result<Frames>) -> Outcome {
+    match frames {
+        Err(_) => Outcome::Panicked,
+        // A component that panics is caught by Dioxus and drawn as an error box in both frames.
+        Ok(f)
+            if f.server.contains("Encountered panic") || f.client.contains("Encountered panic") =>
+        {
+            Outcome::Panicked
+        }
+        Ok(f) if f.rounds >= MAX_ROUNDS => Outcome::Unsettled,
+        Ok(f) => match divergence(&view(&f.server), &view(&f.client)) {
+            None => Outcome::Same,
+            Some((server, client)) => Outcome::Differs { server, client },
+        },
+    }
 }
 
 pub(crate) fn run_all() -> BTreeMap<String, Outcome> {
-    let mut out = BTreeMap::new();
-    for (name, app) in demo_list() {
-        let outcome = match catch_unwind(AssertUnwindSafe(|| frames(app))) {
-            Err(_) => Outcome::Panicked,
-            // A component that panics is caught by Dioxus and drawn as an error box in both frames.
-            Ok(f)
-                if f.server.contains("Encountered panic")
-                    || f.client.contains("Encountered panic") =>
-            {
-                Outcome::Panicked
-            }
-            Ok(f) => match divergence(&paint_view(&f.server), &paint_view(&f.client)) {
-                None => Outcome::Same,
-                Some((server, client)) => Outcome::Differs {
-                    rounds: f.rounds,
-                    server,
-                    client,
-                },
-            },
-        };
-        out.insert(name, outcome);
+    demo_list()
+        .into_iter()
+        .map(|(name, app)| {
+            let outcome = classify(catch_unwind(AssertUnwindSafe(|| frames(app))));
+            (name, outcome)
+        })
+        .collect()
+}
+
+/// Every page the site prerenders that is not a block's bare iframe route: the home page, the docs and
+/// demos indexes, the charts gallery and its tabs, and one page per component.
+fn route_list() -> Vec<String> {
+    let mut paths: Vec<String> = ["/", "/docs", "/demos", "/charts/"]
+        .map(String::from)
+        .into();
+    for kind in crate::charts_gallery::ChartKind::ALL {
+        paths.push(format!("/charts/{}/", kind.slug()));
     }
-    out
+    for demo in DEMOS {
+        paths.push(format!("/component/{}/", demo.name));
+    }
+    paths
+}
+
+pub(crate) fn run_routes() -> BTreeMap<String, Outcome> {
+    route_list()
+        .into_iter()
+        .map(|path| {
+            let outcome = classify(catch_unwind(AssertUnwindSafe(|| route_frames(&path))));
+            (path, outcome)
+        })
+        .collect()
 }
 
 /// Why a demo's two frames differ, one reason per class. Every entry of [`BASELINE`] names one.
 mod why {
-    pub const SELECT_MIRROR: &str = "the hidden native `<select>` mirror (form value and reset) lists the options the registry \
-        collected in a client effect; it has no box";
     pub const AVATAR: &str = "the image's load state goes `empty` -> `loading` in the first effect; the picture and the fallback \
         share one grid cell, so no box moves (row 204)";
     pub const CAROUSEL: &str = "slide count, and so the previous/next `disabled` state, is read from the mounted track in an \
         effect; the buttons keep their box";
-    pub const NO_SETTLE: &str = "still re-rendering after the round cap natively (a scroll or measurement loop whose answer only a \
-        browser gives); the frames are cut mid-loop, so the diff is not a verdict";
     pub const FIND_LAYER: &str = "the find-in-page layer is mounted by an effect; it is absolutely positioned and `aria-hidden`";
     pub const TAG_GROUP: &str = "OPEN, found by this test: the remove button is `disabled` with `aria-label=\"Remove item \"` \
         (no label) until an effect fills the registry -- the class of row 306, not yet fixed here";
@@ -321,10 +422,10 @@ use why::*;
 /// Shrink-only: a new divergence fails the test with its markup, and an entry that no longer
 /// diverges fails it too, so the list can only get shorter by fixing something.
 const BASELINE: &[(&str, &str)] = &[
-    ("area_chart/interactive", SELECT_MIRROR),
     ("avatar/badge", AVATAR),
     ("avatar/group", AVATAR),
     ("avatar/main", AVATAR),
+    ("avatar/dropdown", AVATAR),
     ("avatar/states", AVATAR),
     ("carousel/align", CAROUSEL),
     ("carousel/api", CAROUSEL),
@@ -344,26 +445,32 @@ const BASELINE: &[(&str, &str)] = &[
     ("carousel/virtual_loop", CAROUSEL),
     ("carousel/virtual_loop_rtl", CAROUSEL),
     ("carousel/virtual_many", CAROUSEL),
-    ("chart/main", SELECT_MIRROR),
-    ("command/scrollable", NO_SETTLE),
-    ("data_table/main", SELECT_MIRROR),
     ("drag_and_drop_list/main", AVATAR),
+    ("dropdown_menu/account_switcher", AVATAR),
     ("empty/avatar", AVATAR),
-    ("form/main", SELECT_MIRROR),
     ("item/avatar", AVATAR),
     ("item/group", AVATAR),
-    ("message_scroller/animation", SELECT_MIRROR),
-    ("pie_chart/interactive", SELECT_MIRROR),
     ("resizable/main", RESIZABLE),
     ("resizable/rtl", RESIZABLE),
     ("resizable/vertical", RESIZABLE),
-    ("select/rtl", SELECT_MIRROR),
-    ("select/scroll", NO_SETTLE),
-    ("select/sizes", SELECT_MIRROR),
     ("tag_group/main", TAG_GROUP),
     ("tag_group/multi", TAG_GROUP),
     ("tag_group/states", TAG_GROUP),
     ("virtual_list/find_in_page", FIND_LAYER),
+];
+
+/// Pages whose first client frame differs from the server page in a paint-relevant way: the pages that
+/// show a demo of [`BASELINE`]. Shrink-only, like it.
+const ROUTE_BASELINE: &[(&str, &str)] = &[
+    ("/", RESIZABLE),
+    ("/component/avatar/", AVATAR),
+    ("/component/carousel/", CAROUSEL),
+    ("/component/drag_and_drop_list/", AVATAR),
+    ("/component/empty/", AVATAR),
+    ("/component/item/", AVATAR),
+    ("/component/resizable/", RESIZABLE),
+    ("/component/tag_group/", TAG_GROUP),
+    ("/component/virtual_list/", FIND_LAYER),
 ];
 
 /// Demos that cannot render natively at all, with the missing piece.
@@ -373,10 +480,6 @@ const UNRENDERABLE: &[(&str, &str)] = &[
     ("navbar/rtl", "needs a `RouterContext` (`Link`)"),
     ("top_layer/main", "needs a `RouterContext` (`Link`)"),
 ];
-
-fn baseline_reason(name: &str) -> Option<&'static str> {
-    BASELINE.iter().find(|(n, _)| *n == name).map(|(_, r)| *r)
-}
 
 #[cfg(test)]
 mod tests {
@@ -397,8 +500,8 @@ mod tests {
         for (name, outcome) in &all {
             let known = BASELINE.iter().any(|(n, _)| n == name);
             match outcome {
-                Outcome::Differs { rounds, .. } if (*rounds >= MAX_ROUNDS) != baseline_reason(name).is_some_and(|r| r == NO_SETTLE) && known => problems.push(format!(
-                    "{name}: settled in {rounds} rounds, so its BASELINE reason (never settles, or not) is wrong."
+                Outcome::Unsettled => problems.push(format!(
+                    "{name}: still re-rendering after {MAX_ROUNDS} rounds; an effect loop."
                 )),
                 Outcome::Differs { server, client, .. } if !known => problems.push(format!(
                     "{name}: the server markup and the markup after the first client tick differ.\n  server: {server}\n  client: {client}\n  \
@@ -432,6 +535,39 @@ mod tests {
         );
         let want = sorted(UNRENDERABLE.iter().map(|(n, _)| n.to_string()));
         assert_eq!(got, want);
+    }
+
+    /// The same gate over whole pages (the layouts, the router, the sidebar and every demo of the page
+    /// together), which is what a visitor's first paint is.
+    #[test]
+    fn pages_paint_the_same_before_and_after_the_first_client_tick() {
+        let all = run_routes();
+        let mut problems = Vec::new();
+        for (path, outcome) in &all {
+            let known = ROUTE_BASELINE.iter().any(|(n, _)| n == path);
+            match outcome {
+                Outcome::Panicked => problems.push(format!("{path}: panicked natively.")),
+                Outcome::Unsettled => problems.push(format!(
+                    "{path}: still re-rendering after {MAX_ROUNDS} rounds; an effect loop."
+                )),
+                Outcome::Differs { server, client } if !known => problems.push(format!(
+                    "{path}: the server page and the page after the first client tick differ.\n  server: {server}\n  client: {client}\n  \
+                     Fix the component, or add the page to ROUTE_BASELINE with the reason."
+                )),
+                Outcome::Same if known => {
+                    problems.push(format!("{path}: no longer differs; delete its ROUTE_BASELINE entry."))
+                }
+                _ => {}
+            }
+        }
+        for (path, _) in ROUTE_BASELINE {
+            if !all.contains_key(*path) {
+                problems.push(format!(
+                    "{path}: ROUTE_BASELINE names a page that is not rendered."
+                ));
+            }
+        }
+        assert!(problems.is_empty(), "\n{}", problems.join("\n"));
     }
 
     // ---- non-vacuity: the harness must see the divergences it exists for ----
@@ -470,13 +606,13 @@ mod tests {
         let f = frames(registry_label);
         assert!(!f.server.contains("Alpha"), "{}", f.server);
         assert!(f.client.contains(r#"aria-label="Alpha""#), "{}", f.client);
-        assert!(divergence(&paint_view(&f.server), &paint_view(&f.client)).is_some());
+        assert!(divergence(&view(&f.server), &view(&f.client)).is_some());
     }
 
     #[test]
     fn a_label_known_at_render_time_is_the_same_in_both_frames() {
         let f = frames(render_time_label);
-        assert_eq!(paint_view(&f.server), paint_view(&f.client));
+        assert_eq!(view(&f.server), view(&f.client));
     }
 
     #[test]
@@ -496,6 +632,15 @@ mod tests {
         assert_eq!(
             a,
             r##"<i id="dxc-#0" aria-controls="dxc-#1"></i><b for="dxc-#0">"##
+        );
+    }
+
+    #[test]
+    fn options_are_dropped_but_a_trigger_label_is_not() {
+        let html = r#"<button><span>first</span></button><select name="a"><option value="a" selected=true>a</option><option value="b">b</option></select><p>x</p>"#;
+        assert_eq!(
+            paint_view(html),
+            r#"<button><span>first</span></button><select name="a"></select><p>x</p>"#
         );
     }
 
