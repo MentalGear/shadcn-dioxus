@@ -1,6 +1,10 @@
 /**
- * Measurement probe for backlog row 328 (declared typography): wrap every component demo in a hostile host and
- * record which dx- parts change. Writes one JSON line per (component, frame) to $TYPO_OUT.
+ * Backlog row 328 measurement probe (kept as .txt so it is not a spec: copy it to playwright/typography-hostile-host.spec.ts,
+ * run it against a debug or release SSG, delete the copy). Per component page it sets a hostile value on each demo frame
+ * (font-size, line-height, font-weight, alone and combined) and records, for every dx- element, which computed values
+ * follow the host and whether the box moves. Output: one JSON line per component in $TYPO_OUT; host values come from
+ * TYPO_FS / TYPO_LH / TYPO_FW (default 23px / 3 / 800).
+ *   TYPO_OUT=/tmp/typo.jsonl PLAYWRIGHT_BASE_URL=http://127.0.0.1:<port> npx playwright test --config=ssg.local.config.ts typography-hostile-host.spec.ts --workers=2
  */
 import { test } from "./fixtures";
 import * as fs from "fs";
