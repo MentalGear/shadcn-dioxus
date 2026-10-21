@@ -152,11 +152,12 @@ const KNOWN_AXE: Record<string, Partial<Record<Scheme, KnownAxe[]>>> = {};
  * hydrated (measured: no request in flight for 30 s, all three iframes `complete` and `data-hydrated`).
  * So: `load`, then the app's own hydration signal (`gotoHydrated`), then `settle`.
  */
-async function openRoute(page: Page, route: Route, scheme: Scheme) {
+async function openRoute(page: Page, route: Route, scheme: Scheme, viewport?: { width: number; height: number }) {
   const origin = new URL(BASE_URL).origin;
   await page.route((url) => url.origin !== origin, (r) => r.abort());
   await page.context().addCookies([{ name: "dx_theme", value: scheme, url: BASE_URL }]);
   await page.emulateMedia({ colorScheme: scheme, reducedMotion: "reduce" });
+  if (viewport) await page.setViewportSize(viewport);
   await gotoHydrated(page, BASE_URL + route.path, { waitUntil: "load", timeout: NAV_TIMEOUT });
   await expect(page.locator("html")).toHaveAttribute("data-theme", scheme);
   await settle(page);
@@ -170,8 +171,11 @@ async function openRoute(page: Page, route: Route, scheme: Scheme) {
  *
  * Also the re-settle after a probe changes the viewport: a component that first renders at the new width (a
  * mobile-only sheet) inserts its stylesheet then, exactly as it does on a page that was loaded at that width.
+ * `watchNewSheets: false` (the restore to the desktop viewport) skips the 400 ms quiet window: going back to the
+ * width the page was loaded at can only re-render components whose stylesheets are already in the head, so it
+ * checks that every stylesheet is loaded and flushes layout, nothing more.
  */
-async function settle(page: Page) {
+async function settle(page: Page, { watchNewSheets = true }: { watchNewSheets?: boolean } = {}) {
   await page.waitForFunction(
     () =>
       [...document.querySelectorAll("iframe")].every((f) => f.contentDocument?.documentElement.dataset.hydrated === "true"),
@@ -187,6 +191,7 @@ async function settle(page: Page) {
     .poll(
       async () => {
         const before = await sheets();
+        if (!watchNewSheets) return before.loaded;
         await page.waitForTimeout(400);
         const after = await sheets();
         return before.loaded && after.loaded && before.count === after.count;
@@ -239,13 +244,21 @@ async function probeAxe(page: Page, route: Route, scheme: Scheme) {
   }
 }
 
-/** 2. no horizontal overflow at 390px: resizes the page to a phone, re-settles, probes, and restores the viewport. */
-async function probeOverflow(page: Page) {
-  const desktop = page.viewportSize()!;
-  await page.setViewportSize({ width: 390, height: 844 });
-  await settle(page);
+/**
+ * Routes whose DOM depends on the viewport they have HAD, not only the one they have: measured with the old
+ * fresh-load-at-390px reading as the reference, a viewport round trip leaves a different set of boxes on these three
+ * (`virtual_grid` renders 2,955 elements after the round trip against 2,784 on a fresh phone load, `site-home` 4,799
+ * against 4,763 from `content-visibility: auto` sections, `message_scroller` moves 10 boxes), while on every other
+ * route the round trip is box-for-box identical. Their phone-width reading therefore comes from a second, fresh
+ * page loaded at 390px, exactly as the old test did.
+ */
+const FRESH_PHONE_LOAD = new Set(["virtual_grid", "site-home", "message_scroller"]);
+const PHONE = { width: 390, height: 844 };
+
+/** The 390px reading itself: which boxes pass the viewport and are neither scrollable nor clipped by an ancestor. */
+async function readOverflow(page: Page) {
   const bound = (await fixedViewportBox(page)).width;
-  const result = await page.evaluate((vw) => {
+  return page.evaluate((vw) => {
     const de = document.documentElement;
     const clipped = (e: Element) => {
       for (let p = e.parentElement; p && p !== document.body; p = p.parentElement) {
@@ -264,9 +277,33 @@ async function probeOverflow(page: Page) {
     // viewport-ok: page-level sideways scroll is `scrollWidth` vs the document's own `clientWidth`, not an overlay bound
     return { vw, pageScroll: de.scrollWidth - de.clientWidth, offenders };
   }, bound);
-  // Back to the desktop viewport for the probes after this one (the forced-colors sweep judged a desktop page).
-  await page.setViewportSize(desktop);
-  await settle(page);
+}
+
+/**
+ * 2. no horizontal overflow at 390px. Runs FIRST on its load: it resizes the page to a phone, re-settles, reads, and
+ * restores the viewport, so it must see the page before anything else has touched it (axe makes closed accordions
+ * lay out their content; the forced-colors sweep focuses, scrolls and writes the URL). Three routes read a fresh
+ * phone-width page instead (`FRESH_PHONE_LOAD`).
+ */
+async function probeOverflow(page: Page, route: Route, scheme: Scheme) {
+  let result: Awaited<ReturnType<typeof readOverflow>>;
+  if (FRESH_PHONE_LOAD.has(route.id)) {
+    const phone = await page.context().newPage();
+    try {
+      await openRoute(phone, route, scheme, PHONE);
+      result = await readOverflow(phone);
+    } finally {
+      await phone.close();
+    }
+  } else {
+    const desktop = page.viewportSize()!;
+    await page.setViewportSize(PHONE);
+    await settle(page);
+    result = await readOverflow(page);
+    // Back to the desktop viewport for the probes after this one (axe and the forced-colors sweep judged a desktop page).
+    await page.setViewportSize(desktop);
+    await settle(page, { watchNewSheets: false });
+  }
   expect(result.pageScroll, "page-level horizontal scroll").toBeLessThanOrEqual(0);
   expect(
     result.offenders.slice(0, 6),
@@ -275,9 +312,9 @@ async function probeOverflow(page: Page) {
 }
 
 /**
- * 3. keyboard focus in forced colors. Turns `forcedColors: "active"` on for the rest of the load: it changes what
- * every later read of the page sees, so it comes after axe and overflow, and nothing that judges the page's
- * normal rendering runs after it. It also moves focus, scrolls and writes `#main-content` into the URL.
+ * 3. keyboard focus in forced colors. Turns `forcedColors: "active"` on for the rest of the load and moves focus,
+ * scrolls and writes `#main-content` into the URL, so it comes after axe and overflow, which judge the page's normal
+ * rendering.
  */
 async function probeForcedColors(page: Page) {
   await page.emulateMedia({ forcedColors: "active" });
@@ -433,17 +470,19 @@ async function runProbes(probes: Array<[title: string, run: () => Promise<void>]
 }
 
 // --- the sweep: one navigation per (route, scheme), every probe on it ------------------------
-// PROBE ORDER, and why it is this one (each probe sees the page as the old, separate load gave it):
-//   1. axe        reads the page as loaded, at the default viewport, no forced colors: first, before anything
-//                 changes a viewport, a media feature, focus or the URL.
-//   2. overflow   resizes to 390px and re-settles (stylesheets a phone-width render inserts), reads geometry,
-//                 and restores the viewport. It does not scroll or focus.
-//   3. forced colors  emulates forced colors, presses Tab/Enter, focuses and scrolls to controls and ends on a
-//                 `#main-content` URL: everything after it would see a mutated page, so it goes last of the
-//                 three reads...
-//   3b. active option ...and only combobox/command have a 3b, which focuses an input and opens the palette: the
-//                 very last, on top of 3's forced-colors emulation, which it needs anyway.
-// Order and restores are proven against the old layout by `dev-docs/research/row-327-all-routes-and-goto-hydrated.md`.
+// PROBE ORDER, and why it is this one. Each order was measured against the old one-load-per-probe layout on every
+// route (`dev-docs/research/row-327-all-routes-and-goto-hydrated.md`): axe's full result and the 390px reading must
+// come out as they did on a fresh load, and the forced-colors sweep may only gain controls, never lose or fail one.
+//   1. overflow   resizes to 390px, re-settles, reads geometry, restores the viewport. First, because axe and the
+//                 sweep both change what a later geometry read sees (axe: closed accordions lay out their content,
+//                 `content-visibility` sections render; the sweep: focus, scroll, URL hash).
+//   2. axe        reads the page at the default viewport with nothing focused and no forced colors. A viewport round
+//                 trip does not change its result: pass, violation and incomplete node counts per rule are identical.
+//   3. forced colors  emulates forced colors, presses Tab/Enter, focuses and scrolls to controls, writes
+//                 `#main-content` into the URL. After axe, which judges normal rendering. (It can see one control a
+//                 fresh load does not, the docs props table's scroller, which becomes focusable once the page has
+//                 been resized or scanned: a gain, and it passes.)
+//   3b. active option  combobox/command only: focuses an input and opens the palette, so the very last.
 for (const route of ROUTES) {
   for (const scheme of SCHEMES) {
     const focusInput = ACTIVEDESCENDANT_LISTS[route.id] as ((page: Page) => Promise<void>) | undefined;
@@ -457,8 +496,8 @@ for (const route of ROUTES) {
       test.setTimeout(NAV_TIMEOUT);
       await openRoute(page, route, scheme);
       await runProbes([
+        [`no horizontal overflow at 390px (${scheme})`, () => probeOverflow(page, route, scheme)],
         [`axe (${scheme})`, () => probeAxe(page, route, scheme)],
-        [`no horizontal overflow at 390px (${scheme})`, () => probeOverflow(page)],
         ...(route.kind === "page"
           ? [[`skip link and visible focus in forced colors (${scheme})`, () => probeForcedColors(page)] as [string, () => Promise<void>]]
           : []),
