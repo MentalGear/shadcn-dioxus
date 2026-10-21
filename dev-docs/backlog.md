@@ -106,7 +106,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [343](backlog/343-one-virtualize-mode-in-the-engine-and-a-data.md) | One virtualize mode in the engine, and a data body for Table | BACKLOG (owner 2026-10-21). Comes after 340 and before 341 and 342. | M (about 2 to 2.5 days) | primitives |
 | [344](backlog/344-charts-flash-the-final-drawing-before-their-entry.md) | Charts flash the final drawing before their entry animation on first client-side open | OPEN (owner report 2026-10-21) | S | charts |
 
-## Done rows (244)
+## Done rows (245)
 
 | # | Item | Updated |
 |---|---|---|
@@ -354,6 +354,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [308](backlog/done/308-virtualgrid-scroll-trap-at-the-edges.md) | VirtualGrid traps page scroll at its edges; should VirtualList and VirtualGrid be unified? | 2026-10-20 |
 | [320](backlog/done/320-skip-the-cargo-gates-when-the-rust-tree.md) | Skip the cargo gates when the Rust tree is unchanged since the last green full gate | 2026-10-21 |
 | [324](backlog/done/324-keep-warm-release-target-trees-for-validation-and.md) | Keep warm release target trees for validation and for deploy | 2026-10-21 |
+| [346](backlog/done/346-popover-keyboard-close-focus-return-test-raced-the-close-policy.md) | Popover keyboard-close focus-return spec raced the close policy | 2026-10-21 |
 
 ## Notes (8)
 
