@@ -53,7 +53,7 @@
   color: var(--dx-foreground);
   cursor: text;
   font-family: inherit;
-  font-size: var(--dx-text-sm);
+  font-size: var(--dx-coarse-text-entry-font-size);
   line-height: 1.25rem;
   outline: none;
   padding-block: 0;
@@ -95,17 +95,6 @@
 
 .dx-combobox-input::placeholder {
   color: var(--dx-muted-foreground);
-}
-
-/*
- * Floor the font-size to 16px on touch devices -- see `../input/style.css`'s
- * identical comment (iOS Safari auto-zooms a focused text field below
- * 16px; scoped to coarse pointers so desktop sizing is unaffected).
- */
-@media (pointer: coarse) {
-  .dx-combobox-input {
-    font-size: var(--dx-text-base);
-  }
 }
 
 .dx-combobox-expand-icon {
@@ -291,7 +280,7 @@
   background: transparent;
   color: var(--dx-foreground);
   font-family: inherit;
-  font-size: var(--dx-text-sm);
+  font-size: var(--dx-coarse-text-entry-font-size);
   line-height: 1.25rem;
   outline: none;
   padding-block: 0;
@@ -300,12 +289,6 @@
 
 .dx-combobox-chips-input::placeholder {
   color: var(--dx-muted-foreground);
-}
-
-@media (pointer: coarse) {
-  .dx-combobox-chips-input {
-    font-size: var(--dx-text-base);
-  }
 }
 
 .dx-combobox-clear {

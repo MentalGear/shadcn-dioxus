@@ -29,7 +29,7 @@
      12px matches the grip's own width, so line + grip are one contiguous drag target; fingers
      get twice that below. react-resizable-panels' own `hitAreaMargins` default is the same
      idea (5px a side for a fine pointer, 15px for a coarse one). */
-  --dx-resizable-hit-size: var(--dx-space-3);
+  --dx-resizable-hit-size: var(--dx-coarse-resizable-hit-size);
 
   position: relative;
   display: flex;
@@ -53,12 +53,6 @@
   width: 100%;
   height: 1px;
   cursor: row-resize;
-}
-
-@media (pointer: coarse) {
-  .dx-resizable-handle {
-    --dx-resizable-hit-size: var(--dx-space-6);
-  }
 }
 
 /* shadcn: the handle's own `after:` hit-area -- a comfortably wide invisible pointer target
