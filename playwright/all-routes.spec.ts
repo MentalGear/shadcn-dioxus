@@ -296,6 +296,7 @@ async function probeOverflow(page: Page, route: Route, scheme: Scheme) {
       await phone.close();
     }
   } else {
+    // viewport-ok: remembers the size to restore with `setViewportSize`, not a bound for any box
     const desktop = page.viewportSize()!;
     await page.setViewportSize(PHONE);
     await settle(page);
