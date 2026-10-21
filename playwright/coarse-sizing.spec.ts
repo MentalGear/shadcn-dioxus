@@ -145,12 +145,21 @@ test.describe("docs section and theme picker", () => {
     await chip("On").click();
     await expect(html).toHaveAttribute("data-dx-coarse", "on");
     expect((await page.context().cookies()).some((c) => c.name === "dx_dx_coarse" && c.value === "on")).toBe(true);
-    // The page really switched: an `auto` container follows `html`'s forced value only when it has none, so
-    // read a control outside any container.
-    expect(await page.locator(".dx-input").first().evaluate((e) => getComputedStyle(e).fontSize)).toBe("16px");
+    // The page really switched: a control outside any container (a probe on <body>) takes the forced value.
+    const bodyInput = () =>
+      page.evaluate(() => {
+        document.getElementById("coarse-body-probe")?.remove();
+        const i = document.createElement("input");
+        i.id = "coarse-body-probe";
+        i.className = "dx-input";
+        document.body.append(i);
+        return getComputedStyle(i).fontSize;
+      });
+    expect(await bodyInput()).toBe("16px");
 
     await chip("Off").click();
     await expect(html).toHaveAttribute("data-dx-coarse", "off");
+    expect(await bodyInput()).toBe("14px");
 
     // Written by the pre-paint snippet from the cookie: present at DOMContentLoaded, before hydration.
     await page.reload({ waitUntil: "domcontentloaded" });

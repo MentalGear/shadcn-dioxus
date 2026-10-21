@@ -20,6 +20,9 @@
   height: 100%;
   padding: .25rem;
   margin: 0;
+
+  /* The hidden native <select> is the real tap target: the theme's text-entry size keeps iOS from zooming. */
+  font-size: var(--dx-coarse-text-entry-font-size);
   inset: 0;
   opacity: 0;
 }
