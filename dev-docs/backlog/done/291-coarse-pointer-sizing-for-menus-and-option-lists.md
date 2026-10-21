@@ -1,10 +1,10 @@
 ---
 id: 291
 title: "Coarse-pointer sizing for menus and option lists"
-status: "PARTLY LANDED 2026-10-20 (theme-touch lane 1ba0b2e5). Select and combobox are the remaining open…"
+status: "LANDED 2026-10-21 (lane leftovers, sha 1025fd76; theme part by theme-touch lane 1ba0b2e5). The…"
 size: "S–M"
 area: theme
-updated: 2026-10-20
+updated: 2026-10-21
 ---
 
 # Row 291: Coarse-pointer sizing for menus and option lists
@@ -15,7 +15,7 @@ Menu rows are about 28 px tall, which is too small for a finger. Add a `pointer:
 
 ## Status / trigger
 
-**PARTLY LANDED 2026-10-20 (theme-touch lane 1ba0b2e5).** Select and combobox are the remaining open part (see "What is left"). Earlier: OPEN (owner review 2026-10-19). **I concur.** Today the only coarse rules are the 16 px text-entry font floor (row 30) and the resizable handle.
+**LANDED 2026-10-21 (lane leftovers, sha 1025fd76; theme part by theme-touch lane 1ba0b2e5).** The select and combobox part left in "What was left" is done. Earlier: OPEN (owner review 2026-10-19). **I concur.** Today the only coarse rules are the 16 px text-entry font floor (row 30) and the resizable handle.
 
 ## Size
 
@@ -49,13 +49,10 @@ Readers: the theme's `[data-dx-menu-item]` row (dropdown menu, context menu, men
 
 Spec: `playwright/menu-touch-targets.spec.ts` (touch emulation: every item and trigger >= 44px; desktop rows stay 24-34px; the slot is the single knob). Screenshots: `/home/user/tgt/shots-theme-touch/291-*-{before,after}.png`.
 
-## What is left (owner: apply in batch B or a follow-up; these are the files another session owned)
+## Landed (leftovers lane, 2026-10-21): select and combobox
 
-Both are the same two-line change: read the slots instead of the literals.
+`.dx-select-option` and `.dx-combobox-option` now read the slots instead of literals: `min-height: var(--dx-menu-item-min-height)`, `font-size: var(--dx-menu-item-font-size)`, `padding-block`/`padding-inline-start` from `--dx-menu-item-padding-block`/`-inline` (desktop values are the old literals: `space-1`, `space-1-5`, `--dx-text-sm`, so the dense rows are unchanged; the inline-end padding is the indicator slot and is untouched). Under touch emulation both measure >= 44px with 16px text.
 
-- `preview/src/components/select/style.css`, `.dx-select-option` (line ~226): `font-size: var(--dx-text-sm);` -> `font-size: var(--dx-menu-item-font-size);` and add `min-height: var(--dx-menu-item-min-height);` (stylelint order: before `align-items`).
-- `preview/src/components/combobox/style.css`, `.dx-combobox-option` (line ~174): the same two lines. (The chips input and the 16px input floor already exist.)
-- Then add both to `HOSTS` in `menu-touch-targets.spec.ts` (open the select / combobox demo, assert option height >= 44 under touch emulation).
-- Not changed on purpose: native select (the OS draws its picker), the dropdown/context triggers (ordinary Buttons), navigation-menu panel links (cards, not rows).
-- Visual baselines: none are recorded for these touch sizes here; re-record if the owner keeps a touch baseline set.
-- Limit: Playwright can emulate `(any-pointer: coarse) and (hover: none)` (it does for `hasTouch` + `isMobile`) but not a hybrid laptop (coarse AND a hover-capable fine pointer), so "a touchscreen laptop keeps dense menus" rests on the query itself, not a test.
+Spec: `playwright/menu-touch-targets.spec.ts` gained `Select options` and `Combobox options` hosts (>= 44px, 16px text under `hasTouch` + `isMobile`; desktop keeps 24-34px rows and 14px text; the retuned slot moves both). 16 tests, all pass.
+
+Still not changed on purpose: native select (the OS draws its picker), the dropdown/context triggers (ordinary Buttons), navigation-menu panel links (cards, not rows). Visual baselines: none are recorded for the touch sizes. Limit: Playwright cannot emulate a hybrid laptop (coarse AND hover-capable), so "a touchscreen laptop keeps dense menus" rests on the query itself.

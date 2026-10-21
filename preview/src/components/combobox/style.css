@@ -162,13 +162,18 @@
  * positioned inside that room, so a long label wraps (`overflow-wrap:
  * anywhere`) before it can meet the check. The tokens are the theme's; this
  * option pads by `--dx-space-2`, so it overrides only `inset` (shadcn's `pr-8` +
- * `absolute right-2 size-4`). Guard: playwright/menu-indicator-gap.spec.ts. */
+ * `absolute right-2 size-4`). Guard: playwright/menu-indicator-gap.spec.ts.
+ *
+ * The list is a flex column that scrolls, so the option must not shrink: an explicit `min-height` (the
+ * theme slot's desktop value is `0px`) replaces the flex item's `auto` floor, and a constrained list
+ * then squeezed every row to ~13px instead of scrolling (combobox.spec.ts "reopening scrolls"). */
 .dx-combobox-option {
   --dx-menu-item-indicator-inset: var(--dx-space-2);
 
   position: relative;
   display: flex;
   min-height: var(--dx-menu-item-min-height);
+  flex-shrink: 0;
   align-items: center;
   border-radius: var(--dx-radius-md);
   cursor: default;
