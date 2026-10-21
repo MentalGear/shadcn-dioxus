@@ -159,7 +159,24 @@ async function prefixReachesAnyFrame(
   return false;
 }
 
-for (const name of MIGRATED) {
+/**
+ * Row 331: 52 pages -> 31. The sweep's one assertion no gate or other spec owns is (2), a hashed `dx-...-<8 hex>` class
+ * in the DOM (`#[css_module]` is still in the tree and `check-dx-class-prefix.sh` only warns for it); (1) and (3)
+ * ask whether a sheet reached the page, which `first-paint-styles.spec.ts` "the bundle is complete" proves for every
+ * `asset!()`-linked sheet at request level. So the pages are chosen to RENDER every class the old sweep rendered:
+ * on a debug SSG build each of the 52 pages was probed (across frames, scoped as assertion 3 scopes it) for its
+ * distinct `dx-` classes, minus the 44 the site chrome puts on every page; 257 classes remain, and these 31 pages
+ * carry all of them (greedy cover, most-uncovered-first, ties by the MIGRATED order). A hashed class on a component
+ * part that a dropped page rendered is therefore on a kept page too. All three assertions still run on each.
+ */
+const SAMPLED = new Set([
+  "sidebar", "calendar", "drag_and_drop_list", "field", "form", "combobox", "date_picker", "item", "breadcrumb",
+  "avatar", "card", "empty", "pagination", "navbar", "progress", "tag_group", "toolbar", "alert", "input_group",
+  "aspect_ratio", "color_picker", "menubar", "button", "hover_card", "toast", "toggle_group", "badge",
+  "button_group", "checkbox", "switch", "toggle",
+]);
+
+for (const name of MIGRATED.filter((n) => SAMPLED.has(n))) {
   test(`${name}: stylesheet delivered, classes unhashed`, async ({ page }) => {
     // Hydrated, not merely `load`ed (dev-docs/backlog.md row 115, row 109's
     // class): the SSG shell for `/component/?name=...&` has no

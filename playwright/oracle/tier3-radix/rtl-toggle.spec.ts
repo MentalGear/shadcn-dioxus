@@ -7,8 +7,22 @@
  * `rtl` variant): (1) the provider is reactive (the keys mirror live, both ways); (2) the five primitives that
  * used to ignore the direction (tag_group, date_picker, navigation_menu, accordion via its unit logic, tabs as
  * the control) mirror ArrowLeft/ArrowRight; (3) anchored popups resolve `align` logically (row 13's open
- * question about `top_layer.rs`: it was NOT direction-aware, now is); (4) a sweep of every Normal component:
- * the toggle flips, nothing throws and nothing overflows the page horizontally.
+ * question about `top_layer.rs`: it was NOT direction-aware, now is); (4) a sweep of the components whose primitive
+ * reads the direction: the toggle flips, nothing throws and nothing overflows the page horizontally.
+ *
+ * Row 331 shrank (4) from every Normal component (82 pages) to `DIRECTION_AWARE` (below). The sampling rule is
+ * derived, not picked: a component is in the sweep when its primitive calls `use_direction`, `resolve_horizontal`
+ * or `ltr_equivalent` (`grep -rlE "resolve_horizontal|ltr_equivalent|use_direction" primitives/src`, the same
+ * set `scripts/check-direction-keys.sh` polices), one catalog page per such primitive. A component that never
+ * reads the direction has no RTL code path the toggle can reach, so its page is an LTR page with a button on it.
+ * Measured on a debug SSG build (2026-10-21): the 82 pages took 184 s of the file's 194 s.
+ *
+ * The overflow probe is NOT vacuous, but narrower than it reads (one browser probe, same day, `/component/card/`):
+ * `html` and `body` are `overflow-x: clip`/`hidden`, so an in-flow element 2000 px wide adds nothing to
+ * `scrollWidth - clientWidth` (-15, the scrollbar gutter) while an absolutely positioned element that escapes
+ * `body` (`right: -2000px`) adds 2000 (1985), in LTR and under the toggle alike. It therefore catches a
+ * positioned element sticking out of the page, not an in-flow demo that is too wide; it stays in the sample.
+ * (The toggle sets `dir` on the demo frames only, `html` stays `ltr`.)
  */
 import { test, expect } from "../../fixtures";
 import { type Page } from "@playwright/test";
@@ -100,9 +114,24 @@ test.describe("anchored popups resolve align logically (top_layer.rs)", () => {
   });
 });
 
-test.describe("every component under the toggle", () => {
-  const normal = readCatalog().map((r) => r.name).filter((n) => n !== "sidebar");
-  for (const name of normal) {
+/**
+ * One catalog page per direction-aware primitive: accordion, calendar, carousel, chart (bar_chart), combobox (+multi),
+ * context_menu, date_picker, dropdown_menu (+menu_sub), menubar, navbar, navigation_menu, questionnaire,
+ * radio_group, resizable, scroll_area, select, slider, tabs, tag_group, toggle_group, toolbar, virtual_grid.
+ * (`virtual/justified_engine.rs` is `VirtualJustifiedGrid`'s engine, shown on the virtual_grid page.)
+ */
+const DIRECTION_AWARE = [
+  "accordion", "bar_chart", "calendar", "carousel", "combobox", "context_menu", "date_picker", "dropdown_menu",
+  "menubar", "navbar", "navigation_menu", "questionnaire", "radio_group", "resizable", "scroll_area", "select",
+  "slider", "tabs", "tag_group", "toggle_group", "toolbar", "virtual_grid",
+];
+
+test.describe("every direction-aware component under the toggle", () => {
+  const catalog = new Set(readCatalog().map((r) => r.name));
+  test("the sample names only catalog pages", () => {
+    expect(DIRECTION_AWARE.filter((n) => !catalog.has(n))).toEqual([]);
+  });
+  for (const name of DIRECTION_AWARE) {
     test(`${name}: RTL toggle flips the demo, no errors, no horizontal page overflow`, async ({ page }) => {
       const errors: string[] = [];
       page.on("pageerror", (e) => errors.push(String(e)));

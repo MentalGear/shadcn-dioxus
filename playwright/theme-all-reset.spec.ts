@@ -9,7 +9,17 @@ import { gotoHydrated } from "./hydration";
 // exactly what `all: unset` produced (captured on the pre-change build, light scheme).
 const GOTO = { timeout: 20 * 60 * 1000 };
 
-// Computed values of the pre-change build (light). `rect` is the border box.
+// Computed values of the pre-change build (light). `rect` is the border box, rounded to 2 decimals.
+//
+// Row 331 verdict (2026-10-21): KEPT. Re-checked against today's build: all four records still equal the
+// pre-change values, so no re-baseline was needed. What only this snapshot catches: a probe that appended
+// `cursor: default`, `text-indent`, `appearance: auto`, `transition-property: none`, `letter-spacing`, `border-width`
+// and `text-shadow`/`word-spacing` declarations (appended to the shipped sheet) to the four controls went red
+// here (4 of 4) while this file's per-control tests, `switch.spec`, `slider.spec`, `slider-thumb-clip.spec`,
+// `color-picker*.spec` and `overlay-switch.spec` stayed green. The gates `check-theme-baseline.sh` (bans `all:`,
+// checks the two theme rules) and `check-popup-root-reset.sh` (checks the popup-root rule) scan sources for those
+// shapes and read no computed value, and `popup-style-isolation` compares a popup with its own clone, so a
+// sheet-level change reaches both sides: by their construction, not by a run on the probe.
 const BEFORE: Record<string, Record<string, string>> = {
   "switch": {
     "display": "flex",
@@ -41,7 +51,7 @@ const BEFORE: Record<string, Record<string, string>> = {
     "transition-property": "background-color, box-shadow",
     "align-items": "center",
     "background-color": "rgb(229, 229, 229)",
-    "rect": "32x18.390625"
+    "rect": "32x18.39"
   },
   "slider-thumb": {
     "display": "block",
@@ -185,7 +195,10 @@ for (const which of Object.keys(BEFORE)) {
         const o: Record<string, string> = {};
         for (const p of ps) o[p] = s.getPropertyValue(p);
         const r = e.getBoundingClientRect();
-        o.rect = `${r.width}x${r.height}`;
+        // Rounded to 2 decimals (row 258): a thumb at a fractional position under `translate(-10px, -10px)` gives
+        // 19.99999237060547 on some loads. The computed width/height above stay exact.
+        const r2 = (n: number) => Math.round(n * 100) / 100;
+        o.rect = `${r2(r.width)}x${r2(r.height)}`;
         return o;
       }, props);
       expect(got).toEqual(BEFORE[which]);
