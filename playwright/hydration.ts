@@ -44,7 +44,7 @@ export async function gotoHydrated(
   url: string,
   opts?: Parameters<Page["goto"]>[1],
 ): Promise<void> {
-  await page.goto(url, { waitUntil: "networkidle", ...opts });
+  await page.goto(url, { waitUntil: (process.env.PW_GOTO_WAIT as "load" | "networkidle") ?? "networkidle", ...opts });
   await page.waitForSelector('html[data-hydrated="true"]', { state: "attached" });
   if (/[?&]name=/.test(url)) {
     const timeout = opts?.timeout;
