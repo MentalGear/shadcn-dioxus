@@ -1,7 +1,7 @@
 ---
 id: 330
 title: "Audit 4: a policy cascade layer for theme rules that must win (@layer dx-base, dx-components, dx-policy)"
-status: "SPIKED 2026-10-21 (lane b-layer): the mechanism works, the policy semantics do not; nothing retired"
+status: "CLOSED 2026-10-21: spike verdict \"do not build as specified\" (no gate arm retired); the two cheap…"
 size: "L"
 area: theme
 updated: 2026-10-21
@@ -15,7 +15,7 @@ Audit 4: a policy cascade layer for theme rules that must win (@layer dx-base, d
 
 ## Status / trigger
 
-**SPIKED 2026-10-21 (lane b-layer): the mechanism works, the policy semantics do not; nothing retired**
+**CLOSED 2026-10-21: spike verdict "do not build as specified" (no gate arm retired); the two cheap salvages are noted in Detail.** 
 
 ## Size
 

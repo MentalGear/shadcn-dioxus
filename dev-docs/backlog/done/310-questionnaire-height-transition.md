@@ -1,7 +1,7 @@
 ---
 id: 310
 title: "Questionnaire: animate the height between items instead of snapping"
-status: "OPEN (owner review 2026-10-20; implemented on lane/b-quest, awaiting merge)"
+status: "LANDED 2026-10-20, on main (8f069523 glide, 7588cb89 demo and checkpoints, merged via PR…"
 size: "S"
 area: questionnaire
 updated: 2026-10-20
@@ -15,7 +15,7 @@ Owner request, 2026-10-20: "questionaire: option to have height css transition, 
 
 ## Status / trigger
 
-OPEN (owner review 2026-10-20; implemented on lane/b-quest, awaiting merge)
+**LANDED 2026-10-20, on main (8f069523 glide, 7588cb89 demo and checkpoints, merged via PR #123/#126).** Owner review 2026-10-20.
 
 ## Size
 
