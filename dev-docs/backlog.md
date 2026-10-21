@@ -41,7 +41,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (69)
+## Open rows (67)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -105,17 +105,15 @@ proposing one is closed as out of scope (row 337 is the first).
 | [341](backlog/341-virtualgrid-header-sort-row-selection-and-cell.md) | VirtualGrid: header sort state, row selection, and controls inside cells | BACKLOG (owner 2026-10-21; amended 09:35). Comes after row 343 (needs its VirtualizeMode); row 342… | M (about 1.5 to 2 days) | primitives |
 | [342](backlog/342-datatable-large-data-variant-on-virtualgrid.md) | DataTable: a large-data variant rendered through VirtualGrid | BACKLOG (owner 2026-10-21; amended 09:35). Needs rows 340, 343 and 341. | S (about 1 day) | components |
 | [343](backlog/343-one-virtualize-mode-in-the-engine-and-a-data.md) | One virtualize mode in the engine, and a data body for Table | BACKLOG (owner 2026-10-21). Comes after 340 and before 341 and 342. | M (about 2 to 2.5 days) | primitives |
-| [344](backlog/344-charts-flash-the-final-drawing-before-their-entry.md) | Charts flash the final drawing before their entry animation on first client-side open | OPEN (owner report 2026-10-21) | S | charts |
 | [347](backlog/347-message-scroller-scroll-up-inside-the-autoscroll-window.md) | Message scroller: a scroll up inside the 180 ms autoscroll window leaves follow mode armed | BACKLOG (found 2026-10-21 by the batch-2 reds lane). | S (a primitive TS change plus the… | primitives |
 | [348](backlog/348-otp-input-edges-use-a-solid-colour.md) | OTP Input edges use a solid colour, not the translucent dark input token | Open (owner approved 2026-10-20). | S | components |
 | [349](backlog/349-coarse-sizing-global-default-plus-a-per-container-attribute.md) | Coarse sizing: global default plus a per-container `data-dx-coarse` attribute | Open (owner approved 2026-10-20). | M | theme |
 | [350](backlog/350-coarse-demo-palette-toggle-and-side-by-side-docs.md) | Coarse demo: Auto/On/Off in the theme palette and a side-by-side docs section | Open, needs row 349 (owner approved 2026-10-20). | S | docs |
 | [351](backlog/351-rtl-demos-always-come-last.md) | RTL demos always come last in a component's demo list | Open (owner approved 2026-10-20). | S | docs |
 | [352](backlog/352-link-global-attributes-in-prop-tables.md) | Link the 'Plus the global attributes.' sentence in props tables to MDN | Open (owner approved 2026-10-20). | S | docs |
-| [353](backlog/353-carousel-next-arrow-fades-in-after-hydration.md) | Carousel Next arrow fades 0.5 to 1 after hydration (first-paint flicker) | Open (found while fixing row 345; owner approved 2026-10-21). | S-M | components |
 | [354](backlog/354-remove-the-docs-header-language-switcher.md) | Remove the docs header language switcher | Open (owner 2026-10-21: "why is there a lang switcher in the docs menu? If there are no translation… | S | docs |
 
-## Done rows (258)
+## Done rows (260)
 
 | # | Item | Updated |
 |---|---|---|
@@ -375,8 +373,10 @@ proposing one is closed as out of scope (row 337 is the first).
 | [330](backlog/done/330-audit-4-a-policy-cascade-layer-for-theme.md) | Audit 4: a policy cascade layer for theme rules that must win (@layer dx-base, dx-components, dx-policy) | 2026-10-21 |
 | [331](backlog/done/331-audit-5-delete-the-sweeps-that-a-static.md) | Audit 5: delete the sweeps that a static gate or another spec already covers | 2026-10-21 |
 | [337](backlog/done/337-text-editor-component-rich-text-markdown-composer.md) | Text editor component (rich text / markdown composer) | 2026-10-21 |
+| [344](backlog/done/344-charts-flash-the-final-drawing-before-their-entry.md) | Charts flash the final drawing before their entry animation on first client-side open | 2026-10-21 |
 | [345](backlog/done/345-carousel-nav-opacity-spec-read-next-mid-fade.md) | carousel-nav-opacity first-slide spec reads Next mid-fade (red on main) | 2026-10-21 |
 | [346](backlog/done/346-popover-keyboard-close-focus-return-test-raced-the-close-policy.md) | Popover keyboard-close focus-return spec raced the close policy | 2026-10-21 |
+| [353](backlog/done/353-carousel-next-arrow-fades-in-after-hydration.md) | Carousel Next arrow fades 0.5 to 1 after hydration (first-paint flicker) | 2026-10-21 |
 
 ## Notes (8)
 
