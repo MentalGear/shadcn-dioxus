@@ -11,12 +11,24 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root/preview"
 
 # Honor CARGO_TARGET_DIR (CLAUDE.md: every lane builds into an isolated, ABSOLUTE
-# target dir; backlog rows 98/100/122) and fall back to the workspace's own
-# `target/` when it is unset. The build itself -- absolute-path / base-path-marker
-# guards, wiping public/, the dx invocation, the freshness check -- lives in
-# scripts/build-ssg.sh, the single implementation shared with verification lanes.
+# target dir; backlog rows 98/100/122). When it is unset the deploy builds in the WARM DEPLOY TREE,
+# `${LANE_TGT:-/home/user/tgt}/release` (backlog row 324): the one release tree that is allowed to hold a
+# `--base-path shadcn-dioxus` build, kept warm by every deploy, so a deploy rebuilds only the two workspace crates
+# (~3-5 min) instead of the 700-crate dependency tree (~22-50 min). Without a /home/user/tgt it falls back to the
+# workspace's own `target/` as before. The no-base-path validation tree (`release-template`, see
+# scripts/lane-target.sh) is refused here: a base-path build would taint it for good (row 100).
+# The build itself -- absolute-path / base-path-marker guards, wiping public/, the dx invocation, the freshness
+# check -- lives in scripts/build-ssg.sh, the single implementation shared with verification lanes.
+if [ -z "${CARGO_TARGET_DIR:-}" ] && [ -d "${LANE_TGT:-/home/user/tgt}" ]; then
+  CARGO_TARGET_DIR="${LANE_TGT:-/home/user/tgt}/release"
+fi
 export CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-$repo_root/target}"
 target_dir="${CARGO_TARGET_DIR%/}"
+if [ -e "$target_dir/.no-base-path-only" ]; then
+  echo "deploy-preview: $target_dir is the no-base-path validation tree (sentinel .no-base-path-only); a --base-path build would taint it (row 100). Use the deploy tree: CARGO_TARGET_DIR=${LANE_TGT:-/home/user/tgt}/release" >&2
+  exit 2
+fi
+mkdir -p "$target_dir"
 
 # Same path build-ssg.sh derives for `release` (it also prints it as PUBLIC_DIR=).
 public_dir="$target_dir/dx/preview/release/web/public"
@@ -130,3 +142,4 @@ cp -r "$public_dir"/. "$repo_root/docs/"
 touch "$repo_root/docs/.nojekyll"
 
 echo "==> Done. Review with 'git status'/'git diff --stat -- docs', then commit and push to main."
+echo "==> Refresh step (row 324): $target_dir is warm for this commit; also refresh the no-base-path validation tree: scripts/lane-target.sh warm-release"

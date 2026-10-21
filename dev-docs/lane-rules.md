@@ -12,6 +12,12 @@ Session tooling (paths below default to `LANE_TGT=/home/user/tgt`):
 - `scripts/lane-ssg.sh <worktree> <lane> [port]` -- debug SSG of a worktree inside the queue, from a fresh
   copy of the warm template, served on `port` (the server starts outside the lock).
 - `scripts/gate-at.sh <commit> <log>` -- `scripts/run-gates.sh` on a pinned commit in its own worktree (class `gate`).
+- `scripts/lane-target.sh create <name> --release [--base-path P]` / `warm-release [--base-path P]` -- the two warm
+  RELEASE trees (row 324): `$LANE_TGT/release-template` (no base path, validation) and `$LANE_TGT/release` (base path,
+  the deploy's), chosen by base path. A validation release build is `eval "$(scripts/lane-target.sh create v --release)"`
+  then `scripts/build-ssg.sh release` (~3-5 min warm, 22-50 min cold). After every deploy run
+  `scripts/lane-target.sh warm-release` (queued, in place) so the no-base-path tree follows main; the deploy refreshes
+  `release` itself. Never build with the other's base path: `deploy-preview.sh` refuses the `release-template` tree.
 - Setup for a new container: `CARGO_TARGET_DIR=$LANE_TGT/template scripts/build-ssg.sh debug` once (the warm
   template), `mkdir -p $LANE_TGT`.
 
@@ -100,7 +106,7 @@ main loop's bookkeeping). So:
 
 ## Gate procedure (owner decision 2026-10-18; why: `dev-docs/backlog.md` row 221)
 One exclusive build lock serialises every compile, a full `run-gates.sh` holds it for 15-21 min, and a round of ten
-lanes that each ran it (plus reruns after a red) queued about four hours of lock time. Three rules:
+lanes that each ran it (plus reruns after a red) queued about four hours of lock time. Four rules:
 1. **Lanes run the fast gates; the full gates run once per merge batch.** A lane's compile is proven by its own
    `lane-ssg` build and its specs; the main loop merges a batch of lanes and runs the ONE full `run-gates.sh`
    (three clippy arms, `cargo test`, the cargo-building checks) on the merged tree through `scripts/gate-at.sh`,
@@ -115,6 +121,25 @@ lanes that each ran it (plus reruns after a red) queued about four hours of lock
    or six lane builds an hour; more lanes than that do not finish sooner, they wait longer (and hold more disk and
    memory). Split a larger round into consecutive batches with disjoint files; the next batch's editing can start
    while the previous batch's merge gates run.
+4. **A cargo gate whose inputs did not change is not run again (row 320).** The five cargo gates are ~90 % of a full
+   run (measured on `f127233a`: `check-primitives-features` 130 s, clippy 256 + 227 + 271 s, `test` 310 s of 1,339 s).
+   `run-gates.sh` stores each one's PASS under a key made of `scripts/cargo-inputs-hash.sh` (a content hash of every
+   file under the cargo crates -- `primitives cli preview test-harness dioxus-attributes
+   scripts/attr-spread-collision-checker templates`, `preview/build.rs`' `docs.md`/`notes.md`/`component.json` and the
+   fixtures the tests read included -- except asset-only `css svg png jpg ico woff*`, which count by path; plus
+   `Cargo.toml`/`Cargo.lock`, toolchain and lint config, the root `component.json`, and every file a literal
+   `include_str!`/`include_bytes!` pulls in: `dev-docs/motion.md`, `preview/assets/main.css`, `theme-presets.css`),
+   the toolchain, `RUSTFLAGS`, each gate's command line and the two helper scripts. A later run with the SAME key
+   prints `reused from tree <sha>`, and the summary and the `ALL GREEN` line list every reused gate and the tree it
+   really ran on, so green still quotes a tree: this one's cargo inputs are byte-identical to that one's. Consequences
+   for the main loop: a CSS-only (per-component `style.css`), spec-only, docs-only or backlog-only batch, and the rerun
+   after a red FAST gate, cost seconds instead of ~20 min; a change to any Rust, `Cargo.lock`, a component `docs.md`,
+   `main.css`/`theme-presets.css` or `dev-docs/motion.md` runs them all. Only a PASS is stored (also from a run that was
+   red elsewhere: a cargo gate's result does not depend on the fast gates), a FAIL deletes it, `fmt` always runs,
+   `--no-reuse` (or `GATE_REUSE=0`) forces the real run, and the store is `$LANE_TGT/gate-reuse` (`GATE_REUSE_DIR`).
+   `scripts/check-gate-reuse.sh` pins the promises; a new Rust file that reads a file at run time through
+   `CARGO_MANIFEST_DIR` fails it until its input is shown to be inside the hashed set.
+
 
 ## Running the suite (row 152a, measured 2026-10-19)
 Facts, all from one debug SSG build of one tree on this 4-core / 15 GB box shared with other lanes' cargo builds
