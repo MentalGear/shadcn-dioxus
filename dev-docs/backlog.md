@@ -101,7 +101,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [334](backlog/334-make-the-four-whole-site-sweeps-cheaper.md) | Make the four whole-site sweeps cheaper (all-routes, first-paint-styles, layout-stability, theme-picker-phone) | BACKLOG (owner approved 2026-10-21, option (c) of row 323) | M | tests |
 | [335](backlog/335-message-scroller-demos-animation-fade-previous-context.md) | Message Scroller demos: animation demo shows LLM output, both fade demos look default, previous-context demo is unclear | BACKLOG (owner 2026-10-21) | S | components |
 | [336](backlog/336-docs-page-title-does-not-update-on-navigation.md) | Docs: the browser tab title does not change when navigating to another page | BACKLOG (owner 2026-10-21) | S | docs |
-| [337](backlog/337-text-editor-component-rich-text-markdown-composer.md) | Text editor component (rich text / markdown composer) | BACKLOG (owner 2026-10-21) | S-M (A) / M-L (B) | components |
+| [337](backlog/337-text-editor-component-rich-text-markdown-composer.md) | Text editor component (rich text / markdown composer) | BACKLOG -- option A approved, build when it becomes relevant (owner 2026-10-21) | S-M (A) | components |
 
 ## Done rows (246)
 
