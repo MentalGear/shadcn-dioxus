@@ -14,9 +14,24 @@
 # soon as the wall mounted its first tiles (`first-paint-styles` found it as "border 2px -> 0 on
 # /component/virtual_grid/": the JS-off page and the hydrated page computed different styles).
 #
-# A static `style: "..."` is never re-set, so only a string with an interpolation can hit it. The class is
-# made unable to recur by construction:
+# The same re-set also makes the opposite swap wrong: a string swapped for another string or for "" leaves
+# the remembered longhands in place, because they were remembered before the swap and are only put back when
+# they read empty. The questionnaire `progress` demo painted its checkpoint segments with
+# `style: if done { "...; background: var(--dx-primary);" } else { "...; background: var(--dx-muted);" }`: after
+# two steps the segments that had changed kept only `height` and `flex` (computed background transparent), so
+# the bar showed one bright segment, two invisible ones and one dark one; the collapsible `file_tree` and
+# bubble `collapsible` chevrons (`style: if open() { "rotate: ..." } else { "" }`) stayed rotated after closing.
+# Both are the one interpreter behaviour, so the gate has two arms.
 #
+# A static `style: "..."` is never re-set, so only a string with an interpolation, or a `style:` whose value is
+# chosen at run time by `if`/`match`, can hit it. The class is made unable to recur by construction:
+#
+#   ARM 2. A rsx `style:` attribute must not be an `if` or `match` expression choosing between whole style
+#   strings. State-dependent paint goes through a class or a `data-state` attribute with a rule in the
+#   component's `style.css`, or the two states are two static `if`/`else` elements (a static literal is never
+#   re-set). Reasoned exceptions are in ALLOW_CHOICE below.
+#
+#   ARM 1.
 #   An inline `style:` string (rsx `style: "..."` / `"style": "..."`) that has an interpolation `{...}` must not
 #   declare a SHORTHAND property (border*, background, margin, padding, font, outline, flex, gap, inset, overflow,
 #   transition, animation, mask, ...) with a `var()` in its value. Put the declaration in a stylesheet or a
@@ -60,6 +75,16 @@ ALLOW = [
 ]
 used = set()
 
+# ARM 2 exceptions: (file suffix, substring of the line, reason). Each is the same shape as the defect; checked on
+# the built site 2026-10-21 and none misrenders, because the choice is made once and never swapped live.
+ALLOW_CHOICE = [
+    ("preview/src/main.rs", "style: match member.2 {", "docs-site member status dot: the status is fixed per row and never changes after render, and every arm declares the same longhands (background-color is a longhand)"),
+    ("primitives/src/chart/components/series/radar.rs", "style: if ring_fill {", "sets only a custom property, or nothing; ring_fill is fixed for a chart's lifetime, so the string is never swapped"),
+    ("primitives/src/combobox/components/input.rs", "style: if ctx.is_multi()", "is_multi is fixed for a combobox's lifetime, so the string is never swapped for \"\""),
+]
+used_choice = set()
+CHOICE = re.compile(r"(?<![\w-])\"?style\"?\s*:\s*(?:\{\s*)?(?:if|match)\b")
+
 SHORTHANDS = {
     "all", "animation", "background", "border", "border-block", "border-block-end", "border-block-start",
     "border-bottom", "border-color", "border-image", "border-inline", "border-inline-end", "border-inline-start",
@@ -92,6 +117,13 @@ for path in files:
         print(f"check-dynamic-style-shorthand: cannot read {path}: {err}", file=sys.stderr)
         sys.exit(2)
     scanned += 1
+    for n, line_text in enumerate(text.split("\n"), 1):
+        if CHOICE.search(line_text):
+            hit = next((i for i, (suffix, sub, _w) in enumerate(ALLOW_CHOICE) if path.endswith(suffix) and sub in line_text), None)
+            if hit is not None:
+                used_choice.add(hit)
+            else:
+                problems.append(f"{path}:{n}: `style:` chosen by if/match: `{line_text.strip()[:90]}`")
     for m in STYLE_LITERAL.finditer(text):
         literal = m.group(1)
         if not has_interpolation(literal):
@@ -112,7 +144,8 @@ for path in files:
 
 stale = []
 if not explicit:
-    stale = [f"ALLOW entry {i} ({s}, {sub!r}) matches nothing: remove it" for i, (s, sub, _) in enumerate(ALLOW) if i not in used]
+    stale = [f"ALLOW_CHOICE entry {i} ({s}, {sub!r}) matches nothing: remove it" for i, (s, sub, _) in enumerate(ALLOW_CHOICE) if i not in used_choice]
+    stale += [f"ALLOW entry {i} ({s}, {sub!r}) matches nothing: remove it" for i, (s, sub, _) in enumerate(ALLOW) if i not in used]
 
 if problems or stale:
     for p in problems:
@@ -121,8 +154,8 @@ if problems or stale:
         print(s)
     if problems:
         print(
-            "\ncheck-dynamic-style-shorthand: Dioxus drops a `var()` shorthand from an inline `style` the first time the "
-            "string is re-set. Move the declaration to a stylesheet / `style {}` rule keyed by a class or data attribute "
+            "\ncheck-dynamic-style-shorthand: Dioxus re-sets an inline `style` by remembering and restoring longhands: it drops "
+            "a `var()` shorthand and keeps stale longhands when a string is swapped (a `style:` chosen by if/match). Move the declaration to a stylesheet / `style {}` rule keyed by a class or data attribute "
             "(keep only the computed numbers inline), or write the longhands. See this script's header."
         )
     sys.exit(1)

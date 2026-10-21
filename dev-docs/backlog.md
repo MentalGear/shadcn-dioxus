@@ -34,7 +34,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (65)
+## Open rows (70)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -86,14 +86,14 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [309](backlog/309-virtuallist-and-virtualgrid-share-one-engine.md) | VirtualList and VirtualGrid share one engine: DOM bridge, pinned focus, fade (two components, one engine) | LANDED 2026-10-20 on lane/vgrid-justified (owner go), pending the merge batch -- shared DOM bridge… | M | virtual |
 | [310](backlog/310-questionnaire-height-transition.md) | Questionnaire: animate the height between items instead of snapping | OPEN (owner review 2026-10-20; implemented on lane/b-quest, awaiting merge) | S | questionnaire |
 | [311](backlog/311-combobox-multiple-demo-higher-on-the-page.md) | Combobox multiple demo higher on the component page | DONE 2026-10-20 (claude/batch-b). Owner request. | S | combobox |
-| [321](backlog/321-one-merge-queue-owner-for-main-batch-one.md) | One merge-queue owner for main (batch, one full gate and one suite per batch, deploy) | OPEN (owner approved 2026-10-21; the backlog thread session_01QoX93TwsKJ9GtMXWUXXfKw took the role) | S | process |
+| [321](backlog/321-one-merge-queue-owner-for-main-batch-one.md) | One merge-queue owner for main (batch, one full gate and one suite per batch, deploy) | OPEN, documented (owner approved 2026-10-21; the QUEUE format is in lane-rules.md "Merge queue"… | S | process |
 | [322](backlog/322-run-the-full-release-suite-per-deploy-not.md) | Run the full release suite per deploy, not per merge batch | BACKLOG (owner: maybe, 2026-10-21) | S | tests |
 | [325](backlog/325-heavy-cross-page-oracles-construct-the-causes-away.md) | Heavy cross-page oracles: construct the causes away, run what remains per deploy | OPEN (owner approved 2026-10-21; first construction in flight) | M | tests |
 | [326](backlog/326-lanes-iterate-with-dx-serve-hot-reload-and.md) | Lanes iterate with dx serve hot reload and verify on an SSG build | BACKLOG (owner approved 2026-10-21, if reliable and safe) | S | process |
 | [327](backlog/327-audit-1-visit-each-route-once-per-scheme.md) | Audit 1: visit each route once per scheme in all-routes; measure load vs networkidle in gotoHydrated | BACKLOG (owner 2026-10-21: do it if it holds up) | M | tests |
 | [328](backlog/328-audit-2-declared-typography-every-text-or-icon.md) | Audit 2: declared typography -- every text- or icon-bearing root declares its size, only font-family, colour and direction inherit | PARTLY LANDED 2026-10-21 (lane typography: measured; static root gate check-declared-typography +… | M | theme |
 | [329](backlog/329-audit-3-ssr-vs-first-render-parity-as.md) | Audit 3: SSR-vs-first-render parity as a cargo test (spike first) | BACKLOG (owner 2026-10-21: do it if it holds up; spike first) | M | tests |
-| [330](backlog/330-audit-4-a-policy-cascade-layer-for-theme.md) | Audit 4: a policy cascade layer for theme rules that must win (@layer dx-base, dx-components, dx-policy) | BACKLOG (owner 2026-10-21: do it if it holds up; overlaps row 170) | L | theme |
+| [330](backlog/330-audit-4-a-policy-cascade-layer-for-theme.md) | Audit 4: a policy cascade layer for theme rules that must win (@layer dx-base, dx-components, dx-policy) | SPIKED 2026-10-21 (lane b-layer): the mechanism works, the policy semantics do not; nothing retired | L | theme |
 | [331](backlog/331-audit-5-delete-the-sweeps-that-a-static.md) | Audit 5: delete the sweeps that a static gate or another spec already covers | BACKLOG (owner 2026-10-21: do it if it holds up; overlaps row 152b) | S | tests |
 | [332](backlog/332-tag-group-remove-buttons-render-an-empty-label-and.md) | Tag Group remove buttons render an empty label and disabled on the server | BACKLOG (found 2026-10-21 by the row-329 spike) | S | components |
 | [333](backlog/333-resizable-panels-render-flex-basis-0-on-the-server.md) | Resizable panels render flex-basis 0% on the server and get their real size only in an effect | BACKLOG (found 2026-10-21 by the row-329 spike) | S | components |
@@ -103,6 +103,11 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [337](backlog/337-text-editor-component-rich-text-markdown-composer.md) | Text editor component (rich text / markdown composer) | BACKLOG -- option A approved, build when it becomes relevant (owner 2026-10-21) | S-M (A) | components |
 | [338](backlog/338-hydration-parity-spec-runs-cargo-at-load-outside-the.md) | hydration-parity.spec builds attr-synth with cargo at load time, outside the build lock | BACKLOG (found 2026-10-21) | S | tests |
 | [339](backlog/339-main-thread-timing-specs-not-skipped-on-debug-builds-in.md) | main-thread timing specs are not skipped on debug builds in test:changed runs | BACKLOG (found 2026-10-21) | S | tests |
+| [340](backlog/340-datatable-column-model-and-use-data-table-hook.md) | DataTable: a column definition and one state hook, rendered into Table | BACKLOG (owner 2026-10-21, after the Table/DataTable/VirtualGrid evaluation; reframed 09:35 as one… | M+ (about 2 to 2.5 days; was M before… | components |
+| [341](backlog/341-virtualgrid-header-sort-row-selection-and-cell.md) | VirtualGrid: header sort state, row selection, and controls inside cells | BACKLOG (owner 2026-10-21; amended 09:35). Comes after row 343 (needs its VirtualizeMode); row 342… | M (about 1.5 to 2 days) | primitives |
+| [342](backlog/342-datatable-large-data-variant-on-virtualgrid.md) | DataTable: a large-data variant rendered through VirtualGrid | BACKLOG (owner 2026-10-21; amended 09:35). Needs rows 340, 343 and 341. | S (about 1 day) | components |
+| [343](backlog/343-one-virtualize-mode-in-the-engine-and-a-data.md) | One virtualize mode in the engine, and a data body for Table | BACKLOG (owner 2026-10-21). Comes after 340 and before 341 and 342. | M (about 2 to 2.5 days) | primitives |
+| [344](backlog/344-charts-flash-the-final-drawing-before-their-entry.md) | Charts flash the final drawing before their entry animation on first client-side open | OPEN (owner report 2026-10-21) | S | charts |
 
 ## Done rows (247)
 

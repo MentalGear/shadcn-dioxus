@@ -116,7 +116,6 @@ gates=(
   "check-registry-url|scripts/check-registry-url.sh"
   "check-motion-gating|scripts/check-motion-gating.sh"
   "check-theme-baseline|scripts/check-theme-baseline.sh"
-  "check-dynamic-style|scripts/check-dynamic-style.sh"
   "check-popup-boundary|scripts/check-popup-boundary.sh"
   "check-popup-root-reset|scripts/check-popup-root-reset.sh"
   "check-declared-typography|scripts/check-declared-typography.sh"
