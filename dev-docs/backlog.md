@@ -34,7 +34,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (61)
+## Open rows (64)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -99,6 +99,9 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [332](backlog/332-tag-group-remove-buttons-render-an-empty-label-and.md) | Tag Group remove buttons render an empty label and disabled on the server | BACKLOG (found 2026-10-21 by the row-329 spike) | S | components |
 | [333](backlog/333-resizable-panels-render-flex-basis-0-on-the-server.md) | Resizable panels render flex-basis 0% on the server and get their real size only in an effect | BACKLOG (found 2026-10-21 by the row-329 spike) | S | components |
 | [334](backlog/334-make-the-four-whole-site-sweeps-cheaper.md) | Make the four whole-site sweeps cheaper (all-routes, first-paint-styles, layout-stability, theme-picker-phone) | BACKLOG (owner approved 2026-10-21, option (c) of row 323) | M | tests |
+| [335](backlog/335-message-scroller-demos-animation-fade-previous-context.md) | Message Scroller demos: animation demo shows LLM output, both fade demos look default, previous-context demo is unclear | BACKLOG (owner 2026-10-21) | S | components |
+| [336](backlog/336-docs-page-title-does-not-update-on-navigation.md) | Docs: the browser tab title does not change when navigating to another page | BACKLOG (owner 2026-10-21) | S | docs |
+| [337](backlog/337-text-composer-component-chat-prompt-input.md) | Text composer component (chat prompt input) | BACKLOG (owner 2026-10-21) | M | components |
 
 ## Done rows (246)
 
