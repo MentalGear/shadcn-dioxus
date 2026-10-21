@@ -1058,7 +1058,7 @@ html[data-theme="light"] [class~="dxc-system"] {
   fill: black;
   fill-opacity: 1;
   fill-rule: nonzero;
-  font: normal normal 400 normal var(--dx-text-base) normal var(--dx-font-sans);
+  font: normal normal 400 normal var(--dx-text-base) / normal var(--dx-font-sans);
   font-feature-settings: normal;
   font-kerning: auto;
   font-language-override: normal;
