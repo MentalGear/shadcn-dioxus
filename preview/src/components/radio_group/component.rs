@@ -17,7 +17,7 @@ use dioxus_primitives::radio_group::{self, RadioGroupProps, RadioItemProps};
 // `scripts/check-dx-class-prefix.sh`.
 #[component]
 pub fn RadioGroup(props: RadioGroupProps) -> Element {
-    let base = attributes!(div { class: "dx-radio-group" });
+    let base = attributes!(div { class: "dx-radio-group", "data-dx-root": "" });
     let merged = merge_attributes(vec![base, props.attributes]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/radio_group/style.css") }

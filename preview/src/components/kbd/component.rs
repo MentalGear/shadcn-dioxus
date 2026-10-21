@@ -10,7 +10,7 @@ pub fn Kbd(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
     children: Element,
 ) -> Element {
-    let base = attributes!(kbd { class: "dx-kbd" });
+    let base = attributes!(kbd { class: "dx-kbd", "data-dx-root": "" });
     let merged = merge_attributes(vec![base, attributes]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/kbd/style.css") }

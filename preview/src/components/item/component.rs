@@ -121,7 +121,7 @@ pub fn Item(
 ) -> Element {
     let in_group = try_use_context::<InItemGroup>().is_some();
     let mut base = attributes!(div {
-        class: "dx-item",
+        class: "dx-item", "data-dx-root": "",
         "data-slot": "item",
         "data-variant": variant.class(),
         "data-size": size.class(),

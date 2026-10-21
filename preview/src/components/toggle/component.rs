@@ -110,6 +110,7 @@ pub fn Toggle(props: ToggleProps) -> Element {
     // (`data-variant` / `data-size`); they are theme state, so they win over a
     // caller's attribute of the same name.
     let owned = attributes!(button {
+        "data-dx-root": "",
         "data-variant": props.variant.class(),
         "data-size": props.size.class(),
     });

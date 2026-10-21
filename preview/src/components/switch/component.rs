@@ -73,7 +73,7 @@ pub struct SwitchProps {
 #[component]
 pub fn Switch(props: SwitchProps) -> Element {
     let base = attributes!(button {
-        class: "dx-switch",
+        class: "dx-switch", "data-dx-root": "",
         "data-size": props.size.class(),
     });
     let merged = merge_attributes(vec![base, props.attributes]);

@@ -47,7 +47,7 @@ pub fn Field(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
     children: Element,
 ) -> Element {
-    let base = attributes!(div { class: "dx-field" });
+    let base = attributes!(div { class: "dx-field", "data-dx-root": "" });
     // `role`/`data-orientation`/`data-invalid` reflect this wrapper's own
     // typed `orientation`/`invalid` props, not a caller-overridable default,
     // so they are merged in LAST (owned wins) -- see the merge-precedence
@@ -72,7 +72,7 @@ pub fn FieldGroup(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
     children: Element,
 ) -> Element {
-    let base = attributes!(div { class: "dx-field-group" });
+    let base = attributes!(div { class: "dx-field-group", "data-dx-root": "" });
     let merged = merge_attributes(vec![base, attributes]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/field/style.css") }
@@ -91,7 +91,7 @@ pub fn FieldSet(
     attributes: Vec<Attribute>,
     children: Element,
 ) -> Element {
-    let base = attributes!(fieldset { class: "dx-field-set" });
+    let base = attributes!(fieldset { class: "dx-field-set", "data-dx-root": "" });
     let merged = merge_attributes(vec![base, attributes]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/field/style.css") }

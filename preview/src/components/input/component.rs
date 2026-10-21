@@ -46,7 +46,7 @@ pub fn Input(
     attributes: Vec<Attribute>,
     children: Element,
 ) -> Element {
-    let base = attributes!(input { class: "dx-input" });
+    let base = attributes!(input { class: "dx-input", "data-dx-root": "" });
     // `onwheel` is attached ONLY when the caller passed one. Dioxus registers every bubbling rsx
     // handler once on `#main` with no options (dioxus-interpreter-js `createListener`), so an
     // `onwheel: move |e| _ = onwheel.map(..)` shim on every `<input>` -- the previous shape, set

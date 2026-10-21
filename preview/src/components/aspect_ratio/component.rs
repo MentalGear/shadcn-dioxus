@@ -25,7 +25,7 @@ use dioxus_primitives::{dioxus_attributes::attributes, merge_attributes};
 #[component]
 pub fn AspectRatio(props: AspectRatioProps) -> Element {
     let base = attributes!(div {
-        class: "dx-aspect-ratio",
+        class: "dx-aspect-ratio", "data-dx-root": "",
     });
     let merged = merge_attributes(vec![base, props.attributes]);
 

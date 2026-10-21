@@ -13,7 +13,7 @@ pub fn Label(props: LabelProps) -> Element {
     // attributes on the same `<label>`, a WHATWG duplicate-attribute parse
     // error (found by the SSG lane's hydration-parity Rule 4 on the field
     // demo). Merge them the same way Table/Combobox do.
-    let base = attributes!(label { class: "dx-label" });
+    let base = attributes!(label { class: "dx-label", "data-dx-root": "" });
     let merged = merge_attributes(vec![base, props.attributes]);
 
     rsx! {

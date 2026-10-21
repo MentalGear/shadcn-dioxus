@@ -641,7 +641,7 @@ pub fn Markdown(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
 ) -> Element {
     let base = attributes!(div {
-        class: "dx-markdown",
+        class: "dx-markdown", "data-dx-root": "",
         "data-slot": "markdown",
     });
     let owned = attributes!(div {

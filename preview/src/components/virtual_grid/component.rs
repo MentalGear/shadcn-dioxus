@@ -9,7 +9,7 @@ use dioxus_primitives::{dioxus_attributes::attributes, merge_attributes};
 #[component]
 pub fn VirtualGrid(props: VirtualGridProps) -> Element {
     let base = attributes!(div {
-        class: "dx-virtual-grid"
+        class: "dx-virtual-grid", "data-dx-root": ""
     });
     let merged = merge_attributes(vec![base, props.attributes]);
 
@@ -39,7 +39,7 @@ pub fn VirtualGrid(props: VirtualGridProps) -> Element {
 #[component]
 pub fn VirtualWrapGrid(props: VirtualWrapGridProps) -> Element {
     let base = attributes!(div {
-        class: "dx-virtual-grid dx-virtual-grid-wrap"
+        class: "dx-virtual-grid dx-virtual-grid-wrap", "data-dx-root": ""
     });
     let merged = merge_attributes(vec![base, props.attributes]);
 
@@ -64,7 +64,7 @@ pub fn VirtualWrapGrid(props: VirtualWrapGridProps) -> Element {
 #[component]
 pub fn VirtualJustifiedGrid(props: VirtualJustifiedGridProps) -> Element {
     let base = attributes!(div {
-        class: "dx-virtual-grid dx-virtual-grid-justified"
+        class: "dx-virtual-grid dx-virtual-grid-justified", "data-dx-root": ""
     });
     let merged = merge_attributes(vec![base, props.attributes]);
 

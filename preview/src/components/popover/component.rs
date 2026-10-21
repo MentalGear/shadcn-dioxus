@@ -7,7 +7,7 @@ use dioxus_primitives::{dioxus_attributes::attributes, merge_attributes};
 #[component]
 pub fn PopoverRoot(props: PopoverRootProps) -> Element {
     let base = attributes!(div {
-        class: "dx-popover"
+        class: "dx-popover", "data-dx-root": ""
     });
     let merged = merge_attributes(vec![base, props.attributes]);
 

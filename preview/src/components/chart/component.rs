@@ -55,7 +55,7 @@ pub use dioxus_primitives::chart::{
 #[component]
 pub fn ChartContainer(props: ChartContainerProps) -> Element {
     let base = attributes!(div {
-        class: "dx-chart",
+        class: "dx-chart", "data-dx-root": "",
     });
     // `.clone()`, not a move: `..props` below needs `props` intact --
     // moving `props.attributes` out first (as the non-spread `Chart`/

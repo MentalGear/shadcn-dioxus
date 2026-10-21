@@ -86,6 +86,7 @@ pub fn Avatar(props: AvatarProps) -> Element {
     let class = format!("{} {}", "dx-avatar", props.shape.to_class());
     let base = attributes!(span {
         class,
+        "data-dx-root": "",
         "data-size": props.size.to_data_size(),
     });
     let merged = merge_attributes(vec![base, props.attributes]);

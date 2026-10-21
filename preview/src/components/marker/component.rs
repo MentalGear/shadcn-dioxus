@@ -44,7 +44,7 @@ pub fn Marker(
     children: Element,
 ) -> Element {
     let base = attributes!(div {
-        class: "dx-marker",
+        class: "dx-marker", "data-dx-root": "",
         "data-slot": "marker",
     });
     // `data-variant` reflects this wrapper's own typed `variant` prop, not a
