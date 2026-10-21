@@ -216,10 +216,12 @@ test.describe("Rule 1 — a named control contributes name=value to FormData on 
     const trigger = page.getByRole("combobox", { name: "Fruit (library)" });
     await trigger.click();
     await page.getByLabel("Fruit options (library)").getByRole("option", { name: "Banana" }).click();
-    // SelectValue displays the selected option's underlying value (the raw
-    // `T`, lowercase "banana" per this fixture), not its rendered label.
-    await expect(trigger).toHaveText("banana");
+    // The trigger shows the item's LABEL (`item_to_label`, backlog row 306, so
+    // the label is in server HTML); the form submits its VALUE ("banana").
+    await expect(trigger).toHaveText("Banana");
     const entries = await submitAndRead(page, "#entries-submit", formResult(page));
+    expect(hasEntry(entries, "fruit-lib", "banana"), "the form submits the value, never the label").toBe(true);
+    expect(hasEntry(entries, "fruit-lib", "Banana")).toBe(false);
     expect(
       hasKey(entries, "fruit-lib"),
       "Select declares `name` but never renders a submittable element for it " +
@@ -623,10 +625,10 @@ test.describe("Rule 6 — form reset restores the initial value", () => {
     const trigger = page.getByRole("combobox", { name: "Fruit (library)" });
     await trigger.click();
     await page.getByLabel("Fruit options (library)").getByRole("option", { name: "Banana" }).click();
-    // See the rule 1 Select test: SelectValue shows the raw value, not the label.
-    await expect(trigger).toHaveText("banana");
+    // See the rule 1 Select test: the trigger shows the label, the form submits the value.
+    await expect(trigger).toHaveText("Banana");
     await page.locator("#entries-reset").click();
-    await expect(trigger).toHaveText("apple");
+    await expect(trigger).toHaveText("Apple");
     const entries = await submitAndRead(page, "#entries-submit", formResult(page));
     expect(hasEntry(entries, "fruit-lib", "apple")).toBe(true);
   });
