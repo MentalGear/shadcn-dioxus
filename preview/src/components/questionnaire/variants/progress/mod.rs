@@ -43,17 +43,21 @@ fn items() -> Vec<ItemDef> {
     ]
 }
 
-/// A segmented bar inside the named progressbar.
+/// A segmented bar inside the named progressbar. The segments are styled by `data-state` classes, never by a
+/// `style` string that changes with the step (Dioxus patches a changed `style` string property by property and
+/// drops the properties the new string does not repeat).
 #[component]
 fn Checkpoints() -> Element {
     let progress = use_questionnaire().progress();
     rsx! {
         QuestionnaireProgress { style: "width: 100%;",
-            span { aria_hidden: "true", style: "display: flex; gap: var(--dx-space-1-5); margin-bottom: var(--dx-space-2);",
+            span { aria_hidden: "true", class: "dx-questionnaire-checkpoints",
                 for index in 0..progress.total {
                     span {
                         key: "{index}",
-                        style: if index < progress.current { "height: 0.375rem; flex: 1; border-radius: var(--dx-radius-full); background: var(--dx-primary);" } else { "height: 0.375rem; flex: 1; border-radius: var(--dx-radius-full); background: var(--dx-muted);" },
+                        class: "dx-questionnaire-checkpoint",
+                        "data-slot": "questionnaire-checkpoint",
+                        "data-state": if index < progress.current { "done" } else { "pending" },
                     }
                 }
             }

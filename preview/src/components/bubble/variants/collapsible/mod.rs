@@ -52,7 +52,11 @@ pub fn Demo() -> Element {
                                         } else {
                                             "Show more"
                                         }
-                                        ChevronDown { style: if open() { "rotate: 180deg;" } else { "" } }
+                                        if open() {
+                                            ChevronDown { style: "rotate: 180deg;" }
+                                        } else {
+                                            ChevronDown {}
+                                        }
                                     }
                                 },
                             }
