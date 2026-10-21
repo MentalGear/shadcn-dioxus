@@ -62,3 +62,5 @@ Is ~7 min per release build worth 3.5 GB each of disk, two trees (7 GB; 9 GB fre
 would actually shorten the build is a validation-only release profile (`lto = "thin"` and 16 codegen units, say), but then
 the build is no longer the shipped one, and the timing specs (`main-thread`) must not run on it. Recommendation: keep the
 no-base-path tree only (the validation builds are the frequent ones); the deploy tree already exists.
+
+**Owner decision 2026-10-21:** keep only the no-base-path validation tree (`$LANE_TGT/release-template`, 3.5 GB; a warm release build measured 14.4 min against 21.8 min cold). The deploy tree stays as it is today, no second warm copy. Refresh with `scripts/lane-target.sh warm-release` only when `Cargo.lock`, the toolchain or dx changes (it says "is current" otherwise).

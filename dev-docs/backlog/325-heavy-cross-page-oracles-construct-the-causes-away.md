@@ -24,3 +24,5 @@ M
 ## Detail
 
 `popup-style-isolation` opens every popup on every page because popups inherit from their DOM host; the popup-root typography reset (row 218's half, lane popup-root-reset, 2026-10-21) removes the inherited channel and `check-popup-boundary.sh` already removes the selector channel, so the spec shrinks to one popup per component. `all-routes` (16% of suite time) and `first-paint-styles` (7.7%) move to the per-deploy run of row 322 once rows 327 and 329 shrink them.
+
+**Update 2026-10-21:** the popup half landed with batch A -- row 259 (lane popup-root-reset 419a2526): one zero-specificity popup-root rule resets 98 inherited properties and `check-popup-root-reset.sh` guards it; `popup-style-isolation` shrank from 85 tests / 592 s to 22 tests / 150 s (one popup per component under a hostile parent) while the old full matrix still passes 89/89 on the new build. Left: `all-routes` and `first-paint-styles` (rows 327 and 329, Round 4 thread).
