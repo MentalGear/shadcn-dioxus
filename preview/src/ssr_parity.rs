@@ -419,10 +419,6 @@ mod why {
     pub const CAROUSEL: &str = "slide count, and so the previous/next `disabled` state, is read from the mounted track in an \
         effect; the buttons keep their box";
     pub const FIND_LAYER: &str = "the find-in-page layer is mounted by an effect; it is absolutely positioned and `aria-hidden`";
-    pub const TAG_GROUP: &str = "OPEN, found by this test: the remove button is `disabled` with `aria-label=\"Remove item \"` \
-        (no label) until an effect fills the registry -- the class of row 306, not yet fixed here";
-    pub const RESIZABLE: &str = "OPEN, found by this test: the panels are `flex-basis: 0%` in the server markup and take their \
-        share (50%, 40%) in an effect, so the first paint has collapsed panels";
 }
 use why::*;
 
@@ -458,26 +454,18 @@ const BASELINE: &[(&str, &str)] = &[
     ("empty/avatar", AVATAR),
     ("item/avatar", AVATAR),
     ("item/group", AVATAR),
-    ("resizable/main", RESIZABLE),
-    ("resizable/rtl", RESIZABLE),
-    ("resizable/vertical", RESIZABLE),
-    ("tag_group/main", TAG_GROUP),
-    ("tag_group/multi", TAG_GROUP),
-    ("tag_group/states", TAG_GROUP),
     ("virtual_list/find_in_page", FIND_LAYER),
 ];
 
 /// Pages whose first client frame differs from the server page in a paint-relevant way: the pages that
 /// show a demo of [`BASELINE`]. Shrink-only, like it.
 const ROUTE_BASELINE: &[(&str, &str)] = &[
-    ("/", RESIZABLE),
+    ("/", AVATAR),
     ("/component/avatar/", AVATAR),
     ("/component/carousel/", CAROUSEL),
     ("/component/drag_and_drop_list/", AVATAR),
     ("/component/empty/", AVATAR),
     ("/component/item/", AVATAR),
-    ("/component/resizable/", RESIZABLE),
-    ("/component/tag_group/", TAG_GROUP),
     ("/component/virtual_list/", FIND_LAYER),
 ];
 
