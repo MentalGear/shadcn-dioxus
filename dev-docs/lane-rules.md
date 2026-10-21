@@ -77,7 +77,7 @@ it, and `lane-target.sh create` clears the stamp. After a build, prove your chan
    contains your change, with ONE command: `cd playwright && PLAYWRIGHT_BASE_URL=http://127.0.0.1:<port> flock
    /home/user/tgt/pw.lock npm run test:changed -- --workers=2` (`tools/test-changed.sh`: runs exactly the specs
    `tools/select.mjs` maps your diff to, on `ssg.local.config.ts`; `CHANGED_RANGE=A..B` for another range,
-   `CHANGED_MATRIX=1` to add the route-matrix specs; "no spec covers the diff" means docs/gates/tooling only).
+   `CHANGED_MATRIX=1` to add the route-matrix specs; "no spec covers the diff" means docs/gates/tooling only; a changed `preview/assets/*.css` is read rule by rule -- the page-scoped matrix specs run only the tests of the pages the changed rules reach, the owning component's specs and every spec that spells a changed class are added, anything it cannot place keeps the whole broad set; `node playwright/tools/select.mjs --explain` says why, `CHANGED_FULL_CSS=1` forces the old behaviour; row 323).
    Quote its summary line in your report. Do not pick the specs by hand: `node playwright/tools/select.mjs --explain` lists the specs
    that cover your diff (default range `origin/main...HEAD` plus uncommitted files; `--range A..B`, `--files f...`).
    Map: a component directory -> the specs about that component (file named for it, or naming its page); a primitive
@@ -180,6 +180,26 @@ Facts, all from one debug SSG build of one tree on this 4-core / 15 GB box share
   route x scheme three times (axe, 390 px overflow, forced-colors) as three tests, `first-paint-styles` and the route
   matrices (`touch-*`, `main-thread`, `dx-class-migration`) each re-navigate every route; a worker-scoped page or one
   visit-each-route fixture (`fixtures.ts`) would cut two of the three hydrations per route in `all-routes` (a navigation-plus-hydrate is ~1.8 s on debug).
+
+## Merge queue (row 321, owner decision 2026-10-21)
+Why: on 2026-10-20 four sessions each merged main into their own batch and re-gated whenever main moved (three extra
+full gates for batch A), and two deploys collided. So there is ONE merge owner (the backlog thread,
+`session_01QoX93TwsKJ9GtMXWUXXfKw`); nobody else merges to main or deploys.
+1. **Lanes and threads** push a fast-gated branch (rules above: merge main into it, fast gates, own specs) and add a
+   row to the **Merge QUEUE** table at the bottom of `CLAIMS.md` on the `claims` branch. Columns: **branch**, **head
+   sha** (the pushed head the gates ran on), **rows** (backlog rows it closes or touches), **owner thread** (session
+   id), **fast-gate result** (the `run-gates.sh --skip ...` summary, e.g. "58/58"), **notes** (what to expect in the
+   merge: files other branches touch, a spec's measured result). A later push to the branch means a new head sha in the
+   row, not a new row.
+2. **The owner** merges the queued branches in batches (4-5, see "Gate procedure") onto a fresh branch from main
+   (`claude/queue-N`, `--no-ff`, in queue order; conflicts keep both sides, `playwright/durations.json` keeps every
+   entry and recomputes its header, `dev-docs/backlog.md` is regenerated with `scripts/backlog-index.sh`), then runs ONE
+   full `scripts/run-gates.sh` and ONE full Playwright suite run (`playwright/tools/run-suite.sh`) per batch on the
+   merged tree, plus `scripts/registry-install-smoke.sh` when a component's files changed.
+3. A red caused by one queued branch is fixed on the batch branch when small and in scope, otherwise the branch is
+   dropped from the batch and sent back; a red that also fails on main is not the batch's.
+4. The owner merges the batch to main, **deploys once** (`scripts/deploy-preview.sh`, docs commit), deletes the merged
+   `lane/*` branches, and marks the rows merged (removes them from the QUEUE table, notes the merge commit).
 
 ## Conventions the gates enforce
 Listeners in eval JS through `primitives/src/js_listener.rs` `listen`; passive scroll listeners; motion through

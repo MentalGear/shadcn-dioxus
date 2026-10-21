@@ -88,3 +88,62 @@ test("animate_height demo renders and its switch flips data-animate-height live"
   }
   expect(Math.abs(heights[1] - heights[0])).toBeGreaterThan(60);
 });
+
+/**
+ * Every progress visual on the component page, at every step, light and dark: each demo's named progressbar
+ * keeps the muted-foreground text colour, and any checkpoint segments keep primary/muted paint. The owner saw the
+ * bar go black after the first step on the live page, so no demo's bar is left unchecked.
+ */
+const ALL_DEMOS = [
+  "main", "multiple", "animate_height", "freeform", "skip", "shortcuts", "validation", "controlled", "resume",
+  "conditional", "navigation_state", "progress",
+] as const;
+for (const m of ["light", "dark"] as const) {
+  test(`every demo's progress keeps its colours at every step (${m})`, async ({ page }) => {
+    await gotoHydrated(page, URL, GOTO);
+    await mode(page, m);
+    const mutedForeground = await token(page, "--dx-muted-foreground");
+    const primary = await token(page, "--dx-primary");
+    const muted = await token(page, "--dx-muted");
+    const background = await token(page, "--dx-background");
+    const checked: string[] = [];
+    for (const name of ALL_DEMOS) {
+      const root = page.locator(name === "main" ? "#component-preview-frame" : `#component-preview-frame-${name}`).first();
+      await root.scrollIntoViewIfNeeded();
+      const bar = root.getByRole("progressbar");
+      // a few demos render no progress at all; the rest must be exactly one named progressbar
+      if ((await bar.count()) === 0) continue;
+      await expect(bar, name).toHaveCount(1);
+      checked.push(name);
+      for (let step = 1; step <= 6; step++) {
+        const textColour = await bar.evaluate((el) => getComputedStyle(el).color);
+        expect(textColour, `${name} step ${step}: progress text colour`).toBe(mutedForeground);
+        const segs = await bar.locator('[data-slot="questionnaire-checkpoint"]').evaluateAll((els) =>
+          els.map((el) => [getComputedStyle(el).backgroundColor, el.getAttribute("data-state")]),
+        );
+        for (const [colour, state] of segs) {
+          expect(colour, `${name} step ${step}: ${state} segment`).toBe(state === "done" ? primary : muted);
+          expect(colour).not.toBe(background);
+        }
+        const next = root.getByRole("button", { name: "Next" });
+        if (!(await next.isVisible()) || !(await next.isEnabled())) {
+          const input = root.locator('input[data-slot="questionnaire-choice-input"]:visible').first();
+          if (!(await input.count())) break;
+          await input.check();
+          if (!(await next.isVisible()) || !(await next.isEnabled())) break;
+        }
+        const before = await bar.textContent();
+        await next.click();
+        await page.waitForTimeout(150);
+        if ((await bar.textContent()) === before) {
+          // a required item blocked Next: answer it and go on
+          const input = root.locator('input[data-slot="questionnaire-choice-input"]:visible').first();
+          if (await input.count()) await input.check();
+          await next.click();
+          await page.waitForTimeout(150);
+        }
+      }
+    }
+    expect(checked, "demos whose progress was checked").toEqual(expect.arrayContaining(["main", "progress", "animate_height"]));
+  });
+}

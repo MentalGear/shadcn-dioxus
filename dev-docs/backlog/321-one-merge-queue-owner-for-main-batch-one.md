@@ -1,7 +1,7 @@
 ---
 id: 321
 title: "One merge-queue owner for main (batch, one full gate and one suite per batch, deploy)"
-status: "OPEN (owner approved 2026-10-21; the backlog thread session_01QoX93TwsKJ9GtMXWUXXfKw took the role)"
+status: "OPEN, documented (owner approved 2026-10-21; the QUEUE format is in lane-rules.md \"Merge queue\"…"
 size: "S"
 area: process
 updated: 2026-10-21
@@ -15,7 +15,7 @@ One merge-queue owner for main (batch, one full gate and one suite per batch, de
 
 ## Status / trigger
 
-**OPEN (owner approved 2026-10-21; the backlog thread session_01QoX93TwsKJ9GtMXWUXXfKw took the role)**
+**OPEN, documented (owner approved 2026-10-21; the QUEUE format is in lane-rules.md "Merge queue"; closes when batch queue-1 is merged and deployed through it)**
 
 ## Size
 

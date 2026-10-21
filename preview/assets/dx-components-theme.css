@@ -893,7 +893,7 @@ html[data-theme="light"] [class~="dxc-system"] {
  * This used to be a 400-character comment plus the declaration pasted into 33 component stylesheets
  * (50 sites), kept in step by hand with `main.css`'s `!important` app-layer backstop, which hid every
  * stylesheet that forgot it (Input, Textarea, Native Select had no declaration at all). One rule, here,
- * is the single source, and `scripts/check-touch-action.sh` fails a component stylesheet that declares
+ * is the single source, and `scripts/check-theme-baseline.sh` (arm 1) fails a component stylesheet that declares
  * `manipulation` again.
  *
  * The element list is `main.css`'s catch-all list (button, link, form controls, `summary`, anything

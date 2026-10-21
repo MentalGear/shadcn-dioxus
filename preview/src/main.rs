@@ -56,6 +56,8 @@ mod motion_docs;
 mod nav_link;
 #[cfg(test)]
 mod polar_parity;
+#[cfg(test)]
+mod ssr_parity;
 mod theme;
 mod utilities_docs;
 mod wasm_libc_shim;
