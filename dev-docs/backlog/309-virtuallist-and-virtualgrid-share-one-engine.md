@@ -1,7 +1,7 @@
 ---
 id: 309
 title: "VirtualList and VirtualGrid share one engine: DOM bridge, pinned focus, fade (two components, one engine)"
-status: "LANDED 2026-10-20 on lane/vgrid-justified (owner go), pending the merge batch -- shared DOM bridge…"
+status: "OPEN (deferred: grid content-visibility mode, grid find-in-page placeholders; the rest merged)…"
 size: "M"
 area: virtual
 updated: 2026-10-20
@@ -15,7 +15,7 @@ Owner decision 2026-10-20: keep `VirtualList` and `VirtualGrid` as two component
 
 ## Status / trigger
 
-**LANDED 2026-10-20 on lane/vgrid-justified (owner go), pending the merge batch** -- shared DOM bridge and pinned-focus strategy; the grids gained `fade`, the windowed list keeps its focused row; `VirtualJustifiedGrid` (owner approved 2026-10-20) packs variable-aspect items into gapless, uncropped justified rows on the same engine, with a `justified` demo and a Grid/Justified switch on the photo wall (Grid keeps uniform cells and fits each photo with `object-fit`); open items in the notes.
+**OPEN (deferred: grid content-visibility mode, grid find-in-page placeholders; the rest merged):** **LANDED 2026-10-20 on lane/vgrid-justified (owner go), pending the merge batch** -- shared DOM bridge and pinned-focus strategy; the grids gained `fade`, the windowed list keeps its focused row; `VirtualJustifiedGrid` (owner approved 2026-10-20) packs variable-aspect items into gapless, uncropped justified rows on the same engine, with a `justified` demo and a Grid/Justified switch on the photo wall (Grid keeps uniform cells and fits each photo with `object-fit`); open items in the notes.
 
 ## Size
 
