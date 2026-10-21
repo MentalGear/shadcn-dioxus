@@ -34,7 +34,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (62)
+## Open rows (61)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -90,7 +90,6 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [311](backlog/311-combobox-multiple-demo-higher-on-the-page.md) | Combobox multiple demo higher on the component page | DONE 2026-10-20 (claude/batch-b). Owner request. | S | combobox |
 | [321](backlog/321-one-merge-queue-owner-for-main-batch-one.md) | One merge-queue owner for main (batch, one full gate and one suite per batch, deploy) | OPEN (owner approved 2026-10-21; the backlog thread session_01QoX93TwsKJ9GtMXWUXXfKw took the role) | S | process |
 | [322](backlog/322-run-the-full-release-suite-per-deploy-not.md) | Run the full release suite per deploy, not per merge batch | BACKLOG (owner: maybe, 2026-10-21) | S | tests |
-| [323](backlog/323-finer-spec-selection-map-changed-css-rules-to.md) | Finer spec selection: map changed CSS rules to the classes and routes that use them | BACKLOG (proposed 2026-10-21, instead of splitting main.css) | M | tests |
 | [325](backlog/325-heavy-cross-page-oracles-construct-the-causes-away.md) | Heavy cross-page oracles: construct the causes away, run what remains per deploy | OPEN (owner approved 2026-10-21; first construction in flight) | M | tests |
 | [326](backlog/326-lanes-iterate-with-dx-serve-hot-reload-and.md) | Lanes iterate with dx serve hot reload and verify on an SSG build | BACKLOG (owner approved 2026-10-21, if reliable and safe) | S | process |
 | [327](backlog/327-audit-1-visit-each-route-once-per-scheme.md) | Audit 1: visit each route once per scheme in all-routes; measure load vs networkidle in gotoHydrated | BACKLOG (owner 2026-10-21: do it if it holds up) | M | tests |
@@ -101,7 +100,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [332](backlog/332-tag-group-remove-buttons-render-an-empty-label-and.md) | Tag Group remove buttons render an empty label and disabled on the server | BACKLOG (found 2026-10-21 by the row-329 spike) | S | components |
 | [333](backlog/333-resizable-panels-render-flex-basis-0-on-the-server.md) | Resizable panels render flex-basis 0% on the server and get their real size only in an effect | BACKLOG (found 2026-10-21 by the row-329 spike) | S | components |
 
-## Done rows (244)
+## Done rows (245)
 
 | # | Item | Updated |
 |---|---|---|
@@ -348,6 +347,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [303](backlog/done/303-charts-and-demos-pages-have-no-docs-sidebar.md) | Charts and Demos pages have no docs sidebar | 2026-10-20 |
 | [308](backlog/done/308-virtualgrid-scroll-trap-at-the-edges.md) | VirtualGrid traps page scroll at its edges; should VirtualList and VirtualGrid be unified? | 2026-10-20 |
 | [320](backlog/done/320-skip-the-cargo-gates-when-the-rust-tree.md) | Skip the cargo gates when the Rust tree is unchanged since the last green full gate | 2026-10-21 |
+| [323](backlog/done/323-finer-spec-selection-map-changed-css-rules-to.md) | Finer spec selection: map changed CSS rules to the classes and routes that use them | 2026-10-21 |
 | [324](backlog/done/324-keep-warm-release-target-trees-for-validation-and.md) | Keep warm release target trees for validation and for deploy | 2026-10-21 |
 
 ## Notes (8)
