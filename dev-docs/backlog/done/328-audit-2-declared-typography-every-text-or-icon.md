@@ -1,7 +1,7 @@
 ---
 id: 328
 title: "Audit 2: declared typography -- every text- or icon-bearing root declares its size, only font-family, colour and direction inherit"
-status: "PARTLY LANDED 2026-10-21 (lane typography: measured; static root gate check-declared-typography +…"
+status: "LANDED 2026-10-21 (lane root-reset): the per-root gate of the first landing is replaced by a…"
 size: "M"
 area: theme
 updated: 2026-10-21
@@ -15,7 +15,7 @@ Audit 2: declared typography -- every text- or icon-bearing root declares its si
 
 ## Status / trigger
 
-**PARTLY LANDED 2026-10-21 (lane typography: measured; static root gate `check-declared-typography` + shrink-only baseline of 38 font-size / 45 line-height rows; burn-down and the line-height token open)**
+**LANDED 2026-10-21 (lane root-reset)**: the per-root gate of the first landing is replaced by a construction, see "Decision and measurement (root-reset)" below.
 
 ## Size
 
@@ -76,3 +76,56 @@ the inert from the exposed: the baseline carries an `evidence` column from this 
   declare one), so a gate would demand more than the reference does.
 - No browser half was added: the exposed size cases are caller-content slots, the popup half has `popup-style-isolation`, and
   one more spec over 83 pages costs ~100 s of suite time for no remaining defect class. Rerun the probe when a root changes.
+
+### Decision and measurement (root-reset, 2026-10-21, debug SSG; base ddd9d057 against the lane)
+
+**Verdict: the construction is better than the per-root gate, and landed.** Every namesake root carries `"data-dx-root": ""` (57
+roots; 4 wrapper roots opt out; the 4 `<dialog>`-panel roots stay with the popup-root rule; 18 components have no namesake
+root) and ONE theme rule, "Component root" in `dx-components-theme.css`,
+`:where([data-dx-root]:not([data-dx-root] *, button, input, select, textarea))`, resets 51 inherited text properties to the
+theme base. `scripts/check-component-root-reset.sh` replaces `check-declared-typography.sh`; the 83-row baseline TSV is deleted.
+
+Measured with the hostile-host probe (host 23px / line-height 3 / weight 800, 83 component pages; leaf = element that owns text
+or an svg; "box moves" = width or height changes >= 1 px):
+
+| property | leaf elements whose box moved, before -> after | part classes | components |
+|---|---|---|---|
+| line-height | 382 -> 54 | 38 -> 13 | 27 -> 10 |
+| font-weight | 395 -> 53 | 69 -> 13 | 38 -> 9 |
+| font-size | 26 -> 26 (not reset, see below) | 6 -> 6 | 6 -> 6 |
+
+Same at a realistic host (18px / 1.8 / 600): lh 380 -> 54, fw 349 -> 52. (The row's first numbers, 63/48/15, counted classes
+on dd14365e before the seven-root burn-down.) What is left is not the library's: the four opt-out wrappers (tabs content, hover-card and
+tooltip trigger: caller content), demo scaffolding classes (`dx-avatar-label`, `dx-tasks-*`, `dx-virtual-list-*`,
+`dx-form-hint`, `dx-top-layer-hint`, `dx-data-table-pagination-*`) and one probe artifact (textarea `dx-label`: computed weight
+500 in both runs, the box moves because a flex item's width follows its container).
+
+Screenshots, light theme, every prerendered route (100) at 1280 and 390 px, before against after, exact pixel compare: 190/200
+identical; the 10 that differ are the capture's own noise (the same routes differ between two captures of the BASE build: charts,
+radar, carousel, message-scroller, progress, a live render counter in virtual-list; `/charts/` at 390 px re-captured with a 1.5 s settle
+is byte-identical, base against lane). The first lane build (no form-control exclusion) differed on the 7 `/charts/*` pages: an
+icon-only `<button class="dx-button">` lost the UA `text-align: center` to the reset's `text-align: start` and its glyph moved 5 px.
+That is the one real regression class the measurement found, fixed by construction (a UA-styled control is excluded from the rule;
+the UA sheet already resets its `font`, `text-transform`, `letter-spacing`, and a `textarea`'s `pre-wrap` would have been lost too).
+
+Variants measured on the same build (rule patched in the browser): (a) reset every root, nested ones included: 82/100 identical
+desktop, regressions on bubble, message, chart-tooltip, field (a nested root loses its host component's declared typography) ->
+rejected, outermost only; (b) `font-size: var(--dx-text-base)` on the root: 90/100 identical (noise only), leaf boxes moved 26 -> 26
+(identical), `font-size` "follows host" classes 232 -> 83 but those are icons and parts with their own size -> not reset: it would
+resize every caller label and paragraph inside a component in an app whose body is 14px, for no measured gain.
+
+A browser scan of the 56 component pages that render a marked root found every `dx-<dir>` element marked except two hand-written
+reuses of the class outside the component (the docs site's `CodeBlock` in `main.rs` and the generated props table in `build.rs`);
+neither moved a pixel, and no browser spec was added (the static gate places the marker within 15 lines of the class literal in the
+same function; the probe stays a `.txt`).
+
+Secondary roots found by the probe (a part a caller can place without the namesake root): Field's `FieldSet`/`FieldGroup`, Trace's
+collapsible, Input OTP's group and separator carry the marker too.
+
+### Still open (follow-ups, not this row)
+
+- `line-height` resets to `normal` (the site's body base, same as the popup rule). An app whose body sets another leading (Tailwind
+  preflight: 1.5) sees caller text inside a component at `normal` unless its sheet declares one. A `--dx-body-line-height` slot
+  read by both this rule and the popup rule would let an app say so; not done (the popup rule is another section).
+- The 18 components with no namesake root (input_otp, context_menu, collapsible, the charts, ...) are not covered by the marker
+  gate; the probe finds nothing broken in them beyond the secondary roots above.
