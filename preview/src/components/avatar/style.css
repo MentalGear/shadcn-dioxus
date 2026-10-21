@@ -29,6 +29,7 @@
     color: var(--dx-foreground);
     font-size: var(--dx-text-sm);
     grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+    line-height: calc(1.25 / 0.875);
     user-select: none;
 
     --dx-avatar-size: var(--dx-space-8);
@@ -60,6 +61,7 @@
     --dx-avatar-size: var(--dx-space-6);
 
     font-size: var(--dx-text-xs);
+    line-height: calc(1 / 0.75);
 }
 
 .dx-avatar[data-size="lg"] {

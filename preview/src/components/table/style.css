@@ -20,6 +20,7 @@
   border-collapse: collapse;
   caption-side: bottom;
   font-size: var(--dx-text-sm);
+  line-height: calc(1.25 / 0.875);
 }
 
 .dx-table-row {
