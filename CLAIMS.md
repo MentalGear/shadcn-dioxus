@@ -32,3 +32,4 @@ unclaimed round. Owner decision 2026-10-18 ("Split, plus queue").
 | 285-289 | session_01U81eYPLNgreufRCunjx3nM |
 | 290-309 | session_01QoX93TwsKJ9GtMXWUXXfKw (owner-review rows 290-305; 306-308 backlog sync; 309 held for the Round 4 VirtualList/VirtualGrid unification row if the owner approves) |
 | 310-319 | session_019CSAknzLi1PvcaAvfgpych (Round 4; replaces its void 290-299 block) |
+| 320-339 | session_01PJCSoqAo9bCWeVLpz61Wdy (owner 2026-10-21: test/build speed items and the test-architecture audit constructions) |
