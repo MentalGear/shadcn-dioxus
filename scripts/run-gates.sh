@@ -103,6 +103,7 @@ gates=(
   "check-motion-gating|scripts/check-motion-gating.sh"
   "check-theme-baseline|scripts/check-theme-baseline.sh"
   "check-popup-boundary|scripts/check-popup-boundary.sh"
+  "check-popup-root-reset|scripts/check-popup-root-reset.sh"
   "check-destructive-text|scripts/check-destructive-text.sh"
   "check-css-state-recipes|scripts/check-css-state-recipes.sh"
   "check-focus-outline-reset|scripts/check-focus-outline-reset.sh"
