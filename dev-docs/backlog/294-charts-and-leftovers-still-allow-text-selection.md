@@ -1,10 +1,10 @@
 ---
 id: 294
 title: "Charts (and leftovers) still allow text selection"
-status: "OPEN, a follow-up to row 229 (landed 2026-10-18), which covered buttons and ARIA control roles but…"
+status: "Charts LANDED 2026-10-20 (lane charts-page); the leftover sweep stays OPEN. .dx-chart (the…"
 size: "S"
 area: preview
-updated: 2026-10-19
+updated: 2026-10-20
 ---
 
 # Row 294: Charts (and leftovers) still allow text selection
@@ -15,7 +15,7 @@ Dragging or double-tapping across a chart selects its axis labels, legend and to
 
 ## Status / trigger
 
-OPEN, a follow-up to row 229 (landed 2026-10-18), which covered buttons and ARIA control roles but not charts.
+**Charts LANDED 2026-10-20 (lane `charts-page`); the leftover sweep stays OPEN.** `.dx-chart` (the `ChartContainer` div; legend, tooltip, svg text and arc labels are all inside it) declares `-webkit-touch-callout: none` and `-webkit-user-select`/`user-select: none`: the theme's control rule must not take `[tabindex]` containers (prose, code), so this is a per-sheet declaration with a reasoned `USER_SELECT_ALLOW` entry in `scripts/check-theme-baseline.sh`, not a theme change. Specs: `user-select.spec.ts` "a chart selects no text" (computed style over every chart part on 4 pages, a real drag and double-click, the shipped stylesheet). **Leftovers (static sweep against shadcn new-york-v4):** progress, badge, card header, tabs trigger text and slider track/range need nothing (shadcn leaves badge, progress and card selectable; tab triggers and the slider thumb are `role=tab`/`slider`, already covered). Still selectable where shadcn has `select-none`: `kbd`, `.dx-label`, the input-group addon (and scroll-area); each is a one-line sheet or theme-baseline change outside this lane's files (theme-touch lane / those components' owners). Originally: OPEN, a follow-up to row 229 (landed 2026-10-18).
 
 ## Size
 

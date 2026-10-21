@@ -65,8 +65,11 @@ pub const BASES: &[(&str, &str)] = &[
     ("taupe", "Taupe"),
 ];
 
-/// shadcn's accent themes: `[data-theme-accent="<slug>"]` blocks.
+/// shadcn's accent themes: `[data-theme-accent="<slug>"]` blocks, plus `docs`: the docs site's own link blue,
+/// not shadcn data, so the colour the site shows by default (the `Default` swatch has no colour of its own) can
+/// be picked as an accent (backlog row 301).
 pub const ACCENTS: &[(&str, &str)] = &[
+    ("docs", "Docs blue"),
     ("amber", "Amber"),
     ("blue", "Blue"),
     ("cyan", "Cyan"),

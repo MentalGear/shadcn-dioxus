@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Isolated, warm CARGO_TARGET_DIRs for lanes (backlog row 116 step 3; rows 98/100).
 #
-#   scripts/lane-target.sh create <name> [--template DIR] [--root DIR] [--force]
+#   scripts/lane-target.sh create <name> [--template DIR | --release [--base-path P]] [--root DIR] [--force]
+#   scripts/lane-target.sh warm-release [--base-path P] [--root DIR] [--force]
 #   scripts/lane-target.sh prune  [--root DIR] [--older-than DAYS] [--apply]
 #   scripts/lane-target.sh du     [--root DIR]
 #
@@ -21,11 +22,28 @@
 #   2. grep of the template's dx `public/` HTML for quoted `/shadcn-dioxus/` (or legacy `/dioxus-components/`) URLs --
 #      authoritative on the actual output, catches templates made by hand.
 # Defaults: root $LANE_TARGET_ROOT or /home/user/tgt, template $LANE_TARGET_TEMPLATE or <root>/template.
+#
+# Warm RELEASE trees (row 324). A cold release build is ~22-50 min (700 crates, lto); with the dependencies warm only
+# the two workspace crates rebuild (~3-5 min). The 2026-10-20 batch-A validation build was cold because the one
+# warm release tree was the deploy's, carried `.base-path-build`, and the check above (rightly) refused it. So there
+# are two, chosen by base path, and neither is ever built with the other's setting:
+#   <root>/release-template   NO base path -- validation builds (`create <name> --release`), sentinel `.no-base-path-only`
+#   <root>/release            base path `shadcn-dioxus` -- the deploy (scripts/deploy-preview.sh builds in it by default;
+#                             `create <name> --release --base-path shadcn-dioxus` copies it)
+# `warm-release [--base-path P]` is the REFRESH STEP: an in-place, queued (class lane) `build-ssg.sh release` of THIS
+# worktree into the matching tree: the whole cold build the first time (measured 2026-10-21: 1,309 s), and afterwards a
+# build in which only the workspace crates recompile (measured 864 s: `preview`, 410 s server + 267 s client, and
+# `primitives` are fat-LTO single-codegen-unit crates, so the saving over cold is ~7 min, not the 3-5 min total
+# first hoped for). What the warm tree holds is the DEPENDENCY crates, which change only with Cargo.lock, the
+# toolchain or dx: so the refresh is only needed when Cargo.lock's hash differs from `.cargo-lock-sha` recorded in the tree
+# (`warm-release` says so and skips otherwise; --force builds anyway). Re-running it after every deploy would rebuild
+# the workspace crates that every validation build rebuilds anyway. The deploy itself refreshes `release`. `prune` never
+# removes either tree. A release tree is ~3.5 GB: `create` refuses when the disk cannot take the copy (--force to try).
 set -euo pipefail
 
 root="${LANE_TARGET_ROOT:-/home/user/tgt}"
 template="${LANE_TARGET_TEMPLATE:-}"
-older_than=2 apply=0 force=0
+older_than=2 apply=0 force=0 release=0 base_path="" explicit_template=0
 
 die() { echo "lane-target: $*" >&2; exit 1; }
 usage() { sed -n '2,8p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//' >&2; exit 2; }
@@ -36,17 +54,34 @@ if [ "$cmd" = create ]; then name="${1:-}"; [ -n "$name" ] || usage; shift; fi
 while [ $# -gt 0 ]; do
   case "$1" in
     --root) root="${2:?}"; shift 2 ;;
-    --template) template="${2:?}"; shift 2 ;;
+    --template) template="${2:?}"; explicit_template=1; shift 2 ;;
+    --release) release=1; shift ;;
+    --base-path) base_path="${2:?}"; shift 2 ;;
     --older-than) older_than="${2:?}"; shift 2 ;;
     --apply) apply=1; shift ;;
     --force) force=1; shift ;;
     *) usage ;;
   esac
 done
-root="${root%/}"; template="${template:-$root/template}"; template="${template%/}"
+root="${root%/}"
 case "$root" in /*) ;; *) die "root must be absolute: $root" ;; esac
+[ -z "$base_path" ] || [ "$release" = 1 ] || [ "$cmd" = warm-release ] || die "--base-path only goes with --release / warm-release"
+[ "$release" = 0 ] || [ "$explicit_template" = 0 ] || die "--release picks the template itself; drop --template"
+# The two warm release trees, picked by base path (row 324).
+release_tree() { # $1 = base path or empty -> the tree's path
+  if [ -n "$1" ]; then echo "$root/release"; else echo "$root/release-template"; fi
+}
+if [ "$release" = 1 ]; then template="$(release_tree "$base_path")"; fi
+template="${template:-$root/template}"; template="${template%/}"
 
 contaminated() { # $1 = tree; prints why and returns 0 if it holds a base-path build
+  if [ "$release" = 1 ] && [ -n "$base_path" ]; then
+    # The deploy tree is SUPPOSED to hold a base-path build -- of this very base path, and of nothing else.
+    [ -e "$1/.no-base-path-only" ] && { echo "$1 is the no-base-path tree (sentinel .no-base-path-only)"; return 0; }
+    grep -q -- "--base-path $base_path " "$1/.base-path-build" 2>/dev/null \
+      || { echo "$1/.base-path-build does not record a build with --base-path $base_path"; return 0; }
+    return 1
+  fi
   [ -e "$1/.base-path-build" ] && { echo "marker $1/.base-path-build"; return 0; }
   local d
   for d in "$1"/dx/*/*/web/public; do
@@ -60,7 +95,11 @@ case "$cmd" in
   create)
     [[ "$name" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]] || die "bad lane name '$name'"
     [ "$name" != template ] || die "'template' is reserved"
-    [ -d "$template" ] || die "template not found: $template (build one: CARGO_TARGET_DIR=$template dx build ... without --base-path)"
+    if [ "$release" = 1 ]; then
+      [ -d "$template" ] || die "no warm release tree at $template -- build it once (cold, 25-50 min, queued): scripts/lane-target.sh warm-release${base_path:+ --base-path $base_path}"
+    else
+      [ -d "$template" ] || die "template not found: $template (build one: CARGO_TARGET_DIR=$template dx build ... without --base-path)"
+    fi
     why="$(contaminated "$template")" && die "refusing template $template: $why (base-path build, backlog row 100). Build a clean template."
     dest="$root/$name"
     [ ! -e "$dest" ] || die "$dest already exists (prune it or pick another name)"
@@ -75,6 +114,27 @@ case "$cmd" in
     echo "export CARGO_TARGET_DIR=$dest"
     echo "export CARGO_INCREMENTAL=${LANE_CARGO_INCREMENTAL:-0}"
     ;;
+  warm-release)
+    # The refresh step: build THIS worktree's release SSG in place, in the queue, in the tree that matches the base path.
+    tree="$(release_tree "$base_path")"; here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    lock_sha="$(sha1sum "$here/../Cargo.lock" | cut -c1-40)"
+    if [ -d "$tree/dx" ] && [ "$force" -ne 1 ] && [ "$(cat "$tree/.cargo-lock-sha" 2>/dev/null)" = "$lock_sha" ]; then
+      echo "lane-target: $tree is current: its dependencies were built from this Cargo.lock ($lock_sha). A refresh would only rebuild the workspace crates, which every build from it rebuilds anyway; --force to build anyway." >&2
+      exit 0
+    fi
+    mkdir -p "$tree"
+    if [ -z "$base_path" ]; then
+      [ ! -e "$tree/.base-path-build" ] || die "$tree carries .base-path-build (a base-path build got into the no-base-path tree): delete it and rebuild cold"
+      : > "$tree/.no-base-path-only"
+    fi
+    free_gb="$(df -Pk "$root" | awk 'NR==2{print int($4/1024/1024)}')"
+    if [ ! -d "$tree/dx" ] && [ "$free_gb" -lt 7 ]; then die "cold release build needs ~5 GB; only ${free_gb} GB free under $root"; fi
+    echo "lane-target: warm-release into $tree ($([ -d "$tree/dx" ] && echo "warm: workspace crates only" || echo "COLD: ~25-50 min")), queued as class lane ..." >&2
+    LANE_TGT="${LANE_TGT:-$root}" "$here/lane-lock.sh" lane --label "warm-release${base_path:+:$base_path}" -- \
+      env CARGO_TARGET_DIR="$tree" CARGO_INCREMENTAL=0 CARGO_BUILD_JOBS=2 BUILD_SSG_NETNS=1 \
+      "$here/build-ssg.sh" release ${base_path:+--base-path "$base_path"} || exit 1
+    echo "$lock_sha" > "$tree/.cargo-lock-sha"
+    ;;
   du)
     [ -d "$root" ] || die "no such root: $root"
     du -sh "$root"/*/ 2>/dev/null | sort -h; du -sh "$root"; df -h "$root" | tail -1
@@ -84,6 +144,8 @@ case "$cmd" in
     echo "lane dirs under $root idle > ${older_than}d ($([ "$apply" -eq 1 ] && echo REMOVING || echo "dry run, pass --apply")); the template is never pruned:"
     for d in "$root"/*/; do
       d="${d%/}"; [ -d "$d" ] || continue; [ "$d" != "$template" ] || continue
+      # The warm release trees (row 324) are expensive to rebuild (25-50 min) and only touched by a deploy / a refresh.
+      [ "$d" != "$root/release" ] && [ "$d" != "$root/release-template" ] || continue
       # "Active" = any file touched within N days (depth-bounded, first hit wins).
       [ -z "$(find "$d" -maxdepth 4 -type f -mtime "-$older_than" -print -quit 2>/dev/null)" ] || continue
       printf '  %s  %s\n' "$(du -sh "$d" | cut -f1)" "$d"

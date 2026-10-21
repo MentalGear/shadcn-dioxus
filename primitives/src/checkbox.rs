@@ -1,5 +1,6 @@
 //! Defines the [`Checkbox`] component and its subcomponents, which manage checkbox inputs with controlled state.
 
+use crate::default_checked::use_default_checked;
 use crate::{merge_attributes, use_controlled, use_form_reset_listener, use_unique_id};
 use dioxus::{document::eval, prelude::*};
 use dioxus_attributes::attributes;
@@ -273,8 +274,8 @@ fn BubbleInput(
     /// Called when the owning `<form>` fires a native `reset` event, so the
     /// component's own (Dioxus-side) checked state can resync -- the browser
     /// reset algorithm only restores this input's own `checked`
-    /// IDL property from its `checked` content attribute (see
-    /// `initial_checked` below); it never touches [`Checkbox`]'s signal.
+    /// IDL property from its `.defaultChecked` (see `use_default_checked`
+    /// below); it never touches [`Checkbox`]'s signal.
     #[props(default)]
     on_reset: Callback<()>,
     #[props(extends = input)] attributes: Vec<Attribute>,
@@ -282,6 +283,13 @@ fn BubbleInput(
     let id = use_unique_id();
 
     use_form_reset_listener(id, move || on_reset.call(()));
+
+    // The reset algorithm restores checkedness from `.defaultChecked`; see `default_checked.rs`
+    // for why that is set here, on the client, and never through `initial_checked` (row 253).
+    use_default_checked(
+        move || id.cloned(),
+        move || default_checked != CheckboxState::Unchecked,
+    );
 
     // Update the actual input state to match our virtual state.
     use_effect(move || {
@@ -315,21 +323,19 @@ fn BubbleInput(
 
     // All owned: `id` is looked up by the `use_effect` eval above and by
     // `use_form_reset_listener`, so a caller override would break both;
-    // `type`/`aria_hidden`/`tabindex`/`initial_checked` are this hidden
+    // `type`/`aria_hidden`/`tabindex`/`checked` are this hidden
     // mirror input's own structural/functional state.
     let owned = attributes!(input {
         id,
         r#type: "checkbox",
         aria_hidden: "true",
         tabindex: "-1",
-        // Default checked -- `initial_checked` (-> `.defaultChecked`, the
-        // `checked` *content attribute*), not `checked` (-> the live
-        // `.checked` IDL property; see dioxus-interpreter-js's
-        // `set_attribute.ts`). The HTML reset algorithm restores
-        // checkedness from the content attribute, so this is the one that
-        // must carry the default for `<form reset>` to work; the live
-        // property is kept in sync separately by the `use_effect` above.
-        initial_checked: default_checked != CheckboxState::Unchecked,
+        // The `checked` content attribute: the server HTML carries it (so a no-script form post
+        // and the parser's `.defaultChecked` are right before hydration) and a client-created
+        // input gets the live state from it. The default for `<form reset>` is
+        // `use_default_checked` above; the live property is also kept in sync by the
+        // `use_effect` above. Never `initial_checked` (row 253, `default_checked.rs`).
+        checked: checked() != CheckboxState::Unchecked,
     });
     let merged = merge_attributes(vec![attributes, owned]);
 
@@ -343,5 +349,33 @@ fn BubbleInput(
 
             ..merged,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::default_checked::test_support::hidden_inputs;
+
+    #[component]
+    fn Defaults() -> Element {
+        rsx! {
+            Checkbox { default_checked: CheckboxState::Checked, name: "a" }
+            Checkbox { default_checked: CheckboxState::Indeterminate, name: "b" }
+            Checkbox { name: "c" }
+        }
+    }
+
+    /// A default-checked Checkbox's hidden input is server-rendered with the `checked` content
+    /// attribute (so the parser's `.defaultChecked`, a no-script post and a hydrated page agree)
+    /// and never with a literal `initial_checked` (backlog row 253).
+    #[test]
+    fn default_checked_is_a_checked_attribute_not_initial_checked() {
+        let mut dom = VirtualDom::new(Defaults);
+        dom.rebuild_in_place();
+        let html = dioxus_ssr::render(&dom);
+        let inputs = hidden_inputs(&html, "checkbox");
+        let flags: Vec<bool> = inputs.iter().map(|(checked, _)| *checked).collect();
+        assert_eq!(flags, [true, true, false], "{html}");
     }
 }

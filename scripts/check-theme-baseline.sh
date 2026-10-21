@@ -101,6 +101,10 @@ USER_SELECT_ALLOW = [
      "a drag surface (carousel content), unselectable only while the pointer drags it"),
     ("preview/src/components/drag_and_drop_list/style.css", ".dx-drag-and-drop-list-item",
      "a draggable `li` row: the drag gesture must not sweep a text selection (not a button/role the baseline lists)"),
+    ("preview/src/components/chart/style.css", ".dx-chart",
+     "a data graphic (`div` container): axis labels, legend and tooltip are part of the picture, so a drag or "
+     "double-tap across it must not select them; the container is not a button/role, and the focusable "
+     "`[data-slot=chart]` root is a `[tabindex]` the baseline leaves selectable on purpose"),
     ("preview/src/components/color_picker/style.css", ".dx-color-picker-area-thumb",
      "the area's draggable thumb is a `div` (not a button or widget role): a drag must not sweep a text selection"),
     ("preview/src/components/drawer/style.css", ".dx-drawer[data-dragging=\"true\"]",

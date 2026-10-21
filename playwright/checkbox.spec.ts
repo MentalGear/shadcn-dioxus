@@ -2,6 +2,7 @@ import { test, expect } from "./fixtures";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from './axe';
 import { BASE_URL } from './base-url';
 import { gotoHydrated } from './hydration';
+import { readAtRest } from './animations';
 
 test('test', async ({ page }) => {
   await gotoHydrated(page, `${BASE_URL}/component/checkbox/`, { timeout: 20 * 60 * 1000, waitUntil: 'networkidle' }); // Increase timeout to 20 minutes
@@ -41,8 +42,11 @@ test('the box and its indicator keep one constant size whether or not it is chec
   const checkbox = page.locator('#component-preview-frame').getByRole('checkbox', { name: 'Accept terms and conditions', exact: true });
   await expect(checkbox).toBeVisible();
 
+  // Read AT REST: the click leaves the box in its press-feedback release (`scale` 0.98 easing back to 1 over
+  // `--dx-press-duration`), and `getBoundingClientRect()` includes `scale` -- a read right after the click saw
+  // 15.76 px. The question here is the box's layout size, so wait for the transition to finish first.
   const boxes = () =>
-    checkbox.evaluate((el) => {
+    readAtRest(checkbox, (el) => {
       const rect = (e: Element) => {
         const r = e.getBoundingClientRect();
         return { x: r.x, y: r.y, width: r.width, height: r.height };

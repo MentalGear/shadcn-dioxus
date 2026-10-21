@@ -62,6 +62,7 @@ use crate::components::select::{Select, SelectOption};
 use crate::components::switch::Switch;
 use dioxus::prelude::*;
 use dioxus_primitives::checkbox::CheckboxState;
+use dioxus_primitives::default_checked::use_default_checked;
 use dioxus_primitives::js_listener::{use_js_listeners, JsListeners};
 
 /// The ONLY way a preview page renders a `<form>` (`scripts/check-demo-forms.sh` fails on any other).
@@ -363,6 +364,15 @@ fn watch_invalid_js(form_id: &str, report_id: &str) -> String {
 /// lands.
 #[component]
 pub fn FormFixture() -> Element {
+    // The native reference inputs below that start checked render a plain `checked` (the server
+    // HTML carries it) and get `.defaultChecked` -- what `<form reset>` restores -- here, on the
+    // client, exactly like the library controls' hidden inputs. Never `initial_checked`: SSR wrote
+    // it as a literal attribute and hydration never applied it (row 253,
+    // `primitives/src/default_checked.rs`).
+    use_default_checked(|| "chk-native".to_string(), || true);
+    use_default_checked(|| "chk-disabled-native".to_string(), || true);
+    use_default_checked(|| "chk-outside-native".to_string(), || true);
+
     // Wire the capturing `invalid` listener (and the `document`-level ones that clear the
     // markers again) after the required-blocking form mounts. They belong to this component:
     // `use_js_listeners` removes every one of them when the fixture unmounts -- the `document`
@@ -415,13 +425,12 @@ pub fn FormFixture() -> Element {
                                 r#type: "checkbox",
                                 name: "terms-native",
                                 value: "accepted",
-                                // `initial_checked` (-> `defaultChecked`) rather than `checked`
-                                // (-> the live `.checked` IDL property, per dioxus-interpreter-js
-                                // `set_attribute.ts`): only the former sets the `checked` content
-                                // attribute the HTML reset algorithm reads, so this reference
-                                // control actually restores on <form> reset like a plain static
+                                // `checked` is the server-rendered content attribute; the
+                                // default the HTML reset algorithm reads is set by
+                                // `use_default_checked("chk-native", ..)` above, so this reference
+                                // control restores on <form> reset like a plain static
                                 // `<input checked>` would. See docs/conformance-harness.md rule 6.
-                                initial_checked: true,
+                                checked: true,
                             }
                         }
                     }
@@ -444,9 +453,10 @@ pub fn FormFixture() -> Element {
                                 r#type: "checkbox",
                                 name: "promo-native",
                                 value: "yes",
-                                // See the `chk-native` comment above: `initial_checked`, not
-                                // `checked`, so this reference matches static-HTML reset semantics.
-                                initial_checked: true,
+                                // See the `chk-native` comment above: `checked` plus
+                                // `use_default_checked`, so this reference matches static-HTML
+                                // reset semantics.
+                                checked: true,
                                 disabled: true,
                             }
                         }
@@ -565,7 +575,7 @@ pub fn FormFixture() -> Element {
                             name: "terms-outside-native",
                             value: "accepted",
                             form: "outside-form",
-                            initial_checked: true,
+                            checked: true,
                         }
                     }
                     div { class: "dx-form-field",

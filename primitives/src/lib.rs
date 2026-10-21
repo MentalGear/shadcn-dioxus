@@ -36,6 +36,7 @@ pub mod command;
 pub mod context_menu;
 #[cfg(feature = "calendar")]
 pub mod date_picker;
+pub mod default_checked;
 pub mod dialog;
 pub mod direction;
 pub mod drag_and_drop_list;

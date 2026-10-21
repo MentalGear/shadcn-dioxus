@@ -17,16 +17,17 @@
 .dx-navbar-trigger,
 .dx-navbar > .dx-navbar-item {
   display: flex;
+  min-height: var(--dx-menu-trigger-min-height);
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  padding: var(--dx-space-0-5) var(--dx-space-1-5);
+  padding: var(--dx-menu-trigger-padding);
   border: none;
   border-radius: var(--dx-radius-sm);
   background: none;
   color: var(--dx-foreground);
   cursor: pointer;
-  font-size: var(--dx-text-sm);
+  font-size: var(--dx-menu-item-font-size);
   font-weight: 500;
   transition: background-color var(--dx-motion-duration-fast) var(--dx-motion-ease-out);
 }
@@ -267,12 +268,14 @@
 /* An entry inside a panel is a menu item: the theme's menu-item row (`--dx-menu-item-*`, Nova
  * `.cn-dropdown-menu-item` `gap-1.5 rounded-md px-1.5 py-1 text-sm`, hover `bg-accent`). */
 .dx-navbar-item {
-  display: block;
+  display: flex;
+  min-height: var(--dx-menu-item-min-height);
+  align-items: center;
   padding: var(--dx-menu-item-padding);
   border-radius: var(--dx-menu-item-radius);
   color: var(--dx-foreground);
   cursor: pointer;
-  font-size: var(--dx-text-sm);
+  font-size: var(--dx-menu-item-font-size);
   text-decoration: none;
 }
 

@@ -28,8 +28,8 @@ use crate::components::{
 };
 use crate::nav_link::NavLink;
 use crate::{
-    components, installed_source, variant_title, ComponentVariantDemoData, HighlightedCode, Navbar,
-    PreviewCode, Route, MAIN_ID,
+    components, installed_source, variant_title, ComponentVariantDemoData, DocsLayout,
+    DocsNavActive, HighlightedCode, Navbar, PreviewCode, Route, MAIN_ID,
 };
 use dioxus::prelude::*;
 use dioxus_icons::lucide::{
@@ -355,20 +355,24 @@ fn ChartsPage(kind: ChartKind) -> Element {
 
     rsx! {
         document::Title { "{kind.tab_label()} \u{2013} {SITE_NAME}" }
-        Navbar {}
-        main { id: MAIN_ID, tabindex: "-1", class: "dx-charts-page",
-            ChartsHero {}
-            div { id: "charts", class: "dx-charts-browse",
-                ChartsTabs { active: kind }
-                section { class: "dx-charts-gallery",
-                    h2 { class: "dx-charts-sr-only", "{kind.tab_label()}" }
-                    ul { class: "dx-charts-grid",
-                        for variant in variants {
-                            ChartsCard {
-                                key: "{kind.slug()}-{variant.name}",
-                                kind,
-                                variant: variant.clone(),
-                                on_view_code: move |view| selected.set(Some(view)),
+        // The same docs shell (sidebar, navbar trigger) as every component page
+        // (backlog row 303). `SidebarInset` renders the page's one `<main>`, so the
+        // gallery is a `div` inside it.
+        DocsLayout { active: DocsNavActive::Charts,
+            div { class: "dx-charts-page",
+                ChartsHero {}
+                div { id: "charts", class: "dx-charts-browse",
+                    ChartsTabs { active: kind }
+                    section { class: "dx-charts-gallery",
+                        h2 { class: "dx-charts-sr-only", "{kind.tab_label()}" }
+                        ul { class: "dx-charts-grid",
+                            for variant in variants {
+                                ChartsCard {
+                                    key: "{kind.slug()}-{variant.name}",
+                                    kind,
+                                    variant: variant.clone(),
+                                    on_view_code: move |view| selected.set(Some(view)),
+                                }
                             }
                         }
                     }

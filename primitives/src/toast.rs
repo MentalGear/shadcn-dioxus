@@ -608,7 +608,7 @@ if (!document.getElementById('dx-toast-base-styles')) {
         border: none;
         padding: 0;
         background: none;
-        color: inherit;
+        color: var(--dx-foreground, inherit);
       }
       :where(.dx-toast-base-region ol) {
         display: flex;

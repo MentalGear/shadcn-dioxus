@@ -1,5 +1,6 @@
 //! Defines the [`Switch`] component and its sub-components.
 
+use crate::default_checked::use_default_checked;
 use crate::{merge_attributes, use_controlled, use_form_reset_listener, use_unique_id};
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
@@ -89,6 +90,8 @@ pub fn Switch(props: SwitchProps) -> Element {
     let hidden_input_id = use_unique_id();
     let default_checked = props.default_checked;
     use_form_reset_listener(hidden_input_id, move || set_checked.call(default_checked));
+    // `<form reset>` restores the hidden input from `.defaultChecked`; see `default_checked.rs`.
+    use_default_checked(move || hidden_input_id.cloned(), move || default_checked);
 
     // Safari and Firefox on macOS do not focus <button> on click by default
     // (matches the macOS "Press Tab to highlight items" preference). Capture
@@ -154,14 +157,11 @@ pub fn Switch(props: SwitchProps) -> Element {
             form: props.form,
             value: props.value,
             required: props.required,
-            // Live sync (-> `.checked` IDL property) and default (->
-            // `.defaultChecked`/the `checked` content attribute) are both
-            // needed: the former keeps this mirror in step with the visible
-            // switch, the latter is what the HTML reset algorithm reads, so
-            // omitting it would repeat Checkbox's BubbleInput reset defect
-            // (see primitives/src/checkbox.rs).
+            // `checked` is the server-rendered content attribute and the live sync (->
+            // `.checked` IDL property) that keeps this mirror in step with the visible switch;
+            // the default the HTML reset algorithm reads is `use_default_checked` above, never
+            // `initial_checked` (row 253, `default_checked.rs`; same as Checkbox's BubbleInput).
             checked,
-            initial_checked: props.default_checked,
             disabled: props.disabled,
             style: "transform: translateX(-100%); position: absolute; pointer-events: none; opacity: 0; margin: 0; width: 0; height: 0;",
         }
@@ -206,5 +206,33 @@ pub struct SwitchThumbProps {
 pub fn SwitchThumb(props: SwitchThumbProps) -> Element {
     rsx! {
         span { ..props.attributes, {props.children} }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::default_checked::test_support::hidden_inputs;
+
+    #[component]
+    fn Defaults() -> Element {
+        rsx! {
+            Switch { default_checked: true, name: "a", SwitchThumb {} }
+            Switch { name: "b", SwitchThumb {} }
+        }
+    }
+
+    /// A default-checked Switch's hidden input is server-rendered with the `checked` content
+    /// attribute and never with a literal `initial_checked` (backlog row 253).
+    #[test]
+    fn default_checked_is_a_checked_attribute_not_initial_checked() {
+        let mut dom = VirtualDom::new(Defaults);
+        dom.rebuild_in_place();
+        let html = dioxus_ssr::render(&dom);
+        let flags: Vec<bool> = hidden_inputs(&html, "checkbox")
+            .iter()
+            .map(|(checked, _)| *checked)
+            .collect();
+        assert_eq!(flags, [true, false], "{html}");
     }
 }

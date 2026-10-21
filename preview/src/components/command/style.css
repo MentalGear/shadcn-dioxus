@@ -298,11 +298,12 @@ dialog.dx-command-dialog[open][data-state="open"] {
  * data-selected:text-foreground data-selected:*:[svg]:text-foreground` (see the highlight rule), icons `size-4`. */
 .dx-command-item {
   display: flex;
+  min-height: var(--dx-menu-item-min-height);
   align-items: center;
   padding: var(--dx-space-1-5) var(--dx-space-2);
   border-radius: var(--dx-radius-sm);
   cursor: default;
-  font-size: var(--dx-text-sm);
+  font-size: var(--dx-menu-item-font-size);
   gap: var(--dx-menu-item-indicator-gap);
   outline: none;
   overflow-wrap: anywhere;

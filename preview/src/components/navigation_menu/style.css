@@ -28,6 +28,7 @@
 .dx-navigation-menu-item > .dx-navigation-menu-link {
   display: flex;
   height: var(--dx-control-height-lg);
+  min-height: var(--dx-menu-trigger-min-height);
   flex-direction: row;
   align-items: center;
   padding: var(--dx-space-1-5) var(--dx-space-2-5);
@@ -385,11 +386,16 @@
   justify-content: flex-start;
   padding: var(--dx-space-4);
   border-radius: var(--dx-radius-md);
-  background-image: linear-gradient(
+
+  /* The slot the theme's press wash layers over (`dx-components-theme.css`, "Press feedback"), so a
+   * pressed card keeps its gradient. */
+  --dx-press-under: linear-gradient(
     to bottom,
     color-mix(in oklab, var(--dx-navigation-menu-featured-surface) 50%, transparent),
     var(--dx-navigation-menu-featured-surface)
   );
+
+  background-image: var(--dx-press-under);
   gap: var(--dx-space-2);
 }
 

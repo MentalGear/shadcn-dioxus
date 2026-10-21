@@ -175,3 +175,62 @@ test.describe("text fields, prose, code and links stay selectable", () => {
     expect((await page.evaluate(() => window.getSelection()?.toString() ?? "")).trim().length).toBeGreaterThan(10);
   });
 });
+
+// Row 294: a chart is a picture. `.dx-chart` carries the declaration for its whole subtree (axis labels, legend,
+// tooltip, the arc labels of a pie), because the focusable chart root is a `[tabindex]` container the theme's
+// control rule leaves selectable on purpose.
+test.describe("a chart selects no text", () => {
+  for (const path of ["/component/bar_chart/", "/component/pie_chart/", "/component/line_chart/", "/charts/area/"]) {
+    test(`${path}: every part of every chart computes user-select: none`, async ({ page }) => {
+      await open(page, path);
+      const bad = await page.evaluate(() => {
+        const out: string[] = [];
+        for (const chart of document.querySelectorAll<HTMLElement>(".dx-chart")) {
+          for (const el of [chart, ...chart.querySelectorAll<HTMLElement | SVGElement>("*")]) {
+            if (getComputedStyle(el).userSelect !== "none") out.push(`${el.tagName.toLowerCase()}[${el.getAttribute("data-slot") ?? ""}]`);
+          }
+        }
+        return [...new Set(out)];
+      });
+      expect(bad, "chart parts that stayed text-selectable").toEqual([]);
+      expect(await page.locator(".dx-chart").count(), "the page has charts").toBeGreaterThan(0);
+    });
+  }
+
+  test("a drag and a double-click across a chart select none of its labels, prose around it stays selectable", async ({ page }) => {
+    await open(page, "/component/bar_chart/");
+    const chart = page.locator(".dx-chart").first();
+    await chart.scrollIntoViewIfNeeded();
+    const labels = await chart.locator("svg text").evaluateAll((els) => els.map((el) => el.textContent ?? ""));
+    expect(labels.length, "the chart has axis text").toBeGreaterThan(0);
+    const box = (await chart.boundingBox())!;
+    const y = box.y + box.height / 2;
+    await page.mouse.move(Math.max(1, box.x - 20), box.y - 6);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2, y, { steps: 8 });
+    await page.mouse.move(box.x + box.width + 20, box.y + box.height + 6, { steps: 8 });
+    await page.mouse.up();
+    const swept = (await page.evaluate(() => window.getSelection()?.toString() ?? "")).replace(/\s+/g, " ").trim();
+    for (const label of labels.map((l) => l.trim()).filter(Boolean)) {
+      expect(swept, `"${label}" was swept into a selection`).not.toContain(label);
+    }
+    await page.mouse.dblclick(box.x + box.width / 2, y);
+    const word = (await page.evaluate(() => window.getSelection()?.toString() ?? "")).trim();
+    expect(word, "a double-click on a chart selects no word").toBe("");
+
+    // The docs prose above the demo is untouched.
+    const p = page.locator("main p, #main-content p").filter({ hasText: /.{60,}/ }).first();
+    expect(await p.evaluate((el) => getComputedStyle(el).userSelect)).not.toBe("none");
+  });
+
+  test("the iOS text callout is switched off on the chart in the shipped stylesheet", async ({ request }) => {
+    const html = await (await request.get(`${BASE}/component/bar_chart/`)).text();
+    const sheets = [...html.matchAll(/href="([^"]+\.css)"/g)].map((m) => m[1]);
+    let found = false;
+    for (const s of sheets) {
+      const css = await (await request.get(new URL(s, `${BASE}/component/bar_chart/`).toString())).text();
+      if (/\.dx-chart\s*\{[^}]*-webkit-touch-callout:\s*none[^}]*-webkit-user-select:\s*none[^}]*user-select:\s*none/s.test(css)) found = true;
+    }
+    expect(found, "the .dx-chart rule declares -webkit-touch-callout and the Safari user-select").toBe(true);
+  });
+});

@@ -15,9 +15,9 @@ const BRAND = "shadcn-dioxus"; // SITE_NAME: the brand link is the `/` link of t
 const PAGES: { path: string; nav: string[]; footer: string[]; sidebar: string[] | null; tab?: string }[] = [
   { path: "/", nav: [BRAND], footer: [BRAND, "components"], sidebar: ["home"] },
   { path: "/docs", nav: ["docs"], footer: ["docs"], sidebar: ["overview"] },
-  { path: "/demos", nav: ["demos"], footer: ["demos"], sidebar: null },
-  { path: "/charts/", nav: ["charts"], footer: ["charts"], sidebar: null, tab: "area charts" },
-  { path: "/charts/bar/", nav: [], footer: [], sidebar: null, tab: "bar charts" },
+  { path: "/demos", nav: ["demos"], footer: ["demos"], sidebar: ["demos"] },
+  { path: "/charts/", nav: ["charts"], footer: ["charts"], sidebar: ["charts"], tab: "area charts" },
+  { path: "/charts/bar/", nav: [], footer: [], sidebar: ["charts"], tab: "bar charts" },
   { path: "/component/button/", nav: [], footer: [], sidebar: ["button"] },
 ];
 

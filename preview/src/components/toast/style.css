@@ -53,7 +53,7 @@
   border: none;
   margin: 0;
   background: none;
-  color: inherit;
+  color: var(--dx-foreground);
 
   /* block/inline split of the same reset (top right bottom left -> auto,
      space-5, space-5, auto) -- see this rule's own comment above for why
