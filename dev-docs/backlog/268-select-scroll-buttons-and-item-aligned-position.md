@@ -33,3 +33,7 @@ Related: [row 188](188-demo-parity-second-audit-the-owner-s-per.md).
 ## Progress (2026-10-20, claude/batch-b)
 
 Scroll buttons implemented (`primitives/src/select/components/scroll_button.rs`, `SelectScrollUpButton`/`SelectScrollDownButton`, wired into themed `Select`/`SelectMulti`, `scroll` demo variant, `playwright/select-scroll-buttons.spec.ts`). `cargo check --workspace --all-targets` is green; the spec has NOT yet been run (the SSG rebuild was refused for disk space), so the row stays OPEN. `position="item-aligned"` is not started.
+
+## Progress (2026-10-21, lane/select-scroll)
+
+`playwright/popup-style-isolation.spec.ts:258` failed for the cases chart, data_table, message_scroller, area_chart, pie_chart and site-charts: `.dx-select-scroll-button` and its `svg`/`path` computed `font-size: 14px` when the Select trigger sat in a small host (`dx-card-action`, `dx-card-footer`, `dx-data-table-pagination-size`) against 16px for the same popup alone. The scroll buttons set no `font-size`, so they inherited the host's through the popup's DOM ancestry. Fix: `.dx-select-scroll-button { font-size: var(--dx-text-sm) }`, the token the options set, in `preview/src/components/select/style.css`; the svg and path inherit it from the button. The site-home toast-region case of the same spec is row 218's and stays red.

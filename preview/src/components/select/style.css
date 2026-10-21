@@ -219,6 +219,10 @@
   justify-content: center;
   background: var(--dx-floating-background);
   color: var(--dx-muted-foreground);
+
+  /* Own size, like the options: the button and its svg must not inherit the host's font-size
+     (a popup's DOM ancestor is its trigger's host, e.g. a card action or a table footer). */
+  font-size: var(--dx-text-sm);
   visibility: hidden;
 }
 
