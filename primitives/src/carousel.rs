@@ -2883,8 +2883,16 @@ impl CarouselContext {
     }
 
     /// The [`CarouselNext`] mirror of [`Self::prev_disabled`].
+    ///
+    /// While no slide has registered (`count == 0`: SSR, the hydrating first render and the first
+    /// client frame) the answer is "not disabled": the count is unknown, not zero, and a disabled
+    /// guess would paint Next at the 0.5 disabled opacity and then fade it up to 1 after the items
+    /// register (backlog row 353: the pose was decided after first paint). The optimistic pose is
+    /// the right one for every carousel that has slides; a one-slide carousel settles to disabled
+    /// once its item registers.
     fn next_disabled(&self) -> bool {
-        !self.loop_wraps() && !can_scroll_next((self.selected)(), (self.count)())
+        let count = (self.count)();
+        !self.loop_wraps() && count > 0 && !can_scroll_next((self.selected)(), count)
     }
 }
 
@@ -6364,19 +6372,16 @@ mod ssr_tests {
     }
 
     #[test]
-    fn next_button_is_disabled_before_registration_effects_run() {
-        // Unlike `CarouselPrevious` (whose `disabled` never depends on
-        // `count`), `CarouselNext`'s does -- and on this first,
-        // pre-effect render `count == 0` (see `CarouselItem`'s "SSR
-        // stability" doc: registration is effect-driven, and
-        // `rebuild_in_place` alone never runs effects). So this button is
-        // conservatively disabled too here, consistent with every other
-        // count-derived default in this module ("N of M" included) --
-        // not a bug. `next_button_becomes_enabled_once_items_have_registered`
-        // below is the same fixture after effects run.
+    fn next_button_is_enabled_before_registration_effects_run() {
+        // The slide count is only known once the items register in an effect, so on the first
+        // render (`count == 0`, what SSR and the first client frame paint) the count is unknown,
+        // not zero: Next must already wear its final pose (enabled, opacity 1) instead of a
+        // disabled guess that fades up after hydration (backlog row 353).
+        // `next_button_becomes_enabled_once_items_have_registered` below is the same fixture
+        // after effects run.
         let html = render(ThreeSlideCarousel);
         let opening_tag = button_tag(&html, 1);
-        assert!(opening_tag.contains("disabled"));
+        assert!(!opening_tag.contains("disabled"), "{opening_tag}");
         assert!(opening_tag.contains(r#"aria-label="Next slide""#));
     }
 
