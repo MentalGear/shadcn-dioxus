@@ -39,7 +39,7 @@ pub fn InputOtp(props: InputOtpProps) -> Element {
 /// [`input_otp::InputOtpGroup`].
 #[component]
 pub fn InputOtpGroup(props: InputOtpGroupProps) -> Element {
-    let base = attributes!(div { class: "dx-input-otp-group" });
+    let base = attributes!(div { class: "dx-input-otp-group", "data-dx-root": "" });
     let merged = merge_attributes(vec![base, props.attributes]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/input_otp/style.css") }
@@ -65,7 +65,7 @@ pub fn InputOtpSlot(props: InputOtpSlotProps) -> Element {
 /// rather than this wrapper needing to duplicate it.
 #[component]
 pub fn InputOtpSeparator(props: InputOtpSeparatorProps) -> Element {
-    let base = attributes!(div { class: "dx-input-otp-separator" });
+    let base = attributes!(div { class: "dx-input-otp-separator", "data-dx-root": "" });
     let merged = merge_attributes(vec![base, props.attributes]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/input_otp/style.css") }

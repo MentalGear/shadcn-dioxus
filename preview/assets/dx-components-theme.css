@@ -1150,38 +1150,52 @@ html[data-theme="light"] [class~="dxc-system"] {
  *
  * The in-flow twin of "Popup root" above. A component sits inside a card footer, a muted or centred
  * block, a table cell, a `white-space: nowrap` toolbar or a prose column, and every INHERITED property
- * still flows from that host into the component's text: a `line-height: 3` host re-spaced 63 leaf boxes
- * across 34 components, a `font-weight: 800` host re-weighted 48, a 23px host resized 15 (hostile-host
- * probe, dev-docs/research/typography-hostile-host-probe.spec.ts.txt). The first answer was a per-root
- * gate demanding that each of 64 stylesheets declare the root's size and line height (check-declared-
- * typography, baseline of 83 rows); this is the same fix by construction, once: every component's
- * namesake root carries `data-dx-root` (`preview/src/components/<dir>/component.rs`; a valueless
- * attribute, written by the component, not the caller) and this ONE zero-specificity rule gives it the
- * theme's base value of every inherited property that styles TEXT, so the component starts from the same
- * typography wherever it is placed and its parts, which declare their own size, weight and leading where
- * they differ, can no longer see the host. `:where()` keeps it a baseline: any component rule on the
- * root itself, and the UA rules for `button`, `input` and the like, still win where they should (an
- * author rule beats the UA sheet whatever its specificity, so a root that IS a form control and relies
- * on a UA text default opts out, see below).
+ * still flows from that host into the component's text: a `line-height: 3` host re-spaced 382 leaf
+ * boxes in 27 components, a `font-weight: 800` host re-weighted 395 in 38 (hostile-host probe,
+ * dev-docs/research/typography-hostile-host-probe.spec.ts.txt, ddd9d057). The first answer was a
+ * per-root gate demanding that each stylesheet declare its root's size and line height
+ * (check-declared-typography, a baseline of 83 rows); this is the same fix by construction, once:
+ * every component's namesake root carries `data-dx-root` (written by the component in
+ * `preview/src/components/<dir>/component.rs`, a valueless attribute the caller cannot forget) and
+ * this ONE zero-specificity rule gives it the theme's base value of every inherited property that
+ * styles TEXT, so the component starts from the same typography wherever it is placed and its
+ * parts, which declare their own size, weight and leading where they differ, cannot see the host.
+ * `:where()` keeps it a baseline: a declaration made on the root itself, in any component sheet,
+ * still wins.
  *
- * Only the OUTERMOST root resets. `:not([data-dx-root] *)` is inside the `:where()`, so it costs no
- * specificity: a Badge inside a Card keeps the Card's declared 14px / 1.43 / weight (its host is the
- * component, which is designed), and only the Card itself is cut from the page around it.
+ * Four things it deliberately does not do:
+ *   - Only the OUTERMOST root resets (`:not([data-dx-root] *, ...)` sits inside the `:where()` and costs
+ *     no specificity). A Badge inside a Card keeps the Card's declared 14px / leading / weight, so
+ *     the host a component can see is another component, which is designed, and only the Card is
+ *     cut from the page around it. (Resetting every root, nested ones included, moved 9 more of 100 screenshots.)
+ *   - It skips `button`, `input`, `select` and `textarea`: the UA sheet already gives a form control
+ *     its own `font`, `text-align`, `text-transform`, `letter-spacing` and `white-space`, and an author
+ *     rule beats the UA sheet whatever its specificity, so the reset would REPLACE a UA default
+ *     rather than cut a host (an icon-only `<button>` lost its UA `text-align: center`, moving its
+ *     glyph 5px; a `<textarea>` would have lost `white-space: pre-wrap`).
+ *   - It leaves identity, interaction and document state inheriting, because that is the point of
+ *     an in-flow component: `font-family`, `color`, `direction`/`writing-mode`, `cursor`,
+ *     `pointer-events`, `visibility`, `user-select`, SVG paint, table and list structure, caret and
+ *     scrollbar colour, `color-scheme`, `text-size-adjust`, `text-rendering` (the full list, each
+ *     with its reason, is `EXCLUDED` in scripts/check-component-root-reset.sh, which also checks
+ *     every inherited property of mdn-data 2.27.1 against it).
+ *   - `font-size` is not reset, by measurement (row 328): resetting it to `--dx-text-base` changed no
+ *     leaf box that the other properties' reset did not already settle (26 leaf elements either
+ *     way) and moved no demo pixel, but it WOULD resize every caller-supplied label and paragraph
+ *     inside a component in an app whose body is 14px. The text a component styles declares its own
+ *     size; the text a caller puts inside it follows the caller's page.
  *
- * What it deliberately leaves alone, each because it is identity, interaction or document state and
- * not text styling (scripts/check-component-root-reset.sh lists every inherited mdn-data property
- * with its decision and fails on one that is neither declared nor reasoned):
- *   - `font-family`, `color`, `-webkit-text-fill-color`: the app picks its font and its colours.
- *   - `direction`, `writing-mode`, `text-orientation`, `text-combine-upright`: script and RTL.
- *   - `cursor`, `pointer-events`, `visibility`, `user-select`: a disabled or hidden host stays so.
- *   - `font-size`: see the NOTE in the rule.
- *   - SVG paint, border-collapse/spacing, list styles, caret/accent/scrollbar colour, forced and
- *     print colour adjust, `color-scheme`, `text-size-adjust`, `text-rendering`: not text styling or
- *     set once on the document root.
- * A component that is a wrapper around the caller's content (Tabs, Tooltip, Hover Card, Carousel)
- * carries no marker, with a `typography-inherit(<root>): <reason>` comment in its style.css.
+ * `line-height` resets to `normal`, the base of this site's `body` (and of the popup rule above). An app
+ * whose body sets another leading (Tailwind's preflight sets 1.5) sees caller text inside a component
+ * at `normal` unless the component declares its own; retune it by declaring `line-height` on the
+ * component's class.
+ *
+ * A component that wraps the caller's content (Tabs, Tooltip, Hover Card, Carousel) carries no marker
+ * and a `typography-inherit(<root>): <reason>` comment in its sheet. Another top-level part a caller
+ * can place without the namesake root (Field's FieldSet, Trace's collapsible, Input OTP's group and
+ * separator) carries the marker too. The four roots that ARE a `<dialog>` panel get the popup rule.
  * ========================================================================== */
-:where([data-dx-root]:not([data-dx-root] *)) {
+:where([data-dx-root]:not([data-dx-root] *, button, input, select, textarea)) {
   font-feature-settings: normal;
   font-kerning: auto;
   font-language-override: normal;
