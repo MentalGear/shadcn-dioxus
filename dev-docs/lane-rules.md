@@ -77,7 +77,7 @@ it, and `lane-target.sh create` clears the stamp. After a build, prove your chan
    contains your change, with ONE command: `cd playwright && PLAYWRIGHT_BASE_URL=http://127.0.0.1:<port> flock
    /home/user/tgt/pw.lock npm run test:changed -- --workers=2` (`tools/test-changed.sh`: runs exactly the specs
    `tools/select.mjs` maps your diff to, on `ssg.local.config.ts`; `CHANGED_RANGE=A..B` for another range,
-   `CHANGED_MATRIX=1` to add the route-matrix specs; "no spec covers the diff" means docs/gates/tooling only).
+   `CHANGED_MATRIX=1` to add the route-matrix specs; "no spec covers the diff" means docs/gates/tooling only; a changed `preview/assets/*.css` is read rule by rule -- the page-scoped matrix specs run only the tests of the pages the changed rules reach, the owning component's specs and every spec that spells a changed class are added, anything it cannot place keeps the whole broad set; `node playwright/tools/select.mjs --explain` says why, `CHANGED_FULL_CSS=1` forces the old behaviour; row 323).
    Quote its summary line in your report. Do not pick the specs by hand: `node playwright/tools/select.mjs --explain` lists the specs
    that cover your diff (default range `origin/main...HEAD` plus uncommitted files; `--range A..B`, `--files f...`).
    Map: a component directory -> the specs about that component (file named for it, or naming its page); a primitive

@@ -34,7 +34,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (64)
+## Open rows (65)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -88,7 +88,6 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [311](backlog/311-combobox-multiple-demo-higher-on-the-page.md) | Combobox multiple demo higher on the component page | DONE 2026-10-20 (claude/batch-b). Owner request. | S | combobox |
 | [321](backlog/321-one-merge-queue-owner-for-main-batch-one.md) | One merge-queue owner for main (batch, one full gate and one suite per batch, deploy) | OPEN (owner approved 2026-10-21; the backlog thread session_01QoX93TwsKJ9GtMXWUXXfKw took the role) | S | process |
 | [322](backlog/322-run-the-full-release-suite-per-deploy-not.md) | Run the full release suite per deploy, not per merge batch | BACKLOG (owner: maybe, 2026-10-21) | S | tests |
-| [323](backlog/323-finer-spec-selection-map-changed-css-rules-to.md) | Finer spec selection: map changed CSS rules to the classes and routes that use them | BACKLOG (proposed 2026-10-21, instead of splitting main.css) | M | tests |
 | [325](backlog/325-heavy-cross-page-oracles-construct-the-causes-away.md) | Heavy cross-page oracles: construct the causes away, run what remains per deploy | OPEN (owner approved 2026-10-21; first construction in flight) | M | tests |
 | [326](backlog/326-lanes-iterate-with-dx-serve-hot-reload-and.md) | Lanes iterate with dx serve hot reload and verify on an SSG build | BACKLOG (owner approved 2026-10-21, if reliable and safe) | S | process |
 | [327](backlog/327-audit-1-visit-each-route-once-per-scheme.md) | Audit 1: visit each route once per scheme in all-routes; measure load vs networkidle in gotoHydrated | BACKLOG (owner 2026-10-21: do it if it holds up) | M | tests |
@@ -102,8 +101,10 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [335](backlog/335-message-scroller-demos-animation-fade-previous-context.md) | Message Scroller demos: animation demo shows LLM output, both fade demos look default, previous-context demo is unclear | BACKLOG (owner 2026-10-21) | S | components |
 | [336](backlog/336-docs-page-title-does-not-update-on-navigation.md) | Docs: the browser tab title does not change when navigating to another page | BACKLOG (owner 2026-10-21) | S | docs |
 | [337](backlog/337-text-editor-component-rich-text-markdown-composer.md) | Text editor component (rich text / markdown composer) | BACKLOG -- option A approved, build when it becomes relevant (owner 2026-10-21) | S-M (A) | components |
+| [338](backlog/338-hydration-parity-spec-runs-cargo-at-load-outside-the.md) | hydration-parity.spec builds attr-synth with cargo at load time, outside the build lock | BACKLOG (found 2026-10-21) | S | tests |
+| [339](backlog/339-main-thread-timing-specs-not-skipped-on-debug-builds-in.md) | main-thread timing specs are not skipped on debug builds in test:changed runs | BACKLOG (found 2026-10-21) | S | tests |
 
-## Done rows (246)
+## Done rows (247)
 
 | # | Item | Updated |
 |---|---|---|
@@ -352,6 +353,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [303](backlog/done/303-charts-and-demos-pages-have-no-docs-sidebar.md) | Charts and Demos pages have no docs sidebar | 2026-10-20 |
 | [308](backlog/done/308-virtualgrid-scroll-trap-at-the-edges.md) | VirtualGrid traps page scroll at its edges; should VirtualList and VirtualGrid be unified? | 2026-10-20 |
 | [320](backlog/done/320-skip-the-cargo-gates-when-the-rust-tree.md) | Skip the cargo gates when the Rust tree is unchanged since the last green full gate | 2026-10-21 |
+| [323](backlog/done/323-finer-spec-selection-map-changed-css-rules-to.md) | Finer spec selection: map changed CSS rules to the classes and routes that use them | 2026-10-21 |
 | [324](backlog/done/324-keep-warm-release-target-trees-for-validation-and.md) | Keep warm release target trees for validation and for deploy | 2026-10-21 |
 
 ## Notes (8)
