@@ -23,7 +23,7 @@ use dioxus_primitives::merge_attributes;
 // `#[css_module]`'s own `OnceLock`-guarded injection used to give.
 #[component]
 pub fn Checkbox(props: CheckboxProps) -> Element {
-    let base = attributes!(input { class: "dx-checkbox" });
+    let base = attributes!(input { class: "dx-checkbox", "data-dx-root": "" });
     let merged = merge_attributes(vec![base, props.attributes]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/checkbox/style.css") }

@@ -44,7 +44,7 @@ pub fn Trace(
     children: Element,
 ) -> Element {
     let base = attributes!(div {
-        class: "dx-trace",
+        class: "dx-trace", "data-dx-root": "",
         "data-slot": "trace",
     });
     let merged = merge_attributes(vec![base, attributes]);
@@ -147,6 +147,7 @@ pub fn TraceDescription(
 pub fn TraceCollapsible(props: CollapsibleProps) -> Element {
     let base = attributes!(div {
         class: "dx-trace-collapsible",
+        "data-dx-root": "",
         "data-slot": "trace-collapsible",
     });
     let merged = merge_attributes(vec![base, props.attributes]);

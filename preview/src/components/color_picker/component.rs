@@ -83,7 +83,7 @@ pub fn ColorPickerRoot(props: ColorPickerRootProps) -> Element {
         color: props.color,
     });
 
-    let base = attributes!(div { class: "dx-color-picker" });
+    let base = attributes!(div { class: "dx-color-picker", "data-dx-root": "" });
     let merged = merge_attributes(vec![base, props.attributes]);
 
     rsx! {

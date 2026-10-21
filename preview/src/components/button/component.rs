@@ -97,7 +97,7 @@ pub fn Button(
     children: Element,
 ) -> Element {
     let base = attributes!(button {
-        class: "dx-button",
+        class: "dx-button", "data-dx-root": "",
         "data-style": variant.class(),
         "data-size": size.class(),
         "data-radius": radius.class(),

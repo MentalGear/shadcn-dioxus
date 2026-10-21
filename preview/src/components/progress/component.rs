@@ -9,7 +9,7 @@ use dioxus_primitives::progress::{self, ProgressLabelProps, ProgressProps, Progr
 /// bare 4px track as before.
 #[component]
 pub fn Progress(props: ProgressProps) -> Element {
-    let base = attributes!(div { class: "dx-progress" });
+    let base = attributes!(div { class: "dx-progress", "data-dx-root": "" });
     let merged = merge_attributes(vec![base, props.attributes]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/progress/style.css") }

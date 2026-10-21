@@ -41,7 +41,7 @@ pub fn NativeSelect(
     attributes: Vec<Attribute>,
     children: Element,
 ) -> Element {
-    let base = attributes!(select { class: "dx-native-select", "data-size": size.class() });
+    let base = attributes!(select { class: "dx-native-select", "data-dx-root": "", "data-size": size.class() });
     let merged = merge_attributes(vec![base, attributes]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/native_select/style.css") }

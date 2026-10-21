@@ -38,7 +38,7 @@ pub fn InputGroup(
     children: Element,
 ) -> Element {
     let base = attributes!(div {
-        class: "dx-input-group"
+        class: "dx-input-group", "data-dx-root": ""
     });
     let merged = merge_attributes(vec![base, attributes]);
     rsx! {

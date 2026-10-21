@@ -5,7 +5,7 @@ use dioxus_primitives::{dioxus_attributes::attributes, merge_attributes};
 #[component]
 pub fn Skeleton(#[props(extends=GlobalAttributes)] attributes: Vec<Attribute>) -> Element {
     let base = attributes!(div {
-        class: "dx-skeleton",
+        class: "dx-skeleton", "data-dx-root": "",
     });
     // The pulse is paused while off-screen or in a hidden tab (`dx-components-theme.css`).
     let motion = use_motion();

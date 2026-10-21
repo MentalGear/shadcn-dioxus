@@ -30,7 +30,7 @@ pub fn Empty(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
     children: Element,
 ) -> Element {
-    let base = attributes!(div { class: "dx-empty" });
+    let base = attributes!(div { class: "dx-empty", "data-dx-root": "" });
     let merged = merge_attributes(vec![base, attributes]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/empty/style.css") }

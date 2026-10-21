@@ -45,7 +45,7 @@ pub fn Table(
     attributes: Vec<Attribute>,
     children: Element,
 ) -> Element {
-    let base = attributes!(table { class: "dx-table", "data-slot": "table" });
+    let base = attributes!(table { class: "dx-table", "data-dx-root": "", "data-slot": "table" });
     let merged = merge_attributes(vec![base, attributes]);
 
     rsx! {

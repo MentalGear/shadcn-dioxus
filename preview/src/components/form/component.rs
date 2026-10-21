@@ -403,6 +403,7 @@ pub fn FormFixture() -> Element {
                 DemoForm {
                     id: "entries-form",
                     class: "dx-form",
+                    "data-dx-root": "",
                     show_status: false,
                     onsubmit: move |_: FormEvent| {
                         let _ = document::eval(&read_form_data_js("entries-form", "form-result"));
@@ -609,6 +610,7 @@ pub fn FormFixture() -> Element {
                 DemoForm {
                     id: "outside-form",
                     class: "dx-form",
+                    "data-dx-root": "",
                     show_status: false,
                     onsubmit: move |_: FormEvent| {
                         let _ = document::eval(&read_form_data_js("outside-form", "outside-result"));
@@ -642,6 +644,7 @@ pub fn FormFixture() -> Element {
                 DemoForm {
                     id: "form-required",
                     class: "dx-form",
+                    "data-dx-root": "",
                     show_status: false,
                     onsubmit: move |_: FormEvent| {
                         let _ = document::eval(&read_form_data_js("form-required", "required-result"));

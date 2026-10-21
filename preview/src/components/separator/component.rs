@@ -5,7 +5,7 @@ use dioxus_primitives::{dioxus_attributes::attributes, merge_attributes};
 #[component]
 pub fn Separator(props: SeparatorProps) -> Element {
     let base = attributes!(div {
-        class: "dx-separator",
+        class: "dx-separator", "data-dx-root": "",
     });
     let merged = merge_attributes(vec![base, props.attributes]);
 

@@ -16,7 +16,7 @@ pub use dioxus_primitives::menu_item::MenuItemVariant;
 #[component]
 pub fn DropdownMenu(props: DropdownMenuProps) -> Element {
     let base = attributes!(div {
-        class: "dx-dropdown-menu",
+        class: "dx-dropdown-menu", "data-dx-root": "",
     });
     let merged = merge_attributes(vec![base, props.attributes.clone()]);
 

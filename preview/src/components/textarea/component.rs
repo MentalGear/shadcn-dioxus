@@ -49,7 +49,7 @@ pub fn Textarea(
     #[props(extends=textarea)]
     attributes: Vec<Attribute>,
 ) -> Element {
-    let base = attributes!(textarea { class: "dx-textarea", "data-slot": "textarea" });
+    let base = attributes!(textarea { class: "dx-textarea", "data-dx-root": "", "data-slot": "textarea" });
     // `data-style` reflects this wrapper's own typed `variant` prop, not a
     // caller default -- owned-wins.
     let owned = attributes!(textarea { "data-style": variant.class() });

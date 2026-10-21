@@ -81,7 +81,7 @@ pub struct ComboboxProps<T: Clone + PartialEq + 'static = String> {
 
 #[component]
 pub fn Combobox<T: Clone + PartialEq + 'static>(props: ComboboxProps<T>) -> Element {
-    let base = attributes!(div { class: "dx-combobox" });
+    let base = attributes!(div { class: "dx-combobox", "data-dx-root": "" });
     let merged = merge_attributes(vec![base, props.attributes]);
 
     rsx! {
@@ -251,7 +251,7 @@ pub struct ComboboxMultiProps<T: Clone + PartialEq + ToString + 'static = String
 pub fn ComboboxMulti<T: Clone + PartialEq + ToString + 'static>(
     props: ComboboxMultiProps<T>,
 ) -> Element {
-    let base = attributes!(div { class: "dx-combobox dx-combobox-multi" });
+    let base = attributes!(div { class: "dx-combobox dx-combobox-multi", "data-dx-root": "" });
     let merged = merge_attributes(vec![base, props.attributes]);
 
     rsx! {

@@ -12,7 +12,7 @@ pub fn Breadcrumb(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
     children: Element,
 ) -> Element {
-    let base = attributes!(nav { class: "dx-breadcrumb", "aria-label": "breadcrumb" });
+    let base = attributes!(nav { class: "dx-breadcrumb", "data-dx-root": "", "aria-label": "breadcrumb" });
     let merged = merge_attributes(vec![base, attributes]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/breadcrumb/style.css") }

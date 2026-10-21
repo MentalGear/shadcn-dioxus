@@ -53,7 +53,7 @@ pub fn Message(
     children: Element,
 ) -> Element {
     let base = attributes!(div {
-        class: "dx-message",
+        class: "dx-message", "data-dx-root": "",
         "data-slot": "message",
     });
     // `data-align` reflects this wrapper's own typed `align` prop, not a caller

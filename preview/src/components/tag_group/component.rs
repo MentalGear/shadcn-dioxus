@@ -25,7 +25,7 @@ use dioxus_primitives::tag_group::{
 // `style.css` -- see `scripts/check-dx-class-prefix.sh`.
 #[component]
 pub fn TagGroup(props: TagGroupProps<String>) -> Element {
-    let base = attributes!(div { class: "dx-tag-group" });
+    let base = attributes!(div { class: "dx-tag-group", "data-dx-root": "" });
     let merged = merge_attributes(vec![base, props.attributes]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/tag_group/style.css") }
@@ -46,7 +46,7 @@ pub fn TagGroup(props: TagGroupProps<String>) -> Element {
 
 #[component]
 pub fn TagGroupMulti(props: TagGroupMultiProps<String>) -> Element {
-    let base = attributes!(div { class: "dx-tag-group" });
+    let base = attributes!(div { class: "dx-tag-group", "data-dx-root": "" });
     let merged = merge_attributes(vec![base, props.attributes]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/tag_group/style.css") }

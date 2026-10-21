@@ -34,7 +34,7 @@ pub fn Alert(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
     children: Element,
 ) -> Element {
-    let base = attributes!(div { class: "dx-alert" });
+    let base = attributes!(div { class: "dx-alert", "data-dx-root": "" });
     // `role="alert"` and `data-style` reflect this wrapper's own required
     // live-region semantics and typed `variant` prop, not a caller default --
     // owned-wins, merged after the caller's own attributes.

@@ -103,6 +103,12 @@ Any one of these works:
 
 Either way the first add creates a `components` folder in your project (if it doesn't already exist), adds the component files to it, adds the `dioxus-primitives` dependency to your `Cargo.toml`, and copies the shared theme to `assets/dx-components-theme.css`. With `dx`, declare the module with `mod components;` in your `main.rs` and link the theme once in your root component with `document::Link { rel: "stylesheet", href: asset!("/assets/dx-components-theme.css") }`; `shadcn-dioxus init` does both for you.
 
+**Text inside components.** A component does not take its host's text styling: its root resets line height, weight, letter spacing and the other inherited text properties to the theme, and keeps only the font family, colour and direction of your page. The line height it resets to is `--dx-root-line-height` (default `normal`). If your app sets another body leading, as Tailwind's preflight does (`1.5`), set it once so text inside components matches the page around them:
+
+```css
+:root { --dx-root-line-height: 1.5; }
+```
+
 ## Motion
 
 Animation speed comes from `--dx-motion-duration-*` and `--dx-motion-ease*` tokens, `prefers-reduced-motion` is answered by the stylesheets, an infinite animation may only animate compositor properties, and motion nobody can see is not run: loops pause, timers stop and entrances wait to be seen (`use_motion`, `use_interval_while`, `use_entered_view_when`, `use_document_visible`). The tokens, the hooks, the gates, how to write your own animated component and a per-component table of what moves and what each does while unseen are in [`dev-docs/motion.md`](./dev-docs/motion.md), and on the site under [Docs, "Motion"](https://mentalgear.github.io/shadcn-dioxus/docs/#motion).
