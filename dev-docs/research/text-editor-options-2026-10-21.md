@@ -1,5 +1,7 @@
 # Text editor component: is there a Rust library we can use? (research, 2026-10-21)
 
+> **Outcome (owner 2026-10-21):** row 337 is closed as out of scope. The library keeps to primitives and shadcn element parity and builds no editor ([`backlog.md`](../backlog.md#scope)). This note stays as a reference for an app or framework that adds one.
+
 Scope: backlog row 337 (text editor / rich-text composer). Option A (markdown textarea + preview), B (wrap Tiptap/ProseMirror), C (own contenteditable). This note answers "option B-Rust": is there an existing Rust-based library?
 
 Method: crates.io API (names, versions, dates, downloads, licences), the crates' own source downloaded and read (taino-edit-*, dioxus-editor, kode-*, dioxus-nox-markdown, dioxus-code-editor), READMEs and repo pages, docs.rs, `npm view`, and a real esbuild bundle-size measurement for the JS editors. The GitHub REST API was blocked for non-session repos, so last-commit dates come from `git log` of shallow clones where I could clone, otherwise from crates.io release dates. No code was run in a browser. Everything flagged "UNVERIFIED" is a claim I could not check.
