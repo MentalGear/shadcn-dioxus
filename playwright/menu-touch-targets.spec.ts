@@ -68,6 +68,24 @@ const HOSTS: Row[] = [
     rows: (page) => page.locator(".dx-command-item"),
   },
   {
+    label: "Select options",
+    open: async (page) => {
+      await gotoHydrated(page, block("select", "main"));
+      await page.getByRole("combobox").first().click();
+      await expect(page.getByRole("listbox")).toHaveAttribute("data-state", "open");
+    },
+    rows: (page) => page.getByRole("listbox").getByRole("option"),
+  },
+  {
+    label: "Combobox options",
+    open: async (page) => {
+      await gotoHydrated(page, block("combobox", "main"));
+      await page.getByRole("combobox", { name: "Select framework" }).click();
+      await expect(page.locator("[role='listbox'][data-state='open']")).toBeVisible();
+    },
+    rows: (page) => page.locator("[role='listbox'][data-state='open']").getByRole("option"),
+  },
+  {
     label: "NavigationMenu triggers",
     open: async (page) => {
       await gotoHydrated(page, block("navigation_menu", "main"));
@@ -101,11 +119,13 @@ test.describe("touch (any-pointer: coarse, hover: none)", () => {
     });
   }
 
-  test("a menu item's text steps up to the base size", async ({ page }) => {
-    await HOSTS[0].open(page);
-    const size = await HOSTS[0].rows(page).first().evaluate((el) => getComputedStyle(el).fontSize);
-    expect(size).toBe("16px");
-  });
+  for (const h of HOSTS.filter((x) => /^(DropdownMenu|Select|Combobox)/.test(x.label))) {
+    test(`${h.label}: the text steps up to the base size`, async ({ page }) => {
+      await h.open(page);
+      const size = await h.rows(page).first().evaluate((el) => getComputedStyle(el).fontSize);
+      expect(size).toBe("16px");
+    });
+  }
 });
 
 test.describe("fine pointer (desktop)", () => {
@@ -119,6 +139,17 @@ test.describe("fine pointer (desktop)", () => {
       expect(height).toBeLessThan(34);
     }
   });
+
+  for (const h of HOSTS.filter((x) => /^(Select|Combobox) options$/.test(x.label))) {
+    test(`${h.label} keep Nova's dense size and 14px text`, async ({ page }) => {
+      await h.open(page);
+      for (const height of await heights(h.rows(page))) {
+        expect(height).toBeGreaterThan(24);
+        expect(height).toBeLessThan(34);
+      }
+      expect(await h.rows(page).first().evaluate((el) => getComputedStyle(el).fontSize)).toBe("14px");
+    });
+  }
 });
 
 test.describe("one token set, no per-sheet copies", () => {
@@ -128,9 +159,11 @@ test.describe("one token set, no per-sheet copies", () => {
     await HOSTS[0].open(page);
     await page.evaluate(() => document.documentElement.style.setProperty("--dx-menu-item-min-height", "60px"));
     for (const height of await heights(HOSTS[0].rows(page))) expect(height).toBeGreaterThanOrEqual(59.5);
-    // Command reads the same slot.
-    await HOSTS[4].open(page);
-    await page.evaluate(() => document.documentElement.style.setProperty("--dx-menu-item-min-height", "60px"));
-    for (const height of await heights(HOSTS[4].rows(page))) expect(height).toBeGreaterThanOrEqual(59.5);
+    // Command, Select and Combobox read the same slot.
+    for (const h of HOSTS.filter((x) => /^(Command items|Select options|Combobox options)$/.test(x.label))) {
+      await h.open(page);
+      await page.evaluate(() => document.documentElement.style.setProperty("--dx-menu-item-min-height", "60px"));
+      for (const height of await heights(h.rows(page))) expect(height, h.label).toBeGreaterThanOrEqual(59.5);
+    }
   });
 });

@@ -36,6 +36,7 @@
   border: 1px solid transparent;
   border-radius: var(--dx-radius-lg);
   font-size: var(--dx-text-sm);
+  line-height: calc(1.25 / 0.875);
   outline: none;
   transition:
     color var(--dx-motion-duration-fast) var(--dx-motion-ease),

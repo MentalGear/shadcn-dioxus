@@ -19,6 +19,7 @@
   font-size: var(--dx-text-xs);
   font-weight: 500;
   gap: var(--dx-space-1);
+  line-height: calc(1 / 0.75);
 
   /* A badge rendered with `as` is a link: its focus is the theme's ring below, not the UA outline. */
   outline: none;

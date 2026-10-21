@@ -12,6 +12,7 @@
   min-width: 0;
   font-size: var(--dx-text-sm);
   gap: var(--dx-space-2);
+  line-height: calc(1.25 / 0.875);
 }
 
 .dx-message[data-align="end"] {

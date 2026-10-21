@@ -1,0 +1,108 @@
+/**
+ * Backlog row 328 measurement probe (kept as .txt so it is not a spec: copy it to playwright/typography-hostile-host.spec.ts,
+ * run it against a debug or release SSG, delete the copy). Per component page it sets a hostile value on each demo frame
+ * (font-size, line-height, font-weight, alone and combined) and records, for every dx- element, which computed values
+ * follow the host and whether the box moves. Output: one JSON line per component in $TYPO_OUT; host values come from
+ * TYPO_FS / TYPO_LH / TYPO_FW (default 23px / 3 / 800).
+ *   TYPO_OUT=/tmp/typo.jsonl PLAYWRIGHT_BASE_URL=http://127.0.0.1:<port> npx playwright test --config=ssg.local.config.ts typography-hostile-host.spec.ts --workers=2
+ */
+import { test } from "./fixtures";
+import * as fs from "fs";
+import { readCatalog } from "./catalog";
+import { BASE_URL } from "./base-url";
+import { gotoHydrated } from "./hydration";
+
+const OUT = process.env.TYPO_OUT ?? "/tmp/typo-probe.jsonl";
+
+for (const row of readCatalog()) {
+  test(`typography probe ${row.name}`, async ({ page }) => {
+    test.setTimeout(60_000);
+    await gotoHydrated(page, `${BASE_URL}/component/${row.name}/`);
+    const H = { fs: process.env.TYPO_FS ?? "23px", lh: process.env.TYPO_LH ?? "3", fw: process.env.TYPO_FW ?? "800" };
+    const result = await page.evaluate((H) => {
+      const PROPS = [
+        "font-size", "line-height", "font-weight", "font-style", "letter-spacing", "word-spacing", "text-transform",
+        "text-align", "white-space", "text-indent",
+      ];
+      const SIZE_HOSTILE: Record<string, string> = { "font-size": H.fs, "font-weight": H.fw, "line-height": H.lh };
+      const FULL_HOSTILE: Record<string, string> = {
+        ...SIZE_HOSTILE, "font-style": "italic", "letter-spacing": "3px", "word-spacing": "9px",
+        "text-transform": "uppercase", "text-align": "right", "white-space": "nowrap", "text-indent": "17px",
+      };
+      const frames = [...document.querySelectorAll<HTMLElement>("[id^='component-preview-frame']")];
+      const out: any[] = [];
+      for (const frame of frames) {
+        const els = [frame, ...frame.querySelectorAll<HTMLElement>("*")].filter((e) => {
+          const cls = typeof e.className === "string" ? e.className : (e as any).className?.baseVal ?? "";
+          return /(^|\s)dx-/.test(cls) && e !== frame;
+        });
+        const snap = () =>
+          els.map((e) => {
+            const cs = getComputedStyle(e);
+            const r = e.getBoundingClientRect();
+            const o: Record<string, string> = {};
+            for (const p of PROPS) o[p] = cs.getPropertyValue(p);
+            return { o, w: Math.round(r.width * 10) / 10, h: Math.round(r.height * 10) / 10 };
+          });
+        const apply = (h: Record<string, string>) => {
+          for (const [k, v] of Object.entries(h)) frame.style.setProperty(k, v);
+        };
+        const clear = (h: Record<string, string>) => {
+          for (const k of Object.keys(h)) frame.style.removeProperty(k);
+        };
+        const base = snap();
+        const profile = (h: Record<string, string>) => { apply(h); const r = snap(); clear(h); return r; };
+        const pFs = profile({ "font-size": H.fs });
+        const pLh = profile({ "line-height": H.lh });
+        const pFw = profile({ "font-weight": H.fw });
+        apply(SIZE_HOSTILE);
+        const size = snap();
+        clear(SIZE_HOSTILE);
+        apply(FULL_HOSTILE);
+        const full = snap();
+        clear(FULL_HOSTILE);
+        const recs = els.map((e, i) => {
+          const cls = (typeof e.className === "string" ? e.className : (e as any).className?.baseVal ?? "") as string;
+          const dx = cls.split(/\s+/).filter((c) => /^dx-[a-z0-9-]+$/.test(c));
+          let ownText = false;
+          for (const n of Array.from(e.childNodes)) if (n.nodeType === 3 && (n.textContent ?? "").trim()) ownText = true;
+          // text anywhere below whose nearest dx- element is this one (through plain wrappers)
+          let deepText = false;
+          const walk = (node: Node) => {
+            for (const ch of Array.from(node.childNodes)) {
+              if (ch.nodeType === 3 && (ch.textContent ?? "").trim()) deepText = true;
+              else if (ch.nodeType === 1) {
+                const c2 = (ch as Element).getAttribute("class") ?? "";
+                if (!/(^|\s)dx-/.test(c2)) walk(ch);
+              }
+            }
+          };
+          walk(e);
+          const parentIdx = els.indexOf(e.parentElement as HTMLElement);
+          const d = (a: any, b: any) => [Math.abs(a.w - b.w), Math.abs(a.h - b.h)];
+          const dFs = d(base[i], pFs[i]), dLh = d(base[i], pLh[i]), dFw = d(base[i], pFw[i]);
+          const hasSvg = !!e.querySelector("svg") || e.tagName.toLowerCase() === "svg";
+          // outermost dx- element: no dx- ancestor inside the frame
+          let outer = true;
+          for (let p = e.parentElement; p && p !== frame; p = p.parentElement) {
+            const pc = typeof p.className === "string" ? p.className : "";
+            if (/(^|\s)dx-/.test(pc)) { outer = false; break; }
+          }
+          const chSize = PROPS.filter((p) => base[i].o[p] !== size[i].o[p] && Object.keys(SIZE_HOSTILE).includes(p));
+          const chFull = PROPS.filter((p) => base[i].o[p] !== full[i].o[p]);
+          const dw = Math.max(Math.abs(base[i].w - size[i].w), 0);
+          const dh = Math.max(Math.abs(base[i].h - size[i].h), 0);
+          return {
+            tag: e.tagName.toLowerCase(), dx, ownText, deepText, hasSvg, outer, parentIdx,
+            fsOnly: base[i].o["font-size"] !== pFs[i].o["font-size"], fsBox: dFs, lhOnly: base[i].o["line-height"] !== pLh[i].o["line-height"], lhBox: dLh, fwOnly: base[i].o["font-weight"] !== pFw[i].o["font-weight"], fwBox: dFw,
+            chSize, chFull, dw, dh, base: base[i].o, size: size[i].o, bw: base[i].w, bh: base[i].h,
+            hidden: base[i].w === 0 && base[i].h === 0,
+          };
+        });
+        out.push({ frame: frame.id, recs });
+      }
+      return out;
+    }, H);
+    fs.appendFileSync(OUT, JSON.stringify({ component: row.name, frames: result }) + "\n");
+  });
+}

@@ -105,6 +105,14 @@ USER_SELECT_ALLOW = [
      "a data graphic (`div` container): axis labels, legend and tooltip are part of the picture, so a drag or "
      "double-tap across it must not select them; the container is not a button/role, and the focusable "
      "`[data-slot=chart]` root is a `[tabindex]` the baseline leaves selectable on purpose"),
+    ("preview/src/components/kbd/style.css", ".dx-kbd",
+     "a key cap (`kbd` element, not a button or widget role): shadcn's Kbd carries `select-none`"),
+    ("preview/src/components/label/style.css", ".dx-label",
+     "a form label (`label` element, not a control role): shadcn's Label carries `select-none`; it labels a field and "
+     "the field itself (input, textarea) stays selectable"),
+    ("preview/src/components/input_group/style.css", ".dx-input-group-addon",
+     "the icon, text or button row beside a field (`div`, not a control role): shadcn's InputGroupAddon carries "
+     "`select-none`, so a drag across the group selects the field's value and not the addon"),
     ("preview/src/components/color_picker/style.css", ".dx-color-picker-area-thumb",
      "the area's draggable thumb is a `div` (not a button or widget role): a drag must not sweep a text selection"),
     ("preview/src/components/drawer/style.css", ".dx-drawer[data-dragging=\"true\"]",

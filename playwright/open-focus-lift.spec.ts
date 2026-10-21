@@ -175,7 +175,12 @@ test.describe("function-form final_focus", () => {
     await ready(page, POPOVER.panel);
     await page.keyboard.press("Escape");
     await expect(page.locator(POPOVER.panel)).toHaveCount(0);
-    expect(await activeId(page)).toBe("popover-focus-return");
+    // Escape closes a native `popover="auto"` synchronously: `:popover-open` is gone and the browser
+    // has already put focus back on the trigger. The author's `final_focus` is applied by the one
+    // close policy (`dxCloseFocus`) once the `toggle` task has reached Rust and the close effect has
+    // run (~10-20 ms later, measured), so a read right after the panel disappears sees the trigger.
+    // Wait for the named target, not a fixed delay; `toBeFocused` times out if it never lands.
+    await expect(page.locator("#popover-focus-return")).toBeFocused();
   });
 });
 

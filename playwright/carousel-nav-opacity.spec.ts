@@ -37,6 +37,7 @@ import { type Page, type Locator } from "@playwright/test";
 import { BASE_URL } from "./base-url";
 import { expectNoAxeViolations } from "./axe";
 import { gotoHydrated } from "./hydration";
+import { awaitAnimationsSettled } from "./animations";
 
 const GOTO_OPTS = { timeout: 20 * 60 * 1000 };
 
@@ -224,6 +225,12 @@ test.describe("Carousel: nav_disabled_opacity 0 fades the arrow out and then hid
     await goto(page, "hidden_arrows");
     const root = hiddenArrows(page);
     await expect(prevOf(root)).toBeDisabled();
+    // Next is server-rendered `disabled` (no slide has registered yet) and
+    // enables itself right after hydration, fading 0.5 -> 1 over the slow
+    // motion token: read both arrows at rest, never mid-fade (row 345).
+    await expect(nextOf(root)).toBeEnabled();
+    await awaitAnimationsSettled(nextOf(root));
+    await awaitAnimationsSettled(prevOf(root));
     expect(await look(prevOf(root))).toEqual({ opacity: 0, visibility: "hidden", disabled: true });
     expect(await look(nextOf(root))).toEqual({ opacity: 1, visibility: "visible", disabled: false });
 

@@ -227,6 +227,13 @@ test.describe("message_scroller: RTL", () => {
     await root.scrollIntoViewIfNeeded();
     const vp = viewportOf(page, "main");
     await expect(vp).not.toHaveAttribute("data-pending-scroll");
+    // The opening pin is settled only once the viewport has published its state (`data-scrollable`, written in
+    // the same frame as the pin) and the pin's 180 ms autoscroll window has closed (`data-autoscrolling` gone).
+    // Absence of `data-pending-scroll` alone is not enough: it clears in that same frame, so a `scrollTop = 0`
+    // issued right after lands inside the window, where a scroll up cannot release follow mode and the end
+    // button stays inactive for good (backlog row 347). Red on main 16a20ad1 as well, 5/5 at --repeat-each=5.
+    await expect(vp).toHaveAttribute("data-scrollable", /\bstart\b/);
+    await expect(vp).not.toHaveAttribute("data-autoscrolling");
     const button = root.locator('[data-message-scroller-button][data-direction="end"]');
     const centred = async () => {
       await vp.evaluate((el) => (el.scrollTop = 0));

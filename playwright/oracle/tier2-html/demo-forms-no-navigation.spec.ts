@@ -23,11 +23,15 @@
  * request, a `framenavigated`, a URL change, or a JS marker set on `window` before the action being gone
  * afterwards (a reload).
  *
- *   1. (hydrated, every route) as above, on a hydrated page. Routes are entered by clicking the docs sidebar's
- *      own links (a real user path, and ~50x cheaper than a fresh wasm boot per route); the app's own pages and
- *      the sidebar block demos are loaded fresh. `novalidate` is forced on each form first, so constraint
- *      validation cannot hide a submission that would have navigated. The dashboard's compose modal is opened
- *      first -- its form is not in the DOM until then.
+ *   1. (hydrated, every route that has a form) as above, on a hydrated page. Which routes have one is read from the
+ *      SERVED markup (a request-level pass, no wasm boot: `servedFormRoutes`), plus the routes in `REVEAL`, whose
+ *      form only exists after something is opened (the dashboard's compose modal). Row 331 measured the
+ *      unshrunk walk of all ~190 routes on a debug build: exactly those routes were the ones it found forms on
+ *      (11 served + the compose modal), at 128 s of a 192 s file. On a client-rendered `dx serve` nothing is
+ *      served with a form, so the walk falls back to every route. Routes are entered by clicking the docs
+ *      sidebar's own links (a real user path, and ~50x cheaper than a fresh wasm boot per route); the app's own
+ *      pages and the sidebar block demos are loaded fresh. `novalidate` is forced on each form first, so
+ *      constraint validation cannot hide a submission that would have navigated.
  *   2. (before hydration) the SERVED markup of every route that has a `<form`, loaded with scripting OFF and,
  *      separately, with the wasm bundle blocked (JS on, no Dioxus listeners): the same clicks and Enter
  *      presses must not navigate. Needs prerendered HTML, so it skips on a client-rendered `dx serve` and is
@@ -41,7 +45,7 @@
  *   PLAYWRIGHT_BASE_URL=http://127.0.0.1:8083 npx playwright test --config=oracle.local.config.ts oracle/tier2-html/demo-forms-no-navigation.spec.ts
  */
 import { test, expect } from "../../fixtures";
-import type { Locator, Page } from "@playwright/test";
+import type { Locator, Page, PlaywrightTestArgs } from "@playwright/test";
 import { catalogNames, readBlockDemos } from "../../catalog";
 import { BASE_URL } from "../../base-url";
 import { gotoHydrated } from "../../hydration";
@@ -196,6 +200,25 @@ async function enter(page: Page, route: string, first: boolean): Promise<void> {
   await page.waitForTimeout(300);
 }
 
+/** Routes whose served HTML already has a `<form`: empty on a client-rendered dev server. One request pass per worker. */
+let servedForms: Promise<string[]> | undefined;
+function servedFormRoutes(playwright: PlaywrightTestArgs["playwright"]): Promise<string[]> {
+  servedForms ??= (async () => {
+    const found: string[] = [];
+    const ctx = await playwright.request.newContext();
+    try {
+      for (const route of ALL_ROUTES) {
+        const res = await ctx.get(BASE_URL + route, { timeout: 60_000 }).catch(() => null);
+        if (res?.ok() && /<form[\s>]/i.test(await res.text())) found.push(route);
+      }
+    } finally {
+      await ctx.dispose();
+    }
+    return found;
+  })();
+  return servedForms;
+}
+
 test.describe("demo forms never navigate", () => {
   test("the route list parses: catalog components, block demos and the app pages", () => {
     expect(COMPONENTS.length).toBeGreaterThan(60);
@@ -204,15 +227,17 @@ test.describe("demo forms never navigate", () => {
     expect(new Set(ALL_ROUTES).size).toBe(ALL_ROUTES.length);
   });
 
-  test("hydrated: every route's submit buttons and Enter-in-field never navigate or reload", async ({ page }) => {
+  test("hydrated: every form route's submit buttons and Enter-in-field never navigate or reload", async ({ page, playwright }) => {
     test.setTimeout(30 * 60 * 1000);
+    const served = await servedFormRoutes(playwright);
+    const routes = served.length > 0 ? ALL_ROUTES.filter((r) => served.includes(r) || r in REVEAL) : ALL_ROUTES;
     const tracker = track(page);
     const failures: Outcome[] = [];
     const exercised: string[] = [];
     let forms = 0;
     let controls = 0;
     let first = true;
-    for (const route of ALL_ROUTES) {
+    for (const route of routes) {
       await enter(page, route, first);
       first = false;
       tracker.reset();
@@ -236,18 +261,9 @@ test.describe("demo forms never navigate", () => {
   });
 
   test.describe("before hydration (served markup)", () => {
-    /** Routes whose served HTML already has a `<form`: empty on a client-rendered dev server. */
     let withForms: string[] = [];
     test.beforeAll(async ({ playwright }) => {
-      const ctx = await playwright.request.newContext();
-      try {
-        for (const route of ALL_ROUTES) {
-          const res = await ctx.get(BASE_URL + route, { timeout: 60_000 }).catch(() => null);
-          if (res?.ok() && /<form[\s>]/i.test(await res.text())) withForms.push(route);
-        }
-      } finally {
-        await ctx.dispose();
-      }
+      withForms = await servedFormRoutes(playwright);
     });
 
     for (const variant of ["scripting disabled", "wasm blocked"] as const) {
