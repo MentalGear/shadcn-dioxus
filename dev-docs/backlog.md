@@ -34,7 +34,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (63)
+## Open rows (64)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -98,9 +98,10 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [329](backlog/329-audit-3-ssr-vs-first-render-parity-as.md) | Audit 3: SSR-vs-first-render parity as a cargo test (spike first) | BACKLOG (owner 2026-10-21: do it if it holds up; spike first) | M | tests |
 | [330](backlog/330-audit-4-a-policy-cascade-layer-for-theme.md) | Audit 4: a policy cascade layer for theme rules that must win (@layer dx-base, dx-components, dx-policy) | BACKLOG (owner 2026-10-21: do it if it holds up; overlaps row 170) | L | theme |
 | [331](backlog/331-audit-5-delete-the-sweeps-that-a-static.md) | Audit 5: delete the sweeps that a static gate or another spec already covers | BACKLOG (owner 2026-10-21: do it if it holds up; overlaps row 152b) | S | tests |
-| [340](backlog/340-datatable-column-model-and-use-data-table-hook.md) | DataTable: a column definition and one state hook, rendered into Table | BACKLOG (owner 2026-10-21, after the Table/DataTable/VirtualGrid evaluation). | M (about 1.5 to 2 days) | components |
-| [341](backlog/341-virtualgrid-header-sort-row-selection-and-cell.md) | VirtualGrid: header sort state, row selection, and controls inside cells | BACKLOG (owner 2026-10-21). Depends on nothing. Row 342 needs it. | M (about 1.5 to 2 days) | primitives |
-| [342](backlog/342-datatable-large-data-variant-on-virtualgrid.md) | DataTable: a large-data variant rendered through VirtualGrid | BACKLOG (owner 2026-10-21). Needs rows 340 and 341. | S (about 1 day) | components |
+| [340](backlog/340-datatable-column-model-and-use-data-table-hook.md) | DataTable: a column definition and one state hook, rendered into Table | BACKLOG (owner 2026-10-21, after the Table/DataTable/VirtualGrid evaluation; reframed 09:35 as one… | M+ (about 2 to 2.5 days; was M before… | components |
+| [341](backlog/341-virtualgrid-header-sort-row-selection-and-cell.md) | VirtualGrid: header sort state, row selection, and controls inside cells | BACKLOG (owner 2026-10-21; amended 09:35). Comes after row 343 (needs its VirtualizeMode); row 342… | M (about 1.5 to 2 days) | primitives |
+| [342](backlog/342-datatable-large-data-variant-on-virtualgrid.md) | DataTable: a large-data variant rendered through VirtualGrid | BACKLOG (owner 2026-10-21; amended 09:35). Needs rows 340, 343 and 341. | S (about 1 day) | components |
+| [343](backlog/343-one-virtualize-mode-in-the-engine-and-a-data.md) | One virtualize mode in the engine, and a data body for Table | BACKLOG (owner 2026-10-21). Comes after 340 and before 341 and 342. | M (about 2 to 2.5 days) | primitives |
 
 ## Done rows (244)
 
