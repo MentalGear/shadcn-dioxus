@@ -159,6 +159,7 @@ try {
   fs.rmSync(tmp, { recursive: true, force: true });
 }
 
+let LISTED = null; // spec file -> every test title path, from `playwright test --list` (section 4)
 const QUICK = process.env.SELECT_SELFTEST_QUICK === "1"; // sections 1-3 only (the mutation proof of the CSS half)
 if (!QUICK) {
 // ---- 4. title shapes against the real specs ---------------------------------------------------------------------
@@ -194,11 +195,17 @@ eq("titles: alias matches a squashed name", SCOPES["oracle/tier1-apg/keyboard-ma
       for (const c of s.suites ?? []) walk(c, c.file && c.title === c.file ? trail : [...trail, c.title], c.file ?? file);
     };
     for (const t of j.suites ?? []) walk(t, [], t.file);
+    LISTED = perFile;
     for (const f of files) {
       const titles = perFile.get(f) ?? [];
       const scoped = titles.filter((t) => SCOPES[f](t));
       // a table entry that names no page at all in its own spec is stale: the spec's titles changed shape
       check(`titles: ${f} still names pages in its titles (${scoped.length}/${titles.length})`, scoped.length > 0, "the title pattern matches no test of this spec");
+      // a title that visibly names a page ("<component>: ...", "/component/<name>/", "component \"<name>\"") must be recognised: if a
+      // spec renames its tests the table has to follow, and this is the line that goes red instead of the tests silently staying
+      const names = titles.filter((t) => comps.some((c) => t.startsWith(`${c}: `) || t.includes(`/component/${c}/`) || t.includes(`component "${c}"`)));
+      const unseen = names.filter((t) => !SCOPES[f](t));
+      check(`titles: ${f} recognises every title that names a component page (${names.length - unseen.length}/${names.length})`, unseen.length === 0, unseen.slice(0, 2).map((t) => t.slice(0, 100)).join(" | "));
       // every key an entry returns is a real page key
       for (const t of scoped) for (const k of SCOPES[f](t)) if (!/^(c:[\w]+|site:(home|docs|demos|charts|dashboard))$/.test(k) || (k.startsWith("c:") && !comps.includes(k.slice(2)))) check(`titles: ${f} names a real page`, false, `${JSON.stringify(t)} -> ${k}`);
     }
@@ -218,11 +225,31 @@ eq("titles: alias matches a squashed name", SCOPES["oracle/tier1-apg/keyboard-ma
   if (all && narrowed.grepInvert) {
     const re = new RegExp(narrowed.grepInvert, "i"); // Playwright builds the same case-insensitive RegExp from --grep-invert
     const grepText = (file, title) => `chromium ${file} ${title}`;
-    check("pattern: drops a test of another page", re.test(grepText("all-routes.spec.ts", "accordion: axe (light)")));
-    check("pattern: keeps the calendar page's test", !re.test(grepText("all-routes.spec.ts", "calendar: axe (light)")));
-    check("pattern: keeps an unscoped test", !re.test(grepText("all-routes.spec.ts", "the language switcher sets <html lang>, and it survives navigating to another page")));
-    check("pattern: does not touch another spec file", !re.test(grepText("button.spec.ts", "accordion: axe (light)")));
-    check("pattern: anchored, so a longer title is not dropped", !re.test(grepText("all-routes.spec.ts", "accordion: axe (light) extra")));
+    // By construction, from the specs' own current titles: the pattern must match EXACTLY the titles select.mjs says it dropped,
+    // in every narrowed file, and nothing in any other file (a hard-coded sample title goes stale when a spec renames its tests).
+    check("pattern: the real titles of the specs are listed", !!LISTED && LISTED.has("all-routes.spec.ts"));
+    if (LISTED) {
+      let wrong = 0, seen = 0;
+      const detail = [];
+      for (const n of narrowed.narrowed) {
+        const titles = LISTED.get(n.file);
+        if (!titles) continue; // not listed here (a spec that runs cargo at load is kept whole and never narrowed)
+        for (const t of titles) {
+          seen++;
+          // the expectation is computed HERE from the title table, not read back from select.mjs: a test that names pages is
+          // dropped iff none of them is reached (--pages c:calendar), a test that names none is always kept
+          const ks = SCOPES[n.file]?.(t);
+          const want = !!ks && ks.length > 0 && !ks.includes("c:calendar");
+          if (re.test(grepText(n.file, t)) !== want) { wrong++; if (detail.length < 3) detail.push(`${n.file}: ${t.slice(0, 90)} (want ${want ? "dropped" : "kept"})`); }
+        }
+        check(`pattern: ${n.file} keeps ${n.kept} of ${n.total}`, titles.length === n.total && titles.filter((t) => !re.test(grepText(n.file, t))).length === n.kept, `listed ${titles.length}`);
+      }
+      check(`pattern: drops exactly the dropped tests (${seen} titles checked)`, wrong === 0 && seen > 0, detail.join("; "));
+      for (const [f, titles] of LISTED) if (!narrowed.narrowed.some((n) => n.file === f)) check(`pattern: leaves ${f} alone`, titles.every((t) => !re.test(grepText(f, t))));
+    }
+    check("pattern: does not touch another spec file", !re.test(grepText("button.spec.ts", "calendar: axe (light)")) && !re.test(grepText("button.spec.ts", "accordion: axe (light)")));
+    const sample = LISTED?.get("all-routes.spec.ts")?.find((t) => t.startsWith("accordion: "));
+    if (sample) check("pattern: anchored, so a longer title is not dropped", !re.test(grepText("all-routes.spec.ts", sample + " extra")));
   }
   const noCss = run("--files", "preview/assets/main.css", "--no-css-narrow");
   check("--no-css-narrow: the whole BROAD set (matrix specs and the guards) comes back", noCss.specs.length >= 25 && noCss.specs.includes("all-routes.spec.ts") && !noCss.grepInvert);

@@ -24,7 +24,11 @@ const idKeys = (id) => {
 const routeKeys = (route) => { const k = routeKey(route, comps); return k === "site:other" || k === "site:component-index" ? null : [k]; };
 const aliasKeys = (t) => { const n = t.toLowerCase().replace(/[^a-z0-9]/g, ""); const ks = normComps.filter(([, x]) => n.includes(x)).map(([c]) => `c:${c}`); return ks.length ? ks : null; };
 const first = (t, re, f) => { const m = t.match(re); return m ? f(m) : null; };
-const TITLE_SCOPED = {
+// Any title that spells a component page's route names that page, whatever else the title says ("a chart selects no text
+// /component/bar_chart/: ...", "4. ... /component/date_picker/: first open"): the fallback of every pattern spec.
+const mentioned = (t) => { const ks = [...t.matchAll(/\/component\/([a-z_]+)\//g)].map((m) => m[1]).filter((c) => comps.includes(c)).map((c) => `c:${c}`); return ks.length ? ks : null; };
+const withMention = (fn) => (t) => fn(t) ?? mentioned(t);
+const PATTERN_SCOPED = {
   "all-routes.spec.ts": (t) => first(t, /^(site-\w+|block-[\w-]+|[a-z_]+): (?:axe|no horizontal overflow|skip link and visible focus|the active option shows)/, (m) => idKeys(m[1])),
   "oracle/tier2-html/first-paint-styles.spec.ts": (t) =>
     first(t, /(\/[\w/-]*?) -> \/component\/(\w+)\/$/, (m) => [...(routeKeys(m[1]) ?? []), `c:${m[2]}`]) ??
@@ -37,6 +41,9 @@ const TITLE_SCOPED = {
   "demos-batch2-b.spec.ts": (t) => first(t, /^(\w+)\/\w+ opens/, (m) => [`c:${m[1]}`]),
   "user-select.spec.ts": (t) => first(t, /^every control on (\/\S*) computes/, (m) => routeKeys(m[1])),
   "popup-style-isolation.spec.ts": (t) => first(t, /looks like the same popup alone ([\w-]+)$/, (m) => idKeys(m[1])),
+};
+// `alias` specs (a describe per component) match a component by its squashed name anywhere in the title
+const ALIAS_SCOPED = {
   "oracle/tier1-apg/keyboard-matrix.spec.ts": aliasKeys,
   "oracle/tier3-radix/rtl.spec.ts": aliasKeys,
   "oracle/tier2-html/top-layer-ink.spec.ts": aliasKeys,
@@ -46,5 +53,5 @@ const TITLE_SCOPED = {
   "focus-ring.spec.ts": aliasKeys,
   "theme-preset-contrast.spec.ts": (t) => aliasKeys(t) ?? (/home page|home\b/i.test(t) ? ["site:home"] : null),
 };
-return TITLE_SCOPED;
+return { ...Object.fromEntries(Object.entries(PATTERN_SCOPED).map(([f, fn]) => [f, withMention(fn)])), ...ALIAS_SCOPED };
 }
