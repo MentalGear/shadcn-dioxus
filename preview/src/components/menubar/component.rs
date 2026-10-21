@@ -13,7 +13,7 @@ pub use dioxus_primitives::menu_item::MenuItemVariant;
 
 #[component]
 pub fn Menubar(props: MenubarProps) -> Element {
-    let base = attributes!(div { class: "dx-menubar" });
+    let base = attributes!(div { class: "dx-menubar", "data-dx-root": "" });
     let merged = merge_attributes(vec![base, props.attributes]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/menubar/style.css") }

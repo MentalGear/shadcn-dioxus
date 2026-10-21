@@ -598,6 +598,11 @@ html[data-theme="light"] [class~="dxc-system"] {
    * fill toward `--dx-foreground` reads this token (`color-mix(in var(--dx-hover-mix-space), <fill>,
    * var(--dx-foreground) <weight>)`), so they all follow shadcn's space by construction. */
   --dx-hover-mix-space: oklch;
+
+  /* The leading the popup-root and component-root resets put back on a component (rows 259, 328). `normal`
+   * is this site's body; an app whose body sets another leading (Tailwind's preflight: 1.5) sets this once,
+   * e.g. `:root { --dx-root-line-height: 1.5 }`, so text inside components matches the page around them. */
+  --dx-root-line-height: normal;
   --dx-opacity-disabled: 0.5;
   --dx-ring-width: 2px;
   --dx-ring: 0 0 0 var(--dx-ring-width) var(--dx-ring-color);
@@ -1058,7 +1063,7 @@ html[data-theme="light"] [class~="dxc-system"] {
   fill: black;
   fill-opacity: 1;
   fill-rule: nonzero;
-  font: normal normal 400 normal var(--dx-text-base) / normal var(--dx-font-sans);
+  font: normal normal 400 normal var(--dx-text-base) / var(--dx-root-line-height, normal) var(--dx-font-sans);
   font-feature-settings: normal;
   font-kerning: auto;
   font-language-override: normal;
@@ -1143,6 +1148,109 @@ html[data-theme="light"] [class~="dxc-system"] {
   word-spacing: normal;
   word-wrap: normal;
   writing-mode: horizontal-tb;
+}
+
+/* ============================================================================
+ * Component root: an in-flow component is not a child of whatever holds it (docs/backlog.md row 328).
+ *
+ * The in-flow twin of "Popup root" above. A component sits inside a card footer, a muted or centred
+ * block, a table cell, a `white-space: nowrap` toolbar or a prose column, and every INHERITED property
+ * still flows from that host into the component's text: a `line-height: 3` host re-spaced 382 leaf
+ * boxes in 27 components, a `font-weight: 800` host re-weighted 395 in 38 (hostile-host probe,
+ * dev-docs/research/typography-hostile-host-probe.spec.ts.txt, ddd9d057). The first answer was a
+ * per-root gate demanding that each stylesheet declare its root's size and line height
+ * (check-declared-typography, a baseline of 83 rows); this is the same fix by construction, once:
+ * every component's namesake root carries `data-dx-root` (written by the component in
+ * `preview/src/components/<dir>/component.rs`, a valueless attribute the caller cannot forget) and
+ * this ONE zero-specificity rule gives it the theme's base value of every inherited property that
+ * styles TEXT, so the component starts from the same typography wherever it is placed and its
+ * parts, which declare their own size, weight and leading where they differ, cannot see the host.
+ * `:where()` keeps it a baseline: a declaration made on the root itself, in any component sheet,
+ * still wins.
+ *
+ * Four things it deliberately does not do:
+ *   - Only the OUTERMOST root resets (`:not([data-dx-root] *, ...)` sits inside the `:where()` and costs
+ *     no specificity). A Badge inside a Card keeps the Card's declared 14px / leading / weight, so
+ *     the host a component can see is another component, which is designed, and only the Card is
+ *     cut from the page around it. (Resetting every root, nested ones included, moved 9 more of 100 screenshots.)
+ *   - It skips `button`, `input`, `select` and `textarea`: the UA sheet already gives a form control
+ *     its own `font`, `text-align`, `text-transform`, `letter-spacing` and `white-space`, and an author
+ *     rule beats the UA sheet whatever its specificity, so the reset would REPLACE a UA default
+ *     rather than cut a host (an icon-only `<button>` lost its UA `text-align: center`, moving its
+ *     glyph 5px; a `<textarea>` would have lost `white-space: pre-wrap`).
+ *   - It leaves identity, interaction and document state inheriting, because that is the point of
+ *     an in-flow component: `font-family`, `color`, `direction`/`writing-mode`, `cursor`,
+ *     `pointer-events`, `visibility`, `user-select`, SVG paint, table and list structure, caret and
+ *     scrollbar colour, `color-scheme`, `text-size-adjust`, `text-rendering` (the full list, each
+ *     with its reason, is `EXCLUDED` in scripts/check-component-root-reset.sh, which also checks
+ *     every inherited property of mdn-data 2.27.1 against it).
+ *   - `font-size` is not reset, by measurement (row 328): resetting it to `--dx-text-base` changed no
+ *     leaf box that the other properties' reset did not already settle (26 leaf elements either
+ *     way) and moved no demo pixel, but it WOULD resize every caller-supplied label and paragraph
+ *     inside a component in an app whose body is 14px. The text a component styles declares its own
+ *     size; the text a caller puts inside it follows the caller's page.
+ *
+ * `line-height` resets to `normal`, the base of this site's `body` (and of the popup rule above). An app
+ * whose body sets another leading (Tailwind's preflight sets 1.5) sets `--dx-root-line-height` once on
+ * `:root` (owner 2026-10-21), and both resets follow it; a component can still declare its own.
+ *
+ * A component that wraps the caller's content (Tabs, Tooltip, Hover Card, Carousel) carries no marker
+ * and a `typography-inherit(<root>): <reason>` comment in its sheet. Another top-level part a caller
+ * can place without the namesake root (Field's FieldSet, Trace's collapsible, Input OTP's group and
+ * separator) carries the marker too. The four roots that ARE a `<dialog>` panel get the popup rule.
+ * ========================================================================== */
+:where([data-dx-root]:not([data-dx-root] *, button, input, select, textarea)) {
+  font-feature-settings: normal;
+  font-kerning: auto;
+  font-language-override: normal;
+  font-optical-sizing: auto;
+  font-palette: normal;
+  font-size-adjust: none;
+  font-stretch: normal;
+  font-style: normal;
+  font-synthesis: weight style small-caps;
+  font-synthesis-position: auto;
+  font-variant: normal;
+  font-variation-settings: normal;
+  font-weight: 400;
+  hanging-punctuation: none;
+  hyphenate-character: auto;
+  hyphenate-limit-chars: auto;
+  hyphens: manual;
+  letter-spacing: normal;
+  line-break: auto;
+  line-height: var(--dx-root-line-height, normal);
+  line-height-step: 0;
+  orphans: 2;
+  overflow-wrap: normal;
+  quotes: auto;
+  ruby-align: space-around;
+  ruby-merge: separate;
+  ruby-overhang: auto;
+  ruby-position: over;
+  tab-size: 8;
+  text-align: start;
+  text-align-last: auto;
+  text-autospace: no-autospace;
+  text-decoration-skip: auto;
+  text-decoration-skip-ink: auto;
+  text-emphasis: none currentcolor;
+  text-emphasis-position: over;
+  text-indent: 0;
+  text-justify: auto;
+  text-shadow: none;
+  text-spacing-trim: normal;
+  -webkit-text-stroke-color: currentcolor;
+  -webkit-text-stroke-width: 0;
+  text-transform: none;
+  text-underline-offset: auto;
+  text-underline-position: auto;
+  text-wrap-style: auto;
+  white-space: normal;
+  widows: 2;
+  word-break: normal;
+  word-spacing: normal;
+  word-wrap: normal;
 }
 
 /* ============================================================================

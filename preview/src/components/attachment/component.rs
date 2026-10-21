@@ -118,7 +118,7 @@ pub fn Attachment(
 ) -> Element {
     use_context_provider(|| AttachmentContext { state });
     let base = attributes!(div {
-        class: "dx-attachment",
+        class: "dx-attachment", "data-dx-root": "",
         "data-slot": "attachment",
     });
     // `data-state` / `data-size` / `data-orientation` reflect this wrapper's own

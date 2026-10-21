@@ -104,7 +104,7 @@ pub fn Bubble(
     children: Element,
 ) -> Element {
     let base = attributes!(div {
-        class: "dx-bubble",
+        class: "dx-bubble", "data-dx-root": "",
         "data-slot": "bubble",
     });
     // `data-variant` / `data-align` reflect this wrapper's own typed props, not

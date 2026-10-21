@@ -90,7 +90,7 @@ pub fn CodeBlock(
     children: Element,
 ) -> Element {
     let base = attributes!(div {
-        class: "dx-code-block",
+        class: "dx-code-block", "data-dx-root": "",
         "data-slot": "code-block",
     });
     // `data-variant` and `data-size` reflect this component's own typed props -- owned-wins.

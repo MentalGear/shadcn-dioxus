@@ -19,7 +19,7 @@ pub fn ButtonGroup(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
     children: Element,
 ) -> Element {
-    let base = attributes!(div { class: "dx-button-group" });
+    let base = attributes!(div { class: "dx-button-group", "data-dx-root": "" });
     let mut group_vertical = use_context_provider(|| GroupVertical(Signal::new(orientation_vertical)));
     if *group_vertical.0.peek() != orientation_vertical {
         group_vertical.0.set(orientation_vertical);

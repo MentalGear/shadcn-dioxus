@@ -9,7 +9,7 @@ use dioxus_primitives::merge_attributes;
 
 #[component]
 pub fn Accordion(props: AccordionProps) -> Element {
-    let base = attributes!(div { class: "dx-accordion", width: "15rem" });
+    let base = attributes!(div { class: "dx-accordion", "data-dx-root": "", width: "15rem" });
     let merged = merge_attributes(vec![base, props.attributes]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/accordion/style.css") }

@@ -95,7 +95,7 @@ pub fn ToggleGroup(props: ToggleGroupProps) -> Element {
     // redeclares `--dx-toggle-*` on it, which every item inherits (shadcn's own
     // context does the same job, with `context.variant || variant` winning).
     // They are theme state, so they win over a caller's attribute of the same name.
-    let base = attributes!(div { class: "dx-toggle-group" });
+    let base = attributes!(div { class: "dx-toggle-group", "data-dx-root": "" });
     let owned = attributes!(div {
         "data-variant": props.variant.class(),
         "data-size": props.size.class(),

@@ -86,7 +86,7 @@ pub fn DragAndDropList(props: DragAndDropListProps) -> Element {
         })
         .collect();
 
-    let base = attributes!(ul { class: "dx-drag-and-drop-list" });
+    let base = attributes!(ul { class: "dx-drag-and-drop-list", "data-dx-root": "" });
     let merged = merge_attributes(vec![base, props.attributes]);
 
     rsx! {

@@ -291,7 +291,7 @@ pub fn RangeCalendar(props: RangeCalendarProps) -> Element {
 #[component]
 pub(crate) fn CalendarRoot(props: calendar::CalendarProps) -> Element {
     let base = attributes!(div {
-        class: "dx-calendar"
+        class: "dx-calendar", "data-dx-root": ""
     });
     let merged = merge_attributes(vec![base, props.attributes]);
 
@@ -323,7 +323,7 @@ pub(crate) fn CalendarRoot(props: calendar::CalendarProps) -> Element {
 #[component]
 pub(crate) fn RangeCalendarRoot(props: calendar::RangeCalendarProps) -> Element {
     let base = attributes!(div {
-        class: "dx-calendar"
+        class: "dx-calendar", "data-dx-root": ""
     });
     let merged = merge_attributes(vec![base, props.attributes]);
 

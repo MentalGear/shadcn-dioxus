@@ -52,7 +52,7 @@ pub fn Pagination(
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
     children: Element,
 ) -> Element {
-    let base = attributes!(nav { class: "dx-pagination", "data-slot": "pagination", aria_label: "pagination" });
+    let base = attributes!(nav { class: "dx-pagination", "data-dx-root": "", "data-slot": "pagination", aria_label: "pagination" });
     // `role="navigation"` is required landmark semantics this wrapper
     // asserts, not a caller default -- owned-wins, merged after the caller's
     // own attributes.

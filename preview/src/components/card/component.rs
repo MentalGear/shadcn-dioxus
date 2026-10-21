@@ -29,7 +29,7 @@ pub fn Card(
     #[props(extends=GlobalAttributes)] attributes: Vec<Attribute>,
     children: Element,
 ) -> Element {
-    let base = attributes!(div { class: "dx-card", "data-slot": "card" });
+    let base = attributes!(div { class: "dx-card", "data-dx-root": "", "data-slot": "card" });
     // `data-size` reflects the typed prop, not a caller default -- owned-wins.
     let owned = attributes!(div { "data-size": size.class() });
     let merged = merge_attributes(vec![base, attributes, owned]);
