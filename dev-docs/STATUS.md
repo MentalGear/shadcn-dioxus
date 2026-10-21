@@ -5,37 +5,41 @@ the page as stale and check `git log` and the flag files named here.** Seeded 20
 [`research/next-round-plan-2026-10-15.md`](./research/next-round-plan-2026-10-15.md),
 [`research/backlog-order-2026-10-18.md`](./research/backlog-order-2026-10-18.md) and [`plan.md`](./plan.md).
 
-Last updated: **2026-10-19**. Several sessions work in parallel; who holds what is on the `claims` branch (`CLAIMS.md`).
-Preview site: https://mentalgear.github.io/shadcn-dioxus/ (deployed from main `404e7175`, PR #106).
+Last updated: **2026-10-21**. Several sessions work in parallel; who holds what is on the `claims` branch (`CLAIMS.md`).
+Preview site: https://mentalgear.github.io/shadcn-dioxus/ (deployed from main `66aeac85`, PR #127, merge queue batch 2).
 
-## Current work (2026-10-19)
+## Merge queue (owner decision 2026-10-21)
 
-| Lane holder | Work |
-|---|---|
-| backlog thread (`session_01QoX93TwsKJ9GtMXWUXXfKw`, branch `claude/features-1`) | the features group: menus (155 g2 + Command shortcuts), calendar (155 g8, DOB layouts, num-integer), parts (188/187 component parts, Select scroll), chatkit (265: CodeBlock, Trace, Checkpoint), hygiene (217 sleep/strum, row 5 rule 8), snapshot (245, 246), combobox (187 multi-select); plus the bookkeeping close of rows already done |
-| earlier session (`session_01PJCSoqAo9bCWeVLpz61Wdy`) | Round 1 (lock 221/216/92, suite speed 152a, baseline reds 242/115, specs 241/164), redone after a container restart lost its unpushed work |
-| Round 4 thread | VirtualGrid 244, find-in-page 153, home scroll jank 174, utilities 186 |
-| docs-review thread | the owner's docs-site review (rows 285-289) |
-| cleanup thread | repo cleanup plan (row 266), runs with the Round 6 sweep |
+One session owns merges to main and deploys: the backlog thread (`session_01QoX93TwsKJ9GtMXWUXXfKw`). Lanes push a
+fast-gated branch and a QUEUE row on the `claims` branch; the queue owner merges a batch, runs ONE full
+`scripts/run-gates.sh` and ONE full Playwright suite (`playwright/tools/run-suite.sh`) on the merged tree, opens one PR,
+merges it after the project coordinator's OK and deploys once. Procedure: [`lane-rules.md`](./lane-rules.md#merge-queue-row-321-owner-decision-2026-10-21).
 
 ## Merged and deployed
 
-Rounds 2-3 (PR #102), Rounds 5 and 7 (PR #105: rows 188 demo items, 213, 162, 261, 264, 165, 157, 137, 136), the
-card-overflow fix (PR #104, row 280); preview redeployed from `404e7175` (PR #106).
+- Batch B (PR #121), the questionnaire fixes (#123, #124).
+- Batch A (PR #125, batch-A thread): rows 253, 254, 255-259, 268, the 291/294 tails, 297-303, 320 (cargo-gate reuse), 324.
+- Queue batch 1 (PR #126): the dynamic-style gate merge (#124), rows 327 (all-routes once), 329 (SSR parity test), 321
+  (queue docs), 330 (verdict: the `@layer` policy layer does not hold), a stale Select spec.
+- Queue batch 2 (PR #127): the 291/294 leftovers, rows 323 (CSS-aware spec selector + `check-select-css`), 328 part 1,
+  331 (sweep shrinks, about -435 worker-s), 258, 334-339 (docs), the text-editor research; suite reds fixed as rows 345
+  (carousel spec read mid-fade), 346 (Popover focus-return spec race), 347 (message-scroller spec race; product edge
+  open) and a chart-tooltip `line-height`.
+- Queue batch 3 (this commit's PR): row 328's construction, one zero-specificity component-root reset on
+  `[data-dx-root]` (`check-component-root-reset.sh` replaces `check-declared-typography`).
 
-## Features batch (2026-10-19)
+Earlier: Rounds 2-3 (PR #102), Rounds 5 and 7 (PR #105), the features batch, Round 4 (see below).
 
-Merged lanes: hygiene (row 5 landed: the `form` attribute on the Switch/RadioGroup/Checkbox hidden inputs; one primitives
-sleep helper), menus (theme `data-dx-menu-*` hoist, `CommandShortcut`), calendar (`caption_layout`, ISO week numbers, cell
-size, date of birth; `num-integer` and `dioxus-sdk-time` removed), chatkit (CodeBlock, Trace, Checkpoint, agent chat demos;
-row 265 partial, item 3 is the owner's decision), snapshot (rows 245/246 landed: timer-drain opener, skip-link exclusion,
-element-level classifier `scripts/snapshot-classify.mjs`, format 4), combobox (`ComboboxMulti` with chips and clear, row 187
-item 6), parts (typed AlertDialog size/media/action variant, Card size, Spinner size, Button radius; rows 187/188 updated;
-the Select scroll buttons and item-aligned position split out to row 268). `strum` is also gone from preview.
+## Owner decisions (2026-10-21)
+
+The merge queue is the backlog thread's; cargo-gate reuse is on; only the warm release validation tree is kept; the
+text editor's option A is built when relevant (row 337); `--dx-root-line-height` defaults to `normal` (Tailwind apps set
+1.5); the `theme-all-reset` golden is kept (row 331). New backlog rows are held until the speedy test suites have
+merged (2026-10-20); the drafted rows wait in the backlog thread.
 
 ## Backlog numbers
 
-59 open and 217 done rows on 2026-10-20 (see [`backlog.md`](./backlog.md)): the 2026-10-20 sync closed rows 92, 98, 109, 110, 161 and 186 after checking their commits, refreshed the status of 155, 187, 188 and 217 for PR #112, and added rows 307 (iOS Color Panel does not pick colors) and 308 (VirtualGrid scroll trap, plus the VirtualList/VirtualGrid unification question); earlier: the 2026-10-19 bookkeeping pass closed 29 rows, the owner review added rows 290-305, the docs review row 285, and the features-batch validation row 306.
+68 open and 252 done row files on 2026-10-21 (see [`backlog.md`](./backlog.md)).
 
 ## Next round
 
@@ -45,6 +49,7 @@ last) and the repo cleanup (row 266) wait until every component and feature row 
 
 ## Owner inputs pending
 
+- iPhone re-test of press feedback on touch taps (row 295).
 - iPhone re-test right after the deploy: rows 28 and 30, plus the touch-focus and keyboard-inset checklist of the
   2026-10-18 round (rows 226, 227).
 - Decisions before round 1 ends: CI back on (rows 4, 33); upstream engagement and the upstream filings of rows 130,
