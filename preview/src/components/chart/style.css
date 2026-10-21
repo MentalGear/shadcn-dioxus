@@ -437,6 +437,12 @@
    * be this element's containing block. */
   grid-area: chart;
   inset-block-start: 0;
+
+  /* shadcn's `text-xs` is 12px on a 16px line. Declared, not inherited: the host's line-height flowed in
+   * (a Card's 1.4286 made every row 17.14px, so the tooltip was 54.28px tall), and the primitive sizes the
+   * flip/clamp from the ceil of its border box, so a fractional height put the flipped tooltip 1.7px off
+   * the pointer (chart_tooltip_follow "flips above the pointer near the bottom edge"). */
+  line-height: 1rem;
   pointer-events: none;
 
   /* The primitive's inline `transform` overrides this; it is the closed /
