@@ -283,19 +283,17 @@ test.describe("overlay-gated elements", () => {
   });
 });
 
-// Every `preview/src/components/*` page, per `preview/src/components/mod.rs`'s
-// `examples!` list -- mirrors touch-focus-zoom.spec.ts's own COMPONENTS
-// enumeration exactly (same rationale: one page load covers every listed
-// variant, since `ComponentHighlight` renders them all inline).
+// Row 331: 46 component pages -> 23. Chosen by a greedy set cover, not by taste: on a debug SSG build every one of
+// the old pages was probed for the (tag, role, first `dx-` class or raw) families SELECTOR matches there, 75
+// distinct families in all (12 of them raw, no `dx-` class: the `main.css` backstop's own targets), and these 23
+// pages carry every one of them (most-uncovered-first, ties by the old list's order). Any family a dropped page had
+// is on a kept page, so a component sheet that sets `touch-action: auto` on its control, or a raw element that
+// loses the backstop, still fails. Dropped: the 23 pages whose families were all already covered (the old 46 took
+// 81 s). `check-theme-baseline.sh` scopes the theme rule to `dx-` and cannot see raw elements or computed values.
 const COMPONENTS = [
-  "accordion", "alert_dialog", "aspect_ratio", "avatar", "badge", "button",
-  "calendar", "card", "checkbox", "collapsible", "color_picker", "combobox",
-  "context_menu", "date_picker", "dialog", "drag_and_drop_list",
-  "dropdown_menu", "form", "hover_card", "input", "item", "label", "menubar",
-  "navbar", "pagination", "popover", "progress", "radio_group", "scroll_area",
-  "select", "separator", "sheet", "sidebar", "skeleton", "slider", "switch",
-  "tabs", "tag_group", "textarea", "toast", "toggle", "toggle_group",
-  "toolbar", "tooltip", "top_layer", "virtual_list",
+  "top_layer", "calendar", "form", "combobox", "drag_and_drop_list", "navbar", "tag_group", "item", "menubar",
+  "scroll_area", "badge", "button", "card", "color_picker", "date_picker", "hover_card", "pagination", "textarea",
+  "toggle", "toggle_group", "toolbar", "tooltip", "virtual_list",
 ];
 
 for (const name of COMPONENTS) {
