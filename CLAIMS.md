@@ -33,8 +33,9 @@ unclaimed round. Owner decision 2026-10-18 ("Split, plus queue").
 | 280-284 | session_01RDeEiq38KizbPJHTcaCvEU |
 | 285-289 | session_01U81eYPLNgreufRCunjx3nM |
 | 290-309 | session_01QoX93TwsKJ9GtMXWUXXfKw (owner-review rows 290-305; 306-308 backlog sync; 309 held for the Round 4 VirtualList/VirtualGrid unification row if the owner approves) |
-| 310-319 | session_019CSAknzLi1PvcaAvfgpych (Round 4; replaces its void 290-299 block) |
+| 310-319 | session_019CSAknzLi1PvcaAvfgpych (Round 4; replaces its void 290-299 block). 310 and 311 were minted by session_01QoX93TwsKJ9GtMXWUXXfKw's batch B by mistake (questionnaire height, combobox multiple order; merged in #121); Round 4 keeps 312-319 |
 | 320-339 | session_01PJCSoqAo9bCWeVLpz61Wdy (owner 2026-10-21: test/build speed items and the test-architecture audit constructions) |
+| 340-359 | session_01QoX93TwsKJ9GtMXWUXXfKw (backlog thread: 340-342 DataTable model rows, owner 2026-10-21; held owner-note rows from 2026-10-20) |
 
 ## Merge QUEUE (owner 2026-10-21: one merge owner for main; append fast-gated branches here)
 
