@@ -3,4 +3,3 @@ separator
 dropdown
 ellipsis
 menu
-rtl

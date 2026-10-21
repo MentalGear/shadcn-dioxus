@@ -6,4 +6,3 @@ invalid
 group
 table
 indeterminate
-rtl

@@ -120,6 +120,9 @@ function sheetMaps(): { defs: Record<string, string[]>; fingerprints: Record<str
 
 const { defs: DEFS, fingerprints: FINGERPRINTS } = sheetMaps();
 
+/** The sheet the not-vacuous test drops: the header's theme picker renders Popover on every route. */
+const POPOVER_SHEET = path.join("src", "components", "popover", "style.css");
+
 /**
  * The rendered `dx-*` classes none of whose component sheets is among the page's applied stylesheets,
  * keyed by the sheet source that should have supplied them.
@@ -209,11 +212,8 @@ test("the class -> stylesheet map is not empty (the sources were found)", () => 
   expect(DEFS["dx-popover-content"], "popover's panel class is owned by popover/style.css").toEqual([
     path.join("src", "components", "popover", "style.css"),
   ]);
-  expect(DEFS["dx-language-select"], "the header language select is owned by assets/language-select.css").toEqual([
-    path.join("assets", "language-select.css"),
-  ]);
   // Not button: `main.css` leads two rules with `.dx-button` (the dark-mode toggle, c7a52a9c), so no class tells button/style.css apart.
-  for (const sheet of ["src/components/popover/style.css", "src/components/tabs/style.css", "assets/language-select.css"]) {
+  for (const sheet of ["src/components/popover/style.css", "src/components/tabs/style.css"]) {
     const { marks, leads } = FINGERPRINTS[path.normalize(sheet)];
     expect(marks.length + leads.length, `${sheet} can be told apart from every other sheet`).toBeGreaterThan(0);
   }
@@ -253,15 +253,15 @@ for (const { url, settled } of ROUTES) {
 test("the oracle is not vacuous: a component stylesheet missing from the page is reported", async ({ page }) => {
   // Without this, a mistake in the class -> sheet maps (wrong path, a fingerprint that matches
   // everywhere) would leave every route test above green whatever the page loaded. Take the header's
-  // language select (it renders on every route) and drop ITS stylesheet, the way the lost insertion did.
+  // theme picker's popover (it renders on every route) and drop ITS stylesheet, the way the lost insertion did.
   // goto-ok: stylesheet-presence oracle samples at domcontentloaded and across the redirect; no interaction
   await page.goto(`${BASE_URL}/docs`, { waitUntil: "domcontentloaded", timeout: 60_000 });
   await settle(page);
   await expect.poll(() => missingStylesheets(page), { timeout: 10_000 }).toEqual({});
-  const { marks } = FINGERPRINTS[path.join("assets", "language-select.css")];
-  // Delete the RULES of that sheet (a whole class ONLY it mentions; `main.css` also mentions `.dx-language-select-value`),
+  const { marks } = FINGERPRINTS[POPOVER_SHEET];
+  // Delete the RULES of that sheet (a whole class ONLY it mentions),
   // wherever they are -- not the sheet's `<link>`: on a build with the site's one CSS bundle (scripts/ssg-css-bundle.mjs) the
-  // language-select rules live in the same sheet as every other component's, and removing that sheet would drop them all.
+  // popover rules live in the same sheet as every other component's, and removing that sheet would drop them all.
   const removed = await page.evaluate((marks) => {
     const mentions = (selector: string) => marks.some((m) => new RegExp(`\\.${m}(?![\\w-])`).test(selector));
     let n = 0;
@@ -280,15 +280,15 @@ test("the oracle is not vacuous: a component stylesheet missing from the page is
       try {
         strip(sheet.cssRules, (i) => sheet.deleteRule(i));
       } catch {
-        // A cross-origin sheet (the Geist font CSS) hides its rules; it has no language-select rule.
+        // A cross-origin sheet (the Geist font CSS) hides its rules; it has no popover rule.
       }
     }
     return n;
   }, marks);
-  expect(removed, "found and deleted the language-select rules").toBeGreaterThan(0);
+  expect(removed, "found and deleted the popover rules").toBeGreaterThan(0);
   const missing = await missingStylesheets(page);
-  expect(Object.keys(missing)).toEqual([path.join("assets", "language-select.css")]);
-  expect(missing[path.join("assets", "language-select.css")]).toContain("dx-language-select");
+  expect(Object.keys(missing)).toEqual([POPOVER_SHEET]);
+  expect(missing[POPOVER_SHEET].some((cls) => cls.startsWith("dx-popover"))).toBe(true);
 });
 
 test("the theme picker's popover panel is styled on the legacy component route", async ({ page }) => {

@@ -137,6 +137,9 @@ fn discover_components(root: &std::path::Path) -> Vec<Component> {
             }
         }
         variants.extend(found);
+        // RTL demos always come last, whatever `order.txt` says (row 351): a stable partition, so
+        // the listed order is kept inside each group. A curator cannot put one in the middle.
+        variants.sort_by_key(|v| is_rtl_variant(v));
 
         components.push(Component {
             name,
@@ -146,6 +149,11 @@ fn discover_components(root: &std::path::Path) -> Vec<Component> {
     }
     components.sort_by(|a, b| a.name.cmp(&b.name));
     components
+}
+
+/// A variant named `rtl`, or ending in `_rtl` (`drag_free_rtl`): the right-to-left twin of a demo.
+fn is_rtl_variant(name: &str) -> bool {
+    name == "rtl" || name.ends_with("_rtl")
 }
 
 /// The generated file: one `with_registry!` macro that hands the whole component list to the macro
@@ -362,7 +370,9 @@ fn render_props_section(name: &str, sections: &[DocsSection]) -> DocsSection {
                 .filter_map(|f| f.extends.as_deref())
                 .map(|target| {
                     if target == "GlobalAttributes" {
-                        "the global attributes".to_string()
+                        format!(
+                            "<a href=\"{MDN_GLOBAL_ATTRIBUTES}\" target=\"_blank\" rel=\"noopener noreferrer\">the global attributes</a>"
+                        )
                     } else {
                         format!(
                             "the <code>&lt;{}&gt;</code> element's attributes",
@@ -436,6 +446,10 @@ fn render_props_section(name: &str, sections: &[DocsSection]) -> DocsSection {
 /// The Table component's part classes (`src/components/table/component.rs`, `style.css`): every table
 /// this script emits (a docs.md pipe table, a props reference) wears them, so docs tables look like the
 /// library's Table instead of a second hand-written table style. `ComponentHighlight` loads the sheet.
+/// Where the "Plus the global attributes." sentence of a props table points (row 352).
+const MDN_GLOBAL_ATTRIBUTES: &str =
+    "https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Global_attributes";
+
 const TABLE: &str = "dx-table";
 const THEAD: &str = "dx-table-header";
 const TBODY: &str = "dx-table-body";

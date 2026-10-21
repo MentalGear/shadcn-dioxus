@@ -41,7 +41,7 @@ pub(crate) struct Frames {
     pub rounds: usize,
 }
 
-/// The root every demo sits under on the site: the app's own i18n context (`App` in `main.rs`).
+/// The root every demo sits under on the site (the i18n demos bring their own, `crate::i18n::LocaleDemo`).
 #[derive(Props, Clone, PartialEq)]
 #[allow(unpredictable_function_pointer_comparisons)]
 struct RootProps {
@@ -51,15 +51,6 @@ struct RootProps {
 
 #[component]
 fn Root(props: RootProps) -> Element {
-    use dioxus_i18n::prelude::*;
-    use unic_langid::langid;
-    use_init_i18n(|| {
-        I18nConfig::new(langid!("en-US"))
-            .with_locale((langid!("en-US"), include_str!("i18n/en-US.ftl")))
-            .with_locale((langid!("fr-FR"), include_str!("i18n/fr-FR.ftl")))
-            .with_locale((langid!("es-ES"), include_str!("i18n/es-ES.ftl")))
-            .with_locale((langid!("de-DE"), include_str!("i18n/de-DE.ftl")))
-    });
     let Demo = props.demo;
     rsx! { Demo {} }
 }
@@ -82,7 +73,7 @@ pub(crate) fn settle(dom: &mut VirtualDom) -> usize {
     active
 }
 
-/// The root of a whole page: the app's i18n context, the memory history the server gives each request
+/// The root of a whole page: the memory history the server gives each request
 /// (`dioxus-server-0.7.9/src/ssr.rs:177`) and the site's `Route` router.
 #[derive(Props, Clone, PartialEq)]
 struct RouteRootProps {
@@ -93,15 +84,6 @@ struct RouteRootProps {
 #[component]
 fn RouteRoot(props: RouteRootProps) -> Element {
     use dioxus::history::{History, MemoryHistory};
-    use dioxus_i18n::prelude::*;
-    use unic_langid::langid;
-    use_init_i18n(|| {
-        I18nConfig::new(langid!("en-US"))
-            .with_locale((langid!("en-US"), include_str!("i18n/en-US.ftl")))
-            .with_locale((langid!("fr-FR"), include_str!("i18n/fr-FR.ftl")))
-            .with_locale((langid!("es-ES"), include_str!("i18n/es-ES.ftl")))
-            .with_locale((langid!("de-DE"), include_str!("i18n/de-DE.ftl")))
-    });
     let path = props.path.clone();
     use_hook(|| {
         provide_context(
