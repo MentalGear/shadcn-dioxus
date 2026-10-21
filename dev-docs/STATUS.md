@@ -33,7 +33,8 @@ Earlier: Rounds 2-3 (PR #102), Rounds 5 and 7 (PR #105), the features batch, Rou
 ## Owner decisions (2026-10-21)
 
 The merge queue is the backlog thread's; cargo-gate reuse is on; only the warm release validation tree is kept; the
-text editor's option A is built when relevant (row 337); `--dx-root-line-height` defaults to `normal` (Tailwind apps set
+library keeps to primitives and shadcn element parity, so no Markdown or rich-text editor is built (row 337 closed as out
+of scope; the rule is in [`backlog.md`](./backlog.md#scope)); `--dx-root-line-height` defaults to `normal` (Tailwind apps set
 1.5); the `theme-all-reset` golden is kept (row 331). New backlog rows are held until the speedy test suites have
 merged (2026-10-20); the drafted rows wait in the backlog thread.
 
