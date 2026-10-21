@@ -30,6 +30,8 @@ serde_json = "1"
 
 [dev-dependencies]
 dioxus-ssr = "0.7.0"
+# `ssr_parity.rs` drives a native VirtualDom whose tasks may hold a tokio timer (primitives `src/sleep.rs`).
+tokio = { version = "1", features = ["rt", "time"] }
 serde_json = "1"
 
 [features]
