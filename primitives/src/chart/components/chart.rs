@@ -1368,13 +1368,22 @@ mod tests {
     #[test]
     fn a_client_created_chart_starts_in_the_entrance_pose_not_the_final_drawing() {
         // Row 344: client-created, will animate -> "pending" from the first render.
-        assert_eq!(entrance_pose(true, true, false, None, false), Some("pending"));
-        assert_eq!(entrance_pose(true, false, false, None, false), Some("pending"));
+        assert_eq!(
+            entrance_pose(true, true, false, None, false),
+            Some("pending")
+        );
+        assert_eq!(
+            entrance_pose(true, false, false, None, false),
+            Some("pending")
+        );
         assert_eq!(entrance_pose(true, false, false, None, true), Some("true"));
         // A hydrated (server-painted) chart is never put in the start pose.
         assert_eq!(entrance_pose(true, false, true, None, false), None);
         assert_eq!(entrance_pose(true, false, true, Some(true), true), None);
-        assert_eq!(entrance_pose(true, false, true, Some(false), true), Some("true"));
+        assert_eq!(
+            entrance_pose(true, false, true, Some(false), true),
+            Some("true")
+        );
         // `animate` off: nothing.
         assert_eq!(entrance_pose(false, false, false, None, true), None);
     }
