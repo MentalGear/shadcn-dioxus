@@ -41,7 +41,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (69)
+## Open rows (65)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -98,7 +98,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [333](backlog/333-resizable-panels-render-flex-basis-0-on-the-server.md) | Resizable panels render flex-basis 0% on the server and get their real size only in an effect | BACKLOG (found 2026-10-21 by the row-329 spike) | S | components |
 | [334](backlog/334-make-the-four-whole-site-sweeps-cheaper.md) | Make the four whole-site sweeps cheaper (all-routes, first-paint-styles, layout-stability, theme-picker-phone) | BACKLOG (owner approved 2026-10-21, option (c) of row 323) | M | tests |
 | [335](backlog/335-message-scroller-demos-animation-fade-previous-context.md) | Message Scroller demos: animation demo shows LLM output, both fade demos look default, previous-context demo is unclear | BACKLOG (owner 2026-10-21) | S | components |
-| [336](backlog/336-docs-page-title-does-not-update-on-navigation.md) | Docs: the browser tab title does not change when navigating to another page | BACKLOG (owner 2026-10-21) | S | docs |
 | [338](backlog/338-hydration-parity-spec-runs-cargo-at-load-outside-the.md) | hydration-parity.spec builds attr-synth with cargo at load time, outside the build lock | BACKLOG (found 2026-10-21) | S | tests |
 | [339](backlog/339-main-thread-timing-specs-not-skipped-on-debug-builds-in.md) | main-thread timing specs are not skipped on debug builds in test:changed runs | BACKLOG (found 2026-10-21) | S | tests |
 | [340](backlog/340-datatable-column-model-and-use-data-table-hook.md) | DataTable: a column definition and one state hook, rendered into Table | BACKLOG (owner 2026-10-21, after the Table/DataTable/VirtualGrid evaluation; reframed 09:35 as one… | M+ (about 2 to 2.5 days; was M before… | components |
@@ -110,12 +109,9 @@ proposing one is closed as out of scope (row 337 is the first).
 | [348](backlog/348-otp-input-edges-use-a-solid-colour.md) | OTP Input edges use a solid colour, not the translucent dark input token | Open (owner approved 2026-10-20). | S | components |
 | [349](backlog/349-coarse-sizing-global-default-plus-a-per-container-attribute.md) | Coarse sizing: global default plus a per-container `data-dx-coarse` attribute | Open (owner approved 2026-10-20). | M | theme |
 | [350](backlog/350-coarse-demo-palette-toggle-and-side-by-side-docs.md) | Coarse demo: Auto/On/Off in the theme palette and a side-by-side docs section | Open, needs row 349 (owner approved 2026-10-20). | S | docs |
-| [351](backlog/351-rtl-demos-always-come-last.md) | RTL demos always come last in a component's demo list | Open (owner approved 2026-10-20). | S | docs |
-| [352](backlog/352-link-global-attributes-in-prop-tables.md) | Link the 'Plus the global attributes.' sentence in props tables to MDN | Open (owner approved 2026-10-20). | S | docs |
 | [353](backlog/353-carousel-next-arrow-fades-in-after-hydration.md) | Carousel Next arrow fades 0.5 to 1 after hydration (first-paint flicker) | Open (found while fixing row 345; owner approved 2026-10-21). | S-M | components |
-| [354](backlog/354-remove-the-docs-header-language-switcher.md) | Remove the docs header language switcher | Open (owner 2026-10-21: "why is there a lang switcher in the docs menu? If there are no translation… | S | docs |
 
-## Done rows (258)
+## Done rows (262)
 
 | # | Item | Updated |
 |---|---|---|
@@ -374,9 +370,13 @@ proposing one is closed as out of scope (row 337 is the first).
 | [328](backlog/done/328-audit-2-declared-typography-every-text-or-icon.md) | Audit 2: declared typography -- every text- or icon-bearing root declares its size, only font-family, colour and direction inherit | 2026-10-21 |
 | [330](backlog/done/330-audit-4-a-policy-cascade-layer-for-theme.md) | Audit 4: a policy cascade layer for theme rules that must win (@layer dx-base, dx-components, dx-policy) | 2026-10-21 |
 | [331](backlog/done/331-audit-5-delete-the-sweeps-that-a-static.md) | Audit 5: delete the sweeps that a static gate or another spec already covers | 2026-10-21 |
+| [336](backlog/done/336-docs-page-title-does-not-update-on-navigation.md) | Docs: the browser tab title does not change when navigating to another page | 2026-10-21 |
 | [337](backlog/done/337-text-editor-component-rich-text-markdown-composer.md) | Text editor component (rich text / markdown composer) | 2026-10-21 |
 | [345](backlog/done/345-carousel-nav-opacity-spec-read-next-mid-fade.md) | carousel-nav-opacity first-slide spec reads Next mid-fade (red on main) | 2026-10-21 |
 | [346](backlog/done/346-popover-keyboard-close-focus-return-test-raced-the-close-policy.md) | Popover keyboard-close focus-return spec raced the close policy | 2026-10-21 |
+| [351](backlog/done/351-rtl-demos-always-come-last.md) | RTL demos always come last in a component's demo list | 2026-10-21 |
+| [352](backlog/done/352-link-global-attributes-in-prop-tables.md) | Link the 'Plus the global attributes.' sentence in props tables to MDN | 2026-10-21 |
+| [354](backlog/done/354-remove-the-docs-header-language-switcher.md) | Remove the docs header language switcher | 2026-10-21 |
 
 ## Notes (8)
 
