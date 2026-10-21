@@ -41,7 +41,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (68)
+## Open rows (69)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -113,6 +113,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [352](backlog/352-link-global-attributes-in-prop-tables.md) | Link the 'Plus the global attributes.' sentence in props tables to MDN | Open (owner approved 2026-10-20). | S | docs |
 | [353](backlog/353-carousel-next-arrow-fades-in-after-hydration.md) | Carousel Next arrow fades 0.5 to 1 after hydration (first-paint flicker) | Open (found while fixing row 345; owner approved 2026-10-21). | S-M | components |
 | [354](backlog/354-remove-the-docs-header-language-switcher.md) | Remove the docs header language switcher | Open (owner 2026-10-21: "why is there a lang switcher in the docs menu? If there are no translation… | S | docs |
+| [355](backlog/355-adopt-google-rust-style-guide-items.md) | Adopt Google Rust style guide items: workspace lint table and conventions | BACKLOG -- Round 6 sweep, after row 267's file split (owner approved 2026-10-21) | S-M | process |
 
 ## Done rows (259)
 
