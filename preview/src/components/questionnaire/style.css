@@ -36,6 +36,27 @@
   font-weight: 500;
 }
 
+/* A segmented bar for a custom progress indicator (children of `QuestionnaireProgress`): one segment per
+ * item, `done` in the primary colour and `pending` as the muted track, as shadcn's Progress paints them.
+ * Driven by `data-state`, not an inline `style`, because a `style` string that changes with the step is
+ * patched property by property and loses the properties the new string does not repeat. */
+.dx-questionnaire-checkpoints {
+  display: flex;
+  margin-bottom: var(--dx-space-2);
+  gap: var(--dx-space-1-5);
+}
+
+.dx-questionnaire-checkpoint {
+  height: 0.375rem;
+  flex: 1;
+  border-radius: var(--dx-radius-full);
+  background: var(--dx-muted);
+}
+
+.dx-questionnaire-checkpoint[data-state="done"] {
+  background: var(--dx-primary);
+}
+
 /* `min-w-0 border-0 p-0 outline-none flex flex-col gap-4`. The fieldset takes focus after a
  * navigation (tabindex -1) without drawing a ring: the move itself is the cue, as in shadcn. */
 .dx-questionnaire-item {
