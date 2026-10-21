@@ -168,17 +168,18 @@
 
   position: relative;
   display: flex;
+  min-height: var(--dx-menu-item-min-height);
   align-items: center;
   border-radius: var(--dx-radius-md);
   cursor: default;
-  font-size: var(--dx-text-sm);
+  font-size: var(--dx-menu-item-font-size);
   gap: var(--dx-space-2);
   line-height: 1.25rem;
   outline: none;
   overflow-wrap: anywhere;
-  padding-block: var(--dx-space-1);
+  padding-block: var(--dx-menu-item-padding-block);
   padding-inline:
-    var(--dx-space-1-5)
+    var(--dx-menu-item-padding-inline)
     calc(var(--dx-menu-item-indicator-inset) + var(--dx-menu-item-indicator-size) + var(--dx-menu-item-indicator-gap));
 }
 
