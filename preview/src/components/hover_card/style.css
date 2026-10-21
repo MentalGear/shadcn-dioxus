@@ -1,4 +1,6 @@
 /* Hover Card Styles */
+
+/* typography-inherit(dx-hover-card): the root only wraps the caller's trigger content, which follows the surrounding text like any inline element (the panel is reset by the popup-root rule) */
 .dx-hover-card {
   position: relative;
   display: inline-block;
