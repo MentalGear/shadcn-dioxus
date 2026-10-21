@@ -32,6 +32,12 @@
   font-weight: var(--dx-label-font-weight, 500);
   gap: var(--dx-label-gap, var(--dx-space-2));
   line-height: var(--dx-label-line-height, 1);
+
+  /* shadcn's `Label` carries `select-none`: tapping or double-clicking a label to reach its control must not select its words. Backlog row 294; the reason is on `USER_SELECT_ALLOW` in `scripts/check-theme-baseline.sh`. */
+
+  /* stylelint-disable-next-line property-no-vendor-prefix -- Safari; the unprefixed form follows on the next line */
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 /* `.cn-label`'s `peer-disabled:opacity-50` and `peer-disabled:cursor-not-allowed`: a label that

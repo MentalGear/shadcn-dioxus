@@ -66,6 +66,12 @@
   padding: 0 var(--dx-space-2);
   color: var(--dx-muted-foreground);
   gap: var(--dx-space-1);
+
+  /* shadcn's `InputGroupAddon` carries `select-none`: the icon or text beside a field is chrome, and a drag across the group must select the field's value, not the addon. Backlog row 294; the reason is on `USER_SELECT_ALLOW` in `scripts/check-theme-baseline.sh`. */
+
+  /* stylelint-disable-next-line property-no-vendor-prefix -- Safari; the unprefixed form follows on the next line */
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .dx-input-group-addon[data-align="start"] {
