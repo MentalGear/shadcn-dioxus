@@ -292,11 +292,14 @@ pub(crate) fn divergence(server: &str, client: &str) -> Option<(String, String)>
     if server == client {
         return None;
     }
-    let prefix = server
+    let mut prefix = server
         .bytes()
         .zip(client.bytes())
         .take_while(|(a, b)| a == b)
         .count();
+    while !server.is_char_boundary(prefix) {
+        prefix -= 1;
+    }
     // Back up to the start of the tag the first difference is in.
     let start = server[..prefix].rfind('<').unwrap_or(0);
     let (s, c) = (&server[start..], &client[start..]);
@@ -306,8 +309,13 @@ pub(crate) fn divergence(server: &str, client: &str) -> Option<(String, String)>
         .zip(c.bytes().rev())
         .take_while(|(a, b)| a == b)
         .count();
-    let end_s = s.len() - suffix;
-    let end_c = c.len() - suffix;
+    let (mut end_s, mut end_c) = (s.len() - suffix, c.len() - suffix);
+    while !s.is_char_boundary(end_s) {
+        end_s += 1;
+    }
+    while !c.is_char_boundary(end_c) {
+        end_c += 1;
+    }
     // Forward to the end of the tag the last difference is in.
     let end_s = s[end_s..].find('>').map_or(s.len(), |i| end_s + i + 1);
     let end_c = c[end_c..].find('>').map_or(c.len(), |i| end_c + i + 1);
@@ -322,7 +330,7 @@ pub(crate) fn divergence(server: &str, client: &str) -> Option<(String, String)>
             t.to_string()
         }
     };
-    Some((cap(&s[..end_s.max(0)]), cap(&c[..end_c.max(0)])))
+    Some((cap(&s[..end_s]), cap(&c[..end_c])))
 }
 
 /// Every component variant demo, as `name/variant`.
