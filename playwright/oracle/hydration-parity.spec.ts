@@ -486,7 +486,8 @@ function duplicateAttrTags(html: string): { raw: string; dup: string }[] {
 }
 
 /**
- * Rule 4c support: builds and runs `playwright/oracle/attr-synth/` (see
+ * Rule 4c support: runs the BUILT `playwright/oracle/attr-synth/` (built by
+ * `tools/ensure-attr-synth.sh`, through the build lock, never here -- row 338) (see
  * that crate's own `src/main.rs` doc comment for the full rationale) and
  * parses its one-JSON-object-per-line stdout. Run once, synchronously, at
  * module load -- same timing as `COMPONENT_NAMES` above -- so the resulting
@@ -511,32 +512,16 @@ type AttrSynthCase = {
 
 function runAttrSynth(): { cases: AttrSynthCase[]; error: string | null } {
   const crateDir = path.join(__dirname, "attr-synth");
-  // Absolute and scoped to this crate on purpose (CLAUDE.md: lane
-  // `CARGO_TARGET_DIR`s must be absolute) -- this also keeps it from being
-  // silently redirected by an inherited `CARGO_TARGET_DIR` a caller may
-  // have set for the main (unrelated, differently-shaped) preview/primitives
-  // workspace build.
-  const env = { ...process.env, CARGO_TARGET_DIR: path.join(crateDir, "target") };
-
-  const build = spawnSync("cargo", ["build", "--release", "--quiet"], {
-    cwd: crateDir,
-    env,
-    timeout: NAV_TIMEOUT,
-    encoding: "utf-8",
-  });
-  if (build.error) {
-    return { cases: [], error: `failed to spawn \`cargo build\` for attr-synth: ${build.error}` };
-  }
-  if (build.status !== 0) {
+  const binPath = path.join(crateDir, "target", "release", "attr-synth");
+  if (!fs.existsSync(binPath)) {
+    // Never build here (row 338): module load runs for `--list` too, outside the build lock.
     return {
       cases: [],
       error:
-        `attr-synth \`cargo build --release\` exited ${build.status}:\n` +
-        `--- stderr ---\n${build.stderr}\n--- stdout ---\n${build.stdout}`,
+        `attr-synth is not built (${binPath}). Run \`playwright/tools/ensure-attr-synth.sh\` (builds it through the ` +
+        "build lock; `npm run test:changed` and tools/run-suite.sh do it for you), then rerun.",
     };
   }
-
-  const binPath = path.join(crateDir, "target", "release", "attr-synth");
   const run = spawnSync(binPath, [], { cwd: crateDir, timeout: NAV_TIMEOUT, encoding: "utf-8" });
   if (run.error) {
     return { cases: [], error: `failed to spawn the attr-synth binary at ${binPath}: ${run.error}` };

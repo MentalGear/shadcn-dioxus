@@ -309,6 +309,10 @@ else
   fi
 fi
 
+# A debug build says so (row 339): playwright/base-url.ts's buildProfile() reads it so the timing specs skip on a
+# lane build whose path names no profile. Never on release: that public dir is what deploys.
+if [ "$profile" = debug ]; then echo debug > "$public_dir/build-profile.txt"; else rm -f "$public_dir/build-profile.txt"; fi
+
 echo "build-ssg: OK -- ${route_count:-?} routes"
 echo "PUBLIC_DIR=$public_dir"
 echo "STALE_HTML=0"
