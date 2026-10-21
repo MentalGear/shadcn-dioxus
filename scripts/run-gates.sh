@@ -11,6 +11,8 @@
 #   --stop-on-fail    stop at the first red gate (default: run everything, report all reds)
 #   --log-dir DIR     per-gate logs + summary.tsv (default: $CARGO_TARGET_DIR/run-gates)
 #   --list            print the gate names and exit
+#   --no-reuse        run every cargo gate even when its result is stored for an identical cargo-input hash
+#                     (also GATE_REUSE=0); see guard 7
 #
 # Exit codes: 0 = every gate ran and passed; 1 = at least one gate red; 2 = bad usage /
 # environment; 3 = green but PARTIAL (--only/--skip/--stop-on-fail hid some gates) -- a partial
@@ -45,14 +47,25 @@
 #  6. stylelint runs with `npx --no-install`: a worktree without node_modules fails loudly
 #     (`npm ci`, never `npm install`, or symlink the main checkout's node_modules -- backlog row 72)
 #     instead of letting npx download an unvetted version.
+#  7. Reuse (backlog row 320). The cargo gates (CARGO_GATES: check-primitives-features, check-attr-spread-collision,
+#     the three clippy arms, `cargo test`) are ~20 of the full gate's ~22 minutes, and a CSS-, spec- or docs-only batch
+#     cannot change their result. So a PASS is stored per (cargo-input hash, toolchain, command line) -- the key of
+#     scripts/gate-reuse.sh, whose inputs are scripts/cargo-inputs-hash.sh's working-tree file set -- and a later run
+#     with the SAME key reuses it, printing `reused from <tree>`; the summary lists every reused gate with the tree it
+#     really ran on and the final line says how many. Only a PASS is stored, a FAIL deletes the stored PASS, a
+#     changed byte in any input is a different key, and --no-reuse (or GATE_REUSE=0) forces the real run. fmt is
+#     never reused (it is under a second). The store is $GATE_REUSE_DIR, default ${LANE_TGT:-/home/user/tgt}/gate-reuse.
 set -uo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
+# shellcheck source=scripts/gate-reuse.sh
+. "$repo_root/scripts/gate-reuse.sh"
 
 die() { echo "run-gates: $*" >&2; exit 2; }
 
-only="" skip="" stop_on_fail=0 list=0 log_dir=""
+only="" skip="" stop_on_fail=0 list=0 log_dir="" reuse=1
+[ "${GATE_REUSE:-1}" = 0 ] && reuse=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --only) only="${2:?--only needs a REGEX}"; shift 2 ;;
@@ -60,7 +73,8 @@ while [ $# -gt 0 ]; do
     --stop-on-fail) stop_on_fail=1; shift ;;
     --log-dir) log_dir="${2:?--log-dir needs a DIR}"; shift 2 ;;
     --list) list=1; shift ;;
-    -h|--help) sed -n '2,14p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    --no-reuse) reuse=0; shift ;;
+    -h|--help) sed -n '2,16p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) die "unknown option: $1 (try --help)" ;;
   esac
 done
@@ -126,6 +140,7 @@ gates=(
   "check-slow-spec-budget|scripts/check-slow-spec-budget.sh"
   "check-docs-no-demo-list|scripts/check-docs-no-demo-list.sh"
   "check-docs-own-components|scripts/check-docs-own-components.sh"
+  "check-gate-reuse|scripts/check-gate-reuse.sh"
   "fmt|cargo fmt --all -- --check"
   "check-primitives-features|scripts/check-primitives-features.sh"
   "clippy-default|cargo clippy --workspace $CLIPPY_FLAGS"
@@ -189,15 +204,46 @@ now() { date +%s.%N; }
 CARGO_GATES='^(clippy-|test$|check-primitives-features$|check-attr-spread-collision$)'
 touched=0
 
+# Guard 7 state: the reuse key is computed once, lazily, at the first cargo gate that would run.
+cargo_cmds=() reuse_key="" reuse_state=unset reuse_pending=() reused=() reused_from=""
+tree_label="$head_sha"; [ "$dirty_files" = 0 ] || tree_label="$head_sha+dirty:$diff_hash"
+reuse_init() { # sets reuse_state to on|off
+  [ "$reuse_state" = unset ] || return 0
+  reuse_state=off
+  [ "$reuse" = 1 ] || { echo "run-gates: reuse off (--no-reuse / GATE_REUSE=0): every cargo gate runs"; return 0; }
+  local g
+  for g in "${gates[@]}"; do [[ "${g%%|*}" =~ $CARGO_GATES ]] && cargo_cmds+=("${g%%|*}=${g#*|}"); done
+  if ! reuse_key="$(gate_reuse_key "$repo_root" "${cargo_cmds[@]}")" || [ -z "$reuse_key" ]; then
+    echo "run-gates: reuse off (could not compute the cargo-input key): every cargo gate runs"; return 0
+  fi
+  if ! mkdir -p "$(gate_reuse_store)" 2>/dev/null; then
+    echo "run-gates: reuse off (cannot create $(gate_reuse_store)): every cargo gate runs"; return 0
+  fi
+  gate_reuse_prune
+  reuse_state=on
+  echo "run-gates: cargo-input key $reuse_key (store $(gate_reuse_store))"
+}
+
 red=() ran=0 hidden=0
 for g in "${gates[@]}"; do
   name="${g%%|*}"; cmd="${g#*|}"
   if { [ -n "$only" ] && ! [[ "$name" =~ $only ]]; } || { [ -n "$skip" ] && [[ "$name" =~ $skip ]]; }; then
     hidden=$((hidden + 1)); continue
   fi
-  if [ "$touched" = 0 ] && [[ "$name" =~ $CARGO_GATES ]]; then
-    scripts/lane-touch.sh "$CARGO_TARGET_DIR" || die "lane-touch failed"
-    touched=1
+  if [[ "$name" =~ $CARGO_GATES ]]; then
+    reuse_init
+    if [ "$reuse_state" = on ] && hit="$(gate_reuse_lookup "$reuse_key" "$name")"; then
+      IFS=$'\t' read -r from_tree from_date from_secs <<<"$hit"
+      printf '>> %-34s PASS  reused from tree %s (ran %s, took %ss)\n' "$name" "$from_tree" "$from_date" "$from_secs"
+      printf '%s\tPASS\t0\t0.0\treused from tree %s (%s, %ss)\n' "$name" "$from_tree" "$from_date" "$from_secs" >> "$summary_tsv"
+      reused+=("$name")
+      case ", $reused_from, " in *", $from_tree, "*) ;; *) reused_from="${reused_from:+$reused_from, }$from_tree" ;; esac
+      ran=$((ran + 1)); continue
+    fi
+    if [ "$touched" = 0 ]; then
+      scripts/lane-touch.sh "$CARGO_TARGET_DIR" || die "lane-touch failed"
+      touched=1
+    fi
   fi
   log="$log_dir/$name.log"
   printf '>> %-34s ' "$name"
@@ -216,6 +262,9 @@ for g in "${gates[@]}"; do
   ran=$((ran + 1))
   printf '%s  %7ss  %s\n' "$status" "$secs" "$why"
   printf '%s\t%s\t%s\t%s\t%s\n' "$name" "$status" "$rc" "$secs" "$log" >> "$summary_tsv"
+  if [ "$reuse_state" = on ] && [[ "$name" =~ $CARGO_GATES ]]; then
+    if [ "$status" = PASS ]; then reuse_pending+=("$name:$secs"); else gate_reuse_forget "$reuse_key" "$name"; fi
+  fi
   if [ "$status" = FAIL ]; then
     red+=("$name")
     echo "   --- last 25 lines of $log"; tail -n 25 "$log" | sed 's/^/   | /'
@@ -223,11 +272,26 @@ for g in "${gates[@]}"; do
   fi
 done
 
+# Guard 7: store the PASSes of the cargo gates that really ran -- only if the cargo inputs are still what the key
+# was taken on (a tree edited under a running gate must not vouch for the new bytes).
+if [ "${#reuse_pending[@]}" -gt 0 ]; then
+  if [ "$(gate_reuse_key "$repo_root" "${cargo_cmds[@]}" 2>/dev/null)" = "$reuse_key" ]; then
+    for p in "${reuse_pending[@]}"; do gate_reuse_record "$reuse_key" "${p%%:*}" "$tree_label" "${p#*:}"; done
+    echo "run-gates: stored ${#reuse_pending[@]} cargo-gate PASS result(s) under key $reuse_key"
+  else
+    echo "run-gates: the cargo inputs changed while the gates ran -- nothing stored for reuse"
+  fi
+fi
+
 echo
 echo "================ run-gates summary (tree $head_sha, diff-hash $diff_hash) ================"
 awk -F'\t' '{ printf "%-34s %-5s rc=%-3s %8ss  %s\n", $1, $2, $3, $4, $5 }' "$summary_tsv"
 total="$(awk -F'\t' '{ s += $4 } END { printf "%.1f", s }' "$summary_tsv")"
 echo "gates run: $ran   red: ${#red[@]}   total: ${total}s"
+if [ "${#reused[@]}" -gt 0 ]; then
+  echo "REUSED (not run now, PASS stored for an identical cargo-input key $reuse_key): ${reused[*]}"
+  echo "  taken from tree(s): $reused_from  -- the cargo inputs of $tree_label are byte-identical to theirs"
+fi
 if [ "${#red[@]}" -gt 0 ]; then
   echo "RED: ${red[*]}"
   exit 1
@@ -237,3 +301,4 @@ if [ "$hidden" -gt 0 ] || [ "$ran" -ne "${#gates[@]}" ]; then
   exit 3
 fi
 echo "ALL GREEN: all ${#gates[@]} gates passed on $head_sha (diff-hash $diff_hash)"
+[ "${#reused[@]}" -eq 0 ] || echo "  of which ${#reused[@]} cargo gate(s) reused from tree $reused_from (identical cargo inputs, key $reuse_key); --no-reuse for a full run"
