@@ -34,7 +34,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (64)
+## Open rows (65)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -102,6 +102,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [341](backlog/341-virtualgrid-header-sort-row-selection-and-cell.md) | VirtualGrid: header sort state, row selection, and controls inside cells | BACKLOG (owner 2026-10-21; amended 09:35). Comes after row 343 (needs its VirtualizeMode); row 342… | M (about 1.5 to 2 days) | primitives |
 | [342](backlog/342-datatable-large-data-variant-on-virtualgrid.md) | DataTable: a large-data variant rendered through VirtualGrid | BACKLOG (owner 2026-10-21; amended 09:35). Needs rows 340, 343 and 341. | S (about 1 day) | components |
 | [343](backlog/343-one-virtualize-mode-in-the-engine-and-a-data.md) | One virtualize mode in the engine, and a data body for Table | BACKLOG (owner 2026-10-21). Comes after 340 and before 341 and 342. | M (about 2 to 2.5 days) | primitives |
+| [344](backlog/344-charts-flash-the-final-drawing-before-their-entry.md) | Charts flash the final drawing before their entry animation on first client-side open | OPEN (owner report 2026-10-21) | S | charts |
 
 ## Done rows (244)
 
