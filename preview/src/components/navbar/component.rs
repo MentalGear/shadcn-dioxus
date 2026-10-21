@@ -8,7 +8,7 @@ use dioxus_primitives::navbar::{
 
 #[component]
 pub fn Navbar(props: NavbarProps) -> Element {
-    let base = attributes!(nav { class: "dx-navbar" });
+    let base = attributes!(nav { class: "dx-navbar", "data-dx-root": "" });
     let merged = merge_attributes(vec![base, props.attributes]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/navbar/style.css") }

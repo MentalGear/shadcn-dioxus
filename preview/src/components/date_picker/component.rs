@@ -252,7 +252,7 @@ pub struct DateRangePickerProps {
 #[component]
 pub fn DatePicker(props: DatePickerProps) -> Element {
     let base = attributes!(div {
-        class: "dx-date-picker"
+        class: "dx-date-picker", "data-dx-root": ""
     });
     let merged = merge_attributes(vec![base, props.attributes]);
     let month_count = props.month_count.max(1);
@@ -316,7 +316,7 @@ pub fn DatePicker(props: DatePickerProps) -> Element {
 #[component]
 pub fn DateRangePicker(props: DateRangePickerProps) -> Element {
     let base = attributes!(div {
-        class: "dx-date-picker"
+        class: "dx-date-picker", "data-dx-root": ""
     });
     let merged = merge_attributes(vec![base, props.attributes]);
     let month_count = props.month_count.max(1);

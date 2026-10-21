@@ -44,7 +44,7 @@ pub fn Trace(
     children: Element,
 ) -> Element {
     let base = attributes!(div {
-        class: "dx-trace",
+        class: "dx-trace", "data-dx-root": "",
         "data-slot": "trace",
     });
     let merged = merge_attributes(vec![base, attributes]);

@@ -11,7 +11,7 @@ use std::time::Duration;
 
 #[component]
 fn StyledToast(props: ToastProps) -> Element {
-    let base = attributes!(div { class: "dx-toast" });
+    let base = attributes!(div { class: "dx-toast", "data-dx-root": "" });
     let merged = merge_attributes(vec![base, props.attributes]);
     rsx! {
         Toast {

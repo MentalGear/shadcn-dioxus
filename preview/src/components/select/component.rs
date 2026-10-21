@@ -254,7 +254,7 @@ fn with_extra_class(base: impl std::fmt::Display, extra: &Option<String>) -> Str
 
 #[component]
 pub fn Select<T: Clone + PartialEq + 'static>(props: SelectProps<T>) -> Element {
-    let base = attributes!(div { class: "dx-select" });
+    let base = attributes!(div { class: "dx-select", "data-dx-root": "" });
     let merged = merge_attributes(vec![base, props.attributes]);
     let trigger_class = with_extra_class("dx-select-trigger", &props.trigger_class);
     let list_class = with_extra_class("dx-select-list", &props.list_class);
@@ -311,7 +311,7 @@ pub fn Select<T: Clone + PartialEq + 'static>(props: SelectProps<T>) -> Element 
 
 #[component]
 pub fn SelectMulti<T: Clone + PartialEq + 'static>(props: SelectMultiProps<T>) -> Element {
-    let base = attributes!(div { class: "dx-select" });
+    let base = attributes!(div { class: "dx-select", "data-dx-root": "" });
     let merged = merge_attributes(vec![base, props.attributes]);
     let trigger_class = with_extra_class("dx-select-trigger", &props.trigger_class);
     let list_class = with_extra_class("dx-select-list", &props.list_class);

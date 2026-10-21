@@ -137,7 +137,7 @@ pub struct CommandProps<T: Clone + PartialEq + 'static = String> {
 /// `ComboboxInput`/`ComboboxList`.
 #[component]
 pub fn Command<T: Clone + PartialEq + 'static>(props: CommandProps<T>) -> Element {
-    let base = attributes!(div { class: "dx-command" });
+    let base = attributes!(div { class: "dx-command", "data-dx-root": "" });
     let merged = merge_attributes(vec![base, props.attributes]);
 
     rsx! {

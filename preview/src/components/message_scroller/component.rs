@@ -39,7 +39,7 @@ pub fn MessageScrollerProvider(props: MessageScrollerProviderProps) -> Element {
 #[component]
 pub fn MessageScroller(props: MessageScrollerProps) -> Element {
     let base = attributes!(div {
-        class: "dx-message-scroller",
+        class: "dx-message-scroller", "data-dx-root": "",
         "data-slot": "message-scroller",
     });
     let merged = merge_attributes(vec![base, props.attributes]);

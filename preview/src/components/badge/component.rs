@@ -67,7 +67,7 @@ pub fn Badge(props: BadgeProps) -> Element {
 
 #[component]
 fn BadgeElement(props: BadgeProps) -> Element {
-    let base = attributes!(span { class: "dx-badge" });
+    let base = attributes!(span { class: "dx-badge", "data-dx-root": "" });
     // `data-style` reflects this wrapper's own typed `variant` prop, not a
     // caller default -- owned-wins.
     let owned = attributes!(span { "data-style": props.variant.class() });

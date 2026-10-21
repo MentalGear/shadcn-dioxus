@@ -1146,6 +1146,96 @@ html[data-theme="light"] [class~="dxc-system"] {
 }
 
 /* ============================================================================
+ * Component root: an in-flow component is not a child of whatever holds it (docs/backlog.md row 328).
+ *
+ * The in-flow twin of "Popup root" above. A component sits inside a card footer, a muted or centred
+ * block, a table cell, a `white-space: nowrap` toolbar or a prose column, and every INHERITED property
+ * still flows from that host into the component's text: a `line-height: 3` host re-spaced 63 leaf boxes
+ * across 34 components, a `font-weight: 800` host re-weighted 48, a 23px host resized 15 (hostile-host
+ * probe, dev-docs/research/typography-hostile-host-probe.spec.ts.txt). The first answer was a per-root
+ * gate demanding that each of 64 stylesheets declare the root's size and line height (check-declared-
+ * typography, baseline of 83 rows); this is the same fix by construction, once: every component's
+ * namesake root carries `data-dx-root` (`preview/src/components/<dir>/component.rs`; a valueless
+ * attribute, written by the component, not the caller) and this ONE zero-specificity rule gives it the
+ * theme's base value of every inherited property that styles TEXT, so the component starts from the same
+ * typography wherever it is placed and its parts, which declare their own size, weight and leading where
+ * they differ, can no longer see the host. `:where()` keeps it a baseline: any component rule on the
+ * root itself, and the UA rules for `button`, `input` and the like, still win where they should (an
+ * author rule beats the UA sheet whatever its specificity, so a root that IS a form control and relies
+ * on a UA text default opts out, see below).
+ *
+ * Only the OUTERMOST root resets. `:not([data-dx-root] *)` is inside the `:where()`, so it costs no
+ * specificity: a Badge inside a Card keeps the Card's declared 14px / 1.43 / weight (its host is the
+ * component, which is designed), and only the Card itself is cut from the page around it.
+ *
+ * What it deliberately leaves alone, each because it is identity, interaction or document state and
+ * not text styling (scripts/check-component-root-reset.sh lists every inherited mdn-data property
+ * with its decision and fails on one that is neither declared nor reasoned):
+ *   - `font-family`, `color`, `-webkit-text-fill-color`: the app picks its font and its colours.
+ *   - `direction`, `writing-mode`, `text-orientation`, `text-combine-upright`: script and RTL.
+ *   - `cursor`, `pointer-events`, `visibility`, `user-select`: a disabled or hidden host stays so.
+ *   - `font-size`: see the NOTE in the rule.
+ *   - SVG paint, border-collapse/spacing, list styles, caret/accent/scrollbar colour, forced and
+ *     print colour adjust, `color-scheme`, `text-size-adjust`, `text-rendering`: not text styling or
+ *     set once on the document root.
+ * A component that is a wrapper around the caller's content (Tabs, Tooltip, Hover Card, Carousel)
+ * carries no marker, with a `typography-inherit(<root>): <reason>` comment in its style.css.
+ * ========================================================================== */
+:where([data-dx-root]:not([data-dx-root] *)) {
+  font-feature-settings: normal;
+  font-kerning: auto;
+  font-language-override: normal;
+  font-optical-sizing: auto;
+  font-palette: normal;
+  font-size-adjust: none;
+  font-stretch: normal;
+  font-style: normal;
+  font-synthesis: weight style small-caps;
+  font-synthesis-position: auto;
+  font-variant: normal;
+  font-variation-settings: normal;
+  font-weight: 400;
+  hanging-punctuation: none;
+  hyphenate-character: auto;
+  hyphenate-limit-chars: auto;
+  hyphens: manual;
+  letter-spacing: normal;
+  line-break: auto;
+  line-height: normal;
+  line-height-step: 0;
+  orphans: 2;
+  overflow-wrap: normal;
+  quotes: auto;
+  ruby-align: space-around;
+  ruby-merge: separate;
+  ruby-overhang: auto;
+  ruby-position: over;
+  tab-size: 8;
+  text-align: start;
+  text-align-last: auto;
+  text-autospace: no-autospace;
+  text-decoration-skip: auto;
+  text-decoration-skip-ink: auto;
+  text-emphasis: none currentcolor;
+  text-emphasis-position: over;
+  text-indent: 0;
+  text-justify: auto;
+  text-shadow: none;
+  text-spacing-trim: normal;
+  -webkit-text-stroke-color: currentcolor;
+  -webkit-text-stroke-width: 0;
+  text-transform: none;
+  text-underline-offset: auto;
+  text-underline-position: auto;
+  text-wrap-style: auto;
+  white-space: normal;
+  widows: 2;
+  word-break: normal;
+  word-spacing: normal;
+  word-wrap: normal;
+}
+
+/* ============================================================================
  * Press feedback: a pressed control answers the finger (docs/backlog.md row 205).
  *
  * Touch has no hover, so the only acknowledgement a tap gets is the press itself. One

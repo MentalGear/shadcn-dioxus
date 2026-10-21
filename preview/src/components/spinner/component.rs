@@ -42,7 +42,7 @@ pub fn Spinner(
     size: SpinnerSize,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
 ) -> Element {
-    let base = attributes!(span { class: "dx-spinner", "aria-label": "{label}" });
+    let base = attributes!(span { class: "dx-spinner", "data-dx-root": "", "aria-label": "{label}" });
     // `role="status"` is required live-region semantics, not a caller
     // default -- owned-wins.
     let owned = attributes!(span { role: "status", "data-size": size.class() });

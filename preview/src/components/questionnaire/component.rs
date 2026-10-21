@@ -113,7 +113,7 @@ fn HeightAnimation() -> Element {
 #[component]
 pub fn Questionnaire(props: StyledQuestionnaireProps) -> Element {
     let animate = props.animate_height;
-    let base = attributes!(div { class: "dx-questionnaire", "data-slot": "questionnaire" });
+    let base = attributes!(div { class: "dx-questionnaire", "data-dx-root": "", "data-slot": "questionnaire" });
     let merged = merge_attributes(vec![
         base,
         attributes!(div { "data-animate-height": animate.then_some("true") }),

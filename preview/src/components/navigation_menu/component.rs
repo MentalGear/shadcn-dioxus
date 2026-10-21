@@ -9,7 +9,7 @@ use dioxus_primitives::navigation_menu::{
 
 #[component]
 pub fn NavigationMenu(props: NavigationMenuProps) -> Element {
-    let base = attributes!(nav { class: "dx-navigation-menu" });
+    let base = attributes!(nav { class: "dx-navigation-menu", "data-dx-root": "" });
     let merged = merge_attributes(vec![base, props.attributes]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/navigation_menu/style.css") }
