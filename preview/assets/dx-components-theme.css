@@ -1006,6 +1006,146 @@ html[data-theme="light"] [class~="dxc-system"] {
 }
 
 /* ============================================================================
+ * Popup root: a popup is not a child of whatever holds its trigger (docs/backlog.md row 218, 259).
+ *
+ * A popover or dialog is painted in the top layer but stays a DOM descendant of its trigger, and
+ * painting is all the top layer changes: every INHERITED property still flows from the host into the
+ * panel. A Select inside a `dx-card-footer` rendered its scroll buttons at 14px and the same Select
+ * alone at 16px; the toast region inside `dx-component-card-preview` took the card's 14px; a menu in a
+ * muted, centred or monospace host took that colour, alignment and face. Descendant selectors are closed
+ * by `scripts/check-popup-boundary.sh`; this is the other half, by construction: ONE zero-specificity
+ * rule gives every `dx-` popup root the theme's ROOT value of every inherited property, so a popup
+ * starts from the same typography wherever it is rendered and its content (which declares its own
+ * size, colour and weight where it differs) cannot see the host. `:where()` keeps it a baseline: any
+ * component rule, and the UA rules for `[popover]` and `dialog`, are not out-ranked in the wrong
+ * direction, because a declaration made on the root itself still wins.
+ *
+ * What it deliberately leaves alone:
+ *   - `direction`: an RTL page's popups are RTL. Nothing else may touch it.
+ *   - custom properties (`--dx-*`): slots keep composing, so a component that sizes its popup through
+ *     a slot variable keeps working.
+ *   - `color-scheme` (the active mode), `text-size-adjust`, `text-rendering`, `accent-color` and the
+ *     tap-highlight colour: document-level settings an app makes once on the root and no host
+ *     component changes, so inheriting them IS the root value.
+ * Values are the theme's: the sans family, `--dx-text-base`, `--dx-foreground`; every other property
+ * takes its initial value (the root sets none of them). `user-select` is `text`, not `auto`: `auto`
+ * resolves to the parent's `none` and a popup in a button would be unselectable. An app that wants a
+ * different baseline declares it on the popup classes (any specificity beats this rule).
+ *
+ * The property list is the inherited longhands of mdn-data 2.27.1 (`css/properties.json`,
+ * `inherited: true`, which tracks the CSS specs), kept in `scripts/check-popup-root-reset.sh`, which
+ * fails when this rule drops one, sets `direction`, or stops being zero-specificity.
+ * ========================================================================== */
+:where(
+  [popover][class^="dx-"],
+  [popover][class*=" dx-"],
+  dialog[class^="dx-"],
+  dialog[class*=" dx-"]
+) {
+  border-collapse: separate;
+  border-spacing: 0;
+  caption-side: top;
+  caret-animation: auto;
+  caret-color: auto;
+  caret-shape: auto;
+  clip-rule: nonzero;
+  color: var(--dx-foreground);
+  color-interpolation-filters: linearrgb;
+  cursor: auto;
+  dominant-baseline: auto;
+  dynamic-range-limit: no-limit;
+  empty-cells: show;
+  fill: black;
+  fill-opacity: 1;
+  fill-rule: nonzero;
+  font: normal normal 400 normal var(--dx-text-base) / normal var(--dx-font-sans);
+  font-feature-settings: normal;
+  font-kerning: auto;
+  font-language-override: normal;
+  font-optical-sizing: auto;
+  font-palette: normal;
+  font-size-adjust: none;
+  font-synthesis: weight style small-caps;
+  font-synthesis-position: auto;
+  font-variation-settings: normal;
+  font-width: normal;
+  forced-color-adjust: auto;
+  hanging-punctuation: none;
+  hyphenate-character: auto;
+  hyphenate-limit-chars: auto;
+  hyphens: manual;
+  image-orientation: from-image;
+  image-rendering: auto;
+  image-resolution: 1dppx;
+  interactivity: auto;
+  interpolate-size: numeric-only;
+  letter-spacing: normal;
+  line-break: auto;
+  line-height-step: 0;
+  list-style: disc outside none;
+  marker-end: none;
+  marker-mid: none;
+  marker-start: none;
+  math-depth: 0;
+  math-shift: normal;
+  math-style: normal;
+  orphans: 2;
+  overflow-wrap: normal;
+  paint-order: normal;
+  pointer-events: auto;
+  print-color-adjust: economy;
+  quotes: auto;
+  ruby-align: space-around;
+  ruby-merge: separate;
+  ruby-overhang: auto;
+  ruby-position: over;
+  scrollbar-color: auto;
+  speak-as: normal;
+  stroke: none;
+  stroke-dasharray: none;
+  stroke-dashoffset: 0;
+  stroke-linecap: butt;
+  stroke-linejoin: miter;
+  stroke-miterlimit: 4;
+  stroke-opacity: 1;
+  stroke-width: 1px;
+  tab-size: 8;
+  text-align: start;
+  text-align-last: auto;
+  text-anchor: start;
+  text-autospace: no-autospace;
+  text-combine-upright: none;
+  text-decoration-skip: auto;
+  text-decoration-skip-ink: auto;
+  text-emphasis: none currentcolor;
+  text-emphasis-position: over;
+  -webkit-text-fill-color: currentcolor;
+  text-indent: 0;
+  text-justify: auto;
+  text-orientation: mixed;
+  text-shadow: none;
+  text-spacing-trim: normal;
+  -webkit-text-stroke-color: currentcolor;
+  -webkit-text-stroke-width: 0;
+  text-transform: none;
+  text-underline-offset: auto;
+  text-underline-position: auto;
+  text-wrap-style: auto;
+
+  /* `user-select: text`, not `auto`: `auto` resolves to the parent's `none` (a popup rendered inside a button). */
+  /* stylelint-disable-next-line property-no-vendor-prefix -- Safari; the unprefixed form follows on the next line */
+  -webkit-user-select: text;
+  user-select: text;
+  visibility: visible;
+  white-space: normal;
+  widows: 2;
+  word-break: normal;
+  word-spacing: normal;
+  word-wrap: normal;
+  writing-mode: horizontal-tb;
+}
+
+/* ============================================================================
  * Press feedback: a pressed control answers the finger (docs/backlog.md row 205).
  *
  * Touch has no hover, so the only acknowledgement a tap gets is the press itself. One
