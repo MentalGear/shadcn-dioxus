@@ -8,6 +8,7 @@
 #   - a no-base-path template that carries `.base-path-build` is refused, as is the sentinel tree for a base-path copy;
 #   - `--release` and `--template` together are a usage error (the template is not a free choice);
 #   - `prune --apply` never removes `release` or `release-template`, however idle;
+#   - `warm-release` skips a tree whose recorded Cargo.lock hash is the current one (the refresh is for dependency changes);
 #   - scripts/deploy-preview.sh defaults to <LANE_TGT>/release and refuses a tree with the `.no-base-path-only` sentinel
 #     BEFORE it builds anything.
 # Usage: scripts/check-lane-target.sh      (a few seconds, no network)
@@ -52,6 +53,11 @@ rm "$R/release/.no-base-path-only"
 find "$R" -mindepth 1 -maxdepth 3 -exec touch -d '30 days ago' {} + 2>/dev/null
 t prune --older-than 2 --apply >/dev/null 2>&1
 if [ -d "$R/release" ] && [ -d "$R/release-template" ] && [ -d "$R/template" ] && [ ! -d "$R/a" ] && [ ! -d "$R/b" ]; then ok "prune removes idle lane copies, never the warm trees"; else bad "prune kept/removed the wrong dirs: $(ls "$R" | tr '\n' ' ')"; fi
+
+# warm-release: a tree built from the current Cargo.lock is current -- skipped before it queues anything
+mkdir -p "$R/release-template/dx"; sha1sum Cargo.lock | cut -c1-40 > "$R/release-template/.cargo-lock-sha"
+out="$(t warm-release 2>&1)"; rc=$?
+if [ $rc = 0 ] && [[ "$out" == *"is current"* ]]; then ok "warm-release skips a tree whose dependencies match Cargo.lock"; else bad "warm-release must skip a current tree (rc=$rc): $out"; fi
 
 # deploy-preview.sh: refuses the sentinel tree before building, and defaults to <LANE_TGT>/release
 out="$(CARGO_TARGET_DIR="$R/release-template" timeout 20 scripts/deploy-preview.sh 2>&1)"; rc=$?

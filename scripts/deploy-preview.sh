@@ -142,4 +142,4 @@ cp -r "$public_dir"/. "$repo_root/docs/"
 touch "$repo_root/docs/.nojekyll"
 
 echo "==> Done. Review with 'git status'/'git diff --stat -- docs', then commit and push to main."
-echo "==> Refresh step (row 324): $target_dir is warm for this commit; also refresh the no-base-path validation tree: scripts/lane-target.sh warm-release"
+echo "==> Row 324: $target_dir stays warm for the next deploy. The no-base-path validation tree follows Cargo.lock/toolchain changes only: scripts/lane-target.sh warm-release (it says when it is current)."

@@ -2,7 +2,7 @@
 # Isolated, warm CARGO_TARGET_DIRs for lanes (backlog row 116 step 3; rows 98/100).
 #
 #   scripts/lane-target.sh create <name> [--template DIR | --release [--base-path P]] [--root DIR] [--force]
-#   scripts/lane-target.sh warm-release [--base-path P] [--root DIR]
+#   scripts/lane-target.sh warm-release [--base-path P] [--root DIR] [--force]
 #   scripts/lane-target.sh prune  [--root DIR] [--older-than DAYS] [--apply]
 #   scripts/lane-target.sh du     [--root DIR]
 #
@@ -31,10 +31,14 @@
 #   <root>/release            base path `shadcn-dioxus` -- the deploy (scripts/deploy-preview.sh builds in it by default;
 #                             `create <name> --release --base-path shadcn-dioxus` copies it)
 # `warm-release [--base-path P]` is the REFRESH STEP: an in-place, queued (class lane) `build-ssg.sh release` of THIS
-# worktree into the matching tree, which is a few minutes when the tree is warm and the whole cold build the first
-# time. Run it after every deploy (the deploy itself already refreshed `release`, so in practice this is the no-base-path
-# one) from a checkout of the deployed main. `prune` never removes either tree. A release tree is ~4-5 GB: `create` refuses
-# when the disk cannot take the copy (--force to try).
+# worktree into the matching tree: the whole cold build the first time (measured 2026-10-21: 1,309 s), and afterwards a
+# build in which only the workspace crates recompile (measured 864 s: `preview`, 410 s server + 267 s client, and
+# `primitives` are fat-LTO single-codegen-unit crates, so the saving over cold is ~7 min, not the 3-5 min total
+# first hoped for). What the warm tree holds is the DEPENDENCY crates, which change only with Cargo.lock, the
+# toolchain or dx: so the refresh is only needed when Cargo.lock's hash differs from `.cargo-lock-sha` recorded in the tree
+# (`warm-release` says so and skips otherwise; --force builds anyway). Re-running it after every deploy would rebuild
+# the workspace crates that every validation build rebuilds anyway. The deploy itself refreshes `release`. `prune` never
+# removes either tree. A release tree is ~3.5 GB: `create` refuses when the disk cannot take the copy (--force to try).
 set -euo pipefail
 
 root="${LANE_TARGET_ROOT:-/home/user/tgt}"
@@ -113,6 +117,11 @@ case "$cmd" in
   warm-release)
     # The refresh step: build THIS worktree's release SSG in place, in the queue, in the tree that matches the base path.
     tree="$(release_tree "$base_path")"; here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    lock_sha="$(sha1sum "$here/../Cargo.lock" | cut -c1-40)"
+    if [ -d "$tree/dx" ] && [ "$force" -ne 1 ] && [ "$(cat "$tree/.cargo-lock-sha" 2>/dev/null)" = "$lock_sha" ]; then
+      echo "lane-target: $tree is current: its dependencies were built from this Cargo.lock ($lock_sha). A refresh would only rebuild the workspace crates, which every build from it rebuilds anyway; --force to build anyway." >&2
+      exit 0
+    fi
     mkdir -p "$tree"
     if [ -z "$base_path" ]; then
       [ ! -e "$tree/.base-path-build" ] || die "$tree carries .base-path-build (a base-path build got into the no-base-path tree): delete it and rebuild cold"
@@ -123,7 +132,8 @@ case "$cmd" in
     echo "lane-target: warm-release into $tree ($([ -d "$tree/dx" ] && echo "warm: workspace crates only" || echo "COLD: ~25-50 min")), queued as class lane ..." >&2
     LANE_TGT="${LANE_TGT:-$root}" "$here/lane-lock.sh" lane --label "warm-release${base_path:+:$base_path}" -- \
       env CARGO_TARGET_DIR="$tree" CARGO_INCREMENTAL=0 CARGO_BUILD_JOBS=2 BUILD_SSG_NETNS=1 \
-      "$here/build-ssg.sh" release ${base_path:+--base-path "$base_path"}
+      "$here/build-ssg.sh" release ${base_path:+--base-path "$base_path"} || exit 1
+    echo "$lock_sha" > "$tree/.cargo-lock-sha"
     ;;
   du)
     [ -d "$root" ] || die "no such root: $root"

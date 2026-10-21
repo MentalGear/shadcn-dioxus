@@ -15,8 +15,10 @@ Session tooling (paths below default to `LANE_TGT=/home/user/tgt`):
 - `scripts/lane-target.sh create <name> --release [--base-path P]` / `warm-release [--base-path P]` -- the two warm
   RELEASE trees (row 324): `$LANE_TGT/release-template` (no base path, validation) and `$LANE_TGT/release` (base path,
   the deploy's), chosen by base path. A validation release build is `eval "$(scripts/lane-target.sh create v --release)"`
-  then `scripts/build-ssg.sh release` (~3-5 min warm, 22-50 min cold). After every deploy run
-  `scripts/lane-target.sh warm-release` (queued, in place) so the no-base-path tree follows main; the deploy refreshes
+  then `CARGO_TARGET_DIR=$CARGO_TARGET_DIR scripts/build-ssg.sh release`: measured 2026-10-21 on a quiet box, 864 s warm
+  against 1,309 s cold (~7 min saved; `preview` and `primitives` are fat-LTO crates and recompile either way, only the
+  ~1,300 dependency units are warm). The warm trees are 3.5 GB each. Refresh with `scripts/lane-target.sh warm-release`
+  only when `Cargo.lock`, the toolchain or dx changed (it says "is current" and exits otherwise); the deploy refreshes
   `release` itself. Never build with the other's base path: `deploy-preview.sh` refuses the `release-template` tree.
 - Setup for a new container: `CARGO_TARGET_DIR=$LANE_TGT/template scripts/build-ssg.sh debug` once (the warm
   template), `mkdir -p $LANE_TGT`.
