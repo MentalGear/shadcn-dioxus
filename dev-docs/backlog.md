@@ -61,7 +61,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [170](backlog/170-cross-component-css-overrides-190-sites-in-12.md) | Cross-component CSS overrides: 190 sites in 12 sheets declare, in one component's stylesheet, a property that… | NARROWED 2026-10-19 (backlog review): baseline is now 138 sites in 9 sheets (was 190 in 12) | M (the decision and the prototype are… | theme |
 | [188](backlog/188-demo-parity-second-audit-the-owner-s-per.md) | Demo parity, second audit: the owner's per-example list against the original shadcn demos (51 components; row… | DEMO-ONLY ITEMS DONE 2026-10-19 (batch 2: every section-5 demo exists; what remains needs component… | M per batch | docs |
 | [217](backlog/217-dependency-audit-follow-ups-what-users-pay-for.md) | Dependency audit follow-ups (what users pay for in compile time and supply chain) | PARTLY LANDED 2026-10-18 (lane deps 04ad7ddf): features calendar/color-picker, no build script… | S-M each | build |
-| [218](backlog/218-popup-style-isolation-top-layer-popups-stay-dom.md) | Popup style isolation: top-layer popups stay DOM descendants of their trigger, so free-content rules in an… | NARROWED 2026-10-19 (backlog review): PARTLY LANDED 2026-10-15 (lane ancestorleak 900f394 +… | M | overlays |
+| [218](backlog/218-popup-style-isolation-top-layer-popups-stay-dom.md) | Popup style isolation: top-layer popups stay DOM descendants of their trigger, so free-content rules in an… | NARROWED 2026-10-21: PARTLY LANDED 2026-10-15 (lane ancestorleak 900f394 + main-loop 526b51d… | M | overlays |
 | [247](backlog/247-avatar-loading-spec-450ms-floor.md) | avatar-loading spec has a 450 ms floor too tight for this machine | BACKLOG (2026-10-19) | S | tests |
 | [248](backlog/248-select-placeholder-until-mount-hydration-shift.md) | Select renders its placeholder until mount, so a Select with a default value shifts layout at hydration | BACKLOG (2026-10-19) | S-M | components |
 | [249](backlog/249-navigationmenu-indicator.md) | NavigationMenuIndicator (the leftover of closed row 72) | BACKLOG (2026-10-19) | S | components |
@@ -89,7 +89,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [310](backlog/310-questionnaire-height-transition.md) | Questionnaire: animate the height between items instead of snapping | OPEN (owner review 2026-10-20; implemented on lane/b-quest, awaiting merge) | S | questionnaire |
 | [311](backlog/311-combobox-multiple-demo-higher-on-the-page.md) | Combobox multiple demo higher on the component page | DONE 2026-10-20 (claude/batch-b). Owner request. | S | combobox |
 
-## Done rows (241)
+## Done rows (242)
 
 | # | Item | Updated |
 |---|---|---|
@@ -319,6 +319,7 @@ glob `dev-docs/backlog/*116-*` and `dev-docs/backlog/done/*116-*`.
 | [254](backlog/done/254-stale-cargo-lock-in-detached-crates.md) | Stale Cargo.lock in the detached crates (attr-synth, carousel-lab) rewritten by lane spec runs | 2026-10-20 |
 | [255](backlog/done/255-stale-specs-toast-countdown-shim-and-drawer-drag-viewport.md) | Two specs drifted from the product and were red on main: the toast countdown shim and the drawer drag viewport | 2026-10-20 |
 | [256](backlog/done/256-press-release-tail-breaks-geometry-reads-after-a-click.md) | The press-release `scale` tail broke three layout-stability reads taken right after a click | 2026-10-20 |
+| [259](backlog/done/259-popup-root-typography-reset.md) | Popup root: one theme rule resets every inherited property at a popover or dialog (typography half of row 218) | 2026-10-21 |
 | [260](backlog/done/260-hover-color-mix-space-one-token-everywhere.md) | Every hover color-mix reads the theme's mix space (finish row 243) | 2026-10-19 |
 | [261](backlog/done/261-theme-mono-font-token.md) | A --dx-font-mono theme token | 2026-10-19 |
 | [262](backlog/done/262-toast-f6-one-listener-per-page.md) | Toast: one F6 listener per page, not one per ToastProvider | 2026-10-19 |
