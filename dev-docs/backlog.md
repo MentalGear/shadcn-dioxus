@@ -41,7 +41,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (69)
+## Open rows (68)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -91,7 +91,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [321](backlog/321-one-merge-queue-owner-for-main-batch-one.md) | One merge-queue owner for main (batch, one full gate and one suite per batch, deploy) | OPEN, documented (owner approved 2026-10-21; the QUEUE format is in lane-rules.md "Merge queue"… | S | process |
 | [322](backlog/322-run-the-full-release-suite-per-deploy-not.md) | Run the full release suite per deploy, not per merge batch | BACKLOG (owner: maybe, 2026-10-21) | S | tests |
 | [325](backlog/325-heavy-cross-page-oracles-construct-the-causes-away.md) | Heavy cross-page oracles: construct the causes away, run what remains per deploy | PARTLY LANDED 2026-10-21: the popup half (row 259, batch A) and the all-routes half (row 327, batch… | M | tests |
-| [326](backlog/326-lanes-iterate-with-dx-serve-hot-reload-and.md) | Lanes iterate with dx serve hot reload and verify on an SSG build | BACKLOG (owner approved 2026-10-21, if reliable and safe) | S | process |
 | [327](backlog/327-audit-1-visit-each-route-once-per-scheme.md) | Audit 1: visit each route once per scheme in all-routes; measure load vs networkidle in gotoHydrated | PARTLY LANDED 2026-10-21 (queue batch 1, PR #126, c5d02507): all-routes loads each (route, scheme)… | M | tests |
 | [329](backlog/329-audit-3-ssr-vs-first-render-parity-as.md) | Audit 3: SSR-vs-first-render parity as a cargo test (spike first) | PARTLY LANDED 2026-10-21 (queue batch 1, PR #126: the SSR vs first-client-frame parity test runs in… | M | tests |
 | [332](backlog/332-tag-group-remove-buttons-render-an-empty-label-and.md) | Tag Group remove buttons render an empty label and disabled on the server | BACKLOG (found 2026-10-21 by the row-329 spike) | S | components |
@@ -115,7 +114,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [353](backlog/353-carousel-next-arrow-fades-in-after-hydration.md) | Carousel Next arrow fades 0.5 to 1 after hydration (first-paint flicker) | Open (found while fixing row 345; owner approved 2026-10-21). | S-M | components |
 | [354](backlog/354-remove-the-docs-header-language-switcher.md) | Remove the docs header language switcher | Open (owner 2026-10-21: "why is there a lang switcher in the docs menu? If there are no translation… | S | docs |
 
-## Done rows (258)
+## Done rows (259)
 
 | # | Item | Updated |
 |---|---|---|
@@ -371,6 +370,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [320](backlog/done/320-skip-the-cargo-gates-when-the-rust-tree.md) | Skip the cargo gates when the Rust tree is unchanged since the last green full gate | 2026-10-21 |
 | [323](backlog/done/323-finer-spec-selection-map-changed-css-rules-to.md) | Finer spec selection: map changed CSS rules to the classes and routes that use them | 2026-10-21 |
 | [324](backlog/done/324-keep-warm-release-target-trees-for-validation-and.md) | Keep warm release target trees for validation and for deploy | 2026-10-21 |
+| [326](backlog/done/326-lanes-iterate-with-dx-serve-hot-reload-and.md) | Lanes iterate with dx serve hot reload and verify on an SSG build | 2026-10-21 |
 | [328](backlog/done/328-audit-2-declared-typography-every-text-or-icon.md) | Audit 2: declared typography -- every text- or icon-bearing root declares its size, only font-family, colour and direction inherit | 2026-10-21 |
 | [330](backlog/done/330-audit-4-a-policy-cascade-layer-for-theme.md) | Audit 4: a policy cascade layer for theme rules that must win (@layer dx-base, dx-components, dx-policy) | 2026-10-21 |
 | [331](backlog/done/331-audit-5-delete-the-sweeps-that-a-static.md) | Audit 5: delete the sweeps that a static gate or another spec already covers | 2026-10-21 |
