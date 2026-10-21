@@ -49,9 +49,10 @@ fn TreeNode(node: Node, default_open: bool) -> Element {
                     CollapsibleTrigger {
                         r#as: move |attrs: Vec<Attribute>| rsx! {
                             button { style: "{ROW} justify-content: flex-start; width: 100%; border: none; background: transparent; cursor: pointer;", ..attrs,
-                                ChevronRight {
-                                    size: "1rem",
-                                    style: if open() { "transform: rotate(90deg);" } else { "" },
+                                if open() {
+                                    ChevronRight { size: "1rem", style: "transform: rotate(90deg);" }
+                                } else {
+                                    ChevronRight { size: "1rem" }
                                 }
                                 if open() {
                                     FolderOpen { size: "1rem" }

@@ -30,6 +30,7 @@ const URL = `${BASE_URL}/component/questionnaire/`;
 const DEMOS = [
   "main",
   "multiple",
+  "animate_height",
   "freeform",
   "skip",
   "shortcuts",
