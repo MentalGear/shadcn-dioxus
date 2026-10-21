@@ -1,7 +1,7 @@
 ---
 id: 325
 title: "Heavy cross-page oracles: construct the causes away, run what remains per deploy"
-status: "OPEN (owner approved 2026-10-21; first construction in flight)"
+status: "PARTLY LANDED 2026-10-21: the popup half (row 259, batch A) and the all-routes half (row 327, batch…"
 size: "M"
 area: tests
 updated: 2026-10-21
@@ -15,7 +15,7 @@ Heavy cross-page oracles: construct the causes away, run what remains per deploy
 
 ## Status / trigger
 
-**OPEN (owner approved 2026-10-21; first construction in flight)**
+**PARTLY LANDED 2026-10-21: the popup half (row 259, batch A) and the `all-routes` half (row 327, batch 1). Left: `first-paint-styles`, through row 329's follow-up.**
 
 ## Size
 

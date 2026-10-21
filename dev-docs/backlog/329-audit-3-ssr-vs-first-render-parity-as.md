@@ -1,7 +1,7 @@
 ---
 id: 329
 title: "Audit 3: SSR-vs-first-render parity as a cargo test (spike first)"
-status: "BACKLOG (owner 2026-10-21: do it if it holds up; spike first)"
+status: "PARTLY LANDED 2026-10-21 (queue batch 1, PR #126: the SSR vs first-client-frame parity test runs in…"
 size: "M"
 area: tests
 updated: 2026-10-21
@@ -15,7 +15,7 @@ Audit 3: SSR-vs-first-render parity as a cargo test (spike first).
 
 ## Status / trigger
 
-**BACKLOG (owner 2026-10-21: do it if it holds up; spike first)**
+**PARTLY LANDED 2026-10-21 (queue batch 1, PR #126: the SSR vs first-client-frame parity test runs in `cargo test`, verdict below). Left: retire `first-paint-text` after a green round and shrink `first-paint-styles` section 2 and `layout-stability` cause 1.**
 
 ## Size
 

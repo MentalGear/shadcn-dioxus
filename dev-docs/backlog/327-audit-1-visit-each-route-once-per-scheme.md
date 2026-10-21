@@ -1,7 +1,7 @@
 ---
 id: 327
 title: "Audit 1: visit each route once per scheme in all-routes; measure load vs networkidle in gotoHydrated"
-status: "BACKLOG (owner 2026-10-21: do it if it holds up)"
+status: "PARTLY LANDED 2026-10-21 (queue batch 1, PR #126, c5d02507): all-routes loads each (route, scheme)…"
 size: "M"
 area: tests
 updated: 2026-10-21
@@ -15,7 +15,7 @@ Audit 1: visit each route once per scheme in all-routes; measure load vs network
 
 ## Status / trigger
 
-**BACKLOG (owner 2026-10-21: do it if it holds up)**
+**PARTLY LANDED 2026-10-21 (queue batch 1, PR #126, c5d02507): `all-routes` loads each (route, scheme) once. Left: measure `load` plus `html[data-hydrated]` against `networkidle` in `gotoHydrated` on one file.**
 
 ## Size
 
