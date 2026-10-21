@@ -17,6 +17,7 @@
   color: var(--dx-card-foreground);
   font-size: var(--dx-text-sm);
   gap: var(--dx-card-spacing);
+  line-height: calc(1.25 / 0.875);
 }
 
 .dx-card[data-size="sm"] {

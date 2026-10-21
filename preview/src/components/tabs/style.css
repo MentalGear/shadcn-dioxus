@@ -21,6 +21,8 @@
  * Like the size, it reaches the list and triggers through slot variables the root
  * re-declares (not `[data-orientation] .dx-tabs-list`, which a Tabs nested in a
  * vertical Tabs' panel would inherit). */
+
+/* typography-inherit(dx-tabs): the root is a layout wrapper around the caller's panels; shadcn's Tabs declares no size or line height either (the triggers declare theirs) */
 .dx-tabs {
     display: flex;
     width: 100%;

@@ -5,6 +5,7 @@
    their own required layout -- it has to work with zero theme CSS
    applied. Everything below is purely visual. */
 
+/* typography-inherit(dx-carousel): the root wraps the caller's slides, which are page content; shadcn's Carousel declares no size or line height */
 .dx-carousel {
     position: relative;
     width: 100%;
