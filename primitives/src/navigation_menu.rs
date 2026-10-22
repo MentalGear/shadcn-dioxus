@@ -363,6 +363,71 @@ pub fn NavigationMenuList(props: NavigationMenuListProps) -> Element {
     }
 }
 
+/// The props for the [`NavigationMenuIndicator`] component.
+#[derive(Props, Clone, PartialEq)]
+pub struct NavigationMenuIndicatorProps {
+    /// Additional attributes to apply to the indicator element.
+    #[props(extends = GlobalAttributes)]
+    pub attributes: Vec<Attribute>,
+    /// What the indicator draws (the theme's arrow); empty by default.
+    pub children: Element,
+}
+
+/// # NavigationMenuIndicator
+///
+/// The part Radix and shadcn call `NavigationMenuIndicator`: a decoration that sits under the
+/// open item's trigger and follows it as the open item changes. Place it inside
+/// [`NavigationMenuList`], after the items. It is purely visual (`aria-hidden`, presentational).
+///
+/// The primitive measures the open item's trigger against the list (`offsetLeft`/`offsetWidth`,
+/// at rest, never a transformed rect) and writes `--dx-nav-indicator-x` (the inline-start offset,
+/// so it is right in RTL) and `--dx-nav-indicator-width` on the element's own `style`, so the theme positions it with plain
+/// CSS. The measurement runs when the open item changes. It is not re-run on a window resize
+/// while a panel stays open: a resize closes nothing here, so a narrow-to-wide resize with a
+/// panel open leaves it at the old offset until the next switch.
+///
+/// This must be used inside a [`NavigationMenu`] component.
+///
+/// ## Data attributes
+/// - `data-state`: `visible` while an item is open, `hidden` otherwise.
+#[component]
+pub fn NavigationMenuIndicator(props: NavigationMenuIndicatorProps) -> Element {
+    let ctx: NavigationMenuContext = use_context();
+    let id = use_unique_id();
+    let open = ctx.open;
+
+    use_effect(move || {
+        let is_open = open().is_some();
+        let _ = dioxus::document::eval(
+            r#"const [id, isOpen] = await dioxus.recv();
+            const el = document.getElementById(id);
+            if (!el) return;
+            const trigger = el.parentElement && el.parentElement.querySelector(':scope > li[data-state="open"] > button');
+            if (!isOpen || !trigger) return;
+            const item = trigger.closest('li');
+            const rtl = getComputedStyle(el.parentElement).direction === 'rtl';
+            const x = rtl ? el.parentElement.clientWidth - item.offsetLeft - item.offsetWidth : item.offsetLeft;
+            el.style.setProperty('--dx-nav-indicator-x', x + 'px');
+            el.style.setProperty('--dx-nav-indicator-width', item.offsetWidth + 'px');"#,
+        )
+        .send((id.cloned(), is_open));
+    });
+
+    let attributes = merge_attributes(vec![
+        attributes!(li { id: id.cloned() }),
+        props.attributes,
+        attributes!(li {
+            role: "presentation",
+            aria_hidden: "true",
+            "data-state": if open().is_some() { "visible" } else { "hidden" },
+        }),
+    ]);
+
+    rsx! {
+        li { ..attributes, {props.children} }
+    }
+}
+
 #[derive(Clone, Copy)]
 struct NavigationMenuItemContext {
     index: ReadSignal<usize>,

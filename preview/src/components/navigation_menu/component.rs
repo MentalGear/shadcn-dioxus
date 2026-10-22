@@ -3,7 +3,7 @@ use dioxus_icons::lucide::ChevronDown;
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::merge_attributes;
 use dioxus_primitives::navigation_menu::{
-    self, NavigationMenuContentProps, NavigationMenuItemProps, NavigationMenuLinkProps,
+    self, NavigationMenuContentProps, NavigationMenuIndicatorProps, NavigationMenuItemProps, NavigationMenuLinkProps,
     NavigationMenuListProps, NavigationMenuProps, NavigationMenuTriggerProps,
 };
 
@@ -92,6 +92,22 @@ pub fn NavigationMenuLink(props: NavigationMenuLinkProps) -> Element {
             onclick: props.onclick,
             attributes: merged,
             {props.children}
+        }
+    }
+}
+
+/// shadcn's `NavigationMenuIndicator`: the arrow under the open item's trigger. The theme draws
+/// the arrow (`.dx-navigation-menu-indicator-arrow`, Nova `cn-navigation-menu-indicator-arrow`);
+/// the primitive only measures where the open trigger is.
+#[component]
+pub fn NavigationMenuIndicator(props: NavigationMenuIndicatorProps) -> Element {
+    let base = attributes!(li { class: "dx-navigation-menu-indicator" });
+    let merged = merge_attributes(vec![base, props.attributes]);
+    rsx! {
+        document::Link { rel: "stylesheet", href: asset!("/src/components/navigation_menu/style.css") }
+        navigation_menu::NavigationMenuIndicator {
+            attributes: merged,
+            div { class: "dx-navigation-menu-indicator-arrow" }
         }
     }
 }

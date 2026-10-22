@@ -93,3 +93,16 @@ here are fixed.
 ## Motion
 
 Opening content slides in over `--dx-motion-duration-slow` and out over `--dx-motion-duration-base` (`opacity`, `scale` and `translate`, never `transform`); the trigger chevron rotates with `--dx-motion-ease-standard`. Retune with those tokens. Reduced motion swaps in `--dx-motion-duration-reduced`. Nothing loops. See [Motion](/docs#motion) for the tokens, reduced motion and the per-component table.
+
+## Indicator
+
+`NavigationMenuIndicator` is shadcn's optional arrow under the open item's trigger. Put it inside the
+`NavigationMenuList`, after the items. It is decorative (`aria-hidden`), fades in while an item is open
+(`data-state="visible"`), and slides to the new trigger when the open item changes.
+
+```rust
+NavigationMenuList {
+    NavigationMenuItem { index: 0usize, /* trigger and content */ }
+    NavigationMenuIndicator {}
+}
+```
