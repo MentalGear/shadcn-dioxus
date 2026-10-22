@@ -26,7 +26,10 @@ Session tooling (paths below default to `LANE_TGT=/home/user/tgt`):
 ## Worktree and files
 - Work ONLY in your own git worktree, on its own branch (`lane/<name>`). Never touch the main checkout or another
   lane's worktree. Do not push. Symlink `playwright/node_modules` and `preview/node_modules` from the main checkout
-  (never `npm install`).
+  (installed there with `pnpm install --frozen-lockfile`; pnpm's layout is relative symlinks into `.pnpm`, so the
+  symlink resolves), or run `pnpm install --frozen-lockfile` inside the worktree (hard links from the shared store,
+  seconds). Never `pnpm add`/`update` or any install that rewrites the lock: the lockfile pins the Playwright that
+  matches `/opt/pw-browsers` (backlog rows 72, 359).
 - Edit ONLY the files your prompt says you own. If you must touch another file, stop and say so in the report.
 - Commit with the default git identity (never `-c user.email`, `GIT_AUTHOR_*`/`GIT_COMMITTER_*` or a worktree config
   identity: GitHub shows any other committer as Unverified). Commit in your worktree: Conventional Commits `type(scope): subject`, a body with the why and the evidence, and the
@@ -55,7 +58,7 @@ Session tooling (paths below default to `LANE_TGT=/home/user/tgt`):
   `build-ssg.sh` concurrent with another SSG build needs `BUILD_SSG_NETNS=1` too.
 - A server or watcher is never started inside the lock (it would be killed with the group anyway); serve through
   `lane-ssg.sh`, or start it outside the queue. Never create another target dir by hand, never `cargo clean`.
-- Playwright: `--workers=2` at most, and every run under its own lock: `flock $LANE_TGT/pw.lock npx playwright test ...` (ten lanes' browsers at once would OOM). A crash, "Target closed" or browser-disconnected failure is checked against
+- Playwright: `--workers=2` at most, and every run under its own lock: `flock $LANE_TGT/pw.lock pnpm exec playwright test ...` (ten lanes' browsers at once would OOM). A crash, "Target closed" or browser-disconnected failure is checked against
   `dmesg | grep -i 'killed process' | tail` before it is believed.
 
 ## Shared targets judge freshness by mtime (row 216)
@@ -80,7 +83,7 @@ Use the cheapest tool that answers the question, in this order:
    this step and use step 2.
 2. **Verify on one `lane-ssg` build** with the diff-based spec run, never a hand-picked list:
    `cd playwright && PLAYWRIGHT_BASE_URL=http://127.0.0.1:<port> PW_BUILD_PROFILE=debug flock /home/user/tgt/pw.lock
-   npm run test:changed -- --workers=2` (details in "Before handback" step 3; `node tools/select.mjs --explain`
+   pnpm run test:changed -- --workers=2` (details in "Before handback" step 3; `node tools/select.mjs --explain`
    says which specs and why; `CHANGED_RANGE=A..B` for a range other than your branch). Specs run on SSG output,
    not on `dx serve`, because the first paint and hydration are what they test.
 3. **The full suite is the main loop's**, once per merge batch (`playwright/tools/run-suite.sh`, "Running the
@@ -96,7 +99,7 @@ Use the cheapest tool that answers the question, in this order:
    `run-gates.sh`: the main loop runs it once on the merged tree.
 3. Run your own specs plus the existing specs of everything you touched on a `lane-ssg` build that you verified
    contains your change, with ONE command: `cd playwright && PLAYWRIGHT_BASE_URL=http://127.0.0.1:<port> flock
-   /home/user/tgt/pw.lock npm run test:changed -- --workers=2` (`tools/test-changed.sh`: runs exactly the specs
+   /home/user/tgt/pw.lock pnpm run test:changed -- --workers=2` (`tools/test-changed.sh`: runs exactly the specs
    `tools/select.mjs` maps your diff to, on `ssg.local.config.ts`; `CHANGED_RANGE=A..B` for another range,
    `CHANGED_MATRIX=1` to add the route-matrix specs; "no spec covers the diff" means docs/gates/tooling only; a changed `preview/assets/*.css` is read rule by rule -- the page-scoped matrix specs run only the tests of the pages the changed rules reach, the owning component's specs and every spec that spells a changed class are added, anything it cannot place keeps the whole broad set; `node playwright/tools/select.mjs --explain` says why, `CHANGED_FULL_CSS=1` forces the old behaviour; row 323).
    Quote its summary line in your report. Do not pick the specs by hand: `node playwright/tools/select.mjs --explain` lists the specs
@@ -109,7 +112,7 @@ Use the cheapest tool that answers the question, in this order:
    `BROAD_EXTRA`); a changed spec -> itself; a changed helper -> the specs importing it; `fixtures.ts`, `base-url.ts`
    or a config -> every spec. A single-component change leaves the matrix specs out (add `--matrix`, or run them with
    `--grep <component>`). Run the list with
-   `PW_SPECS_FILE=<file> npx playwright test --config=suite.local.config.ts` (`select.mjs > <file>`) under
+   `PW_SPECS_FILE=<file> pnpm exec playwright test --config=suite.local.config.ts` (`select.mjs > <file>`) under
    `flock $LANE_TGT/pw.lock`. The full suite is the main loop's, run as duration-balanced chunks
    (`playwright/tools/run-suite.sh`, "Running the suite" below). A change to shared plumbing (a primitive, `merge_attributes`, the theme, a component other
    components compose such as Button) also needs the specs of its consumers: each lane green alone proves nothing about

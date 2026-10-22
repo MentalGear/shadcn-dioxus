@@ -50,9 +50,15 @@ jobs:
     steps:
       # Do our best to cache the toolchain and node install steps
       - uses: actions/checkout@v4
+      # pnpm version comes from playwright/package.json "packageManager" (row 359)
+      - uses: pnpm/action-setup@v4.1.0
+        with:
+          package_json_file: playwright/package.json
       - uses: actions/setup-node@v4
         with:
           node-version: lts/*
+          cache: pnpm
+          cache-dependency-path: playwright/pnpm-lock.yaml
       - uses: DioxusLabs/dioxus-ci/actions/setup-dioxus@v0.1.0
         with:
           toolchain: 1.88.0
@@ -62,11 +68,11 @@ jobs:
         with:
           version: 0.7.9
       - name: Install dependencies
-        run: cd ./playwright && npm ci
+        run: cd ./playwright && pnpm install --frozen-lockfile
       - name: Install Playwright Browsers
-        run: cd ./playwright && npx playwright install --with-deps
+        run: cd ./playwright && pnpm exec playwright install --with-deps
       - name: Run Playwright tests
-        run: cd ./playwright && npx playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
+        run: cd ./playwright && pnpm exec playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
       - name: Upload blob report to GitHub Actions Artifacts
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
@@ -97,9 +103,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # pnpm version comes from playwright/package.json "packageManager" (row 359)
+      - uses: pnpm/action-setup@v4.1.0
+        with:
+          package_json_file: playwright/package.json
       - uses: actions/setup-node@v4
         with:
           node-version: lts/*
+          cache: pnpm
+          cache-dependency-path: playwright/pnpm-lock.yaml
       - uses: DioxusLabs/dioxus-ci/actions/setup-dioxus@v0.1.0
         with:
           toolchain: 1.88.0
@@ -109,9 +121,9 @@ jobs:
         with:
           version: 0.7.9
       - name: Install dependencies
-        run: cd ./playwright && npm ci
+        run: cd ./playwright && pnpm install --frozen-lockfile
       - name: Install Playwright Browsers
-        run: cd ./playwright && npx playwright install --with-deps chromium
+        run: cd ./playwright && pnpm exec playwright install --with-deps chromium
       - name: Build the fullstack SSG artifact
         # --force-sequential: dx otherwise races its own client and server
         # sub-builds during the SSG render pass (scripts/deploy-preview.sh's
@@ -130,7 +142,7 @@ jobs:
           echo "::error::static server on :8090 never came up"
           exit 1
       - name: Run the hydration-parity oracle against the static SSG site
-        run: cd ./playwright && npx playwright test --config=ssg.local.config.ts oracle/hydration-parity.spec.ts
+        run: cd ./playwright && pnpm exec playwright test --config=ssg.local.config.ts oracle/hydration-parity.spec.ts
       - name: Upload Playwright report
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4

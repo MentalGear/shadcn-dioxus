@@ -43,12 +43,16 @@ jobs:
     steps:
       # Do our best to cache the toolchain and node install steps
       - uses: actions/checkout@v4
+      # pnpm version comes from preview/package.json "packageManager" (row 359)
+      - uses: pnpm/action-setup@v4.1.0
+        with:
+          package_json_file: preview/package.json
       - uses: actions/setup-node@v4
         with:
           node-version: lts/*
+          cache: pnpm
+          cache-dependency-path: preview/pnpm-lock.yaml
       - name: Install dependencies
-        run: |
-          npm install --save-dev stylelint-config-idiomatic-order
-          npm install -g stylelint stylelint-config-standard
+        run: cd ./preview && pnpm install --frozen-lockfile
       - name: Stylelint
-        run: cd ./preview && npx stylelint "**/*.css" --max-warnings=0
+        run: cd ./preview && pnpm exec stylelint "src/**/*.css" "assets/**/*.css" --max-warnings=0

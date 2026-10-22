@@ -1,9 +1,11 @@
 {
+  "private": true,
+  "packageManager": "pnpm@10.28.0",
   "devDependencies": {
-    "@axe-core/playwright": "^4.10.2",
-    "@playwright/test": "^1.60.0",
-    "axe-playwright": "^2.1.0",
-    "playwright": "^1.60.0"
+    "@axe-core/playwright": "4.10.2",
+    "@playwright/test": "1.60.0",
+    "axe-playwright": "2.1.0",
+    "playwright": "1.60.0"
   },
   "scripts": {
     "select": "node tools/select.mjs --explain",

@@ -44,9 +44,9 @@
 #     green cannot be quoted for a commit it was not taken on.
 #  5. Any scripts/check-*.sh that is not in the list below fails the run, so a newly added check
 #     cannot silently stay out of the gate set. Add it here AND to CLAUDE.md.
-#  6. stylelint runs with `npx --no-install`: a worktree without node_modules fails loudly
-#     (`npm ci`, never `npm install`, or symlink the main checkout's node_modules -- backlog row 72)
-#     instead of letting npx download an unvetted version.
+#  6. stylelint runs with `pnpm exec`, which never downloads: a worktree without node_modules fails loudly
+#     (`cd preview && pnpm install --frozen-lockfile`, or symlink the main checkout's node_modules --
+#     backlog rows 72, 359) instead of fetching an unvetted version.
 #  7. Reuse (backlog row 320). The cargo gates (CARGO_GATES: check-primitives-features, check-attr-spread-collision,
 #     the three clippy arms, `cargo test`) are ~20 of the full gate's ~22 minutes, and a CSS-, spec- or docs-only batch
 #     cannot change their result. So a PASS is stored per (cargo-input hash, toolchain, command line) -- the key of
@@ -152,7 +152,7 @@ gates=(
   "clippy-web|cargo clippy -p dioxus-primitives -p preview --features dioxus-primitives/web,preview/web $CLIPPY_FLAGS"
   "clippy-server|cargo clippy -p preview --features server $CLIPPY_FLAGS"
   "test|cargo test --workspace"
-  "stylelint|cd preview && npx --no-install stylelint \"src/**/*.css\" \"assets/**/*.css\""
+  "stylelint|cd preview && pnpm exec stylelint \"src/**/*.css\" \"assets/**/*.css\""
 )
 
 if [ "$list" = 1 ]; then

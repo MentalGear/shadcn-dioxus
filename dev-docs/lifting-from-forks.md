@@ -145,7 +145,7 @@ cd preview && dx run --web --port 8080     # ~4 minutes cold
 For the tests, the image's Chromium may not match the pinned Playwright's expected build. Rather than downloading another, point at the installed one — `playwright/oracle.local.config.ts` does exactly this and reuses an already-running server instead of starting its own:
 
 ```bash
-cd playwright && npx playwright test --config=oracle.local.config.ts <spec>
+cd playwright && pnpm exec playwright test --config=oracle.local.config.ts <spec>
 ```
 
 ## 7. The queue, with per-item recipes

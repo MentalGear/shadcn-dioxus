@@ -114,7 +114,7 @@ The control matters: same harness, same page, same keypress, and `Dialog` restor
 To reproduce, with the preview running on :8080:
 
 ```bash
-cd playwright && npx playwright test oracle-focus-restore --project=chromium
+cd playwright && pnpm exec playwright test oracle-focus-restore --project=chromium
 ```
 
 ### `aria-hidden` on background content — a WCAG-class defect
