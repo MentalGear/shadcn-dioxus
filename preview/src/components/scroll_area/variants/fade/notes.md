@@ -1,0 +1,1 @@
+Three cases: a vertical list fading at the end and, once scrolled, at the start (`ScrollFade::Y`); a horizontal strip that follows the reading direction (`ScrollFade::X`, flip it with the button); and a list too short to scroll, which has no fade.

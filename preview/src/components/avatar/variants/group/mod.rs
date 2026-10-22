@@ -17,23 +17,32 @@ pub fn Demo() -> Element {
             flex_direction: "column",
             align_items: "center",
             gap: "1.5rem",
-            AvatarGroup { style: "filter: grayscale(1);", aria_label: "Team",
-                ImageAvatar { src: AVERY_LIN.to_string(), alt: "Avery Lin", "AL" }
-                ImageAvatar { src: CASEY_PARK.to_string(), alt: "Casey Park", "CP" }
-                ImageAvatar { src: PRIYA_NAIR.to_string(), alt: "Priya Nair", "PN" }
+            div { style: "display: flex; flex-direction: column; align-items: center; gap: 0.5rem;",
+                p { style: "margin: 0; color: var(--dx-muted-foreground); font-size: var(--dx-text-sm);", "Overlapping stack" }
+                AvatarGroup { style: "filter: grayscale(1);", aria_label: "Team",
+                    ImageAvatar { src: AVERY_LIN.to_string(), alt: "Avery Lin", "AL" }
+                    ImageAvatar { src: CASEY_PARK.to_string(), alt: "Casey Park", "CP" }
+                    ImageAvatar { src: PRIYA_NAIR.to_string(), alt: "Priya Nair", "PN" }
+                }
             }
-            AvatarGroup { style: "filter: grayscale(1);", aria_label: "Team with a count",
-                ImageAvatar { src: AVERY_LIN.to_string(), alt: "Avery Lin", "AL" }
-                ImageAvatar { src: CASEY_PARK.to_string(), alt: "Casey Park", "CP" }
-                ImageAvatar { src: PRIYA_NAIR.to_string(), alt: "Priya Nair", "PN" }
-                AvatarGroupCount { "+3" }
+            div { style: "display: flex; flex-direction: column; align-items: center; gap: 0.5rem;",
+                p { style: "margin: 0; color: var(--dx-muted-foreground); font-size: var(--dx-text-sm);", "Ending in a count tile" }
+                AvatarGroup { style: "filter: grayscale(1);", aria_label: "Team with a count",
+                    ImageAvatar { src: AVERY_LIN.to_string(), alt: "Avery Lin", "AL" }
+                    ImageAvatar { src: CASEY_PARK.to_string(), alt: "Casey Park", "CP" }
+                    ImageAvatar { src: PRIYA_NAIR.to_string(), alt: "Priya Nair", "PN" }
+                    AvatarGroupCount { "+3" }
+                }
             }
-            AvatarGroup { style: "filter: grayscale(1);", aria_label: "Team with an icon tile",
-                ImageAvatar { src: AVERY_LIN.to_string(), alt: "Avery Lin", "AL" }
-                ImageAvatar { src: CASEY_PARK.to_string(), alt: "Casey Park", "CP" }
-                ImageAvatar { src: PRIYA_NAIR.to_string(), alt: "Priya Nair", "PN" }
-                AvatarGroupCount {
-                    Plus {}
+            div { style: "display: flex; flex-direction: column; align-items: center; gap: 0.5rem;",
+                p { style: "margin: 0; color: var(--dx-muted-foreground); font-size: var(--dx-text-sm);", "Ending in an icon tile" }
+                AvatarGroup { style: "filter: grayscale(1);", aria_label: "Team with an icon tile",
+                    ImageAvatar { src: AVERY_LIN.to_string(), alt: "Avery Lin", "AL" }
+                    ImageAvatar { src: CASEY_PARK.to_string(), alt: "Casey Park", "CP" }
+                    ImageAvatar { src: PRIYA_NAIR.to_string(), alt: "Priya Nair", "PN" }
+                    AvatarGroupCount {
+                        Plus {}
+                    }
                 }
             }
         }

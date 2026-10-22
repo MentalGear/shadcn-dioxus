@@ -1,0 +1,1 @@
+`initial_focus` and `final_focus` as functions of how the dialog was opened: a keyboard open lands on the second field, a mouse open on Cancel, a touch open on the panel; a keyboard close returns focus to a chosen button.
