@@ -1,0 +1,1 @@
+The order is the app's: `order` is the keys of `items`, first to last, and `on_reorder` receives the complete new order after every move by pointer or keyboard. Writing a new order (the Reverse button) re-arranges the list the same way.

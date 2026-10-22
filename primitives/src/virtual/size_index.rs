@@ -37,6 +37,9 @@ pub(crate) struct SizeEstimates {
     count: usize,
     /// `None` selects adaptive estimation (see the module doc).
     per_item: Option<Rc<[u32]>>,
+    /// The engine key of each item (`identity::key_hash` of its `item_key`); `None` keys an item
+    /// by its index. Measured sizes follow the key, so they follow the item through a reorder.
+    keys: Option<Rc<[u64]>>,
 }
 
 impl SizeEstimates {
@@ -46,6 +49,22 @@ impl SizeEstimates {
         Self {
             count,
             per_item: estimate.map(|f| (0..count).map(f).collect()),
+            keys: None,
+        }
+    }
+
+    /// The same estimates with item identity: `keys[i]` is the engine key of item `i` (see
+    /// `identity::engine_keys`). `None` keeps the index as the key.
+    pub(crate) fn with_keys(mut self, keys: Option<Rc<[u64]>>) -> Self {
+        self.keys = keys;
+        self
+    }
+
+    /// The engine key of item `index`.
+    fn key_of(&self, index: usize) -> u64 {
+        match &self.keys {
+            Some(keys) => keys.get(index).copied().unwrap_or(u64::MAX - index as u64),
+            None => index as u64,
         }
     }
 
@@ -53,6 +72,11 @@ impl SizeEstimates {
     fn same_as(&self, other: &Self) -> bool {
         self.count == other.count
             && match (&self.per_item, &other.per_item) {
+                (None, None) => true,
+                (Some(a), Some(b)) => Rc::ptr_eq(a, b),
+                _ => false,
+            }
+            && match (&self.keys, &other.keys) {
                 (None, None) => true,
                 (Some(a), Some(b)) => Rc::ptr_eq(a, b),
                 _ => false,
@@ -82,9 +106,11 @@ impl Node {
 /// Prefix sums over item sizes. See the module doc.
 pub(crate) struct SizeIndex {
     source: SizeEstimates,
-    /// Measured sizes by item index. Entries at or beyond `count` are kept, so a list that
-    /// shrinks and grows back remembers them (the old `item_size_cache` never evicted either).
-    measured: HashMap<usize, u32>,
+    /// Measured sizes by item key (the index without an `item_key`). Entries of items that are
+    /// not in the list now are kept, so a list that shrinks and grows back, or an item that
+    /// leaves a filter and returns, remembers them (the old `item_size_cache` never evicted
+    /// either).
+    measured: HashMap<u64, u32>,
     measured_sum: u64,
     /// 1-based Fenwick array of length `count + 1`.
     tree: Vec<Node>,
@@ -94,12 +120,12 @@ pub(crate) struct SizeIndex {
 
 impl SizeIndex {
     /// Build the index. `O(N + M)` for `N` items and `M` measured sizes.
-    pub(crate) fn new(source: SizeEstimates, measured: HashMap<usize, u32>) -> Self {
+    pub(crate) fn new(source: SizeEstimates, measured: HashMap<u64, u32>) -> Self {
         let count = source.count;
         let measured_sum = measured.values().map(|&v| v as u64).sum();
         let mut tree = vec![Node::default(); count + 1];
         for i in 0..count {
-            tree[i + 1] = match measured.get(&i) {
+            tree[i + 1] = match measured.get(&source.key_of(i)) {
                 Some(&size) => Node {
                     measured: size as i64,
                     ..Node::default()
@@ -158,7 +184,7 @@ impl SizeIndex {
 
     /// The measured size of item `index`, if it has been measured.
     pub(crate) fn measured_size(&self, index: usize) -> Option<u32> {
-        self.measured.get(&index).copied()
+        self.measured.get(&self.source.key_of(index)).copied()
     }
 
     /// The average the adaptive mode weighs an unmeasured item by; 0 in estimate mode (where
@@ -195,7 +221,7 @@ impl SizeIndex {
 
     /// The current size of item `index` (measured, else estimated, else the adaptive average).
     pub(crate) fn size(&self, index: usize) -> u32 {
-        if let Some(&size) = self.measured.get(&index) {
+        if let Some(size) = self.measured_size(index) {
             return size;
         }
         match &self.source.per_item {
@@ -258,7 +284,7 @@ impl SizeIndex {
     /// Record the measured size of item `index`. `O(log N)`. Returns the size it replaced
     /// (`None` the first time). The adaptive average moves with it, for free.
     pub(crate) fn set_measured(&mut self, index: usize, size: u32) -> Option<u32> {
-        let previous = self.measured.insert(index, size);
+        let previous = self.measured.insert(self.source.key_of(index), size);
         match previous {
             Some(old) => self.measured_sum = self.measured_sum - old as u64 + size as u64,
             None => self.measured_sum += size as u64,
@@ -412,7 +438,7 @@ mod tests {
             let estimate: &dyn Fn(usize) -> u32 = &estimate_for;
             let source = SizeEstimates::evaluate(count, Some(estimate));
             let mut measured = HashMap::new();
-            let mut index = SizeIndex::new(source, measured.clone());
+            let mut index = SizeIndex::new(source, HashMap::new());
             assert_matches_naive(&index, count, &measured, Some(estimate), &mut rng);
             for _ in 0..60 {
                 if count == 0 {
@@ -435,7 +461,7 @@ mod tests {
         for count in [1usize, 2, 5, 16, 17, 300] {
             let source = SizeEstimates::evaluate(count, None);
             let mut measured = HashMap::new();
-            let mut index = SizeIndex::new(source, measured.clone());
+            let mut index = SizeIndex::new(source, HashMap::new());
             assert_matches_naive(&index, count, &measured, None, &mut rng);
             for _ in 0..60 {
                 let i = rng.below(count as u64) as usize;
@@ -543,5 +569,37 @@ mod tests {
             keep += built.total() as u64;
             println!("N={count:>9}: old {old:>10.2?} / measurement, index {new:>8.2?} / measurement, one-off build {build:>9.2?} (ignore {keep})");
         }
+    }
+
+    #[test]
+    fn measured_sizes_follow_the_item_key_through_a_reorder() {
+        let estimate: &dyn Fn(usize) -> u32 = &|_| 50;
+        let keyed = |order: &[u64]| {
+            SizeEstimates::evaluate(order.len(), Some(estimate))
+                .with_keys(Some(order.iter().copied().collect()))
+        };
+        let mut index = SizeIndex::new(keyed(&[10, 11, 12]), HashMap::new());
+        index.set_measured(0, 130);
+        assert_eq!(
+            (index.size(0), index.size(1), index.start(1)),
+            (130, 50, 130)
+        );
+        // Reversed: the item measured at 130 px is now last and keeps its size.
+        assert!(index.sync(&keyed(&[12, 11, 10])));
+        assert_eq!(index.measured_size(2), Some(130));
+        assert_eq!(index.measured_size(0), None);
+        assert_eq!(
+            (index.size(0), index.size(2), index.total()),
+            (50, 130, 230)
+        );
+        // An item that leaves and returns remembers its size.
+        assert!(index.sync(&keyed(&[12, 11])));
+        assert_eq!(index.total(), 100);
+        assert!(index.sync(&keyed(&[10, 12, 11])));
+        assert_eq!(index.size(0), 130);
+        // Unkeyed estimates still key by index.
+        let mut plain = SizeIndex::new(SizeEstimates::evaluate(3, Some(estimate)), HashMap::new());
+        plain.set_measured(0, 130);
+        assert_eq!(plain.measured_size(0), Some(130));
     }
 }

@@ -107,6 +107,12 @@ The mode follows the live `count`, so a component whose count crosses the thresh
 The item that last received focus (a link or button inside a row, or the active cell or tile of a grid) stays mounted when you scroll away from it: it is drawn at its own position outside the window (`VirtualList` marks it `data-virtual-pinned`), so focus never falls to the page and Tab or the arrow keys continue from where they were. Moving focus elsewhere releases it, and when a scroll brings the window back to it the same DOM node rejoins the flow without remounting. (`VirtualList` in content-visibility mode keeps every row in the DOM, so there is nothing to pin.)
 <!-- /shared:virtual-engine:focus -->
 
+<!-- shared:virtual-engine:identity -->
+## Identity: `item_key`
+
+A renderer is a count and a function of the index, so on its own it cannot tell who is at an index. After a sort, a filter or a reorder the DOM node, the pinned focus row, the grid's active cell and the measured height of a row would all stay on the slot while the item moved on: focus on a different item, a measured 130 px applied to a 34 px header. The optional `item_key` prop (`VirtualGrid` calls it `row_key`: rows are what it identifies) says who is at an index: a string that is unique and stays with the item. Everything that must survive a change of the view is then keyed by it: the row's DOM node and the state inside it, the row that stays mounted while it holds focus, the grid's active cell, and the engine's measured sizes (a wrapping grid keys a row by the items it holds). Without it the key is the index, which is the old behaviour. The key is read while rendering, so signals it reads re-render the component; the browser still drops focus from a node it has to move, so a reorder that keeps the focused node in place (the common case when one row moves) keeps focus.
+<!-- /shared:virtual-engine:identity -->
+
 <!-- shared:virtual-engine:scroll-chaining -->
 ## Scroll chaining
 

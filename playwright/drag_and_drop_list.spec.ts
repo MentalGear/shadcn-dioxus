@@ -6,6 +6,7 @@ import { gotoHydrated } from "./hydration";
 const URL = `${BASE}/component/drag_and_drop_list/`;
 const REMOVABLE_URL = `${BASE}/component/block/?name=drag_and_drop_list&variant=removable&`;
 const TUNING_URL = `${BASE}/component/block/?name=drag_and_drop_list&variant=tuning&`;
+const CONTROLLED_URL = `${BASE}/component/block/?name=drag_and_drop_list&variant=controlled&`;
 const LOAD_TIMEOUT = 20 * 60 * 1000;
 
 /** Navigate to the DnD page and return the first (main) variant list. */
@@ -246,12 +247,18 @@ test.describe("Drag and drop lifecycle", () => {
     await expect(items.first()).toBeFocused();
   });
 
-  test("grabbed item has aria-grabbed true", async ({ page }) => {
+  test("a lifted item is marked data-is-grabbing, and no item has aria-grabbed (deprecated since ARIA 1.1)", async ({
+    page,
+  }) => {
     const list = await loadMainList(page);
     const items = getItems(list);
     await items.first().click();
     await page.keyboard.press("Enter");
-    await expect(items.first()).toHaveAttribute("aria-grabbed", "true");
+    await expect(items.first()).toHaveAttribute("data-is-grabbing", "true");
+    await expect(list.locator("[aria-grabbed]")).toHaveCount(0);
+    await page.keyboard.press("Escape");
+    await expect(list.locator("[aria-grabbed]")).toHaveCount(0);
+    await expect(list.locator("[data-is-grabbing]")).toHaveCount(0);
   });
 
   test("focus after successful drop lands on moved item", async ({
@@ -821,5 +828,123 @@ test.describe("Axe automated scan", () => {
     await expectNoAxeViolations(page, "drag_and_drop_list: main list", {
       include: 'ul[aria-roledescription="sortable list"]',
     });
+  });
+});
+
+test.describe("Reported order (backlog row 362)", () => {
+  const KEYS: Record<string, string> = {
+    Alpha: "alpha",
+    Bravo: "bravo",
+    Charlie: "charlie",
+    Delta: "delta",
+  };
+
+  async function loadControlled(page: import("@playwright/test").Page) {
+    await gotoHydrated(page, CONTROLLED_URL, { timeout: LOAD_TIMEOUT });
+    const list = page.getByRole("list", { name: "Controlled list" });
+    await expect(list).toBeVisible({ timeout: 30000 });
+    return list;
+  }
+
+  /** The keys of the items in DOM order. */
+  async function domOrder(list: import("@playwright/test").Locator) {
+    const texts = await getItems(list).evaluateAll((nodes) =>
+      nodes.map((node) => (node.textContent ?? "").trim()),
+    );
+    return texts.map((text) => KEYS[text] ?? text).join(",");
+  }
+
+  const reported = (page: import("@playwright/test").Page) =>
+    page.getByTestId("reported-order");
+
+  test("starts in the given order", async ({ page }) => {
+    const list = await loadControlled(page);
+    await expect(reported(page)).toHaveText("alpha,bravo,charlie,delta");
+    expect(await domOrder(list)).toBe("alpha,bravo,charlie,delta");
+  });
+
+  test("the order on_reorder reports equals the DOM order after keyboard moves", async ({
+    page,
+  }) => {
+    const list = await loadControlled(page);
+    const items = getItems(list);
+    await items.first().click();
+    // Space lifts, two arrows move it two slots down, Space drops.
+    await page.keyboard.press("Space");
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("ArrowDown");
+    // Nothing is reported until the drop.
+    await expect(reported(page)).toHaveText("alpha,bravo,charlie,delta");
+    await page.keyboard.press("Space");
+    await expect(reported(page)).toHaveText("bravo,charlie,alpha,delta");
+    expect(await domOrder(list)).toBe("bravo,charlie,alpha,delta");
+    // The moved item keeps focus.
+    await expect(items.nth(2)).toBeFocused();
+
+    // A second move, upwards, from the new order.
+    await page.keyboard.press("Space");
+    await page.keyboard.press("ArrowUp");
+    await page.keyboard.press("ArrowUp");
+    await page.keyboard.press("Space");
+    await expect(reported(page)).toHaveText("alpha,bravo,charlie,delta");
+    expect(await domOrder(list)).toBe("alpha,bravo,charlie,delta");
+  });
+
+  test("Escape cancels: nothing is reported and the order is unchanged", async ({
+    page,
+  }) => {
+    const list = await loadControlled(page);
+    await getItems(list).first().click();
+    await page.keyboard.press("Space");
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("Escape");
+    await expect(reported(page)).toHaveText("alpha,bravo,charlie,delta");
+    expect(await domOrder(list)).toBe("alpha,bravo,charlie,delta");
+    await expect(getItems(list).first()).toBeFocused();
+  });
+
+  test("the order on_reorder reports equals the DOM order after a pointer drag", async ({
+    page,
+  }) => {
+    const list = await loadControlled(page);
+    await dispatchDragLifecycle(page, {
+      sourceIndex: 0,
+      targetIndex: 2,
+      drop: "list",
+      yFraction: 0.8,
+    });
+    await expect(reported(page)).toHaveText("bravo,charlie,alpha,delta");
+    expect(await domOrder(list)).toBe("bravo,charlie,alpha,delta");
+
+    // Back up above the first item.
+    await dispatchDragLifecycle(page, {
+      sourceIndex: 2,
+      targetIndex: 0,
+      drop: "document",
+      yFraction: 0.2,
+    });
+    await expect(reported(page)).toHaveText("alpha,bravo,charlie,delta");
+    expect(await domOrder(list)).toBe("alpha,bravo,charlie,delta");
+  });
+
+  test("a controlled list follows an order the app writes", async ({ page }) => {
+    const list = await loadControlled(page);
+    await page.getByRole("button", { name: "Reverse" }).click();
+    await expect(reported(page)).toHaveText("delta,charlie,bravo,alpha");
+    expect(await domOrder(list)).toBe("delta,charlie,bravo,alpha");
+  });
+
+  test("an uncontrolled list also keeps what it reports (the main demo)", async ({
+    page,
+  }) => {
+    const list = await loadMainList(page);
+    const items = getItems(list);
+    const before = [await itemText(items.nth(0)), await itemText(items.nth(1))];
+    await items.first().click();
+    await page.keyboard.press("Space");
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("Space");
+    await expect.poll(() => itemText(items.nth(0))).toBe(before[1]);
+    expect(await itemText(items.nth(1))).toBe(before[0]);
   });
 });

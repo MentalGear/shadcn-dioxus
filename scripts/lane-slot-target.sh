@@ -5,7 +5,7 @@
 #   scripts/lane-slot-target.sh check-disk <dir>    exit 1 unless free disk - live reservations >= size(dir) + 20% + 2 GB
 #   scripts/lane-slot-target.sh reserve <dir>       the same check, then records a reservation for the caller's pid
 #   scripts/lane-slot-target.sh release             drops it (also dropped when the pid dies)
-#   scripts/lane-slot-target.sh copy <src> <dest>   cp -a of src's entries without .tree-owner
+#   scripts/lane-slot-target.sh copy <src> <dest>   copy of src without .tree-owner and without `incremental/` dirs
 #
 # Slot 0 uses $LANE_TGT/<name> (check, gates, ...), exactly as before. A slot >= 1 compiles
 # at the same time as slot 0 and so cannot share its target dir; its dir (<name>-s1) is created
@@ -23,6 +23,10 @@ die() { echo "lane-slot-target: $*" >&2; exit 1; }
 # Under one flock on $Q/disk.lock: free space minus the bytes live copies already reserved
 # ($Q/disk-reserve/<pid>, one file per owner pid, ignored and removed when that pid is dead) must
 # cover this copy; the reservation is written before the lock is released and dropped by `release`.
+# Row 367: a copy never carries cargo's `incremental/` dirs (3.0 of the template's 6.8 GB): every lane command runs
+# with CARGO_INCREMENTAL=0 (lane-cargo.sh, lane-ssg.sh, run-gates.sh), which neither reads nor writes them, so they
+# were dead weight that made each lane build need 10.4 GB free. The guard's size estimate leaves them out too
+# (`du --exclude`). LANE_COPY_INCREMENTAL=1 keeps them (for a hand-run incremental build).
 # Test hooks: LANE_FREE_KB (fake free space), LANE_DISK_MARGIN_KB (default 2 GB), LANE_RESERVE_PID.
 RES="$Q/disk-reserve"
 live_reserved_kb() { # sums live reservations, deletes dead ones; call under the disk lock
@@ -34,9 +38,10 @@ live_reserved_kb() { # sums live reservations, deletes dead ones; call under the
   done
   echo "$sum"
 }
+slim_du_args() { [ "${LANE_COPY_INCREMENTAL:-0}" = 1 ] || echo "--exclude=incremental"; }
 check_disk() { # $1 = dir whose size is the estimate; $2 = "reserve" to record the reservation for $RESERVE_PID
   local need_kb free_kb held_kb
-  need_kb="$(du -sk "$1" 2>/dev/null | cut -f1)"; need_kb="${need_kb:-0}"
+  need_kb="$(du -sk $(slim_du_args) "$1" 2>/dev/null | cut -f1)"; need_kb="${need_kb:-0}"
   need_kb=$(( need_kb + need_kb / 5 + ${LANE_DISK_MARGIN_KB:-2097152} ))
   mkdir -p "$RES"
   exec 202>>"$Q/disk.lock"; flock 202
@@ -55,7 +60,12 @@ release() { rm -f "$RES/$RESERVE_PID"; }
 # (ENOSPC, kill) can not name another worktree and look like a stale foreign tree (row 356).
 copy_tree() {
   mkdir -p "$2"
-  find "$1" -mindepth 1 -maxdepth 1 ! -name .tree-owner -exec cp -a --reflink=auto -t "$2" {} +
+  if [ "${LANE_COPY_INCREMENTAL:-0}" = 1 ]; then
+    find "$1" -mindepth 1 -maxdepth 1 ! -name .tree-owner -exec cp -a --reflink=auto -t "$2" {} +
+  else
+    # tar keeps modes, mtimes (cargo freshness) and hard links; the excludes are anchored to target/<profile|triple>[/<profile>]
+    tar -C "$1" -cf - --exclude=./.tree-owner --exclude='./*/incremental' --exclude='./*/*/incremental' . | tar -C "$2" -xpf -
+  fi
 }
 
 cmd="${1:-}"; shift || true

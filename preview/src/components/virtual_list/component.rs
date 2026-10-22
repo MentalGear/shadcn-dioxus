@@ -17,6 +17,7 @@ pub fn VirtualList(props: VirtualListProps) -> Element {
             buffer: props.buffer,
             estimate_size: props.estimate_size,
             render_item: props.render_item,
+            item_key: props.item_key,
             virtualize: props.virtualize,
             auto_threshold: props.auto_threshold,
             fade: props.fade,

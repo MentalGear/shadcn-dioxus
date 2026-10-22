@@ -34,7 +34,9 @@
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 
-use crate::r#virtual::{measured_px, use_virtual_bridge, Bridge, Engine, SizeEstimates};
+use crate::r#virtual::{
+    engine_keys, measured_px, render_key, use_virtual_bridge, Bridge, Engine, SizeEstimates,
+};
 pub use crate::r#virtual::{VirtualizeMode, DEFAULT_AUTO_THRESHOLD};
 use crate::{merge_attributes, use_unique_id};
 
@@ -71,6 +73,12 @@ pub struct TableRowsProps {
     pub columns: usize,
     /// Renders the cells of row `idx` (an absolute index); the body owns the `<tr>`.
     pub render_row: Callback<usize, Element>,
+    /// Who is at row `idx`: a string unique in the table that stays with the row when the table
+    /// is sorted, filtered or reordered. Defaults to the index (a row is its slot). With it,
+    /// each `<tr>` is keyed by its item, so focus and state inside a row (a checkbox, an input)
+    /// move with the row through a sort, and the measured row heights of a windowed body follow
+    /// the item. Read while rendering, so signals it reads re-render the body.
+    pub item_key: Option<Callback<usize, String>>,
     /// Extra attributes for the `<tr>` of row `idx`: a class, `data-state`, `aria-selected`.
     /// The body's own `data-virtual-index` and `aria-rowindex` win over a same-named one.
     pub row_attributes: Option<Callback<usize, Vec<Attribute>>>,
@@ -103,6 +111,7 @@ struct BodyProps {
     count: ReadSignal<usize>,
     columns: usize,
     render_row: Callback<usize, Element>,
+    item_key: Option<Callback<usize, String>>,
     row_attributes: Option<Callback<usize, Vec<Attribute>>>,
     row_offset: usize,
     buffer: ReadSignal<usize>,
@@ -122,6 +131,7 @@ pub fn TableRows(props: TableRowsProps) -> Element {
         count,
         columns,
         render_row,
+        item_key,
         row_attributes,
         row_offset,
         buffer,
@@ -144,6 +154,7 @@ pub fn TableRows(props: TableRowsProps) -> Element {
                 count,
                 columns,
                 render_row,
+                item_key,
                 row_attributes,
                 row_offset,
                 buffer,
@@ -157,6 +168,7 @@ pub fn TableRows(props: TableRowsProps) -> Element {
                 count,
                 columns,
                 render_row,
+                item_key,
                 row_attributes,
                 row_offset,
                 buffer,
@@ -188,6 +200,7 @@ fn TableRowsAll(props: BodyProps) -> Element {
     let BodyProps {
         count,
         render_row,
+        item_key,
         row_attributes,
         row_offset,
         attributes,
@@ -198,7 +211,7 @@ fn TableRowsAll(props: BodyProps) -> Element {
     rsx! {
         tbody { ..merged,
             for idx in 0..count() {
-                tr { key: "{idx}", ..row_attrs(row_attributes, idx, row_offset), {render_row(idx)} }
+                tr { key: "{render_key(item_key, idx)}", ..row_attrs(row_attributes, idx, row_offset), {render_row(idx)} }
             }
         }
     }
@@ -211,6 +224,7 @@ fn TableRowsWindowed(props: BodyProps) -> Element {
         count,
         columns,
         render_row,
+        item_key,
         row_attributes,
         row_offset,
         buffer,
@@ -228,6 +242,7 @@ fn TableRowsWindowed(props: BodyProps) -> Element {
             None => DEFAULT_ROW_ESTIMATE,
         };
         SizeEstimates::evaluate(count(), Some(&estimate as &dyn Fn(usize) -> u32))
+            .with_keys(engine_keys(item_key, count()))
     });
 
     // The table announces the whole table's size, since the DOM holds a window.
@@ -269,17 +284,15 @@ fn TableRowsWindowed(props: BodyProps) -> Element {
                 style: "height: {top}px;",
                 td { colspan: "{columns}", style: "height: inherit; padding: 0; border: 0;" }
             }
+            // The `tr` is the root of the loop body: a keyed fragment needs the key on the body's own
+            // root, a `{ let idx = ..; rsx! { tr { key } } }` block wraps it in a keyless node and the
+            // rows are then diffed by position (every row remounted, focus lost; row 361).
             for item in items {
-                {
-                    let idx = item.index();
-                    rsx! {
-                        tr {
-                            key: "{item.key()}",
-                            onresize: onresize(idx),
-                            ..row_attrs(row_attributes, idx, row_offset),
-                            {render_row(idx)}
-                        }
-                    }
+                tr {
+                    key: "{render_key(item_key, item.index())}",
+                    onresize: onresize(item.index()),
+                    ..row_attrs(row_attributes, item.index(), row_offset),
+                    {render_row(item.index())}
                 }
             }
             tr {
