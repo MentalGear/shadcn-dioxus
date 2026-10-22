@@ -61,8 +61,8 @@ last) and the repo cleanup (row 266) wait until every component and feature row 
 - iPhone re-test of press feedback on touch taps (row 295).
 - iPhone re-test right after the deploy: rows 28 and 30, plus the touch-focus and keyboard-inset checklist of the
   2026-10-18 round (rows 226, 227).
-- Decisions: CI back on (rows 4, 33); older WebKit (row 15); the preview-card light tint (row 285); radial tooltips
-  (row 304); ai-elements item 3 (row 265). Decided 2026-10-22: no upstream engagement (rows 6 and 14 closed; nothing
+- Decisions: CI back on (rows 4, 33); older WebKit (row 15); radial tooltips
+  (row 304); ai-elements item 3 (row 265). Decided 2026-10-22: row 285 closed (docs-page only); no upstream engagement (rows 6 and 14 closed; nothing
   from rows 130, 131, 98 is filed upstream).
 
 ## Rules in force

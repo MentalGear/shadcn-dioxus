@@ -1,10 +1,10 @@
 ---
 id: 285
 title: "Docs preview card: a visible light-mode tint without breaking Toggle hover contrast"
-status: "OPEN. Needs the owner's call on the light-mode tint strength once the Toggle/Pagination hover is…"
+status: "CLOSED 2026-10-22: the owner decided it is a docs-page detail only; the near-white light preview…"
 size: "S"
 area: preview
-updated: 2026-10-19
+updated: 2026-10-22
 ---
 
 # Row 285: Docs preview card: a visible light-mode tint without breaking Toggle hover contrast
@@ -18,6 +18,8 @@ keep it at 85/15 (about `#fefefe`, barely visible): a stronger tint (50% gave `#
 (`rgb(248,248,248)`) only 5/255 from the surface where `theme-preset-contrast.spec.ts` requires 6.
 
 ## Status / trigger
+
+**CLOSED 2026-10-22: the owner decided it is a docs-page detail only; the near-white light preview card stays.**
 
 **OPEN.** Needs the owner's call on the light-mode tint strength once the Toggle/Pagination hover is adjusted.
 
