@@ -1,12 +1,5 @@
-use super::super::component::{
-    filter_rows, includes_string, paginate, sort_rows, DataTableColumnHeader, DataTablePagination,
-    DataTableToolbar, SortDirection,
-};
-use crate::components::checkbox::Checkbox;
-use crate::components::table::*;
+use super::super::component::{Column, DataTable, RowFn, SortDirection};
 use dioxus::prelude::*;
-use dioxus_primitives::checkbox::CheckboxState;
-use std::collections::HashSet;
 
 // Fixture shaped like shadcn/ui's own Data Table demo (id/status/email/
 // amount, ~12 rows) per dev-docs/component-backlog.md row 69's demo brief.
@@ -46,151 +39,37 @@ fn format_amount(cents: i64) -> String {
 
 #[component]
 pub fn Demo() -> Element {
-    // Exactly one column is the "active" sort at all times (default:
-    // email ascending) rather than an `Option<(key, dir)>` with a
-    // "nothing sorted" state -- matching the vendored APG sortable-table
-    // reference, which likewise always has exactly one column carrying
-    // `aria-sort` (see `DataTableColumnHeader`'s doc and
+    // The whole table is described once: columns (typed sort keys, the one
+    // filtered column), a row key, and which features are on. The component
+    // owns sort, filter, page and selection (`use_data_table`).
+    //
+    // Exactly one column is the "active" sort at all times (default: email
+    // ascending), matching the vendored APG sortable-table reference, which
+    // likewise always has exactly one column carrying `aria-sort` (see
+    // `DataTableColumnHeader`'s doc and
     // `playwright/oracle/tier1-apg/sortable-table.spec.ts`'s R1).
-    let mut sort_key = use_signal(|| "email");
-    let mut sort_direction = use_signal(|| SortDirection::Ascending);
-    let mut filter = use_signal(String::new);
-    let mut page = use_signal(|| 0usize);
-    let mut page_size = use_signal(|| 5usize);
-    let mut selected = use_signal(HashSet::<&'static str>::new);
-
-    let mut toggle_sort = move |key: &'static str| {
-        if sort_key() == key {
-            sort_direction.set(sort_direction().toggled());
-        } else {
-            sort_key.set(key);
-            sort_direction.set(SortDirection::Ascending);
-        }
-        page.set(0);
-    };
-
-    // Case-insensitive substring match anywhere in the email, not just a
-    // prefix -- shadcn/ui parity, see `includes_string`'s own doc comment
-    // (`state.rs`) for the exact semantics and why.
-    let query = filter();
-    let filtered: Vec<Payment> = filter_rows(PAYMENTS, |p| includes_string(p.email, &query));
-
-    let sorted: Vec<Payment> = match sort_key() {
-        "amount" => sort_rows(&filtered, sort_direction(), |p| p.amount_cents),
-        _ => sort_rows(&filtered, sort_direction(), |p| p.email),
-    };
-
-    let (page_rows, page_count) = paginate(&sorted, page(), page_size());
-
-    let all_visible_selected = !page_rows.is_empty() && page_rows.iter().all(|p| selected().contains(p.id));
-    let any_visible_selected = page_rows.iter().any(|p| selected().contains(p.id));
-    let select_all_state = if all_visible_selected {
-        CheckboxState::Checked
-    } else if any_visible_selected {
-        CheckboxState::Indeterminate
-    } else {
-        CheckboxState::Unchecked
-    };
-    let visible_ids: Vec<&'static str> = page_rows.iter().map(|p| p.id).collect();
+    let columns = vec![
+        Column::new("id", "ID", |p: &Payment| rsx! { "{p.id}" }),
+        Column::new("status", "Status", |p: &Payment| rsx! { "{p.status}" }),
+        // Case-insensitive substring match anywhere in the email, not just a
+        // prefix -- shadcn/ui parity, see `includes_string`'s doc (`state.rs`).
+        Column::new("email", "Email", |p: &Payment| rsx! { "{p.email}" })
+            .sortable(|p: &Payment| p.email)
+            .filterable(|p: &Payment| p.email.to_string()),
+        Column::new("amount", "Amount", |p: &Payment| rsx! { "{format_amount(p.amount_cents)}" })
+            .sortable(|p: &Payment| p.amount_cents),
+    ];
 
     rsx! {
-        div { class: "dx-data-table-demo", style: "display: flex; flex-direction: column; gap: 1rem; width: 100%;",
-            DataTableToolbar {
-                value: filter(),
-                oninput: move |value| {
-                    filter.set(value);
-                    page.set(0);
-                },
-                placeholder: "Filter emails...",
-                aria_label: "Filter by email",
-            }
-            Table {
-                TableHeader {
-                    TableRow {
-                        TableHead {
-                            Checkbox {
-                                checked: select_all_state,
-                                aria_label: "Select all",
-                                on_checked_change: move |state: CheckboxState| {
-                                    let checked = bool::from(state);
-                                    selected
-                                        .with_mut(|set| {
-                                            for id in visible_ids.iter().copied() {
-                                                if checked {
-                                                    set.insert(id);
-                                                } else {
-                                                    set.remove(id);
-                                                }
-                                            }
-                                        });
-                                },
-                            }
-                        }
-                        TableHead { "ID" }
-                        TableHead { "Status" }
-                        DataTableColumnHeader {
-                            sorted: (sort_key() == "email").then_some(sort_direction()),
-                            onclick: move |_| toggle_sort("email"),
-                            "Email"
-                        }
-                        DataTableColumnHeader {
-                            sorted: (sort_key() == "amount").then_some(sort_direction()),
-                            onclick: move |_| toggle_sort("amount"),
-                            "Amount"
-                        }
-                    }
-                }
-                TableBody {
-                    if page_rows.is_empty() {
-                        TableRow {
-                            TableCell { colspan: 5, "No results." }
-                        }
-                    }
-                    for row in page_rows.iter().copied() {
-                        TableRow { key: "{row.id}", selected: selected().contains(row.id),
-                            TableCell {
-                                Checkbox {
-                                    checked: if selected().contains(row.id) {
-                                        CheckboxState::Checked
-                                    } else {
-                                        CheckboxState::Unchecked
-                                    },
-                                    aria_label: "Select row {row.id}",
-                                    on_checked_change: move |state: CheckboxState| {
-                                        let checked = bool::from(state);
-                                        selected
-                                            .with_mut(|set| {
-                                                if checked {
-                                                    set.insert(row.id);
-                                                } else {
-                                                    set.remove(row.id);
-                                                }
-                                            });
-                                    },
-                                }
-                            }
-                            TableCell { "{row.id}" }
-                            TableCell { "{row.status}" }
-                            TableCell { "{row.email}" }
-                            TableCell { "{format_amount(row.amount_cents)}" }
-                        }
-                    }
-                }
-            }
-            DataTablePagination {
-                selected_count: selected().len(),
-                total_count: filtered.len(),
-                page: page(),
-                page_count,
-                page_size: page_size(),
-                page_size_options: vec![5, 10, 20],
-                on_page_size_change: move |value| {
-                    page_size.set(value);
-                    page.set(0);
-                },
-                on_previous: move |_| page.set(page().saturating_sub(1)),
-                on_next: move |_| page.set((page() + 1).min(page_count.saturating_sub(1))),
-            }
+        DataTable::<Payment> {
+            rows: PAYMENTS.to_vec(),
+            columns,
+            row_key: RowFn::new(|p: &Payment| p.id.to_string()),
+            selectable: true,
+            filter_placeholder: "Filter emails...".to_string(),
+            filter_label: "Filter by email".to_string(),
+            page_sizes: vec![5, 10, 20],
+            default_sort: Some(("email".to_string(), SortDirection::Ascending)),
         }
     }
 }
