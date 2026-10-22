@@ -48,6 +48,11 @@ struct TagOptionCtx {
     /// when this is greater than zero, so removability is driven purely by the
     /// presence of a remove button rather than a separate prop.
     remove_button_count: Signal<usize>,
+    /// The tag's accessible text and disabled state, decided during render from props, so a
+    /// [`TagRemoveButton`] paints its label and enabled state on the server (the item registry
+    /// is only filled by an effect).
+    text_value: Memo<String>,
+    disabled: Memo<bool>,
 }
 
 #[derive(Clone, PartialEq)]
@@ -137,23 +142,6 @@ impl TagGroupState {
             .find(|item| item.id == id)
             .map(|item| item.removed)
             .unwrap_or(false)
-    }
-
-    fn text_value(&self, id: &str) -> String {
-        self.items
-            .read()
-            .iter()
-            .find(|item| item.id == id)
-            .map(|item| item.text_value.clone())
-            .unwrap_or_default()
-    }
-
-    fn can_remove_item(&self, id: &str) -> bool {
-        self.items
-            .read()
-            .iter()
-            .find(|item| item.id == id)
-            .is_some_and(TagItem::can_remove)
     }
 
     fn focus_item(&mut self, id: &str) {
@@ -966,6 +954,8 @@ pub fn TagOption<T: Clone + PartialEq + 'static>(props: TagOptionProps<T>) -> El
     use_context_provider(|| TagOptionCtx {
         id: item_id,
         remove_button_count,
+        text_value,
+        disabled,
     });
 
     let item = use_item(
@@ -1050,11 +1040,10 @@ pub fn TagRemoveButton(
         }
     });
 
-    let label = use_memo(move || {
-        let text = state.text_value(&(option.id)());
-        format!("Remove item {text}")
-    });
-    let can_remove = use_memo(move || state.can_remove_item(&(option.id)()));
+    // Both come from the enclosing `TagOption`'s render-time values, not the effect-filled registry
+    // (a removed tag renders nothing, so a mounted button's tag is not removed).
+    let label = use_memo(move || format!("Remove item {}", option.text_value.read()));
+    let can_remove = use_memo(move || !option.disabled.cloned());
 
     // `aria_label` is an overridable default (a descriptive name a caller
     // may want to localize/customize); `type`/`tabindex`/`disabled` are this
