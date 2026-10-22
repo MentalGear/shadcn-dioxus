@@ -112,7 +112,7 @@
   color: var(--dx-foreground);
 }
 
-.dx-data-table-row[data-reorder="source"] {
+.dx-data-table-row[data-reorder="source"] > td:not(:where([popover], dialog) *) {
   opacity: var(--dx-dnd-ghost-opacity, 0.5);
 }
 
