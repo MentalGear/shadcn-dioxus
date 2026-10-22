@@ -8,6 +8,11 @@ DragAndDropList {
     items,
     // Whether the list items should be removable
     is_removable,
+    // Controlled order: the keys of `items`, first to last (omit for an
+    // uncontrolled list that remembers its own order)
+    order,
+    // Called with the complete new order after every move
+    on_reorder,
     // Opacity of the dragged item's ghost, 0.0 to 1.0 (default 0.9)
     ghost_opacity,
     // Room the other items make at the drop slot: a CSS length, or a bare
@@ -15,6 +20,14 @@ DragAndDropList {
     drop_gap,
 }
 ```
+
+## Order: uncontrolled and controlled
+
+Give every item a `key:` on its root element: that key is its identity in the order, in the DOM and for focus (an item without one is identified by its position in `items`). With only `items` the list remembers the order itself. Pass `order` (a `ReadSignal<Vec<String>>` of the keys) and the list shows exactly that order and changes it only when you write a new one; either way `on_reorder` receives the complete new order, in DOM order, after a move by pointer or keyboard (not when an item is dropped where it was). `on_remove` receives the key of a removed item.
+
+## Keyboard
+
+Focus an item, then Space or Enter lifts it, the arrow keys move it (Up and Down; the primitive's `axis: ReorderAxis::Horizontal` uses Left and Right instead, mirrored in right-to-left), Space or Enter drops it, Escape puts it back. Every step is announced through a live region, and the instructions are tied to the list with `aria-describedby`. There is no `aria-grabbed` (deprecated since ARIA 1.1); a lifted item carries `data-is-grabbing`.
 
 ## Ghost and drop gap
 
