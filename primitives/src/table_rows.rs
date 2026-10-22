@@ -284,17 +284,15 @@ fn TableRowsWindowed(props: BodyProps) -> Element {
                 style: "height: {top}px;",
                 td { colspan: "{columns}", style: "height: inherit; padding: 0; border: 0;" }
             }
+            // The `tr` is the root of the loop body: a keyed fragment needs the key on the body's own
+            // root, a `{ let idx = ..; rsx! { tr { key } } }` block wraps it in a keyless node and the
+            // rows are then diffed by position (every row remounted, focus lost; row 361).
             for item in items {
-                {
-                    let idx = item.index();
-                    rsx! {
-                        tr {
-                            key: "{render_key(item_key, idx)}",
-                            onresize: onresize(idx),
-                            ..row_attrs(row_attributes, idx, row_offset),
-                            {render_row(idx)}
-                        }
-                    }
+                tr {
+                    key: "{render_key(item_key, item.index())}",
+                    onresize: onresize(item.index()),
+                    ..row_attrs(row_attributes, item.index(), row_offset),
+                    {render_row(item.index())}
                 }
             }
             tr {

@@ -3,9 +3,9 @@
   "build": "debug",
   "workers": "2",
   "date": "2026-10-21",
-  "tests": 3715,
-  "files": 225,
-  "total_seconds": 10845,
+  "tests": 3721,
+  "files": 226,
+  "total_seconds": 10866,
   "budget_seconds": 17000,
   "max_file_seconds": 3000,
   "note": "seconds = sum of test durations (worker time) on the DEBUG SSG build, 2 workers, 4-core box shared with other lanes; main-thread.spec.ts and scroll-main-thread.spec.ts are release-only (skipped on debug) and carry their RELEASE seconds. release_total_seconds = the same run on a release build. Refresh: playwright/tools/run-suite.sh, then durations.mjs chunk-*.json --write",
@@ -140,6 +140,14 @@
    "skipped": 0,
    "retried": 0
   },
+  "button_group.spec.ts": {
+   "tests": 2,
+   "seconds": 4,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "retried": 0
+  },
   "button-hover.spec.ts": {
    "tests": 4,
    "seconds": 8.4,
@@ -152,14 +160,6 @@
    "tests": 3,
    "seconds": 5.7,
    "passed": 3,
-   "failed": 0,
-   "skipped": 0,
-   "retried": 0
-  },
-  "button_group.spec.ts": {
-   "tests": 2,
-   "seconds": 4,
-   "passed": 2,
    "failed": 0,
    "skipped": 0,
    "retried": 0
@@ -252,6 +252,22 @@
    "skipped": 0,
    "retried": 0
   },
+  "chart_tooltip_follow.spec.ts": {
+   "tests": 33,
+   "seconds": 77.1,
+   "passed": 33,
+   "failed": 0,
+   "skipped": 0,
+   "retried": 0
+  },
+  "chart_tooltip.spec.ts": {
+   "tests": 35,
+   "seconds": 70.9,
+   "passed": 35,
+   "failed": 0,
+   "skipped": 0,
+   "retried": 0
+  },
   "chart-entry-animation.spec.ts": {
    "tests": 25,
    "seconds": 124.7,
@@ -284,18 +300,10 @@
    "skipped": 0,
    "retried": 0
   },
-  "chart_tooltip.spec.ts": {
-   "tests": 35,
-   "seconds": 70.9,
-   "passed": 35,
-   "failed": 0,
-   "skipped": 0,
-   "retried": 0
-  },
-  "chart_tooltip_follow.spec.ts": {
-   "tests": 33,
-   "seconds": 77.1,
-   "passed": 33,
+  "charts_gallery.spec.ts": {
+   "tests": 36,
+   "seconds": 106.5,
+   "passed": 36,
    "failed": 0,
    "skipped": 0,
    "retried": 0
@@ -304,14 +312,6 @@
    "tests": 8,
    "seconds": 254.1,
    "passed": 8,
-   "failed": 0,
-   "skipped": 0,
-   "retried": 0
-  },
-  "charts_gallery.spec.ts": {
-   "tests": 36,
-   "seconds": 106.5,
-   "passed": 36,
    "failed": 0,
    "skipped": 0,
    "retried": 0
@@ -764,6 +764,22 @@
    "skipped": 0,
    "retried": 0
   },
+  "input_group.spec.ts": {
+   "tests": 5,
+   "seconds": 9.8,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "retried": 0
+  },
+  "input_otp.spec.ts": {
+   "tests": 19,
+   "seconds": 32.4,
+   "passed": 19,
+   "failed": 0,
+   "skipped": 0,
+   "retried": 0
+  },
   "input-otp-pattern.spec.ts": {
    "tests": 7,
    "seconds": 12.3,
@@ -780,18 +796,10 @@
    "skipped": 0,
    "retried": 0
   },
-  "input_group.spec.ts": {
-   "tests": 5,
-   "seconds": 9.8,
-   "passed": 5,
-   "failed": 0,
-   "skipped": 0,
-   "retried": 0
-  },
-  "input_otp.spec.ts": {
-   "tests": 19,
-   "seconds": 32.4,
-   "passed": 19,
+  "item-key.spec.ts": {
+   "tests": 6,
+   "seconds": 21.3,
+   "passed": 6,
    "failed": 0,
    "skipped": 0,
    "retried": 0
@@ -900,6 +908,14 @@
    "skipped": 0,
    "retried": 0
   },
+  "message_scroller.spec.ts": {
+   "tests": 26,
+   "seconds": 107.6,
+   "passed": 25,
+   "failed": 0,
+   "skipped": 1,
+   "retried": 0
+  },
   "message-scroller-api.spec.ts": {
    "tests": 10,
    "seconds": 35.3,
@@ -922,14 +938,6 @@
    "passed": 12,
    "failed": 0,
    "skipped": 0,
-   "retried": 0
-  },
-  "message_scroller.spec.ts": {
-   "tests": 26,
-   "seconds": 107.6,
-   "passed": 25,
-   "failed": 0,
-   "skipped": 1,
    "retried": 0
   },
   "modal-exit.spec.ts": {
@@ -972,18 +980,18 @@
    "skipped": 0,
    "retried": 0
   },
-  "nav-scroll-instant.spec.ts": {
-   "tests": 5,
-   "seconds": 40.6,
-   "passed": 5,
-   "failed": 0,
-   "skipped": 0,
-   "retried": 0
-  },
   "nav_link.spec.ts": {
    "tests": 3,
    "seconds": 12.5,
    "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "retried": 0
+  },
+  "nav-scroll-instant.spec.ts": {
+   "tests": 5,
+   "seconds": 40.6,
+   "passed": 5,
    "failed": 0,
    "skipped": 0,
    "retried": 0
@@ -996,18 +1004,18 @@
    "skipped": 0,
    "retried": 0
   },
-  "navigation-menu-indicator.spec.ts": {
-   "tests": 1,
-   "seconds": 2.6,
-   "passed": 1,
-   "failed": 0,
-   "skipped": 0,
-   "retried": 0
-  },
   "navigation_menu.spec.ts": {
    "tests": 30,
    "seconds": 65.1,
    "passed": 30,
+   "failed": 0,
+   "skipped": 0,
+   "retried": 0
+  },
+  "navigation-menu-indicator.spec.ts": {
+   "tests": 1,
+   "seconds": 2.6,
+   "passed": 1,
    "failed": 0,
    "skipped": 0,
    "retried": 0
@@ -1412,18 +1420,18 @@
    "skipped": 0,
    "retried": 0
   },
-  "radial-chart-gap-tooltip.spec.ts": {
-   "tests": 3,
-   "seconds": 8,
-   "passed": 3,
-   "failed": 0,
-   "skipped": 0,
-   "retried": 0
-  },
   "radial_chart.spec.ts": {
    "tests": 20,
    "seconds": 35.8,
    "passed": 20,
+   "failed": 0,
+   "skipped": 0,
+   "retried": 0
+  },
+  "radial-chart-gap-tooltip.spec.ts": {
+   "tests": 3,
+   "seconds": 8,
+   "passed": 3,
    "failed": 0,
    "skipped": 0,
    "retried": 0
@@ -1692,18 +1700,18 @@
    "skipped": 0,
    "retried": 0
   },
-  "toggle.spec.ts": {
-   "tests": 14,
-   "seconds": 25.6,
-   "passed": 14,
-   "failed": 0,
-   "skipped": 0,
-   "retried": 0
-  },
   "toggle_group.spec.ts": {
    "tests": 15,
    "seconds": 28.6,
    "passed": 15,
+   "failed": 0,
+   "skipped": 0,
+   "retried": 0
+  },
+  "toggle.spec.ts": {
+   "tests": 14,
+   "seconds": 25.6,
+   "passed": 14,
    "failed": 0,
    "skipped": 0,
    "retried": 0
@@ -1764,6 +1772,14 @@
    "skipped": 0,
    "retried": 0
   },
+  "virtual_list.spec.ts": {
+   "tests": 17,
+   "seconds": 65,
+   "passed": 16,
+   "failed": 0,
+   "skipped": 1,
+   "retried": 0
+  },
   "virtual-engine.spec.ts": {
    "tests": 5,
    "seconds": 9.2,
@@ -1802,14 +1818,6 @@
    "passed": 4,
    "failed": 0,
    "skipped": 0,
-   "retried": 0
-  },
-  "virtual_list.spec.ts": {
-   "tests": 17,
-   "seconds": 65,
-   "passed": 16,
-   "failed": 0,
-   "skipped": 1,
    "retried": 0
   }
  }

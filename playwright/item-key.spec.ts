@@ -62,8 +62,8 @@ test.describe("VirtualList item_key", () => {
     const frame = await open(page);
     const scroller = frame.locator(".dx-virtual-list-container");
     // Measure every row once by scrolling the whole list past the viewport.
-    const total = await scroller.evaluate((el) => el.scrollHeight);
-    for (let top = 0; top <= total; top += 300) {
+    // The canvas grows as rows are measured, so the end is read again on every step.
+    for (let top = 0; top <= (await scroller.evaluate((el) => el.scrollHeight)); top += 300) {
       await scroller.evaluate((el, t) => (el.scrollTop = t), top);
       await page.waitForTimeout(40);
     }
@@ -115,14 +115,23 @@ test.describe("TableRows item_key", () => {
 
   test("state follows the item through a full reverse", async ({ page }) => {
     const frame = await open(page);
-    await itemCheck(frame, 5).check();
+    // A windowed body unmounts the rows that leave the window (an uncontrolled checkbox there is
+    // reset, by design), and a full reverse sends the top rows to the bottom. So the item
+    // that is checked sits in the middle of the 40 rows (19 -> row 20), which stays in the window.
+    const scroller = frame.locator(".dx-table-container");
+    await scroller.evaluate((el) => (el.scrollTop = 19 * 37 - 100));
+    const id = 19;
+    const middle = itemCheck(frame, id);
+    await expect(middle).toBeVisible(); // the window has followed the scroll
+    await middle.check();
     await press(page, 0, "reorder");
-    await expect(frame.locator('tr[data-virtual-index="0"] [data-item-button]')).toHaveAttribute(
-      "data-item-button",
-      "39",
+    // Item `id` is now row 39 - id: still in the window, same DOM node, still checked.
+    await expect(frame.locator(`tr[data-virtual-index="${39 - id}"] [data-item-check]`)).toHaveAttribute(
+      "data-item-check",
+      String(id),
     );
-    await expect(itemCheck(frame, 5)).toBeChecked();
-    await expect(itemCheck(frame, 39)).not.toBeChecked();
+    await expect(itemCheck(frame, id)).toBeChecked();
+    await expect(itemCheck(frame, 39 - id)).not.toBeChecked();
   });
 
   test("without item_key a row is its slot: focus and state stay on the slot", async ({ page }) => {
