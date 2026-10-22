@@ -20,7 +20,7 @@
 #
 # EXCEPTIONS are in ALLOW below, each with a reason; an entry that no longer matches anything is itself an
 # error (a fixed site must leave the list). ToggleGroup's pressed set is a `HashSet<String>` of item values
-# since row 364, so it needs no exception here.
+# since row 364; only its deprecated index props stay allowlisted.
 #
 # Usage: scripts/check-collection-derive.sh [FILE ...]   (default: every .rs under preview/src/components;
 # explicit files are for self-tests, and skip the stale-entry check)
@@ -43,7 +43,9 @@ if not files:
     sys.exit(2)
 
 # (file suffix, rule id, reason). A rule id is one of the RULES keys.
+TOGGLE = "the deprecated index API of ToggleGroup (`pressed` / `default_pressed` / `on_pressed_change`), kept so old callers compile; the value API is `HashSet<String>`"
 ALLOW = [
+    ("toggle_group/component.rs", "set-usize", TOGGLE),
     ("components/mod.rs", "sort-by", "orders the site's component catalogue (demo names), not rows of a collection"),
 ]
 used = set()
