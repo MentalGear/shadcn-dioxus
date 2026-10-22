@@ -38,7 +38,13 @@ Table {
 ```rust
 Table {
     // The container scrolls: give it a height, and `TableHeader` can stay put above the rows.
-    container_attributes: vec![Attribute::new("style", "max-height: 24rem;", None, false)],
+    // A scroll container must be keyboard-reachable: `tabindex`, a role and a name.
+    container_attributes: vec![
+        Attribute::new("style", "max-height: 24rem;", None, false),
+        Attribute::new("tabindex", "0", None, false),
+        Attribute::new("role", "region", None, false),
+        Attribute::new("aria-label", "Invoices", None, false),
+    ],
     TableHeader { sticky: true,
         TableRow { TableHead { "Invoice" } TableHead { "Status" } TableHead { "Amount" } }
     }
@@ -59,8 +65,9 @@ Table {
 }
 ```
 
-- **Windowed** mounts only the rows in view (plus `buffer`, default 8, each side) between two `aria-hidden` spacer rows, so the table stays a real `<table>`: `<thead>`, `<tr>`, `<td>`. Every row carries `aria-rowindex` (the header counts as row 1; `row_offset` says how many rows come before the data) and the `<table>` carries `aria-rowcount` of the whole table, so a screen reader announces `row 4,001 of 20,001`. Rows are measured as they mount; `estimate_size` (default 35 px) is the first guess. A row that holds focus is not kept mounted when the window leaves it.
+- **Windowed** mounts only the rows in view (plus `buffer`, default 8, each side) between two `aria-hidden` spacer rows, so the table stays a real `<table>`: `<thead>`, `<tr>`, `<td>`. Every row carries `aria-rowindex` (the header counts as row 1; `row_offset` says how many rows come before the data) and the `<table>` carries `aria-rowcount` of the whole table, so a screen reader announces `row 4,001 of 20,001`. Rows are measured as they mount; `estimate_size` (default 37 px) is the first guess. A row that holds focus is not kept mounted when the window leaves it.
 - **`ContentVisibility`** keeps every row in the DOM and in the server's HTML. Unlike a list, a table cannot let the browser skip the off-screen rows: browsers do not apply `content-visibility` to table rows or row groups (measured in Chromium: a `<tbody>` or `<tr>` with `content-visibility: auto` keeps its full height). So here the mode is a plain table, and its cost grows with the row count, which is why `Auto` leaves it at 1,000 rows.
+- Give a fixed column layout (`table-layout: fixed` on the `Table`) when the first paint matters: the server renders a windowed table without rows, so with automatic layout the columns resize once the window mounts.
 - `TableBody` stays as it is, for hand-written rows; it cannot be windowed, because its rows are children, not data.
 
 <!-- shared:virtual-engine:modes -->

@@ -252,7 +252,7 @@ pub struct TableRowsProps {
     /// How many rows to mount beyond each edge of the viewport when windowed. Defaults to 8.
     #[props(default = ReadSignal::new(Signal::new(8)))]
     pub buffer: ReadSignal<usize>,
-    /// The height of row `idx` in px until it is measured. Defaults to 35 for every row.
+    /// The height of row `idx` in px until it is measured. Defaults to 37 for every row.
     pub estimate_size: Option<Callback<usize, u32>>,
     /// How rows are kept cheap: every row in the DOM, or a window of them between spacer rows.
     /// `Auto` (the default) picks by `count`. A table cannot skip off-screen rows the way

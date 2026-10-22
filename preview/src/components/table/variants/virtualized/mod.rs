@@ -24,7 +24,15 @@ pub fn Demo() -> Element {
                 }
             }
             Table {
-                container_attributes: vec![Attribute::new("style", "max-height: 320px;", None, false)],
+                container_attributes: vec![
+                    Attribute::new("style", "max-height: 320px;", None, false),
+                    // A scroll container must be reachable by keyboard.
+                    Attribute::new("tabindex", "0", None, false),
+                    Attribute::new("role", "region", None, false),
+                    Attribute::new("aria-label", "Invoices", None, false),
+                ],
+                // Fixed columns: the server renders no rows, so automatic layout would resize them.
+                style: "table-layout: fixed;",
                 TableHeader { sticky: true,
                     TableRow {
                         TableHead { "Invoice" }

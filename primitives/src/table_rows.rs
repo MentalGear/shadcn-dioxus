@@ -38,9 +38,9 @@ use crate::r#virtual::{measured_px, use_virtual_bridge, Bridge, Engine, SizeEsti
 pub use crate::r#virtual::{VirtualizeMode, DEFAULT_AUTO_THRESHOLD};
 use crate::{merge_attributes, use_unique_id};
 
-/// The height guess, in px, of a row that has not been measured: one line of 14px text with the
-/// styled table's `0.5rem` cell padding and a 1px border.
-pub const DEFAULT_ROW_ESTIMATE: u32 = 35;
+/// The height guess, in px, of a row that has not been measured: one 14px text line (20px) with the
+/// styled table's `0.5rem` cell padding and a 1px border, measured in the demo.
+pub const DEFAULT_ROW_ESTIMATE: u32 = 37;
 
 /// What a `<table>` shares with the [`TableRows`] inside it: the id of the element that scrolls
 /// (the table's container) and the total row count the table announces as `aria-rowcount`.
