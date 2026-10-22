@@ -41,7 +41,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (46)
+## Open rows (51)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -86,11 +86,16 @@ proposing one is closed as out of scope (row 337 is the first).
 | [322](backlog/322-run-the-full-release-suite-per-deploy-not.md) | Run the full release suite per deploy, not per merge batch | BACKLOG (owner: maybe, 2026-10-21) | S | tests |
 | [325](backlog/325-heavy-cross-page-oracles-construct-the-causes-away.md) | Heavy cross-page oracles: construct the causes away, run what remains per deploy | PARTLY LANDED 2026-10-21: the popup half (row 259, batch A) and the all-routes half (row 327, batch… | M | tests |
 | [329](backlog/329-audit-3-ssr-vs-first-render-parity-as.md) | Audit 3: SSR-vs-first-render parity as a cargo test (spike first) | PARTLY LANDED 2026-10-21 (queue batch 1, PR #126: the SSR vs first-client-frame parity test runs in… | M | tests |
-| [341](backlog/341-virtualgrid-header-sort-row-selection-and-cell.md) | VirtualGrid: header sort state, row selection, and controls inside cells | BACKLOG (owner 2026-10-21; amended 09:35). Comes after row 343 (needs its VirtualizeMode); row 342… | M (about 1.5 to 2 days) | primitives |
+| [341](backlog/341-virtualgrid-header-sort-row-selection-and-cell.md) | VirtualGrid: header sort state, row selection, and controls inside cells | 2026-10-22: hooks keyed by row identity (row_key, row 361); comes after rows 360-362… | M (about 1.5 to 2 days) | primitives |
 | [342](backlog/342-datatable-large-data-variant-on-virtualgrid.md) | DataTable: a large-data variant rendered through VirtualGrid | BACKLOG (owner 2026-10-21; amended 09:35; scope widened 2026-10-22). Needs rows 340, 343 and 341.… | S (about 1 day) | components |
 | [355](backlog/355-adopt-google-rust-style-guide-items.md) | Adopt Google Rust style guide items: workspace lint table and conventions | BACKLOG -- Round 6 sweep, after row 267's file split (owner approved 2026-10-21) | S-M | process |
 | [358](backlog/358-all-routes-one-navigation-for-both-schemes.md) | all-routes: one navigation for both schemes (needs a clean forced-colors reset) | BACKLOG. Blocked on one thing: the forced-colors sweep presses Tab from the focus start point… | S | tests |
 | [359](backlog/359-js-tooling-pnpm-minimum-release-age.md) | JS tooling: pnpm in playwright/ and preview/ with minimumReleaseAge, exact pins and install scripts off | BACKLOG (owner approved 2026-10-22, decision card in the "Switching npm to Bun" thread; background… | S-M, about half a day. | tooling |
+| [360](backlog/360-data-view-shared-collection-model.md) | Shared collection model: data_view in primitives (identity, ViewState with manual order, fields, index-returning derive) and the selection count fix | BACKLOG (owner asked 2026-10-22 to deconstruct the collection model to its roots; design note… | M. | primitives |
+| [361](backlog/361-renderer-identity-item-key.md) | Renderer identity: item_key on VirtualList, TableRows and VirtualGrid, engine sizes keyed by item | BACKLOG (owner asked 2026-10-22 to deconstruct the collection model to its roots; design note… | M. | primitives |
+| [362](backlog/362-reorder-gesture-controlled-dnd.md) | Reorder gesture extracted, KeyOrder, DragAndDropList controlled mode with on_reorder | BACKLOG (owner asked 2026-10-22 to deconstruct the collection model to its roots; design note… | M. | primitives |
+| [363](backlog/363-datatable-row-reorder-and-columns.md) | DataTable: reorderable rows (drag handle) and a Columns menu (visibility, keyboard column order) | BACKLOG (owner asked 2026-10-22 to deconstruct the collection model to its roots; design note… | M. | components |
+| [364](backlog/364-togglegroup-value-keyed.md) | ToggleGroup: pressed state keyed by value, not index (optional) | BACKLOG (owner asked 2026-10-22 to deconstruct the collection model to its roots; design note… | S. | components |
 
 ## Done rows (286)
 

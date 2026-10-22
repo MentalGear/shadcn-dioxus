@@ -1,10 +1,10 @@
 ---
 id: 341
 title: "VirtualGrid: header sort state, row selection, and controls inside cells"
-status: "BACKLOG (owner 2026-10-21; amended 09:35). Comes after row 343 (needs its VirtualizeMode); row 342…"
+status: "2026-10-22: hooks keyed by row identity (row_key, row 361); comes after rows 360-362…"
 size: "M (about 1.5 to 2 days)"
 area: primitives
-updated: 2026-10-21
+updated: 2026-10-22
 ---
 
 # Row 341: VirtualGrid: header sort state, row selection, and controls inside cells
@@ -14,6 +14,8 @@ updated: 2026-10-21
 Add the three hooks VirtualGrid needs before it can host a DataTable: `aria-sort` on header cells, a selected state on rows, and keyboard handling for a control (such as a checkbox) inside a cell.
 
 ## Status / trigger
+
+**2026-10-22:** hooks keyed by row identity (`row_key`, row 361); comes after rows 360-362 ([`research/collection-model-2026-10-22.md`](../research/collection-model-2026-10-22.md)).
 
 BACKLOG (owner 2026-10-21; amended 09:35). Comes after row 343 (needs its VirtualizeMode); row 342 needs it.
 
