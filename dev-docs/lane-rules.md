@@ -65,6 +65,27 @@ sources, unless the target's `.tree-owner` stamp already names this worktree; `l
 `gate-at.sh`, `run-gates.sh` (before its first cargo gate) and `build-ssg.sh` (`BUILD_SSG_TOUCH=always|auto|never`) call
 it, and `lane-target.sh create` clears the stamp. After a build, prove your change is in the output (grep the served HTML, CSS or wasm for a string you added).
 
+## The fast loop: dx serve to iterate, test:changed to verify (owner 2026-10-21, row 326)
+
+Use the cheapest tool that answers the question, in this order:
+1. **Iterate on `dx serve`** for markup, CSS and component logic you need to see: no lock queue, no SSG build per
+   edit. Copy a warm target (`eval "$(scripts/lane-target.sh create <lane>)"`, it exports an absolute
+   `CARGO_TARGET_DIR` and `CARGO_INCREMENTAL=0`), then from `preview/`:
+   `CARGO_BUILD_JOBS=2 dx serve --web --port <your port> > /home/user/tgt/dx-serve-<lane>.log 2>&1 &`.
+   After every edit, `scripts/dev-wait.sh <port> --log /home/user/tgt/dx-serve-<lane>.log` before you look: an
+   HTTP 200 proves nothing ([`dx-serve-hot-reload.md`](./dx-serve-hot-reload.md), [`dev-loop.md`](./dev-loop.md):
+   no grepping minified CSS, no `elementFromPoint` after a `pointer-events: none` fix, a `Hotreloading:` line with
+   no rebuild did not take effect). One server per lane; kill your own server PID and delete your target copy when
+   done (`scripts/lane-target.sh prune` lists them). With little free disk or memory (`df -h /`, `free -g`), skip
+   this step and use step 2.
+2. **Verify on one `lane-ssg` build** with the diff-based spec run, never a hand-picked list:
+   `cd playwright && PLAYWRIGHT_BASE_URL=http://127.0.0.1:<port> PW_BUILD_PROFILE=debug flock /home/user/tgt/pw.lock
+   npm run test:changed -- --workers=2` (details in "Before handback" step 3; `node tools/select.mjs --explain`
+   says which specs and why; `CHANGED_RANGE=A..B` for a range other than your branch). Specs run on SSG output,
+   not on `dx serve`, because the first paint and hydration are what they test.
+3. **The full suite is the main loop's**, once per merge batch (`playwright/tools/run-suite.sh`, "Running the
+   suite"). A lane never runs it.
+
 ## Before handback (rows 221, 224; gate step changed 2026-10-18)
 1. Merge the current session branch into your lane branch (`git merge <session branch>`, no rebase). New gates may have
    landed since you branched; on a `preview/src/components/mod.rs` conflict keep both sides' variants on every line.

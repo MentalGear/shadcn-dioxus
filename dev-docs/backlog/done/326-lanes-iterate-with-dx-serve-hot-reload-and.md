@@ -1,7 +1,7 @@
 ---
 id: 326
 title: "Lanes iterate with dx serve hot reload and verify on an SSG build"
-status: "BACKLOG (owner approved 2026-10-21, if reliable and safe)"
+status: "LANDED 2026-10-21 (owner asked that every agent knows the fast loop): documented in…"
 size: "S"
 area: process
 updated: 2026-10-21
@@ -15,7 +15,7 @@ Lanes iterate with dx serve hot reload and verify on an SSG build.
 
 ## Status / trigger
 
-**BACKLOG (owner approved 2026-10-21, if reliable and safe)**
+**LANDED 2026-10-21 (owner asked that every agent knows the fast loop): documented in `dev-docs/lane-rules.md` "The fast loop" and in CLAUDE.md; batch-4 lanes briefed.**
 
 ## Size
 
