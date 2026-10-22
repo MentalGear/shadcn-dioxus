@@ -128,6 +128,7 @@ gates=(
   "check-ssg-verify|scripts/check-ssg-verify.sh"
   "check-duplicate-keyframes|scripts/check-duplicate-keyframes.sh"
   "check-hover-media|scripts/check-hover-media.sh"
+  "check-render-keys|scripts/check-render-keys.sh"
   "check-theme-mode-writer|scripts/check-theme-mode-writer.sh"
   "check-open-focus|scripts/check-open-focus.sh"
   "check-scroll-behavior|scripts/check-scroll-behavior.sh"

@@ -241,6 +241,11 @@ pub struct TableRowsProps {
     /// Renders the cells (`TableCell`s) of row `idx`, an absolute index; the body owns the
     /// `<tr>`, so it can set `aria-rowindex` and measure the row.
     pub render_row: Callback<usize, Element>,
+    /// Who is at row `idx`: a string unique in the table that stays with the row through a sort,
+    /// filter or reorder. Defaults to the index (a row is its slot). With it each `<tr>` is keyed
+    /// by its item, so focus and state inside a row move with it and the measured row heights
+    /// follow the item.
+    pub item_key: Option<Callback<usize, String>>,
     /// Whether row `idx` is selected: sets `data-state="selected"` like [`TableRow`]'s
     /// `selected`. Read while rendering, so a selection a row reads re-renders the body.
     pub row_selected: Option<Callback<usize, bool>>,
@@ -290,6 +295,7 @@ pub fn TableRows(props: TableRowsProps) -> Element {
             count: props.count,
             columns: props.columns,
             render_row: props.render_row,
+            item_key: props.item_key,
             row_attributes,
             row_offset: props.row_offset,
             buffer: props.buffer,

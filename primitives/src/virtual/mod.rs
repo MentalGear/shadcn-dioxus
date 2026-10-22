@@ -15,6 +15,8 @@
 //!   [`justified_engine`]: `VirtualJustifiedGrid`'s engine and spatial keyboard model on top of it.
 //! - [`pin`]: keep the focused item rendered when it leaves the window, shared by the grids'
 //!   active cell and `VirtualList`'s focused row.
+//! - [`identity`]: item identity (`item_key`): the one `render_key`, the engine's key hash and where a
+//!   remembered item is now (backlog row 361).
 //! - [`mode`]: [`VirtualizeMode`] (`Auto | ContentVisibility | Windowed`) and its `auto_threshold`,
 //!   the one "how are off-screen rows kept cheap" choice of `VirtualList`, `Table`'s data body
 //!   and `VirtualGrid` (backlog row 343).
@@ -26,6 +28,7 @@
 mod bridge;
 mod cv_chunks;
 mod grid;
+mod identity;
 mod justified_engine;
 pub(crate) mod layout;
 mod mode;
@@ -39,6 +42,7 @@ mod window;
 pub(crate) use bridge::{measured_px, use_virtual_bridge, Bridge};
 pub(crate) use cv_chunks::{cv_chunks, ChunkSkip, CHUNK_ROWS};
 pub(crate) use grid::{GridEngine, GridKey, GridShape};
+pub(crate) use identity::{engine_keys, engine_row_keys, render_key, resolve_index};
 pub(crate) use justified_engine::{navigate as justified_navigate, JustifiedEngine, RowPlan};
 pub(crate) use layout::justified::JustifiedOptions;
 pub use mode::{VirtualizeMode, DEFAULT_AUTO_THRESHOLD};
