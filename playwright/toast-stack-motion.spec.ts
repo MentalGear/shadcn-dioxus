@@ -81,6 +81,7 @@ function analyse(frames: Frame[], leaving: string): { motions: Motion[]; lastLea
 /** The expectations of a dismissal: the toasts that move do so smoothly and have settled before the unmount. */
 function expectSmooth(motions: Motion[], movers: number, travel: number) {
   const moving = motions.filter((m) => m.total > 1.5);
+  if (process.env.PW_MOTION_LOG) console.log(`motion ${test.info().title.slice(0, 40)}: ${JSON.stringify(motions)}`);
   expect(moving.length, `${movers} toast(s) close the gap`).toBe(movers);
   for (const m of moving) {
     expect(m.total, "they travel the leaving toast's footprint").toBeGreaterThan(travel);
