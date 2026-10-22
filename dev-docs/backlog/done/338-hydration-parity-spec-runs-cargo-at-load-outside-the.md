@@ -1,7 +1,7 @@
 ---
 id: 338
 title: "hydration-parity.spec builds attr-synth with cargo at load time, outside the build lock"
-status: "BACKLOG (found 2026-10-21)"
+status: "LANDED 2026-10-21 (lane test-tools): the spec only runs the built attr-synth binary…"
 size: "S"
 area: tests
 updated: 2026-10-21
@@ -15,7 +15,7 @@ hydration-parity.spec builds attr-synth with cargo at load time, outside the bui
 
 ## Status / trigger
 
-**BACKLOG (found 2026-10-21)**
+**LANDED 2026-10-21 (lane test-tools): the spec only runs the built attr-synth binary; playwright/tools/ensure-attr-synth.sh builds it through the build lock (test-changed.sh when selected, run-suite.sh always); select-selftest fails any spec that runs cargo**
 
 ## Size
 

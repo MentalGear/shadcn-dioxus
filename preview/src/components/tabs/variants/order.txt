@@ -1,5 +1,4 @@
 # Display order of this component's demos after `main`; a variants/<name>/ directory not listed here follows, sorted by name.
-rtl
 until_found
 line
 vertical

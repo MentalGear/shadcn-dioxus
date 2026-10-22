@@ -1,7 +1,7 @@
 ---
 id: 353
 title: "Carousel Next arrow fades 0.5 to 1 after hydration (first-paint flicker)"
-status: "Open (found while fixing row 345; owner approved 2026-10-21)."
+status: "LANDED 2026-10-21 (claude/first-pose): CarouselContext::next_disabled treats an unregistered slide…"
 size: "S-M"
 area: components
 updated: 2026-10-21
@@ -15,7 +15,7 @@ Carousel Next arrow fades 0.5 to 1 after hydration (first-paint flicker).
 
 ## Status / trigger
 
-Open (found while fixing [row 345](./done/345-carousel-nav-opacity-spec-read-next-mid-fade.md); owner approved 2026-10-21).
+LANDED 2026-10-21 (claude/first-pose): `CarouselContext::next_disabled` treats an unregistered slide count (0) as unknown, so Next is enabled at opacity 1 in the SSR markup and on every frame after hydration; a one-slide carousel settles to disabled after registration (fade 1 to 0.5, rare). Spec in playwright/first-pose.spec.ts, red before (server HTML had `disabled`).
 
 ## Size
 

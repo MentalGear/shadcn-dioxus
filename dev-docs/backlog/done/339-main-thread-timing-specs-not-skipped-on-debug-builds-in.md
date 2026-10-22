@@ -1,7 +1,7 @@
 ---
 id: 339
 title: "main-thread timing specs are not skipped on debug builds in test:changed runs"
-status: "BACKLOG (found 2026-10-21)"
+status: "LANDED 2026-10-21 (lane test-tools): build-ssg.sh stamps a debug public dir with build-profile.txt…"
 size: "S"
 area: tests
 updated: 2026-10-21
@@ -15,7 +15,7 @@ main-thread timing specs are not skipped on debug builds in test:changed runs.
 
 ## Status / trigger
 
-**BACKLOG (found 2026-10-21)**
+**LANDED 2026-10-21 (lane test-tools): build-ssg.sh stamps a debug public dir with build-profile.txt; base-url.ts buildProfile() reads it from SSG_SITE_DIR or the served site, so every config skips main-thread on a lane build**
 
 ## Size
 

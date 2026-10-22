@@ -3,6 +3,5 @@ outline
 sizes
 spacing
 vertical
-rtl
 disabled
 font_weight

@@ -21,8 +21,8 @@
   background: none;
   color: var(--dx-foreground);
   font-family: inherit;
-  font-size: var(--dx-text-sm);
-  line-height: 1.25rem;
+  font-size: var(--dx-coarse-text-entry-font-size);
+  line-height: var(--dx-coarse-text-entry-line-height);
   outline: none;
   resize: vertical;
   transition: background-color var(--dx-motion-duration-fast) var(--dx-motion-ease-out), border-color var(--dx-motion-duration-fast) var(--dx-motion-ease-out), box-shadow var(--dx-motion-duration-fast) var(--dx-motion-ease-out);
@@ -136,17 +136,5 @@
   .dx-textarea[data-style="ghost"]:hover:not(:disabled) {
     background-color: var(--dx-muted);
     color: var(--dx-accent-foreground);
-  }
-}
-
-/*
- * Floor the font-size to 16px on touch devices (Nova's `text-base md:text-sm`). iOS Safari
- * auto-zooms when a focused text field computes below 16px. Scoped to coarse pointers so
- * desktop sizing is unaffected.
- */
-@media (pointer: coarse) {
-  .dx-textarea {
-    font-size: var(--dx-text-base);
-    line-height: 1.5rem;
   }
 }

@@ -37,7 +37,7 @@
   color: var(--dx-foreground);
   cursor: pointer;
   font-family: inherit;
-  font-size: var(--dx-text-sm);
+  font-size: var(--dx-coarse-text-entry-font-size);
   padding-block: var(--dx-native-select-padding-block);
   padding-inline:
     var(--dx-space-2-5)
@@ -114,8 +114,3 @@
   transform: translateY(-50%);
 }
 
-@media (pointer: coarse) {
-  .dx-native-select {
-    font-size: var(--dx-text-base);
-  }
-}

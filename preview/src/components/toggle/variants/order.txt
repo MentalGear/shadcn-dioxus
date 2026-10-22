@@ -3,4 +3,3 @@ text
 outline
 sizes
 disabled
-rtl

@@ -346,6 +346,44 @@
   }
 }
 
+/* Start pose (backlog row 344): a chart the client creates after hydration (a chart tab
+ * opened client-side) renders `data-animate="pending"` from its first frame, until it is seen
+ * and the attribute becomes "true". Pending holds exactly the pose the entrance animations
+ * start from, so the first painted frame is never the final drawing that the animation would
+ * then restart from zero (full -> gone -> animate). Reduced motion and the server render never
+ * get it (no hold, the final drawing). */
+@media (prefers-reduced-motion: no-preference) {
+  .dx-chart [data-slot="chart-svg"][data-animate="pending"] [data-slot="chart-bar"] {
+    transform: scaleY(0);
+    transform-box: view-box;
+    transform-origin: 0 var(--dx-chart-zero);
+  }
+
+  .dx-chart [data-slot="chart-svg"][data-animate="pending"][data-bars="horizontal"] [data-slot="chart-bar"] {
+    transform: scaleX(0);
+    transform-origin: var(--dx-chart-zero) 0;
+  }
+
+  .dx-chart:is([data-kind="area"], [data-kind="line"])
+    [data-slot="chart-svg"][data-animate="pending"]
+    [data-slot="chart-series"] {
+    clip-path: inset(0 100% 0 0);
+  }
+
+  .dx-chart [data-slot="chart-svg"][data-animate="pending"] [data-kind="radar"] [data-series] > * {
+    transform: scale(0);
+    transform-origin: 0 0;
+  }
+
+  .dx-chart [data-slot="chart-svg"][data-animate="pending"] [data-slot="chart-sweep-mask"] path {
+    stroke-dasharray: 0 1;
+  }
+
+  .dx-chart [data-slot="chart-svg"][data-animate="pending"] [data-slot="chart-arc-labels"] {
+    opacity: 0;
+  }
+}
+
 /* The whole hover mechanism (`$S/chart-api.md`: "no coordinate math, no
  * layout reads, no document::eval") -- invisible, full-height bands, one
  * per datum, that alone drive `active_index`. */

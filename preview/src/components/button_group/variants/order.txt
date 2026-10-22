@@ -7,4 +7,3 @@ with_input
 dropdown
 select
 popover
-rtl

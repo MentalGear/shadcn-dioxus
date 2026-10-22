@@ -44,6 +44,22 @@ Measured: a warm-server `inspect.mjs` call is ~1–2s wall time (including
 Chromium launch); a plain `curl` proves nothing more than "the process is
 alive" (see Trap 0 below, worse than documented).
 
+## Running tests: the specs that cover your diff (2026-10-21)
+
+After the edit loop above, verify on a prerendered build (first paint and hydration are what the specs test), with
+the diff-based run, never a hand-picked list and never the whole suite:
+
+```bash
+cd playwright && PLAYWRIGHT_BASE_URL=http://127.0.0.1:<port> npm run test:changed -- --workers=2
+node tools/select.mjs --explain        # which specs cover the diff, and why
+```
+
+`test:changed` (`playwright/tools/test-changed.sh`) runs what `tools/select.mjs` maps your diff to (default range
+`origin/main...HEAD` plus uncommitted files; `CHANGED_RANGE=A..B`, `CHANGED_MATRIX=1` for the route matrices). Build
+and serve with `scripts/lane-ssg.sh` (lanes) or `scripts/build-ssg.sh debug` plus `scripts/serve-spa.py` (README,
+"Testing changes"). The full suite runs once per merge batch (`playwright/tools/run-suite.sh`); every gate before
+every commit is `scripts/run-gates.sh`. Lanes: [`lane-rules.md`](./lane-rules.md), "The fast loop".
+
 ## Environment for every number below
 
 4 CPU cores, 15GB RAM, `/` had 15GB free at the start of this session (11GB

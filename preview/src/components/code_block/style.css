@@ -106,7 +106,7 @@
   box-shadow: 0 0 0 1px color-mix(in oklab, var(--dx-foreground) 10%, transparent);
   inset-block-start: var(--dx-space-2);
   inset-inline-end: var(--dx-space-2);
-  opacity: 0;
+  opacity: var(--dx-coarse-actions-opacity);
   transition: opacity var(--dx-motion-duration-base);
 }
 
@@ -123,12 +123,6 @@
 
 .dx-code-block:focus-within > .dx-code-block-actions {
   opacity: 1;
-}
-
-@media (pointer: coarse) {
-  .dx-code-block > .dx-code-block-actions {
-    opacity: 1;
-  }
 }
 
 .dx-code-block-sr-only {

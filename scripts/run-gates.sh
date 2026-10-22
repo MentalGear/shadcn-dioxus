@@ -99,6 +99,7 @@ gates=(
   "check-installed-paths|scripts/check-installed-paths.sh"
   "check-css-vars-defined|scripts/check-css-vars-defined.sh"
   "check-hover-mix-space|scripts/check-hover-mix-space.sh"
+  "check-coarse-sizing|scripts/check-coarse-sizing.sh"
   "check-press-under|scripts/check-press-under.sh"
   "check-cargo-locks|scripts/check-cargo-locks.sh"
   "check-uncleared-intervals|scripts/check-uncleared-intervals.sh"

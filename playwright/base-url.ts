@@ -19,6 +19,10 @@
  * A spec can migrate by importing `BASE_URL` from here (aliasing to `BASE`
  * where that's the file's existing local name) instead of declaring its own.
  */
+import { execFileSync } from "node:child_process";
+import fs from "node:fs";
+import path from "node:path";
+
 export const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:8080";
 
 /**
@@ -63,7 +67,43 @@ export function buildProfile(): "debug" | "release" | "unknown" {
   const dir = (process.env.SSG_SITE_DIR ?? "").replace(/\\/g, "/");
   if (/\/dx\/[^/]+\/debug\/web\/public\/?$/.test(dir)) return "debug";
   if (/\/dx\/[^/]+\/release\/web\/public\/?$/.test(dir)) return "release";
-  return "unknown";
+  // A lane build is copied to `pub-<lane>` (scripts/lane-ssg.sh), so its path names nothing (row 339: 11 false reds
+  // of main-thread.spec through `test:changed`). `scripts/build-ssg.sh` therefore stamps a DEBUG build's public dir
+  // with `build-profile.txt`; read it from the site dir, else from the served site itself.
+  return profileFromMarker(dir);
+}
+
+const PROFILE_MARKER = "build-profile.txt";
+let markerProfile: "debug" | "release" | "unknown" | undefined;
+
+function profileFromMarker(siteDir: string): "debug" | "release" | "unknown" {
+  if (markerProfile) return markerProfile;
+  const parse = (t: string | undefined) => {
+    const v = (t ?? "").trim().toLowerCase();
+    return v === "debug" || v === "release" ? v : undefined;
+  };
+  let found: "debug" | "release" | undefined;
+  try {
+    if (siteDir) found = parse(fs.readFileSync(path.join(siteDir, PROFILE_MARKER), "utf8"));
+  } catch {
+    /* no marker in the site dir */
+  }
+  const base = process.env.PLAYWRIGHT_BASE_URL;
+  if (!found && base) {
+    try {
+      const out = execFileSync(
+        "curl",
+        ["-fsS", "--max-time", "3", `${base.replace(/\/+$/, "")}/${PROFILE_MARKER}`],
+        { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
+      );
+      // A SPA-fallback or 404 body is not a marker: parse() only accepts the one word.
+      found = parse(out);
+    } catch {
+      /* server down, or a release/deployed build without a marker */
+    }
+  }
+  markerProfile = found ?? "unknown";
+  return markerProfile;
 }
 
 /**

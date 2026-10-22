@@ -1,19 +1,10 @@
 .dx-input-otp-input {
   font-family: inherit;
-}
 
-/*
- * Floor the font-size to 16px on touch devices, same reasoning as
- * input/style.css: iOS Safari auto-zooms a focused control whose computed
- * font-size is below 16px -- this real input is invisible (opacity: 0,
- * primitives/src/input_otp.rs) but still geometrically focusable, so it is
- * still subject to that zoom-on-focus behavior regardless of its own
- * visibility.
- */
-@media (pointer: coarse) {
-  .dx-input-otp-input {
-    font-size: var(--dx-text-base);
-  }
+  /* This real input is invisible (opacity: 0, primitives/src/input_otp.rs) but still geometrically
+     focusable, so iOS Safari's zoom-on-focus below 16px applies to it: it takes the theme's text-entry
+     size, the 16px touch floor under coarse sizing. */
+  font-size: var(--dx-coarse-text-entry-font-size);
 }
 
 /* Nova input-otp (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css `.cn-input-otp*`,
@@ -46,7 +37,7 @@
   align-items: center;
   justify-content: center;
 
-  --dx-input-otp-edge: var(--dx-input);
+  --dx-input-otp-edge: var(--dx-input-edge);
   --dx-input-otp-end: -1px;
   --dx-input-otp-start: 1px;
 

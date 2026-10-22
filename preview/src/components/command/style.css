@@ -238,16 +238,8 @@ dialog.dx-command-dialog[open][data-state="open"] {
   box-shadow: none;
   color: var(--dx-foreground);
   font-family: inherit;
-  font-size: var(--dx-text-sm);
+  font-size: var(--dx-coarse-text-entry-font-size);
   outline: none;
-}
-
-/* Floor the font-size to 16px on touch devices, as `.dx-input` does: iOS Safari auto-zooms
- * the page on focus of anything smaller. */
-@media (pointer: coarse) {
-  .dx-command-input {
-    font-size: var(--dx-text-base);
-  }
 }
 
 .dx-command-input::placeholder {

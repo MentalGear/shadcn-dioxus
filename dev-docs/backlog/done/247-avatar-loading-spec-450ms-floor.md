@@ -1,10 +1,10 @@
 ---
 id: 247
 title: "avatar-loading spec has a 450 ms floor too tight for this machine"
-status: "BACKLOG (2026-10-19)"
+status: "LANDED 2026-10-21 (lane test-tools): the floor was the gap between component mount and the…"
 size: "S"
 area: tests
-updated: 2026-10-19
+updated: 2026-10-21
 ---
 
 # Row 247: avatar-loading spec has a 450 ms floor too tight for this machine
@@ -15,7 +15,7 @@ avatar-loading spec has a 450 ms floor too tight for this machine
 
 ## Status / trigger
 
-**BACKLOG (2026-10-19)**
+**LANDED 2026-10-21 (lane test-tools): the floor was the gap between component mount and the data-hydrated flag; the spec now anchors on the wasm resource's responseEnd and asserts the full 600 ms delay (>=595)**
 
 ## Size
 

@@ -203,6 +203,11 @@ struct ResizableGroupContext {
     disabled: ReadSignal<bool>,
     group_id: Signal<String>,
     panels: Signal<Vec<PanelConstraints>>,
+    /// Each panel's constraints, written by the panel while it first renders (not reactive).
+    /// [`ResizablePanel`] registers its constraints in an effect, which the server never runs, so
+    /// until that registry fills a panel sizes itself from this render-time list instead of
+    /// painting `flex-basis: 0%` (row 333).
+    render_defaults: CopyValue<Vec<PanelConstraints>>,
     committed: Memo<Vec<f64>>,
     set_committed: Callback<Vec<f64>>,
     /// Per-panel size immediately before Enter last collapsed it, so a later Enter can restore
@@ -226,8 +231,17 @@ impl ResizableGroupContext {
             .collect()
     }
 
+    /// A panel's constraints: the registry's once it holds this panel, else what the panel
+    /// declared while rendering (so a handle's `aria-valuemin`/`max` are right on the server).
     fn panel_at(&self, index: usize) -> PanelConstraints {
-        (self.panels)().get(index).copied().unwrap_or_default()
+        if let Some(c) = (self.panels)().get(index) {
+            return *c;
+        }
+        self.render_defaults
+            .read()
+            .get(index)
+            .copied()
+            .unwrap_or_default()
     }
 
     /// The sizes actually shown: the committed (controlled-or-uncontrolled) vector where it
@@ -254,6 +268,26 @@ impl ResizableGroupContext {
                     .unwrap_or_else(|| computed.get(i).copied().unwrap_or(0.0))
             })
             .collect()
+    }
+
+    /// The size a panel paints: [`Self::effective_sizes`] once the registry covers it, else the
+    /// share [`initial_sizes`] gives it among the defaults the panels rendered so far (a panel
+    /// with a `default_size` is exact; one without takes the equal split among the panels seen
+    /// up to it, corrected when the registry fills).
+    fn panel_size(&self, index: usize) -> f64 {
+        if (self.panels)().len() > index {
+            return self.effective_sizes().get(index).copied().unwrap_or(0.0);
+        }
+        if let Some(c) = (self.committed)().get(index) {
+            return *c;
+        }
+        let defaults: Vec<Option<f64>> = self
+            .render_defaults
+            .read()
+            .iter()
+            .map(|p| p.default_size)
+            .collect();
+        initial_sizes(&defaults).get(index).copied().unwrap_or(0.0)
     }
 
     fn commit(&self, sizes: Vec<f64>) {
@@ -376,6 +410,7 @@ pub fn ResizablePanelGroup(props: ResizablePanelGroupProps) -> Element {
 
     let group_id = use_unique_id();
     let panels = use_signal(Vec::new);
+    let render_defaults = use_hook(|| CopyValue::new(Vec::<PanelConstraints>::new()));
     let pre_collapse = use_signal(Vec::new);
     let group_dragging_unused = use_signal(|| false);
     let mut group_movement = use_move_interaction(group_dragging_unused);
@@ -388,6 +423,7 @@ pub fn ResizablePanelGroup(props: ResizablePanelGroupProps) -> Element {
         disabled: props.disabled,
         group_id,
         panels,
+        render_defaults,
         committed,
         set_committed,
         pre_collapse,
@@ -516,6 +552,23 @@ pub fn ResizablePanel(props: ResizablePanelProps) -> Element {
     let collapsible = props.collapsible;
     let collapsed_size = props.collapsed_size;
 
+    // Record this panel's default while rendering, once, in sibling order, so `panel_size` has
+    // it on the server too.
+    use_hook(|| {
+        let mut defaults = ctx.render_defaults;
+        let mut defaults = defaults.write();
+        if defaults.len() <= index {
+            defaults.resize(index + 1, PanelConstraints::default());
+        }
+        defaults[index] = PanelConstraints {
+            min_size,
+            max_size,
+            default_size,
+            collapsible,
+            collapsed_size,
+        };
+    });
+
     use_effect(move || {
         let mut ctx = ctx;
         ctx.register_panel(
@@ -531,7 +584,7 @@ pub fn ResizablePanel(props: ResizablePanelProps) -> Element {
     });
 
     let id = use_memo(move || ctx.panel_id(index));
-    let size = use_memo(move || ctx.effective_sizes().get(index).copied().unwrap_or(0.0));
+    let size = use_memo(move || ctx.panel_size(index));
     let collapsed = use_memo(move || {
         let panel = ctx.panel_at(index);
         panel.collapsible && size() <= panel.collapsed_size + 0.001
@@ -640,7 +693,7 @@ pub fn ResizableHandle(props: ResizableHandleProps) -> Element {
 
     let direction = ctx.direction;
 
-    let size_now = use_memo(move || ctx.effective_sizes().get(index).copied().unwrap_or(0.0));
+    let size_now = use_memo(move || ctx.panel_size(index));
     let primary = use_memo(move || ctx.panel_at(index));
 
     use_effect(move || {

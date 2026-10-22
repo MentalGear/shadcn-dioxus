@@ -132,29 +132,33 @@ If you want to add a new component, you should:
 
 ### Testing changes
 
-The components use a combination of unit tests with cargo, css linting, and end-to-end tests with Playwright.
-
-To run the unit tests for the `dioxus-primitives` crate, use:
-
-```sh
-cargo test -p dioxus-primitives
-```
-
-To run the CSS linting, use:
+The fast loop, in the order you need it (the measured details are in
+[`dev-docs/dev-loop.md`](./dev-docs/dev-loop.md) and
+[`dev-docs/lane-rules.md`](./dev-docs/lane-rules.md#the-fast-loop-dx-serve-to-iterate-testchanged-to-verify-owner-2026-10-21-row-326)):
 
 ```sh
-cd preview
-npm install
-npx stylelint "src/**/*.css"
+# once: the locked Node dependencies (never `npm install`, it can pull a Playwright without a matching browser)
+(cd playwright && npm ci) && (cd preview && npm ci)
+
+# 1. iterate: dev server with hot reload; wait for YOUR edit to be built before you look
+#    (an HTTP 200 proves nothing, see dev-docs/dx-serve-hot-reload.md)
+(cd preview && dx serve --web --port 8080 > /tmp/dx-serve-8080.log 2>&1 &)
+scripts/dev-wait.sh 8080 --log /tmp/dx-serve-8080.log
+
+# 2. every gate before every commit: the static checks, fmt, stylelint, the three clippy arms, cargo test
+#    (green = "ALL GREEN" and exit 0; the target dir must be an absolute path)
+CARGO_TARGET_DIR=$PWD/target-gates scripts/run-gates.sh
+
+# 3. the Playwright specs that cover YOUR diff, on a prerendered build (what users get, hydration included)
+CARGO_TARGET_DIR=$PWD/target-ssg scripts/build-ssg.sh debug      # prints PUBLIC_DIR=...
+scripts/serve-spa.py <PUBLIC_DIR> 8741 &
+cd playwright && PLAYWRIGHT_BASE_URL=http://127.0.0.1:8741 npm run test:changed -- --workers=2
+node tools/select.mjs --explain                                  # which specs, and why
 ```
 
-To run the Playwright end-to-end tests, use:
-
-```sh
-cd playwright
-npm install
-npx playwright test
-```
+The whole suite (about 3,600 tests) runs once per merge batch as duration-balanced chunks:
+`playwright/tools/run-suite.sh --out <dir>`. A component change also needs the install check,
+`scripts/registry-install-smoke.sh`. Unit tests alone: `cargo test -p dioxus-primitives`.
 
 Most specs also run an [axe-core](https://github.com/dequelabs/axe-core) static accessibility scan (valid ARIA, accessible names, unique landmarks, contrast, heading order, …) via the shared `playwright/axe.ts` helper — see [`dev-docs/conformance-harness.md`](./dev-docs/conformance-harness.md), "axe (static rules)", for what it covers versus the behaviour oracles and its exclusion policy.
 

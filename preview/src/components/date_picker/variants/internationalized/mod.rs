@@ -1,4 +1,5 @@
 use super::super::component::*;
+use crate::i18n::{use_locale_root, LocaleDemo};
 use dioxus::prelude::*;
 
 use dioxus_i18n::tid;
@@ -8,10 +9,11 @@ use time::{Date, Month};
 /// after a pick, like every uncontrolled shadcn date picker.
 #[component]
 pub fn Demo() -> Element {
+    use_locale_root();
     let mut selected_date = use_signal(|| None::<Date>);
 
     rsx! {
-        div {
+        LocaleDemo {
             DatePicker {
                 selected_date: selected_date(),
                 on_value_change: move |v| {

@@ -1,7 +1,7 @@
 ---
 id: 344
 title: "Charts flash the final drawing before their entry animation on first client-side open"
-status: "OPEN (owner report 2026-10-21)"
+status: "LANDED 2026-10-21 (claude/first-pose): a client-created chart renders data-animate=\"pending\" (the…"
 size: "S"
 area: charts
 updated: 2026-10-21
@@ -15,7 +15,7 @@ The first time any chart tab is opened (e.g. https://mentalgear.github.io/shadcn
 
 ## Status / trigger
 
-OPEN (owner report 2026-10-21)
+LANDED 2026-10-21 (claude/first-pose): a client-created chart renders `data-animate="pending"` (the entrance's start pose) from its first frame; `entrance_pose` in chart.rs, pending rules in chart/style.css; playwright/first-pose.spec.ts red before (first frame `none` = final drawing, 6 kinds), green after.
 
 ## Size
 
