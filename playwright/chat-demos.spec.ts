@@ -274,7 +274,7 @@ test.describe("message_scroller: previous_context", () => {
 
     // Default peek (64px): send the first queued message; the new user row is the anchor.
     await sendAndSettle(page);
-    const atDefault = await offsetOf(vp, "m2");
+    const atDefault = await offsetOf(vp, "m6");
 
     // Reset, widen the peek to 128px, send the same message again.
     await root.getByRole("button", { name: "Reset context example" }).click();
@@ -284,7 +284,7 @@ test.describe("message_scroller: previous_context", () => {
     await page.keyboard.press("End");
     await expect(root.getByTestId("peek-value")).toHaveText("128px");
     await sendAndSettle(page);
-    const atWide = await offsetOf(vp, "m2");
+    const atWide = await offsetOf(vp, "m6");
 
     // The anchored row sits (peek) pixels below the top edge, so +64px of peek is ~+64px of offset.
     expect(atWide - atDefault).toBeGreaterThan(40);
@@ -347,21 +347,21 @@ test.describe("message_scroller: animation", () => {
     await send.click();
     await expect(root.getByText("Can user messages pop in like iMessage")).toBeVisible();
     await expect(userRow("m0")).toHaveClass(/dx-demo-enter-fade/);
-    // The assistant's reply carries no entrance class.
-    await expect(send).toBeEnabled({ timeout: 60_000 });
+    // Only the sent bubbles are shown: no assistant reply streams in below them.
+    await expect(root.locator('[data-message-id="m1"]')).toHaveCount(0);
+    await expect(send).toBeEnabled();
 
     // Pick "Pop" and send the next turn.
     await root.getByRole("combobox", { name: "Animation preset" }).click();
     await page.getByRole("option", { name: "Pop" }).click();
     await send.click();
-    await expect(userRow("m2")).toHaveClass(/dx-demo-enter-pop/);
+    await expect(userRow("m1")).toHaveClass(/dx-demo-enter-pop/);
     // The earlier row did not take on the new preset.
     await expect(userRow("m0")).toHaveClass(/dx-demo-enter-fade/);
     await expect(userRow("m0")).not.toHaveClass(/dx-demo-enter-pop/);
-    await expect(send).toBeEnabled({ timeout: 60_000 });
 
     // The entrance is a theme keyframe, not a layout animation.
-    const name = await userRow("m2").evaluate((el) => getComputedStyle(el).animationName);
+    const name = await userRow("m1").evaluate((el) => getComputedStyle(el).animationName);
     expect(name).toBe("dx-pop-in");
 
     await reset.click();

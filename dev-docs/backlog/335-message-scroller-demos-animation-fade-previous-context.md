@@ -1,7 +1,7 @@
 ---
 id: 335
 title: "Message Scroller demos: animation demo shows LLM output, both fade demos look default, previous-context demo is unclear"
-status: "BACKLOG (owner 2026-10-21)"
+status: "LANDED on branch claude/scroller, verified on a debug SSG (test:changed 313 passed, 3 skipped)…"
 size: "S"
 area: components
 updated: 2026-10-21
@@ -15,7 +15,7 @@ Message Scroller demos: animation demo shows LLM output, both fade demos look de
 
 ## Status / trigger
 
-**BACKLOG (owner 2026-10-21)**
+**LANDED on branch claude/scroller, verified on a debug SSG (test:changed 313 passed, 3 skipped): animation demo shows only sent bubbles, fade demo is a None-vs-edge side-by-side, previous_context has real history and a caption; specs updated**
 
 ## Size
 
