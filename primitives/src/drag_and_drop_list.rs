@@ -527,12 +527,17 @@ pub fn DragAndDropList(props: DragAndDropListProps) -> Element {
         caller_style.map(|s| format!(" {s}")).unwrap_or_default(),
     );
     let style = (!style.is_empty()).then_some(style);
-    let attributes = merge_attributes(vec![rest_attrs, attributes!(div { style: style })]);
+    // `data-orientation` goes through the same merge, so a caller's own
+    // `data-orientation` cannot become a second attribute on the root.
     let axis = props.axis.as_str();
+    let attributes = merge_attributes(vec![
+        attributes!(div { "data-orientation": axis }),
+        rest_attrs,
+        attributes!(div { style: style }),
+    ]);
 
     rsx! {
         div {
-            "data-orientation": axis,
             ..attributes,
             {children}
         }

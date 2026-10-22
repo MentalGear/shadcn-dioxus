@@ -442,6 +442,7 @@ const BASELINE: &[(&str, &str)] = &[
     ("item/avatar", AVATAR),
     ("item/group", AVATAR),
     ("table/virtualized", TABLE_ROWCOUNT),
+    ("table/reorder", TABLE_ROWCOUNT),
     ("virtual_list/find_in_page", FIND_LAYER),
 ];
 
