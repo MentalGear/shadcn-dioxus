@@ -15,7 +15,7 @@ Add the three hooks VirtualGrid needs before it can host a DataTable: `aria-sort
 
 ## Status / trigger
 
-**2026-10-22:** hooks keyed by row identity (`row_key`, row 361); comes after rows 360-362 ([`research/collection-model-2026-10-22.md`](../research/collection-model-2026-10-22.md)).
+**2026-10-22:** hooks keyed by row identity (`row_key`, row 361); comes after rows 360-362 ([`research/collection-model-2026-10-22.md`](../../research/collection-model-2026-10-22.md)).
 
 BACKLOG (owner 2026-10-21; amended 09:35). Comes after row 343 (needs its VirtualizeMode); row 342 needs it.
 
@@ -43,3 +43,16 @@ Evaluation: https://claude.ai/artifact/CGKtSVebCVar2PmKXNWs5T (Table, DataTable 
 New order (owner 2026-10-21, 09:35): 340, then 343, then 341, then 342. Design: row 340's amendment (one `VirtualizeMode` for every consumer, one data-driven `DataTable<T>`, explicit layout with an automatic mode).
 
 **This row:** Besides the three hooks, VirtualGrid adopts the shared `VirtualizeMode` from row 343 (content-visibility row chunks while `rows <= auto_threshold`, windowed above), about +0.5 day. It needs row 343's mode type, so it comes after 343.
+
+## Landed (2026-10-22, lane `gridhooks`)
+
+API (all optional props of `VirtualGrid`, `primitives/src/virtual_grid.rs`):
+- `column_sort: Callback<usize, Option<SortDirection>>`: `aria-sort` on that column's header (only the sorted one carries it). `SortDirection` is re-exported from `data_view`.
+- `row_selected: Callback<String, bool>`: asked per mounted row with `render_key(row_key, index)`, so selection is keyed by row identity (row 361). Emits `aria-selected="true|false"` and `data-state="selected"` on selected rows; `style.css` paints it `--dx-muted` (sticky column too).
+- Controls in cells: no prop; the grid detects a cell's control.
+
+**Control-model decision: one control per cell, "focus the widget" (APG), no Enter/F2 interaction mode.** Why: it keeps exactly one tab stop with no mode state, `Space`/`Enter` work natively on a checkbox/switch/button/link, and arrows keep moving between cells because the focused control does not consume them. The interaction mode is needed only for text fields, selects and multi-control cells (which swallow arrows); a data table's row checkbox and header sort button, the case this row exists for, need none. Cells with such content are out of scope and documented as such. Mechanism: a MutationObserver (coalesced per frame, `listen`-free, stops when the grid leaves the page) sets the cell `tabindex=-1` and the control `0` in the active cell, `-1` elsewhere; the active-cell focus script focuses the control when the cell has one; the cell's `onfocusin` (not `onfocus`) makes the cell active when a control inside takes focus. The wrap and justified grids are unchanged.
+
+Not done: the amendment's `VirtualizeMode` adoption (row 343's type is not in this tree); left to row 343/342.
+
+Specs: `playwright/virtual-grid-hooks.spec.ts` on the new `selectable` demo (10,000 orders, checkbox column, sortable headers).
