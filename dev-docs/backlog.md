@@ -41,7 +41,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (49)
+## Open rows (50)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -94,6 +94,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [363](backlog/363-datatable-row-reorder-and-columns.md) | DataTable: reorderable rows (drag handle) and a Columns menu (visibility, keyboard column order) | BACKLOG (owner asked 2026-10-22 to deconstruct the collection model to its roots; design note… | M. | components |
 | [364](backlog/364-togglegroup-value-keyed.md) | ToggleGroup: pressed state keyed by value, not index (optional) | BACKLOG (owner asked 2026-10-22 to deconstruct the collection model to its roots; design note… | S. | components |
 | [365](backlog/365-final-sweep-refactor-and-root-cause-review.md) | Final sweep: refactor review with the deconstruct-to-root and solve-by-construction exercise, proposals to the owner | BACKLOG (owner 2026-10-22, backlog thread: "final sweep, check for refactors and also run there the… | M for the review. Each accepted… | process |
+| [366](backlog/366-test-the-shipped-web-arm.md) | Gates: run cargo test on the shipped web arm too (ssr_parity differs between the plain and server feature sets) | BACKLOG. Found in batch 6, when one run of the same code failed on each arm in turn. | S: one gate step plus its reuse key. | tooling |
 
 ## Done rows (289)
 
