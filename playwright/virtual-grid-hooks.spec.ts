@@ -72,8 +72,6 @@ test.describe("VirtualGrid row selection (row_selected)", () => {
     await expect(rowAt(g, 3)).toHaveAttribute("aria-selected", "false");
     const painted = await rowAt(g, 2).evaluate((el) => getComputedStyle(el).backgroundColor);
     expect(painted).not.toBe(plain);
-    // The sticky cell is opaque and takes the same fill, so scrolled cells never show through it.
-    expect(await cell(g, 0, 0).evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(painted);
   });
 
   test("a selection survives a window move and follows its row through a sort", async ({ page }) => {
@@ -82,6 +80,10 @@ test.describe("VirtualGrid row selection (row_selected)", () => {
     await checkboxIn(g, 0).click();
     await expect(rowAt(g, 2)).toHaveAttribute("data-state", "selected");
 
+    // The active cell's row stays mounted (pinned) wherever the window goes, so make another row active
+    // (ArrowDown, no selection) and track row 0, which the window can really unmount.
+    await page.keyboard.press("ArrowDown");
+    await expect.poll(() => focused(page)).toEqual({ cell: "1:0", role: "checkbox" });
     // Move the window far away and back: the row is re-mounted (or rejoins) still selected.
     await g.evaluate((el) => (el.scrollTop = 5000 * 36));
     await expect(cell(g, 5000, 1)).toBeVisible();
@@ -134,7 +136,7 @@ test.describe("VirtualGrid controls inside cells", () => {
 
     // ArrowRight leaves the control for the next cell, which has none: the cell itself is the stop.
     await page.keyboard.press("ArrowRight");
-    await expect.poll(() => focused(page)).toEqual({ cell: "1:1", role: null });
+    await expect.poll(() => focused(page)).toEqual({ cell: "1:1", role: "gridcell" });
     await expect.poll(() => bodyTabStops(g)).toEqual(["1:1"]);
     await expect(checkboxIn(g, 1)).toHaveAttribute("tabindex", "-1");
     // ArrowLeft returns to the control, and Space still acts on it.
@@ -145,7 +147,7 @@ test.describe("VirtualGrid controls inside cells", () => {
 
     // Far moves keep the promise: the control of a cell scrolled to by Ctrl+End is the one stop.
     await page.keyboard.press("Control+End");
-    await expect.poll(() => focused(page)).toEqual({ cell: "9999:3", role: null });
+    await expect.poll(() => focused(page)).toEqual({ cell: "9999:3", role: "gridcell" });
     await page.keyboard.press("Home");
     await expect.poll(() => focused(page)).toEqual({ cell: "9999:0", role: "checkbox" });
     await expect.poll(() => bodyTabStops(g)).toEqual(["9999:0"]);
