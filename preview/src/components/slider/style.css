@@ -66,8 +66,8 @@
     position: absolute;
     top: 50%;
     display: block;
-    width: var(--dx-space-3);
-    height: var(--dx-space-3);
+    width: var(--dx-coarse-slider-thumb-size);
+    height: var(--dx-coarse-slider-thumb-size);
     box-sizing: border-box;
     padding: 0;
     border: 1px solid var(--dx-ring-color);
@@ -111,7 +111,7 @@
 .dx-slider-thumb::after {
     position: absolute;
     content: "";
-    inset: calc(-1 * var(--dx-space-2));
+    inset: calc(-1 * var(--dx-coarse-slider-thumb-margin));
 }
 
 .dx-slider[data-orientation="vertical"] .dx-slider-thumb {
@@ -127,19 +127,6 @@
        `left` (see alert_dialog/style.css's identical centering note). */
     left: 50%;
     transform: translate3d(-50%, 50%, 0); /* rtl-physical: see comment above */
-}
-
-/* Coarse pointer (row 291's step): a 20px thumb with a 44px target (`-inset-3` around it), the
- * minimum a finger needs; the fine-pointer 12px / 28px sizes are Nova's. */
-@media (pointer: coarse) {
-    .dx-slider-thumb {
-        width: var(--dx-space-5);
-        height: var(--dx-space-5);
-    }
-
-    .dx-slider-thumb::after {
-        inset: calc(-1 * var(--dx-space-3));
-    }
 }
 
 /* `ring-ring/50 hover:ring-3 focus-visible:ring-3 active:ring-3`: the shared 3px focus halo. */

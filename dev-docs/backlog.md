@@ -41,7 +41,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (69)
+## Open rows (52)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -69,12 +69,9 @@ proposing one is closed as out of scope (row 337 is the first).
 | [188](backlog/188-demo-parity-second-audit-the-owner-s-per.md) | Demo parity, second audit: the owner's per-example list against the original shadcn demos (51 components; row… | DEMO-ONLY ITEMS DONE 2026-10-19 (batch 2: every section-5 demo exists; what remains needs component… | M per batch | docs |
 | [217](backlog/217-dependency-audit-follow-ups-what-users-pay-for.md) | Dependency audit follow-ups (what users pay for in compile time and supply chain) | PARTLY LANDED 2026-10-18 (lane deps 04ad7ddf): features calendar/color-picker, no build script… | S-M each | build |
 | [218](backlog/218-popup-style-isolation-top-layer-popups-stay-dom.md) | Popup style isolation: top-layer popups stay DOM descendants of their trigger, so free-content rules in an… | NARROWED 2026-10-21: PARTLY LANDED 2026-10-15 (lane ancestorleak 900f394 + main-loop 526b51d… | M | overlays |
-| [247](backlog/247-avatar-loading-spec-450ms-floor.md) | avatar-loading spec has a 450 ms floor too tight for this machine | BACKLOG (2026-10-19) | S | tests |
-| [248](backlog/248-select-placeholder-until-mount-hydration-shift.md) | Select renders its placeholder until mount, so a Select with a default value shifts layout at hydration | BACKLOG (2026-10-19) | S-M | components |
 | [249](backlog/249-navigationmenu-indicator.md) | NavigationMenuIndicator (the leftover of closed row 72) | BACKLOG (2026-10-19) | S | components |
 | [250](backlog/250-container-reset-loses-unpushed-work.md) | A container reset to a fresh clone loses every unpushed lane commit and all session scratch | CONSTRUCTION LANDED 2026-10-19 (lane-rules: push lane/* after every commit); redo of the lost work… | S | infra |
-| [251](backlog/251-native-checkbox-ssr-initial-checked.md) | Native checkbox in the prerendered /component/form/ ignores initial_checked until the page is client-created | BACKLOG (lane specs2 2026-10-19) | S | components |
-| [252](backlog/252-virtualgrid-ssr-height-off-by-one-row.md) | VirtualGrid: the prerendered inner wrapper is one row shorter than after hydration (175000 px -&gt; 175036 px) | BACKLOG (validation 2026-10-20) | S | components |
+| [252](backlog/252-virtualgrid-ssr-height-off-by-one-row.md) | VirtualGrid: the prerendered inner wrapper is one row shorter than after hydration (175000 px -&gt; 175036 px) | OPEN, inherent (cannot be decided at render): measured canvas | S | components |
 | [257](backlog/257-user-select-sidebar-spec-goto-hung-to-the-90-s-timeout-once.md) | user-select.spec.ts /component/sidebar/ page.goto hung to the 90 s timeout once in the release suite | OPEN (not reproducible: 1 failure in the batch-A release suite; 17 of 17 green since on release and… | S | playwright |
 | [265](backlog/265-upstream-ai-elements-code-block-trace-chat.md) | Upstream ai-elements (chat, message, code-block, trace, checkpoint, ...) vs our chat kit | PARTIAL 2026-10-19 (items 1-2 landed: code_block, trace, checkpoint and chat demos; item 3 is an… | L | chat |
 | [266](backlog/266-repo-cleanup-archive-historical-dev-docs.md) | Repo cleanup: archive historical dev-docs, trim CLAUDE.md and the big dev docs, split backlog.md | APPROVED 2026-10-19 (owner: run it when safe, in the Round 6 sweep); starts once no feature lane… | M-L | process |
@@ -91,31 +88,17 @@ proposing one is closed as out of scope (row 337 is the first).
 | [321](backlog/321-one-merge-queue-owner-for-main-batch-one.md) | One merge-queue owner for main (batch, one full gate and one suite per batch, deploy) | OPEN, documented (owner approved 2026-10-21; the QUEUE format is in lane-rules.md "Merge queue"… | S | process |
 | [322](backlog/322-run-the-full-release-suite-per-deploy-not.md) | Run the full release suite per deploy, not per merge batch | BACKLOG (owner: maybe, 2026-10-21) | S | tests |
 | [325](backlog/325-heavy-cross-page-oracles-construct-the-causes-away.md) | Heavy cross-page oracles: construct the causes away, run what remains per deploy | PARTLY LANDED 2026-10-21: the popup half (row 259, batch A) and the all-routes half (row 327, batch… | M | tests |
-| [326](backlog/326-lanes-iterate-with-dx-serve-hot-reload-and.md) | Lanes iterate with dx serve hot reload and verify on an SSG build | BACKLOG (owner approved 2026-10-21, if reliable and safe) | S | process |
-| [327](backlog/327-audit-1-visit-each-route-once-per-scheme.md) | Audit 1: visit each route once per scheme in all-routes; measure load vs networkidle in gotoHydrated | PARTLY LANDED 2026-10-21 (queue batch 1, PR #126, c5d02507): all-routes loads each (route, scheme)… | M | tests |
 | [329](backlog/329-audit-3-ssr-vs-first-render-parity-as.md) | Audit 3: SSR-vs-first-render parity as a cargo test (spike first) | PARTLY LANDED 2026-10-21 (queue batch 1, PR #126: the SSR vs first-client-frame parity test runs in… | M | tests |
-| [332](backlog/332-tag-group-remove-buttons-render-an-empty-label-and.md) | Tag Group remove buttons render an empty label and disabled on the server | BACKLOG (found 2026-10-21 by the row-329 spike) | S | components |
-| [333](backlog/333-resizable-panels-render-flex-basis-0-on-the-server.md) | Resizable panels render flex-basis 0% on the server and get their real size only in an effect | BACKLOG (found 2026-10-21 by the row-329 spike) | S | components |
 | [334](backlog/334-make-the-four-whole-site-sweeps-cheaper.md) | Make the four whole-site sweeps cheaper (all-routes, first-paint-styles, layout-stability, theme-picker-phone) | BACKLOG (owner approved 2026-10-21, option (c) of row 323) | M | tests |
 | [335](backlog/335-message-scroller-demos-animation-fade-previous-context.md) | Message Scroller demos: animation demo shows LLM output, both fade demos look default, previous-context demo is unclear | BACKLOG (owner 2026-10-21) | S | components |
-| [336](backlog/336-docs-page-title-does-not-update-on-navigation.md) | Docs: the browser tab title does not change when navigating to another page | BACKLOG (owner 2026-10-21) | S | docs |
-| [338](backlog/338-hydration-parity-spec-runs-cargo-at-load-outside-the.md) | hydration-parity.spec builds attr-synth with cargo at load time, outside the build lock | BACKLOG (found 2026-10-21) | S | tests |
-| [339](backlog/339-main-thread-timing-specs-not-skipped-on-debug-builds-in.md) | main-thread timing specs are not skipped on debug builds in test:changed runs | BACKLOG (found 2026-10-21) | S | tests |
 | [340](backlog/340-datatable-column-model-and-use-data-table-hook.md) | DataTable: a column definition and one state hook, rendered into Table | BACKLOG (owner 2026-10-21, after the Table/DataTable/VirtualGrid evaluation; reframed 09:35 as one… | M+ (about 2 to 2.5 days; was M before… | components |
 | [341](backlog/341-virtualgrid-header-sort-row-selection-and-cell.md) | VirtualGrid: header sort state, row selection, and controls inside cells | BACKLOG (owner 2026-10-21; amended 09:35). Comes after row 343 (needs its VirtualizeMode); row 342… | M (about 1.5 to 2 days) | primitives |
 | [342](backlog/342-datatable-large-data-variant-on-virtualgrid.md) | DataTable: a large-data variant rendered through VirtualGrid | BACKLOG (owner 2026-10-21; amended 09:35). Needs rows 340, 343 and 341. | S (about 1 day) | components |
 | [343](backlog/343-one-virtualize-mode-in-the-engine-and-a-data.md) | One virtualize mode in the engine, and a data body for Table | BACKLOG (owner 2026-10-21). Comes after 340 and before 341 and 342. | M (about 2 to 2.5 days) | primitives |
-| [344](backlog/344-charts-flash-the-final-drawing-before-their-entry.md) | Charts flash the final drawing before their entry animation on first client-side open | OPEN (owner report 2026-10-21) | S | charts |
 | [347](backlog/347-message-scroller-scroll-up-inside-the-autoscroll-window.md) | Message scroller: a scroll up inside the 180 ms autoscroll window leaves follow mode armed | BACKLOG (found 2026-10-21 by the batch-2 reds lane). | S (a primitive TS change plus the… | primitives |
-| [348](backlog/348-otp-input-edges-use-a-solid-colour.md) | OTP Input edges use a solid colour, not the translucent dark input token | Open (owner approved 2026-10-20). | S | components |
-| [349](backlog/349-coarse-sizing-global-default-plus-a-per-container-attribute.md) | Coarse sizing: global default plus a per-container `data-dx-coarse` attribute | Open (owner approved 2026-10-20). | M | theme |
-| [350](backlog/350-coarse-demo-palette-toggle-and-side-by-side-docs.md) | Coarse demo: Auto/On/Off in the theme palette and a side-by-side docs section | Open, needs row 349 (owner approved 2026-10-20). | S | docs |
-| [351](backlog/351-rtl-demos-always-come-last.md) | RTL demos always come last in a component's demo list | Open (owner approved 2026-10-20). | S | docs |
-| [352](backlog/352-link-global-attributes-in-prop-tables.md) | Link the 'Plus the global attributes.' sentence in props tables to MDN | Open (owner approved 2026-10-20). | S | docs |
-| [353](backlog/353-carousel-next-arrow-fades-in-after-hydration.md) | Carousel Next arrow fades 0.5 to 1 after hydration (first-paint flicker) | Open (found while fixing row 345; owner approved 2026-10-21). | S-M | components |
-| [354](backlog/354-remove-the-docs-header-language-switcher.md) | Remove the docs header language switcher | Open (owner 2026-10-21: "why is there a lang switcher in the docs menu? If there are no translation… | S | docs |
+| [355](backlog/355-adopt-google-rust-style-guide-items.md) | Adopt Google Rust style guide items: workspace lint table and conventions | BACKLOG -- Round 6 sweep, after row 267's file split (owner approved 2026-10-21) | S-M | process |
 
-## Done rows (258)
+## Done rows (276)
 
 | # | Item | Updated |
 |---|---|---|
@@ -341,6 +324,9 @@ proposing one is closed as out of scope (row 337 is the first).
 | [244](backlog/done/244-virtualgrid-x-y-virtualization-that-windows.md) | VirtualGrid: x/y virtualization that windows rows AND columns (a data grid, an image grid) | 2026-10-19 |
 | [245](backlog/done/245-snapshot-harness-tooltip-and-skip-link.md) | Computed-style snapshot harness: tooltip timing nondeterminism and the skip link counted as an open-state item | 2026-10-19 |
 | [246](backlog/done/246-snapshot-buckets-too-coarse.md) | Snapshot diff buckets are page-level on some routes | 2026-10-19 |
+| [247](backlog/done/247-avatar-loading-spec-450ms-floor.md) | avatar-loading spec has a 450 ms floor too tight for this machine | 2026-10-21 |
+| [248](backlog/done/248-select-placeholder-until-mount-hydration-shift.md) | Select renders its placeholder until mount, so a Select with a default value shifts layout at hydration | 2026-10-21 |
+| [251](backlog/done/251-native-checkbox-ssr-initial-checked.md) | Native checkbox in the prerendered /component/form/ ignores initial_checked until the page is client-created | 2026-10-21 |
 | [253](backlog/done/253-ssg-renders-initial-checked-as-a-literal-attribute.md) | SSG renders `initial_checked` as a literal `initial_checked=true` attribute, so a prerendered checkbox, switch or radio loads unchecked | 2026-10-20 |
 | [254](backlog/done/254-stale-cargo-lock-in-detached-crates.md) | Stale Cargo.lock in the detached crates (attr-synth, carousel-lab) rewritten by lane spec runs | 2026-10-20 |
 | [255](backlog/done/255-stale-specs-toast-countdown-shim-and-drawer-drag-viewport.md) | Two specs drifted from the product and were red on main: the toast countdown shim and the drawer drag viewport | 2026-10-20 |
@@ -371,12 +357,27 @@ proposing one is closed as out of scope (row 337 is the first).
 | [320](backlog/done/320-skip-the-cargo-gates-when-the-rust-tree.md) | Skip the cargo gates when the Rust tree is unchanged since the last green full gate | 2026-10-21 |
 | [323](backlog/done/323-finer-spec-selection-map-changed-css-rules-to.md) | Finer spec selection: map changed CSS rules to the classes and routes that use them | 2026-10-21 |
 | [324](backlog/done/324-keep-warm-release-target-trees-for-validation-and.md) | Keep warm release target trees for validation and for deploy | 2026-10-21 |
+| [326](backlog/done/326-lanes-iterate-with-dx-serve-hot-reload-and.md) | Lanes iterate with dx serve hot reload and verify on an SSG build | 2026-10-21 |
+| [327](backlog/done/327-audit-1-visit-each-route-once-per-scheme.md) | Audit 1: visit each route once per scheme in all-routes; measure load vs networkidle in gotoHydrated | 2026-10-21 |
 | [328](backlog/done/328-audit-2-declared-typography-every-text-or-icon.md) | Audit 2: declared typography -- every text- or icon-bearing root declares its size, only font-family, colour and direction inherit | 2026-10-21 |
 | [330](backlog/done/330-audit-4-a-policy-cascade-layer-for-theme.md) | Audit 4: a policy cascade layer for theme rules that must win (@layer dx-base, dx-components, dx-policy) | 2026-10-21 |
 | [331](backlog/done/331-audit-5-delete-the-sweeps-that-a-static.md) | Audit 5: delete the sweeps that a static gate or another spec already covers | 2026-10-21 |
+| [332](backlog/done/332-tag-group-remove-buttons-render-an-empty-label-and.md) | Tag Group remove buttons render an empty label and disabled on the server | 2026-10-21 |
+| [333](backlog/done/333-resizable-panels-render-flex-basis-0-on-the-server.md) | Resizable panels render flex-basis 0% on the server and get their real size only in an effect | 2026-10-21 |
+| [336](backlog/done/336-docs-page-title-does-not-update-on-navigation.md) | Docs: the browser tab title does not change when navigating to another page | 2026-10-21 |
 | [337](backlog/done/337-text-editor-component-rich-text-markdown-composer.md) | Text editor component (rich text / markdown composer) | 2026-10-21 |
+| [338](backlog/done/338-hydration-parity-spec-runs-cargo-at-load-outside-the.md) | hydration-parity.spec builds attr-synth with cargo at load time, outside the build lock | 2026-10-21 |
+| [339](backlog/done/339-main-thread-timing-specs-not-skipped-on-debug-builds-in.md) | main-thread timing specs are not skipped on debug builds in test:changed runs | 2026-10-21 |
+| [344](backlog/done/344-charts-flash-the-final-drawing-before-their-entry.md) | Charts flash the final drawing before their entry animation on first client-side open | 2026-10-21 |
 | [345](backlog/done/345-carousel-nav-opacity-spec-read-next-mid-fade.md) | carousel-nav-opacity first-slide spec reads Next mid-fade (red on main) | 2026-10-21 |
 | [346](backlog/done/346-popover-keyboard-close-focus-return-test-raced-the-close-policy.md) | Popover keyboard-close focus-return spec raced the close policy | 2026-10-21 |
+| [348](backlog/done/348-otp-input-edges-use-a-solid-colour.md) | OTP Input edges use a solid colour, not the translucent dark input token | 2026-10-21 |
+| [349](backlog/done/349-coarse-sizing-global-default-plus-a-per-container-attribute.md) | Coarse sizing: global default plus a per-container `data-dx-coarse` attribute | 2026-10-21 |
+| [350](backlog/done/350-coarse-demo-palette-toggle-and-side-by-side-docs.md) | Coarse demo: Auto/On/Off in the theme palette and a side-by-side docs section | 2026-10-21 |
+| [351](backlog/done/351-rtl-demos-always-come-last.md) | RTL demos always come last in a component's demo list | 2026-10-21 |
+| [352](backlog/done/352-link-global-attributes-in-prop-tables.md) | Link the 'Plus the global attributes.' sentence in props tables to MDN | 2026-10-21 |
+| [353](backlog/done/353-carousel-next-arrow-fades-in-after-hydration.md) | Carousel Next arrow fades 0.5 to 1 after hydration (first-paint flicker) | 2026-10-21 |
+| [354](backlog/done/354-remove-the-docs-header-language-switcher.md) | Remove the docs header language switcher | 2026-10-21 |
 
 ## Notes (8)
 

@@ -124,11 +124,19 @@ test("delay: the fallback is held back that long, and a picture that loads withi
   const shownAt = async () => page.evaluate(() => (window as unknown as { __delayedShownAt: number | null }).__delayedShownAt);
   // ... and it appears once the 600 ms are up (not instantly, not never).
   await expect(avatar.locator(".dx-avatar-fallback")).toHaveText("DF", { timeout: 10_000 });
-  const { hydratedAt } = await page.evaluate(() => ({ hydratedAt: (window as unknown as { __hydratedAt: number }).__hydratedAt }));
-  const waited = (await shownAt())! - hydratedAt;
-  // 600 ms from mount. The prerendered page mounts the avatar while it hydrates, up to ~200 ms before the hydrated
-  // flag (the legacy client-created route mounted after it), so the floor is 600 minus that slack, not the delay itself.
-  expect(waited).toBeGreaterThanOrEqual(350);
+  // The delay runs from the component's client mount, which is not observable from the DOM and happens during
+  // hydration, up to a machine-dependent gap BEFORE the `data-hydrated` flag (row 247: waited 445 ms against an
+  // anchor of `hydratedAt`, a 450 ms floor that this box's gap exceeded in three runs). So anchor on something that
+  // strictly precedes the mount: the wasm module's last byte (the app cannot mount before it is downloaded). Then
+  // the delay itself is the floor, with no slack to tune: shown >= wasmEnd + 600 on every machine.
+  const wasmEnd = await page.evaluate(() => {
+    const e = performance.getEntriesByType("resource").find((r) => /\.wasm(\?|$)/.test(r.name));
+    return e ? e.responseEnd : null;
+  });
+  expect(wasmEnd, "the wasm module's resource timing entry").not.toBeNull();
+  const waited = (await shownAt())! - wasmEnd!;
+  // 600 ms delay; 5 ms for timer coarsening (a timer may fire a tick early against performance.now()).
+  expect(waited).toBeGreaterThanOrEqual(595);
   expect(waited).toBeLessThan(4_000);
 });
 

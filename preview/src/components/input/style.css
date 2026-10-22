@@ -24,7 +24,7 @@
   border-start-start-radius: var(--dx-group-radius-start-start, var(--dx-radius-lg));
   box-shadow: inset 0 0 0 1px var(--dx-input);
   color: var(--dx-foreground);
-  font-size: var(--dx-text-sm);
+  font-size: var(--dx-coarse-text-entry-font-size);
   gap: var(--dx-space-1);
   outline: none;
   transition: background-color var(--dx-motion-duration-fast) var(--dx-motion-ease-out);
@@ -75,15 +75,4 @@
   color: var(--dx-muted-foreground);
   cursor: not-allowed;
   opacity: var(--dx-input-disabled-opacity, var(--dx-opacity-disabled));
-}
-
-/*
- * Floor the font-size to 16px on touch devices. iOS Safari auto-zooms when a
- * focused text field computes below 16px, and the input otherwise inherits a
- * smaller size. Scoped to coarse pointers so desktop sizing is unaffected.
- */
-@media (pointer: coarse) {
-  .dx-input {
-    font-size: var(--dx-text-base);
-  }
 }

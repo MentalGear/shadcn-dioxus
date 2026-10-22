@@ -510,27 +510,19 @@ for (const route of ROUTES) {
   }
 }
 
-// --- 4. <html lang> follows the language switcher -------------------------------------------
-// WCAG 3.1.1/3.1.2: a German page read with an English voice. `<html lang>` follows the ACTIVE locale
-// (`App`'s effect on `I18n::language()` in main.rs), so it also survives a route change, which remounts the
-// header's select.
-test("the language switcher sets <html lang>, and it survives navigating to another page", async ({ page }) => {
+// --- 4. <html lang> is English, and there is no site-wide language switcher (row 354) ---------
+// The site is English only: the header has no language control, `<html lang>` stays `en` on a route change
+// (the `internationalized` Calendar/Date Picker demos mark their own subtree, see date-picker.spec.ts).
+test("<html lang> is en, no header language switcher, and both survive navigating to another page", async ({ page }) => {
   test.setTimeout(NAV_TIMEOUT);
   await openRoute(page, { id: "button", path: "/component/button/", kind: "page" }, "light");
   const lang = page.locator("html");
-  const select = page.getByLabel("Language", { exact: true });
-  await expect(lang).toHaveAttribute("lang", /^en/);
-  await select.selectOption("German");
-  await expect(lang).toHaveAttribute("lang", "de-DE");
-  // A client-side navigation (a sidebar link, no reload) keeps the locale and the page's language.
+  await expect(lang).toHaveAttribute("lang", "en");
+  await expect(page.getByLabel("Language", { exact: true })).toHaveCount(0);
   await page.locator('a[data-sidebar="menu-button"][href*="/component/badge/"]:visible').click();
   await expect(page.locator(".dx-component-page-header h1")).toBeVisible();
-  await expect(lang).toHaveAttribute("lang", "de-DE");
-  await expect(select, "the select shows the language the page is really in").toHaveValue("German");
-  await select.selectOption("French");
-  await expect(lang).toHaveAttribute("lang", "fr-FR");
-  await select.selectOption("English");
-  await expect(lang).toHaveAttribute("lang", "en-US");
+  await expect(lang).toHaveAttribute("lang", "en");
+  await expect(page.getByLabel("Language", { exact: true })).toHaveCount(0);
 });
 
 // --- 5. calibration: the frame-title assertion bites ----------------------------------------

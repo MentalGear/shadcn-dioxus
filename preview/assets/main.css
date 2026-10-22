@@ -178,6 +178,10 @@ main[tabindex="-1"]:focus {
  * new raw control added anywhere in `preview/` can never regress this by
  * omission.
  */
+
+/* Only RAW controls (no `dx-` class): every library control reads the theme's text-entry size, which
+   * `data-dx-coarse` switches (a forced `off` must stay at the desktop size, and this rule would win it back
+   * with `!important`). */
 @media (pointer: coarse) {
   /* Written as an explicit allowlist of simple selectors on purpose: the
      first version used `input:not([type="checkbox"], [type="radio"], …)`
@@ -188,23 +192,26 @@ main[tabindex="-1"]:focus {
      touch-focus-zoom oracle stayed red on every route through the navbar's
      language <select>). Simple selectors survive; see
      docs/issues/asset-css-not-selector-list.md. */
-  input:not([type]),
-  input[type="text"],
-  input[type="search"],
-  input[type="email"],
-  input[type="url"],
-  input[type="tel"],
-  input[type="password"],
-  input[type="number"],
-  input[type="date"],
-  input[type="datetime-local"],
-  input[type="month"],
-  input[type="week"],
-  input[type="time"],
-  textarea,
-  select,
-  [contenteditable="true"],
-  [contenteditable=""] {
+
+  /* A chained `:not()`, not the list form the notation rule wants: the asset pipeline drops that (above). */
+  /* stylelint-disable-next-line selector-not-notation */
+  input:not([type]):not([class*="dx-"]),
+  input[type="text"]:not([class*="dx-"]),
+  input[type="search"]:not([class*="dx-"]),
+  input[type="email"]:not([class*="dx-"]),
+  input[type="url"]:not([class*="dx-"]),
+  input[type="tel"]:not([class*="dx-"]),
+  input[type="password"]:not([class*="dx-"]),
+  input[type="number"]:not([class*="dx-"]),
+  input[type="date"]:not([class*="dx-"]),
+  input[type="datetime-local"]:not([class*="dx-"]),
+  input[type="month"]:not([class*="dx-"]),
+  input[type="week"]:not([class*="dx-"]),
+  input[type="time"]:not([class*="dx-"]),
+  textarea:not([class*="dx-"]),
+  select:not([class*="dx-"]),
+  [contenteditable="true"]:not([class*="dx-"]),
+  [contenteditable=""]:not([class*="dx-"]) {
     /* `!important` is deliberate and load-bearing: this is the app-wide
        backstop, and it must beat every component stylesheet's own class
        rule (e.g. `.dx-language-select { font-size: 0.8rem }`), which any
@@ -2271,7 +2278,7 @@ html[data-cv-settle] {
 
   /* 8px between header items, not the desktop 16px: a docs page's primary group is the sidebar
    * trigger + logo + Docs + Demos + Charts, and with 12px gaps that group plus GitHub, the toggle and
-   * the language select needed ~12px more than a 390px phone has (the "Charts" link drew over the
+   * the (since removed) language select needed ~12px more than a 390px phone has (the "Charts" link drew over the
    * GitHub mark). One value for both groups, so the row's rhythm is the same on every page; the
    * `<= 360px` and `<= 320px` blocks below spend the rest of their room elsewhere. Guard:
    * playwright/theme-picker-phone.spec.ts, "the header row fits at every phone width". */
@@ -2371,15 +2378,13 @@ html[data-cv-settle] {
 }
 
 /* Very narrow phones. The header is one `nowrap` row whose widest page (a docs page: sidebar trigger,
- * logo, Docs, Demos, Charts | GitHub, light/dark toggle, language select) needs ~330px of content width
+ * logo, Docs, Demos, Charts | GitHub, light/dark toggle) needs ~330px of content width
  * at the 8px gaps above, plus the row's padding and 1px borders. A 390px phone offers ~356px (fits), a
  * 360px phone ~334px, a 320px phone ~294px at 12px padding, so with `min-width: 0` the two groups used
  * to draw over each other ("Charts" under the GitHub mark, ~16px at 320px). Reclaim the difference in
- * steps, spacing and text first, the language chevron last:
- *   <= 360px  tighter row padding (~8px), 14.4px link text (~7px) and a 16px language chevron (~8px):
- *             ~10px spare on a docs page at 360px
- *   <= 320px  drop the chevron entirely (flag only, ~16px; the transparent `<select>` still covers the
- *             flag, so it stays operable), 8px row padding (~8px) and 6px gaps (~12px): ~11px spare
+ * steps, spacing and text:
+ *   <= 360px  tighter row padding (~8px) and 14.4px link text (~7px)
+ *   <= 320px  8px row padding (~8px) and 6px gaps (~12px)
  * Measured with a mobile viewport (overlay scrollbars) on `/`, `/docs`, `/component/button/` and
  * `/demos` at 390, 360 and 320px. A desktop browser squeezed to a phone width also spends 15px on a
  * classic scrollbar, which these steps do not cover: 320px is the narrowest phone. */
@@ -2393,11 +2398,6 @@ html[data-cv-settle] {
   .dx-navbar-link {
     font-size: 0.9rem;
   }
-
-  .dx-language-select-value .dx-select-expand-icon {
-    width: 16px;
-    height: 16px;
-  }
 }
 
 @media (width <= 320px) {
@@ -2409,10 +2409,6 @@ html[data-cv-settle] {
   .dx-navbar-primary,
   .dx-navbar-utilities {
     gap: 0.375rem;
-  }
-
-  .dx-language-select-value .dx-select-expand-icon {
-    display: none;
   }
 }
 

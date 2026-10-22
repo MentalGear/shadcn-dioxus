@@ -41,7 +41,7 @@ pub(crate) struct Frames {
     pub rounds: usize,
 }
 
-/// The root every demo sits under on the site: the app's own i18n context (`App` in `main.rs`).
+/// The root every demo sits under on the site (the i18n demos bring their own, `crate::i18n::LocaleDemo`).
 #[derive(Props, Clone, PartialEq)]
 #[allow(unpredictable_function_pointer_comparisons)]
 struct RootProps {
@@ -51,15 +51,6 @@ struct RootProps {
 
 #[component]
 fn Root(props: RootProps) -> Element {
-    use dioxus_i18n::prelude::*;
-    use unic_langid::langid;
-    use_init_i18n(|| {
-        I18nConfig::new(langid!("en-US"))
-            .with_locale((langid!("en-US"), include_str!("i18n/en-US.ftl")))
-            .with_locale((langid!("fr-FR"), include_str!("i18n/fr-FR.ftl")))
-            .with_locale((langid!("es-ES"), include_str!("i18n/es-ES.ftl")))
-            .with_locale((langid!("de-DE"), include_str!("i18n/de-DE.ftl")))
-    });
     let Demo = props.demo;
     rsx! { Demo {} }
 }
@@ -82,7 +73,7 @@ pub(crate) fn settle(dom: &mut VirtualDom) -> usize {
     active
 }
 
-/// The root of a whole page: the app's i18n context, the memory history the server gives each request
+/// The root of a whole page: the memory history the server gives each request
 /// (`dioxus-server-0.7.9/src/ssr.rs:177`) and the site's `Route` router.
 #[derive(Props, Clone, PartialEq)]
 struct RouteRootProps {
@@ -93,15 +84,6 @@ struct RouteRootProps {
 #[component]
 fn RouteRoot(props: RouteRootProps) -> Element {
     use dioxus::history::{History, MemoryHistory};
-    use dioxus_i18n::prelude::*;
-    use unic_langid::langid;
-    use_init_i18n(|| {
-        I18nConfig::new(langid!("en-US"))
-            .with_locale((langid!("en-US"), include_str!("i18n/en-US.ftl")))
-            .with_locale((langid!("fr-FR"), include_str!("i18n/fr-FR.ftl")))
-            .with_locale((langid!("es-ES"), include_str!("i18n/es-ES.ftl")))
-            .with_locale((langid!("de-DE"), include_str!("i18n/de-DE.ftl")))
-    });
     let path = props.path.clone();
     use_hook(|| {
         provide_context(
@@ -419,10 +401,6 @@ mod why {
     pub const CAROUSEL: &str = "slide count, and so the previous/next `disabled` state, is read from the mounted track in an \
         effect; the buttons keep their box";
     pub const FIND_LAYER: &str = "the find-in-page layer is mounted by an effect; it is absolutely positioned and `aria-hidden`";
-    pub const TAG_GROUP: &str = "OPEN, found by this test: the remove button is `disabled` with `aria-label=\"Remove item \"` \
-        (no label) until an effect fills the registry -- the class of row 306, not yet fixed here";
-    pub const RESIZABLE: &str = "OPEN, found by this test: the panels are `flex-basis: 0%` in the server markup and take their \
-        share (50%, 40%) in an effect, so the first paint has collapsed panels";
 }
 use why::*;
 
@@ -458,26 +436,18 @@ const BASELINE: &[(&str, &str)] = &[
     ("empty/avatar", AVATAR),
     ("item/avatar", AVATAR),
     ("item/group", AVATAR),
-    ("resizable/main", RESIZABLE),
-    ("resizable/rtl", RESIZABLE),
-    ("resizable/vertical", RESIZABLE),
-    ("tag_group/main", TAG_GROUP),
-    ("tag_group/multi", TAG_GROUP),
-    ("tag_group/states", TAG_GROUP),
     ("virtual_list/find_in_page", FIND_LAYER),
 ];
 
 /// Pages whose first client frame differs from the server page in a paint-relevant way: the pages that
 /// show a demo of [`BASELINE`]. Shrink-only, like it.
 const ROUTE_BASELINE: &[(&str, &str)] = &[
-    ("/", RESIZABLE),
+    ("/", AVATAR),
     ("/component/avatar/", AVATAR),
     ("/component/carousel/", CAROUSEL),
     ("/component/drag_and_drop_list/", AVATAR),
     ("/component/empty/", AVATAR),
     ("/component/item/", AVATAR),
-    ("/component/resizable/", RESIZABLE),
-    ("/component/tag_group/", TAG_GROUP),
     ("/component/virtual_list/", FIND_LAYER),
 ];
 

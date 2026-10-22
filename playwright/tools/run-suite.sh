@@ -22,6 +22,9 @@ while [ $# -gt 0 ]; do
 done
 [ -n "$out" ] || { echo "run-suite: --out DIR is required" >&2; exit 2; }
 mkdir -p "$out"
+# hydration-parity.spec.ts only runs the attr-synth binary; build it here, through the build lock, before any
+# `--list` or chunk loads the spec (row 338).
+tools/ensure-attr-synth.sh || exit 2
 if [ -z "$table" ]; then
   if [ -f durations.json ]; then table=durations.json
   else table="$out/list.json"; PLAYWRIGHT_JSON_OUTPUT_FILE="$table" npx playwright test --config="$config" --list --reporter=json >/dev/null || exit 2; fi

@@ -30,7 +30,6 @@ use charts_gallery::{Charts, ChartsKind};
 use core::panic;
 use dioxus::prelude::{dioxus_router::LinkProps, *};
 use dioxus_code::{advanced::HighlightedSource, Code, CodeTheme, Theme};
-use dioxus_i18n::prelude::{i18n, use_init_i18n, I18nConfig};
 use dioxus_icons::lucide::{
     ArrowRight, ArrowUpRight, BookOpen, ChartColumn, Check, ChevronDown, ChevronLeft, Copy,
     ExternalLink, FileText, Hash, House, Mail, Menu, Monitor, Pause, Play, SkipBack, SkipForward,
@@ -38,19 +37,20 @@ use dioxus_icons::lucide::{
 use dioxus_primitives::direction::{Direction, DirectionProvider};
 use dioxus_primitives::{ContentAlign, ContentSide};
 use nav_link::NavLink;
-use unic_langid::{langid, LanguageIdentifier};
 
 #[cfg(test)]
 mod chart_parity;
 #[cfg(test)]
 mod chart_tooltip_parity;
 mod charts_gallery;
+mod coarse_docs;
 mod components;
 mod dashboard;
 mod docs_nav;
 // Client builds only: the server keeps `ServerDocument` for the SSR `<head>` (see the module's docs).
 #[cfg(not(feature = "server"))]
 mod eager_head;
+mod i18n;
 mod installed_source;
 mod motion_docs;
 mod nav_link;
@@ -273,30 +273,11 @@ fn server_static_routes() -> Vec<String> {
 pub fn App() -> Element {
     // Insert every `document::Link`/`Stylesheet`/`Meta` into `<head>` as it renders, not from an effect
     // that a same-turn teardown drops while Dioxus's de-duplication still counts the link as present
-    // (the legacy `/component/?name=X` shell lost the header's `LanguageSelect`/`Popover` CSS that way).
+    // (the legacy `/component/?name=X` shell lost the header's `Popover` CSS that way).
     // First, so it is in place before any component can render a link. Client builds only: the server's
     // `ServerDocument` must keep collecting the SSR head. See `eager_head`.
     #[cfg(not(feature = "server"))]
     eager_head::use_eager_head_document();
-
-    let locale = use_init_i18n(|| {
-        I18nConfig::new(langid!("en-US"))
-            .with_locale((langid!("en-US"), include_str!("i18n/en-US.ftl")))
-            .with_locale((langid!("fr-FR"), include_str!("i18n/fr-FR.ftl")))
-            .with_locale((langid!("es-ES"), include_str!("i18n/es-ES.ftl")))
-            .with_locale((langid!("de-DE"), include_str!("i18n/de-DE.ftl")))
-    });
-
-    // `<html lang>` follows the ACTIVE locale, not whichever control last changed it (WCAG 3.1.1: a
-    // German page read with an English voice). The static document says `lang="en"` and the app
-    // starts on `en-US`, so SSR is right as it is; this effect re-reads `I18n::language()` (a signal)
-    // and so also runs on every later `set_language`, from the header's `LanguageSelect` or any
-    // future control. `<html>` is never vdom-owned, so writing it cannot desync hydration. The tag is
-    // a `LanguageIdentifier` (letters and `-` only), so `{:?}` yields a valid JS string literal.
-    use_effect(move || {
-        let tag = locale.language().to_string();
-        document::eval(&format!("document.documentElement.lang = {tag:?}"));
-    });
 
     // Hydration-ready signal, by construction (dev-docs/backlog.md: SSG
     // interaction tests race hydration). `document::eval` only ever runs
@@ -316,6 +297,20 @@ pub fn App() -> Element {
     rsx! {
         Router::<Route> {}
     }
+}
+
+/// `date picker` -> `Date Picker`, for a page title.
+fn title_case(text: &str) -> String {
+    text.split(' ')
+        .map(|word| {
+            let mut chars = word.chars();
+            match chars.next() {
+                Some(first) => first.to_uppercase().chain(chars).collect::<String>(),
+                None => String::new(),
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
 }
 
 #[derive(Routable, Clone, PartialEq)]
@@ -404,6 +399,38 @@ pub enum Route {
 }
 
 impl Route {
+    /// The document title of this route: `<page> – shadcn-dioxus`, the bare site name for the home page.
+    /// `AppLayout` is the only caller, so every route's title is decided here and nowhere else.
+    pub fn page_title(&self) -> String {
+        let page = match self {
+            Route::Home { .. } => return SITE_NAME.to_string(),
+            Route::Docs { .. } => "Docs".to_string(),
+            Route::Demos { .. } => "Demos".to_string(),
+            Route::Charts { .. } => charts_gallery::ChartKind::Area.tab_label().to_string(),
+            Route::ChartsKind { kind, .. } => match charts_gallery::ChartKind::from_slug(kind) {
+                Some(kind) => kind.tab_label().to_string(),
+                None => "Chart type not found".to_string(),
+            },
+            Route::ComponentDemo { .. } => "Components".to_string(),
+            Route::ComponentDemoPath { name, .. } => {
+                if components::DEMOS.iter().any(|demo| demo.name == name) {
+                    title_case(&name.replace('_', " "))
+                } else {
+                    "Component not found".to_string()
+                }
+            }
+            Route::NotFound { .. } => "Page not found".to_string(),
+            Route::ComponentBlockDemo { .. } => "Block demo".to_string(),
+            Route::ComponentBlockDemoPath { name, variant, .. } => format!(
+                "{} \u{2013} {} block demo",
+                title_case(&name.replace('_', " ")),
+                variant.replace('_', " ")
+            ),
+            Route::EmailClientDashboard { .. } => "Email client dashboard".to_string(),
+        };
+        format!("{page} \u{2013} {SITE_NAME}")
+    }
+
     pub fn iframe(&self) -> Option<bool> {
         match self {
             Route::Home { iframe, .. } => *iframe,
@@ -557,7 +584,14 @@ fn AppLayout() -> Element {
         }
     });
 
+    // The ONE place that sets the document title (row 336): derived from the current route, so a
+    // client-side navigation replaces it and no page can forget to. Pages never render their own
+    // `document::Title`; `Route::page_title` is the table.
+    let route = use_route::<Route>();
+    let title = route.page_title();
+
     rsx! {
+        document::Title { "{title}" }
         GlobalHead {}
         Outlet::<Route> {}
     }
@@ -717,7 +751,6 @@ fn Navbar() -> Element {
                     }
                     theme::ThemePicker {}
                     theme::DarkModeToggle {}
-                    LanguageSelect {}
                 }
             }
         }
@@ -905,12 +938,8 @@ fn LazyCssCodeBlock(asset: Asset) -> Element {
         async move { fetch_asset_text(url).await }
     });
 
-    // Fully qualified rather than imported: this file already has its own,
-    // unrelated local `enum Language` (the i18n language switcher above),
-    // and importing `dioxus_code::Language` under that same bare name
-    // shadows it -- confirmed live: it breaks the i18n enum's own inherent
-    // `impl` block ("cannot define inherent `impl` for a type outside of
-    // the crate") the moment both are in scope together.
+    // Fully qualified rather than imported: a bare `Language` would be ambiguous with other
+    // language types in scope.
     let placeholder = |text: &'static str| HighlightedCode {
         source: HighlightedSource::from_static_parts(text, dioxus_code::Language::Css, &[]),
     };
@@ -976,137 +1005,6 @@ fn CopyButton(#[props(extends=GlobalAttributes)] attributes: Vec<Attribute>) -> 
             "onclick": "const b = this; const visiblePre = Array.from(b.parentNode.querySelectorAll('pre:not(.dx-code-gutter)')).find((pre) => pre.offsetParent !== null); navigator.clipboard.writeText(visiblePre ? visiblePre.innerText : Array.from(b.parentNode.childNodes).filter((node) => node !== b).map((node) => node.textContent).join('').trim()); b.dataset.copied = 'true';",
             Copy { class: "dx-copy-icon" }
             Check { class: "dx-check-icon" }
-        }
-    }
-}
-
-#[derive(Clone, Copy, PartialEq)]
-enum Language {
-    English,
-    French,
-    Spanish,
-    German,
-}
-
-impl Language {
-    /// Every entry, in the order the dropdown lists them.
-    const ALL: [Language; 4] = [
-        Language::English,
-        Language::French,
-        Language::Spanish,
-        Language::German,
-    ];
-
-    /// The variant name, also the `<option>` value (the old strum `Display`).
-    const fn as_str(&self) -> &'static str {
-        match self {
-            Language::English => "English",
-            Language::French => "French",
-            Language::Spanish => "Spanish",
-            Language::German => "German",
-        }
-    }
-
-    /// The inverse of `as_str` (the old strum `EnumString`).
-    fn from_name(name: &str) -> Option<Self> {
-        Language::ALL
-            .into_iter()
-            .find(|language| language.as_str() == name)
-    }
-
-    /// The entry for the active locale, so a `LanguageSelect` that remounts on a route change (the
-    /// whole docs layout does) shows the language the page is really in, not always English.
-    fn from_id(id: &LanguageIdentifier) -> Self {
-        Language::ALL
-            .into_iter()
-            .find(|language| language.id() == *id)
-            .unwrap_or(Language::English)
-    }
-
-    const fn id(&self) -> LanguageIdentifier {
-        match self {
-            Language::English => langid!("en-US"),
-            Language::French => langid!("fr-FR"),
-            Language::Spanish => langid!("es-ES"),
-            Language::German => langid!("de-DE"),
-        }
-    }
-
-    const fn flag(&self) -> &'static str {
-        match self {
-            Language::English => "🇬🇧",
-            Language::French => "🇫🇷",
-            Language::Spanish => "🇪🇸",
-            Language::German => "🇩🇪",
-        }
-    }
-
-    fn display_name(&self) -> String {
-        format!("{} {}", self.flag(), self.localize_name())
-    }
-
-    const fn localize_name(&self) -> &'static str {
-        match self {
-            Language::English => "English",
-            Language::French => "Français",
-            Language::Spanish => "Español",
-            Language::German => "Deutsch",
-        }
-    }
-}
-
-#[component]
-fn LanguageSelect() -> Element {
-    let mut current_lang = use_signal(|| Language::from_id(&i18n().language()));
-
-    rsx! {
-        document::Stylesheet { href: asset!("/assets/language-select.css") }
-        div { class: "dx-language-container",
-            span { class: "dx-language-select-container",
-                select {
-                    class: "dx-language-select",
-                    aria_label: "Language",
-                    onchange: move |e| {
-                        let name = e.value().parse().unwrap_or(current_lang.read().as_str().to_string());
-                        if let Some(lang) = Language::from_name(&name) {
-                            current_lang.set(lang);
-                        }
-                        let id = current_lang.read().id();
-                        tracing::info!("Current lang: {id}");
-                        // backlog row 84 finding 5: this call was commented
-                        // out, so the dropdown changed its own displayed
-                        // selection but never touched the app's actual
-                        // locale -- every `tid!`/`t!` call site (e.g. the
-                        // date_picker/calendar internationalized demos'
-                        // `on_format_month`/`on_format_*_placeholder`
-                        // callbacks) stayed on `en-US` regardless. `i18n()`
-                        // (`dioxus_i18n::prelude`) reads the same `I18n`
-                        // context `use_init_i18n` provided in `App` above;
-                        // `set_language` writes its `active_bundle` signal,
-                        // which every `tid!` call reads reactively
-                        // (`I18n::try_translate_with_args`'s own
-                        // `self.active_bundle.read()`), so this now
-                        // propagates live to every already-mounted
-                        // translated string, not just future ones.
-                        i18n().set_language(id);
-                    },
-                    for lang in Language::ALL {
-                        option {
-                            value: lang.as_str(),
-                            selected: lang == *current_lang.read(),
-                            {lang.display_name()}
-                        }
-                    }
-                }
-                span { class: "dx-language-select-value",
-                    {current_lang.read().flag()}
-                    ChevronDown {
-                        class: "dx-select-expand-icon",
-                        size: "24px",
-                        stroke: "var(--dx-foreground)",
-                    }
-                }
-            }
         }
     }
 }
@@ -1189,6 +1087,7 @@ const DOCS_SECTIONS: &[&str] = &[
     "Recommended workflow",
     "Motion",
     "Utilities",
+    "Touch sizing",
 ];
 
 /// Turns a heading's visible text into a same-page anchor id: lowercased,
@@ -1439,6 +1338,10 @@ fn Docs(dark_mode: Option<bool>) -> Element {
                 section { class: "dx-docs-section",
                     h2 { id: "{docs_section_slug(DOCS_SECTIONS[5])}", "{DOCS_SECTIONS[5]}" }
                     crate::utilities_docs::UtilitiesDocs {}
+                }
+                section { class: "dx-docs-section",
+                    h2 { id: "{docs_section_slug(DOCS_SECTIONS[6])}", "{DOCS_SECTIONS[6]}" }
+                    crate::coarse_docs::CoarseDocs {}
                 }
             }
         }
@@ -1804,7 +1707,6 @@ fn ComponentDemoPath(iframe: Option<bool>, dark_mode: Option<bool>, name: String
 fn NotFound(segments: Vec<String>) -> Element {
     let path = segments.join("/");
     rsx! {
-        document::Title { "Page not found \u{2013} {SITE_NAME}" }
         Navbar {}
         main { id: MAIN_ID, tabindex: "-1", class: "dx-component-demo-not-found",
             h3 { "Page not found" }

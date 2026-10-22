@@ -488,24 +488,13 @@ td:has(.dx-calendar-grid-cell[data-selection-end="true"]) {
     height: 100%;
     padding: var(--dx-space-1);
     margin: 0;
+
+    /* Despite `opacity: 0` below, this is the REAL tap target (a native `<select>` overlaid on the
+       visible `-value` span, so a touch device still opens its native picker): a focusable text-entry
+       element, so it takes the theme's text-entry size (the 16px touch floor under coarse sizing). */
+    font-size: var(--dx-coarse-text-entry-font-size);
     inset: 0;
     opacity: 0;
-}
-
-/*
- * Floor the font-size to 16px on touch devices -- see `../input/style.css`'s
- * identical comment. Despite `opacity: 0` above, this is the REAL tap
- * target (a native `<select>` overlaid on the visible `-value` span, the
- * standard construction for a styled select whose native picker UI a touch
- * device should still open) -- not decorative and not `pointer-events:
- * none`, so it is exactly the focusable text-entry element WebKit's
- * auto-zoom threshold applies to.
- */
-@media (pointer: coarse) {
-    .dx-calendar-month-select,
-    .dx-calendar-year-select {
-        font-size: var(--dx-text-base);
-    }
 }
 
 /* Nova `caption_label` (`.cn-calendar-caption-label`): `h-6 pr-1 pl-1.5 flex items-center gap-1

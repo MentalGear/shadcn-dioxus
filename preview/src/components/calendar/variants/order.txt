@@ -4,7 +4,6 @@ internationalized
 range
 multi_month
 unavailable_dates
-rtl
 presets
 date_time
 caption
