@@ -4,7 +4,7 @@ title: "Accordion: no hover underline on collapsed headers; optional left chevro
 status: "OPEN (owner review 2026-10-19)."
 size: "M"
 area: primitives
-updated: 2026-10-20
+updated: 2026-10-22
 ---
 
 # Row 299: Accordion: no hover underline on collapsed headers; optional left chevron, used on the docs component page
@@ -34,5 +34,5 @@ M
 3. Use `chevron: Start` on the docs page accordion (`main.rs:1926-1980`, Installation plus the `docs.md` sections).
    - "Manual installation files" inside it is a `Collapsible`, not an accordion. **Default: give it the same left chevron so the page matches.**
 
-## Resolution (lane b-accdrawer, 2026-10-20)
-Implemented; see the backlog.md row and the new Playwright spec named there.
+## Resolution (lane disclosure, 2026-10-22)
+Landed earlier: collapsed headers do not underline (open ones do, a documented deviation), `chevron: AccordionChevron::Start`, used on the docs page accordion and its Collapsible. `playwright/accordion-chevron.spec.ts` covers all three; lane disclosure re-checked each on current main and found nothing left.

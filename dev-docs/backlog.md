@@ -41,7 +41,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (52)
+## Open rows (50)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -69,7 +69,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [188](backlog/188-demo-parity-second-audit-the-owner-s-per.md) | Demo parity, second audit: the owner's per-example list against the original shadcn demos (51 components; row… | DEMO-ONLY ITEMS DONE 2026-10-19 (batch 2: every section-5 demo exists; what remains needs component… | M per batch | docs |
 | [217](backlog/217-dependency-audit-follow-ups-what-users-pay-for.md) | Dependency audit follow-ups (what users pay for in compile time and supply chain) | PARTLY LANDED 2026-10-18 (lane deps 04ad7ddf): features calendar/color-picker, no build script… | S-M each | build |
 | [218](backlog/218-popup-style-isolation-top-layer-popups-stay-dom.md) | Popup style isolation: top-layer popups stay DOM descendants of their trigger, so free-content rules in an… | NARROWED 2026-10-21: PARTLY LANDED 2026-10-15 (lane ancestorleak 900f394 + main-loop 526b51d… | M | overlays |
-| [249](backlog/249-navigationmenu-indicator.md) | NavigationMenuIndicator (the leftover of closed row 72) | BACKLOG (2026-10-19) | S | components |
 | [250](backlog/250-container-reset-loses-unpushed-work.md) | A container reset to a fresh clone loses every unpushed lane commit and all session scratch | CONSTRUCTION LANDED 2026-10-19 (lane-rules: push lane/* after every commit); redo of the lost work… | S | infra |
 | [252](backlog/252-virtualgrid-ssr-height-off-by-one-row.md) | VirtualGrid: the prerendered inner wrapper is one row shorter than after hydration (175000 px -&gt; 175036 px) | OPEN, inherent (cannot be decided at render): measured canvas | S | components |
 | [257](backlog/257-user-select-sidebar-spec-goto-hung-to-the-90-s-timeout-once.md) | user-select.spec.ts /component/sidebar/ page.goto hung to the 90 s timeout once in the release suite | OPEN (not reproducible: 1 failure in the batch-A release suite; 17 of 17 green since on release and… | S | playwright |
@@ -80,7 +79,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [285](backlog/285-docs-preview-card-light-mode-tint.md) | Docs preview card: a visible light-mode tint without breaking Toggle hover contrast | OPEN. Needs the owner's call on the light-mode tint strength once the Toggle/Pagination hover is… | S | preview |
 | [295](backlog/295-press-feedback-on-touch-taps-already-on-by.md) | Press feedback on touch taps: already on by default, so check why taps don't show it | PARTLY LANDED 2026-10-20 (theme-touch lane 1ba0b2e5, cf64037a); device re-test open. Row 205… | S (or none) | theme |
 | [296](backlog/296-combobox-list-drifts-from-its-input-on-ios-after.md) | Combobox list drifts from its input on iOS after long scrolling | OPEN (owner report 2026-10-19), needs device verification. Related rows: 28 (iOS keyboard anchor… | M + device check | overlays |
-| [299](backlog/299-accordion-no-hover-underline-on-collapsed-headers.md) | Accordion: no hover underline on collapsed headers; optional left chevron, used on the docs component page | OPEN (owner review 2026-10-19). | M | primitives |
 | [304](backlog/304-radial-chart-tooltips-share-the-gap-split-equally.md) | Radial chart tooltips share the gap, split equally per ring (lowest priority) | PARKED (lowest priority; ask the owner before starting), owner 2026-10-19. Ask the owner whether… | S–M (to scope) | primitives |
 | [305](backlog/305-side-drawer-scrolling-its-content-also-drags-the.md) | Side drawer: scrolling its content also drags the drawer sideways (iOS) | BACKLOG (owner report 2026-10-19, iOS device) | S–M | primitives |
 | [307](backlog/307-ios-color-panel-does-not-pick-colors.md) | iOS: the Color Panel opens but tapping its color box does not change the color | OPEN (owner report 2026-10-20, iOS device; being investigated in the 'iOS Color Panel won't pick… | M | overlays |
@@ -98,7 +96,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [347](backlog/347-message-scroller-scroll-up-inside-the-autoscroll-window.md) | Message scroller: a scroll up inside the 180 ms autoscroll window leaves follow mode armed | BACKLOG (found 2026-10-21 by the batch-2 reds lane). | S (a primitive TS change plus the… | primitives |
 | [355](backlog/355-adopt-google-rust-style-guide-items.md) | Adopt Google Rust style guide items: workspace lint table and conventions | BACKLOG -- Round 6 sweep, after row 267's file split (owner approved 2026-10-21) | S-M | process |
 
-## Done rows (276)
+## Done rows (278)
 
 | # | Item | Updated |
 |---|---|---|
@@ -326,6 +324,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [246](backlog/done/246-snapshot-buckets-too-coarse.md) | Snapshot diff buckets are page-level on some routes | 2026-10-19 |
 | [247](backlog/done/247-avatar-loading-spec-450ms-floor.md) | avatar-loading spec has a 450 ms floor too tight for this machine | 2026-10-21 |
 | [248](backlog/done/248-select-placeholder-until-mount-hydration-shift.md) | Select renders its placeholder until mount, so a Select with a default value shifts layout at hydration | 2026-10-21 |
+| [249](backlog/done/249-navigationmenu-indicator.md) | NavigationMenuIndicator (the leftover of closed row 72) | 2026-10-22 |
 | [251](backlog/done/251-native-checkbox-ssr-initial-checked.md) | Native checkbox in the prerendered /component/form/ ignores initial_checked until the page is client-created | 2026-10-21 |
 | [253](backlog/done/253-ssg-renders-initial-checked-as-a-literal-attribute.md) | SSG renders `initial_checked` as a literal `initial_checked=true` attribute, so a prerendered checkbox, switch or radio loads unchecked | 2026-10-20 |
 | [254](backlog/done/254-stale-cargo-lock-in-detached-crates.md) | Stale Cargo.lock in the detached crates (attr-synth, carousel-lab) rewritten by lane spec runs | 2026-10-20 |
@@ -346,6 +345,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [294](backlog/done/294-charts-and-leftovers-still-allow-text-selection.md) | Charts (and leftovers) still allow text selection | 2026-10-21 |
 | [297](backlog/done/297-overview-page-sidebar-demo-drop-the-none-option.md) | Overview page sidebar demo: drop the "None" option | 2026-10-20 |
 | [298](backlog/done/298-overview-demo-cards-vertical-divider-between.md) | Overview demo cards: vertical divider between description and example | 2026-10-20 |
+| [299](backlog/done/299-accordion-no-hover-underline-on-collapsed-headers.md) | Accordion: no hover underline on collapsed headers; optional left chevron, used on the docs component page | 2026-10-22 |
 | [300](backlog/done/300-home-hero-title-shadcn-dioxus-in-bold.md) | Home hero title "shadcn-dioxus" in bold | 2026-10-20 |
 | [301](backlog/done/301-component-card-title-hover-colour-follows-the.md) | Component-card title hover colour follows the theme; offer the default blue in the palette picker | 2026-10-20 |
 | [302](backlog/done/302-charts-page-tab-bar-keep-the-pill-on-the-active.md) | Charts page tab bar: keep the pill on the active tab | 2026-10-20 |
