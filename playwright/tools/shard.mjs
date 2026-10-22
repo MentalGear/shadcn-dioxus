@@ -5,7 +5,7 @@
 // currently lightest shard (LPT), so the shards finish within a few percent of each other.
 //
 //   node playwright/tools/shard.mjs <index>/<count> [--out FILE] [--print-loads] [--table FILE]
-//   PW_SPECS_FILE=FILE npx playwright test --config=suite.local.config.ts     (the config reads the list)
+//   PW_SPECS_FILE=FILE pnpm exec playwright test --config=suite.local.config.ts     (the config reads the list)
 //
 // A spec file missing from durations.json is dealt with the median measured duration (the budget gate,
 // scripts/check-slow-spec-budget.sh, makes that a red so the table is refreshed).

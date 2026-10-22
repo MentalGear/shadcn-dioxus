@@ -12,8 +12,8 @@
 #      dx's reqwest client rejects the agent proxy's CA (`UnknownIssuer`):
 #      esbuild, binaryen/wasm-opt, wasm-bindgen -> ~/.local/share/.dx/tools/
 #      (fetched with curl, which does trust the CA; TLS is never disabled)
-#   4. `npm ci` in playwright/ and preview/ (never plain `npm install` --
-#      backlog row 72; Playwright browsers are preinstalled at
+#   4. `pnpm install --frozen-lockfile` in playwright/ and preview/ (never a
+#      plain `pnpm add`/`install` that rewrites the lock -- backlog rows 72, 359; Playwright browsers are preinstalled at
 #      /opt/pw-browsers, so `playwright install` is deliberately NOT run)
 #   5. `cargo fetch --locked`
 #
@@ -102,29 +102,36 @@ if [ ! -x "$tools_dir/wasm-bindgen-${wb_version}/wasm-bindgen" ]; then
   fi
 fi
 
-# --- 4. node deps (npm ci only) -----------------------------------------------
-npm_ci_if_stale() {
+# --- 4. node deps (pnpm, frozen lockfile only; backlog row 359) -----------------
+# pnpm comes from corepack at the version each package.json pins (`packageManager`);
+# an already-installed pnpm is used as is. Install scripts of dependencies never
+# run (pnpm-workspace.yaml: empty onlyBuiltDependencies) and a version younger
+# than minimumReleaseAge is refused.
+ensure_pnpm() {
+  command -v pnpm >/dev/null && return 0
+  local want
+  want="$(sed -n 's/.*"packageManager": *"\(pnpm@[^"]*\)".*/\1/p' "$repo_root/playwright/package.json")"
+  log "pnpm missing; corepack enable + prepare ${want:-pnpm}"
+  corepack enable >/dev/null 2>&1 || true
+  corepack prepare "${want:-pnpm@latest}" --activate >/dev/null
+}
+pnpm_install_if_stale() {
   local dir="$1"
   [ -f "$dir/package.json" ] || return 0
-  # preview/package-lock.json is gitignored (root .gitignore: package-lock.json),
-  # so a fresh checkout has none: generate one (no install) so `npm ci` can run.
-  if [ ! -f "$dir/package-lock.json" ]; then
-    log "no lockfile in ${dir#"$repo_root"/}; generating one (--package-lock-only)"
-    (cd "$dir" && npm install --package-lock-only --no-audit --no-fund >/dev/null)
-  fi
-  # node_modules/.package-lock.json is npm's own marker, newer than the lockfile
-  # whenever node_modules is in sync. A symlinked node_modules (worktree lanes)
-  # is left alone.
+  # node_modules/.modules.yaml is pnpm's own marker, newer than the lockfile
+  # whenever node_modules is in sync. A symlinked node_modules (worktree lanes,
+  # see dev-docs/lane-rules.md) is left alone.
   if [ -L "$dir/node_modules" ] \
-     || { [ -f "$dir/node_modules/.package-lock.json" ] \
-          && [ "$dir/node_modules/.package-lock.json" -nt "$dir/package-lock.json" ]; }; then
+     || { [ -f "$dir/node_modules/.modules.yaml" ] \
+          && [ "$dir/node_modules/.modules.yaml" -nt "$dir/pnpm-lock.yaml" ]; }; then
     return 0
   fi
-  log "npm ci in ${dir#"$repo_root"/}"
-  (cd "$dir" && npm ci --no-audit --no-fund >/dev/null)
+  ensure_pnpm
+  log "pnpm install --frozen-lockfile in ${dir#"$repo_root"/}"
+  (cd "$dir" && pnpm install --frozen-lockfile --reporter=silent)
 }
-npm_ci_if_stale "$repo_root/playwright"
-npm_ci_if_stale "$repo_root/preview"
+pnpm_install_if_stale "$repo_root/playwright"
+pnpm_install_if_stale "$repo_root/preview"
 
 # --- 5. crates ----------------------------------------------------------------
 # Fast when the registry/git caches are warm.

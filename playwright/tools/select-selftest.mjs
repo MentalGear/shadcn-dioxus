@@ -192,7 +192,7 @@ eq("titles: alias matches a squashed name", SCOPES["oracle/tier1-apg/keyboard-ma
   const walkDir = (d) => { for (const e of fs.readdirSync(d, { withFileTypes: true })) { if (e.name === "node_modules" || e.name === "target") continue; const q = path.join(d, e.name); if (e.isDirectory()) walkDir(q); else if (/\.spec\.ts$/.test(e.name)) allSpecs.push(q); } };
   walkDir(PW);
   eq("specs: none runs cargo (row 338)", allSpecs.filter((f) => /(?:spawnSync|execSync|execFileSync|spawn|exec)\(\s*["'`]cargo|\bcargo build\b/.test(fs.readFileSync(f, "utf8"))).map((f) => path.relative(PW, f)), []);
-  const r = spawnSync("npx", ["playwright", "test", "-c", "ssg.local.config.ts", "--list", "--reporter=json", ...files], { cwd: PW, env, encoding: "utf8", maxBuffer: 1 << 28 });
+  const r = spawnSync("pnpm", ["exec", "playwright", "test", "-c", "ssg.local.config.ts", "--list", "--reporter=json", ...files], { cwd: PW, env, encoding: "utf8", maxBuffer: 1 << 28 });
   if (r.status !== 0 || !r.stdout) check("titles: playwright --list works", false, (r.stderr || "").slice(0, 300));
   else {
     const j = JSON.parse(r.stdout), perFile = new Map();

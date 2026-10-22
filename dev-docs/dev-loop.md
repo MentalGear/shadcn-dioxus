@@ -50,7 +50,7 @@ After the edit loop above, verify on a prerendered build (first paint and hydrat
 the diff-based run, never a hand-picked list and never the whole suite:
 
 ```bash
-cd playwright && PLAYWRIGHT_BASE_URL=http://127.0.0.1:<port> npm run test:changed -- --workers=2
+cd playwright && PLAYWRIGHT_BASE_URL=http://127.0.0.1:<port> pnpm run test:changed -- --workers=2
 node tools/select.mjs --explain        # which specs cover the diff, and why
 ```
 
@@ -432,7 +432,7 @@ symlink so `node scripts/inspect.mjs` can find the `playwright`/
 ```bash
 ln -s playwright/node_modules node_modules   # from the worktree root; gitignored, not committed
 ```
-This session did exactly that rather than `npm install` a second copy — see
+This session did exactly that rather than installing a second copy — see
 the task's own Node-package constraint. See the script's own header comment
 for the full flag list
 (`--variant`, `--dark`, `--viewport`, `--click`/`--press` in given order,
@@ -547,9 +547,9 @@ noisy, not as a spec-runtime baseline.
 **Running exactly one spec — the substring trap, confirmed live:**
 
 ```bash
-npx playwright test --config=session.local.config.ts select.spec.ts --list
+pnpm exec playwright test --config=session.local.config.ts select.spec.ts --list
 #   -> select.spec.ts AND native_select.spec.ts (confirmed this session)
-npx playwright test --config=session.local.config.ts ./select.spec.ts --list
+pnpm exec playwright test --config=session.local.config.ts ./select.spec.ts --list
 #   -> select.spec.ts only
 ```
 
@@ -559,7 +559,7 @@ anything containing that text, including `native_select.spec.ts`. Anchor it
 (a leading `./`, or a full relative path with a `/`) to get exactly one
 file, or use `--grep`/`-g <regex>` to filter by test *title* instead of file
 path. Other useful exact flags (from this session's own
-`npx playwright test --help`): `--repeat-each <N>`, `--reporter=line` (both
+`pnpm exec playwright test --help`): `--repeat-each <N>`, `--reporter=line` (both
 used in this session's own verification run above), `--grep-invert <regex>`.
 
 ## Computed-style snapshot: hover and open states (backlog row 135, 2026-10-11)

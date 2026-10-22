@@ -237,7 +237,7 @@ function listTitles(files) {
   files = files.filter((f) => !/(?:spawnSync|execSync|execFileSync|spawn)\(\s*["'`]cargo|cargo build/.test(src[f] ?? ""));
   if (!files.length) return new Map();
   const env = { ...process.env, PLAYWRIGHT_BASE_URL: process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:1" };
-  const r = spawnSync("npx", ["playwright", "test", "-c", "ssg.local.config.ts", "--list", "--reporter=json", ...files], { cwd: PW, env, encoding: "utf8", maxBuffer: 1 << 28 });
+  const r = spawnSync("pnpm", ["exec", "playwright", "test", "-c", "ssg.local.config.ts", "--list", "--reporter=json", ...files], { cwd: PW, env, encoding: "utf8", maxBuffer: 1 << 28 });
   if (r.status !== 0 || !r.stdout) return null;
   let j;
   try { j = JSON.parse(r.stdout); } catch { return null; }

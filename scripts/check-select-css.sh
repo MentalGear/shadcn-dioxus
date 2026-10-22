@@ -2,7 +2,7 @@
 #
 # check-select-css.sh   (backlog row 323)
 #
-# `playwright/tools/select.mjs` (npm run test:changed) used to answer ANY edit of `preview/assets/*.css` with the whole
+# `playwright/tools/select.mjs` (pnpm run test:changed) used to answer ANY edit of `preview/assets/*.css` with the whole
 # BROAD set (~1,450 tests, ~6,600 s of worker time). It now reads the changed CSS RULES (not the file), places the
 # classes / ids / custom properties they touch on the pages of the SSG build under test, and selects only the matrix
 # tests whose page is reached, falling back to the BROAD set for anything it cannot place. A selector that wrongly
@@ -28,7 +28,7 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
 command -v node >/dev/null || { echo "check-select-css: node is required"; exit 1; }
-[ -d playwright/node_modules ] || { echo "check-select-css: playwright/node_modules is missing (npm ci in playwright/)"; exit 1; }
+[ -d playwright/node_modules ] || { echo "check-select-css: playwright/node_modules is missing (pnpm install --frozen-lockfile in playwright/)"; exit 1; }
 
 out="$(node playwright/tools/select.mjs --self-test 2>&1)" || { printf '%s\n' "$out"; echo "check-select-css: FAIL -- the selector's self-test is red"; exit 1; }
 printf '%s\n' "$out" | tail -1

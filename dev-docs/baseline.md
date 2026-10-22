@@ -11,7 +11,7 @@ HEAD commit: `c8b6aeeba43985d8529726b873392251012947a9`
 - `wasm-bindgen` 0.2.121 (matches `Cargo.lock`), pre-seeded into `~/.cargo/bin/wasm-bindgen` **and** into dx's own tool cache (`~/.local/share/.dx/tools/wasm-bindgen-0.2.121/wasm-bindgen`) — dx looks in the latter, not `$PATH`, so pre-seeding only `~/.cargo/bin` is not sufficient on its own.
 - `NO_PROXY="localhost,127.0.0.1,::1"` and `SSL_CERT_FILE=/root/.ccr/ca-bundle.crt` exported before every `dx` invocation.
 - `rustup target add wasm32-unknown-unknown` done.
-- Playwright: `npm ci` in `playwright/` (package-lock.json present, 15 packages).
+- Playwright: `pnpm install --frozen-lockfile` in `playwright/` (`pnpm-lock.yaml`, frozen install).
 - Browser: **chromium only**. `/opt/pw-browsers/chromium-1194/chrome-linux/chrome` (Chromium 141.0.7390.37). Firefox/webkit are not installed in this image; CI covers them. Config: new `playwright/baseline.local.config.ts` (modeled on `oracle.local.config.ts`: same `executablePath`, but `fullyParallel: true`, `workers: 4`, `reporter: "list"`, `timeout: 90s`, no `webServer` block — reuses the already-running dx server).
 
 ### Build mode deviation: debug, not release
@@ -40,7 +40,7 @@ nohup dx run --web --port 8080 > <scratchpad>/dx-server.log 2>&1 &
 ## Results — full suite (`baseline.local.config.ts`)
 
 ```
-cd playwright && npx playwright test --config=baseline.local.config.ts
+cd playwright && pnpm exec playwright test --config=baseline.local.config.ts
 ```
 
 **127 tests run: 119 passed, 8 failed.** (~5.4 minutes wall time, 4 workers.)
