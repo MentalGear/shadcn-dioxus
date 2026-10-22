@@ -17,12 +17,12 @@
 
 use crate::components::button::{Button, ButtonSize, ButtonVariant};
 use crate::components::checkbox::Checkbox;
-use reorder::{use_row_reorder, ReorderableRow, RowHandle};
 use crate::components::table::{Table, TableBody, TableCell, TableHead, TableHeader, TableRow};
 use dioxus::prelude::*;
 use dioxus_icons::lucide::{ArrowDown, ArrowUp, ArrowUpDown};
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::merge_attributes;
+use reorder::{use_row_reorder, ReorderableRow, RowHandle};
 
 use dioxus_primitives::checkbox::CheckboxState;
 
@@ -47,7 +47,9 @@ mod reorder;
 mod state;
 
 #[allow(unused_imports)]
-pub use columns::{use_data_table, Column, ColumnAlign, DataTableModel, DataTableOptions, DataTableState, RowFn};
+pub use columns::{
+    use_data_table, Column, ColumnAlign, DataTableModel, DataTableOptions, DataTableState, RowFn,
+};
 #[allow(unused_imports)]
 pub use columns_menu::{ColumnsMenuItem, DataTableColumnsMenu, DataTableColumnsMenuProps};
 #[allow(unused_imports)]
@@ -55,7 +57,9 @@ pub use layout::ColumnLayout;
 #[allow(unused_imports)]
 pub use model::{derive, RowCompare, TableState, TableView};
 #[allow(unused_imports)]
-pub use state::{filter_rows, includes_string, paginate, sort_rows, sort_rows_by, tri_state, SortDirection};
+pub use state::{
+    filter_rows, includes_string, paginate, sort_rows, sort_rows_by, tri_state, SortDirection,
+};
 
 /// Props for [`DataTableColumnHeader`].
 #[derive(Props, Clone, PartialEq)]
@@ -102,7 +106,9 @@ pub struct DataTableColumnHeaderProps {
 #[component]
 pub fn DataTableColumnHeader(props: DataTableColumnHeaderProps) -> Element {
     let aria_sort = props.sorted.map_or("none", SortDirection::aria_sort);
-    let base = attributes!(th { class: "dx-data-table-column-header" });
+    let base = attributes!(th {
+        class: "dx-data-table-column-header"
+    });
     // `aria-sort` is required APG Table-pattern state this wrapper computes
     // from `props.sorted`, not a caller default -- owned-wins.
     let owned = attributes!(th { aria_sort });
@@ -165,7 +171,8 @@ pub struct DataTableToolbarProps {
 /// A toolbar holding a text filter [`Input`](crate::components::input::Input).
 #[component]
 pub fn DataTableToolbar(props: DataTableToolbarProps) -> Element {
-    let base = attributes!(div { class: "dx-data-table-toolbar", "data-slot": "data-table-toolbar" });
+    let base =
+        attributes!(div { class: "dx-data-table-toolbar", "data-slot": "data-table-toolbar" });
     let merged = merge_attributes(vec![base, props.attributes]);
     let value = (props.value)();
 
@@ -378,24 +385,39 @@ pub fn DataTable<T: Clone + PartialEq + 'static>(props: DataTableProps<T>) -> El
     let mut reorder = use_row_reorder(state);
     reorder.sync(&view.keys, model.sort.is_some());
     let visible = model.visible_columns(&props.columns);
-    let column_count = visible.len() + usize::from(props.selectable) + usize::from(props.reorderable);
+    let column_count =
+        visible.len() + usize::from(props.selectable) + usize::from(props.reorderable);
     let page_keys = view.keys.clone();
     let page_count = view.page_count;
-    let base = attributes!(div { class: "dx-data-table", "data-slot": "data-table", "data-dx-root": "" });
+    let base =
+        attributes!(div { class: "dx-data-table", "data-slot": "data-table", "data-dx-root": "" });
     let merged = merge_attributes(vec![base, props.attributes.clone()]);
 
     // The Columns menu lists the hideable columns in layout order, hidden ones included.
     let all_ids: Vec<String> = props.columns.iter().map(|c| c.id.clone()).collect();
-    let listed_ids: Vec<String> = props.columns.iter().filter(|c| c.hideable).map(|c| c.id.clone()).collect();
+    let listed_ids: Vec<String> = props
+        .columns
+        .iter()
+        .filter(|c| c.hideable)
+        .map(|c| c.id.clone())
+        .collect();
     let menu_items: Vec<ColumnsMenuItem> = model
         .layout
         .arranged(props.columns.iter().map(|c| c.id.as_str()))
         .into_iter()
         .filter_map(|id| props.columns.iter().find(|c| c.id == id))
         .filter(|c| c.hideable)
-        .map(|c| ColumnsMenuItem { id: c.id.clone(), label: c.header.clone(), visible: !model.layout.is_hidden(&c.id) })
+        .map(|c| ColumnsMenuItem {
+            id: c.id.clone(),
+            label: c.header.clone(),
+            visible: !model.layout.is_hidden(&c.id),
+        })
         .collect();
-    let labels: Vec<(String, String)> = props.columns.iter().map(|c| (c.id.clone(), c.header.clone())).collect();
+    let labels: Vec<(String, String)> = props
+        .columns
+        .iter()
+        .map(|c| (c.id.clone(), c.header.clone()))
+        .collect();
     let show_toolbar = props.filter_placeholder.is_some() || props.column_menu;
     let columns_menu = props.column_menu.then(|| {
         let listed = listed_ids.clone();

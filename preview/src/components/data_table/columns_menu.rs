@@ -7,7 +7,10 @@
 //! header). Same `#[path]` sibling wiring as `state.rs`.
 
 use crate::components::button::{Button, ButtonVariant};
-use crate::components::dropdown_menu::{DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuTrigger};
+use crate::components::dropdown_menu::{
+    DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel,
+    DropdownMenuTrigger,
+};
 use dioxus::prelude::*;
 use dioxus_icons::lucide::ChevronDown;
 use dioxus_primitives::dioxus_attributes::attributes;
@@ -57,7 +60,6 @@ pub fn DataTableColumnsMenu(props: DataTableColumnsMenuProps) -> Element {
             // focus-ok: the focused menu item stays on the column the user just moved
             "document.querySelectorAll('[data-dx-column-item]')[{slot}]?.focus();"
         ));
-        focus_slot.set(None);
     });
     let on_visible_change = props.on_visible_change;
     let on_move = props.on_move;
@@ -65,6 +67,7 @@ pub fn DataTableColumnsMenu(props: DataTableColumnsMenuProps) -> Element {
     let count = props.items.len();
 
     rsx! {
+        div { class: "dx-data-table-columns",
         DropdownMenu {
             DropdownMenuTrigger {
                 class: "dx-data-table-columns-trigger",
@@ -117,6 +120,7 @@ pub fn DataTableColumnsMenu(props: DataTableColumnsMenuProps) -> Element {
                     }
                 }
             }
+        }
         }
     }
 }

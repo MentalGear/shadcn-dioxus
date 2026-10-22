@@ -22,7 +22,10 @@ pub struct ColumnLayout {
 impl ColumnLayout {
     /// A layout in source order with `hidden` columns hidden.
     pub fn with_hidden<'a>(hidden: impl IntoIterator<Item = &'a str>) -> Self {
-        Self { order: None, hidden: hidden.into_iter().map(str::to_string).collect() }
+        Self {
+            order: None,
+            hidden: hidden.into_iter().map(str::to_string).collect(),
+        }
     }
 
     /// Whether the column `id` is hidden.
@@ -62,13 +65,27 @@ impl ColumnLayout {
     /// past like any other. Stops at the ends. Returns the 0-based position the
     /// column now has among `listed` (in layout order), or `None` when nothing
     /// moved (an end, or an id that is not listed).
-    pub fn move_listed(&mut self, all: &[&str], listed: &[&str], id: &str, delta: isize) -> Option<usize> {
+    pub fn move_listed(
+        &mut self,
+        all: &[&str],
+        listed: &[&str],
+        id: &str,
+        delta: isize,
+    ) -> Option<usize> {
         let arranged_all = self.arranged(all.iter().copied());
-        let arranged: Vec<&str> = arranged_all.iter().copied().filter(|c| listed.contains(c)).collect();
+        let arranged: Vec<&str> = arranged_all
+            .iter()
+            .copied()
+            .filter(|c| listed.contains(c))
+            .collect();
         let at = arranged.iter().position(|c| *c == id)?;
         let neighbour = *arranged.get(at.checked_add_signed(delta)?)?;
         let mut order = KeyOrder::new(arranged_all.iter().map(|c| c.to_string()));
-        let moved = if delta < 0 { order.move_before(id, neighbour) } else { order.move_after(id, neighbour) };
+        let moved = if delta < 0 {
+            order.move_before(id, neighbour)
+        } else {
+            order.move_after(id, neighbour)
+        };
         if !moved {
             return None;
         }

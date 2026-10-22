@@ -85,6 +85,15 @@ is_exempt_wrapper_file() {
                 *) return 0 ;;
             esac
             ;;
+        # A `#[path]` sibling of a themed wrapper (`components/<name>/<part>.rs`, not `variants/`): `dx components
+        # add` copies the component's whole directory, so the wrapper layer is every `.rs` directly in it
+        # (data_table's reorder.rs and columns_menu.rs, row 363).
+        "$preview_src"/components/*/*.rs)
+            case "$1" in
+                "$preview_src"/components/form/*|"$preview_src"/components/top_layer/*) return 1 ;;
+                *) return 0 ;;
+            esac
+            ;;
         *) return 1 ;;
     esac
 }

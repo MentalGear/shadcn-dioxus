@@ -93,7 +93,11 @@ pub struct Column<T: 'static> {
 
 impl<T: 'static> Column<T> {
     /// A plain, unsorted, unfiltered column.
-    pub fn new(id: impl Into<String>, header: impl Into<String>, cell: impl Fn(&T) -> Element + 'static) -> Self {
+    pub fn new(
+        id: impl Into<String>,
+        header: impl Into<String>,
+        cell: impl Fn(&T) -> Element + 'static,
+    ) -> Self {
         let id = id.into();
         Self {
             field: Field::new(id.clone()),
@@ -191,7 +195,11 @@ pub struct DataTableOptions {
 
 impl Default for DataTableOptions {
     fn default() -> Self {
-        Self { page_size: 10, sort: None, hidden_columns: Vec::new() }
+        Self {
+            page_size: 10,
+            sort: None,
+            hidden_columns: Vec::new(),
+        }
     }
 }
 
@@ -272,7 +280,13 @@ impl DataTableState {
     /// `listed`, the columns of `all` the Columns menu offers; see
     /// [`ColumnLayout::move_listed`]. The new position among `listed`, or
     /// `None` when nothing moved.
-    pub fn move_column(&self, all: &[&str], listed: &[&str], id: &str, delta: isize) -> Option<usize> {
+    pub fn move_column(
+        &self,
+        all: &[&str],
+        listed: &[&str],
+        id: &str,
+        delta: isize,
+    ) -> Option<usize> {
         let mut layout = self.layout;
         layout.with_mut(|l| l.move_listed(all, listed, id, delta))
     }
@@ -305,13 +319,18 @@ pub struct DataTableModel<T: 'static> {
 impl<T: 'static> DataTableModel<T> {
     /// This column's sort direction, `None` when another column is sorted.
     pub fn sorted(&self, column_id: &str) -> Option<SortDirection> {
-        self.sort.as_ref().filter(|(id, _)| id == column_id).map(|(_, d)| *d)
+        self.sort
+            .as_ref()
+            .filter(|(id, _)| id == column_id)
+            .map(|(_, d)| *d)
     }
 
     /// The columns to render, in layout order, hidden ones left out.
     pub fn visible_columns<'a>(&self, columns: &'a [Column<T>]) -> Vec<&'a Column<T>> {
         let ids = self.layout.visible(columns.iter().map(|c| c.id.as_str()));
-        ids.into_iter().filter_map(|id| columns.iter().find(|c| c.id == id)).collect()
+        ids.into_iter()
+            .filter_map(|id| columns.iter().find(|c| c.id == id))
+            .collect()
     }
 
     /// Whether the row with `key` is selected.
@@ -336,24 +355,36 @@ pub fn use_data_table<T: Clone + 'static>(
     options: DataTableOptions,
 ) -> DataTableModel<T> {
     let state = use_signal(|| TableState::new(options.page_size, options.sort));
-    let layout = use_signal(|| ColumnLayout::with_hidden(options.hidden_columns.iter().map(String::as_str)));
+    let layout =
+        use_signal(|| ColumnLayout::with_hidden(options.hidden_columns.iter().map(String::as_str)));
     let fields: Vec<Field<T>> = columns.iter().map(|c| c.field.clone()).collect();
     let row_key_for_keys = row_key.clone();
     let row_key = row_key.clone();
     let derived: Memo<View> = use_memo(use_reactive!(|(fields, row_key)| {
-        derive(&rows.read(), &state.read(), &fields, |row| row_key.call(row))
+        derive(&rows.read(), &state.read(), &fields, |row| {
+            row_key.call(row)
+        })
     }));
     // Every row's key, for a manual move only (read when a row is dropped, never while rendering).
     let mut key_fn = use_signal(|| row_key_for_keys.clone());
     if *key_fn.peek() != row_key_for_keys {
         key_fn.set(row_key_for_keys);
     }
-    let all_keys = use_callback(move |()| rows.peek().iter().map(|r| key_fn.peek().call(r)).collect::<Vec<String>>());
+    let all_keys = use_callback(move |()| {
+        rows.peek()
+            .iter()
+            .map(|r| key_fn.peek().call(r))
+            .collect::<Vec<String>>()
+    });
     let current = state.read().clone();
     let layout_now = layout.read().clone();
     let view = TableView::from_view(&rows.read(), &derived.read());
     DataTableModel {
-        state: DataTableState { state, layout, all_keys },
+        state: DataTableState {
+            state,
+            layout,
+            all_keys,
+        },
         view,
         sort: current.sort,
         filter: current.filter,

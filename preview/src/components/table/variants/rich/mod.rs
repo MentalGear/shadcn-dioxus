@@ -75,7 +75,11 @@ pub fn Demo() -> Element {
                         }
                     }
                     for column in columns.iter() {
-                        TableHead { key: "{column.id}", style: if column.id == "amount" { "text-align: end;" } else { "" }, "{column.header}" }
+                        if column.id == "amount" {
+                            TableHead { key: "{column.id}", style: "text-align: end;", "{column.header}" }
+                        } else {
+                            TableHead { key: "{column.id}", "{column.header}" }
+                        }
                     }
                 }
             }
@@ -93,7 +97,11 @@ pub fn Demo() -> Element {
                             }
                         }
                         for column in columns.iter() {
-                            TableCell { key: "{column.id}", style: if column.id == "amount" { "text-align: end;" } else { "" }, {column.cell.call(row)} }
+                            if column.id == "amount" {
+                                TableCell { key: "{column.id}", style: "text-align: end;", {column.cell.call(row)} }
+                            } else {
+                                TableCell { key: "{column.id}", {column.cell.call(row)} }
+                            }
                         }
                     }
                 }

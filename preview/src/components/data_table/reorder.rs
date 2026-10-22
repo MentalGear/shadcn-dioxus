@@ -25,8 +25,8 @@ use dioxus_primitives::data_view::{KeyOrder, RowAnchor};
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::direction::Direction;
 use dioxus_primitives::drag_and_drop_list::reorder::{
-    announce_cancel, announce_drop, announce_lift, announce_move, command_for_key, pointer_position, DropPosition,
-    ReorderAxis, ReorderCommand, ReorderState,
+    announce_cancel, announce_drop, announce_lift, announce_move, command_for_key,
+    pointer_position, DropPosition, ReorderAxis, ReorderCommand, ReorderState,
 };
 use dioxus_primitives::merge_attributes;
 use dioxus_primitives::table_rows::TableScroller;
@@ -67,10 +67,18 @@ pub(crate) fn plan_move(page_keys: &[String], from: usize, to: usize) -> Option<
     let keys = moved.keys();
     let to = keys.iter().position(|k| *k == key)?;
     match keys.get(to + 1) {
-        Some(next) => Some(MovePlan { key, anchor: next.clone(), after: false }),
+        Some(next) => Some(MovePlan {
+            key,
+            anchor: next.clone(),
+            after: false,
+        }),
         None => {
             let previous = keys.get(to.checked_sub(1)?)?.clone();
-            Some(MovePlan { key, anchor: previous, after: true })
+            Some(MovePlan {
+                key,
+                anchor: previous,
+                after: true,
+            })
         }
     }
 }
@@ -99,7 +107,7 @@ pub(crate) fn use_row_reorder(table: DataTableState) -> RowReorder {
     use_context_provider(move || reorder);
     // Focus returns to a handle by row key once the rows have re-rendered: a keyed row that moves is
     // re-inserted by the DOM and the browser drops its focus on the way.
-    let mut focus_key = reorder.focus_key;
+    let focus_key = reorder.focus_key;
     use_effect(move || {
         let Some(key) = focus_key.read().clone() else {
             return;
@@ -110,7 +118,6 @@ pub(crate) fn use_row_reorder(table: DataTableState) -> RowReorder {
             document.querySelector('[data-dx-reorder-handle="' + CSS.escape(key) + '"]')?.focus();"#,
         );
         let _ = eval.send(key);
-        focus_key.set(None);
     });
     reorder
 }
@@ -169,7 +176,8 @@ impl RowReorder {
         let len = self.count();
         let next = (self.gesture)().step(index, delta, len);
         self.gesture.set(next);
-        self.announcement.set(announce_move(next.to().unwrap_or(index), len));
+        self.announcement
+            .set(announce_move(next.to().unwrap_or(index), len));
     }
 
     /// Applies the lifted row's chosen slot to the manual order (a second call of one gesture, or one
@@ -198,7 +206,9 @@ impl RowReorder {
     }
 
     fn end(&mut self) {
-        let lifted_key = (self.gesture)().from().and_then(|from| self.page_keys.peek().get(from).cloned());
+        let lifted_key = (self.gesture)()
+            .from()
+            .and_then(|from| self.page_keys.peek().get(from).cloned());
         self.gesture.set(ReorderState::Idle);
         self.focus_key.set(lifted_key);
     }
@@ -257,6 +267,7 @@ pub(crate) fn ReorderableRow(props: ReorderableRowProps) -> Element {
     let mut mounted: Signal<Option<std::rc::Rc<MountedData>>> = use_signal(|| None);
     let (source, drop) = reorder.marks(index);
     let owned = attributes!(tr {
+        class: "dx-data-table-row",
         "data-reorder": source.then_some("source"),
         "data-drop": drop,
     });
@@ -270,8 +281,13 @@ pub(crate) fn ReorderableRow(props: ReorderableRowProps) -> Element {
                     return;
                 };
                 if let Ok(rect) = row.get_client_rect().await {
-                    let position =
-                        pointer_position(ReorderAxis::Vertical, Direction::Ltr, event.client_coordinates().y, rect.origin.y, rect.size.height);
+                    let position = pointer_position(
+                        ReorderAxis::Vertical,
+                        Direction::Ltr,
+                        event.client_coordinates().y,
+                        rect.origin.y,
+                        rect.size.height,
+                    );
                     reorder.hover(index, position);
                 }
             }
@@ -303,7 +319,8 @@ pub(crate) fn RowHandle(props: RowHandleProps) -> Element {
     let disabled = reorder.is_sorted();
     let lifted = reorder.lifted() && (reorder.gesture)().from() == Some(index);
     let onkeydown = move |event: KeyboardEvent| {
-        let Some(command) = command_for_key(&event.key(), ReorderAxis::Vertical, Direction::Ltr) else {
+        let Some(command) = command_for_key(&event.key(), ReorderAxis::Vertical, Direction::Ltr)
+        else {
             return;
         };
         let lifted = reorder.lifted();
@@ -360,15 +377,36 @@ mod tests {
     #[test]
     fn a_move_lands_before_the_row_that_now_follows_it() {
         let plan = plan_move(&keys(&["a", "b", "c", "d"]), 3, 1).unwrap();
-        assert_eq!(plan, MovePlan { key: "d".into(), anchor: "b".into(), after: false });
+        assert_eq!(
+            plan,
+            MovePlan {
+                key: "d".into(),
+                anchor: "b".into(),
+                after: false
+            }
+        );
         let plan = plan_move(&keys(&["a", "b", "c", "d"]), 0, 1).unwrap();
-        assert_eq!(plan, MovePlan { key: "a".into(), anchor: "c".into(), after: false });
+        assert_eq!(
+            plan,
+            MovePlan {
+                key: "a".into(),
+                anchor: "c".into(),
+                after: false
+            }
+        );
     }
 
     #[test]
     fn a_move_to_the_end_of_the_page_lands_after_the_row_before_it() {
         let plan = plan_move(&keys(&["a", "b", "c"]), 0, 2).unwrap();
-        assert_eq!(plan, MovePlan { key: "a".into(), anchor: "c".into(), after: true });
+        assert_eq!(
+            plan,
+            MovePlan {
+                key: "a".into(),
+                anchor: "c".into(),
+                after: true
+            }
+        );
     }
 
     #[test]
