@@ -56,8 +56,8 @@ use dioxus_attributes::attributes;
 
 use crate::js_listener::{use_js_listeners, JsListeners};
 use crate::r#virtual::{
-    cv_chunks, measured_px, pin_in_flow, use_virtual_bridge, Bridge, ChunkSkip, Engine,
-    SizeEstimates, CHUNK_ROWS, DEFAULT_SIZE,
+    cv_chunks, engine_keys, measured_px, pin_in_flow, render_key, resolve_index,
+    use_virtual_bridge, Bridge, ChunkSkip, Engine, SizeEstimates, CHUNK_ROWS, DEFAULT_SIZE,
 };
 pub use crate::r#virtual::{VirtualizeMode, DEFAULT_AUTO_THRESHOLD};
 use crate::scroll_area::use_scroll_fade;
@@ -97,6 +97,12 @@ pub struct VirtualListProps {
     pub estimate_size: Option<Callback<usize, u32>>,
     /// Renders the item at an absolute index.
     pub render_item: Callback<usize, Element>,
+    /// Who is at index `idx`: a string unique among the items that stays with the item when the
+    /// items are sorted, filtered or reordered. Defaults to the index (an item is its slot). With
+    /// it the item's DOM node (and so focus and any state inside it), the item that stays mounted
+    /// while it holds focus and the measured sizes follow the item instead of the slot. Read
+    /// while rendering, so signals it reads re-render the component.
+    pub item_key: Option<Callback<usize, String>>,
     /// Windowed mode, opt-in (experimental, backlog row 153): the searchable text of item `idx`,
     /// plain text without markup. When given, every row's text is also kept in the DOM inside a
     /// `hidden="until-found"` placeholder, so the browser's find-in-page (and a `#:~:text=` link)
@@ -135,6 +141,7 @@ struct ListBodyProps {
     buffer: ReadSignal<usize>,
     estimate_size: Option<Callback<usize, u32>>,
     render_item: Callback<usize, Element>,
+    item_key: Option<Callback<usize, String>>,
     text_value: Option<Callback<usize, String>>,
     #[props(extends = GlobalAttributes)]
     attributes: Vec<Attribute>,
@@ -189,6 +196,7 @@ pub fn VirtualList(props: VirtualListProps) -> Element {
         buffer,
         estimate_size,
         render_item,
+        item_key,
         text_value,
         virtualize,
         auto_threshold,
@@ -212,6 +220,7 @@ pub fn VirtualList(props: VirtualListProps) -> Element {
                 buffer,
                 estimate_size,
                 render_item,
+                item_key,
                 text_value,
                 attributes,
             }
@@ -223,6 +232,7 @@ pub fn VirtualList(props: VirtualListProps) -> Element {
                 buffer,
                 estimate_size,
                 render_item,
+                item_key,
                 text_value: None,
                 attributes,
             }
@@ -238,6 +248,7 @@ fn VirtualListContentVisibility(props: ListBodyProps) -> Element {
         count,
         estimate_size,
         render_item,
+        item_key,
         attributes,
         ..
     } = props;
@@ -268,7 +279,7 @@ fn VirtualListContentVisibility(props: ListBodyProps) -> Element {
         div { ..merged,
             {cv_chunks(rows, 0, skip, &[], |idx| rsx! {
                 div {
-                    key: "{idx}",
+                    key: "{render_key(item_key, idx)}",
                     role: "listitem",
                     "data-virtual-index": "{idx}",
                     "aria-setsize": "{set_size}",
@@ -288,6 +299,7 @@ fn VirtualListWindowed(props: ListBodyProps) -> Element {
         buffer,
         estimate_size,
         render_item,
+        item_key,
         text_value,
         attributes,
     } = props;
@@ -309,12 +321,16 @@ fn VirtualListWindowed(props: ListBodyProps) -> Element {
             count(),
             estimate.as_ref().map(|f| f as &dyn Fn(usize) -> u32),
         )
+        .with_keys(engine_keys(item_key, count()))
     });
 
     // The row that last received focus stays mounted when the window leaves it (the grids keep
     // their active cell the same way, `virtual/pin.rs`): unmounting it would drop focus to
     // `<body>` mid-interaction.
-    let mut focused = use_signal(|| None::<usize>);
+    // Remembered as the index it had and, with an `item_key`, who it is: when the list is
+    // reordered the pin follows the item (`resolve_index`). `pin_tick` only asks for a render.
+    let mut pin = use_hook(|| CopyValue::new(None::<(usize, Option<String>)>));
+    let mut pin_tick = use_signal(|| 0u32);
 
     // Find-in-page placeholders (opt-in, row 153): one capturing `beforematch` listener on the
     // container names the item whose placeholder the browser is about to reveal; the list then
@@ -342,7 +358,17 @@ fn VirtualListWindowed(props: ListBodyProps) -> Element {
 
     // Subscribe: this render runs again whenever the bridge publishes a new window.
     bridge.track();
-    let pinned_index = focused();
+    pin_tick();
+    let pinned_index = {
+        let current = pin.peek().clone();
+        current.and_then(|(index, key)| {
+            let now = resolve_index(item_key, key.as_deref(), index, count());
+            if now != Some(index) {
+                pin.set(now.map(|index| (index, key)));
+            }
+            now
+        })
+    };
     let (plan, items, detached) = {
         let estimates = estimates.read();
         let mut engine = engine;
@@ -391,7 +417,7 @@ fn VirtualListWindowed(props: ListBodyProps) -> Element {
 
                         rsx! {
                             div {
-                                key: "{item.key()}",
+                                key: "{render_key(item_key, idx)}",
                                 role: "listitem",
                                 "data-virtual-index": "{idx}",
                                 "data-virtual-pinned": detached_style.is_some().then_some("true"),
@@ -400,8 +426,10 @@ fn VirtualListWindowed(props: ListBodyProps) -> Element {
                                 style: detached_style,
                                 onresize: onresize(idx),
                                 onfocusin: move |_| {
-                                    if *focused.peek() != Some(idx) {
-                                        focused.set(Some(idx));
+                                    let now = (idx, item_key.map(|_| render_key(item_key, idx)));
+                                    if pin.peek().as_ref() != Some(&now) {
+                                        pin.set(Some(now));
+                                        pin_tick += 1;
                                     }
                                 },
                                 {render_item(idx)}
@@ -445,6 +473,7 @@ fn FindPlaceholders(
                 let start = chunk * FIND_CHUNK;
                 let end = (start + FIND_CHUNK).min(count) - 1;
                 rsx! {
+                    // key-ok: a chunk of find placeholders is a slice of positions, not an item
                     FindChunk { key: "{chunk}", start, end, estimate_size, text_value }
                 }
             })}
@@ -482,6 +511,7 @@ fn FindChunk(
             {(start..=end).zip(heights).map(|(idx, height)| {
             rsx! {
                 div {
+                    // key-ok: a placeholder is a position's text, rebuilt from `text_value(idx)`
                     key: "{idx}",
                     // Upper case on purpose: Dioxus' web interpreter treats an attribute NAMED
                     // `hidden` as boolean and drops "until-found"; `setAttribute` lower-cases the

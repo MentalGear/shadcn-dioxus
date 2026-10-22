@@ -589,4 +589,24 @@ mod tests {
         let plan = engine.plan(4);
         assert_eq!(*mounted(&plan).last().unwrap(), 24 + 4);
     }
+
+    #[test]
+    fn a_reordered_list_keeps_each_items_measured_size() {
+        let keyed = |order: &[u64]| {
+            uniform(order.len(), 50).with_keys(Some(order.iter().copied().collect()))
+        };
+        let mut engine = Engine::new();
+        engine.sync(&keyed(&[1, 2, 3, 4]));
+        engine.scroll(0, 100, false);
+        engine.plan(0);
+        // Item 1 (at the top) measures 130 px, item 4 stays estimated.
+        engine.resize_item(0, 130);
+        assert_eq!(engine.index.total(), 130 + 150);
+        // Reversed: the 130 px item is last, nothing is owed and the total is unchanged.
+        engine.sync(&keyed(&[4, 3, 2, 1]));
+        assert_eq!(engine.index.total(), 280);
+        assert_eq!(engine.index.size(0), 50);
+        assert_eq!(engine.index.size(3), 130);
+        assert_eq!(engine.index.start(3), 150);
+    }
 }

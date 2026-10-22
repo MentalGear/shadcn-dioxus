@@ -62,8 +62,9 @@ use dioxus_attributes::attributes;
 
 use crate::direction::{use_direction, Direction, HorizontalNav};
 use crate::r#virtual::{
-    justified_navigate, measured_px, use_virtual_bridge, with_pinned, Bridge, Engine, GridEngine,
-    GridKey, GridShape, JustifiedEngine, JustifiedOptions, RowPlan, ScrollReport, SizeEstimates,
+    engine_row_keys, justified_navigate, measured_px, render_key, resolve_index,
+    use_virtual_bridge, with_pinned, Bridge, Engine, GridEngine, GridKey, GridShape,
+    JustifiedEngine, JustifiedOptions, RowPlan, ScrollReport, SizeEstimates,
 };
 use crate::scroll_area::use_scroll_fade;
 pub use crate::scroll_area::ScrollFade;
@@ -84,6 +85,12 @@ pub struct VirtualGridProps {
     /// The height of a data row by index, in px. Defaults to [`DEFAULT_ROW_HEIGHT`] (36) for
     /// every row. Rows are not measured: a cell taller than its row overflows it.
     pub row_height: Option<Callback<usize, u32>>,
+    /// Who is at row `idx`: a string unique among the rows that stays with the row when the rows
+    /// are sorted, filtered or reordered. Defaults to the index (a row is its slot). With it the
+    /// row's DOM node and the active cell's row follow the row instead of the slot, so after a
+    /// sort the grid's one tab stop (and focus) stays on the same row's item. Read while
+    /// rendering, so signals it reads re-render the grid.
+    pub row_key: Option<Callback<usize, String>>,
     /// The width of a column by index, in px. Defaults to [`DEFAULT_COLUMN_WIDTH`] (120) for
     /// every column.
     pub column_width: Option<Callback<usize, u32>>,
@@ -168,6 +175,7 @@ pub fn VirtualGrid(props: VirtualGridProps) -> Element {
         row_count,
         column_count,
         row_height,
+        row_key,
         column_width,
         render_cell,
         render_header,
@@ -196,6 +204,17 @@ pub fn VirtualGrid(props: VirtualGridProps) -> Element {
     );
     let engine = bridge.engine();
     let active = use_signal(|| (0usize, 0usize));
+    // Who the active row is (with a `row_key`): the active cell follows its row through a reorder.
+    let mut active_key = use_hook(|| CopyValue::new(None::<String>));
+    {
+        let (row, column) = active();
+        let key = active_key.peek().clone();
+        let now = resolve_index(row_key, key.as_deref(), row, row_count());
+        if let Some(now) = now.filter(|now| *now != row) {
+            let mut active = active;
+            active.set((now, column));
+        }
+    }
     let focus_request = use_signal(|| 0u64);
 
     let row_estimates = use_memo(move || {
@@ -230,8 +249,9 @@ pub fn VirtualGrid(props: VirtualGridProps) -> Element {
 
     let shape = GridShape::full(row_count(), column_count());
     let tab_stop = shape.clamp(active());
-    let set_active = move |cell: (usize, usize)| {
+    let mut set_active = move |cell: (usize, usize)| {
         let mut active = active;
+        active_key.set(row_key.map(|_| render_key(row_key, cell.0)));
         if *active.peek() != cell {
             active.set(cell);
             if let Some(callback) = on_active_change {
@@ -289,6 +309,7 @@ pub fn VirtualGrid(props: VirtualGridProps) -> Element {
         let focusable = tab_stop == Some((row, column));
         rsx! {
             div {
+                // key-ok: a column is a position of the grid, not an item (`row_key` names rows)
                 key: "{column}",
                 role: if is_sticky { "rowheader" } else { "gridcell" },
                 "aria-colindex": column + 1,
@@ -327,6 +348,7 @@ pub fn VirtualGrid(props: VirtualGridProps) -> Element {
                         div { style: "position: relative; flex: none; width: {pane_width}px;",
                             for column in header_cells {
                                 div {
+                                    // key-ok: a column header is a position of the grid
                                     key: "{column.index()}",
                                     role: "columnheader",
                                     "aria-colindex": column.index() + 1,
@@ -341,7 +363,7 @@ pub fn VirtualGrid(props: VirtualGridProps) -> Element {
                 div { style: "position: relative; width: {width}px; height: {plan.body_height}px;",
                     for row in plan.rows {
                         div {
-                            key: "{row.index()}",
+                            key: "{render_key(row_key, row.index())}",
                             role: "row",
                             "aria-rowindex": row.index() + 1 + header_rows,
                             style: "position: absolute; inset-inline-start: 0; top: {row.start()}px; display: flex; width: {width}px; height: {row.size()}px;",
@@ -375,6 +397,12 @@ pub struct VirtualWrapGridProps {
     pub estimate_row_height: Option<Callback<usize, u32>>,
     /// Renders the item at an absolute index.
     pub render_item: Callback<usize, Element>,
+    /// Who is at index `idx`: a string unique among the items that stays with the item when the
+    /// items are sorted, filtered or reordered. Defaults to the index (an item is its slot). With
+    /// it the item's DOM node (and so focus and any state inside it), the item that stays mounted
+    /// while it holds focus and the measured sizes follow the item instead of the slot. Read
+    /// while rendering, so signals it reads re-render the component.
+    pub item_key: Option<Callback<usize, String>>,
     /// How many rows to mount beyond each edge of the viewport, so a scroll never shows a blank edge
     /// (the window is re-centred once fewer than half of them remain, so between `buffer / 2` and
     /// `buffer` rows are always mounted beyond each edge). Only a windowed layout reads it:
@@ -444,6 +472,7 @@ pub fn VirtualWrapGrid(props: VirtualWrapGridProps) -> Element {
         columns,
         estimate_row_height,
         render_item,
+        item_key,
         buffer,
         dir,
         on_active_change,
@@ -461,6 +490,17 @@ pub fn VirtualWrapGrid(props: VirtualWrapGridProps) -> Element {
     let laid_out_for = use_hook(|| CopyValue::new(0usize));
     // The active item, as an index: it keeps its item when the column count changes.
     let active = use_signal(|| 0usize);
+    // Who the active item is (with an `item_key`): the tab stop follows it through a reorder.
+    let mut active_key = use_hook(|| CopyValue::new(None::<String>));
+    {
+        let index = active();
+        let key = active_key.peek().clone();
+        let now = resolve_index(item_key, key.as_deref(), index, count());
+        if let Some(now) = now.filter(|now| *now != index) {
+            let mut active = active;
+            active.set(now);
+        }
+    }
     let focus_request = use_signal(|| 0u64);
 
     let estimates = use_memo(move || {
@@ -470,6 +510,7 @@ pub fn VirtualWrapGrid(props: VirtualWrapGridProps) -> Element {
             shape.rows(),
             estimate.as_ref().map(|f| f as &dyn Fn(usize) -> u32),
         )
+        .with_keys(engine_row_keys(item_key, count(), columns()))
     });
 
     let active_cell = use_active_cell(active, columns);
@@ -478,8 +519,9 @@ pub fn VirtualWrapGrid(props: VirtualWrapGridProps) -> Element {
     let columns_now = columns().max(1);
     let shape = GridShape::wrapping(count(), columns_now);
     let tab_stop = shape.clamp(index_to_cell(active(), columns_now));
-    let set_active = move |index: usize| {
+    let mut set_active = move |index: usize| {
         let mut active = active;
+        active_key.set(item_key.map(|_| render_key(item_key, index)));
         if *active.peek() != index {
             active.set(index);
             if let Some(callback) = on_active_change {
@@ -544,6 +586,7 @@ pub fn VirtualWrapGrid(props: VirtualWrapGridProps) -> Element {
                 style: "position: relative; height: {height}px;",
                 for row in rows {
                     div {
+                        // key-ok: a wrapping grid's row is a slot of `columns` items; its cells are keyed
                         key: "{row.index()}",
                         role: "row",
                         "aria-rowindex": row.index() + 1,
@@ -554,7 +597,7 @@ pub fn VirtualWrapGrid(props: VirtualWrapGridProps) -> Element {
                             let focusable = tab_stop == Some((row.index(), column));
                             rsx! {
                                 div {
-                                    key: "{column}",
+                                    key: "{render_key(item_key, index)}",
                                     role: "gridcell",
                                     "aria-colindex": column + 1,
                                     "data-grid-cell": "{row.index()}:{column}",
@@ -869,6 +912,7 @@ pub fn VirtualJustifiedGrid(props: VirtualJustifiedGridProps) -> Element {
         };
         rsx! {
             div {
+                // key-ok: the justified grid has no `item_key` yet (its items are bare aspects)
                 key: "{index}",
                 role: "gridcell",
                 "aria-colindex": column + 1,
@@ -893,6 +937,7 @@ pub fn VirtualJustifiedGrid(props: VirtualJustifiedGridProps) -> Element {
                 style: "position: relative; width: {canvas_width_style}; height: {height:.3}px;",
                 for plan in rows {
                     div {
+                        // key-ok: the justified grid's rows are positions of a computed layout
                         key: "{plan.row}",
                         role: "row",
                         "aria-rowindex": plan.row + 1,
