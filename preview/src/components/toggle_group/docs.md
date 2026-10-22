@@ -16,15 +16,26 @@ ToggleGroup {
     horizontal: true,
     // More than one item may be pressed (the default is single-select, radio-style).
     allow_multiple_pressed: true,
+    // The values of the items pressed at first (shadcn's `defaultValue`). Drive the group instead with
+    // `value: Some(set)` and `on_value_change: move |set: HashSet<String>| ...` (controlled).
+    default_value: HashSet::from(["bold".to_string()]),
     // The toggle item represents each individual toggle button in the group.
     ToggleItem {
-        // The index of the toggle item, used to determine the order in which items are focused.
+        // The item's identity in the pressed set (shadcn's item `value`), unique within the group.
+        value: "bold",
+        // The position of the toggle item, used only to order keyboard focus.
         index: 0,
         // The contents of the toggle item button
         {children}
     }
 }
 ```
+
+## Pressed state follows the value
+
+The pressed set is a `HashSet<String>` of item `value`s, like the selection of every other collection (the Data Table's row keys), so reordering the items or inserting one before the others never moves the pressed state to a different button. `index` only orders keyboard focus. The group is single-select unless `allow_multiple_pressed` is set.
+
+`default_pressed`, `pressed` and `on_pressed_change` (a `HashSet<usize>` of positions) are deprecated and still work: an item without a `value` is keyed by its index.
 
 ## Variant, size and spacing
 

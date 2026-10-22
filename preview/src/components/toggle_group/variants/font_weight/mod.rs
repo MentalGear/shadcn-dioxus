@@ -16,8 +16,8 @@ const WEIGHTS: [(&str, &str, &str); 4] = [
 /// `font-*` class named underneath.
 #[component]
 pub fn Demo() -> Element {
-    let mut selected = use_signal(|| 1usize);
-    let pressed = use_memo(move || Some(HashSet::from([selected()])));
+    let mut selected = use_signal(|| "normal");
+    let value = use_memo(move || Some(HashSet::from([selected().to_string()])));
     rsx! {
         Field {
             FieldLabel { html_for: "font-weight-group", id: "font-weight-label", "Font Weight" }
@@ -27,17 +27,20 @@ pub fn Demo() -> Element {
                 variant: ToggleVariant::Outline,
                 size: ToggleSize::Lg,
                 spacing: 2u8,
-                pressed,
-                on_pressed_change: move |next: HashSet<usize>| {
+                value,
+                on_value_change: move |next: HashSet<String>| {
                     // Single-select: pressing the pressed tile again leaves it chosen.
-                    if let Some(index) = next.into_iter().next() {
-                        selected.set(index);
+                    if let Some(key) = next.into_iter().next() {
+                        if let Some((slug, _, _)) = WEIGHTS.iter().find(|(slug, _, _)| *slug == key) {
+                            selected.set(slug);
+                        }
                     }
                 },
-                for (index , (_ , label , weight)) in WEIGHTS.iter().enumerate() {
+                for (index , (slug , label , weight)) in WEIGHTS.iter().enumerate() {
                     ToggleItem {
                         key: "{label}",
                         index,
+                        value: *slug,
                         aria_label: *label,
                         style: "width: 4rem; height: 4rem; flex-direction: column; border-radius: var(--dx-radius-xl);",
                         span { style: "font-size: var(--dx-text-2xl); font-weight: {weight}; line-height: 1;", "Aa" }
@@ -49,7 +52,7 @@ pub fn Demo() -> Element {
             FieldDescription {
                 "Use "
                 code { style: "border-radius: var(--dx-radius-md); background: var(--dx-muted); padding: 0.125rem 0.25rem;",
-                    "font-{WEIGHTS[selected()].0}"
+                    "font-{selected()}"
                 }
                 " to set the font weight."
             }

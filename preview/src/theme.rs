@@ -521,16 +521,15 @@ fn ThemePickerPanel(
                 ToggleGroup {
                     class: "dx-theme-swatches",
                     aria_labelledby: "dx-theme-base-label-{scope}",
-                    pressed: Some(single(swatch_index(&base.read(), BASES))),
-                    on_pressed_change: move |next: HashSet<usize>| {
-                        // Index 0 is "Default"; the presets follow in list order.
-                        match next.into_iter().next().and_then(|i| i.checked_sub(1)) {
+                    value: Some(single(swatch_value(&base.read()))),
+                    on_value_change: move |next: HashSet<String>| {
+                        // "default" is no preset; the others are the preset slugs.
+                        match next.into_iter().next().and_then(|v| BASES.iter().find(|(slug, _)| *slug == v).map(|(slug, _)| *slug)) {
                             None => {
                                 base.set(String::new());
                                 set_pref(Pref::Base, None);
                             }
-                            Some(i) => {
-                                let slug = BASES[i].0;
+                            Some(slug) => {
                                 base.set(slug.to_string());
                                 set_pref(Pref::Base, Some(slug));
                             }
@@ -538,6 +537,7 @@ fn ThemePickerPanel(
                     },
                     ToggleItem {
                         index: 0usize,
+                        value: "default",
                         class: "dx-theme-swatch",
                         aria_label: "Default base colour",
                         title: "Default",
@@ -547,6 +547,7 @@ fn ThemePickerPanel(
                         ToggleItem {
                             key: "{slug}",
                             index: i + 1,
+                            value: slug,
                             class: "dx-theme-swatch",
                             aria_label: "{label}",
                             title: "{label}",
@@ -565,16 +566,15 @@ fn ThemePickerPanel(
                 ToggleGroup {
                     class: "dx-theme-swatches",
                     aria_labelledby: "dx-theme-accent-label-{scope}",
-                    pressed: Some(single(swatch_index(&accent.read(), ACCENTS))),
-                    on_pressed_change: move |next: HashSet<usize>| {
-                        // Index 0 is "Default"; the presets follow in list order.
-                        match next.into_iter().next().and_then(|i| i.checked_sub(1)) {
+                    value: Some(single(swatch_value(&accent.read()))),
+                    on_value_change: move |next: HashSet<String>| {
+                        // "default" is no preset; the others are the preset slugs.
+                        match next.into_iter().next().and_then(|v| ACCENTS.iter().find(|(slug, _)| *slug == v).map(|(slug, _)| *slug)) {
                             None => {
                                 accent.set(String::new());
                                 set_pref(Pref::Accent, None);
                             }
-                            Some(i) => {
-                                let slug = ACCENTS[i].0;
+                            Some(slug) => {
                                 accent.set(slug.to_string());
                                 set_pref(Pref::Accent, Some(slug));
                             }
@@ -582,6 +582,7 @@ fn ThemePickerPanel(
                     },
                     ToggleItem {
                         index: 0usize,
+                        value: "default",
                         class: "dx-theme-swatch",
                         aria_label: "Default accent",
                         title: "Default",
@@ -591,6 +592,7 @@ fn ThemePickerPanel(
                         ToggleItem {
                             key: "{slug}",
                             index: i + 1,
+                            value: slug,
                             class: "dx-theme-swatch",
                             aria_label: "{label}",
                             title: "{label}",
@@ -610,9 +612,9 @@ fn ThemePickerPanel(
                     class: "dx-theme-chips",
                     variant: ToggleVariant::Outline,
                     aria_labelledby: "dx-theme-radius-label-{scope}",
-                    pressed: Some(single(chip_index(&radius.read()))),
-                    on_pressed_change: move |next: HashSet<usize>| {
-                        if let Some(value) = next.into_iter().next().and_then(|i| RADII.get(i).copied()) {
+                    value: Some(single(chip_value(&radius.read()).to_string())),
+                    on_value_change: move |next: HashSet<String>| {
+                        if let Some(value) = next.into_iter().next().and_then(|v| RADII.iter().copied().find(|r| *r == v)) {
                             if value == DEFAULT_RADIUS {
                                 radius.set(String::new());
                                 set_pref(Pref::Radius, None);
@@ -626,6 +628,7 @@ fn ThemePickerPanel(
                         ToggleItem {
                             key: "{value}",
                             index: i,
+                            value,
                             title: if value == DEFAULT_RADIUS { "0.625 (default)" } else { value },
                             "{value}"
                         }
@@ -666,9 +669,9 @@ fn ThemePickerPanel(
                     class: "dx-theme-chips",
                     variant: ToggleVariant::Outline,
                     aria_labelledby: "dx-theme-coarse-label-{scope}",
-                    pressed: Some(single(coarse_index(&coarse.read()))),
-                    on_pressed_change: move |next: HashSet<usize>| {
-                        if let Some((value, _)) = next.into_iter().next().and_then(|i| COARSE_MODES.get(i).copied()) {
+                    value: Some(single(coarse_value(&coarse.read()).to_string())),
+                    on_value_change: move |next: HashSet<String>| {
+                        if let Some((value, _)) = next.into_iter().next().and_then(|v| COARSE_MODES.iter().copied().find(|(mode, _)| coarse_value(mode) == v)) {
                             coarse.set(value.to_string());
                             set_pref(Pref::Coarse, if value.is_empty() { None } else { Some(value) });
                         }
@@ -677,6 +680,7 @@ fn ThemePickerPanel(
                         ToggleItem {
                             key: "coarse-{label}",
                             index: i,
+                            value: coarse_value(value),
                             title: match value {
                                 "on" => "Touch sizes everywhere",
                                 "off" => "Desktop sizes everywhere",
@@ -694,40 +698,39 @@ fn ThemePickerPanel(
 /// Touch sizing choices, `(attribute value, label)`: "" is `auto` and stored as "no attribute".
 pub const COARSE_MODES: &[(&str, &str)] = &[("", "Auto"), ("on", "On"), ("off", "Off")];
 
-/// Item index of the touch-sizing chips.
-fn coarse_index(current: &str) -> usize {
-    COARSE_MODES
-        .iter()
-        .position(|(v, _)| *v == current)
-        .unwrap_or(0)
+/// Item value of the touch-sizing chips: "" (auto) is stored as no attribute, but an item needs a
+/// non-empty value.
+fn coarse_value(current: &str) -> &str {
+    if current.is_empty() {
+        "auto"
+    } else {
+        current
+    }
 }
 
-/// The one pressed item of a single-select [`ToggleGroup`]. The groups are controlled: `on_pressed_change`
+/// The one pressed item of a single-select [`ToggleGroup`]. The groups are controlled: `on_value_change`
 /// writes the preference and the pressed set is read back from it, so pressing the pressed item again
 /// (an empty next set) changes nothing, a radio rather than a toggle.
-fn single(index: usize) -> HashSet<usize> {
-    HashSet::from([index])
+fn single(value: impl Into<String>) -> HashSet<String> {
+    HashSet::from([value.into()])
 }
 
-/// Item index of a swatch group: 0 is "Default" (no preset), the presets follow in list order.
-fn swatch_index(current: &str, list: &[(&str, &str)]) -> usize {
-    list.iter()
-        .position(|(slug, _)| *slug == current)
-        .map_or(0, |i| i + 1)
+/// Item value of a swatch group: "default" is no preset, the presets are their slugs.
+fn swatch_value(current: &str) -> String {
+    if current.is_empty() {
+        "default".to_string()
+    } else {
+        current.to_string()
+    }
 }
 
-/// Item index of the radius chips: the default radius is stored as "no attribute" (empty).
-fn chip_index(current: &str) -> usize {
-    RADII
-        .iter()
-        .position(|r| {
-            if *r == DEFAULT_RADIUS {
-                current.is_empty()
-            } else {
-                *r == current
-            }
-        })
-        .unwrap_or(0)
+/// Item value of the radius chips: the default radius is stored as "no attribute" (empty).
+fn chip_value(current: &str) -> &str {
+    if current.is_empty() {
+        DEFAULT_RADIUS
+    } else {
+        current
+    }
 }
 
 fn label_of(list: &[(&'static str, &'static str)], slug: &str) -> &'static str {

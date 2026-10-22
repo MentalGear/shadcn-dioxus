@@ -19,8 +19,8 @@
 #   only re-exports them.
 #
 # EXCEPTIONS are in ALLOW below, each with a reason; an entry that no longer matches anything is itself an
-# error (a fixed site must leave the list). ToggleGroup's `HashSet<usize>` is its public upstream API (a
-# separate parity row if ever wanted), and the sites that merely consume it carry the same reason.
+# error (a fixed site must leave the list). ToggleGroup's pressed set is a `HashSet<String>` of item values
+# since row 364, so it needs no exception here.
 #
 # Usage: scripts/check-collection-derive.sh [FILE ...]   (default: every .rs under preview/src/components;
 # explicit files are for self-tests, and skip the stale-entry check)
@@ -43,12 +43,7 @@ if not files:
     sys.exit(2)
 
 # (file suffix, rule id, reason). A rule id is one of the RULES keys.
-TOGGLE = "ToggleGroup's `HashSet<usize>` is its public upstream API (indices of pressed items), not a row selection"
 ALLOW = [
-    ("toggle_group/component.rs", "set-usize", TOGGLE),
-    ("toggle_group/variants/font_weight/mod.rs", "set-usize", TOGGLE + "; this demo is a consumer"),
-    ("virtual_grid/variants/photo_wall/mod.rs", "set-usize", TOGGLE + "; this demo's ToggleGroup is a view-mode switch"),
-    ("message_scroller/variants/anchoring/mod.rs", "set-usize", TOGGLE + "; this demo's ToggleGroup is a mode switch"),
     ("components/mod.rs", "sort-by", "orders the site's component catalogue (demo names), not rows of a collection"),
 ]
 used = set()

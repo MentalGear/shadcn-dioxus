@@ -11,14 +11,30 @@ use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 use std::collections::HashSet;
 
-// Todo: docs, test controlled version
+/// The pressed-set key of an item: its `value`, or the decimal `index` when it has no value
+/// (the deprecated index API's identity, so `HashSet<usize>` callers keep working).
+fn item_key(value: &str, index: usize) -> String {
+    if value.is_empty() {
+        index.to_string()
+    } else {
+        value.to_string()
+    }
+}
+
+fn indices_to_keys(indices: &HashSet<usize>) -> HashSet<String> {
+    indices.iter().map(|i| i.to_string()).collect()
+}
+
+fn keys_to_indices(keys: &HashSet<String>) -> HashSet<usize> {
+    keys.iter().filter_map(|k| k.parse().ok()).collect()
+}
 
 #[derive(Clone, Copy)]
 struct ToggleGroupCtx {
     // State
     disabled: ReadSignal<bool>,
-    pressed: Memo<HashSet<usize>>,
-    set_pressed: Callback<HashSet<usize>>,
+    pressed: Memo<HashSet<String>>,
+    set_pressed: Callback<HashSet<String>>,
 
     allow_multiple_pressed: ReadSignal<bool>,
 
@@ -41,12 +57,11 @@ impl ToggleGroupCtx {
         }
     }
 
-    fn is_pressed(&self, id: usize) -> bool {
-        let pressed = (self.pressed)();
-        pressed.contains(&id)
+    fn is_pressed(&self, id: &str) -> bool {
+        (self.pressed)().contains(id)
     }
 
-    fn set_pressed(&self, id: usize, pressed: bool) {
+    fn set_pressed(&self, id: String, pressed: bool) {
         let mut new_pressed = (self.pressed)();
         match pressed {
             false => new_pressed.remove(&id),
@@ -84,14 +99,28 @@ impl ToggleGroupCtx {
 /// The props for the [`ToggleGroup`] component
 #[derive(Props, Clone, PartialEq)]
 pub struct ToggleGroupProps {
-    /// The default pressed items if the component is not controlled.
+    /// The values of the items pressed initially when the component is not controlled
+    /// (shadcn's `defaultValue`; a single-type group holds at most one).
+    #[props(default)]
+    pub default_value: HashSet<String>,
+
+    /// The values of the currently pressed items, to drive the group when controlled
+    /// (shadcn's `value`).
+    pub value: ReadSignal<Option<HashSet<String>>>,
+
+    /// Called with the new set of pressed values (shadcn's `onValueChange`).
+    #[props(default)]
+    pub on_value_change: Callback<HashSet<String>>,
+
+    /// Deprecated: use `default_value`. Indices of the items pressed initially; an item without
+    /// a `value` is keyed by its `index`.
     #[props(default)]
     pub default_pressed: HashSet<usize>,
 
-    /// The currently pressed items. This can be used to drive the component when controlled.
+    /// Deprecated: use `value`. Indices of the pressed items, when controlled.
     pub pressed: ReadSignal<Option<HashSet<usize>>>,
 
-    /// Callback to handle changes in pressed state
+    /// Deprecated: use `on_value_change`. Called with the indices of the pressed items.
     #[props(default)]
     pub on_pressed_change: Callback<HashSet<usize>>,
 
@@ -138,9 +167,9 @@ pub struct ToggleGroupProps {
 /// fn Demo() -> Element {
 ///     rsx! {
 ///         ToggleGroup { horizontal: true, allow_multiple_pressed: true,
-///             ToggleItem { index: 0usize, em { "B" } }
-///             ToggleItem { index: 1usize, i { "I" } }
-///             ToggleItem { index: 2usize, u { "U" } }
+///             ToggleItem { index: 0usize, value: "bold", em { "B" } }
+///             ToggleItem { index: 1usize, value: "italic", i { "I" } }
+///             ToggleItem { index: 2usize, value: "underline", u { "U" } }
 ///         }
 ///     }
 /// }
@@ -156,10 +185,31 @@ pub struct ToggleGroupProps {
 /// - `data-direction`: The resolved text direction. Values are `ltr` or `rtl`.
 #[component]
 pub fn ToggleGroup(props: ToggleGroupProps) -> Element {
-    let (pressed, set_pressed) = use_controlled(
-        props.pressed,
-        props.default_pressed,
+    // The index API is a thin adapter over the value set: an index is the key of an item that
+    // has no `value`.
+    let (controlled, default_set, on_pressed_change, deprecated_pressed) = (
+        props.value,
+        if props.default_value.is_empty() {
+            indices_to_keys(&props.default_pressed)
+        } else {
+            props.default_value.clone()
+        },
         props.on_pressed_change,
+        props.pressed,
+    );
+    let controlled_keys = use_memo(move || {
+        controlled
+            .cloned()
+            .or_else(|| deprecated_pressed.cloned().map(|p| indices_to_keys(&p)))
+    });
+    let on_value_change = props.on_value_change;
+    let (pressed, set_pressed) = use_controlled(
+        controlled_keys.into(),
+        default_set,
+        use_callback(move |keys: HashSet<String>| {
+            on_value_change.call(keys.clone());
+            on_pressed_change.call(keys_to_indices(&keys));
+        }),
     );
     let direction = use_direction(props.dir);
     let direction_signal = use_direction_signal(direction);
@@ -200,8 +250,14 @@ pub fn ToggleGroup(props: ToggleGroupProps) -> Element {
 /// The props for the [`ToggleItem`] component
 #[derive(Props, Clone, PartialEq)]
 pub struct ToggleItemProps {
-    /// The index of the item within the [`ToggleGroup`]. This is used to order the items for keyboard navigation.
+    /// The index of the item within the [`ToggleGroup`]. This orders the items for keyboard
+    /// navigation; the pressed state follows `value`, so reordering items never moves it.
     pub index: ReadSignal<usize>,
+
+    /// The item's identity in the group's pressed set (shadcn's item `value`). Unique within the
+    /// group. Without one the item is keyed by its `index` (the deprecated index API).
+    #[props(default)]
+    pub value: ReadSignal<String>,
 
     /// Whether the toggle item is disabled.
     #[props(default)]
@@ -230,9 +286,9 @@ pub struct ToggleItemProps {
 /// fn Demo() -> Element {
 ///     rsx! {
 ///         ToggleGroup { horizontal: true, allow_multiple_pressed: true,
-///             ToggleItem { index: 0usize, em { "B" } }
-///             ToggleItem { index: 1usize, i { "I" } }
-///             ToggleItem { index: 2usize, u { "U" } }
+///             ToggleItem { index: 0usize, value: "bold", em { "B" } }
+///             ToggleItem { index: 1usize, value: "italic", i { "I" } }
+///             ToggleItem { index: 2usize, value: "underline", u { "U" } }
 ///         }
 ///     }
 /// }
@@ -249,14 +305,19 @@ pub fn ToggleItem(props: ToggleItemProps) -> Element {
     let mut ctx: ToggleGroupCtx = use_context();
 
     // We need a kept-alive signal to control the toggle.
-    let mut pressed = use_signal(|| ctx.is_pressed(props.index.cloned()));
+    let key = move || item_key(&props.value.cloned(), props.index.cloned());
+    let mut pressed = use_signal(|| ctx.is_pressed(&key()));
     use_effect(move || {
-        let is_pressed = ctx.is_pressed(props.index.cloned());
+        let is_pressed = ctx.is_pressed(&key());
         pressed.set(is_pressed);
     });
 
     let disabled = move || (ctx.disabled)() || (props.disabled)();
-    let item = use_item(collection_item(ctx.focus, props.index).disabled(disabled));
+    let item = use_item(
+        collection_item(ctx.focus, props.index)
+            .disabled(disabled)
+            .key(move || Some(key())),
+    );
     let tab_index = item.tabindex;
     let onmounted = item.onmounted();
 
@@ -309,7 +370,7 @@ pub fn ToggleItem(props: ToggleItemProps) -> Element {
 
             pressed: pressed(),
             on_pressed_change: move |pressed| {
-                ctx.set_pressed(props.index.cloned(), pressed);
+                ctx.set_pressed(key(), pressed);
             },
 
             attributes: merged,

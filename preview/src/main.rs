@@ -3543,13 +3543,13 @@ fn BlockComposer() -> Element {
         }
         div { style: "display: flex; flex-wrap: wrap; align-items: center; gap: 0.55rem; margin-top: 0.85rem;",
             ToggleGroup { horizontal: true, allow_multiple_pressed: true, aria_label: "Text formatting",
-                ToggleItem { index: 0usize, aria_label: "Bold",
+                ToggleItem { index: 0usize, value: "bold", aria_label: "Bold",
                     b { "B" }
                 }
-                ToggleItem { index: 1usize, aria_label: "Italic",
+                ToggleItem { index: 1usize, value: "italic", aria_label: "Italic",
                     i { "I" }
                 }
-                ToggleItem { index: 2usize, aria_label: "Underline",
+                ToggleItem { index: 2usize, value: "underline", aria_label: "Underline",
                     u { "U" }
                 }
             }
