@@ -401,6 +401,11 @@ mod why {
     pub const CAROUSEL: &str = "slide count, and so the previous/next `disabled` state, is read from the mounted track in an \
         effect; the buttons keep their box";
     pub const FIND_LAYER: &str = "the find-in-page layer is mounted by an effect; it is absolutely positioned and `aria-hidden`";
+    pub const TABLE_ROWCOUNT: &str = "`TableRows` hands its row count up to the `<table>` (`aria-rowcount`, an ARIA attribute, \
+        no box) through the `TableScroller` context after the body renders, since the table renders first (row 343)";
+    pub const ANCHOR_ID: &str = "a caller-supplied `id` on a popup's content reaches the trigger's `anchor-name` only after the content's \
+        effect syncs it into the root context (`PopoverCtx::content_id` and its Tooltip/HoverCard twins); the server writes the generated \
+        id. `anchor-name` is a custom ident that names an anchor and paints nothing, and the client's name is the one `position-anchor` resolves";
 }
 use why::*;
 
@@ -436,6 +441,7 @@ const BASELINE: &[(&str, &str)] = &[
     ("empty/avatar", AVATAR),
     ("item/avatar", AVATAR),
     ("item/group", AVATAR),
+    ("table/virtualized", TABLE_ROWCOUNT),
     ("virtual_list/find_in_page", FIND_LAYER),
 ];
 
@@ -446,13 +452,20 @@ const ROUTE_BASELINE: &[(&str, &str)] = &[
     ("/component/avatar/", AVATAR),
     ("/component/carousel/", CAROUSEL),
     ("/component/drag_and_drop_list/", AVATAR),
+    ("/component/dropdown_menu/", AVATAR),
     ("/component/empty/", AVATAR),
     ("/component/item/", AVATAR),
+    ("/component/table/", TABLE_ROWCOUNT),
+    ("/component/top_layer/", ANCHOR_ID),
     ("/component/virtual_list/", FIND_LAYER),
 ];
 
 /// Demos that cannot render natively at all, with the missing piece.
 const UNRENDERABLE: &[(&str, &str)] = &[
+    (
+        "breadcrumb/router_link",
+        "needs a `RouterContext` (`NavLink`)",
+    ),
     ("navbar/click_only", "needs a `RouterContext` (`Link`)"),
     ("navbar/main", "needs a `RouterContext` (`Link`)"),
     ("navbar/rtl", "needs a `RouterContext` (`Link`)"),
