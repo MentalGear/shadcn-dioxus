@@ -367,9 +367,9 @@ html[data-theme="light"] [class~="dxc-system"] {
    * WebKit auto-zooms a focused text field under 16px on a coarse pointer,
    * so 1rem/16px is both the typographic "body text" size and the
    * accessibility floor -- one token, not two. The floor's enforcement
-   * sites (the `@media (pointer: coarse)` rules in this app's `main.css`
-   * and in `combobox`/`date_picker`/`input`/`textarea`/`calendar`'s own
-   * `style.css`) now read this token instead of a bare `16px` literal. */
+   * sites (the `@media (pointer: coarse)` backstop in this app's `main.css`
+   * and the theme's coarse-sizing block, `--dx-coarse-text-entry-font-size`,
+   * that every text-entry sheet reads) use this token, not a bare `16px`. */
   --dx-text-xs: 0.75rem;   /* 12px */
   --dx-text-sm: 0.875rem;  /* 14px -- the most common size in the survey */
   --dx-text-base: 1rem;    /* 16px -- touch floor, row 30 */
@@ -639,6 +639,16 @@ html[data-theme="light"] [class~="dxc-system"] {
   --dx-field-fill: var(--light, transparent)
     var(--dark, color-mix(in oklab, var(--dx-input) 30%, transparent));
 
+  /* The OPAQUE twin of `--dx-input` (backlog row 348), for an edge that is drawn twice on one pixel. Dark
+   * `--dx-input` is white at 15%, so two edges that overlap by a pixel (the OTP slots' shared divider, a
+   * joined group's seam) stack to a darker line there. This is that same line already composited over
+   * `--dx-background`: light is the opaque ramp step itself, dark mixes the 15% white into the page
+   * colour (`--dx-hover-mix-space`, the theme's one mix space), so it looks like `--dx-input` on the
+   * page and stays the same colour where it overlaps. A custom dark `--input` is not followed by this
+   * arm: retune `--dx-input-edge` with it. */
+  --dx-input-edge: var(--light, var(--dx-input))
+    var(--dark, color-mix(in var(--dx-hover-mix-space), oklch(100% 0 0deg) 15%, var(--dx-background)));
+
   /* State recipes (see "State recipes: focus, invalid, disabled" at the end of this file). The
    * inside-the-box twin of `--dx-ring-field` for containers that clip an outer halo: a 1px
    * ring-coloured edge over the 3px ring/50 band, the two layers `--dx-ring-field` draws, mirrored
@@ -675,45 +685,94 @@ html[data-theme="light"] [class~="dxc-system"] {
    * which reads the same padding token). Was 8px 12px / radius lg - sm (4px) / gap 8px; rows are
    * about 8px shorter (14px text, 4px + 4px padding = ~28px). */
   --dx-menu-item-padding-block: var(--dx-space-1);
-  --dx-menu-item-padding-inline: var(--dx-space-1-5);
-  --dx-menu-item-padding: var(--dx-menu-item-padding-block) var(--dx-menu-item-padding-inline);
   --dx-menu-item-radius: var(--dx-radius-md);
   --dx-menu-item-gap: var(--dx-space-1-5);
-
-  /* The touch step (docs/backlog.md row 291), one set of slots every menu and option-list sheet
-   * reads, so a sheet never carries its own `@media (pointer: coarse)` copy of a row size:
-   *  - `--dx-menu-item-min-height` / `--dx-menu-item-font-size`: a row of a menu, listbox or
-   *    command palette (dropdown, context menu, menubar, navbar and navigation-menu panels, select,
-   *    combobox, command). Rows centre their content, so a taller row needs no padding of its own.
-   *  - `--dx-menu-trigger-min-height` / `--dx-menu-trigger-padding`: an entry in a menu BAR
-   *    (menubar, navbar and navigation-menu triggers), which sits in the bar rather than in a panel.
-   * The desktop values are the Nova sizes above (`0` = no floor); the coarse block just below this
-   * `:root` rule replaces them. */
-  --dx-menu-item-min-height: 0px;
-  --dx-menu-item-font-size: var(--dx-text-sm);
-  --dx-menu-trigger-min-height: 0px;
-  --dx-menu-trigger-padding: var(--dx-space-0-5) var(--dx-space-1-5);
 }
 
 /* ============================================================================
- * Touch targets for menus and option lists (docs/backlog.md row 291).
+ * Coarse sizing: touch sizes, one switch (docs/backlog.md rows 291, 349).
  *
- * A finger needs ~44px (Apple HIG; WCAG 2.5.5 AAA is 44 CSS px, 2.5.8 AA's 24px is a floor), and
- * Nova's menu row is ~28px. The query is the one `modality.rs` uses for its first-paint guess,
- * `(any-pointer: coarse) and (hover: none)`: a laptop with a touchscreen has a fine pointer that can
- * hover, so it keeps the dense desktop menus. Only the slots change here, never a selector, so
- * every sheet that reads them follows and an app can retune one value (`--dx-menu-item-min-height`).
- * The inline padding grows with the font so the label stays optically centred in the taller row;
- * the vertical padding stays, the row's `min-height` and `align-items: center` do the sizing.
+ * A finger needs ~44px (Apple HIG; WCAG 2.5.5 AAA is 44 CSS px, 2.5.8 AA's 24px is a floor) and
+ * iOS auto-zooms a focused text field under 16px, while Nova's dense desktop sizes (a ~28px menu
+ * row, a 14px input, a 12px slider thumb) are right for a mouse. Every size that differs by pointer
+ * is a THEME VARIABLE below, and the component sheets read the variable: no sheet carries its own
+ * `@media (pointer: coarse)` copy (`scripts/check-coarse-sizing.sh`).
+ *
+ * The switch is `data-dx-coarse="auto|on|off"` on `<html>` or on any container, like
+ * `data-dx-press-feedback`:
+ *   - `auto` (also: no attribute) follows `(pointer: coarse)`, the PRIMARY pointer, so a laptop with
+ *     a touchscreen keeps the dense desktop sizes and a phone or tablet gets the touch ones;
+ *   - `on` / `off` force coarse / fine sizing for that subtree (popups stay DOM descendants of
+ *     their trigger, so they follow it), which is how the docs compare both on a desktop.
+ * A nested container wins over its ancestors, so `auto` inside an `on` subtree is the media query
+ * again.
+ *
+ * How it works, and why it is shaped like this. A custom property that holds `var()` is resolved
+ * ON THE ELEMENT THAT DECLARES IT and inherited as the resolved value, so a size declared once on
+ * `:root` could never differ inside a container. The sizes are therefore declared on
+ * `:root, [data-dx-coarse]` (every element that can change the answer), each choosing between its
+ * coarse and its fine value with the two switch variables of that element:
+ *     --size: var(--dx-pick-coarse, <coarse value>) var(--dx-pick-fine, <fine value>);
+ * `--dx-pick-coarse` / `--dx-pick-fine` are set to `initial` (guaranteed-invalid, so the fallback
+ * is taken) or to the empty value (substitutes nothing): exactly one of them is `initial`. The
+ * media query and the attribute rules below only flip those two; the values are written once.
+ * Apps retune one size by redeclaring it (`--dx-menu-item-min-height`, ...), after this sheet.
+ *
+ * The sizes:
+ *  - menus and option lists (docs/backlog.md row 291): `--dx-menu-item-min-height` /
+ *    `-font-size` / `-padding-inline` (a row of a menu, listbox or command palette: rows centre
+ *    their content, so a taller row needs no padding of its own) and `--dx-menu-trigger-min-height`
+ *    / `-padding` (an entry in a menu BAR: menubar, navbar, navigation-menu triggers);
+ *  - text entry: `--dx-coarse-text-entry-font-size` / `-line-height` (input, textarea, combobox,
+ *    command, native select, date-picker segments, the OTP and calendar `select` inputs; 16px
+ *    avoids WebKit's zoom-on-focus);
+ *  - drag targets: `--dx-coarse-slider-thumb-size` / `-margin` (a 20px thumb with a 44px target),
+ *    `--dx-coarse-resizable-hit-size`;
+ *  - `--dx-coarse-actions-opacity`: hover-revealed action buttons (code block copy) are always
+ *    visible, there being no hover.
  * ========================================================================== */
-@media (any-pointer: coarse) and (hover: none) {
-  :root {
-    --dx-menu-item-padding-inline: var(--dx-space-3);
-    --dx-menu-item-min-height: 2.75rem;
-    --dx-menu-item-font-size: var(--dx-text-base);
-    --dx-menu-trigger-min-height: 2.75rem;
-    --dx-menu-trigger-padding: var(--dx-space-2) var(--dx-space-3);
+:root,
+[data-dx-coarse="auto"] {
+  --dx-pick-coarse: ;
+  --dx-pick-fine: initial;
+}
+
+@media (pointer: coarse) {
+  :root,
+  [data-dx-coarse="auto"] {
+    --dx-pick-coarse: initial;
+    --dx-pick-fine: ;
   }
+}
+
+/* After the media rules: an explicit `on` / `off` on `<html>` (specificity (0,1,0), the same as
+ * `:root`) must win over the media query. */
+[data-dx-coarse="on"] {
+  --dx-pick-coarse: initial;
+  --dx-pick-fine: ;
+}
+
+[data-dx-coarse="off"] {
+  --dx-pick-coarse: ;
+  --dx-pick-fine: initial;
+}
+
+:root,
+[data-dx-coarse] {
+  /* Desktop values are the Nova sizes (`0` = no floor). The inline padding of a menu row grows with its
+   * font so the label stays optically centred in the taller row; the vertical padding stays. */
+  --dx-menu-item-padding-inline: var(--dx-pick-coarse, var(--dx-space-3)) var(--dx-pick-fine, var(--dx-space-1-5));
+  --dx-menu-item-padding: var(--dx-menu-item-padding-block) var(--dx-menu-item-padding-inline);
+  --dx-menu-item-min-height: var(--dx-pick-coarse, 2.75rem) var(--dx-pick-fine, 0px);
+  --dx-menu-item-font-size: var(--dx-pick-coarse, var(--dx-text-base)) var(--dx-pick-fine, var(--dx-text-sm));
+  --dx-menu-trigger-min-height: var(--dx-pick-coarse, 2.75rem) var(--dx-pick-fine, 0px);
+  --dx-menu-trigger-padding: var(--dx-pick-coarse, var(--dx-space-2) var(--dx-space-3)) var(--dx-pick-fine, var(--dx-space-0-5) var(--dx-space-1-5));
+  --dx-coarse-text-entry-font-size: var(--dx-pick-coarse, var(--dx-text-base)) var(--dx-pick-fine, var(--dx-text-sm));
+  --dx-coarse-text-entry-line-height: var(--dx-pick-coarse, 1.5rem) var(--dx-pick-fine, 1.25rem);
+  --dx-coarse-slider-thumb-size: var(--dx-pick-coarse, var(--dx-space-5)) var(--dx-pick-fine, var(--dx-space-3));
+  --dx-coarse-slider-thumb-margin: var(--dx-pick-coarse, var(--dx-space-3)) var(--dx-pick-fine, var(--dx-space-2));
+  --dx-coarse-resizable-hit-size: var(--dx-pick-coarse, var(--dx-space-6)) var(--dx-pick-fine, var(--dx-space-3));
+  --dx-coarse-actions-opacity: var(--dx-pick-coarse, 1) var(--dx-pick-fine, 0);
 }
 
 /* ============================================================================

@@ -154,8 +154,11 @@ type Row = {
 };
 
 async function scan(page: Page): Promise<Row[]> {
-  return page.$$eval(SELECTOR, (els) =>
-    els.map((el) => {
+  return page.$$eval(SELECTOR, (all) => {
+    // A container the page FORCES to desktop sizing (`data-dx-coarse="off"`, the docs' side-by-side demo, rows
+    // 349/350) is deliberately below the floor on a coarse device: that is what `off` means.
+    const els = all.filter((el) => !el.closest('[data-dx-coarse="off"]'));
+    return els.map((el) => {
       const cs = getComputedStyle(el as HTMLElement);
       return {
         tag: el.tagName.toLowerCase(),
@@ -168,8 +171,8 @@ async function scan(page: Page): Promise<Row[]> {
           el.getAttribute("name") ||
           "",
       };
-    }),
-  );
+    });
+  });
 }
 
 function assertAllAtLeast16(rows: Row[], route: string) {

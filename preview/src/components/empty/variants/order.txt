@@ -3,4 +3,3 @@ outline
 background
 avatar
 search
-rtl

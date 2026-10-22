@@ -280,7 +280,6 @@ pub fn ChartsKind(kind: String, dark_mode: Option<bool>) -> Element {
         // slug is never prerendered anyway (`server_static_routes` only
         // lists `ChartKind::ALL`).
         None => rsx! {
-            document::Title { "Chart type not found \u{2013} {SITE_NAME}" }
             Navbar {}
             main { id: MAIN_ID, tabindex: "-1", class: "dx-charts-not-found",
                 h1 { "Chart type not found" }
@@ -291,9 +290,6 @@ pub fn ChartsKind(kind: String, dark_mode: Option<bool>) -> Element {
         },
     }
 }
-
-/// The site name in a page title: `Area Charts \u{2013} shadcn-dioxus` (`crate::SITE_NAME`).
-use crate::SITE_NAME;
 
 /// Runs when a tab link is activated, before the router navigates (an inline
 /// handler runs ahead of Dioxus's own delegated one): remembers where the tab
@@ -354,7 +350,6 @@ fn ChartsPage(kind: ChartKind) -> Element {
     }));
 
     rsx! {
-        document::Title { "{kind.tab_label()} \u{2013} {SITE_NAME}" }
         // The same docs shell (sidebar, navbar trigger) as every component page
         // (backlog row 303). `SidebarInset` renders the page's one `<main>`, so the
         // gallery is a `div` inside it.

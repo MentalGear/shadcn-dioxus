@@ -991,8 +991,7 @@ test.describe("Internationalized variant (variant=internationalized)", () => {
     // (`preview/src/components/date_picker/component.rs`). True both
     // before and after backlog row 84 finding 5's fix (the app's initial
     // locale was always, and still is, `en-US` -- see
-    // `use_init_i18n(|| I18nConfig::new(langid!("en-US")) ...)` in
-    // `main.rs`); the *switcher actually working* is the next test.
+    // `LocaleDemo` in `preview/src/i18n/mod.rs`); the *picker actually working* is the next test.
     await gotoDatePicker(page);
     const placeholders = async (variant?: string) => ({
       year: await segment(page, "year", variant).textContent(),
@@ -1003,51 +1002,31 @@ test.describe("Internationalized variant (variant=internationalized)", () => {
     expect(await placeholders(undefined)).toEqual({ year: "YYYY", month: "MM", day: "DD" });
   });
 
-  test("the language switcher actually changes the active locale -- backlog row 84 finding 5", async ({ page }) => {
-    // RED on the unmodified tree (verified live before this fix):
-    // `preview/src/main.rs`'s `LanguageSelect` `onchange` handler had
-    // `i18n().set_language(id)` commented out, so `use_init_i18n` kept the
-    // app fixed at `en-US` for the life of the page no matter what the
-    // dropdown showed selected -- the control was dead. Fixed by
-    // uncommenting the call (wiring it up for real was a contained,
-    // two-line change: import `i18n` and make the call) rather than
-    // removing the control, since `dioxus_i18n::prelude::i18n()` reads the
-    // exact `I18n` context `use_init_i18n` already provides in `App`, and
-    // `set_language` writes its reactively-read `active_bundle` signal --
-    // no larger plumbing was needed. The internationalized date_picker
-    // variant's `on_format_day_placeholder: || tid!("D_Abbr")` etc. (and,
-    // as of finding 2's fix, `on_format_month`) read that same bundle, so
-    // switching to French should change "D_Abbr" from "D" (en-US) to "J"
-    // (fr-FR, per `fr-FR.ftl`) live, with no reload. The plain "main"
-    // variant's placeholders are hardcoded in `component.rs` (not
-    // `tid!`-driven at all -- see `variants/main/mod.rs`), so they must NOT
-    // change -- this isolates "the switcher recompiled translated text" from
-    // "the whole page reloaded" or some other unrelated effect.
+  test("the demo's own locale picker changes the demo's locale and marks its subtree (row 354)", async ({ page }) => {
+    // The docs header has no language switcher any more (the site is English only): the
+    // internationalized variant owns a `ToggleGroup` locale picker and its own i18n root, so the
+    // formatting hooks (`on_format_*placeholder` fed by `tid!`) stay demonstrated. Switching to
+    // French changes "D_Abbr"/"Y_Abbr" ("D" -> "J", "Y" -> "A", `fr-FR.ftl`) live, the subtree
+    // carries `lang="fr-FR"` (WCAG 3.1.2) and the page stays `lang="en"`. The plain "main" variant's
+    // placeholders are hardcoded in `component.rs`, so they must NOT change.
     await gotoDatePicker(page);
-    const languageSelect = page.getByRole("combobox", { name: "Language" });
-    await expect(languageSelect).toBeVisible();
+    await expect(page.getByRole("combobox", { name: "Language" }), "no site-wide language select").toHaveCount(0);
+    const frame = page.locator("#component-preview-frame-internationalized");
+    const french = frame.getByRole("button", { name: "Français" });
+    await expect(french).toBeVisible();
 
-    // Placeholder text repeats the formatter's letter `max_length` times
-    // (`DateSegment::display_value`) -- "DD" for the 2-character day
-    // segment, matching this file's own established convention (e.g. the
-    // "renders the same fixed year -> month -> day segment order" test's
-    // `{ year: "YYYY", month: "MM", day: "DD" }`).
-    const mainDayBefore = await segment(page, "day", undefined).textContent();
-    expect(mainDayBefore).toBe("DD");
-    const intlDayBefore = await segment(page, "day", "internationalized").textContent();
-    expect(intlDayBefore).toBe("DD");
+    expect(await segment(page, "day", undefined).textContent()).toBe("DD");
+    expect(await segment(page, "day", "internationalized").textContent()).toBe("DD");
+    await expect(frame.locator("[lang]").first()).toHaveAttribute("lang", "en-US");
 
-    await languageSelect.selectOption("French");
+    await french.click();
 
-    // Day ("D" -> "J") and year ("Y" -> "A") both change between en-US and
-    // fr-FR, so either alone would prove the switch took effect; month is
-    // deliberately not asserted here since fr-FR's own `M_Abbr` is ALSO
-    // "M" (`fr-FR.ftl`) -- it would pass whether or not the switch worked,
-    // so it isn't discriminating evidence either way.
+    // Month is not asserted: fr-FR's `M_Abbr` is also "M", so it would pass whether or not the switch worked.
     await expect(segment(page, "day", "internationalized")).toHaveText("JJ");
     await expect(segment(page, "year", "internationalized")).toHaveText("AAAA");
-    // The non-internationalized variant is untouched by the locale change.
+    await expect(frame.locator('[lang="fr-FR"]').first()).toBeVisible();
     await expect(segment(page, "day", undefined)).toHaveText("DD");
+    await expect(page.locator("html")).toHaveAttribute("lang", "en");
   });
 });
 

@@ -21,7 +21,7 @@ Everything here is for the people and agents who work on this repository. Start 
 | Path | What it is |
 |---|---|
 | `../CLAUDE.md` | Project instructions: delegation, the gate list and the one gate entry point (`scripts/run-gates.sh`), build rules. |
-| [`lane-rules.md`](./lane-rules.md) | The brief every delegated lane gets: worktree, the global build lock, mtime touch, merge-then-fast-gates before handback, the gate procedure. |
+| [`lane-rules.md`](./lane-rules.md) | The brief every delegated lane gets: the fast loop (`dx serve` + `scripts/dev-wait.sh` to iterate, `npm run test:changed` to verify), worktree, the global build lock, mtime touch, merge-then-fast-gates before handback, the gate procedure. |
 | [`agent-model-fit.md`](./agent-model-fit.md) | Which agent model (Haiku / Sonnet) fits which lane; a running log, one row per delegated lane. |
 | [`dev-loop.md`](./dev-loop.md) | The measured fast dev loop: edit, wait, inspect, one spec, suite. |
 | [`dx-serve-hot-reload.md`](./dx-serve-hot-reload.md) | How to trust (and not trust) a `dx serve` result when verifying a UI fix. |
