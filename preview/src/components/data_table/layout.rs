@@ -73,7 +73,7 @@ impl ColumnLayout {
             return None;
         }
         self.order = Some(order);
-        Some(at.checked_add_signed(delta)?)
+        at.checked_add_signed(delta)
     }
 }
 

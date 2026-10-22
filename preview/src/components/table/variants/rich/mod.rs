@@ -64,7 +64,7 @@ pub fn Demo() -> Element {
     let page_keys = view.keys.clone();
     rsx! {
         Table {
-            TableCaption { "Recent orders. {view.selected_count} of {ORDERS.len()} selected." }
+            TableCaption { "Recent orders. {view.selected_total} of {ORDERS.len()} selected." }
             TableHeader {
                 TableRow {
                     TableHead {
