@@ -26,3 +26,19 @@ InputGroup {
 ```
 
 A group that holds a block addon stacks its children in a column and sizes to them; the addon's `order` places it above (`BlockStart`) or below (`BlockEnd`) the control wherever it appears in the markup. This is the shape of a chat composer: the text on top, the actions in a bottom row.
+
+## Textarea and custom controls
+
+`InputGroupTextarea` is the multi-line control (shadcn's `InputGroupTextarea`). It composes `Textarea`, drops the textarea's own fill, edge and resize handle, and leaves the group's outer edge to draw the chrome. Add a `BlockEnd` addon for a footer:
+
+```rust
+InputGroup {
+    InputGroupTextarea { placeholder: "Write a message...", oninput: move |e| text.set(e.value()) }
+    InputGroupAddon { align: InputGroupAlign::BlockEnd,
+        InputGroupText { "{count} / 120" }
+        Button { style: "margin-inline-start: auto;", size: ButtonSize::IconSm, ArrowUp {} }
+    }
+}
+```
+
+Any other element can be the group's control: give it the `dx-input-group-control` class and strip its own chrome. The group's hover, focus-visible, invalid (`aria-invalid="true"`) and disabled states follow it, and the addons sit around it. The `custom_control` demo uses a plain `textarea` styled by the caller.

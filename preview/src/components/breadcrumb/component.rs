@@ -54,13 +54,21 @@ pub fn BreadcrumbLink(
     #[props(extends = GlobalAttributes)]
     #[props(extends = a)]
     attributes: Vec<Attribute>,
+    /// Renders the crumb as the element the callback returns, given the crumb's attributes
+    /// (shadcn's `render` prop: a router link instead of an `<a>`). The callback then owns the
+    /// children, so pass them inside it; the `children` of the crumb are not rendered.
+    r#as: Option<Callback<Vec<Attribute>, Element>>,
     children: Element,
 ) -> Element {
     let base = attributes!(a { class: "dx-breadcrumb-link" });
     let merged = merge_attributes(vec![base, attributes]);
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/breadcrumb/style.css") }
-        a { ..merged, {children} }
+        if let Some(dynamic) = r#as {
+            {dynamic.call(merged)}
+        } else {
+            a { ..merged, {children} }
+        }
     }
 }
 

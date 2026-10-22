@@ -4,7 +4,7 @@ title: "Demo parity, second audit: the owner's per-example list against the orig
 status: "DEMO-ONLY ITEMS DONE 2026-10-19 (batch 2: every section-5 demo exists; what remains needs component…"
 size: "M per batch"
 area: docs
-updated: 2026-10-20
+updated: 2026-10-22
 ---
 
 # Row 188: Demo parity, second audit: the owner's per-example list against the original shadcn demos (51 components; row…
@@ -38,3 +38,5 @@ M per batch
 **Update 2026-10-19 (lane calendar):** the DOB dropdown layouts demo (`date_picker/variants/date_of_birth`) and the calendar cell size (`calendar/variants/cell_size`; `--dx-calendar-cell-size` was already the slot behind shadcn's `--cell-size`, so only a demo and docs were missing) landed. Calendar docs carry the `caption_layout` and cell-size notes (date_picker docs.md belongs to another thread).
 
 Select scroll buttons and `position=item-aligned` were split out to [row 268](268-select-scroll-buttons-and-item-aligned-position.md).
+
+**Update 2026-10-22 (lane parts188):** the four leftovers of the 2026-10-20 sync are closed. (1) Textarea footer: new themed `InputGroupTextarea` (composes `Textarea`, owned `data-bare` marker; `textarea/style.css` drops fill, edge, radius and resize for a bare textarea so the group draws the one chrome, keyed by the textarea's own attribute so `input_group/style.css` declares nothing on it and the cross-component baseline did not grow), demo `input_group/variants/textarea` (`BlockEnd` footer with a live count and a send button), `input_group/component.json` gained the `textarea` component dependency. (2) Custom control: the group's states already followed any element wearing `dx-input-group-control`; documented as the contract and shown by `input_group/variants/custom_control` (a caller-styled plain `textarea`, plus an `aria-invalid` one). (3) Breadcrumb router link: `BreadcrumbLink { r#as }` (same `Callback<Vec<Attribute>, Element>` shape as Button and Badge), demo `breadcrumb/variants/router_link` through the preview's `NavLink`, docs section. (4) Tabs and ToggleGroup vertical were stale entries: `Tabs { horizontal: false }` and `ToggleGroup { horizontal: false }` exist with `[data-orientation=vertical]` CSS, ArrowUp/ArrowDown navigation, demos (`tabs/vertical`, `vertical_line`, `toggle_group/vertical`) and specs (`tabs.spec.ts` vertical orientation, `toggle_group.spec.ts` vertical). Spec: `playwright/demos-parts188.spec.ts`. Row stays open for the items listed above that other rows own (switch/toggle sizes, invalid control ring, Field `disabled`, `ProgressLabel`, `InputGroupButton`, the 34px NativeSelect and Popover icon sizing).

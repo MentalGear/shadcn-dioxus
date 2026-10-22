@@ -6,3 +6,5 @@ kbd
 dropdown
 spinner
 block
+textarea
+custom_control

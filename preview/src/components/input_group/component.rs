@@ -1,4 +1,5 @@
 use crate::components::input::Input;
+use crate::components::textarea::{Textarea, TextareaVariant};
 use dioxus::prelude::*;
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::merge_attributes;
@@ -74,6 +75,47 @@ pub fn InputGroupInput(
             onchange,
             onfocus,
             onblur,
+            attributes: merged,
+        }
+    }
+}
+
+/// The group's multi-line control (shadcn's `InputGroupTextarea`), composing the themed
+/// [`Textarea`]. Its own fill, edge and resize handle are dropped (`data-bare`, textarea's
+/// sheet), so only the group's outer edge draws the chrome; put a `BlockEnd` addon under it for
+/// a footer (a character count, a send button). Any other element can be the group's control by
+/// wearing the `dx-input-group-control` class: the group's hover, focus, invalid and disabled
+/// states follow it.
+#[component]
+pub fn InputGroupTextarea(
+    /// Runs on every edit.
+    oninput: Option<EventHandler<FormEvent>>,
+    /// Runs when the value is committed.
+    onchange: Option<EventHandler<FormEvent>>,
+    /// Runs when the textarea gains focus.
+    onfocus: Option<EventHandler<FocusEvent>>,
+    /// Runs when the textarea loses focus.
+    onblur: Option<EventHandler<FocusEvent>>,
+    /// Runs on a key press in the textarea.
+    onkeydown: Option<EventHandler<KeyboardEvent>>,
+    #[props(extends = GlobalAttributes)]
+    #[props(extends = textarea)]
+    attributes: Vec<Attribute>,
+) -> Element {
+    let base = attributes!(textarea { class: "dx-input-group-control" });
+    // `data-bare` is this wrapper's own marker (it takes the group's chrome), not a caller default.
+    let owned = attributes!(textarea { "data-bare": "" });
+    let merged = merge_attributes(vec![base, attributes, owned]);
+
+    rsx! {
+        document::Link { rel: "stylesheet", href: asset!("/src/components/input_group/style.css") }
+        Textarea {
+            variant: TextareaVariant::Default,
+            oninput,
+            onchange,
+            onfocus,
+            onblur,
+            onkeydown,
             attributes: merged,
         }
     }
