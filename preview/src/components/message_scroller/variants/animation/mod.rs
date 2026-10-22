@@ -10,20 +10,17 @@ use crate::components::{
 use dioxus::prelude::*;
 use dioxus_icons::lucide::{ArrowUp, MessageCircleDashed, RotateCw};
 
-/// `(user message, assistant reply)`; each press of send plays one pair.
-const SCRIPT: [(&str, &str); 3] = [
-    (
-        "Can user messages pop in like iMessage without breaking anchoring?",
-        "Yes. Animate the user row with opacity, scale and translate, and let the assistant response stream normally below it.\n\nThat keeps the row measurement predictable while still giving the newly sent bubble a more tactile entrance.",
-    ),
-    (
-        "What makes the animation feel more like iMessage?",
-        "Use a quick pop from the trailing edge: a little scale, a small upward move, and no layout animation.\n\nThe bubble feels tactile, but the measured row stays predictable, so anchoring and auto-scroll do not have to fight a changing layout.",
-    ),
-    (
-        "Can I switch between presets while testing the same thread?",
-        "Yes. Keep the conversation in place while you change the preset, then send the next message to compare the new entrance against the same context.\n\nThat makes it easier to judge the difference between a subtle fade, a snappy pop, and a small drop without rebuilding the scenario each time.",
-    ),
+/// The user messages, one per press of send. Short on purpose: the demo is about the bubble's entrance,
+/// so nothing else (no assistant reply, no streamed text) competes with it.
+const SCRIPT: [&str; 8] = [
+    "Can user messages pop in like iMessage without breaking anchoring?",
+    "What makes the animation feel more like iMessage?",
+    "Pick a preset, then send again.",
+    "Each new bubble plays the preset you picked.",
+    "Rows already on screen keep theirs.",
+    "Try the spring bounce.",
+    "Or the blur fade.",
+    "Slide side is the last one.",
 ];
 
 /// The presets: `(id, name)`. Each plays one entrance keyframes (the theme's `dx-fade-in`,
@@ -52,62 +49,29 @@ fn preset_class(preset: &str) -> String {
 #[derive(Clone, PartialEq)]
 struct Turn {
     id: u32,
-    mine: bool,
     text: String,
     /// The preset that was selected when this row was sent. Stored with the row, so changing the
     /// preset later never replays the entrance of rows already on screen.
     preset: &'static str,
 }
 
-/// A real timer for the simulated stream (this demo has no async runtime of its own; the
-/// browser's `setTimeout` is the clock).
-async fn sleep_ms(ms: u32) {
-    let _ = document::eval(&format!("await new Promise((r) => setTimeout(r, {ms}));")).await;
-}
-
 #[component]
 pub fn Demo() -> Element {
     let mut turns = use_signal(Vec::<Turn>::new);
     let mut sent = use_signal(|| 0usize);
-    let mut busy = use_signal(|| false);
     let mut preset = use_signal(|| "fade");
     let next = SCRIPT.get(sent());
 
     let mut send = move || {
-        let Some(&(user, reply)) = SCRIPT.get(sent()) else {
+        let Some(&user) = SCRIPT.get(sent()) else {
             return;
         };
-        if busy() {
-            return;
-        }
-        busy.set(true);
-        let id = sent() as u32 * 2;
+        let id = sent() as u32;
         sent += 1;
-        let preset_now = preset();
-        spawn(async move {
-            turns.write().push(Turn {
-                id,
-                mine: true,
-                text: user.to_string(),
-                preset: preset_now,
-            });
-            sleep_ms(400).await;
-            turns.write().push(Turn {
-                id: id + 1,
-                mine: false,
-                text: String::new(),
-                preset: "",
-            });
-            for word in reply.split(' ') {
-                sleep_ms(15).await;
-                if let Some(turn) = turns.write().iter_mut().find(|t| t.id == id + 1) {
-                    if !turn.text.is_empty() {
-                        turn.text.push(' ');
-                    }
-                    turn.text.push_str(word);
-                }
-            }
-            busy.set(false);
+        turns.write().push(Turn {
+            id,
+            text: user.to_string(),
+            preset: preset(),
         });
     };
 
@@ -143,7 +107,7 @@ pub fn Demo() -> Element {
                             size: ButtonSize::Icon,
                             r#type: "button",
                             aria_label: "Reset animated messages",
-                            disabled: turns.read().is_empty() || busy(),
+                            disabled: turns.read().is_empty(),
                             onclick: move |_| {
                                 turns.write().clear();
                                 sent.set(0);
@@ -168,25 +132,17 @@ pub fn Demo() -> Element {
                             MessageScroller {
                                 MessageScrollerViewport { "aria-label": "Animated conversation",
                                     MessageScrollerContent {
-                                        "aria-busy": busy(),
                                         style: "padding: var(--dx-card-spacing);",
                                         for turn in turns() {
                                             MessageScrollerItem {
                                                 key: "{turn.id}",
                                                 message_id: "m{turn.id}",
-                                                scroll_anchor: turn.mine,
                                                 Message {
                                                     class: preset_class(turn.preset),
-                                                    align: if turn.mine { MessageAlign::End } else { MessageAlign::Start },
+                                                    align: MessageAlign::End,
                                                     MessageContent {
-                                                        Bubble { variant: if turn.mine { BubbleVariant::Muted } else { BubbleVariant::Ghost },
-                                                            BubbleContent { style: "display: flex; flex-direction: column; gap: var(--dx-space-2);",
-                                                                for (i , paragraph) in turn.text.split("\n\n").enumerate() {
-                                                                    p { key: "{i}", style: "margin: 0; white-space: pre-wrap;",
-                                                                        "{paragraph}"
-                                                                    }
-                                                                }
-                                                            }
+                                                        Bubble { variant: BubbleVariant::Muted,
+                                                            BubbleContent { "{turn.text}" }
                                                         }
                                                     }
                                                 }
@@ -230,7 +186,7 @@ pub fn Demo() -> Element {
                         r#type: "button",
                         style: "margin-inline-start: auto;",
                         aria_label: "Send Message",
-                        disabled: next.is_none() || busy(),
+                        disabled: next.is_none(),
                         onclick: move |_| send(),
                         ArrowUp {}
                     }

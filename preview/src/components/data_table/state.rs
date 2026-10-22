@@ -26,6 +26,8 @@
 //! copies verbatim, so the copied module keeps compiling with zero extra
 //! wiring in a consumer's project.
 
+use dioxus_primitives::checkbox::CheckboxState;
+
 /// Which way a column is sorted. Mirrors the APG Table pattern's
 /// `aria-sort` token set (`ascending` | `descending`; this crate's sortable
 /// columns are always in one of these two states once sorted -- see
@@ -67,13 +69,21 @@ impl SortDirection {
 /// so rows whose keys compare equal keep their relative order -- e.g.
 /// sorting by `status` alone doesn't reshuffle same-status rows.
 pub fn sort_rows<T: Clone, K: Ord>(rows: &[T], direction: SortDirection, key_fn: impl Fn(&T) -> K) -> Vec<T> {
+    sort_rows_by(rows, direction, |a, b| key_fn(a).cmp(&key_fn(b)))
+}
+
+/// [`sort_rows`] with a caller-supplied comparator instead of a key function
+/// (what a `Column`'s type-erased sort is). `compare` always describes the
+/// *ascending* order; `direction` reverses it. Stable, like [`sort_rows`].
+pub fn sort_rows_by<T: Clone>(
+    rows: &[T],
+    direction: SortDirection,
+    compare: impl Fn(&T, &T) -> std::cmp::Ordering,
+) -> Vec<T> {
     let mut sorted = rows.to_vec();
-    sorted.sort_by(|a, b| {
-        let (ka, kb) = (key_fn(a), key_fn(b));
-        match direction {
-            SortDirection::Ascending => ka.cmp(&kb),
-            SortDirection::Descending => kb.cmp(&ka),
-        }
+    sorted.sort_by(|a, b| match direction {
+        SortDirection::Ascending => compare(a, b),
+        SortDirection::Descending => compare(b, a),
     });
     sorted
 }
@@ -133,9 +143,39 @@ pub fn paginate<T: Clone>(rows: &[T], page: usize, page_size: usize) -> (Vec<T>,
     (rows[start..end].to_vec(), total_pages)
 }
 
+/// The "all, some, none" state of a header checkbox: `selected` of `total`
+/// rows are checked. Zero rows is `Unchecked` (nothing to select). Shared by
+/// the Data Table model and the Table demo's hand-written selection column,
+/// so the tri-state is written once.
+pub fn tri_state(selected: usize, total: usize) -> CheckboxState {
+    if total > 0 && selected >= total {
+        CheckboxState::Checked
+    } else if selected > 0 {
+        CheckboxState::Indeterminate
+    } else {
+        CheckboxState::Unchecked
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn tri_state_is_all_some_none() {
+        assert_eq!(tri_state(0, 5), CheckboxState::Unchecked);
+        assert_eq!(tri_state(2, 5), CheckboxState::Indeterminate);
+        assert_eq!(tri_state(5, 5), CheckboxState::Checked);
+        assert_eq!(tri_state(0, 0), CheckboxState::Unchecked);
+    }
+
+    #[test]
+    fn sort_rows_by_reverses_the_comparator_for_descending() {
+        let asc = sort_rows_by(ROWS, SortDirection::Ascending, |a, b| a.name.cmp(b.name));
+        let desc = sort_rows_by(ROWS, SortDirection::Descending, |a, b| a.name.cmp(b.name));
+        assert_eq!(asc.iter().map(|r| r.name).collect::<Vec<_>>(), vec!["alice", "bob", "carol", "dana"]);
+        assert_eq!(desc.iter().map(|r| r.name).collect::<Vec<_>>(), vec!["dana", "carol", "bob", "alice"]);
+    }
 
     #[derive(Debug, Clone, PartialEq)]
     struct Row {

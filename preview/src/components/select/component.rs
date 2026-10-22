@@ -4,7 +4,7 @@ use dioxus_primitives::select::{self, SelectGroupLabelProps, SelectOptionProps};
 use dioxus_primitives::{dioxus_attributes::attributes, merge_attributes};
 use std::time::Duration;
 
-pub use dioxus_primitives::select::SelectGroup;
+pub use dioxus_primitives::select::{SelectGroup, SelectPosition};
 
 // docs/backlog.md row 32: `#[css_module]` is gone -- see checkbox/component.rs's
 // header comment for the full delivery-mechanism rationale (asset!() +
@@ -107,6 +107,11 @@ pub struct SelectProps<T: Clone + PartialEq + 'static = String> {
     #[props(default = ReadSignal::new(Signal::new(true)))]
     pub scroll_lock: ReadSignal<bool>,
 
+    /// Where the list is placed: below the trigger (`Popper`, the default) or with the selected
+    /// option over the trigger (`ItemAligned`, shadcn's `position="item-aligned"`).
+    #[props(default)]
+    pub position: ReadSignal<select::SelectPosition>,
+
     /// ARIA label applied to the trigger button. Ignored when `trigger` is
     /// supplied -- the caller's custom trigger content is then responsible
     /// for its own accessible name.
@@ -202,6 +207,11 @@ pub struct SelectMultiProps<T: Clone + PartialEq + 'static = String> {
     #[props(default = ReadSignal::new(Signal::new(true)))]
     pub scroll_lock: ReadSignal<bool>,
 
+    /// Where the list is placed: below the trigger (`Popper`, the default) or with the selected
+    /// option over the trigger (`ItemAligned`, shadcn's `position="item-aligned"`).
+    #[props(default)]
+    pub position: ReadSignal<select::SelectPosition>,
+
     /// ARIA label applied to the trigger button. Ignored when `trigger` is
     /// supplied.
     #[props(default)]
@@ -275,6 +285,7 @@ pub fn Select<T: Clone + PartialEq + 'static>(props: SelectProps<T>) -> Element 
             roving_loop: props.roving_loop,
             typeahead_timeout: props.typeahead_timeout,
             scroll_lock: props.scroll_lock,
+            position: props.position,
             attributes: merged,
             select::SelectTrigger {
                 class: trigger_class,
@@ -331,6 +342,7 @@ pub fn SelectMulti<T: Clone + PartialEq + 'static>(props: SelectMultiProps<T>) -
             roving_loop: props.roving_loop,
             typeahead_timeout: props.typeahead_timeout,
             scroll_lock: props.scroll_lock,
+            position: props.position,
             attributes: merged,
             select::SelectTrigger {
                 class: trigger_class,

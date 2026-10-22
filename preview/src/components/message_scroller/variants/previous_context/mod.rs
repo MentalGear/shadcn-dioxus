@@ -14,15 +14,26 @@ use dioxus_icons::lucide::{ArrowUp, RotateCw};
 
 const DEFAULT_PEEK: f64 = 64.0;
 
-/// The first two turns, already in the thread when the demo opens.
-const INITIAL: [(bool, &str); 2] = [
+/// The earlier conversation, already in the thread when the demo opens: enough history that the
+/// thread scrolls, so the "previous context" a new turn leaves visible above it is real text.
+const INITIAL: [(bool, &str); 6] = [
+    (true, "Which scroll library should I use for a chat UI?"),
+    (
+        false,
+        "You don't need one. Wrap the message list in `MessageScroller`: it handles pinning to the newest message, loading older history and jumping back to the end.\n\nThe rest of this thread shows what happens when you send a new message.",
+    ),
+    (true, "Does it keep my place when older messages load above?"),
+    (
+        false,
+        "Yes. Prepended rows are measured and the viewport is moved by their height, so whatever you were reading stays exactly where it was on screen.",
+    ),
     (
         true,
         "I'm building a chat for our app and the scroll behavior is driving me nuts. Every time the AI streams a reply, the whole thread jumps around.",
     ),
     (
         false,
-        "That's the classic streaming scroll problem. Wrap your message list in `MessageScroller` and turn on `autoScroll` -- the viewport pins to the bottom as tokens arrive, so users always see the latest text land in place.\n\nThe important part: it only auto-scrolls while the reader is already at the bottom. The moment they scroll up to read something earlier, auto-scroll backs off and their position is preserved. You get smooth streaming without fighting the user's intent.",
+        "That's the classic streaming scroll problem. Turn on `autoScroll` -- the viewport pins to the bottom as tokens arrive, so users always see the latest text land in place.\n\nThe important part: it only auto-scrolls while the reader is already at the bottom. The moment they scroll up to read something earlier, auto-scroll backs off and their position is preserved.",
     ),
 ];
 
@@ -125,7 +136,7 @@ pub fn Demo() -> Element {
                 Card { style: "height: 32rem; gap: 0;",
                     CardHeader { style: "padding-bottom: var(--dx-card-spacing); border-bottom: 1px solid var(--dx-border);",
                         CardTitle { "Keeping Context Visible" }
-                        CardDescription { "New turns keep part of the previous reply in view." }
+                        CardDescription { "A new turn settles near the top and keeps the end of the previous reply in view." }
                         CardAction {
                             Tooltip {
                                 TooltipTrigger {
@@ -227,7 +238,7 @@ pub fn Demo() -> Element {
                     }
                 }
                 p { style: "margin: 0; text-align: center; font-size: var(--dx-text-xs); color: var(--dx-muted-foreground);",
-                    "Adjust the slider and send. Observe the previous message peek."
+                    "Send a message: the new turn settles near the top, and the last {peek():.0}px of the previous reply stays visible above it. Move the slider, reset and send again to compare."
                 }
             }
         }

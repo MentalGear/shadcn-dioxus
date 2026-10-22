@@ -514,7 +514,12 @@ function reconcileFollowMode(state) {
   // then a state commit lands before the scroll animation has moved the
   // viewport, sees it still at the end, and would re-arm.
   const scrolledDown = scrollTop > lastScrollTop + EPS;
-  lastScrollTop = scrollTop;
+  // While a pin's autoscroll window is open only a move DOWN advances the
+  // baseline. Our own pin moves scrollTop down, but an upward move in the same
+  // window (a scrollbar drag, a programmatic scroll to the top) must stay
+  // visible to the commit the window's timer runs once it closes: advancing the
+  // baseline here consumed it and left follow armed (row 347).
+  lastScrollTop = autoscrolling ? Math.max(lastScrollTop, scrollTop) : scrollTop;
   if (
     cfg.autoScroll &&
     !state.end &&

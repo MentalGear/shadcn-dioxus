@@ -3,3 +3,4 @@ multi
 disabled
 sizes
 scroll
+aligned

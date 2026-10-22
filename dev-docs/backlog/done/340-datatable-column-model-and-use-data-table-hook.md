@@ -4,7 +4,7 @@ title: "DataTable: a column definition and one state hook, rendered into Table"
 status: "BACKLOG (owner 2026-10-21, after the Table/DataTable/VirtualGrid evaluation; reframed 09:35 as one…"
 size: "M+ (about 2 to 2.5 days; was M before…"
 area: components
-updated: 2026-10-21
+updated: 2026-10-22
 ---
 
 # Row 340: DataTable: a column definition and one state hook, rendered into Table
@@ -49,3 +49,10 @@ Tom asked for Table to get the same `virtualize` auto mode as the virtual compon
 4. **The layout is explicit, and the mode is automatic.** DataTable has `layout: Table` (the default) or `layout: Grid` (VirtualGrid, for data that is also very wide or needs cell-level keyboard navigation). Auto picks only between content visibility and windowing *within* the chosen layout. It never switches a read-only table into a keyboard grid on its own, because that would change the accessibility model and the keyboard behaviour when the row count crosses a threshold. *Rules out:* behaviour that changes with data size beyond performance.
 
 **This row:** The deliverable is the `DataTable<T>` component (point 3 above), with `Column<T>` (typed sort key `Fn(&T) -> K`, `K: Ord`) and `use_data_table` underneath (still public for custom layouts), and `layout: Table` only. Size M becomes M+ (about 2 to 2.5 days).
+
+## Landed (2026-10-22, lane `datatable`)
+
+- `data_table/model.rs` (pure `TableState` + `derive`, 12 unit tests), `columns.rs` (`Column<T>` with typed `.sortable(key)`, `.filterable`, `.width`, `.align`; `RowFn`; `use_data_table` returning `DataTableModel { state (Copy mutators), view, ... }`), `DataTable<T>` in `component.rs` (toolbar, `Table`, sort headers with `aria-sort`, selection, pagination; `selectable`, `filter_placeholder`, `page_sizes`, `default_sort`). `state.rs` keeps its helpers, gains `sort_rows_by` and `tri_state`.
+- The demo is one `DataTable::<Payment>`; the Table `rich` demo's header checkbox uses the shared `tri_state`.
+- Evidence: `cargo test -p preview data_table` 34 passed; `data_table.spec.ts` (5 new: sort/aria-sort, page reset, selection across pages/sort/filter, keyboard sort + select-all + Tab order, keyboard filter/paging) 17 x3 green; tier-1 APG sortable-table oracle unchanged and green; `test:changed` 44 passed.
+- Layout hooks left for 343/341/342: `Column<T>` is layout-agnostic, `use_data_table` yields `view` + `state` and is public, so a `TableRows` body or a VirtualGrid renderer can consume it; `layout`/`virtualize` props are not added yet.

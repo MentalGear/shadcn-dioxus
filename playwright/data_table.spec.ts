@@ -118,6 +118,125 @@ test("Next/Previous move pages and disable at the ends", async ({ page }) => {
   await expect(pageReadout(page)).toHaveText("Page 2 of 3");
 });
 
+// --- The column model: sort, selection across pages, keyboard -----------------------------
+//
+// Backlog row 340: the demo is one `DataTable<Payment>` (columns, row key, features) and the
+// component owns sort/filter/page/selection, so these assert what the model guarantees, not
+// what hand-written markup happened to do.
+
+const header = (page: Page, name: string) => table(page).locator("th", { hasText: name });
+const sortButton = (page: Page, name: string) => header(page, name).getByRole("button");
+const firstRowText = (page: Page) => table(page).locator("tbody tr").first();
+
+test("the header sort button toggles direction and moves aria-sort to the one sorted column", async ({ page }) => {
+  await goto(page);
+
+  await expect(header(page, "Email")).toHaveAttribute("aria-sort", "ascending");
+  await expect(header(page, "Amount")).toHaveAttribute("aria-sort", "none");
+  await expect(firstRowText(page)).toContainText("alexandra@example.com");
+
+  await sortButton(page, "Email").click();
+  await expect(header(page, "Email")).toHaveAttribute("aria-sort", "descending");
+  await expect(firstRowText(page)).toContainText("zara@example.com");
+
+  await sortButton(page, "Amount").click();
+  await expect(header(page, "Email")).toHaveAttribute("aria-sort", "none");
+  await expect(header(page, "Amount")).toHaveAttribute("aria-sort", "ascending");
+  await expect(firstRowText(page)).toContainText("$55.00");
+
+  await sortButton(page, "Amount").click();
+  await expect(firstRowText(page)).toContainText("$999.00");
+
+  // ID and Status are not sortable: no button, no aria-sort.
+  await expect(header(page, "Status").getByRole("button")).toHaveCount(0);
+  await expect(header(page, "Status")).not.toHaveAttribute("aria-sort", /.*/);
+});
+
+test("sorting and filtering return to page 1", async ({ page }) => {
+  await goto(page);
+
+  await nextButton(page).click();
+  await expect(pageReadout(page)).toHaveText("Page 2 of 3");
+  await sortButton(page, "Amount").click();
+  await expect(pageReadout(page)).toHaveText("Page 1 of 3");
+
+  await nextButton(page).click();
+  await filterInput(page).fill("a");
+  await expect(pageReadout(page)).toContainText("Page 1 of");
+});
+
+test("selection is kept by row across pages, sorting and filtering", async ({ page }) => {
+  await goto(page);
+
+  await page.getByRole("checkbox", { name: "Select row PMT-03" }).click(); // alexandra, page 1
+  await expect(selectedSummary(page)).toHaveText("1 of 12 row(s) selected.");
+  await expect(selectAllCheckbox(page)).toHaveAttribute("aria-checked", "mixed");
+  await expect(table(page).locator("tbody tr[data-state=selected]")).toHaveCount(1);
+
+  // Page 2 shows none of it, but the footer still counts it.
+  await nextButton(page).click();
+  await expect(selectAllCheckbox(page)).toHaveAttribute("aria-checked", "false");
+  await expect(selectedSummary(page)).toHaveText("1 of 12 row(s) selected.");
+
+  // Re-sort: the same row is still the selected one, wherever it lands.
+  await previousButton(page).click();
+  await sortButton(page, "Email").click(); // descending: alexandra is last overall
+  await expect(page.getByRole("checkbox", { name: "Select row PMT-03" })).toHaveCount(0);
+  await filterInput(page).fill("alexandra");
+  await expect(page.getByRole("checkbox", { name: "Select row PMT-03" })).toHaveAttribute("aria-checked", "true");
+  await expect(selectAllCheckbox(page)).toHaveAttribute("aria-checked", "true");
+  await expect(selectedSummary(page)).toHaveText("1 of 1 row(s) selected.");
+});
+
+test("keyboard: Enter and Space sort from the header button, Space toggles row and select-all checkboxes", async ({
+  page,
+}) => {
+  await goto(page);
+
+  await sortButton(page, "Amount").focus();
+  await page.keyboard.press("Enter");
+  await expect(header(page, "Amount")).toHaveAttribute("aria-sort", "ascending");
+  await page.keyboard.press("Space");
+  await expect(header(page, "Amount")).toHaveAttribute("aria-sort", "descending");
+  await expect(sortButton(page, "Amount")).toBeFocused();
+
+  await selectAllCheckbox(page).focus();
+  await page.keyboard.press("Space");
+  await expect(selectedSummary(page)).toHaveText("5 of 12 row(s) selected.");
+  await expect(selectAllCheckbox(page)).toHaveAttribute("aria-checked", "true");
+
+  // Tab walks header checkbox -> sort buttons -> first row checkbox.
+  await page.keyboard.press("Tab");
+  await expect(sortButton(page, "Email")).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(sortButton(page, "Amount")).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(rowCheckboxes(page).first()).toBeFocused();
+  await page.keyboard.press("Space");
+  await expect(rowCheckboxes(page).first()).toHaveAttribute("aria-checked", "false");
+  await expect(selectAllCheckbox(page)).toHaveAttribute("aria-checked", "mixed");
+  await expect(selectedSummary(page)).toHaveText("4 of 12 row(s) selected.");
+});
+
+test("keyboard: the filter input narrows rows and Previous/Next are reachable and operable", async ({ page }) => {
+  await goto(page);
+
+  await filterInput(page).focus();
+  await page.keyboard.type("carm");
+  await expect(table(page).locator("tbody tr")).toHaveCount(1); // carmella
+  await expect(firstRowText(page)).toContainText("carmella@example.com");
+  await page.keyboard.press("Control+A");
+  await page.keyboard.press("Backspace");
+  await expect(table(page).locator("tbody tr")).toHaveCount(5);
+
+  await nextButton(page).focus();
+  await page.keyboard.press("Enter");
+  await expect(pageReadout(page)).toHaveText("Page 2 of 3");
+  await previousButton(page).focus();
+  await page.keyboard.press("Space");
+  await expect(pageReadout(page)).toHaveText("Page 1 of 3");
+});
+
 // --- Checkbox alignment and layout stability ---------------------------------
 //
 // Owner report: "Datatables: checkboxes are not vertically centered, and there is
@@ -240,7 +359,7 @@ test("the demo spans its frame and the counters use tabular figures, so no text 
   // (Geist: yes, a wider fallback: no), which is why the two behavioural tests below can pass
   // without it; this is the font-independent invariant that rules the whole class out.
   const { demo, frame } = await page.evaluate(() => {
-    const demo = document.querySelector(".dx-data-table-demo")!;
+    const demo = document.querySelector(".dx-data-table")!;
     const frame = demo.parentElement!;
     const cs = getComputedStyle(frame);
     return {

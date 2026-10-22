@@ -1,7 +1,7 @@
 ---
 id: 347
 title: "Message scroller: a scroll up inside the 180 ms autoscroll window leaves follow mode armed"
-status: "BACKLOG (found 2026-10-21 by the batch-2 reds lane)."
+status: "LANDED on branch claude/scroller, verified on a debug SSG (test:changed 313 passed, 3 skipped)…"
 size: "S (a primitive TS change plus the…"
 area: primitives
 updated: 2026-10-21
@@ -15,7 +15,7 @@ updated: 2026-10-21
 
 ## Status / trigger
 
-BACKLOG (found 2026-10-21 by the batch-2 reds lane).
+LANDED on branch claude/scroller, verified on a debug SSG (test:changed 313 passed, 3 skipped): lastScrollTop only advances downward inside the autoscroll window; spec added in message-scroller-api.spec.ts; spec green 3/3 with the fix, red-before not run
 
 ## Size
 
@@ -30,4 +30,4 @@ S (a primitive TS change plus the bundle rebuild).
 
 ### Fix
 
-Candidate fix by construction: do not advance `lastScrollTop` while `autoscrolling`, so the commit that the autoscroll timer runs sees the upward move and releases follow. Needs a check that a smooth streaming pin does not re-arm or release on its own, then `scripts/build-js-bundle.sh` (row 217 gate). A real reader cannot scroll within 180 ms of a pin, so the user-visible risk is small.
+Candidate fix by construction: do not advance `lastScrollTop` while `autoscrolling`, so the commit that the autoscroll timer runs sees the upward move and releases follow. Needs a check that a smooth streaming pin does not re-arm or release on its own, (correction: `primitives/src/message_scroller.js` is hand-written, not generated, so there is no bundle to rebuild; the fix keeps a high-water baseline instead of freezing it, because freezing would hide an upward move that starts below the old baseline). A real reader cannot scroll within 180 ms of a pin, so the user-visible risk is small.

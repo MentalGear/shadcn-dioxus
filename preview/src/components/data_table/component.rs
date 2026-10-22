@@ -16,16 +16,32 @@
 //! pure, unit-tested transform logic those state signals are fed through.
 
 use crate::components::button::{Button, ButtonSize, ButtonVariant};
-use crate::components::table::TableHead;
+use crate::components::checkbox::Checkbox;
+use crate::components::table::{Table, TableBody, TableCell, TableHead, TableHeader, TableRow};
 use dioxus::prelude::*;
 use dioxus_icons::lucide::{ArrowDown, ArrowUp, ArrowUpDown};
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::merge_attributes;
 
+use dioxus_primitives::checkbox::CheckboxState;
+
+// A consumer-facing surface: this crate's own demos use a subset of it.
+#[allow(dead_code)]
+#[path = "columns.rs"]
+mod columns;
+#[allow(dead_code)]
+#[path = "model.rs"]
+mod model;
+#[allow(dead_code)]
 #[path = "state.rs"]
 mod state;
 
-pub use state::{filter_rows, includes_string, paginate, sort_rows, SortDirection};
+#[allow(unused_imports)]
+pub use columns::{use_data_table, Column, ColumnAlign, DataTableModel, DataTableOptions, DataTableState, RowFn};
+#[allow(unused_imports)]
+pub use model::{derive, TableState, TableView};
+#[allow(unused_imports)]
+pub use state::{filter_rows, includes_string, paginate, sort_rows, sort_rows_by, tri_state, SortDirection};
 
 /// Props for [`DataTableColumnHeader`].
 #[derive(Props, Clone, PartialEq)]
@@ -254,6 +270,178 @@ pub fn DataTablePagination(props: DataTablePaginationProps) -> Element {
                     }
                 }
             }
+        }
+    }
+}
+
+/// Props for [`DataTable`].
+#[derive(Props, Clone, PartialEq)]
+pub struct DataTableProps<T: Clone + PartialEq + 'static> {
+    /// The full data (every page, before filtering). Pass a `Vec<T>` or a
+    /// signal; the table re-derives when it changes.
+    pub rows: ReadSignal<Vec<T>>,
+
+    /// The column definitions, in display order: one `Column` per header and
+    /// cell, so the two cannot drift apart.
+    pub columns: Vec<Column<T>>,
+
+    /// A stable key for a row (a database id, not an index). Selection is
+    /// kept by key, so it survives sorting, filtering and paging.
+    pub row_key: RowFn<T, String>,
+
+    /// Adds a leading checkbox column with a header "select all" for the
+    /// current page.
+    #[props(default)]
+    pub selectable: bool,
+
+    /// Shows a filter input with this placeholder, matching every column
+    /// marked `filterable`. `None` hides the toolbar.
+    #[props(default)]
+    pub filter_placeholder: Option<String>,
+
+    /// The filter input's accessible name; required in practice whenever
+    /// `filter_placeholder` is set.
+    #[props(default = "Filter rows".to_string())]
+    pub filter_label: String,
+
+    /// The rows-per-page choices. Empty (the default) shows every row and no
+    /// pagination bar; otherwise the first choice is the initial page size.
+    #[props(default)]
+    pub page_sizes: Vec<usize>,
+
+    /// The initially sorted column id and direction.
+    #[props(default)]
+    pub default_sort: Option<(String, SortDirection)>,
+
+    /// What the body says when no row matches.
+    #[props(default = "No results.".to_string())]
+    pub empty_message: String,
+
+    #[props(extends = GlobalAttributes)]
+    pub attributes: Vec<Attribute>,
+}
+
+/// A data-driven table: describe the columns once and the component renders
+/// the toolbar, the [`Table`] with sortable headers (`aria-sort` on the `th`),
+/// row selection with an all/some/none header checkbox, and the pagination
+/// bar, on top of [`use_data_table`]. Use the hook directly for a custom
+/// layout.
+#[component]
+pub fn DataTable<T: Clone + PartialEq + 'static>(props: DataTableProps<T>) -> Element {
+    let options = DataTableOptions {
+        page_size: props.page_sizes.first().copied().unwrap_or(usize::MAX),
+        sort: props.default_sort.clone(),
+    };
+    let model = use_data_table(props.rows, &props.columns, &props.row_key, options);
+    let state = model.state;
+    let view = &model.view;
+    let column_count = props.columns.len() + usize::from(props.selectable);
+    let page_keys = view.keys.clone();
+    let page_count = view.page_count;
+    let base = attributes!(div { class: "dx-data-table", "data-slot": "data-table", "data-dx-root": "" });
+    let merged = merge_attributes(vec![base, props.attributes.clone()]);
+
+    rsx! {
+        document::Link { rel: "stylesheet", href: asset!("/src/components/data_table/style.css") }
+        div { ..merged,
+            if let Some(placeholder) = props.filter_placeholder.clone() {
+                DataTableToolbar {
+                    value: model.filter.clone(),
+                    oninput: move |value: String| state.set_filter(value),
+                    placeholder,
+                    aria_label: props.filter_label.clone(),
+                }
+            }
+            Table {
+                TableHeader {
+                    TableRow {
+                        if props.selectable {
+                            TableHead {
+                                Checkbox {
+                                    checked: view.select_all,
+                                    aria_label: "Select all",
+                                    on_checked_change: move |next: CheckboxState| {
+                                        state.set_many_selected(&page_keys, bool::from(next));
+                                    },
+                                }
+                            }
+                        }
+                        for column in props.columns.iter() {
+                            {column_header(column, &model)}
+                        }
+                    }
+                }
+                TableBody {
+                    if view.rows.is_empty() {
+                        TableRow {
+                            TableCell { colspan: column_count, "{props.empty_message}" }
+                        }
+                    }
+                    for (row , key) in view.rows.iter().zip(view.keys.iter()) {
+                        TableRow { key: "{key}", selected: model.is_selected(key),
+                            if props.selectable {
+                                TableCell {
+                                    Checkbox {
+                                        checked: if model.is_selected(key) {
+                                            CheckboxState::Checked
+                                        } else {
+                                            CheckboxState::Unchecked
+                                        },
+                                        aria_label: "Select row {key}",
+                                        on_checked_change: {
+                                            let key = key.clone();
+                                            move |next: CheckboxState| state.set_selected(&key, bool::from(next))
+                                        },
+                                    }
+                                }
+                            }
+                            for column in props.columns.iter() {
+                                TableCell {
+                                    class: column.align.class(),
+                                    {column.cell.call(row)}
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if !props.page_sizes.is_empty() {
+                DataTablePagination {
+                    selected_count: view.selected_count,
+                    total_count: view.filtered_count,
+                    page: view.page,
+                    page_count,
+                    page_size: model.page_size,
+                    page_size_options: props.page_sizes.clone(),
+                    on_page_size_change: move |size| state.set_page_size(size),
+                    on_previous: move |_| state.previous_page(),
+                    on_next: move |_| state.next_page(page_count),
+                }
+            }
+        }
+    }
+}
+
+/// One header cell: the sort button when the column is sortable, else plain text.
+fn column_header<T: Clone + 'static>(column: &Column<T>, model: &DataTableModel<T>) -> Element {
+    let state = model.state;
+    let id = column.id.clone();
+    let align = column.align.class();
+    let style = column.width.as_ref().map(|w| format!("width: {w};"));
+    if column.is_sortable() {
+        rsx! {
+            DataTableColumnHeader {
+                key: "{column.id}",
+                sorted: model.sorted(&column.id),
+                onclick: move |_| state.toggle_sort(&id),
+                class: align,
+                style,
+                "{column.header}"
+            }
+        }
+    } else {
+        rsx! {
+            TableHead { key: "{column.id}", class: align, style, "{column.header}" }
         }
     }
 }

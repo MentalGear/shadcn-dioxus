@@ -10,6 +10,7 @@
 }
 
 .dx-navigation-menu-list {
+  position: relative; /* the indicator's containing block */
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -420,4 +421,42 @@
   display: block;
   overflow: visible;
   line-height: 1.25;
+}
+
+/* Nova `.cn-navigation-menu-indicator` / `-arrow`: `top-full z-1 flex h-1.5 items-end justify-center
+ * overflow-hidden`, its arrow `relative top-[60%] h-2 w-2 rotate-45 bg-border rounded-tl-sm shadow-md`;
+ * it fades with `data-[state=visible|hidden]`. Radix sizes the indicator to the open trigger and
+ * slides it; the primitive writes the two custom properties (the open item's inline-start offset and
+ * width in the list, direction-aware), so this sheet only places it and animates `inset-inline-start`. */
+.dx-navigation-menu-indicator {
+  position: absolute;
+  z-index: var(--dx-z-raise);
+  top: 100%;
+  display: flex;
+  overflow: hidden;
+  width: var(--dx-nav-indicator-width, 0);
+  height: 0.375rem;
+  align-items: flex-end;
+  justify-content: center;
+  inset-inline-start: var(--dx-nav-indicator-x, 0);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    inset-inline-start var(--dx-motion-duration-slower) var(--dx-motion-ease-standard),
+    opacity var(--dx-motion-duration-fast) var(--dx-motion-ease-out);
+}
+
+.dx-navigation-menu-indicator[data-state="visible"] {
+  opacity: 1;
+}
+
+.dx-navigation-menu-indicator-arrow {
+  position: relative;
+  top: 60%;
+  width: 0.5rem;
+  height: 0.5rem;
+  background: var(--dx-border);
+  border-start-start-radius: var(--dx-radius-sm);
+  box-shadow: var(--dx-shadow-md);
+  rotate: 45deg;
 }

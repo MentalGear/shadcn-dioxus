@@ -1,1 +1,1 @@
-A slider drives `scroll_previous_item_peek` (64 to 128 px), together with `scroll_margin`. Send the next queued message to see how much of the previous reply stays visible above the new turn.
+The thread opens with earlier history, so there is real context above the composer. Send a message and the new turn is anchored near the top of the viewport; `scroll_previous_item_peek` (64 to 128 px, driven by the slider, together with `scroll_margin`) is how many pixels of the previous reply stay visible above it. Drag the slider, reset and send the same message again to compare.
