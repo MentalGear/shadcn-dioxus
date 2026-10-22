@@ -79,7 +79,7 @@ for (const mode of ["light", "dark"] as const) {
       await expect(link).toHaveClass(/dx-breadcrumb-link/);
       await expect(link).toHaveAttribute("href", /\/component\/card\/?/);
       expect(await css(link, "text-decoration-line")).toBe("none");
-      await expect(root.getByRole("link")).toHaveCount(2);
+      await expect(root.locator("a.dx-breadcrumb-link")).toHaveCount(2);
       await expect(root.locator(".dx-breadcrumb-page")).toHaveAttribute("aria-current", "page");
       await expectNoAxeViolations(page, `breadcrumb/router_link ${mode}`);
     });
