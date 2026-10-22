@@ -94,9 +94,9 @@ proposing one is closed as out of scope (row 337 is the first).
 | [363](backlog/363-datatable-row-reorder-and-columns.md) | DataTable: reorderable rows (drag handle) and a Columns menu (visibility, keyboard column order) | BACKLOG (owner asked 2026-10-22 to deconstruct the collection model to its roots; design note… | M. | components |
 | [364](backlog/364-togglegroup-value-keyed.md) | ToggleGroup: pressed state keyed by value, not index (optional) | BACKLOG (owner asked 2026-10-22 to deconstruct the collection model to its roots; design note… | S. | components |
 | [365](backlog/365-final-sweep-refactor-and-root-cause-review.md) | Final sweep: refactor review with the deconstruct-to-root and solve-by-construction exercise, proposals to the owner | BACKLOG (owner 2026-10-22, backlog thread: "final sweep, check for refactors and also run there the… | M for the review. Each accepted… | process |
-| [366](backlog/366-test-the-shipped-web-arm.md) | Gates: run cargo test on the shipped web arm too (ssr_parity differs between the plain and server feature sets) | BACKLOG. Found in batch 6, when one run of the same code failed on each arm in turn. | S: one gate step plus its reuse key. | tooling |
+| [367](backlog/367-lane-build-disk-class.md) | Lane builds need 10.4 GB free because every lane-ssg copies 6.8 GB of template, 3.0 GB of it dead incremental state | PARTIAL. Landed in lane gatetools: the copy leaves cargo's incremental/ dirs out and the guard… | S for the landed part… | tooling |
 
-## Done rows (289)
+## Done rows (290)
 
 | # | Item | Updated |
 |---|---|---|
@@ -389,6 +389,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [354](backlog/done/354-remove-the-docs-header-language-switcher.md) | Remove the docs header language switcher | 2026-10-21 |
 | [356](backlog/done/356-lane-disk-guard-ignores-concurrent-copies.md) | Lane disk guard ignores concurrent template copies, so two slots both pass and both die with ENOSPC | 2026-10-22 |
 | [357](backlog/done/357-date-picker-natural-language-test-midnight.md) | Date picker natural_language unit test fails when a run crosses midnight UTC | 2026-10-22 |
+| [366](backlog/done/366-test-the-shipped-web-arm.md) | Gates: run cargo test on the shipped web arm too (ssr_parity differs between the plain and server feature sets) | 2026-10-22 |
 
 ## Notes (8)
 

@@ -94,7 +94,7 @@ Use the cheapest tool that answers the question, in this order:
    landed since you branched; on a `preview/src/components/mod.rs` conflict keep both sides' variants on every line.
 2. Push your branch (rule 1 of "Nothing lives only in the container"), then run the FAST gates without the lock and quote their summary line (owner decision 2026-10-18, see "Gate
    procedure" below): `CARGO_TARGET_DIR=$LANE_TGT/check scripts/run-gates.sh --skip
-   '^(clippy-|test$|check-primitives-features$|check-attr-spread-collision$)'` -- every listed gate PASS, exit 3
+   '^(clippy-|test(-server)?$|check-primitives-features$|check-attr-spread-collision$)'` -- every listed gate PASS, exit 3
    (partial by design). That is every static `check-*.sh`, fmt and stylelint, in seconds. Do NOT run the full
    `run-gates.sh`: the main loop runs it once on the merged tree.
 3. Run your own specs plus the existing specs of everything you touched on a `lane-ssg` build that you verified
