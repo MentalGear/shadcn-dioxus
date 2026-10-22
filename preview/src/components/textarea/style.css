@@ -138,3 +138,27 @@
     color: var(--dx-accent-foreground);
   }
 }
+
+/* Bare (`data-bare`, set by `InputGroupTextarea`): the control inside an input group. The group draws
+ * the one field chrome (fill, edge, focus, invalid and disabled), so the textarea paints none of its own
+ * and cannot resize (shadcn: `resize-none rounded-none border-0 bg-transparent shadow-none ring-0`).
+ * Keyed by the textarea's own attribute, so the group's sheet never declares properties on this element.
+ * Last in the sheet, and each state selector at least as specific as the variant rule it overrides. */
+.dx-textarea[data-bare][data-style],
+.dx-textarea[data-bare][data-style]:focus,
+.dx-textarea[data-bare][data-style]:focus-visible,
+.dx-textarea[data-bare][data-style][aria-invalid="true"],
+.dx-textarea[data-bare][data-style][data-invalid="true"],
+.dx-textarea[data-bare][data-style]:disabled:not([data-style="ghost"]) {
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  opacity: 1;
+  resize: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dx-textarea[data-bare][data-style]:hover:not(:disabled) {
+    background: none;
+  }
+}
