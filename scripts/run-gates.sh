@@ -48,7 +48,7 @@
 #     (`cd preview && pnpm install --frozen-lockfile`, or symlink the main checkout's node_modules --
 #     backlog rows 72, 359) instead of fetching an unvetted version.
 #  7. Reuse (backlog row 320). The cargo gates (CARGO_GATES: check-primitives-features, check-attr-spread-collision,
-#     the three clippy arms, `cargo test`) are ~20 of the full gate's ~22 minutes, and a CSS-, spec- or docs-only batch
+#     the three clippy arms, `cargo test`, `cargo test` on the server arm) are ~20 of the full gate's ~22 minutes, and a CSS-, spec- or docs-only batch
 #     cannot change their result. So a PASS is stored per (cargo-input hash, toolchain, command line) -- the key of
 #     scripts/gate-reuse.sh, whose inputs are scripts/cargo-inputs-hash.sh's working-tree file set -- and a later run
 #     with the SAME key reuses it, printing `reused from <tree>`; the summary lists every reused gate with the tree it
@@ -153,6 +153,7 @@ gates=(
   "clippy-web|cargo clippy -p dioxus-primitives -p preview --features dioxus-primitives/web,preview/web $CLIPPY_FLAGS"
   "clippy-server|cargo clippy -p preview --features server $CLIPPY_FLAGS"
   "test|cargo test --workspace"
+  "test-server|cargo test -p preview --features server"
   "stylelint|cd preview && pnpm exec stylelint \"src/**/*.css\" \"assets/**/*.css\""
 )
 
@@ -207,7 +208,7 @@ now() { date +%s.%N; }
 # mtime, so touch this worktree's sources once, right before the first cargo gate that actually runs (a
 # fast-gates-only run builds nothing and must not stamp the target). lane-touch skips it when the target's
 # `.tree-owner` stamp already names this worktree.
-CARGO_GATES='^(clippy-|test$|check-primitives-features$|check-attr-spread-collision$)'
+CARGO_GATES='^(clippy-|test(-server)?$|check-primitives-features$|check-attr-spread-collision$)'
 touched=0
 
 # Guard 7 state: the reuse key is computed once, lazily, at the first cargo gate that would run.

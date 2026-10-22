@@ -175,5 +175,31 @@ LANE_RESERVE_PID=$pa "$LST" release 2>/dev/null
 kill "$pa" "$pb" 2>/dev/null
 unset LANE_FREE_KB LANE_DISK_MARGIN_KB
 
+# --- 10 a copy leaves cargo's incremental dirs out (row 367) --------------------------------------
+scenario slim-copy
+mkdir -p "$LANE_TGT/slim/x86_64-unknown-linux-gnu/server-dev/incremental/preview-1" "$LANE_TGT/slim/x86_64-unknown-linux-gnu/server-dev/deps" "$LANE_TGT/slim/debug/incremental"
+head -c 1048576 /dev/zero > "$LANE_TGT/slim/x86_64-unknown-linux-gnu/server-dev/incremental/preview-1/dep-graph.bin"
+head -c 1048576 /dev/zero > "$LANE_TGT/slim/debug/incremental/big"
+echo lib > "$LANE_TGT/slim/x86_64-unknown-linux-gnu/server-dev/deps/libx.rlib"; echo owner > "$LANE_TGT/slim/.tree-owner"
+ln "$LANE_TGT/slim/x86_64-unknown-linux-gnu/server-dev/deps/libx.rlib" "$LANE_TGT/slim/x86_64-unknown-linux-gnu/server-dev/deps/libx-link.rlib"
+touch -d '2020-01-02 03:04:05' "$LANE_TGT/slim/x86_64-unknown-linux-gnu/server-dev/deps/libx.rlib"
+"$LST" copy "$LANE_TGT/slim" "$LANE_TGT/slim-dst" 2>/dev/null || bad "slim copy failed"
+[ -e "$LANE_TGT/slim-dst/x86_64-unknown-linux-gnu/server-dev/deps/libx.rlib" ] || bad "slim copy lost a dep"
+[ -e "$LANE_TGT/slim-dst/x86_64-unknown-linux-gnu/server-dev/incremental" ] && bad "slim copy carried a <triple>/<profile>/incremental dir"
+[ -e "$LANE_TGT/slim-dst/debug/incremental" ] && bad "slim copy carried a <profile>/incremental dir"
+[ -e "$LANE_TGT/slim-dst/.tree-owner" ] && bad "slim copy carried .tree-owner"
+[ "$(stat -c %Y "$LANE_TGT/slim-dst/x86_64-unknown-linux-gnu/server-dev/deps/libx.rlib")" = "$(stat -c %Y "$LANE_TGT/slim/x86_64-unknown-linux-gnu/server-dev/deps/libx.rlib")" ] || bad "slim copy changed an mtime (cargo freshness)"
+[ "$(stat -c %i "$LANE_TGT/slim-dst/x86_64-unknown-linux-gnu/server-dev/deps/libx.rlib")" = "$(stat -c %i "$LANE_TGT/slim-dst/x86_64-unknown-linux-gnu/server-dev/deps/libx-link.rlib")" ] || bad "slim copy broke a hard link"
+LANE_COPY_INCREMENTAL=1 "$LST" copy "$LANE_TGT/slim" "$LANE_TGT/slim-full" 2>/dev/null
+[ -e "$LANE_TGT/slim-full/debug/incremental/big" ] || bad "LANE_COPY_INCREMENTAL=1 should keep the incremental dirs"
+# the guard sizes the slim copy: a disk that fits it but not the full tree passes
+export LANE_DISK_MARGIN_KB=0
+full=$(du -sk "$LANE_TGT/slim" | cut -f1); slim=$(du -sk --exclude=incremental "$LANE_TGT/slim" | cut -f1)
+[ "$slim" -lt "$full" ] || bad "fixture: the incremental dirs should add size"
+export LANE_FREE_KB=$(( slim + slim / 5 + 8 ))
+"$LST" check-disk "$LANE_TGT/slim" 2>/dev/null || bad "the guard counted the incremental dirs a slim copy leaves out"
+LANE_COPY_INCREMENTAL=1 "$LST" check-disk "$LANE_TGT/slim" 2>/dev/null && bad "the full-copy guard ignored the incremental dirs"
+unset LANE_FREE_KB LANE_DISK_MARGIN_KB
+
 if [ "$fails" -ne 0 ]; then echo "check-lane-lock: FAIL -- $fails problem(s)" >&2; exit 1; fi
-echo "check-lane-lock: OK -- 9 scenarios"
+echo "check-lane-lock: OK -- 10 scenarios"
