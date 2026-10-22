@@ -261,16 +261,17 @@ test.describe("message_scroller: follow mode and the autoscroll window", () => {
     // Leave the pinned end by hand, then press the jump button: it re-arms follow and opens the 180 ms window.
     await vp.evaluate((el) => (el.scrollTop = 0));
     await expect(button).toHaveAttribute("data-active", "true");
-    // Scroll to the top in the very frame the window opens (a MutationObserver callback runs in the same task
-    // as the attribute write), so the move is guaranteed to land inside it, with no timing assumption.
+    // Once the pin has really moved the viewport down (first scroll event of its smooth scroll, while the 180 ms
+    // window is open), scroll back to the top in that same event: an upward move that lands inside the window,
+    // with no timing assumption. The move must follow a downward one, or there is nothing to release.
     await vp.evaluate((el) => {
-      const observer = new MutationObserver(() => {
-        if (el.hasAttribute("data-autoscrolling")) {
-          observer.disconnect();
+      const onScroll = () => {
+        if (el.scrollTop > 0 && el.hasAttribute("data-autoscrolling")) {
+          el.removeEventListener("scroll", onScroll);
           el.scrollTop = 0;
         }
-      });
-      observer.observe(el, { attributes: true, attributeFilter: ["data-autoscrolling"] });
+      }; // listener-ok: removed by the handler itself, spec-only
+      el.addEventListener("scroll", onScroll);
     });
     await button.click();
     await expect(vp).not.toHaveAttribute("data-autoscrolling");

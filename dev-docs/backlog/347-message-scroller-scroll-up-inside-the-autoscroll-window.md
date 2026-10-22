@@ -1,7 +1,7 @@
 ---
 id: 347
 title: "Message scroller: a scroll up inside the 180 ms autoscroll window leaves follow mode armed"
-status: "CODE DONE, NOT YET BROWSER-VERIFIED (lane scroller): lastScrollTop only advances downward inside…"
+status: "LANDED on branch claude/scroller, verified on a debug SSG (test:changed 313 passed, 3 skipped)…"
 size: "S (a primitive TS change plus the…"
 area: primitives
 updated: 2026-10-21
@@ -15,7 +15,7 @@ updated: 2026-10-21
 
 ## Status / trigger
 
-CODE DONE, NOT YET BROWSER-VERIFIED (lane scroller): lastScrollTop only advances downward inside the autoscroll window; spec added in message-scroller-api.spec.ts; red/green runs pending (disk)
+LANDED on branch claude/scroller, verified on a debug SSG (test:changed 313 passed, 3 skipped): lastScrollTop only advances downward inside the autoscroll window; spec added in message-scroller-api.spec.ts; spec green 3/3 with the fix, red-before not run
 
 ## Size
 
