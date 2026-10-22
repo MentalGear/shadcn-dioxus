@@ -48,7 +48,7 @@ owner said to continue with the backlog until done, skipping rows that wait on h
 
 ## Backlog numbers
 
-46 open and 285 done row files on 2026-10-22 (see [`backlog.md`](./backlog.md)).
+49 open and 289 done row files on 2026-10-22 (see [`backlog.md`](./backlog.md)).
 
 ## Next round
 
