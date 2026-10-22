@@ -12,7 +12,7 @@
 #
 # This gate is arithmetic over that file and the spec files on disk, with no browser, so it is fast and cannot flake:
 #   1. every `*.spec.ts` under playwright/ has an entry (a new spec: run it once with
-#      `PLAYWRIGHT_JSON_OUTPUT_FILE=/abs/r.json npx playwright test --reporter=json <spec>` and
+#      `PLAYWRIGHT_JSON_OUTPUT_FILE=/abs/r.json pnpm exec playwright test --reporter=json <spec>` and
 #      `node playwright/tools/durations.mjs /abs/r.json --write playwright/durations.json --merge`);
 #   2. no entry names a file that no longer exists (a deleted spec leaves the table in step);
 #   3. `meta.total_seconds` equals the sum of the entries (so the budget cannot be dodged by editing only the meta);

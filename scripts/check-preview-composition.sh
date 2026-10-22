@@ -173,6 +173,9 @@ trim() {
 
 is_allowed() {
     local module="$1" item="$2"
+    # `data_view` is the pure collection model (state, derive, matcher): no component, hook or markup lives
+    # in it (backlog row 360), so every item is a plain value -- the whole module, not a list of names.
+    [[ "$module" == "data_view" ]] && return 0
     if [[ -z "$module" ]]; then
         [[ -n "${allowed_root[$item]:-}" ]]
     else

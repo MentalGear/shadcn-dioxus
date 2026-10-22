@@ -5,8 +5,7 @@ use dioxus::prelude::*;
 
 /// The default case-insensitive substring filter.
 pub fn default_combobox_filter(query: &str, text: &str) -> bool {
-    let query = query.trim().to_lowercase();
-    query.is_empty() || text.to_lowercase().contains(&query)
+    crate::data_view::contains_query(text, query)
 }
 
 /// What a combobox holds, by construction.

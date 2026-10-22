@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Run only the Playwright specs that cover what this branch changed (owner 2026-10-20, row 152a follow-up).
 #
-#   npm run test:changed                         # from playwright/: diff = origin/main...HEAD + uncommitted changes
-#   npm run test:changed -- --workers=2          # extra args go to `playwright test`
-#   CHANGED_RANGE=abc123..HEAD npm run test:changed
-#   CHANGED_MATRIX=1 npm run test:changed        # also the route-matrix specs for a single-component change
+#   pnpm run test:changed                         # from playwright/: diff = origin/main...HEAD + uncommitted changes
+#   pnpm run test:changed -- --workers=2          # extra args go to `playwright test`
+#   CHANGED_RANGE=abc123..HEAD pnpm run test:changed
+#   CHANGED_MATRIX=1 pnpm run test:changed        # also the route-matrix specs for a single-component change
 #
 # The spec list comes from tools/select.mjs (the cover relation documented at its top: a component's own specs, a
 # primitive's consumer components' specs, the broad set for shared plumbing, every spec for a config change). Uses
@@ -37,4 +37,4 @@ echo "test-changed: ${#specs[@]} spec file(s) cover the diff: ${specs[*]}" >&2
 if printf '%s\n' "${specs[@]}" | grep -q 'hydration-parity\.spec\.ts$'; then tools/ensure-attr-synth.sh; fi
 extra=()
 [ -n "$grep_invert" ] && extra+=(--grep-invert "$grep_invert")
-exec npx playwright test -c ssg.local.config.ts "${specs[@]}" ${extra[@]+"${extra[@]}"} "$@"
+exec pnpm exec playwright test -c ssg.local.config.ts "${specs[@]}" ${extra[@]+"${extra[@]}"} "$@"

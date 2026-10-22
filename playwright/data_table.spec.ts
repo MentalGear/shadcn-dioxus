@@ -188,6 +188,23 @@ test("selection is kept by row across pages, sorting and filtering", async ({ pa
   await expect(selectedSummary(page)).toHaveText("1 of 1 row(s) selected.");
 });
 
+test("the selected count only counts rows in the filtered view (row 360)", async ({ page }) => {
+  await goto(page);
+
+  await page.getByRole("checkbox", { name: "Select row PMT-03" }).click(); // alexandra
+  await expect(selectedSummary(page)).toHaveText("1 of 12 row(s) selected.");
+
+  // Filter the selected row out: the footer reads "selected in view of filtered", never "1 of 1" for a
+  // row that is not in the view, and certainly not "3 of 1".
+  await filterInput(page).fill("ken");
+  await expect(table(page).locator("tbody tr")).toHaveCount(1);
+  await expect(selectedSummary(page)).toHaveText("0 of 1 row(s) selected.");
+
+  // The selection itself survives: clearing the filter brings it back.
+  await filterInput(page).fill("");
+  await expect(selectedSummary(page)).toHaveText("1 of 12 row(s) selected.");
+});
+
 test("keyboard: Enter and Space sort from the header button, Space toggles row and select-all checkboxes", async ({
   page,
 }) => {

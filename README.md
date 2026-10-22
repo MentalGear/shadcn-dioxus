@@ -137,8 +137,9 @@ The fast loop, in the order you need it (the measured details are in
 [`dev-docs/lane-rules.md`](./dev-docs/lane-rules.md#the-fast-loop-dx-serve-to-iterate-testchanged-to-verify-owner-2026-10-21-row-326)):
 
 ```sh
-# once: the locked Node dependencies (never `npm install`, it can pull a Playwright without a matching browser)
-(cd playwright && npm ci) && (cd preview && npm ci)
+# once: the locked Node dependencies, with pnpm (never `pnpm add`/`update` here, it can pull a Playwright without a
+# matching browser; versions younger than 3 days are refused and no install script runs, backlog row 359)
+(cd playwright && pnpm install --frozen-lockfile) && (cd preview && pnpm install --frozen-lockfile)
 
 # 1. iterate: dev server with hot reload; wait for YOUR edit to be built before you look
 #    (an HTTP 200 proves nothing, see dev-docs/dx-serve-hot-reload.md)
@@ -152,7 +153,7 @@ CARGO_TARGET_DIR=$PWD/target-gates scripts/run-gates.sh
 # 3. the Playwright specs that cover YOUR diff, on a prerendered build (what users get, hydration included)
 CARGO_TARGET_DIR=$PWD/target-ssg scripts/build-ssg.sh debug      # prints PUBLIC_DIR=...
 scripts/serve-spa.py <PUBLIC_DIR> 8741 &
-cd playwright && PLAYWRIGHT_BASE_URL=http://127.0.0.1:8741 npm run test:changed -- --workers=2
+cd playwright && PLAYWRIGHT_BASE_URL=http://127.0.0.1:8741 pnpm run test:changed -- --workers=2
 node tools/select.mjs --explain                                  # which specs, and why
 ```
 

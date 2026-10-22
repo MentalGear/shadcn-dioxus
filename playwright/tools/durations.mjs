@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Per-file durations from a Playwright JSON report (backlog row 152a).
 //
-//   PLAYWRIGHT_JSON_OUTPUT_FILE=/abs/report.json npx playwright test --config=suite.local.config.ts --reporter=json,line
+//   PLAYWRIGHT_JSON_OUTPUT_FILE=/abs/report.json pnpm exec playwright test --config=suite.local.config.ts --reporter=json,line
 //   node playwright/tools/durations.mjs /abs/report.json [--write playwright/durations.json [--merge]] [--top 30] [--meta k=v ...]
 // --merge: the report is a partial run (a lane's own specs): only those files' entries are replaced.
 //

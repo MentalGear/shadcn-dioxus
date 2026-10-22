@@ -24,3 +24,11 @@ M.
 ## Detail
 
 See the design note's "The model", "Migration path" and "Backlog impact" sections.
+
+## Landed (migration steps 1 and 2)
+
+- `primitives/src/data_view/` (std only, no cargo feature: `check-primitives-features` and `check-cargo-dep-versions` need nothing new): `ViewState` (= row 340's `TableState` plus `order: Option<KeyOrder>`, unused by any UI), `KeyOrder::reconcile`, `Field<T>`, `derive` (indices + keys + counts, never rows), `derive_by` (closure form), `derive_rows` and `TableView<T>` (the compatibility wrapper, clones only the page), the stage helpers moved from preview's `state.rs`, and the one `contains_query`.
+- Data Table: `model.rs`/`state.rs` re-export every old name (`derive` = `derive_rows`); `Column<T>` holds a `Field<T>` (the `id` field stays); `use_data_table` memoises `derive` and no longer clones every row three times. `includes_string` and `default_combobox_filter` call `contains_query`.
+- Count fix: `View`/`TableView` carry `selected_in_view` and `selected_total`; the footer reads `selected_in_view of filtered_count`; `selected_count` is a deprecated alias of `selected_total`. Spec: `data_table.spec.ts` "the selected count only counts rows in the filtered view".
+- Law tests (`data_view/laws.rs`, fixed-seed LCG, 40 seeds x 200 steps): keys are a duplicate-free permutation of the filtered keys, the page is the clamped window of them, `selected_in_view <= filtered_count`, `reconcile` is idempotent and a permutation.
+- Gate `check-collection-derive.sh` (in `run-gates.sh` and the CLAUDE.md gate sentence): no `.to_lowercase().contains(`, `HashSet<usize>`/`Vec<bool>`/`[bool; N]` selection or ad-hoc `sort_by` in `preview/src/components/**`; allowlist for ToggleGroup's upstream API (and its three consumers) and the catalogue sort.

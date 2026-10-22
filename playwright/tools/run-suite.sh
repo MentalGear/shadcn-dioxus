@@ -27,7 +27,7 @@ mkdir -p "$out"
 tools/ensure-attr-synth.sh || exit 2
 if [ -z "$table" ]; then
   if [ -f durations.json ]; then table=durations.json
-  else table="$out/list.json"; PLAYWRIGHT_JSON_OUTPUT_FILE="$table" npx playwright test --config="$config" --list --reporter=json >/dev/null || exit 2; fi
+  else table="$out/list.json"; PLAYWRIGHT_JSON_OUTPUT_FILE="$table" pnpm exec playwright test --config="$config" --list --reporter=json >/dev/null || exit 2; fi
 fi
 # Snapshot the table and cut ALL the chunks up front: every chunk is a slice of ONE partition. (Cutting chunk i just
 # before it runs re-reads durations.json each time; editing the table mid-run then put 34 files in two chunks and 34 in
@@ -44,7 +44,7 @@ for i in $(seq 1 "$chunks"); do
   start=$(date +%s)
   flock "$lock" bash -c '
     s=$(date +%s)
-    PW_SPECS_FILE="$1" PLAYWRIGHT_JSON_OUTPUT_FILE="$2" npx playwright test --config="$3" --workers="$4" --reporter=json,line >"$5" 2>&1
+    PW_SPECS_FILE="$1" PLAYWRIGHT_JSON_OUTPUT_FILE="$2" pnpm exec playwright test --config="$3" --workers="$4" --reporter=json,line >"$5" 2>&1
     echo $(( $(date +%s) - s )) > "$6"' _ "$out/specs-$i.txt" "$out/chunk-$i.json" "$config" "$workers" "$out/chunk-$i.log" "$out/chunk-$i.wall"
   w=$(cat "$out/chunk-$i.wall" 2>/dev/null || echo 0); total=$((total + w))
   echo "chunk $i/$chunks: $(wc -l < "$out/specs-$i.txt") files, wall_in_lock=${w}s (queued+run $(( $(date +%s) - start ))s), running total ${total}s"
