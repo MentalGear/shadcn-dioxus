@@ -2,6 +2,7 @@ use super::super::component::*;
 use crate::components::checkbox::Checkbox;
 use dioxus::prelude::*;
 use dioxus_primitives::checkbox::CheckboxState;
+use dioxus_primitives::data_view::sort_rows_by;
 use std::collections::HashSet;
 
 const ROWS: usize = 10_000;
@@ -24,21 +25,15 @@ fn total_cents(id: usize) -> usize {
 
 /// Item ids in display order for the sort state (`column` is 1-based after the checkbox column).
 fn sorted_ids(sort: Option<(usize, SortDirection)>) -> Vec<usize> {
-    let mut ids: Vec<usize> = (0..ROWS).collect();
-    if let Some((column, direction)) = sort {
-        ids.sort_by(|a, b| {
-            let ordering = match column {
-                1 => order_number(*a).cmp(&order_number(*b)),
-                2 => status(*a).cmp(status(*b)).then(a.cmp(b)),
-                _ => total_cents(*a).cmp(&total_cents(*b)),
-            };
-            match direction {
-                SortDirection::Ascending => ordering,
-                SortDirection::Descending => ordering.reverse(),
-            }
-        });
+    let ids: Vec<usize> = (0..ROWS).collect();
+    match sort {
+        None => ids,
+        Some((column, direction)) => sort_rows_by(&ids, direction, |a, b| match column {
+            1 => order_number(*a).cmp(&order_number(*b)),
+            2 => status(*a).cmp(status(*b)).then(a.cmp(b)),
+            _ => total_cents(*a).cmp(&total_cents(*b)),
+        }),
     }
-    ids
 }
 
 #[component]
