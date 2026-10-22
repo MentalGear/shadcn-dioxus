@@ -1395,8 +1395,10 @@ mod tests {
         let html = render(ChartKind::Line, false, true);
         assert!(html.contains(r#"viewBox="0 0 369 208""#), "{html}");
         assert!(html.contains(r#"data-measured="false""#), "{html}");
-        // No animation on the server render (no JS: the final drawing).
-        assert!(!html.contains("data-animate"), "{html}");
+        // This harness allocates client ids (`dxc-c...`), i.e. a chart created by the client, so
+        // its first frame is the entrance's start pose (row 344). A server-rendered chart gets a
+        // server id, counts as hydrated and keeps the final drawing: `entrance_pose`'s own test.
+        assert!(html.contains(r#"data-animate="pending""#), "{html}");
         for kind in [ChartKind::Pie, ChartKind::Radar, ChartKind::RadialBar] {
             let html = render(kind, false, true);
             assert!(html.contains(r#"viewBox="0 0 250 250""#), "{kind:?}");
