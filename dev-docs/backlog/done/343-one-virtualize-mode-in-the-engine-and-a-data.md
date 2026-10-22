@@ -1,7 +1,7 @@
 ---
 id: 343
 title: "One virtualize mode in the engine, and a data body for Table"
-status: "BACKLOG (owner 2026-10-21). Comes after 340 and before 341 and 342."
+status: "LANDED 2026-10-22 (batch 6, lane virtualize). VirtualizeMode { Auto, ContentVisibility, Windowed }…"
 size: "M (about 2 to 2.5 days)"
 area: primitives
 updated: 2026-10-22
@@ -15,7 +15,7 @@ Move `VirtualListMode` into the shared engine as `VirtualizeMode`, and give Tabl
 
 ## Status / trigger
 
-BACKLOG (owner 2026-10-21). Comes after 340 and before 341 and 342.
+**LANDED 2026-10-22 (batch 6, lane virtualize).** `VirtualizeMode { Auto, ContentVisibility, Windowed }` and `DEFAULT_AUTO_THRESHOLD` live in `primitives/src/virtual/mode.rs` (`VirtualListMode` is a deprecated alias); new `TableRows` primitive windows rows inside a real `<table>` with top and bottom spacer rows, `aria-rowindex`, and `aria-rowcount` on the table via `TableScroller`; themed `Table { container_attributes }`, `TableHeader { sticky }`, `TableRows { row_selected }`, demo `table/variants/virtualized`, `playwright/table-rows.spec.ts` (4/4). Measured: `content-visibility` does not apply to table rows or row groups (spec excludes internal table elements from size containment), so ContentVisibility mode keeps every row in the DOM. The table route joined first-paint-styles `CLIENT_MEASURED` like virtual_list. Rows 341 and 342 can now build on it.
 
 ## Size
 

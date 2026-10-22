@@ -41,7 +41,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (49)
+## Open rows (46)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -89,13 +89,10 @@ proposing one is closed as out of scope (row 337 is the first).
 | [329](backlog/329-audit-3-ssr-vs-first-render-parity-as.md) | Audit 3: SSR-vs-first-render parity as a cargo test (spike first) | PARTLY LANDED 2026-10-21 (queue batch 1, PR #126: the SSR vs first-client-frame parity test runs in… | M | tests |
 | [341](backlog/341-virtualgrid-header-sort-row-selection-and-cell.md) | VirtualGrid: header sort state, row selection, and controls inside cells | BACKLOG (owner 2026-10-21; amended 09:35). Comes after row 343 (needs its VirtualizeMode); row 342… | M (about 1.5 to 2 days) | primitives |
 | [342](backlog/342-datatable-large-data-variant-on-virtualgrid.md) | DataTable: a large-data variant rendered through VirtualGrid | BACKLOG (owner 2026-10-21; amended 09:35). Needs rows 340, 343 and 341. | S (about 1 day) | components |
-| [343](backlog/343-one-virtualize-mode-in-the-engine-and-a-data.md) | One virtualize mode in the engine, and a data body for Table | BACKLOG (owner 2026-10-21). Comes after 340 and before 341 and 342. | M (about 2 to 2.5 days) | primitives |
 | [355](backlog/355-adopt-google-rust-style-guide-items.md) | Adopt Google Rust style guide items: workspace lint table and conventions | BACKLOG -- Round 6 sweep, after row 267's file split (owner approved 2026-10-21) | S-M | process |
-| [356](backlog/356-lane-disk-guard-ignores-concurrent-copies.md) | Lane disk guard ignores concurrent template copies, so two slots both pass and both die with ENOSPC | OPEN. Workaround meanwhile: lanes build with LANE_SLOTS=1 when free disk is under twice the guard's… | S: lane-slot-target.sh reservation plus… | tooling |
-| [357](backlog/357-date-picker-natural-language-test-midnight.md) | Date picker natural_language unit test fails when a run crosses midnight UTC | OPEN. | XS: inject the clock in the test. | primitives |
 | [358](backlog/358-all-routes-one-navigation-for-both-schemes.md) | all-routes: one navigation for both schemes (needs a clean forced-colors reset) | BACKLOG. Blocked on one thing: the forced-colors sweep presses Tab from the focus start point… | S | tests |
 
-## Done rows (282)
+## Done rows (285)
 
 | # | Item | Updated |
 |---|---|---|
@@ -370,6 +367,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [338](backlog/done/338-hydration-parity-spec-runs-cargo-at-load-outside-the.md) | hydration-parity.spec builds attr-synth with cargo at load time, outside the build lock | 2026-10-21 |
 | [339](backlog/done/339-main-thread-timing-specs-not-skipped-on-debug-builds-in.md) | main-thread timing specs are not skipped on debug builds in test:changed runs | 2026-10-21 |
 | [340](backlog/done/340-datatable-column-model-and-use-data-table-hook.md) | DataTable: a column definition and one state hook, rendered into Table | 2026-10-22 |
+| [343](backlog/done/343-one-virtualize-mode-in-the-engine-and-a-data.md) | One virtualize mode in the engine, and a data body for Table | 2026-10-22 |
 | [344](backlog/done/344-charts-flash-the-final-drawing-before-their-entry.md) | Charts flash the final drawing before their entry animation on first client-side open | 2026-10-21 |
 | [345](backlog/done/345-carousel-nav-opacity-spec-read-next-mid-fade.md) | carousel-nav-opacity first-slide spec reads Next mid-fade (red on main) | 2026-10-21 |
 | [346](backlog/done/346-popover-keyboard-close-focus-return-test-raced-the-close-policy.md) | Popover keyboard-close focus-return spec raced the close policy | 2026-10-21 |
@@ -381,6 +379,8 @@ proposing one is closed as out of scope (row 337 is the first).
 | [352](backlog/done/352-link-global-attributes-in-prop-tables.md) | Link the 'Plus the global attributes.' sentence in props tables to MDN | 2026-10-21 |
 | [353](backlog/done/353-carousel-next-arrow-fades-in-after-hydration.md) | Carousel Next arrow fades 0.5 to 1 after hydration (first-paint flicker) | 2026-10-21 |
 | [354](backlog/done/354-remove-the-docs-header-language-switcher.md) | Remove the docs header language switcher | 2026-10-21 |
+| [356](backlog/done/356-lane-disk-guard-ignores-concurrent-copies.md) | Lane disk guard ignores concurrent template copies, so two slots both pass and both die with ENOSPC | 2026-10-22 |
+| [357](backlog/done/357-date-picker-natural-language-test-midnight.md) | Date picker natural_language unit test fails when a run crosses midnight UTC | 2026-10-22 |
 
 ## Notes (8)
 
