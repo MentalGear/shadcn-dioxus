@@ -65,7 +65,8 @@ test.describe("RTL demos come last (row 351)", () => {
 });
 
 test("the props table's global-attributes sentence links to MDN (row 352)", async ({ page }) => {
-  await gotoHydrated(page, `${BASE_URL}/component/button/`);
+  // Alert's props extend the GlobalAttributes spread (Button's name the <button> element instead).
+  await gotoHydrated(page, `${BASE_URL}/component/alert/`);
   const link = page.locator(".dx-docs-props a", { hasText: "the global attributes" }).first();
   await expect(link).toHaveAttribute(
     "href",
