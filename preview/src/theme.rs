@@ -30,6 +30,9 @@ const CHANNEL_NAME: &str = "dx-theme";
 /// * `PressFeedback` is `data-dx-press-feedback="off"`, read by the theme's "Press feedback" rule
 ///   in `dx-components-theme.css` (absent = on, the only other state; `off` is the only value the
 ///   snippet accepts for it).
+/// * `Coarse` is `data-dx-coarse="on|off"`, read by the theme's coarse-sizing block in
+///   `dx-components-theme.css` (absent = `auto`, which follows `(pointer: coarse)`; `on` and `off` are
+///   the only other values the snippet accepts, and force the touch or the desktop sizes page-wide).
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Pref {
     Mode,
@@ -37,6 +40,7 @@ pub enum Pref {
     Accent,
     Radius,
     PressFeedback,
+    Coarse,
 }
 
 impl Pref {
@@ -47,6 +51,7 @@ impl Pref {
             Pref::Accent => "theme-accent",
             Pref::Radius => "theme-radius",
             Pref::PressFeedback => "dx-press-feedback",
+            Pref::Coarse => "dx-coarse",
         }
     }
 }
@@ -110,7 +115,7 @@ const DEFAULT_RADIUS: &str = "0.625";
 /// already on `<html>` and `theme-presets.css` / `dx-components-theme.css` render-blocking in
 /// `<head>`, the first paint is already in the chosen mode, colours and radius. [`theme_seed`] runs it
 /// again for any host that has no such `index.html`.
-pub const PREPAINT_JS: &str = "(function(){var K=['theme','theme-base','theme-accent','theme-radius','dx-press-feedback'],R=document.documentElement,Q=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)');function M(m){if(m)R.setAttribute('data-theme',m);else R.removeAttribute('data-theme');R.classList.toggle('dark',m?m==='dark':!!(Q&&Q.matches))}function A(k,v){if(K.indexOf(k)<0)return;var ok=!!v&&/^[a-z0-9.]{1,16}$/.test(v)&&(k!=='theme'||v==='dark'||v==='light')&&(k!=='dx-press-feedback'||v==='off');if(k==='theme')M(ok?v:null);else if(ok)R.setAttribute('data-'+k,v);else R.removeAttribute('data-'+k)}window.__dxApplyMode=M;window.__dxTheme=A;if(Q&&!window.__dxModeWatch){window.__dxModeWatch=1;try{/*listener-ok: lives as long as the page*/Q.addEventListener('change',function(){if(!R.hasAttribute('data-theme'))M(null)})}catch(e){}}try{var C=document.cookie.split(';');K.forEach(function(k){var n='dx_'+k.replace('-','_')+'=',v=null;C.forEach(function(c){c=c.trim();if(c.indexOf(n)===0)v=decodeURIComponent(c.slice(n.length))});A(k,v)})}catch(e){}})();(function(){var W=window,R=document.documentElement;if(W.__dxModality)return;W.__dxModality=1;function S(m){if(R.getAttribute('data-dx-modality')!==m)R.setAttribute('data-dx-modality',m)}var Q=W.matchMedia&&W.matchMedia('(any-pointer: coarse) and (hover: none)');if(!R.hasAttribute('data-dx-modality'))S(Q&&Q.matches?'touch':'mouse');var K={Shift:1,Control:1,Alt:1,Meta:1,AltGraph:1,CapsLock:1,Fn:1,FnLock:1,Hyper:1,Super:1,OS:1};function P(t){return t==='touch'||t==='pen'?t:'mouse'}try{/*listener-ok: the modality writer lives as long as the page*/W.addEventListener('pointerdown',function(e){S(P(e.pointerType))},true);/*listener-ok: the modality writer lives as long as the page*/W.addEventListener('keydown',function(e){if(!K[e.key])S('keyboard')},true);/*listener-ok: the modality writer lives as long as the page*/W.addEventListener('click',function(e){if(e.detail===0){S('keyboard')}else if(R.getAttribute('data-dx-modality')==='keyboard')S(P(e.pointerType||(Q&&Q.matches?'touch':'mouse')))},true)}catch(x){}})()";
+pub const PREPAINT_JS: &str = "(function(){var K=['theme','theme-base','theme-accent','theme-radius','dx-press-feedback','dx-coarse'],R=document.documentElement,Q=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)');function M(m){if(m)R.setAttribute('data-theme',m);else R.removeAttribute('data-theme');R.classList.toggle('dark',m?m==='dark':!!(Q&&Q.matches))}function A(k,v){if(K.indexOf(k)<0)return;var ok=!!v&&/^[a-z0-9.]{1,16}$/.test(v)&&(k!=='theme'||v==='dark'||v==='light')&&(k!=='dx-press-feedback'||v==='off')&&(k!=='dx-coarse'||v==='on'||v==='off');if(k==='theme')M(ok?v:null);else if(ok)R.setAttribute('data-'+k,v);else R.removeAttribute('data-'+k)}window.__dxApplyMode=M;window.__dxTheme=A;if(Q&&!window.__dxModeWatch){window.__dxModeWatch=1;try{/*listener-ok: lives as long as the page*/Q.addEventListener('change',function(){if(!R.hasAttribute('data-theme'))M(null)})}catch(e){}}try{var C=document.cookie.split(';');K.forEach(function(k){var n='dx_'+k.replace('-','_')+'=',v=null;C.forEach(function(c){c=c.trim();if(c.indexOf(n)===0)v=decodeURIComponent(c.slice(n.length))});A(k,v)})}catch(e){}})();(function(){var W=window,R=document.documentElement;if(W.__dxModality)return;W.__dxModality=1;function S(m){if(R.getAttribute('data-dx-modality')!==m)R.setAttribute('data-dx-modality',m)}var Q=W.matchMedia&&W.matchMedia('(any-pointer: coarse) and (hover: none)');if(!R.hasAttribute('data-dx-modality'))S(Q&&Q.matches?'touch':'mouse');var K={Shift:1,Control:1,Alt:1,Meta:1,AltGraph:1,CapsLock:1,Fn:1,FnLock:1,Hyper:1,Super:1,OS:1};function P(t){return t==='touch'||t==='pen'?t:'mouse'}try{/*listener-ok: the modality writer lives as long as the page*/W.addEventListener('pointerdown',function(e){S(P(e.pointerType))},true);/*listener-ok: the modality writer lives as long as the page*/W.addEventListener('keydown',function(e){if(!K[e.key])S('keyboard')},true);/*listener-ok: the modality writer lives as long as the page*/W.addEventListener('click',function(e){if(e.detail===0){S('keyboard')}else if(R.getAttribute('data-dx-modality')==='keyboard')S(P(e.pointerType||(Q&&Q.matches?'touch':'mouse')))},true)}catch(x){}})()";
 
 pub fn theme_seed() {
     _ = document::eval(&format!(
@@ -244,18 +249,20 @@ struct ThemeState {
     radius: Signal<String>,
     /// `"off"` or empty (on).
     press: Signal<String>,
+    /// `"on"`, `"off"` or empty (auto).
+    coarse: Signal<String>,
 }
 
 impl ThemeState {
     /// Re-reads the three attributes: another tab, the cookie or the pre-paint script may have changed
     /// them since this component last looked.
     fn sync(self) {
-        let (mut base, mut accent, mut radius, mut press) =
-            (self.base, self.accent, self.radius, self.press);
+        let (mut base, mut accent, mut radius, mut press, mut coarse) =
+            (self.base, self.accent, self.radius, self.press, self.coarse);
         spawn(async move {
             let mut eval = document::eval(
                 r#"const r = document.documentElement;
-                dioxus.send([r.getAttribute('data-theme-base') || '', r.getAttribute('data-theme-accent') || '', r.getAttribute('data-theme-radius') || '', r.getAttribute('data-dx-press-feedback') || ''].join('|'));"#,
+                dioxus.send([r.getAttribute('data-theme-base') || '', r.getAttribute('data-theme-accent') || '', r.getAttribute('data-theme-radius') || '', r.getAttribute('data-dx-press-feedback') || '', r.getAttribute('data-dx-coarse') || ''].join('|'));"#,
             );
             if let Ok(state) = eval.recv::<String>().await {
                 let mut parts = state.split('|');
@@ -263,21 +270,24 @@ impl ThemeState {
                 accent.set(parts.next().unwrap_or_default().to_string());
                 radius.set(parts.next().unwrap_or_default().to_string());
                 press.set(parts.next().unwrap_or_default().to_string());
+                coarse.set(parts.next().unwrap_or_default().to_string());
             }
         });
     }
 
     fn reset(self) {
-        let (mut base, mut accent, mut radius, mut press) =
-            (self.base, self.accent, self.radius, self.press);
+        let (mut base, mut accent, mut radius, mut press, mut coarse) =
+            (self.base, self.accent, self.radius, self.press, self.coarse);
         base.set(String::new());
         accent.set(String::new());
         radius.set(String::new());
         press.set(String::new());
+        coarse.set(String::new());
         set_pref(Pref::Base, None);
         set_pref(Pref::Accent, None);
         set_pref(Pref::Radius, None);
         set_pref(Pref::PressFeedback, None);
+        set_pref(Pref::Coarse, None);
     }
 }
 
@@ -287,6 +297,7 @@ fn use_theme_state() -> ThemeState {
         accent: use_signal(String::new),
         radius: use_signal(String::new),
         press: use_signal(String::new),
+        coarse: use_signal(String::new),
     };
     use_effect(move || state.sync());
     state
@@ -460,7 +471,7 @@ fn ThemePickerDrawer(state: ThemeState, open: Signal<bool>) -> Element {
     }
 }
 
-/// The picker's content: reset, base colour, accent, radius, press feedback. Rendered inside either the header's
+/// The picker's content: reset, base colour, accent, radius, press feedback, touch sizing. Rendered inside either the header's
 /// `Popover` (`scope: "popover"`) or the phone `Drawer` (`scope: "drawer"`); `scope` is also
 /// the `data-presentation` CSS hooks onto (larger touch targets in the drawer) and keeps the label ids
 /// unique per presentation.
@@ -480,6 +491,7 @@ fn ThemePickerPanel(
         mut accent,
         mut radius,
         mut press,
+        mut coarse,
     } = state;
 
     let base_label = label_of(BASES, &base.read());
@@ -644,8 +656,50 @@ fn ThemePickerPanel(
                     }
                 }
             }
+
+            div { class: "dx-theme-picker-section",
+                span { class: "dx-theme-picker-label", id: "dx-theme-coarse-label-{scope}",
+                    "Touch sizing"
+                    span { class: "dx-theme-picker-current", "auto follows the device" }
+                }
+                ToggleGroup {
+                    class: "dx-theme-chips",
+                    variant: ToggleVariant::Outline,
+                    aria_labelledby: "dx-theme-coarse-label-{scope}",
+                    pressed: Some(single(coarse_index(&coarse.read()))),
+                    on_pressed_change: move |next: HashSet<usize>| {
+                        if let Some((value, _)) = next.into_iter().next().and_then(|i| COARSE_MODES.get(i).copied()) {
+                            coarse.set(value.to_string());
+                            set_pref(Pref::Coarse, if value.is_empty() { None } else { Some(value) });
+                        }
+                    },
+                    for (i , (value , label)) in COARSE_MODES.iter().copied().enumerate() {
+                        ToggleItem {
+                            key: "coarse-{label}",
+                            index: i,
+                            title: match value {
+                                "on" => "Touch sizes everywhere",
+                                "off" => "Desktop sizes everywhere",
+                                _ => "Follow the device's pointer",
+                            },
+                            "{label}"
+                        }
+                    }
+                }
+            }
         }
     }
+}
+
+/// Touch sizing choices, `(attribute value, label)`: "" is `auto` and stored as "no attribute".
+pub const COARSE_MODES: &[(&str, &str)] = &[("", "Auto"), ("on", "On"), ("off", "Off")];
+
+/// Item index of the touch-sizing chips.
+fn coarse_index(current: &str) -> usize {
+    COARSE_MODES
+        .iter()
+        .position(|(v, _)| *v == current)
+        .unwrap_or(0)
 }
 
 /// The one pressed item of a single-select [`ToggleGroup`]. The groups are controlled: `on_pressed_change`
@@ -721,6 +775,7 @@ mod tests {
             Pref::Accent,
             Pref::Radius,
             Pref::PressFeedback,
+            Pref::Coarse,
         ] {
             assert!(
                 PREPAINT_JS.contains(&format!("'{}'", pref.key())),

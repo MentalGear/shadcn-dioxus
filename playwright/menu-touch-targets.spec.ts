@@ -9,8 +9,8 @@ import { measureAtRest } from "./animations";
  *
  * Nova's menu row is ~28px, too small for a finger. `dx-components-theme.css` declares four slots
  * (`--dx-menu-item-min-height`, `--dx-menu-item-font-size`, `--dx-menu-trigger-min-height`,
- * `--dx-menu-trigger-padding`) and replaces them under `(any-pointer: coarse) and (hover: none)` (the query
- * `modality.rs` uses); every menu / listbox / palette sheet reads the slots, so none carries a `@media` copy.
+ * `--dx-menu-trigger-padding`) and replaces them under `(pointer: coarse)` (row 349 moved them behind the
+ * `data-dx-coarse` switch, `coarse-sizing.spec.ts`); every menu / listbox / palette sheet reads the slots, so none carries a `@media` copy.
  *
  * Real touch emulation (`hasTouch` + `isMobile`) matches that query in Chromium; a plain desktop context does
  * not, and must keep today's dense rows.
@@ -103,13 +103,13 @@ async function heights(rows: Locator): Promise<number[]> {
   return out;
 }
 
-test.describe("touch (any-pointer: coarse, hover: none)", () => {
+test.describe("touch (pointer: coarse)", () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, colorScheme: "light" });
   test.skip(({ browserName }) => browserName !== "chromium", "mobile emulation is Chromium-only");
 
   test("the emulated device matches the theme's coarse query", async ({ page }) => {
     await gotoHydrated(page, block("menubar", "shortcuts"));
-    expect(await page.evaluate(() => matchMedia("(any-pointer: coarse) and (hover: none)").matches)).toBe(true);
+    expect(await page.evaluate(() => matchMedia("(pointer: coarse)").matches)).toBe(true);
   });
 
   for (const h of HOSTS) {
@@ -133,7 +133,7 @@ test.describe("fine pointer (desktop)", () => {
 
   test("the coarse query does not match, and the rows keep Nova's dense size", async ({ page }) => {
     await HOSTS[0].open(page);
-    expect(await page.evaluate(() => matchMedia("(any-pointer: coarse) and (hover: none)").matches)).toBe(false);
+    expect(await page.evaluate(() => matchMedia("(pointer: coarse)").matches)).toBe(false);
     for (const height of await heights(HOSTS[0].rows(page))) {
       expect(height).toBeGreaterThan(24);
       expect(height).toBeLessThan(34);

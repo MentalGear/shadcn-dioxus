@@ -43,6 +43,7 @@ mod chart_parity;
 #[cfg(test)]
 mod chart_tooltip_parity;
 mod charts_gallery;
+mod coarse_docs;
 mod components;
 mod dashboard;
 mod docs_nav;
@@ -1086,6 +1087,7 @@ const DOCS_SECTIONS: &[&str] = &[
     "Recommended workflow",
     "Motion",
     "Utilities",
+    "Touch sizing",
 ];
 
 /// Turns a heading's visible text into a same-page anchor id: lowercased,
@@ -1336,6 +1338,10 @@ fn Docs(dark_mode: Option<bool>) -> Element {
                 section { class: "dx-docs-section",
                     h2 { id: "{docs_section_slug(DOCS_SECTIONS[5])}", "{DOCS_SECTIONS[5]}" }
                     crate::utilities_docs::UtilitiesDocs {}
+                }
+                section { class: "dx-docs-section",
+                    h2 { id: "{docs_section_slug(DOCS_SECTIONS[6])}", "{DOCS_SECTIONS[6]}" }
+                    crate::coarse_docs::CoarseDocs {}
                 }
             }
         }

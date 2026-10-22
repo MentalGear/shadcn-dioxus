@@ -178,6 +178,10 @@ main[tabindex="-1"]:focus {
  * new raw control added anywhere in `preview/` can never regress this by
  * omission.
  */
+
+/* Only RAW controls (no `dx-` class): every library control reads the theme's text-entry size, which
+   * `data-dx-coarse` switches (a forced `off` must stay at the desktop size, and this rule would win it back
+   * with `!important`), and the preview's own `dx-language-select` does the same in language-select.css. */
 @media (pointer: coarse) {
   /* Written as an explicit allowlist of simple selectors on purpose: the
      first version used `input:not([type="checkbox"], [type="radio"], …)`
@@ -188,23 +192,26 @@ main[tabindex="-1"]:focus {
      touch-focus-zoom oracle stayed red on every route through the navbar's
      language <select>). Simple selectors survive; see
      docs/issues/asset-css-not-selector-list.md. */
-  input:not([type]),
-  input[type="text"],
-  input[type="search"],
-  input[type="email"],
-  input[type="url"],
-  input[type="tel"],
-  input[type="password"],
-  input[type="number"],
-  input[type="date"],
-  input[type="datetime-local"],
-  input[type="month"],
-  input[type="week"],
-  input[type="time"],
-  textarea,
-  select,
-  [contenteditable="true"],
-  [contenteditable=""] {
+
+  /* A chained `:not()`, not the list form the notation rule wants: the asset pipeline drops that (above). */
+  /* stylelint-disable-next-line selector-not-notation */
+  input:not([type]):not([class*="dx-"]),
+  input[type="text"]:not([class*="dx-"]),
+  input[type="search"]:not([class*="dx-"]),
+  input[type="email"]:not([class*="dx-"]),
+  input[type="url"]:not([class*="dx-"]),
+  input[type="tel"]:not([class*="dx-"]),
+  input[type="password"]:not([class*="dx-"]),
+  input[type="number"]:not([class*="dx-"]),
+  input[type="date"]:not([class*="dx-"]),
+  input[type="datetime-local"]:not([class*="dx-"]),
+  input[type="month"]:not([class*="dx-"]),
+  input[type="week"]:not([class*="dx-"]),
+  input[type="time"]:not([class*="dx-"]),
+  textarea:not([class*="dx-"]),
+  select:not([class*="dx-"]),
+  [contenteditable="true"]:not([class*="dx-"]),
+  [contenteditable=""]:not([class*="dx-"]) {
     /* `!important` is deliberate and load-bearing: this is the app-wide
        backstop, and it must beat every component stylesheet's own class
        rule (e.g. `.dx-language-select { font-size: 0.8rem }`), which any

@@ -41,7 +41,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (55)
+## Open rows (52)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -96,12 +96,9 @@ proposing one is closed as out of scope (row 337 is the first).
 | [342](backlog/342-datatable-large-data-variant-on-virtualgrid.md) | DataTable: a large-data variant rendered through VirtualGrid | BACKLOG (owner 2026-10-21; amended 09:35). Needs rows 340, 343 and 341. | S (about 1 day) | components |
 | [343](backlog/343-one-virtualize-mode-in-the-engine-and-a-data.md) | One virtualize mode in the engine, and a data body for Table | BACKLOG (owner 2026-10-21). Comes after 340 and before 341 and 342. | M (about 2 to 2.5 days) | primitives |
 | [347](backlog/347-message-scroller-scroll-up-inside-the-autoscroll-window.md) | Message scroller: a scroll up inside the 180 ms autoscroll window leaves follow mode armed | BACKLOG (found 2026-10-21 by the batch-2 reds lane). | S (a primitive TS change plus the… | primitives |
-| [348](backlog/348-otp-input-edges-use-a-solid-colour.md) | OTP Input edges use a solid colour, not the translucent dark input token | Open (owner approved 2026-10-20). | S | components |
-| [349](backlog/349-coarse-sizing-global-default-plus-a-per-container-attribute.md) | Coarse sizing: global default plus a per-container `data-dx-coarse` attribute | Open (owner approved 2026-10-20). | M | theme |
-| [350](backlog/350-coarse-demo-palette-toggle-and-side-by-side-docs.md) | Coarse demo: Auto/On/Off in the theme palette and a side-by-side docs section | Open, needs row 349 (owner approved 2026-10-20). | S | docs |
 | [355](backlog/355-adopt-google-rust-style-guide-items.md) | Adopt Google Rust style guide items: workspace lint table and conventions | BACKLOG -- Round 6 sweep, after row 267's file split (owner approved 2026-10-21) | S-M | process |
 
-## Done rows (273)
+## Done rows (276)
 
 | # | Item | Updated |
 |---|---|---|
@@ -374,6 +371,9 @@ proposing one is closed as out of scope (row 337 is the first).
 | [344](backlog/done/344-charts-flash-the-final-drawing-before-their-entry.md) | Charts flash the final drawing before their entry animation on first client-side open | 2026-10-21 |
 | [345](backlog/done/345-carousel-nav-opacity-spec-read-next-mid-fade.md) | carousel-nav-opacity first-slide spec reads Next mid-fade (red on main) | 2026-10-21 |
 | [346](backlog/done/346-popover-keyboard-close-focus-return-test-raced-the-close-policy.md) | Popover keyboard-close focus-return spec raced the close policy | 2026-10-21 |
+| [348](backlog/done/348-otp-input-edges-use-a-solid-colour.md) | OTP Input edges use a solid colour, not the translucent dark input token | 2026-10-21 |
+| [349](backlog/done/349-coarse-sizing-global-default-plus-a-per-container-attribute.md) | Coarse sizing: global default plus a per-container `data-dx-coarse` attribute | 2026-10-21 |
+| [350](backlog/done/350-coarse-demo-palette-toggle-and-side-by-side-docs.md) | Coarse demo: Auto/On/Off in the theme palette and a side-by-side docs section | 2026-10-21 |
 | [351](backlog/done/351-rtl-demos-always-come-last.md) | RTL demos always come last in a component's demo list | 2026-10-21 |
 | [352](backlog/done/352-link-global-attributes-in-prop-tables.md) | Link the 'Plus the global attributes.' sentence in props tables to MDN | 2026-10-21 |
 | [353](backlog/done/353-carousel-next-arrow-fades-in-after-hydration.md) | Carousel Next arrow fades 0.5 to 1 after hydration (first-paint flicker) | 2026-10-21 |
