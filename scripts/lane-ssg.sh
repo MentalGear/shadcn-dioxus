@@ -17,9 +17,13 @@ if [ "${1:-}" = "--locked-build" ]; then
   pub="$T/pub-$lane"; log="$T/ssg-$lane.log"; scratch="$T/ssg-lane${LANE_SLOT_SUFFIX:-}"
   echo "lane-ssg: building $wt in slot ${LANE_SLOT:-?} (log $log)" >&2
   rm -rf "$scratch"
-  "$here/lane-slot-target.sh" check-disk "$T/template"
-  cp -a "$T/template" "$scratch"
-  rm -f "$scratch/.tree-owner"   # a fresh copy is always touched (row 216)
+  # Reserve the copy's bytes (row 356) so a concurrent slot copy sees them; the copy never carries .tree-owner
+  # (a fresh copy is always touched, row 216), and a failed copy leaves no scratch behind.
+  export LANE_RESERVE_PID=$$
+  trap '"$here/lane-slot-target.sh" release' EXIT
+  "$here/lane-slot-target.sh" reserve "$T/template"
+  if ! "$here/lane-slot-target.sh" copy "$T/template" "$scratch"; then rm -rf "$scratch"; echo "lane-ssg: copy of the template failed" >&2; exit 1; fi
+  "$here/lane-slot-target.sh" release
   cd "$wt"
   "$here/lane-touch.sh" "$scratch" --force
   if ! CARGO_BUILD_JOBS=2 CARGO_TARGET_DIR="$scratch" CARGO_INCREMENTAL=0 BUILD_SSG_TOUCH=never BUILD_SSG_NETNS=1 scripts/build-ssg.sh debug >"$log" 2>&1; then
