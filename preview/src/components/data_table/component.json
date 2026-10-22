@@ -18,7 +18,8 @@
     { "name": "button", "git": "https://github.com/MentalGear/shadcn-dioxus" },
     { "name": "select", "git": "https://github.com/MentalGear/shadcn-dioxus" },
     { "name": "input", "git": "https://github.com/MentalGear/shadcn-dioxus" },
-    { "name": "checkbox", "git": "https://github.com/MentalGear/shadcn-dioxus" }
+    { "name": "checkbox", "git": "https://github.com/MentalGear/shadcn-dioxus" },
+    { "name": "dropdown_menu", "git": "https://github.com/MentalGear/shadcn-dioxus" }
   ],
   "globalAssets": ["../../../assets/dx-components-theme.css"]
 }

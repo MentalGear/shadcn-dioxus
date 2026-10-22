@@ -104,7 +104,7 @@ pub(crate) fn use_row_reorder(table: DataTableState) -> RowReorder {
         let Some(key) = focus_key.read().clone() else {
             return;
         };
-        let mut eval = document::eval(
+        let eval = document::eval(
             r#"const key = await dioxus.recv();
             // focus-ok: returns focus to the handle of the row that was just moved or stepped to
             document.querySelector('[data-dx-reorder-handle="' + CSS.escape(key) + '"]')?.focus();"#,

@@ -350,6 +350,7 @@ pub fn use_data_table<T: Clone + 'static>(
     }
     let all_keys = use_callback(move |()| rows.peek().iter().map(|r| key_fn.peek().call(r)).collect::<Vec<String>>());
     let current = state.read().clone();
+    let layout_now = layout.read().clone();
     let view = TableView::from_view(&rows.read(), &derived.read());
     DataTableModel {
         state: DataTableState { state, layout, all_keys },
@@ -357,7 +358,7 @@ pub fn use_data_table<T: Clone + 'static>(
         sort: current.sort,
         filter: current.filter,
         page_size: current.page_size,
-        layout: layout.read().clone(),
+        layout: layout_now,
         selected: current.selected,
     }
 }
