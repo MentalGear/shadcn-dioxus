@@ -21,13 +21,20 @@ const open = (page: Page) => gotoHydrated(page, `${BASE_URL}/component/toast/`);
 
 type Frame = { t: number; items: Record<string, { y: number; o: number; ty: number; removed: boolean }> };
 
-/** Starts a per-frame sampler of every toast of the region (by element id). Stopped by `stop`. */
-async function startSampler(page: Page, name: string) {
-  await region(page, name).evaluate((reg) => {
+/**
+ * Starts a per-frame sampler of every toast of the region (by element id), stopped by `stopSampler`.
+ * `keepCollapsed` blurs the region every frame: closing with the close button hands focus to the
+ * region (so the pile would expand under the click), and a collapsed pile is what a countdown or
+ * `Toasts::close` from code leaves, so the spec holds it collapsed to measure that case.
+ */
+async function startSampler(page: Page, name: string, keepCollapsed = false) {
+  await region(page, name).evaluate((reg, blur) => {
     const w = window as unknown as { __dxF: Frame[]; __dxStop: boolean };
     w.__dxF = [];
     w.__dxStop = false;
     const tick = () => {
+      const active = document.activeElement as HTMLElement | null;
+      if (blur && active && reg.contains(active)) active.blur();
       const items: Frame["items"] = {};
       reg.querySelectorAll<HTMLElement>('[role="alertdialog"]').forEach((el) => {
         const r = el.getBoundingClientRect(); // rest-ok: the sampler measures motion itself, frame by frame
@@ -39,7 +46,7 @@ async function startSampler(page: Page, name: string) {
       if (!w.__dxStop && w.__dxF.length < 900) requestAnimationFrame(tick);
     };
     tick();
-  });
+  }, keepCollapsed);
 }
 
 async function stopSampler(page: Page): Promise<Frame[]> {
@@ -147,8 +154,8 @@ test.describe("toast: a dismissal does not make the stack jump", () => {
     await page.waitForTimeout(500);
     const t = toasts(page, STACK);
     const leaving = await t.first().evaluate((el) => el.id);
-    await startSampler(page, STACK);
-    // A dispatched click: no hover or focus, so the pile stays collapsed.
+    await startSampler(page, STACK, true);
+    // A dispatched click: no hover, and the region's focus is dropped every frame, so the pile stays collapsed.
     await t.first().getByRole("button", { name: "close" }).dispatchEvent("click");
     await expect(t).toHaveCount(2);
     await page.waitForTimeout(500);
