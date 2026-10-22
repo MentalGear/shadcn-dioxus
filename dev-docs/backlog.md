@@ -41,7 +41,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (51)
+## Open rows (52)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -96,6 +96,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [362](backlog/362-reorder-gesture-controlled-dnd.md) | Reorder gesture extracted, KeyOrder, DragAndDropList controlled mode with on_reorder | BACKLOG (owner asked 2026-10-22 to deconstruct the collection model to its roots; design note… | M. | primitives |
 | [363](backlog/363-datatable-row-reorder-and-columns.md) | DataTable: reorderable rows (drag handle) and a Columns menu (visibility, keyboard column order) | BACKLOG (owner asked 2026-10-22 to deconstruct the collection model to its roots; design note… | M. | components |
 | [364](backlog/364-togglegroup-value-keyed.md) | ToggleGroup: pressed state keyed by value, not index (optional) | BACKLOG (owner asked 2026-10-22 to deconstruct the collection model to its roots; design note… | S. | components |
+| [365](backlog/365-final-sweep-refactor-and-root-cause-review.md) | Final sweep: refactor review with the deconstruct-to-root and solve-by-construction exercise, proposals to the owner | BACKLOG (owner 2026-10-22, backlog thread: "final sweep, check for refactors and also run there the… | M for the review. Each accepted… | process |
 
 ## Done rows (286)
 
