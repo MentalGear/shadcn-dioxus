@@ -48,7 +48,7 @@ pub fn Demo() -> Element {
 }}"# }
             VirtualList {
                 count: rows,
-                virtualize: VirtualListMode::Windowed,
+                virtualize: VirtualizeMode::Windowed,
                 buffer: 8usize,
                 estimate_size: |_| 48,
                 // The same text the row shows, so a find-in-page match lands on the real row.

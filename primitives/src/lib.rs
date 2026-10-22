@@ -81,6 +81,7 @@ pub mod separator;
 mod sleep;
 pub mod slider;
 pub mod switch;
+pub mod table_rows;
 pub mod tabs;
 pub mod tag_group;
 #[cfg(test)]

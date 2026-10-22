@@ -33,41 +33,81 @@
 use dioxus::prelude::*;
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::merge_attributes;
+pub use dioxus_primitives::table_rows::{VirtualizeMode, DEFAULT_AUTO_THRESHOLD};
+use dioxus_primitives::table_rows::{use_table_scroller, TableRows as TableRowsPrimitive};
+
+/// Props for [`Table`].
+#[derive(Props, Clone, PartialEq)]
+pub struct TableProps {
+    /// Attributes for the scrolling container `<div>` (`dx-table-container`): give it a
+    /// `max-height` (and the container scrolls vertically) so a windowed [`TableRows`] has a
+    /// viewport and a sticky [`TableHeader`] has something to stick to.
+    #[props(default)]
+    pub container_attributes: Vec<Attribute>,
+
+    #[props(extends = GlobalAttributes)]
+    #[props(extends = table)]
+    pub attributes: Vec<Attribute>,
+
+    /// The table's sections: caption, header, body, footer.
+    pub children: Element,
+}
 
 /// Wraps a `<table>` in a horizontally-scrollable container, matching
 /// shadcn/ui's own `Table` (`div.overflow-x-auto` + `table`). The
 /// container needs no `dx-table` class of its own beyond `dx-table-
-/// container` -- only the `<table>` element carries `dx-table`.
+/// container` -- only the `<table>` element carries `dx-table`. The
+/// container is also the element a windowed [`TableRows`] scrolls in
+/// (it owns an `id` for that) and the table carries the `aria-rowcount`
+/// such a body announces.
 #[component]
-pub fn Table(
-    #[props(extends = GlobalAttributes)]
-    #[props(extends = table)]
-    attributes: Vec<Attribute>,
-    children: Element,
-) -> Element {
+pub fn Table(props: TableProps) -> Element {
+    let scroller = use_table_scroller();
     let base = attributes!(table { class: "dx-table", "data-dx-root": "", "data-slot": "table" });
-    let merged = merge_attributes(vec![base, attributes]);
+    let row_count: Option<usize> = *scroller.row_count.read();
+    let owned = attributes!(table { "aria-rowcount": row_count.map(|n| n.to_string()) });
+    let merged = merge_attributes(vec![base, props.attributes, owned]);
+    let container = attributes!(div {
+        class: "dx-table-container",
+        "data-slot": "table-container",
+    });
+    let container_owned = attributes!(div { id: scroller.id });
+    let container = merge_attributes(vec![container, props.container_attributes, container_owned]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/table/style.css") }
-        div { class: "dx-table-container", "data-slot": "table-container",
-            table { ..merged, {children} }
+        div { ..container,
+            table { ..merged, {props.children} }
         }
     }
 }
 
+/// Props for [`TableHeader`].
+#[derive(Props, Clone, PartialEq)]
+pub struct TableHeaderProps {
+    /// Keeps the header cells at the top of the table's scroll container while the body scrolls
+    /// under them (`position: sticky`). Needs a container with a `max-height`
+    /// ([`TableProps::container_attributes`]). Defaults to `false`.
+    #[props(default)]
+    pub sticky: bool,
+
+    #[props(extends = GlobalAttributes)]
+    pub attributes: Vec<Attribute>,
+
+    /// The header rows.
+    pub children: Element,
+}
+
 /// `<thead>`.
 #[component]
-pub fn TableHeader(
-    #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
-    children: Element,
-) -> Element {
+pub fn TableHeader(props: TableHeaderProps) -> Element {
     let base = attributes!(thead { class: "dx-table-header", "data-slot": "table-header" });
-    let merged = merge_attributes(vec![base, attributes]);
+    let owned = attributes!(thead { "data-sticky": props.sticky.then_some("true") });
+    let merged = merge_attributes(vec![base, props.attributes, owned]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/table/style.css") }
-        thead { ..merged, {children} }
+        thead { ..merged, {props.children} }
     }
 }
 
@@ -188,5 +228,75 @@ pub fn TableCaption(
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/table/style.css") }
         caption { ..merged, {children} }
+    }
+}
+
+/// Props for [`TableRows`].
+#[derive(Props, Clone, PartialEq)]
+pub struct TableRowsProps {
+    /// The number of data rows.
+    pub count: ReadSignal<usize>,
+    /// The number of columns, which the spacer rows of a windowed body span.
+    pub columns: usize,
+    /// Renders the cells (`TableCell`s) of row `idx`, an absolute index; the body owns the
+    /// `<tr>`, so it can set `aria-rowindex` and measure the row.
+    pub render_row: Callback<usize, Element>,
+    /// Whether row `idx` is selected: sets `data-state="selected"` like [`TableRow`]'s
+    /// `selected`. Read while rendering, so a selection a row reads re-renders the body.
+    pub row_selected: Option<Callback<usize, bool>>,
+    /// Extra attributes for the `<tr>` of row `idx`.
+    pub row_attributes: Option<Callback<usize, Vec<Attribute>>>,
+    /// How many rows precede the first data row (the header). Defaults to 1.
+    #[props(default = 1)]
+    pub row_offset: usize,
+    /// How many rows to mount beyond each edge of the viewport when windowed. Defaults to 8.
+    #[props(default = ReadSignal::new(Signal::new(8)))]
+    pub buffer: ReadSignal<usize>,
+    /// The height of row `idx` in px until it is measured. Defaults to 35 for every row.
+    pub estimate_size: Option<Callback<usize, u32>>,
+    /// How rows are kept cheap: every row in the DOM, or a window of them between spacer rows.
+    /// `Auto` (the default) picks by `count`. A table cannot skip off-screen rows the way
+    /// `VirtualList` does, so `ContentVisibility` here is a plain table.
+    #[props(default = ReadSignal::new(Signal::new(VirtualizeMode::Auto)))]
+    pub virtualize: ReadSignal<VirtualizeMode>,
+    /// With `Auto`: the largest `count` that keeps every row in the DOM. Defaults to 1000.
+    #[props(default = ReadSignal::new(Signal::new(DEFAULT_AUTO_THRESHOLD)))]
+    pub auto_threshold: ReadSignal<usize>,
+
+    #[props(extends = GlobalAttributes)]
+    pub attributes: Vec<Attribute>,
+}
+
+/// The data-driven `<tbody>`: `count` rows from `render_row`, all in the DOM or windowed over
+/// two spacer rows (see [`TableRowsProps::virtualize`]). Use [`TableBody`] for hand-written rows.
+/// Inside a [`Table`] with a `max-height` and a sticky [`TableHeader`] it is a long table that
+/// scrolls in place.
+#[component]
+pub fn TableRows(props: TableRowsProps) -> Element {
+    let base = attributes!(tbody { class: "dx-table-body", "data-slot": "table-body" });
+    let merged = merge_attributes(vec![base, props.attributes]);
+    let (row_selected, row_attributes) = (props.row_selected, props.row_attributes);
+    let row_attributes = Callback::new(move |idx: usize| {
+        let base = attributes!(tr { class: "dx-table-row", "data-slot": "table-row" });
+        let selected = row_selected.is_some_and(|f| f(idx));
+        let state = attributes!(tr { "data-state": selected.then_some("selected") });
+        let theirs = row_attributes.map(|f| f(idx)).unwrap_or_default();
+        merge_attributes(vec![base, theirs, state])
+    });
+
+    rsx! {
+        document::Link { rel: "stylesheet", href: asset!("/src/components/table/style.css") }
+        TableRowsPrimitive {
+            count: props.count,
+            columns: props.columns,
+            render_row: props.render_row,
+            row_attributes,
+            row_offset: props.row_offset,
+            buffer: props.buffer,
+            estimate_size: props.estimate_size,
+            virtualize: props.virtualize,
+            auto_threshold: props.auto_threshold,
+            attributes: merged,
+        }
     }
 }

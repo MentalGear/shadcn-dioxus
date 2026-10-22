@@ -15,6 +15,9 @@
 //!   [`justified_engine`]: `VirtualJustifiedGrid`'s engine and spatial keyboard model on top of it.
 //! - [`pin`]: keep the focused item rendered when it leaves the window, shared by the grids'
 //!   active cell and `VirtualList`'s focused row.
+//! - [`mode`]: [`VirtualizeMode`] (`Auto | ContentVisibility | Windowed`) and its `auto_threshold`,
+//!   the one "how are off-screen rows kept cheap" choice of `VirtualList`, `Table`'s data body
+//!   and `VirtualGrid` (backlog row 343).
 //! - [`bridge`]: the DOM bridge every windowed component consumes (one passive scroll
 //!   listener, one ResizeObserver, scope-owned cleanup, a render only when the window moves).
 //!
@@ -25,6 +28,7 @@ mod cv_chunks;
 mod grid;
 mod justified_engine;
 pub(crate) mod layout;
+mod mode;
 mod pin;
 mod size_index;
 pub(crate) mod types;
@@ -37,6 +41,7 @@ pub(crate) use cv_chunks::{cv_chunks, ChunkSkip, CHUNK_ROWS};
 pub(crate) use grid::{GridEngine, GridKey, GridShape};
 pub(crate) use justified_engine::{navigate as justified_navigate, JustifiedEngine, RowPlan};
 pub(crate) use layout::justified::JustifiedOptions;
+pub use mode::{VirtualizeMode, DEFAULT_AUTO_THRESHOLD};
 pub(crate) use pin::{pin_in_flow, with_pinned};
 pub(crate) use size_index::{SizeEstimates, DEFAULT_SIZE};
 pub(crate) use types::ScrollReport;

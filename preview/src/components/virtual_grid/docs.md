@@ -98,6 +98,23 @@ The container is `role="grid"` with `aria-rowcount` and `aria-colcount` of the w
 
 A `VirtualGrid` cell taller than its row overflows it (rows are not measured). For a grid of a few thousand cells, a plain CSS grid with `content-visibility: auto` on each row may be the simpler answer: everything stays in the DOM and the browser skips the rows that are off-screen. Find-in-page, the accessibility tree and the server are covered under "Find-in-page and the windowed DOM" below.
 
+<!-- shared:virtual-engine:modes -->
+## The three modes and what they cost
+
+One mode type, `VirtualizeMode`, lives in the shared engine and is the `virtualize` prop of every component that chooses between keeping rows in the DOM and windowing them: `VirtualList`, and `TableRows` (the data body of a `Table`). `VirtualGrid` is always windowed today; it adopts the same type with row 341. `auto_threshold` (default 1,000) is the one switch point of `Auto`.
+
+| | `ContentVisibility` | `Windowed` | `Auto` (the default) |
+|---|---|---|---|
+| In the DOM | every row | the rows in view plus an overscan | `ContentVisibility` while `count <= auto_threshold`, `Windowed` above |
+| Server-rendered HTML | every row | none | follows the mode |
+| Find-in-page (Ctrl+F), selection | reach every row (skipped content: not Safari 18-25) | only the mounted window | follows the mode |
+| Screen readers | every row | only the window, each row announcing its place (`3 of 100000`) | follows the mode |
+| Cost grows with the row count | yes: DOM and memory are linear | no: flat to millions of rows | follows the mode |
+| How off-screen rows are kept cheap | a list: the browser skips them in chunks of 20 (`content-visibility: auto`); a table: not at all, browsers do not skip table rows | not mounted | follows the mode |
+
+The mode follows the live `count`, so a component whose count crosses the threshold re-mounts its rows in the other mode (its scroll position resets); choose an explicit mode when the count hovers around the threshold.
+<!-- /shared:virtual-engine:modes -->
+
 <!-- shared:virtual-engine:engine -->
 ## The shared windowing engine
 
