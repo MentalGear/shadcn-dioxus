@@ -3,10 +3,11 @@
 //! this file adds the typed column definition and the signal that holds the
 //! state. Same `#[path]` sibling wiring as `state.rs`.
 
+use super::layout::ColumnLayout;
 use super::model::{TableState, TableView};
 use super::state::SortDirection;
 use dioxus::prelude::*;
-use dioxus_primitives::data_view::{derive, Field, View};
+use dioxus_primitives::data_view::{derive, Field, RowAnchor, View};
 use std::rc::Rc;
 
 /// A shared closure over a row, compared by identity so it can sit in props
@@ -85,6 +86,9 @@ pub struct Column<T: 'static> {
     pub width: Option<String>,
     /// Header and cell alignment.
     pub align: ColumnAlign,
+    /// Whether the Columns menu offers this column (a visibility toggle and a
+    /// keyboard move). `true` unless [`Column::hideable`] says otherwise.
+    pub hideable: bool,
 }
 
 impl<T: 'static> Column<T> {
@@ -98,6 +102,7 @@ impl<T: 'static> Column<T> {
             cell: RowFn::new(cell),
             width: None,
             align: ColumnAlign::Start,
+            hideable: true,
         }
     }
 
@@ -133,6 +138,14 @@ impl<T: 'static> Column<T> {
         self
     }
 
+    /// Whether the Columns menu offers this column. `false` keeps it out of the
+    /// menu (always shown, never moved by it), like TanStack's `enableHiding: false`.
+    #[must_use]
+    pub fn hideable(mut self, hideable: bool) -> Self {
+        self.hideable = hideable;
+        self
+    }
+
     /// Whether the header offers a sort button.
     pub fn is_sortable(&self) -> bool {
         self.field.is_sortable()
@@ -148,6 +161,7 @@ impl<T: 'static> Clone for Column<T> {
             cell: self.cell.clone(),
             width: self.width.clone(),
             align: self.align,
+            hideable: self.hideable,
         }
     }
 }
@@ -159,6 +173,7 @@ impl<T: 'static> PartialEq for Column<T> {
             && self.cell == other.cell
             && self.width == other.width
             && self.align == other.align
+            && self.hideable == other.hideable
             && self.field == other.field
     }
 }
@@ -170,11 +185,13 @@ pub struct DataTableOptions {
     pub page_size: usize,
     /// The initially sorted column and direction.
     pub sort: Option<(String, SortDirection)>,
+    /// Ids of the columns that start hidden (the Columns menu shows them again).
+    pub hidden_columns: Vec<String>,
 }
 
 impl Default for DataTableOptions {
     fn default() -> Self {
-        Self { page_size: 10, sort: None }
+        Self { page_size: 10, sort: None, hidden_columns: Vec::new() }
     }
 }
 
@@ -183,6 +200,8 @@ impl Default for DataTableOptions {
 #[derive(Clone, Copy)]
 pub struct DataTableState {
     state: Signal<TableState>,
+    layout: Signal<ColumnLayout>,
+    all_keys: Callback<(), Vec<String>>,
 }
 
 impl DataTableState {
@@ -228,6 +247,36 @@ impl DataTableState {
         state.with_mut(|s| s.set_selected(key, selected));
     }
 
+    /// The manual row move behind the drag handle: row `key` lands next to the
+    /// visible row `anchor`, in the order of every row of the data. Only
+    /// meaningful while no sort is active (a sort wins over a manual order).
+    /// `false` when nothing moved.
+    pub fn move_row(&self, key: &str, anchor: RowAnchor<'_>) -> bool {
+        let mut state = self.state;
+        let keys = self.all_keys.call(());
+        state.with_mut(|s| s.move_row(keys.iter().map(String::as_str), key, anchor))
+    }
+
+    /// The current column layout (order and hidden columns).
+    pub fn layout(&self) -> ColumnLayout {
+        self.layout.read().clone()
+    }
+
+    /// Shows or hides the column `id`.
+    pub fn set_column_hidden(&self, id: &str, hidden: bool) {
+        let mut layout = self.layout;
+        layout.with_mut(|l| l.set_hidden(id, hidden));
+    }
+
+    /// Moves the column `id` one place (`delta` -1 earlier, 1 later) among
+    /// `listed`, the columns of `all` the Columns menu offers; see
+    /// [`ColumnLayout::move_listed`]. The new position among `listed`, or
+    /// `None` when nothing moved.
+    pub fn move_column(&self, all: &[&str], listed: &[&str], id: &str, delta: isize) -> Option<usize> {
+        let mut layout = self.layout;
+        layout.with_mut(|l| l.move_listed(all, listed, id, delta))
+    }
+
     /// Selects or deselects every key (the header checkbox).
     pub fn set_many_selected(&self, keys: &[String], selected: bool) {
         let mut state = self.state;
@@ -248,6 +297,8 @@ pub struct DataTableModel<T: 'static> {
     pub filter: String,
     /// Rows per page.
     pub page_size: usize,
+    /// Which columns are shown and in what order.
+    pub layout: ColumnLayout,
     selected: std::collections::HashSet<String>,
 }
 
@@ -255,6 +306,12 @@ impl<T: 'static> DataTableModel<T> {
     /// This column's sort direction, `None` when another column is sorted.
     pub fn sorted(&self, column_id: &str) -> Option<SortDirection> {
         self.sort.as_ref().filter(|(id, _)| id == column_id).map(|(_, d)| *d)
+    }
+
+    /// The columns to render, in layout order, hidden ones left out.
+    pub fn visible_columns<'a>(&self, columns: &'a [Column<T>]) -> Vec<&'a Column<T>> {
+        let ids = self.layout.visible(columns.iter().map(|c| c.id.as_str()));
+        ids.into_iter().filter_map(|id| columns.iter().find(|c| c.id == id)).collect()
     }
 
     /// Whether the row with `key` is selected.
@@ -279,19 +336,28 @@ pub fn use_data_table<T: Clone + 'static>(
     options: DataTableOptions,
 ) -> DataTableModel<T> {
     let state = use_signal(|| TableState::new(options.page_size, options.sort));
+    let layout = use_signal(|| ColumnLayout::with_hidden(options.hidden_columns.iter().map(String::as_str)));
     let fields: Vec<Field<T>> = columns.iter().map(|c| c.field.clone()).collect();
+    let row_key_for_keys = row_key.clone();
     let row_key = row_key.clone();
     let derived: Memo<View> = use_memo(use_reactive!(|(fields, row_key)| {
         derive(&rows.read(), &state.read(), &fields, |row| row_key.call(row))
     }));
+    // Every row's key, for a manual move only (read when a row is dropped, never while rendering).
+    let mut key_fn = use_signal(|| row_key_for_keys.clone());
+    if *key_fn.peek() != row_key_for_keys {
+        key_fn.set(row_key_for_keys);
+    }
+    let all_keys = use_callback(move |()| rows.peek().iter().map(|r| key_fn.peek().call(r)).collect::<Vec<String>>());
     let current = state.read().clone();
     let view = TableView::from_view(&rows.read(), &derived.read());
     DataTableModel {
-        state: DataTableState { state },
+        state: DataTableState { state, layout, all_keys },
         view,
         sort: current.sort,
         filter: current.filter,
         page_size: current.page_size,
+        layout: layout.read().clone(),
         selected: current.selected,
     }
 }

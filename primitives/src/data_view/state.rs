@@ -117,6 +117,23 @@ impl KeyOrder {
         true
     }
 
+    /// Moves `key` to sit directly after `anchor`, the mirror of
+    /// [`Self::move_before`] (the row-order move when the moved row becomes
+    /// the last visible one). `false`, changing nothing, when either key is not
+    /// listed or they are the same key.
+    pub fn move_after(&mut self, key: &str, anchor: &str) -> bool {
+        if key == anchor {
+            return false;
+        }
+        let (Some(from), Some(_)) = (self.position(key), self.position(anchor)) else {
+            return false;
+        };
+        let item = self.0.remove(from);
+        let at = self.position(anchor).map_or(self.0.len(), |p| p + 1);
+        self.0.insert(at, item);
+        true
+    }
+
     /// Drops `key` from the order. `true` when it was listed.
     pub fn remove(&mut self, key: &str) -> bool {
         match self.position(key) {
@@ -134,6 +151,17 @@ impl KeyOrder {
     }
 }
 
+/// Where a moved row lands: directly before or directly after a neighbour that
+/// is visible (on the page, through the filter), so rows the view hides keep
+/// their relative place.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RowAnchor<'a> {
+    /// Directly before this row.
+    Before(&'a str),
+    /// Directly after this row.
+    After(&'a str),
+}
+
 /// What a collection view remembers between renders.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ViewState {
@@ -149,7 +177,7 @@ pub struct ViewState {
     pub page_size: usize,
     /// Keys of the selected rows, across every page and filter.
     pub selected: HashSet<String>,
-    /// A manual row order, used while no sort is active. Not drawn by any UI yet.
+    /// A manual row order, used while no sort is active ([`move_row`](Self::move_row); the Data Table's drag handle column writes it).
     pub order: Option<KeyOrder>,
 }
 
@@ -213,6 +241,30 @@ impl ViewState {
         } else {
             self.selected.remove(key);
         }
+    }
+
+    /// The manual row move (a drag handle or its keyboard twin): `key` lands
+    /// next to `anchor` in the order of `all_keys`, every key of the source rows
+    /// (the stored order is first reconciled against them, so it is always a
+    /// permutation of the keys that exist). The page,
+    /// filter and selection are untouched. `false`, changing nothing, when
+    /// `key` or the anchor is not among `all_keys` or they are the same row.
+    pub fn move_row<'a>(
+        &mut self,
+        all_keys: impl IntoIterator<Item = &'a str>,
+        key: &str,
+        anchor: RowAnchor<'_>,
+    ) -> bool {
+        let stored = self.order.clone().unwrap_or_default();
+        let mut order = KeyOrder::new(stored.reconcile(all_keys).into_iter().map(str::to_string));
+        let moved = match anchor {
+            RowAnchor::Before(anchor) => order.move_before(key, anchor),
+            RowAnchor::After(anchor) => order.move_after(key, anchor),
+        };
+        if moved {
+            self.order = Some(order);
+        }
+        moved
     }
 
     /// Selects or deselects every key in `keys` (the header checkbox: the rows
@@ -284,6 +336,40 @@ mod tests {
         let items = ["a", "b", "c", "a"];
         assert_eq!(o.arrange(items, |k| k), ["c", "a", "a", "b"]);
         assert_eq!(o.reconcile(items), ["c", "a", "a", "b"]);
+    }
+
+    #[test]
+    fn move_after_lands_behind_the_anchor_whatever_the_direction() {
+        let mut o = order(&["a", "b", "c", "d"]);
+        assert!(o.move_after("a", "c"));
+        assert_eq!(listed(&o), ["b", "c", "a", "d"]);
+        assert!(o.move_after("d", "b"));
+        assert_eq!(listed(&o), ["b", "d", "c", "a"]);
+        assert!(!o.move_after("d", "d"));
+        assert!(!o.move_after("d", "zz"));
+        assert_eq!(listed(&o), ["b", "d", "c", "a"]);
+    }
+
+    #[test]
+    fn move_row_reconciles_first_and_leaves_the_rest_of_the_view_alone() {
+        let mut state = ViewState::new(2, None);
+        state.page = 1;
+        state.set_selected("c", true);
+        let all = ["a", "b", "c", "d"];
+        // No stored order yet: source order is the starting point.
+        assert!(state.move_row(all, "d", RowAnchor::Before("a")));
+        assert_eq!(listed(state.order.as_ref().unwrap()), ["d", "a", "b", "c"]);
+        // A key that is new since, and one that is gone, are reconciled away.
+        let all = ["a", "b", "c", "e"];
+        assert!(state.move_row(all, "a", RowAnchor::After("c")));
+        assert_eq!(listed(state.order.as_ref().unwrap()), ["b", "c", "a", "e"]);
+        // A move that cannot happen changes nothing.
+        let before = state.clone();
+        assert!(!state.move_row(all, "zz", RowAnchor::After("c")));
+        assert!(!state.move_row(all, "a", RowAnchor::Before("a")));
+        assert_eq!(state, before);
+        assert_eq!(state.page, 1);
+        assert!(state.selected.contains("c"));
     }
 
     #[test]
