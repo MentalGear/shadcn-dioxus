@@ -452,13 +452,37 @@ const ROUTE_BASELINE: &[(&str, &str)] = &[
     ("/component/avatar/", AVATAR),
     ("/component/carousel/", CAROUSEL),
     ("/component/drag_and_drop_list/", AVATAR),
-    ("/component/dropdown_menu/", AVATAR),
     ("/component/empty/", AVATAR),
     ("/component/item/", AVATAR),
     ("/component/table/", TABLE_ROWCOUNT),
-    ("/component/top_layer/", ANCHOR_ID),
     ("/component/virtual_list/", FIND_LAYER),
 ];
+
+/// Pages that differ only when primitives' `web` arm is compiled (preview's `web`, `desktop` and `server`
+/// features turn it on; a bare `cargo test --workspace` does not). The `web` arm is the one that ships:
+/// the popup roots there are real `<dialog>`s whose content effect syncs its id into the trigger's
+/// `anchor-name` (`primitives/src/popover.rs:242,385`), and the dropdown menu page's account-switcher
+/// avatar (`dropdown_menu/account_switcher`) reaches its load effect only in the web arm's markup. The plain
+/// arm does neither, so these pages match there.
+/// The outcome is a function of the compiled feature set, never of timing: 10 runs per arm agree.
+const ROUTE_BASELINE_WEB: &[(&str, &str)] = &[
+    ("/component/dropdown_menu/", AVATAR),
+    ("/component/top_layer/", ANCHOR_ID),
+];
+
+/// The pages [`ROUTE_BASELINE`] and, when the `web` arm is compiled, [`ROUTE_BASELINE_WEB`] list.
+fn route_baseline() -> Vec<(&'static str, &'static str)> {
+    let web = cfg!(any(
+        feature = "web",
+        feature = "desktop",
+        feature = "server"
+    ));
+    ROUTE_BASELINE
+        .iter()
+        .chain(web.then_some(ROUTE_BASELINE_WEB).into_iter().flatten())
+        .copied()
+        .collect()
+}
 
 /// Demos that cannot render natively at all, with the missing piece.
 const UNRENDERABLE: &[(&str, &str)] = &[
@@ -534,8 +558,9 @@ mod tests {
     fn pages_paint_the_same_before_and_after_the_first_client_tick() {
         let all = run_routes();
         let mut problems = Vec::new();
+        let baseline = route_baseline();
         for (path, outcome) in &all {
-            let known = ROUTE_BASELINE.iter().any(|(n, _)| n == path);
+            let known = baseline.iter().any(|(n, _)| n == path);
             match outcome {
                 Outcome::Panicked => problems.push(format!("{path}: panicked natively.")),
                 Outcome::Unsettled => problems.push(format!(
@@ -551,7 +576,7 @@ mod tests {
                 _ => {}
             }
         }
-        for (path, _) in ROUTE_BASELINE {
+        for (path, _) in &baseline {
             if !all.contains_key(*path) {
                 problems.push(format!(
                     "{path}: ROUTE_BASELINE names a page that is not rendered."
