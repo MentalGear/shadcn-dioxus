@@ -17,15 +17,18 @@ pub fn Demo() -> Element {
 #[component]
 fn PauseButton() -> Element {
     let toast_api = use_toast();
+    // Numbered so several toasts from repeated clicks can be told apart.
+    let mut count = use_signal(|| 0u32);
 
     rsx! {
         Button {
             r#type: "button",
             "data-style": "outline",
             onclick: move |_| {
+                count += 1;
                 toast_api
                     .info(
-                        "Hover or focus me".to_string(),
+                        format!("Hover or focus me #{count}"),
                         ToastOptions::new().duration(Duration::from_secs(3)),
                     );
             },
