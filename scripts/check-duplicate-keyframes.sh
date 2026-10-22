@@ -50,8 +50,6 @@ ALLOW = [
      "pure opacity fade, identical to the theme's dx-fade-in/out; modal-panel lane"),
     ("preview/src/components/dialog/style.css::dx-dialog-backdrop-animate-*",
      "pure opacity fade, identical to the theme's dx-fade-in/out; modal-panel lane"),
-    ("preview/src/components/toast/style.css::dx-slide-up-*",
-     "two names on purpose: the toast swaps `-even`/`-odd` to restart the same animation on a re-triggered toast"),
 ]
 
 explicit = sys.argv[1:]
