@@ -1,4 +1,5 @@
 use super::super::component::*;
+use crate::i18n::{use_locale_root, LocaleDemo};
 use dioxus::prelude::*;
 use dioxus_i18n::tid;
 
@@ -6,10 +7,11 @@ use time::{macros::date, Date, Month, Weekday};
 
 #[component]
 pub fn Demo() -> Element {
+    use_locale_root();
     let mut selected_date = use_signal(|| None::<Date>);
     let mut view_date = use_signal(|| date!(2026 - 05 - 15));
     rsx! {
-        div {
+        LocaleDemo {
             Calendar {
                 selected_date: selected_date(),
                 on_date_change: move |date| {

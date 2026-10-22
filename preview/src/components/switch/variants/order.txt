@@ -3,5 +3,4 @@ description
 choice_card
 disabled
 invalid
-rtl
 sizes

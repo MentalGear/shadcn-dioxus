@@ -7,4 +7,3 @@ controlled
 disabled
 dynamic
 custom_items
-rtl

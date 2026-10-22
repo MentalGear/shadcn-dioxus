@@ -3,9 +3,9 @@
   "build": "debug",
   "workers": "2",
   "date": "2026-10-21",
-  "tests": 3660,
-  "files": 220,
-  "total_seconds": 11346.9,
+  "tests": 3666,
+  "files": 221,
+  "total_seconds": 11238,
   "budget_seconds": 17000,
   "max_file_seconds": 3000,
   "note": "seconds = sum of test durations (worker time) on the DEBUG SSG build, 2 workers, 4-core box shared with other lanes; main-thread.spec.ts and scroll-main-thread.spec.ts are release-only (skipped on debug) and carry their RELEASE seconds. release_total_seconds = the same run on a release build. Refresh: playwright/tools/run-suite.sh, then durations.mjs chunk-*.json --write",
@@ -54,7 +54,7 @@
   },
   "all-routes.spec.ts": {
    "tests": 183,
-   "seconds": 961.5,
+   "seconds": 830.9,
    "passed": 183,
    "failed": 0,
    "skipped": 0,
@@ -494,9 +494,9 @@
   },
   "date-picker.spec.ts": {
    "tests": 80,
-   "seconds": 185,
-   "passed": 80,
-   "failed": 0,
+   "seconds": 192.8,
+   "passed": 79,
+   "failed": 1,
    "skipped": 0,
    "retried": 0
   },
@@ -584,6 +584,14 @@
    "tests": 1,
    "seconds": 3.4,
    "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "retried": 0
+  },
+  "docs-site.spec.ts": {
+   "tests": 6,
+   "seconds": 16.7,
+   "passed": 6,
    "failed": 0,
    "skipped": 0,
    "retried": 0
@@ -1206,7 +1214,7 @@
   },
   "oracle/tier2-html/stylesheets-present.spec.ts": {
    "tests": 15,
-   "seconds": 29.8,
+   "seconds": 27.1,
    "passed": 15,
    "failed": 0,
    "skipped": 0,
