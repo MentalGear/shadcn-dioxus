@@ -272,7 +272,14 @@ pub fn VirtualGrid(props: VirtualGridProps) -> Element {
         let geometry = column_geometry.read();
         (geometry.2, geometry.1)
     };
-    use_focus_active_cell(container_id, active, focus_request, true, header, sticky_width);
+    use_focus_active_cell(
+        container_id,
+        active,
+        focus_request,
+        true,
+        header,
+        sticky_width,
+    );
 
     let shape = GridShape::full(row_count(), column_count());
     let tab_stop = shape.clamp(active());
@@ -1002,7 +1009,9 @@ fn sort_token(
     column_sort: Option<Callback<usize, Option<SortDirection>>>,
     column: usize,
 ) -> Option<&'static str> {
-    column_sort.and_then(|f| f(column)).map(SortDirection::aria_sort)
+    column_sort
+        .and_then(|f| f(column))
+        .map(SortDirection::aria_sort)
 }
 
 /// Whether row `index` is selected: `None` without the `row_selected` hook, else the answer for
@@ -1179,7 +1188,13 @@ fn focus_and_reveal(
     sticky_width: u32,
 ) {
     let eval = document::eval(FOCUS_CELL_JS);
-    let _ = eval.send((container_id, selector, control_selector, header, sticky_width));
+    let _ = eval.send((
+        container_id,
+        selector,
+        control_selector,
+        header,
+        sticky_width,
+    ));
 }
 
 /// Focuses the active cell once it is in the DOM (it is pinned, so the render that made it
