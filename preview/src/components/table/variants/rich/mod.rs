@@ -45,13 +45,8 @@ const ORDERS: [Order; 4] = [
 pub fn Demo() -> Element {
     let mut selected = use_signal(|| [false, true, false, false]);
     let count = selected().iter().filter(|s| **s).count();
-    let header_state = if count == 0 {
-        CheckboxState::Unchecked
-    } else if count == ORDERS.len() {
-        CheckboxState::Checked
-    } else {
-        CheckboxState::Indeterminate
-    };
+    // The all/some/none state is the Data Table's one `tri_state`.
+    let header_state = crate::components::data_table::tri_state(count, ORDERS.len());
     rsx! {
         Table {
             TableCaption { "Recent orders. {count} of {ORDERS.len()} selected." }

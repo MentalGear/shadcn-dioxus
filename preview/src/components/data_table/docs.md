@@ -1,44 +1,37 @@
-Data Table is a composition pattern, not a new primitive — the same architecture as shadcn/ui's own Data Table. It builds sorting, filtering, pagination, and row selection out of [`Table`](/component/table/) plus this crate's existing `Select`, `Checkbox`, `Button`, and `Input` components. Three pieces do the composing:
+Data Table is a composition pattern, not a new primitive — the same architecture as shadcn/ui's Data Table over TanStack Table. You describe the table once, as typed `Column<T>` definitions, and `DataTable` renders it into [`Table`](/component/table/) plus this crate's `Select`, `Checkbox`, `Button` and `Input`: sortable headers, a filter input, pagination and row selection with an all/some/none header checkbox.
 
-- `DataTableColumnHeader` — a sortable `TableHead`: a ghost `Button` toggles the sort and an icon shows the current direction, with `aria-sort` set on the header cell per the [APG Table pattern](https://www.w3.org/WAI/ARIA/apg/patterns/table/)'s sortable-columns guidance.
-- `DataTableToolbar` — a text filter `Input` with an accessible name. The demo below filters like shadcn's `includesString`: a case-insensitive substring match anywhere in the email, not just at the start.
+- **`Column<T>`** — an `id`, a header, a cell renderer `Fn(&T) -> Element`, and builders: `.sortable(|row| key)` (a typed key, `K: Ord`, so a sort can never name a column or type that does not exist), `.filterable(|row| text)`, `.width("8rem")`, `.align(ColumnAlign::End)`.
+- **`DataTable<T>`** — the component. It takes `rows`, `columns` and a `row_key` (a stable identity, so selection survives sorting, filtering and paging), and opt-in features: `selectable`, `filter_placeholder`, `page_sizes`, `default_sort`. Header and cell counts cannot drift apart, and `aria-sort` sits on the `th` (per the [APG Table pattern](https://www.w3.org/WAI/ARIA/apg/patterns/table/)) and `data-state="selected"` on the row without the page writing either.
+- **`use_data_table(rows, &columns, &row_key, options)`** — the state underneath, public for custom layouts. It owns sort, filter, page and selection and returns a `DataTableModel`: the derived `view` (page rows, keys, page count, counts, the header checkbox state) and `state`, a `Copy` handle of mutators (`toggle_sort`, `set_filter`, `set_page_size`, `next_page`, `set_selected`, `set_many_selected`) for event handlers.
+
+Sorting, filtering or changing the page size returns to page 1. A header activation sorts the column ascending, then flips direction; exactly one column carries the sort, as in the APG reference. The filter matches like shadcn's `includesString`: a case-insensitive substring match anywhere in the text of any `filterable` column, not just at the start. The header checkbox covers the current page; the footer counts selected rows across every page.
+
+The state transitions are a pure, unit-tested state machine (`TableState` and `derive` in `model.rs`, built on `state.rs`'s `sort_rows_by`, `filter_rows` and `paginate`, all generic over `&[T]`), and the three pieces below stay available for tables the component does not fit.
+
+- `DataTableColumnHeader` — a sortable `TableHead`: a ghost `Button` toggles the sort and an icon shows the direction.
+- `DataTableToolbar` — a text filter `Input` with an accessible name.
 - `DataTablePagination` — a "x of y row(s) selected" summary, a rows-per-page `Select`, a "Page n of m" readout, and Previous/Next `Button`s (disabled at either end).
 
-The actual sort/filter/pagination *state* — which column is sorted and in which direction, the filter text, the current page — is owned by the page that composes these pieces (see the demo below), and derived through a small set of pure, unit-tested helpers (`sort_rows`, `filter_rows`, `paginate`, all generic over `&[T]` + a closure) rather than baked into any of the three components above.
+`DataTable` renders every row in the DOM, one page at a time. A virtualized layout for tens of thousands of rows is planned (backlog rows 343, 341, 342); it will take the same `Column<T>`.
 
 ## Component Structure
 
 ```rust
-DataTableToolbar {
-    value: filter,
-    oninput: move |v| filter.set(v),
-    aria_label: "Filter by email",
-}
-Table {
-    TableHeader {
-        TableRow {
-            DataTableColumnHeader {
-                sorted: if sort_key() == "email" { Some(sort_direction()) } else { None },
-                onclick: move |_| toggle_sort("email"),
-                "Email"
-            }
-        }
-    }
-    TableBody {
-        for row in page_rows {
-            TableRow { TableCell { "{row.email}" } }
-        }
-    }
-}
-DataTablePagination {
-    selected_count: selected().len(),
-    total_count: filtered_count,
-    page: page(),
-    page_count,
-    page_size: page_size(),
-    page_size_options: vec![5, 10, 20],
-    on_page_size_change: move |n| page_size.set(n),
-    on_previous: move |_| page.set(page().saturating_sub(1)),
-    on_next: move |_| page.set(page() + 1),
+let columns = vec![
+    Column::new("email", "Email", |p: &Payment| rsx! { "{p.email}" })
+        .sortable(|p| p.email)
+        .filterable(|p| p.email.to_string()),
+    Column::new("amount", "Amount", |p: &Payment| rsx! { "{format_amount(p.amount_cents)}" })
+        .sortable(|p| p.amount_cents),
+];
+
+DataTable::<Payment> {
+    rows: payments,
+    columns,
+    row_key: RowFn::new(|p: &Payment| p.id.to_string()),
+    selectable: true,
+    filter_placeholder: "Filter emails...".to_string(),
+    page_sizes: vec![5, 10, 20],
+    default_sort: Some(("email".to_string(), SortDirection::Ascending)),
 }
 ```
