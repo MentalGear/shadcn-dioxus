@@ -138,7 +138,7 @@ The fast loop, in the order you need it (the measured details are in
 
 ```sh
 # once: the locked Node dependencies, with pnpm (never `pnpm add`/`update` here, it can pull a Playwright without a
-# matching browser; versions younger than 3 days are refused and no install script runs, backlog row 359)
+# matching browser; versions younger than 30 days are refused and no install script runs, backlog row 359)
 (cd playwright && pnpm install --frozen-lockfile) && (cd preview && pnpm install --frozen-lockfile)
 
 # 1. iterate: dev server with hot reload; wait for YOUR edit to be built before you look

@@ -47,6 +47,8 @@ S-M, about half a day.
 - **CI:** `pnpm/action-setup@v4.1.0` (a tag, not a SHA: the lane had no GitHub API access to resolve one; pin the SHA when the workflows are re-enabled), version read from `packageManager`, `setup-node` `cache: pnpm`, frozen installs, `pnpm exec`. stylelint.yml now runs the locked install and the same globs as the gate. Not run (workflow_dispatch freeze).
 - **Left:** 50-odd `npx playwright` usage comments in `playwright/*.spec.ts` headers and `base-url.ts`/`*.local.config.ts` (touching them would make `test:changed` select every spec; they still work as typed); historical notes in `dev-docs/research`, `dev-docs/issues`, done rows.
 
+- **2026-10-22, owner raised the release age to 30 days (43200 minutes):** `minimumReleaseAge` is `43200` in both `playwright/pnpm-workspace.yaml` and `preview/pnpm-workspace.yaml` (was 4320, 3 days, as written above). An urgent fix may be let through deliberately with `minimumReleaseAgeExclude`, one package per entry, each with its reason in a comment. Lock-age check on 2026-10-22: playwright 16 of 16 packages are at least 30 days old; preview has three packages published less than 30 days before that date, all transitive and locked by the earlier 3-day policy: `@csstools/css-syntax-patches-for-csstree@1.1.15` (2026-10-01), `ignore@7.0.12` (2026-10-02), `source-map-js@1.2.2` (2026-09-30). Frozen installs in both folders succeed and neither lockfile changed. Not changed here: the three versions stay until the owner decides on an exclude or a bump.
+
 ### Acceptance
 
 - Fresh clone + `scripts/session-setup.sh` installs both folders with pnpm and no install scripts run.
