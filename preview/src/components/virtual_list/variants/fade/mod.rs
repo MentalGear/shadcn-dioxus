@@ -38,7 +38,7 @@ pub fn Demo() -> Element {
                 VirtualList {
                     count: rows,
                     buffer: 12usize,
-                    virtualize: VirtualListMode::Windowed,
+                    virtualize: VirtualizeMode::Windowed,
                     fade: ScrollFade::Y,
                     estimate_size: |_| 68,
                     style: "position: relative; max-height: 18rem; overflow-y: auto;",
@@ -65,7 +65,7 @@ pub fn Demo() -> Element {
                 style: "border: 1px solid var(--dx-border); border-radius: var(--dx-radius-lg);",
                 VirtualList {
                     count: 300usize,
-                    virtualize: VirtualListMode::ContentVisibility,
+                    virtualize: VirtualizeMode::ContentVisibility,
                     fade: ScrollFade::Y,
                     estimate_size: |_| 68,
                     style: "position: relative; max-height: 18rem; overflow-y: auto;",

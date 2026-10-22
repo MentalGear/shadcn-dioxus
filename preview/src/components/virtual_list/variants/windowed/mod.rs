@@ -151,7 +151,7 @@ pub fn Demo() -> Element {
                         count: rows,
                         // No `virtualize`: `Auto` (the default) windows any list longer than
                         // 1,000 rows and keeps every row in the DOM up to that. Pass
-                        // `VirtualListMode::Windowed` to window a short list too.
+                        // `VirtualizeMode::Windowed` to window a short list too.
                         buffer: 12usize,
                         estimate_size: |idx: usize| 68 + (idx % 6).div_ceil(2) as u32 * 20,
                         "aria-label": "One hundred thousand rows",

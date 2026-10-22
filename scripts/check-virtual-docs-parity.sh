@@ -14,6 +14,8 @@
 #      between the markers must be byte-identical. Fails on a block that differs, a block present in only
 #      one file, a marker that is not closed (or closed twice), and when neither file has a block at all.
 #      A new shared feature gets a new block in both files; a feature only one component has stays outside.
+#      `preview/src/components/table/docs.md` (the data body `TableRows`, row 343) may carry any of the same blocks
+#      (it carries `modes`): each one it has must equal the list's text, and it need not carry the others.
 #
 #   2. Prop docs. A prop name that `VirtualListProps` shares with any grid props struct
 #      (`VirtualGridProps`, `VirtualWrapGridProps`, `VirtualJustifiedGridProps`: today `count`,
@@ -22,7 +24,7 @@
 #      component's documentation of the prop. A new field added to both is held to the same rule.
 #
 # Scope: the two docs.md files and primitives/src/virtual_list.rs + primitives/src/virtual_grid.rs. No network.
-# Overrides for self-tests: VDP_LIST_DOCS, VDP_GRID_DOCS, VDP_LIST_RS, VDP_GRID_RS (file paths).
+# Overrides for self-tests: VDP_LIST_DOCS, VDP_GRID_DOCS, VDP_TABLE_DOCS, VDP_LIST_RS, VDP_GRID_RS (file paths).
 # Exit status: 0 when in parity, 1 on a difference, 2 when a source cannot be read or parsed.
 
 set -euo pipefail
@@ -37,6 +39,7 @@ import sys
 
 list_docs = os.environ.get("VDP_LIST_DOCS", "preview/src/components/virtual_list/docs.md")
 grid_docs = os.environ.get("VDP_GRID_DOCS", "preview/src/components/virtual_grid/docs.md")
+table_docs = os.environ.get("VDP_TABLE_DOCS", "preview/src/components/table/docs.md")
 list_rs = os.environ.get("VDP_LIST_RS", "primitives/src/virtual_list.rs")
 grid_rs = os.environ.get("VDP_GRID_RS", "primitives/src/virtual_grid.rs")
 
@@ -95,6 +98,13 @@ for name in sorted(set(lb) | set(gb)):
             f"    {list_docs}: {a[first] if first < len(a) else '<end of block>'}\n"
             f"    {grid_docs}: {b[first] if first < len(b) else '<end of block>'}"
         )
+
+tb = blocks(table_docs, read(table_docs))
+for name in sorted(tb):
+    if name not in lb:
+        problems.append(f"shared block `{name}` is in {table_docs} but not in {list_docs}")
+    elif tb[name] != lb[name]:
+        problems.append(f"shared block `{name}` in {table_docs} differs from {list_docs}: copy the list's text")
 
 def props(path, text, struct):
     """field name -> collapsed `///` doc of `pub struct <struct> { ... }`."""

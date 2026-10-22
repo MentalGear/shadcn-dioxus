@@ -55,7 +55,7 @@ pub fn Demo() -> Element {
                 buffer: 12usize,
                 // The windowed engine: these demos exercise measured row heights and the
                 // scrollbar-stability freeze. (`Auto` would keep 2000 rows in the DOM.)
-                virtualize: VirtualListMode::Windowed,
+                virtualize: VirtualizeMode::Windowed,
                 // NO estimate_size - uses adaptive estimation which will struggle
                 // with random heights until many items are measured
                 render_item: move |idx: usize| {

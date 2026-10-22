@@ -9,7 +9,7 @@ VirtualList {
     // Optional: the height guess for a row that has not been measured or rendered yet.
     estimate_size: |idx: usize| 80,
     // Optional: how off-screen rows are kept cheap. `Auto` (the default) picks by `count`.
-    virtualize: VirtualListMode::Auto,
+    virtualize: VirtualizeMode::Auto,
     // Row renderer callback receives the absolute index.
     render_item: move |idx: usize| rsx! {
         article { "{rows[idx].title}" }
@@ -39,9 +39,9 @@ Give the list a height (or `max-height`) and `overflow-y: auto`: it is the scrol
 
 ```rust
 // Every row in the DOM, however many (a long list of one-line rows can afford it):
-VirtualList { count: 20_000usize, virtualize: VirtualListMode::ContentVisibility, .. }
+VirtualList { count: 20_000usize, virtualize: VirtualizeMode::ContentVisibility, .. }
 // Windowed from the first row (heavy rows, or find-in-page is not needed):
-VirtualList { count: 800usize, virtualize: VirtualListMode::Windowed, .. }
+VirtualList { count: 800usize, virtualize: VirtualizeMode::Windowed, .. }
 // Move the automatic switch point:
 VirtualList { count: 12_000usize, auto_threshold: 10_000usize, .. }
 ```
@@ -73,6 +73,23 @@ Only the rows in view are mounted, over a spacer that gives the scrollbar the fu
 - A mounted row's text is in the DOM twice, so its match counts twice.
 - Placeholders are not in the accessibility tree; browsers without `until-found` (Firefox before 139, Safari before 26.2) treat it as `hidden`, so those rows stay unfindable, as without the prop.
 - Example: the `find_in_page` variant. Findings and open checks: `dev-docs/backlog/153-native-find-in-page-for-windowed-virtual-lists.md`.
+
+<!-- shared:virtual-engine:modes -->
+## The three modes and what they cost
+
+One mode type, `VirtualizeMode`, lives in the shared engine and is the `virtualize` prop of every component that chooses between keeping rows in the DOM and windowing them: `VirtualList`, and `TableRows` (the data body of a `Table`). `VirtualGrid` is always windowed today; it adopts the same type with row 341. `auto_threshold` (default 1,000) is the one switch point of `Auto`.
+
+| | `ContentVisibility` | `Windowed` | `Auto` (the default) |
+|---|---|---|---|
+| In the DOM | every row | the rows in view plus an overscan | `ContentVisibility` while `count <= auto_threshold`, `Windowed` above |
+| Server-rendered HTML | every row | none | follows the mode |
+| Find-in-page (Ctrl+F), selection | reach every row (skipped content: not Safari 18-25) | only the mounted window | follows the mode |
+| Screen readers | every row | only the window, each row announcing its place (`3 of 100000`) | follows the mode |
+| Cost grows with the row count | yes: DOM and memory are linear | no: flat to millions of rows | follows the mode |
+| How off-screen rows are kept cheap | a list: the browser skips them in chunks of 20 (`content-visibility: auto`); a table: not at all, browsers do not skip table rows | not mounted | follows the mode |
+
+The mode follows the live `count`, so a component whose count crosses the threshold re-mounts its rows in the other mode (its scroll position resets); choose an explicit mode when the count hovers around the threshold.
+<!-- /shared:virtual-engine:modes -->
 
 <!-- shared:virtual-engine:engine -->
 ## The shared windowing engine
@@ -122,7 +139,7 @@ VirtualGrid { row_count: 1_000usize, column_count: 30usize, fade: ScrollFade::Bo
 - `count` (required): the number of rows.
 - `render_item` (required): renders row `idx`.
 - `estimate_size`: row height guess in px, by index.
-- `virtualize`: `VirtualListMode::{Auto, ContentVisibility, Windowed}`, default `Auto`.
+- `virtualize`: `VirtualizeMode::{Auto, ContentVisibility, Windowed}`, default `Auto`.
 - `auto_threshold`: the largest `count` `Auto` keeps in `ContentVisibility`; default `1000`.
 - `buffer`: windowed mode only; default `8`.
 - `fade`: `ScrollFade::{None, Y, X, Both, Top, Bottom, Start, End}`, default `None`; the scroll-edge fade above.

@@ -222,13 +222,11 @@ preview/src/components/sidebar/component.rs	SidebarProvider.open
 preview/src/components/sidebar/component.rs	SidebarSeparator.decorative
 preview/src/components/sidebar/component.rs	SidebarSeparator.horizontal
 preview/src/components/sidebar/component.rs	SidebarTrigger.onclick
-preview/src/components/table/component.rs	Table.children
 preview/src/components/table/component.rs	TableBody.children
 preview/src/components/table/component.rs	TableCaption.children
 preview/src/components/table/component.rs	TableCell.children
 preview/src/components/table/component.rs	TableFooter.children
 preview/src/components/table/component.rs	TableHead.children
-preview/src/components/table/component.rs	TableHeader.children
 preview/src/components/tag_group/component.rs	RemoveButton.children
 preview/src/components/textarea/component.rs	Textarea.onblur
 preview/src/components/textarea/component.rs	Textarea.onchange

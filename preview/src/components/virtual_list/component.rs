@@ -1,6 +1,6 @@
 use dioxus::prelude::*;
 #[allow(unused_imports)] // a consumer-facing surface; this crate's own demos use a subset
-pub use dioxus_primitives::virtual_list::{ScrollFade, VirtualListMode, VirtualListProps};
+pub use dioxus_primitives::virtual_list::{ScrollFade, VirtualListProps, VirtualizeMode};
 use dioxus_primitives::{dioxus_attributes::attributes, merge_attributes};
 
 /// Styled wrapper around the primitive `VirtualList`.

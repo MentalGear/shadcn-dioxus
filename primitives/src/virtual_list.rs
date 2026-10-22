@@ -2,11 +2,11 @@
 //!
 //! # Modes
 //!
-//! [`VirtualListMode`] (the `virtualize` prop) chooses how rows that are off-screen are kept
+//! [`VirtualizeMode`] (the `virtualize` prop) chooses how rows that are off-screen are kept
 //! cheap. It uses the same prop name, the same `ContentVisibility` variant and the same
 //! `data-virtualize` spelling as [`crate::message_scroller::Virtualization`].
 //!
-//! - [`VirtualListMode::ContentVisibility`]: **every row is in the DOM** (and in the server's
+//! - [`VirtualizeMode::ContentVisibility`]: **every row is in the DOM** (and in the server's
 //!   HTML) and the browser skips laying out and painting the ones that are off-screen
 //!   (`content-visibility: auto` with `contain-intrinsic-block-size: auto <estimate>`). There is
 //!   no scroll listener, no measurement and no Rust work while scrolling. The accessibility tree,
@@ -23,7 +23,7 @@
 //!   per row made a scroll cost O(rows) of main-thread time (7.7 ms per frame at 1,000 rows and
 //!   31 ms at 5,000 in the demo), and one per 20 rows brings it to a windowed list's cost (1.1
 //!   and 1.5 ms, against 1.4 ms windowed).
-//! - [`VirtualListMode::Windowed`]: only the rows in view plus `buffer` rows each side are
+//! - [`VirtualizeMode::Windowed`]: only the rows in view plus `buffer` rows each side are
 //!   mounted, and a spacer gives the scrollbar the full height. DOM and memory stay flat from
 //!   10k to millions of rows, rows may have any height (measured, with `estimate_size` as the
 //!   first guess), and the cost is that rows outside the window do not exist: native find-in-page
@@ -33,7 +33,7 @@
 //!   position (`data-virtual-pinned`), as the grids keep their active cell. Browsers also cap an element's
 //!   height (about 17M px in Firefox, 33M px in Chromium), which bounds a single scroll canvas
 //!   to roughly 300k rows of 100px.
-//! - [`VirtualListMode::Auto`] (the default): `ContentVisibility` while
+//! - [`VirtualizeMode::Auto`] (the default): `ContentVisibility` while
 //!   `count <= auto_threshold` (1000 unless overridden), `Windowed` above it. The mode is
 //!   decided from the live `count`, so a list that grows past the threshold re-mounts its rows
 //!   in the other mode. Pass an explicit mode to opt out (a heavy row at 2000 rows may want
@@ -59,65 +59,22 @@ use crate::r#virtual::{
     cv_chunks, measured_px, pin_in_flow, use_virtual_bridge, Bridge, ChunkSkip, Engine,
     SizeEstimates, CHUNK_ROWS, DEFAULT_SIZE,
 };
+pub use crate::r#virtual::{VirtualizeMode, DEFAULT_AUTO_THRESHOLD};
 use crate::scroll_area::use_scroll_fade;
 pub use crate::scroll_area::ScrollFade;
 use crate::{merge_attributes, use_unique_id};
 
-/// The row count up to which [`VirtualListMode::Auto`] keeps every row in the DOM.
-///
-/// 1,000 because the cost of keeping every row grows with the count: mounting them is one
-/// main-thread task proportional to the row count (about 90 ms for 1,000 rows and 205 ms, one
-/// 147 ms task, for 5,000 in the demo, release build), while a window mounts about 40 rows
-/// whatever the count. Raise it for lists of cheap rows, lower it for heavy ones.
-pub const DEFAULT_AUTO_THRESHOLD: usize = 1_000;
-
-/// How many consecutive rows [`VirtualListMode::ContentVisibility`] skips (and un-skips)
+/// How many consecutive rows [`VirtualizeMode::ContentVisibility`] skips (and un-skips)
 /// together. Chromium does per-frame work for every element that `content-visibility: auto` may
 /// skip, so skipping each row separately costs the main thread `O(rows)` on every scroll frame;
 /// groups of 20 keep that to `O(rows / 20)`. The grouping lives in `primitives/src/virtual/`
 /// and is shared with `MessageScroller`.
 pub const CONTENT_VISIBILITY_CHUNK: usize = CHUNK_ROWS;
 
-/// How a [`VirtualList`] keeps off-screen rows cheap. See the module doc's "Modes".
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum VirtualListMode {
-    /// [`ContentVisibility`](Self::ContentVisibility) while `count <= auto_threshold`,
-    /// [`Windowed`](Self::Windowed) above it. The default.
-    #[default]
-    Auto,
-    /// Every row stays in the DOM and the browser skips the ones that are off-screen
-    /// (`content-visibility: auto`). Native find-in-page, selection, focus and the accessibility
-    /// tree reach every row (find-in-page: not Safari 18-25). DOM and memory grow with the row
-    /// count.
-    ContentVisibility,
-    /// Only the rows in view plus `buffer` rows each side are mounted. Flat cost for any row
-    /// count; rows outside the window are unreachable by find-in-page and the server renders
-    /// none.
-    Windowed,
-}
-
-impl VirtualListMode {
-    /// The `virtualize` prop's wire spelling: `"auto"`, `"content-visibility"` or `"windowed"`.
-    /// A rendered list's `data-virtualize` is always one of the last two.
-    pub fn as_str(self) -> &'static str {
-        match self {
-            Self::Auto => "auto",
-            Self::ContentVisibility => "content-visibility",
-            Self::Windowed => "windowed",
-        }
-    }
-
-    /// The concrete mode for a list of `count` rows: `self` unless it is `Auto`, which becomes
-    /// `ContentVisibility` up to `auto_threshold` rows and `Windowed` above. Never returns
-    /// `Auto`.
-    pub fn resolve(self, count: usize, auto_threshold: usize) -> Self {
-        match self {
-            Self::Auto if count <= auto_threshold => Self::ContentVisibility,
-            Self::Auto => Self::Windowed,
-            concrete => concrete,
-        }
-    }
-}
+/// The old name of [`VirtualizeMode`], which now lives in the shared virtual engine (backlog row
+/// 343) and is the one `virtualize` type of every virtual component. Kept for one release.
+#[deprecated(since = "0.1.0", note = "renamed `VirtualizeMode`")]
+pub type VirtualListMode = VirtualizeMode;
 
 /// The props for the [`VirtualList`] component.
 #[derive(Props, Clone, PartialEq)]
@@ -150,10 +107,10 @@ pub struct VirtualListProps {
     /// 26.2) treat it as `hidden`: rows that are not mounted stay unfindable, as without the
     /// prop. Ignored by content-visibility mode, whose rows are all in the DOM already.
     pub text_value: Option<Callback<usize, String>>,
-    /// How off-screen rows are kept cheap. Defaults to [`VirtualListMode::Auto`].
-    #[props(default = ReadSignal::new(Signal::new(VirtualListMode::Auto)))]
-    pub virtualize: ReadSignal<VirtualListMode>,
-    /// With [`VirtualListMode::Auto`]: the largest `count` that keeps every row in the DOM.
+    /// How off-screen rows are kept cheap. Defaults to [`VirtualizeMode::Auto`].
+    #[props(default = ReadSignal::new(Signal::new(VirtualizeMode::Auto)))]
+    pub virtualize: ReadSignal<VirtualizeMode>,
+    /// With [`VirtualizeMode::Auto`]: the largest `count` that keeps every row in the DOM.
     /// Defaults to [`DEFAULT_AUTO_THRESHOLD`] (1000).
     #[props(default = ReadSignal::new(Signal::new(DEFAULT_AUTO_THRESHOLD)))]
     pub auto_threshold: ReadSignal<usize>,
@@ -187,9 +144,9 @@ struct ListBodyProps {
 ///
 /// The `VirtualList` component renders a long list cheaply, in one of two modes (see the
 /// module documentation for the full trade-offs): every row in the DOM with the browser skipping
-/// the off-screen ones ([`VirtualListMode::ContentVisibility`]), or only a window of rows mounted
-/// over a full-height canvas ([`VirtualListMode::Windowed`]). By default
-/// ([`VirtualListMode::Auto`]) it picks the first up to [`DEFAULT_AUTO_THRESHOLD`] rows and the
+/// the off-screen ones ([`VirtualizeMode::ContentVisibility`]), or only a window of rows mounted
+/// over a full-height canvas ([`VirtualizeMode::Windowed`]). By default
+/// ([`VirtualizeMode::Auto`]) it picks the first up to [`DEFAULT_AUTO_THRESHOLD`] rows and the
 /// second above.
 ///
 /// Each row is a `role="listitem"` with `aria-setsize` and `aria-posinset`, in both modes, so a
@@ -199,7 +156,7 @@ struct ListBodyProps {
 ///
 /// ```rust
 /// use dioxus::prelude::*;
-/// use dioxus_primitives::virtual_list::{VirtualList, VirtualListMode};
+/// use dioxus_primitives::virtual_list::{VirtualList, VirtualizeMode};
 ///
 /// #[component]
 /// fn Demo() -> Element {
@@ -209,7 +166,7 @@ struct ListBodyProps {
 ///             // Optional: the height guess for rows that have not been measured/rendered.
 ///             estimate_size: |_idx| 48,
 ///             // Optional: `Auto` (the default) picks by `count`.
-///             virtualize: VirtualListMode::ContentVisibility,
+///             virtualize: VirtualizeMode::ContentVisibility,
 ///             render_item: move |idx: usize| rsx! {
 ///                 article { "Row {idx}" }
 ///             },
@@ -245,7 +202,7 @@ pub fn VirtualList(props: VirtualListProps) -> Element {
     // windowed engine, its scroll listeners) with it. A memo, so only a *change of mode*
     // re-renders this component, not every count change.
     let windowed = use_memo(move || {
-        virtualize().resolve(count(), auto_threshold()) == VirtualListMode::Windowed
+        virtualize().resolve(count(), auto_threshold()) == VirtualizeMode::Windowed
     });
 
     if windowed() {
@@ -549,65 +506,3 @@ const BEFOREMATCH_BRIDGE_JS: &str = r#"
         if (holder) dioxus.send(Number(holder.dataset.findIndex));
     }, true);
 "#;
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn auto_picks_by_count_and_threshold() {
-        let auto = VirtualListMode::Auto;
-        assert_eq!(auto.resolve(0, 1_000), VirtualListMode::ContentVisibility);
-        assert_eq!(
-            auto.resolve(1_000, 1_000),
-            VirtualListMode::ContentVisibility
-        );
-        assert_eq!(auto.resolve(1_001, 1_000), VirtualListMode::Windowed);
-        assert_eq!(auto.resolve(100, 10), VirtualListMode::Windowed);
-    }
-
-    #[test]
-    fn an_explicit_mode_ignores_the_count() {
-        for count in [0, 1, 1_000, 1_001, 1_000_000] {
-            assert_eq!(
-                VirtualListMode::ContentVisibility.resolve(count, 1_000),
-                VirtualListMode::ContentVisibility
-            );
-            assert_eq!(
-                VirtualListMode::Windowed.resolve(count, 1_000),
-                VirtualListMode::Windowed
-            );
-        }
-    }
-
-    #[test]
-    fn the_default_is_auto_and_resolve_never_returns_it() {
-        assert_eq!(VirtualListMode::default(), VirtualListMode::Auto);
-        for count in [0, 1, 999, 1_000, 1_001, usize::MAX] {
-            for mode in [
-                VirtualListMode::Auto,
-                VirtualListMode::ContentVisibility,
-                VirtualListMode::Windowed,
-            ] {
-                assert_ne!(
-                    mode.resolve(count, DEFAULT_AUTO_THRESHOLD),
-                    VirtualListMode::Auto
-                );
-            }
-        }
-    }
-
-    #[test]
-    fn wire_spellings_match_message_scroller() {
-        assert_eq!(
-            VirtualListMode::ContentVisibility.as_str(),
-            "content-visibility"
-        );
-        assert_eq!(
-            VirtualListMode::ContentVisibility.as_str(),
-            crate::message_scroller::Virtualization::ContentVisibility.as_str()
-        );
-        assert_eq!(VirtualListMode::Windowed.as_str(), "windowed");
-        assert_eq!(VirtualListMode::Auto.as_str(), "auto");
-    }
-}
