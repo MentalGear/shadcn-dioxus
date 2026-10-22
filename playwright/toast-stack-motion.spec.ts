@@ -166,10 +166,12 @@ test.describe("toast: a dismissal does not make the stack jump", () => {
     }
     const t = toasts(page, PAUSE);
     await expect(t).toHaveCount(3);
-    const leaving = await t.nth(1).evaluate((el) => el.id); // the middle one expires second
+    const leaving = await t.last().evaluate((el) => el.id); // the oldest expires first
     await startSampler(page, PAUSE);
-    await expect(t).toHaveCount(1, { timeout: 8000 });
+    await expect(t).toHaveCount(2, { timeout: 8000 });
+    await page.waitForTimeout(150);
     const { motions } = analyse(await stopSampler(page), leaving);
+    expect(motions.length, "a newer toast was watched throughout").toBeGreaterThan(0);
     for (const m of motions) expect(m.jumpAfter, `no jump at an unmount (${JSON.stringify(m)})`).toBeLessThan(1);
   });
 
