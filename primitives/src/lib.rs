@@ -34,6 +34,7 @@ pub mod color_picker;
 pub mod combobox;
 pub mod command;
 pub mod context_menu;
+pub mod data_view;
 #[cfg(feature = "calendar")]
 pub mod date_picker;
 pub mod default_checked;

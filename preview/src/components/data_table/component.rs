@@ -39,7 +39,7 @@ mod state;
 #[allow(unused_imports)]
 pub use columns::{use_data_table, Column, ColumnAlign, DataTableModel, DataTableOptions, DataTableState, RowFn};
 #[allow(unused_imports)]
-pub use model::{derive, TableState, TableView};
+pub use model::{derive, RowCompare, TableState, TableView};
 #[allow(unused_imports)]
 pub use state::{filter_rows, includes_string, paginate, sort_rows, sort_rows_by, tri_state, SortDirection};
 
@@ -169,8 +169,8 @@ pub fn DataTableToolbar(props: DataTableToolbarProps) -> Element {
 /// Props for [`DataTablePagination`].
 #[derive(Props, Clone, PartialEq)]
 pub struct DataTablePaginationProps {
-    /// Number of rows currently selected (across every page, not just the
-    /// one visible).
+    /// Number of selected rows that pass the filter (across every page, not
+    /// just the one visible): the left half of "x of y row(s) selected".
     pub selected_count: usize,
 
     /// Number of rows in the filtered result set (before pagination).
@@ -407,7 +407,7 @@ pub fn DataTable<T: Clone + PartialEq + 'static>(props: DataTableProps<T>) -> El
             }
             if !props.page_sizes.is_empty() {
                 DataTablePagination {
-                    selected_count: view.selected_count,
+                    selected_count: view.selected_in_view,
                     total_count: view.filtered_count,
                     page: view.page,
                     page_count,
