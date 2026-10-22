@@ -3,10 +3,10 @@
 //! this file adds the typed column definition and the signal that holds the
 //! state. Same `#[path]` sibling wiring as `state.rs`.
 
-use super::model::{derive, TableState, TableView};
+use super::model::{TableState, TableView};
 use super::state::SortDirection;
 use dioxus::prelude::*;
-use std::cmp::Ordering;
+use dioxus_primitives::data_view::{derive, Field, View};
 use std::rc::Rc;
 
 /// A shared closure over a row, compared by identity so it can sit in props
@@ -60,10 +60,10 @@ impl ColumnAlign {
     }
 }
 
-type Comparator<T> = Rc<dyn Fn(&T, &T) -> Ordering>;
-
 /// One column of a data table: an id, a header, how to render a cell, and
-/// (optionally) a typed sort key, filter text, width and alignment.
+/// (optionally) a typed sort key, filter text, width and alignment. The sort
+/// key and filter text are a [`Field`] of `dioxus_primitives::data_view`; the
+/// rest is what a table adds to draw it.
 ///
 /// ```ignore
 /// Column::new("email", "Email", |p: &Payment| rsx! { "{p.email}" })
@@ -73,16 +73,14 @@ type Comparator<T> = Rc<dyn Fn(&T, &T) -> Ordering>;
 /// ```
 pub struct Column<T: 'static> {
     /// Stable id: what `aria-sort`, the sort state and a header activation
-    /// refer to. Unique within a table.
+    /// refer to. Unique within a table. Same as `field.id`.
     pub id: String,
+    /// The sort key and filter text (`id` is repeated in it).
+    pub field: Field<T>,
     /// The header text.
     pub header: String,
     /// Renders this column's cell for a row.
     pub cell: RowFn<T, Element>,
-    /// The ascending order of this column's sort key; `None` = not sortable.
-    pub(crate) compare: Option<Comparator<T>>,
-    /// The text the filter matches for a row; `None` = not filtered.
-    pub filter_text: Option<RowFn<T, String>>,
     /// An optional CSS width for the column (`"8rem"`).
     pub width: Option<String>,
     /// Header and cell alignment.
@@ -92,12 +90,12 @@ pub struct Column<T: 'static> {
 impl<T: 'static> Column<T> {
     /// A plain, unsorted, unfiltered column.
     pub fn new(id: impl Into<String>, header: impl Into<String>, cell: impl Fn(&T) -> Element + 'static) -> Self {
+        let id = id.into();
         Self {
-            id: id.into(),
+            field: Field::new(id.clone()),
+            id,
             header: header.into(),
             cell: RowFn::new(cell),
-            compare: None,
-            filter_text: None,
             width: None,
             align: ColumnAlign::Start,
         }
@@ -108,7 +106,7 @@ impl<T: 'static> Column<T> {
     /// button and `aria-sort`.
     #[must_use]
     pub fn sortable<K: Ord>(mut self, key: impl Fn(&T) -> K + 'static) -> Self {
-        self.compare = Some(Rc::new(move |a, b| key(a).cmp(&key(b))));
+        self.field = self.field.sortable(key);
         self
     }
 
@@ -117,7 +115,7 @@ impl<T: 'static> Column<T> {
     /// does).
     #[must_use]
     pub fn filterable(mut self, text: impl Fn(&T) -> String + 'static) -> Self {
-        self.filter_text = Some(RowFn::new(text));
+        self.field = self.field.filterable(text);
         self
     }
 
@@ -137,7 +135,7 @@ impl<T: 'static> Column<T> {
 
     /// Whether the header offers a sort button.
     pub fn is_sortable(&self) -> bool {
-        self.compare.is_some()
+        self.field.is_sortable()
     }
 }
 
@@ -145,10 +143,9 @@ impl<T: 'static> Clone for Column<T> {
     fn clone(&self) -> Self {
         Self {
             id: self.id.clone(),
+            field: self.field.clone(),
             header: self.header.clone(),
             cell: self.cell.clone(),
-            compare: self.compare.clone(),
-            filter_text: self.filter_text.clone(),
             width: self.width.clone(),
             align: self.align,
         }
@@ -162,12 +159,7 @@ impl<T: 'static> PartialEq for Column<T> {
             && self.cell == other.cell
             && self.width == other.width
             && self.align == other.align
-            && match (&self.compare, &other.compare) {
-                (Some(a), Some(b)) => Rc::ptr_eq(a, b),
-                (None, None) => true,
-                _ => false,
-            }
-            && self.filter_text == other.filter_text
+            && self.field == other.field
     }
 }
 
@@ -275,9 +267,11 @@ impl<T: 'static> DataTableModel<T> {
 /// to render: `rows` is the full data, `columns` say how each column sorts and
 /// filters, `row_key` gives a row a stable identity for selection.
 ///
-/// `options` is read on the first render only. Render the returned
-/// [`DataTableModel::view`] into `Table` yourself, or hand the same inputs to
-/// the `DataTable` component, which does exactly that.
+/// `options` is read on the first render only. The derivation
+/// (`dioxus_primitives::data_view::derive`) is memoised on the state, the rows
+/// and the columns, and works on indices: only the current page's rows are
+/// cloned. Render the returned [`DataTableModel::view`] into `Table` yourself,
+/// or hand the same inputs to the `DataTable` component, which does exactly that.
 pub fn use_data_table<T: Clone + 'static>(
     rows: ReadSignal<Vec<T>>,
     columns: &[Column<T>],
@@ -285,20 +279,13 @@ pub fn use_data_table<T: Clone + 'static>(
     options: DataTableOptions,
 ) -> DataTableModel<T> {
     let state = use_signal(|| TableState::new(options.page_size, options.sort));
+    let fields: Vec<Field<T>> = columns.iter().map(|c| c.field.clone()).collect();
+    let row_key = row_key.clone();
+    let derived: Memo<View> = use_memo(use_reactive!(|(fields, row_key)| {
+        derive(&rows.read(), &state.read(), &fields, |row| row_key.call(row))
+    }));
     let current = state.read().clone();
-    let compare = current
-        .sort
-        .as_ref()
-        .and_then(|(id, _)| columns.iter().find(|c| &c.id == id))
-        .and_then(|c| c.compare.clone());
-    let all = rows.read();
-    let view = derive(
-        &all,
-        &current,
-        |row| columns.iter().filter_map(|c| c.filter_text.as_ref().map(|f| f.call(row))).collect(),
-        compare.as_deref(),
-        |row| row_key.call(row),
-    );
+    let view = TableView::from_view(&rows.read(), &derived.read());
     DataTableModel {
         state: DataTableState { state },
         view,

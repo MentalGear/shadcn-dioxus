@@ -121,6 +121,7 @@ gates=(
   "check-popup-root-reset|scripts/check-popup-root-reset.sh"
   "check-component-root-reset|scripts/check-component-root-reset.sh"
   "check-destructive-text|scripts/check-destructive-text.sh"
+  "check-collection-derive|scripts/check-collection-derive.sh"
   "check-css-state-recipes|scripts/check-css-state-recipes.sh"
   "check-focus-outline-reset|scripts/check-focus-outline-reset.sh"
   "check-spec-viewport-bound|scripts/check-spec-viewport-bound.sh"
