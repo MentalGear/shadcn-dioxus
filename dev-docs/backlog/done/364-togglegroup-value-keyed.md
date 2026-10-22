@@ -24,3 +24,7 @@ S.
 ## Detail
 
 See the design note's "The model", "Migration path" and "Backlog impact" sections.
+
+## Landed
+
+`ToggleGroup` takes `value` / `default_value` / `on_value_change` (`HashSet<String>`), `ToggleItem` takes `value` (unique id; without one the item is keyed by its `index`, so the deprecated `pressed` / `default_pressed` / `on_pressed_change` index API still compiles and is adapted over the same set). Pressed state follows the value through a reorder or an insertion (`toggle_group.spec.ts`, reorder demo). Callers migrated: i18n locale switcher, theme swatches, message_scroller anchoring demo, photo_wall view switch, docs_nav, the toggle_group demos. The `HashSet<usize>` allowlist in `check-collection-derive.sh` is gone.
