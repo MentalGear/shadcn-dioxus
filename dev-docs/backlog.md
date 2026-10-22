@@ -41,14 +41,12 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (52)
+## Open rows (50)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
 | [4](backlog/004-first-3-browser-ci-run-treat-as-calibration-not.md) | First 3-browser CI run — treat as calibration. Not done — see 2026-09-04 Notes below for what's now known and… | A manual dispatch of playwright.yml on a GitHub-hosted runner: all workflows are… | S–M | ci |
-| [6](backlog/006-upstream-engagement-where-fixes-land-open.md) | Upstream engagement — where fixes land (open decision #1) + talking to upstream/fork authors (decision #4) | User decision | S to start | upstream |
 | [10](backlog/010-phase-5-collision-detection.md) | Phase 5 — collision detection | 5.1 REFRAMED by the 2026-09-01 bits-ui/Radix source comparison, FLIP sub-problem landed same day… | S (flip, done) + S (JS-fallback shift… | theme |
-| [14](backlog/014-nudge-dioxus-framework-issues-2962-onclose-4319.md) | Nudge Dioxus framework issues: #2962 (onclose), #4319 (dialog methods), ancestor-traversal gap (complaints.md) | User decision (outward-facing) | S | overlays |
 | [15](backlog/015-scrollbar-gutter-on-older-webkit-ios-momentum.md) | scrollbar-gutter on older WebKit + iOS momentum scroll | A product decision that those targets matter | M | misc |
 | [23](backlog/023-preview-s-desktop-feature-lacks-dioxus.md) | preview's desktop feature lacks dioxus-primitives/web — a webview-backed desktop build would render the… | OPEN (verification only): FIXED 2026-09-26 (3633b20), verified at feature-resolution level only… | S | overlays |
 | [28](backlog/028-verify-the-2026-09-02-ios-keyboard-anchor.md) | Verify the 2026-09-02 iOS-keyboard anchor-tracking fix (use_anchor_position_fallback… | User re-test after deploy — the sandbox has no WebKit, and page.setViewportSize() cannot reproduce… | S to verify | overlays |
@@ -98,7 +96,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [364](backlog/364-togglegroup-value-keyed.md) | ToggleGroup: pressed state keyed by value, not index (optional) | BACKLOG (owner asked 2026-10-22 to deconstruct the collection model to its roots; design note… | S. | components |
 | [365](backlog/365-final-sweep-refactor-and-root-cause-review.md) | Final sweep: refactor review with the deconstruct-to-root and solve-by-construction exercise, proposals to the owner | BACKLOG (owner 2026-10-22, backlog thread: "final sweep, check for refactors and also run there the… | M for the review. Each accepted… | process |
 
-## Done rows (286)
+## Done rows (288)
 
 | # | Item | Updated |
 |---|---|---|
@@ -106,12 +104,14 @@ proposing one is closed as out of scope (row 337 is the first).
 | [2](backlog/done/002-phase-4-4-popover-popover-auto-top-layer-for.md) | Phase 4.4 — popover/popover="auto" top layer for non-modal overlays | unknown |
 | [3](backlog/done/003-phase-4-2-native-dialog-showmodal-for-dialog.md) | Phase 4.2 — native &lt;dialog&gt;+showModal() for Dialog and AlertDialog | 2026-09-01 |
 | [5](backlog/done/005-tier-2-harness-completion-rules-5-checkvalidity.md) | Tier-2 harness completion — rules 5 (checkValidity/reportValidity/willValidate), 7 (label association), 8… | 2026-09-19 |
+| [6](backlog/done/006-upstream-engagement-where-fixes-land-open.md) | Upstream engagement — where fixes land (open decision #1) + talking to upstream/fork authors (decision #4) | 2026-10-22 |
 | [7](backlog/done/007-wervice-tooltip-fade-out-a704c517-upstream-pr.md) | Wervice tooltip fade-out (a704c517, upstream PR #293) | 2026-09-18 |
 | [8](backlog/done/008-select-trigger-apg-select-only-combobox-role.md) | Select trigger → APG select-only-combobox role (role="combobox") | 2026-09-18 |
 | [9](backlog/done/009-select-listbox-scroll-lock.md) | Select listbox scroll lock | 2026-09-18 |
 | [11](backlog/done/011-phase-6-typeahead-for-menus-dq-typeahead-rs-not.md) | Phase 6 — typeahead for menus (dq typeahead.rs, not select/) | 2026-09-18 |
 | [12](backlog/done/012-phase-6-pub-mod-portal-toggle-class-prop-public.md) | Phase 6 — pub mod portal, Toggle class prop, public CalendarDayState (upstream #199) | 2026-09-18 |
 | [13](backlog/done/013-phase-6-rtl-dq-direction-rs-key-flip-concept.md) | Phase 6 — RTL (dq direction.rs + key-flip concept) | 2026-10-05 |
+| [14](backlog/done/014-nudge-dioxus-framework-issues-2962-onclose-4319.md) | Nudge Dioxus framework issues: #2962 (onclose), #4319 (dialog methods), ancestor-traversal gap (complaints.md) | 2026-10-22 |
 | [16](backlog/done/016-component-candidates-new-components-from.md) | Component candidates — new components from upstream PRs, the fork network, and catalog gaps | 2026-10-19 |
 | [17](backlog/done/017-mutation-testing-cargo-mutants-scoped-to-the.md) | Mutation testing (cargo-mutants), scoped to the algorithmic modules that already carry unit tests (slider… | 2026-08-31 |
 | [18](backlog/done/018-css-anchor-positioning-cross-browser-fallback.md) | CSS Anchor Positioning cross-browser fallback for anchored overlays | 2026-09-01 |

@@ -1,10 +1,10 @@
 ---
 id: 6
 title: "Upstream engagement — where fixes land (open decision #1) + talking to upstream/fork authors (decision #4)"
-status: "User decision"
+status: "CLOSED 2026-10-22: the owner decided on no upstream engagement. Local fixes and workarounds stay as…"
 size: "S to start"
 area: upstream
-updated: 2026-09-19
+updated: 2026-10-22
 ---
 
 # Row 6: Upstream engagement — where fixes land (open decision #1) + talking to upstream/fork authors (decision #4)
@@ -14,6 +14,8 @@ updated: 2026-09-19
 Upstream engagement — where fixes land (open decision #1) + talking to upstream/fork authors (decision #4)
 
 ## Status / trigger
+
+**CLOSED 2026-10-22: the owner decided on no upstream engagement.** Local fixes and workarounds stay as they are; nothing is filed upstream.
 
 **User decision**
 

@@ -1,10 +1,10 @@
 ---
 id: 14
 title: "Nudge Dioxus framework issues: #2962 (onclose), #4319 (dialog methods), ancestor-traversal gap (complaints.md)"
-status: "User decision (outward-facing)"
+status: "CLOSED 2026-10-22: the owner decided on no upstream engagement. Local fixes and workarounds stay as…"
 size: "S"
 area: overlays
-updated: 2026-09-03
+updated: 2026-10-22
 ---
 
 # Row 14: Nudge Dioxus framework issues: #2962 (onclose), #4319 (dialog methods), ancestor-traversal gap (complaints.md)
@@ -14,6 +14,8 @@ updated: 2026-09-03
 Nudge Dioxus framework issues: #2962 (`onclose`), #4319 (dialog methods), ancestor-traversal gap (`complaints.md`)
 
 ## Status / trigger
+
+**CLOSED 2026-10-22: the owner decided on no upstream engagement.** Local fixes and workarounds stay as they are; nothing is filed upstream.
 
 User decision (outward-facing)
 
