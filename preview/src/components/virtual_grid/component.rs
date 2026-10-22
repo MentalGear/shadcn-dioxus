@@ -1,7 +1,7 @@
 use dioxus::prelude::*;
 #[allow(unused_imports)] // a consumer-facing surface; this crate's own demos use a subset
 pub use dioxus_primitives::virtual_grid::{
-    ScrollFade, TileRect, VirtualGridProps, VirtualJustifiedGridProps, VirtualWrapGridProps,
+    ScrollFade, SortDirection, TileRect, VirtualGridProps, VirtualJustifiedGridProps, VirtualWrapGridProps,
 };
 use dioxus_primitives::{dioxus_attributes::attributes, merge_attributes};
 
@@ -23,6 +23,8 @@ pub fn VirtualGrid(props: VirtualGridProps) -> Element {
             column_width: props.column_width,
             render_cell: props.render_cell,
             render_header: props.render_header,
+            column_sort: props.column_sort,
+            row_selected: props.row_selected,
             header_height: props.header_height,
             sticky_first_column: props.sticky_first_column,
             row_buffer: props.row_buffer,
