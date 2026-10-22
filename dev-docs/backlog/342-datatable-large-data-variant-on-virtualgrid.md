@@ -1,10 +1,10 @@
 ---
 id: 342
 title: "DataTable: a large-data variant rendered through VirtualGrid"
-status: "BACKLOG (owner 2026-10-21; amended 09:35). Needs rows 340, 343 and 341."
+status: "BACKLOG (owner 2026-10-21; amended 09:35; scope widened 2026-10-22). Needs rows 340, 343 and 341.…"
 size: "S (about 1 day)"
 area: components
-updated: 2026-10-21
+updated: 2026-10-22
 ---
 
 # Row 342: DataTable: a large-data variant rendered through VirtualGrid
@@ -15,7 +15,13 @@ A DataTable demo that renders the row 340 model through VirtualGrid (for example
 
 ## Status / trigger
 
-BACKLOG (owner 2026-10-21; amended 09:35). Needs rows 340, 343 and 341.
+BACKLOG (owner 2026-10-21; amended 09:35; scope widened 2026-10-22). Needs rows 340, 343 and 341.
+
+**Amendment 2026-10-22 (owner, in the backlog thread): one collection model for every view.** Before the VirtualGrid variant, move row 340's `TableState` + `derive` out of `data_table/` into one shared collection model that Table/`TableRows`, VirtualList, VirtualGrid and the drag-and-drop list all render from:
+- **Manual order:** the state gains an ordered list of row keys; with no active sort the view follows it, and a drag or keyboard "move up/down" rewrites it (reorderable lists and table rows from one model; the drag-and-drop list becomes a renderer of it).
+- **Fields, not columns, at the model level:** a field says how a row sorts and filters; a list is the model with one or a few fields. Table `Column<T>` = field + header + cell, plus a table-only column order and visibility state (reorderable columns).
+- **Renderers stay separate** so the semantics stay right (`list`/`listbox` with free-form items vs `table`/`grid` with cells, as shadcn keeps them); a list is not rendered as a one-column table.
+- `TableState` must keep its public transitions (or a deprecated alias) so row 340's `DataTable` and `use_data_table` callers keep compiling.
 
 ## Size
 
