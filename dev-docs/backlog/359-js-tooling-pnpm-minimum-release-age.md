@@ -1,6 +1,6 @@
 ---
 id: 359
-title: "JS tooling: pnpm in playwright/ and preview/ with minimumReleaseAge and install scripts off"
+title: "JS tooling: pnpm in playwright/ and preview/ with minimumReleaseAge, exact pins and install scripts off"
 status: "BACKLOG (owner approved 2026-10-22, decision card in the \"Switching npm to Bun\" thread; background…"
 size: "S-M, about half a day."
 area: tooling
@@ -27,6 +27,9 @@ S-M, about half a day.
   - `minimumReleaseAge` of 4320 minutes (3 days). Pick the value and write it down.
   - Install scripts off. pnpm 10 already skips dependency lifecycle scripts unless they're listed in `onlyBuiltDependencies`. Keep that list empty. The only script in today's lockfiles is `fsevents`, which only installs on macOS.
   - `packageManager` pinned in each `package.json` (corepack).
+  - **Pin every direct dependency exactly** (owner 2026-10-22 12:58Z). No `^` or `~` in either `package.json`; pin to the versions the lockfile resolves today. Set `save-exact=true` so later adds stay pinned. The frozen lockfile with integrity hashes already pins transitive deps.
+  - Drop `create-stylelint` from `preview/` dependencies. It's a scaffolding CLI that nothing runs. Check with grep first.
+  - `fsevents` (optional macOS-only dep of `playwright`, used only for watch mode) needs no allowlisting. Its 2.3.2 tarball ships a prebuilt `fsevents.node` and has no install script.
 - **Installs:** `pnpm install --frozen-lockfile` replaces `npm ci` everywhere.
 - **`scripts/session-setup.sh`:** swap `npm_ci_if_stale` for the pnpm install. Replace the `node_modules/.package-lock.json` freshness marker with pnpm's `node_modules/.modules.yaml`. Make sure pnpm is present (corepack enable, or install pinned). Check that symlinked `node_modules` in worktree lanes still resolves, since pnpm's layout is symlinks into `.pnpm`.
 - **Gates:**
