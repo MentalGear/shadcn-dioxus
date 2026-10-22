@@ -98,3 +98,18 @@
 .dx-table-footer .dx-table-row:last-child {
   border-bottom: none;
 }
+
+/* A sticky header (`TableHeader { sticky: true }`) in a scrolling container: the cells stick,
+ * not the row group, and an inset shadow draws the row's border, which `border-collapse`
+ * would leave behind when the cell moves. */
+.dx-table-header[data-sticky="true"] .dx-table-head {
+  position: sticky;
+  z-index: var(--dx-z-raise);
+  top: 0;
+  background-color: var(--dx-background);
+  box-shadow: inset 0 -1px 0 var(--dx-border);
+}
+
+.dx-table-header[data-sticky="true"] .dx-table-row {
+  border-bottom: none;
+}

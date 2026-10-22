@@ -1,7 +1,7 @@
 ---
 id: 357
 title: "Date picker natural_language unit test fails when a run crosses midnight UTC"
-status: "OPEN."
+status: "Already fixed on main: parse_phrase(input, today) in…"
 size: "XS: inject the clock in the test."
 area: primitives
 updated: 2026-10-22
@@ -15,7 +15,7 @@ Reported by the docs-site lane (batch 4): the date-picker `natural_language` tes
 
 ## Status / trigger
 
-OPEN.
+Already fixed on main: `parse_phrase(input, today)` in `preview/src/components/date_picker/variants/natural_language/mod.rs` takes the reference date, `Demo` passes `UtcDateTime::now().date()` once, and every unit test uses the fixed `TODAY = 2026-10-14` (or an explicit date). No test reads the clock. The report was against an older tree.
 
 ## Size
 

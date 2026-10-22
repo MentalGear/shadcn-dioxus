@@ -98,10 +98,10 @@ async function installSnap(page: Page) {
     const off = document.createElement("style");
     off.textContent = "*,*::before,*::after{transition:none!important;animation:none!important}";
     document.head.appendChild(off);
-    (window as unknown as { __dxSnap: (sel: string) => unknown }).__dxSnap = (sel: string) => {
+    (window as unknown as { __dxSnap: (sel: string) => string }).__dxSnap = (sel: string) => {
       const out: Record<string, Record<string, string>> = {};
       const root = document.querySelector(sel);
-      if (!root) return out;
+      if (!root) return "{}";
       // Key = the ancestors' keys + tag.classes + the nth such sibling, so content a client render inserts next to an
       // element (a chart's axes, a select's options) does not renumber the elements that were already there.
       const label = (el: Element) => {
@@ -129,13 +129,15 @@ async function installSnap(page: Page) {
         }
       };
       walk(root, label(root));
-      return out;
+      // One string across the CDP boundary: Playwright serialises an evaluate result value by value, which cost more
+      // than computing the styles (about 0.65 s of every 1,500-element snapshot).
+      return JSON.stringify(out);
     };
   }, PROPS);
 }
 
-const snapOf = (page: Page, sel: string): Promise<Snap> =>
-  page.evaluate((s) => (window as unknown as { __dxSnap: (sel: string) => Snap }).__dxSnap(s), sel);
+const snapOf = async (page: Page, sel: string): Promise<Snap> =>
+  JSON.parse(await page.evaluate((s) => (window as unknown as { __dxSnap: (sel: string) => string }).__dxSnap(s), sel));
 
 /**
  * Every computed-style difference between two snapshots of the same subtree, over the elements both have in the same state
@@ -347,10 +349,12 @@ test.describe("1. every prerendered page's head carries the complete stylesheet 
  * (the CLS bound is what holds them to "reserved space"). A route that starts differing fails until somebody looks and adds it
  * here with a reason; the list is not a place to hide a late stylesheet (that is test 1 and the late-sheet checks).
  * markdown (2026-10-19): its streaming demo composes a MessageScroller, which stays `visibility: hidden` until the client reveals it.
+ * table (2026-10-22, row 343): the virtualized demo's windowed body is rendered with no rows on the server and its bottom spacer
+ * shrinks once the first rows mount (740000 px -> 739334 px), like virtual_list.
  */
 const CLIENT_MEASURED = new Set([
   "area_chart", "avatar", "bar_chart", "carousel", "chart", "chart_tooltip", "data_table", "drag_and_drop_list", "form", "item",
-  "line_chart", "markdown", "message_scroller", "pie_chart", "progress", "resizable", "select", "toast", "top_layer", "virtual_list",
+  "line_chart", "markdown", "message_scroller", "pie_chart", "progress", "resizable", "select", "table", "toast", "top_layer", "virtual_list",
 ]);
 
 test.describe("2. hard load: the static page is the page", () => {
@@ -386,8 +390,9 @@ test.describe("2. hard load: the static page is the page", () => {
         await ctx.close();
         return { snaps, late, ...sets, cls };
       };
-      const off = await read(false);
-      const on = await read(true);
+      // Two independent contexts (no shared state, cookies or cache), so they run side by side: the JavaScript-off read
+      // is nearly all waiting on the server and the style walk, the hydrated one mostly waits on wasm and its settle window.
+      const [off, on] = await Promise.all([read(false), read(true)]);
       if (!CLIENT_MEASURED.has(slug)) {
         for (const scheme of ["light", "dark"] as const) {
           const d = diffSnaps(off.snaps[scheme], on.snaps[scheme]);
@@ -421,7 +426,7 @@ test.describe("3. client-side navigation: no route is painted with late styles",
       const before = await headAndCovers(page);
       // The state the browser would paint: the moment the route's article exists, before anything else can run.
       await page.evaluate(() => {
-        const w = window as unknown as { __first: unknown; __dxSnap: (s: string) => unknown; __cls: number[]; __sheets: string[] };
+        const w = window as unknown as { __first: unknown; __dxSnap: (s: string) => string; __cls: number[]; __sheets: string[] };
         w.__first = null;
         w.__cls.length = 0;
         w.__sheets.length = 0;
@@ -441,7 +446,8 @@ test.describe("3. client-side navigation: no route is painted with late styles",
         .poll(() => pendingSheets(page), { timeout: 20_000 })
         .toBe(0);
       await page.waitForTimeout(400);
-      const first = (await page.evaluate(() => (window as unknown as { __first: Snap | null }).__first)) as Snap | null;
+      const firstJson = await page.evaluate(() => (window as unknown as { __first: string | null }).__first);
+      const first = firstJson === null ? null : (JSON.parse(firstJson) as Snap);
       expect(first, "the new route's article was observed").toBeTruthy();
       const settled = await snapOf(page, "article.dx-component-page");
       if (!CLIENT_MEASURED.has(slug)) {
@@ -475,7 +481,7 @@ test.describe("4. a popover's content is styled the moment it first mounts", () 
       await page.waitForTimeout(500);
       await installSnap(page);
       await page.evaluate((marker) => {
-        const w = window as unknown as { __firstOpen: unknown; __dxSnap: (s: string) => unknown };
+        const w = window as unknown as { __firstOpen: unknown; __dxSnap: (s: string) => string };
         w.__firstOpen = null;
         const mo = new MutationObserver(() => {
           const cell = document.querySelector(marker);
@@ -495,7 +501,8 @@ test.describe("4. a popover's content is styled the moment it first mounts", () 
         .poll(() => pendingSheets(page), { timeout: 20_000 })
         .toBe(0);
       await page.waitForTimeout(400);
-      const first = (await page.evaluate(() => (window as unknown as { __firstOpen: Snap | null }).__firstOpen)) as Snap | null;
+      const firstJson = await page.evaluate(() => (window as unknown as { __firstOpen: string | null }).__firstOpen);
+      const first = firstJson === null ? null : (JSON.parse(firstJson) as Snap);
       expect(first, "the popover content was observed when it first mounted").toBeTruthy();
       const settled = await snapOf(page, "[data-first-open-probe]");
       const d = diffSnaps(first!, settled);

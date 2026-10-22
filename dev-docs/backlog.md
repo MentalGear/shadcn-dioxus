@@ -41,14 +41,12 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (49)
+## Open rows (50)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
 | [4](backlog/004-first-3-browser-ci-run-treat-as-calibration-not.md) | First 3-browser CI run — treat as calibration. Not done — see 2026-09-04 Notes below for what's now known and… | A manual dispatch of playwright.yml on a GitHub-hosted runner: all workflows are… | S–M | ci |
-| [6](backlog/006-upstream-engagement-where-fixes-land-open.md) | Upstream engagement — where fixes land (open decision #1) + talking to upstream/fork authors (decision #4) | User decision | S to start | upstream |
 | [10](backlog/010-phase-5-collision-detection.md) | Phase 5 — collision detection | 5.1 REFRAMED by the 2026-09-01 bits-ui/Radix source comparison, FLIP sub-problem landed same day… | S (flip, done) + S (JS-fallback shift… | theme |
-| [14](backlog/014-nudge-dioxus-framework-issues-2962-onclose-4319.md) | Nudge Dioxus framework issues: #2962 (onclose), #4319 (dialog methods), ancestor-traversal gap (complaints.md) | User decision (outward-facing) | S | overlays |
 | [15](backlog/015-scrollbar-gutter-on-older-webkit-ios-momentum.md) | scrollbar-gutter on older WebKit + iOS momentum scroll | A product decision that those targets matter | M | misc |
 | [23](backlog/023-preview-s-desktop-feature-lacks-dioxus.md) | preview's desktop feature lacks dioxus-primitives/web — a webview-backed desktop build would render the… | OPEN (verification only): FIXED 2026-09-26 (3633b20), verified at feature-resolution level only… | S | overlays |
 | [28](backlog/028-verify-the-2026-09-02-ios-keyboard-anchor.md) | Verify the 2026-09-02 iOS-keyboard anchor-tracking fix (use_anchor_position_fallback… | User re-test after deploy — the sandbox has no WebKit, and page.setViewportSize() cannot reproduce… | S to verify | overlays |
@@ -70,13 +68,11 @@ proposing one is closed as out of scope (row 337 is the first).
 | [217](backlog/217-dependency-audit-follow-ups-what-users-pay-for.md) | Dependency audit follow-ups (what users pay for in compile time and supply chain) | PARTLY LANDED 2026-10-18 (lane deps 04ad7ddf): features calendar/color-picker, no build script… | S-M each | build |
 | [218](backlog/218-popup-style-isolation-top-layer-popups-stay-dom.md) | Popup style isolation: top-layer popups stay DOM descendants of their trigger, so free-content rules in an… | NARROWED 2026-10-21: PARTLY LANDED 2026-10-15 (lane ancestorleak 900f394 + main-loop 526b51d… | M | overlays |
 | [250](backlog/250-container-reset-loses-unpushed-work.md) | A container reset to a fresh clone loses every unpushed lane commit and all session scratch | CONSTRUCTION LANDED 2026-10-19 (lane-rules: push lane/* after every commit); redo of the lost work… | S | infra |
-| [252](backlog/252-virtualgrid-ssr-height-off-by-one-row.md) | VirtualGrid: the prerendered inner wrapper is one row shorter than after hydration (175000 px -&gt; 175036 px) | OPEN, inherent (cannot be decided at render): measured canvas | S | components |
 | [257](backlog/257-user-select-sidebar-spec-goto-hung-to-the-90-s-timeout-once.md) | user-select.spec.ts /component/sidebar/ page.goto hung to the 90 s timeout once in the release suite | OPEN (not reproducible: 1 failure in the batch-A release suite; 17 of 17 green since on release and… | S | playwright |
 | [265](backlog/265-upstream-ai-elements-code-block-trace-chat.md) | Upstream ai-elements (chat, message, code-block, trace, checkpoint, ...) vs our chat kit | PARTIAL 2026-10-19 (items 1-2 landed: code_block, trace, checkpoint and chat demos; item 3 is an… | L | chat |
 | [266](backlog/266-repo-cleanup-archive-historical-dev-docs.md) | Repo cleanup: archive historical dev-docs, trim CLAUDE.md and the big dev docs, split backlog.md | APPROVED 2026-10-19 (owner: run it when safe, in the Round 6 sweep); starts once no feature lane… | M-L | process |
 | [267](backlog/267-split-oversized-source-files-into-modules.md) | Split oversized source files into modules (carousel.rs, carousel.spec.ts, main.rs, top_layer.rs, calendar.rs, date_picker.rs) | BACKLOG (owner approved 2026-10-19 on the cleanup plan; Round 6, before the 152b suite prune).… | M | process |
 | [268](backlog/268-select-scroll-buttons-and-item-aligned-position.md) | Select scroll buttons and position=item-aligned | OPEN. Scroll buttons written and compiling, browser spec not yet run (2026-10-20); item-aligned not… | S-M (scroll buttons), M-L (item-aligned) | select |
-| [285](backlog/285-docs-preview-card-light-mode-tint.md) | Docs preview card: a visible light-mode tint without breaking Toggle hover contrast | OPEN. Needs the owner's call on the light-mode tint strength once the Toggle/Pagination hover is… | S | preview |
 | [295](backlog/295-press-feedback-on-touch-taps-already-on-by.md) | Press feedback on touch taps: already on by default, so check why taps don't show it | PARTLY LANDED 2026-10-20 (theme-touch lane 1ba0b2e5, cf64037a); device re-test open. Row 205… | S (or none) | theme |
 | [296](backlog/296-combobox-list-drifts-from-its-input-on-ios-after.md) | Combobox list drifts from its input on iOS after long scrolling | OPEN (owner report 2026-10-19), needs device verification. Related rows: 28 (iOS keyboard anchor… | M + device check | overlays |
 | [304](backlog/304-radial-chart-tooltips-share-the-gap-split-equally.md) | Radial chart tooltips share the gap, split equally per ring (lowest priority) | PARKED (lowest priority; ask the owner before starting), owner 2026-10-19. Ask the owner whether… | S–M (to scope) | primitives |
@@ -87,15 +83,20 @@ proposing one is closed as out of scope (row 337 is the first).
 | [322](backlog/322-run-the-full-release-suite-per-deploy-not.md) | Run the full release suite per deploy, not per merge batch | BACKLOG (owner: maybe, 2026-10-21) | S | tests |
 | [325](backlog/325-heavy-cross-page-oracles-construct-the-causes-away.md) | Heavy cross-page oracles: construct the causes away, run what remains per deploy | PARTLY LANDED 2026-10-21: the popup half (row 259, batch A) and the all-routes half (row 327, batch… | M | tests |
 | [329](backlog/329-audit-3-ssr-vs-first-render-parity-as.md) | Audit 3: SSR-vs-first-render parity as a cargo test (spike first) | PARTLY LANDED 2026-10-21 (queue batch 1, PR #126: the SSR vs first-client-frame parity test runs in… | M | tests |
-| [334](backlog/334-make-the-four-whole-site-sweeps-cheaper.md) | Make the four whole-site sweeps cheaper (all-routes, first-paint-styles, layout-stability, theme-picker-phone) | BACKLOG (owner approved 2026-10-21, option (c) of row 323) | M | tests |
-| [341](backlog/341-virtualgrid-header-sort-row-selection-and-cell.md) | VirtualGrid: header sort state, row selection, and controls inside cells | BACKLOG (owner 2026-10-21; amended 09:35). Comes after row 343 (needs its VirtualizeMode); row 342… | M (about 1.5 to 2 days) | primitives |
-| [342](backlog/342-datatable-large-data-variant-on-virtualgrid.md) | DataTable: a large-data variant rendered through VirtualGrid | BACKLOG (owner 2026-10-21; amended 09:35). Needs rows 340, 343 and 341. | S (about 1 day) | components |
-| [343](backlog/343-one-virtualize-mode-in-the-engine-and-a-data.md) | One virtualize mode in the engine, and a data body for Table | BACKLOG (owner 2026-10-21). Comes after 340 and before 341 and 342. | M (about 2 to 2.5 days) | primitives |
+| [341](backlog/341-virtualgrid-header-sort-row-selection-and-cell.md) | VirtualGrid: header sort state, row selection, and controls inside cells | 2026-10-22: hooks keyed by row identity (row_key, row 361); comes after rows 360-362… | M (about 1.5 to 2 days) | primitives |
+| [342](backlog/342-datatable-large-data-variant-on-virtualgrid.md) | DataTable: a large-data variant rendered through VirtualGrid | BACKLOG (owner 2026-10-21; amended 09:35; scope widened 2026-10-22). Needs rows 340, 343 and 341.… | S (about 1 day) | components |
 | [355](backlog/355-adopt-google-rust-style-guide-items.md) | Adopt Google Rust style guide items: workspace lint table and conventions | BACKLOG -- Round 6 sweep, after row 267's file split (owner approved 2026-10-21) | S-M | process |
-| [356](backlog/356-lane-disk-guard-ignores-concurrent-copies.md) | Lane disk guard ignores concurrent template copies, so two slots both pass and both die with ENOSPC | OPEN. Workaround meanwhile: lanes build with LANE_SLOTS=1 when free disk is under twice the guard's… | S: lane-slot-target.sh reservation plus… | tooling |
-| [357](backlog/357-date-picker-natural-language-test-midnight.md) | Date picker natural_language unit test fails when a run crosses midnight UTC | OPEN. | XS: inject the clock in the test. | primitives |
+| [358](backlog/358-all-routes-one-navigation-for-both-schemes.md) | all-routes: one navigation for both schemes (needs a clean forced-colors reset) | BACKLOG. Blocked on one thing: the forced-colors sweep presses Tab from the focus start point… | S | tests |
+| [359](backlog/359-js-tooling-pnpm-minimum-release-age.md) | JS tooling: pnpm in playwright/ and preview/ with minimumReleaseAge, exact pins and install scripts off | BACKLOG (owner approved 2026-10-22, decision card in the "Switching npm to Bun" thread; background… | S-M, about half a day. | tooling |
+| [360](backlog/360-data-view-shared-collection-model.md) | Shared collection model: data_view in primitives (identity, ViewState with manual order, fields, index-returning derive) and the selection count fix | BACKLOG (owner asked 2026-10-22 to deconstruct the collection model to its roots; design note… | M. | primitives |
+| [361](backlog/361-renderer-identity-item-key.md) | Renderer identity: item_key on VirtualList, TableRows and VirtualGrid, engine sizes keyed by item | BACKLOG (owner asked 2026-10-22 to deconstruct the collection model to its roots; design note… | M. | primitives |
+| [362](backlog/362-reorder-gesture-controlled-dnd.md) | Reorder gesture extracted, KeyOrder, DragAndDropList controlled mode with on_reorder | BACKLOG (owner asked 2026-10-22 to deconstruct the collection model to its roots; design note… | M. | primitives |
+| [363](backlog/363-datatable-row-reorder-and-columns.md) | DataTable: reorderable rows (drag handle) and a Columns menu (visibility, keyboard column order) | BACKLOG (owner asked 2026-10-22 to deconstruct the collection model to its roots; design note… | M. | components |
+| [364](backlog/364-togglegroup-value-keyed.md) | ToggleGroup: pressed state keyed by value, not index (optional) | BACKLOG (owner asked 2026-10-22 to deconstruct the collection model to its roots; design note… | S. | components |
+| [365](backlog/365-final-sweep-refactor-and-root-cause-review.md) | Final sweep: refactor review with the deconstruct-to-root and solve-by-construction exercise, proposals to the owner | BACKLOG (owner 2026-10-22, backlog thread: "final sweep, check for refactors and also run there the… | M for the review. Each accepted… | process |
+| [366](backlog/366-test-the-shipped-web-arm.md) | Gates: run cargo test on the shipped web arm too (ssr_parity differs between the plain and server feature sets) | BACKLOG. Found in batch 6, when one run of the same code failed on each arm in turn. | S: one gate step plus its reuse key. | tooling |
 
-## Done rows (281)
+## Done rows (289)
 
 | # | Item | Updated |
 |---|---|---|
@@ -103,12 +104,14 @@ proposing one is closed as out of scope (row 337 is the first).
 | [2](backlog/done/002-phase-4-4-popover-popover-auto-top-layer-for.md) | Phase 4.4 — popover/popover="auto" top layer for non-modal overlays | unknown |
 | [3](backlog/done/003-phase-4-2-native-dialog-showmodal-for-dialog.md) | Phase 4.2 — native &lt;dialog&gt;+showModal() for Dialog and AlertDialog | 2026-09-01 |
 | [5](backlog/done/005-tier-2-harness-completion-rules-5-checkvalidity.md) | Tier-2 harness completion — rules 5 (checkValidity/reportValidity/willValidate), 7 (label association), 8… | 2026-09-19 |
+| [6](backlog/done/006-upstream-engagement-where-fixes-land-open.md) | Upstream engagement — where fixes land (open decision #1) + talking to upstream/fork authors (decision #4) | 2026-10-22 |
 | [7](backlog/done/007-wervice-tooltip-fade-out-a704c517-upstream-pr.md) | Wervice tooltip fade-out (a704c517, upstream PR #293) | 2026-09-18 |
 | [8](backlog/done/008-select-trigger-apg-select-only-combobox-role.md) | Select trigger → APG select-only-combobox role (role="combobox") | 2026-09-18 |
 | [9](backlog/done/009-select-listbox-scroll-lock.md) | Select listbox scroll lock | 2026-09-18 |
 | [11](backlog/done/011-phase-6-typeahead-for-menus-dq-typeahead-rs-not.md) | Phase 6 — typeahead for menus (dq typeahead.rs, not select/) | 2026-09-18 |
 | [12](backlog/done/012-phase-6-pub-mod-portal-toggle-class-prop-public.md) | Phase 6 — pub mod portal, Toggle class prop, public CalendarDayState (upstream #199) | 2026-09-18 |
 | [13](backlog/done/013-phase-6-rtl-dq-direction-rs-key-flip-concept.md) | Phase 6 — RTL (dq direction.rs + key-flip concept) | 2026-10-05 |
+| [14](backlog/done/014-nudge-dioxus-framework-issues-2962-onclose-4319.md) | Nudge Dioxus framework issues: #2962 (onclose), #4319 (dialog methods), ancestor-traversal gap (complaints.md) | 2026-10-22 |
 | [16](backlog/done/016-component-candidates-new-components-from.md) | Component candidates — new components from upstream PRs, the fork network, and catalog gaps | 2026-10-19 |
 | [17](backlog/done/017-mutation-testing-cargo-mutants-scoped-to-the.md) | Mutation testing (cargo-mutants), scoped to the algorithmic modules that already carry unit tests (slider… | 2026-08-31 |
 | [18](backlog/done/018-css-anchor-positioning-cross-browser-fallback.md) | CSS Anchor Positioning cross-browser fallback for anchored overlays | 2026-09-01 |
@@ -325,6 +328,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [248](backlog/done/248-select-placeholder-until-mount-hydration-shift.md) | Select renders its placeholder until mount, so a Select with a default value shifts layout at hydration | 2026-10-21 |
 | [249](backlog/done/249-navigationmenu-indicator.md) | NavigationMenuIndicator (the leftover of closed row 72) | 2026-10-22 |
 | [251](backlog/done/251-native-checkbox-ssr-initial-checked.md) | Native checkbox in the prerendered /component/form/ ignores initial_checked until the page is client-created | 2026-10-21 |
+| [252](backlog/done/252-virtualgrid-ssr-height-off-by-one-row.md) | VirtualGrid: the prerendered inner wrapper is one row shorter than after hydration (175000 px -&gt; 175036 px) | 2026-10-22 |
 | [253](backlog/done/253-ssg-renders-initial-checked-as-a-literal-attribute.md) | SSG renders `initial_checked` as a literal `initial_checked=true` attribute, so a prerendered checkbox, switch or radio loads unchecked | 2026-10-20 |
 | [254](backlog/done/254-stale-cargo-lock-in-detached-crates.md) | Stale Cargo.lock in the detached crates (attr-synth, carousel-lab) rewritten by lane spec runs | 2026-10-20 |
 | [255](backlog/done/255-stale-specs-toast-countdown-shim-and-drawer-drag-viewport.md) | Two specs drifted from the product and were red on main: the toast countdown shim and the drawer drag viewport | 2026-10-20 |
@@ -337,6 +341,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [263](backlog/done/263-toast-remaining-base-ui-behaviour.md) | Toast: pause on hover/focus, vertical swipe, legacy keyframes on translate | 2026-10-19 |
 | [264](backlog/done/264-non-modal-dialog-pointer-dismissal-and-aria-modal.md) | Non-modal Dialog/Drawer: aria-modal and an outside-press switch | 2026-10-19 |
 | [280](backlog/done/280-cards-fit-their-content-at-every-width.md) | Home-page cards fit their content at every width | 2026-10-19 |
+| [285](backlog/done/285-docs-preview-card-light-mode-tint.md) | Docs preview card: a visible light-mode tint without breaking Toggle hover contrast | 2026-10-22 |
 | [290](backlog/done/290-toast-exit-animation-a-real-visible-cap-and-enter.md) | Toast: exit animation, a real visible cap, and enter from the toaster's edge (Sonner parity) | 2026-10-20 |
 | [291](backlog/done/291-coarse-pointer-sizing-for-menus-and-option-lists.md) | Coarse-pointer sizing for menus and option lists | 2026-10-21 |
 | [292](backlog/done/292-tooltip-rich-content-demo-lays-title-and-body.md) | Tooltip: rich-content demo lays title and body side by side | 2026-10-20 |
@@ -363,12 +368,14 @@ proposing one is closed as out of scope (row 337 is the first).
 | [331](backlog/done/331-audit-5-delete-the-sweeps-that-a-static.md) | Audit 5: delete the sweeps that a static gate or another spec already covers | 2026-10-21 |
 | [332](backlog/done/332-tag-group-remove-buttons-render-an-empty-label-and.md) | Tag Group remove buttons render an empty label and disabled on the server | 2026-10-21 |
 | [333](backlog/done/333-resizable-panels-render-flex-basis-0-on-the-server.md) | Resizable panels render flex-basis 0% on the server and get their real size only in an effect | 2026-10-21 |
+| [334](backlog/done/334-make-the-four-whole-site-sweeps-cheaper.md) | Make the four whole-site sweeps cheaper (all-routes, first-paint-styles, layout-stability, theme-picker-phone) | 2026-10-22 |
 | [335](backlog/done/335-message-scroller-demos-animation-fade-previous-context.md) | Message Scroller demos: animation demo shows LLM output, both fade demos look default, previous-context demo is unclear | 2026-10-21 |
 | [336](backlog/done/336-docs-page-title-does-not-update-on-navigation.md) | Docs: the browser tab title does not change when navigating to another page | 2026-10-21 |
 | [337](backlog/done/337-text-editor-component-rich-text-markdown-composer.md) | Text editor component (rich text / markdown composer) | 2026-10-21 |
 | [338](backlog/done/338-hydration-parity-spec-runs-cargo-at-load-outside-the.md) | hydration-parity.spec builds attr-synth with cargo at load time, outside the build lock | 2026-10-21 |
 | [339](backlog/done/339-main-thread-timing-specs-not-skipped-on-debug-builds-in.md) | main-thread timing specs are not skipped on debug builds in test:changed runs | 2026-10-21 |
 | [340](backlog/done/340-datatable-column-model-and-use-data-table-hook.md) | DataTable: a column definition and one state hook, rendered into Table | 2026-10-22 |
+| [343](backlog/done/343-one-virtualize-mode-in-the-engine-and-a-data.md) | One virtualize mode in the engine, and a data body for Table | 2026-10-22 |
 | [344](backlog/done/344-charts-flash-the-final-drawing-before-their-entry.md) | Charts flash the final drawing before their entry animation on first client-side open | 2026-10-21 |
 | [345](backlog/done/345-carousel-nav-opacity-spec-read-next-mid-fade.md) | carousel-nav-opacity first-slide spec reads Next mid-fade (red on main) | 2026-10-21 |
 | [346](backlog/done/346-popover-keyboard-close-focus-return-test-raced-the-close-policy.md) | Popover keyboard-close focus-return spec raced the close policy | 2026-10-21 |
@@ -380,6 +387,8 @@ proposing one is closed as out of scope (row 337 is the first).
 | [352](backlog/done/352-link-global-attributes-in-prop-tables.md) | Link the 'Plus the global attributes.' sentence in props tables to MDN | 2026-10-21 |
 | [353](backlog/done/353-carousel-next-arrow-fades-in-after-hydration.md) | Carousel Next arrow fades 0.5 to 1 after hydration (first-paint flicker) | 2026-10-21 |
 | [354](backlog/done/354-remove-the-docs-header-language-switcher.md) | Remove the docs header language switcher | 2026-10-21 |
+| [356](backlog/done/356-lane-disk-guard-ignores-concurrent-copies.md) | Lane disk guard ignores concurrent template copies, so two slots both pass and both die with ENOSPC | 2026-10-22 |
+| [357](backlog/done/357-date-picker-natural-language-test-midnight.md) | Date picker natural_language unit test fails when a run crosses midnight UTC | 2026-10-22 |
 
 ## Notes (8)
 

@@ -11,6 +11,8 @@
 #   6 term           TERM to the wrapper stops the command's whole process group
 #   7 status-env     exit status and LANE_SLOT/LANE_SLOT_SUFFIX pass through
 #   8 legacy         `flock ssg.lock` callers and slot 0 exclude each other, both ways
+#   9 disk-reserve   (row 356) two concurrent copies on a disk sized for one: the second refuses; a dead
+#                    pid's reservation is ignored; `copy` never carries the source's .tree-owner
 set -uo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 LL="$PWD/scripts/lane-lock.sh"
@@ -146,5 +148,32 @@ flock -n "$LANE_TGT/ssg.lock" true || bad "ssg.lock still held after the command
 LANE_LEGACY_LOCK= "$LL" -- sh -c 'flock -n "$LANE_TGT/ssg.lock" true && echo free > "$LANE_TGT/seen2"' 2>/dev/null
 [ "$(cat "$LANE_TGT/seen2" 2>/dev/null)" = free ] || bad "LANE_LEGACY_LOCK= should leave ssg.lock alone"
 
+# --- 9 disk reservation (row 356) -----------------------------------------------------------------
+scenario disk-reserve
+LST="$PWD/scripts/lane-slot-target.sh"
+mkdir -p "$LANE_TGT/src"; head -c 102400 /dev/zero > "$LANE_TGT/src/blob"; echo owner > "$LANE_TGT/src/.tree-owner"
+export LANE_DISK_MARGIN_KB=0
+need=$(( $(du -sk "$LANE_TGT/src" | cut -f1) )); need=$(( need + need / 5 ))
+export LANE_FREE_KB=$(( need + need / 2 ))          # room for one copy, not two
+sleep 30 & pa=$!; pids+=($pa); sleep 30 & pb=$!; pids+=($pb)
+LANE_RESERVE_PID=$pa "$LST" reserve "$LANE_TGT/src" 2>/dev/null || bad "first reservation should pass on a disk sized for one"
+LANE_RESERVE_PID=$pb "$LST" reserve "$LANE_TGT/src" 2>/dev/null && bad "second concurrent reservation passed on a disk sized for one"
+[ -e "$LANE_TGT/lockq/disk-reserve/$pb" ] && bad "a refused copy left a reservation"
+LANE_RESERVE_PID=$pa "$LST" release 2>/dev/null
+LANE_RESERVE_PID=$pb "$LST" reserve "$LANE_TGT/src" 2>/dev/null || bad "reservation should pass again once the first copy released"
+LANE_RESERVE_PID=$pb "$LST" release 2>/dev/null
+# a dead pid's reservation is ignored (and swept)
+sleep 0 & dp=$!; wait "$dp"
+mkdir -p "$LANE_TGT/lockq/disk-reserve"; echo "$need" > "$LANE_TGT/lockq/disk-reserve/$dp"
+LANE_RESERVE_PID=$pa "$LST" reserve "$LANE_TGT/src" 2>/dev/null || bad "a dead pid's reservation blocked a new copy"
+[ -e "$LANE_TGT/lockq/disk-reserve/$dp" ] && bad "the dead pid's reservation file was not swept"
+LANE_RESERVE_PID=$pa "$LST" release 2>/dev/null
+# a partial or complete copy never carries .tree-owner
+"$LST" copy "$LANE_TGT/src" "$LANE_TGT/dst" 2>/dev/null
+[ -e "$LANE_TGT/dst/blob" ] || bad "copy lost the files"
+[ -e "$LANE_TGT/dst/.tree-owner" ] && bad "copy carried the source's .tree-owner"
+kill "$pa" "$pb" 2>/dev/null
+unset LANE_FREE_KB LANE_DISK_MARGIN_KB
+
 if [ "$fails" -ne 0 ]; then echo "check-lane-lock: FAIL -- $fails problem(s)" >&2; exit 1; fi
-echo "check-lane-lock: OK -- 8 scenarios"
+echo "check-lane-lock: OK -- 9 scenarios"

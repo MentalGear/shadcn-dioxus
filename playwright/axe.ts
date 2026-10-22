@@ -305,7 +305,11 @@ export async function expectNoAxeViolations(
 ): Promise<void> {
   await waitForAppReady(page);
 
-  let builder = new AxeBuilder({ page }).withTags(TAGS);
+  // `resultTypes: ["violations"]`: every rule still runs on every node and `violations` is complete, but axe stops building
+  // the selector, source and check data of the passing and incomplete nodes this function never reads (14,700 nodes on the
+  // home page). Measured on a debug build, 8 routes: -20 % scan time, identical violations on the real pages and on a page
+  // with five injected defects.
+  let builder = new AxeBuilder({ page }).withTags(TAGS).options({ resultTypes: ["violations"] });
 
   if (opts.include) {
     builder = builder.include(opts.include);

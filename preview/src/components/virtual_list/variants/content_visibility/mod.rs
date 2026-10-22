@@ -144,7 +144,7 @@ pub fn Demo() -> Element {
                     count: ROWS,
                     // Keep every row in the DOM, whatever the count (`Auto` would also pick
                     // this up to 1,000 rows).
-                    virtualize: VirtualListMode::ContentVisibility,
+                    virtualize: VirtualizeMode::ContentVisibility,
                     // The height the browser assumes for a row it has not rendered yet (summed
                     // over each chunk of 20 rows); it remembers the real height once it has.
                     // Close guesses keep the scrollbar steady.

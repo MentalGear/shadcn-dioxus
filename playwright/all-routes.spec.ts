@@ -220,6 +220,7 @@ async function settle(page: Page, { watchNewSheets = true }: { watchNewSheets?: 
 async function stillViolates(page: Page, selector: string): Promise<boolean> {
   const results = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "best-practice"])
+    .options({ resultTypes: ["violations"] })
     .include(selector)
     .analyze();
   return results.violations.length > 0;

@@ -47,3 +47,17 @@ BreadcrumbItem {
     }
 }
 ```
+
+### As a router link
+
+`BreadcrumbLink { r#as }` renders the crumb as the element the callback returns, given the crumb's attributes (shadcn's `render` prop). Pass the attributes to your router's link and the children inside it, so a click navigates in-app:
+
+```rust
+BreadcrumbItem {
+    BreadcrumbLink {
+        r#as: move |attributes: Vec<Attribute>| rsx! {
+            Link { to: Route::Components {}, attributes, "Components" }
+        },
+    }
+}
+```

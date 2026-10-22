@@ -1,10 +1,10 @@
 ---
 id: 252
 title: "VirtualGrid: the prerendered inner wrapper is one row shorter than after hydration (175000 px -> 175036 px)"
-status: "OPEN, inherent (cannot be decided at render): measured canvas"
+status: "CLOSED 2026-10-22 as inherent (owner chose \"Close as inherent\" on the decision card). The demo…"
 size: "S"
 area: components
-updated: 2026-10-21
+updated: 2026-10-22
 ---
 
 # Row 252: VirtualGrid: the prerendered inner wrapper is one row shorter than after hydration (175000 px -> 175036 px)
@@ -14,6 +14,8 @@ updated: 2026-10-21
 VirtualGrid: the prerendered inner wrapper is one row shorter than after hydration (175000 px -> 175036 px)
 
 ## Status / trigger
+
+**CLOSED 2026-10-22 as inherent (owner chose "Close as inherent" on the decision card).** The demo keeps measured row heights; the first-paint gap is documented, not fixed.
 
 **OPEN, inherent (cannot be decided at render): measured canvas**
 

@@ -401,6 +401,11 @@ mod why {
     pub const CAROUSEL: &str = "slide count, and so the previous/next `disabled` state, is read from the mounted track in an \
         effect; the buttons keep their box";
     pub const FIND_LAYER: &str = "the find-in-page layer is mounted by an effect; it is absolutely positioned and `aria-hidden`";
+    pub const TABLE_ROWCOUNT: &str = "`TableRows` hands its row count up to the `<table>` (`aria-rowcount`, an ARIA attribute, \
+        no box) through the `TableScroller` context after the body renders, since the table renders first (row 343)";
+    pub const ANCHOR_ID: &str = "a caller-supplied `id` on a popup's content reaches the trigger's `anchor-name` only after the content's \
+        effect syncs it into the root context (`PopoverCtx::content_id` and its Tooltip/HoverCard twins); the server writes the generated \
+        id. `anchor-name` is a custom ident that names an anchor and paints nothing, and the client's name is the one `position-anchor` resolves";
 }
 use why::*;
 
@@ -436,6 +441,7 @@ const BASELINE: &[(&str, &str)] = &[
     ("empty/avatar", AVATAR),
     ("item/avatar", AVATAR),
     ("item/group", AVATAR),
+    ("table/virtualized", TABLE_ROWCOUNT),
     ("virtual_list/find_in_page", FIND_LAYER),
 ];
 
@@ -448,11 +454,42 @@ const ROUTE_BASELINE: &[(&str, &str)] = &[
     ("/component/drag_and_drop_list/", AVATAR),
     ("/component/empty/", AVATAR),
     ("/component/item/", AVATAR),
+    ("/component/table/", TABLE_ROWCOUNT),
     ("/component/virtual_list/", FIND_LAYER),
 ];
 
+/// Pages that differ only when primitives' `web` arm is compiled (preview's `web`, `desktop` and `server`
+/// features turn it on; a bare `cargo test --workspace` does not). The `web` arm is the one that ships:
+/// the popup roots there are real `<dialog>`s whose content effect syncs its id into the trigger's
+/// `anchor-name` (`primitives/src/popover.rs:242,385`), and the dropdown menu page's account-switcher
+/// avatar (`dropdown_menu/account_switcher`) reaches its load effect only in the web arm's markup. The plain
+/// arm does neither, so these pages match there.
+/// The outcome is a function of the compiled feature set, never of timing: 10 runs per arm agree.
+const ROUTE_BASELINE_WEB: &[(&str, &str)] = &[
+    ("/component/dropdown_menu/", AVATAR),
+    ("/component/top_layer/", ANCHOR_ID),
+];
+
+/// The pages [`ROUTE_BASELINE`] and, when the `web` arm is compiled, [`ROUTE_BASELINE_WEB`] list.
+fn route_baseline() -> Vec<(&'static str, &'static str)> {
+    let web = cfg!(any(
+        feature = "web",
+        feature = "desktop",
+        feature = "server"
+    ));
+    ROUTE_BASELINE
+        .iter()
+        .chain(web.then_some(ROUTE_BASELINE_WEB).into_iter().flatten())
+        .copied()
+        .collect()
+}
+
 /// Demos that cannot render natively at all, with the missing piece.
 const UNRENDERABLE: &[(&str, &str)] = &[
+    (
+        "breadcrumb/router_link",
+        "needs a `RouterContext` (`NavLink`)",
+    ),
     ("navbar/click_only", "needs a `RouterContext` (`Link`)"),
     ("navbar/main", "needs a `RouterContext` (`Link`)"),
     ("navbar/rtl", "needs a `RouterContext` (`Link`)"),
@@ -521,8 +558,9 @@ mod tests {
     fn pages_paint_the_same_before_and_after_the_first_client_tick() {
         let all = run_routes();
         let mut problems = Vec::new();
+        let baseline = route_baseline();
         for (path, outcome) in &all {
-            let known = ROUTE_BASELINE.iter().any(|(n, _)| n == path);
+            let known = baseline.iter().any(|(n, _)| n == path);
             match outcome {
                 Outcome::Panicked => problems.push(format!("{path}: panicked natively.")),
                 Outcome::Unsettled => problems.push(format!(
@@ -538,7 +576,7 @@ mod tests {
                 _ => {}
             }
         }
-        for (path, _) in ROUTE_BASELINE {
+        for (path, _) in &baseline {
             if !all.contains_key(*path) {
                 problems.push(format!(
                     "{path}: ROUTE_BASELINE names a page that is not rendered."
