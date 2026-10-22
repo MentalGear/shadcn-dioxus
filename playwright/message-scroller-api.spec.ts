@@ -248,3 +248,34 @@ test.describe("message_scroller: RTL", () => {
     expect(await centred()).toBeLessThanOrEqual(1);
   });
 });
+
+test.describe("message_scroller: follow mode and the autoscroll window", () => {
+  test("a scroll up inside the pin's autoscroll window releases follow (row 347)", async ({ page }) => {
+    await gotoHydrated(page, url("message_scroller"), GOTO_OPTS);
+    const root = frame(page, "main");
+    await root.scrollIntoViewIfNeeded();
+    const vp = viewportOf(page, "main");
+    await expect(vp).toHaveAttribute("data-scrollable", /\bstart\b/);
+    await expect(vp).not.toHaveAttribute("data-autoscrolling");
+    const button = root.locator('[data-message-scroller-button][data-direction="end"]');
+    // Leave the pinned end by hand, then press the jump button: it re-arms follow and opens the 180 ms window.
+    await vp.evaluate((el) => (el.scrollTop = 0));
+    await expect(button).toHaveAttribute("data-active", "true");
+    // Scroll to the top in the very frame the window opens (a MutationObserver callback runs in the same task
+    // as the attribute write), so the move is guaranteed to land inside it, with no timing assumption.
+    await vp.evaluate((el) => {
+      const observer = new MutationObserver(() => {
+        if (el.hasAttribute("data-autoscrolling")) {
+          observer.disconnect();
+          el.scrollTop = 0;
+        }
+      });
+      observer.observe(el, { attributes: true, attributeFilter: ["data-autoscrolling"] });
+    });
+    await button.click();
+    await expect(vp).not.toHaveAttribute("data-autoscrolling");
+    expect(await vp.evaluate((el) => Math.round(el.scrollTop))).toBe(0);
+    // Follow was released: the viewport sits at the top and the jump button is offered again.
+    await expect(button).toHaveAttribute("data-active", "true");
+  });
+});
