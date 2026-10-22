@@ -659,9 +659,13 @@ pub fn Chart(props: ChartProps) -> Element {
         style: wrapper_style,
     });
     let merged = merge_attributes(vec![caller_rest, owned, enter.attributes()]);
-    let animate =
-        (props.animate && !pending && plays_entrance(hydrated, painted_in_view(), entered()))
-            .then_some("true");
+    let animate = entrance_pose(
+        props.animate,
+        pending,
+        hydrated,
+        painted_in_view(),
+        entered(),
+    );
 
     rsx! {
         div {
@@ -1113,6 +1117,30 @@ if (el && document.visibilityState === 'visible') {
 dioxus.send(seen);
 "#;
 
+/// The svg's `data-animate`, decided during render so no frame shows a pose the entrance then
+/// undoes (backlog row 344). `"true"` plays the entrance (see [`plays_entrance`]). A chart the
+/// client creates (a tab or route opened after hydration) has no painted stand-in and WILL
+/// animate once it is seen, so until then it renders `"pending"`, which the stylesheet turns into
+/// the entrance's start pose (bars at zero, lines unrevealed, arcs unswept): its first painted
+/// frame is the pose the animation begins from, never the final drawing that the effect-set
+/// `"true"` would otherwise restart from zero. A hydrated chart is already painted, so it never
+/// shows `"pending"`; with `animate` off nothing is set.
+fn entrance_pose(
+    animate: bool,
+    pending: bool,
+    hydrated: bool,
+    painted_in_view: Option<bool>,
+    entered: bool,
+) -> Option<&'static str> {
+    if !animate {
+        return None;
+    }
+    if !pending && plays_entrance(hydrated, painted_in_view, entered) {
+        return Some("true");
+    }
+    (!hydrated && !entered).then_some("pending")
+}
+
 /// Whether `data-animate` may be set. A chart created by the client plays its entrance once it
 /// has been seen. A hydrated one has already been painted, so it plays only if it was NOT in view
 /// at hydration (`Some(false)`) and has since been seen; `Some(true)` (it was in the first
@@ -1335,6 +1363,29 @@ mod tests {
         // Client-created (nothing was painted): plays once seen, whatever the mount read says.
         assert!(!plays_entrance(false, None, false));
         assert!(plays_entrance(false, None, true));
+    }
+
+    #[test]
+    fn a_client_created_chart_starts_in_the_entrance_pose_not_the_final_drawing() {
+        // Row 344: client-created, will animate -> "pending" from the first render.
+        assert_eq!(
+            entrance_pose(true, true, false, None, false),
+            Some("pending")
+        );
+        assert_eq!(
+            entrance_pose(true, false, false, None, false),
+            Some("pending")
+        );
+        assert_eq!(entrance_pose(true, false, false, None, true), Some("true"));
+        // A hydrated (server-painted) chart is never put in the start pose.
+        assert_eq!(entrance_pose(true, false, true, None, false), None);
+        assert_eq!(entrance_pose(true, false, true, Some(true), true), None);
+        assert_eq!(
+            entrance_pose(true, false, true, Some(false), true),
+            Some("true")
+        );
+        // `animate` off: nothing.
+        assert_eq!(entrance_pose(false, false, false, None, true), None);
     }
 
     #[test]
