@@ -115,7 +115,10 @@ test.describe("position=item-aligned", () => {
   }
 
   test("the selected option sits on the trigger's line and the list stays in the viewport", async ({ page }) => {
-    await page.setViewportSize({ width: 1000, height: 900 });
+    // The 24-option list is ~634px tall with the selected option ~447px below its top, so the exact
+    // alignment needs the list's top >= the 8px viewport margin: 900px left it 2.14px short (the list
+    // clamped at the margin and has nothing to scroll), 1000px leaves ~50px of slack.
+    await page.setViewportSize({ width: 1000, height: 1000 });
     await gotoHydrated(page, `${BASE_URL}/component/select/`);
     // Put the trigger mid-viewport so there is room above and below for the alignment to be exact.
     await aligned(page).evaluate((el) => {
