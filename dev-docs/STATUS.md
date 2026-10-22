@@ -5,8 +5,8 @@ the page as stale and check `git log` and the flag files named here.** Seeded 20
 [`research/next-round-plan-2026-10-15.md`](./research/next-round-plan-2026-10-15.md),
 [`research/backlog-order-2026-10-18.md`](./research/backlog-order-2026-10-18.md) and [`plan.md`](./plan.md).
 
-Last updated: **2026-10-21**. Several sessions work in parallel; who holds what is on the `claims` branch (`CLAIMS.md`).
-Preview site: https://mentalgear.github.io/shadcn-dioxus/ (deployed from main `66aeac85`, PR #127, merge queue batch 2).
+Last updated: **2026-10-22**. Several sessions work in parallel; who holds what is on the `claims` branch (`CLAIMS.md`).
+Preview site: https://mentalgear.github.io/shadcn-dioxus/ (deployed from main `ac99f4e8`, PR #132, merge queue batch 5; batch 6 is this commit's PR).
 
 ## Merge queue (owner decision 2026-10-21)
 
@@ -25,8 +25,16 @@ merges it after the project coordinator's OK and deploys once. Procedure: [`lane
   331 (sweep shrinks, about -435 worker-s), 258, 334-339 (docs), the text-editor research; suite reds fixed as rows 345
   (carousel spec read mid-fade), 346 (Popover focus-return spec race), 347 (message-scroller spec race; product edge
   open) and a chart-tooltip `line-height`.
-- Queue batch 3 (this commit's PR): row 328's construction, one zero-specificity component-root reset on
+- Queue batch 3 (PR #128): row 328's construction, one zero-specificity component-root reset on
   `[data-dx-root]` (`check-component-root-reset.sh` replaces `check-declared-typography`).
+- Queue batch 4 (PR #131): the coarse sizing switch (`data-dx-coarse`, `check-coarse-sizing.sh`, rows 349, 350), docs
+  site fixes (rows 351-354: RTL demos last, MDN link, carousel Next fade, language switcher removed), first-paint poses,
+  SSR parity for tag group and resizable, test tooling, the fast-loop docs (row 326).
+- Queue batch 5 (PR #132): Select item-aligned position (268), NavigationMenuIndicator (249), the DataTable model and
+  component (340), message scroller follow release and demos (347, 335); row 299 closed.
+- Queue batch 6 (this commit's PR): one `VirtualizeMode` in the virtual engine and a windowed `TableRows` body (343),
+  whole-site sweeps about -20% worker-seconds (334, follow-up 358), the lane disk guard as a reservation (356; 357 was
+  already fixed), InputGroupTextarea, the custom-control contract and a breadcrumb router link (188 leftovers).
 
 Earlier: Rounds 2-3 (PR #102), Rounds 5 and 7 (PR #105), the features batch, Round 4 (see below).
 
@@ -35,12 +43,12 @@ Earlier: Rounds 2-3 (PR #102), Rounds 5 and 7 (PR #105), the features batch, Rou
 The merge queue is the backlog thread's; cargo-gate reuse is on; only the warm release validation tree is kept; the
 library keeps to primitives and shadcn element parity, so no Markdown or rich-text editor is built (row 337 closed as out
 of scope; the rule is in [`backlog.md`](./backlog.md#scope)); `--dx-root-line-height` defaults to `normal` (Tailwind apps set
-1.5); the `theme-all-reset` golden is kept (row 331). New backlog rows are held until the speedy test suites have
-merged (2026-10-20); the drafted rows wait in the backlog thread.
+1.5); the `theme-all-reset` golden is kept (row 331). The hold on new backlog rows is lifted (2026-10-21); the
+owner said to continue with the backlog until done, skipping rows that wait on his iPhone re-tests or decisions.
 
 ## Backlog numbers
 
-68 open and 252 done row files on 2026-10-21 (see [`backlog.md`](./backlog.md)).
+46 open and 285 done row files on 2026-10-22 (see [`backlog.md`](./backlog.md)).
 
 ## Next round
 
