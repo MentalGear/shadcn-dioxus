@@ -68,6 +68,7 @@
 import { test, expect } from "./fixtures";
 import { BASE_URL } from "./base-url";
 import http from "node:http";
+import type { BrowserContext, Page } from "@playwright/test";
 
 type Box = { x: number; y: number; w: number; h: number };
 type BoxEvent = { t: number; f: number; id: number; cls: string; txt: string; from: Box; to: Box };
@@ -136,11 +137,16 @@ const FULL = !!process.env.LS_STEP;
 const STEP = Number(process.env.LS_STEP ?? 32);
 const ALL_WIDTHS = [...new Set([...sweep(STEP), ...KEY_WIDTHS])].sort((a, b) => a - b);
 const HEIGHT = 800;
+/** Pages measuring widths at once inside one group's context (`LS_POOL=1` is the old one-at-a-time sweep). */
+const POOL = Math.max(1, Number(process.env.LS_POOL ?? 2));
 const ONLY = (process.env.LS_WIDTHS ?? "").split(",").filter(Boolean).map(Number);
 
-const GROUPS: { route: string; scheme: "light" | "dark"; widths: number[] }[] = [
-  { route: "/", scheme: "light", widths: ALL_WIDTHS },
-  { route: "/", scheme: "dark", widths: FULL ? ALL_WIDTHS : KEY_WIDTHS },
+const GROUPS: { route: string; scheme: "light" | "dark"; widths: number[]; pool?: number }[] = [
+  // The home page keeps ONE page at a time: it is the long, progressively parsed page, and with two pages (four browsers
+  // on the box) the first paint landed earlier in the parse and a card below the fold was counted as moving (833px, once
+  // in three pooled runs). Every other page is pooled.
+  { route: "/", scheme: "light", widths: ALL_WIDTHS, pool: 1 },
+  { route: "/", scheme: "dark", widths: FULL ? ALL_WIDTHS : KEY_WIDTHS, pool: 1 },
   ...["/docs/", "/demos/", "/component/avatar/", "/component/button/"].map((route) => ({
     route,
     scheme: "light" as const,
@@ -151,25 +157,14 @@ const GROUPS: { route: string; scheme: "light" | "dark"; widths: number[] }[] = 
 
 const fmt = (b: Box) => `${b.x},${b.y} ${b.w}x${b.h}`;
 
-for (const { route, scheme, widths } of GROUPS) {
+for (const { route, scheme, widths, pool = POOL } of GROUPS) {
   test(`layout stability ${route} ${scheme} (${widths.length} widths)`, async ({ browser }) => {
     test.skip(browser.browserType().name() !== "chromium", "frame-by-frame box recording is measured in Chromium");
     test.setTimeout(45 * 60 * 1000);
-    const context = await browser.newContext({ viewport: { width: widths[0], height: HEIGHT }, colorScheme: scheme });
-    await context.addCookies([{ name: "dx_theme", value: scheme, url: BASE_URL }]);
-    const page = await context.newPage();
-    await page.addInitScript(RECORDER);
-    // Hydration waits until the prerendered page has been painted (+200 ms): the slow-wasm case, the worst one for
-    // a prerendered page, and the only one in which every prerendered-vs-hydrated difference is on screen. Without
-    // it a fast or a loaded machine hydrates before its first paint and the same defect passes at that width.
-    await page.route("**/*.wasm", async (route) => {
-      for (let i = 0; i < 400 && !(await page.evaluate(() => performance.getEntriesByType("paint").length).catch(() => 0)); i++) await page.waitForTimeout(50);
-      await page.waitForTimeout(200);
-      await route.continue().catch(() => {});
-    });
-    const failures: string[] = [];
+    const contexts: BrowserContext[] = [];
 
-    for (const width of ONLY.length ? ONLY : widths) {
+    /** One width: load, hydrate, record 1.5 s of box movement, and describe what moved after the first paint ("" = nothing). */
+    async function measure(page: Page, width: number): Promise<string> {
       await page.setViewportSize({ width, height: HEIGHT });
       // goto-ok: measures layout from the first committed byte through hydration; waiting for hydration first would hide the shift
       await page.goto(`${BASE_URL}${route}`, { waitUntil: "commit" });
@@ -185,19 +180,51 @@ for (const { route, scheme, widths } of GROUPS) {
       // The clock starts at the first paint: a frame painted from a half-parsed document counts (see the header).
       const settledAt = firstPaint!;
       const late = events.filter((e) => e.t > settledAt + 20);
-      if (late.length === 0) continue;
+      if (late.length === 0) return "";
       if (process.env.LS_DUMP) console.log(`${route} ${scheme} ${width}px`, JSON.stringify(late.slice(0, 40).map((e) => [e.t, e.f, e.cls, e.txt, fmt(e.from), fmt(e.to)])));
       const perBox = new Map<number, BoxEvent[]>();
       for (const e of late) perBox.set(e.id, [...(perBox.get(e.id) ?? []), e]);
       const oscillating = [...perBox.values()].filter((v) => v.length > 1).length;
       const classes = [...new Set(late.map((e) => e.cls))].slice(0, 4).join(" | ");
       const first = late[0];
-      failures.push(
+      return (
         `${width}px: ${perBox.size} box(es) changed after first paint (${oscillating} more than once), ` +
-          `frames ${[...new Set(late.map((e) => e.f))].slice(0, 6).join(",")}, e.g. "${first.cls}" ${fmt(first.from)} -> ${fmt(first.to)}; classes: ${classes}`,
+        `frames ${[...new Set(late.map((e) => e.f))].slice(0, 6).join(",")}, e.g. "${first.cls}" ${fmt(first.from)} -> ${fmt(first.to)}; classes: ${classes}`
       );
     }
-    await context.close();
+
+    // POOL pages of the one context take the widths from a shared queue. The cost of a width is mostly waiting (the
+    // wasm download, hydration, the 1.5 s no-input window), so two pages at once finish in about half the time; each
+    // width is still its own fresh navigation on its own page, measured by the same recorder and judged by the same
+    // rule. A page's paint clock is its own, and the held-until-painted wasm below is per page.
+    const todo = [...(ONLY.length ? ONLY : widths)];
+    const order = [...todo];
+    const failureAt = new Map<number, string>();
+    async function worker() {
+      const context = await browser.newContext({ viewport: { width: widths[0], height: HEIGHT }, colorScheme: scheme });
+      contexts.push(context);
+      await context.addCookies([{ name: "dx_theme", value: scheme, url: BASE_URL }]);
+      const page = await context.newPage();
+      await page.addInitScript(RECORDER);
+      // Hydration waits until the prerendered page has been painted (+200 ms): the slow-wasm case, the worst one for
+      // a prerendered page, and the only one in which every prerendered-vs-hydrated difference is on screen. Without
+      // it a fast or a loaded machine hydrates before its first paint and the same defect passes at that width.
+      await page.route("**/*.wasm", async (route) => {
+        for (let i = 0; i < 400 && !(await page.evaluate(() => performance.getEntriesByType("paint").length).catch(() => 0)); i++) await page.waitForTimeout(50);
+        await page.waitForTimeout(200);
+        await route.continue().catch(() => {});
+      });
+      for (let width = todo.shift(); width !== undefined; width = todo.shift()) {
+        const failure = await measure(page, width);
+        if (failure) failureAt.set(width, failure);
+      }
+    }
+    try {
+      await Promise.all(Array.from({ length: Math.min(pool, todo.length) }, worker));
+    } finally {
+      for (const c of contexts) await c.close();
+    }
+    const failures = order.filter((w) => failureAt.has(w)).map((w) => failureAt.get(w)!);
     expect(failures, `${route} (${scheme}): the top group changed by itself after its first paint at ${failures.length} of ${widths.length} widths`).toEqual([]);
   });
 }
