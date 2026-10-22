@@ -426,6 +426,7 @@ pub fn ToastProvider(props: ToastProviderProps) -> Element {
                             // The slot leaves the layout the moment the toast starts leaving: the
                             // stylesheet shrinks its footprint over `--toast-exit-ms`, so the
                             // toasts that stay move smoothly instead of jumping at the unmount.
+                            "data-toast-slot": "",
                             "data-removed": toast.closing.then_some("true"),
                             style: "--toast-exit-ms: {TOAST_EXIT.as_millis()}ms",
                             {

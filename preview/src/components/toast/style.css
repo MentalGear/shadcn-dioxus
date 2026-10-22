@@ -140,11 +140,14 @@
  * the toast enters. The same rule serves collapsed and expanded piles through `--toast-footprint`. */
 .dx-toast-container li {
   display: flex;
+}
+
+.dx-toast-container [data-toast-slot] {
   animation: dx-toast-slot-in var(--dx-motion-duration-slow) var(--dx-motion-ease-out);
   transition: margin-block var(--dx-motion-duration-slow) var(--dx-motion-ease);
 }
 
-.dx-toast-container li[data-removed="true"] {
+.dx-toast-container [data-toast-slot][data-removed="true"] {
   margin-block: var(--toast-shrink-start) var(--toast-shrink-end);
   transition-duration: var(--toast-exit-ms, var(--dx-motion-duration-slow));
 }
@@ -331,8 +334,8 @@
 @media (prefers-reduced-motion: reduce) {
   .dx-toast,
   .dx-toast[data-removed="true"],
-  .dx-toast-container li,
-  .dx-toast-container li[data-removed="true"] {
+  .dx-toast-container [data-toast-slot],
+  .dx-toast-container [data-toast-slot][data-removed="true"] {
     animation: none;
     transition-duration: var(--dx-motion-duration-reduced);
   }
