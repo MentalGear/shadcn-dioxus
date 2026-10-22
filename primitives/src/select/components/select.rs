@@ -15,7 +15,7 @@ use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 use dioxus_core::Task;
 
-use super::super::context::SelectContext;
+use super::super::context::{SelectContext, SelectPosition};
 
 /// Props for the [`Select`] (single-select) component
 #[derive(Props, Clone, PartialEq)]
@@ -84,6 +84,13 @@ pub struct SelectProps<T: Clone + PartialEq + 'static = String> {
     /// the page scrollable behind an open listbox.
     #[props(default = ReadSignal::new(Signal::new(true)))]
     pub scroll_lock: ReadSignal<bool>,
+
+    /// Where the listbox is placed: [`SelectPosition::Popper`] (below the trigger, the default) or
+    /// [`SelectPosition::ItemAligned`] (the selected option over the trigger, Radix's default
+    /// mode). Item-aligned keeps the list inside the viewport: it shifts and shortens it, and
+    /// scrolls the selected option into place first.
+    #[props(default)]
+    pub position: ReadSignal<SelectPosition>,
 
     /// The text direction, emitted on the trigger and listbox content.
     /// Defaults to the nearest [`crate::direction::DirectionProvider`], or
@@ -156,6 +163,13 @@ pub struct SelectMultiProps<T: Clone + PartialEq + 'static = String> {
     #[props(default = ReadSignal::new(Signal::new(true)))]
     pub scroll_lock: ReadSignal<bool>,
 
+    /// Where the listbox is placed: [`SelectPosition::Popper`] (below the trigger, the default) or
+    /// [`SelectPosition::ItemAligned`] (the selected option over the trigger, Radix's default
+    /// mode). Item-aligned keeps the list inside the viewport: it shifts and shortens it, and
+    /// scrolls the selected option into place first.
+    #[props(default)]
+    pub position: ReadSignal<SelectPosition>,
+
     /// The text direction -- see [`SelectProps::dir`]'s identical doc.
     #[props(default)]
     pub dir: Option<Direction>,
@@ -182,6 +196,8 @@ struct SelectRootConfig {
     scroll_lock: ReadSignal<bool>,
     /// See `SelectContext::direction`'s doc.
     direction: ReadSignal<Direction>,
+    /// See `SelectContext::position`'s doc.
+    position: ReadSignal<SelectPosition>,
 }
 
 /// Adapts the root's typed `item_to_label` to the type-erased values the shared context holds.
@@ -215,6 +231,7 @@ fn use_select_root(
         required,
         scroll_lock,
         direction,
+        position,
     } = config;
     let selectable = use_selectable_root(
         values,
@@ -253,6 +270,7 @@ fn use_select_root(
         required,
         scroll_lock,
         direction,
+        position,
     });
 
     (ctx, open)
@@ -352,6 +370,7 @@ pub fn Select<T: Clone + PartialEq + 'static>(props: SelectProps<T>) -> Element 
             required: props.required,
             scroll_lock: props.scroll_lock,
             direction: direction_signal,
+            position: props.position,
         },
     );
 
@@ -559,6 +578,7 @@ pub fn SelectMulti<T: Clone + PartialEq + 'static>(props: SelectMultiProps<T>) -
             required: ReadSignal::new(Signal::new(false)),
             scroll_lock: props.scroll_lock,
             direction: direction_signal,
+            position: props.position,
         },
     );
 
