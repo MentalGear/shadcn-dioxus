@@ -25,4 +25,4 @@ S
 
 ## Detail
 
-Would replace our eval bridges with typed API; nothing blocks on it. Drafted 2026-09-03, not filed — user decision: [`dev-docs/issues/drafts/dioxus-issue-nudges.md`](../issues/drafts/dioxus-issue-nudges.md) (issue numbers unverified against this repo's own docs/code — see the draft's note)
+Would replace our eval bridges with typed API; nothing blocks on it. Drafted 2026-09-03, not filed — user decision: [`dev-docs/issues/drafts/dioxus-issue-nudges.md`](../../issues/drafts/dioxus-issue-nudges.md) (issue numbers unverified against this repo's own docs/code — see the draft's note)
