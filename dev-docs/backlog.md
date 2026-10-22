@@ -41,7 +41,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (47)
+## Open rows (49)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -87,13 +87,15 @@ proposing one is closed as out of scope (row 337 is the first).
 | [322](backlog/322-run-the-full-release-suite-per-deploy-not.md) | Run the full release suite per deploy, not per merge batch | BACKLOG (owner: maybe, 2026-10-21) | S | tests |
 | [325](backlog/325-heavy-cross-page-oracles-construct-the-causes-away.md) | Heavy cross-page oracles: construct the causes away, run what remains per deploy | PARTLY LANDED 2026-10-21: the popup half (row 259, batch A) and the all-routes half (row 327, batch… | M | tests |
 | [329](backlog/329-audit-3-ssr-vs-first-render-parity-as.md) | Audit 3: SSR-vs-first-render parity as a cargo test (spike first) | PARTLY LANDED 2026-10-21 (queue batch 1, PR #126: the SSR vs first-client-frame parity test runs in… | M | tests |
-| [334](backlog/334-make-the-four-whole-site-sweeps-cheaper.md) | Make the four whole-site sweeps cheaper (all-routes, first-paint-styles, layout-stability, theme-picker-phone) | BACKLOG (owner approved 2026-10-21, option (c) of row 323) | M | tests |
 | [341](backlog/341-virtualgrid-header-sort-row-selection-and-cell.md) | VirtualGrid: header sort state, row selection, and controls inside cells | BACKLOG (owner 2026-10-21; amended 09:35). Comes after row 343 (needs its VirtualizeMode); row 342… | M (about 1.5 to 2 days) | primitives |
 | [342](backlog/342-datatable-large-data-variant-on-virtualgrid.md) | DataTable: a large-data variant rendered through VirtualGrid | BACKLOG (owner 2026-10-21; amended 09:35). Needs rows 340, 343 and 341. | S (about 1 day) | components |
 | [343](backlog/343-one-virtualize-mode-in-the-engine-and-a-data.md) | One virtualize mode in the engine, and a data body for Table | BACKLOG (owner 2026-10-21). Comes after 340 and before 341 and 342. | M (about 2 to 2.5 days) | primitives |
 | [355](backlog/355-adopt-google-rust-style-guide-items.md) | Adopt Google Rust style guide items: workspace lint table and conventions | BACKLOG -- Round 6 sweep, after row 267's file split (owner approved 2026-10-21) | S-M | process |
+| [356](backlog/356-lane-disk-guard-ignores-concurrent-copies.md) | Lane disk guard ignores concurrent template copies, so two slots both pass and both die with ENOSPC | OPEN. Workaround meanwhile: lanes build with LANE_SLOTS=1 when free disk is under twice the guard's… | S: lane-slot-target.sh reservation plus… | tooling |
+| [357](backlog/357-date-picker-natural-language-test-midnight.md) | Date picker natural_language unit test fails when a run crosses midnight UTC | OPEN. | XS: inject the clock in the test. | primitives |
+| [358](backlog/358-all-routes-one-navigation-for-both-schemes.md) | all-routes: one navigation for both schemes (needs a clean forced-colors reset) | BACKLOG. Blocked on one thing: the forced-colors sweep presses Tab from the focus start point… | S | tests |
 
-## Done rows (283)
+## Done rows (282)
 
 | # | Item | Updated |
 |---|---|---|
@@ -361,6 +363,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [331](backlog/done/331-audit-5-delete-the-sweeps-that-a-static.md) | Audit 5: delete the sweeps that a static gate or another spec already covers | 2026-10-21 |
 | [332](backlog/done/332-tag-group-remove-buttons-render-an-empty-label-and.md) | Tag Group remove buttons render an empty label and disabled on the server | 2026-10-21 |
 | [333](backlog/done/333-resizable-panels-render-flex-basis-0-on-the-server.md) | Resizable panels render flex-basis 0% on the server and get their real size only in an effect | 2026-10-21 |
+| [334](backlog/done/334-make-the-four-whole-site-sweeps-cheaper.md) | Make the four whole-site sweeps cheaper (all-routes, first-paint-styles, layout-stability, theme-picker-phone) | 2026-10-22 |
 | [335](backlog/done/335-message-scroller-demos-animation-fade-previous-context.md) | Message Scroller demos: animation demo shows LLM output, both fade demos look default, previous-context demo is unclear | 2026-10-21 |
 | [336](backlog/done/336-docs-page-title-does-not-update-on-navigation.md) | Docs: the browser tab title does not change when navigating to another page | 2026-10-21 |
 | [337](backlog/done/337-text-editor-component-rich-text-markdown-composer.md) | Text editor component (rich text / markdown composer) | 2026-10-21 |
@@ -378,8 +381,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [352](backlog/done/352-link-global-attributes-in-prop-tables.md) | Link the 'Plus the global attributes.' sentence in props tables to MDN | 2026-10-21 |
 | [353](backlog/done/353-carousel-next-arrow-fades-in-after-hydration.md) | Carousel Next arrow fades 0.5 to 1 after hydration (first-paint flicker) | 2026-10-21 |
 | [354](backlog/done/354-remove-the-docs-header-language-switcher.md) | Remove the docs header language switcher | 2026-10-21 |
-| [356](backlog/done/356-lane-disk-guard-ignores-concurrent-copies.md) | Lane disk guard ignores concurrent template copies, so two slots both pass and both die with ENOSPC | 2026-10-22 |
-| [357](backlog/done/357-date-picker-natural-language-test-midnight.md) | Date picker natural_language unit test fails when a run crosses midnight UTC | 2026-10-22 |
 
 ## Notes (8)
 
