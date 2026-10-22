@@ -181,7 +181,7 @@ main[tabindex="-1"]:focus {
 
 /* Only RAW controls (no `dx-` class): every library control reads the theme's text-entry size, which
    * `data-dx-coarse` switches (a forced `off` must stay at the desktop size, and this rule would win it back
-   * with `!important`), and the preview's own `dx-language-select` does the same in language-select.css. */
+   * with `!important`). */
 @media (pointer: coarse) {
   /* Written as an explicit allowlist of simple selectors on purpose: the
      first version used `input:not([type="checkbox"], [type="radio"], …)`
