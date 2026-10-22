@@ -5,6 +5,7 @@ use dioxus_primitives::drag_and_drop_list::{
     self, DragAndDropContext, DragAndDropDropIndicatorProps, DragAndDropItemContext,
     DragAndDropListItemProps, DragAndDropListItemsProps,
 };
+use dioxus_primitives::drag_and_drop_list::sortable_item_key;
 use dioxus_primitives::merge_attributes;
 
 // docs/backlog.md row 32: `#[css_module]` is gone -- see checkbox/component.rs's
@@ -26,8 +27,25 @@ use dioxus_primitives::merge_attributes;
 // `scripts/check-dx-class-prefix.sh`.
 #[derive(Props, Clone, PartialEq)]
 pub struct DragAndDropListProps {
-    /// Items (labels) to be rendered.
+    /// The items to render. Each takes its identity from the `key:` on its
+    /// root element (else its position here); key every item when the order
+    /// is controlled.
     pub items: Vec<Element>,
+
+    /// Controlled order: the keys of `items`, first to last. Set, the list
+    /// shows exactly this order and changes it only when the owner writes a
+    /// new one after `on_reorder`. Unset, the list remembers the order.
+    #[props(default)]
+    pub order: Option<ReadSignal<Vec<String>>>,
+
+    /// Called with the complete new order (every key) after an item is moved
+    /// by pointer or keyboard.
+    #[props(default)]
+    pub on_reorder: Callback<Vec<String>>,
+
+    /// Called with the key of an item the user removed (`is_removable`).
+    #[props(default)]
+    pub on_remove: Callback<String>,
 
     /// Set if the list items should be removable
     #[props(default)]
@@ -71,11 +89,7 @@ pub fn DragAndDropList(props: DragAndDropListProps) -> Element {
         .iter()
         .enumerate()
         .map(|(idx, item)| {
-            let key = item
-                .as_ref()
-                .ok()
-                .and_then(|v| v.key.clone())
-                .unwrap_or_else(|| idx.to_string());
+            let key = sortable_item_key(item, idx);
             rsx! {
                 DragIcon { key: "{key}" }
                 div { class: "dx-drag-and-drop-list-item-body-div", {item} }
@@ -93,6 +107,9 @@ pub fn DragAndDropList(props: DragAndDropListProps) -> Element {
         document::Link { rel: "stylesheet", href: asset!("/src/components/drag_and_drop_list/style.css") }
         drag_and_drop_list::DragAndDropList {
             items,
+            order: props.order,
+            on_reorder: props.on_reorder,
+            on_remove: props.on_remove,
             aria_label: props.aria_label,
             ghost_opacity: props.ghost_opacity,
             drop_gap: props.drop_gap,

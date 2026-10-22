@@ -188,3 +188,44 @@ fn view_laws_hold_over_random_sequences() {
         }
     }
 }
+
+/// A move then its inverse is the identity, every move keeps the order a
+/// duplicate-free permutation, and `move_before` agrees with `move_key`.
+#[test]
+fn key_order_move_then_inverse_move_is_identity() {
+    for seed in 0..200u64 {
+        let mut rng = Lcg(seed + 7);
+        let len = 1 + rng.below(12);
+        let mut order = KeyOrder::new((0..len).map(|i| format!("k{i}")));
+        for round in 0..30 {
+            let ctx = format!("seed {seed} round {round}");
+            let before = order.clone();
+            let key = format!("k{}", rng.below(len));
+            let from = order.position(&key).expect("listed");
+            let by = rng.below(2 * len + 1) as isize - len as isize;
+            match rng.below(3) {
+                0 => assert!(order.move_key(&key, rng.below(len + 2)), "{ctx}"),
+                1 => assert!(order.move_by(&key, by), "{ctx}"),
+                _ => {
+                    let anchor = format!("k{}", rng.below(len));
+                    if !order.move_before(&key, &anchor) {
+                        assert_eq!(key, anchor, "{ctx}");
+                        assert_eq!(order, before, "{ctx}");
+                        continue;
+                    }
+                    let at = order.position(&key).unwrap();
+                    assert_eq!(order.keys().get(at + 1), Some(&anchor), "{ctx}");
+                }
+            }
+            let mut sorted: Vec<&String> = order.keys().iter().collect();
+            sorted.sort();
+            sorted.dedup();
+            assert_eq!(sorted.len(), len, "{ctx}: not a permutation");
+            // The inverse: put the key back where it was.
+            assert!(order.move_key(&key, from), "{ctx}");
+            assert_eq!(order, before, "{ctx}: move then inverse is not identity");
+            // Keep walking from a changed order so positions vary.
+            order.move_key(&key, rng.below(len));
+        }
+    }
+}

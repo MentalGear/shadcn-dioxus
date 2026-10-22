@@ -39,6 +39,99 @@ impl KeyOrder {
         keys.sort_by_key(|k| position.get(k).copied().unwrap_or(usize::MAX));
         keys
     }
+
+    /// `items` arranged by this order, where `key` names each item's key: the
+    /// same rule as [`Self::reconcile`] (listed keys in the listed order,
+    /// unlisted items after them in source order, stable for equal keys) but
+    /// over the items themselves, so a duplicate key cannot lose one.
+    pub fn arrange<T>(
+        &self,
+        items: impl IntoIterator<Item = T>,
+        key: impl Fn(&T) -> &str,
+    ) -> Vec<T> {
+        let position: HashMap<&str, usize> = self
+            .0
+            .iter()
+            .enumerate()
+            .rev()
+            .map(|(i, k)| (k.as_str(), i))
+            .collect();
+        let mut items: Vec<T> = items.into_iter().collect();
+        items.sort_by_key(|item| position.get(key(item)).copied().unwrap_or(usize::MAX));
+        items
+    }
+
+    /// How many keys the order lists.
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    /// Whether the order lists no key.
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    /// The listed position of `key`.
+    pub fn position(&self, key: &str) -> Option<usize> {
+        self.0.iter().position(|k| k == key)
+    }
+
+    /// Moves `key` so it sits at listed position `to` (clamped to the last
+    /// position) and the keys between shift by one. Returns `false`, changing
+    /// nothing, when `key` is not listed. The inverse of a move is
+    /// `move_key(key, old_position)`.
+    pub fn move_key(&mut self, key: &str, to: usize) -> bool {
+        let Some(from) = self.position(key) else {
+            return false;
+        };
+        let to = to.min(self.0.len() - 1);
+        let item = self.0.remove(from);
+        self.0.insert(to, item);
+        true
+    }
+
+    /// Moves `key` by `delta` positions (negative = earlier), stopping at the
+    /// ends rather than wrapping. `false` when `key` is not listed.
+    pub fn move_by(&mut self, key: &str, delta: isize) -> bool {
+        let Some(from) = self.position(key) else {
+            return false;
+        };
+        let to = from.saturating_add_signed(delta);
+        self.move_key(key, to)
+    }
+
+    /// Moves `key` to sit directly before `anchor` (the row-order move once a
+    /// filter hides rows: the anchor is the next *visible* key, so hidden keys
+    /// keep their relative place). `false`, changing nothing, when either key
+    /// is not listed or they are the same key.
+    pub fn move_before(&mut self, key: &str, anchor: &str) -> bool {
+        if key == anchor {
+            return false;
+        }
+        let (Some(from), Some(_)) = (self.position(key), self.position(anchor)) else {
+            return false;
+        };
+        let item = self.0.remove(from);
+        let at = self.position(anchor).unwrap_or(self.0.len());
+        self.0.insert(at, item);
+        true
+    }
+
+    /// Drops `key` from the order. `true` when it was listed.
+    pub fn remove(&mut self, key: &str) -> bool {
+        match self.position(key) {
+            Some(at) => {
+                self.0.remove(at);
+                true
+            }
+            None => false,
+        }
+    }
+
+    /// The listed keys, owned.
+    pub fn into_keys(self) -> Vec<String> {
+        self.0
+    }
 }
 
 /// What a collection view remembers between renders.
@@ -132,5 +225,73 @@ impl ViewState {
         for key in keys {
             self.set_selected(key, selected);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn order(keys: &[&str]) -> KeyOrder {
+        KeyOrder::new(keys.iter().map(|k| k.to_string()))
+    }
+
+    fn listed(order: &KeyOrder) -> Vec<&str> {
+        order.keys().iter().map(String::as_str).collect()
+    }
+
+    #[test]
+    fn move_key_shifts_the_keys_between() {
+        let mut o = order(&["a", "b", "c", "d"]);
+        assert!(o.move_key("a", 2));
+        assert_eq!(listed(&o), ["b", "c", "a", "d"]);
+        assert!(o.move_key("d", 0));
+        assert_eq!(listed(&o), ["d", "b", "c", "a"]);
+        // Past the end clamps to the last position.
+        assert!(o.move_key("d", 99));
+        assert_eq!(listed(&o), ["b", "c", "a", "d"]);
+        // A missing key changes nothing.
+        assert!(!o.move_key("zz", 0));
+        assert_eq!(listed(&o), ["b", "c", "a", "d"]);
+    }
+
+    #[test]
+    fn move_by_stops_at_the_ends() {
+        let mut o = order(&["a", "b", "c"]);
+        assert!(o.move_by("a", -1));
+        assert_eq!(listed(&o), ["a", "b", "c"]);
+        assert!(o.move_by("a", 1));
+        assert_eq!(listed(&o), ["b", "a", "c"]);
+        assert!(o.move_by("a", 9));
+        assert_eq!(listed(&o), ["b", "c", "a"]);
+    }
+
+    #[test]
+    fn move_before_lands_ahead_of_the_anchor_whatever_the_direction() {
+        let mut o = order(&["a", "b", "c", "d"]);
+        assert!(o.move_before("a", "d"));
+        assert_eq!(listed(&o), ["b", "c", "a", "d"]);
+        assert!(o.move_before("d", "b"));
+        assert_eq!(listed(&o), ["d", "b", "c", "a"]);
+        assert!(!o.move_before("d", "d"));
+        assert!(!o.move_before("d", "zz"));
+        assert_eq!(listed(&o), ["d", "b", "c", "a"]);
+    }
+
+    #[test]
+    fn arrange_follows_reconcile_and_keeps_duplicates() {
+        let o = order(&["c", "a", "gone"]);
+        let items = ["a", "b", "c", "a"];
+        assert_eq!(o.arrange(items, |k| k), ["c", "a", "a", "b"]);
+        assert_eq!(o.reconcile(items), ["c", "a", "a", "b"]);
+    }
+
+    #[test]
+    fn remove_drops_one_key() {
+        let mut o = order(&["a", "b", "c"]);
+        assert!(o.remove("b"));
+        assert!(!o.remove("b"));
+        assert_eq!(listed(&o), ["a", "c"]);
+        assert_eq!(o.len(), 2);
     }
 }

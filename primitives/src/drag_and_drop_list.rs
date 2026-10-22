@@ -1,27 +1,31 @@
 //! Defines the [`DragAndDropList`] component and its sub-components.
+//!
+//! The gesture itself (state machine, key map, announcements) is
+//! [`reorder`]; the order it edits is a [`KeyOrder`]. The list is
+//! *uncontrolled* when it only gets `items` (it remembers the order itself)
+//! and *controlled* when it also gets `order`: then it reports every move
+//! through `on_reorder` and shows exactly the order it is given.
 use crate::collection::{collection_item, use_collection_provider, use_item, CollectionState};
+use crate::data_view::KeyOrder;
+use crate::direction::use_direction;
 use crate::{fold_style_attributes, merge_attributes, use_unique_id};
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
+use std::collections::HashSet;
 
-#[derive(Clone, Copy, PartialEq, Debug)]
-enum DropPosition {
-    Before,
-    Undefined,
-    After,
-}
+pub mod reorder;
 
-impl From<std::cmp::Ordering> for DropPosition {
-    fn from(ord: std::cmp::Ordering) -> Self {
-        match ord {
-            std::cmp::Ordering::Less => Self::Before,
-            std::cmp::Ordering::Equal => Self::Undefined,
-            std::cmp::Ordering::Greater => Self::After,
-        }
-    }
-}
+pub use reorder::ReorderAxis;
+use reorder::{
+    announce_cancel, announce_drop, announce_lift, announce_move, announce_remove, command_for_key,
+    pointer_position, DropPosition, ReorderCommand, ReorderState,
+};
 
-fn sortable_item_key(children: &Element, index: usize) -> String {
+/// The stable identity of a sortable item: the `key:` its root element
+/// carries, else its position in the `items` it was given. The one derivation
+/// both the primitive and a themed wrapper use, so the order's keys, the DOM
+/// keys and the focus keys cannot disagree.
+pub fn sortable_item_key(children: &Element, index: usize) -> String {
     children
         .as_ref()
         .ok()
@@ -44,25 +48,6 @@ impl SortableListItem {
     }
 }
 
-/// Resolves the final insertion index from a hovered item and pointer position.
-fn resolve_drop_index(from: usize, hovered: usize, position: DropPosition) -> usize {
-    let slot = match position {
-        DropPosition::Before | DropPosition::Undefined => hovered,
-        DropPosition::After => hovered + 1,
-    };
-
-    if from < slot {
-        slot - 1
-    } else {
-        slot
-    }
-}
-
-/// Resolves whether the final insertion index is before or after the source item.
-fn resolve_drop_position(from: usize, to: usize) -> DropPosition {
-    to.cmp(&from).into()
-}
-
 /// Context provided by [`DragAndDropListItem`] to its children.
 /// Use `use_context::<DragAndDropItemContext>()` to access the current item's index.
 #[derive(Clone, Copy)]
@@ -77,26 +62,31 @@ impl DragAndDropItemContext {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Debug)]
-enum DragState {
-    Idle,
-    Dragging {
-        from: usize,
-        to: Option<usize>,
-        position: DropPosition,
-    },
-    Dropped {
-        from: usize,
-        to: usize,
-    },
+/// What the list was given this render, mirrored for event handlers.
+#[derive(Clone, Copy, PartialEq)]
+struct ListConfig {
+    controlled: bool,
+    axis: ReorderAxis,
+    on_reorder: Callback<Vec<String>>,
+    on_remove: Callback<String>,
 }
 
 /// Context provided by [`DragAndDropList`] to its descendants.
 /// Use `use_context::<DragAndDropContext>()` to access list-level operations.
 #[derive(Clone, Copy)]
 pub struct DragAndDropContext {
-    drag: Signal<DragState>,
+    drag: Signal<ReorderState>,
+    /// The items as rendered: the given items arranged by the order.
     list_items: Signal<Vec<SortableListItem>>,
+    /// The order an uncontrolled list remembers.
+    order: Signal<KeyOrder>,
+    /// Keys an uncontrolled list has removed.
+    removed: Signal<HashSet<String>>,
+    /// Key of the lifted item: focus returns to it by identity, because in a
+    /// controlled list the rendered order only changes once the owner has
+    /// applied the reported one.
+    lifted_key: Signal<Option<String>>,
+    config: Signal<ListConfig>,
     focus: CollectionState,
     announcement: Signal<String>,
     /// This list's own id for its [`DragAndDropInstructions`] element, which
@@ -108,93 +98,114 @@ pub struct DragAndDropContext {
 
 impl DragAndDropContext {
     fn drag_from(&self) -> Option<usize> {
-        match (self.drag)() {
-            DragState::Idle => None,
-            DragState::Dragging { from, .. } | DragState::Dropped { from, .. } => Some(from),
-        }
+        (self.drag)().from()
     }
 
     fn drop_to(&self) -> Option<usize> {
-        match (self.drag)() {
-            DragState::Idle => None,
-            DragState::Dragging { to, .. } => to,
-            DragState::Dropped { to, .. } => Some(to),
-        }
+        (self.drag)().to()
     }
 
     fn drop_position(&self) -> DropPosition {
-        match (self.drag)() {
-            DragState::Dragging { position, .. } => position,
-            _ => DropPosition::Undefined,
-        }
+        (self.drag)().position()
     }
 
     fn is_dragging(&self) -> bool {
-        !matches!((self.drag)(), DragState::Idle)
+        (self.drag)().is_active()
+    }
+
+    fn is_lifted(&self) -> bool {
+        (self.drag)().is_lifted()
+    }
+
+    fn axis(&self) -> ReorderAxis {
+        (self.config)().axis
+    }
+
+    fn keys(&self) -> Vec<String> {
+        (self.list_items)()
+            .into_iter()
+            .map(|item| item.key)
+            .collect()
     }
 
     fn start_drag(&mut self, index: usize) {
-        self.drag.set(DragState::Dragging {
-            from: index,
-            to: None,
-            position: DropPosition::Undefined,
-        });
+        let key = (self.list_items)().get(index).map(|item| item.key.clone());
+        self.lifted_key.set(key);
+        self.drag.set(ReorderState::lift(index));
+    }
+
+    fn focus_lifted(&mut self) {
+        self.focus.set_focus_key((self.lifted_key)());
     }
 
     fn end_drag(&mut self) {
-        let focus_target = self.drop_to().or(self.drag_from());
-        self.set_focus(focus_target);
-        self.drag.set(DragState::Idle);
+        self.focus_lifted();
+        self.drag.set(ReorderState::Idle);
     }
 
     fn cancel_drag(&mut self) {
-        self.set_focus(self.drag_from());
-        self.drag.set(DragState::Idle);
+        self.focus_lifted();
+        self.drag.set(ReorderState::Idle);
     }
 
     fn drag_over(&mut self, hovered: usize, position: DropPosition) {
-        let DragState::Dragging { from, .. } = (self.drag)() else {
-            return;
-        };
-        let resolved = resolve_drop_index(from, hovered, position);
-        self.drag.set(DragState::Dragging {
-            from,
-            to: Some(resolved),
-            position: resolve_drop_position(from, resolved),
-        });
+        self.drag.set((self.drag)().hover(hovered, position));
     }
 
+    /// Drops the lifted item onto its chosen slot: the new order is committed
+    /// (remembered when uncontrolled) and reported through `on_reorder`.
     fn drop(&mut self) {
-        let DragState::Dragging {
-            from, to: Some(to), ..
-        } = (self.drag)()
-        else {
+        let (state, moved) = (self.drag)().drop_item();
+        let Some((from, to)) = moved else {
             return;
         };
-        let mut list = (self.list_items)();
-        let item = list.remove(from);
-        list.insert(to, item);
-        self.list_items.set(list);
-        self.drag.set(DragState::Dropped { from, to });
+        self.drag.set(state);
+        if from != to {
+            let keys = self.keys();
+            if let Some(key) = keys.get(from).cloned() {
+                let mut order = KeyOrder::new(keys);
+                order.move_key(&key, to);
+                self.commit_order(order.into_keys());
+            }
+        }
     }
 
-    /// Remove the item at the given index from the list.
-    pub fn remove(&mut self, index: usize) {
-        let mut list = (self.list_items)();
-        if index < list.len() {
-            list.remove(index);
-            let new_len = list.len();
-            let focus_target = new_len.checked_sub(1).map(|last| index.min(last));
-            let focus_id =
-                focus_target.and_then(|index| list.get(index).map(|item| item.key.clone()));
-            self.list_items.set(list);
-            self.focus.set_focus_key(focus_id);
-            self.announcement.set(format!(
-                "Removed item from position {}. {} items remaining",
-                index + 1,
-                new_len
-            ));
+    fn commit_order(&mut self, keys: Vec<String>) {
+        let config = (self.config)();
+        if !config.controlled {
+            self.order.set(KeyOrder::new(keys.clone()));
         }
+        config.on_reorder.call(keys);
+    }
+
+    /// Remove the item at the given index from the list. An uncontrolled list
+    /// drops it; a controlled one reports its key through `on_remove` and the
+    /// owner decides.
+    pub fn remove(&mut self, index: usize) {
+        let items = (self.list_items)();
+        let Some(removed) = items.get(index).map(|item| item.key.clone()) else {
+            return;
+        };
+        let remaining: Vec<&SortableListItem> =
+            items.iter().filter(|item| item.key != removed).collect();
+        let new_len = remaining.len();
+        let focus_id = new_len
+            .checked_sub(1)
+            .and_then(|last| remaining.get(index.min(last)).map(|item| item.key.clone()));
+        let config = (self.config)();
+        if config.controlled {
+            config.on_remove.call(removed);
+        } else {
+            let mut order = (self.order)();
+            order.remove(&removed);
+            self.order.set(order);
+            let mut gone = (self.removed)();
+            gone.insert(removed.clone());
+            self.removed.set(gone);
+            config.on_remove.call(removed);
+        }
+        self.focus.set_focus_key(focus_id);
+        self.announcement.set(announce_remove(index, new_len));
     }
 
     fn announce(&mut self, msg: String) {
@@ -226,59 +237,27 @@ impl DragAndDropContext {
         self.focus.focus_prev();
     }
 
-    fn move_up(&mut self, index: usize) {
-        let DragState::Dragging { from, to, .. } = (self.drag)() else {
-            return;
-        };
-        let current = to.unwrap_or(index);
-        let len = (self.list_items)().len();
-        let new_to = current.checked_sub(1).unwrap_or(len - 1);
-        self.drag.set(DragState::Dragging {
-            from,
-            to: Some(new_to),
-            position: resolve_drop_position(from, new_to),
-        });
-    }
-
-    fn move_down(&mut self, index: usize) {
-        let DragState::Dragging { from, to, .. } = (self.drag)() else {
-            return;
-        };
-        let current = to.unwrap_or(index);
-        let len = (self.list_items)().len();
-        let new_to = (current + 1) % len;
-        self.drag.set(DragState::Dragging {
-            from,
-            to: Some(new_to),
-            position: resolve_drop_position(from, new_to),
-        });
-    }
-
-    fn announce_move(&mut self, index: usize) {
-        let pos = self.drop_to().unwrap_or(index) + 1;
-        let count = self.item_count();
-        self.announce(format!(
-            "You have moved the item to position {pos} of {count}"
-        ));
+    /// A keyboard step of the lifted item, wrapping at the ends.
+    fn step(&mut self, index: usize, delta: isize) {
+        let len = self.item_count();
+        let state = (self.drag)().step(index, delta, len);
+        self.drag.set(state);
+        let to = state.to().unwrap_or(index);
+        self.announce(announce_move(to, len));
     }
 
     fn toggle_drag(&mut self, index: usize) {
-        if self.is_dragging() {
-            let from = self.drag_from().unwrap_or(index) + 1;
-            let to = self.drop_to().unwrap_or(index) + 1;
+        if self.is_lifted() {
+            let from = self.drag_from().unwrap_or(index);
+            let to = self.drop_to().unwrap_or(index);
             self.drop();
             self.end_drag();
-            self.announce(format!(
-                "You have dropped the item. It has moved from position {from} to position {to}"
-            ));
+            self.announce(announce_drop(from, to));
         } else {
             let count = self.item_count();
             self.start_drag(index);
             self.drag_over(index, DropPosition::Undefined);
-            self.announce(format!(
-                "You have lifted an item in position {} of {count}",
-                index + 1
-            ));
+            self.announce(announce_lift(index, count));
         }
     }
 }
@@ -286,8 +265,36 @@ impl DragAndDropContext {
 /// The props for the [`DragAndDropList`] component.
 #[derive(Props, Clone, PartialEq)]
 pub struct DragAndDropListProps {
-    /// Items (labels) to be rendered.
+    /// The items to render. Each takes its identity from the `key:` on its
+    /// root element (else its position here); give every item a key whenever
+    /// the order is controlled or persisted.
     pub items: Vec<Element>,
+
+    /// Controlled order: the keys of `items`, first to last. When set, the
+    /// list shows exactly this order (keys it does not list follow in the
+    /// order of `items`, listed keys with no item are skipped) and changes it
+    /// only when the owner writes a new one after [`on_reorder`](Self::on_reorder).
+    /// Unset, the list remembers the order itself, starting from `items`.
+    #[props(default)]
+    pub order: Option<ReadSignal<Vec<String>>>,
+
+    /// Called with the complete new order (every key, first to last) after an
+    /// item is moved, by pointer or keyboard, controlled or not. Not called
+    /// when an item is dropped where it was.
+    #[props(default)]
+    pub on_reorder: Callback<Vec<String>>,
+
+    /// Called with the key of an item the user removed. An uncontrolled list
+    /// has already dropped it; a controlled list drops it only when the owner
+    /// stops passing it.
+    #[props(default)]
+    pub on_remove: Callback<String>,
+
+    /// The axis the items are laid out on. `Vertical` (the default) moves a
+    /// lifted item with Up and Down; `Horizontal` uses Left and Right,
+    /// mirrored under right-to-left, and the pointer picks the slot by x.
+    #[props(default)]
+    pub axis: ReorderAxis,
 
     /// Accessible label for the list
     #[props(default)]
@@ -435,23 +442,58 @@ fn drop_gap_declaration(drop_gap: Option<&str>) -> String {
 /// ```
 #[component]
 pub fn DragAndDropList(props: DragAndDropListProps) -> Element {
-    let drag = use_signal(|| DragState::Idle);
-    let list_items = use_signal(|| {
-        props
-            .items
-            .iter()
-            .cloned()
-            .enumerate()
-            .map(|(index, item)| SortableListItem::new(item, index))
-            .collect()
+    let drag = use_signal(|| ReorderState::Idle);
+    let order = use_signal(KeyOrder::default);
+    let removed = use_signal(HashSet::<String>::new);
+    let lifted_key = use_signal(|| None::<String>);
+    let mut list_items = use_signal(Vec::<SortableListItem>::new);
+    let mut config = use_signal(|| ListConfig {
+        controlled: props.order.is_some(),
+        axis: props.axis,
+        on_reorder: props.on_reorder,
+        on_remove: props.on_remove,
     });
     let announcement = use_signal(String::new);
     let focus = use_collection_provider(ReadSignal::new(Signal::new(true)));
     let instructions_id = use_unique_id();
 
+    // What the handlers see tracks the props: the config, and the items
+    // arranged by the one order (the owner's when controlled, else the one
+    // remembered), minus the ones an uncontrolled list removed.
+    let current = ListConfig {
+        controlled: props.order.is_some(),
+        axis: props.axis,
+        on_reorder: props.on_reorder,
+        on_remove: props.on_remove,
+    };
+    if *config.peek() != current {
+        config.set(current);
+    }
+    let arranged = {
+        let source = props
+            .items
+            .iter()
+            .cloned()
+            .enumerate()
+            .map(|(index, item)| SortableListItem::new(item, index))
+            .filter(|item| props.order.is_some() || !removed.peek().contains(&item.key));
+        match props.order {
+            Some(controlled) => KeyOrder::new(controlled.read().iter().cloned())
+                .arrange(source, |item| item.key.as_str()),
+            None => order.read().arrange(source, |item| item.key.as_str()),
+        }
+    };
+    if *list_items.peek() != arranged {
+        list_items.set(arranged);
+    }
+
     use_context_provider(move || DragAndDropContext {
         drag,
         list_items,
+        order,
+        removed,
+        lifted_key,
+        config,
         focus,
         announcement,
         instructions_id,
@@ -486,9 +528,11 @@ pub fn DragAndDropList(props: DragAndDropListProps) -> Element {
     );
     let style = (!style.is_empty()).then_some(style);
     let attributes = merge_attributes(vec![rest_attrs, attributes!(div { style: style })]);
+    let axis = props.axis.as_str();
 
     rsx! {
         div {
+            "data-orientation": axis,
             ..attributes,
             {children}
         }
@@ -702,76 +746,58 @@ pub fn DragAndDropListItem(props: DragAndDropListItemProps) -> Element {
     let mut collection_onmounted = item.onmounted();
     let mut item_ref: Signal<Option<std::rc::Rc<MountedData>>> = use_signal(|| None);
 
+    let direction = use_direction(None);
     let onkeydown = move |event: Event<KeyboardData>| {
-        let key = event.key();
-
-        match key {
-            Key::ArrowUp => {
-                event.prevent_default();
-                if ctx.is_dragging() {
-                    ctx.move_up(index);
-                    ctx.announce_move(index);
-                } else {
+        let Some(command) = command_for_key(&event.key(), ctx.axis(), direction) else {
+            return;
+        };
+        event.prevent_default();
+        let lifted = ctx.is_dragging();
+        match command {
+            ReorderCommand::Step(delta) => {
+                if lifted {
+                    ctx.step(index, delta);
+                } else if delta < 0 {
                     ctx.focus_prev();
-                }
-            }
-            Key::ArrowDown => {
-                event.prevent_default();
-                if ctx.is_dragging() {
-                    ctx.move_down(index);
-                    ctx.announce_move(index);
                 } else {
                     ctx.focus_next();
                 }
             }
-            Key::Enter => {
-                event.prevent_default();
-                ctx.toggle_drag(index);
-            }
-            Key::Character(ref c) if c == " " => {
-                event.prevent_default();
-                ctx.toggle_drag(index);
-            }
-            Key::Escape => {
-                event.prevent_default();
-                if ctx.is_dragging() {
-                    let pos = ctx.drag_from().unwrap_or(index) + 1;
+            ReorderCommand::Toggle => ctx.toggle_drag(index),
+            ReorderCommand::Cancel => {
+                if lifted {
+                    let from = ctx.drag_from().unwrap_or(index);
                     ctx.cancel_drag();
-                    ctx.announce(format!(
-                        "Movement cancelled. The item has returned to its starting position of {pos}"
-                    ));
+                    ctx.announce(announce_cancel(from));
                 }
             }
-            Key::Delete | Key::Backspace => {
-                event.prevent_default();
-                if !ctx.is_dragging() {
+            ReorderCommand::Remove => {
+                if !lifted {
                     ctx.remove(index);
                 }
             }
-            Key::Home => {
-                event.prevent_default();
-                if !ctx.is_dragging() {
+            ReorderCommand::First => {
+                if !lifted {
                     ctx.set_focus(Some(0));
                 }
             }
-            Key::End => {
-                event.prevent_default();
-                if !ctx.is_dragging() {
+            ReorderCommand::Last => {
+                if !lifted {
                     ctx.set_focus(ctx.item_count().checked_sub(1));
                 }
             }
-            _ => {}
-        };
+        }
     };
 
-    // All owned: role description/draggable/tabindex/aria-grabbed define
-    // this item's DnD widget semantics, the `data-*` attributes are its own
-    // managed drag/focus state.
+    // All owned: role description/draggable/tabindex define this item's DnD
+    // widget semantics, the `data-*` attributes are its own managed
+    // drag/focus state. There is no `aria-grabbed` (deprecated since ARIA
+    // 1.1): the lift is announced through the live region and shown by
+    // `data-is-grabbing`.
     let owned = attributes!(li {
         aria_roledescription: "sortable item",
         draggable: "true",
         tabindex: item.tabindex,
-        aria_grabbed: if ctx.drag_from().is_some_and(|from| from == index) { "true" } else { "false" },
         "data-is-grabbing": if ctx.drag_from().is_some_and(|from| from == index) { "true" },
         // Set when the drop target has returned to this item's starting slot —
         // i.e. dropping now would leave it in place. The primitive suppresses
@@ -849,15 +875,21 @@ pub fn DragAndDropListItem(props: DragAndDropListItemProps) -> Element {
                 event.data_transfer().set_drop_effect("move");
                 async move {
                     if let Some(md) = item_ref() {
-                        let cursor_y = event.client_coordinates().y;
+                        let pointer = event.client_coordinates();
                         if let Ok(rect) = md.get_client_rect().await {
-                            let mid_y = rect.origin.y + rect.size.height / 2.0;
-                            let position = if cursor_y < mid_y {
-                                DropPosition::Before
-                            } else {
-                                DropPosition::After
+                            let axis = ctx.axis();
+                            let (cursor, origin, size) = match axis {
+                                ReorderAxis::Vertical => {
+                                    (pointer.y, rect.origin.y, rect.size.height)
+                                }
+                                ReorderAxis::Horizontal => {
+                                    (pointer.x, rect.origin.x, rect.size.width)
+                                }
                             };
-                            ctx.drag_over(index, position);
+                            ctx.drag_over(
+                                index,
+                                pointer_position(axis, direction, cursor, origin, size),
+                            );
                         }
                     }
                 }
@@ -1083,5 +1115,35 @@ mod tests {
             id_at(&described_by[1]) < describedby_at(&described_by[1]),
             "{html}"
         );
+    }
+
+    /// Text of every sortable item's `span`, in document order.
+    fn item_texts(html: &str) -> Vec<String> {
+        html.split("<span")
+            .skip(1)
+            .map(|chunk| {
+                let start = chunk.find('>').unwrap() + 1;
+                chunk[start..chunk.find("</span>").unwrap()].to_string()
+            })
+            .collect()
+    }
+
+    #[component]
+    fn Controlled() -> Element {
+        let order = use_signal(|| vec!["Three".to_string(), "One".to_string()]);
+        rsx! { DragAndDropList { items: items(), order: ReadSignal::from(order) } }
+    }
+
+    #[test]
+    fn a_controlled_list_shows_the_given_order_and_appends_unlisted_items() {
+        let html = render(Controlled);
+        assert_eq!(item_texts(&html), ["Three", "One", "Two"], "{html}");
+    }
+
+    #[test]
+    fn an_uncontrolled_list_starts_in_item_order_and_has_no_aria_grabbed() {
+        let html = render(Untuned);
+        assert_eq!(item_texts(&html), ["One", "Two", "Three"], "{html}");
+        assert!(!html.contains("aria-grabbed"), "{html}");
     }
 }
