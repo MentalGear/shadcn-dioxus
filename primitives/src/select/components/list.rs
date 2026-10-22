@@ -7,6 +7,8 @@ use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 
 use super::super::context::SelectContext;
+#[cfg(feature = "web")]
+use super::super::context::SelectPosition;
 use super::scroll_button::InRenderedList;
 
 /// The props for the [`SelectList`] component
@@ -90,6 +92,92 @@ pub fn SelectList(props: SelectListProps) -> Element {
             {props.children}
         }
     }
+}
+
+/// The item-aligned placement script. Reads the geometry it needs in untransformed layout units
+/// (`offsetTop`/`offsetHeight`, never a rect of the list: the pop-in animates `scale`), puts the
+/// selected option's centre on the trigger's centre, then keeps the list inside the visual
+/// viewport by moving it and, past that, scrolling the option away from the trigger line.
+#[cfg(feature = "web")]
+const ITEM_ALIGNED_JS: &str = r#"
+const id = await dioxus.recv();
+const triggerId = await dioxus.recv();
+const list = document.getElementById(id);
+const trigger = document.querySelector('[style*="anchor-name: --dxa-' + triggerId + ';"]');
+if (!list || !trigger) return;
+const MARGIN = 8;
+const offsetIn = (el) => {
+    let y = 0;
+    for (let n = el; n && n !== list; n = n.offsetParent) y += n.offsetTop;
+    return y;
+};
+const place = () => {
+    // The box a fixed element resolves against (a `position: fixed; inset: 0` probe): the root's
+    // client size is wider by the reserved scrollbar gutter.
+    const probe = document.createElement('div');
+    probe.style.cssText = 'position:fixed;inset:0;visibility:hidden;pointer-events:none;';
+    document.documentElement.appendChild(probe);
+    const box = probe.getBoundingClientRect();
+    probe.remove();
+    const vv = window.visualViewport;
+    const vw = box.width;
+    const vh = Math.min(box.height, vv ? vv.height : Infinity);
+    const t = trigger.getBoundingClientRect();
+    const selected = list.querySelector('[role="option"][aria-selected="true"]');
+    list.style.setProperty('--dx-anchor-width', t.width + 'px');
+    list.style.setProperty('--dx-available-height', Math.max(0, vh - 2 * MARGIN) + 'px');
+    const ch = list.offsetHeight;
+    const cw = list.offsetWidth;
+    const maxScroll = list.scrollHeight - list.clientHeight;
+    const border = list.offsetHeight - list.clientHeight;
+    // y of the option's top inside the list's border box when the list is scrolled to `s`.
+    const optTop = selected ? offsetIn(selected) + list.clientTop : 0;
+    const optH = selected ? selected.offsetHeight : 0;
+    const want = t.top + t.height / 2 - optH / 2;
+    let top = selected ? want - optTop : t.bottom + 4;
+    let scroll = 0;
+    if (selected) {
+        const lo = MARGIN, hi = vh - MARGIN - ch;
+        if (top < lo || top > hi) {
+            top = Math.min(Math.max(top, lo), Math.max(lo, hi));
+            // The panel cannot go further: scroll the list so the option still lands as close as it can.
+            scroll = Math.min(Math.max(optTop - (want - top) - list.clientTop, 0), maxScroll);
+        }
+    }
+    top = Math.min(Math.max(top, MARGIN), Math.max(MARGIN, vh - MARGIN - ch));
+    const rtl = getComputedStyle(list).direction === 'rtl';
+    let left = rtl ? t.right - cw : t.left;
+    left = Math.min(Math.max(left, MARGIN), Math.max(MARGIN, vw - MARGIN - cw));
+    list.style.top = top + 'px';
+    list.style.left = left + 'px';
+    list.scrollTop = scroll;
+    list.dataset.placed = 'true';
+};
+let tries = 0;
+const start = () => {
+    if (!list.isConnected) return;
+    if (!list.matches(':popover-open') && tries++ < 20) { requestAnimationFrame(start); return; }
+    place();
+};
+start();
+listen(window, 'resize', place, { passive: true });
+"#;
+
+/// Places the listbox for `position="item-aligned"`; does nothing for the popper placement.
+#[cfg(feature = "web")]
+fn use_item_aligned(id: String, ctx: SelectContext) {
+    use crate::js_listener::{use_js_listeners, JsListeners};
+    let open = ctx.selectable.open;
+    use_js_listeners(move || {
+        if !open() || (ctx.position)() != SelectPosition::ItemAligned {
+            return None;
+        }
+        Some(
+            JsListeners::install(ITEM_ALIGNED_JS)
+                .arg(id.clone())
+                .arg(ctx.selectable.trigger_id.cloned()),
+        )
+    });
 }
 
 /// Shared listbox keydown handling for both render arms below -- unchanged
@@ -295,14 +383,18 @@ fn SelectListRendered(id: String, attributes: Vec<Attribute>, children: Element)
     // (`top: 100%; left: 0; margin-top: 0.25rem` == 4px at the default root
     // font size): anchored below the trigger, left-aligned with it, the
     // same bottom/start convention `DropdownMenu`/`Menubar` already use.
+    // Item-aligned places the list itself (`use_item_aligned`), so the popper engine sits out.
+    let popper_open = use_memo(move || open() && (ctx.position)() == SelectPosition::Popper);
     crate::top_layer::use_anchor_position_fallback(
         id.clone(),
         ctx.selectable.trigger_id.cloned(),
-        open,
+        popper_open,
         crate::ContentSide::Bottom,
         crate::ContentAlign::Start,
         4,
     );
+    // `position="item-aligned"`: the selected option over the trigger, inside the viewport.
+    use_item_aligned(id.clone(), ctx);
     // A Select that does NOT lock the page (`scroll_lock: false`) closes on
     // any scroll (`top_layer::use_close_on_scroll`'s doc); a locking one
     // keeps its `ScrollLockGuard`.
@@ -380,6 +472,7 @@ fn SelectListRendered(id: String, attributes: Vec<Attribute>, children: Element)
         dir: (ctx.direction)().as_str(),
         "data-state": if open() { "open" } else { "closed" },
         "data-direction": (ctx.direction)().as_str(),
+        "data-position": (ctx.position)().as_str(),
     });
     let attributes = merge_attributes(vec![attributes, owned]);
 
@@ -457,6 +550,7 @@ fn SelectListRendered(id: String, attributes: Vec<Attribute>, children: Element)
         dir: (ctx.direction)().as_str(),
         "data-state": if open() { "open" } else { "closed" },
         "data-direction": (ctx.direction)().as_str(),
+        "data-position": (ctx.position)().as_str(),
     });
     let attributes = merge_attributes(vec![attributes, labelledby, owned]);
 

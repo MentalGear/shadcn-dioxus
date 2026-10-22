@@ -3,6 +3,7 @@ import type { Locator, Page } from "@playwright/test";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 import { awaitAnimationsSettled, measureAtRest } from "./animations";
+import { fixedViewportBox } from "./viewport-box";
 
 // Row 268: Select scroll buttons. The `scroll` variant has 24 options, more than the popup's 18rem max-height shows.
 
@@ -96,4 +97,86 @@ test("a list that fits shows no scroll button, and a closed select renders none"
   const l = page.getByRole("listbox", { name: "Small size options" });
   await expect(l).toHaveAttribute("data-state", "open");
   await expect(l.locator('[data-slot="select-scroll-button"][data-visible="true"]')).toHaveCount(0);
+});
+
+// Row 268: position="item-aligned". The `aligned` variant opens with "UTC+5" selected in the 24-option list.
+test.describe("position=item-aligned", () => {
+  const aligned = (page: Page) => page.getByRole("combobox", { name: "Aligned zone select" });
+  const alignedList = (page: Page) => page.getByRole("listbox", { name: "Aligned zone options" });
+
+  async function openAligned(page: Page) {
+    await gotoHydrated(page, `${BASE_URL}/component/select/`);
+    await aligned(page).scrollIntoViewIfNeeded();
+    await aligned(page).click();
+    await expect(alignedList(page)).toHaveAttribute("data-state", "open");
+    await expect(alignedList(page)).toHaveAttribute("data-position", "item-aligned");
+    await awaitAnimationsSettled(alignedList(page));
+    await expect(alignedList(page)).toHaveAttribute("data-placed", "true");
+  }
+
+  test("the selected option sits on the trigger's line and the list stays in the viewport", async ({ page }) => {
+    await page.setViewportSize({ width: 1000, height: 900 });
+    await gotoHydrated(page, `${BASE_URL}/component/select/`);
+    // Put the trigger mid-viewport so there is room above and below for the alignment to be exact.
+    await aligned(page).evaluate((el) => {
+      // rest-ok: the trigger does not animate
+      const r = el.getBoundingClientRect();
+      // viewport-ok: only scrolls the page, no overlay is bounded by it
+      window.scrollBy(0, r.top - window.innerHeight / 2);
+    });
+    await aligned(page).click();
+    await expect(alignedList(page)).toHaveAttribute("data-placed", "true");
+    await awaitAnimationsSettled(alignedList(page));
+    const selected = alignedList(page).getByRole("option", { selected: true });
+    await expect(selected).toHaveText("UTC+5");
+    const t = await measureAtRest(aligned(page));
+    const o = await measureAtRest(selected);
+    const l = await measureAtRest(alignedList(page));
+    expect(Math.abs(o.y + o.height / 2 - (t.y + t.height / 2)), "option centre on trigger centre").toBeLessThanOrEqual(2);
+    expect(l.width).toBeGreaterThanOrEqual(t.width - 1);
+    const vp = await fixedViewportBox(page);
+    expect(l.y).toBeGreaterThanOrEqual(vp.y - 0.5);
+    expect(l.y + l.height).toBeLessThanOrEqual(vp.y + vp.height + 0.5);
+    expect(l.x).toBeGreaterThanOrEqual(vp.x - 0.5);
+    expect(l.x + l.width).toBeLessThanOrEqual(vp.x + vp.width + 0.5);
+  });
+
+  test("a trigger at the viewport's edge keeps the list inside it and the scroll buttons work", async ({ page }) => {
+    await page.setViewportSize({ width: 800, height: 420 });
+    await gotoHydrated(page, `${BASE_URL}/component/select/`);
+    // Trigger near the bottom edge: the list cannot centre on it, so it is pushed up and the option scrolled.
+    await aligned(page).evaluate((el) => {
+      // rest-ok: the trigger does not animate
+      const r = el.getBoundingClientRect();
+      // viewport-ok: only scrolls the page, no overlay is bounded by it
+      window.scrollBy(0, r.top - (window.innerHeight - 60));
+    });
+    await aligned(page).click();
+    await expect(alignedList(page)).toHaveAttribute("data-placed", "true");
+    await awaitAnimationsSettled(alignedList(page));
+    const l = await measureAtRest(alignedList(page));
+    const vp = await fixedViewportBox(page);
+    expect(l.y).toBeGreaterThanOrEqual(vp.y - 0.5);
+    expect(l.y + l.height).toBeLessThanOrEqual(vp.y + vp.height + 0.5);
+    // Still an overflowing list: its edge buttons keep reporting the scroll state.
+    const up = alignedList(page).locator('[data-slot="select-scroll-button"][data-direction="up"]');
+    const down = alignedList(page).locator('[data-slot="select-scroll-button"][data-direction="down"]');
+    const top = await scrollTop(alignedList(page));
+    await expect(up).toHaveAttribute("data-visible", top > 1 ? "true" : "false");
+    await expect(down).toHaveAttribute("data-visible", "true");
+    // The selected option is still visible inside the list.
+    const o = await measureAtRest(alignedList(page).getByRole("option", { selected: true }));
+    expect(o.y).toBeGreaterThanOrEqual(l.y - 1);
+    expect(o.y + o.height).toBeLessThanOrEqual(l.y + l.height + 1);
+  });
+
+  test("selecting still works and the popper select is unchanged", async ({ page }) => {
+    await openAligned(page);
+    await alignedList(page).getByRole("option", { name: "UTC+8" }).click();
+    await expect(aligned(page)).toContainText("UTC+8");
+    await trigger(page).scrollIntoViewIfNeeded();
+    await trigger(page).click();
+    await expect(list(page)).toHaveAttribute("data-position", "popper");
+    await expect(list(page)).not.toHaveAttribute("data-placed", "true");
+  });
 });

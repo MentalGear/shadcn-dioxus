@@ -4,3 +4,4 @@ rtl
 disabled
 sizes
 scroll
+aligned

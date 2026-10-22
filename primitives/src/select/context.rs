@@ -10,6 +10,28 @@ use super::text_search::AdaptiveKeyboard;
 use crate::direction::Direction;
 use crate::selectable::{RcPartialEqValue, SelectableContext};
 
+/// Where a [`Select`](super::components::select::Select)'s listbox is placed (Radix's `position`).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum SelectPosition {
+    /// Anchored below the trigger (flipping above when it does not fit): the popper placement,
+    /// shadcn's current default.
+    #[default]
+    Popper,
+    /// The selected option sits over the trigger and the listbox stays inside the viewport:
+    /// Radix's `item-aligned` mode.
+    ItemAligned,
+}
+
+impl SelectPosition {
+    /// The `data-position` value the listbox carries.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            SelectPosition::Popper => "popper",
+            SelectPosition::ItemAligned => "item-aligned",
+        }
+    }
+}
+
 /// Main context for the select component containing all shared state
 #[derive(Clone, Copy)]
 pub(super) struct SelectContext {
@@ -63,6 +85,9 @@ pub(super) struct SelectContext {
     /// here either (this crate's `SelectList` always uses anchor
     /// positioning, never Radix's "item-aligned" mode that math is for).
     pub direction: ReadSignal<Direction>,
+
+    /// Where the listbox is placed: see [`SelectPosition`].
+    pub position: ReadSignal<SelectPosition>,
 }
 
 impl SelectContext {
