@@ -1,7 +1,7 @@
 ---
 id: 356
 title: "Lane disk guard ignores concurrent template copies, so two slots both pass and both die with ENOSPC"
-status: "OPEN. Workaround meanwhile: lanes build with LANE_SLOTS=1 when free disk is under twice the guard's…"
+status: "LANDED. lane-slot-target.sh reserve|release|copy (flock on $Q/disk.lock, one file per pid under…"
 size: "S: lane-slot-target.sh reservation plus…"
 area: tooling
 updated: 2026-10-22
@@ -15,7 +15,7 @@ updated: 2026-10-22
 
 ## Status / trigger
 
-OPEN. Workaround meanwhile: lanes build with `LANE_SLOTS=1` when free disk is under twice the guard's need.
+LANDED. `lane-slot-target.sh reserve|release|copy` (flock on `$Q/disk.lock`, one file per pid under `$Q/disk-reserve/`, dead pids swept); `lane-ssg.sh` and the warm slot copy use them; `check-lane-lock.sh` scenario 9 is red on the old script and green now. The `LANE_SLOTS=1` workaround is no longer needed for this.
 
 ## Size
 
