@@ -190,8 +190,8 @@ pub(crate) fn DocsComponentNav(active: DocsNavActive) -> Element {
     // Controlled, radio-style: the pressed item is the order, and pressing it again (an empty set) is ignored.
     let pressed = use_memo(move || {
         Some(HashSet::from([match sort() {
-            NavSort::Az => "az",
-            NavSort::Category => "category",
+            NavSort::Az => "az".to_string(),
+            NavSort::Category => "category".to_string(),
         }]))
     });
 
