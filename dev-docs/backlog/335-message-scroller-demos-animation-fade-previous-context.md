@@ -1,7 +1,7 @@
 ---
 id: 335
 title: "Message Scroller demos: animation demo shows LLM output, both fade demos look default, previous-context demo is unclear"
-status: "BACKLOG (owner 2026-10-21)"
+status: "CODE DONE, NOT YET BROWSER-VERIFIED (lane scroller): animation demo shows only sent bubbles, fade…"
 size: "S"
 area: components
 updated: 2026-10-21
@@ -15,7 +15,7 @@ Message Scroller demos: animation demo shows LLM output, both fade demos look de
 
 ## Status / trigger
 
-**BACKLOG (owner 2026-10-21)**
+**CODE DONE, NOT YET BROWSER-VERIFIED (lane scroller): animation demo shows only sent bubbles, fade demo is a None-vs-edge side-by-side, previous_context has real history and a caption; specs updated; the SSG run is pending (disk)**
 
 ## Size
 
