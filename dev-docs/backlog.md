@@ -41,7 +41,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (47)
+## Open rows (46)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -70,7 +70,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [217](backlog/217-dependency-audit-follow-ups-what-users-pay-for.md) | Dependency audit follow-ups (what users pay for in compile time and supply chain) | PARTLY LANDED 2026-10-18 (lane deps 04ad7ddf): features calendar/color-picker, no build script… | S-M each | build |
 | [218](backlog/218-popup-style-isolation-top-layer-popups-stay-dom.md) | Popup style isolation: top-layer popups stay DOM descendants of their trigger, so free-content rules in an… | NARROWED 2026-10-21: PARTLY LANDED 2026-10-15 (lane ancestorleak 900f394 + main-loop 526b51d… | M | overlays |
 | [250](backlog/250-container-reset-loses-unpushed-work.md) | A container reset to a fresh clone loses every unpushed lane commit and all session scratch | CONSTRUCTION LANDED 2026-10-19 (lane-rules: push lane/* after every commit); redo of the lost work… | S | infra |
-| [252](backlog/252-virtualgrid-ssr-height-off-by-one-row.md) | VirtualGrid: the prerendered inner wrapper is one row shorter than after hydration (175000 px -&gt; 175036 px) | OPEN, inherent (cannot be decided at render): measured canvas | S | components |
 | [257](backlog/257-user-select-sidebar-spec-goto-hung-to-the-90-s-timeout-once.md) | user-select.spec.ts /component/sidebar/ page.goto hung to the 90 s timeout once in the release suite | OPEN (not reproducible: 1 failure in the batch-A release suite; 17 of 17 green since on release and… | S | playwright |
 | [265](backlog/265-upstream-ai-elements-code-block-trace-chat.md) | Upstream ai-elements (chat, message, code-block, trace, checkpoint, ...) vs our chat kit | PARTIAL 2026-10-19 (items 1-2 landed: code_block, trace, checkpoint and chat demos; item 3 is an… | L | chat |
 | [266](backlog/266-repo-cleanup-archive-historical-dev-docs.md) | Repo cleanup: archive historical dev-docs, trim CLAUDE.md and the big dev docs, split backlog.md | APPROVED 2026-10-19 (owner: run it when safe, in the Round 6 sweep); starts once no feature lane… | M-L | process |
@@ -93,7 +92,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [358](backlog/358-all-routes-one-navigation-for-both-schemes.md) | all-routes: one navigation for both schemes (needs a clean forced-colors reset) | BACKLOG. Blocked on one thing: the forced-colors sweep presses Tab from the focus start point… | S | tests |
 | [359](backlog/359-js-tooling-pnpm-minimum-release-age.md) | JS tooling: pnpm in playwright/ and preview/ with minimumReleaseAge, exact pins and install scripts off | BACKLOG (owner approved 2026-10-22, decision card in the "Switching npm to Bun" thread; background… | S-M, about half a day. | tooling |
 
-## Done rows (285)
+## Done rows (286)
 
 | # | Item | Updated |
 |---|---|---|
@@ -323,6 +322,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [248](backlog/done/248-select-placeholder-until-mount-hydration-shift.md) | Select renders its placeholder until mount, so a Select with a default value shifts layout at hydration | 2026-10-21 |
 | [249](backlog/done/249-navigationmenu-indicator.md) | NavigationMenuIndicator (the leftover of closed row 72) | 2026-10-22 |
 | [251](backlog/done/251-native-checkbox-ssr-initial-checked.md) | Native checkbox in the prerendered /component/form/ ignores initial_checked until the page is client-created | 2026-10-21 |
+| [252](backlog/done/252-virtualgrid-ssr-height-off-by-one-row.md) | VirtualGrid: the prerendered inner wrapper is one row shorter than after hydration (175000 px -&gt; 175036 px) | 2026-10-22 |
 | [253](backlog/done/253-ssg-renders-initial-checked-as-a-literal-attribute.md) | SSG renders `initial_checked` as a literal `initial_checked=true` attribute, so a prerendered checkbox, switch or radio loads unchecked | 2026-10-20 |
 | [254](backlog/done/254-stale-cargo-lock-in-detached-crates.md) | Stale Cargo.lock in the detached crates (attr-synth, carousel-lab) rewritten by lane spec runs | 2026-10-20 |
 | [255](backlog/done/255-stale-specs-toast-countdown-shim-and-drawer-drag-viewport.md) | Two specs drifted from the product and were red on main: the toast countdown shim and the drawer drag viewport | 2026-10-20 |
