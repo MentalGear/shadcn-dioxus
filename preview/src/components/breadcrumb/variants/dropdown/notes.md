@@ -1,1 +1,1 @@
-A collapsed crumb opens a dropdown menu of the hidden sections.
+The middle crumb is a dropdown trigger: it shows the current section, and its menu lists the other sections.

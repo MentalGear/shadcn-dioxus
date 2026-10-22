@@ -1,1 +1,1 @@
-Right-to-left layout: the menus, submenu and arrow keys mirror.
+Right-to-left layout: the menus and their arrow keys mirror.
