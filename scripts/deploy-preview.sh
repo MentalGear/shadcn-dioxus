@@ -3,11 +3,120 @@
 # Pages, which is configured (repo Settings -> Pages) to serve straight
 # from the `main` branch's /docs folder -- no CI build step involved.
 #
-# Usage: scripts/deploy-preview.sh
+# Usage: scripts/deploy-preview.sh               (the release suite, then the deploy build)
+#        scripts/deploy-preview.sh --suite-only  (only the release suite: run it ahead of a deploy, e.g. nightly)
 # Then: git add docs && git commit -m "..." && git push (to main).
+#
+# THE FULL PLAYWRIGHT SUITE RUNS HERE, ONCE PER DEPLOY (backlog row 322). A merge batch runs the gates and the specs its
+# diff selects (dev-docs/lane-rules.md, "Merge queue"); the whole suite (~66-82 min on release) is what stands between
+# main and the published site. Before building, the deploy needs a green release-suite run of the EXACT tree it
+# deploys: a stamp `$LANE_TGT/release-suite/<tree sha>.pass` (`git rev-parse HEAD^{tree}`, clean worktree). With no
+# stamp it makes one: a no-base-path RELEASE build of this tree in a copy of the warm `release-template` (the suite
+# cannot run on the base-path build, row 100), served by serve-spa.py, `playwright/tools/run-suite.sh` on it, and the
+# stamp only when every chunk reported and no test failed (flaky = passed on retry is allowed and listed). A red suite
+# stops the deploy with the failing titles. `DEPLOY_SUITE=skip:<reason>` deploys without it and says so; it is for an
+# emergency fix only, and the reason is printed.
+#   DEPLOY_SUITE_WORKERS (default 3: the main loop's full-run setting), DEPLOY_SUITE_CHUNKS (default 6),
+#   DEPLOY_SUITE_PORT (default 4830).
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+suite_only=0
+case "${1:-}" in
+  "") ;;
+  --suite-only) suite_only=1 ;;
+  *) echo "deploy-preview: unknown argument $1 (usage: scripts/deploy-preview.sh [--suite-only])" >&2; exit 2 ;;
+esac
+
+lane_tgt="${LANE_TGT:-/home/user/tgt}"
+suite_dir="$lane_tgt/release-suite"
+
+# Prints the summary of a run-suite.sh output directory and exits non-zero unless every chunk wrote its JSON report
+# and no test failed (`unexpected`). The list of failing titles goes to stderr.
+suite_verdict() {
+  node - "$1" "$2" <<'NODE'
+const fs = require("fs");
+const [dir, chunks] = process.argv.slice(2);
+let expected = 0, unexpected = 0, flaky = 0, skipped = 0;
+const missing = [], failed = [], flakyTitles = [];
+const walk = (suite, file) => {
+  for (const s of suite.suites ?? []) walk(s, s.file ?? file);
+  for (const spec of suite.specs ?? []) for (const t of spec.tests ?? []) {
+    const title = `${spec.file ?? file}: ${spec.title}`;
+    if (t.status === "unexpected") failed.push(title);
+    if (t.status === "flaky") flakyTitles.push(title);
+  }
+};
+for (let i = 1; i <= Number(chunks); i++) {
+  const f = `${dir}/chunk-${i}.json`;
+  if (!fs.existsSync(f)) { missing.push(i); continue; }
+  let j;
+  try { j = JSON.parse(fs.readFileSync(f, "utf8")); } catch { missing.push(i); continue; }
+  expected += j.stats.expected; unexpected += j.stats.unexpected; flaky += j.stats.flaky; skipped += j.stats.skipped;
+  for (const s of j.suites ?? []) walk(s, s.file);
+  if ((j.errors ?? []).length) missing.push(`${i} (${j.errors.length} run errors)`);
+}
+console.log(`passed=${expected} failed=${unexpected} flaky=${flaky} skipped=${skipped} chunks_missing=${missing.length ? missing.join(",") : 0}`);
+if (flakyTitles.length) console.error(`flaky (passed on retry):\n  ${flakyTitles.join("\n  ")}`);
+if (failed.length) console.error(`failed:\n  ${failed.join("\n  ")}`);
+process.exit(unexpected === 0 && missing.length === 0 && expected > 0 ? 0 : 1);
+NODE
+}
+
+release_suite() {
+  local tree head stamp
+  head="$(git -C "$repo_root" rev-parse HEAD)"
+  tree="$(git -C "$repo_root" rev-parse 'HEAD^{tree}')"
+  stamp="$suite_dir/$tree.pass"
+  case "${DEPLOY_SUITE:-run}" in
+    run) ;;
+    skip:?*) echo "deploy-preview: WARNING: release suite SKIPPED (${DEPLOY_SUITE#skip:}); $head is deployed without a full-suite run (row 322)" >&2; return 0 ;;
+    *) echo "deploy-preview: DEPLOY_SUITE must be unset, 'run' or 'skip:<reason>' (got '${DEPLOY_SUITE}')" >&2; exit 2 ;;
+  esac
+  # The stamp names a commit's tree; uncommitted changes would be deployed without having been tested. /docs is the
+  # deploy's own output and does not count.
+  if [ -n "$(git -C "$repo_root" status --porcelain --untracked-files=no -- . ':(exclude)docs')" ]; then
+    echo "deploy-preview: the worktree has uncommitted changes outside docs/; commit them first, the release suite (row 322) runs on a commit's tree" >&2
+    exit 2
+  fi
+  if [ -f "$stamp" ]; then
+    echo "==> Release suite: green for tree $tree already ($(head -1 "$stamp")); not run again."
+    return 0
+  fi
+  local name="deploy-suite-$$" out="$suite_dir/run-$tree" port="${DEPLOY_SUITE_PORT:-4830}"
+  local chunks="${DEPLOY_SUITE_CHUNKS:-6}" workers="${DEPLOY_SUITE_WORKERS:-3}"
+  local tgt pub server_pid=""
+  echo "==> Release suite (row 322): no green run recorded for tree $tree ($head); building and running it."
+  mkdir -p "$suite_dir"; rm -rf "$out"; mkdir -p "$out"
+  tgt="$(cd "$repo_root" && scripts/lane-target.sh create "$name" --release | sed -n 's/^export CARGO_TARGET_DIR=//p')"
+  [ -n "$tgt" ] || { echo "deploy-preview: could not copy the warm release-template tree (scripts/lane-target.sh create $name --release)" >&2; exit 1; }
+  # shellcheck disable=SC2064  # expand now: the trap must remove THIS copy and stop THIS server
+  trap "[ -n \"\${server_pid:-}\" ] && kill \"\${server_pid}\" 2>/dev/null; rm -rf '$tgt'" EXIT
+  ( cd "$repo_root" && CARGO_TARGET_DIR="$tgt" CARGO_INCREMENTAL=0 scripts/lane-lock.sh gate --label "deploy-suite:build" -- \
+      scripts/build-ssg.sh release ) > "$out/build.log" 2>&1 \
+    || { tail -30 "$out/build.log" >&2; echo "deploy-preview: the release-suite build failed (log $out/build.log)" >&2; exit 1; }
+  pub="$tgt/dx/preview/release/web/public"
+  "$repo_root/scripts/emit-404.sh" "$pub" >/dev/null
+  python3 "$repo_root/scripts/serve-spa.py" "$pub" "$port" >/dev/null 2>&1 9>&- 3>&- </dev/null &
+  server_pid=$!
+  for _ in $(seq 1 50); do curl -fsS -o /dev/null "http://127.0.0.1:$port/" && break; sleep 0.2; done
+  ( cd "$repo_root/playwright" && PLAYWRIGHT_BASE_URL="http://127.0.0.1:$port" PW_BUILD_PROFILE=release SSG_SITE_DIR="$pub" \
+      tools/run-suite.sh --out "$out" --chunks "$chunks" --workers "$workers" ) | tee "$out/run-suite.log" || true  # the verdict below decides
+  kill "$server_pid" 2>/dev/null || true; server_pid=""
+  rm -rf "$tgt"; trap - EXIT
+  local verdict
+  if verdict="$(suite_verdict "$out" "$chunks")"; then
+    printf '%s %s workers=%s %s\n' "$(date -u +%FT%TZ)" "$head" "$workers" "$verdict" > "$stamp"
+    echo "==> Release suite GREEN: $verdict (stamp $stamp; reports in $out)"
+  else
+    echo "deploy-preview: release suite RED for $head: $verdict -- not deploying (reports in $out; refresh nothing, fix and re-run)" >&2
+    exit 1
+  fi
+}
+
+release_suite
+if [ "$suite_only" = 1 ]; then exit 0; fi
+
 cd "$repo_root/preview"
 
 # Honor CARGO_TARGET_DIR (CLAUDE.md: every lane builds into an isolated, ABSOLUTE

@@ -9,7 +9,8 @@
 # The spec list comes from tools/select.mjs (the cover relation documented at its top: a component's own specs, a
 # primitive's consumer components' specs, the broad set for shared plumbing, every spec for a config change). Uses
 # ssg.local.config.ts, so PLAYWRIGHT_BASE_URL must point at a served build of the tree under test (scripts/lane-ssg.sh).
-# This is the lane's and the small-PR's run; the full suite still runs once per merge batch (dev-docs/lane-rules.md).
+# This is the lane's, the small PR's and the merge batch's run; the full suite runs once per deploy (row 322,
+# scripts/deploy-preview.sh; dev-docs/lane-rules.md).
 #
 # A changed theme or site stylesheet (preview/assets/*.css) is read rule by rule (backlog row 323): select.mjs crawls
 # PLAYWRIGHT_BASE_URL (or reads SELECT_SSG_DIR, the lane's pub dir) to learn which pages carry the classes the changed
