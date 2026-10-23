@@ -131,7 +131,7 @@ impl Engine {
             self.scroll_adjustments = 0;
             self.deferred_adjustments = 0;
             self.frozen_total = Some(FrozenTotal {
-                total: self.index.total(),
+                total: self.index.total().saturating_add(self.canvas_padding()),
                 count: self.index.count(),
             });
         }
@@ -248,11 +248,11 @@ impl Engine {
 
     /// The total scroll size; the frozen value while scrolling.
     fn total_size(&self) -> u32 {
-        let total = match self.frozen_total {
+        // The padding is frozen with the total: a row measured during the scroll moves neither.
+        match self.frozen_total {
             Some(frozen) if frozen.count == self.index.count() => frozen.total,
-            _ => self.index.total(),
-        };
-        total.saturating_add(self.canvas_padding())
+            _ => self.index.total().saturating_add(self.canvas_padding()),
+        }
     }
 
     /// The rows in view, `(first, last)` inclusive, from the current scroll state. `None` until
@@ -546,6 +546,19 @@ mod tests {
         // Stored 67 (69 is within 2px of it), so 66 + 66 + 67 = 199, and 2.4px hang below.
         assert_eq!(short.item(2).unwrap().size(), 67);
         assert_eq!(short.plan(8).canvas_height, 202);
+    }
+
+    #[test]
+    fn the_padding_is_frozen_with_the_total_while_scrolling() {
+        let mut engine = Engine::new();
+        engine.sync(&SizeEstimates::evaluate(3, Some(&|_| 66)));
+        let _ = engine.scroll(0, 400, false);
+        assert_eq!(engine.plan(8).canvas_height, 198);
+        let _ = engine.scroll(10, 400, true);
+        engine.resize_item_exact(2, 66.4);
+        assert_eq!(engine.plan(8).canvas_height, 198);
+        let _ = engine.scroll(10, 400, false);
+        assert_eq!(engine.plan(8).canvas_height, 199);
     }
 
     #[test]
