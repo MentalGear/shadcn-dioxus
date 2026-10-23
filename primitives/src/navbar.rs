@@ -1260,14 +1260,14 @@ pub fn NavbarItem(mut props: NavbarItemProps) -> Element {
         "-1"
     };
 
-    rsx! {
-        NavLink {
-            class: props.class,
-            active_class: props.active_class,
-            new_tab: props.new_tab,
-            onclick_only: props.onclick_only,
-            rel: props.rel,
-            to: props.to,
+    // The item's own role, disabled state and roving tabindex go through the
+    // same merge as the caller's attributes (merged last, so they win), never
+    // as literals beside a forwarded `attributes:` that could carry the same
+    // key a second time.
+    let is_disabled = disabled();
+    let item_attributes = merge_attributes(vec![
+        std::mem::take(&mut props.attributes),
+        attributes!(a {
             // Pattern-class activatable-item role -- see `MenubarItem`'s
             // identical `crate::menu_semantics::MENU_ITEM_ROLE`
             // (`menubar.rs`), which this mirrors.
@@ -1279,9 +1279,20 @@ pub fn NavbarItem(mut props: NavbarItemProps) -> Element {
             // `<button disabled>`) has no native disabled semantics at
             // all, so `data-disabled` alone left this item looking, to
             // assistive tech, like a perfectly normal active link.
-            aria_disabled: disabled(),
-            "data-disabled": disabled(),
-            tabindex,
+            aria_disabled: is_disabled,
+            "data-disabled": is_disabled,
+            tabindex: tabindex,
+        }),
+    ]);
+
+    rsx! {
+        NavLink {
+            class: props.class,
+            active_class: props.active_class,
+            new_tab: props.new_tab,
+            onclick_only: props.onclick_only,
+            rel: props.rel,
+            to: props.to,
 
             onclick: {
                 let value = props.value.clone();
@@ -1303,7 +1314,7 @@ pub fn NavbarItem(mut props: NavbarItemProps) -> Element {
                 }
             },
 
-            attributes: props.attributes,
+            attributes: item_attributes,
             {props.children}
         }
     }

@@ -21,6 +21,7 @@
 
 use dioxus::html::input_data::MouseButton;
 use dioxus::prelude::*;
+use dioxus_attributes::attributes;
 
 /// The path of a route string: everything before the first `?` or `#`, without
 /// a trailing slash (a static host redirects `/docs` to `/docs/`, so the
@@ -126,14 +127,26 @@ pub fn NavLink(props: NavLinkProps) -> Element {
     let rel = rel.or_else(|| is_external.then(|| "noopener noreferrer".to_string()));
     let do_default = onclick.is_none() || !onclick_only;
     let target = to.clone();
+    // One list, so a caller's `href`/`rel`/`target` replaces the anchor's own
+    // instead of becoming a second attribute; `aria-current` is merged last
+    // (and was dropped from the caller's list above), so it is always ours.
+    let new_tab_target = new_tab.then_some("_blank");
+    let aria_current = is_active.then_some("page");
+    let attributes = crate::merge_attributes(vec![
+        attributes!(a {
+            href: href,
+            rel: rel,
+            target: new_tab_target
+        }),
+        attributes,
+        attributes!(a {
+            aria_current: aria_current
+        }),
+    ]);
 
     rsx! {
         a {
             class,
-            href,
-            rel,
-            target: new_tab.then_some("_blank"),
-            aria_current: is_active.then_some("page"),
             onmounted: move |event| {
                 if let Some(handler) = onmounted {
                     handler.call(event);
