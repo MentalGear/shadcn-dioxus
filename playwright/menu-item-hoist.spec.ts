@@ -121,7 +121,8 @@ for (const host of HOSTS) {
       expect(item["display"]).toBe("flex");
       expect(item["position"]).toBe("relative");
       expect(item["font-size"], "text-sm").toBe("14px");
-      expect(item["cursor"]).toBe("pointer");
+      // The interactive-element cursor is the theme's one rule now (cursor-option.spec.ts): shadcn v4's arrow by default.
+      expect(item["cursor"]).toBe("default");
       expect(item["color"], "the ordinary ink").toBe(foreground);
 
       const sep = await menu.getByRole("separator").first().evaluate(pick, SEPARATOR_PROPS);
