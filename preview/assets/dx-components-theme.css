@@ -223,6 +223,12 @@ html[data-theme="light"] [class~="dxc-system"] {
    primary button/badge already rendered through `--dx-primary-alt`. */
   --dx-primary: var(--primary, var(--light, #000) var(--dark, #e5e5e5));
   --dx-primary-foreground: var(--primary-foreground, var(--light, #fafafa) var(--dark, #171717));
+
+  /* Drop indicator: the line or highlight that marks where a dragged row or item will land (Drag and Drop
+   * List, Data Table and Table reorder, the Virtual List reorder demo). It is the accent colour, so it
+   * follows the accent preset through `--dx-primary`, NOT the focus ring (which is grey by default and
+   * calibrated for contrast). Every drop indicator reads this one token; a host may retune it. */
+  --dx-drop-indicator: var(--dx-primary);
   --dx-secondary: var(--secondary, var(--primary-color-5));
   --dx-secondary-foreground: var(--secondary-foreground, var(--light, #171717) var(--dark, #fafafa));
   --dx-muted: var(--muted, var(--primary-color-5));

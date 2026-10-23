@@ -2,7 +2,6 @@ use super::super::component::*;
 use crate::components::button::{Button, ButtonSize, ButtonVariant};
 use crate::components::checkbox::Checkbox;
 use crate::components::label::Label;
-use crate::components::switch::Switch;
 use dioxus::prelude::*;
 use dioxus_icons::lucide::GripVertical;
 use dioxus_primitives::dioxus_attributes::attributes;
@@ -198,10 +197,10 @@ fn Row(props: RowProps) -> Element {
     }
 }
 
-/// The list and the order it shows: one shared `render_item`, so the two modes differ only in
-/// whether the list is told who is at an index.
+/// The list and the order it shows. `item_key` says who is at an index, so focus, a row's own state
+/// (the checkbox) and the measured heights follow the task when the order changes.
 #[component]
-fn Rows(reorder: Reorder, keyed: bool) -> Element {
+fn Rows(reorder: Reorder) -> Element {
     let order = reorder.order;
     let render_item = move |idx: usize| {
         let id = order.read()[idx];
@@ -209,29 +208,15 @@ fn Rows(reorder: Reorder, keyed: bool) -> Element {
             Row { reorder, idx, id }
         }
     };
-    // The same list twice, once with `item_key` and once without (the default, a row is its slot).
-    if keyed {
-        rsx! {
-            VirtualList {
-                count: COUNT,
-                buffer: 6usize,
-                virtualize: VirtualizeMode::Windowed,
-                estimate_size: |_idx| 45,
-                item_key: move |idx: usize| format!("task-{}", order.read()[idx]),
-                "aria-label": "Tasks",
-                render_item,
-            }
-        }
-    } else {
-        rsx! {
-            VirtualList {
-                count: COUNT,
-                buffer: 6usize,
-                virtualize: VirtualizeMode::Windowed,
-                estimate_size: |_idx| 45,
-                "aria-label": "Tasks",
-                render_item,
-            }
+    rsx! {
+        VirtualList {
+            count: COUNT,
+            buffer: 6usize,
+            virtualize: VirtualizeMode::Windowed,
+            estimate_size: |_idx| 45,
+            item_key: move |idx: usize| format!("task-{}", order.read()[idx]),
+            "aria-label": "Tasks",
+            render_item,
         }
     }
 }
@@ -239,7 +224,7 @@ fn Rows(reorder: Reorder, keyed: bool) -> Element {
 /// A sortable task list of 200 rows: drag a grip (or Space, the arrows, Space) to reorder, or use
 /// the buttons to reverse or shuffle in one click. The order is data and `item_key` says who is at
 /// an index, so focus, a row's own state (the checkbox) and the measured heights follow the task
-/// when the order changes; with `item_key` off a row is its slot and the state stays at the index.
+/// when the order changes (what `item_key` changes is described in the Virtual List docs).
 #[component]
 pub fn Demo() -> Element {
     let order = use_signal(|| (0..COUNT).collect::<Vec<usize>>());
@@ -252,7 +237,6 @@ pub fn Demo() -> Element {
         announcement,
         focus_id,
     };
-    let mut keyed = use_signal(|| true);
     let mut order_mut = order;
     // A deterministic shuffle, so the demo (and its spec) behave the same every time.
     let shuffle = move |_| {
@@ -293,6 +277,13 @@ pub fn Demo() -> Element {
   gap: 0.75rem;
 }}
 
+/* The preview frame centres its child on the cross axis, so a wrapper with no width of its own
+   shrinks to its content (the list was as wide as its longest label). Keyed by the data attribute:
+   every variant of this page declares `.dx-virtual-list-demo`, and the last stylesheet wins. */
+.dx-virtual-list-demo[data-vl-reorder-demo] {{
+  width: 100%;
+}}
+
 .dx-vl-reorder-frame {{
   border: 1px solid var(--dx-border);
   border-radius: var(--dx-radius-lg);
@@ -313,11 +304,11 @@ pub fn Demo() -> Element {
 }}
 
 .dx-vl-reorder-row[data-drop="before"] {{
-  box-shadow: inset 0 2px 0 var(--dx-ring-color);
+  box-shadow: inset 0 2px 0 var(--dx-drop-indicator);
 }}
 
 .dx-vl-reorder-row[data-drop="after"] {{
-  box-shadow: inset 0 -2px 0 var(--dx-ring-color);
+  box-shadow: inset 0 -2px 0 var(--dx-drop-indicator);
 }}
 
 .dx-vl-reorder-grip {{
@@ -366,18 +357,9 @@ pub fn Demo() -> Element {
                     onclick: shuffle,
                     "Shuffle"
                 }
-                div { class: "ml-auto flex items-center gap-2",
-                    Switch {
-                        id: "vl-reorder-item-key",
-                        "data-reorder": "key-mode",
-                        default_checked: true,
-                        on_checked_change: move |value| keyed.set(value),
-                    }
-                    Label { html_for: "vl-reorder-item-key", "item_key" }
-                }
             }
             div { class: "dx-vl-reorder-frame",
-                Rows { reorder, keyed: keyed() }
+                Rows { reorder }
             }
             span { id: "vl-reorder-hint", class: "dx-vl-reorder-sr-only", {INSTRUCTIONS} }
             div {

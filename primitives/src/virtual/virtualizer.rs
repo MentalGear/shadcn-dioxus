@@ -823,4 +823,24 @@ mod tests {
         assert_eq!(engine.index.size(3), 130);
         assert_eq!(engine.index.start(3), 150);
     }
+
+    /// The key-off twin of the test above (`playwright/item-key.spec.ts` no longer toggles it in the
+    /// Virtual List demo): without keys the engine keys by index, so a measured size belongs to the
+    /// slot and a reorder moves nothing.
+    #[test]
+    fn without_keys_a_measured_size_stays_on_its_slot() {
+        let mut engine = Engine::new();
+        engine.sync(&uniform(4, 50));
+        engine.scroll(0, 100, false);
+        engine.plan(0);
+        engine.resize_item(0, 130);
+        assert_eq!(engine.index.total(), 130 + 150);
+        // The data was reversed but the list says nothing about identity: the same estimates, so the
+        // index is not rebuilt and the 130 px stays on slot 0 (the task that moved there inherits it).
+        engine.sync(&uniform(4, 50).with_keys(None));
+        assert_eq!(engine.index.size(0), 130);
+        assert_eq!(engine.index.size(3), 50);
+        assert_eq!(engine.index.start(3), 130 + 100);
+        assert_eq!(engine.index.total(), 280);
+    }
 }

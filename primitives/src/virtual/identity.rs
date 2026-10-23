@@ -80,3 +80,79 @@ pub(crate) fn engine_row_keys(
             .collect(),
     )
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use dioxus::prelude::*;
+    use std::cell::{Cell, RefCell};
+    use std::rc::Rc;
+
+    /// Runs `f` inside a Dioxus runtime, where a `Callback` can be made.
+    fn with_runtime(f: impl Fn() + 'static) {
+        #[derive(Clone, Props)]
+        struct Harness {
+            f: Rc<dyn Fn()>,
+            ran: Rc<Cell<bool>>,
+        }
+        impl PartialEq for Harness {
+            fn eq(&self, _: &Self) -> bool {
+                true
+            }
+        }
+        let ran = Rc::new(Cell::new(false));
+        let mut dom = VirtualDom::new_with_props(
+            |props: Harness| {
+                (props.f)();
+                props.ran.set(true);
+                rsx! { div {} }
+            },
+            Harness {
+                f: Rc::new(f),
+                ran: ran.clone(),
+            },
+        );
+        dom.rebuild_in_place();
+        assert!(ran.get(), "the harness component did not run");
+    }
+
+    /// The key-OFF half of `playwright/item-key.spec.ts` ("without item_key a row is its slot"),
+    /// proved at the engine: with no `item_key` the identity of an element IS its index, so after
+    /// any reorder the DOM node, its state and its measured size stay on the slot.
+    #[test]
+    fn without_an_item_key_a_row_is_its_slot() {
+        for idx in [0, 3, 196, 199] {
+            assert_eq!(render_key(None, idx), idx.to_string());
+        }
+        assert!(engine_keys(None, 200).is_none());
+        assert!(engine_row_keys(None, 200, 4).is_none());
+        // The remembered item is "the one at that slot", wherever the data went.
+        assert_eq!(resolve_index(None, Some("task-3"), 3, 200), Some(3));
+        assert_eq!(resolve_index(None, Some("task-3"), 196, 200), Some(196));
+    }
+
+    /// The key-ON half: the key is the item's, so after a reverse the item that was at slot 3 is at
+    /// slot 196 and everything keyed by it (the DOM node, the pinned row) goes there.
+    #[test]
+    fn with_an_item_key_a_row_follows_its_item() {
+        with_runtime(|| {
+            let order = Rc::new(RefCell::new((0..200usize).collect::<Vec<_>>()));
+            let key = {
+                let order = order.clone();
+                Callback::new(move |idx: usize| format!("task-{}", order.borrow()[idx]))
+            };
+            assert_eq!(render_key(Some(key), 3), "task-3");
+            let before = engine_keys(Some(key), 200).unwrap();
+            order.borrow_mut().reverse();
+            assert_eq!(render_key(Some(key), 3), "task-196");
+            assert_eq!(render_key(Some(key), 196), "task-3");
+            assert_eq!(resolve_index(Some(key), Some("task-3"), 3, 200), Some(196));
+            // An item's engine key never changes; only the slot it sits in does.
+            let after = engine_keys(Some(key), 200).unwrap();
+            assert_eq!(before[3], after[196]);
+            assert_ne!(before[3], after[3]);
+            // A key that is gone resolves to nothing.
+            assert_eq!(resolve_index(Some(key), Some("task-999"), 3, 200), None);
+        });
+    }
+}

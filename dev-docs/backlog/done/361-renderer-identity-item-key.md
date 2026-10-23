@@ -34,3 +34,11 @@ See the design note's "The model", "Migration path" and "Backlog impact" section
 - Docs: shared `identity` block in the list and grid docs (parity gate green), `item_key` bullet in the table docs. Demos: `virtual_list/variants/reorder`, `table/variants/reorder` (each with an `item_key` on/off toggle). Spec: `playwright/item-key.spec.ts`.
 - Known limit: a browser drops focus from a node the diff has to move, so focus survives a reorder only while the focused node itself stays in place (one row moving, or the pinned row).
 - Browser spec run 2026-10-22 (it had never run): 3 reds. (1) `TableRowsWindowed` put the keyed `tr` inside a `for` body written as `{ let idx = ..; rsx! { tr { key } } }`; the block wraps the `tr` in a keyless node, so Dioxus diffed rows by position and remounted every row on a change of order (focus lost, `check-render-keys` cannot see it). Fixed: the `tr` is the loop body's own root. (2) The table "full reverse" spec checked item 5, which a reverse sends to row 35, outside the 40-row window (an unmounted uncontrolled checkbox resets by design): it now checks item 19 (row 20, stays in the window). (3) The canvas spec's warm-up scan read `scrollHeight` once, before rows were measured, so it covered only two thirds of the list and the unscanned rows were measured during the reverse (29163 -> 30127): it re-reads the end on every step. `item-key.spec.ts` 6/6 green, 3 runs in a row.
+
+- Follow-up 2026-10-23 (lane demofix2, owner feedback): the Virtual List `reorder` demo always sets `item_key`
+  (no switch) and fills the demo frame's width (`.dx-virtual-list-demo[data-vl-reorder-demo] { width: 100% }`:
+  the preview frame centres its child, so a wrapper without a width shrank to its longest label). What
+  `item_key` changes is explained in the shared `identity` block of the Virtual List and Virtual Grid docs. The
+  key-off proof of `playwright/item-key.spec.ts` moved to the engine: `without_an_item_key_a_row_is_its_slot`
+  (`primitives/src/virtual/identity.rs`) and `without_keys_a_measured_size_stays_on_its_slot`
+  (`virtualizer.rs`), each with a key-on twin; the Table demo keeps its toggle and its key-off spec.

@@ -2,6 +2,7 @@ import { test, expect } from "./fixtures";
 import { expectNoAxeViolations } from "./axe";
 import { BASE_URL as BASE } from "./base-url";
 import { gotoHydrated } from "./hydration";
+import { ACCENT, applyModeAndAccent, paintedColour, resolvedToken, type Mode } from "./drop-indicator";
 
 const URL = `${BASE}/component/drag_and_drop_list/`;
 const REMOVABLE_URL = `${BASE}/component/block/?name=drag_and_drop_list&variant=removable&`;
@@ -399,6 +400,36 @@ function tuningSlider(page: import("@playwright/test").Page, name: string) {
 
 const DEFAULT_GHOST_OPACITY = 0.9;
 const DEFAULT_DROP_GAP = 25;
+
+test.describe("Drop indicator colour", () => {
+  // The drop line is the accent colour (`--dx-drop-indicator`, default `var(--dx-primary)`), not the grey
+  // focus ring: under a coloured accent preset its painted colour is `--dx-primary`, in both modes.
+  const BEFORE = '[data-position="before"] + li[aria-roledescription="sortable item"]';
+  const AFTER = 'li[aria-roledescription="sortable item"]:has(+ [data-position="after"])';
+
+  for (const mode of ["light", "dark"] as Mode[]) {
+    test(`the drop line is --dx-primary under the ${ACCENT} accent, ${mode}`, async ({ page }) => {
+      const list = await loadMainList(page);
+      await applyModeAndAccent(page, mode);
+      const items = getItems(list);
+      await items.nth(2).click();
+      await expect(items.nth(2)).toBeFocused();
+      await page.keyboard.press("Enter");
+      await page.keyboard.press("ArrowDown");
+      await expect.poll(() => dropIndicatorOpacity(page)).toBeGreaterThan(0.5);
+
+      const primary = await resolvedToken(page, "--dx-primary");
+      const ring = await resolvedToken(page, "--dx-ring-color");
+      expect(await resolvedToken(page, "--dx-drop-indicator")).toBe(primary);
+      expect(ring).not.toBe(primary); // the accent is coloured, the ring is not: they cannot be mistaken
+      const onBefore = (await page.locator(BEFORE).count()) > 0;
+      const line = await paintedColour(page, onBefore ? BEFORE : AFTER, "backgroundColor", onBefore ? "::before" : "::after");
+      expect(line).toBe(primary);
+
+      await page.keyboard.press("Escape");
+    });
+  }
+});
 
 test.describe("Ghost opacity", () => {
   test("the dragged item's ghost is 0.9 opaque by default, at its origin and once moved", async ({
