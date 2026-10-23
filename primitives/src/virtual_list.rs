@@ -107,7 +107,9 @@ pub struct VirtualListProps {
     /// plain text without markup. When given, every row's text is also kept in the DOM inside a
     /// `hidden="until-found"` placeholder, so the browser's find-in-page (and a `#:~:text=` link)
     /// can match rows that are not mounted; when the browser reveals a match it fires
-    /// `beforematch` on that placeholder and the list scrolls the real row into view. Costs about
+    /// `beforematch` on that placeholder and the list scrolls the real row into view and marks it
+    /// `data-find-match="true"` (the find bar highlights the hidden placeholder, not the row, so
+    /// style the attribute to show which row matched). Costs about
     /// two DOM nodes per row, mounted after hydration (not server-rendered), and a mounted row's
     /// match counts twice. Engines without `until-found` (Firefox before 139, Safari before
     /// 26.2) treat it as `hidden`: rows that are not mounted stay unfindable, as without the
@@ -334,8 +336,11 @@ fn VirtualListWindowed(props: ListBodyProps) -> Element {
 
     // Find-in-page placeholders (opt-in, row 153): one capturing `beforematch` listener on the
     // container names the item whose placeholder the browser is about to reveal; the list then
-    // scrolls that row's real position into the middle of the viewport, which mounts it.
+    // scrolls that row's real position into the middle of the viewport, which mounts it, and
+    // marks it as the match (`data-find-match`), because the find bar's own highlight is on the
+    // placeholder, not on the row.
     let find_enabled = text_value.is_some();
+    let mut find_match = use_signal(|| None::<usize>);
     let mut hydrated = use_signal(|| false);
     use_effect(move || hydrated.set(true));
     use_js_listeners(move || {
@@ -345,7 +350,10 @@ fn VirtualListWindowed(props: ListBodyProps) -> Element {
         Some(
             JsListeners::install(BEFOREMATCH_BRIDGE_JS)
                 .arg(container_id.cloned())
-                .on_message(move |index: usize| bridge.reveal(index)),
+                .on_message(move |index: usize| {
+                    find_match.set(Some(index));
+                    bridge.reveal(index);
+                }),
         )
     });
 
@@ -383,6 +391,7 @@ fn VirtualListWindowed(props: ListBodyProps) -> Element {
     };
     let set_size = count.to_string();
     let rows_total = count();
+    let find_match = find_match();
 
     // `id` is owned: the bridge looks this element up by id (a JS eval), so a caller override
     // would silently break scroll sync (backlog row 93 names this site explicitly).
@@ -421,6 +430,7 @@ fn VirtualListWindowed(props: ListBodyProps) -> Element {
                                 role: "listitem",
                                 "data-virtual-index": "{idx}",
                                 "data-virtual-pinned": detached_style.is_some().then_some("true"),
+                                "data-find-match": (find_match == Some(idx)).then_some("true"),
                                 "aria-setsize": "{set_size}",
                                 "aria-posinset": "{idx + 1}",
                                 style: detached_style,
@@ -452,8 +462,11 @@ const FIND_CHUNK: usize = 100;
 /// (a layer that dropped the placeholders of mounted rows had to change on every window move,
 /// and find-next then skipped rows; see the row file). The price is that a mounted row's text
 /// is in the DOM twice, so its match counts twice. Each placeholder is as tall as its row's
-/// estimate, so a revealed match sits where the real row is when the estimates are right; the
-/// layer is transparent and ignores the pointer.
+/// estimate, so the browser's own scroll to a match lands near the real row (the `beforematch`
+/// scroll then puts the row itself in the middle). A revealed placeholder is hidden again in the
+/// next frame and the find bar's highlight on it is transparent (`::search-text`): the
+/// placeholder's text never lines up with the row's own, so either would paint a stray copy over
+/// the row. The layer is transparent and ignores the pointer.
 #[component]
 fn FindPlaceholders(
     /// The number of rows.
@@ -469,6 +482,9 @@ fn FindPlaceholders(
             "data-find-layer": "",
             "aria-hidden": "true",
             style: "position: absolute; inset: 0 0 auto 0; pointer-events: none; color: transparent;",
+            // The find bar's highlight is not painted on a placeholder (Chromium 144+; elsewhere
+            // the re-hide in `BEFOREMATCH_BRIDGE_JS` keeps it to one frame).
+            style { "[data-find-index]::search-text {{ color: transparent; background-color: transparent; }}" }
             {(0..chunks).map(|chunk| {
                 let start = chunk * FIND_CHUNK;
                 let end = (start + FIND_CHUNK).min(count) - 1;
@@ -528,11 +544,15 @@ fn FindChunk(
 
 /// Tells Rust which row's placeholder the browser is about to reveal for a find-in-page or
 /// text-fragment match. `beforematch` bubbles; one capturing listener on the container sees all.
+/// The browser removes `hidden` after the event; the placeholder gets it back in the next frame,
+/// which the real find bar (headed Chromium 153) walks past in order, forwards and back.
 const BEFOREMATCH_BRIDGE_JS: &str = r#"
     const container = document.getElementById(await dioxus.recv());
     if (!container) return;
     listen(container, "beforematch", (event) => {
         const holder = event.target.closest && event.target.closest("[data-find-index]");
-        if (holder) dioxus.send(Number(holder.dataset.findIndex));
+        if (!holder) return;
+        dioxus.send(Number(holder.dataset.findIndex));
+        requestAnimationFrame(() => holder.setAttribute("hidden", "until-found"));
     }, true);
 "#;

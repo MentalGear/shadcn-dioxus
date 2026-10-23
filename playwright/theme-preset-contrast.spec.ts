@@ -36,6 +36,11 @@ const AA = 4.5;
  */
 const DISTINCT_PRESSED = 16;
 const DISTINCT_HOVER = 6;
+/**
+ * The docs link blue in light, as sRGB: `--dx-docs-blue` is oklch(0.555 0.241 260.95) = rgb(0, 99, 252) since the colour
+ * audit (2026-10-23, contrast-mode.spec.ts "fixed for everyone"); #0065ff was 4.47:1 on `--dx-muted`, this clears 4.5:1.
+ */
+const DOCS_BLUE_LIGHT = [0, 99, 252] as const;
 
 const PRESETS_CSS = fs.readFileSync(
   path.join(__dirname, "..", "preview", "assets", "theme-presets.css"),
@@ -414,7 +419,7 @@ test.describe("docs-site highlight ink", () => {
         }
       }, attrs);
 
-    for (const [mode, today] of [["light", [0, 101, 255]], ["dark", [77, 148, 255]]] as const) {
+    for (const [mode, today] of [["light", DOCS_BLUE_LIGHT], ["dark", [77, 148, 255]]] as const) {
       await set({ "data-theme": mode, "data-theme-accent": null, "data-theme-base": null });
       expect(await ink(), `${mode}: no preset`).toEqual(today);
       // A base colour alone is not an accent choice: the docs highlight stays blue.
@@ -450,7 +455,7 @@ test.describe("component-card title hover (row 301)", () => {
       return Array.from(cx.getImageData(0, 0, 1, 1).data.slice(0, 3));
     });
 
-  for (const [mode, today] of [["light", [0, 101, 255]], ["dark", [77, 148, 255]]] as const) {
+  for (const [mode, today] of [["light", DOCS_BLUE_LIGHT], ["dark", [77, 148, 255]]] as const) {
     test(`hovered card title: default blue, Docs blue and another accent (${mode})`, async ({ page }) => {
       await open(page, "/", ".dx-hero-prompt");
       await page.evaluate((m) => {

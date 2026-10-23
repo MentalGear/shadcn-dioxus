@@ -226,7 +226,8 @@ html[data-theme="light"] [class~="dxc-system"] {
   --dx-secondary: var(--secondary, var(--primary-color-5));
   --dx-secondary-foreground: var(--secondary-foreground, var(--light, #171717) var(--dark, #fafafa));
   --dx-muted: var(--muted, var(--primary-color-5));
-  --dx-muted-foreground: var(--muted-foreground, var(--secondary-color-5));
+  --dx-muted-foreground-source: var(--muted-foreground, var(--secondary-color-5));
+  --dx-muted-foreground: var(--dx-muted-foreground-source);
   --dx-accent: var(--accent, var(--light, var(--primary-color-4)) var(--dark, var(--primary-color-5)));
   --dx-accent-foreground: var(--accent-foreground, var(--secondary-color-1));
 
@@ -300,14 +301,15 @@ html[data-theme="light"] [class~="dxc-system"] {
    * surface it sits on instead of being one opaque ramp step. The light arm is
    * unchanged (the ramp step). */
   --dx-border: var(--border, var(--light, var(--primary-color-6)) var(--dark, oklch(100% 0 0deg / 10%)));
-  --dx-input: var(--input, var(--light, var(--primary-color-6)) var(--dark, oklch(100% 0 0deg / 15%)));
+  --dx-input-source: var(--input, var(--light, var(--primary-color-6)) var(--dark, oklch(100% 0 0deg / 15%)));
+  --dx-input: var(--dx-input-source);
 
   /* The focus ring colour, shadcn-exact: `--dx-ring-source` is a preset's or a host's `--ring` when one is
    * set (shadcn's base colours each set a tinted `--ring`; accents never do), else shadcn neutral's own, light
    * oklch(0.708 0 0) and dark oklch(0.556 0 0). The library's default look is shadcn neutral, so the default
    * ring is grey (it used to fall back to the upstream Dioxus blue #2b7fff). The calibrated, contrast-clamped
-   * value is ONE separate rule at the end of this file ("Calibrated focus ring"); this plain definition is what
-   * the ring is without it. */
+   * value is one entry of the contrast-mode block at the end of this file ("Contrast mode"); this plain
+   * definition is what the ring is without it. */
   --dx-ring-source: var(--ring, var(--light, oklch(70.8% 0 0deg)) var(--dark, oklch(55.6% 0 0deg)));
   --dx-ring-color: var(--dx-ring-source);
 
@@ -320,8 +322,14 @@ html[data-theme="light"] [class~="dxc-system"] {
   --dx-border-strong: var(--border-strong, var(--primary-color-7));
 
   /* Status -- shadcn ships no success/warning/info roles; these are plain
-   * aliases of the existing status colours so sites can leave the ramp. */
-  --dx-success: var(--secondary-success-color);
+   * aliases of the existing status colours so sites can leave the ramp.
+   *
+   * `--dx-success` light: the upstream emerald `#10b981` is 2.54:1 on white as the copy-check icon, under WCAG 1.4.11's 3:1.
+   * The lightness is clamped (OKLCH `l` to at most 0.64; hue and chroma kept, gamut-mapped), a no-op for any
+   * host `--secondary-success-color` that already reads. Dark is unchanged (15:1). Not a shadcn role, so not
+   * part of the contrast switch (it holds in both settings). */
+  --dx-success: var(--light, oklch(from var(--secondary-success-color) min(l, 0.64) c h))
+    var(--dark, var(--secondary-success-color));
   --dx-success-subtle: var(--primary-success-color);
   --dx-warning: var(--secondary-warning-color);
   --dx-warning-subtle: var(--primary-warning-color);
@@ -343,7 +351,8 @@ html[data-theme="light"] [class~="dxc-system"] {
   --dx-sidebar-background: var(--sidebar, var(--light, var(--primary-color-2)) var(--dark, #171717));
   --dx-sidebar-foreground: var(--sidebar-foreground, var(--secondary-color-4));
   --dx-sidebar-primary: var(--sidebar-primary, var(--secondary-color-1));
-  --dx-sidebar-primary-foreground: var(--sidebar-primary-foreground, var(--primary-color));
+  --dx-sidebar-primary-foreground-source: var(--sidebar-primary-foreground, var(--primary-color));
+  --dx-sidebar-primary-foreground: var(--dx-sidebar-primary-foreground-source);
   --dx-sidebar-accent: var(--sidebar-accent, var(--light, var(--primary-color-4)) var(--dark, var(--primary-color-5)));
   --dx-sidebar-accent-foreground: var(--sidebar-accent-foreground, var(--secondary-color-4));
   --dx-sidebar-border: var(--sidebar-border, var(--primary-color-6));
@@ -644,7 +653,7 @@ html[data-theme="light"] [class~="dxc-system"] {
    * dark. One token so a field cannot be written with one arm and forget the other, and a retuned
    * fill moves them all together. Fills only: the hover / fade / invalid variants keep their own. */
   --dx-field-fill: var(--light, transparent)
-    var(--dark, color-mix(in oklab, var(--dx-input) 30%, transparent));
+    var(--dark, color-mix(in oklab, var(--dx-input-source) 30%, transparent));
 
   /* The OPAQUE twin of `--dx-input` (backlog row 348), for an edge that is drawn twice on one pixel. Dark
    * `--dx-input` is white at 15%, so two edges that overlap by a pixel (the OTP slots' shared divider, a
@@ -654,7 +663,8 @@ html[data-theme="light"] [class~="dxc-system"] {
    * page and stays the same colour where it overlaps. A custom dark `--input` is not followed by this
    * arm: retune `--dx-input-edge` with it. */
   --dx-input-edge: var(--light, var(--dx-input))
-    var(--dark, color-mix(in var(--dx-hover-mix-space), oklch(100% 0 0deg) 15%, var(--dx-background)));
+    var(--dark, color-mix(in var(--dx-hover-mix-space), oklch(100% 0 0deg) var(--dx-input-edge-percent), var(--dx-background)));
+  --dx-input-edge-percent: 15%;
 
   /* State recipes (see "State recipes: focus, invalid, disabled" at the end of this file). The
    * inside-the-box twin of `--dx-ring-field` for containers that clip an outer halo: a 1px
@@ -2325,24 +2335,89 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
  * `cursor: not-allowed` fail the gate (allowlist with reasons in the script).
  * ========================================================================== */
 
-/* Calibrated focus ring: the ONE place the ring colour is contrast-clamped (scope or gate it here, nothing else
- * reads the clamp). The plain definition is `--dx-ring-color: var(--dx-ring-source)` in the token block.
+/* ============================================================================
+ * Contrast mode: shadcn's own colours by default, a calibrated WCAG set behind ONE switch.
  *
- * Clamps the LIGHT arm's OKLCH lightness (at most 0.65; hue and chroma kept, gamut-mapped by the browser), the
- * same relative-colour construction as `--dx-primary-ink` and `--dx-destructive-text`. It is applied ON TOP of
- * any `--ring`: a base's tint and a pasted shadcn theme's coloured ring still come through, only a ring lighter
- * than the bound is darkened, and one already deeper is passed through unchanged. Derivation (WCAG 2.x, non-text
- * 3:1, SC 1.4.11): the light surfaces the ring edge sits on (page, card, popover) are white, relative luminance
- * 1.0, so the edge needs Y <= 1.05 / 3 - 0.05 = 0.30. For a grey, OKLab L is cbrt(Y), so L <= 0.30^(1/3) = 0.669
- * is exactly 3:1; 0.65 (Y 0.2746, 3.23:1) leaves a small margin for the chroma of a tinted ring (a vivid green
- * at L 0.65 is still 3.13:1) and for 8-bit rounding. Measured in Chromium on the focused Input, light, worst of
- * page / card / popover, before -> after: no preset 3.76 (the old blue) -> 3.23; shadcn neutral 2.58 -> 3.23;
- * every other base 2.32-2.63 (olive, the worst, 2.32) -> 3.20-3.28.
+ * Every theme colour defaults to shadcn's exact value, and several of those fail WCAG 2.2 (the focus ring
+ * and the input / checkbox / radio edge and the unchecked Switch track are 1.2-2.6:1 against the page where
+ * 1.4.11 asks 3:1; `muted-foreground` is 3.9-4.4:1 on a muted / accent / secondary surface in eight of the
+ * nine base colours where 1.4.3 asks 4.5:1). This block is the whole calibrated set. Nothing else in the
+ * theme branches on the mode, and no component sheet reads it:
  *
- * Dark arm: not clamped. shadcn's dark rings (L 0.54-0.58) measure 3.47:1 or better on the dark page, card and
- * popover for every base (worst: mauve on card 3.47), so no bound is needed; a host's own dark `--ring` is its
- * choice. Guard: playwright/ring-contrast.spec.ts. */
-/* stylelint-disable-next-line no-duplicate-selectors -- the calibrated rule is its own block on purpose, so one selector can scope it */
+ *   <html data-dx-contrast="wcag">     calibrated
+ *   <html data-dx-contrast="shadcn">   shadcn-exact (also opts out of the media query below)
+ *   no attribute                       shadcn-exact, unless the user asks for more contrast
+ *                                      (`@media (prefers-contrast: more)`), then calibrated
+ *
+ * How it works: the mode is two switch variables on `:root`, exactly one of them `initial` (the
+ * `--dx-pick-coarse` / `--dx-pick-fine` construction of the coarse-sizing block): `var(--dx-pick-wcag, A)
+ * var(--dx-pick-shadcn, B)` is A in calibrated mode and B otherwise. The values are written ONCE, here; the
+ * token block above keeps shadcn's definition under a `-source` name (`--dx-ring-source`,
+ * `--dx-input-source`, `--dx-muted-foreground-source`, ...) and this block selects between "the source" and
+ * "the source, clamped". Each clamp is a relative-colour lightness bound (the `--dx-primary-ink` /
+ * `--dx-destructive-text` construction), so a preset's tint and a pasted shadcn theme's colours still come
+ * through; only a value that fails is moved, and one that already passes is returned unchanged.
+ *
+ * Derivations (WCAG 2.x relative luminance; for a grey, OKLab L = cbrt(Y)):
+ *  - Non-text 3:1 on a white surface (page, card, popover are white in light): Y <= 1.05 / 3 - 0.05 = 0.30,
+ *    L <= 0.669. Bound 0.65 (Y 0.2746, 3.23:1) leaves a margin for the chroma of a tinted preset and for
+ *    8-bit rounding. Applied to the focus ring edge, the input edge (Input, Textarea, Select, Combobox,
+ *    Checkbox, Radio, ...) and the unchecked Switch track, all three read these two tokens.
+ *  - Dark: an edge or track is a translucent white (`--dx-input` is white at 15%); the surfaces are
+ *    #0a0a0a / #171717, so the Switch track (80% of `--dx-input`) needs about 34% white over the page and
+ *    ~33% over a card: `--dx-input` is raised to 44% white (`--dx-wcag-input-alpha`), the track is then
+ *    35%. The dark ring (L 0.54-0.58) already measures >= 3.47:1 and is not touched.
+ *  - Text 4.5:1 on the muted / accent / secondary surfaces (L 0.96-0.97, Y ~0.92) of the nine bases: measured
+ *    in Chromium, the strictest base (mist, taupe) needs L <= 0.541 and the lightest passing value of the
+ *    others is 0.544-0.549, so the bound is 0.54. The library's own `#6e6e6e` (L 0.538) is returned unchanged.
+ *  - `--dx-sidebar-primary-foreground` in dark: shadcn's Blue accent paints `#eff6ff` on `#2b7fff` (3.46:1).
+ *    The ink is chosen by the fill's lightness: near-white (L 0.99) on a fill at or below L 0.575, near-black
+ *    (L 0.05) above it, hue of the fill and chroma <= 0.014. Pure black and white tie at Y 0.179 (4.58:1);
+ *    L 0.575 is the OKLab lightness of the mid-tones that sit there (indigo L 0.585, Y 0.179; docs blue L 0.56,
+ *    Y 0.167), and measured over every base x accent (171 fills) the worst is >= 4.5:1.
+ *
+ * Not calibrated, by decision: selected fills (`--dx-accent-selected`), Slider / Progress tracks and the
+ * Tabs active pill (each carries a second cue: a check, a filled range, a label), and every hover or
+ * pressed state. Guards: playwright/contrast-mode.spec.ts, playwright/ring-contrast.spec.ts.
+ * ========================================================================== */
+/* stylelint-disable-next-line no-duplicate-selectors -- the calibrated block is its own rule on purpose, so one selector can scope it */
 :root {
-  --dx-ring-color: var(--light, oklch(from var(--dx-ring-source) min(l, 0.65) c h)) var(--dark, var(--dx-ring-source));
+  --dx-pick-shadcn: initial;
+  --dx-pick-wcag: ;
+}
+
+:root[data-dx-contrast="wcag"] {
+  --dx-pick-shadcn: ;
+  --dx-pick-wcag: initial;
+}
+
+@media (prefers-contrast: more) {
+  :root:not([data-dx-contrast="shadcn"]) {
+    --dx-pick-shadcn: ;
+    --dx-pick-wcag: initial;
+  }
+}
+
+/* stylelint-disable-next-line no-duplicate-selectors -- see above */
+:root {
+  /* Dark `--dx-input` alpha in calibrated mode (a number, so one value feeds the relative colour and the
+   * opaque twin's percentage). */
+  --dx-wcag-input-alpha: 0.44;
+
+  /* P3: the focus ring (non-text 3:1). Light arm only; the dark ring already clears 3.47:1. */
+  --dx-ring-color: var(--dx-pick-wcag, var(--light, oklch(from var(--dx-ring-source) min(l, 0.65) c h)) var(--dark, var(--dx-ring-source)))
+    var(--dx-pick-shadcn, var(--dx-ring-source));
+
+  /* P9: the input / checkbox / radio edge and the unchecked Switch track. */
+  --dx-input: var(--dx-pick-wcag, var(--light, oklch(from var(--dx-input-source) min(l, 0.65) c h)) var(--dark, oklch(from var(--dx-input-source) l c h / max(alpha, var(--dx-wcag-input-alpha)))))
+    var(--dx-pick-shadcn, var(--dx-input-source));
+  --dx-input-edge-percent: var(--dx-pick-wcag, calc(var(--dx-wcag-input-alpha) * 100%)) var(--dx-pick-shadcn, 15%);
+
+  /* P1: muted text (4.5:1) on every muted-ish surface, light arm. */
+  --dx-muted-foreground: var(--dx-pick-wcag, var(--light, oklch(from var(--dx-muted-foreground-source) min(l, 0.54) c h)) var(--dark, var(--dx-muted-foreground-source)))
+    var(--dx-pick-shadcn, var(--dx-muted-foreground-source));
+
+  /* P6: sidebar primary ink (4.5:1 on its fill), dark arm. */
+  --dx-sidebar-primary-foreground: var(--dx-pick-wcag, var(--light, var(--dx-sidebar-primary-foreground-source)) var(--dark, oklch(from var(--dx-sidebar-primary) clamp(0.05, calc((0.575 - l) * 1000 + 0.05), 0.99) min(c, 0.014) h)))
+    var(--dx-pick-shadcn, var(--dx-sidebar-primary-foreground-source));
 }

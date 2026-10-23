@@ -67,7 +67,10 @@ Only the rows in view are mounted, over a spacer that gives the scrollbar the fu
 
 ### Find-in-page in windowed mode (experimental)
 
-`text_value: |idx| String` keeps every row's plain text in the DOM as a `hidden="until-found"` placeholder, so the browser's find-in-page and `#:~:text=` links can match rows that are not mounted. When the browser reveals a match it fires `beforematch`, and the list scrolls the real row into view.
+`text_value: |idx| String` keeps every row's plain text in the DOM as a `hidden="until-found"` placeholder, so the browser's find-in-page and `#:~:text=` links can match rows that are not mounted. When the browser reveals a match it fires `beforematch`, and the list scrolls the real row into view and marks it `data-find-match="true"`.
+
+- The find bar's highlight belongs to the placeholder, not the row, so the list hides the placeholder again in the next frame and makes its highlight transparent (`::search-text`, Chromium 144+). Style `[data-find-match]` to show which row matched; the `find_in_page` variant flashes it.
+- Verified with the real Ctrl+F bar in headed Chromium 153: find-next and find-previous walk the matches in order, also with rows taller than their estimate.
 
 - It costs about one element and one text node per row, mounted after hydration (100,000 rows: ~101,000 elements and ~10 MB more JS heap); scrolling costs the same as without it, because the placeholders are skipped in `content-visibility: auto` chunks.
 - A mounted row's text is in the DOM twice, so its match counts twice.

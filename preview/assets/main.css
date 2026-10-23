@@ -31,8 +31,12 @@
    * the #000 page and 3.80:1 on the #141313 card -- under 4.5:1 again, in
    * the other direction. The `--light`/`--dark` pair keeps light as-is and
    * uses the lighter #4d94ff in dark (7.00:1 on #000, 6.18:1 on #141313,
-   * 5.04:1 on #262626). */
-  --dx-docs-blue: var(--dark, #4d94ff) var(--light, #0065ff);
+   * 5.04:1 on #262626).
+   *
+   * Light, second pass (colour audit 2026-10-23): #0065ff is 4.47:1 on `--dx-muted` (#f5f5f5), where the
+   * docs paint eyebrows and links on cards, 0.03 short of 4.5. oklch(0.555 0.241 260.95), the
+   * same hue and chroma one lightness step deeper (5 thousandths of L), clears 4.5:1 on muted and 4.9:1 on white. */
+  --dx-docs-blue: var(--dark, #4d94ff) var(--light, oklch(55.5% 0.241 260.95deg));
   --highlight-color-tertiary: var(--dx-docs-blue);
   --dx-content-width: 1360px;
 
