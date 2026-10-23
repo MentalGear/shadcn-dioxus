@@ -5,14 +5,16 @@ import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
 /**
- * The keyboard-focus ring is grey (shadcn's neutral `--ring`) and its solid edge reads >= 3:1 (WCAG 1.4.11,
- * non-text contrast) against the page, card and popover surfaces, in the default theme and under every
- * theme-picker preset, in both modes.
+ * The keyboard-focus ring is grey (shadcn's neutral `--ring`). By default it is shadcn's EXACT value, light
+ * 2.3-2.6:1 on white (under 1.4.11's 3:1, shadcn's own); in contrast mode (`<html data-dx-contrast="wcag">`,
+ * or `prefers-contrast: more`) its solid edge reads >= 3:1 (WCAG 1.4.11, non-text contrast) against the page,
+ * card and popover surfaces, in the default theme and under every theme-picker preset, in both modes.
  *
- * Construction under test (`preview/assets/dx-components-theme.css`, `--dx-ring-source` / `--dx-ring-color`):
- * the source is the user's or preset's `--ring`, else shadcn neutral's (light oklch(0.708 0 0) = 2.6:1 on
- * white, dark oklch(0.556 0 0)); the LIGHT arm's OKLCH lightness is clamped (hue and chroma kept), so a base
- * colour's tint, and a pasted theme's coloured ring, still come through.
+ * Construction under test (`preview/assets/dx-components-theme.css`, `--dx-ring-source` / `--dx-ring-color`,
+ * the "Contrast mode" block): the source is the user's or preset's `--ring`, else shadcn neutral's (light
+ * oklch(0.708 0 0) = 2.6:1 on white, dark oklch(0.556 0 0)); in contrast mode the LIGHT arm's OKLCH lightness
+ * is clamped (hue and chroma kept), so a base colour's tint, and a pasted theme's coloured ring, still come
+ * through. The switch itself, and the other calibrated roles, are in contrast-mode.spec.ts.
  *
  * Method: focus the docs Input, read the first colour of its focused `box-shadow` (the 1px solid edge of
  * `--dx-ring-field`), resolve it through a canvas, and compare with the three surface tokens resolved the
@@ -59,11 +61,13 @@ test.describe("focus ring contrast", () => {
     await page.addStyleTag({ content: "*,*::before,*::after{transition:none!important;animation:none!important}" });
   });
 
-  /** Applies each combination in turn and measures the focused Input's ring edge. */
-  const measure = (page: import("@playwright/test").Page, mode: "light" | "dark", override?: string) =>
+  /** Applies each combination in turn and measures the focused Input's ring edge. `contrast` is the
+   * `data-dx-contrast` value (null: none); the contrast-mode tests below use `wcag`, the default ones null. */
+  const measure = (page: import("@playwright/test").Page, mode: "light" | "dark", override?: string, contrast: string | null = "wcag") =>
     page.evaluate(
-      ({ mode, bases, accents, override }) => {
+      ({ mode, bases, accents, override, contrast }) => {
         (window as unknown as { __dxApplyMode: (m: string) => void }).__dxApplyMode(mode);
+        (window as unknown as { __dxTheme: (k: string, v: string | null) => void }).__dxTheme("dx-contrast", contrast);
         const html = document.documentElement;
         if (override) html.style.setProperty("--ring", override);
         else html.style.removeProperty("--ring");
@@ -141,7 +145,7 @@ test.describe("focus ring contrast", () => {
         html.style.removeProperty("--ring");
         return out;
       },
-      { mode, bases: BASES, accents: ACCENTS, override },
+      { mode, bases: BASES, accents: ACCENTS, override, contrast },
     );
 
   const hueGap = (a: number, b: number) => Math.min(Math.abs(a - b), 360 - Math.abs(a - b));
@@ -153,7 +157,7 @@ test.describe("focus ring contrast", () => {
   });
 
   for (const mode of ["light", "dark"] as const) {
-    test(`${mode}: ring edge >= 3:1 on background, card and popover, default and every preset`, async ({ page }) => {
+    test(`${mode}, contrast mode: ring edge >= 3:1 on background, card and popover, default and every preset`, async ({ page }) => {
       const rows = await measure(page, mode);
       const worst = rows.reduce((a, b) => (b.ratio < a.ratio ? b : a));
       console.log(`[ring ${mode}] worst ${worst.ratio.toFixed(3)}:1 on ${worst.worstSurface} at ${label(worst)}`);
@@ -167,11 +171,31 @@ test.describe("focus ring contrast", () => {
       ).toEqual([]);
     });
 
-    test(`${mode}: with no preset the ring is neutral grey, not the old blue`, async ({ page }) => {
-      const rows = (await measure(page, mode)).filter((r) => r.base === "none");
-      expect(rows.length).toBeGreaterThan(0);
-      for (const r of rows) {
-        expect(r.ring.c, `${label(r)}: chroma ${r.ring.c.toFixed(3)} (blue #2b7fff is ~0.2)`).toBeLessThan(NEUTRAL_CHROMA);
+    for (const contrast of [null, "wcag"] as const) {
+      test(`${mode}, ${contrast ?? "default"}: with no preset the ring is neutral grey, not the old blue`, async ({ page }) => {
+        const rows = (await measure(page, mode, undefined, contrast)).filter((r) => r.base === "none");
+        expect(rows.length).toBeGreaterThan(0);
+        for (const r of rows) {
+          expect(r.ring.c, `${label(r)}: chroma ${r.ring.c.toFixed(3)} (blue #2b7fff is ~0.2)`).toBeLessThan(NEUTRAL_CHROMA);
+        }
+      });
+    }
+
+    test(`${mode}, default: the ring is shadcn's exact value (the preset's own --ring, neutral's when none), under 3:1 in light`, async ({ page }) => {
+      const rows = await measure(page, mode, undefined, null);
+      // No preset: shadcn neutral's own ring, light oklch(0.708 0 0), dark oklch(0.556 0 0) (8-bit rounding: +-0.01).
+      const none = rows.find((r) => r.base === "none" && r.accent === "none")!;
+      expect(Math.abs(none.ring.l - (mode === "light" ? 0.708 : 0.556)), `${label(none)}: ring L ${none.ring.l.toFixed(3)}`).toBeLessThan(0.012);
+      // Every preset: the edge IS the declared `--ring`, not a clamped copy of it.
+      for (const r of rows.filter((r) => r.declared)) {
+        expect(Math.abs(r.ring.l - r.declared!.l), `${label(r)}: ring L ${r.ring.l.toFixed(3)} vs --ring L ${r.declared!.l.toFixed(3)}`).toBeLessThan(0.012);
+      }
+      const w = rows.reduce((a, b) => (b.ratio < a.ratio ? b : a));
+      console.log(`[ring ${mode} default] worst ${w.ratio.toFixed(3)}:1 on ${w.worstSurface} at ${label(w)} (shadcn's own)`);
+      if (mode === "light") {
+        // shadcn's own grey ring is 2.3-2.6:1 on a white surface; that is the documented, allowed default.
+        expect(w.ratio, "shadcn's light ring is under 3:1").toBeLessThan(NON_TEXT);
+        expect(w.ratio, "and not weaker than shadcn's own 2.3:1 floor").toBeGreaterThanOrEqual(2.3);
       }
     });
 
@@ -205,4 +229,15 @@ test.describe("focus ring contrast", () => {
       expect(deep.ring.l, "a deep ring keeps its lightness").toBeLessThan(0.5);
     });
   }
+
+  test("light: `prefers-contrast: more` calibrates the ring by itself; `data-dx-contrast=\"shadcn\"` opts out", async ({ page }) => {
+    await page.emulateMedia({ contrast: "more" });
+    const calibrated = (await measure(page, "light", undefined, null)).find((r) => r.base === "none" && r.accent === "none")!;
+    expect(calibrated.ratio, `media query on: ${calibrated.ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(NON_TEXT);
+    const optedOut = (await measure(page, "light", undefined, "shadcn")).find((r) => r.base === "none" && r.accent === "none")!;
+    expect(optedOut.ratio, `shadcn opt-out: ${optedOut.ratio.toFixed(2)}:1`).toBeLessThan(NON_TEXT);
+    await page.emulateMedia({ contrast: "no-preference" });
+    const off = (await measure(page, "light", undefined, null)).find((r) => r.base === "none" && r.accent === "none")!;
+    expect(off.ratio).toBeLessThan(NON_TEXT);
+  });
 });

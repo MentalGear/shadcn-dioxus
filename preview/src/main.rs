@@ -45,6 +45,7 @@ mod chart_tooltip_parity;
 mod charts_gallery;
 mod coarse_docs;
 mod components;
+mod contrast_docs;
 mod dashboard;
 mod docs_nav;
 // Client builds only: the server keeps `ServerDocument` for the SSR `<head>` (see the module's docs).
@@ -1088,6 +1089,7 @@ const DOCS_SECTIONS: &[&str] = &[
     "Motion",
     "Utilities",
     "Touch sizing",
+    "Contrast mode",
 ];
 
 /// Turns a heading's visible text into a same-page anchor id: lowercased,
@@ -1342,6 +1344,10 @@ fn Docs(dark_mode: Option<bool>) -> Element {
                 section { class: "dx-docs-section",
                     h2 { id: "{docs_section_slug(DOCS_SECTIONS[6])}", "{DOCS_SECTIONS[6]}" }
                     crate::coarse_docs::CoarseDocs {}
+                }
+                section { class: "dx-docs-section",
+                    h2 { id: "{docs_section_slug(DOCS_SECTIONS[7])}", "{DOCS_SECTIONS[7]}" }
+                    crate::contrast_docs::ContrastDocs {}
                 }
             }
         }

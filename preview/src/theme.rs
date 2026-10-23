@@ -33,6 +33,10 @@ const CHANNEL_NAME: &str = "dx-theme";
 /// * `Coarse` is `data-dx-coarse="on|off"`, read by the theme's coarse-sizing block in
 ///   `dx-components-theme.css` (absent = `auto`, which follows `(pointer: coarse)`; `on` and `off` are
 ///   the only other values the snippet accepts, and force the touch or the desktop sizes page-wide).
+/// * `Contrast` is `data-dx-contrast="wcag|shadcn"`, read by the theme's "Contrast mode" block in
+///   `dx-components-theme.css` (absent = follow the system: shadcn's exact colours, or the calibrated WCAG
+///   set under `prefers-contrast: more`; `wcag` and `shadcn` are the only values the snippet accepts, and
+///   force one or the other page-wide).
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Pref {
     Mode,
@@ -41,6 +45,7 @@ pub enum Pref {
     Radius,
     PressFeedback,
     Coarse,
+    Contrast,
 }
 
 impl Pref {
@@ -52,6 +57,7 @@ impl Pref {
             Pref::Radius => "theme-radius",
             Pref::PressFeedback => "dx-press-feedback",
             Pref::Coarse => "dx-coarse",
+            Pref::Contrast => "dx-contrast",
         }
     }
 }
@@ -115,7 +121,7 @@ const DEFAULT_RADIUS: &str = "0.625";
 /// already on `<html>` and `theme-presets.css` / `dx-components-theme.css` render-blocking in
 /// `<head>`, the first paint is already in the chosen mode, colours and radius. [`theme_seed`] runs it
 /// again for any host that has no such `index.html`.
-pub const PREPAINT_JS: &str = "(function(){var K=['theme','theme-base','theme-accent','theme-radius','dx-press-feedback','dx-coarse'],R=document.documentElement,Q=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)');function M(m){if(m)R.setAttribute('data-theme',m);else R.removeAttribute('data-theme');R.classList.toggle('dark',m?m==='dark':!!(Q&&Q.matches))}function A(k,v){if(K.indexOf(k)<0)return;var ok=!!v&&/^[a-z0-9.]{1,16}$/.test(v)&&(k!=='theme'||v==='dark'||v==='light')&&(k!=='dx-press-feedback'||v==='off')&&(k!=='dx-coarse'||v==='on'||v==='off');if(k==='theme')M(ok?v:null);else if(ok)R.setAttribute('data-'+k,v);else R.removeAttribute('data-'+k)}window.__dxApplyMode=M;window.__dxTheme=A;if(Q&&!window.__dxModeWatch){window.__dxModeWatch=1;try{/*listener-ok: lives as long as the page*/Q.addEventListener('change',function(){if(!R.hasAttribute('data-theme'))M(null)})}catch(e){}}try{var C=document.cookie.split(';');K.forEach(function(k){var n='dx_'+k.replace('-','_')+'=',v=null;C.forEach(function(c){c=c.trim();if(c.indexOf(n)===0)v=decodeURIComponent(c.slice(n.length))});A(k,v)})}catch(e){}})();(function(){var W=window,R=document.documentElement;if(W.__dxModality)return;W.__dxModality=1;function S(m){if(R.getAttribute('data-dx-modality')!==m)R.setAttribute('data-dx-modality',m)}var Q=W.matchMedia&&W.matchMedia('(any-pointer: coarse) and (hover: none)');if(!R.hasAttribute('data-dx-modality'))S(Q&&Q.matches?'touch':'mouse');var K={Shift:1,Control:1,Alt:1,Meta:1,AltGraph:1,CapsLock:1,Fn:1,FnLock:1,Hyper:1,Super:1,OS:1};function P(t){return t==='touch'||t==='pen'?t:'mouse'}try{/*listener-ok: the modality writer lives as long as the page*/W.addEventListener('pointerdown',function(e){S(P(e.pointerType))},true);/*listener-ok: the modality writer lives as long as the page*/W.addEventListener('keydown',function(e){if(!K[e.key])S('keyboard')},true);/*listener-ok: the modality writer lives as long as the page*/W.addEventListener('click',function(e){if(e.detail===0){S('keyboard')}else if(R.getAttribute('data-dx-modality')==='keyboard')S(P(e.pointerType||(Q&&Q.matches?'touch':'mouse')))},true)}catch(x){}})()";
+pub const PREPAINT_JS: &str = "(function(){var K=['theme','theme-base','theme-accent','theme-radius','dx-press-feedback','dx-coarse','dx-contrast'],R=document.documentElement,Q=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)');function M(m){if(m)R.setAttribute('data-theme',m);else R.removeAttribute('data-theme');R.classList.toggle('dark',m?m==='dark':!!(Q&&Q.matches))}function A(k,v){if(K.indexOf(k)<0)return;var ok=!!v&&/^[a-z0-9.]{1,16}$/.test(v)&&(k!=='theme'||v==='dark'||v==='light')&&(k!=='dx-press-feedback'||v==='off')&&(k!=='dx-coarse'||v==='on'||v==='off')&&(k!=='dx-contrast'||v==='wcag'||v==='shadcn');if(k==='theme')M(ok?v:null);else if(ok)R.setAttribute('data-'+k,v);else R.removeAttribute('data-'+k)}window.__dxApplyMode=M;window.__dxTheme=A;if(Q&&!window.__dxModeWatch){window.__dxModeWatch=1;try{/*listener-ok: lives as long as the page*/Q.addEventListener('change',function(){if(!R.hasAttribute('data-theme'))M(null)})}catch(e){}}try{var C=document.cookie.split(';');K.forEach(function(k){var n='dx_'+k.replace('-','_')+'=',v=null;C.forEach(function(c){c=c.trim();if(c.indexOf(n)===0)v=decodeURIComponent(c.slice(n.length))});A(k,v)})}catch(e){}})();(function(){var W=window,R=document.documentElement;if(W.__dxModality)return;W.__dxModality=1;function S(m){if(R.getAttribute('data-dx-modality')!==m)R.setAttribute('data-dx-modality',m)}var Q=W.matchMedia&&W.matchMedia('(any-pointer: coarse) and (hover: none)');if(!R.hasAttribute('data-dx-modality'))S(Q&&Q.matches?'touch':'mouse');var K={Shift:1,Control:1,Alt:1,Meta:1,AltGraph:1,CapsLock:1,Fn:1,FnLock:1,Hyper:1,Super:1,OS:1};function P(t){return t==='touch'||t==='pen'?t:'mouse'}try{/*listener-ok: the modality writer lives as long as the page*/W.addEventListener('pointerdown',function(e){S(P(e.pointerType))},true);/*listener-ok: the modality writer lives as long as the page*/W.addEventListener('keydown',function(e){if(!K[e.key])S('keyboard')},true);/*listener-ok: the modality writer lives as long as the page*/W.addEventListener('click',function(e){if(e.detail===0){S('keyboard')}else if(R.getAttribute('data-dx-modality')==='keyboard')S(P(e.pointerType||(Q&&Q.matches?'touch':'mouse')))},true)}catch(x){}})()";
 
 pub fn theme_seed() {
     _ = document::eval(&format!(
@@ -251,18 +257,26 @@ struct ThemeState {
     press: Signal<String>,
     /// `"on"`, `"off"` or empty (auto).
     coarse: Signal<String>,
+    /// `"wcag"`, `"shadcn"` or empty (follow the system).
+    contrast: Signal<String>,
 }
 
 impl ThemeState {
     /// Re-reads the three attributes: another tab, the cookie or the pre-paint script may have changed
     /// them since this component last looked.
     fn sync(self) {
-        let (mut base, mut accent, mut radius, mut press, mut coarse) =
-            (self.base, self.accent, self.radius, self.press, self.coarse);
+        let (mut base, mut accent, mut radius, mut press, mut coarse, mut contrast) = (
+            self.base,
+            self.accent,
+            self.radius,
+            self.press,
+            self.coarse,
+            self.contrast,
+        );
         spawn(async move {
             let mut eval = document::eval(
                 r#"const r = document.documentElement;
-                dioxus.send([r.getAttribute('data-theme-base') || '', r.getAttribute('data-theme-accent') || '', r.getAttribute('data-theme-radius') || '', r.getAttribute('data-dx-press-feedback') || '', r.getAttribute('data-dx-coarse') || ''].join('|'));"#,
+                dioxus.send([r.getAttribute('data-theme-base') || '', r.getAttribute('data-theme-accent') || '', r.getAttribute('data-theme-radius') || '', r.getAttribute('data-dx-press-feedback') || '', r.getAttribute('data-dx-coarse') || '', r.getAttribute('data-dx-contrast') || ''].join('|'));"#,
             );
             if let Ok(state) = eval.recv::<String>().await {
                 let mut parts = state.split('|');
@@ -271,23 +285,32 @@ impl ThemeState {
                 radius.set(parts.next().unwrap_or_default().to_string());
                 press.set(parts.next().unwrap_or_default().to_string());
                 coarse.set(parts.next().unwrap_or_default().to_string());
+                contrast.set(parts.next().unwrap_or_default().to_string());
             }
         });
     }
 
     fn reset(self) {
-        let (mut base, mut accent, mut radius, mut press, mut coarse) =
-            (self.base, self.accent, self.radius, self.press, self.coarse);
+        let (mut base, mut accent, mut radius, mut press, mut coarse, mut contrast) = (
+            self.base,
+            self.accent,
+            self.radius,
+            self.press,
+            self.coarse,
+            self.contrast,
+        );
         base.set(String::new());
         accent.set(String::new());
         radius.set(String::new());
         press.set(String::new());
         coarse.set(String::new());
+        contrast.set(String::new());
         set_pref(Pref::Base, None);
         set_pref(Pref::Accent, None);
         set_pref(Pref::Radius, None);
         set_pref(Pref::PressFeedback, None);
         set_pref(Pref::Coarse, None);
+        set_pref(Pref::Contrast, None);
     }
 }
 
@@ -298,6 +321,7 @@ fn use_theme_state() -> ThemeState {
         radius: use_signal(String::new),
         press: use_signal(String::new),
         coarse: use_signal(String::new),
+        contrast: use_signal(String::new),
     };
     use_effect(move || state.sync());
     state
@@ -471,7 +495,7 @@ fn ThemePickerDrawer(state: ThemeState, open: Signal<bool>) -> Element {
     }
 }
 
-/// The picker's content: reset, base colour, accent, radius, press feedback, touch sizing. Rendered inside either the header's
+/// The picker's content: reset, base colour, accent, radius, press feedback, touch sizing, contrast. Rendered inside either the header's
 /// `Popover` (`scope: "popover"`) or the phone `Drawer` (`scope: "drawer"`); `scope` is also
 /// the `data-presentation` CSS hooks onto (larger touch targets in the drawer) and keeps the label ids
 /// unique per presentation.
@@ -492,6 +516,7 @@ fn ThemePickerPanel(
         mut radius,
         mut press,
         mut coarse,
+        mut contrast,
     } = state;
 
     let base_label = label_of(BASES, &base.read());
@@ -691,7 +716,54 @@ fn ThemePickerPanel(
                     }
                 }
             }
+
+            div { class: "dx-theme-picker-section",
+                span { class: "dx-theme-picker-label", id: "dx-theme-contrast-label-{scope}",
+                    "Contrast"
+                    span { class: "dx-theme-picker-current", "WCAG-calibrated colours" }
+                }
+                ToggleGroup {
+                    class: "dx-theme-chips",
+                    variant: ToggleVariant::Outline,
+                    aria_labelledby: "dx-theme-contrast-label-{scope}",
+                    value: Some(single(contrast_value(&contrast.read()).to_string())),
+                    on_value_change: move |next: HashSet<String>| {
+                        if let Some((value, _)) = next.into_iter().next().and_then(|v| CONTRAST_MODES.iter().copied().find(|(mode, _)| contrast_value(mode) == v)) {
+                            contrast.set(value.to_string());
+                            set_pref(Pref::Contrast, if value.is_empty() { None } else { Some(value) });
+                        }
+                    },
+                    for (i , (value , label)) in CONTRAST_MODES.iter().copied().enumerate() {
+                        ToggleItem {
+                            key: "contrast-{label}",
+                            index: i,
+                            value: contrast_value(value),
+                            title: match value {
+                                "wcag" => "Calibrated colours: focus ring, field edges and muted text meet WCAG",
+                                "shadcn" => "shadcn's exact colours, even under prefers-contrast: more",
+                                _ => "shadcn's colours; calibrated when the system asks for more contrast",
+                            },
+                            "{label}"
+                        }
+                    }
+                }
+            }
         }
+    }
+}
+
+/// Contrast choices, `(attribute value, label)`: "" is "follow the system" (`prefers-contrast`), stored as
+/// "no attribute". `shadcn` pins shadcn's exact colours, `wcag` pins the calibrated set.
+pub const CONTRAST_MODES: &[(&str, &str)] =
+    &[("shadcn", "shadcn"), ("wcag", "WCAG"), ("", "System")];
+
+/// Item value of the contrast chips: "" (system) is stored as no attribute, but an item needs a
+/// non-empty value.
+fn contrast_value(current: &str) -> &str {
+    if current.is_empty() {
+        "system"
+    } else {
+        current
     }
 }
 
@@ -779,6 +851,7 @@ mod tests {
             Pref::Radius,
             Pref::PressFeedback,
             Pref::Coarse,
+            Pref::Contrast,
         ] {
             assert!(
                 PREPAINT_JS.contains(&format!("'{}'", pref.key())),
