@@ -130,19 +130,37 @@ impl ScrollFade {
     }
 }
 
-/// Where a browser has no scroll-driven animations (`animation-timeline: scroll()`), `dx-effects.css`
-/// can only draw every fade edge statically, so a faded scroller showed a fade past which there was
-/// nothing to scroll to. This script sets the four depth properties itself from the scroll position
-/// and the distance left (`|scrollLeft|`, so RTL reads like LTR), once per frame at most, and does
-/// nothing where the animations exist (the CSS drives them there).
-const SCROLL_FADE_FALLBACK_JS: &str = r#"
-    if (CSS.supports('animation-timeline: scroll()')) return;
+/// The one script of a faded scroller (the single writer of the properties below), installed for every
+/// `fade` other than [`ScrollFade::None`]. It does two things, once per frame at most:
+///
+/// - It measures the scrollbar gutters (`offsetWidth - clientWidth` less the borders, and the same for
+///   the height) and writes them as `--dx-scrollbar-inline-size` / `--dx-scrollbar-block-size`.
+///   `dx-effects.css` builds the fade mask around them so a classic scrollbar stays opaque instead of
+///   dissolving with the content (a mask covers the whole border box, scrollbars included, and CSS cannot
+///   tell how wide a scrollbar is). An overlay scrollbar (macOS, iOS) measures 0 and is left as it was:
+///   it floats over the content and fades with it. A `ResizeObserver` on the scroller's content box sees
+///   a scrollbar appear or go, so nothing listens to scroll for this.
+/// - Where a browser has no scroll-driven animations (`animation-timeline: scroll()`), `dx-effects.css`
+///   can only draw every fade edge statically, so a faded scroller showed a fade past which there was
+///   nothing to scroll to; there the script also sets the four depth properties itself from the scroll
+///   position and the distance left (`|scrollLeft|`, so RTL reads like LTR). Where the animations exist
+///   the CSS drives them and no scroll listener is added.
+const SCROLL_FADE_JS: &str = r#"
     const el = document.querySelector('[data-scroll-fade-key="' + (await dioxus.recv()) + '"]');
     if (!el) return;
+    const driven = CSS.supports('animation-timeline: scroll()');
     const depth = (past, edge) => (past > 1 ? 'var(--dx-internal-scroll-fade-size-' + edge + ')' : '0px');
-    let raf = 0;
+    let raf = 0, inline = '', block = '';
     const update = () => {
         raf = 0;
+        const cs = getComputedStyle(el);
+        const px = (v) => parseFloat(v) || 0;
+        const gutter = (box, client, a, b) => Math.max(0, box - client - px(cs[a]) - px(cs[b])) + 'px';
+        const i = gutter(el.offsetWidth, el.clientWidth, 'borderLeftWidth', 'borderRightWidth');
+        const b = gutter(el.offsetHeight, el.clientHeight, 'borderTopWidth', 'borderBottomWidth');
+        if (i !== inline) el.style.setProperty('--dx-scrollbar-inline-size', (inline = i));
+        if (b !== block) el.style.setProperty('--dx-scrollbar-block-size', (block = b));
+        if (driven) return;
         const top = el.scrollTop, start = Math.abs(el.scrollLeft);
         const set = (name, past, edge) => el.style.setProperty('--dx-scroll-fade-' + name, depth(past, edge));
         set('t', top, 't');
@@ -151,7 +169,7 @@ const SCROLL_FADE_FALLBACK_JS: &str = r#"
         set('e', el.scrollWidth - el.clientWidth - start, 'e');
     };
     const schedule = () => { if (!raf) raf = requestAnimationFrame(update); };
-    listen(el, 'scroll', schedule, { passive: true });
+    if (!driven) listen(el, 'scroll', schedule, { passive: true });
     const resizes = new ResizeObserver(schedule);
     resizes.observe(el);
     if (el.firstElementChild) resizes.observe(el.firstElementChild);
@@ -159,16 +177,15 @@ const SCROLL_FADE_FALLBACK_JS: &str = r#"
     update();
 "#;
 
-/// The attributes a scroller carries for `fade` (see [`ScrollFade::attributes`]) plus, in a browser
-/// without scroll-driven animations, the listener that makes an edge show only while there is more
-/// content past it. Every component with a `fade` prop calls this instead of `fade.attributes()`, so
-/// the fallback is one mechanism for all of them. Nothing is installed for [`ScrollFade::None`] or
-/// where the CSS animations are supported.
+/// The attributes a scroller carries for `fade` (see [`ScrollFade::attributes`]) plus the script that
+/// measures its scrollbar gutters (so the mask leaves them opaque) and, in a browser without
+/// scroll-driven animations, makes an edge show only while there is more content past it. Every
+/// component with a `fade` prop calls this instead of `fade.attributes()`, so it is one mechanism for
+/// all of them. Nothing is installed for [`ScrollFade::None`].
 pub(crate) fn use_scroll_fade(fade: ScrollFade) -> Vec<Attribute> {
     let key = use_unique_id();
     use_js_listeners(move || {
-        (fade != ScrollFade::None)
-            .then(|| JsListeners::install(SCROLL_FADE_FALLBACK_JS).arg(key.cloned()))
+        (fade != ScrollFade::None).then(|| JsListeners::install(SCROLL_FADE_JS).arg(key.cloned()))
     });
     let mut attributes = fade.attributes();
     if fade != ScrollFade::None {
