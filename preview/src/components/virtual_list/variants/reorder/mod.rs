@@ -18,7 +18,7 @@ const INSTRUCTIONS: &str = "Press Space to start reordering. Use the Up and Down
 
 /// Every third task carries a second line, so row heights differ and the list measures them.
 fn has_detail(id: usize) -> bool {
-    id % 3 == 0
+    id.is_multiple_of(3)
 }
 
 /// The reorder gesture of the list and what the rows share: the order (the data), the gesture
