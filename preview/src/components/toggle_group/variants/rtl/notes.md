@@ -1,0 +1,1 @@
+Wrapped in `DirectionProvider` with `Direction::Rtl` inside a `dir="rtl"` box: the items run right to left and the Left and Right arrow keys move focus the mirrored way. The items read S, H and C so they stay distinct from the main demo's labels.

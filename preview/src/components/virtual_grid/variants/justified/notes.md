@@ -1,0 +1,1 @@
+`VirtualJustifiedGrid` lays out 20,000 photos of mixed aspect ratios in rows that fill the width, each uncropped. The slider sets the target row height; the "Wall" switch widens the canvas to six times the demo and scrolls both ways.

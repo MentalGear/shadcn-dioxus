@@ -1,0 +1,1 @@
+`VirtualWrapGrid` over 5,000 generated landscapes, with the column count switched by radios (2, 3, 4 or 6). Row height starts from an estimate and is measured as rows render; the photos are drawn in the page, so nothing is fetched.

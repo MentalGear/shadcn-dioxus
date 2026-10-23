@@ -1,0 +1,1 @@
+A table built from the Data Table's model (`use_data_table`) with composed cells: a leading checkbox column with a select-all header, a `Badge` status column and right-aligned totals with a footer. Order ORD-3022 starts selected, and a selected row renders `data-state="selected"`.

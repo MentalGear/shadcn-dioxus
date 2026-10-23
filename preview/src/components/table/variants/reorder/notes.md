@@ -1,0 +1,1 @@
+A reorderable table body with 40 windowed rows. `item_key` makes each row's DOM node follow its order, so a focused button and a ticked checkbox stay with their order when you reverse or rotate the list. Turn `item_key` off to see the checkbox stay at its position instead.
