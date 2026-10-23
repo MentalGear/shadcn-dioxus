@@ -2313,3 +2313,114 @@ test.describe("Rule 15 — vertical shift + size clamp: an overlay taller than t
     expect(metrics.scrollHeight, debug).toBeGreaterThan(metrics.clientHeight);
   });
 });
+
+/**
+ * Rule 16 — shift and size clamp on a CONFORMING engine (docs/backlog.md
+ * row 10, the "JS-fallback shift" follow-up).
+ *
+ * Rules 12 and 15 prove the cross-axis shift and the size clamp only under
+ * `stripAnchorSupportsBlock`, i.e. on an engine with no CSS Anchor
+ * Positioning. Row 10 recorded the other half as an open gap: the
+ * `@supports` contract declares `position-try-fallbacks: flip-block,
+ * flip-inline` and nothing else, CSS has no shift primitive and no
+ * shrink-to-fit primitive, so on an engine that DOES resolve `anchor()`
+ * (this sandbox's Chromium, Chrome/Edge 125+, FF 147+, Safari 26+) a
+ * center-aligned panel wider than its trigger's room runs past the
+ * viewport edge, and a panel taller than the viewport overflows it, unless
+ * `use_anchor_position_fallback` hands the call to its JS path. These are
+ * the same fixtures and assertions as Rules 12 and 15, with the engine's
+ * own anchor positioning left in place, so they pin that hand-off.
+ */
+test.describe("Rule 16 — shift and size clamp hold on a conforming CSS Anchor Positioning engine too", () => {
+  const CASES: { name: string; contentId: string; open: (page: Page) => Promise<void> }[] = [
+    {
+      name: "Tooltip",
+      contentId: "edge-bottom-tooltip-content",
+      open: async (page) => {
+        await page.locator("#edge-bottom-tooltip-trigger").hover();
+      },
+    },
+    {
+      name: "HoverCard",
+      contentId: "edge-bottom-hovercard-content",
+      open: async (page) => {
+        await page.locator("#edge-bottom-hovercard-trigger").hover();
+      },
+    },
+    {
+      name: "Popover (non-modal)",
+      contentId: "edge-bottom-popover-content",
+      open: async (page) => {
+        await page.locator("#edge-bottom-popover-trigger").evaluate((el) => (el as HTMLElement).click());
+      },
+    },
+  ];
+
+  for (const kase of CASES) {
+    test(`${kase.name} (near-left-edge, center-aligned) stays within the viewport horizontally`, async ({ page }) => {
+      await page.setViewportSize(MOBILE_VIEWPORT);
+      await gotoFixture(page);
+      await kase.open(page);
+      await expect(page.locator(`#${kase.contentId}`)).toBeVisible();
+      // The settle loop and the rAF-throttled tracking, as Rule 12.
+      await page.waitForTimeout(300);
+
+      const content = await rectOf(page, `#${kase.contentId}`);
+      const viewport = await viewportSize(page);
+      const debug = JSON.stringify({ overlay: kase.name, content, viewport });
+      expect(content.left, debug).toBeGreaterThanOrEqual(-EDGE_TOLERANCE);
+      expect(content.right, debug).toBeLessThanOrEqual(viewport.width + EDGE_TOLERANCE);
+      expect(content.top, debug).toBeGreaterThanOrEqual(-EDGE_TOLERANCE);
+      expect(content.bottom, debug).toBeLessThanOrEqual(viewport.height + EDGE_TOLERANCE);
+    });
+  }
+
+  test("Popover content taller than a short viewport is capped, made scrollable, and stays within the viewport vertically", async ({
+    page,
+  }) => {
+    const SHORT_VIEWPORT = { width: 390, height: 400 };
+    await page.setViewportSize(SHORT_VIEWPORT);
+    await gotoFixture(page);
+    await page.locator("#stack-popover-trigger").evaluate((el) => el.scrollIntoView({ block: "center" }));
+    await page.locator("#stack-popover-trigger").evaluate((el) => (el as HTMLElement).click());
+    const content = page.locator("#stack-popover-content");
+    await expect(content).toBeVisible();
+
+    // Same filler as Rule 15 (see its header doc for `flexShrink`).
+    await content.evaluate((el) => {
+      const filler = document.createElement("div");
+      filler.id = "rule16-filler";
+      filler.style.height = "500px";
+      filler.style.flexShrink = "0";
+      el.appendChild(filler);
+    });
+    await page.evaluate(() => window.dispatchEvent(new Event("resize")));
+    await page.waitForTimeout(300);
+
+    const rect = await rectOf(page, "#stack-popover-content");
+    const metrics = await content.evaluate((el) => {
+      const style = getComputedStyle(el);
+      return {
+        offsetHeight: (el as HTMLElement).offsetHeight,
+        clientHeight: (el as HTMLElement).clientHeight,
+        scrollHeight: (el as HTMLElement).scrollHeight,
+        overflowY: style.overflowY,
+      };
+    });
+    const viewport = await viewportSize(page);
+    const EDGE_MARGIN = 4;
+    const triggerRect = await rectOf(page, "#stack-popover-trigger");
+    const expectedAvailableHeight = Math.max(
+      triggerRect.top - EDGE_MARGIN,
+      viewport.height - EDGE_MARGIN - triggerRect.bottom,
+    );
+    const debug = JSON.stringify({ rect, metrics, viewport, expectedAvailableHeight, triggerRect });
+
+    expect(rect.top, debug).toBeGreaterThanOrEqual(-EDGE_TOLERANCE);
+    expect(rect.bottom, debug).toBeLessThanOrEqual(viewport.height + EDGE_TOLERANCE);
+    expect(rect.bottom <= triggerRect.top + EDGE_TOLERANCE || rect.top >= triggerRect.bottom - EDGE_TOLERANCE, debug).toBe(true);
+    expect(metrics.offsetHeight, debug).toBeLessThanOrEqual(expectedAvailableHeight + EDGE_TOLERANCE);
+    expect(metrics.overflowY, debug).toBe("auto");
+    expect(metrics.scrollHeight, debug).toBeGreaterThan(metrics.clientHeight);
+  });
+});
