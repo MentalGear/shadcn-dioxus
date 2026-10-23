@@ -147,12 +147,18 @@ const GROUPS: { route: string; scheme: "light" | "dark"; widths: number[]; pool?
   // in three pooled runs). Every other page is pooled.
   { route: "/", scheme: "light", widths: ALL_WIDTHS, pool: 1 },
   { route: "/", scheme: "dark", widths: FULL ? ALL_WIDTHS : KEY_WIDTHS, pool: 1 },
-  ...["/docs/", "/demos/", "/component/avatar/", "/component/button/"].map((route) => ({
+  ...["/docs/", "/demos/", "/component/button/"].map((route) => ({
     route,
     scheme: "light" as const,
     widths: FULL ? ALL_WIDTHS : KEY_WIDTHS,
   })),
-  { route: "/component/avatar/", scheme: "dark", widths: FULL ? ALL_WIDTHS : [768, 1024, 1180, 1194, 1366] },
+  // Cause 1 (SSR != hydrated) is `cargo test`'s first (row 329): `preview/src/ssr_parity.rs` fails on any markup that
+  // differs between the server and the first client frame, and pins the avatar's `empty` -> `loading` as the one known
+  // case. What it cannot see is whether that change moves a box, which is a property of the avatar's sheet, not of the
+  // width; so the avatar page keeps one width per layout regime (phone, tablet, laptop) and one dark one, and the home
+  // page's twelve avatars stay in its full sweep above.
+  { route: "/component/avatar/", scheme: "light", widths: FULL ? ALL_WIDTHS : [360, 768, 1280] },
+  { route: "/component/avatar/", scheme: "dark", widths: FULL ? ALL_WIDTHS : [1024] },
 ];
 
 const fmt = (b: Box) => `${b.x},${b.y} ${b.w}x${b.h}`;

@@ -618,6 +618,26 @@ mod tests {
         rsx! { div { style: "flex-basis: {basis}%;" } }
     }
 
+    /// A text input whose `value` an effect fills (row 306's Combobox half: the input showed no label
+    /// until hydration). The browser spec `first-paint-text` read `input.value`; this is that read.
+    fn effect_valued_input() -> Element {
+        let mut value = use_signal(String::new);
+        use_effect(move || value.set("SvelteKit".into()));
+        rsx! { input { r#type: "text", value: "{value}" } }
+    }
+
+    #[test]
+    fn a_value_written_by_an_effect_is_seen() {
+        let f = frames(effect_valued_input);
+        assert!(f.client.contains(r#"value="SvelteKit""#), "{}", f.client);
+        let (server, client) =
+            divergence(&view(&f.server), &view(&f.client)).expect("the two frames differ");
+        assert!(
+            client.contains("SvelteKit") && !server.contains("SvelteKit"),
+            "{server}\n{client}"
+        );
+    }
+
     #[test]
     fn a_registry_filled_by_an_effect_is_seen() {
         let f = frames(registry_label);

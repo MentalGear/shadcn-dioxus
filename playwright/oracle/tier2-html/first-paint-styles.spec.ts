@@ -31,7 +31,7 @@
  * WHAT THIS ORACLE ASSERTS (by property, over every component route -- a new component is covered the day it lands):
  *   1. every prerendered page's head has the bundle after the four global sheets, the same one on every page, complete;
  *   2. hard load: the JS-disabled computed styles of `main` equal the hydrated ones in both system colour schemes, and
- *      no stylesheet is inserted that the head/bundle did not already carry;
+ *      no stylesheet is inserted that the head/bundle did not already carry (only on the routes `SECTION_2` lists, row 329);
  *   3. client-side navigation to every component: the computed styles in the very first state the new route is in
  *      (the DOM the browser would paint) equal its settled ones, no uncovered sheet is inserted, CLS stays ~0;
  *   4. the date picker's calendar is styled the moment it first mounts;
@@ -67,7 +67,7 @@ const ALL_COMPONENTS: string[] = fs
 /** `FIRST_PAINT_ROUTES=field,date_picker` narrows the per-route tests (the whole-site tests always cover every page). */
 const COMPONENTS: string[] = (() => {
   const only = (process.env.FIRST_PAINT_ROUTES ?? "").split(",").map((s) => s.trim()).filter(Boolean);
-  return only.length ? ALL_COMPONENTS.filter((c) => only.includes(c)) : ALL_COMPONENTS;
+  return only.length && !only.includes("all") ? ALL_COMPONENTS.filter((c) => only.includes(c)) : ALL_COMPONENTS;
 })();
 
 /** The four sheets `GlobalHead` links on every route; the bundle must come right after them. */
@@ -357,9 +357,30 @@ const CLIENT_MEASURED = new Set([
   "line_chart", "markdown", "message_scroller", "pie_chart", "progress", "resizable", "select", "table", "toast", "top_layer", "virtual_list",
 ]);
 
+/**
+ * The routes section 2 loads (row 329). A computed style that differs between the JS-off page and the hydrated one has one of
+ * three causes: the markup differs (an effect writes text, a `style`, a class or a `data-*`), the browser writes something the
+ * Rust did not (a measurement, an eval reply), or a sheet arrives late. The first is `cargo test`'s now:
+ * `preview/src/ssr_parity.rs` compares the server markup with the first client frame on every demo and every component page,
+ * so a markup-only difference fails there in seconds, naming the markup. The third is section 1 (one complete bundle in every
+ * head) and section 3 (no uncovered sheet, CLS ~0 on every route). What is left for a real browser is the second cause, which
+ * lives in the components that measure themselves (`CLIENT_MEASURED`: the CLS bound and the late-sheet check run there), and
+ * one real hydration of the markup class's own subjects for the style diff: Field (the page of the original report), Select
+ * and Combobox (row 306) and Tag Group (row 332). An explicit `FIRST_PAINT_ROUTES` runs exactly that list, `all` every route.
+ */
+const SECTION_2: string[] = (() => {
+  const only = (process.env.FIRST_PAINT_ROUTES ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  if (only.includes("all")) return ALL_COMPONENTS;
+  if (only.length) return COMPONENTS;
+  return ALL_COMPONENTS.filter((c) => CLIENT_MEASURED.has(c) || ["field", "select", "combobox", "tag_group"].includes(c));
+})();
+
 test.describe("2. hard load: the static page is the page", () => {
   test.describe.configure({ mode: "parallel" });
-  for (const slug of COMPONENTS) {
+  test("the route list is real: every client-measured slug is a component page", () => {
+    expect([...CLIENT_MEASURED].filter((c) => !ALL_COMPONENTS.includes(c)), "a stale CLIENT_MEASURED entry").toEqual([]);
+  });
+  for (const slug of SECTION_2) {
     test(`/component/${slug}/: JavaScript off and hydrated compute the same styles, light and dark`, async ({ browser }) => {
       const read = async (js: boolean) => {
         const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, javaScriptEnabled: js, colorScheme: "light" });
