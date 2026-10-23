@@ -1,10 +1,10 @@
 ---
 id: 360
 title: "Shared collection model: data_view in primitives (identity, ViewState with manual order, fields, index-returning derive) and the selection count fix"
-status: "BACKLOG (owner asked 2026-10-22 to deconstruct the collection model to its roots; design note…"
+status: "LANDED 2026-10-23: steps 1-2 in batch 7 (PR #134), the migration steps as rows 361 and 362 (batch…"
 size: "M."
 area: primitives
-updated: 2026-10-22
+updated: 2026-10-23
 ---
 
 # Row 360: Shared collection model: data_view in primitives (identity, ViewState with manual order, fields, index-returning derive) and the selection count fix
@@ -15,7 +15,7 @@ Migration steps 1 and 2 of the note: lift row 340's `TableState`/`derive` into `
 
 ## Status / trigger
 
-BACKLOG (owner asked 2026-10-22 to deconstruct the collection model to its roots; design note [`research/collection-model-2026-10-22.md`](../research/collection-model-2026-10-22.md)). Order: 360, then 361 and 362 in parallel, then 363, then 341, then 342.
+**LANDED 2026-10-23: steps 1-2 in batch 7 (PR #134), the migration steps as rows 361 and 362 (batch 8, PR #135) and 363 (batch 9, PR #136).** BACKLOG (owner asked 2026-10-22 to deconstruct the collection model to its roots; design note [`research/collection-model-2026-10-22.md`](../../research/collection-model-2026-10-22.md)). Order: 360, then 361 and 362 in parallel, then 363, then 341, then 342.
 
 ## Size
 

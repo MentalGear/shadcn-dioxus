@@ -5,8 +5,8 @@ the page as stale and check `git log` and the flag files named here.** Seeded 20
 [`research/next-round-plan-2026-10-15.md`](./research/next-round-plan-2026-10-15.md),
 [`research/backlog-order-2026-10-18.md`](./research/backlog-order-2026-10-18.md) and [`plan.md`](./plan.md).
 
-Last updated: **2026-10-22**. Several sessions work in parallel; who holds what is on the `claims` branch (`CLAIMS.md`).
-Preview site: https://mentalgear.github.io/shadcn-dioxus/ (deployed from main `ac99f4e8`, PR #132, merge queue batch 5; batch 6 is this commit's PR).
+Last updated: **2026-10-23**. Several sessions work in parallel; who holds what is on the `claims` branch (`CLAIMS.md`).
+Preview site: https://mentalgear.github.io/shadcn-dioxus/ (deployed from main `330c501c`, PR #136, merge queue batch 9; batch 10 is this commit's PR).
 
 ## Merge queue (owner decision 2026-10-21)
 
@@ -32,9 +32,17 @@ merges it after the project coordinator's OK and deploys once. Procedure: [`lane
   SSR parity for tag group and resizable, test tooling, the fast-loop docs (row 326).
 - Queue batch 5 (PR #132): Select item-aligned position (268), NavigationMenuIndicator (249), the DataTable model and
   component (340), message scroller follow release and demos (347, 335); row 299 closed.
-- Queue batch 6 (this commit's PR): one `VirtualizeMode` in the virtual engine and a windowed `TableRows` body (343),
+- Queue batch 6 (PR #133): one `VirtualizeMode` in the virtual engine and a windowed `TableRows` body (343),
   whole-site sweeps about -20% worker-seconds (334, follow-up 358), the lane disk guard as a reservation (356; 357 was
   already fixed), InputGroupTextarea, the custom-control contract and a breadcrumb router link (188 leftovers).
+
+- Queue batch 7 (PR #134): pnpm with exact pins and a minimum release age (359), the shared collection model
+  `data_view` in primitives with `check-collection-derive.sh` (360 steps 1-2).
+- Queue batch 8 (PR #135): `item_key` renderer identity on the windowed views (361), controlled DragAndDropList and the
+  shared reorder gesture (362), the `test-server` cargo gate (366), slimmer lane copies (367 partial).
+- Queue batch 9 (PR #136): DataTable drag-handle reorder and Columns menu (363), ToggleGroup keyed by value (364),
+  VirtualGrid sort, selection and cell controls (341), toast stack motion (dismiss and enter glide), 207 demo notes,
+  pnpm release age 30 days; row 368 filed (VirtualGrid row-axis first paint).
 
 Earlier: Rounds 2-3 (PR #102), Rounds 5 and 7 (PR #105), the features batch, Round 4 (see below).
 
