@@ -15,7 +15,7 @@ pub fn Demo() -> Element {
     rsx! {
         div { class: "dx-virtual-list-demo",
             p { style: "color: var(--dx-muted-foreground); font-size: 0.9rem; margin-bottom: 0.75rem;",
-                "Random heights variant - tests adaptive estimation with highly variable item sizes"
+                "Dynamic row heights: every row measures its own height, with no estimate given, so the list adapts as rows are measured"
             }
             style { r#".dx-virtual-list-container {{
   position: relative;
@@ -57,7 +57,7 @@ pub fn Demo() -> Element {
                 // scrollbar-stability freeze. (`Auto` would keep 2000 rows in the DOM.)
                 virtualize: VirtualizeMode::Windowed,
                 // NO estimate_size - uses adaptive estimation which will struggle
-                // with random heights until many items are measured
+                // with dynamic row heights until many items are measured
                 render_item: move |idx: usize| {
                     let repeats = pseudo_random_repeats(idx);
                     let extra_text = "Variable content. ".repeat(repeats);

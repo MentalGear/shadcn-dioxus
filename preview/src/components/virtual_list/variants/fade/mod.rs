@@ -45,7 +45,7 @@ pub fn Demo() -> Element {
     rsx! {
         div { style: "display: flex; width: 100%; max-width: 28rem; flex-direction: column; gap: var(--dx-space-4);",
             Caption {
-                title: "Windowed",
+                title: "Fade top and bottom, windowed",
                 "Only the rows in view are mounted, and the fade still tracks the scroll position."
             }
             div {
@@ -74,7 +74,7 @@ pub fn Demo() -> Element {
                 }
             }
             Caption {
-                title: "Content-visibility",
+                title: "Fade top and bottom, content-visibility",
                 "Every row is in the DOM and the browser skips the off-screen ones; the fade is the same."
             }
             div {

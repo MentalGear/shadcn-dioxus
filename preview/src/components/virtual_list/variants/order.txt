@@ -1,5 +1,5 @@
 # Display order of this component's demos after `main`; a variants/<name>/ directory not listed here follows, sorted by name.
-random_heights
+dynamic_row_heights
 content_visibility
 windowed
 fade
