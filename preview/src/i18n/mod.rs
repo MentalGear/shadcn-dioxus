@@ -40,7 +40,7 @@ pub fn use_locale_root() {
 pub fn LocaleDemo(children: Element) -> Element {
     let mut i18n = i18n();
     let mut selected = use_signal(|| 0usize);
-    let pressed = use_memo(move || Some(HashSet::from([selected()])));
+    let pressed = use_memo(move || Some(HashSet::from([LOCALES[selected()].0.to_string()])));
     let tag = LOCALES[selected()].0.to_string();
 
     rsx! {
@@ -49,16 +49,20 @@ pub fn LocaleDemo(children: Element) -> Element {
                 aria_label: "Locale",
                 variant: ToggleVariant::Outline,
                 size: ToggleSize::Sm,
-                pressed,
-                on_pressed_change: move |next: HashSet<usize>| {
+                value: pressed,
+                on_value_change: move |next: HashSet<String>| {
                     // Single-select: pressing the pressed item again keeps it chosen.
-                    if let Some(index) = next.into_iter().next() {
+                    if let Some(index) = next
+                        .into_iter()
+                        .next()
+                        .and_then(|id| LOCALES.iter().position(|(l, _)| l.to_string() == id))
+                    {
                         selected.set(index);
                         i18n.set_language(LOCALES[index].0.clone());
                     }
                 },
                 for (index , (id , name)) in LOCALES.iter().enumerate() {
-                    ToggleItem { key: "{id}", index, lang: "{id}", "{name}" }
+                    ToggleItem { key: "{id}", index, value: id.to_string(), lang: "{id}", "{name}" }
                 }
             }
             div { lang: "{tag}", {children} }

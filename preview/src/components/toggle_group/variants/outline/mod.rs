@@ -9,10 +9,10 @@ pub fn Demo() -> Element {
     rsx! {
         ToggleGroup {
             variant: ToggleVariant::Outline,
-            default_pressed: HashSet::from([0usize]),
+            default_value: HashSet::from(["all".to_string()]),
             aria_label: "Message filter",
-            ToggleItem { index: 0usize, aria_label: "Toggle all", "All" }
-            ToggleItem { index: 1usize, aria_label: "Toggle missed", "Missed" }
+            ToggleItem { index: 0usize, value: "all", aria_label: "Toggle all", "All" }
+            ToggleItem { index: 1usize, value: "missed", aria_label: "Toggle missed", "Missed" }
         }
     }
 }

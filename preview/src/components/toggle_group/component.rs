@@ -25,14 +25,28 @@ use std::collections::HashSet;
 /// `size` and `spacing` (shadcn's `ToggleGroup` props, which every item inherits).
 #[derive(Props, Clone, PartialEq)]
 pub struct ToggleGroupProps {
-    /// The default pressed items if the component is not controlled.
+    /// The values of the items pressed initially when the component is not controlled
+    /// (shadcn's `defaultValue`; a single-type group holds at most one).
+    #[props(default)]
+    pub default_value: HashSet<String>,
+
+    /// The values of the currently pressed items, to drive the group when controlled
+    /// (shadcn's `value`).
+    pub value: ReadSignal<Option<HashSet<String>>>,
+
+    /// Called with the new set of pressed values (shadcn's `onValueChange`).
+    #[props(default)]
+    pub on_value_change: Callback<HashSet<String>>,
+
+    /// Deprecated: use `default_value`. Indices of the items pressed initially; an item without
+    /// a `value` is keyed by its `index`.
     #[props(default)]
     pub default_pressed: HashSet<usize>,
 
-    /// The currently pressed items. This can be used to drive the component when controlled.
+    /// Deprecated: use `value`. Indices of the pressed items, when controlled.
     pub pressed: ReadSignal<Option<HashSet<usize>>>,
 
-    /// Callback to handle changes in pressed state
+    /// Deprecated: use `on_value_change`. Called with the indices of the pressed items.
     #[props(default)]
     pub on_pressed_change: Callback<HashSet<usize>>,
 
@@ -107,6 +121,9 @@ pub fn ToggleGroup(props: ToggleGroupProps) -> Element {
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/toggle_group/style.css") }
         toggle_group::ToggleGroup {
+            default_value: props.default_value,
+            value: props.value,
+            on_value_change: props.on_value_change,
             default_pressed: props.default_pressed,
             pressed: props.pressed,
             on_pressed_change: props.on_pressed_change,
@@ -134,6 +151,7 @@ pub fn ToggleItem(props: ToggleItemProps) -> Element {
         document::Link { rel: "stylesheet", href: asset!("/src/components/toggle_group/style.css") }
         toggle_group::ToggleItem {
             index: props.index,
+            value: props.value,
             disabled: props.disabled,
             attributes: merged,
             {props.children}
@@ -149,10 +167,11 @@ mod tests {
     fn GroupWithCallerClasses() -> Element {
         rsx! {
             ToggleGroup {
-                pressed: None,
+                value: None,
                 class: "caller-group-class",
                 ToggleItem {
                     index: 0usize,
+                    value: "b",
                     class: "caller-item-class",
                     "B"
                 }
@@ -177,7 +196,7 @@ mod tests {
         let mut dom = VirtualDom::new(|| {
             rsx! {
                 ToggleGroup {
-                    pressed: None,
+                    value: None,
                     ToggleItem { index: 0usize, "B" }
                 }
             }
@@ -194,7 +213,7 @@ mod tests {
         let mut dom = VirtualDom::new(|| {
             rsx! {
                 ToggleGroup {
-                    pressed: None,
+                    value: None,
                     variant: ToggleVariant::Outline,
                     size: ToggleSize::Lg,
                     spacing: 0u8,
@@ -218,7 +237,7 @@ mod tests {
     fn defaults_are_separate_default_toggles_two_steps_apart() {
         let mut dom = VirtualDom::new(|| {
             rsx! {
-                ToggleGroup { pressed: None,
+                ToggleGroup { value: None,
                     ToggleItem { index: 0usize, "B" }
                 }
             }

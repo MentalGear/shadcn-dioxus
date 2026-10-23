@@ -318,18 +318,18 @@ pub fn Demo() -> Element {
                     horizontal: true,
                     role: "group",
                     variant: ToggleVariant::Outline,
-                    pressed: Some(HashSet::from([usize::from(justified)])),
-                    on_pressed_change: move |pressed: HashSet<usize>| {
+                    value: Some(HashSet::from([if justified { "justified" } else { "grid" }.to_string()])),
+                    on_value_change: move |pressed: HashSet<String>| {
                         // Radio-style: pressing the pressed item again keeps it.
-                        if pressed.contains(&1) {
+                        if pressed.contains("justified") {
                             layout.set(Layout::Justified);
-                        } else if pressed.contains(&0) {
+                        } else if pressed.contains("grid") {
                             layout.set(Layout::Grid);
                         }
                     },
                     aria_label: "Layout",
-                    ToggleItem { index: 0usize, "Grid" }
-                    ToggleItem { index: 1usize, "Justified" }
+                    ToggleItem { index: 0usize, value: "grid", "Grid" }
+                    ToggleItem { index: 1usize, value: "justified", "Justified" }
                 }
                 if !justified {
                     Field { orientation: FieldOrientation::Horizontal,

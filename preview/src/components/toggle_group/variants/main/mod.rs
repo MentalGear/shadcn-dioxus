@@ -13,9 +13,9 @@ pub fn Demo() -> Element {
             variant: ToggleVariant::Outline,
             allow_multiple_pressed: true,
             aria_label: "Text formatting",
-            ToggleItem { index: 0usize, aria_label: "Toggle bold", Bold {} }
-            ToggleItem { index: 1usize, aria_label: "Toggle italic", Italic {} }
-            ToggleItem { index: 2usize, aria_label: "Toggle strikethrough", Strikethrough {} }
+            ToggleItem { index: 0usize, value: "bold", aria_label: "Toggle bold", Bold {} }
+            ToggleItem { index: 1usize, value: "italic", aria_label: "Toggle italic", Italic {} }
+            ToggleItem { index: 2usize, value: "strikethrough", aria_label: "Toggle strikethrough", Strikethrough {} }
         }
     }
 }

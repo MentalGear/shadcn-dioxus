@@ -190,8 +190,8 @@ pub(crate) fn DocsComponentNav(active: DocsNavActive) -> Element {
     // Controlled, radio-style: the pressed item is the order, and pressing it again (an empty set) is ignored.
     let pressed = use_memo(move || {
         Some(HashSet::from([match sort() {
-            NavSort::Az => 0usize,
-            NavSort::Category => 1usize,
+            NavSort::Az => "az".to_string(),
+            NavSort::Category => "category".to_string(),
         }]))
     });
 
@@ -204,18 +204,19 @@ pub(crate) fn DocsComponentNav(active: DocsNavActive) -> Element {
                 ToggleGroup {
                     class: "dx-nav-sort-toggles",
                     aria_label: "Order components by",
-                    pressed,
+                    value: pressed,
                     size: ToggleSize::Sm,
                     spacing: 1u8,
-                    on_pressed_change: move |set: HashSet<usize>| {
-                        if set.contains(&0) {
+                    on_value_change: move |set: HashSet<String>| {
+                        if set.contains("az") {
                             choose(NavSort::Az);
-                        } else if set.contains(&1) {
+                        } else if set.contains("category") {
                             choose(NavSort::Category);
                         }
                     },
                     ToggleItem {
                         index: 0usize,
+                        value: "az",
                         class: "dx-nav-sort-option",
                         "data-nav-sort-option": "az",
                         "onclick": CHOOSE_AZ_JS,
@@ -223,6 +224,7 @@ pub(crate) fn DocsComponentNav(active: DocsNavActive) -> Element {
                     }
                     ToggleItem {
                         index: 1usize,
+                        value: "category",
                         class: "dx-nav-sort-option",
                         "data-nav-sort-option": "category",
                         "onclick": CHOOSE_CATEGORY_JS,

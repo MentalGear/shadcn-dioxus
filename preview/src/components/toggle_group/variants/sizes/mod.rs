@@ -12,21 +12,21 @@ pub fn Demo() -> Element {
             ToggleGroup {
                 size: ToggleSize::Sm,
                 variant: ToggleVariant::Outline,
-                default_pressed: HashSet::from([0usize]),
+                default_value: HashSet::from(["top".to_string()]),
                 aria_label: "Small placement",
-                ToggleItem { index: 0usize, aria_label: "Toggle small top", "Top" }
-                ToggleItem { index: 1usize, aria_label: "Toggle small bottom", "Bottom" }
-                ToggleItem { index: 2usize, aria_label: "Toggle small left", "Left" }
-                ToggleItem { index: 3usize, aria_label: "Toggle small right", "Right" }
+                ToggleItem { index: 0usize, value: "top", aria_label: "Toggle small top", "Top" }
+                ToggleItem { index: 1usize, value: "bottom", aria_label: "Toggle small bottom", "Bottom" }
+                ToggleItem { index: 2usize, value: "left", aria_label: "Toggle small left", "Left" }
+                ToggleItem { index: 3usize, value: "right", aria_label: "Toggle small right", "Right" }
             }
             ToggleGroup {
                 variant: ToggleVariant::Outline,
-                default_pressed: HashSet::from([0usize]),
+                default_value: HashSet::from(["top".to_string()]),
                 aria_label: "Default placement",
-                ToggleItem { index: 0usize, aria_label: "Toggle default top", "Top" }
-                ToggleItem { index: 1usize, aria_label: "Toggle default bottom", "Bottom" }
-                ToggleItem { index: 2usize, aria_label: "Toggle default left", "Left" }
-                ToggleItem { index: 3usize, aria_label: "Toggle default right", "Right" }
+                ToggleItem { index: 0usize, value: "top", aria_label: "Toggle default top", "Top" }
+                ToggleItem { index: 1usize, value: "bottom", aria_label: "Toggle default bottom", "Bottom" }
+                ToggleItem { index: 2usize, value: "left", aria_label: "Toggle default left", "Left" }
+                ToggleItem { index: 3usize, value: "right", aria_label: "Toggle default right", "Right" }
             }
         }
     }
