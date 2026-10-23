@@ -107,8 +107,7 @@
 
 .dx-drag-and-drop-list-item[data-is-grabbing="true"][data-drop-at-origin="true"] {
   border-style: solid;
-  border-color: var(--dx-ring-color);
-  box-shadow: var(--dx-ring-focus);
+  border-color: var(--dx-drop-indicator);
 }
 
 .dx-drag-and-drop-list-item-icon {
@@ -184,7 +183,7 @@
   position: absolute;
   height: 3px;
   border-radius: 999px;
-  background-color: var(--dx-ring-color);
+  background-color: var(--dx-drop-indicator);
   content: "";
   inset-inline: 10px;
   opacity: 0;

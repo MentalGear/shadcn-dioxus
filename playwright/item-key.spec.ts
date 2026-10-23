@@ -4,15 +4,21 @@ import { BASE_URL } from "./base-url";
 import { demoFrame, demoRole } from "./demo-frame";
 import { gotoHydrated } from "./hydration";
 import { measureAtRest } from "./animations";
+import { ACCENT, applyModeAndAccent, paintedColour, resolvedToken, type Mode } from "./drop-indicator";
 
 // Renderer identity (backlog row 361): `item_key` on VirtualList and TableRows. Everything that must
 // survive a change of the view (the DOM node and so the state inside a row, the row that stays mounted
-// while it holds focus, the measured sizes) follows the item, not the slot. Both `reorder` demos render
-// the same list twice: with `item_key` (the default of the demo) and without it (the default of the
-// library: a row is its slot), switched by the demo's last button.
+// while it holds focus, the measured sizes) follows the item, not the slot.
 //
-// `reorder` demos, button positions: virtual_list = Reverse (0), Shuffle (1), and the item_key SWITCH (the
-// first `switch`); table = Sort descending (0), Move first to last (1), item_key toggle (2).
+// The Virtual List `reorder` demo always sets `item_key` (owner 2026-10-23: no toggle in the demo), so
+// this file proves the key-ON behaviour there. The key-OFF behaviour of the VirtualList engine ("a row is
+// its slot": the DOM node, its state and the measured size stay on the index) moved to the engine's own
+// unit tests: `without_an_item_key_a_row_is_its_slot` (primitives/src/virtual/identity.rs) and
+// `without_keys_a_measured_size_stays_on_its_slot` (primitives/src/virtual/virtualizer.rs), with their
+// key-on twins. The Table `reorder` demo still has its item_key toggle, so its key-off test stays here.
+//
+// `reorder` demos, button positions: virtual_list = Reverse (0), Shuffle (1); table = Sort descending (0),
+// Move first to last (1), item_key toggle (2).
 
 const LIST_URL = `${BASE_URL}/component/virtual_list/`;
 const TABLE_URL = `${BASE_URL}/component/table/`;
@@ -46,17 +52,35 @@ test.describe("VirtualList item_key", () => {
     await expect(frame.locator('[data-virtual-index="0"] [data-item]')).toHaveAttribute("data-item", "199");
   });
 
-  test("without item_key a row is its slot: focus and state stay on the slot", async ({ page }) => {
+  test("the demo has no item_key switch: the list always keys its rows by task", async ({ page }) => {
     const frame = await open(page);
-    await demoRole(page, "switch", 0, "reorder").click(); // item_key off
-    await expect(itemButton(frame, 3)).toBeVisible();
-    await itemCheck(frame, 3).check();
-    await itemButton(frame, 3).focus();
-    await press(page, 0, "reorder");
-    // Slot 3 now shows item 196 and still holds focus and the checked box.
-    await expect(page.locator(":focus")).toHaveAttribute("data-item-button", "196");
-    await expect(itemCheck(frame, 196)).toBeChecked();
-    await expect(itemCheck(frame, 3)).toHaveCount(0);
+    await expect(frame.getByRole("switch")).toHaveCount(0);
+    await expect(frame.locator('[data-reorder="key-mode"]')).toHaveCount(0);
+    // Reverse and Shuffle are the demo's two buttons before the first row's grip.
+    await expect(frame.getByRole("button").nth(0)).toHaveAttribute("data-reorder", "reverse");
+    await expect(frame.getByRole("button").nth(1)).toHaveAttribute("data-reorder", "shuffle");
+  });
+
+  test("the list fills the demo frame's width", async ({ page }) => {
+    const frame = await open(page);
+    const content = await frame.evaluate((el) => {
+      const cs = getComputedStyle(el);
+      return {
+        padding: parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight),
+        border: parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth),
+      };
+    });
+    const outer = await measureAtRest(frame);
+    const demo = await measureAtRest(frame.locator("[data-vl-reorder-demo]"));
+    const box = await measureAtRest(frame.locator(".dx-vl-reorder-frame"));
+    const list = await measureAtRest(frame.locator(".dx-virtual-list-container"));
+    const contentWidth = outer.width - content.padding - content.border;
+    // The demo wrapper is the frame's content width, the bordered box is the same, the list is the box
+    // inside its 1px border on each side (it used to shrink to its longest row label).
+    expect(Math.abs(demo.width - contentWidth)).toBeLessThanOrEqual(0.5);
+    expect(Math.abs(box.width - contentWidth)).toBeLessThanOrEqual(0.5);
+    expect(Math.abs(list.width - (box.width - 2))).toBeLessThanOrEqual(0.5);
+    expect(list.width).toBeGreaterThan(400);
   });
 
   test("a shuffle keeps the checked task's state and focus with the task", async ({ page }) => {
@@ -99,6 +123,21 @@ test.describe("VirtualList item_key", () => {
     await expect(itemButton(frame, 0)).toBeFocused();
     await expect(itemButton(frame, 0)).toHaveAttribute("aria-pressed", "false");
   });
+
+  for (const mode of ["light", "dark"] as Mode[]) {
+    test(`the drop line is --dx-primary under the ${ACCENT} accent, ${mode}`, async ({ page }) => {
+      const frame = await open(page);
+      await applyModeAndAccent(page, mode);
+      await itemButton(frame, 0).focus();
+      await page.keyboard.press("Space");
+      await page.keyboard.press("ArrowDown");
+      await expect(frame.locator("[data-drop]")).toHaveCount(1);
+      const primary = await resolvedToken(page, "--dx-primary");
+      expect(await resolvedToken(page, "--dx-ring-color")).not.toBe(primary);
+      expect(await paintedColour(page, "[data-vl-reorder-demo] [data-drop]", "boxShadow")).toBe(primary);
+      await page.keyboard.press("Escape");
+    });
+  }
 
   test("a reversed list keeps its measured heights: the canvas does not move", async ({ page }) => {
     const frame = await open(page);

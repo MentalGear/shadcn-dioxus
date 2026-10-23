@@ -3,6 +3,7 @@ import { type Page } from "@playwright/test";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 import { measureAtRest } from "./animations";
+import { ACCENT, applyModeAndAccent, paintedColour, resolvedToken, type Mode } from "./drop-indicator";
 
 // The `reorder` variant of data_table (backlog row 363): five tasks T-1..T-5, a drag-handle column and
 // a Columns menu (Header is not hideable; Status, Reviewer, ID are).
@@ -72,6 +73,26 @@ test.describe("DataTable reorderable rows", () => {
     await page.keyboard.press("Home");
     await expect(handle(page, "T-1")).toBeFocused();
   });
+});
+
+test.describe("DataTable drop indicator colour", () => {
+  // The drop line is `--dx-drop-indicator` (default `var(--dx-primary)`): the accent, not the grey ring.
+  for (const mode of ["light", "dark"] as Mode[]) {
+    test(`the drop line is --dx-primary under the ${ACCENT} accent, ${mode}`, async ({ page }) => {
+      await goto(page);
+      await applyModeAndAccent(page, mode);
+      await handle(page, "T-1").focus();
+      await page.keyboard.press("Space");
+      await page.keyboard.press("ArrowDown");
+      const target = rows(page).locator("xpath=..").locator("tr[data-drop]");
+      await expect(target).toHaveCount(1);
+      const primary = await resolvedToken(page, "--dx-primary");
+      expect(await resolvedToken(page, "--dx-ring-color")).not.toBe(primary);
+      expect(await resolvedToken(page, "--dx-drop-indicator")).toBe(primary);
+      expect(await paintedColour(page, 'tr[data-drop] > td', "boxShadow")).toBe(primary);
+      await page.keyboard.press("Escape");
+    });
+  }
 });
 
 test.describe("DataTable Columns menu", () => {
