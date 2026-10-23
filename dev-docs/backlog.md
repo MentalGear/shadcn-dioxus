@@ -41,7 +41,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (40)
+## Open rows (36)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -52,13 +52,9 @@ proposing one is closed as out of scope (row 337 is the first).
 | [30](backlog/030-verify-the-2026-09-02-touch-text-entry-font.md) | Verify the 2026-09-02 touch text-entry font-size floor… | User re-test after deploy — the sandbox has no WebKit, and while Playwright's iPhone 13 emulation… | S to verify | tests |
 | [33](backlog/033-3-browser-playwright-on-every-push-pr-sharded.md) | 3-browser Playwright on every push/PR, sharded — dignifiedquire/dx-components runs chromium+firefox+webkit… | CI reactivation (user: off until further notice, 2026-08-30) — then it is a workflow-trigger… | S | ci |
 | [97](backlog/097-a-second-un-fragmented-rsx-sibling-renders-on.md) | A second, un-fragmented rsx sibling renders on the first pass and is silently dropped by the next one | OPEN (instance done, class not swept): Found 2026-09-20 (round 5) adding a scoped &lt;style&gt; tag… | DONE for this instance (explicit… | misc |
-| [130](backlog/130-arborium-2-17-0-s-wasm-libc-shim-lacks-the-data.md) | arborium 2.17.0's wasm libc shim lacks the data symbol stderr that tree-sitter's stack.c… | NARROWED 2026-10-19 (backlog review): local fix 7ad8421 in; filing upstream is the owner's decision… | S | upstream |
-| [131](backlog/131-dioxus-cli-0-7-9-ssg-leaves-every-pre-rendered.md) | dioxus-cli 0.7.9 --ssg leaves every pre-rendered route except index.html stale when public/ already exists | NARROWED 2026-10-19 (backlog review): local fix 150e97b in (build-ssg.sh wipes public/); filing… | S | build |
 | [152](backlog/152-test-suite-review-revisit-the-playwright-suite.md) | Test-suite review: revisit the Playwright suite (~1,786 tests, ~21 min on a release build with 4 workers) for… | NARROWED 2026-10-19: speed half 152a DONE (lane suite-speed badc56d7): measured (3,752 tests, 183… | M | tests |
 | [153](backlog/153-native-find-in-page-for-windowed-virtual-lists.md) | Native find-in-page for WINDOWED virtual lists: keep per-item text in the DOM as hidden="until-found"… | PROTOTYPED 2026-10-19 (lane virtual-grid, round 4); Chromium Ctrl+F verified 2026-10-23 -- works in… | M | virtual |
-| [154](backlog/154-shared-virtualization-engine-one-engine-in.md) | Shared virtualization engine: ONE engine in primitives/src/virtual/ (core, strategy, DOM bridge) that every… | DESIGN NOTE -- first note recorded 2026-10-05 from the owner question whether the virtualized… | S (note); the build is not estimated | virtual |
 | [155](backlog/155-shadcn-parity-wave-group-1-the-invalid-ring.md) | shadcn parity wave (group 1, the invalid ring, LANDED 2026-10-13 with row 145's state recipes): the 27 "Add… | OPEN (follow-ups only, end of Notes): LANDED: group 1 2026-10-13 (with row 145's state recipes)… | M-L in total (23 of the 27 are S; four… | theme |
-| [158](backlog/158-theme-follow-ups-accept-shadcn-s-dark-class-as.md) | Theme follow-ups: accept shadcn's .dark class as an alias of data-theme="dark", and suppress transitions… | OPEN (part (b) conditional, on hold): PART (a) LANDED 2026-10-15 (by construction, lane x158dark… | S + S | theme |
 | [167](backlog/167-migrate-the-52-hand-paired-listener-sites-onto.md) | Migrate the 52 hand-paired listener sites onto use_js_listeners, shrinking PAIRED_BY_HAND in… | OPEN -- recorded 2026-10-05 (follow-up of row 159, which landed 2026-10-05 in round 3); scheduled… | M (mechanical per site, 11 files) | misc |
 | [170](backlog/170-cross-component-css-overrides-190-sites-in-12.md) | Cross-component CSS overrides: 190 sites in 12 sheets declare, in one component's stylesheet, a property that… | NARROWED 2026-10-19 (backlog review): baseline is now 138 sites in 9 sheets (was 190 in 12) | M (the decision and the prototype are… | theme |
 | [188](backlog/188-demo-parity-second-audit-the-owner-s-per.md) | Demo parity, second audit: the owner's per-example list against the original shadcn demos (51 components; row… | DEMO-ONLY ITEMS DONE 2026-10-19 (batch 2: every section-5 demo exists; what remains needs component… | M per batch | docs |
@@ -86,7 +82,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [370](backlog/370-merge-attributes-class-none.md) | merge_attributes: a class: None replaces the base class instead of being ignored | Open. Found by the biggrid lane in batch 10. | S | primitives |
 | [371](backlog/371-dependency-evaluation-keep-lift-drop.md) | Dependency evaluation: keep, feature-gate, replace, lift or drop (rule of 2026-10-23) | PARKED by the owner 2026-10-23 ("its own item, and not yet"). Inventory done; no outcome is… | S each outcome | build |
 
-## Done rows (304)
+## Done rows (308)
 
 | # | Item | Updated |
 |---|---|---|
@@ -212,6 +208,8 @@ proposing one is closed as out of scope (row 337 is the first).
 | [127](backlog/done/127-preview-assets-main-css-is-outside-the.md) | preview/assets/main.css is outside the stylelint gate's glob; 7 pre-existing errors | 2026-10-11 |
 | [128](backlog/done/128-scripts-check-dx-class-prefix-sh-is-red-on-main.md) | scripts/check-dx-class-prefix.sh is red on main @ 62de3cb: bar_chart/style.css and line_chart/style.css… | 2026-10-03 |
 | [129](backlog/done/129-preview-src-components-navbar-component-json.md) | preview/src/components/navbar/component.json lacks the theme globalAssets entry every other component has | 2026-10-05 |
+| [130](backlog/done/130-arborium-2-17-0-s-wasm-libc-shim-lacks-the-data.md) | arborium 2.17.0's wasm libc shim lacks the data symbol stderr that tree-sitter's stack.c… | 2026-10-23 |
+| [131](backlog/done/131-dioxus-cli-0-7-9-ssg-leaves-every-pre-rendered.md) | dioxus-cli 0.7.9 --ssg leaves every pre-rendered route except index.html stale when public/ already exists | 2026-10-23 |
 | [132](backlog/done/132-dx-tabs-content-keeps-padding-var-dx-space-8.md) | .dx-tabs-content keeps padding: var(--dx-space-8) while Nova's TabsContent has none; consumers not audited | 2026-10-14 |
 | [133](backlog/done/133-inputgroup-has-no-invalid-or-disabled-styling.md) | InputGroup has no invalid or disabled styling | 2026-10-13 |
 | [134](backlog/done/134-nova-s-tinted-destructive-button-is-contrast.md) | Nova's tinted destructive button is contrast-failing in dark; ours deliberately is not Nova's. Widened… | 2026-10-13 |
@@ -232,8 +230,10 @@ proposing one is closed as out of scope (row 337 is the first).
 | [149](backlog/done/149-scroll-lock-rs-installs-non-passive-wheel.md) | scroll_lock.rs installs non-passive wheel/touchmove listeners on window permanently after the first lock | 2026-10-05 |
 | [150](backlog/done/150-home-page-blocks-registered-their-hooks-on-the.md) | Home-page blocks registered their hooks on the parent scope: MasonryCard called component.call(()), so… | 2026-10-23 |
 | [151](backlog/done/151-a-document-link-stylesheet-can-be-recorded-as.md) | A document::Link stylesheet can be recorded as present and never inserted: a subtree torn down in the turn it… | 2026-10-04 |
+| [154](backlog/done/154-shared-virtualization-engine-one-engine-in.md) | Shared virtualization engine: ONE engine in primitives/src/virtual/ (core, strategy, DOM bridge) that every… | 2026-10-23 |
 | [156](backlog/done/156-drawer-has-fallen-behind-shadcn-it-moved-from.md) | Drawer has fallen behind shadcn: it moved from Vaul to Base UI Drawer (snap points, nested drawers, non-modal… | 2026-10-19 |
 | [157](backlog/done/157-inputotp-hard-codes-a-numeric-keypad-inputmode.md) | InputOtp hard-codes a numeric keypad: inputmode="numeric" and pattern="[0-9]*" are fixed, so alphanumeric… | 2026-10-19 |
+| [158](backlog/done/158-theme-follow-ups-accept-shadcn-s-dark-class-as.md) | Theme follow-ups: accept shadcn's .dark class as an alias of data-theme="dark", and suppress transitions… | 2026-10-23 |
 | [159](backlog/done/159-js-listeners-added-through-eval-or-shipped.md) | JS listeners added through eval (or shipped scripts) and never removed: a class, widening row 149 | 2026-10-05 |
 | [160](backlog/done/160-two-small-bugs-the-shadcn-comparison-found-tabs.md) | Two small bugs the shadcn comparison found: Tabs Ghost sets data-variant="ghost" that no CSS styles… | 2026-10-05 |
 | [161](backlog/done/161-rename-the-website-to-shadcn-dioxus-and-give-it.md) | Rename the website to "shadcn-dioxus" and give it a real favicon (an SVG that follows light/dark, a PNG… | 2026-10-20 |

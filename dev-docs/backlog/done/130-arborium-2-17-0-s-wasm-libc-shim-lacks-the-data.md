@@ -1,10 +1,10 @@
 ---
 id: 130
 title: "arborium 2.17.0's wasm libc shim lacks the data symbol stderr that tree-sitter's stack.c…"
-status: "NARROWED 2026-10-19 (backlog review): local fix 7ad8421 in; filing upstream is the owner's decision…"
+status: "CLOSED 2026-10-23 (owner): local fix 7ad8421 stays; not filed upstream (no-upstream rule). When a…"
 size: "S"
 area: upstream
-updated: 2026-10-19
+updated: 2026-10-23
 ---
 
 # Row 130: arborium 2.17.0's wasm libc shim lacks the data symbol stderr that tree-sitter's stack.c…
@@ -15,7 +15,7 @@ arborium 2.17.0's wasm libc shim lacks the data symbol `stderr` that tree-sitter
 
 ## Status / trigger
 
-**NARROWED 2026-10-19 (backlog review): local fix 7ad8421 in; filing upstream is the owner's decision (row 6)**
+**CLOSED 2026-10-23 (owner): local fix 7ad8421 stays; not filed upstream (no-upstream rule). When a fixed arborium lands, the duplicate-symbol link error says to delete the local stderr definition.** **NARROWED 2026-10-19 (backlog review): local fix 7ad8421 in; filing upstream is the owner's decision (row 6)**
 
 ## Size
 

@@ -15,7 +15,7 @@ When a VirtualGrid's own scroll reaches its top or bottom edge, further wheel or
 
 ## Status / trigger
 
-**LANDED 2026-10-20 (fix 7f172201, PR #115 merge 1ec049f3; gate 58/58 green): only the inline axis is contained now (`overscroll-behavior-x: contain`), so block-axis scroll chains to the page at the grid's top and bottom edges; two new tests in `playwright/virtual-grid.spec.ts`. The unification question below (owner decision 2026-10-20: two components, shared engine) is recorded in [row 154](../154-shared-virtualization-engine-one-engine-in.md).** Originally: OPEN (owner report 2026-10-20; with the Round 4 thread)
+**LANDED 2026-10-20 (fix 7f172201, PR #115 merge 1ec049f3; gate 58/58 green): only the inline axis is contained now (`overscroll-behavior-x: contain`), so block-axis scroll chains to the page at the grid's top and bottom edges; two new tests in `playwright/virtual-grid.spec.ts`. The unification question below (owner decision 2026-10-20: two components, shared engine) is recorded in [row 154](154-shared-virtualization-engine-one-engine-in.md).** Originally: OPEN (owner report 2026-10-20; with the Round 4 thread)
 
 ## Size
 
@@ -29,4 +29,4 @@ S
 
 **Open design question (owner has not decided):** unify VirtualList as a list configuration of VirtualGrid? Round 4's recommendation: keep two components, because a list and a grid need different ARIA semantics (`role=list`/`listbox` rows versus `role=grid` rows, cells and column headers), and move the shared bridge and strategy layer into the engine, as row 154 (shared virtualization engine) already proposes. If the owner approves a unification, a follow-up row is held for it (not created yet). Related: row 244 (VirtualGrid, landed), row 153 (find-in-page for windowed lists).
 
-Links: [row 154](../154-shared-virtualization-engine-one-engine-in.md), [row 153](../153-native-find-in-page-for-windowed-virtual-lists.md).
+Links: [row 154](154-shared-virtualization-engine-one-engine-in.md), [row 153](../153-native-find-in-page-for-windowed-virtual-lists.md).

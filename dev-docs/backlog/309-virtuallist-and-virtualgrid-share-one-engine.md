@@ -23,6 +23,8 @@ M
 
 ## Detail
 
+The engine's design note (row 154, folded here 2026-10-23) is in [done/154](done/154-shared-virtualization-engine-one-engine-in.md).
+
 **Inventory (before this row).** Who implemented what, and the verdict.
 
 | Part | VirtualList (windowed) | VirtualGrid / VirtualWrapGrid | Verdict |
