@@ -11,6 +11,9 @@ const GOTO = { timeout: 20 * 60 * 1000 };
 
 // Computed values of the pre-change build (light). `rect` is the border box, rounded to 2 decimals.
 //
+// Re-baselined 2026-10-23: `cursor` is `default` (was `pointer`): the interactive-element cursor is the theme's one rule now
+// (`data-dx-interactive-element-cursor`, cursor-option.spec.ts), and shadcn v4's arrow is its default; nothing else moved.
+//
 // Row 331 verdict (2026-10-21): KEPT. Re-checked against today's build: all four records still equal the
 // pre-change values, so no re-baseline was needed. What only this snapshot catches: a probe that appended
 // `cursor: default`, `text-indent`, `appearance: auto`, `transition-property: none`, `letter-spacing`, `border-width`
@@ -44,7 +47,7 @@ const BEFORE: Record<string, Record<string, string>> = {
     "text-indent": "0px",
     "text-shadow": "none",
     "word-spacing": "0px",
-    "cursor": "pointer",
+    "cursor": "default",
     "outline-style": "none",
     "appearance": "none",
     "transform": "none",
@@ -76,7 +79,7 @@ const BEFORE: Record<string, Record<string, string>> = {
     "text-indent": "0px",
     "text-shadow": "none",
     "word-spacing": "0px",
-    "cursor": "pointer",
+    "cursor": "default",
     "outline-style": "none",
     "appearance": "none",
     "transform": "matrix(1, 0, 0, 1, -6, -6)",
@@ -109,7 +112,7 @@ const BEFORE: Record<string, Record<string, string>> = {
     "text-indent": "0px",
     "text-shadow": "none",
     "word-spacing": "0px",
-    "cursor": "pointer",
+    "cursor": "default",
     "outline-style": "none",
     "appearance": "none",
     "transform": "matrix(1, 0, 0, 1, -10, -10)",
@@ -141,7 +144,7 @@ const BEFORE: Record<string, Record<string, string>> = {
     "text-indent": "0px",
     "text-shadow": "none",
     "word-spacing": "0px",
-    "cursor": "pointer",
+    "cursor": "default",
     "outline-style": "none",
     "appearance": "none",
     "transform": "matrix(1, 0, 0, 1, -10, -10)",
