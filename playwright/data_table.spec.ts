@@ -14,8 +14,10 @@ const goto = (page: Page) =>
 
 const table = (page: Page) => page.locator('#component-preview-frame [data-slot="table"]');
 const filterInput = (page: Page) => page.getByRole("textbox", { name: "Filter by email" });
-const selectAllCheckbox = (page: Page) => page.getByRole("checkbox", { name: "Select all" });
-const rowCheckboxes = (page: Page) => page.getByRole("checkbox", { name: /^Select row / });
+// Scoped to the main demo's frame: the page also holds the `large` Grid demo, whose header and rows carry the same names.
+const mainDemo = (page: Page) => page.locator("#component-preview-frame");
+const selectAllCheckbox = (page: Page) => mainDemo(page).getByRole("checkbox", { name: "Select all" });
+const rowCheckboxes = (page: Page) => mainDemo(page).getByRole("checkbox", { name: /^Select row / });
 const pagination = (page: Page) => page.locator('[data-slot="data-table-pagination"]');
 const selectedSummary = (page: Page) => pagination(page).locator(".dx-data-table-pagination-selected");
 const pageReadout = (page: Page) => pagination(page).locator(".dx-data-table-pagination-page");
