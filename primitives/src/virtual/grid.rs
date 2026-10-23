@@ -247,7 +247,7 @@ impl GridEngine {
                 .map(to_data)
                 .collect(),
             body_height: rows.canvas_height,
-            pane_width: columns.content_size,
+            pane_width: columns.canvas_height,
         }
     }
 }

@@ -52,10 +52,12 @@ pub(crate) struct RenderKey {
 pub(crate) struct Plan {
     pub(crate) items: Vec<VirtualItem>,
     pub(crate) top_offset: u32,
+    /// The extent of the items alone, never `max`ed with the viewport: the viewport is `0` on the
+    /// server and measured on the client, so a canvas that depended on it drew a short list
+    /// differently in the server's markup and the first client frame (backlog row 368). A consumer
+    /// that fills its box does it in CSS (`min-width: 100%` on the columns axis); on the rows
+    /// axis the space below the last row is the scroll container's own.
     pub(crate) canvas_height: u32,
-    /// The extent of the items alone (no `max` with the viewport): what a consumer that fills
-    /// the viewport in CSS (`min-width: 100%`) needs, equal on the server and on the client.
-    pub(crate) content_size: u32,
 }
 
 /// The scroll total held fixed while the user scrolls.
@@ -249,7 +251,7 @@ impl Engine {
             top_offset: self
                 .rendered
                 .map_or(0, |(first, _)| self.index.start(first)),
-            canvas_height: self.total_size().max(self.viewport),
+            canvas_height: self.total_size(),
         }
     }
 
@@ -274,7 +276,6 @@ impl Engine {
             items,
             top_offset: key.top_offset,
             canvas_height: key.canvas_height,
-            content_size: self.total_size(),
         }
     }
 
@@ -384,7 +385,18 @@ mod tests {
         engine.scroll(1000, 600, true);
         assert_eq!(engine.plan(8).canvas_height, 5000);
         engine.sync(&uniform(4, 50));
-        assert_eq!(engine.plan(8).canvas_height, 600); // max(200, viewport)
+        assert_eq!(engine.plan(8).canvas_height, 200); // the rows' extent, not the viewport's
+    }
+
+    #[test]
+    fn a_short_list_has_one_canvas_before_and_after_the_viewport_is_known() {
+        // Row 368: the server has no viewport (0), the client measures one; four rows of 50px
+        // are 200px on both, whatever the box that holds them.
+        let mut engine = Engine::new();
+        engine.sync(&uniform(4, 50));
+        let server = engine.plan(8).canvas_height;
+        engine.scroll(0, 600, false);
+        assert_eq!((server, engine.plan(8).canvas_height), (200, 200));
     }
 
     #[test]
