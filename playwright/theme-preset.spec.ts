@@ -100,11 +100,11 @@ test.beforeEach(async ({ page }) => {
   await expect(primaryButton(page)).toBeVisible();
 });
 
-test("default (no preset) is today's look: no attributes, black primary", async ({ page }) => {
+test("default (no preset) is today's look: no attributes, shadcn's near-black primary", async ({ page }) => {
   expect(await attr(page, "data-theme-base")).toBeNull();
   expect(await attr(page, "data-theme-accent")).toBeNull();
   expect(await attr(page, "data-theme-radius")).toBeNull();
-  await expectBackground(page, primaryButton(page), "#000");
+  await expectBackground(page, primaryButton(page), "#171717");
 });
 
 test("selecting an accent recolours a real button through --dx-primary", async ({ page }) => {
@@ -220,18 +220,18 @@ test("Default restores today's value, per axis and via Reset", async ({ page }) 
 
   const panel = await openPicker(page);
   await panel.getByRole("button", { name: "Blue", exact: true }).click();
-  await expectBackgroundNot(page, button, "#000");
+  await expectBackgroundNot(page, button, "#171717");
   await panel.getByRole("button", { name: "Default accent" }).click();
-  await expectBackground(page, button, "#000");
+  await expectBackground(page, button, "#171717");
   expect(await attr(page, "data-theme-accent")).toBeNull();
   expect(await cookie(page, "dx_theme_accent")).toBeUndefined();
 
   await panel.getByRole("button", { name: "Red", exact: true }).click();
   await panel.getByRole("button", { name: "Slate", exact: true }).click();
   await panel.getByRole("button", { name: "1", exact: true }).click();
-  await expectBackgroundNot(page, button, "#000");
+  await expectBackgroundNot(page, button, "#171717");
   await panel.getByRole("button", { name: "Reset" }).click();
-  await expectBackground(page, button, "#000");
+  await expectBackground(page, button, "#171717");
   for (const a of ["data-theme-base", "data-theme-accent", "data-theme-radius"]) {
     expect(await attr(page, a)).toBeNull();
   }
@@ -273,24 +273,31 @@ test("every swatch is named and the panel opens from the keyboard", async ({ pag
   await expect(panel).toBeHidden();
 });
 
-test("with no preset --dx-border-strong is still the ramp step, in both modes", async ({ page }) => {
-  // The one role token that gained a `var(--border-strong, ...)` hook for presets; its fallback must be
-  // exactly what it was. Painted colours, not custom-property text.
-  for (const mode of ["light", "dark"]) {
-    const [strong, ramp] = await page.evaluate((m) => {
+test("with no preset --dx-border-strong is the preset derivation (ink 26% over the page), in both modes", async ({ page }) => {
+  // The one role token that gained a `var(--border-strong, ...)` hook for presets; its fallback is the same
+  // derivation the presets use, in the theme's mix space (the upstream ramp step it replaced is gone, row 373).
+  // Painted colours, not custom-property text; shadcn's own oklab mix lands within 2 levels of it.
+  const shadcn = { light: [182, 182, 182], dark: [62, 62, 62] } as const;
+  for (const mode of ["light", "dark"] as const) {
+    const [strong, derived] = await page.evaluate((m) => {
       // The mode goes through the page's one writer (theme.rs `apply_mode`), never a raw attribute write.
       (window as unknown as { __dxApplyMode: (m: string) => void }).__dxApplyMode(m);
       const paint = (v: string) => {
         const el = document.createElement("div");
-        el.style.borderTop = `1px solid var(${v})`;
+        el.style.borderTop = `1px solid ${v}`;
         document.body.appendChild(el);
         const c = getComputedStyle(el).borderTopColor;
         el.remove();
         return c;
       };
-      return [paint("--dx-border-strong"), paint("--primary-color-7")];
+      return [
+        paint("var(--dx-border-strong)"),
+        paint("color-mix(in var(--dx-hover-mix-space), var(--dx-foreground) 26%, var(--dx-background))"),
+      ];
     }, mode);
-    expect(strong, mode).toBe(ramp);
+    expect(strong, mode).toBe(derived);
+    const rgb = strong.match(/\d+(\.\d+)?/g)!.slice(0, 3).map(Number);
+    for (let i = 0; i < 3; i++) expect(Math.abs(rgb[i] - shadcn[mode][i]), `${mode} channel ${i}: ${strong}`).toBeLessThanOrEqual(2);
   }
 });
 
