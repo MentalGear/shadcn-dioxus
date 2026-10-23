@@ -2329,7 +2329,12 @@ test.describe("Rule 15 — vertical shift + size clamp: an overlay taller than t
  * viewport edge, and a panel taller than the viewport overflows it, unless
  * `use_anchor_position_fallback` hands the call to its JS path. These are
  * the same fixtures and assertions as Rules 12 and 15, with the engine's
- * own anchor positioning left in place, so they pin that hand-off.
+ * own anchor positioning left in place, so they pin that hand-off (row
+ * 210's exclusion-zone check: a CSS placement outside the visual viewport
+ * goes to the JS path). Verified 2026-10-23: green on `main`; with that
+ * check mutated off, Tooltip and Popover land at `left: -85px`/`-73px` and
+ * the filled Popover reaches `bottom: 806px` on a 400px viewport (red).
+ * HoverCard stays in bounds either way, a guard as in Rule 12.
  */
 test.describe("Rule 16 — shift and size clamp hold on a conforming CSS Anchor Positioning engine too", () => {
   const CASES: { name: string; contentId: string; open: (page: Page) => Promise<void> }[] = [
