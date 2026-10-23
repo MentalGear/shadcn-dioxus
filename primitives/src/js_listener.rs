@@ -181,6 +181,7 @@ impl JsListeners {
     /// (`message_scroller.rs`: the controller's `end`/`start`/`message` commands). Messages sent
     /// through it are read by the body's own `await dioxus.recv()`; the body must return when
     /// told to stop, so the teardown that follows can run.
+    #[cfg(feature = "web")]
     pub(crate) fn eval(&self) -> Eval {
         self.eval
     }
