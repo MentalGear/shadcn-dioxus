@@ -27,6 +27,19 @@ InputGroup {
 
 A group that holds a block addon stacks its children in a column and sizes to them; the addon's `order` places it above (`BlockStart`) or below (`BlockEnd`) the control wherever it appears in the markup. This is the shape of a chat composer: the text on top, the actions in a bottom row.
 
+## Buttons
+
+`InputGroupButton` (shadcn's `InputGroupButton`) is the themed `Button` with the addon's metrics: ghost and `type="button"` by default, `size: InputGroupButtonSize::{Xs (default), Sm, IconXs, IconSm}` (24px text, 28px text, a 24px square, a 32px square), text-sm, and a radius 3px under `--radius` on the two xs sizes. `variant` takes any `ButtonVariant`.
+
+```rust
+InputGroup {
+    InputGroupInput { value: "https://ui.shadcn.com/docs", readonly: true }
+    InputGroupAddon { align: InputGroupAlign::End,
+        InputGroupButton { size: InputGroupButtonSize::IconXs, "aria-label": "Copy link", Copy {} }
+    }
+}
+```
+
 ## Textarea and custom controls
 
 `InputGroupTextarea` is the multi-line control (shadcn's `InputGroupTextarea`). It composes `Textarea`, drops the textarea's own fill, edge and resize handle, and leaves the group's outer edge to draw the chrome. Add a `BlockEnd` addon for a footer:

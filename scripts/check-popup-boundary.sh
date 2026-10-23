@@ -73,7 +73,7 @@ ALLOW = [
     ("attachment", r"\.dx-attachment-media", "the ancestor is the attachment's media tile, which holds one icon or one image"),
     ("avatar", r"^\.dx-avatar > \*$", DIRECT),
     ("avatar", r"\.dx-avatar-(badge|group-count) > svg$", "the ancestor is a leaf part (the status badge dot or the +N tile) that holds one icon; no popup trigger is ever rendered inside it"),
-    ("badge", r"^\.dx-badge svg$", "the ancestor is an inline label; a Badge holds text and an icon, never an interactive popup trigger"),
+    ("badge", r"^\.dx-badge > svg$", "the ancestor is an inline label; a Badge holds text and an icon, never an interactive popup trigger"),
     ("breadcrumb", r"\.dx-breadcrumb-(separator|ellipsis) svg", LEAF),
     ("button", r"svg", "the ancestor is a <button>, which cannot contain interactive content, so no popup trigger (and no panel) is rendered inside it"),
     ("toggle", r"^\.dx-toggle(\[[^]]*\])? svg", "the ancestor is the Toggle, a <button>, which cannot contain interactive content, so no popup trigger (and no panel) is rendered inside it"),

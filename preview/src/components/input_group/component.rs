@@ -1,3 +1,4 @@
+use crate::components::button::{Button, ButtonSize, ButtonVariant};
 use crate::components::input::Input;
 use crate::components::textarea::{Textarea, TextareaVariant};
 use dioxus::prelude::*;
@@ -139,6 +140,68 @@ pub fn InputGroupAddon(
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/input_group/style.css") }
         div { ..merged, {children} }
+    }
+}
+
+/// The size of an [`InputGroupButton`]: shadcn's `xs` (the default), `sm`, `icon-xs` and `icon-sm`.
+#[derive(Copy, Clone, PartialEq, Default)]
+#[non_exhaustive]
+pub enum InputGroupButtonSize {
+    /// 24px tall, text and an optional 14px icon.
+    #[default]
+    Xs,
+    /// 28px tall.
+    Sm,
+    /// A 24px square icon button.
+    IconXs,
+    /// A 32px square icon button.
+    IconSm,
+}
+
+impl InputGroupButtonSize {
+    fn button_size(&self) -> ButtonSize {
+        match self {
+            InputGroupButtonSize::Xs => ButtonSize::Xs,
+            InputGroupButtonSize::Sm => ButtonSize::Sm,
+            InputGroupButtonSize::IconXs => ButtonSize::IconXs,
+            InputGroupButtonSize::IconSm => ButtonSize::IconSm,
+        }
+    }
+}
+
+/// A button inside an [`InputGroupAddon`] (shadcn's `InputGroupButton`): the themed [`Button`],
+/// ghost and `type="button"` by default, with the addon's metrics (text-sm, a tighter radius,
+/// `IconSm` a 32px square). The metrics are Button's own rules for its `data-addon` marker
+/// (button's sheet), so this component declares nothing on the button element.
+#[component]
+pub fn InputGroupButton(
+    /// The button's look; `Ghost` by default, as in shadcn.
+    #[props(default = ButtonVariant::Ghost)]
+    variant: ButtonVariant,
+    /// `Xs` (the default), `Sm`, `IconXs` or `IconSm`.
+    #[props(default)]
+    size: InputGroupButtonSize,
+    #[props(extends = GlobalAttributes)]
+    #[props(extends = button)]
+    attributes: Vec<Attribute>,
+    /// Runs on a click.
+    onclick: Option<EventHandler<MouseEvent>>,
+    /// The label, an icon, or both.
+    children: Element,
+) -> Element {
+    let base = attributes!(button { class: "dx-input-group-button", r#type: "button" });
+    // `data-addon` is this wrapper's own marker (Button reads it for the addon metrics), not a
+    // caller default.
+    let owned = attributes!(button { "data-addon": "" });
+    // The handler rides in the attributes (as in Button), so none is attached when none was given.
+    let mut handlers = Vec::new();
+    if let Some(f) = onclick {
+        handlers.extend(attributes!(button { onclick: move |event| f.call(event) }));
+    }
+    let merged = merge_attributes(vec![base, handlers, attributes, owned]);
+
+    rsx! {
+        Button { variant, size: size.button_size(), attributes: merged, {children} }
     }
 }
 
