@@ -143,7 +143,6 @@ html[data-theme="light"] [class~="dxc-system"] {
   --secondary-color-6: var(--dark, #5d5d5d) var(--light, #d0d0d0);
 
   /* Highlight colors */
-  --focused-border-color: var(--dark, #2b7fff) var(--light, #2b7fff);
   --primary-success-color: var(--dark, #02271c) var(--light, #ecfdf5);
   --secondary-success-color: var(--dark, #b6fae3) var(--light, #10b981);
   --primary-warning-color: var(--dark, #342203) var(--light, #fffbeb);
@@ -302,7 +301,15 @@ html[data-theme="light"] [class~="dxc-system"] {
    * unchanged (the ramp step). */
   --dx-border: var(--border, var(--light, var(--primary-color-6)) var(--dark, oklch(100% 0 0deg / 10%)));
   --dx-input: var(--input, var(--light, var(--primary-color-6)) var(--dark, oklch(100% 0 0deg / 15%)));
-  --dx-ring-color: var(--ring, var(--focused-border-color));
+
+  /* The focus ring colour, shadcn-exact: `--dx-ring-source` is a preset's or a host's `--ring` when one is
+   * set (shadcn's base colours each set a tinted `--ring`; accents never do), else shadcn neutral's own, light
+   * oklch(0.708 0 0) and dark oklch(0.556 0 0). The library's default look is shadcn neutral, so the default
+   * ring is grey (it used to fall back to the upstream Dioxus blue #2b7fff). The calibrated, contrast-clamped
+   * value is ONE separate rule at the end of this file ("Calibrated focus ring"); this plain definition is what
+   * the ring is without it. */
+  --dx-ring-source: var(--ring, var(--light, oklch(70.8% 0 0deg)) var(--dark, oklch(55.6% 0 0deg)));
+  --dx-ring-color: var(--dx-ring-source);
 
   /* Non-shadcn role: a stronger line than `--dx-border` (hover borders,
    * checkbox ring). Phase B removed every other `-alt` role variant. There is
@@ -2317,3 +2324,25 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
  * disabled rule, a focus or invalid rule that paints something other than a recipe token, and a dead
  * `cursor: not-allowed` fail the gate (allowlist with reasons in the script).
  * ========================================================================== */
+
+/* Calibrated focus ring: the ONE place the ring colour is contrast-clamped (scope or gate it here, nothing else
+ * reads the clamp). The plain definition is `--dx-ring-color: var(--dx-ring-source)` in the token block.
+ *
+ * Clamps the LIGHT arm's OKLCH lightness (at most 0.65; hue and chroma kept, gamut-mapped by the browser), the
+ * same relative-colour construction as `--dx-primary-ink` and `--dx-destructive-text`. It is applied ON TOP of
+ * any `--ring`: a base's tint and a pasted shadcn theme's coloured ring still come through, only a ring lighter
+ * than the bound is darkened, and one already deeper is passed through unchanged. Derivation (WCAG 2.x, non-text
+ * 3:1, SC 1.4.11): the light surfaces the ring edge sits on (page, card, popover) are white, relative luminance
+ * 1.0, so the edge needs Y <= 1.05 / 3 - 0.05 = 0.30. For a grey, OKLab L is cbrt(Y), so L <= 0.30^(1/3) = 0.669
+ * is exactly 3:1; 0.65 (Y 0.2746, 3.23:1) leaves a small margin for the chroma of a tinted ring (a vivid green
+ * at L 0.65 is still 3.13:1) and for 8-bit rounding. Measured in Chromium on the focused Input, light, worst of
+ * page / card / popover, before -> after: no preset 3.76 (the old blue) -> 3.23; shadcn neutral 2.58 -> 3.23;
+ * every other base 2.32-2.63 (olive, the worst, 2.32) -> 3.20-3.28.
+ *
+ * Dark arm: not clamped. shadcn's dark rings (L 0.54-0.58) measure 3.47:1 or better on the dark page, card and
+ * popover for every base (worst: mauve on card 3.47), so no bound is needed; a host's own dark `--ring` is its
+ * choice. Guard: playwright/ring-contrast.spec.ts. */
+/* stylelint-disable-next-line no-duplicate-selectors -- the calibrated rule is its own block on purpose, so one selector can scope it */
+:root {
+  --dx-ring-color: var(--light, oklch(from var(--dx-ring-source) min(l, 0.65) c h)) var(--dark, var(--dx-ring-source));
+}
