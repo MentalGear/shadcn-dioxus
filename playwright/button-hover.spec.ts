@@ -65,8 +65,8 @@ for (const scheme of ["light", "dark"] as const) {
 }
 
 // Measured with shadcn's docs ink `--foreground #000`, light #e5e5e5; the theme's ink is shadcn's near-black
-// oklch(0.145) since row 373 (owner, 2026-10-23), which steps #f5f5f5 5% toward #0a0a0a and lands on #e7e7e7. Dark
-// is unchanged (the dark ink was already #fafafa).
+// oklch(0.145) (row 373), which steps #f5f5f5 5% toward #0a0a0a and lands on #e7e7e7. Dark
+// ink is #fafafa.
 test("the secondary hover is #e7e7e7 (light, near-black ink) and base-nova's measured #2f2f2f (dark)", async ({ page }) => {
   for (const [scheme, rgb] of [["light", "231,231,231"], ["dark", "47,47,47"]] as const) {
     await open(page, scheme);

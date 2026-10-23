@@ -95,7 +95,7 @@ playwright/tools/test-changed.sh	1
 playwright/tooltip.spec.ts	2
 playwright/touch-open-focus.spec.ts	1
 playwright/viewport-box.ts	1
-preview/assets/dx-components-theme.css	11
+preview/assets/dx-components-theme.css	9
 preview/assets/main.css	13
 preview/build.rs	3
 preview/src/components/accordion/component.rs	2

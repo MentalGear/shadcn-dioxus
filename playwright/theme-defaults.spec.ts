@@ -4,7 +4,7 @@ import { gotoHydrated } from "./hydration";
 
 /**
  * The theme's own default fallbacks (what a page gets with NO preset and no `--foreground` etc. supplied) are
- * shadcn Neutral's, both modes (owner decision 2026-10-23, backlog row 373, proposals P7 and P8 of the theme
+ * shadcn Neutral's, both modes (backlog row 373, proposals P7 and P8 of the theme
  * contrast audit). Computed in the browser, resolved to sRGB through a canvas so `oklch()` expectations and the
  * painted token compare in one space.
  *

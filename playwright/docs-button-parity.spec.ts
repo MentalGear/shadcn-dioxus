@@ -7,8 +7,8 @@ import { BASE_URL } from "./base-url";
 // values are what https://ui.shadcn.com/docs/components/base/button computes with no preset (its `:root` and
 // `.dark` blocks: --foreground oklch(0.145) = #0a0a0a / #fafafa, --primary-foreground #fafafa / #171717,
 // --secondary-foreground #171717 / #fafafa, --primary oklch(0.205) = #171717 / #e5e5e5, --secondary #f5f5f5 / #262626,
-// --border #e5e5e5), read in Chromium from a local replica of that page. Light ink was pure #000 / #000 primary until
-// the owner moved the theme's defaults to shadcn's near-black (2026-10-23, backlog row 373). The Destructive Button is the one deliberate difference (row 134:
+// --border #e5e5e5), read in Chromium from a local replica of that page. The theme's light ink and primary are
+// shadcn's near-black (backlog row 373). The Destructive Button is the one deliberate difference (row 134:
 // a solid fill, because shadcn's 10% tint fails 4.5:1 for text): its fill is the destructive role and its ink
 // stays light; it is asserted separately so a change is a decision, not an accident.
 // Run against the SSG lane.

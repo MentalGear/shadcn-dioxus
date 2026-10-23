@@ -160,8 +160,8 @@ html[data-theme="light"] [class~="dxc-system"] {
    * `--foreground` / `--card-foreground` / `--popover-foreground` `oklch(0.145)` = #0a0a0a, `--primary`
    * `oklch(0.205)` = #171717, `--accent-foreground` `oklch(0.205)`, `--destructive-foreground` `oklch(0.985)`;
    * `.dark` the foregrounds `oklch(0.985)` = #fafafa, `--primary` `oklch(0.922)` = #e5e5e5. So a site that sets
-   * none of the bare variables gets shadcn's near-black ink, not the pure black the library defaulted to until
-   * 2026-10-23 (owner decision, row 373: the near-black is what shadcn ships, and it is 19.8:1 on white, so
+   * none of the bare variables gets shadcn's near-black ink
+   * (row 373: the near-black is what shadcn ships, and it is 19.8:1 on white, so
    * nothing is lost to contrast). Dark `--dx-destructive` keeps #a22e2e on purpose: it is a FILL here
    * (solid Button / Badge / AlertDialog action carry near-white text on it) and shadcn's dark salmon #ff6568
    * is only 2.8:1 under that text -- a preset that brings it also brings `--destructive-foreground`. Light
@@ -269,7 +269,7 @@ html[data-theme="light"] [class~="dxc-system"] {
   /* The focus ring colour, shadcn-exact: `--dx-ring-source` is a preset's or a host's `--ring` when one is
    * set (shadcn's base colours each set a tinted `--ring`; accents never do), else shadcn neutral's own, light
    * oklch(0.708 0 0) and dark oklch(0.556 0 0). The library's default look is shadcn neutral, so the default
-   * ring is grey (it used to fall back to the upstream Dioxus blue #2b7fff). The calibrated, contrast-clamped
+   * ring is grey. The calibrated, contrast-clamped
    * value is one entry of the contrast-mode block at the end of this file ("Contrast mode"); this plain
    * definition is what the ring is without it. */
   --dx-ring-source: var(--ring, var(--light, oklch(70.8% 0 0deg)) var(--dark, oklch(55.6% 0 0deg)));
@@ -307,7 +307,7 @@ html[data-theme="light"] [class~="dxc-system"] {
    * `.dx-sidebar-wrapper` (same values), which masks these until a worker
    * lane deletes that block.
    *
-   * Defaults are shadcn Neutral's whole sidebar set (owner decision 2026-10-23, row 373): `--sidebar`
+   * Defaults are shadcn Neutral's whole sidebar set (row 373): `--sidebar`
    * `oklch(0.985)` = #fafafa light / `oklch(0.205)` = #171717 dark (phase C owner decision 1: the dark sidebar
    * stays distinct from the #0a0a0a page), `--sidebar-foreground` `oklch(0.145)` / `oklch(0.985)`,
    * `--sidebar-accent` `oklch(0.97)` / `oklch(0.269)` with `--sidebar-accent-foreground` `oklch(0.205)` /
