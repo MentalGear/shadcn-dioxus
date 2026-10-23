@@ -277,11 +277,15 @@
    page foreground: near-black (#111) on #dc2626 is 3.9:1 in light mode, white is 4.8:1. In dark
    the destructive-foreground (#dcdcdc on #a22e2e, 5.2:1) also clears 4.5:1 under the stacked-toast
    brightness filter, where the page foreground (#d4d4d4) fell to 4.4:1. The other types use a
-   subtle tint under the page foreground (>= 8:1 in both themes). */
+   subtle tint under the page foreground (>= 8:1 in both themes).
+
+   The surface is `--dx-destructive-fill`, the fill-grade role built for text on it (>= 4.57:1 in every
+   preset and mode), not `--dx-destructive`: under any theme-picker preset the dark `--dx-destructive` is
+   shadcn's salmon #ff6467, which left the near-white ink at 2.77:1. */
 .dx-toast[data-type="error"] {
   --dx-toast-foreground: var(--dx-destructive-foreground);
 
-  background-color: var(--dx-destructive);
+  background-color: var(--dx-destructive-fill);
   color: var(--dx-destructive-foreground);
 }
 
