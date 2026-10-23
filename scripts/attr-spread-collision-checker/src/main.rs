@@ -37,7 +37,8 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 use dioxus_rsx::{
-    AttributeName, AttributeValue, BodyNode, CallBody, Component, Element, TemplateBody,
+    AttributeName, AttributeValue, BodyNode, CallBody, Component, Element, ElementName,
+    TemplateBody,
 };
 use syn::visit::{self, Visit};
 use syn::{FnArg, Pat, Type};
@@ -62,6 +63,16 @@ const DEFAULT_GLOBAL_IDENTS_PATH: &str =
     "dev-docs/issues/duplicate-attribute-global-attribute-idents.txt";
 
 const DEFAULT_ROOTS: &[&str] = &["primitives/src", "preview/src/components"];
+
+/// The HTML elements whose content the parser reads as text, never as markup (WHATWG
+/// "raw text" and "escapable raw text" elements, plus `noscript`, which is raw text
+/// whenever scripting is on): a `<!--` inside them is two characters of text, not the
+/// start of a comment. `plaintext` is left out (obsolete, and nothing here renders it).
+/// Inside `svg`/`math` the same names are foreign elements whose content IS parsed, so
+/// the check is suspended there (`RsxFinder::foreign_depth`).
+const RAW_TEXT_ELEMENTS: &[&str] = &[
+    "style", "script", "textarea", "title", "noscript", "iframe", "xmp", "noembed", "noframes",
+];
 
 fn main() -> ExitCode {
     let mut roots: Vec<String> = Vec::new();
@@ -147,6 +158,7 @@ fn main() -> ExitCode {
             fn_typed_fields: &fn_typed_fields,
             style_idents: &style_idents,
             global_idents: &global_idents,
+            foreign_depth: 0,
             findings: &mut findings,
         };
         finder.visit_file(file);
@@ -197,6 +209,13 @@ fn main() -> ExitCode {
         files_with_spread.len()
     );
     eprintln!("# TOTAL component-attributes-forward findings: {component_count}");
+    eprintln!(
+        "# TOTAL raw-text-dynamic-child findings: {}",
+        findings
+            .iter()
+            .filter(|f| f.kind == FindingKind::RawTextDynamicChild)
+            .count()
+    );
 
     ExitCode::SUCCESS
 }
@@ -265,6 +284,22 @@ enum FindingKind {
     /// for its disclosed conservatism (only fires when the OTHER field's name is a known
     /// `GlobalAttributes` ident, and only when the target component resolves).
     ComponentAttributesForward,
+    /// A raw-text or escapable-raw-text HTML element (`style`, `script`, `textarea`,
+    /// `title`, ...; `RAW_TEXT_ELEMENTS`) with a child that is anything but one static
+    /// text literal: a formatted string with an interpolation, a `{expr}` block, a
+    /// component, an `if`/`for`, or a nested element. `dioxus-ssr` brackets every
+    /// dynamic text node with `<!--node-idN-->` / `<!--#-->` hydration markers, and
+    /// inside these elements the browser's HTML parser keeps those markers as literal
+    /// characters of the element's text instead of comment nodes: a `<style>` gets a
+    /// garbage leading qualified rule that swallows the real one (CDO/CDC tokens, then
+    /// `node-idN` as a selector), a `<textarea>` shows the markers in its value, and
+    /// hydration never finds the text node to bind. Fine in `dx serve --web` (pure CSR
+    /// emits no markers), broken in the SSG deployment. Backlog row 97, measured in
+    /// `dev-docs/issues/raw-text-hydration-markers.md`. Zero baseline: any finding fails.
+    /// Static text renders without markers; dynamic text goes through
+    /// `dangerous_inner_html`, which SSR writes verbatim (a `textarea`'s `value` also
+    /// works, but only from hydration on: the parser ignores a `value` attribute there).
+    RawTextDynamicChild,
 }
 
 impl FindingKind {
@@ -272,6 +307,7 @@ impl FindingKind {
         match self {
             FindingKind::Spread => "spread",
             FindingKind::ComponentAttributesForward => "component-attributes-forward",
+            FindingKind::RawTextDynamicChild => "raw-text-dynamic-child",
         }
     }
 }
@@ -293,6 +329,8 @@ enum Reason {
     UnresolvedFn,
     /// The `component-attributes-forward` kind's only reason.
     AdHocGlobalAttrPlusForwardedAttributes,
+    /// The `raw-text-dynamic-child` kind's only reason.
+    DynamicChildInRawText,
 }
 
 impl Reason {
@@ -303,6 +341,9 @@ impl Reason {
             Reason::UnresolvedFn => "unresolved enclosing fn",
             Reason::AdHocGlobalAttrPlusForwardedAttributes => {
                 "ad-hoc GlobalAttributes-extends key beside a separately forwarded `attributes:` field on the same child component"
+            }
+            Reason::DynamicChildInRawText => {
+                "dynamic child inside a raw-text element: SSR's hydration markers become literal text (use static text, or dangerous_inner_html)"
             }
         }
     }
@@ -453,6 +494,9 @@ struct RsxFinder<'a> {
     fn_typed_fields: &'a HashMap<String, Option<HashSet<String>>>,
     style_idents: &'a HashSet<String>,
     global_idents: &'a HashSet<String>,
+    /// How many `svg`/`math` elements enclose the node being walked: inside them
+    /// `RAW_TEXT_ELEMENTS`' names are foreign elements and the raw-text check is off.
+    foreign_depth: usize,
     findings: &'a mut Vec<Finding>,
 }
 
@@ -507,9 +551,16 @@ impl RsxFinder<'_> {
         match node {
             BodyNode::Element(el) => {
                 self.check_element(el);
+                self.check_raw_text_children(el);
+                let foreign = matches!(
+                    &el.name,
+                    ElementName::Ident(ident) if ident == "svg" || ident == "math"
+                );
+                self.foreign_depth += usize::from(foreign);
                 for child in &el.children {
                     self.walk_body_node(child);
                 }
+                self.foreign_depth -= usize::from(foreign);
             }
             BodyNode::Component(comp) => {
                 self.check_component_attributes_forward(comp);
@@ -569,6 +620,33 @@ impl RsxFinder<'_> {
         }
     }
 
+    /// The row-97 check -- see `FindingKind::RawTextDynamicChild`'s doc.
+    fn check_raw_text_children(&mut self, el: &Element) {
+        if self.foreign_depth > 0 {
+            return;
+        }
+        let ElementName::Ident(ident) = &el.name else {
+            return;
+        };
+        let name = ident_name(ident);
+        if !RAW_TEXT_ELEMENTS.contains(&name.as_str()) {
+            return;
+        }
+        for child in &el.children {
+            if matches!(child, BodyNode::Text(text) if text.is_static()) {
+                continue;
+            }
+            self.findings.push(Finding {
+                kind: FindingKind::RawTextDynamicChild,
+                file: self.file.to_string(),
+                line: child.span().start().line,
+                enclosing_fn: self.current_fn.clone(),
+                name: name.clone(),
+                reason: Reason::DynamicChildInRawText,
+            });
+        }
+    }
+
     /// The `5fc1439`-shaped check -- see `FindingKind::ComponentAttributesForward`'s doc.
     fn check_component_attributes_forward(&mut self, comp: &Component) {
         let has_forwarded_attributes = comp.fields.iter().any(|f| {
@@ -617,5 +695,118 @@ impl RsxFinder<'_> {
                 reason: Reason::AdHocGlobalAttrPlusForwardedAttributes,
             });
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The `raw-text-dynamic-child` findings for one file's source, as `(line, element)`.
+    fn raw_text_findings(src: &str) -> Vec<(usize, String)> {
+        let file = syn::parse_file(src).expect("fixture parses");
+        let fn_typed_fields = HashMap::new();
+        let idents = HashSet::new();
+        let mut findings = Vec::new();
+        RsxFinder {
+            file: "fixture.rs",
+            current_fn: None,
+            fn_typed_fields: &fn_typed_fields,
+            style_idents: &idents,
+            global_idents: &idents,
+            foreign_depth: 0,
+            findings: &mut findings,
+        }
+        .visit_file(&file);
+        findings
+            .into_iter()
+            .filter(|f| f.kind == FindingKind::RawTextDynamicChild)
+            .map(|f| (f.line, f.name))
+            .collect()
+    }
+
+    #[test]
+    fn flags_an_expression_child_of_a_style_tag() {
+        // The row-97 shape: CarouselContent's `style { {no_skip_css} }` beside its track.
+        let src = "fn demo() -> Element {\n    rsx! {\n        style { {css} }\n        div {}\n    }\n}\n";
+        assert_eq!(raw_text_findings(src), vec![(3, "style".to_string())]);
+    }
+
+    #[test]
+    fn flags_interpolated_text_in_style_script_textarea_and_title() {
+        let src = r##"fn demo() -> Element {
+    rsx! {
+        style { "#{id} {{ color: red; }}" }
+        script { "window.x = {x};" }
+        textarea { "{value}" }
+        title { "{name}" }
+    }
+}
+"##;
+        let names: Vec<String> = raw_text_findings(src).into_iter().map(|f| f.1).collect();
+        assert_eq!(names, ["style", "script", "textarea", "title"]);
+    }
+
+    #[test]
+    fn flags_components_conditionals_and_loops_inside_a_raw_text_element() {
+        let src = r##"fn demo() -> Element {
+    rsx! {
+        style {
+            Rules {}
+            if dark { ".a {{}}" }
+            for r in rules { "{r}" }
+        }
+    }
+}
+"##;
+        assert_eq!(raw_text_findings(src).len(), 3);
+    }
+
+    #[test]
+    fn flags_the_same_shape_however_deeply_nested_and_inside_a_fragment() {
+        // Wrapping in `Fragment` (the row-97 "fix") does not change what SSR emits.
+        let src = r##"fn demo() -> Element {
+    rsx! {
+        Fragment {
+            div { section { style { {css} } } }
+        }
+    }
+}
+"##;
+        assert_eq!(raw_text_findings(src), vec![(4, "style".to_string())]);
+    }
+
+    #[test]
+    fn passes_static_text_and_dangerous_inner_html() {
+        // What the preview's demo `<style>` tags do (static text, `{{` escapes included),
+        // and the construction the finding points to for dynamic CSS.
+        let src = r##"fn demo() -> Element {
+    rsx! {
+        style { r#".dx-demo {{ height: 12rem; }}"# }
+        style { dangerous_inner_html: css }
+        script { dangerous_inner_html: JS }
+        textarea { value: "{value}" }
+        div { "{dynamic_text_outside_raw_text_is_fine}" }
+    }
+}
+"##;
+        assert_eq!(raw_text_findings(src), vec![]);
+    }
+
+    #[test]
+    fn passes_svg_title_and_style_whose_content_is_parsed_as_markup() {
+        // `chart.rs` renders `svg { title { "{props.aria_label}" } }`: in foreign content
+        // the markers are real comment nodes, so hydration binds them.
+        let src = r##"fn demo() -> Element {
+    rsx! {
+        svg {
+            title { "{label}" }
+            g { style { "{css}" } }
+        }
+        title { "{after_the_svg_the_check_is_back_on}" }
+    }
+}
+"##;
+        assert_eq!(raw_text_findings(src), vec![(7, "title".to_string())]);
     }
 }

@@ -41,7 +41,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (43)
+## Open rows (42)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -52,7 +52,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [28](backlog/028-verify-the-2026-09-02-ios-keyboard-anchor.md) | Verify the 2026-09-02 iOS-keyboard anchor-tracking fix (use_anchor_position_fallback… | User re-test after deploy — the sandbox has no WebKit, and page.setViewportSize() cannot reproduce… | S to verify | overlays |
 | [30](backlog/030-verify-the-2026-09-02-touch-text-entry-font.md) | Verify the 2026-09-02 touch text-entry font-size floor… | User re-test after deploy — the sandbox has no WebKit, and while Playwright's iPhone 13 emulation… | S to verify | tests |
 | [33](backlog/033-3-browser-playwright-on-every-push-pr-sharded.md) | 3-browser Playwright on every push/PR, sharded — dignifiedquire/dx-components runs chromium+firefox+webkit… | CI reactivation (user: off until further notice, 2026-08-30) — then it is a workflow-trigger… | S | ci |
-| [97](backlog/097-a-second-un-fragmented-rsx-sibling-renders-on.md) | A second, un-fragmented rsx sibling renders on the first pass and is silently dropped by the next one | OPEN (instance done, class not swept): Found 2026-09-20 (round 5) adding a scoped &lt;style&gt; tag… | DONE for this instance (explicit… | misc |
 | [130](backlog/130-arborium-2-17-0-s-wasm-libc-shim-lacks-the-data.md) | arborium 2.17.0's wasm libc shim lacks the data symbol stderr that tree-sitter's stack.c… | NARROWED 2026-10-19 (backlog review): local fix 7ad8421 in; filing upstream is the owner's decision… | S | upstream |
 | [131](backlog/131-dioxus-cli-0-7-9-ssg-leaves-every-pre-rendered.md) | dioxus-cli 0.7.9 --ssg leaves every pre-rendered route except index.html stale when public/ already exists | NARROWED 2026-10-19 (backlog review): local fix 150e97b in (build-ssg.sh wipes public/); filing… | S | build |
 | [152](backlog/152-test-suite-review-revisit-the-playwright-suite.md) | Test-suite review: revisit the Playwright suite (~1,786 tests, ~21 min on a release build with 4 workers) for… | NARROWED 2026-10-19: speed half 152a DONE (lane suite-speed badc56d7): measured (3,752 tests, 183… | M | tests |
@@ -89,7 +88,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [370](backlog/370-merge-attributes-class-none.md) | merge_attributes: a class: None replaces the base class instead of being ignored | Open. Found by the biggrid lane in batch 10. | S | primitives |
 | [371](backlog/371-dependency-evaluation-keep-lift-drop.md) | Dependency evaluation: keep, feature-gate, replace, lift or drop (rule of 2026-10-23) | PARKED by the owner 2026-10-23 ("its own item, and not yet"). Inventory done; no outcome is… | S each outcome | build |
 
-## Done rows (301)
+## Done rows (302)
 
 | # | Item | Updated |
 |---|---|---|
@@ -182,6 +181,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [94](backlog/done/094-demo-wrappers-that-set-max-width-margin-0-auto.md) | Demo wrappers that set max-width + margin: 0 auto never reach that width — they shrink-wrap instead, so every… | 2026-10-19 |
 | [95](backlog/done/095-a-debug-ssg-build-serves-fine-but-traps-at.md) | A debug SSG build serves fine but traps at runtime, so interaction specs run against it fail like real… | 2026-10-19 |
 | [96](backlog/done/096-scroll-snap-stop-always-caps-a-browser-driven.md) | scroll-snap-stop: always caps a browser-driven scroll but NOT this crate's own pointer-drag release | 2026-09-20 |
+| [97](backlog/done/097-a-second-un-fragmented-rsx-sibling-renders-on.md) | A second, un-fragmented rsx sibling renders on the first pass and is silently dropped by the next one | 2026-10-23 |
 | [98](backlog/done/098-dx-build-ssg-fails-with-no-such-file-or.md) | dx build --ssg fails with No such file or directory (os error 2) when CARGO_TARGET_DIR is a relative path | 2026-10-20 |
 | [99](backlog/done/099-anchor-name-style-set-as-a-bare-literal-beside.md) | anchor_name_style set as a bare literal beside a spread — a duplicate-style class across the anchored-trigger… | 2026-10-19 |
 | [100](backlog/done/100-a-no-base-path-build-made-in-the-shared-repo.md) | A no---base-path build made in the SHARED repo-root target/ still emits /dioxus-components/ prefixed markup —… | 2026-10-19 |
