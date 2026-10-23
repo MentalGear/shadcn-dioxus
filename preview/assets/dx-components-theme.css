@@ -104,76 +104,33 @@ html[data-theme="light"] [class~="dxc-system"] {
 }
 
 /* stylelint-disable-next-line no-duplicate-selectors -- deliberate second :root: the first block (color-scheme)
- * anchors the doc comment above it, and this token ramp is kept after the data-theme and prefers-color-scheme
+ * anchors the doc comment above it, and these role tokens are kept after the data-theme and prefers-color-scheme
  * overrides. The two blocks set disjoint properties (no color-scheme, --dark or --light here), so the
  * duplicate changes no cascade. */
 :root {
-  /* Primary colors */
-  --primary-color: var(--dark, #000) var(--light, #fff);
-  --primary-color-1: var(--dark, #0e0e0e) var(--light, #fbfbfb);
-  --primary-color-2: var(--dark, #0a0a0a) var(--light, #fff);
-  --primary-color-3: var(--dark, #141313) var(--light, #f8f8f8);
-  --primary-color-4: var(--dark, #1a1a1a) var(--light, #f8f8f8);
-  --primary-color-5: var(--dark, #262626) var(--light, #f5f5f5);
-  --primary-color-6: var(--dark, #232323) var(--light, #e5e5e5);
-  --primary-color-7: var(--dark, #3e3e3e) var(--light, #b0b0b0);
-
-  /* Secondary colors */
-  --secondary-color: var(--dark, #fff) var(--light, #000);
-  --secondary-color-1: var(--dark, #fafafa) var(--light, #000);
-  --secondary-color-2: var(--dark, #e6e6e6) var(--light, #0d0d0d);
-  --secondary-color-3: var(--dark, #dcdcdc) var(--light, #2b2b2b);
-  --secondary-color-4: var(--dark, #d4d4d4) var(--light, #111);
-
-  /* axe `color-contrast` (docs/backlog.md row 39, filed 2026-09-03): the
-   * light value was #848484, 3.74:1 on white -- below WCAG's 4.5:1
-   * threshold for normal text, and this token is the "muted"/secondary
-   * text color used across ~28 component stylesheets (descriptions,
-   * shortcuts, helper text), so it accounted for the large majority of
-   * this round's axe-coverage color-contrast findings. #6e6e6e clears
-   * 4.5:1 against every background it's actually measured against in
-   * this app (white 5.1:1, --primary-color-3/4's #f8f8f8 4.8:1,
-   * --primary-color-1's #fbfbfb 4.9:1, and the 5% ink tint #f2f2f2 of a
-   * selected choice card 4.57:1 -- #707070 was 4.42:1 there, hidden from
-   * axe while the demo frame's dot grid made every contrast inside it
-   * "incomplete"). The dark value (#a1a1a1,
-   * 7.47:1+ against this theme's dark backgrounds) already passed and is
-   * unchanged. */
-  --secondary-color-5: var(--dark, #a1a1a1) var(--light, #6e6e6e);
-  --secondary-color-6: var(--dark, #5d5d5d) var(--light, #d0d0d0);
-
-  /* Highlight colors */
-  --primary-success-color: var(--dark, #02271c) var(--light, #ecfdf5);
-  --secondary-success-color: var(--dark, #b6fae3) var(--light, #10b981);
-  --primary-warning-color: var(--dark, #342203) var(--light, #fffbeb);
-  --secondary-warning-color: var(--dark, #feeac7) var(--light, #f59e0b);
-  --primary-error-color: var(--dark, #a22e2e) var(--light, #dc2626);
-  --secondary-error-color: var(--dark, #9b1c1c) var(--light, #ef4444);
-  --contrast-error-color: var(--dark, var(--secondary-color-3)) var(--light, var(--primary-color));
-  --primary-info-color: var(--dark, var(--primary-color-5)) var(--light, var(--primary-color));
-  --secondary-info-color: var(--dark, var(--primary-color-7)) var(--light, var(--secondary-color-3));
-
   /* ==========================================================================
-   * Semantic role tokens (docs/backlog.md row 111, phase A).
+   * Semantic role tokens (docs/backlog.md row 111).
    *
    * shadcn's theme is a set of ROLES (background, card, popover, primary,
-   * muted, accent, border, ...), not a numbered ramp. Everything below is
-   * the role layer, defined ON TOP of the ramp above: the ramp stays the
-   * source of truth in phase A and every role resolves to exactly one
-   * ramp step per mode, so adding this block changes no computed style.
-   * Component sites are repointed from the ramp to these roles
+   * muted, accent, border, ...), not a numbered ramp. This is the role layer,
+   * and it is the whole palette: the upstream Dioxus numbered ramp
+   * (`--primary-color-*`, `--secondary-color-*`, the status and error
+   * variables, `--focused-border-color`) was deleted once every role carried
+   * its own literal (backlog row 373), so a role's default is written once,
+   * here, and is shadcn's Neutral value unless a comment says why not.
+   * Component sites read these roles
    * (dev-docs/research/theme-2026-10-03/{role-token-map.md,sites.tsv}).
    *
    * Naming: `--dx-<role>`, where <role> is shadcn's own name. Each one reads
-   * the bare shadcn variable first and falls back to the ramp:
-   *   --dx-border: var(--border, <ramp step>)
+   * the bare shadcn variable first and falls back to the default:
+   *   --dx-border: var(--border, <default>)
    * so pasting a shadcn theme (`--border`, `--card`, ...) into a host app
    * re-themes these components, while the `dx-` prefix keeps OUR names from
    * colliding with a host's own. The reverse is deliberate and is the one
    * risk: a host app that already defines a bare `--border`/`--primary`/
    * `--accent`/... for its own purposes now changes our look.
    *
-   * Light/dark: unchanged. Each fallback keeps the `var(--dark, ...)
+   * Light/dark: each fallback keeps the `var(--dark, ...)
    * var(--light, ...)` space toggle, so one declaration still covers
    * `data-theme`, `prefers-color-scheme` and non-browser renderers. A shadcn
    * theme's own `.dark { --border: ... }` override is the host's job.
@@ -191,45 +148,44 @@ html[data-theme="light"] [class~="dxc-system"] {
 
   /* Page and surfaces. Dark is shadcn's own surface ladder (phase C, option C; shadcn-ui/ui@295a1f1
    * apps/v4/app/globals.css `.dark`): page `oklch(0.145)` = #0a0a0a, card and popover `oklch(0.205)` =
-   * #171717, accent / muted / secondary `oklch(0.269)` = #262626. The ramp is untouched: the page reads
-   * its step `-2` (#0a0a0a dark, #fff light, so light does not move), accent its step `-5`; card and
-   * popover have no ramp step (the ramp's #141313 / #1a1a1a / #262626 bracket it) and carry the literal.
-   * Before: page #000, card #141313, popover #262626, accent #3e3e3e. The page is now darker than
+   * #171717, accent / muted / secondary `oklch(0.269)` = #262626. Light is white for page, card and popover
+   * and `oklch(0.97)` = #f5f5f5 for muted / secondary / accent (the accent was the ramp's #f8f8f8 until row 373).
+   * Before phase C: page #000, card #141313, popover #262626, accent #3e3e3e. The page is now darker than
    * every raised surface, so a floating panel (popover #171717) and its highlighted row (accent
    * #262626) are distinct (1.19:1 apart, the same step shadcn ships) and the page no longer collapses
    * into pure black. In dark, muted == secondary == accent (#262626), as in shadcn: a sheet whose rest
    * state is `--dx-muted` and whose hover is `--dx-accent` must derive the second state, not assume it. */
 
-  /* The TEXT roles are shadcn's own base-nova values (what ui.shadcn.com/docs paints with no preset: `:root`
-   * `--foreground #000`, `--primary-foreground #fafafa`, `--secondary-foreground #171717`, `--destructive
-   * #e40014`; `.dark` `--foreground #fafafa`, `--primary-foreground #171717`), so a site that sets none of the
-   * bare variables gets the same ink as shadcn's docs instead of the Dioxus ramp's greys (`--secondary-color-4`
-   * #111 / #d4d4d4 as body ink, `--primary-color` #fff as the ink on a primary fill). The ramp stays for
-   * installers that read it. Dark `--dx-destructive` keeps the ramp's #a22e2e on purpose: it is a FILL here
+  /* The TEXT roles are shadcn's own Neutral values, what ui.shadcn.com paints with no preset: `:root`
+   * `--foreground` / `--card-foreground` / `--popover-foreground` `oklch(0.145)` = #0a0a0a, `--primary`
+   * `oklch(0.205)` = #171717, `--accent-foreground` `oklch(0.205)`, `--destructive-foreground` `oklch(0.985)`;
+   * `.dark` the foregrounds `oklch(0.985)` = #fafafa, `--primary` `oklch(0.922)` = #e5e5e5. So a site that sets
+   * none of the bare variables gets shadcn's near-black ink, not the pure black the library defaulted to until
+   * 2026-10-23 (owner decision, row 373: the near-black is what shadcn ships, and it is 19.8:1 on white, so
+   * nothing is lost to contrast). Dark `--dx-destructive` keeps #a22e2e on purpose: it is a FILL here
    * (solid Button / Badge / AlertDialog action carry near-white text on it) and shadcn's dark salmon #ff6568
-   * is only 2.8:1 under that text -- a preset that brings it also brings `--destructive-foreground`. */
-  --dx-background: var(--background, var(--primary-color-2));
-  --dx-foreground: var(--foreground, var(--light, #000) var(--dark, #fafafa));
-  --dx-card: var(--card, var(--light, var(--primary-color-2)) var(--dark, #171717));
-  --dx-card-foreground: var(--card-foreground, var(--light, #000) var(--dark, #fafafa));
-  --dx-popover: var(--popover, var(--light, var(--primary-color)) var(--dark, #171717));
-  --dx-popover-foreground: var(--popover-foreground, var(--light, #000) var(--dark, #fafafa));
+   * is only 2.8:1 under that text -- a preset that brings it also brings `--destructive-foreground`. Light
+   * `--dx-destructive` is shadcn's `oklch(0.577 0.245 27.325)` = #e7000b (was #e40014). */
+  --dx-background: var(--background, var(--light, #fff) var(--dark, #0a0a0a));
+  --dx-foreground: var(--foreground, var(--light, oklch(14.5% 0 0deg)) var(--dark, oklch(98.5% 0 0deg)));
+  --dx-card: var(--card, var(--light, #fff) var(--dark, #171717));
+  --dx-card-foreground: var(--card-foreground, var(--light, oklch(14.5% 0 0deg)) var(--dark, oklch(98.5% 0 0deg)));
+  --dx-popover: var(--popover, var(--light, #fff) var(--dark, #171717));
+  --dx-popover-foreground: var(--popover-foreground, var(--light, oklch(14.5% 0 0deg)) var(--dark, oklch(98.5% 0 0deg)));
 
   /* Actions */
 
-  /* Nova: `--primary` is pure black in light, oklch(0.922) = #e5e5e5 in dark
-   (shadcn globals.css). Was the ramp's `secondary-color-1` (#000 | #fafafa);
-   only the dark half moves (#fafafa -> #e5e5e5), which is also what the
-   primary button/badge already rendered through `--dx-primary-alt`. */
-  --dx-primary: var(--primary, var(--light, #000) var(--dark, #e5e5e5));
+  /* Nova: `--primary` is shadcn's `oklch(0.205)` = #171717 in light (it was pure black until row 373) and
+   * `oklch(0.922)` = #e5e5e5 in dark (shadcn globals.css). */
+  --dx-primary: var(--primary, var(--light, oklch(20.5% 0 0deg)) var(--dark, oklch(92.2% 0 0deg)));
   --dx-primary-foreground: var(--primary-foreground, var(--light, #fafafa) var(--dark, #171717));
-  --dx-secondary: var(--secondary, var(--primary-color-5));
+  --dx-secondary: var(--secondary, var(--light, #f5f5f5) var(--dark, #262626));
   --dx-secondary-foreground: var(--secondary-foreground, var(--light, #171717) var(--dark, #fafafa));
-  --dx-muted: var(--muted, var(--primary-color-5));
-  --dx-muted-foreground-source: var(--muted-foreground, var(--secondary-color-5));
+  --dx-muted: var(--muted, var(--light, #f5f5f5) var(--dark, #262626));
+  --dx-muted-foreground-source: var(--muted-foreground, var(--light, #6e6e6e) var(--dark, #a1a1a1));
   --dx-muted-foreground: var(--dx-muted-foreground-source);
-  --dx-accent: var(--accent, var(--light, var(--primary-color-4)) var(--dark, var(--primary-color-5)));
-  --dx-accent-foreground: var(--accent-foreground, var(--secondary-color-1));
+  --dx-accent: var(--accent, var(--light, oklch(97% 0 0deg)) var(--dark, oklch(26.9% 0 0deg)));
+  --dx-accent-foreground: var(--accent-foreground, var(--light, oklch(20.5% 0 0deg)) var(--dark, oklch(98.5% 0 0deg)));
 
   /* The fill of a SELECTED / ACTIVE / HIGHLIGHTED state that sits on a card, popover, muted or accent
    * rest (a chart's active toggle, a calendar's today or in-range cell, the current pagination page,
@@ -247,8 +203,8 @@ html[data-theme="light"] [class~="dxc-system"] {
   --dx-accent-selected: var(--light, var(--dx-accent))
     var(--dark, color-mix(in var(--dx-hover-mix-space), var(--dx-accent), var(--dx-foreground) 15%));
   --dx-accent-selected-foreground: var(--dx-accent-foreground);
-  --dx-destructive: var(--destructive, var(--light, #e40014) var(--dark, var(--primary-error-color)));
-  --dx-destructive-foreground: var(--destructive-foreground, var(--contrast-error-color));
+  --dx-destructive: var(--destructive, var(--light, oklch(57.7% 0.245 27.325deg)) var(--dark, #a22e2e));
+  --dx-destructive-foreground: var(--destructive-foreground, oklch(98.5% 0 0deg));
 
   /* `--dx-destructive` kept readable AS TEXT: error messages, a destructive menu item, the destructive
    * Alert, a required-field star. `--dx-destructive` is a FILL (dark #a22e2e, light #e40014): as text it
@@ -300,8 +256,8 @@ html[data-theme="light"] [class~="dxc-system"] {
    * (written `100%` / `0deg` for the linter), so a line takes its tint from the
    * surface it sits on instead of being one opaque ramp step. The light arm is
    * unchanged (the ramp step). */
-  --dx-border: var(--border, var(--light, var(--primary-color-6)) var(--dark, oklch(100% 0 0deg / 10%)));
-  --dx-input-source: var(--input, var(--light, var(--primary-color-6)) var(--dark, oklch(100% 0 0deg / 15%)));
+  --dx-border: var(--border, var(--light, #e5e5e5) var(--dark, oklch(100% 0 0deg / 10%)));
+  --dx-input-source: var(--input, var(--light, #e5e5e5) var(--dark, oklch(100% 0 0deg / 15%)));
   --dx-input: var(--dx-input-source);
 
   /* The focus ring colour, shadcn-exact: `--dx-ring-source` is a preset's or a host's `--ring` when one is
@@ -317,24 +273,25 @@ html[data-theme="light"] [class~="dxc-system"] {
    * checkbox ring). Phase B removed every other `-alt` role variant. There is
    * no shadcn variable to read, so a theme preset
    * (`preview/assets/theme-presets.css`) supplies the optional `--border-strong`
-   * hook, derived from its own ink and page so the line keeps the preset's tint;
-   * with none set this is the ramp step, as before. */
-  --dx-border-strong: var(--border-strong, var(--primary-color-7));
+   * hook, derived from its own ink and page so the line keeps the preset's tint.
+   * With none set this is the same derivation, ink 26% over the page, in the theme's one mix space
+   * (`--dx-hover-mix-space`, scripts/check-hover-mix-space.sh): #b6b6b6 light, #3e3e3e dark at the
+   * defaults (it was the ramp's #b0b0b0 / #3e3e3e until row 373). */
+  --dx-border-strong: var(--border-strong, color-mix(in var(--dx-hover-mix-space), var(--dx-foreground) 26%, var(--dx-background)));
 
   /* Status -- shadcn ships no success/warning/info roles; these are plain
    * aliases of the existing status colours so sites can leave the ramp.
    *
    * `--dx-success` light: the upstream emerald `#10b981` is 2.54:1 on white as the copy-check icon, under WCAG 1.4.11's 3:1.
-   * The lightness is clamped (OKLCH `l` to at most 0.64; hue and chroma kept, gamut-mapped), a no-op for any
-   * host `--secondary-success-color` that already reads. Dark is unchanged (15:1). Not a shadcn role, so not
-   * part of the contrast switch (it holds in both settings). */
-  --dx-success: var(--light, oklch(from var(--secondary-success-color) min(l, 0.64) c h))
-    var(--dark, var(--secondary-success-color));
-  --dx-success-subtle: var(--primary-success-color);
-  --dx-warning: var(--secondary-warning-color);
-  --dx-warning-subtle: var(--primary-warning-color);
-  --dx-info: var(--secondary-info-color);
-  --dx-info-subtle: var(--primary-info-color);
+   * The lightness is clamped (OKLCH `l` to at most 0.64; hue and chroma kept, gamut-mapped). Dark is
+   * unchanged (15:1). Not a shadcn role, so not part of the contrast switch (it holds in both settings).
+   * The values are the upstream Dioxus status colours, written here as literals now the ramp is gone. */
+  --dx-success: var(--light, oklch(from #10b981 min(l, 0.64) c h)) var(--dark, #b6fae3);
+  --dx-success-subtle: var(--light, #ecfdf5) var(--dark, #02271c);
+  --dx-warning: var(--light, #f59e0b) var(--dark, #feeac7);
+  --dx-warning-subtle: var(--light, #fffbeb) var(--dark, #342203);
+  --dx-info: var(--light, #2b2b2b) var(--dark, #3e3e3e);
+  --dx-info-subtle: var(--light, #fff) var(--dark, #262626);
 
   /* Sidebar. Names kept from the sidebar component's own pre-existing
    * `--dx-sidebar-*` set (so no site changes); the shadcn names they read
@@ -344,19 +301,24 @@ html[data-theme="light"] [class~="dxc-system"] {
    * `.dx-sidebar-wrapper` (same values), which masks these until a worker
    * lane deletes that block.
    *
-   * Dark (phase C owner decision 1): shadcn's sidebar is `oklch(0.205)` = #171717 with accent
-   * `oklch(0.269)` = #262626 (apps/v4/app/globals.css `.dark`), the card/popover and accent pairing
-   * above, so the sidebar stays distinct from the new #0a0a0a page (it was the ramp's `-2`, which IS
-   * #0a0a0a, and would have blended in). Was #0a0a0a / #1a1a1a. Light is unchanged. */
-  --dx-sidebar-background: var(--sidebar, var(--light, var(--primary-color-2)) var(--dark, #171717));
-  --dx-sidebar-foreground: var(--sidebar-foreground, var(--secondary-color-4));
-  --dx-sidebar-primary: var(--sidebar-primary, var(--secondary-color-1));
-  --dx-sidebar-primary-foreground-source: var(--sidebar-primary-foreground, var(--primary-color));
+   * Defaults are shadcn Neutral's whole sidebar set (owner decision 2026-10-23, row 373): `--sidebar`
+   * `oklch(0.985)` = #fafafa light / `oklch(0.205)` = #171717 dark (phase C owner decision 1: the dark sidebar
+   * stays distinct from the #0a0a0a page), `--sidebar-foreground` `oklch(0.145)` / `oklch(0.985)`,
+   * `--sidebar-accent` `oklch(0.97)` / `oklch(0.269)` with `--sidebar-accent-foreground` `oklch(0.205)` /
+   * `oklch(0.985)`, `--sidebar-border` `oklch(0.922)` / white at 10% (as `--dx-border`), `--sidebar-ring`
+   * `oklch(0.708)` / `oklch(0.556)` (as the focus ring), and `--sidebar-primary` `oklch(0.205)` with
+   * `--sidebar-primary-foreground` `oklch(0.985)` in light. Dark `--sidebar-primary` stays #fafafa (shadcn's own
+   * is a blue accent chip, `oklch(0.488 0.243 264.376)`, which a neutral default should not paint) and its ink
+   * stays #000; the calibrated branch of the contrast block picks that ink by the fill. */
+  --dx-sidebar-background: var(--sidebar, var(--light, oklch(98.5% 0 0deg)) var(--dark, oklch(20.5% 0 0deg)));
+  --dx-sidebar-foreground: var(--sidebar-foreground, var(--light, oklch(14.5% 0 0deg)) var(--dark, oklch(98.5% 0 0deg)));
+  --dx-sidebar-primary: var(--sidebar-primary, var(--light, oklch(20.5% 0 0deg)) var(--dark, #fafafa));
+  --dx-sidebar-primary-foreground-source: var(--sidebar-primary-foreground, var(--light, oklch(98.5% 0 0deg)) var(--dark, #000));
   --dx-sidebar-primary-foreground: var(--dx-sidebar-primary-foreground-source);
-  --dx-sidebar-accent: var(--sidebar-accent, var(--light, var(--primary-color-4)) var(--dark, var(--primary-color-5)));
-  --dx-sidebar-accent-foreground: var(--sidebar-accent-foreground, var(--secondary-color-4));
-  --dx-sidebar-border: var(--sidebar-border, var(--primary-color-6));
-  --dx-sidebar-ring: var(--sidebar-ring, var(--primary-color-7));
+  --dx-sidebar-accent: var(--sidebar-accent, var(--light, oklch(97% 0 0deg)) var(--dark, oklch(26.9% 0 0deg)));
+  --dx-sidebar-accent-foreground: var(--sidebar-accent-foreground, var(--light, oklch(20.5% 0 0deg)) var(--dark, oklch(98.5% 0 0deg)));
+  --dx-sidebar-border: var(--sidebar-border, var(--light, oklch(92.2% 0 0deg)) var(--dark, oklch(100% 0 0deg / 10%)));
+  --dx-sidebar-ring: var(--sidebar-ring, var(--light, oklch(70.8% 0 0deg)) var(--dark, oklch(55.6% 0 0deg)));
 
   /* Radius base. shadcn derives its whole radius scale from one `--radius`
    * (apps/v4/app/globals.css, shadcn-ui/ui@295a1f1: `--radius: 0.625rem`,
@@ -575,14 +537,14 @@ html[data-theme="light"] [class~="dxc-system"] {
    * distinguishable series hues -- no prior token set to reuse. Validated
    * with the `dataviz` skill's own `validate_palette.js` against this
    * theme's real card surfaces, not generic reference surfaces:
-   *   light (surface #fbfbfb, this file's --primary-color-1 light value):
+   *   light (surface #fbfbfb, the former ramp step `--primary-color-1`'s light value):
    *     lightness band PASS, chroma floor PASS, CVD separation PASS (worst
    *     adjacent dE 9.1), normal-vision floor PASS (dE 19.6), contrast WARN
    *     (3 of 8 slots < 3:1 -- relieved by construction: a legend is always
    *     shown for >=2 series and the tooltip always shows a text value next
    *     to the swatch, per the dataviz skill's own "legend always present
    *     for >=2 series" rule -- never dismissed, satisfied by the design).
-   *   dark (surface #0e0e0e, this file's --primary-color-1 dark value):
+   *   dark (surface #0e0e0e, the former ramp step `--primary-color-1`'s dark value):
    *     ALL CHECKS PASS (worst adjacent dE 8.4, normal-vision dE 19.3,
    *     contrast all >= 3:1).
    * `--dx-chart-grid`/`--dx-chart-axis-text` reuse existing grayscale

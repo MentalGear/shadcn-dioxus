@@ -18,8 +18,6 @@
   --dx-docs-preview-surface: color-mix(in var(--dx-hover-mix-space), var(--dx-background) var(--dark, 50%) var(--light, 85%), var(--dark, var(--dx-card)) var(--light, var(--dx-muted)));
   --dx-font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --dx-font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", "Menlo", "Monaco", "Consolas", monospace;
-  --highlight-color-main: #dd7230;
-  --highlight-color-secondary: #eb5160;
 
   /* axe `color-contrast` (docs/backlog.md row 39, filed 2026-09-03): the
    * previous #2b7fff, used as `color` (not a border/background) in 11
