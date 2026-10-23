@@ -1313,7 +1313,6 @@ mod tests {
     //! even when the caller passes its own (`dioxus_router::Link` writes its
     //! literal beside `..attributes`, so the attribute came out twice).
     use super::*;
-    use dioxus::prelude::*;
 
     #[derive(Routable, Clone, PartialEq)]
     enum TestRoute {

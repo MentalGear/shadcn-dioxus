@@ -141,7 +141,7 @@ pub fn NavLink(props: NavLinkProps) -> Element {
                 }
                 event.prevent_default();
                 if do_default && !is_external {
-                    router.push_any(target.clone());
+                    navigator().push(target.clone());
                 }
                 if let Some(handler) = onclick {
                     handler.call(event);
