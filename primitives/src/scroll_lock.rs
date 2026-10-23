@@ -736,6 +736,7 @@ fn release(state: &ScrollLockState, acquired: &Cell<bool>) {
     };
     let state = state.clone();
     // The root scope's task: this runs from an unmount cleanup too, whose own scope is going.
+    // interval-ok: one bounded wait for a frame, not a timer
     crate::dioxus_core::spawn_forever(async move {
         let mut frame = document::eval(
             "await new Promise((r) => { requestAnimationFrame(() => r()); setTimeout(r, 50); });
