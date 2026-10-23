@@ -15,15 +15,18 @@ pub fn Demo() -> Element {
 #[component]
 fn ToastButton() -> Element {
     let toast_api = use_toast();
+    // Numbered so several toasts from repeated clicks can be told apart.
+    let mut count = use_signal(|| 0u32);
 
     rsx! {
         Button {
             r#type: "button",
             "data-style": "outline",
             onclick: move |_| {
+                count += 1;
                 toast_api
                     .info(
-                        "Custom Toast".to_string(),
+                        format!("Custom Toast #{count}"),
                         ToastOptions::new()
                             .description("Some info you need")
                             .duration(Duration::from_secs(60))

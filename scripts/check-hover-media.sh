@@ -59,10 +59,6 @@ ALLOW = [
      "the `@supports (scrollbar-width: auto)` REST state: scrollbars are transparent until the element is hovered. "
      "`:not(:hover)` matches everything on a touch device, which is the intent there (an overlay scrollbar), and "
      "its `:hover` partner is wrapped"),
-    ("preview/src/components/toast/style.css", ".dx-toast-container:not(:hover, :focus-within)*",
-     "the collapsed-stack entrance animation: it must apply on touch (nothing can hover, so the stack is always "
-     "collapsed unless focus is inside), so it stays outside the media; the expanded state is the `:hover` and "
-     "`:focus-within` rules, whose hover half is wrapped"),
 ]
 
 # (rust path, substring on the line, reason) for a `:hover` in a .rs file that is not CSS.

@@ -3,9 +3,9 @@
   "build": "debug",
   "workers": "2",
   "date": "2026-10-21",
-  "tests": 3734,
-  "files": 228,
-  "total_seconds": 10887.1,
+  "tests": 3741,
+  "files": 229,
+  "total_seconds": 10917.1,
   "budget_seconds": 17000,
   "max_file_seconds": 3000,
   "note": "seconds = sum of test durations (worker time) on the DEBUG SSG build, 2 workers, 4-core box shared with other lanes; main-thread.spec.ts and scroll-main-thread.spec.ts are release-only (skipped on debug) and carry their RELEASE seconds. release_total_seconds = the same run on a release build. Refresh: playwright/tools/run-suite.sh, then durations.mjs chunk-*.json --write",
@@ -485,9 +485,9 @@
    "retried": 0
   },
   "data_table.spec.ts": {
-   "tests": 18,
-   "seconds": 35.4,
-   "passed": 18,
+   "tests": 17,
+   "seconds": 36,
+   "passed": 17,
    "failed": 0,
    "skipped": 0,
    "retried": 0
@@ -1664,6 +1664,14 @@
    "tests": 3,
    "seconds": 15.6,
    "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "retried": 0
+  },
+  "toast-stack-motion.spec.ts": {
+   "tests": 8,
+   "seconds": 29.4,
+   "passed": 8,
    "failed": 0,
    "skipped": 0,
    "retried": 0

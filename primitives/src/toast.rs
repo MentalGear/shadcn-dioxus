@@ -166,11 +166,18 @@ struct ToastCtx {
 /// stylesheet's exit transition reads, so the Rust constant is the one source of the duration.
 const TOAST_EXIT: Duration = Duration::from_millis(200);
 
+/// Extra time a closed toast stays mounted after [`TOAST_EXIT`]. The exit transitions start on the
+/// first frame AFTER the `closing` render, not at the moment the timer starts, so unmounting at
+/// exactly `TOAST_EXIT` could cut the last few percent of the pile's gap-closing off and show them
+/// as a one-frame jump. The slack makes "every exit transition has finished" true by construction.
+const TOAST_UNMOUNT_SLACK: Duration = Duration::from_millis(60);
+
 /// Closes the toast `id` with its exit animation: marks it `closing` (so it gets `data-removed`,
 /// leaves the pile at once and is inert) and removes it after [`TOAST_EXIT`]. Closing a toast
-/// that is closing or gone does nothing. Every dismissal that has not animated itself already
-/// (close button, action, countdown, [`Toasts::close`]) goes through here; a swipe flies out on
-/// its own and removes directly.
+/// that is closing or gone does nothing. EVERY dismissal goes through here (close button, action,
+/// countdown, [`Toasts::close`], a swipe): the toast's list item takes its place out of the layout
+/// at once (`data-removed` on the `li`), so the toasts that stay close the gap while it fades and no
+/// one jumps when it unmounts.
 fn close_record(mut toasts: Signal<VecDeque<ToastRecord>>, id: ToastId) {
     {
         let Ok(mut list) = toasts.try_write() else {
@@ -183,7 +190,7 @@ fn close_record(mut toasts: Signal<VecDeque<ToastRecord>>, id: ToastId) {
     }
     // interval-ok: one bounded wait, dropped with the app
     crate::dioxus_core::spawn_forever(async move {
-        crate::sleep::sleep(TOAST_EXIT).await;
+        crate::sleep::sleep(TOAST_EXIT + TOAST_UNMOUNT_SLACK).await;
         remove_record(toasts, id);
     });
 }
@@ -416,6 +423,12 @@ pub fn ToastProvider(props: ToastProviderProps) -> Element {
                     }) {
                         ToastListItem {
                             key: "{toast.id}",
+                            // The slot leaves the layout the moment the toast starts leaving: the
+                            // stylesheet shrinks its footprint over `--toast-exit-ms`, so the
+                            // toasts that stay move smoothly instead of jumping at the unmount.
+                            class: "dx-toast-slot",
+                            "data-removed": toast.closing.then_some("true"),
+                            style: "--toast-exit-ms: {TOAST_EXIT.as_millis()}ms",
                             {
                                 props.render_toast.call(ToastProps::builder().id(toast.id)
                                     .index(index)
@@ -1043,7 +1056,7 @@ struct ToastRenderCtx {
 /// - `data-toast-odd`: Present on odd-indexed toasts for alternating styles.
 /// - `data-top`: Present on the topmost toast.
 /// - `data-visible`: `true` while the toast is within the provider's `visible_toasts` cap, `false` while it waits hidden behind it (also when the pile is expanded).
-/// - `data-removed`: `true` while a closed toast plays its exit animation (it is inert and no longer counts toward the pile); it unmounts 200 ms later.
+/// - `data-removed`: `true` while a closed toast plays its exit animation (it is inert and no longer counts toward the pile); it unmounts once the 200 ms exit has finished (a short slack after it). Its list item carries the same `data-removed`, so the slot leaves the layout at once and the remaining toasts close the gap while it fades.
 /// - `data-swiping`: `true` while a pointer drags the toast, `dismissed` while it flies out after a swipe.
 ///
 /// While dragged, the toast sets `--toast-swipe-x` or `--toast-swipe-y` (px, toward the dismiss edge of the axis the drag took); map them to the `translate` property.
@@ -1091,9 +1104,7 @@ pub fn Toast(props: ToastProps) -> Element {
 
     // Swipe to dismiss (pointer events, threshold + velocity; see `use_toast_swipe`).
     let toasts_for_swipe = ctx.toasts;
-    use_toast_swipe(id.into(), move || {
-        remove_record(toasts_for_swipe, toast_key)
-    });
+    use_toast_swipe(id.into(), move || close_record(toasts_for_swipe, toast_key));
 
     // Derived here, from the record and the provider's cap, so no themed wrapper has to pass them:
     // `closing` while the exit animation plays, `visible` while the toast is within the cap.
@@ -1299,9 +1310,9 @@ const end = (e) => {
   el.dataset.swiping = 'dismissed';
   const size = axis === 'x' ? el.offsetWidth : el.offsetHeight;
   el.style.setProperty(prop(axis), d.dir[axis] * (size + 48) + 'px');
-  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const timer = setTimeout(() => dioxus.send(true), reduced ? 0 : 160);
-  cleanup(() => clearTimeout(timer));
+  // The toast leaves the pile now (the Rust side marks it closing: its slot shrinks while it
+  // flies out), not after the fly-out, so the others never wait for it and never jump.
+  dioxus.send(true);
 };
 listen(el, 'pointerdown', (e) => {
   if (drag || (e.pointerType === 'mouse' && e.button !== 0)) return;

@@ -136,7 +136,7 @@ test.describe("toast: enter, exit and visible cap (row 290)", () => {
     await open(page);
     await page.mouse.move(2, 2);
     await addStack(page, 4);
-    const queued = toasts(page, R).filter({ hasText: "Notification 1" });
+    const queued = toasts(page, R).filter({ hasText: "Notification #1" });
     await expect(queued).toHaveAttribute("data-visible", "false");
     // A dispatched click: no hover or focus, so the pile stays collapsed.
     await toasts(page, R).first().getByRole("button", { name: "close" }).dispatchEvent("click");
@@ -149,7 +149,7 @@ test.describe("toast: enter, exit and visible cap (row 290)", () => {
     await page.mouse.move(2, 2);
     await addStack(page, 4);
     const t = toasts(page, R);
-    const queued = t.filter({ hasText: "Notification 1" });
+    const queued = t.filter({ hasText: "Notification #1" });
     await expect(queued).toHaveAttribute("data-visible", "false");
 
     // Hold the pointer over the pile (expanded).
