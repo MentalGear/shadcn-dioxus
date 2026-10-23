@@ -41,35 +41,28 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (36)
+## Open rows (29)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
 | [4](backlog/004-first-3-browser-ci-run-treat-as-calibration-not.md) | First 3-browser CI run — treat as calibration. Not done — see 2026-09-04 Notes below for what's now known and… | A manual dispatch of playwright.yml on a GitHub-hosted runner: all workflows are… | S–M | ci |
 | [10](backlog/010-phase-5-collision-detection.md) | Phase 5 — collision detection | 5.1 REFRAMED by the 2026-09-01 bits-ui/Radix source comparison, FLIP sub-problem landed same day… | S (flip, done) + S (JS-fallback shift… | theme |
-| [15](backlog/015-scrollbar-gutter-on-older-webkit-ios-momentum.md) | scrollbar-gutter on older WebKit + iOS momentum scroll | A product decision that those targets matter | M | misc |
 | [23](backlog/023-preview-s-desktop-feature-lacks-dioxus.md) | preview's desktop feature lacks dioxus-primitives/web — a webview-backed desktop build would render the… | OPEN (verification only): FIXED 2026-09-26 (3633b20), verified at feature-resolution level only… | S | overlays |
 | [28](backlog/028-verify-the-2026-09-02-ios-keyboard-anchor.md) | Verify the 2026-09-02 iOS-keyboard anchor-tracking fix (use_anchor_position_fallback… | User re-test after deploy — the sandbox has no WebKit, and page.setViewportSize() cannot reproduce… | S to verify | overlays |
 | [30](backlog/030-verify-the-2026-09-02-touch-text-entry-font.md) | Verify the 2026-09-02 touch text-entry font-size floor… | User re-test after deploy — the sandbox has no WebKit, and while Playwright's iPhone 13 emulation… | S to verify | tests |
 | [33](backlog/033-3-browser-playwright-on-every-push-pr-sharded.md) | 3-browser Playwright on every push/PR, sharded — dignifiedquire/dx-components runs chromium+firefox+webkit… | CI reactivation (user: off until further notice, 2026-08-30) — then it is a workflow-trigger… | S | ci |
-| [130](backlog/130-arborium-2-17-0-s-wasm-libc-shim-lacks-the-data.md) | arborium 2.17.0's wasm libc shim lacks the data symbol stderr that tree-sitter's stack.c… | NARROWED 2026-10-19 (backlog review): local fix 7ad8421 in; filing upstream is the owner's decision… | S | upstream |
-| [131](backlog/131-dioxus-cli-0-7-9-ssg-leaves-every-pre-rendered.md) | dioxus-cli 0.7.9 --ssg leaves every pre-rendered route except index.html stale when public/ already exists | NARROWED 2026-10-19 (backlog review): local fix 150e97b in (build-ssg.sh wipes public/); filing… | S | build |
 | [152](backlog/152-test-suite-review-revisit-the-playwright-suite.md) | Test-suite review: revisit the Playwright suite (~1,786 tests, ~21 min on a release build with 4 workers) for… | NARROWED 2026-10-19: speed half 152a DONE (lane suite-speed badc56d7): measured (3,752 tests, 183… | M | tests |
 | [153](backlog/153-native-find-in-page-for-windowed-virtual-lists.md) | Native find-in-page for WINDOWED virtual lists: keep per-item text in the DOM as hidden="until-found"… | PROTOTYPED 2026-10-19 (lane virtual-grid, round 4); Chromium Ctrl+F verified 2026-10-23 -- works in… | M | virtual |
-| [154](backlog/154-shared-virtualization-engine-one-engine-in.md) | Shared virtualization engine: ONE engine in primitives/src/virtual/ (core, strategy, DOM bridge) that every… | DESIGN NOTE -- first note recorded 2026-10-05 from the owner question whether the virtualized… | S (note); the build is not estimated | virtual |
 | [155](backlog/155-shadcn-parity-wave-group-1-the-invalid-ring.md) | shadcn parity wave (group 1, the invalid ring, LANDED 2026-10-13 with row 145's state recipes): the 27 "Add… | OPEN (last follow-up on branch claude/row155-picker-month-short, move to done when it merges)… | M-L in total (23 of the 27 are S; four… | theme |
-| [158](backlog/158-theme-follow-ups-accept-shadcn-s-dark-class-as.md) | Theme follow-ups: accept shadcn's .dark class as an alias of data-theme="dark", and suppress transitions… | OPEN (part (b) conditional, on hold): PART (a) LANDED 2026-10-15 (by construction, lane x158dark… | S + S | theme |
 | [170](backlog/170-cross-component-css-overrides-190-sites-in-12.md) | Cross-component CSS overrides: 190 sites in 12 sheets declare, in one component's stylesheet, a property that… | NARROWED 2026-10-19 (backlog review): baseline is now 138 sites in 9 sheets (was 190 in 12) | M (the decision and the prototype are… | theme |
 | [188](backlog/188-demo-parity-second-audit-the-owner-s-per.md) | Demo parity, second audit: the owner's per-example list against the original shadcn demos (51 components; row… | DEMO-ONLY ITEMS DONE 2026-10-19 (batch 2: every section-5 demo exists; what remains needs component… | M per batch | docs |
 | [217](backlog/217-dependency-audit-follow-ups-what-users-pay-for.md) | Dependency audit follow-ups (what users pay for in compile time and supply chain) | PARTLY LANDED 2026-10-18 (lane deps 04ad7ddf): features calendar/color-picker, no build script… | S-M each | build |
 | [250](backlog/250-container-reset-loses-unpushed-work.md) | A container reset to a fresh clone loses every unpushed lane commit and all session scratch | CONSTRUCTION LANDED 2026-10-19 (lane-rules: push lane/* after every commit); redo of the lost work… | S | infra |
-| [265](backlog/265-upstream-ai-elements-code-block-trace-chat.md) | Upstream ai-elements (chat, message, code-block, trace, checkpoint, ...) vs our chat kit | PARTIAL 2026-10-19 (items 1-2 landed: code_block, trace, checkpoint and chat demos; item 3 is an… | L | chat |
 | [266](backlog/266-repo-cleanup-archive-historical-dev-docs.md) | Repo cleanup: archive historical dev-docs, trim CLAUDE.md and the big dev docs, split backlog.md | APPROVED 2026-10-19 (owner: run it when safe, in the Round 6 sweep); starts once no feature lane… | M-L | process |
 | [267](backlog/267-split-oversized-source-files-into-modules.md) | Split oversized source files into modules (carousel.rs, carousel.spec.ts, main.rs, top_layer.rs, calendar.rs, date_picker.rs) | BACKLOG (owner approved 2026-10-19 on the cleanup plan; Round 6, before the 152b suite prune).… | M | process |
 | [268](backlog/268-select-scroll-buttons-and-item-aligned-position.md) | Select scroll buttons and position=item-aligned | NARROWED 2026-10-23. Both parts are on main and their browser specs are green (progress note… | S-M (scroll buttons), M-L (item-aligned) | select |
 | [295](backlog/295-press-feedback-on-touch-taps-already-on-by.md) | Press feedback on touch taps: already on by default, so check why taps don't show it | PARTLY LANDED 2026-10-20 (theme-touch lane 1ba0b2e5, cf64037a); device re-test open. Row 205… | S (or none) | theme |
 | [296](backlog/296-combobox-list-drifts-from-its-input-on-ios-after.md) | Combobox list drifts from its input on iOS after long scrolling | OPEN (owner report 2026-10-19), needs device verification. Related rows: 28 (iOS keyboard anchor… | M + device check | overlays |
-| [304](backlog/304-radial-chart-tooltips-share-the-gap-split-equally.md) | Radial chart tooltips share the gap, split equally per ring (lowest priority) | PARKED (lowest priority; ask the owner before starting), owner 2026-10-19. Ask the owner whether… | S–M (to scope) | primitives |
 | [305](backlog/305-side-drawer-scrolling-its-content-also-drags-the.md) | Side drawer: scrolling its content also drags the drawer sideways (iOS) | BACKLOG (owner report 2026-10-19, iOS device) | S–M | primitives |
 | [307](backlog/307-ios-color-panel-does-not-pick-colors.md) | iOS: the Color Panel opens but tapping its color box does not change the color | OPEN (owner report 2026-10-20, iOS device; being investigated in the 'iOS Color Panel won't pick… | M | overlays |
 | [309](backlog/309-virtuallist-and-virtualgrid-share-one-engine.md) | VirtualList and VirtualGrid share one engine: DOM bridge, pinned focus, fade (two components, one engine) | OPEN (deferred: grid content-visibility mode, grid find-in-page placeholders; the rest merged)… | M | virtual |
@@ -82,7 +75,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [371](backlog/371-dependency-evaluation-keep-lift-drop.md) | Dependency evaluation: keep, feature-gate, replace, lift or drop (rule of 2026-10-23) | PARKED by the owner 2026-10-23 ("its own item, and not yet"). Inventory done; no outcome is… | S each outcome | build |
 | [372](backlog/372-scroll-fade-overlay-scrollbar-hybrid.md) | Scroll fade: transition the edge depths (landed) and paint the fade as gradients where the scrollbar is an overlay (deferred) | Part 2 LANDED (lane fadehybrid): the registered --dx-scroll-fade-t/-b/-s/-e depths transition… | M | primitives |
 
-## Done rows (310)
+## Done rows (317)
 
 | # | Item | Updated |
 |---|---|---|
@@ -98,6 +91,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [12](backlog/done/012-phase-6-pub-mod-portal-toggle-class-prop-public.md) | Phase 6 — pub mod portal, Toggle class prop, public CalendarDayState (upstream #199) | 2026-09-18 |
 | [13](backlog/done/013-phase-6-rtl-dq-direction-rs-key-flip-concept.md) | Phase 6 — RTL (dq direction.rs + key-flip concept) | 2026-10-05 |
 | [14](backlog/done/014-nudge-dioxus-framework-issues-2962-onclose-4319.md) | Nudge Dioxus framework issues: #2962 (onclose), #4319 (dialog methods), ancestor-traversal gap (complaints.md) | 2026-10-22 |
+| [15](backlog/done/015-scrollbar-gutter-on-older-webkit-ios-momentum.md) | scrollbar-gutter on older WebKit + iOS momentum scroll | 2026-10-23 |
 | [16](backlog/done/016-component-candidates-new-components-from.md) | Component candidates — new components from upstream PRs, the fork network, and catalog gaps | 2026-10-19 |
 | [17](backlog/done/017-mutation-testing-cargo-mutants-scoped-to-the.md) | Mutation testing (cargo-mutants), scoped to the algorithmic modules that already carry unit tests (slider… | 2026-08-31 |
 | [18](backlog/done/018-css-anchor-positioning-cross-browser-fallback.md) | CSS Anchor Positioning cross-browser fallback for anchored overlays | 2026-09-01 |
@@ -208,6 +202,8 @@ proposing one is closed as out of scope (row 337 is the first).
 | [127](backlog/done/127-preview-assets-main-css-is-outside-the.md) | preview/assets/main.css is outside the stylelint gate's glob; 7 pre-existing errors | 2026-10-11 |
 | [128](backlog/done/128-scripts-check-dx-class-prefix-sh-is-red-on-main.md) | scripts/check-dx-class-prefix.sh is red on main @ 62de3cb: bar_chart/style.css and line_chart/style.css… | 2026-10-03 |
 | [129](backlog/done/129-preview-src-components-navbar-component-json.md) | preview/src/components/navbar/component.json lacks the theme globalAssets entry every other component has | 2026-10-05 |
+| [130](backlog/done/130-arborium-2-17-0-s-wasm-libc-shim-lacks-the-data.md) | arborium 2.17.0's wasm libc shim lacks the data symbol stderr that tree-sitter's stack.c… | 2026-10-23 |
+| [131](backlog/done/131-dioxus-cli-0-7-9-ssg-leaves-every-pre-rendered.md) | dioxus-cli 0.7.9 --ssg leaves every pre-rendered route except index.html stale when public/ already exists | 2026-10-23 |
 | [132](backlog/done/132-dx-tabs-content-keeps-padding-var-dx-space-8.md) | .dx-tabs-content keeps padding: var(--dx-space-8) while Nova's TabsContent has none; consumers not audited | 2026-10-14 |
 | [133](backlog/done/133-inputgroup-has-no-invalid-or-disabled-styling.md) | InputGroup has no invalid or disabled styling | 2026-10-13 |
 | [134](backlog/done/134-nova-s-tinted-destructive-button-is-contrast.md) | Nova's tinted destructive button is contrast-failing in dark; ours deliberately is not Nova's. Widened… | 2026-10-13 |
@@ -228,8 +224,10 @@ proposing one is closed as out of scope (row 337 is the first).
 | [149](backlog/done/149-scroll-lock-rs-installs-non-passive-wheel.md) | scroll_lock.rs installs non-passive wheel/touchmove listeners on window permanently after the first lock | 2026-10-05 |
 | [150](backlog/done/150-home-page-blocks-registered-their-hooks-on-the.md) | Home-page blocks registered their hooks on the parent scope: MasonryCard called component.call(()), so… | 2026-10-23 |
 | [151](backlog/done/151-a-document-link-stylesheet-can-be-recorded-as.md) | A document::Link stylesheet can be recorded as present and never inserted: a subtree torn down in the turn it… | 2026-10-04 |
+| [154](backlog/done/154-shared-virtualization-engine-one-engine-in.md) | Shared virtualization engine: ONE engine in primitives/src/virtual/ (core, strategy, DOM bridge) that every… | 2026-10-23 |
 | [156](backlog/done/156-drawer-has-fallen-behind-shadcn-it-moved-from.md) | Drawer has fallen behind shadcn: it moved from Vaul to Base UI Drawer (snap points, nested drawers, non-modal… | 2026-10-19 |
 | [157](backlog/done/157-inputotp-hard-codes-a-numeric-keypad-inputmode.md) | InputOtp hard-codes a numeric keypad: inputmode="numeric" and pattern="[0-9]*" are fixed, so alphanumeric… | 2026-10-19 |
+| [158](backlog/done/158-theme-follow-ups-accept-shadcn-s-dark-class-as.md) | Theme follow-ups: accept shadcn's .dark class as an alias of data-theme="dark", and suppress transitions… | 2026-10-23 |
 | [159](backlog/done/159-js-listeners-added-through-eval-or-shipped.md) | JS listeners added through eval (or shipped scripts) and never removed: a class, widening row 149 | 2026-10-05 |
 | [160](backlog/done/160-two-small-bugs-the-shadcn-comparison-found-tabs.md) | Two small bugs the shadcn comparison found: Tabs Ghost sets data-variant="ghost" that no CSS styles… | 2026-10-05 |
 | [161](backlog/done/161-rename-the-website-to-shadcn-dioxus-and-give-it.md) | Rename the website to "shadcn-dioxus" and give it a real favicon (an SVG that follows light/dark, a PNG… | 2026-10-20 |
@@ -332,6 +330,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [262](backlog/done/262-toast-f6-one-listener-per-page.md) | Toast: one F6 listener per page, not one per ToastProvider | 2026-10-19 |
 | [263](backlog/done/263-toast-remaining-base-ui-behaviour.md) | Toast: pause on hover/focus, vertical swipe, legacy keyframes on translate | 2026-10-19 |
 | [264](backlog/done/264-non-modal-dialog-pointer-dismissal-and-aria-modal.md) | Non-modal Dialog/Drawer: aria-modal and an outside-press switch | 2026-10-19 |
+| [265](backlog/done/265-upstream-ai-elements-code-block-trace-chat.md) | Upstream ai-elements (chat, message, code-block, trace, checkpoint, ...) vs our chat kit | 2026-10-23 |
 | [280](backlog/done/280-cards-fit-their-content-at-every-width.md) | Home-page cards fit their content at every width | 2026-10-19 |
 | [285](backlog/done/285-docs-preview-card-light-mode-tint.md) | Docs preview card: a visible light-mode tint without breaking Toggle hover contrast | 2026-10-22 |
 | [290](backlog/done/290-toast-exit-animation-a-real-visible-cap-and-enter.md) | Toast: exit animation, a real visible cap, and enter from the toaster's edge (Sonner parity) | 2026-10-20 |
@@ -346,6 +345,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [301](backlog/done/301-component-card-title-hover-colour-follows-the.md) | Component-card title hover colour follows the theme; offer the default blue in the palette picker | 2026-10-20 |
 | [302](backlog/done/302-charts-page-tab-bar-keep-the-pill-on-the-active.md) | Charts page tab bar: keep the pill on the active tab | 2026-10-20 |
 | [303](backlog/done/303-charts-and-demos-pages-have-no-docs-sidebar.md) | Charts and Demos pages have no docs sidebar | 2026-10-20 |
+| [304](backlog/done/304-radial-chart-tooltips-share-the-gap-split-equally.md) | Radial chart tooltips share the gap, split equally per ring (lowest priority) | 2026-10-23 |
 | [306](backlog/done/306-select-and-combobox-show-no-selected-label-before.md) | Select and Combobox show no selected label before hydration | 2026-10-20 |
 | [308](backlog/done/308-virtualgrid-scroll-trap-at-the-edges.md) | VirtualGrid traps page scroll at its edges; should VirtualList and VirtualGrid be unified? | 2026-10-20 |
 | [310](backlog/done/310-questionnaire-height-transition.md) | Questionnaire: animate the height between items instead of snapping | 2026-10-20 |
