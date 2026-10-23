@@ -115,19 +115,20 @@ pub fn Demo() -> Element {
                         horizontal: true,
                         role: "group",
                         aria_label: "Select scroll anchor role",
-                        pressed: Some(HashSet::from([anchor_role()])),
-                        on_pressed_change: move |pressed: HashSet<usize>| {
+                        value: Some(HashSet::from([if anchor_is_user { "user" } else { "assistant" }.to_string()])),
+                        on_value_change: move |pressed: HashSet<String>| {
                             // The group is single-select; pressing the active item again would
                             // empty it, so keep the current role in that case.
-                            if let Some(&role) = pressed.iter().next() {
+                            if let Some(role) = pressed.iter().next() {
+                                let role = usize::from(role == "assistant");
                                 if role != anchor_role() {
                                     anchor_role.set(role);
                                     sent.set(0);
                                 }
                             }
                         },
-                        ToggleItem { index: 0usize, aria_label: "Anchor user messages", "User" }
-                        ToggleItem { index: 1usize, aria_label: "Anchor assistant messages", "Assistant" }
+                        ToggleItem { index: 0usize, value: "user", aria_label: "Anchor user messages", "User" }
+                        ToggleItem { index: 1usize, value: "assistant", aria_label: "Anchor assistant messages", "Assistant" }
                     }
                     Button {
                         size: ButtonSize::Icon,

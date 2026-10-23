@@ -94,6 +94,14 @@ In right-to-left layouts the grid mirrors: the sticky column sits at the right, 
 
 The container is `role="grid"` with `aria-rowcount` and `aria-colcount` of the whole grid, and every mounted row and cell carries `aria-rowindex` / `aria-colindex`, so a screen reader announces where a cell is even though only a window exists. Header cells are `role="columnheader"`; with `sticky_first_column` the first column's cells are `role="rowheader"`.
 
+## Sorting, selection and controls in cells
+
+Three hooks let the grid host a data table. All are optional.
+
+- `column_sort: Callback<usize, Option<SortDirection>>` sets `aria-sort` on a header: return `Some(Ascending|Descending)` for the sorted column and `None` for the rest (the APG sortable-table pattern puts it on that one header only). The grid owns the `columnheader`, so this is the only way to set it.
+- `row_selected: Callback<String, bool>` is asked, for every mounted row, whether the row with that `row_key` (the index as a string without one) is selected. Selected rows get `aria-selected="true"` and `data-state="selected"` (painted `--dx-muted` by the sheet, sticky column included); the others `aria-selected="false"`. It is keyed by identity, so the selection follows the row through a sort and a window move.
+- **A cell may hold one control** (checkbox, switch, button, link): the APG grid's "focus the widget" model. The control, not its cell, is then the grid's single tab stop, the arrows still move between cells (focus lands on the next cell's control, or on the cell when it has none), and `Space` / `Enter` act on the control natively. A cell with a text field, a select or several controls needs the APG's `Enter`/`F2` interaction mode, which the grid does not provide: keep those out of the grid, or edit in a dialog.
+
 ## What windowing costs
 
 A `VirtualGrid` cell taller than its row overflows it (rows are not measured). For a grid of a few thousand cells, a plain CSS grid with `content-visibility: auto` on each row may be the simpler answer: everything stays in the DOM and the browser skips the rows that are off-screen. Find-in-page, the accessibility tree and the server are covered under "Find-in-page and the windowed DOM" below.

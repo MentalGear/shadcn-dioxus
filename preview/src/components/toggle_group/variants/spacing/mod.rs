@@ -13,23 +13,23 @@ pub fn Demo() -> Element {
                 size: ToggleSize::Sm,
                 variant: ToggleVariant::Outline,
                 spacing: 2u8,
-                default_pressed: HashSet::from([0usize]),
+                default_value: HashSet::from(["top".to_string()]),
                 aria_label: "Spaced placement",
-                ToggleItem { index: 0usize, aria_label: "Toggle spaced top", "Top" }
-                ToggleItem { index: 1usize, aria_label: "Toggle spaced bottom", "Bottom" }
-                ToggleItem { index: 2usize, aria_label: "Toggle spaced left", "Left" }
-                ToggleItem { index: 3usize, aria_label: "Toggle spaced right", "Right" }
+                ToggleItem { index: 0usize, value: "top", aria_label: "Toggle spaced top", "Top" }
+                ToggleItem { index: 1usize, value: "bottom", aria_label: "Toggle spaced bottom", "Bottom" }
+                ToggleItem { index: 2usize, value: "left", aria_label: "Toggle spaced left", "Left" }
+                ToggleItem { index: 3usize, value: "right", aria_label: "Toggle spaced right", "Right" }
             }
             ToggleGroup {
                 size: ToggleSize::Sm,
                 variant: ToggleVariant::Outline,
                 spacing: 0u8,
-                default_pressed: HashSet::from([0usize]),
+                default_value: HashSet::from(["top".to_string()]),
                 aria_label: "Joined placement",
-                ToggleItem { index: 0usize, aria_label: "Toggle joined top", "Top" }
-                ToggleItem { index: 1usize, aria_label: "Toggle joined bottom", "Bottom" }
-                ToggleItem { index: 2usize, aria_label: "Toggle joined left", "Left" }
-                ToggleItem { index: 3usize, aria_label: "Toggle joined right", "Right" }
+                ToggleItem { index: 0usize, value: "top", aria_label: "Toggle joined top", "Top" }
+                ToggleItem { index: 1usize, value: "bottom", aria_label: "Toggle joined bottom", "Bottom" }
+                ToggleItem { index: 2usize, value: "left", aria_label: "Toggle joined left", "Left" }
+                ToggleItem { index: 3usize, value: "right", aria_label: "Toggle joined right", "Right" }
             }
         }
     }

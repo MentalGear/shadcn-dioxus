@@ -5,3 +5,4 @@ spacing
 vertical
 disabled
 font_weight
+reorder

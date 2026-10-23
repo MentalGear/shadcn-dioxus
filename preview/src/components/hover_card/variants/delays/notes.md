@@ -1,0 +1,1 @@
+`delay` and `close_delay` on `HoverCard`, next to the defaults of 600 and 300 ms. The card waits for the pointer to rest, and outlives it leaving so the pointer can cross onto the card. Keyboard focus opens it at once.

@@ -19,12 +19,15 @@ pub fn Demo() -> Element {
             DirectionProvider { direction: Direction::Rtl,
                 ToggleGroup { horizontal: true, allow_multiple_pressed: true,
                     ToggleItem { index: 0usize,
+                        value: "s",
                         s { "S" }
                     }
                     ToggleItem { index: 1usize,
+                        value: "h",
                         mark { "H" }
                     }
                     ToggleItem { index: 2usize,
+                        value: "c",
                         code { "C" }
                     }
                 }

@@ -1,0 +1,1 @@
+`delay` and `close_delay` on `Tooltip`: it opens on contact by default, `delay: 600` asks for a rest-to-open delay, and `close_delay` keeps it open long enough to move onto it. Keyboard focus opens each at once.

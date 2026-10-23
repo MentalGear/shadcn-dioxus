@@ -1,0 +1,1 @@
+`initial_focus` as a function of how the popover was opened: a keyboard open lands on the second field, a mouse open on the first, a touch open on the panel. A keyboard close returns focus to a chosen button.

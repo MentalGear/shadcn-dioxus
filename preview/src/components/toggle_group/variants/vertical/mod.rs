@@ -11,11 +11,11 @@ pub fn Demo() -> Element {
             horizontal: false,
             allow_multiple_pressed: true,
             spacing: 1u8,
-            default_pressed: HashSet::from([0usize, 1usize]),
+            default_value: HashSet::from(["bold".to_string(), "italic".to_string()]),
             aria_label: "Vertical text formatting",
-            ToggleItem { index: 0usize, aria_label: "Toggle vertical bold", Bold {} }
-            ToggleItem { index: 1usize, aria_label: "Toggle vertical italic", Italic {} }
-            ToggleItem { index: 2usize, aria_label: "Toggle vertical underline", Underline {} }
+            ToggleItem { index: 0usize, value: "bold", aria_label: "Toggle vertical bold", Bold {} }
+            ToggleItem { index: 1usize, value: "italic", aria_label: "Toggle vertical italic", Italic {} }
+            ToggleItem { index: 2usize, value: "underline", aria_label: "Toggle vertical underline", Underline {} }
         }
     }
 }

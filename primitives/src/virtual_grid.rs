@@ -49,6 +49,16 @@
 //! lost to an unmount and Tab always finds the grid's stop; moving it scrolls it into view
 //! past the sticky header and column.
 //!
+//! # Header sort, row selection and controls in cells
+//!
+//! [`VirtualGridProps::column_sort`] sets `aria-sort` on a column header,
+//! [`VirtualGridProps::row_selected`] marks rows `aria-selected` / `data-state="selected"` by the
+//! row's identity (`row_key`), and a cell may hold **one control** (a checkbox, switch, button or
+//! link): the APG grid's "focus the widget" model. The control, not its cell, is then the grid's
+//! one tab stop; the arrows still move between cells (focus lands on the next cell's control),
+//! and `Space` / `Enter` act on the control natively. A cell with a text field, a select or
+//! several controls needs the APG's Enter/F2 interaction mode, which the grid does not provide.
+//!
 //! # What windowing costs
 //!
 //! Cells outside the window do not exist: find-in-page cannot reach them, the accessibility
@@ -60,6 +70,7 @@
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 
+pub use crate::data_view::SortDirection;
 use crate::direction::{use_direction, Direction, HorizontalNav};
 use crate::r#virtual::{
     engine_row_keys, justified_navigate, measured_px, render_key, resolve_index,
@@ -99,6 +110,19 @@ pub struct VirtualGridProps {
     /// Renders the header of a column. When given, a header row of `role="columnheader"` cells
     /// sticks to the top of the grid while it scrolls.
     pub render_header: Option<Callback<usize, Element>>,
+    /// Which way column `column` is sorted, for its header's `aria-sort` (`ascending` or
+    /// `descending`). Return `None` for a column that is not the sort column: it gets no
+    /// `aria-sort`, as the APG sortable-table pattern has only the sorted header carry one. The
+    /// grid owns the `columnheader` element, so this is the caller's only way to set it. Read
+    /// while rendering, so signals it reads re-render the grid. Ignored without `render_header`.
+    pub column_sort: Option<Callback<usize, Option<SortDirection>>>,
+    /// Whether the row whose [`row_key`](Self::row_key) is `key` is selected (the key is the
+    /// index as a string without `row_key`). When given, every mounted row carries
+    /// `aria-selected="true|false"`, and a selected one also `data-state="selected"` (the
+    /// style hook). Keyed by the row's identity, not its slot: the callback is asked about the
+    /// row each DOM node holds, so a selection survives a sort and a window move. Read while
+    /// rendering, so signals it reads re-render the grid.
+    pub row_selected: Option<Callback<String, bool>>,
     /// The height of the header row, in px. Ignored without `render_header`.
     #[props(default = 40)]
     pub header_height: u32,
@@ -179,6 +203,8 @@ pub fn VirtualGrid(props: VirtualGridProps) -> Element {
         column_width,
         render_cell,
         render_header,
+        column_sort,
+        row_selected,
         header_height,
         sticky_first_column,
         row_buffer,
@@ -192,6 +218,7 @@ pub fn VirtualGrid(props: VirtualGridProps) -> Element {
 
     let direction = use_direction(dir);
     let container_id = use_unique_id();
+    use_cell_controls(container_id);
     // The shared DOM bridge (`primitives/src/virtual/bridge.rs`); both axes read each report.
     let bridge = use_virtual_bridge(
         container_id,
@@ -245,7 +272,14 @@ pub fn VirtualGrid(props: VirtualGridProps) -> Element {
         let geometry = column_geometry.read();
         (geometry.2, geometry.1)
     };
-    use_focus_active_cell(container_id, active, focus_request, header, sticky_width);
+    use_focus_active_cell(
+        container_id,
+        active,
+        focus_request,
+        true,
+        header,
+        sticky_width,
+    );
 
     let shape = GridShape::full(row_count(), column_count());
     let tab_stop = shape.clamp(active());
@@ -315,9 +349,12 @@ pub fn VirtualGrid(props: VirtualGridProps) -> Element {
                 "aria-colindex": column + 1,
                 "data-grid-cell": "{row}:{column}",
                 "data-grid-sticky": is_sticky.then_some("true"),
+                "data-grid-active": focusable.then_some("true"),
                 tabindex: if focusable { "0" } else { "-1" },
                 style,
-                onfocus: move |_| set_active((row, column)),
+                // `focusin`, not `focus`: it also fires for a control inside the cell, so a click
+                // or Tab that lands on one makes its cell the active one.
+                onfocusin: move |_| set_active((row, column)),
                 {render_cell((row, column))}
             }
         }
@@ -328,18 +365,19 @@ pub fn VirtualGrid(props: VirtualGridProps) -> Element {
 
     rsx! {
         div { onkeydown, ..merged,
-            div { style: "position: relative; width: {width}px;",
+            div { style: "position: relative; width: {width}px; min-width: 100%;",
                 if let Some(render_header) = render_header {
                     div {
                         role: "row",
                         "aria-rowindex": 1,
                         "data-grid-header": "true",
-                        style: "position: sticky; top: 0; z-index: 2; display: flex; width: {width}px; height: {header}px;",
+                        style: "position: sticky; top: 0; z-index: 2; display: flex; width: {width}px; min-width: 100%; height: {header}px;",
                         if sticky == 1 {
                             div {
                                 role: "columnheader",
                                 "aria-colindex": 1,
                                 "data-grid-cell": "header:0",
+                                "aria-sort": sort_token(column_sort, 0),
                                 "data-grid-sticky": "true",
                                 style: "position: sticky; inset-inline-start: 0; z-index: 1; flex: none; box-sizing: border-box; width: {sticky_column_width}px; height: 100%;",
                                 {render_header(0)}
@@ -353,6 +391,7 @@ pub fn VirtualGrid(props: VirtualGridProps) -> Element {
                                     role: "columnheader",
                                     "aria-colindex": column.index() + 1,
                                     "data-grid-cell": "header:{column.index()}",
+                                    "aria-sort": sort_token(column_sort, column.index()),
                                     style: "position: absolute; inset-block: 0; inset-inline-start: {column.start()}px; box-sizing: border-box; width: {column.size()}px;",
                                     {render_header(column.index())}
                                 }
@@ -360,13 +399,15 @@ pub fn VirtualGrid(props: VirtualGridProps) -> Element {
                         }
                     }
                 }
-                div { style: "position: relative; width: {width}px; height: {plan.body_height}px;",
+                div { style: "position: relative; width: {width}px; min-width: 100%; height: {plan.body_height}px;",
                     for row in plan.rows {
                         div {
                             key: "{render_key(row_key, row.index())}",
                             role: "row",
                             "aria-rowindex": row.index() + 1 + header_rows,
-                            style: "position: absolute; inset-inline-start: 0; top: {row.start()}px; display: flex; width: {width}px; height: {row.size()}px;",
+                            "aria-selected": selected_token(row_selected, row_key, row.index()),
+                            "data-state": selected_state(row_selected, row_key, row.index()),
+                            style: "position: absolute; inset-inline-start: 0; top: {row.start()}px; display: flex; width: {width}px; min-width: 100%; height: {row.size()}px;",
                             if sticky == 1 {
                                 {cell(row.index(), 0, 0, sticky_column_width)}
                             }
@@ -514,7 +555,7 @@ pub fn VirtualWrapGrid(props: VirtualWrapGridProps) -> Element {
     });
 
     let active_cell = use_active_cell(active, columns);
-    use_focus_active_cell(container_id, active_cell, focus_request, 0, 0);
+    use_focus_active_cell(container_id, active_cell, focus_request, false, 0, 0);
 
     let columns_now = columns().max(1);
     let shape = GridShape::wrapping(count(), columns_now);
@@ -963,6 +1004,102 @@ fn use_active_cell(active: Signal<usize>, columns: ReadSignal<usize>) -> Memo<(u
     use_memo(move || index_to_cell(active(), columns()))
 }
 
+/// The `aria-sort` token of column `column`, or `None` for an unsorted one (or without the hook).
+fn sort_token(
+    column_sort: Option<Callback<usize, Option<SortDirection>>>,
+    column: usize,
+) -> Option<&'static str> {
+    column_sort
+        .and_then(|f| f(column))
+        .map(SortDirection::aria_sort)
+}
+
+/// Whether row `index` is selected: `None` without the `row_selected` hook, else the answer for
+/// the row's key (its identity, so the answer follows the row through a sort).
+fn row_is_selected(
+    row_selected: Option<Callback<String, bool>>,
+    row_key: Option<Callback<usize, String>>,
+    index: usize,
+) -> Option<bool> {
+    row_selected.map(|f| f(render_key(row_key, index)))
+}
+
+/// The row's `aria-selected` value (every row carries one once the hook is given).
+fn selected_token(
+    row_selected: Option<Callback<String, bool>>,
+    row_key: Option<Callback<usize, String>>,
+    index: usize,
+) -> Option<&'static str> {
+    row_is_selected(row_selected, row_key, index).map(|on| if on { "true" } else { "false" })
+}
+
+/// The row's `data-state`: `selected` for a selected row, nothing otherwise.
+fn selected_state(
+    row_selected: Option<Callback<String, bool>>,
+    row_key: Option<Callback<usize, String>>,
+    index: usize,
+) -> Option<&'static str> {
+    row_is_selected(row_selected, row_key, index)
+        .filter(|on| *on)
+        .map(|_| "selected")
+}
+
+/// Keeps the one-tab-stop promise when cells hold controls (APG grid, "focus the widget"
+/// option): see [`CELL_CONTROLS_JS`]. Installed once per grid; it follows the DOM, so a window
+/// move, a re-render or a caller's own `tabindex` cannot leave a second stop behind.
+fn use_cell_controls(container_id: Signal<String>) {
+    use_effect(move || {
+        let eval = document::eval(CELL_CONTROLS_JS);
+        let _ = eval.send((container_id.peek().clone(), CONTROL_SELECTOR));
+    });
+}
+
+/// What counts as a cell's control: a natively focusable element, or one with a widget role that
+/// a library control (a checkbox button, a switch) renders. A cell holds ONE (the first).
+const CONTROL_SELECTOR: &str = concat!(
+    "a[href], button:not([disabled]), input:not([type=hidden]):not([disabled]), ",
+    "select:not([disabled]), textarea:not([disabled]), ",
+    "[role=checkbox], [role=switch], [role=radio], [role=button], [role=link], ",
+    "[data-grid-control]"
+);
+
+/// For every data cell that holds a control: the cell itself leaves the tab order
+/// (`tabindex=-1`), the control is the tab stop (`tabindex=0`) in the active cell and `-1`
+/// everywhere else, and the control is marked `data-grid-control-active` where it is the stop.
+/// Runs on every DOM change under the grid (a MutationObserver, coalesced to one frame) and is
+/// idempotent, so its own writes settle after one pass. Stops when the grid leaves the page.
+const CELL_CONTROLS_JS: &str = r#"
+    const [id, selector] = await dioxus.recv();
+    const grid = document.getElementById(id);
+    if (!grid) return;
+    const set = (el, name, value) => {
+        if (el.getAttribute(name) !== value) el.setAttribute(name, value);
+    };
+    let queued = false;
+    const sync = () => {
+        queued = false;
+        if (!grid.isConnected) { observer.disconnect(); return; }
+        for (const cell of grid.querySelectorAll('[data-grid-cell]:not([data-grid-cell^="header"])')) {
+            const control = cell.querySelector(selector);
+            if (!control) continue;
+            const active = cell.getAttribute("data-grid-active") === "true";
+            set(cell, "data-grid-has-control", "true");
+            set(cell, "tabindex", "-1");
+            set(control, "tabindex", active ? "0" : "-1");
+        }
+    };
+    const observer = new MutationObserver(() => {
+        if (!queued) { queued = true; requestAnimationFrame(sync); }
+    });
+    observer.observe(grid, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ["tabindex", "data-grid-active"],
+    });
+    sync();
+"#;
+
 /// Maps a key press to a grid move, or `None` for a key the grid does not handle (which then
 /// keeps its default action). The horizontal arrows go through `direction.rs`, so they mirror in
 /// RTL.
@@ -998,6 +1135,7 @@ fn use_focus_active_cell(
     container_id: Signal<String>,
     active: impl Readable<Target = (usize, usize)> + Copy + 'static,
     focus_request: Signal<u64>,
+    controls: bool,
     header: u32,
     sticky_width: u32,
 ) {
@@ -1009,6 +1147,7 @@ fn use_focus_active_cell(
         focus_and_reveal(
             container_id.peek().clone(),
             format!(r#"[data-grid-cell="{row}:{column}"]"#),
+            if controls { CONTROL_SELECTOR } else { "" },
             header,
             sticky_width,
         );
@@ -1030,6 +1169,7 @@ fn use_focus_active_tile(
         focus_and_reveal(
             container_id.peek().clone(),
             format!(r#"[data-grid-index="{index}"]"#),
+            "",
             0,
             0,
         );
@@ -1037,15 +1177,30 @@ fn use_focus_active_tile(
 }
 
 /// Runs [`FOCUS_CELL_JS`] for the cell `selector` names inside the grid `container_id`.
-fn focus_and_reveal(container_id: String, selector: String, header: u32, sticky_width: u32) {
+///
+/// With a non-empty `control_selector` (the data grid's [`CONTROL_SELECTOR`]) focus goes to the
+/// cell's control when it holds one, else to the cell.
+fn focus_and_reveal(
+    container_id: String,
+    selector: String,
+    control_selector: &str,
+    header: u32,
+    sticky_width: u32,
+) {
     let eval = document::eval(FOCUS_CELL_JS);
-    let _ = eval.send((container_id, selector, header, sticky_width));
+    let _ = eval.send((
+        container_id,
+        selector,
+        control_selector,
+        header,
+        sticky_width,
+    ));
 }
 
 /// Focuses the active cell once it is in the DOM (it is pinned, so the render that made it
 /// active mounts it) and scrolls the container just enough to show it beside the sticky edges.
 const FOCUS_CELL_JS: &str = r#"
-    const [id, selector, header, stickyWidth] = await dioxus.recv();
+    const [id, selector, controlSelector, header, stickyWidth] = await dioxus.recv();
     let tries = 0;
     const go = () => {
         const grid = document.getElementById(id);
@@ -1056,7 +1211,7 @@ const FOCUS_CELL_JS: &str = r#"
             return;
         }
         // focus-ok: the grid pattern's roving tab stop; the key press already holds focus inside the grid
-        cell.focus({ preventScroll: true });
+        (controlSelector && cell.querySelector(controlSelector) || cell).focus({ preventScroll: true });
         const box = grid.getBoundingClientRect();
         const rect = cell.getBoundingClientRect();
         const top = box.top + grid.clientTop + header;

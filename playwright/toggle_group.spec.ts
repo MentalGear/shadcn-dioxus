@@ -244,3 +244,55 @@ test.describe("Axe automated scan", () => {
     await expectNoAxeViolations(page, "toggle_group: B selected", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 });
+
+// Row 364: the pressed set is keyed by item `value`, so reordering the items or inserting one before them never
+// moves the pressed state to another button (the position-keyed `HashSet<usize>` did exactly that).
+test.describe("pressed state follows the item value (row 364)", () => {
+  const frame = (page: Page) => frameOf(page, "reorder");
+  const multi = (page: Page, v: string) => frame(page).getByRole("group", { name: "Reorderable multiple" }).getByRole("button", { name: `multi ${v}`, exact: true });
+  const single = (page: Page, v: string) => frame(page).getByRole("group", { name: "Reorderable single" }).getByRole("button", { name: `single ${v}`, exact: true });
+  const order = async (page: Page) =>
+    frame(page).getByRole("group", { name: "Reorderable multiple" }).getByRole("button").evaluateAll((els) => els.map((e) => e.getAttribute("aria-label")));
+
+  test("uncontrolled multiple: default and clicked items stay pressed across reverse and insert", async ({ page }) => {
+    await gotoHydrated(page, `${BASE_URL}/component/toggle_group/`);
+    await expect(multi(page, "italic")).toHaveAttribute("data-state", "on"); // default_value
+    await multi(page, "bold").click();
+    await expect(multi(page, "bold")).toHaveAttribute("data-state", "on");
+    await expect(multi(page, "underline")).toHaveAttribute("data-state", "off");
+
+    await frame(page).getByRole("button", { name: "Reverse order", exact: true }).click();
+    await expect.poll(() => order(page)).toEqual(["multi underline", "multi italic", "multi bold"]);
+    await expect(multi(page, "bold")).toHaveAttribute("data-state", "on");
+    await expect(multi(page, "italic")).toHaveAttribute("data-state", "on");
+    await expect(multi(page, "underline")).toHaveAttribute("data-state", "off");
+
+    await frame(page).getByRole("button", { name: "Insert first", exact: true }).click();
+    await expect.poll(() => order(page)).toEqual(["multi new1", "multi underline", "multi italic", "multi bold"]);
+    await expect(multi(page, "new1")).toHaveAttribute("data-state", "off");
+    await expect(multi(page, "bold")).toHaveAttribute("data-state", "on");
+    await expect(multi(page, "italic")).toHaveAttribute("data-state", "on");
+    await expect(multi(page, "underline")).toHaveAttribute("data-state", "off");
+
+    // Still toggles by value afterwards (multiple: several may be pressed).
+    await multi(page, "new1").click();
+    await expect(multi(page, "new1")).toHaveAttribute("data-state", "on");
+    await expect(multi(page, "bold")).toHaveAttribute("data-state", "on");
+  });
+
+  test("controlled single: the chosen value follows the item, replaces rather than adds", async ({ page }) => {
+    await gotoHydrated(page, `${BASE_URL}/component/toggle_group/`);
+    await expect(single(page, "italic")).toHaveAttribute("data-state", "on");
+    await frame(page).getByRole("button", { name: "Insert first", exact: true }).click();
+    await frame(page).getByRole("button", { name: "Reverse order", exact: true }).click();
+    await expect(single(page, "italic")).toHaveAttribute("data-state", "on");
+    await expect(single(page, "bold")).toHaveAttribute("data-state", "off");
+    await single(page, "bold").click();
+    await expect(single(page, "bold")).toHaveAttribute("data-state", "on");
+    await expect(single(page, "italic")).toHaveAttribute("data-state", "off");
+    await expect(frame(page).getByTestId("toggle-group-chosen")).toHaveText("Chosen: bold");
+    await frame(page).getByRole("button", { name: "Insert first", exact: true }).click();
+    await expect(single(page, "bold")).toHaveAttribute("data-state", "on");
+    await expect(single(page, "new2")).toHaveAttribute("data-state", "off");
+  });
+});

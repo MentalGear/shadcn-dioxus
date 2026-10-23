@@ -14,36 +14,45 @@ use dioxus_icons::lucide::Search;
 pub fn Demo() -> Element {
     rsx! {
         div { style: "display: flex; flex-direction: column; gap: 1rem; width: 100%; max-width: 24rem;",
-            InputGroup {
-                InputGroupAddon {
-                    Search {}
-                }
-                InputGroupInput {
-                    id: "input-addons-search",
-                    "aria-label": "Search the docs",
-                    placeholder: "Search the docs",
-                }
-            }
-            InputGroup {
-                InputGroupAddon { InputGroupText { "https://" } }
-                InputGroupInput {
-                    id: "input-addons-domain",
-                    "aria-label": "Website domain",
-                    placeholder: "example.com",
-                }
-                InputGroupAddon { align: InputGroupAlign::End,
-                    InputGroupText { ".com" }
+            div { style: "display: flex; flex-direction: column; gap: 0.5rem;",
+                p { style: "margin: 0; color: var(--dx-muted-foreground); font-size: var(--dx-text-sm);", "Leading icon addon" }
+                InputGroup {
+                    InputGroupAddon {
+                        Search {}
+                    }
+                    InputGroupInput {
+                        id: "input-addons-search",
+                        "aria-label": "Search the docs",
+                        placeholder: "Search the docs",
+                    }
                 }
             }
-            ButtonGroup { "aria-label": "Newsletter signup",
-                Input {
-                    id: "input-addons-subscribe",
-                    "aria-label": "Email address",
-                    placeholder: "you@example.com",
-                    r#type: "email",
-                    style: "flex: 1;",
+            div { style: "display: flex; flex-direction: column; gap: 0.5rem;",
+                p { style: "margin: 0; color: var(--dx-muted-foreground); font-size: var(--dx-text-sm);", "Text addons on both ends" }
+                InputGroup {
+                    InputGroupAddon { InputGroupText { "https://" } }
+                    InputGroupInput {
+                        id: "input-addons-domain",
+                        "aria-label": "Website domain",
+                        placeholder: "example.com",
+                    }
+                    InputGroupAddon { align: InputGroupAlign::End,
+                        InputGroupText { ".com" }
+                    }
                 }
-                Button { variant: ButtonVariant::Outline, "Subscribe" }
+            }
+            div { style: "display: flex; flex-direction: column; gap: 0.5rem;",
+                p { style: "margin: 0; color: var(--dx-muted-foreground); font-size: var(--dx-text-sm);", "A bare input joined to a button" }
+                ButtonGroup { "aria-label": "Newsletter signup",
+                    Input {
+                        id: "input-addons-subscribe",
+                        "aria-label": "Email address",
+                        placeholder: "you@example.com",
+                        r#type: "email",
+                        style: "flex: 1;",
+                    }
+                    Button { variant: ButtonVariant::Outline, "Subscribe" }
+                }
             }
         }
     }

@@ -1,0 +1,1 @@
+`hidden_until_found` keeps closed items mounted, so the browser's find-in-page and `#fragment` links can reach them. The match reveals the item and the accordion opens it. Try Ctrl+F for text inside a closed item.

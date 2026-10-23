@@ -27,7 +27,7 @@ fn StackButton() -> Element {
                 count += 1;
                 toast_api
                     .info(
-                        format!("Notification {count}"),
+                        format!("Notification #{count}"),
                         ToastOptions::new().duration(Duration::from_secs(60)),
                     );
             },

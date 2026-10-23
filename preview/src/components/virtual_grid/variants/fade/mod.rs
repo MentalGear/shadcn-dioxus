@@ -1,6 +1,21 @@
 use super::super::component::*;
 use dioxus::prelude::*;
 
+/// A demo caption: a title line and a one-sentence description.
+#[component]
+fn Caption(title: &'static str, children: Element) -> Element {
+    rsx! {
+        div { style: "display: flex; flex-direction: column; gap: 0.125rem;",
+            p { style: "margin: 0; color: var(--dx-foreground); font-size: var(--dx-text-sm); font-weight: 500;",
+                "{title}"
+            }
+            p { style: "margin: 0; color: var(--dx-muted-foreground); font-size: var(--dx-text-sm);",
+                {children}
+            }
+        }
+    }
+}
+
 /// `fade` on both layouts: `Y` on the wrapping gallery, `Both` on the two-axis data grid. The fade is a mask on the grid's own scroll container, driven by its
 /// scroll offset, so it follows the scrollbar whatever cells are mounted. A mask also fades the
 /// container's border, so the border sits on a wrapper and the grid drops its own.
@@ -8,6 +23,10 @@ use dioxus::prelude::*;
 pub fn Demo() -> Element {
     rsx! {
         div { style: "display: flex; flex-direction: column; gap: var(--dx-space-4); width: 100%;",
+            Caption {
+                title: "Wrapping gallery",
+                "ScrollFade::Y on a VirtualWrapGrid: it scrolls vertically, so the top and bottom edges fade."
+            }
             div {
                 "data-demo": "fade-wrap",
                 style: "border: 1px solid var(--dx-border); border-radius: var(--dx-radius-lg); overflow: hidden;",
@@ -26,6 +45,10 @@ pub fn Demo() -> Element {
                     "aria-label": "Tiles, faded at the scroll edges",
                     style: "height: 16rem; border: none; border-radius: 0;",
                 }
+            }
+            Caption {
+                title: "Two-axis grid",
+                "ScrollFade::Both on a VirtualGrid that scrolls rows and columns: all four edges fade, each only while there is more content past it."
             }
             div {
                 "data-demo": "fade-grid",

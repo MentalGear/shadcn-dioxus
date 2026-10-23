@@ -28,7 +28,9 @@
 //! copies verbatim, so the copied module keeps compiling with zero extra
 //! wiring in a consumer's project.
 
-pub use dioxus_primitives::data_view::{filter_rows, paginate, sort_rows, sort_rows_by, tri_state, SortDirection};
+pub use dioxus_primitives::data_view::{
+    filter_rows, paginate, sort_rows, sort_rows_by, tri_state, SortDirection,
+};
 
 /// Whether `needle` appears anywhere in `haystack`, case-insensitively,
 /// after trimming `needle`'s surrounding whitespace. This is the Data
