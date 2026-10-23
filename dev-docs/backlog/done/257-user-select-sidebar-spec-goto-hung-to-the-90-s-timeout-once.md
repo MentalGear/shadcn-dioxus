@@ -1,10 +1,10 @@
 ---
 id: 257
 title: "user-select.spec.ts /component/sidebar/ page.goto hung to the 90 s timeout once in the release suite"
-status: "OPEN (not reproducible: 1 failure in the batch-A release suite; 17 of 17 green since on release and…"
+status: "LANDED 2026-10-23 (branch claude/playwright-suite-infra): not reproduced; every gotoHydrated…"
 size: "S"
 area: playwright
-updated: 2026-10-20
+updated: 2026-10-23
 ---
 
 # Row 257: one unexplained `goto` hang on /component/sidebar/
@@ -15,7 +15,7 @@ Chunk 7 of the batch-A release suite (3fd7844b, served at :4830): `user-select.s
 
 ## Status / trigger
 
-OPEN (not reproducible: 1 failure in the batch-A release suite; 17 of 17 green since on release and debug builds of the batch and of main)
+**LANDED 2026-10-23 (branch `claude/playwright-suite-infra`): not reproduced; every `gotoHydrated` failure now names the requests still open, so a recurrence is diagnosable from its report**
 
 ## Size
 
@@ -30,3 +30,13 @@ S
 **Next step (only if it recurs).**
 
 Run the failing chunk with `DEBUG=pw:api` and keep the request log (`page.on("requestfailed"/"request")`) so the open request is named. Until then a single 90 s timeout in a 575-test chunk is load noise and is not worth a change.
+
+## Update 2026-10-23: the next step, by construction
+
+The test itself no longer exists (row 331 cut `user-select`'s sweep to 12 pages, without the sidebar). The class does:
+any `networkidle` that never arrives. Instead of waiting for a recurrence to run with `DEBUG=pw:api`,
+`playwright/hydration.ts`'s `gotoHydrated` records every request of every frame while it runs and, when the navigation,
+the `data-hydrated` wait or the redirect wait fails (the TEST timeout included), appends the requests that neither
+finished nor failed (method, resource type, frame, age, URL) to the error, or says no request was open.
+`goto-hydrated-open-requests.spec.ts` was red on the old helper and is green; a scratch run at a 3 s test timeout showed
+the list under Playwright's "Test timeout of 3000ms exceeded". Reopen with that list if it recurs.
