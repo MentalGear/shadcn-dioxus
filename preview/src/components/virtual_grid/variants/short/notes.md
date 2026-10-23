@@ -1,0 +1,1 @@
+A grid with fewer rows than fit in its box: five rows in 24rem. The scroll canvas is the rows' own height, and the empty space below them belongs to the scroll container, so the server's markup and the first client frame draw the same grid.

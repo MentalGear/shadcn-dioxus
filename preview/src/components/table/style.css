@@ -1,4 +1,7 @@
-/* Nova table (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css,
+/* The shared table look is the theme's `--dx-table-*` tokens (dx-components-theme.css), read by
+ * this sheet and by `virtual_grid/style.css`.
+ *
+ * Nova table (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css,
  * `.cn-table-*`): `w-full caption-bottom text-sm`; a row is `border-b
  * hover:bg-muted/50 data-[state=selected]:bg-muted` (the last body row has no
  * border); a head cell `h-10 px-2 text-left align-middle font-medium`, a cell
@@ -19,12 +22,12 @@
   width: 100%;
   border-collapse: collapse;
   caption-side: bottom;
-  font-size: var(--dx-text-sm);
+  font-size: var(--dx-table-font-size);
   line-height: calc(1.25 / 0.875);
 }
 
 .dx-table-row {
-  border-bottom: 1px solid var(--dx-border);
+  border-bottom: var(--dx-table-row-border);
   transition: background-color var(--dx-motion-duration-base) var(--dx-motion-ease);
 }
 
@@ -34,20 +37,20 @@
 
 @media (hover: hover) and (pointer: fine) {
   .dx-table-row:hover {
-    background-color: color-mix(in oklab, var(--dx-muted) 50%, transparent);
+    background-color: var(--dx-table-hover-background);
   }
 }
 
 .dx-table-row[data-state="selected"] {
-  background-color: var(--dx-muted);
+  background-color: var(--dx-table-selected-background);
 }
 
 .dx-table-head {
   overflow: hidden;
-  height: 2.5rem;
-  padding: 0 var(--dx-space-2);
+  height: var(--dx-table-head-height);
+  padding: 0 var(--dx-table-cell-padding);
   color: var(--dx-foreground);
-  font-weight: 500;
+  font-weight: var(--dx-table-head-weight);
   text-align: start;
   text-overflow: ellipsis;
   vertical-align: middle;
@@ -73,7 +76,7 @@
 
 .dx-table-cell {
   overflow: hidden;
-  padding: var(--dx-space-2);
+  padding: var(--dx-table-cell-padding);
   text-overflow: ellipsis;
   vertical-align: middle;
   white-space: nowrap;

@@ -137,3 +137,11 @@
 .dx-data-table-columns {
   margin-inline-start: auto;
 }
+
+/* The Grid layout's "No results." line (the Table layout puts it in a row). */
+.dx-data-table-empty {
+  margin: 0;
+  color: var(--dx-muted-foreground);
+  font-size: var(--dx-text-sm);
+  text-align: center;
+}
