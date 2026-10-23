@@ -9,6 +9,12 @@ fn row_title(idx: usize, rows: usize) -> String {
     format!("Row {} of {rows}", idx + 1)
 }
 
+/// Every fifth row is two lines tall while the estimate stays one line, so the placeholders'
+/// positions drift from the real rows the further down the list a match is.
+fn is_tall(idx: usize) -> bool {
+    idx % 5 == 4
+}
+
 #[component]
 pub fn Demo() -> Element {
     let mut rows = use_signal(|| COUNTS[0]);
@@ -16,7 +22,7 @@ pub fn Demo() -> Element {
     rsx! {
         div { class: "dx-virtual-list-demo", "data-vl-demo": "find-in-page",
             p { class: "dx-virtual-list-subtitle",
-                "Experimental: a windowed list that keeps each unmounted row's text in the DOM as a hidden=\"until-found\" placeholder. Search the page (Ctrl+F) for \"Row 7777 of\": the browser reveals the placeholder, and the list scrolls the real row into view."
+                "Experimental: a windowed list that keeps each unmounted row's text in the DOM as a hidden=\"until-found\" placeholder. Search the page (Ctrl+F) for \"Row 7777 of\": the browser reveals the placeholder, and the list scrolls the real row into view and flashes it."
             }
             style { r#".dx-virtual-list-container {{
   position: relative;
@@ -40,11 +46,24 @@ pub fn Demo() -> Element {
 
 .dx-virtual-list-find-row {{
   box-sizing: border-box;
-  height: 48px;
+  min-height: 48px;
   padding: 0.75rem 0.9rem;
   border-bottom: 1px solid var(--dx-border);
   color: var(--dx-foreground);
   font-size: 0.875rem;
+}}
+
+.dx-virtual-list-find-row small {{
+  display: block;
+  color: var(--dx-muted-foreground);
+}}
+
+[data-find-match] .dx-virtual-list-find-row {{
+  animation: dx-virtual-list-find-match 2s ease-out;
+}}
+
+@keyframes dx-virtual-list-find-match {{
+  from {{ background-color: var(--dx-accent); }}
 }}"# }
             VirtualList {
                 count: rows,
@@ -55,7 +74,12 @@ pub fn Demo() -> Element {
                 text_value: move |idx: usize| row_title(idx, rows()),
                 "aria-label": "Searchable windowed list",
                 render_item: move |idx: usize| rsx! {
-                    div { class: "dx-virtual-list-find-row", "{row_title(idx, rows())}" }
+                    div { class: "dx-virtual-list-find-row",
+                        "{row_title(idx, rows())}"
+                        if is_tall(idx) {
+                            small { "A taller row than the 48px estimate" }
+                        }
+                    }
                 },
             }
             div { style: "display: flex; flex-wrap: wrap; align-items: center; gap: var(--dx-space-2);",
