@@ -56,8 +56,8 @@ use dioxus_attributes::attributes;
 
 use crate::js_listener::{use_js_listeners, JsListeners};
 use crate::r#virtual::{
-    cv_chunks, engine_keys, measured_px, pin_in_flow, render_key, resolve_index,
-    use_virtual_bridge, Bridge, ChunkSkip, Engine, SizeEstimates, CHUNK_ROWS, DEFAULT_SIZE,
+    cv_chunks, engine_keys, pin_in_flow, render_key, resolve_index, use_virtual_bridge, Bridge,
+    ChunkSkip, Engine, SizeEstimates, CHUNK_ROWS, DEFAULT_SIZE,
 };
 pub use crate::r#virtual::{VirtualizeMode, DEFAULT_AUTO_THRESHOLD};
 use crate::scroll_area::use_scroll_fade;
@@ -352,7 +352,7 @@ fn VirtualListWindowed(props: ListBodyProps) -> Element {
     let onresize = move |idx| {
         move |event: Event<ResizeData>| {
             let rect = event.data().get_content_box_size().unwrap_or_default();
-            bridge.measure(idx, measured_px(rect.height));
+            bridge.measure_exact(idx, rect.height);
         }
     };
 

@@ -34,6 +34,9 @@ mod columns;
 #[path = "columns_menu.rs"]
 mod columns_menu;
 #[allow(dead_code)]
+#[path = "grid.rs"]
+mod grid;
+#[allow(dead_code)]
 #[path = "layout.rs"]
 mod layout;
 #[allow(dead_code)]
@@ -48,7 +51,8 @@ mod state;
 
 #[allow(unused_imports)]
 pub use columns::{
-    use_data_table, Column, ColumnAlign, DataTableModel, DataTableOptions, DataTableState, RowFn,
+    use_data_table, use_data_table_index, Column, ColumnAlign, DataTableIndex, DataTableModel,
+    DataTableOptions, DataTableState, RowFn, DEFAULT_GRID_COLUMN_WIDTH,
 };
 #[allow(unused_imports)]
 pub use columns_menu::{ColumnsMenuItem, DataTableColumnsMenu, DataTableColumnsMenuProps};
@@ -98,8 +102,49 @@ pub struct DataTableColumnHeaderProps {
     pub children: Element,
 }
 
-/// A sortable column header: a [`TableHead`] whose content is a ghost
-/// [`Button`] that toggles the column's sort and shows the current
+/// Props for [`DataTableSortButton`].
+#[derive(Props, Clone, PartialEq)]
+pub struct DataTableSortButtonProps {
+    /// This column's current sort direction, `None` when another column is sorted.
+    pub sorted: Option<SortDirection>,
+
+    /// Fired when the button is activated.
+    pub onclick: EventHandler<MouseEvent>,
+
+    /// The column's label.
+    pub children: Element,
+}
+
+/// The sort button of a column header: a ghost [`Button`] with the label and an icon for the
+/// direction. [`DataTableColumnHeader`] puts it in a `th`; the `Grid` layout puts it in a
+/// `columnheader` cell, so both sort the same way.
+#[component]
+pub fn DataTableSortButton(props: DataTableSortButtonProps) -> Element {
+    rsx! {
+        document::Link { rel: "stylesheet", href: asset!("/src/components/data_table/style.css") }
+        Button {
+            variant: ButtonVariant::Ghost,
+            size: ButtonSize::Sm,
+            class: "dx-data-table-column-header-button",
+            onclick: move |event| props.onclick.call(event),
+            {props.children}
+            match props.sorted {
+                Some(SortDirection::Ascending) => rsx! {
+                    ArrowUp { class: "dx-data-table-sort-icon", size: "16px" }
+                },
+                Some(SortDirection::Descending) => rsx! {
+                    ArrowDown { class: "dx-data-table-sort-icon", size: "16px" }
+                },
+                None => rsx! {
+                    ArrowUpDown { class: "dx-data-table-sort-icon", size: "16px" }
+                },
+            }
+        }
+    }
+}
+
+/// A sortable column header: a [`TableHead`] whose content is a [`DataTableSortButton`]
+/// that toggles the column's sort and shows the current
 /// direction, with `aria-sort` on the `th` itself (not the button) per the
 /// APG Table pattern. See [`DataTableColumnHeaderProps::sorted`] for the
 /// exact `aria-sort` value convention.
@@ -118,24 +163,7 @@ pub fn DataTableColumnHeader(props: DataTableColumnHeaderProps) -> Element {
         document::Link { rel: "stylesheet", href: asset!("/src/components/data_table/style.css") }
         TableHead {
             attributes: merged,
-            Button {
-                variant: ButtonVariant::Ghost,
-                size: ButtonSize::Sm,
-                class: "dx-data-table-column-header-button",
-                onclick: move |event| props.onclick.call(event),
-                {props.children}
-                match props.sorted {
-                    Some(SortDirection::Ascending) => rsx! {
-                        ArrowUp { class: "dx-data-table-sort-icon", size: "16px" }
-                    },
-                    Some(SortDirection::Descending) => rsx! {
-                        ArrowDown { class: "dx-data-table-sort-icon", size: "16px" }
-                    },
-                    None => rsx! {
-                        ArrowUpDown { class: "dx-data-table-sort-icon", size: "16px" }
-                    },
-                }
-            }
+            DataTableSortButton { sorted: props.sorted, onclick: move |event| props.onclick.call(event), {props.children} }
         }
     }
 }
@@ -301,6 +329,21 @@ pub fn DataTablePagination(props: DataTablePaginationProps) -> Element {
     }
 }
 
+/// How [`DataTable`] draws its rows. A choice, never automatic: the two have different keyboard
+/// and accessibility models, so the row count alone must not switch one for the other.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum DataTableLayout {
+    /// A real `<table>`, one page at a time (the default): every row of the page is in the DOM,
+    /// Tab walks its controls, find-in-page reaches every row on the page.
+    #[default]
+    Table,
+    /// A [`VirtualGrid`](crate::components::virtual_grid::VirtualGrid) with no pagination, for tens
+    /// of thousands of rows: only the rows in view exist, the arrow keys move between cells (one
+    /// tab stop), and the server renders the header only. Costs: no find-in-page across the
+    /// rows, screen readers see only the window (rows announce `n of N`), no `reorderable`.
+    Grid,
+}
+
 /// Props for [`DataTable`].
 #[derive(Props, Clone, PartialEq)]
 pub struct DataTableProps<T: Clone + PartialEq + 'static> {
@@ -340,6 +383,20 @@ pub struct DataTableProps<T: Clone + PartialEq + 'static> {
     #[props(default)]
     pub default_sort: Option<(String, SortDirection)>,
 
+    /// How the rows are drawn: [`DataTableLayout::Table`] (default, paged) or
+    /// [`DataTableLayout::Grid`] (windowed and scrolling, `page_sizes` and `reorderable` are
+    /// ignored).
+    #[props(default)]
+    pub layout: DataTableLayout,
+
+    /// The `Grid` layout's height, any CSS length: the grid scrolls inside it.
+    #[props(default = "24rem".to_string())]
+    pub grid_height: String,
+
+    /// The `Grid` layout's accessible name (a bare grid has none).
+    #[props(default = "Data".to_string())]
+    pub grid_label: String,
+
     /// Adds a leading drag-handle column (shadcn's `dashboard-01`) that reorders
     /// rows: pointer-drag the handle, or Space/Enter to lift, Up and Down to
     /// choose the slot, Space/Enter to drop, Escape to cancel. The order is the
@@ -371,9 +428,23 @@ pub struct DataTableProps<T: Clone + PartialEq + 'static> {
 /// the toolbar, the [`Table`] with sortable headers (`aria-sort` on the `th`),
 /// row selection with an all/some/none header checkbox, and the pagination
 /// bar, on top of [`use_data_table`]. Use the hook directly for a custom
-/// layout.
+/// layout. `layout: DataTableLayout::Grid` draws the same columns and state through a
+/// virtualized grid for very long data.
 #[component]
 pub fn DataTable<T: Clone + PartialEq + 'static>(props: DataTableProps<T>) -> Element {
+    match props.layout {
+        DataTableLayout::Table => rsx! {
+            DataTableTable::<T> { ..props }
+        },
+        DataTableLayout::Grid => rsx! {
+            grid::DataTableGrid::<T> { ..props }
+        },
+    }
+}
+
+/// The `Table` layout of [`DataTable`].
+#[component]
+fn DataTableTable<T: Clone + PartialEq + 'static>(props: DataTableProps<T>) -> Element {
     let options = DataTableOptions {
         page_size: props.page_sizes.first().copied().unwrap_or(usize::MAX),
         sort: props.default_sort.clone(),
@@ -473,7 +544,7 @@ pub fn DataTable<T: Clone + PartialEq + 'static>(props: DataTableProps<T>) -> El
                 }
             }
             for column in visible.iter() {
-                TableCell { key: "{column.id}", class: column.align.class(), {column.cell.call(row)} }
+                TableCell { key: "{column.id}", class: column.align.class().unwrap_or_default(), {column.cell.call(row)} }
             }
         }
     };
@@ -563,7 +634,9 @@ pub fn DataTable<T: Clone + PartialEq + 'static>(props: DataTableProps<T>) -> El
 fn column_header<T: Clone + 'static>(column: &Column<T>, model: &DataTableModel<T>) -> Element {
     let state = model.state;
     let id = column.id.clone();
-    let align = column.align.class();
+    // `unwrap_or_default`, not the `Option`: `merge_attributes` lets a `class: None` replace the
+    // base class (`dx-table-cell`, `dx-table-head`), so an unaligned cell lost the whole table look.
+    let align = column.align.class().unwrap_or_default();
     let style = column.width.as_ref().map(|w| format!("width: {w};"));
     if column.is_sortable() {
         rsx! {

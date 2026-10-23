@@ -1,10 +1,10 @@
 ---
 id: 362
 title: "Reorder gesture extracted, KeyOrder, DragAndDropList controlled mode with on_reorder"
-status: "BACKLOG (owner asked 2026-10-22 to deconstruct the collection model to its roots; design note…"
+status: "LANDED 2026-10-22 (batch 8, PR #135). BACKLOG (owner asked 2026-10-22 to deconstruct the collection…"
 size: "M."
 area: primitives
-updated: 2026-10-22
+updated: 2026-10-23
 ---
 
 # Row 362: Reorder gesture extracted, KeyOrder, DragAndDropList controlled mode with on_reorder
@@ -15,7 +15,7 @@ Migration step 4: one keyboard-accessible reorder gesture out of `drag_and_drop_
 
 ## Status / trigger
 
-BACKLOG (owner asked 2026-10-22 to deconstruct the collection model to its roots; design note [`research/collection-model-2026-10-22.md`](../research/collection-model-2026-10-22.md)). Order: 360, then 361 and 362 in parallel, then 363, then 341, then 342.
+**LANDED 2026-10-22 (batch 8, PR #135).** BACKLOG (owner asked 2026-10-22 to deconstruct the collection model to its roots; design note [`research/collection-model-2026-10-22.md`](../../research/collection-model-2026-10-22.md)). Order: 360, then 361 and 362 in parallel, then 363, then 341, then 342.
 
 ## Size
 

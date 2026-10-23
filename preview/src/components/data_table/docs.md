@@ -2,6 +2,7 @@ Data Table is a composition pattern, not a new primitive — the same architectu
 
 - **`Column<T>`** — an `id`, a header, a cell renderer `Fn(&T) -> Element`, and builders: `.sortable(|row| key)` (a typed key, `K: Ord`, so a sort can never name a column or type that does not exist), `.filterable(|row| text)`, `.width("8rem")`, `.align(ColumnAlign::End)`.
 - **`DataTable<T>`** — the component. It takes `rows`, `columns` and a `row_key` (a stable identity, so selection survives sorting, filtering and paging), and opt-in features: `selectable`, `filter_placeholder`, `page_sizes`, `default_sort`. Header and cell counts cannot drift apart, and `aria-sort` sits on the `th` (per the [APG Table pattern](https://www.w3.org/WAI/ARIA/apg/patterns/table/)) and `data-state="selected"` on the row without the page writing either.
+- **`use_data_table_index(rows, &columns, &row_key, options)`** — the same state with the derived `View` (indices and keys) in a memo instead of copied rows; what the Grid layout renders from.
 - **`use_data_table(rows, &columns, &row_key, options)`** — the state underneath, public for custom layouts. It owns sort, filter, page and selection and returns a `DataTableModel`: the derived `view` (page rows, keys, page count, counts, the header checkbox state) and `state`, a `Copy` handle of mutators (`toggle_sort`, `set_filter`, `set_page_size`, `next_page`, `set_selected`, `set_many_selected`) for event handlers.
 
 Sorting, filtering or changing the page size returns to page 1. A header activation sorts the column ascending, then flips direction; exactly one column carries the sort, as in the APG reference. The filter matches like shadcn's `includesString`: a case-insensitive substring match anywhere in the text of any `filterable` column, not just at the start. The header checkbox covers the current page; the footer reads "selected rows that pass the filter, across every page, of the filtered rows" (shadcn's count, so it never reads "3 of 1"); the selection itself also keeps rows the filter hides.
@@ -12,7 +13,16 @@ The state transitions are a pure, unit-tested state machine (`ViewState` and `de
 - `DataTableToolbar` — a text filter `Input` with an accessible name.
 - `DataTablePagination` — a "x of y row(s) selected" summary, a rows-per-page `Select`, a "Page n of m" readout, and Previous/Next `Button`s (disabled at either end).
 
-`DataTable` renders every row in the DOM, one page at a time. A virtualized layout for tens of thousands of rows is planned (backlog rows 343, 341, 342); it will take the same `Column<T>`.
+## Table or Grid layout
+
+`DataTable` draws its rows one of two ways, chosen with `layout`, never switched for you by the row count (the two have different keyboard and accessibility models):
+
+- **`DataTableLayout::Table`** (the default) is a real `<table>` one page at a time. Every row of the page is in the DOM, Tab walks the controls, find-in-page and the server's HTML reach every row on the page. Use it unless you have tens of thousands of rows.
+- **`DataTableLayout::Grid`** draws the same columns and the same state through [`VirtualGrid`](/component/virtual_grid/) with no pagination: the table scrolls, and only the rows in view (plus a few) exist. Use it for tens of thousands of rows. Sorting, filtering, selection (kept by `row_key`, so a selected row survives scrolling away and back, and a sort) and the Columns menu work the same; the header carries `aria-sort`, and the checkbox column is a control in a cell. Give each column a pixel width with `.grid_width(px)` (the Table layout takes the CSS `.width`), and the box a height with `grid_height`.
+
+The Grid layout's costs are the virtual grid's: no find-in-page across the rows, the server renders only the header (the rows appear when the page hydrates), screen readers see only the window (rows announce their position of the total), the arrow keys move between cells with one tab stop instead of Tab walking every control, and `page_sizes` and `reorderable` are ignored. The Grid layout reads rows by position from the derived indices (`use_data_table_index`), so it never copies the data; its header checkbox covers every row that passes the filter.
+
+Both layouts read one table look from the theme's `--dx-table-*` tokens (text size, cell padding, row border, header weight and height, hover and selected fill), so a row of either looks the same.
 
 ## Component Structure
 

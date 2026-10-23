@@ -687,6 +687,18 @@ html[data-theme="light"] [class~="dxc-system"] {
   --dx-menu-item-padding-block: var(--dx-space-1);
   --dx-menu-item-radius: var(--dx-radius-md);
   --dx-menu-item-gap: var(--dx-space-1-5);
+
+  /* The table look, once (row 342): `Table` (`table/style.css`) and `VirtualGrid`
+   * (`virtual_grid/style.css`) both read these, so a data table drawn through either cannot drift.
+   * Nova `.cn-table-*`: `text-sm`, a cell `p-2`, a row `border-b hover:bg-muted/50
+   * data-[state=selected]:bg-muted`, a head `h-10 font-medium`. */
+  --dx-table-font-size: var(--dx-text-sm);
+  --dx-table-cell-padding: var(--dx-space-2);
+  --dx-table-row-border: 1px solid var(--dx-border);
+  --dx-table-head-height: 2.5rem;
+  --dx-table-head-weight: 500;
+  --dx-table-hover-background: color-mix(in oklab, var(--dx-muted) 50%, transparent);
+  --dx-table-selected-background: var(--dx-muted);
 }
 
 /* ============================================================================

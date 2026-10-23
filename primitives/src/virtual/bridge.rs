@@ -142,9 +142,19 @@ impl Bridge<Engine> {
     /// Item `index` measured `measured` px along the axis; a size change above the viewport
     /// moves the scroll position by the same amount, so what the reader sees stays put.
     pub(crate) fn measure(self, index: usize, measured: u32) {
+        self.measure_with(|engine| engine.resize_item(index, measured));
+    }
+
+    /// `measure` for a size in px with its fraction: offsets use whole px, the canvas covers the
+    /// exact extent.
+    pub(crate) fn measure_exact(self, index: usize, exact: f64) {
+        self.measure_with(|engine| engine.resize_item_exact(index, exact));
+    }
+
+    fn measure_with(self, resize: impl FnOnce(&mut Engine) -> Option<i32>) {
         let mut engine = self.engine;
         let (adjustment, current) =
-            engine.with_mut(|engine| (engine.resize_item(index, measured), engine.scroll_offset()));
+            engine.with_mut(|engine| (resize(engine), engine.scroll_offset()));
         self.publish();
         if let Some(delta) = adjustment {
             self.set_scroll_top(corrected(current, delta));

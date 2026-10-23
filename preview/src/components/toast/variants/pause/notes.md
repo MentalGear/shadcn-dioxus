@@ -1,0 +1,1 @@
+Pause on hover and focus: the toast lasts 3 s, but while the pointer is over the toaster or focus is inside it the timer stops, and it resumes with the time that was left. Click the button, then hover the toast.

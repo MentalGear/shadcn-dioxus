@@ -1,0 +1,1 @@
+Pressed state follows an item's `value`, not its position. Two groups share one list, an uncontrolled multiple-select one and a controlled single-select one; reverse the list or insert an item first and the same items stay pressed.

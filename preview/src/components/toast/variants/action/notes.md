@@ -1,0 +1,1 @@
+A button with an action: `ToastOptions::action("Undo", ..)` adds a real button to the toast. Activating it runs the callback (the counter beside the button goes up) and dismisses the toast; the toast lasts 60 s so you can reach it with Tab after F6.

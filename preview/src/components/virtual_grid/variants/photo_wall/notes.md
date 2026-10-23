@@ -1,0 +1,1 @@
+90,000 generated photos in two layouts behind one toggle: a two-axis `VirtualGrid` of 300 by 300 square cells, or a `VirtualJustifiedGrid` that keeps each photo's aspect. The counter, drag-to-pan, minimap, random jump and the photo preview work in both; in the Grid layout a switch crops photos to fill their cells.

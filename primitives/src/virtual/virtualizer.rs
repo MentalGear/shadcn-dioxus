@@ -52,10 +52,12 @@ pub(crate) struct RenderKey {
 pub(crate) struct Plan {
     pub(crate) items: Vec<VirtualItem>,
     pub(crate) top_offset: u32,
+    /// The extent of the items alone, never `max`ed with the viewport: the viewport is `0` on the
+    /// server and measured on the client, so a canvas that depended on it drew a short list
+    /// differently in the server's markup and the first client frame (backlog row 368). A consumer
+    /// that fills its box does it in CSS (`min-width: 100%` on the columns axis); on the rows
+    /// axis the space below the last row is the scroll container's own.
     pub(crate) canvas_height: u32,
-    /// The extent of the items alone (no `max` with the viewport): what a consumer that fills
-    /// the viewport in CSS (`min-width: 100%`) needs, equal on the server and on the client.
-    pub(crate) content_size: u32,
 }
 
 /// The scroll total held fixed while the user scrolls.
@@ -82,6 +84,11 @@ pub(crate) struct Engine {
     drawn: Option<RenderKey>,
     /// The `buffer` of the last render (a buffer change always re-renders, so this is current).
     buffer: usize,
+    /// For each measured row, its exact size minus the whole px the index holds for it (see
+    /// `resize_item_exact`), and the sum of those. Offsets stay on whole px, so the canvas is
+    /// padded by the rounded-up sum: it always contains the content it holds.
+    fractions: HashMap<usize, f64>,
+    fraction_sum: f64,
 }
 
 impl Engine {
@@ -94,6 +101,8 @@ impl Engine {
             scroll_adjustments: 0,
             deferred_adjustments: 0,
             frozen_total: None,
+            fractions: HashMap::new(),
+            fraction_sum: 0.0,
             rendered: None,
             drawn: None,
             buffer: 8,
@@ -105,6 +114,9 @@ impl Engine {
     pub(crate) fn sync(&mut self, estimates: &SizeEstimates) {
         if self.index.sync(estimates) {
             self.rendered = None;
+            let count = self.index.count();
+            self.fractions.retain(|&i, _| i < count);
+            self.fraction_sum = self.fractions.values().sum();
         }
     }
 
@@ -152,6 +164,31 @@ impl Engine {
     /// Handle a row's new measured height. Returns the scroll adjustment to apply, if any.
     ///
     /// `O(log N)`: one position lookup and one tree update, with no copy of the geometry.
+    /// `resize_item` for an item measured at `exact` px (a fraction of a px is common). The index
+    /// keeps the rounded whole px, so offsets stay faithful; the remainder is remembered so the
+    /// canvas can cover the content (three 66.1875px rows are 198.56px, not 198).
+    pub(crate) fn resize_item_exact(&mut self, index: usize, exact: f64) -> Option<i32> {
+        let adjustment = self.resize_item(index, super::bridge::measured_px(exact));
+        if let Some(item) = self.index.item(index) {
+            let stored = self.index.measured_size(index).unwrap_or(item.size());
+            let exact = if exact.is_nan() { 0.0 } else { exact.max(1.0) };
+            let fraction = exact - f64::from(stored);
+            let old = if fraction.abs() < 1e-9 {
+                self.fractions.remove(&index)
+            } else {
+                self.fractions.insert(index, fraction)
+            };
+            self.fraction_sum += fraction - old.unwrap_or(0.0);
+        }
+        adjustment
+    }
+
+    /// Px the canvas adds to the index's total so it holds its rows' exact extent.
+    fn canvas_padding(&self) -> u32 {
+        // 0.01 px of float noise never earns a whole px.
+        (self.fraction_sum - 0.01).max(0.0).ceil() as u32
+    }
+
     pub(crate) fn resize_item(&mut self, index: usize, new_size: u32) -> Option<i32> {
         let item = self.index.item(index)?;
         let cached = self.index.measured_size(index);
@@ -190,10 +227,11 @@ impl Engine {
 
     /// The total scroll size; the frozen value while scrolling.
     fn total_size(&self) -> u32 {
-        match self.frozen_total {
+        let total = match self.frozen_total {
             Some(frozen) if frozen.count == self.index.count() => frozen.total,
             _ => self.index.total(),
-        }
+        };
+        total.saturating_add(self.canvas_padding())
     }
 
     /// The rows in view, `(first, last)` inclusive, from the current scroll state. `None` until
@@ -249,7 +287,7 @@ impl Engine {
             top_offset: self
                 .rendered
                 .map_or(0, |(first, _)| self.index.start(first)),
-            canvas_height: self.total_size().max(self.viewport),
+            canvas_height: self.total_size(),
         }
     }
 
@@ -274,7 +312,6 @@ impl Engine {
             items,
             top_offset: key.top_offset,
             canvas_height: key.canvas_height,
-            content_size: self.total_size(),
         }
     }
 
@@ -378,13 +415,46 @@ mod tests {
     }
 
     #[test]
+    fn the_canvas_covers_fractional_rows_while_offsets_stay_on_whole_px() {
+        let mut engine = Engine::new();
+        engine.sync(&SizeEstimates::evaluate(3, Some(&|_| 68)));
+        let _ = engine.scroll(0, 400, false);
+        for i in 0..3 {
+            engine.resize_item_exact(i, 66.1875);
+        }
+        // Offsets: 66px apart (nearest), not drifting by the fraction.
+        assert_eq!(engine.item(2).unwrap().start(), 132);
+        // Canvas: 3 x 66.1875 = 198.5625 px of content, so 199, never 198.
+        assert_eq!(engine.plan(8).canvas_height, 199);
+        // Whole-px rows add nothing.
+        let mut whole = Engine::new();
+        whole.sync(&SizeEstimates::evaluate(3, Some(&|_| 68)));
+        let _ = whole.scroll(0, 400, false);
+        for i in 0..3 {
+            whole.resize_item_exact(i, 66.0);
+        }
+        assert_eq!(whole.plan(8).canvas_height, 198);
+    }
+
+    #[test]
     fn frozen_total_is_ignored_when_the_count_changes() {
         let mut engine = Engine::new();
         engine.sync(&uniform(100, 50));
         engine.scroll(1000, 600, true);
         assert_eq!(engine.plan(8).canvas_height, 5000);
         engine.sync(&uniform(4, 50));
-        assert_eq!(engine.plan(8).canvas_height, 600); // max(200, viewport)
+        assert_eq!(engine.plan(8).canvas_height, 200); // the rows' extent, not the viewport's
+    }
+
+    #[test]
+    fn a_short_list_has_one_canvas_before_and_after_the_viewport_is_known() {
+        // Row 368: the server has no viewport (0), the client measures one; four rows of 50px
+        // are 200px on both, whatever the box that holds them.
+        let mut engine = Engine::new();
+        engine.sync(&uniform(4, 50));
+        let server = engine.plan(8).canvas_height;
+        engine.scroll(0, 600, false);
+        assert_eq!((server, engine.plan(8).canvas_height), (200, 200));
     }
 
     #[test]

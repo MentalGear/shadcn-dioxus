@@ -1,0 +1,1 @@
+A single-select group of 4rem "Aa" tiles, controlled through `value` and `on_value_change` and set up like shadcn's font-weight selector (`outline`, `size: lg`, `spacing: 2`, inside a `Field`). The handler keeps the old choice when you press the pressed tile again, and the chosen `font-*` class is named underneath.

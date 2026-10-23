@@ -1,10 +1,10 @@
 ---
 id: 359
 title: "JS tooling: pnpm in playwright/ and preview/ with minimumReleaseAge, exact pins and install scripts off"
-status: "BACKLOG (owner approved 2026-10-22, decision card in the \"Switching npm to Bun\" thread; background…"
+status: "LANDED 2026-10-22 (batch 7, PR #134); owner raised minimumReleaseAge to 30 days in batch 9 (PR…"
 size: "S-M, about half a day."
 area: tooling
-updated: 2026-10-22
+updated: 2026-10-23
 ---
 
 # Row 359: JS tooling: pnpm in playwright/ and preview/ with minimumReleaseAge and install scripts off
@@ -15,7 +15,7 @@ Harden the supply chain of the two JS folders (`playwright/`, `preview/`) by rep
 
 ## Status / trigger
 
-**BACKLOG (owner approved 2026-10-22, decision card in the "Switching npm to Bun" thread; background: the Bun evaluation of 2026-10-21 in the project files).** Own merge batch after batch 6, kept apart from other tooling changes because it touches session-setup.sh, run-gates.sh, two workflows and the docs.
+**LANDED 2026-10-22 (batch 7, PR #134); owner raised minimumReleaseAge to 30 days in batch 9 (PR #136).** **BACKLOG (owner approved 2026-10-22, decision card in the "Switching npm to Bun" thread; background: the Bun evaluation of 2026-10-21 in the project files).** Own merge batch after batch 6, kept apart from other tooling changes because it touches session-setup.sh, run-gates.sh, two workflows and the docs.
 
 ## Size
 

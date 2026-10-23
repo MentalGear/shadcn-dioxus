@@ -1,0 +1,1 @@
+`TableRows` windows the body: the counts either side of `Auto`'s 1,000-row threshold switch between a windowed and a fully mounted body. The container is a scrollable, labelled region with a sticky header and fixed column layout, and `row_selected` marks the third row.

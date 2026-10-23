@@ -14,8 +14,10 @@ const goto = (page: Page) =>
 
 const table = (page: Page) => page.locator('#component-preview-frame [data-slot="table"]');
 const filterInput = (page: Page) => page.getByRole("textbox", { name: "Filter by email" });
-const selectAllCheckbox = (page: Page) => page.getByRole("checkbox", { name: "Select all" });
-const rowCheckboxes = (page: Page) => page.getByRole("checkbox", { name: /^Select row / });
+// Scoped to the main demo's frame: the page also holds the `large` Grid demo, whose header and rows carry the same names.
+const mainDemo = (page: Page) => page.locator("#component-preview-frame");
+const selectAllCheckbox = (page: Page) => mainDemo(page).getByRole("checkbox", { name: "Select all" });
+const rowCheckboxes = (page: Page) => mainDemo(page).getByRole("checkbox", { name: /^Select row / });
 const pagination = (page: Page) => page.locator('[data-slot="data-table-pagination"]');
 const selectedSummary = (page: Page) => pagination(page).locator(".dx-data-table-pagination-selected");
 const pageReadout = (page: Page) => pagination(page).locator(".dx-data-table-pagination-page");
@@ -282,7 +284,7 @@ type Box = { x: number; y: number; width: number; height: number };
 // changes, so it waits for the checkbox's (and its ancestors') transitions to finish first (`readAtRest`).
 const layoutBoxes = (page: Page, label: string) =>
   readAtRest(
-    page.getByRole("checkbox", { name: label, exact: true }),
+    mainDemo(page).getByRole("checkbox", { name: label, exact: true }),
     (checkbox) => {
       const box = (el: Element | null): Box => {
         if (!el) throw new Error("missing element");
@@ -399,7 +401,7 @@ test("toggling a checkbox moves and resizes nothing", async ({ page }) => {
   expect(labels).toHaveLength(6);
 
   for (const label of labels) {
-    const checkbox = page.getByRole("checkbox", { name: label, exact: true });
+    const checkbox = mainDemo(page).getByRole("checkbox", { name: label, exact: true });
     const before = await layoutBoxes(page, label);
     await checkbox.click();
     await expect(checkbox).not.toHaveAttribute("aria-checked", "false");
