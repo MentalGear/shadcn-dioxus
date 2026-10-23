@@ -82,6 +82,9 @@ test.describe("windowed find-in-page placeholders (row 153 prototype)", () => {
   test("the find bar's highlight is not painted on a placeholder", async ({ page }) => {
     await gotoHydrated(page, URL);
     await expect(row(page, 0)).toBeVisible();
+    // An engine without `::search-text` has no rule to check: its highlight is the UA's and cannot be styled.
+    const supported = await page.evaluate(() => CSS.supports("selector(::search-text)"));
+    test.skip(!supported, "::search-text needs Chromium 144+");
     // `::search-text` (Chromium 144+): the active match is the placeholder, which never lines up
     // with the real row's own text, so its highlight is transparent; the real row carries
     // `data-find-match` instead.
