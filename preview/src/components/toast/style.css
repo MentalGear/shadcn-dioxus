@@ -17,23 +17,32 @@
    * (`* -1 * var(--toast-edge)`), as in Sonner. Only `data-toaster-side="top"` below flips it. */
   --toast-edge: 1;
 
-  /* How much room a toast takes in the pile: nothing while collapsed (the toasts overlap), one toast
-   * expanded. A toast that leaves, or arrives, takes this plus the gap away from, or adds it to, the
-   * pile's height (`li` below); the two vars say on which margin, which depends on the pile's
+  /* The ONE vertical size model of the pile (a Sonner stack, laid out in flow).
+   *
+   * A toast is as tall as its content plus a constant padding: no fixed height. The primitive measures
+   * each toast's content (a ResizeObserver, primitives/src/toast.rs `TOAST_SIZE_JS`) and writes that
+   * toast's own height as `--toast-height` on its list item, and the FRONT toast's as
+   * `--front-toast-height` on the list. Collapsed, a toast behind the front one is as tall as the front
+   * one (Sonner's `--front-toast-height`) with its content hidden, so the pile looks even whatever each
+   * holds; expanded, every toast has its own height. A toast that is not measured yet is simply auto-sized
+   * and not overlapped (`--toast-box` below is invalid until `--toast-height` exists). */
+  --toast-gap: var(--dx-space-3);
+
+  /* 1 while the pile is expanded (hover, focus), else 0: how much of a toast's own height the toast
+   * takes in the pile (nothing collapsed, where the toasts overlap; all of it expanded). A toast that
+   * leaves, or arrives, takes this times its height plus the gap away from, or adds it to, the pile's
+   * height (`.dx-toast-slot` below); the two vars say on which margin, which depends on the pile's
    * direction (bottom toaster: the far side of an item is its top). */
-  --toast-footprint: 0px;
-  --toast-slot-shrink: calc(-1 * (var(--toast-footprint) + var(--dx-space-3)));
-  --toast-shrink-start: var(--toast-slot-shrink);
-  --toast-shrink-end: 0px;
+  --toast-expanded: 0;
 }
 
 .dx-toast-container:focus-within {
-  --toast-footprint: var(--dx-space-16);
+  --toast-expanded: 1;
 }
 
 @media (hover: hover) and (pointer: fine) {
   .dx-toast-container:hover {
-    --toast-footprint: var(--dx-space-16);
+    --toast-expanded: 1;
   }
 }
 
@@ -104,13 +113,16 @@
 
   --toast-list-direction: column;
   --toast-edge: -1;
+}
+
+.dx-toast-container[data-toaster-side="top"] .dx-toast-slot {
   --toast-shrink-start: 0px;
   --toast-shrink-end: var(--toast-slot-shrink);
 }
 
 .dx-toast-container[data-toaster-side="top"] .dx-toast {
   margin-top: 0;
-  margin-bottom: calc(-1 * var(--dx-space-16));
+  margin-bottom: calc(-1 * var(--toast-box));
 }
 
 .dx-toast-container[data-toaster-side="top"]:focus-within .dx-toast {
@@ -128,7 +140,7 @@
   flex-direction: var(--toast-list-direction, column-reverse);
   padding: 0;
   margin: 0;
-  gap: var(--dx-space-3);
+  gap: var(--toast-gap);
 }
 
 /* One list item per toast: its slot in the pile. A toast that starts leaving (`data-removed`, set on
@@ -137,12 +149,19 @@
  * toast itself, which keeps its box, fades toward the edge. The toasts that stay are laid out from
  * the slots still present, so they glide into the freed room instead of jumping when the closed toast
  * unmounts. A new toast's slot grows in the same way (`dx-toast-slot-in`), so the pile makes room as
- * the toast enters. The same rule serves collapsed and expanded piles through `--toast-footprint`. */
+ * the toast enters. The same rule serves collapsed and expanded piles through `--toast-expanded`. */
 .dx-toast-container li {
   display: flex;
 }
 
 .dx-toast-slot {
+  /* What leaving or arriving takes from the pile: this toast's own footprint (its height when the pile
+   * is expanded, nothing collapsed) plus the gap. `--toast-height` is the primitive's measurement of
+   * this very toast, so a three-line toast frees three lines' room. Unmeasured, only the gap. */
+  --toast-slot-shrink: calc(-1 * (var(--toast-expanded) * var(--toast-height, 0px) + var(--toast-gap)));
+  --toast-shrink-start: var(--toast-slot-shrink);
+  --toast-shrink-end: 0px;
+
   animation: dx-toast-slot-in var(--dx-motion-duration-slow) var(--dx-motion-ease-out);
   transition: margin-block var(--dx-motion-duration-slow) var(--dx-motion-ease);
 }
@@ -159,17 +178,30 @@
 }
 
 .dx-toast {
+  /* The height this toast takes in the pile. Its own (`--toast-height`, measured) when it is the front
+   * toast or the pile is expanded; behind the front toast and collapsed, the front toast's, so the pile
+   * is even. Invalid (auto height, no overlap) until the primitive has measured. */
+  --toast-box: var(--toast-height);
+
+  /* What animates when the pile restacks: the toast's height (the front toast changed) and its margin
+   * (expanding, collapsing). Off until the toast has been measured and a frame has passed
+   * (`data-sized`, written with the measurement), so the switch from the unmeasured layout to the
+   * measured one never plays as a glide. */
+  --toast-box-transition: height var(--dx-motion-duration-slow) var(--dx-motion-ease), margin-top var(--dx-motion-duration-slow) var(--dx-motion-ease);
+
+  /* One padding for every toast, whatever it holds (Sonner's 16px): the box is the content plus this. */
+  --toast-pad: var(--dx-space-4);
+
   z-index: calc(var(--toast-count) - var(--toast-index));
-  display: flex;
+  display: block;
   overflow: hidden;
   width: 18rem;
-  height: var(--dx-space-16);
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--dx-space-3) var(--dx-space-4);
+  height: var(--toast-box, auto);
+  box-sizing: border-box;
+  padding: var(--toast-pad);
   border: 1px solid var(--dx-border);
   border-radius: var(--dx-radius-2xl);
-  margin-top: calc(-1 * var(--dx-space-16));
+  margin-top: calc(-1 * var(--toast-box));
   animation: dx-toast-slide-in var(--dx-motion-duration-slow) var(--dx-motion-ease-out);
   box-shadow: var(--dx-shadow-lg);
   filter: var(--light, none)
@@ -183,7 +215,7 @@
     calc(100% - var(--toast-index) * 5%),
     calc(100% - var(--toast-index) * 2%)
   );
-  transition: transform var(--dx-motion-duration-slow) var(--dx-motion-ease), translate var(--dx-motion-duration-slow) var(--dx-motion-ease), margin-top var(--dx-motion-duration-slow) var(--dx-motion-ease), opacity var(--dx-motion-duration-slow) var(--dx-motion-ease), filter var(--dx-motion-duration-slow) var(--dx-motion-ease);
+  transition: transform var(--dx-motion-duration-slow) var(--dx-motion-ease), translate var(--dx-motion-duration-slow) var(--dx-motion-ease), var(--toast-box-transition), opacity var(--dx-motion-duration-slow) var(--dx-motion-ease), filter var(--dx-motion-duration-slow) var(--dx-motion-ease);
 
   /* rtl-physical: the swipe offset is a screen-space distance toward the nearest edge, signed by the gesture itself (it reads the toaster's side, RTL included).
      The y offset adds the slot shift (a hidden or closing toast's displacement, below) to the swipe. */
@@ -198,6 +230,21 @@
   pointer-events: none;
 
   --toast-hidden: 1;
+}
+
+.dx-toast-slot:not([data-sized="true"]) > .dx-toast {
+  --toast-box-transition: height 0s, margin-top 0s;
+}
+
+/* Collapsed, every toast behind the front one is as tall as the front one and shows nothing of its own
+ * content: only its edge peeks out above the pile, whatever it holds. The expanded rules below give
+ * each toast its own height and content back. */
+.dx-toast:not([data-top]) {
+  --toast-box: var(--front-toast-height, var(--toast-height));
+}
+
+.dx-toast:not([data-top]) .dx-toast-body {
+  opacity: 0;
 }
 
 /* A queued toast waits at the far end of the EXPANDED pile, shifted away from the toaster's edge; when a
@@ -254,16 +301,28 @@
 }
 
 .dx-toast-container:focus-within .dx-toast {
+  --toast-box: var(--toast-height);
+
   margin-top: 0;
   filter: brightness(1);
   transform: scale(calc(100%));
 }
 
+.dx-toast-container:focus-within .dx-toast .dx-toast-body {
+  opacity: 1;
+}
+
 @media (hover: hover) and (pointer: fine) {
   .dx-toast-container:hover .dx-toast {
+    --toast-box: var(--toast-height);
+
     margin-top: 0;
     filter: brightness(1);
     transform: scale(calc(100%));
+  }
+
+  .dx-toast-container:hover .dx-toast .dx-toast-body {
+    opacity: 1;
   }
 }
 
@@ -352,9 +411,20 @@
   }
 }
 
+/* The toast's content row: the ONE box the primitive measures (`data-toast-body`). Its height is the
+ * content's, so it carries no padding and no margin of its own; the toast's padding goes around it. */
+.dx-toast-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: opacity var(--dx-motion-duration-slow) var(--dx-motion-ease);
+}
+
 .dx-toast-content {
+  min-width: 0;
   flex: 1;
   margin-inline-end: var(--dx-space-2);
+  overflow-wrap: anywhere;
   transition: filter var(--dx-motion-duration-slow) var(--dx-motion-ease);
 }
 
