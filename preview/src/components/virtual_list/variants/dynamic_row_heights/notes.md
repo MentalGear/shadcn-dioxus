@@ -1,0 +1,1 @@
+Rows whose heights depend on their content (0 to 20 sentences), with no `estimate_size`: the list measures each row as it renders and adapts its size estimate, and the scrollbar stays stable while it learns.

@@ -46,8 +46,19 @@
  * more content; scrolling fades the start edge in and, at the end, the end edge
  * sharpens. No overflow, no fade. Put the border/background on a wrapper and the
  * class on the inner scroller, so the mask dissolves the content and not the
- * card. A visible scrollbar fades with the content; pair it with
- * `scrollbar-width: none` to hide it.
+ * card. A classic (space-taking) scrollbar is NOT faded: the mask is built so the
+ * scrollbar gutters stay opaque and only the content area dissolves (see "The mask
+ * is a stack of layers" below). An overlay scrollbar (macOS and iOS, 0px wide)
+ * sits on top of the content, inside the content area, and fades with it; pair the
+ * fade with `scrollbar-width: none` to hide any scrollbar.
+ *
+ *   --dx-scrollbar-inline-size            width of the vertical scrollbar's gutter
+ *   --dx-scrollbar-block-size             height of the horizontal scrollbar's
+ *                                         gutter
+ *   Both are measured and written by the scroller's own script (`use_scroll_fade`
+ *   in `primitives/src/scroll_area.rs`, one ResizeObserver, which also drives the
+ *   edges where scroll-driven animations are missing); with no script they stay
+ *   0px and the scrollbar fades with the content, as it did before.
  *
  * In Rust: `ScrollArea`, `VirtualList` and `MessageScrollerViewport` take a
  * `fade: ScrollFade` prop (`None`, `Y`, `X`, `Both`, `Top`, `Bottom`, `Start`, `End`: one
@@ -224,8 +235,8 @@
   );
 
   /* stylelint-disable-next-line property-no-vendor-prefix -- Safari before 15.4 reads only the prefixed mask-image; dropping it would lose the scroll fade there */
-  -webkit-mask-image: var(--dx-scroll-fade-mask, var(--dx-scroll-fade-block));
-  mask-image: var(--dx-scroll-fade-mask, var(--dx-scroll-fade-block));
+  -webkit-mask-image: var(--dx-scroll-fade-mask, var(--dx-scroll-fade-solid), var(--dx-scroll-fade-block));
+  mask-image: var(--dx-scroll-fade-mask, var(--dx-scroll-fade-solid), var(--dx-scroll-fade-block));
 }
 
 .dx-scroll-fade-x {
@@ -238,8 +249,8 @@
   );
 
   /* stylelint-disable-next-line property-no-vendor-prefix -- Safari before 15.4 reads only the prefixed mask-image; dropping it would lose the scroll fade there */
-  -webkit-mask-image: var(--dx-scroll-fade-mask, var(--dx-scroll-fade-inline));
-  mask-image: var(--dx-scroll-fade-mask, var(--dx-scroll-fade-inline));
+  -webkit-mask-image: var(--dx-scroll-fade-mask, var(--dx-scroll-fade-solid), var(--dx-scroll-fade-inline));
+  mask-image: var(--dx-scroll-fade-mask, var(--dx-scroll-fade-solid), var(--dx-scroll-fade-inline));
 }
 
 .dx-scroll-fade-x:where([dir="rtl"], [dir="rtl"] *) {
@@ -272,8 +283,18 @@
   );
 
   /* stylelint-disable-next-line property-no-vendor-prefix -- Safari before 15.4 reads only the prefixed mask-image; dropping it would lose the scroll fade there */
-  -webkit-mask-image: var(--dx-scroll-fade-mask, var(--dx-scroll-fade-block), var(--dx-scroll-fade-inline));
-  mask-image: var(--dx-scroll-fade-mask, var(--dx-scroll-fade-block), var(--dx-scroll-fade-inline));
+  -webkit-mask-image: var(
+    --dx-scroll-fade-mask,
+    var(--dx-scroll-fade-solid),
+    var(--dx-scroll-fade-block),
+    var(--dx-scroll-fade-inline)
+  );
+  mask-image: var(
+    --dx-scroll-fade-mask,
+    var(--dx-scroll-fade-solid),
+    var(--dx-scroll-fade-block),
+    var(--dx-scroll-fade-inline)
+  );
 }
 
 .dx-scroll-fade-xy:where([dir="rtl"], [dir="rtl"] *) {
@@ -286,9 +307,9 @@
   );
 }
 
-/* One edge: the utility sets the mask itself. */
+/* One edge: the utility sets its gradient; the mask below stacks it on the solid layers. */
 .dx-scroll-fade-t {
-  --dx-scroll-fade-mask: linear-gradient(
+  --dx-scroll-fade-edge: linear-gradient(
     to bottom,
     transparent 0,
     #000 var(--dx-scroll-fade-t, 0px),
@@ -297,7 +318,7 @@
 }
 
 .dx-scroll-fade-b {
-  --dx-scroll-fade-mask: linear-gradient(
+  --dx-scroll-fade-edge: linear-gradient(
     to bottom,
     #000 0,
     #000 calc(100% - var(--dx-scroll-fade-b, 0px)),
@@ -306,7 +327,7 @@
 }
 
 .dx-scroll-fade-l {
-  --dx-scroll-fade-mask: linear-gradient(
+  --dx-scroll-fade-edge: linear-gradient(
     to right,
     transparent 0,
     #000 var(--dx-scroll-fade-s, 0px),
@@ -315,7 +336,7 @@
 }
 
 .dx-scroll-fade-r {
-  --dx-scroll-fade-mask: linear-gradient(
+  --dx-scroll-fade-edge: linear-gradient(
     to right,
     #000 0,
     #000 calc(100% - var(--dx-scroll-fade-e, 0px)),
@@ -324,7 +345,7 @@
 }
 
 .dx-scroll-fade-s {
-  --dx-scroll-fade-mask: linear-gradient(
+  --dx-scroll-fade-edge: linear-gradient(
     to right,
     transparent 0,
     #000 var(--dx-scroll-fade-s, 0px),
@@ -333,7 +354,7 @@
 }
 
 .dx-scroll-fade-e {
-  --dx-scroll-fade-mask: linear-gradient(
+  --dx-scroll-fade-edge: linear-gradient(
     to right,
     #000 0,
     #000 calc(100% - var(--dx-scroll-fade-e, 0px)),
@@ -342,7 +363,7 @@
 }
 
 .dx-scroll-fade-s:where([dir="rtl"], [dir="rtl"] *) {
-  --dx-scroll-fade-mask: linear-gradient(
+  --dx-scroll-fade-edge: linear-gradient(
     to left,
     transparent 0,
     #000 var(--dx-scroll-fade-s, 0px),
@@ -351,7 +372,7 @@
 }
 
 .dx-scroll-fade-e:where([dir="rtl"], [dir="rtl"] *) {
-  --dx-scroll-fade-mask: linear-gradient(
+  --dx-scroll-fade-edge: linear-gradient(
     to left,
     #000 0,
     #000 calc(100% - var(--dx-scroll-fade-e, 0px)),
@@ -366,11 +387,30 @@
 .dx-scroll-fade-s,
 .dx-scroll-fade-e {
   /* stylelint-disable-next-line property-no-vendor-prefix -- Safari before 15.4 reads only the prefixed mask-image; dropping it would lose the scroll fade there */
-  -webkit-mask-image: var(--dx-scroll-fade-mask);
-  mask-image: var(--dx-scroll-fade-mask);
+  -webkit-mask-image: var(--dx-scroll-fade-mask, var(--dx-scroll-fade-solid), var(--dx-scroll-fade-edge));
+  mask-image: var(--dx-scroll-fade-mask, var(--dx-scroll-fade-solid), var(--dx-scroll-fade-edge));
 }
 
-/* The mask is the intersection of the two edge gradients. */
+/* The mask is a stack of layers (top first), so that only the CONTENT area dissolves:
+ *
+ *   1. a solid layer over the whole border box          (exclude)
+ *   2. a solid layer over the content area               (exclude)
+ *   3. the block gradient, or the inline one, or the edge gradient
+ *   4. (both axes) the inline gradient                   (3 intersect 4)
+ *
+ * The content area is the padding box minus the two scrollbar gutters, as wide and as tall
+ * as `--dx-scrollbar-inline-size`/`-block-size` say, and sits at the inline start (so at the
+ * right in RTL, where a classic scrollbar moves to the left). The gradients are sized to it,
+ * which also makes the fade depth a share of what the reader sees, not of the box plus the
+ * scrollbar. Folded from the bottom with each layer's own `mask-composite`: with g the
+ * gradient (or two gradients intersected) inside the content area and 0 outside it,
+ * layer 2 gives 1 - g there and 0 elsewhere, and layer 1 (xor with 1) turns that into g
+ * inside the content area and 1 everywhere else: the scrollbar gutters and any border stay
+ * fully opaque. Where there is no gutter (no overflow, `scrollbar-width: none`, an overlay
+ * scrollbar, or no script to measure it) the content area is the padding box and nothing
+ * outside it is painted but a border, so the mask is the plain gradient it was before. The
+ * lists have four entries for the four layers; a one-gradient mask has three and the
+ * extra entry is ignored. The mask is `none` under `.dx-scroll-fade-none`. */
 .dx-scroll-fade,
 .dx-scroll-fade-y,
 .dx-scroll-fade-x,
@@ -381,14 +421,41 @@
 .dx-scroll-fade-r,
 .dx-scroll-fade-s,
 .dx-scroll-fade-e {
-  /* stylelint-disable-next-line property-no-vendor-prefix -- the prefixed mask-composite takes the legacy
-   * `source-in` keyword, which the standard property rejects (Safari before 15.4); where both apply, the
-   * standard `intersect` below sets the same operation */
-  -webkit-mask-composite: source-in;
-  mask-composite: intersect;
-  /* stylelint-disable-next-line property-no-vendor-prefix -- Safari before 15.4 reads only the prefixed mask-repeat */
+  --dx-scroll-fade-solid: linear-gradient(#000, #000), linear-gradient(#000, #000);
+  --dx-internal-scroll-fade-area: calc(100% - var(--dx-scrollbar-inline-size, 0px))
+    calc(100% - var(--dx-scrollbar-block-size, 0px));
+  --dx-internal-scroll-fade-area-x: 0%;
+
+  /* stylelint-disable property-no-vendor-prefix -- Safari before 15.4 reads only the prefixed mask-* longhands,
+   * and the prefixed mask-composite takes the legacy keywords (`xor` = exclude, `source-in` = intersect),
+   * which the standard property rejects; where both apply the standard line after each sets the same thing */
+  -webkit-mask-clip: border-box, padding-box, padding-box, padding-box;
+  mask-clip: border-box, padding-box, padding-box, padding-box;
+  -webkit-mask-composite: xor, xor, source-in, source-in;
+  mask-composite: exclude, exclude, intersect, intersect;
+  -webkit-mask-origin: border-box, padding-box, padding-box, padding-box;
+  mask-origin: border-box, padding-box, padding-box, padding-box;
+  -webkit-mask-position: 0 0, var(--dx-internal-scroll-fade-area-x) 0, var(--dx-internal-scroll-fade-area-x) 0, var(--dx-internal-scroll-fade-area-x) 0;
+  mask-position: 0 0, var(--dx-internal-scroll-fade-area-x) 0, var(--dx-internal-scroll-fade-area-x) 0, var(--dx-internal-scroll-fade-area-x) 0;
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%, var(--dx-internal-scroll-fade-area), var(--dx-internal-scroll-fade-area), var(--dx-internal-scroll-fade-area);
+  mask-size: 100% 100%, var(--dx-internal-scroll-fade-area), var(--dx-internal-scroll-fade-area), var(--dx-internal-scroll-fade-area);
+  /* stylelint-enable property-no-vendor-prefix */
+}
+
+/* A classic scrollbar moves to the left in RTL, so the content area hugs the right edge. */
+.dx-scroll-fade:where([dir="rtl"], [dir="rtl"] *),
+.dx-scroll-fade-y:where([dir="rtl"], [dir="rtl"] *),
+.dx-scroll-fade-x:where([dir="rtl"], [dir="rtl"] *),
+.dx-scroll-fade-xy:where([dir="rtl"], [dir="rtl"] *),
+.dx-scroll-fade-t:where([dir="rtl"], [dir="rtl"] *),
+.dx-scroll-fade-b:where([dir="rtl"], [dir="rtl"] *),
+.dx-scroll-fade-l:where([dir="rtl"], [dir="rtl"] *),
+.dx-scroll-fade-r:where([dir="rtl"], [dir="rtl"] *),
+.dx-scroll-fade-s:where([dir="rtl"], [dir="rtl"] *),
+.dx-scroll-fade-e:where([dir="rtl"], [dir="rtl"] *) {
+  --dx-internal-scroll-fade-area-x: 100%;
 }
 
 /* Scroll-aware: each fade is driven by the scroller's own scroll position.

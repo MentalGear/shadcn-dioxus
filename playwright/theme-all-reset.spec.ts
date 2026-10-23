@@ -201,7 +201,21 @@ for (const which of Object.keys(BEFORE)) {
         o.rect = `${r2(r.width)}x${r2(r.height)}`;
         return o;
       }, props);
-      expect(got).toEqual(BEFORE[which]);
+      // The slider thumb's border is the focus-ring colour token, which the golden recorded as the old default
+      // blue (rgb(43, 127, 255)); it is now shadcn's grey, so the border is compared to the token itself and
+      // every other property to the golden (`all: unset` equivalence is about the rest).
+      const expected: Record<string, string> = { ...BEFORE[which] };
+      if (which === "slider-thumb") {
+        expected["border-top-color"] = await page.evaluate(() => {
+          const probe = document.createElement("i");
+          probe.style.color = "var(--dx-ring-color)";
+          document.body.append(probe);
+          const c = getComputedStyle(probe).color;
+          probe.remove();
+          return c;
+        });
+      }
+      expect(got).toEqual(expected);
     });
   });
 }

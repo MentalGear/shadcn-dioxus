@@ -142,6 +142,7 @@ gates=(
   "check-dynamic-style-shorthand|scripts/check-dynamic-style-shorthand.sh"
   "check-virtual-docs-parity|scripts/check-virtual-docs-parity.sh"
   "check-backlog-index|scripts/check-backlog-index.sh"
+  "check-supply-chain-doc|scripts/check-supply-chain-doc.sh"
   "check-lane-lock|scripts/check-lane-lock.sh"
   "check-slow-spec-budget|scripts/check-slow-spec-budget.sh"
   "check-docs-no-demo-list|scripts/check-docs-no-demo-list.sh"

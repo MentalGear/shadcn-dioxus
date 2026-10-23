@@ -168,14 +168,15 @@ test.describe("VirtualGrid fade (shared with VirtualList and ScrollArea)", () =>
     await expect(grid).toHaveClass(/dx-virtual-grid/); // merged, not replaced
     await expect(grid.locator('[data-grid-cell="0:0"]')).toBeVisible({ timeout: 60_000 });
 
-    // One mask of two intersected layers: the block gradient and the inline gradient.
+    // One mask of four layers (dx-effects.css, "The mask is a stack of layers"): two solid ones that keep the
+    // scrollbar gutters opaque, then the block gradient and the inline gradient, intersected.
     const mask = await grid.evaluate((n) => {
       const cs = getComputedStyle(n);
       return { image: cs.maskImage || cs.webkitMaskImage || "", composite: cs.maskComposite };
     });
-    expect((mask.image.match(/linear-gradient/g) ?? []).length).toBe(2);
+    expect((mask.image.match(/linear-gradient/g) ?? []).length).toBe(4);
     expect(mask.image).toContain("to right"); // the inline layer; the block layer is the default direction, to bottom
-    expect(mask.composite).toMatch(/^intersect(, intersect)*$/); // one operation per layer
+    expect(mask.composite).toMatch(/^exclude, exclude, intersect(, intersect)*$/); // one operation per layer
 
     // At the origin: top and inline-start crisp, bottom and inline-end faded.
     await scrollBothTo(grid, "start", "start");
@@ -207,7 +208,7 @@ test.describe("VirtualGrid fade (shared with VirtualList and ScrollArea)", () =>
       wrapper.removeAttribute("dir");
       return mask;
     });
-    expect((rtl.match(/linear-gradient/g) ?? []).length).toBe(2);
+    expect((rtl.match(/linear-gradient/g) ?? []).length).toBe(4); // two solid gutter layers and the two fades
     expect(rtl).toContain("to left");
     expect(rtl).not.toContain("to right");
   });

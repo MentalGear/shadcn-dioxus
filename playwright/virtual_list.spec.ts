@@ -95,10 +95,10 @@ test("scrollHeight remains stable during continuous scroll", async ({ page }) =>
   await testScrollHeightStability(page, 100);
 });
 
-// Test with random_heights variant which has highly variable item sizes
+// Test with dynamic_row_heights variant which has highly variable item sizes
 // This reproduces production failure where adaptive estimation struggles
-test("scrollHeight stable with random heights variant", async ({ page }) => {
-  await gotoHydrated(page, `${BASE_URL}/component/block/?name=virtual_list&variant=random_heights&`, {
+test("scrollHeight stable with dynamic row heights variant", async ({ page }) => {
+  await gotoHydrated(page, `${BASE_URL}/component/block/?name=virtual_list&variant=dynamic_row_heights&`, {
     timeout: 20 * 60 * 1000,
   });
 
@@ -109,7 +109,7 @@ test("scrollHeight stable with random heights variant", async ({ page }) => {
   const firstCard = page.getByRole("heading", { level: 3 }).first();
   const cardText = await firstCard.textContent();
   console.log("First card text:", cardText);
-  // Random heights variant shows "X repeats" in the heading
+  // Dynamic row heights variant shows "X repeats" in the heading
   expect(cardText, "Variant should show 'repeats' count").toContain("repeats");
 
   // Start scrolling immediately - don't wait for measurements
@@ -149,12 +149,12 @@ test("scrollHeight stable with random heights variant", async ({ page }) => {
   const maxHeight = Math.max(...scrollHeights);
   const heightVariance = maxHeight - minHeight;
 
-  console.log(`Random heights - scrollHeight range: ${minHeight} - ${maxHeight} (variance: ${heightVariance}px)`);
+  console.log(`Dynamic row heights - scrollHeight range: ${minHeight} - ${maxHeight} (variance: ${heightVariance}px)`);
   console.log(`Measurements:`, measurements.map((m, i) =>
     `step ${i + 1}: scrollTop=${m.scrollTop}, scrollHeight=${m.scrollHeight}`
   ).join('\n'));
 
-  // With random heights and poor early estimates, we intentionally DON'T freeze
+  // With dynamic row heights and poor early estimates, we intentionally DON'T freeze
   // because a bad frozen value causes worse UX (sudden jumps) than gradual drift.
   // The adaptive estimation will improve as more items are measured, and future
   // scrolls will be stable once enough items are measured (≥20 or ≥10%).
@@ -223,7 +223,7 @@ test("resize churn while scrolling does not panic (holds no borrow across resize
   page.on("console", (msg) => consoleMessages.push(msg.text()));
   page.on("pageerror", (err) => consoleMessages.push(`pageerror: ${err.message}`));
 
-  await gotoHydrated(page, `${BASE_URL}/component/block/?name=virtual_list&variant=random_heights&`, {
+  await gotoHydrated(page, `${BASE_URL}/component/block/?name=virtual_list&variant=dynamic_row_heights&`, {
     timeout: 20 * 60 * 1000,
   });
 
