@@ -1,10 +1,10 @@
 ---
 id: 361
 title: "Renderer identity: item_key on VirtualList, TableRows and VirtualGrid, engine sizes keyed by item"
-status: "BACKLOG (owner asked 2026-10-22 to deconstruct the collection model to its roots; design note…"
+status: "LANDED 2026-10-22 (batch 8, PR #135). BACKLOG (owner asked 2026-10-22 to deconstruct the collection…"
 size: "M."
 area: primitives
-updated: 2026-10-22
+updated: 2026-10-23
 ---
 
 # Row 361: Renderer identity: item_key on VirtualList, TableRows and VirtualGrid, engine sizes keyed by item
@@ -15,7 +15,7 @@ Migration step 3: every windowed renderer tracks items by position today (DOM ke
 
 ## Status / trigger
 
-BACKLOG (owner asked 2026-10-22 to deconstruct the collection model to its roots; design note [`research/collection-model-2026-10-22.md`](../research/collection-model-2026-10-22.md)). Order: 360, then 361 and 362 in parallel, then 363, then 341, then 342.
+**LANDED 2026-10-22 (batch 8, PR #135).** BACKLOG (owner asked 2026-10-22 to deconstruct the collection model to its roots; design note [`research/collection-model-2026-10-22.md`](../../research/collection-model-2026-10-22.md)). Order: 360, then 361 and 362 in parallel, then 363, then 341, then 342.
 
 ## Size
 
