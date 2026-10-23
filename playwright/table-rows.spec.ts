@@ -23,6 +23,21 @@ async function open(page: Page) {
 }
 
 test.describe("TableRows", () => {
+  // Row 369: rows measured with a fraction. The rows sit in flow at their exact height, so the
+  // bottom spacer is the exact rest: at the end it is empty, not the canvas's rounded-up padding.
+  test("rows with a fractional height: the spacers add up to the rows' exact extent", async ({ page }) => {
+    await open(page);
+    await page.addStyleTag({ content: `tr[data-virtual-index] { height: 50.1875px !important; }` });
+    await expect.poll(() => rows(page).first().evaluate((el) => el.getBoundingClientRect().height)).toBe(50.1875);
+    const bottomSpacer = body(page).locator('tr[data-virtual-spacer="bottom"]');
+    await expect(async () => {
+      await scroller(page).evaluate((el) => (el.scrollTop = 1e9));
+      await expect(rows(page).last()).toHaveAttribute("data-virtual-index", "19999", { timeout: 1000 });
+      const spacer = await bottomSpacer.evaluate((el) => el.getBoundingClientRect().height);
+      expect(spacer).toBeLessThan(0.01);
+    }).toPass({ timeout: 30_000 });
+  });
+
   test("Auto windows 20,000 rows: a handful in the DOM, spacers, row and table ARIA", async ({ page }) => {
     await open(page);
     const n = await rows(page).count();

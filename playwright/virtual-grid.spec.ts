@@ -266,6 +266,32 @@ test.describe("gallery (items wrap into rows)", () => {
   });
 });
 
+// Row 369: a row's measured height keeps its fraction. The canvas once summed whole px, so rows of
+// 66.1875px ended up to a px below it (a short grid's box then overflowed by 1px); now it holds the
+// remainders, rounded up.
+test("gallery: rows with a fractional height end inside the canvas", async ({ page }) => {
+  await gotoHydrated(page, PAGE_URL);
+  const grid = gallery(page);
+  await expect(grid.locator('[data-grid-index="0"]')).toBeVisible();
+  await page.addStyleTag({
+    content: `[data-virtual-grid] > div > [role="row"] { height: 66.1875px !important; overflow: hidden; }`,
+  });
+  await grid.scrollIntoViewIfNeeded();
+  const overhang = () =>
+    grid.evaluate((el) => {
+      const canvas = el.querySelector(":scope > div")!.getBoundingClientRect();
+      const rows = [...el.querySelectorAll(':scope > div > [role="row"]')];
+      const last = rows[rows.length - 1].getBoundingClientRect();
+      return { index: rows[rows.length - 1].getAttribute("aria-rowindex"), over: last.bottom - canvas.bottom };
+    });
+  await expect(async () => {
+    await scrollGrid(grid, 1e9, 0);
+    const { index, over } = await overhang();
+    expect(index).toBe("1250");
+    expect(over).toBeLessThanOrEqual(0.01);
+  }).toPass({ timeout: 15000 });
+});
+
 // Scroll chaining: at a grid's top or bottom edge the wheel must scroll the page (the grid once set
 // `overscroll-behavior: contain` and trapped it); only the inline axis stays contained.
 for (const [name, pick] of [["data grid", dataGrid], ["gallery", gallery]] as const) {

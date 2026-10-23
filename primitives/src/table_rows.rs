@@ -35,7 +35,7 @@ use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 
 use crate::r#virtual::{
-    engine_keys, measured_px, render_key, use_virtual_bridge, Bridge, Engine, SizeEstimates,
+    engine_keys, render_key, use_virtual_bridge, Bridge, Engine, SizeEstimates,
 };
 pub use crate::r#virtual::{VirtualizeMode, DEFAULT_AUTO_THRESHOLD};
 use crate::{merge_attributes, use_unique_id};
@@ -252,7 +252,7 @@ fn TableRowsWindowed(props: BodyProps) -> Element {
     let onresize = move |idx| {
         move |event: Event<ResizeData>| {
             let rect = event.data().get_border_box_size().unwrap_or_default();
-            bridge.measure(idx, measured_px(rect.height));
+            bridge.measure_exact(idx, rect.height);
         }
     };
 
@@ -263,11 +263,7 @@ fn TableRowsWindowed(props: BodyProps) -> Element {
         engine.with_mut(|engine| {
             engine.sync(&estimates);
             let plan = engine.plan(buffer());
-            let end = plan
-                .items
-                .last()
-                .map_or(plan.top_offset, |l| l.start() + l.size());
-            let bottom = plan.canvas_height.saturating_sub(end);
+            let bottom = engine.flow_bottom(&plan);
             (plan.items, plan.top_offset, bottom)
         })
     };

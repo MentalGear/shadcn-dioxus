@@ -1090,6 +1090,8 @@ impl LocalDateExt for time::OffsetDateTime {
 /// Rules:
 /// - Later lists win for the same (name, namespace) pair.
 /// - `class` is concatenated with a single space separator (trimmed); the volatility flag is OR-ed.
+///   A later `AttributeValue::None` or empty `class` (a themed wrapper forwarding an unset
+///   `Option<&str>` class) is ignored instead of replacing the earlier one.
 /// - `style` is folded the same way, as CSS declarations: earlier declarations first, then the
 ///   later ones (each side trimmed, a missing `;` between them supplied), so a later list can
 ///   override individual properties but never silently drops the earlier list's other
@@ -1146,16 +1148,7 @@ pub fn merge_attributes(mut lists: Vec<Vec<Attribute>>) -> Vec<Attribute> {
                     .find(|a| a.namespace == attr.namespace)
                 {
                     if attr.name == "class" {
-                        let was_volatile = existing.volatile;
-                        *existing = match (&existing.value, &attr.value) {
-                            (Text(a), Text(b)) => Attribute {
-                                name: attr.name,
-                                namespace: attr.namespace,
-                                volatile: was_volatile || attr.volatile,
-                                value: Text(join_class(a, b)),
-                            },
-                            _ => attr,
-                        };
+                        fold_class_into(existing, attr);
                     } else if attr.name == "style" {
                         fold_style_into(existing, attr);
                     } else if let (
@@ -1324,6 +1317,23 @@ fn join_style(a: &str, b: &str) -> String {
     }
 }
 
+/// Fold a later `class` into the earlier one: two texts join; an unset later class
+/// (`class: None`, e.g. a wrapper forwarding an `Option<&str>`) leaves the earlier one alone,
+/// as an empty text already does (row 370).
+fn fold_class_into(existing: &mut Attribute, attr: Attribute) {
+    use dioxus_core::AttributeValue::None as NoValue;
+    match (&existing.value, &attr.value) {
+        (Text(a), Text(b)) => {
+            let value = join_class(a, b);
+            existing.volatile |= attr.volatile;
+            existing.value = Text(value);
+        }
+        (_, NoValue) => {}
+        // Nothing to fold into: the later value wins, as for any other attribute.
+        _ => *existing = attr,
+    }
+}
+
 fn join_class(a: &str, b: &str) -> String {
     let (a, b) = (a.trim(), b.trim());
     if !a.is_empty() && !b.is_empty() {
@@ -1486,6 +1496,41 @@ mod tests {
         ]);
         assert_eq!(adopted.len(), 1);
         assert_eq!(get_value(&adopted[0]), "color: red;");
+    }
+
+    /// Row 370: an absent or empty `class` never replaces the one already there, so a themed
+    /// wrapper that forwards an `Option<&str>` class as `class: None` keeps its base class.
+    #[test]
+    fn class_merge_ignores_a_later_none_or_empty_and_adopts_a_later_value_over_none() {
+        let none = |name: &'static str| Attribute {
+            name,
+            namespace: None,
+            volatile: false,
+            value: dioxus_core::AttributeValue::None,
+        };
+        let kept = merge_attributes(vec![
+            vec![attr("class", "dx-table-cell")],
+            vec![none("class")],
+        ]);
+        assert_eq!(kept.len(), 1);
+        assert_eq!(get_value(&kept[0]), "dx-table-cell");
+        let adopted = merge_attributes(vec![
+            vec![none("class")],
+            vec![attr("class", "dx-table-cell")],
+        ]);
+        assert_eq!(adopted.len(), 1);
+        assert_eq!(get_value(&adopted[0]), "dx-table-cell");
+        let empty = merge_attributes(vec![
+            vec![attr("class", "dx-table-cell")],
+            vec![attr("class", "")],
+        ]);
+        assert_eq!(empty.len(), 1);
+        assert_eq!(get_value(&empty[0]), "dx-table-cell");
+        let style_empty = merge_attributes(vec![
+            vec![attr("style", "color: red;")],
+            vec![attr("style", "")],
+        ]);
+        assert_eq!(get_value(&style_empty[0]), "color: red;");
     }
 
     #[test]

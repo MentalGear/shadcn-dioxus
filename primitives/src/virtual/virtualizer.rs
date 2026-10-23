@@ -161,9 +161,6 @@ impl Engine {
         self.scroll_offset
     }
 
-    /// Handle a row's new measured height. Returns the scroll adjustment to apply, if any.
-    ///
-    /// `O(log N)`: one position lookup and one tree update, with no copy of the geometry.
     /// `resize_item` for an item measured at `exact` px (a fraction of a px is common). The index
     /// keeps the rounded whole px, so offsets stay faithful; the remainder is remembered so the
     /// canvas can cover the content (three 66.1875px rows are 198.56px, not 198).
@@ -189,7 +186,11 @@ impl Engine {
         (self.fraction_sum - 0.01).max(0.0).ceil() as u32
     }
 
-    pub(crate) fn resize_item(&mut self, index: usize, new_size: u32) -> Option<i32> {
+    /// Handle a row's new measured height in whole px. Returns the scroll adjustment to apply,
+    /// if any. Private: renderers measure through `resize_item_exact`, which keeps the fraction.
+    ///
+    /// `O(log N)`: one position lookup and one tree update, with no copy of the geometry.
+    fn resize_item(&mut self, index: usize, new_size: u32) -> Option<i32> {
         let item = self.index.item(index)?;
         let cached = self.index.measured_size(index);
 
@@ -315,6 +316,31 @@ impl Engine {
         }
     }
 
+    /// The bottom spacer, in px, for a renderer whose mounted items sit in flow at their exact
+    /// size (`TableRows`' `<tr>`s), where the canvas's rounded-up padding would add a blank px:
+    /// the exact extent below the last mounted item, i.e. the canvas without its padding but
+    /// with every remainder, less `end` and the remainders the mounted items already occupy.
+    /// So a short body whose rows are all mounted is exactly its rows' height (row 369).
+    pub(crate) fn flow_bottom(&self, plan: &Plan) -> f64 {
+        let end = plan
+            .items
+            .last()
+            .map_or(plan.top_offset, |last| last.start() + last.size());
+        let mounted: f64 = plan
+            .items
+            .iter()
+            .filter_map(|item| self.fractions.get(&item.index()))
+            .sum();
+        let whole = plan.canvas_height.saturating_sub(self.canvas_padding());
+        let bottom = f64::from(whole) + self.fraction_sum - f64::from(end) - mounted;
+        // Float noise below 0.01 px is no spacer.
+        if bottom < 0.01 {
+            0.0
+        } else {
+            bottom
+        }
+    }
+
     /// Item `index` at its current position, whether or not it is mounted: what a consumer
     /// needs to draw one extra item outside the window (the grid's focused cell).
     pub(crate) fn item(&self, index: usize) -> Option<VirtualItem> {
@@ -332,6 +358,8 @@ impl Engine {
     /// items). The next [`sync`](Self::sync) rebuilds the index from the estimates alone.
     pub(crate) fn forget_measurements(&mut self) {
         self.index = SizeIndex::new(SizeEstimates::evaluate(0, None), HashMap::new());
+        self.fractions.clear();
+        self.fraction_sum = 0.0;
         self.rendered = None;
     }
 
@@ -434,6 +462,55 @@ mod tests {
             whole.resize_item_exact(i, 66.0);
         }
         assert_eq!(whole.plan(8).canvas_height, 198);
+    }
+
+    #[test]
+    fn flow_bottom_holds_the_exact_rest_and_nothing_for_a_fully_mounted_body() {
+        // A short body: all three rows mounted in flow at 66.1875px, so no spacer at all (the
+        // canvas's padding px would be a blank px under the last row).
+        let mut short = Engine::new();
+        short.sync(&SizeEstimates::evaluate(3, Some(&|_| 68)));
+        let _ = short.scroll(0, 400, false);
+        for i in 0..3 {
+            short.resize_item_exact(i, 66.1875);
+        }
+        let plan = short.plan(8);
+        assert_eq!(plan.items.len(), 3);
+        assert_eq!(short.flow_bottom(&plan), 0.0);
+        // A long body: top spacer + the mounted rows at their exact size + the bottom spacer is
+        // the exact extent of every row.
+        let mut long = Engine::new();
+        long.sync(&uniform(100, 50));
+        let _ = long.scroll(0, 100, false);
+        for i in 0..4 {
+            long.resize_item_exact(i, 66.1875);
+        }
+        let plan = long.plan(0);
+        let mounted: f64 = plan
+            .items
+            .iter()
+            .map(|item| if item.index() < 4 { 66.1875 } else { 50.0 })
+            .sum();
+        let flow = f64::from(plan.top_offset) + mounted + long.flow_bottom(&plan);
+        assert!(
+            (flow - (4.0 * 66.1875 + 96.0 * 50.0)).abs() < 1e-9,
+            "{flow}"
+        );
+    }
+
+    #[test]
+    fn forget_measurements_drops_the_fractions_too() {
+        // The grid forgets its rows on a column change; a stale remainder would pad the canvas
+        // of rows that are no longer measured.
+        let mut engine = Engine::new();
+        engine.sync(&SizeEstimates::evaluate(3, Some(&|_| 68)));
+        let _ = engine.scroll(0, 400, false);
+        for i in 0..3 {
+            engine.resize_item_exact(i, 66.1875);
+        }
+        engine.forget_measurements();
+        engine.sync(&SizeEstimates::evaluate(3, Some(&|_| 68)));
+        assert_eq!(engine.plan(8).canvas_height, 204);
     }
 
     #[test]
