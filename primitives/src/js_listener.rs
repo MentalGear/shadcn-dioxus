@@ -31,6 +31,13 @@
 //! `listen` ignores a missing target (a `getElementById` that found nothing) and a call after
 //! the teardown (a `requestAnimationFrame` that fires late).
 //!
+//! `listen` returns `off`, which removes that one registration early (idempotent; the teardown
+//! skips it afterwards). That is for a listener narrower than the script: the `window`
+//! `pointermove`/`pointerup` of one drag, installed at its `pointerdown` and removed when it ends
+//! (`drawer.rs`, the carousel's drag), or a pending `{ once: true }` listener a newer request
+//! cancels. A `{ once: true }` registration is also forgotten when it fires, so
+//! `window.__dxJsListeners.live` stays exact.
+//!
 //! `scripts/check-js-listeners.sh` fails on a raw `addEventListener` in any Rust, JS or HTML
 //! source of `primitives/` and `preview/` that neither lives in this file nor carries a
 //! `listener-ok: <reason>` marker (a listener that genuinely lives as long as the page).
@@ -72,13 +79,22 @@ const __dxBlocking = { wheel: 1, mousewheel: 1, touchstart: 1, touchmove: 1, DOM
 const __dxReg = (window.__dxJsListeners = window.__dxJsListeners || { n: 0, live: new Map() });
 const cleanup = (fn) => { if (__dxDone) fn(); else __dxOff.push(fn); };
 const listen = (target, type, handler, options) => {
-    if (!target || __dxDone) return;
+    if (!target || __dxDone) return () => {};
     const o = typeof options === 'boolean' ? { capture: options } : Object.assign({}, options);
     if (o.passive === undefined && __dxBlocking[type]) o.passive = true;
-    target.addEventListener(type, handler, o);
     const id = ++__dxReg.n;
+    let live = true;
+    const off = () => {
+        if (!live) return;
+        live = false;
+        target.removeEventListener(type, h, o);
+        __dxReg.live.delete(id);
+    };
+    const h = o.once ? (e) => { off(); return handler(e); } : handler;
+    target.addEventListener(type, h, o);
     __dxReg.live.set(id, type);
-    __dxOff.push(() => { target.removeEventListener(type, handler, o); __dxReg.live.delete(id); });
+    __dxOff.push(off);
+    return off;
 };
 "#;
 
@@ -160,6 +176,16 @@ impl JsListeners {
     }
 }
 
+impl JsListeners {
+    /// The script's channel, for a script that also takes commands after it started
+    /// (`message_scroller.rs`: the controller's `end`/`start`/`message` commands). Messages sent
+    /// through it are read by the body's own `await dioxus.recv()`; the body must return when
+    /// told to stop, so the teardown that follows can run.
+    pub(crate) fn eval(&self) -> Eval {
+        self.eval
+    }
+}
+
 impl Drop for JsListeners {
     fn drop(&mut self) {
         let _ = self.eval.send(TEARDOWN);
@@ -190,6 +216,16 @@ mod tests {
         assert!(TEARDOWN
             .chars()
             .all(|c| c.is_ascii_alphanumeric() || c == '_'));
+    }
+
+    /// `listen` hands back an `off` for an early removal, and `{ once: true }` registrations
+    /// unregister themselves when they fire (row 167: per-drag and per-request listeners inside
+    /// a longer-lived script).
+    #[test]
+    fn listen_returns_an_early_off_and_forgets_fired_once_listeners() {
+        assert!(PRELUDE.contains("return off;"));
+        assert!(PRELUDE.contains("if (!target || __dxDone) return () => {};"));
+        assert!(PRELUDE.contains("o.once ? (e) => { off(); return handler(e); } : handler"));
     }
 
     /// The scroll-blocking events default to passive in `listen`; the set must cover exactly the
