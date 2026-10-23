@@ -365,13 +365,13 @@ pub fn VirtualGrid(props: VirtualGridProps) -> Element {
 
     rsx! {
         div { onkeydown, ..merged,
-            div { style: "position: relative; width: {width}px;",
+            div { style: "position: relative; width: {width}px; min-width: 100%;",
                 if let Some(render_header) = render_header {
                     div {
                         role: "row",
                         "aria-rowindex": 1,
                         "data-grid-header": "true",
-                        style: "position: sticky; top: 0; z-index: 2; display: flex; width: {width}px; height: {header}px;",
+                        style: "position: sticky; top: 0; z-index: 2; display: flex; width: {width}px; min-width: 100%; height: {header}px;",
                         if sticky == 1 {
                             div {
                                 role: "columnheader",
@@ -399,7 +399,7 @@ pub fn VirtualGrid(props: VirtualGridProps) -> Element {
                         }
                     }
                 }
-                div { style: "position: relative; width: {width}px; height: {plan.body_height}px;",
+                div { style: "position: relative; width: {width}px; min-width: 100%; height: {plan.body_height}px;",
                     for row in plan.rows {
                         div {
                             key: "{render_key(row_key, row.index())}",
@@ -407,7 +407,7 @@ pub fn VirtualGrid(props: VirtualGridProps) -> Element {
                             "aria-rowindex": row.index() + 1 + header_rows,
                             "aria-selected": selected_token(row_selected, row_key, row.index()),
                             "data-state": selected_state(row_selected, row_key, row.index()),
-                            style: "position: absolute; inset-inline-start: 0; top: {row.start()}px; display: flex; width: {width}px; height: {row.size()}px;",
+                            style: "position: absolute; inset-inline-start: 0; top: {row.start()}px; display: flex; width: {width}px; min-width: 100%; height: {row.size()}px;",
                             if sticky == 1 {
                                 {cell(row.index(), 0, 0, sticky_column_width)}
                             }

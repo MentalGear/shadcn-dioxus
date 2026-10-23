@@ -53,6 +53,9 @@ pub(crate) struct Plan {
     pub(crate) items: Vec<VirtualItem>,
     pub(crate) top_offset: u32,
     pub(crate) canvas_height: u32,
+    /// The extent of the items alone (no `max` with the viewport): what a consumer that fills
+    /// the viewport in CSS (`min-width: 100%`) needs, equal on the server and on the client.
+    pub(crate) content_size: u32,
 }
 
 /// The scroll total held fixed while the user scrolls.
@@ -271,6 +274,7 @@ impl Engine {
             items,
             top_offset: key.top_offset,
             canvas_height: key.canvas_height,
+            content_size: self.total_size(),
         }
     }
 
