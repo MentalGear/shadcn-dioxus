@@ -284,7 +284,7 @@ type Box = { x: number; y: number; width: number; height: number };
 // changes, so it waits for the checkbox's (and its ancestors') transitions to finish first (`readAtRest`).
 const layoutBoxes = (page: Page, label: string) =>
   readAtRest(
-    page.getByRole("checkbox", { name: label, exact: true }),
+    mainDemo(page).getByRole("checkbox", { name: label, exact: true }),
     (checkbox) => {
       const box = (el: Element | null): Box => {
         if (!el) throw new Error("missing element");
@@ -401,7 +401,7 @@ test("toggling a checkbox moves and resizes nothing", async ({ page }) => {
   expect(labels).toHaveLength(6);
 
   for (const label of labels) {
-    const checkbox = page.getByRole("checkbox", { name: label, exact: true });
+    const checkbox = mainDemo(page).getByRole("checkbox", { name: label, exact: true });
     const before = await layoutBoxes(page, label);
     await checkbox.click();
     await expect(checkbox).not.toHaveAttribute("aria-checked", "false");
