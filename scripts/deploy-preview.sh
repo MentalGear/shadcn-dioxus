@@ -114,9 +114,6 @@ release_suite() {
   fi
 }
 
-release_suite
-if [ "$suite_only" = 1 ]; then exit 0; fi
-
 cd "$repo_root/preview"
 
 # Honor CARGO_TARGET_DIR (CLAUDE.md: every lane builds into an isolated, ABSOLUTE
@@ -138,6 +135,11 @@ if [ -e "$target_dir/.no-base-path-only" ]; then
   exit 2
 fi
 mkdir -p "$target_dir"
+
+# Row 322: the release suite gates the build (header). After the target checks above, so a wrong tree is refused
+# before anything runs.
+release_suite
+if [ "$suite_only" = 1 ]; then exit 0; fi
 
 # Same path build-ssg.sh derives for `release` (it also prints it as PUBLIC_DIR=).
 public_dir="$target_dir/dx/preview/release/web/public"
