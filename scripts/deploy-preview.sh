@@ -18,6 +18,9 @@
 # emergency fix only, and the reason is printed.
 #   DEPLOY_SUITE_WORKERS (default 3: the main loop's full-run setting), DEPLOY_SUITE_CHUNKS (default 6),
 #   DEPLOY_SUITE_PORT (default 4830).
+# The deploy suite is the one place the narrowed browser sweeps run in full (row 329: the cargo `ssr_parity` test
+# covers SSR-vs-first-render per batch): `FIRST_PAINT_ROUTES=all` (first-paint text and styles, every route) and
+# `LS_STEP=32` (layout-stability, every width on every route).
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -101,6 +104,7 @@ release_suite() {
   server_pid=$!
   for _ in $(seq 1 50); do curl -fsS -o /dev/null "http://127.0.0.1:$port/" && break; sleep 0.2; done
   ( cd "$repo_root/playwright" && PLAYWRIGHT_BASE_URL="http://127.0.0.1:$port" PW_BUILD_PROFILE=release SSG_SITE_DIR="$pub" \
+      FIRST_PAINT_ROUTES=all LS_STEP=32 \
       tools/run-suite.sh --out "$out" --chunks "$chunks" --workers "$workers" ) | tee "$out/run-suite.log" || true  # the verdict below decides
   kill "$server_pid" 2>/dev/null || true; server_pid=""
   rm -rf "$tgt"; trap - EXIT
