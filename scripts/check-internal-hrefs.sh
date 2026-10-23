@@ -87,6 +87,16 @@ if [ -n "$raw_links" ]; then
   fail=1
 fi
 
+# 4. The library renders no raw router `Link { .. }` (row 126): a shipped
+# component's current-page mark goes through `primitives/src/nav_link.rs`.
+lib_links=$(grep -rnE '(^|[^A-Za-z0-9_:])Link[[:space:]]*\{' primitives/src --include='*.rs' \
+  | grep -vE '^[^:]+:[0-9]+:[[:space:]]*//' | grep -v 'link-ok:' || true)
+if [ -n "$lib_links" ]; then
+  echo "check-internal-hrefs: raw router Link in primitives/src (use nav_link::NavLink, row 126):" >&2
+  echo "$lib_links" >&2
+  fail=1
+fi
+
 if [ "$fail" -ne 0 ]; then
   exit 1
 fi

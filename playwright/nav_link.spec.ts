@@ -114,3 +114,19 @@ test("modified and middle clicks leave the router alone (new tab), plain click n
   await demos.click();
   await expect(page).toHaveURL(/\/demos\/?\??$/);
 });
+
+// Row 126 library residue: `NavbarItem` (a shipped component) renders the same
+// `NavLink` construction, so no anchor of its demo pages carries two `aria-current`.
+test("the library NavbarItem emits at most one aria-current per anchor in the prerendered HTML", async ({
+  request,
+}) => {
+  for (const path of ["/", "/component/navbar/"]) {
+    const res = await request.get(`${BASE_URL}${path}`);
+    expect(res.ok(), path).toBe(true);
+    const anchors = (await res.text()).match(/<a\b[^>]*>/g) ?? [];
+    expect(anchors.length, path).toBeGreaterThan(0);
+    for (const tag of anchors) {
+      expect((tag.match(/\baria-current=/g) ?? []).length, `${path}: ${tag.slice(0, 160)}`).toBeLessThanOrEqual(1);
+    }
+  }
+});
