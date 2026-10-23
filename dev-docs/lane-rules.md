@@ -243,7 +243,8 @@ Listeners in eval JS through `primitives/src/js_listener.rs` `listen`; passive s
 `use_motion` / `use_interval_while`; no `transform` in component `@keyframes`; state recipes and focus rings from the
 theme tokens; destructive text through `--dx-destructive-text`; no cross-component property overrides (compose through
 slot variables); every `:hover` inside `@media (hover: hover) and (pointer: fine)`; descendant selectors on generic
-elements end with `:not(:where([popover], dialog) *)`; overlays bounded in specs with `fixedViewportBox(page)`; demo
+elements end with `:not(:where([popover], dialog) *)`; variant rules (`[data-variant|size|orientation|spacing]`) reach
+their parts through slot variables the root re-declares, never through a descendant combinator; overlays bounded in specs with `fixedViewportBox(page)`; demo
 controls located by role and position inside the demo frame, never by demo copy (row 220); geometry measured only at
 rest (row 222).
 

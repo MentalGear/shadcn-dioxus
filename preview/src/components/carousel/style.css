@@ -20,6 +20,9 @@
        root). See the orientation rules' own comment for the carousel-narrow
        lane's full derivation. */
     box-sizing: border-box;
+
+    /* Slot read by the Previous/Next icon (`none`; an RTL horizontal Carousel mirrors it below). */
+    --dx-carousel-nav-icon-transform: none;
 }
 
 .dx-carousel-content {
@@ -133,6 +136,7 @@
 .dx-carousel-next svg {
     width: var(--dx-space-4);
     height: var(--dx-space-4);
+    transform: var(--dx-carousel-nav-icon-transform, none);
 }
 
 /* A chevron-style icon inside Previous/Next points a physical direction
@@ -147,10 +151,11 @@
    $S/round4/carousel/variant-rtl-light.png before this rule existed.
    `scaleX(-1)` is a pure mirror (not a directional offset), so it needs
    no `rtl-physical` allowlist comment -- it is exactly as direction-safe
-   as flipping is supposed to be. */
-.dx-carousel[data-orientation="horizontal"][data-direction="rtl"] .dx-carousel-previous svg,
-.dx-carousel[data-orientation="horizontal"][data-direction="rtl"] .dx-carousel-next svg {
-    transform: scaleX(-1);
+   as flipping is supposed to be. The root re-declares the slot variable
+   the icon reads (every Carousel does, the default `none` included), so a
+   Carousel nested in an RTL one never inherits the mirror. */
+.dx-carousel[data-orientation="horizontal"][data-direction="rtl"] {
+    --dx-carousel-nav-icon-transform: scaleX(-1);
 }
 
 /* The disabled arrow (the one at the first/last slide of a carousel that does
@@ -264,18 +269,18 @@
    pixels with `.dx-carousel-content`), never load-bearing. */
 .dx-carousel[data-orientation="horizontal"] {
     padding-inline: var(--dx-space-12);
-}
 
-.dx-carousel[data-orientation="horizontal"] .dx-carousel-previous {
-    inset-block-start: 50%;
-    inset-inline-start: 0;
-    transform: translateY(-50%); /* rtl-physical: vertical-only offset, centers on the block axis regardless of dir */
-}
-
-.dx-carousel[data-orientation="horizontal"] .dx-carousel-next {
-    inset-block-start: 50%;
-    inset-inline-end: 0;
-    transform: translateY(-50%); /* rtl-physical: vertical-only offset, centers on the block axis regardless of dir */
+    /* Previous/Next placement slots, read by the two rules after the vertical block below.
+       Every orientation re-declares all of them on the root, so a Carousel nested in another
+       never inherits the outer one's placement. */
+    --dx-carousel-previous-inset-block-start: 50%;
+    --dx-carousel-previous-inset-inline-start: 0;
+    --dx-carousel-previous-transform: translateY(-50%); /* rtl-physical: vertical-only offset, centers on the block axis regardless of dir */
+    --dx-carousel-next-inset-block-start: 50%;
+    --dx-carousel-next-inset-block-end: auto;
+    --dx-carousel-next-inset-inline-start: auto;
+    --dx-carousel-next-inset-inline-end: 0;
+    --dx-carousel-next-transform: translateY(-50%); /* rtl-physical: vertical-only offset, centers on the block axis regardless of dir */
 }
 
 /* Vertical: centered on the inline axis, pinned near the block edges --
@@ -305,18 +310,27 @@
    braces margin now that the component reserves its own). */
 .dx-carousel[data-orientation="vertical"] {
     padding-block: var(--dx-space-12);
+
+    --dx-carousel-previous-inset-block-start: 0;
+    --dx-carousel-previous-inset-inline-start: 50%;
+    --dx-carousel-previous-transform: translateX(-50%); /* rtl-physical: centers this control on its own parent's inline axis, symmetric under dir so it needs no sign flip -- same construction as resizable/style.css's own transform-paired centering */
+    --dx-carousel-next-inset-block-start: auto;
+    --dx-carousel-next-inset-block-end: 0;
+    --dx-carousel-next-inset-inline-start: 50%;
+    --dx-carousel-next-inset-inline-end: auto;
+    --dx-carousel-next-transform: translateX(-50%); /* rtl-physical: see comment above */
 }
 
-.dx-carousel[data-orientation="vertical"] .dx-carousel-previous {
-    inset-block-start: 0;
-    inset-inline-start: 50%;
-    transform: translateX(-50%); /* rtl-physical: centers this control on its own parent's inline axis, symmetric under dir so it needs no sign flip -- same construction as resizable/style.css's own transform-paired centering */
+.dx-carousel-previous {
+    inset-block-start: var(--dx-carousel-previous-inset-block-start, auto);
+    inset-inline-start: var(--dx-carousel-previous-inset-inline-start, auto);
+    transform: var(--dx-carousel-previous-transform, none); /* rtl-physical: see the slot declarations above */
 }
 
-.dx-carousel[data-orientation="vertical"] .dx-carousel-next {
-    inset-block-end: 0;
-    inset-inline-start: 50%;
-    transform: translateX(-50%); /* rtl-physical: see comment above */
+.dx-carousel-next {
+    inset-block: var(--dx-carousel-next-inset-block-start, auto) var(--dx-carousel-next-inset-block-end, auto);
+    inset-inline: var(--dx-carousel-next-inset-inline-start, auto) var(--dx-carousel-next-inset-inline-end, auto);
+    transform: var(--dx-carousel-next-transform, none); /* rtl-physical: see the slot declarations above */
 }
 
 /* Rotation control (autoplay) -- a small circular button, matching
@@ -537,16 +551,31 @@
         timeline-scope: --dx-carousel-scroll-x, --dx-carousel-scroll-y;
     }
 
-    .dx-carousel-fade[data-orientation="horizontal"] .dx-carousel-content {
-        scroll-timeline: --dx-carousel-scroll-x inline;
+    /* Orientation slots: a fade root declares them for both orientations (horizontal `ltr` is
+       the base), so a fade Carousel nested in another re-declares its own and never inherits
+       the outer one's; the track and the viewport read them below. */
+    .dx-carousel-fade[data-orientation="horizontal"] {
+        --dx-carousel-fade-scroll-timeline: --dx-carousel-scroll-x inline;
+        --dx-carousel-fade-animation-timeline: --dx-carousel-scroll-x, --dx-carousel-scroll-x;
+        --dx-carousel-fade-viewport-dir: to right;
     }
 
-    .dx-carousel-fade[data-orientation="vertical"] .dx-carousel-content {
-        scroll-timeline: --dx-carousel-scroll-y block;
+    .dx-carousel-fade[data-orientation="vertical"] {
+        --dx-carousel-fade-scroll-timeline: --dx-carousel-scroll-y block;
+        --dx-carousel-fade-animation-timeline: --dx-carousel-scroll-y, --dx-carousel-scroll-y;
+        --dx-carousel-fade-viewport-dir: to bottom;
+    }
+
+    .dx-carousel-fade[data-orientation="horizontal"][data-direction="rtl"] {
+        --dx-carousel-fade-viewport-dir: to left;
+    }
+
+    .dx-carousel-content {
+        scroll-timeline: var(--dx-carousel-fade-scroll-timeline);
     }
 
     .dx-carousel-fade [data-slot="carousel-viewport"] {
-        --dx-carousel-fade-dir: to right;
+        --dx-carousel-fade-dir: var(--dx-carousel-fade-viewport-dir, to right);
 
         animation-duration: 1ms, 1ms;
         animation-fill-mode: both, both;
@@ -554,6 +583,7 @@
         animation-range:
             0 var(--dx-carousel-fade-size),
             calc(100% - var(--dx-carousel-fade-size)) 100%;
+        animation-timeline: var(--dx-carousel-fade-animation-timeline);
         animation-timing-function: linear, linear;
         mask-image: linear-gradient(
             var(--dx-carousel-fade-dir),
@@ -564,19 +594,6 @@
         );
     }
 
-    .dx-carousel-fade[data-orientation="horizontal"] [data-slot="carousel-viewport"] {
-        animation-timeline: --dx-carousel-scroll-x, --dx-carousel-scroll-x;
-    }
-
-    .dx-carousel-fade[data-orientation="vertical"] [data-slot="carousel-viewport"] {
-        --dx-carousel-fade-dir: to bottom;
-
-        animation-timeline: --dx-carousel-scroll-y, --dx-carousel-scroll-y;
-    }
-
-    .dx-carousel-fade[data-orientation="horizontal"][data-direction="rtl"] [data-slot="carousel-viewport"] {
-        --dx-carousel-fade-dir: to left;
-    }
 }
 
 @keyframes dx-carousel-fade-start {

@@ -44,7 +44,8 @@
   overflow-wrap: break-word;
 }
 
-.dx-bubble[data-align="end"] .dx-bubble-content {
+/* `>` like the variant rules below: a Bubble nested in this one keeps its own alignment (row 218). */
+.dx-bubble[data-align="end"] > .dx-bubble-content {
   align-self: flex-end;
 }
 

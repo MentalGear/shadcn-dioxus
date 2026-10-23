@@ -31,6 +31,9 @@
      idea (5px a side for a fine pointer, 15px for a coarse one). */
   --dx-resizable-hit-size: var(--dx-coarse-resizable-hit-size);
 
+  /* Orientation slot (`horizontal`; `vertical` re-declares it below), read by the grip. */
+  --dx-resizable-handle-grip-transform: translate(-50%, -50%); /* rtl-physical: centers the grip, see .dx-resizable-handle-grip */
+
   position: relative;
   display: flex;
   flex: 0 0 auto;
@@ -53,6 +56,9 @@
   width: 100%;
   height: 1px;
   cursor: row-resize;
+
+  /* Orientation slot for the grip (see the horizontal default on `.dx-resizable-handle`). */
+  --dx-resizable-handle-grip-transform: translate(-50%, -50%) rotate(90deg); /* rtl-physical: same centering as .dx-resizable-handle-grip below, plus a vertical-orientation rotation */
 }
 
 /* shadcn: the handle's own `after:` hit-area -- a comfortably wide invisible pointer target
@@ -128,13 +134,10 @@
      invisible to hit-testing, so the point lands on whatever is geometrically behind it (the
      neighbouring panel) and the 12px grip dragged only across the few px its handle's strip
      happened to cover. The cursor is inherited from the handle (col-/row-resize). */
-  transform: translate(-50%, -50%); /* rtl-physical: see comment above */
+  transform: var(--dx-resizable-handle-grip-transform, translate(-50%, -50%)); /* rtl-physical: see comment above */
 }
 
 /* shadcn: `[&[data-panel-group-direction=vertical]>div]:rotate-90` rotates the WHOLE grip --
    and, being a descendant, its icon along with it -- rather than swapping width/height or
    rotating only the icon; one transform does both jobs, and the grip's own on-screen footprint
    swaps to match the vertical handle's own w<->h swap for free. */
-.dx-resizable-handle[data-orientation="vertical"] .dx-resizable-handle-grip {
-  transform: translate(-50%, -50%) rotate(90deg); /* rtl-physical: same centering as .dx-resizable-handle-grip above, plus a vertical-orientation rotation */
-}

@@ -42,6 +42,16 @@
     color var(--dx-motion-duration-fast) var(--dx-motion-ease),
     background-color var(--dx-motion-duration-fast) var(--dx-motion-ease),
     border-color var(--dx-motion-duration-fast) var(--dx-motion-ease);
+
+  /* Size slots (`default`; `sm` and `xs` re-declare them below). Every Item declares all of
+     them, so an Item nested in another Item's content never inherits the outer size. */
+  --dx-item-media-image-size: 2.5rem;
+  --dx-item-content-gap: var(--dx-space-1);
+  --dx-item-description-font-size: var(--dx-text-sm);
+
+  /* Media placement slots: an Item that holds a description (below) re-declares them on its own root. */
+  --dx-item-media-align-self: auto;
+  --dx-item-media-transform: none;
 }
 
 .dx-item:focus-visible {
@@ -82,9 +92,17 @@ a.dx-item {
   gap: var(--dx-space-2-5);
 }
 
+.dx-item[data-size="sm"] {
+  --dx-item-media-image-size: var(--dx-space-8);
+}
+
 .dx-item[data-size="xs"] {
   padding: var(--dx-space-2) var(--dx-space-2-5);
   gap: var(--dx-space-2);
+
+  --dx-item-media-image-size: var(--dx-space-6);
+  --dx-item-content-gap: 0;
+  --dx-item-description-font-size: var(--dx-text-xs);
 }
 
 /* Item Media */
@@ -92,13 +110,18 @@ a.dx-item {
   display: flex;
   flex-shrink: 0;
   align-items: center;
+  align-self: var(--dx-item-media-align-self);
   justify-content: center;
   gap: var(--dx-space-2);
+  transform: var(--dx-item-media-transform);
 }
 
-.dx-item:has([data-slot="item-description"]) .dx-item-media {
-  align-self: flex-start;
-  transform: translateY(0.125rem);
+/* An Item with a description tops its media. Set on the Item's own root as slots (row 218), never as
+   `.dx-item:has(..) .dx-item-media`: that also moved the media of every Item nested inside one, and the
+   description sits at no fixed depth (the email client wraps ItemContent in a button). */
+.dx-item:has([data-slot="item-description"]) {
+  --dx-item-media-align-self: flex-start;
+  --dx-item-media-transform: translateY(0.125rem);
 }
 
 .dx-item-media svg {
@@ -116,19 +139,9 @@ a.dx-item {
 
 .dx-item-media[data-variant="image"] {
   overflow: hidden;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: var(--dx-item-media-image-size, 2.5rem);
+  height: var(--dx-item-media-image-size, 2.5rem);
   border-radius: var(--dx-radius-sm);
-}
-
-.dx-item[data-size="sm"] .dx-item-media[data-variant="image"] {
-  width: var(--dx-space-8);
-  height: var(--dx-space-8);
-}
-
-.dx-item[data-size="xs"] .dx-item-media[data-variant="image"] {
-  width: var(--dx-space-6);
-  height: var(--dx-space-6);
 }
 
 .dx-item-media[data-variant="image"] img {
@@ -142,11 +155,7 @@ a.dx-item {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: var(--dx-space-1);
-}
-
-.dx-item[data-size="xs"] .dx-item-content {
-  gap: 0;
+  gap: var(--dx-item-content-gap, var(--dx-space-1));
 }
 
 .dx-item-content + .dx-item-content {
@@ -171,7 +180,7 @@ a.dx-item {
   margin: 0;
   -webkit-box-orient: vertical;
   color: var(--dx-muted-foreground);
-  font-size: var(--dx-text-sm);
+  font-size: var(--dx-item-description-font-size, var(--dx-text-sm));
   font-weight: 400;
   -webkit-line-clamp: 2;
   line-height: 1.5;
@@ -182,10 +191,6 @@ a.dx-item {
 .dx-item-description a:not(:where([popover], dialog) *) {
   text-decoration: underline;
   text-underline-offset: 4px;
-}
-
-.dx-item[data-size="xs"] .dx-item-description {
-  font-size: var(--dx-text-xs);
 }
 
 @media (hover: hover) and (pointer: fine) {

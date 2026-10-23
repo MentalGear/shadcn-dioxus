@@ -41,6 +41,7 @@ const PATTERN_SCOPED = {
   "demos-batch2-b.spec.ts": (t) => first(t, /^(\w+)\/\w+ opens/, (m) => [`c:${m[1]}`]),
   "user-select.spec.ts": (t) => first(t, /^every control on (\/\S*) computes/, (m) => routeKeys(m[1])),
   "popup-style-isolation.spec.ts": (t) => first(t, /looks like the same popup alone ([\w-]+)$/, (m) => idKeys(m[1])),
+  "variant-nesting.spec.ts": () => null, // one test per page, titled with its `/component/<c>/` route (the mention fallback)
 };
 // `alias` specs (a describe per component) match a component by its squashed name anywhere in the title
 const ALIAS_SCOPED = {

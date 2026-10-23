@@ -26,6 +26,14 @@
   transition-property: all;
   transition-timing-function: var(--dx-motion-ease-standard);
   white-space: nowrap;
+
+  /* Radius slot at its default on every root (sizes and `radius` re-declare it), so a Button nested in
+     a small or icon-xs Button never inherits the outer radius (row 218). */
+  --dx-button-radius: var(--dx-radius-lg);
+
+  /* Icon size slot: each size re-declares it on its own root, so a Button nested inside another
+   * (through `as`) never inherits the outer size's icon through a descendant selector. */
+  --dx-button-icon-size: 1rem;
 }
 
 .dx-button svg {
@@ -34,8 +42,8 @@
 }
 
 .dx-button svg:not([class*="size-"]) {
-  width: 1rem;
-  height: 1rem;
+  width: var(--dx-button-icon-size);
+  height: var(--dx-button-icon-size);
 }
 
 /* Sizes. `data-size` xs/sm/default/lg and their icon-only twins are Nova's
@@ -46,6 +54,7 @@
   padding: 0 var(--dx-space-2);
 
   --dx-button-radius: min(var(--dx-radius-md), 10px);
+  --dx-button-icon-size: 0.75rem;
 
   font-size: var(--dx-text-xs);
   gap: var(--dx-space-1);
@@ -56,16 +65,12 @@
   padding-inline: var(--dx-space-1-5);
 }
 
-.dx-button[data-size="xs"] svg:not([class*="size-"]) {
-  width: 0.75rem;
-  height: 0.75rem;
-}
-
 .dx-button[data-size="sm"] {
   height: var(--dx-control-height-sm);
   padding: 0 var(--dx-space-2-5);
 
   --dx-button-radius: min(var(--dx-radius-md), 12px);
+  --dx-button-icon-size: 0.875rem;
 
   font-size: 0.8rem;
   gap: var(--dx-space-1);
@@ -73,11 +78,6 @@
 
 .dx-button[data-size="sm"]:has(> svg) {
   padding-inline: var(--dx-space-1-5);
-}
-
-.dx-button[data-size="sm"] svg:not([class*="size-"]) {
-  width: 0.875rem;
-  height: 0.875rem;
 }
 
 .dx-button[data-size="default"] {
@@ -108,11 +108,7 @@
   height: var(--dx-control-height-xs);
 
   --dx-button-radius: min(var(--dx-radius-md), 10px);
-}
-
-.dx-button[data-size="icon-xs"] svg:not([class*="size-"]) {
-  width: 0.75rem;
-  height: 0.75rem;
+  --dx-button-icon-size: 0.75rem;
 }
 
 .dx-button[data-size="icon-sm"] {

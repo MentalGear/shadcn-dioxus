@@ -17,6 +17,30 @@
   align-items: center;
   border-radius: var(--dx-radius-lg);
   gap: calc(var(--dx-space-1) * var(--dx-toggle-group-spacing, 2));
+
+  /* Joined-bar slots (`spacing: 0`; see the rules below). Every root declares all of them, `initial` (the
+     guaranteed-invalid value) for a separate group, so an item falls through to its own radius and border and
+     a group nested inside a joined bar never inherits the outer bar's corners. */
+  --dx-toggle-group-radius: initial;
+  --dx-toggle-group-first-ss: initial;
+  --dx-toggle-group-first-es: initial;
+  --dx-toggle-group-first-se: initial;
+  --dx-toggle-group-last-es: initial;
+  --dx-toggle-group-last-se: initial;
+  --dx-toggle-group-last-ee: initial;
+  --dx-toggle-group-follower-border-inline-start-width: initial;
+  --dx-toggle-group-follower-border-top-width: initial;
+
+  /* The Toggle slots the variant and size rules below publish to the items, reset the same way (row 218):
+     a default group nested in an outline or small one falls through to each item's own fallback. */
+  --dx-toggle-border-width: initial;
+  --dx-toggle-height: initial;
+  --dx-toggle-min-width: initial;
+  --dx-toggle-radius: initial;
+  --dx-toggle-font-size: initial;
+  --dx-toggle-icon-size: initial;
+  --dx-toggle-icon-padding: initial;
+  --dx-toggle-padding-inline: initial;
 }
 
 .dx-toggle-group[data-orientation="vertical"] {
@@ -47,6 +71,7 @@
 .dx-toggle-group[data-spacing="0"] {
   --dx-toggle-padding-inline: var(--dx-space-2);
   --dx-toggle-icon-padding: var(--dx-space-1-5);
+  --dx-toggle-group-radius: 0;
 }
 
 .dx-toggle-group-item {
@@ -58,8 +83,13 @@
   align-items: center;
   justify-content: center;
   border: var(--dx-toggle-border-width, 0) solid var(--dx-input);
-  border-radius: var(--dx-toggle-radius, var(--dx-radius-lg));
+  border-top-width: var(--dx-toggle-group-item-border-top-width, var(--dx-toggle-border-width, 0));
   background-color: transparent;
+  border-end-end-radius: var(--dx-toggle-group-item-last-ee, var(--dx-toggle-group-radius, var(--dx-toggle-radius, var(--dx-radius-lg))));
+  border-end-start-radius: var(--dx-toggle-group-item-first-es, var(--dx-toggle-group-item-last-es, var(--dx-toggle-group-radius, var(--dx-toggle-radius, var(--dx-radius-lg)))));
+  border-inline-start-width: var(--dx-toggle-group-item-border-inline-start-width, var(--dx-toggle-border-width, 0));
+  border-start-end-radius: var(--dx-toggle-group-item-first-se, var(--dx-toggle-group-item-last-se, var(--dx-toggle-group-radius, var(--dx-toggle-radius, var(--dx-radius-lg)))));
+  border-start-start-radius: var(--dx-toggle-group-item-first-ss, var(--dx-toggle-group-radius, var(--dx-toggle-radius, var(--dx-radius-lg))));
   color: var(--dx-foreground);
   font-size: var(--dx-toggle-font-size, var(--dx-text-sm));
   font-weight: 500;
@@ -68,6 +98,15 @@
   padding-inline: var(--dx-toggle-padding-inline, var(--dx-space-2-5));
   transition: background-color var(--dx-motion-duration-slow) var(--dx-motion-ease), border-color var(--dx-motion-duration-slow) var(--dx-motion-ease), outline-color var(--dx-motion-duration-base);
   white-space: nowrap;
+
+  --dx-toggle-group-item-first-ss: initial;
+  --dx-toggle-group-item-first-es: initial;
+  --dx-toggle-group-item-first-se: initial;
+  --dx-toggle-group-item-last-es: initial;
+  --dx-toggle-group-item-last-se: initial;
+  --dx-toggle-group-item-last-ee: initial;
+  --dx-toggle-group-item-border-inline-start-width: initial;
+  --dx-toggle-group-item-border-top-width: initial;
 }
 
 .dx-toggle-group-item:has(> [data-icon="inline-start"]) {
@@ -88,38 +127,49 @@
   height: var(--dx-toggle-icon-size, 1rem);
 }
 
-/* Joined (`spacing: 0`): square items, the radius only on the two ends of the bar. */
-.dx-toggle-group[data-spacing="0"] .dx-toggle-group-item {
-  border-radius: 0;
+/* Joined (`spacing: 0`): square items, the radius only on the two ends of the bar. The root declares the
+   slots (`ss` start-start, `es` end-start, `se` start-end, `ee` end-end corner of the item that is first or
+   last in the bar); the item reads them through its position rules below. */
+.dx-toggle-group[data-spacing="0"][data-orientation="horizontal"] {
+  --dx-toggle-group-first-ss: var(--dx-radius-lg);
+  --dx-toggle-group-first-es: var(--dx-radius-lg);
+  --dx-toggle-group-last-se: var(--dx-radius-lg);
+  --dx-toggle-group-last-ee: var(--dx-radius-lg);
 }
 
-.dx-toggle-group[data-spacing="0"][data-orientation="horizontal"] .dx-toggle-group-item:first-child {
-  border-end-start-radius: var(--dx-radius-lg);
-  border-start-start-radius: var(--dx-radius-lg);
-}
-
-.dx-toggle-group[data-spacing="0"][data-orientation="horizontal"] .dx-toggle-group-item:last-child {
-  border-end-end-radius: var(--dx-radius-lg);
-  border-start-end-radius: var(--dx-radius-lg);
-}
-
-.dx-toggle-group[data-spacing="0"][data-orientation="vertical"] .dx-toggle-group-item:first-child {
-  border-start-end-radius: var(--dx-radius-lg);
-  border-start-start-radius: var(--dx-radius-lg);
-}
-
-.dx-toggle-group[data-spacing="0"][data-orientation="vertical"] .dx-toggle-group-item:last-child {
-  border-end-end-radius: var(--dx-radius-lg);
-  border-end-start-radius: var(--dx-radius-lg);
+.dx-toggle-group[data-spacing="0"][data-orientation="vertical"] {
+  --dx-toggle-group-first-ss: var(--dx-radius-lg);
+  --dx-toggle-group-first-se: var(--dx-radius-lg);
+  --dx-toggle-group-last-es: var(--dx-radius-lg);
+  --dx-toggle-group-last-ee: var(--dx-radius-lg);
 }
 
 /* An outline bar shares the edge between neighbours: every item but the first drops its leading edge. */
-.dx-toggle-group[data-variant="outline"][data-spacing="0"][data-orientation="horizontal"] .dx-toggle-group-item:not(:first-child) {
-  border-inline-start-width: 0;
+.dx-toggle-group[data-variant="outline"][data-spacing="0"][data-orientation="horizontal"] {
+  --dx-toggle-group-follower-border-inline-start-width: 0;
 }
 
-.dx-toggle-group[data-variant="outline"][data-spacing="0"][data-orientation="vertical"] .dx-toggle-group-item:not(:first-child) {
-  border-top-width: 0;
+.dx-toggle-group[data-variant="outline"][data-spacing="0"][data-orientation="vertical"] {
+  --dx-toggle-group-follower-border-top-width: 0;
+}
+
+/* The item's position picks its slots. Declared on the item itself (custom properties only), reset on every
+   item first so an item of a group nested in a first or last item does not inherit its position. */
+.dx-toggle-group-item:first-child {
+  --dx-toggle-group-item-first-ss: var(--dx-toggle-group-first-ss);
+  --dx-toggle-group-item-first-es: var(--dx-toggle-group-first-es);
+  --dx-toggle-group-item-first-se: var(--dx-toggle-group-first-se);
+}
+
+.dx-toggle-group-item:last-child {
+  --dx-toggle-group-item-last-es: var(--dx-toggle-group-last-es);
+  --dx-toggle-group-item-last-se: var(--dx-toggle-group-last-se);
+  --dx-toggle-group-item-last-ee: var(--dx-toggle-group-last-ee);
+}
+
+.dx-toggle-group-item:not(:first-child) {
+  --dx-toggle-group-item-border-inline-start-width: var(--dx-toggle-group-follower-border-inline-start-width);
+  --dx-toggle-group-item-border-top-width: var(--dx-toggle-group-follower-border-top-width);
 }
 
 /* docs/backlog.md row 89: same construction as `toggle/style.css`'s

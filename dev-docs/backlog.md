@@ -41,7 +41,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (36)
+## Open rows (35)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -62,7 +62,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [170](backlog/170-cross-component-css-overrides-190-sites-in-12.md) | Cross-component CSS overrides: 190 sites in 12 sheets declare, in one component's stylesheet, a property that… | NARROWED 2026-10-19 (backlog review): baseline is now 138 sites in 9 sheets (was 190 in 12) | M (the decision and the prototype are… | theme |
 | [188](backlog/188-demo-parity-second-audit-the-owner-s-per.md) | Demo parity, second audit: the owner's per-example list against the original shadcn demos (51 components; row… | DEMO-ONLY ITEMS DONE 2026-10-19 (batch 2: every section-5 demo exists; what remains needs component… | M per batch | docs |
 | [217](backlog/217-dependency-audit-follow-ups-what-users-pay-for.md) | Dependency audit follow-ups (what users pay for in compile time and supply chain) | PARTLY LANDED 2026-10-18 (lane deps 04ad7ddf): features calendar/color-picker, no build script… | S-M each | build |
-| [218](backlog/218-popup-style-isolation-top-layer-popups-stay-dom.md) | Popup style isolation: top-layer popups stay DOM descendants of their trigger, so free-content rules in an… | NARROWED 2026-10-21: PARTLY LANDED 2026-10-15 (lane ancestorleak 900f394 + main-loop 526b51d… | M | overlays |
 | [250](backlog/250-container-reset-loses-unpushed-work.md) | A container reset to a fresh clone loses every unpushed lane commit and all session scratch | CONSTRUCTION LANDED 2026-10-19 (lane-rules: push lane/* after every commit); redo of the lost work… | S | infra |
 | [265](backlog/265-upstream-ai-elements-code-block-trace-chat.md) | Upstream ai-elements (chat, message, code-block, trace, checkpoint, ...) vs our chat kit | PARTIAL 2026-10-19 (items 1-2 landed: code_block, trace, checkpoint and chat demos; item 3 is an… | L | chat |
 | [266](backlog/266-repo-cleanup-archive-historical-dev-docs.md) | Repo cleanup: archive historical dev-docs, trim CLAUDE.md and the big dev docs, split backlog.md | APPROVED 2026-10-19 (owner: run it when safe, in the Round 6 sweep); starts once no feature lane… | M-L | process |
@@ -82,7 +81,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [370](backlog/370-merge-attributes-class-none.md) | merge_attributes: a class: None replaces the base class instead of being ignored | Open. Found by the biggrid lane in batch 10. | S | primitives |
 | [371](backlog/371-dependency-evaluation-keep-lift-drop.md) | Dependency evaluation: keep, feature-gate, replace, lift or drop (rule of 2026-10-23) | PARKED by the owner 2026-10-23 ("its own item, and not yet"). Inventory done; no outcome is… | S each outcome | build |
 
-## Done rows (309)
+## Done rows (310)
 
 | # | Item | Updated |
 |---|---|---|
@@ -286,6 +285,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [214](backlog/done/214-home-masonry-column-assignment-depends-on-how.md) | Home masonry column assignment depends on how much of the ~580 KB prerendered page has been parsed | 2026-10-18 |
 | [215](backlog/done/215-charts-re-lays-out-at-hydration-at-every-width.md) | /charts/ re-lays out at hydration at every width | 2026-10-18 |
 | [216](backlog/done/216-infra-worktrees-sharing-or-copying-one-cargo.md) | Infra: worktrees sharing or copying one CARGO_TARGET_DIR build and lint another tree's code (re-confirms row… | 2026-10-19 |
+| [218](backlog/done/218-popup-style-isolation-top-layer-popups-stay-dom.md) | Popup style isolation: top-layer popups stay DOM descendants of their trigger, so free-content rules in an… | 2026-10-23 |
 | [219](backlog/done/219-preview-src-components-mod-rs-variant-registry.md) | preview/src/components/mod.rs variant registry is one shared macro list that every demo-adding lane edits | 2026-10-18 |
 | [220](backlog/done/220-shared-oracle-specs-locate-demo-controls-by.md) | Shared oracle specs locate demo controls by their visible demo text, so every demo that mirrors shadcn more… | 2026-10-18 |
 | [221](backlog/done/221-infra-session-process-lessons-from-the-2026-10.md) | Infra: session process lessons from the 2026-10-14/15 batch (memory, lock fairness, gate worktree… | 2026-10-19 |
