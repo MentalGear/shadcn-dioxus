@@ -318,9 +318,10 @@ impl Engine {
 
     /// The bottom spacer, in px, for a renderer whose mounted items sit in flow at their exact
     /// size (`TableRows`' `<tr>`s), where the canvas's rounded-up padding would add a blank px:
-    /// the exact extent below the last mounted item, i.e. the canvas without its padding but
-    /// with every remainder, less `end` and the remainders the mounted items already occupy.
-    /// So a short body whose rows are all mounted is exactly its rows' height (row 369).
+    /// the canvas without its padding but with every remainder, less `end` and the remainders
+    /// the mounted items already occupy. The top spacer stays on the whole-px offsets the engine
+    /// scrolls by, so the remainders of the rows above the window ride here: the body is the
+    /// rows' exact extent, and a short body whose rows are all mounted gets no spacer (row 369).
     pub(crate) fn flow_bottom(&self, plan: &Plan) -> f64 {
         let end = plan
             .items
