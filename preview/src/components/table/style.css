@@ -1,6 +1,7 @@
 /* The shared table look is the theme's `--dx-table-*` tokens (dx-components-theme.css), read by
- * this sheet and by `virtual_grid/style.css`. */
-/* Nova table (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css,
+ * this sheet and by `virtual_grid/style.css`.
+ *
+ * Nova table (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css,
  * `.cn-table-*`): `w-full caption-bottom text-sm`; a row is `border-b
  * hover:bg-muted/50 data-[state=selected]:bg-muted` (the last body row has no
  * border); a head cell `h-10 px-2 text-left align-middle font-medium`, a cell
