@@ -88,9 +88,10 @@
 // other lanes are compiling on the same box; the report prints both.
 
 import { chromium } from "playwright";
+import { sandboxChromium } from "../playwright/sandbox-chromium.cjs";
 import fs from "node:fs";
 
-const CHROMIUM_PATH = process.env.PW_CHROMIUM || "/opt/pw-browsers/chromium-1194/chrome-linux/chrome";
+const CHROMIUM_PATH = sandboxChromium(); // PW_CHROMIUM, else the newest preinstalled one (row 374)
 
 function parseArgs(argv) {
   const o = {

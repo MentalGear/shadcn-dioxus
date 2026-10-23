@@ -1,5 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 import { perTestTimeoutMs, timingSpecIgnore } from "./base-url";
+import { sandboxLaunchOptions } from "./sandbox-chromium.cjs";
 // Local-only: use the image's preinstalled Chromium and the already-running dx server.
 export default defineConfig({
   testDir: ".",
@@ -15,7 +16,7 @@ export default defineConfig({
     grepInvert: /mobile/,
     use: {
       ...devices["Desktop Chrome"],
-      launchOptions: { executablePath: "/opt/pw-browsers/chromium-1194/chrome-linux/chrome" },
+      launchOptions: sandboxLaunchOptions(), // sandbox-chromium.cjs (row 374)
     },
   }],
 });

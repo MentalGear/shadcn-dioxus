@@ -1,6 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 import { perTestTimeoutMs, timingSpecIgnore } from "./base-url";
-import fs from "node:fs";
+import { sandboxLaunchOptions } from "./sandbox-chromium.cjs";
 // The SSG lane. Points at a plain static file server serving the
 // fullstack-SSG-prerendered site (`dx build --ssg --features fullstack
 // --platform web`'s output directory,
@@ -24,19 +24,13 @@ import fs from "node:fs";
 // `.github/workflows/playwright.yml`'s `ssg-hydration-parity` job for how
 // CI drives this same config (dev-docs/backlog.md row 22).
 //
-// `executablePath` below is this AGENT SANDBOX's own local Chromium
-// install path (`dx`/`npx playwright install` land browsers somewhere this
-// sandbox's own tooling doesn't always find automatically) -- committed
-// because this file itself is committed and used by the CI job above, but
-// only ever applied when that exact path exists; a real CI runner (which
-// installs its own browser via `npx playwright install --with-deps
-// chromium` into Playwright's normal cache dir) hits neither branch and
-// gets Playwright's own default resolution, same as every other config in
-// this repo that never sets `executablePath` at all.
-const SANDBOX_CHROMIUM = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome";
-const launchOptions = fs.existsSync(SANDBOX_CHROMIUM)
-  ? { executablePath: SANDBOX_CHROMIUM }
-  : {};
+// `executablePath` comes from `sandbox-chromium.cjs` (row 374): `PW_CHROMIUM`,
+// else the newest Chromium preinstalled under `PLAYWRIGHT_BROWSERS_PATH` (this
+// agent sandbox's image), else nothing -- a real CI runner (which installs its
+// own browser via `npx playwright install --with-deps chromium` into
+// Playwright's normal cache dir) gets Playwright's own default resolution,
+// same as every other config in this repo that never sets `executablePath`.
+const launchOptions = sandboxLaunchOptions();
 
 export default defineConfig({
   testDir: ".",
