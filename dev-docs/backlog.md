@@ -41,7 +41,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (35)
+## Open rows (36)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -80,6 +80,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [369](backlog/369-virtual-fractional-rows-grid-table.md) | VirtualGrid and TableRows: carry the exact measured size so a short body with fractional rows cannot overflow by 1px | Open. Found in batch 10 (scroll-fade 199 vs 198). | S | primitives |
 | [370](backlog/370-merge-attributes-class-none.md) | merge_attributes: a class: None replaces the base class instead of being ignored | Open. Found by the biggrid lane in batch 10. | S | primitives |
 | [371](backlog/371-dependency-evaluation-keep-lift-drop.md) | Dependency evaluation: keep, feature-gate, replace, lift or drop (rule of 2026-10-23) | PARKED by the owner 2026-10-23 ("its own item, and not yet"). Inventory done; no outcome is… | S each outcome | build |
+| [372](backlog/372-scroll-fade-overlay-scrollbar-hybrid.md) | Scroll fade: transition the edge depths (landed) and paint the fade as gradients where the scrollbar is an overlay (deferred) | Part 2 LANDED (lane fadehybrid): the registered --dx-scroll-fade-t/-b/-s/-e depths transition… | M | primitives |
 
 ## Done rows (310)
 
