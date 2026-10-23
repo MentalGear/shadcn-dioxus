@@ -41,7 +41,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (43)
+## Open rows (40)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -66,7 +66,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [217](backlog/217-dependency-audit-follow-ups-what-users-pay-for.md) | Dependency audit follow-ups (what users pay for in compile time and supply chain) | PARTLY LANDED 2026-10-18 (lane deps 04ad7ddf): features calendar/color-picker, no build script… | S-M each | build |
 | [218](backlog/218-popup-style-isolation-top-layer-popups-stay-dom.md) | Popup style isolation: top-layer popups stay DOM descendants of their trigger, so free-content rules in an… | NARROWED 2026-10-21: PARTLY LANDED 2026-10-15 (lane ancestorleak 900f394 + main-loop 526b51d… | M | overlays |
 | [250](backlog/250-container-reset-loses-unpushed-work.md) | A container reset to a fresh clone loses every unpushed lane commit and all session scratch | CONSTRUCTION LANDED 2026-10-19 (lane-rules: push lane/* after every commit); redo of the lost work… | S | infra |
-| [257](backlog/257-user-select-sidebar-spec-goto-hung-to-the-90-s-timeout-once.md) | user-select.spec.ts /component/sidebar/ page.goto hung to the 90 s timeout once in the release suite | OPEN (not reproducible: 1 failure in the batch-A release suite; 17 of 17 green since on release and… | S | playwright |
 | [265](backlog/265-upstream-ai-elements-code-block-trace-chat.md) | Upstream ai-elements (chat, message, code-block, trace, checkpoint, ...) vs our chat kit | PARTIAL 2026-10-19 (items 1-2 landed: code_block, trace, checkpoint and chat demos; item 3 is an… | L | chat |
 | [266](backlog/266-repo-cleanup-archive-historical-dev-docs.md) | Repo cleanup: archive historical dev-docs, trim CLAUDE.md and the big dev docs, split backlog.md | APPROVED 2026-10-19 (owner: run it when safe, in the Round 6 sweep); starts once no feature lane… | M-L | process |
 | [267](backlog/267-split-oversized-source-files-into-modules.md) | Split oversized source files into modules (carousel.rs, carousel.spec.ts, main.rs, top_layer.rs, calendar.rs, date_picker.rs) | BACKLOG (owner approved 2026-10-19 on the cleanup plan; Round 6, before the 152b suite prune).… | M | process |
@@ -78,18 +77,16 @@ proposing one is closed as out of scope (row 337 is the first).
 | [307](backlog/307-ios-color-panel-does-not-pick-colors.md) | iOS: the Color Panel opens but tapping its color box does not change the color | OPEN (owner report 2026-10-20, iOS device; being investigated in the 'iOS Color Panel won't pick… | M | overlays |
 | [309](backlog/309-virtuallist-and-virtualgrid-share-one-engine.md) | VirtualList and VirtualGrid share one engine: DOM bridge, pinned focus, fade (two components, one engine) | OPEN (deferred: grid content-visibility mode, grid find-in-page placeholders; the rest merged)… | M | virtual |
 | [321](backlog/321-one-merge-queue-owner-for-main-batch-one.md) | One merge-queue owner for main (batch, one full gate and one suite per batch, deploy) | OPEN, documented (owner approved 2026-10-21; the QUEUE format is in lane-rules.md "Merge queue"… | S | process |
-| [322](backlog/322-run-the-full-release-suite-per-deploy-not.md) | Run the full release suite per deploy, not per merge batch | BACKLOG (owner: maybe, 2026-10-21) | S | tests |
 | [325](backlog/325-heavy-cross-page-oracles-construct-the-causes-away.md) | Heavy cross-page oracles: construct the causes away, run what remains per deploy | PARTLY LANDED 2026-10-21: the popup half (row 259, batch A) and the all-routes half (row 327, batch… | M | tests |
 | [329](backlog/329-audit-3-ssr-vs-first-render-parity-as.md) | Audit 3: SSR-vs-first-render parity as a cargo test (spike first) | PARTLY LANDED 2026-10-21 (queue batch 1, PR #126: the SSR vs first-client-frame parity test runs in… | M | tests |
 | [355](backlog/355-adopt-google-rust-style-guide-items.md) | Adopt Google Rust style guide items: workspace lint table and conventions | BACKLOG -- Round 6 sweep, after row 267's file split (owner approved 2026-10-21) | S-M | process |
-| [358](backlog/358-all-routes-one-navigation-for-both-schemes.md) | all-routes: one navigation for both schemes (needs a clean forced-colors reset) | BACKLOG. Blocked on one thing: the forced-colors sweep presses Tab from the focus start point… | S | tests |
 | [365](backlog/365-final-sweep-refactor-and-root-cause-review.md) | Final sweep: refactor review with the deconstruct-to-root and solve-by-construction exercise, proposals to the owner | BACKLOG (owner 2026-10-22, backlog thread: "final sweep, check for refactors and also run there the… | M for the review. Each accepted… | process |
 | [367](backlog/367-lane-build-disk-class.md) | Lane builds need 10.4 GB free because every lane-ssg copies 6.8 GB of template, 3.0 GB of it dead incremental state | PARTIAL. Landed in lane gatetools: the copy leaves cargo's incremental/ dirs out and the guard… | S for the landed part… | tooling |
 | [369](backlog/369-virtual-fractional-rows-grid-table.md) | VirtualGrid and TableRows: carry the exact measured size so a short body with fractional rows cannot overflow by 1px | Open. Found in batch 10 (scroll-fade 199 vs 198). | S | primitives |
 | [370](backlog/370-merge-attributes-class-none.md) | merge_attributes: a class: None replaces the base class instead of being ignored | Open. Found by the biggrid lane in batch 10. | S | primitives |
 | [371](backlog/371-dependency-evaluation-keep-lift-drop.md) | Dependency evaluation: keep, feature-gate, replace, lift or drop (rule of 2026-10-23) | PARKED by the owner 2026-10-23 ("its own item, and not yet"). Inventory done; no outcome is… | S each outcome | build |
 
-## Done rows (301)
+## Done rows (304)
 
 | # | Item | Updated |
 |---|---|---|
@@ -328,6 +325,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [254](backlog/done/254-stale-cargo-lock-in-detached-crates.md) | Stale Cargo.lock in the detached crates (attr-synth, carousel-lab) rewritten by lane spec runs | 2026-10-20 |
 | [255](backlog/done/255-stale-specs-toast-countdown-shim-and-drawer-drag-viewport.md) | Two specs drifted from the product and were red on main: the toast countdown shim and the drawer drag viewport | 2026-10-20 |
 | [256](backlog/done/256-press-release-tail-breaks-geometry-reads-after-a-click.md) | The press-release `scale` tail broke three layout-stability reads taken right after a click | 2026-10-20 |
+| [257](backlog/done/257-user-select-sidebar-spec-goto-hung-to-the-90-s-timeout-once.md) | user-select.spec.ts /component/sidebar/ page.goto hung to the 90 s timeout once in the release suite | 2026-10-23 |
 | [258](backlog/done/258-theme-all-reset-cp-area-thumb-rect-flakes-by-a-sub-pixel.md) | theme-all-reset.spec.ts cp-area-thumb 'visual computed style' flakes on a sub-pixel rect (20x19.99999) | 2026-10-21 |
 | [259](backlog/done/259-popup-root-typography-reset.md) | Popup root: one theme rule resets every inherited property at a popover or dialog (typography half of row 218) | 2026-10-21 |
 | [260](backlog/done/260-hover-color-mix-space-one-token-everywhere.md) | Every hover color-mix reads the theme's mix space (finish row 243) | 2026-10-19 |
@@ -354,6 +352,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [310](backlog/done/310-questionnaire-height-transition.md) | Questionnaire: animate the height between items instead of snapping | 2026-10-20 |
 | [311](backlog/done/311-combobox-multiple-demo-higher-on-the-page.md) | Combobox multiple demo higher on the component page | 2026-10-20 |
 | [320](backlog/done/320-skip-the-cargo-gates-when-the-rust-tree.md) | Skip the cargo gates when the Rust tree is unchanged since the last green full gate | 2026-10-21 |
+| [322](backlog/done/322-run-the-full-release-suite-per-deploy-not.md) | Run the full release suite per deploy, not per merge batch | 2026-10-23 |
 | [323](backlog/done/323-finer-spec-selection-map-changed-css-rules-to.md) | Finer spec selection: map changed CSS rules to the classes and routes that use them | 2026-10-21 |
 | [324](backlog/done/324-keep-warm-release-target-trees-for-validation-and.md) | Keep warm release target trees for validation and for deploy | 2026-10-21 |
 | [326](backlog/done/326-lanes-iterate-with-dx-serve-hot-reload-and.md) | Lanes iterate with dx serve hot reload and verify on an SSG build | 2026-10-21 |
@@ -386,6 +385,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [354](backlog/done/354-remove-the-docs-header-language-switcher.md) | Remove the docs header language switcher | 2026-10-21 |
 | [356](backlog/done/356-lane-disk-guard-ignores-concurrent-copies.md) | Lane disk guard ignores concurrent template copies, so two slots both pass and both die with ENOSPC | 2026-10-22 |
 | [357](backlog/done/357-date-picker-natural-language-test-midnight.md) | Date picker natural_language unit test fails when a run crosses midnight UTC | 2026-10-22 |
+| [358](backlog/done/358-all-routes-one-navigation-for-both-schemes.md) | all-routes: one navigation for both schemes (needs a clean forced-colors reset) | 2026-10-23 |
 | [359](backlog/done/359-js-tooling-pnpm-minimum-release-age.md) | JS tooling: pnpm in playwright/ and preview/ with minimumReleaseAge, exact pins and install scripts off | 2026-10-23 |
 | [360](backlog/done/360-data-view-shared-collection-model.md) | Shared collection model: data_view in primitives (identity, ViewState with manual order, fields, index-returning derive) and the selection count fix | 2026-10-23 |
 | [361](backlog/done/361-renderer-identity-item-key.md) | Renderer identity: item_key on VirtualList, TableRows and VirtualGrid, engine sizes keyed by item | 2026-10-23 |

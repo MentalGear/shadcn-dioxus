@@ -14,11 +14,13 @@
  * CATALOG complete against the component directories; this file keeps every CATALOG row covered.) The
  * four site pages (`/`, `/docs`, `/demos`, `/charts/`) ride along.
  *
- * One NAVIGATION per (route, scheme): the three probe families below used to be three tests, so every page was
- * loaded, hydrated and settled three times per scheme (row 327; a navigation-plus-settle is ~2 s on a debug build).
- * They are now one test per (route, scheme) that loads once and runs the probes in order on that load
- * (`runProbes`, with the ORDER and why in the comment above the sweep loop). A failure in one probe does not hide
- * the others: every probe runs, and the test's error carries each failing probe's own message under its name.
+ * One NAVIGATION per route, for both schemes: the three probe families below used to be three tests, so every page
+ * was loaded, hydrated and settled three times per scheme (row 327; a navigation-plus-settle is ~2 s on a debug
+ * build), and then once per scheme (row 358). Now one test per route loads it once, in light, and runs every probe
+ * in both schemes on that load, switching the scheme in place (`ensureScheme`: the theme is attributes and CSS,
+ * `__dxApplyMode` is its one writer, so the DOM does not depend on the scheme). The ORDER, and the fresh-load
+ * comparison every route was checked against, are in the comment above the sweep loop. A failure in one probe does
+ * not hide the others: every probe runs, and the test's error carries each failing probe's own message under its name.
  *
  * For every route, in `light` and in `dark`:
  *  1. AXE. `expectNoAxeViolations` with the repo's tag set, closed state. Known, tracked findings are
@@ -216,6 +218,24 @@ async function settle(page: Page, { watchNewSheets = true }: { watchNewSheets?: 
   await page.evaluate(() => new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r()))));
 }
 
+/**
+ * Put the loaded page in `scheme` in place, as a fresh load in that scheme would have it (row 358): the cookie (so a
+ * page opened from here, the fresh phone loads, reads the same), the media query, and the one mode writer
+ * `__dxApplyMode` (`preview/src/theme.rs`'s PREPAINT_JS) in every frame, the block-demo iframes included; then the
+ * usual settle. A no-op when the page is already in `scheme`. Every probe starts with it, so a probe that failed
+ * half-way cannot leave the next one judging the wrong scheme.
+ */
+async function ensureScheme(page: Page, scheme: Scheme) {
+  if ((await page.locator("html").getAttribute("data-theme")) === scheme) return;
+  await page.context().addCookies([{ name: "dx_theme", value: scheme, url: BASE_URL }]);
+  await page.emulateMedia({ colorScheme: scheme }); // the other emulated features (reduced motion, forced colors) stay
+  for (const frame of page.frames()) {
+    await frame.evaluate((m) => (window as unknown as { __dxApplyMode?: (m: string) => void }).__dxApplyMode?.(m), scheme);
+  }
+  await expect(page.locator("html")).toHaveAttribute("data-theme", scheme);
+  await settle(page);
+}
+
 /** Does `selector` still violate any rule? (For the "known finding is still real" assertion.) */
 async function stillViolates(page: Page, selector: string): Promise<boolean> {
   const results = await new AxeBuilder({ page })
@@ -232,6 +252,7 @@ async function stillViolates(page: Page, selector: string): Promise<boolean> {
 
 /** 1. axe, closed state, at the default viewport, with the page as it was loaded. */
 async function probeAxe(page: Page, route: Route, scheme: Scheme) {
+  await ensureScheme(page, scheme);
   const known = KNOWN_AXE[route.id]?.[scheme] ?? [];
   await expectNoAxeViolations(page, `all-routes: ${route.id} (${scheme})`, {
     excludeRegions: [EXCLUDE_BLOCK_DEMO_FRAMES, ...known.map((k) => ({ selector: k.selector, reason: `${k.row}: ${k.why}` }))],
@@ -251,9 +272,12 @@ async function probeAxe(page: Page, route: Route, scheme: Scheme) {
  * (`virtual_grid` renders 2,955 elements after the round trip against 2,784 on a fresh phone load, `site-home` 4,799
  * against 4,763 from `content-visibility: auto` sections, `message_scroller` moves 10 boxes), while on every other
  * route the round trip is box-for-box identical. Their phone-width reading therefore comes from a second, fresh
- * page loaded at 390px, exactly as the old test did.
+ * page loaded at 390px, exactly as the old test did. Row 358 added `collapsible` and `tabs`: the in-place scheme switch
+ * is a second re-layout, and after one their closed find-in-page panels (`hidden="until-found"`) lay out 1-2 boxes
+ * that no ancestor clips (a second viewport round trip on a fresh page does the same), so their dark reading would
+ * not be a fresh dark page's. Every other route's switched reading has exactly the fresh load's unclipped boxes.
  */
-const FRESH_PHONE_LOAD = new Set(["virtual_grid", "site-home", "message_scroller"]);
+const FRESH_PHONE_LOAD = new Set(["virtual_grid", "site-home", "message_scroller", "collapsible", "tabs"]);
 const PHONE = { width: 390, height: 844 };
 
 /** The 390px reading itself: which boxes pass the viewport and are neither scrollable nor clipped by an ancestor. */
@@ -281,64 +305,92 @@ async function readOverflow(page: Page) {
 }
 
 /**
- * 2. no horizontal overflow at 390px. Runs FIRST on its load: it resizes the page to a phone, re-settles, reads, and
- * restores the viewport, so it must see the page before anything else has touched it (axe makes closed accordions
- * lay out their content; the forced-colors sweep focuses, scrolls and writes the URL). Three routes read a fresh
- * phone-width page instead (`FRESH_PHONE_LOAD`).
+ * 2. no horizontal overflow at 390px, in every scheme of `schemes`. Runs FIRST on its load: it resizes the page to a
+ * phone ONCE, re-settles, reads each scheme (switched in place at the phone width), and restores the viewport, so it
+ * must see the page before anything else has touched it (axe makes closed accordions lay out their content; the
+ * forced-colors sweep focuses, scrolls and writes the URL). Three routes read a fresh phone-width page per scheme
+ * instead (`FRESH_PHONE_LOAD`).
+ *
+ * The reading after the switch is not box-for-box the fresh dark load's (row 358): any later re-layout of the page --
+ * the switch, or simply a second viewport round trip on a fresh page -- changes the boxes of CLOSED accordion content
+ * (its `overflow: hidden` wrapper drops to zero size), and a second round trip on a fresh dark page gives exactly the
+ * switched reading. Those boxes sit under an `overflow: hidden` ancestor, which `readOverflow` never counts, so the
+ * set of boxes that can offend is the same (the two routes where it is not are in `FRESH_PHONE_LOAD`): checked on every route (`dev-docs/research/row-358-one-navigation-both-schemes.md`).
  */
-async function probeOverflow(page: Page, route: Route, scheme: Scheme) {
-  let result: Awaited<ReturnType<typeof readOverflow>>;
+async function probeOverflow(page: Page, route: Route, schemes: Scheme[]) {
+  const results: Partial<Record<Scheme, Awaited<ReturnType<typeof readOverflow>>>> = {};
   if (FRESH_PHONE_LOAD.has(route.id)) {
-    const phone = await page.context().newPage();
-    try {
-      await openRoute(phone, route, scheme, PHONE);
-      result = await readOverflow(phone);
-    } finally {
-      await phone.close();
+    for (const scheme of schemes) {
+      const phone = await page.context().newPage();
+      try {
+        await openRoute(phone, route, scheme, PHONE);
+        results[scheme] = await readOverflow(phone);
+      } finally {
+        await phone.close();
+      }
     }
+    // The cookie now names the last scheme; the shared page keeps its own (ensureScheme reads `data-theme`).
   } else {
     // viewport-ok: remembers the size to restore with `setViewportSize`, not a bound for any box
     const desktop = page.viewportSize()!;
     await page.setViewportSize(PHONE);
     await settle(page);
-    result = await readOverflow(page);
+    for (const scheme of schemes) {
+      await ensureScheme(page, scheme);
+      results[scheme] = await readOverflow(page);
+    }
     // Back to the desktop viewport for the probes after this one (axe and the forced-colors sweep judged a desktop page).
     await page.setViewportSize(desktop);
     await settle(page, { watchNewSheets: false });
   }
-  expect(result.pageScroll, "page-level horizontal scroll").toBeLessThanOrEqual(0);
+  const verdict = (r: Awaited<ReturnType<typeof readOverflow>>) => ({ pageScroll: Math.max(r.pageScroll, 0), offenders: r.offenders.slice(0, 6) });
+  const vw = Object.values(results)[0]!.vw;
   expect(
-    result.offenders.slice(0, 6),
-    `content wider than the ${result.vw}px viewport and not scrollable or clipped by an ancestor`,
-  ).toEqual([]);
+    Object.fromEntries(schemes.map((s) => [s, verdict(results[s]!)])),
+    `page-level horizontal scroll, and content wider than the ${vw}px viewport and not scrollable or clipped by an ancestor, per scheme`,
+  ).toEqual(Object.fromEntries(schemes.map((s) => [s, { pageScroll: 0, offenders: [] }])));
 }
 
 /**
- * 3. keyboard focus in forced colors. Turns `forcedColors: "active"` on for the rest of the load and moves focus,
- * scrolls and writes `#main-content` into the URL, so it comes after axe and overflow, which judge the page's normal
- * rendering.
+ * 3. keyboard focus in forced colors, in every scheme of `schemes`, on ONE keyboard walk. Turns `forcedColors: "active"`
+ * on for the rest of the load and moves focus, scrolls and writes `#main-content` into the URL, so it comes after axe
+ * and overflow, which judge the page's normal rendering.
+ *
+ * Why one walk for both schemes (row 358): the skip-link check presses Tab from the document's focus start point, and
+ * a first walk moves that point into `<main>`; no reset tried was exact (blur, strip the hash, scroll to 0, a throw-away
+ * button prepended and removed: 81 of 83 controls on the home page). A second sweep is not the same either: the first
+ * leaves a roving-tabindex container (Menubar) handing focus to its item, so a second pick or a second `focus()` of it
+ * judges something else. So every element is focused ONCE and its outline read in each scheme while it holds focus,
+ * the scheme flipped in the page (`installFlipScheme`), which needs no style settle: `getComputedStyle` recalculates.
+ * Every route was compared with a fresh load in each scheme (`dev-docs/research/row-358-one-navigation-both-schemes.md`).
  */
-async function probeForcedColors(page: Page) {
+async function probeForcedColors(page: Page, schemes: Scheme[]) {
   await page.emulateMedia({ forcedColors: "active" });
   expect(await page.evaluate(() => matchMedia("(forced-colors: active)").matches), "forced colors is emulated").toBe(true);
+  await installFlipScheme(page);
 
-  // The skip link: the very first Tab stop, with an indicator, and it lands focus in <main>.
+  // The skip link: the very first Tab stop, with an indicator in every scheme, and it lands focus in <main>.
   await page.keyboard.press("Tab");
-  const first = await page.evaluate(() => {
+  const first = await page.evaluate((schemes) => {
+    const flip = (window as unknown as FlipWindow).__allRoutesFlipScheme;
     const a = document.activeElement as HTMLElement | null;
-    const cs = a ? getComputedStyle(a) : null;
     return {
       cls: a?.className ?? "",
       href: a?.getAttribute("href") ?? "",
-      outline: cs ? `${cs.outlineStyle} ${cs.outlineWidth}` : "",
-      outlined: !!cs && cs.outlineStyle !== "none" && parseFloat(cs.outlineWidth) > 0,
-      mains: document.querySelectorAll("main").length,
+      outline: a
+        ? flip(schemes, () => {
+            const cs = getComputedStyle(a);
+            return cs.outlineStyle !== "none" && parseFloat(cs.outlineWidth) > 0 ? "visible" : `${cs.outlineStyle} ${cs.outlineWidth}`;
+          })
+        : {},
       target: document.getElementById("main-content")?.tagName ?? null,
     };
-  });
+  }, schemes);
   expect(first.cls, "the first Tab stop is the skip link").toContain("dx-skip-link");
   expect(first.href).toBe("#main-content");
-  expect(first.outlined, `the focused skip link has an outline (${first.outline})`).toBe(true);
+  expect(first.outline, "the focused skip link's outline (style and width > 0), per scheme").toEqual(
+    Object.fromEntries(schemes.map((s) => [s, "visible"])),
+  );
   expect(first.target, "the skip link's target exists and is a <main>").toBe("MAIN");
   await page.keyboard.press("Enter");
   expect(
@@ -358,8 +410,9 @@ async function probeForcedColors(page: Page) {
     expect(inMain.inside, "the Tab after the skip link lands inside <main>, not back in the nav or sidebar").toBe(true);
   }
 
-  // Every distinct control signature in <main>, focused by keyboard, has a visible indicator.
-  const failures = await page.evaluate(() => {
+  // Every distinct control signature in <main>, focused by keyboard, has a visible indicator in every scheme.
+  const failures = await page.evaluate((schemes) => {
+    const flip = (window as unknown as FlipWindow).__allRoutesFlipScheme;
     const SELECTOR =
       'a[href], button:not([disabled]), input:not([disabled]):not([type=hidden]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex="-1"]), [role=button], [role=tab], [role=switch], [role=checkbox], [role=radio], [role=slider], [role=menuitem], [role=option]';
     const mains = [...document.querySelectorAll("main")];
@@ -376,7 +429,7 @@ async function probeForcedColors(page: Page) {
         );
       });
     const seen = new Set<string>();
-    const out: string[] = [];
+    const out: Record<string, string[]> = Object.fromEntries(schemes.map((s) => [s, []]));
     const visibleOutline = (e: Element) => {
       const cs = getComputedStyle(e);
       return cs.outlineStyle !== "none" && parseFloat(cs.outlineWidth) > 0;
@@ -391,26 +444,57 @@ async function probeForcedColors(page: Page) {
       e.focus();
       if (document.activeElement !== e) continue; // not focusable right now (hidden until hover, etc.)
       if (!e.matches(":focus-visible")) {
-        out.push(`${sig}: focused by script after a Tab but :focus-visible does not match (cannot be judged)`);
+        for (const s of schemes) out[s].push(`${sig}: focused by script after a Tab but :focus-visible does not match (cannot be judged)`);
         continue;
       }
       checked++;
-      let ok = visibleOutline(e);
-      if (!ok && getComputedStyle(e).opacity === "0") {
-        // An invisible overlay input (InputOtp): focus shows on the active proxy inside its group.
-        const proxy = e.parentElement?.querySelector('[data-active="true"]');
-        ok = !!proxy && visibleOutline(proxy);
-      }
-      if (!ok) {
+      const verdicts = flip(schemes, () => {
+        let ok = visibleOutline(e);
+        if (!ok && getComputedStyle(e).opacity === "0") {
+          // An invisible overlay input (InputOtp): focus shows on the active proxy inside its group.
+          const proxy = e.parentElement?.querySelector('[data-active="true"]');
+          ok = !!proxy && visibleOutline(proxy);
+        }
+        if (ok) return "";
         const cs = getComputedStyle(e);
-        out.push(`${sig}: outline ${cs.outlineStyle} ${cs.outlineWidth}`);
-      }
+        return `${sig}: outline ${cs.outlineStyle} ${cs.outlineWidth}`;
+      });
+      for (const s of schemes) if (verdicts[s]) out[s].push(verdicts[s]);
       if (checked >= 120) break;
     }
     (document.activeElement as HTMLElement | null)?.blur();
     return out;
+  }, schemes);
+  expect(failures, "controls whose keyboard focus is invisible in forced-colors mode, per scheme").toEqual(
+    Object.fromEntries(schemes.map((s) => [s, []])),
+  );
+}
+
+type FlipWindow = { __allRoutesFlipScheme: <T>(schemes: string[], read: () => T) => Record<string, T> };
+/**
+ * Installs `window.__allRoutesFlipScheme(schemes, read)`: runs `read` once per scheme with the page flipped to it by
+ * the one mode writer (`window.__dxApplyMode`, PREPAINT_JS), then restores the mode the page had. In-page and
+ * synchronous, so a focused element keeps focus and no settle is needed. That is the whole scheme as CSS sees it:
+ * `html[data-theme]` decides every theme token and outranks the `prefers-color-scheme` defaults on `:root`, so the
+ * emulated media query (left as loaded) does not take part.
+ */
+async function installFlipScheme(page: Page) {
+  await page.evaluate(() => {
+    const w = window as unknown as FlipWindow & { __dxApplyMode: (m: string | null) => void };
+    w.__allRoutesFlipScheme = (schemes, read) => {
+      const before = document.documentElement.getAttribute("data-theme");
+      const out: Record<string, ReturnType<typeof read>> = {};
+      try {
+        for (const s of schemes) {
+          w.__dxApplyMode(s);
+          out[s] = read();
+        }
+      } finally {
+        w.__dxApplyMode(before);
+      }
+      return out;
+    };
   });
-  expect(failures, "controls whose keyboard focus is invisible in forced-colors mode").toEqual([]);
 }
 
 // --- 3b. the active option of a listbox that never takes focus ------------------------------
@@ -432,20 +516,27 @@ const ACTIVEDESCENDANT_LISTS: Record<string, (page: Page) => Promise<void>> = {
 /**
  * 3b runs LAST on its load: it types into the list and (Command) opens a dialog, so nothing may read the page
  * after it. Forced colors is already on from `probeForcedColors` (3b needs it; the old test set it before load).
+ * The option is highlighted once and its outline read in every scheme, switched in place (row 358).
  */
-async function probeActiveDescendant(page: Page, focusInput: (page: Page) => Promise<void>) {
+async function probeActiveDescendant(page: Page, focusInput: (page: Page) => Promise<void>, schemes: Scheme[]) {
   await page.emulateMedia({ forcedColors: "active" });
   await page.keyboard.press("Tab"); // keyboard modality
   await focusInput(page);
   await page.keyboard.press("ArrowDown");
   const option = page.locator('[role="option"][data-highlighted="true"]').first();
   await expect(option).toBeVisible();
-  const outline = await option.evaluate((e) => {
-    const cs = getComputedStyle(e);
-    return { style: cs.outlineStyle, width: parseFloat(cs.outlineWidth) };
-  });
-  expect(outline.style, "outline-style of the highlighted option").not.toBe("none");
-  expect(outline.width).toBeGreaterThan(0);
+  const outlines: Partial<Record<Scheme, string>> = {};
+  for (const scheme of schemes) {
+    await ensureScheme(page, scheme);
+    await expect(option).toBeVisible();
+    outlines[scheme] = await option.evaluate((e) => {
+      const cs = getComputedStyle(e);
+      return cs.outlineStyle !== "none" && parseFloat(cs.outlineWidth) > 0 ? "visible" : `${cs.outlineStyle} ${cs.outlineWidth}`;
+    });
+  }
+  expect(outlines, "the highlighted option's outline (style and width > 0), per scheme").toEqual(
+    Object.fromEntries(schemes.map((s) => [s, "visible"])),
+  );
 }
 
 /**
@@ -471,44 +562,43 @@ async function runProbes(probes: Array<[title: string, run: () => Promise<void>]
   }
 }
 
-// --- the sweep: one navigation per (route, scheme), every probe on it ------------------------
-// PROBE ORDER, and why it is this one. Each order was measured against the old one-load-per-probe layout on every
+// --- the sweep: one navigation per route, both schemes on it ------------------------------------
+// PROBE ORDER, and why it is this one. Row 327 measured each order against the old one-load-per-probe layout on every
 // route (`dev-docs/research/row-327-all-routes-and-goto-hydrated.md`): axe's full result and the 390px reading must
 // come out as they did on a fresh load, and the forced-colors sweep may only gain controls, never lose or fail one.
-//   1. overflow   resizes to 390px, re-settles, reads geometry, restores the viewport. First, because axe and the
-//                 sweep both change what a later geometry read sees (axe: closed accordions lay out their content,
-//                 `content-visibility` sections render; the sweep: focus, scroll, URL hash).
-//   2. axe        reads the page at the default viewport with nothing focused and no forced colors. A viewport round
-//                 trip does not change its result: pass, violation and incomplete node counts per rule are identical.
-//   3. forced colors  emulates forced colors, presses Tab/Enter, focuses and scrolls to controls, writes
-//                 `#main-content` into the URL. After axe, which judges normal rendering. (It can see one control a
-//                 fresh load does not, the docs props table's scroller, which becomes focusable once the page has
-//                 been resized or scanned: a gain, and it passes.)
+// Row 358 then checked the in-place scheme switch the same way, every route against a fresh load in each scheme
+// (`dev-docs/research/row-358-one-navigation-both-schemes.md`).
+//   1. overflow   resizes to 390px once, re-settles, reads light, switches, reads dark, restores the viewport. First,
+//                 because axe and the sweep both change what a later geometry read sees (axe: closed accordions lay
+//                 out their content, `content-visibility` sections render; the sweep: focus, scroll, URL hash).
+//   2. axe        dark (the page is in dark after 1), then light: the page at the default viewport with nothing
+//                 focused and no forced colors. A viewport round trip and a scheme switch do not change its result.
+//   3. forced colors  emulates forced colors, presses Tab/Enter ONCE, reads the skip link and sweeps the controls in
+//                 light and in dark (see `probeForcedColors` for why one walk). After axe, which judges normal rendering.
 //   3b. active option  combobox/command only: focuses an input and opens the palette, so the very last.
 for (const route of ROUTES) {
-  for (const scheme of SCHEMES) {
-    const focusInput = ACTIVEDESCENDANT_LISTS[route.id] as ((page: Page) => Promise<void>) | undefined;
-    const title = [
-      "axe",
-      "no horizontal overflow at 390px",
-      ...(route.kind === "page" ? ["skip link and visible focus in forced colors"] : []),
-      ...(focusInput ? ["the active option shows an outline in forced colors"] : []),
-    ].join(" + ");
-    test(`${route.id}: ${title} (${scheme})`, async ({ page }) => {
-      test.setTimeout(NAV_TIMEOUT);
-      await openRoute(page, route, scheme);
-      await runProbes([
-        [`no horizontal overflow at 390px (${scheme})`, () => probeOverflow(page, route, scheme)],
-        [`axe (${scheme})`, () => probeAxe(page, route, scheme)],
-        ...(route.kind === "page"
-          ? [[`skip link and visible focus in forced colors (${scheme})`, () => probeForcedColors(page)] as [string, () => Promise<void>]]
-          : []),
-        ...(focusInput
-          ? [[`the active option shows an outline in forced colors (${scheme})`, () => probeActiveDescendant(page, focusInput)] as [string, () => Promise<void>]]
-          : []),
-      ]);
-    });
-  }
+  const focusInput = ACTIVEDESCENDANT_LISTS[route.id] as ((page: Page) => Promise<void>) | undefined;
+  const title = [
+    "axe",
+    "no horizontal overflow at 390px",
+    ...(route.kind === "page" ? ["skip link and visible focus in forced colors"] : []),
+    ...(focusInput ? ["the active option shows an outline in forced colors"] : []),
+  ].join(" + ");
+  test(`${route.id}: ${title} (${SCHEMES.join(", ")})`, async ({ page }) => {
+    test.setTimeout(NAV_TIMEOUT);
+    await openRoute(page, route, SCHEMES[0]);
+    const schemesLabel = SCHEMES.join(", ");
+    await runProbes([
+      [`no horizontal overflow at 390px (${schemesLabel})`, () => probeOverflow(page, route, SCHEMES)],
+      ...[...SCHEMES].reverse().map((scheme) => [`axe (${scheme})`, () => probeAxe(page, route, scheme)] as [string, () => Promise<void>]),
+      ...(route.kind === "page"
+        ? [[`skip link and visible focus in forced colors (${schemesLabel})`, () => probeForcedColors(page, SCHEMES)] as [string, () => Promise<void>]]
+        : []),
+      ...(focusInput
+        ? [[`the active option shows an outline in forced colors (${schemesLabel})`, () => probeActiveDescendant(page, focusInput, SCHEMES)] as [string, () => Promise<void>]]
+        : []),
+    ]);
+  });
 }
 
 // --- 4. <html lang> is English, and there is no site-wide language switcher (row 354) ---------
