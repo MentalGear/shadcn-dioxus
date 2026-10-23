@@ -1,0 +1,1 @@
+`fade: ScrollFade::Y` on a windowed list of 20,000 rows and on a content-visibility list of 300. The fade is a mask driven by the container's scroll offset, so it tracks the scrollbar whichever rows are mounted. The "3 rows" button leaves nothing to scroll, so the fade disappears.

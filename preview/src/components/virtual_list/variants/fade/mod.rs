@@ -18,6 +18,21 @@ fn row(idx: usize) -> Element {
     }
 }
 
+/// A demo caption: a title line and a one-sentence description.
+#[component]
+fn Caption(title: &'static str, children: Element) -> Element {
+    rsx! {
+        div { style: "display: flex; flex-direction: column; gap: 0.125rem;",
+            p { style: "margin: 0; color: var(--dx-foreground); font-size: var(--dx-text-sm); font-weight: 500;",
+                "{title}"
+            }
+            p { style: "margin: 0; color: var(--dx-muted-foreground); font-size: var(--dx-text-sm);",
+                {children}
+            }
+        }
+    }
+}
+
 /// `VirtualList`'s `fade` prop on both modes. The fade is a mask on the list's own scroll
 /// container, driven by its scroll offset, so it follows the scrollbar whichever rows are
 /// mounted: the windowed list below holds 20,000 rows but mounts a few dozen. Switch to 3 rows
@@ -29,8 +44,9 @@ pub fn Demo() -> Element {
 
     rsx! {
         div { style: "display: flex; width: 100%; max-width: 28rem; flex-direction: column; gap: var(--dx-space-4);",
-            p { style: "margin: 0; color: var(--dx-muted-foreground); font-size: 0.9rem;",
-                "Windowed: only the rows in view are mounted, and the fade still tracks the scroll position."
+            Caption {
+                title: "Windowed",
+                "Only the rows in view are mounted, and the fade still tracks the scroll position."
             }
             div {
                 "data-demo": "fade-windowed",
@@ -57,8 +73,9 @@ pub fn Demo() -> Element {
                     }
                 }
             }
-            p { style: "margin: 0; color: var(--dx-muted-foreground); font-size: 0.9rem;",
-                "Content-visibility: every row is in the DOM and the browser skips the off-screen ones."
+            Caption {
+                title: "Content-visibility",
+                "Every row is in the DOM and the browser skips the off-screen ones; the fade is the same."
             }
             div {
                 "data-demo": "fade-content-visibility",

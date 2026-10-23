@@ -40,61 +40,70 @@ pub fn Demo() -> Element {
 
     rsx! {
         div { style: "display: flex; width: 100%; max-width: 24rem; flex-direction: column; gap: var(--dx-space-4);",
-            div {
-                "data-demo": "fade-y",
-                style: "border: 1px solid var(--dx-border); border-radius: var(--dx-radius-lg);",
-                ScrollArea {
-                    height: "12rem",
-                    padding: "0.75rem 1rem",
-                    direction: ScrollDirection::Vertical,
-                    fade: ScrollFade::Y,
-                    tabindex: "0",
-                    "aria-label": "Releases",
-                    div {
-                        p { style: "margin: 0 0 0.5rem; font-size: var(--dx-text-sm); font-weight: 500;", "Releases" }
-                        for tag in RELEASES {
-                            p { style: "margin: 0; font-size: var(--dx-text-sm);", "{tag}" }
-                            Separator { decorative: true, style: "margin: 0.5rem 0;" }
-                        }
-                    }
-                }
-            }
-            div {
-                "data-demo": "fade-x",
-                style: "border: 1px solid var(--dx-border); border-radius: var(--dx-radius-lg);",
-                ScrollArea {
-                    padding: "0.75rem 1rem",
-                    direction: ScrollDirection::Horizontal,
-                    dir: Some(direction),
-                    fade: ScrollFade::X,
-                    tabindex: "0",
-                    "aria-label": "Components",
-                    div { style: "display: flex; gap: 0.5rem; width: max-content;",
-                        for name in TAGS {
-                            span { style: "flex: none; padding: 0.25rem 0.75rem; border: 1px solid var(--dx-border); border-radius: var(--dx-radius-md); font-size: var(--dx-text-sm);",
-                                "{name}"
+            div { style: "display: flex; flex-direction: column; gap: 0.5rem;",
+                p { style: "margin: 0; color: var(--dx-muted-foreground); font-size: var(--dx-text-sm);", "Vertical: fades at the end, and at the start once scrolled" }
+                div {
+                    "data-demo": "fade-y",
+                    style: "border: 1px solid var(--dx-border); border-radius: var(--dx-radius-lg);",
+                    ScrollArea {
+                        height: "12rem",
+                        padding: "0.75rem 1rem",
+                        direction: ScrollDirection::Vertical,
+                        fade: ScrollFade::Y,
+                        tabindex: "0",
+                        "aria-label": "Releases",
+                        div {
+                            p { style: "margin: 0 0 0.5rem; font-size: var(--dx-text-sm); font-weight: 500;", "Releases" }
+                            for tag in RELEASES {
+                                p { style: "margin: 0; font-size: var(--dx-text-sm);", "{tag}" }
+                                Separator { decorative: true, style: "margin: 0.5rem 0;" }
                             }
                         }
                     }
                 }
             }
-            div {
-                "data-demo": "fade-short",
-                style: "border: 1px solid var(--dx-border); border-radius: var(--dx-radius-lg);",
-                ScrollArea {
-                    height: "12rem",
-                    padding: "0.75rem 1rem",
-                    direction: ScrollDirection::Vertical,
-                    fade: ScrollFade::Y,
-                    tabindex: "0",
-                    "aria-label": "Short list",
-                    div {
-                        for tag in &RELEASES[..3] {
-                            p { style: "margin: 0; font-size: var(--dx-text-sm);", "{tag}" }
-                            Separator { decorative: true, style: "margin: 0.5rem 0;" }
+            div { style: "display: flex; flex-direction: column; gap: 0.5rem;",
+                p { style: "margin: 0; color: var(--dx-muted-foreground); font-size: var(--dx-text-sm);", "Horizontal: follows the reading direction (flip it with the button)" }
+                div {
+                    "data-demo": "fade-x",
+                    style: "border: 1px solid var(--dx-border); border-radius: var(--dx-radius-lg);",
+                    ScrollArea {
+                        padding: "0.75rem 1rem",
+                        direction: ScrollDirection::Horizontal,
+                        dir: Some(direction),
+                        fade: ScrollFade::X,
+                        tabindex: "0",
+                        "aria-label": "Components",
+                        div { style: "display: flex; gap: 0.5rem; width: max-content;",
+                            for name in TAGS {
+                                span { style: "flex: none; padding: 0.25rem 0.75rem; border: 1px solid var(--dx-border); border-radius: var(--dx-radius-md); font-size: var(--dx-text-sm);",
+                                    "{name}"
+                                }
+                            }
                         }
-                        p { style: "margin: 0; font-size: var(--dx-text-xs); color: var(--dx-muted-foreground);",
-                            "Nothing to scroll to, so nothing fades."
+                    }
+                }
+            }
+            div { style: "display: flex; flex-direction: column; gap: 0.5rem;",
+                p { style: "margin: 0; color: var(--dx-muted-foreground); font-size: var(--dx-text-sm);", "Too short to scroll: no fade" }
+                div {
+                    "data-demo": "fade-short",
+                    style: "border: 1px solid var(--dx-border); border-radius: var(--dx-radius-lg);",
+                    ScrollArea {
+                        height: "12rem",
+                        padding: "0.75rem 1rem",
+                        direction: ScrollDirection::Vertical,
+                        fade: ScrollFade::Y,
+                        tabindex: "0",
+                        "aria-label": "Short list",
+                        div {
+                            for tag in &RELEASES[..3] {
+                                p { style: "margin: 0; font-size: var(--dx-text-sm);", "{tag}" }
+                                Separator { decorative: true, style: "margin: 0.5rem 0;" }
+                            }
+                            p { style: "margin: 0; font-size: var(--dx-text-xs); color: var(--dx-muted-foreground);",
+                                "Nothing to scroll to, so nothing fades."
+                            }
                         }
                     }
                 }
