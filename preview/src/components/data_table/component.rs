@@ -378,6 +378,7 @@ pub fn DataTable<T: Clone + PartialEq + 'static>(props: DataTableProps<T>) -> El
         page_size: props.page_sizes.first().copied().unwrap_or(usize::MAX),
         sort: props.default_sort.clone(),
         hidden_columns: props.hidden_columns.clone(),
+        selected: Vec::new(),
     };
     let model = use_data_table(props.rows, &props.columns, &props.row_key, options);
     let state = model.state;

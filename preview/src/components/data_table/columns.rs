@@ -191,6 +191,10 @@ pub struct DataTableOptions {
     pub sort: Option<(String, SortDirection)>,
     /// Ids of the columns that start hidden (the Columns menu shows them again).
     pub hidden_columns: Vec<String>,
+    /// Keys of the rows that start selected. Applied when the state is
+    /// created, so the server markup and the client's first frame agree
+    /// (setting a selection from a hook after the first read would not).
+    pub selected: Vec<String>,
 }
 
 impl Default for DataTableOptions {
@@ -199,6 +203,7 @@ impl Default for DataTableOptions {
             page_size: 10,
             sort: None,
             hidden_columns: Vec::new(),
+            selected: Vec::new(),
         }
     }
 }
@@ -354,7 +359,11 @@ pub fn use_data_table<T: Clone + 'static>(
     row_key: &RowFn<T, String>,
     options: DataTableOptions,
 ) -> DataTableModel<T> {
-    let state = use_signal(|| TableState::new(options.page_size, options.sort));
+    let state = use_signal(|| {
+        let mut initial = TableState::new(options.page_size, options.sort);
+        initial.set_many_selected(options.selected.iter().map(String::as_str), true);
+        initial
+    });
     let layout =
         use_signal(|| ColumnLayout::with_hidden(options.hidden_columns.iter().map(String::as_str)));
     let fields: Vec<Field<T>> = columns.iter().map(|c| c.field.clone()).collect();

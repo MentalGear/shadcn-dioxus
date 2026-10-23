@@ -56,10 +56,9 @@ pub fn Demo() -> Element {
         rows.into(),
         &columns,
         &RowFn::new(|o: &Order| o.id.to_string()),
-        DataTableOptions { page_size: usize::MAX, ..Default::default() },
+        DataTableOptions { page_size: usize::MAX, selected: vec!["ORD-3022".to_string()], ..Default::default() },
     );
     let state = model.state;
-    use_hook(|| state.set_selected("ORD-3022", true));
     let view = &model.view;
     let page_keys = view.keys.clone();
     rsx! {
