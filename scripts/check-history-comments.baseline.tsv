@@ -32,7 +32,6 @@ playwright/first-pose.spec.ts	1
 playwright/hover-card.spec.ts	2
 playwright/input_group.spec.ts	2
 playwright/input_otp.spec.ts	7
-playwright/item-key.spec.ts	1
 playwright/main-thread.ts	2
 playwright/markdown.spec.ts	1
 playwright/menu-item-hoist.spec.ts	1
@@ -210,7 +209,7 @@ scripts/check-eager-head-document.sh	1
 scripts/check-hooks-in-closures.sh	4
 scripts/check-infinite-animations.sh	1
 scripts/check-js-bundle.sh	2
-scripts/check-js-listeners.sh	2
+scripts/check-js-listeners.sh	1
 scripts/check-markdown-parser.sh	1
 scripts/check-motion-gating.sh	1
 scripts/check-open-focus.sh	2

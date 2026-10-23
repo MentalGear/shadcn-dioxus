@@ -16,7 +16,7 @@
  * NARROWED (row 329): the every-route sweep moved into `cargo test`. `preview/src/ssr_parity.rs` renders every demo and
  * every component page natively, once as the server frame and once after the first client tick (effects run), and fails on
  * any difference in text, `value`, `aria-label`, `class`, `style` or `data-*`; it is a superset of what this spec read,
- * found a case this spec missed (tag_group, row 332) and reproduced row 306 at `fb8c0b65^`. What it cannot see is a real
+ * found a case this spec missed (tag_group, row 332) and reproduces row 306. What it cannot see is a real
  * browser hydrating the shipped wasm, so this spec keeps that half on the routes the class has hit (`ROUTES`):
  * Select and Combobox (row 306) and Tag Group (row 332). `FIRST_PAINT_ROUTES=all` runs every component route again,
  * `FIRST_PAINT_ROUTES=select,field` any list.

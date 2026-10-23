@@ -10,7 +10,7 @@ import { ACCENT, applyModeAndAccent, paintedColour, resolvedToken, type Mode } f
 // survive a change of the view (the DOM node and so the state inside a row, the row that stays mounted
 // while it holds focus, the measured sizes) follows the item, not the slot.
 //
-// The Virtual List `reorder` demo always sets `item_key` (owner 2026-10-23: no toggle in the demo), so
+// The Virtual List `reorder` demo always sets `item_key` (the demo has no toggle), so
 // this file proves the key-ON behaviour there. The key-OFF behaviour of the VirtualList engine ("a row is
 // its slot": the DOM node, its state and the measured size stay on the index) moved to the engine's own
 // unit tests: `without_an_item_key_a_row_is_its_slot` (primitives/src/virtual/identity.rs) and
@@ -76,7 +76,7 @@ test.describe("VirtualList item_key", () => {
     const list = await measureAtRest(frame.locator(".dx-virtual-list-container"));
     const contentWidth = outer.width - content.padding - content.border;
     // The demo wrapper is the frame's content width, the bordered box is the same, the list is the box
-    // inside its 1px border on each side (it used to shrink to its longest row label).
+    // inside its 1px border on each side (without a width it would shrink to its longest row label).
     expect(Math.abs(demo.width - contentWidth)).toBeLessThanOrEqual(0.5);
     expect(Math.abs(box.width - contentWidth)).toBeLessThanOrEqual(0.5);
     expect(Math.abs(list.width - (box.width - 2))).toBeLessThanOrEqual(0.5);
@@ -90,7 +90,7 @@ test.describe("VirtualList item_key", () => {
     await press(page, 1, "reorder"); // Shuffle
     await expect(page.locator(":focus")).toHaveAttribute("data-item-button", "3");
     await expect(itemCheck(frame, 3)).toBeChecked();
-    // The list really changed order: slot 3 no longer holds task 3.
+    // The list really changed order: slot 3 holds a task other than task 3.
     await expect(frame.locator('[data-virtual-index="3"] [data-item]')).not.toHaveAttribute("data-item", "3");
   });
 

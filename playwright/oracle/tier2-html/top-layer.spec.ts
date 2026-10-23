@@ -2331,7 +2331,7 @@ test.describe("Rule 15 — vertical shift + size clamp: an overlay taller than t
  * the same fixtures and assertions as Rules 12 and 15, with the engine's
  * own anchor positioning left in place, so they pin that hand-off (row
  * 210's exclusion-zone check: a CSS placement outside the visual viewport
- * goes to the JS path). Verified 2026-10-23: green on `main`; with that
+ * goes to the JS path). Green as is; with that
  * check mutated off, Tooltip and Popover land at `left: -85px`/`-73px` and
  * the filled Popover reaches `bottom: 806px` on a 400px viewport (red).
  * HoverCard stays in bounds either way, a guard as in Rule 12.

@@ -1,10 +1,7 @@
 // The one place that decides which Chromium binary a local Playwright run launches (backlog row 374).
 //
-// Every playwright/*.local.config.ts, the specs that replace `launchOptions`, and the scripts/*.mjs probes used to
-// hard-code revision 1194's `chrome-linux/chrome` under `/opt/pw-browsers`. A fresh container shipped revision 1243
-// with a `chrome-linux64/` directory instead, the exists-check silently fell through to Playwright's own resolution, and
-// that looks for the revision the pinned @playwright/test expects (1223 for 1.60.0), which is not installed either:
-// every lane run died at browser launch until someone symlinked the old path. By construction now:
+// A fresh sandbox image may ship a different Chromium revision (and a `chrome-linux64/` directory) than the
+// last one, so no config, spec or probe names a revision path (row 374 has the incident). The binary is chosen here:
 //
 //   1. `PW_CHROMIUM=<path>` wins. A path that does not exist throws: an explicit override that is wrong must fail
 //      loudly, not fall back to another browser.

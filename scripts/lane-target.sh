@@ -16,7 +16,7 @@
 # running `prune` afterwards.
 #
 # Row 367: every lane command runs with CARGO_INCREMENTAL=0, which neither reads nor writes cargo's
-# `incremental/` dirs, so they are dead weight (3.0 of the template's 6.8 GB on 2026-10-22). `create`
+# `incremental/` dirs, so they are dead weight (about 3 of the template's 6.8 GB). `create`
 # leaves them out of the copy (the same `lane-slot-target.sh copy` lane-ssg.sh uses) and sizes its disk
 # check without them. `slim` deletes them from every tree under the root: once is enough to free the
 # template's 3.0 GB for good. A tree created with LANE_CARGO_INCREMENTAL=1 keeps the full copy and gets
