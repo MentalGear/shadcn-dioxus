@@ -112,7 +112,8 @@ test.describe("scroll fade edge transition", () => {
     const el = await open(page);
     const { property, duration } = await transitionStyle(el);
     expect(property).toBe("none");
-    expect(duration).toBe("0s");
+    // (a `tabindex` scroller also meets the theme's reduced-motion floor of 0.01ms, which is not a duration to wait for)
+    expect(parseFloat(duration)).toBeLessThan(0.001);
     await withoutScrollTimeline(el);
     for (const prop of PROPS) {
       const grow = await setDepth(el, prop, "40px");
@@ -125,12 +126,17 @@ test.describe("scroll fade edge transition", () => {
     const el = await open(page);
     const supported = await page.evaluate(() => CSS.supports("animation-timeline: scroll()"));
     test.skip(!supported, "needs scroll-driven animations");
-    await el.evaluate((n) => ((n as HTMLElement).scrollTop = 120));
+    // The depth is an animation on the element's scroll timeline (the computed value is a calc() of the
+    // animated depth, so the animation object is what is read, not a number).
     await expect
-      .poll(() => el.evaluate((n) => parseFloat(getComputedStyle(n).getPropertyValue("--dx-scroll-fade-t"))), {
-        message: "the start edge faded in with the scroll",
-      })
-      .toBeGreaterThan(1);
+      .poll(() =>
+        el.evaluate((n) =>
+          n.getAnimations().some((a) => a instanceof CSSAnimation && a.animationName.startsWith("dx-scroll-fade-") && a.timeline instanceof ScrollTimeline),
+        ),
+      )
+      .toBe(true);
+    await el.evaluate((n) => ((n as HTMLElement).scrollTop = 120));
+    await el.evaluate((n) => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
     const transitions = await el.evaluate((n) => n.getAnimations().filter((a) => a instanceof CSSTransition).length);
     expect(transitions).toBe(0);
   });
