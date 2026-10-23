@@ -99,6 +99,45 @@ test("a list that fits shows no scroll button, and a closed select renders none"
   await expect(l.locator('[data-slot="select-scroll-button"][data-visible="true"]')).toHaveCount(0);
 });
 
+/** A headless page cannot be backgrounded: override what the motion registry reads (`primitives/src/activity.rs`). */
+async function setHidden(page: Page, hidden: boolean) {
+  await page.evaluate((h) => {
+    Object.defineProperty(document, "visibilityState", { configurable: true, get: () => (h ? "hidden" : "visible") });
+    Object.defineProperty(document, "hidden", { configurable: true, get: () => h });
+    document.dispatchEvent(new Event("visibilitychange"));
+  }, hidden);
+}
+
+test("a hidden tab pauses the hover auto-scroll and a visible one resumes it", async ({ page }) => {
+  await open(page);
+  const l = list(page);
+  const box = await measureAtRest(down(page));
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await expect.poll(() => scrollTop(l), { timeout: 5000 }).toBeGreaterThan(20);
+  await setHidden(page, true);
+  await expect(down(page)).toHaveAttribute("data-dx-motion", "paused");
+  const held = await scrollTop(l);
+  await page.waitForTimeout(250);
+  expect(Math.abs((await scrollTop(l)) - held), "no scrolling while the tab is hidden").toBeLessThanOrEqual(1);
+  await setHidden(page, false);
+  await expect(down(page)).not.toHaveAttribute("data-dx-motion", "paused");
+  await expect.poll(() => scrollTop(l), { timeout: 5000 }).toBeGreaterThan(held + 20);
+});
+
+// Reduced motion: the hover scroll is the user's own pointer driving the list (like holding an arrow key),
+// not decorative motion, so it keeps working; the buttons still show and hide with the scroll position.
+test("under reduced motion the buttons still show and hovering still scrolls", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await open(page);
+  const l = list(page);
+  await expect(down(page)).toHaveAttribute("data-visible", "true");
+  await expect(up(page)).toHaveAttribute("data-visible", "false");
+  const box = await measureAtRest(down(page));
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await expect.poll(() => scrollTop(l), { timeout: 5000 }).toBeGreaterThan(20);
+  await expect(up(page)).toHaveAttribute("data-visible", "true");
+});
+
 // Row 268: position="item-aligned". The `aligned` variant opens with "UTC+5" selected in the 24-option list.
 test.describe("position=item-aligned", () => {
   const aligned = (page: Page) => page.getByRole("combobox", { name: "Aligned zone select" });
