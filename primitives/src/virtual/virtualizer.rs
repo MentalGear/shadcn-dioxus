@@ -180,10 +180,30 @@ impl Engine {
         adjustment
     }
 
-    /// Px the canvas adds to the index's total so it holds its rows' exact extent.
+    /// Px the canvas adds to the index's total so it holds its rows' exact extent: how far the
+    /// lowest-reaching row hangs below the total. Rows sit at whole-px offsets, so a row's
+    /// remainder never moves the rows after it; it only overhangs them, and only the last few
+    /// rows (those with less than a remainder's worth of px after them) can reach past the end.
+    /// Not the sum of the remainders: 1,000 rows of 66.4px would pad the canvas by 400 blank px,
+    /// and the canvas would grow under a reader resting at the end as rows got measured.
     fn canvas_padding(&self) -> u32 {
+        // A remainder is at most the 2px resize tolerance plus half a px of rounding.
+        const REACH: f64 = 3.0;
+        let mut after = 0.0;
+        let mut overhang: f64 = 0.0;
+        for index in (0..self.index.count()).rev() {
+            if after >= REACH {
+                break;
+            }
+            let fraction = self.fractions.get(&index).copied().unwrap_or(0.0);
+            overhang = overhang.max(fraction - after);
+            after += self
+                .index
+                .item(index)
+                .map_or(0.0, |item| f64::from(item.size()));
+        }
         // 0.01 px of float noise never earns a whole px.
-        (self.fraction_sum - 0.01).max(0.0).ceil() as u32
+        (overhang - 0.01).max(0.0).ceil() as u32
     }
 
     /// Handle a row's new measured height in whole px. Returns the scroll adjustment to apply,
@@ -497,6 +517,35 @@ mod tests {
             (flow - (4.0 * 66.1875 + 96.0 * 50.0)).abs() < 1e-9,
             "{flow}"
         );
+    }
+
+    #[test]
+    fn the_canvas_pads_for_the_last_rows_overhang_not_the_sum_of_every_remainder() {
+        // 1,000 rows of 66.4px sit at 66px offsets: the last one ends 0.4px below 66,000px.
+        let mut engine = Engine::new();
+        engine.sync(&SizeEstimates::evaluate(1000, Some(&|_| 66)));
+        let _ = engine.scroll(0, 400, false);
+        for i in 0..1000 {
+            engine.resize_item_exact(i, 66.4);
+        }
+        assert_eq!(engine.plan(8).canvas_height, 66_001);
+        // Rows measured far above the end pad nothing.
+        let mut top = Engine::new();
+        top.sync(&SizeEstimates::evaluate(1000, Some(&|_| 66)));
+        let _ = top.scroll(0, 400, false);
+        for i in 0..10 {
+            top.resize_item_exact(i, 66.4);
+        }
+        assert_eq!(top.plan(8).canvas_height, 66_000);
+        // A last row stored 2px short (inside the resize tolerance) still fits.
+        let mut short = Engine::new();
+        short.sync(&SizeEstimates::evaluate(3, Some(&|_| 66)));
+        let _ = short.scroll(0, 400, false);
+        short.resize_item_exact(2, 66.6);
+        short.resize_item_exact(2, 69.4);
+        // Stored 67 (69 is within 2px of it), so 66 + 66 + 67 = 199, and 2.4px hang below.
+        assert_eq!(short.item(2).unwrap().size(), 67);
+        assert_eq!(short.plan(8).canvas_height, 202);
     }
 
     #[test]
