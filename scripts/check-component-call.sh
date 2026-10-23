@@ -41,7 +41,7 @@
 # or a reasoned entry in ALLOW below (`file|callee`). A marker or entry that suppresses
 # nothing is STALE and fails. `--self-test` runs mutations that must turn red.
 #
-# Usage: scripts/check-component-call.sh [--self-test] [root]
+# Usage: scripts/check-component-call.sh [--self-test] [root]  (a plain run also runs the self-test)
 # Exit 0 clean, 1 violation or stale escape, 2 self-test failure.
 
 set -euo pipefail
@@ -278,7 +278,10 @@ main()
 PYEOF
 
 if [[ $self_test -eq 0 ]]; then
-  exec python3 "$checker" "$root"
+  # the gate command is the bare script path (run-gates.sh's list guard), so the mutation
+  # self-test rides along with every real run; `--self-test` alone skips the tree scan
+  python3 "$checker" "$root" || exit $?
+  exec "$0" --self-test >/dev/null || { echo "check-component-call: self-test failed" >&2; exit 2; }
 fi
 
 # --- self-test: each mutation must turn red, each control must stay green ---------------------
