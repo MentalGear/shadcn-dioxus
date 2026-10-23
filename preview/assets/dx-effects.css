@@ -52,6 +52,9 @@
  * sits on top of the content, inside the content area, and fades with it; pair the
  * fade with `scrollbar-width: none` to hide any scrollbar.
  *
+ * Each edge's depth transitions (150ms ease-out, the theme's base motion tokens) when it switches,
+ * and not under `prefers-reduced-motion: reduce`; see "Each edge's depth eases" below.
+ *
  *   --dx-scrollbar-inline-size            width of the vertical scrollbar's gutter
  *   --dx-scrollbar-block-size             height of the horizontal scrollbar's
  *                                         gutter
@@ -442,6 +445,48 @@
   -webkit-mask-size: 100% 100%, var(--dx-internal-scroll-fade-area), var(--dx-internal-scroll-fade-area), var(--dx-internal-scroll-fade-area);
   mask-size: 100% 100%, var(--dx-internal-scroll-fade-area), var(--dx-internal-scroll-fade-area), var(--dx-internal-scroll-fade-area);
   /* stylelint-enable property-no-vendor-prefix */
+}
+
+/* Each edge's depth eases when it switches. The four depths are registered `<length-percentage>`
+ * properties, so they transition like any length: an edge grows in as you scroll away from it and
+ * shrinks as you reach it, instead of jumping. Where scroll-driven animations exist the depth is
+ * already an animation of the scroll position (continuous, and an animation outranks a transition,
+ * so nothing doubles up); the transition is what smooths the browsers without them (WebKit before
+ * 26, Firefox), where the scroller's script sets the depth to its full size or to 0 at a threshold.
+ * It uses the theme's base motion duration and ease-out (with fallbacks, this file also works
+ * without the theme), and is off under `prefers-reduced-motion: reduce`. It runs only in response
+ * to the reader's own scrolling, so the theme's `data-dx-motion="paused"` rule (off-screen loops)
+ * has nothing to stop. */
+.dx-scroll-fade,
+.dx-scroll-fade-y,
+.dx-scroll-fade-x,
+.dx-scroll-fade-xy,
+.dx-scroll-fade-t,
+.dx-scroll-fade-b,
+.dx-scroll-fade-l,
+.dx-scroll-fade-r,
+.dx-scroll-fade-s,
+.dx-scroll-fade-e {
+  transition:
+    --dx-scroll-fade-t var(--dx-motion-duration-base, 150ms) var(--dx-motion-ease-out, ease-out),
+    --dx-scroll-fade-b var(--dx-motion-duration-base, 150ms) var(--dx-motion-ease-out, ease-out),
+    --dx-scroll-fade-s var(--dx-motion-duration-base, 150ms) var(--dx-motion-ease-out, ease-out),
+    --dx-scroll-fade-e var(--dx-motion-duration-base, 150ms) var(--dx-motion-ease-out, ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dx-scroll-fade,
+  .dx-scroll-fade-y,
+  .dx-scroll-fade-x,
+  .dx-scroll-fade-xy,
+  .dx-scroll-fade-t,
+  .dx-scroll-fade-b,
+  .dx-scroll-fade-l,
+  .dx-scroll-fade-r,
+  .dx-scroll-fade-s,
+  .dx-scroll-fade-e {
+    transition: none;
+  }
 }
 
 /* A classic scrollbar moves to the left in RTL, so the content area hugs the right edge. */
