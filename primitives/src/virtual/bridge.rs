@@ -142,9 +142,19 @@ impl Bridge<Engine> {
     /// Item `index` measured `measured` px along the axis; a size change above the viewport
     /// moves the scroll position by the same amount, so what the reader sees stays put.
     pub(crate) fn measure(self, index: usize, measured: u32) {
+        self.measure_with(|engine| engine.resize_item(index, measured));
+    }
+
+    /// `measure` for a size in px with its fraction: offsets use whole px, the canvas covers the
+    /// exact extent.
+    pub(crate) fn measure_exact(self, index: usize, exact: f64) {
+        self.measure_with(|engine| engine.resize_item_exact(index, exact));
+    }
+
+    fn measure_with(self, resize: impl FnOnce(&mut Engine) -> Option<i32>) {
         let mut engine = self.engine;
         let (adjustment, current) =
-            engine.with_mut(|engine| (engine.resize_item(index, measured), engine.scroll_offset()));
+            engine.with_mut(|engine| (resize(engine), engine.scroll_offset()));
         self.publish();
         if let Some(delta) = adjustment {
             self.set_scroll_top(corrected(current, delta));
@@ -173,14 +183,11 @@ pub(crate) fn corrected(offset: u32, delta: i32) -> u32 {
 }
 
 /// A measured size in whole px, at least 1 (a collapsed item still occupies one index slot).
-/// Rounded UP (ignoring float noise below 1/100 px): the canvas is the sum of these, so a
-/// rounded-down size made the canvas shorter than the rows it holds and the container gained a
-/// 1px scroll overflow (three 66.1875px rows measured 66 each: canvas 198, content 198.56).
 pub(crate) fn measured_px(size: f64) -> u32 {
     if size.is_nan() {
         return 1;
     }
-    (size - 0.01).max(1.0).ceil().min(f64::from(u32::MAX)) as u32
+    size.max(1.0).round().min(f64::from(u32::MAX)) as u32
 }
 
 /// Moves a container's scroll position by id.
@@ -269,11 +276,9 @@ mod tests {
     }
 
     #[test]
-    fn measured_sizes_round_up_and_never_collapse_to_zero() {
-        assert_eq!(measured_px(47.4), 48);
-        assert_eq!(measured_px(66.1875), 67);
-        assert_eq!(measured_px(47.0), 47);
-        assert_eq!(measured_px(47.004), 47);
+    fn measured_sizes_round_and_never_collapse_to_zero() {
+        assert_eq!(measured_px(47.4), 47);
+        assert_eq!(measured_px(47.5), 48);
         assert_eq!(measured_px(0.0), 1);
         assert_eq!(measured_px(-3.0), 1);
         assert_eq!(measured_px(f64::NAN), 1);
