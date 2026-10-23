@@ -45,7 +45,7 @@ const EXPECTED = {
     Secondary: { bg: "#f5f5f5", color: "#171717" },
     Outline: { bg: "#ffffff", color: "#0a0a0a" },
     Ghost: { bg: "transparent", color: "#0a0a0a" },
-    Link: { bg: "transparent", color: "#0a0a0a" },
+    Link: { bg: "transparent", color: "#171717" }, // `--dx-primary-ink`: the link ink is the primary, clamped to L <= 0.5
   },
   dark: {
     Primary: { bg: "#e5e5e5", color: "#171717" },

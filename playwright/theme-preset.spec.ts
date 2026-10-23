@@ -288,16 +288,20 @@ test("with no preset --dx-border-strong is the preset derivation (ink 26% over t
         document.body.appendChild(el);
         const c = getComputedStyle(el).borderTopColor;
         el.remove();
-        return c;
+        // Chromium serialises oklch() as oklch()/lab(); resolve through a canvas to 8-bit sRGB.
+        const cx = document.createElement("canvas").getContext("2d")!;
+        cx.clearRect(0, 0, 1, 1);
+        cx.fillStyle = c;
+        cx.fillRect(0, 0, 1, 1);
+        return Array.from(cx.getImageData(0, 0, 1, 1).data).slice(0, 3);
       };
       return [
         paint("var(--dx-border-strong)"),
         paint("color-mix(in var(--dx-hover-mix-space), var(--dx-foreground) 26%, var(--dx-background))"),
       ];
     }, mode);
-    expect(strong, mode).toBe(derived);
-    const rgb = strong.match(/\d+(\.\d+)?/g)!.slice(0, 3).map(Number);
-    for (let i = 0; i < 3; i++) expect(Math.abs(rgb[i] - shadcn[mode][i]), `${mode} channel ${i}: ${strong}`).toBeLessThanOrEqual(2);
+    expect(strong, mode).toEqual(derived);
+    for (let i = 0; i < 3; i++) expect(Math.abs(strong[i] - shadcn[mode][i]), `${mode} channel ${i}: ${strong}`).toBeLessThanOrEqual(2);
   }
 });
 
