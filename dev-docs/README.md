@@ -26,6 +26,7 @@ Everything here is for the people and agents who work on this repository. Start 
 | [`dev-loop.md`](./dev-loop.md) | The measured fast dev loop: edit, wait, inspect, one spec, suite. |
 | [`dx-serve-hot-reload.md`](./dx-serve-hot-reload.md) | How to trust (and not trust) a `dx serve` result when verifying a UI fix. |
 | [`preview-composition.md`](./preview-composition.md) | The one architectural rule of `preview/` (themed wrappers only), enforced by `scripts/check-preview-composition.sh`. |
+| [`supply-chain/README.md`](./supply-chain/README.md) | The supply-chain and dependency security playbook, written to be read and copied alone: scope, threat model (what is and is not defended), the controls table (control, threat, enforcing script, config, status enforced / manual / planned, how to adopt), recorded decisions (no vendoring), and the "Adopt this in your project" file list. Drift-gated by `scripts/check-supply-chain-doc.sh`; the root [`../SECURITY.md`](../SECURITY.md) is the reporting policy. |
 | [`motion.md`](./motion.md) | How animation works: tokens, reduced motion, compositor-only loops, visibility gating, and the gates behind them. Also on the site's `/docs`. |
 
 ## Reference (stable)
@@ -61,6 +62,7 @@ Dated evidence behind rows and decisions; the backlog rows link to the file that
 | `message-scroller-parity-2026-10-14.md`, `chat-kit-demos-2026-10-14.md` | Chat kit and Message Scroller parity (rows 146, 213). |
 | `shadcn-demo-gaps-2026-10-11.md`, `shadcn-demo-parity-audit-2026-10-11.md`, `docs-audit-2026-10-17.md` | Demo and docs parity audits. |
 | `dependency-audit-2026-10-14.{md,json}` | Compile-time and supply-chain audit (row 217, markdown decisions). |
+| `dependency-evaluation.md`, `dependency-scanners.md` | Row 371 (parked): the dependency rule applied to every user-compiled crate, and the scanner and criteria review behind the planned controls of the [supply-chain playbook](./supply-chain/README.md). |
 | `touch-open-focus`, `mobile-keyboard`, `nav-scroll-smooth`, `user-select-inventory` (`-2026-10-17.md`), `baseui-focus-2026-10-18.md` | Touch, keyboard, scroll and focus investigations (rows 226-229, 240). |
 
 ## Historical one-offs (left in place so links keep working)

@@ -259,6 +259,10 @@ This builds the `preview` app in release mode and overwrites `/docs` with
 the output. Review the result (`git status`, `git diff --stat -- docs`),
 then commit and push to `main`.
 
+## Security
+
+Report a vulnerability privately as described in [`SECURITY.md`](./SECURITY.md); how the dependency and repo supply chain is defended (threat model, controls, how to copy the approach) is in [`dev-docs/supply-chain/README.md`](./dev-docs/supply-chain/README.md).
+
 ## License
 
 This project is dual licensed under the [MIT](./LICENSE-MIT) and [Apache 2.0](./LICENSE-APACHE) licenses.
