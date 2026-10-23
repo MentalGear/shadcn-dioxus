@@ -544,7 +544,7 @@ fn DataTableTable<T: Clone + PartialEq + 'static>(props: DataTableProps<T>) -> E
                 }
             }
             for column in visible.iter() {
-                TableCell { key: "{column.id}", class: column.align.class().unwrap_or_default(), {column.cell.call(row)} }
+                TableCell { key: "{column.id}", class: column.align.class(), {column.cell.call(row)} }
             }
         }
     };
@@ -634,9 +634,7 @@ fn DataTableTable<T: Clone + PartialEq + 'static>(props: DataTableProps<T>) -> E
 fn column_header<T: Clone + 'static>(column: &Column<T>, model: &DataTableModel<T>) -> Element {
     let state = model.state;
     let id = column.id.clone();
-    // `unwrap_or_default`, not the `Option`: `merge_attributes` lets a `class: None` replace the
-    // base class (`dx-table-cell`, `dx-table-head`), so an unaligned cell lost the whole table look.
-    let align = column.align.class().unwrap_or_default();
+    let align = column.align.class();
     let style = column.width.as_ref().map(|w| format!("width: {w};"));
     if column.is_sortable() {
         rsx! {

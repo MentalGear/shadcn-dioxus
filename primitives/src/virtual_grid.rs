@@ -73,9 +73,9 @@ use dioxus_attributes::attributes;
 pub use crate::data_view::SortDirection;
 use crate::direction::{use_direction, Direction, HorizontalNav};
 use crate::r#virtual::{
-    engine_row_keys, justified_navigate, measured_px, render_key, resolve_index,
-    use_virtual_bridge, with_pinned, Bridge, Engine, GridEngine, GridKey, GridShape,
-    JustifiedEngine, JustifiedOptions, RowPlan, ScrollReport, SizeEstimates,
+    engine_row_keys, justified_navigate, render_key, resolve_index, use_virtual_bridge,
+    with_pinned, Bridge, Engine, GridEngine, GridKey, GridShape, JustifiedEngine, JustifiedOptions,
+    RowPlan, ScrollReport, SizeEstimates,
 };
 use crate::scroll_area::use_scroll_fade;
 pub use crate::scroll_area::ScrollFade;
@@ -587,7 +587,7 @@ pub fn VirtualWrapGrid(props: VirtualWrapGridProps) -> Element {
     let onresize = move |row: usize| {
         move |event: Event<ResizeData>| {
             let size = event.data().get_border_box_size().unwrap_or_default();
-            bridge.measure(row, measured_px(size.height));
+            bridge.measure_exact(row, size.height);
         }
     };
 

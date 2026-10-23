@@ -131,7 +131,7 @@ impl Engine {
             self.scroll_adjustments = 0;
             self.deferred_adjustments = 0;
             self.frozen_total = Some(FrozenTotal {
-                total: self.index.total(),
+                total: self.index.total().saturating_add(self.canvas_padding()),
                 count: self.index.count(),
             });
         }
@@ -161,9 +161,6 @@ impl Engine {
         self.scroll_offset
     }
 
-    /// Handle a row's new measured height. Returns the scroll adjustment to apply, if any.
-    ///
-    /// `O(log N)`: one position lookup and one tree update, with no copy of the geometry.
     /// `resize_item` for an item measured at `exact` px (a fraction of a px is common). The index
     /// keeps the rounded whole px, so offsets stay faithful; the remainder is remembered so the
     /// canvas can cover the content (three 66.1875px rows are 198.56px, not 198).
@@ -183,13 +180,37 @@ impl Engine {
         adjustment
     }
 
-    /// Px the canvas adds to the index's total so it holds its rows' exact extent.
+    /// Px the canvas adds to the index's total so it holds its rows' exact extent: how far the
+    /// lowest-reaching row hangs below the total. Rows sit at whole-px offsets, so a row's
+    /// remainder never moves the rows after it; it only overhangs them, and only the last few
+    /// rows (those with less than a remainder's worth of px after them) can reach past the end.
+    /// Not the sum of the remainders: 1,000 rows of 66.4px would pad the canvas by 400 blank px,
+    /// and the canvas would grow under a reader resting at the end as rows got measured.
     fn canvas_padding(&self) -> u32 {
+        // A remainder is at most the 2px resize tolerance plus half a px of rounding.
+        const REACH: f64 = 3.0;
+        let mut after = 0.0;
+        let mut overhang: f64 = 0.0;
+        for index in (0..self.index.count()).rev() {
+            if after >= REACH {
+                break;
+            }
+            let fraction = self.fractions.get(&index).copied().unwrap_or(0.0);
+            overhang = overhang.max(fraction - after);
+            after += self
+                .index
+                .item(index)
+                .map_or(0.0, |item| f64::from(item.size()));
+        }
         // 0.01 px of float noise never earns a whole px.
-        (self.fraction_sum - 0.01).max(0.0).ceil() as u32
+        (overhang - 0.01).max(0.0).ceil() as u32
     }
 
-    pub(crate) fn resize_item(&mut self, index: usize, new_size: u32) -> Option<i32> {
+    /// Handle a row's new measured height in whole px. Returns the scroll adjustment to apply,
+    /// if any. Private: renderers measure through `resize_item_exact`, which keeps the fraction.
+    ///
+    /// `O(log N)`: one position lookup and one tree update, with no copy of the geometry.
+    fn resize_item(&mut self, index: usize, new_size: u32) -> Option<i32> {
         let item = self.index.item(index)?;
         let cached = self.index.measured_size(index);
 
@@ -227,11 +248,11 @@ impl Engine {
 
     /// The total scroll size; the frozen value while scrolling.
     fn total_size(&self) -> u32 {
-        let total = match self.frozen_total {
+        // The padding is frozen with the total: a row measured during the scroll moves neither.
+        match self.frozen_total {
             Some(frozen) if frozen.count == self.index.count() => frozen.total,
-            _ => self.index.total(),
-        };
-        total.saturating_add(self.canvas_padding())
+            _ => self.index.total().saturating_add(self.canvas_padding()),
+        }
     }
 
     /// The rows in view, `(first, last)` inclusive, from the current scroll state. `None` until
@@ -315,6 +336,32 @@ impl Engine {
         }
     }
 
+    /// The bottom spacer, in px, for a renderer whose mounted items sit in flow at their exact
+    /// size (`TableRows`' `<tr>`s), where the canvas's rounded-up padding would add a blank px:
+    /// the canvas without its padding but with every remainder, less `end` and the remainders
+    /// the mounted items already occupy. The top spacer stays on the whole-px offsets the engine
+    /// scrolls by, so the remainders of the rows above the window ride here: the body is the
+    /// rows' exact extent, and a short body whose rows are all mounted gets no spacer (row 369).
+    pub(crate) fn flow_bottom(&self, plan: &Plan) -> f64 {
+        let end = plan
+            .items
+            .last()
+            .map_or(plan.top_offset, |last| last.start() + last.size());
+        let mounted: f64 = plan
+            .items
+            .iter()
+            .filter_map(|item| self.fractions.get(&item.index()))
+            .sum();
+        let whole = plan.canvas_height.saturating_sub(self.canvas_padding());
+        let bottom = f64::from(whole) + self.fraction_sum - f64::from(end) - mounted;
+        // Float noise below 0.01 px is no spacer.
+        if bottom < 0.01 {
+            0.0
+        } else {
+            bottom
+        }
+    }
+
     /// Item `index` at its current position, whether or not it is mounted: what a consumer
     /// needs to draw one extra item outside the window (the grid's focused cell).
     pub(crate) fn item(&self, index: usize) -> Option<VirtualItem> {
@@ -332,6 +379,8 @@ impl Engine {
     /// items). The next [`sync`](Self::sync) rebuilds the index from the estimates alone.
     pub(crate) fn forget_measurements(&mut self) {
         self.index = SizeIndex::new(SizeEstimates::evaluate(0, None), HashMap::new());
+        self.fractions.clear();
+        self.fraction_sum = 0.0;
         self.rendered = None;
     }
 
@@ -434,6 +483,97 @@ mod tests {
             whole.resize_item_exact(i, 66.0);
         }
         assert_eq!(whole.plan(8).canvas_height, 198);
+    }
+
+    #[test]
+    fn flow_bottom_holds_the_exact_rest_and_nothing_for_a_fully_mounted_body() {
+        // A short body: all three rows mounted in flow at 66.1875px, so no spacer at all (the
+        // canvas's padding px would be a blank px under the last row).
+        let mut short = Engine::new();
+        short.sync(&SizeEstimates::evaluate(3, Some(&|_| 68)));
+        let _ = short.scroll(0, 400, false);
+        for i in 0..3 {
+            short.resize_item_exact(i, 66.1875);
+        }
+        let plan = short.plan(8);
+        assert_eq!(plan.items.len(), 3);
+        assert_eq!(short.flow_bottom(&plan), 0.0);
+        // A long body: top spacer + the mounted rows at their exact size + the bottom spacer is
+        // the exact extent of every row.
+        let mut long = Engine::new();
+        long.sync(&uniform(100, 50));
+        let _ = long.scroll(0, 100, false);
+        for i in 0..4 {
+            long.resize_item_exact(i, 66.1875);
+        }
+        let plan = long.plan(0);
+        let mounted: f64 = plan
+            .items
+            .iter()
+            .map(|item| if item.index() < 4 { 66.1875 } else { 50.0 })
+            .sum();
+        let flow = f64::from(plan.top_offset) + mounted + long.flow_bottom(&plan);
+        assert!(
+            (flow - (4.0 * 66.1875 + 96.0 * 50.0)).abs() < 1e-9,
+            "{flow}"
+        );
+    }
+
+    #[test]
+    fn the_canvas_pads_for_the_last_rows_overhang_not_the_sum_of_every_remainder() {
+        // 1,000 rows of 66.4px sit at 66px offsets: the last one ends 0.4px below 66,000px.
+        let mut engine = Engine::new();
+        engine.sync(&SizeEstimates::evaluate(1000, Some(&|_| 66)));
+        let _ = engine.scroll(0, 400, false);
+        for i in 0..1000 {
+            engine.resize_item_exact(i, 66.4);
+        }
+        assert_eq!(engine.plan(8).canvas_height, 66_001);
+        // Rows measured far above the end pad nothing.
+        let mut top = Engine::new();
+        top.sync(&SizeEstimates::evaluate(1000, Some(&|_| 66)));
+        let _ = top.scroll(0, 400, false);
+        for i in 0..10 {
+            top.resize_item_exact(i, 66.4);
+        }
+        assert_eq!(top.plan(8).canvas_height, 66_000);
+        // A last row stored 2px short (inside the resize tolerance) still fits.
+        let mut short = Engine::new();
+        short.sync(&SizeEstimates::evaluate(3, Some(&|_| 66)));
+        let _ = short.scroll(0, 400, false);
+        short.resize_item_exact(2, 66.6);
+        short.resize_item_exact(2, 69.4);
+        // Stored 67 (69 is within 2px of it), so 66 + 66 + 67 = 199, and 2.4px hang below.
+        assert_eq!(short.item(2).unwrap().size(), 67);
+        assert_eq!(short.plan(8).canvas_height, 202);
+    }
+
+    #[test]
+    fn the_padding_is_frozen_with_the_total_while_scrolling() {
+        let mut engine = Engine::new();
+        engine.sync(&SizeEstimates::evaluate(3, Some(&|_| 66)));
+        let _ = engine.scroll(0, 400, false);
+        assert_eq!(engine.plan(8).canvas_height, 198);
+        let _ = engine.scroll(10, 400, true);
+        engine.resize_item_exact(2, 66.4);
+        assert_eq!(engine.plan(8).canvas_height, 198);
+        let _ = engine.scroll(10, 400, false);
+        assert_eq!(engine.plan(8).canvas_height, 199);
+    }
+
+    #[test]
+    fn forget_measurements_drops_the_fractions_too() {
+        // The grid forgets its rows on a column change; a stale remainder would pad the canvas
+        // of rows that are no longer measured.
+        let mut engine = Engine::new();
+        engine.sync(&SizeEstimates::evaluate(3, Some(&|_| 68)));
+        let _ = engine.scroll(0, 400, false);
+        for i in 0..3 {
+            engine.resize_item_exact(i, 66.1875);
+        }
+        engine.forget_measurements();
+        engine.sync(&SizeEstimates::evaluate(3, Some(&|_| 68)));
+        assert_eq!(engine.plan(8).canvas_height, 204);
     }
 
     #[test]
