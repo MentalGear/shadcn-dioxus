@@ -106,7 +106,7 @@ fi
 # pnpm comes from corepack at the version each package.json pins (`packageManager`);
 # an already-installed pnpm is used as is. Install scripts of dependencies never
 # run (pnpm-workspace.yaml: empty onlyBuiltDependencies) and a version younger
-# than minimumReleaseAge is refused.
+# than minimumReleaseAge (30 days, backlog row 359) is refused.
 ensure_pnpm() {
   command -v pnpm >/dev/null && return 0
   local want

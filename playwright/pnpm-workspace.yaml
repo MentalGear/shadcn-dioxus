@@ -1,5 +1,12 @@
 # Supply-chain hardening (backlog row 359). Both settings are read by pnpm 10.
-# Refuse any version published less than 3 days (4320 minutes) ago.
-minimumReleaseAge: 4320
+# Refuse any version published less than 30 days (43200 minutes) ago. Raised from
+# 3 days on 2026-10-22 (owner decision).
+# An urgent fix (for example a security patch) that must land sooner may be let
+# through deliberately, one package at a time, with minimumReleaseAgeExclude
+# (pnpm 10 takes a list of package names or name@version). Each entry needs a
+# reason comment next to it, and the entry is removed once the release is 30 days old.
+minimumReleaseAge: 43200
+# minimumReleaseAgeExclude:
+#   - <package-name>  # reason: <CVE id or advisory>, why it cannot wait 30 days
 # No dependency may run an install script. Keep this list EMPTY.
 onlyBuiltDependencies: []
