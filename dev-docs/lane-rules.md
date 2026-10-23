@@ -21,7 +21,12 @@ Session tooling (paths below default to `LANE_TGT=/home/user/tgt`):
   only when `Cargo.lock`, the toolchain or dx changed (it says "is current" and exits otherwise); the deploy refreshes
   `release` itself. Never build with the other's base path: `deploy-preview.sh` refuses the `release-template` tree.
 - Setup for a new container: `CARGO_TARGET_DIR=$LANE_TGT/template scripts/build-ssg.sh debug` once (the warm
-  template), `mkdir -p $LANE_TGT`.
+  template), `mkdir -p $LANE_TGT`, then `scripts/lane-target.sh slim --apply` (row 367: drops cargo's `incremental/`
+  dirs, ~3 GB of a 6.8 GB template, which no lane command reads because they all run with `CARGO_INCREMENTAL=0`).
+- `scripts/lane-target.sh slim [--apply]` -- lists (deletes with `--apply`) the `incremental/` dirs of every tree
+  under `$LANE_TGT` except one stamped `.keep-incremental` (`create` stamps it under `LANE_CARGO_INCREMENTAL=1`).
+  `--apply` refuses, changing nothing, while any build slot is held; `prune --apply` runs it too. Copies
+  (`create`, `lane-ssg.sh`, the slot-1 warm copies) already leave the dirs out, so this only reclaims the source trees.
 
 ## Worktree and files
 - Work ONLY in your own git worktree, on its own branch (`lane/<name>`). Never touch the main checkout or another

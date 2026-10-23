@@ -1,10 +1,10 @@
 ---
 id: 367
 title: "Lane builds need 10.4 GB free because every lane-ssg copies 6.8 GB of template, 3.0 GB of it dead incremental state"
-status: "PARTIAL. Landed in lane gatetools: the copy leaves cargo's incremental/ dirs out and the guard…"
-size: "S for the landed part…"
+status: "LANDED 2026-10-23 (tooling). Lane gatetools made the copies slim; branch claude/lane-template-slim…"
+size: "S (lane-slot-target.sh, lane-target.sh…"
 area: tooling
-updated: 2026-10-22
+updated: 2026-10-23
 ---
 
 # Row 367: Lane builds need 10.4 GB free because every lane-ssg copies the whole template
@@ -15,11 +15,11 @@ updated: 2026-10-22
 
 ## Status / trigger
 
-PARTIAL. Landed in lane `gatetools`: the copy leaves cargo's `incremental/` dirs out and the guard sizes the slim copy. Open: slim the template itself, and (optionally) stop copying at all.
+LANDED 2026-10-23 (tooling). Lane `gatetools` made the copies slim; branch `claude/lane-template-slim` added `scripts/lane-target.sh slim`, made `create` copy slim and `prune` slim the kept trees. One step is the main loop's, on its container: `scripts/lane-target.sh slim --apply` once with the queue idle (frees ~3.0 GB of the template for good). The per-slot persistent tree (proposal 3) is not done: revisit only if 6.6 GB free is still too much.
 
 ## Size
 
-S for the landed part (`lane-slot-target.sh`, one `check-lane-lock.sh` scenario). M for the per-slot persistent tree.
+S (`lane-slot-target.sh`, `lane-target.sh`, two `check-lane-lock.sh` scenarios). M for the per-slot persistent tree, not done.
 
 ## Detail
 
@@ -31,3 +31,10 @@ S for the landed part (`lane-slot-target.sh`, one `check-lane-lock.sh` scenario)
 1. Free 3.0 GB permanently and keep the guard honest: `rm -rf /home/user/tgt/template/*/*/incremental` once no lane is copying (hold the lock). Nothing reads them while `CARGO_INCREMENTAL=0`; the `release` and `deploy` trees are separate and untouched. After that the guard's `--exclude` is a no-op and the template is 3.8 GB.
 2. The same dead weight probably sits in `check`, `gates`, `ssg-lane`/`-s1` copies; `scripts/lane-target.sh prune` could drop `incremental/` from any tree that is not `LANE_CARGO_INCREMENTAL=1`.
 3. A persistent per-slot build tree (`$T/ssg-lane` kept between builds, row 216 `lane-touch.sh --force` instead of a fresh copy) would remove the copy entirely and bring the footprint to one 3.8 GB tree per slot, always resident. It was rejected in the `lane-ssg.sh` header: a target shared across worktrees failed 3 of 5 builds with "stylesheet ... not in dx's asset manifest" (dx's asset manifest goes stale across trees), so it needs a verified reset of `dx/` and the `build/` fingerprints per build; larger, riskier, and the slim copy already removes the disk pressure. Revisit only if 6.6 GB is still too much.
+
+**Landed (2026-10-23, proposals 1 and 2 as tooling).** The lane still does not touch the template; it ships the command the main loop runs.
+- `scripts/lane-target.sh slim [--apply]` lists (deletes) `<tree>/<profile>/incremental` and `<tree>/<triple>/<profile>/incremental` in every tree under the root (`template`, `check`, `gates`, `ssg-lane*`, `*-s1`, lane copies, the release trees, which normally have none since release builds are not incremental). A tree stamped `.keep-incremental` is skipped. `--apply` takes every slot lock (`LANE_SLOTS` plus any `lockq/slot-*.lock` on disk) and the legacy `ssg.lock` with a non-blocking flock for the whole delete, because a `tar` copy that reads a tree mid-delete fails; if any is held it prints which, deletes nothing and exits 1.
+- `scripts/lane-target.sh create` copied the full template with `cp -a`; it now uses the same `lane-slot-target.sh copy` as `lane-ssg.sh` (slim unless `LANE_CARGO_INCREMENTAL=1`, which keeps the full copy and stamps `.keep-incremental` so `slim` leaves that lane's state alone), and sizes its free-disk check without the incremental dirs.
+- `scripts/lane-target.sh prune --apply` runs `slim` after its own deletions; with a build running it only warns.
+- `check-lane-lock.sh` scenario 11 proves: `create` drops the dirs at both depths and keeps deps, the opt-out copies them and stamps the tree, `slim` without `--apply` deletes nothing, `--apply` refuses (and deletes nothing) while a real `lane-lock.sh` holder has slot 0, then on an idle queue deletes the dirs of the template and of `gates`, keeps deps, the stamped tree and `lockq/`.
+- `lane-rules.md`: the new-container setup ends with `slim --apply`, and the command is listed with the session tooling.
