@@ -1,0 +1,1 @@
+One `DataTable` configured from a column list: Email is sortable and filterable (a case-insensitive substring match), Amount is sortable, `selectable` adds row checkboxes, and `page_sizes` offers 5, 10 or 20 rows. The default sort is Email ascending, and one column always carries the sort.

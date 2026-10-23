@@ -1,0 +1,1 @@
+`show` returns a `ToastId`. "Show" opens a permanent "Syncing..." toast, "Update" turns that same toast into a success titled "Synced" that can auto-dismiss, and "Close" dismisses it. Update or Close after the toast is gone does nothing.

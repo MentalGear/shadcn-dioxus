@@ -1,0 +1,1 @@
+Drag-handle rows and a Columns menu (`reorderable`, `column_menu`). Drag a row's handle, or focus it and use Space and the arrow keys, to reorder rows. The Columns menu hides columns (Header cannot be hidden) and, with Alt+Up and Alt+Down on a menu item, moves them.

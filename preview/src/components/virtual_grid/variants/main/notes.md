@@ -1,0 +1,1 @@
+A 10,000 by 50 grid with the first column pinned (`sticky_first_column`) and a header row. Click a cell, then use the arrow keys, Home and End, Ctrl+Home and Ctrl+End, and PageUp and PageDown; the line below reports the active cell.

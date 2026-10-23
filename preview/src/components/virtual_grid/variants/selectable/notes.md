@@ -1,0 +1,1 @@
+A 10,000-row grid with sortable column headers and a checkbox column. Selection is kept by row key, so it follows a row through a sort. Tab reaches one checkbox, the arrow keys move between cells, and Space toggles the focused row.
