@@ -60,6 +60,8 @@ pub mod message_scroller;
 pub mod modality;
 mod move_interaction;
 #[cfg(feature = "router")]
+pub mod nav_link;
+#[cfg(feature = "router")]
 pub mod navbar;
 // Deliberately NOT gated on `feature = "router"`, unlike `navbar` above:
 // `NavigationMenuLink` renders a plain `a[href]` itself rather than

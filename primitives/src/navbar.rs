@@ -1306,3 +1306,75 @@ pub fn NavbarItem(mut props: NavbarItemProps) -> Element {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    //! Backlog row 126: a `NavbarItem` must emit exactly one `aria-current`,
+    //! even when the caller passes its own (`dioxus_router::Link` writes its
+    //! literal beside `..attributes`, so the attribute came out twice).
+    use super::*;
+    use dioxus::prelude::*;
+
+    #[derive(Routable, Clone, PartialEq)]
+    enum TestRoute {
+        #[route("/?:q")]
+        Home { q: Option<String> },
+        #[route("/other")]
+        Other {},
+    }
+
+    #[component]
+    fn Home(q: Option<String>) -> Element {
+        let _ = q;
+        rsx! {
+            Navbar { aria_label: "t",
+                NavbarItem {
+                    index: 0usize,
+                    value: "home".to_string(),
+                    to: "/?".to_string(),
+                    aria_current: "page",
+                    "Home"
+                }
+                NavbarItem {
+                    index: 1usize,
+                    value: "plain".to_string(),
+                    to: "/",
+                    "Plain"
+                }
+                NavbarItem {
+                    index: 2usize,
+                    value: "other".to_string(),
+                    to: "/other",
+                    "Other"
+                }
+            }
+        }
+    }
+
+    #[component]
+    fn Other() -> Element {
+        rsx! { "other" }
+    }
+
+    #[test]
+    fn navbar_item_emits_exactly_one_aria_current() {
+        fn app() -> Element {
+            rsx! { Router::<TestRoute> {} }
+        }
+        let mut dom = VirtualDom::new(app);
+        dom.rebuild_in_place();
+        let html = dioxus_ssr::render(&dom);
+        let anchors: Vec<&str> = html.match_indices("<a ").map(|(i, _)| {
+            let end = html[i..].find('>').unwrap();
+            &html[i..i + end]
+        }).collect();
+        assert_eq!(anchors.len(), 3, "{html}");
+        for a in &anchors {
+            assert!(a.matches("aria-current").count() <= 1, "duplicate: {a}");
+        }
+        // Home (query-suffixed target) and Plain are both the page; Other is not.
+        assert!(anchors[0].contains("aria-current=\"page\""), "{}", anchors[0]);
+        assert!(anchors[1].contains("aria-current=\"page\""), "{}", anchors[1]);
+        assert!(!anchors[2].contains("aria-current"), "{}", anchors[2]);
+    }
+}
