@@ -445,6 +445,13 @@
   -webkit-mask-size: 100% 100%, var(--dx-internal-scroll-fade-area), var(--dx-internal-scroll-fade-area), var(--dx-internal-scroll-fade-area);
   mask-size: 100% 100%, var(--dx-internal-scroll-fade-area), var(--dx-internal-scroll-fade-area), var(--dx-internal-scroll-fade-area);
   /* stylelint-enable property-no-vendor-prefix */
+
+  /* The depths ease when they switch; why and when not: "Each edge's depth eases" below. */
+  transition:
+    --dx-scroll-fade-t var(--dx-motion-duration-base, 150ms) var(--dx-motion-ease-out, ease-out),
+    --dx-scroll-fade-b var(--dx-motion-duration-base, 150ms) var(--dx-motion-ease-out, ease-out),
+    --dx-scroll-fade-s var(--dx-motion-duration-base, 150ms) var(--dx-motion-ease-out, ease-out),
+    --dx-scroll-fade-e var(--dx-motion-duration-base, 150ms) var(--dx-motion-ease-out, ease-out);
 }
 
 /* Each edge's depth eases when it switches. The four depths are registered `<length-percentage>`
@@ -457,23 +464,6 @@
  * without the theme), and is off under `prefers-reduced-motion: reduce`. It runs only in response
  * to the reader's own scrolling, so the theme's `data-dx-motion="paused"` rule (off-screen loops)
  * has nothing to stop. */
-.dx-scroll-fade,
-.dx-scroll-fade-y,
-.dx-scroll-fade-x,
-.dx-scroll-fade-xy,
-.dx-scroll-fade-t,
-.dx-scroll-fade-b,
-.dx-scroll-fade-l,
-.dx-scroll-fade-r,
-.dx-scroll-fade-s,
-.dx-scroll-fade-e {
-  transition:
-    --dx-scroll-fade-t var(--dx-motion-duration-base, 150ms) var(--dx-motion-ease-out, ease-out),
-    --dx-scroll-fade-b var(--dx-motion-duration-base, 150ms) var(--dx-motion-ease-out, ease-out),
-    --dx-scroll-fade-s var(--dx-motion-duration-base, 150ms) var(--dx-motion-ease-out, ease-out),
-    --dx-scroll-fade-e var(--dx-motion-duration-base, 150ms) var(--dx-motion-ease-out, ease-out);
-}
-
 @media (prefers-reduced-motion: reduce) {
   .dx-scroll-fade,
   .dx-scroll-fade-y,
