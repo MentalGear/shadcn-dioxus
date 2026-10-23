@@ -89,7 +89,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [370](backlog/370-merge-attributes-class-none.md) | merge_attributes: a class: None replaces the base class instead of being ignored | Open. Found by the biggrid lane in batch 10. | S | primitives |
 | [371](backlog/371-dependency-evaluation-keep-lift-drop.md) | Dependency evaluation: keep, feature-gate, replace, lift or drop (rule of 2026-10-23) | PARKED by the owner 2026-10-23 ("its own item, and not yet"). Inventory done; no outcome is… | S each outcome | build |
 
-## Done rows (301)
+## Done rows (302)
 
 | # | Item | Updated |
 |---|---|---|
@@ -394,6 +394,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [364](backlog/done/364-togglegroup-value-keyed.md) | ToggleGroup: pressed state keyed by value, not index (optional) | 2026-10-22 |
 | [366](backlog/done/366-test-the-shipped-web-arm.md) | Gates: run cargo test on the shipped web arm too (ssr_parity differs between the plain and server feature sets) | 2026-10-22 |
 | [368](backlog/done/368-virtual-grid-row-axis-first-paint.md) | VirtualGrid: the row axis plans max(rows, viewport), so a short grid differs between server and first client frame | 2026-10-23 |
+| [373](backlog/done/373-theme-defaults-are-shadcn-neutral.md) | Theme default fallbacks are shadcn Neutral; the upstream colour ramp is deleted | 2026-10-23 |
 
 ## Notes (8)
 
