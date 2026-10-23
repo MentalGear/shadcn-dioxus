@@ -57,6 +57,44 @@ test.describe("windowed find-in-page placeholders (row 153 prototype)", () => {
     await expect.poll(() => rowInView(page, 7776)).toBe(true);
   });
 
+  test("a revealed placeholder is hidden again, and the real row is marked as the match", async ({ page }) => {
+    await gotoHydrated(page, URL);
+    await expect(row(page, 0)).toBeVisible();
+    // The browser removes `hidden` when it reveals a match. Left revealed, the placeholder's text
+    // (and the find bar's active-match highlight on it) sat over the real row, offset by the
+    // row's padding: measured with the real Ctrl+F bar in headed Chromium 153. Hidden again in
+    // the next frame, find-next still walks on in order, forwards and back (same probe).
+    const reveal = (index: number) =>
+      placeholder(page, index).evaluate((el) => {
+        el.removeAttribute("hidden");
+        el.dispatchEvent(new Event("beforematch", { bubbles: true }));
+      });
+    await reveal(7776);
+    await expect(placeholder(page, 7776)).toHaveAttribute("hidden", "until-found");
+    await expect.poll(() => rowInView(page, 7776)).toBe(true);
+    // The real row says it holds the match, so the styled layer can show it.
+    await expect(row(page, 7776)).toHaveAttribute("data-find-match", "true");
+    await reveal(7786);
+    await expect(row(page, 7786)).toHaveAttribute("data-find-match", "true");
+    await expect(list(page).locator("[data-find-match]")).toHaveCount(1);
+  });
+
+  test("the find bar's highlight is not painted on a placeholder", async ({ page }) => {
+    await gotoHydrated(page, URL);
+    await expect(row(page, 0)).toBeVisible();
+    // `::search-text` (Chromium 144+): the active match is the placeholder, which never lines up
+    // with the real row's own text, so its highlight is transparent; the real row carries
+    // `data-find-match` instead.
+    // Computed `::search-text` does not report the UA's own highlight colours, but its `color`
+    // follows the element's unless a rule sets it, so give the element a colour of its own first.
+    const paint = await placeholder(page, 7776).evaluate((el) => {
+      (el as HTMLElement).style.color = "rgb(255, 0, 0)";
+      const s = getComputedStyle(el, "::search-text");
+      return { background: s.backgroundColor, color: s.color };
+    });
+    expect(paint).toEqual({ background: "rgba(0, 0, 0, 0)", color: "rgba(0, 0, 0, 0)" });
+  });
+
   test("a text-fragment link reveals the placeholder and the list follows", async ({ page }) => {
     // A real browser reveal: the text fragment is searched when the document loads, so it can only
     // find placeholders that exist by then. They mount after hydration, so this records which of the

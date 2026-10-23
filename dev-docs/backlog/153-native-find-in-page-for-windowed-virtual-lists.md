@@ -1,10 +1,10 @@
 ---
 id: 153
 title: "Native find-in-page for WINDOWED virtual lists: keep per-item text in the DOM as hidden=\"until-found\"…"
-status: "PROTOTYPED 2026-10-19 (lane virtual-grid, round 4) -- works in Chromium as an opt-in text_value…"
+status: "PROTOTYPED 2026-10-19 (lane virtual-grid, round 4); Chromium Ctrl+F verified 2026-10-23 -- works in…"
 size: "M"
 area: virtual
-updated: 2026-10-19
+updated: 2026-10-23
 ---
 
 # Row 153: Native find-in-page for WINDOWED virtual lists: keep per-item text in the DOM as hidden="until-found"…
@@ -15,7 +15,7 @@ Native find-in-page for WINDOWED virtual lists: keep per-item text in the DOM as
 
 ## Status / trigger
 
-**PROTOTYPED 2026-10-19 (lane `virtual-grid`, round 4)** -- works in Chromium as an opt-in `text_value` prop; the Ctrl+F find-next path still needs a manual check (owner idea 2026-10-05)
+**PROTOTYPED 2026-10-19 (lane `virtual-grid`, round 4); Chromium Ctrl+F verified 2026-10-23** -- works in Chromium as an opt-in `text_value` prop, now checked with the real find bar (see below); still open before it loses "experimental": a Firefox 139+/Safari 26.2 run and a release-build mount timing for 100k rows (owner idea 2026-10-05)
 
 ## Size
 
@@ -46,3 +46,17 @@ M
 **Verdict:** workable as an opt-in in Chromium (find, text-fragment links, `beforematch` -> index -> scroll all verified; scroll cost unchanged with the cv chunks). Before it is promoted from "experimental": the manual Ctrl+F find-next check per engine (risk 1), a Firefox/Safari run, and a release-build mount timing for 100k rows. Placeholder positions use the estimates, so with poor estimates the browser's own scroll lands near, not on, the row; the `beforematch` scroll then corrects it, but `window.find` (no `beforematch`) does not.
 
 See also [row 308](done/308-virtualgrid-scroll-trap-at-the-edges.md): VirtualGrid does not pass wheel/touch scroll to the page at its edges, and the open VirtualList/VirtualGrid unification question.
+
+## Real Ctrl+F in Chromium (2026-10-23, thread "Find-in-page for virtual lists")
+
+**How:** headed Chrome for Testing 153 under Xvfb, the browser's own find bar driven by `xdotool` (Ctrl+F, type, Enter and Shift+Enter), screenshots of the screen for the bar's `k/n`, and `beforematch`, `scrollTop` and the rows in view read after every step. Playwright alone cannot open the find bar; this harness can, so risk 1 is now measured for Chromium.
+
+**Before (main `52f2878`):** find-next and find-previous walked the matches in order with no skips (`"7 of 10000"`: placeholders 6, 16, 26 ... 86, one `beforematch` per Enter, the real row in view each time), so risk 1 holds in Chromium. But a revealed placeholder stayed revealed, and the bar paints its active match (orange, with dark text) on the PLACEHOLDER, whose text sits at the top-left of a box the size of the estimate: a second copy of the matched text ~10 px above and beside the real row's own text. Every visited placeholder stayed revealed.
+
+**Fix (this thread, three parts, opt-in path only):** (1) the `beforematch` bridge sets `hidden="until-found"` back on the placeholder in the next animation frame; (2) a `[data-find-index]::search-text { color: transparent; background-color: transparent }` rule in the layer (Chromium 144+; elsewhere (1) keeps the stray paint to one frame); (3) the real row carries `data-find-match="true"` (one at a time), so a caller can show which row matched; the `find_in_page` demo flashes it with `--dx-accent`. The demo's every fifth row is now two lines (72 px) against a 48 px estimate, so placeholder positions drift from the real rows (by ~4,800 px at row 1,000).
+
+**After (same harness):** forwards and back in order, with the drift: `"7 of 10000"` 6 -> 66 and back to 36; `"77 of 10000"` 76, 176, 276, 376, 476 and back to 176, the matched row in view after every step; no revealed placeholder left and no stray highlight (screenshots). The bar counts 1,002 for 1,000 rows (the double-counted mounted rows, as documented). Typing the query fires `beforematch` once per keystroke on the same placeholder (each incremental search re-reveals it now that it is hidden again): harmless, the scroll target is the same.
+
+**Specs:** `playwright/virtual-list-find.spec.ts` adds "a revealed placeholder is hidden again, and the real row is marked as the match" and "the find bar's highlight is not painted on a placeholder" (red on main, green with the fix; 6/6 on a debug lane-ssg build).
+
+**Still open:** Firefox 139+ and Safari 26.2 (not installed here; this harness works for any engine Playwright can launch headed), and the release-build mount timing for 100k rows (3.5 s debug).
