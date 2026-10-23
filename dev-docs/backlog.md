@@ -41,7 +41,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (40)
+## Open rows (42)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -85,6 +85,8 @@ proposing one is closed as out of scope (row 337 is the first).
 | [358](backlog/358-all-routes-one-navigation-for-both-schemes.md) | all-routes: one navigation for both schemes (needs a clean forced-colors reset) | BACKLOG. Blocked on one thing: the forced-colors sweep presses Tab from the focus start point… | S | tests |
 | [365](backlog/365-final-sweep-refactor-and-root-cause-review.md) | Final sweep: refactor review with the deconstruct-to-root and solve-by-construction exercise, proposals to the owner | BACKLOG (owner 2026-10-22, backlog thread: "final sweep, check for refactors and also run there the… | M for the review. Each accepted… | process |
 | [367](backlog/367-lane-build-disk-class.md) | Lane builds need 10.4 GB free because every lane-ssg copies 6.8 GB of template, 3.0 GB of it dead incremental state | PARTIAL. Landed in lane gatetools: the copy leaves cargo's incremental/ dirs out and the guard… | S for the landed part… | tooling |
+| [369](backlog/369-virtual-fractional-rows-grid-table.md) | VirtualGrid and TableRows: carry the exact measured size so a short body with fractional rows cannot overflow by 1px | Open. Found in batch 10 (scroll-fade 199 vs 198). | S | primitives |
+| [370](backlog/370-merge-attributes-class-none.md) | merge_attributes: a class: None replaces the base class instead of being ignored | Open. Found by the biggrid lane in batch 10. | S | primitives |
 
 ## Done rows (301)
 
