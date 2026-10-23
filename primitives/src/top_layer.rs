@@ -712,7 +712,7 @@ if (!document.getElementById('dx-top-layer-ink-styles')) {
          happens to be wired up. (Select/Combobox's listboxes are plain
          <div> options, not form controls -- unaffected by this rule either
          way; both already carry their own explicit, intentionally different
-         \`color: var(--secondary-color-1)\` declared directly on the list,
+         \`color: var(--dx-popover-foreground)\` declared directly on the list,
          which already won outright before this rule existed.) Scoped to
          top-layer descendants rather than applied app-wide: this closes the
          class where it actually bites without silently restyling every

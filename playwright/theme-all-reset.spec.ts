@@ -215,6 +215,20 @@ for (const which of Object.keys(BEFORE)) {
           return c;
         });
       }
+      // Two golden values were the old pure-black defaults: `color` (the page ink, `--dx-foreground`) and the thumbs'
+      // `border-top-color` (`--dx-primary`). Both are shadcn's near-black now (row 373), so they are compared to the
+      // token itself, like the ring colour above; every other property still equals the golden.
+      const token = async (name: string) =>
+        page.evaluate((n) => {
+          const probe = document.createElement("i");
+          probe.style.color = `var(${n})`;
+          document.body.append(probe);
+          const c = getComputedStyle(probe).color;
+          probe.remove();
+          return c;
+        }, name);
+      if (expected["color"] === "rgb(0, 0, 0)") expected["color"] = await token("--dx-foreground");
+      if (expected["border-top-color"] === "rgb(0, 0, 0)") expected["border-top-color"] = await token("--dx-primary");
       expect(got).toEqual(expected);
     });
   });
