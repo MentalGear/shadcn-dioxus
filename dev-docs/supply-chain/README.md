@@ -6,7 +6,7 @@ The repo's own interlinked docs ([`../README.md`](../README.md), [`../../CLAUDE.
 [`../../SECURITY.md`](../../SECURITY.md)) point here; nothing here depends on them.
 
 Every statement below is true of the repository as of the date above, or is marked **planned** or **unverified**. The controls
-table is checked against the tree by [`scripts/check-supply-chain-doc.sh`](../../scripts/check-supply-chain-doc.sh) (see
+table is checked against the tree by [`check-supply-chain-doc.sh`](./check-supply-chain-doc.sh) (see
 [Keeping this document true](#keeping-this-document-true)).
 
 ## The approach in one paragraph
@@ -102,7 +102,7 @@ requires every `enforced`/`manual` path to exist and every `planned` script to s
 | C19 | `check-pnpm-hardening.sh`: both `pnpm-workspace.yaml` keep `minimumReleaseAge >= 43200`, `trustPolicy: no-downgrade`, `blockExoticSubdeps: true`, `onlyBuiltDependencies: []`; every `package.json` dependency is an exact version; no `tarball:`/git resolution in the lock; `packageManager` pnpm >= 10.21 | T1 T2: the JS settings and exact pins are today a convention and a yaml comment, not a gate | `scripts/check-pnpm-hardening.sh` | `playwright/pnpm-workspace.yaml`, `preview/pnpm-workspace.yaml`, `playwright/package.json`, `preview/package.json` | none yet | planned | Row 371; research E |
 | C20 | Dependency register: one schema-checked TOML entry per direct dependency (outcome, reach class, version, evidence date, closure hash); a version bump re-opens the entry; transitive, `build.rs` and proc-macro counts are shrink-only ratchets; `lifted-from: crate@version` headers must have an entry | T4: closure growth and lifted code that no advisory scan can see | `scripts/check-supply-chain-register.sh` | `supply-chain/register.toml` | none yet | planned | Row 371; follow the repo's shrink-only baseline pattern |
 | C21 | Users' cooldown: the starter's `.cargo/config.toml` sets Cargo's minimum publish age once Rust 1.100 is stable (expected 2026-11-12); the only control that would have covered the 86-minute window of the August 2026 attack | T1 for users | none | `templates/starter/.cargo/config.toml` | none yet | planned | Unverified: that older cargo ignores the unknown key; row 371 |
-| C22 | This document stays true: the controls table is parsed, enforced and manual rows must name existing paths, planned scripts must not exist yet, and every script in the declared supply-chain set must appear in the table | drift of this playbook from the tree | `scripts/check-supply-chain-doc.sh` | `dev-docs/supply-chain/README.md`, `SECURITY.md` | run-gates | enforced | Copy with the table format; edit `SUPPLY_CHAIN_SCRIPTS` at the top |
+| C22 | This document stays true: the controls table is parsed, enforced and manual rows must name existing paths, planned scripts must not exist yet, and every script in the declared supply-chain set must appear in the table | drift of this playbook from the tree | `dev-docs/supply-chain/check-supply-chain-doc.sh`, `scripts/check-supply-chain-doc.sh` | `dev-docs/supply-chain/README.md`, `SECURITY.md` | run-gates | enforced | Copy the gate (it lives next to this file) with the table format; edit its CONFIG block (playbook path, `SECURITY.md`, gate-list file, `SUPPLY_CHAIN_SCRIPTS`). `scripts/check-supply-chain-doc.sh` is only this repo's three-line wrapper |
 
 Counts (checked by the gate, which prints them): 13 enforced, 3 manual, 6 planned.
 
@@ -168,26 +168,51 @@ The minimal order. Each step is independently useful; stop where the cost stops 
    specific to that layout.
 10. **No third-party runtime fetches (C13).** Copy `scripts/check-demo-remote-assets.sh`; edit the roots.
 11. **Evidence (C14).** Copy `scripts/dep-report.sh` to get the numbers (crates, `unsafe`, `build.rs`) a dependency decision needs.
-12. **The drift gate (C22).** Copy this file's table format and `scripts/check-supply-chain-doc.sh`; set
-    `SUPPLY_CHAIN_SCRIPTS` to your own scripts; register it in your gate list.
+12. **The drift gate (C22).** Copy this file's table format and `check-supply-chain-doc.sh` (next to this file); edit the
+    CONFIG block at its top (playbook path, `SECURITY.md`, gate-list file, `SUPPLY_CHAIN_SCRIPTS`); register it in your gate list.
 13. **Then the planned layer, in the order of the research**: `cargo-deny` (C16), a pinned advisory database with a
     refresh step (C18), `cargo-vet` (C17), a register with ratchets (C20), the pnpm gate (C19).
 
 What each file needs changed is in the **Adopt** column of the table; every script documents its rules in its own header comment.
 
+## Extracting this into its own repo
+
+The owner may move this to a repository of its own. It is built so that `git subtree split --prefix=dev-docs/supply-chain`
+yields a usable root: everything new lives in this directory (this README and `check-supply-chain-doc.sh`), and the gate
+reads every repository-specific path from one CONFIG block at its top.
+
+**What moves** (already in `dev-docs/supply-chain/`): this playbook and the drift gate. Nothing else is moved by the split.
+
+**What stays as this repository's wiring** (and is only *described* here, not moved):
+- the enforcing scripts and tool settings in the controls table (`scripts/check-*.sh`, `scripts/registry-install-smoke.sh`,
+  `scripts/stamp-release-rev.sh`, `scripts/dep-report.sh`, `scripts/session-setup.sh`, the `pnpm-workspace.yaml` files and
+  the workflows): they are specific to this repository's layout (`dx components` registry, Dioxus primitives). In an
+  extracted repo they would become the **reference implementations** the table points at, copied into a `reference/` folder
+  or linked by commit, which is a later decision;
+- `scripts/check-supply-chain-doc.sh`, the three-line wrapper that `scripts/run-gates.sh` lists, and the gate-list entry;
+- the root `SECURITY.md` (each project keeps its own), the links from `CLAUDE.md`, `README.md`, `dev-docs/README.md` and
+  backlog row 371, and `dev-docs/research/dependency-*.md` which this playbook cites.
+
+**What to change after a split**: in the gate's CONFIG block set `SCD_GATE_LIST=""` (or the new repo's gate list), point
+`SCD_SECURITY` at the new repo's policy, and list the new repo's own scripts in `SUPPLY_CHAIN_SCRIPTS`; the table's
+script and config paths are repository-relative, so they are rewritten to the reference copies. Relative links in this
+README that leave the directory (`../../SECURITY.md`, `../backlog/`, `../research/`, `../../CLAUDE.md`, `../README.md`) will
+not resolve in the extracted repo and must be turned into absolute links to this repository or into plain text; they are
+this repository's interlinking (the docs-map and backlog links), deliberately kept while the playbook lives here.
+
 ## Keeping this document true
 
-`scripts/check-supply-chain-doc.sh` is a gate (it needs no network and no build). It parses the controls table above and fails when:
+`check-supply-chain-doc.sh` (next to this file; `scripts/check-supply-chain-doc.sh` is the wrapper the gate list names) is a gate (it needs no network and no build). It parses the controls table above and fails when:
 
 - an `enforced` or `manual` row names a script or config path that does not exist;
 - a `planned` row names a script that already exists (the row must be flipped to `enforced`);
-- a script in the declared set `SUPPLY_CHAIN_SCRIPTS` at the top of the gate is not named by any row (a new control cannot land
+- a script in the declared set `SUPPLY_CHAIN_SCRIPTS` in the gate's CONFIG block is not named by any row (a new control cannot land
   without documentation), or a script in that set no longer exists;
 - a row has a status other than `enforced`, `manual` or `planned`, an id is repeated, or the required headings are missing;
 - `SECURITY.md` is missing or does not link this playbook.
 
-`scripts/check-supply-chain-doc.sh --self-test` mutates an in-memory copy of the table against a throwaway tree and requires
-every mutation to turn red (and the unmutated table to stay green). The declared set is a list kept in the gate, so adding a
+`check-supply-chain-doc.sh --self-test` mutates an in-memory copy of the table against a throwaway tree and requires
+every mutation to turn red (and the unmutated table to stay green). The declared set is a list kept in the gate's CONFIG block, so adding a
 supply-chain script means adding it to that list and to the table in the same commit.
 
 Facts this document relies on and that were **not verified by a script**: the 2026-08-20 incident details and the planned
