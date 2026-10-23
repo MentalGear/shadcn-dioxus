@@ -1,0 +1,28 @@
+---
+id: 167
+title: "Migrate the 52 hand-paired listener sites onto use_js_listeners, shrinking PAIRED_BY_HAND in…"
+status: "LANDED 2026-10-23 (branch claude/listener-pairing-migration, waiting for the merge queue) -- was…"
+size: "M (mechanical per site, 11 files)"
+area: misc
+updated: 2026-10-23
+---
+
+# Row 167: Migrate the 52 hand-paired listener sites onto use_js_listeners, shrinking PAIRED_BY_HAND in…
+
+## Item
+
+Migrate the 52 hand-paired listener sites onto `use_js_listeners`, shrinking `PAIRED_BY_HAND` in `scripts/check-js-listeners.sh` to empty
+
+## Status / trigger
+
+**LANDED 2026-10-23 (branch `claude/listener-pairing-migration`, waiting for the merge queue)** -- was: **OPEN** -- recorded 2026-10-05 (follow-up of row 159, which landed 2026-10-05 in round 3); scheduled late in the next-session order (step 4, after rows 137, 146, 155's menu group and 154's Carousel research, because they edit the same files) **2026-10-20 sync: `PAIRED_BY_HAND` in `scripts/check-js-listeners.sh` still non-empty; queued for the Round 6 sweep.**
+
+## Size
+
+M (mechanical per site, 11 files)
+
+## Detail
+
+Row 159 built the scope-owned helper (`primitives/src/js_listener.rs`, `use_js_listeners`) and the gate (`scripts/check-js-listeners.sh`), and grandfathered the registrations that already had a correct hand-written add/remove pair in `PAIRED_BY_HAND`, a ratchet that only shrinks. The audit counted **52 hand-paired sites in the 11 files** the map names: `carousel.rs`, `collapsible.rs`, `context_menu.rs`, `drag_and_drop_list.rs`, `drawer.rs`, `input_otp.rs`, `menu_sub.rs`, `message_scroller.js`, `navigation_menu.rs`, `top_layer.rs` and `virtual_list.rs`. Each is correct today, but each is a hand-wired teardown (an `await dioxus.recv()` sentinel and the matching removes) that a later edit can break, which is the class row 159 exists to close. **Migration (mechanical, per the gate's own header):** `x.addEventListener(t, h, o)` -> `listen(x, t, h, o)`, delete the `await dioxus.recv()` and the matching removes, wrap in `use_js_listeners`; one file per lane step; delete the file's `PAIRED_BY_HAND` line in the same change (the gate reports a file that no longer needs its entry); the target is an empty map. `message_scroller.js` is a shipped script whose `attach()` returns its own teardown: decide per file whether it moves or stays with a reasoned marker. **Two sites need a marker, not just a move:** `primitives/src/context_menu.rs:801` and `:960` register `window` `wheel`/`touchmove` listeners with `{ capture: true, passive: false }` (they cancel scrolling outside the open menu), which `check-blocking-scroll-listeners.sh` reports once they go through `listen(...)` with `passive: false`: add `blocking-ok: <reason>` (cancelling the wheel is the feature; installed only while a menu is open and removed with it) as a JS comment on the line above inside the migrated script, the way `scroll_lock.rs:458` and `:482` do. **Collisions:** `carousel.rs` waits for row 154's Carousel research, `navigation_menu.rs` is row 137, `message_scroller.js` row 146, `context_menu.rs` row 155 group 2, `drawer.rs` rows 141 and 156: take those files after those rows merge, or last. Verify each migrated site with its component spec, `playwright/oracle/tier2-html/listener-inventory.spec.ts` and the three listener gates.
+
+**Landed 2026-10-23 (branch `claude/listener-pairing-migration`), the account:** all 51 remaining hand-paired sites (the row's 52 counted `virtual_list.rs`, which row 309 had already moved) in the 10 listed files now register through `listen` inside a `JsListeners` script, and the `PAIRED_BY_HAND` ratchet is deleted from `scripts/check-js-listeners.sh` rather than left empty, so a hand-paired add/remove now always fails. **Helper:** `listen` returns `off` (an idempotent early removal the teardown then skips) for listeners narrower than their script, and a `{ once: true }` registration forgets itself when it fires; `JsListeners::eval()` (web only) hands out the channel for a script that also takes commands. **Per file:** `collapsible`, `input_otp`, `menu_sub`, `navigation_menu`, `top_layer` (two `toggle` syncs; the anchor fallback's trackers, its `ResizeObserver` through `cleanup`) plain moves; `context_menu` one shared `CONTEXT_MENU_SCROLL_BLOCK_JS` with the two `blocking-ok:` markers, and its whole-file entry in `check-blocking-scroll-listeners.sh`'s allowlist is gone; `drag_and_drop_list` from an `ondragstart`-installed eval to a per-item `use_js_listeners` keyed on a `native_drag` signal (an item unmounted mid-drag now removes them too); `drawer` keeps the per-drag window listeners' lifetime through `off`; `message_scroller.js` uses `listen` in `bind()`, Rust sends `teardown` and then drops the script; `carousel` tracking, drag and wheel-band bridges moved, while the two one-shot `{ once: true }` `scrollend` snap restores stay raw with a `listener-ok:` reason (they must outlive their script: a fire-and-forget scroll write, and a drag teardown mid-settle would leave snapping off). **Proof:** the gate red on the old files (collapsible 1, drawer 4, carousel 21) and green on the tree; every migrated script passes `node --check` inside the prelude; clippy (primitives, default and web arms) and `cargo test -p dioxus-primitives --lib` (936) green; fast gates all PASS; on a debug SSG build `listener-inventory.spec.ts` plus every touched component's specs: 515 passed, 3 failed, and the same 3 (`carousel.spec.ts:1635`, `:1901`, `:2252`, wheel edge band) fail identically on main's build in this container (Chromium 153, not the pinned 1194), so they are not this change.
