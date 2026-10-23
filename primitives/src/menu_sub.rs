@@ -82,7 +82,7 @@ use dioxus_core::Task;
 
 use crate::collection::{use_collection_provider, CollectionPlacement, CollectionState};
 use crate::direction::{Direction, HorizontalNav};
-use crate::{use_effect_with_cleanup, use_unique_id};
+use crate::use_unique_id;
 
 /// Hover-intent delay before a pointer hovering a sub-trigger opens its
 /// submenu.
@@ -425,28 +425,20 @@ pub(crate) fn use_sub_outside_dismiss(
     content_id: impl Readable<Target = String> + Copy + 'static,
     on_dismiss: impl FnMut() + Clone + 'static,
 ) {
-    use_effect_with_cleanup(move || {
-        let mut eval = dioxus::document::eval(
-            "const [triggerId, contentId] = await dioxus.recv();
-            const inside = (target) => {
-                const t = document.getElementById(triggerId);
-                const c = document.getElementById(contentId);
-                return (t != null && t.contains(target)) || (c != null && c.contains(target));
-            };
-            const onFocus = e => { if (!inside(e.target)) dioxus.send(true); };
-            document.addEventListener('focusin', onFocus, true);
-            await dioxus.recv();
-            document.removeEventListener('focusin', onFocus, true);",
-        );
-        let _ = eval.send((trigger_id.cloned(), content_id.cloned()));
+    crate::js_listener::use_js_listeners(move || {
         let mut on_dismiss = on_dismiss.clone();
-        spawn(async move {
-            while let Ok(true) = eval.recv::<bool>().await {
-                on_dismiss();
-            }
-        });
-        move || {
-            let _ = eval.send(true);
-        }
+        Some(
+            crate::js_listener::JsListeners::install(
+                "const [triggerId, contentId] = await dioxus.recv();
+                const inside = (target) => {
+                    const t = document.getElementById(triggerId);
+                    const c = document.getElementById(contentId);
+                    return (t != null && t.contains(target)) || (c != null && c.contains(target));
+                };
+                listen(document, 'focusin', (e) => { if (!inside(e.target)) dioxus.send(true); }, true);",
+            )
+            .arg((trigger_id.cloned(), content_id.cloned()))
+            .on_message(move |_: bool| on_dismiss()),
+        )
     });
 }

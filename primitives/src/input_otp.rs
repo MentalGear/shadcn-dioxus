@@ -662,25 +662,18 @@ fn use_caret_sync(
     id: impl Readable<Target = String> + Copy + 'static,
     mut selection_start: Signal<usize>,
 ) {
-    crate::use_effect_with_cleanup(move || {
-        let mut eval = document::eval(
-            "const id = await dioxus.recv();
-            const input = document.getElementById(id);
-            const send = () => dioxus.send(input.selectionStart ?? input.value.length);
-            const events = ['input', 'keyup', 'click', 'focus', 'select'];
-            events.forEach((ev) => input.addEventListener(ev, send));
-            await dioxus.recv();
-            events.forEach((ev) => input.removeEventListener(ev, send));",
-        );
-        let _ = eval.send(id.cloned());
-        spawn(async move {
-            while let Ok(pos) = eval.recv::<usize>().await {
-                selection_start.set(pos);
-            }
-        });
-        move || {
-            let _ = eval.send(true);
-        }
+    crate::js_listener::use_js_listeners(move || {
+        Some(
+            crate::js_listener::JsListeners::install(
+                "const id = await dioxus.recv();
+                const input = document.getElementById(id);
+                if (!input) return;
+                const send = () => dioxus.send(input.selectionStart ?? input.value.length);
+                for (const ev of ['input', 'keyup', 'click', 'focus', 'select']) listen(input, ev, send);",
+            )
+            .arg(id.cloned())
+            .on_message(move |pos: usize| selection_start.set(pos)),
+        )
     });
 }
 

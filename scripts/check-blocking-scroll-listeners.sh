@@ -81,13 +81,9 @@ import sys
 from pathlib import Path
 
 # file (repo-relative) -> why its non-passive wheel/touch listeners are legitimate.
-ALLOWLIST = {
-    "primitives/src/context_menu.rs": (
-        "installs non-passive window wheel/touchmove listeners in an effect only while a "
-        "context menu is OPEN and removes them in that effect's cleanup -- blocking the page "
-        "scroll behind an open menu is its job"
-    ),
-}
+# Empty since row 167: context_menu.rs's two window wheel/touchmove listeners moved onto
+# `listen(..)` and carry their own `blocking-ok:` markers.
+ALLOWLIST: dict[str, str] = {}
 
 ATTR_RE = re.compile(
     r"(?<![A-Za-z0-9_.])(onwheel|onmousewheel|ontouchstart|ontouchmove)\s*:\s*(?=move\b|\||[a-z_])"

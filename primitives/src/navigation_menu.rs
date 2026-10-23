@@ -162,8 +162,7 @@ use crate::direction::use_direction;
 use crate::hover_intent::{use_hover_intent, HoverIntent};
 use crate::menu_sub::{use_delayed_action, DelayedAction};
 use crate::{
-    has_own_accessible_name, merge_attributes, use_animated_open, use_effect_with_cleanup,
-    use_id_or, use_unique_id,
+    has_own_accessible_name, merge_attributes, use_animated_open, use_id_or, use_unique_id,
 };
 
 /// Debounce before a blur that nothing inside the nav cancels closes the
@@ -891,29 +890,23 @@ fn NavigationMenuOutsidePressDismiss() -> Element {
     let trigger_id = item_ctx.trigger_id;
     let index = item_ctx.index;
 
-    use_effect_with_cleanup(move || {
-        let mut eval = dioxus::document::eval(
-            "const triggerId = await dioxus.recv();
-            const onPointer = e => {
-                const trigger = document.getElementById(triggerId);
-                const nav = trigger && trigger.closest('nav');
-                if (nav && !nav.contains(e.target)) dioxus.send(true);
-            };
-            document.addEventListener('pointerdown', onPointer, true);
-            await dioxus.recv();
-            document.removeEventListener('pointerdown', onPointer, true);",
-        );
-        let _ = eval.send(trigger_id.cloned());
-        spawn(async move {
-            while let Ok(true) = eval.recv::<bool>().await {
+    crate::js_listener::use_js_listeners(move || {
+        Some(
+            crate::js_listener::JsListeners::install(
+                "const triggerId = await dioxus.recv();
+                listen(document, 'pointerdown', (e) => {
+                    const trigger = document.getElementById(triggerId);
+                    const nav = trigger && trigger.closest('nav');
+                    if (nav && !nav.contains(e.target)) dioxus.send(true);
+                }, true);",
+            )
+            .arg(trigger_id.cloned())
+            .on_message(move |_: bool| {
                 if (ctx.open)() == Some(index.cloned()) {
                     ctx.set_open.call(None);
                 }
-            }
-        });
-        move || {
-            let _ = eval.send(true);
-        }
+            }),
+        )
     });
 
     rsx! {}

@@ -898,6 +898,7 @@ const CAROUSEL_SCROLL_TO_JS: &str = concat!(carousel_trace_js!(), "\
             scroller.__dxCancelSnapRestore = null;
         };
         if ('onscrollend' in window) {
+            // listener-ok: a one-shot `{ once: true }` scrollend that restores snapping after this write's own scroll -- removed by firing or by the next write's cancel, and it must outlive this fire-and-forget script
             scroller.addEventListener('scrollend', restoreSnap, { once: true, passive: true });
             scroller.__dxCancelSnapRestore = () => scroller.removeEventListener('scrollend', restoreSnap);
         } else {
@@ -955,10 +956,7 @@ const CAROUSEL_SCROLL_TO_JS: &str = concat!(carousel_trace_js!(), "\
 const CAROUSEL_SCROLL_TRACKING_JS: &str = concat!(carousel_true_end_js!(), carousel_trace_js!(), "\
     const [id, orientation, align, inputQuietMs, virtualWindow] = await dioxus.recv();
     const container = document.getElementById(id);
-    if (!container) {
-        await dioxus.recv();
-        return;
-    }
+    if (!container) return;
     // See `CAROUSEL_SCROLL_TO_JS`'s own identical helper's doc: which
     // slide counts as 'nearest' (and therefore `selected`) must anchor on
     // the same point `align` snaps to, so this agrees with wherever the
@@ -1302,16 +1300,16 @@ const CAROUSEL_SCROLL_TRACKING_JS: &str = concat!(carousel_true_end_js!(), carou
     // version waited two frames for no scroll) fired mid-spring-back and
     // left a stale sub-pixel transform: a measured regression, so the signal
     // comes from the one party that knows. Routed through the same idle gate.
-    container.addEventListener('dx-carousel-rest', scrollEnded);
-    container.addEventListener('pointerdown', clearIntent, { passive: true });
-    container.addEventListener('keydown', clearIntent, { passive: true });
-    container.addEventListener('scroll', onScroll, { passive: true });
-    container.addEventListener('wheel', onInput, { passive: true });
-    container.addEventListener('touchstart', onTouch, { passive: true });
-    container.addEventListener('touchend', onTouch, { passive: true });
-    container.addEventListener('touchcancel', onTouch, { passive: true });
+    listen(container, 'dx-carousel-rest', scrollEnded);
+    listen(container, 'pointerdown', clearIntent, { passive: true });
+    listen(container, 'keydown', clearIntent, { passive: true });
+    listen(container, 'scroll', onScroll, { passive: true });
+    listen(container, 'wheel', onInput, { passive: true });
+    listen(container, 'touchstart', onTouch, { passive: true });
+    listen(container, 'touchend', onTouch, { passive: true });
+    listen(container, 'touchcancel', onTouch, { passive: true });
     if (supportsScrollEnd) {
-        container.addEventListener('scrollend', scrollEnded, { passive: true });
+        listen(container, 'scrollend', scrollEnded, { passive: true });
     }
     // A resize of the scroller's own box re-settles too -- not just a
     // scroll -- closing a real, measured mount-time race (this session):
@@ -1353,30 +1351,21 @@ const CAROUSEL_SCROLL_TRACKING_JS: &str = concat!(carousel_true_end_js!(), carou
     }) : null;
     if (windowObserver) windowObserver.observe(container, { childList: true });
     resizeObserver.observe(container);
-    await dioxus.recv();
-    container.removeEventListener('scroll', onScroll);
-    container.removeEventListener('wheel', onInput);
-    container.removeEventListener('touchstart', onTouch);
-    container.removeEventListener('touchend', onTouch);
-    container.removeEventListener('touchcancel', onTouch);
-    if (supportsScrollEnd) {
-        container.removeEventListener('scrollend', scrollEnded);
-    }
-    resizeObserver.disconnect();
-    if (windowObserver) windowObserver.disconnect();
-    container.removeEventListener('dx-carousel-rest', scrollEnded);
-    container.removeEventListener('pointerdown', clearIntent);
-    container.removeEventListener('keydown', clearIntent);
-    clearTimeout(debounceTimer);
-    clearTimeout(gateTimer);
-    if (pinRaf) cancelAnimationFrame(pinRaf);
-    // Only ever remove this bridge's OWN gate: a re-attach (new options)
-    // can install its replacement before this teardown message arrives.
-    // Still-waiting scroll writes run rather than being dropped.
-    if (container.__dxWhenIdle === whenIdle) {
-        delete container.__dxWhenIdle;
-    }
-    waiters.forEach((f) => f());");
+    // The listeners above are `listen`'s (removed by the teardown); the rest is undone here.
+    cleanup(() => {
+        resizeObserver.disconnect();
+        if (windowObserver) windowObserver.disconnect();
+        clearTimeout(debounceTimer);
+        clearTimeout(gateTimer);
+        if (pinRaf) cancelAnimationFrame(pinRaf);
+        // Only ever remove this bridge's OWN gate: a re-attach (new options)
+        // can install its replacement before this teardown message arrives.
+        // Still-waiting scroll writes run rather than being dropped.
+        if (container.__dxWhenIdle === whenIdle) {
+            delete container.__dxWhenIdle;
+        }
+        waiters.forEach((f) => f());
+    });");
 
 /// Attach [`CAROUSEL_SCROLL_TRACKING_JS`] to the element with the given
 /// `id` for as long as the calling component stays mounted, forwarding
@@ -1384,14 +1373,14 @@ const CAROUSEL_SCROLL_TRACKING_JS: &str = concat!(carousel_true_end_js!(), carou
 /// `set_selected` (and, if present, `on_position`) and every `('visible',
 /// start, end)` message to `visible_range` -- the a11y contract's own
 /// "visible" set (module doc, "Accessibility"; see [`CarouselItem`]'s own
-/// "Visible slides / `inert`" doc). Mirrors `crate::lib`'s
-/// `use_outside_dismiss`/`use_form_reset_listener` shape exactly: an
-/// initial `eval.send(..)` of the (id, orientation) the script's own
-/// `await dioxus.recv()` unpacks, a spawned task looping on `eval.recv()`
-/// for as long as the script keeps sending, and a cleanup closure that
-/// sends a teardown value so the script's own trailing `await
-/// dioxus.recv()` can resolve and remove its listeners before the element
-/// is gone.
+/// "Visible slides / `inert`" doc). A [`use_js_listeners`] script: an
+/// initial `.arg(..)` of the (id, orientation, ...) the script's own
+/// `await dioxus.recv()` unpacks, an `on_message` handler for as long as
+/// the script keeps sending, and the derived teardown (unmount or a changed
+/// option) that removes its listeners and runs its `cleanup` before the
+/// element is gone.
+///
+/// [`use_js_listeners`]: crate::js_listener::use_js_listeners
 ///
 /// `on_position`, when `Some`, is called with the nearest slide's own
 /// logical POSITION (`data-position`, may differ from its data index) --
@@ -1408,36 +1397,33 @@ fn use_carousel_scroll_tracking(
     mut visible_range: Signal<(usize, usize)>,
     on_position: Option<Callback<isize>>,
 ) {
-    crate::use_effect_with_cleanup(move || {
+    crate::js_listener::use_js_listeners(move || {
         let id = id.cloned();
         let orientation_str = orientation().as_str().to_string();
         let align_str = align().as_str().to_string();
-        let mut eval = document::eval(CAROUSEL_SCROLL_TRACKING_JS);
-        let _ = eval.send((
-            id,
-            orientation_str,
-            align_str,
-            CAROUSEL_INPUT_QUIET_MS,
-            on_position.is_some(),
-        ));
-        spawn(async move {
-            while let Ok((kind, a, b)) = eval.recv::<(String, i64, i64)>().await {
-                if kind == "selected" {
-                    set_selected.call(a.max(0) as usize);
-                    if let Some(on_position) = on_position {
-                        on_position.call(b as isize);
+        Some(
+            crate::js_listener::JsListeners::install(CAROUSEL_SCROLL_TRACKING_JS)
+                .arg((
+                    id,
+                    orientation_str,
+                    align_str,
+                    CAROUSEL_INPUT_QUIET_MS,
+                    on_position.is_some(),
+                ))
+                .on_message(move |(kind, a, b): (String, i64, i64)| {
+                    if kind == "selected" {
+                        set_selected.call(a.max(0) as usize);
+                        if let Some(on_position) = on_position {
+                            on_position.call(b as isize);
+                        }
+                    } else {
+                        let count_now = *count.peek();
+                        let a = a.max(0) as usize;
+                        let b = b.max(0) as usize;
+                        visible_range.set(clamp_visible_range((a, b), count_now));
                     }
-                } else {
-                    let count_now = *count.peek();
-                    let a = a.max(0) as usize;
-                    let b = b.max(0) as usize;
-                    visible_range.set(clamp_visible_range((a, b), count_now));
-                }
-            }
-        });
-        move || {
-            let _ = eval.send(true);
-        }
+                }),
+        )
     });
 }
 
@@ -1511,10 +1497,10 @@ const CAROUSEL_SNAP_RESTORE_FALLBACK_MS: f64 = 500.0;
 /// settles on `CarouselContext`'s `selected` through that one existing
 /// bridge, never a second source of truth for the index.
 ///
-/// Mirrors [`CAROUSEL_SCROLL_TRACKING_JS`]'s own long-lived shape: an
-/// initial `dioxus.send` of static config, then `await dioxus.recv()`
-/// again only for teardown -- everything in between is real
-/// `addEventListener`s this script installs and removes itself, driving
+/// Mirrors [`CAROUSEL_SCROLL_TRACKING_JS`]'s own long-lived shape: a
+/// `JsListeners` script that reads its static config with one
+/// `await dioxus.recv()` and registers real listeners through `listen`
+/// (removed by the derived teardown), driving
 /// no Rust-side state at all while active (see the module doc's "Engine"
 /// section for why `document::eval` is this crate's established escape
 /// hatch for DOM access -- `setPointerCapture` and a real, ordered
@@ -1544,10 +1530,7 @@ const CAROUSEL_SNAP_RESTORE_FALLBACK_MS: f64 = 500.0;
 const CAROUSEL_DRAG_JS: &str = concat!(carousel_true_end_js!(), carousel_trace_js!(), "\
     const [id, orientation, thresholdPx, enabled, snapRestoreFallbackMs, align] = await dioxus.recv();
     const el = document.getElementById(id);
-    if (!el || !enabled) {
-        await dioxus.recv();
-        return;
-    }
+    if (!el || !enabled) return;
     // See `CAROUSEL_SCROLL_TO_JS`'s own identical helper's doc -- release
     // settle below finds the 'nearest' slide (and the delta to it) by the
     // same align-aware anchor point, so a drag lands consistently with
@@ -2042,6 +2025,7 @@ const CAROUSEL_DRAG_JS: &str = concat!(carousel_true_end_js!(), carousel_trace_j
                     // instantly correct until that animation has already
                     // finished on its own.
                     if ('onscrollend' in window) {
+                        // listener-ok: a one-shot `{ once: true }` scrollend that restores snapping after this write's own scroll -- removed by firing or by the next write's cancel, and it must outlive this script (a teardown mid-settle would leave snapping off)
                         el.addEventListener('scrollend', restoreSnap, { once: true, passive: true });
                         cancelPendingSnapRestore = () => el.removeEventListener('scrollend', restoreSnap);
                     } else {
@@ -2084,25 +2068,17 @@ const CAROUSEL_DRAG_JS: &str = concat!(carousel_true_end_js!(), carousel_trace_j
         }
     };
 
-    el.addEventListener('pointerdown', onPointerDown);
-    el.addEventListener('pointermove', onPointerMove);
-    el.addEventListener('pointerup', endDrag);
-    el.addEventListener('pointercancel', endDrag);
-    el.addEventListener('lostpointercapture', endDrag);
-    el.addEventListener('click', onClickCapture, true);
-    await dioxus.recv();
-    el.removeEventListener('pointerdown', onPointerDown);
-    el.removeEventListener('pointermove', onPointerMove);
-    el.removeEventListener('pointerup', endDrag);
-    el.removeEventListener('pointercancel', endDrag);
-    el.removeEventListener('lostpointercapture', endDrag);
-    el.removeEventListener('click', onClickCapture, true);");
+    listen(el, 'pointerdown', onPointerDown);
+    listen(el, 'pointermove', onPointerMove);
+    listen(el, 'pointerup', endDrag);
+    listen(el, 'pointercancel', endDrag);
+    listen(el, 'lostpointercapture', endDrag);
+    listen(el, 'click', onClickCapture, true);");
 
 /// Attach [`CAROUSEL_DRAG_JS`] to the element with the given `id` for as
 /// long as the calling component stays mounted and `enabled()` is `true`
 /// -- mirrors [`use_carousel_scroll_tracking`]'s own shape exactly (an
-/// initial `eval.send(..)`, teardown via a second send read by the
-/// script's own trailing `await dioxus.recv()`), one layer simpler since
+/// initial `.arg(..)`, the derived `use_js_listeners` teardown), one layer simpler since
 /// this bridge reports nothing back to Rust at all (see [`CAROUSEL_DRAG_JS`]'s
 /// own doc for why: every `scrollBy` it issues -- including `endDrag`'s
 /// own release settle -- is picked up by [`use_carousel_scroll_tracking`]'s
@@ -2115,35 +2091,30 @@ const CAROUSEL_DRAG_JS: &str = concat!(carousel_true_end_js!(), carousel_trace_j
 /// down the listeners, not just the initial mount value -- the gate itself
 /// lives in the script (`if (!el || !enabled) { ...; return; }`) rather
 /// than in whether this hook installs an eval at all, so every path
-/// through this function sends the exact same shape of config and returns
-/// the exact same shape of cleanup closure.
+/// through this function sends the exact same shape of config.
 fn use_carousel_drag(
     id: impl Readable<Target = String> + Copy + 'static,
     orientation: ReadSignal<CarouselOrientation>,
     align: ReadSignal<CarouselAlign>,
     enabled: ReadSignal<bool>,
 ) {
-    crate::use_effect_with_cleanup(move || {
+    crate::js_listener::use_js_listeners(move || {
         let id = id.cloned();
         let orientation_str = orientation().as_str().to_string();
         let align_str = align().as_str().to_string();
-        let eval = document::eval(CAROUSEL_DRAG_JS);
-        // No spawned receive loop here, unlike `use_carousel_scroll_tracking`
-        // just above -- this script never `dioxus.send`s anything back (see
-        // this function's own doc), so there is nothing to poll for until
-        // the cleanup closure's own teardown `send` below, which needs no
-        // receiver on this side to take effect.
-        let _ = eval.send((
-            id,
-            orientation_str,
-            CAROUSEL_DRAG_THRESHOLD_PX,
-            enabled(),
-            CAROUSEL_SNAP_RESTORE_FALLBACK_MS,
-            align_str,
-        ));
-        move || {
-            let _ = eval.send(true);
-        }
+        // No `on_message` here, unlike `use_carousel_scroll_tracking` just
+        // above -- this script never `dioxus.send`s anything back (see this
+        // function's own doc).
+        Some(
+            crate::js_listener::JsListeners::install(CAROUSEL_DRAG_JS).arg((
+                id,
+                orientation_str,
+                CAROUSEL_DRAG_THRESHOLD_PX,
+                enabled(),
+                CAROUSEL_SNAP_RESTORE_FALLBACK_MS,
+                align_str,
+            )),
+        )
     });
 }
 
@@ -2256,10 +2227,7 @@ fn use_carousel_drag(
 const CAROUSEL_WHEEL_BAND_JS: &str = concat!(carousel_true_end_js!(), "\
     const [id, orientation] = await dioxus.recv();
     const el = document.getElementById(id);
-    if (!el) {
-        await dioxus.recv();
-        return;
-    }
+    if (!el) return;
     const horizontal = orientation === 'horizontal';
 
     // ---- Mode D's constants: the owner's tuned bench defaults (rev 40
@@ -2722,19 +2690,17 @@ const CAROUSEL_WHEEL_BAND_JS: &str = concat!(carousel_true_end_js!(), "\
         apply(0);
     };
 
-    el.addEventListener('wheel', onWheel, { passive: true });
-    el.addEventListener('pointerdown', onPointerDown, { passive: true });
-    window.addEventListener('pointermove', onPointerMove, { passive: true });
-    await dioxus.recv();
-    el.removeEventListener('wheel', onWheel);
-    el.removeEventListener('pointerdown', onPointerDown);
-    window.removeEventListener('pointermove', onPointerMove);
-    cancelHome();
-    clearIdle();
-    if (visible) {
-        visible = 0;
-        el.style.transform = '';
-    }");
+    listen(el, 'wheel', onWheel, { passive: true });
+    listen(el, 'pointerdown', onPointerDown, { passive: true });
+    listen(window, 'pointermove', onPointerMove, { passive: true });
+    cleanup(() => {
+        cancelHome();
+        clearIdle();
+        if (visible) {
+            visible = 0;
+            el.style.transform = '';
+        }
+    });");
 
 /// Attach [`CAROUSEL_WHEEL_BAND_JS`] to the element with the given `id` for
 /// as long as the calling component stays mounted -- mirrors
@@ -2748,14 +2714,13 @@ fn use_carousel_wheel_band(
     id: impl Readable<Target = String> + Copy + 'static,
     orientation: ReadSignal<CarouselOrientation>,
 ) {
-    crate::use_effect_with_cleanup(move || {
+    crate::js_listener::use_js_listeners(move || {
         let id = id.cloned();
         let orientation_str = orientation().as_str().to_string();
-        let eval = document::eval(CAROUSEL_WHEEL_BAND_JS);
-        let _ = eval.send((id, orientation_str));
-        move || {
-            let _ = eval.send(true);
-        }
+        Some(
+            crate::js_listener::JsListeners::install(CAROUSEL_WHEEL_BAND_JS)
+                .arg((id, orientation_str)),
+        )
     });
 }
 
@@ -6649,11 +6614,10 @@ mod ssr_tests {
             .unwrap();
         assert!(check < report);
         assert!(CAROUSEL_SCROLL_TRACKING_JS.contains("intent.tries < 2"));
+        // Registered through `listen`, so the teardown removes them (row 167).
         for ev in ["pointerdown", "keydown"] {
             assert!(CAROUSEL_SCROLL_TRACKING_JS
-                .contains(&format!("addEventListener('{ev}', clearIntent")));
-            assert!(CAROUSEL_SCROLL_TRACKING_JS
-                .contains(&format!("removeEventListener('{ev}', clearIntent")));
+                .contains(&format!("listen(container, '{ev}', clearIntent")));
         }
     }
 
