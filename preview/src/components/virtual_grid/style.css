@@ -54,6 +54,20 @@
   outline: none;
 }
 
+/* A selected row (`row_selected`): the Nova table's `data-[state=selected]:bg-muted`. The sticky
+ * column is opaque so scrolled cells never show through it, so it takes the same fill. */
+.dx-virtual-grid [role="row"][data-state="selected"]:not(:where([popover], dialog) *),
+.dx-virtual-grid [role="row"][data-state="selected"] [data-grid-sticky]:not(:where([popover], dialog) *) {
+  background-color: var(--dx-muted);
+}
+
+/* A cell that holds a control: the control is the tab stop (the cell is `tabindex=-1`), so the
+ * active cell shows the focus ring when its control is focused, and the cell's own ring is only
+ * for a click on its padding. */
+.dx-virtual-grid [data-grid-has-control]:has(:focus-visible):not(:where([popover], dialog) *) {
+  box-shadow: var(--dx-ring-focus-inset);
+}
+
 /* The gallery: rows are CSS grids of equal tracks; the gap is part of the measured row. */
 .dx-virtual-grid-wrap {
   overflow: hidden auto;
