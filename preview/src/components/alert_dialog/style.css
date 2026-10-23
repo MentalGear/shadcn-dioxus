@@ -205,7 +205,6 @@ dialog.dx-alert-dialog[open][data-state="open"] {
   border: 1px solid transparent;
   border-radius: var(--dx-radius-lg);
   background-clip: padding-box;
-  cursor: default;
   font-family: inherit;
   font-size: var(--dx-text-sm);
   font-weight: 500;

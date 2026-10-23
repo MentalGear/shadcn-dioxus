@@ -29,7 +29,6 @@
     background-color: var(--dx-field-fill);
     box-shadow: inset 0 0 0 1px var(--dx-input);
     color: var(--dx-foreground);
-    cursor: pointer;
 
     /* The ring is the box-shadow token on :focus-visible; the UA outline would be a second ring. */
     outline: none;

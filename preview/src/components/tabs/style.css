@@ -154,7 +154,6 @@
     background: none;
     color: var(--light, color-mix(in oklab, var(--dx-foreground) 60%, transparent))
         var(--dark, var(--dx-muted-foreground));
-    cursor: pointer;
     font-family: inherit;
     font-size: var(--dx-tabs-trigger-font-size);
     font-weight: 500;

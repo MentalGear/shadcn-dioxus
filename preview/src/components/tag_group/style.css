@@ -27,7 +27,7 @@
   align-items: center;
   border: 1px solid var(--dx-border);
   border-radius: var(--dx-radius-full);
-  cursor: default;
+  cursor: var(--dx-interactive-element-cursor, default);
   font-size: var(--dx-text-sm);
   gap: var(--dx-space-1);
   outline: none;
@@ -61,7 +61,6 @@
   border-radius: var(--dx-radius-md);
   background-color: transparent;
   color: var(--dx-muted-foreground);
-  cursor: pointer;
   margin-inline-start: var(--dx-space-1);
   transition:
     background-color 120ms var(--dx-motion-ease),

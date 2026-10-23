@@ -145,7 +145,6 @@
   border-radius: var(--dx-radius-md);
   background-color: transparent;
   color: var(--dx-muted-foreground);
-  cursor: pointer;
   margin-inline-start: 10px;
   transition:
     background-color 120ms ease,

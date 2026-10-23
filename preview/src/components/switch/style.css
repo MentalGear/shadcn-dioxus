@@ -38,7 +38,6 @@
   background-color: var(--light, var(--dx-input))
     var(--dark, color-mix(in oklab, var(--dx-input) 80%, transparent));
   color: inherit;
-  cursor: pointer;
   font: inherit;
   letter-spacing: inherit;
   outline: none;

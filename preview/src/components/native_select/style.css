@@ -35,7 +35,6 @@
   border-start-start-radius: var(--dx-group-radius-start-start, var(--dx-native-select-radius));
   box-shadow: inset 0 0 0 1px var(--dx-input);
   color: var(--dx-foreground);
-  cursor: pointer;
   font-family: inherit;
   font-size: var(--dx-coarse-text-entry-font-size);
   padding-block: var(--dx-native-select-padding-block);

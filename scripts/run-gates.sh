@@ -118,6 +118,7 @@ gates=(
   "check-registry-url|scripts/check-registry-url.sh"
   "check-motion-gating|scripts/check-motion-gating.sh"
   "check-theme-baseline|scripts/check-theme-baseline.sh"
+  "check-cursor-baseline|scripts/check-cursor-baseline.sh"
   "check-popup-boundary|scripts/check-popup-boundary.sh"
   "check-popup-root-reset|scripts/check-popup-root-reset.sh"
   "check-component-root-reset|scripts/check-component-root-reset.sh"

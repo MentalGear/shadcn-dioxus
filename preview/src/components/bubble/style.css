@@ -52,7 +52,6 @@
  * control styling is reset, and it keeps a visible focus ring. */
 .dx-bubble-content:is(button, a) {
   color: inherit;
-  cursor: pointer;
   font-family: inherit;
   outline: none;
   text-align: start;

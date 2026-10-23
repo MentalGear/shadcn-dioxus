@@ -81,7 +81,6 @@
     border-radius: var(--dx-radius-lg);
     background-color: transparent;
     color: var(--dx-foreground);
-    cursor: pointer;
     font-size: var(--dx-text-sm);
     outline: none;
 }
@@ -221,7 +220,6 @@
     border-radius: var(--dx-radius-lg);
     aspect-ratio: 1;
     color: var(--dx-foreground);
-    cursor: pointer;
     font-size: var(--dx-text-sm);
 }
 
@@ -510,7 +508,6 @@ td:has(.dx-calendar-grid-cell[data-selection-end="true"]) {
     border-radius: var(--dx-calendar-cell-radius);
     background-color: transparent;
     color: var(--dx-foreground);
-    cursor: pointer;
     font-size: var(--dx-text-sm);
     font-weight: 500;
     gap: var(--dx-space-1);

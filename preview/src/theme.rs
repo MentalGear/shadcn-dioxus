@@ -37,6 +37,10 @@ const CHANNEL_NAME: &str = "dx-theme";
 ///   `dx-components-theme.css` (absent = follow the system: shadcn's exact colours, or the calibrated WCAG
 ///   set under `prefers-contrast: more`; `wcag` and `shadcn` are the only values the snippet accepts, and
 ///   force one or the other page-wide).
+/// * `Cursor` is `data-dx-interactive-element-cursor="pointer|default"`, read by the theme's "Interactive-element
+///   cursor" rule in `dx-components-theme.css` (absent = shadcn v4's arrow on buttons, options, tabs, ...;
+///   `pointer` gives every interactive `dx-` element the hand; `pointer` and `default` are the only values
+///   the snippet accepts).
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Pref {
     Mode,
@@ -46,6 +50,7 @@ pub enum Pref {
     PressFeedback,
     Coarse,
     Contrast,
+    Cursor,
 }
 
 impl Pref {
@@ -58,6 +63,7 @@ impl Pref {
             Pref::PressFeedback => "dx-press-feedback",
             Pref::Coarse => "dx-coarse",
             Pref::Contrast => "dx-contrast",
+            Pref::Cursor => "dx-interactive-element-cursor",
         }
     }
 }
@@ -121,7 +127,7 @@ const DEFAULT_RADIUS: &str = "0.625";
 /// already on `<html>` and `theme-presets.css` / `dx-components-theme.css` render-blocking in
 /// `<head>`, the first paint is already in the chosen mode, colours and radius. [`theme_seed`] runs it
 /// again for any host that has no such `index.html`.
-pub const PREPAINT_JS: &str = "(function(){var K=['theme','theme-base','theme-accent','theme-radius','dx-press-feedback','dx-coarse','dx-contrast'],R=document.documentElement,Q=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)');function M(m){if(m)R.setAttribute('data-theme',m);else R.removeAttribute('data-theme');R.classList.toggle('dark',m?m==='dark':!!(Q&&Q.matches))}function A(k,v){if(K.indexOf(k)<0)return;var ok=!!v&&/^[a-z0-9.]{1,16}$/.test(v)&&(k!=='theme'||v==='dark'||v==='light')&&(k!=='dx-press-feedback'||v==='off')&&(k!=='dx-coarse'||v==='on'||v==='off')&&(k!=='dx-contrast'||v==='wcag'||v==='shadcn');if(k==='theme')M(ok?v:null);else if(ok)R.setAttribute('data-'+k,v);else R.removeAttribute('data-'+k)}window.__dxApplyMode=M;window.__dxTheme=A;if(Q&&!window.__dxModeWatch){window.__dxModeWatch=1;try{/*listener-ok: lives as long as the page*/Q.addEventListener('change',function(){if(!R.hasAttribute('data-theme'))M(null)})}catch(e){}}try{var C=document.cookie.split(';');K.forEach(function(k){var n='dx_'+k.replace('-','_')+'=',v=null;C.forEach(function(c){c=c.trim();if(c.indexOf(n)===0)v=decodeURIComponent(c.slice(n.length))});A(k,v)})}catch(e){}})();(function(){var W=window,R=document.documentElement;if(W.__dxModality)return;W.__dxModality=1;function S(m){if(R.getAttribute('data-dx-modality')!==m)R.setAttribute('data-dx-modality',m)}var Q=W.matchMedia&&W.matchMedia('(any-pointer: coarse) and (hover: none)');if(!R.hasAttribute('data-dx-modality'))S(Q&&Q.matches?'touch':'mouse');var K={Shift:1,Control:1,Alt:1,Meta:1,AltGraph:1,CapsLock:1,Fn:1,FnLock:1,Hyper:1,Super:1,OS:1};function P(t){return t==='touch'||t==='pen'?t:'mouse'}try{/*listener-ok: the modality writer lives as long as the page*/W.addEventListener('pointerdown',function(e){S(P(e.pointerType))},true);/*listener-ok: the modality writer lives as long as the page*/W.addEventListener('keydown',function(e){if(!K[e.key])S('keyboard')},true);/*listener-ok: the modality writer lives as long as the page*/W.addEventListener('click',function(e){if(e.detail===0){S('keyboard')}else if(R.getAttribute('data-dx-modality')==='keyboard')S(P(e.pointerType||(Q&&Q.matches?'touch':'mouse')))},true)}catch(x){}})()";
+pub const PREPAINT_JS: &str = "(function(){var K=['theme','theme-base','theme-accent','theme-radius','dx-press-feedback','dx-coarse','dx-contrast','dx-interactive-element-cursor'],R=document.documentElement,Q=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)');function M(m){if(m)R.setAttribute('data-theme',m);else R.removeAttribute('data-theme');R.classList.toggle('dark',m?m==='dark':!!(Q&&Q.matches))}function A(k,v){if(K.indexOf(k)<0)return;var ok=!!v&&/^[a-z0-9.]{1,16}$/.test(v)&&(k!=='theme'||v==='dark'||v==='light')&&(k!=='dx-press-feedback'||v==='off')&&(k!=='dx-coarse'||v==='on'||v==='off')&&(k!=='dx-contrast'||v==='wcag'||v==='shadcn')&&(k!=='dx-interactive-element-cursor'||v==='pointer'||v==='default');if(k==='theme')M(ok?v:null);else if(ok)R.setAttribute('data-'+k,v);else R.removeAttribute('data-'+k)}window.__dxApplyMode=M;window.__dxTheme=A;if(Q&&!window.__dxModeWatch){window.__dxModeWatch=1;try{/*listener-ok: lives as long as the page*/Q.addEventListener('change',function(){if(!R.hasAttribute('data-theme'))M(null)})}catch(e){}}try{var C=document.cookie.split(';');K.forEach(function(k){var n='dx_'+k.replace('-','_')+'=',v=null;C.forEach(function(c){c=c.trim();if(c.indexOf(n)===0)v=decodeURIComponent(c.slice(n.length))});A(k,v)})}catch(e){}})();(function(){var W=window,R=document.documentElement;if(W.__dxModality)return;W.__dxModality=1;function S(m){if(R.getAttribute('data-dx-modality')!==m)R.setAttribute('data-dx-modality',m)}var Q=W.matchMedia&&W.matchMedia('(any-pointer: coarse) and (hover: none)');if(!R.hasAttribute('data-dx-modality'))S(Q&&Q.matches?'touch':'mouse');var K={Shift:1,Control:1,Alt:1,Meta:1,AltGraph:1,CapsLock:1,Fn:1,FnLock:1,Hyper:1,Super:1,OS:1};function P(t){return t==='touch'||t==='pen'?t:'mouse'}try{/*listener-ok: the modality writer lives as long as the page*/W.addEventListener('pointerdown',function(e){S(P(e.pointerType))},true);/*listener-ok: the modality writer lives as long as the page*/W.addEventListener('keydown',function(e){if(!K[e.key])S('keyboard')},true);/*listener-ok: the modality writer lives as long as the page*/W.addEventListener('click',function(e){if(e.detail===0){S('keyboard')}else if(R.getAttribute('data-dx-modality')==='keyboard')S(P(e.pointerType||(Q&&Q.matches?'touch':'mouse')))},true)}catch(x){}})()";
 
 pub fn theme_seed() {
     _ = document::eval(&format!(
@@ -259,24 +265,27 @@ struct ThemeState {
     coarse: Signal<String>,
     /// `"wcag"`, `"shadcn"` or empty (follow the system).
     contrast: Signal<String>,
+    /// `"pointer"` or empty (shadcn's default arrow).
+    cursor: Signal<String>,
 }
 
 impl ThemeState {
     /// Re-reads the three attributes: another tab, the cookie or the pre-paint script may have changed
     /// them since this component last looked.
     fn sync(self) {
-        let (mut base, mut accent, mut radius, mut press, mut coarse, mut contrast) = (
+        let (mut base, mut accent, mut radius, mut press, mut coarse, mut contrast, mut cursor) = (
             self.base,
             self.accent,
             self.radius,
             self.press,
             self.coarse,
             self.contrast,
+            self.cursor,
         );
         spawn(async move {
             let mut eval = document::eval(
                 r#"const r = document.documentElement;
-                dioxus.send([r.getAttribute('data-theme-base') || '', r.getAttribute('data-theme-accent') || '', r.getAttribute('data-theme-radius') || '', r.getAttribute('data-dx-press-feedback') || '', r.getAttribute('data-dx-coarse') || '', r.getAttribute('data-dx-contrast') || ''].join('|'));"#,
+                dioxus.send([r.getAttribute('data-theme-base') || '', r.getAttribute('data-theme-accent') || '', r.getAttribute('data-theme-radius') || '', r.getAttribute('data-dx-press-feedback') || '', r.getAttribute('data-dx-coarse') || '', r.getAttribute('data-dx-contrast') || '', r.getAttribute('data-dx-interactive-element-cursor') || ''].join('|'));"#,
             );
             if let Ok(state) = eval.recv::<String>().await {
                 let mut parts = state.split('|');
@@ -286,18 +295,20 @@ impl ThemeState {
                 press.set(parts.next().unwrap_or_default().to_string());
                 coarse.set(parts.next().unwrap_or_default().to_string());
                 contrast.set(parts.next().unwrap_or_default().to_string());
+                cursor.set(parts.next().unwrap_or_default().to_string());
             }
         });
     }
 
     fn reset(self) {
-        let (mut base, mut accent, mut radius, mut press, mut coarse, mut contrast) = (
+        let (mut base, mut accent, mut radius, mut press, mut coarse, mut contrast, mut cursor) = (
             self.base,
             self.accent,
             self.radius,
             self.press,
             self.coarse,
             self.contrast,
+            self.cursor,
         );
         base.set(String::new());
         accent.set(String::new());
@@ -305,12 +316,14 @@ impl ThemeState {
         press.set(String::new());
         coarse.set(String::new());
         contrast.set(String::new());
+        cursor.set(String::new());
         set_pref(Pref::Base, None);
         set_pref(Pref::Accent, None);
         set_pref(Pref::Radius, None);
         set_pref(Pref::PressFeedback, None);
         set_pref(Pref::Coarse, None);
         set_pref(Pref::Contrast, None);
+        set_pref(Pref::Cursor, None);
     }
 }
 
@@ -322,6 +335,7 @@ fn use_theme_state() -> ThemeState {
         press: use_signal(String::new),
         coarse: use_signal(String::new),
         contrast: use_signal(String::new),
+        cursor: use_signal(String::new),
     };
     use_effect(move || state.sync());
     state
@@ -517,6 +531,7 @@ fn ThemePickerPanel(
         mut press,
         mut coarse,
         mut contrast,
+        mut cursor,
     } = state;
 
     let base_label = label_of(BASES, &base.read());
@@ -748,7 +763,50 @@ fn ThemePickerPanel(
                     }
                 }
             }
+
+            div { class: "dx-theme-picker-section",
+                span { class: "dx-theme-picker-label", id: "dx-theme-cursor-label-{scope}",
+                    "Cursor"
+                    span { class: "dx-theme-picker-current", "on buttons, tabs, options and menu items" }
+                }
+                ToggleGroup {
+                    class: "dx-theme-chips",
+                    variant: ToggleVariant::Outline,
+                    aria_labelledby: "dx-theme-cursor-label-{scope}",
+                    value: Some(single(cursor_value(&cursor.read()).to_string())),
+                    on_value_change: move |next: HashSet<String>| {
+                        if let Some((value, _)) = next.into_iter().next().and_then(|v| CURSOR_MODES.iter().copied().find(|(mode, _)| cursor_value(mode) == v)) {
+                            cursor.set(value.to_string());
+                            set_pref(Pref::Cursor, if value.is_empty() { None } else { Some(value) });
+                        }
+                    },
+                    for (i , (value , label)) in CURSOR_MODES.iter().copied().enumerate() {
+                        ToggleItem {
+                            key: "cursor-{label}",
+                            index: i,
+                            value: cursor_value(value),
+                            title: match value {
+                                "pointer" => "The hand on every interactive element",
+                                _ => "shadcn's arrow on buttons, tabs, options and menu items",
+                            },
+                            "{label}"
+                        }
+                    }
+                }
+            }
         }
+    }
+}
+
+/// Cursor choices, `(attribute value, label)`: "" is the default arrow (shadcn v4) and stored as "no attribute".
+pub const CURSOR_MODES: &[(&str, &str)] = &[("", "Default"), ("pointer", "Pointer")];
+
+/// Item value of the cursor chips: "" (default) is stored as no attribute, but an item needs a non-empty value.
+fn cursor_value(current: &str) -> &str {
+    if current.is_empty() {
+        "default"
+    } else {
+        current
     }
 }
 
@@ -852,6 +910,7 @@ mod tests {
             Pref::PressFeedback,
             Pref::Coarse,
             Pref::Contrast,
+            Pref::Cursor,
         ] {
             assert!(
                 PREPAINT_JS.contains(&format!("'{}'", pref.key())),
