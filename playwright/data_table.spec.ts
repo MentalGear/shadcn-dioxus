@@ -12,7 +12,7 @@ import { readAtRest } from "./animations";
 const goto = (page: Page) =>
   gotoHydrated(page, `${BASE_URL}/component/data_table/`, { timeout: 20 * 60 * 1000 });
 
-const table = (page: Page) => page.locator('[data-slot="table"]');
+const table = (page: Page) => page.locator('#component-preview-frame [data-slot="table"]');
 const filterInput = (page: Page) => page.getByRole("textbox", { name: "Filter by email" });
 const selectAllCheckbox = (page: Page) => page.getByRole("checkbox", { name: "Select all" });
 const rowCheckboxes = (page: Page) => page.getByRole("checkbox", { name: /^Select row / });
@@ -294,7 +294,7 @@ const layoutBoxes = (page: Page, label: string) =>
         checkbox: box(checkbox),
         cell: box(cell),
         row: box(cell.closest("tr")),
-        table: box(document.querySelector('[data-slot="table"]')),
+        table: box(document.querySelector('#component-preview-frame [data-slot="table"]')),
         toolbar: box(document.querySelector('[data-slot="data-table-toolbar"]')),
         pagination: box(document.querySelector('[data-slot="data-table-pagination"]')),
         // The count's own width legitimately follows its text; its origin must not move.
@@ -326,7 +326,7 @@ test("every checkbox is vertically centred in its cell, its row and beside the a
 
   const offsets = await page.evaluate(() => {
     const centre = (r: { y: number; height: number }) => r.y + r.height / 2;
-    return [...document.querySelectorAll('[data-slot="table"] tr')].flatMap((tr) => {
+    return [...document.querySelectorAll('#component-preview-frame [data-slot="table"] tr')].flatMap((tr) => {
       const checkbox = tr.querySelector('[role="checkbox"]');
       if (!checkbox) return [];
       const cell = checkbox.closest("td,th")!;
@@ -360,7 +360,7 @@ test("the checkbox's hidden mirror input does not make the table container scrol
   // The primitive follows each checkbox with a hidden `position: absolute` <input>. Behind a
   // block-level checkbox it sits below the box, and `overflow: hidden` on the cell does not
   // clip it (the container is its containing block) -- a 4px vertical scroll range.
-  const overflow = await page.locator('[data-slot="table-container"]').evaluate((el) => ({
+  const overflow = await page.locator('#component-preview-frame [data-slot="table-container"]').evaluate((el) => ({
     vertical: el.scrollHeight - el.clientHeight,
     horizontal: el.scrollWidth - el.clientWidth,
   }));

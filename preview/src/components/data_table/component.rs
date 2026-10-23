@@ -22,6 +22,7 @@ use dioxus::prelude::*;
 use dioxus_icons::lucide::{ArrowDown, ArrowUp, ArrowUpDown};
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::merge_attributes;
+use reorder::{use_row_reorder, ReorderableRow, RowHandle};
 
 use dioxus_primitives::checkbox::CheckboxState;
 
@@ -30,18 +31,35 @@ use dioxus_primitives::checkbox::CheckboxState;
 #[path = "columns.rs"]
 mod columns;
 #[allow(dead_code)]
+#[path = "columns_menu.rs"]
+mod columns_menu;
+#[allow(dead_code)]
+#[path = "layout.rs"]
+mod layout;
+#[allow(dead_code)]
 #[path = "model.rs"]
 mod model;
+#[allow(dead_code)]
+#[path = "reorder.rs"]
+mod reorder;
 #[allow(dead_code)]
 #[path = "state.rs"]
 mod state;
 
 #[allow(unused_imports)]
-pub use columns::{use_data_table, Column, ColumnAlign, DataTableModel, DataTableOptions, DataTableState, RowFn};
+pub use columns::{
+    use_data_table, Column, ColumnAlign, DataTableModel, DataTableOptions, DataTableState, RowFn,
+};
+#[allow(unused_imports)]
+pub use columns_menu::{ColumnsMenuItem, DataTableColumnsMenu, DataTableColumnsMenuProps};
+#[allow(unused_imports)]
+pub use layout::ColumnLayout;
 #[allow(unused_imports)]
 pub use model::{derive, RowCompare, TableState, TableView};
 #[allow(unused_imports)]
-pub use state::{filter_rows, includes_string, paginate, sort_rows, sort_rows_by, tri_state, SortDirection};
+pub use state::{
+    filter_rows, includes_string, paginate, sort_rows, sort_rows_by, tri_state, SortDirection,
+};
 
 /// Props for [`DataTableColumnHeader`].
 #[derive(Props, Clone, PartialEq)]
@@ -88,7 +106,9 @@ pub struct DataTableColumnHeaderProps {
 #[component]
 pub fn DataTableColumnHeader(props: DataTableColumnHeaderProps) -> Element {
     let aria_sort = props.sorted.map_or("none", SortDirection::aria_sort);
-    let base = attributes!(th { class: "dx-data-table-column-header" });
+    let base = attributes!(th {
+        class: "dx-data-table-column-header"
+    });
     // `aria-sort` is required APG Table-pattern state this wrapper computes
     // from `props.sorted`, not a caller default -- owned-wins.
     let owned = attributes!(th { aria_sort });
@@ -141,12 +161,18 @@ pub struct DataTableToolbarProps {
 
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
+
+    /// More toolbar content after the filter, such as the
+    /// [`DataTableColumnsMenu`] (shadcn puts it at the end of the bar).
+    #[props(default)]
+    pub children: Element,
 }
 
 /// A toolbar holding a text filter [`Input`](crate::components::input::Input).
 #[component]
 pub fn DataTableToolbar(props: DataTableToolbarProps) -> Element {
-    let base = attributes!(div { class: "dx-data-table-toolbar", "data-slot": "data-table-toolbar" });
+    let base =
+        attributes!(div { class: "dx-data-table-toolbar", "data-slot": "data-table-toolbar" });
     let merged = merge_attributes(vec![base, props.attributes]);
     let value = (props.value)();
 
@@ -162,6 +188,7 @@ pub fn DataTableToolbar(props: DataTableToolbarProps) -> Element {
                 value: "{value}",
                 oninput: move |event: FormEvent| props.oninput.call(event.value()),
             }
+            {props.children}
         }
     }
 }
@@ -313,6 +340,25 @@ pub struct DataTableProps<T: Clone + PartialEq + 'static> {
     #[props(default)]
     pub default_sort: Option<(String, SortDirection)>,
 
+    /// Adds a leading drag-handle column (shadcn's `dashboard-01`) that reorders
+    /// rows: pointer-drag the handle, or Space/Enter to lift, Up and Down to
+    /// choose the slot, Space/Enter to drop, Escape to cancel. The order is the
+    /// view's manual order (`ViewState::order`, by row key), so it survives
+    /// filtering and paging; while a column is sorted the handles are disabled,
+    /// since a sort wins over a manual order.
+    #[props(default)]
+    pub reorderable: bool,
+
+    /// Adds a "Columns" menu to the toolbar: a checkbox per column that shows
+    /// or hides it (shadcn's data-table), and Alt+Up/Alt+Down on a focused item
+    /// moves the column. Columns marked `.hideable(false)` are left out of it.
+    #[props(default)]
+    pub column_menu: bool,
+
+    /// Ids of the columns that start hidden.
+    #[props(default)]
+    pub hidden_columns: Vec<String>,
+
     /// What the body says when no row matches.
     #[props(default = "No results.".to_string())]
     pub empty_message: String,
@@ -331,15 +377,105 @@ pub fn DataTable<T: Clone + PartialEq + 'static>(props: DataTableProps<T>) -> El
     let options = DataTableOptions {
         page_size: props.page_sizes.first().copied().unwrap_or(usize::MAX),
         sort: props.default_sort.clone(),
+        hidden_columns: props.hidden_columns.clone(),
     };
     let model = use_data_table(props.rows, &props.columns, &props.row_key, options);
     let state = model.state;
     let view = &model.view;
-    let column_count = props.columns.len() + usize::from(props.selectable);
+    let mut reorder = use_row_reorder(state);
+    reorder.sync(&view.keys, model.sort.is_some());
+    let visible = model.visible_columns(&props.columns);
+    let column_count =
+        visible.len() + usize::from(props.selectable) + usize::from(props.reorderable);
     let page_keys = view.keys.clone();
     let page_count = view.page_count;
-    let base = attributes!(div { class: "dx-data-table", "data-slot": "data-table", "data-dx-root": "" });
+    let base =
+        attributes!(div { class: "dx-data-table", "data-slot": "data-table", "data-dx-root": "" });
     let merged = merge_attributes(vec![base, props.attributes.clone()]);
+
+    // The Columns menu lists the hideable columns in layout order, hidden ones included.
+    let all_ids: Vec<String> = props.columns.iter().map(|c| c.id.clone()).collect();
+    let listed_ids: Vec<String> = props
+        .columns
+        .iter()
+        .filter(|c| c.hideable)
+        .map(|c| c.id.clone())
+        .collect();
+    let menu_items: Vec<ColumnsMenuItem> = model
+        .layout
+        .arranged(props.columns.iter().map(|c| c.id.as_str()))
+        .into_iter()
+        .filter_map(|id| props.columns.iter().find(|c| c.id == id))
+        .filter(|c| c.hideable)
+        .map(|c| ColumnsMenuItem {
+            id: c.id.clone(),
+            label: c.header.clone(),
+            visible: !model.layout.is_hidden(&c.id),
+        })
+        .collect();
+    let labels: Vec<(String, String)> = props
+        .columns
+        .iter()
+        .map(|c| (c.id.clone(), c.header.clone()))
+        .collect();
+    let show_toolbar = props.filter_placeholder.is_some() || props.column_menu;
+    let columns_menu = props.column_menu.then(|| {
+        let listed = listed_ids.clone();
+        rsx! {
+            DataTableColumnsMenu {
+                items: menu_items,
+                on_visible_change: move |(id, visible): (String, bool)| state.set_column_hidden(&id, !visible),
+                on_move: move |(id, delta): (String, isize)| {
+                    let all: Vec<&str> = all_ids.iter().map(String::as_str).collect();
+                    let listed: Vec<&str> = listed.iter().map(String::as_str).collect();
+                    if let Some(position) = state.move_column(&all, &listed, &id, delta) {
+                        let label = labels.iter().find(|(c, _)| *c == id).map_or(id.as_str(), |(_, h)| h.as_str());
+                        reorder.announce(format!("Moved the {label} column to position {} of {}", position + 1, listed.len()));
+                    }
+                },
+            }
+        }
+    });
+
+    let body_events = if props.reorderable {
+        attributes!(tbody {
+            ondragover: move |event: DragEvent| {
+                // Drops can land in the gaps between rows: the body accepts them.
+                event.prevent_default();
+                event.data_transfer().set_drop_effect("move");
+            },
+            ondrop: move |event: DragEvent| {
+                event.prevent_default();
+                reorder.drop_pointer();
+            },
+        })
+    } else {
+        Vec::new()
+    };
+
+    // The cells of one row: the same in a plain and in a reorderable body.
+    let cells = |row: &T, key: &str, index: usize| -> Element {
+        rsx! {
+            if props.reorderable {
+                TableCell { class: "dx-data-table-handle-cell", RowHandle { index, row_key: key.to_string() } }
+            }
+            if props.selectable {
+                TableCell {
+                    Checkbox {
+                        checked: if model.is_selected(key) { CheckboxState::Checked } else { CheckboxState::Unchecked },
+                        aria_label: "Select row {key}",
+                        on_checked_change: {
+                            let key = key.to_string();
+                            move |next: CheckboxState| state.set_selected(&key, bool::from(next))
+                        },
+                    }
+                }
+            }
+            for column in visible.iter() {
+                TableCell { key: "{column.id}", class: column.align.class(), {column.cell.call(row)} }
+            }
+        }
+    };
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/data_table/style.css") }
@@ -350,11 +486,19 @@ pub fn DataTable<T: Clone + PartialEq + 'static>(props: DataTableProps<T>) -> El
                     oninput: move |value: String| state.set_filter(value),
                     placeholder,
                     aria_label: props.filter_label.clone(),
+                    {columns_menu}
                 }
+            } else if show_toolbar {
+                div { class: "dx-data-table-toolbar", "data-slot": "data-table-toolbar", {columns_menu} }
             }
             Table {
                 TableHeader {
                     TableRow {
+                        if props.reorderable {
+                            TableHead { class: "dx-data-table-handle-cell",
+                                span { class: "dx-data-table-sr-only", "Reorder" }
+                            }
+                        }
                         if props.selectable {
                             TableHead {
                                 Checkbox {
@@ -366,41 +510,24 @@ pub fn DataTable<T: Clone + PartialEq + 'static>(props: DataTableProps<T>) -> El
                                 }
                             }
                         }
-                        for column in props.columns.iter() {
+                        for column in visible.iter() {
                             {column_header(column, &model)}
                         }
                     }
                 }
-                TableBody {
+                TableBody { attributes: body_events,
                     if view.rows.is_empty() {
                         TableRow {
                             TableCell { colspan: column_count, "{props.empty_message}" }
                         }
                     }
-                    for (row , key) in view.rows.iter().zip(view.keys.iter()) {
-                        TableRow { key: "{key}", selected: model.is_selected(key),
-                            if props.selectable {
-                                TableCell {
-                                    Checkbox {
-                                        checked: if model.is_selected(key) {
-                                            CheckboxState::Checked
-                                        } else {
-                                            CheckboxState::Unchecked
-                                        },
-                                        aria_label: "Select row {key}",
-                                        on_checked_change: {
-                                            let key = key.clone();
-                                            move |next: CheckboxState| state.set_selected(&key, bool::from(next))
-                                        },
-                                    }
-                                }
-                            }
-                            for column in props.columns.iter() {
-                                TableCell {
-                                    class: column.align.class(),
-                                    {column.cell.call(row)}
-                                }
-                            }
+                    if props.reorderable {
+                        for (index , (row , key)) in view.rows.iter().zip(view.keys.iter()).enumerate() {
+                            ReorderableRow { key: "{key}", index, selected: model.is_selected(key), {cells(row, key, index)} }
+                        }
+                    } else {
+                        for (index , (row , key)) in view.rows.iter().zip(view.keys.iter()).enumerate() {
+                            TableRow { key: "{key}", selected: model.is_selected(key), {cells(row, key, index)} }
                         }
                     }
                 }
@@ -416,6 +543,15 @@ pub fn DataTable<T: Clone + PartialEq + 'static>(props: DataTableProps<T>) -> El
                     on_page_size_change: move |size| state.set_page_size(size),
                     on_previous: move |_| state.previous_page(),
                     on_next: move |_| state.next_page(page_count),
+                }
+            }
+            if props.reorderable || props.column_menu {
+                div {
+                    class: "dx-data-table-sr-only",
+                    role: "status",
+                    aria_live: "assertive",
+                    aria_atomic: "true",
+                    "{reorder.announcement()}"
                 }
             }
         }

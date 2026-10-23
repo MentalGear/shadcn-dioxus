@@ -97,3 +97,43 @@
   align-items: center;
   gap: var(--dx-space-2);
 }
+
+/* Reorderable rows (row 363): the leading handle column, the lifted row and the drop line. */
+.dx-data-table-handle-icon {
+  color: var(--dx-muted-foreground);
+  cursor: grab;
+}
+
+.dx-data-table-handle:active .dx-data-table-handle-icon {
+  cursor: grabbing;
+}
+
+.dx-data-table-handle[aria-pressed="true"] .dx-data-table-handle-icon {
+  color: var(--dx-foreground);
+}
+
+.dx-data-table-row[data-reorder="source"] > td:not(:where([popover], dialog) *) {
+  opacity: var(--dx-dnd-ghost-opacity, 0.5);
+}
+
+.dx-data-table-row[data-drop="before"] > td:not(:where([popover], dialog) *) {
+  box-shadow: inset 0 2px 0 var(--dx-ring-color);
+}
+
+.dx-data-table-row[data-drop="after"] > td:not(:where([popover], dialog) *) {
+  box-shadow: inset 0 -2px 0 var(--dx-ring-color);
+}
+
+/* The live region and the handles' instructions: spoken, not drawn. */
+.dx-data-table-sr-only {
+  position: absolute;
+  overflow: hidden;
+  width: 1px;
+  height: 1px;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+.dx-data-table-columns {
+  margin-inline-start: auto;
+}
