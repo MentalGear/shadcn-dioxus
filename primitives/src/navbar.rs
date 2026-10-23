@@ -8,7 +8,7 @@ use crate::{
     direction::{use_direction, use_direction_signal, Direction, HorizontalNav},
     has_own_accessible_name,
     hover_intent::{use_hover_intent, HoverIntent},
-    merge_attributes, use_animated_open, use_id_or, use_unique_id,
+    merge_attributes, nav_link::NavLink, use_animated_open, use_id_or, use_unique_id,
 };
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
@@ -1082,7 +1082,7 @@ pub struct NavbarItemProps {
 
     /// When [`true`], the `target` route will be opened in a new tab.
     ///
-    /// This does not change whether the [`Link`] is active or not.
+    /// This does not change whether the link is active or not.
     #[props(default)]
     pub new_tab: bool,
 
@@ -1122,7 +1122,7 @@ pub struct NavbarItemProps {
 /// # NavbarItem
 ///
 /// The `NavbarItem` component represents a link within a navbar. It accepts a superset of the props
-/// from the [`Link`] component.
+/// from the router's `Link` component, rendered through [`NavLink`] (one `aria-current`, row 126).
 ///
 /// This must be used inside a [`NavbarContent`] component.
 ///
@@ -1259,7 +1259,7 @@ pub fn NavbarItem(mut props: NavbarItemProps) -> Element {
     };
 
     rsx! {
-        Link {
+        NavLink {
             class: props.class,
             active_class: props.active_class,
             new_tab: props.new_tab,

@@ -1,6 +1,8 @@
 //! `NavLink`: the one in-app link for navigation (navbar, footer, docs
 //! sidebar, chart tabs), with a current-page marker that is the same on the
-//! server and in the browser.
+//! server and in the browser. A thin `Route`-typed wrapper over the library's
+//! `dioxus_primitives::nav_link::NavLink` (row 126: the library's `NavbarItem`
+//! renders the same construction, so the fix lives in one place).
 //!
 //! **Why not `dioxus_router::Link` (backlog row 126).** `Link` computes its
 //! own `aria-current` as `href == router.full_route_string()`, and writes that
@@ -21,7 +23,7 @@
 //! router (`navigator().push`); Ctrl/Cmd/Shift/Alt and middle clicks fall
 //! through to the browser (new tab, ...). The `href` carries the router's
 //! history prefix (`/shadcn-dioxus` on Pages). If a dioxus-router upgrade
-//! changes `Link`'s click rules, mirror them here once.
+
 //!
 //! **Rule:** a router `Link {` in `preview/src` must be a `NavLink` instead,
 //! unless it is an external target or a content link that can never point at
@@ -30,24 +32,8 @@
 //! on a `Link`".
 
 use crate::Route;
-use dioxus::html::input_data::MouseButton;
 use dioxus::prelude::*;
-
-/// Whether `to` is the page the router is on: the same *path*, ignoring the
-/// query (`?:dark_mode`, `?:iframe` are display state, not a different page).
-/// Both strings come from `Route`'s own `Display`, so a browser location and a
-/// server request that parse to the same route compare equal.
-pub(crate) fn is_current(to: &Route, current: &Route) -> bool {
-    path_of(to) == path_of(current)
-}
-
-fn path_of(route: &Route) -> String {
-    let rendered = route.to_string();
-    match rendered.split_once('?') {
-        Some((path, _)) => path.to_string(),
-        None => rendered,
-    }
-}
+use dioxus_primitives::nav_link as primitive;
 
 #[derive(Props, Clone, PartialEq)]
 pub struct NavLinkProps {
@@ -58,11 +44,14 @@ pub struct NavLinkProps {
     /// `/charts/`). The caller must derive it from route state alone so the
     /// server and the browser agree.
     pub active: Option<bool>,
+    /// The class attribute for the anchor.
     pub class: Option<String>,
     /// Runs after the router navigation (plain primary clicks only).
     pub onclick: Option<EventHandler<MouseEvent>>,
+    /// Additional attributes for the anchor.
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
+    /// The children of the anchor.
     pub children: Element,
 }
 
@@ -73,37 +62,16 @@ pub fn NavLink(props: NavLinkProps) -> Element {
         active,
         class,
         onclick,
-        mut attributes,
+        attributes,
         children,
     } = props;
-    // The single `aria-current` is ours: a caller-supplied one in the spread
-    // would be a second attribute (the duplicate-attribute class).
-    attributes.retain(|attribute| attribute.name != "aria-current");
-    let router = router();
-    let current: Route = router.current();
-    let is_active = active.unwrap_or_else(|| is_current(&to, &current));
-    let href = format!("{}{}", router.prefix().unwrap_or_default(), to);
-    let target = to.clone();
     rsx! {
-        a {
+        primitive::NavLink {
+            to: NavigationTarget::Internal(to.to_string()),
+            active,
             class,
-            href,
-            aria_current: is_active.then_some("page"),
-            onclick: move |event: MouseEvent| {
-                // Modified and non-primary clicks keep the browser's own
-                // behavior, like `Link`.
-                if !event.modifiers().is_empty()
-                    || event.trigger_button() != Some(MouseButton::Primary)
-                {
-                    return;
-                }
-                event.prevent_default();
-                navigator().push(target.clone());
-                if let Some(handler) = onclick {
-                    handler.call(event);
-                }
-            },
-            ..attributes,
+            onclick,
+            attributes,
             {children}
         }
     }
@@ -112,6 +80,11 @@ pub fn NavLink(props: NavLinkProps) -> Element {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use dioxus_primitives::nav_link::is_current;
+
+    fn target(route: &Route) -> NavigationTarget {
+        NavigationTarget::Internal(route.to_string())
+    }
 
     #[test]
     fn current_ignores_the_query() {
@@ -119,8 +92,11 @@ mod tests {
             dark_mode: Some(true),
         };
         let without = Route::Docs { dark_mode: None };
-        assert!(is_current(&with, &without));
-        assert!(!is_current(&with, &Route::Demos { dark_mode: None }));
+        assert!(is_current(&target(&with), &without.to_string()));
+        assert!(!is_current(
+            &target(&with),
+            &Route::Demos { dark_mode: None }.to_string()
+        ));
     }
 
     #[test]
@@ -133,7 +109,10 @@ mod tests {
             kind: "bar".into(),
             dark_mode: None,
         };
-        assert!(!is_current(&area, &bar));
-        assert!(!is_current(&area, &Route::Charts { dark_mode: None }));
+        assert!(!is_current(&target(&area), &bar.to_string()));
+        assert!(!is_current(
+            &target(&area),
+            &Route::Charts { dark_mode: None }.to_string()
+        ));
     }
 }
