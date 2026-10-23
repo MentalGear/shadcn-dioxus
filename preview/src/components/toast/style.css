@@ -281,11 +281,18 @@
 
    The surface is `--dx-destructive-fill`, the fill-grade role built for text on it (>= 4.57:1 in every
    preset and mode), not `--dx-destructive`: under any theme-picker preset the dark `--dx-destructive` is
-   shadcn's salmon #ff6467, which left the near-white ink at 2.77:1. */
+   shadcn's salmon #ff6467, which left the near-white ink at 2.77:1.
+
+   A toast floats over arbitrary page content and the dark fill is translucent (60%), so the fill is
+   composited onto the page colour INSIDE the toast: an opaque `background-color` with the fill as a flat
+   gradient layer above it. The surface, and so the ink's contrast, no longer depends on what is behind. The
+   layer is handed over through `--dx-press-under` (a gradient in `background-image`, scripts/check-press-under.sh). */
 .dx-toast[data-type="error"] {
   --dx-toast-foreground: var(--dx-destructive-foreground);
+  --dx-press-under: linear-gradient(var(--dx-destructive-fill), var(--dx-destructive-fill));
 
-  background-color: var(--dx-destructive-fill);
+  background-color: var(--dx-background);
+  background-image: var(--dx-press-under);
   color: var(--dx-destructive-foreground);
 }
 

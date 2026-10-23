@@ -47,6 +47,7 @@ type Toolkit = {
   lum: (c: RGB) => number;
   ratio: (a: RGB, b: RGB) => number;
   token: (name: string, under?: RGB) => RGB;
+  alphaOf: (css: string) => number;
   apply: (mode: string, contrast: string | null, base: string, accent: string) => void;
 };
 
@@ -80,6 +81,11 @@ function installToolkit() {
     probe.remove();
     return c;
   };
+  const alphaOf = (css: string): number => {
+    const a = /(?:rgba?|color|oklch|lab|lch|oklab)\(.*?\/\s*([\d.]+)(%?)\s*\)/.exec(css);
+    if (!a) return 1;
+    return a[2] ? Number(a[1]) / 100 : Number(a[1]);
+  };
   const html = document.documentElement;
   const apply = (mode: string, contrast: string | null, base: string, accent: string) => {
     const w = window as unknown as { __dxApplyMode: (m: string) => void; __dxTheme: (k: string, v: string | null) => void };
@@ -90,7 +96,7 @@ function installToolkit() {
     if (accent === "none") html.removeAttribute("data-theme-accent");
     else html.setAttribute("data-theme-accent", accent);
   };
-  (window as unknown as { __cm: Toolkit }).__cm = { rgbOf, lum, ratio, token, apply };
+  (window as unknown as { __cm: Toolkit }).__cm = { rgbOf, lum, ratio, token, alphaOf, apply };
 }
 
 async function open(page: Page, route: string) {
@@ -428,7 +434,7 @@ test.describe("fixed for everyone (P2, P4, P5)", () => {
   for (const contrast of [null, "wcag"] as const) {
     const tag = contrast ?? "default";
 
-    test(`${tag}: the error Toast's ink reads >= 4.5:1 on its surface, every base, both modes`, async ({ page }) => {
+    test(`${tag}: the error Toast surface is opaque and its ink reads >= 4.5:1, every base, both modes`, async ({ page }) => {
       const rows = await page.evaluate(
         ({ contrast, bases }) => {
           const cm = (window as unknown as { __cm: Toolkit }).__cm;
@@ -441,11 +447,22 @@ test.describe("fixed for everyone (P2, P4, P5)", () => {
               toast.setAttribute("data-type", "error");
               document.body.append(toast);
               const cs = getComputedStyle(toast);
-              const page = cm.token("--dx-background");
-              const surface = cm.rgbOf(cs.backgroundColor, page);
+              // Opaque by construction: an opaque background-color under the fill layer, so the surface cannot
+              // depend on what the toast floats over. Measure over two very different backdrops: same answer.
+              const bgAlpha = cm.alphaOf(cs.backgroundColor);
+              // `linear-gradient(<fill>, <fill>)`: the computed colours contain no ", " outside their own parentheses.
+              const inner = cs.backgroundImage.slice("linear-gradient(".length, -1);
+              const fill = inner.slice(0, inner.indexOf("), ") + 1);
+              if (!cs.backgroundImage.startsWith("linear-gradient(")) throw new Error(`error toast has no fill layer: ${cs.backgroundImage}`);
+              const over = (backdrop: [number, number, number]) => cm.rgbOf(fill, cm.rgbOf(cs.backgroundColor, backdrop));
+              const onWhite = over([255, 255, 255]);
+              const onBlack = over([0, 0, 0]);
+              const surface = onWhite;
               const ink = cm.rgbOf(cs.color, surface);
               toast.remove();
               out.push({ label: `${mode} base=${base}`, ratio: cm.ratio(ink, surface) });
+              out.push({ label: `${mode} base=${base} background-color alpha ${bgAlpha} (must be 1)`, ratio: bgAlpha === 1 ? 21 : 0 });
+              out.push({ label: `${mode} base=${base} surface depends on the backdrop`, ratio: onWhite.join() === onBlack.join() ? 21 : 0 });
             }
           }
           return out;
