@@ -83,18 +83,7 @@ GENERATED = ("primitives/src/js/",)
 
 # file (repo-relative) -> why a hand-written add/remove pair is still acceptable there. Only
 # shrinks: migrate the file onto `use_js_listeners`, then delete its line.
-PAIRED_BY_HAND = {
-    "primitives/src/carousel.rs": "scroller/container/window listeners with their own teardown script, owned by the carousel bridges",
-    "primitives/src/collapsible.rs": "`beforematch` on the collapsible's own element, removed after the recv-sentinel",
-    "primitives/src/context_menu.rs": "window wheel/touchmove while a context menu is open, removed in the effect's cleanup",
-    "primitives/src/drag_and_drop_list.rs": "document drag listeners, removed in the drag's own teardown",
-    "primitives/src/drawer.rs": "window pointer listeners of one drag, removed when the drag ends",
-    "primitives/src/input_otp.rs": "input events, removed after the recv-sentinel",
-    "primitives/src/menu_sub.rs": "document `focusin`, removed after the recv-sentinel",
-    "primitives/src/message_scroller.js": "viewport/document listeners installed by attach() and removed by the function it returns",
-    "primitives/src/navigation_menu.rs": "document `pointerdown`, removed after the recv-sentinel",
-    "primitives/src/top_layer.rs": "`toggle` and window scroll/resize trackers, removed after the recv-sentinel",
-}
+PAIRED_BY_HAND: dict[str, str] = {}
 
 # Registrations that are NOT hand-paired but still legitimate, in files whose owner has not
 # added the marker yet. Same ratchet: delete the line when the marker lands.
