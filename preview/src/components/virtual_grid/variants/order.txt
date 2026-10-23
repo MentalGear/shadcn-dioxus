@@ -3,3 +3,4 @@ gallery
 justified
 photo_wall
 selectable
+short

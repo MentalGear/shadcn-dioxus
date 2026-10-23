@@ -553,6 +553,40 @@ test.describe("5. an explicit theme is on <html> before first paint and never fl
 });
 
 // ---------------------------------------------------------------------------------------------
+// 5b. A virtual grid with fewer rows than fit (backlog row 368).
+// ---------------------------------------------------------------------------------------------
+
+test.describe("5b. a short VirtualGrid draws the same canvas on the server and after hydration", () => {
+  test("/component/virtual_grid/: the `short` demo's row canvas is its rows' extent with JavaScript off and on", async ({ browser }) => {
+    const read = async (js: boolean) => {
+      const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, javaScriptEnabled: js });
+      const page = await ctx.newPage();
+      await noWebFonts(page);
+      // goto-ok: the JavaScript-off variant never hydrates; the hydrated variant waits for it below (hydrated(page))
+      await page.goto(`${BASE}/component/virtual_grid/`, { waitUntil: "load" });
+      if (js) {
+        await hydrated(page);
+        await page.waitForTimeout(500);
+      }
+      // The grid's body wrapper: the last child of the content div, the one that holds the `row`s.
+      const heights = await page.evaluate(() => {
+        const grid = document.querySelector("#component-preview-frame-short [data-virtual-grid=grid]");
+        const inner = grid?.firstElementChild;
+        const body = inner?.lastElementChild as HTMLElement | null;
+        return { rows: grid?.querySelectorAll("[role=row]").length ?? -1, canvas: body ? body.getBoundingClientRect().height : -1 };
+      });
+      await ctx.close();
+      return heights;
+    };
+    const [off, on] = await Promise.all([read(false), read(true)]);
+    expect(on.canvas, "the demo's canvas was found").toBeGreaterThan(0);
+    expect(off.canvas, `canvas height: server ${off.canvas}px, hydrated ${on.canvas}px`).toBe(on.canvas);
+    // 5 rows x 36px: the rows' extent, not the 24rem box.
+    expect(on.canvas).toBe(180);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
 // 6. The detector is not blind.
 // ---------------------------------------------------------------------------------------------
 
