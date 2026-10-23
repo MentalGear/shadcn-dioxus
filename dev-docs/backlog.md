@@ -41,7 +41,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (48)
+## Open rows (47)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -56,7 +56,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [126](backlog/126-link-s-aria-current-can-emit-a-duplicated.md) | Link's aria_current can emit a duplicated attribute under a base path; the charts gallery tab row uses plain… | OPEN (library residue: NavbarItem still wraps raw Link): LANDED 2026-10-11 (root-caused and fixed… | S (diagnosis) | charts |
 | [130](backlog/130-arborium-2-17-0-s-wasm-libc-shim-lacks-the-data.md) | arborium 2.17.0's wasm libc shim lacks the data symbol stderr that tree-sitter's stack.c… | NARROWED 2026-10-19 (backlog review): local fix 7ad8421 in; filing upstream is the owner's decision… | S | upstream |
 | [131](backlog/131-dioxus-cli-0-7-9-ssg-leaves-every-pre-rendered.md) | dioxus-cli 0.7.9 --ssg leaves every pre-rendered route except index.html stale when public/ already exists | NARROWED 2026-10-19 (backlog review): local fix 150e97b in (build-ssg.sh wipes public/); filing… | S | build |
-| [150](backlog/150-home-page-blocks-registered-their-hooks-on-the.md) | Home-page blocks registered their hooks on the parent scope: MasonryCard called component.call(()), so… | OPEN (only the candidate .call(()) gate remains): FIXED 2026-10-04, merged (b83640a, PR #84 /… | M | docs |
 | [152](backlog/152-test-suite-review-revisit-the-playwright-suite.md) | Test-suite review: revisit the Playwright suite (~1,786 tests, ~21 min on a release build with 4 workers) for… | NARROWED 2026-10-19: speed half 152a DONE (lane suite-speed badc56d7): measured (3,752 tests, 183… | M | tests |
 | [153](backlog/153-native-find-in-page-for-windowed-virtual-lists.md) | Native find-in-page for WINDOWED virtual lists: keep per-item text in the DOM as hidden="until-found"… | PROTOTYPED 2026-10-19 (lane virtual-grid, round 4) -- works in Chromium as an opt-in text_value… | M | virtual |
 | [154](backlog/154-shared-virtualization-engine-one-engine-in.md) | Shared virtualization engine: ONE engine in primitives/src/virtual/ (core, strategy, DOM bridge) that every… | DESIGN NOTE -- first note recorded 2026-10-05 from the owner question whether the virtualized… | S (note); the build is not estimated | virtual |
@@ -94,7 +93,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [367](backlog/367-lane-build-disk-class.md) | Lane builds need 10.4 GB free because every lane-ssg copies 6.8 GB of template, 3.0 GB of it dead incremental state | PARTIAL. Landed in lane gatetools: the copy leaves cargo's incremental/ dirs out and the guard… | S for the landed part… | tooling |
 | [368](backlog/368-virtual-grid-row-axis-first-paint.md) | VirtualGrid: the row axis plans max(rows, viewport), so a short grid differs between server and first client frame | BACKLOG (found 2026-10-23 fixing the column axis in batch 9). | S | primitives |
 
-## Done rows (293)
+## Done rows (294)
 
 | # | Item | Updated |
 |---|---|---|
@@ -236,6 +235,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [147](backlog/done/147-safari-18-25-cannot-find-in-page-text-inside.md) | Safari 18-25 cannot find-in-page text inside content-visibility: auto-skipped content (WebKit bug 283846) | 2026-10-19 |
 | [148](backlog/done/148-a-chat-sidebar-category-for-the-chat-kit-and.md) | A "Chat" sidebar category for the chat kit and message_scroller | 2026-10-19 |
 | [149](backlog/done/149-scroll-lock-rs-installs-non-passive-wheel.md) | scroll_lock.rs installs non-passive wheel/touchmove listeners on window permanently after the first lock | 2026-10-05 |
+| [150](backlog/done/150-home-page-blocks-registered-their-hooks-on-the.md) | Home-page blocks registered their hooks on the parent scope: MasonryCard called component.call(()), so… | 2026-10-23 |
 | [151](backlog/done/151-a-document-link-stylesheet-can-be-recorded-as.md) | A document::Link stylesheet can be recorded as present and never inserted: a subtree torn down in the turn it… | 2026-10-04 |
 | [156](backlog/done/156-drawer-has-fallen-behind-shadcn-it-moved-from.md) | Drawer has fallen behind shadcn: it moved from Vaul to Base UI Drawer (snap points, nested drawers, non-modal… | 2026-10-19 |
 | [157](backlog/done/157-inputotp-hard-codes-a-numeric-keypad-inputmode.md) | InputOtp hard-codes a numeric keypad: inputmode="numeric" and pattern="[0-9]*" are fixed, so alphanumeric… | 2026-10-19 |

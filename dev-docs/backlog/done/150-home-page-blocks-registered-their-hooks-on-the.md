@@ -4,7 +4,7 @@ title: "Home-page blocks registered their hooks on the parent scope: MasonryCard
 status: "OPEN (only the candidate .call(()) gate remains): FIXED 2026-10-04, merged (b83640a, PR #84 /…"
 size: "M"
 area: docs
-updated: 2026-10-20
+updated: 2026-10-23
 ---
 
 # Row 150: Home-page blocks registered their hooks on the parent scope: MasonryCard called component.call(()), so…
@@ -16,6 +16,8 @@ Home-page blocks registered their hooks on the parent scope: `MasonryCard` calle
 ## Status / trigger
 
 **OPEN (only the candidate `.call(())` gate remains):** **FIXED 2026-10-04, merged** (`b83640a`, PR #84 / `001a5f0`, SCROLL-FIX lane); the candidate `.call(())` gate in the notes stays OPEN (measure false positives first) **2026-10-20 sync: checked, the candidate `.call(())` gate still does not exist in `scripts/`; row stays open for it only.**
+
+**LANDED 2026-10-23 (`scripts/check-component-call.sh`, in `run-gates.sh` with its `--self-test`).** Measured first over `primitives/src` + `preview/src` without tests: 31 `.call(())` sites, only 2 on a `Callback<(), Element>` (the `ChartIcon` render prop in the chart tooltip and legend), 29 on `Callback<(), ()>`/`EventHandler` (not components); of 653 non-shadowed `#[component]` fns 3 are called directly (`Calendar(self)`, `RangeCalendar(self)`, `scroll_area::ScrollArea(props)`, each in the body of a forwarding component or fn pointer that is itself mounted); 1 fn-pointer field call (`(entry.thumb)()`). 6 real shapes, 0 false positives, all 6 on the reasoned `ALLOW` list. Rule: direct call of a `#[component]` fn (enum variants and tuple structs of the same name excluded), `.call(())` on a name declared `Callback<(), Element>` or bound through a `struct W(Callback<(), Element>)` pattern, a call of a `fn(..) -> Element` field. Argument-taking render props (`render_item.call(i)`, `render_row`, `as`) are deliberately out of scope (keyed row/slot renderers). Known limits: a component from another crate (`Link(props)`), a local closure returning `rsx!`, and a `Callback` held in a variable of another name are not seen; the runtime backstop stays `scroll-main-thread.spec.ts`.
 
 ## Size
 
