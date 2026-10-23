@@ -15,7 +15,7 @@ Migration step 5: `reorderable` adds a drag-handle column (dashboard-01 parity) 
 
 ## Status / trigger
 
-LANDED on claude/dtreorder (merge pending): reorderable handle column, ColumnLayout + Columns menu, rich Table demo from the model (see "Landed" below). Design note [`research/collection-model-2026-10-22.md`](../research/collection-model-2026-10-22.md).
+LANDED on claude/dtreorder (merge pending): reorderable handle column, ColumnLayout + Columns menu, rich Table demo from the model (see "Landed" below). Design note [`research/collection-model-2026-10-22.md`](../../research/collection-model-2026-10-22.md).
 
 ## Size
 
