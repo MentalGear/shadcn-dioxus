@@ -90,9 +90,9 @@ test.describe("DataTable Grid layout", () => {
     await expect(summary(page)).toHaveText(`1 of ${ROWS} row(s) selected.`);
     await expect(g.locator('[role="row"][aria-rowindex="2"]')).toHaveAttribute("aria-selected", "true");
 
-    // Out of the window: the row is not mounted, the selection is still counted. (The clicked checkbox holds
-    // focus, and the grid keeps the focused row mounted so focus is not lost: blur first.)
-    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    // Out of the window: the row is not mounted, the selection is still counted. (The grid keeps its active
+    // cell's row mounted, the one tab stop, so make another cell the active one first.)
+    await cell(g, 5, 2).click();
     await scrollTo(g, 20_000);
     await expect(rowCheckbox(g, "ORD-00001")).toHaveCount(0);
     await expect(summary(page)).toHaveText(`1 of ${ROWS} row(s) selected.`);
@@ -140,6 +140,7 @@ test.describe("Table and Grid layouts share one table look", () => {
     await expect(cell(g, 0, 1)).toHaveText("ORD-00001");
     await rowCheckbox(g, "ORD-00001").click();
     await expect(g.locator('[role="row"][data-state="selected"]')).toHaveCount(1);
+    await page.mouse.move(0, 0); // off the rows: a hovered row paints the hover fill, not the selected one
     await page.waitForTimeout(400); // the Table row's background transition
     const style = (el: Element, props: string[]) => {
       const cs = getComputedStyle(el);
