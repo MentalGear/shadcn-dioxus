@@ -277,18 +277,30 @@ test("gallery: rows with a fractional height end inside the canvas", async ({ pa
     content: `[data-virtual-grid] > div > [role="row"] { height: 66.1875px !important; overflow: hidden; }`,
   });
   await grid.scrollIntoViewIfNeeded();
-  const overhang = () =>
-    grid.evaluate((el) => {
-      const canvas = el.querySelector(":scope > div")!.getBoundingClientRect();
-      const rows = [...el.querySelectorAll(':scope > div > [role="row"]')];
-      const last = rows[rows.length - 1].getBoundingClientRect();
-      return { index: rows[rows.length - 1].getAttribute("aria-rowindex"), over: last.bottom - canvas.bottom };
+  // Read once the scroll has ended and the last row is measured: the canvas height has held still
+  // for a second (while the scroll runs it is frozen at the estimates' sum, which fits trivially).
+  const settled = () =>
+    grid.evaluate(async (el) => {
+      const canvas = el.querySelector(":scope > div") as HTMLElement;
+      const heights: string[] = [];
+      for (let i = 0; i < 5; i++) {
+        heights.push(canvas.style.height);
+        await new Promise((resolve) => setTimeout(resolve, 200));
+      }
+      const rows = [...canvas.querySelectorAll(':scope > [role="row"]')];
+      const last = rows[rows.length - 1];
+      return {
+        stable: heights.every((h) => h === canvas.style.height),
+        index: last.getAttribute("aria-rowindex"),
+        height: last.getBoundingClientRect().height,
+        over: last.getBoundingClientRect().bottom - canvas.getBoundingClientRect().bottom,
+      };
     });
   await expect(async () => {
     await scrollGrid(grid, 1e9, 0);
-    const { index, over } = await overhang();
-    expect(index).toBe("1250");
-    expect(over).toBeLessThanOrEqual(0.01);
+    const state = await settled();
+    expect(state).toMatchObject({ stable: true, index: "1250", height: 66.1875 });
+    expect(state.over).toBeLessThanOrEqual(0.01);
   }).toPass({ timeout: 15000 });
 });
 
