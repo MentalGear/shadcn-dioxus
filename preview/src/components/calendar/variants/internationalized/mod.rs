@@ -25,6 +25,7 @@ pub fn Demo() -> Element {
                 },
                 on_format_weekday: |weekday: Weekday| tid!(& weekday.to_string()),
                 on_format_month: |month: Month| tid!(& month.to_string()),
+                on_format_month_short: |month: Month| tid!(& format!("{month}_Short")),
                 caption_layout: CaptionLayout::Dropdown,
                 min_date: date!(1995 - 07 - 21),
                 max_date: date!(2035 - 09 - 11),

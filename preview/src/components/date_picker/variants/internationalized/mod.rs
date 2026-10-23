@@ -1,9 +1,10 @@
 use super::super::component::*;
+use crate::components::calendar::CaptionLayout;
 use crate::i18n::{use_locale_root, LocaleDemo};
 use dioxus::prelude::*;
 
 use dioxus_i18n::tid;
-use time::{Date, Month};
+use time::{Date, Month, Weekday};
 
 /// shadcn's `date-picker-rtl` twin for the localisation side: no footer and the popover STAYS OPEN
 /// after a pick, like every uncontrolled shadcn date picker.
@@ -32,6 +33,12 @@ pub fn Demo() -> Element {
                 // (`calendar/variants/internationalized/mod.rs`'s identical
                 // `on_format_month: |month: Month| tid!(& month.to_string())`).
                 on_format_month: |month: Month| tid!(& month.to_string()),
+                // The popover's calendar takes the same locale: weekday headers, the caption, and
+                // the month dropdown's short names from their own keys (French "Juin" and "Juil."
+                // would both cut to "Jui" from the full name).
+                on_format_weekday: |weekday: Weekday| tid!(& weekday.to_string()),
+                on_format_month_short: |month: Month| tid!(& format!("{month}_Short")),
+                caption_layout: CaptionLayout::Dropdown,
             }
         }
     }
