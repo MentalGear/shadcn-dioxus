@@ -47,11 +47,15 @@ impl Reorder {
         }
     }
 
-    /// Ends the gesture; focus goes back to the handle of the item that was lifted.
-    fn end(&mut self) {
-        let id = (self.gesture)()
+    /// The task that is lifted now (read before a drop moves it).
+    fn lifted_id(&self) -> Option<usize> {
+        (self.gesture)()
             .from()
-            .and_then(|from| self.order.peek().get(from).copied());
+            .and_then(|from| self.order.peek().get(from).copied())
+    }
+
+    /// Ends the gesture; focus goes back to the handle of the task that was lifted.
+    fn end(&mut self, id: Option<usize>) {
         self.gesture.set(ReorderState::Idle);
         self.focus_id.set(id);
     }
@@ -90,8 +94,9 @@ fn Row(props: RowProps) -> Element {
             ReorderCommand::Toggle if lifted => {
                 let from = (reorder.gesture)().from().unwrap_or(idx);
                 let to = (reorder.gesture)().to().unwrap_or(idx);
+                let id = reorder.lifted_id();
                 reorder.commit();
-                reorder.end();
+                reorder.end(id);
                 reorder.announcement.set(announce_drop(from, to));
             }
             ReorderCommand::Toggle => {
@@ -114,7 +119,8 @@ fn Row(props: RowProps) -> Element {
             }
             ReorderCommand::Cancel if lifted => {
                 let from = (reorder.gesture)().from().unwrap_or(0);
-                reorder.end();
+                let id = reorder.lifted_id();
+                reorder.end(id);
                 reorder.announcement.set(announce_cancel(from));
             }
             _ => return,
@@ -136,7 +142,10 @@ fn Row(props: RowProps) -> Element {
             // Firefox starts no drag without data on the transfer.
             let _ = event.data_transfer().set_data("text/html", "");
         },
-        ondragend: move |_| reorder.end(),
+        ondragend: move |_| {
+            let id = reorder.lifted_id();
+            reorder.end(id);
+        },
     });
     rsx! {
         div {
@@ -167,8 +176,9 @@ fn Row(props: RowProps) -> Element {
             },
             ondrop: move |event: DragEvent| {
                 event.prevent_default();
+                let id = reorder.lifted_id();
                 reorder.commit();
-                reorder.end();
+                reorder.end(id);
             },
             Button {
                 variant: ButtonVariant::Ghost,
