@@ -149,6 +149,7 @@ gates=(
   "check-docs-own-components|scripts/check-docs-own-components.sh"
   "check-gate-reuse|scripts/check-gate-reuse.sh"
   "check-lane-target|scripts/check-lane-target.sh"
+  "check-chromium-path|scripts/check-chromium-path.sh"
   "check-select-css|scripts/check-select-css.sh"
   "fmt|cargo fmt --all -- --check"
   "check-primitives-features|scripts/check-primitives-features.sh"

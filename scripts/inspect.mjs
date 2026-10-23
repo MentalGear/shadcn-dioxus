@@ -56,10 +56,11 @@
 //     --eval 'return document.querySelectorAll(".dx-component-card").length'
 
 import { chromium } from "playwright";
+import { sandboxChromium } from "../playwright/sandbox-chromium.cjs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
-const CHROMIUM_PATH = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome";
+const CHROMIUM_PATH = sandboxChromium(); // PW_CHROMIUM, else the newest preinstalled one (row 374)
 const TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "best-practice"]; // mirrors playwright/axe.ts
 
 function parseArgs(argv) {

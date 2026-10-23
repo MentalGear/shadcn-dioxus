@@ -22,19 +22,18 @@
  *
  * Functional spec: no millisecond thresholds. Nothing here bounds an overlay in the viewport.
  */
-import fs from "node:fs";
 import { test, expect } from "./fixtures";
 import type { Locator, Page } from "@playwright/test";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
+import { sandboxLaunchOptions } from "./sandbox-chromium.cjs";
 
 // Classic scrollbars for this file's browser. `launchOptions` of `test.use` REPLACE the config's (they do not
-// merge), so the sandbox's own Chromium path that `ssg.local.config.ts` sets is repeated here, under the same
-// exists-check; a CI runner without it uses Playwright's default browser.
-const SANDBOX_CHROMIUM = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome";
+// merge), so the sandbox Chromium that `ssg.local.config.ts` sets is resolved here again, by the same
+// `sandbox-chromium.cjs` (row 374); a CI runner without one uses Playwright's default browser.
 test.use({
   launchOptions: {
-    ...(fs.existsSync(SANDBOX_CHROMIUM) ? { executablePath: SANDBOX_CHROMIUM } : {}),
+    ...sandboxLaunchOptions(),
     ignoreDefaultArgs: ["--hide-scrollbars"],
   },
 });

@@ -1,5 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 import { perTestTimeoutMs, timingSpecIgnore } from "./base-url";
+import { sandboxLaunchOptions } from "./sandbox-chromium.cjs";
 // Local-only, forced-classic-scrollbar variant of oracle.local.config.ts.
 //
 // This repo's default headless Chromium renders 0-width overlay scrollbars
@@ -28,7 +29,7 @@ export default defineConfig({
     use: {
       ...devices["Desktop Chrome"],
       launchOptions: {
-        executablePath: "/opt/pw-browsers/chromium-1194/chrome-linux/chrome",
+        ...sandboxLaunchOptions(), // sandbox-chromium.cjs (row 374)
         headless: false,
       },
     },

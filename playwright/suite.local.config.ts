@@ -1,5 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 import { perTestTimeoutMs, timingSpecIgnore } from "./base-url";
+import { sandboxLaunchOptions } from "./sandbox-chromium.cjs";
 import fs from "node:fs";
 import path from "node:path";
 // The full-suite config (backlog row 152a): ssg.local.config.ts's project (sandbox Chromium, `... (mobile)` excluded)
@@ -17,8 +18,7 @@ import path from "node:path";
 // with a fresh Chromium context issues exactly two third-party requests, both from the deliberate avatar "slow" and
 // "broken" demos (`httpbin.org/delay/3600`, `invalid-url.example`), and those are what avatar-loading.spec.ts asserts
 // on; the fonts are self-hosted since round 7. There is nothing to block that a spec does not already own.
-const SANDBOX_CHROMIUM = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome";
-const launchOptions = fs.existsSync(SANDBOX_CHROMIUM) ? { executablePath: SANDBOX_CHROMIUM } : {};
+const launchOptions = sandboxLaunchOptions(); // the sandbox image's newest Chromium, or Playwright's own (row 374)
 
 const listFile = process.env.PW_SPECS_FILE;
 const testMatch = listFile
