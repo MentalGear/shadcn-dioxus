@@ -9,6 +9,13 @@
   gap: var(--dx-space-2);
   line-height: calc(1.25 / 0.875);
   text-align: start;
+
+  /* Variant slots for the content (`default`; `separator` re-declares them). `initial` is the
+     guaranteed-invalid value, so the content's `flex` falls back to its initial value and its
+     `text-align` to the inherited one, exactly as without a rule. Every Marker declares them, so
+     a Marker nested in a separator Marker's content never inherits the outer variant. */
+  --dx-marker-content-flex: initial;
+  --dx-marker-content-text-align: initial;
 }
 
 /* A marker rendered as a link or button (`as`): the UA's own control styling is
@@ -79,12 +86,14 @@
 
 .dx-marker-content {
   min-width: 0;
+  flex: var(--dx-marker-content-flex);
   overflow-wrap: break-word;
+  text-align: var(--dx-marker-content-text-align);
 }
 
-.dx-marker[data-variant="separator"] .dx-marker-content {
-  flex: none;
-  text-align: center;
+.dx-marker[data-variant="separator"] {
+  --dx-marker-content-flex: none;
+  --dx-marker-content-text-align: center;
 }
 
 .dx-marker-content a:not(:where([popover], dialog) *) {

@@ -6,7 +6,6 @@
 # (a multiset). kind = composed:<Y> (X's class on Y's root) | tag (bare form-control element).
 preview/src/components/button_group/style.css	composed:separator	.dx-button-group-separator	align-self
 preview/src/components/button_group/style.css	composed:separator	.dx-button-group-separator	margin
-preview/src/components/button_group/style.css	composed:separator	.dx-button-group[data-orientation="vertical"] .dx-button-group-separator	margin
 preview/src/components/chart/style.css	composed:card	[data-slot="card"].dx-chart-interactive	padding-block
 preview/src/components/chart/style.css	composed:card	[data-slot="card-content"].dx-chart-interactive-content	padding
 preview/src/components/chart/style.css	composed:card	[data-slot="card-content"].dx-chart-interactive-content	padding

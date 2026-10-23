@@ -53,7 +53,8 @@
   align-self: flex-end;
 }
 
-.dx-message[data-align="end"] [data-slot="bubble"] {
+/* Child combinators here and below (row 218): a Message nested in this one keeps its own alignment. */
+.dx-message[data-align="end"] > [data-slot="bubble"] {
   align-self: flex-end;
 }
 
@@ -70,12 +71,13 @@
   padding-inline: var(--dx-space-3);
 }
 
-.dx-message[data-align="end"] .dx-message-footer {
+.dx-message[data-align="end"] > .dx-message-content > .dx-message-footer {
   justify-content: flex-end;
 }
 
-/* An unframed (ghost) bubble has no inset, so the header and footer lose theirs. */
-.dx-message:has([data-slot="bubble"][data-variant="ghost"]) .dx-message-header,
-.dx-message:has([data-slot="bubble"][data-variant="ghost"]) .dx-message-footer {
+/* An unframed (ghost) bubble has no inset, so the header and footer lose theirs. Child combinators throughout (`Message > MessageContent > Bubble`,
+   the documented composition): a Message nested in this one, or in a ghost bubble's content, is not matched. */
+.dx-message:has(> .dx-message-content > [data-slot="bubble"][data-variant="ghost"]) > .dx-message-content > .dx-message-header,
+.dx-message:has(> .dx-message-content > [data-slot="bubble"][data-variant="ghost"]) > .dx-message-content > .dx-message-footer {
   padding-inline: 0;
 }

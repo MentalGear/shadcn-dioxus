@@ -4,6 +4,25 @@
    * the card (dark). Now the theme's text-safe destructive role (`--dx-destructive-text`, backlog row 134). */
   --dx-attachment-destructive-ink: var(--dx-destructive-text);
 
+  /* Size and orientation slots (the default values here; the `data-size` / `data-orientation`
+   * root rules below re-declare them). Every root declares all of them, so an Attachment nested
+   * in another one (inside a vertical card's actions, say) never inherits the outer one's look
+   * through a `[data-*] .dx-attachment-*` descendant selector. */
+  --dx-attachment-media-width: 2.5rem;
+  --dx-attachment-media-radius: var(--dx-radius-lg);
+  --dx-attachment-media-icon-size: 1rem;
+
+  /* Vertical overrides of the two size-dependent media slots, kept apart so they win over the
+   * size's value whatever the rule order (`initial` is the guaranteed-invalid value, so the media
+   * falls back to the size's). */
+  --dx-attachment-media-width-vertical: initial;
+  --dx-attachment-media-icon-size-vertical: initial;
+  --dx-attachment-content-padding-inline: 0;
+  --dx-attachment-actions-position: relative;
+  --dx-attachment-actions-gap: normal;
+  --dx-attachment-actions-inset-block-start: auto;
+  --dx-attachment-actions-inset-inline-end: auto;
+
   position: relative;
   display: flex;
   width: fit-content;
@@ -46,6 +65,14 @@
 .dx-attachment[data-orientation="vertical"] {
   width: 6rem;
   flex-direction: column;
+
+  --dx-attachment-media-width-vertical: 100%;
+  --dx-attachment-media-icon-size-vertical: 1.5rem;
+  --dx-attachment-content-padding-inline: var(--dx-space-1);
+  --dx-attachment-actions-position: absolute;
+  --dx-attachment-actions-gap: var(--dx-space-1);
+  --dx-attachment-actions-inset-block-start: var(--dx-space-3);
+  --dx-attachment-actions-inset-inline-end: var(--dx-space-3);
 }
 
 .dx-attachment[data-orientation="vertical"]:has([data-slot="attachment-content"]) {
@@ -70,6 +97,8 @@
 .dx-attachment[data-size="sm"] {
   font-size: var(--dx-text-xs);
   gap: var(--dx-space-2-5);
+
+  --dx-attachment-media-width: 2rem;
 }
 
 .dx-attachment[data-size="sm"]:has([data-slot="attachment-media"]) {
@@ -84,6 +113,10 @@
   border-radius: var(--dx-radius-lg);
   font-size: var(--dx-text-xs);
   gap: var(--dx-space-1-5);
+
+  --dx-attachment-media-width: 1.75rem;
+  --dx-attachment-media-radius: var(--dx-radius-md);
+  --dx-attachment-media-icon-size: 0.875rem;
 }
 
 .dx-attachment[data-size="xs"]:has([data-slot="attachment-media"]) {
@@ -98,11 +131,11 @@
   position: relative;
   display: flex;
   overflow: hidden;
-  width: 2.5rem;
+  width: var(--dx-attachment-media-width-vertical, var(--dx-attachment-media-width));
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  border-radius: var(--dx-radius-lg);
+  border-radius: var(--dx-attachment-media-radius);
   aspect-ratio: 1;
   background-color: var(--dx-muted);
   color: var(--dx-foreground);
@@ -110,32 +143,9 @@
 
 .dx-attachment-media svg {
   display: block;
-  width: 1rem;
-  height: 1rem;
+  width: var(--dx-attachment-media-icon-size-vertical, var(--dx-attachment-media-icon-size));
+  height: var(--dx-attachment-media-icon-size-vertical, var(--dx-attachment-media-icon-size));
   pointer-events: none;
-}
-
-.dx-attachment[data-size="sm"] .dx-attachment-media {
-  width: 2rem;
-}
-
-.dx-attachment[data-size="xs"] .dx-attachment-media {
-  width: 1.75rem;
-  border-radius: var(--dx-radius-md);
-}
-
-.dx-attachment[data-size="xs"] .dx-attachment-media svg {
-  width: 0.875rem;
-  height: 0.875rem;
-}
-
-.dx-attachment[data-orientation="vertical"] .dx-attachment-media {
-  width: 100%;
-}
-
-.dx-attachment[data-orientation="vertical"] .dx-attachment-media svg {
-  width: 1.5rem;
-  height: 1.5rem;
 }
 
 .dx-attachment[data-state="error"] .dx-attachment-media {
@@ -164,10 +174,7 @@
   max-width: 100%;
   flex: 1;
   line-height: 1.25;
-}
-
-.dx-attachment[data-orientation="vertical"] .dx-attachment-content {
-  padding-inline: var(--dx-space-1);
+  padding-inline: var(--dx-attachment-content-padding-inline);
 }
 
 .dx-attachment-title {
@@ -198,18 +205,14 @@
 
 /* Actions sit above the trigger (z-index) so both stay separately clickable. */
 .dx-attachment-actions {
-  position: relative;
+  position: var(--dx-attachment-actions-position);
   z-index: var(--dx-z-local-md);
   display: flex;
   flex-shrink: 0;
   align-items: center;
-}
-
-.dx-attachment[data-orientation="vertical"] .dx-attachment-actions {
-  position: absolute;
-  gap: var(--dx-space-1);
-  inset-block-start: var(--dx-space-3);
-  inset-inline-end: var(--dx-space-3);
+  gap: var(--dx-attachment-actions-gap);
+  inset-block-start: var(--dx-attachment-actions-inset-block-start);
+  inset-inline-end: var(--dx-attachment-actions-inset-inline-end);
 }
 
 /* A full-card overlay behind the actions. The focus ring is the card's own

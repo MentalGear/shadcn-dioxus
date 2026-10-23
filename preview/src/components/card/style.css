@@ -6,6 +6,7 @@
  * overlay inside the card is never clipped. */
 .dx-card {
   --dx-card-spacing: var(--dx-space-4);
+  --dx-card-title-font-size: var(--dx-text-base);
 
   display: flex;
   flex-direction: column;
@@ -22,6 +23,7 @@
 
 .dx-card[data-size="sm"] {
   --dx-card-spacing: var(--dx-space-3);
+  --dx-card-title-font-size: var(--dx-text-sm);
 }
 
 /* A footer sits flush with the bottom edge (it carries its own padding). */
@@ -62,13 +64,9 @@
 }
 
 .dx-card-title {
-  font-size: var(--dx-text-base);
+  font-size: var(--dx-card-title-font-size);
   font-weight: 500;
   line-height: 1.375;
-}
-
-.dx-card[data-size="sm"] .dx-card-title {
-  font-size: var(--dx-text-sm);
 }
 
 .dx-card-description {

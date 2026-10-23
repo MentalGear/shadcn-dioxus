@@ -28,6 +28,18 @@
   padding-inline: var(--dx-toggle-padding-inline, var(--dx-space-2-5));
   transition: background-color var(--dx-motion-duration-base), border-color var(--dx-motion-duration-base), color var(--dx-motion-duration-base), outline-color var(--dx-motion-duration-base);
   white-space: nowrap;
+
+  /* Every slot at its default, re-declared on every root (row 218): a Toggle nested inside an outline or
+     small Toggle never inherits the outer one's slots. ToggleGroup items are not `.dx-toggle`, so the
+     group's slots still reach them. */
+  --dx-toggle-border-width: 0;
+  --dx-toggle-height: var(--dx-control-height-default);
+  --dx-toggle-min-width: var(--dx-control-height-default);
+  --dx-toggle-radius: var(--dx-radius-lg);
+  --dx-toggle-font-size: var(--dx-text-sm);
+  --dx-toggle-padding-inline: var(--dx-space-2-5);
+  --dx-toggle-icon-size: 1rem;
+  --dx-toggle-icon-padding: var(--dx-space-2);
 }
 
 .dx-toggle:has(> [data-icon="inline-start"]) {

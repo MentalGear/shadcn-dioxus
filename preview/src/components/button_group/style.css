@@ -7,6 +7,10 @@
   display: flex;
   width: fit-content;
   align-items: stretch;
+
+  /* Separator inset slot (a row group; `vertical` re-declares it), so a group nested in another
+   * never inherits the outer orientation's inset through a descendant selector. */
+  --dx-button-group-separator-margin: 1px 0;
 }
 
 .dx-button-group:has(> .dx-button-group) {
@@ -15,6 +19,8 @@
 
 .dx-button-group[data-orientation="vertical"] {
   flex-direction: column;
+
+  --dx-button-group-separator-margin: 0 1px;
 }
 
 /*
@@ -37,7 +43,18 @@
  *
  * Horizontal: a non-first child flattens its inline-start corners, a non-last
  * child its inline-end corners. Vertical: block-start / block-end instead.
+ *
+ * Every child starts from no join (row 218): a ButtonGroup nested in another one is itself a child by
+ * position, and without the reset below its own first/last control inherited the OUTER seam's flat
+ * corners through the inner root, though nested groups sit `gap-2` apart. The position rules outweigh it.
  */
+.dx-button-group > * {
+  --dx-group-radius-start-start: initial;
+  --dx-group-radius-start-end: initial;
+  --dx-group-radius-end-start: initial;
+  --dx-group-radius-end-end: initial;
+}
+
 .dx-button-group:not([data-orientation="vertical"]) > :not(:first-child) {
   --dx-group-radius-start-start: 0;
   --dx-group-radius-end-start: 0;
@@ -106,11 +123,7 @@
  * 1px rule that stretches to the row height, inset 1px top/bottom; in a column a horizontal one. */
 .dx-button-group-separator {
   align-self: stretch;
-  margin: 1px 0;
-}
-
-.dx-button-group[data-orientation="vertical"] .dx-button-group-separator {
-  margin: 0 1px;
+  margin: var(--dx-button-group-separator-margin);
 }
 
 .dx-button-group-text {

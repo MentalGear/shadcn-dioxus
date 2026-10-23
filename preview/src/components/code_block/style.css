@@ -16,10 +16,14 @@
   /* Slot variables: the header, footer, content and lines read these, so one declaration on
    * the root sizes the whole block. */
   --dx-code-block-inset: var(--dx-space-3);
+  --dx-code-block-bar-color: var(--dx-muted-foreground);
+  --dx-code-block-title-color: var(--dx-foreground);
+  --dx-code-block-title-font-size: var(--dx-text-sm);
 }
 
 .dx-code-block[data-size="sm"] {
   --dx-code-block-inset: var(--dx-space-2-5);
+  --dx-code-block-title-font-size: var(--dx-text-xs);
 
   font-size: var(--dx-text-xs);
 }
@@ -27,6 +31,9 @@
 .dx-code-block[data-variant="destructive"] {
   border-color: color-mix(in oklab, var(--dx-destructive) 30%, transparent);
   color: var(--dx-destructive-text);
+
+  --dx-code-block-bar-color: var(--dx-destructive-text);
+  --dx-code-block-title-color: var(--dx-destructive-text);
 }
 
 .dx-code-block:has(> .dx-code-block-content:focus-visible) {
@@ -40,7 +47,7 @@
   min-width: 0;
   flex-shrink: 0;
   align-items: center;
-  color: var(--dx-muted-foreground);
+  color: var(--dx-code-block-bar-color);
   gap: var(--dx-space-2);
   padding-inline: var(--dx-code-block-inset);
 }
@@ -53,28 +60,15 @@
   padding-bottom: var(--dx-code-block-inset);
 }
 
-.dx-code-block[data-variant="destructive"] .dx-code-block-header,
-.dx-code-block[data-variant="destructive"] .dx-code-block-footer {
-  color: var(--dx-destructive-text);
-}
-
 .dx-code-block-title {
   overflow: hidden;
   min-width: 0;
-  color: var(--dx-foreground);
+  color: var(--dx-code-block-title-color);
   font-family: var(--dx-font-sans);
-  font-size: var(--dx-text-sm);
+  font-size: var(--dx-code-block-title-font-size);
   font-weight: 500;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.dx-code-block[data-size="sm"] .dx-code-block-title {
-  font-size: var(--dx-text-xs);
-}
-
-.dx-code-block[data-variant="destructive"] .dx-code-block-title {
-  color: var(--dx-destructive-text);
 }
 
 .dx-code-block-title svg:not(:where([popover], dialog) *) {

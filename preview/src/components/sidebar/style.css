@@ -104,13 +104,13 @@
   width: var(--dx-sidebar-width-icon);
 }
 
-[data-variant="floating"] .dx-sidebar-gap,
-[data-variant="inset"] .dx-sidebar-gap {
+:where(.dx-sidebar-desktop)[data-variant="floating"] > .dx-sidebar-gap,
+:where(.dx-sidebar-desktop)[data-variant="inset"] > .dx-sidebar-gap {
   width: var(--dx-sidebar-width);
 }
 
-[data-variant="floating"][data-collapsible="icon"] .dx-sidebar-gap,
-[data-variant="inset"][data-collapsible="icon"] .dx-sidebar-gap {
+:where(.dx-sidebar-desktop)[data-variant="floating"][data-collapsible="icon"] > .dx-sidebar-gap,
+:where(.dx-sidebar-desktop)[data-variant="inset"][data-collapsible="icon"] > .dx-sidebar-gap {
   width: calc(var(--dx-sidebar-width-icon) + 1rem);
 }
 
@@ -160,21 +160,21 @@
   overflow: visible;
 }
 
-[data-variant="sidebar"][data-side="left"] .dx-sidebar-container {
+:where(.dx-sidebar-desktop)[data-variant="sidebar"][data-side="left"] > .dx-sidebar-container {
   border-right: 1px solid var(--dx-sidebar-border);
 }
 
-[data-variant="sidebar"][data-side="right"] .dx-sidebar-container {
+:where(.dx-sidebar-desktop)[data-variant="sidebar"][data-side="right"] > .dx-sidebar-container {
   border-left: 1px solid var(--dx-sidebar-border);
 }
 
-[data-variant="floating"] .dx-sidebar-container,
-[data-variant="inset"] .dx-sidebar-container {
+:where(.dx-sidebar-desktop)[data-variant="floating"] > .dx-sidebar-container,
+:where(.dx-sidebar-desktop)[data-variant="inset"] > .dx-sidebar-container {
   padding: var(--dx-space-2);
 }
 
-[data-variant="floating"][data-collapsible="icon"] .dx-sidebar-container,
-[data-variant="inset"][data-collapsible="icon"] .dx-sidebar-container {
+:where(.dx-sidebar-desktop)[data-variant="floating"][data-collapsible="icon"] > .dx-sidebar-container,
+:where(.dx-sidebar-desktop)[data-variant="inset"][data-collapsible="icon"] > .dx-sidebar-container {
   width: calc(var(--dx-sidebar-width-icon) + 1rem + 2px);
 }
 
@@ -186,7 +186,7 @@
   background: var(--dx-sidebar-background);
 }
 
-[data-variant="floating"] .dx-sidebar-inner {
+:where(.dx-sidebar-desktop)[data-variant="floating"] > .dx-sidebar-container > .dx-sidebar-inner {
   border: 1px solid var(--dx-sidebar-border);
   border-radius: var(--dx-radius-lg);
   box-shadow: var(--dx-shadow-sm);
@@ -866,11 +866,11 @@
   }
 }
 
-.dx-sidebar-menu-item:has(.dx-sidebar-menu-button[data-size="sm"]) .dx-sidebar-menu-badge {
+.dx-sidebar-menu-item:has(> .dx-sidebar-menu-button[data-size="sm"], > .dx-sidebar-tooltip > .dx-sidebar-menu-button[data-size="sm"]) > .dx-sidebar-menu-badge {
   top: 0.25rem;
 }
 
-.dx-sidebar-menu-item:has(.dx-sidebar-menu-button[data-size="lg"]) .dx-sidebar-menu-badge {
+.dx-sidebar-menu-item:has(> .dx-sidebar-menu-button[data-size="lg"], > .dx-sidebar-tooltip > .dx-sidebar-menu-button[data-size="lg"]) > .dx-sidebar-menu-badge {
   top: 0.625rem;
 }
 
