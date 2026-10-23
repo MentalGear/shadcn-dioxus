@@ -25,17 +25,14 @@
 #   1. is not in primitives/src/js_listener.rs (the one implementation), AND
 #   2. has no `listener-ok: <reason>` marker on the same line or on one of the two lines above it
 #      (a Rust/JS/HTML comment; inside an eval string write a JS comment on the line above the
-#      call, in a `\`-joined one-line string use the allowlist below), AND
-#   3. is not an already-correct HAND-PAIRED registration in a file of PAIRED_BY_HAND below: the
-#      same file removes the same (event, handler) with `removeEventListener`, from a teardown
-#      the author wired up by hand.
+#      call, in a `\`-joined one-line string use the allowlist below).
 #
-# PAIRED_BY_HAND is a ratchet, not a licence: it lists the files that had a correct hand-written
-# add/remove pair before the helper existed and have not been moved onto it yet (each migration
-# is mechanical: `x.addEventListener(t, h, o)` -> `listen(x, t, h, o)`, delete the
-# `await dioxus.recv()` and the matching removes, wrap in `use_js_listeners`). The list only shrinks;
-# a file that no longer needs its entry is reported (a note, not a failure) so it gets deleted. A
-# NEW file, or a registration with no matching remove in a listed file, fails.
+# A correct hand-written add/remove pair fails too: the teardown is written, so a later edit can
+# break it. The hand-paired files row 159 grandfathered (its `PAIRED_BY_HAND` ratchet, 52 sites
+# in 11 files) were all moved onto the helper by row 167 and the ratchet is gone. The move is
+# mechanical: `x.addEventListener(t, h, o)` -> `listen(x, t, h, o)`, delete the
+# `await dioxus.recv()` and the matching removes, wrap in `use_js_listeners`; a listener narrower
+# than its script (one drag's window listeners) keeps the `off` that `listen` returns.
 #
 # Also checked: `scripts/check-blocking-scroll-listeners.sh` sees `listen(.., 'wheel' | 'touchstart'
 # | 'touchmove', .., { passive: false })` too, so the helper's passive default cannot be turned off
@@ -80,10 +77,6 @@ HELPER = "primitives/src/js_listener.rs"
 
 # Generated, not source: primitives/build.rs bundles primitives/src/ts/focus-trap.ts into it.
 GENERATED = ("primitives/src/js/",)
-
-# file (repo-relative) -> why a hand-written add/remove pair is still acceptable there. Only
-# shrinks: migrate the file onto `use_js_listeners`, then delete its line.
-PAIRED_BY_HAND: dict[str, str] = {}
 
 # Registrations that are NOT hand-paired but still legitimate, in files whose owner has not
 # added the marker yet. Same ratchet: delete the line when the marker lands.
@@ -154,7 +147,7 @@ def line_of(text, pos):
 
 
 def scan(rel, text):
-    """Returns (violations, hand_paired_sites) for one file."""
+    """Returns the violations of one file."""
     lines = text.split("\n")
     removes = set()
     for m in REMOVE_RE.finditer(text):
@@ -162,7 +155,7 @@ def scan(rel, text):
         if len(a) >= 2:
             removes.add((norm(a[0]), norm(a[1])))
 
-    bad, hand_paired = [], 0
+    bad = []
     for m in ADD_RE.finditer(text):
         ln = line_of(text, m.start())
         if is_comment(lines[ln - 1]):
@@ -172,19 +165,16 @@ def scan(rel, text):
             continue
         a = split_args(text, m.end() - 1)
         paired = len(a) >= 2 and IDENT_RE.match(norm(a[1]) or "") is not None and (norm(a[0]), norm(a[1])) in removes
-        if rel in PAIRED_BY_HAND and paired:
-            hand_paired += 1
-            continue
         if rel in PENDING_MARKER:
             continue
         if paired:
             why = ("hand-paired `addEventListener`/`removeEventListener` -- move it onto `use_js_listeners` "
-                   "(the file is not in PAIRED_BY_HAND, which only shrinks)")
+                   "(a written teardown is what a later edit breaks; the helper derives it)")
         else:
             why = ("raw `addEventListener` with no matching `removeEventListener` -- the listener lives as long as "
                    "the page, whatever scope ran the script")
         bad.append((ln, why))
-    return bad, hand_paired
+    return bad
 
 
 def main():
@@ -208,7 +198,6 @@ def main():
             paths.append(idx)
 
     bad, notes = [], []
-    seen_hand_paired = {}
     for p in paths:
         rel = names.get(str(p), str(p)).replace("\\", "/")
         if rel == HELPER or rel.startswith(GENERATED):
@@ -217,15 +206,11 @@ def main():
             text = p.read_text(encoding="utf-8")
         except (OSError, UnicodeDecodeError):
             continue
-        file_bad, hand_paired = scan(rel, text)
-        seen_hand_paired[rel] = hand_paired
+        file_bad = scan(rel, text)
         for ln, why in file_bad:
             bad.append((rel, ln, why))
 
     if not args:
-        for rel in PAIRED_BY_HAND:
-            if seen_hand_paired.get(rel, 0) == 0:
-                notes.append(f"note: {rel} no longer needs its PAIRED_BY_HAND entry -- delete it from scripts/check-js-listeners.sh")
         for rel in PENDING_MARKER:
             p = Path(rel)
             if p.is_file() and any(
@@ -249,8 +234,7 @@ def main():
         )
         sys.exit(1)
 
-    print("check-js-listeners: OK -- every addEventListener is in the helper, marked listener-ok, or an "
-          "already-paired registration in a PAIRED_BY_HAND file.")
+    print("check-js-listeners: OK -- every addEventListener is in the helper or marked listener-ok.")
 
 
 if __name__ == "__main__":

@@ -22,13 +22,25 @@ use crate::{
     },
     merge_attributes,
     selectable::{pointer_select_cancel, pointer_select_commit, pointer_select_start},
-    use_animated_open, use_controlled, use_effect_with_cleanup, use_id_or, use_outside_dismiss,
+    use_animated_open, use_controlled, use_id_or, use_outside_dismiss,
     use_unique_id,
 };
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 use dioxus_core::Task;
 use std::time::Duration;
+
+/// Cancels wheel/touchmove scrolling outside the open menu (see the comment at both call
+/// sites). Arg: the root id.
+const CONTEXT_MENU_SCROLL_BLOCK_JS: &str = "const id = await dioxus.recv();
+const f = (e) => {
+    const r = document.getElementById(id);
+    if (!r || !r.contains(e.target)) e.preventDefault();
+};
+// blocking-ok: cancelling the wheel outside the menu is the feature; installed only while a menu is open and removed with it
+listen(window, 'wheel', f, { capture: true, passive: false });
+// blocking-ok: same as the wheel listener above -- held only while a menu is open
+listen(window, 'touchmove', f, { capture: true, passive: false });";
 
 /// How long a touch must be held before the context menu opens.
 const LONG_PRESS_DURATION: Duration = Duration::from_millis(500);
@@ -801,27 +813,11 @@ fn ContextMenuContentRendered(
     // click target as soon as the page scrolls. Native context menus block
     // scroll while open; match that by suppressing wheel/touchmove outside
     // the menu without mutating page-level overflow styles.
-    use_effect_with_cleanup(move || {
+    crate::js_listener::use_js_listeners(move || {
         if !open() {
-            return Box::new(|| {}) as Box<dyn FnOnce()>;
+            return None;
         }
-        let root = ctx.root_id;
-        let eval = dioxus::document::eval(
-            "const id = await dioxus.recv(); \
-             const f = (e) => { \
-                 const r = document.getElementById(id); \
-                 if (!r || !r.contains(e.target)) e.preventDefault(); \
-             }; \
-             window.addEventListener('wheel', f, { capture: true, passive: false }); \
-             window.addEventListener('touchmove', f, { capture: true, passive: false }); \
-             await dioxus.recv(); \
-             window.removeEventListener('wheel', f, true); \
-             window.removeEventListener('touchmove', f, true);",
-        );
-        let _ = eval.send(root.cloned());
-        Box::new(move || {
-            let _ = eval.send(true);
-        })
+        Some(crate::js_listener::JsListeners::install(CONTEXT_MENU_SCROLL_BLOCK_JS).arg(ctx.root_id.cloned()))
     });
 
     // docs/backlog.md row 25: an APG menu requires an accessible name from
@@ -961,27 +957,11 @@ fn ContextMenuContentRendered(
     // click target as soon as the page scrolls. Native context menus block
     // scroll while open; match that by suppressing wheel/touchmove outside
     // the menu without mutating page-level overflow styles.
-    use_effect_with_cleanup(move || {
+    crate::js_listener::use_js_listeners(move || {
         if !open() {
-            return Box::new(|| {}) as Box<dyn FnOnce()>;
+            return None;
         }
-        let root = ctx.root_id;
-        let eval = dioxus::document::eval(
-            "const id = await dioxus.recv(); \
-             const f = (e) => { \
-                 const r = document.getElementById(id); \
-                 if (!r || !r.contains(e.target)) e.preventDefault(); \
-             }; \
-             window.addEventListener('wheel', f, { capture: true, passive: false }); \
-             window.addEventListener('touchmove', f, { capture: true, passive: false }); \
-             await dioxus.recv(); \
-             window.removeEventListener('wheel', f, true); \
-             window.removeEventListener('touchmove', f, true);",
-        );
-        let _ = eval.send(root.cloned());
-        Box::new(move || {
-            let _ = eval.send(true);
-        })
+        Some(crate::js_listener::JsListeners::install(CONTEXT_MENU_SCROLL_BLOCK_JS).arg(ctx.root_id.cloned()))
     });
 
     // See the web arm's identical construction above (docs/backlog.md row

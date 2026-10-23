@@ -1,7 +1,7 @@
 //! Defines the [`Collapsible`] component and its sub-components.
 
 use crate::dioxus_core::AttributeValue;
-use crate::{merge_attributes, use_controlled, use_effect_with_cleanup, use_id_or, use_unique_id};
+use crate::{merge_attributes, use_controlled, use_id_or, use_unique_id};
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 
@@ -56,8 +56,8 @@ pub(crate) fn hidden_attribute(state: PanelHidden) -> Attribute {
 /// open state has to follow it: `on_reveal` is where the caller opens the panel. Dioxus has no
 /// typed `onbeforematch`, so this is an `eval` bridge with the same shape as the other listener
 /// hooks (`use_global_keydown_listener`, `use_dialog_close_sync`): the listener is registered
-/// from an effect, and the effect's cleanup tears it down when the component unmounts or any
-/// input changes, so nothing outlives the element.
+/// through `use_js_listeners`, whose teardown is derived (the component unmounts or any input
+/// changes), so nothing outlives the element.
 ///
 /// Only elements the event is dispatched *at* count (`event.target === element`): `beforematch`
 /// bubbles, so a nested panel's reveal would otherwise also open every panel around it twice.
@@ -68,32 +68,22 @@ pub(crate) fn use_beforematch(
     enabled: impl Readable<Target = bool> + Copy + 'static,
     on_reveal: impl FnMut() + Clone + 'static,
 ) {
-    use_effect_with_cleanup(move || -> Box<dyn FnOnce()> {
+    crate::js_listener::use_js_listeners(move || {
         if !enabled.cloned() {
-            return Box::new(|| {});
+            return None;
         }
-        let mut eval = document::eval(
-            "const id = await dioxus.recv();
-            const element = document.getElementById(id);
-            if (element) {
-                const onBeforeMatch = (event) => {
-                    if (event.target === element) dioxus.send(true);
-                };
-                element.addEventListener('beforematch', onBeforeMatch);
-                await dioxus.recv();
-                element.removeEventListener('beforematch', onBeforeMatch);
-            }",
-        );
-        let _ = eval.send(id.cloned());
         let mut on_reveal = on_reveal.clone();
-        spawn(async move {
-            while let Ok(true) = eval.recv::<bool>().await {
-                on_reveal();
-            }
-        });
-        Box::new(move || {
-            let _ = eval.send(true);
-        })
+        Some(
+            crate::js_listener::JsListeners::install(
+                "const id = await dioxus.recv();
+                const element = document.getElementById(id);
+                listen(element, 'beforematch', (event) => {
+                    if (event.target === element) dioxus.send(true);
+                });",
+            )
+            .arg(id.cloned())
+            .on_message(move |_: bool| on_reveal()),
+        )
     });
 }
 

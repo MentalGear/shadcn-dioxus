@@ -751,6 +751,39 @@ pub fn DragAndDropListItem(props: DragAndDropListItemProps) -> Element {
     let mut collection_onmounted = item.onmounted();
     let mut item_ref: Signal<Option<std::rc::Rc<MountedData>>> = use_signal(|| None);
 
+    // While a native drag that started on this item is in flight, the document accepts the drop
+    // anywhere (`dragover`'s `preventDefault`) and reports it back, so a drop between or beside
+    // the items still commits. Installed by `ondragstart`, removed when the drag ends (the item's
+    // own `ondragend` or the document's `drop`/`dragend`) or the item unmounts.
+    let mut native_drag = use_signal(|| false);
+    crate::js_listener::use_js_listeners(move || {
+        if !native_drag() {
+            return None;
+        }
+        let mut ctx = ctx;
+        Some(
+            crate::js_listener::JsListeners::install(
+                r#"listen(document, "dragover", (event) => {
+                    event.preventDefault();
+                    if (event.dataTransfer) {
+                        event.dataTransfer.dropEffect = "move";
+                    }
+                }, true);
+                listen(document, "drop", (event) => {
+                    event.preventDefault();
+                    dioxus.send("drop");
+                }, true);
+                listen(document, "dragend", () => dioxus.send("end"), true);"#,
+            )
+            .on_message(move |action: String| {
+                if action == "drop" {
+                    ctx.drop();
+                }
+                native_drag.set(false);
+            }),
+        )
+    });
+
     let direction = use_direction(None);
     let onkeydown = move |event: Event<KeyboardData>| {
         let Some(command) = command_for_key(&event.key(), ctx.axis(), direction) else {
@@ -830,51 +863,12 @@ pub fn DragAndDropListItem(props: DragAndDropListItemProps) -> Element {
                 event.data_transfer().set_drop_effect("move");
                 // Note: this is only for Firefox (without it, DnD won't work)
                 let _ = event.data_transfer().set_data("text/html", "");
-                let mut document_drop_ctx = ctx;
-                let mut document_drop = document::eval(
-                    r#"
-                    function cleanup() {
-                        document.removeEventListener("dragover", onDragOver, true);
-                        document.removeEventListener("drop", onDrop, true);
-                        document.removeEventListener("dragend", onDragEnd, true);
-                    }
-
-                    function onDragOver(event) {
-                        event.preventDefault();
-                        if (event.dataTransfer) {
-                            event.dataTransfer.dropEffect = "move";
-                        }
-                    }
-
-                    function onDrop(event) {
-                        event.preventDefault();
-                        dioxus.send("drop");
-                        cleanup();
-                    }
-
-                    function onDragEnd() {
-                        dioxus.send("end");
-                        cleanup();
-                    }
-
-                    document.addEventListener("dragover", onDragOver, true);
-                    document.addEventListener("drop", onDrop, true);
-                    document.addEventListener("dragend", onDragEnd, true);
-
-                    await dioxus.recv();
-                    cleanup();
-                    "#,
-                );
-                spawn(async move {
-                    if let Ok(action) = document_drop.recv::<String>().await {
-                        if action == "drop" {
-                            document_drop_ctx.drop();
-                        }
-                    }
-                    let _ = document_drop.send(true);
-                });
+                native_drag.set(true);
             },
-            ondragend: move |_| ctx.end_drag(),
+            ondragend: move |_| {
+                native_drag.set(false);
+                ctx.end_drag();
+            },
             ondragover: move |event: Event<DragData>| {
                 event.prevent_default();
                 event.data_transfer().set_drop_effect("move");

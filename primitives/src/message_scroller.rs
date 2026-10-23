@@ -564,33 +564,34 @@ fn use_message_scroller_controller(
     let id = ctx.id;
 
     use_effect_with_cleanup(move || {
-        let mut eval = document::eval(MESSAGE_SCROLLER_JS);
-        let _ = eval.send(Msg::Init {
-            id: id.peek().clone(),
-            auto_scroll: *auto_scroll.peek(),
-            default_scroll_position: position.peek().as_str(),
-            edge: *edge.peek(),
-            peek: *peek.peek(),
-            margin: *margin.peek(),
-            virtualize: virtualize.peek().as_str(),
-        });
+        let listeners = crate::js_listener::JsListeners::install(MESSAGE_SCROLLER_JS)
+            .arg(Msg::Init {
+                id: id.peek().clone(),
+                auto_scroll: *auto_scroll.peek(),
+                default_scroll_position: position.peek().as_str(),
+                edge: *edge.peek(),
+                peek: *peek.peek(),
+                margin: *margin.peek(),
+                virtualize: virtualize.peek().as_str(),
+            })
+            .on_message(move |out: Out| match out {
+                Out::Scrollable(_, start, end) => scrollable.set(Scrollable { start, end }),
+                Out::Visibility(_, anchor, ids) => visibility.set(Visibility {
+                    current_anchor_id: (!anchor.is_empty()).then_some(anchor),
+                    visible_message_ids: ids,
+                }),
+            });
+        let eval = listeners.eval();
         for msg in queue.take() {
             let _ = eval.send(msg);
         }
         eval_slot.set(Some(eval));
-        spawn(async move {
-            while let Ok(out) = eval.recv::<Out>().await {
-                match out {
-                    Out::Scrollable(_, start, end) => scrollable.set(Scrollable { start, end }),
-                    Out::Visibility(_, anchor, ids) => visibility.set(Visibility {
-                        current_anchor_id: (!anchor.is_empty()).then_some(anchor),
-                        visible_message_ids: ids,
-                    }),
-                }
-            }
-        });
         move || {
+            // `teardown` ends the controller's own message loop (its `teardown()` clears the
+            // frames, timers and observers); dropping the script then removes every listener
+            // it registered through `listen`.
             let _ = eval.send(Msg::Teardown);
+            drop(listeners);
         }
     });
 

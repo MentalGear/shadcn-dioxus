@@ -149,7 +149,7 @@ use crate::dialog::{
     DialogContent, DialogCtx, DialogDescription, DialogDescriptionProps, DialogRoot, DialogTitle,
     DialogTitleProps,
 };
-use crate::{merge_attributes, use_effect_with_cleanup, use_id_or, use_unique_id};
+use crate::{merge_attributes, use_id_or, use_unique_id};
 use dioxus::core::use_drop;
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
@@ -488,9 +488,8 @@ const INTERACTIVE_SELECTOR: &str =
     "button, a[href], input, select, textarea, [contenteditable=\"\"], [contenteditable=\"true\"], [role=\"button\"]";
 
 /// [`use_drawer_gesture`]'s script: the whole drag gesture, in the real DOM.
-/// Structurally the same recv-params/addEventListener/recv-sentinel/
-/// removeEventListener shape as `lib.rs`'s `use_outside_dismiss` and
-/// `use_dialog_backdrop_dismiss`.
+/// A [`JsListeners`](crate::js_listener::JsListeners) body: its listeners
+/// go through `listen`, so the teardown is derived from the hook's scope.
 ///
 /// Parameters, in order: the content element's id, `vertical`, `sign` (from
 /// [`EdgeSide::drag_axis`]), [`INTERACTIVE_SELECTOR`], [`VELOCITY_WINDOW_MS`],
@@ -582,10 +581,12 @@ if (el && enabled) {
         drag.samples.push([e.timeStamp, drag.offset]);
         if (!raf) raf = requestAnimationFrame(flush);
     };
+    // The window listeners of the drag in flight: installed at its `pointerdown`, removed when it
+    // ends (`listen`'s early `off`), and by the teardown if the panel goes first.
+    let dragOff = [];
     const stop = () => {
-        window.removeEventListener('pointermove', onMove);
-        window.removeEventListener('pointerup', onUp);
-        window.removeEventListener('pointercancel', onCancel);
+        dragOff.forEach((off) => off());
+        dragOff = [];
         if (raf) { cancelAnimationFrame(raf); raf = 0; }
     };
     const end = (e, cancelled) => {
@@ -637,15 +638,17 @@ if (el && enabled) {
             drag.committed = true;
             dioxus.send(['start', vertical ? drag.rect.height : drag.rect.width, 0]);
         }
-        window.addEventListener('pointermove', onMove);
-        window.addEventListener('pointerup', onUp);
-        window.addEventListener('pointercancel', onCancel);
+        dragOff = [
+            listen(window, 'pointermove', onMove),
+            listen(window, 'pointerup', onUp),
+            listen(window, 'pointercancel', onCancel),
+        ];
     };
-    el.addEventListener('pointerdown', onDown);
-    await dioxus.recv();
-    el.removeEventListener('pointerdown', onDown);
-    drag = null;
-    stop();
+    listen(el, 'pointerdown', onDown);
+    cleanup(() => {
+        drag = null;
+        stop();
+    });
 }"#;
 
 /// One message from [`GESTURE_JS`], already oriented toward the closing edge.
@@ -686,32 +689,29 @@ fn use_drawer_gesture(
     dismissible: ReadSignal<bool>,
     on_event: impl FnMut(DragEvent) + Clone + 'static,
 ) {
-    use_effect_with_cleanup(move || {
+    crate::js_listener::use_js_listeners(move || {
         // Reactive reads: `side` and `dismissible` changing (unusual, but not
         // disallowed -- both are plain `ReadSignal` props) tears down and
         // reinstalls this listener with the new axis / enablement rather than
         // leaving the script silently stale.
         let (vertical, sign) = side.cloned().drag_axis();
         let enabled = dismissible.cloned();
-        let mut eval = document::eval(GESTURE_JS);
-        let _ = eval.send(content_id.cloned());
-        let _ = eval.send(vertical);
-        let _ = eval.send(sign);
-        let _ = eval.send(INTERACTIVE_SELECTOR);
-        let _ = eval.send(VELOCITY_WINDOW_MS);
-        let _ = eval.send(AXIS_LOCK_PX);
-        let _ = eval.send(enabled);
         let mut on_event = on_event.clone();
-        spawn(async move {
-            while let Ok((kind, a, b)) = eval.recv::<(String, f64, f64)>().await {
-                if let Some(event) = DragEvent::from_wire(&kind, a, b) {
-                    on_event(event);
-                }
-            }
-        });
-        move || {
-            let _ = eval.send(true);
-        }
+        Some(
+            crate::js_listener::JsListeners::install(GESTURE_JS)
+                .arg(content_id.cloned())
+                .arg(vertical)
+                .arg(sign)
+                .arg(INTERACTIVE_SELECTOR)
+                .arg(VELOCITY_WINDOW_MS)
+                .arg(AXIS_LOCK_PX)
+                .arg(enabled)
+                .on_message(move |(kind, a, b): (String, f64, f64)| {
+                    if let Some(event) = DragEvent::from_wire(&kind, a, b) {
+                        on_event(event);
+                    }
+                }),
+        )
     });
 }
 
