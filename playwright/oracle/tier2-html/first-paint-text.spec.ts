@@ -13,8 +13,16 @@
  * oracle's business). Differences that are the demo's own client state, not delivery, are listed in `ALLOW` with a reason;
  * a stale entry fails.
  *
+ * NARROWED (row 329): the every-route sweep moved into `cargo test`. `preview/src/ssr_parity.rs` renders every demo and
+ * every component page natively, once as the server frame and once after the first client tick (effects run), and fails on
+ * any difference in text, `value`, `aria-label`, `class`, `style` or `data-*`; it is a superset of what this spec read,
+ * found a case this spec missed (tag_group, row 332) and reproduced row 306 at `fb8c0b65^`. What it cannot see is a real
+ * browser hydrating the shipped wasm, so this spec keeps that half on the routes the class has hit (`ROUTES`):
+ * Select and Combobox (row 306) and Tag Group (row 332). `FIRST_PAINT_ROUTES=all` runs every component route again,
+ * `FIRST_PAINT_ROUTES=select,field` any list.
+ *
  *   PLAYWRIGHT_BASE_URL=http://127.0.0.1:8090 npx playwright test --config=ssg.local.config.ts oracle/tier2-html/first-paint-text.spec.ts
- * `FIRST_PAINT_ROUTES=select,combobox` narrows it. Functional, not timing: valid on a debug build.
+ * Functional, not timing: valid on a debug build.
  */
 import { test, expect } from "../../fixtures";
 import type { Page } from "@playwright/test";
@@ -30,9 +38,12 @@ const ALL_COMPONENTS: string[] = fs
   .filter((d) => d.isDirectory() && fs.existsSync(path.join(PREVIEW, "src", "components", d.name, "docs.md")))
   .map((d) => d.name)
   .sort();
+/** The routes the class has hit; every other route is the native parity test's (`preview/src/ssr_parity.rs`, row 329). */
+const ROUTES = ["select", "combobox", "tag_group"];
 const COMPONENTS: string[] = (() => {
   const only = (process.env.FIRST_PAINT_ROUTES ?? "").split(",").map((s) => s.trim()).filter(Boolean);
-  return only.length ? ALL_COMPONENTS.filter((c) => only.includes(c)) : ALL_COMPONENTS;
+  if (only.includes("all")) return ALL_COMPONENTS;
+  return ALL_COMPONENTS.filter((c) => (only.length ? only : ROUTES).includes(c));
 })();
 
 /** `<slug>`: reason the route's value text legitimately differs between the JS-off page and the hydrated one. */
@@ -111,6 +122,10 @@ test.describe("first-paint text: the static page carries every value's text", ()
       expect(d, `${d.length} difference(s): ${d.slice(0, 6).join(" | ")}`).toEqual([]);
     });
   }
+
+  test("the route list is real: every kept route is a component page", () => {
+    expect(ROUTES.filter((r) => !ALL_COMPONENTS.includes(r)), "a kept route without a component page would be skipped silently").toEqual([]);
+  });
 
   test("the detector is not blind: a Select's value span and a Combobox input are inspected, with their text", async ({ browser }) => {
     const ctx = await browser.newContext({ javaScriptEnabled: false });
