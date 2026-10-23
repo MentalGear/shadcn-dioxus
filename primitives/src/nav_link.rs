@@ -19,8 +19,8 @@
 //! middle clicks, external targets and `new_tab` fall to the browser. The
 //! `href` of an internal target carries the router's history prefix.
 
-use dioxus::prelude::*;
 use dioxus::html::input_data::MouseButton;
+use dioxus::prelude::*;
 
 /// The path of a route string: everything before the first `?` or `#`, without
 /// a trailing slash (a static host redirects `/docs` to `/docs/`, so the

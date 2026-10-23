@@ -33,7 +33,7 @@
 
 use crate::Route;
 use dioxus::prelude::*;
-use dioxus_primitives::nav_link as primitive;
+use dioxus_primitives::nav_link::NavLink as PrimitiveNavLink;
 
 #[derive(Props, Clone, PartialEq)]
 pub struct NavLinkProps {
@@ -66,7 +66,7 @@ pub fn NavLink(props: NavLinkProps) -> Element {
         children,
     } = props;
     rsx! {
-        primitive::NavLink {
+        PrimitiveNavLink {
             to: NavigationTarget::Internal(to.to_string()),
             active,
             class,
