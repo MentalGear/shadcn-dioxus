@@ -3,6 +3,7 @@ import type { Locator, Page } from "@playwright/test";
 import { BASE_URL } from "./base-url";
 import { demoFrame, demoRole } from "./demo-frame";
 import { gotoHydrated } from "./hydration";
+import { measureAtRest } from "./animations";
 
 // Renderer identity (backlog row 361): `item_key` on VirtualList and TableRows. Everything that must
 // survive a change of the view (the DOM node and so the state inside a row, the row that stays mounted
@@ -10,8 +11,8 @@ import { gotoHydrated } from "./hydration";
 // the same list twice: with `item_key` (the default of the demo) and without it (the default of the
 // library: a row is its slot), switched by the demo's last button.
 //
-// `reorder` demos, button positions: virtual_list = Reverse (0), item_key toggle (1);
-// table = Sort descending (0), Move first to last (1), item_key toggle (2).
+// `reorder` demos, button positions: virtual_list = Reverse (0), Shuffle (1), and the item_key SWITCH (the
+// first `switch`); table = Sort descending (0), Move first to last (1), item_key toggle (2).
 
 const LIST_URL = `${BASE_URL}/component/virtual_list/`;
 const TABLE_URL = `${BASE_URL}/component/table/`;
@@ -47,7 +48,7 @@ test.describe("VirtualList item_key", () => {
 
   test("without item_key a row is its slot: focus and state stay on the slot", async ({ page }) => {
     const frame = await open(page);
-    await demoRole(page, "button", 1, "reorder").click(); // item_key off
+    await demoRole(page, "switch", 0, "reorder").click(); // item_key off
     await expect(itemButton(frame, 3)).toBeVisible();
     await itemCheck(frame, 3).check();
     await itemButton(frame, 3).focus();
@@ -56,6 +57,47 @@ test.describe("VirtualList item_key", () => {
     await expect(page.locator(":focus")).toHaveAttribute("data-item-button", "196");
     await expect(itemCheck(frame, 196)).toBeChecked();
     await expect(itemCheck(frame, 3)).toHaveCount(0);
+  });
+
+  test("a shuffle keeps the checked task's state and focus with the task", async ({ page }) => {
+    const frame = await open(page);
+    await itemCheck(frame, 3).check();
+    await itemButton(frame, 3).focus();
+    await press(page, 1, "reorder"); // Shuffle
+    await expect(page.locator(":focus")).toHaveAttribute("data-item-button", "3");
+    await expect(itemCheck(frame, 3)).toBeChecked();
+    // The list really changed order: slot 3 no longer holds task 3.
+    await expect(frame.locator('[data-virtual-index="3"] [data-item]')).not.toHaveAttribute("data-item", "3");
+  });
+
+  test("dragging a grip onto another row moves the task, and its checkbox goes with it", async ({ page }) => {
+    const frame = await open(page);
+    await itemCheck(frame, 0).check();
+    const rows = frame.locator("[data-item]");
+    const source = await measureAtRest(itemButton(frame, 0));
+    const target = await measureAtRest(rows.nth(3));
+    await page.mouse.move(source.x + source.width / 2, source.y + source.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(source.x + 10, source.y + source.height / 2 + 10, { steps: 5 });
+    await page.mouse.move(target.x + 120, target.y + target.height * 0.8, { steps: 15 });
+    await expect(rows.nth(3)).toHaveAttribute("data-drop", "after");
+    await page.mouse.up();
+    await expect(frame.locator('[data-virtual-index="3"] [data-item]')).toHaveAttribute("data-item", "0");
+    await expect(frame.locator('[data-virtual-index="0"] [data-item]')).toHaveAttribute("data-item", "1");
+    await expect(itemCheck(frame, 0)).toBeChecked();
+  });
+
+  test("Space lifts, Down chooses the slot, Space drops, and focus stays on the moved task's grip", async ({ page }) => {
+    const frame = await open(page);
+    await itemButton(frame, 0).focus();
+    await page.keyboard.press("Space");
+    await expect(itemButton(frame, 0)).toHaveAttribute("aria-pressed", "true");
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("Space");
+    await expect(frame.locator('[data-virtual-index="2"] [data-item]')).toHaveAttribute("data-item", "0");
+    await expect(itemButton(frame, 0)).toBeFocused();
+    await expect(itemButton(frame, 0)).toHaveAttribute("aria-pressed", "false");
   });
 
   test("a reversed list keeps its measured heights: the canvas does not move", async ({ page }) => {

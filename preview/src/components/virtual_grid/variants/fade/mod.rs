@@ -24,8 +24,8 @@ pub fn Demo() -> Element {
     rsx! {
         div { style: "display: flex; flex-direction: column; gap: var(--dx-space-4); width: 100%;",
             Caption {
-                title: "Wrapping gallery",
-                "ScrollFade::Y on a VirtualWrapGrid: it scrolls vertically, so the top and bottom edges fade."
+                title: "Fade top and bottom",
+                "ScrollFade::Y on a VirtualWrapGrid, which scrolls vertically: the top and bottom edges fade."
             }
             div {
                 "data-demo": "fade-wrap",
@@ -47,7 +47,7 @@ pub fn Demo() -> Element {
                 }
             }
             Caption {
-                title: "Two-axis grid",
+                title: "Fade on all edges",
                 "ScrollFade::Both on a VirtualGrid that scrolls rows and columns: all four edges fade, each only while there is more content past it."
             }
             div {
