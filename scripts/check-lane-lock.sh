@@ -13,6 +13,10 @@
 #   8 legacy         `flock ssg.lock` callers and slot 0 exclude each other, both ways
 #   9 disk-reserve   (row 356) two concurrent copies on a disk sized for one: the second refuses; a dead
 #                    pid's reservation is ignored; `copy` never carries the source's .tree-owner
+#  10 slim-copy      (row 367) a copy leaves cargo's incremental dirs out; the guard sizes the slim copy
+#  11 slim-trees     (row 367) `lane-target.sh create` copies slim (full + stamp with LANE_CARGO_INCREMENTAL=1);
+#                    `slim` is a dry run without --apply, refuses while a build holds a slot, then deletes the
+#                    incremental dirs of every tree except a stamped one and keeps deps
 set -uo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 LL="$PWD/scripts/lane-lock.sh"
@@ -201,5 +205,36 @@ export LANE_FREE_KB=$(( slim + slim / 5 + 8 ))
 LANE_COPY_INCREMENTAL=1 "$LST" check-disk "$LANE_TGT/slim" 2>/dev/null && bad "the full-copy guard ignored the incremental dirs"
 unset LANE_FREE_KB LANE_DISK_MARGIN_KB
 
+# --- 11 lane-target.sh create copies slim; slim drops the dead incremental dirs (row 367) ----------
+scenario slim-trees
+LT="$PWD/scripts/lane-target.sh"; export LANE_TARGET_ROOT="$LANE_TGT"
+tpl="$LANE_TGT/template"
+mkdir -p "$tpl/wasm32-unknown-unknown/wasm-dev/incremental/preview-1" "$tpl/wasm32-unknown-unknown/wasm-dev/deps" "$tpl/debug/incremental/x" "$LANE_TGT/gates/debug/incremental/y"
+echo lib > "$tpl/wasm32-unknown-unknown/wasm-dev/deps/libx.rlib"
+echo state > "$tpl/wasm32-unknown-unknown/wasm-dev/incremental/preview-1/dep-graph.bin"
+echo state > "$tpl/debug/incremental/x/s"; echo state > "$LANE_TGT/gates/debug/incremental/y/s"
+"$LT" create a >/dev/null 2>&1 || bad "create failed"
+[ -e "$LANE_TGT/a/wasm32-unknown-unknown/wasm-dev/deps/libx.rlib" ] || bad "create lost a dep"
+[ -e "$LANE_TGT/a/wasm32-unknown-unknown/wasm-dev/incremental" ] && bad "create copied a <triple>/<profile>/incremental dir"
+[ -e "$LANE_TGT/a/debug/incremental" ] && bad "create copied a <profile>/incremental dir"
+LANE_CARGO_INCREMENTAL=1 "$LT" create b >/dev/null 2>&1 || bad "create with LANE_CARGO_INCREMENTAL=1 failed"
+[ -e "$LANE_TGT/b/debug/incremental/x/s" ] || bad "LANE_CARGO_INCREMENTAL=1 should copy the incremental dirs"
+[ -e "$LANE_TGT/b/.keep-incremental" ] || bad "LANE_CARGO_INCREMENTAL=1 should stamp .keep-incremental"
+"$LT" slim >/dev/null 2>&1 || bad "slim dry run failed"
+[ -e "$tpl/debug/incremental/x/s" ] || bad "slim without --apply deleted something"
+"$LL" lane -- bash -c "$(holder)" 2>/dev/null & h=$!; pids+=($h)
+waitfor 5 exists "$LANE_TGT/pids" || bad "holder did not start"
+"$LT" slim --apply >/dev/null 2>&1 && bad "slim --apply ran while a build held slot 0"
+[ -e "$tpl/debug/incremental/x/s" ] || bad "a refused slim deleted something"
+touch "$LANE_TGT/release"; wait "$h" 2>/dev/null
+"$LT" slim --apply >/dev/null 2>&1 || bad "slim --apply failed on an idle queue"
+[ -e "$tpl/wasm32-unknown-unknown/wasm-dev/incremental" ] && bad "slim kept the template's <triple>/<profile>/incremental"
+[ -e "$tpl/debug/incremental" ] && bad "slim kept the template's <profile>/incremental"
+[ -e "$LANE_TGT/gates/debug/incremental" ] && bad "slim skipped another tree (gates)"
+[ -e "$tpl/wasm32-unknown-unknown/wasm-dev/deps/libx.rlib" ] || bad "slim deleted a dep"
+[ -e "$LANE_TGT/b/debug/incremental/x/s" ] || bad "slim ignored .keep-incremental"
+[ -d "$LANE_TGT/lockq" ] || bad "slim removed the lock queue"
+unset LANE_TARGET_ROOT
+
 if [ "$fails" -ne 0 ]; then echo "check-lane-lock: FAIL -- $fails problem(s)" >&2; exit 1; fi
-echo "check-lane-lock: OK -- 10 scenarios"
+echo "check-lane-lock: OK -- 11 scenarios"
