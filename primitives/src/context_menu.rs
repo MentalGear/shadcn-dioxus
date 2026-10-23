@@ -22,8 +22,7 @@ use crate::{
     },
     merge_attributes,
     selectable::{pointer_select_cancel, pointer_select_commit, pointer_select_start},
-    use_animated_open, use_controlled, use_id_or, use_outside_dismiss,
-    use_unique_id,
+    use_animated_open, use_controlled, use_id_or, use_outside_dismiss, use_unique_id,
 };
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
@@ -817,7 +816,10 @@ fn ContextMenuContentRendered(
         if !open() {
             return None;
         }
-        Some(crate::js_listener::JsListeners::install(CONTEXT_MENU_SCROLL_BLOCK_JS).arg(ctx.root_id.cloned()))
+        Some(
+            crate::js_listener::JsListeners::install(CONTEXT_MENU_SCROLL_BLOCK_JS)
+                .arg(ctx.root_id.cloned()),
+        )
     });
 
     // docs/backlog.md row 25: an APG menu requires an accessible name from
@@ -961,7 +963,10 @@ fn ContextMenuContentRendered(
         if !open() {
             return None;
         }
-        Some(crate::js_listener::JsListeners::install(CONTEXT_MENU_SCROLL_BLOCK_JS).arg(ctx.root_id.cloned()))
+        Some(
+            crate::js_listener::JsListeners::install(CONTEXT_MENU_SCROLL_BLOCK_JS)
+                .arg(ctx.root_id.cloned()),
+        )
     });
 
     // See the web arm's identical construction above (docs/backlog.md row

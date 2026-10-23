@@ -2717,7 +2717,10 @@ fn use_carousel_wheel_band(
     crate::js_listener::use_js_listeners(move || {
         let id = id.cloned();
         let orientation_str = orientation().as_str().to_string();
-        Some(crate::js_listener::JsListeners::install(CAROUSEL_WHEEL_BAND_JS).arg((id, orientation_str)))
+        Some(
+            crate::js_listener::JsListeners::install(CAROUSEL_WHEEL_BAND_JS)
+                .arg((id, orientation_str)),
+        )
     });
 }
 
