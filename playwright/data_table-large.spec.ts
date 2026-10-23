@@ -90,7 +90,9 @@ test.describe("DataTable Grid layout", () => {
     await expect(summary(page)).toHaveText(`1 of ${ROWS} row(s) selected.`);
     await expect(g.locator('[role="row"][aria-rowindex="2"]')).toHaveAttribute("aria-selected", "true");
 
-    // Out of the window: the row is not mounted, the selection is still counted.
+    // Out of the window: the row is not mounted, the selection is still counted. (The clicked checkbox holds
+    // focus, and the grid keeps the focused row mounted so focus is not lost: blur first.)
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
     await scrollTo(g, 20_000);
     await expect(rowCheckbox(g, "ORD-00001")).toHaveCount(0);
     await expect(summary(page)).toHaveText(`1 of ${ROWS} row(s) selected.`);
