@@ -3,9 +3,9 @@
   "build": "debug",
   "workers": "2",
   "date": "2026-10-21",
-  "tests": 3717,
-  "files": 234,
-  "total_seconds": 11119.9,
+  "tests": 3727,
+  "files": 235,
+  "total_seconds": 11153.4,
   "budget_seconds": 17000,
   "max_file_seconds": 3000,
   "note": "seconds = sum of test durations (worker time) on the DEBUG SSG build, 2 workers, 4-core box shared with other lanes; main-thread.spec.ts and scroll-main-thread.spec.ts are release-only (skipped on debug) and carry their RELEASE seconds. release_total_seconds = the same run on a release build. Refresh: playwright/tools/run-suite.sh, then durations.mjs chunk-*.json --write",
@@ -560,6 +560,14 @@
    "tests": 20,
    "seconds": 51.5,
    "passed": 20,
+   "failed": 0,
+   "skipped": 0,
+   "retried": 0
+  },
+  "demos-parity3.spec.ts": {
+   "tests": 10,
+   "seconds": 33.5,
+   "passed": 10,
    "failed": 0,
    "skipped": 0,
    "retried": 0

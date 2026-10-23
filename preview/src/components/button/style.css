@@ -127,6 +127,42 @@
   height: var(--dx-control-height-lg);
 }
 
+/* Addon (`data-addon`, set by `InputGroupButton`): Nova's `.cn-input-group-button*` on top of the button
+ * size (shadcn-ui/ui@295a1f1 style-nova.css: `gap-2 text-sm`; xs `h-6 gap-1 px-1.5
+ * rounded-[calc(var(--radius)-3px)] [&>svg:not([class*='size-'])]:size-3.5`; icon-xs `size-6
+ * rounded-[calc(var(--radius)-3px)] p-0`; icon-sm `size-8 p-0`). Keyed on the button's own marker, so the
+ * input group's sheet declares nothing on the button, and one attribute above the size rules so it wins
+ * them in any sheet order. */
+.dx-button[data-addon][data-size] {
+  font-size: var(--dx-text-sm);
+  gap: var(--dx-space-2);
+  line-height: 1.25rem;
+}
+
+.dx-button[data-addon][data-size="xs"] {
+  gap: var(--dx-space-1);
+  padding-inline: var(--dx-space-1-5);
+
+  --dx-button-radius: calc(var(--dx-radius) - 3px);
+}
+
+.dx-button[data-addon][data-size="xs"] > svg:not([class*="size-"]) {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.dx-button[data-addon][data-size="icon-xs"] {
+  padding: 0;
+
+  --dx-button-radius: calc(var(--dx-radius) - 3px);
+}
+
+.dx-button[data-addon][data-size="icon-sm"] {
+  width: var(--dx-control-height-default);
+  height: var(--dx-control-height-default);
+  padding: 0;
+}
+
 .dx-button:disabled {
   opacity: var(--dx-opacity-disabled);
   pointer-events: none;

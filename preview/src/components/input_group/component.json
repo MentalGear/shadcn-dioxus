@@ -10,6 +10,7 @@
     }
   ],
   "componentDependencies": [
+    { "name": "button", "git": "https://github.com/MentalGear/shadcn-dioxus" },
     { "name": "input", "git": "https://github.com/MentalGear/shadcn-dioxus" },
     { "name": "textarea", "git": "https://github.com/MentalGear/shadcn-dioxus" }
   ],

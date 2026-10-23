@@ -1,12 +1,17 @@
 /* Nova spinner (shadcn-ui/ui@295a1f1 registry/bases/radix/ui/spinner.tsx: `size-4 animate-spin`; the
  * style sheet has no `.cn-spinner` block). It carries no colour of its own: the ring is
- * `currentColor`, so it takes the ink of whatever it sits in (a Button, a Badge, an input addon). */
+ * `currentColor`, so it takes the ink of whatever it sits in (a Button, a Badge, an input addon).
+ *
+ * The ring's edge is `--dx-spinner-size`, read with a 1rem fallback and NOT set on the default spinner, so a
+ * container that sizes its icons reaches a nested spinner by setting the variable on its own element (a Badge
+ * sets 0.75rem, shadcn's `.cn-badge [&>svg]:size-3!`, where shadcn's spinner IS the svg). A container never
+ * sizes the ring with a descendant `svg` rule: that rule and `.dx-spinner svg` would tie at (0,1,1) and the
+ * sheet loaded last would win, which an installed app decides by render order. A typed `size` below sets the
+ * variable on the spinner itself, so it beats any inherited value. */
 .dx-spinner {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-
-  --dx-spinner-size: 1rem;
 }
 
 .dx-spinner svg {
@@ -15,8 +20,8 @@
   animation: dx-spinner-spin 1s linear infinite;
 }
 
-/* Typed `size`: the ring's edge is one slot variable (default 1rem, set on the base rule above), so
- * the four sizes cannot drift apart. */
+/* Typed `size`: the ring's edge is one slot variable (default 1rem, the fallback above), so the four
+ * sizes cannot drift apart. */
 .dx-spinner[data-size="sm"] {
   --dx-spinner-size: 0.75rem;
 }

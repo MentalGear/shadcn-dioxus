@@ -31,11 +31,22 @@ FieldSet {
 
 ## Styling the label
 
-`FieldLabel` renders the themed `Label` (`<label class="dx-label dx-field-label">`) and retunes it through `Label`'s slot variables (see the Label docs): `--dx-label-line-height` always (shadcn's `FieldLabel` is `Label` plus `leading-snug`), and `--dx-label-color` while the field is `invalid`. `Field`'s stylesheet never declares `font-size`, `line-height`, or `color` on the label itself, so the label looks the same on every route regardless of which stylesheet loads first.
+`FieldLabel` renders the themed `Label` (`<label class="dx-label dx-field-label">`) and retunes it through `Label`'s slot variables (see the Label docs): `--dx-label-line-height` always (shadcn's `FieldLabel` is `Label` plus `leading-snug`), `--dx-label-color` while the field is `invalid`, and `--dx-label-opacity` while it is `disabled`. `Field`'s stylesheet never declares `font-size`, `line-height`, or `color` on the label itself, so the label looks the same on every route regardless of which stylesheet loads first.
 
 ## Invalid state
 
 `invalid` on a `Field` turns the label, description and `FieldError` text destructive. The control itself is invalid when it carries `aria-invalid="true"` (the attribute assistive technology reads), exactly as in shadcn, so set both: `Input`, `Textarea`, `NativeSelect`, `InputGroup`, `InputOtp`, `Checkbox`, `RadioItem`, `Switch`, `Toggle` and `Button` then draw the one shared invalid recipe, a destructive edge plus a destructive ring (`--dx-ring-invalid*` in the theme), and keep it while focused.
+
+## Disabled state
+
+`disabled` on a `Field` (shadcn's `data-disabled` on `Field`) dims every `FieldLabel` inside it to `--dx-opacity-disabled`; the description keeps its ink. It is styling only, so give the control its own `disabled` as well: that is what takes it out of the tab order and the submitted form.
+
+```rust
+Field { disabled: true,
+    FieldLabel { html_for: "workspace", "Workspace" }
+    Input { id: "workspace", value: "acme-inc", disabled: true }
+}
+```
 
 ## Choice card
 

@@ -20,6 +20,7 @@
  *   --dx-label-font-size    default --dx-text-sm
  *   --dx-label-font-weight  default 500
  *   --dx-label-line-height  default 1
+ *   --dx-label-opacity      default 1 (Field's disabled row sets --dx-opacity-disabled)
  *
  * Set a slot on the label's own element, not on an ancestor: custom properties
  * inherit, so an ancestor's value would also reach every nested label.
@@ -32,6 +33,7 @@
   font-weight: var(--dx-label-font-weight, 500);
   gap: var(--dx-label-gap, var(--dx-space-2));
   line-height: var(--dx-label-line-height, 1);
+  opacity: var(--dx-label-opacity, 1);
 
   /* shadcn's `Label` carries `select-none`: tapping or double-clicking a label to reach its control must not select its words. Backlog row 294; the reason is on `USER_SELECT_ALLOW` in `scripts/check-theme-baseline.sh`. */
 
