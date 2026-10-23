@@ -1,6 +1,7 @@
 /* VirtualGrid / VirtualWrapGrid. The primitive places rows and cells with inline styles (absolute
  * positions, sticky header and first column); this sheet only paints them, in the Nova table's
- * terms (`table/style.css`): `text-sm`, a `border-b` per row, a medium-weight header. The
+ * terms: the theme's `--dx-table-*` tokens, the same ones `table/style.css` reads (text size, row
+ * border, cell padding, header weight, selected fill), so the two cannot drift. The
  * primitive renders no classes inside the grid, so every descendant rule selects the grid's own
  * `data-grid-*` parts and ends with the popup boundary (`check-popup-boundary.sh`): a popup
  * opened from a cell keeps its own styles. */
@@ -12,7 +13,7 @@
   border-radius: var(--dx-radius-lg);
   background-color: var(--dx-background);
   color: var(--dx-foreground);
-  font-size: var(--dx-text-sm);
+  font-size: var(--dx-table-font-size);
   font-variant-numeric: tabular-nums;
 
   /* Only the inline axis is contained (a sideways swipe at the edge must not trigger browser
@@ -24,9 +25,9 @@
   display: block;
   overflow: hidden;
   align-content: center;
-  border-block-end: 1px solid var(--dx-border);
+  border-block-end: var(--dx-table-row-border);
   outline: none;
-  padding-inline: var(--dx-space-2);
+  padding-inline: var(--dx-table-cell-padding);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -39,7 +40,7 @@
 
 .dx-virtual-grid [data-grid-header] [data-grid-cell]:not(:where([popover], dialog) *) {
   color: var(--dx-foreground);
-  font-weight: 500;
+  font-weight: var(--dx-table-head-weight);
 }
 
 .dx-virtual-grid [data-grid-sticky]:not(:where([popover], dialog) *) {
@@ -54,11 +55,19 @@
   outline: none;
 }
 
+/* The Nova table's row hover (`hover:bg-muted/50`), on a data grid's rows only (the gallery and
+ * the photo wall are not tables). Before the selected rule, which wins by source order. */
+@media (hover: hover) and (pointer: fine) {
+  .dx-virtual-grid:not(.dx-virtual-grid-wrap, .dx-virtual-grid-justified) [role="row"]:hover:not(:where([popover], dialog) *) {
+    background-color: var(--dx-table-hover-background);
+  }
+}
+
 /* A selected row (`row_selected`): the Nova table's `data-[state=selected]:bg-muted`. The sticky
  * column is opaque so scrolled cells never show through it, so it takes the same fill. */
 .dx-virtual-grid [role="row"][data-state="selected"]:not(:where([popover], dialog) *),
 .dx-virtual-grid [role="row"][data-state="selected"] [data-grid-sticky]:not(:where([popover], dialog) *) {
-  background-color: var(--dx-muted);
+  background-color: var(--dx-table-selected-background);
 }
 
 /* A cell that holds a control: the control is the tab stop (the cell is `tabindex=-1`), so the
