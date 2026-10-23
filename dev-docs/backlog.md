@@ -87,7 +87,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [367](backlog/367-lane-build-disk-class.md) | Lane builds need 10.4 GB free because every lane-ssg copies 6.8 GB of template, 3.0 GB of it dead incremental state | PARTIAL. Landed in lane gatetools: the copy leaves cargo's incremental/ dirs out and the guard… | S for the landed part… | tooling |
 | [369](backlog/369-virtual-fractional-rows-grid-table.md) | VirtualGrid and TableRows: carry the exact measured size so a short body with fractional rows cannot overflow by 1px | Open. Found in batch 10 (scroll-fade 199 vs 198). | S | primitives |
 | [370](backlog/370-merge-attributes-class-none.md) | merge_attributes: a class: None replaces the base class instead of being ignored | Open. Found by the biggrid lane in batch 10. | S | primitives |
-| [371](backlog/371-dependency-evaluation-keep-lift-drop.md) | Dependency evaluation: keep, feature-gate, replace, lift or drop (rule of 2026-10-23) | Inventory done; outcomes await owner approval. Research and every measured fact… | S each outcome | build |
+| [371](backlog/371-dependency-evaluation-keep-lift-drop.md) | Dependency evaluation: keep, feature-gate, replace, lift or drop (rule of 2026-10-23) | PARKED by the owner 2026-10-23 ("its own item, and not yet"). Inventory done; no outcome is… | S each outcome | build |
 
 ## Done rows (301)
 

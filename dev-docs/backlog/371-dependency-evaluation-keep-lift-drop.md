@@ -1,7 +1,7 @@
 ---
 id: 371
 title: "Dependency evaluation: keep, feature-gate, replace, lift or drop (rule of 2026-10-23)"
-status: "Inventory done; outcomes await owner approval. Research and every measured fact…"
+status: "PARKED by the owner 2026-10-23 (\"its own item, and not yet\"). Inventory done; no outcome is…"
 size: "S each outcome"
 area: build
 updated: 2026-10-23
@@ -15,7 +15,16 @@ Apply the owner's dependency rule (2026-10-23) to every dependency a user's `dx 
 
 ## Status / trigger
 
-Inventory done; outcomes await owner approval. Research and every measured fact: [`dev-docs/research/dependency-evaluation.md`](../research/dependency-evaluation.md); re-runnable with `scripts/dep-report.sh [--network]`. Follows row 217 (does not redo it).
+PARKED by the owner 2026-10-23 ("its own item, and not yet"). Inventory done; no outcome is approved.
+
+Owner notes for when it is picked up:
+
+- If `dioxus-icons` is replaced by the lifted glyphs, the full `dioxus-icons` set stays available to developers as an opt-in.
+- Scope: SECURITY covers everything that builds or touches the project (the whole workspace lock, the docs site, build scripts, dev tooling, the CLI); only the PERFORMANCE budgets (crate count, compile time, wasm bytes) are measured on the closure users compile.
+- Vendoring (`cargo vendor`) was assessed and is not adopted: vendored code would need the same security checks, and `Cargo.lock` checksums with crates.io's immutable versions already pin the exact bytes, `cargo vet diff` reviews each update without copying source, a yanked version still builds from the lock, and crates.io deletes only malware (which a vendored copy would keep). Lift only where it protects users, and scan lifted code like a dependency (`lifted-from: crate@version`, advisory match, `unsafe` and licence checks).
+- Construction half: the scanner research and an independent review of these criteria in [`dev-docs/research/dependency-scanners.md`](../research/dependency-scanners.md) (cargo-deny now, cargo-vet second, a pinned advisory db, gate the whole closure, shrink-only ratchets, `lifted-from:` headers, a schema-checked register).
+
+Research and every measured fact: [`dev-docs/research/dependency-evaluation.md`](../research/dependency-evaluation.md); re-runnable with `scripts/dep-report.sh [--network]`. Follows row 217 (does not redo it).
 
 ## Size
 
