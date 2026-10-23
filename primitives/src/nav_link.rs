@@ -22,14 +22,22 @@
 use dioxus::prelude::*;
 use dioxus::html::input_data::MouseButton;
 
-/// The path of a route string: everything before the first `?` or `#`.
+/// The path of a route string: everything before the first `?` or `#`, without
+/// a trailing slash (a static host redirects `/docs` to `/docs/`, so the
+/// browser's location reads `/docs/` while the route renders `/docs`). The root
+/// stays `/`.
 fn path_of(route: &str) -> &str {
     let end = route.find(['?', '#']).unwrap_or(route.len());
-    &route[..end]
+    let path = route[..end].trim_end_matches('/');
+    if path.is_empty() {
+        "/"
+    } else {
+        path
+    }
 }
 
 /// Whether the internal target `to` is the page the router is on: the same
-/// *path*, ignoring the query and fragment (display state, not another page).
+/// *path*, ignoring the query, the fragment and a trailing slash.
 /// An external target is never current.
 pub fn is_current(to: &NavigationTarget, current_route: &str) -> bool {
     match to {
@@ -167,6 +175,9 @@ mod tests {
         assert!(is_current(&internal("/charts/"), "/charts/?"));
         assert!(is_current(&internal("/docs?dark_mode=true"), "/docs#top"));
         assert!(!is_current(&internal("/charts/bar/"), "/charts/"));
+        assert!(is_current(&internal("/docs"), "/docs/"));
+        assert!(is_current(&internal("/"), "/?"));
+        assert!(!is_current(&internal("/"), "/docs/"));
     }
 
     #[test]
