@@ -41,7 +41,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (41)
+## Open rows (40)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -53,7 +53,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [30](backlog/030-verify-the-2026-09-02-touch-text-entry-font.md) | Verify the 2026-09-02 touch text-entry font-size floor… | User re-test after deploy — the sandbox has no WebKit, and while Playwright's iPhone 13 emulation… | S to verify | tests |
 | [33](backlog/033-3-browser-playwright-on-every-push-pr-sharded.md) | 3-browser Playwright on every push/PR, sharded — dignifiedquire/dx-components runs chromium+firefox+webkit… | CI reactivation (user: off until further notice, 2026-08-30) — then it is a workflow-trigger… | S | ci |
 | [97](backlog/097-a-second-un-fragmented-rsx-sibling-renders-on.md) | A second, un-fragmented rsx sibling renders on the first pass and is silently dropped by the next one | OPEN (instance done, class not swept): Found 2026-09-20 (round 5) adding a scoped &lt;style&gt; tag… | DONE for this instance (explicit… | misc |
-| [126](backlog/126-link-s-aria-current-can-emit-a-duplicated.md) | Link's aria_current can emit a duplicated attribute under a base path; the charts gallery tab row uses plain… | OPEN (library residue: NavbarItem still wraps raw Link): LANDED 2026-10-11 (root-caused and fixed… | S (diagnosis) | charts |
 | [130](backlog/130-arborium-2-17-0-s-wasm-libc-shim-lacks-the-data.md) | arborium 2.17.0's wasm libc shim lacks the data symbol stderr that tree-sitter's stack.c… | NARROWED 2026-10-19 (backlog review): local fix 7ad8421 in; filing upstream is the owner's decision… | S | upstream |
 | [131](backlog/131-dioxus-cli-0-7-9-ssg-leaves-every-pre-rendered.md) | dioxus-cli 0.7.9 --ssg leaves every pre-rendered route except index.html stale when public/ already exists | NARROWED 2026-10-19 (backlog review): local fix 150e97b in (build-ssg.sh wipes public/); filing… | S | build |
 | [152](backlog/152-test-suite-review-revisit-the-playwright-suite.md) | Test-suite review: revisit the Playwright suite (~1,786 tests, ~21 min on a release build with 4 workers) for… | NARROWED 2026-10-19: speed half 152a DONE (lane suite-speed badc56d7): measured (3,752 tests, 183… | M | tests |
@@ -87,7 +86,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [365](backlog/365-final-sweep-refactor-and-root-cause-review.md) | Final sweep: refactor review with the deconstruct-to-root and solve-by-construction exercise, proposals to the owner | BACKLOG (owner 2026-10-22, backlog thread: "final sweep, check for refactors and also run there the… | M for the review. Each accepted… | process |
 | [367](backlog/367-lane-build-disk-class.md) | Lane builds need 10.4 GB free because every lane-ssg copies 6.8 GB of template, 3.0 GB of it dead incremental state | PARTIAL. Landed in lane gatetools: the copy leaves cargo's incremental/ dirs out and the guard… | S for the landed part… | tooling |
 
-## Done rows (300)
+## Done rows (301)
 
 | # | Item | Updated |
 |---|---|---|
@@ -208,6 +207,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [123](backlog/done/123-oracle-hydration-parity-spec-ts-hard-codes-base.md) | oracle/hydration-parity.spec.ts hard-codes BASE = "http://127.0.0.1:8090"; 5 cases fail when a base-path… | 2026-10-04 |
 | [124](backlog/done/124-charts-a-small-pre-hydration-layout-jump-on-the.md) | Charts: a small pre-hydration layout jump on the legend cards, and on pie-interactive's Select (SSR renders… | 2026-10-03 |
 | [125](backlog/done/125-charts-visual-nits-left-after-the-parity-round.md) | Charts visual nits left after the parity round: radar legend ~12px lower than shadcn; pie-interactive Select… | 2026-10-03 |
+| [126](backlog/done/126-link-s-aria-current-can-emit-a-duplicated.md) | Link's aria_current can emit a duplicated attribute under a base path; the charts gallery tab row uses plain… | 2026-10-23 |
 | [127](backlog/done/127-preview-assets-main-css-is-outside-the.md) | preview/assets/main.css is outside the stylelint gate's glob; 7 pre-existing errors | 2026-10-11 |
 | [128](backlog/done/128-scripts-check-dx-class-prefix-sh-is-red-on-main.md) | scripts/check-dx-class-prefix.sh is red on main @ 62de3cb: bar_chart/style.css and line_chart/style.css… | 2026-10-03 |
 | [129](backlog/done/129-preview-src-components-navbar-component-json.md) | preview/src/components/navbar/component.json lacks the theme globalAssets entry every other component has | 2026-10-05 |

@@ -8,7 +8,9 @@ use crate::{
     direction::{use_direction, use_direction_signal, Direction, HorizontalNav},
     has_own_accessible_name,
     hover_intent::{use_hover_intent, HoverIntent},
-    merge_attributes, use_animated_open, use_id_or, use_unique_id,
+    merge_attributes,
+    nav_link::NavLink,
+    use_animated_open, use_id_or, use_unique_id,
 };
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
@@ -1082,7 +1084,7 @@ pub struct NavbarItemProps {
 
     /// When [`true`], the `target` route will be opened in a new tab.
     ///
-    /// This does not change whether the [`Link`] is active or not.
+    /// This does not change whether the link is active or not.
     #[props(default)]
     pub new_tab: bool,
 
@@ -1122,7 +1124,7 @@ pub struct NavbarItemProps {
 /// # NavbarItem
 ///
 /// The `NavbarItem` component represents a link within a navbar. It accepts a superset of the props
-/// from the [`Link`] component.
+/// from the router's `Link` component, rendered through [`NavLink`] (one `aria-current`, row 126).
 ///
 /// This must be used inside a [`NavbarContent`] component.
 ///
@@ -1259,7 +1261,7 @@ pub fn NavbarItem(mut props: NavbarItemProps) -> Element {
     };
 
     rsx! {
-        Link {
+        NavLink {
             class: props.class,
             active_class: props.active_class,
             new_tab: props.new_tab,
@@ -1304,5 +1306,87 @@ pub fn NavbarItem(mut props: NavbarItemProps) -> Element {
             attributes: props.attributes,
             {props.children}
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    //! Backlog row 126: a `NavbarItem` must emit exactly one `aria-current`,
+    //! even when the caller passes its own (`dioxus_router::Link` writes its
+    //! literal beside `..attributes`, so the attribute came out twice).
+    use super::*;
+
+    #[derive(Routable, Clone, PartialEq)]
+    enum TestRoute {
+        #[route("/?:q")]
+        Home { q: Option<String> },
+        #[route("/other")]
+        Other {},
+    }
+
+    #[component]
+    fn Home(q: Option<String>) -> Element {
+        let _ = q;
+        rsx! {
+            Navbar { aria_label: "t",
+                NavbarItem {
+                    index: 0usize,
+                    value: "home".to_string(),
+                    to: "/?".to_string(),
+                    aria_current: "page",
+                    "Home"
+                }
+                NavbarItem {
+                    index: 1usize,
+                    value: "plain".to_string(),
+                    to: "/",
+                    "Plain"
+                }
+                NavbarItem {
+                    index: 2usize,
+                    value: "other".to_string(),
+                    to: "/other",
+                    "Other"
+                }
+            }
+        }
+    }
+
+    #[component]
+    fn Other() -> Element {
+        rsx! { "other" }
+    }
+
+    #[test]
+    fn navbar_item_emits_exactly_one_aria_current() {
+        fn app() -> Element {
+            rsx! { Router::<TestRoute> {} }
+        }
+        let mut dom = VirtualDom::new(app);
+        dom.rebuild_in_place();
+        let html = dioxus_ssr::render(&dom);
+        let anchors: Vec<&str> = html
+            .match_indices("<a ")
+            .map(|(i, _)| {
+                let end = html[i..].find('>').unwrap();
+                &html[i..i + end]
+            })
+            .collect();
+        assert_eq!(anchors.len(), 3, "{html}");
+        for a in &anchors {
+            assert!(a.matches("aria-current").count() <= 1, "duplicate: {a}");
+        }
+        // Home (query-suffixed target) and Plain are both the page; Other is not.
+        assert!(
+            anchors[0].contains("aria-current=\"page\""),
+            "{}",
+            anchors[0]
+        );
+        assert!(
+            anchors[1].contains("aria-current=\"page\""),
+            "{}",
+            anchors[1]
+        );
+        assert!(!anchors[2].contains("aria-current"), "{}", anchors[2]);
     }
 }

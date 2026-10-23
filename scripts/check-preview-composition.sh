@@ -157,6 +157,11 @@ declare -A allowed_qualified=(
     ["modality::FocusTarget"]=1   # plain enums, not markup -- the `initial_focus` /
     ["modality::OpenModality"]=1  # `final_focus` functions of the focus_target variants
                                    # (dialog, alert_dialog, popover; backlog row 240)
+    ["nav_link::NavLink"]=1       # the unstyled one-aria-current anchor (row 126): it has no
+                                   # visual of its own (callers pass the class), so there is no
+                                   # theme class to skip -- only preview/src/nav_link.rs, the
+                                   # `Route`-typed wrapper every in-app link goes through
+    ["nav_link::is_current"]=1    # pure path comparison, not markup -- preview/src/nav_link.rs tests
     ["direction::Direction"]=1    # plain enum, not markup -- every RTL fixture
                                    # (preview/src/components/*/variants/rtl/mod.rs)
     ["direction::DirectionProvider"]=1 # context-provider component with no DOM
