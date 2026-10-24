@@ -1542,12 +1542,6 @@ fn DocsLayout(
                         // A-Z by default or by category: see `docs_nav`.
                         docs_nav::DocsComponentNav { active }
                     }
-                    // The theme picker's phone entry: a "Theme" button pinned under the
-                    // scrolling nav that opens the picker as a bottom `Drawer`. Always
-                    // rendered; `main.css` shows it only at the header's phone breakpoint
-                    // (the header's own popover trigger is hidden there) -- see
-                    // `theme::ThemePicker`'s doc for why that is CSS and not a Rust check.
-                    theme::ThemePickerSidebarFooter {}
                 }
                 SidebarInset { id: MAIN_ID, tabindex: "-1", {children} }
             }

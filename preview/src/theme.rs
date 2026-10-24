@@ -5,7 +5,6 @@ use crate::components::{
         DrawerTitle,
     },
     popover::{PopoverContent, PopoverRoot, PopoverTrigger},
-    sidebar::{SidebarCtx, SidebarFooter, SidebarMenu, SidebarMenuButton, SidebarMenuItem},
     switch::Switch,
     toggle::ToggleVariant,
     toggle_group::{ToggleGroup, ToggleItem},
@@ -251,7 +250,7 @@ fn LightModeIcon() -> Element {
 /// the first paint is already right, see [`PREPAINT_JS`]); these signals are only ever read back from
 /// them, on mount and whenever a panel opens ([`ThemeState::sync`]).
 ///
-/// One per trigger: the header's [`ThemePicker`] and the phone menu's [`ThemePickerSidebarFooter`] each
+/// One per trigger: the header's [`ThemePicker`] and its phone entry [`ThemePickerPhoneTrigger`] each
 /// own one and hand it to the shared [`ThemePickerPanel`], so the panel itself never has to fetch its
 /// own state after it mounts (which would paint one frame of "Default" selected before the read-back).
 #[derive(Clone, Copy, PartialEq)]
@@ -351,29 +350,23 @@ fn use_theme_state() -> ThemeState {
 /// The swatch dots take their colours from the very same `[data-theme-*]` blocks the presets use
 /// (`main.css`, `.dx-theme-swatch`), so no colour is written down twice.
 ///
-/// # One panel, two presentations, one entry per page
+/// # One panel, two presentations, two triggers in the header
 ///
 /// [`ThemePickerPanel`] is the content and exists once. Where it opens is a layout question, so it is
 /// answered by CSS rather than by measuring the window in Rust (which would render different markup
-/// before and after hydration, and flash): this component, the header trigger that opens it as a
-/// popover, is always rendered and `main.css` hides it at phone width (`<= 760px`, the header's own
-/// breakpoint). At that width the picker opens as a bottom [`Drawer`] from a phone entry, and which
-/// entry is a structural question this component answers, because it is the one thing every route's
-/// header renders:
+/// before and after hydration, and flash). Both triggers sit in the header on every route and are
+/// always rendered; `main.css` shows exactly one of them at any width, under one query (`<= 760px`,
+/// the header's own breakpoint):
 ///
-/// * a route with a navigation sheet (`DocsLayout`: Home, Docs, component pages) already hosts
-///   [`ThemePickerSidebarFooter`] in it, always rendered and shown by `main.css` only at that width;
-/// * a route without one (`/demos`, the `/charts/` gallery, "not found") has no sheet to put it in, so
-///   the header itself renders [`ThemePickerPhoneTrigger`] next to the popover's trigger, shown by
-///   `main.css` only at that width. Whether a sheet exists is the presence of the [`SidebarCtx`]
-///   context, identical on the server and in the browser, so it cannot flash either.
+/// * above it, this component's popover trigger opens the panel as a popover;
+/// * at and below it, [`ThemePickerPhoneTrigger`] opens the panel as a bottom [`Drawer`], because a
+///   popover anchored to an icon in a phone header would open half off-screen.
 ///
-/// So a header always has exactly one phone entry and a layout cannot lose it by being built without a
-/// sidebar (backlog row 142), and exactly one trigger is ever visible, so exactly one panel is mounted.
+/// Both sit in the same header slot, so the picker is one tap away on every page at every width, and
+/// exactly one trigger is ever visible, so exactly one panel is mounted.
 #[component]
 pub fn ThemePicker() -> Element {
     let state = use_theme_state();
-    let has_navigation_sheet = try_consume_context::<SidebarCtx>().is_some();
 
     rsx! {
         PopoverRoot {
@@ -396,18 +389,13 @@ pub fn ThemePicker() -> Element {
                 }
             }
         }
-        if !has_navigation_sheet {
-            ThemePickerPhoneTrigger {}
-        }
+        ThemePickerPhoneTrigger {}
     }
 }
 
-/// The picker's phone entry for a page with no navigation sheet to host [`ThemePickerSidebarFooter`]:
-/// an icon button in the header, where the popover's own trigger sits above the breakpoint, that opens
-/// [`ThemePickerPanel`] as the same bottom [`Drawer`]. Rendered only by [`ThemePicker`] and only when
-/// there is no [`SidebarCtx`]; `main.css` shows it at phone width and nowhere else. Where a navigation
-/// sheet exists the header already spends that room on its sidebar trigger, which is why the sheet keeps
-/// its own entry rather than both moving here.
+/// The picker's phone entry: an icon button in the header, in the slot the popover's own trigger holds
+/// above the breakpoint, that opens [`ThemePickerPanel`] as a bottom [`Drawer`]. Rendered only by
+/// [`ThemePicker`]; `main.css` shows it at phone width and nowhere else.
 #[component]
 fn ThemePickerPhoneTrigger() -> Element {
     let state = use_theme_state();
@@ -427,53 +415,9 @@ fn ThemePickerPhoneTrigger() -> Element {
     }
 }
 
-/// The picker on phones, on a page with a navigation sheet: a "Theme" entry at the foot of the mobile
-/// navigation sheet that opens [`ThemePickerPanel`] as a bottom [`Drawer`]. (A page without a sheet gets
-/// [`ThemePickerPhoneTrigger`] in its header instead; see [`ThemePicker`] for which and why.)
-///
-/// The header has no room for the popover's trigger at phone width (it would overlap "Charts" and the
-/// GitHub link) and the popover itself would open from a point near the middle of the screen, so on
-/// phones the picker lives where the rest of the navigation does and opens as a bottom sheet, the
-/// native phone idiom. Rendered inside the desktop sidebar too (the sidebar only becomes a sheet below
-/// 768px, in Rust); `.dx-theme-sidebar-footer` is `display: none` above the 760px breakpoint, which is
-/// what keeps it out of the accessibility tree there.
-///
-/// The drawer is a child of the sidebar sheet, so it is a modal opened on top of a modal. That is the
-/// shape the dialog primitive supports (it ships a nested-dialog demo): the browser stacks the two
-/// `<dialog>`s in the top layer, so Escape and the focus trap act on the topmost one only, the scroll
-/// lock is one refcounted lock shared along the component chain, and closing the drawer returns focus
-/// to this trigger inside the still-open sheet.
-#[component]
-pub fn ThemePickerSidebarFooter() -> Element {
-    let state = use_theme_state();
-    let mut open = use_signal(|| false);
-
-    rsx! {
-        SidebarFooter { class: "dx-theme-sidebar-footer",
-            SidebarMenu {
-                SidebarMenuItem {
-                    SidebarMenuButton {
-                        as: move |attributes: Vec<Attribute>| rsx! {
-                            button {
-                                r#type: "button",
-                                aria_haspopup: "dialog",
-                                onclick: move |_| open.set(true),
-                                ..attributes,
-                                Palette { size: "1rem", "aria-hidden": "true" }
-                                span { "Theme" }
-                            }
-                        },
-                    }
-                }
-            }
-            ThemePickerDrawer { state, open }
-        }
-    }
-}
-
 /// The phone presentation: [`ThemePickerPanel`] in a bottom [`Drawer`], opened and closed through the
-/// `open` signal its trigger owns ([`ThemePickerSidebarFooter`] or [`ThemePickerPhoneTrigger`]). It is
-/// rendered next to that trigger, so closing it returns focus to the trigger that opened it.
+/// `open` signal [`ThemePickerPhoneTrigger`] owns. It is rendered next to that trigger, so closing it
+/// returns focus to the trigger that opened it.
 #[component]
 fn ThemePickerDrawer(state: ThemeState, open: Signal<bool>) -> Element {
     let mut open = open;
@@ -966,11 +910,10 @@ mod tests {
         assert!(last_base < first_accent);
     }
 
-    /// The popover's trigger is hidden, the header's phone entry shown and the sidebar sheet's footer shown
-    /// under ONE query in `main.css`. If they ever sat under different ones there would be a width with no
-    /// "Theme" button, or with two.
+    /// The popover's trigger is hidden and the header's phone entry shown under ONE query in `main.css`.
+    /// If they ever sat under different ones there would be a width with no "Theme" button, or with two.
     #[test]
-    fn the_phone_entries_switch_under_one_breakpoint() {
+    fn the_phone_entry_switches_under_one_breakpoint() {
         const QUERY: &str = "@media (width <= 760px) {";
         let popover = MAIN_CSS
             .find(".dx-popover:has(> .dx-theme-picker-trigger) {")
@@ -982,20 +925,9 @@ mod tests {
         );
         // The block is the query's own braces: it ends at the first line that is just `}`.
         let block = &MAIN_CSS[query..query + MAIN_CSS[query..].find("\n}\n").unwrap()];
-        for (what, rule) in [
-            (
-                "shows the header's phone entry",
-                "button.dx-theme-phone-trigger {\n    display: flex;",
-            ),
-            (
-                "shows the sidebar sheet's footer",
-                ".dx-sidebar-footer.dx-theme-sidebar-footer {\n    display: flex;",
-            ),
-        ] {
-            assert!(
-                block.contains(rule),
-                "the `{QUERY}` block of main.css must also {what}"
-            );
-        }
+        assert!(
+            block.contains("button.dx-theme-phone-trigger {\n    display: flex;"),
+            "the `{QUERY}` block of main.css must also show the header's phone entry"
+        );
     }
 }
