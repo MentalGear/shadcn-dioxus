@@ -8,7 +8,12 @@
  * row's cross size (and a definite-height row, e.g. `h-5`, exactly like `h-full` would). */
 .dx-separator {
   flex-shrink: 0;
-  background-color: var(--dx-border);
+  background-color: var(--dx-separator-background, var(--dx-border));
+}
+
+/* Zero specificity: a class on the separator that sets a margin still wins, as it does on a bare div. */
+:where(.dx-separator) {
+  margin: var(--dx-separator-margin, 0);
 }
 
 .dx-separator[data-orientation="horizontal"] {

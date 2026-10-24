@@ -3,7 +3,12 @@
 /* typography-inherit(dx-tooltip): the root only wraps the caller's trigger content, which follows the surrounding text like any inline element (the panel is reset by the popup-root rule) */
 .dx-tooltip {
   position: relative;
-  display: inline-block;
+  display: var(--dx-tooltip-display, inline-block);
+}
+
+/* Zero specificity: a class on the root that sets a width still wins. */
+:where(.dx-tooltip) {
+  width: var(--dx-tooltip-width, auto);
 }
 
 .dx-tooltip-trigger {

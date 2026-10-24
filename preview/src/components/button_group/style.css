@@ -122,8 +122,7 @@
 /* The separator's orientation is derived from the group (component.rs): in a row it is a vertical
  * 1px rule that stretches to the row height, inset 1px top/bottom; in a column a horizontal one. */
 .dx-button-group-separator {
-  align-self: stretch;
-  margin: var(--dx-button-group-separator-margin);
+  --dx-separator-margin: var(--dx-button-group-separator-margin);
 }
 
 .dx-button-group-text {

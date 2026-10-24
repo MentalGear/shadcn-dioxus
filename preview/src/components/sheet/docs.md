@@ -93,3 +93,12 @@ Closing keeps the sheet a modal -- in the top layer, at the same size and place 
 ## Motion
 
 The sheet slides in from its edge over 500 ms and out over `--dx-motion-duration-slower`; the durations are the `--dx-edge-duration-enter/-exit` slots' defaults in the theme's Edge panel recipe, and the scrim follows `--dx-overlay-duration`, `--dx-overlay-ease`, `--dx-overlay-scrim` and `--dx-overlay-blur`. The sheet stays open until its exit settles (at most 1500 ms) and only then closes, so the slide-out is always played. Its keyframes are the shared `dx-edge-in-*`/`dx-edge-out-*` pair in the theme, on `translate` like every other keyframe (no `transform`, so nothing is on the `check-anchored-keyframes.sh` allowlist). Reduced motion swaps in `--dx-motion-duration-reduced`. Nothing loops. See [Motion](/docs#motion) for the tokens, reduced motion and the per-component table.
+
+## Slot variables
+
+A component that composes `Sheet` (such as `Sidebar` on a phone) retunes the panel by setting a custom property on the `Sheet`'s class, never by declaring `background` or `width` on its own class: two stylesheets declaring the same property on one element are decided by which sheet loads last, and that order differs from route to route. `.dx-sheet` reads each of these with its own default, so a variable that is not set changes nothing. The panel's padding is the edge recipe's own `--dx-edge-padding`.
+
+| Variable | Default | Property |
+| --- | --- | --- |
+| `--dx-sheet-background` | `var(--dx-popover)` | `background` |
+| `--dx-sheet-width` | `75%` | `width (left and right panels)` |
