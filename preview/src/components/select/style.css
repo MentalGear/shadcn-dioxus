@@ -44,7 +44,6 @@
   border-start-start-radius: var(--dx-group-radius-start-start, var(--dx-select-trigger-radius));
   box-shadow: inset 0 0 0 1px var(--dx-input);
   color: var(--dx-foreground);
-  cursor: pointer;
   font-family: inherit;
   font-size: var(--dx-text-sm);
   gap: var(--dx-space-1-5);
@@ -286,7 +285,6 @@
   min-height: var(--dx-menu-item-min-height);
   align-items: center;
   border-radius: var(--dx-radius-md);
-  cursor: pointer;
   font-size: var(--dx-menu-item-font-size);
   gap: var(--dx-space-1-5);
   outline: none;

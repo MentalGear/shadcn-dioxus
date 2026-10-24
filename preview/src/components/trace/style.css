@@ -83,7 +83,6 @@
   border-radius: var(--dx-radius-md);
   background: transparent;
   color: var(--dx-muted-foreground);
-  cursor: pointer;
   font: inherit;
   gap: var(--dx-space-1);
   outline: none;

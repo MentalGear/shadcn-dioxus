@@ -1067,6 +1067,76 @@ html[data-theme="light"] [class~="dxc-system"] {
 }
 
 /* ============================================================================
+ * Interactive-element cursor: ONE rule decides it (owner 2026-10-23: "some interactive elements use a click
+ * pointer (combobox, calendar, etc), others don't -- make it a global consistent option").
+ *
+ * Before this rule every component sheet picked its own: Select, Tabs, Switch and the calendar's cells said
+ * `cursor: pointer`, Button, Combobox's options, Command's items and the Alert Dialog's buttons said
+ * `cursor: default`, so the same press looked different in each. shadcn v4 (Tailwind v4's preflight) leaves a
+ * button at the default arrow, and that is the default here; an app that wants the hand opts in with
+ * `data-dx-interactive-element-cursor="pointer"` on `<html>` (or on any container: like `data-dx-coarse`, the
+ * attribute only sets one custom property, so a nested `="default"` turns it back off). The attribute is
+ * the theme picker's "Cursor" control (`theme.rs`, `PREPAINT_JS`).
+ *
+ * The list is the user-select list above (what PRESSES: a button, `summary`, the menu-item, option, tab,
+ * switch, checkbox, radio and slider roles) plus `select` (a native one is a pressable box too) and the
+ * shared menu-item row. It deliberately leaves out text fields (`input`, `textarea`: the text cursor is the
+ * field's), `a[href]` (a link is a link: the browser's own `cursor: auto` is already the hand, in both
+ * settings) and the `[tabindex]` catch-all (prose and scrollers). Same zero specificity and `dx-` scoping as
+ * the baselines above, so a component keeps what is genuinely its own: `grab`/`grabbing` on a drag handle,
+ * `col-resize` on a resizer, `text` on a field. A disabled control (`:disabled`, `aria-disabled="true"`,
+ * `data-disabled="true"`) is left out of the list altogether, so it keeps its own disabled cursor
+ * (`not-allowed`, or the UA's arrow where its recipe is `pointer-events: none`) in both settings.
+ *
+ * What a component sheet may NOT do is declare `cursor: pointer` or `cursor: default` on a control: at
+ * (0,1,0) it out-ranks this rule and the option silently stops reaching that element. The one spelling for
+ * a clickable thing the list cannot name (a `label` that wraps a radio, a drag thumb, an SVG hit band, a
+ * selectable chip) is `cursor: var(--dx-interactive-element-cursor, default)`.
+ * `scripts/check-cursor-baseline.sh` enforces both and that this rule still exists.
+ * ========================================================================== */
+[data-dx-interactive-element-cursor="pointer"] {
+  --dx-interactive-element-cursor: pointer;
+}
+
+[data-dx-interactive-element-cursor="default"] {
+  --dx-interactive-element-cursor: default;
+}
+
+:where(
+  :is(
+    button[class^="dx-"],
+    button[class*=" dx-"],
+    summary[class^="dx-"],
+    summary[class*=" dx-"],
+    select[class^="dx-"],
+    select[class*=" dx-"],
+    [role="button"][class^="dx-"],
+    [role="button"][class*=" dx-"],
+    [role="menuitem"][class^="dx-"],
+    [role="menuitem"][class*=" dx-"],
+    [role="menuitemcheckbox"][class^="dx-"],
+    [role="menuitemcheckbox"][class*=" dx-"],
+    [role="menuitemradio"][class^="dx-"],
+    [role="menuitemradio"][class*=" dx-"],
+    [role="option"][class^="dx-"],
+    [role="option"][class*=" dx-"],
+    [role="tab"][class^="dx-"],
+    [role="tab"][class*=" dx-"],
+    [role="switch"][class^="dx-"],
+    [role="switch"][class*=" dx-"],
+    [role="checkbox"][class^="dx-"],
+    [role="checkbox"][class*=" dx-"],
+    [role="radio"][class^="dx-"],
+    [role="radio"][class*=" dx-"],
+    [role="slider"][class^="dx-"],
+    [role="slider"][class*=" dx-"],
+    [data-dx-menu-item]
+  ):not(:disabled, [aria-disabled="true"], [data-disabled="true"])
+) {
+  cursor: var(--dx-interactive-element-cursor, default);
+}
+
+/* ============================================================================
  * Popup root: a popup is not a child of whatever holds its trigger (docs/backlog.md row 218, 259).
  *
  * A popover or dialog is painted in the top layer but stays a DOM descendant of its trigger, and
@@ -1640,7 +1710,6 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
   padding: var(--dx-menu-item-padding);
   border-radius: var(--dx-menu-item-radius);
   color: var(--dx-foreground);
-  cursor: pointer;
   font-size: var(--dx-menu-item-font-size);
   gap: var(--dx-menu-item-gap);
   outline: none;

@@ -35,7 +35,6 @@
 
 @media (hover: hover) and (pointer: fine) {
   :where(.dx-collapsible-trigger:not([data-style]):hover) {
-    cursor: pointer;
     text-decoration-line: underline;
   }
 }

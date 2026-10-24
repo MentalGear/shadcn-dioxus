@@ -120,7 +120,6 @@
   border-radius: min(var(--dx-radius-md), 12px);
   background: transparent;
   color: var(--dx-foreground);
-  cursor: pointer;
   inset-inline-end: var(--dx-space-3);
   outline: none;
   transition-duration: var(--dx-motion-duration-base);

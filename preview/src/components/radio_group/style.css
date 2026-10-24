@@ -36,7 +36,6 @@
   background-color: var(--dx-field-fill);
   box-shadow: inset 0 0 0 1px var(--dx-input);
   content: "";
-  cursor: pointer;
 }
 
 /* Checked: `bg-primary border-primary` with the `size-2` `primary-foreground` dot. The ring below

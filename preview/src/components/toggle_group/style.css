@@ -186,13 +186,11 @@
   border-color: var(--dx-ring-color);
   background-color: var(--dx-accent);
   box-shadow: var(--dx-ring-focus);
-  cursor: pointer;
 }
 
 @media (hover: hover) and (pointer: fine) {
   .dx-toggle-group-item:where(:hover) {
     background-color: var(--dx-accent);
-    cursor: pointer;
   }
 }
 

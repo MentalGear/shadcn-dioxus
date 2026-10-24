@@ -475,7 +475,6 @@
   aspect-ratio: 1;
   background: transparent;
   color: var(--dx-sidebar-foreground);
-  cursor: pointer;
   inset-inline-end: 0.75rem;
   outline: none;
   transition: transform var(--dx-motion-duration-base) var(--dx-motion-ease-out), opacity var(--dx-motion-duration-slow) var(--dx-motion-ease-out), visibility 0ms 0ms;
@@ -611,7 +610,6 @@
   border-radius: var(--dx-radius-md);
   background: transparent;
   color: var(--dx-sidebar-foreground);
-  cursor: pointer;
   font-size: var(--dx-text-sm);
   gap: var(--dx-space-2);
   outline: none;
@@ -750,7 +748,6 @@
   aspect-ratio: 1;
   background: transparent;
   color: var(--dx-sidebar-foreground);
-  cursor: pointer;
 
   /* Tailwind preflight's `button { font: inherit }`: the action carries no text of its own (an icon and
    * a visually-hidden label), so its text metrics are the surrounding sidebar's, never the UA button's. */
@@ -942,7 +939,6 @@
   border-radius: var(--dx-radius-md);
   background: transparent;
   color: var(--dx-sidebar-foreground);
-  cursor: pointer;
   font-size: var(--dx-text-sm);
   gap: var(--dx-space-2);
   outline: none;

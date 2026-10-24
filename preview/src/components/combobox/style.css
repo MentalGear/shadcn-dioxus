@@ -165,7 +165,6 @@
   flex-shrink: 0;
   align-items: center;
   border-radius: var(--dx-radius-md);
-  cursor: default;
   font-size: var(--dx-menu-item-font-size);
   gap: var(--dx-space-2);
   line-height: 1.25rem;
@@ -256,7 +255,6 @@
   border-radius: var(--dx-radius-sm);
   background: transparent;
   color: inherit;
-  cursor: pointer;
   margin-inline-start: calc(var(--dx-space-1) * -1);
   opacity: 0.5;
   outline: none;
@@ -303,7 +301,6 @@
   border-radius: var(--dx-radius-sm);
   background: transparent;
   color: var(--dx-muted-foreground);
-  cursor: pointer;
   outline: none;
 }
 

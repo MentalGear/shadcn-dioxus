@@ -209,7 +209,6 @@
   border-start-end-radius: var(--dx-group-radius-start-end, var(--dx-radius-lg));
   border-start-start-radius: var(--dx-group-radius-start-start, var(--dx-radius-lg));
   color: var(--dx-foreground);
-  cursor: default;
   font-family: inherit;
   font-size: var(--dx-text-sm);
   font-weight: 500;

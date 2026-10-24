@@ -18,7 +18,6 @@
     padding: 0;
     border: none;
     background-color: transparent;
-    cursor: pointer;
     transition: rotate var(--dx-motion-duration-base) var(--dx-motion-ease-standard);
 
     /* The chevron is 20px, through the popover trigger's icon slot. */

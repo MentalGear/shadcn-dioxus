@@ -3,7 +3,8 @@
 //! The theme's colours are shadcn's exact values by default. A few of them are below WCAG 2.2's thresholds
 //! (shadcn's own, not ours), so the theme also carries one calibrated set behind one switch, defined once in
 //! the "Contrast mode" block at the end of `dx-components-theme.css`. The theme picker's "Contrast" control
-//! (`theme.rs`) writes the same attribute.
+//! (`theme.rs`) writes the same attribute. A closing paragraph documents the interactive-element cursor option
+//! (`data-dx-interactive-element-cursor`), which lives in the same theme sheet.
 
 use crate::components::table::{Table, TableBody, TableCell, TableHead, TableHeader, TableRow};
 use crate::DocsPre;
@@ -98,6 +99,16 @@ pub fn ContrastDocs() -> Element {
             " (\"Contrast mode\"); nothing else in the theme or in a component sheet reads the mode. To calibrate one more role in your app, declare it inside "
             code { ":root[data-dx-contrast=\"wcag\"]" }
             " after the theme sheet."
+        }
+        h3 { id: "interactive-element-cursor", "Cursor on interactive elements" }
+        p {
+            "Buttons, tabs, options, menu items, switches, checkboxes and the rest keep the default arrow, as in shadcn v4. To give every one of them the hand instead, set "
+            code { "data-dx-interactive-element-cursor=\"pointer\"" }
+            " on "
+            code { "<html>" }
+            " (or on any container); one rule in "
+            code { "dx-components-theme.css" }
+            " decides it for all of them, and the theme picker's \"Cursor\" control sets it. Text fields keep the text cursor, disabled controls their not-allowed cursor and drag handles their grab cursor, whichever you choose."
         }
     }
 }
