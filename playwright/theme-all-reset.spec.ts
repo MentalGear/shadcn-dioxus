@@ -11,8 +11,8 @@ const GOTO = { timeout: 20 * 60 * 1000 };
 
 // Computed values of the pre-change build (light). `rect` is the border box, rounded to 2 decimals.
 //
-// Re-baselined 2026-10-23: `cursor` is `default` (was `pointer`): the interactive-element cursor is the theme's one rule now
-// (`data-dx-interactive-element-cursor`, cursor-option.spec.ts), and shadcn v4's arrow is its default; nothing else moved.
+// `cursor` is `default`: the interactive-element cursor is the theme's one rule (`data-dx-interactive-element-cursor`,
+// cursor-option.spec.ts, backlog row 381), and shadcn v4's arrow is its default.
 //
 // Row 331 verdict (2026-10-21): KEPT. Re-checked against today's build: all four records still equal the
 // pre-change values, so no re-baseline was needed. What only this snapshot catches: a probe that appended

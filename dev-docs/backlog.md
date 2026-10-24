@@ -76,7 +76,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [372](backlog/372-scroll-fade-overlay-scrollbar-hybrid.md) | Scroll fade: transition the edge depths (landed) and paint the fade as gradients where the scrollbar is an overlay (deferred) | Part 2 LANDED (lane fadehybrid): the registered --dx-scroll-fade-t/-b/-s/-e depths transition… | M | primitives |
 | [376](backlog/376-toast-height-follows-content.md) | Toast height follows its content: measured heights, an even collapsed pile, own heights expanded | Owner bug report with a screenshot, 2026-10-23, plus the question "how should dynamic height via… | M | overlays |
 
-## Done rows (319)
+## Done rows (322)
 
 | # | Item | Updated |
 |---|---|---|
@@ -398,7 +398,10 @@ proposing one is closed as out of scope (row 337 is the first).
 | [368](backlog/done/368-virtual-grid-row-axis-first-paint.md) | VirtualGrid: the row axis plans max(rows, viewport), so a short grid differs between server and first client frame | 2026-10-23 |
 | [373](backlog/done/373-theme-defaults-are-shadcn-neutral.md) | Theme default fallbacks are shadcn Neutral; the upstream colour ramp is deleted | 2026-10-23 |
 | [374](backlog/done/374-playwright-chromium-path-resolver.md) | One Chromium path resolver for every local Playwright config, spec and script | 2026-10-23 |
+| [375](backlog/done/375-one-page-wide-scroll-lock.md) | Scroll lock is one page-wide lock with a deferred final release, so a dialog-to-dialog handoff keeps the page still | 2026-10-24 |
 | [377](backlog/done/377-release-suite-reds-batch-13.md) | Release-suite reds of batch 13: the detector's meta-proof, the baked build day, the spinner slot leak, the hidden code block's box | 2026-10-24 |
+| [379](backlog/done/379-session-setup-fetches-detached-locks.md) | Session setup fetches every committed Cargo.lock, so check-cargo-locks resolves offline in a fresh container | 2026-10-24 |
+| [381](backlog/done/381-interactive-element-cursor-option.md) | Interactive-element cursor is one theme option, data-dx-interactive-element-cursor | 2026-10-24 |
 
 ## Notes (8)
 

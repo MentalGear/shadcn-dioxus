@@ -1067,12 +1067,9 @@ html[data-theme="light"] [class~="dxc-system"] {
 }
 
 /* ============================================================================
- * Interactive-element cursor: ONE rule decides it (owner 2026-10-23: "some interactive elements use a click
- * pointer (combobox, calendar, etc), others don't -- make it a global consistent option").
- *
- * Before this rule every component sheet picked its own: Select, Tabs, Switch and the calendar's cells said
- * `cursor: pointer`, Button, Combobox's options, Command's items and the Alert Dialog's buttons said
- * `cursor: default`, so the same press looked different in each. shadcn v4 (Tailwind v4's preflight) leaves a
+ * Interactive-element cursor: ONE rule decides it, so every pressable `dx-` element shows the same cursor
+ * and an app chooses it in one place (backlog row 381). Component sheets do not declare their own
+ * `cursor: pointer` / `cursor: default` (`scripts/check-cursor-baseline.sh`). shadcn v4 (Tailwind v4's preflight) leaves a
  * button at the default arrow, and that is the default here; an app that wants the hand opts in with
  * `data-dx-interactive-element-cursor="pointer"` on `<html>` (or on any container: like `data-dx-coarse`, the
  * attribute only sets one custom property, so a nested `="default"` turns it back off). The attribute is

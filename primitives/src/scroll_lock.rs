@@ -8,8 +8,8 @@
 //!    global read and written from inside `document::eval`. This version
 //!    keeps its refcounting and its restore-the-original-state behavior,
 //!    but moves the counter into Rust -- one page-wide count shared by every
-//!    call site (backlog row 375: it was once one per nesting chain, which
-//!    gave two sibling dialogs two counters; see `ScrollLockInner`) --
+//!    call site (backlog row 375: two sibling dialogs share one count;
+//!    see `ScrollLockInner`) --
 //!    so "is this the outermost lock/unlock" is decided synchronously in
 //!    Rust *before* any `document::eval` runs, per docs/plan.md Phase 3.2.
 //!    That reproduces the guard sarendipitee/dx-components' `overlay.rs`

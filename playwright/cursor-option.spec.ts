@@ -8,14 +8,13 @@ import { demoFrame, demoRole, popupItem } from "./demo-frame";
  * The interactive-element cursor option (`<html data-dx-interactive-element-cursor="pointer|default">`,
  * `preview/assets/dx-components-theme.css`, "Interactive-element cursor").
  *
- * Owner 2026-10-23: "some interactive elements use a click pointer (combobox, calendar, etc), others don't --
- * make it a global consistent option and add a toggle to the demo appearance menu." The construction is ONE
+ * One cursor for every interactive element, chosen in one place and toggled from the demo appearance menu
+ * (backlog row 381). The construction is ONE
  * zero-specificity theme rule over every pressable `dx-` element (`scripts/check-cursor-baseline.sh` keeps the
  * per-component declarations out). This spec pins the behaviour in the browser:
  *
  *   default (no attribute)   a Button, a Combobox's chip remove and option, a Calendar day and a Select trigger all
- *                            compute the arrow (`default`; shadcn v4's), not the hand the sheets used to pick
- *                            one by one;
+ *                            compute the arrow (`default`; shadcn v4's), not the hand;
  *   ="pointer"               every one of them computes `pointer`, in every sweep entry below;
  *   never changed            a text field's `text`, a disabled control's own cursor (`not-allowed`, or no
  *                            pointer for a `pointer-events: none` button), a drag handle's `grab`;
