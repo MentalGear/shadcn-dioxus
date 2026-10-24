@@ -163,12 +163,12 @@ public_dir="$target_dir/dx/preview/release/web/public"
 # `<script type="module">` is ready. The affected route's static HTML then has no script tag at
 # all -- not a visible error, just a dead, never-hydrates page if it ships.
 #
-# A cold cargo cache does not change it, so compile-cache warmth is not the variable. The cause: by
-# default `dx build --fullstack` compiles the server and client targets in parallel, and the client
-# side's post-compile work (wasm-bindgen, wasm-opt -- both CPU-heavy) still competes for CPU
-# when the SSG pass's concurrent requests hit the freshly-listening server, it needs before it can inject the script tag. On this sandbox's 4 cores,
-# `--force-sequential=true` above (server build, then client build, so nothing competes with the
-# server during its SSG window) removes the race (row 116);
+# The race is CPU contention, not cache state: by default `dx build --fullstack` compiles the
+# server and client targets in parallel, and the client side's post-compile work (wasm-bindgen,
+# wasm-opt -- both CPU-heavy) still competes for CPU while the SSG pass's concurrent requests hit
+# the freshly-listening server. On this sandbox's 4 cores, `--force-sequential=true` above
+# (server build, then client build, so nothing competes with the server during its SSG window)
+# removes the race (row 116);
 # dx's own `--help` default-enables it under `CI=1`. The verification below stays as a safety
 # net regardless, on every route dx actually produced: a dead page must not ship even if this
 # analysis is wrong for another environment.

@@ -480,6 +480,10 @@ def _month_dated(body):
 
 
 _AUX = r"(?:the|a|an|its|their|any|whichever|whatever|other|of|to|from|with|by|for|on|in|at|as|is|are|be|been|being|and|or|not|only|also|already)"
+_NUM = r"(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)"
+# "once in 340 runs", "1 in 3 releases", "two out of five attempts"
+_FREQ = (r"(?:once|twice|" + _NUM + r") (?:in|out of) " + _NUM + r" (?:\w+ )?"
+         r"(?:runs?|attempts?|trials?|releases?|repeats?|tries|builds?|passes|iterations?)\b")
 PHRASES = [
     (re.compile(r"\b(?:(?:before|after) (?:the|this|that|a) (?:fix|change|refactor|migration|rename|revert|patch|bug ?fix|port)|before (?:the|this|that|a) rewrite)\b", re.I), "before the fix"),
     (re.compile(r"\bformerly\b", re.I), "formerly"),
@@ -585,6 +589,14 @@ PHRASES = [
                 r"\breproduced the (?:identical|same|failure|bug|defect)\b|"
                 r"(?:\b0?\.\d+|\b\d+\.\d+) (?:of \w+ )?gave\b|\bgave (?:a )?hue \d+|\bgave \d+(?:\.\d+)?:1", re.I), "how it came to be"),
     (re.compile(r"\b(?:NARROWED|WIDENED)\b"), "how it came to be"),
+    # round 8 (row 410): an observation's frequency told as its reason -- "(seen once in 340 runs at --workers=4)",
+    # "(measured: 1 in 3 releases stuck)" -- and an investigation's steps: "so cache warmth is not the variable",
+    # "the cause was ruled out". A frequency counts only beside an observation word before it or a failure word after
+    # it. Not adopted: a bare frequency ("passes when 2 in 3 runs succeed" is a retry policy), bare `measured:` (a
+    # figure the code depends on is data), the present-tense `rules out` ("this rules out the cascade tie").
+    (re.compile(r"\b(?:seen|observed|measured|reproduced|happened|occurred|hit)\b[^.;]{0,40}?\b" + _FREQ + r"|"
+                + _FREQ + r"[^.;]{0,30}?\b(?:stuck|failed|fail(?:ure)?s?|red|flaked|flaky|hung|timed out)\b|"
+                r"\bis not the variable\b|\bwas ruled out\b", re.I), "how it came to be"),
     # a pointer into a dead session's scratchpad
     (re.compile(r"\$S/"), "scratchpad path"),
 ]
@@ -1175,6 +1187,13 @@ MUST_FLAG = [
     "two cold rebuilds reproduced the identical 5-of-6 failure",
     "(0.07 of chroma gave hue 221 for blue 264)",
     "(0.12 gave 4.48:1)",
+    # round 8: an observation's frequency, an investigation's steps
+    "shut (seen once in 340 runs at --workers=4: aria-expanded stayed false for 5s)",
+    "leaves `:active` set (measured: 1 in 3 releases stuck)",
+    "the panel stayed closed 2 out of 5 runs failed at --workers=4",
+    "it reproduced twice in ten attempts",
+    "A cold cargo cache does not change it, so compile-cache warmth is not the variable.",
+    "the cascade was ruled out first",
 ]
 # ... and present-tense sentences that must NOT be (the false positives to keep out).
 MUST_NOT_FLAG = [
@@ -1298,6 +1317,12 @@ MUST_NOT_FLAG = [
     "the engine gave up after three tries",
     "a cold cache does not change the result",
     "(row 303 gave `/demos` and the `/charts/` gallery the docs shell)",
+    # round 8: frequencies and the same verbs in their present-tense senses
+    "the retry passes when 2 in 3 runs succeed",
+    "one in three tiles is wide",
+    "measured: 4.52:1 for the muted ink on the card",
+    "this rules out the cascade tie",
+    "a check that runs once in 3 builds on CI",
 ]
 
 

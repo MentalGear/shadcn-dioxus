@@ -5,7 +5,7 @@
 #
 # cargo gives a workspace crate the SAME unit hash in every worktree and judges freshness by mtime,
 # so a lane whose files are older than another tree's artifact in a shared target silently builds
-# or lints that other tree's code (measured: builds containing another lane's code). The cure is to
+# or lints that other tree's code. The cure is to
 # touch the sources before every cargo/dx run -- but only when it is needed: the target's
 # `.tree-owner` stamp names the worktree that last touched for it, and when that is THIS worktree
 # its own edits are already newer than every artifact, so the touch is skipped (a touch of ~1500
