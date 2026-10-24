@@ -11,12 +11,9 @@ import type { Page, Request } from "@playwright/test";
  * listening yet. "networkidle" only says the network went quiet; it says
  * nothing about whether hydration itself has completed, and a fast-booting
  * release build can go idle (no more in-flight requests) while still mid
- * hydration. This repo has no other hydration-ready signal -- every SSG
- * spec today either accepts the race (and, in carousel.spec.ts's case,
- * silently lost clicks/hovers issued right after goto) or gets lucky on
- * timing.
+ * hydration. The page's `data-hydrated` attribute (below) is the one hydration-ready signal.
  *
- * The fix, by construction: `preview/src/main.rs`'s root `App` component
+ * The construction: `preview/src/main.rs`'s root `App` component
  * runs a `use_effect` with no signal reads -- so it fires exactly once,
  * and only after a render has actually committed to the DOM -- that sets
  * `document.documentElement.dataset.hydrated = "true"`. `use_effect`
@@ -65,8 +62,8 @@ export async function gotoHydrated(
 }
 
 /**
- * Row 257: a `networkidle` that never arrives (one 90 s hang on /component/sidebar/ in a 575-test release chunk, never
- * reproduced) said only "Timeout exceeded", so the request that kept the network busy was never named. Every request of
+ * Row 257: a `networkidle` that never arrives says only "Timeout exceeded", so the request that kept the network busy
+ * is never named. Every request of
  * every frame is recorded while `gotoHydrated` runs; on a failure the ones that neither finished nor failed are listed
  * under the error. That includes the TEST timeout: when it fires, the pending `goto`/`waitForSelector` rejects, the
  * error passes through here, and the report shows it beside Playwright's "Test timeout ... exceeded".

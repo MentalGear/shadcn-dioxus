@@ -12,9 +12,8 @@ import { sandboxLaunchOptions } from "./sandbox-chromium.cjs";
 //
 //   python3 -m http.server 8090 -d <site-dir>
 //
-// Existing specs across this repo hardcode `http://127.0.0.1:8080` as their
-// base URL, so when running any of *those* against this lane, also serve
-// the same SSG site dir on port 8080 (two static-server processes over the
+// Specs default to `http://127.0.0.1:8080` as their base URL (base-url.ts), so when running any of *those*
+// against this lane, also serve the same SSG site dir on port 8080 (two static-server processes over the
 // same directory is fine -- it's just files). The oracle spec this config
 // serves (`oracle/hydration-parity.spec.ts`) defaults to 8090 (override:
 // `PLAYWRIGHT_BASE_URL`, base-url.ts's `baseUrlOr`), and reads `SSG_SITE_DIR` (the same site dir this config's own comment

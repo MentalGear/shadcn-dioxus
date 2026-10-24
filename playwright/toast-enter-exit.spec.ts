@@ -105,7 +105,7 @@ test.describe("toast: enter, exit and visible cap (row 290)", () => {
       await expect(toasts(page, name)).toHaveCount(0);
       const s = await samples(page);
       const out = s.filter((x) => x.removed === "true" && x.connected);
-      expect(out.length, "still mounted while it animates out").toBeGreaterThan(2);
+      expect(out.length, "mounted while it animates out").toBeGreaterThan(2);
       expect(out.every((x) => x.inert), "inert while leaving").toBe(true);
       const end = out[out.length - 1];
       expect(end.o, "fades out").toBeLessThan(out[0].o + 0.01);

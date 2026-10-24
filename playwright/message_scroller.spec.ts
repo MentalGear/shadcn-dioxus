@@ -175,7 +175,7 @@ test.describe("follow the stream", () => {
     const releasedAt = await wheel(page, vp, -500);
     expect(await dist(vp)).toBeGreaterThan(100);
     await expect(streamButton(page)).toBeEnabled({ timeout: 60_000 });
-    // The reply kept growing below the reader without moving them.
+    // The reply keeps growing below the reader without moving them.
     expect(Math.abs((await scrollTop(vp)) - releasedAt)).toBeLessThanOrEqual(1);
     expect(await dist(vp)).toBeGreaterThan(100);
     await expect(jumpButton(page)).toHaveAttribute("data-active", "true");
@@ -260,7 +260,7 @@ test.describe("jump to latest", () => {
     await page.keyboard.press("Enter");
     await expect.poll(() => dist(vp), { timeout: 10_000 }).toBeLessThanOrEqual(1);
     await expect(button).toHaveJSProperty("inert", true);
-    // The button went inert while focused: focus must not fall to <body>.
+    // The button goes inert while focused: focus must not fall to <body>.
     await expect(vp).toBeFocused();
   });
 
@@ -296,8 +296,8 @@ test.describe("anchoring a new turn", () => {
     await expect.poll(() => offsetOf(vp, "m12"), { timeout: 10_000 }).toBeGreaterThanOrEqual(50);
     expect(await offsetOf(vp, "m12")).toBeLessThanOrEqual(110);
     await expect(streamButton(page)).toBeEnabled({ timeout: 60_000 });
-    // The reply is taller than the viewport, so following took over from the
-    // anchor and the turn scrolled out of the top.
+    // The reply is taller than the viewport, so following takes over from the
+    // anchor and the turn scrolls out of the top.
     await expect.poll(() => dist(vp)).toBeLessThanOrEqual(1);
     expect(await offsetOf(vp, "m12")).toBeLessThan(0);
   });
@@ -399,7 +399,7 @@ test.describe("virtualization: content-visibility", () => {
     await expect(frameOf(page, "long").getByText(`${ROWS + 4} messages in the DOM`)).toBeVisible();
   });
 
-  test("scroll-up release and jump-to-latest still work on a long transcript", async ({ page }) => {
+  test("scroll-up release and jump-to-latest work on a long transcript", async ({ page }) => {
     const vp = await open(page, "long");
     await expect.poll(() => dist(vp)).toBeLessThanOrEqual(1);
     const at = await wheel(page, vp, -800);

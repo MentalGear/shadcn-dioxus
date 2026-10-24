@@ -1,6 +1,6 @@
 /**
  * Row 188 demo coverage, dates, pickers, small primitives and compositions: the demo-only items of
- * the research doc's section 5 (D-G): calendar presets/date_time, date_picker time and
+ * the parity audit (groups D-G): calendar presets/date_time, date_picker time and
  * natural_language, select disabled, combobox custom_items, native_select disabled/groups, separator, label,
  * slider, aspect_ratio, scroll_area, kbd, badge, resizable, field subscription, input_otp verify, accordion
  * faq/multiple, avatar, command inline, navigation_menu icons, alert, table rich, and the

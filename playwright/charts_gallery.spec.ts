@@ -279,7 +279,7 @@ test("View Code numbers its lines in a gutter that selecting and copying leave o
   expect(copied.trim()).toBe(source.trim());
   expect(copied).not.toMatch(/^\d+$/m);
 
-  // The Copy button is unchanged: the source, exactly.
+  // The Copy button copies the source, exactly.
   await dialog.getByRole("button", { name: /^Copy code/ }).click();
   await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe(source);
 });

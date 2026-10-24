@@ -49,12 +49,12 @@ test("keyboard navigation skips disabled items", async ({ page }) => {
 });
 
 /**
- * Regression coverage for a plain CSS smoothness bug, not a conformance rule
+ * Coverage for a plain CSS smoothness property, not a conformance rule
  * (accordion open/close smoothness is not specified by APG/HTML, and the
  * mechanism this asserts on -- `grid-template-rows` -- is not a Radix or
  * bits-ui *behaviour* either, so this does not belong under `oracle/`'s
  * tiered rule-source policy; it is a straightforward "does not snap"
- * regression test, most at home here).
+ * test, most at home here).
  *
  * `AccordionContent` only mounts once an item starts opening
  * (`use_animated_open`), so a plain `transition` on `grid-template-rows`
@@ -302,7 +302,7 @@ test.describe("hidden_until_found", () => {
     await expect(returns).toHaveAttribute("data-revealed", "true");
   });
 
-  test("opening by click still animates, closing animates and then re-hides", async ({ page }) => {
+  test("opening by click animates, closing animates and then re-hides", async ({ page }) => {
     const { trigger, panelOf } = await load(page);
     const returns = panelOf("Returns");
     const contentId = (await returns.getAttribute("id"))!;

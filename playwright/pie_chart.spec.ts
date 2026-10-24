@@ -4,15 +4,13 @@ import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
 // dev-docs/backlog.md row 109: this suite interacts (hover/click) right
 // after navigating, on the SSG lane -- `gotoHydrated` so that can't land
-// before hydration attaches listeners. Row 90's `networkidle` fix for this
-// file is the same class under a weaker remedy; this supersedes it.
+// before hydration attaches listeners.
 import { gotoHydrated } from "./hydration";
 
 // The gallery's own variant folders, `preview/src/components/pie_chart/
 // variants/*` -- `main` is shadcn's `chart-pie-simple.tsx`. One-to-one with
 // `preview/src/components/mod.rs`'s `pie_chart[...]` registration line and
-// shadcn's own 11 `chart-pie-*.tsx` demos (dev-docs/research/
-// dev-docs/archive/research/chart-2026-09-19.md §1.2) -- each variant's own doc comment in
+// shadcn's own 11 `chart-pie-*.tsx` demos (dev-docs/archive/research/chart-2026-09-19.md §1.2) -- each variant's own doc comment in
 // `preview/src/components/pie_chart/variants/<name>/mod.rs` cites the exact
 // shadcn source file it ports.
 //
@@ -241,7 +239,7 @@ test.describe("Pie chart: load animation", () => {
     // The chart in the first paint is never animated (it is the server-rendered final drawing;
     // `chart-entry-animation.spec.ts`), so the entrance is checked on the last demo, which starts
     // far below the first screen. The canonical, prerendered page: the legacy `/component/?name=`
-    // URL used above redirects client-side, so its charts are created in the browser (nothing was
+    // URL used above redirects client-side, so its charts are created in the browser (nothing is
     // painted) and the one in view animates at once.
     await gotoHydrated(page, `${BASE_URL}/component/pie_chart/`, { timeout: 20 * 60 * 1000 });
     const f = frame(page, "interactive");

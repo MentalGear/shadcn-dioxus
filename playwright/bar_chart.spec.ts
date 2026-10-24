@@ -11,12 +11,10 @@
  * every other registered variant gets `#component-preview-frame-<variant>`
  * instead.
  *
- * PHASE 1 (`main` -- shadcn's `chart-bar-default.tsx`, `multiple`,
- * `stacked`, `stacked_legend`, `interactive`): the variants that need no
- * `BarOptions` feature. PHASE 2 (`horizontal`, `negative`, `mixed`, `label`,
- * `label_custom`, `active`): the variants built on `BarOptions`
- * (`horizontal`/`value_labels`/`inside_labels`/`active_index`); together all
- * 10/10 of shadcn's `chart-bar-*` demos.
+ * `main` (shadcn's `chart-bar-default.tsx`), `multiple`, `stacked`, `stacked_legend` and `interactive` need no
+ * `BarOptions` feature; `horizontal`, `negative`, `mixed`, `label`, `label_custom` and `active` are built on
+ * `BarOptions` (`horizontal`/`value_labels`/`inside_labels`/`active_index`); together all 10 of shadcn's
+ * `chart-bar-*` demos.
  */
 import { test, expect } from "./fixtures";
 import { type Page, type Locator } from "@playwright/test";
@@ -143,9 +141,9 @@ test.describe("interactive variant (shadcn chart-bar-interactive.tsx)", () => {
     await toggles.nth(1).click();
     await expect(toggles.nth(1)).toHaveAttribute("data-active", "true");
     await expect(toggles.nth(0)).toHaveAttribute("data-active", "false");
-    // Still exactly one bar per category either way (a single-series
-    // config), so the count itself is unchanged even though the drawn
-    // values are now the other series'.
+    // One bar per category either way (a single-series
+    // config), so the count is the same although the drawn
+    // values are the other series'.
     await expect(bars).toHaveCount(barsBefore);
   });
 });

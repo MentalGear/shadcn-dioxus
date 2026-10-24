@@ -13,8 +13,8 @@ import { BASE_URL } from "./base-url";
  * keeps, per chart svg, the signature of its first painted frame; that frame must already be the
  * collapsed pose, never the final one the chart ends up in.
  *
- * 353: the Carousel's Next arrow was server-rendered `disabled` (slide count unknown until the
- * items register), which would paint it at 0.5 opacity and fade it to 1 after hydration. Its first frame
+ * 353: the Carousel's Next arrow is not server-rendered `disabled` (the slide count is unknown until the
+ * items register, and a disabled render would paint it at 0.5 opacity and fade it to 1 after hydration). Its first frame
  * is the enabled pose, and its opacity is 1 on every sampled frame.
  *
  * Functional (what is painted on every frame), so a debug build is fine.

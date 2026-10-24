@@ -200,10 +200,10 @@ test.describe("delay / close_delay (backlog row 166)", () => {
   });
 });
 
-// dev-docs/backlog.md row 292 -- the "Rich content" demo laid its title and body side by side. The
-// body is a flex row (icon-plus-text and Kbd tooltips rely on it), and `display: inline-flex` was
-// keyed on `[data-state="open"]` alone, so the paragraphs stacked ONLY during the closing fade, when
-// the rule stopped matching. Two invariants: the demo stacks them at rest, and a tooltip lays out
+// dev-docs/backlog.md row 292 -- the "Rich content" demo stacks its title and body. The
+// body is a flex row (icon-plus-text and Kbd tooltips rely on it), so a `display: inline-flex`
+// keyed on `[data-state="open"]` alone would stack the paragraphs ONLY during the closing fade, when
+// the rule stops matching. Two invariants: the demo stacks them at rest, and a tooltip lays out
 // the same in the closed (fading) state as in the open one.
 test.describe("Rich content layout (row 292)", () => {
   test("title and body are stacked (title above body) at rest, not side by side", async ({ page }) => {

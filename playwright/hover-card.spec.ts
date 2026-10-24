@@ -177,7 +177,7 @@ test.describe("delay / close_delay (backlog row 166)", () => {
     expect(elapsed(await readProbe(page), "mouseout", "surface:closed")!).toBeGreaterThanOrEqual(300 - SLOP);
   });
 
-  test("a scroll still closes an open card (close-on-scroll)", async ({ page }) => {
+  test("a scroll closes an open card (close-on-scroll)", async ({ page }) => {
     await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
     await page.evaluate(() => (document.body.style.paddingBottom = "3000px"));
     await trigger(page, "Quick (10 / 100)").hover();

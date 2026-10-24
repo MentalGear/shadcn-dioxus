@@ -60,7 +60,7 @@ test.describe("Behavioural: variant-specific rendering", () => {
   // regex matches ANY test title containing that substring, not just ones
   // about viewports -- a title like "...mobile's whole span..." would be
   // silently excluded from every run, everywhere, by that filter (`--list`
-  // shows 16 tests instead of the expected 17, with no error or warning).
+  // shows one test fewer than the file defines, with no error or warning).
   // Worth knowing for every other chart spec too: `chart-api.md`'s own sample data names a series "mobile",
   // and any spec prose that echoes that name verbatim risks the same
   // silent exclusion.
@@ -149,7 +149,7 @@ test.describe("Behavioural: variant-specific rendering", () => {
       await expect(frame.locator(`linearGradient[id="${id}"]`)).toHaveCount(1);
     }
     // ...and that is what actually paints: no stylesheet `fill` overrides the
-    // presentation attribute (a themed `fill: var(--series-color)` once did,
+    // presentation attribute (a themed `fill: var(--series-color)` would,
     // flattening every gradient area to a solid colour).
     for (const fill of await areaPaths.evaluateAll((els) => els.map((el) => getComputedStyle(el).fill))) {
       expect(fill).toMatch(/^url\(/);

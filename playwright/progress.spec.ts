@@ -46,7 +46,7 @@ test.describe("label and value", () => {
     expect(Math.abs(fill.width / track.width - 0.56)).toBeLessThan(0.01);
   });
 
-  test("a bare Progress is still the 4px track and keeps its name from aria-label", async ({ page }) => {
+  test("a bare Progress is the 4px track and keeps its name from aria-label", async ({ page }) => {
     await gotoHydrated(page, URL, { timeout: LOAD_TIMEOUT });
     const bare = page.getByRole("progressbar", { name: "Progressbar Demo" });
     await expect(bare).toBeVisible();

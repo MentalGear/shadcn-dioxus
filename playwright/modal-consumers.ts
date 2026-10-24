@@ -7,12 +7,12 @@
  *
  * Two derivations, both by reading the repo (the grep a reviewer would run):
  *   - PRIMITIVE CALLERS: every `primitives/src/*.rs` that calls `use_dialog_open_driver(`
- *     (today `dialog.rs`, `alert_dialog.rs` and `popover.rs`, whose modal arm is covered by
+ *     (`dialog.rs`, `alert_dialog.rs` and `popover.rs`, whose modal arm is covered by
  *     `popover.spec.ts`) and every one that
- *     calls `.showModal()` itself (today only `lib.rs` -- the driver). A new file on either
+ *     calls `.showModal()` itself (only `lib.rs` -- the driver). A new file on either
  *     list fails `modal-exit.spec.ts` until it is accounted for here.
  *   - THEMED CONSUMERS: every `preview/src/components/<name>/component.rs` that composes one
- *     of those primitives (`DialogRoot`, `AlertDialogRoot`, `Drawer`, `CommandDialog`) -- today
+ *     of those primitives (`DialogRoot`, `AlertDialogRoot`, `Drawer`, `CommandDialog`) --
  *     dialog, alert_dialog, sheet, drawer, command (plus the unstyled `top_layer` oracle
  *     fixture). Every other call site (sidebar's `Sheet`, the theme picker's and charts
  *     gallery's `Drawer`, the email client's compose `Dialog`) goes through one of those

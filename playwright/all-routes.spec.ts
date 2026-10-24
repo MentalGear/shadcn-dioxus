@@ -1,8 +1,8 @@
 /**
  * ORACLE: one generated sweep over EVERY page of the preview, in light and dark.
  *
- * The class this closes: a11y and layout defects that only ever showed up on a page nobody had a spec
- * for. A sweep of every route in both themes finds in minutes what a hand audit finds slowly: icon-only
+ * The class this covers: a11y and layout defects that show up only on a page with no spec
+ * of its own. A sweep of every route in both themes finds in minutes what a hand audit finds slowly: icon-only
  * buttons with no name, an `ItemGroup` of non-`listitem`s, a badge legible in only one theme, demos wider
  * than a phone, no skip link, and no keyboard focus indicator at all in Windows high-contrast
  * (`forced-colors`) mode.
@@ -138,8 +138,7 @@ interface KnownAxe {
   row: string;
   why: string;
 }
-// Empty: the chart toggle label finding (row 111, dark `--dx-accent` 4.13:1) went away when the active toggle moved to
-// `--dx-accent-selected` (phase C). Add an entry here only for a finding that is real and tracked.
+// Empty. Add an entry here only for a finding that is real and tracked.
 const KNOWN_AXE: Record<string, Partial<Record<Scheme, KnownAxe[]>>> = {};
 
 // --- helpers -------------------------------------------------------------------------------
@@ -149,7 +148,7 @@ const KNOWN_AXE: Record<string, Partial<Record<Scheme, KnownAxe[]>>> = {};
  *
  * "Settled" is checked by what a scan needs, not by `networkidle`: Chromium never reports `networkidle` for
  * a page that embeds the block-demo iframes (`/component/sidebar/`) even when every frame has loaded and
- * hydrated (measured: no request in flight for 30 s, all three iframes `complete` and `data-hydrated`).
+ * hydrated (no request in flight for 30 s, all three iframes `complete` and `data-hydrated`).
  * So: `load`, then the app's own hydration signal (`gotoHydrated`), then `settle`.
  */
 async function openRoute(page: Page, route: Route, scheme: Scheme, viewport?: { width: number; height: number }) {
@@ -265,11 +264,11 @@ async function probeAxe(page: Page, route: Route, scheme: Scheme) {
 }
 
 /**
- * Routes whose DOM depends on the viewport they have HAD, not only the one they have: measured against a
+ * Routes whose DOM depends on the viewport they have HAD, not only the one they have: against a
  * fresh-load-at-390px reading, a viewport round trip leaves a different set of boxes on these three
- * (`virtual_grid` renders 2,955 elements after the round trip against 2,784 on a fresh phone load, `site-home` 4,799
- * against 4,763 from `content-visibility: auto` sections, `message_scroller` moves 10 boxes), while on every other
- * route the round trip is box-for-box identical. Their phone-width reading therefore comes from a second, fresh
+ * (`virtual_grid` renders more elements after the round trip than on a fresh phone load, `site-home` differs
+ * from its `content-visibility: auto` sections, `message_scroller` moves a few boxes), while on every other
+ * route the round trip is box-for-box identical. Their phone-width reading
  * page loaded at 390px. `collapsible` and `tabs` are in the set too (row 358): the in-place scheme switch
  * is a second re-layout, and after one their closed find-in-page panels (`hidden="until-found"`) lay out 1-2 boxes
  * that no ancestor clips (a second viewport round trip on a fresh page does the same), so their dark reading would
@@ -327,7 +326,7 @@ async function probeOverflow(page: Page, route: Route, schemes: Scheme[]) {
         await phone.close();
       }
     }
-    // The cookie now names the last scheme; the shared page keeps its own (ensureScheme reads `data-theme`).
+    // The cookie names the last scheme; the shared page keeps its own (ensureScheme reads `data-theme`).
   } else {
     // viewport-ok: remembers the size to restore with `setViewportSize`, not a bound for any box
     const desktop = page.viewportSize()!;
@@ -355,12 +354,12 @@ async function probeOverflow(page: Page, route: Route, schemes: Scheme[]) {
  * and overflow, which judge the page's normal rendering.
  *
  * Why one walk for both schemes (row 358): the skip-link check presses Tab from the document's focus start point, and
- * a first walk moves that point into `<main>`; no reset tried was exact (blur, strip the hash, scroll to 0, a throw-away
- * button prepended and removed: 81 of 83 controls on the home page). A second sweep is not the same either: the first
+ * a first walk moves that point into `<main>`; no reset is exact (blur, strip the hash, scroll to 0, a throw-away
+ * button prepended and removed leaves controls that differ). A second sweep is not the same either: the first
  * leaves a roving-tabindex container (Menubar) handing focus to its item, so a second pick or a second `focus()` of it
  * judges something else. So every element is focused ONCE and its outline read in each scheme while it holds focus,
  * the scheme flipped in the page (`installFlipScheme`), which needs no style settle: `getComputedStyle` recalculates.
- * Every route was compared with a fresh load in each scheme (`dev-docs/archive/research/row-358-one-navigation-both-schemes.md`).
+ * Every route is held to a fresh load in each scheme (compared in `dev-docs/archive/research/row-358-one-navigation-both-schemes.md`).
  */
 async function probeForcedColors(page: Page, schemes: Scheme[]) {
   await page.emulateMedia({ forcedColors: "active" });
@@ -561,11 +560,10 @@ async function runProbes(probes: Array<[title: string, run: () => Promise<void>]
 }
 
 // --- the sweep: one navigation per route, both schemes on it ------------------------------------
-// PROBE ORDER, and why it is this one. Row 327 measured each order against a fresh load per probe on every
-// route (`dev-docs/archive/research/row-327-all-routes-and-goto-hydrated.md`): axe's full result and the 390px reading must
-// come out as they did on a fresh load, and the forced-colors sweep may only gain controls, never lose or fail one.
-// Row 358 checked the in-place scheme switch the same way, every route against a fresh load in each scheme
-// (`dev-docs/archive/research/row-358-one-navigation-both-schemes.md`).
+// PROBE ORDER, and why it is this one (row 327, `dev-docs/archive/research/row-327-all-routes-and-goto-hydrated.md`):
+// axe's full result and the 390px reading must equal a fresh load's per probe on every route, and the forced-colors
+// sweep may only gain controls, never lose or fail one. The in-place scheme switch is held to the same standard,
+// every route against a fresh load in each scheme (row 358, `dev-docs/archive/research/row-358-one-navigation-both-schemes.md`).
 //   1. overflow   resizes to 390px once, re-settles, reads light, switches, reads dark, restores the viewport. First,
 //                 because axe and the sweep both change what a later geometry read sees (axe: closed accordions lay
 //                 out their content, `content-visibility` sections render; the sweep: focus, scroll, URL hash).

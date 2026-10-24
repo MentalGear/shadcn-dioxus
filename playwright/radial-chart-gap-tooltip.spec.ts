@@ -7,7 +7,7 @@ import { gotoHydrated } from "./hydration";
 // the pointer is anywhere between the innermost and outermost ring: the gap
 // between two rings and a ring's empty remainder keep the nearest ring active
 // (by radius). It closes only when the pointer leaves the chart. Pie and Radar
-// still close off a sector. Hover resolves from coordinates in
+// close off a sector. Hover resolves from coordinates in
 // `primitives/src/chart/components/pointer.rs` (`nearest_ring`).
 // The `main` variant has no background track, so `elementFromPoint` tells a
 // bar from a gap.

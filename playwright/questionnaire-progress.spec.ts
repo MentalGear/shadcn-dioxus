@@ -91,8 +91,8 @@ test("animate_height demo renders and its switch flips data-animate-height live"
 
 /**
  * Every progress visual on the component page, at every step, light and dark: each demo's named progressbar
- * keeps the muted-foreground text colour, and any checkpoint segments keep primary/muted paint. The owner saw the
- * bar go black after the first step on the live page, so no demo's bar is left unchecked.
+ * keeps the muted-foreground text colour, and any checkpoint segments keep primary/muted paint, so no
+ * demo's bar goes black after the first step.
  */
 const ALL_DEMOS = [
   "main", "multiple", "animate_height", "freeform", "skip", "shortcuts", "validation", "controlled", "resume",

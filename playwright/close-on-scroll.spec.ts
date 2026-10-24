@@ -1,14 +1,13 @@
 /**
- * Non-modal anchored panels close when the page scrolls away from them (backlog row 193, item 7
- * of `dev-docs/research/next-round-plan-2026-10-14.md`): one helper, `use_close_on_scroll` in
- * `primitives/src/top_layer.rs`, two policies.
+ * Non-modal anchored panels close when the page scrolls away from them (backlog row 193): one helper,
+ * `use_close_on_scroll` in `primitives/src/top_layer.rs`, two policies.
  *
  *   - ANY scroll closes it: Tooltip, HoverCard, Menubar, NavigationMenu (and Select / DropdownMenu /
  *     ContextMenu when their `scroll_lock` / `modal` is off -- every shipped demo keeps the default
  *     lock, which is why those three have no case here: no existing page can open them unlocked).
  *   - Only the ANCHOR LEAVING THE VIEWPORT closes it: Popover and the DatePicker / ColorPicker
- *     popovers built on it (they can hold half-entered input), and Combobox. The plan listed Combobox
- *     under "any scroll"; it is moved here because its list holds a typed query and a phone keyboard
+ *     popovers built on it (they can hold half-entered input), and Combobox. Combobox is here rather than
+ *     under "any scroll" because its list holds a typed query and a phone keyboard
  *     scrolls and resizes the page while it is being used, so "any scroll" would close it the moment
  *     it is tapped. "Anchor leaves the viewport" cannot be tripped by a focus-driven scroll: that
  *     scroll reveals the field, it never hides it.

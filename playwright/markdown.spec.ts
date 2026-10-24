@@ -67,7 +67,7 @@ test("the main demo renders headings, lists, task checkboxes, a table and a code
   await expect(root.locator("pre code.language-rust")).toContainText("println!");
   await expect(root.locator("blockquote")).toBeVisible();
   await expect(root.locator("del")).toHaveText("strikethrough");
-  // The bare URL became a link.
+  // The bare URL is a link.
   await expect(root.locator('a[href="https://example.com/docs"]')).toHaveCount(1);
 });
 
@@ -211,7 +211,7 @@ test("streaming: the heal pass keeps raw markers out of every frame, and the scr
   await expect(md.locator("pre code.language-rust")).toContainText("ship it");
   await expect(md.locator("table")).toBeVisible();
   await expect(md.locator('a[href="https://example.com/faq"]')).toHaveCount(1);
-  // At the live edge the scroller stayed with the newest text.
+  // At the live edge the scroller stays with the newest text.
   const gap = await root
     .locator("[data-message-scroller-viewport]")
     .evaluate((el) => el.scrollHeight - el.clientHeight - el.scrollTop);

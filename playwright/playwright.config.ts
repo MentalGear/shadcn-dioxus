@@ -34,12 +34,10 @@ export default defineConfig({
     trace: "on-first-retry",
   },
 
-  // Per-test budget. Was a flat 5 minutes, which let a hung test (e.g. row 73's
-  // drawer-drag hang) burn 5 min x retries before surfacing. 120s: the local
-  // configs already run the whole suite at 90s (1391 passed, row 116 follow-up),
-  // plus headroom for this config's slower firefox/webkit projects. Genuinely long
-  // tests keep their own `test.setTimeout(...)` (absolute, unaffected). Override
-  // without editing: PW_TEST_TIMEOUT=<ms>. `webServer.timeout` below is separate.
+  // Per-test budget: a hung test (e.g. row 73's drawer-drag hang) must surface in two minutes, not burn a flat
+  // 5 min x retries. 120s: the local configs run the whole suite at 90s, plus headroom for this config's slower
+  // firefox/webkit projects. Genuinely long tests keep their own `test.setTimeout(...)` (absolute, unaffected).
+  // Override without editing: PW_TEST_TIMEOUT=<ms>. `webServer.timeout` below is separate.
   timeout: perTestTimeoutMs(2 * 60 * 1000),
   testIgnore: timingSpecIgnore(),
 
@@ -67,7 +65,7 @@ export default defineConfig({
       },
     },
 
-    // Temporarily disabled mobile tests in CI. The mobile browser CI downloads acts different than the local tests which pass
+    // Mobile projects do not run in CI: the mobile browsers CI downloads behave differently from the local ones, where these tests pass.
     // /* Test against mobile viewports. */
     // {
     //   name: "Mobile Chrome",

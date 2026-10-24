@@ -36,7 +36,7 @@ test("table renders the invoice demo: caption, header, rows, and footer total", 
     await expect(th, "TableHead defaults to scope=col").toHaveAttribute("scope", "col");
   }
 
-  // 6 rows (5+ per the brief).
+  // 6 rows (5+).
   const bodyRows = table.locator("tbody tr");
   await expect(bodyRows).toHaveCount(6);
   await expect(bodyRows.first()).toContainText("INV001");

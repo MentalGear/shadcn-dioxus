@@ -112,7 +112,7 @@ test.describe("Dark mode: native parts follow the theme", () => {
     expect(r.select.bg).toBe(r.select.expectBgDark);
     expect(r.select.color).toBe(r.select.expectColor);
     // The popup is painted from the options: opaque popover surface and ink, so it never inherits the
-    // select's translucent fill (which, over a light popup, was near-white text on near-white).
+    // select's translucent fill (which, over a light popup, would be near-white text on near-white).
     expect(r.option.bg).toBe(r.option.expectBg);
     expect(r.option.color).toBe(r.option.expectColor);
     expect(r.option.bg).not.toBe("rgba(0, 0, 0, 0)");
@@ -154,7 +154,7 @@ test.describe("Dark mode: native parts follow the theme", () => {
     });
   }
 
-  test("under a theme preset the options still read the (tinted) popover role, in dark", async ({ page }) => {
+  test("under a theme preset the options read the (tinted) popover role, in dark", async ({ page }) => {
     await openThemed(page, { os: "light", cookie: "dark", base: "zinc" });
     const r = await probe(page);
     expect(r.rootScheme).toBe("dark");

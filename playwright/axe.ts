@@ -16,17 +16,16 @@
  * component can pass every keyboard/behaviour oracle in this repo and
  * still fail axe (a duplicate landmark, an invalid `aria-required` on a
  * `button`, a `role="menu"` popup with no accessible name) -- exactly the
- * defect class this file exists to catch, and exactly the class that
- * caught `dev-docs/backlog.md` row 25 (ContextMenu/Menubar menu popups with no
- * accessible name) and the toast/aria-required cases.
+ * defect class this file exists to catch (backlog row 25: ContextMenu/Menubar menu popups
+ * with no accessible name; the toast `aria-required` cases).
  *
  * ## Where each state is scanned
  *
  * At rest: `all-routes.spec.ts` scans every page of the preview (every
  * CATALOG component page, the site pages, every block demo) as it loads,
  * in light and in dark, with this helper and no rule disabled. A component
- * spec therefore does not scan its own page at load: that scan was the
- * same page, the same tag set and one scheme (backlog row 152).
+ * spec therefore does not scan its own page at load: the sweep covers the same page, the
+ * same tag set and both schemes (backlog row 152).
  * `tools/select.mjs` adds the changed component's `all-routes` test to a
  * `test:changed` run, so a lane still gets the at-rest scan of what it
  * touched.
@@ -53,50 +52,42 @@
  *
  * ## `color-contrast`: fixed by construction, not excluded
  *
- * The scans run with no `color-contrast` exclusion. Nearly all of the contrast failures a route can show
- * trace back to one CSS custom property, `--secondary-color-5` (`preview/assets/dx-components-theme.css`),
- * the theme's "muted secondary text" token, used across ~28 component stylesheets plus the docs sidebar and
- * site footer. Its light value is `#707070`, which clears the 4.5:1 WCAG asks of normal text against every
- * background it is paired with in this app (`#848484` would be 3.74:1 on white). The rest of the
- * remediation (a site-CSS accent color, a component's literal inline color, two components using a token
- * meant for dark surfaces as light-mode text) is listed in `dev-docs/backlog.md` row 39.
+ * The scans run with no `color-contrast` exclusion. Text colour is a theme token (`--dx-muted-foreground` and
+ * the other roles in `preview/assets/dx-components-theme.css`) that clears the 4.5:1 WCAG asks of normal text on
+ * the surfaces it is paired with (shadcn's own values by default; the calibrated `data-dx-contrast="wcag"` set is
+ * pinned by `contrast-mode.spec.ts`), so a component never carries a literal colour of its own to fall short.
+ * Residue beyond that is listed in `dev-docs/backlog.md` row 39.
  *
  * `EXCLUDE_VENDORED_CODE_HIGHLIGHT` scopes out nothing: the syntax-highlighted code spans (the "Manual
  * installation"/component-source viewer, `preview/src/main.rs`'s `CodeBlock` wrapping a `PreviewCode`, and the
  * same highlighter's output in a component's "Usage notes" prose, all under `.dx-preview-code-theme`) clear
  * contrast by construction. The `github-light` theme's CSS is not source this repo owns: it is generated from
  * the `dioxus-code`/`arborium-theme` crates into `docs/assets/github-light*.css` on every
- * `scripts/deploy-preview.sh` run, so the fix lives in `preview/assets/main.css`: an override rule
+ * `scripts/deploy-preview.sh` run, so the contrast fix lives in `preview/assets/main.css`: an override rule
  * `.dx-preview-code-theme <theme class>` (two classes, beating the theme's own single-class rule whatever
  * the stylesheet order) for the theme's three comment-family custom properties
  * (`--dxc-*-a-c-color`/`--dxc-*-a-cd-color`/`--dxc-*-var-muted`) across every class variant the crate
  * generates for `github-light` (plain, `-system-light-`, `-system-dark-`). The upstream comment token
- * `#6e7781` clears 4.5:1 on `#ffffff`/`#f2f2f2` but is 4.39:1 on this app's code-block background
- * (`--primary-color-1`'s light value `#fbfbfb`, `.dx-preview-code-theme`'s `background-color`), so the
- * override sets it to `#59636e` (GitHub's own light-theme comment color): 5.91:1 on `#fbfbfb`, 6.11:1 on
- * `#ffffff`, 5.46:1 on `#f2f2f2`. Every other token in the theme already clears 4.5:1 on `#fbfbfb`
- * (`#1f2328` 15.27:1, `#8250df` 4.88:1, `#0550ae` 7.34:1, `#0a3069` 12.38:1, `#cf222e` 5.18:1,
- * `#953800`/`#116329` 7.14:1, `#0969da` 5.02:1). The paired `github-dark` theme (`data-theme=dark`) needs no
- * override: its comment token `#8b949e` is 6.28:1 on the dark code-block background (`#0e0e0e`) and every
- * other token is at least 6.28:1. `preview/assets/main.css` carries the same detail beside the rule.
+ * `#6e7781` is below 4.5:1 on the code block's `--dx-card` background, so the override sets it to `#59636e`
+ * (GitHub's own light-theme comment color). The paired `github-dark` theme (`data-theme=dark`) needs no
+ * override. `preview/assets/main.css` carries the same detail beside the rule.
  *
  * The constant stays exported as an `AxeRegionExclusion` with a selector that excludes nothing (see
- * `expectNoAxeViolations`'s handling of an empty selector, below), purely for call-site compatibility: ~20
- * spec files `import` it and pass it to `expectNoAxeViolations({ excludeRegions: [...] })`. It is slated for
- * removal, with every call site, the next time those spec files are touched.
+ * `expectNoAxeViolations`'s handling of an empty selector, below), purely for call-site compatibility: the spec
+ * files that `import` it pass it to `expectNoAxeViolations({ excludeRegions: [...] })`. It goes, with every call
+ * site, the next time those spec files are touched.
  *
  * ## Readiness: every scan waits for the app's first paint
  *
  * `expectNoAxeViolations` waits (`waitForAppReady`, below) before it scans.
  * `page.goto()` resolving only means the CSR shell loaded, not that
  * Dioxus's wasm client has painted anything into it yet; scanning in that
- * gap intermittently produced two false violations
+ * gap yields two false violations
  * (`landmark-one-main`/`page-has-heading-one`, both against the bare
- * `<html>` element) on whichever demo page happened to be fastest. See
+ * `<html>` element) on whichever demo page happens to be fastest. See
  * `waitForAppReady`'s own doc comment for the full mechanism and why two
- * waits, not one. This lives in the shared helper, not each of the ~72
- * call sites, per this repo's "same problem more than once -> fix the
- * class" rule.
+ * waits, not one. This lives in the shared helper, not each call site, per
+ * this repo's "same problem more than once -> fix the class" rule.
  */
 
 import { expect, type Page } from "@playwright/test";
@@ -110,10 +101,8 @@ export interface AxeExclusion {
   /** The axe rule id (or ids) to disable, e.g. "color-contrast". */
   ids: string | string[];
   /**
-   * Why this specific scan site is a false positive for this rule (or, for
-   * the three grandfathered pre-existing exclusions, why their coverage is
-   * being preserved unchanged rather than newly claimed as a false
-   * positive). Must be non-empty -- see `expectNoAxeViolations`.
+   * Why this specific scan site is a false positive for this rule. Must be non-empty -- see
+   * `expectNoAxeViolations`.
    */
   reason: string;
 }
@@ -136,16 +125,16 @@ export interface AxeRegionExclusion {
 }
 
 /**
- * RETAINED ONLY FOR CALL-SITE COMPATIBILITY -- slated for removal.
+ * Kept only for call-site compatibility; slated for removal.
  *
- * The excluded defect (the vendored `github-light` syntax-highlighting theme's comment token, `#6e7781`,
- * measuring 4.39:1 against this app's code-block background, `#fbfbfb`) is fixed in source -- NOT in the
+ * The defect it would exclude (the vendored `github-light` syntax-highlighting theme's comment token, `#6e7781`,
+ * below 4.5:1 against this app's code-block background) is fixed in source -- NOT in the
  * crate-generated `docs/assets/github-light*.css` (regenerated by every `scripts/deploy-preview.sh` run)
  * but as a higher-specificity override in `preview/assets/main.css`, which sets the theme's comment-token
- * custom properties to `#59636e` (5.91:1) on `.dx-preview-code-theme <theme class>`.
+ * custom properties to `#59636e` on `.dx-preview-code-theme <theme class>`.
  * `.dx-preview-code-theme` has no `color-contrast` violation to exclude. See this file's header doc
  * ("`EXCLUDE_VENDORED_CODE_HIGHLIGHT` scopes out nothing") and `preview/assets/main.css`'s own comment on
- * that override rule for the measurements.
+ * that override rule.
  *
  * The constant stays exported, with a selector that excludes nothing (see
  * `expectNoAxeViolations`'s empty-selector handling below), purely so the
@@ -193,8 +182,7 @@ function formatViolations(
 /**
  * How long `waitForAppReady` will wait for either readiness signal before
  * giving up. Bounded well above every *passing* scan's observed duration
- * in this suite (1.8-8.5s, see this file's header doc's Group-B analysis)
- * but far below Playwright's own per-test ceiling (5min in this repo's
+ * in this suite (a few seconds) but far below Playwright's own per-test ceiling (5min in this repo's
  * config), so a page that genuinely never renders (a real defect, not a
  * race) still fails fast with a clear "waiting for locator(...) to be
  * attached" timeout instead of silently eating the whole test budget.
@@ -210,18 +198,16 @@ const APP_READY_TIMEOUT_MS = 15_000;
  * satisfy either wait below on its own) was fetched. It says nothing
  * about whether the wasm client has run its first render pass yet, and
  * for a CSR app the `load` event routinely fires before that paint.
- * Scanning in that gap is exactly what produced the two false violations
- * this wait fixes: `landmark-one-main`/`page-has-heading-one`, both
+ * Scanning in that gap is exactly what produces the two false violations
+ * this wait prevents: `landmark-one-main`/`page-has-heading-one`, both
  * targeting the bare `<html>` element, on whichever demo page's scan
- * happened to run fastest (finished in ~1.3-2.0s -- well under every
- * *passing* scan's 1.8-8.5s -- because there was almost nothing in the
- * DOM yet to scan).
+ * happens to run fastest (almost nothing in the DOM yet to scan, so it
+ * finishes well under a normal scan's time).
  *
  * Two waits, not one, because the race produces *two* violations and
  * every route this suite scans (`preview/src/main.rs`'s `Home`, `Docs`,
  * `Demos`, `ComponentHighlight`/`ComponentDemo`, the dashboard) renders
- * both together as part of the same first paint -- confirmed by reading
- * every route function in `preview/src/main.rs`, each either rendering
+ * both together as part of the same first paint -- each either rendering
  * its own top-level `main { .. }` + `h1` (`Home`, `Docs`, `Demos`) or
  * composing `DocsLayout`, whose `SidebarInset` always renders the page's
  * one `<main>` (`preview/src/components/sidebar/component.rs`), around
@@ -231,8 +217,7 @@ const APP_READY_TIMEOUT_MS = 15_000;
  *      `aria-level="1"` equivalent -- `getByRole` matches either).
  * Both checks use `state: "attached"` only (no visibility/animation
  * wait, no `networkidle`), so this stays cheap and matches the exact two
- * rules the race violates -- a direct fix for the observed failure mode,
- * not a general "wait a bit longer."
+ * rules the race violates -- a direct fix for the failure mode, not a general "wait a bit longer."
  */
 async function waitForAppReady(page: Page): Promise<void> {
   await page

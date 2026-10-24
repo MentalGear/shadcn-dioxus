@@ -12,10 +12,9 @@ export default defineConfig({
   testIgnore: timingSpecIgnore(), // main-thread.spec.ts is skipped on a known-debug build (base-url.ts)
   projects: [{
     name: "chromium",
-    // Mirrors playwright.config.ts's own CI project: without this, navbar.spec.ts:26,
-    // select.spec.ts:132 and sidebar.spec.ts:151 (each named `... (mobile)`) run here too and
-    // fail on `.tap()`, which needs `hasTouch` -- this launch has no mobile emulation
-    // (dev-docs/backlog.md row 105).
+    // Mirrors playwright.config.ts's own CI project: the `... (mobile)` tests of navbar.spec.ts,
+    // select.spec.ts and sidebar.spec.ts need `.tap()`, which needs `hasTouch`, and this launch has
+    // no mobile emulation (dev-docs/backlog.md row 105).
     grepInvert: /mobile/,
     use: {
       ...devices["Desktop Chrome"],

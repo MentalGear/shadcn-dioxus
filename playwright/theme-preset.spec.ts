@@ -195,7 +195,7 @@ test("junk in a preset cookie is ignored, not applied", async ({ page, context }
   expect(await attr(page, "data-theme")).toBeNull();
 });
 
-test("light/dark toggle still flips with a preset active", async ({ page }) => {
+test("light/dark toggle flips with a preset active", async ({ page }) => {
   const panel = await openPicker(page);
   await panel.getByRole("button", { name: "Blue", exact: true }).click();
   await page.keyboard.press("Escape");
@@ -215,7 +215,7 @@ test("light/dark toggle still flips with a preset active", async ({ page }) => {
   await expectBackground(page, button, blue.light);
 });
 
-test("Default restores today's value, per axis and via Reset", async ({ page }) => {
+test("Default restores the default value, per axis and via Reset", async ({ page }) => {
   const button = primaryButton(page);
 
   const panel = await openPicker(page);
@@ -275,7 +275,7 @@ test("every swatch is named and the panel opens from the keyboard", async ({ pag
 
 test("with no preset --dx-border-strong is the preset derivation (ink 26% over the page), in both modes", async ({ page }) => {
   // The one role token that gained a `var(--border-strong, ...)` hook for presets; its fallback is the same
-  // derivation the presets use, in the theme's mix space (the upstream ramp step it replaced is gone, row 373).
+  // derivation the presets use, in the theme's mix space (row 373).
   // Painted colours, not custom-property text; shadcn's own oklab mix lands within 2 levels of it.
   const shadcn = { light: [182, 182, 182], dark: [62, 62, 62] } as const;
   for (const mode of ["light", "dark"] as const) {
@@ -436,7 +436,7 @@ for (const { width, height } of PHONES) {
         await expect(drawer(page).getByRole("button", { name: "Zinc", exact: true })).toHaveAttribute("aria-pressed", "true");
         await expect(drawer(page).getByRole("button", { name: "0.3", exact: true })).toHaveAttribute("aria-pressed", "true");
 
-        // Reset puts today's look back, in the open drawer.
+        // Reset puts the default look back, in the open drawer.
         await drawer(page).getByRole("button", { name: "Reset" }).tap();
         for (const a of ["data-theme-base", "data-theme-accent", "data-theme-radius"]) {
           expect(await attr(page, a)).toBeNull();

@@ -20,9 +20,9 @@ test('hover navigation', async ({ page }) => {
   // Assert the url changed to the calendar component. Path-segment form
   // (dev-docs/backlog.md row 46): `navbar`'s own demo fixture
   // (preview/src/components/navbar/variants/main/mod.rs) links via
-  // `Route::component`, which now builds the canonical, SSG-enumerable
-  // `/component/<name>/` route rather than the legacy `?name=...` query
-  // form (still supported -- it redirects client-side to this same path).
+  // `Route::component`, which builds the canonical, SSG-enumerable
+  // `/component/<name>/` route (the `?name=...` query
+  // form redirects client-side to this same path).
   await expect(page).toHaveURL(/\/component\/calendar\//);
 });
 
@@ -138,7 +138,7 @@ test.describe('Close animation is not skipped', () => {
     // *do* go through native forced-hide (per WHATWG, showing a sibling
     // `auto` popover -- or an outside pointerdown -- hides this one
     // synchronously, at the browser level, before any Rust effect ever
-    // runs) -- a separate, pre-existing limit of `PopoverKind::Auto` that
+    // runs) -- a separate limit of `PopoverKind::Auto` that
     // no hook swap on the `open` signal can reach (`use_popover_shown_
     // while_mounted`'s own doc calls this an accepted limit of the plain
     // Popover API). Escape isolates the class row 77 describes:
@@ -174,7 +174,7 @@ test.describe('Close animation is not skipped', () => {
       .filter((o) => Number.isFinite(o) && o > 0 && o < 1);
     expect(midFadeOpacities.length).toBeGreaterThan(0);
 
-    // It still does eventually unmount (the fix must not leak the element
+    // It does eventually unmount (the element must not leak
     // forever) -- the last sampled frame(s), past the animation's own
     // duration plus its settle hold, should show it gone.
     const lastSample = samples[samples.length - 1];
@@ -197,7 +197,7 @@ test.describe('Axe automated scan', () => {
 // (preview/src/components/navbar/variants/click_only/mod.rs, which renders
 // alongside `main` on this page under its own labels, so the hover-driven
 // tests above can never match it). The default behaviour (hover opens,
-// hovering another switches, leaving closes) is the unchanged "hover
+// hovering another switches, leaving closes) is the "hover
 // navigation" test at the top of this file.
 // ---------------------------------------------------------------------------
 test.describe('open_on_hover: false (click activation)', () => {
@@ -257,7 +257,7 @@ test.describe('open_on_hover: false (click activation)', () => {
     await expect(layout).toHaveAttribute('data-state', 'closed');
   });
 
-  test('keyboard still opens and Escape closes', async ({ page }) => {
+  test('keyboard opens and Escape closes', async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/navbar/`, { timeout: 20 * 60 * 1000 });
     const layout = clickNav(page, 'Layout');
     await page.getByRole('menuitem', { name: 'Layout', exact: true }).focus();
@@ -282,7 +282,7 @@ test.describe('open_on_hover: false (click activation)', () => {
 // Open/close fade vs. the anchor's centring transform . An anchored overlay centres itself
 // with `transform: translateX(-50%)` (top_layer.rs's engine stylesheet); a `@keyframes` that sets
 // `transform` REPLACES it for as long as it runs (the panel then plays its fade off-centre). `NavbarContent` sets
-// no `data-side`, so it has no centring to lose today -- the same shape, latent -- so this probes the rendered keyframes instead of sampling a position that could not
+// no `data-side`, so it has no centring to lose -- the same shape, latent -- so this probes the rendered keyframes instead of sampling a position that could not
 // move anyway: `assert-anchor-transform.ts` supplies an inline `transform`, seeks the element's own
 // CSS animation to its start/midpoint/end, and asserts the transform survives while `scale`/`translate`
 // do the moving. Source-level guard: scripts/check-anchored-keyframes.sh.

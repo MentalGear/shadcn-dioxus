@@ -132,7 +132,7 @@ test.describe("toast: a dismissal does not make the stack jump", () => {
     expectSmooth(motions, 2, 60);
   });
 
-  test("expanded, close button on the newest: nothing below it exists, the older ones still glide", async ({ page }) => {
+  test("expanded, close button on the newest: nothing below it exists, the older ones glide", async ({ page }) => {
     await open(page);
     await page.mouse.move(2, 2);
     await add(page, "Add to stack", 3, STACK);

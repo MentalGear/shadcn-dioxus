@@ -232,7 +232,7 @@ for (const mode of ["az", "category"] as const) {
       return !!top && !!top.closest(".dx-nav-sort-group");
     });
     expect(hit).toBe(true);
-    // The switch still works while scrolled.
+    // The switch works while scrolled.
     await option(page, mode === "az" ? "category" : "az").click();
     await expect(option(page, mode === "az" ? "category" : "az")).toHaveAttribute("aria-pressed", "true");
   });

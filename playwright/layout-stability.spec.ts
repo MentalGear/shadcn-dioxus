@@ -11,8 +11,8 @@
  *      initials side by side in a centred flex row, so the picture sits ~8px left of the circle's centre with
  *      the initials peeking in on the right; when the wasm hydrates, the fallback is removed and the image
  *      jumps back to the centre. Twelve avatars in the home page's widget masonry, at every width.
- *   2. Estimated != real size. The masonry is CSS multi-column, which balances columns by card height, and the
- *      cards were `content-visibility: auto`: a not-yet-rendered card is laid out at its ESTIMATE, then
+ *   2. Estimated != real size. A CSS multi-column masonry balances columns by card height, and a
+ *      `content-visibility: auto` card that is not yet rendered is laid out at its ESTIMATE, then
  *      unskipped over the next frames (the unskip of one card moves the next into range), and every unskip
  *      re-balances the columns -- three to six re-layouts in the first ~300 ms, some after the first paint.
  *
@@ -38,8 +38,7 @@
  *
  * Widths: the default sweep is 320..1440 step 32 plus every CSS breakpoint of the preview and its +-1px
  * neighbours plus the iPad widths (768, 820, 834, 1024, 1180, 1194, 1366). `LS_STEP=8` is the full 8px sweep.
- * Dark runs and the secondary routes use the breakpoint/iPad widths only. Measured runtime on the 4-core
- * sandbox against a debug SSG build is in the commit message of the change that added this file.
+ * Dark runs and the secondary routes use the breakpoint/iPad widths only.
  *
  *   PLAYWRIGHT_BASE_URL=http://127.0.0.1:8108 npx playwright test --config=ssg.local.config.ts layout-stability.spec.ts --workers=3
  *
@@ -52,14 +51,12 @@
  * second group of tests ("progressive paint") is what makes the parse slow: Chrome's own network and CPU throttling
  * (CDP `Network.emulateNetworkConditions` + `Emulation.setCPUThrottlingRate`), so the document really arrives in
  * chunks and is painted between them, and it records every widget card's position from the first frame in which the
- * card exists. A card must stay in its column and at its place: the multi-column masonry it replaced re-assigned
- * cards to columns on every parsed card (6 to 8 cards changed column in one frame at 1280px, 3 at 768px); the
- * construction that made it pass is that a card's column is its DOM position (`MasonrySlot` in `preview/src/main.rs`).
+ * card exists. A card must stay in its column and at its place: a card's column is its DOM position
+ * (`MasonrySlot` in `preview/src/main.rs`), so a parsed card never re-assigns the others (a multi-column
+ * masonry does: 6 to 8 cards changed column in one frame at 1280px, 3 at 768px).
  *
- * Not covered, on purpose: `/charts/`. Its charts are prerendered at a default width and re-measured when the wasm
- * hydrates (the plot, its axes and the header's select all re-flow ~100-1000ms after the first paint at every
- * width, 120-630 boxes), which is a separate defect in the chart primitive, not in the layout; it is its own
- * backlog item, and adding the route here belongs with that fix.
+ * Not covered here: `/charts/`. A chart's drawing is a function of the measured width and re-renders when the wasm
+ * hydrates, so that page has its own spec, `charts-hydration-stability.spec.ts` (backlog row 215).
  *
  * `LS_DUMP=1` prints every late box event of a failing width. `LS_WIDTHS=480,1280` runs just those widths. `LS_CPU=4` slows
  * the pages' CPU four times, the way a loaded box does (row 377).

@@ -62,7 +62,7 @@ test("appending 1,000 rows to a 2,000-row transcript while following costs the m
   });
   const msPerFrame = (((await taskSeconds()) - before) * 1000) / frames;
   console.log(`message_scroller long: ${msPerFrame.toFixed(1)} ms of main-thread time per appended-frame (10 rows)`);
-  // Following still lands exactly at the end after the burst.
+  // Following lands exactly at the end after the burst.
   await expect.poll(distance, { timeout: 10_000 }).toBeLessThanOrEqual(1);
   // 3,000 rows in the DOM. On a loaded 4-core VM against a debug SSG build (this path is JS and
   // browser layout, which a release wasm build barely changes) a frame of ten appended rows costs

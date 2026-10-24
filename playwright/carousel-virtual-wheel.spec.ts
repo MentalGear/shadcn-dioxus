@@ -4,27 +4,26 @@
  * must not let the custom scroll-end snap interfere with a looping or
  * virtual slider.
  *
- * Two root causes, one test group each (see `primitives/src/carousel.rs`,
+ * Two failure classes, one test group each (see `primitives/src/carousel.rs`,
  * `CAROUSEL_SCROLL_TRACKING_JS`'s "Browser-idle gate" and
  * `item_basis_style`'s own docs):
  *
  * 1. OVERSIZED SNAP AREAS. The gap model puts each slide's gap inside its
  *    own box as `padding-inline-start` next to `flex-basis: 100%`, which is
- *    only a whole slide under `box-sizing: border-box`. That box-sizing came
- *    only from the themed `.dx-carousel-item` class, which the virtual
- *    slides (rendered by the primitive itself) never carry -- so each one
- *    was one gap (16px) wider than the snapport. A snap area larger than
- *    the snapport makes every position inside it a valid rest position, so
- *    the browser stopped snapping and the component's own re-centre then
- *    "snapped" the leftover 16px itself at scroll end, as an instant
- *    `scrollBy`.
- * 2. SCROLL-END REACTIONS FIRED BEFORE THE BROWSER WAS IDLE. The settle ran
- *    on the first `scrollend`, even with wheel input still arriving, and
- *    everything downstream of it (the `selected` update, the virtual
- *    window's re-anchor and re-render, the instant re-align `scrollBy` with
- *    snapping suspended) ran mid-gesture -- writing the scroll position
- *    while the browser was still scrolling (THE RULE, `carousel.rs` module
- *    doc).
+ *    only a whole slide under `box-sizing: border-box`. The themed
+ *    `.dx-carousel-item` class is not there on the virtual slides (rendered by
+ *    the primitive itself), so `item_basis_style` declares that box-sizing
+ *    inline; without it each slide would be one gap (16px) wider than the
+ *    snapport. A snap area larger than the snapport makes every position inside
+ *    it a valid rest position, so the browser would stop snapping and the
+ *    component's own re-centre would then "snap" the leftover 16px itself at
+ *    scroll end, as an instant `scrollBy`.
+ * 2. SCROLL-END REACTIONS WAIT FOR THE BROWSER TO BE IDLE. Settling on the
+ *    first `scrollend` while wheel input is still arriving would run everything
+ *    downstream of it (the `selected` update, the virtual window's re-anchor and
+ *    re-render, the instant re-align `scrollBy` with snapping suspended)
+ *    mid-gesture -- writing the scroll position while the browser is still
+ *    scrolling (THE RULE, `carousel.rs` module doc).
  *
  * METHOD. A probe installed before the app boots wraps every scroll write
  * (`scrollBy`/`scrollTo`/`scroll`/`scrollIntoView` and the
@@ -38,7 +37,7 @@
  * which never scroll (untrusted) but are exactly what the component's input
  * tracking sees. Headless Chromium cannot reproduce a real trackpad's
  * compositor momentum or Firefox's own scroll-end timing; these tests pin
- * the ordering contract, and the feel remains the owner's real-device
+ * the ordering contract, and the feel remains a real-device
  * check.
  */
 
@@ -329,7 +328,7 @@ test.describe("Carousel: scroll-end reactions wait until the browser is truly id
     })()]);
     const rec = await stopRecording(content, 1200);
     const last = rec.wheels[rec.wheels.length - 1];
-    expect(rec.writes.length, "Next still pages").toBeGreaterThan(0);
+    expect(rec.writes.length, "Next pages").toBeGreaterThan(0);
     expect(rec.writes[0].t - last, "the paging write waits for input to go quiet").toBeGreaterThanOrEqual(100);
     const end = rec.frames[rec.frames.length - 1];
     expect(end.sel).toBe("2 of 5");
@@ -338,15 +337,14 @@ test.describe("Carousel: scroll-end reactions wait until the browser is truly id
 });
 
 /*
- * The wheel band only engages at a TRUE end of the data -- the owner's
- * approved rule, one predicate (`isTrueEnd`) in `CAROUSEL_WHEEL_BAND_JS`,
+ * The wheel band only engages at a TRUE end of the data -- one predicate (`isTrueEnd`) in `CAROUSEL_WHEEL_BAND_JS`,
  * read per gesture from `data-loop`/`data-slide-count` on the scroller and
  * the `data-index` of the slide at that physical edge:
  * - any looping carousel (`r#loop`, any `LoopMode`, plain or virtual): never;
  * - virtual, non-looping: only when its real first/last item is the slide at
  *   the edge the scroller rests at -- never at the rendered slice's edge
  *   mid-list (the browser clamps there; the window re-centres once idle);
- * - plain, non-looping: unchanged (both ends; carousel.spec.ts's own mode-D
+ * - plain, non-looping: both ends (carousel.spec.ts's own mode-D
  *   block, e.g. "real (trusted) wheel input at the start and end edges").
  *
  * HOLDING A SLICE EDGE. A virtual window only rests at its slice's edge
@@ -813,7 +811,7 @@ async function pitchOf(content: Locator): Promise<number> {
 }
 
 test.describe("Carousel drag band: only at a true end of the data", () => {
-  test("plain main: dragging past the first slide still bands (unchanged), then rests cleanly", async ({ page }) => {
+  test("plain main: dragging past the first slide bands, then rests cleanly", async ({ page }) => {
     const { content } = await open(page, "main");
     const r = await dragIntoEdge(page, content, "min", "x", (await pitchOf(content)) * 1.2);
     expect(r.band).toBeGreaterThan(5);
@@ -930,7 +928,7 @@ test.describe("Carousel drag band: only at a true end of the data", () => {
  * rendered slice's physical end mid-list (and a looping carousel's against
  * its physical ends) for ~1s -- where macOS Firefox draws its own native
  * bounce whenever `overscroll-behavior` is `auto`. This crate's own band
- * never fired there. The rule under test (`content_overscroll_style` in
+ * never fires there. The rule under test (`content_overscroll_style` in
  * `primitives/src/carousel.rs`): the scroll axis is `overscroll-behavior:
  * none` unless BOTH ends of the rendered slides are true ends, so wherever a
  * flick can clamp at a false end, the platform cannot bounce. (Whether
@@ -1088,7 +1086,7 @@ const RECORDED_TRACKPAD_FLICKS: Record<"mark3" | "mark4" | "mark6", [number, num
 
 type FlickRun = { travel: number; maxPinnedMs: number; pinnedFrames: number; startPos: number; endPos: number };
 
-/** Replay one owner flick (trusted wheel, recorded timing) and measure travel and pinned-at-a-false-end stalls. */
+/** Replay one recorded flick (trusted wheel, recorded timing) and measure travel and pinned-at-a-false-end stalls. */
 async function replayRecordedFlick(page: Page, content: Locator, events: [number, number][]): Promise<FlickRun> {
   await content.evaluate((node) => {
     const el = node as HTMLElement;
@@ -1188,7 +1186,7 @@ test.describe("Carousel: long real flicks never stall at a rendered slice end", 
     expect(r.maxPinnedMs).toBeLessThanOrEqual(200);
   });
 
-  test("a true end is unchanged: a flick back to virtual_many's real first item stays there, with no re-centre", async ({ page }) => {
+  test("at a true end: a flick back to virtual_many's real first item stays there, with no re-centre", async ({ page }) => {
     test.setTimeout(120_000);
     await enableWheelDebug(page);
     const { frame, content } = await open(page, "virtual_many");

@@ -38,8 +38,8 @@ test.describe("Axe automated scan", () => {
   });
 });
 
-// Regression: "the examples for the chart demo page display the labels over
-// the legend". `ChartTooltip` positions itself with `left`/`top` PERCENTAGES of
+// The tooltip must not cover the legend (the demo page's labels over
+// the legend). `ChartTooltip` positions itself with `left`/`top` PERCENTAGES of
 // `Chart`'s own logical width/height -- i.e. of the svg's own box -- so the
 // tooltip's containing block must be that box: `.dx-chart` (a flex column
 // holding the svg wrapper, the tooltip, AND the legend as siblings) must not be
@@ -56,8 +56,8 @@ test.describe("Axe automated scan", () => {
 //     the legend, at any viewport tested (measured real rendered boxes, not
 //     the CSS). A real invariant worth locking in.
 //  2. The DYNAMIC open tooltip never overlaps the legend, for the `bar`
-//     variant specifically (the failure shows as a bar chart with a hit-band
-//     tooltip overlapping the legend, 152 x 16 px).
+//     variant specifically (the failure is a bar chart's hit-band
+//     tooltip overlapping the legend).
 test.describe("Legend never overlaps the chart's axis labels, svg box, or open tooltip", () => {
   function intersects(
     a: { x: number; y: number; width: number; height: number } | null,
@@ -116,9 +116,9 @@ test.describe("Legend never overlaps the chart's axis labels, svg box, or open t
           // returns VIEWPORT-relative coordinates, and `.hover()` force-
           // scrolls its target into view as part of Playwright's own
           // actionability protocol while a bare `boundingBox()` does not;
-          // hoisting `legendBox` above the loop measured it against the
-          // page's initial (pre-scroll) position while `tooltipBox` was
-          // measured after `.hover()` had already scrolled the page --
+          // hoisting `legendBox` above the loop would measure it against the
+          // page's initial (pre-scroll) position while `tooltipBox` is
+          // measured after `.hover()` has already scrolled the page --
           // two boxes in two different scroll states are not comparable,
           // and that gives a false pass in this exact test, even against
           // CSS that lets the tooltip overlap the legend.
@@ -134,7 +134,7 @@ test.describe("Legend never overlaps the chart's axis labels, svg box, or open t
   }
 });
 
-// Regression: every chart on the deployed SSG pages must resolve its series colors (a black/grey chart
+// Every chart on the deployed SSG pages must resolve its series colors (a black/grey chart
 // with nearly invisible lines is the failure). `ChartContainer` therefore emits its `--color-<slot>`
 // declarations as an inline `style` attribute on the container (no `<style>` element at all): built as
 // a `<style>` rule from a dynamic text node, SSR puts a `<!--node-id..-->` hydration marker inside that

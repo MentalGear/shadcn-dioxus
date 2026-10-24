@@ -40,12 +40,12 @@ test('sheet basic interactions', async ({ page }) => {
   const closeButton = sheet.getByRole('button').last();
   await expect(closeButton).toBeFocused();
 
-  // Phase 4.2 (dev-docs/plan.md): Sheet composes the modal Dialog primitive,
-  // now a native `<dialog>` on the web arm. Chromium's own focus trap parks
+  // Sheet composes the modal Dialog primitive,
+  // a native `<dialog>` on the web arm. Chromium's own focus trap parks
   // focus on `<body>` for exactly one Tab stop after the last focusable
   // element before wrapping to the first
-  // (dev-docs/archive/research/phase4-spike-findings.md experiment 4a) -- harness correction for
-  // the new trap's documented shape, same fix as dialog.spec.ts.
+  // (dev-docs/archive/research/phase4-spike-findings.md experiment 4a); the test steps over
+  // that stop, as dialog.spec.ts does.
   await page.keyboard.press('Tab');
   await expect
     .poll(() => page.evaluate(() => document.activeElement === document.body))
@@ -140,7 +140,7 @@ test('right sheet content geometry matches shadcn spec at desktop and near-break
   await expect(sheet).toHaveCount(0);
 });
 
-// Regression coverage for a native-`<dialog>` centering defect shared with
+// Native-`<dialog>` centering, shared with
 // Drawer: Chromium's `dialog:modal` UA rule ships `inset: 0; margin: auto;
 // width/height: fit-content`. Overriding only the one edge a side needs
 // (e.g. `right: 0`) leaves the UA's own `inset: 0` still supplying
@@ -227,7 +227,7 @@ test('close button matches Nova spec: 16px icon, ghost icon-sm (28px, full opaci
   // finishes -- geometry and computed-style reads taken before it settles
   // are unstable (the panel, and everything positioned inside/relative to
   // it, is still moving/transitioning). Same wait-for-animations idiom
-  // `toast.spec.ts` already uses. Without the wait, even a lone `--workers=1` run (no
+  // `toast.spec.ts` uses. Without the wait, even a lone `--workers=1` run (no
   // cross-test contention) fails DIFFERENT assertions across runs (opacity
   // one time, the rightGap/topGap geometry pair another) -- both symptoms of
   // the same missing wait, not two separate bugs.
@@ -242,7 +242,7 @@ test('close button matches Nova spec: 16px icon, ghost icon-sm (28px, full opaci
   expect(iconBox!.height).toBeCloseTo(16, 0);
 
   // Nova (`.cn-sheet-close`): a ghost `icon-sm` Button -- full opacity (no `opacity-70`), 28px square,
-  // `min(radius-md, 12px)` (8px) corners. (Was shadcn New York's opacity-70 / rounded-xs 2px / 24px.)
+  // `min(radius-md, 12px)` (8px) corners.
   const opacity = await closeButton.evaluate((el) => getComputedStyle(el).opacity);
   expect(opacity).toBe('1');
   const borderRadius = await closeButton.evaluate((el) => getComputedStyle(el).borderRadius);
@@ -279,9 +279,7 @@ test.describe('Axe automated scan', () => {
 // The scrim every modal overlay shares (assert-backdrop-fade.ts has the full
 // claim; popover/dialog/alert-dialog/sheet/drawer specs all run the identical
 // assertion): the dialog's own `::backdrop` is the only painter, black/10 with a
-// 4px blur, and it fades in and out for the same length. Before this, Sheet
-// stacked its own animated wrapper scrim on the UA's un-animated one and the
-// exit snapped.
+// 4px blur, and it fades in and out for the same length.
 test.describe("Scrim", () => {
   test("Sheet paints the shared scrim and fades it in and out", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/sheet/`, { timeout: 20 * 60 * 1000 });

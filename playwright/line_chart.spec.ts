@@ -11,8 +11,7 @@ const URL = `${BASE_URL}/component/line_chart/`;
  * convention (`ComponentDemo`'s `frame_id`): the `main` variant keeps the
  * bare `component-preview-frame` id every single-variant component page
  * already uses; every other variant on the same page gets
- * `component-preview-frame-<name>` appended, so they can never collide
- * (the same fix `popover`'s `non_modal` variant needed).
+ * `component-preview-frame-<name>` appended, so they can never collide.
  *
  * Kept as an explicit map (not derived from a shared list) so a new variant
  * is a one-line addition here, visible in the diff.
@@ -47,8 +46,8 @@ test.describe("Line chart", () => {
       // Attribute selector, not getByRole("img") -- this page's other
       // controls (the interactive variant's toggle buttons, the Select on
       // sibling chart pages) can render decorative icon-shaped <svg>s some
-      // engines compute an implicit "img" role for too (the exact false
-      // match `chart.spec.ts`'s own comment documents hitting).
+      // engines compute an implicit "img" role for too (the false
+      // match `chart.spec.ts`'s own comment documents).
       const svg = scope.locator('svg[role="img"]').first();
       await expect(svg).toBeVisible();
       await expect(svg).toHaveAccessibleName(/.+/);
@@ -70,7 +69,7 @@ test.describe("Line chart", () => {
     await expect(frame(page, "multiple").locator('[data-slot="chart-line"]')).toHaveCount(2);
   });
 
-  test("linear and step: still render exactly one chart-line for their single series", async ({
+  test("linear and step: render exactly one chart-line for their single series", async ({
     page,
   }) => {
     await expect(frame(page, "linear").locator('[data-slot="chart-line"]')).toHaveCount(1);

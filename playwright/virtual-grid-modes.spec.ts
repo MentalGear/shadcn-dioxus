@@ -1,5 +1,5 @@
 /**
- * The grids' two open items of backlog row 309, on the shared engine:
+ * The grids' two items of backlog row 309, on the shared engine:
  *
  *  - Find-in-page placeholders: a windowed VirtualGrid / VirtualWrapGrid with `text_value` keeps
  *    every cell's text in the DOM as a `hidden="until-found"` placeholder (the layer VirtualList

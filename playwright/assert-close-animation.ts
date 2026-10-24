@@ -1,5 +1,5 @@
 /**
- * Shared assertion logic for the accordion close-animation regression check.
+ * Shared assertion logic for the accordion close-animation check.
  *
  * Used by `accordion-animation.spec.ts` in both of its modes (real app route
  * and standalone reproduction page) -- same function, so "it passes on the

@@ -31,15 +31,15 @@ test.describe('Axe automated scan', () => {
 
 test('the box and its indicator keep one constant size whether or not it is checked', async ({ page }) => {
   // The primitive mounts the indicator's children (the check icon) only while the box is
-  // checked. A content-sized indicator was therefore 0x0 unchecked and 16x16 checked -- the
-  // inside of the box changed shape on every toggle. The indicator now always fills the box.
+  // checked. A content-sized indicator would therefore be 0x0 unchecked and 16x16 checked -- the
+  // inside of the box would change shape on every toggle. The indicator always fills the box.
   await gotoHydrated(page, `${BASE_URL}/component/checkbox/`, { timeout: 20 * 60 * 1000 });
   const checkbox = page.locator('#component-preview-frame').getByRole('checkbox', { name: 'Accept terms and conditions', exact: true });
   await expect(checkbox).toBeVisible();
 
   // Read AT REST: the click leaves the box in its press-feedback release (`scale` 0.98 easing back to 1 over
-  // `--dx-press-duration`), and `getBoundingClientRect()` includes `scale` -- a read right after the click saw
-  // 15.76 px. The question here is the box's layout size, so wait for the transition to finish first.
+  // `--dx-press-duration`), and `getBoundingClientRect()` includes `scale` -- a read right after the click sees
+  // ~15.76 px. The question here is the box's layout size, so wait for the transition to finish first.
   const boxes = () =>
     readAtRest(checkbox, (el) => {
       const rect = (e: Element) => {

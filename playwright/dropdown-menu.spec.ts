@@ -84,7 +84,7 @@ test('open content is fit-content width, not full page width, and sits near its 
   expect(Math.abs(box.x - triggerBox.x), debug).toBeLessThan(200);
 });
 
-// REGRESSION (dev-docs/backlog.md row 85): a raw DOM `.focus()` call landing
+// Guard (dev-docs/backlog.md row 85): a raw DOM `.focus()` call landing
 // directly on a menu item -- the exact thing a Playwright test driving
 // focus programmatically does, and an assistive-technology focus-
 // restoration path plausibly could -- must not close the whole menu and
@@ -112,7 +112,7 @@ test('a raw .focus() call on a plain item does not close the menu (row 85)', asy
   await expect(editItem).toBeVisible();
 
   await editItem.focus();
-  // Give any (correctly, now, no-op) reactive close a moment to have
+  // Give any reactive close (a no-op here) a moment to have
   // fired if it were going to -- avoids a false green from asserting
   // before a real regression's own close would have completed.
   await page.waitForTimeout(150);
@@ -123,8 +123,7 @@ test('a raw .focus() call on a plain item does not close the menu (row 85)', asy
 
 // --- Checkable items: DropdownMenuCheckboxItem / DropdownMenuRadioGroup / DropdownMenuRadioItem ---
 //
-// shadcn's DropdownMenu has CheckboxItem and RadioGroup + RadioItem; this one
-// had neither. They are one construction shared with ContextMenu and Menubar
+// shadcn's DropdownMenu has CheckboxItem and RadioGroup + RadioItem, and so does this one. They are one construction shared with ContextMenu and Menubar
 // (`primitives/src/menu_item.rs`), graded here for DropdownMenu's own wiring:
 // role/aria contract, click + keyboard behaviour, close semantics, roving
 // focus and typeahead. The shared role contract is also graded across all
@@ -393,7 +392,7 @@ test.describe('Axe automated scan', () => {
 // `DropdownMenuSub { open_on_hover: false }` -- click-activated submenu
 // (preview/src/components/dropdown_menu/variants/click_only_submenu/mod.rs;
 // renders alongside `main` on this page under its own labels). The default
-// hover-open / hover-leave-close contract is pinned, unchanged, by
+// hover-open / hover-leave-close contract is pinned by
 // `oracle/tier1-apg/menu-submenu.spec.ts`'s "hover:" tests on `main`.
 // ---------------------------------------------------------------------------
 test.describe('DropdownMenuSub open_on_hover: false (click activation)', () => {
@@ -492,7 +491,7 @@ test.describe('DropdownMenuSub open_on_hover: false (click activation)', () => {
 // Open/close fade vs. the anchor's centring transform . An anchored overlay centres itself
 // with `transform: translateX(-50%)` (top_layer.rs's engine stylesheet); a `@keyframes` that sets
 // `transform` REPLACES it for as long as it runs (the panel then plays its fade off-centre). `DropdownMenuContent` sets
-// no `data-side`, so it has no centring to lose today -- the same shape, latent -- so this probes the rendered keyframes instead of sampling a position that could not
+// no `data-side`, so it has no centring to lose -- the same shape, latent -- so this probes the rendered keyframes instead of sampling a position that could not
 // move anyway: `assert-anchor-transform.ts` supplies an inline `transform`, seeks the element's own
 // CSS animation to its start/midpoint/end, and asserts the transform survives while `scale`/`translate`
 // do the moving. Source-level guard: scripts/check-anchored-keyframes.sh.

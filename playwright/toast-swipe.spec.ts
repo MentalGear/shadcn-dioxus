@@ -81,7 +81,7 @@ test.describe("toast: swipe to dismiss (row 138 step 4)", () => {
     await expect(t).toHaveCount(1);
   });
 
-  test("a press on the close button is still a click, not a swipe", async ({ page }) => {
+  test("a press on the close button is a click, not a swipe", async ({ page }) => {
     const t = await show(page);
     await t.getByRole("button", { name: "close", exact: true }).click();
     await expect(t).toHaveCount(0);

@@ -42,16 +42,13 @@ test("modal: opens a form of labelled fields, traps focus, Escape closes", async
     await page.keyboard.press("Tab");
     await expect(dialog.getByRole("textbox", { name, exact: true })).toBeFocused();
   }
-  // Native-dialog engine migration (two-engine overlay architecture
-  // completion): the modal `Popover` is a real `<dialog>` + `showModal()` on
-  // the web arm, so this cycle goes through Chromium's own focus trap rather
-  // than the vendored `FocusTrap` -- same documented shape as
+  // The modal `Popover` is a real `<dialog>` + `showModal()` on
+  // the web arm, so this cycle goes through Chromium's own focus trap, with the same documented shape as
   // `dialog.spec.ts`'s identical comment (dev-docs/archive/research/phase4-spike-findings.md
   // experiment 4a): Chromium's native trap parks focus on `<body>` for
   // exactly one Tab stop after the last focusable element before wrapping to
-  // the first (invisible to the user, does not let focus escape the dialog)
-  // -- a harness correction for the new trap's documented shape, not a
-  // behavior change under test.
+  // the first (invisible to the user, does not let focus escape the dialog);
+  // the test steps over that stop.
   await page.keyboard.press("Tab");
   await expect
     .poll(() => page.evaluate(() => document.activeElement === document.body))
@@ -155,13 +152,11 @@ for (const [arm, url, label] of ARMS) {
 
 for (const [arm, url, label] of ARMS) {
 test(`${arm}: popover stays open when clicking non-focusable content inside it`, async ({ page }) => {
-  // Regression: `use_outside_dismiss` served pointerdown and focusin with one
-  // shared handler. Clicking a non-focusable region inside the popover (e.g.
+  // `use_outside_dismiss` tells pointerdown from focusin. Clicking a non-focusable region inside the popover (e.g.
   // this demo's "Dimensions" heading) blurs the currently-focused control,
   // and the browser moves focus to the nearest focusable *ancestor* -- which
-  // is outside the popover's root while still containing it. The shared
-  // handler read that as focus leaving and closed the popover the user just
-  // clicked into.
+  // is outside the popover's root while still containing it. That is not
+  // focus leaving, so the popover the user just clicked into stays open.
   await gotoHydrated(page, url);
   const popoverButton = page.getByRole("button", { name: label, exact: true });
   await popoverButton.click();
@@ -178,11 +173,11 @@ test(`${arm}: popover stays open when clicking non-focusable content inside it`,
 
 for (const [arm, url, label] of ARMS) {
 test(`${arm}: rapid open/close/open settles on the correct final state`, async ({ page }) => {
-  // Regression for `use_animated_open`'s unmount race: `open` is captured by
+  // Guard for `use_animated_open`'s unmount race: `open` is captured by
   // value when the close effect spawns its async task. If the user reopens
-  // before that task's animation settles, a naive fix can let the stale
-  // task's `show_in_dom.set(false)` run after the fresh reopen already set
-  // `show_in_dom.set(true)` -- the popover vanishes although it is open.
+  // before that task's animation settles, the stale
+  // task's `show_in_dom.set(false)` must not run after the fresh reopen already set
+  // `show_in_dom.set(true)` -- the popover would vanish although it is open.
   await gotoHydrated(page, url);
   const popoverButton = page.getByRole("button", { name: label, exact: true });
   const dialog = page.getByRole("dialog");
@@ -211,14 +206,14 @@ test(`${arm}: rapid open/close/open settles on the correct final state`, async (
 });
 }
 
-test("modal: an animation cancelled with no successor cycle still unmounts", async ({ page }) => {
-  // Regression for the residual leak in the upstream unmount-race fix: it
+test("modal: an animation cancelled with no successor cycle unmounts", async ({ page }) => {
+  // Guard for the other branch of the unmount race: the close effect
   // declines to write `show_in_dom` when the close animation's promise
-  // rejects, reasoning that a rejection means a newer cycle is already in
-  // flight to take over. That reasoning doesn't hold when the animation is
+  // rejects, on the reasoning that a rejection means a newer cycle is already in
+  // flight to take over. That reasoning does not hold when the animation is
   // cancelled by something *other* than a newer open/close cycle (e.g. a
   // script cancelling it directly) -- with no successor cycle to flip
-  // `show_in_dom`, the closed (but still `opacity: 0`) node stays mounted
+  // `show_in_dom`, the closed (but still `opacity: 0`) node would stay mounted
   // forever. The generation counter must apply the stale cycle's own result
   // in that case, since no newer generation exists to own it.
   await gotoHydrated(page, MODAL_URL);
@@ -238,8 +233,8 @@ test("modal: an animation cancelled with no successor cycle still unmounts", asy
   // Start closing, then cancel its CSS animation directly -- simulating an
   // external interruption, not a re-open. Escape, not a second trigger
   // click -- see the identical comment in the "rapid open/close/open" test
-  // above for why the (now correctly background-inert) trigger can no
-  // longer be clicked while this modal `Popover` is open.
+  // above for why the (background-inert) trigger cannot
+  // be clicked while this modal `Popover` is open.
   await page.keyboard.press("Escape");
   await page.waitForTimeout(30);
   await page.evaluate(() => {
@@ -316,7 +311,7 @@ test.describe("Axe automated scan", () => {
 // never loads `../preview/src/components/popover/style.css` and has no
 // close animation defined at all: `getAnimations()` is empty, so
 // `use_animated_open` correctly unmounts immediately -- a fixture-
-// composition gap, not a defect in rows 19/7's fix. `main`/`non_modal`
+// composition gap, not a defect of rows 19/7. `main`/`non_modal`
 // (this file's route) go through the themed `PopoverRoot` wrapper
 // (`preview/src/components/popover/component.rs`), which *does* load that
 // stylesheet via its own `document::Link`, the same way every other
@@ -326,7 +321,7 @@ test.describe("Axe automated scan", () => {
 //
 // Both `main` and `non_modal` render on this one page (`ComponentDemo`'s
 // "Normal" component layout puts every variant on the same route, not
-// behind a `?variant=` query param -- confirmed by reading
+// behind a `?variant=` query param -- see
 // `preview/src/main.rs`'s `ComponentHighlight`/`ComponentVariantHighlight`;
 // `select.spec.ts`'s `?variant=multi&` etc. disambiguate by each variant's
 // own unique visible text for the same reason, not the URL), so this test
@@ -348,7 +343,7 @@ test.describe("Axe automated scan", () => {
 // a `click` event (no `pointerdown`), so it never engages light dismiss at
 // all -- only this trigger's own `onclick` handler
 // (`ctx.set_open.call(!(ctx.open)())`, `primitives/src/popover.rs`) runs,
-// a genuinely script-driven toggle, exactly the path row 19 fixes.
+// a genuinely script-driven toggle, exactly the path row 19 covers.
 test.describe("Close-fade animation, non-modal arm (dev-docs/backlog.md rows 19, 7)", () => {
   test("content fades out (opacity -> 0, still popover-open) before unmounting", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/popover/`, {
@@ -375,9 +370,8 @@ test.describe("Close-fade animation, non-modal arm (dev-docs/backlog.md rows 19,
 });
 
 // The scrim. The modal Popover is a `<dialog>` + `showModal()` with no wrapper of
-// its own, so before the shared-scrim fix its whole scrim was the UA's default
-// `::backdrop` (`rgba(0 0 0 / 10%)`, no transition): it appeared in one frame and
-// vanished in one frame. It now paints the same scrim as Dialog/AlertDialog/Sheet/
+// its own, so its whole scrim is the `::backdrop` (the UA default `rgba(0 0 0 / 10%)` has no transition and
+// would appear in one frame and vanish in one frame). It paints the same scrim as Dialog/AlertDialog/Sheet/
 // Drawer and fades it in and out for the same length (`assert-backdrop-fade.ts` owns
 // the claim; the other four specs run the identical assertion).
 //
@@ -390,7 +384,7 @@ test.describe("Close-fade animation, non-modal arm (dev-docs/backlog.md rows 19,
 const TRANSPARENT = /^(rgba\(0, 0, 0, 0\)|transparent)$/;
 
 test.describe("Scrim", () => {
-  test("a modal popover dims nothing by default (overlay defaults to false) but is still modal", async ({ page }) => {
+  test("a modal popover dims nothing by default (overlay defaults to false) but is modal", async ({ page }) => {
     await gotoHydrated(page, MODAL_URL);
     const trigger = page.getByRole("button", { name: MODAL_TRIGGER, exact: true });
     await expect(trigger).toBeVisible();
@@ -406,7 +400,7 @@ test.describe("Scrim", () => {
     expect(capture.settled.backdropFilter).toBe("none");
   });
 
-  test("a modal popover carries data-dx-overlay=off on a dialog that is still a real modal", async ({ page }) => {
+  test("a modal popover carries data-dx-overlay=off on a dialog that is a real modal", async ({ page }) => {
     await gotoHydrated(page, MODAL_URL);
     await page.getByRole("button", { name: MODAL_TRIGGER, exact: true }).click();
     const dialog = page.getByRole("dialog");

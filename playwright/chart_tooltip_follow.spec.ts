@@ -483,7 +483,7 @@ async function recordStates(page: Page, frameSel = "#component-preview-frame") {
 }
 
 test.describe("Polar tooltips do not blink while hovering", () => {
-  // Regression: hover must not ride on pointerenter/leave of the arcs, whose
+  // Hover must not ride on pointerenter/leave of the arcs, whose
   // active affordance (`scale(1.05)`) moves the very hit target under the
   // pointer, so a pointer near an arc's edge would flip open/closed in a loop.
   // Hover is resolved from coordinates against the resting geometry.
@@ -678,7 +678,7 @@ test.describe("A late pointer result never reopens a closed tooltip", () => {
     expect(stuck, "tooltip stuck open after move+leave").toBe(0);
   });
 
-  test("a real hover afterwards still opens it", async ({ page }) => {
+  test("a real hover afterwards opens it", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await gotoHydrated(page, area, { timeout: 20 * 60 * 1000 });
     const m = await measure(page);

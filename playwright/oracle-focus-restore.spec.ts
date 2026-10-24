@@ -25,9 +25,8 @@
  * keyboard user must Tab from the top of the document to get back to where
  * they were.
  *
- * Existing coverage note: the current suite asserts `data-state="closed"`
- * after Escape but never asserts *where focus went*, which is why this class
- * of defect is invisible to it today.
+ * Why a separate oracle: asserting `data-state="closed"` after Escape never shows
+ * *where focus went*, so a focus-return defect is invisible to the component specs.
  */
 
 import { test, expect } from "./fixtures";
@@ -136,9 +135,8 @@ test("ContextMenu returns focus to its trigger on Escape", async ({ page }) => {
 });
 
 /**
- * CONTROL: Dialog already implements focus restore, via the vendored
- * focus-trap (FocusTrap captures document.activeElement and restores it in
- * remove()). This test should PASS on current main.
+ * CONTROL: the native-`<dialog>` Dialog restores focus to its invoker on close (`close()`).
+ * This test passes by construction.
  *
  * It exists to prove the oracle itself is sound: if this fails too, the
  * harness is wrong, not the components.
@@ -149,12 +147,11 @@ test("ContextMenu returns focus to its trigger on Escape", async ({ page }) => {
 // in the same place -- on the trigger -- for the same reason (the focused item
 // unmounts with the content, and focus would otherwise fall to <body>).
 //
-// Row 140 was Menubar only: its items commit on `pointerdown` and close the
-// menu right there, so the mousedown that follows focused the item being
-// unmounted and focus ended on the page. DropdownMenu/ContextMenu commit on
-// click/pointerup and were already fine; they are pinned here so a future
-// change to a menu-family host cannot reopen the class
-// (`menu_root::keep_focus_on_pointerdown`).
+// Row 140: Menubar items commit on `pointerdown` and close the
+// menu right there, so the mousedown that follows would focus the item being
+// unmounted and focus would end on the page (`menu_root::keep_focus_on_pointerdown`
+// prevents it). DropdownMenu/ContextMenu commit on click/pointerup; they are
+// pinned here so a future change to a menu-family host cannot reopen the class.
 
 test("Menubar returns focus to its trigger after a pointer selection", async ({ page }) => {
   await open(page, "menubar");

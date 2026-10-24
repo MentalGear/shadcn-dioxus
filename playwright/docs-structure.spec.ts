@@ -12,7 +12,7 @@
  *  1. exactly ONE Installation section per page, holding exactly one install command (`shadcn-dioxus add
  *     <name>`), and no `dx components add` outside the Code tab (the dx alternative lives once, on /docs);
  *  2. every item is closed on load, "Manual installation files" included (it stays closed even after its
- *     parent Installation is opened: owner, row 236), and every section's `h2` wraps its trigger so the
+ *     parent Installation is opened, row 236), and every section's `h2` wraps its trigger so the
  *     heading outline and axe `heading-order` keep working;
  *  3. no text-only "Examples" section survives inside the docs; a demo's prose is a closed "About this
  *     example" Collapsible under that demo;

@@ -1,6 +1,6 @@
 /**
- * Regression check for the accordion close animation's "residual height that
- * snaps to 0 on unmount" jank, avoided by
+ * Check that the accordion close animation has no "residual height that
+ * snaps to 0 on unmount" jank, as ensured by
  * preview/src/components/accordion/{component.rs, style.css}: the content
  * must animate all the way to ~0px height (not a padding-sized floor) before
  * `use_animated_open` unmounts it, with no multi-frame plateau on the way
@@ -12,12 +12,11 @@
  * (`assertCloseAnimationReachesZero`) is what's being claimed to hold in
  * both places:
  *   - ACCORDION_MODE unset or "app" (default): drives the real preview app
- *     route, exactly like the existing `accordion.spec.ts`.
+ *     route, like `accordion.spec.ts`.
  *   - ACCORDION_MODE=repro: drives a standalone reproduction page (a copy of
  *     the rendered DOM + CSS with a script that toggles `data-open` and
  *     unmounts on animation end, exposing `closeAccordion()`, `closeDone`
- *     and `samples` on `window`) via ACCORDION_URL -- how the fix was first
- *     measured, 138px -> 16px plateau -> snap before, monotonic to 0 after.
+ *     and `samples` on `window`) via ACCORDION_URL.
  */
 import { test } from "./fixtures";
 import { type Page } from "@playwright/test";

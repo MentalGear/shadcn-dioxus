@@ -14,8 +14,8 @@ test("test", async ({ page }) => {
 });
 
 /*
- * The wrapped input carries no border/radius of its own -- regression
- * guard for a real bug. `Input`'s component composes its base class via
+ * The wrapped input carries no border/radius of its own -- guard
+ * against a class-merge bug.
  * `merge_attributes` (which concatenates `class` values space-joined)
  * instead of rendering `class: "dx-input"` as a literal RSX attribute
  * followed by `..attributes`: under Dioxus's plain "later duplicate
@@ -28,7 +28,7 @@ test("test", async ({ page }) => {
  * would then have nothing to override at the browser's *native* default
  * input chrome, which shows through inside `.dx-input-group`'s own
  * CSS-drawn border -- a visible double-border/"pill within a pill" seam.
- * Asserts both halves directly: the class union survived the merge, and
+ * Asserts both halves directly: the class union survives the merge, and
  * the *effect* that class union is supposed to produce (no border/radius
  * of the input's own) actually holds.
  */

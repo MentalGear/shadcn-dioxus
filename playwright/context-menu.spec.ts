@@ -34,13 +34,12 @@ test('menu lands at the tap coordinates on touch long-press', async ({ page }) =
   // this test stays a clean "no clamping" baseline) -- but padding only
   // *adds* to whatever height the surrounding page content already has,
   // and that height isn't this test's to control or assume (300px of
-  // padding-top put the trigger's center at y ~= 735 against a 720px-tall
-  // default viewport -- 15px *past* the bottom edge -- so
-  // `use_point_anchor_clamp` rightly pulled the menu back on-screen, and
-  // `top + ch > vh - EDGE_MARGIN` is correctly true there). Anchoring the
-  // trigger's position directly, rather than adding to an unmeasured
-  // ambient height, makes the "nowhere near an edge" premise true by
-  // construction.
+  // padding-top can put the trigger's center past the bottom edge of a
+  // 720px-tall viewport, where `use_point_anchor_clamp` rightly pulls the
+  // menu back on-screen, and `top + ch > vh - EDGE_MARGIN` is correctly
+  // true). Anchoring the trigger's position directly, rather than adding
+  // to an unmeasured ambient height, makes the "nowhere near an edge"
+  // premise true by construction.
   await trigger.evaluate((el) => {
     (el as HTMLElement).style.position = 'fixed';
     (el as HTMLElement).style.top = '120px';
@@ -711,7 +710,7 @@ test.describe('Axe automated scan', () => {
 // `ContextMenuSub { open_on_hover: false }` -- click-activated submenu
 // (preview/src/components/context_menu/variants/click_only_submenu/mod.rs;
 // renders alongside `main` on this page under its own labels). The default
-// hover-open / hover-leave-close contract is pinned, unchanged, by
+// hover-open / hover-leave-close contract is pinned by
 // `oracle/tier1-apg/menu-submenu.spec.ts`'s "hover:" tests on `main`.
 // ---------------------------------------------------------------------------
 test.describe('ContextMenuSub open_on_hover: false (click activation)', () => {
@@ -801,7 +800,7 @@ test.describe('ContextMenuSub open_on_hover: false (click activation)', () => {
 // Open/close fade vs. the anchor's centring transform . An anchored overlay centres itself
 // with `transform: translateX(-50%)` (top_layer.rs's engine stylesheet); a `@keyframes` that sets
 // `transform` REPLACES it for as long as it runs (the panel then plays its fade off-centre). `ContextMenuContent` sets
-// no `data-side`, so it has no centring to lose today -- the same shape, latent -- so this probes the rendered keyframes instead of sampling a position that could not
+// no `data-side`, so it has no centring to lose -- the same shape, latent -- so this probes the rendered keyframes instead of sampling a position that could not
 // move anyway: `assert-anchor-transform.ts` supplies an inline `transform`, seeks the element's own
 // CSS animation to its start/midpoint/end, and asserts the transform survives while `scale`/`translate`
 // do the moving. Source-level guard: scripts/check-anchored-keyframes.sh.

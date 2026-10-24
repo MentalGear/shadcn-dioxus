@@ -10,8 +10,8 @@
  * `.dx-carousel`'s own 6rem `padding-inline` reservation comes out of it.
  *
  * Geometry is read in-page (`getBoundingClientRect`), at desktop and phone
- * widths, in light and dark, so a regression in any of those four corners is
- * caught -- not just the one a human happened to look at.
+ * widths, in light and dark, so each of those four corners is
+ * checked -- not just the one a human happens to look at.
  */
 
 import { test, expect } from "./fixtures";
@@ -41,7 +41,7 @@ for (const vp of VIEWPORTS) {
     test.describe(`carousel demos @ ${vp.name} ${scheme}`, () => {
       test.use({ viewport: { width: vp.width, height: vp.height }, colorScheme: scheme });
 
-      test("indicators: dots sit below the slides, inside the frame, tablist still first in DOM", async ({
+      test("indicators: dots sit below the slides, inside the frame, tablist first in DOM", async ({
         page,
       }) => {
         await open(page, "indicators");
@@ -132,7 +132,7 @@ for (const vp of VIEWPORTS) {
 }
 
 /**
- * Class-level guards for two defect classes seen on the
+ * Class-level guards for two defect classes on the
  * `indicators`/`api` and `autoplay` demos (dark theme, carousel page):
  *
  *  1. Demo content must never extend past its preview frame, on ANY carousel
@@ -146,7 +146,7 @@ for (const vp of VIEWPORTS) {
  *     before AND after a state change. The defect (square dots after
  *     the first click) is dioxus-interpreter-js 0.7.9 stripping `var()`
  *     shorthands (`border-radius`, `background`) out of an inline `style`
- *     the first time it was re-set, so the assertion that matters is the one
+ *     the first time it is re-set, so the assertion that matters is the one
  *     made AFTER a click, not the initial render.
  */
 const ALL_CAROUSEL_URL = `${BASE_URL}/component/carousel/`;

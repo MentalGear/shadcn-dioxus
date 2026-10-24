@@ -101,8 +101,7 @@ test("disabled state blocks input", async ({ page }) => {
 });
 
 /**
- * Hit-target coverage (backlog row 60: "there is almost no hit target for the
- * input"). The real `<input>`
+ * Hit-target coverage (backlog row 60). The real `<input>`
  * (`primitives/src/input_otp.rs`) is sized to the full visible row
  * (`position: absolute; inset: 0` against a `display: inline-flex` parent
  * that is itself sized by the row's own content, since the decorative
@@ -162,8 +161,8 @@ test.describe("Hit-target coverage: the real input covers the whole visible row"
     await expect(input).toBeVisible();
 
     // Every slot, at its center and near each of its 4 corners -- the
-    // reported symptom was that only the thin gaps *between* the
-    // decorative slot boxes were clickable, not the boxes themselves
+    // symptom to rule out is that only the thin gaps *between* the
+    // decorative slot boxes are clickable, not the boxes themselves
     // (where a user actually taps).
     const points: { label: string; x: number; y: number }[] = await page.evaluate(() => {
       const slots = Array.from(document.querySelectorAll("#otp-main + div [data-slot-index]")) as HTMLElement[];
@@ -190,8 +189,7 @@ test.describe("Hit-target coverage: the real input covers the whole visible row"
 });
 
 /**
- * Click-to-caret positioning (backlog row 63: "first box has normal hit
- * target, but none of the others"). The real
+ * Click-to-caret positioning (backlog row 63). The real
  * `<input>` is `opacity: 0` with `font-family: inherit` and no
  * `letter-spacing` tuned to the visual slot grid
  * (`preview/src/components/input_otp/style.css`'s `.dx-input-otp-input`
@@ -233,8 +231,7 @@ test.describe("Click-to-caret positioning: a click on a slot places the caret at
     // A real `<input>`'s `selectionStart` cannot exceed `value.length`
     // (`setSelectionRange` clamps its arguments), so every slot's click
     // must land at 0 here -- for an empty value, 0 is the *only* valid
-    // caret position, not a leftover bug. What must differ from before the
-    // fix is which slot is shown active: only slot 0 (the slot the caret
+    // caret position, not a leftover bug. What must differ between slots is which slot is shown active: only slot 0 (the slot the caret
     // can actually be at), never 3 or 5.
     for (const idx of [0, 3, 5]) {
       await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
@@ -297,7 +294,7 @@ test.describe("Click-to-caret positioning: a click on a slot places the caret at
     }
   });
 
-  test("disabled state still blocks click-to-caret positioning", async ({ page }) => {
+  test("disabled state blocks click-to-caret positioning", async ({ page }) => {
     await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
     const input = page.locator("#otp-disabled");
     const p = await slotCenter(page, "#otp-disabled", 1);
@@ -308,9 +305,7 @@ test.describe("Click-to-caret positioning: a click on a slot places the caret at
 });
 
 /**
- * Click-then-type replace (backlog row 64: "clicking just any field should be
- * able to correct that number. I'm in the selected field then typing a number
- * right [and it doesn't correct]"). The click-to-caret positioning
+ * Click-then-type replace (backlog row 64). The click-to-caret positioning
  * (`snap_caret_to_slot`, see the "Click-to-caret positioning" describe block
  * above) selects the clicked character (`setSelectionRange(idx, idx + 1,
  * 'forward')`) whenever one exists at that index, because native `<input>`
@@ -389,7 +384,7 @@ test.describe("Click-then-type replace: a click selects the slot so the next key
     await expect(input).toHaveValue("12349");
   });
 
-  test("clicking past the end of an empty value still collapses to a plain caret at 0 -- nothing exists there to select", async ({
+  test("clicking past the end of an empty value collapses to a plain caret at 0 -- nothing exists there to select", async ({
     page,
   }) => {
     await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
@@ -406,7 +401,7 @@ test.describe("Click-then-type replace: a click selects the slot so the next key
 
 // Every internal divider is ONE border width, in both text directions. The slot edge is an inset
 // box-shadow (no computed border), so the width at a shared edge is the sum of the two
-// neighbours' facing inset offsets. A full edge on every slot, overlapped by -1px, put two
+// neighbours' facing inset offsets. A full edge on every slot, overlapped by -1px, would put two
 // translucent layers on the shared pixel (the dark fill is the edge colour at 30%), which read
 // about twice as thick as the outer border.
 test.describe("Slot dividers are a single border width", () => {

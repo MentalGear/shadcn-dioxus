@@ -72,7 +72,7 @@ test.describe("toast: vertical swipe (row 263 item 2)", () => {
     expect(Math.abs((await measureAtRest(t)).y - before.y)).toBeLessThan(1);
   });
 
-  test("a horizontal drag still dismisses a top toast (the axis follows the first movement)", async ({ page }) => {
+  test("a horizontal drag dismisses a top toast (the axis follows the first movement)", async ({ page }) => {
     const t = await show(page, "Show top toast", TOP);
     await drag(page, t, 120, 0);
     await expect(t).toHaveCount(0);

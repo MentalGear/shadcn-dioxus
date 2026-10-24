@@ -52,7 +52,7 @@ test('a click on a trigger whose panel hover just opened keeps it open; the next
   await expect(trigger).toHaveAttribute('aria-expanded', 'true');
 
   await trigger.click();
-  // Still open, and not merely "not yet closed": give any (wrongly) scheduled close, and the
+  // Open, and not merely "not yet closed": give any (wrongly) scheduled close, and the
   // 150ms intent timer, time to land before asserting.
   await page.waitForTimeout(400);
   await expect(trigger).toHaveAttribute('aria-expanded', 'true');
@@ -66,7 +66,7 @@ test('a click on a trigger whose panel hover just opened keeps it open; the next
   await expect(trigger).toHaveAttribute('aria-expanded', 'false');
 });
 
-test('a keyboard-opened panel still toggles shut on the first click (no stale hover marker)', async ({ page }) => {
+test('a keyboard-opened panel toggles shut on the first click (no stale hover marker)', async ({ page }) => {
   await gotoHydrated(page, URL, GOTO);
   const trigger = nav(page).getByRole('button', { name: 'Getting started' });
   // Hover-open, leave and let the close grace elapse, so the hover marker had every chance
@@ -195,14 +195,14 @@ test.describe('Open animation never reflows the content', () => {
     expect(widths.length).toBeGreaterThan(3);
     // Rounded to the nearest pixel: real layout stability, not sub-pixel
     // rounding noise, is what this guards -- a genuine width-based reflow
-    // (the reported bug) shows a multi-pixel-wide range across these
+    // shows a multi-pixel-wide range across these
     // samples, not a rounding-only difference.
     const distinctWidths = new Set(widths.map((w) => Math.round(w)));
     expect(distinctWidths.size).toBe(1);
   });
 
   test('the open/close motion actually animates transform, not just opacity', async ({ page }) => {
-    // Guards the entrance motion behind the "reflow" report (not a literal `width`
+    // Guards the entrance motion behind the reflow invariant (not a literal `width`
     // transition): `preview/src/components/navigation_menu/style.css`'s
     // `[data-state]` motion rules must not tie in CSS specificity with the shared,
     // engine-injected anchor-positioning stylesheet's own `transform: none` reset
@@ -245,7 +245,7 @@ test.describe('Open animation never reflows the content', () => {
     // Flip `data-state` directly on the real, mounted element (bypassing
     // this primitive's own hover/focus lifecycle entirely) to isolate
     // exactly what the CSS cascade computes for "closed", independent of
-    // timing -- the technique that isolates this bug.
+    // timing -- the technique that isolates this cascade case.
     await page.evaluate(() => {
       const el = document.querySelector('.dx-navigation-menu-content');
       el?.setAttribute('data-state', 'closed');
@@ -268,18 +268,18 @@ test.describe('Open animation never reflows the content', () => {
     // `scale(0.98)` / `translateY(var(--dx-space-2))`, never the identity ("1" / "none" / "0px 0px").
     expect(settledClosed!.scale).toBe('0.98');
     expect(['none', '0px 0px', '0px']).not.toContain(settledClosed!.translate);
-    // ...and the element's own `transform` was never touched by it.
+    // ...and the element's own `transform` is not touched by it.
     expect(settledClosed!.transform).toBe('none');
   });
 });
 
 test.describe('Panel layout matches shadcn: panel width, featured card and list items', () => {
-  // The report (dark mode, "Getting started" open): a panel ~900px+ wide
+  // This block rules out (dark mode, "Getting started" open): a panel ~900px+ wide
   // (a `width: max-content` box around `fr` tracks with no width
   // contract), a featured card indistinguishable from the panel
   // (`--dx-muted` and `--dx-popover` are the same colour in dark), and
   // "Button"/"Input" -- bare-text links -- at 16px/400 next to
-  // "Introduction"'s 14px/500 title, are what this block rules out. Reference: shadcn's NavigationMenu demo,
+  // "Introduction"'s 14px/500 title. Reference: shadcn's NavigationMenu demo,
   // shadcn-ui/ui@295a1f1 apps/v4/registry/new-york-v4/examples/
   // navigation-menu-demo.tsx (grid `md:w-[400px] lg:w-[500px]
   // lg:grid-cols-[.75fr_1fr]`, featured `from-muted/50 to-muted`, `ListItem`).
@@ -294,7 +294,7 @@ test.describe('Panel layout matches shadcn: panel width, featured card and list 
     // These tests are about the panel's layout, not its activation.
     await trigger.hover();
     await expect(trigger).toHaveAttribute('aria-expanded', 'true');
-    // The click this replaces also focused the trigger, and the Escape handler lives inside
+    // A hover does not focus the trigger, and the Escape handler lives inside
     // the nav: without focus there, the Escape a caller sends to close the panel is ignored.
     await trigger.focus();
     // Past the open animation (transform scale .98 -> 1), so rects are final.
@@ -386,8 +386,8 @@ test.describe('Panel layout matches shadcn: panel width, featured card and list 
       });
 
       test('the featured copy sits at the top of the card, and its title stays on one line', async ({ page }) => {
-        // The report: "the text [is] at the bottom" -- shadcn's `justify-end`
-        // pinned the title to the foot of a card as tall as the three list rows.
+        // The title is not at the bottom: shadcn's `justify-end`
+        // would pin it to the foot of a card as tall as the three list rows.
         await openPanel(page, 'Getting started');
         const m = await readAtRest(page.locator(OPEN_PANEL).first(), (panel) => {
           const card = panel.querySelector<HTMLElement>('.dx-navigation-menu-featured')!;
@@ -457,7 +457,7 @@ test.describe('Axe automated scan', () => {
 // renders alongside `main` on this page under its own `aria_label` and
 // trigger names, so none of the hover-driven tests above can match it).
 // Default behaviour (hover opens / pointer-leave closes) is covered by every
-// test above, unchanged.
+// test above.
 // ---------------------------------------------------------------------------
 test.describe('open_on_hover: false (click activation)', () => {
   const HOVER_SETTLE_MS = 1000; // >> HOVER_OPEN_INTENT_DELAY (150ms) + HOVER_CLOSE_GRACE_DELAY (300ms)
@@ -543,7 +543,7 @@ test.describe('open_on_hover: false (click activation)', () => {
     await expect(guides).toHaveAttribute('aria-expanded', 'false');
   });
 
-  test('an outside pointerdown that moves no focus (Safari-style: a button is not focused on click) still closes it', async ({ page }) => {
+  test('an outside pointerdown that moves no focus (Safari-style: a button is not focused on click) closes it', async ({ page }) => {
     await gotoHydrated(page, URL, GOTO);
     const guides = clickNav(page).getByRole('button', { name: 'Guides' });
     await guides.click();
@@ -587,7 +587,7 @@ test.describe('open_on_hover: false (click activation)', () => {
 // Open/close fade vs. the anchor's centring transform . An anchored overlay centres itself
 // with `transform: translateX(-50%)` (top_layer.rs's engine stylesheet); a `@keyframes` that sets
 // `transform` REPLACES it for as long as it runs (the panel then plays its fade off-centre). `NavigationMenuContent` sets
-// no `data-side`, so it has no centring to lose today -- the same shape, latent -- so this probes the rendered keyframes instead of sampling a position that could not
+// no `data-side`, so it has no centring to lose -- the same shape, latent -- so this probes the rendered keyframes instead of sampling a position that could not
 // move anyway: `assert-anchor-transform.ts` supplies an inline `transform`, seeks the element's own
 // CSS animation to its start/midpoint/end, and asserts the transform survives while `scale`/`translate`
 // do the moving. Source-level guard: scripts/check-anchored-keyframes.sh.

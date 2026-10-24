@@ -1,5 +1,5 @@
 /**
- * The component page's docs accordion is the library's own `Accordion` (owner rule: the docs are built from the
+ * The component page's docs accordion is the library's own `Accordion` (the docs are built from the
  * library's own components; a native `<details>` draws its chevron past the divider and never animates).
  * `scripts/check-docs-own-components.sh` keeps native disclosures out of the docs chrome, and this spec is the
  * browser half:

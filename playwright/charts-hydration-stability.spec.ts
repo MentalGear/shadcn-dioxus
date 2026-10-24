@@ -2,19 +2,18 @@
  * CHARTS HYDRATION STABILITY (dev-docs/backlog.md row 215): the `/charts/` gallery, prerendered, is the same page
  * once the wasm has hydrated it -- no box moves or resizes when the page goes from the static HTML to the live app.
  *
- * Row 204's layout-stability spec could not include `/charts/`: its charts re-measured at hydration, and 120-630
- * boxes changed at every width. Three causes, all of one class, "the server render lays out from an assumption
- * that the first measured render then corrects":
+ * The class: "the server render lays out from an assumption that the first measured render then corrects".
+ * Row 204's layout-stability spec cannot include `/charts/` because of it. Its three members:
  *
- *   1. The chart svg's height. The server draws a chart at an assumed width (369 px) and the svg scaled with its
- *      viewBox ratio; the measured render uses the real width and a rounded height, and with a legend the 28 px
- *      reserved for it did not scale -- the svg (and every card around it) changed height by 0.4-3 px.
- *      Now the box is CSS alone, the same declaration in every render (`chart.rs`, `svg_style`).
+ *   1. The chart svg's height. A server render at an assumed width (369 px) scaled by the viewBox ratio, against a
+ *      measured render with the real width and a rounded height (and a legend's 28 px reserve that does not scale),
+ *      changes the svg (and every card around it) by 0.4-3 px. So the box is CSS alone, the same declaration in
+ *      every render (`chart.rs`, `svg_style`).
  *   2. The time-range select. The prerendered trigger has no selected label yet ("Select an option") and is as wide
- *      as that; hydration adds the label and the trigger, the title beside it and the whole card header re-flowed.
- *      The demos give the trigger a fixed width, as shadcn's does (`w-[160px]`).
- *   3. The drawing itself: a stand-in at the assumed width, replaced by the measured one. Its text was a different
- *      size (the svg scales uniformly) and a different set of ticks.
+ *      as that; hydration adds the label, and the trigger, the title beside it and the whole card header would
+ *      re-flow. So the demos give the trigger a fixed width, as shadcn's does (`w-[160px]`).
+ *   3. The drawing itself: a stand-in at the assumed width, replaced by the measured one. Its text is a different
+ *      size (the svg scales uniformly) and it has a different set of ticks.
  *
  * What this spec does about the drawing: nothing, on purpose. The marks, ticks and labels INSIDE a chart's svg
  * are a function of the measured width, which no prerender can know; they are excluded here (and the stand-in's

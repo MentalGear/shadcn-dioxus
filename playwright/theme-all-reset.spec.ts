@@ -3,10 +3,10 @@ import type { Page } from "@playwright/test";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
-// Row 239: `all: unset` (0,1,0) outranked every zero-specificity theme baseline on Switch, the Slider thumb and both
-// ColorPicker thumbs. The `all:` resets are gone (scripts/check-theme-baseline.sh bans them) and spelled out; this
-// spec pins (a) the theme baselines now reaching those four controls and (b) that the visual computed style is
-// exactly what `all: unset` produced (captured on the pre-change build, light scheme).
+// Row 239: `all: unset` (0,1,0) would outrank every zero-specificity theme baseline, so Switch, the Slider thumb and both
+// ColorPicker thumbs spell their resets out (scripts/check-theme-baseline.sh bans `all:`). This
+// spec pins (a) the theme baselines reaching those four controls and (b) that the visual computed style is
+// exactly the `all: unset` golden (captured in the light scheme).
 const GOTO = { timeout: 20 * 60 * 1000 };
 
 // Computed values of the theme baseline (light). `rect` is the border box, rounded to 2 decimals.
@@ -203,8 +203,8 @@ for (const which of Object.keys(BEFORE)) {
         o.rect = `${r2(r.width)}x${r2(r.height)}`;
         return o;
       }, props);
-      // The slider thumb's border is the focus-ring colour token (shadcn's grey), which the golden recorded as
-      // blue (rgb(43, 127, 255)), so the border is compared to the token itself and
+      // The slider thumb's border is the focus-ring colour token (shadcn's grey); the golden holds
+      // blue (rgb(43, 127, 255)) for it, so the border is compared to the token itself and
       // every other property to the golden (`all: unset` equivalence is about the rest).
       const expected: Record<string, string> = { ...BEFORE[which] };
       if (which === "slider-thumb") {

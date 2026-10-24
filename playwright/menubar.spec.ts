@@ -60,7 +60,7 @@ test("keyboard navigation", async ({ page }) => {
   await expect(fileMenuContent).toHaveCount(0);
 });
 
-// REGRESSION (`dev-docs/backlog.md` row 85). The most directly reproducible
+// Guard (`dev-docs/backlog.md` row 85). The most directly reproducible
 // instance of the whole class this row reports: `MenubarItem`'s own
 // `onblur` must not close this menu unconditionally whenever `focused()`
 // (it holds `menu_ctx.focus`'s roving focus the instant it blurs).
@@ -86,19 +86,19 @@ test("a raw .focus() call on the trigger does not close its own open content (ro
   await fileMenuButton.click();
   await expect(fileMenuContent).toHaveAttribute("data-state", "open");
   // Arrow-down so a `MenubarItem` genuinely holds DOM focus -- the
-  // precondition `MenubarItem`'s own (removed) `onblur` needed.
+  // precondition an `onblur` close on `MenubarItem` would need.
   await page.keyboard.press("ArrowDown");
   const newItem = fileMenuContent.getByRole("menuitem", { name: "New" });
   await expect(newItem).toBeFocused();
 
   await fileMenuButton.focus();
-  // Give any (correctly, now, no-op) reactive close a moment to have
+  // Give any reactive close (a no-op here) a moment to have
   // fired if it were going to -- avoids a false green from asserting
   // before a real regression's own close would have completed.
   await page.waitForTimeout(150);
 
   await expect(fileMenuContent, "the content must not close").toHaveCount(1);
-  await expect(fileMenuContent, "and must still report itself open").toHaveAttribute(
+  await expect(fileMenuContent, "and must report itself open").toHaveAttribute(
     "data-state",
     "open",
   );
@@ -107,8 +107,7 @@ test("a raw .focus() call on the trigger does not close its own open content (ro
 
 // --- Checkable items: MenubarCheckboxItem / MenubarRadioGroup / MenubarRadioItem ---
 //
-// shadcn's Menubar has CheckboxItem and RadioGroup + RadioItem; this one had
-// neither. They are one construction shared with DropdownMenu and ContextMenu
+// shadcn's Menubar has CheckboxItem and RadioGroup + RadioItem, and so does this one. They are one construction shared with DropdownMenu and ContextMenu
 // (`primitives/src/menu_item.rs`), graded here for Menubar's own wiring:
 // role/aria contract, pointer (pointerdown, like every Menubar item) and
 // keyboard behaviour, close semantics (closing a menu hands focus back to its
@@ -338,7 +337,7 @@ test.describe("Axe automated scan", () => {
 // `open_on_hover: false` -- once one menu is open, hovering another trigger
 // does not switch to it (preview/src/components/menubar/variants/click_only/
 // mod.rs; renders alongside `main` on this page under its own labels). The
-// default hover-switch is the unchanged "pointer navigation" test at the top
+// default hover-switch is the "pointer navigation" test at the top
 // of this file.
 // ---------------------------------------------------------------------------
 test.describe("open_on_hover: false (click activation)", () => {
@@ -376,7 +375,7 @@ test.describe("open_on_hover: false (click activation)", () => {
     await expect(menuNamed(page, "Insert")).toHaveCount(0);
   });
 
-  test("keyboard: ArrowDown still opens the menu and focuses its first item", async ({ page }) => {
+  test("keyboard: ArrowDown opens the menu and focuses its first item", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/menubar/`, { timeout: 20 * 60 * 1000 });
     const insert = page.getByRole("menuitem", { name: "Insert", exact: true });
     await insert.focus();
@@ -390,7 +389,7 @@ test.describe("open_on_hover: false (click activation)", () => {
 // Open/close fade vs. the anchor's centring transform . An anchored overlay centres itself
 // with `transform: translateX(-50%)` (top_layer.rs's engine stylesheet); a `@keyframes` that sets
 // `transform` REPLACES it for as long as it runs (the panel then plays its fade off-centre). `MenubarContent` sets
-// no `data-side`, so it has no centring to lose today -- the same shape, latent -- so this probes the rendered keyframes instead of sampling a position that could not
+// no `data-side`, so it has no centring to lose -- the same shape, latent -- so this probes the rendered keyframes instead of sampling a position that could not
 // move anyway: `assert-anchor-transform.ts` supplies an inline `transform`, seeks the element's own
 // CSS animation to its start/midpoint/end, and asserts the transform survives while `scale`/`translate`
 // do the moving. Source-level guard: scripts/check-anchored-keyframes.sh.

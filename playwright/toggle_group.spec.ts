@@ -36,10 +36,9 @@ test("test", async ({ page }) => {
   await expect(b_button).toBeFocused();
 });
 
-// HARDENING (dev-docs/backlog.md row 89), not a reproduced defect -- see
+// HARDENING (dev-docs/backlog.md row 89) -- see
 // `toggle.spec.ts`'s identical test for the full writeup (same
-// `:where(:hover)` construction, same "already correct via source order,
-// now correct via specificity" story).
+// `:where(:hover)` construction: correct via specificity, not source order).
 for (const dark of [false, true]) {
   test(`a pressed item keeps its "on" background while hovered (${dark ? "dark" : "light"} mode)`, async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/toggle_group/${dark ? "?dark_mode=true" : ""}`);
@@ -59,7 +58,7 @@ for (const dark of [false, true]) {
     expect(await bButton.evaluate((el) => el.matches(":hover"))).toBe(true);
     const onAndHovered = await bButton.evaluate((el) => getComputedStyle(el).backgroundColor);
 
-    // The invariant the `:where()` fix makes durable (pressed keeps its own
+    // The invariant the `:where()` construction makes durable (pressed keeps its own
     // background under the pointer), not a particular colour -- the pressed
     // colour is derived from the preset-aware role tokens.
     expect(onAndHovered, `onAtRest=${onAtRest} onAndHovered=${onAndHovered}`).toBe(onAtRest);
@@ -241,7 +240,7 @@ test.describe("Axe automated scan", () => {
 });
 
 // Row 364: the pressed set is keyed by item `value`, so reordering the items or inserting one before them never
-// moves the pressed state to another button (the position-keyed `HashSet<usize>` did exactly that).
+// moves the pressed state to another button.
 test.describe("pressed state follows the item value (row 364)", () => {
   const frame = (page: Page) => frameOf(page, "reorder");
   const multi = (page: Page, v: string) => frame(page).getByRole("group", { name: "Reorderable multiple" }).getByRole("button", { name: `multi ${v}`, exact: true });
