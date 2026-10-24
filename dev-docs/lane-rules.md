@@ -289,6 +289,12 @@ with `fixedViewportBox(page)`, demo controls located by role and position never 
 written once in the header of its `scripts/check-*.sh` and summarised in [`gates.md`](./gates.md); read the gate's page
 entry before you write the construction it forbids, not after it goes red.
 
+The one convention every lane meets in every file: **code describes only its current state**
+([`history-in-comments.md`](./history-in-comments.md)). A comment, test title, demo string or name you write states
+what the code does and why, in present tense, with the backlog row; what happened (the bug, the date, the commit, the
+report, this lane or round, "used to", "before the fix") goes into the row's `## Status`/`## Detail` (or
+`dev-docs/archive/` for a long note) and your report, never into the code.
+
 ## Web requests
 Never send the user's email, name or any account identifier to an external service (User-Agent, headers, query
 strings, payloads). Use a generic User-Agent such as `shadcn-dioxus-research`.

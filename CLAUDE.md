@@ -41,6 +41,11 @@ gate never needs an edit to this file.
   coincidence: deconstruct down to the root cause, then propose the best-fit fix *by construction*, one that makes the
   whole class unable to recur, rather than fixing the instances one at a time. Say plainly which instances the
   construction subsumes and which (if any) it does not.
+- **Code describes only its current state** ([`dev-docs/history-in-comments.md`](./dev-docs/history-in-comments.md)):
+  comments, test titles, demo text and names say what the code is and why, in present tense, plus the backlog row.
+  The story (dates, commits, "used to", which bug or report found it, which lane or round) goes straight into the
+  backlog row's `## Status`/`## Detail`, or `dev-docs/archive/` for a long note, never into the code. The history gates
+  enforce it; write it this way the first time.
 - **Run every gate before every commit, not just the ones the change "obviously" touches** (all workflows are
   `workflow_dispatch`-only, CI freeze, row 33, so nothing else will): `CARGO_TARGET_DIR=<absolute isolated dir>
   scripts/run-gates.sh`. Green is **`ALL GREEN` with exit 0**; exit 3 is a partial run (`--only`, `--skip`, `--fast`),
