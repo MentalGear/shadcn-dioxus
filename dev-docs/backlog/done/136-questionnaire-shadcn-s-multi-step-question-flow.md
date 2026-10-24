@@ -15,7 +15,7 @@ updated: 2026-10-19
 
 ## Status / trigger
 
-**LANDED 2026-10-19** (see the update below; the owner lifted the hold on 2026-10-18). Was: **ON HOLD (owner 2026-10-14: not started, no schedule).** **BACKLOG** -- recorded 2026-10-04 from the shadcn catalog audit (`dev-docs/research/shadcn-catalog-2026-10-04.md` §3.6); shipped by shadcn 2026-08-05, after our 2026-09-03 catalog list, so in scope by the parity rule. Revisit after the chat kit has proved out (`dev-docs/archive/rounds/component-backlog.md`). **2026-10-05 (owner): backlogged and scheduled LAST in the next-session order; trigger unchanged: after the chat kit proves out**
+**LANDED 2026-10-19** (see the update below; the owner lifted the hold on 2026-10-18). Was: **ON HOLD (owner 2026-10-14: not started, no schedule).** **BACKLOG** -- recorded 2026-10-04 from the shadcn catalog audit (`dev-docs/archive/research/shadcn-catalog-2026-10-04.md` §3.6); shipped by shadcn 2026-08-05, after our 2026-09-03 catalog list, so in scope by the parity rule. Revisit after the chat kit has proved out (`dev-docs/archive/rounds/component-backlog.md`). **2026-10-05 (owner): backlogged and scheduled LAST in the next-session order; trigger unchanged: after the chat kit proves out**
 
 ## Size
 

@@ -1,7 +1,7 @@
 """Row 111 phase A, REPOINT lane: apply every REPOINT site in place, preserving formatting.
 
-    python3 dev-docs/research/theme-2026-10-03/tools/apply.py            # apply (idempotent: a second run finds nothing)
-    python3 dev-docs/research/theme-2026-10-03/tools/apply.py --check    # verify the working tree against git HEAD
+    python3 dev-docs/archive/research/theme-2026-10-03/tools/apply.py            # apply (idempotent: a second run finds nothing)
+    python3 dev-docs/archive/research/theme-2026-10-03/tools/apply.py --check    # verify the working tree against git HEAD
 
 Method: the same analysis gen.py uses (engine.analyse), but instead of looking at a whitespace-normalised
 value it runs on the raw declaration value and patches only the `var(...)` spans it decided to replace,
@@ -15,7 +15,7 @@ dark under the current theme, and cross-checks the per-file REPOINT count agains
 """
 import os, re, subprocess, sys, collections, csv
 HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.abspath(os.path.join(HERE, "../../../.."))
+ROOT = os.path.abspath(os.path.join(HERE, "../../../../.."))
 sys.path.insert(0, HERE)
 import engine
 from engine import analyse, resolve, T, REFTOK

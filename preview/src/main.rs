@@ -2920,7 +2920,7 @@ fn MasonryColumn(slot: MasonrySlot) -> Element {
 /// `BlockPlayer` that was a new, never-cleared 100 ms `setInterval` per
 /// re-render (one a second, since each fresh player re-renders when its label
 /// ticks), and the readout never got past 1:24 because every fresh signal
-/// restarted at 84 s (dev-docs/research/scroll-jank-2026-10-04.md, Cause 1).
+/// restarted at 84 s (dev-docs/archive/research/scroll-jank-2026-10-04.md, Cause 1).
 #[component]
 fn MasonryCard(#[props(default)] popout: bool, children: Element) -> Element {
     let class = if popout {

@@ -131,7 +131,7 @@
 //! Dialog, Popover or menu had opened once, *every* wheel tick on the page paid
 //! that wait again (Chromium `DidHandleInputEventSentToMain` 40/40 ticks versus 0;
 //! wheel latency max 388 ms versus 143 ms with a busy main thread,
-//! `dev-docs/research/scroll-jank-2026-10-04.md` section 7.3).
+//! `dev-docs/archive/research/scroll-jank-2026-10-04.md` section 7.3).
 //! `DOMDebugger.getEventListeners(window)` after one open-and-close showed
 //! `wheel` and `touchmove` still there, non-passive.
 //!

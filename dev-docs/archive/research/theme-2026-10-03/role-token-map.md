@@ -4,7 +4,7 @@
 
 Companion files: [`sites.tsv`](./sites.tsv) (one row per ramp reference, machine-readable) and
 [`tools/`](./tools) (the extractor, the role table and a value-preservation checker that produced it:
-`python3 dev-docs/research/theme-2026-10-03/tools/gen.py [--write]`).
+`python3 dev-docs/archive/research/theme-2026-10-03/tools/gen.py [--write]`).
 
 ## 1. What changed in `preview/assets/dx-components-theme.css`
 
@@ -205,7 +205,7 @@ Each lane edits every file of its units (the component's `style.css` plus its `c
 inline `style:` strings) by applying the TSV rows of those files: replace the declaration's `current_value` with
 `new_value` (the TSV already collapsed light/dark wrappers), leave `KEEP-phaseB` rows alone, and for `sidebar`
 delete the six `--dx-sidebar-*` declarations on `.dx-sidebar-wrapper`. Done criterion per lane:
-`python3 dev-docs/research/theme-2026-10-03/tools/gen.py` reports 0 `REPOINT` rows for its files.
+`python3 dev-docs/archive/research/theme-2026-10-03/tools/gen.py` reports 0 `REPOINT` rows for its files.
 
 - **Lane A (242):** `preview/assets/main.css`, `preview/assets/language-select.css`; components `alert`,
   `button_group`, `combobox`, `command`, `date_picker`, `form`, `hover_card`, `input_otp`, `label`,
@@ -221,7 +221,7 @@ delete the six `--dx-sidebar-*` declarations on `.dx-sidebar-wrapper`. Done crit
   `drawer`, `field`, `input_group`, `item`, `kbd`, `navbar`, `pagination`, `popover`, `resizable`, `sidebar`,
   `spinner`, `top_layer`, `virtual_list`.
 
-(`gen.py` prints the exact unit list and re-derives it deterministically; the `lane` column of the TSV is the
+(`dev-docs/archive/research/theme-2026-10-03/tools/gen.py` prints the exact unit list and re-derives it deterministically; the `lane` column of the TSV is the
 authority. A unit is a whole component directory, so no two lanes touch the same file.)
 
 ## 10. Phase B reconciliation (colour lane, 2026-10-03)

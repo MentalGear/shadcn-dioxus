@@ -119,7 +119,7 @@ html[data-theme="light"] [class~="dxc-system"] {
    * its own literal (backlog row 373), so a role's default is written once,
    * here, and is shadcn's Neutral value unless a comment says why not.
    * Component sites read these roles
-   * (dev-docs/research/theme-2026-10-03/{role-token-map.md,sites.tsv}).
+   * (dev-docs/archive/research/theme-2026-10-03/{dev-docs/archive/research/theme-2026-10-03/role-token-map.md,dev-docs/archive/research/theme-2026-10-03/sites.tsv}).
    *
    * Naming: `--dx-<role>`, where <role> is shadcn's own name. Each one reads
    * the bare shadcn variable first and falls back to the default:
@@ -143,7 +143,7 @@ html[data-theme="light"] [class~="dxc-system"] {
    * `--dx-border-strong` and the status roles (`-subtle`, success/warning/info)
    * are NOT shadcn roles and have no shadcn fallback. The phase-A `-alt` /
    * `-alt-2` variants were review markers; phase B moved every site onto a
-   * base role and deleted them (see dev-docs/research/theme-2026-10-03/).
+   * base role and deleted them (see dev-docs/archive/research/theme-2026-10-03/).
    * ========================================================================== */
 
   /* Page and surfaces. Dark is shadcn's own surface ladder (phase C, option C; shadcn-ui/ui@295a1f1
@@ -1280,7 +1280,7 @@ html[data-theme="light"] [class~="dxc-system"] {
  * block, a table cell, a `white-space: nowrap` toolbar or a prose column, and every INHERITED property
  * still flows from that host into the component's text: a `line-height: 3` host re-spaced 382 leaf
  * boxes in 27 components, a `font-weight: 800` host re-weighted 395 in 38 (hostile-host probe,
- * dev-docs/research/typography-hostile-host-probe.spec.ts.txt, ddd9d057). The first answer was a
+ * dev-docs/archive/research/typography-hostile-host-probe.spec.ts.txt, ddd9d057). The first answer was a
  * per-root gate demanding that each stylesheet declare its root's size and line height
  * (check-declared-typography, a baseline of 83 rows); this is the same fix by construction, once:
  * every component's namesake root carries `data-dx-root` (written by the component in

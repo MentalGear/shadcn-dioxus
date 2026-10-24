@@ -81,7 +81,7 @@
 //
 // SETUP: like scripts/inspect.mjs this resolves `playwright` through a gitignored symlink at the repo root:
 //   ln -s playwright/node_modules node_modules      (see dev-docs/dev-loop.md)
-// Findings and the measured bisect this harness produced: dev-docs/research/scroll-jank-2026-10-04.md
+// Findings and the measured bisect this harness produced: dev-docs/archive/research/scroll-jank-2026-10-04.md
 //
 // NOTE: use a RELEASE build (CLAUDE.md: debug timings are meaningless) and
 // prefer COUNTS (layouts, style recalcs, listeners) over absolute ms when

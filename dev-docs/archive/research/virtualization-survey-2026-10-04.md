@@ -69,7 +69,7 @@ Every virtualization / windowing / lazy-render mechanism found. "Rust re-render"
 ### 1.4 Docs site: home-page cards and component-page variants
 
 - `preview/assets/main.css:1415-1442` (uncommitted, +185 lines in the working tree): `.dx-component-card { content-visibility: auto; contain-intrinsic-block-size: auto 380px }` and `.dx-widget-card:not(.dx-widget-card-popout) { ... auto 330px }`, 450 px for `<= 640px` viewports. Popout cards are excluded because `content-visibility: auto` implies paint containment, which would clip their dropdown.
-- Motivation and measurements: `dev-docs/research/scroll-jank-2026-10-04.md` (4.4k nodes, 29k px page; `PrePaint` 1,851 -> 135 ms; main busy -63%; ~119 layouts per full scroll, one per card entering view).
+- Motivation and measurements: `dev-docs/archive/research/scroll-jank-2026-10-04.md` (4.4k nodes, 29k px page; `PrePaint` 1,851 -> 135 ms; main busy -63%; ~119 layouts per full scroll, one per card entering view).
 - **Not yet covered, same shape:** the component page renders every variant inline with a live demo plus a highlighted source block (`preview/src/main.rs:1590-1608`, `.dx-component-variant`; carousel has 13 variants). Same rule would apply, same popout caveat.
 
 ### 1.5 Table / DataTable

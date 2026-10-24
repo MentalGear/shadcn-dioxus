@@ -27,7 +27,7 @@ Audit section 4: of ~200 text/icon-bearing parts, 68 declare no `font-size` and 
 
 ### Measurement (lane typography, 2026-10-21, debug SSG of dd14365e)
 
-Probe: `dev-docs/research/typography-hostile-host-probe.spec.ts.txt` (copy to `playwright/`, run against an SSG). For all 83 component
+Probe: `dev-docs/archive/research/typography-hostile-host-probe.spec.ts.txt` (copy to `playwright/`, run against an SSG). For all 83 component
 pages it sets a hostile value on every demo frame (`#component-preview-frame*`, the host of the component) and re-reads
 every `dx-` element's computed style and box: font-size 23px, line-height 3, weight 800 (second run, realistic host: 18px,
 1.8, 600). 374 distinct `dx-` part classes rendered (329 in main demos). "Follows host" = the computed value changed;

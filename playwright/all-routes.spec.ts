@@ -315,7 +315,7 @@ async function readOverflow(page: Page) {
  * the switch, or simply a second viewport round trip on a fresh page -- changes the boxes of CLOSED accordion content
  * (its `overflow: hidden` wrapper drops to zero size), and a second round trip on a fresh dark page gives exactly the
  * switched reading. Those boxes sit under an `overflow: hidden` ancestor, which `readOverflow` never counts, so the
- * set of boxes that can offend is the same (the two routes where it is not are in `FRESH_PHONE_LOAD`): checked on every route (`dev-docs/research/row-358-one-navigation-both-schemes.md`).
+ * set of boxes that can offend is the same (the two routes where it is not are in `FRESH_PHONE_LOAD`): checked on every route (`dev-docs/archive/research/row-358-one-navigation-both-schemes.md`).
  */
 async function probeOverflow(page: Page, route: Route, schemes: Scheme[]) {
   const results: Partial<Record<Scheme, Awaited<ReturnType<typeof readOverflow>>>> = {};
@@ -362,7 +362,7 @@ async function probeOverflow(page: Page, route: Route, schemes: Scheme[]) {
  * leaves a roving-tabindex container (Menubar) handing focus to its item, so a second pick or a second `focus()` of it
  * judges something else. So every element is focused ONCE and its outline read in each scheme while it holds focus,
  * the scheme flipped in the page (`installFlipScheme`), which needs no style settle: `getComputedStyle` recalculates.
- * Every route was compared with a fresh load in each scheme (`dev-docs/research/row-358-one-navigation-both-schemes.md`).
+ * Every route was compared with a fresh load in each scheme (`dev-docs/archive/research/row-358-one-navigation-both-schemes.md`).
  */
 async function probeForcedColors(page: Page, schemes: Scheme[]) {
   await page.emulateMedia({ forcedColors: "active" });
@@ -564,10 +564,10 @@ async function runProbes(probes: Array<[title: string, run: () => Promise<void>]
 
 // --- the sweep: one navigation per route, both schemes on it ------------------------------------
 // PROBE ORDER, and why it is this one. Row 327 measured each order against the old one-load-per-probe layout on every
-// route (`dev-docs/research/row-327-all-routes-and-goto-hydrated.md`): axe's full result and the 390px reading must
+// route (`dev-docs/archive/research/row-327-all-routes-and-goto-hydrated.md`): axe's full result and the 390px reading must
 // come out as they did on a fresh load, and the forced-colors sweep may only gain controls, never lose or fail one.
 // Row 358 then checked the in-place scheme switch the same way, every route against a fresh load in each scheme
-// (`dev-docs/research/row-358-one-navigation-both-schemes.md`).
+// (`dev-docs/archive/research/row-358-one-navigation-both-schemes.md`).
 //   1. overflow   resizes to 390px once, re-settles, reads light, switches, reads dark, restores the viewport. First,
 //                 because axe and the sweep both change what a later geometry read sees (axe: closed accordions lay
 //                 out their content, `content-visibility` sections render; the sweep: focus, scroll, URL hash).

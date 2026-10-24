@@ -13,7 +13,7 @@ Environment rules that apply to every thread (all in CLAUDE.md): build SSG only 
 
 ## Round 2 outcome (2026-10-04, branch `claude/zealous-davinci-mtusif`, base `main` @ `44a103e`; uncommitted when written)
 
-Lanes ran with disjoint file sets (CLAUDE.md's lane rule). New backlog rows 139-151; research notes in `dev-docs/research/*-2026-10-04.md` (static reads of `44a103e` plus the dirty tree; `scroll-jank-2026-10-04.md` sections 0-6 describe HEAD and its section 7 the fixes).
+Lanes ran with disjoint file sets (CLAUDE.md's lane rule). New backlog rows 139-151; research notes in `dev-docs/research/*-2026-10-04.md` (static reads of `44a103e` plus the dirty tree; `dev-docs/archive/research/scroll-jank-2026-10-04.md` sections 0-6 describe HEAD and its section 7 the fixes).
 
 | Lane | What landed | Recorded in |
 |---|---|---|
@@ -60,7 +60,7 @@ Lanes ran with disjoint file sets (CLAUDE.md's lane rule). New backlog rows 139-
 
 **Goal:** finish the shadcn Nova migration for every component outside the seven already done (card, button, input, badge, tabs, dialog, select), without regressing the contrast, layout or behaviour of anything.
 
-**Read first:** `dev-docs/backlog.md` row 111 (the 2026-10-04 addendum is the state of play), `dev-docs/research/theme-2026-10-03/role-token-map.md` (token set, section 10 reconciliation, 10.5 owner recommendations), `border-box.md` (what border-box changed and how to read the snapshot), `preview/assets/dx-components-theme.css`, `playwright/computed-style-snapshot.spec.ts`, and the Nova sources at `shadcn-ui/ui@295a1f1` (`registry/styles/style-nova.css`, `registry/bases/base/ui/*`). Commits `99f00b1` (the pattern for one component: Nova rules transcribed to plain CSS and `--dx-` tokens) and `0e6d3ac`.
+**Read first:** `dev-docs/backlog.md` row 111 (the 2026-10-04 addendum is the state of play), `dev-docs/archive/research/theme-2026-10-03/role-token-map.md` (token set, section 10 reconciliation, 10.5 owner recommendations), `dev-docs/archive/research/theme-2026-10-03/border-box.md` (what border-box changed and how to read the snapshot), `preview/assets/dx-components-theme.css`, `playwright/computed-style-snapshot.spec.ts`, and the Nova sources at `shadcn-ui/ui@295a1f1` (`registry/styles/style-nova.css`, `registry/bases/base/ui/*`). Commits `99f00b1` (the pattern for one component: Nova rules transcribed to plain CSS and `--dx-` tokens) and `0e6d3ac`.
 
 **Do first (they make phase C provable):**
 1. Row 135: extend the snapshot with an open-state pass for overlays (`alert_dialog`, `command`, `context_menu`, `dialog`, `drawer`, `sheet`, `top_layer`) and a hover pass, with the same A/A byte-identical gate. Phase A's 0-diff proof does not cover them.
@@ -70,7 +70,7 @@ Lanes ran with disjoint file sets (CLAUDE.md's lane rule). New backlog rows 139-
 - Per-component Nova pass in disjoint lanes (e.g. accordion/alert/avatar/breadcrumb; calendar/date_picker/checkbox/radio/switch/slider; menus and popovers; sidebar/navigation_menu/pagination/table; charts last — their parity tests `preview/src/{chart,polar,chart_tooltip}_parity.rs` must stay green, they compare geometry not colour). One reviewer pass per lane over the before/after snapshot; every difference must be an intended Nova change, listed with old -> new.
 - Axe colour-contrast re-run over the docs, light and dark (the theme file's own rule; not run in phase B). Rows 134 (tinted destructive, ~2.7:1 in dark) and the dark `--dx-primary` `#e5e5e5` (was `#fafafa` through the ramp) are the known suspects.
 - Close the leftovers: `test-harness/assets/dx-components-theme.css` is a stale copy (differs from `preview/assets/dx-components-theme.css`); 40 remaining `var(--primary|secondary-color...)` refs (`sheet`, `carousel`, `toggle`, `toggle_group`, `main.css`, `top_layer.rs`) get a role or a stated reason; row 132 (`.dx-tabs-content` padding), row 133 (InputGroup invalid/disabled).
-- Owner questions to ask before building, not after: the chart palette (shadcn's blue ramp vs our multi-hue `--dx-chart-1..8`, row 119 tie-in), and whether accent dark moves `#3e3e3e` -> `#262626` (role-token-map.md 10.5).
+- Owner questions to ask before building, not after: the chart palette (shadcn's blue ramp vs our multi-hue `--dx-chart-1..8`, row 119 tie-in), and whether accent dark moves `#3e3e3e` -> `#262626` (dev-docs/archive/research/theme-2026-10-03/role-token-map.md 10.5).
 
 **Deliberately not taken, keep that way unless the owner changes it:** shadcn's grey focus ring (~2.6:1 on white), Nova's tinted destructive button, the `#171717` dark card/popover.
 

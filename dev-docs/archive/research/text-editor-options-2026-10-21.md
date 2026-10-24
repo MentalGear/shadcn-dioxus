@@ -1,6 +1,6 @@
 # Text editor component: is there a Rust library we can use? (research, 2026-10-21)
 
-> **Outcome (owner 2026-10-21):** row 337 is closed as out of scope. The library keeps to primitives and shadcn element parity and builds no editor ([`backlog.md`](../backlog.md#scope)). This note stays as a reference for an app or framework that adds one.
+> **Outcome (owner 2026-10-21):** row 337 is closed as out of scope. The library keeps to primitives and shadcn element parity and builds no editor ([`backlog.md`](../../backlog.md#scope)). This note stays as a reference for an app or framework that adds one.
 
 Scope: backlog row 337 (text editor / rich-text composer). Option A (markdown textarea + preview), B (wrap Tiptap/ProseMirror), C (own contenteditable). This note answers "option B-Rust": is there an existing Rust-based library?
 

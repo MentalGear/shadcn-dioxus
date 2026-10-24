@@ -61,7 +61,7 @@ Dated evidence behind rows and decisions; the backlog rows link to the file that
 | `carousel-*.md`, `carousel-loop-2026-09-25/`, `carousel-overscroll-bench.html` | Carousel engine, overscroll, loop research (rows 91, 96, 102, 103). |
 | `scroll-jank`, `shadcn-catalog`, `unification-audit`, `virtualization-survey` (all `-2026-10-04.md`) | Round-2 research notes feeding rows 136-154. |
 | `dev-docs/archive/research/message-scroller-parity-2026-10-14.md`, `dev-docs/archive/research/chat-kit-demos-2026-10-14.md` | Chat kit and Message Scroller parity (rows 146, 213). |
-| `shadcn-demo-gaps-2026-10-11.md`, `shadcn-demo-parity-audit-2026-10-11.md`, `dev-docs/archive/research/docs-audit-2026-10-17.md` | Demo and docs parity audits. |
+| `dev-docs/archive/research/shadcn-demo-gaps-2026-10-11.md`, `shadcn-demo-parity-audit-2026-10-11.md`, `dev-docs/archive/research/docs-audit-2026-10-17.md` | Demo and docs parity audits. |
 | `dependency-audit-2026-10-14.{md,json}` | Compile-time and supply-chain audit (row 217, markdown decisions). |
 | `dependency-evaluation.md`, `dependency-scanners.md` | Row 371 (parked): the dependency rule applied to every user-compiled crate, and the scanner and criteria review behind the planned controls of the [supply-chain playbook](./supply-chain/README.md). |
 | `touch-open-focus`, `mobile-keyboard`, `nav-scroll-smooth`, `user-select-inventory` (`-2026-10-17.md`), `dev-docs/archive/research/baseui-focus-2026-10-18.md` | Touch, keyboard, scroll and focus investigations (rows 226-229, 240). |

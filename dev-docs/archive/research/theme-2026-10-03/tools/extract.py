@@ -1,7 +1,7 @@
 import re, sys, subprocess, json
 import os,sys
 HERE=os.path.dirname(os.path.abspath(__file__))
-ROOT=os.path.abspath(os.path.join(HERE,"../../../.."))
+ROOT=os.path.abspath(os.path.join(HERE,"../../../../.."))
 sys.path.insert(0,HERE)
 REF=re.compile(r'--(?:(?:primary|secondary)-color(?:-\d+)?|(?:primary|secondary|contrast)-(?:success|warning|error|info)-color|focused-border-color)(?![a-zA-Z0-9-])')
 def strip_comments(s):

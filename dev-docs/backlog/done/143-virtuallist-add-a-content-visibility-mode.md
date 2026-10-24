@@ -15,7 +15,7 @@ updated: 2026-10-05
 
 ## Status / trigger
 
-**LANDED 2026-10-05 (round 3; owner-approved)** -- from the virtualization survey (`dev-docs/research/virtualization-survey-2026-10-04.md` sections 2, 7.1, 8)
+**LANDED 2026-10-05 (round 3; owner-approved)** -- from the virtualization survey (`dev-docs/archive/research/virtualization-survey-2026-10-04.md` sections 2, 7.1, 8)
 
 ## Size
 

@@ -1,6 +1,6 @@
 # shadcn demo parity audit -- the owner's second audit, checked against the tree (2026-10-11)
 
-Source: the owner's row-188 text (below), compared with the row-187 report ([`shadcn-demo-gaps-2026-10-11.md`](./shadcn-demo-gaps-2026-10-11.md)) and with the preview tree **at git HEAD `a6611b3`** (read with `git show HEAD:<path>`). A parallel batch is adding demo variants for checkbox, input, input_group, button_group, radio_group, switch, toggle, toggle_group, tabs, progress, skeleton, spinner, tooltip, textarea, collapsible, card, empty, item, breadcrumb and button; none of that is counted as existing here. Tracked-feature rows: 133 (input-group states), 137 (RTL), 138 (toast), 155 (parity wave, groups 1-10), 156 (drawer), 166 (hover/tooltip delays), 169 (popover non-modal).
+Source: the owner's row-188 text (below), compared with the row-187 report ([`shadcn-demo-gaps-2026-10-11.md`](../archive/research/shadcn-demo-gaps-2026-10-11.md)) and with the preview tree **at git HEAD `a6611b3`** (read with `git show HEAD:<path>`). A parallel batch is adding demo variants for checkbox, input, input_group, button_group, radio_group, switch, toggle, toggle_group, tabs, progress, skeleton, spinner, tooltip, textarea, collapsible, card, empty, item, breadcrumb and button; none of that is counted as existing here. Tracked-feature rows: 133 (input-group states), 137 (RTL), 138 (toast), 155 (parity wave, groups 1-10), 156 (drawer), 166 (hover/tooltip delays), 169 (popover non-modal).
 
 ## 1. Row 188, verbatim
 

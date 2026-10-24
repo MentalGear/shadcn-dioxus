@@ -311,7 +311,7 @@ summary,
  * pointer (`pointercancel` after ~20px: the drag dies). That was masked by a
  * `ontouchstart: prevent_default` on the handle, which Dioxus delegates to `#main` as a
  * NON-passive root listener -- making every wheel/touch on the whole page wait for the main thread
- * (dev-docs/research/scroll-jank-2026-10-04.md, Cause 2b; scripts/check-blocking-scroll-listeners.sh).
+ * (dev-docs/archive/research/scroll-jank-2026-10-04.md, Cause 2b; scripts/check-blocking-scroll-listeners.sh).
  * The slider thumb and the color area need no such rule: their non-focusable containers
  * (`.dx-slider`, `.dx-color-picker-area-container`) are `touch-action: none` ancestors, and the
  * effective value is the intersection down the ancestor chain. Specificity (0,2,0) and source
@@ -1798,7 +1798,7 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
   overflow: visible;
 }
 
-/* Scroll cost (dev-docs/research/scroll-jank-2026-10-04.md, Cause 3): the home page is 70 live
+/* Scroll cost (dev-docs/archive/research/scroll-jank-2026-10-04.md, Cause 3): the home page is 70 live
  * demos + 14 blocks (~4.4k nodes, ~29k px), so any main-thread frame -- a skeleton pulse, a
  * spinner, a ticking player -- re-walked ALL of it (`PrePaint` 1.85 s over one scroll). Cards
  * that are off screen are skipped entirely (no style, layout or paint; their animations stop
@@ -1825,7 +1825,7 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
  * written `var(--dx-cv, auto)`, and `html[data-cv-settle]` (below) flips it to `visible`. A skipped
  * card lays out at its estimate, so a jump over never-rendered cards (a `#fragment` link, a deep
  * link, Back/Forward to a hash) was computed against geometry that changes the moment the cards are
- * rendered, and landed up to ~1,200 px off (dev-docs/research/scroll-jank-2026-10-04.md section 8).
+ * rendered, and landed up to ~1,200 px off (dev-docs/archive/research/scroll-jank-2026-10-04.md section 8).
  * The shell's anchor handler (the inline script in `preview/index.html`) sets the attribute BEFORE
  * it scrolls, so every card is laid out for real when the scroll offset is computed, and removes it
  * once the page has settled; each card has by then recorded its true height for `auto`. A new

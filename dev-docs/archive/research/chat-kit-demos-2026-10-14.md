@@ -19,9 +19,9 @@ Not verified: the registry sources (`apps/v4/registry/bases/base/ui/{message,bub
 
 Provenance inside this repo (what our components cite):
 - `preview/src/components/message_scroller/style.css` line 1 cites `shadcn-ui/ui@295a1f1 registry/bases/base/ui/message-scroller.tsx` and `registry/styles/style-nova.css`.
-- `primitives/src/message_scroller.rs` (module doc) cites `dev-docs/research/shadcn-catalog-2026-10-04.md` section 4 and `@shadcn/react` (MIT). `primitives/src/message_scroller.js` cites `use-message-scroller-controller.ts`, `use-message-scroller-commands.ts`, `geometry.ts`.
+- `primitives/src/message_scroller.rs` (module doc) cites `dev-docs/archive/research/shadcn-catalog-2026-10-04.md` section 4 and `@shadcn/react` (MIT). `primitives/src/message_scroller.js` cites `use-message-scroller-controller.ts`, `use-message-scroller-commands.ts`, `geometry.ts`.
 - The other four `component.json` files cite only `https://github.com/MentalGear/shadcn-dioxus` (dependency git URLs). Their `docs.md` files say "styled composition", with no shadcn URL.
-- `dev-docs/research/shadcn-catalog-2026-10-04.md` sections 3.1-3.5 describe all five components. `dev-docs/archive/rounds/component-backlog.md` rows 81-84 record Message, Bubble, Marker and Attachment as "built 2026-10-04 (chat kit)".
+- `dev-docs/archive/research/shadcn-catalog-2026-10-04.md` sections 3.1-3.5 describe all five components. `dev-docs/archive/rounds/component-backlog.md` rows 81-84 record Message, Bubble, Marker and Attachment as "built 2026-10-04 (chat kit)".
 - **Correction to the record:** `dev-docs/research/shadcn-demo-parity-audit-2026-10-11.md` (line 45 and line 57) says "No original page: ... message, bubble, marker, attachment, message_scroller". That is wrong. All five have docs pages and examples in `main` today (and in the local clone at `30a58d4`). The owner's "far richer" remark is consistent with this.
 
 ## 1. Inventory
@@ -164,6 +164,6 @@ Related but not a demo gap: backlog row 148 (a "Chat" sidebar category) would mo
 ## 6. Unverified or caveats
 
 - Each row's "matches" compares intent and the set of parts used, read from source. Pixel and style parity was not checked (no browser run).
-- The shadcn example list comes from `main` on 2026-10-14. The catalog (`dev-docs/research/shadcn-catalog-2026-10-04.md`) cites snapshot `295a1f1`. The local clone is `30a58d4`. Sampled files match, but a full diff was not run.
+- The shadcn example list comes from `main` on 2026-10-14. The catalog (`dev-docs/archive/research/shadcn-catalog-2026-10-04.md`) cites snapshot `295a1f1`. The local clone is `30a58d4`. Sampled files match, but a full diff was not run.
 - The shadcn docs embed `"styleName": "base-rhea"` and import `@/styles/base-rhea/ui/*`. We have no `rhea` flavour; our stylesheets cite Nova (for example the `message_scroller/style.css` header). Treat shadcn's class names as intent, not as CSS to copy.
 - No `CollapsibleTrigger`-as-Button or `DropdownMenuTrigger`-as-`Button` polymorphism was checked against our component code. The docs say the components accept `render`, ours use `r#as`. Verify before writing each demo.

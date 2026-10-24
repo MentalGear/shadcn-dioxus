@@ -20,7 +20,7 @@
 //!
 //! What this can see is what the component's own Rust does between the two frames. What it cannot see is
 //! anything that only the browser produces: layout, measurement, `document::eval` replies, web-sys
-//! events, the interpreter's DOM writes. See `dev-docs/research/row-329-ssr-first-render-parity-spike.md`.
+//! events, the interpreter's DOM writes. See `dev-docs/archive/research/row-329-ssr-first-render-parity-spike.md`.
 
 use crate::components::DEMOS;
 use crate::ComponentType;

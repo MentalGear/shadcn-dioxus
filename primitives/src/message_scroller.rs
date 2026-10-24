@@ -2,7 +2,7 @@
 //! transcript needs, and nothing else.
 //!
 //! A port of shadcn/ui's `message-scroller` (the `@shadcn/react` headless
-//! controller, MIT) per `dev-docs/research/shadcn-catalog-2026-10-04.md`
+//! controller, MIT) per `dev-docs/archive/research/shadcn-catalog-2026-10-04.md`
 //! section 4. It owns *scroll*: where the transcript opens, whether it
 //! follows a streaming reply, where a new turn lands, keeping the reader's
 //! place while older rows are prepended, and a jump-to-latest control. It

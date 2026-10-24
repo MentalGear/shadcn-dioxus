@@ -3,7 +3,7 @@
 import re, sys, json, collections
 import os,sys
 HERE=os.path.dirname(os.path.abspath(__file__))
-ROOT=os.path.abspath(os.path.join(HERE,"../../../.."))
+ROOT=os.path.abspath(os.path.join(HERE,"../../../../.."))
 sys.path.insert(0,HERE)
 from cssvar import *
 THEME=os.path.join(ROOT,'preview/assets/dx-components-theme.css')
