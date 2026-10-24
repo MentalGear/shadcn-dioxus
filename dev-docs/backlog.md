@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (21)
+## Open rows (23)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -65,5 +65,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [371](backlog/371-dependency-evaluation-keep-lift-drop.md) | Dependency evaluation: keep, feature-gate, replace, lift or drop (rule of 2026-10-23) | WAITING ON OWNER: parked ("its own item, and not yet", 2026-10-23); no work until he reopens it.… | S each outcome | build |
 | [372](backlog/372-scroll-fade-overlay-scrollbar-hybrid.md) | Scroll fade: transition the edge depths (landed) and paint the fade as gradients where the scrollbar is an overlay (deferred) | WAITING ON OWNER: part 1, the overlay-scrollbar hybrid, is deferred ("leave mask for now"); reopen… | M | primitives |
 | [382](backlog/382-rustdoc-warnings-to-zero.md) | Rustdoc warnings to zero: shrink the check-rustdoc baseline (87 entries, mostly unclosed HTML tags) | OPEN, S, no browser: shrink scripts/check-rustdoc.baseline.tsv (87 entries, mostly unclosed HTML… | S | primitives |
+| [383](backlog/383-adversarial-review-board.md) | Adversarial review board: independent expert reviewers attack the finished library, last item of the backlog | BACKLOG. Runs last: after row 365's proposals are answered and every other engineering row has… | M | process |
+| [384](backlog/384-burn-down-ratchet-baselines.md) | Burn down the ratchet baselines and the leftover TODO comments (props docs, history comments, dead refs) | BACKLOG. The history-comment part overlaps row 267's extension (rewrite history comments while… | M | process |
 
 <!-- END GENERATED -->
