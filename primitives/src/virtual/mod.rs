@@ -54,9 +54,9 @@ pub(crate) use pin::{pin_in_flow, with_pinned};
 pub(crate) use size_index::{SizeEstimates, DEFAULT_SIZE};
 pub(crate) use types::ScrollReport;
 pub(crate) use virtualizer::Engine;
-// Not yet consumed within this lane: `default_range_extractor` reaches the module
+// Not consumed inside `virtual`: `default_range_extractor` reaches the module
 // directly (`super::window::window`). Re-exported here per the shared-window-math API
-// contract so the planned looping `CarouselVirtual` (a separate, concurrent lane) can
+// contract so the looping `CarouselVirtualContent` can
 // call `crate::r#virtual::window(..., wrap: true)` without reaching into a submodule.
 #[allow(unused_imports)]
 pub(crate) use window::{window, WindowItem};
