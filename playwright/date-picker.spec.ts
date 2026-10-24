@@ -1125,9 +1125,8 @@ test.describe("Unavailable dates variant (variant=unavailable_dates)", () => {
   }
 });
 
-// dev-docs/backlog.md row 380: the page is prerendered on the build day, and the calendar used to
-// read the clock while rendering, so hydration kept the build day's month and "today" mark. Both now
-// come from the visitor's clock, read after mount.
+// dev-docs/backlog.md row 380: the page is prerendered on the build day, so the month and the "today"
+// mark come from the visitor's clock, read after mount (`calendar::use_today`), never while rendering.
 test.describe("Today is the visitor's date, not the build day", () => {
   for (const [name, variant] of [["main", undefined], ["range", "range"]] as const) {
     test(`the ${name} picker opens on the visitor's month and marks the visitor's today`, async ({ page }) => {
