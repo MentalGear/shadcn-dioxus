@@ -398,7 +398,7 @@ html[data-theme="light"] [class~="dxc-system"] {
 
   /* Control height scale -- the one ladder every sized control reads, so
    * "small", "default" and "large" mean the same pixels in a button, a tab
-   * list, an input and a select (owner decision 2026-10-13). The values are
+   * list, an input and a select (dev-docs/decisions.md). The values are
    * Nova's h-6 / h-7 / h-8 / h-9 and are Button's `data-size` xs / sm / default
    * / lg exactly; `default` is shadcn's 32px field and never moves. Read these
    * for a control's `height` (and the width of its icon-only twin); do not
@@ -823,11 +823,10 @@ html[data-theme="light"] [class~="dxc-system"] {
  * The modal scrim, once.
  *
  * Every native-`<dialog>` overlay (Dialog, AlertDialog, Sheet, Drawer, CommandDialog and the
- * modal Popover) paints its scrim with the dialog's own top-layer `::backdrop`. Six stylesheets
- * used to carry the same three-rule block each (base, open, `@starting-style`) plus a
- * reduced-motion entry; that was one shape pasted six times, and the copy-paste is what produced
- * the stacked-scrim drift in the first place (the Command dialog painted a second 30% scrim over
- * the UA's). One rule keyed on the `dx-` class prefix of a `<dialog>` (the row-111 border-box
+ * modal Popover) paints its scrim with the dialog's own top-layer `::backdrop`. A per-sheet
+ * three-rule block (base, open, `@starting-style`) plus a reduced-motion entry would be one shape
+ * pasted six times, and that copy-paste is what stacks a second scrim over the UA's (as the
+ * Command dialog's 30% wrapper did). One rule keyed on the `dx-` class prefix of a `<dialog>` (the row-111 border-box
  * precedent, ZERO specificity, so an app can restyle it with any selector) replaces all six and
  * ships to every `dx components add` consumer through this file.
  *
@@ -909,9 +908,9 @@ html[data-theme="light"] [class~="dxc-system"] {
  * included), which is what shadcn's components assume: Tailwind's preflight
  * (`*, ::before, ::after { box-sizing: border-box }`) is part of every shadcn
  * install. The initial `content-box` bit us twice with the same shape:
- * `.dx-card` given `height: 100%` overflowed a fixed slot by its padding +
- * border (carousel `vertical` demo, `09cd59e`), and `CarouselVirtualContent`'s
- * slides added the gap padding on top of `flex-basis: 100%` (`971e955`).
+ * `.dx-card` given `height: 100%` overflows a fixed slot by its padding +
+ * border (carousel `vertical` demo), and `CarouselVirtualContent`'s
+ * slides add the gap padding on top of `flex-basis: 100%`.
  *
  * Scoped, not universal, on purpose. This file is copied into the app of
  * every `dx components add` user and linked at THEIR root, so a bare `*` here
@@ -951,11 +950,11 @@ html[data-theme="light"] [class~="dxc-system"] {
  * `playwright/oracle/tier2-html/touch-double-tap.spec.ts`). `touch-action: none` is never the fix: it
  * also blocks the one-finger pan a page or a scroll container needs.
  *
- * This used to be a 400-character comment plus the declaration pasted into 33 component stylesheets
- * (50 sites), kept in step by hand with `main.css`'s `!important` app-layer backstop, which hid every
- * stylesheet that forgot it (Input, Textarea, Native Select had no declaration at all). One rule, here,
- * is the single source, and `scripts/check-theme-baseline.sh` (arm 1) fails a component stylesheet that declares
- * `manipulation` again.
+ * One rule, here, is the single source: a declaration per component stylesheet would need keeping in
+ * step by hand with `main.css`'s `!important` app-layer backstop, which hides every stylesheet that
+ * forgets it (Input, Textarea, Native Select would have none), and
+ * `scripts/check-theme-baseline.sh` (arm 1) fails a component stylesheet that declares
+ * `manipulation`.
  *
  * The element list is `main.css`'s catch-all list (button, link, form controls, `summary`, anything
  * focusable by `tabindex`, and the interactive ARIA widget roles) plus the roles our primitives render
@@ -1280,9 +1279,9 @@ html[data-theme="light"] [class~="dxc-system"] {
  * block, a table cell, a `white-space: nowrap` toolbar or a prose column, and every INHERITED property
  * still flows from that host into the component's text: a `line-height: 3` host re-spaced 382 leaf
  * boxes in 27 components, a `font-weight: 800` host re-weighted 395 in 38 (hostile-host probe,
- * dev-docs/archive/research/typography-hostile-host-probe.spec.ts.txt, ddd9d057). The first answer was a
- * per-root gate demanding that each stylesheet declare its root's size and line height
- * (check-declared-typography, a baseline of 83 rows); this is the same fix by construction, once:
+ * dev-docs/archive/research/typography-hostile-host-probe.spec.ts.txt). A per-root gate demanding
+ * that each stylesheet declare its root's size and line height would only police the copies; this is
+ * the fix by construction, once:
  * every component's namesake root carries `data-dx-root` (written by the component in
  * `preview/src/components/<dir>/component.rs`, a valueless attribute the caller cannot forget) and
  * this ONE zero-specificity rule gives it the theme's base value of every inherited property that
@@ -1315,7 +1314,7 @@ html[data-theme="light"] [class~="dxc-system"] {
  *
  * `line-height` resets to `normal`, the base of this site's `body` (and of the popup rule above). An app
  * whose body sets another leading (Tailwind's preflight sets 1.5) sets `--dx-root-line-height` once on
- * `:root` (owner 2026-10-21), and both resets follow it; a component can still declare its own.
+ * `:root` (backlog row 328), and both resets follow it; a component can still declare its own.
  *
  * A component that wraps the caller's content (Tabs, Tooltip, Hover Card, Carousel) carries no marker
  * and a `typography-inherit(<root>): <reason>` comment in its sheet. Another top-level part a caller
@@ -1511,11 +1510,9 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
  *
  * Twelve components draw a panel that floats over the page: Popover, Select, Combobox, Dropdown
  * Menu, Context Menu, Menubar, Navbar, Navigation Menu, Hover Card, Tooltip, Color Picker and the
- * Date Picker (which wears the Popover's panel). Each used to declare its own edge, radius, fill,
- * shadow, padding, stacking and open/close motion -- six edge idioms (a 1px border, an inset
- * 1px `box-shadow` ring in two colours, a `border` in `--dx-input`, no edge, and the UA's own 3px
- * `dialog` border on the colour picker), open durations of 100/150/200 ms on five curves, and 21
- * byte-identical `@keyframes` copies. This is the one recipe, shadcn's: `bg-popover
+ * Date Picker (which wears the Popover's panel). None declares its own edge, radius, fill,
+ * shadow, padding, stacking or open/close motion (per-sheet copies drift into different edge
+ * idioms, durations and curves, and byte-identical `@keyframes`). This is the one recipe, shadcn's: `bg-popover
  * text-popover-foreground`, a 1px `foreground/10` border (a real border, so it can sit beside
  * `--dx-shadow-md`, which is `none` in dark mode and cannot share a `box-shadow` list), `rounded-lg`,
  * `shadow-md`, `p-1`.
@@ -1829,9 +1826,9 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
  * Edge panel, once (dev-docs/backlog.md rows 207 and 208).
  *
  * Sheet and Drawer are the same thing: a modal panel docked to one edge of the viewport that slides
- * in from it. They used to be two (two side enums, two stylesheets each re-deriving the `<dialog>`
- * UA reset, the per-side inset, border and size, and two sets of slide keyframes), and a fix to one
- * had to be made again in the other. This is the one recipe; Sheet is an edge panel, and Drawer is an
+ * in from it. Two parallel implementations (two side enums, two stylesheets each re-deriving the
+ * `<dialog>` UA reset, the per-side inset, border and size, and two sets of slide keyframes) would
+ * need every fix made twice. This is the one recipe; Sheet is an edge panel, and Drawer is an
  * edge panel plus a drag gesture, a handle and nested stacking (`drawer/style.css`, the Drawer
  * primitive), none of which belongs here.
  *
@@ -2127,8 +2124,8 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
  * Shared interaction-rules layer (dev-docs/backlog.md row 31a).
  *
  * One place for the hover/focus/disabled/reduced-motion affordances that
- * used to be copied -- slightly differently, component to component --
- * into ~28 `style.css` files. `:where(...)` keeps every rule here at zero
+ * would otherwise be copied -- slightly differently, component to component --
+ * into every `style.css` file. `:where(...)` keeps every rule here at zero
  * specificity, so any component class selector overrides it outright, even
  * a bare `.dx-foo:hover`; a component only needs to write the one property
  * it actually wants to differ, not the whole rule.
