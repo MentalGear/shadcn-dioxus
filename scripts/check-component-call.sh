@@ -32,10 +32,10 @@
 # Shapes in primitives/src + preview/src, excluding tests:
 #   `.call(())` on `Callback<(), Element>`: 2 (chart tooltip/legend `ChartIcon`),
 #   On `Callback<(), ()>`/`EventHandler` (event handlers, resets, drop hooks): not flagged.
-#   Direct calls of a `#[component]` fn: 3 (`Calendar(self)`, `RangeCalendar(self)`,
-#   `scroll_area::ScrollArea(props)`), all in the body of a component that forwards its own props.
+#   Direct calls of a `#[component]` fn: 2 (`Calendar(self)`, `RangeCalendar(self)`),
+#   both in the body of a component that forwards its own props.
 #   fn-pointer calls: 1 (`(entry.thumb)()`, hook-free SVG thumbnail).
-#   Six real shapes, each a reasoned allowlist entry below.
+#   Five real shapes, each a reasoned allowlist entry below.
 #
 # Escapes: an inline `component-call-ok: <reason>` comment on the line or the two above,
 # or a reasoned entry in ALLOW below (`file|callee`). A marker or entry that suppresses
@@ -67,9 +67,6 @@ ALLOW = {
         "mounted component's own scope",
     "primitives/src/calendar.rs|RangeCalendar":
         "same as Calendar: the mounted fn pointer forwards its own props",
-    "preview/src/components/scroll_area/component.rs|ScrollArea":
-        "the themed wrapper IS a component and tail-forwards its props to the primitive of the "
-        "same name: the hooks run in the wrapper's own scope, once per render, in a fixed position",
     "primitives/src/chart/components/tooltip.rs|icon":
         "`ChartIcon` is the documented render-prop for a series icon (an SVG, hook-free by "
         "contract, 'Unused for now' in chart/config.rs); nothing in the tree sets it",

@@ -23,7 +23,10 @@ pub struct ScrollAreaProps {
     #[props(default)]
     pub dir: Option<Direction>,
 
-    /// Whether the scrollbars should be always visible.
+    /// Whether the scrollbar thumb stays painted at rest (`true`) or paints only while a fine
+    /// pointer hovers the box (`false`, Radix's `type="hover"`). Sets `dx-scroll-area-always-show`
+    /// or `dx-scroll-area-auto-hide` on the scroller; the themed component's `style.css` styles
+    /// both. An OS overlay scrollbar (macOS, iOS) still shows only while scrolling.
     #[props(default)]
     pub always_show_scrollbars: ReadSignal<bool>,
 

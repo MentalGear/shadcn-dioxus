@@ -214,6 +214,22 @@ test("vertical: a column with spacing 1 (4px), navigated with ArrowUp/ArrowDown"
   await expect(items.nth(1), "ArrowRight is not the vertical axis").toBeFocused();
 });
 
+test("vertical: roving_loop false stops the arrows at either end and still moves between items (row 397)", async ({ page }) => {
+  await gotoHydrated(page, `${BASE_URL}/component/toggle_group/`);
+  const items = group(page, "vertical", "Vertical text formatting").getByRole("button");
+  await items.nth(1).focus();
+  await page.keyboard.press("ArrowDown");
+  await expect(items.nth(2)).toBeFocused();
+  await page.keyboard.press("ArrowDown");
+  await expect(items.nth(2), "no wrap past the last item").toBeFocused();
+  await page.keyboard.press("ArrowUp");
+  await expect(items.nth(1)).toBeFocused();
+  await page.keyboard.press("ArrowUp");
+  await expect(items.nth(0)).toBeFocused();
+  await page.keyboard.press("ArrowUp");
+  await expect(items.nth(0), "no wrap before the first item").toBeFocused();
+});
+
 test("font weight: a controlled single-select of 4rem tiles that names the chosen font-* class", async ({ page }) => {
   await gotoHydrated(page, `${BASE_URL}/component/toggle_group/`);
   const root = group(page, "font_weight", "Font Weight");

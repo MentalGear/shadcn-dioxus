@@ -61,7 +61,7 @@ SidebarProvider {
 ## Behaviors
 - Layout: `variant` adjusts chrome (`Floating/Inset` adds padding/radius); `side` selects left/right.
 - Collapse: `Offcanvas` hides the rail; `Icon` keeps a thin icon strip and hides labels/actions/badges; `None` is static.
-- Keyboard: ⌘/Ctrl+B toggles via provider. Focus rings are defined in `sidebar/style.css`; keep or replace with `:focus-visible` styles.
+- Keyboard: ⌘/Ctrl+B toggles via the provider, except while focus is in a text field, a `select` or a contenteditable, or after a nearer handler (an editor's own Ctrl+B) called `preventDefault`. `SidebarProvider { keyboard_shortcut: Some('k') }` picks another key; `keyboard_shortcut: None` turns the shortcut off. Focus rings are defined in `sidebar/style.css`; keep or replace with `:focus-visible` styles.
 - Tooltips: `tooltip: Option<Element>` on `SidebarMenuButton`; `None` skips wrapping in Tooltip.
 - Trigger icon: `icon: Option<Element>` on `SidebarTrigger` replaces the default panel icon (e.g. a hamburger `Menu`); give it the class `dx-sidebar-trigger-icon` to keep the trigger's icon sizing and RTL flip.
 

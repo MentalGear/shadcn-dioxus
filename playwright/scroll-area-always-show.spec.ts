@@ -1,7 +1,7 @@
 /**
- * `ScrollArea { always_show_scrollbars: true }`: the scroller carries `dx-scroll-area-always-show`, and main.css
+ * `ScrollArea { always_show_scrollbars: true }`: the scroller carries `dx-scroll-area-always-show`, and its style.css
  * paints its thumb without hover, so the horizontal demo reads as scrollable at rest. A scroller without the prop
- * (the `main` demo) keeps the app-wide hover-only thumb.
+ * (the `main` demo) carries `dx-scroll-area-auto-hide` and keeps a hover-only thumb.
  *
  * Observed through the computed `scrollbar-color` with the pointer parked off both scrollers: a visible thumb has
  * a painted first colour, a hidden one is fully transparent. Functional spec: no millisecond thresholds.

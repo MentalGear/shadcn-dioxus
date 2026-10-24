@@ -23,5 +23,5 @@ mod laws;
 pub use derive::{derive, derive_by, derive_rows, RowCompare, TableView, View};
 pub use field::Field;
 pub use stages::{filter_rows, paginate, sort_rows, sort_rows_by, tri_state, SortDirection};
-pub use state::{KeyOrder, RowAnchor, TableState, ViewState};
+pub use state::{KeyOrder, RowAnchor, TableState, ViewChanges, ViewState};
 pub use text::{contains_query, contains_query_normalized, normalize_query};

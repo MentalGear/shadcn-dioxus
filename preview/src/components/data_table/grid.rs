@@ -31,6 +31,9 @@ pub(super) fn DataTableGrid<T: Clone + PartialEq + 'static>(props: DataTableProp
         sort: props.default_sort.clone(),
         hidden_columns: props.hidden_columns.clone(),
         selected: Vec::new(),
+        on_sort_change: props.on_sort_change,
+        on_page_change: props.on_page_change,
+        on_selection_change: props.on_selection_change,
     };
     let model = use_data_table_index(props.rows, &props.columns, &props.row_key, options);
     let state = model.state;
