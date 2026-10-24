@@ -1989,12 +1989,12 @@ test.describe("confirm: false demos follow their shadcn twin", () => {
 test.describe("Natural language picker (variant=natural_language)", () => {
   const VARIANT = "natural_language";
 
-  /** `toLocaleDateString("en-US", { day: "2-digit", month: "long", year: "numeric" })` of the browser's local today + `days` (the demo reads the local date after mount, `use_today`). */
+  /** `toLocaleDateString("en-US", { day: "2-digit", month: "long", year: "numeric" })` of UTC-today + `days` (the demo uses UTC today). */
   async function expectedDate(page: Page, days: number) {
     return page.evaluate((d) => {
       const now = new Date();
-      const day = new Date(now.getFullYear(), now.getMonth(), now.getDate() + d);
-      return day.toLocaleDateString("en-US", { day: "2-digit", month: "long", year: "numeric" });
+      const utc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + d));
+      return utc.toLocaleDateString("en-US", { timeZone: "UTC", day: "2-digit", month: "long", year: "numeric" });
     }, days);
   }
 

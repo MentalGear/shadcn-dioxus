@@ -1,8 +1,8 @@
 use super::super::component::*;
 use dioxus::prelude::*;
 
-use dioxus_primitives::calendar::{use_today, DateRange};
-use time::{ext::NumericalDuration, Date};
+use dioxus_primitives::calendar::DateRange;
+use time::{ext::NumericalDuration, Date, UtcDateTime};
 
 /// Three unavailable ranges inside the month the picker opens on (the current one).
 ///
@@ -31,9 +31,7 @@ fn unavailable_ranges(today: Date) -> Vec<DateRange> {
 pub fn Demo() -> Element {
     let mut selected_range = use_signal(|| None::<DateRange>);
 
-    // In the visitor's month, read after mount (backlog row 380).
-    let today = use_today();
-    let disabled_ranges = use_memo(move || unavailable_ranges(today()));
+    let disabled_ranges = use_signal(|| unavailable_ranges(UtcDateTime::now().date()));
 
     rsx! {
         div {

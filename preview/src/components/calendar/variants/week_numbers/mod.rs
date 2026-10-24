@@ -16,7 +16,7 @@ pub fn Demo() -> Element {
         Date::from_calendar_date(today().year(), Month::January, 12).expect("valid date")
     });
     let mut selected_date = use_signal(move || Some(january_12()));
-    let mut view_date = use_signal(move || january_12());
+    let mut view_date = use_signal(move || january_12.cloned());
     use_effect(move || {
         let day = january_12();
         if *view_date.peek() != day {
