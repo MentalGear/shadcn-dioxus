@@ -17,8 +17,8 @@
 //! do nothing (dev-docs/backlog.md row 3's warning, given when Phase 4.4 landed
 //! the same lesson for Popover).
 //!
-//! `DialogContentNonModal` (`is_modal: false`) is unchanged from before this
-//! slice on both targets, per dev-docs/plan.md Phase 4.2's scope.
+//! `DialogContentNonModal` (`is_modal: false`) is the plain non-native arm on
+//! both targets (dev-docs/plan.md Phase 4.2 scopes native `<dialog>` to the modal path).
 //! `DialogContentModal` (`is_modal: true`) is cfg-split
 //! (`dev-docs/archive/research/phase4-spike-findings.md` Construction B):
 //! - `#[cfg(not(feature = "web"))]`: the plain
@@ -27,8 +27,8 @@
 //!   never bound as an attribute (Construction B's central finding: binding
 //!   it declaratively in the same build as a guarded `showModal()` call
 //!   doesn't crash, it silently skips the modal state entirely), driven by
-//!   `crate::use_dialog_open_driver`/`crate::use_dialog_close_sync` (the
-//!   fix for the historical stranded-signal defect,
+//!   `crate::use_dialog_open_driver`/`crate::use_dialog_close_sync` (which
+//!   prevents the stranded-signal defect,
 //!   `dev-docs/reference/platform-rationale.md` Caveat 1) plus
 //!   `crate::use_dialog_backdrop_dismiss` (now shared with `popover.rs`'s
 //!   modal web arm too) for the "click far outside the dialog" behaviour
@@ -152,7 +152,7 @@ pub struct DialogRootProps {
     pub overlay: ReadSignal<bool>,
 
     /// Base UI's `disablePointerDismissal`: when `true`, a press outside the panel and focus
-    /// moving outside it no longer close the dialog (a modal's backdrop click included), so the
+    /// moving outside it do not close the dialog (a modal's backdrop click included), so the
     /// first press on the page of a non-modal dialog only acts on the page. Escape and the
     /// dialog's own close controls still close it. Defaults to `false`.
     #[props(default = ReadSignal::new(Signal::new(false)))]
@@ -415,7 +415,7 @@ pub fn DialogContent(props: DialogContentProps) -> Element {
     }
 }
 
-/// `is_modal: false` arm -- unchanged from before Phase 4.2 on both targets
+/// `is_modal: false` arm -- the plain non-native arm on both targets
 /// (dev-docs/plan.md Phase 4.2 scopes native `<dialog>` to the modal path only).
 #[component]
 fn DialogContentNonModal(
@@ -552,7 +552,7 @@ fn DialogContentModal(
     let open = ctx.open;
     let set_open = ctx.set_open;
 
-    // Browser -> signal (the fix for the historical stranded-signal defect,
+    // Browser -> signal (which prevents the stranded-signal defect,
     // dev-docs/reference/platform-rationale.md Caveat 1) and signal -> browser
     // (guarded against `InvalidStateError`), both from `lib.rs`.
     crate::use_dialog_close_sync(id, set_open);

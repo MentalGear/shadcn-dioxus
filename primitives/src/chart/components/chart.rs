@@ -1143,7 +1143,7 @@ fn entrance_pose(
 
 /// Whether `data-animate` may be set. A chart created by the client plays its entrance once it
 /// has been seen. A hydrated one has already been painted, so it plays only if it was NOT in view
-/// at hydration (`Some(false)`) and has since been seen; `Some(true)` (it was in the first
+/// at hydration (`Some(false)`) and is seen later; `Some(true)` (it was in the first
 /// paint) and `None` (not yet known, or the read failed) never animate, so the painted chart is
 /// never restarted.
 fn plays_entrance(hydrated: bool, painted_in_view: Option<bool>, entered: bool) -> bool {
@@ -1673,7 +1673,7 @@ mod tests {
         // dioxus_ssr renders a numeric attribute value unquoted (valid
         // HTML5: an unquoted value is fine as long as it has no
         // whitespace/quotes/etc in it), unlike every string attribute
-        // above -- confirmed empirically, not assumed.
+        // above.
         assert!(html.contains("tabindex=0"));
     }
 
