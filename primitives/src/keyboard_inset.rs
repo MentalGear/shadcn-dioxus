@@ -20,7 +20,7 @@
 //! * `data-dx-keyboard="open"`.
 //!
 //! All three exist ONLY while the keyboard is open, so a rule written against the attribute leaves
-//! the panel byte-for-byte as it was with no keyboard. A sheet consumes them as
+//! the panel byte-for-byte as it is without a keyboard. A sheet consumes them as
 //! `.dx-x[data-dx-keyboard] { bottom: var(--dx-keyboard-inset, 0px); max-height: calc(100% - ...) }`
 //! (always with a `0px` fallback: the variable is absent without a keyboard).
 //!

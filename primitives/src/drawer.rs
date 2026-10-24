@@ -26,21 +26,20 @@
 //! side only reacts to three messages: `start` (with the panel's measured size),
 //! `move` (the cumulative offset, oriented so positive always means "toward the
 //! closing edge") and `end` (the release velocity, and whether the browser
-//! cancelled the gesture). It replaced a design that polled
-//! `crate::pointer::pointer_position` from a reactive effect and timed its
-//! samples with the wall clock of whenever that effect happened to run. Two
-//! defects of that design are closed by construction:
+//! cancelled the gesture). Polling `crate::pointer::pointer_position` from a
+//! reactive effect and timing its samples with the wall clock of whenever
+//! that effect happens to run would go wrong in two ways; the script rules
+//! both out by construction:
 //!
-//! - **The release velocity was noise.** It was the displacement between the
-//!   LAST TWO samples over their effect-run times, floored at 1 ms: on a busy
-//!   main thread several `pointermove`s collapse into one effect run and a slow
-//!   drag read as a fling (`drawer.spec.ts`'s old "short, slow drag" test noted
-//!   it closed the drawer in roughly 1 run in 3). The script timestamps every
+//! - **The release velocity is not noise.** The displacement between the
+//!   last two samples over their effect-run times, floored at 1 ms, reads a
+//!   slow drag as a fling on a busy main thread, where several
+//!   `pointermove`s collapse into one effect run. The script timestamps every
 //!   sample with the event's own `timeStamp` and takes the velocity over the last
 //!   [`VELOCITY_WINDOW_MS`] of movement before the release; a pause before
 //!   letting go is therefore no flick, and a flick needs at least
 //!   [`FLICK_MIN_DISTANCE_PX`] of travel so jitter cannot read as one.
-//! - **The direction was decided in three places.** Orientation (down for
+//! - **The direction is decided in one place.** Orientation (down for
 //!   `Bottom`, up for `Top`, and so on) is applied once, in the script, from the
 //!   `vertical`/`sign` pair [`EdgeSide::drag_axis`] hands it; everything after
 //!   -- the live offset, the rubber band, the release decision -- works on that
@@ -838,7 +837,7 @@ pub struct DrawerRootProps {
 ///
 /// The entry point for the drawer -- a modal [`crate::dialog::DialogRoot`]
 /// (see that component's own doc for the full modality/focus-trap/
-/// scroll-lock behaviour, all inherited unchanged) plus the `side`/
+/// scroll-lock behaviour, all inherited) plus the `side`/
 /// `dismissible` configuration [`DrawerContent`]'s drag gesture consumes.
 /// Manages the open state and provides context to its children; the
 /// contents only render while open.
@@ -977,10 +976,10 @@ pub struct DrawerContentProps {
 ///
 /// The content of the drawer -- must be used inside a [`Drawer`]. Renders
 /// [`crate::dialog::DialogContent`] (so it inherits that primitive's focus
-/// trap/restore, inertness, top layer and Escape handling unchanged) with
+/// trap/restore, inertness, top layer and Escape handling) with
 /// `data-side`/`data-state`/`data-dragging` data attributes and, while a
-/// drag has moved the panel, an inline `translate` (see this module's doc
-/// for why `translate` and not `transform`) tracking the pointer.
+/// drag has moved the panel, an inline `transform` (see this module's doc
+/// for why `transform` and not `translate`) tracking the pointer.
 ///
 /// Owns the drag gesture for both itself and any [`DrawerHandle`] rendered
 /// inside it -- see [`GESTURE_JS`]'s doc for why one listener on this
@@ -1091,9 +1090,9 @@ pub fn DrawerContent(props: DrawerContentProps) -> Element {
                 Settle::Close => {
                     // Hold the panel where the pointer left it: the exit keyframe
                     // (`translate`) then carries it the rest of the way from HERE.
-                    // Resetting the offset to 0 instead made the inline `transform` ease back
-                    // to rest while the exit slid the panel out -- a visible hitch against the
-                    // release point.
+                    // Resetting the offset to 0 instead would make the inline `transform` ease
+                    // back to rest while the exit slid the panel out -- a visible hitch against
+                    // the release point.
                     released_offset.set(Some(damped_display_offset(
                         raw,
                         size.map(|s| s - room),
@@ -1244,8 +1243,7 @@ pub fn DrawerHandle(props: DrawerHandleProps) -> Element {
 /// `aria-labelledby` to a `DialogTitle` id whether or not one is rendered,
 /// so omitting this leaves a broken reference (axe's `aria-dialog-name`
 /// rule) rather than simply an unnamed drawer -- see
-/// [`crate::command::CommandDialog`]'s doc for the same lesson learned
-/// there first.
+/// [`crate::command::CommandDialog`]'s doc for the same rule.
 ///
 /// ## Example
 ///
@@ -1459,8 +1457,8 @@ mod tests {
 
     #[test]
     fn damped_display_offset_is_a_pure_function_of_cumulative_raw_offset() {
-        // Regression for the exact bug this module's own doc warns against:
-        // re-damping an already-damped *display* value each frame would
+        // The rule this module's own doc states: re-damping an
+        // already-damped *display* value each frame would
         // make two equal cumulative raw offsets, reached via different
         // paths, disagree -- they must not.
         let via_one_big_step = damped_display_offset(-40.0, Some(400.0), 0.0);
@@ -1471,7 +1469,7 @@ mod tests {
 
     #[test]
     fn drag_style_is_absent_at_rest_for_every_side() {
-        // Regression: `0.0 * sign` is negative zero for `Top`/`Left` (`sign == -1.0`), which
+        // `0.0 * sign` is negative zero for `Top`/`Left` (`sign == -1.0`), which
         // `f64::Display` would otherwise render as the literal text `"-0"`. At rest there is no
         // inline style at all, so a stylesheet owns `transform` (the nested-drawer offset).
         for side in [
@@ -1531,7 +1529,7 @@ mod tests {
 
     #[test]
     fn should_close_on_release_never_closes_a_drag_toward_the_open_side() {
-        // Regression guard: dragging a bottom drawer UP (negative, oriented) --
+        // Dragging a bottom drawer UP (negative, oriented) --
         // however far, however fast -- is never a dismissal.
         assert!(!should_close_on_release(-300.0, Some(400.0), 2.0));
         assert!(!should_close_on_release(-300.0, Some(400.0), -2.0));

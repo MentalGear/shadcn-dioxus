@@ -24,14 +24,15 @@
 //! - `#[cfg(not(feature = "web"))]`: the plain
 //!   `div` + vendored `FocusTrap` path.
 //! - `#[cfg(feature = "web")]`: a real `<dialog>` element, `open`
-//!   never bound as an attribute (Construction B's central finding: binding
+//!   never bound as an attribute (binding
 //!   it declaratively in the same build as a guarded `showModal()` call
-//!   doesn't crash, it silently skips the modal state entirely), driven by
+//!   doesn't crash, it silently skips the modal state entirely: Construction
+//!   B of the spike findings above), driven by
 //!   `crate::use_dialog_open_driver`/`crate::use_dialog_close_sync` (which
 //!   prevents the stranded-signal defect,
 //!   `dev-docs/reference/platform-rationale.md` Caveat 1) plus
-//!   `crate::use_dialog_backdrop_dismiss` (now shared with `popover.rs`'s
-//!   modal web arm too) for the "click far outside the dialog" behaviour
+//!   `crate::use_dialog_backdrop_dismiss` (shared with `popover.rs`'s
+//!   modal web arm) for the "click far outside the dialog" behaviour
 //!   `dialog.spec.ts` already covers -- `use_outside_dismiss`
 //!   itself is not reusable here, because a `showModal()` backdrop click's
 //!   `event.target` *is* the `<dialog>` element (it contains itself), so
@@ -58,7 +59,7 @@
 //! Known limit of reading `:focus-visible`: a mouse click on an opener that ALREADY holds
 //! keyboard focus (a keyboard open, Escape, then a click on the same trigger with no other
 //! pointer interaction between) is still `:focus-visible`, so that open keeps the browser
-//! default (the first control), which is today's behaviour.
+//! default (the first control).
 //!
 //! ### Closing keeps the dialog modal until its exit has played
 //!
@@ -69,8 +70,8 @@
 //! `<dialog>` therefore carries its own `data-state` (`"open"`/`"closed"`) --
 //! `[open]` stays set for the whole exit, so a stylesheet keys the exit on
 //! `[data-state="closed"]` -- and stays a real modal in the top layer, with the
-//! viewport as its containing block, until the end. See that hook's doc for the
-//! regression this closes (a closing Sheet/Drawer/Dialog changing size and
+//! viewport as its containing block, until the end. See that hook's doc for what
+//! this prevents (a closing Sheet/Drawer/Dialog changing size and
 //! position, clipped to a `content-visibility` ancestor, the moment it left the
 //! top layer).
 

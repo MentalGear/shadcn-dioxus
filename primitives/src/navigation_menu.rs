@@ -74,7 +74,7 @@
 //! ArrowDown on a top-level trigger unambiguously means "open/enter this
 //! panel," never "also move to the next item" -- see
 //! [`NavigationMenuTrigger`]'s own doc for that choice). Both are cheap,
-//! cited, backward-compatible follow-ups, not implemented.
+//! cited and backward-compatible, and both are left out.
 //!
 //! # Hover intent and the pointer contract
 //!
@@ -85,18 +85,17 @@
 //! when the pointer leaves the trigger and its panel, and the marker that
 //! lets a click confirm a hover-opened panel -- lives in
 //! `crate::hover_intent::HoverIntent`, shared with `crate::navbar` so the
-//! opening half can never be wired without the closing half (the navbar once
-//! was: its dropdown stayed open for ever after the pointer left it). This
+//! opening half can never be wired without the closing half. This
 //! module only reports `mouseenter`/`mouseleave` of its trigger and panel to
 //! it. The timers are `crate::menu_sub::DelayedAction`s, the same primitive
 //! `DropdownMenuSub`/`ContextMenuSub` use.
 //!
 //! Hover is an *option*, not a given: [`NavigationMenuProps::open_on_hover`]
-//! (default `true`, today's behaviour) switches the whole pointer-hover
+//! (default `true`) switches the whole pointer-hover
 //! contract off, leaving **click activation** -- see that prop's doc for the
 //! exact semantics and the Base UI/Radix comparison. Every hover entry point
 //! in this file (the trigger's and the content's `onmouseenter`/
-//! `onmouseleave`) checks it first, so there is no ungated hover path left.
+//! `onmouseleave`) checks it first, so there is no ungated hover path.
 //!
 //! # Detecting "focus left the nav" without `relatedTarget`
 //!
@@ -104,9 +103,9 @@
 //! ("Moving focus out of the navigation region also closes an open
 //! dropdown ... necessary to meet WCAG 2.1 1.4.13") is implemented in its
 //! reference JS (`js/disclosureMenu.js`'s `onBlur`) by reading
-//! `event.relatedTarget` and checking `rootNode.contains(...)`. Confirmed
-//! by reading `dioxus-html` 0.7.9's own event source
-//! (`dioxus-html-0.7.9/src/events/focus.rs`): this framework version's
+//! `event.relatedTarget` and checking `rootNode.contains(...)`.
+//! `dioxus-html` 0.7.9's own event source
+//! (`dioxus-html-0.7.9/src/events/focus.rs`) shows that this framework version's
 //! `FocusData` exposes no `related_target` at all, so that check is not
 //! available here -- consistent with no existing component in this crate
 //! reading it either (`rg relatedTarget primitives/src` finds nothing).

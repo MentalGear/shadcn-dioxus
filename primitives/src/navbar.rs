@@ -222,10 +222,8 @@ pub fn Navbar(props: NavbarProps) -> Element {
                 onkeydown: move |event: Event<KeyboardData>| {
                     match event.key() {
                         Key::Escape => {
-                            // dev-docs/backlog.md row 53's own Escape-refocus
-                            // finding: root-caused as a genuine oversight,
-                            // not a deliberate hover-model exemption --
-                            // `Navbar` fully supports keyboard-driven
+                            // Escape refocuses the trigger (dev-docs/backlog.md
+                            // row 53): `Navbar` fully supports keyboard-driven
                             // opening (`NavbarNav`'s ArrowDown/ArrowUp move
                             // focus into the open content exactly the way
                             // `MenubarMenu`'s do), so it needs the same
@@ -245,8 +243,7 @@ pub fn Navbar(props: NavbarProps) -> Element {
                             // first to force a real transition, mirroring
                             // `MenubarMenu`'s identical comment. A no-op
                             // when nothing was open (Escape pressed with no
-                            // nav open), matching this handler's prior
-                            // behavior exactly for that case.
+                            // nav open).
                             let open_index = *ctx.open_nav.peek();
                             ctx.set_open_nav.call(None);
                             if let Some(index) = open_index {
@@ -302,10 +299,8 @@ struct NavbarNavContext {
     // keyed off their own `trigger_id`). Read by `NavbarContentRendered`;
     // kept in sync with `NavbarTrigger`'s own (possibly caller-overridden)
     // `id` via `use_id_or` there -- see that component's doc
-    // (dev-docs/backlog.md row 36) -- rather than set once via `use_unique_id`
-    // the way `MenubarMenuContext::trigger_id` still is, since `Navbar` is
-    // new enough to build the row-36 fix in from the start instead of
-    // planting the same id-desync defect a fifth time.
+    // (dev-docs/backlog.md row 36) -- rather than set once via `use_unique_id`,
+    // so a caller-supplied id cannot desync from the id `NavbarContent` reads.
     trigger_id: Signal<String>,
 }
 
@@ -512,8 +507,7 @@ pub fn NavbarNav(props: NavbarNavProps) -> Element {
 pub struct NavbarTriggerProps {
     /// The ID of the trigger button. If not provided, an internally
     /// generated ID is used -- see `NavbarTrigger`'s use of `use_id_or`
-    /// for why this is a typed field (dev-docs/backlog.md row 36, applied here
-    /// from the start alongside row 41 rather than shipped without it).
+    /// for why this is a typed field (dev-docs/backlog.md rows 36 and 41).
     pub id: ReadSignal<Option<String>>,
 
     /// Additional attributes to apply to the trigger element.
@@ -688,7 +682,7 @@ pub fn NavbarTrigger(props: NavbarTriggerProps) -> Element {
                     // `is_open()` is already true -- toggling off that would
                     // close the menu the tap was opening. Desktop hover-open
                     // happens before `pointerdown`, so the snapshot is `true`
-                    // there and the click closes it, as before.
+                    // there and the click closes it.
                     open_at_down.set(Some(is_open()));
                 }
             },
@@ -901,14 +895,12 @@ fn NavbarContentRendered(
     // `hidePopover()` the instant `open` goes `false`, which (per the UA
     // popover stylesheet's `[popover]:not(:popover-open) { display: none }`)
     // sets `display: none` on the content before `use_animated_open`'s own
-    // rAF-deferred `getAnimations()` check ever ran -- the exact defect
-    // `dev-docs/backlog.md` row 77 flagged as a likely (never-investigated)
-    // sibling of the identical `NavigationMenu` bug it fixed. Confirmed by
-    // execution here too: an in-page rAF sample of a real close showed
+    // rAF-deferred `getAnimations()` check ever runs -- the exact defect of
+    // `dev-docs/backlog.md` row 77 (the identical `NavigationMenu` bug):
     // `opacity`/`transform` jump straight from the open resting value to the
     // closed target between two consecutive animation frames, with the
-    // content already disconnected from the DOM one frame later -- no
-    // transition frame ever ran. `PopoverKind::Auto` (unlike
+    // content disconnected from the DOM one frame later -- no
+    // transition frame ever runs. `PopoverKind::Auto` (unlike
     // `NavigationMenuContent`'s `Manual`) is proven safe with this hook
     // already: `popover.rs`'s modal-less `Popover` pairs the identical
     // `Auto` + `use_popover_shown_while_mounted` combination (see that
@@ -1269,13 +1261,12 @@ pub fn NavbarItem(mut props: NavbarItemProps) -> Element {
             // identical `crate::menu_semantics::MENU_ITEM_ROLE`
             // (`menubar.rs`), which this mirrors.
             role: crate::menu_semantics::MENU_ITEM_ROLE,
-            // Found via an axe `color-contrast` finding on this pattern
-            // class's disabled state (dev-docs/backlog.md row 39): see
-            // `dropdown_menu.rs`'s identical `DropdownMenuItem` fix for the
-            // full account -- this renders as an `<a>`, which (unlike a
-            // `<button disabled>`) has no native disabled semantics at
-            // all, so `data-disabled` alone left this item looking, to
-            // assistive tech, like a perfectly normal active link.
+            // The disabled state of this pattern class (dev-docs/backlog.md
+            // row 39): see `dropdown_menu.rs`'s identical `DropdownMenuItem`
+            // wiring for the full account -- this renders as an `<a>`, which
+            // (unlike a `<button disabled>`) has no native disabled
+            // semantics at all, so `data-disabled` alone would leave this
+            // item looking, to assistive tech, like a normal active link.
             aria_disabled: is_disabled,
             "data-disabled": is_disabled,
             tabindex: tabindex,
@@ -1321,7 +1312,7 @@ pub fn NavbarItem(mut props: NavbarItemProps) -> Element {
 mod tests {
     //! Backlog row 126: a `NavbarItem` must emit exactly one `aria-current`,
     //! even when the caller passes its own (`dioxus_router::Link` writes its
-    //! literal beside `..attributes`, so the attribute came out twice).
+    //! literal beside `..attributes`, so the attribute would come out twice).
     use super::*;
 
     #[derive(Routable, Clone, PartialEq)]

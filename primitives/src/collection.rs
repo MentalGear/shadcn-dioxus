@@ -13,8 +13,8 @@ struct CollectionItemState {
     disabled: bool,
     hidden: bool,
     selected: bool,
-    // Optional label text, read back by `CollectionState::text_entries` --
-    // additive to this struct's other per-item fields, not a second item
+    // Optional label text, read back by `CollectionState::text_entries`;
+    // this struct holds every per-item field, so there is no second item
     // registry. See that method's own doc.
     text_value: Option<String>,
 }
@@ -130,7 +130,7 @@ impl CollectionState {
         // Only notify subscribers when the value actually changes. A redundant
         // clear (clearing focus when nothing is focused) must not wake effects
         // reading focus state, or it re-triggers the context-menu auto-close
-        // bug guarded against on `focused` below.
+        // (guarded on `focused` below).
         if *self.focus_key.peek() != key {
             self.focus_key.set(key);
         }
@@ -206,8 +206,8 @@ impl CollectionState {
     /// Every currently registered item's `(index, text value or empty
     /// string, disabled)`, in index order -- the read side of the per-item
     /// `text_value` registered via [`CollectionItemBuilder::text_value`].
-    /// Additive to the existing per-item registration [`use_item`] already
-    /// threads through for `key`/`disabled`/`hidden`/`selected`: a feature
+    /// Part of the one per-item registration [`use_item`] threads through
+    /// for `key`/`disabled`/`hidden`/`selected`: a feature
     /// that needs to search item text (currently only
     /// `crate::typeahead::find_next_match`) reads it here instead of
     /// keeping its own second, parallel item registry that would
@@ -554,8 +554,7 @@ impl CollectionItemBuilder {
     /// Optional label text for this item, read back (in bulk, across every
     /// registered item) by [`CollectionState::text_entries`]. Unset by
     /// default (`None`) — nothing reads this unless a caller opts in, so
-    /// existing `collection_item(...)` call sites that never chain this are
-    /// unaffected.
+    /// a `collection_item(...)` call that never chains this is unaffected.
     pub(crate) fn text_value(mut self, text_value: impl Fn() -> Option<String> + 'static) -> Self {
         self.text_value = Rc::new(text_value);
         self

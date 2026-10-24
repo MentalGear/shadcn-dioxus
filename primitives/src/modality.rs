@@ -83,7 +83,7 @@ pub const MODALITY_JS: &str = "(function(){var W=window,R=document.documentEleme
 ///
 /// Script focus here never passes `focusVisible` (Chrome 144+): it would override the text-field
 /// rule (a focused field matches `:focus-visible` after any modality, `--dx-ring-field`), and the
-/// non-field rings are already decided by the modality attribute. See the backlog row 240 update.
+/// non-field rings are already decided by the modality attribute (backlog row 240).
 pub const OPEN_FOCUS_JS: &str = r#"
 function dxModality() {
     const m = document.documentElement.getAttribute('data-dx-modality');

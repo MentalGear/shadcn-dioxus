@@ -177,8 +177,8 @@ impl<T: Clone> TableView<T> {
     }
 }
 
-/// [`derive_by`] with the page's rows cloned into a [`TableView`] (the Data
-/// Table's original `derive`).
+/// [`derive_by`] with the page's rows cloned into a [`TableView`] (the form
+/// the Data Table renders).
 pub fn derive_rows<T: Clone>(
     rows: &[T],
     state: &ViewState,

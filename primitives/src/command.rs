@@ -8,7 +8,7 @@
 //!
 //! - **`Dialog`** (`dialog.rs`) -- [`CommandDialog`] is a thin wrapper over
 //!   [`crate::dialog::DialogRoot`] + [`crate::dialog::DialogContent`],
-//!   unchanged, reusing its native `<dialog>`/`showModal()` modal machinery
+//!   reusing its native `<dialog>`/`showModal()` modal machinery
 //!   (focus trap, restore, inertness, top layer) as-is.
 //! - **`Combobox`** (`combobox/`) -- not the `Combobox`/`ComboboxList`
 //!   *components* (see "Why a sibling context" below), but the same
@@ -24,7 +24,7 @@
 //!   [`crate::combobox::default_combobox_filter`], reused, not
 //!   reimplemented.
 //! - **`SelectGroup`/`SelectGroupLabel`** (`select/components/group.rs`) --
-//!   [`CommandGroup`]/[`CommandGroupLabel`] port that exact shape: a
+//!   [`CommandGroup`]/[`CommandGroupLabel`] follow that exact shape: a
 //!   `role="group"` element plus a mount-time `use_effect` in the label that
 //!   sets a context signal the group reads into `aria-labelledby`.
 //!
@@ -51,7 +51,7 @@
 //!   layer (`top_layer::anchor_name_style`). `CommandList` is never promoted
 //!   anywhere -- it is always an in-flow child of `Command`, the same shape
 //!   `ComboboxListRendered`'s `#[cfg(not(feature = "web"))]` arm already
-//!   renders unconditionally today -- so there is no anchor to bind.
+//!   renders unconditionally -- so there is no anchor to bind.
 //! - No `set_open`/`open_with_empty_query_and_focus_first`/`_last`: a
 //!   command palette's list has no open/closed state of its own to toggle --
 //!   the surrounding `CommandDialog` (or whatever the caller composes
@@ -578,8 +578,8 @@ pub fn CommandEmpty(props: CommandEmptyProps) -> Element {
 }
 
 /// Context for [`CommandGroupLabel`] to publish its id into, read back by
-/// [`CommandGroup`]'s `aria-labelledby`. Ported from
-/// `select::SelectGroupContext`'s identical shape.
+/// [`CommandGroup`]'s `aria-labelledby`. The same shape as
+/// `select::SelectGroupContext`.
 #[derive(Clone, Copy)]
 struct CommandGroupContext {
     labeled_by: Signal<Option<String>>,
@@ -605,8 +605,8 @@ pub struct CommandGroupProps {
     pub children: Element,
 }
 
-/// Groups related [`CommandItem`]s inside a [`CommandList`]. Ported from
-/// `select::SelectGroup`'s exact shape (`role="group"` +
+/// Groups related [`CommandItem`]s inside a [`CommandList`]. The same shape as
+/// `select::SelectGroup` (`role="group"` +
 /// `aria-labelledby`), minus the `render`/`ListboxContext` gate `SelectGroup`
 /// reads -- `CommandList` is always rendered, so there is nothing to gate on.
 #[component]
@@ -653,8 +653,8 @@ pub struct CommandGroupLabelProps {
     pub children: Element,
 }
 
-/// Labels a [`CommandGroup`]. Must be used inside one. Ported from
-/// `select::SelectGroupLabel`'s exact shape: a mount-time `use_effect` sets
+/// Labels a [`CommandGroup`]. Must be used inside one. The same shape as
+/// `select::SelectGroupLabel`: a mount-time `use_effect` sets
 /// the enclosing group's `aria-labelledby` target.
 #[component]
 pub fn CommandGroupLabel(props: CommandGroupLabelProps) -> Element {
@@ -850,7 +850,7 @@ pub struct CommandDialogProps {
 
 /// `CommandDialog` = [`crate::dialog::DialogRoot`] +
 /// [`crate::dialog::DialogContent`] wrapping a [`Command`]. A thin
-/// composition, unmodified from `Dialog`'s own modal machinery -- see the
+/// composition over `Dialog`'s own modal machinery -- see the
 /// module doc. Initial focus lands on [`CommandInput`] via the shared open-focus
 /// policy (`data-dx-autofocus`, see that component's doc) rather than anything
 /// this wrapper does itself.

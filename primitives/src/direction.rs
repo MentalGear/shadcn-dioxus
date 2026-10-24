@@ -5,7 +5,7 @@
 //! `dignifiedquire/dx-components`'s own Rust port of it
 //! (`primitives/src/direction.rs`, MIT OR Apache-2.0, dioxus-components
 //! @ 5af3cc292559a0e8d73c7b9a827c4ca08ef34d99) as-is for the context/provider
-//! shape, renaming its `DirectionProvider` field from `dir` to `direction`
+//! shape, with its `DirectionProvider` field named `direction`
 //! (this crate's own choice, to avoid a name clash with the per-component
 //! `dir: Option<Direction>` *prop* every RTL-aware root also exposes).
 //!

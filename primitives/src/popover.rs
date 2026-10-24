@@ -1,13 +1,13 @@
 //! Defines the [`PopoverRoot`] component and its sub-components.
 //!
-//! ## Native `<dialog>` modality for the modal arm (two-engine completion,
-//! dev-docs/plan.md)
+//! ## Native `<dialog>` modality for the modal arm (two-engine overlay
+//! architecture, dev-docs/plan.md)
 //!
 //! `PopoverModalContent` is cfg-split the same way `dialog.rs`'s
 //! `DialogContentModal`/`alert_dialog.rs`'s `AlertDialogContent` are
 //! (`dev-docs/archive/research/phase4-spike-findings.md` Construction B):
 //! - `#[cfg(not(feature = "web"))]`: the plain
-//!   `div` + vendored `FocusTrap` path (unchanged).
+//!   `div` + vendored `FocusTrap` path.
 //! - `#[cfg(feature = "web")]`: a real `<dialog>` opened with
 //!   `showModal()`, driven by the exact same
 //!   `crate::use_dialog_open_driver`/`crate::use_dialog_close_sync`/
@@ -39,7 +39,7 @@
 //! dialog too, which keeps the modal arm trigger-anchored rather than
 //! falling back to the UA's viewport-centered default.
 
-// Only the native (Blitz) modal arm still evaluates script itself (its focus trap); the web arm's
+// Only the native (Blitz) modal arm evaluates script itself (its focus trap); the web arm's
 // open driver is the shared `crate::use_dialog_open_driver`.
 #[cfg(not(feature = "web"))]
 use dioxus::document;
@@ -75,7 +75,7 @@ struct PopoverCtx {
     // Whether a modal popover keeps its page-dimming scrim. Only the modal arms read it.
     overlay: ReadSignal<bool>,
     labelledby: Signal<String>,
-    // Only read by `use_outside_dismiss` calls, which now live solely in
+    // Only read by `use_outside_dismiss` calls, which live solely in
     // native (Blitz) arms (`PopoverModalContent`/`PopoverNonModalContent`'s
     // `#[cfg(not(feature = "web"))]` variants) -- both web arms get
     // dismissal from the browser instead. `#[allow(unused)]` so the web
@@ -556,8 +556,8 @@ fn PopoverModalContent(
     }
 }
 
-/// Web arm (native-dialog engine, two-engine overlay architecture
-/// completion): a real `<dialog>` opened with `showModal()`, driven exactly like
+/// Web arm (native-dialog engine, two-engine overlay architecture):
+/// a real `<dialog>` opened with `showModal()`, driven exactly like
 /// `dialog.rs`'s web modal arm by the shared trio [`crate::use_dialog_open_driver`],
 /// [`crate::use_dialog_close_sync`] and [`crate::use_dialog_backdrop_dismiss`]. There is
 /// one implementation of the deferred close: the dialog stays modal -- in the top
@@ -604,8 +604,8 @@ fn PopoverModalContent(
     // `use_dialog_backdrop_dismiss` all want a `Readable<Target = String>`
     // to track this content's own element id, the same shape
     // `dialog.rs`'s `Memo<String>` gives them -- but this component's whole
-    // call chain (`PopoverContent` -> `PopoverContentRendered` -> here) has
-    // always threaded a plain `String`, not a `Memo`, matching
+    // call chain (`PopoverContent` -> `PopoverContentRendered` -> here)
+    // threads a plain `String`, not a `Memo`, matching
     // `PopoverNonModalContent`'s identical `id: String` shape. It never
     // changes across this instance's own mounted lifetime -- a different id
     // means a fresh mount, per `use_id_or`/`PopoverCtx::content_id`'s doc --
@@ -954,7 +954,7 @@ pub fn PopoverTrigger(props: PopoverTriggerProps) -> Element {
     // `[data-side]` CSS still resolves relative to this trigger once the
     // content is promoted to the top layer -- non-modal via
     // `popover="auto"` (Phase 4.4), modal via `showModal()` (this module's
-    // doc comment, native-dialog engine migration). Inert (empty string) on
+    // doc comment, native-dialog engine). Inert (empty string) on
     // the native (Blitz) arm, which never promotes anything to a top layer
     // and has no containing-block problem to solve; a real anchor name on
     // the web arm, set unconditionally here regardless of `is_modal` since

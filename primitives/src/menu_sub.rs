@@ -38,9 +38,9 @@
 //!   entering the other. This crate's only prior art for a timed
 //!   pointer-driven open/close is `context_menu.rs`'s long-press timer
 //!   (`LONG_PRESS_DURATION`, `crate::sleep::sleep` + `spawn`/`Task`) --
-//!   [`DelayedAction`] is that same primitive, factored out so it isn't
-//!   reinvented a third and fourth time for `DropdownMenuSubTrigger`/
-//!   `ContextMenuSubTrigger`.
+//!   [`DelayedAction`] is that same primitive, shared so
+//!   `DropdownMenuSubTrigger`/`ContextMenuSubTrigger` do not each
+//!   reinvent it.
 //! - The **`open_on_hover` switch** ([`SubMenuState::open_on_hover`]) and the
 //!   four pointer-hover entry points ([`SubMenuState::hover_enter_trigger`],
 //!   [`SubMenuState::hover_leave_trigger`], [`SubMenuState::hover_enter_content`],
@@ -409,7 +409,7 @@ pub(crate) fn use_sub_menu_state(
 ///
 /// Deliberately narrower than `use_outside_dismiss` in one respect: no
 /// `pointerdown` handling. A click anywhere outside a `Sub`'s own
-/// trigger+content already closes the *whole* enclosing menu today (every
+/// trigger+content already closes the *whole* enclosing menu (every
 /// item's `onclick` calls the host's own `set_open.call(false)`, and a
 /// `Sub` renders nothing once its enclosing `*Content` unmounts -- see
 /// `DropdownMenuSub`'s own cleanup effect), so a second, submenu-scoped
