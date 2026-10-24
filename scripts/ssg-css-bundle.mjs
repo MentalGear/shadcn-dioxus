@@ -39,7 +39,7 @@
 // must not flip those results: bundling in first-appearance order does exactly that to Field's label (14px instead of 12.8px,
 // which first-paint-styles.spec.ts catches). So the bundle is ordered to agree with as many pages' own head orders as it can
 // (pairwise votes over every page, then local search); 208 of 2943 sheet pairs are ordered both ways on different pages --
-// route-and-history-dependent cascade that exists today and that a single order can only resolve one way; they are printed
+// route-and-history-dependent cascade that exists and that a single order can only resolve one way; they are printed
 // (`order conflicts`) and the all-routes computed-style comparison (first-paint-styles.spec.ts, "cascade") says whether any of
 // them changes a pixel. Sheets are otherwise `dx-`/`ec-`-prefixed (scripts/check-dx-class-prefix.sh) with no
 // `@import`/`@charset`/`url()` (checked here: such a sheet aborts the build).

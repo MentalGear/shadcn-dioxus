@@ -15,12 +15,12 @@
 #
 # and the `font` shorthand (which resets the family too) may only be `font: inherit`.
 #
-# THE DEFECT (dev-docs/research/round3-2026-10-05.md, row 162): a hard-coded
+# THE CLASS (dev-docs/research/round3-2026-10-05.md, row 162): a hard-coded
 # `font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif` in a
 # component sheet. A top-layer `<dialog>` still inherits from its DOM parent, so none of that is needed -- it
 # only makes every overlay (and the calendar) render in the system UI font while the page around it is Geist,
-# and ignore the app font of any consumer. Five stylesheets (dialog, alert-dialog, sheet, drawer, calendar)
-# carried the same stack: a class, not five typos, so the gate makes the class unable to recur: a literal
+# and ignore the app font of any consumer. The same stack in five sheets (dialog, alert-dialog, sheet, drawer, calendar)
+# is a class, not five typos, so the gate makes the class unable to recur: a literal
 # family is simply not expressible in a component stylesheet.
 #
 # Comments are stripped before scanning, so prose that mentions a font is fine; a declaration that spans

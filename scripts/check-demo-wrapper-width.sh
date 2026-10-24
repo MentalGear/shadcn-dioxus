@@ -54,8 +54,7 @@
 #     correctly out of scope -- but this script only resolves ONE hop
 #     through a wrapper component, so a root built from two or more
 #     nested same-folder wrapper calls would not be walked further and
-#     could go unchecked. None do today (checked by hand against every
-#     hit this script currently allows through clean).
+#     could go unchecked. None do today.
 #   - A wrapper whose max-width-bearing class lives in a DIFFERENT
 #     component's folder (a cross-folder import) is not resolved; none do
 #     today.

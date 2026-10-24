@@ -35,7 +35,7 @@
  *      `ontouchstart: prevent_default` would make them blocking.
  *   4. A real-touch drag that starts on the slider thumb / resizable handle / color-area thumb moves the
  *      control and does NOT scroll the page or select text, with no touchstart handler to say so
- *      (`touch-action: none` does it) -- the guard for removing those three handlers.
+ *      (`touch-action: none` does it) -- the guard that those three controls need no handler.
  *   5. The demo cards are skipped off screen (`content-visibility: auto` on `.dx-component-card`; the
  *      `.dx-widget-card` masonry cards are contained but not skipped (row 204): a balanced multi-column
  *      layout cannot place a card whose height is only an estimate; popout cards stay `visible`, containment
@@ -51,8 +51,8 @@
  *
  * Red proof: without the constructions, tests 1, 2, 3, 5 and 6 fail (live setIntervals climbing over 12 s
  * idle and timer fires/s climbing; the player readout stuck; `#main` blocking on `wheel` + `touchstart`; no
- * card or variant skipped). The three touch tests pass either way -- they guard the removal of the
- * `ontouchstart` handlers, not a defect of their own. The resizable handle relies on `main.css` exempting it
+ * card or variant skipped). The three touch tests pass either way -- they guard against
+ * `ontouchstart` handlers being needed, not a defect of their own. The resizable handle relies on `main.css` exempting it
  * from the `touch-action: manipulation` catch-all. Numbers: the research note's section 7.
  */
 import { test, expect } from "../../fixtures";
@@ -232,7 +232,7 @@ test.describe("scroll smoothness of / (counts)", () => {
 
     // A scripted top-to-bottom scroll (real wheel input). Counts are reported, not capped: on any build the
     // scroll window still holds ~1 layout per card entering/leaving view and the on-screen Progress demo's
-    // 250 ms `width` transition, which is O(card) now (the cost that moved is PrePaint/Layerize per frame,
+    // 250 ms `width` transition, which is O(card) (the remaining cost is PrePaint/Layerize per frame,
     // which is time, not a count; see the research note and `scripts/measure-scroll.mjs`).
     await page.mouse.move(40, 400);
     const before = await metrics(cdp);
@@ -258,8 +258,8 @@ test.describe("scroll smoothness of / (counts)", () => {
   test("6. component-page variants are NOT skipped (their demos measure themselves on mount)", async ({ page }) => {
     // `.dx-component-variant`: the stacked "Variants" demos under a component's main demo (the chart pages
     // have up to 13 live demos each). They are deliberately outside the `content-visibility: auto` rule
-    // (main.css): a skipped subtree has no layout box, so a carousel or a chart measured 0 at mount and
-    // never recovered (carousel-virtual-wheel / carousel / chart_tooltip `default_index`). The home cards
+    // (main.css): a skipped subtree has no layout box, so a carousel or a chart measures 0 at mount and
+    // never recovers (carousel-virtual-wheel / carousel / chart_tooltip `default_index`). The home cards
     // DO keep the skip (tests 1-5).
     await gotoHydrated(page, `${BASE_URL}/component/area_chart/?`, { timeout: 20 * 60 * 1000 });
     await page.waitForFunction(() => document.querySelectorAll(".dx-component-variant").length >= 5, undefined, { timeout: 5 * 60 * 1000 });

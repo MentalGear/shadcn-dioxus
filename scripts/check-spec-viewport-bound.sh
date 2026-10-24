@@ -8,8 +8,8 @@
 # `window.innerWidth` / `innerHeight` or `page.viewportSize()`. The preview sets
 # `html { scrollbar-gutter: stable }` (preview/assets/main.css), so those numbers include the reserved
 # gutter (390 at a 390px phone) while a fixed overlay's containing block excludes it (375): a panel
-# landing 11-15px past the right edge still passed, which masked a real overflow in
-# `primitives/src/top_layer.rs` (`viewportMetrics()`) until the probe replaced the number.
+# landing 11-15px past the right edge still passes, which masks an overflow of the kind
+# `primitives/src/top_layer.rs`'s `viewportMetrics()` had.
 #
 # This gate fails when a spec (every `playwright/**/*.ts` except `node_modules`, `fixtures/` and
 # `oracle/reference/`), comments stripped, names one of the gutter-inclusive sources:

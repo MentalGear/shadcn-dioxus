@@ -6,7 +6,7 @@
 # differs by pointer is a theme variable (`--dx-coarse-*`, `--dx-menu-item-*`, `--dx-menu-trigger-*`) that
 # the switch flips (dx-components-theme.css, "Coarse sizing"). A component sheet that says
 # `@media (pointer: coarse)` (or `any-pointer: coarse`) itself would follow the device and ignore the
-# attribute: a forced-on container would keep the desktop size in it, and 12 sheets did exactly that.
+# attribute: a forced-on container would keep the desktop size in it (row 349).
 #
 # This gate fails on a `pointer: coarse` / `any-pointer: coarse` media feature in any stylesheet under
 # preview/src (every component sheet, the dashboards) or preview/assets, comments stripped, except the

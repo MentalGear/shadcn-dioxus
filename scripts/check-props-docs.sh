@@ -12,7 +12,7 @@
 # `preview/src/components/*/component.rs`:
 #   - a field of a `#[derive(Props)]` struct (pub or not: the builder setter is public either way): never
 #     allowed without a doc comment;
-#   - an argument of a `#[component] fn Name(a: A, ..)`: ~500 predate this gate, so they are a shrink-only
+#   - an argument of a `#[component] fn Name(a: A, ..)`: those that predate this gate are a shrink-only
 #     baseline (`scripts/check-props-docs.baseline.tsv`, `path<TAB>Fn.arg`). A NEW undocumented argument
 #     fails, and so does a baseline entry that is now documented or gone (delete the line).
 # A `#[props(extends = ..)]` spread is not a prop (the table says "plus the global attributes") and is exempt.

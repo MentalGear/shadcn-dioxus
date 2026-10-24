@@ -9,8 +9,8 @@
 # `use_motion`, whose one `[data-dx-motion="paused"]` theme rule then pauses it, or a reasoned allowlist entry.
 # Utility loops (`.dx-shimmer`) are gated at their host.
 #
-# THE CLASS (animations running in the background are not about cards, but the actual components and their
-# animations; backlog row 177): a component that keeps a loop or a timer alive while it is scrolled off
+# THE CLASS (backlog row 177):
+# a component that keeps a loop or a timer alive while it is scrolled off
 # screen, inside a skipped `content-visibility` card, or in a hidden tab spends main-thread work on
 # nothing. The scroll re-profile measured the infinite animations alone at -15% scroll busy time, and the
 # home page's 1 Hz tickers wake the page every second for cards nobody is looking at. The fix is by construction,

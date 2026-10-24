@@ -7,7 +7,7 @@
 # primitives, minutes), so it is NOT in scripts/run-gates.sh: run it before merging whenever a
 # `component.json` or any file under `preview/src/components/<name>/` (except `variants/` and `docs.md`)
 # changes. `scripts/check-installed-paths.sh` is the fast static approximation that is in run-gates.sh; this
-# is what it approximates (it exists because 27 components lacked the `mod.rs` an install needs and still
+# is what it approximates (it exists because a component without the `mod.rs` an install needs still
 # passed every gate, the preview declaring them inline: E0583 in a user's tree).
 #
 # What it does, all in one scratch directory that is deleted on exit:
@@ -150,8 +150,8 @@ else
 fi
 # The template pre-declares `dioxus-primitives` (so its `web` feature can switch the browser-only code on), and a
 # smoke app that did too would let every component whose `component.json` lacks `cargoDependencies` compile
-# here and fail with E0433 in an app made any other way (`kbd`, `area_chart`, `bubble`, `empty`, `message`
-# were the cases). The app under test therefore starts with NO crate but `dioxus`: the install itself must
+# here and fail with E0433 in an app made any other way.
+# The app under test therefore starts with NO crate but `dioxus`: the install itself must
 # add every other crate a component uses. (`dx new` / `shadcn-dioxus new` is not the only way in: `init` on an
 # existing app, or a bare `cargo new`, gets no primitives.)
 python3 -I - "$app/Cargo.toml" <<'PY' || { echo "registry-install-smoke: could not strip dioxus-primitives from the app's Cargo.toml" >&2; exit 2; }

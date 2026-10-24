@@ -2,8 +2,8 @@
  * ORACLE: tier 1 (APG) — Window Splitter pattern (Resizable).
  *
  * Source: W3C ARIA Authoring Practices Guide (APG), "Window Splitter Pattern"
- * (live URL: https://www.w3.org/WAI/ARIA/apg/patterns/windowsplitter/), read
- * from the SAME pinned, read-only `w3c/aria-practices` checkout this repo's
+ * (live URL: https://www.w3.org/WAI/ARIA/apg/patterns/windowsplitter/),
+ * from the SAME pinned `w3c/aria-practices` checkout this repo's
  * other tier-1 files already use (see `../reference/7e4034b/README.md`):
  *
  *   commit 7e4034b262bc0d25332e330d8a582aaf34113829
@@ -16,8 +16,8 @@
  * issue 130," i.e. the pattern itself is prose-only upstream. There is
  * nothing to vendor or calibrate against, so every rule below cites the
  * pattern's own prose sections directly (mirroring
- * `keyboard-matrix.spec.ts`'s header: "Rather than invent quotes from
- * memory, each was read straight from that pinned commit's tree") rather
+ * `keyboard-matrix.spec.ts`'s header: every quote comes straight
+ * from that pinned commit's tree, not from memory) rather
  * than the two-subject (component + vendored reference) calibration
  * `README.md` describes for the patterns that DO have one.
  *

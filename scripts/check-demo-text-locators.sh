@@ -50,9 +50,9 @@ import sys
 explicit = sys.argv[1:]
 
 # Shared specs outside playwright/oracle/ (path under playwright/).
-# NOT yet in scope: `modal-exit.spec.ts` and `modal-initial-focus.spec.ts` drive the `CONSUMERS` table of
-# `modal-consumers.ts`, which still carries each demo's trigger and closer COPY (`trigger: "Show Dialog"`); moving it to
-# role/position changes the table's type for both specs, so it goes in with the lane that owns modal-initial-focus.
+# Not in scope: `modal-exit.spec.ts` and `modal-initial-focus.spec.ts` drive the `CONSUMERS` table of
+# `modal-consumers.ts`, which carries each demo's trigger and closer COPY (`trigger: "Show Dialog"`); moving it to
+# role/position changes the table's type for both specs.
 EXTRA_SPECS = [
     "theme-preset-contrast.spec.ts",
     "oracle-focus-restore.spec.ts",

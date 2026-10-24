@@ -15,9 +15,7 @@
  * every other rule below establishes, not a citation, consistent with this
  * tier's own "read as a proposal" policy.
  *
- * FIXTURE DECISION (dev-docs/conformance-harness.md's queue item 8,
- * "no RTL fixture exists," and dev-docs/backlog.md row 13's "waits on an RTL
- * fixture decision"): one `rtl` variant page per RTL-aware component
+ * FIXTURE DECISION (dev-docs/backlog.md row 13): one `rtl` variant page per RTL-aware component
  * (`/component/<x>/`, variant `rtl`), whose `Demo` sets `dir="rtl"` on
  * its own root element and wraps its primitives in
  * `DirectionProvider { direction: Direction::Rtl, ... }` -- see any of
@@ -31,7 +29,7 @@
  * (which `primitives/src/direction.rs`'s own unit tests already cover).
  * Every RTL-aware component also has a `main` variant that stays LTR --
  * used below as this file's own control group, proving the LTR default
- * is unchanged by the RTL work.
+ * is not touched by direction support.
  *
  * WHY TIER 3, NOT TIER 1/2: `@radix-ui/react-direction` and every
  * component's own `useDirection` consumption is Radix's own design, not a
@@ -128,8 +126,8 @@ async function subContentFor(subTrigger: Locator): Promise<Locator> {
  * roving-focus-group.tsx, lines 348-365 (`MAP_KEY_TO_FOCUS_INTENT` +
  * `getDirectionAwareKey`) -- every one of the five Radix components below
  * delegates its *entire* direction-awareness to this one shared
- * `RovingFocusGroup` (confirmed by reading each of tabs.tsx,
- * radio-group.tsx, toggle-group.tsx, toolbar.tsx, menubar.tsx: each simply
+ * `RovingFocusGroup` (each of tabs.tsx,
+ * radio-group.tsx, toggle-group.tsx, toolbar.tsx, menubar.tsx simply
  * forwards `dir` to it, no per-component direction logic of its own).
  * `ArrowLeft` becomes `HorizontalNav::Next` under RTL (Radix:
  * `getDirectionAwareKey('ArrowLeft', 'rtl') === 'ArrowRight'`, then

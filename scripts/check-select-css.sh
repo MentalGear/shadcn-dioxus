@@ -5,7 +5,7 @@
 # `playwright/tools/select.mjs` (pnpm run test:changed) answers an edit of `preview/assets/*.css` by reading the changed
 # CSS RULES (not the file), placing the classes / ids / custom properties they touch on the pages of the SSG build
 # under test, and selecting only the matrix tests whose page is reached; anything it cannot place falls back to the
-# whole BROAD set (~1,450 tests, ~6,600 s of worker time). A selector that wrongly
+# whole BROAD set. A selector that wrongly
 # says "this rule cannot reach that page" is a hole in the test run, so the logic keeps its promises in a deterministic
 # node test (`select.mjs --self-test`, playwright/tools/select-selftest.mjs): no browser, no build, no network.
 #

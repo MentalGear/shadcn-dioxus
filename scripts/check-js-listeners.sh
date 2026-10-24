@@ -10,8 +10,8 @@
 # a shipped or inline script) belongs to the PAGE, not to the Dioxus scope that evaluated the script.
 # Dropping the component drops the Rust task that listens to the eval; the `addEventListener`
 # registration stays on `window`/`document` for the rest of the visit, and a script that is re-run
-# (an effect, a second visit to the route) adds another one on top (the form fixture, the sidebar,
-# `pointer.rs`, the focus trap and `scroll_lock.rs` were instances); a non-passive `wheel`/`touchmove`
+# (an effect, a second visit to the route) adds another one on top (rows 149, 159);
+# a non-passive `wheel`/`touchmove`
 # listener on `window` also makes every wheel tick on the page wait for the main thread once a modal
 # has opened. The fix is by construction, not per instance: the one sanctioned way is
 # `primitives/src/js_listener.rs` (`JsListeners` / `use_js_listeners`): the script registers through
@@ -27,8 +27,8 @@
 #      call, in a `\`-joined one-line string use the allowlist below).
 #
 # A correct hand-written add/remove pair fails too: the teardown is written, so a later edit can
-# break it. There is no hand-paired allowlist (row 167 moved
-# the sites row 159 had grandfathered onto the helper). The conversion is
+# break it. There is no hand-paired allowlist (row 167).
+# The conversion is
 # mechanical: `x.addEventListener(t, h, o)` -> `listen(x, t, h, o)`, delete the
 # `await dioxus.recv()` and the matching removes, wrap in `use_js_listeners`; a listener narrower
 # than its script (one drag's window listeners) keeps the `off` that `listen` returns.

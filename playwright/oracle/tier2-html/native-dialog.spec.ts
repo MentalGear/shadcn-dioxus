@@ -23,16 +23,17 @@
  *     (no pointing-device button was pressed):
  *     https://www.w3.org/TR/uievents/#event-type-click
  *
- * Rule 7's bug: `use_dialog_backdrop_dismiss` (primitives/src/lib.rs)
+ * Rule 7's hazard: `use_dialog_backdrop_dismiss` (primitives/src/lib.rs)
  * distinguishes a backdrop click from a content click with a bounding-rect
  * test against `event.clientX`/`clientY`. A keyboard activation (Enter or
  * Space) of a button dispatches a `click` with `detail === 0` and, in
  * Chromium, `clientX`/`clientY` of `0, 0` -- coordinates that do not
  * correspond to any real pointer position and, for any dialog not pinned at
- * the viewport's top-left corner, fall outside its content rect. The rect
- * test reads that as "outside" and dismisses. Because the listener is bound
- * directly on the `<dialog>` element and native `click` events bubble, this
- * fires for *any* keyboard-activated control inside the dialog's content --
+ * the viewport's top-left corner, fall outside its content rect. A rect test
+ * alone would read that as "outside" and dismiss, so the hook ignores a click
+ * with `detail === 0`. Because the listener is bound directly on the `<dialog>`
+ * element and native `click` events bubble, an unguarded listener would fire
+ * for *any* keyboard-activated control inside the dialog's content --
  * including, in the nested-dialog fixture, the "Open Nested Dialog" button,
  * whose bubbled synthetic click reaches the *outer* dialog's own listener
  * and dismisses the outer dialog a tick after the nested one opens. Because
@@ -44,9 +45,9 @@
  * it during that instant is lost.
  *
  * Fixture: preview/src/components/top_layer/component.rs (`TopLayerFixture`,
- * extended additively for this file — the "Native <dialog> ..." sections),
+ * whose "Native <dialog> ..." sections this file drives),
  * served at /component/?name=top_layer, plus the existing Dialog demo
- * (/component/?name=dialog, its nested-dialog fixture from Phase 3.2) for
+ * (/component/?name=dialog, its nested-dialog fixture) for
  * rules 3-5, which need no new markup.
  *
  * Calibration (dev-docs/conformance-harness.md, "Calibration"): rule 1 runs
@@ -61,7 +62,7 @@
  * ordinary CSS and has no platform-level inertness; a JS focus trap only
  * contains Tab, it does not touch pointer/programmatic-focus inertness);
  * rules 3-4 -- Escape syncing `open` and focus restore on close; rule 5 --
- * the Phase 3.2 nested-dialog fixture's close order and focus return.
+ * the nested-dialog fixture's close order and focus return.
  *
  * The defect this whole file guards against
  * (dev-docs/reference/platform-rationale.md Caveat 1,
@@ -69,7 +70,7 @@
  * `<dialog>` driven one-way from the `open` signal (`showModal()`/`close()`)
  * with no `close`/`cancel` sync strands the signal at `true` after a native
  * Escape, and the dialog can never reopen. Rule 3's 5-cycle reopen loop is
- * this exact regression test, at the oracle layer rather than a spike.
+ * this exact guard, at the oracle layer.
  */
 
 import { test, expect } from "../../fixtures";
@@ -355,7 +356,7 @@ test.describe("Rule 6 — modal Popover", () => {
     // open -- unlike Rule 2's `AlertDialog`-based fixture (chosen there
     // specifically because `Dialog`'s own backdrop-click dismiss would
     // otherwise confound the probe), every modal `Popover` *does* carry
-    // `use_dialog_backdrop_dismiss` (this migration wires the same trio
+    // `use_dialog_backdrop_dismiss` (it wires the same trio
     // `Dialog`'s web modal arm uses), so a real click at these background
     // coordinates is a legitimate "outside" click to the `<dialog>`'s own
     // full-viewport `::backdrop` and correctly dismisses the Popover as a
@@ -397,7 +398,7 @@ test.describe("Rule 6 — modal Popover", () => {
       await page.keyboard.press("Escape");
       await expect(contentEl, `cycle ${cycle}: Escape must close the Popover`).toBeHidden();
 
-      // Same historical-defect guard as Rule 3: a stranded `open` signal
+      // Same guard as Rule 3: a stranded `open` signal
       // would make the *next* trigger click compute `!true` and the
       // Popover would never reopen (`PopoverTrigger`'s own
       // `set_open.call(!(ctx.open)())` toggle). A clean re-open every
@@ -425,7 +426,7 @@ test.describe("Rule 6 — modal Popover", () => {
     await gotoTopLayer(page);
     // Pinned near the top-left viewport corner (see the fixture's own
     // wrapping `style`) -- far enough from the viewport center that a
-    // viewport-centered `showModal()` (the UA default this migration must
+    // viewport-centered `showModal()` (the UA default the popover must
     // override) would measurably disagree with a trigger-anchored one.
     const trigger = page.locator("#popover-modal-anchor-trigger");
     const content = page.locator("#popover-modal-anchor-content");
@@ -460,7 +461,7 @@ test.describe("Rule 6 — modal Popover", () => {
     expect(Math.abs(measurement.offsetTop), debug).toBeLessThan(40);
     expect(Math.abs(measurement.offsetCenterX), debug).toBeLessThan(20);
 
-    // Not viewport-centered: the UA default this migration must override
+    // Not viewport-centered: the UA default the popover must override
     // (`dialog:modal { position: fixed; inset: 0; margin: auto; }`) would
     // place the content's center within a few pixels of the *viewport's*
     // center regardless of the trigger -- which, given the trigger is
@@ -478,8 +479,8 @@ test.describe("Rule 6 — modal Popover", () => {
 /**
  * Rule 7 — keyboard activation of a control inside a modal `<dialog>` must
  * never be misread as a backdrop click (see this file's header comment for
- * the mechanism). Fixture: the existing nested-dialog demo
- * (/component/?name=dialog, Phase 3.2), which already places a trigger
+ * the mechanism). Fixture: the nested-dialog demo
+ * (/component/?name=dialog), which places a trigger
  * ("Open Nested Dialog") inside the outer dialog's own content.
  */
 
@@ -685,7 +686,7 @@ test.describe("Rule 8 — the opening-gesture false positive: a modal Popover's 
     // (`use_dialog_backdrop_dismiss`'s own deferral, primitives/src/lib.rs)
     // directly, sidestepping the timing-race problem the black-box test
     // above cannot fully close in a sandbox with no engine that actually
-    // exhibits the reported click-retarget quirk.
+    // exhibits the click-retarget quirk.
     await page.addInitScript(() => {
       const w = window as unknown as {
         __dxBackdropListenerAttachedInsideRaf?: boolean;
@@ -724,8 +725,8 @@ test.describe("Rule 8 — the opening-gesture false positive: a modal Popover's 
     // dev-docs/backlog.md row 109: this test clicks the trigger right after
     // navigating, on the SSG lane -- `gotoHydrated` so that click can't
     // land before hydration attaches listeners. The `addInitScript` above
-    // still instruments this same navigation: `gotoHydrated` is just
-    // `page.goto` plus a wait, so init-script ordering is unchanged.
+    // instruments this same navigation: `gotoHydrated` is just
+    // `page.goto` plus a wait, so init-script ordering holds.
     await gotoHydrated(page, `${BASE_URL}/component/popover/`, { timeout: NAV_TIMEOUT });
     const trigger = demoRole(page, "button", 0, "modal");
     await trigger.scrollIntoViewIfNeeded();

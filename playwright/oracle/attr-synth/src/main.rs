@@ -20,7 +20,7 @@
 //! would be the obvious alternative, but needs no preview change at all).
 //! `preview` is also a binary-only crate (no lib target), so it cannot be depended on from
 //! outside. Driving existing demo pages via query parameters was
-//! investigated and does not work for this purpose either: this app's `dx
+//! does not work for this purpose either: this app's `dx
 //! build --ssg` prerenders one static file per route at BUILD time, and a
 //! query string cannot select a different prerendered file (see
 //! `hydration-parity.spec.ts`'s Rule 4 doc) -- query-driven prop changes only take effect after client
@@ -723,7 +723,7 @@ fn cases() -> Vec<Case> {
             "navigation_menu:trigger:style",
             "style",
             "--attr-synth-marker: nav-menu-trigger-style;",
-            "primitives/src/navigation_menu.rs NavigationMenuTrigger (top_layer::anchored_trigger_attributes -- previously RED BY DESIGN, see dev-docs history/this lane's commit for the fix)",
+            "primitives/src/navigation_menu.rs NavigationMenuTrigger (top_layer::anchored_trigger_attributes -- folded, so the case is GREEN; row 99)",
             navigation_menu_trigger_style
         ),
         case!(

@@ -9,7 +9,7 @@
 # palette through `data-dx-autofocus`), and `dx-components-theme.css` ("Focus modality") draws a ring
 # only for the keyboard. An overlay that picks its own focus target is its own instance of
 # the same bug on iOS: a ring around the panel, a text field focused while the panel was still being
-# placed, so the software keyboard rose and moved the layout.
+# placed, so the software keyboard rises and moves the layout.
 #
 # This gate keeps a second, private open-focus decision from coming back. In every Rust source of
 # `primitives/src` and `preview/src` that is on an open path -- it mentions `showModal`, `showPopover`,

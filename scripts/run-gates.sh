@@ -168,7 +168,7 @@ gates=(
   "check-primitives-features|scripts/check-primitives-features.sh"
   # Clippy, default arm: `cargo clippy --workspace --all-targets -- -D warnings` lints the `not(feature = "web")` arm of primitives and every workspace member. A plain `cargo clippy --workspace` never enables primitives' `web` feature or preview's `server` feature, and those two are what ships (`dx build --ssg` compiles the browser client with `web` and the prerender server with `server`), so each arm is its own gate; `--all-features` cannot replace them (preview's `desktop` needs gtk and webkit2gtk, the renderers are alternatives, and it would stop linting the `not(web)` arm). Every clippy gate is also red when its log holds a `generated N warning(s)` line although cargo exited 0.
   "clippy-default|cargo clippy --workspace $CLIPPY_FLAGS"
-  # Clippy, `web` arm: primitives and preview with their `web` features, the code the wasm client compiles (about 100 `feature = "web"` cfg sites in primitives alone).
+  # Clippy, `web` arm: primitives and preview with their `web` features, the code the wasm client compiles (over 100 `feature = "web"` cfg sites in primitives alone).
   "clippy-web|cargo clippy -p dioxus-primitives -p preview --features dioxus-primitives/web,preview/web $CLIPPY_FLAGS"
   # Clippy, `server` arm: preview with `server` (the SSG prerender server; implies fullstack and primitives/web).
   "clippy-server|cargo clippy -p preview --features server $CLIPPY_FLAGS"

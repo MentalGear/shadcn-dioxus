@@ -9,9 +9,9 @@
  *     after that something has already been painted.
  *   - Layout Instability API (`layout-shift`): the reflow when such a sheet lands is a layout shift.
  *
- * THE CLASS this guards, as the owner reported it: "elements on their component's page, on first load, show a white/light
- * version or placeholder before their dark mode or real style kicks in (also shifts layout), e.g. /component/field/.
- * Hydration?" Measured on the release SSG build:
+ * THE CLASS this guards: elements on a component's page show a white/light version or placeholder on first load
+ * before their dark mode or real style kicks in (and shift layout), e.g. /component/field/. The cause is not
+ * hydration. Measured on the release SSG build:
  *   - NOT hydration and NOT the theme. A hard load is right: the JS-disabled page and the hydrated page have
  *     0 differing computed styles over `main` in light and dark (this spec's parity tests), hydration inserts no
  *     stylesheet, CLS 0.0001, and the pre-paint script has set `data-theme` before the first paint.
@@ -326,7 +326,7 @@ test.describe("1. every prerendered page's head carries the complete stylesheet 
     const bundle = sheetLinks(head).find((t) => t.includes("data-dx-css-bundle"));
     expect(bundle, "the field page's head has a bundle link").toBeTruthy();
     // The href is root-relative INCLUDING any `--base-path` prefix, and BASE already carries that prefix when the
-    // site is served under one, so resolve it as a URL rather than gluing it on (that doubled the prefix: a 404 body).
+    // site is served under one, so resolve it as a URL rather than gluing it on (which doubles the prefix and returns a 404 body).
     const css = await (await request.get(new URL(hrefOf(bundle!), `${BASE}/`).toString())).text();
     expect(css.length, "the bundle is not an empty file").toBeGreaterThan(50_000);
     const walk = (dir: string, ext: string): string[] =>

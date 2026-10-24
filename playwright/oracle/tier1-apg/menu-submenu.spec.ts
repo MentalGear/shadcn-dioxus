@@ -6,7 +6,7 @@
  * and "WAI-ARIA Roles, States, and Properties" (h2) sections
  * (`content/patterns/menubar/menu-and-menubar-pattern.html`, pinned commit
  * `7e4034b262bc0d25332e330d8a582aaf34113829` of `w3c/aria-practices` --
- * see `playwright/oracle/reference/README.md`). Quoted below verbatim, read
+ * see `playwright/oracle/reference/README.md`). Quoted below verbatim
  * from that pinned commit's own file (not from memory --
  * `keyboard-matrix.spec.ts`'s file header documents the
  * same technique and cites the same commit for its own prose quotes).
@@ -21,8 +21,8 @@
  *   "A parent menuitem has aria-haspopup set to either menu or true."
  *   "A parent menuitem has aria-expanded set to false when its child menu
  *   is not visible and set to true when the child menu is visible."
- *   (This section never mentions aria-controls at all -- checked against
- *   the same pinned commit's file, no match. This crate's sub-trigger sets
+ *   (This section never mentions aria-controls at all: no match in
+ *   the same pinned commit's file. This crate's sub-trigger sets
  *   aria-controls anyway, as unambiguous ownership of the popup it opens,
  *   but that is this crate's own choice, not an APG-cited requirement, and
  *   nothing below asserts it as a rule.)
@@ -45,9 +45,9 @@
  * value that refers to the menuitem or button that controls its display.
  * A label provided by aria-label.") -- not re-derived here, just applied to
  * a submenu's own popup instead of a root menu's. `dev-docs/backlog.md` row 25
- * closed exactly this gap on `ContextMenu`/`Menubar`'s submenu-shaped
+ * holds this rule for `ContextMenu`/`Menubar`'s submenu-shaped
  * popups; this file applies the same rule to the `*SubContent` components
- * of row 68, so the gap cannot reopen here silently.
+ * of row 68, so the gap cannot open here silently.
  *
  * Calibration: neither `../reference/7e4034b/` (menu-button/combobox/radio
  * only, per that directory's README) nor this repo vendors an executable
@@ -137,7 +137,7 @@ const PAST_INTENT_DELAY_MS = 500;
 /**
  * Hover a submenu trigger and measure, IN THE PAGE, from its `mouseover` to the `aria-expanded="true"` flip
  * (`performance.now()` stamps, the pattern of `hover-delay-probe.ts`). Timing from the spec process adds the
- * protocol round trip to both ends and, on a slow debug build, made the "opens only after the intent delay" test
+ * protocol round trip to both ends and, on a slow debug build, makes the "opens only after the intent delay" test
  * flaky (backlog row 115); a delay is a lower bound the product promises, so only that bound is asserted.
  */
 async function hoverAndTimeOpen(subTrigger: Locator): Promise<{ elapsedMs: number }> {
@@ -377,7 +377,7 @@ test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
   // `onmouseleave`. This test drives real intermediate `mousemove` events
   // (via `page.mouse.move(..., { steps })`) from the trigger, across the
   // trigger/content boundary, and onto a submenu item -- `.hover()` alone
-  // can synthesize a single jump that skips the boundary this bug lives at.
+  // can synthesize a single jump that skips the boundary this invariant is about.
   test("hover: moving the pointer off the trigger and into the submenu content keeps it open and its item clickable", async ({
     page,
   }) => {
@@ -468,7 +468,7 @@ test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
     const trigger = demoRole(page, "button");
     const subTrigger = rootItem(page, 3);
     // Mouse-click-opened, deliberately with NO keyboard navigation
-    // afterward -- this is exactly the precondition the bug needs:
+    // afterward -- this is exactly the precondition the violation needs:
     // `ctx.focus` (the root's own roving-focus collection) is never
     // populated by a plain click-open.
     await expect(subTrigger).toBeVisible();
@@ -582,13 +582,13 @@ test.describe("APG Menu and Menubar pattern — ContextMenu.Sub", () => {
     await expect(subTrigger).toHaveAttribute("aria-expanded", "false");
   });
 
-  // REGRESSION -- see the identical `DropdownMenu.Sub` test above for the
-  // full root-cause writeup (`primitives/src/menu_sub.rs`'s
+  // Same invariant as the identical `DropdownMenu.Sub` test above, which has the
+  // full explanation (`primitives/src/menu_sub.rs`'s
   // `SubMenuState::hover_close`, `primitives/src/context_menu.rs`'s
-  // `ContextMenuSubContentRendered`); this is the same defect and the same
-  // fix, exercised against `ContextMenu.Sub` instead, since the two hosts
+  // `ContextMenuSubContentRendered`); this one exercises
+  // `ContextMenu.Sub` instead, since the two hosts
   // duplicate this hover-timer wiring independently (not one shared code
-  // path) and both needed the same fix.
+  // path).
   test("hover: moving the pointer off the trigger and into the submenu content keeps it open and its item clickable", async ({
     page,
   }) => {
@@ -651,8 +651,8 @@ test.describe("APG Menu and Menubar pattern — ContextMenu.Sub", () => {
   // (`focused() && !sub.focus.any_focused()`, `context_menu.rs`) as
   // `DropdownMenuSubTrigger`'s, so both use the same construction
   // (`crate::menu_sub::use_sub_outside_dismiss`) for uniformity and
-  // defense-in-depth. This test is the permanent regression guard now that
-  // both hosts share the construction.
+  // defense-in-depth. This test guards the construction that
+  // both hosts share.
   test("a raw .focus() call on the sub-trigger does not close the whole menu (row 85, construction parity)", async ({
     page,
   }) => {

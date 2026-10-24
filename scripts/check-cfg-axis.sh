@@ -14,11 +14,11 @@
 # native arm -- no `popover` attribute, no `<dialog>` elements -- while the
 # wasm client then hydrates against that structurally different markup,
 # breaking events page-wide on every hard-loaded page of the deployed site. `playwright/oracle/
-# hydration-parity.spec.ts` is the regression oracle for the symptom;
-# this script is the regression guard for the cfg pattern that caused it.
+# hydration-parity.spec.ts` is the oracle for the symptom;
+# this script guards the cfg pattern behind it.
 #
 # `target_family = "wasm"` remains legitimate ONLY for genuinely
-# wasm-only *execution* internals -- and none exist in this crate:
+# wasm-only *execution* internals -- and the only one is `sleep.rs` (allowlisted below):
 # `document::eval` itself is a cross-renderer Dioxus API that compiles and
 # runs (inertly, off a real browser/webview) on every target, so every
 # leaf hook (`use_popover_sync`, `use_dialog_open_driver`, etc., in
@@ -41,10 +41,10 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 SRC_DIR="primitives/src"
 
 # Files allowed to contain a `target_family = "wasm"` cfg predicate, should
-# one ever legitimately need to appear (see the module doc above). Empty:
-# no occurrence remains, including in the leaf execution modules --
+# one ever legitimately need to appear (see the module doc above). Only `sleep.rs` is listed;
+# the leaf execution modules carry none --
 # `document::eval` needs no inner wasm-only guard.
-# Kept as a real (if currently-empty) allowlist, not a hardcoded zero,
+# Kept as a real allowlist, not a hardcoded zero,
 # so a single narrowly-scoped exception doesn't require rewriting this
 # script's logic, only adding a path here.
 ALLOWLIST=(

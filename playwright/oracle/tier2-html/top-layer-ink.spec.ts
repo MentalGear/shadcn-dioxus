@@ -2,7 +2,7 @@
  * ORACLE: tier 2 (HTML/CSS) — top-layer text color (`[popover]`/`<dialog>`
  * UA `color: CanvasText` beats DOM-tree inheritance).
  *
- * ## The bug class (this file is its regression oracle)
+ * ## The bug class (this file is its oracle)
  *
  * Both the `[popover]` and `<dialog>` user-agent stylesheets set `color:
  * CanvasText` **directly on the element**:
@@ -91,7 +91,7 @@
  * --dx-foreground)`; `.dx-tooltip-content` declares its own
  * *intentionally different* `color: var(--dx-background)`; `.dx-select-
  * list`/`.dx-combobox-list` declare their own *intentionally different*
- * `color: var(--secondary-color-1)` (the ramp token row 111's popover role replaced). Every one of these is author-origin
+ * `color: var(--dx-popover-foreground)` (the popover role, row 111). Every one of these is author-origin
  * and wins over the UA default with no help from the baseline -- each
  * is asserted against its OWN actual token (`expectedVar`), not assumed to
  * be the general ink token, so a real regression in any of them still
@@ -124,8 +124,8 @@ import { demoFrame, demoRole } from "../../demo-frame";
 const NAV_TIMEOUT = 20 * 60 * 1000; // first run compiles the app
 
 // The page ink: `body { color: var(--dx-foreground) }` (`preview/assets/main.css`). Read as a token at
-// runtime by `resolvedColor`, never as a literal, so a retune of the ink (row 231 moved it from the
-// ramp's `--secondary-color-4` #111 to shadcn's `--foreground`, and row 373 from #000 to oklch(0.145)) cannot stale this file again.
+// runtime by `resolvedColor`, never as a literal, so a retune of the ink (rows 231, 373)
+// cannot stale this file.
 const INK_TOKEN = "--dx-foreground";
 
 const url = (name: string) => `${BASE_URL}/component/${name}/`;
@@ -244,7 +244,7 @@ const SURFACES: Surface[] = [
   },
   {
     // Modal `Popover` arm (`is_modal: true`, the `modal` demo): a real `<dialog>` +
-    // `showModal()` on the web arm (native-dialog engine migration) -- reaches the fix
+    // `showModal()` on the web arm (the native-dialog engine) -- reaches the fix
     // through `use_dialog_open_driver`, not `use_popover_sync`.
     name: "popover (modal arm)",
     open: async (page) => {
@@ -309,10 +309,10 @@ const SURFACES: Surface[] = [
   {
     // `.dx-select-list` declares its own `color: var(--dx-popover-foreground)`
     // directly (author origin, already winning over the UA default with no
-    // help needed from this file's fix). Row 111 moved it from the ramp's
-    // `--secondary-color-1` to the popover role, which resolves to
+    // help needed from this file's fix). Row 111: it takes the popover role,
+    // which resolves to
     // `--dx-popover-foreground`, so `expectedVar` names that
-    // token; it is still the surface's OWN declared colour, not an instance
+    // token; it is the surface's OWN declared colour, not an instance
     // of the bug. This case exists
     // to prove the shared `:where()` rule leaves it alone, the same
     // load-bearing negative shape as the Tooltip case above.
@@ -332,7 +332,7 @@ const SURFACES: Surface[] = [
   {
     // Same shape as `select` immediately above: `.dx-combobox-list` also
     // declares its own `color: var(--dx-foreground)` directly
-    // (the popover role, row 111; was `--secondary-color-1`).
+    // (the popover role, row 111).
     name: "combobox",
     open: async (page) => {
       await goto(page, "combobox");

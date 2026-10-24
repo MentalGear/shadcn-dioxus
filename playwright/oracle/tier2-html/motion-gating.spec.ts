@@ -1,8 +1,8 @@
 /**
  * ORACLE: tier 2 (HTML) -- motion nobody can see does not run, in the components themselves.
  *
- * Source: the owner's rule: "animations running in the background are not about cards,
- * but the actual components and their animations". Rule sources:
+ * Source: dev-docs/backlog.md row 176: the rule is about the components and their animations, not about cards.
+ * Rule sources:
  *   - Web Animations: `Animation.playState` is `"paused"` once `animation-play-state: paused` applies,
  *     and a paused CSS animation keeps its phase and resumes from it:
  *       https://www.w3.org/TR/css-animations-1/#animation-play-state

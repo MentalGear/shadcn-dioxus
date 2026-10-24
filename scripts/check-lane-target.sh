@@ -8,7 +8,7 @@
 # refuses the validation tree before it builds anything.
 #
 # A cold release build is 22-50 min; scripts/lane-target.sh keeps two warm release trees so a validation build is
-# 3-5 min, and the rule that makes that safe is "a tree never holds the other's base-path setting" (row 100):
+# about 14 min, and the rule that makes that safe is "a tree never holds the other's base-path setting" (row 100):
 #   - `create <n> --release` copies <root>/release-template (no base path), never <root>/release (the deploy's);
 #   - `create <n> --release --base-path P` copies <root>/release, only if its marker records `--base-path P`;
 #   - a no-base-path template that carries `.base-path-build` is refused, as is the sentinel tree for a base-path copy;

@@ -18,8 +18,8 @@
  * `[role="button"]`/menu-item/tab/etc. controls are):
  *   https://webkit.org/blog/5610/more-responsive-tapping-on-ios/
  *
- * Reported behaviour this guards against (iOS 18 Safari): "If the user is quickly tapping buttons, the double-tap zoom is
- * triggered." Two rapid taps on/near an interactive control that has not
+ * Behaviour this guards against (iOS 18 Safari): quickly tapping buttons triggers the double-tap zoom.
+ * Two rapid taps on/near an interactive control that has not
  * opted out of the gesture are read by Mobile Safari as a double-tap
  * zoom request instead of two independent activations.
  *
@@ -269,13 +269,13 @@ test.describe("overlay-gated elements", () => {
   });
 });
 
-// Row 331: 23 component pages out of 46. Chosen by a greedy set cover, not by taste: on a debug SSG build every one of
-// the component pages was probed for the (tag, role, first `dx-` class or raw) families SELECTOR matches there, 75
-// distinct families in all (12 of them raw, no `dx-` class: the `main.css` backstop's own targets), and these 23
-// pages carry every one of them (most-uncovered-first, ties by list order). Any family a dropped page had
-// is on a kept page, so a component sheet that sets `touch-action: auto` on its control, or a raw element that
-// loses the backstop, still fails. The other 23 pages add no family (all 46 take
-// 81 s). `check-theme-baseline.sh` scopes the theme rule to `dx-` and cannot see raw elements or computed values.
+// Row 331: 23 component pages out of 46, chosen by a greedy set cover, not by taste: on a debug SSG build the
+// component pages carry 75 distinct (tag, role, first `dx-` class or raw) families that SELECTOR matches (12 of them
+// raw, no `dx-` class: the `main.css` backstop's own targets), and these 23 pages carry every one of them
+// (most-uncovered-first, ties by list order). Any family a dropped page has is on a kept page, so a component sheet
+// that sets `touch-action: auto` on its control, or a raw element that loses the backstop, still fails. The other 23
+// pages add no family (all 46 take 81 s). `check-theme-baseline.sh` scopes the theme rule to `dx-` and cannot see raw
+// elements or computed values.
 const COMPONENTS = [
   "top_layer", "calendar", "form", "combobox", "drag_and_drop_list", "navbar", "tag_group", "item", "menubar",
   "scroll_area", "badge", "button", "card", "color_picker", "date_picker", "hover_card", "pagination", "textarea",

@@ -46,8 +46,8 @@
 #    `componentDependencies` of its component.json, and nothing else. A
 #    component's installed files (everything outside `variants/`, which is
 #    repo-only) that reach `crate::components::<other>` must therefore list
-#    `<other>`, else the installed tree does not compile (`form` once missed four,
-#    `top_layer` one). Comments and string literals are
+#    `<other>`, else the installed tree does not compile (a missed one is an E0433 in the
+#    installed app). Comments and string literals are
 #    ignored; `crate::components::{a, b::{X}}` groups are read. The reverse
 #    (a dependency declared but never imported) installs unused code but
 #    compiles, so it is only a note.

@@ -124,8 +124,8 @@ cd "$repo_root/preview"
 # target dir; backlog rows 98/100/122). When it is unset the deploy builds in the WARM DEPLOY TREE,
 # `${LANE_TGT:-/home/user/tgt}/release` (backlog row 324): the one release tree that is allowed to hold a
 # `--base-path shadcn-dioxus` build, kept warm by every deploy, so a deploy rebuilds only the two workspace crates
-# (~3-5 min) instead of the 700-crate dependency tree (~22-50 min). Without a /home/user/tgt it falls back to the
-# workspace's own `target/` as before. The no-base-path validation tree (`release-template`, see
+# (~14 min) instead of the 700-crate dependency tree (~22-50 min). Without a /home/user/tgt it falls back to the
+# workspace's own `target/`. The no-base-path validation tree (`release-template`, see
 # scripts/lane-target.sh) is refused here: a base-path build would taint it for good (row 100).
 # The build itself -- absolute-path / base-path-marker guards, wiping public/, the dx invocation, the freshness
 # check -- lives in scripts/build-ssg.sh, the single implementation shared with verification lanes.
@@ -157,33 +157,23 @@ public_dir="$target_dir/dx/preview/release/web/public"
 # refresh /docs from a build dx itself called a success while it dropped pages.
 "$repo_root/scripts/build-ssg.sh" release --base-path shadcn-dioxus
 
-# `dx build --ssg` has a known race (independent of any source change --
-# it reproduces identically on an untouched checkout) where its SSG render pass fires all routes' requests at
-# the freshly-started fullstack server concurrently, and some of those
-# requests can land before something the server needs to inject the
-# hydration bootstrap `<script type="module">` is ready. The affected
-# route's static HTML then has no script tag at all -- not a visible
-# error, just a dead, never-hydrates page if it ships.
+# `dx build --ssg` has a race, independent of any source change, where its SSG render pass fires
+# all routes' requests at the freshly-started fullstack server concurrently, and some of those
+# requests can land before something the server needs to inject the hydration bootstrap
+# `<script type="module">` is ready. The affected route's static HTML then has no script tag at
+# all -- not a visible error, just a dead, never-hydrates page if it ships.
 #
-# A cold cargo cache does NOT self-heal this (direct testing: two
-# independent fully-cold rebuilds -- target/wasm-release,
-# target/wasm32-unknown-unknown/wasm-release, target/server-release,
-# target/x86_64-*/server-release and target/dx/preview/release cleared
-# first -- reproduced the *identical* 5-of-6 failure at near-identical
-# internal timing), so compile-cache warmth is not the variable.
-# The actual cause: by default `dx build --fullstack` compiles the server
-# and client targets in parallel, and the client side's post-compile work
-# (wasm-bindgen, wasm-opt -- both CPU-heavy) is still competing for CPU
-# when the SSG pass's concurrent requests hit the freshly-listening server,
-# starving whatever it needs to finish before it can inject the script tag.
-# On this sandbox's 4 cores, `--force-sequential=true` above (server build,
-# then client build, so nothing competes with the server during its SSG
-# window) removes it (2/2 clean runs against 2/2 failures without it) -- dx's own
-# `--help` already default-enables this under `CI=1` for what's presumably
-# this same reason. The verification below stays as a safety net regardless
-# (belt-and-suspenders: don't ship a dead page even if this analysis is
-# ever wrong for some other environment), on every route dx actually
-# produced, rather than trust that the flag always suffices.
+# A cold cargo cache does NOT self-heal it (two independent fully-cold rebuilds reproduced the
+# identical 5-of-6 failure at near-identical internal timing), so compile-cache warmth is not the
+# variable. The cause: by default `dx build --fullstack` compiles the server and client targets in
+# parallel, and the client side's post-compile work (wasm-bindgen, wasm-opt -- both CPU-heavy) still
+# competes for CPU when the SSG pass's concurrent requests hit the freshly-listening server,
+# starving whatever it needs before it can inject the script tag. On this sandbox's 4 cores,
+# `--force-sequential=true` above (server build, then client build, so nothing competes with the
+# server during its SSG window) removes it (2/2 clean runs against 2/2 failures without it, row
+# 116); dx's own `--help` default-enables it under `CI=1`. The verification below stays as a safety
+# net regardless, on every route dx actually produced: a dead page must not ship even if this
+# analysis is wrong for another environment.
 echo "==> Verifying every route's build output includes its hydration bootstrap script ..."
 missing_script=()
 route_count=0
@@ -203,18 +193,16 @@ if [ "${#missing_script[@]}" -gt 0 ]; then
   echo "described above -- but scripts/build-ssg.sh already passes --force-sequential=true" >&2
   echo "specifically to avoid it, so seeing this means that mitigation didn't hold" >&2
   echo "(different environment, dx version, core count, ...). A cold cache alone" >&2
-  echo "did NOT fix this when it was tested (see the comment above) -- diagnose" >&2
+  echo "does NOT fix this (see the comment above) -- diagnose" >&2
   echo "fresh from this build's own log rather than assume that remedy." >&2
   exit 1
 fi
 echo "==> OK: all $route_count route(s) have their bootstrap script."
 
-# dev-docs/backlog.md row 46: before the path-segment route construction
-# (preview/src/main.rs's ComponentDemoPath/ComponentBlockDemoPath), every
-# `/component/?name=X&` page prerendered as the "Component not found" shell
-# for every X, because a query-string route is not enumerable at build time
-# -- this check is the safety net for a recurrence of that class, on every
-# route dx actually produced, the same belt-and-suspenders shape as the
+# dev-docs/backlog.md row 46: a query-string route (`/component/?name=X&`) is not enumerable at
+# build time, so it prerenders as the "Component not found" shell for every X; the demo routes are
+# path segments (preview/src/main.rs's ComponentDemoPath/ComponentBlockDemoPath). This check is the
+# safety net for that class, on every route dx actually produced, the same belt-and-suspenders shape as the
 # bootstrap-script check above. A well-formed build should never ship this
 # marker at all: `ComponentDemoPath`'s own not-found branch only renders for
 # a name absent from `components::DEMOS`, and `server_static_routes`

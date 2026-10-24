@@ -16,9 +16,9 @@
 # pending-substitution longhands that all read "", so the "put back" writes `setProperty(longhand, "")`, which
 # REMOVES them -- and the whole shorthand with them. The string you wrote is right and the markup the server
 # sent is right (the SSG page shows the border); the first time the string is re-set on the client the
-# declaration silently disappears. Examples: the carousel's active dot loses its colour and radius after the
-# first click (documented in carousel/docs.md), and the photo wall's minimap box loses its border and fill as
-# soon as the wall mounts its first tiles (`first-paint-styles` reports "border 2px -> 0 on
+# declaration silently disappears. Examples: a carousel's active dot would lose its colour and radius after the
+# first click (documented in carousel/docs.md), and a photo wall's minimap box would lose its border and fill as
+# soon as the wall mounts its first tiles (`first-paint-styles` would report "border 2px -> 0 on
 # /component/virtual_grid/": the JS-off page and the hydrated page compute different styles).
 #
 # The same re-set also makes the opposite swap wrong: a string swapped for another string or for "" leaves
@@ -27,8 +27,8 @@
 # `style: if done { "...; background: var(--dx-primary);" } else { "...; background: var(--dx-muted);" }`: after
 # two steps the segments that changed keep only `height` and `flex` (computed background transparent), so
 # the bar shows one bright segment, two invisible ones and one dark one; a chevron
-# (`style: if open() { "rotate: ..." } else { "" }`) stays rotated after closing (the questionnaire `progress`
-# demo and the `file_tree` / bubble `collapsible` chevrons were the instances).
+# (`style: if open() { "rotate: ..." } else { "" }`) stays rotated after closing (the shape of the questionnaire `progress`
+# demo and of `file_tree` / bubble `collapsible` chevrons).
 # Both are the one interpreter behaviour, so the gate has two arms.
 #
 # A static `style: "..."` is never re-set, so only a string with an interpolation, or a `style:` whose value is
@@ -52,7 +52,7 @@
 #
 # Scope: preview/src/**, primitives/src/**, templates/** (`*.rs`). Comments are blanked first.
 # EXCEPTIONS are in ALLOW below, each with its reason; an entry that no longer matches is an error (a fixed
-# site must leave the list). The list starts empty.
+# site must leave the list). The list is empty.
 #
 # Usage: scripts/check-dynamic-style-shorthand.sh [FILE ...]   (default: every *.rs under the scopes; explicit
 # files are for self-tests, and skip the allowlist stale-entry check)

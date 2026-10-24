@@ -33,8 +33,8 @@
  * only three patterns' *example* pages are vendored under
  * `../reference/7e4034b/` (menu-button, combobox-select-only, radio; see
  * that directory's README), so these two are not present there. The text
- * above was read from a fresh, read-only clone of `w3c/aria-practices`
- * checked out at the SAME pinned commit already vendored elsewhere in this
+ * above is from `w3c/aria-practices`
+ * at the SAME pinned commit already vendored elsewhere in this
  * repo (`7e4034b262bc0d25332e330d8a582aaf34113829`), the same technique
  * `keyboard-matrix.spec.ts`'s file header already documents and uses for
  * its own Menubar prose citations -- not invented from memory.
@@ -63,10 +63,10 @@
  *   - Navbar         (menu-and-menubar pattern, hover/click-opened nav
  *                      dropdowns; same shape as Menubar's submenus -- popup
  *                      role/items graded here, not the `menubar`-role
- *                      top-level container. Added in the same pass that
- *                      routed `navbar.rs`'s role literals through
+ *                      top-level container. `navbar.rs`'s role literals
+ *                      route through
  *                      `menu_semantics` -- dev-docs/backlog.md rows 24, 25, 41 --
- *                      since a fourth hand-written role set was exactly what
+ *                      since a fourth hand-written role set is exactly what
  *                      this file exists to catch)
  *
  * Contract asserted per component: popup is role="menu"; every plain item is

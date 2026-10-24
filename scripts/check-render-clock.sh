@@ -4,7 +4,7 @@
 #
 # A component that reads the clock while rendering, or in a prop default, bakes the day the page
 # was prerendered into the static HTML, and hydration keeps it: the calendar's "today", the month
-# it opens on, a date picker's default segment values and every demo built on them showed the build
+# it opens on, a date picker's default segment values and every demo built on them show the build
 # day (backlog row 380). So the clock is read in one place, `dioxus_primitives::calendar::use_today`,
 # which renders the server's date during hydration and reads the visitor's clock after mount.
 #

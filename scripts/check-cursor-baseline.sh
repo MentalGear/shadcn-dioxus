@@ -4,13 +4,13 @@
 #
 # The cursor of an interactive element is decided ONCE, by the theme, so every pressable element shows the
 # same cursor and an app chooses it in one place (backlog row 381 records the decision). Per-sheet
-# `cursor: pointer` / `cursor: default` declarations made one press look different in each component.
+# `cursor: pointer` / `cursor: default` declarations make one press look different in each component.
 #
 # `preview/assets/dx-components-theme.css` ("Interactive-element cursor") has ONE zero-specificity rule,
 # the same shape as the `touch-action` and `user-select` baselines, that gives every pressable `dx-` element
 # `cursor: var(--dx-interactive-element-cursor, default)`; `<html data-dx-interactive-element-cursor="pointer">`
 # (or any container) sets the variable to `pointer`. shadcn v4 leaves a button at the arrow, so that is the
-# default. This gate makes the per-sheet copies inexpressible again, so the class cannot grow back:
+# default. This gate makes the per-sheet copies inexpressible, so the class cannot grow back:
 #
 #  1. No component sheet (`preview/src/components/*/style.css`) and no `preview/assets/main.css` rule may
 #     declare `cursor: pointer`, `cursor: default` or `cursor: auto`: at (0,1,0) it out-ranks the theme rule

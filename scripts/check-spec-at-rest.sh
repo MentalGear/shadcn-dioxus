@@ -5,10 +5,10 @@
 # A spec that reads the GEOMETRY of an overlay surface must read it at rest. `boundingBox()` and
 # `getBoundingClientRect()` include transforms, and every floating panel, dialog, sheet, drawer, select
 # listbox ... plays an enter animation (`dx-pop-in` scales 0.95 -> 1, a dialog and a sheet move in), so a read
-# before the animation settles is a race against the animation clock. It bit twice in one round:
-# `select.spec.ts` :366/:376 read the listbox 142.16 px wide mid-animation against 145.89 at rest, and
-# `dialog.spec.ts:188` compared the footer band with the dialog during the 200 ms enter (1 in 5 runs failed,
-# 1.25-1.86 px off). The construction is `measureAtRest(locator)` / `readAtRest(locator, fn)` in
+# before the animation settles is a race against the animation clock. Measured (row 222):
+# a select listbox reads 142.16 px wide mid-animation against 145.89 at rest, and
+# a dialog footer band compared with the dialog during the 200 ms enter is off by 1.25-1.86 px (1 run in 5).
+# The construction is `measureAtRest(locator)` / `readAtRest(locator, fn)` in
 # `playwright/animations.ts`: they await `awaitAnimationsSettled` (the element's, its descendants' AND its
 # ancestors' animations; the footer sits inside the animating dialog) and then read.
 #

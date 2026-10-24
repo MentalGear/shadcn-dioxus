@@ -70,10 +70,10 @@
  *      naming "hydration" when it has to recover from one, or as an
  *      uncaught panic/exception when it can't.
  *   3. (post-hydration interactivity on a hard load) On the hard-loaded
- *      home page -- no client-side navigation, matching the real-world
- *      report this rule regression-tests -- clicking the Dropdown Menu
+ *      home page -- no client-side navigation, matching a real
+ *      visitor's hard load -- clicking the Dropdown Menu
  *      demo's "Open Menu" trigger opens its menu. This is the literal
- *      user-reported symptom ("Dropdown Menu -> Open Menu: nothing is
+ *      symptom a split arm causes ("Dropdown Menu -> Open Menu: nothing is
  *      happening") on the deployed site's main page.
  *   4. (no duplicated attribute names in served markup) The raw HTTP-served
  *      HTML of `/` contains NO start tag with the same attribute name
@@ -85,7 +85,7 @@
  *      different, real markup. The "hydration parity — per-component
  *      pages" describe block below is Rule 4's extension to every one of
  *      those pages; Rule 4 here is the narrower `/`-only guard for the
- *      original five-component finding. The legacy query-string route
+ *      five primitives that carry the hazard. The legacy query-string route
  *      (`Route::ComponentDemo`) still serves the same name-agnostic shell
  *      regardless of `X` by construction (see that route's own doc comment
  *      in `preview/src/main.rs`) -- it is what the "legacy query-URL
@@ -134,7 +134,7 @@
  *      region's *effective* (first-wins, per the parse rule quoted above)
  *      served `aria-label` is the caller's override, not the primitive's
  *      default -- the concrete, human-readable form of "no duplicate" for
- *      this exact regression.
+ *      this exact case.
  *
  * Failure shapes: Rule 1 fails when the server-rendered toast region
  * carries no `popover` attribute at all (the native arm). Rules 2 and 3
@@ -627,8 +627,8 @@ test.describe("hydration parity — SSG server markup vs. wasm client", () => {
     // `\bdx-toast-container\b` (a whole class TOKEN anywhere in the
     // attribute value), not `dx-toast-container-[^"]*` (a literal trailing
     // hyphen then more characters): the class is the plain, unhashed,
-    // multi-class `class="dx-toast-base-region dx-toast-container"` (row 32
-    // dropped `#[css_module]` hashing), so a pattern that requires a literal
+    // multi-class `class="dx-toast-base-region dx-toast-container"` (row 32:
+    // no `#[css_module]` hashing), so a pattern that requires a literal
     // "-" immediately after "container" can never match.
     const containerMatch = html.match(/<div[^>]*class="[^"]*\bdx-toast-container\b[^"]*"[^>]*>/);
     expect(
@@ -669,7 +669,7 @@ test.describe("hydration parity — SSG server markup vs. wasm client", () => {
   test("Rule 3: Dropdown Menu 'Open Menu' opens its menu on a hard-loaded main page", async ({
     page,
   }) => {
-    // dev-docs/backlog.md row 109's own follow-up: this test clicks the
+    // dev-docs/backlog.md row 109: this test clicks the
     // trigger right after navigating, on the SSG lane -- `gotoHydrated` so
     // that click can't land before hydration attaches listeners. (Rule 2
     // above is a pure console/error check with no interaction, so it keeps
@@ -753,7 +753,7 @@ test.describe("hydration parity — SSG server markup vs. wasm client", () => {
   // `ImageAvatar { alt: "Jordan Reyes", aria_label: "Error avatar", ... }`.
   // `ImageAvatar` (`preview/src/components/avatar/component.rs`) computes
   // its OWN default accessible name from `alt` (`aria_label: "{alt}"` --
-  // the row-34 axe fix, `role-img-alt`) and merges it with the caller's
+  // row 34, axe `role-img-alt`) and merges it with the caller's
   // `attributes` via `merge_attributes` (caller-wins, deduped) before
   // rendering `Avatar`'s `role="img"` root -- structurally the same
   // "explicit default + caller override of the same attribute name" shape
@@ -778,7 +778,7 @@ test.describe("hydration parity — SSG server markup vs. wasm client", () => {
   test("Rule 4b: the avatar demo's caller-overridden accessible name is served, not the alt-derived default", async ({
     request,
   }) => {
-    // The avatar page (not the `/` gallery card, which now shows shadcn's avatar-demo): the "Error State" example lives in
+    // The avatar page (not the `/` gallery card, which shows shadcn's avatar-demo): the "Error State" example lives in
     // the `states` variant (backlog row 235).
     const response = await request.get(`${BASE}/component/avatar/`, { timeout: NAV_TIMEOUT });
     expect(response.ok()).toBeTruthy();
@@ -873,8 +873,8 @@ test.describe("hydration parity — per-component pages (row 46)", () => {
       // "networkidle" and that page settles fine): `top_layer`'s oracle
       // fixture page is "a large probe surface" with its own ongoing
       // timers/listeners by design (playwright/oracle/tier2-html/
-      // top-layer.spec.ts), so it may never reach network-idle at all (a
-      // 90s loop timeout on exactly that page). A hydration mismatch surfaces during the
+      // top-layer.spec.ts), so it may never reach network-idle at all.
+      // A hydration mismatch surfaces during the
       // synchronous hydration walk right after `load`, not from later
       // background network activity, so "load" is both sufficient for what
       // this rule checks and immune to a fixture page's own idle timers.

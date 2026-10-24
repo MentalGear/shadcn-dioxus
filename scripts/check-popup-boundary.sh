@@ -15,7 +15,7 @@
 #   .dx-input-group-addon button { height: var(--dx-control-height-xs); padding: 0 var(--dx-space-2) }
 #   .dx-input-group-addon svg    { width: 1rem; height: 1rem }
 #
-# also matched every day cell and chevron of the Date Picker calendar whose trigger sits in an addon (28x24
+# also matches every day cell and chevron of the Date Picker calendar whose trigger sits in an addon (28x24
 # cells, 16px chevrons) -- invisible on the Date Picker's own page, wrong only in the one demo that nests it.
 # Any `.dx-x <bare element | [role] | *>` rule has the same reach: Popover, DropdownMenu, Select, Tooltip,
 # HoverCard, Combobox, Dialog/Sheet/Drawer, DatePicker/ColorPicker and Command all render inside their trigger.

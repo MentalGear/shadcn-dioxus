@@ -4,7 +4,7 @@
 #
 # The SSG serves complete markup before the wasm bundle has hydrated it, and Dioxus attaches its event delegation
 # only when hydration walks the tree: a click or hover a spec issues right after a plain `page.goto` is DROPPED,
-# not queued (row 109 -- the flake class that carousel, tooltip and hover-card specs hit one at a time). The cure
+# not queued (row 109). The cure
 # is one helper, `gotoHydrated` (`playwright/hydration.ts`: `networkidle`, then `html[data-hydrated="true"]`, a
 # flag the app's root effect sets only after a client render has committed). Every bare `page.goto(` is a latent
 # instance of the same race (row 109).
