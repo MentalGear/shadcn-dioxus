@@ -5,7 +5,7 @@ import { demoFrame } from "./demo-frame";
 import { gotoHydrated } from "./hydration";
 
 // VirtualGrid (backlog row 244): the `main` demo is a 10,000-row x 50-column data grid with a sticky
-// header row and a sticky first column; the `gallery` demo is a VirtualWrapGrid of 5,000 generated
+// header row and a pinned first column; the `gallery` demo is a VirtualWrapGrid of 5,000 generated
 // images in rows of a selectable column count. Both window their rows; the data grid also windows
 // its columns. Controls are located by role and position inside the demo frames (row 220).
 
@@ -30,7 +30,7 @@ async function scrollGrid(grid: Locator, top: number, left: number) {
   );
 }
 
-/** The cell's box and the grid's visible body (below the sticky header, beside the sticky column). */
+/** The cell's box and the grid's visible body (below the pinned header, beside the pinned column). */
 async function placement(grid: Locator, row: number, column: number) {
   return grid.evaluate(
     (el, key) => {
@@ -53,7 +53,7 @@ async function placement(grid: Locator, row: number, column: number) {
 }
 
 /**
- * Whether the cell is fully inside the grid's scrollport, clear of the sticky header (the grid may itself
+ * Whether the cell is fully inside the grid's scrollport, clear of the pinned header (the grid may itself
  * be partly below the page fold, so this is not `toBeInViewport`).
  */
 async function inGridView(grid: Locator, row: number, column: number) {
@@ -110,7 +110,7 @@ test.describe("data grid (rows and columns windowed)", () => {
     await scrollGrid(grid, 1e9, 1e9);
     await expect(cell(grid, 9999, 49)).toBeVisible();
     await expect(grid.locator('[role="row"][aria-rowindex="10001"]')).toHaveCount(1);
-    // The sticky header and column are still there, at the far corner.
+    // The pinned header and column are still there, at the far corner.
     await expect(cell(grid, "header", 49)).toBeVisible();
     await expect(cell(grid, 9999, 0)).toBeVisible();
     expect(await mountedCells(grid)).toBeLessThan(1000);
@@ -144,7 +144,7 @@ test.describe("data grid (rows and columns windowed)", () => {
     expect(afterPage.endsWith(":49")).toBe(true);
 
     // Ctrl+End: the last cell, far outside the window, is rendered, focused and scrolled into view
-    // below the sticky header and beside the sticky column.
+    // below the pinned header and beside the pinned column.
     await page.keyboard.press("Control+End");
     await expect.poll(() => focusedCell(page)).toBe("9999:49");
     await expect.poll(() => inGridView(grid, 9999, 49)).toBe(true);
@@ -169,13 +169,13 @@ test.describe("data grid (rows and columns windowed)", () => {
     expect(await focusedCell(page)).toBe("0:0");
   });
 
-  test("a column scrolled under the sticky column is revealed beside it", async ({ page }) => {
+  test("a column scrolled under the pinned column is revealed beside it", async ({ page }) => {
     await gotoHydrated(page, PAGE_URL);
     const grid = dataGrid(page);
     await cell(grid, 0, 1).click();
     await page.keyboard.press("End");
     await expect.poll(() => focusedCell(page)).toBe("0:49");
-    // Walk back to column 1: it ends up just right of the sticky row-number column, not under it.
+    // Walk back to column 1: it ends up just right of the pinned row-number column, not under it.
     await page.keyboard.press("Home");
     await page.keyboard.press("ArrowRight");
     await expect.poll(() => focusedCell(page)).toBe("0:1");
@@ -185,14 +185,77 @@ test.describe("data grid (rows and columns windowed)", () => {
   });
 });
 
+/** The alpha channel of a computed colour (`rgb()`, `rgba()`, `oklab(... / a)`, `color(srgb ... / a)`). */
+function alphaOf(color: string): number {
+  const slash = /\/\s*([\d.]+)(%?)\s*\)$/.exec(color);
+  if (slash) return Number(slash[1]) / (slash[2] ? 100 : 1);
+  const legacy = /^rgba\((?:[^,]+,){3}\s*([\d.]+)\s*\)$/.exec(color);
+  return legacy ? Number(legacy[1]) : 1;
+}
+
+/** The computed background colour of the first element matching `selector` in the grid. */
+const backgroundOf = (grid: Locator, selector: string) =>
+  grid.locator(selector).first().evaluate((el) => getComputedStyle(el).backgroundColor);
+
+// The pinned header row is the opaque cover of the body cells that scroll under it. The row hover fill is
+// translucent, so it belongs to body rows only (row 386): hovering the header while the grid is scrolled
+// must not change the header row's or the pinned header cell's background.
+test.describe("row hover (data grid)", () => {
+  test("hovering the pinned header keeps it opaque and unchanged while a body row still takes the hover fill", async ({
+    page,
+  }) => {
+    await gotoHydrated(page, PAGE_URL);
+    const grid = dataGrid(page);
+    await expectStyled(grid);
+    await scrollGrid(grid, 40 * 36, 3 * 112);
+    await expect(cell(grid, 40, 1)).toBeVisible();
+
+    const headerRow = "[role='row'][data-grid-header]";
+    const pinnedHeader = "[data-grid-header] [data-grid-pinned]";
+    const bodyRow = "[role='row']:not([data-grid-header])";
+
+    // At rest, with the pointer parked on the page body outside the grid.
+    await page.mouse.move(0, 0);
+    const rest = {
+      row: await backgroundOf(grid, headerRow),
+      pinned: await backgroundOf(grid, pinnedHeader),
+      body: await backgroundOf(grid, bodyRow),
+    };
+    expect(alphaOf(rest.row)).toBe(1);
+    expect(alphaOf(rest.pinned)).toBe(1);
+
+    // Pointer over a scrolled header cell: the header row is hovered.
+    await cell(grid, "header", 4).hover();
+    await expect(grid.locator(headerRow)).toHaveCSS("background-color", rest.row);
+    expect(await grid.locator(`${headerRow}:hover`).count()).toBe(1);
+    expect(await backgroundOf(grid, headerRow)).toBe(rest.row);
+    expect(await backgroundOf(grid, pinnedHeader)).toBe(rest.pinned);
+
+    // Pointer over the pinned header cell.
+    await cell(grid, "header", 0).hover();
+    expect(await grid.locator(`${headerRow}:hover`).count()).toBe(1);
+    expect(await backgroundOf(grid, headerRow)).toBe(rest.row);
+    expect(await backgroundOf(grid, pinnedHeader)).toBe(rest.pinned);
+
+    // A body row keeps its hover fill (the rule still reaches the rows it is for).
+    await cell(grid, 40, 4).hover();
+    const hovered = grid.locator(`${bodyRow}:hover`);
+    await expect(hovered).toHaveCount(1);
+    await expect.poll(() => hovered.evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe(rest.body);
+    const fill = await hovered.evaluate((el) => getComputedStyle(el).backgroundColor);
+    expect(alphaOf(fill)).toBeGreaterThan(0);
+    expect(alphaOf(fill)).toBeLessThan(1);
+  });
+});
+
 test.describe("right-to-left", () => {
-  test("the sticky column moves to the right, the arrows mirror, and the far inline end renders", async ({ page }) => {
+  test("the pinned column moves to the right, the arrows mirror, and the far inline end renders", async ({ page }) => {
     await gotoHydrated(page, PAGE_URL);
     await page.locator("#dx-direction-toggle").click();
     await expect(demoFrame(page)).toHaveAttribute("dir", "rtl");
     const grid = dataGrid(page);
     await expect(cell(grid, 0, 1)).toBeVisible();
-    // The sticky first column sits at the inline start, which is the right.
+    // The pinned first column sits at the inline start, which is the right.
     const p = await placement(grid, 0, 0);
     expect(Math.abs(p.right - p.gridRight)).toBeLessThan(2);
     const next = await placement(grid, 0, 1);

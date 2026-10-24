@@ -146,16 +146,15 @@ test.describe("VirtualList item_key", () => {
   });
 
   for (const mode of ["light", "dark"] as Mode[]) {
-    test(`the drop line is --dx-primary under the ${ACCENT} accent, ${mode}`, async ({ page }) => {
+    test(`the drop line is --dx-primary-mark under the ${ACCENT} accent, ${mode}`, async ({ page }) => {
       const frame = await open(page);
       await applyModeAndAccent(page, mode);
       await itemButton(frame, 0).focus();
       await page.keyboard.press("Space");
       await page.keyboard.press("ArrowDown");
       await expect(frame.locator("[data-drop]")).toHaveCount(1);
-      const primary = await resolvedToken(page, "--dx-primary");
-      expect(await resolvedToken(page, "--dx-ring-color")).not.toBe(primary);
-      expect(await paintedColour(page, "[data-vl-reorder-demo] [data-drop]", "boxShadow")).toBe(primary);
+      const mark = await resolvedToken(page, "--dx-primary-mark");
+      expect(await paintedColour(page, "[data-vl-reorder-demo] [data-drop]", "boxShadow")).toBe(mark);
       await page.keyboard.press("Escape");
     });
   }

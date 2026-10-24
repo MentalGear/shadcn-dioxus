@@ -307,7 +307,7 @@ mod tests {
         let mut grid = GridEngine::new();
         let rows = super::super::SizeEstimates::evaluate(1_000, Some(&|_| 36));
         let columns = super::super::SizeEstimates::evaluate(50, Some(&|_| 120));
-        grid.sync(&rows, &columns, 0, 0, 0);
+        grid.sync(&rows, &columns, super::super::Pins::default());
         grid.scroll(report(0, 0));
         assert!(asks(&mut grid));
         let _ = grid.plan(6, 4, None);

@@ -422,7 +422,7 @@ test.describe("Rule 1 — clipping escape (an ancestor with overflow:hidden + tr
     expect(result.escapes, JSON.stringify(result)).toBe(true);
   });
 
-  // dev-docs/backlog.md row 72: `NavigationMenuContent`'s web arm is
+  // dev-docs/backlog.md row 81: `NavigationMenuContent`'s web arm is
   // `popover="manual"`, anchored to its own trigger
   // (`NavigationMenuContentRendered`, `navigation_menu.rs`) -- the same
   // top-layer engine `NavbarContent` uses (`dx-anchor-navigation-menu`,

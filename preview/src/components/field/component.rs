@@ -29,8 +29,8 @@ impl FieldOrientation {
 }
 
 /// One labeled form field -- a label, its control, and optional
-/// description/error text, laid out together. Builds on this repo's landed
-/// native form participation (every themed control already mirrors its
+/// description/error text, laid out together. Builds on this repo's native
+/// form participation (every themed control already mirrors its
 /// state onto a real, hidden native input/select, see
 /// `dev-docs/preview-composition.md`): `Field` only supplies the *layout* and
 /// label/description/error wiring around whatever control (`Input`,

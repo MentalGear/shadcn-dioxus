@@ -26,7 +26,7 @@
  * `scrollBy({ behavior })` call (the carousel's) is not affected by CSS.
  * Against a build with an ambient smooth rule, the two row-110 specs
  * (`carousel.spec.ts`'s hover-stops-rotation test and `top-layer.spec.ts`'s `pinNearTop`)
- * can flake: that is the ambient-smooth bug showing, not a harness problem.
+ * are unstable: an ambient smooth rule is a product defect, not a harness problem.
  *
  * The module stays as the one import point so a future
  * suite-wide fixture has a single place to live.

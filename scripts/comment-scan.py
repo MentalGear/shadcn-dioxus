@@ -40,7 +40,11 @@ EXT_KIND = {
     ".ts": "js", ".tsx": "js", ".js": "js", ".mjs": "js", ".cjs": "js",
     ".sh": "shell",
     ".py": "python",
+    ".txt": "txt",
 }
+# A `.txt` is read only where it is a data file with `#` comments that ships with the code (a component's
+# `variants/order.txt`); a licence text (`preview/assets/fonts/OFL.txt`) or an ident list under dev-docs/ is not.
+TXT_PREFIXES = ("preview/src/components/", "primitives/src/", "templates/", "cli/")
 SKIP_PREFIXES = (
     "dev-docs/archive/",
     "docs/",
@@ -71,7 +75,10 @@ def tracked_files(root):
             continue
         if p.startswith(SKIP_PREFIXES) or any(s in "/" + p for s in SKIP_PARTS) or p.endswith(SKIP_SUFFIXES):
             continue
-        if os.path.splitext(p)[1] in EXT_KIND and os.path.isfile(os.path.join(root, p)):
+        ext = os.path.splitext(p)[1]
+        if ext == ".txt" and not p.startswith(TXT_PREFIXES):
+            continue
+        if ext in EXT_KIND and os.path.isfile(os.path.join(root, p)):
             files.append(p)
     return sorted(files)
 
@@ -423,7 +430,15 @@ def extract_html(text):
             yield base + ln - 1, body
 
 
-EXTRACTORS = {"rust": extract_rust, "html": extract_html, "css": extract_css, "js": extract_js, "shell": extract_shell, "python": extract_python}
+def extract_txt(text):
+    """A data file whose comments are the lines starting with `#` (a component's `variants/order.txt`)."""
+    for lineno, ln in enumerate(text.split("\n"), 1):
+        s = ln.lstrip()
+        if s.startswith("#"):
+            yield lineno, s.lstrip("#")
+
+
+EXTRACTORS = {"txt": extract_txt, "rust": extract_rust, "html": extract_html, "css": extract_css, "js": extract_js, "shell": extract_shell, "python": extract_python}
 
 
 def comments_of(root, path):
@@ -543,6 +558,16 @@ PHRASES = [
                 r"\bowner(?:'s)?(?: real)?[- ](?:[\w-]+ )?(?:report|session)\b|\bowner's (?:bench|lab)\b|\blab session\b|"
                 r"\bincident behind\b|\bthe incident (?:itself|that|which)\b|\bproduction incident\b|"
                 r"(?<!upstream )(?<!upstream Dioxus )\bPR #\d+|\bmotivated PR #\d+", re.I), "report"),
+    # round 6 (row 384): who asked and how a finding was made, told in the code: "owner asked for X", "requested by
+    # the owner", "(issue #262)" as a credit (not `upstream issue #N`), "the product bug behind this test", "surveyed
+    # ... and found", "the scroll re-profile", "a re-test is still required", "version 4: version 3 plus ...", and
+    # "landed" in the merged sense ("landed silently", "landed in main"); a click or a focus that "landed on" an element
+    # is geometry and stays
+    (re.compile(r"\bowner (?:asked|wanted|requested|reported)\b|\b(?:requested|asked for|reported|filed) by (?:the )?(?:owner|user|reviewer|maintainer)\b|"
+                r"(?<!upstream )(?<!upstream: )(?<!upstream Dioxus )\bissues? #\d+|\bthe (?:product |real |underlying )?bug behind\b|"
+                r"\bsurveyed\b[^.;]{0,100}\bfound\b|\bthe survey (?:found|showed|measured)\b|\bre-?profil(?:e|ed|ing)\b|"
+                r"\bre-?test is still (?:required|needed|pending|open)\b|\bversion \d+ plus\b|"
+                r"\blanded (?:silently|in main|on main|in row|with row|as part of|via)\b|\blanded in (?:the )?(?:session|queue) branch\b", re.I), "who asked"),
     # a pointer into a dead session's scratchpad
     (re.compile(r"\$S/"), "scratchpad path"),
 ]
@@ -1107,6 +1132,18 @@ MUST_FLAG = [
     "see that module's own doc for why it moved out of here",
     "It replaces a call per route",
     "this now lives in the theme",
+    # round 6: who asked and how it was found
+    "(backlog row 311: owner asked for `multiple` higher on the page)",
+    "the owner wanted it above the fold",
+    "a change requested by the owner",
+    "open from a held touch instead (issue #262).",
+    "row 115 -- the product bug behind this file's load-only flake",
+    "(row 31a surveyed them and found no clean clusters)",
+    "The scroll re-profile measured the infinite animations alone",
+    "a real iPhone re-test is still required.",
+    "OUTPUT FORMAT (version 4: version 3 plus `user-select`)",
+    "a planned control that landed silently is documentation drift",
+    "the helper landed in main with its own test",
 ]
 # ... and present-tense sentences that must NOT be (the false positives to keep out).
 MUST_NOT_FLAG = [
@@ -1206,6 +1243,16 @@ MUST_NOT_FLAG = [
     "a bug the user had to type around",
     "the node is exposed to assistive technology",
     "a regression test covers it",
+    # round 6: the same words in their present-tense or provenance senses
+    "the owner applies the move; the menu keeps the order",
+    "a controlled list changes only when the owner writes a new one",
+    "tracked upstream: issue #199 of DioxusLabs/components",
+    "upstream issue #199 asks for the same API",
+    "a click that landed on a sibling is ignored",
+    "focus would not have landed on it",
+    "the survey of the stylesheets lives in the token table",
+    "a profile of the page is taken once, not re-fetched",
+    "every plus sign in version 4 is escaped",
 ]
 
 
@@ -1256,6 +1303,9 @@ EXTRACTION_CASES = [
     ("rust string JS: // inside a JS string is not a comment", "a.rs", 'let u = "const m = \'// used to be\'; function f() { return m; }";\n', 0),
     ("rust string with no code shape is data", "a.rs", 'let u = "see /* used to be */ above";\n', 0),
     ("rust byte string is skipped", "a.rs", 'let u = b"const a = 1; // used to be";\n', 1),
+    ("a variants/order.txt `#` comment is read", "preview/src/components/x/variants/order.txt", "# owner asked for `multiple` first (backlog row 311)\nmultiple\n", 1),
+    ("a clean order.txt `#` comment passes", "preview/src/components/x/variants/order.txt", "# The multiple demos come first (backlog row 311).\nmultiple\n", 0),
+    ("an order.txt line that is not a comment is data", "preview/src/components/x/variants/order.txt", "owner asked\n", 0),
     ("rust string JS with a clean comment", "a.rs", 'const J: &str = r#"\n  // the panel is positioned from the trigger\n  const a = 1;\n"#;\n', 0),
 ]
 

@@ -2967,7 +2967,7 @@ fn BlockProfile() -> Element {
                     span { style: "font-weight: 600; color: var(--dx-foreground);", "Avery Lin" }
                     Badge {
                         variant: BadgeVariant::Secondary,
-                        style: "padding: 0.15rem 0.3rem; background-color: var(--dx-ring-color); color: white;",
+                        style: "padding: 0.15rem 0.3rem; background-color: var(--dx-ring-color); color: var(--dx-accent-ring-ink, white);",
                         VerifiedIcon {}
                     }
                 }

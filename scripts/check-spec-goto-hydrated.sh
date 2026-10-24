@@ -33,7 +33,7 @@
 # `gotoHydrated` waits for that redirect to land.
 #
 # Rule 3. A path route carries no query text in its `<name>` segment: `/component/popover&variant=overlay/` is a 404
-# (a migration from the legacy `?name=popover&variant=overlay&` form produces exactly that, and the legacy route
+# (rewriting the query form `?name=popover&variant=overlay&` by hand produces exactly that, and the query route
 # silently drops the `variant`).
 #
 # Rule 4. Query text is never glued to a path route: `${url(name)}variant=${variant}&` and `${URL}dark_mode=true` (with

@@ -271,6 +271,7 @@
   position: absolute;
   width: var(--dx-menu-item-indicator-size);
   height: var(--dx-menu-item-indicator-size);
+  color: var(--dx-accent-ink, inherit);
   inset-block: 0;
   inset-inline-end: var(--dx-menu-item-indicator-inset);
   margin-block: auto;
@@ -278,13 +279,13 @@
 }
 
 .dx-select-option:focus-visible {
-  background: var(--dx-accent);
+  background: var(--dx-accent-tint);
   color: var(--dx-accent-foreground);
 }
 
 @media (hover: hover) and (pointer: fine) {
   .dx-select-option:hover:not([data-disabled="true"]) {
-    background: var(--dx-accent);
+    background: var(--dx-accent-tint);
     color: var(--dx-accent-foreground);
   }
 }

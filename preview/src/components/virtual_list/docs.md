@@ -139,7 +139,7 @@ VirtualGrid { row_count: 1_000usize, column_count: 30usize, fade: ScrollFade::Bo
 ```
 
 - It needs `dx-effects.css` linked once at the app root next to the theme (the `virtual_list` and `virtual_grid` `component.json` list it in `globalAssets`). Without it the prop is inert. See the `dx-scroll-fade` utility in the ScrollArea docs for the variables that tune depth and reveal distance.
-- The mask covers everything inside the container: a border or background on it fades with the content (put those on a wrapper and set `border: none` on the container), and so does a `VirtualGrid`'s sticky header, which a top fade dims once you scroll (prefer `ScrollFade::Bottom` or `End` with `render_header`).
+- The mask covers everything inside the container: a border or background on it fades with the content (put those on a wrapper and set `border: none` on the container), and so does a `VirtualGrid`'s pinned header, which a top fade dims once you scroll (prefer `ScrollFade::Bottom` or `End` with `render_header`).
 - Examples: the `fade` variants (a windowed list and a content-visibility list; a wrapping gallery and a two-axis data grid).
 <!-- /shared:virtual-engine:fade -->
 

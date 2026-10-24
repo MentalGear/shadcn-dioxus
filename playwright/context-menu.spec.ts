@@ -178,7 +178,7 @@ test('clamps the menu into the viewport for a touch long-press near a corner', a
 
 test('touch long-press opens the context menu', async ({ page }) => {
   // iOS Safari does not fire `contextmenu` on long press, so the menu must
-  // open from a held touch instead (issue #262).
+  // open from a held touch instead.
   await gotoHydrated(page, `${BASE_URL}/component/context_menu/`, { timeout: 20 * 60 * 1000 });
   const trigger = page.getByRole('button', { name: 'right click here' });
   const contextMenu = page.getByRole('menu');

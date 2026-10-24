@@ -1,14 +1,13 @@
 /**
  * Backlog row 305 (iOS): scrolling a drawer's content must not drag the drawer sideways. The drag
- * decides its axis first
+ * decides its axis only once it has
  * travelled `AXIS_LOCK_PX`, commits only when that movement is predominantly along the dismiss axis
  * (and no scrollable ancestor can scroll that way), and is otherwise abandoned for that pointer, so
  * `start`/`move` are never sent and the panel never shifts while content scrolls.
  *
  * Two drivers, for all four sides: synthetic touch Pointer Events (deterministic geometry, the wobble
  * and the diagonal) and, on Chromium, real touch input through CDP `Input.dispatchTouchEvent` (a real
- * browser scroll with sideways wobble). WebKit, where the bug shows, is not available here:
- * a real iPhone re-test is still required.
+ * browser scroll with sideways wobble). WebKit is not available here; verify on a real iPhone (row 305).
  */
 import { test, expect } from './fixtures';
 import { BASE_URL } from './base-url';

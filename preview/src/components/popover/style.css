@@ -29,7 +29,7 @@
    * defaults (WHATWG HTML's popover section) -- the *non-modal* arm of this content carries the
    * `popover` attribute; the modal arm (a `<dialog>` opened with `showModal()`) never does.
    * `inset`/`margin` are *not* reset unconditionally here: this rule's own `margin-top` and
-   * `transform: translate(-50%, -50%)` are the legacy DOM-relative centring the `data-side` rules
+   * `transform: translate(-50%, -50%)` are the DOM-relative centring the `data-side` rules
    * below build on, so zeroing them would break that path. The non-modal arm's own `inset`/`margin`
    * reset lives in the single, engine-injected anchor-positioning stylesheet shared by every
    * `dx-anchor-*` overlay (`primitives/src/top_layer.rs`'s `ensure_anchor_positioning_styles`).
@@ -39,7 +39,7 @@
   gap: var(--dx-space-2-5);
   text-align: start;
 
-  /* rtl-physical: legacy modal centring trick, paired with the implicit
+  /* rtl-physical: modal centring trick, paired with the implicit
      `left: 50%; top: 50%` of its centred positioning context -- same family as
      dialog/alert_dialog's identical note. */
   transform: translate(-50%, -50%);

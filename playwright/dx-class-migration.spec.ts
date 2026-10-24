@@ -181,11 +181,10 @@ for (const name of MIGRATED.filter((n) => SAMPLED.has(n))) {
     // route, and assertion 3 below falls back to `document.body` when that
     // article is absent -- which sweeps in the sitewide navbar's hand-rolled
     // `dx-select-expand-icon` (see its scoping comment) and demands a
-    // `dx-select` stylesheet no component route ever delivers. Probed: right
-    // after `goto(load)` on the tabs route, 5 of 12 loads had no article and
-    // exactly that class; 0 of 7 once `data-hydrated` was set. Under
-    // `--workers=4` the `load` event routinely fires before hydration, so
-    // a bare `load` flakes tabs/sidebar/navbar.
+    // `dx-select` stylesheet no component route ever delivers. Under
+    // `--workers=4` the `load` event routinely fires before hydration (the
+    // article is absent), so a bare `load` is not a safe signal on
+    // tabs/sidebar/navbar; `data-hydrated` is.
     await gotoHydrated(page, `${BASE_URL}/component/${name}/`);
     // The page's own demo must have rendered before the sheet is meaningful.
     await expect(page.locator("body")).toBeVisible();

@@ -30,7 +30,7 @@
 # `rm -rf public`). Two checks, because neither alone is enough:
 #   1. marker `<template>/.base-path-build`, written by scripts/deploy-preview.sh --
 #      instant, and catches a tree whose `public/` was already wiped;
-#   2. grep of the template's dx `public/` HTML for quoted `/shadcn-dioxus/` (or legacy `/dioxus-components/`) URLs --
+#   2. grep of the template's dx `public/` HTML for quoted `/shadcn-dioxus/` (or `/dioxus-components/`) URLs --
 #      authoritative on the actual output, catches templates made by hand.
 # Defaults: root $LANE_TARGET_ROOT or /home/user/tgt, template $LANE_TARGET_TEMPLATE or <root>/template.
 #

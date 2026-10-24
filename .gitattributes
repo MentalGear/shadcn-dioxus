@@ -1,0 +1,10 @@
+# Generated files that every lane branch changes in the same place conflict textually on every merge into a batch queue
+# (backlog row 400). Each gets a merge driver that merges what the file MEANS, registered per clone by
+# scripts/setup-merge-drivers.sh (the SessionStart hook runs it; worktrees share the repo config):
+#   dev-docs/backlog.md, dev-docs/backlog-done.md   the indexes scripts/backlog-index.sh generates: a 3-way merge by row id
+#   playwright/durations.json                       the per-spec seconds table: a 3-way merge by entry, totals recomputed
+# A clone without the registration falls back to git's text merge (and the old conflicts); scripts/check-merge-drivers.sh
+# keeps this file, the driver scripts and the registration command in step.
+dev-docs/backlog.md merge=backlog-index
+dev-docs/backlog-done.md merge=backlog-index
+playwright/durations.json merge=durations

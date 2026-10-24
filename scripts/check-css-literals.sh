@@ -12,8 +12,8 @@
 #
 # Why: a token set only pays for itself if the components actually read from
 # it. A literal that duplicates a token's value is a value that will silently
-# fail to follow when the token is retuned -- exactly the drift row 31a's
-# survey found across the component stylesheets, and the reason row 31b exists.
+# fail to follow when the token is retuned -- exactly the drift of row 31a
+# (across the component stylesheets), and the reason row 31b exists.
 #
 # WHAT IS AND IS NOT AN ERROR
 #
@@ -30,8 +30,8 @@
 # output, which is deliberately not this lint's business.
 #
 # Only the properties the token set actually covers are scanned. Colors,
-# `line-height` and `font-weight` have no tokens (row 31a surveyed them and
-# found no clean clusters) and are ignored.
+# `line-height` and `font-weight` have no tokens (their values form no clean
+# clusters, row 31a) and are ignored.
 #
 # Usage: scripts/check-css-literals.sh
 # Exit status: 0 if no component stylesheet hard-codes a tokenised value.

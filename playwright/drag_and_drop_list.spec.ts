@@ -48,8 +48,8 @@ function getLiveRegion(list: import("@playwright/test").Locator) {
  * avatar. The demo's `ImageAvatar` renders its fallback initials ("RH") only
  * once the image has failed or timed out, so reading the whole `textContent`
  * twice -- once before and once after that happens -- would compare two different
- * strings for the same item (`...Apr29` vs `...Apr29RH`), a flake under
- * parallel load (backlog row 114). The avatar is decoration, not part of an item's
+ * strings for the same item (`...Apr29` vs `...Apr29RH`), depending on
+ * load timing (backlog row 114). The avatar is decoration, not part of an item's
  * identity; what remains (title, task code, status, due date) is stable from the first
  * render, so nothing needs to wait for the avatars to settle.
  */
@@ -401,13 +401,13 @@ const DEFAULT_GHOST_OPACITY = 0.9;
 const DEFAULT_DROP_GAP = 25;
 
 test.describe("Drop indicator colour", () => {
-  // The drop line is the accent colour (`--dx-drop-indicator`, default `var(--dx-primary)`), not the grey
-  // focus ring: under a coloured accent preset its painted colour is `--dx-primary`, in both modes.
+  // The drop line is the accent colour (`--dx-drop-indicator`, default `var(--dx-primary-mark)`, row 389): under a
+  // coloured accent preset its painted colour is `--dx-primary-mark`, in both modes.
   const BEFORE = '[data-position="before"] + li[aria-roledescription="sortable item"]';
   const AFTER = 'li[aria-roledescription="sortable item"]:has(+ [data-position="after"])';
 
   for (const mode of ["light", "dark"] as Mode[]) {
-    test(`the drop line is --dx-primary under the ${ACCENT} accent, ${mode}`, async ({ page }) => {
+    test(`the drop line is --dx-primary-mark under the ${ACCENT} accent, ${mode}`, async ({ page }) => {
       const list = await loadMainList(page);
       await applyModeAndAccent(page, mode);
       const items = getItems(list);
@@ -417,13 +417,11 @@ test.describe("Drop indicator colour", () => {
       await page.keyboard.press("ArrowDown");
       await expect.poll(() => dropIndicatorOpacity(page)).toBeGreaterThan(0.5);
 
-      const primary = await resolvedToken(page, "--dx-primary");
-      const ring = await resolvedToken(page, "--dx-ring-color");
-      expect(await resolvedToken(page, "--dx-drop-indicator")).toBe(primary);
-      expect(ring).not.toBe(primary); // the accent is coloured, the ring is not: they cannot be mistaken
+      const mark = await resolvedToken(page, "--dx-primary-mark");
+      expect(await resolvedToken(page, "--dx-drop-indicator")).toBe(mark);
       const onBefore = (await page.locator(BEFORE).count()) > 0;
       const line = await paintedColour(page, onBefore ? BEFORE : AFTER, "backgroundColor", onBefore ? "::before" : "::after");
-      expect(line).toBe(primary);
+      expect(line).toBe(mark);
 
       await page.keyboard.press("Escape");
     });

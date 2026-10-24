@@ -112,14 +112,14 @@
  * a fixed ramp step would not follow a preset at
  * all: it would stay grey under every base.
  *
- * So pressed is the hover surface (`--dx-accent`) pushed 15% toward the ink
+ * So pressed is the hover surface (`--dx-accent-tint`: `--dx-accent`, hued by a picked accent, row 389) pushed 15% toward the ink
  * (`--dx-foreground`): a role-derived colour, so a preset recolours it, and
  * distinct from hover BY CONSTRUCTION -- always the hover colour plus a fixed
  * step, in either mode, under any base. Across every base x accent the step is
  * 20/255 or more from hover and 40/255 or more from rest, and the ink on it
  * stays at 5.2:1 or better (playwright/theme-preset-contrast.spec.ts). */
 .dx-toggle[data-state="on"] {
-  background-color: color-mix(in var(--dx-hover-mix-space), var(--dx-accent), var(--dx-foreground) 15%);
+  background-color: color-mix(in var(--dx-hover-mix-space), var(--dx-accent-tint), var(--dx-tint-step-ink) 15%);
   color: var(--dx-foreground);
 }
 

@@ -76,9 +76,9 @@ test.describe("DataTable reorderable rows", () => {
 });
 
 test.describe("DataTable drop indicator colour", () => {
-  // The drop line is `--dx-drop-indicator` (default `var(--dx-primary)`): the accent, not the grey ring.
+  // The drop line is `--dx-drop-indicator` (default `var(--dx-primary-mark)`, the accent clamped to 3:1 on every surface, row 389).
   for (const mode of ["light", "dark"] as Mode[]) {
-    test(`the drop line is --dx-primary under the ${ACCENT} accent, ${mode}`, async ({ page }) => {
+    test(`the drop line is --dx-primary-mark under the ${ACCENT} accent, ${mode}`, async ({ page }) => {
       await goto(page);
       await applyModeAndAccent(page, mode);
       await handle(page, "T-1").focus();
@@ -86,10 +86,9 @@ test.describe("DataTable drop indicator colour", () => {
       await page.keyboard.press("ArrowDown");
       const target = rows(page).locator("xpath=..").locator("tr[data-drop]");
       await expect(target).toHaveCount(1);
-      const primary = await resolvedToken(page, "--dx-primary");
-      expect(await resolvedToken(page, "--dx-ring-color")).not.toBe(primary);
-      expect(await resolvedToken(page, "--dx-drop-indicator")).toBe(primary);
-      expect(await paintedColour(page, 'tr[data-drop] > td', "boxShadow")).toBe(primary);
+      const mark = await resolvedToken(page, "--dx-primary-mark");
+      expect(await resolvedToken(page, "--dx-drop-indicator")).toBe(mark);
+      expect(await paintedColour(page, 'tr[data-drop] > td', "boxShadow")).toBe(mark);
       await page.keyboard.press("Escape");
     });
   }

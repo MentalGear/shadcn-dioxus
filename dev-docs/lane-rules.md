@@ -132,6 +132,9 @@ Use the cheapest tool that answers the question, in this order:
 ## Before handback (rows 221, 224; gate step changed 2026-10-18)
 1. Merge the current session branch into your lane branch (`git merge <session branch>`, no rebase). New gates may have
    landed since you branched; on a `preview/src/components/mod.rs` conflict keep both sides' variants on every line.
+   `dev-docs/backlog.md`, `dev-docs/backlog-done.md` and `playwright/durations.json` merge through the drivers of
+   `.gitattributes` (row 400; registered by `scripts/setup-merge-drivers.sh`, which the SessionStart hook runs): a
+   conflict marker in one of them means the drivers are not registered in this clone, so run that script and redo the merge.
 2. Push your branch (rule 1 of "Nothing lives only in the container"), then run the FAST gates without the lock and
    quote their summary line (owner decision 2026-10-18, see "Gate procedure" below):
    `CARGO_TARGET_DIR=$LANE_TGT/check scripts/run-gates.sh --fast` -- every listed gate PASS, exit 3 (partial by design).

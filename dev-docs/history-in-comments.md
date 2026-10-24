@@ -45,7 +45,9 @@ JS or CSS held in a Rust string literal, whose own comments are read, below). Bo
   framing (`exactly as before`, `renamed from`, `the original asserted`, `historical defect`, `before Phase 1.1`), the
   before/after forms of round 3 (`unchanged from before`, `as before`, `as they always were`, `exactly as it did`, `the same
   defect as X had`, `had to fix`, `was exposed to the same`, `not yet caught`, `regressed when`, `the first attempt at`,
-  `why it moved`, `replaces a call per`) and who asked (`owner report`, `bug report`, `PR #47`), plus a month-only date `2026-08`). The counts are in
+  `why it moved`, `replaces a call per`) and who asked (`owner report`, `bug report`, `PR #47`), the round 6 forms (`owner asked/wanted`, `requested by the owner`,
+  `issue #262` as a credit unless `upstream issue #N`, `the product bug behind`, `surveyed ... found`, `re-profile`,
+  `re-test is still required`, `version 4 plus`, `landed silently/in main`), plus a month-only date `2026-08`). The counts are in
   `scripts/check-history-comments.baseline.tsv` (`path<TAB>count`). The gate **fails** when a file's count rises, when a
   new file has a non-zero count, and when a count **fell** while the baseline still allows the old number (run
   `scripts/check-history-comments.sh --update-baseline` to lock the drop in). Shrink-only: `--update-baseline` refuses
@@ -83,6 +85,8 @@ Skipped: `dev-docs/archive/` (history belongs there; code files elsewhere under 
   `\` line continuation are unescaped first. "Reads as code" is a statement or block shape plus a JS word (`const`,
   `function`, `=>`, `document` ...) for JS, a `{ prop: value }` rule plus a `/* */` for CSS (a CSS-only string yields only
   its block comments). A URL (`https://x`) or a prose string with a `//` in it is data, and so is the text around a comment.
+- **`.txt` data files.** Under `preview/src/components/`, `primitives/src/`, `templates/` and `cli/` a `.txt` is read
+  for its `#` lines (a component's `variants/order.txt`); a licence text or an ident list elsewhere is not.
 - **A path is a link.** `dev-docs/research/round3-2026-10-05.md` is masked before the rules run: it is neither "this
   round" nor a date. A `$S/...` pointer is not a path, it is a dead scratchpad reference, and is flagged.
 - **Provenance is not history.** A full SHA in a pinned-upstream frame (`radix-ui/primitives` commit `<sha>`, `<sha>` of
@@ -90,6 +94,13 @@ Skipped: `dev-docs/archive/` (history belongs there; code files elsewhere under 
 - **"no longer" as a state.** `Duplicate no longer matches`, `no longer applies once the element ...`, `(no longer
   `exists`)`, `whose titles no longer match`, `an API its primitive no longer has` describe what the code handles.
   Instrument `used to exclude/filter/skip ...` stays unless `that/which used to`.
+- Not adopted, on purpose (round 6): bare `landed`/`landing` (a focus, click or press that landed on an element is
+  geometry: 70 of the 71 comment lines), `legacy` (it names real surfaces: the `?name=` query routes kept for
+  redirects, `legacy-route-ok:`, the legacy `ssg.lock`, a browser's legacy keywords, Playwright's legacy API; "our old
+  way" cannot be told from those by pattern), `flake`/`flaky` (mostly present-tense reasons: "would be flaky under
+  load"), `still required/needed/open` (a state: "the dialog is still open"), a bare `reported`/`asked for` (what a
+  callback reports, what a prop asked for), `found by` (what a lookup finds), `survey` without `surveyed ... found`.
+  Each has a must-not-flag sentence in the self-test.
 - Not adopted, on purpose: bare `pre-existing` (a baseline's entries are pre-existing by design), `is gone` (a state: "the
   dialog is gone"), `carried over from`, `started as`, `was never ...`, a bare `this slice` (a pie slice), `measured live`,
   a bare `lane` (the SSG lane is a test target), `PR #N` after `upstream` (provenance). Each has a must-not-flag sentence in

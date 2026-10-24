@@ -20,6 +20,7 @@ pub fn Demo() -> Element {
             border_radius: "0.5em",
             padding: "1em",
             direction: ScrollDirection::Horizontal,
+            always_show_scrollbars: true,
             tabindex: "0",
             div { style: "display: flex; gap: 1rem; width: max-content;",
                 for (src, name) in AVATAR_CARDS {

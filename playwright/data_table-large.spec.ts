@@ -168,7 +168,7 @@ test.describe("Table and Grid layouts share one table look", () => {
       const body = root.querySelector('[data-grid-cell="0:1"]')!;
       const head = root.querySelector('[data-grid-cell="header:1"]')!;
       const plainRow = root.querySelector('[role="row"][aria-rowindex="3"]')!;
-      const plainCell = plainRow.querySelector('[data-grid-cell]:not([data-grid-sticky])')!;
+      const plainCell = plainRow.querySelector('[data-grid-cell]:not([data-grid-pinned])')!;
       return {
         table: f(root, ["font-size"]),
         cell: f(body, ["padding-left", "padding-right", "font-size"]),

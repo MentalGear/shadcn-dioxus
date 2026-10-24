@@ -7,7 +7,7 @@
 //
 // Input: the machine-readable twin `<B>.diff.json` that `playwright/computed-style-snapshot.spec.ts -g compare`
 // writes beside `<B>.diff.txt` (one object per differing value or added/removed record: mode, page, section,
-// id, kind, tag, cls, pseudo, state, target, prop, a, b). A legacy `.diff.txt` is parsed best-effort.
+// id, kind, tag, cls, pseudo, state, target, prop, a, b). A `.diff.txt` is parsed best-effort.
 //
 // Output: every difference is either EXPLAINED by exactly one rule (first match wins) or UNEXPLAINED; the exit
 // status is 1 when anything is unexplained, 2 on bad usage or a rejected rule. A rule that matched nothing is
@@ -128,7 +128,7 @@ export function classify(diffs, rules) {
 
 const elementKey = (d) => `${d.mode} ${d.page} ${d.section} ${d.id}`;
 
-/** Best-effort parser of the legacy text report. */
+/** Best-effort parser of the text report. */
 function parseTxt(text) {
   const out = [];
   const val = '("(?:[^"\\\\]|\\\\.)*")';
