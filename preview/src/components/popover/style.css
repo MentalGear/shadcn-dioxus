@@ -228,7 +228,7 @@
  * 16px, so an icon beside a label keeps the 2rem height. A composite that wants another icon size sets
  * the slot (DatePicker's chevron is 1.25rem). Direct children only, so nothing inside a child component
  * is reached (backlog row 188). */
-.dx-popover-trigger > svg:not([class*="size-"]):not(:where([popover], dialog) *) {
+.dx-popover-trigger > svg:not([class*="size-"], :where([popover], dialog) *) {
   width: var(--dx-popover-trigger-icon-size);
   height: var(--dx-popover-trigger-icon-size);
   flex-shrink: 0;
