@@ -7,20 +7,36 @@ const ZONES: [&str; 24] = [
 ];
 
 /// `position: SelectPosition::ItemAligned` (shadcn's `position="item-aligned"`): the list opens over the trigger
-/// with the selected option on the trigger's line, shifted and scrolled to stay inside the viewport.
+/// with the selected option on the trigger's line, shifted and scrolled to stay inside the viewport. The second
+/// select has no value, so its whole list opens below the trigger and flips above it when there is no room.
 #[component]
 pub fn Demo() -> Element {
     rsx! {
-        Select::<String> {
-            item_to_label: |zone: String| zone,
-            default_value: "UTC+5".to_string(),
-            position: SelectPosition::ItemAligned,
-            width: "12rem",
-            trigger_aria_label: "Aligned zone select",
-            list_aria_label: "Aligned zone options",
-            SelectGroup {
-                for (i , zone) in ZONES.iter().enumerate() {
-                    SelectOption::<String> { index: i, value: zone.to_string(), text_value: zone.to_string(), "{zone}" }
+        div { style: "display: flex; flex-direction: column; gap: 1rem; width: 12rem;",
+            Select::<String> {
+                item_to_label: |zone: String| zone,
+                default_value: "UTC+5".to_string(),
+                position: SelectPosition::ItemAligned,
+                width: "12rem",
+                trigger_aria_label: "Aligned zone select",
+                list_aria_label: "Aligned zone options",
+                SelectGroup {
+                    for (i , zone) in ZONES.iter().enumerate() {
+                        SelectOption::<String> { index: i, value: zone.to_string(), text_value: zone.to_string(), "{zone}" }
+                    }
+                }
+            }
+            Select::<String> {
+                item_to_label: |zone: String| zone,
+                placeholder: "Pick a zone",
+                position: SelectPosition::ItemAligned,
+                width: "12rem",
+                trigger_aria_label: "Unaligned zone select",
+                list_aria_label: "Unaligned zone options",
+                SelectGroup {
+                    for (i , zone) in ZONES.iter().enumerate() {
+                        SelectOption::<String> { index: i, value: zone.to_string(), text_value: zone.to_string(), "{zone}" }
+                    }
                 }
             }
         }

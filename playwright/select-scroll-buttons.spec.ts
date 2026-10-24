@@ -173,6 +173,42 @@ test.describe("position=item-aligned", () => {
     expect(o.y + o.height).toBeLessThanOrEqual(l.y + l.height + 1);
   });
 
+  // No selected option: nothing to align, so the whole list sits beside the trigger, flipping on collision.
+  const unaligned = (page: Page) => page.getByRole("combobox", { name: "Unaligned zone select" });
+  const unalignedList = (page: Page) => page.getByRole("listbox", { name: "Unaligned zone options" });
+
+  for (const [edge, side] of [
+    ["bottom", "top"],
+    ["top", "bottom"],
+  ] as const) {
+    test(`with no selection, a trigger at the ${edge} edge opens the whole list on its ${side} side`, async ({ page }) => {
+      await page.setViewportSize({ width: 800, height: 420 });
+      await gotoHydrated(page, `${BASE_URL}/component/select/`);
+      await unaligned(page).evaluate((el, edge) => {
+        // rest-ok: the trigger does not animate
+        const r = el.getBoundingClientRect();
+        // viewport-ok: only scrolls the page, no overlay is bounded by it
+        window.scrollBy(0, edge === "bottom" ? r.top - (window.innerHeight - 60) : r.top - 20);
+      }, edge);
+      await unaligned(page).click();
+      await expect(unalignedList(page)).toHaveAttribute("data-placed", "true");
+      await expect(unalignedList(page)).toHaveAttribute("data-side", side);
+      await awaitAnimationsSettled(unalignedList(page));
+      const t = await measureAtRest(unaligned(page));
+      const l = await measureAtRest(unalignedList(page));
+      const vp = await fixedViewportBox(page);
+      if (side === "top") expect(l.y + l.height, "list ends above the trigger").toBeLessThanOrEqual(t.y + 0.5);
+      else expect(l.y, "list starts below the trigger").toBeGreaterThanOrEqual(t.y + t.height - 0.5);
+      expect(l.y).toBeGreaterThanOrEqual(vp.y - 0.5);
+      expect(l.y + l.height).toBeLessThanOrEqual(vp.y + vp.height + 0.5);
+      // Capped to the chosen side's room, the 24 options still scroll.
+      await expect(unalignedList(page).locator('[data-slot="select-scroll-button"][data-direction="down"]')).toHaveAttribute(
+        "data-visible",
+        "true",
+      );
+    });
+  }
+
   test("selecting still works and the popper select is unchanged", async ({ page }) => {
     await openAligned(page);
     await alignedList(page).getByRole("option", { name: "UTC+8" }).click();
