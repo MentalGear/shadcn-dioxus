@@ -4,9 +4,9 @@ cli/src/init.rs	1
 playwright/assert-fade-out.ts	1
 playwright/carousel-nav-opacity.spec.ts	1
 playwright/carousel-wheel-replay.spec.ts	1
-playwright/demos-batch2-a.spec.ts	1
-playwright/demos-batch2-b.spec.ts	1
-playwright/demos-parity3.spec.ts	1
+playwright/demos-menu-overlay-floating.spec.ts	1
+playwright/demos-dates-pickers-primitives.spec.ts	1
+playwright/demos-field-input-group-badge.spec.ts	1
 playwright/oracle/tier1-apg/keyboard-matrix.spec.ts	2
 playwright/oracle/tier2-html/listener-inventory.spec.ts	1
 playwright/oracle/tier2-html/scroll-main-thread.spec.ts	1

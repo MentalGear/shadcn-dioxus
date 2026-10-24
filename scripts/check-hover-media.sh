@@ -316,10 +316,9 @@ if errors:
         print(f"check-hover-media: {e}", file=sys.stderr)
     print(f"check-hover-media: FAILED -- {len(errors)} problem(s)", file=sys.stderr)
     sys.exit(1)
-pending = sum(1 for (p, pat, r), k in zip(ALLOW, used) if r.startswith("pending-lane-merge") for _ in range(k))
 print(
     f"check-hover-media: OK -- {counters['tokens']} `:hover` tokens in {len(stylesheets)} stylesheets, "
-    f"{counters['wrapped']} selectors inside the hover media, {counters['allowed']} allowlisted "
-    f"({pending} pending-lane-merge), {n_rs} in Rust files ({len(RS_ALLOW)} allowed)"
+    f"{counters['wrapped']} selectors inside the hover media, {counters['allowed']} allowlisted, "
+    f"{n_rs} in Rust files ({len(RS_ALLOW)} allowed)"
 )
 PYEOF

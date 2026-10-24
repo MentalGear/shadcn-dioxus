@@ -305,7 +305,7 @@ test("left arrow key navigates through all days of the month in reverse", async 
   await testArrowKeyNavigation(page, "ArrowLeft", "last", "descending");
 });
 
-test.describe("selected/range state outranks :hover (user report, calendar-state lane)", () => {
+test.describe("selected/range state outranks :hover", () => {
   // Dark mode specifically: the bug this guards against (line255's old
   // `[data-selected="true"]:hover` re-declaring background-color/color
   // instead of leaving the plain [data-selected="true"] rule in place) only

@@ -1,7 +1,7 @@
 ---
 id: 377
 title: "Release-suite reds of batch 13: the detector's meta-proof, the baked build day, the spinner slot leak, the hidden code block's box"
-status: "LANDED in lane b13fix. Verified on one debug SSG build: variant-nesting, demos-parity3, date-picker…"
+status: "LANDED in lane b13fix. Verified on one debug SSG build: variant-nesting…"
 size: "M."
 area: playwright
 updated: 2026-10-24
@@ -15,7 +15,7 @@ updated: 2026-10-24
 
 ## Status / trigger
 
-LANDED in lane b13fix. Verified on one debug SSG build: variant-nesting, demos-parity3, date-picker (natural language, `:128`), hydration-parity Rule 4c each 3 repeats green (183 tests), layout-stability avatar light and dark at `LS_STEP=32` 3 repeats green (64 widths each); `LS_CPU=4` at 5 widths was red (4 of 5 widths) before the recorder change and green after; the natural-language test was red on the build-day markup (expected April 02, 2031, page showed October 25, 2026). `pnpm run test:changed` with `CHANGED_RANGE=queue/batch-13..HEAD`: 26 spec files, 657 passed. The cargo arms (clippy x3, test, test-server, `ssr_parity` with the new `CLOCK` entries) were not run in the lane (disk).
+LANDED in lane b13fix. Verified on one debug SSG build: variant-nesting, demos-field-input-group-badge, date-picker (natural language, `:128`), hydration-parity Rule 4c each 3 repeats green (183 tests), layout-stability avatar light and dark at `LS_STEP=32` 3 repeats green (64 widths each); `LS_CPU=4` at 5 widths was red (4 of 5 widths) before the recorder change and green after; the natural-language test was red on the build-day markup (expected April 02, 2031, page showed October 25, 2026). `pnpm run test:changed` with `CHANGED_RANGE=queue/batch-13..HEAD`: 26 spec files, 657 passed. The cargo arms (clippy x3, test, test-server, `ssr_parity` with the new `CLOCK` entries) were not run in the lane (disk).
 
 ## Size
 

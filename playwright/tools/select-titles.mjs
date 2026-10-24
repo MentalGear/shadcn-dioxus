@@ -38,7 +38,7 @@ const PATTERN_SCOPED = {
   "oracle/tier2-html/touch-double-tap.spec.ts": (t) => first(t, /^component "(\w+)":/, (m) => [`c:${m[1]}`]),
   "oracle/tier2-html/touch-focus-zoom.spec.ts": (t) => first(t, /^component "(\w+)":/, (m) => [`c:${m[1]}`]),
   "dx-class-migration.spec.ts": (t) => first(t, /^(\w+): stylesheet delivered/, (m) => [`c:${m[1]}`]),
-  "demos-batch2-b.spec.ts": (t) => first(t, /^(\w+)\/\w+ opens/, (m) => [`c:${m[1]}`]),
+  "demos-dates-pickers-primitives.spec.ts": (t) => first(t, /^(\w+)\/\w+ opens/, (m) => [`c:${m[1]}`]),
   "user-select.spec.ts": (t) => first(t, /^every control on (\/\S*) computes/, (m) => routeKeys(m[1])),
   "popup-style-isolation.spec.ts": (t) => first(t, /looks like the same popup alone ([\w-]+)$/, (m) => idKeys(m[1])),
   "variant-nesting.spec.ts": () => null, // one test per page, titled with its `/component/<c>/` route (the mention fallback)

@@ -35,7 +35,7 @@ test("test", async ({ page }) => {
   await expect(activeTab).toContainText("Tab 1 Content");
 });
 
-test.describe("active tab keeps its color under the pointer (calendar-state lane sweep)", () => {
+test.describe("active tab keeps its color under the pointer", () => {
   // Same bug class as calendar/style.css's day hover (see calendar.spec.ts):
   // `.dx-tabs-trigger:hover` must not out-rank
   // `.dx-tabs-trigger[data-state="active"]`, or clicking a tab -- which

@@ -735,7 +735,7 @@ mod tests {
     }
 
     #[test]
-    fn ticks_are_round_1_2_5_steps() {
+    fn ticks_are_nice_1_2_5_steps() {
         let s = LinearScale {
             domain: (0.0, 100.0),
             range: (0.0, 1.0),

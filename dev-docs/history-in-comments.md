@@ -52,6 +52,13 @@ JS or CSS held in a Rust string literal, whose own comments are read, below). Bo
   `done/NNN-*.md`, and that every cited repo path exists. The dead ones that predate the gate (mostly the old `docs/`
   prefix, which is the deployed site now; the project docs are `dev-docs/`) are in
   `scripts/check-comment-refs.baseline.tsv` (`file<TAB>kind<TAB>ref`), shrink-only the same way.
+- **`scripts/check-history-names.sh`** is the same rule for NAMES (row 384): a Playwright `test(`/`test.describe(`/
+  `describe(`/`it(`/`test.step(` title, a Rust `#[test]` function name and a spec file name must not carry a date
+  2026-08+, `regression` / `(regression guard)`, `round 5` / `batch 13`, `user-reported` / `owner's`, `pre-fix` /
+  `before the fix`, `the old behaviour`, `no longer`, `follow-up` or a `(... lane)` tag, nor anything
+  `comment-scan.py`'s `history_reason` flags (`used to`, `previously`, `now uses`). A name has no baseline: a hit fails,
+  the only exemption is a reasoned `ALLOW` entry in `scripts/history-names.py`, and a stale entry fails. A title says
+  what the test asserts in the present tense; `row N` pointers stay (links). `--inventory` lists the hits.
 
 Skipped: `dev-docs/archive/` (history belongs there; code files elsewhere under `dev-docs/` are scanned), `docs/`,
 `*.md`, the vendored APG reference tree, generated `primitives/src/js/*.js`, lock files, and the gates' own sources.
