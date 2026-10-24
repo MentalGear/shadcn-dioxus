@@ -356,8 +356,9 @@ fn watch_invalid_js(form_id: &str, report_id: &str) -> String {
 /// `RadioGroup`, `Select` and `SelectMulti` document `name` (and `RadioGroup`
 /// also documents `required`) and render a hidden native mirror that submits
 /// it (see `dev-docs/plan.md` Phase 1). The native multi-select reference
-/// marks its defaults `initial_selected` (the `selected` content attribute,
-/// which `<form reset>` restores from), not `selected` (the live property). This fixture sets those props per their
+/// marks its defaults `selected`, which the server HTML carries as the content
+/// attribute `<form reset>` restores from; `initial_selected` would be written
+/// as a literal attribute and never applied (row 253, as for `initial_checked`). This fixture sets those props per their
 /// documented API, so it is the oracle for that submission.
 #[component]
 pub fn FormFixture() -> Element {
@@ -555,9 +556,9 @@ pub fn FormFixture() -> Element {
                         div { class: "dx-form-field",
                             label { r#for: "fruits-native", "Fruits (native reference)" }
                             select { id: "fruits-native", name: "fruits-native", multiple: true,
-                                option { value: "apple", initial_selected: true, "Apple" }
+                                option { value: "apple", selected: true, "Apple" }
                                 option { value: "banana", "Banana" }
-                                option { value: "cherry", initial_selected: true, "Cherry" }
+                                option { value: "cherry", selected: true, "Cherry" }
                                 option { value: "date", "Date" }
                             }
                         }
