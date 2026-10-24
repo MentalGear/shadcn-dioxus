@@ -41,7 +41,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (30)
+## Open rows (29)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -74,9 +74,8 @@ proposing one is closed as out of scope (row 337 is the first).
 | [370](backlog/370-merge-attributes-class-none.md) | merge_attributes: a class: None replaces the base class instead of being ignored | Open. Found by the biggrid lane in batch 10. | S | primitives |
 | [371](backlog/371-dependency-evaluation-keep-lift-drop.md) | Dependency evaluation: keep, feature-gate, replace, lift or drop (rule of 2026-10-23) | PARKED by the owner 2026-10-23 ("its own item, and not yet"). Inventory done; no outcome is… | S each outcome | build |
 | [372](backlog/372-scroll-fade-overlay-scrollbar-hybrid.md) | Scroll fade: transition the edge depths (landed) and paint the fade as gradients where the scrollbar is an overlay (deferred) | Part 2 LANDED (lane fadehybrid): the registered --dx-scroll-fade-t/-b/-s/-e depths transition… | M | primitives |
-| [377](backlog/377-release-suite-reds-batch-13.md) | Release-suite reds of batch 13: the detector's meta-proof, the baked build day, the spinner slot leak, the hidden code block's box | IN PROGRESS (lane b13fix). | M. | playwright |
 
-## Done rows (318)
+## Done rows (319)
 
 | # | Item | Updated |
 |---|---|---|
@@ -398,6 +397,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [368](backlog/done/368-virtual-grid-row-axis-first-paint.md) | VirtualGrid: the row axis plans max(rows, viewport), so a short grid differs between server and first client frame | 2026-10-23 |
 | [373](backlog/done/373-theme-defaults-are-shadcn-neutral.md) | Theme default fallbacks are shadcn Neutral; the upstream colour ramp is deleted | 2026-10-23 |
 | [374](backlog/done/374-playwright-chromium-path-resolver.md) | One Chromium path resolver for every local Playwright config, spec and script | 2026-10-23 |
+| [377](backlog/done/377-release-suite-reds-batch-13.md) | Release-suite reds of batch 13: the detector's meta-proof, the baked build day, the spinner slot leak, the hidden code block's box | 2026-10-24 |
 
 ## Notes (8)
 
