@@ -6,7 +6,7 @@ resolves here by id.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Done rows (338)
+## Done rows (339)
 
 | # | Item | Updated |
 |---|---|---|
@@ -348,5 +348,6 @@ resolves here by id.
 | [401](backlog/done/401-select-css-gate-names-dead-mutation.md) | check-select-css names a mutation that died instead of printing a blank verdict | 2026-10-24 |
 | [403](backlog/done/403-theme-picker-in-the-phone-header-on-every-page.md) | The theme picker's palette icon is in the phone header on every page | 2026-10-24 |
 | [404](backlog/done/404-touch-tap-commits-on-click.md) | A touch tap on a Select, Combobox, Command or context-menu item commits on the tap's click | 2026-10-24 |
+| [405](backlog/done/405-scroll-bounce-freezes-windowed-renderers.md) | An iOS rubber-band bounce no longer freezes a windowed renderer: offsets are clamped and a bad message is skipped | 2026-10-24 |
 
 <!-- END GENERATED -->
