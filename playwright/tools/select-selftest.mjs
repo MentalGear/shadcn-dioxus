@@ -276,6 +276,14 @@ eq("titles: alias matches a squashed name", SCOPES["oracle/tier1-apg/keyboard-ma
   check("a build that is not a prerendered SSG (an empty shell, as a dev server serves) is not believed", devLike.specs.length >= 25 && devLike.specs.includes("all-routes.spec.ts") && !devLike.grepInvert);
   const noIndex = run("--files", "preview/assets/main.css", "--range", "HEAD~5..HEAD");
   check("no SSG build to read: the BROAD set stays", noIndex.specs.length >= 25 && noIndex.specs.includes("all-routes.spec.ts") && !noIndex.grepInvert);
+  // A file inside a primitive directory maps to the components that reach what mod.rs re-exports from it:
+  // virtual/find.rs is VirtualList's and VirtualGrid's find-in-page, so it is their specs, not Carousel's and not the
+  // broad set; virtual/mod.rs keeps every user of the engine.
+  const find = run("--files", "primitives/src/virtual/find.rs");
+  check("primitive submodule: virtual/find.rs selects the virtual list and grid specs", ["virtual_list.spec.ts", "virtual-grid.spec.ts", "virtual-list-find.spec.ts"].every((f) => find.specs.includes(f)), find.specs.join(" "));
+  check("primitive submodule: virtual/find.rs selects neither Carousel nor the broad set", !find.specs.some((f) => /^carousel|^message_scroller|dx-class-migration|hydration-parity|preview\.spec/.test(f)), find.specs.join(" "));
+  const vmod = run("--files", "primitives/src/virtual/mod.rs");
+  check("primitive submodule: virtual/mod.rs keeps every engine user (Carousel, Message Scroller, the tables)", ["carousel.spec.ts", "message_scroller.spec.ts", "table.spec.ts", "virtual_list.spec.ts"].every((f) => vmod.specs.includes(f)) && !vmod.specs.includes("dx-class-migration.spec.ts"), vmod.specs.join(" "));
   // A component's at-rest axe scan lives only in all-routes (row 152): a change to the component runs that page's test.
   const comp = run("--files", "preview/src/components/kbd/component.rs");
   const ar = comp.narrowed.find((n) => n.file === "all-routes.spec.ts");
