@@ -6,7 +6,7 @@ resolves here by id.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Done rows (339)
+## Done rows (343)
 
 | # | Item | Updated |
 |---|---|---|
@@ -349,5 +349,9 @@ resolves here by id.
 | [403](backlog/done/403-theme-picker-in-the-phone-header-on-every-page.md) | The theme picker's palette icon is in the phone header on every page | 2026-10-24 |
 | [404](backlog/done/404-touch-tap-commits-on-click.md) | A touch tap on a Select, Combobox, Command or context-menu item commits on the tap's click | 2026-10-24 |
 | [405](backlog/done/405-scroll-bounce-freezes-windowed-renderers.md) | An iOS rubber-band bounce no longer freezes a windowed renderer: offsets are clamped and a bad message is skipped | 2026-10-24 |
+| [406](backlog/done/406-find-match-lands-on-the-estimate.md) | Find-in-page lands a match on the item's estimated position, not on the item | 2026-10-24 |
+| [408](backlog/done/408-selectmulti-name-submits.md) | SelectMulti's name prop takes part in form submission | 2026-10-24 |
+| [409](backlog/done/409-css-vars-declared-with-fallbacks.md) | Every CSS custom property read is declared, fallbacks included | 2026-10-24 |
+| [410](backlog/done/410-history-comments-third-cold-read.md) | History comments: third fresh-seed cold read | 2026-10-24 |
 
 <!-- END GENERATED -->

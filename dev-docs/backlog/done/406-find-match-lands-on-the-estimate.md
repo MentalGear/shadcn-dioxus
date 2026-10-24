@@ -1,7 +1,7 @@
 ---
 id: 406
 title: "Find-in-page lands a match on the item's estimated position, not on the item"
-status: "Fixed on lane/find-photo-wall: use_find_in_page (primitives/src/virtual/find.rs) now settles every…"
+status: "LANDED (merge queue batch 16): use_find_in_page (primitives/src/virtual/find.rs) now settles every…"
 size: "S"
 area: virtual
 updated: 2026-10-24
@@ -15,7 +15,7 @@ Owner report: in the `virtual_grid` page's `find_in_page` demo the text grid wor
 
 ## Status / trigger
 
-Fixed on `lane/find-photo-wall`: `use_find_in_page` (`primitives/src/virtual/find.rs`) now settles every match on the real item's own box. Trigger for reopening: a windowed view whose match ends outside its scrollport, or a consumer that passes `None` for the item selector without scrolling the real item itself.
+LANDED (merge queue batch 16): `use_find_in_page` (`primitives/src/virtual/find.rs`) now settles every match on the real item's own box. Trigger for reopening: a windowed view whose match ends outside its scrollport, or a consumer that passes `None` for the item selector without scrolling the real item itself.
 
 ## Size
 

@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (40)
+## Open rows (39)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -62,7 +62,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [307](backlog/307-ios-color-panel-does-not-pick-colors.md) | iOS: the Color Panel opens but tapping its color box does not change the color | WAITING ON OWNER: reproduce on an iPhone (owner report 2026-10-20: the Color Panel opens but… | M | overlays |
 | [355](backlog/355-adopt-google-rust-style-guide-items.md) | Adopt Google Rust style guide items: workspace lint table and conventions | BACKLOG -- Round 6 sweep, after row 267's file split (owner approved 2026-10-21) | S-M | process |
 | [365](backlog/365-final-sweep-refactor-and-root-cause-review.md) | Final sweep: refactor review with the deconstruct-to-root and solve-by-construction exercise, proposals to the owner | BACKLOG (owner 2026-10-22, backlog thread: "final sweep, check for refactors and also run there the… | M for the review. Each accepted… | process |
-| [371](backlog/371-dependency-evaluation-keep-lift-drop.md) | Dependency evaluation: keep, feature-gate, replace, lift or drop (rule of 2026-10-23) | WAITING ON OWNER: parked ("its own item, and not yet", 2026-10-23); no work until he reopens it.… | S each outcome | build |
+| [371](backlog/371-dependency-evaluation-keep-lift-drop.md) | Dependency evaluation: keep, feature-gate, replace, lift or drop (rule of 2026-10-23) | BACKLOG: unparked by the owner 2026-10-24, stage 4 of the adopted order (after the structure rows… | S each outcome | build |
 | [372](backlog/372-scroll-fade-overlay-scrollbar-hybrid.md) | Scroll fade: transition the edge depths (landed) and paint the fade as gradients where the scrollbar is an overlay (deferred) | WAITING ON OWNER: part 1, the overlay-scrollbar hybrid, is deferred ("leave mask for now"); reopen… | M | primitives |
 | [382](backlog/382-rustdoc-warnings-to-zero.md) | Rustdoc warnings to zero: shrink the check-rustdoc baseline (87 entries, mostly unclosed HTML tags) | OPEN, S, no browser: shrink scripts/check-rustdoc.baseline.tsv (87 entries, mostly unclosed HTML… | S | primitives |
 | [383](backlog/383-adversarial-review-board.md) | Adversarial review board: independent expert reviewers attack the finished library, last item of the backlog | BACKLOG. Runs last: after row 365's proposals are answered and every other engineering row has… | M | process |
@@ -83,6 +83,5 @@ proposing one is closed as out of scope (row 337 is the first).
 | [398](backlog/398-docs-review-api-gaps.md) | API gaps the docs review found | BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in… | M | components |
 | [399](backlog/399-docs-review-demos.md) | Demo batch from the docs review | BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in… | S | docs |
 | [402](backlog/402-load-robust-timing-specs.md) | Release timing specs compare same-run measurements, not absolute milliseconds | Done on lane/timing-relative (numbers below). Trigger for reopening: a release timing spec that… | S | tests |
-| [406](backlog/406-find-match-lands-on-the-estimate.md) | Find-in-page lands a match on the item's estimated position, not on the item | Fixed on lane/find-photo-wall: use_find_in_page (primitives/src/virtual/find.rs) now settles every… | S | virtual |
 
 <!-- END GENERATED -->
