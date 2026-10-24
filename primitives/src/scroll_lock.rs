@@ -16,7 +16,7 @@
 //!    uses against the unlock-flash (@ ~L625-655: only unlock once the
 //!    shared count reaches zero) without adopting that fork's
 //!    `OverlayCtx`/`OverlayManager` architecture -- see
-//!    docs/recommended-implementations.md §5.
+//!    dev-docs/reference/platform-rationale.md §5.
 //! 2. That file's unmount cleanup guards on `*active.peek()` being true,
 //!    i.e. it only releases the lock if `active` is *still* true at drop
 //!    time. In dq's own tree that's fine, because their `DialogContent`
@@ -303,7 +303,7 @@
 //! scrolling on iOS Safari is a platform behavior no event listener reaches
 //! once the gesture has ended. Radix delegates this same case to
 //! `react-remove-scroll`, which this crate has no equivalent of. See
-//! docs/recommended-implementations.md §5.
+//! dev-docs/reference/platform-rationale.md §5.
 //!
 //! ## Scroll-position capture and restore, and `use_early_scroll_capture`
 //! This hook has always captured `window.scrollX`/`scrollY` before locking

@@ -46,7 +46,7 @@
  *     (`toggle` event) still lands back in the Rust `open` signal, per
  *     primitives/src/top_layer.rs's `use_popover_sync` (the same defect
  *     class documented for `<dialog>`'s old one-way binding in
- *     docs/recommended-implementations.md Caveat 1).
+ *     dev-docs/reference/platform-rationale.md Caveat 1).
  *   - Rule 1 ("clipping escape") and rule 4 ("stacking") are top-layer
  *     properties every promoted element gets regardless of its
  *     `popover="auto"|"manual"` kind, so all three components (Tooltip,
@@ -635,7 +635,7 @@ test.describe("Rule 2 — light dismiss for popover=auto (click outside closes i
     // The browser's own light dismiss hides the element; the Rust signal
     // must independently learn about it (primitives/src/top_layer.rs
     // `use_popover_sync`'s `toggle` listener) -- assert both, since a
-    // stranded signal (the exact defect class recommended-implementations.md
+    // stranded signal (the exact defect class dev-docs/reference/platform-rationale.md
     // Caveat 1 documents for <dialog>) would leave data-state="open" even
     // though the content is gone.
     await expect(page.locator("#stack-popover-content")).toBeHidden();

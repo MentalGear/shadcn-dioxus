@@ -11,7 +11,7 @@ updated: 2026-09-19
 
 ## Item
 
-**Main-thread responsiveness oracle (INP / long tasks).** Install a `PerformanceObserver` for `longtask` (and `event` timing with `durationThreshold`) in the page before each overlay's open/close and each form control's primary interaction, then assert no task over 50 ms and no interaction over 200 ms was recorded during the gesture — the thresholds from the reference in [`recommended-implementations.md`](../../recommended-implementations.md) §11 (kciter, *The Browser's Main Thread Is Expensive*). Rules 1–5 of that section (no same-handler layout read+write, passive listeners unless `preventDefault`, compositor-only animation unless bounded and frame-sampled, no busy-wait, no atomic heavy work inside render) are review-enforced only until this exists
+**Main-thread responsiveness oracle (INP / long tasks).** Install a `PerformanceObserver` for `longtask` (and `event` timing with `durationThreshold`) in the page before each overlay's open/close and each form control's primary interaction, then assert no task over 50 ms and no interaction over 200 ms was recorded during the gesture — the thresholds from the reference in [`recommended-implementations.md`](../../reference/platform-rationale.md) §11 (kciter, *The Browser's Main Thread Is Expensive*). Rules 1–5 of that section (no same-handler layout read+write, passive listeners unless `preventDefault`, compositor-only animation unless bounded and frame-sampled, no busy-wait, no atomic heavy work inside render) are review-enforced only until this exists
 
 ## Status / trigger
 

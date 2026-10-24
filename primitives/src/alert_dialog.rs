@@ -326,7 +326,7 @@ pub fn AlertDialogContent(props: AlertDialogContentProps) -> Element {
     // `dialog.rs`'s web modal arm -- see `crate::use_dialog_close_sync`/
     // `crate::use_dialog_open_driver` (lib.rs) for the historical
     // stranded-signal defect this fixes
-    // (docs/recommended-implementations.md Caveat 1). Deliberately no
+    // (dev-docs/reference/platform-rationale.md Caveat 1). Deliberately no
     // `use_global_escape_listener` and no focus-trap eval: the browser's own
     // `showModal()`/`cancel`/`close` events already cover Escape, focus
     // trap, and focus restore.

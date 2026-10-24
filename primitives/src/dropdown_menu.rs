@@ -56,7 +56,7 @@ struct DropdownMenuContext {
     // `open_with_focus` below, which sets this *before* flipping `open` --
     // never the reverse -- so opening never depends on the content already
     // being mounted or on the open<->focus sync effect below. See
-    // docs/recommended-implementations.md's "keyboard open contract" note.
+    // dev-docs/reference/platform-rationale.md's "keyboard open contract" note.
     initial_focus: Signal<Option<CollectionPlacement>>,
 
     // Unique ID for the trigger button
@@ -745,7 +745,7 @@ pub fn DropdownMenuContent(props: DropdownMenuContentProps) -> Element {
 /// `hidePopover()` from `open` and mirrors the browser's own `toggle` event
 /// (fired on light dismiss, Escape, or any other close) back into
 /// `set_open`, so the Rust signal can never strand the way `docs/
-/// recommended-implementations.md` Caveat 1 documents for `<dialog>`'s old
+/// dev-docs/reference/platform-rationale.md` Caveat 1 documents for `<dialog>`'s old
 /// one-way `showModal()`/`close()` binding. It also clears the focus
 /// collection on that path -- see its callback's own comment.
 #[cfg(feature = "web")]
@@ -886,7 +886,7 @@ fn DropdownMenuContentRendered(
 }
 
 /// Native (Blitz) arm: unchanged from before this slice -- Blitz has no
-/// popover-API support at all (`docs/recommended-implementations.md`
+/// popover-API support at all (`dev-docs/reference/platform-rationale.md`
 /// Caveat 2), so light dismiss / Escape still need this crate's own
 /// blur-driven dismissal, and this is the functional floor: a plain,
 /// always-in-flow `div`, visible exactly when `render()` (`DropdownMenuContent`)
@@ -2100,7 +2100,7 @@ fn DropdownMenuSubContentRendered(
 }
 
 /// Native (Blitz) arm: Blitz has no popover-API support at all
-/// (`docs/recommended-implementations.md` Caveat 2), so this stays the
+/// (`dev-docs/reference/platform-rationale.md` Caveat 2), so this stays the
 /// functional floor -- a plain, always-in-flow `div`, visible exactly when
 /// `render()` (`DropdownMenuSubContent`) mounts it. Mirrors
 /// `DropdownMenuContentRendered`'s identical native arm.

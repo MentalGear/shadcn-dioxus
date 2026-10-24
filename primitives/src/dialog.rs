@@ -29,7 +29,7 @@
 //!   doesn't crash, it silently skips the modal state entirely), driven by
 //!   `crate::use_dialog_open_driver`/`crate::use_dialog_close_sync` (the
 //!   fix for the historical stranded-signal defect,
-//!   `docs/recommended-implementations.md` Caveat 1) plus
+//!   `dev-docs/reference/platform-rationale.md` Caveat 1) plus
 //!   `crate::use_dialog_backdrop_dismiss` (now shared with `popover.rs`'s
 //!   modal web arm too) for the "click far outside the dialog" behaviour
 //!   `dialog.spec.ts` already covers -- `use_outside_dismiss`
@@ -553,7 +553,7 @@ fn DialogContentModal(
     let set_open = ctx.set_open;
 
     // Browser -> signal (the fix for the historical stranded-signal defect,
-    // docs/recommended-implementations.md Caveat 1) and signal -> browser
+    // dev-docs/reference/platform-rationale.md Caveat 1) and signal -> browser
     // (guarded against `InvalidStateError`), both from `lib.rs`.
     crate::use_dialog_close_sync(id, set_open);
     crate::use_dialog_open_driver(id, open);

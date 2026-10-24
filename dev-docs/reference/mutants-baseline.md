@@ -1,6 +1,6 @@
 # cargo-mutants baseline — algorithmic modules, 2026-08-31
 
-One-off baseline per [`backlog.md`](./backlog.md) row 17, scoped to the 9 unit-tested algorithmic files in `primitives/src` (per `conformance-harness.md`'s list, `lib.rs` excluded). 765 mutants in ~110 min (`cargo mutants -p dioxus-primitives -f <files> --timeout-multiplier 3 -j 2`, three passes).
+One-off baseline per [`backlog.md`](../backlog.md) row 17, scoped to the 9 unit-tested algorithmic files in `primitives/src` (per `conformance-harness.md`'s list, `lib.rs` excluded). 765 mutants in ~110 min (`cargo mutants -p dioxus-primitives -f <files> --timeout-multiplier 3 -j 2`, three passes).
 
 ## Score: 37% (233 caught / 637 viable) — 397 survivors
 

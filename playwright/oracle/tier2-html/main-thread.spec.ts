@@ -2,7 +2,7 @@
  * ORACLE: tier 2 (HTML) -- main-thread responsiveness (INP / long tasks).
  *
  * Source: dev-docs/backlog.md row 45, drawing on
- * dev-docs/recommended-implementations.md §11 ("Main-thread responsiveness
+ * dev-docs/reference/platform-rationale.md §11 ("Main-thread responsiveness
  * (interaction latency)", 2026-09-03), which is itself built on kciter,
  * "The Browser's Main Thread Is Expensive"
  * (https://kciter.so/posts/the-expensive-main-thread/en/). §11's own

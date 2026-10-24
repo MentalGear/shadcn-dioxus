@@ -37,9 +37,9 @@ Everything here is for the people and agents who work on this repository. Start 
 | [`conformance-harness.md`](./conformance-harness.md) | The Playwright conformance harness: three rule tiers (APG / HTML / Radix-opinion), sources, calibration, current inventory. |
 | [`component-backlog.md`](./archive/rounds/component-backlog.md) | The component catalog harvest (upstream PRs, forks, shadcn gaps), re-rated; ranked queue of components. |
 | [`capability-gaps.md`](./archive/fork-research/capability-gaps.md) | Capabilities upstream lacks (form participation, focus restore, scroll lock, collision, typeahead, RTL) and which fork closed each. |
-| [`lifting-from-forks.md`](./archive/fork-research/lifting-from-forks.md), [`recommended-implementations.md`](./recommended-implementations.md) | How to port from forks (licensing, lift shapes, traps) and what to build per gap. |
+| [`lifting-from-forks.md`](./archive/fork-research/lifting-from-forks.md), [`recommended-implementations.md`](./reference/platform-rationale.md) | How to port from forks (licensing, lift shapes, traps) and what to build per gap. |
 | [`fork-network-research.md`](./archive/fork-research/fork-network-research.md) | The former `README.md`: summary of the 81-fork research with its document index and confidence notes. |
-| [`mutants-baseline.md`](./mutants-baseline.md), [`baseline.md`](./archive/rounds/baseline.md) | One-off baselines (cargo-mutants 2026-08-31; the Phase 0 green baseline 2026-08-29). |
+| [`mutants-baseline.md`](./reference/mutants-baseline.md), [`baseline.md`](./archive/rounds/baseline.md) | One-off baselines (cargo-mutants 2026-08-31; the Phase 0 green baseline 2026-08-29). |
 
 ## Issues and upstream drafts
 

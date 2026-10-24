@@ -107,7 +107,7 @@ pub mod virtual_list;
 /// engine (`showModal()`'s own focus trap/restore/inertness/top-layer),
 /// completing the two-engine overlay architecture (docs/plan.md). `#[cfg]`
 /// -gated on this crate's `web` feature (not `target_family = "wasm"` --
-/// see `docs/recommended-implementations.md` Caveat 1 for why that axis was
+/// see `dev-docs/reference/platform-rationale.md` Caveat 1 for why that axis was
 /// corrected) so that neither the wasm client nor a host build with `web`
 /// on (the fullstack SSG server) ever references, and therefore never
 /// bundles, this asset at all -- see [`focus_trap_script`] (this file), the
@@ -464,7 +464,7 @@ fn use_form_reset_listener(
 /// Docs/plan.md Phase 4.2. Ported *by construction*, not by copying code,
 /// from `dev-docs/archive/research/phase4-spike-findings.md`'s `use_dialog_open_driver`
 /// (experiment 2's fix for experiment 1's stranded-signal defect, see
-/// `docs/recommended-implementations.md` Caveat 1). The guard (checking
+/// `dev-docs/reference/platform-rationale.md` Caveat 1). The guard (checking
 /// `dialog.open` before calling either method) mirrors
 /// [`crate::top_layer::use_popover_sync`]'s `:popover-open` check for the
 /// identical reason: a redundant call throws `InvalidStateError` (spike
@@ -486,7 +486,7 @@ fn use_form_reset_listener(
 /// doc): `dioxus-desktop` is a non-wasm binary with a real, working webview
 /// `eval` and belongs on this same arm, not on native/Blitz's no-op one --
 /// and, confirmed by the 2026-09-01 production incident
-/// (`docs/recommended-implementations.md` Caveat 1), the fullstack SSG
+/// (`dev-docs/reference/platform-rationale.md` Caveat 1), the fullstack SSG
 /// prerender is a *host* (non-wasm) binary that also belongs on this arm
 /// whenever this crate's `web` feature is on.
 ///
@@ -677,7 +677,7 @@ const DIALOG_EXIT_TIMEOUT_MS: u32 = 1500;
 /// strand.
 ///
 /// This is the fix for the exact defect class
-/// `docs/recommended-implementations.md` Caveat 1 documents for upstream's
+/// `dev-docs/reference/platform-rationale.md` Caveat 1 documents for upstream's
 /// first `<dialog>` (`b3f6de53`): a one-way `showModal()`/`close()` binding
 /// with no listener on the browser's own `close` event, so a native Escape
 /// left the `open` signal stranded at `true` and the dialog could never

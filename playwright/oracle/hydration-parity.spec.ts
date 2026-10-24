@@ -26,7 +26,7 @@
  * built by CI as fullstack SSG (`.github/workflows/web.yml`: `ssg: true,
  * features: fullstack`). The SSG prerender runs the *server* binary -- a
  * host (non-wasm) build, not the wasm client. Before the axis fix this
- * spec guards (`docs/recommended-implementations.md` Caveat 1), every
+ * spec guards (`dev-docs/reference/platform-rationale.md` Caveat 1), every
  * overlay component split its rendered markup on
  * `#[cfg(target_family = "wasm")]`, which is false on that host binary --
  * so the SSG server rendered the *native* arm (plain `div`s, no `popover`

@@ -66,7 +66,7 @@ Sources are `dq` = `dignifiedquire/dx-components`, `sr` = `sarendipitee/dioxus-c
 | Source | Fork | Category | What it adds | Take? |
 |---|---|---|---|---|
 | `scroll_lock.rs` (58 ln) | dq | a11y | Body scroll lock, refcounted for nested modals, restoring the original `overflow` | **TAKE** — plus sr's unlock-flash guard |
-| native `<dialog>` + `showModal()` | dq (`7b25d863`) | a11y | Focus trap, focus restore, inert background and top layer as browser behaviour — subsumes `focus_scope.rs` and `aria_hidden.rs` | **FLAG** — see caveats in [`recommended-implementations.md`](../../recommended-implementations.md); needs a declarative-`open` floor |
+| native `<dialog>` + `showModal()` | dq (`7b25d863`) | a11y | Focus trap, focus restore, inert background and top layer as browser behaviour — subsumes `focus_scope.rs` and `aria_hidden.rs` | **FLAG** — see caveats in [`recommended-implementations.md`](../../reference/platform-rationale.md); needs a declarative-`open` floor |
 | `use_refocus_on_close_unless` (`lib.rs:241-255`) | dq | a11y | Focus restore for the menu family, Radix `onCloseAutoFocus` semantics | **TAKE** — plus moving focus off the item, which our oracle found and no source handles |
 | `aria_hidden.rs` (91 ln) | dq | a11y | Background content hidden from AT while a modal is open | **FLAG** — only if the native-dialog route is rejected; also needs the Dialog wiring that fork never did |
 | `df16e449` | matchish | behavior | `pub mod portal` — `use_portal`/`PortalId` are unreachable by consumers | **FLAG** — public-API decision, one line, merges clean |

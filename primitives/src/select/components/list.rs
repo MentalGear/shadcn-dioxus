@@ -513,7 +513,7 @@ fn SelectListRendered(id: String, attributes: Vec<Attribute>, children: Element)
 }
 
 /// Native (Blitz) arm: Blitz has no popover-API support at all
-/// (`docs/recommended-implementations.md` Caveat 2), so this stays the
+/// (`dev-docs/reference/platform-rationale.md` Caveat 2), so this stays the
 /// functional floor, a plain, always-in-flow `div`. Scroll-lock is the one
 /// addition to this arm since docs/backlog.md row 9 -- mirrors
 /// `DropdownMenuContentRendered`'s identical native arm

@@ -932,7 +932,7 @@ const CAROUSEL_SCROLL_TO_JS: &str = concat!(carousel_trace_js!(), "\
 /// simpler, fires exactly once per gesture (no flicker to begin with),
 /// and is still zero-JS-dependency, feature-detected, degrade-not-break,
 /// matching this repo's own platform-features-first posture
-/// (`dev-docs/recommended-implementations.md`'s `<dialog>` finding).
+/// (`dev-docs/reference/platform-rationale.md`'s `<dialog>` finding).
 /// **"Once" means once the browser is truly idle, not on the first
 /// `scrollend`.** The settle waits on this bridge's browser-idle gate: the
 /// latest scroll has ended AND no wheel/touch input for
@@ -951,7 +951,7 @@ const CAROUSEL_SCROLL_TO_JS: &str = concat!(carousel_trace_js!(), "\
 /// One read (`getBoundingClientRect`, of the container and every slide)
 /// followed by nothing but a `dioxus.send` -- no DOM write at all in this
 /// callback -- so there is no read-then-write-layout main-thread hazard
-/// (`dev-docs/recommended-implementations.md` §11 Rule 1) to begin with.
+/// (`dev-docs/reference/platform-rationale.md` §11 Rule 1) to begin with.
 /// Both listeners are `passive: true` (§11 Rule 2).
 const CAROUSEL_SCROLL_TRACKING_JS: &str = concat!(carousel_true_end_js!(), carousel_trace_js!(), "\
     const [id, orientation, align, inputQuietMs, virtualWindow] = await dioxus.recv();
@@ -3689,7 +3689,7 @@ fn snap_type_value(orientation: CarouselOrientation, drag_free: bool) -> &'stati
 /// This gesture reads pointer state maintained entirely on the JS side
 /// (see `CAROUSEL_DRAG_JS`'s own doc) and writes only a scroll position
 /// per pointer move -- never a synchronous layout *read* in the same
-/// handler (`dev-docs/recommended-implementations.md` §11 Rule 1); the one
+/// handler (`dev-docs/reference/platform-rationale.md` §11 Rule 1); the one
 /// read this construction needs (the container's own starting scroll
 /// offset) is implicit in `scrollBy`'s own *relative* delta, so it is
 /// never taken at all, on either side of the bridge. `endDrag` itself does

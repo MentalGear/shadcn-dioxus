@@ -18,7 +18,7 @@
  * Source for our own implementation:
  * `dignifiedquire/dx-components` (MIT OR Apache-2.0)
  * `primitives/src/scroll_lock.rs` @ 5af3cc292559a0e8d73c7b9a827c4ca08ef34d99,
- * adapted per docs/recommended-implementations.md §5 and implemented at
+ * adapted per dev-docs/reference/platform-rationale.md §5 and implemented at
  * `primitives/src/scroll_lock.rs` in this repo -- see that file's header for
  * the full adaptation note (a Rust-side nesting-aware counter in place of
  * the dq base's JS global, reproducing sarendipitee/dx-components'
@@ -50,7 +50,7 @@
  * fixture page (`preview/src/components/top_layer/component.rs`).
  *
  * KNOWN GAP, both in the dq base and here (see
- * docs/recommended-implementations.md §5): no iOS momentum-scroll handling.
+ * dev-docs/reference/platform-rationale.md §5): no iOS momentum-scroll handling.
  * Radix delegates that to `react-remove-scroll`, which this crate has no
  * equivalent of, and this file does not test for it -- only that
  * `window.scrollY` doesn't move while locked, on a desktop Chromium

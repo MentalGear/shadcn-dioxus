@@ -336,7 +336,7 @@ pub fn RadioItem(props: RadioItemProps) -> Element {
     // Hidden native radio mirroring this item, so the group participates in
     // HTML form submission -- see docs/plan.md Phase 1.2. Rendered
     // unconditionally, matching Checkbox's BubbleInput: this repo's decision
-    // table (docs/recommended-implementations.md §1) follows upstream over
+    // table (dev-docs/reference/platform-rationale.md §1) follows upstream over
     // Radix's `closest('form')` gate, which Dioxus has no cheap equivalent
     // for. Shape ported from dignifiedquire/dx-components (MIT OR
     // Apache-2.0), primitives/src/radio_group.rs (RadioGroupItem's hidden

@@ -37,7 +37,7 @@ The single authoritative sequence. Detail for each item lives in the documents l
 Every item follows the same loop. An item is not done until all five hold:
 
 1. A conformance test exists, cites its rule source, and **fails first** — per [`conformance-harness.md`](./conformance-harness.md). A port that lands without a red test has proved nothing.
-2. The implementation follows [`recommended-implementations.md`](./recommended-implementations.md), which picks the best source per gap rather than copying one fork.
+2. The implementation follows [`recommended-implementations.md`](./reference/platform-rationale.md), which picks the best source per gap rather than copying one fork.
 3. Provenance and licence handled per [`guides/lifting-code.md`](./guides/lifting-code.md) — cherry-picks keep their author; lifted files get a header.
 4. The repo's own checks pass: `cargo clippy --workspace --examples --tests --all-features --all-targets -- -D warnings`, `cargo fmt --check`, `cargo test --workspace`, stylelint, and Playwright. *(2026-10-04: the clippy command as written is not usable -- `--all-features` needs gtk for preview's `desktop` and would hide the `not(web)` arm. The entry point is `CARGO_TARGET_DIR=<absolute isolated dir> scripts/run-gates.sh`, which runs the three clippy arms; see CLAUDE.md and `backlog.md` row 116's round-2 addendum.)*
 5. The provenance ledger in [`lifting-from-forks.md`](./archive/fork-research/lifting-from-forks.md) §8 is updated.
@@ -65,7 +65,7 @@ Nothing below can be validated without these, and none of them touch component b
 | 1.2 | `RadioGroup` — per-item hidden `<input type="radio">` | `dq radio_group.rs:267-279` / `sr :338-348`, independently identical | **Done** 2026-08-29 (`radio_group.rs`) |
 | 1.3 | `Select` — hidden native `<select>` with mirrored options | `dq select/components/select.rs:158-186`; needed a new `required` prop | **Done** 2026-08-29 (`select/components/select.rs`) |
 
-Not new design: the pattern is already in-tree in `Checkbox`. Render unconditionally, matching `Checkbox` — the reasoning is in `recommended-implementations.md`, and it is a framework limitation this repo already documented in `complaints.md`, not a preference.
+Not new design: the pattern is already in-tree in `Checkbox`. Render unconditionally, matching `Checkbox` — the reasoning is in `dev-docs/reference/platform-rationale.md`, and it is a framework limitation this repo already documented in `complaints.md`, not a preference.
 
 ## Phase 2 — The verified mined fixes *(cheapest — already cherry-pick tested)*
 
@@ -93,7 +93,7 @@ All four shipped with a regression test per the definition of done. Provenance l
 |---|---|---|---|
 | 4.1 | **Ask upstream why `797b343e` dropped `<dialog>`** | No recorded rationale; not a blocker for Phases 0–3 | **Not started** — user decision (`backlog.md` row 6, "upstream engagement"), unaffected by 4.2 going ahead anyway |
 | 4.2 | If clear → native `<dialog>`, with `open` bound declaratively as the floor | Blitz styles `dialog:not([open])` as `display:none`, and `open` needs no JS | **Done** 2026-08-31 (Phase 4.2) — modal `Dialog`/`AlertDialog` web arm renders a real `<dialog>` + `showModal()`; native/Blitz arm unchanged; own oracle `oracle/tier2-html/native-dialog.spec.ts` |
-| 4.3 | If blocked → port `aria_hidden.rs` **and finish the Dialog/AlertDialog wiring that fork never did** | Strictly more work for less capability | **N/A** — 4.2 was taken; caveat 1 investigated by execution and found not to block (see `recommended-implementations.md`) |
+| 4.3 | If blocked → port `aria_hidden.rs` **and finish the Dialog/AlertDialog wiring that fork never did** | Strictly more work for less capability | **N/A** — 4.2 was taken; caveat 1 investigated by execution and found not to block (see `dev-docs/reference/platform-rationale.md`) |
 | 4.4 | Non-modal overlays → `popover=` top layer | Fixes clipping inside `overflow:hidden`/transformed ancestors | **Done** 2026-08-31 (Phase 4.4), then extended to every remaining overlay across two migrations: Migration A (DropdownMenu, ContextMenu, Menubar, Select, Combobox, Toast onto the top layer) and Migration B (modal Popover onto the native-dialog engine) — both complete as of PR #23 |
 
 ## Phase 5 — Collision detection
@@ -136,7 +136,7 @@ Owned by a person, not by this document. Status as of 2026-09-02:
 - Porting playbook, harness design, and best-of-each recommendations.
 - Phases 0–4 built and merged: form participation (Phase 1), the four mined fixes (Phase 2), focus restore + scroll lock (Phase 3), and the native-platform decision with both migrations complete (Phase 4) — see each phase's table above for landing PRs.
 - Phase 5's FLIP sub-problem landed (CSS `position-try-fallbacks`, PR #17); shift/size clamping and `ContextMenu`'s point-anchor clamp remain open.
-- A 2026-09-01 production incident (cfg-axis: markup split on `target_family = "wasm"` instead of the `web` feature, breaking the deployed SSG site) was root-caused, fixed, and given a standing regression guard (`scripts/check-cfg-axis.sh`) plus a new oracle axis (`oracle/hydration-parity.spec.ts`) — see `recommended-implementations.md` Caveat 1.
-- A 2026-09-01/02 round of hardening beyond the original plan: the keyboard-matrix oracle's 12 reds → 0 (DropdownMenu/Menubar/Select's shared open-with-focus contract, Slider's missing Home/End/PageUp/PageDown, HoverCard's missing Escape dismiss), the menu pattern-class role contract (`menu_semantics.rs`), anchored-overlay visualViewport tracking for the iOS keyboard case, a text-entry touch-zoom font-size floor, and a global-stylesheet `@import` fix — see `recommended-implementations.md`'s per-item sections and `backlog.md` for the individual rows.
+- A 2026-09-01 production incident (cfg-axis: markup split on `target_family = "wasm"` instead of the `web` feature, breaking the deployed SSG site) was root-caused, fixed, and given a standing regression guard (`scripts/check-cfg-axis.sh`) plus a new oracle axis (`oracle/hydration-parity.spec.ts`) — see `dev-docs/reference/platform-rationale.md` Caveat 1.
+- A 2026-09-01/02 round of hardening beyond the original plan: the keyboard-matrix oracle's 12 reds → 0 (DropdownMenu/Menubar/Select's shared open-with-focus contract, Slider's missing Home/End/PageUp/PageDown, HoverCard's missing Escape dismiss), the menu pattern-class role contract (`menu_semantics.rs`), anchored-overlay visualViewport tracking for the iOS keyboard case, a text-entry touch-zoom font-size floor, and a global-stylesheet `@import` fix — see `dev-docs/reference/platform-rationale.md`'s per-item sections and `backlog.md` for the individual rows.
 - Oracles written and executed well beyond the original one: focus restore (5/5 green), keyboard matrix, menu roles, top layer (11 rules), native dialog, touch focus-zoom, global stylesheet, form participation, scroll lock, hydration parity — see `conformance-harness.md`'s Status section for the full current inventory.
 - Several adversarial review rounds across the research and execution documents, catching factual errors and broken commands.

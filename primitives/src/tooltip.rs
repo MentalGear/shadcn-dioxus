@@ -517,7 +517,7 @@ fn TooltipContentRendered(
 
 /// Native (Blitz) arm: unchanged from before this slice. Blitz implements
 /// neither the `popover` attribute nor `document::eval`
-/// (`docs/recommended-implementations.md` Caveat 2), so this is the
+/// (`dev-docs/reference/platform-rationale.md` Caveat 2), so this is the
 /// functional floor — a plain, always-in-flow div, visible exactly when
 /// `render()` (above) mounts it.
 #[cfg(not(feature = "web"))]

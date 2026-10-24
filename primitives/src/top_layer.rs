@@ -787,7 +787,7 @@ impl PopoverKind {
 /// from `open`, and sync the browser's own `toggle` event — fired on
 /// light-dismiss (`auto`), Escape (`auto`), or any other script/UA-driven
 /// close — back into `set_open`, so the Rust signal never strands. This is
-/// the same defect class `docs/recommended-implementations.md` Caveat 1
+/// the same defect class `dev-docs/reference/platform-rationale.md` Caveat 1
 /// documents for `<dialog>`'s one-way `showModal()`/`close()` binding
 /// (the upstream regression that motivated PR #47); the eval-channel
 /// pattern that fixes it here is the same one already used by
@@ -804,7 +804,7 @@ impl PopoverKind {
 /// Only a real browser or webview implements the Popover API. Blitz
 /// (`dioxus-native`) implements neither the `popover` attribute nor
 /// `document::eval` (the latter is a no-op there) —
-/// `docs/recommended-implementations.md` Caveat 2's capability table shows
+/// `dev-docs/reference/platform-rationale.md` Caveat 2's capability table shows
 /// both at zero. This hook must never run on that target: calling it there
 /// would be a silent no-op at best (`eval` swallowed) and, worse, its
 /// *caller* rendering the `popover` attribute unconditionally would be
@@ -821,10 +821,10 @@ impl PopoverKind {
 /// same web-style arm, not on the native/no-op one `target_family = "wasm"`
 /// would wrongly exclude it from. `target_family = "wasm"` was the original
 /// gate here; it was corrected to `feature = "web"` after a 2026-09-01
-/// production incident (`docs/recommended-implementations.md` Caveat 1)
+/// production incident (`dev-docs/reference/platform-rationale.md` Caveat 1)
 /// showed the fullstack SSG prerender — a host (non-wasm) binary built with
 /// this feature on — rendered the native-arm markup instead, because the
-/// old gate excluded it. See `docs/recommended-implementations.md` Caveat 1
+/// old gate excluded it. See `dev-docs/reference/platform-rationale.md` Caveat 1
 /// for the corrected rule: markup/attribute choice keys off this renderer
 /// feature; only genuinely wasm-only *execution* internals (none exist in
 /// this hook's body — `document::eval` itself compiles and runs inertly on

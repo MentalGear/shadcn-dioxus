@@ -15,7 +15,7 @@ Mutation testing (`cargo-mutants`), scoped to the algorithmic modules that alrea
 
 ## Status / trigger
 
-**Landed 2026-08-31, PR #13** — baseline was 37% (397 survivors, ~350 genuinely unit-killable); all eight targeted test additions landed same day (per-file scores now 58–91%, see [`mutants-baseline.md`](../../mutants-baseline.md)), and the scoped command is a `workflow_dispatch` job, `.github/workflows/mutants.yml` (recommendation adopted: not nightly)
+**Landed 2026-08-31, PR #13** — baseline was 37% (397 survivors, ~350 genuinely unit-killable); all eight targeted test additions landed same day (per-file scores now 58–91%, see [`mutants-baseline.md`](../../reference/mutants-baseline.md)), and the scoped command is a `workflow_dispatch` job, `.github/workflows/mutants.yml` (recommendation adopted: not nightly)
 
 ## Size
 
@@ -23,4 +23,4 @@ S to set up
 
 ## Detail
 
-**2026-09-26 (audit correction):** baseline DONE (PR #13, 2026-08-31, see `mutants-baseline.md`); periodic re-run optional, not required. Automates what the red-first discipline does by hand — a surviving mutant is exactly the "test cannot go red" finding Phase 2 hit twice (slider 2.1, virtual_list 2.2). Do NOT scope it over component render code: those mutants are only killable by the Playwright suite, and a wasm rebuild + e2e run per mutant is economically impossible; the oracle red-first rule covers that layer instead. **2026-09-19 (batch 3, leftovers lane):** `cargo-mutants` v27.1.0 installed but not run this round (disk-space gate deferred it) — command to resume: `cargo mutants -f 'primitives/src/slider.rs' -t 60 -j 1 -o <scratch-dir>`
+**2026-09-26 (audit correction):** baseline DONE (PR #13, 2026-08-31, see `dev-docs/reference/mutants-baseline.md`); periodic re-run optional, not required. Automates what the red-first discipline does by hand — a surviving mutant is exactly the "test cannot go red" finding Phase 2 hit twice (slider 2.1, virtual_list 2.2). Do NOT scope it over component render code: those mutants are only killable by the Playwright suite, and a wasm rebuild + e2e run per mutant is economically impossible; the oracle red-first rule covers that layer instead. **2026-09-19 (batch 3, leftovers lane):** `cargo-mutants` v27.1.0 installed but not run this round (disk-space gate deferred it) — command to resume: `cargo mutants -f 'primitives/src/slider.rs' -t 60 -j 1 -o <scratch-dir>`

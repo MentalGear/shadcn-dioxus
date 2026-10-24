@@ -653,7 +653,7 @@ fn HoverCardContentRendered(
 }
 
 /// Native (Blitz) arm: unchanged from before this slice — see
-/// `docs/recommended-implementations.md` Caveat 2.
+/// `dev-docs/reference/platform-rationale.md` Caveat 2.
 #[cfg(not(feature = "web"))]
 #[component]
 fn HoverCardContentRendered(

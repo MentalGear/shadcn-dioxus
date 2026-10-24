@@ -12,7 +12,7 @@ stable across 3 consecutive full-suite runs (48/48 total). Every test
 encodes one empirical claim; several of the "passing" tests assert a
 *surprising* result rather than the originally expected one -- those are
 flagged explicitly. Nothing here was taken on faith from
-`dev-docs/recommended-implementations.md` or the dignifiedquire fork without
+`dev-docs/reference/platform-rationale.md` or the dignifiedquire fork without
 being run against a real browser.
 
 Chromium version: whatever ships in this environment's
@@ -244,7 +244,7 @@ spike found, and the one that most needs a person's attention before Phase
   - **Working mitigation, verified in isolation:** freezing `<body>` with
     `position: fixed; top: -{scrollY}px` (the technique
     `react-remove-scroll` and similar libraries use, and which
-    `dev-docs/recommended-implementations.md` §5 already flags this repo as
+    `dev-docs/reference/platform-rationale.md` §5 already flags this repo as
     *not* having relative to Radix) blocks both the wheel and the
     `PageDown` gesture completely (`scrollY` stayed `0` through both). This
     fix was proven against the spike's fixtures but is **not** wired into
@@ -262,7 +262,7 @@ carry. (Separately, and *not* an oracle for the hazard above: a purely
 regardless of any dialog -- that's ordinary, well-known CSS behaviour,
 unrelated to this finding, and was not used as evidence for it.)
 
-**This means `dev-docs/recommended-implementations.md` §5's "native `<dialog>`
+**This means `dev-docs/reference/platform-rationale.md` §5's "native `<dialog>`
 does not itself prevent background scrolling -- this is needed regardless
 of item 2" undersold the risk.** It reads as "Phase 3.2's scroll lock is
 necessary and sufficient once bolted onto Phase 4." It is necessary but,
@@ -380,7 +380,7 @@ Rust-side synchronization at all for the pure light-dismiss case.
   environment only runs the `web` target. Every finding above is Chromium
   web-only; the plan's Blitz-floor reasoning (bind `open` declaratively
   where `eval` no-ops) rests on the capability table in
-  `dev-docs/recommended-implementations.md`, not on anything this spike ran.
+  `dev-docs/reference/platform-rationale.md`, not on anything this spike ran.
 - **Other engines** (Firefox, WebKit/Safari) were not exercised --
   Playwright's bundled Chromium was the only browser available in this
   environment. The two new hazards (the `<body>` Tab stop and the

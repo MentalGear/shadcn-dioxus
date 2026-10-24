@@ -68,7 +68,7 @@
  * work under the JS trap). Full per-rule ledger in this session's report.
  *
  * Historical defect this whole file guards against
- * (docs/recommended-implementations.md Caveat 1,
+ * (dev-docs/reference/platform-rationale.md Caveat 1,
  * dev-docs/archive/research/phase4-spike-findings.md experiment 1): upstream's first `<dialog>`
  * (`b3f6de53`) drove `showModal()`/`close()` one-way from the `open` signal
  * with no `close`/`cancel` sync, so a native Escape stranded the signal at
@@ -233,7 +233,7 @@ test.describe("Rule 3 — Escape closes the dialog, the Rust `open` signal syncs
       await page.keyboard.press("Escape");
       await expect(dialogEl, `cycle ${cycle}: Escape must close the dialog`).toHaveCount(0);
 
-      // The historical defect (docs/recommended-implementations.md Caveat
+      // The historical defect (dev-docs/reference/platform-rationale.md Caveat
       // 1): if the `open` signal stranded at `true`, the *next* trigger
       // click would compute `!true` and the dialog would never reopen. A
       // clean re-open on every cycle is itself the sync proof.

@@ -49,7 +49,7 @@ use dioxus::prelude::*;
 // `use_global_escape_listener`/`use_outside_dismiss` are only called from
 // native (Blitz) arms now -- `PopoverModalContent`'s native arm (its own
 // dismissal wiring, unchanged) and `PopoverNonModalContent`'s native arm
-// (Blitz has no Popover API, `docs/recommended-implementations.md` Caveat
+// (Blitz has no Popover API, `dev-docs/reference/platform-rationale.md` Caveat
 // 2). Both web arms get dismissal from the browser instead (`showModal()`'s
 // `cancel`/`close` events for modal, `popover="auto"` light dismiss for
 // non-modal) -- gated the same way so the web build never carries an
@@ -706,7 +706,7 @@ fn PopoverModalContent(
 /// light dismiss and Escape included -- back into `set_open`
 /// unconditionally, exactly like `use_popover_sync` did, so the Rust
 /// signal still can never strand the way `docs/
-/// recommended-implementations.md` Caveat 1 documents for `<dialog>`'s old
+/// dev-docs/reference/platform-rationale.md` Caveat 1 documents for `<dialog>`'s old
 /// one-way `showModal()`/`close()` binding; only the signal -> browser
 /// *hide* path changed -- `hidePopover()` is never called from our own
 /// closing path at all, only a real DOM removal (once `render()` drops to
@@ -808,7 +808,7 @@ fn PopoverNonModalContent(
 }
 
 /// Native (Blitz) arm: unchanged from before this slice -- Blitz has no
-/// popover-API support at all (`docs/recommended-implementations.md`
+/// popover-API support at all (`dev-docs/reference/platform-rationale.md`
 /// Caveat 2), so light dismiss / Escape still need this crate's own
 /// JS-driven listeners.
 #[cfg(not(feature = "web"))]

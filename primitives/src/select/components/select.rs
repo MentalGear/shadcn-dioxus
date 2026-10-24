@@ -411,7 +411,7 @@ pub fn Select<T: Clone + PartialEq + 'static>(props: SelectProps<T>) -> Element 
 
         // Hidden native <select> for form participation, matching Radix's
         // "BubbleSelect" pattern -- see docs/plan.md Phase 1.3 and
-        // docs/recommended-implementations.md §1. Rendered unconditionally
+        // dev-docs/reference/platform-rationale.md §1. Rendered unconditionally
         // (matching Checkbox's BubbleInput), so an empty `name` simply means
         // this contributes nothing to the entry list, per the HTML
         // "constructing the entry list" algorithm, rather than needing a
