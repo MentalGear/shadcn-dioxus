@@ -7,7 +7,7 @@
 # primitives, minutes), so it is NOT in scripts/run-gates.sh: run it before merging whenever a
 # `component.json` or any file under `preview/src/components/<name>/` (except `variants/` and `docs.md`)
 # changes. `scripts/check-installed-paths.sh` is the fast static approximation that is in run-gates.sh; this
-# is what it approximates (it exists because 27 components lacked the `mod.rs` an install needs and still
+# is what it approximates (it exists because a component without the `mod.rs` an install needs still
 # passed every gate, the preview declaring them inline: E0583 in a user's tree).
 #
 # What it does, all in one scratch directory that is deleted on exit:
@@ -24,6 +24,8 @@
 #      `BIN add <names> --path <repo>`;
 #   4. checks every component directory and its `pub mod` line landed, then
 #      `cargo check` with CARGO_INCREMENTAL=0 and an absolute scratch CARGO_TARGET_DIR (never the repo's).
+#   On exit it removes the scratch dir (kept with --keep) and the cargo git cache entries this run created
+#   (the registry repo is named `dx-smoke-registry-<run id>`, so a concurrent run's entries never match).
 #
 # Usage: scripts/registry-install-smoke.sh [--cli BIN] [--only a,b,c] [--target TRIPLE] [--keep]
 #   --cli BIN        install with this `shadcn-dioxus` binary instead of `dx components`
@@ -70,7 +72,15 @@ if [ "${avail_kb:-0}" -lt 6000000 ]; then
 fi
 
 work="$(mktemp -d "$tmp_parent/registry-smoke.XXXXXX")" || exit 2
+# The registry repo's name carries this run's id, so cargo's cache entries for it are this run's alone.
+reg_name="dx-smoke-registry-${work##*.}"
 cleanup() {
+  # Cargo keys a git dependency's cache entry on the registry's path, which is unique to this run's $work, so the
+  # entries are useless once $work is gone: they are removed here, with or without --keep.
+  local cargo_home="${CARGO_HOME:-$HOME/.cargo}" d
+  for d in "$cargo_home"/git/db/"$reg_name"-* "$cargo_home"/git/checkouts/"$reg_name"-*; do
+    if [ -e "$d" ]; then rm -rf "$d"; fi
+  done
   if [ "$keep" = 1 ]; then
     echo "registry-install-smoke: kept $work (delete it when done: it holds the cargo target dir)"
   else
@@ -88,7 +98,7 @@ if [ -z "$url" ]; then
 fi
 
 # 1. The registry: a throwaway git repo of the working tree.
-reg="$work/registry"
+reg="$work/$reg_name"
 mkdir -p "$reg"
 git ls-files -z --cached --others --exclude-standard \
   | while IFS= read -r -d '' f; do [ -e "$f" ] && printf '%s\0' "$f"; done \
@@ -138,10 +148,10 @@ if [ -n "$cli" ]; then
 else
   render_ref "$app" smoke_app
 fi
-# The template pre-declares `dioxus-primitives` (so its `web` feature can switch the browser-only code on), and so did
-# this script's app: every component whose `component.json` forgot `cargoDependencies` still compiled here and
-# failed with E0433 in an app made any other way (`kbd`, `area_chart`, `bubble`, `empty`, `message`, found on
-# GitHub after the merge). The app under test therefore starts with NO crate but `dioxus`: the install itself must
+# The template pre-declares `dioxus-primitives` (so its `web` feature can switch the browser-only code on), and a
+# smoke app that did too would let every component whose `component.json` lacks `cargoDependencies` compile
+# here and fail with E0433 in an app made any other way.
+# The app under test therefore starts with NO crate but `dioxus`: the install itself must
 # add every other crate a component uses. (`dx new` / `shadcn-dioxus new` is not the only way in: `init` on an
 # existing app, or a bare `cargo new`, gets no primitives.)
 python3 -I - "$app/Cargo.toml" <<'PY' || { echo "registry-install-smoke: could not strip dioxus-primitives from the app's Cargo.toml" >&2; exit 2; }

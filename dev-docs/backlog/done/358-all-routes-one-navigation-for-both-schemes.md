@@ -36,4 +36,4 @@ the scheme flipped in the page by `__dxApplyMode`. Overflow reads both schemes i
 switched page. Compared with fresh loads on all 90 routes x 2 schemes: axe node counts per rule 180/180, forced-colors
 verdicts 174/174 (no control gained or lost), overflow verdicts 180/180; `collapsible` and `tabs` joined
 `FRESH_PHONE_LOAD` (their closed find-in-page panels lay out unclipped boxes after any second re-layout). Numbers and
-method: [`row-358-one-navigation-both-schemes.md`](../../research/row-358-one-navigation-both-schemes.md).
+method: [`row-358-one-navigation-both-schemes.md`](../../archive/research/row-358-one-navigation-both-schemes.md).

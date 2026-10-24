@@ -1,5 +1,5 @@
 /**
- * Row 212 (next-round-plan item 10): every form-control demo of checkbox,
+ * Row 212: every form-control demo of checkbox,
  * radio_group and switch is named by a VISIBLE label, the way shadcn's demos
  * pair a control with its text, not by an `aria-label` that no sighted user
  * can read.
@@ -16,7 +16,7 @@
  * Scope: checkbox, radio_group and switch. slider and progress are not in
  * this list: their demos are bare in shadcn's own demo files too, and most of
  * their non-main variants are aria-label-only, so they need their own
- * decision (row 212, follow-up), not a silent exemption here.
+ * decision (row 212), not a silent exemption here.
  */
 import { test, expect } from "./fixtures";
 import type { Page } from "@playwright/test";

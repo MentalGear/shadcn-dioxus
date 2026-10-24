@@ -37,8 +37,8 @@ const AA = 4.5;
 const DISTINCT_PRESSED = 16;
 const DISTINCT_HOVER = 6;
 /**
- * The docs link blue in light, as sRGB: `--dx-docs-blue` is oklch(0.555 0.241 260.95) = rgb(0, 99, 252) since the colour
- * audit (2026-10-23, contrast-mode.spec.ts "fixed for everyone"); #0065ff was 4.47:1 on `--dx-muted`, this clears 4.5:1.
+ * The docs link blue in light, as sRGB: `--dx-docs-blue` is oklch(0.555 0.241 260.95) = rgb(0, 99, 252) (contrast-mode.spec.ts
+ * "fixed for everyone"); #0065ff would be 4.47:1 on `--dx-muted`, this clears 4.5:1.
  */
 const DOCS_BLUE_LIGHT = [0, 99, 252] as const;
 
@@ -197,8 +197,8 @@ for (const mode of ["light", "dark"] as const) {
             name: `badge ${v}`,
             selector: `.dx-badge[data-style="${v}"]`,
           })),
-          // The demo's "Verified" badge: an inline `--dx-ring-color` fill with white ink, which was 3.60:1
-          // in dark mode before its fill was clamped.
+          // The demo's "Verified" badge: an inline `--dx-ring-color` fill with white ink, which is 3.60:1
+          // in dark mode unless its fill is clamped.
           { name: "badge verified", selector: '.dx-badge[style*="--dx-ring-color"]' }, // the badge whose inline fill is the ring colour
         ],
         mode,
@@ -276,7 +276,7 @@ for (const mode of ["light", "dark"] as const) {
           `worst hover contrast ${worstRatio.ratio.toFixed(2)}:1 (${worstRatio.at})`,
       );
       expect(wrong.slice(0, 12)).toEqual([]);
-      // And with no accent chosen the library's own look is untouched: Nova's `/80` still changes the fill.
+      // And with no accent chosen the library's own look holds: Nova's `/80` changes the fill.
       const none = rest.filter((r) => r.accent === "none" && r.base === "none");
       none.forEach((r) => {
         const h = hover[rest.indexOf(r)];
@@ -287,7 +287,7 @@ for (const mode of ["light", "dark"] as const) {
     test("Toggle: off / hovered / pressed text >= 4.5:1, and the three backgrounds differ", async ({ page }) => {
       await open(page, "/component/toggle/", ".dx-toggle");
       // The main demo's toggle is the first on the page. Not named by label or text: the demo's content
-      // (row 212 relabelled it, and it keeps being refined) is not what this sweep is about.
+      // is not what this sweep is about.
       const toggle = page.locator(".dx-component-preview-frame .dx-toggle").first();
       const probe: Probe[] = [{ name: "toggle", selector: ".dx-component-preview-frame .dx-toggle" }];
       const away = () => page.mouse.move(0, 0);
@@ -315,7 +315,7 @@ for (const mode of ["light", "dark"] as const) {
     test("ToggleGroup: off / hovered / pressed text >= 4.5:1, and the three backgrounds differ", async ({ page }) => {
       await open(page, "/component/toggle_group/", ".dx-toggle-group-item");
       // The main demo's first three items (bold, italic, strikethrough), by position: the demo's glyphs and
-      // aria-labels are not what this sweep is about (row 212 relabelled them).
+      // aria-labels are not what this sweep is about.
       // Scoped to the demo frame: the docs sidebar carries its own ToggleGroup (the A-Z / Category sort), which
       // comes first on the page and is not the component under test.
       const item = (n: number) => page.locator(".dx-component-preview-frame .dx-toggle-group-item").nth(n);
@@ -375,7 +375,7 @@ function sameBackground(a: Row[], b: Row[]): string[] {
 
 /**
  * The docs site's own accent ink (`--highlight-color-tertiary`: the SHOWCASE eyebrow, the `$` in the CLI chip,
- * prose links) follows an accent preset, stays readable on every surface it sits on, and is exactly today's
+ * prose links) follows an accent preset, stays readable on every surface it sits on, and is exactly the default
  * blue when no accent is chosen.
  */
 test.describe("docs-site highlight ink", () => {

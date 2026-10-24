@@ -375,7 +375,7 @@ mod tests {
     }
 
     #[test]
-    fn a_move_lands_before_the_row_that_now_follows_it() {
+    fn a_move_lands_before_the_row_that_follows_the_target_slot() {
         let plan = plan_move(&keys(&["a", "b", "c", "d"]), 3, 1).unwrap();
         assert_eq!(
             plan,

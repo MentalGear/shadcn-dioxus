@@ -16,7 +16,7 @@
 //! - **Active bar** ([`BarOptions::active_index`]): `data-active="true"`,
 //!   which the themed stylesheet draws as shadcn's `chart-bar-active` --
 //!   0.8 fill opacity and a dashed outline in the bar's own color; the other
-//!   bars are unchanged.
+//!   bars are drawn normally.
 //! - **Labels**: [`BarOptions::value_labels`] (`<LabelList position="top"
 //!   offset={12}>`), [`BarOptions::category_labels`] (the category name just
 //!   beyond the bar's end in the bar's color -- `chart-bar-negative`), and
@@ -142,7 +142,7 @@ pub struct BarOptions {
     /// Highlight the bar at this datum index (every series' bar there):
     /// `data-active="true"`, drawn by the themed stylesheet as shadcn's
     /// `chart-bar-active` (0.8 fill opacity + a dashed outline in the bar's
-    /// own color). Every other bar is `data-active="false"` and unchanged.
+    /// own color). Every other bar is `data-active="false"` and drawn normally.
     pub active_index: Option<usize>,
 }
 
@@ -592,8 +592,7 @@ mod tests {
         // a large positive value, is wider than the band is tall). Only
         // `data-slot="chart-bar"` rects: `chart.rs`'s own (vertical-only,
         // un-marked) hit-bands and this family's own horizontal hit-bands
-        // are ALSO `<rect>`s on this same page (the module doc's own
-        // "what this does NOT fix" section), so a plain "every `<rect>`"
+        // are ALSO `<rect>`s on this same page, so a plain "every `<rect>`"
         // scan would wrongly include them.
         assert_eq!(html.matches(r#"data-slot="chart-bar""#).count(), 2);
         for line in html.split("<rect").skip(1) {
@@ -831,9 +830,9 @@ mod tests {
     }
 
     #[test]
-    fn hidden_table_still_lists_every_datum_regardless_of_orientation() {
-        // The hidden data table is `chart.rs`'s own job, untouched by this
-        // lane -- pinning here only that this family's own rendering
+    fn hidden_table_lists_every_datum_regardless_of_orientation() {
+        // The hidden data table is `chart.rs`'s own job -- pinning here
+        // only that this family's own rendering
         // doesn't somehow interfere with it (e.g. by consuming `ctx.data`
         // in a way that would panic on an edge case).
         let rows = table_rows(&sample_data());

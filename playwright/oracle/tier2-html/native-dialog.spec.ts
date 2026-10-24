@@ -1,7 +1,7 @@
 /**
  * ORACLE: tier 2 (HTML) — native `<dialog>` modality for `Dialog`/`AlertDialog`.
  *
- * Source: docs/plan.md Phase 4.2, drawing on the WHATWG HTML Living
+ * Source: dev-docs/plan.md Phase 4.2, drawing on the WHATWG HTML Living
  * Standard's `<dialog>` chapter and the W3C ARIA Authoring Practices Guide
  * (APG) dialog-modal pattern for the keyboard rules:
  *   - The `<dialog>` element, `showModal()`, top-layer promotion, and the
@@ -23,17 +23,17 @@
  *     (no pointing-device button was pressed):
  *     https://www.w3.org/TR/uievents/#event-type-click
  *
- * Rule 7's bug (live-site report, independent of the hydration fix that
- * preceded it): `use_dialog_backdrop_dismiss` (primitives/src/lib.rs)
+ * Rule 7's hazard: `use_dialog_backdrop_dismiss` (primitives/src/lib.rs)
  * distinguishes a backdrop click from a content click with a bounding-rect
  * test against `event.clientX`/`clientY`. A keyboard activation (Enter or
  * Space) of a button dispatches a `click` with `detail === 0` and, in
  * Chromium, `clientX`/`clientY` of `0, 0` -- coordinates that do not
  * correspond to any real pointer position and, for any dialog not pinned at
- * the viewport's top-left corner, fall outside its content rect. The rect
- * test reads that as "outside" and dismisses. Because the listener is bound
- * directly on the `<dialog>` element and native `click` events bubble, this
- * fires for *any* keyboard-activated control inside the dialog's content --
+ * the viewport's top-left corner, fall outside its content rect. A rect test
+ * alone would read that as "outside" and dismiss, so the hook ignores a click
+ * with `detail === 0`. Because the listener is bound directly on the `<dialog>`
+ * element and native `click` events bubble, an unguarded listener would fire
+ * for *any* keyboard-activated control inside the dialog's content --
  * including, in the nested-dialog fixture, the "Open Nested Dialog" button,
  * whose bubbled synthetic click reaches the *outer* dialog's own listener
  * and dismisses the outer dialog a tick after the nested one opens. Because
@@ -45,35 +45,32 @@
  * it during that instant is lost.
  *
  * Fixture: preview/src/components/top_layer/component.rs (`TopLayerFixture`,
- * extended additively for this file — the "Native <dialog> ..." sections),
+ * whose "Native <dialog> ..." sections this file drives),
  * served at /component/?name=top_layer, plus the existing Dialog demo
- * (/component/?name=dialog, its nested-dialog fixture from Phase 3.2) for
+ * (/component/?name=dialog, its nested-dialog fixture) for
  * rules 3-5, which need no new markup.
  *
- * Calibration (docs/conformance-harness.md, "Calibration"): rule 1 runs
+ * Calibration (dev-docs/conformance-harness.md, "Calibration"): rule 1 runs
  * against a native reference first (prefixed CALIBRATION:) — a plain
  * `<dialog>` opened by one `showModal()` call, with no library state or
  * logic involved beyond that (see the fixture's doc comment for why the
  * trigger cannot be fully declarative the way `popovertarget` is). A
  * CALIBRATION failure means the test is wrong, not the component.
  *
- * STATUS AT WRITE TIME (this session, against pre-Phase-4.2 `main` —
- * `Dialog`/`AlertDialog` still a CSS-positioned `div` + vendored
- * `FocusTrap`): rules 1-2 RED (a plain div is clipped by ordinary CSS and
- * has no platform-level inertness; the JS focus trap only contains Tab, it
- * does not touch pointer/programmatic-focus inertness); rules 3-4 GREEN
- * already (the vendored trap + `use_global_escape_listener` already sync
- * `open` on Escape and restore focus on close); rule 5 GREEN already (the
- * Phase 3.2 nested-dialog fixture's close order and focus return already
- * work under the JS trap). Full per-rule ledger in this session's report.
+ * What each rule rules out: rules 1-2 -- a `Dialog`/`AlertDialog` that is a
+ * CSS-positioned `div` + vendored `FocusTrap` (a plain div is clipped by
+ * ordinary CSS and has no platform-level inertness; a JS focus trap only
+ * contains Tab, it does not touch pointer/programmatic-focus inertness);
+ * rules 3-4 -- Escape syncing `open` and focus restore on close; rule 5 --
+ * the nested-dialog fixture's close order and focus return.
  *
- * Historical defect this whole file guards against
- * (docs/recommended-implementations.md Caveat 1,
- * docs/phase4-spike-findings.md experiment 1): upstream's first `<dialog>`
- * (`b3f6de53`) drove `showModal()`/`close()` one-way from the `open` signal
- * with no `close`/`cancel` sync, so a native Escape stranded the signal at
- * `true` and the dialog could never reopen. Rule 3's 5-cycle reopen loop is
- * this exact regression test, at the oracle layer rather than a spike.
+ * The defect this whole file guards against
+ * (dev-docs/reference/platform-rationale.md Caveat 1,
+ * dev-docs/archive/research/phase4-spike-findings.md experiment 1): a
+ * `<dialog>` driven one-way from the `open` signal (`showModal()`/`close()`)
+ * with no `close`/`cancel` sync strands the signal at `true` after a native
+ * Escape, and the dialog can never reopen. Rule 3's 5-cycle reopen loop is
+ * this exact guard, at the oracle layer.
  */
 
 import { test, expect } from "../../fixtures";
@@ -233,7 +230,7 @@ test.describe("Rule 3 — Escape closes the dialog, the Rust `open` signal syncs
       await page.keyboard.press("Escape");
       await expect(dialogEl, `cycle ${cycle}: Escape must close the dialog`).toHaveCount(0);
 
-      // The historical defect (docs/recommended-implementations.md Caveat
+      // The defect this guards (dev-docs/reference/platform-rationale.md Caveat
       // 1): if the `open` signal stranded at `true`, the *next* trigger
       // click would compute `!true` and the dialog would never reopen. A
       // clean re-open on every cycle is itself the sync proof.
@@ -311,44 +308,30 @@ test.describe("axe: nested dialogs open", () => {
 
 /**
  * Rule 6 — modal `Popover` on the native-dialog engine (two-engine overlay
- * architecture completion, docs/plan.md). `PopoverModalContent`'s web arm
- * moves from the vendored `FocusTrap` (a plain `div`, no platform-level
- * inertness) onto the exact same `<dialog>` + `showModal()` +
+ * architecture, dev-docs/plan.md). `PopoverModalContent`'s web arm uses
+ * the same `<dialog>` + `showModal()` +
  * open-driver/close-sync/backdrop-dismiss trio `Dialog`'s web modal arm
- * already uses (Rules 1-4 above) -- so this rule mirrors those almost
- * exactly, against `#name=top_layer`'s new "Native <dialog> modal Popover"
+ * uses (Rules 1-4 above) -- so this rule mirrors those almost
+ * exactly, against `#name=top_layer`'s "Native <dialog> modal Popover"
  * section instead of the Dialog demo.
  *
- * STATUS AT WRITE TIME (this session, against the pre-migration modal
- * `PopoverModalContent` -- a `div` + vendored `FocusTrap`, identical shape
- * to pre-Phase-4.2 `Dialog`): inertness (6b) RED, for the identical reason
- * Rule 2 was RED for `Dialog` -- the JS trap only contains Tab, it does not
- * touch pointer/programmatic-focus inertness, so a background click/focus()
- * reaches straight through. Clipping escape (6a), Escape+resync (6c), and
- * focus restore (6d) were already GREEN pre-migration (the vendored trap +
- * `use_global_escape_listener` already synced `open` on Escape and restored
- * focus, and the `div` was never clipped in this fixture's specific
- * up-to-60px case the way a *taller* clip would have caught -- see Rule 1's
- * own pre-4.2 ledger for the general form of this same clipping defect).
- * Trigger-anchored placement (6e) is the one rule that is GREEN *both*
- * before and after this migration, and must *stay* green through the swap
- * -- that is this rule's regression guard, not a new capability: pre-
- * migration, the modal arm was a plain DOM child positioned by ordinary
- * `position: absolute` inside `PopoverRoot`'s `position: relative` wrapper
- * (no top-layer promotion, no anchor-positioning needed at all); this
- * migration's `<dialog>` is promoted straight into the top layer by
- * `showModal()` regardless, which is exactly the containing-block problem
- * `docs/plan.md` Phase 4.4 solved for `popover="auto"` content (see
- * `top_layer.rs`'s module doc) -- so the web modal arm now carries the same
- * `dx-anchor-popover`/`position-anchor` wiring the non-modal arm already
- * uses, and `top_layer.rs`'s shared, engine-injected anchor-positioning
- * stylesheet now matches `:modal` alongside `[popover]` in every selector
- * (including the `margin: 0; inset: auto;` UA reset for `dialog:modal`'s own
- * `position: fixed; inset: 0; margin: auto;` centering trap) so the same
- * `anchor()` rules apply to a `showModal()` dialog too.
+ * Rule 6's guards: inertness (6b: a background click/focus() must not reach
+ * through; a JS focus trap only contains Tab and never provides pointer or
+ * programmatic-focus inertness), clipping escape (6a), Escape+resync (6c),
+ * focus restore (6d) and trigger-anchored placement (6e). The modal arm's
+ * `<dialog>` is promoted straight into the top layer by `showModal()`,
+ * which is the containing-block problem backlog row 2 solves
+ * for `popover="auto"` content (see `top_layer.rs`'s module doc) -- so the
+ * web modal arm carries the same `dx-anchor-popover`/`position-anchor`
+ * wiring the non-modal arm uses, and `top_layer.rs`'s shared,
+ * engine-injected anchor-positioning stylesheet matches `:modal` alongside
+ * `[popover]` in every selector (including the `margin: 0; inset: auto;` UA
+ * reset for `dialog:modal`'s own `position: fixed; inset: 0; margin: auto;`
+ * centering trap) so the same `anchor()` rules apply to a `showModal()`
+ * dialog too (6e is the regression guard for that placement).
  */
 
-test.describe("Rule 6 — modal Popover (two-engine completion)", () => {
+test.describe("Rule 6 — modal Popover", () => {
   test("6a. clipping escape: modal Popover content escapes an overflow:hidden ancestor", async ({ page }) => {
     await gotoTopLayer(page);
     await page.locator("#popover-modal-clip-trigger").click();
@@ -373,7 +356,7 @@ test.describe("Rule 6 — modal Popover (two-engine completion)", () => {
     // open -- unlike Rule 2's `AlertDialog`-based fixture (chosen there
     // specifically because `Dialog`'s own backdrop-click dismiss would
     // otherwise confound the probe), every modal `Popover` *does* carry
-    // `use_dialog_backdrop_dismiss` (this migration wires the same trio
+    // `use_dialog_backdrop_dismiss` (it wires the same trio
     // `Dialog`'s web modal arm uses), so a real click at these background
     // coordinates is a legitimate "outside" click to the `<dialog>`'s own
     // full-viewport `::backdrop` and correctly dismisses the Popover as a
@@ -415,7 +398,7 @@ test.describe("Rule 6 — modal Popover (two-engine completion)", () => {
       await page.keyboard.press("Escape");
       await expect(contentEl, `cycle ${cycle}: Escape must close the Popover`).toBeHidden();
 
-      // Same historical-defect guard as Rule 3: a stranded `open` signal
+      // Same guard as Rule 3: a stranded `open` signal
       // would make the *next* trigger click compute `!true` and the
       // Popover would never reopen (`PopoverTrigger`'s own
       // `set_open.call(!(ctx.open)())` toggle). A clean re-open every
@@ -437,13 +420,13 @@ test.describe("Rule 6 — modal Popover (two-engine completion)", () => {
     await expect(trigger).toBeFocused();
   });
 
-  test("6e. trigger-anchored placement: a modal Popover renders next to its trigger, not viewport-centered (regression guard -- must stay green through the native-dialog swap)", async ({
+  test("6e. trigger-anchored placement: a modal Popover renders next to its trigger, not viewport-centered", async ({
     page,
   }) => {
     await gotoTopLayer(page);
     // Pinned near the top-left viewport corner (see the fixture's own
     // wrapping `style`) -- far enough from the viewport center that a
-    // viewport-centered `showModal()` (the UA default this migration must
+    // viewport-centered `showModal()` (the UA default the popover must
     // override) would measurably disagree with a trigger-anchored one.
     const trigger = page.locator("#popover-modal-anchor-trigger");
     const content = page.locator("#popover-modal-anchor-content");
@@ -478,7 +461,7 @@ test.describe("Rule 6 — modal Popover (two-engine completion)", () => {
     expect(Math.abs(measurement.offsetTop), debug).toBeLessThan(40);
     expect(Math.abs(measurement.offsetCenterX), debug).toBeLessThan(20);
 
-    // Not viewport-centered: the UA default this migration must override
+    // Not viewport-centered: the UA default the popover must override
     // (`dialog:modal { position: fixed; inset: 0; margin: auto; }`) would
     // place the content's center within a few pixels of the *viewport's*
     // center regardless of the trigger -- which, given the trigger is
@@ -496,8 +479,8 @@ test.describe("Rule 6 — modal Popover (two-engine completion)", () => {
 /**
  * Rule 7 — keyboard activation of a control inside a modal `<dialog>` must
  * never be misread as a backdrop click (see this file's header comment for
- * the mechanism). Fixture: the existing nested-dialog demo
- * (/component/?name=dialog, Phase 3.2), which already places a trigger
+ * the mechanism). Fixture: the nested-dialog demo
+ * (/component/?name=dialog), which places a trigger
  * ("Open Nested Dialog") inside the outer dialog's own content.
  */
 
@@ -538,9 +521,9 @@ for (const key of ["Enter", "Space"] as const) {
       await page.keyboard.press(key);
 
       // 7a: both dialogs must still be open a moment later -- long enough
-      // for the historical top-layer-forced-removal cascade (outer closes
-      // -> nested's own `close` fires) to have played out if the bug were
-      // still present.
+      // for the top-layer-forced-removal cascade (outer closes
+      // -> nested's own `close` fires) to play out if the bug were
+      // present.
       await page.waitForTimeout(250);
       await expect(page.getByRole("dialog"), `${key}: both dialogs must remain open`).toHaveCount(2);
       await expect(outer, `${key}: the outer dialog must still be open`).toBeVisible();
@@ -557,8 +540,8 @@ for (const key of ["Enter", "Space"] as const) {
   });
 }
 
-test.describe("Rule 7c — regression guard: a real pointer click on the backdrop still dismisses", () => {
-  test("opening the dialog by keyboard, a real mouse click far outside it still dismisses", async ({ page }) => {
+test.describe("Rule 7c — a real pointer click on the backdrop dismisses", () => {
+  test("opening the dialog by keyboard, a real mouse click far outside it dismisses", async ({ page }) => {
     await gotoDialog(page);
     const trigger = demoRole(page, "button");
     await trigger.focus();
@@ -599,12 +582,11 @@ test.describe("Rule 7d — a keyboard activation of a control inside the dialog 
 });
 
 /**
- * Rule 8 — the opening-gesture false positive (user device report,
- * 2026-09-03, iOS Safari touch): "Show Popover" (then the home page's default, a
- * modal `Popover`; since dev-docs/backlog.md row 169 the default is non-modal, so
- * these tests drive the explicit `modal` demo, "Open modal popover") shows only its
- * `::backdrop`; the popover itself flashes
- * and disappears. See `use_dialog_backdrop_dismiss`'s doc
+ * Rule 8 — the opening-gesture false positive (iOS Safari touch): a modal
+ * `Popover` shows only its `::backdrop`; the popover itself flashes
+ * and disappears. The default `Popover` is non-modal (dev-docs/backlog.md
+ * row 169), so these tests drive the explicit `modal` demo, "Open modal
+ * popover". See `use_dialog_backdrop_dismiss`'s doc
  * (primitives/src/lib.rs) for the full mechanism this rule guards.
  *
  * Root cause: `use_dialog_backdrop_dismiss`'s discriminator for "is this a
@@ -624,37 +606,36 @@ test.describe("Rule 7d — a keyboard activation of a control inside the dialog 
  * box, which the rect test then (correctly, by its own logic) reads as
  * "outside" and dismisses.
  *
- * Reproduction attempted (this session): touch-emulated (`hasTouch`,
+ * Reproduction status: touch-emulated (`hasTouch`,
  * `locator.tap()`) opens of the modal popover and of every `Auto`-kind
  * `popover` this crate has (`DropdownMenu`, `Menubar`, `Select`, non-modal
  * `Popover` -- see `PopoverKind`'s doc, `primitives/src/top_layer.rs`, for
  * which components are `Auto` vs. `Manual`; `Tooltip`/`HoverCard` are
  * `Manual` and never light-dismiss at all, so they are not exposed to
- * either variant of this bug class) -- confirmed by execution, none
- * self-dismiss in this sandbox's Chromium. Expected, not evidence there is
- * nothing to fix: this Chromium build dispatches exactly one `click` per
+ * either variant of this bug class) do not self-dismiss in this sandbox's
+ * Chromium. That is no evidence there is
+ * nothing to guard: this Chromium build dispatches exactly one `click` per
  * tap with a stable `target`, so the opening tap structurally cannot reach
  * this hook's listener (the sibling-DOM argument above), and this sandbox
  * has no engine that reproduces WebKit's lazy click-retarget-on-DOM-mutation
- * quirk to exercise instead. This stays device-only, per this session's own
- * instruction not to claim a reproduction that was not actually achieved --
- * the test below instead exercises the *construction* directly (does this
- * hook's listener exist yet, immediately after open, before any risk
+ * quirk. The failure itself is device-only; the test below
+ * exercises the *construction* directly (is this
+ * hook's listener absent immediately after open, before any risk
  * window has closed), which is checkable in this sandbox regardless of
  * which engine's click-timing quirk (if any) would go on to exploit it.
  *
- * `Auto`-kind popovers are audited, not fixed, in this round: they have no
+ * `Auto`-kind popovers are not covered by this construction: they have no
  * hook of ours to defer at all (their light dismiss is a browser-native
- * algorithm with no JS listener of this crate's own in the loop), so this
- * construction fix does not apply to them. A declarative `popovertarget`
+ * algorithm with no JS listener of this crate's own in the loop). A
+ * declarative `popovertarget`
  * invoker (WHATWG's own answer to "this click opened me, don't also count
- * it as light dismiss") was evaluated for them and rejected for this round:
+ * it as light dismiss") is not used for them:
  * every one of these triggers is a *toggle* button (`onclick` computing
  * `!open`), and `popovertarget`'s default action is `"toggle"` too --
  * layering a second, browser-native toggle onto the same click as this
  * crate's own Rust-driven one risks a double-toggle race with no clean way
  * to verify the outcome without a real device. Tracked as a documented
- * residual risk (`docs/backlog.md`), not silently dropped.
+ * residual risk (`dev-docs/backlog.md`).
  */
 test.describe("Rule 8 — the opening-gesture false positive: a modal Popover's backdrop-dismiss listener is not attached until the frame after it opens", () => {
   test("black-box: a touch-emulated open of the modal (is_modal: true) Popover stays open for at least 1s and until a real outside tap", async ({
@@ -705,7 +686,7 @@ test.describe("Rule 8 — the opening-gesture false positive: a modal Popover's 
     // (`use_dialog_backdrop_dismiss`'s own deferral, primitives/src/lib.rs)
     // directly, sidestepping the timing-race problem the black-box test
     // above cannot fully close in a sandbox with no engine that actually
-    // exhibits the reported click-retarget quirk.
+    // exhibits the click-retarget quirk.
     await page.addInitScript(() => {
       const w = window as unknown as {
         __dxBackdropListenerAttachedInsideRaf?: boolean;
@@ -744,8 +725,8 @@ test.describe("Rule 8 — the opening-gesture false positive: a modal Popover's 
     // dev-docs/backlog.md row 109: this test clicks the trigger right after
     // navigating, on the SSG lane -- `gotoHydrated` so that click can't
     // land before hydration attaches listeners. The `addInitScript` above
-    // still instruments this same navigation: `gotoHydrated` is just
-    // `page.goto` plus a wait, so init-script ordering is unchanged.
+    // instruments this same navigation: `gotoHydrated` is just
+    // `page.goto` plus a wait, so init-script ordering holds.
     await gotoHydrated(page, `${BASE_URL}/component/popover/`, { timeout: NAV_TIMEOUT });
     const trigger = demoRole(page, "button", 0, "modal");
     await trigger.scrollIntoViewIfNeeded();

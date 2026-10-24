@@ -1,19 +1,18 @@
 #!/usr/bin/env python3
-"""Rebuild dev-docs/backlog.md (the INDEX) from the row files in dev-docs/backlog/, or check it.
+"""Rebuild the two backlog INDEX files from the row files in dev-docs/backlog/, or check them.
 
 Layout (see the header of dev-docs/backlog.md):
-  dev-docs/backlog/<NNN>-<slug>.md        open row
-  dev-docs/backlog/done/<NNN>-<slug>.md   done row
-  dev-docs/backlog/notes/<slug>.md        narrative sections kept from the old monolithic file
-Only the block between the BEGIN/END GENERATED markers of dev-docs/backlog.md is generated; the header above it
-is hand-written.
+  dev-docs/backlog/<NNN>-<slug>.md        open row   -> listed in dev-docs/backlog.md (the open index)
+  dev-docs/backlog/done/<NNN>-<slug>.md   done row   -> listed in dev-docs/backlog-done.md (the done index)
+Only the block between the BEGIN/END GENERATED markers of each index file is generated; the header above it
+is hand-written. A citation "dev-docs/backlog.md row N" resolves by id in either index.
 
 Modes (run with `python3 -I`; scripts/backlog-index.sh wraps this):
   (default)  sync the derived front matter fields (`status`, `size`) of every row file from its sections, then
              rewrite the generated block of dev-docs/backlog.md.
   --check    write nothing; exit 1 listing every problem: missing front matter fields, id / file name mismatch,
              duplicate ids, a row present in both open and done, missing or reordered sections, `status`/`size`
-             out of sync with their sections, a note without front matter, a stale index.
+             out of sync with their sections, a stale index (open or done).
 """
 import html
 import json
@@ -25,6 +24,7 @@ ROOT = Path(__file__).resolve().parent.parent
 DOCS = ROOT / "dev-docs"
 BACKLOG = DOCS / "backlog"
 INDEX = DOCS / "backlog.md"
+DONE_INDEX = DOCS / "backlog-done.md"
 BEGIN = "<!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->"
 END = "<!-- END GENERATED -->"
 SECTIONS = ["Item", "Status / trigger", "Size", "Detail"]
@@ -32,7 +32,7 @@ REQUIRED = ["id", "title", "status", "size", "area", "updated"]
 NAME_RE = re.compile(r"^(\d{3,})-[a-z0-9][a-z0-9-]*\.md$")
 
 
-# ---- derived fields (kept identical to scripts/backlog-split-once.py)
+# ---- derived fields
 def strip_md(s):
     s = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", s)
     s = s.replace("**", "").replace("`", "")
@@ -148,29 +148,13 @@ def load_rows():
     return rows, problems
 
 
-def load_notes():
-    notes, problems = [], []
-    d = BACKLOG / "notes"
-    if not d.is_dir():
-        return notes, [f"missing directory {d.relative_to(ROOT)}"]
-    for p in sorted(d.glob("*.md")):
-        rel = p.relative_to(ROOT).as_posix()
-        fm, _, _ = split_front_matter(p.read_text(encoding="utf-8"))
-        if fm is None or not fm.get("title") or not fm.get("date"):
-            problems.append(f"{rel}: note needs front matter with title and date")
-            continue
-        notes.append({"slug": p.stem, "rel": rel, "fm": fm})
-    return notes, problems
-
-
 # ---- rendering
 def cell(s):
     return html.escape(s, quote=False).replace("|", "\\|")
 
 
-def render(rows, notes):
+def render_open(rows):
     open_rows = sorted((r for r in rows if r["state"] == "open"), key=lambda r: r["id"])
-    done_rows = sorted((r for r in rows if r["state"] == "done"), key=lambda r: r["id"])
     out = [BEGIN, "", f"## Open rows ({len(open_rows)})", "",
            "| # | Item | Status / trigger | Size | Area |", "|---|---|---|---|---|"]
     for r in open_rows:
@@ -178,22 +162,24 @@ def render(rows, notes):
         out.append(
             f"| [{r['id']}](backlog/{r['path'].name}) | {cell(f['title'])} | {cell(f['status'])} | {cell(f['size'])} | {cell(f['area'])} |"
         )
-    out += ["", f"## Done rows ({len(done_rows)})", "", "| # | Item | Updated |", "|---|---|---|"]
-    for r in done_rows:
-        f = r["fm"]
-        out.append(f"| [{r['id']}](backlog/done/{r['path'].name}) | {cell(f['title'])} | {cell(f['updated'])} |")
-    out += ["", f"## Notes ({len(notes)})", "",
-            "Narrative sections of the old monolithic file, verbatim (ordering rounds, environment notes, queue evaluations).", ""]
-    for n in notes:
-        out.append(f"- [{cell(n['fm']['title'])}](backlog/notes/{n['slug']}.md) ({cell(n['fm']['date'])})")
     out += ["", END]
     return "\n".join(out)
 
 
-def splice(index_text, block):
+def render_done(rows):
+    done_rows = sorted((r for r in rows if r["state"] == "done"), key=lambda r: r["id"])
+    out = [BEGIN, "", f"## Done rows ({len(done_rows)})", "", "| # | Item | Updated |", "|---|---|---|"]
+    for r in done_rows:
+        f = r["fm"]
+        out.append(f"| [{r['id']}](backlog/done/{r['path'].name}) | {cell(f['title'])} | {cell(f['updated'])} |")
+    out += ["", END]
+    return "\n".join(out)
+
+
+def splice(path, index_text, block):
     a, b = index_text.find(BEGIN), index_text.find(END)
     if a < 0 or b < 0 or b < a:
-        raise SystemExit(f"{INDEX.relative_to(ROOT)}: BEGIN/END GENERATED markers not found")
+        raise SystemExit(f"{path.relative_to(ROOT)}: BEGIN/END GENERATED markers not found")
     return index_text[:a] + block + index_text[b + len(END) :]
 
 
@@ -224,12 +210,9 @@ def main():
         print(__doc__)
         return 2
     rows, problems = load_rows()
-    notes, nproblems = load_notes()
-    problems += nproblems
     if not check:
         n = sync_derived(rows)
         rows, problems = load_rows()
-        problems += nproblems
         if n:
             print(f"backlog-index: synced status/size front matter in {n} row file(s)")
     if problems:
@@ -237,17 +220,20 @@ def main():
         for p in problems:
             print("  - " + p)
         return 1
-    new = splice(INDEX.read_text(encoding="utf-8"), render(rows, notes))
-    if check:
-        if new != INDEX.read_text(encoding="utf-8"):
-            print(f"backlog-index: {INDEX.relative_to(ROOT)} is stale; run scripts/backlog-index.sh and commit the result")
-            return 1
-        o = sum(r["state"] == "open" for r in rows)
-        print(f"backlog-index: OK -- {o} open + {len(rows) - o} done rows, {len(notes)} notes, index current")
-        return 0
-    INDEX.write_text(new, encoding="utf-8")
+    targets = [(INDEX, render_open(rows)), (DONE_INDEX, render_done(rows))]
+    new = [(p, splice(p, p.read_text(encoding="utf-8"), block)) for p, block in targets]
     o = sum(r["state"] == "open" for r in rows)
-    print(f"backlog-index: wrote {INDEX.relative_to(ROOT)} ({o} open, {len(rows) - o} done, {len(notes)} notes)")
+    if check:
+        stale = [p for p, text in new if text != p.read_text(encoding="utf-8")]
+        if stale:
+            names = ", ".join(p.relative_to(ROOT).as_posix() for p in stale)
+            print(f"backlog-index: {names} stale; run scripts/backlog-index.sh and commit the result")
+            return 1
+        print(f"backlog-index: OK -- {o} open + {len(rows) - o} done rows, both indexes current")
+        return 0
+    for p, text in new:
+        p.write_text(text, encoding="utf-8")
+    print(f"backlog-index: wrote {INDEX.relative_to(ROOT)} ({o} open) and {DONE_INDEX.relative_to(ROOT)} ({len(rows) - o} done)")
     return 0
 
 

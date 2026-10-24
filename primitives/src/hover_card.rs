@@ -304,7 +304,7 @@ pub fn HoverCard(props: HoverCardProps) -> Element {
     });
 
     // Owned by this component -- open/disabled state must win over a
-    // caller's own attributes (`docs/backlog.md` row 93's
+    // caller's own attributes (`dev-docs/backlog.md` row 93's
     // duplicate-attribute hazard).
     let attributes = merge_attributes(vec![
         props.attributes,
@@ -386,8 +386,8 @@ pub fn HoverCardTrigger(props: HoverCardTriggerProps) -> Element {
 
     // Tooltip pattern: "Escape: Dismisses the Tooltip." HoverCard shares
     // Tooltip's role and show-on-focus/hide-on-blur contract (see
-    // `tooltip.rs`'s identical `handle_keydown`) but previously had no
-    // `onkeydown` at all, so this same-class control didn't match it.
+    // `tooltip.rs`'s identical `handle_keydown`), so it needs the same
+    // `onkeydown`.
     let handle_keydown = move |event: Event<KeyboardData>| {
         if event.key() == Key::Escape && (ctx.open)() {
             event.prevent_default();
@@ -399,12 +399,12 @@ pub fn HoverCardTrigger(props: HoverCardTriggerProps) -> Element {
     // `[data-side]` CSS still resolves relative to this trigger once the
     // content is promoted to the top layer -- see
     // `crate::top_layer::anchor_name_style`/`anchored_trigger_attributes`.
-    // Previously a bare `style: anchor_name_style(..)` literal directly
+    // Not a bare `style: anchor_name_style(..)` literal directly
     // alongside the `..props.attributes` spread below: a caller supplying
-    // their own `style` then produced two `style` attributes on this same
-    // element (`docs/conformance-harness.md` hydration-parity Rule 4;
-    // `scripts/check-attr-spread-collision.sh`). Folding it here first,
-    // like every other anchored trigger, fixes that and (unlike plain
+    // their own `style` would then produce two `style` attributes on this
+    // same element (`dev-docs/conformance-harness.md` hydration-parity
+    // Rule 4; `scripts/check-attr-spread-collision.sh`). Folding it here
+    // first, like every other anchored trigger, avoids that and (unlike plain
     // `merge_attributes`, which folds a plain `style` attribute but leaves
     // shorthand style props -- `padding: ".."`, namespace `Some("style")`
     // -- as separate attributes) renders exactly one `style` carrying the
@@ -412,7 +412,7 @@ pub fn HoverCardTrigger(props: HoverCardTriggerProps) -> Element {
     let attributes =
         crate::top_layer::anchored_trigger_attributes(&ctx.content_id.cloned(), props.attributes);
     // Owned by this component -- role/focusability/aria wiring must win
-    // over a caller's own attributes (`docs/backlog.md` row 93's
+    // over a caller's own attributes (`dev-docs/backlog.md` row 93's
     // duplicate-attribute hazard).
     let attributes = merge_attributes(vec![
         attributes,
@@ -528,8 +528,8 @@ pub fn HoverCardContent(props: HoverCardContentProps) -> Element {
     let render = use_animated_open(id, ctx.open);
 
     // `HoverCardContentRendered` is a real component (not a plain fn) so it
-    // -- and the hooks it calls internally (this slice's
-    // `use_popover_shown_while_mounted` on the web arm) -- get a fresh
+    // -- and the hooks it calls internally (`use_popover_shown_while_mounted`
+    // on the web arm) -- get a fresh
     // scope each time `render()` mounts/unmounts it, matching this
     // element's actual DOM lifetime. See
     // `tooltip.rs`'s identical `TooltipContentRendered` comment for why a
@@ -550,7 +550,7 @@ pub fn HoverCardContent(props: HoverCardContentProps) -> Element {
     }
 }
 
-/// Web arm (Phase 4.4, docs/plan.md): promote to the top layer via
+/// Web arm (Phase 4.4, dev-docs/plan.md): promote to the top layer via
 /// `popover="manual"` (see `crate::top_layer::PopoverKind::Manual`'s doc for
 /// why `manual` and not `auto` — a `HoverCard`'s own mouseenter/mouseleave
 /// pair already owns its lifecycle, and MDN's own naming for this pattern
@@ -558,7 +558,7 @@ pub fn HoverCardContent(props: HoverCardContentProps) -> Element {
 /// popover does).
 ///
 /// Uses `crate::top_layer::use_popover_shown_while_mounted`, not
-/// `use_popover_sync` (docs/backlog.md row 19) -- same reasoning as
+/// `use_popover_sync` (dev-docs/backlog.md row 19) -- same reasoning as
 /// `tooltip.rs`'s identical `TooltipContentRendered`: this component is
 /// mounted by `render()` (`use_animated_open`) above for the whole CSS
 /// close animation, and `use_popover_sync` would call `hidePopover()` the
@@ -616,7 +616,7 @@ fn HoverCardContentRendered(
         }),
         // Owned by this component -- role/top-layer wiring/positioning
         // state must win over a caller's own attributes
-        // (`docs/backlog.md` row 93's duplicate-attribute hazard).
+        // (`dev-docs/backlog.md` row 93's duplicate-attribute hazard).
         attributes!(div {
             role: "tooltip",
             popover: crate::top_layer::PopoverKind::Manual.as_str(),
@@ -629,7 +629,7 @@ fn HoverCardContentRendered(
     // one `style` attribute -- see `top_layer::anchored_content_attributes`'s
     // doc for why a bare `style: position_anchor_style(&id)` literal
     // alongside `..attributes` is the duplicate-`style` hazard
-    // (`docs/conformance-harness.md` hydration-parity Rule 4).
+    // (`dev-docs/conformance-harness.md` hydration-parity Rule 4).
     let attributes = crate::top_layer::anchored_content_attributes(&id, attributes);
 
     rsx! {
@@ -652,8 +652,8 @@ fn HoverCardContentRendered(
     }
 }
 
-/// Native (Blitz) arm: unchanged from before this slice — see
-/// `docs/recommended-implementations.md` Caveat 2.
+/// Native (Blitz) arm -- see
+/// `dev-docs/reference/platform-rationale.md` Caveat 2.
 #[cfg(not(feature = "web"))]
 #[component]
 fn HoverCardContentRendered(
@@ -679,7 +679,7 @@ fn HoverCardContentRendered(
     let handle_mouse_leave = move |_: Event<MouseData>| timers.pointer_leave();
 
     // Owned by this component -- see the web arm's identical construction
-    // above (`docs/backlog.md` row 93).
+    // above (`dev-docs/backlog.md` row 93).
     let attributes = merge_attributes(vec![
         attributes,
         attributes!(div {

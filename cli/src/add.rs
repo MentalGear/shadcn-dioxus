@@ -5,9 +5,9 @@
 //! `copy_global_assets`, `remove_component`, `ensure_components_module_exists`;
 //! <https://github.com/DioxusLabs/dioxus>, `MIT OR Apache-2.0`). Differences from dx:
 //!   * a bare-name `componentDependencies` entry resolves in the registry of the component that names
-//!     it ([`dependency_source`]); dx resolves it in dx's own default registry, which is what sent
-//!     `date_picker`'s `calendar` and `popover` to upstream and made the install die with "outside of
-//!     the component registry";
+//!     it ([`dependency_source`]); dx resolves it in dx's own default registry, so
+//!     `date_picker`'s `calendar` and `popover` would come from upstream and the install would die with
+//!     "outside of the component registry";
 //!   * each component copies its global assets from ITS OWN registry root, not the root of the
 //!     registry named on the command line;
 //!   * destinations are checked before anything is written or `cargo add`ed, so an "already exists"

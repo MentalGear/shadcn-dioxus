@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 #
-# check-hover-mix-space.sh  (backlog row 260, finishing row 243)
+# check-hover-mix-space.sh  (backlog rows 243, 260)
 #
 # shadcn base-nova writes its hover step as `color-mix(in oklch, var(--secondary), var(--foreground) 5%)`.
 # The theme carries that space once as `--dx-hover-mix-space` (dx-components-theme.css), and every hover /
 # pressed / active fill that steps a colour toward the ink or the page reads it:
 # `color-mix(in var(--dx-hover-mix-space), <fill>, var(--dx-foreground) N%)`. Hand-writing the space
-# (`in oklab` was 3 levels off on a grey) is how six components drifted from Button.
+# (`in oklab` is 3 levels off on a grey) is how components drift from Button (rows 243, 260).
 #
 # This gate fails on a LITERAL interpolation space (`color-mix(in oklab|oklch|srgb|...`) in a component
 # sheet (preview/src/components/*/style.css) or a preview/assets/*.css sheet when the mix is a STEP, i.e.

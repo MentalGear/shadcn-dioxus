@@ -1,6 +1,5 @@
 /**
- * Auto-popover opening-gesture oracle (dev-docs/backlog.md row 40, 2026-10-03
- * re-audit).
+ * Auto-popover opening-gesture oracle (dev-docs/backlog.md row 40).
  *
  * The class under test: a `popover="auto"` surface that becomes
  * `:popover-open` BETWEEN the `pointerdown` and the `pointerup` of the same
@@ -18,19 +17,20 @@
  *     TRUE -> every open auto popover is hidden.
  *
  * Consequences, per trigger family (primitives/src/):
- *   - open on `click`  (DropdownMenu, Select, non-modal Popover): the
- *     popover shows only after the gesture's `pointerup` has finished -> safe
+ *   - open on `click`  (DropdownMenu, Select, non-modal Popover, NavbarTrigger):
+ *     the popover shows only after the gesture's `pointerup` has finished -> safe
  *     no matter how long the finger/mouse is held. iOS's lazy click
  *     retargeting (native-dialog.spec.ts Rule 8) is irrelevant here: the
- *     algorithm never reads `click`. This is why row 40's original worry
- *     ("an Auto popover could read the opening tap as outside") is not a
- *     real exposure for these.
+ *     algorithm never reads `click`. So an Auto popover cannot read the
+ *     opening tap as outside for these (row 40).
  *   - open on `pointerup` (Menubar): shows after `pointerup` -> safe.
- *   - open on `pointerdown` (NavbarTrigger, navbar.rs): shows BETWEEN down
- *     and up whenever the hold outlasts Dioxus's render + effect (a few ms).
- *     `navbar.spec.ts` "mobile navigation" cannot see this: Playwright's
- *     `tap()` has zero hold, so `pointerup` is dispatched before
- *     `showPopover()` runs. A real finger holds ~50-150ms.
+ *   - open on `pointerdown` (nothing does): an Auto popover shown BETWEEN down
+ *     and up whenever the hold outlasts Dioxus's render + effect (a few ms) is
+ *     hidden by the gesture that opened it, so `NavbarTrigger` (navbar.rs)
+ *     opens from `click` and uses `pointerdown` only to snapshot the state the
+ *     gesture started from. `navbar.spec.ts` "mobile navigation" cannot see a
+ *     regression there: Playwright's `tap()` has zero hold, so `pointerup` is
+ *     dispatched before `showPopover()` runs. A real finger holds ~50-150ms.
  *
  * The test holds a real touch for 250ms (CDP `Input.dispatchTouchEvent`,
  * since `page.touchscreen` only exposes an instantaneous `tap`) and asserts
@@ -40,12 +40,10 @@
  * (NavbarNav's `onmouseenter`) can silently re-open a just-light-dismissed
  * Navbar and mask the false dismiss.
  *
- * Expected state when this file landed: UNVERIFIED -- written in a lane that
- * could not build. If the Navbar case is RED, the construction fix is to
- * stop opening an `auto` popover from `pointerdown` (open on `click`, or
- * make `NavbarContent` `manual` + `use_outside_dismiss`); see
- * dev-docs/backlog.md row 40. The DropdownMenu case is a green control for
- * the click-open family.
+ * If the Navbar case is RED, `NavbarTrigger` opens its `auto` popover from
+ * `pointerdown`: it must open on `click` (or `NavbarContent` must be `manual` +
+ * `use_outside_dismiss`); see dev-docs/backlog.md row 40. The DropdownMenu case
+ * is a green control for the click-open family.
  */
 import { test, expect } from "../../fixtures";
 import { type Page } from "@playwright/test";
@@ -67,8 +65,9 @@ const CASES: {
   trigger: (page: Page) => import("@playwright/test").Locator;
 }[] = [
   {
-    // pointerdown-open: the family the 2026-10-03 audit found exposed.
-    name: "NavbarTrigger (opens on pointerdown)",
+    // NavbarTrigger opens from `click` (`pointerdown` only snapshots state),
+    // so the pointerdown/pointerup gap cannot dismiss it.
+    name: "NavbarTrigger (opens on click)",
     url: `${BASE_URL}/component/navbar/`,
     trigger: (page) => demoRole(page, "menuitem", 0),
   },

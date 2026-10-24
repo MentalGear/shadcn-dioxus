@@ -66,8 +66,7 @@ pub fn Demo() -> Element {
                     let extra_text = "Extra content to vary row height. ".repeat(idx % 6);
                     rsx! {
                         article { class: "dx-virtual-list-card",
-                            // axe `heading-order` (docs/backlog.md row 34's
-                            // own round): a repeated per-row card title in a
+                            // axe `heading-order` (dev-docs/backlog.md row 34): a repeated per-row card title in a
                             // 2000-item virtualized list is not part of the
                             // page's document outline (jumping straight
                             // from this page's own h1 to an h3 here, with

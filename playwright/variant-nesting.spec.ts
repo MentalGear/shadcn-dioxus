@@ -7,8 +7,8 @@
  *
  *   .dx-card[data-size="sm"] .dx-card-title { font-size: var(--dx-text-sm); }
  *
- * also matches the title of every default Card nested anywhere inside the small one. The docs page's DEMO/CODE
- * `line` Tabs restyled every Tabs demo inside it that way. The construction (Tabs' since `lane/p5tabs`): the root
+ * also matches the title of every default Card nested anywhere inside the small one (the docs page's DEMO/CODE
+ * `line` Tabs would restyle every Tabs demo inside it that way). The construction (Tabs' construction): the root
  * re-declares a slot variable for EVERY variant and the part reads it, so a nested root re-declares its own value;
  * `scripts/check-variant-scope.sh` keeps the descendant form out of the sheets statically.
  *

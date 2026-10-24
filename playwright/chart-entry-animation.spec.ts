@@ -4,8 +4,8 @@ import { gotoHydrated } from "./hydration";
 import { BASE_URL } from "./base-url";
 
 /**
- * Backlog row 211 / next-round plan item 9: charts flickered on load. The SSG paints the final
- * chart; hydration then set `data-animate="true"` on the already painted chart, which restarted
+ * Backlog row 211: a chart must not flicker on load. The SSG paints the final
+ * chart; setting `data-animate="true"` on the already painted chart at hydration would restart
  * the bars / lines / arcs from zero (full -> gone -> animate).
  *
  * The decision (`primitives/src/chart/components/chart.rs`, `plays_entrance`):

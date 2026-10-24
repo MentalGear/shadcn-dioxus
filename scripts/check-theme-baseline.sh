@@ -2,14 +2,18 @@
 #
 # check-theme-baseline.sh
 #
-# The theme baseline (docs/backlog.md row 145, lane T) moved two things that every component
-# stylesheet used to paste into ONE zero-specificity rule in `preview/assets/dx-components-theme.css`,
-# keyed on the `dx-` class prefix (the row-111 border-box precedent). This gate makes the copies
-# inexpressible again, so the class cannot grow back one stylesheet at a time:
+# What the theme owns once is not declared per component. No component `style.css` may declare `touch-action:
+# manipulation` (the theme's one zero-specificity rule covers every `dx-` button, link, form control, `tabindex` and
+# interactive ARIA role; a drag surface may still declare `none` or `pan-*`), paint a `::backdrop` (the modal scrim is
+# the theme's one rule on `dialog[class^="dx-"]`, retuned by the `--dx-overlay-*` tokens), reset with `all:` (it
+# outranks every zero-specificity theme rule), or re-declare `user-select: none` for an element the theme's one
+# control rule already covers (every other use sits on the gate's reasoned `USER_SELECT_ALLOW`). The theme's
+# `:where(dialog[class^="dx-"]) { padding: 0 }` reset means every dialog sheet declares its own inset. All these theme
+# rules must still exist, and the vendor-prefixed line carries the one scoped `property-no-vendor-prefix` disable.
 #
-#  1. `touch-action: manipulation` (no double-tap-to-zoom on a control). It was declared 50 times in 33
-#     component stylesheets, with a 400-character comment copied 44 times, and kept in step by hand
-#     with `main.css`'s `!important` backstop, which hid every sheet that forgot it. The theme rule
+#  1. `touch-action: manipulation` (no double-tap-to-zoom on a control). Declared per sheet it is copied
+#     into dozens of stylesheets and kept in step by hand with a `main.css` `!important` backstop,
+#     which hides every sheet that forgets it. The theme rule
 #     covers every `dx-` element that is a button, link, form control, `summary`, focusable by
 #     `tabindex`, or an interactive ARIA widget role. A component sheet may still declare a DIFFERENT
 #     value where the element is a drag surface or a scroller (`none`, `pan-x`, `pan-y`, ...); it may
@@ -18,20 +22,20 @@
 #     the theme rule's list -- do not paste the declaration.
 #
 #  2. The modal scrim: a `::backdrop` rule that paints (`background`, `backdrop-filter`, `transition`).
-#     Dialog, AlertDialog, Sheet, Drawer, CommandDialog and the modal Popover carried the same
-#     three-rule block each; it is now ONE rule on any `<dialog>` with a `dx-` class, driven by the
+#     Dialog, AlertDialog, Sheet, Drawer, CommandDialog and the modal Popover share ONE
+#     rule on any `<dialog>` with a `dx-` class, driven by the
 #     `--dx-overlay-*` tokens. A component sheet has no `::backdrop` rule to write; to retune the
 #     scrim change the tokens, to remove it use `overlay: false` (`data-dx-overlay="off"`).
 #
 #  3. (see 5) The theme rules themselves: the touch rule, the scrim, and
 #     the dialog-box rule `:where(dialog[class^="dx-"]) { padding: 0 }`, which takes away the UA's
-#     `dialog { padding: 1em }` (font-size dependent: a panel's `font-size` change silently moved
-#     Sheet's and Drawer's inset 16 -> 14px) so a dialog sheet's inset is only ever one it declares.
+#     `dialog { padding: 1em }` (font-size dependent: a panel's `font-size` change silently moves
+#     the inset, 16 -> 14px) so a dialog sheet's inset is only ever one it declares.
 #
-#  4. `user-select: none` on a control (row 229, the owner's review: "interactive elements like btns etc.
-#     should not allow user text selection"). Only the parts that had remembered to say so were unselectable
-#     (menu items, select options, command items, the calendar arrows: one declaration each in 12 sheets);
-#     Button, Tab, Accordion trigger, Switch, Toggle... showed a selection on a double-click. The theme now has
+#  4. `user-select: none` on a control (row 229: interactive elements like buttons
+#     should not allow user text selection). Declared per sheet, only the parts that remember to say so
+#     are unselectable (menu items, select options, command items, the calendar arrows);
+#     Button, Tab, Accordion trigger, Switch, Toggle... show a selection on a double-click. The theme has
 #     ONE zero-specificity rule (`-webkit-user-select` + `user-select: none`) for every `dx-` button,
 #     `[role=button]`, `summary` and menu-item/option/tab/switch/checkbox/radio/slider role, and deliberately
 #     NOT for text fields, `spinbutton` segments, the `[tabindex]` catch-all or `a[href]`. A component sheet
@@ -41,7 +45,7 @@
 #     does not reach it (a non-interactive label, a drag surface). A stale entry fails.
 #
 #  4b. `all:` (unset/initial/revert) is banned in component stylesheets (row 239): at (0,1,0) it beats every
-#     zero-specificity rule above on the element it lands on (Switch and the slider and colour-picker thumbs lost
+#     zero-specificity rule above on the element it lands on (Switch and the slider and colour-picker thumbs lose
 #     user-select, touch-action and press feedback to it). Write the resets out instead.
 #
 #  5. The theme rules themselves are still there (a deleted rule would otherwise pass 1, 2 and 4 and silently

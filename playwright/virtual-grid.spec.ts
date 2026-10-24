@@ -1,6 +1,5 @@
 import { test, expect } from "./fixtures";
 import type { Locator, Page } from "@playwright/test";
-import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
 import { demoFrame } from "./demo-frame";
 import { gotoHydrated } from "./hydration";
@@ -69,8 +68,8 @@ async function inGridView(grid: Locator, row: number, column: number) {
 
 /**
  * The grid's own sheet reached the page: the scroll container IS a scroll container. Without `style.css`
- * the grid is `overflow: visible`, nothing scrolls and the windowing never advances (the 2026-10 preview:
- * a release build embeds a component's CSS source instead of linking it, so only a `document::Link` in the
+ * the grid is `overflow: visible`, nothing scrolls and the windowing never advances (a
+ * release build embeds a component's CSS source instead of linking it, so only a `document::Link` in the
  * wrapper ships it -- a debug build masks the omission, so `check-component-catalog.sh` rule 2b guards the
  * source and this guards a release build the spec is run against).
  */
@@ -186,6 +185,69 @@ test.describe("data grid (rows and columns windowed)", () => {
   });
 });
 
+/** The alpha channel of a computed colour (`rgb()`, `rgba()`, `oklab(... / a)`, `color(srgb ... / a)`). */
+function alphaOf(color: string): number {
+  const slash = /\/\s*([\d.]+)(%?)\s*\)$/.exec(color);
+  if (slash) return Number(slash[1]) / (slash[2] ? 100 : 1);
+  const legacy = /^rgba\((?:[^,]+,){3}\s*([\d.]+)\s*\)$/.exec(color);
+  return legacy ? Number(legacy[1]) : 1;
+}
+
+/** The computed background colour of the first element matching `selector` in the grid. */
+const backgroundOf = (grid: Locator, selector: string) =>
+  grid.locator(selector).first().evaluate((el) => getComputedStyle(el).backgroundColor);
+
+// The sticky header row is the opaque cover of the body cells that scroll under it. The row hover fill is
+// translucent, so it belongs to body rows only (row 386): hovering the header while the grid is scrolled
+// must not change the header row's or the pinned header cell's background.
+test.describe("row hover (data grid)", () => {
+  test("hovering the sticky header keeps it opaque and unchanged while a body row still takes the hover fill", async ({
+    page,
+  }) => {
+    await gotoHydrated(page, PAGE_URL);
+    const grid = dataGrid(page);
+    await expectStyled(grid);
+    await scrollGrid(grid, 40 * 36, 3 * 112);
+    await expect(cell(grid, 40, 1)).toBeVisible();
+
+    const headerRow = "[role='row'][data-grid-header]";
+    const pinnedHeader = "[data-grid-header] [data-grid-sticky]";
+    const bodyRow = "[role='row']:not([data-grid-header])";
+
+    // At rest, with the pointer parked on the page body outside the grid.
+    await page.mouse.move(0, 0);
+    const rest = {
+      row: await backgroundOf(grid, headerRow),
+      pinned: await backgroundOf(grid, pinnedHeader),
+      body: await backgroundOf(grid, bodyRow),
+    };
+    expect(alphaOf(rest.row)).toBe(1);
+    expect(alphaOf(rest.pinned)).toBe(1);
+
+    // Pointer over a scrolled header cell: the header row is hovered.
+    await cell(grid, "header", 4).hover();
+    await expect(grid.locator(headerRow)).toHaveCSS("background-color", rest.row);
+    expect(await grid.locator(`${headerRow}:hover`).count()).toBe(1);
+    expect(await backgroundOf(grid, headerRow)).toBe(rest.row);
+    expect(await backgroundOf(grid, pinnedHeader)).toBe(rest.pinned);
+
+    // Pointer over the pinned header cell.
+    await cell(grid, "header", 0).hover();
+    expect(await grid.locator(`${headerRow}:hover`).count()).toBe(1);
+    expect(await backgroundOf(grid, headerRow)).toBe(rest.row);
+    expect(await backgroundOf(grid, pinnedHeader)).toBe(rest.pinned);
+
+    // A body row keeps its hover fill (the rule still reaches the rows it is for).
+    await cell(grid, 40, 4).hover();
+    const hovered = grid.locator(`${bodyRow}:hover`);
+    await expect(hovered).toHaveCount(1);
+    await expect.poll(() => hovered.evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe(rest.body);
+    const fill = await hovered.evaluate((el) => getComputedStyle(el).backgroundColor);
+    expect(alphaOf(fill)).toBeGreaterThan(0);
+    expect(alphaOf(fill)).toBeLessThan(1);
+  });
+});
+
 test.describe("right-to-left", () => {
   test("the sticky column moves to the right, the arrows mirror, and the far inline end renders", async ({ page }) => {
     await gotoHydrated(page, PAGE_URL);
@@ -266,9 +328,8 @@ test.describe("gallery (items wrap into rows)", () => {
   });
 });
 
-// Row 369: a row's measured height keeps its fraction. The canvas once summed whole px, so rows of
-// 66.1875px ended up to a px below it (a short grid's box then overflowed by 1px); now it holds the
-// remainders, rounded up.
+// Row 369: a row's measured height keeps its fraction. The canvas holds the remainders, rounded up; summing
+// whole px would leave rows of 66.1875px up to a px below it (a short grid's box then overflows by 1px).
 test("gallery: rows with a fractional height end inside the canvas", async ({ page }) => {
   await gotoHydrated(page, PAGE_URL);
   const grid = gallery(page);
@@ -304,8 +365,8 @@ test("gallery: rows with a fractional height end inside the canvas", async ({ pa
   }).toPass({ timeout: 15000 });
 });
 
-// Scroll chaining: at a grid's top or bottom edge the wheel must scroll the page (the grid once set
-// `overscroll-behavior: contain` and trapped it); only the inline axis stays contained.
+// Scroll chaining: at a grid's top or bottom edge the wheel must scroll the page (`overscroll-behavior: contain`
+// would trap it); only the inline axis stays contained.
 for (const [name, pick] of [["data grid", dataGrid], ["gallery", gallery]] as const) {
   test.describe(`${name} scroll chaining`, () => {
     test.use({ viewport: { width: 1280, height: 600 } });
@@ -349,12 +410,3 @@ for (const [name, pick] of [["data grid", dataGrid], ["gallery", gallery]] as co
     });
   });
 }
-
-test.describe("Axe automated scan", () => {
-  test("loaded has no automatically detectable a11y issues", async ({ page }) => {
-    await gotoHydrated(page, PAGE_URL);
-    await expect(cell(dataGrid(page), 0, 1)).toBeVisible();
-    await expect(gallery(page).locator('[data-grid-index="0"]')).toBeVisible();
-    await expectNoAxeViolations(page, "virtual_grid: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-});

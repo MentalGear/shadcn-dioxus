@@ -121,7 +121,7 @@ pub fn BreadcrumbSeparator(
 
 /// A collapsed run of crumbs, shown as `...`. A `<span>`, as in shadcn: place
 /// it inside a [`BreadcrumbItem`] (`BreadcrumbItem { BreadcrumbEllipsis {} }`).
-/// It used to render an `<li>`, so the usual placement nested an `<li>` in the
+/// It is not an `<li>`: the usual placement would nest an `<li>` in the
 /// item's `<li>`, which is invalid HTML.
 ///
 /// A purely visual marker: `role="presentation"` + `aria-hidden="true"` per the

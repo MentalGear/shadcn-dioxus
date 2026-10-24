@@ -1,8 +1,14 @@
 #!/usr/bin/env bash
-# check-lane-target.sh -- the warm release trees' promises (backlog row 324), on tiny fake trees, no build.
+# check-lane-target.sh
+#
+# The warm release trees keep their promise that a tree never holds the other's base-path setting, proven on tiny fake
+# trees with no build: `lane-target.sh create <n> --release` copies `release-template` (no base path), a base-path
+# copy only comes from `release` when its marker records that path, a tainted or sentinel tree is refused, `prune
+# --apply` never removes either warm tree, `warm-release` skips a current tree, and `scripts/deploy-preview.sh`
+# refuses the validation tree before it builds anything.
 #
 # A cold release build is 22-50 min; scripts/lane-target.sh keeps two warm release trees so a validation build is
-# 3-5 min, and the rule that makes that safe is "a tree never holds the other's base-path setting" (row 100):
+# about 14 min, and the rule that makes that safe is "a tree never holds the other's base-path setting" (row 100):
 #   - `create <n> --release` copies <root>/release-template (no base path), never <root>/release (the deploy's);
 #   - `create <n> --release --base-path P` copies <root>/release, only if its marker records `--base-path P`;
 #   - a no-base-path template that carries `.base-path-build` is refused, as is the sentinel tree for a base-path copy;

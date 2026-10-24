@@ -67,14 +67,10 @@
  * stylesheet order would decide. (A parent that owns the whole trigger look, the sidebar's menu button and
  * action, opts out of this recipe altogether with `data-style`, the `:not([data-style])` above.)
  *
- * :focus-visible ring: the shared --dx-ring token (docs/backlog.md row 31a),
-   but the RULE stays here rather than in the shared interaction layer.
-   `#[css_module]` hashes this class in both the DOM and this stylesheet
-   (`.dx-x` -> `.dx-x-<hash>`, docs/issues/css-module-supports-scoping.md), so
-   an unhashed selector in the global theme sheet can never match the rendered
-   element -- confirmed against the built artifact, where the wasm carries the
-   hashed name. Once row 32 drops css_module hashing, this can collapse into
-   the shared layer for real. */
+ * :focus-visible ring: the shared --dx-ring-field token (dev-docs/backlog.md row 31a),
+   but the RULE stays here rather than in the shared interaction layer
+   (which waits on `[data-dx-interactive]` being wired onto interactive roots,
+   see `dx-components-theme.css`). */
 .dx-dropdown-menu-trigger:not([data-style]):focus-visible {
   box-shadow: var(--dx-dropdown-menu-trigger-focus-ring, var(--dx-ring-field));
 }
@@ -92,11 +88,11 @@
    * pop-in/out come from the theme's floating-surface recipe (`data-dx-surface="floating"`, emitted
    * by `DropdownMenuContent`). Its `border`/`overflow`/`padding` undo the UA popover stylesheet's
    * `[popover] { border: solid; overflow: auto; ... }` (WHATWG HTML's popover section) -- on the web
-   * arm (docs/backlog.md item 2) this content carries the `popover` attribute. The matching
+   * arm (dev-docs/backlog.md item 2) this content carries the `popover` attribute. The matching
    * `margin`/`inset` reset, and the `@supports (anchor-name: --a)` anchor-positioning rules that
    * keep this menu anchored to its trigger once promoted to the top layer, live in the shared,
    * engine-injected stylesheet every `dx-anchor-*`-marked overlay gets for free -- see
-   * `primitives/src/top_layer.rs`'s `ensure_anchor_positioning_styles` doc (docs/backlog.md item 1).
+   * `primitives/src/top_layer.rs`'s `ensure_anchor_positioning_styles` doc (dev-docs/backlog.md item 1).
    * On an engine without CSS Anchor Positioning (or the native/Blitz arm, which never sets
    * `popover` at all), this rule's own `position: absolute; top: 100%; left: 0` stays the fallback
    * placement -- irrelevant to whichever anchored path is actually active, since
@@ -132,7 +128,7 @@
  * inline padding matches the theme's `inset`, so nothing is overridden). Guard:
  * playwright/menu-indicator-gap.spec.ts. */
 
-/* The reserved indicator slot. Nested submenu (docs/component-backlog.md row 68):
+/* The reserved indicator slot. Nested submenu (dev-docs/archive/rounds/component-backlog.md row 68):
    `.dx-dropdown-menu-sub-trigger` is layered on top of `.dx-dropdown-menu-item` (see `component.rs`
    -- both classes are always applied together), so it only needs to reserve the trailing chevron's
    slot; the "submenu is open" highlight, like every other item property (padding, hover/focus,
@@ -154,14 +150,13 @@
    `SelectTrigger` uses `ChevronDown` for, not CSS-generated `content:`
    text (which risks becoming part of the trigger's own accessible name --
    see `component.rs`'s doc on this class for why that distinction
-   mattered here). It carries no rule of its own: Nova draws it in the item's
-   ink (`.cn-dropdown-menu-sub-trigger` has no icon colour; the old 0.7 opacity
-   is gone), and the theme's indicator slot places and sizes it. */
+   matters). It carries no rule of its own: Nova draws it in the item's
+   ink (`.cn-dropdown-menu-sub-trigger` has no icon colour, no opacity), and the theme's indicator slot places and sizes it. */
 
-/* Cross-lane handoff (rtl-rust, $S/batch3/rtl-rust/css-needs.md): this is a
+/* RTL: this is a
    real SVG (`ChevronRight`, component.rs), not a plain unicode character
    that would mirror for free under `dir` -- and `*SubTrigger`/
-   `*SubContentRendered` now flip which side the submenu opens on in RTL
+   `*SubContentRendered` flip which side the submenu opens on in RTL
    (Rust-side), so the icon must flip too or it would point away from
    where the submenu actually opens. */
 [dir="rtl"] .dx-dropdown-menu-sub-trigger-icon {

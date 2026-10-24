@@ -63,7 +63,7 @@ impl ColumnLayout {
     /// every column in source order): it swaps with the listed neighbour, so a
     /// column the menu does not list keeps its place and a hidden one is moved
     /// past like any other. Stops at the ends. Returns the 0-based position the
-    /// column now has among `listed` (in layout order), or `None` when nothing
+    /// column has among `listed` (in layout order), or `None` when nothing
     /// moved (an end, or an id that is not listed).
     pub fn move_listed(
         &mut self,

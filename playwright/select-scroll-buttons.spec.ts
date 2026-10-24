@@ -126,7 +126,7 @@ test("a hidden tab pauses the hover auto-scroll and a visible one resumes it", a
 
 // Reduced motion: the hover scroll is the user's own pointer driving the list (like holding an arrow key),
 // not decorative motion, so it keeps working; the buttons still show and hide with the scroll position.
-test("under reduced motion the buttons still show and hovering still scrolls", async ({ page }) => {
+test("under reduced motion the buttons show and hovering scrolls", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await open(page);
   const l = list(page);
@@ -155,8 +155,9 @@ test.describe("position=item-aligned", () => {
 
   test("the selected option sits on the trigger's line and the list stays in the viewport", async ({ page }) => {
     // The 24-option list is ~634px tall with the selected option ~447px below its top, so the exact
-    // alignment needs the list's top >= the 8px viewport margin: 900px left it 2.14px short (the list
-    // clamped at the margin and has nothing to scroll), 1000px leaves ~50px of slack.
+    // alignment needs the list's top >= the 8px viewport margin: a shorter viewport clamps the list at
+    // the margin (it then has nothing to scroll and the option cannot reach the trigger's line), 1000px
+    // leaves ~50px of slack.
     await page.setViewportSize({ width: 1000, height: 1000 });
     await gotoHydrated(page, `${BASE_URL}/component/select/`);
     // Put the trigger mid-viewport so there is room above and below for the alignment to be exact.
@@ -261,7 +262,7 @@ test.describe("position=item-aligned", () => {
     });
   }
 
-  test("selecting still works and the popper select is unchanged", async ({ page }) => {
+  test("selecting works and the popper select keeps its position", async ({ page }) => {
     await openAligned(page);
     await alignedList(page).getByRole("option", { name: "UTC+8" }).click();
     await expect(aligned(page)).toContainText("UTC+8");

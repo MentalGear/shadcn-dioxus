@@ -140,18 +140,16 @@
   }
 }
 
-/* docs/backlog.md row 32: renamed from the bare `.dx-sr-only` to
- * `.dx-pagination-sr-only` -- `sidebar/style.css` defines a byte-identical
- * rule under the same short name, and `#[css_module]`'s hash was the only
- * thing keeping the two apart. Now that this component's hashing is gone,
- * this copy is namespaced like everything else here.
- * TODO(row 31a): still the better long-term home is one shared
+/* dev-docs/backlog.md row 32: `.dx-pagination-sr-only`, not a bare
+ * `.dx-sr-only` -- `sidebar/style.css` would define a byte-identical
+ * rule under the same short name, with nothing keeping the two apart but
+ * the namespace, so this copy is namespaced like everything else here.
+ * TODO(row 31a): the better long-term home is one shared
  * `dx-sr-only` utility class in `preview/assets/dx-utilities.css` (a
  * GENERATED file, not hand-edited -- see
  * `scripts/generate-dx-utilities.js`) so this exact duplication with
- * `sidebar/style.css` collapses into a single definition; out of scope for
- * this migration, so both components keep their own namespaced copy for
- * now. */
+ * `sidebar/style.css` collapses into a single definition; until then both
+ * components keep their own namespaced copy. */
 .dx-pagination-sr-only {
   position: absolute;
   overflow: hidden;

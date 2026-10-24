@@ -270,26 +270,25 @@ pub fn RangeCalendar(props: RangeCalendarProps) -> Element {
     }
 }
 
-// docs/backlog.md row 51: the stylesheet `Link` lives HERE, on the
+// dev-docs/backlog.md row 51: the stylesheet `Link` lives HERE, on the
 // `pub(crate)` root each of this module's real entry points funnels
 // through, not on `Calendar`/`RangeCalendar` above -- `date_picker`
 // (`../date_picker/component.rs`) composes `CalendarRoot`/
 // `RangeCalendarRoot` directly (`super::super::calendar::*`), bypassing
 // `Calendar`/`RangeCalendar` entirely, since `DatePickerCalendar`'s
 // `calendar: fn(T) -> Element` prop needs a bare component function to call,
-// not a wrapper that also takes a `month_count` prop. Before this fix the
-// Link sat only on `Calendar`/`RangeCalendar`, so that composition path
-// never rendered it and the calendar's CSS silently never reached
-// `/component/?name=date_picker&` -- root-caused by comparing `Calendar`'s
-// own route (styled) against `date_picker`'s composition of it (unstyled).
+// not a wrapper that also takes a `month_count` prop. A Link only on
+// `Calendar`/`RangeCalendar` would never render on that composition path, and
+// the calendar's CSS would silently never reach
+// `/component/?name=date_picker&`.
 // Putting it here instead -- matching `popover/component.rs`'s pattern of a
 // `Link` on every one of ITS composable entry points, not just its "main"
 // one -- means every path that ends up rendering the primitive (this
 // module's own `Calendar`/`RangeCalendar`, and any other themed component
 // that composes `CalendarRoot`/`RangeCalendarRoot` the way `date_picker`
 // does) gets the stylesheet for free, by construction; `document::Link`'s
-// `(href, rel)` dedup makes the now-redundant render from `Calendar`'s own
-// `document::Link` (removed above) unnecessary rather than merely harmless.
+// `(href, rel)` dedup would make a second `document::Link` on `Calendar`
+// redundant, so `Calendar` carries none.
 #[component]
 pub(crate) fn CalendarRoot(props: calendar::CalendarProps) -> Element {
     let base = attributes!(div {

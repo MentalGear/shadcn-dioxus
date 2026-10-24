@@ -1,18 +1,16 @@
 /**
  * CARD FIT (backlog row 280): no home-page card may be narrower than its content, at any width.
  *
- * The owner saw the "Reply to roadmap thread" showcase card cut its footer off: B, I, U, Save draft and Post sat
- * in one `display: flex` row with no wrap, wider than the card, and `.dx-widget-card`'s `overflow: hidden`
- * clipped Post in half. A width sweep of the deployed site found it was a CLASS, not one card: nine cards clipped
- * or spilled their content somewhere between 320 and 1920 px --
+ * The class: a card clips or spills its content somewhere between 320 and 1920 px --
  *
- *   - showcase cards whose content does not wrap (the composer's footer; the Schedule card, whose calendar demo
- *     carried its own 20px padding inside the card's);
- *   - component cards whose preview column was too narrow for the demo: the gallery switched to two columns on a
- *     VIEWPORT breakpoint, so with the docs sidebar open the preview column was 286 px at 780 px wide (Field, Input
- *     Group, Pagination, Skeleton, Chart Tooltip, Resizable, 780-1160 px);
- *   - demos with a fixed width wider than a phone's card (Skeleton's shadcn 250 px lines, Resizable's 450 px group
- *     capped by too small a viewport margin, an Input whose UA intrinsic width did not shrink in a flex row).
+ *   - showcase cards whose content does not wrap (a composer footer whose B, I, U, Save draft and Post sit in
+ *     one `display: flex` row with no wrap, wider than the card, so `.dx-widget-card`'s `overflow: hidden`
+ *     clips Post in half; a calendar demo that carries its own 20px padding inside the card's);
+ *   - component cards whose preview column is too narrow for the demo: a gallery that switches to two columns
+ *     on a VIEWPORT breakpoint leaves a narrow preview column with the docs sidebar open (Field, Input Group,
+ *     Pagination, Skeleton, Chart Tooltip, Resizable);
+ *   - demos with a fixed width wider than a phone's card (Skeleton's shadcn 250 px lines, Resizable's 450 px
+ *     group capped by too small a viewport margin, an Input whose UA intrinsic width does not shrink in a flex row).
  *
  * The construction is this spec: it loads `/`, and at every width of the sweep requires each showcase card
  * (`.dx-widget-card`) and each component card's preview frame (`.dx-component-card-preview`) to be at least as

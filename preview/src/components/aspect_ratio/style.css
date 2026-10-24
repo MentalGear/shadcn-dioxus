@@ -1,6 +1,6 @@
 /* Nova has no `.cn-aspect-ratio` block (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css; the
  * component is a bare ratio box, registry/bases/radix/ui/aspect-ratio.tsx). These two classes are the
- * demo's frame and image, shadcn's demo `rounded-lg` / `object-cover`, and stay as they were. */
+ * demo's frame and image, shadcn's demo `rounded-lg` / `object-cover`. */
 .dx-aspect-ratio-container {
   overflow: hidden;
   padding: var(--dx-space-4);

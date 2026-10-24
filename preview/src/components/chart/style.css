@@ -1,7 +1,7 @@
 /*
  * Chart theme -- styles the primitive's unstyled `data-slot`/`data-series`
- * DOM (`$S/chart-api.md`, the binding contract between the chart-primitive
- * and chart-preview lanes; dev-docs/research/chart-2026-09-19.md §6).
+ * DOM (chart-api.md is the binding contract between the chart primitive
+ * and this theme; dev-docs/archive/research/chart-2026-09-19.md §6).
  *
  * Every rule below is scoped under one of the three classes the wrapper
  * components in `component.rs` attach (`.dx-chart` on `ChartContainer`,
@@ -33,22 +33,21 @@
  * own logical width/height (`ChartLayout`, shared via context), i.e. of
  * the svg's own box, so its containing block must be pixel-exact with
  * that box regardless of what else lives in `.dx-chart` -- the legend's
- * size, or which side it's on. A flex column (this rule's previous shape)
- * cannot give that guarantee: `ChartTooltip` is `.dx-chart`'s child too,
+ * size, or which side it's on. A flex column cannot give that guarantee: `ChartTooltip` is `.dx-chart`'s child too,
  * so its only containing-block option there is `.dx-chart` itself, whose
  * total box includes the legend's own height -- the wrong basis for a
  * percentage calibrated to the svg alone.
  *
- * This was a real, measured bug, not a theoretical one: with
+ * A flex column fails measurably: with
  * `ChartLegend`'s `vertical_align: Top` (`data-align="top"`, the `bar`
- * demo variant), `.dx-chart`'s total height included the legend's ~16px
- * ABOVE the chart's own top edge, and every `top:X%` the primitive wrote
- * was computed as X% of the *svg's* height, then resolved by the browser
+ * demo variant), `.dx-chart`'s total height includes the legend's ~16px
+ * ABOVE the chart's own top edge, and every `top:X%` the primitive writes
+ * is computed as X% of the *svg's* height, then resolved by the browser
  * as X% of the *combined* (legend + svg) height measured from
  * `.dx-chart`'s own top -- landing the tooltip's anchor, and often its
- * whole body, inside the legend's row (confirmed: hovering the `bar`
- * demo's 2nd bar rendered the tooltip directly over the legend, obscuring
- * "Desktop" entirely -- $S/chart-legend-overlap/before-bar-crop-light.png).
+ * whole body, inside the legend's row (hovering the `bar`
+ * demo's 2nd bar would render the tooltip directly over the legend, obscuring
+ * "Desktop" entirely).
  * The default (bottom-aligned) legend is calibrated wrong by the same
  * arithmetic, just less visibly with this package's current demo data
  * (every series value the demos use is far enough from zero that the
@@ -57,7 +56,7 @@
  *
  * `legend-before`/`legend-after` are always present as grid rows so the
  * legend's own `data-align` (an ordinary attribute selector on the legend
- * itself, same idiom this rule previously used for `order`) can move it to
+ * itself) can move it to
  * either side of the fixed "chart" row without moving the row `Chart`/
  * `ChartTooltip` share. The row `ChartLegend` doesn't occupy is empty and
  * collapses to 0 height (an `auto`-sized grid row with no content). */
@@ -84,7 +83,7 @@
   grid-area: chart;
 }
 
-/* Keyboard contract (`$S/chart-api.md`, "API changes" #4): `Chart`'s own
+/* Keyboard contract: `Chart`'s own
  * `[data-slot="chart"]` wrapper div -- not `ChartContainer`'s `.dx-chart`
  * div, and not the svg -- is the focusable/roving root when `Chart`'s
  * `keyboard` prop is on. Ring token is the shared focus halo
@@ -192,11 +191,9 @@
 }
 
 /* Axis ticks are the muted tier (shadcn: `muted-foreground`), a step below
- * the values and labels the chart itself draws (`--secondary-color-4`, the
- * base rule above). `--secondary-color-5` is #707070 on the white card
- * (4.95:1) and #a1a1a1 on the dark card #171717 (6.94:1) -- both clear 4.5:1
- * -- whereas the token this used to read, `--dx-chart-axis-text`, is the body
- * text colour. That token stays for the cursor, which is not a tick. */
+ * the values and labels the chart itself draws (`--dx-foreground`, the
+ * base rule above). `--dx-muted-foreground` is the theme's muted text role,
+ * whereas `--dx-chart-axis-text` is the body text colour. That token stays for the cursor, which is not a tick. */
 .dx-chart [data-slot="chart-axis"] text {
   fill: var(--dx-muted-foreground);
   font-size: var(--dx-text-xs);
@@ -205,7 +202,7 @@
 /* No `fill` here on purpose (as for the polar arcs below): `area.rs` sets
  * each area's fill as a presentation attribute -- `var(--series-color)`, or
  * the `url(#..)` of its `<linearGradient>` (`AreaOptions::gradient`) -- and a
- * stylesheet `fill` beats a presentation attribute, which silently painted
+ * stylesheet `fill` beats a presentation attribute, so one here would paint
  * every gradient area (gradient, interactive) as a flat colour. */
 .dx-chart [data-slot="chart-area"] {
   fill-opacity: 0.4;
@@ -384,8 +381,8 @@
   }
 }
 
-/* The whole hover mechanism (`$S/chart-api.md`: "no coordinate math, no
- * layout reads, no document::eval") -- invisible, full-height bands, one
+/* The whole hover mechanism (no coordinate math, no layout reads, no
+ * document::eval) -- invisible, full-height bands, one
  * per datum, that alone drive `active_index`. */
 .dx-chart [data-slot="chart-hit-band"] {
   cursor: var(--dx-interactive-element-cursor, default);
@@ -394,16 +391,16 @@
 }
 
 /* The real, visually-hidden `<table>` -- the actual AT-facing "browse the
- * data" path (dev-docs/research/chart-2026-09-19.md §2.5/§6.4). Same
+ * data" path (dev-docs/archive/research/chart-2026-09-19.md §2.5/§6.4). Same
  * technique as `sidebar/style.css`'s `.dx-sidebar-sr-only` and
  * `pagination/style.css`'s `.dx-pagination-sr-only` (byte-identical there
- * too; still not collapsed into a shared utility -- see those files' own
+ * too; each component keeps its own copy -- see those files' own
  * TODO(row 31a) comment), namespaced here as this component's own copy.
  *
  * The clamp sits on the table's WRAPPER (`chart-data-wrapper`), not on the
  * table: a `table` box is sized to at least its min-content width and
  * ignores `width: 1px` / `overflow: hidden` (CSS 2.1 17.5.2), so with
- * `white-space: nowrap` cells it stayed 280-440px wide -- invisible
+ * `white-space: nowrap` cells it stays 280-440px wide -- invisible
  * (`clip-path`) yet still counted as scrollable overflow, widening the
  * whole page on phones (measured: 418-727px full-page at a 390px
  * viewport). Overriding the table's `display` instead would strip its table
@@ -446,8 +443,8 @@
  *     final on the first visible frame, and `data-motion` stays `false` for
  *     the render that shows it -- the transition is enabled only from the
  *     next position change on. Without this, a first open near the right
- *     edge showed at an estimated, unflipped position and then slid across
- *     the whole chart to the flipped one. */
+ *     edge would show at an estimated, unflipped position and then slide
+ *     across the whole chart to the flipped one. */
 .dx-chart-tooltip {
   position: absolute;
   z-index: var(--dx-z-local-md);
@@ -455,17 +452,15 @@
 
   /* shadcn's `min-w-[8rem]` under Tailwind's border-box preflight: 128px
    * including the padding, not 128px of content plus 24px of padding (which
-   * made every short tooltip 152px wide -- too wide to fit beside the pointer
-   * on either side of a 250px polar chart, so it pinned instead of following). */
+   * would make every short tooltip 152px wide -- too wide to fit beside the pointer
+   * on either side of a 250px polar chart, so it would pin instead of following). */
   min-width: 8rem;
   padding: var(--dx-space-2) var(--dx-space-3);
   border-radius: var(--dx-radius-lg);
   background-color: var(--dx-background);
   box-shadow: var(--dx-shadow-md);
 
-  /* Body text on the `--primary-color-2` surface. NOT `--primary-color`: that
-   * is the page background, so the text was invisible in both themes
-   * (white-on-white / near-black-on-near-black). `--secondary-color-4` is the
+  /* Body text on the `--dx-background` surface: `--dx-foreground`, the
    * body-text token the chart's own svg text and every other popover use. */
   color: var(--dx-foreground);
   font-size: var(--dx-text-xs);
@@ -476,9 +471,9 @@
   grid-area: chart;
   inset-block-start: 0;
 
-  /* shadcn's `text-xs` is 12px on a 16px line. Declared, not inherited: the host's line-height flowed in
-   * (a Card's 1.4286 made every row 17.14px, so the tooltip was 54.28px tall), and the primitive sizes the
-   * flip/clamp from the ceil of its border box, so a fractional height put the flipped tooltip 1.7px off
+  /* shadcn's `text-xs` is 12px on a 16px line. Declared, not inherited: the host's line-height would flow in
+   * (a Card's 1.4286 makes every row 17.14px, so the tooltip would be 54.28px tall), and the primitive sizes the
+   * flip/clamp from the ceil of its border box, so a fractional height puts the flipped tooltip 1.7px off
    * the pointer (chart_tooltip_follow "flips above the pointer near the bottom edge"). */
   line-height: 1rem;
   pointer-events: none;
@@ -559,16 +554,14 @@
 
   /* Block-start breathing room between the chart and the legend -- shadcn's
    * own `ChartLegendContent` convention (`pt-3`/`pb-3` depending on
-   * `verticalAlign`; `$S/refs/ui/apps/v4/registry/new-york-v4/ui/chart.tsx`).
-   * Previously absent: the legend sat flush against the svg's own box (a
-   * real, if minor, visual-crowding issue independent of the `grid-area`
-   * fix above -- the two were found and fixed together, not conflated). */
+   * `verticalAlign`; shadcn-ui/ui `apps/v4/registry/new-york-v4/ui/chart.tsx`).
+   * Without it the legend sits flush against the svg's own box (a minor
+   * visual-crowding issue independent of the `grid-area` rule above). */
   padding-block-start: var(--dx-space-3);
   padding-inline-start: 0;
 }
 
-/* `vertical_align: LegendAlign::Top` (`$S/chart-api.md`'s "API changes"
- * #6): rendered as `data-align="top"` on this element; `bottom` (the
+/* `vertical_align: LegendAlign::Top`: rendered as `data-align="top"` on this element; `bottom` (the
  * default) needs no rule since `legend-after` above already matches it.
  * Moves the legend to the `legend-before` grid row (above the fixed
  * "chart" row `Chart`/`ChartTooltip` share -- see `.dx-chart`'s own
@@ -608,7 +601,7 @@
 
 /* ---------------------------------------------------------------------- *
  * Swatch -- shared shape between the tooltip and the legend
- * (`role="graphics-symbol"`, `$S/chart-api.md`).
+ * (`role="graphics-symbol"`).
  * ---------------------------------------------------------------------- */
 
 .dx-chart-tooltip [data-slot="chart-swatch"],
@@ -623,9 +616,8 @@
 
 /* ---------------------------------------------------------------------- *
  * Tooltip indicators, per-series icons, a formatter-built total row
- * (`chart_tooltip` gallery -- s2-tooltip lane, §4(e) of the stage-2 chart
- * handoff). Dot (the default) already matches the base swatch rule above
- * unchanged; None/hide_indicator render no swatch element at all, so
+ * (`chart_tooltip` gallery). Dot (the default) is the base swatch rule above;
+ * None/hide_indicator render no swatch element at all, so
  * neither needs a rule here -- only Line and Dashed do.
  * ---------------------------------------------------------------------- */
 

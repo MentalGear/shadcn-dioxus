@@ -1,33 +1,17 @@
 /**
- * DatePicker — calendar popover anchoring (live-site report, item 3,
- * 2026-09-01) and a minimal smoke suite. No date-picker spec existed
- * before this file (docs/backlog.md row 20) -- this closes part of that
- * backlog row (an e2e spec exists now); the rest of row 20's scope
- * (segment typing/arrows/backspace, range picker) is not covered here and
- * remains open, see this session's report.
+ * DatePicker — calendar popover anchoring and a minimal smoke suite (dev-docs/backlog.md row 20 holds the
+ * scope; segment typing/arrows/backspace and the range picker have their own describes below).
  *
- * Root cause of the live-site report ("the calendar doesn't anchor to its
- * trigger"), confirmed by execution against this repo's dev server:
- *   1. `date_picker/style.css` never carried its own copy of the
- *      `@supports (anchor-name: --a)` block every other non-modal-arm
- *      consumer in this workspace has (grep turned up zero matches) --
- *      the same shape of gap fixed for `color_picker/style.css`.
- *   2. That alone was not sufficient: `date_picker::DatePickerPopover`
- *      (`primitives/src/date_picker.rs`) rendered its calendar on the
- *      *modal* popover arm unconditionally -- its own `is_modal` prop was
- *      declared but never forwarded to the `PopoverRoot` it renders. The
- *      modal arm's DOM-relative "centering trick" positions the popup
- *      under its *positioned ancestor* (the narrow date-input group), not
- *      its trigger, with no edge/collision avoidance -- confirmed by
- *      execution, a 276px-wide calendar centered under a ~178px-wide
- *      ancestor rendered ~138px off the left edge of the viewport on this
- *      repo's dev server, which is the actual shape of "doesn't anchor to
- *      its trigger."
- * Fixed by forwarding `is_modal` in the primitive, setting
- * `is_modal: false` on `preview/src/components/date_picker/component.rs`'s
- * `DatePickerPopover` calls (matching `ColorPickerPopover`'s own
- * `is_modal: false`), and adding the `@supports` block to this page's
- * `style.css` -- see each fix's own comment for the full account.
+ * The calendar anchors to its trigger, not to the narrow date-input group around it:
+ *   1. `date_picker/style.css` carries its own copy of the `@supports (anchor-name: --a)` block every other
+ *      non-modal-arm consumer in this workspace has (as `color_picker/style.css` does).
+ *   2. `date_picker::DatePickerPopover` (`primitives/src/date_picker.rs`) forwards its `is_modal` prop to the
+ *      `PopoverRoot` it renders, and the preview's `DatePickerPopover` calls set `is_modal: false`
+ *      (`preview/src/components/date_picker/component.rs`, matching `ColorPickerPopover`). The modal arm's
+ *      DOM-relative "centering trick" positions the popup under its *positioned ancestor* (the narrow
+ *      date-input group), not its trigger, with no edge/collision avoidance: a 276px-wide calendar centered
+ *      under a ~178px-wide ancestor renders ~138px off the left edge of the viewport.
+ * Each piece carries its own comment.
  */
 
 import { test, expect } from "./fixtures";
@@ -81,8 +65,8 @@ async function rectOf(page: Page, locator: ReturnType<typeof trigger>) {
  * after a 150px scroll that frees room below, flips it back -- a ~164px jump that reads as "the offset changed").
  * Neither is an anchoring bug: the panel is doing what the contract says when it does not fit. These tests ask
  * "is the panel anchored to its trigger, below it, and does it track a scroll", which only has a defined answer
- * when it fits, so they run in a viewport tall enough that it does (dev-docs/backlog.md row 21; measured on a
- * release SSG build, 2026-10-05: 720 -> flips above, 800/900/1000 -> below and exact scroll tracking).
+ * when it fits, so they run in a viewport tall enough that it does (dev-docs/backlog.md row 21; on a
+ * release SSG build: 720 -> flips above, 800/900/1000 -> below and exact scroll tracking).
  */
 const ROOMY_VIEWPORT = { width: 1280, height: 900 };
 
@@ -115,7 +99,7 @@ test("anchors the popup next to its trigger, not viewport-centered or offset", a
   expect(viewport.height - t.bottom, `no room below the trigger for the panel -- ${debug}`).toBeGreaterThan(c.height + 8);
 
   // Below the trigger (this fixture's default side is "bottom"), not
-  // centered in the viewport -- the pre-fix modal arm rendered far enough
+  // centered in the viewport -- the modal arm renders far enough
   // left of the trigger to spill off the viewport edge entirely, so
   // "roughly centered on the trigger's own horizontal position" is the
   // discriminating assertion, not merely "somewhere on screen."
@@ -123,25 +107,19 @@ test("anchors the popup next to its trigger, not viewport-centered or offset", a
   const triggerCenterX = (t.left + t.right) / 2;
   const contentCenterX = (c.left + c.right) / 2;
   expect(Math.abs(contentCenterX - triggerCenterX), debug).toBeLessThan(2);
-  // And not the viewport-centered placement the broken modal arm fell
-  // back to for content wider than its positioning ancestor: the
-  // viewport's own horizontal center would coincide with the trigger's
-  // only by accident on this fixture's layout, so assert against it
-  // directly using a page-specific fixed offset would be fragile --
-  // instead this is covered by the anchor-to-trigger assertion above,
-  // which a viewport-centered box could only satisfy if the trigger
-  // itself happened to sit at viewport center (it does not, on this
-  // fixture's layout, confirmed by execution: trigger center vs. viewport
-  // center differ by well over the 2px tolerance used above).
+  // And not a viewport-centered placement (what the modal arm falls back to for content wider than its
+  // positioning ancestor): the viewport's own horizontal center coincides with the trigger's only by accident
+  // of this fixture's layout, so the anchor-to-trigger assertion above is what discriminates -- a
+  // viewport-centered box could satisfy it only if the trigger itself sat at viewport center (it does not:
+  // trigger center vs. viewport center differ by well over the 2px tolerance used above).
   expect(Math.abs(triggerCenterX - viewport.width / 2)).toBeGreaterThan(20);
 });
 
 test("uses the CSS-anchor path, not the JS-measured fallback (no inline top/left)", async ({ page }) => {
   await gotoDatePicker(page);
   // A raw DOM click (bypassing Playwright's own actionability auto-scroll)
-  // deliberately keeps `window.scrollY` at 0 for this open: confirmed by
-  // execution (this session's diagnosis) that this repo's Chromium build
-  // computes a `[popover]` + `position: fixed` element's *very first*
+  // deliberately keeps `window.scrollY` at 0 for this open: this repo's
+  // Chromium build computes a `[popover]` + `position: fixed` element's *very first*
   // `anchor()`-resolved position incorrectly whenever the document is
   // already scrolled at the moment the popover is shown -- off by exactly
   // the scroll offset, as if measured document-relative instead of
@@ -170,7 +148,7 @@ test("uses the CSS-anchor path, not the JS-measured fallback (no inline top/left
   expect(marker).toBe(true);
 });
 
-test("offset to trigger is unchanged after scrolling (CSS anchor tracks scroll natively)", async ({ page }) => {
+test("offset to trigger holds after scrolling (CSS anchor tracks scroll natively)", async ({ page }) => {
   await page.setViewportSize(ROOMY_VIEWPORT); // see ROOMY_VIEWPORT: at 720px tall the panel flips above, then back below
   await gotoDatePicker(page);
   // Raw DOM click, scrollY kept at 0 for the open -- see the identical
@@ -185,9 +163,9 @@ test("offset to trigger is unchanged after scrolling (CSS anchor tracks scroll n
   await expect(content(page)).toBeVisible();
   await page.waitForTimeout(200);
 
-  // The date picker's own trigger and panel -- NOT `document.querySelector('[style*="anchor-name"]')`: since the
-  // header's theme picker button (`.dx-theme-picker-trigger`, inline `anchor-name`) came first in the DOM, that
-  // selector measured the sticky header button, whose offset to the panel drifts by exactly the scroll delta.
+  // The date picker's own trigger and panel -- NOT `document.querySelector('[style*="anchor-name"]')`: the
+  // header's theme picker button (`.dx-theme-picker-trigger`, inline `anchor-name`) comes first in the DOM, and
+  // that selector would measure the sticky header button, whose offset to the panel drifts by exactly the scroll delta.
   const offsetOf = async () => {
     const t = await rectOf(page, trigger(page));
     const c = await rectOf(page, content(page));
@@ -234,13 +212,12 @@ test.describe("Axe automated scan", () => {
 
 /**
  * -----------------------------------------------------------------------
- * Everything below closes the rest of `dev-docs/backlog.md` row 20: segment
- * typing, arrow keys, backspace, and the range picker were "still only
- * verified ad hoc" -- this is the deliberate, source- and APG-derived
- * coverage for that. Row 21 (the two anchoring tests above failing in this
+ * Everything below is the rest of `dev-docs/backlog.md` row 20's coverage: segment
+ * typing, arrow keys, backspace, and the range picker, derived deliberately from
+ * the source and the APG. (The two anchoring tests above can fail in a
  * sandbox -- a Chromium anchor-position engine freeze after scroll,
- * environment-only) is untouched: nothing below weakens, skips, or
- * resembles those two tests.
+ * environment-only, row 21 -- which is a separate matter: nothing below weakens, skips, or
+ * resembles those two tests.)
  *
  * Reference basis (derive-then-cite, not "assert whatever the crate does"):
  * `primitives/src/date_picker.rs`'s `DateSegment` renders `role="spinbutton"`
@@ -250,10 +227,9 @@ test.describe("Axe automated scan", () => {
  * non-deprecated pattern doc -- not its own linked example,
  * `examples/datepicker-spinbuttons.html`, which is itself marked
  * "(Deprecated)" by APG and predates that pattern doc's Home/End rule), in
- * the pinned APG checkout `$S/aria-practices` (commit 7e4034b, same commit
- * `playwright/oracle/reference/README.md` already cites -- not vendored
- * under `playwright/oracle/reference/` by this lane, since nothing here
- * needed the page rendered, only its text). Moving focus *among* several
+ * the APG checkout pinned by `playwright/oracle/reference/README.md` (not
+ * vendored under `playwright/oracle/reference/`, since nothing here
+ * needs the page rendered, only its text). Moving focus *among* several
  * spinbuttons with Left/Right (this crate's `ArrowLeft`/`ArrowRight`) is
  * outside the lone `spinbutton` role's own contract; the closest named APG
  * convention is `content/patterns/toolbar/toolbar-pattern.html`'s own text
@@ -262,35 +238,27 @@ test.describe("Axe automated scan", () => {
  * "Left Arrow and Right Arrow navigate among controls") -- cited per-test
  * below, not asserted as if `spinbutton-pattern.html` itself required it.
  *
- * Two real, minimal defects were found deriving this and are fixed in their
- * own commits (see this lane's report for the red-before/green-after
- * evidence): (1) `Home`/`End` were unhandled on every segment, contradicting
- * `spinbutton-pattern.html`'s Keyboard Interaction list (Home/End are not
- * marked "(Optional)" there, unlike Page Up/Down); (2) every segment
- * rendered a dangling `aria-labelledby` referencing an id nothing ever
- * rendered, contradicting that same pattern's own either/or labelling rule.
- * Several other gaps against the cited text were found and were deliberately
- * NOT fixed in that pass (documented in the tests that touched them, and in
- * that lane's report): no `aria-valuetext` on the month segment (a bare
- * 1-12 number, arguably "not user-friendly" per the pattern's own example),
- * and `aria-valuenow` reporting today's date rather than being omitted when
- * no date has been chosen yet. Both (plus two related findings from the
- * same investigation -- `Calendar`'s unavailable days having no
- * `aria-disabled`, and Up/Down wrapping the year segment instead of
- * clamping it) were recorded together as `dev-docs/backlog.md` row 84 and
- * are fixed by the tests below this comment (the "aria-valuenow /
- * aria-valuetext" and "Arrow keys" describe blocks) -- see each test's own
- * comment for the red-before/green-after account.
+ * What the segments satisfy from the cited text: `Home`/`End` are handled on
+ * every segment (`spinbutton-pattern.html`'s Keyboard Interaction list marks
+ * them without "(Optional)", unlike Page Up/Down); no segment renders a
+ * dangling `aria-labelledby` (that pattern's own either/or labelling rule);
+ * the month segment has an `aria-valuetext` (a bare 1-12 number is arguably
+ * "not user-friendly" per the pattern's own example); and `aria-valuenow` is
+ * omitted, not today's date, while no date has been chosen. Related findings
+ * (`Calendar`'s unavailable days carry `aria-disabled`, and Up/Down clamp the
+ * year segment instead of wrapping it) are recorded together as
+ * `dev-docs/backlog.md` row 84 and held by the tests below this comment (the
+ * "aria-valuenow / aria-valuetext" and "Arrow keys" describe blocks) -- see
+ * each test's own comment.
  */
 
 /**
  * Every variant of this ("Normal"-type) component renders together on the
- * SAME page -- confirmed by reading `preview/src/main.rs`'s
- * `ComponentVariantHighlight` (the "Variants" section loops over every
- * variant unconditionally) and `preview/src/components/mod.rs`'s
- * `component_page!` macro (`name: stringify!($variant)`) -- there is no
+ * SAME page (`preview/src/main.rs`'s `ComponentVariantHighlight` loops over every
+ * variant unconditionally, and `preview/src/components/mod.rs`'s
+ * `component_page!` macro sets `name: stringify!($variant)`) -- there is no
  * `?variant=` query-string switch for this component's route (unlike, e.g.,
- * `select`/`combobox`/`popover`, confirmed live: `variant=range` and
+ * `select`/`combobox`/`popover`, `variant=range` and
  * `variant=main` render byte-identical pages here). Each demo is scoped by
  * `#component-preview-frame` (the "main" demo) or
  * `#component-preview-frame-<variant>` (`frame_id` in `main.rs`, keyed by
@@ -298,7 +266,7 @@ test.describe("Axe automated scan", () => {
  * `multi_month`, `unavailable_dates`), so every test below scopes into the
  * right one explicitly instead of relying on `.first()`/page-wide role
  * queries the way the smoke tests above do (those only ever touch the
- * "main" instance via one trigger, so `.first()` was sufficient there).
+ * "main" instance via one trigger, so `.first()` is sufficient there).
  */
 function frame(page: Page, variant?: string) {
   return page.locator(variant ? `#component-preview-frame-${variant}` : "#component-preview-frame");
@@ -449,10 +417,8 @@ test.describe("Segment typing (digit entry, spinbutton-pattern.html #keyboard_in
     // range, but a probed third-digit overflow check ("90" > 12) already
     // fails after this one keystroke -- `push_commit_text_effects` in
     // `date_picker.rs` advances focus immediately rather than waiting for a
-    // second digit. Verified red/green isn't applicable here (this is
-    // pre-existing, unchanged behavior) but was verified live before
-    // writing this assertion (flipping the expected focus target to "month"
-    // fails the test, confirming it actually exercises the advance).
+    // second digit. Flipping the expected focus target to "month" fails
+    // the test, so it does exercise the advance.
     await gotoDatePicker(page);
     const month = segment(page, "month");
     await month.click();
@@ -488,10 +454,9 @@ test.describe("Segment typing (digit entry, spinbutton-pattern.html #keyboard_in
     await month.click();
     await page.keyboard.press("x");
 
-    // `valueBefore` is `null` on this fresh page as of backlog row 84
-    // finding 3's fix (an untouched segment now omits `aria-valuenow`
-    // entirely instead of defaulting it) -- `toHaveAttribute` has no way to
-    // assert "still absent" from a `null` expected value, so branch
+    // `valueBefore` is `null` on this fresh page (backlog row 84 finding 3: an untouched segment omits
+    // `aria-valuenow` entirely instead of defaulting it) -- `toHaveAttribute` has no way to
+    // assert "absent" from a `null` expected value, so branch
     // explicitly instead of assuming it's always a string.
     if (valueBefore === null) {
       expect(await month.getAttribute("aria-valuenow")).toBeNull();
@@ -499,7 +464,7 @@ test.describe("Segment typing (digit entry, spinbutton-pattern.html #keyboard_in
       await expect(month).toHaveAttribute("aria-valuenow", valueBefore);
     }
     await expect(month).toHaveText(textBefore!);
-    // `Key::Character` still calls `prevent_default`/`stop_propagation` for
+    // `Key::Character` calls `prevent_default`/`stop_propagation` for
     // a non-digit (matches `key_effects_non_digit_character_still_blocks_
     // default_but_does_not_edit` in date_picker.rs's own unit tests) but
     // pushes no focus-moving effect, so focus stays put.
@@ -509,7 +474,7 @@ test.describe("Segment typing (digit entry, spinbutton-pattern.html #keyboard_in
   test("digits that would exceed the maximum are clamped to it; the day segment (no next segment registered) keeps focus rather than losing it", async ({ page }) => {
     // Fresh page, day segment: year/month haven't been touched yet, so
     // `day_bounds_for_year_month(None, None, ...)` falls through to the
-    // generic `(1, 31)` bounds (verified live) regardless of the sandbox's
+    // generic `(1, 31)` bounds regardless of the sandbox's
     // real date -- read `aria-valuemax` rather than hardcoding 31, so this
     // stays correct even if that fallback ever changes.
     await gotoDatePicker(page);
@@ -520,7 +485,7 @@ test.describe("Segment typing (digit entry, spinbutton-pattern.html #keyboard_in
 
     await expect(day).toHaveText(max!.padStart(2, "0"));
     await expect(day).toHaveAttribute("aria-valuenow", max!);
-    // Verified live: `FocusNext` from the day segment (this input's last
+    // `FocusNext` from the day segment (this input's last
     // registered collection item, `roving_loop: false`) resolves to no
     // available index, so `CollectionState::set_focus` clears the internal
     // pointer but nothing ever calls `.blur()` -- real DOM focus is
@@ -541,10 +506,9 @@ test.describe("Arrow keys: Up/Down step the value; Home/End jump to the bounds",
     // is still `None`, so the very first Up/Down press takes the `None =>
     // default` branch -- it commits `default` as the real value rather
     // than stepping from it, which is invisible here specifically because
-    // `default` already equals what was displayed. Verified live (this is
-    // what this test's own first draft got wrong, caught by the assertion
-    // failing red: pressing ArrowDown once on a fresh segment left
-    // aria-valuenow unchanged instead of decrementing). `Home` first makes
+    // `default` already equals what was displayed, so pressing ArrowDown
+    // once on a fresh segment leaves aria-valuenow unchanged instead of
+    // decrementing. `Home` first makes
     // this deterministic and gives `current_value` a real `Some(...)`, so
     // Up/Down genuinely step from there -- matching how a user who has
     // already interacted with the segment experiences it.
@@ -576,11 +540,9 @@ test.describe("Arrow keys: Up/Down step the value; Home/End jump to the bounds",
     // "(Optional)" there (unlike Page Up/Down, which this crate does not
     // implement and this suite does not require). `aria-valuemin`/
     // `aria-valuemax` are unconditionally present on every segment here, so
-    // the rule always applies. FIX REGRESSION GUARD: before this lane's
-    // `fix(date-picker)` commit, Home/End fell through `date_segment_key_
-    // effects`'s wildcard arm and did nothing at all -- confirmed by
-    // execution against the unfixed build (month's aria-valuenow was
-    // provably unchanged by either key).
+    // the rule always applies. Guard: Home/End must not fall
+    // through `date_segment_key_effects`'s wildcard arm and do nothing at
+    // all (month's aria-valuenow would be unchanged by either key).
     await gotoDatePicker(page);
     const month = segment(page, "month");
     await month.click();
@@ -600,10 +562,9 @@ test.describe("Arrow keys: Up/Down step the value; Home/End jump to the bounds",
   });
 
   test("Up wraps from the maximum to the minimum and Down wraps from the minimum to the maximum on month (a cyclical unit)", async ({ page }) => {
-    // Month and day are cyclical -- backlog row 84 finding 4's calibration
+    // Month and day are cyclical -- backlog row 84 finding 4
     // (`date_segment_key_effects`'s own doc): matches native Chromium
-    // `<input type="date">`'s month/day sub-fields. Unchanged by this
-    // lane's fix.
+    // `<input type="date">`'s month/day sub-fields.
     await gotoDatePicker(page);
     const month = segment(page, "month");
     await month.click();
@@ -616,15 +577,13 @@ test.describe("Arrow keys: Up/Down step the value; Home/End jump to the bounds",
   });
 
   test("Up clamps at the maximum and Down clamps at the minimum on the year segment (not cyclical) -- backlog row 84 finding 4", async ({ page }) => {
-    // RED on the unmodified tree (verified live before this fix): `roll_value`
-    // applied the same wrap to every segment type with no year-specific
-    // exception, so End -> ArrowUp on the year segment reported
-    // aria-valuenow="1925" (wrapped to the minimum) instead of staying at
-    // "2050". Fixed by threading an explicit per-segment wrap policy through
-    // `date_segment_key_effects` (`SegmentValueBounds.wrap`): month/day keep
-    // wrapping (see the sibling test above), the year segment now clamps --
-    // matches native Chromium `<input type="date">`'s year sub-field, which
-    // does not wrap either. GREEN after the fix: both assertions below hold.
+    // `roll_value` must not apply the same wrap to every segment type: an
+    // explicit per-segment wrap policy runs through `date_segment_key_effects`
+    // (`SegmentValueBounds.wrap`). Month/day wrap (see the sibling test
+    // above), the year segment clamps -- matches native Chromium
+    // `<input type="date">`'s year sub-field, which does not wrap either. A
+    // year wrap would make End -> ArrowUp report aria-valuenow="1925" (the
+    // minimum) instead of staying at "2050".
     await gotoDatePicker(page);
     const year = segment(page, "year");
     await year.click();
@@ -721,20 +680,19 @@ test.describe("Tab order", () => {
   });
 });
 
-test.describe("aria-valuenow / aria-valuetext, and the fixed dangling aria-labelledby", () => {
+test.describe("aria-valuenow / aria-valuetext, and no dangling aria-labelledby", () => {
   test("aria-valuenow mirrors the live value on every arrow-key change (already exercised above); before any date is chosen it is entirely absent, not today's date -- backlog row 84 finding 3", async ({ page }) => {
-    // RED on the unmodified tree (verified live before this fix): `now_value`
-    // in `date_picker.rs` was `value().unwrap_or(default)`, and `default` is
-    // today's year/month/day -- so an untouched segment's `aria-valuenow`
-    // was never blank (it reported e.g. today's actual year), even though
-    // `display_value` correctly showed the YYYY/MM/DD placeholder because
-    // `value()` itself was still `None`. That silently claimed a value the
-    // user never set. Fixed by making `aria-valuenow` mirror `props.value`'s
-    // own `Option` faithfully: present once the segment actually holds a
+    // `now_value` in `date_picker.rs` must not be `value().unwrap_or(default)`:
+    // `default` is today's year/month/day, so an untouched segment's
+    // `aria-valuenow` would never be blank (it would report e.g. today's
+    // actual year) although `display_value` correctly shows the YYYY/MM/DD
+    // placeholder because `value()` itself is still `None`, silently
+    // claiming a value the user never set. So `aria-valuenow` mirrors
+    // `props.value`'s own `Option` faithfully: present once the segment holds a
     // value, omitted while it doesn't (the ARIA-wide convention for "no
     // value yet", matching how other range-like roles represent an
     // indeterminate value) -- see `DateSegment`'s `now_value` doc for the
-    // full account, including why this also fixes finding 6 (tested below).
+    // full account, including how this also settles finding 6 (tested below).
     await gotoDatePicker(page);
     const year = segment(page, "year");
     const month = segment(page, "month");
@@ -756,19 +714,18 @@ test.describe("aria-valuenow / aria-valuetext, and the fixed dangling aria-label
   });
 
   test("the month segment's aria-valuetext is a locale-aware month name once it has a value, and absent while untouched -- backlog row 84 finding 2", async ({ page }) => {
-    // RED on the unmodified tree (verified live before this fix): no
-    // `aria-valuetext` was ever rendered on any segment -- `DateSegment` is
-    // generic over any `Integer` and had no month-name concept of its own,
-    // and nothing threaded the calendar grid's own `on_format_month`
-    // callback down to it. `spinbutton-pattern.html`'s Roles/States/
+    // `DateSegment` is generic over any `Integer` and has no month-name
+    // concept of its own, so the calendar grid's own `on_format_month`
+    // callback is threaded down to it; without that no `aria-valuetext`
+    // would render on any segment. `spinbutton-pattern.html`'s Roles/States/
     // Properties section: "If the value of aria-valuenow is not
     // user-friendly, e.g., the day of the week is represented by a number,
     // the aria-valuetext property is set ... to a string that makes the
     // spinbutton value understandable" -- a bare month number (1-12) is
-    // exactly that case. Fixed by threading a new `on_format_month`
+    // exactly that case. The `on_format_month`
     // callback (defaulting to `Month::to_string()`, i18n-overridable
-    // exactly like the calendar grid's own) down to `DatePickerMonthSegment`
-    // and gating it on the same "has a value" check as aria-valuenow, so
+    // exactly like the calendar grid's own) reaches `DatePickerMonthSegment`
+    // and is gated on the same "has a value" check as aria-valuenow, so
     // the two stay in lockstep.
     await gotoDatePicker(page);
     const month = segment(page, "month");
@@ -796,17 +753,16 @@ test.describe("aria-valuenow / aria-valuetext, and the fixed dangling aria-label
   });
 
   test("the first Up/Down keypress on a never-touched segment is a real, detectable transition, not a silent no-op -- backlog row 84 finding 6", async ({ page }) => {
-    // RED on the unmodified tree (verified live before this fix): finding 3
-    // meant an untouched segment's `aria-valuenow` already equaled
-    // `default` (e.g. today's month) before any key was pressed;
-    // `date_segment_key_effects`'s `None => default` branch then committed
+    // If an untouched segment's `aria-valuenow` already equaled `default`
+    // (e.g. today's month) before any key was pressed, then
+    // `date_segment_key_effects`'s `None => default` branch would commit
     // exactly that same `default` on the first Up/Down press -- so
-    // `aria-valuenow` read identically before and after (both "today's
-    // month"), which is indistinguishable from a dropped keystroke. Fixed
-    // as a direct consequence of finding 3's fix: once "no value" stops
-    // being reported as "= default", the untouched state has NO
-    // aria-valuenow at all, so the first press's `default` commit is a
-    // genuine attribute-absent -> attribute-present transition. This test
+    // `aria-valuenow` would read identically before and after (both "today's
+    // month"), indistinguishable from a dropped keystroke. Finding 3's
+    // construction prevents that: "no value" is not reported as "= default",
+    // the untouched state has NO aria-valuenow at all, so the first press's
+    // `default` commit is a genuine attribute-absent -> attribute-present
+    // transition. This test
     // deliberately does NOT press Home first (unlike the general Up/Down
     // test above), specifically to exercise the never-touched, first-ever
     // keypress case findings 3 and 6 are both about.
@@ -820,30 +776,25 @@ test.describe("aria-valuenow / aria-valuetext, and the fixed dangling aria-label
 
     const after = await month.getAttribute("aria-valuenow");
     expect(after, "the first keypress must produce a real aria-valuenow, not leave it absent").not.toBeNull();
-    // `date_segment_key_effects`'s `None => default` branch is unchanged by
-    // this fix (only the *reporting* of "no value yet" changed) -- the
-    // committed value is still exactly `default` (today's month), just now
-    // genuinely new information rather than a repeat of what was already
-    // being announced.
+    // `date_segment_key_effects`'s `None => default` branch commits exactly
+    // `default` (today's month): genuinely new information, not a repeat of
+    // what was already being announced.
     expect(Number(after)).toBe(today);
   });
 
-  test("every spinbutton's aria-labelledby, if present, references an element that exists (fix regression guard)", async ({ page }) => {
+  test("every spinbutton's aria-labelledby, if present, references an element that exists", async ({ page }) => {
     // `spinbutton-pattern.html`'s Roles/States/Properties section: "If the
     // spinbutton has a visible label, it is referenced by aria-labelledby
     // ... . Otherwise, the spinbutton element has a label provided by
     // aria-label." No `DateSegment` has a separate *visible* label element
     // (every caller -- `DatePickerYearSegment` etc. -- passes only a plain
     // `aria_label`), so aria-labelledby should never appear at all here.
-    // Before this lane's `fix(date-picker)` commit, every segment on the
-    // page carried `aria-labelledby="span-<id>-label"` referencing an id
-    // nothing ever rendered -- confirmed by execution (24/24 spinbuttons on
-    // this gallery page had a dangling reference). Chromium's own
-    // accessible-name computation happened to fall back to `aria-label`
-    // regardless (confirmed via `locator.ariaSnapshot()`) and axe-core does
-    // not flag a dangling `aria-labelledby` either, which is exactly why
-    // this needed deriving from the cited rule rather than from either
-    // tool's silence. Phrased as "if present, resolves" rather than
+    // A segment carrying `aria-labelledby="span-<id>-label"` for an id
+    // nothing renders would be a dangling reference. Chromium's own
+    // accessible-name computation falls back to `aria-label` regardless
+    // (`locator.ariaSnapshot()` shows it) and axe-core does not flag a
+    // dangling `aria-labelledby` either, which is exactly why this is
+    // derived from the cited rule rather than from either tool's silence. Phrased as "if present, resolves" rather than
     // "is absent" so this stays meaningful if a real visible label is ever
     // added later, per the same rule's other branch.
     await gotoDatePicker(page);
@@ -856,7 +807,7 @@ test.describe("aria-valuenow / aria-valuetext, and the fixed dangling aria-label
     });
     expect(danglingCount).toBe(0);
 
-    // And the accessible name is still exactly "year"/"month"/"day" via
+    // And the accessible name is exactly "year"/"month"/"day" via
     // `aria-label` alone -- every `segment()` locator throughout this file
     // already depends on this resolving correctly, but this asserts it
     // directly for the main demo's three segments.
@@ -878,7 +829,7 @@ test.describe("Range picker (DateRangePicker, variant=range)", () => {
     // Both sides share one `BaseDatePickerContext.focus` collection
     // (`DateRangePicker` calls `use_collection_provider` once for the whole
     // input, and `DateRangePickerEndValue` registers its segments at
-    // `start_index: 3` onward in the same collection) -- confirmed live: a
+    // `start_index: 3` onward in the same collection) -- a
     // fresh page's start-day (index 2) -> ArrowRight lands on end-year
     // (index 3), a real DOM focus move, not just an internal pointer.
     await gotoDatePicker(page);
@@ -895,13 +846,12 @@ test.describe("Range picker (DateRangePicker, variant=range)", () => {
     expect(activeId).toBe(endYearId);
   });
 
-  test("typing into the start and end year/month segments updates each independently (stops short of completing either date -- see the regression guard below)", async ({ page }) => {
+  test("typing into the start and end year/month segments updates each independently (stops short of completing either date -- see the Home-key test below)", async ({ page }) => {
     // `DateRangePickerInputValue`'s own commit effect (`date_picker.rs`)
     // only calls `on_date_change`/touches the calendar once a side's
     // year+month+day all resolve to `Some` -- this exercises everything up
-    // to but not including that point, which used to be where the hang
-    // documented in the regression guard below kicked in (confirmed: this
-    // test passes green on its own, both before and after that fix).
+    // to but not including that point, which is where the hang
+    // documented in the regression guard below kicks in without the guard.
     await gotoDatePicker(page);
     const start = { year: rangeSegment(page, "start", "year", "range"), month: rangeSegment(page, "start", "month", "range") };
     const end = { year: rangeSegment(page, "end", "year", "range"), month: rangeSegment(page, "end", "month", "range") };
@@ -922,28 +872,21 @@ test.describe("Range picker (DateRangePicker, variant=range)", () => {
   });
 
   test("completing a full date on the start side via the segments (year+month, then Home on day) resolves promptly and commits only the start side", async ({ page }) => {
-    // Regression guard for a confirmed page hang (dev-docs/backlog.md's
-    // range-hang account). Root cause: the moment a `DateRangePicker`
-    // side's year/month/day segments first all resolved, `DateElement`'s
-    // own two effects (`date_picker.rs`) and `DateRangeInputContext`'s
-    // `start_date`/`end_date` signals formed an unconditional two-way
-    // sync -- `DateElement`'s "sync down from selected_date" effect wrote
-    // the segment signals, whose "sync up via on_date_change" effect wrote
-    // `start_date` right back, and neither hop checked whether the value
-    // it was about to write actually differed from what was already
-    // there. `Signal::set` marks a signal dirty (rescheduling every
-    // subscriber) regardless of whether the new value equals the old one,
-    // so the round trip re-triggered itself forever: confirmed live, the
-    // render thread pinned near 100% CPU and its RSS grew ~4MB/s
-    // (unthrottled allocation on every iteration) until the tab crashed --
-    // with no calendar open and the end side never touched, ruling out any
-    // popover/focus-advance involvement. Fixed by construction: every
-    // write to `start_date`/`end_date` now goes through one guarded choke
-    // point (`DateRangeInputContext::set_start_date`/`set_end_date`,
-    // mirroring the equality guard `DatePickerContext::set_date`/
-    // `DateRangePickerContext::set_range` already use one level up), and
-    // `DateElement`'s own sync-down effect only writes a segment signal
-    // when its decomposed value actually changes.
+    // Regression guard for a page hang (dev-docs/backlog.md's range-hang account). The moment a
+    // `DateRangePicker` side's year/month/day segments first all resolve, `DateElement`'s own two
+    // effects (`date_picker.rs`) and `DateRangeInputContext`'s `start_date`/`end_date` signals must
+    // not form an unconditional two-way sync: `DateElement`'s "sync down from selected_date" effect
+    // writes the segment signals, whose "sync up via on_date_change" effect writes `start_date`
+    // right back, and if neither hop checks whether the value it is about to write actually differs,
+    // the round trip re-triggers itself forever (`Signal::set` marks a signal dirty, rescheduling
+    // every subscriber, whether or not the new value equals the previous one): the render thread pins
+    // near 100% CPU and its RSS grows ~4MB/s until the tab crashes, with no calendar open and the
+    // end side never touched, so no popover/focus-advance is involved. By construction every write
+    // to `start_date`/`end_date` goes through one guarded choke point
+    // (`DateRangeInputContext::set_start_date`/`set_end_date`, mirroring the equality guard
+    // `DatePickerContext::set_date`/`DateRangePickerContext::set_range` use one level up), and
+    // `DateElement`'s own sync-down effect only writes a segment signal when its decomposed value
+    // actually changes.
     await gotoDatePicker(page);
     const startYear = rangeSegment(page, "start", "year", "range");
     const startMonth = rangeSegment(page, "start", "month", "range");
@@ -956,14 +899,14 @@ test.describe("Range picker (DateRangePicker, variant=range)", () => {
     await page.keyboard.press("Home");
     await startDay.click();
     // `page.keyboard.press()` has no `timeout` option of its own (unlike a
-    // locator action), so a regression here would hang the whole test file
+    // locator action), so a hang here would hold the whole test file
     // for the 5-minute *test* timeout instead of failing fast -- race it
-    // against a manual timeout so a reintroduction of the bug still fails
+    // against a manual timeout so a reintroduction of the bug fails
     // in 5s.
     await Promise.race([
       page.keyboard.press("Home"),
       new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Home on the day segment did not resolve within 5s (regression -- see this test's own comment)")), 5000)
+        setTimeout(() => reject(new Error("Home on the day segment did not resolve within 5s (see this test's own comment)")), 5000)
       ),
     ]);
 
@@ -972,7 +915,7 @@ test.describe("Range picker (DateRangePicker, variant=range)", () => {
     await expect(startDay).toHaveText("01");
     // The end side was never touched.
     await expect(endYear).toHaveText("YYYY");
-    // The page as a whole is still responsive, not just this one action.
+    // The page as a whole is responsive, not just this one action.
     expect(await page.evaluate(() => 1 + 1)).toBe(2);
   });
 });
@@ -987,7 +930,7 @@ test.describe("Internationalized variant (variant=internationalized)", () => {
     // mod.rs`) only swaps in `tid!(...)`-sourced placeholder text, never a
     // different child order. A French or Japanese date field would
     // conventionally reorder these; this documents that this crate does
-    // not do so today, rather than silently assuming order is locale-
+    // not do so, rather than silently assuming order is locale-
     // sensitive because the variant is named "internationalized".
     await gotoDatePicker(page);
     const labels = await frame(page, "internationalized")
@@ -999,9 +942,9 @@ test.describe("Internationalized variant (variant=internationalized)", () => {
   test("the internationalized variant's placeholders match the default variant's on first load (both start at en-US)", async ({ page }) => {
     // `en-US.ftl`'s `D_Abbr`/`M_Abbr`/`Y_Abbr` are "D"/"M"/"Y" -- byte-
     // identical to `main`'s own hardcoded placeholder callbacks
-    // (`preview/src/components/date_picker/component.rs`). True both
-    // before and after backlog row 84 finding 5's fix (the app's initial
-    // locale was always, and still is, `en-US` -- see
+    // (`preview/src/components/date_picker/component.rs`). True of backlog
+    // row 84 finding 5's construction (the app's initial
+    // locale is `en-US` -- see
     // `LocaleDemo` in `preview/src/i18n/mod.rs`); the *picker actually working* is the next test.
     await gotoDatePicker(page);
     const placeholders = async (variant?: string) => ({
@@ -1014,7 +957,7 @@ test.describe("Internationalized variant (variant=internationalized)", () => {
   });
 
   test("the demo's own locale picker changes the demo's locale and marks its subtree (row 354)", async ({ page }) => {
-    // The docs header has no language switcher any more (the site is English only): the
+    // The docs header has no language switcher (the site is English only): the
     // internationalized variant owns a `ToggleGroup` locale picker and its own i18n root, so the
     // formatting hooks (`on_format_*placeholder` fed by `tid!`) stay demonstrated. Switching to
     // French changes "D_Abbr"/"Y_Abbr" ("D" -> "J", "Y" -> "A", `fr-FR.ftl`) live, the subtree
@@ -1046,12 +989,12 @@ test.describe("Unavailable dates variant (variant=unavailable_dates)", () => {
     // The demo computes its disabled ranges from today and keeps them inside the
     // month the picker opens on (`unavailable_dates/mod.rs`), so no month/year
     // navigation is needed -- and none is done here, which is the point: the
-    // first version of this test jumped to a hard-coded May 2026 through the
-    // selects, and the demo it exercised showed nothing to anyone opening it on
+    // test must not jump to a hard-coded May 2026 through the
+    // selects, or the demo it exercises would show nothing to anyone opening it on
     // any other month. `RangeCalendarDay::handle_day_select` (calendar.rs)
     // early-returns for an unavailable date before ever calling
     // `set_selected_date`/committing anything, and never sets a native
-    // `disabled` attribute (confirmed live: `.disabled` is `false`) -- only
+    // `disabled` attribute (`.disabled` is `false`) -- only
     // `data-disabled`/`data-unavailable` plus styling communicate it, so the
     // real assertion has to be behavioural (nothing changes), not "the click fails."
     await gotoDatePicker(page);
@@ -1143,34 +1086,23 @@ test.describe("Today is the visitor's date, not the build day", () => {
 });
 
 test.describe("Completing a range selection via the calendar", () => {
-  // This used to hang the tab -- same root cause as, and fixed by the same
-  // construction as, the segments-only guard above (dev-docs/backlog.md's
-  // range-hang account), not the popover-closing/top_layer mechanism
-  // originally suspected. What actually happens once a calendar click
-  // completes a range: `DateRangePickerCalendar`'s `on_range_change` calls
-  // the already-guarded `DateRangePickerContext::set_range`, which flows
-  // back down through `props.selected_range` into
-  // `DateRangePickerInputValue`'s own sync-down effect -- which
-  // (unconditionally, before this fix) wrote the *same* `start_date`/
-  // `end_date` signals `DateElement`'s segments for the start AND end side
-  // both read, tripping the identical unbounded two-effect cycle the
-  // segments-only guard above documents, for both sides at once. The
-  // popover-closing call (`base_ctx.open.set(false)`) sits one statement
-  // after the range-commit call in the same handler, so from the outside
-  // it looked correlated with "closing a popover"; it never actually got
-  // a chance to run before this fix, since the interpreter never returned
-  // from the effect cascade the *preceding* statement (`ctx.set_range`)
-  // touched off. Confirmed live before this fix: the demo's
-  // `on_range_change` callback logs the fully correct committed range
-  // within ~300ms, then the click action itself never resolves and the
-  // whole page stops responding to a trivial `page.evaluate(() => 1 + 1)`
-  // -- a real hang, not a slow response, with the render thread pinned
-  // near 100% CPU and RSS growing until the tab crashed (same signature as
-  // the segments-only case). Fixed by the same construction: every write
-  // to `start_date`/`end_date` (including this sync-down effect's) now
-  // goes through the guarded `DateRangeInputContext::set_start_date`/
-  // `set_end_date` choke point. No change was needed in `calendar.rs`,
-  // `popover.rs`, or `top_layer.rs`.
+  // Completing a range with a calendar click must not hang the tab -- same mechanism as the
+  // segments-only guard above (dev-docs/backlog.md's range-hang account), not the
+  // popover-closing/top_layer mechanism. Once a calendar click completes a range,
+  // `DateRangePickerCalendar`'s `on_range_change` calls the guarded
+  // `DateRangePickerContext::set_range`, which flows back down through `props.selected_range` into
+  // `DateRangePickerInputValue`'s own sync-down effect, which writes the *same* `start_date`/
+  // `end_date` signals `DateElement`'s segments for the start AND end side both read; unguarded,
+  // that trips the same unbounded two-effect cycle for both sides at once. The popover-closing
+  // call (`base_ctx.open.set(false)`) sits one statement after the range-commit call in the same
+  // handler, so from the outside the hang looks correlated with "closing a popover", but it never
+  // gets to run when the effect cascade touched off by the preceding `ctx.set_range` never
+  // returns: the demo's `on_range_change` callback logs the correct committed range within
+  // ~300ms, then the click action itself never resolves and the page stops answering a trivial
+  // `page.evaluate(() => 1 + 1)` (a real hang with the render thread pinned near 100% CPU, not a
+  // slow response). So every write to `start_date`/`end_date` (including this sync-down
+  // effect's) goes through the guarded `DateRangeInputContext::set_start_date`/`set_end_date`
+  // choke point; `calendar.rs`, `popover.rs` and `top_layer.rs` take no part in it.
   test("clicking a second, different calendar day to complete a range selection resolves, and Apply closes the popover and syncs the segments", async ({ page }) => {
     await gotoDatePickerFrozen(page);
     await pickerTrigger(page, "range").click();
@@ -1203,20 +1135,21 @@ test.describe("Completing a range selection via the calendar", () => {
 
 /**
  * -----------------------------------------------------------------------
- * Completing SEVERAL ranges in a row (dev-docs/backlog.md row 83's follow-up, 2026-10-05).
+ * Completing SEVERAL ranges in a row (dev-docs/backlog.md row 83).
  *
- * The test above completes ONE range, and a second range hung the tab for a different reason than
- * the first: `DateRangePickerContext::set_range` compared against the controlled value with a
- * TRACKED read, and `DateRangePickerInputValue`'s sync-up effect calls it -- so every change the
- * parent made to the range (the one a calendar click had just reported upward) woke that effect
- * too. When it ran before the sync-down effect had copied the new range into the segments it read
- * the PREVIOUS range from them, reported it, the parent applied it, and the two ranges alternated
- * forever: a wasm loop that never yields to the browser, so even `page.evaluate(() => 1 + 1)`
- * never returned. The first range could not trigger it (nothing was in the segments yet, so there
- * was nothing stale to report) and which effect wakes first is hash-ordered -- a debug dev-server
- * build hung on the 2nd range, a release SSG build on the 3rd, a build with two extra log lines
- * on the 4th -- so no single count of ranges proves it gone: this completes six, and ALSO counts
- * what the demo's `on_range_change` was told, which a ping-pong inflates long before it freezes.
+ * The test above completes ONE range; a second range must not hang the tab for a different reason
+ * than the first: `DateRangePickerContext::set_range` compares against the controlled value with
+ * an UNTRACKED read, because `DateRangePickerInputValue`'s sync-up effect calls it -- a TRACKED
+ * read would wake that effect on every change the parent makes to the range (the one a calendar
+ * click has just reported upward). When it ran before the sync-down effect had copied the new
+ * range into the segments it would read the PREVIOUS range from them, report it, the parent would
+ * apply it, and the two ranges would alternate forever: a wasm loop that never yields to the
+ * browser, so even `page.evaluate(() => 1 + 1)` never returns. The first range cannot trigger it
+ * (nothing is in the segments yet, so there is nothing stale to report) and which effect wakes
+ * first is hash-ordered -- a debug dev-server build hangs on the 2nd range, a release SSG build on
+ * the 3rd, a build with two extra log lines on the 4th -- so no single count of ranges proves it
+ * gone: this completes six, and ALSO counts what the demo's `on_range_change` was told, which a
+ * ping-pong inflates long before it freezes.
  * (Guarded natively too: `a_range_the_parent_sets_is_never_reported_back`, primitives/src/date_picker.rs.)
  * -----------------------------------------------------------------------
  */
@@ -1243,7 +1176,7 @@ test.describe("Completing several ranges in a row (variant=range)", () => {
     const pad = (day: number) => String(day).padStart(2, "0");
 
     // Start before end, end before start, adjacent, a long span: the stale pair a ping-pong reports
-    // is always the PREVIOUS range, so each step has to differ from the one before it.
+    // is always the range before, so each step has to differ from the one before it.
     const picks: Array<[number, number]> = [[6, 13], [15, 20], [3, 9], [10, 12], [22, 25], [1, 2]];
     for (const [index, [first, second]] of picks.entries()) {
       const label = `after range ${index + 1} (${first} -> ${second})`;
@@ -1269,8 +1202,8 @@ test.describe("Completing several ranges in a row (variant=range)", () => {
  * -----------------------------------------------------------------------
  * The calendar's stylesheet is on the page BEFORE the popover is ever opened. The calendar sits
  * inside the popover, whose content mounts on first open, so the `<link>` that `CalendarRoot`
- * carries used to be inserted then -- late, and not render-blocking: the first open painted the
- * calendar unstyled for a frame or two. The styled pickers now render it at the picker root. (The
+ * carries would be inserted then -- late, and not render-blocking: the first open would paint the
+ * calendar unstyled for a frame or two. The styled pickers render it at the picker root. (The
  * docs site's SSG bundle carries it either way; a `dx components add date_picker` project, and
  * `dx serve`, do not, which is what this checks.)
  * -----------------------------------------------------------------------
@@ -1299,16 +1232,15 @@ test.describe("Calendar stylesheet before the first open", () => {
 
 /**
  * -----------------------------------------------------------------------
- * Multi-month panel (owner report 1): the popover panel used to be sized for ONE month
- * (`.dx-popover-content { width: 18rem }`), so with `month_count: 2` the second month rendered
- * outside it. The panel is now `width: max-content` (capped to the viewport) and the months wrap
- * inside it -- side by side when there is room, stacked when there is not.
+ * Multi-month panel: a popover panel sized for ONE month (`.dx-popover-content { width: 18rem }`)
+ * would leave the second month of `month_count: 2` outside it. The panel is `width: max-content`
+ * (capped to the viewport) and the months wrap inside it -- side by side when there is room, stacked when there is not.
  * -----------------------------------------------------------------------
  */
 async function monthGeometry(dialog: Locator) {
   // The box a `position: fixed` panel is placed in (see viewport-box.ts): NOT `documentElement.clientWidth`
   // -- under `html { scrollbar-gutter: stable }` that reads the gutter-inclusive 390 while the containing
-  // block is 375, which hid a panel landing 11-15px past the right edge (it passed against clientWidth).
+  // block is 375, so a panel landing 11-15px past the right edge would pass against clientWidth.
   const fixedBox = await fixedViewportBox(dialog.page());
   return readAtRest(dialog, (d, vp) => {
     const rect = (e: Element) => {
@@ -1353,7 +1285,7 @@ test.describe("Multi-month popover panel (variant=multi_month)", () => {
       const g = await monthGeometry(dialog);
       const debug = JSON.stringify(g);
       expect(g.views, debug).toHaveLength(2);
-      // Both months are INSIDE the panel (this was the bug: the 2nd one sat outside it).
+      // Both months are INSIDE the panel.
       for (const v of g.views) {
         expect(v.left, debug).toBeGreaterThanOrEqual(g.dialog.left - 0.5);
         expect(v.right, debug).toBeLessThanOrEqual(g.dialog.right + 0.5);
@@ -1374,8 +1306,8 @@ test.describe("Multi-month popover panel (variant=multi_month)", () => {
     });
   }
 
-  // 390 = phone, 600 = small tablet (the months still stack), 900 = the gutter offset used to leak
-  // there too (panel right edge 896 vs a 885 containing block).
+  // 390 = phone, 600 = small tablet (the months still stack), 900 = the gutter offset must not leak
+  // there either (a panel right edge of 896 vs an 885 containing block).
   for (const width of [390, 600, 900]) {
     test.describe(`at ${width}px width`, () => {
       test.use({ viewport: { width, height: 844 } });
@@ -1421,8 +1353,8 @@ test.describe("Multi-month popover panel (variant=multi_month)", () => {
 
 /**
  * -----------------------------------------------------------------------
- * Closing after a selection (owner report 3): the popover used to close on the same frame as the
- * click, so nobody saw the selected state. It now holds open for `close_delay` (default 300 ms),
+ * Closing after a selection: the popover must not close on the same frame as the click, or nobody
+ * sees the selected state. It holds open for `close_delay` (default 300 ms),
  * then plays its normal exit animation and returns focus to the trigger. `close_on_select: false`
  * keeps it open. The timer is owned by the picker's scope (cancelled on unmount -- covered by the
  * `date_picker` unit tests) and by any press/key inside the picker, month navigation, or a reopen.
@@ -1550,7 +1482,7 @@ test.describe("Closing after a selection: dwell, then close", () => {
     await expect(dialog).toHaveAttribute("data-state", "open");
     await expect(dayCell(dialog, 12)).toHaveAttribute("data-selected", "true");
 
-    // Escape still closes it.
+    // Escape closes it.
     await page.keyboard.press("Escape");
     await expect(dialog).toBeHidden({ timeout: 15000 });
   });
@@ -1565,7 +1497,7 @@ test.describe("Closing after a selection: dwell, then close", () => {
     await expect(dayCell(dialog, 17)).toHaveAttribute("data-selected", "true");
     await expect(segment(page, "day", CLOSING)).toHaveText("17");
     await expect(dialog).toBeHidden({ timeout: 15000 });
-    await expect(segment(page, "day", CLOSING)).toHaveText("17"); // and still set once it has closed
+    await expect(segment(page, "day", CLOSING)).toHaveText("17"); // and set once it has closed
   });
 
   test("range picker: starting a NEW range during the dwell of the previous one cancels the close", async ({ page }) => {
@@ -1574,7 +1506,7 @@ test.describe("Closing after a selection: dwell, then close", () => {
     const dialog = pickerContent(page, CLOSING_RANGE);
     await expect(dialog).toBeVisible();
 
-    // a..b completes (a close is now pending); 40 ms later the user presses on c, which only anchors a new range.
+    // a..b completes (a close is pending); 40 ms later the user presses on c, which only anchors a new range.
     const { a, b, c } = await closingRangeDays(dialog);
     await runSteps(dialog, [{ click: a }, { wait: 20 }, { click: b }, { wait: 40 }, { pointerdown: c }, { click: c }]);
     await page.waitForTimeout(DWELL_MIN_MS * 3);
@@ -1655,12 +1587,12 @@ test.describe("close_on_select: false (variant=keep_open)", () => {
 
 /**
  * -----------------------------------------------------------------------
- * Open/close animation (owner report 5). The popover centres itself on its trigger with
- * `transform: translateX(-50%)` (top_layer.rs's engine stylesheet). The date picker's fade used to
- * animate `transform: translateY(...)` too, which REPLACES that for the length of the animation: the
- * panel played its fade half a panel-width to the right of where it settles (144 px for one month)
- * and snapped back on the last frame -- on every open and every close. The fade now animates
- * `translate`, which composes with `transform`.
+ * Open/close animation. The popover centres itself on its trigger with
+ * `transform: translateX(-50%)` (top_layer.rs's engine stylesheet). The fade animates `translate`,
+ * which composes with `transform`; a fade that animated `transform: translateY(...)` would REPLACE
+ * the centring for the length of the animation, so the panel would play its fade half a
+ * panel-width to the right of where it settles (144 px for one month) and snap back on the last
+ * frame, on every open and every close.
  * -----------------------------------------------------------------------
  */
 test.describe("Open/close animation", () => {
@@ -1739,7 +1671,7 @@ test.describe("Apply / Cancel footer (confirm, the default) -- single picker (va
     await expect(footerButton(dialog, "Cancel")).toHaveClass(/dx-button/);
   });
 
-  test("picking a day stages it: the calendar shows it, the input is unchanged, the popover stays open (well past the old dwell)", async ({ page }) => {
+  test("picking a day stages it: the calendar shows it, the input is unchanged, the popover stays open (well past a 300 ms dwell)", async ({ page }) => {
     await gotoDatePicker(page);
     const before = await committedDay(page);
     await pickerTrigger(page).click();
@@ -1876,7 +1808,7 @@ test.describe("Apply / Cancel footer (confirm, the default) -- range picker (var
     await dayCell(dialog, 12).click();
     await expect(footerButton(dialog, "Apply")).toBeEnabled();
     await page.waitForTimeout(DWELL_MIN_MS * 3);
-    await expect(dialog).toHaveAttribute("data-state", "open"); // complete, but still staged
+    await expect(dialog).toHaveAttribute("data-state", "open"); // complete, but staged
     // The input keeps the committed (empty) range.
     await expect(rangeSegment(page, "start", "day", "range")).not.toHaveText("06");
 
@@ -1923,7 +1855,7 @@ test.describe("Apply / Cancel footer (confirm, the default) -- range picker (var
 
 /**
  * The demos that mirror a shadcn date-picker demo switch the footer off (`confirm: false`) and copy
- * that demo's open/close behaviour (research table: uncontrolled popover demos STAY OPEN on select;
+ * that demo's open/close behaviour (uncontrolled popover demos STAY OPEN on select;
  * controlled-`open` demos CLOSE). See docs.md's table.
  */
 test.describe("confirm: false demos follow their shadcn twin", () => {
@@ -1977,8 +1909,7 @@ test.describe("confirm: false demos follow their shadcn twin", () => {
 
 /**
  * -----------------------------------------------------------------------
- * Natural language (variant=natural_language) -- shadcn's `date-picker-natural-language` (research:
- * /home/user/tgt/research-shadcn-209-210.md part A1): label "Schedule Date", placeholder "Tomorrow or
+ * Natural language (variant=natural_language) -- shadcn's `date-picker-natural-language`: label "Schedule Date", placeholder "Tomorrow or
  * next week", initial value "In 2 days", parse on input (a miss KEEPS the previous date), ArrowDown opens
  * the popover, the calendar button is an icon button INSIDE the input group (aria-label "Select date",
  * popover aligned to the end), selecting writes the formatted date into the input and closes, and the
@@ -1991,7 +1922,7 @@ test.describe("Natural language picker (variant=natural_language)", () => {
   /**
    * The page's clock, frozen at a fixed instant far from the day the site was built: the prerendered markup carries the
    * BUILD day, so a test that compares the page with "today" passes only while the build and the run share a UTC day
-   * (a deploy that built before midnight and tested after it failed, backlog row 377). Frozen, the demo has to read the
+   * (backlog row 377). Frozen, the demo has to read the
    * clock after hydration to show this date, and the expectation below is pure arithmetic on the same instant.
    */
   const FROZEN_NOW = Date.UTC(2031, 2, 31, 23, 30); // 31 March 2031, 23:30 UTC: one more day crosses a month

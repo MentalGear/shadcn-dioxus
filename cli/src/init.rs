@@ -30,7 +30,7 @@ pub const THEME_FILE: &str = "dx-components-theme.css";
 pub enum RegistryChange {
     /// There was no `Dioxus.toml`.
     Created,
-    /// There was one without a registry; the table was added.
+    /// A `Dioxus.toml` exists but names no registry; the table is added.
     Added,
     /// It already names exactly this registry.
     Unchanged,

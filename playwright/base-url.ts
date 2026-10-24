@@ -5,19 +5,13 @@
  * every spec file. See dev-docs/dev-loop.md's "Per-lane servers" section.
  *
  *   PLAYWRIGHT_BASE_URL=http://127.0.0.1:8083 \
- *     npx playwright test --config=session.local.config.ts avatar.spec.ts
+ *     npx playwright test --config=ssg.local.config.ts avatar.spec.ts
  *
- * The default is unchanged (`http://127.0.0.1:8080`), so every spec that has
- * not been migrated to import this -- most of them still hardcode the
- * literal inline -- keeps working exactly as before.
+ * The default is `http://127.0.0.1:8080`, so a spec that does
+ * not import this (a few hardcode the literal inline) still reaches the default server.
  *
- * This consolidates three ad hoc variants of the same idea that predate this
- * file (kept working, not "wrong", just three names for one thing):
- *   - `drag_and_drop_list.spec.ts`: `const BASE = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:8080"`
- *   - `sidebar.spec.ts`: `const BASE_URL = "http://127.0.0.1:8080"` (no env override)
- *   - every other spec: the literal inline, repeated per `page.goto(...)` call
- * A spec can migrate by importing `BASE_URL` from here (aliasing to `BASE`
- * where that's the file's existing local name) instead of declaring its own.
+ * A spec imports `BASE_URL` from here instead of declaring its own constant or repeating the literal
+ * per `page.goto(...)` call (alias it to `BASE` where that is the file's local name).
  */
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
@@ -67,9 +61,8 @@ export function buildProfile(): "debug" | "release" | "unknown" {
   const dir = (process.env.SSG_SITE_DIR ?? "").replace(/\\/g, "/");
   if (/\/dx\/[^/]+\/debug\/web\/public\/?$/.test(dir)) return "debug";
   if (/\/dx\/[^/]+\/release\/web\/public\/?$/.test(dir)) return "release";
-  // A lane build is copied to `pub-<lane>` (scripts/lane-ssg.sh), so its path names nothing (row 339: 11 false reds
-  // of main-thread.spec through `test:changed`). `scripts/build-ssg.sh` therefore stamps a DEBUG build's public dir
-  // with `build-profile.txt`; read it from the site dir, else from the served site itself.
+  // A lane build is copied to `pub-<lane>` (scripts/lane-ssg.sh), so its path names nothing (row 339).
+  // `scripts/build-ssg.sh` therefore stamps a DEBUG build's public dir with `build-profile.txt`; read it
   return profileFromMarker(dir);
 }
 
@@ -109,7 +102,7 @@ function profileFromMarker(siteDir: string): "debug" | "release" | "unknown" {
 /**
  * `testIgnore` for configs: timing-threshold specs (long-task / INP budgets in
  * `oracle/tier2-html/main-thread.spec.ts`) measure 64-153 ms long tasks on a
- * debug build that are 0 on release (backlog row 116, 2026-10-01: 4 false reds),
+ * debug build that are 0 on release (backlog row 116),
  * so they are skipped -- loudly, once -- when the build is known to be debug.
  * `PW_FORCE_TIMING_SPECS=1` runs them anyway (e.g. to confirm the false red).
  */

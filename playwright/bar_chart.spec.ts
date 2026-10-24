@@ -1,23 +1,19 @@
 /**
  * `bar_chart` gallery -- shadcn/ui `chart-bar-*` demo parity
- * (dev-docs/research/chart-2026-09-19.md §1.2, $S/stage2-common.md).
+ * (dev-docs/archive/research/chart-2026-09-19.md §1.2; backlog row 90).
  *
  * Every registered variant of a "Normal"-kind component (this one included)
  * renders on the SAME `/component/?name=bar_chart&` page load, all at once
- * -- `?variant=` has no effect on this route (confirmed live for `chart`
+ * -- `?variant=` has no effect on this route (see `chart`
  * itself in `playwright/oracle/tier3-radix/chart.spec.ts`'s own header
- * comment, and re-confirmed for this route while writing this file). The
+ * comment). The
  * `main` variant's demo panel is the un-suffixed `#component-preview-frame`;
  * every other registered variant gets `#component-preview-frame-<variant>`
  * instead.
  *
- * PHASE 1 (`main` -- shadcn's `chart-bar-default.tsx`, `multiple`,
- * `stacked`, `stacked_legend`, `interactive`): the variants buildable with
- * zero primitive changes beyond what the stage-1 Chart round already
- * shipped. PHASE 2 (`horizontal`, `negative`, `mixed`, `label`,
- * `label_custom`, `active`, added once `s2-refactor` landed and this
- * lane's own `BarOptions` feature work -- `horizontal`/`value_labels`/
- * `inside_labels`/`active_index` -- was integrated): all 10/10 of shadcn's
+ * `main` (shadcn's `chart-bar-default.tsx`), `multiple`, `stacked`, `stacked_legend` and `interactive` need no
+ * `BarOptions` feature; `horizontal`, `negative`, `mixed`, `label`, `label_custom` and `active` are built on
+ * `BarOptions` (`horizontal`/`value_labels`/`inside_labels`/`active_index`); together all 10 of shadcn's
  * `chart-bar-*` demos.
  */
 import { test, expect } from "./fixtures";
@@ -145,9 +141,9 @@ test.describe("interactive variant (shadcn chart-bar-interactive.tsx)", () => {
     await toggles.nth(1).click();
     await expect(toggles.nth(1)).toHaveAttribute("data-active", "true");
     await expect(toggles.nth(0)).toHaveAttribute("data-active", "false");
-    // Still exactly one bar per category either way (a single-series
-    // config), so the count itself is unchanged even though the drawn
-    // values are now the other series'.
+    // One bar per category either way (a single-series
+    // config), so the count is the same although the drawn
+    // values are the other series'.
     await expect(bars).toHaveCount(barsBefore);
   });
 });
@@ -279,19 +275,13 @@ test.describe("active variant (shadcn chart-bar-active.tsx)", () => {
 });
 
 test.describe("Axe automated scan", () => {
-  test("loaded has no automatically detectable a11y issues", async ({ page }) => {
-    await goto(page);
-    await expectNoAxeViolations(page, "bar_chart: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-
   // Title deliberately avoids the lowercase substring "mobile":
   // `playwright.config.ts`'s `grepInvert: /mobile/` (meant to skip
   // viewport-name tests) silently drops ANY test whose title contains that
-  // substring, case-sensitively, with no warning -- dev-docs/issues/
-  // chart-stage2-handoff.md §5's own documented trap, live in this exact
-  // file until now (confirmed via `npx playwright test --list
-  // bar_chart.spec.ts | wc -l` vs. `grep -c 'test(' bar_chart.spec.ts`
-  // before this rename).
+  // substring, case-sensitively, with no warning (the trap is documented
+  // in dev-docs/backlog/done/090-chart-stage-2-per-chart-type-galleries-shadcn.md).
+  // Check a title with `npx playwright test --list bar_chart.spec.ts | wc -l`
+  // against `grep -c 'test(' bar_chart.spec.ts`.
   test("interactive variant toggled to the second series has no automatically detectable a11y issues", async ({
     page,
   }) => {

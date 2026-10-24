@@ -8,23 +8,19 @@ use dioxus_primitives::drag_and_drop_list::{
 use dioxus_primitives::drag_and_drop_list::sortable_item_key;
 use dioxus_primitives::merge_attributes;
 
-// docs/backlog.md row 32: `#[css_module]` is gone -- see checkbox/component.rs's
+// dev-docs/backlog.md row 32: see checkbox/component.rs's
 // header comment for the full delivery-mechanism rationale (asset!() +
 // document::Link, embedded in the wrapper so a `shadcn-dioxus add
 // drag_and_drop_list`-copied component needs no extra wiring).
 //
-// This component is also on the row-32 "not already namespaced" lane, and
-// its `.dx-remove-button` is one of the two genuine cross-component
-// collisions row 32 found: `tag_group` defines its own, differently-sized
-// `.dx-remove-button` (unsized vs this one's 26x26px + `margin-left: 10px`),
-// and unhashing both under the same short name would silently restyle
-// whichever sheet lost the CSS load order. Every out-of-namespace class here
-// (`dx-dnd-list*`, `dx-item-icon`, `dx-item-body-div`, `dx-remove-button`,
-// `dx-drop-indicator`) was renamed under the full `dx-drag-and-drop-list-`
-// namespace in the same change that drops the macro, in this file,
+// Every class here lives under the full `dx-drag-and-drop-list-` namespace
+// (list, item, icon, body, remove button, drop indicator), in this file,
 // `style.css`, and the `variants/main` demo's own inline stylesheet (which
-// hovers `.dx-dnd-list-item` to restyle a demo-only class) -- see
-// `scripts/check-dx-class-prefix.sh`.
+// hovers `.dx-drag-and-drop-list-item` to restyle a demo-only class). A short
+// name such as `.dx-remove-button` would collide with `tag_group`'s
+// differently-sized one (unsized vs this one's 26x26px + `margin-left: 10px`)
+// and silently restyle whichever sheet lost the CSS load order (backlog row 32)
+// -- see `scripts/check-dx-class-prefix.sh`.
 #[derive(Props, Clone, PartialEq)]
 pub struct DragAndDropListProps {
     /// The items to render. Each takes its identity from the `key:` on its

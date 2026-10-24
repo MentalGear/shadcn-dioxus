@@ -1,7 +1,7 @@
 /**
  * ORACLE: tier 2 (HTML) — top layer (`popover` attribute).
  *
- * Source: docs/plan.md Phase 4.4, drawing on the WHATWG HTML Living
+ * Source: dev-docs/plan.md Phase 4.4, drawing on the WHATWG HTML Living
  * Standard's popover chapter:
  *   - The `popover` attribute, its `auto`/`manual` states, and the implied
  *     top-layer promotion:
@@ -23,12 +23,12 @@
  * shown by a `<button popovertarget>` — the browser's own implementation of
  * the identical WHATWG HTML feature, with zero Dioxus involvement.
  *
- * Calibration (docs/conformance-harness.md, "Calibration"): every rule below
+ * Calibration (dev-docs/conformance-harness.md, "Calibration"): every rule below
  * runs against the native reference first (prefixed CALIBRATION: in the
  * test name) and the library component second. A CALIBRATION failure means
  * the *test* is wrong, not the component.
  *
- * Per-component dismissal semantics (docs/plan.md Phase 4.4's own
+ * Per-component dismissal semantics (dev-docs/plan.md Phase 4.4's own
  * requirement to "document the choice per component"):
  *   - `Tooltip`/`HoverCard` render with `popover="manual"` on the web arm.
  *     Both already own their entire open/close lifecycle through
@@ -45,41 +45,41 @@
  *     2-3 are exactly what checks that the WHATWG-mandated browser behaviour
  *     (`toggle` event) still lands back in the Rust `open` signal, per
  *     primitives/src/top_layer.rs's `use_popover_sync` (the same defect
- *     class documented for `<dialog>`'s old one-way binding in
- *     docs/recommended-implementations.md Caveat 1).
+ *     class documented for a one-way `<dialog>` binding in
+ *     dev-docs/reference/platform-rationale.md Caveat 1).
  *   - Rule 1 ("clipping escape") and rule 4 ("stacking") are top-layer
  *     properties every promoted element gets regardless of its
  *     `popover="auto"|"manual"` kind, so all three components (Tooltip,
  *     HoverCard, Popover) are checked for rule 1; rule 4 uses `Popover`
  *     (the click-triggered case is the easiest to drive deterministically).
- *   - Migration A slice 2/3 (`ContextMenu`/`Menubar`, `docs/plan.md` Phase
+ *   - `ContextMenu`/`Menubar` (`dev-docs/plan.md` Phase
  *     5.2's point-anchor case is explicitly out of scope for this file):
  *     `ContextMenu` also renders `popover="manual"` on the web arm, for a
  *     reason distinct from Tooltip/HoverCard's: it opens at a raw click
  *     point with no persistent trigger to key an outside-vs-internal
  *     dismissal distinction off of the way `auto`'s native light dismiss
- *     would need, so it keeps its own pre-existing `use_outside_dismiss` +
- *     root `Escape` handler entirely unchanged (see
+ *     would need, so it keeps its own `use_outside_dismiss` +
+ *     root `Escape` handler (see
  *     `primitives/src/context_menu.rs`'s `ContextMenuContentRendered` doc
  *     for the full reasoning and the focus-restore risk this avoids).
  *     `Menubar` menus render `popover="auto"`, anchored to their own
- *     trigger like `DropdownMenu` -- Rule 1 (clipping) and the new Rule 9
+ *     trigger like `DropdownMenu` -- Rule 1 (clipping) and Rule 9
  *     (scroll behavior, below) cover both; rules 2/3 (light dismiss/Escape)
  *     stay scoped to `Popover` as documented above, since `ContextMenu`'s
  *     `manual` mode never light-dismisses and `Menubar`'s Escape handling
  *     is APG-specific (per-trigger refocus) rather than a generic "does the
  *     Rust signal learn about a native close" check those two rules make.
- *   - Migration A slice 3/3 (final): `Select`'s listbox renders
+ *   - `Select`'s listbox renders
  *     `popover="auto"` on the web arm (`select/components/list.rs`'s
- *     `SelectListRendered`) -- its own pre-existing, more precise
+ *     `SelectListRendered`) -- its own more precise
  *     blur-driven dismissal/focus-restore logic stays the primary
  *     mechanism, with native light dismiss layered on as a backstop; see
  *     that component's own doc for the full reasoning. `Combobox`'s listbox
- *     renders `popover="manual"` instead -- an initial `auto` attempt was
- *     reversed by execution: it broke `combobox.spec.ts`'s "dynamic option
+ *     renders `popover="manual"` instead -- `auto` breaks
+ *     `combobox.spec.ts`'s "dynamic option
  *     removal" case, where an external control button (with its own
  *     `prevent_default()`-guarded `pointerdown`, specifically so it does
- *     not close the combobox) got light-dismissed anyway, since WHATWG
+ *     not close the combobox) gets light-dismissed anyway, since WHATWG
  *     light dismiss classifies any outside pointerdown as "outside" full
  *     stop, `prevent_default()` or not -- see
  *     `combobox/components/list.rs`'s `ComboboxListRendered` doc for the
@@ -89,11 +89,11 @@
  *     mechanism, with `auto` (where used) only ever a backstop. `Toast`'s
  *     region renders `popover="manual"` (`toast.rs`'s `ToastRegionRendered`)
  *     -- it has no open/close lifecycle and nothing to anchor to, so only
- *     the stacking property (a new Rule 10, below) applies to it; Rule 1
+ *     the stacking property (Rule 10, below) applies to it; Rule 1
  *     does not, since a toast is not clipped by an ancestor the way a
  *     trigger-anchored popup is (it is viewport-region positioned, not
  *     positioned relative to any particular trigger element).
- *   - `NavigationMenu`'s panel (docs/backlog.md row 72 follow-up) also
+ *   - `NavigationMenu`'s panel (dev-docs/backlog.md row 72) also
  *     renders `popover="manual"`, for the same reason as Tooltip/HoverCard/
  *     ContextMenu/Menubar above: it owns its entire open/close lifecycle
  *     (hover-intent timers, a focus-leave debounce, its own Escape handler
@@ -113,9 +113,7 @@
  *     `side`-prop-dependent rules Navbar is equally excluded from, for the
  *     same reasons already documented on those rules).
  *
- * Rules implemented (see this session's report for the full red/green
- * ledger per rule per component, both before and after the Phase 4.4
- * implementation landed):
+ * Rules implemented (dev-docs/plan.md Phase 4.4):
  *   1. Clipping escape — component content inside an ancestor with
  *      `overflow: hidden` + `transform` + a height shorter than the
  *      content renders fully visible outside the clip.
@@ -126,11 +124,11 @@
  *      renders above it.
  *   5. Near-viewport-edge flip — see "Rules 5-7" below.
  *
- * ## Rules 5-7 — CSS Anchor Positioning flip (docs/backlog.md row 10)
+ * ## Rules 5-7 — CSS Anchor Positioning flip (dev-docs/backlog.md row 10)
  *
  * Unlike every rule above, this trio's citation is the **W3C CSS Anchor
  * Positioning** spec, not WHATWG HTML — this tier's "standard" principle
- * (docs/conformance-harness.md) is satisfied by that spec instead:
+ * (dev-docs/conformance-harness.md) is satisfied by that spec instead:
  *   - `position-try-fallbacks` and the `flip-block`/`flip-inline` "existing
  *     tactics":
  *     <https://www.w3.org/TR/css-anchor-position-1/#fallback-var>
@@ -162,9 +160,9 @@
  * applies to all three — no side is skipped here.
  * Rule 7 (no spurious flip): a normal, mid-viewport placement (the existing
  * "Stacking popover" from the section above, `side="bottom"` far from any
- * edge) renders unflipped, below its trigger — this is the regression guard
+ * edge) renders unflipped, below its trigger — this is the guard
  * for `primitives/src/top_layer.rs`'s `use_anchor_position_fallback`: since
- * that hook's JS fallback now accepts *either* the primary or the flipped
+ * that hook's JS fallback accepts *either* the primary or the flipped
  * placement as contract-legal (see its doc), this rule confirms it isn't
  * accepting a flip that never should have happened in the common case.
  */
@@ -199,7 +197,7 @@ const gotoFixture = (page: Page) =>
  * coordinate inside the content's own box but outside the clip ancestor's
  * box resolves to whatever is actually *painted* there: the content itself
  * if it escaped (top layer), or whatever sits behind/around the clip box
- * if it did not (the pre-Phase-4.4 behaviour this rule was written to
+ * if it did not (the clipped behaviour this rule exists to
  * catch).
  *
  * Candidate probe points are the content box's four corners (inset 2px, or by
@@ -215,14 +213,14 @@ const gotoFixture = (page: Page) =>
  * content and ancestor don't overlap at all, every on-screen candidate
  * qualifies.
  *
- * The viewport bound matters, confirmed by execution: `element.getBounding
+ * The viewport bound matters: `element.getBounding
  * ClientRect()` reports a box's full geometry regardless of whether any of
  * it is actually on-screen, but `document.elementFromPoint()` is a
  * viewport-relative API that returns `null` for any coordinate outside
  * `[0, innerWidth) x [0, innerHeight)` -- always, regardless of what
  * top-layer content would otherwise paint there. `use_anchor_position_
  * fallback` (primitives/src/top_layer.rs) can legitimately compute a
- * static (non-collision-aware; that's Phase 5's remaining scope) position
+ * position
  * that runs partly off-screen for this fixture's unstyled, unconstrained-
  * width tooltip content -- a real, on-screen escape from the clip ancestor
  * either way, just not always at the *first* candidate in box-corner
@@ -246,22 +244,16 @@ async function escapesClip(
         return { escapes: false, reason: `missing element(s): content=${!!content} ancestor=${!!ancestor}` };
       }
       // Wait out any entrance animation on `content` itself before probing
-      // -- same idiom `toast.spec.ts` already uses. Found by construction,
-      // via NavigationMenu's own instance of this exact call (row 72's
-      // fix, `08a14d8`, made its dead entrance animation actually run):
-      // `document.elementFromPoint` at the content's own top-left corner
-      // returned the page's "Clipping escape" `<h2>` instead of the
-      // (correctly top-layered, `position:fixed`, `z-index:1000`) content,
-      // reproducibly, every time the probe ran before this wait existed --
-      // never once after adding it. Every one of this describe block's 11
-      // `escapesClip` calls shares this same "probe immediately after
-      // hover/click, before any entrance animation settles" shape; only
-      // NavigationMenu's own animation happened to be slow/real enough
-      // (`--dx-motion-duration-slow`, and genuinely running rather than
-      // dead) to make the race land often enough to fail here first, but
-      // nothing about the mechanism is specific to it -- fixed for all 11
-      // by construction, in the shared helper, rather than adding a wait
-      // to one call site.
+      // -- same idiom `toast.spec.ts` uses. A probe issued mid-animation
+      // makes `document.elementFromPoint` at the content's own top-left
+      // corner return the page's "Clipping escape" `<h2>` instead of the
+      // (correctly top-layered, `position:fixed`, `z-index:1000`) content
+      // (NavigationMenu's slow, genuinely running entrance animation,
+      // `--dx-motion-duration-slow`, shows it first; row 72). Every one of
+      // this describe block's 11 `escapesClip` calls shares this "probe
+      // immediately after hover/click, before any entrance animation
+      // settles" shape, so the wait lives in the shared helper rather than
+      // at one call site.
       await Promise.all(
         content.getAnimations({ subtree: true }).map((a) => a.finished.catch(() => undefined)),
       );
@@ -347,11 +339,10 @@ test.describe("Rule 1 — clipping escape (an ancestor with overflow:hidden + tr
     expect(result.escapes, JSON.stringify(result)).toBe(true);
   });
 
-  // docs/backlog.md item 2: DropdownMenu's web arm migrated to
+  // dev-docs/backlog.md item 2: DropdownMenu's web arm is
   // `popover="auto"` (`DropdownMenuContentRendered`, `dropdown_menu.rs`).
-  // Written RED first against the pre-migration plain-div `DropdownMenuContent`
-  // (confirmed by execution: it clipped at the 60px ancestor exactly like
-  // Tooltip/HoverCard/Popover did before Phase 4.4).
+  // A plain-div `DropdownMenuContent` would clip at the 60px ancestor exactly
+  // like Tooltip/HoverCard/Popover would without the top layer (Phase 4.4).
   test("DropdownMenu content escapes the clip", async ({ page }) => {
     await gotoFixture(page);
     await page.locator("#clip-dropdown-menu-trigger").click();
@@ -360,13 +351,12 @@ test.describe("Rule 1 — clipping escape (an ancestor with overflow:hidden + tr
     expect(result.escapes, JSON.stringify(result)).toBe(true);
   });
 
-  // Migration A slice 2/3: ContextMenu's web arm migrated to
-  // `popover="manual"` (`ContextMenuContentRendered`, `context_menu.rs`).
-  // Written RED first against the pre-migration plain `position: fixed`
-  // div (confirmed by execution: it clipped at the 60px ancestor exactly
-  // like the others did pre-migration -- a `transform`-ed ancestor becomes
-  // the containing block for a `position: fixed` descendant, per ordinary
-  // CSS, regardless of the popover migration).
+  // ContextMenu's web arm is `popover="manual"`
+  // (`ContextMenuContentRendered`, `context_menu.rs`). A plain
+  // `position: fixed` div would clip at the 60px ancestor like the others --
+  // a `transform`-ed ancestor becomes the containing block for a
+  // `position: fixed` descendant, per ordinary CSS, unless the content is
+  // in the top layer.
   test("ContextMenu content escapes the clip", async ({ page }) => {
     await gotoFixture(page);
     await page.locator("#clip-context-menu-trigger").click({ button: "right" });
@@ -375,12 +365,10 @@ test.describe("Rule 1 — clipping escape (an ancestor with overflow:hidden + tr
     expect(result.escapes, JSON.stringify(result)).toBe(true);
   });
 
-  // Migration A slice 2/3: Menubar menus' web arm migrated to
-  // `popover="auto"`, anchored to their own trigger
-  // (`MenubarContentRendered`, `menubar.rs`). Written RED first against the
-  // pre-migration plain `position: absolute` div (confirmed by execution:
-  // it clipped at the 60px ancestor exactly like DropdownMenu's identical
-  // pre-migration shape did).
+  // Menubar menus' web arm is `popover="auto"`, anchored to their own
+  // trigger (`MenubarContentRendered`, `menubar.rs`). A plain
+  // `position: absolute` div would clip at the 60px ancestor exactly like
+  // DropdownMenu's equivalent shape would.
   test("Menubar content escapes the clip", async ({ page }) => {
     await gotoFixture(page);
     await page.locator("#clip-menubar-trigger").click();
@@ -389,13 +377,10 @@ test.describe("Rule 1 — clipping escape (an ancestor with overflow:hidden + tr
     expect(result.escapes, JSON.stringify(result)).toBe(true);
   });
 
-  // Migration A slice 3/3 (final): Select's web arm migrated to
-  // `popover="auto"` (`SelectListRendered`, `select/components/list.rs`).
-  // Written RED first against the pre-migration plain `div` (confirmed by
-  // execution: it clipped at the 60px ancestor exactly like every other
-  // pre-migration listbox/menu here did). Not portal'd -- `SelectList`
-  // renders in place in the tree, so this was a real gap, not a case that
-  // turned out to already escape.
+  // Select's web arm is `popover="auto"` (`SelectListRendered`,
+  // `select/components/list.rs`). Not portal'd -- `SelectList` renders in
+  // place in the tree, so a plain `div` would clip at the 60px ancestor like
+  // every other listbox/menu here.
   test("Select listbox escapes the clip", async ({ page }) => {
     await gotoFixture(page);
     await page.locator("#clip-select-trigger").click();
@@ -404,12 +389,10 @@ test.describe("Rule 1 — clipping escape (an ancestor with overflow:hidden + tr
     expect(result.escapes, JSON.stringify(result)).toBe(true);
   });
 
-  // Migration A slice 3/3 (final): Combobox's web arm migrated to
-  // `popover="manual"` (`ComboboxListRendered`, `combobox/components/list.rs`
-  // -- see that component's doc for why `manual`, not `auto`). Written RED
-  // first against the pre-migration plain `div` (confirmed by execution: it
-  // clipped at the 60px ancestor exactly like the others did pre-migration).
-  // Opened via keyboard (ArrowDown) rather than a click, since a click on
+  // Combobox's web arm is `popover="manual"` (`ComboboxListRendered`,
+  // `combobox/components/list.rs` -- see that component's doc for why
+  // `manual`, not `auto`); a plain `div` would clip at the 60px ancestor
+  // like the others. Opened via keyboard (ArrowDown) rather than a click, since a click on
   // the input alone does not open this popup.
   test("Combobox listbox escapes the clip", async ({ page }) => {
     await gotoFixture(page);
@@ -420,30 +403,26 @@ test.describe("Rule 1 — clipping escape (an ancestor with overflow:hidden + tr
     expect(result.escapes, JSON.stringify(result)).toBe(true);
   });
 
-  // 2026-09-03, finding C: `NavbarNav`'s web arm -> `popover="auto"`
-  // (`NavbarContentRendered`, `navbar.rs`) -- `Navbar` never migrated onto
-  // the top-layer engine during Migration A (it has no `top_layer`/
-  // `use_anchor_position_fallback`/`popover` reference at all before this
-  // fix). Written RED first against the pre-migration plain,
-  // `position: absolute`-only div (confirmed by execution: it clipped at
-  // the 60px ancestor exactly like `Menubar`'s identical pre-migration
-  // shape did).
+  // `NavbarNav`'s web arm is `popover="auto"` (`NavbarContentRendered`,
+  // `navbar.rs`) on the top-layer engine, so it escapes the 60px ancestor.
+  // A plain `position: absolute`-only div would clip there exactly like
+  // `Menubar`'s equivalent shape does.
   test("Navbar content escapes the clip", async ({ page }) => {
     await gotoFixture(page);
     // `.hover()`, not `.click()` -- `navbar.spec.ts`'s own suite opens this
     // exact way (`NavbarNav`'s `onmouseenter`); a plain `.click()` also
     // synthesizes the hover Playwright performs to reach the element first,
-    // which opens it, immediately followed by the click's own `pointerdown`
-    // toggling it back closed (`NavbarTrigger`'s own toggle-on-pointerdown)
-    // -- a pre-existing interaction, confirmed by execution against
-    // unmodified `main`, not something this migration changed.
+    // which opens it, immediately followed by the click itself
+    // toggling it back closed (`NavbarTrigger`'s own toggle-on-click)
+    // -- an interaction of `NavbarTrigger` itself, independent of the
+    // popover engine.
     await page.locator("#clip-navbar-trigger").hover();
     await expect(page.locator("#clip-navbar-content")).toBeVisible();
     const result = await escapesClip(page, "#clip-navbar-content", "#clip-box");
     expect(result.escapes, JSON.stringify(result)).toBe(true);
   });
 
-  // docs/backlog.md row 72 follow-up: `NavigationMenuContent`'s web arm ->
+  // dev-docs/backlog.md row 81: `NavigationMenuContent`'s web arm is
   // `popover="manual"`, anchored to its own trigger
   // (`NavigationMenuContentRendered`, `navigation_menu.rs`) -- the same
   // top-layer engine `NavbarContent` uses (`dx-anchor-navigation-menu`,
@@ -467,7 +446,7 @@ test.describe("Rule 1 — clipping escape (an ancestor with overflow:hidden + tr
  * axe (static rules) — every anchored-overlay component on this fixture,
  * scanned with its content open. No component spec reaches this fixture
  * (each has its own, real-demo page instead); this is the state no other
- * spec covers, per docs/backlog.md row 34's own remit. Reuses exactly the
+ * spec covers, per dev-docs/backlog.md row 34's own remit. Reuses exactly the
  * open steps Rule 1 above already established for each component.
  */
 test.describe("axe: every overlay open (top-layer fixture)", () => {
@@ -513,17 +492,15 @@ test.describe("axe: every overlay open (top-layer fixture)", () => {
     await expectNoAxeViolations(page, "top-layer fixture: Menubar open", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 
-  // Previously KNOWN RED here (docs/backlog.md row 36): `SelectList`'s
-  // default `aria-labelledby` pointed at `ctx.selectable.trigger_id`'s
-  // internally-generated value, which this fixture's
-  // `SelectTrigger { id: "clip-select-trigger", ... }` diverged from --
-  // `merge_attributes`'s caller-wins rule overrode the *rendered* DOM id
-  // with the fixture's own, but the id the listbox labelled itself by was
-  // a separate signal never resynced to match, so the reference dangled.
-  // Fixed by feeding `ctx.selectable.trigger_id` straight into `use_id_or`
-  // in `SelectTrigger` (`select/components/trigger.rs`) -- see Rule 14
+  // `SelectList`'s default `aria-labelledby` points at
+  // `ctx.selectable.trigger_id`'s value, which must match this fixture's
+  // `SelectTrigger { id: "clip-select-trigger", ... }`: `merge_attributes`'s
+  // caller-wins rule overrides the *rendered* DOM id with the fixture's own,
+  // so `SelectTrigger` feeds `ctx.selectable.trigger_id` straight into
+  // `use_id_or` (`select/components/trigger.rs`) to keep the listbox's
+  // reference from dangling (dev-docs/backlog.md row 36). See Rule 14
   // below for the direct (non-axe) regression guard on the resolved
-  // reference itself, across every trigger this same fix touched.
+  // reference itself, across every trigger that construction covers.
   test("Select listbox open has no automatically detectable a11y issues", async ({ page }) => {
     await gotoFixture(page);
     await page.locator("#clip-select-trigger").click();
@@ -539,7 +516,7 @@ test.describe("axe: every overlay open (top-layer fixture)", () => {
     await expectNoAxeViolations(page, "top-layer fixture: Combobox open", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 
-  // 2026-09-03, finding C: added alongside the Navbar migration.
+  // Navbar's `popover="auto"` content.
   test("Navbar content open has no automatically detectable a11y issues", async ({ page }) => {
     await gotoFixture(page);
     await page.locator("#clip-navbar-trigger").hover();
@@ -547,8 +524,7 @@ test.describe("axe: every overlay open (top-layer fixture)", () => {
     await expectNoAxeViolations(page, "top-layer fixture: Navbar open", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 
-  // docs/backlog.md row 72 follow-up: added alongside the NavigationMenu
-  // oracle coverage above.
+  // dev-docs/backlog.md row 72: the NavigationMenu oracle coverage above.
   test("NavigationMenu content open has no automatically detectable a11y issues", async ({ page }) => {
     await gotoFixture(page);
     await page.locator("#clip-navigation-menu-trigger").hover();
@@ -558,18 +534,17 @@ test.describe("axe: every overlay open (top-layer fixture)", () => {
 });
 
 /**
- * Rule 10 — Toast top-layer stacking (Migration A slice 3/3, final).
+ * Rule 10 — Toast top-layer stacking.
  * `ToastProvider`'s region has no open/close lifecycle and never anchors to
  * a trigger (see `primitives/src/toast.rs`'s `ToastRegionRendered` doc for
  * why it renders `popover="manual"` rather than `auto`) -- the property
- * that migration buys it is exactly Rule 4's: painting above a competing
+ * the top layer buys it is exactly Rule 4's: painting above a competing
  * high-`z-index` sibling regardless of DOM/stacking-context position. The
  * fixture pins a small (40x20px) high-`z-index` sibling and the toast
  * region to the same `position: fixed` bottom-right viewport corner.
  *
  * No "before any toast exists" calibration half here, unlike every other
- * rule in this file -- confirmed by execution that the premise doesn't
- * hold for this fixture: the region itself is mounted (and, being
+ * rule in this file -- the premise doesn't hold for this fixture: the region itself is mounted (and, being
  * `popover="manual"`, already `:popover-open`) from page load, before any
  * toast is ever added, and even with zero toasts inside it the UA popover
  * stylesheet's own `border`/`padding` defaults (this raw, unstyled
@@ -579,8 +554,7 @@ test.describe("axe: every overlay open (top-layer fixture)", () => {
  * which only applies to the *styled* wrapper) already give the empty
  * region a real, nonzero-area box at that exact corner -- so the sibling
  * is already covered before the click, not just after. That is itself
- * further (if incidental) evidence the migration works -- the top layer
- * promotion holds for the region continuously, not only while it holds a
+ * further (if incidental) evidence the top-layer promotion holds for the region continuously, not only while it holds a
  * toast -- but it means the meaningful check is simply "the sibling is not
  * what paints at that point once a toast exists," verified directly below
  * instead of via a before/after diff.
@@ -635,7 +609,7 @@ test.describe("Rule 2 — light dismiss for popover=auto (click outside closes i
     // The browser's own light dismiss hides the element; the Rust signal
     // must independently learn about it (primitives/src/top_layer.rs
     // `use_popover_sync`'s `toggle` listener) -- assert both, since a
-    // stranded signal (the exact defect class recommended-implementations.md
+    // stranded signal (the exact defect class dev-docs/reference/platform-rationale.md
     // Caveat 1 documents for <dialog>) would leave data-state="open" even
     // though the content is gone.
     await expect(page.locator("#stack-popover-content")).toBeHidden();
@@ -666,16 +640,14 @@ test.describe("Rule 3 — Escape closes popover=auto, and Rust state syncs", () 
 });
 
 test.describe("Rule 4 — top-layer stacking (a popover opened after a high-z-index sibling renders above it)", () => {
-  // Scroll the section into view *before* opening (item 2, 2026-09-01: the
-  // stacking section went back to in-flow layout -- see
-  // `preview/src/components/top_layer/style.css`'s comment on
-  // `.dx-top-layer-stack-sibling` -- so it can render below the fold again),
+  // Scroll the section into view *before* opening (the stacking section is
+  // in-flow -- see `preview/src/components/top_layer/style.css`'s comment on
+  // `.dx-top-layer-stack-sibling` -- so it can render below the fold),
   // not after: opening first and scrolling afterward is exactly what Rule 8
   // below exercises deliberately, and doing it here too would make this
   // rule's assertion race the fallback's rAF-throttled re-measure for no
-  // reason this rule needs to take on -- confirmed by execution, this
-  // ordering (scroll, then open) is deterministic where the reverse briefly
-  // isn't. `#stack-sibling` is used (not the trigger) because its box is
+  // reason this rule needs to take on -- scroll-then-open is
+  // deterministic where the reverse is not. `#stack-sibling` is used (not the trigger) because its box is
   // taller than the trigger row's, so scrolling it fully into view also
   // covers the row.
   test("CALIBRATION: native <div popover=auto> renders above the high-z-index sibling", async ({ page }) => {
@@ -779,16 +751,15 @@ test.describe("Rule 5 — block-axis flip: a bottom-edge trigger with side=\"bot
     await assertFlippedAbove(page, "#edge-bottom-popover-trigger", "#edge-bottom-popover-content");
   });
 
-  // 2026-09-03, finding C (user report: "why does the Navbar menu not
-  // auto-flip when it gets cut off at the bottom/top like the other
-  // menus?"). Unlike the three cases above, `NavbarContent` has no `side`
+  // Why this case exists: a Navbar cut off at the bottom/top must flip like
+  // the other menus (a real page footer needs it).
+  // Unlike the three cases above, `NavbarContent` has no `side`
   // prop (always below/start-aligned, the same fixed convention
   // `MenubarContent`/`DropdownMenuContent` use) -- so this pins the
   // *trigger* at the bottom edge instead, the shape a real page footer or
-  // bottom nav bar puts a `Navbar` in. Written RED first against the
-  // pre-migration plain, `position: absolute; top: 100%`-only div
-  // (confirmed by execution: no flip at all -- content rendered straight
-  // off the bottom of the viewport, uncorrected).
+  // bottom nav bar puts a `Navbar` in. A plain `position: absolute;
+  // top: 100%`-only div never flips: its content renders straight off the
+  // bottom of the viewport, uncorrected.
   test("Navbar content flips above its bottom-edge trigger", async ({ page }) => {
     await gotoFixture(page);
     // `.hover()`, not `.click()` -- see the identical comment on this
@@ -798,7 +769,7 @@ test.describe("Rule 5 — block-axis flip: a bottom-edge trigger with side=\"bot
     await assertFlippedAbove(page, "#edge-bottom-navbar-trigger", "#edge-bottom-navbar-content");
   });
 
-  // docs/backlog.md row 72 follow-up. Like Navbar just above,
+  // dev-docs/backlog.md row 72. Like Navbar just above,
   // `NavigationMenuContent` has no `side` prop (always below/start-aligned
   // -- see `primitives/src/navigation_menu.rs`'s
   // `NavigationMenuContentRendered`, hardcoded `ContentSide::Bottom`/
@@ -855,18 +826,17 @@ test.describe("Rule 6 — inline-axis flip: a right-edge trigger with side=\"rig
   });
 });
 
-test.describe("Rule 7 — normal mid-viewport placement is unchanged (no spurious flip)", () => {
+test.describe("Rule 7 — normal mid-viewport placement does not flip", () => {
   // Regression guard for the primitives/src/top_layer.rs
-  // `use_anchor_position_fallback` interaction fix: that hook's JS fallback
-  // now accepts *either* the primary or the flipped placement as
+  // `use_anchor_position_fallback` interaction: that hook's JS fallback
+  // accepts *either* the primary or the flipped placement as
   // contract-legal (see its doc) precisely so it never fights a real CSS
   // flip -- this rule confirms the common (nothing-needs-to-flip) case
   // still renders at the primary, unflipped placement, i.e. that the
-  // widened acceptance didn't turn into "accept anything." Scrolled into
-  // view before opening (item 2, 2026-09-01; see Rule 4's comment above) --
-  // this rule's whole premise is "plenty of room," which the fixture's
-  // below-the-fold resting position (now that the stacking section is
-  // in-flow again) does not give it.
+  // acceptance does not widen to "accept anything." Scrolled into
+  // view before opening (see Rule 4's comment above) -- this rule's whole
+  // premise is "plenty of room," which the fixture's below-the-fold
+  // resting position (the stacking section is in-flow) does not give it.
   test("Popover (non-modal) with plenty of room stays on its preferred (bottom) side", async ({ page }) => {
     await gotoFixture(page);
     await page.locator("#stack-sibling").scrollIntoViewIfNeeded();
@@ -876,15 +846,14 @@ test.describe("Rule 7 — normal mid-viewport placement is unchanged (no spuriou
     const content = await rectOf(page, "#stack-popover-content");
     const debug = JSON.stringify({ trigger, content });
     // Below the trigger (side="bottom", unflipped) -- a block-axis flip
-    // would have put it above instead.
+    // would put it above instead.
     expect(content.top, debug).toBeGreaterThanOrEqual(trigger.bottom - EDGE_TOLERANCE);
   });
 });
 
 /**
- * Rule 8 — scroll tracking (docs decision 2026-09-01, from a live-site
- * report: the `ColorPicker` popup floated viewport-fixed while the page
- * scrolled, detached from its trigger). Two independent positioning paths
+ * Rule 8 — scroll tracking (a `ColorPicker` popup must not float
+ * viewport-fixed while the page scrolls, detached from its trigger). Two independent positioning paths
  * exist (`primitives/src/top_layer.rs`'s `use_anchor_position_fallback`
  * doc, "Scroll/resize tracking"), so both need their own case here:
  *
@@ -893,11 +862,11 @@ test.describe("Rule 7 — normal mid-viewport placement is unchanged (no spuriou
  *     all -- this fixture's own `Popover`/`Tooltip`/`HoverCard` all land on
  *     this path in this repo's Chromium once `popover/style.css`'s
  *     `@supports` block is loaded, which is the case for every page in this
- *     workspace *except* `color_picker`'s own (see the wiring-gap fix in
- *     `preview/src/components/color_picker/style.css`, added the same day
- *     as this rule) -- so the fixture page used here for the CSS-path case
- *     is `color_picker`, the exact composition the live-site report was
- *     filed against, not this file's own `TopLayerFixture`.
+ *     workspace *except* `color_picker`'s own unless its sheet wires it in
+ *     (see `preview/src/components/color_picker/style.css`) -- so the
+ *     fixture page used here for the CSS-path case is `color_picker`, the
+ *     composition the scroll-tracking rule is about, not this
+ *     file's own `TopLayerFixture`.
  *   - The JS-measured fallback path (`use_anchor_position_fallback`'s
  *     "neither matches" branch): only engages when the CSS path failed to
  *     land the content correctly. Whether an engine's CSS path lands this
@@ -965,8 +934,8 @@ test.describe("Rule 8 — scroll tracking: an anchored overlay's content keeps i
     // whose bottom edge is at y ~ 453, so at Playwright's default 1280x720 it does NOT fit: `position-try-fallbacks:
     // flip-block` correctly opens it ABOVE the trigger (offset -428), and the scroll then frees enough room below
     // that it flips back (offset +8) -- a 436px jump that reads as "frozen / drifted" but is the flip, not a tracking
-    // failure. Measured on a release SSG build (2026-10-05): 720 -> -428 then 8; 900/1000/1100 -> 8 then 8, exactly
-    // tracked on this Chromium 1194, CSS-anchor path (empty inline `top`). dev-docs/backlog.md rows 21/106.
+    // failure. On a release SSG build: viewport 720 gives -428 then 8; 900/1000/1100 give 8 then 8, exactly
+    // tracked on the CSS-anchor path (empty inline `top`). dev-docs/backlog.md rows 21/106.
     await page.setViewportSize({ width: 1280, height: 1000 });
     // dev-docs/backlog.md row 109: SSG lane -- `gotoHydrated`, see this
     // file's own `gotoFixture` doc.
@@ -975,17 +944,15 @@ test.describe("Rule 8 — scroll tracking: an anchored overlay's content keeps i
     });
 
     // Opened at scrollY=0 with a raw DOM click (bypassing Playwright's own
-    // actionability auto-scroll), *not* pre-scrolled: confirmed by
-    // execution (this session's diagnosis) that this repo's Chromium build
-    // computes a `[popover]` + `position: fixed` element's *very first*
+    // actionability auto-scroll), *not* pre-scrolled: this repo's Chromium
+    // build computes a `[popover]` + `position: fixed` element's *very first*
     // `anchor()`-resolved position incorrectly whenever the document is
     // already scrolled at the moment the popover is shown -- off by
     // exactly the scroll offset, as if measured document-relative instead
     // of viewport-relative -- and that wrong value never self-corrects for
     // the life of that popover instance, even once real further scrolling
-    // happens. `use_anchor_position_fallback`'s own fallback correctly
-    // detects and compensates for this (this repo's actual, existing
-    // protection against exactly this failure mode -- see its doc), so
+    // happens. `use_anchor_position_fallback`'s own fallback detects and
+    // compensates for this (see its doc), so
     // end-user positioning is never wrong; this test's whole point, though,
     // is to isolate the *CSS-only* path specifically, which this Chromium
     // quirk can only be kept out of by not scrolling before the open it is
@@ -1009,7 +976,7 @@ test.describe("Rule 8 — scroll tracking: an anchored overlay's content keeps i
     // Let the open-state fade-in settle before taking the "before" reading:
     // `dx-color-picker-popover-fade-in` (`.15s ease-out`,
     // `color_picker/style.css`) transiently animates this element, and
-    // confirmed by execution, `getBoundingClientRect()` mid-animation can
+    // `getBoundingClientRect()` mid-animation can
     // read a not-yet-settled box on this path -- unrelated to tracking (it
     // resolves to the same final rect either way), but this rule needs a
     // stable "before" to compare "after" against.
@@ -1018,7 +985,7 @@ test.describe("Rule 8 — scroll tracking: an anchored overlay's content keeps i
     // This picker's own trigger and panel -- NOT `document.querySelector('[style*="anchor-name"]')` /
     // `("dialog[popover]")`: the header's theme picker (a `.dx-theme-picker-trigger` button with an inline
     // `anchor-name`, and its own popover dialog) precedes the demo in the DOM, so those first-match selectors
-    // measured the header, which does not scroll with the content.
+    // would measure the header, which does not scroll with the content.
     const offsetOf = async () => {
       const t = await readAtRest(trigger, (el) => el.getBoundingClientRect().toJSON());
       const c = await readAtRest(content, (el) => el.getBoundingClientRect().toJSON());
@@ -1037,26 +1004,22 @@ test.describe("Rule 8 — scroll tracking: an anchored overlay's content keeps i
 });
 
 /**
- * Rule 9 — point-positioned vs. anchored scroll behavior (Migration A slice
- * 2/3). Rule 8 above already covers the *anchored* case (content tracks its
- * trigger through a scroll); this rule adds the two shapes slice 2 migrated:
+ * Rule 9 — point-positioned vs. anchored scroll behavior. Rule 8 above covers the *anchored* case (content tracks its
+ * trigger through a scroll); this rule adds the two shapes `ContextMenu` and
+ * `Menubar` take:
  *
  *   - `ContextMenu` opens at a raw click point with **no** anchor at all
  *     (`ContextMenuContentRendered`, `context_menu.rs` -- deliberately not
- *     anchored, per this slice's own scope: "CSS anchors need an element,
- *     do NOT anchor"). Its pre-migration behavior -- measured against an
- *     unmodified `position: fixed` div, *before* writing this rule, per
- *     this slice's own instruction to preserve whatever that behavior
- *     already was -- is that `position: fixed`'s containing block is the
- *     viewport (absent a transformed ancestor), so the content stays at
- *     the click's *viewport-relative* position and does not move on screen
- *     as the page scrolls underneath it -- the same thing a native OS
- *     context menu does, and explicitly what Radix's own `ContextMenu`
- *     does too (cited in this slice's own task description). Promoting it
- *     to the top layer via `popover="manual"` does not change this: a
- *     top-layer element's containing block is *also* the viewport, so the
- *     inline `top`/`left` pixel values set at open time keep meaning
- *     exactly what they meant before migrating.
+ *     anchored: CSS anchors need an element). A `position: fixed` div's
+ *     containing block is the viewport (absent a transformed ancestor), so
+ *     the content stays at the click's *viewport-relative* position and
+ *     does not move on screen as the page scrolls underneath it -- the same
+ *     thing a native OS context menu does, and what Radix's own
+ *     `ContextMenu` does. Promoting it to the top layer via
+ *     `popover="manual"` does not change this: a top-layer element's
+ *     containing block is *also* the viewport, so the inline `top`/`left`
+ *     pixel values set at open time keep meaning exactly what they mean for
+ *     a `position: fixed` div.
  *   - `Menubar` menus, by contrast, anchor each menu's content to its own
  *     trigger (`MenubarContentRendered`, `menubar.rs`) -- the same shape
  *     `DropdownMenu`'s Rule 8 case exercises -- and so must keep tracking
@@ -1092,7 +1055,7 @@ test.describe("Rule 9 — point-positioned vs. anchored scroll behavior", () => 
     expect(after.left, debug).toBeCloseTo(before.left, 0);
   });
 
-  // Row 193: a menubar never locks the page, so an open menu no longer follows its trigger through a
+  // Row 193: a menubar never locks the page, so an open menu does not follow its trigger through a
   // scroll -- any scroll (past the helper's 300 ms quiet window after the open) closes it
   // (`top_layer::use_close_on_scroll`, `playwright/close-on-scroll.spec.ts` for the full policy).
   test("Menubar content closes on a scroll instead of following its trigger", async ({ page }) => {
@@ -1111,15 +1074,15 @@ test.describe("Rule 9 — point-positioned vs. anchored scroll behavior", () => 
 
 /**
  * Rule 11 — anchored-overlay self-overlap contract, iOS on-screen keyboard
- * (2026-09-02, user report: the Combobox options list rendering on top of
- * its own search input after focusing/typing on iOS Safari).
+ * (the Combobox options list must not render on top of its own search
+ * input after focusing/typing on iOS Safari).
  *
  * Citation: no single WHATWG/W3C section states "an anchored popup must
  * never cover its own anchor" as a normative MUST -- this rule cites this
  * repo's own anchored-overlay contract (the `[data-side]`/`[data-align]`
  * placement formula `use_anchor_position_fallback` implements and
  * self-checks, `primitives/src/top_layer.rs`) plus the platform surface the
- * investigation and fix are built on:
+ * contract is built on:
  *   - CSSOM View's `VisualViewport` -- the on-screen-keyboard-aware
  *     viewport rectangle. `window.innerWidth`/`innerHeight` do NOT shrink
  *     when iOS Safari's keyboard appears; `window.visualViewport` does:
@@ -1127,31 +1090,30 @@ test.describe("Rule 9 — point-positioned vs. anchored scroll behavior", () => 
  *     <https://www.w3.org/TR/cssom-view-1/#the-visualviewport-interface>
  *   - The WHATWG HTML popover UA stylesheet default this file's Rule 1-10
  *     already cite -- what an anchored overlay falls back to once CSS
- *     Anchor Positioning can no longer place it:
+ *     Anchor Positioning cannot place it:
  *     <https://html.spec.whatwg.org/multipage/rendering.html#the-popover-attribute>
  *
- * Investigation findings (this session, `<scratchpad>/ios-combobox/repro.js`)
- * identified two gaps in `use_anchor_position_fallback` pre-fix:
- *   1. No visual-viewport awareness -- the fallback reads only
- *      `window.innerWidth/innerHeight` + `getBoundingClientRect()`, both
+ * Two gaps `use_anchor_position_fallback` must not have:
+ *   1. No visual-viewport awareness -- a fallback that reads only
+ *      `window.innerWidth/innerHeight` + `getBoundingClientRect()` is
  *      blind to a keyboard-driven `visualViewport` change.
- *   2. Scroll/resize tracking listeners were installed ONLY when the
+ *   2. Scroll/resize tracking listeners installed ONLY when the
  *      *first* measurement already concluded `usingFallback` (see that
  *      hook's own "Scroll/resize tracking" doc) -- an overlay that looked
- *      correctly anchored at open time never got a listener at all, so a
+ *      correctly anchored at open time would never get a listener at all, so a
  *      later divergence (the keyboard opening after the overlay is already
  *      open -- exactly Combobox's shape: focusing its input both opens the
- *      listbox and summons the keyboard) was never re-measured for the
+ *      listbox and summons the keyboard) would never be re-measured for the
  *      rest of that open.
  *
  * Scope: every overlay that actually calls `use_anchor_position_fallback`
- * (grepped `primitives/src/*.rs`, `combobox/components/list.rs`,
+ * (in `primitives/src/*.rs`, `combobox/components/list.rs`,
  * `select/components/list.rs`) -- Tooltip, HoverCard, Popover,
- * DropdownMenu, Menubar, Select, Combobox. `ContextMenu` is deliberately
- * excluded: per Rule 9's own doc above and `context_menu.rs` (grepped: zero
- * references to `use_anchor_position_fallback` or `anchor_id`), it opens at
+ * DropdownMenu, Menubar, Select, Combobox. `ContextMenu`'s root content is deliberately
+ * excluded: per Rule 9's own doc above and `context_menu.rs` (its root content is
+ * clamped by `use_point_anchor_clamp`, not `use_anchor_position_fallback`), it opens at
  * a raw click point with no anchor at all, so it has no "own anchor rect"
- * to overlap and neither of this fix's two gaps can apply to it.
+ * to overlap and neither of the two gaps can apply to it.
  *
  * Parts (a)-(c) below use the "Clipping escape" section's
  * `clip-*-trigger`/`clip-*-content` pairs (one per component, already used
@@ -1160,10 +1122,9 @@ test.describe("Rule 9 — point-positioned vs. anchored scroll behavior", () => 
  * id-addressable trigger and content.
  *
  * Simulating an iOS Safari engine in this sandbox's Chromium:
- *   - No Chromium launch flag disables `anchor-name`/`anchor()` support any
- *     more (confirmed empirically this session and in the prior
- *     investigation: the feature has fully shipped and is no longer
- *     flag-gated) -- so "this engine doesn't do CSS Anchor Positioning" is
+ *   - No Chromium launch flag disables `anchor-name`/`anchor()` support
+ *     (the feature has fully shipped and is not flag-gated) -- so "this
+ *     engine doesn't do CSS Anchor Positioning" is
  *     simulated at the CSS-cascade level instead, in
  *     `stripAnchorSupportsBlock` below: brace-counted removal (a greedy
  *     regex would over/under-match the many nested `{}` inside it) of the
@@ -1173,9 +1134,7 @@ test.describe("Rule 9 — point-positioned vs. anchored scroll behavior", () => 
  *     (`primitives/src/top_layer.rs`'s `anchor_positioning_inject_js`).
  *     This drops exactly the `anchor()`-based placement rules an engine
  *     without the feature would never have applied, regardless of whether
- *     *this* browser actually supports it -- ported from this session's own
- *     `repro.js` diagnosis harness rather than reinvented, since it was
- *     already verified working there.
+ *     *this* browser actually supports it.
  *   - A real iOS keyboard shrinks `window.visualViewport` while leaving
  *     `window.innerWidth/innerHeight` untouched; `page.setViewportSize()`
  *     cannot reproduce that split -- it resizes the real layout viewport
@@ -1183,24 +1142,23 @@ test.describe("Rule 9 — point-positioned vs. anchored scroll behavior", () => 
  *     *can* exercise is gap 2 above: does anything re-measure at all once
  *     an overlay is already open? That is what parts (b) and (c) below
  *     drive at. (Real `visualViewport`-only divergence needs a genuine iOS
- *     Safari; see `docs/backlog.md`'s new row for that follow-up.)
+ *     Safari; tracked in `dev-docs/backlog.md`.)
  *
  * Part (c)'s second sub-case, "conforming at open, diverging later," is the
  * one gap 2 exists for and needs a component that genuinely lands on the
- * CSS-anchor path at open, not the JS fallback -- confirmed by execution
- * (this session): every one of the seven `clip-*` pairs above already runs
+ * CSS-anchor path at open, not the JS fallback: every one of the seven
+ * `clip-*` pairs above runs
  * the JS fallback at open in this fixture context (the `clip-box`
  * ancestor's `transform` appears to invalidate `anchor()`'s reference the
- * same way it does for `use_anchor_position_fallback`'s own pre-existing
- * cases), and DropdownMenu/Select/Combobox land on the fallback path even
+ * same way it does for `use_anchor_position_fallback`'s own cases), and
+ * DropdownMenu/Select/Combobox land on the fallback path even
  * on their own, unclipped gallery pages -- the same broad CSS-Anchor-
- * Positioning unevenness `docs/backlog.md` item 21 already documents for
+ * Positioning unevenness `dev-docs/backlog.md` item 21 documents for
  * ColorPicker/DatePicker in this sandbox. `CONFORMING_CASES` below is the
- * (smaller, execution-verified) set of contexts on this same fixture, or a
+ * (smaller) set of contexts on this same fixture, or a
  * component's own gallery page, that DO land on the CSS-anchor path at
  * open in this sandbox; the rest are explicitly marked unsupported here
- * with the reason, rather than asserting something that was never true to
- * begin with.
+ * with the reason, rather than asserting something that is not true.
  */
 function rectsIntersect(
   a: { top: number; left: number; right: number; bottom: number },
@@ -1240,7 +1198,7 @@ async function pinNearTop(page: Page, locator: import("@playwright/test").Locato
   // A viewport-pinned trigger cannot be scrolled anywhere, so "pin it near the
   // top" is meaningless for one -- and worse than meaningless: `rect.top` for a
   // `position: fixed` element is always its fixed on-screen position, so the
-  // scroll below computes a large, arbitrary offset (+659px measured for
+  // scroll below computes a large, arbitrary offset (+659px for
   // `#edge-bottom-popover-trigger`, whose row is `position: fixed; bottom: 4px`)
   // that scrolls the *rest* of the page under the stationary trigger. That drags
   // the fixture's unrelated `#stack-sibling` (`position: absolute; z-index: 9999`,
@@ -1248,11 +1206,9 @@ async function pinNearTop(page: Page, locator: import("@playwright/test").Locato
   // rectangle, where it intercepts the click and sends Playwright into a
   // scroll-and-retry loop until the 5-minute test timeout.
   //
-  // Found by execution 2026-09-04, the first run of this file in a container that
-  // actually had Playwright browsers -- Rule 11(c)'s Popover case had never once
-  // opened its popover. Fixed here rather than in that one case because the
+  // The guard lives here rather than in Rule 11(c)'s Popover case because the
   // hazard belongs to this helper's own assumption (that a trigger sits in normal
-  // document flow), so any future fixed-position trigger would hit it again.
+  // document flow), so any fixed-position trigger would hit it.
   const isViewportPinned = await locator.evaluate((el) => {
     for (let node: Element | null = el; node; node = node.parentElement) {
       if (getComputedStyle(node).position === "fixed") return true;
@@ -1267,27 +1223,21 @@ async function pinNearTop(page: Page, locator: import("@playwright/test").Locato
   // fixture's fixed right-edge triggers, which then intercept the click and
   // send Playwright into its scroll-and-retry loop.
   //
-  // Originally (2026-09-18) this call and the `window.scrollTo` below each
-  // passed their own `behavior: "instant"`, working around the site's
-  // global `html { scroll-behavior: smooth }` (`preview/assets/main.css`,
-  // commit daebe40) animating this helper's own positioning scroll for
-  // several hundred ms instead of landing it instantly -- `pinNearTop`'s
-  // entire contract (see this function's own opening doc) is to deliver
-  // the trigger at a settled, known position BEFORE `overlay.open()` runs.
-  // Simplified per dev-docs/backlog.md row 110, and kept so by row 228: the
-  // root `scroll-behavior` is `auto` unless a same-page anchor jump opts in
-  // (`html[data-anchor-scroll]`), so an unqualified scroll -- one that does
+  // `pinNearTop`'s entire contract (see this function's own opening doc) is
+  // to deliver the trigger at a settled, known position BEFORE
+  // `overlay.open()` runs. The root `scroll-behavior` is `auto` unless a
+  // same-page anchor jump opts in (`html[data-anchor-scroll]`; dev-docs/
+  // backlog.md rows 110 and 228), so an unqualified scroll -- one that does
   // not name its own `behavior` -- is already instant without a per-call-site
-  // argument. Kept unqualified (not re-adding `behavior: "instant"` here) so
-  // this helper relies on the page's own contract, not a copy of a workaround.
+  // argument. Kept unqualified (no `behavior: "instant"` here) so this helper
+  // relies on the page's own contract, not a copy of a workaround.
   await locator.evaluate((el) => el.scrollIntoView({ block: "nearest", inline: "center" }));
   const rect = await rectOfLocator(locator);
   // "Near the top" means just below the sticky navbar, not 24px from the
   // viewport edge: the preview's `.dx-preview-navbar` is `position: sticky;
   // top: 0` (main.css), so anything pinned above its bottom edge is covered
   // and hit-tested by the nav -- Playwright then retries `hover()` until the
-  // test times out. Found by execution 2026-09-02, the first run in this
-  // sandbox with main.css actually applied (see
+  // test times out (this needs main.css applied; see
   // `oracle/tier2-html/global-stylesheet.spec.ts`).
   const navBottom = await page.evaluate(() => {
     const nav = document.querySelector(".dx-preview-navbar, nav[aria-label='Primary']");
@@ -1314,8 +1264,7 @@ async function simulateOnScreenKeyboard(page: Page): Promise<void> {
 
 /**
  * See this section's header doc, "Simulating an iOS Safari engine" -- the
- * CSS-cascade half. Ported from `<scratchpad>/ios-combobox/repro.js`'s
- * `stripAnchorSupportsBlock`.
+ * CSS-cascade half (`stripAnchorSupportsBlock`).
  */
 async function stripAnchorSupportsBlock(page: Page): Promise<void> {
   await page.waitForFunction(() => !!document.getElementById("dx-anchor-positioning-styles"), {
@@ -1432,11 +1381,10 @@ const ANCHORED_OVERLAYS: AnchoredOverlay[] = [
     },
   },
   {
-    // 2026-09-03, finding C: added alongside the Navbar migration --
     // `use_anchor_position_fallback` is a shared function, so the same iOS
-    // keyboard/self-overlap contract Rule 11 already checks for every other
-    // `dx-anchor-*` consumer must hold for this one too, not just the
-    // flip/clip rules finding C's own construction primarily targets.
+    // keyboard/self-overlap contract Rule 11 checks for every other
+    // `dx-anchor-*` consumer must hold for Navbar too, not just the
+    // flip/clip rules.
     // `.hover()`, not `.click()` -- see the identical comment on this
     // fixture's Rule 1 "Navbar content escapes the clip" case; `reengage`
     // is needed for the same reason Tooltip/HoverCard above need it (a
@@ -1452,7 +1400,7 @@ const ANCHORED_OVERLAYS: AnchoredOverlay[] = [
     },
   },
   {
-    // docs/backlog.md row 72 follow-up: `NavigationMenuContent` also calls
+    // dev-docs/backlog.md row 72: `NavigationMenuContent` also calls
     // `use_anchor_position_fallback` (see this module's own "Top layer"
     // doc), so the same iOS keyboard/self-overlap contract applies here
     // too, mirroring the Navbar entry above exactly (`.hover()`, not
@@ -1479,7 +1427,7 @@ async function assertNoSelfOverlapWithinViewport(page: Page, overlay: AnchoredOv
   expect(content.bottom, debug).toBeLessThanOrEqual(viewport.height + EDGE_TOLERANCE);
 }
 
-test.describe("Rule 11 — anchored-overlay self-overlap contract (2026-09-02 iOS keyboard bug)", () => {
+test.describe("Rule 11 — anchored-overlay self-overlap contract", () => {
   test.describe("(a) no self-overlap once open", () => {
     for (const overlay of ANCHORED_OVERLAYS) {
       test(`${overlay.name}: content never overlaps its own anchor`, async ({ page }) => {
@@ -1531,38 +1479,38 @@ test.describe("Rule 11 — anchored-overlay self-overlap contract (2026-09-02 iO
     /**
      * The gap this whole rule exists for (gap 2 in this section's header
      * doc): CSS Anchor Positioning is fully intact and correct at *open*
-     * time -- `usingFallback` stays false, so pre-fix no tracking listener
-     * is ever attached -- and only THEN does anchor-positioning support
-     * disappear, mid-open, the same moment an iOS keyboard would appear
-     * over a focused Combobox input. Must be RED before the fix.
+     * time -- `usingFallback` stays false, so a listener attached only on the
+     * fallback path would never exist -- and only THEN does anchor-positioning
+     * support disappear, mid-open, the same moment an iOS keyboard would
+     * appear over a focused Combobox input.
      *
      * Needs a context that genuinely lands on the CSS-anchor path at open
      * (see this section's header doc, last paragraph, for why the `clip-*`
      * pairs above cannot be reused for this one case) -- `CONFORMING_CASES`
-     * below, execution-verified per entry, most deliberately marked
+     * below, checked per entry, most deliberately marked
      * unsupported with the reason rather than faked:
      *   - DropdownMenu/Select/Combobox never land on the CSS-anchor path at
      *     all in this sandbox, on any page checked (their own gallery page
-     *     or this fixture) -- same broad unevenness `docs/backlog.md` item
-     *     21 already documents.
+     *     or this fixture) -- same broad unevenness `dev-docs/backlog.md` item
+     *     21 documents.
      *   - Tooltip/HoverCard DO conform at open here (`edge-bottom-*`), but
-     *     confirmed by execution: shrinking the viewport for the keyboard
+     *     shrinking the viewport for the keyboard
      *     simulation moves the trigger out from under Chromium's actual
      *     (unmoved) cursor, and this browser re-hit-tests `:hover` on
      *     scroll/resize for real -- so the *real* browser closes the
-     *     overlay via a genuine `pointerleave` before any of this fix's
+     *     overlay via a genuine `pointerleave` before any of the fix's
      *     logic even runs, and re-hovering to keep it open starts a whole
      *     new open cycle (a fresh, cold measurement -- not the same-open
-     *     "diverges mid-open" case this test exists for). Not a gap this
-     *     fix closes or should try to: a hover-only surface summoning an
-     *     on-screen keyboard was never the reported shape to begin with
-     *     (Combobox's is a focused, keyboard-persistent text input).
+     *     "diverges mid-open" case this test exists for). Not a gap the
+     *     fix closes or should try to: a hover-only surface does not
+     *     summon an on-screen keyboard (Combobox's is a focused,
+     *     keyboard-persistent text input).
      *   - Menubar conforms at open on its own gallery page at desktop
-     *     width, but confirmed by execution: not at `MOBILE_VIEWPORT`
+     *     width, but not at `MOBILE_VIEWPORT`
      *     width (390px) -- the one precondition this case needs.
-     *   - Navbar (docs/backlog.md row 41; added to `ANCHORED_OVERLAYS`
-     *     above for parts (a)/(b) by finding C, not previously carried
-     *     into this `CONFORMING_CASES` table) opens the same way here as
+     *   - Navbar (dev-docs/backlog.md row 41; part of `ANCHORED_OVERLAYS`
+     *     above for parts (a)/(b), not of this `CONFORMING_CASES` table)
+     *     opens the same way here as
      *     in `ANCHORED_OVERLAYS` above -- `.hover()` on its trigger, with
      *     a `reengage` step after the keyboard-simulation resize -- the
      *     exact shape that entry's own doc gives Tooltip/HoverCard
@@ -1570,25 +1518,21 @@ test.describe("Rule 11 — anchored-overlay self-overlap contract (2026-09-02 iO
      *     when the resize moves the trigger out from under the
      *     stationary synthetic cursor). That is the same Chromium
      *     hover/pointerleave behaviour the Tooltip/HoverCard bullet above
-     *     already established by execution -- a property of *how the
+     *     describes -- a property of *how the
      *     overlay opens*, not of this component's own code -- so it
      *     applies here on the same grounds. Marked unsupported on that
-     *     basis, NOT independently re-confirmed by execution for Navbar
-     *     in this environment (no Playwright browser available this
-     *     round, docs/backlog.md rows 36/41's own report) -- flagged so a
-     *     future execution pass can confirm or correct it, the same
-     *     standard every other entry here was held to.
-     *   - Popover is the sole survivor, and is enough: confirmed by
-     *     execution (before this section's assertions were tightened) that
-     *     its content really does stop tracking after the strip (stays at
+     *     basis (a structural inference, not independently confirmed by
+     *     execution for Navbar; dev-docs/backlog.md rows 36/41).
+     *   - Popover is the sole survivor, and is enough: its content really
+     *     does stop tracking after the strip (stays at
      *     `style.top === ""`, i.e. no re-measurement ever happens) --
      *     `expect(...).not.toBe("")` below is the direct, mechanism-level
      *     assertion for that (rather than an overlap/viewport check alone,
      *     which this exact fixture's geometry can pass by coincidence even
-     *     while genuinely stale -- confirmed by execution: the stale,
-     *     UA-default position it fell back to for this specific trigger
-     *     happened to land at the viewport's top-left corner, nowhere near
-     *     -- but also nowhere *correct* relative to -- the trigger).
+     *     while genuinely stale: the stale, UA-default position it falls
+     *     back to for this specific trigger happens to land at the
+     *     viewport's top-left corner, nowhere near -- but also nowhere
+     *     *correct* relative to -- the trigger).
      */
     type ConformingCase =
       | {
@@ -1609,10 +1553,10 @@ test.describe("Rule 11 — anchored-overlay self-overlap contract (2026-09-02 iO
         trigger: (page) => page.locator("#edge-bottom-popover-trigger"),
         content: (page) => page.locator("#edge-bottom-popover-content"),
         open: async (page) => {
-          // Row 210 (exclusion zone): a CSS-anchor placement that leaves the visual viewport is no
-          // longer trusted -- the JS path takes over at open. This fixture's trigger sits 16px from
-          // the left edge, so its centre-aligned 288px panel started 73px off-screen and
-          // (correctly) took the JS path from the first frame, which is not the "conforming at
+          // Row 210 (exclusion zone): a CSS-anchor placement that leaves the visual viewport is not
+          // trusted -- the JS path takes over at open. This fixture's trigger sits 16px from
+          // the left edge, so its centre-aligned 288px panel would start 73px off-screen and
+          // (correctly) take the JS path from the first frame, which is not the "conforming at
           // open" premise of this case. Moving the fixed trigger inward keeps the CSS placement
           // inside the viewport, so the CSS arm still places it and the divergence is the test.
           await page.locator("#edge-bottom-popover-trigger").evaluate((el) => {
@@ -1633,8 +1577,8 @@ test.describe("Rule 11 — anchored-overlay self-overlap contract (2026-09-02 iO
         reason:
           "conforms at open (edge-bottom-tooltip-*) but is hover-driven: the keyboard-simulation resize " +
           "moves the trigger out from under the real (unmoved) cursor, and this Chromium genuinely closes " +
-          "the tooltip via a real pointerleave before this fix's logic runs -- not the same-open " +
-          "'diverges mid-open' case this test targets, and not the reported bug's shape (a focused text " +
+          "the tooltip via a real pointerleave before the tracking logic runs -- not the same-open " +
+          "'diverges mid-open' case this test targets, and not the keyboard-overlap shape (a focused text " +
           "input, not a hover surface, is what keeps an overlay open while a keyboard appears).",
       },
       {
@@ -1648,7 +1592,7 @@ test.describe("Rule 11 — anchored-overlay self-overlap contract (2026-09-02 iO
         reason:
           "no naturally CSS-anchor-conforming context found for DropdownMenu in this Chromium sandbox " +
           "(checked its own gallery page's demo instance and every clip-* pair on the top_layer fixture -- " +
-          "all land on the JS fallback path at open already; docs/backlog.md item 21 records this sandbox's " +
+          "all land on the JS fallback path at open already; dev-docs/backlog.md item 21 records this sandbox's " +
           "broader CSS-Anchor-Positioning unevenness). Verify on a real device instead.",
       },
       {
@@ -1674,11 +1618,11 @@ test.describe("Rule 11 — anchored-overlay self-overlap contract (2026-09-02 iO
           "no naturally CSS-anchor-conforming context found for Combobox in this Chromium sandbox (checked " +
           "its own gallery page's demo instances and every clip-* pair on the top_layer fixture -- all land " +
           "on the JS fallback path at open already, which is itself the correctly-handled case, not this " +
-          "gap). This is the reported bug's own component -- see this session's report for why real-device " +
-          "iOS Safari verification is still needed for the exact 'conforming at open' shape.",
+          "gap). Combobox is the component the keyboard-overlap contract is about; real-device iOS Safari " +
+          "verification is still needed for the exact 'conforming at open' shape (dev-docs/backlog.md row 28).",
       },
       {
-        // docs/backlog.md row 41(b). See this section's header doc's own
+        // dev-docs/backlog.md row 41(b). See this section's header doc's own
         // "Navbar" bullet above for the full reasoning and its caveat: this
         // is a structural inference from `ANCHORED_OVERLAYS`' own hover +
         // `reengage` shape for Navbar (identical to Tooltip/HoverCard's,
@@ -1690,28 +1634,28 @@ test.describe("Rule 11 — anchored-overlay self-overlap contract (2026-09-02 iO
           "same as Tooltip/HoverCard above -- ANCHORED_OVERLAYS opens Navbar via .hover() with a reengage " +
           "step after the keyboard-simulation resize, the same hover-driven shape that makes Tooltip/HoverCard " +
           "genuinely close via a real pointerleave when the resize moves the trigger out from under the " +
-          "stationary synthetic cursor, before this fix's logic ever runs. Not independently confirmed by " +
-          "execution for Navbar in this environment (docs/backlog.md rows 36/41's own report) -- a future " +
+          "stationary synthetic cursor, before the tracking logic ever runs. Not independently confirmed by " +
+          "execution for Navbar in this environment (dev-docs/backlog.md rows 36/41's own report) -- a future " +
           "execution pass should confirm or correct this.",
       },
       {
-        // docs/backlog.md row 72 follow-up. Same structural inference as
-        // the Navbar entry above (added to `ANCHORED_OVERLAYS` for parts
-        // (a)/(b), not previously carried into this `CONFORMING_CASES`
+        // dev-docs/backlog.md row 72. Same structural inference as
+        // the Navbar entry above (in `ANCHORED_OVERLAYS` for parts
+        // (a)/(b), not in this `CONFORMING_CASES`
         // table): NavigationMenu opens the same way here as in
         // `ANCHORED_OVERLAYS` above -- `.hover()` on its trigger, with a
         // `reengage` step after the keyboard-simulation resize -- the
         // identical hover-driven shape that makes Tooltip/HoverCard/Navbar
         // genuinely close via a real pointerleave when the resize moves
         // the trigger out from under the stationary synthetic cursor,
-        // before this fix's logic ever runs.
+        // before the tracking logic ever runs.
         name: "NavigationMenu",
         supported: false,
         reason:
           "same as Tooltip/HoverCard/Navbar above -- ANCHORED_OVERLAYS opens NavigationMenu via .hover() with " +
           "a reengage step after the keyboard-simulation resize, the same hover-driven shape that makes those " +
           "three genuinely close via a real pointerleave when the resize moves the trigger out from under the " +
-          "stationary synthetic cursor, before this fix's logic ever runs. This is the same structural " +
+          "stationary synthetic cursor, before the tracking logic ever runs. This is the same structural " +
           "inference the Navbar bullet above draws, not an independent execution run against the specific " +
           "'conforming at open' shape this test needs for NavigationMenu (it is skipped, like Navbar, by " +
           "test.skip(!kase.supported, ...) below, so this reason itself is never exercised by a normal run) " +
@@ -1742,8 +1686,8 @@ test.describe("Rule 11 — anchored-overlay self-overlap contract (2026-09-02 iO
         await simulateOnScreenKeyboard(page);
 
         // The direct, mechanism-level assertion: did anything re-measure at
-        // all? Pre-fix, gap 2 means the answer is no -- no listener was
-        // ever attached, since this content conformed (via CSS) at open --
+        // all? If gap 2 were open the answer would be no -- no listener
+        // is ever attached, since this content conformed (via CSS) at open --
         // so `style.top` stays exactly `""` forever, regardless of whether
         // this fixture's particular geometry also happens to overlap or
         // leave the viewport (see this section's header doc for why an
@@ -1768,9 +1712,9 @@ test.describe("Rule 11 — anchored-overlay self-overlap contract (2026-09-02 iO
 });
 
 /**
- * Rule 12 — inline-axis shift (2026-09-03, user device report: the
- * `ColorPicker` popup on the home page's widget masonry clips against the
- * viewport's edge on a small screen).
+ * Rule 12 — inline-axis shift (the `ColorPicker` popup on the home page's
+ * widget masonry must not clip against the viewport's edge on a small
+ * screen).
  *
  * Citation: same as Rule 11 above -- this repo's own anchored-overlay
  * placement contract (`[data-side]`/`[data-align]`, `use_anchor_position_
@@ -1779,40 +1723,37 @@ test.describe("Rule 11 — anchored-overlay self-overlap contract (2026-09-02 iO
  * (`position-try-fallbacks`, <https://www.w3.org/TR/css-anchor-position-1/#fallback-var>),
  * of which this crate's `@supports` block declares only the flip members
  * (`flip-block`, `flip-inline`, Rules 5/6 above) -- no shift primitive, on
- * either engine, before this fix.
+ * either engine.
  *
- * Root cause (see `use_anchor_position_fallback`'s doc, "Inline-axis shift
- * (2026-09-03)", `primitives/src/top_layer.rs`): flip only ever swaps `side`
+ * Why a shift is needed (see `use_anchor_position_fallback`'s doc, "Inline-axis shift",
+ * `primitives/src/top_layer.rs`): flip only ever swaps `side`
  * to its own axis's opposite (block for top/bottom, inline for left/right).
  * A `side="top"`/`side="bottom"` placement's horizontal position comes
  * entirely from `align`, computed once against the trigger and never
  * checked against the viewport at all -- so a center-aligned overlay wider
- * than the room its trigger has on one side simply ran past that edge, on
- * an engine with no CSS Anchor Positioning (the reported device, iOS 18
- * Safari; simulated here exactly as Rule 11 does).
+ * than the room its trigger has on one side runs past that edge, on
+ * an engine with no CSS Anchor Positioning (iOS 18 Safari; simulated here
+ * exactly as Rule 11 does).
  *
- * Two fixture halves, both confirmed by execution to reproduce (RED before
- * the fix):
- *   - The reported component itself: the widget-masonry `ColorPicker` on
+ * Two fixture halves:
+ *   - The component the rule is about: the widget-masonry `ColorPicker` on
  *     the home page (`/`), which sits near the *left* edge of a narrow
  *     viewport -- its `side="bottom"`/`align="center"` (defaults) content
  *     is wide enough to run a few pixels past the left edge there. Only the
  *     horizontal bounds are asserted for this case, deliberately: opening
  *     this specific component's popover independently grabs focus onto an
  *     internal drag-thumb (`ColorArea`'s `AreaThumb`, `color_picker.rs`),
- *     which this session found (by execution) drives a large, pre-existing,
- *     unrelated vertical scroll on this fixture regardless of this fix --
- *     not something this rule is about, and not new here (confirmed by
- *     execution against the pre-fix build too) -- tracked separately,
- *     `docs/backlog.md`.
+ *     which drives a large, unrelated vertical scroll on this fixture
+ *     regardless of the shift -- not something this rule is about
+ *     (tracked separately, `dev-docs/backlog.md`).
  *   - Two of this file's own `edge-bottom-*` fixture cases (`Tooltip`,
- *     non-modal `Popover`) -- confirmed by execution to land at
+ *     non-modal `Popover`) -- without the shift they land at
  *     `left: -192px`/`-194px` under the same simulation, a much larger
  *     margin than the ColorPicker case and free of that component's own
  *     scroll confound, so both axes are asserted here. `HoverCard` is
  *     included too for the same reason Rule 5 includes all three: it
- *     already stays within bounds here (confirmed by execution), so this
- *     is a passing regression guard for it, not a second red case.
+ *     already stays within bounds here, so it is a passing regression
+ *     guard, not a second discriminating case.
  */
 test.describe("Rule 12 — inline-axis shift: a center-aligned overlay wider than the room its trigger has on one side stays within the viewport horizontally (no CSS Anchor Positioning engine)", () => {
   test("ColorPicker popover (home page widget masonry) stays within the viewport horizontally", async ({ page }) => {
@@ -1888,22 +1829,22 @@ test.describe("Rule 12 — inline-axis shift: a center-aligned overlay wider tha
 });
 
 /**
- * Rule 13 — fit-content width (2026-09-04 user report: "dropdown menu has
- * full page width").
+ * Rule 13 — fit-content width (a dropdown menu must not take the full page
+ * width).
  *
  * Regression guard for the exact failure mode `top_layer::
- * anchored_content_attributes` (`primitives/src/top_layer.rs`, added
- * 2026-09-03) exists to prevent: a duplicated `style` attribute on an
+ * anchored_content_attributes` (`primitives/src/top_layer.rs`) exists to
+ * prevent: a duplicated `style` attribute on an
  * anchored-content leaf where SSR and the WASM client disagree about which
- * `style` wins (`docs/conformance-harness.md` hydration-parity Rule 4). If
+ * `style` wins (`dev-docs/conformance-harness.md` hydration-parity Rule 4). If
  * the client ever kept a caller/wrapper `style` in place of (rather than
  * folded with) this module's own `position-anchor`/`position: fixed`
  * declarations, the popover UA stylesheet's `[popover] { inset: 0; margin:
- * auto; }` centering-trap default (undone today by the engine-injected
+ * auto; }` centering-trap default (undone by the engine-injected
  * `:where(...)` reset in `ensure_anchor_positioning_styles`) or a stray
  * caller `width: 100%` would be free to stretch the content across the
  * whole viewport instead of shrink-wrapping its own children -- the
- * reported symptom. Every one of these components is authored `min-width`
+ * symptom. Every one of these components is authored `min-width`
  * only (no `width`), so a correctly-folded `style` always leaves the UA
  * `width: fit-content` default (or this fixture's own short menu-item/
  * option text) in charge, and the box stays well under the viewport.
@@ -1974,7 +1915,7 @@ test.describe("Rule 13 — fit-content width (not full page width)", () => {
       open: (page) => page.locator("#clip-navbar-trigger").hover(),
     },
     {
-      // docs/backlog.md row 72 follow-up.
+      // dev-docs/backlog.md row 72.
       name: "NavigationMenu",
       triggerId: "clip-navigation-menu-trigger",
       contentId: "clip-navigation-menu-content",
@@ -2009,7 +1950,7 @@ test.describe("Rule 13 — fit-content width (not full page width)", () => {
 /**
  * Rule 14 — trigger id resync: an overlay's `aria-labelledby` must resolve
  * to an element that actually exists, at the caller's own id where the
- * caller overrides one (docs/backlog.md rows 36/41).
+ * caller overrides one (dev-docs/backlog.md rows 36/41).
  *
  * Citation: WAI-ARIA's `aria-labelledby` is only well-formed when it refers
  * to an `id` present in the document -- the same normative property the
@@ -2019,27 +1960,25 @@ test.describe("Rule 13 — fit-content width (not full page width)", () => {
  * the *id-desync* failure mode rather than the *missing-labelledby-at-all*
  * one that file's calibration already covers.
  *
- * Root cause (row 36): `DropdownMenuContent`/`ContextMenuContent`/
+ * The hazard (row 36): `DropdownMenuContent`/`ContextMenuContent`/
  * `MenubarContent`/`SelectList`/`NavbarContent` (row 41) all label
- * themselves from an internally generated `trigger_id` context signal, but
- * each trigger used to render its own `id` through the caller-wins
- * `merge_attributes` pattern without ever writing a caller override back
- * into that signal -- so a caller-supplied `id` (exactly what this
- * fixture's `clip-*-trigger` ids are) won the *rendered* DOM id while the
- * content's `aria-labelledby` kept pointing at the old, internally
- * generated one nothing in the DOM carries any more: a dangling reference.
- * `SelectTrigger`'s case was axe-detectable (Rule "Select listbox open" in
- * the section above, via `aria-input-field-name`); the other four were not
- * (row 25's own finding: axe carries no rule that checks a bare
+ * themselves from an internally generated `trigger_id` context signal, so
+ * a trigger that renders a caller-supplied `id` (exactly what this
+ * fixture's `clip-*-trigger` ids are) through the caller-wins
+ * `merge_attributes` pattern without writing it back into that signal
+ * wins the *rendered* DOM id while the content's `aria-labelledby` keeps
+ * pointing at the internally generated one nothing in the DOM carries: a
+ * dangling reference. `SelectTrigger`'s case is axe-detectable (Rule
+ * "Select listbox open" in the section above, via `aria-input-field-name`);
+ * the other four are not (row 25: axe carries no rule that checks a bare
  * `role="menu"` container for an accessible name at all) -- this rule is
  * the direct, non-axe regression guard that catches all five the same way,
  * by checking the reference itself rather than relying on axe's coverage
  * gaps lining up.
  *
- * Fix: `SelectTrigger`/`DropdownMenuTrigger`/`ContextMenuTrigger`/
- * `MenubarTrigger`/`NavbarTrigger` now feed their own (previously
- * untyped-`id`) shared `trigger_id` context signal straight into
- * `use_id_or` alongside a new typed `id` prop, mirroring `DialogTitle`'s
+ * The construction: `SelectTrigger`/`DropdownMenuTrigger`/`ContextMenuTrigger`/
+ * `MenubarTrigger`/`NavbarTrigger` feed their shared `trigger_id` context
+ * signal straight into `use_id_or` alongside a typed `id` prop, mirroring `DialogTitle`'s
  * identical `use_id_or(ctx.dialog_labelledby, props.id)`
  * (`primitives/src/dialog.rs`) -- `use_id_or`'s own effect writes a caller
  * override back into that signal, so every reader of `trigger_id`
@@ -2050,8 +1989,8 @@ test.describe("Rule 13 — fit-content width (not full page width)", () => {
  * every one of these five already carries a caller-overridden trigger `id`
  * (`clip-select-trigger`, `clip-dropdown-menu-trigger`,
  * `clip-context-menu-trigger`, `clip-menubar-trigger`,
- * `clip-navbar-trigger`), which is exactly the condition row 36 needed to
- * manifest -- no new fixture markup required. `Tooltip`/`HoverCard`/
+ * `clip-navbar-trigger`), which is exactly the condition row 36 needs to
+ * manifest -- no extra fixture markup required. `Tooltip`/`HoverCard`/
  * `Popover`/`Combobox` are not included: none of them label their content
  * from a `trigger_id`-shaped context signal the way this family does
  * (`Tooltip`/`HoverCard`/`Popover` use `aria-describedby`/no default label
@@ -2059,13 +1998,9 @@ test.describe("Rule 13 — fit-content width (not full page width)", () => {
  * mechanism -- `oracle/tier1-apg/menu-roles.spec.ts`), so row 36's defect
  * class cannot arise for them.
  *
- * NOT YET RUN in this environment (no Playwright browser available this
- * round -- docs/backlog.md rows 36/41's own report spells out exactly
- * what is and isn't verified here): written red-first against the
- * pre-fix code per this repo's convention, and expected to fail pre-fix
- * for all five cases below (the labelledby value would resolve to nothing,
- * or to the stale internally-generated id rather than the caller's own),
- * and pass post-fix.
+ * Each of the five cases below fails if the labelledby value resolves to
+ * nothing, or to the stale internally-generated id rather than the
+ * caller's own (dev-docs/backlog.md rows 36/41).
  */
 test.describe("Rule 14 — aria-labelledby resolves to the caller-overridden trigger id", () => {
   const LABELLEDBY_CASES: Array<{
@@ -2105,14 +2040,13 @@ test.describe("Rule 14 — aria-labelledby resolves to the caller-overridden tri
       open: (page) => page.locator("#clip-navbar-trigger").hover(),
     },
     {
-      // docs/backlog.md row 72 follow-up: `NavigationMenuContent` labels
+      // dev-docs/backlog.md row 72: `NavigationMenuContent` labels
       // itself from `item_ctx.trigger_id` (`navigation_menu.rs`) and
-      // `NavigationMenuTrigger` already feeds a caller override into that
-      // same signal via `use_id_or`, the identical construction row 36's
-      // fix gave the other five components above -- built correctly from
-      // the start (this primitive postdates that fix), so this case is
-      // expected to pass without needing a corresponding fix, unlike the
-      // five above.
+      // `NavigationMenuTrigger` feeds a caller override into that
+      // same signal via `use_id_or`, the identical construction row 36 gives
+      // the other five components above, so this case holds for the same
+      // reason: the content's `aria-labelledby` and the caller-overridden
+      // trigger id agree.
       name: "NavigationMenu",
       triggerId: "clip-navigation-menu-trigger",
       contentId: "clip-navigation-menu-content",
@@ -2160,13 +2094,13 @@ test.describe("Rule 14 — aria-labelledby resolves to the caller-overridden tri
 });
 
 /**
- * Rule 15 — vertical shift + size clamp (docs/backlog.md row 10 residual
- * scope: "shift/size clamping", closed 2026-09-04).
+ * Rule 15 — vertical shift + size clamp (dev-docs/backlog.md row 10 residual
+ * scope: "shift/size clamping").
  *
  * Citation: same as Rules 11/12 above -- this repo's own anchored-overlay
  * placement contract (`use_anchor_position_fallback`,
  * `primitives/src/top_layer.rs`), not a normative WHATWG/W3C MUST. See that
- * function's doc, "Vertical shift + size clamp (2026-09-04)", for the full
+ * function's doc, "Vertical shift + size clamp", for the full
  * construction this rule guards: CSS Anchor Positioning's own
  * collision-avoidance family (`position-try-fallbacks`) has no primitive
  * for either half of it -- no shift-along-an-axis keyword (the same gap
@@ -2187,8 +2121,8 @@ test.describe("Rule 14 — aria-labelledby resolves to the caller-overridden tri
  * outright (CSS2.1 §10.7: a larger `min-height` overrides a smaller
  * `max-height` on the same box) -- silently defeating the very clamp this
  * rule exists to check, not a false pass but a wrong one. `stack-popover-
- * content` carries no `min-height` of its own (confirmed by inspection,
- * `preview/src/components/popover/style.css`), so nothing here competes
+ * content` carries no `min-height` of its own
+ * (`preview/src/components/popover/style.css`), so nothing here competes
  * with the engine's own inline override.
  *
  * A synthetic 500px-tall child is appended to the content *after* it opens
@@ -2207,7 +2141,7 @@ test.describe("Rule 14 — aria-labelledby resolves to the caller-overridden tri
  * 11/12's own precedent) -- so a plain
  * `window.dispatchEvent(new Event('resize'))`, fired after appending the
  * filler child, is enough to force a fresh measurement that sees the new
- * (now much taller) content, with no real second viewport resize needed.
+ * (much taller) content, with no real second viewport resize needed.
  */
 test.describe("Rule 15 — vertical shift + size clamp: an overlay taller than the viewport is clamped to fit and made scrollable, not left to overflow off-screen", () => {
   test("Popover content taller than a short viewport is capped, made scrollable, and stays within the viewport vertically", async ({
@@ -2229,7 +2163,7 @@ test.describe("Rule 15 — vertical shift + size clamp: an overlay taller than t
     // nav (see the `edge-bottom-popover-trigger` case above) -- bypasses
     // that actionability/visibility concern entirely, which matters here
     // since `SHORT_VIEWPORT` leaves little headroom below the nav.
-    // Row 210 (exclusion zone): the panel now takes the room BESIDE its trigger and never
+    // Row 210 (exclusion zone): the panel takes the room BESIDE its trigger and never
     // slides over it, so the trigger must be on screen for "within the viewport" to be
     // possible at all (a trigger scrolled out of view keeps its panel beside it, out of view).
     // (Scrolled AFTER the open: with the CSS-anchor block stripped the content briefly sits in
@@ -2315,12 +2249,12 @@ test.describe("Rule 15 — vertical shift + size clamp: an overlay taller than t
 });
 
 /**
- * Rule 16 — shift and size clamp on a CONFORMING engine (docs/backlog.md
+ * Rule 16 — shift and size clamp on a CONFORMING engine (dev-docs/backlog.md
  * row 10, the "JS-fallback shift" follow-up).
  *
  * Rules 12 and 15 prove the cross-axis shift and the size clamp only under
  * `stripAnchorSupportsBlock`, i.e. on an engine with no CSS Anchor
- * Positioning. Row 10 recorded the other half as an open gap: the
+ * Positioning. The other half is row 10's gap: the
  * `@supports` contract declares `position-try-fallbacks: flip-block,
  * flip-inline` and nothing else, CSS has no shift primitive and no
  * shrink-to-fit primitive, so on an engine that DOES resolve `anchor()`
@@ -2331,7 +2265,7 @@ test.describe("Rule 15 — vertical shift + size clamp: an overlay taller than t
  * the same fixtures and assertions as Rules 12 and 15, with the engine's
  * own anchor positioning left in place, so they pin that hand-off (row
  * 210's exclusion-zone check: a CSS placement outside the visual viewport
- * goes to the JS path). Green as is; with that
+ * goes to the JS path). With that
  * check mutated off, Tooltip and Popover land at `left: -85px`/`-73px` and
  * the filled Popover reaches `bottom: 806px` on a 400px viewport (red).
  * HoverCard stays in bounds either way, a guard as in Rule 12.

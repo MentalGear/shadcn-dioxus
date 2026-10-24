@@ -2,8 +2,8 @@
  * Carousel trackpad edge-band: replay of REAL trackpad recordings.
  *
  * Source data: `fixtures/carousel-wheel-recordings.json` -- wheel bursts the
- * owner recorded on a MacBook trackpad in Firefox 156 while tuning the
- * overscroll bench (dev-docs/research/carousel-overscroll-bench.html), plus
+ * recorded on a MacBook trackpad in Firefox 156 while tuning the
+ * overscroll bench (`fixtures/carousel-overscroll-bench-rev40.html`), plus
  * two clearly-marked SYNTHETIC ones (a notched mouse wheel and vertical page
  * scrolling) for which no real data exists. The JSON's top-level `timing`
  * note says how event spacing was reconstructed (the telemetry has no
@@ -14,14 +14,14 @@
  *  (a) REFERENCE -- the bench's own mode D ("onewriter", rev 40, copied to
  *      `fixtures/carousel-overscroll-bench-rev40.html`). It is the
  *      known-good engine the recordings were tuned against, so this block
- *      proves the replay harness reproduces what the owner saw (a band on an
+ *      proves the replay harness reproduces what the bench draws (a band on an
  *      owned push, none on a native arrival, a band after a re-push).
  *
  *  (b) COMPONENT -- the shipped carousel's `.dx-carousel-content` transform,
- *      asserted against the component's INTENDED contract. Written before the
- *      "mode D" edge-band engine lands in `primitives/src/carousel.rs`; it is
- *      expected to fail against the old engine on main (see the per-test
- *      comments for which assertions did, when this file was added).
+ *      asserted against the component's INTENDED contract, which the "mode D"
+ *      edge-band engine in `primitives/src/carousel.rs` satisfies (the
+ *      per-test comments say which assertions a plateau/velocity engine would
+ *      fail).
  *
  * WHAT IS EMULATED, AND WHY: `dispatchEvent(new WheelEvent(...))` is
  * untrusted, so the browser never scrolls for it. Real trackpad momentum
@@ -217,7 +217,7 @@ test.describe("Carousel wheel replay: reference (the bench's own mode D, rev 40)
   }
 
   /*
-   * DOCUMENTED DIFFERENCES -- NOT ASSERTED. The bench predates the notched
+   * DOCUMENTED DIFFERENCES -- NOT ASSERTED. The bench has none of the notched
    * and axis rules the component deliberately adds: it converts deltaMode 1
    * lines to px (x16) and treats any wheel event as horizontal input
    * (`raw = deltaX !== 0 ? deltaX : deltaY`), so it neither releases a
@@ -225,7 +225,7 @@ test.describe("Carousel wheel replay: reference (the bench's own mode D, rev 40)
    * component will deliberately differ (see block (b)), so the bench's actual
    * behaviour is only recorded as a test annotation, never asserted.
    *
-   * Measured when this file was added (Chromium, 806px track): the notched
+   * Measured on Chromium, 806px track: the notched
    * recording (4 x 3 lines) draws a 29px band that is held until the bench's
    * 1500ms idle backstop and is home ~1.8s after the last click (component
    * contract: <= 300ms); the vertical-only recording (8 x dy -100) draws a
@@ -266,20 +266,16 @@ async function openComponent(page: Page): Promise<{ content: Locator }> {
 }
 
 /*
- * The component's intended contract. RED against main's old engine when this
- * file was added (`CAROUSEL_WHEEL_BOUNCE_JS`'s plateau/velocity release, no
- * owned-vs-native split, no notched or axis rule) and green once mode D's
- * edge-band engine is ported -- nothing here is skipped. Baseline on main
- * (430c52b, release SSG build, Chromium, 336px-wide track, bound = 168px):
- *   - owned-push-flick / -hard, end-edge: FAIL the bound (peaks 234 / 264 /
- *     288px); the release itself is fine (home within 300ms).
- *   - native-arrival-a / -b: FAIL, the old engine draws a band (167 / 146px)
- *     for momentum arriving at the edge.
- *   - native-arrival-repush-start / -end: FAIL "no band before the re-push"
- *     (228 / 214px drawn while still coasting in).
- *   - notched: FAIL, settles 400ms after the last click (contract 300ms).
- *   - vertical-only: FAIL, draws a 169px band from dy-only events.
- *   - slow-push-a / -b: PASS (spring-back already under way by +400ms).
+ * The component's intended contract: `CAROUSEL_WHEEL_BOUNCE_JS`'s edge-band engine (mode D, with an
+ * owned-vs-native split and a notched and an axis rule) satisfies every case below -- nothing here is
+ * skipped. What each case pins (release SSG build, Chromium, 336px-wide track, bound = 168px):
+ *   - owned-push-flick / -hard, end-edge: the band peak stays under the bound and the release is home
+ *     within 300ms.
+ *   - native-arrival-a / -b: momentum arriving at the edge draws no band.
+ *   - native-arrival-repush-start / -end: no band is drawn before the re-push, while still coasting in.
+ *   - notched: settles within 300ms of the last click.
+ *   - vertical-only: dy-only events draw no band.
+ *   - slow-push-a / -b: the spring-back is already under way by +400ms.
  */
 test.describe("Carousel wheel replay: component (intended contract)", () => {
   for (const rec of byKind("owned-push")) {
@@ -372,8 +368,8 @@ test.describe("Carousel wheel replay: component (intended contract)", () => {
       expect(peakAbs(r), summary).toBeLessThanOrEqual(0.5 * width);
       // "Releases" = the spring-back STARTS (the port's NOTCH_IDLE_MS is 140);
       // being fully home also includes the 340ms spring-back animation itself,
-      // so that is bounded separately. The failure this guards against is the
-      // old 1.5s hold, not the animation's own length.
+      // so that is bounded separately. The failure this guards against is a
+      // 1.5s hold, not the animation's own length.
       const start = releaseStartAfter(r);
       expect(start, `release started (${summary})`).not.toBeNull();
       expect(start!, summary).toBeLessThanOrEqual(300);

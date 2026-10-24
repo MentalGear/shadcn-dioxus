@@ -6,7 +6,7 @@
  * `-description` `text-muted-foreground text-sm`. DrawerClose has no rule of its own in Nova (the
  * demos pass an outline `Button`), so the unstyled default close below is that outline Button. The
  * panel fill is the one modal fill (`--dx-popover`) shared with Dialog, AlertDialog, Sheet and
- * Command (owner decision 6). The slide, drag and rubber-band motion is this library's own.
+ * Command. The slide, drag and rubber-band motion is this library's own.
  *
  * The PANEL is the theme's one "Edge panel" recipe (`dx-components-theme.css`, shared with Sheet): the
  * `<dialog>` UA reset, the per-side inset, size, border, corners and the slide, keyed on the
@@ -78,7 +78,7 @@
  *   drag-triggered close plays out), tracks the live pointer offset. A CSS `animation`'s value for a
  *   property overrides even a higher-specificity inline style on that SAME property for as long as the
  *   animation applies, so the live drag has to live on a property the slide never touches, or it would
- *   be invisibly overridden the entire time the drawer is open (confirmed by execution). `transform`
+ *   be invisibly overridden the entire time the drawer is open. `transform`
  *   composes with `translate` instead of competing for the same cascade slot, so both apply at once with
  *   no extra timing coordination. At rest there is no inline style, so this sheet owns `transform` and
  *   `scale` for the nested-drawer stack below.
@@ -88,9 +88,8 @@
    * the strip that covers a rubber-band can never be a different colour from the panel. */
   --dx-drawer-fill: var(--dx-popover);
 
-  /* The recipe's slots. Panel padding is NOT Nova's 0 here (backlog row 197, decided with the edge-panel
-   * lane): Nova pads only the header, footer and body and the Sheet follows it, but three consumers
-   * outside the drawer lane put content straight into a Drawer panel and lean on its inset -- the theme
+  /* The recipe's slots. Panel padding is NOT Nova's 0 here (backlog row 197): Nova pads only the header, footer and body and the Sheet follows it, but three consumers
+   * outside the drawer put content straight into a Drawer panel and lean on its inset -- the theme
    * picker's drawer (`theme.rs`, `main.css`: the panel between the handle and the footer, with the
    * panel's gap), the chart code drawer (`main.css`, block padding) -- so the Drawer keeps its 16px
    * until those pad themselves; then this one slot flips to the recipe default and the `gap` below goes. */
@@ -129,14 +128,13 @@
    * which very much includes ordinary text (a title, a description) --
    * unlike a `mousedown` confined to the decorative handle, there is no
    * single element to scope this to, so it applies here, to the whole
-   * dragging content, inherited down to every descendant. Reproduced
-   * live pre-fix: a slow horizontal `mousedown`+move sweep across
-   * `DrawerDescription`'s text made `window.getSelection().toString()`
-   * return the full sentence. No `-webkit-user-select`: this repo's own
+   * dragging content, inherited down to every descendant. Without
+   * it a slow horizontal `mousedown`+move sweep across
+   * `DrawerDescription`'s text selects the full sentence
+   * (`window.getSelection().toString()`). No `-webkit-user-select`: this repo's own
    * `stylelint-config-standard` (`property-no-vendor-prefix`) flags it as
-   * no-longer-needed by this project's supported-browser data (Safari has
-   * shipped unprefixed `user-select` since 15.4) -- confirmed by running
-   * it, not assumed. */
+   * unneeded by this project's supported-browser data (Safari has
+   * shipped unprefixed `user-select` since 15.4). */
   user-select: none;
 }
 
@@ -325,9 +323,9 @@
  *
  * `touch-action` here must track the SAME drag axis as `.dx-drawer` itself (`pan-x` for the vertical
  * drag axis): restricting only the axis this crate's own pointer-drag gesture actually reads. A blanket
- * `touch-action: none` previously blocked BOTH axes, which -- per `preview/assets/main.css`'s own
+ * `touch-action: none` would block BOTH axes, which -- per `preview/assets/main.css`'s own
  * load-bearing comment on this exact tradeoff ("`touch-action: none` must never be used, it breaks
- * scrolling") -- unnecessarily stopped a touch user from panning the page by starting a touch on this
+ * scrolling") -- would unnecessarily stop a touch user from panning the page by starting a touch on this
  * handle at all, on either axis, not just the one the drag gesture owns. */
 .dx-drawer[data-side="bottom"] .dx-drawer-handle {
   display: block;
@@ -364,18 +362,17 @@
 
 /* `DrawerClose`'s default rendering (no `as` override -- e.g. this
  * component's own `main` demo variant's top-side drawer, `DrawerClose {
- * "Close" }`) had NO rule at all here, unlike `.dx-sheet-close`
- * (preview/src/components/sheet/style.css). `color` (inherited) landed
- * fine -- `rgb(17,17,17)`/`rgb(212,212,212)` in light/dark, exactly
- * `--secondary-color-4`, since browsers inherit a `<button>`'s `color`
- * from its ancestors same as any other element -- but `background-color`
- * is never inherited, and a `<button>`'s own UA default for it
- * (`ButtonFace`) does not react to this app's `data-theme` at all: it
- * measured `rgb(239,239,239)` in BOTH modes, live. In light mode that
- * coincidentally reads fine (near-black text, light background); in dark
- * mode it is `rgb(212,212,212)` text on that SAME near-white
- * `rgb(239,239,239)` background -- light-on-light, an axe `color-contrast`
- * violation and, per the bug report, actually unreadable. Values below
+ * "Close" }`) needs a rule here, as `.dx-sheet-close`
+ * (preview/src/components/sheet/style.css) has one. `color` (inherited) is
+ * fine -- `rgb(17,17,17)`/`rgb(212,212,212)` in light/dark -- since browsers
+ * inherit a `<button>`'s `color` from its ancestors same as any other
+ * element -- but `background-color` is never inherited, and a `<button>`'s
+ * own UA default for it (`ButtonFace`) does not react to this app's
+ * `data-theme` at all: it is `rgb(239,239,239)` in BOTH modes. In light mode
+ * that reads fine (near-black text, light background); in dark mode it is
+ * `rgb(212,212,212)` text on that SAME near-white `rgb(239,239,239)`
+ * background -- light-on-light, an axe `color-contrast` violation and
+ * actually unreadable. Values below
  * mirror `.dx-button[data-style="outline"]`
  * (preview/src/components/button/style.css) exactly -- the same
  * already-audited light/dark recipe, not a new one-off pair.
@@ -393,9 +390,8 @@
  * targets never has one, and unlike `.dx-button` this spells no *class*
  * name at all, so it can't trip `scripts/check-dx-class-prefix.sh` (which
  * flags any `.<name>` in a component's own stylesheet that isn't
- * `dx-drawer-...` -- confirmed by running it: `:not(.dx-button)` failed
- * that gate outright, exactly as designed, since `.dx-button` is a
- * foreign component's namespace). */
+ * `dx-drawer-...`; `:not(.dx-button)` fails that gate, since `.dx-button`
+ * is a foreign component's namespace). */
 .dx-drawer-close:not([data-style]) {
   display: inline-flex;
   height: var(--dx-control-height-default);
@@ -436,8 +432,8 @@
 /* On-screen keyboard (`primitives/src/keyboard_inset.rs`). While it is open the helper puts
  * `data-dx-keyboard`, `--dx-keyboard-inset` (the keyboard's height under the layout viewport) and
  * `--dx-keyboard-top` (the visual viewport's pan offset, normally 0) on this panel; with no keyboard, or
- * a pinch-zoomed page, none of them exists and these rules do not match, so the panel is exactly what it
- * was. The panel's box is pulled into the VISIBLE band `[top, 100% - inset]` and scrolls inside it (the
+ * a pinch-zoomed page, none of them exists and these rules do not match, so the panel keeps its
+ * no-keyboard layout. The panel's box is pulled into the VISIBLE band `[top, 100% - inset]` and scrolls inside it (the
  * helper scrolls the focused field to the middle). The slide uses `translate`, so `top`/`bottom` are free
  * to move. The `0px` fallbacks are the no-keyboard values. */
 .dx-drawer[data-dx-keyboard] {

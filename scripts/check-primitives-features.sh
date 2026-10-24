@@ -3,8 +3,8 @@
 # check-primitives-features.sh
 #
 # `dioxus-primitives` has optional features so that an app compiles only what its components use
-# (dev-docs/backlog.md row 217): `router` (Navbar; dioxus-router, ~40 crates), `calendar` (Calendar + DatePicker;
-# `time`), `color-picker` (ColorPicker; `palette` and 11 companions). Inside this workspace every
+# (dev-docs/backlog.md row 217): `router` (Navbar; dioxus-router and its dependency tree), `calendar` (Calendar + DatePicker;
+# `time`), `color-picker` (ColorPicker; `palette` and its companions). Inside this workspace every
 # build unifies ALL of them (preview turns them on), so a gated module that quietly depends on another gated
 # crate -- or a non-gated module that grew a `use time::` -- compiles here and breaks in a user's tree that enabled
 # only the feature its component.json asks for. This gate builds the crate ON ITS OWN, outside that unification:

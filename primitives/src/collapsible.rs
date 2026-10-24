@@ -476,8 +476,8 @@ mod tests {
 
     #[test]
     fn keep_mounted_hides_closed_content_with_plain_hidden() {
-        // Before the fix this rendered the text with no `hidden` at all, so a styled
-        // layer (or no layer) showed closed content.
+        // Closed content carries `hidden`: with no `hidden` at all, a styled
+        // layer (or no layer) would show closed content.
         let html = render(KeepMounted);
         assert!(html.contains("closed text"), "{html}");
         assert_eq!(content_hidden(&html), Some(String::new()), "{html}");

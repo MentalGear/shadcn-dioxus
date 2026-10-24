@@ -5,19 +5,17 @@
  * "a closing modal stays a modal, at the same size and place, until its exit has
  * played" is one claim, not five copies of a measurement.
  *
- * WHAT WENT WRONG (owner report 2026-10-05: Dialog close "glitches", the right/left
- * Sheet "changes size" while closing, the Drawer "glitches" on close). A native
- * `dialog.close()` drops the dialog out of the top layer in one frame, and the
- * driver used to call it the moment `open` went false. Out of the top layer a
- * `position: fixed` box is no longer resolved against the viewport but against the
- * nearest ancestor with layout containment -- on the home page that is the demo's
- * `.dx-component-card` (`content-visibility: auto`) -- and is clipped by its paint
- * containment: a Sheet went from 384x800 to 384x256, a Drawer from 1265x346 to
- * 1105x205, mid-slide. `transition: overlay allow-discrete` kept the dialog in the
- * top layer in Chromium only, and only until that transition ended (not in step with
- * the panel's own exit); Firefox and Safari snapped. The component pages have no such
- * ancestor, which is how the earlier verification missed it: THESE CAPTURES RUN ON THE
- * HOME PAGE, inside the card.
+ * THE FAILURE IT GUARDS (backlog row 141): a native `dialog.close()` drops the dialog out of the top
+ * layer mid-exit, so its box changes size and place. A native `dialog.close()` drops the
+ * dialog out of the top layer in one frame, so a driver that calls it the moment `open` goes
+ * false loses the top layer mid-exit. Out of the top layer a `position: fixed` box is no longer
+ * resolved against the viewport but against the nearest ancestor with layout containment -- on
+ * the home page that is the demo's `.dx-component-card` (`content-visibility: auto`) -- and is
+ * clipped by its paint containment: a Sheet goes from 384x800 to 384x256, a Drawer from
+ * 1265x346 to 1105x205, mid-slide. `transition: overlay allow-discrete` keeps the dialog in the
+ * top layer in Chromium only, and only until that transition ends (not in step with the
+ * panel's own exit); Firefox and Safari snap. The component pages have no such ancestor, so
+ * THESE CAPTURES RUN ON THE HOME PAGE, inside the card.
  *
  * THE CONSTRUCTION these assertions pin down: `use_dialog_open_driver`
  * (`primitives/src/lib.rs`) defers `close()` until every animation on the dialog (and

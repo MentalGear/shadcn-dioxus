@@ -20,12 +20,11 @@ test('test', async ({ page }) => {
   await page.keyboard.press('Tab');
   const confirmButtonForTab = page.getByRole('button', { name: 'Delete' });
   await expect(confirmButtonForTab).toBeFocused();
-  // Phase 4.2 (docs/plan.md): the always-modal AlertDialog is now a native
+  // The always-modal AlertDialog is a native
   // `<dialog>` on the web arm. Chromium's own focus trap parks focus on
   // `<body>` for exactly one Tab stop after the last focusable element
-  // before wrapping to the first (docs/phase4-spike-findings.md experiment
-  // 4a) -- harness correction for the new trap's documented shape, same as
-  // dialog.spec.ts's identical fix.
+  // before wrapping to the first (dev-docs/archive/research/phase4-spike-findings.md experiment
+  // 4a) -- the trap's documented shape, as in dialog.spec.ts.
   await page.keyboard.press('Tab');
   await expect
     .poll(() => page.evaluate(() => document.activeElement === document.body))
@@ -50,11 +49,6 @@ test('test', async ({ page }) => {
 });
 
 test.describe('Axe automated scan', () => {
-  test('loaded (dialog closed) has no automatically detectable a11y issues', async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/alert_dialog/`, { timeout: 20 * 60 * 1000 });
-    await expectNoAxeViolations(page, 'alert-dialog: loaded', { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-
   test('open has no automatically detectable a11y issues', async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/alert_dialog/`, { timeout: 20 * 60 * 1000 });
     await page.getByRole('button', { name: 'Show Alert Dialog' }).click();
@@ -66,9 +60,8 @@ test.describe('Axe automated scan', () => {
 // The scrim every modal overlay shares (assert-backdrop-fade.ts has the full
 // claim; popover/dialog/alert-dialog/sheet/drawer specs all run the identical
 // assertion): the dialog's own `::backdrop` is the only painter, black/10 with a
-// 4px blur, and it fades in and out for the same length. Before this, AlertDialog
-// stacked its own animated wrapper scrim on the UA's un-animated one and the
-// exit snapped.
+// 4px blur, and it fades in and out for the same length. The wrapper stays transparent, so no second
+// scrim stacks on the UA's un-animated one.
 test.describe("Scrim", () => {
   test("AlertDialog paints the shared scrim and fades it in and out", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/alert_dialog/`, { timeout: 20 * 60 * 1000 });

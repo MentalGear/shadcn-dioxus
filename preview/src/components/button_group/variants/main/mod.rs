@@ -9,10 +9,9 @@ pub fn Demo() -> Element {
         div { style: "display: flex; flex-direction: column; align-items: center; gap: 1.5rem;",
             ButtonGroup {
                 // Icon-only buttons need an explicit accessible name -- the icon
-                // is decorative markup, so without this axe's `button-name` rule
+                // is decorative markup, so without one axe's `button-name` rule
                 // fires (critical) and a screen reader announces an unnamed
-                // button. The Ellipsis button below already does this; these two
-                // were missed, and the demo's own axe scan caught it.
+                // button. Every icon-only button in this demo carries one.
                 Button {
                     variant: ButtonVariant::Outline,
                     "aria-label": "Previous",

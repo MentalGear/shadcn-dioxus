@@ -29,7 +29,7 @@
    * defaults (WHATWG HTML's popover section) -- the *non-modal* arm of this content carries the
    * `popover` attribute; the modal arm (a `<dialog>` opened with `showModal()`) never does.
    * `inset`/`margin` are *not* reset unconditionally here: this rule's own `margin-top` and
-   * `transform: translate(-50%, -50%)` are the legacy DOM-relative centring the `data-side` rules
+   * `transform: translate(-50%, -50%)` are the DOM-relative centring the `data-side` rules
    * below build on, so zeroing them would break that path. The non-modal arm's own `inset`/`margin`
    * reset lives in the single, engine-injected anchor-positioning stylesheet shared by every
    * `dx-anchor-*` overlay (`primitives/src/top_layer.rs`'s `ensure_anchor_positioning_styles`).
@@ -39,7 +39,7 @@
   gap: var(--dx-space-2-5);
   text-align: start;
 
-  /* rtl-physical: legacy modal centring trick, paired with the implicit
+  /* rtl-physical: modal centring trick, paired with the implicit
      `left: 50%; top: 50%` of its centred positioning context -- same family as
      dialog/alert_dialog's identical note. */
   transform: translate(-50%, -50%);
@@ -126,7 +126,7 @@
   /* logical: `align="start"` is a reading-direction concept for a
      top/bottom-placed overlay's cross axis (Radix's Floating UI resolves
      align logically from `dir` -- packages/react/popper/src/popper.tsx,
-     radix-ui/primitives commit f7ecd5a). No transform to desync from
+     radix-ui/primitives@f7ecd5a). No transform to desync from
      (`transform: none` below), so this is a plain, safe conversion. */
   inset-inline-start: 0;
   transform: none;
@@ -161,7 +161,7 @@
 /* Header, title and description: Nova's `cn-popover-header` (flex column,
  * gap-0.5, text-sm), `cn-popover-title` (font-medium) and
  * `cn-popover-description` (muted). `.dx-popover-content-title`/`-description`
- * are the previous names, kept so a copied-out page that still uses them
+ * are aliases of those, kept so a copied-out page that uses them
  * renders the same. */
 .dx-popover-header {
   display: flex;

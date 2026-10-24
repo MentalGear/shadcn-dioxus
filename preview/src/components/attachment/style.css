@@ -1,7 +1,7 @@
 .dx-attachment {
   /* Text-safe destructive ink, as in bubble/style.css: `--dx-destructive` is a
    * fill colour, and as text it falls below 4.5:1 on its own tint (light) and on
-   * the card (dark). Now the theme's text-safe destructive role (`--dx-destructive-text`, backlog row 134). */
+   * the card (dark). The theme's text-safe destructive role is `--dx-destructive-text` (backlog row 134). */
   --dx-attachment-destructive-ink: var(--dx-destructive-text);
 
   /* Size and orientation slots (the default values here; the `data-size` / `data-orientation`

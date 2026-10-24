@@ -31,7 +31,7 @@
 //! band by that many pixels on each side.
 
 // `VirtualJustifiedGrid` (through `super::justified_engine`) consumes the justified packer; the
-// sectioned model and the strip arithmetic have no consumer yet, and the unit tests exercise all of it.
+// sectioned model and the strip arithmetic have no consumer outside their tests, which exercise all of it.
 #![allow(dead_code)]
 
 use std::ops::Range;

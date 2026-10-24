@@ -5,7 +5,7 @@ import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
 // The main Attachment demo is shadcn's `attachment-demo`: an image group, an uploading file with a Spinner and a
-// finished code file. (It was a plain list of three file chips with no image: backlog row 230.)
+// finished code file (backlog row 230).
 const URL = `${BASE_URL}/component/attachment/`;
 const GOTO = { timeout: 20 * 60 * 1000 };
 const main = (page: Page) => page.locator("#component-preview-frame").first();

@@ -2,13 +2,12 @@
 #
 # check-internal-hrefs.sh
 #
-# Keeps internal links on the docs site from escaping the deploy base path.
-# The Pages build is served below `/shadcn-dioxus/` (`dx --base-path`), so
-# a root-absolute link that does not go through the router 404s there while
-# working on a dev server mounted at `/`. It hit twice -- the build-time
-# rendered docs.md HTML (now prefixed by `prefix_internal_hrefs` in
-# preview/src/main.rs) and the NavigationMenu demo, whose links render as plain
-# `<a>`, not a router `Link` -- so this makes the class unable to recur:
+# Internal links on the docs site must not escape the deploy base path (the Pages build is served below
+# `/shadcn-dioxus/`): no root-absolute string literal as an `href:` in `preview/src/**/*.rs` (build it from the router
+# prefix or use a `Link { to: Route::... }`), no legacy `/component/?name=<x>` link in `preview/src` (the canonical
+# route is `/component/<x>/`), and no router `Link { .. }` in `preview/src` without a `// link-ok: <reason>` marker,
+# or ever with `aria_current` (the router's own `aria-current` differs between server and browser, so navigation links
+# use `NavLink`, row 126).
 #
 #   1. No root-absolute string literal as an `href:` attribute in
 #      preview/src/**/*.rs (`href: "/docs"`). Build the value from the router

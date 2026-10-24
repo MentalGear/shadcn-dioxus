@@ -1,7 +1,7 @@
 /**
  * Modal initial focus follows the modality that opened the modal (backlog row 206).
  *
- * Owner report: tapping a demo button that opens a dialog/drawer focused its first field, which
+ * The failure it prevents: tapping a demo button that opens a dialog/drawer must not focus its first field, which
  * pops the mobile keyboard. The construction is ONE place -- `use_dialog_open_driver`
  * (`primitives/src/lib.rs`), the driver every native-`<dialog>` modal goes through (Dialog,
  * AlertDialog, Sheet, Drawer, CommandDialog, the modal Popover). At open time it reads the
@@ -14,16 +14,16 @@
  * window global, no install order: the result is the same on every page, which the modal
  * Popover case proves on a page with no Dialog/AlertDialog root.
  *
- * Row 226 replaced the `:focus-visible` read of the opener with the interaction modality (`<html
- * data-dx-modality>`, written once by `primitives/src/modality.rs`; iOS keeps focus on a previously
- * tapped field, which always matches `:focus-visible`) and the palette's `autofocus` with
- * `data-dx-autofocus`. Owner decision 2026-10-18 (Base UI's default open-focus policy): keyboard AND
+ * Row 226: the open-focus policy reads the interaction modality (`<html
+ * data-dx-modality>`, written once by `primitives/src/modality.rs`), not the opener's `:focus-visible` (iOS
+ * keeps focus on a field tapped earlier, which always matches `:focus-visible`), and the palette uses
+ * `data-dx-autofocus`. The policy is Base UI's default open-focus policy: keyboard AND
  * mouse focus the first control (the palette's search box included), touch and pen focus the panel;
 
  * `touch-open-focus.spec.ts` is the touch half (every overlay, iOS-like emulation);
  * `mouse-open-focus.spec.ts` has the explicit mouse cases.
  *
- * Unchanged and re-proved here: Tab from the panel enters the dialog, Escape closes it and the
+ * Also proved here: Tab from the panel enters the dialog, Escape closes it and the
  * trigger gets focus back, and the latest modality wins on a second open.
  *
  * Touch is a `hasTouch` context with `locator.tap()`; mouse is a plain `click()`.
@@ -161,7 +161,7 @@ for (const consumer of CONSUMERS) {
       expect(ring.focusVisible, "a pointer-opened panel is not :focus-visible").toBe(false);
       expect(ring.outlineStyle === "none" || ring.outlineWidth === "0px", "no UA outline on the panel").toBe(true);
 
-      // The trap still works from the panel: Tab lands on the first control inside.
+      // The trap works from the panel: Tab lands on the first control inside.
       await page.keyboard.press("Tab");
       await expect.poll(() => whereIsFocus(page, consumer.dialogSelector)).toMatchObject({
         inDialog: true,
@@ -198,7 +198,7 @@ for (const consumer of CONSUMERS) {
 
 test.describe("sheet text field: a tap leaves it alone, a mouse or keyboard open focuses the first control", () => {
   // The Sheet demo is the one with text inputs ("Edit profile"): the first control a keyboard
-  // open reaches, and the field a tap used to focus.
+  // open reaches, and the field a tap must leave alone.
   test("Sheet: tap opens on the panel with the keyboard closed; keyboard open reaches a control", async ({
     browser,
     page,

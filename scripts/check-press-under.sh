@@ -5,7 +5,7 @@
 # A pressed `dx-` control gets the theme's press wash (`dx-components-theme.css`, "Press feedback"), a
 # `background-image` layer that out-ranks every component rule so the wash paints on a control whose sheet
 # writes a `background` shorthand. That rule REPLACES the element's own `background-image`: a pressable card
-# with a gradient (Navigation Menu's featured card) lost it while pressed. The wash therefore ends with
+# with a gradient (Navigation Menu's featured card) loses it while pressed. The wash therefore ends with
 # `var(--dx-press-under, none)`, and a control that paints an image or gradient hands it over by declaring it once
 # in that slot:  `--dx-press-under: <image>; background-image: var(--dx-press-under);`.
 #

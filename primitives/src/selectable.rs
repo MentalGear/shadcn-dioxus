@@ -45,7 +45,7 @@ pub(crate) struct SelectableContext {
     pub(crate) disabled: ReadSignal<bool>,
 
     /// Id of the trigger button, for `use_refocus_on_close_unless` (lib.rs)
-    /// to return focus to on close. See docs/plan.md Phase 3.1.
+    /// to return focus to on close. See dev-docs/plan.md Phase 3.1.
     pub(crate) trigger_id: Signal<String>,
 
     /// Set just before a close caused by focus leaving the listbox (see the
@@ -233,7 +233,7 @@ pub(crate) fn use_selectable_root(
     let mut interacted_outside = use_signal(|| false);
 
     // A fresh open shouldn't inherit an `interacted_outside` flag left over
-    // from a previous close (see docs/plan.md Phase 3.1).
+    // from a previous close (see dev-docs/plan.md Phase 3.1).
     use_effect(move || {
         if open() {
             interacted_outside.set(false);

@@ -162,7 +162,7 @@ See the `shortcuts` and `destructive` variants.
 
 ## Direction / RTL
 
-`DropdownMenu` accepts a `dir: Option<Direction>` prop, inherited by every `DropdownMenuSub`. Under RTL: the submenu open key becomes `ArrowLeft` (was `ArrowRight`), the close key becomes `ArrowRight` (was `ArrowLeft`; `Escape` always closes regardless of direction), and each `DropdownMenuSubContent` opens to the left of its trigger instead of the right. See the `rtl` variant.
+`DropdownMenu` accepts a `dir: Option<Direction>` prop, inherited by every `DropdownMenuSub`. Under RTL: the submenu open key is `ArrowLeft` instead of `ArrowRight`, the close key `ArrowRight` instead of `ArrowLeft` (`Escape` always closes regardless of direction), and each `DropdownMenuSubContent` opens to the left of its trigger instead of the right. See the `rtl` variant.
 
 ## Motion
 

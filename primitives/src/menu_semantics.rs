@@ -6,32 +6,24 @@
 //!
 //! # Why this module exists
 //!
-//! Before this module, each of `dropdown_menu.rs`, `context_menu.rs`, and
-//! `menubar.rs` hand-wrote its own `role`/`aria-haspopup` string literals.
-//! `context_menu.rs` and `menubar.rs` correctly used the menu pattern's
-//! roles; `dropdown_menu.rs` instead carried `role="listbox"` /
-//! `role="option"` / `aria-haspopup="listbox"` -- upstream's original
-//! markup, which is the APG **listbox** pattern's contract, not the
-//! menu-button pattern's. `DropdownMenu` has no selection model at all (no
-//! `value`/`selected` state on the root, no `aria-selected` on any item;
-//! activating an item calls `on_select` and closes the menu -- action
-//! semantics, not selection semantics), so the listbox roles were simply
-//! wrong: assistive technology announced "list box / option N of M" and
-//! implied a selection that does not exist. See `docs/backlog.md` row 24 and
-//! `oracle/tier1-apg/menu-roles.spec.ts` for the oracle that caught this and
-//! the APG citations backing it.
+//! The whole pattern class shares one definition, so the *next* menu-pattern
+//! component cannot hand-write a different set of `role`/`aria-haspopup`
+//! string literals (dev-docs/backlog.md rows 24, 25, 41: a `navbar.rs` with its
+//! own `role="menubar"`/`role="menu"`/`role="menuitem"` literals would be
+//! exactly that second set). `dropdown_menu.rs`, `context_menu.rs`,
+//! `menubar.rs`, and `navbar.rs` all read their menu/menuitem/haspopup
+//! literals from here, so a role can only drift if this module itself is
+//! edited.
 //!
-//! Rather than fix `dropdown_menu.rs`'s three literals in place -- which
-//! would leave the *next* menu-pattern component free to hand-write a
-//! fourth, possibly-different set -- this module gives the whole pattern
-//! class one shared definition. That risk was not hypothetical: `navbar.rs`
-//! was exactly that fourth set, added after this module existed and still
-//! hand-writing its own `role="menubar"`/`role="menu"`/`role="menuitem"`
-//! literals instead of reading them from here -- found and fixed in the same
-//! stage-1 pass that added this doc paragraph (docs/backlog.md rows 24, 25,
-//! 41). `dropdown_menu.rs`, `context_menu.rs`, `menubar.rs`, and `navbar.rs`
-//! all read their menu/menuitem/haspopup literals from here now, so a role
-//! can only drift if this module itself is edited.
+//! `DropdownMenu` has no selection model at all (no `value`/`selected` state
+//! on the root, no `aria-selected` on any item; activating an item calls
+//! `on_select` and closes the menu -- action semantics, not selection
+//! semantics), so it takes the menu roles and never `role="listbox"` /
+//! `role="option"` / `aria-haspopup="listbox"`: that is the APG **listbox**
+//! pattern's contract, and assistive technology would announce "list box /
+//! option N of M" and imply a selection that does not exist. See
+//! `dev-docs/backlog.md` row 24 and `oracle/tier1-apg/menu-roles.spec.ts`,
+//! the oracle that grades it, with the APG citations backing it.
 //!
 //! # Scope
 //!
@@ -43,9 +35,7 @@
 //!   pattern, not shared with a menu-button's popup. `Navbar`'s top-level
 //!   `div` is the same element in the same pattern as `Menubar`'s (a
 //!   roving-tabindex row of triggers, not a popup this module governs), not
-//!   a coincidental lookalike -- confirmed by reading both components in
-//!   full during the stage-1 pass that added `navbar.rs` to this module's
-//!   consumers, rather than assumed from the matching literal alone.
+//!   a coincidental lookalike.
 //! - `navbar`'s items. `Navbar` is a *navigation* menu: its items are links
 //!   (`NavbarItem`), never checkable, so [`MENU_ITEM_CHECKBOX_ROLE`] /
 //!   [`MENU_ITEM_RADIO_ROLE`] are not offered to it.

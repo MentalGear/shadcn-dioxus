@@ -48,9 +48,9 @@
 //   measured cost of this wait against a warm server.
 //
 // EXAMPLES
-//   node scripts/inspect.mjs http://127.0.0.1:8083/component/?name=kbd
-//   node scripts/inspect.mjs http://127.0.0.1:8083/component/?name=kbd --dark --screenshot /tmp/kbd-dark.png
-//   node scripts/inspect.mjs http://127.0.0.1:8083/component/?name=dialog \
+//   node scripts/inspect.mjs http://127.0.0.1:8083/component/kbd/
+//   node scripts/inspect.mjs http://127.0.0.1:8083/component/kbd/ --dark --screenshot /tmp/kbd-dark.png
+//   node scripts/inspect.mjs http://127.0.0.1:8083/component/dialog/ \
 //     --click 'button:has-text("Open")' --axe
 //   node scripts/inspect.mjs http://127.0.0.1:8083/ \
 //     --eval 'return document.querySelectorAll(".dx-component-card").length'

@@ -169,7 +169,7 @@ pub fn Menubar(props: MenubarProps) -> Element {
     });
 
     // Owned by this component -- role/direction/disabled/roving-focus state
-    // must win over a caller's own attributes (`docs/backlog.md` row 93's
+    // must win over a caller's own attributes (`dev-docs/backlog.md` row 93's
     // duplicate-attribute hazard).
     let attributes = merge_attributes(vec![
         props.attributes,
@@ -208,12 +208,12 @@ struct MenubarMenuContext {
     // `MenubarMenu` itself renders, the one enclosing both its
     // `MenubarTrigger` and `MenubarContent`) -- mirrors
     // `ContextMenuCtx::root_id`/`DropdownMenuContext::root_id`
-    // (`context_menu.rs`/`dropdown_menu.rs`) exactly, added for the same
-    // `docs/backlog.md` row 85 fix: `MenubarContentRendered`'s own
+    // (`context_menu.rs`/`dropdown_menu.rs`) exactly, for
+    // `dev-docs/backlog.md` row 85: `MenubarContentRendered`'s own
     // `use_outside_dismiss(menu_ctx.root_id, ...)` call answers "did focus
     // leave this menu" by asking the DOM directly, instead of the
-    // signal-based checks `MenubarTrigger`'s and `MenubarItem`'s own
-    // `onblur` handlers used to make (removed -- see each one's own doc).
+    // signal-based checks an `onblur` handler on `MenubarTrigger` or
+    // `MenubarItem` would make (neither has one -- see each one's own note).
     root_id: Signal<String>,
 
     // The current `MenubarContent`'s own element id for *this* menu, kept
@@ -226,7 +226,7 @@ struct MenubarMenuContext {
     content_id: Signal<String>,
 
     // This menu's own `MenubarTrigger` element id, so `MenubarContent` can
-    // label itself `aria_labelledby` from it -- docs/backlog.md row 25 (an
+    // label itself `aria_labelledby` from it -- dev-docs/backlog.md row 25 (an
     // APG menu requires an accessible name from either aria-labelledby or
     // aria-label; this crate's `DropdownMenu`/`ContextMenu` already do the
     // same, keyed off their own `trigger_id`). Set once by `MenubarTrigger`
@@ -366,7 +366,7 @@ pub fn MenubarMenu(props: MenubarMenuProps) -> Element {
         }
     });
 
-    // docs/backlog.md row 11 (Phase 6, typeahead): one buffer per
+    // dev-docs/backlog.md row 11 (typeahead): one buffer per
     // `MenubarMenu`, scoped to this menu's own items (`menu_ctx.focus`),
     // never the menubar's row of triggers (`ctx.focus`) -- the APG rule
     // this implements ("Move focus to the next item in the *current menu*
@@ -382,12 +382,11 @@ pub fn MenubarMenu(props: MenubarMenuProps) -> Element {
     // just as reachable through `..props.attributes` -- `MenubarMenuProps`
     // has no typed field claiming either name) followed by a trailing
     // `..props.attributes` spread on the same element emits *both* into
-    // the SSR'd HTML instead of the caller's override "still winning" as
-    // the comment this replaced claimed -- a WHATWG duplicate-attribute
-    // parse error, `docs/conformance-harness.md` hydration-parity Rule 4.
-    // `ContextMenu`'s own root `div` (`context_menu.rs`) already merges
-    // this same shape via `merge_attributes` (`b35d671`); this now matches
-    // it exactly.
+    // the SSR'd HTML instead of the caller's override "still winning" --
+    // a WHATWG duplicate-attribute parse error,
+    // `dev-docs/conformance-harness.md` hydration-parity Rule 4.
+    // `ContextMenu`'s own root `div` (`context_menu.rs`) merges
+    // this same shape via `merge_attributes`.
     let attributes = merge_attributes(vec![
         attributes!(div {
             id: root_id.cloned(),
@@ -406,8 +405,8 @@ pub fn MenubarMenu(props: MenubarMenuProps) -> Element {
                         // APG menubar: "Enter: ... opens the submenu and
                         // places focus on its first item." Route through the
                         // same open-with-focus path ArrowDown (below) uses,
-                        // rather than toggling `open_menu` alone -- that used
-                        // to leave `initial_focus` unset, stranding focus on
+                        // rather than toggling `open_menu` alone -- that would
+                        // leave `initial_focus` unset, stranding focus on
                         // this trigger. See
                         // oracle/tier1-apg/keyboard-matrix.spec.ts.
                         if !is_open() {
@@ -421,9 +420,9 @@ pub fn MenubarMenu(props: MenubarMenuProps) -> Element {
                         // APG menubar (Optional): "Space: ... opens the
                         // submenu and places focus on its first item." Wired
                         // explicitly here (keydown), not left to a
-                        // synthesized native-button click the way it used to
-                        // be -- `MenubarTrigger` wires only `onpointerup`,
-                        // never `onclick`, so that click had no listener to
+                        // synthesized native-button click --
+                        // `MenubarTrigger` wires only `onpointerup`,
+                        // never `onclick`, so that click has no listener to
                         // act on it at all.
                         if !is_open() {
                             menu_ctx.initial_focus.set(Some(CollectionPlacement::First));
@@ -435,7 +434,7 @@ pub fn MenubarMenu(props: MenubarMenuProps) -> Element {
                         // APG menubar: "Escape: ... sets focus to the
                         // menubar." Use the existing collection-focus
                         // mechanism (not the shared refocus-on-close hook --
-                        // see docs/plan.md Phase 3.1) to move focus back to
+                        // see dev-docs/plan.md Phase 3.1) to move focus back to
                         // this menu's own trigger item. `ctx.focus` never
                         // stopped being this trigger's own index while
                         // keyboard focus roamed *within* the open submenu
@@ -504,7 +503,7 @@ pub struct MenubarTriggerProps {
     /// The ID of the trigger button. If not provided, an internally
     /// generated ID is used -- see `MenubarTrigger`'s use of `use_id_or`
     /// for why this is a typed field rather than left to
-    /// `GlobalAttributes` alone (docs/backlog.md row 36).
+    /// `GlobalAttributes` alone (dev-docs/backlog.md row 36).
     pub id: ReadSignal<Option<String>>,
 
     /// Additional attributes to apply to the trigger element.
@@ -590,7 +589,7 @@ pub fn MenubarTrigger(props: MenubarTriggerProps) -> Element {
     let index = menu_ctx.index;
     let is_focused = move || item.focused() && !menu_ctx.focus.any_focused();
 
-    // docs/backlog.md row 36: `menu_ctx.trigger_id` is the same signal
+    // dev-docs/backlog.md row 36: `menu_ctx.trigger_id` is the same signal
     // `MenubarContent`'s `aria-labelledby` reads back (row 25, below) -- a
     // caller-supplied `id` here must resolve into it, not just win the
     // render. Feeding it straight into `use_id_or` as the generated-id
@@ -604,11 +603,11 @@ pub fn MenubarTrigger(props: MenubarTriggerProps) -> Element {
     // `..props.attributes` spread: `id` below and a caller-supplied `id` in
     // `props.attributes` would otherwise both render, the same
     // duplicate-attribute hydration hazard `merge_attributes`'s own doc
-    // warns about (docs/conformance-harness.md Rule 4).
+    // warns about (dev-docs/conformance-harness.md Rule 4).
     let attributes = merge_attributes(vec![
         attributes!(button {
             // This menu's own trigger id, so `MenubarContent` can label
-            // itself `aria_labelledby` from it -- docs/backlog.md row 25.
+            // itself `aria_labelledby` from it -- dev-docs/backlog.md row 25.
             id: id.cloned(),
         }),
         props.attributes,
@@ -618,13 +617,14 @@ pub fn MenubarTrigger(props: MenubarTriggerProps) -> Element {
     // resolves relative to *this* trigger once promoted to the top layer --
     // keyed on `menu_ctx.content_id`, not this menu's own index, for the
     // same reason `DropdownMenuTrigger` keys off `ctx.content_id` (see that
-    // doc). Previously a bare `style: anchor_name_style(..)` literal
-    // directly on this element, beside `..attributes` below: a caller
-    // supplying their own `style` then produced two `style` attributes on
-    // this same tag (`docs/conformance-harness.md` hydration-parity Rule 4;
-    // `scripts/check-attr-spread-collision.sh`). Folding it into
-    // `attributes` here instead, via `top_layer::anchored_trigger_attributes`,
-    // fixes that and (unlike plain `merge_attributes`, which folds a plain
+    // doc). It is folded into `attributes` here via
+    // `top_layer::anchored_trigger_attributes`, not written as a bare
+    // `style: anchor_name_style(..)` literal on this element beside
+    // `..attributes` below: a caller supplying their own `style` would then
+    // produce two `style` attributes on this same tag
+    // (`dev-docs/conformance-harness.md` hydration-parity Rule 4;
+    // `scripts/check-attr-spread-collision.sh`). Folding it (unlike plain
+    // `merge_attributes`, which folds a plain
     // `style` attribute but leaves shorthand style props -- `padding:
     // ".."`, namespace `Some("style")` -- as separate attributes) renders
     // exactly one `style` carrying the anchor binding plus whatever the
@@ -632,7 +632,7 @@ pub fn MenubarTrigger(props: MenubarTriggerProps) -> Element {
     let attributes =
         crate::top_layer::anchored_trigger_attributes(&menu_ctx.content_id.cloned(), attributes);
     // Owned by this component -- role/type/roving-focus state must win
-    // over a caller's own attributes (`docs/backlog.md` row 93's
+    // over a caller's own attributes (`dev-docs/backlog.md` row 93's
     // duplicate-attribute hazard).
     let attributes = merge_attributes(vec![
         attributes,
@@ -660,23 +660,21 @@ pub fn MenubarTrigger(props: MenubarTriggerProps) -> Element {
                     ctx.focus.set_focus(Some(index.cloned()));
                 }
             },
-            // `docs/backlog.md` row 85: this used to carry its own
-            // `onblur`, closing this menu whenever `is_focused()`
-            // (`item.focused() && !menu_ctx.focus.any_focused()`) --
-            // synchronously reading the row's own roving-focus signal the
-            // instant this trigger blurred. Correct for every focus move
-            // this crate's own click/hover/keyboard code drives (all of
-            // which update `ctx.focus`/`menu_ctx.focus` *before* moving DOM
-            // focus), but never told about a focus move arriving any other
-            // way -- confirmed on the unmodified tree: arrow-down into a
-            // `MenubarItem` inside this menu's open content (so it
+            // No `onblur` here (`dev-docs/backlog.md` row 85): closing this
+            // menu on blur would synchronously read the row's own roving-
+            // focus signal (`item.focused() && !menu_ctx.focus.any_focused()`),
+            // which is current for every focus move this crate's own
+            // click/hover/keyboard code drives (all of which update
+            // `ctx.focus`/`menu_ctx.focus` *before* moving DOM focus) but
+            // stale for a focus move arriving any other way: arrow-down into
+            // a `MenubarItem` inside this menu's open content (so it
             // genuinely holds DOM focus), then a raw `.focus()` call
-            // directly on this trigger, closed the content immediately.
+            // directly on this trigger, would close the content immediately.
             // `MenubarContentRendered`'s own `use_outside_dismiss(menu_ctx.
-            // root_id, ...)` call now gives this menu the same DOM-truth-
-            // based construction `DropdownMenu`/`ContextMenu` already use
-            // (see `DropdownMenuTrigger`'s doc in `dropdown_menu.rs` for
-            // the full root-cause writeup), so this handler is redundant.
+            // root_id, ...)` call gives this menu the DOM-truth-based
+            // construction `DropdownMenu`/`ContextMenu` use (see
+            // `DropdownMenuTrigger`'s comment in `dropdown_menu.rs` for the
+            // root cause).
             ..attributes,
             {props.children}
         }
@@ -767,7 +765,7 @@ pub struct MenubarContentProps {
 pub fn MenubarContent(props: MenubarContentProps) -> Element {
     let mut menu_ctx: MenubarMenuContext = use_context();
 
-    // docs/backlog.md row 53 (the "content lifecycle/positioning pipeline"
+    // dev-docs/backlog.md row 53 (the "content lifecycle/positioning pipeline"
     // band): id resolution + `use_animated_open`'s render gate, identical
     // across all three menu-family hosts' `*Content` components -- see
     // `menu_root::use_menu_content_lifecycle`'s own doc.
@@ -792,7 +790,7 @@ pub fn MenubarContent(props: MenubarContentProps) -> Element {
     }
 }
 
-/// Web arm (Migration A, slice 2/3): promote each menu's content to the top
+/// Web arm: promote each menu's content to the top
 /// layer via `popover="auto"`, anchored to its own trigger -- the same
 /// mechanism `DropdownMenuContentRendered` uses (`dropdown_menu.rs`), which
 /// see for the general `popover`/CSS-anchor wiring this mirrors.
@@ -810,12 +808,11 @@ pub fn MenubarContent(props: MenubarContentProps) -> Element {
 /// `onblur`-driven close-and-focus-clear logic still fires and still owns
 /// what happens next; native light dismiss only ever supplies the same
 /// "something outside happened" signal blur already does, for the rare
-/// outside interaction that would not otherwise cause a blur (verified
-/// during this migration's design pass; see the `use_popover_sync`
-/// callback below).
+/// outside interaction that would not otherwise cause a blur (see the
+/// `use_popover_sync` callback below).
 ///
-/// Escape is still handled entirely by `MenubarMenu`'s own `onkeydown`
-/// (unchanged, still calls `prevent_default()` unconditionally): APG
+/// Escape is handled entirely by `MenubarMenu`'s own `onkeydown`
+/// (which calls `prevent_default()` unconditionally): APG
 /// requires Escape to move focus to *this specific menu's own trigger*
 /// (`ctx.focus.set_focus(Some(props.index))`), which native light dismiss
 /// has no way to know how to do (it has no notion of "which trigger opened
@@ -836,8 +833,8 @@ fn MenubarContentRendered(id: String, attributes: Vec<Attribute>, children: Elem
 
     // Drive `showPopover()`/`hidePopover()` from `open`, and sync a native
     // close back into `ctx.open_menu` -- but *only* when this menu is still
-    // the one recorded as open. Confirmed necessary by execution's design
-    // pass, not defensive boilerplate: `Menubar`'s own effect
+    // the one recorded as open. Necessary, not defensive
+    // boilerplate: `Menubar`'s own effect
     // (`Menubar`'s `use_effect` reacting to `ctx.focus.focused_index()`)
     // can move `ctx.open_menu` straight from `Some(this index)` to
     // `Some(another index)` in one step (arrow-key navigation between
@@ -862,17 +859,17 @@ fn MenubarContentRendered(id: String, attributes: Vec<Attribute>, children: Elem
             }
         }),
     );
-    // `docs/backlog.md` row 85: `MenubarTrigger`'s and `MenubarItem`'s own
-    // `onblur` handlers used to decide "did focus leave this menu" by
-    // synchronously checking a Rust-tracked roving-focus signal
-    // (`menu_ctx.focus.any_focused()`/`ctx.focus`) -- exactly
-    // `DropdownMenuTrigger`'s former defect (see that component's doc in
-    // `dropdown_menu.rs` for the full root-cause writeup), and the *more*
-    // directly reproducible instance of it: arrow-down into a `MenubarItem`
+    // `dev-docs/backlog.md` row 85: "did focus leave this menu" is never
+    // decided by an `onblur` on `MenubarTrigger` or `MenubarItem` that
+    // synchronously checks a Rust-tracked roving-focus signal
+    // (`menu_ctx.focus.any_focused()`/`ctx.focus`) -- the defect
+    // `DropdownMenuTrigger` documents (see its comment in
+    // `dropdown_menu.rs` for the root cause), most directly reproducible
+    // here: arrow-down into a `MenubarItem`
     // (so it genuinely holds DOM focus), then a raw `.focus()` call
-    // directly on `MenubarTrigger` -- confirmed on the unmodified tree to
-    // close this content immediately, with no mouse-opened precondition
-    // needed at all. `use_outside_dismiss` asks the DOM directly instead
+    // directly on `MenubarTrigger` would close this content immediately,
+    // with no mouse-opened precondition needed at all.
+    // `use_outside_dismiss` asks the DOM directly instead
     // (`root_id` covers this menu's own trigger *and* this content, since
     // `MenubarMenu` wraps both in one element) -- same guard as the
     // `use_popover_sync` callback just above, for the same race (arrow-key
@@ -886,7 +883,7 @@ fn MenubarContentRendered(id: String, attributes: Vec<Attribute>, children: Elem
     });
     // JS-measured static positioning fallback for engines without CSS
     // Anchor Positioning -- see `top_layer::use_anchor_position_fallback`'s
-    // doc. `side`/`align` and the 8px gap match this menu's pre-migration
+    // doc. `side`/`align` and the 8px gap match this menu's themed
     // CSS (`../menubar/style.css`'s `top: 100%; left: 0; margin-top:
     // 0.5rem` -- 0.5rem == 8px at the default root font size): anchored
     // below the trigger, left-aligned with it, matching
@@ -921,7 +918,7 @@ fn MenubarContentRendered(id: String, attributes: Vec<Attribute>, children: Elem
     // sidestepping `manganis-core`'s `css_module_parser` not scoping
     // classes inside `@supports` bodies.
     //
-    // docs/backlog.md row 25: an APG menu requires an accessible name from
+    // dev-docs/backlog.md row 25: an APG menu requires an accessible name from
     // either aria-labelledby or aria-label -- labelled by this menu's own
     // trigger, mirroring `DropdownMenuContent`'s identical pattern
     // (`dropdown_menu.rs`). Only contributed when the caller hasn't already
@@ -932,9 +929,9 @@ fn MenubarContentRendered(id: String, attributes: Vec<Attribute>, children: Elem
     // same-named `aria-labelledby`/`aria-label` with an
     // empty/`AttributeValue::None` value, and two entries for one
     // attribute name is exactly the duplicate-attribute hazard
-    // `merge_attributes` exists to prevent (`docs/conformance-harness.md`
-    // hydration-parity Rule 4). docs/backlog.md row 53 (the "trigger
-    // id-plumbing" band): this exact block is now
+    // `merge_attributes` exists to prevent (`dev-docs/conformance-harness.md`
+    // hydration-parity Rule 4). dev-docs/backlog.md row 53 (the "trigger
+    // id-plumbing" band): this block is
     // `menu_root::content_labelledby_attributes`, shared with
     // `DropdownMenu`/`ContextMenu`'s identical construction.
     let labelledby =
@@ -946,7 +943,7 @@ fn MenubarContentRendered(id: String, attributes: Vec<Attribute>, children: Elem
         }),
         labelledby,
         // Owned by this component -- menu semantics + top-layer wiring
-        // must win over a caller's own attributes (`docs/backlog.md` row
+        // must win over a caller's own attributes (`dev-docs/backlog.md` row
         // 93's duplicate-attribute hazard).
         attributes!(div {
             role: crate::menu_semantics::MENU_ROLE,
@@ -958,7 +955,7 @@ fn MenubarContentRendered(id: String, attributes: Vec<Attribute>, children: Elem
     // one `style` attribute -- see `top_layer::anchored_content_attributes`'s
     // doc for why a bare `style: position_anchor_style(&id)` literal
     // alongside `..attributes` is the duplicate-`style` hazard
-    // (`docs/conformance-harness.md` hydration-parity Rule 4).
+    // (`dev-docs/conformance-harness.md` hydration-parity Rule 4).
     let attributes = crate::top_layer::anchored_content_attributes(&id, attributes);
 
     rsx! {
@@ -967,7 +964,7 @@ fn MenubarContentRendered(id: String, attributes: Vec<Attribute>, children: Elem
             // Items commit on `pointerdown` and close the menu right there;
             // the mousedown that follows must not focus the pressed (about
             // to unmount) item, or focus ends on `<body>` instead of the
-            // trigger the commit just refocused (docs/backlog.md row 140) --
+            // trigger the commit just refocused (dev-docs/backlog.md row 140) --
             // see `menu_root::keep_focus_on_pointerdown`.
             onpointerdown: crate::menu_root::keep_focus_on_pointerdown,
             ..attributes,
@@ -976,9 +973,8 @@ fn MenubarContentRendered(id: String, attributes: Vec<Attribute>, children: Elem
     }
 }
 
-/// Native (Blitz) arm: unchanged from before this slice -- Blitz has no
-/// popover-API support at all, so this stays the functional floor, a plain,
-/// always-in-flow `div`.
+/// Native (Blitz) arm: Blitz has no popover-API support at all, so this is
+/// the functional floor, a plain, always-in-flow `div`.
 #[cfg(not(feature = "web"))]
 #[component]
 fn MenubarContentRendered(id: String, attributes: Vec<Attribute>, children: Element) -> Element {
@@ -986,7 +982,7 @@ fn MenubarContentRendered(id: String, attributes: Vec<Attribute>, children: Elem
     let menu_ctx: MenubarMenuContext = use_context();
     let index = menu_ctx.index;
 
-    // `docs/backlog.md` row 85 -- see the web arm's identical call above
+    // `dev-docs/backlog.md` row 85 -- see the web arm's identical call above
     // for the full construction.
     use_outside_dismiss(menu_ctx.root_id, move || {
         if (ctx.open_menu)() == Some(index.cloned()) {
@@ -995,7 +991,7 @@ fn MenubarContentRendered(id: String, attributes: Vec<Attribute>, children: Elem
         }
     });
 
-    // See the web arm's identical construction above (docs/backlog.md row
+    // See the web arm's identical construction above (dev-docs/backlog.md row
     // 25/53) for why this is conditional and routed through
     // `menu_root::content_labelledby_attributes` rather than a bare literal
     // alongside `..attributes`.
@@ -1005,7 +1001,7 @@ fn MenubarContentRendered(id: String, attributes: Vec<Attribute>, children: Elem
         attributes,
         labelledby,
         // Owned by this component -- see the web arm's identical
-        // construction above (`docs/backlog.md` row 93).
+        // construction above (`dev-docs/backlog.md` row 93).
         attributes!(div {
             role: crate::menu_semantics::MENU_ROLE,
             "data-state": if (menu_ctx.is_open)() { "open" } else { "closed" },
@@ -1015,7 +1011,7 @@ fn MenubarContentRendered(id: String, attributes: Vec<Attribute>, children: Elem
     rsx! {
         div {
             id,
-            // See the web arm's identical guard above (docs/backlog.md row
+            // See the web arm's identical guard above (dev-docs/backlog.md row
             // 140).
             onpointerdown: crate::menu_root::keep_focus_on_pointerdown,
             ..attributes,
@@ -1037,7 +1033,7 @@ pub struct MenubarItemProps {
     #[props(default)]
     pub disabled: ReadSignal<bool>,
 
-    /// Explicit label text used for typeahead search (`docs/backlog.md`
+    /// Explicit label text used for typeahead search (`dev-docs/backlog.md`
     /// row 11 -- APG's "Any key that corresponds to a printable character"
     /// rule). When not set, falls back to [`Self::value`].
     #[props(default)]
@@ -1159,17 +1155,16 @@ pub fn MenubarItem(props: MenubarItemProps) -> Element {
     let onmounted = item.onmounted();
 
     // Owned by this component -- see `MenubarTrigger`'s identical
-    // construction above (`docs/backlog.md` row 93).
+    // construction above (`dev-docs/backlog.md` row 93).
     let attributes = merge_attributes(vec![
         props.attributes,
         attributes!(div {
             role: crate::menu_semantics::MENU_ITEM_ROLE,
-            // Found via an axe `color-contrast` finding on this pattern
-            // class's disabled state (docs/backlog.md row 39): see
-            // `dropdown_menu.rs`'s identical `DropdownMenuItem` fix for the
-            // full account -- `data-disabled` alone never told assistive
-            // tech this item was disabled at all; `ContextMenuItem`
-            // (`context_menu.rs`) already set this.
+            // The disabled state of this pattern class (dev-docs/backlog.md
+            // row 39): see `dropdown_menu.rs`'s identical `DropdownMenuItem`
+            // wiring for the full account -- `data-disabled` alone never
+            // tells assistive tech this item is disabled; `ContextMenuItem`
+            // (`context_menu.rs`) sets this too.
             aria_disabled: disabled(),
             "data-disabled": disabled(),
             tabindex: if focused() { "0" } else { "-1" },
@@ -1186,7 +1181,7 @@ pub fn MenubarItem(props: MenubarItemProps) -> Element {
                         props.on_select.call(value.clone());
                         ctx.set_open_menu.call(None);
                         // APG menubar close-focus rule, via the collection's
-                        // own focus mechanism -- see docs/plan.md Phase 3.1
+                        // own focus mechanism -- see dev-docs/plan.md Phase 3.1
                         // and the matching Escape case in `MenubarMenu`.
                         // `ctx.focus` never actually left this trigger's
                         // index while item-level keyboard focus roamed the
@@ -1218,19 +1213,17 @@ pub fn MenubarItem(props: MenubarItemProps) -> Element {
 
             onmounted,
 
-            // `docs/backlog.md` row 85: this used to carry its own
-            // `onblur`, unconditionally closing this menu whenever
-            // `focused()` (this item still held `menu_ctx.focus`'s roving
-            // focus at the instant it blurred) -- the single most directly
-            // reproducible instance of the whole class this row reports:
+            // No `onblur` here (`dev-docs/backlog.md` row 85): closing this
+            // menu whenever `focused()` (this item holds `menu_ctx.focus`'s
+            // roving focus at the instant it blurs) is the most directly
+            // reproducible instance of the class this row reports:
             // arrow-down onto this item (so it genuinely holds DOM focus),
-            // then a raw `.focus()` call on `MenubarTrigger` -- confirmed
-            // RED on the unmodified tree, no other precondition needed.
-            // See `MenubarTrigger`'s own identical removal, just above in
-            // this file, and `DropdownMenuTrigger`'s doc (`dropdown_menu.
-            // rs`) for the full root-cause writeup this shares.
-            // `MenubarContentRendered`'s own `use_outside_dismiss` call
-            // now owns this job, DOM-truth-based rather than signal-based.
+            // then a raw `.focus()` call on `MenubarTrigger`. See
+            // `MenubarTrigger`'s own note above in this file, and
+            // `DropdownMenuTrigger`'s comment (`dropdown_menu.rs`) for the
+            // root cause they share. `MenubarContentRendered`'s own
+            // `use_outside_dismiss` call owns this job, DOM-truth-based
+            // rather than signal-based.
             ..attributes,
             {props.children}
         }
@@ -1535,15 +1528,14 @@ fn menubar_checkable_item(state: CheckableState, common: CheckableCommon) -> Ele
     }
 }
 
-/// `docs/backlog.md` row 85 / hydration-parity Rule 4 regression coverage:
+/// `dev-docs/backlog.md` row 85 / hydration-parity Rule 4 coverage:
 /// proves `MenubarMenu`'s own wrapping `div` renders a caller-supplied
 /// `id` exactly once, with no second, internally-generated `dxc-N` id
-/// also present -- the identical regression `dropdown_menu.rs`'s own
+/// also present -- the identical contract `dropdown_menu.rs`'s own
 /// `ssr_tests::callers_own_id_on_the_root_is_not_duplicated` proves for
-/// `DropdownMenu`'s root. Confirmed RED on the pre-fix tree (both the
-/// generated id and `id="my-menu-root"` were present, 2 total `id="`
-/// occurrences) and GREEN after routing this element's attributes through
-/// `merge_attributes`.
+/// `DropdownMenu`'s root. Without routing this element's attributes through
+/// `merge_attributes` both the generated id and `id="my-menu-root"` would be
+/// present (2 total `id="` occurrences).
 #[cfg(test)]
 mod ssr_tests {
     use super::*;

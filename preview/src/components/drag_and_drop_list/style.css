@@ -4,7 +4,7 @@
   /*
    * Ghost: the item being dragged, left in the list as a placeholder while its
    * slot is chosen. 0.9 keeps it readable -- measured on a white page, primary
-   * text stays at 14.6:1 and muted text at 4:1, where the previous 0.5 left
+   * text stays at 14.6:1 and muted text at 4:1, where 0.5 would leave
    * them at 3.5:1 and 2:1 -- while the dashed border and the see-through background
    * still mark it as lifted. (Muted text needs 0.96 or more to reach 4.5:1;
    * that is the price of any translucency, so raise it for a stricter theme.)

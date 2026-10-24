@@ -11,12 +11,12 @@
 // Provenance: a port of the controller in `@shadcn/react`'s
 // `message-scroller` (`use-message-scroller-controller.ts`,
 // `use-message-scroller-commands.ts`, `geometry.ts`), shadcn/ui, MIT
-// licence. Ported from shadcn-ui/ui@295a1f114a138f23b5dfee0e0c6812394dfeb90c;
-// re-checked 2026-10-19 against shadcn-ui/ui@e31626978fe8e3804fe2e792e11e32dc560e40a8
-// (no change under packages/react/src/message-scroller since the port). The mode machine, the tail spacer, the anchoring maths, prepend
-// preservation and the opening-position rules are theirs; what changed is
-// the host: React refs and `useSyncExternalStore` are replaced by DOM
-// discovery (`data-message-*` attributes), and state is written back as
+// licence. Ported from shadcn-ui/ui@295a1f114a138f23b5dfee0e0c6812394dfeb90c
+// (the reference revision of the upstream `packages/react/src/message-scroller`).
+// The mode machine, the tail spacer, the anchoring maths, prepend
+// preservation and the opening-position rules are theirs; the host differs:
+// this controller discovers the DOM (`data-message-*` attributes) instead of
+// using React refs and `useSyncExternalStore`, and writes state back as
 // `data-*` attributes. The visibility store (`useMessageScrollerVisibility`)
 // is an IntersectionObserver that runs only while Rust has a subscriber
 // (`observe` messages).
@@ -118,7 +118,7 @@ let openFrames = 0;
 // row -> whether it was a scroll anchor the last time the content changed. A row
 // only counts as a *new* anchor when it was not already an anchor: an anchor
 // that was there all along (the open transcript's user messages) must never
-// pull the reader back when an unrelated row is swapped (a typing marker
+// pull the reader back if an unrelated row is swapped (a typing marker
 // replaced by its reply keeps the row count unchanged).
 const anchorSeen = new WeakMap();
 let published = null;
@@ -521,7 +521,7 @@ function reconcileFollowMode(state) {
   // baseline. Our own pin moves scrollTop down, but an upward move in the same
   // window (a scrollbar drag, a programmatic scroll to the top) must stay
   // visible to the commit the window's timer runs once it closes: advancing the
-  // baseline here consumed it and left follow armed (row 347).
+  // baseline here would consume it and leave follow armed (row 347).
   lastScrollTop = autoscrolling ? Math.max(lastScrollTop, scrollTop) : scrollTop;
   if (
     cfg.autoScroll &&

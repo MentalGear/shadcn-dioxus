@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Run scripts/run-gates.sh on a PINNED commit in its own worktree, so merges in the main checkout
-# can never change the tree under a running gate (2026-10-14: a merge during a run left conflict
+# can never change the tree under a running gate (a merge during a run would leave conflict
 # markers in the checked tree; backlog row 221). Usage: scripts/gate-at.sh <commit> <logfile>
 # LANE_TGT (default /home/user/tgt) holds the lock queue, the gates target and the worktree root.
 set -uo pipefail
@@ -8,9 +8,9 @@ export T="${LANE_TGT:-/home/user/tgt}" LANE_TGT="${LANE_TGT:-/home/user/tgt}"; r
 c="${1:?commit}"; log="${2:?log}"
 cd "$repo"
 c="$(git rev-parse --verify "$c^{commit}")" || exit 2
-# One worktree PER COMMIT: a shared one let a second gate-at re-check-out the tree under a first
-# run still queued for the lock, so that run tested (and its log, named for its commit, vouched
-# for) another commit (2026-10-18, row 221).
+# One worktree PER COMMIT: a shared one would let a second gate-at re-check-out the tree under a first
+# run still queued for the lock, so that run would test (and its log, named for its commit, vouch
+# for) another commit (row 221).
 wt="${LANE_WT:-/home/user/wt}/gates-${c:0:12}"
 git worktree remove --force "$wt" >/dev/null 2>&1 || true
 git worktree add -q --detach "$wt" "$c" || exit 2

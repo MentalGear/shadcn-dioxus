@@ -51,8 +51,8 @@ struct BaseDatePickerContext {
 /// only then does the normal exit animation (150-200 ms) run. 300 ms is the shortest value that
 /// reliably clears both: a visual change needs roughly 100-150 ms to be noticed at all, and the
 /// day's own transition has to finish inside it; anything past ~400 ms starts to read as lag
-/// instead of confirmation (the popover looks stuck). Pass `Duration::ZERO` for the old
-/// behaviour of closing immediately.
+/// instead of confirmation (the popover looks stuck). Pass `Duration::ZERO` to close
+/// immediately.
 pub const DEFAULT_CLOSE_DELAY: Duration = Duration::from_millis(300);
 
 /// Hand keyboard focus back to the trigger that opened the popover, if focus is still inside it.
@@ -524,11 +524,11 @@ impl DateRangePickerContext {
     /// there, finds it differs from the parent's value, and reports the stale range back up. The
     /// parent applies it (one render later), the sync-down effect copies it into the segments,
     /// the sync-up effect reports that, and the two ranges alternate forever -- a wasm loop that
-    /// never yields to the browser (the second range completed in one page froze the tab; the
-    /// order the two effects wake in is hash-ordered, so it reproduced on some builds, and on some
-    /// opens, and not on others). `DatePickerContext::set_date` already reads its value this way,
-    /// and the `check-self-subscribing-effects.sh` gate now rejects any method an effect calls
-    /// that reads its own fields with tracked syntax.
+    /// never yields to the browser (it freezes the tab; the order the two effects wake in is
+    /// hash-ordered, so it happens on some builds and some opens and not on others).
+    /// `DatePickerContext::set_date` reads its value this way too, and the
+    /// `check-self-subscribing-effects.sh` gate rejects any method an effect calls that reads
+    /// its own fields with tracked syntax.
     pub fn set_range(&mut self, range: Option<DateRange>) {
         if *self.date_range.peek() != range {
             self.set_selected_range.call(range);
@@ -792,26 +792,21 @@ pub fn DatePickerPopover(props: DatePickerPopoverProps) -> Element {
 
     rsx! {
         PopoverRoot {
-            // Item 3 fix (2026-09-01, live-site report): `is_modal` was
-            // declared on `DatePickerPopoverProps` (documented "whether the
-            // popover is a modal and should capture focus") but never
-            // actually forwarded here, so it silently had no effect --
-            // every `DatePickerPopover` rendered with `PopoverRoot`'s own
-            // default (then `is_modal: true`) no matter what a caller passed.
+            // `is_modal` (documented "whether the popover is a modal and
+            // should capture focus") must be forwarded here, or it silently
+            // has no effect and every `DatePickerPopover` renders with
+            // `PopoverRoot`'s own default no matter what a caller passed.
             // See `preview/src/components/date_picker/component.rs` for why
-            // this mattered in practice: `PopoverModalContent`'s DOM-
+            // this matters in practice: `PopoverModalContent`'s DOM-
             // relative "centering trick" (`position: absolute; left: 50%;
             // transform: translateX(-50%)`, `../popover/style.css`) centers
             // the calendar under its *positioned ancestor* (the narrow
             // `.dx-date-picker` input group), not its trigger, and has no
             // collision/edge-avoidance -- so a calendar wider than that
             // ancestor renders partly off-screen whenever the ancestor sits
-            // near a viewport edge, confirmed by execution (measured
-            // ~-138px of a 276px-wide calendar sitting off the left edge on
-            // this repo's dev server). Forwarding `is_modal` here is what
-            // lets that preview component's `is_modal: false` actually
-            // switch the calendar onto the non-modal, trigger-anchored arm
-            // instead.
+            // near a viewport edge. Forwarding `is_modal` is what lets that
+            // preview component's `is_modal: false` switch the calendar
+            // onto the non-modal, trigger-anchored arm instead.
             is_modal: props.is_modal,
             overlay: props.overlay,
             open: open(),
@@ -1079,8 +1074,8 @@ pub fn DateRangePickerCalendar(props: DatePickerCalendarProps<RangeCalendarProps
 }
 
 /// The integer types a [`DateSegment`] edits (`i32` years, `u8` months and days): ordered,
-/// copyable, with `+` and `-` for the arrow-key step. A local trait instead of the
-/// `num-integer` crate, which this module used for its bound alone.
+/// copyable, with `+` and `-` for the arrow-key step. A local trait, so the module needs no
+/// `num-integer` crate for its bound alone.
 trait SegmentInt: Copy + Ord + std::ops::Add<Output = Self> + std::ops::Sub<Output = Self> {
     const ONE: Self;
 
@@ -1142,8 +1137,7 @@ struct DateSegmentProps<T: Clone + SegmentInt + 'static> {
     /// An `aria-valuetext` alternative to the raw number, for a value whose
     /// number alone doesn't convey its meaning (e.g. a month name) -- per
     /// the APG spinbutton pattern's Roles/States/Properties section. `None`
-    /// (the default) renders no `aria-valuetext` at all, exactly like an
-    /// absent `value_text` always has. Always `None` while the segment has
+    /// (the default) renders no `aria-valuetext` at all. Always `None` while the segment has
     /// no value (see [`DateSegment`]'s own doc), matching `aria-valuenow`'s
     /// own absent-while-untouched rule (backlog row 84 findings 2 and 3).
     #[props(default)]
@@ -1157,8 +1151,8 @@ struct DateSegmentProps<T: Clone + SegmentInt + 'static> {
 /// A single side effect produced by interpreting a `DateSegment` keydown
 /// event, in the exact order `DateSegment`'s `onkeydown` handler should apply
 /// them. Keeping this as an ordered list (rather than, say, a handful of
-/// independent booleans/options) preserves the original code's effect
-/// ordering exactly -- which differs between branches (e.g. the empty-text
+/// independent booleans/options) keeps the effect
+/// ordering exact -- which differs between branches (e.g. the empty-text
 /// case emits the value before moving focus, while the overflow case moves
 /// focus before emitting).
 #[derive(Debug, Clone, PartialEq)]
@@ -1386,14 +1380,13 @@ fn date_segment_key_effects<T: SegmentInt + Copy + FromStr>(
         // Up/Down which that same list marks "(Optional)"):
         // "Home: If the spinbutton has a minimum value, sets the value to
         // its minimum." / "End: ... sets the value to its maximum."
-        // (`$S/aria-practices` content/patterns/spinbutton/spinbutton-
-        // pattern.html#keyboard_interaction, commit 7e4034b -- the current,
+        // (w3c/aria-practices `content/patterns/spinbutton/spinbutton-
+        // pattern.html#keyboard_interaction` -- the current,
         // non-deprecated pattern doc, not the deprecated `datepicker-
         // spinbuttons.html` example, which predates this rule and has no
-        // Home/End support of its own to conflict with it). Previously
-        // unhandled (fell through to the wildcard arm below), confirmed by
-        // execution against this repo's dev server before this fix: Home/End
-        // on a focused segment left `aria-valuenow` completely unchanged.
+        // Home/End support of its own to conflict with it). Without these
+        // arms Home/End fall through to the wildcard arm below and leave
+        // `aria-valuenow` unchanged.
         Key::Home => {
             effects.push(DateSegmentEffect::EmitValue(Some(min)));
         }
@@ -1435,22 +1428,21 @@ fn DateSegment<T: Clone + Copy + SegmentInt + FromStr + Display + 'static>(
     // backlog row 84 findings 2/3/6 (the "untouched segment" state machine):
     // `aria-valuenow` must mirror `props.value` faithfully -- present once
     // the segment actually holds a value, absent while it doesn't -- rather
-    // than substituting `props.default` for the "no value yet" case, which
-    // is what this used to do (`(props.value)().unwrap_or(props.default)`).
-    // That substitution silently claimed a value (typically today's date)
-    // the user never set (finding 3), AND made the first Up/Down keypress
+    // than substituting `props.default` for the "no value yet" case
+    // (`(props.value)().unwrap_or(props.default)`).
+    // That substitution would silently claim a value (typically today's date)
+    // the user never set (finding 3), AND make the first Up/Down keypress
     // on a never-touched segment invisible from an aria/assistive-tech
     // standpoint (finding 6): `date_segment_key_effects`'s `None => default`
-    // branch (unchanged by this fix -- see its own doc) already committed
-    // exactly `default` on that first press, so when `aria-valuenow` was
-    // ALREADY reporting `default` beforehand, the announced value was
-    // identical before and after -- indistinguishable from a dropped
-    // keystroke. Once "no value" stops being reported as "= default", that
-    // same first press becomes a real, detectable transition (the attribute
-    // goes from absent to present), fixing both findings with the one
-    // change. `value_text` (below, in the rendered `span`) is gated on this
-    // same `Option`, so `aria-valuetext` (finding 2) tracks `aria-valuenow`
-    // in lockstep instead of drifting into its own "untouched" state.
+    // branch (see its own doc) commits exactly `default` on that first
+    // press, so if `aria-valuenow` were ALREADY reporting `default`
+    // beforehand, the announced value would be identical before and after
+    // -- indistinguishable from a dropped keystroke. With "no value" not
+    // reported as "= default", that same first press is a real, detectable
+    // transition (the attribute goes from absent to present). `value_text`
+    // (below, in the rendered `span`) is gated on this same `Option`, so
+    // `aria-valuetext` (finding 2) tracks `aria-valuenow` in lockstep
+    // instead of drifting into its own "untouched" state.
     let now_value = use_memo(move || (props.value)());
 
     let mut ctx = use_context::<BaseDatePickerContext>();
@@ -1515,7 +1507,7 @@ fn DateSegment<T: Clone + Copy + SegmentInt + FromStr + Display + 'static>(
 
     // `id`/`spellcheck`/`enterkeyhint` are overridable defaults (this `id`
     // is a generated fallback, not referenced by any aria wiring -- see the
-    // removed `aria-labelledby` above); the rest is this segment's own
+    // "No `aria-labelledby`" note above); the rest is this segment's own
     // functional state (role/aria-value*/inputmode/contenteditable define
     // the widget, `tabindex`/the data attributes are managed) and is owned.
     let defaults = attributes!(span {
@@ -1534,20 +1526,18 @@ fn DateSegment<T: Clone + Copy + SegmentInt + FromStr + Display + 'static>(
     // Roles/States/Properties section ("If the spinbutton has a visible
     // label, it is referenced by aria-labelledby ... . Otherwise, the
     // spinbutton element has a label provided by aria-label" --
-    // `$S/aria-practices` content/patterns/spinbutton/
-    // spinbutton-pattern.html#roles_states_properties, commit 7e4034b), and
+    // w3c/aria-practices `content/patterns/spinbutton/
+    // spinbutton-pattern.html#roles_states_properties`), and
     // every caller here (`DatePickerYearSegment` etc., below) always passes
     // a plain `aria_label: "year"`/`"month"`/`"day"` -- there never is a
     // separate *visible* label element for `aria-labelledby` to reference.
-    // This span used to also render `aria-labelledby="{id}-label"`, but
-    // nothing in this module (or its preview consumers) ever rendered an
-    // element with that id -- confirmed by execution before this fix: every
-    // one of a live page's spinbuttons carried a dangling reference
-    // (`document.getElementById(idref)` === `null`). Chromium's own
-    // accessible-name computation happens to fall back to `aria-label` when
-    // `aria-labelledby`'s IDREFs don't resolve (confirmed live via
-    // Playwright's `ariaSnapshot()`, and axe-core's ruleset does not flag it
-    // either), so this was not user-visible in this repo's own harness --
+    // An `aria-labelledby="{id}-label"` would be a dangling reference:
+    // nothing in this module (or its preview consumers) renders an
+    // element with that id (`document.getElementById(idref)` === `null`).
+    // Chromium's own accessible-name computation falls back to `aria-label`
+    // when `aria-labelledby`'s IDREFs don't resolve (Playwright's
+    // `ariaSnapshot()` shows it, and axe-core's ruleset does not flag it
+    // either), so it would not be user-visible in this repo's own harness --
     // but it is dead, misleading markup that contradicts the cited rule
     // outright (an `aria-labelledby` with nothing to reference is not
     // "referencing a visible label"), and relying on a fallback another
@@ -1645,14 +1635,14 @@ pub fn DatePickerYearSegment(props: DatePickerYearSegmentProps) -> Element {
     let min_year = base_ctx.enabled_date_range.start().year();
     let max_year = base_ctx.enabled_date_range.end().year();
 
-    // `aria_label: "year"` used to be forwarded as its own ad-hoc keyed prop
-    // alongside a separately-threaded `attributes: props.attributes` --
-    // `DateSegment` has no typed `aria_label` field, so both landed as
+    // `aria_label: "year"` is an overridable default folded into the same
+    // `merge_attributes` call as `props.attributes`, not an ad-hoc keyed
+    // prop beside a separately-threaded `attributes: props.attributes`:
+    // `DateSegment` has no typed `aria_label` field, so both would land as
     // independent entries in the same forwarded `Vec<Attribute>`, the
     // component-forward shape of backlog row 93's duplicate-attribute
-    // hazard. Folding it into the same `merge_attributes` call as an
-    // overridable default (a caller's own `aria_label` wins) closes that
-    // the same way the element-level sites in this file do.
+    // hazard. A caller's own `aria_label` wins, the same as at the
+    // element-level sites in this file.
     let defaults = attributes!(div { aria_label: "year" });
     let merged = merge_attributes(vec![defaults, props.attributes.clone()]);
 
@@ -1934,9 +1924,8 @@ impl DateRangeInputContext {
     /// segments first resolve (`DateElement`'s "sync down from
     /// selected_date" effect writes the segment signals, whose "sync up via
     /// on_date_change" effect writes this signal right back) -- see
-    /// dev-docs/backlog.md's range-hang account for the full trace and the
-    /// live reproduction (CPU pinned, RSS growing ~4MB/s, until the tab
-    /// crashes) that confirmed it.
+    /// backlog row 83 for the full trace (the CPU stays pinned and memory
+    /// grows until the tab crashes).
     fn set_start_date(&mut self, date: Option<Date>) {
         if *self.start_date.peek() != date {
             self.start_date.set(date);
@@ -2007,7 +1996,7 @@ fn DateElement(props: DateElementProps) -> Element {
         // resolve; for a `DateRangePicker` side, that callback writes
         // straight back into the very signal this effect reads
         // (`DateRangeInputContext::set_start_date`/`set_end_date`). An
-        // unconditional `.set()` here (the previous behavior) closes that
+        // unconditional `.set()` here would close that
         // into an unbounded cycle the instant a date first completes, even
         // though `set_start_date`/`set_end_date` themselves already
         // no-op an unchanged value -- Dioxus's `Signal::set` marks a
@@ -2015,7 +2004,7 @@ fn DateElement(props: DateElementProps) -> Element {
         // whether the new value equals the old one, so the *other* half of
         // a two-way sync has to refuse the redundant write too, or the
         // "no-op" write still wakes this effect for nothing. See
-        // dev-docs/backlog.md's range-hang account.
+        // dev-docs/backlog.md row 83.
         let date = (props.selected_date)();
         let new_year = date.map(|d| d.year());
         if *year_value.peek() != new_year {
@@ -2087,7 +2076,7 @@ pub fn DatePickerInputValue(props: DatePickerInputValueProps) -> Element {
                 // AND the one the calendar just selected (the segments re-render from it and commit
                 // it back up). Only a typed commit, which changes the value, closes the popover here:
                 // the echo of a calendar selection finds the value already set, and closing on it
-                // closed the popover on the same frame as the click -- ahead of `close_delay`, and
+                // would close the popover on the same frame as the click -- ahead of `close_delay`, and
                 // even with `close_on_select: false`. The calendar closes it itself
                 // (`BaseDatePickerContext::selection_complete`).
                 let changed = *ctx.selected_date.peek() != date;
@@ -2227,7 +2216,7 @@ pub struct DatePickerInputProps {
     /// See `DateElementProps::on_format_month` (backlog row 84 finding 2).
     /// Only applies to the default children (a caller-supplied `children`
     /// renders its own segments directly and must thread this itself, the
-    /// same pre-existing limitation the placeholder callbacks above have).
+    /// same limitation the placeholder callbacks above have).
     #[props(default = Callback::new(|month: Month| month.to_string()))]
     pub on_format_month: Callback<Month, String>,
 
@@ -2407,11 +2396,10 @@ mod tests {
     fn untouched_date_segments_omit_aria_valuenow_and_aria_valuetext() {
         // backlog row 84 findings 2/3/6: before any date is chosen, every
         // segment's `props.value` is `None` -- `aria-valuenow` (and the
-        // month segment's new `aria-valuetext`) must be entirely absent
-        // rather than substituting `default`/a formatted default. RED on
-        // the unmodified tree: `now_value` used to be `(props.value)()
-        // .unwrap_or(props.default)`, so `aria-valuenow="<today's year>"`
-        // etc. were always present here.
+        // month segment's `aria-valuetext`) must be entirely absent
+        // rather than substituting `default`/a formatted default (with
+        // `now_value` as `(props.value)().unwrap_or(props.default)`,
+        // `aria-valuenow="<today's year>"` etc. would always be present).
         let mut dom = VirtualDom::new(UntouchedDatePicker);
         dom.rebuild_in_place();
         let html = dioxus_ssr::render(&dom);
@@ -2439,9 +2427,9 @@ mod tests {
         // must report it, and the month segment's `aria-valuetext` must be
         // the default formatter's locale-aware month name (backlog row 84
         // finding 2 -- `Month::to_string()` by default, "May" for month 5),
-        // not merely "some non-empty string". RED on the unmodified tree:
-        // `aria-valuetext` never rendered at all (no such attribute
-        // existed), so `html.contains(r#"aria-valuetext="May""#)` failed.
+        // not merely "some non-empty string": the test fails if
+        // `aria-valuetext` is not rendered at all, since
+        // `html.contains(r#"aria-valuetext="May""#)` is then false.
         let mut dom = VirtualDom::new(ControlledDatePicker);
         dom.rebuild_in_place();
         let html = dioxus_ssr::render(&dom);
@@ -2476,14 +2464,10 @@ mod tests {
 
     #[test]
     fn date_segment_renders_aria_label_and_no_dangling_aria_labelledby() {
-        // Regression guard for the `aria-labelledby` fix -- SSR-level rather
-        // than the browser-level `playwright/date-picker.spec.ts` check, so
-        // this runs (and was run, red-then-green) without needing a `dx
-        // serve --web` build: this repo's own sandbox hit severe, batch-
-        // wide disk pressure while this lane worked (see this lane's
-        // report), so this cargo-only check is the primary evidence for the
-        // RSX shape here, with the browser-level test as the fuller
-        // (still-current-code, not yet server-verified) companion.
+        // Guard for the `aria-labelledby` shape -- SSR-level
+        // rather than the browser-level `playwright/date-picker.spec.ts`
+        // check, so it runs without needing a `dx serve --web` build; the
+        // browser-level test is the fuller companion.
         let mut dom = VirtualDom::new(ControlledDatePicker);
         dom.rebuild_in_place();
         let html = dioxus_ssr::render(&dom);
@@ -2514,14 +2498,14 @@ mod tests {
     }
 
     // -----------------------------------------------------------------
-    // `date_segment_key_effects` and friends (docs/mutants-baseline.md fix #7)
+    // `date_segment_key_effects` and friends (dev-docs/reference/mutants-baseline.md fix #7)
     //
     // These exercise the pure decision logic extracted from `DateSegment`'s
-    // `onkeydown` handler (mechanical, behavior-preserving extraction --
-    // precedent: `move_interaction.rs`'s `MoveEvent::from_keyboard`).
+    // `onkeydown` handler (the same shape as `move_interaction.rs`'s
+    // `MoveEvent::from_keyboard`).
     // -----------------------------------------------------------------
 
-    /// Test-only convenience wrapper matching the pre-refactor flat argument
+    /// Test-only convenience wrapper taking the flat argument
     /// list, so each case below stays a single readable call.
     #[allow(clippy::too_many_arguments)]
     fn key_effects(
@@ -2537,10 +2521,9 @@ mod tests {
         min: i32,
         max: i32,
     ) -> Vec<DateSegmentEffect<i32>> {
-        // `wrap: true` for every pre-existing call site below: all of them
-        // predate the wrap-vs-clamp split (backlog row 84 finding 4) and
-        // exercise the month/day-shaped ("cyclical") behavior, which is
-        // unchanged by that fix -- see `key_effects_clamped` for the new,
+        // `wrap: true` for every call site below: they exercise the
+        // month/day-shaped ("cyclical") behavior of the wrap-vs-clamp split
+        // (backlog row 84 finding 4) -- see `key_effects_clamped` for the
         // year-shaped (`wrap: false`) cases.
         date_segment_key_effects(
             key,
@@ -2813,7 +2796,7 @@ mod tests {
     }
 
     #[test]
-    fn key_effects_non_digit_character_still_blocks_default_but_does_not_edit() {
+    fn key_effects_non_digit_character_blocks_default_but_does_not_edit() {
         let (ctrl, meta, alt) = no_modifiers();
         let effects = key_effects(
             &Key::Character("x".to_string()),
@@ -3124,7 +3107,7 @@ mod tests {
     // -----------------------------------------------------------------
     // Home/End (APG spinbutton-pattern.html #keyboard_interaction --
     // playwright/date-picker.spec.ts's "Home/End" describe block is the
-    // browser-level regression guard for the same fix; these are its pure-
+    // browser-level guard for the same behavior; these are its pure-
     // function-level counterpart, mirroring every other `key_effects_*`
     // test above).
     // -----------------------------------------------------------------
@@ -3191,7 +3174,7 @@ mod tests {
     }
 
     // -----------------------------------------------------------------
-    // Month/day segment min-max guards (docs/mutants-baseline.md fix #7)
+    // Month/day segment min-max guards (dev-docs/reference/mutants-baseline.md fix #7)
     // -----------------------------------------------------------------
 
     #[test]
@@ -3277,7 +3260,7 @@ mod tests {
     }
 
     // -----------------------------------------------------------------
-    // Context accessors (bonus: same file, same mutants-baseline gap)
+    // Context accessors
     // -----------------------------------------------------------------
 
     /// Run a closure inside a Dioxus runtime context so that Signal/Callback
@@ -3585,7 +3568,7 @@ mod tests {
         );
     }
 
-    // ---- a controlled range change is never answered (the second-range page hang) -----------------
+    // ---- a controlled range change is never answered (a second range must not hang the page) -----------------
 
     /// A controlled `DateRangePicker` the way the demo uses it: the parent owns the range and
     /// applies whatever `on_range_change` reports. Everything the picker reports is recorded.
@@ -3613,8 +3596,8 @@ mod tests {
         }
     }
 
-    /// Run the VirtualDom until it is quiet -- bounded, so a regression is a failed assertion and
-    /// not a hung test (the bug this guards is an unbounded loop).
+    /// Run the VirtualDom until it is quiet -- bounded, so an unbounded loop is a failed assertion
+    /// and not a hung test.
     fn settle(dom: &mut VirtualDom) {
         for _ in 0..60 {
             dom.process_events();
@@ -3623,14 +3606,12 @@ mod tests {
     }
 
     /// A range the PARENT sets (a calendar click it has just applied, a "this week" button) must
-    /// never be reported back through `on_range_change`: the picker already holds it. It used to
-    /// be, once the picker had held a different complete range: the sync-up effect
-    /// (`DateRangePickerInputValue`) was subscribed to the parent's value through
-    /// `DateRangePickerContext::set_range`'s tracked read, so a parent change woke it ahead of the
-    /// sync-down effect, it read the PREVIOUS range from the segments and reported that, and the
-    /// two ranges then alternated forever -- completing a second range froze the tab. Which of the
-    /// two effects wakes first is hash-ordered, hence the many changes: with the bug at least one
-    /// of them wakes them the wrong way round.
+    /// never be reported back through `on_range_change`: the picker already holds it. A sync-up
+    /// effect subscribed to the parent's value (through `DateRangePickerContext::set_range`'s
+    /// tracked read) could wake ahead of the sync-down effect on a parent change, read the
+    /// PREVIOUS range from the segments and report that, and the two ranges would alternate
+    /// forever (row 83). Which of the two effects wakes first is hash-ordered, hence the many
+    /// changes: a subscribed effect wakes them the wrong way round for at least one of them.
     #[test]
     fn a_range_the_parent_sets_is_never_reported_back() {
         let harness = RangeHarness::default();

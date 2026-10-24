@@ -5,15 +5,15 @@
  *
  * Chart has no Radix primitive to calibrate against at all -- Radix ships
  * no chart component, and neither does any fork this repo's own research
- * already surveyed (dev-docs/research/chart-2026-09-19.md §2.4). This file
- * lives in `tier3-radix/` (the folder name is kept, per that research
+ * covers (dev-docs/archive/research/chart-2026-09-19.md §2.4). This file
+ * lives in `tier3-radix/` (the folder name stays, per that research
  * doc's own §6.5 decision (b): a new `chart.spec.ts` whose header names its
  * real opinion source rather than renaming the folder) with two different
  * opinion sources instead of a Radix demo:
  *
  *   - Recharts' `accessibilityLayer`, read from source at
- *     `recharts/recharts` commit 86ad3632ff3f83a742001ae6fc079dd27961a2a4
- *     (2026-09-18, MIT) -- specifically its keyboard contract
+ *     `recharts/recharts` commit 86ad3632ff3f83a742001ae6fc079dd27961a2a4 history-ok: pinned upstream revision
+ *     (MIT) -- specifically its keyboard contract
  *     (`src/state/keyboardEventsMiddleware.ts`: focus activates a data
  *     point, ArrowRight/ArrowLeft step it direction-aware, Home/End jump to
  *     the ends, Escape/blur clears it). R5 below is calibrated against this
@@ -36,9 +36,8 @@
  * rules against (no Radix demo, no vendored APG example page -- neither
  * applies here, per the research doc's §2.2/§2.4). Every rule below is
  * therefore internal-opinion, asserted only against this repo's own
- * `Chart`, the same status `oracle-focus-restore.spec.ts` originally
- * carried before an external reference existed
- * (dev-docs/conformance-harness.md's own calibration table).
+ * `Chart` (dev-docs/conformance-harness.md's calibration table lists this
+ * status for a subject with no external reference).
  *
  * Fixture: `?name=chart&variant=bar` throughout -- three series (desktop/
  * mobile/tablet), a legend, a tooltip, and a small, fixed six-row dataset
@@ -46,18 +45,11 @@
  * index-based assertion below (Home/End, "row 0"/"row 5") exact and
  * independent of the `main` variant's interactive range picker.
  *
- * STATUS AT WRITE TIME: RED. `Chart`/`ChartContainer`/`ChartTooltip`/
- * `ChartLegend` do not exist in `dioxus_primitives` yet (this lane is
- * written concurrently with, and ahead of, the chart-primitive lane
- * landing them -- $S/chart-lanes.md has the hand-off) and the `chart[bar,
- * line, stacked]` demo registration this file's fixture depends on is not
- * yet wired into `preview/src/components/mod.rs`'s compiled module tree.
- * Every assertion below is written directly against the binding contract
- * ($S/chart-api.md), not against a running server -- expected to fail
- * end-to-end (the route itself 404s/doesn't render) until both land, then
- * to be run for real and fixed up against whatever the real DOM turns out
- * to need (dev-docs/dx-serve-hot-reload.md; "iterate visually later" per
- * this lane's own brief).
+ * Every assertion is written against the chart API contract
+ * (`dioxus_primitives`' `Chart`/`ChartContainer`/`ChartTooltip`/
+ * `ChartLegend` and the `chart[bar, line, stacked]` demo registration in
+ * `preview/src/components/mod.rs`); see dev-docs/dx-serve-hot-reload.md
+ * for iterating against a dev server.
  */
 
 import { test, expect } from "../../fixtures";
@@ -69,10 +61,8 @@ import { gotoHydrated } from "../../hydration";
 // `?variant=` has no effect on this route: every registered variant
 // renders inline, all at once, further down the SAME page (a "Variants"
 // section, one `h3.dx-component-variant-title` + one demo/code tab pair
-// per variant) -- confirmed live, not assumed (`?variant=bar` and no
-// variant param at all render byte-identical pages, same finding
-// date-picker.spec.ts's own header comment already recorded for that
-// component's route). The default (un-suffixed) `#component-preview-frame`
+// per variant) -- `?variant=bar` and no variant param at all render
+// byte-identical pages (the same holds for date-picker.spec.ts's route). The default (un-suffixed) `#component-preview-frame`
 // belongs to the `main` variant shown at the top of the page; every other
 // variant's demo panel is `#component-preview-frame-<variant>` instead
 // (its DEMO tab's own `aria-controls` target, read live from the page).
@@ -100,8 +90,7 @@ test.describe("R1 -- svg root: role=img, non-empty accessible name, <title> (WAI
     expect(ariaLabel, "svg[role=img] must carry a non-empty aria-label").toBeTruthy();
     expect(ariaLabel!.trim().length).toBeGreaterThan(0);
 
-    // Known framework limitation, not a component bug ($S/chart-lanes.md
-    // "API changes" #7): dioxus-html 0.7.9 has no SVG-namespaced `title`
+    // Known framework limitation, not a component bug: dioxus-html 0.7.9 has no SVG-namespaced `title`
     // element, so on this CSR-only dev server (`dx serve --web`, no SSR)
     // Chart's <title> is built as an HTML-namespaced node. A bare CSS type
     // selector matches by local name regardless of namespace (no
@@ -188,8 +177,7 @@ test.describe("R4 -- hovering a hit-band opens the tooltip with that datum's lab
 
 test.describe("R5 -- keyboard: ArrowRight/ArrowLeft step the active index, Home/End jump, Escape closes (Recharts keyboardEventsMiddleware.ts, tier-3 opinion)", () => {
   // No `rtl` demo variant exists for `chart` (unlike e.g. `calendar[...,
-  // rtl]`) at MVP -- per this lane's brief ("otherwise assert LTR only and
-  // note it"), the ArrowRight/ArrowLeft direction-swap under `dir="rtl"`
+  // rtl]`), so these cases assert LTR only: the ArrowRight/ArrowLeft direction-swap under `dir="rtl"`
   // Recharts applies (`selectChartDirection`) is NOT covered here. Add a
   // `chart[..., rtl]` demo variant and a dedicated case here (mirroring
   // `oracle/tier3-radix/rtl.spec.ts`'s own per-component cases) if/when one
@@ -197,7 +185,7 @@ test.describe("R5 -- keyboard: ArrowRight/ArrowLeft step the active index, Home/
   test("LTR: ArrowRight/ArrowLeft/Home/End/Escape drive the active index and the tooltip", async ({ page }) => {
     await goto(page);
     const frame = frameOf(page);
-    // $S/chart-api.md "API changes" #4: the keyboard/tabindex/role/aria
+    // The keyboard/tabindex/role/aria
     // attributes live on `Chart`'s own [data-slot="chart"] wrapper div, not
     // on `ChartContainer`'s [data-chart] div.
     const container = frame.locator('[data-slot="chart"]');

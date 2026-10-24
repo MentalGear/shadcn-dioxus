@@ -15,7 +15,7 @@
 //! - **a render-signal write only when the window changes**: the engine lives in a non-reactive
 //!   [`CopyValue`], and [`Bridge::publish`] bumps the one reactive revision only when the engine's
 //!   [`Windowing::needs_render`] says a render would draw something different (row 143's
-//!   quantised range, now for every consumer);
+//!   quantised range, for every consumer);
 //! - for one-axis engines, the shared flows on top: a scroll report with its anchoring
 //!   correction ([`Bridge::scroll_axis`]), a measured item ([`Bridge::measure`]) and
 //!   `scroll_to(index)` ([`Bridge::reveal`]), each writing the corrected `scrollTop` back.
@@ -221,7 +221,7 @@ const SCROLL_BRIDGE_JS: &str = r#"
         // most reports into no render at all (`virtualizer.rs`).
         publish(true);
         // The canvas size stays frozen until the scroll has been quiet this long. Firefox in CI
-        // can take long enough between scroll events that a shorter timeout unfroze it mid-scroll.
+        // can take long enough between scroll events that a shorter timeout would unfreeze it mid-scroll.
         timer = setTimeout(() => {
             timer = null;
             publish(false);

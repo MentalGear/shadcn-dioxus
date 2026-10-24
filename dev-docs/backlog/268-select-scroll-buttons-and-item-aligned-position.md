@@ -1,10 +1,10 @@
 ---
 id: 268
 title: "Select scroll buttons and position=item-aligned"
-status: "NARROWED 2026-10-23. Both parts are on main and their browser specs are green (progress note…"
-size: "S-M (scroll buttons), M-L (item-aligned)"
+status: "Only the native (Blitz) arm is left: position=item-aligned emits data-position there and nothing…"
+size: "S (native arm only)"
 area: select
-updated: 2026-10-23
+updated: 2026-10-24
 ---
 
 # Row 268: Select scroll buttons and position=item-aligned
@@ -15,11 +15,11 @@ Two Select parts shadcn has and this Select does not. Split out of row 188 by th
 
 ## Status / trigger
 
-NARROWED 2026-10-23. Both parts are on main and their browser specs are green (progress note below). Left open: the native (Blitz) arm of item-aligned only emits `data-position`, and the item-aligned list does not flip as a whole above/below the trigger on collision (it clamps to the viewport and scrolls instead).
+**Only the native (Blitz) arm is left:** `position=item-aligned` emits `data-position` there and nothing positions the list. The web arm is complete: scroll buttons and item-aligned landed (3bbf20c5, 3165d011, specs 11/11 green on a debug SSG build, 2026-10-23), and the no-selection flip above/below landed in batch 14 (7a3a571d, 4c2bcd7d; with a selected option the list clamps to the viewport and scrolls, which is Radix's behaviour).
 
 ## Size
 
-S-M (scroll buttons), M-L (item-aligned)
+S (native arm only)
 
 ## Detail
 

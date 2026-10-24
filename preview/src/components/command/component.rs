@@ -4,7 +4,7 @@ use dioxus_primitives::combobox::default_combobox_filter;
 use dioxus_primitives::command::{self, CommandEmptyProps, CommandGroupLabelProps, CommandItemProps};
 use dioxus_primitives::{dioxus_attributes::attributes, merge_attributes};
 
-// docs/backlog.md row 32: plain `dx-`-prefixed CSS, no `#[css_module]`
+// dev-docs/backlog.md row 32: plain `dx-`-prefixed CSS, no `#[css_module]`
 // hashing -- delivered the same `asset!()` + `document::Link` way every
 // other themed wrapper in this crate delivers its stylesheet (see
 // checkbox/component.rs's header comment for the full rationale).

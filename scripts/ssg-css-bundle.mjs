@@ -6,7 +6,7 @@
 // Run by scripts/build-ssg.sh after `dx build --ssg` (never by hand on a tree you care about: it rewrites the
 // HTML in place). Idempotent per tree: a second run refuses ("already bundled") instead of stacking bundles.
 //
-// THE DEFECT THIS CLOSES (measured 2026-10-05, dev-docs/backlog.md "first-paint style delivery"):
+// THE DEFECT THIS CLOSES (dev-docs/research/round3-2026-10-05.md section 2, "first-paint style delivery"):
 // every component ships its CSS with `document::Link { rel: "stylesheet", href: asset!(..) }` at the point it
 // RENDERS. For a hard load the SSR `<head>` already carries the sheets of everything the SSR rendered, as
 // render-blocking `<link>`s, so the first paint is right (JS-off and hydrated screenshots are pixel-identical,
@@ -36,10 +36,10 @@
 //
 // Cascade: the per-route sheets are ordered by RENDER order (a composer's sheet before its parts': `field` before `label`,
 // so `.dx-label` (12.8px) beats `.dx-field-label` (14px), equal specificity, later wins). A bundle has ONE order, and it
-// must not flip those results: bundling in first-appearance order did exactly that to Field's label (14px instead of 12.8px,
-// caught by first-paint-styles.spec.ts). So the bundle is ordered to agree with as many pages' own head orders as it can
+// must not flip those results: bundling in first-appearance order does exactly that to Field's label (14px instead of 12.8px,
+// which first-paint-styles.spec.ts catches). So the bundle is ordered to agree with as many pages' own head orders as it can
 // (pairwise votes over every page, then local search); 208 of 2943 sheet pairs are ordered both ways on different pages --
-// route-and-history-dependent cascade that exists today and that a single order can only resolve one way; they are printed
+// route-and-history-dependent cascade that exists and that a single order can only resolve one way; they are printed
 // (`order conflicts`) and the all-routes computed-style comparison (first-paint-styles.spec.ts, "cascade") says whether any of
 // them changes a pixel. Sheets are otherwise `dx-`/`ec-`-prefixed (scripts/check-dx-class-prefix.sh) with no
 // `@import`/`@charset`/`url()` (checked here: such a sheet aborts the build).
@@ -219,7 +219,7 @@ const bundleTag = `<link rel="stylesheet" href="${bundleHref}" ${MARK} data-cove
 let rewritten = 0;
 let removed = 0;
 for (const pg of parsed) {
-  // Remove (unless --keep-links) the per-route links the bundle now carries, last to first so offsets hold.
+  // Remove (unless --keep-links) the per-route links the bundle carries, last to first so offsets hold.
   let head = pg.html.slice(0, pg.end);
   const edits = [];
   for (const s of pg.sheets) {

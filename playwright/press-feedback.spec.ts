@@ -4,9 +4,9 @@ import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
 /**
- * Backlog row 205 (the owner's touch finding), part 1 and 2:
+ * Backlog row 205, part 1 and 2:
  *
- *  1. No sticky hover. A touch browser keeps `:hover` on the element it just tapped; every hover rule now
+ *  1. No sticky hover. A touch browser keeps `:hover` on the element it just tapped; every hover rule
  *     lives inside `@media (hover: hover) and (pointer: fine)` (`scripts/check-hover-media.sh`), so after a
  *     tap a control looks exactly like it did at rest.
  *  2. Press feedback, a switchable system utility (`dx-components-theme.css`, "Press feedback"): a pressed
@@ -52,7 +52,7 @@ async function press(page: Page, el: Locator) {
   const down = Date.now();
   return async () => {
     // A real touch lasts 40-100ms. Headless Chromium can leave `:active` set when the up lands within the
-    // frame of the down (now that the press applies at once, a poll can be satisfied that fast).
+    // frame of the down (the press applies at once, so a poll can be satisfied that fast).
     await page.waitForTimeout(Math.max(0, 60 - (Date.now() - down)));
     await client.send("Input.emulateTouchFromMouseEvent", { type: "mouseReleased", x, y, button: "left", clickCount: 1 });
     // No `client.detach()` here: detaching straight after the up event drops it and leaves `:active` set
@@ -101,7 +101,7 @@ test.describe("touch", () => {
     await expect.poll(() => style(button, "scale")).toBe("none");
   });
 
-  // Backlog row 295. A tap on a phone is 40-100ms. These pin the two reasons it used to show nothing.
+  // Backlog row 295. A tap on a phone is 40-100ms. These pin the two reasons it could show nothing.
 
   test("the press lands instantly even where a component has its own transition (a tap is 40-100ms)", async ({ page }) => {
     const button = page.locator('.dx-button[data-style="secondary"]:not([disabled])').first();
@@ -144,9 +144,10 @@ test.describe("touch", () => {
     expect(tail.length, `frames between pressed and rest after release: ${frames.join(",")}`).toBeGreaterThanOrEqual(2);
   });
 
-  // The wash used to be a zero-specificity `background-image`, wiped by any component that writes the `background`
-  // shorthand: 23 control families (Tabs, Menubar / Navbar / Navigation Menu triggers, Toolbar, ...) showed only a
-  // sub-pixel scale. These are the ones the audit found; the gate-free guard is that each paints the wash.
+  // A zero-specificity `background-image` wash would be wiped by any component that writes the `background`
+  // shorthand (Tabs, Menubar / Navbar / Navigation Menu triggers, Toolbar, ... would show only a sub-pixel
+  // scale), so the wash out-ranks them. These are representative control families; the guard is that each
+  // paints the wash.
   for (const [route, selector] of [
     ["tabs", ".dx-tabs-trigger"],
     ["menubar", ".dx-menubar-trigger"],

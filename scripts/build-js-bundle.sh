@@ -4,11 +4,10 @@
 #
 # The ONE way to regenerate `primitives/src/js/*.js` from `primitives/src/ts/*.ts`.
 #
-# The bundle used to be rebuilt by `primitives/build.rs` (the `lazy-js-bundle` crate): a build script that ran,
-# and could shell out to `bun`, in EVERY consumer's build of dioxus-primitives, and whose staleness check hashed
-# with `std::hash::DefaultHasher` (std documents that hasher as not stable across Rust releases). The build script
-# is gone (dev-docs/backlog.md row 217); the generated `.js` is committed, and `scripts/check-js-bundle.sh` proves
-# it still belongs to its `.ts` source.
+# dioxus-primitives has no build script: a `build.rs` would run, and could shell out to `bun`, in EVERY consumer's
+# build, and a staleness check hashing with `std::hash::DefaultHasher` is not stable across Rust releases
+# (dev-docs/backlog.md row 217). So the generated `.js` is committed, and `scripts/check-js-bundle.sh` proves it
+# still belongs to its `.ts` source.
 #
 # Usage: scripts/build-js-bundle.sh
 #   Rebuilds every primitives/src/ts/<name>.ts into primitives/src/js/<name>.js with

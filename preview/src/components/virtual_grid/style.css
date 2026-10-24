@@ -55,10 +55,13 @@
   outline: none;
 }
 
-/* The Nova table's row hover (`hover:bg-muted/50`), on a data grid's rows only (the gallery and
- * the photo wall are not tables). Before the selected rule, which wins by source order. */
+/* The Nova table's row hover (`hover:bg-muted/50`), on a data grid's body rows only (the gallery
+ * and the photo wall are not tables). The hover fill is translucent, so it must never land on
+ * the sticky header row, whose opaque background is what covers the body cells scrolling under
+ * it: the header row is excluded by structure (`data-grid-header`), not by source order
+ * (row 386). Before the selected rule, which wins by source order. */
 @media (hover: hover) and (pointer: fine) {
-  .dx-virtual-grid:not(.dx-virtual-grid-wrap, .dx-virtual-grid-justified) [role="row"]:hover:not(:where([popover], dialog) *) {
+  .dx-virtual-grid:not(.dx-virtual-grid-wrap, .dx-virtual-grid-justified) [role="row"]:not([data-grid-header]):hover:not(:where([popover], dialog) *) {
     background-color: var(--dx-table-hover-background);
   }
 }

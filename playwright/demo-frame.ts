@@ -5,10 +5,9 @@ import type { Locator, Page } from "@playwright/test";
  *
  * A shared oracle spec (keyboard matrix, main-thread, top-layer ink, rtl, ...) drives the demo pages of many
  * components. Locating a control there by the demo's visible COPY (`getByRole("button", { name: "Open Menu" })`,
- * `getByText("Selected: Duplicate")`) ties every one of those specs to wording nobody meant as a contract: three
- * rounds in one session, a demo that mirrored shadcn's example more closely (row 212's labelled demos, row 155
- * group 3's toggles) renamed a button and broke `keyboard-matrix`, `main-thread`, `rtl` and
- * `theme-preset-contrast` at once.
+ * `getByText("Selected: Duplicate")`) ties every one of those specs to wording nobody meant as a contract: a demo that mirrors shadcn's example more
+ * closely (row 212's labelled demos, row 155 group 3's toggles) renames a button and breaks `keyboard-matrix`,
+ * `main-thread`, `rtl` and `theme-preset-contrast` at once.
  *
  * The construction: the spec names a control by its ARIA ROLE and its POSITION inside the demo frame --
  * `demoRole(page, "button")` is the first button of the page's main demo, `demoRole(page, "tab", 2)` its third

@@ -7,11 +7,11 @@ use dioxus::prelude::*;
 // panel's pixel height with JS and grows the group to fit, but this crate's ResizablePanel is
 // pure-CSS percentage-of-the-group's-real-size with `overflow: hidden` (primitives/src/
 // resizable.rs's own documented contract), so a FIXED 200px content height silently clips
-// (confirmed by screenshot: the nested group's 25%-share "Top" panel, well under 200px tall,
-// truncated its own label mid-glyph). `height: 100%` is the construction that can never
+// (the nested group's 25%-share "Top" panel, well under 200px tall,
+// would truncate its own label mid-glyph). `height: 100%` is the construction that can never
 // overflow its panel regardless of split percentage or a later drag/resize -- the two
 // `DemoGroup` calls below restore an explicit group height precisely so this has a reliably
-// generous share to fill, matching this demo's own original (pre-shadcn-translation) height.
+// generous share to fill.
 fn panel_content(label: &'static str) -> Element {
     rsx! {
         div {
@@ -33,8 +33,7 @@ fn handle_grip() -> Element {
 // directly to the demo's own ResizablePanelGroup instance -- the same way every other demo in
 // this crate applies its own presentational chrome (border/height/overflow) via props rather
 // than a class shipped in style.css, so a consumer installing this component gets none of this
-// page's own demo framing. `--primary-color-6`/`-7` is this repo's established "border" token
-// pair (`.dx-card`, `.dx-button[data-style="outline"]`); `--dx-radius-lg` is shadcn's
+// page's own demo framing. `--dx-input` is the theme's field-border token and `--dx-radius-lg` is shadcn's
 // `rounded-lg`.
 #[component]
 fn DemoGroup(direction: ResizableDirection, height: &'static str, children: Element) -> Element {
@@ -45,9 +44,9 @@ fn DemoGroup(direction: ResizableDirection, height: &'static str, children: Elem
             max_width: "28rem",
             // shadcn's `md:min-w-[450px]`, capped by the VIEWPORT so it cannot overflow a phone. Not `100%`: the
             // group sits in a shrink-wrapped flex item, so a percentage resolves against its own intrinsic width and
-            // `min(450px, 100%)` collapsed the demo to ~325px at every width (measured 1280/1024/600: 325px, was 450).
+            // `min(450px, 100%)` collapses the demo to ~325px at every width (measured 1280/1024/600).
             // 6rem: a phone card's preview is the viewport less 74px of padding and border, and `100vw` also counts
-            // the 15px `scrollbar-gutter` of a desktop browser at that width (`4rem` overflowed by 5px, row 280).
+            // the 15px `scrollbar-gutter` of a desktop browser at that width (`4rem` would overflow by 5px, row 280).
             min_width: "min(450px, 100vw - 6rem)",
             border: "1px solid var(--dx-input)",
             border_radius: "var(--dx-radius-lg)",

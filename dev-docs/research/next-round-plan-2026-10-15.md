@@ -47,9 +47,9 @@ touches shared code, a gate, or needs root-causing); no Haiku lane this round.
 
 ### 2a. Proposed additions (E5, 2026-10-17; only with the owner's go)
 
-Investigations (read-only, against the `83758d5` debug SSG): `touch-open-focus-2026-10-17.md`,
-`mobile-keyboard-2026-10-17.md`, `nav-scroll-smooth-2026-10-17.md`, `user-select-inventory-2026-10-17.md`,
-`docs-audit-2026-10-17.md` (all in `dev-docs/research/`).
+Investigations (read-only, against the `83758d5` debug SSG): `dev-docs/archive/research/touch-open-focus-2026-10-17.md`,
+`dev-docs/archive/research/mobile-keyboard-2026-10-17.md`, `dev-docs/archive/research/nav-scroll-smooth-2026-10-17.md`, `dev-docs/archive/research/user-select-inventory-2026-10-17.md`,
+`dev-docs/archive/research/docs-audit-2026-10-17.md` (all in `dev-docs/research/`).
 
 | Lane | Rows | Owns | Must not touch | Proof |
 |---|---|---|---|---|

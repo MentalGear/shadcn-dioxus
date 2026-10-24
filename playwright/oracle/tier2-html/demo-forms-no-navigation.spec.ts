@@ -8,9 +8,9 @@
  * page load. The algorithm's `method=dialog` branch ("If form does not have an ancestor dialog element, then
  * return") is the one case that never navigates, and is what `DemoForm` relies on before hydration.
  *
- * WHAT THIS GUARDS (owner report 2026-10-05: "submit buttons in the demo / docs pages should not trigger /
- * reload the page"): the card's login form was a bare `<form>` with no `onsubmit`, so "Login" and Enter in its
- * email field reloaded `/component/card/` as `/component/card/?`. Dioxus does not prevent that by itself --
+ * WHAT THIS GUARDS (a demo or docs page's submit button must not trigger / reload the
+ * page): a bare `<form>` with no `onsubmit` (the card's login form is the example) would reload
+ * `/component/card/` as `/component/card/?` on "Login" or Enter in its email field. Dioxus does not prevent that by itself --
  * dioxus-web-0.7.9/src/dom.rs:113-116 calls `preventDefault` only when a Rust handler cleared
  * `Event::default_action_enabled()` -- and, independent of any handler, the SSG pages are plain HTML until the
  * wasm bundle has hydrated them. The construction is `DemoForm` (preview/src/components/form/component.rs),
@@ -25,9 +25,9 @@
  *
  *   1. (hydrated, every route that has a form) as above, on a hydrated page. Which routes have one is read from the
  *      SERVED markup (a request-level pass, no wasm boot: `servedFormRoutes`), plus the routes in `REVEAL`, whose
- *      form only exists after something is opened (the dashboard's compose modal). Row 331 measured the
- *      unshrunk walk of all ~190 routes on a debug build: exactly those routes were the ones it found forms on
- *      (11 served + the compose modal), at 128 s of a 192 s file. On a client-rendered `dx serve` nothing is
+ *      form only exists after something is opened (the dashboard's compose modal). Row 331: walking
+ *      all ~190 routes on a debug build found forms only on those routes
+ *      (11 served + the compose modal) and cost 128 s of a 192 s file. On a client-rendered `dx serve` nothing is
  *      served with a form, so the walk falls back to every route. Routes are entered by clicking the docs
  *      sidebar's own links (a real user path, and ~50x cheaper than a fresh wasm boot per route); the app's own
  *      pages and the sidebar block demos are loaded fresh. `novalidate` is forced on each form first, so

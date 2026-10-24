@@ -20,28 +20,26 @@
  *   - The `popover` attribute and the top-layer promotion it implies:
  *     https://html.spec.whatwg.org/multipage/popover.html#the-popover-attribute
  *
- * ## The 2026-09-01 production incident this guards against
+ * ## The production failure this guards against (backlog row 22)
  *
  * The deployed site (https://mentalgear.github.io/shadcn-dioxus/) is
  * built by CI as fullstack SSG (`.github/workflows/web.yml`: `ssg: true,
  * features: fullstack`). The SSG prerender runs the *server* binary -- a
- * host (non-wasm) build, not the wasm client. Before the axis fix this
- * spec guards (`docs/recommended-implementations.md` Caveat 1), every
- * overlay component split its rendered markup on
- * `#[cfg(target_family = "wasm")]`, which is false on that host binary --
- * so the SSG server rendered the *native* arm (plain `div`s, no `popover`
- * attributes, no `<dialog>` elements) while the wasm client then hydrated
- * against that structurally different markup. Empirical confirmation this
- * session reproduced locally, matching the live deployed site byte-for-byte
- * on the diagnostic marker: the always-mounted `ToastProvider` region
- * renders as `<div role="region" class="dx-toast-container-...">` with NO
- * `popover` attribute on both, where the wasm web arm's own render function
- * renders that same element with `popover="manual"`. The user-visible
- * symptom: "Dropdown Menu -> Open Menu: nothing happens" on a hard-loaded
- * page of the deployed site -- and, more broadly, broken events page-wide,
- * because Dioxus's event delegation is wired from the hydration walk (see
- * above), so one popover-shaped mismatch can take down listener attachment
- * for the whole page, not just the mismatched element.
+ * host (non-wasm) build, not the wasm client. An overlay component that
+ * splits its rendered markup on `#[cfg(target_family = "wasm")]` renders
+ * the *native* arm there (plain `div`s, no `popover` attributes, no
+ * `<dialog>` elements) while the wasm client then hydrates against that
+ * structurally different markup (`dev-docs/reference/platform-rationale.md`
+ * Caveat 1: the arm is chosen on the `web` feature axis instead). The
+ * always-mounted `ToastProvider` region is the diagnostic marker: it must
+ * render as `<div role="region" class="dx-toast-container-..." popover=
+ * "manual">` in the served HTML, as the wasm web arm's own render does.
+ * The user-visible symptom of a mismatch is "Dropdown Menu -> Open Menu:
+ * nothing happens" on a hard-loaded page of the deployed site -- and, more
+ * broadly, broken events page-wide, because Dioxus's event delegation is
+ * wired from the hydration walk (see above), so one popover-shaped
+ * mismatch can take down listener attachment for the whole page, not just
+ * the mismatched element.
  *
  * Fixture: no dedicated fixture -- this spec exercises the real home page
  * (`/`, `preview/src/main.rs`'s `Route::Home`) exactly as a real visitor's
@@ -72,57 +70,39 @@
  *      naming "hydration" when it has to recover from one, or as an
  *      uncaught panic/exception when it can't.
  *   3. (post-hydration interactivity on a hard load) On the hard-loaded
- *      home page -- no client-side navigation, matching the real-world
- *      report this rule regression-tests -- clicking the Dropdown Menu
+ *      home page -- no client-side navigation, matching a real
+ *      visitor's hard load -- clicking the Dropdown Menu
  *      demo's "Open Menu" trigger opens its menu. This is the literal
- *      user-reported symptom ("Dropdown Menu -> Open Menu: nothing is
+ *      symptom a split arm causes ("Dropdown Menu -> Open Menu: nothing is
  *      happening") on the deployed site's main page.
  *   4. (no duplicated attribute names in served markup) The raw HTTP-served
  *      HTML of `/` contains NO start tag with the same attribute name
- *      written twice. (`/component/?name=top_layer&` and
- *      `/component/?name=dialog&` were the URLs this rule was specified
- *      against, but at write time `name` was a *query* param
- *      (`#[route("/component/?:name&:iframe&:dark_mode")]`,
- *      `preview/src/main.rs`) and this app's `dx build --ssg` only
- *      prerendered a fixed path list that did not vary by query string --
- *      confirmed empirically: the built `server` binary run standalone
- *      served byte-identical markup for `/component/?name=button&`,
- *      `/component/?name=top_layer&`, and no query at all, all three
- *      being literally the `name=""` ("Component not found") prerendered
- *      page. **UPDATE (dev-docs/backlog.md row 46, construction landed):**
- *      that claim no longer holds -- `name` now lives in the URL PATH on
- *      the canonical route (`ComponentDemoPath`, `/component/:name/`),
- *      which `dx build --ssg` DOES enumerate one static file per
- *      `components::DEMOS` entry for (see `server_static_routes` in
- *      `preview/src/main.rs`), so `/component/button/` and
- *      `/component/top_layer/` now serve genuinely different, real
- *      markup. The "hydration parity — per-component pages" describe
- *      block below is Rule 4's own extension to every one of those pages,
- *      superseding this rule's original `/`-only scope for the
- *      duplicate-attribute check specifically (Rule 4 here stays as
- *      originally written, unchanged, as the narrower `/`-only
- *      regression guard for the ORIGINAL five-component finding). The old
- *      query-string route (`Route::ComponentDemo`) still exists for
- *      backward compatibility and still serves the same name-agnostic
- *      shell regardless of `X` by construction (see that route's own doc
- *      comment in `preview/src/main.rs`) -- it is what the "legacy
- *      query-URL redirect" describe block below exercises. `/` does not
- *      have either problem and is where
- *      the fixtures actually live pre-JS: the whole component gallery is
- *      embedded directly on the home page (Rule 3's Dropdown Menu is the
- *      same pattern) -- it is also, not coincidentally, the exact page
- *      Finding 1's own evidence came from. NOTE (2026-09-03): `top_layer`
- *      itself was subsequently excluded from the `/` gallery grid
+ *      written twice. `name` lives in the URL PATH on the canonical
+ *      component route (`ComponentDemoPath`, `/component/:name/`), which
+ *      `dx build --ssg` enumerates one static file per `components::DEMOS`
+ *      entry for (see `server_static_routes` in `preview/src/main.rs`), so
+ *      `/component/button/` and `/component/top_layer/` serve genuinely
+ *      different, real markup. The "hydration parity — per-component
+ *      pages" describe block below is Rule 4's extension to every one of
+ *      those pages; Rule 4 here is the narrower `/`-only guard for the
+ *      five primitives that carry the hazard. The legacy query-string route
+ *      (`Route::ComponentDemo`) still serves the same name-agnostic shell
+ *      regardless of `X` by construction (see that route's own doc comment
+ *      in `preview/src/main.rs`) -- it is what the "legacy query-URL
+ *      redirect" describe block below exercises. `/` is where the fixtures
+ *      live pre-JS: the whole component gallery is embedded directly on
+ *      the home page (Rule 3's Dropdown Menu is the same pattern). The
+ *      `top_layer` fixture itself is excluded from the `/` gallery grid
  *      (`preview/src/main.rs`'s `ComponentGallery` -- it is an oracle
- *      fixture, not an installable component; still reachable at its own
- *      `/component/?name=top_layer&` page) -- this does not weaken Rule 4's
- *      own coverage, since every duplicate-attribute defect it found above
- *      lived in a *primitive* (`toast.rs`, `progress.rs`, `context_menu.rs`,
+ *      fixture, not an installable component; it has its own
+ *      `/component/top_layer/` page). That does not weaken Rule 4's
+ *      coverage, since every duplicate-attribute defect it guards lives in
+ *      a *primitive* (`toast.rs`, `progress.rs`, `context_menu.rs`,
  *      `popover.rs`, `select/components/trigger.rs`) that other components
- *      still embedded on `/` continue to exercise (the `progress` demo, the
- *      `context_menu`/`popover`/`select` component cards themselves); it did
- *      remove Rule 4b's only caller-override instance of the pattern from
- *      `/`, which is why Rule 4b's subject changed (see its own doc below).
+ *      embedded on `/` exercise (the `progress` demo, the
+ *      `context_menu`/`popover`/`select` component cards themselves); it
+ *      is why Rule 4b's subject is the avatar card (see its own doc
+ *      below).
  *      Rule source: the WHATWG HTML parsing
  *      spec's tokenizer step for start tags --
  *      https://html.spec.whatwg.org/multipage/parsing.html#attribute-name-state
@@ -145,35 +125,31 @@
  *      but fails axe's `landmark-unique` on the SSG lane wherever two
  *      landmarks are meant to be told apart by a caller-supplied name
  *      (`preview.spec.ts`, the top-layer fixture's toast region vs. the
- *      app shell's). Found 2026-09-01 in `ToastRegionRendered`
+ *      app shell's). The motivating case is `ToastRegionRendered`
  *      (`primitives/src/toast.rs`): its `aria_label: "{length}
- *      notifications"` followed by `..attributes` serialized BOTH the
+ *      notifications"` followed by `..attributes` would serialize BOTH the
  *      primitive's default and the top-layer fixture's
  *      `aria_label: "Top-layer fixture notifications"` override into the
  *      same `<div>` start tag. Also asserts directly that the fixture
  *      region's *effective* (first-wins, per the parse rule quoted above)
  *      served `aria-label` is the caller's override, not the primitive's
  *      default -- the concrete, human-readable form of "no duplicate" for
- *      this exact regression.
+ *      this exact case.
  *
- * STATUS AT WRITE TIME (this session, against pre-axis-fix `main`): rules
- * 1-3 RED against the local SSG build -- see this session's report for
- * verbatim failure output. Rule 1 fails because the server-rendered toast
- * region carries no `popover` attribute at all (the native arm). Rules 2
- * and 3 fail as direct consequences of rule 1's markup mismatch: hydration
+ * Failure shapes: Rule 1 fails when the server-rendered toast region
+ * carries no `popover` attribute at all (the native arm). Rules 2 and 3
+ * fail as direct consequences of rule 1's markup mismatch: hydration
  * cannot reconcile the wasm client's web-arm render against the server's
  * native-arm markup, so hydration errors surface and click handlers
  * page-wide (including the Dropdown Menu trigger) are never attached.
  *
- * Rule 4 was added and confirmed RED separately (2026-09-01, against a
- * build with rules 1-3 already green): 15 duplicate-attribute start tags on
- * `/`, across five components, every one of them a real caller override in
- * `preview/src/components/top_layer/component.rs`'s oracle fixture (plus
- * one on a dashboard `Progress` bar) colliding with that primitive's own
- * explicit attribute of the same name. Verbatim (one representative per
- * component; the fixture's `id="clip-*"`/`id="scroll-*"`/`id="edge-*"`/
- * `id="popover-modal-*"` triggers repeat the same popover/context-menu/
- * select shape 5/2/1 more times respectively):
+ * Rule 4 rejects any duplicate-attribute start tag on `/`: a caller
+ * override (the `preview/src/components/top_layer/component.rs` oracle
+ * fixture, or a dashboard `Progress` bar) colliding with the primitive's
+ * own explicit attribute of the same name. The shapes it rejects, one
+ * representative per component (the fixture's `id="clip-*"`/`id="scroll-*"`/
+ * `id="edge-*"`/`id="popover-modal-*"` triggers repeat the same
+ * popover/context-menu/select shape):
  *
  *   duplicate "style" in a dashboard Progress bar:
  *     <div role="progressbar" ... style="--progress-value: 68%"
@@ -195,56 +171,53 @@
  *     <button id="dxc-226" style="anchor-name: --dxa-dxc-226;" type="button"
  *             aria-haspopup="listbox" aria-expanded=false
  *             id="clip-select-trigger" ...>
- *   duplicate "style"+"aria-label" in ToastRegionRendered (`toast.rs`, the
- *   original Finding 1 evidence):
+ *   duplicate "style"+"aria-label" in ToastRegionRendered (`toast.rs`):
  *     <div id="dxc-216" role="region" aria-label="0 notifications"
  *          tabindex="-1" popover="manual" style="--toast-count: 0"
  *          style="position: fixed; top: auto; right: 0; bottom: 0; left:
  *          auto; margin: 0;" aria-label="Top-layer fixture notifications"
  *          data-node-hydration="2062">
  *
- * Fixed by construction in all five files (`toast.rs`'s `ToastRegionRendered`
+ * Held by construction in all five files (`toast.rs`'s `ToastRegionRendered`
  * both arms, `progress.rs`'s `Progress`, `context_menu.rs`'s
  * `ContextMenuRoot` and `ContextMenuTrigger`, `popover.rs`'s
  * `PopoverTrigger`, `select/components/trigger.rs`'s `SelectTrigger`):
- * `merge_attributes` now combines each component's own default attributes
+ * `merge_attributes` combines each component's own default attributes
  * with the caller's `attributes` into a single deduped list (caller wins)
  * before the `rsx!` call, so every tag is only ever built with one value
- * per attribute name -- neither lane can ever emit a duplicate, because
- * there is only ever one attribute *to* emit. `PopoverTrigger`'s `id` is
- * the one exception carried over unmerged, on its own single explicit
- * binding (its pre-existing `use_effect`-based caller-id-to-`ctx.labelledby`
- * sync, unchanged, already makes it end up holding the caller's value) --
- * every other `id` above is caller-wins like the rest, matching each
- * element's pre-existing client (CSR, post-hydration) behavior exactly
- * (spread order already made the caller's id win there), not newly
- * protected against override the way `toast.rs`'s own `id` is (see that
- * function's doc): nothing else here does a fixed-expectation
- * `document.getElementById` lookup against its *own* id winning --
- * `use_outside_dismiss`/`use_refocus_on_close_unless`'s lookups already
- * silently no-op whenever a caller's override id makes them miss, on both
- * lanes, unchanged by this fix (a real, separate, pre-existing behavior gap
- * once a caller overrides one of these ids -- out of scope here, which is
- * only about the served markup agreeing with the DOM).
+ * per attribute name -- neither the server nor the client path can emit a
+ * duplicate, because there is only ever one attribute *to* emit.
+ * `PopoverTrigger`'s `id` is the one exception carried unmerged, on its
+ * own single explicit binding (its `use_effect`-based caller-id-to-
+ * `ctx.labelledby` sync already makes it end up holding the caller's
+ * value) -- every other `id` above is caller-wins like the rest, matching
+ * each element's client (CSR, post-hydration) behavior (spread order makes
+ * the caller's id win there), not protected against override the way
+ * `toast.rs`'s own `id` is (see that function's doc): nothing else here
+ * does a fixed-expectation `document.getElementById` lookup against its
+ * *own* id winning -- `use_outside_dismiss`/`use_refocus_on_close_unless`'s
+ * lookups silently no-op whenever a caller's override id makes them miss,
+ * on both paths (a separate behavior gap once a caller overrides one of
+ * these ids -- out of scope here, which is only about the served markup
+ * agreeing with the DOM).
  *
- * ## Row 46 extension (2026-09-19): every component page, not just `/`
+ * ## Per-component pages (backlog rows 46 and 22): every component page, not just `/`
  *
- * Rows 46 and 22 (dev-docs/backlog.md): every `/component/?name=X&` page
- * used to prerender as the "Component not found" shell for every `X` (a
+ * Rows 46 and 22 (dev-docs/backlog.md): a `/component/?name=X&` page can
+ * only prerender as the "Component not found" shell for every `X` (a
  * query string can never become a distinct static file -- see
- * `preview/src/main.rs`'s `Route::ComponentDemo` doc comment), so this file
- * could only ever compare `/` and the dashboard/docs routes against their
- * own server-rendered markup. Now that `name` lives in the URL PATH on the
- * canonical `ComponentDemoPath` route (`/component/:name/`), `dx build
+ * `preview/src/main.rs`'s `Route::ComponentDemo` doc comment), so `name`
+ * lives in the URL PATH on the canonical `ComponentDemoPath` route
+ * (`/component/:name/`), and `dx build
  * --ssg` prerenders one real, distinct static file per
- * `components::DEMOS` entry, and Rules 1-4b's underlying method (does the
+ * `components::DEMOS` entry. Rules 1-4b's underlying method (does the
  * server-rendered markup agree with what the client hydrates against, with
  * zero hydration errors and no duplicated attributes) extends to every one
- * of them. Two new `describe` blocks below do that extension:
+ * of them. Two `describe` blocks below do that extension:
  *
  *   - "hydration parity — per-component pages": Rule 5 (no prerendered
- *     component page served the not-found shell -- the row 46 regression
- *     itself, made a black-box assertion) and Rule 2/Rule 4's own method
+ *     component page served the not-found shell -- row 46 as a black-box
+ *     assertion) and Rule 2/Rule 4's own method
  *     applied to every discovered page (zero hydration errors, no
  *     duplicated attributes), enumerated from the BUILT OUTPUT itself
  *     (`SSG_SITE_DIR`'s `component/*` subdirectories that have their own
@@ -255,22 +228,20 @@
  *     file host (no `dx serve`, no server-side redirect logic at all) can
  *     still only ever serve ONE physical file for every `/component/?name=
  *     X&` request regardless of `X` (the query string is invisible to
- *     file-path resolution), so the OLD `ComponentDemo` route's client-side
+ *     file-path resolution), so the legacy `ComponentDemo` route's client-side
  *     redirect (`preview/src/main.rs`) is what has to resolve the real
  *     component after hydration, not the server. Both blocks `test.skip`
- *     (not fail) when `SSG_SITE_DIR` is unset, so this file still runs its
- *     original, pre-row-46 rules 1-4b unchanged against an SSG build that
- *     was not invoked through the env var this lane's CI job sets.
+ *     (not fail) when `SSG_SITE_DIR` is unset, so rules 1-4b still run
+ *     against an SSG build that was not invoked through that env var.
  *
- * ## `attr-oracle` lane extension: Rule 4c, synthesized collisions
+ * ## Rule 4c: synthesized collisions (backlog row 93)
  *
  * Rules 4/4b/4-extended above all share one limitation: they can only ever
  * find a duplicate-attribute collision that some `preview` demo page
  * *happens* to produce (a caller override that happens to collide with a
- * component's own literal attribute of the same name). That is exactly how
- * three successive manual sweeps (`b35d671`, `5fc1439`, `f2be1d7`) each left
- * different survivors -- each one fixed only what was incidentally exercised
- * by the demo content that existed at the time. A component that carries the
+ * component's own literal attribute of the same name). Manual sweeps of
+ * demo pages therefore each leave different survivors: a sweep fixes only
+ * what the demo content incidentally exercises. A component that carries the
  * same literal-attribute-beside-a-raw-spread hazard shape, but that no demo
  * page currently happens to override, is invisible to all of the rules
  * above -- not fixed, just not yet triggered.
@@ -304,36 +275,26 @@
  * `npx playwright test` run with no SSG build present at all -- broader
  * standing coverage than the SSG-gated rules above, not narrower.
  *
- * As of this extension: 27 real component+attribute+element sites across
+ * Coverage: 27 real component+attribute+element sites across
  * 13 primitives (`progress`, `toast`, `context_menu`, `dropdown_menu`,
  * `menubar`, `popover`, `navbar`, `navigation_menu`, `collapsible`,
  * `tooltip`, `select`, `hover_card`, `combobox`), plus 2 self-test sites
  * that prove the detection pipeline itself (not a real component) can tell
  * a live collision apart from a fixed one -- see attr-synth/src/main.rs's
- * own doc for the exhaustive list and for what it still cannot reach
+ * own doc for the exhaustive list and for what it cannot reach
  * (four menu-family `*Content` components gated behind an effect-driven
- * render signal that does not settle synchronously, plus `Drawer`, not
- * pursued for time). Running this against the tree as it stood when this
- * extension first landed found one genuine, previously-unknown defect this
- * way: `navigation_menu:trigger:style` (`NavigationMenuTrigger` served a
- * bare `style: anchor_name_style(..)` literal beside a raw `..attributes`
- * spread) -- itself the intended proof that this extension can catch
- * something the demo-page-driven rules above cannot. The `anchor-style-class`
- * lane (this repository's own history/commit log) then audited every other
- * `anchor_name_style` trigger call site the same defect could plausibly hit
- * (`grep -rn "anchor_name_style" primitives/src/*.rs`) and found three more
- * genuinely defective the same way (`hover_card:trigger:style`,
- * `menubar:trigger:style`, `navbar:trigger:style` below) plus five already
- * safe from this specific hazard (their own `style` already ran through
- * `merge_attributes` before the `rsx!` spread, just not folded -- see the
- * `.toContain` discussion below) -- `context_menu:sub_trigger:style`,
- * `dropdown_menu:trigger:style`, `dropdown_menu:sub_trigger:style`,
- * `popover:trigger:style`, `tooltip:trigger:style`. All nine now share one
- * construction, `top_layer::anchored_trigger_attributes`, added as part of
- * that fix; the cases for all nine (new or pre-existing) are asserted here
- * the same way as every other case in this block, so none of them can
- * regress back to a bare literal, or back to a plain (non-folding) merge,
- * without this file failing.
+ * render signal that does not settle synchronously, plus `Drawer`).
+ * The demo-page-driven rules above cannot catch a bare
+ * `style: anchor_name_style(..)` literal beside a raw `..attributes`
+ * spread (the `navigation_menu:trigger:style` shape); this block can.
+ * Nine anchored-trigger cases (`navigation_menu`, `hover_card`, `menubar`,
+ * `navbar`, `context_menu:sub_trigger`, `dropdown_menu:trigger`,
+ * `dropdown_menu:sub_trigger`, `popover:trigger`, `tooltip:trigger`, all
+ * on `style`) share one
+ * construction, `top_layer::anchored_trigger_attributes` (backlog row 99),
+ * and each is asserted here the same way as every other case in this
+ * block, so none of them can regress to a bare literal, or to a plain
+ * (non-folding) merge, without this file failing.
  */
 
 import { test, expect } from "../fixtures";
@@ -615,7 +576,7 @@ test.describe("hydration parity — synthesized attribute collisions (Rule 4c)",
       // ever folds `class` (`primitives/src/lib.rs`'s own
       // `later_list_overwrites`/`style_attribute_is_overwritten_not_folded`
       // tests), so without folding first, a caller's own `style` would
-      // either collide with a bare literal (the original defect this rule
+      // either collide with a bare literal (the defect this rule
       // exists to catch) or, once merged the naive way, silently REPLACE --
       // not combine with -- the anchor/position-anchor binding, which is a
       // quieter, worse failure (CSS Anchor Positioning breaks with no
@@ -665,15 +626,10 @@ test.describe("hydration parity — SSG server markup vs. wasm client", () => {
 
     // `\bdx-toast-container\b` (a whole class TOKEN anywhere in the
     // attribute value), not `dx-toast-container-[^"]*` (a literal trailing
-    // hyphen then more characters): the latter was written against the old
-    // `#[css_module]`-hashed shape (`dx-toast-container-a1b2c3`) row 32
-    // (dev-docs/backlog.md) already migrated away from -- the class is now
-    // the plain, unhashed, multi-class `class="dx-toast-base-region
-    // dx-toast-container"`, which the old pattern can never match (it
-    // requires a literal "-" immediately after "container"). Found by
-    // actually executing this lane for the first time (row 22) -- this
-    // spec's own Rule 1 had silently never been re-verified against a
-    // post-row-32 build.
+    // hyphen then more characters): the class is the plain, unhashed,
+    // multi-class `class="dx-toast-base-region dx-toast-container"` (row 32:
+    // no `#[css_module]` hashing), so a pattern that requires a literal
+    // "-" immediately after "container" can never match.
     const containerMatch = html.match(/<div[^>]*class="[^"]*\bdx-toast-container\b[^"]*"[^>]*>/);
     expect(
       containerMatch,
@@ -713,7 +669,7 @@ test.describe("hydration parity — SSG server markup vs. wasm client", () => {
   test("Rule 3: Dropdown Menu 'Open Menu' opens its menu on a hard-loaded main page", async ({
     page,
   }) => {
-    // dev-docs/backlog.md row 109's own follow-up: this test clicks the
+    // dev-docs/backlog.md row 109: this test clicks the
     // trigger right after navigating, on the SSG lane -- `gotoHydrated` so
     // that click can't land before hydration attaches listeners. (Rule 2
     // above is a pure console/error check with no interaction, so it keeps
@@ -722,7 +678,7 @@ test.describe("hydration parity — SSG server markup vs. wasm client", () => {
 
     // The home page mounts every component's gallery card, so there is no single demo frame to scope to: the
     // dropdown menu's trigger and open content are selected by the component's own classes, inside ITS card --
-    // the docs chrome's own "Jump to category" menu (6be1887d) is a dropdown-menu trigger too and comes first.
+    // the docs chrome's own "Jump to category" menu is a dropdown-menu trigger too and comes first.
     const trigger = page
       .locator('article.dx-component-card:has(a[href^="/component/dropdown_menu/"]) button.dx-dropdown-menu-trigger')
       .first();
@@ -734,21 +690,18 @@ test.describe("hydration parity — SSG server markup vs. wasm client", () => {
     await expect(
       trigger,
       "clicking 'Open Menu' on a hard-loaded page did not open the menu " +
-        "(data-state never became 'open') — the literal user-reported " +
-        "symptom this rule regression-tests",
+        "(data-state never became 'open'): a hard-loaded page must be " +
+        "interactive after hydration",
     ).toHaveAttribute("data-state", "open");
-    // `menuitem`, not `option`: DropdownMenu's items were `role="option"`
-    // (inherited listbox/option roles) until dev-docs/backlog.md row 24
-    // fixed them to the correct APG Menu Button pattern role
-    // (`menu-roles.spec.ts`) -- this rule's own locator was never updated
-    // to match and had gone unnoticed because the SSG lane it runs against
-    // had never been executed (row 22) until now. Scoped through
+    // `menuitem`, not `option`: DropdownMenu's items carry the APG Menu
+    // Button pattern role (dev-docs/backlog.md row 24, `menu-roles.spec.ts`),
+    // not the listbox `option` role. Scoped through
     // `getByLabel("Open Menu")` (the popup's own accessible name, via
     // `aria-labelledby` back to its trigger) rather than a bare
     // page-wide `getByRole` -- with every component's gallery card mounted
     // on `/`, `menubar`'s own demo ALSO has an "Edit" menuitem, and a
     // page-wide locator hits a strict-mode "2 elements" violation across
-    // the two components' items (confirmed by execution).
+    // the two components' items.
     await expect(
       page.locator('.dx-dropdown-menu-content[data-state="open"]').getByRole("menuitem").first(),
     ).toBeVisible();
@@ -757,10 +710,10 @@ test.describe("hydration parity — SSG server markup vs. wasm client", () => {
   // `/component/?name=top_layer&`/`/component/?name=dialog&` are not
   // included: `name` is a query param this app's SSG build does not
   // prerender per-value (see Rule 4's doc above) -- `/` already embeds
-  // every component gallery card directly (`top_layer` itself no longer
-  // among them, 2026-09-03 -- see Rule 4's own doc note above -- but every
-  // duplicate-attribute defect Rule 4 found still lives in a primitive
-  // exercised by another gallery card).
+  // every component gallery card directly (`top_layer` itself is not among
+  // them, see Rule 4's own doc note above, but every duplicate-attribute
+  // defect Rule 4 guards lives in a primitive exercised by another gallery
+  // card).
   const RULE4_URLS = [`${BASE}/`];
 
   test("Rule 4: no start tag in served HTML has a duplicated attribute name (WHATWG HTML duplicate-attribute parse error)", async ({
@@ -784,28 +737,27 @@ test.describe("hydration parity — SSG server markup vs. wasm client", () => {
     }
   });
 
-  // Rule 4b's ORIGINAL (2026-09-01) subject was the top-layer oracle
-  // fixture's `ToastProvider` region -- its caller `aria_label:
-  // "Top-layer fixture notifications"` override of `ToastRegionRendered`'s
-  // own default (`toast.rs`). That subject left `/` on 2026-09-03 when
-  // `preview/src/main.rs`'s `ComponentGallery` stopped embedding the
-  // `top_layer` fixture on the home page (it is an oracle probe surface,
-  // not an installable component -- see docs/backlog.md's landed row and
-  // this file's own Rule 4 doc note above); `/component/?name=X&` cannot
-  // serve as a replacement fixture for the reason Rule 4's doc already
-  // gives (this app's SSG build does not prerender per query-string value).
+  // Rule 4b's subject is the `avatar` component's own gallery card, always
+  // mounted on `/`. (The top-layer oracle fixture's `ToastProvider` region --
+  // a caller `aria_label: "Top-layer fixture notifications"` override of
+  // `ToastRegionRendered`'s own default (`toast.rs`) -- would be the more
+  // direct subject, but `preview/src/main.rs`'s `ComponentGallery` does not
+  // embed the `top_layer` fixture on the home page (it is an oracle probe
+  // surface, not an installable component; see Rule 4's doc note above), and
+  // `/component/?name=X&` cannot serve as a fixture page for the reason
+  // Rule 4's doc gives: this app's SSG build does not prerender per
+  // query-string value.)
   //
-  // REPLACEMENT SUBJECT: the `avatar` component's own gallery card, always
-  // mounted on `/` (avatar was never excluded). Its "Error State" example
+  // The avatar's "Error State" example
   // (`preview/src/components/avatar/variants/states/mod.rs`) renders
   // `ImageAvatar { alt: "Jordan Reyes", aria_label: "Error avatar", ... }`.
   // `ImageAvatar` (`preview/src/components/avatar/component.rs`) computes
   // its OWN default accessible name from `alt` (`aria_label: "{alt}"` --
-  // the row-34 axe fix, `role-img-alt`) and merges it with the caller's
+  // row 34, axe `role-img-alt`) and merges it with the caller's
   // `attributes` via `merge_attributes` (caller-wins, deduped) before
   // rendering `Avatar`'s `role="img"` root -- structurally the same
   // "explicit default + caller override of the same attribute name" shape
-  // Rule 4b was written to guard, just one layer up (a preview-level
+  // Rule 4b guards, just one layer up (a preview-level
   // themed-wrapper default, not a primitive's own): if that merge order
   // were ever reversed (`merge_attributes(vec![props.attributes, base])`
   // instead of `vec![base, props.attributes]`), the alt-derived default
@@ -826,7 +778,7 @@ test.describe("hydration parity — SSG server markup vs. wasm client", () => {
   test("Rule 4b: the avatar demo's caller-overridden accessible name is served, not the alt-derived default", async ({
     request,
   }) => {
-    // The avatar page (not the `/` gallery card, which now shows shadcn's avatar-demo): the "Error State" example lives in
+    // The avatar page (not the `/` gallery card, which shows shadcn's avatar-demo): the "Error State" example lives in
     // the `states` variant (backlog row 235).
     const response = await request.get(`${BASE}/component/avatar/`, { timeout: NAV_TIMEOUT });
     expect(response.ok()).toBeTruthy();
@@ -834,8 +786,8 @@ test.describe("hydration parity — SSG server markup vs. wasm client", () => {
 
     const tags = extractStartTags(html);
     // The example is found by its deliberately dead `src` (it is the only avatar that is meant to fail to load) plus
-    // its alt text. The alt used to be "Invalid image"; the demo now names an invented person ("Jordan Reyes", with
-    // no real photo hot-linked), so the alt is still the alt-derived default that must LOSE to the override.
+    // its alt text: the demo names an invented person ("Jordan Reyes", with no real photo hot-linked), so the alt is
+    // the alt-derived default that must LOSE to the override.
     const markerImg = tags.find(
       (t) =>
         t.name === "img" &&
@@ -874,14 +826,14 @@ test.describe("hydration parity — SSG server markup vs. wasm client", () => {
   });
 });
 
-// Row 46 extension -- see this file's header ("Row 46 extension") for the
-// full rationale. Both describe blocks below skip (not fail) when
-// SSG_SITE_DIR is unset, so this file stays runnable exactly as it always
-// was against an SSG build invoked without that env var.
+// Per-component pages (row 46) -- see this file's header ("Per-component
+// pages") for the full rationale. Both describe blocks below skip (not
+// fail) when SSG_SITE_DIR is unset, so this file stays runnable against an
+// SSG build invoked without that env var.
 test.describe("hydration parity — per-component pages (row 46)", () => {
   test.skip(
     COMPONENT_NAMES.length === 0,
-    "SSG_SITE_DIR not set -- export it to the SSG build's public/ dir (or run via this lane's CI job) to enumerate every prerendered component page; see this file's header.",
+    "SSG_SITE_DIR not set -- export it to the SSG build's public/ dir (or run via the CI job that builds the SSG) to enumerate every prerendered component page; see this file's header.",
   );
 
   test("Rule 5: no prerendered component page served the not-found shell", async ({ request }) => {
@@ -897,7 +849,7 @@ test.describe("hydration parity — per-component pages (row 46)", () => {
     expect(
       offenders,
       `component page(s) served the "Component not found" shell instead of their real content ` +
-        `-- this is the row 46 regression itself: ${offenders.join(", ")}`,
+        `-- every prerendered page must carry its own content (row 46): ${offenders.join(", ")}`,
     ).toHaveLength(0);
   });
 
@@ -921,9 +873,8 @@ test.describe("hydration parity — per-component pages (row 46)", () => {
       // "networkidle" and that page settles fine): `top_layer`'s oracle
       // fixture page is "a large probe surface" with its own ongoing
       // timers/listeners by design (playwright/oracle/tier2-html/
-      // top-layer.spec.ts), so it may never reach network-idle at all --
-      // confirmed by execution, this loop timed out at 90s on exactly that
-      // page before this fix. A hydration mismatch surfaces during the
+      // top-layer.spec.ts), so it may never reach network-idle at all.
+      // A hydration mismatch surfaces during the
       // synchronous hydration walk right after `load`, not from later
       // background network activity, so "load" is both sufficient for what
       // this rule checks and immune to a fixture page's own idle timers.
@@ -964,7 +915,7 @@ test.describe("hydration parity — per-component pages (row 46)", () => {
   });
 });
 
-// A plain static file server (this lane's `python3 -m http.server`, and
+// A plain static file server (`python3 -m http.server`, and
 // GitHub Pages in production) resolves a URL to a file by PATH alone -- the
 // query string plays no part, so it can only ever serve ONE physical file
 // for every `/component/?name=X&` request regardless of `X`

@@ -196,9 +196,8 @@ fn use_item_aligned(id: String, ctx: SelectContext) {
     });
 }
 
-/// Shared listbox keydown handling for both render arms below -- unchanged
-/// from before this slice's migration, just factored out so it isn't
-/// duplicated across the web/native split.
+/// Shared listbox keydown handling for both render arms below -- factored
+/// out so it isn't duplicated across the web/native split.
 fn select_list_onkeydown(mut ctx: SelectContext) -> impl FnMut(KeyboardEvent) {
     move |event: KeyboardEvent| {
         let key = event.key();
@@ -262,7 +261,7 @@ fn select_list_onkeydown(mut ctx: SelectContext) -> impl FnMut(KeyboardEvent) {
                 // `DropdownMenu`'s identical Escape carve-out
                 // (`dropdown_menu.rs`) and for the same reason: calling
                 // both `set_open` *and* `prevent_default` unconditionally
-                // here would race it. Native (Blitz) arm: unchanged, closes
+                // here would race it. Native (Blitz) arm: closes
                 // here directly (Blitz has no popover-API light dismiss to
                 // defer to).
                 if cfg!(feature = "web") {
@@ -277,32 +276,31 @@ fn select_list_onkeydown(mut ctx: SelectContext) -> impl FnMut(KeyboardEvent) {
     }
 }
 
-/// Web arm (Migration A slice 3/3, final): promote the listbox to the top
+/// Web arm: promote the listbox to the top
 /// layer via `popover="auto"` so it escapes clipping/transformed ancestors,
-/// the same fix already shipped for `Tooltip`/`HoverCard`/`Popover`/
-/// `DropdownMenu`/`Menubar` (docs/plan.md Phase 4.4, Migration A slices
-/// 1-2). Anchored to `SelectTrigger` below/start-aligned, matching this
-/// component's pre-migration `top: 100%; left: 0` CSS
+/// the same construction as `Tooltip`/`HoverCard`/`Popover`/
+/// `DropdownMenu`/`Menubar` (dev-docs/plan.md Phase 4.4). Anchored to `SelectTrigger` below/start-aligned, matching the
+/// themed `top: 100%; left: 0` placement
 /// (`../../../../preview/src/components/select/style.css`).
 ///
-/// ## `auto`, decided by execution
+/// ## `auto`
 ///
 /// This listbox holds real DOM focus while open (`listbox_ref.set_focus`
 /// below, and individual `SelectOption`s via the roving-tabindex collection
 /// -- `collection.rs`'s `control_mount_focus`) and closes itself on
-/// `onblur` (below) when that focus leaves the whole widget -- exactly the
-/// CAUTION this slice's task named: does `showPopover()` fight that
-/// self-driven blur-close? Confirmed by execution that it does not:
+/// `onblur` (below) when that focus leaves the whole widget -- the
+/// question is whether `showPopover()` fights that self-driven blur-close.
+/// It does not:
 ///
 /// - **Escape**: `select_list_onkeydown` above defers to native light
 ///   dismiss on this arm (the same carve-out `DropdownMenu` uses). WHATWG's
 ///   popover hide algorithm restores focus to the "previously focused
 ///   element" recorded when `showPopover()` ran -- here, `SelectTrigger`,
 ///   since that is whatever had focus at the moment the trigger's own click
-///   opened this popover -- *for free*, satisfying this slice's guarded
+///   opened this popover -- *for free*, satisfying the guarded
 ///   "Escape -> trigger" oracle without any Rust-side `.focus()` call on
-///   this path. The pre-existing `use_refocus_on_close_unless`
-///   (`select.rs`, unchanged) still independently focuses the trigger on
+///   this path. `use_refocus_on_close_unless`
+///   (`select.rs`) still independently focuses the trigger on
 ///   every `open` "closes" transition regardless of cause; by the time it
 ///   runs here, native has already moved focus there, so its own
 ///   `.focus()` call is a same-element no-op, not a fight.
@@ -315,14 +313,14 @@ fn select_list_onkeydown(mut ctx: SelectContext) -> impl FnMut(KeyboardEvent) {
 ///   `hidePopover()`'s algorithm runs (mid pointerdown, before the click's
 ///   own default focus-shift action), a real outside interaction hasn't
 ///   moved focus away *yet* on this exact tick in the case that does
-///   matter for this slice's guarded suite (Tab, which `SelectOption`'s/
-///   this component's `onblur` already handle exactly as before -- Tab
+///   matter for the guarded suite (Tab, which `SelectOption`'s/
+///   this component's `onblur` handle on their own -- Tab
 ///   does not close the popover as a WHATWG light-dismiss trigger at all,
 ///   it is not a `pointerdown` -- so light dismiss never enters into the
 ///   `select.spec.ts` "tabbing out ... closes" cases).
 /// - **Animation**: does *not* use [`crate::top_layer::use_popover_sync`]
-///   bound to the raw `open` signal, unlike every prior `dx-anchor-*`
-///   consumer -- see [`crate::top_layer::use_popover_shown_while_mounted`]'s
+///   bound to the raw `open` signal, unlike the other `dx-anchor-*`
+///   consumers -- see [`crate::top_layer::use_popover_shown_while_mounted`]'s
 ///   doc for the animate-out race that binding would otherwise cause with
 ///   [`crate::use_animated_open`] (`SelectList`, above), and why this
 ///   mount/unmount-scoped variant avoids it.
@@ -333,7 +331,7 @@ fn SelectListRendered(id: String, attributes: Vec<Attribute>, children: Element)
     // Scroll buttons render only inside this subtree (`scroll_button.rs`).
     use_context_provider(|| InRenderedList);
     let open = ctx.selectable.open;
-    // axe `aria-input-field-name` (docs/backlog.md row 34's own round): an
+    // axe `aria-input-field-name` (dev-docs/backlog.md row 34): an
     // ARIA `listbox` is an input field and needs an accessible name.
     // Default it from the trigger (whose own visible text is the
     // placeholder/selected value) -- but ONLY if the caller hasn't already
@@ -363,7 +361,7 @@ fn SelectListRendered(id: String, attributes: Vec<Attribute>, children: Element)
     let onkeydown = select_list_onkeydown(ctx);
 
     // Lock page scroll while the listbox is open, matching Radix Select's
-    // default (docs/backlog.md row 9). Mirrors `DropdownMenuContentRendered`'s
+    // default (dev-docs/backlog.md row 9). Mirrors `DropdownMenuContentRendered`'s
     // identical `scroll_lock_active`/`ScrollLockGuard` shape
     // (`dropdown_menu.rs`) -- opt-out via `ctx.scroll_lock`
     // (`Select`/`SelectMulti`'s `scroll_lock` prop) rather than `modal`,
@@ -395,7 +393,7 @@ fn SelectListRendered(id: String, attributes: Vec<Attribute>, children: Element)
     );
     // JS-measured static positioning fallback for engines without CSS
     // Anchor Positioning -- see `top_layer::use_anchor_position_fallback`'s
-    // doc. `side`/`align`/gap match this component's pre-migration CSS
+    // doc. `side`/`align`/gap match this component's themed CSS
     // (`top: 100%; left: 0; margin-top: 0.25rem` == 4px at the default root
     // font size): anchored below the trigger, left-aligned with it, the
     // same bottom/start convention `DropdownMenu`/`Menubar` already use.
@@ -432,7 +430,7 @@ fn SelectListRendered(id: String, attributes: Vec<Attribute>, children: Element)
     // sidestepping `manganis-core`'s `css_module_parser` not scoping
     // classes inside `@supports` bodies.
     //
-    // axe `aria-input-field-name` (docs/backlog.md row 34's own round): an
+    // axe `aria-input-field-name` (dev-docs/backlog.md row 34): an
     // ARIA `listbox` is an input field and needs an accessible name.
     // Default it from the trigger (whose own visible text is the
     // placeholder/selected value) -- but ONLY if the caller hasn't already
@@ -447,7 +445,7 @@ fn SelectListRendered(id: String, attributes: Vec<Attribute>, children: Element)
     // empty/`AttributeValue::None` value (`has_own_accessible_name`'s own
     // doc explains why), and two entries for one attribute name is exactly
     // the duplicate-attribute hazard `merge_attributes` exists to prevent
-    // (`docs/conformance-harness.md` hydration-parity Rule 4) -- a literal
+    // (`dev-docs/conformance-harness.md` hydration-parity Rule 4) -- a literal
     // plus a raw spread cannot dedupe that; only routing every contributor
     // through one `merge_attributes` call can. Ordered after `attributes`
     // so it wins over exactly that spurious caller-side empty value, while
@@ -479,7 +477,7 @@ fn SelectListRendered(id: String, attributes: Vec<Attribute>, children: Element)
     // one `style` attribute -- see `top_layer::anchored_content_attributes`'s
     // doc for why a bare `style: position_anchor_style(&id)` literal
     // alongside `..attributes` is the duplicate-`style` hazard
-    // (`docs/conformance-harness.md` hydration-parity Rule 4).
+    // (`dev-docs/conformance-harness.md` hydration-parity Rule 4).
     let attributes = crate::top_layer::anchored_content_attributes(
         &ctx.selectable.trigger_id.cloned(),
         attributes,
@@ -521,9 +519,9 @@ fn SelectListRendered(id: String, attributes: Vec<Attribute>, children: Element)
 }
 
 /// Native (Blitz) arm: Blitz has no popover-API support at all
-/// (`docs/recommended-implementations.md` Caveat 2), so this stays the
+/// (`dev-docs/reference/platform-rationale.md` Caveat 2), so this stays the
 /// functional floor, a plain, always-in-flow `div`. Scroll-lock is the one
-/// addition to this arm since docs/backlog.md row 9 -- mirrors
+/// addition to this arm (dev-docs/backlog.md row 9) -- mirrors
 /// `DropdownMenuContentRendered`'s identical native arm
 /// (`dropdown_menu.rs`), which mounts `ScrollLockGuard` unconditionally on
 /// both arms rather than only the web one.
@@ -554,9 +552,9 @@ fn SelectListRendered(id: String, attributes: Vec<Attribute>, children: Element)
     });
 
     let onkeydown = select_list_onkeydown(ctx);
-    // See the web arm's identical `scroll_lock_active` (docs/backlog.md row 9).
+    // See the web arm's identical `scroll_lock_active` (dev-docs/backlog.md row 9).
     let scroll_lock_active = use_memo(move || (ctx.scroll_lock)() && open());
-    // See the web arm's identical construction (docs/backlog.md row 34) for
+    // See the web arm's identical construction (dev-docs/backlog.md row 34) for
     // why this is conditional and routed through `merge_attributes` rather
     // than a bare literal alongside `..attributes`.
     let labelledby: Vec<Attribute> = if has_own_accessible_name(&attributes) {

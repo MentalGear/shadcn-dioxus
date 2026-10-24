@@ -5,9 +5,9 @@
 //! same three files' own `*Sub` components share. See that module's own doc
 //! for the general shape this one follows: identical plumbing lives here,
 //! everything host-private (including anything this module's own doc below
-//! explicitly declines to generalize) stays exactly where it was.
+//! explicitly declines to generalize) stays in its host.
 //!
-//! # Scope: `docs/backlog.md` row 53
+//! # Scope: `dev-docs/backlog.md` row 53
 //!
 //! Row 53's own assessment of whether `Navbar` and `Menubar` should go
 //! further and share one submenu primitive concluded **extract three narrow
@@ -25,22 +25,21 @@
 //! - [`use_open_focus_sync`] -- the "open-index container": the effect that
 //!   keeps a menu's own `open` boolean in sync with whether its roving-focus
 //!   collection currently holds DOM focus, gated on no descendant submenu
-//!   being open. Before this extraction this exact effect -- down to the
-//!   `.peek()` choice on both reads, so the effect's own reactive dependency
-//!   stays `focus.any_focused()` alone -- was duplicated word for word
-//!   between `DropdownMenu`'s and `ContextMenu`'s root components. **Not**
+//!   being open. `DropdownMenu`'s and `ContextMenu`'s root components share
+//!   this one effect, with a `.peek()` on both reads so the effect's own
+//!   reactive dependency is `focus.any_focused()` alone. **Not**
 //!   used by `Menubar`: that host's analogous effect resyncs a
 //!   *which-index-is-currently-open* signal (`Signal<Option<usize>>`), not a
 //!   plain boolean, and has no `submenu_open_count` concept at all (`Menubar`
 //!   doesn't support `DropdownMenuSub`-style nested submenus) -- forcing the
 //!   two shapes into one generic function would either lose the index
 //!   `Menubar` needs or invent a translation layer with no existing
-//!   duplication to justify it. `Menubar`'s own version stays exactly where
-//!   it was, in `Menubar` itself.
+//!   duplication to justify it. `Menubar`'s own version lives in `Menubar`
+//!   itself.
 //! - [`use_menu_content_lifecycle`] -- the "content lifecycle/positioning
 //!   pipeline": id resolution (a caller-overridable id via `use_id_or`) plus
 //!   `use_animated_open`'s open/close-hold render gate, identical across all
-//!   three hosts' `*Content` components before this extraction. The
+//!   three hosts' `*Content` components. The
 //!   *positioning* half of the name deliberately stays host-private, for the
 //!   exact reason `crate::menu_sub`'s own doc gives for its own submenu
 //!   content: `top_layer.rs` hard-codes a fixed list of `dx-anchor-*` marker
@@ -50,11 +49,10 @@
 //!   function -- this module only factors the lifecycle gate that runs
 //!   *before* that host-private positioning call, never the call itself.
 //! - [`content_labelledby_attributes`] -- the "trigger id-plumbing": an APG
-//!   menu needs an accessible name (`docs/backlog.md` row 25), supplied by
+//!   menu needs an accessible name (`dev-docs/backlog.md` row 25), supplied by
 //!   `aria-labelledby` pointing at the menu's own trigger id unless the
 //!   caller already named the content some other way
-//!   (`has_own_accessible_name`). Before this extraction this exact
-//!   attribute-building block was duplicated across all six
+//!   (`has_own_accessible_name`). One attribute-building block serves all six
 //!   `*ContentRendered` web/native arm pairs (three hosts x two arms).
 //!
 //! Each function takes only `Copy` context-field *values* (a `Memo`, a
@@ -106,7 +104,7 @@ pub(crate) fn use_open_focus_sync(
 /// mount/unmount on `open` through `use_animated_open`'s close-animation
 /// hold. Returns `(id, render)`; `render()` is what every call site's own
 /// `if render() { ...ContentRendered { ... } }` branch keys off, matching
-/// every one of the three hosts' `*Content` components unchanged.
+/// every one of the three hosts' `*Content` components.
 ///
 /// `open` is generic over anything `Readable<Target = bool>` (every current
 /// call site passes a plain `Memo<bool>`) so this works unchanged whether a
@@ -125,7 +123,7 @@ pub(crate) fn use_menu_content_lifecycle(
 
 /// The "trigger id-plumbing" band -- see this module's doc for exactly what
 /// it does and does not subsume. An APG menu needs an accessible name
-/// (`docs/backlog.md` row 25) -- labelled by its own trigger's id, unless
+/// (`dev-docs/backlog.md` row 25) -- labelled by its own trigger's id, unless
 /// the caller already named the content some other way. Returns the
 /// `aria-labelledby` attribute as its own `merge_attributes` input (present
 /// only when applicable, an empty `Vec` otherwise), never a bare literal
@@ -133,7 +131,7 @@ pub(crate) fn use_menu_content_lifecycle(
 /// `aria-labelledby`/`aria-label` with an empty/`AttributeValue::None`
 /// value, and two entries for one attribute name is exactly the
 /// duplicate-attribute hazard `merge_attributes` exists to prevent
-/// (`docs/conformance-harness.md` hydration-parity Rule 4; see
+/// (`dev-docs/conformance-harness.md` hydration-parity Rule 4; see
 /// `has_own_accessible_name`'s own doc).
 pub(crate) fn content_labelledby_attributes(
     attributes: &[Attribute],
@@ -165,11 +163,10 @@ pub(crate) fn content_labelledby_attributes(
 ///   the trigger *inside* that same pointerdown. The mousedown that follows
 ///   it would then focus the pressed item, which is already being unmounted,
 ///   and focus would end on `<body>` instead of the trigger (backlog row
-///   140: keyboard selection returned focus to the trigger, pointer
-///   selection did not). With the default cancelled, the refocus the commit
+///   140). With the default cancelled, the refocus the commit
 ///   made is the last focus change. Items that commit on `click`/`pointerup`
-///   (`DropdownMenu`, `ContextMenu`) never had the gap, but go through the
-///   same wrapper so the class cannot reappear in one host only.
+///   (`DropdownMenu`, `ContextMenu`) have no such gap, but go through the
+///   same wrapper so the class cannot appear in one host only.
 pub(crate) fn keep_focus_on_pointerdown(event: Event<PointerData>) {
     event.prevent_default();
     event.stop_propagation();

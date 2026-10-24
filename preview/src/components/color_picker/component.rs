@@ -12,21 +12,15 @@ use palette::{encoding, FromColor, Hsv, IntoColor, RgbHue, Srgb};
 
 use crate::components::input::Input;
 
-// docs/backlog.md row 32: `#[css_module]` is gone -- see checkbox/component.rs's
+// dev-docs/backlog.md row 32: see checkbox/component.rs's
 // header comment for the full delivery-mechanism rationale (asset!() +
 // document::Link, embedded in the wrapper so a `shadcn-dioxus add
 // color_picker`-copied component needs no extra wiring).
 //
-// This component is also on the row-32 "not already namespaced" lane: before
-// hashing came off, several of this sheet's classes were spelled
-// `dx-color-*` (`dx-color-swatch`, `dx-color-slider*`, `dx-color-area*`,
-// `dx-color-field*`) rather than `dx-color-picker-*`. `#[css_module]`'s hash
-// suffix kept them collision-safe regardless, but the moment that hash is
-// gone a plain `dx-color-swatch` is indistinguishable from any other
-// component that might someday define the same short name. All such classes
-// were renamed to carry the full `dx-color-picker-` namespace (e.g.
-// `dx-color-swatch` -> `dx-color-picker-swatch`) in the same change that
-// drops the macro, in both this file and `style.css` -- see
+// Every class in this sheet carries the full `dx-color-picker-` namespace (e.g.
+// `dx-color-picker-swatch`, not `dx-color-swatch`): with no hash suffix, a
+// plain `dx-color-swatch` would be indistinguishable from any other
+// component that might someday define the same short name -- see
 // `scripts/check-dx-class-prefix.sh`, which enforces this repo-wide.
 fn format_color_hex(color: Color) -> String {
     format!("#{color:X}")
@@ -285,9 +279,8 @@ fn ColorField(props: ColorFieldProps) -> Element {
     // would subscribe this effect to the very signal it writes below,
     // the shape `scripts/check-self-subscribing-effects.sh` flags
     // (dev-docs/backlog.md row 73's class). The field-went-empty
-    // recovery this effect used to also do by re-reading `value` moved
-    // to `oninput` below, the place that actually knows the field just
-    // emptied, instead of relying on a self-triggered re-run to notice.
+    // recovery is `oninput` below, the place that actually knows the field
+    // just emptied, instead of a self-triggered re-run noticing it.
     use_effect(move || {
         let external = ctx.color();
         let current = value.peek().clone();
@@ -331,11 +324,10 @@ fn ColorField(props: ColorFieldProps) -> Element {
 
                     if input.is_empty() {
                         // Restore immediately instead of leaving the field
-                        // blank. This used to be the sync effect's job
-                        // above (re-reading `value` to notice it had gone
-                        // empty), which subscribed that effect to its own
-                        // write; doing it right here, where the field
-                        // actually just emptied, needs no such read.
+                        // blank. Doing it right here, where the field
+                        // actually just emptied, needs no read of `value`
+                        // in the sync effect above (which would subscribe
+                        // that effect to its own write).
                         value.set(hex_from_hsv(ctx.color()));
                         return;
                     }

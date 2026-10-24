@@ -10,7 +10,7 @@ use dioxus_primitives::merge_attributes;
 // raw from `dioxus_primitives::chart` -- so every demo composes exclusively
 // through `crate::components::chart::*`, never a raw `dioxus_primitives::`
 // path outside this file (`scripts/check-preview-composition.sh`). `Curve`
-// joins this list for the stage-2 per-family gallery packages (`area_chart`,
+// is on this list for the per-family gallery packages (`area_chart`,
 // `line_chart`, ...): their own `component.rs` is a thin `pub use
 // crate::components::chart::*;` (the installable package stays `chart`
 // alone), so anything a variant demo names -- `Curve::Linear`/`Curve::Step`
@@ -20,14 +20,12 @@ use dioxus_primitives::merge_attributes;
 // `check-preview-composition.sh` would then have to special-case per
 // gallery instead of once, here, at the seam this file already is).
 //
-// `BarOptions`/`PieOptions`/`RadarOptions`/`RadialOptions` have no demo
-// using them yet (only `variants/line/mod.rs` sets `line: LineOptions { .. }`
-// today, plus `area_chart`'s own `AreaOptions`-using variants) -- reserved
-// stage-2 extension points, same as `ChartProps`' own
-// `bar`/`pie`/`radar`/`radial` fields, so each family's own gallery lane
-// (`s2-bar`/`s2-polar`/`s2-radar`) can write `<Family>Options { .. }` in its
-// demo the moment it lands, with no edit to this shared file needed first.
-// `ChartSeries`/`ChartIcon`/`StackMode` join this list for `area_chart`'s
+// `BarOptions`/`PieOptions`/`RadarOptions`/`RadialOptions` (and
+// `LineOptions`/`AreaOptions`) are the per-family option structs behind
+// `ChartProps`' own `bar`/`pie`/`radar`/`radial`/`line`/`area` fields, so
+// each family's own gallery can write `<Family>Options { .. }` in a
+// demo with no edit to this shared file needed first.
+// `ChartSeries`/`ChartIcon`/`StackMode` are on this list for `area_chart`'s
 // own `icons`/`stacked_expand` variants (setting a series' `icon` field
 // directly, and `AreaOptions.stack_mode`, respectively).
 #[allow(unused_imports)]
@@ -43,12 +41,12 @@ pub use dioxus_primitives::chart::{
 /// the outermost chart piece -- `Chart`/`ChartTooltip`/`ChartLegend` are
 /// composed as its children. The focusable/keyboard-navigable root
 /// (`Chart`'s `keyboard` prop) is `Chart`'s own `[data-slot="chart"]` div,
-/// not this container's -- see `Chart`'s doc comment below (`$S/chart-api.md`
-/// "API changes" #4: an `Element`-typed child has no way to attach
+/// not this container's -- see `Chart`'s doc comment below (an
+/// `Element`-typed child has no way to attach
 /// attributes to its already-rendered parent without a post-mount effect,
 /// which would make them absent from the first SSR render).
 ///
-/// Forwards via `..props` (§4(a)'s stage-2 chart-round construction, the
+/// Forwards via `..props` (the
 /// same shape as `Chart` below) rather than a hand-listed field-by-field
 /// call, so a newly added `ChartContainerProps` field forwards for free
 /// instead of silently compiling away.
@@ -78,7 +76,7 @@ pub fn ChartContainer(props: ChartContainerProps) -> Element {
 /// props. Renders its own top-level `div[data-slot="chart"]` (wrapping the
 /// svg + hidden table) that carries `tabindex`/`role="group"`/
 /// `aria-roledescription="chart"`/`aria-label` and the keyboard handler when
-/// `keyboard` is on -- `$S/chart-api.md`'s "API changes" #4. No base class
+/// `keyboard` is on. No base class
 /// of its own: every mark (including this wrapper div) is unstyled by the
 /// primitive and selected off `[data-slot="..."]` inside the container's
 /// own `.dx-chart` scope (see `style.css`), so there is nothing new to
@@ -89,14 +87,10 @@ pub fn ChartContainer(props: ChartContainerProps) -> Element {
 /// not a hand-listed field-by-field call: `props` here IS `chart::Chart`'s
 /// own `ChartProps` (imported directly, not a separate preview-defined
 /// props type), so every field forwards with no mapping needed. This is a
-/// stage-2 chart round fix-by-construction, not merely this round's own
-/// six new option fields: a hand-listed forward silently drops any field
-/// the list doesn't (yet) name, with no compile error -- which is exactly
-/// how this file's own pre-stage-2 list had already gone stale (API change
-/// #8's `x_label`/`max_x_ticks` were never added to it, so a demo setting
-/// either was silently ignored; fixed for free by this same spread, not
-/// tracked as its own change). `ChartTooltip`/`ChartLegend`/`ChartContainer`
-/// now use the identical shape (§4(a) of the stage-2 handoff).
+/// fix by construction: a hand-listed forward silently drops any field
+/// the list doesn't (yet) name, with no compile error (a demo setting
+/// `x_label`/`max_x_ticks` would be silently ignored). `ChartTooltip`/
+/// `ChartLegend`/`ChartContainer` use the identical shape.
 #[component]
 pub fn Chart(props: ChartProps) -> Element {
     rsx! {
@@ -110,7 +104,7 @@ pub fn Chart(props: ChartProps) -> Element {
 /// (`data-state="closed"`, hidden by CSS) so there is nothing to attach
 /// post-hydration. Optional -- omit it for a chart that doesn't need one.
 ///
-/// Forwards via `..props` (§4(a)): a plain struct-update spread rather than
+/// Forwards via `..props`: a plain struct-update spread rather than
 /// a hand-listed field-by-field call, so a newly added `ChartTooltipProps`
 /// field (e.g. `indicator`/`label_key`/`name_key`/`formatter`) reaches the
 /// real primitive without an edit here. This also folds `children` back
@@ -137,9 +131,9 @@ pub fn ChartTooltip(props: ChartTooltipProps) -> Element {
 /// series, in `config` order. Optional -- a single/dual-series chart
 /// usually doesn't need one.
 ///
-/// Forwards via `..props` (§4(a)), the same shape as `ChartTooltip` above --
-/// this is the fix that lets a newly added `ChartLegendProps` field (e.g.
-/// `hide_icon`) actually reach `chart::ChartLegend`.
+/// Forwards via `..props`, the same shape as `ChartTooltip` above --
+/// so a newly added `ChartLegendProps` field (e.g.
+/// `hide_icon`) reaches `chart::ChartLegend`.
 #[component]
 pub fn ChartLegend(props: ChartLegendProps) -> Element {
     let base = attributes!(ul {

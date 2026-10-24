@@ -5,11 +5,10 @@
 //! that evaluated the script: dropping the component drops the task that listens to the eval,
 //! but the `addEventListener` registration stays on its target for the life of the page, and a
 //! script that is re-run (an effect, a second visit to the route) adds another one on top. That
-//! is the same shape as the uncleared `setInterval` (`interval.rs`), and it was found in `form`
-//! (6 adds, 0 removes), `sidebar`, `theme.rs`, `pointer.rs`, `scroll_lock.rs` and the focus trap
-//! (backlog rows 149 and 159). For a non-passive `wheel`/`touchmove` one it also taxes every
-//! scroll on the page: before the compositor may scroll, the main thread has to run the
-//! handler (`scroll_lock.rs` kept two of those on `window` after the first modal ever opened).
+//! is the same shape as the uncleared `setInterval` (`interval.rs`): a hand-written
+//! add with no remove leaks (backlog rows 149 and 159). For a non-passive `wheel`/`touchmove` one it
+//! also taxes every scroll on the page: before the compositor may scroll, the main thread has
+//! to run the handler (an uncleared pair of those on `window` would outlive the first modal).
 //!
 //! The fix is not "remember to write the `removeEventListener`" -- every hand-written script that
 //! forgot it did so because the removal lived in a different place from the add, on a path nobody

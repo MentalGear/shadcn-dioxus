@@ -7,9 +7,8 @@
 //! `playwright/oracle/hydration-parity.spec.ts`'s Rule 4 (and its
 //! per-component-page extension) fetch already-built SSG markup and check
 //! it for duplicated attribute names. That only ever catches a collision
-//! some `preview` demo page *happens* to exercise -- which is exactly how
-//! three successive manual sweeps (`b35d671`, `5fc1439`, `f2be1d7`) each
-//! left different survivors, per this lane's own brief. This crate
+//! some `preview` demo page *happens* to exercise -- manual sweeps over demo
+//! pages each leave different survivors (backlog row 93). This crate
 //! synthesizes the collision instead: for each covered `dioxus-primitives`
 //! component, it renders that component with a caller-supplied value for
 //! an attribute it ALSO sets literally, so the check runs whether or not
@@ -17,16 +16,14 @@
 //!
 //! ## Why a standalone crate, rendering `dioxus-primitives` directly
 //!
-//! This lane does not own `preview/src/` (a fixture route added there is
-//! the obvious alternative, and was ruled out for that reason -- see the
-//! commit message and the lane's final report). `preview` is also a
-//! binary-only crate (no lib target), so it cannot be depended on from
+//! This crate lives outside `preview/src/` (a fixture route added there
+//! would be the obvious alternative, but needs no preview change at all).
+//! `preview` is also a binary-only crate (no lib target), so it cannot be depended on from
 //! outside. Driving existing demo pages via query parameters was
-//! investigated and does not work for this purpose either: this app's `dx
+//! does not work for this purpose either: this app's `dx
 //! build --ssg` prerenders one static file per route at BUILD time, and a
-//! query string cannot select a different prerendered file (confirmed
-//! empirically, and already documented in `hydration-parity.spec.ts`'s
-//! Rule 4 doc) -- query-driven prop changes only take effect after client
+//! query string cannot select a different prerendered file (see
+//! `hydration-parity.spec.ts`'s Rule 4 doc) -- query-driven prop changes only take effect after client
 //! JS hydrates, which is after the exact pre-JS moment Rule 4 inspects.
 //!
 //! `dioxus-primitives` (this crate's only real dependency, via a normal
@@ -46,21 +43,21 @@
 //! "...")], ... }`, rather than via the `id: "..."` RSX shorthand that
 //! `#[props(extends = GlobalAttributes)]` also allows. This is
 //! deliberate: a handful of these components (e.g. `SelectTrigger`) have
-//! since grown an explicit TYPED `id` prop specifically so that shorthand
-//! now binds to that typed field instead of reaching `attributes` at all
-//! -- a real, additional defense, but one that would make an `id: "..."`
-//! shorthand-based test silently stop exercising the original hazard the
-//! moment such a field is added, without the test itself changing at all.
+//! an explicit TYPED `id` prop, so the shorthand binds to that typed field
+//! instead of reaching `attributes` at all -- a real, additional defense,
+//! but one that would make an `id: "..."` shorthand-based test silently
+//! stop exercising the hazard the moment such a field is added, without
+//! the test itself changing at all.
 //! Setting `attributes` directly is unaffected by that: it is a normal
 //! public field on every one of these props structs, exercises the exact
-//! historical hazard shape (a caller value landing in the raw
+//! hazard shape (a caller value landing in the raw
 //! `attributes` list, colliding with the component's own literal), and
 //! keeps working (or correctly starts failing, if a future refactor
 //! regresses the merge) regardless of what typed convenience fields exist
 //! alongside it.
 //!
-//! Rendering itself mirrors this repo's own established convention for
-//! exactly this kind of proof, already used ad hoc in
+//! Rendering itself mirrors this repo's own convention for
+//! exactly this kind of proof, used ad hoc in
 //! `primitives/src/dropdown_menu.rs`/`menubar.rs`/`carousel.rs`/
 //! `tooltip.rs`'s own `#[cfg(test)]` modules (see their doc comments,
 //! e.g. `dropdown_menu.rs`'s `ssr_tests::
@@ -92,24 +89,23 @@
 //! `DropdownMenuContent`/`MenubarContent`/`NavbarContent`/
 //! `NavigationMenuContent` are gated behind
 //! `menu_root::use_menu_content_lifecycle`'s `use_animated_open` render
-//! signal, which (confirmed by execution: `default_open: true` plus up to
-//! six `render_immediate` passes was not enough, where the identical
-//! technique settles `PopoverContent`/`SelectList`/`TooltipContent`
-//! immediately) does not settle within a bounded number of synchronous
+//! signal, which (`default_open: true` plus up to six `render_immediate`
+//! passes is not enough, where the identical technique settles
+//! `PopoverContent`/`SelectList`/`TooltipContent` immediately) does not settle within a bounded number of synchronous
 //! passes the way the covered anchored-content components do -- it likely
 //! needs a real async executor polling an actual spawned task, the way
 //! `carousel.rs`'s own doc says its sibling `tooltip.rs` render_immediate
-//! test sometimes does. Not pursued further in this lane's time budget;
+//! test sometimes does. Not covered here;
 //! `dropdown_menu:root:id`/`dropdown_menu:trigger:id` above still cover
 //! that file's other two `merge_attributes` sites (and `menubar:*`/
 //! `navbar:*`/`navigation_menu:*` root/trigger cases cover their own
 //! siblings the same way). `Drawer`'s own content merge chains into
 //! `dialog.rs`'s `DialogContent` (a different primitive) rather than
-//! resolving locally, so its content-level case was not pursued; its
-//! root/trigger-level sites were not attempted either, purely for time.
+//! resolving locally, so it has no content-level case, and its
+//! root/trigger-level sites are not covered either.
 //! None of this is preview-fixture-shaped -- it is the same class of gap
 //! either way (a component this crate resolves does not settle
-//! statelessly, or was simply not gotten to), so it doesn't change the
+//! statelessly, or is not covered yet), so it does not change the
 //! "standalone crate, no preview fixture needed" conclusion above.
 
 use dioxus::prelude::*;
@@ -189,9 +185,9 @@ macro_rules! case {
 // ---------------------------------------------------------------------
 // Real primitive components: one case per `merge_attributes` call site
 // that (a) is reachable without opening/interacting with anything (every
-// target element here is unconditionally in the SSR'd tree, matching how
-// Rule 4's original five findings were all root/trigger/always-mounted
-// elements, never something gated behind an `open` state) and (b) sets
+// target element here is unconditionally in the SSR'd tree: root, trigger
+// or always-mounted elements, never something gated behind an `open`
+// state) and (b) sets
 // the target attribute UNCONDITIONALLY in its own literal attrs (never a
 // bare `Option` passthrough with no internally-generated fallback) so the
 // pre-merge collision is always real, never vacuous.
@@ -323,7 +319,7 @@ fn dropdown_menu_sub_trigger_style() -> Element {
 // `DropdownMenuContent`/`MenubarContent`/`NavbarContent`/
 // `NavigationMenuContent` are NOT covered: all four are gated behind
 // `menu_root::use_menu_content_lifecycle`'s `use_animated_open` render
-// signal, which (confirmed by execution) does not settle within a bounded
+// signal, which does not settle within a bounded
 // number of synchronous `render_immediate` passes the way `PopoverContent`/
 // `SelectList`/`TooltipContent` below do -- see this file's top-of-module
 // doc, "What this still cannot reach".
@@ -393,8 +389,8 @@ fn popover_trigger_style() -> Element {
 }
 
 fn popover_content_style() -> Element {
-    // Must actually be open (`default_open: true`) to render at all --
-    // found by execution; same requirement as `select_list_style` and
+    // Must actually be open (`default_open: true`) to render at all;
+    // same requirement as `select_list_style` and
     // `tooltip_content_style` below.
     rsx! {
         PopoverRoot { default_open: true,
@@ -571,16 +567,15 @@ fn combobox_list_style() -> Element {
 // this crate's own detection pipeline (SSR render -> the JSON this prints
 // -> Rule 4c's tokenizer/assertions in hydration-parity.spec.ts) can
 // actually tell a real collision apart from a fixed one, without touching
-// `primitives/src` (out of this lane's ownership) even temporarily. Both
-// arms below hand-build the EXACT historical hazard shape (a literal
+// `primitives/src` even temporarily. Both
+// arms below hand-build the EXACT hazard shape (a literal
 // attribute beside a raw, unmerged caller-attributes spread) that this
 // whole rule exists to catch; the "fixed" arm routes the same two lists
 // through the REAL, unmodified `dioxus_primitives::merge_attributes` --
 // not a reimplementation -- so this is a genuine exercise of the library's
 // own construction, just on a hand-written element instead of a shipped
-// component. This lane's commit message on this branch records how this
-// pair was used to get a live RED-then-GREEN result on the Playwright side
-// (Rule 4c) before this was committed.
+// component. The pair gives a RED arm and a GREEN arm on the Playwright
+// side (Rule 4c).
 // ---------------------------------------------------------------------
 
 fn self_test_unfixed_collision() -> Element {
@@ -728,7 +723,7 @@ fn cases() -> Vec<Case> {
             "navigation_menu:trigger:style",
             "style",
             "--attr-synth-marker: nav-menu-trigger-style;",
-            "primitives/src/navigation_menu.rs NavigationMenuTrigger (top_layer::anchored_trigger_attributes -- previously RED BY DESIGN, see dev-docs history/this lane's commit for the fix)",
+            "primitives/src/navigation_menu.rs NavigationMenuTrigger (top_layer::anchored_trigger_attributes -- folded, so the case is GREEN; row 99)",
             navigation_menu_trigger_style
         ),
         case!(
@@ -815,9 +810,8 @@ fn main() {
     for case in cases() {
         let mut dom = VirtualDom::new(case.render);
         dom.rebuild_in_place();
-        // `rebuild_in_place` alone never runs an effect (confirmed by this
-        // repo's own `primitives/src/carousel.rs` `ssr_tests` doc, same
-        // Dioxus version). Several of this crate's targets (e.g.
+        // `rebuild_in_place` alone never runs an effect (see this repo's
+        // `primitives/src/carousel.rs` `ssr_tests` doc). Several of this crate's targets (e.g.
         // `DropdownMenuContent`) are gated behind an animated-open
         // lifecycle signal (`menu_root::use_menu_content_lifecycle`) that
         // only flips from its initial-render value via a plain synchronous

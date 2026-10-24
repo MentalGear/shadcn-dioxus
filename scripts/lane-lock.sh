@@ -5,7 +5,7 @@
 #   scripts/lane-lock.sh --status
 #
 # Why not bare `flock`: flock wakes a RANDOM waiter, so a lane ready to hand back could lose the
-# lock to one mid-work for an hour, and a merge gate had no way to go first. Here every caller
+# lock to one mid-work for an hour, and a merge gate has no way to go first. Here every caller
 # takes a ticket and only the head of the queue may take a slot.
 #
 # Queue    $LANE_TGT/lockq/<class>-<arrival-ns>-<pid>, class 0 = gate, 1 = lane (default lane).

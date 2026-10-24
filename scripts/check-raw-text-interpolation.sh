@@ -2,9 +2,11 @@
 #
 # check-raw-text-interpolation.sh
 #
-# Forbids any interpolation inside the children of an rsx `style { ... }`,
-# `script { ... }`, `noscript { ... }` or `textarea { ... }` ELEMENT (not the
-# `style: "..."` attribute), including path-qualified spellings:
+# No interpolation inside the children of an rsx `style { }`, `script { }`, `noscript { }` or `textarea { }` element
+# (the `style:` attribute is fine): Dioxus SSR/SSG emits a hydration marker comment before every dynamic text node,
+# which inside a raw-text element turns the first CSS rule or script statement into garbage and inside
+# `<textarea>`/`<noscript>` ships as visible text. Put dynamic CSS in an inline `style:` attribute or a stylesheet
+# asset, set a textarea's `value:` attribute, or use a string literal child with `{{`/`}}` escapes.
 #
 #   style { "{css}" }          style { {CSS_CONST} }          style { "a {x} b" }
 #   dioxus::html::style { "{css}" }      html::script { {JS} }
@@ -25,15 +27,14 @@
 # In `<textarea>`/`<noscript>` the marker is not even inert: it ships as
 # visible literal text (`<!--node-id7-->` in the box).
 #
-# Evidence (2026-10-03): `ChartContainer` rendered `style { "{style_rule}" }`,
-# so on every deployed SSG page `--color-<series>` was never defined, bar/
-# area marks fell back to black fill and line charts to no stroke. The same
-# class showed up a second time in the preview app --
-# `virtual_list/variants/random_heights` (`style { {INLINE_STYLE} }` shipped
-# `<style><!--node-id746-->.dx-virtual-list-container {`, first rule dead) --
-# and three more `style { {CONST} }` demos (carousel `sizes`, button `size`,
-# drag_and_drop_list `main`) had the same shape. Two or more occurrences is
-# a class, so this gate bans the shape, not the instances.
+# Example: `style { "{style_rule}" }` in a chart container leaves
+# `--color-<series>` undefined on every SSG page, so bar/area marks fall back
+# to black fill and line charts to no stroke. The same class covers
+# a virtual-list demo (`style { {INLINE_STYLE} }` ships
+# `<style><!--node-id746-->.dx-virtual-list-container {`, first rule dead) and
+# any `style { {CONST} }` demo.
+# It is a class, so this
+# gate bans the shape, not the instances.
 #
 # What to do instead:
 #   * put dynamic CSS in an inline `style:` attribute on an element (an
@@ -50,7 +51,7 @@
 # attribute keys/values (`media: "{x}"`, `"data-x": ...`) are not text
 # children and are ignored. `document::Style`/`document::Script` (capital
 # letter, routed through the head mechanism) are out of scope, and so is
-# `title`: an SVG `<title>` child is fine (84 of them ship legitimately) and
+# `title`: an SVG `<title>` child is fine (many ship legitimately) and
 # an HTML title is set through `document::Title`. A block that is a closure
 # body (`onfocus: move |e| { ... }`, `async move { ... }`) is never a child.
 #

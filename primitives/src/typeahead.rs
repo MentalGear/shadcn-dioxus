@@ -2,7 +2,7 @@
 //! Menubar" pattern's menu family: [`crate::dropdown_menu`],
 //! [`crate::context_menu`] and [`crate::menubar`] (and, where the
 //! per-submenu collection already makes it free, their own
-//! [`crate::menu_sub`] submenus). `docs/backlog.md` row 11, `docs/plan.md`
+//! [`crate::menu_sub`] submenus). `dev-docs/backlog.md` row 11, `dev-docs/plan.md`
 //! Phase 6.
 //!
 //! # Rule source
@@ -20,15 +20,14 @@
 //!
 //! `select/text_search.rs`'s Levenshtein, keyboard-layout-aware matcher
 //! (driven by `select/context.rs::SelectContext::add_to_typeahead_buffer`)
-//! is deliberately kept for `Select` -- `docs/recommended-
-//! implementations.md` §8 already settled the best-of comparison in
-//! upstream's favor there ("Best-of here means recognising that upstream
-//! already wins one"). This module only reuses that file's *buffer/timeout
+//! is deliberately kept for `Select` -- the best-of comparison in
+//! `dev-docs/archive/research/recommended-implementations.md` §8 favors upstream
+//! there. This module only reuses that file's *buffer/timeout
 //! idiom* -- a `Signal<String>` buffer plus a self-cancelling
 //! `Signal<Option<Task>>` clear-after-timeout task, backed by
 //! `crate::sleep::sleep` -- never its matcher: dignifiedquire's much
 //! smaller `typeahead.rs` (78 lines, plain prefix matching) is the concept
-//! ported here instead, per `docs/recommended-implementations.md` §8's own
+//! ported here instead, per `dev-docs/reference/platform-rationale.md` §8's own
 //! citation.
 //!
 //! # Construction
@@ -40,7 +39,7 @@
 //! or keyboard events, and is exercised directly by this module's own
 //! `#[cfg(test)]` unit tests below -- the exact Radix-parity cases (wrap,
 //! skip-disabled, same-character cycling, case-insensitivity) this
-//! function was built against.
+//! function matches.
 //!
 //! [`TypeaheadState`]/[`TypeaheadState::handle_key`] is the glue: it owns
 //! the live buffer/timer (mirroring `select/context.rs`'s idiom, see
@@ -295,7 +294,7 @@ mod tests {
     }
 
     #[test]
-    fn a_narrowing_search_moves_on_when_the_current_item_no_longer_matches() {
+    fn a_narrowing_search_moves_on_when_the_current_item_stops_matching() {
         let items = vec![item(0, "Duplicate"), item(1, "Delete")];
         assert_eq!(find_next_match(&items, Some(0), "de"), Some(1));
     }

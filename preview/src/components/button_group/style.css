@@ -45,7 +45,7 @@
  * child its inline-end corners. Vertical: block-start / block-end instead.
  *
  * Every child starts from no join (row 218): a ButtonGroup nested in another one is itself a child by
- * position, and without the reset below its own first/last control inherited the OUTER seam's flat
+ * position, and without the reset below its own first/last control would inherit the OUTER seam's flat
  * corners through the inner root, though nested groups sit `gap-2` apart. The position rules outweigh it.
  */
 .dx-button-group > * {

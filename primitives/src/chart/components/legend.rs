@@ -9,8 +9,7 @@ use crate::dioxus_attributes::attributes;
 use crate::merge_attributes;
 
 /// Where a [`ChartLegend`] sits relative to the chart it's paired with.
-/// Rendered as this element's own `data-align` attribute (not named in the
-/// original `$S/chart-api.md` sketch -- see "API changes": without some
+/// Rendered as this element's own `data-align` attribute (without some
 /// attribute reflecting it, this prop would have no observable effect at
 /// all, since `ChartLegend` is a plain sibling of `Chart` with no layout
 /// authority over it) for a themed stylesheet to act on (e.g. flexbox
@@ -66,7 +65,7 @@ pub struct ChartLegendProps {
 ///
 /// One `<li>` per configured series, each with a color swatch and its
 /// label -- shadcn's `ChartLegend`/`ChartLegendContent`
-/// (`dev-docs/research/chart-2026-09-19.md` §1.1), ported as a plain
+/// (`dev-docs/archive/research/chart-2026-09-19.md` §1.1), ported as a plain
 /// sibling of [`crate::chart::Chart`] driven by the same
 /// [`crate::chart::use_chart`] context, rather than a Recharts render-prop
 /// consumer.
@@ -122,9 +121,9 @@ pub fn ChartLegend(props: ChartLegendProps) -> Element {
     // presentation -- `data-slot` is the selector the themed stylesheet's
     // whole ruleset hangs off, and `data-align` is what
     // `ChartLegendProps::vertical_align` exists to control (this
-    // component's own doc). `merge_attributes` (`scripts/
-    // check-attr-spread-collision.sh`'s own fix, replacing a raw
-    // `..props.attributes` beside these as plain literals) makes "owned
+    // component's own doc). `merge_attributes` (the shape
+    // `scripts/check-attr-spread-collision.sh` enforces; a raw `..props.attributes`
+    // beside these as plain literals is flagged) makes "owned
     // wins" explicit and SSR/CSR-consistent instead of accidental.
     // The overhang is two block margins that cancel to zero net room: the
     // legend ends `overhang` px past the box whatever its own height is (its
@@ -158,7 +157,7 @@ pub fn ChartLegend(props: ChartLegendProps) -> Element {
     // makes a single-ring Pie/RadialBar's legend actually mirror its own
     // chart, without complicating any other kind's own by-series legend
     // (Cartesian charts, and a multi-series/stacked polar chart, keep the
-    // series-keyed loop unchanged below).
+    // series-keyed loop below).
     let per_datum =
         matches!(kind, ChartKind::Pie | ChartKind::RadialBar) && config.series.len() <= 1;
     // Series items in Recharts' legend order: its `<Legend>` sorts the payload

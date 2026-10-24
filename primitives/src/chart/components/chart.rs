@@ -334,7 +334,7 @@ pub struct ChartProps {
 /// rect, read fresh per event, give the pointer's position in the chart
 /// box. A category chart (Area/Bar/Line) resolves the nearest category from
 /// that position (the nearest point on Area/Line, the band on bars), hides
-/// the tooltip outside the plot, and works unchanged for a finger dragging
+/// the tooltip outside the plot, and works the same for a finger dragging
 /// across it; the polar families resolve the sector under the pointer.
 /// `ChartTooltip` then positions itself from the pointer and the active
 /// datum's anchor. A mouse leaving closes the tooltip; a finger lifting does
@@ -359,7 +359,7 @@ pub struct ChartProps {
 /// [`ChartProps::attributes`] merges onto it too. The `svg` itself stays
 /// non-focusable (`role="img"` only).
 ///
-/// ## A11y contract (`dev-docs/research/chart-2026-09-19.md` §2.5/§6.4)
+/// ## A11y contract (`dev-docs/archive/research/chart-2026-09-19.md` §2.5/§6.4)
 ///
 /// 1. `svg[role="img"][aria-label]` + `<title>`/`<desc>`.
 /// 2. A real `<table>` mirroring the chart's data -- the screen-reader
@@ -1143,7 +1143,7 @@ fn entrance_pose(
 
 /// Whether `data-animate` may be set. A chart created by the client plays its entrance once it
 /// has been seen. A hydrated one has already been painted, so it plays only if it was NOT in view
-/// at hydration (`Some(false)`) and has since been seen; `Some(true)` (it was in the first
+/// at hydration (`Some(false)`) and is seen later; `Some(true)` (it was in the first
 /// paint) and `None` (not yet known, or the read failed) never animate, so the painted chart is
 /// never restarted.
 fn plays_entrance(hydrated: bool, painted_in_view: Option<bool>, entered: bool) -> bool {
@@ -1673,7 +1673,7 @@ mod tests {
         // dioxus_ssr renders a numeric attribute value unquoted (valid
         // HTML5: an unquoted value is fine as long as it has no
         // whitespace/quotes/etc in it), unlike every string attribute
-        // above -- confirmed empirically, not assumed.
+        // above.
         assert!(html.contains("tabindex=0"));
     }
 
@@ -1708,7 +1708,7 @@ mod tests {
     }
 
     #[test]
-    fn stacked_area_still_renders_one_area_and_line_per_series() {
+    fn stacked_area_renders_one_area_and_line_per_series() {
         let html = render(ChartKind::Area, true, true);
         assert_eq!(html.matches(r#"data-slot="chart-area""#).count(), 2);
         assert_eq!(html.matches(r#"data-slot="chart-line""#).count(), 2);
@@ -1764,8 +1764,8 @@ mod tests {
         assert!(html.contains(r#"scope="row""#));
     }
 
-    /// Regression test for the empty corner `<th>` axe's `empty-table-header`
-    /// rule (`best-practice` tag) flagged on every scan: the default
+    /// The empty corner `<th>` violates axe's `empty-table-header`
+    /// rule (`best-practice` tag): the default
     /// `x_label` ("Category") must give that cell real, non-empty text
     /// instead of `th {}`.
     #[test]
@@ -1779,8 +1779,7 @@ mod tests {
 
     /// Props for a second, more configurable test harness (`x_label`/
     /// `min_tick_gap`/an arbitrary data length) -- kept separate from
-    /// [`Harness`] above so every existing test's fixed 2-datum shape is
-    /// untouched.
+    /// [`Harness`] above so every other test keeps its fixed 2-datum shape.
     #[derive(Clone, PartialEq, Props)]
     struct AxisHarnessProps {
         #[props(default = 2)]
@@ -1916,18 +1915,14 @@ mod tests {
         assert!(html.contains(r#"data-slot="chart-grid""#));
     }
 
-    // -- Stage-2 polar kinds (Pie/RadialBar) --------------------------------
+    // -- Polar kinds (Pie/Radar/RadialBar) ----------------------------------
     //
     // Each kind renders the same `Harness` used by every Cartesian test
-    // above (it's generic over `kind`). RadialBar is still `s2-refactor`'s
-    // placeholder stub; Pie is `s2-polar`'s own real `series::pie::render`
-    // -- see that module's own doc for why `sample_config`'s two series
+    // above (it's generic over `kind`). Pie is `series::pie::render` -- see
+    // that module's own doc for why `sample_config`'s two series
     // (desktop/mobile) make this a *stacked* (two-ring) pie, not the
     // single-ring case (covered in detail by `series::pie`'s own test
-    // module instead). `ChartKind::Radar` moved out of this section (below,
-    // "Radar (landed, s2-radar)") once `s2-radar` replaced its own stub --
-    // see that test's own comment for why this section's original
-    // assertions about it went stale, not wrong-from-the-start.
+    // module instead).
 
     #[test]
     fn pie_kind_renders_one_ring_per_series_and_the_table_without_panicking() {
@@ -1948,23 +1943,15 @@ mod tests {
         assert!(!html.contains(r#"data-slot="chart-cursor""#));
     }
 
-    // -- Radar (landed, s2-radar) -------------------------------------------
+    // -- Radar -------------------------------------------------------------
     //
-    // `series::radar::render` replaced its own placeholder body (stage-2
-    // chart round, `s2-radar` lane) with real per-category-angle geometry:
-    // its own grid/spokes/rim labels and angular hit-sectors (`is_cartesian`
-    // is still `false` for `Radar`, so none of that comes from `Chart`'s own
-    // Cartesian-only rendering above -- `series::radar`'s own module doc has
-    // the full account). This test's ORIGINAL two assertions (`!contains
-    // "chart-grid"`, `!contains "chart-hit-bands"`) encoded that placeholder
-    // state, not a permanent contract -- flipped here to match, rather than
-    // left stale, since a green `cargo test --workspace` gate can't
-    // otherwise pass once that family has real content. `chart.rs` is
-    // "`s2-refactor` only, forever" per `$S/stage2-lanes.md`'s ownership
-    // table for everything else in this file; this one pre-existing test's
-    // now-incorrect assertions about a specific `ChartKind`'s stub state are
-    // the documented, narrow exception -- `series::radar`'s own module tests
-    // carry the actual grid/hit-sector/dot/label coverage.
+    // `series::radar::render` draws its own grid/spokes/rim labels and
+    // angular hit-sectors (`is_cartesian` is `false` for `Radar`, so none of
+    // that comes from `Chart`'s own Cartesian-only rendering above --
+    // `series::radar`'s own module doc has the full account). This test only
+    // checks that a `ChartKind` with real content renders the family's
+    // marks -- `series::radar`'s own module tests carry the actual
+    // grid/hit-sector/dot/label coverage.
     #[test]
     fn radar_kind_renders_its_own_grid_and_hit_sectors() {
         let html = render(ChartKind::Radar, false, true);
@@ -2027,10 +2014,9 @@ mod tests {
         assert!(html.contains(r#"<th scope="col">Percent</th>"#));
         assert!(html.contains("January"));
         assert!(html.contains("February"));
-        // January (186) is 100% of the two non-`None` values' sum -- wait,
-        // both January (186) and February (305) are real, positive
-        // `values[0]`s, so the table's percent column reads their own
-        // share of that sum (186+305=491): 186/491 ~= 37.9%.
+        // Both January (186) and February (305) are real, positive
+        // `values[0]`s, so the table's percent column reads each one's
+        // share of their sum (186+305=491): 186/491 ~= 37.9%.
         assert!(
             html.contains("37.9%"),
             "expected January's own percent share: {html}"

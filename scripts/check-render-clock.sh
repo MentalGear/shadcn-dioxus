@@ -4,7 +4,7 @@
 #
 # A component that reads the clock while rendering, or in a prop default, bakes the day the page
 # was prerendered into the static HTML, and hydration keeps it: the calendar's "today", the month
-# it opens on, a date picker's default segment values and every demo built on them showed the build
+# it opens on, a date picker's default segment values and every demo built on them show the build
 # day (backlog row 380). So the clock is read in one place, `dioxus_primitives::calendar::use_today`,
 # which renders the server's date during hydration and reads the visitor's clock after mount.
 #
@@ -19,8 +19,8 @@
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
-# Files another lane owns while this gate lands (batch 13, row 377: the clock read is in a `use_effect`
-# there, and the date's space is reserved at first paint). Move them to `use_today` and drop them here.
+# Files whose clock read is inside a `use_effect` (row 377: the date's space is reserved at first paint).
+# Move them to `use_today` and drop them here.
 skip_files='^preview/src/components/date_picker/variants/(natural_language|unavailable_dates)/mod\.rs:'
 
 pattern='\b(UtcDateTime|OffsetDateTime|PrimitiveDateTime|SystemTime)::now(_utc|_local)?\b|\bjs_sys::Date::(now|new_0)\b|\b(Utc|Local)::now\b|\bnow_local_date\b'

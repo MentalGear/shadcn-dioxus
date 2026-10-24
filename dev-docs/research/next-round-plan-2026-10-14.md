@@ -18,7 +18,7 @@ Read first in the new chat: `CLAUDE.md` (lanes, gates, isolated target dirs), th
 ## 1. Baselines to capture BEFORE the first batch (they cannot be recovered afterwards)
 
 - Computed-style snapshot `N0` of `main` (debug SSG, the harness as of `dc44637`; A/A twice, byte-identical),
-  procedure in `dev-docs/research/phase-c-plan-2026-10-13.md` sec. 4 and `/home/user/tgt/snap/cap.sh` if the
+  procedure in `dev-docs/archive/rounds/phase-c-plan-2026-10-13.md` sec. 4 and `/home/user/tgt/snap/cap.sh` if the
   container still has it (it will not in a new container: re-derive from `playwright/computed-style-snapshot.spec.ts`).
 - Full Playwright suite on the same build -> `pw-n0.fails` (the reference set; at `dc44637` the known reds are
   the r3 set: hydration-parity selftest (by design), first-paint-styles data_table CLS 0.0131, theme-picker-phone x4,

@@ -1,7 +1,7 @@
 /**
- * `CheckboxState::Indeterminate` used to render the Check tick in an UNFILLED box (the indicator drew
- * its icon for any non-unchecked state; the sheet only styled `data-state="checked"`). By construction
- * the indicator now holds both glyphs and CSS shows the one matching `data-state`, and the filled
+ * `CheckboxState::Indeterminate` must not render the Check tick in an UNFILLED box (an indicator that draws
+ * its icon for any non-unchecked state, with a sheet that only styles `data-state="checked"`, does). By
+ * construction the indicator holds both glyphs and CSS shows the one matching `data-state`, and the filled
  * surface covers checked and indeterminate alike.
  */
 import { test, expect } from "./fixtures";

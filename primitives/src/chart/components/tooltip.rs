@@ -12,7 +12,7 @@ use crate::{fold_style_attributes, merge_attributes};
 
 /// The shape of a [`ChartTooltip`] row's color indicator -- shadcn's
 /// `ChartTooltipContent`'s own `indicator` prop (`"dot" | "line" |
-/// "dashed"`, `$S/refs/ui/apps/v4/registry/new-york-v4/ui/chart.tsx`), plus
+/// "dashed"`, shadcn-ui/ui `apps/v4/registry/new-york-v4/ui/chart.tsx`), plus
 /// a `None` variant [`ChartTooltipProps::hide_indicator`] already covers as
 /// a separate bool -- kept here too so a caller can express "no indicator"
 /// either way (`hide_indicator: true`, matching shadcn's own distinct
@@ -154,7 +154,7 @@ pub struct ChartTooltipProps {
 /// A tooltip that follows the pointer the way shadcn/Recharts tooltips do,
 /// and tracks [`crate::chart::use_chart`]'s `active_index` -- shadcn's
 /// `ChartTooltip`/`ChartTooltipContent`
-/// (`dev-docs/research/chart-2026-09-19.md` §1.1), ported as a plain
+/// (`dev-docs/archive/research/chart-2026-09-19.md` §1.1), ported as a plain
 /// sibling of [`crate::chart::Chart`] rather than a Recharts render-prop
 /// consumer (the module doc explains why the rest of this API differs from
 /// shadcn's own children-introspection shape).
@@ -194,7 +194,7 @@ pub struct ChartTooltipProps {
 ///
 /// `aria-hidden="true"` on the root: this tooltip is a sighted-user
 /// convenience, not the accessible data path -- the hidden `<table>`
-/// `Chart` always renders is (`dev-docs/research/chart-2026-09-19.md`
+/// `Chart` always renders is (`dev-docs/archive/research/chart-2026-09-19.md`
 /// §2.5). Each swatch carries `role="graphics-symbol"` (WAI-ARIA Graphics
 /// Module 1.0 -- an atomic, presentational-children image role, the
 /// textbook fit for a color swatch) and its series' label as its own
@@ -265,8 +265,7 @@ pub fn ChartTooltip(props: ChartTooltipProps) -> Element {
     let indicator_str = props.indicator.as_str();
 
     // The active index's own `(left%, top%)` anchor, computed by whichever
-    // family rendered (§4(d) of the stage-2 handoff -- `ChartLayout`'s own
-    // doc) -- never read when `data-state="closed"` (a themed stylesheet
+    // family rendered (`ChartLayout`'s own doc) -- never read when `data-state="closed"` (a themed stylesheet
     // hides it), so an arbitrary fallback is fine whenever either half of
     // this is still unset (no layout yet, or this family hasn't populated
     // an anchor for the active index).
@@ -304,13 +303,13 @@ pub fn ChartTooltip(props: ChartTooltipProps) -> Element {
     // this tooltip's own open/closed and sighted-only contract, this
     // module's own doc; `data-indicator` mirrors `ChartTooltipProps::
     // indicator` for a themed stylesheet to style each swatch by) --
-    // `merge_attributes` (`scripts/check-attr-spread-collision.sh`'s own
-    // fix, replacing a raw `..props.attributes` beside these as plain
-    // literals) makes "owned wins" explicit and SSR/CSR-consistent instead
+    // `merge_attributes` (the shape `scripts/check-attr-spread-collision.sh`
+    // enforces; a raw `..props.attributes` beside these as plain
+    // literals is flagged) makes "owned wins" explicit and SSR/CSR-consistent instead
     // of accidental.
     //
     // `style` is handled separately, via `fold_style_attributes`
-    // (`resizable.rs`'s/`context_menu.rs`'s own identical fix, cited in
+    // (the same handling as `resizable.rs`/`context_menu.rs`, see
     // that helper's own doc): this component's own position is a literal
     // `style` string, but a caller may also pass CSS the *shorthand* way
     // (e.g. a themed wrapper's `padding`), which becomes its own separate
@@ -587,15 +586,13 @@ mod tests {
     /// and Dioxus renders children top-to-bottom within one pass,
     /// `ChartTooltip` observes the already-set value on `dioxus_ssr`'s
     /// very first render -- no second render/diff needed at all.
-    /// Previously `use_effect` (deferred to the NEXT `render_immediate`
-    /// call, needing a real two-pass mount-then-diff dance every test here
-    /// relied on): switched after finding a real `dioxus_ssr` limitation
-    /// that dance exposes for a spread-heavy root element specifically
-    /// (`render_with`'s own doc, stage-2 chart round) -- `use_hook`
-    /// sidesteps needing a diff at all, for every test in this file, not
-    /// just the ones that found it. Never reads `active_index` itself
-    /// (only writes it once), so this was never a self-subscribing effect
-    /// either way.
+    /// A `use_effect` would be deferred to the NEXT `render_immediate`
+    /// call, needing a real two-pass mount-then-diff dance, and that dance
+    /// hits a real `dioxus_ssr` limitation for a spread-heavy root element
+    /// specifically (`render_with`'s own doc) -- `use_hook`
+    /// sidesteps needing a diff at all, for every test in this file.
+    /// Never reads `active_index` itself (only writes it once), so it is
+    /// not a self-subscribing effect either.
     #[component]
     fn ActiveIndexSetter(index: Option<usize>) -> Element {
         let ctx = use_chart();
@@ -755,7 +752,7 @@ mod tests {
 
     /// Reads the shared `ChartLayout` the way `ChartTooltip` does and prints
     /// the active index's anchor, so a test can pin `Chart`'s own anchor
-    /// arithmetic (the tooltip itself now turns it into a pixel `transform`
+    /// arithmetic (the tooltip itself turns it into a pixel `transform`
     /// with a measured box, which a server render has none of).
     #[component]
     fn AnchorProbe(index: usize) -> Element {
@@ -969,7 +966,7 @@ mod tests {
         assert_eq!(rows[1].value, None);
     }
 
-    /// Every field defaulted -- the base every stage-2 test below starts
+    /// Every field defaulted -- the base every test below starts
     /// from via struct-update (`ChartTooltipProps { field: val,
     /// ..default_tooltip_props() }`), since `ChartTooltipProps` has no
     /// `Default` impl of its own (`Callback`-holding props structs
@@ -991,7 +988,7 @@ mod tests {
     }
 
     /// Renders `ChartTooltip` with the given props, always open at index 0
-    /// -- the shared harness every stage-2 test below builds on. Takes the
+    /// -- the shared harness every test below builds on. Takes the
     /// already-built `ChartTooltipProps` directly (not a closure over
     /// [`default_tooltip_props`]): a closure's anonymous type never
     /// implements `PartialEq`, which `#[derive(Props)]` requires of every
@@ -1010,15 +1007,14 @@ mod tests {
     /// Backlog row 108: located via [`find_element`] (an order-independent
     /// attribute-map lookup), not by slicing the raw HTML string from the
     /// `data-slot="chart-tooltip"` match's own position -- the root
-    /// `<div>`'s attributes go through `merge_attributes` (§4(a) of the
-    /// stage-2 handoff), which sorts them by name, so `data-slot` is very
+    /// `<div>`'s attributes go through `merge_attributes`, which sorts
+    /// them by name, so `data-slot` is very
     /// often NOT the tag's first attribute (e.g. `aria-hidden`/
     /// `data-indicator` both sort before it), and slicing from the match
-    /// itself used to silently drop every attribute that sorts earlier --
-    /// found via a root-tag assertion that failed despite the merged
-    /// `Vec<Attribute>` being verified correct immediately before the
-    /// `rsx!` spread; the dropped attributes were real, just outside this
-    /// fn's own (buggy) slice.
+    /// itself would silently drop every attribute that sorts earlier (a
+    /// root-tag assertion fails even though the merged `Vec<Attribute>` is
+    /// correct before the `rsx!` spread: the dropped attributes are real,
+    /// just outside such a slice).
     fn tooltip_fragment(html: &str) -> &str {
         let root = find_element(html, |attrs| {
             attrs.get("data-slot").map(String::as_str) == Some("chart-tooltip")
@@ -1056,8 +1052,7 @@ mod tests {
             ..default_tooltip_props()
         });
         // Not one concatenated substring match: the root's three
-        // attributes go through `merge_attributes` (§4(a) of the stage-2
-        // handoff), which sorts by name -- correct, SSR/CSR-consistent
+        // attributes go through `merge_attributes`, which sorts by name -- correct, SSR/CSR-consistent
         // output, just not necessarily in the order they were written in
         // this file's own `attributes!` call. Each attribute's own
         // presence/value is what matters, not their relative order, so

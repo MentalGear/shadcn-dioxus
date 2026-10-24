@@ -1,10 +1,10 @@
 ---
 id: 30
 title: "Verify the 2026-09-02 touch text-entry font-size floor…"
-status: "User re-test after deploy — the sandbox has no WebKit, and while Playwright's iPhone 13 emulation…"
+status: "WAITING ON OWNER: re-test on a real iPhone after deploy. The fix is in; Playwright's iPhone 13…"
 size: "S to verify"
 area: tests
-updated: 2026-09-02
+updated: 2026-10-24
 ---
 
 # Row 30: Verify the 2026-09-02 touch text-entry font-size floor…
@@ -15,7 +15,7 @@ Verify the 2026-09-02 touch text-entry `font-size` floor (`playwright/oracle/tie
 
 ## Status / trigger
 
-User re-test after deploy — the sandbox has no WebKit, and while Playwright's iPhone 13 emulation correctly reproduces `(pointer: coarse)`/`(hover: none)` and lets Chromium's DevTools Protocol confirm the *computed* `font-size` values this fix depends on, only real Mobile Safari actually implements the auto-zoom-on-focus behaviour those values are floored against — no engine in this sandbox (Chromium or otherwise) reproduces it, so the oracle can prove the CSS but not the zoom itself
+**WAITING ON OWNER: re-test on a real iPhone after deploy.** The fix is in; Playwright's iPhone 13 emulation and Chromium's CDP prove the computed `font-size` floor, but only real Mobile Safari implements the auto-zoom-on-focus it guards against, so the oracle proves the CSS and not the zoom.
 
 ## Size
 

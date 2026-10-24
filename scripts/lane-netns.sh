@@ -7,7 +7,7 @@
 # 127.0.0.1:9999, and fetching every route from it. Two SSG pre-renders alive at once -- two queue
 # slots, or a slot and an old-style `flock ssg.lock` caller -- share that port: the second dx
 # talks to the FIRST one's server, finishes in 0.4 s with "SSG complete" and no error line, and
-# writes no page (measured 2026-10-19: "95 of 96 route(s) missing" in the loser, the winner fine).
+# writes no page (the loser reports "95 of 96 route(s) missing", the winner is fine; backlog row 221).
 # Inside its own namespace each build owns 127.0.0.1:9999, so the collision cannot happen by
 # construction. The build needs no network (the template's dependency cache is warm).
 # Falls back to running the command directly (loudly) when the container refuses `unshare -n`.

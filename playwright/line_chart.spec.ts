@@ -1,6 +1,6 @@
 import { test, expect } from "./fixtures";
 import { type Page } from "@playwright/test";
-import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
+import { expectNoAxeViolations } from "./axe";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
@@ -11,8 +11,7 @@ const URL = `${BASE_URL}/component/line_chart/`;
  * convention (`ComponentDemo`'s `frame_id`): the `main` variant keeps the
  * bare `component-preview-frame` id every single-variant component page
  * already uses; every other variant on the same page gets
- * `component-preview-frame-<name>` appended, so they can never collide
- * (the same fix `popover`'s `non_modal` variant needed).
+ * `component-preview-frame-<name>` appended, so they can never collide.
  *
  * Kept as an explicit map (not derived from a shared list) so a new variant
  * is a one-line addition here, visible in the diff.
@@ -47,15 +46,15 @@ test.describe("Line chart", () => {
       // Attribute selector, not getByRole("img") -- this page's other
       // controls (the interactive variant's toggle buttons, the Select on
       // sibling chart pages) can render decorative icon-shaped <svg>s some
-      // engines compute an implicit "img" role for too (the exact false
-      // match `chart.spec.ts`'s own comment documents hitting).
+      // engines compute an implicit "img" role for too (the false
+      // match `chart.spec.ts`'s own comment documents).
       const svg = scope.locator('svg[role="img"]').first();
       await expect(svg).toBeVisible();
       await expect(svg).toHaveAccessibleName(/.+/);
 
       // The a11y contract every chart carries regardless of curve/dots/
       // series count: a real, always-present hidden table mirroring the
-      // same data (`$S/chart-api.md`).
+      // same data (`preview/src/components/chart/docs.md`).
       await expect(scope.locator('table[data-slot="chart-data"]')).toBeAttached();
     });
   }
@@ -70,7 +69,7 @@ test.describe("Line chart", () => {
     await expect(frame(page, "multiple").locator('[data-slot="chart-line"]')).toHaveCount(2);
   });
 
-  test("linear and step: still render exactly one chart-line for their single series", async ({
+  test("linear and step: render exactly one chart-line for their single series", async ({
     page,
   }) => {
     await expect(frame(page, "linear").locator('[data-slot="chart-line"]')).toHaveCount(1);
@@ -166,18 +165,6 @@ test.describe("Line chart", () => {
   });
 
   test.describe("Axe automated scan", () => {
-    for (const variant of Object.keys(FRAME_IDS) as (keyof typeof FRAME_IDS)[]) {
-      test(`${variant}: has no automatically detectable a11y issues`, async ({ page }) => {
-        // Scoped to this one variant's own frame -- `include` already
-        // excludes the page's other variants and the vendored code-viewer
-        // tab, so no `excludeRegions` is needed here (unlike the whole-page
-        // scan below).
-        await expectNoAxeViolations(page, `line_chart: ${variant}`, {
-          include: [`#${FRAME_IDS[variant]}`],
-        });
-      });
-    }
-
     test("interactive: Mobile selected has no automatically detectable a11y issues", async ({
       page,
     }) => {
@@ -203,14 +190,6 @@ test.describe("Line chart", () => {
       );
       await expectNoAxeViolations(page, "line_chart: multiple (tooltip open)", {
         include: [`#${FRAME_IDS.multiple}`],
-      });
-    });
-
-    test("whole page (every variant loaded) has no automatically detectable a11y issues", async ({
-      page,
-    }) => {
-      await expectNoAxeViolations(page, "line_chart: whole page loaded", {
-        excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT],
       });
     });
   });

@@ -1,39 +1,35 @@
 /* Typography: Geist / Geist Mono are self-hosted (row 162, `preview/assets/fonts/`, SIL OFL). The
    `@font-face` rules and the preloads are written by `GlobalHead` in `preview/src/main.rs`, because
    `asset!` hashes the font file names and a stylesheet `url()` is not rewritten; NEVER `@import` a font
-   here (found by execution 2026-09-02: a stylesheet whose `@import` has not finished loading is never
-   applied, so the whole file was inert; oracle: `global-stylesheet.spec.ts`).
+   here (a stylesheet whose `@import` has not finished loading is never applied, so the whole file
+   would be inert; oracle: `global-stylesheet.spec.ts`).
 
    The faces do NOT swap in after first paint: preloaded latin files plus `font-display: optional`
-   (hard-load CLS 0.117 -> 0.000 on /component/form/). The docs site picks its fonts by overriding the
+   (no layout shift on a hard load). The docs site picks its fonts by overriding the
    theme's two tokens below; everything else reads `var(--dx-font-sans)` / `var(--dx-font-mono)`. */
 
 /* Theme style variables */
 :root {
   /* Demo preview card fill: a soft step between the page and a card. Dark mixes the page with `--dx-card`
    * (#0a0a0a / #171717); in light `--dx-card` equals the page (#fff), so it mixes with `--dx-muted` instead
-   * (#f5f5f5), only 15% of it: a 50% mix (#fafafa) left a hovered Pagination page (#f5f5f5) within 5/255 of its
-   * surface (dark-surface-contrast needs 6), and 25% (#fcfcfc) left a hovered Toggle (#f8f8f8) 5/255 from it
+   * (#f5f5f5), only 15% of it: a 50% mix (#fafafa) would leave a hovered Pagination page (#f5f5f5) within 5/255 of its
+   * surface (dark-surface-contrast needs 6), and 25% (#fcfcfc) would leave a hovered Toggle (#f8f8f8) 5/255 from it
    * (theme-preset-contrast needs 6). */
   --dx-docs-preview-surface: color-mix(in var(--dx-hover-mix-space), var(--dx-background) var(--dark, 50%) var(--light, 85%), var(--dark, var(--dx-card)) var(--light, var(--dx-muted)));
   --dx-font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --dx-font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", "Menlo", "Monaco", "Consolas", monospace;
 
-  /* axe `color-contrast` (docs/backlog.md row 39, filed 2026-09-03): the
-   * previous #2b7fff, used as `color` (not a border/background) in 11
-   * rules across this file, measured 3.76:1 on white -- below WCAG's
-   * 4.5:1 for normal text. #0065ff keeps the same hue/saturation, darker
-   * lightness only, and clears 4.5:1 (measured 4.88:1 on white).
+  /* axe `color-contrast` (dev-docs/backlog.md row 39): the docs blue is used as `color` (not a
+   * border/background) in 8 rules across this file, so it must clear WCAG's 4.5:1 for normal text
+   * on every surface it is painted on. A plain #2b7fff is 3.76:1 on white, and #0065ff is
+   * 4.06:1 on the #0a0a0a dark page and 3.68:1 on the #171717 dark card, so the `--light`/`--dark`
+   * pair splits the two modes.
    *
-   * Dark theme (reviewer finding, 2026-10-03): #0065ff measured 4.31:1 on
-   * the #000 page and 3.80:1 on the #141313 card -- under 4.5:1 again, in
-   * the other direction. The `--light`/`--dark` pair keeps light as-is and
-   * uses the lighter #4d94ff in dark (7.00:1 on #000, 6.18:1 on #141313,
-   * 5.04:1 on #262626).
+   * Dark: the lighter #4d94ff (6.60:1 on #0a0a0a, 5.97:1 on #171717, 5.04:1 on #262626).
    *
-   * Light, second pass (colour audit 2026-10-23): #0065ff is 4.47:1 on `--dx-muted` (#f5f5f5), where the
-   * docs paint eyebrows and links on cards, 0.03 short of 4.5. oklch(0.555 0.241 260.95), the
-   * same hue and chroma one lightness step deeper (5 thousandths of L), clears 4.5:1 on muted and 4.9:1 on white. */
+   * Light: #0065ff is 4.47:1 on `--dx-muted` (#f5f5f5), where the docs paint eyebrows and links on
+   * cards, 0.03 short of 4.5. oklch(0.555 0.241 260.95), the same hue and chroma 5 thousandths of
+   * L deeper, clears 4.5:1 on muted and 4.9:1 on white. */
   --dx-docs-blue: var(--dark, #4d94ff) var(--light, oklch(55.5% 0.241 260.95deg));
   --highlight-color-tertiary: var(--dx-docs-blue);
   --dx-content-width: 1360px;
@@ -47,7 +43,7 @@
 
 /* The docs site's own accent ink (the eyebrows, the `$` in the CLI chip, prose
  * links, card CTAs) follows the picker's ACCENT choice. With no accent preset
- * it is the blue above, unchanged; a base colour alone is not an accent choice.
+ * it is the blue above; a base colour alone is not an accent choice.
  *
  * It is `--dx-primary` kept readable AS TEXT, not `--dx-primary` itself:
  * shadcn's `--primary` is a fill (a dark blue in dark mode, a pale lime or
@@ -74,21 +70,19 @@ html {
      its target at the very top of the viewport must instead clear the
      sticky nav below it (`.dx-preview-navbar`, `position: sticky; top: 0`) --
      otherwise the target ends up rendered (and, worse, hit-tested for
-     pointer input) underneath the nav. Found by execution
-     (`oracle/tier2-html/native-dialog.spec.ts` 6c/6d/6e, SSG lane only):
-     a real user hitting this needs no test harness at all, just a page
-     whose sticky header is tall enough to reach whatever landed at the
-     top. See `docs/conformance-harness.md`'s hydration-parity section for
-     the specific regression this closes. */
+     pointer input) underneath the nav (`oracle/tier2-html/native-dialog.spec.ts`
+     6c/6d/6e, SSG run only): a real user hits this with no test harness at
+     all, on any page whose sticky header is tall enough to reach whatever
+     lands at the top. See `dev-docs/conformance-harness.md`'s hydration-parity
+     section for the case this covers. */
   scroll-padding-top: var(--dx-navbar-height);
 
   /* Reserve the classic-scrollbar gutter in the SSR/pre-hydration layout
      too. `ensure_scrollbar_gutter_baseline` (`primitives/src/scroll_lock.rs`)
      installs the same `scrollbar-gutter: stable` (as a zero-specificity
      `:where(html)` rule) only once the WASM runtime runs, so without this
-     the page was laid out 15px wider before hydration and shifted
-     the instant it hydrated (CLS 0.115 on /component/chart/ at 390px with
-     classic scrollbars). Declaring it statically makes the SSR and hydrated
+     the page would be laid out 15px wider before hydration and shift
+     the instant it hydrated (with classic scrollbars). Declaring it statically makes the SSR and hydrated
      layouts identical; the runtime rule is a redundant, same-valued
      declaration that this one simply outranks. */
   scrollbar-gutter: stable;
@@ -100,7 +94,7 @@ html {
    is swapped for a shorter one mid-animation, the browser clamps the scroll offset to the new page's bottom, and
    the visitor sees the bottom of the destination and then watches it glide up (or, on Back, the mirror). An
    ambient rule is also a trap for every future `window.scrollTo` (the scroll-lock restore, the charts tab
-   restore each had to be patched or would have been). So the document is instant by default and
+   restore would each have to be patched). So the document is instant by default and
    `preview/index.html`'s same-page `a[href^="#"]` click handler sets `data-anchor-scroll` on `<html>` for exactly
    the jump it lets the browser animate (`/docs`'s "Start" sub-items), clearing it when the jump has settled.
    `scripts/check-scroll-behavior.sh` fails any other `scroll-behavior: smooth` on the root. */
@@ -186,14 +180,10 @@ main[tabindex="-1"]:focus {
    * with `!important`). */
 @media (pointer: coarse) {
   /* Written as an explicit allowlist of simple selectors on purpose: the
-     first version used `input:not([type="checkbox"], [type="radio"], …)`
-     (a selector list inside `:not()`), and the Dioxus asset pipeline's CSS
-     processing silently dropped that entire rule from the served
-     stylesheet — the served file had no `pointer: coarse` block at all
-     while the source did (found by execution, 2026-09-02: the
-     touch-focus-zoom oracle stayed red on every route through the navbar's
-     language <select>). Simple selectors survive; see
-     docs/issues/asset-css-not-selector-list.md. */
+     `input:not([type="checkbox"], [type="radio"], …)` (a selector list inside `:not()`) is
+     silently dropped, entire rule, by the Dioxus asset pipeline's CSS processing: the served
+     stylesheet would have no `pointer: coarse` block at all while the source did (the
+     touch-focus-zoom oracle goes red on every route). Simple selectors survive (dev-docs/archive/research/theme-2026-10-03/border-box.md). */
 
   /* A chained `:not()`, not the list form the notation rule wants: the asset pipeline drops that (above). */
   /* stylelint-disable-next-line selector-not-notation */
@@ -218,11 +208,9 @@ main[tabindex="-1"]:focus {
        backstop, and it must beat every component stylesheet's own class
        rule (e.g. `.dx-language-select { font-size: 0.8rem }`), which any
        class selector otherwise does against these bare element selectors.
-       Found by execution: the touch-focus-zoom oracle stayed red on every
-       route through the navbar's language <select> until this won the
-       cascade. Scoped to coarse pointers only, so desktop sizes are
-       untouched. `var(--dx-text-base)` (docs/backlog.md row 31a) resolves
-       to the same `16px`/`1rem` this was hardcoded to -- it is both the
+       (The touch-focus-zoom oracle checks every route.) Scoped to coarse pointers only, so desktop sizes are
+       untouched. `var(--dx-text-base)` (dev-docs/backlog.md row 31a) resolves
+       to `16px`/`1rem` -- it is both the
        type scale's base step and this touch floor, one token. Custom
        property resolution doesn't depend on `<link>` order (there is
        exactly one declaration of `--dx-text-base` to resolve, defined on
@@ -238,8 +226,8 @@ main[tabindex="-1"]:focus {
  * `touch-action: manipulation`, the second of two layers -- same construction
  * as the `@media (pointer: coarse)` font-size floor just above. The first layer
  * is `dx-components-theme.css`'s one zero-specificity rule on every `dx-`
- * control (it ships to consumers; this file does not, and the 50 per-component
- * copies it replaced are gone, `scripts/check-theme-baseline.sh`). This layer
+ * control (it ships to consumers; this file does not, and no component sheet carries its
+ * own copy, `scripts/check-theme-baseline.sh`). This layer
  * is what covers the preview's own raw elements (footer links, copy buttons,
  * the `top_layer`/`form` fixtures).
  *
@@ -253,8 +241,7 @@ main[tabindex="-1"]:focus {
  * `touch-action: manipulation` as the per-element opt-out authors should
  * set on tappable controls. Same references as
  * `playwright/oracle/tier2-html/touch-double-tap.spec.ts`'s header.
- * A person tapping buttons in quick succession (reported: "if the user is
- * quickly tapping buttons, the double-tap zoom is triggered") gets a page
+ * A person tapping buttons in quick succession gets a page
  * zoom instead of two button presses whenever an interactive element
  * leaves this to the UA default (`auto`, which permits the gesture).
  *
@@ -270,13 +257,13 @@ main[tabindex="-1"]:focus {
  * starting a touch on the thumb).
  *
  * Selectors are simple/flat for the same reason the font-size floor's are
- * (see that rule's own comment): this app's CSS asset pipeline has been
- * observed to silently drop a rule using a selector-list-inside-`:not()`
+ * (see that rule's own comment): this app's CSS asset pipeline
+ * silently drops a rule using a selector-list-inside-`:not()`
  * shape. `[role="menuitem"]`/`[role="option"]`/etc. are listed explicitly
  * rather than relying on any single element's own class, since several of
  * these roles are rendered by primitives this app also uses directly (the
  * `top_layer` and `form` fixtures compose `dioxus_primitives::` without
- * this app's themed wrapper classes -- docs/preview-composition.md).
+ * this app's themed wrapper classes -- dev-docs/preview-composition.md).
  *
  * Oracle: `playwright/oracle/tier2-html/touch-double-tap.spec.ts`.
  */
@@ -308,10 +295,10 @@ summary,
  * it is a drag, never a page pan, so its effective `touch-action` must be `none`. The catch-all's
  * `!important` otherwise beats the handle's own `touch-action: none` (resizable/style.css), and
  * under `manipulation` Chromium starts a pan once the finger leaves the touch slop and CANCELS the
- * pointer (`pointercancel` after ~20px: the drag dies). That was masked by a
- * `ontouchstart: prevent_default` on the handle, which Dioxus delegates to `#main` as a
+ * pointer (`pointercancel` after ~20px: the drag dies). An
+ * `ontouchstart: prevent_default` on the handle would mask that, but Dioxus delegates it to `#main` as a
  * NON-passive root listener -- making every wheel/touch on the whole page wait for the main thread
- * (dev-docs/research/scroll-jank-2026-10-04.md, Cause 2b; scripts/check-blocking-scroll-listeners.sh).
+ * (dev-docs/archive/research/scroll-jank-2026-10-04.md, Cause 2b; scripts/check-blocking-scroll-listeners.sh).
  * The slider thumb and the color area need no such rule: their non-focusable containers
  * (`.dx-slider`, `.dx-color-picker-area-container`) are `touch-action: none` ancestors, and the
  * effective value is the intersection down the ancestor chain. Specificity (0,2,0) and source
@@ -332,6 +319,13 @@ summary,
     :hover {
       scrollbar-color: var(--dx-foreground) rgb(0 0 0 / 0%);
     }
+  }
+
+  /* `ScrollArea { always_show_scrollbars: true }` keeps its thumb painted without hover, so the box reads as
+     scrollable at rest. Same specificity as the two rules above; source order wins. An overlay scrollbar
+     (macOS, iOS) is still drawn by the OS only while scrolling. */
+  .dx-scroll-area-always-show {
+    scrollbar-color: var(--dx-foreground) rgb(0 0 0 / 0%);
   }
 }
 
@@ -464,11 +458,11 @@ summary,
   white-space: pre;
 }
 
-/* axe `color-contrast` (docs/backlog.md row 39 residue): the vendored
+/* axe `color-contrast` (dev-docs/backlog.md row 39 residue): the vendored
  * `github-light` syntax-highlighter theme's comment token, `#6e7781`,
- * measures 4.39:1 against this block's own background above
- * (`--primary-color-1`, `#fbfbfb` light) -- below WCAG AA's 4.5:1 for
- * normal text. That theme is generated at compile time by the
+ * is 4.55:1 on this block's own background above (`--dx-card`, #fff
+ * light) and 4.39:1 on a #fbfbfb card, so a host whose card is not pure white
+ * falls below WCAG AA's 4.5:1 for normal text. That theme is generated at compile time by the
  * `dioxus-code`/`arborium-theme` crates (crates.io -- not source this
  * repo vendors) into `docs/assets/github-light*.css`, which
  * `scripts/deploy-preview.sh` regenerates from scratch on every deploy,
@@ -477,17 +471,17 @@ summary,
  * `.dx-preview-code-theme <theme class>` beats the theme's own
  * `<theme class>`-only rule on specificity alone (two classes vs. one),
  * so it wins regardless of stylesheet load order. `#59636e` is GitHub's
- * own newer light-theme comment color (5.91:1 against `#fbfbfb`), same
+ * own newer light-theme comment color (6.11:1 on #fff, 5.91:1 on `#fbfbfb`), same
  * hue family, same visual register as a comment. Covers every class
  * variant the theme crate generates for this theme: the plain
  * `.dxc-github-light`, its `-system-light-` pairing (both actually
  * rendered on this site), and its `-system-dark-` pairing (the
  * `github-light` theme's own dark-context slot -- generated but not
- * currently rendered anywhere, fixed anyway since it is the same theme).
+ * currently rendered anywhere, covered since it is the same theme).
  * Deliberately does NOT touch `github-dark` (used for `data-theme=dark`,
- * a wholly different theme+palette, already >= 6.28:1 against its own
- * dark background -- see playwright/axe.ts's header doc for that
- * measurement). */
+ * a wholly different theme+palette, whose comment token `#8b949e` is
+ * 5.83:1 on `--dx-card` dark, #171717; every other token is lighter -- see
+ * playwright/axe.ts's header doc for the measurement). */
 /* stylelint-disable selector-class-pattern */
 .dx-preview-code-theme .dxc-github-light,
 .dx-preview-code-theme .dxc-system-light-github-light {
@@ -809,17 +803,17 @@ button.dx-theme-phone-trigger {
  * shares the page with the sticky site `.dx-preview-navbar` above and the
  * `Footer` below, so a `position: fixed` column would keep floating over
  * the footer once the page scrolls past the nav's own height. `.dx-docs-shell`
- * re-scopes just that: a plain sticky in-flow column (mirrors the old
- * hand-rolled `.dx-docs-sidebar`'s `position: sticky; top: 3.25rem`) with a
+ * re-scopes just that: a plain sticky in-flow column (mirrors a hand-rolled
+ * docs sidebar's `position: sticky; top: 3.25rem`) with a
  * width collapse instead of the fixed-position slide (same transition
  * token, same "content reflows to fill the freed width" effect, no
  * viewport-relative positioning to conflict with page chrome). Everything
  * else about the sidebar (mobile Sheet drawer, menu/group styling, the
  * trigger) is the unmodified shared component.
  *
- * `Navbar` moved inside this same `SidebarProvider` (`DocsLayout` in
+ * `Navbar` sits inside this same `SidebarProvider` (`DocsLayout` in
  * `main.rs`) so its `SidebarTrigger` can sit in the navbar row instead of
- * a separate strip below it (the removed `.dx-docs-inset-topbar`). But
+ * a separate strip below it. But
  * `SidebarProvider`'s own render is just `div { class: "dx-sidebar-wrapper",
  * {children} }` (`component.rs`), and the base `.dx-sidebar-wrapper` rule
  * (`sidebar/style.css`) is `display: flex` -- a ROW sized for exactly two
@@ -829,14 +823,13 @@ button.dx-theme-phone-trigger {
  * `Sidebar`+`SidebarInset` under one new wrapper, `.dx-docs-shell-body`,
  * and `.dx-sidebar-wrapper.dx-docs-shell` itself becomes a `flex-direction:
  * column` of exactly two children: `Navbar`, then that body row. Width/
- * border/centering (previously on the outer wrapper, back when `Navbar`
- * was a sibling above it rather than a child) move down to
- * `.dx-docs-shell-body`, since it is now the box that must match the
+ * border/centering live on
+ * `.dx-docs-shell-body` (not the outer wrapper), since it is the box that must match the
  * navbar's own centered, content-width inner row -- the outer wrapper
  * itself just needs to span full width so `Navbar`'s sticky full-bleed
  * background still reaches the viewport edges (its base `width: 100%` and
  * `min-height: 100svh` already do that unmodified; only `height`/`overflow`
- * need overriding, same reason as before: the base's fixed `height: 100svh`
+ * need overriding, same reason as above: the base's fixed `height: 100svh`
  * + `overflow: hidden` would clip content taller than one viewport instead
  * of letting the page grow to it).
  *
@@ -855,9 +848,9 @@ button.dx-theme-phone-trigger {
   flex-direction: column;
 }
 
-/* The former `.dx-sidebar-wrapper.dx-docs-shell` geometry (width/border/
- * centering/the sidebar-row min-height), now one level deeper since
- * `Navbar` occupies that outer wrapper's first row instead. Needs its own
+/* The `.dx-sidebar-wrapper.dx-docs-shell` geometry (width/border/
+ * centering/the sidebar-row min-height), one level deeper because
+ * `Navbar` occupies that outer wrapper's first row. Needs its own
  * `display: flex` -- unlike the outer wrapper, this is a plain new `div`,
  * not `.dx-sidebar-wrapper`, so it does not inherit that from the base
  * component rule. */
@@ -1019,7 +1012,7 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
   /* Cancels `sidebar/style.css`'s own `.dx-sidebar-wrapper:has([data-side=
    * "right"])` row-reverse for the docs-shell specifically: that base rule
    * matches ANY `.dx-sidebar-wrapper` containing a right-sided `Sidebar`
-   * ANYWHERE inside it -- which, now that `Navbar` lives inside this same
+   * ANYWHERE inside it -- which, since `Navbar` lives inside this same
    * wrapper too, includes the outer `.dx-docs-shell` wrapper. Reversing at
    * that level would swap `Navbar` and `.dx-docs-shell-body` (i.e. put the
    * navbar row on the right and the sidebar+inset row on the left), not the
@@ -1046,8 +1039,8 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
 /* `grid-template-columns: minmax(0, 1fr)`, not the implicit `auto` track: an
  * `auto` track grows to its widest child's min-content, so an unshrinkable
  * child (the title row's `dx-component-inline-command`, `white-space:
- * nowrap`) widened the whole header past the viewport at phone widths and
- * pushed the copy button out of view. */
+ * nowrap`) would widen the whole header past the viewport at phone widths and
+ * push the copy button out of view. */
 .dx-docs-page-header,
 .dx-component-page-header {
   display: grid;
@@ -1392,14 +1385,14 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
 
 /* `BlockComponentVariantHighlight` (`preview/src/main.rs`)'s live-preview
  * iframe for a `ComponentType::Block` demo. See that iframe's own comment
- * for the full incident writeup; the short version: the `min-width: 820px`
+ * for the full reasoning; the short version: the `min-width: 820px`
  * below must be gated on THIS file's `@media` query rather than baked into
  * the iframe's inline style or a stylesheet loaded inside the iframe's own
  * document, because this file is loaded by the OUTER top-level page --
  * so `@media (min-width: 768px)` here evaluates against the outer page's
  * real, actual visitor viewport width, not the iframe's own (which can be
  * squeezed well under 768px by this same page's site-nav `Sidebar` on a
- * perfectly normal desktop window -- the original bug this rule fixes --
+ * perfectly normal desktop window -- the case this rule exists for --
  * with no way for anything inside the iframe to tell that apart from a
  * genuinely narrow mobile viewport, since a media query written in the
  * iframe's own stylesheet would evaluate against the iframe's own,
@@ -1463,9 +1456,9 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
 
 /* The demo frame is shadcn's preview frame (ui.shadcn.com/docs/components, `data-slot="component-preview"`:
  * `rounded-2xl border`, inner `h-72 p-10`, centred, NO fill -- the page shows through, so a Card demo reads as
- * a card on the page and axe judges demo text against the real page background). It used to be a card-coloured
- * panel with a 16px dotted grid, 8px radius and 32px padding; in dark that panel was #171717 on a #0a0a0a page,
- * which is what made every docs button look "on a different background" from shadcn's. `min-height` instead of
+ * a card on the page and axe judges demo text against the real page background). A card-coloured panel
+ * would be #171717 on a #0a0a0a page in dark, making every docs button look "on a different background"
+ * from shadcn's. `min-height` instead of
  * `height`: a tall demo (a calendar, a form) grows the frame instead of overflowing it. */
 .dx-component-preview-frame {
   display: flex;
@@ -1482,14 +1475,13 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
 }
 
 /* At phone widths the frame's 32px-per-side padding plus a card's own 24px
- * content padding left a chart 159 of 305px and its text unreadable; 12px
+ * content padding would leave a chart about half the frame width and its text unreadable; 12px
  * (`--dx-space-3`) keeps a visible canvas edge without eating the demo.
  *
  * The frame element is ALSO a `.dx-tabs-content` (`ComponentVariantHighlight`,
- * `preview/src/main.rs`). Until row 132 `components/tabs/style.css` (loaded
- * after this file) padded every `.dx-tabs-content` 2rem and so supplied the
- * frame's padding; Nova's tabs content has none, so the frame now owns its
- * padding above. The compound selector is kept so a future tabs padding cannot
+ * `preview/src/main.rs`). Nova's tabs content has no padding of its own
+ * (`components/tabs/style.css`, loaded after this file; row 132), so the
+ * frame owns its padding above. The compound selector is kept so a future tabs padding cannot
  * win by load order; it must stay ABOVE the `:has(.dx-code-block)` rule below
  * (same specificity), which keeps the CODE tab at `padding: 0` by source
  * order. */
@@ -1701,7 +1693,7 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
   text-transform: capitalize;
 }
 
-/* Homepage component catalog. Width/border/centering now live on
+/* Homepage component catalog. Width/border/centering live on
  * `.dx-docs-shell` (the sidebar+content shell this renders inside, via
  * `DocsLayout`) -- this only needs to fill the sidebar inset's own
  * remaining width, not independently re-center against the viewport. */
@@ -1755,10 +1747,10 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
 }
 
 /* Widget masonry: the columns are FIXED GROUPS decided at build time (`MasonrySlot` in `preview/src/main.rs`), never balanced
- * from the cards' heights. This used to be CSS multi-column, which assigns each card to a column from the
+ * from the cards' heights. CSS multi-column would assign each card to a column from the
  * height of everything laid out so far: the ~580 KB prerendered page is parsed in chunks and painted between
- * them, so every parsed card re-balanced the columns and cards jumped between them while the page loaded
- * (backlog row 214, seen at iPad widths). Here a card's column is a function of its DOM position only, and
+ * them, so every parsed card would re-balance the columns and cards would jump between them while the page loads
+ * (backlog row 214: iPad widths). Here a card's column is a function of its DOM position only, and
  * a card that has not arrived leaves everything already painted where it is (an element only ever grows
  * downward into space that no later card occupies yet).
  *
@@ -1798,9 +1790,9 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
   overflow: visible;
 }
 
-/* Scroll cost (dev-docs/research/scroll-jank-2026-10-04.md, Cause 3): the home page is 70 live
+/* Scroll cost (dev-docs/archive/research/scroll-jank-2026-10-04.md, Cause 3): the home page is 70 live
  * demos + 14 blocks (~4.4k nodes, ~29k px), so any main-thread frame -- a skeleton pulse, a
- * spinner, a ticking player -- re-walked ALL of it (`PrePaint` 1.85 s over one scroll). Cards
+ * spinner, a ticking player -- re-walks ALL of it (`PrePaint` 1.85 s over one scroll, measured). Cards
  * that are off screen are skipped entirely (no style, layout or paint; their animations stop
  * costing frames); visible ones are an independent layout/paint/style boundary, so a pulse in
  * one card never re-walks the page. `auto` in `contain-intrinsic-block-size` remembers a
@@ -1815,17 +1807,16 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
  * `.dx-component-variant` (the "Variants" demos stacked below a component page's main demo, up
  * to 13 live demos on the chart pages) is deliberately NOT skipped: a skipped subtree has no layout
  * box, so a demo that measures itself when it mounts (carousel slides and its virtual window, a chart's
- * width and so its default tooltip) measured 0 there and never recovered -- 33 Playwright tests red
- * (`carousel-virtual-wheel` 18, `carousel` 7, `chart_tooltip` `default_index` 8; 51/51 green once
- * variants are `visible`, verified 2026-10-04). Home-page cards are unaffected: their demos are measured the
- * same with and without the skip. If variants ever get it back, those demos must re-measure on
+ * width and so its default tooltip) would measure 0 there and never recover
+ * (`carousel-virtual-wheel`, `carousel` and the chart tooltip specs guard it). Home-page cards are unaffected: their demos are measured the
+ * same with and without the skip. If variants get it, those demos must re-measure on
  * un-skip first.
  *
  * `--dx-cv` is the ONE switch for all of them: every `content-visibility: auto` in this file is
  * written `var(--dx-cv, auto)`, and `html[data-cv-settle]` (below) flips it to `visible`. A skipped
  * card lays out at its estimate, so a jump over never-rendered cards (a `#fragment` link, a deep
- * link, Back/Forward to a hash) was computed against geometry that changes the moment the cards are
- * rendered, and landed up to ~1,200 px off (dev-docs/research/scroll-jank-2026-10-04.md section 8).
+ * link, Back/Forward to a hash) is computed against geometry that changes the moment the cards are
+ * rendered, and lands up to ~1,200 px off (dev-docs/archive/research/scroll-jank-2026-10-04.md section 8).
  * The shell's anchor handler (the inline script in `preview/index.html`) sets the attribute BEFORE
  * it scrolls, so every card is laid out for real when the scroll offset is computed, and removes it
  * once the page has settled; each card has by then recorded its true height for `auto`. A new
@@ -1833,21 +1824,20 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
 
 /* `overflow-clip-margin`: `content-visibility: auto` implies paint containment, which clips at
  * the box's padding edge, and these two boxes have no horizontal padding -- a focus ring on the
- * title link at the card's left edge (`outline-offset: 3px`) lost its left side. The margin
+ * title link at the card's left edge (`outline-offset: 3px`) would lose its left side. The margin
  * lets such ink out by 0.75rem without changing layout (not Safari: there the ring is clipped). */
 
 /* `contain-intrinsic-block-size` is the size of the CONTENT box, and both cards add padding (a component
  * card 3rem top and bottom, a widget card 3.6rem plus its 2px border) that the estimate does not include.
  * The estimate is therefore the MEAN measured border-box height minus that padding, so a never-rendered
  * card is laid out at the height it will on average have and the document does not resize while it is
- * first scrolled (row 174: the old `auto 380px` was a 476 px card against a 384 px mean, so the page
- * shrank 38.5k -> 32.0k px, -17%, and the scrollbar thumb jumped). The MEAN, not the median (256 px: most
+ * first scrolled (row 174: an `auto 380px` estimate for a 476 px card against a 384 px mean shrinks the page
+ * 38.5k -> 32.0k px, -17%, and the scrollbar thumb jumps). The MEAN, not the median (256 px: most
  * cards are one demo row, a few -- form 2,020, bubble 836 -- are very tall), because it is the sum over the
  * 75 cards that keeps the scrollbar's length steady; the running error stays under ~5% of the page.
- * Re-measured with the `Card` markup (2026-10-19, content-box means over 78 cards, all rendered): 1280 px 376, 1024 px
- * (gallery narrower than 67rem, so stacked) 448, 390 px 444. Earlier, for the bare grid: 384 / 393 px (-> 288 / 297); 390 px: 466 px (-> 418, the 24 px padding of the
- * narrow layout); widgets 327 px (-> 267) at every width. `auto` keeps the real height once a card has been
- * rendered. `playwright/oracle/tier2-html/home-scroll-stability.spec.ts` fails if the first scroll changes
+ * Content-box means over 78 cards, all rendered, with the `Card` markup: 1280 px 376, 1024 px
+ * (gallery narrower than 67rem, so stacked) 448, 390 px 444. Widgets measure 327 px (-> 267) at every
+ * width. `auto` keeps the real height once a card has been rendered. `playwright/oracle/tier2-html/home-scroll-stability.spec.ts` fails if the first scroll changes
  * the document height by 10% or more, which is what re-measuring is for when the gallery changes. */
 .dx-component-card {
   padding: 3rem 0;
@@ -1883,10 +1873,10 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
   grid-area: footer;
 }
 
-/* NOT `content-visibility: auto` (the widget cards used to be): the masonry was CSS multi-column (it is fixed column
- * groups now, see `.dx-widget-masonry`), which balanced its
+/* NOT `content-visibility: auto` on the widget cards: a CSS multi-column masonry (this one is fixed column
+ * groups, see `.dx-widget-masonry`) balances its
  * columns by card HEIGHT, so a card laid out at its estimate and rendered later (it enters the range, which moves
- * the next card into range, and so on) re-balanced the columns once per unskip -- three to six re-layouts of the
+ * the next card into range, and so on) would re-balance the columns once per unskip -- several re-layouts of the
  * gallery in the first ~300 ms, some after the first paint (`playwright/layout-stability.spec.ts`, backlog row
  * 204). Skipping needs the card's height to be known without rendering it, and a balanced column layout is the one
  * place where it never is. The containment that `auto` implied stays, so a card is still an independent
@@ -2038,8 +2028,8 @@ html[data-cv-settle] {
 
 /* A card shows its meta and its preview side by side only when the GALLERY (not the viewport: the
  * docs sidebar takes ~175px of it when open) is wide enough for the widest demo to fit its preview
- * column. Below that it stacks, as on a phone. A viewport breakpoint gave 286px preview columns at
- * 780px (two columns of a 605px gallery) and clipped Field, Input Group, Pagination, Skeleton, Chart
+ * column. Below that it stacks, as on a phone. A viewport breakpoint would give 286px preview columns at
+ * 780px (two columns of a 605px gallery) and clip Field, Input Group, Pagination, Skeleton, Chart
  * Tooltip and Resizable between 780 and 1160px (backlog row 280). 67rem: Resizable's 450px group plus
  * the preview's 2rem padding a side is 516px, twice that plus the 2rem column gap is 1064px.
  * `playwright/card-fit.spec.ts` sweeps the widths and fails on any preview or showcase card whose
@@ -2144,7 +2134,7 @@ html[data-cv-settle] {
 
 /* Bare chart demos (`.dx-chart` as the frame's direct child, e.g. the
  * `chart` page's Bar/Line/Stacked variants) and chart demos wrapped in a
- * `Card` (the `*_chart` galleries) both shrink-wrapped to ~300-450px inside
+ * `Card` (the `*_chart` galleries) both would shrink-wrap to ~300-450px inside
  * the wide frame: the frame is a centred flex column and the chart's own
  * content is a `width: 100%` svg, so there is no intrinsic width to wrap to.
  * Give them one shared comfortable width instead: the frame's full width up
@@ -2265,7 +2255,7 @@ html[data-cv-settle] {
 }
 
 @media (width <= 760px) {
-  /* One compact row at phone widths (measured 54px at 360/390 vs 151px when
+  /* One compact row at phone widths (54px at 360/390, 151px if
    * it wrapped to three rows): no wrapping, tighter gaps, and the brand
    * wordmark visually hidden -- the logo stays as the home link, and the
    * text stays in the accessibility tree. */
@@ -2279,7 +2269,7 @@ html[data-cv-settle] {
 
   /* 8px between header items, not the desktop 16px: a docs page's primary group is the sidebar
    * trigger + logo + Docs + Demos + Charts, and with 12px gaps that group plus GitHub, the toggle and
-   * the (since removed) language select needed ~12px more than a 390px phone has (the "Charts" link drew over the
+   * the toolbar controls need ~12px more than a 390px phone has (the "Charts" link would draw over the
    * GitHub mark). One value for both groups, so the row's rhythm is the same on every page; the
    * `<= 360px` and `<= 320px` blocks below spend the rest of their room elsewhere. Guard:
    * playwright/theme-picker-phone.spec.ts, "the header row fits at every phone width". */
@@ -2312,14 +2302,14 @@ html[data-cv-settle] {
    * nothing to re-implement here. Just the shell's own centering/border,
    * which otherwise stays sized for desktop. Targets `.dx-docs-shell-body`
    * (not the outer `.dx-sidebar-wrapper.dx-docs-shell`) since that is where
-   * this width/border/min-height now lives -- see that class's own comment
+   * this width/border/min-height lives -- see that class's own comment
    * above. */
   .dx-docs-shell-body {
     width: 100%;
     min-height: 0;
   }
 
-  /* Keep a 16px side gutter: with `0` inline padding the h1 and prose sat
+  /* Keep a 16px side gutter: with `0` inline padding the h1 and prose would sit
    * flush against the screen edge on /docs/ and every component page. */
   .dx-docs-page,
   .dx-component-page {
@@ -2381,8 +2371,8 @@ html[data-cv-settle] {
 /* Very narrow phones. The header is one `nowrap` row whose widest page (a docs page: sidebar trigger,
  * logo, Docs, Demos, Charts | GitHub, light/dark toggle) needs ~330px of content width
  * at the 8px gaps above, plus the row's padding and 1px borders. A 390px phone offers ~356px (fits), a
- * 360px phone ~334px, a 320px phone ~294px at 12px padding, so with `min-width: 0` the two groups used
- * to draw over each other ("Charts" under the GitHub mark, ~16px at 320px). Reclaim the difference in
+ * 360px phone ~334px, a 320px phone ~294px at 12px padding, so with `min-width: 0` the two groups would draw over
+ * each other ("Charts" under the GitHub mark, ~16px at 320px). Reclaim the difference in
  * steps, spacing and text:
  *   <= 360px  tighter row padding (~8px) and 14.4px link text (~7px)
  *   <= 320px  8px row padding (~8px) and 6px gaps (~12px)
@@ -2619,7 +2609,7 @@ html[data-cv-settle] {
 .dx-charts-card-body .dx-card {
   /* The Tooltips tab wraps each card in a block (not the flex row the other
    * tabs use), where a content-box `width: 100%` plus the card's border
-   * overflowed the cell. `.dx-card` is border-box from the theme's box-model
+   * would overflow the cell. `.dx-card` is border-box from the theme's box-model
    * rule (dx-components-theme.css), so `width: 100%` is the cell. */
   width: 100%;
   min-width: 0;

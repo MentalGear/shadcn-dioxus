@@ -5,16 +5,20 @@ import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
 /**
- * The keyboard-focus ring is grey (shadcn's neutral `--ring`). By default it is shadcn's EXACT value, light
- * 2.3-2.6:1 on white (under 1.4.11's 3:1, shadcn's own); in contrast mode (`<html data-dx-contrast="wcag">`,
- * or `prefers-contrast: more`) its solid edge reads >= 3:1 (WCAG 1.4.11, non-text contrast) against the page,
- * card and popover surfaces, in the default theme and under every theme-picker preset, in both modes.
+ * The keyboard-focus ring is grey (shadcn's neutral `--ring`) until an accent is picked. With no accent it is
+ * shadcn's EXACT value, light 2.3-2.6:1 on white (under 1.4.11's 3:1, shadcn's own); in contrast mode
+ * (`<html data-dx-contrast="wcag">`, or `prefers-contrast: more`) its solid edge reads >= 3:1 (WCAG 1.4.11,
+ * non-text contrast) against the page, card and popover surfaces, in the default theme and under every
+ * theme-picker preset, in both modes. With an accent picked the ring takes the accent's hue and chroma
+ * (row 385), lightness clamped per mode, and reads >= 3:1 in BOTH contrast settings.
  *
  * Construction under test (`preview/assets/dx-components-theme.css`, `--dx-ring-source` / `--dx-ring-color`,
- * the "Contrast mode" block): the source is the user's or preset's `--ring`, else shadcn neutral's (light
- * oklch(0.708 0 0) = 2.6:1 on white, dark oklch(0.556 0 0)); in contrast mode the LIGHT arm's OKLCH lightness
- * is clamped (hue and chroma kept), so a base colour's tint, and a pasted theme's coloured ring, still come
- * through. The switch itself, and the other calibrated roles, are in contrast-mode.spec.ts.
+ * the "Contrast mode" block): the source is `--dx-accent-ring` when an accent is active, else the user's or
+ * preset's `--ring`, else shadcn neutral's (light oklch(0.708 0 0) = 2.6:1 on white, dark oklch(0.556 0 0));
+ * in contrast mode the LIGHT arm's OKLCH lightness is clamped (hue and chroma kept), so a base colour's tint,
+ * and a pasted theme's coloured ring, still come through. The accent ring's own clamp (light L <= 0.62, dark
+ * L >= 0.6) is the `:root[data-theme-accent]` rule. The switch itself, and the other calibrated roles, are in
+ * contrast-mode.spec.ts.
  *
  * Method: focus the docs Input, read the first colour of its focused `box-shadow` (the 1px solid edge of
  * `--dx-ring-field`), resolve it through a canvas, and compare with the three surface tokens resolved the
@@ -23,10 +27,18 @@ import { gotoHydrated } from "./hydration";
  */
 
 const NON_TEXT = 3;
-/** Neutral ring chroma must stay below this (OKLCH C): the default is grey, not the old #2b7fff (C ~0.2). */
+/** Neutral ring chroma must stay below this (OKLCH C): the default is grey, not a saturated blue such as #2b7fff (C ~0.2). */
 const NEUTRAL_CHROMA = 0.03;
 /** Hue tolerance in degrees. A ring's chroma is 0.01-0.04, so 8-bit rounding alone is a few degrees. */
 const HUE_TOLERANCE = 20;
+/** An accent ring's hue against the accent's `--primary` hue. Gamut mapping of the clamped value moves lime and
+ * yellow's by 4 and 9 degrees; every other accent is within 3. */
+const ACCENT_HUE_TOLERANCE = 10;
+/** An accent whose primary is at least this chromatic has a hue worth tracking (OKLCH C). */
+const CHROMATIC = 0.05;
+/** The accent clamp's bounds, as written in the theme (`--dx-accent-ring-l-max` / `-l-min`), with 8-bit rounding slack. */
+const ACCENT_L_MAX = 0.62 + 0.012;
+const ACCENT_L_MIN = 0.6 - 0.012;
 
 const PRESETS_CSS = fs.readFileSync(path.join(__dirname, "..", "preview", "assets", "theme-presets.css"), "utf8");
 const names = (axis: "base" | "accent") => [
@@ -46,6 +58,11 @@ type Row = {
   ring: { l: number; c: number; h: number };
   /** The `--ring` custom property as the page declares it, in OKLCH (null when none is set). */
   declared: { l: number; c: number; h: number } | null;
+  /** The ring edge's 8-bit sRGB, and the sRGB of the source shadcn would draw (the declared `--ring`, else neutral's). */
+  edgeRgb: number[];
+  sourceRgb: number[];
+  /** The page's `--dx-primary` (the accent's fill when an accent is picked), in OKLCH. */
+  primary: { l: number; c: number; h: number };
 };
 
 test.describe("focus ring contrast", () => {
@@ -131,7 +148,11 @@ test.describe("focus ring contrast", () => {
             const raw = getComputedStyle(html).getPropertyValue("--ring");
             // Chromium serialises the declared colour as lab(); resolve it through the same canvas.
             const declared = raw.trim() ? toOklch(rgbOf(raw.trim())) : null;
+            const sourceRgb = rgbOf(raw.trim() || (mode === "light" ? "oklch(0.708 0 0)" : "oklch(0.556 0 0)"));
             out.push({
+              edgeRgb: edge,
+              sourceRgb,
+              primary: toOklch(surface("--dx-primary")),
               mode,
               base,
               accent,
@@ -172,8 +193,8 @@ test.describe("focus ring contrast", () => {
     });
 
     for (const contrast of [null, "wcag"] as const) {
-      test(`${mode}, ${contrast ?? "default"}: with no preset the ring is neutral grey, not the old blue`, async ({ page }) => {
-        const rows = (await measure(page, mode, undefined, contrast)).filter((r) => r.base === "none");
+      test(`${mode}, ${contrast ?? "default"}: with no preset and no accent the ring is neutral grey`, async ({ page }) => {
+        const rows = (await measure(page, mode, undefined, contrast)).filter((r) => r.base === "none" && r.accent === "none");
         expect(rows.length).toBeGreaterThan(0);
         for (const r of rows) {
           expect(r.ring.c, `${label(r)}: chroma ${r.ring.c.toFixed(3)} (blue #2b7fff is ~0.2)`).toBeLessThan(NEUTRAL_CHROMA);
@@ -182,14 +203,15 @@ test.describe("focus ring contrast", () => {
     }
 
     test(`${mode}, default: the ring is shadcn's exact value (the preset's own --ring, neutral's when none), under 3:1 in light`, async ({ page }) => {
-      const rows = await measure(page, mode, undefined, null);
+      const rows = (await measure(page, mode, undefined, null)).filter((r) => r.accent === "none");
       // No preset: shadcn neutral's own ring, light oklch(0.708 0 0), dark oklch(0.556 0 0) (8-bit rounding: +-0.01).
       const none = rows.find((r) => r.base === "none" && r.accent === "none")!;
       expect(Math.abs(none.ring.l - (mode === "light" ? 0.708 : 0.556)), `${label(none)}: ring L ${none.ring.l.toFixed(3)}`).toBeLessThan(0.012);
-      // Every preset: the edge IS the declared `--ring`, not a clamped copy of it.
+      // Every base with no accent: the edge IS the declared `--ring`, not a clamped copy of it, to the byte.
       for (const r of rows.filter((r) => r.declared)) {
         expect(Math.abs(r.ring.l - r.declared!.l), `${label(r)}: ring L ${r.ring.l.toFixed(3)} vs --ring L ${r.declared!.l.toFixed(3)}`).toBeLessThan(0.012);
       }
+      for (const r of rows) expect(r.edgeRgb, `${label(r)}: ring edge is the unclamped source`).toEqual(r.sourceRgb);
       const w = rows.reduce((a, b) => (b.ratio < a.ratio ? b : a));
       console.log(`[ring ${mode} default] worst ${w.ratio.toFixed(3)}:1 on ${w.worstSurface} at ${label(w)} (shadcn's own)`);
       if (mode === "light") {
@@ -199,17 +221,69 @@ test.describe("focus ring contrast", () => {
       }
     });
 
-    test(`${mode}: the ring keeps its base colour's hue; an accent never recolours it`, async ({ page }) => {
-      const rows = (await measure(page, mode)).filter((r) => r.declared && r.declared.c >= 0.01);
+    test(`${mode}: with no accent the ring keeps its base colour's hue`, async ({ page }) => {
+      const rows = (await measure(page, mode)).filter((r) => r.accent === "none" && r.declared && r.declared.c >= 0.01);
       expect(rows.length).toBeGreaterThan(0);
       const bad = rows.filter((r) => hueGap(r.ring.h, r.declared!.h) > HUE_TOLERANCE);
       expect(
         bad.map((r) => `${label(r)}: ring hue ${r.ring.h.toFixed(0)} vs --ring hue ${r.declared!.h}`).slice(0, 12),
         `${bad.length}/${rows.length} combinations whose ring hue left the base's --ring hue`,
       ).toEqual([]);
-      // The one named case: stone (a warm base, hue ~56) under the blue accent stays warm.
+      // The one named case: stone is a warm base (hue ~56) and keeps its warm ring when no accent is picked.
+      const stone = rows.find((r) => r.base === "stone")!;
+      expect(hueGap(stone.ring.h, 56), `stone ring hue ${stone.ring.h.toFixed(0)}`).toBeLessThan(HUE_TOLERANCE);
+    });
+
+    for (const contrast of [null, "shadcn", "wcag"] as const) {
+      test(`${mode}, ${contrast ?? "default"}: every accent x base ring edge >= 3:1 on background, card and popover (row 385)`, async ({ page }) => {
+        const rows = (await measure(page, mode, undefined, contrast)).filter((r) => r.accent !== "none");
+        expect(rows).toHaveLength(BASES.length * ACCENTS.length + ACCENTS.length);
+        const worst = rows.reduce((a, b) => (b.ratio < a.ratio ? b : a));
+        console.log(`[accent ring ${mode} ${contrast ?? "default"}] worst ${worst.ratio.toFixed(3)}:1 on ${worst.worstSurface} at ${label(worst)}`);
+        const bad = rows.filter((r) => r.ratio < NON_TEXT);
+        expect(
+          bad.map((r) => `${label(r)}: ${r.ratio.toFixed(2)}:1 on ${r.worstSurface}`).slice(0, 12),
+          `${bad.length}/${rows.length} accent rings under ${NON_TEXT}:1`,
+        ).toEqual([]);
+      });
+    }
+
+    test(`${mode}: the accent ring tracks the accent's hue and chroma, and moves lightness only into its bound (row 385)`, async ({ page }) => {
+      const rows = (await measure(page, mode)).filter((r) => r.accent !== "none");
+      const chromatic = rows.filter((r) => r.primary.c >= CHROMATIC);
+      expect(chromatic.length).toBeGreaterThanOrEqual(ACCENTS.length * BASES.length);
+      const wrongHue = chromatic.filter((r) => hueGap(r.ring.h, r.primary.h) > ACCENT_HUE_TOLERANCE);
+      expect(
+        wrongHue.map((r) => `${label(r)}: ring hue ${r.ring.h.toFixed(0)} vs --primary hue ${r.primary.h.toFixed(0)}`).slice(0, 12),
+        `${wrongHue.length}/${chromatic.length} accent rings left the accent's hue`,
+      ).toEqual([]);
+      // Chroma survives the clamp (gamut mapping may trim a little): never grey.
+      const grey = chromatic.filter((r) => r.ring.c < r.primary.c * 0.6);
+      expect(grey.map((r) => `${label(r)}: ring chroma ${r.ring.c.toFixed(3)} vs ${r.primary.c.toFixed(3)}`).slice(0, 12)).toEqual([]);
+      // Lightness: light is at most the ceiling, dark at least the floor; an accent already inside moves not at all.
+      for (const r of rows) {
+        if (mode === "light") {
+          expect(r.ring.l, `${label(r)}: light ring L ${r.ring.l.toFixed(3)} over the ceiling`).toBeLessThanOrEqual(Math.max(ACCENT_L_MAX, r.primary.l + 0.012));
+          if (r.primary.l <= ACCENT_L_MAX) expect(Math.abs(r.ring.l - r.primary.l), `${label(r)}: an in-bound accent is passed through`).toBeLessThan(0.012);
+        } else {
+          expect(r.ring.l, `${label(r)}: dark ring L ${r.ring.l.toFixed(3)} under the floor`).toBeGreaterThanOrEqual(Math.min(ACCENT_L_MIN, r.primary.l - 0.012));
+          if (r.primary.l >= ACCENT_L_MIN) expect(Math.abs(r.ring.l - r.primary.l), `${label(r)}: an in-bound accent is passed through`).toBeLessThan(0.012);
+        }
+      }
+      // The named cases: blue under a warm base is blue, lime keeps its green and the docs accent its blue.
       const stoneBlue = rows.find((r) => r.base === "stone" && r.accent === "blue")!;
-      expect(hueGap(stoneBlue.ring.h, 56), `stone + blue ring hue ${stoneBlue.ring.h.toFixed(0)}`).toBeLessThan(HUE_TOLERANCE);
+      expect(hueGap(stoneBlue.ring.h, 265), `stone + blue ring hue ${stoneBlue.ring.h.toFixed(0)}`).toBeLessThan(ACCENT_HUE_TOLERANCE);
+      const docs = rows.find((r) => r.base === "none" && r.accent === "docs")!;
+      expect(hueGap(docs.ring.h, 260), `docs ring hue ${docs.ring.h.toFixed(0)}`).toBeLessThan(ACCENT_HUE_TOLERANCE);
+    });
+
+    test(`${mode}: a page-level --ring never beats a picked accent (row 385)`, async ({ page }) => {
+      const rows = await measure(page, mode, "oklch(0.7 0.2 30)");
+      const red = rows.find((r) => r.base === "none" && r.accent === "blue")!;
+      expect(hueGap(red.ring.h, red.primary.h), `blue accent over --ring orange: ring hue ${red.ring.h.toFixed(0)}`).toBeLessThan(ACCENT_HUE_TOLERANCE);
+      // With no accent the host's --ring is still the source.
+      const host = rows.find((r) => r.base === "none" && r.accent === "none")!;
+      expect(hueGap(host.ring.h, 30), `no accent, --ring orange: ring hue ${host.ring.h.toFixed(0)}`).toBeLessThan(HUE_TOLERANCE);
     });
 
     test(`${mode}: a page-level --ring is honoured; only lightness is clamped, hue is kept`, async ({ page }) => {

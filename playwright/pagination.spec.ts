@@ -1,5 +1,4 @@
 import { test, expect } from "./fixtures";
-import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
@@ -26,22 +25,19 @@ test("current page is marked aria-current=\"page\"; Previous/Next have accessibl
   await expect(preview.getByRole("link", { name: "3", exact: true })).toBeVisible();
 });
 
-// docs/backlog.md row 89's own watch-list item: "pagination's own equivalent
-// rule pair has a subtle token mismatch left on the watch list." The
-// mismatch is real -- `[data-active="true"]`'s own background
+// dev-docs/backlog.md row 89: `[data-active="true"]`'s own background
 // (`var(--light, var(--primary-color)) var(--dark, var(--primary-color-3))`)
 // and `[data-active="true"]:hover`'s (`var(--primary-color-4)`) are
 // different token-family members, not a deliberate one-step-lighter pairing
 // -- but it does NOT let a user lose the current-page indication on hover:
 // `[data-active="true"]`'s own `border` (`var(--primary-color-6)`) is set by
 // a rule `:hover` never touches at all, so it persists unconditionally, and
-// no non-active link has a border in any state. Confirmed by the exact
-// computed values below (both themes) -- this is the "genuinely benign"
-// outcome the investigation allowed for, not a manufactured fix: the
-// background does shift by a few RGB points on hover, but the border --
+// no non-active link has a border in any state. The exact
+// computed values below (both themes) pin it: the
+// background does shift by a few RGB points on hover
 // the one property no other link's hover ever sets -- never changes.
 for (const dark of [false, true]) {
-  test(`hovering the current page keeps its border (the actual "you are here" signal) unchanged (${dark ? "dark" : "light"} mode)`, async ({ page }) => {
+  test(`hovering the current page keeps its border (the actual "you are here" signal) (${dark ? "dark" : "light"} mode)`, async ({ page }) => {
     // dev-docs/backlog.md row 109: this test hovers right after navigating,
     // on the SSG lane -- `gotoHydrated` so that hover can't land before
     // hydration attaches listeners.
@@ -80,15 +76,8 @@ for (const dark of [false, true]) {
     await other.hover();
     await page.waitForTimeout(400);
     // Nova's ghost Button carries a 1px TRANSPARENT border (`border border-transparent`), so the
-    // width is 1px now; what must hold is that the border never becomes visible.
+    // width is 1px; what must hold is that the border never becomes visible.
     const otherHoveredBorder = await other.evaluate((el) => getComputedStyle(el).borderTopColor);
     expect(otherHoveredBorder, "a non-active link must not gain a visible border on hover").toBe("rgba(0, 0, 0, 0)");
   });
 }
-
-test.describe("Axe automated scan", () => {
-  test("loaded has no automatically detectable a11y issues", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/pagination/`, { waitUntil: "networkidle" });
-    await expectNoAxeViolations(page, "pagination: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-});

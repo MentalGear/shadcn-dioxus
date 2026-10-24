@@ -14,11 +14,11 @@ use dioxus_primitives::{dioxus_attributes::attributes, merge_attributes};
 /// concatenate (space-joined) instead, which is what every caller here
 /// actually wants: their own class alongside `"dx-input"`, never instead
 /// of it. See `preview/src/components/input_group/component.rs` for the
-/// consumer this was found through: without this, `InputGroupInput`'s
-/// wrapped `<input>` rendered with *only* `"dx-input-group-control"`
+/// consumer that depends on it: without the merge, `InputGroupInput`'s
+/// wrapped `<input>` would render with *only* `"dx-input-group-control"`
 /// (`"dx-input"` silently dropped), so none of `"dx-input"`'s own
-/// border/background reset applied and the browser's native default
-/// input chrome showed through inside `InputGroup`'s own border --  a
+/// border/background reset would apply and the browser's native default
+/// input chrome would show through inside `InputGroup`'s own border --  a
 /// visible double-border/"pill within a pill" seam.
 #[component]
 pub fn Input(
@@ -49,10 +49,10 @@ pub fn Input(
     let base = attributes!(input { class: "dx-input", "data-dx-root": "" });
     // `onwheel` is attached ONLY when the caller passed one. Dioxus registers every bubbling rsx
     // handler once on `#main` with no options (dioxus-interpreter-js `createListener`), so an
-    // `onwheel: move |e| _ = onwheel.map(..)` shim on every `<input>` -- the previous shape, set
-    // even when the prop was `None` -- made the whole page's wheel input non-passive: each wheel
-    // tick had to wait for the main thread before the compositor could scroll
-    // (dev-docs/research/scroll-jank-2026-10-04.md, Cause 2b). An rsx event attribute cannot take
+    // `onwheel: move |e| _ = onwheel.map(..)` shim on every `<input>`, set
+    // even when the prop is `None`, would make the whole page's wheel input non-passive: each wheel
+    // tick would have to wait for the main thread before the compositor could scroll
+    // (dev-docs/archive/research/scroll-jank-2026-10-04.md, Cause 2b). An rsx event attribute cannot take
     // an `Option<EventHandler>`, so the optional listener is built as an `Attribute` and spread.
     let wheel: Vec<Attribute> = onwheel
         .map(|handler| vec![dioxus::html::events::onwheel(handler)])

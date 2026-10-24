@@ -36,7 +36,7 @@ pub const REGISTRY_NAME: &str = "shadcn-dioxus";
 #[derive(Clone, Debug, Default, Args)]
 pub struct RegistryArgs {
     /// Git URL of the component registry (default: the project's `Dioxus.toml` `[components.registry]`,
-    /// else https://github.com/MentalGear/shadcn-dioxus)
+    /// else <https://github.com/MentalGear/shadcn-dioxus>)
     #[arg(long)]
     pub git: Option<String>,
 
@@ -126,7 +126,7 @@ pub fn default_cache_root() -> PathBuf {
 }
 
 /// An absolute path from an environment variable, ignoring an unset, empty or relative value (the rule the
-/// XDG spec and the `dirs` crate this replaces both apply).
+/// XDG spec and the `dirs` crate both apply).
 fn env_dir(key: &str) -> Option<PathBuf> {
     std::env::var_os(key)
         .map(PathBuf::from)
@@ -285,7 +285,7 @@ fn clone_registry(url: &str, rev: Option<&str>, dest: &Path) -> Result<()> {
 
 fn checkout_rev(dir: &Path, url: &str, rev: &str) -> Result<()> {
     // `origin/<rev>` first: after a fetch a local branch of the same name is the STALE one that the clone
-    // created (it only moves on `reset`), so trying the bare name first pinned `update` to old commits.
+    // created (it only moves on `reset`), so trying the bare name first would pin `update` to old commits.
     // Tags and commit ids have no `origin/` form and fall through to the bare name.
     git(
         Some(dir),

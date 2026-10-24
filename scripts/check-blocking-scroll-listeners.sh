@@ -14,21 +14,21 @@
 # touch input non-passive: before the compositor may scroll, every wheel tick
 # is dispatched to the main thread and waited for (Chromium
 # `DidHandleInputEventSentToMain` 40/40 ticks vs 0; wheel latency max 388 ms vs
-# 143 ms with a busy main thread, dev-docs/research/scroll-jank-2026-10-04.md,
+# 143 ms with a busy main thread, dev-docs/archive/research/scroll-jank-2026-10-04.md,
 # Cause 2b). On a touch device a blocking `touchstart` additionally delays every
 # scroll start.
 #
-# The instances this was written against, all removed: `Input`'s `onwheel`
-# shim (set on every `<input>` even when the prop was `None`), and
-# `ontouchstart: prevent_default` on the slider thumb, the resizable handle
-# and the color-area thumb (their `onmousedown` twin already stops the focus
-# steal; drags are pointer-driven with `touch-action: none`). Removing them is only
+# The shapes this is written against: an `onwheel` shim set on every `<input>`
+# even when the prop is `None`, and `ontouchstart: prevent_default` on the
+# slider thumb, the resizable handle and the color-area thumb (their
+# `onmousedown` twin already stops the focus steal; drags are pointer-driven
+# with `touch-action: none`). Removing such a handler is only
 # safe while the touched element's EFFECTIVE `touch-action` is `none` (the
 # intersection down the ancestor chain): the slider thumb and the color area get it
 # from their non-focusable containers, but the resizable handle is itself focusable,
-# so the docs app's `touch-action: manipulation !important` catch-all beat its own
-# `none` and Chromium cancelled the drag (`pointercancel` after ~20px) until
-# `preview/assets/main.css` exempted `.dx-resizable-handle[role="separator"]`.
+# so the docs app's `touch-action: manipulation !important` catch-all would beat its own
+# `none` and Chromium would cancel the drag (`pointercancel` after ~20px), so
+# `preview/assets/main.css` exempts `.dx-resizable-handle[role="separator"]`.
 # `playwright/oracle/tier2-html/scroll-main-thread.spec.ts` drives all three with real touch.
 #
 # What it flags, in `primitives/src` and `preview/src` (`*.rs`, `*.js`) and
@@ -63,8 +63,8 @@
 # (`DOMDebugger.getEventListeners`) for `#main`'s listeners on `/`.
 #
 # Usage: scripts/check-blocking-scroll-listeners.sh [file ...]
-#   No arguments scans the tree; explicit files are scanned as given (used to
-#   prove the gate red against old code).
+#   No arguments scans the tree; explicit files are scanned as given (for
+#   proving the gate red against a known-bad file).
 # Exit 0: clean. Exit 1: offending file:line on stderr.
 
 set -euo pipefail
@@ -81,7 +81,7 @@ import sys
 from pathlib import Path
 
 # file (repo-relative) -> why its non-passive wheel/touch listeners are legitimate.
-# Empty since row 167: context_menu.rs's two window wheel/touchmove listeners moved onto
+# Empty (row 167): context_menu.rs's two window wheel/touchmove listeners go through
 # `listen(..)` and carry their own `blocking-ok:` markers.
 ALLOWLIST: dict[str, str] = {}
 
@@ -196,7 +196,7 @@ def main():
         print(
             "  Fix: drop the handler (touch-action / pointer events already cover drags), forward an optional "
             "handler only when Some, or add `// blocking-ok: <reason>` "
-            "(dev-docs/research/scroll-jank-2026-10-04.md, Cause 2b)",
+            "(dev-docs/archive/research/scroll-jank-2026-10-04.md, Cause 2b)",
             file=sys.stderr,
         )
         sys.exit(1)

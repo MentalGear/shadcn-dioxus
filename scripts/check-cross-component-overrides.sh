@@ -2,16 +2,20 @@
 #
 # check-cross-component-overrides.sh
 #
-# Flags a NON-custom property declared, in component X's stylesheet, on an element that is
-# really component Y's:
+# A component's stylesheet must not declare a non-custom property on an element that is really another component's:
+# one element wearing both `dx-Y` and `dx-X-...`, or a bare `> button`/`input`/`select`/`textarea`/`label` selector.
+# Two sheets declaring one property are decided by per-route stylesheet order, so compose through slot variables
+# instead (the base reads `font-size: var(--dx-label-font-size, var(--dx-text-sm))`, the parent sets the variable).
+# Existing sites are a shrink-only baseline, `scripts/check-cross-component-overrides.baseline.tsv`; the gate fails on
+# a site that is not in it.
 #
 #   .dx-field-label { font-size: var(--dx-text-sm); }   /* in field/style.css */
 #   .dx-label       { font-size: 0.8rem; }              /* in label/style.css; same element */
 #
 # Both selectors are (0,1,0) and both set `font-size`, so the winner is whichever stylesheet
 # loads LAST -- and the load order is per route (`<link>`s are injected as components render).
-# The STYLE-DELIVERY lane found 208 sheet pairs ordered both ways across routes, and the
-# Field label was 14px on the home gallery and 12.8px on /component/field/. Patching it with a
+# 208 sheet pairs are ordered both ways across routes, so the Field label would be
+# 14px on the home gallery and 12.8px on /component/field/. Patching it with a
 # specificity bump (`label.dx-field-label`) only moves the contest; it does not remove it.
 #
 # THE CONSTRUCTION: composition through custom properties (the CSS form of shadcn's `cn()` /
@@ -57,8 +61,8 @@
 # false failure.
 #
 # THE RATCHET, NOT A WALL (same shape as check-attr-spread-collision.sh):
-# `scripts/check-cross-component-overrides.baseline.tsv` lists the sites that existed when the
-# gate was introduced, one `file<TAB>kind<TAB>selector<TAB>property` per line (selector with
+# `scripts/check-cross-component-overrides.baseline.tsv` lists the sites that predate the
+# gate, one `file<TAB>kind<TAB>selector<TAB>property` per line (selector with
 # whitespace collapsed; NOT file:line, so unrelated edits above a site do not disturb it; a
 # multiset, because the same selector under two media queries is two sites). The gate fails
 # only on a site that is NOT in the baseline. It is a DEBT REGISTER, NOT AN APPROVAL: do not add

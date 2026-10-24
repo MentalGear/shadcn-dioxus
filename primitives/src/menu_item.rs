@@ -27,8 +27,8 @@
 //! # Checkable items
 //!
 //! shadcn's `DropdownMenu`, `ContextMenu` and `Menubar` all have a
-//! `CheckboxItem` and a `RadioGroup` + `RadioItem`. Before this module none
-//! of the three had either, and writing them three times would have been the
+//! `CheckboxItem` and a `RadioGroup` + `RadioItem`. Writing them three times
+//! would be the
 //! same trap `crate::menu_semantics` and `crate::menu_root` exist to close:
 //! three hosts hand-writing one contract, free to drift apart. So everything
 //! that is *the same* for every host lives here, and each host adds only
@@ -365,7 +365,7 @@ impl CheckableState {
     }
 
     /// The attributes every host's checkable item owns, to be merged *after*
-    /// the caller's own so they win (`docs/backlog.md` row 93's
+    /// the caller's own so they win (`dev-docs/backlog.md` row 93's
     /// duplicate-attribute hazard).
     ///
     /// `aria-checked` is always present: WAI-ARIA 1.2 makes it a required

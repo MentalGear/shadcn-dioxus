@@ -12,7 +12,7 @@ import { gotoHydrated } from "./hydration";
  * `*-shortcuts` / `*-groups` / `*-destructive` / `menubar-demo` examples):
  *
  *   - structure: `role="separator"` (horizontal) and `role="group"` render, the separator is not a roving-focus
- *     target (ArrowDown walks past it), a destructive item is still a plain `menuitem`;
+ *     target (ArrowDown walks past it), a destructive item is a plain `menuitem`;
  *   - geometry (layout offsets, so the pop-in `scale` animation cannot skew them): the separator is 1px tall and
  *     spans the panel edge to edge (undoing the surface's padding); the shortcut sits at the inline end of its row;
  *   - destructive colour, in light and dark: the item text and icon read `--dx-destructive-text` (never the

@@ -8,8 +8,8 @@
 # in the CALLER's scope: `Callback::call` pushes the scope the callback was CREATED in,
 # so a `use_signal`/`use_effect`/`use_interval` inside lands on that scope's hook list,
 # whose index resets only when that scope re-renders. Every later re-render of the
-# caller then allocated a FRESH set beside the old, unreachable one. That is how
-# `MasonryCard` calling `component.call(())` grew a never-cleared interval in
+# caller then allocates a FRESH set beside the old, unreachable one. Example (row 150):
+# `MasonryCard` calling `component.call(())` grows a never-cleared interval in
 # `BlockPlayer` every ~1.2 s (128 live intervals after ~100 s). It compiles, clippy and
 # cargo test stay green, and a hook inside is invisible to grep.
 #
@@ -29,13 +29,13 @@
 # renderers, a documented contract, common, and not a component-as-data. `EventHandler`
 # and `Callback<_, ()>` `.call(())` are not components (measured below).
 #
-# Measured over primitives/src + preview/src, excluding tests (2026-10-23):
-#   31 `.call(())` sites: 2 on `Callback<(), Element>` (chart tooltip/legend `ChartIcon`),
-#   29 on `Callback<(), ()>`/`EventHandler` (event handlers, resets, drop hooks): not flagged.
-#   Direct calls of the 771 `#[component]` fns: 3 (`Calendar(self)`, `RangeCalendar(self)`,
+# Shapes in primitives/src + preview/src, excluding tests:
+#   `.call(())` on `Callback<(), Element>`: 2 (chart tooltip/legend `ChartIcon`),
+#   On `Callback<(), ()>`/`EventHandler` (event handlers, resets, drop hooks): not flagged.
+#   Direct calls of a `#[component]` fn: 3 (`Calendar(self)`, `RangeCalendar(self)`,
 #   `scroll_area::ScrollArea(props)`), all in the body of a component that forwards its own props.
 #   fn-pointer calls: 1 (`(entry.thumb)()`, hook-free SVG thumbnail).
-#   So 6 real shapes, 0 false positives, 6 reasoned allowlist entries below.
+#   Six real shapes, each a reasoned allowlist entry below.
 #
 # Escapes: an inline `component-call-ok: <reason>` comment on the line or the two above,
 # or a reasoned entry in ALLOW below (`file|callee`). A marker or entry that suppresses

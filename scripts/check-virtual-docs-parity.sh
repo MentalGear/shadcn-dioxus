@@ -2,11 +2,11 @@
 #
 # check-virtual-docs-parity.sh
 #
-# `VirtualList` and the three grids (`VirtualGrid`, `VirtualWrapGrid`, `VirtualJustifiedGrid`) are one
-# engine (`primitives/src/virtual/`, backlog row 309): the same fade, the same overscan, the same pinned
-# focus, the same scroll chaining, the same find-in-page limits. Their documentation said so in two
-# different wordings that drifted (a fade note on one page and not the other, `buffer` described three
-# ways). The parity is made a property of the sources, not of a reviewer's memory:
+# `VirtualList` and the grids are one engine, so what they share is documented in the same words: every shared section
+# of `virtual_list/docs.md` and `virtual_grid/docs.md` sits between `<!-- shared:virtual-engine:NAME -->` and `<!--
+# /shared:virtual-engine:NAME -->` markers and the text between them must be byte-identical (a block in only one file,
+# an unclosed marker or a differing text fails; the table docs may carry any of the same blocks), and a prop name that
+# `VirtualListProps` shares with a grid props struct must carry the same `///` doc in all of them. No network.
 #
 #   1. Docs pages. Every section the two components share sits between
 #        <!-- shared:virtual-engine:NAME -->  ...  <!-- /shared:virtual-engine:NAME -->

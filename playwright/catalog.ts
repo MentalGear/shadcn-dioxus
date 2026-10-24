@@ -4,9 +4,9 @@ import * as path from "path";
 /**
  * The ONE reader of `CATALOG` in `preview/src/components/mod.rs`, for every spec that needs the component list.
  *
- * Each spec used to carry its own regex over the `("name", Origin::...)` rows. When `Origin::Extra` grew a
- * reason payload (`Origin::Extra("...")`), the copies that still said `Origin::(?:Shadcn|Extra)\)` silently
- * stopped matching the Extra rows and the all-routes sweep shrank by 48 tests without a single failure.
+ * No spec carries its own regex over the `("name", Origin::...)` rows: a copy that says
+ * `Origin::(?:Shadcn|Extra)\)` does not match a row with a reason payload
+ * (`Origin::Extra("...")`), and the all-routes sweep would shrink without a single failure.
  *
  * So the parse is checked against an independent count: the number of `Origin::` occurrences in the CATALOG
  * block (one per row). A row shape the regex does not understand makes the two differ and `readCatalog`
@@ -70,8 +70,8 @@ const COMPONENTS_DIR = path.join(__dirname, "..", "preview", "src", "components"
  * `/component/block/<name>/<variant>/`; its variants are `main` first, then the names `variants/order.txt`
  * lists, then every other `variants/<name>/` directory sorted.
  *
- * Replaces a text-scrape of a cfg'd-out `examples!(..)` mirror in `components/mod.rs` that `build.rs`
- * had to police for drift.
+ * There is no hand-kept list in `components/mod.rs` to scrape: `build.rs` and this reader derive from the
+ * same directories.
  */
 export interface BlockDemo {
   name: string;

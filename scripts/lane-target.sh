@@ -11,7 +11,7 @@
 # `export CARGO_TARGET_DIR=<abs path>` -- use `eval "$(scripts/lane-target.sh create x)"`
 # (progress goes to stderr, only the export lines to stdout). The path is always
 # absolute (dx --ssg breaks on relative ones, row 98) and never the shared repo `target/`.
-# It also exports `CARGO_INCREMENTAL=0` (row 168: incremental state regrew a target dir
+# It also exports `CARGO_INCREMENTAL=0` (row 168: incremental state regrows a target dir
 # by ~10-13 GB per lane-hour); `LANE_CARGO_INCREMENTAL=1` opts back in, at the cost of
 # running `prune` afterwards.
 #
@@ -30,22 +30,22 @@
 # `rm -rf public`). Two checks, because neither alone is enough:
 #   1. marker `<template>/.base-path-build`, written by scripts/deploy-preview.sh --
 #      instant, and catches a tree whose `public/` was already wiped;
-#   2. grep of the template's dx `public/` HTML for quoted `/shadcn-dioxus/` (or legacy `/dioxus-components/`) URLs --
+#   2. grep of the template's dx `public/` HTML for quoted `/shadcn-dioxus/` (or `/dioxus-components/`) URLs --
 #      authoritative on the actual output, catches templates made by hand.
 # Defaults: root $LANE_TARGET_ROOT or /home/user/tgt, template $LANE_TARGET_TEMPLATE or <root>/template.
 #
 # Warm RELEASE trees (row 324). A cold release build is ~22-50 min (700 crates, lto); with the dependencies warm only
-# the two workspace crates rebuild (~3-5 min). The 2026-10-20 batch-A validation build was cold because the one
-# warm release tree was the deploy's, carried `.base-path-build`, and the check above (rightly) refused it. So there
+# the two workspace crates rebuild (~14 min, measured below). One warm release tree cannot serve both: the deploy's carries
+# `.base-path-build`, and the check above (rightly) refuses it for a validation build. So there
 # are two, chosen by base path, and neither is ever built with the other's setting:
 #   <root>/release-template   NO base path -- validation builds (`create <name> --release`), sentinel `.no-base-path-only`
 #   <root>/release            base path `shadcn-dioxus` -- the deploy (scripts/deploy-preview.sh builds in it by default;
 #                             `create <name> --release --base-path shadcn-dioxus` copies it)
 # `warm-release [--base-path P]` is the REFRESH STEP: an in-place, queued (class lane) `build-ssg.sh release` of THIS
-# worktree into the matching tree: the whole cold build the first time (measured 2026-10-21: 1,309 s), and afterwards a
-# build in which only the workspace crates recompile (measured 864 s: `preview`, 410 s server + 267 s client, and
-# `primitives` are fat-LTO single-codegen-unit crates, so the saving over cold is ~7 min, not the 3-5 min total
-# first hoped for). What the warm tree holds is the DEPENDENCY crates, which change only with Cargo.lock, the
+# worktree into the matching tree: the whole cold build the first time (measured: 1,309 s), and afterwards a
+# build in which only the workspace crates recompile (measured: 864 s; `preview`, 410 s server + 267 s client, and
+# `primitives` are fat-LTO single-codegen-unit crates, so the saving over cold is ~7 min).
+# What the warm tree holds is the DEPENDENCY crates, which change only with Cargo.lock, the
 # toolchain or dx: so the refresh is only needed when Cargo.lock's hash differs from `.cargo-lock-sha` recorded in the tree
 # (`warm-release` says so and skips otherwise; --force builds anyway). Re-running it after every deploy would rebuild
 # the workspace crates that every validation build rebuilds anyway. The deploy itself refreshes `release`. `prune` never

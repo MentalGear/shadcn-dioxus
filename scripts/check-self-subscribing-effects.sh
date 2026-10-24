@@ -12,23 +12,15 @@
 # signal it read changes, so this can re-trigger the effect from its own
 # write -- forever, if nothing else in that same run breaks the cycle.
 #
-# The 2026-09-18 incident this guards against (dev-docs/backlog.md row
-# 73): `DrawerContent`'s drag-continuation `use_effect` read
-# `raw_offset()` with tracked syntax and then wrote a new value to that
-# same signal via `.set()` on every pointermove while dragging -- nothing
-# on that path ever broke the cycle, so the effect re-invoked itself
-# synchronously from the first `pointerdown`, wedging the tab's whole main
-# thread (not just the component -- a `page.evaluate` in the same tab hung
-# too). Fixed (commit b7037cb, cherry-picked from 896e603; the original
-# defect shipped in cdb073b) by reading `raw_offset` through `.peek()`
-# instead of tracked syntax for both of the effect's self-referential
-# reads, matching the read-through-`.peek()`-write-through-`.set()`
-# discipline `lib.rs`'s `use_animated_open` already documents for its own
-# generation counter. Proven below: this script fails against a scratch
-# copy of cdb073b's drawer.rs (on `raw_offset`, plus two more identifiers
-# that turn out to be pre-existing and bounded -- see "Known HEAD
-# findings" below) and no longer flags `raw_offset` against HEAD's fixed
-# version.
+# The shape this guards against (dev-docs/backlog.md row 73): an effect that reads a signal with
+# tracked syntax and writes a new value to that same signal on every pointermove while dragging
+# (`DrawerContent`'s drag-continuation `use_effect` read `raw_offset()`) with nothing on the path
+# to break the cycle re-invokes itself synchronously from the first `pointerdown`, wedging the
+# tab's whole main thread (not just the component -- a `page.evaluate` in the same tab hangs
+# too). The cure is to read through `.peek()` instead of tracked syntax, the
+# read-through-`.peek()`-write-through-`.set()` discipline `lib.rs`'s `use_animated_open`
+# documents for its own generation counter. Row 73 has the full account: this script flags a
+# `raw_offset`-shaped effect and does not flag the `.peek()` form `drawer.rs` uses.
 #
 # What this catches, per `use_effect(move || { ... })` closure body: any
 # identifier read with tracked syntax -- a bare `x()` call (empty
@@ -42,7 +34,7 @@
 #
 # Two categories are excluded by construction, not by per-name allowlist,
 # because they are provably not the mechanism this script guards against
-# (verified by reading dioxus-signals 0.7.9's own source, not assumed):
+# (per dioxus-signals 0.7.9's own source):
 #
 #   1. `CopyValue<T>` identifiers. `copy_value.rs` implements `Readable`
 #      for `CopyValue` with `fn subscribers(&self) -> Subscribers {
@@ -52,8 +44,8 @@
 #      to one afterward cannot re-trigger anything. Declarations of the
 #      shape `let (mut )?NAME = use_hook(|| CopyValue::new(...))` are
 #      found first (COPY_VALUE_DECL_RE, a whole-file pass) and every
-#      name it finds is excluded everywhere in that file. HEAD has three
-#      real examples this exclusion was written against: `main.rs`'s
+#      name it finds is excluded everywhere in that file. Three
+#      real examples in the tree: `main.rs`'s
 #      `initial_route`, `color_picker.rs`'s `granular_value`, and
 #      `lib.rs`'s `cleanup` (the last one doubly so -- its apparent
 #      "read" is actually a *different*, shadowed local of the same name
@@ -68,8 +60,8 @@
 #      effect closure's own synchronous execution, so nothing a spawned
 #      task reads or writes later -- possibly milliseconds or seconds
 #      after the effect itself already returned -- is attributed to that
-#      effect's subscriptions at all. HEAD's `BlockPlayer` demo
-#      (`main.rs`) is the real example this was written against: a
+#      effect's subscriptions at all. The `BlockPlayer` demo
+#      (`main.rs`) is the real example: a
 #      `progress_seconds` signal is read and `.set()` inside a `spawn`ed
 #      polling loop, textually nested inside a `use_effect` whose own
 #      synchronous body reads no signals (so it only ever runs once, on
@@ -78,22 +70,21 @@
 #      found inside the effect's span has its own matching-paren span
 #      computed and excluded from the read/write scan the same way.
 #
-# A SECOND shape, found live on 2026-10-05 (dev-docs/backlog.md row 83's
-# follow-up -- the same DateRangePicker page hang, a different closure of
-# the cycle): an effect that CALLS a method whose body reads one of the
+# A SECOND shape (dev-docs/backlog.md row 83, the DateRangePicker page
+# hang, a different closure of the cycle): an effect that CALLS a method whose body reads one of the
 # method's own fields with tracked syntax silently subscribes the effect to
 # that field -- the read happens inside the effect's reactive context even
 # though it is written in another function. `DateRangePickerContext::
-# set_range` was the case: a guarded setter ("only report if it differs")
-# that compared against the controlled `selected_range` prop with
+# set_range` is the case: a guarded setter ("only report if it differs")
+# that compares against the controlled `selected_range` prop with
 # `(self.date_range)()`, called from `DateRangePickerInputValue`'s sync-up
-# effect. Every change the PARENT made to the range then woke that effect
-# too; when it ran before the sync-down effect had copied the new range
-# into the segment signals it reported the PREVIOUS range back up, the
-# parent applied it, and the two ranges alternated forever (a wasm loop
-# that never yielded -- the second range completed in one page froze the
-# tab; wake order is hash-ordered, so it reproduced on some builds and some
-# opens and not on others, which is why no single run could clear it).
+# effect. Every change the PARENT makes to the range then wakes that effect
+# too; when it runs before the sync-down effect has copied the new range
+# into the segment signals it reports the PREVIOUS range back up, the
+# parent applies it, and the two ranges alternate forever (a wasm loop
+# that never yields and freezes the tab; wake order is hash-ordered, so it
+# reproduces on some builds and some opens and not on others, which is why
+# no single run can clear it).
 # Neither the effect's own tracked-read-then-write set (it writes nothing
 # itself -- the write is the callback) nor row 83's equality guards see it.
 # So the second check is by construction, not by instance: for every `fn`
@@ -102,8 +93,8 @@
 # method that also EMITS (`.call(`/`.set(`/`.write(`: a setter, not a getter
 # an effect legitimately derives from) and flag every `use_effect` in the
 # same file that calls a method of that name.
-# The fix is always the same one `DatePickerContext::set_date` already
-# had: read the compared value through `.peek()` (a setter exists to
+# The fix is always the same one `DatePickerContext::set_date` applies:
+# read the compared value through `.peek()` (a setter exists to
 # EMIT, never to subscribe its caller). Name-based and per-file, so it can
 # over-flag two types that share a method name; resolve by peeking in the
 # method, or (reviewed, by the file's owner) by `TRACKED_CALLEE_ALLOWED`.
@@ -111,48 +102,38 @@
 # Everything else stays a syntactic, conservative check: it does not
 # attempt to prove a given read+write pair on a real `Signal` is
 # REACHABLE on the same run, or that the re-trigger it causes is
-# unbounded rather than self-terminating (see "Known HEAD findings"
+# unbounded rather than self-terminating (see "Reviewed bounded cases"
 # below for two real, analyzed examples of the latter). That pattern is
 # inherently fragile even when a particular instance happens to
 # terminate today, so it is worth surfacing on sight rather than only
 # once it has already hung a page.
 #
-# Known HEAD findings, resolved during batch 2 integration: four real
-# `Signal`s, in three files, were read with tracked syntax and later
-# written in the same `use_effect`, and none of them was ever the row-73
-# shape (an unconditional write on every firing with nothing to ever
-# break the cycle) -- each was analyzed as bounded before deciding what,
-# if anything, to do about it:
+# Reviewed bounded cases: four real `Signal`s, in three files, are read
+# with tracked syntax and written in the same `use_effect` shape, and none
+# is the row-73 shape (an unconditional write on every firing with nothing
+# to break the cycle). Each is bounded and resolved by
+# construction, so the allowlist stays empty:
 #   - `drawer.rs`'s `DrawerContent` drag effect: `dragging` and
-#     `active_pointer_id` were both read at the top of the closure and
-#     only written (to `false`/`None`) behind the same
-#     `if !dragging() { return; }` guard they both sit under, so the one
-#     extra re-run either write schedules reads `dragging()` as `false`
-#     and returns immediately without reading or writing anything else.
-#     `active_pointer_id` was fixed by construction (`.peek()` -- nothing
-#     needs it to wake the effect; a pointer id change is always
-#     accompanied by a `dragging` transition). `dragging` itself IS this
-#     effect's wake switch (pointerdown sets it, pointerup/cancel clears
-#     it) and had to stay tracked to do that job, so it was allowlisted
-#     instead of peeked. The entry was retired on 2026-10-05: this check
-#     passes without it (the drawer's drag effect no longer reads and writes
-#     `dragging` in one closure), so the allowlist is empty again.
+#     `active_pointer_id` are only written (to `false`/`None`) behind the
+#     same `if !dragging() { return; }` guard they both sit under, so the
+#     one extra re-run either write schedules reads `dragging()` as `false`
+#     and returns immediately. `active_pointer_id` is read through
+#     `.peek()` (nothing needs it to wake the effect; a pointer id change
+#     always comes with a `dragging` transition), and the effect does not
+#     read and write `dragging` in one closure.
 #   - `color_picker/component.rs`'s two hex/hue sync effects (`value`,
-#     `current_hue`) were each read only to guard a write against
-#     clobbering already-correct or mid-edit state, with the effect's
-#     real input (the surrounding `ColorPickerContext`'s color) already
-#     tracked separately -- fixed by construction (`.peek()` for the
-#     guard read). `value`'s effect also had a field-went-empty recovery
-#     riding on the same tracked read; that one sub-case genuinely needed
-#     a fresh trigger when the field emptied, which `.peek()` cannot
-#     provide, so it moved to the `oninput` handler that actually knows
-#     the field just emptied instead.
-#   - `collection.rs`'s `use_deferred_collection_focus`: `placement` was
-#     read then written to `None` behind an `else`/`if` shape -- fixed by
-#     construction (`.peek()`), since every caller sets `placement`
-#     before it flips this effect's real trigger (`active`) from false to
-#     true, so `active()` alone already re-runs it for every fresh
-#     request the crate's `open_with_focus`-family call sites make today.
+#     `current_hue`): each is read only to guard a write against clobbering
+#     already-correct or mid-edit state, with the effect's real input (the
+#     surrounding `ColorPickerContext`'s color) tracked separately, so the
+#     guard read is `.peek()`. The field-went-empty recovery needs a fresh
+#     trigger that `.peek()` cannot provide, so it lives in the `oninput`
+#     handler that knows the field just emptied.
+#   - `collection.rs`'s `use_deferred_collection_focus`: `placement` is
+#     read, then written to `None`, behind an `else`/`if` shape, through
+#     `.peek()`, since every caller sets `placement` before it flips this
+#     effect's real trigger (`active`) from false to true, so `active()`
+#     alone re-runs it for every fresh request the crate's
+#     `open_with_focus`-family call sites make.
 #
 # Why python3, not grep/bash regex: same reasoning as
 # check-hooks-in-closures.sh -- finding "the body of this use_effect"
@@ -181,7 +162,7 @@ from pathlib import Path
 
 # (identifier, containing-file-suffix) pairs confirmed, by hand, to
 # re-trigger at most once and then go quiescent -- see the header
-# comment's "Known HEAD findings". Empty by default: populating this is a
+# comment's "Reviewed bounded cases". Empty by default: populating this is a
 # deliberate, reviewed decision (by whoever owns the file in question),
 # not something this script does on its own initiative.
 NON_SELF_TERMINATING: set[tuple[str, str]] = set()

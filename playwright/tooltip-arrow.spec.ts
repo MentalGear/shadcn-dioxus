@@ -3,8 +3,8 @@ import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 import { measureAtRest, readAtRest } from "./animations";
 
-// The tooltip's arrow points at the trigger's centre for every side x align (the bug: `::after { left: 50% }`
-// drew it at the bubble's centre, so a start-aligned bubble pointed at empty space). The arrow is a pseudo
+// The tooltip's arrow points at the trigger's centre for every side x align (a fixed `::after { left: 50% }`
+// would draw it at the bubble's centre, so a start-aligned bubble would point at empty space). The arrow is a pseudo
 // element, so its centre is read from its computed `left`/`top` (an absolutely positioned box, resolved to px)
 // plus the bubble's own rect, at rest.
 const CASES = [

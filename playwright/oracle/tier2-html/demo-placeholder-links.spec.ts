@@ -7,12 +7,12 @@
  *   https://html.spec.whatwg.org/multipage/browsing-the-web.html#the-indicated-part-of-the-document
  * Following `<a href="#">` navigates to the fragment "" of the current URL: the URL gains a trailing `#`
  * (a new history entry) and, because the empty fragment indicates the top of the document, the viewport is
- * scrolled to the top -- smoothly, under the site's global `scroll-behavior: smooth`.
+ * scrolled to the top (smoothly wherever `scroll-behavior: smooth` applies).
  *
- * WHAT THIS GUARDS (audit 2026-10-05, item 6): 17 demos use `href: "#"` as a stand-in for a destination
- * (Pagination x5, Item x3, Breadcrumb x2, Marker x2, Bubble, Attachment, Card, and the top_layer fixture
- * x2). Measured on `/component/pagination/`: a click changed the URL to `...?#` and `scrollY` 120 -> 0.
- * The same class as the submit buttons `DemoForm` closed (`demo-forms-no-navigation.spec.ts`): a demo must
+ * WHAT THIS GUARDS (backlog row 190): demos use `href: "#"` as a stand-in for a destination
+ * (Pagination, Item, Breadcrumb, Marker, Bubble, Attachment, Card, and the top_layer fixture). Unguarded, a
+ * click on `/component/pagination/` changes the URL to `...?#` and `scrollY` 120 -> 0.
+ * The same class as the submit buttons `DemoForm` covers (`demo-forms-no-navigation.spec.ts`): a demo must
  * not be able to move the page.
  *
  * The construction is ONE capture-phase click listener in `preview/index.html`'s existing delegated

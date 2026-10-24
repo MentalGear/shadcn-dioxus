@@ -51,9 +51,9 @@ test('test', async ({ page }) => {
 
 test('drag survives pointercancel (iPad system gesture)', async ({ page }) => {
   // iPad can fire `pointercancel` (without a following `pointerup`) when an OS
-  // gesture interrupts a drag. Regression: the slider didn't listen for
-  // `pointercancel`, so its internal "active pointer" state stayed set and
-  // every subsequent tap was ignored.
+  // gesture interrupts a drag. The slider listens for
+  // `pointercancel`; otherwise its internal "active pointer" state would stay set and
+  // every subsequent tap would be ignored.
   await gotoHydrated(page, `${BASE_URL}/component/slider/`, { timeout: 20 * 60 * 1000 });
   const slider = sliderGroup(page, 'Demo Slider');
   const thumb = page.getByRole('slider', { name: 'Demo Slider' });
@@ -114,10 +114,10 @@ test('drag survives pointercancel (iPad system gesture)', async ({ page }) => {
 
 test('drag ignores pageX/clientX mismatch (iPad pinch-zoom analog)', async ({ page }) => {
   // On iPad pinch-zoomed, `e.pageX` and `e.clientX` differ by the visual
-  // viewport offset. The slider's onpointerdown stored client coords in the
-  // global POINTERS table while the window pointermove listener wrote pageX —
-  // so the very first pointermove produced a delta equal to that offset and
-  // jammed the value at 100%. Reproduce by forging pageX on synthetic events.
+  // viewport offset. The pointerdown and the window pointermove listener must record the same
+  // kind of coordinate: a slider that stored client coords on pointerdown but wrote pageX on
+  // pointermove would produce a first-move delta equal to that offset and
+  // jam the value at 100%. Reproduced by forging pageX on synthetic events.
   await gotoHydrated(page, `${BASE_URL}/component/slider/`, { timeout: 20 * 60 * 1000 });
 
   const slider = sliderGroup(page, 'Demo Slider');
@@ -181,7 +181,7 @@ test('drag ignores pageX/clientX mismatch (iPad pinch-zoom analog)', async ({ pa
     window.dispatchEvent(evt);
   }, { x, y, pageOffset, pointerId });
 
-  // Without the fix the value jumps to ~100. With consistent coords it stays.
+  // With inconsistent coords the value jumps to ~100; with consistent coords it stays.
   const after = await thumb.getAttribute('aria-valuenow');
   expect(parseInt(after!, 10)).toBeLessThan(50);
 });
@@ -332,10 +332,10 @@ test('range collided thumbs drag left from just below collision', async ({ page 
 });
 
 test('range dragged thumb keeps its identity past the other thumb', async ({ page }) => {
-  // Regression for the collision leapfrog bug: set_thumb sorted the pair via
-  // ordered_range, so dragging thumb 0 past thumb 1 silently reassigned which
-  // thumb was "start" and which was "end" -- the thumb under the user's
-  // pointer swapped identity mid-drag and the untouched thumb visibly jumped.
+  // Guard against the collision leapfrog: `set_thumb` must not sort the pair via
+  // `ordered_range`, which would silently reassign which thumb is "start" and which is "end"
+  // when dragging thumb 0 past thumb 1 -- the thumb under the user's pointer swaps identity
+  // mid-drag and the untouched thumb visibly jumps.
   await gotoHydrated(page, `${BASE_URL}/component/block/?name=slider&variant=range&`, { timeout: 20 * 60 * 1000 });
   const thumbs = page.getByRole('slider', { name: 'Range Slider' });
   const t0 = thumbs.nth(0);
@@ -364,16 +364,6 @@ test('range dragged thumb keeps its identity past the other thumb', async ({ pag
 });
 
 test.describe('Axe automated scan', () => {
-  // Slider has no overlay/expand interaction -- loaded (default value) and
-  // a value changed via keyboard are the two meaningful states.
-  test('loaded has no automatically detectable a11y issues', async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/slider/`, { timeout: 20 * 60 * 1000 });
-    // Wait for render before scanning -- see input.spec.ts's identical
-    // comment for why (avoids a false pre-hydration "no main"/"no h1").
-    await expect(page.getByRole('slider', { name: 'Demo Slider' })).toBeVisible();
-    await expectNoAxeViolations(page, 'slider: loaded', { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-
   test('value changed has no automatically detectable a11y issues', async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/slider/`, { timeout: 20 * 60 * 1000 });
     const thumb = page.getByRole('slider', { name: 'Demo Slider' });

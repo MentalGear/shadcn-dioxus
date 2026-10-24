@@ -1,8 +1,8 @@
 /**
- * The component page's docs accordion is the library's own `Accordion` (owner 2026-10-19: "docs accordion is
- * cut off on side, and not animated. Does it use our own accordion?"). The native `<details>` it replaces
- * drew its chevron past the divider and never animated; `scripts/check-docs-own-components.sh` keeps native
- * disclosures out of the docs chrome, and this spec is the browser half:
+ * The component page's docs accordion is the library's own `Accordion` (the docs are built from the
+ * library's own components; a native `<details>` draws its chevron past the divider and never animates).
+ * `scripts/check-docs-own-components.sh` keeps native disclosures out of the docs chrome, and this spec is the
+ * browser half:
  *
  *  1. an item animates open: the content's height passes through intermediate values over time;
  *  2. every item's chevron stays inside the item's border box (nothing is cut off at the side);

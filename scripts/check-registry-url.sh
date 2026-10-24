@@ -2,13 +2,20 @@
 #
 # check-registry-url.sh
 #
+# The registry's own git URL is one string, `REGISTRY_GIT_URL` in `preview/src/main.rs`: every `component.json`
+# `componentDependencies` entry is a `{name, git}` object with that URL and every
+# `dioxus-primitives`/`dioxus-attributes` cargo dependency names it, because dx resolves a bare-name dependency in its
+# default upstream registry even under `--git` and keys its clone cache on the exact URL text; the README install
+# commands and the starter template (its `Dioxus.toml` registry and its `dioxus-primitives` dependency) use the same
+# string.
+#
 # This repository is a `dx components` registry, and `dx components add <name>` reads dx's DEFAULT
 # registry (upstream `DioxusLabs/components`) unless told otherwise. Two things in a manifest silently
 # send an install back to upstream even when the user passed `--git <this repo>` (dioxus-cli 0.7.9,
 # src/cli/component.rs and dioxus-component-manifest):
 #   1. a bare-name `componentDependencies` entry (`"calendar"`) is resolved in the DEFAULT registry, so
-#      `dx components add date_picker --git <us>` installed upstream's calendar/popover next to our
-#      date_picker and then died with "Cannot copy global asset ... outside of the component registry".
+#      `dx components add date_picker --git <us>` installs upstream's calendar/popover next to our
+#      date_picker and then dies with "Cannot copy global asset ... outside of the component registry".
 #      Only the object form `{ "name": "calendar", "git": "<url>" }` resolves from the named repo;
 #   2. a `cargoDependencies` entry for `dioxus-primitives` with another `git` URL puts upstream's crate in
 #      the user's Cargo.toml, not the primitives these styled components were written against.

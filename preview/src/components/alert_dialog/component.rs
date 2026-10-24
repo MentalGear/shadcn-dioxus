@@ -28,7 +28,7 @@ impl AlertDialogSize {
 }
 
 /// The look of an [`AlertDialogAction`]: the confirm button of a destructive prompt (the
-/// default, this component's long-standing fill) or the primary button of an ordinary one.
+/// default fill) or the primary button of an ordinary one.
 #[derive(Copy, Clone, PartialEq, Eq, Default, Debug)]
 #[non_exhaustive]
 pub enum AlertDialogActionVariant {

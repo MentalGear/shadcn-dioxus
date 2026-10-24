@@ -2,7 +2,7 @@ import { test, expect } from "./fixtures";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
-/** Row 155 g8 follow-up: `caption_layout` on DatePicker reaches the popover's calendar (variant=date_of_birth). */
+/** Backlog row 155: `caption_layout` on DatePicker reaches the popover's calendar (variant=date_of_birth). */
 test.describe("DatePicker caption_layout pass-through (variant=date_of_birth)", () => {
   const group = (page: any, name: string) => page.locator(`[data-caption-layout="${name}"]`);
 
@@ -36,7 +36,7 @@ test.describe("DatePicker caption_layout pass-through (variant=date_of_birth)", 
     await expect(years.getByRole("combobox", { name: "Month" })).toHaveCount(0);
   });
 
-  test("the default (main variant) is still a plain label", async ({ page }) => {
+  test("the default (main variant) is a plain label", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/block/?name=date_picker&variant=main&`, { timeout: 20 * 60 * 1000 });
     await page.getByRole("button", { name: "Show Calendar" }).first().click();
     await expect(page.locator(".dx-calendar").first()).toBeVisible({ timeout: 30000 });

@@ -5,7 +5,7 @@ use crate::components::kbd::{Kbd, KbdGroup};
 use super::super::component::{Command, CommandDialog, CommandEmpty, CommandGroup, CommandGroupLabel, CommandItem};
 use dioxus::prelude::*;
 
-// docs/backlog.md row 32: no `#[css_module]` of its own here, and no
+// dev-docs/backlog.md row 32: no `#[css_module]` of its own here, and no
 // `document::Link` needed either -- the `CommandDialog`/`Command` themed
 // wrappers below already carry their own `document::Link` for
 // `style.css`, deduplicated by `document::Link`'s own `(href, rel)`

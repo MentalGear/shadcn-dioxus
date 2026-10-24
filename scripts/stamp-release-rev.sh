@@ -6,7 +6,7 @@
 # commit of this repository (dev-docs/backlog.md row 217, dependency audit A4). Without it
 # `cargo add dioxus-primitives --git <url>` resolves to the default branch's HEAD at the moment of the user's first
 # add, while the component sources come from whichever registry checkout dx cached: after any later primitives
-# change the two skew (a component calling an API its primitive no longer has, or the reverse).
+# change the two skew (a component calling an API its primitive lacks, or the reverse).
 # A commit cannot contain its own hash, so this is a step of the release procedure, not a hand edit:
 #
 #   1. land the release content on the release branch (R = the commit whose primitives users should get);

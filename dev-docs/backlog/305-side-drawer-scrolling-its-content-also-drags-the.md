@@ -1,10 +1,10 @@
 ---
 id: 305
 title: "Side drawer: scrolling its content also drags the drawer sideways (iOS)"
-status: "BACKLOG (owner report 2026-10-19, iOS device)"
+status: "WAITING ON OWNER: iPhone re-test of the side drawer (scroll its content, the drawer must not drag…"
 size: "S–M"
 area: primitives
-updated: 2026-10-20
+updated: 2026-10-24
 ---
 
 # Row 305: Side drawer: scrolling its content also drags the drawer sideways (iOS)
@@ -15,7 +15,7 @@ On iOS, scrolling the content of a left or right drawer also moves the drawer si
 
 ## Status / trigger
 
-**BACKLOG (owner report 2026-10-19, iOS device)**
+**WAITING ON OWNER: iPhone re-test of the side drawer (scroll its content, the drawer must not drag sideways), together with rows 28 and 30.** Implemented 2026-10-20 (lane b-accdrawer): the drag is pending until the pointer commits to the drag axis (`GESTURE_JS`, `primitives/src/drawer.rs:549`), spec `playwright/drawer-axis-lock.spec.ts`.
 
 ## Size
 

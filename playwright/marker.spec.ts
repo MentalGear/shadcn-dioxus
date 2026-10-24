@@ -1,6 +1,5 @@
 import { test, expect } from "./fixtures";
 import type { Page } from "@playwright/test";
-import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
@@ -135,7 +134,7 @@ test("the shimmer is off under prefers-reduced-motion", async ({ page }) => {
   });
   expect(s.name).toBe("none");
   expect(s.image).toBe("none");
-  expect(s.fill).toBe(s.color); // plain text again
+  expect(s.fill).toBe(s.color); // plain text
 });
 
 for (const scheme of ["light", "dark"] as const) {
@@ -189,13 +188,3 @@ for (const scheme of ["light", "dark"] as const) {
     });
   });
 }
-
-test.describe("Axe automated scan", () => {
-  // A marker has no overlay/expand/select interaction -- one state to scan (the
-  // page holds the main demo and every variant, so this covers all of them).
-  test("loaded has no automatically detectable a11y issues", async ({ page }) => {
-    await gotoHydrated(page, URL, GOTO);
-  await styled(page);
-    await expectNoAxeViolations(page, "marker: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-});

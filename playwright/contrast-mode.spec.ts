@@ -149,7 +149,7 @@ test.describe("muted-foreground (P1)", () => {
     expect(fmt(bad).slice(0, 12), `${bad.length}/${rows.length} pairs under ${AA}:1`).toEqual([]);
   });
 
-  test("wcag, dark: unchanged, still >= 4.5:1 everywhere", async ({ page }) => {
+  test("wcag, dark: >= 4.5:1 everywhere", async ({ page }) => {
     const rows = await sweep(page, "dark", "wcag");
     const bad = rows.filter((r) => r.ratio < AA);
     expect(fmt(bad).slice(0, 12)).toEqual([]);
@@ -428,7 +428,7 @@ test("the docs page has a Contrast mode section", async ({ page }) => {
 // ---------------------------------------------------------------------------------------------------------
 // Fixed for everyone: P2 (error Toast), P4 (success), P5 (docs blue). Same in both settings of the switch.
 // ---------------------------------------------------------------------------------------------------------
-test.describe("fixed for everyone (P2, P4, P5)", () => {
+test.describe("the same in both contrast settings (P2, P4, P5)", () => {
   test.beforeEach(async ({ page }) => open(page, "/component/toast/"));
 
   for (const contrast of [null, "wcag"] as const) {

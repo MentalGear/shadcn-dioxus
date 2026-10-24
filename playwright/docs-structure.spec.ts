@@ -1,9 +1,9 @@
 /**
- * ORACLE: the shape of every component page's prose (backlog rows 232, 233, 236; owner 2026-10-19).
+ * ORACLE: the shape of every component page's prose (backlog rows 232, 233, 236).
  *
- * The class this closes: a component page used to explain installation up to five times (header commands, a
- * one-sentence section, "Manual installation files", the Code tab, docs.md) and put a wall of docs.md prose
- * under every header. The page is now ONE of the library's own `Accordion`s (`.dx-docs-accordion`), all items
+ * The class this closes: a component page that explains installation up to five times (header commands, a
+ * one-sentence section, "Manual installation files", the Code tab, docs.md) and puts a wall of docs.md prose
+ * under every header. The page is ONE of the library's own `Accordion`s (`.dx-docs-accordion`), all items
  * closed: "Installation" (written in `ComponentHighlight`), then every docs.md `##` section (data from
  * `build.rs`, `render_docs_sections`, so a new section is collapsed by construction), and a demo's own notes
  * are a `Collapsible` under the demo (`variants/<variant>/notes.md`). This spec reads the REAL pages for every
@@ -12,7 +12,7 @@
  *  1. exactly ONE Installation section per page, holding exactly one install command (`shadcn-dioxus add
  *     <name>`), and no `dx components add` outside the Code tab (the dx alternative lives once, on /docs);
  *  2. every item is closed on load, "Manual installation files" included (it stays closed even after its
- *     parent Installation is opened: owner, row 236), and every section's `h2` wraps its trigger so the
+ *     parent Installation is opened, row 236), and every section's `h2` wraps its trigger so the
  *     heading outline and axe `heading-order` keep working;
  *  3. no text-only "Examples" section survives inside the docs; a demo's prose is a closed "About this
  *     example" Collapsible under that demo;

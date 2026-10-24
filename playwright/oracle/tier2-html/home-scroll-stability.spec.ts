@@ -10,13 +10,12 @@
  *   https://www.w3.org/TR/css-contain-2/#content-visibility
  *   https://www.w3.org/TR/css-sizing-4/#intrinsic-size-override
  *
- * The defect (row 174, cause 4): `.dx-component-card` estimated `auto 380px` while adding 3rem of padding
- * top and bottom, i.e. 476 px against a measured mean of 384 px (median 256 px). 58 of 75 cards were more
- * than 100 px off, so the document shrank 38.5k -> 32.0k px (-17%) during the first scroll: the scrollbar
- * thumb jumped, 64 height steps over 30 px, the largest 1,544 px in one frame. The estimate is now the
- * measured mean less the padding (`preview/assets/main.css`, next to the card rules); this fails when the
- * first scroll changes the document height by 10% or more, which is what re-measuring is for when the
- * gallery changes.
+ * The hazard (row 174, cause 4): a card estimate that does not match its measured size (an `auto 380px`
+ * estimate plus 3rem of padding top and bottom is 476 px against a measured mean of 384 px) makes the
+ * document shrink during the first scroll as cards are measured: the scrollbar thumb jumps, with many height
+ * steps over 30 px. The estimate is the measured mean less the padding (`preview/assets/main.css`, next to the
+ * card rules); this fails when the first scroll changes the document height by 10% or more, which is what
+ * re-measuring is for when the gallery changes.
  *
  * Chromium only (it relies on Chromium's `content-visibility: auto` laying cards out at their estimate):
  *   PLAYWRIGHT_BASE_URL=http://127.0.0.1:8083 npx playwright test --config=oracle.local.config.ts \

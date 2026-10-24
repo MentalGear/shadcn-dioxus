@@ -36,10 +36,9 @@ test("test", async ({ page }) => {
   await expect(b_button).toBeFocused();
 });
 
-// HARDENING (docs/backlog.md row 89), not a reproduced defect -- see
+// HARDENING (dev-docs/backlog.md row 89) -- see
 // `toggle.spec.ts`'s identical test for the full writeup (same
-// `:where(:hover)` construction, same "already correct via source order,
-// now correct via specificity" story).
+// `:where(:hover)` construction: correct via specificity, not source order).
 for (const dark of [false, true]) {
   test(`a pressed item keeps its "on" background while hovered (${dark ? "dark" : "light"} mode)`, async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/toggle_group/${dark ? "?dark_mode=true" : ""}`);
@@ -59,15 +58,15 @@ for (const dark of [false, true]) {
     expect(await bButton.evaluate((el) => el.matches(":hover"))).toBe(true);
     const onAndHovered = await bButton.evaluate((el) => getComputedStyle(el).backgroundColor);
 
-    // The invariant the `:where()` fix makes durable (pressed keeps its own
+    // The invariant the `:where()` construction makes durable (pressed keeps its own
     // background under the pointer), not a particular colour -- the pressed
     // colour is derived from the preset-aware role tokens.
     expect(onAndHovered, `onAtRest=${onAtRest} onAndHovered=${onAndHovered}`).toBe(onAtRest);
   });
 }
 
-// The pressed background is derived from the preset-aware role tokens (it used to be the ramp step
-// `--primary-color-7`, grey under every base), so under a TINTED base it must (a) carry the tint and
+// The pressed background is derived from the preset-aware role tokens (not the ramp step
+// `--primary-color-7`, which is grey under every base), so under a TINTED base it must (a) carry the tint and
 // (b) still be three visibly different backgrounds: resting, hovered, pressed. The exhaustive base x
 // accent x mode proof is `theme-preset-contrast.spec.ts`; this keeps the same assertion next to the
 // component's own specs.
@@ -114,7 +113,7 @@ for (const dark of [false, true]) {
       expect(gap(pressed, hovered), msg).toBeGreaterThanOrEqual(GAP_PRESSED);
       expect(gap(pressed, rest), msg).toBeGreaterThanOrEqual(GAP_PRESSED);
       expect(gap(hovered, rest), msg).toBeGreaterThanOrEqual(GAP_HOVER);
-      // The tint reaches the pressed state: the old ramp step was pure grey (r == g == b) under every base.
+      // The tint reaches the pressed state: the ramp step is pure grey (r == g == b) under every base.
       expect(new Set(pressed).size, `pressed ${pressed} is neutral grey, not ${base}-tinted`).toBeGreaterThan(1);
     });
   }
@@ -233,11 +232,6 @@ test("font weight: a controlled single-select of 4rem tiles that names the chose
 });
 
 test.describe("Axe automated scan", () => {
-  test("loaded (none selected) has no automatically detectable a11y issues", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/toggle_group/`);
-    await expectNoAxeViolations(page, "toggle_group: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-
   test("an item selected has no automatically detectable a11y issues", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/toggle_group/`);
     await mainDemo(page).getByRole("button", { name: "Toggle bold", exact: true }).click();
@@ -246,7 +240,7 @@ test.describe("Axe automated scan", () => {
 });
 
 // Row 364: the pressed set is keyed by item `value`, so reordering the items or inserting one before them never
-// moves the pressed state to another button (the position-keyed `HashSet<usize>` did exactly that).
+// moves the pressed state to another button.
 test.describe("pressed state follows the item value (row 364)", () => {
   const frame = (page: Page) => frameOf(page, "reorder");
   const multi = (page: Page, v: string) => frame(page).getByRole("group", { name: "Reorderable multiple" }).getByRole("button", { name: `multi ${v}`, exact: true });

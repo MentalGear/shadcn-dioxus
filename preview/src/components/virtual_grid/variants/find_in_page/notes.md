@@ -1,0 +1,1 @@
+Experimental: a windowed data grid and a windowed gallery that keep unmounted cells' text as hidden placeholders (`text_value`). Ctrl+F for a cell that is not mounted; the browser reveals the placeholder and the grid brings the real cell in and marks it `data-find-match`.

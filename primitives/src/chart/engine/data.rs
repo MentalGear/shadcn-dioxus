@@ -4,16 +4,16 @@
 //! behind reactive signals; this module itself never touches reactivity at
 //! all.
 //!
-//! Per `dev-docs/research/chart-2026-09-19.md` §1.4, this crate's chart API
+//! Per `dev-docs/archive/research/chart-2026-09-19.md` §1.4, this crate's chart API
 //! is data-driven (`ChartConfig`/`ChartDatum` as plain props), never
 //! children-as-configuration -- Dioxus's `children: Element` gives a parent
 //! no equivalent of React's `Children.map`/`cloneElement`, so a Recharts-
 //! style `Chart { XAxis {...} Bar { data_key: "desktop" } }` that
 //! reconfigures itself from what got nested inside it cannot be built here
 //! (or in any other Rust GUI framework with the same opaque-children
-//! property). `ChartConfig`'s ordered `series` list (`super::super::config`
-//! -- not this module; see that module's own doc for why it moved out from
-//! here), not the nesting of any child component, is what determines both
+//! property). `ChartConfig`'s ordered `series` list (in `super::super::config`, outside
+//! this dioxus-free tree because `ChartSeries::icon` holds a `Callback`), not
+//! the nesting of any child component, is what determines both
 //! draw order and stacking order everywhere in this module.
 
 /// One x-axis category (e.g. a month or a day) and its value for every
@@ -29,13 +29,11 @@ pub struct ChartDatum {
     /// omitted) and as `"—"` in the hidden data table, distinct from
     /// `Some(0.0)`.
     pub values: Vec<Option<f64>>,
-    /// An optional per-datum color override. **Unused for now** -- added
-    /// (stage-2 chart round) alongside `ChartSeries::icon`
-    /// (`super::super::config`) as a reserved extension point; every mark
-    /// still colors itself from its series' `--color-<key>` regardless of
-    /// this field. Intended future use: a single-series chart (Pie/
-    /// RadialBar, most plausibly) coloring each category's own slice/arc
-    /// independently instead of every slice sharing one series color.
+    /// An optional per-datum color override: a bar, a line dot or a pie
+    /// slice for this datum takes it instead of its series'
+    /// `--color-<key>` (so a single-series chart can color each category's
+    /// own slice independently instead of every slice sharing one series
+    /// color); other marks keep the series color.
     pub color: Option<String>,
 }
 
@@ -50,17 +48,14 @@ pub enum ChartKind {
     Bar,
     /// A (possibly curved) line with no fill.
     Line,
-    /// A single ring of proportional wedges, one per datum. **Stub**:
-    /// `Chart` renders only a placeholder group and a reduced data table
-    /// for this kind today -- see `components::series::pie` and
-    /// `engine::polar` (owned by a later stage-2 lane, `s2-polar`).
+    /// A single ring of proportional wedges, one per datum -- see
+    /// `components::series::pie` and `engine::polar`.
     Pie,
-    /// A closed polygon per series across N radial (per-datum) axes.
-    /// **Stub** -- see `components::series::radar` and `engine::radar`
-    /// (`s2-radar`).
+    /// A closed polygon per series across N radial (per-datum) axes -- see
+    /// `components::series::radar` and `engine::radar`.
     Radar,
-    /// Concentric proportional arcs, one ring per series. **Stub** -- see
-    /// `components::series::radial` and `engine::polar` (`s2-polar`).
+    /// Concentric proportional arcs, one ring per series -- see
+    /// `components::series::radial` and `engine::polar`.
     RadialBar,
 }
 
@@ -81,9 +76,8 @@ impl ChartKind {
     /// Whether this kind draws on the Cartesian (band x scale + linear y
     /// scale) plot `components::layout::build` computes -- grid, axes, the
     /// cursor, and the hit-bands all only make sense for these three;
-    /// `Chart` renders the polar/radial kinds' own, much simpler, stub
-    /// markup instead (no grid/axes/cursor/hit-bands, a single placeholder
-    /// mark group, a reduced data table) until a later lane replaces it.
+    /// `Chart` hands the polar/radial kinds to their own family's `render`
+    /// instead (no Cartesian grid/axes/cursor/hit-bands).
     ///
     /// Not the same split as `ChartProps::stacked`'s own area+bar allow-
     /// list: `Line` is Cartesian too, it simply has no stacking
@@ -96,8 +90,7 @@ impl ChartKind {
     /// Whether this kind's hidden data table has one value per series per
     /// category (`engine::table::table_rows`) rather than one reduced value
     /// per category (`engine::table::table_rows_single_series`). Distinct
-    /// from [`Self::is_cartesian`] on purpose (stage-2 chart round, §4(b) of
-    /// the handoff): that method answers "does this kind draw a Cartesian
+    /// from [`Self::is_cartesian`] on purpose: that method answers "does this kind draw a Cartesian
     /// grid/axis," which happens to coincide with "does this kind hold N
     /// values per category" for Area/Bar/Line but diverges for Radar (a
     /// polar kind that still overlays N series per category, exactly like

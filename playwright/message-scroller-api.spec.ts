@@ -214,7 +214,7 @@ test.describe("input_group: block addons", () => {
     const startAddon = await box(start.locator('[data-align="block-start"]'));
     expect(startAddon.y + startAddon.height).toBeLessThanOrEqual(startInput.y + 1);
 
-    // An inline-only group is unchanged: its input and addon share a row.
+    // An inline-only group keeps its input and addon on one row.
     await expect(end.locator('[data-align="block-end"]')).toHaveCSS("order", "1");
     await expect(start.locator('[data-align="block-start"]')).toHaveCSS("order", "-1");
   });
@@ -231,7 +231,7 @@ test.describe("message_scroller: RTL", () => {
     // the same frame as the pin) and the pin's 180 ms autoscroll window has closed (`data-autoscrolling` gone).
     // Absence of `data-pending-scroll` alone is not enough: it clears in that same frame, so a `scrollTop = 0`
     // issued right after lands inside the window, where a scroll up cannot release follow mode and the end
-    // button stays inactive for good (backlog row 347). Red on main 16a20ad1 as well, 5/5 at --repeat-each=5.
+    // button stays inactive for good (backlog row 347).
     await expect(vp).toHaveAttribute("data-scrollable", /\bstart\b/);
     await expect(vp).not.toHaveAttribute("data-autoscrolling");
     const button = root.locator('[data-message-scroller-button][data-direction="end"]');

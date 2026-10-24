@@ -52,7 +52,7 @@ const componentUrl = (name: string) => `${BASE_URL}/component/${name}/`;
 const sidebarEntry = (page: Page, name: string) =>
   page.locator(`a[data-sidebar="menu-button"][href*="/component/${name}/"]:visible`);
 
-/** The homepage renders every demo (75 cards); wait until the gallery is really there. */
+/** The homepage renders every demo; wait until the gallery is really there. */
 async function openHome(page: Page) {
   await gotoHydrated(page, `${BASE_URL}/`, { timeout: 20 * 60 * 1000 });
   await expect(page.locator("article.dx-component-card")).not.toHaveCount(0, { timeout: 120_000 });

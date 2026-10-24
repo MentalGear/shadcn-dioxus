@@ -11,10 +11,15 @@
 #            cli/ dioxus-attributes/ test-harness/ .github/ exists (a `:123` line suffix is ignored; a name
 #            wrapped at a hyphen onto the next line, a placeholder (`<name>`, `*`, `{..}`, `...`) and
 #            node_modules/ preview/public/ target/ are skipped).
-# `docs/` is the DEPLOYED SITE; the project docs moved to `dev-docs/`, so `docs/backlog.md` in a comment is dead
-# (the sweep fixes those with one sed; they are most of the baseline).
+# `docs/` is the DEPLOYED SITE; the project docs are in `dev-docs/`, so `docs/backlog.md` in a comment is dead
+# (a sed fixes those; they are most of the baseline).
 #
-# Dead references that existed when the gate landed are in the shrink-only `scripts/check-comment-refs.baseline.tsv`
+# The comments read are every kind comment-scan.py extracts: CSS `/* */` blocks (a multi-line ` * ` header, a banner, a
+# sheet inside a Rust string) and the `<!-- -->`, `<script>` and `<style>` comments of `preview/index.html` included,
+# each with a dead-path self-test case. A brace that wraps repo paths, `dir/{dir/a.md,dir/b.tsv}`, is a list of paths
+# and each one is checked; a `{name}` placeholder is skipped.
+#
+# Dead references that predate the gate are in the shrink-only `scripts/check-comment-refs.baseline.tsv`
 # (`file<TAB>kind<TAB>ref`; no line numbers, so unrelated edits do not disturb it). It is a DEBT REGISTER, not an
 # approval: fix the citation. The gate fails on a dead reference not in the baseline, and on a baseline entry that
 # now resolves (run `--update-baseline` to lock the shrink in). A deliberate one carries `ref-ok: <reason>`.
@@ -25,7 +30,7 @@
 #   scripts/check-comment-refs.sh --update-baseline
 #       rewrite the baseline. Refuses to ADD an entry (shrink-only) unless the baseline does not exist yet or
 #       --allow-grow is also given (say why in the commit).
-#   scripts/check-comment-refs.sh --self-test      mutation tests (dead row, dead path in rust/css/ts/sh ...)
+#   scripts/check-comment-refs.sh --self-test      mutation tests (dead row, dead path in rust/css/html/ts/sh ...)
 # Exit status: 0 clean; 1 a new dead reference / stale baseline; 2 bad usage.
 
 set -euo pipefail

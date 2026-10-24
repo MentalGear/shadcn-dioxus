@@ -1,0 +1,1 @@
+`VirtualizeMode::Auto` (the default) below `auto_threshold` cells: every cell is mounted and server-rendered, rows are skipped by the browser in chunks of 20 (`content-visibility: auto`), and the container says `data-virtualize="content-visibility"`.

@@ -2,7 +2,7 @@
  * Non-modal drawer (backlog row 156; Base UI `modal: false`). Demo: `variants/non_modal`.
  *
  * Contract: no scrim, no inert page, no scroll lock, no focus trap -- the page behind the panel stays
- * interactive and scrollable. Escape and the close button still close it, and so does a press outside the
+ * interactive and scrollable. Escape and the close button close it, and so does a press outside the
  * panel (Base UI's default light dismissal; the primitive composes the non-modal Dialog arm).
  */
 import { test, expect } from "./fixtures";
@@ -93,7 +93,7 @@ test("Escape and the close button close it", async ({ page }) => {
   await expect(page.locator(ROOT)).toHaveCount(0);
 });
 
-test("a non-modal drawer still drags to dismiss", async ({ page }) => {
+test("a non-modal drawer drags to dismiss", async ({ page }) => {
   await open(page);
   const box = await measureAtRest(page.locator(CONTENT));
   const x = box.x + box.width / 2;

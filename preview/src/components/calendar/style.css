@@ -11,8 +11,8 @@
  * `rounded-lg border`), and `in-data-[slot=popover-content]:bg-transparent` inside a popover. The border
  * and fill stay here for a bare calendar and can be switched off by a container that already IS the card
  * -- a popover panel -- through `--dx-calendar-border` and `--dx-calendar-background` (custom properties
- * inherit, so the container sets them without this stylesheet's namespace being crossed). The old
- * `0 2px 10px` drop shadow is gone: Nova draws none.
+ * inherit, so the container sets them without this stylesheet's namespace being crossed). Nova draws no
+ * drop shadow.
  *
  * Months (`month_count > 1`) sit side by side in this flex row with a gap (`gap-4`), and WRAP onto their own
  * rows when the row is wider than the space it has -- a phone-width viewport, or a narrow card --
@@ -22,7 +22,7 @@
  * A month is ONE size, set by `--dx-calendar-cell-size` (seven fixed day columns), wherever it lands:
  * it never grows to fill the row. The container wraps and centres its rows, so a month that wrapped
  * onto a row of its own keeps the compact grid of the others and sits centred under them, instead of
- * stretching across the whole card (what `flex: 1 1 auto` plus `1fr`-style day columns did). */
+ * stretching across the whole card (what `flex: 1 1 auto` plus `1fr`-style day columns would do). */
 .dx-calendar {
     --dx-calendar-cell-size: var(--dx-space-7);
     --dx-calendar-cell-radius: var(--dx-radius-md);
@@ -92,8 +92,7 @@
 }
 
 /* rtl-physical: matches shadcn's own calendar.tsx RTL treatment exactly
-   (`apps/v4/registry/new-york-v4/ui/calendar.tsx`, radix-ui/ui commit
-   a87a63b: `rtl:**:[.rdp-button_next>svg]:rotate-180` /
+   (`apps/v4/registry/new-york-v4/ui/calendar.tsx`, radix-ui/ui@a87a63b: `rtl:**:[.rdp-button_next>svg]:rotate-180` /
    `..._previous>svg]:rotate-180`) -- button position stays physical, only
    the chevron glyph rotates in RTL (see the `[dir="rtl"] ... svg` rule
    below). Every other shadcn component checked (dialog close button,
@@ -165,12 +164,12 @@
     gap: var(--dx-space-4);
 }
 
-/* Cross-lane handoff (rtl-rust, $S/batch3/rtl-rust/css-needs.md): the day
+/* RTL: the day
    grid's own column order must mirror under RTL to stay spatially
    consistent with the Rust-side ArrowLeft/Right day-step flip
    (`horizontal_day_step`) -- `direction: rtl` reverses this table's visual
    column order without needing its markup/template rewritten. Keyed on
-   `[data-direction="rtl"]` (the attribute rtl-rust confirmed is emitted on
+   `[data-direction="rtl"]` (the attribute emitted on
    this exact grid element), not just inherited `dir`, since a table's own
    `direction` property does not otherwise affect column order unless set
    directly on it. */
@@ -225,7 +224,7 @@
 
 /* The cell's own fill reset (the UA gives a `<button>` a face colour) is zero-specificity too, and sits
    BEFORE the hover rule below: with `background: none` on the plain `.dx-calendar-grid-cell` (one class)
-   the :where() hover rule (zero) could never win, so a plain day showed no hover at all. Equal
+   the :where() hover rule (zero) could never win, so a plain day would show no hover at all. Equal
    specificity, later source order, wins; every state rule still outranks both. */
 :where(.dx-calendar-grid-cell) {
     background: none;
@@ -239,11 +238,10 @@
    exact same elements, so every plain state selector below (each at least
    one class + one attribute, i.e. (0,2,0) or higher) wins regardless of
    which rule comes first in the file. This is deliberately not the
-   alternative the task brief also allows, scoping hover with
-   `:not([data-selected])` chains: that only fixes the attributes it
-   enumerates today and silently stops covering the next one (range/today
-   were exactly the ones missed the first time around, see the removed
-   `[data-selected="true"]:hover` rule below). shadcn's own calendar.tsx
+   alternative of scoping hover with `:not([data-selected])` chains: that
+   only fixes the attributes it enumerates today and silently stops covering
+   the next one (range and today are exactly the ones such a chain misses).
+   shadcn's own calendar.tsx
    (`CalendarDayButton`) gets the same outcome a different way -- Tailwind
    always emits a plain `hover:` utility before a `data-[...]:` one in its
    generated stylesheet, so on the equal specificity Tailwind utilities
@@ -256,7 +254,7 @@
    accident), so :where() is used instead -- it needs no such invariant. */
 
 /* Nova ghost hover: `hover:bg-muted dark:hover:bg-muted/50` (the Button recipe in button/style.css). Dark
-   muted == accent now, so the old accent hover and the muted today / in-range fills were one colour; the
+   muted == accent, so an accent hover and the muted today / in-range fills would be one colour; the
    half-strength muted is the lighter step the Button's own ghost hover takes, and today's hover has a
    rule of its own (below). */
 @media (hover: hover) and (pointer: fine) {
@@ -294,7 +292,7 @@
 }
 
 .dx-calendar-grid-cell[data-month="current"][data-unavailable="true"] {
-    /* axe `color-contrast` (docs/backlog.md row 39, filed 2026-09-03): an
+    /* axe `color-contrast` (dev-docs/backlog.md row 39): an
      * unavailable day is drawn with the muted-text token at FULL opacity plus
      * the line-through, the same ink as other-month and disabled days two rules
      * up. Nova fades a disabled day (`text-muted-foreground opacity-50`); that
@@ -361,12 +359,12 @@ td:has(.dx-calendar-grid-cell[data-selection-end="true"]) {
 
 /* Why hover is :where() and the state rules are plain: the pointer is still over a day right after
    clicking it -- selecting it does not teleport the mouse -- so ":hover" and "just-selected" are the
-   common case, not an edge case (user report, calendar-state lane: "active state on selected date must
-   be over hover state, otherwise active states are not visible after click"). The generic hover rule
+   common case, not an edge case (an active state on a selected date must
+   win over the hover state, or it is not visible after a click). The generic hover rule
    above is :where()-wrapped (specificity (0,0,0)), so the plain state rules -- [data-selected="true"],
    [data-selection-start/-between/-end], the [data-today="true"] one below -- outrank it by construction
    and none of them re-declares a colour for its own `:hover` (a re-declaration whose light and dark arms
-   drift apart is how the selected pill once vanished into the plain hover square in dark mode). Only the
+   drift apart lets the selected pill vanish into the plain hover square in dark mode). Only the
    light-mode bold-on-hover nicety is worth keeping, and it is harmless at zero specificity since nothing
    else sets font-weight here. */
 @media (hover: hover) and (pointer: fine) {

@@ -2,15 +2,15 @@
 #
 # check-supply-chain-doc.sh
 #
-# `dev-docs/supply-chain/README.md` is the repository's supply-chain playbook (owner ask 2026-10-23: document the
-# dependency and repo security properly and separately, so that other projects can inspect and lift the approach).
+# `dev-docs/supply-chain/README.md` is the repository's supply-chain playbook (the dependency and repo security
+# approach is documented separately so that other projects can inspect and lift it).
 # A playbook that names controls is only worth copying while it is true, so the controls table is made a property of
 # the tree, not of a reviewer's memory. By construction this gate parses the table (`## Controls`, one row per
 # control: ID, Control, Threat it stops, Enforcing script, Config, Runs in, Status, Adopt) and fails on:
 #   1. an `enforced` or `manual` row that names no repository path, or names a script or config path (a backticked
 #      token with a `/` or a file extension; a `*` is a glob) that does not exist;
 #   2. a `planned` row whose script already exists (the row must be flipped to `enforced` or `manual`: a planned
-#      control that landed silently is documentation drift);
+#      control shipped without flipping its row is documentation drift);
 #   3. a script in SUPPLY_CHAIN_SCRIPTS (the declared set kept at the top of this file) that no row names, or one
 #      that no longer exists: a new supply-chain script cannot land without a table row, and a deleted one cannot
 #      stay documented. Adding a supply-chain script means adding it to that list and to the table in one commit;

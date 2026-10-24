@@ -1,26 +1,26 @@
 /**
  * A touch (or pen) open never focuses a field and never draws a focus ring (backlog row 226).
  *
- * Owner report (iOS, deployed 83758d5): opening a modal, alert, sheet, drawer, popover or command bar
- * by touch drew a blue ring around the panel or the trigger, and a field inside took focus as soon as
- * the panel opened, so the software keyboard rose while the panel was still being placed.
+ * The iOS failure it prevents: opening a modal, alert, sheet, drawer, popover or command bar
+ * by touch must not draw a blue ring around the panel or the trigger, and a field inside must not take focus as soon as
+ * the panel opens (the software keyboard would rise while the panel is still being placed).
  *
  * The construction under test is ONE modality writer (`primitives/src/modality.rs`, `<html
  * data-dx-modality>`), ONE open-focus policy (`dxOpenFocus`, shared by the dialog driver, the
  * non-modal Popover's show script and Command) and ONE ring rule in the theme. The keyboard half
- * (`modal-initial-focus.spec.ts`, `focus-ring.spec.ts`) is unchanged and re-proved at the bottom.
- * Since the owner decision of 2026-10-18 (Base UI's default open-focus policy) a MOUSE open behaves
+ * (`modal-initial-focus.spec.ts`, `focus-ring.spec.ts`) is also proved at the bottom.
+ * Under Base UI's default open-focus policy a MOUSE open behaves
  * like the keyboard one -- the first control, a text field included -- and only touch/pen is kept on
  * the panel; the Drawer included. Each overlay has a mouse
  * counterpart below.
  *
- * The emulation is what reproduced the report in plain Chromium: an iPhone 13 context (`hasTouch`,
+ * The emulation reproduces the iOS case in plain Chromium: an iPhone 13 context (`hasTouch`,
  * `isMobile`) plus an "iOS-like" capture `mousedown` `preventDefault` on every target that is not a
  * text field. Safari does not focus a tapped button, so `document.activeElement` stays `<body>`
- * after a tap, and THAT is what made the script-focused panel match `:focus-visible`; a plain
+ * after a tap, and THAT is what makes the script-focused panel match `:focus-visible`; a plain
  * Chromium tap focuses the button first and hides the whole class. What no Chromium run can prove
  * is Safari's own `:focus-visible` heuristic and the real software keyboard: see the manual iPhone
- * checklist in the lane report.
+ * checklist in backlog row 226.
  *
  * Overlays: the modal ones are DERIVED from `modal-consumers.ts` (dialog, alert dialog, sheet,
  * drawer, command), so a new modal cannot ship without this proof; the popup family is listed here.
@@ -89,7 +89,7 @@ const POPUPS: Overlay[] = [
 
 const OVERLAYS = [...MODALS, ...POPUPS];
 
-/** iPhone 13 emulation plus Safari's "a tapped button takes no focus" (the setup that reproduced the report). */
+/** iPhone 13 emulation plus Safari's "a tapped button takes no focus" (the iOS setup). */
 async function iosLikeContext(browser: Browser): Promise<BrowserContext> {
   const { defaultBrowserType: _unused, ...iphone } = devices["iPhone 13"];
   const context = await browser.newContext({ ...iphone });
@@ -228,8 +228,8 @@ for (const o of OVERLAYS) {
     });
 
     test("a stale focused text field is not read as a keyboard open", async ({ browser }) => {
-      // iOS keeps focus on a previously tapped text field when a button is tapped. That field always
-      // matches :focus-visible, which row 206's opener check read as "opened by keyboard".
+      // iOS keeps focus on a text field tapped earlier when a button is tapped. That field always
+      // matches :focus-visible, which an opener check on :focus-visible would read as "opened by keyboard".
       const context = await iosLikeContext(browser);
       try {
         const page = await context.newPage();
@@ -281,7 +281,7 @@ for (const o of OVERLAYS) {
       }
     });
 
-    test("the keyboard counterpart is unchanged", async ({ page }) => {
+    test("the keyboard counterpart opens the panel", async ({ page }) => {
       await open(page, o);
       const trigger = triggerOf(page, o);
       await trigger.scrollIntoViewIfNeeded();

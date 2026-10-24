@@ -64,7 +64,7 @@ pub fn Demo() -> Element {
                     .map_or(value.clone(), |(_, name)| name.to_string())
             },
             // Two-line rows with an avatar and an email are wider than the stock 200px
-            // input/list, so the email wrapped mid-word; widen both through the slot variable.
+            // input/list, so the email would wrap mid-word; widen both through the slot variable.
             style: "--dx-combobox-width: 18rem;",
             placeholder: "Assign a teammate...",
             aria_label: "Assign teammate",

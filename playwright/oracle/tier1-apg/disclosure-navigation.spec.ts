@@ -43,8 +43,8 @@
  *      "Keyboard Support"
  *
  *   (R6) The optional arrow-key/Home/End rows this library's own
- *   `navigation_menu.rs` cites and now implements, quoted verbatim from a
- *   session-local read of the pinned aria-practices checkout's *hybrid*
+ *   `navigation_menu.rs` cites and implements, quoted verbatim from the
+ *   pinned aria-practices checkout's *hybrid*
  *   example page (`content/patterns/disclosure/examples/
  *   disclosure-navigation-hybrid.html` -- not vendored under this file's
  *   own `playwright/oracle/reference/7e4034b/` checkout, which only carries
@@ -64,7 +64,7 @@
  *   top-level items..." paragraph) records exactly which parts of this
  *   table are and are not implemented, and why.
  *
- * Calibration shape (docs/conformance-harness.md, "Calibration";
+ * Calibration shape (dev-docs/conformance-harness.md, "Calibration";
  * mirrors `oracle/tier1-apg/focus-restore-reference.spec.ts`'s two-subject
  * layout): every rule below runs once against the pattern's own vendored
  * example page (`playwright/oracle/reference/7e4034b/`, loaded over
@@ -72,7 +72,7 @@
  * library's own `navigation_menu` primitive
  * (`http://127.0.0.1:8080/component/?name=navigation_menu&`). If the
  * REFERENCE subject ever goes red, the rule itself is wrong (or
- * w3c/aria-practices's own example regressed at the pinned commit) -- not
+ * w3c/aria-practices's own example is wrong at the pinned commit) -- not
  * this library. If only the LIBRARY subject goes red, `navigation_menu`
  * regressed. R1-R5 follow this two-subject shape; R6 is Library-only (its
  * source page is not part of this file's own vendored checkout -- see R6's
@@ -107,7 +107,7 @@ const LIBRARY_GOTO = { timeout: 20 * 60 * 1000 };
  * than querying the whole page. The docs site's own persistent chrome
  * (header navbar, footer) renders its own "Docs" links on every route, so
  * an unscoped `page.getByRole('link', { name: 'Docs' })` resolves to more
- * than one element (confirmed live: 3 page-wide vs. 1 once scoped here).
+ * than one element (3 page-wide vs. 1 once scoped here).
  */
 function libraryNav(page: Page) {
   return demoFrame(page).getByRole("navigation").first();

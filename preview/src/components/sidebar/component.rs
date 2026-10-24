@@ -12,15 +12,24 @@ use dioxus_primitives::js_listener::{use_js_listeners, JsListeners};
 use dioxus_primitives::merge_attributes;
 use dioxus_primitives::use_controlled;
 
-// Delivery: every exported entry point in this file renders its own `document::Link` to `style.css`
-// (dedup on (href, rel) makes that free; see checkbox/component.rs's header comment). The variant demos in
-// `variants/{main,inset,floating}/mod.rs` always render the real themed wrapper (`SidebarProvider` /
-// `Sidebar`) from this file, so that Link covers the sheet for them; each `Demo()` also links
-// `variants/demo.css`, which holds only the demo's own decorative classes (team-switcher icon/info-block/
-// chevron, `dx-sidebar-hide-on-collapse`).
+// dev-docs/backlog.md row 32: see checkbox/component.rs's
+// header comment for the full delivery-mechanism rationale (asset!() +
+// document::Link). Every exported entry point in this file gets its own
+// `document::Link` (dedup on (href, rel) makes that free), and
+// `variants/{main,inset,floating}/mod.rs` carry no `Link` for this sheet
+// because every one of those variant demo pages also renders the real themed
+// wrapper (`SidebarProvider`/`Sidebar`) from THIS file, whose `Link` already
+// covers it. Those three variant files do link a second, genuinely separate
+// sheet, `/src/components/sidebar/variants/demo.css`, for their own demo-only
+// decorative classes (team-switcher icon/info-block/chevron,
+// `dx-sidebar-hide-on-collapse`): it is NOT this component's own `style.css`
+// and nothing else links it, so each variant's `Demo()` carries its own
+// `asset!()` + `document::Link` for it.
 //
-// The screen-reader-only helper is `dx-sidebar-sr-only` (`pagination` keeps its own
-// `dx-pagination-sr-only` copy); see `style.css` and `scripts/check-dx-class-prefix.sh`.
+// Its screen-reader-only helper is `dx-sidebar-sr-only`, not a bare
+// `dx-sr-only` that `pagination/style.css` would also define byte-identically
+// (`pagination` has its own `dx-pagination-sr-only` copy) -- see `style.css`'s
+// comment on that rule and `scripts/check-dx-class-prefix.sh`.
 
 // constants
 const SIDEBAR_WIDTH: &str = "16rem";
@@ -142,7 +151,8 @@ pub fn use_is_mobile() -> Signal<bool> {
     let mut is_mobile = use_signal(|| false);
 
     // The resize listener belongs to this component: `use_js_listeners` removes it when the
-    // provider unmounts, so a second provider or a remount never leaves an orphaned listener.
+    // provider unmounts (a `window.__sidebarResizeHandler` global would let a second provider, or a
+    // remount before the drop ran, orphan the first).
     use_js_listeners(move || {
         Some(
             JsListeners::install(&format!(
@@ -247,17 +257,15 @@ pub fn Sidebar(
     let open_mobile = ctx.open_mobile;
 
     if collapsible == SidebarCollapsible::None {
-        // axe `region` (docs/backlog.md row 38): this was a plain `<div>`
-        // with no landmark role at all, so its content (menu items,
-        // footer) sat outside every landmark on the page -- surfaced both
-        // by the block-route direct-visit case (`ComponentBlockDemo`,
-        // `preview/src/main.rs`) and, independently, by the dashboard
-        // email client's own embedded sidebar (`dashboard/views/
-        // email_client/sidebar.rs`), which renders `Sidebar` directly and
-        // was never routed through the block preview at all. `role:
-        // "complementary"` (the `<aside>` landmark) fixes both call sites
-        // at their one shared source; labelled so it stays unambiguous if
-        // a future page ever has more than one.
+        // axe `region` (dev-docs/backlog.md row 38): a plain `<div>` with no
+        // landmark role would leave its content (menu items, footer) outside
+        // every landmark on the page. Both call sites render `Sidebar`
+        // directly: the block-route direct visit (`ComponentBlockDemo`,
+        // `preview/src/main.rs`) and the dashboard email client's embedded
+        // sidebar (`dashboard/views/email_client/sidebar.rs`). `role:
+        // "complementary"` (the `<aside>` landmark) covers both at their one
+        // shared source; the label keeps it unambiguous if a page has more
+        // than one.
         let base = attributes!(div {
             class: "dx-sidebar-static",
             "data-slot": "sidebar",
@@ -324,13 +332,11 @@ pub fn Sidebar(
             "data-variant": variant.as_str(),
             "data-side": side.as_str(),
             "data-slot": "sidebar",
-            // axe `region` (docs/backlog.md row 38) -- see the identical
+            // axe `region` (dev-docs/backlog.md row 38) -- see the identical
             // comment on the `collapsible == SidebarCollapsible::None`
-            // branch above; this is the desktop-expanded/-collapsed
-            // branch actually rendered by both known affected call sites
-            // (the block route's `sidebar` demo and the dashboard email
-            // client's sidebar), so it's the one that mattered for the
-            // reported gap.
+            // branch above; this desktop-expanded/-collapsed branch is the
+            // one both call sites (the block route's `sidebar` demo and the
+            // dashboard email client's sidebar) actually render.
             role: "complementary",
             aria_label: "Sidebar",
             div { class: "dx-sidebar-gap", "data-slot": "sidebar-gap" }

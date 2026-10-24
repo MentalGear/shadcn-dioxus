@@ -7,7 +7,7 @@
 # by dev-docs/dx-serve-hot-reload.md's three traps:
 #
 #   1. A bare HTTP 200 during a build only proves the process is alive --
-#      this sandbox's dev server was empirically observed serving a real
+#      this sandbox's dev server serves a real
 #      HTTP 200 whose BODY reads "Err 404 - dioxus is not currently serving
 #      a web app" while the first cold build was still in flight.
 #   2. There are two different completion strings and they mean different

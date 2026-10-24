@@ -30,27 +30,24 @@ test('test', async ({ page }) => {
 });
 
 /**
- * docs/backlog.md row 44 -- "top_layer fixture's 'Add toast' appears dead
- * on iOS 18" (device report 2026-09-03), root-caused to an unstyled toast
- * getting whatever box the engine's own popover UA-stylesheet defaults
- * happened to produce, which differs enough between engines to matter
- * (Chromium ~105x40px on-screen; WebKit's default was the unverified
- * suspect for the device report). `toBeVisible()` alone -- the only check
- * the tests above and `oracle/tier2-html/top-layer.spec.ts`'s Rule 10 ran
- * before this -- does not catch that: it only checks that an element has
+ * dev-docs/backlog.md row 44: an unstyled toast gets whatever box the engine's own popover UA-stylesheet
+ * defaults produce, which differs enough between engines to matter (Chromium ~105x40px on-screen), so a
+ * toast could appear dead on iOS. `toBeVisible()` alone -- the only check
+ * the tests above and `oracle/tier2-html/top-layer.spec.ts`'s Rule 10 make --
+ * does not catch that: it only checks that an element has
  * *some* box and no `visibility: hidden`/`display: none`, never that the
- * box is a real, on-screen size, which is exactly why this escaped.
+ * box is a real, on-screen size.
  * `boundingBox()`, asserted non-null/non-zero/within-viewport, is the
  * oracle row 44 specifies, run on both the themed demo (this file's own
  * subject) and the `top_layer` fixture
  * (`preview/src/components/top_layer/component.rs`,
- * `#toast-stack-trigger`/"Add toast") -- the fix landed at the primitive
+ * `#toast-stack-trigger`/"Add toast") -- the protection lives at the primitive
  * level (`primitives/src/toast.rs`'s `ensure_toast_base_styles`, a
  * minimal, always-injected fallback stylesheet -- see its own doc), not in
- * either page's own markup, so both lanes are worth covering independently
+ * either page's own markup, so both pages are worth covering independently
  * rather than trusting one to stand in for the other.
  */
-test.describe('Toast bounding box (docs/backlog.md row 44)', () => {
+test.describe('Toast bounding box (dev-docs/backlog.md row 44)', () => {
   async function assertToastOnScreen(page: Page) {
     const toast = page.getByRole('alertdialog').first();
     await expect(toast).toBeVisible();
@@ -58,11 +55,10 @@ test.describe('Toast bounding box (docs/backlog.md row 44)', () => {
     // toast slides in via `@keyframes dx-toast-slide-in`
     // (`preview/src/components/toast/style.css`), `translateY(100%)` -> `0`
     // over 0.2s, plus a `transform: scale()` transition. Measuring during
-    // that window reports a real but still-travelling box: caught by
-    // execution, where this assertion first read
+    // that window reports a real but still-travelling box (e.g.
     // `y=680.98 height=68.73` against a 720px-tall viewport -- ~50px below
     // the bottom edge, and a height above the settled `4rem`, both explained
-    // entirely by the in-flight transform. That is a test-timing artifact,
+    // entirely by the in-flight transform). That is a test-timing artifact,
     // not the off-screen defect this rule is for, and waiting on the
     // animations rather than on a fixed timeout keeps the distinction sharp.
     // `{ subtree: true }` because the animation is declared on the toast
@@ -113,16 +109,15 @@ test.describe('Toast bounding box (docs/backlog.md row 44)', () => {
     await assertToastOnScreen(page);
   });
 
-  // Bug 2 (docs/backlog.md row 44), separate from the bounding-box checks
+  // Row 44, second check (dev-docs/backlog.md), separate from the bounding-box checks
   // above: the fixture's own `ToastProvider { style: "position: fixed;
-  // ..." }` used to replace the primitive's own `style: "--toast-count:
+  // ..." }` must not replace the primitive's own `style: "--toast-count:
   // {length}"` outright (`merge_attributes`'s plain-`style` rule is
-  // last-wins, not concatenation), so the region's computed
-  // `--toast-count` silently went missing whenever a caller supplied its
+  // last-wins, not concatenation), or the region's computed
+  // `--toast-count` silently goes missing whenever a caller supplies its
   // own `style` -- unlike the bounding-box checks above, this one does not
-  // depend on any engine's popover-default box and is red in this
-  // sandbox's own Chromium before the fix, not just on the unavailable-here
-  // WebKit lane.
+  // depend on any engine's popover-default box and fails in this
+  // sandbox's own Chromium, not just on a WebKit lane.
   test('top_layer fixture: --toast-count survives the fixture\'s own style override', async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/top_layer/`);
     await page.locator('#toast-stack-trigger').scrollIntoViewIfNeeded();

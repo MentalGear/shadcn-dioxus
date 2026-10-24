@@ -1,10 +1,10 @@
 ---
 id: 23
 title: "preview's desktop feature lacks dioxus-primitives/web — a webview-backed desktop build would render the…"
-status: "OPEN (verification only): FIXED 2026-09-26 (3633b20), verified at feature-resolution level only…"
+status: "WAITING ON OWNER: a desktop build (needs gtk / webkit2gtk, absent in the sandbox). The fix is in…"
 size: "S"
 area: overlays
-updated: 2026-10-20
+updated: 2026-10-24
 ---
 
 # Row 23: preview's desktop feature lacks dioxus-primitives/web — a webview-backed desktop build would render the…
@@ -15,7 +15,7 @@ updated: 2026-10-20
 
 ## Status / trigger
 
-**OPEN (verification only):** **FIXED 2026-09-26 (`3633b20`)**, verified at feature-resolution level only; the one remaining check is a real desktop build being exercised (none is today) **2026-10-20 sync: checked, no desktop build exists in the repo; still unverified beyond feature resolution.**
+**WAITING ON OWNER: a desktop build (needs gtk / webkit2gtk, absent in the sandbox).** The fix is in (3633b20, `dioxus-primitives/web` in preview's `desktop` feature) and verified at feature-resolution level only; no desktop build exists in the repo and none is exercised.
 
 ## Size
 

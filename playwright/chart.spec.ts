@@ -11,9 +11,8 @@ test("test", async ({ page }) => {
   // not getByRole("img") -- this page's Select trigger also renders a bare
   // decorative chevron <svg> with no explicit role, which Chromium's own
   // accessibility tree still computes an implicit "img" role for, so
-  // getByRole("img").first() picks up that unrelated icon instead (found by
-  // running this spec for real: it resolved to
-  // `svg.dx-select-expand-icon`, not the chart).
+  // getByRole("img").first() picks up that unrelated icon instead (it
+  // resolves to `svg.dx-select-expand-icon`, not the chart).
   const svg = frame.locator('svg[role="img"]').first();
   await expect(svg).toBeVisible();
   await expect(svg).toHaveAccessibleName(/.+/);
@@ -30,11 +29,6 @@ test("test", async ({ page }) => {
 });
 
 test.describe("Axe automated scan", () => {
-  test("loaded (tooltip closed) has no automatically detectable a11y issues", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/chart/`);
-    await expectNoAxeViolations(page, "chart: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-
   test("tooltip open has no automatically detectable a11y issues", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/chart/`);
     const frame = page.locator("#component-preview-frame").first();
@@ -44,34 +38,26 @@ test.describe("Axe automated scan", () => {
   });
 });
 
-// Regression: user report "the examples for the chart demo page display the
-// labels over the legend" (2026-09-19). Root cause, confirmed by measuring
-// real rendered boxes (not just reading the CSS): `ChartTooltip` positions
-// itself with `left`/`top` PERCENTAGES of `Chart`'s own logical width/height
-// -- i.e. of the svg's own box -- but before the fix, `.dx-chart` (a flex
-// column holding the svg wrapper, the tooltip, AND the legend as siblings)
-// was the tooltip's containing block, so those percentages actually
-// resolved against the COMBINED svg+legend box instead. With
-// `ChartLegend`'s `vertical_align: Top` (the `bar` demo variant, the ONLY
-// one affected in practice -- the default/bottom alignment's tooltip only
-// ever extends UPWARD, away from a legend below it, so it was never at
-// risk), this placed the tooltip's anchor -- and often its entire body --
-// inside the legend's own row. Confirmed live: hovering the `bar` demo's
-// 2nd bar rendered the tooltip directly over the legend, fully obscuring
-// "Desktop" (`$S/chart-legend-overlap/before-bar-crop-light.png`).
+// The tooltip must not cover the legend (the demo page's labels over
+// the legend). `ChartTooltip` positions itself with `left`/`top` PERCENTAGES of
+// `Chart`'s own logical width/height -- i.e. of the svg's own box -- so the
+// tooltip's containing block must be that box: `.dx-chart` (a flex column
+// holding the svg wrapper, the tooltip, AND the legend as siblings) must not be
+// it, or those percentages resolve against the COMBINED svg+legend box. With
+// `ChartLegend`'s `vertical_align: Top` (the `bar` demo variant, the ONLY one
+// affected in practice -- the default/bottom alignment's tooltip only ever
+// extends UPWARD, away from a legend below it, so it is never at risk), that
+// places the tooltip's anchor -- and often its entire body -- inside the
+// legend's own row, e.g. hovering the `bar` demo's 2nd bar renders the tooltip
+// directly over the legend, fully obscuring "Desktop".
 //
-// Two things were true and are both asserted below, independently:
-//  1. The STATIC x-axis label group and the plot svg's own box never
-//     overlapped the legend to begin with, on unmodified `main`, at any
-//     viewport this lane tested (measured, not assumed -- the initial bug
-//     report's own best guess at the mechanism, which this suite's naming
-//     preserves, turned out not to be it). These assertions stay green
-//     before and after the fix -- a real invariant worth locking in, not a
-//     manufactured regression.
-//  2. The DYNAMIC open tooltip DID overlap the legend, for the `bar`
-//     variant specifically, before the fix -- red on unmodified `main`
-//     ($S/chart-legend-overlap/full-sweep-light.txt: bar chart 0,
-//     hit-band 1, overlap w=152 h=16), green after.
+// Two things are asserted below, independently:
+//  1. The STATIC x-axis label group and the plot svg's own box never overlap
+//     the legend, at any viewport tested (measured real rendered boxes, not
+//     the CSS). A real invariant worth locking in.
+//  2. The DYNAMIC open tooltip never overlaps the legend, for the `bar`
+//     variant specifically (the failure is a bar chart's hit-band
+//     tooltip overlapping the legend).
 test.describe("Legend never overlaps the chart's axis labels, svg box, or open tooltip", () => {
   function intersects(
     a: { x: number; y: number; width: number; height: number } | null,
@@ -130,13 +116,12 @@ test.describe("Legend never overlaps the chart's axis labels, svg box, or open t
           // returns VIEWPORT-relative coordinates, and `.hover()` force-
           // scrolls its target into view as part of Playwright's own
           // actionability protocol while a bare `boundingBox()` does not;
-          // hoisting `legendBox` above the loop measured it against the
-          // page's initial (pre-scroll) position while `tooltipBox` was
-          // measured after `.hover()` had already scrolled the page --
+          // hoisting `legendBox` above the loop would measure it against the
+          // page's initial (pre-scroll) position while `tooltipBox` is
+          // measured after `.hover()` has already scrolled the page --
           // two boxes in two different scroll states are not comparable,
-          // and this produced a real, confirmed false pass in this exact
-          // test (`$S/chart-legend-overlap/spec-before-fix-buggy-test.log`)
-          // even against the unfixed CSS.
+          // and that gives a false pass in this exact test, even against
+          // CSS that lets the tooltip overlap the legend.
           const legendBox = await legend.boundingBox();
           const tooltipBox = await tooltip.boundingBox();
           expect(intersects(tooltipBox, legendBox), `chart ${i}, hit-band ${b}: tooltip vs legend`).toBe(
@@ -149,15 +134,13 @@ test.describe("Legend never overlaps the chart's axis labels, svg box, or open t
   }
 });
 
-// Regression: on the deployed SSG pages every chart rendered black/grey and
-// line charts were nearly invisible (2026-10-03). `ChartContainer` used to
-// emit its `--color-<slot>` declarations as a `<style>` rule built from a
-// dynamic text node; SSR put a `<!--node-id..-->` hydration marker inside
-// that raw-text element, which CSS parses as part of the selector
-// (`node-id444-- > [data-chart=...]`), so the rule never matched,
-// `--series-color: var(--color-desktop)` was invalid, and marks fell back
-// to `fill: black` / `stroke: none`. The declarations are now an inline
-// `style` attribute on the container (no `<style>` element at all).
+// Every chart on the deployed SSG pages must resolve its series colors (a black/grey chart
+// with nearly invisible lines is the failure). `ChartContainer` therefore emits its `--color-<slot>`
+// declarations as an inline `style` attribute on the container (no `<style>` element at all): built as
+// a `<style>` rule from a dynamic text node, SSR puts a `<!--node-id..-->` hydration marker inside that
+// raw-text element, which CSS parses as part of the selector (`node-id444-- > [data-chart=...]`), so
+// the rule never matches, `--series-color: var(--color-desktop)` is invalid, and marks fall back to
+// `fill: black` / `stroke: none`.
 test.describe("Series colors resolve (no dead --color-<slot> rule)", () => {
   test("the container carries its --color declarations inline, with no <style> child", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/chart/`);

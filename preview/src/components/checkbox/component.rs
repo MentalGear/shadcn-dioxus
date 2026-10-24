@@ -4,23 +4,21 @@ use dioxus_primitives::checkbox::{self, CheckboxProps};
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::merge_attributes;
 
-// docs/backlog.md row 32: `#[css_module]` is gone -- this stylesheet is now
+// dev-docs/backlog.md row 32: this stylesheet is
 // plain, unhashed `dx-`-prefixed CSS (collision safety comes from
 // scripts/check-dx-class-prefix.sh instead of a hash), delivered the same
-// way `main.rs`'s `GlobalHead`/`LanguageSelect` already deliver theirs: an
-// `asset!()`-bundled path linked via `document::Link`. Unlike those two
-// call sites this one lives *inside* the themed wrapper itself so a
+// way `main.rs`'s `GlobalHead` delivers its sheets: an
+// `asset!()`-bundled path linked via `document::Link`. Unlike that
+// call site this one lives *inside* the themed wrapper itself so a
 // `shadcn-dioxus add checkbox`-copied component keeps working with zero
 // extra wiring in the consumer's own app -- `asset!()` resolves this path
-// from the crate root exactly like `#[css_module]`'s own path argument
-// used to (manganis-macro's `resolve_path`), and `shadcn-dioxus add`
+// from the crate root (manganis-macro's `resolve_path`), and `shadcn-dioxus add`
 // preserves this file's `src/components/checkbox/` location verbatim in
 // the consumer project (dioxus-cli's `components_root` defaults to
 // `<crate>/src/components`), so the path keeps resolving post-copy.
 // `document::Link` dedupes by `(href, rel)` (dioxus-document's own doc
 // comment on `LinkProps::href`), so re-rendering `Checkbox` many times on
-// one page inserts the stylesheet exactly once, the same guarantee
-// `#[css_module]`'s own `OnceLock`-guarded injection used to give.
+// one page inserts the stylesheet exactly once.
 #[component]
 pub fn Checkbox(props: CheckboxProps) -> Element {
     let base = attributes!(input { class: "dx-checkbox", "data-dx-root": "" });

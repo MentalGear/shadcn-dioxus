@@ -57,7 +57,7 @@
 }
 
 /* A pressed toggle button (the demo marks it `data-state="on"` / `aria-pressed="true"`). In dark mode
- * muted == accent, so the old `var(--dx-muted)` fill vanished under the hover/focus accent and on the
+ * muted == accent, so a `var(--dx-muted)` fill would vanish under the hover/focus accent and on the
  * #262626 bar; `--dx-accent-selected` is the theme's selected-state fill (dark: the accent pushed 15%
  * toward the ink, so it is distinct from hover by construction). Declared after the hover rule so a
  * hovered pressed button keeps the selected fill. */

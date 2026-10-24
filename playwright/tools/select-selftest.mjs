@@ -7,10 +7,10 @@
 // 2. analyzeSelector: which classes / ids a selector REQUIRES, and what it leaves unconstrained;
 // 3. css-impact.mjs on a synthetic site: page placement, shell-wide classes, closed-popup siblings, dead classes,
 //    custom properties traced to their readers, keyframes, and every fallback to the broad set;
-// 4. the title shapes of the matrix specs (select-titles.mjs) against the real spec files: a spec whose titles no longer
+// 4. the title shapes of the matrix specs (select-titles.mjs) against the real spec files: a spec whose titles do not
 //    follow the shape the table expects fails here, instead of silently keeping every test;
 // 5. the `--grep-invert` pattern select.mjs builds really drops exactly the dropped tests (escaping, anchoring);
-// 6. the real tree: `--pages` narrows the biggest matrix spec and the old behaviour comes back with --no-css-narrow.
+// 6. the real tree: `--pages` narrows the biggest matrix spec and the broad behaviour comes back with --no-css-narrow.
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -165,9 +165,6 @@ if (!QUICK) {
 // ---- 4. title shapes against the real specs ---------------------------------------------------------------------
 const comps = fs.readdirSync(path.join(ROOT, "preview/src/components"), { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name);
 const SCOPES = makeTitleScopes(comps);
-eq("titles: all-routes component", SCOPES["all-routes.spec.ts"]("accordion: axe (light)"), ["c:accordion"]);
-eq("titles: all-routes site page", SCOPES["all-routes.spec.ts"]("site-docs: no horizontal overflow at 390px (dark)"), ["site:docs"]);
-eq("titles: all-routes unrelated test is unscoped", SCOPES["all-routes.spec.ts"]("the language switcher sets <html lang>, and it survives navigating to another page"), null);
 eq("titles: first-paint client navigation names both pages", SCOPES["oracle/tier2-html/first-paint-styles.spec.ts"]("3. client-side navigation: no route is painted with late styles /docs -> /component/bar_chart/"), ["site:docs", "c:bar_chart"]);
 eq("titles: layout-stability", SCOPES["layout-stability.spec.ts"]("layout stability /component/avatar/ dark (5 widths)"), ["c:avatar"]);
 eq("titles: layout-stability home", SCOPES["layout-stability.spec.ts"]("layout stability / light (64 widths)"), ["site:home"]);
@@ -205,6 +202,17 @@ eq("titles: alias matches a squashed name", SCOPES["oracle/tier1-apg/keyboard-ma
     for (const f of files) {
       const titles = perFile.get(f) ?? [];
       const scoped = titles.filter((t) => SCOPES[f](t));
+      if (f === "all-routes.spec.ts") {
+        // The page-naming shape is read off the spec's own listed titles, never a phrase typed here: the first test whose title
+        // starts "<component>: " / "site-<page>: " must scope to exactly that page, and a test that names no route stays unscoped.
+        const compTitle = titles.find((t) => comps.some((c) => t.startsWith(`${c}: `)));
+        const siteTitle = titles.find((t) => /^site-(home|docs|demos|charts): /.test(t));
+        const pageless = titles.find((t) => !/^[\w-]+: /.test(t));
+        check("titles: all-routes has a listed component-route test", !!compTitle);
+        if (compTitle) eq("titles: all-routes component", SCOPES[f](compTitle), [`c:${compTitle.split(": ")[0]}`]);
+        if (siteTitle) eq("titles: all-routes site page", SCOPES[f](siteTitle), [`site:${siteTitle.match(/^site-(\w+)/)[1]}`]);
+        if (pageless) eq("titles: all-routes page-less test is unscoped", SCOPES[f](pageless), null);
+      }
       // a table entry that names no page at all in its own spec is stale: the spec's titles changed shape
       check(`titles: ${f} still names pages in its titles (${scoped.length}/${titles.length})`, scoped.length > 0, "the title pattern matches no test of this spec");
       // a title that visibly names a page ("<component>: ...", "/component/<name>/", "component \"<name>\"") must be recognised: if a
@@ -224,7 +232,9 @@ eq("titles: alias matches a squashed name", SCOPES["oracle/tier1-apg/keyboard-ma
   const env = { ...process.env };
   for (const k of ["PLAYWRIGHT_BASE_URL", "SELECT_SSG_DIR", "SSG_SITE_DIR"]) delete env[k]; // the "no build to read" case must not find one
   const run = (...a) => JSON.parse(execFileSync(node, [path.join(HERE, "select.mjs"), "--format", "json", ...a], { cwd: ROOT, env, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], maxBuffer: 1 << 28 }));
-  const narrowed = run("--pages", "c:calendar");
+  // `--files` with no names is an empty diff: the checks below must not read this branch's own git diff (a batch branch that
+  // changes components adds their at-rest all-routes tests to the kept set, row 152), only the pages they pretend.
+  const narrowed = run("--files", "--pages", "c:calendar");
   const all = narrowed.narrowed.find((n) => n.file === "all-routes.spec.ts");
   check("pages: all-routes is narrowed to the calendar page", !!all && all.kept < 30 && all.kept >= 2, JSON.stringify(all && [all.kept, all.total]));
   check("pages: a drop pattern is produced", typeof narrowed.grepInvert === "string" && narrowed.grepInvert.length > 0);
@@ -266,6 +276,16 @@ eq("titles: alias matches a squashed name", SCOPES["oracle/tier1-apg/keyboard-ma
   check("a build that is not a prerendered SSG (an empty shell, as a dev server serves) is not believed", devLike.specs.length >= 25 && devLike.specs.includes("all-routes.spec.ts") && !devLike.grepInvert);
   const noIndex = run("--files", "preview/assets/main.css", "--range", "HEAD~5..HEAD");
   check("no SSG build to read: the BROAD set stays", noIndex.specs.length >= 25 && noIndex.specs.includes("all-routes.spec.ts") && !noIndex.grepInvert);
+  // A component's at-rest axe scan lives only in all-routes (row 152): a change to the component runs that page's test.
+  const comp = run("--files", "preview/src/components/kbd/component.rs");
+  const ar = comp.narrowed.find((n) => n.file === "all-routes.spec.ts");
+  check("component change: all-routes runs, narrowed to the component's page", comp.specs.includes("all-routes.spec.ts") && !!ar && ar.kept >= 2 && ar.kept < 10, JSON.stringify(ar && [ar.kept, ar.total]));
+  const arTitles = LISTED?.get("all-routes.spec.ts");
+  if (arTitles && comp.grepInvert) {
+    const re = new RegExp(comp.grepInvert, "i");
+    const kept = arTitles.filter((t) => !re.test(`chromium all-routes.spec.ts ${t}`));
+    check("component change: the kept all-routes tests are the component's page and the page-less ones", kept.some((t) => t.startsWith("kbd: ")) && !kept.some((t) => /^(accordion|button|site-home): /.test(t)), kept.join(" | ").slice(0, 300));
+  }
 }
 
 }

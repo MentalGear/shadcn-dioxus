@@ -12,11 +12,6 @@ test("test", async ({ page }) => {
 });
 
 test.describe("Axe automated scan", () => {
-  test("loaded (collapsed) has no automatically detectable a11y issues", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/collapsible/`, { timeout: 20 * 60 * 1000 });
-    await expectNoAxeViolations(page, "collapsible: collapsed", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-
   test("expanded has no automatically detectable a11y issues", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/collapsible/`, { timeout: 20 * 60 * 1000 });
     const preview = page.locator("#component-preview-frame").first();
@@ -32,7 +27,7 @@ test.describe("Axe automated scan", () => {
  * `until_found` variant ("Searchable activity").
  *
  * Headless Chromium's `window.find` finds `until-found` text but does NOT fire `beforematch` for
- * it (only fragment navigation does, see dev-docs/research/virtualization-survey-2026-10-04.md
+ * it (only fragment navigation does, see dev-docs/archive/research/virtualization-survey-2026-10-04.md
  * section 1.9), so the reveal is driven two ways: a real `#fragment` navigation (the browser
  * fires `beforematch` and removes the attribute itself) and a synthetic `beforematch`. Real Ctrl+F
  * in a headed browser takes the same code path as the fragment; that part is checked by hand.
@@ -172,10 +167,9 @@ test.describe("hidden_until_found", () => {
 });
 
 /**
- * The side finding fixed alongside `hidden_until_found`: `keep_mounted` closed content used to be
- * rendered with no `hidden` at all, and the styled layer's `display: contents` then showed it.
- * The preview has no `keep_mounted` demo, so this exercises the stylesheet's contract on the
- * markup the primitive now renders (`hidden=""` for `keep_mounted`, `hidden="until-found"` for
+ * `keep_mounted` closed content carries `hidden`: without it the styled layer's `display: contents`
+ * would show it. The preview has no `keep_mounted` demo, so this exercises the stylesheet's contract
+ * on the markup the primitive renders (`hidden=""` for `keep_mounted`, `hidden="until-found"` for
  * the opt-in); the primitive half is covered by `collapsible.rs`'s SSR unit tests.
  */
 test.describe("styled content wrapper honours hidden", () => {

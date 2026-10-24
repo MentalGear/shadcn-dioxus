@@ -12,17 +12,15 @@ import { sandboxLaunchOptions } from "./sandbox-chromium.cjs";
 //
 //   python3 -m http.server 8090 -d <site-dir>
 //
-// Existing specs across this repo hardcode `http://127.0.0.1:8080` as their
-// base URL, so when running any of *those* against this lane, also serve
-// the same SSG site dir on port 8080 (two static-server processes over the
+// Specs default to `http://127.0.0.1:8080` as their base URL (base-url.ts), so when running any of *those*
+// against this lane, also serve the same SSG site dir on port 8080 (two static-server processes over the
 // same directory is fine -- it's just files). The oracle spec this config
-// was added for (`oracle/hydration-parity.spec.ts`) defaults to 8090 (override:
+// serves (`oracle/hydration-parity.spec.ts`) defaults to 8090 (override:
 // `PLAYWRIGHT_BASE_URL`, base-url.ts's `baseUrlOr`), and reads `SSG_SITE_DIR` (the same site dir this config's own comment
 // above names) to enumerate every prerendered component page for its row
 // 46 rules -- see that file's own header. See dev-docs/conformance-
-// harness.md, "SSG lane", for the full build+serve recipe this mirrors, and
-// `.github/workflows/playwright.yml`'s `ssg-hydration-parity` job for how
-// CI drives this same config (dev-docs/backlog.md row 22).
+// harness.md, "SSG lane", for the full build+serve recipe this mirrors
+// (dev-docs/backlog.md row 22).
 //
 // `executablePath` comes from `sandbox-chromium.cjs` (row 374): `PW_CHROMIUM`,
 // else the newest Chromium preinstalled under `PLAYWRIGHT_BROWSERS_PATH` (this

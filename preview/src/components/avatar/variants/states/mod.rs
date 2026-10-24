@@ -1,10 +1,10 @@
 use super::super::component::*;
 use dioxus::prelude::*;
 
-// docs/backlog.md row 32: no `#[css_module]` of its own here, and no
+// dev-docs/backlog.md row 32: no `#[css_module]` of its own here, and no
 // `document::Link` needed either -- this `Demo` always renders several
-// `ImageAvatar`/`Avatar` themed-wrapper instances below, each of which (as
-// of this migration) now carries its own `document::Link` for `style.css`.
+// `ImageAvatar`/`Avatar` themed-wrapper instances below, each of which
+// carries its own `document::Link` for `style.css`.
 // `document::Link` dedupes on `(href, rel)`, so those links cover this page.
 // Keep this request pending so the example uses the real avatar loading state: the first
 // avatar has no fallback (a pulsing placeholder), the second shows its fallback while loading

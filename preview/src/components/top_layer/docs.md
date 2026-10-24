@@ -21,11 +21,11 @@ the same tier-2 discipline as the [`form`](../form) fixture.
 | Surface | Engine | Sections |
 |---|---|---|
 | `Tooltip`, `HoverCard`, non-modal `Popover` | popover + CSS anchor positioning (JS fallback) | clipping escape, stacking/light-dismiss/Escape, viewport-edge flip |
-| `ContextMenu`, `Menubar` | popover engine (Migration A slice 2/3) | clipping escape, point-positioned vs. anchored scroll tracking |
-| `DropdownMenu`, `Select`, `Combobox`, `Navbar` | popover engine (Migration A slice 3/3; Navbar 2026-09-03) | clipping escape (Navbar also viewport-edge flip) |
+| `ContextMenu`, `Menubar` | popover engine | clipping escape, point-positioned vs. anchored scroll tracking |
+| `DropdownMenu`, `Select`, `Combobox`, `Navbar` | popover engine | clipping escape (Navbar also viewport-edge flip) |
 | `Toast` | `popover="manual"` region | top-layer stacking above a high-`z-index` sibling |
-| `Dialog` | native `<dialog>` + `showModal()` (Phase 4.2) | clipping escape, background inertness |
-| modal `Popover` | native `<dialog>` engine (two-engine completion) | clipping escape, background inertness, anchored placement |
+| `Dialog` | native `<dialog>` + `showModal()` | clipping escape, background inertness |
+| modal `Popover` | native `<dialog>` engine | clipping escape, background inertness, anchored placement |
 
 ## The eight sections
 

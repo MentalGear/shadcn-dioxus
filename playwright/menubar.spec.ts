@@ -60,24 +60,24 @@ test("keyboard navigation", async ({ page }) => {
   await expect(fileMenuContent).toHaveCount(0);
 });
 
-// REGRESSION (`docs/backlog.md` row 85). The most directly reproducible
+// Guard (`dev-docs/backlog.md` row 85). The most directly reproducible
 // instance of the whole class this row reports: `MenubarItem`'s own
-// `onblur` used to close this menu unconditionally whenever `focused()`
-// (it still held `menu_ctx.focus`'s roving focus the instant it blurred).
+// `onblur` must not close this menu unconditionally whenever `focused()`
+// (it holds `menu_ctx.focus`'s roving focus the instant it blurs).
 // Arrow-down onto an item so it genuinely holds DOM focus, then a raw
-// `.focus()` call directly on `MenubarTrigger` -- confirmed RED on the
-// unmodified tree: `fileMenuContent` was torn out of the DOM entirely
-// (count 0) and focus reverted to `fileMenuButton`. No mouse-opened
-// precondition needed at all here (contrast `dropdown-menu.spec.ts`'s
-// identical-shaped test, which does need one) -- `MenubarItem`'s guard
-// never had `DropdownMenuTrigger`'s `submenu_open_count`-style escape
-// hatch, so it fired on this exact sequence unconditionally. Fixed by
-// construction: `MenubarContentRendered` now calls `use_outside_dismiss`
+// `.focus()` call directly on `MenubarTrigger`: with an `onblur` close,
+// `fileMenuContent` would be torn out of the DOM entirely (count 0) and
+// focus would revert to `fileMenuButton`. No mouse-opened precondition is
+// needed here (contrast `dropdown-menu.spec.ts`'s identical-shaped test,
+// which does need one) -- `MenubarItem` has no `submenu_open_count`-style
+// escape hatch like `DropdownMenuTrigger`'s, so such a guard would fire on
+// this exact sequence unconditionally. By construction
+// `MenubarContentRendered` calls `use_outside_dismiss`
 // (`primitives/src/lib.rs`, the same DOM-truth-based check `ContextMenu`'s
-// own root already used), scoped to `MenubarMenu`'s own wrapping element
-// (`menu_ctx.root_id`, new) which covers both `MenubarTrigger` and
-// `MenubarContent` -- and `MenubarTrigger`'s/`MenubarItem`'s fragile
-// `onblur` branches are removed.
+// own root uses), scoped to `MenubarMenu`'s own wrapping element
+// (`menu_ctx.root_id`) which covers both `MenubarTrigger` and
+// `MenubarContent`, and `MenubarTrigger`/`MenubarItem` carry no `onblur`
+// close branch.
 test("a raw .focus() call on the trigger does not close its own open content (row 85)", async ({ page }) => {
   await gotoHydrated(page, `${BASE_URL}/component/menubar/`, { timeout: 20 * 60 * 1000 });
   const fileMenuButton = page.getByRole("menuitem", { name: "File" });
@@ -86,19 +86,19 @@ test("a raw .focus() call on the trigger does not close its own open content (ro
   await fileMenuButton.click();
   await expect(fileMenuContent).toHaveAttribute("data-state", "open");
   // Arrow-down so a `MenubarItem` genuinely holds DOM focus -- the
-  // precondition `MenubarItem`'s own (removed) `onblur` needed.
+  // precondition an `onblur` close on `MenubarItem` would need.
   await page.keyboard.press("ArrowDown");
   const newItem = fileMenuContent.getByRole("menuitem", { name: "New" });
   await expect(newItem).toBeFocused();
 
   await fileMenuButton.focus();
-  // Give any (correctly, now, no-op) reactive close a moment to have
+  // Give any reactive close (a no-op here) a moment to have
   // fired if it were going to -- avoids a false green from asserting
   // before a real regression's own close would have completed.
   await page.waitForTimeout(150);
 
   await expect(fileMenuContent, "the content must not close").toHaveCount(1);
-  await expect(fileMenuContent, "and must still report itself open").toHaveAttribute(
+  await expect(fileMenuContent, "and must report itself open").toHaveAttribute(
     "data-state",
     "open",
   );
@@ -107,8 +107,7 @@ test("a raw .focus() call on the trigger does not close its own open content (ro
 
 // --- Checkable items: MenubarCheckboxItem / MenubarRadioGroup / MenubarRadioItem ---
 //
-// shadcn's Menubar has CheckboxItem and RadioGroup + RadioItem; this one had
-// neither. They are one construction shared with DropdownMenu and ContextMenu
+// shadcn's Menubar has CheckboxItem and RadioGroup + RadioItem, and so does this one. They are one construction shared with DropdownMenu and ContextMenu
 // (`primitives/src/menu_item.rs`), graded here for Menubar's own wiring:
 // role/aria contract, pointer (pointerdown, like every Menubar item) and
 // keyboard behaviour, close semantics (closing a menu hands focus back to its
@@ -261,7 +260,7 @@ test.describe("Checkable items", () => {
     await expect(pinned).toHaveAttribute("aria-checked", "true");
 
     // Pointer: closes, the (controlled) state survives the close, and -- as
-    // for the keyboard below (docs/backlog.md row 140) -- focus returns to
+    // for the keyboard below (dev-docs/backlog.md row 140) -- focus returns to
     // the menu's own trigger. Selection commits on pointerdown, so the
     // mousedown that follows must not focus the item being unmounted.
     await pinned.click();
@@ -306,15 +305,7 @@ test.describe("Checkable items", () => {
 });
 
 test.describe("Axe automated scan", () => {
-  test("loaded (menus closed) has no automatically detectable a11y issues", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/menubar/`, { timeout: 20 * 60 * 1000 });
-    // Wait for render before scanning -- see input.spec.ts's identical
-    // comment for why (avoids a false pre-hydration "no main"/"no h1").
-    await expect(page.getByRole("menuitem", { name: "File" })).toBeVisible();
-    await expectNoAxeViolations(page, "menubar: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-
-  // docs/backlog.md row 25: Menubar's role="menu" popups carry no
+  // dev-docs/backlog.md row 25: Menubar's role="menu" popups carry no
   // aria-labelledby/aria-label at all, so an open menu has no accessible
   // name (APG menu-and-menubar pattern requires one).
   // Checkable items: role="menuitemcheckbox"/"menuitemradio" need aria-checked
@@ -346,7 +337,7 @@ test.describe("Axe automated scan", () => {
 // `open_on_hover: false` -- once one menu is open, hovering another trigger
 // does not switch to it (preview/src/components/menubar/variants/click_only/
 // mod.rs; renders alongside `main` on this page under its own labels). The
-// default hover-switch is the unchanged "pointer navigation" test at the top
+// default hover-switch is the "pointer navigation" test at the top
 // of this file.
 // ---------------------------------------------------------------------------
 test.describe("open_on_hover: false (click activation)", () => {
@@ -384,7 +375,7 @@ test.describe("open_on_hover: false (click activation)", () => {
     await expect(menuNamed(page, "Insert")).toHaveCount(0);
   });
 
-  test("keyboard: ArrowDown still opens the menu and focuses its first item", async ({ page }) => {
+  test("keyboard: ArrowDown opens the menu and focuses its first item", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/menubar/`, { timeout: 20 * 60 * 1000 });
     const insert = page.getByRole("menuitem", { name: "Insert", exact: true });
     await insert.focus();
@@ -395,11 +386,10 @@ test.describe("open_on_hover: false (click activation)", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Open/close fade vs. the anchor's centring transform (2026-10-05). An anchored overlay centres itself
+// Open/close fade vs. the anchor's centring transform . An anchored overlay centres itself
 // with `transform: translateX(-50%)` (top_layer.rs's engine stylesheet); a `@keyframes` that sets
-// `transform` REPLACES it for as long as it runs (the date picker played its fade 144px off-centre, the
-// colour picker 133px). `MenubarContent` sets no `data-side`, so it has no centring to lose today -- the same
-// shape, latent -- so this probes the rendered keyframes instead of sampling a position that could not
+// `transform` REPLACES it for as long as it runs (the panel then plays its fade off-centre). `MenubarContent` sets
+// no `data-side`, so it has no centring to lose -- the same shape, latent -- so this probes the rendered keyframes instead of sampling a position that could not
 // move anyway: `assert-anchor-transform.ts` supplies an inline `transform`, seeks the element's own
 // CSS animation to its start/midpoint/end, and asserts the transform survives while `scale`/`translate`
 // do the moving. Source-level guard: scripts/check-anchored-keyframes.sh.

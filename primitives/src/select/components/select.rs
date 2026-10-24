@@ -77,7 +77,7 @@ pub struct SelectProps<T: Clone + PartialEq + 'static = String> {
     pub typeahead_timeout: ReadSignal<Duration>,
 
     /// Whether opening the listbox locks page scroll, matching Radix
-    /// Select's default (docs/backlog.md row 9). Reuses this crate's shared
+    /// Select's default (dev-docs/backlog.md row 9). Reuses this crate's shared
     /// `scroll_lock` mechanism the same way `DropdownMenu`/`ContextMenu`'s
     /// `modal` prop does -- see `SelectList`'s `SelectListRendered` for the
     /// `ScrollLockGuard` mount. Opt-out, not opt-in: pass `false` to keep
@@ -157,7 +157,7 @@ pub struct SelectMultiProps<T: Clone + PartialEq + 'static = String> {
     pub typeahead_timeout: ReadSignal<Duration>,
 
     /// Whether opening the listbox locks page scroll, matching Radix
-    /// Select's default (docs/backlog.md row 9). See [`SelectProps::scroll_lock`]
+    /// Select's default (dev-docs/backlog.md row 9). See [`SelectProps::scroll_lock`]
     /// -- `SelectMulti` shares `SelectList`/`SelectListRendered` with
     /// [`Select`], so the same opt-out applies here.
     #[props(default = ReadSignal::new(Signal::new(true)))]
@@ -336,7 +336,7 @@ pub fn Select<T: Clone + PartialEq + 'static>(props: SelectProps<T>) -> Element 
     // `Select`/`SelectMulti` mount as soon as the component appears on the
     // page at all, so installing the permanent baseline here -- rather than
     // waiting for the very first open -- avoids that first open doubling as
-    // the moment the gutter reservation appears (docs/backlog.md row 9).
+    // the moment the gutter reservation appears (dev-docs/backlog.md row 9).
     use_effect(crate::scroll_lock::ensure_scrollbar_gutter_baseline);
 
     // Snapshot before `use_single_selectable_value` consumes it: the hidden
@@ -377,7 +377,7 @@ pub fn Select<T: Clone + PartialEq + 'static>(props: SelectProps<T>) -> Element 
     // APG combobox: "Escape ... sets focus on the combobox" -- unless the
     // close was caused by focus leaving the listbox for something outside
     // it, in which case focus should stay where the user put it. See
-    // docs/plan.md Phase 3.1; `SelectTrigger` and `SelectList` set/thread
+    // dev-docs/plan.md Phase 3.1; `SelectTrigger` and `SelectList` set/thread
     // `trigger_id`/`interacted_outside` on `SelectableContext`.
     crate::use_refocus_on_close_unless(
         open,
@@ -410,8 +410,8 @@ pub fn Select<T: Clone + PartialEq + 'static>(props: SelectProps<T>) -> Element 
         }
 
         // Hidden native <select> for form participation, matching Radix's
-        // "BubbleSelect" pattern -- see docs/plan.md Phase 1.3 and
-        // docs/recommended-implementations.md §1. Rendered unconditionally
+        // "BubbleSelect" pattern -- see dev-docs/plan.md Phase 1.3 and
+        // dev-docs/reference/platform-rationale.md §1. Rendered unconditionally
         // (matching Checkbox's BubbleInput), so an empty `name` simply means
         // this contributes nothing to the entry list, per the HTML
         // "constructing the entry list" algorithm, rather than needing a
@@ -524,7 +524,7 @@ pub fn Select<T: Clone + PartialEq + 'static>(props: SelectProps<T>) -> Element 
 #[component]
 pub fn SelectMulti<T: Clone + PartialEq + 'static>(props: SelectMultiProps<T>) -> Element {
     // See `Select`'s identical call, just above, for why this must run from
-    // the root component (docs/backlog.md row 9).
+    // the root component (dev-docs/backlog.md row 9).
     use_effect(crate::scroll_lock::ensure_scrollbar_gutter_baseline);
 
     let (multi_values, set_multi_internal) =
@@ -556,8 +556,9 @@ pub fn SelectMulti<T: Clone + PartialEq + 'static>(props: SelectMultiProps<T>) -
 
     // SelectMulti has no `required` prop: a native <select multiple> can't
     // express "at least one selected" via a single `required` attribute the
-    // way a single-select can, and multi-select form participation is out of
-    // scope for docs/plan.md Phase 1 (which only asks for `Select`).
+    // way a single-select can, and `SelectMulti` renders no hidden mirror
+    // <select multiple>, so it does not submit with a form (`name` is not read
+    // here; only `Select` mirrors its value, dev-docs/plan.md Phase 1.3).
     let (ctx, open) = use_select_root(
         values,
         set_value,

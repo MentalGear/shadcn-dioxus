@@ -431,7 +431,7 @@ fn ThemePickerPhoneTrigger() -> Element {
 /// navigation sheet that opens [`ThemePickerPanel`] as a bottom [`Drawer`]. (A page without a sheet gets
 /// [`ThemePickerPhoneTrigger`] in its header instead; see [`ThemePicker`] for which and why.)
 ///
-/// The header has no room for the popover's trigger at phone width (it overlapped "Charts" and the
+/// The header has no room for the popover's trigger at phone width (it would overlap "Charts" and the
 /// GitHub link) and the popover itself would open from a point near the middle of the screen, so on
 /// phones the picker lives where the rest of the navigation does and opens as a bottom sheet, the
 /// native phone idiom. Rendered inside the desktop sidebar too (the sidebar only becomes a sheet below

@@ -34,7 +34,7 @@ impl AccordionChevron {
 /// Internal accordion context.
 #[derive(Clone, Copy)]
 struct AccordionContext {
-    /// Used to track the next runtime-generated id.
+    /// Tracks the next runtime-generated id.
     next_id: Signal<usize>,
 
     /// The runtime generated ids of the open items.
@@ -166,7 +166,7 @@ pub struct AccordionProps {
     /// Defaults to false, which unmounts closed content after its close animation, so it costs
     /// nothing until opted in; opting in renders every item's content into the server-rendered
     /// HTML as well. Opening because of a match is not animated (the browser has already scrolled
-    /// to the match at full size); the close animation is unchanged, and the content is re-hidden
+    /// to the match at full size); the close animation plays as usual, and the content is re-hidden
     /// once it finishes.
     ///
     /// Browser support: Chrome 102+, Safari 26.2+ (does not scroll to the match) and Firefox 139+
@@ -496,8 +496,8 @@ pub fn AccordionContent(props: AccordionContentProps) -> Element {
 
     // `open()` is part of the test, not just `render_element()` (which turns on in an effect, so it is
     // always false in the server HTML and in a client's first render): a default-open item must render
-    // its content there too, or the server paints it closed (39px) and hydration opens it (145px) --
-    // the same fix the `hidden` computation above makes for `hidden_until_found`.
+    // its content there too, or the server would paint it closed (39px) and hydration would open it (145px) --
+    // the same rule the `hidden` computation above applies for `hidden_until_found`.
     rsx! {
         if open() || render_element() || until_found() {
             div {

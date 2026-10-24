@@ -3,9 +3,9 @@
   "build": "debug",
   "workers": "2",
   "date": "2026-10-21",
-  "tests": 3811,
-  "files": 241,
-  "total_seconds": 11354.7,
+  "tests": 3830,
+  "files": 243,
+  "total_seconds": 11400.9,
   "budget_seconds": 17000,
   "max_file_seconds": 3000,
   "note": "seconds = sum of test durations (worker time) on the DEBUG SSG build, 2 workers, 4-core box shared with other lanes; main-thread.spec.ts and scroll-main-thread.spec.ts are release-only (skipped on debug) and carry their RELEASE seconds. release_total_seconds = the same run on a release build. Refresh: playwright/tools/run-suite.sh, then durations.mjs chunk-*.json --write",
@@ -556,23 +556,7 @@
    "skipped": 0,
    "retried": 0
   },
-  "demos-batch2-a.spec.ts": {
-   "tests": 6,
-   "seconds": 32.9,
-   "passed": 6,
-   "failed": 0,
-   "skipped": 0,
-   "retried": 0
-  },
-  "demos-batch2-b.spec.ts": {
-   "tests": 30,
-   "seconds": 67.8,
-   "passed": 30,
-   "failed": 0,
-   "skipped": 0,
-   "retried": 0
-  },
-  "demos-batch3.spec.ts": {
+  "demos-component-parts.spec.ts": {
    "tests": 20,
    "seconds": 51.5,
    "passed": 20,
@@ -580,7 +564,15 @@
    "skipped": 0,
    "retried": 0
   },
-  "demos-parity3.spec.ts": {
+  "demos-dates-pickers-primitives.spec.ts": {
+   "tests": 30,
+   "seconds": 67.8,
+   "passed": 30,
+   "failed": 0,
+   "skipped": 0,
+   "retried": 0
+  },
+  "demos-field-input-group-badge.spec.ts": {
    "tests": 10,
    "seconds": 33.5,
    "passed": 10,
@@ -588,9 +580,17 @@
    "skipped": 0,
    "retried": 0
   },
-  "demos-parts188.spec.ts": {
+  "demos-input-group-textarea-breadcrumb.spec.ts": {
    "tests": 6,
    "seconds": 19.4,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "retried": 0
+  },
+  "demos-menu-overlay-floating.spec.ts": {
+   "tests": 6,
+   "seconds": 32.9,
    "passed": 6,
    "failed": 0,
    "skipped": 0,
@@ -888,14 +888,6 @@
    "tests": 19,
    "seconds": 611.4,
    "passed": 19,
-   "failed": 0,
-   "skipped": 0,
-   "retried": 0
-  },
-  "leftover-user-select.spec.ts": {
-   "tests": 6,
-   "seconds": 12.8,
-   "passed": 6,
    "failed": 0,
    "skipped": 0,
    "retried": 0
@@ -1509,9 +1501,17 @@
    "retried": 0
   },
   "ring-contrast.spec.ts": {
-   "tests": 14,
-   "seconds": 83,
+   "tests": 24,
+   "seconds": 109.8,
    "passed": 14,
+   "failed": 0,
+   "skipped": 0,
+   "retried": 0
+  },
+  "scroll-area-always-show.spec.ts": {
+   "tests": 1,
+   "seconds": 1.8,
+   "passed": 1,
    "failed": 0,
    "skipped": 0,
    "retried": 0
@@ -1860,6 +1860,14 @@
    "skipped": 0,
    "retried": 0
   },
+  "user-select-kbd-label-addon.spec.ts": {
+   "tests": 6,
+   "seconds": 12.8,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "retried": 0
+  },
   "user-select.spec.ts": {
    "tests": 25,
    "seconds": 38.9,
@@ -1908,6 +1916,14 @@
    "skipped": 0,
    "retried": 0
   },
+  "virtual-grid-modes.spec.ts": {
+   "tests": 7,
+   "seconds": 16.3,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "retried": 0
+  },
   "virtual-grid-photo-wall.spec.ts": {
    "tests": 11,
    "seconds": 23.5,
@@ -1917,9 +1933,9 @@
    "retried": 0
   },
   "virtual-grid.spec.ts": {
-   "tests": 11,
-   "seconds": 27.9,
-   "passed": 11,
+   "tests": 12,
+   "seconds": 29.2,
+   "passed": 12,
    "failed": 0,
    "skipped": 0,
    "retried": 0

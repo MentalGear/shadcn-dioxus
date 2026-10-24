@@ -399,7 +399,7 @@ pub(crate) fn justified_layout(aspects: &[f64], opts: &JustifiedOptions) -> Just
             row_height = row_height.min(cap);
         }
         // Backstop for the cap raise above: the stretch a sparse trailing row with a very narrow
-        // aspect would need is as unbounded as the backoff case was before the peek-ahead.
+        // aspect would need is as unbounded as the backoff case without the peek-ahead.
         if min_tile_width > 0.0 && row_height > target * MAX_STRETCH {
             row_height = target * MAX_STRETCH;
         }
@@ -725,10 +725,10 @@ mod tests {
         }
 
         #[test]
-        fn regression_a_trailing_single_tile_row_created_by_backoff_still_clears_the_floor() {
+        fn a_trailing_single_tile_row_created_by_backoff_clears_the_floor() {
             // Three items just barely reach the threshold together; backing the first row off to
             // two tiles leaves one leftover item as its own trailing (genuinely last) row, which
-            // used to be re-capped at the target height, landing at 105px against a 140px floor.
+            // must not be re-capped at the target height (105px against a 140px floor).
             let r = run(&[0.5; 3], &floored(140.0));
             for t in &r.tiles {
                 assert!(t.width >= 140.0, "tile {} is {}px wide", t.index, t.width);
@@ -736,10 +736,10 @@ mod tests {
         }
 
         #[test]
-        fn regression_a_degenerate_aspect_with_a_floor_does_not_explode_row_height() {
-            // A degenerate item (floored to the 1:20 sliver) at the start of a row used to make
+        fn a_degenerate_aspect_with_a_floor_does_not_explode_row_height() {
+            // A degenerate item (floored to the 1:20 sliver) at the start of a row must not make
             // every backoff candidate look sub-floor, cascading to a one tile row and dividing by
-            // about 0.05: a 375px container exploded to 7500px tall. Such a row is exempt from
+            // about 0.05: a 375px container would explode to 7500px tall. Such a row is exempt from
             // the floor entirely, matching the no-floor baseline exactly.
             let mut aspects = vec![0.0];
             aspects.extend([1.0; 8]);
@@ -779,10 +779,10 @@ mod tests {
         }
 
         #[test]
-        fn regression_a_valid_but_very_narrow_aspect_does_not_explode_row_height_either() {
+        fn a_valid_but_very_narrow_aspect_does_not_explode_row_height_either() {
             // A real, valid aspect that is just very small (0.01) is not exempted as degenerate,
             // so backoff could isolate it in its own row: 375 / 0.01 = 37500px tall, uncapped.
-            // Clamping the height alone broke edge to edge fill instead (width shrinks with the
+            // Clamping the height alone would break edge to edge fill (width shrinks with the
             // height), so the backoff peeks ahead and stops BEFORE committing to such a height.
             // Asserts the fill is preserved, not just the bound.
             let r = run(&sliver_then_squares(), &sliver_opts());
@@ -833,7 +833,7 @@ mod tests {
 
         #[test]
         fn stays_fast_when_many_tiles_in_one_row_share_the_same_narrow_aspect() {
-            // The backoff loop once rescanned the whole shrinking window on every step:
+            // A backoff loop that rescanned the whole shrinking window on every step would be
             // O(tiles) per step, O(tiles^2) per row, tens of seconds for 200k tiles. The
             // one-time prefix lookup makes it linear; a generous time budget pins that.
             let aspects = vec![0.001; 50_000];
@@ -1041,7 +1041,7 @@ mod tests {
     // --- Right-to-left ---------------------------------------------------------------------
 
     #[test]
-    fn a_mirrored_row_still_fills_edge_to_edge_in_reverse_order() {
+    fn a_mirrored_row_fills_edge_to_edge_in_reverse_order() {
         let r = run(&[1.0; 40], &OPTS);
         let row0: Vec<Tile> = r
             .row_tiles(0)

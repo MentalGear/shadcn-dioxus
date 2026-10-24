@@ -259,7 +259,7 @@ pub(crate) fn UtilitiesDocs() -> Element {
 
         h3 { id: "utilities-install", "Install" }
         p {
-            {inline_code("`dx-effects.css` is not a component, so it has no `add` command of its own. The smallest existing path is to add a component that lists it in its `globalAssets`: `scroll_area`, `virtual_list`, `message_scroller`, `attachment` and `marker` all do, and `add` copies the file to `assets/dx-effects.css` next to the theme (an edited copy is kept, `--force` replaces it). Or copy the file by hand from the repository. Then link it once at the app root, after the theme, which it reads for its `--dx-space-*` tokens and `--light`/`--dark` toggles.")}
+            {inline_code("`dx-effects.css` is not a component, so it has no `add` command of its own. The smallest existing path is to add a component that lists it in its `globalAssets`: `scroll_area`, `virtual_list`, `virtual_grid`, `message_scroller`, `attachment`, `marker` and `trace` all do, and `add` copies the file to `assets/dx-effects.css` next to the theme (an edited copy is kept, `--force` replaces it). Or copy the file by hand from the repository. Then link it once at the app root, after the theme, which it reads for its `--dx-space-*` tokens and `--light`/`--dark` toggles.")}
         }
         DocsPre {
             code { "{INSTALL_ADD}" }

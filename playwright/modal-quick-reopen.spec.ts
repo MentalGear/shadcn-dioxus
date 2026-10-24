@@ -1,11 +1,11 @@
 /**
  * Enter, Escape, Enter reopens a modal at once (backlog row 223).
  *
- * A modal is closed only after its exit animation (a369194, row 141), and for that whole window it is
+ * A modal is closed only after its exit animation (row 141), and for that whole window it is
  * still a real modal: the page behind it, the trigger included, is blocked and cannot be focused (an
- * `inert` closing panel does not unblock it either; measured). The user's second Enter was therefore
- * typed into the closing panel and the reopen was lost: 0 of 4 at 0 ms. `use_dialog_open_driver`
- * (`primitives/src/lib.rs`) now treats an Enter or Space aimed at a dialog that is closing -- or that
+ * `inert` closing panel does not unblock it either). A second Enter would therefore be
+ * typed into the closing panel and the reopen lost. `use_dialog_open_driver`
+ * (`primitives/src/lib.rs`) treats an Enter or Space aimed at a dialog that is closing -- or that
  * has just been cancelled and whose state has not flipped yet -- as the opener's: it ends the exit on
  * the spot (the real `close()`, which returns focus) and activates the opener.
  *

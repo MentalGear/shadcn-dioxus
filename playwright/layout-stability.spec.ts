@@ -2,17 +2,17 @@
  * LAYOUT STABILITY (dev-docs/backlog.md row 204): after a page's first paint, nothing in its top group may
  * move or resize by itself.
  *
- * The owner saw the top demo group's elements "flicker (re-layout)" at iPad-landscape widths. The cause was
- * never one rule at one width: it was a CLASS -- the page paints, and then something changes a box without
- * any input. Two members were found by recording every rAF frame from the first one (sweep 320..1440, both
+ * The top demo group's elements can "flicker (re-layout)" at iPad-landscape widths. The cause is
+ * never one rule at one width: it is a CLASS -- the page paints, and then something changes a box without
+ * any input. Two members show up when recording every rAF frame from the first one (sweep 320..1440, both
  * colour schemes, touch emulation on and off):
  *
  *   1. SSR != hydrated. `Avatar` is prerendered with `data-state="empty"`, i.e. the image AND the fallback
  *      initials side by side in a centred flex row, so the picture sits ~8px left of the circle's centre with
  *      the initials peeking in on the right; when the wasm hydrates, the fallback is removed and the image
  *      jumps back to the centre. Twelve avatars in the home page's widget masonry, at every width.
- *   2. Estimated != real size. The masonry is CSS multi-column, which balances columns by card height, and the
- *      cards were `content-visibility: auto`: a not-yet-rendered card is laid out at its ESTIMATE, then
+ *   2. Estimated != real size. A CSS multi-column masonry balances columns by card height, and a
+ *      `content-visibility: auto` card that is not yet rendered is laid out at its ESTIMATE, then
  *      unskipped over the next frames (the unskip of one card moves the next into range), and every unskip
  *      re-balances the columns -- three to six re-layouts in the first ~300 ms, some after the first paint.
  *
@@ -38,8 +38,7 @@
  *
  * Widths: the default sweep is 320..1440 step 32 plus every CSS breakpoint of the preview and its +-1px
  * neighbours plus the iPad widths (768, 820, 834, 1024, 1180, 1194, 1366). `LS_STEP=8` is the full 8px sweep.
- * Dark runs and the secondary routes use the breakpoint/iPad widths only. Measured runtime on the 4-core
- * sandbox against a debug SSG build is in the commit message of the change that added this file.
+ * Dark runs and the secondary routes use the breakpoint/iPad widths only.
  *
  *   PLAYWRIGHT_BASE_URL=http://127.0.0.1:8108 npx playwright test --config=ssg.local.config.ts layout-stability.spec.ts --workers=3
  *
@@ -52,14 +51,12 @@
  * second group of tests ("progressive paint") is what makes the parse slow: Chrome's own network and CPU throttling
  * (CDP `Network.emulateNetworkConditions` + `Emulation.setCPUThrottlingRate`), so the document really arrives in
  * chunks and is painted between them, and it records every widget card's position from the first frame in which the
- * card exists. A card must stay in its column and at its place: the multi-column masonry it replaced re-assigned
- * cards to columns on every parsed card (6 to 8 cards changed column in one frame at 1280px, 3 at 768px); the
- * construction that made it pass is that a card's column is its DOM position (`MasonrySlot` in `preview/src/main.rs`).
+ * card exists. A card must stay in its column and at its place: a card's column is its DOM position
+ * (`MasonrySlot` in `preview/src/main.rs`), so a parsed card never re-assigns the others (a multi-column
+ * masonry does: 6 to 8 cards changed column in one frame at 1280px, 3 at 768px).
  *
- * Not covered, on purpose: `/charts/`. Its charts are prerendered at a default width and re-measured when the wasm
- * hydrates (the plot, its axes and the header's select all re-flow ~100-1000ms after the first paint at every
- * width, 120-630 boxes), which is a separate defect in the chart primitive, not in the layout; it is its own
- * backlog item, and adding the route here belongs with that fix.
+ * Not covered here: `/charts/`. A chart's drawing is a function of the measured width and re-renders when the wasm
+ * hydrates, so that page has its own spec, `charts-hydration-stability.spec.ts` (backlog row 215).
  *
  * `LS_DUMP=1` prints every late box event of a failing width. `LS_WIDTHS=480,1280` runs just those widths. `LS_CPU=4` slows
  * the pages' CPU four times, the way a loaded box does (row 377).
@@ -145,7 +142,7 @@ const FULL = !!process.env.LS_STEP;
 const STEP = Number(process.env.LS_STEP ?? 32);
 const ALL_WIDTHS = [...new Set([...sweep(STEP), ...KEY_WIDTHS])].sort((a, b) => a - b);
 const HEIGHT = 800;
-/** Pages measuring widths at once inside one group's context (`LS_POOL=1` is the old one-at-a-time sweep). */
+/** Pages measuring widths at once inside one group's context (`LS_POOL=1` sweeps one at a time). */
 const POOL = Math.max(1, Number(process.env.LS_POOL ?? 2));
 const ONLY = (process.env.LS_WIDTHS ?? "").split(",").filter(Boolean).map(Number);
 /** CPU slowdown of the sweep's pages (CDP `Emulation.setCPUThrottlingRate`); `LS_CPU=4` makes the parse and the hydration land in different frames the way a loaded box does. 1 = none. */
@@ -153,7 +150,7 @@ const CPU = Math.max(1, Number(process.env.LS_CPU ?? 1));
 
 const GROUPS: { route: string; scheme: "light" | "dark"; widths: number[]; pool?: number }[] = [
   // The home page keeps ONE page at a time: it is the long, progressively parsed page, and with two pages (four browsers
-  // on the box) the first paint landed earlier in the parse and a card below the fold was counted as moving (833px, once
+  // on the box) the first paint lands earlier in the parse and a card below the fold can be counted as moving (833px, once
   // in three pooled runs). Every other page is pooled.
   { route: "/", scheme: "light", widths: ALL_WIDTHS, pool: 1 },
   { route: "/", scheme: "dark", widths: FULL ? ALL_WIDTHS : KEY_WIDTHS, pool: 1 },

@@ -2,23 +2,18 @@
 //! (backlog row 108).
 //!
 //! `merge_attributes` (row 93) sorts an element's merged attribute list by
-//! name, so a test that locates rendered content by slicing the SSR HTML
-//! string at the position of a specific `attribute="value"` match -- or
-//! that assumes one attribute appears before another -- is fragile:
-//! nothing in Dioxus's own attribute model guarantees a stable order (see
-//! row 93's root-cause account), and any future change to how an
-//! element's attributes are constructed can reorder them again, exactly
-//! as `merge_attributes`'s own sort did the first time. Two tests broke
-//! this way in one round (`calendar.rs`'s unit test, chart's
-//! `tooltip.rs::tooltip_fragment()`), which per this repo's own
-//! `CLAUDE.md` rule makes it a class, not a coincidence.
+//! name, and nothing in Dioxus's own attribute model guarantees a stable
+//! order (see row 93's root-cause account), so a test that locates rendered
+//! content by slicing the SSR HTML string at the position of a specific
+//! `attribute="value"` match -- or that assumes one attribute appears before
+//! another -- is fragile: any change to how an element's attributes are
+//! constructed can reorder them.
 //!
-//! This module is the by-construction fix: a small, real (if minimal)
+//! This module is the by-construction answer: a small, real (if minimal)
 //! start-tag parser that turns a rendered tag into a name -> value map,
 //! so call sites do `attrs.get("data-slot") == Some(&"...".to_string())`
 //! -style lookups instead of string-position slicing. Those lookups are
-//! order-independent by construction and can never break this way again,
-//! regardless of what future attribute-ordering change lands.
+//! order-independent by construction, whatever the attribute order.
 //!
 //! Deliberately not a general HTML parser: it only understands what
 //! `dioxus_ssr::render`'s own flat output actually produces (well-formed

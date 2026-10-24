@@ -112,13 +112,13 @@ async function dragFromPoint(page: Page, x: number, y: number, dx: number, dy: n
 }
 
 test.describe('Hit area: the whole handle drags, not just the 1px line', () => {
-  // Owner report: "the handle must be draggable, not just the line". The 1px `.dx-resizable-handle`
-  // div owns the drag listener; its grip (then 12x16, now Nova's 4x24 pill) used to be `pointer-events: none` with only a 4px
-  // `::after` strip behind it, so ~4px either side of the grip -- and the same few px beside the
-  // bare line -- fell through to the panels and started nothing. shadcn's grip is a plain child
+  // The handle must be draggable, not just the line (backlog row 77). The 1px `.dx-resizable-handle`
+  // div owns the drag listener; its grip (Nova's 4x24 pill) is not `pointer-events: none` with only a 4px
+  // `::after` strip behind it, which would let ~4px either side of the grip -- and the same few px beside the
+  // bare line -- fall through to the panels and start nothing. shadcn's grip is a plain child
   // (its pointerdown bubbles to the handle) inside a handle with a wider invisible hit area.
   const GRIP_INSET = 1; // px inside the grip's own edge: visibly "on the grip", far from the 1px line
-  const BESIDE_LINE = 4; // px from the line's centre: inside the hit area, outside the old 4px strip
+  const BESIDE_LINE = 4; // px from the line's centre: inside the hit area, outside a 4px strip
 
   test('grabbing the grip anywhere on its footprint drags the handle, not just its centre line', async ({ page }) => {
     await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
@@ -164,7 +164,7 @@ test.describe('Hit area: the whole handle drags, not just the 1px line', () => {
     }
   });
 
-  test('a few px beside the 1px line, clear of the grip, still drags -- and well outside the hit area does not', async ({ page }) => {
+  test('a few px beside the 1px line, clear of the grip, drags -- and well outside the hit area does not', async ({ page }) => {
     await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
     const handle = page.getByRole('separator', { name: 'Sidebar' });
     const left = await primaryPanel(page, 'Sidebar');
@@ -206,8 +206,8 @@ test.describe('Hit area: the whole handle drags, not just the 1px line', () => {
   test.describe('Touch', () => {
     // `hasTouch` also flips `(pointer: coarse)`, which doubles the hit area (a finger is blunter
     // than a mouse). Chromium additionally fuzzes a touch target by a few px, which is why the
-    // grip's edge alone never reproduced the bug with a finger -- the 10px case does (it is
-    // outside both the old 4px strip and that fuzz, inside the new 24px coarse hit area).
+    // grip's edge alone does not exercise it with a finger -- the 10px case does (it is
+    // outside both a 4px strip and that fuzz, inside the 24px coarse hit area).
     test.use({ hasTouch: true });
 
     for (const [name, offsetFromLine, onGrip] of [
@@ -241,8 +241,8 @@ test.describe('Hit area: the whole handle drags, not just the 1px line', () => {
 
 test.describe('RTL', () => {
   // Under `dir="rtl"` a horizontal group's panels mirror, so the primary pane sits on the RIGHT of
-  // its handle. The arrow keys already flipped for that; the pointer drag did not, so the handle
-  // slid the OPPOSITE way to the pointer. Both now share `primary_delta` (primitives/src/resizable.rs).
+  // its handle. The arrow keys and the pointer drag share `primary_delta` (primitives/src/resizable.rs),
+  // so the handle moves WITH the pointer.
   test('dragging the handle moves it with the pointer, from the line or a few px beside it', async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/block/?name=resizable&variant=rtl&`, { timeout: 20 * 60 * 1000 });
     const handle = page.getByRole('separator', { name: 'Divider' });
@@ -262,7 +262,7 @@ test.describe('RTL', () => {
     }
   });
 
-  test('keyboard still moves the divider in the physical direction of the arrow key', async ({ page }) => {
+  test('keyboard moves the divider in the physical direction of the arrow key', async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/block/?name=resizable&variant=rtl&`, { timeout: 20 * 60 * 1000 });
     const handle = page.getByRole('separator', { name: 'Divider' });
     await handle.focus();
@@ -277,10 +277,9 @@ test.describe('RTL', () => {
 
 test.describe('Appearance (shadcn/ui v4 translation)', () => {
   // Translates shadcn/ui v4's Resizable (react-resizable-panels) look onto this repo's own
-  // tokens (dev-docs/backlog.md's cheap-primitives-wave follow-up) -- a `w-px` handle with a grip.
-  // Phase C (row 111) moved the grip to Nova's `.cn-resizable-handle-icon` (`bg-border h-6 w-1
-  // rounded-lg`, style-nova.css @ 295a1f1): a 4x24px pill, replacing shadcn v4's 12x16px bordered
-  // box (`h-4 w-3`). Both values below are exact translations (this repo's --dx-space-1/-6 tokens).
+  // tokens -- a `w-px` handle with Nova's grip (`.cn-resizable-handle-icon`: `bg-border h-6 w-1
+  // rounded-lg`, style-nova.css @ 295a1f1), a 4x24px pill (not shadcn v4's 12x16px bordered
+  // box, `h-4 w-3`). Both values below are exact translations (this repo's --dx-space-1/-6 tokens).
   test('the handle is a 1px hairline with a 4x24px grip', async ({ page }) => {
     await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
     const handle = page.getByRole('separator', { name: 'Sidebar' });
@@ -297,31 +296,14 @@ test.describe('Appearance (shadcn/ui v4 translation)', () => {
     // The handle's own direct parent is the outer ResizablePanelGroup div (panels and handles
     // are direct siblings inside it -- see primitives/src/resizable.rs's markup doc comment).
     const container = handle.locator('xpath=..');
-    // `--dx-radius-lg` (the demo's radius) is 10px since row 111's shadcn radius scale (was 8px).
+    // `--dx-radius-lg` (the demo's radius) is 10px (row 111's shadcn radius scale).
     await expect(container).toHaveCSS('border-radius', '10px');
 
-    // shadcn: `max-w-md ... md:min-w-[450px]` -- before this translation the group had no width
-    // cap/floor at all and rendered at its own content-hugging width (~269px measured against
+    // shadcn: `max-w-md ... md:min-w-[450px]` -- without it the group has no width
+    // cap/floor and renders at its own content-hugging width (~269px measured against
     // this fixture), well short of shadcn's ~450px.
     const box = await container.boundingBox();
     if (!box) throw new Error('container has no bounding box');
     expect(box.width).toBeGreaterThanOrEqual(440);
-  });
-});
-
-test.describe('Axe automated scan', () => {
-  // Resizable has no overlay/expand interaction to reach a second state --
-  // loaded (default sizes) is the only meaningful scan, per the convention
-  // axe.ts's header documents ("A component with no such state ... scans
-  // once, at load"), matching slider.spec.ts's own identical single-state
-  // scan.
-  test('loaded has no automatically detectable a11y issues', async ({ page }) => {
-    await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
-    // Wait for render before scanning -- see input.spec.ts's identical
-    // comment for why (avoids a false pre-hydration "no main"/"no h1").
-    await expect(page.getByRole('separator', { name: 'Sidebar' })).toBeVisible();
-    await expectNoAxeViolations(page, 'resizable: loaded', {
-      excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT],
-    });
   });
 });

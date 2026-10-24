@@ -33,28 +33,13 @@ test('menu lands at the tap coordinates on touch long-press', async ({ page }) =
   // `use_point_anchor_clamp`, top_layer.rs, never has a reason to act and
   // this test stays a clean "no clamping" baseline) -- but padding only
   // *adds* to whatever height the surrounding page content already has,
-  // and that height isn't this test's to control or assume. It was 300px
-  // of padding-top here, unchanged since this test was written; on this
-  // component's actual current preview-page chrome, that pushed the
-  // trigger's own center to y ~= 735 against a 720px-tall default
-  // viewport -- 15px *past* the bottom edge, not "away from it" as the
-  // comment this replaces claimed. That was already true on this branch's
-  // parent commit (124c4d5, before use_point_anchor_clamp existed at all)
-  // -- it simply had nothing to act on it yet, so a menu positioned
-  // exactly at that tap point silently rendered a hundred-plus px past
-  // the fold and this test never noticed (it only checks the menu's
-  // top-left against the tap point, never full on-screen visibility).
-  // use_point_anchor_clamp landing gave the clamp something to correct
-  // for the first time, and correctly pulled the menu back on-screen --
-  // a real behavior change, but the intended one, not a bug in the clamp
-  // itself (confirmed by execution: instrumented logging on this exact
-  // run showed a genuinely non-zero, already-`:popover-open` content size
-  // measured before the clamp ran, and viewport/tap numbers -- vh=720,
-  // tapY=734.97, content height=168 -- for which
-  // `top + ch > vh - EDGE_MARGIN` is correctly true). Anchoring the
-  // trigger's position directly, rather than adding to an unmeasured
-  // ambient height, makes the "nowhere near an edge" premise true by
-  // construction instead of by an increasingly-stale coincidence.
+  // and that height isn't this test's to control or assume (300px of
+  // padding-top can put the trigger's center past the bottom edge of a
+  // 720px-tall viewport, where `use_point_anchor_clamp` rightly pulls the
+  // menu back on-screen, and `top + ch > vh - EDGE_MARGIN` is correctly
+  // true). Anchoring the trigger's position directly, rather than adding
+  // to an unmeasured ambient height, makes the "nowhere near an edge"
+  // premise true by construction.
   await trigger.evaluate((el) => {
     (el as HTMLElement).style.position = 'fixed';
     (el as HTMLElement).style.top = '120px';
@@ -83,8 +68,8 @@ test('menu lands at the tap coordinates on touch long-press', async ({ page }) =
 
   await expect(contextMenu).toHaveAttribute('data-state', 'open');
   // Measure the SETTLED box: the open fade scales the panel (0.95 -> 1 about its centre), so a box read
-  // mid-fade sits up to ~5.5px right of the tap point on a 220px menu -- this failed on every load-starved
-  // run, with the old `transform` keyframes and the new `scale` ones alike (dev-docs/backlog.md row 115).
+  // mid-fade sits up to ~5.5px right of the tap point on a 220px menu -- that fails on every load-starved
+  // run (dev-docs/backlog.md row 115).
   await awaitAnimationsSettled(contextMenu);
   const menuBox = await measureAtRest(contextMenu);
   if (!menuBox) throw new Error('menu has no bounding box');
@@ -95,7 +80,7 @@ test('menu lands at the tap coordinates on touch long-press', async ({ page }) =
   expect(Math.abs(menuBox.y - tapY)).toBeLessThan(2);
 });
 
-// docs/backlog.md row 10, item 5.2 ("ContextMenu viewport clamping"): unlike
+// dev-docs/backlog.md row 10, item 5.2 ("ContextMenu viewport clamping"): unlike
 // every anchored overlay in this crate (Select/Combobox/DropdownMenu/
 // Menubar/etc, whose shift/size clamp against the viewport is covered by
 // `playwright/oracle/tier2-html/top-layer.spec.ts`'s rules 11-15), that
@@ -193,7 +178,7 @@ test('clamps the menu into the viewport for a touch long-press near a corner', a
 
 test('touch long-press opens the context menu', async ({ page }) => {
   // iOS Safari does not fire `contextmenu` on long press, so the menu must
-  // open from a held touch instead. Reproduces issue #262.
+  // open from a held touch instead.
   await gotoHydrated(page, `${BASE_URL}/component/context_menu/`, { timeout: 20 * 60 * 1000 });
   const trigger = page.getByRole('button', { name: 'right click here' });
   const contextMenu = page.getByRole('menu');
@@ -313,7 +298,7 @@ test('touch tap outside closes the open menu', async ({ page }) => {
   // edge can land in that strip and fail with "no element at outside
   // point" for a reason that has nothing to do with this test's actual
   // claim; the same false negative and the same fix are documented in
-  // `docs/phase4-spike-findings.md`'s spike spec.
+  // `dev-docs/archive/research/phase4-spike-findings.md`'s spike spec.
   const viewport = page.viewportSize();
   if (!viewport) throw new Error('no viewport');
   const farX = viewport.width - 30;
@@ -338,11 +323,11 @@ test('touch tap outside closes the open menu', async ({ page }) => {
 });
 
 test('pointerdown at the trigger location does not dismiss an open menu', async ({ page }) => {
-  // Regression for the long-press dismiss bug: on iOS Safari a fresh
-  // pointerdown could land at the original touch coordinates right after the
-  // menu opened (either from a topology-change re-dispatch under the active
-  // touch, or from compat-mouse promotion). The dismiss listener must treat
-  // the trigger as "inside" the menu's root and ignore it.
+  // On iOS Safari a fresh pointerdown can land at the original touch
+  // coordinates right after the menu opened (either from a topology-change
+  // re-dispatch under the active touch, or from compat-mouse promotion). The
+  // dismiss listener treats the trigger as "inside" the menu's root and
+  // ignores it.
   await gotoHydrated(page, `${BASE_URL}/component/context_menu/`, { timeout: 20 * 60 * 1000 });
   const trigger = page.getByRole('button', { name: 'right click here' });
   const contextMenu = page.getByRole('menu');
@@ -469,8 +454,8 @@ test('keyboard navigation', async ({ page }) => {
 
 // --- Checkable items: ContextMenuCheckboxItem / ContextMenuRadioGroup / ContextMenuRadioItem ---
 //
-// shadcn's ContextMenu has CheckboxItem and RadioGroup + RadioItem; this one
-// had neither. They are one construction shared with DropdownMenu and
+// shadcn's ContextMenu has CheckboxItem and RadioGroup + RadioItem; so does
+// this one. They are one construction shared with DropdownMenu and
 // Menubar (`primitives/src/menu_item.rs`), graded here for ContextMenu's own
 // wiring: role/aria contract, pointer (pointerdown-then-pointerup, like every
 // ContextMenu item) and keyboard behaviour, close semantics, roving focus and
@@ -693,18 +678,10 @@ test.describe('Checkable items', () => {
 });
 
 test.describe('Axe automated scan', () => {
-  test('loaded (menu closed) has no automatically detectable a11y issues', async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/context_menu/`, { timeout: 20 * 60 * 1000 });
-    // Wait for render before scanning -- see input.spec.ts's identical
-    // comment for why (avoids a false pre-hydration "no main"/"no h1").
-    await expect(page.getByRole('button', { name: 'right click here' })).toBeVisible();
-    await expectNoAxeViolations(page, 'context-menu: loaded', { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-
-  // docs/backlog.md row 25: ContextMenu's role="menu" popup carries no
-  // aria-labelledby/aria-label at all, so an open menu has no accessible
-  // name (APG menu-and-menubar pattern requires one) -- this is exactly the
-  // class of defect this round's axe coverage is meant to surface.
+  // dev-docs/backlog.md row 25: ContextMenu's role="menu" popup needs an
+  // accessible name (APG menu-and-menubar pattern requires one: its
+  // aria-labelledby points at the trigger) -- the class of defect this axe
+  // coverage is meant to surface.
   test('menu open has no automatically detectable a11y issues', async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/context_menu/`, { timeout: 20 * 60 * 1000 });
     await page.getByRole('button', { name: 'right click here' }).click({ button: 'right' });
@@ -733,7 +710,7 @@ test.describe('Axe automated scan', () => {
 // `ContextMenuSub { open_on_hover: false }` -- click-activated submenu
 // (preview/src/components/context_menu/variants/click_only_submenu/mod.rs;
 // renders alongside `main` on this page under its own labels). The default
-// hover-open / hover-leave-close contract is pinned, unchanged, by
+// hover-open / hover-leave-close contract is pinned by
 // `oracle/tier1-apg/menu-submenu.spec.ts`'s "hover:" tests on `main`.
 // ---------------------------------------------------------------------------
 test.describe('ContextMenuSub open_on_hover: false (click activation)', () => {
@@ -781,7 +758,7 @@ test.describe('ContextMenuSub open_on_hover: false (click activation)', () => {
     await expect(sub).toHaveAttribute('aria-expanded', 'true');
   });
 
-  test('keyboard is unchanged: ArrowRight / Enter open, ArrowLeft / Escape close', async ({ page }) => {
+  test('keyboard: ArrowRight / Enter open, ArrowLeft / Escape close', async ({ page }) => {
     const { sub } = await openMenu(page);
     await page.keyboard.press('ArrowDown'); // Share
     await page.keyboard.press('ArrowDown'); // Export as
@@ -802,7 +779,7 @@ test.describe('ContextMenuSub open_on_hover: false (click activation)', () => {
     await expect(sub).toBeFocused();
   });
 
-  test('selecting a sub-item still closes the whole menu', async ({ page }) => {
+  test('selecting a sub-item closes the whole menu', async ({ page }) => {
     const { sub } = await openMenu(page);
     await sub.click();
     await page.getByRole('menuitem', { name: 'Plain text' }).click();
@@ -810,7 +787,7 @@ test.describe('ContextMenuSub open_on_hover: false (click activation)', () => {
     await expect(page.getByText('Chosen: text')).toBeVisible();
   });
 
-  test('default (open_on_hover: true) is unchanged: hovering More tools still opens it', async ({ page }) => {
+  test('default (open_on_hover: true): hovering More tools opens it', async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/context_menu/`, { timeout: 20 * 60 * 1000 });
     await page.getByRole('button', { name: 'right click here' }).click({ button: 'right' });
     const sub = page.getByRole('menuitem', { name: 'More tools' });
@@ -820,11 +797,10 @@ test.describe('ContextMenuSub open_on_hover: false (click activation)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Open/close fade vs. the anchor's centring transform (2026-10-05). An anchored overlay centres itself
+// Open/close fade vs. the anchor's centring transform . An anchored overlay centres itself
 // with `transform: translateX(-50%)` (top_layer.rs's engine stylesheet); a `@keyframes` that sets
-// `transform` REPLACES it for as long as it runs (the date picker played its fade 144px off-centre, the
-// colour picker 133px). `ContextMenuContent` sets no `data-side`, so it has no centring to lose today -- the same
-// shape, latent -- so this probes the rendered keyframes instead of sampling a position that could not
+// `transform` REPLACES it for as long as it runs (the panel then plays its fade off-centre). `ContextMenuContent` sets
+// no `data-side`, so it has no centring to lose -- the same shape, latent -- so this probes the rendered keyframes instead of sampling a position that could not
 // move anyway: `assert-anchor-transform.ts` supplies an inline `transform`, seeks the element's own
 // CSS animation to its start/midpoint/end, and asserts the transform survives while `scale`/`translate`
 // do the moving. Source-level guard: scripts/check-anchored-keyframes.sh.

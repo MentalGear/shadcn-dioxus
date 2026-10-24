@@ -29,7 +29,7 @@
     position: relative;
 
     /* Never clipping: the thumb is a child of the track (the primitive renders `SliderThumb` inside
-       `SliderTrack`) and is taller than the 4px track, so an `overflow: hidden` here cut it to a
+       `SliderTrack`) and is taller than the 4px track, so an `overflow: hidden` here would cut it to a
        sliver, along with its focus ring and hit area (row 293). Nova's track clips because its
        thumb is a sibling outside it; ours is not. The rounded clip moves to `.dx-slider-range`. */
     overflow: visible;
@@ -48,7 +48,7 @@
     position: absolute;
     height: 100%;
 
-    /* What the track's `overflow: hidden` did to the range's ends, without clipping the thumb. */
+    /* Rounds the range's ends to the track's radius (the track itself does not clip, so the thumb is never cut). */
     border-radius: inherit;
     background-color: var(--dx-primary);
 }
@@ -74,9 +74,9 @@
     border-radius: 50%;
     margin: 0;
 
-    /* The native-button reset this rule used to take from `all: unset`, spelled out: `all:` (0,1,0) beat
+    /* The native-button reset, spelled out (not `all: unset`): `all:` (0,1,0) beats
        every zero-specificity theme baseline (user-select, touch-action, press feedback, box-sizing), and
-       scripts/check-theme-baseline.sh now bans it. The resets are the ones a native button needs and this rule does not set itself. */
+       scripts/check-theme-baseline.sh bans it. The resets are the ones a native button needs and this rule does not set itself. */
     appearance: none;
     background-color: transparent;
     background-color: white;
@@ -91,13 +91,11 @@
 
     /* rtl-physical: the thumb's horizontal position (`left: X%`, the value
        -> track-position mapping) is set inline by the primitive
-       (primitives/src/slider.rs, out of this lane's ownership), not by this
-       stylesheet -- this rule only supplies the `-50%` self-centering
-       compensation for whatever inline position lands. Converting only the
-       CSS half without knowing which physical/logical property the
-       primitive writes (and whether it already flips for RTL) risks
-       desyncing the pair; flagged as a coordination item with the RTL
-       primitives lane rather than guessed at here. */
+       (primitives/src/slider.rs), not by this stylesheet -- this rule only
+       supplies the `-50%` self-centering compensation for whatever inline
+       position lands. The CSS half must stay in step with the physical or
+       logical property the primitive writes (and whether it flips for RTL),
+       so it is not converted on its own. */
     transform: translate3d(-50%, -50%, 0);
     transition: box-shadow var(--dx-motion-duration-base);
     will-change: left, bottom, transform;

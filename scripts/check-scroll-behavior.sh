@@ -7,13 +7,13 @@
 # them) unless the same selector carries `[data-anchor-scroll]`. Invisible to cargo and clippy, and with CI frozen
 # (dev-docs/backlog.md row 33) nothing else would notice.
 #
-# THE CLASS (row 228, the owner's finding "clicking a demo link from the overview navigates to the component page,
-# but to its bottom"): `html { scroll-behavior: smooth }` made EVERY window scroll that names no `behavior`
-# animate, not only the in-page `#`-anchor jump it was written for. The router's `scrollTo(0, 0)` after a push
-# started a smooth scroll on the long page, the short destination page replaced it mid-animation, the browser
-# clamped the offset to the new page's bottom, and the visitor saw the BOTTOM of the component page and then
-# watched it glide up (Back is the mirror: the list renders at the top and glides to the saved offset). The same
-# ambient rule had already forced a per-call `behavior: 'instant'` into the charts tab restore and would have hit
+# THE CLASS (row 228):
+# `html { scroll-behavior: smooth }` makes EVERY window scroll that names no `behavior`
+# animate, not only the in-page `#`-anchor jump it is meant for. The router's `scrollTo(0, 0)` after a push
+# starts a smooth scroll on the long page, the short destination page replaces it mid-animation, the browser
+# clamps the offset to the new page's bottom, and the visitor sees the BOTTOM of the component page and then
+# watches it glide up (Back is the mirror: the list renders at the top and glides to the saved offset). An
+# ambient rule would also need a per-call `behavior: 'instant'` in the charts tab restore and would hit
 # the scroll-lock restore (`primitives/src/scroll_lock.rs`) and every future `window.scrollTo`. The construction:
 # the document is instant by default; `preview/assets/main.css` has ONE smooth rule,
 # `html[data-anchor-scroll] { scroll-behavior: smooth }`, and `preview/index.html`'s same-page `a[href^="#"]` click
@@ -31,6 +31,9 @@
 #      `setProperty('scroll-behavior', ...)`) fails.
 # ALLOW format: (path, fnmatch pattern on the whitespace-normalised selector entry or the script line, reason).
 # An entry that matches nothing fails the run as stale, so the list cannot rot into blanket permission.
+#
+# The browser half is `playwright/nav-scroll-instant.spec.ts`; it must not run through a fixture that forces
+# `scroll-behavior: auto !important`, which would mask the very bug it guards.
 #
 # Usage: scripts/check-scroll-behavior.sh [FILE ...]   (explicit files are for self-tests; the positive checks that
 # main.css still has the opt-in rule and index.html still sets it run only on the default scan)

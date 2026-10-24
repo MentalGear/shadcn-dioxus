@@ -25,12 +25,10 @@ test("sidebar: preview page renders block", async ({ page }) => {
   const iframe = page.locator("iframe").first();
   await expect(iframe).toBeVisible({ timeout: SIDEBAR_RENDER_TIMEOUT });
   // Path-segment form (dev-docs/backlog.md row 46): `preview/src/main.rs`'s
-  // `BlockComponentVariantHighlight` now builds this iframe's `src` from the
+  // `BlockComponentVariantHighlight` builds this iframe's `src` from the
   // canonical, SSG-enumerable `Route::ComponentBlockDemoPath`
-  // (`/component/block/<name>/<variant>/`) rather than the legacy query
-  // form (`?name=...&variant=...`) -- the query form still works (it
-  // redirects client-side to this same path), but is no longer what this
-  // app's own internal links emit.
+  // (`/component/block/<name>/<variant>/`). The query form
+  // (`?name=...&variant=...`) redirects client-side to this same path.
   await expect(iframe).toHaveAttribute(
     "src",
     /component\/block\/sidebar\/main\//,
@@ -76,12 +74,12 @@ test.describe("sidebar: block route", () => {
     await expect(sidebar).toHaveAttribute("data-side", "left");
   });
 
-  // Fixed 2026-09-15: `collapsible: SidebarCollapsible::None` rendered a
-  // parallel `.dx-sidebar-static` element that never set `data-side`, so the
-  // side-mirroring CSS rule (`.dx-sidebar-wrapper:has([data-slot="sidebar"]
-  // [data-side="right"]) { flex-direction: row-reverse; }`) never matched --
-  // the "Right" control had no visible effect while "None" was selected, the
-  // sidebar always rendered flush against the left edge. Geometry-based per
+  // `collapsible: SidebarCollapsible::None` renders a parallel `.dx-sidebar-static`
+  // element, which must set `data-side` too, or the side-mirroring CSS rule
+  // (`.dx-sidebar-wrapper:has([data-slot="sidebar"]
+  // [data-side="right"]) { flex-direction: row-reverse; }`) never matches --
+  // the "Right" control would have no visible effect while "None" is selected, the
+  // sidebar always rendering flush against the left edge. Geometry-based per
   // this repo's convention (see select.spec.ts's "Trigger minimum width").
   test("desktop: side switch mirrors sidebar with collapsible=none", async ({ page }) => {
     await gotoSidebarBlock(page);
@@ -166,25 +164,20 @@ test.describe("sidebar: block route", () => {
   });
 });
 
-// Fixed 2026-09-04 (docs/backlog.md row 38): the `/component/block/
-// ?name=sidebar&variant=main&` route (this file's `gotoSidebarBlock`) used
-// to be a bare block fixture with no page-level `<h1>`/`<main>` wrapper of
-// its own -- by design, it is normally embedded in an `<iframe>` from the
-// main preview page (see the "preview page renders block" test above),
-// where that absence is a non-issue (the iframe's own document is a
-// separate accessibility-tree root). Visiting it directly, as both tests
-// below do, used to surface `page-has-heading-one`/`region` for exactly
-// that reason. `ComponentBlockDemo` (`preview/src/main.rs`) now renders a
+// dev-docs/backlog.md row 38: the `/component/block/
+// ?name=sidebar&variant=main&` route (this file's `gotoSidebarBlock`) is
+// normally embedded in an `<iframe>` from the main preview page (see the
+// "preview page renders block" test above), where a missing page-level
+// `<h1>`/`<main>` is a non-issue (the iframe's own document is a separate
+// accessibility-tree root). Visiting it directly, as both tests below do,
+// would surface `page-has-heading-one`/`region` without them, so
+// `ComponentBlockDemo` (`preview/src/main.rs`) renders a
 // visually-hidden `<h1>` naming the block, in its own `<header>` landmark;
-// and `Sidebar` (`preview/src/components/sidebar/component.rs`) now gives
+// and `Sidebar` (`preview/src/components/sidebar/component.rs`) gives
 // its own content a `complementary` landmark too, so nothing on the page
-// sits outside a landmark. Both scans below are expected to pass clean.
+// sits outside a landmark. The collapsed scan below and the `all-routes`
+// sweep's at-rest scan of the same route (`block-sidebar-main`) pass clean.
 test.describe("Axe automated scan", () => {
-  test("loaded (expanded) has no automatically detectable a11y issues", async ({ page }) => {
-    await gotoSidebarBlock(page);
-    await expectNoAxeViolations(page, "sidebar: expanded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-
   test("collapsed has no automatically detectable a11y issues", async ({ page }) => {
     await gotoSidebarBlock(page);
     const sidebar = page.locator('[data-slot="sidebar"]:not([data-mobile="true"])');

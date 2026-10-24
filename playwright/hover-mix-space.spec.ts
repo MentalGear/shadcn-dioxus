@@ -3,7 +3,7 @@ import type { Locator, Page } from "@playwright/test";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
-// Row 260 (finishing row 243): every hover / pressed fill that steps a colour toward the ink reads the theme's
+// Row 260 (row 243): every hover / pressed fill that steps a colour toward the ink reads the theme's
 // `--dx-hover-mix-space` (shadcn's `in oklch`), so each one must equal the formula evaluated IN THE PAGE from the
 // resolved tokens. Like button-hover.spec.ts, nothing is typed in: a probe element resolves the expected colour,
 // and a canvas quantises both sides to the 8-bit sRGB a screenshot shows. Light and dark.

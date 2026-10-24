@@ -8,14 +8,14 @@
        (Nova's `flex size-4 items-center justify-center`,
        shadcn-ui/ui@295a1f1 style-nova.css `.cn-checkbox`).
        An inline-block button is placed on the line box's BASELINE, so
-       inside a table cell it sat 2px above the row's centre (measured with
-       Geist: -2.00px vs the row, the cell and the text) and stretched the
+       inside a table cell it sits 2px above the row's centre (measured with
+       Geist: -2.00px vs the row, the cell and the text) and stretches the
        line box (row 37px instead of 36px); shadcn's own tasks data-table
-       papered over exactly that with `translate-y-[2px]`. A block-level
+       papers over exactly that with `translate-y-[2px]`. A block-level
        box has no baseline to sit on, so the table cell's
        `vertical-align: middle` centres it exactly, and everything else
        that hosts a checkbox (Field, Form, the dashboard mock) is a flex
-       container that blockified it already. */
+       container that blockifies it. */
     display: flex;
     width: 1rem;
     height: 1rem;
@@ -37,8 +37,8 @@
 .dx-checkbox-indicator {
     /* Always laid out at the checkbox's full size, checked or not. The
        primitive mounts the indicator's CHILDREN (the check icon) only while
-       the box is checked, so a content-sized indicator was 0x0 unchecked and
-       16x16 checked -- the box's inside changed shape on every toggle. Filling
+       the box is checked, so a content-sized indicator would be 0x0 unchecked and
+       16x16 checked -- the box's inside would change shape on every toggle. Filling
        the button makes the indicator box independent of its children. */
     display: flex;
     width: 100%;

@@ -1,6 +1,6 @@
 //! Radar chart -- part of the shared `chart` package (`ChartContainer`,
 //! `Chart`, `ChartTooltip`, `ChartLegend`; `RadarOptions`/`RadarGrid`
-//! configure the `Radar` family). This folder is a docs/gallery page for
+//! configure the `Radar` family). This folder is a docs and gallery page for
 //! that family, not a separate installable package -- installing `chart`
 //! (`componentDependencies: ["chart"]`, this folder's own `component.json`)
 //! already gives you everything below.
@@ -16,7 +16,7 @@ pub use crate::components::chart::*;
 // `ChartConfig`/`ChartDatum`/`ChartKind`/`LegendAlign`) -- re-exported here
 // rather than added to `chart/component.rs`'s own re-export line, mirroring
 // `chart_tooltip/component.rs`'s identical choice for `TooltipIndicator`/
-// `TooltipRow` (`$S/stage2-lanes.md`, s2-tooltip "FYI, not blocking").
+// `TooltipRow`.
 pub use dioxus_primitives::chart::engine::radar::RadarTick;
 pub use dioxus_primitives::chart::{
     ChartIcon, ChartMargin, RadarGrid, RadarOptions, TooltipIndicator,

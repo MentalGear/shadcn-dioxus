@@ -5,13 +5,13 @@
  *   - HTML Living Standard, "the link element" / "render-blocking": a `<link rel=stylesheet>` in `<head>` blocks the
  *     first render; one inserted after `<body>` exists does NOT (the spec only lets render-blocking elements be added
  *     while the document "allows adding render-blocking elements", i.e. while `body` is null; `blocking=render` on a
- *     late link measured as a no-op, 2026-10-05). So a stylesheet that is discovered by RENDERING something arrives
+ *     late link is a no-op). So a stylesheet that is discovered by RENDERING something arrives
  *     after that something has already been painted.
  *   - Layout Instability API (`layout-shift`): the reflow when such a sheet lands is a layout shift.
  *
- * THE REPORT this guards (owner, 2026-10-05): "elements on their component's page, on first load, show a white/light
- * version or placeholder before their dark mode or real style kicks in (also shifts layout), e.g. /component/field/.
- * Hydration?" Measured on the release SSG build of 001a5f0:
+ * THE CLASS this guards: elements on a component's page show a white/light version or placeholder on first load
+ * before their dark mode or real style kicks in (and shift layout), e.g. /component/field/. The cause is not
+ * hydration. Measured on the release SSG build:
  *   - NOT hydration and NOT the theme. A hard load is right: the JS-disabled page and the hydrated page have
  *     0 differing computed styles over `main` in light and dark (this spec's parity tests), hydration inserts no
  *     stylesheet, CLS 0.0001, and the pre-paint script has set `data-theme` before the first paint.
@@ -31,20 +31,29 @@
  * WHAT THIS ORACLE ASSERTS (by property, over every component route -- a new component is covered the day it lands):
  *   1. every prerendered page's head has the bundle after the four global sheets, the same one on every page, complete;
  *   2. hard load: the JS-disabled computed styles of `main` equal the hydrated ones in both system colour schemes, and
- *      no stylesheet is inserted that the head/bundle did not already carry (only on the routes `SECTION_2` lists, row 329);
- *   3. client-side navigation to every component: the computed styles in the very first state the new route is in
+ *      no stylesheet is inserted that the head/bundle did not already carry (per route, on the routes `COMPONENTS` lists);
+ *   3. client-side navigation to each component `COMPONENTS` lists: the computed styles in the very first state the new route is in
  *      (the DOM the browser would paint) equal its settled ones, no uncovered sheet is inserted, CLS stays ~0;
  *   4. the date picker's calendar is styled the moment it first mounts;
  *   5. an explicit theme choice (cookie) is on `<html>` before the first paint and never changes afterwards;
  *   6. the detector is not blind (a page with its stylesheet removed is reported).
  *
- * RED/GREEN: tests 1, 3 and 4 are red on a build without the bundle (`scripts/build-ssg.sh --no-css-bundle`, or any
- * build older than this oracle) and green with it; test 2 is green on both (it documents that a hard load was always
- * right). Run against an SSG build, served statically (the default :8090; `dx serve` has no bundle and no
+ * RED/GREEN: tests 1, 3 and 4 are red on a build without the bundle (`scripts/build-ssg.sh --no-css-bundle`) and green
+ * with it; test 2 is green on both (a hard load is right either way). Run against an SSG build, served statically (the default :8090; `dx serve` has no bundle and no
  * prerendered head):
  *   PLAYWRIGHT_BASE_URL=http://127.0.0.1:8090 npx playwright test --config=ssg.local.config.ts oracle/tier2-html/first-paint-styles.spec.ts
- * `FIRST_PAINT_ROUTES=field,date_picker` limits the per-route tests; `FIRST_PAINT_CSS_DELAY_MS` (default 150) is the
- * simulated latency of stylesheets fetched after load, which is what makes a late sheet observable on a fast loopback.
+ * `FIRST_PAINT_CSS_DELAY_MS` (default 150) is the simulated latency of stylesheets fetched after load, which is what makes
+ * a late sheet observable on a fast loopback.
+ *
+ * WHICH ROUTES (backlog row 325): the per-route tests of sections 2 and 3 sweep every route only in the per-deploy run
+ * (`scripts/deploy-preview.sh` runs the suite with `FIRST_PAINT_ROUTES=all`). Their causes are
+ * constructed away before any browser: a late sheet cannot exist because `scripts/ssg-css-bundle.mjs` puts every
+ * project sheet of dx's asset manifest into one render-blocking bundle and aborts the build when a page's head is not
+ * "four globals, then the bundle" (`scripts/check-css-delivery.sh` keeps that construction in place), and a markup
+ * difference between the first frame and the settled one fails `cargo test -p preview ssr_parity` (row 329). What is
+ * left for a browser (a component that measures itself, and the proof on every route that the two hold) is the deploy's. A lane or merge batch runs the
+ * whole-site tests (sections 1, 4-6) and the per-route tests on `SUBJECTS` only. `FIRST_PAINT_ROUTES=field,date_picker`
+ * runs exactly that list in both sections.
  * Functional, not timing: it is valid on a debug build.
  */
 import { test, expect } from "../../fixtures";
@@ -64,11 +73,14 @@ const ALL_COMPONENTS: string[] = fs
   .filter((d) => d.isDirectory() && fs.existsSync(path.join(PREVIEW, "src", "components", d.name, "docs.md")))
   .map((d) => d.name)
   .sort();
-/** `FIRST_PAINT_ROUTES=field,date_picker` narrows the per-route tests (the whole-site tests always cover every page). */
-const COMPONENTS: string[] = (() => {
-  const only = (process.env.FIRST_PAINT_ROUTES ?? "").split(",").map((s) => s.trim()).filter(Boolean);
-  return only.length && !only.includes("all") ? ALL_COMPONENTS.filter((c) => only.includes(c)) : ALL_COMPONENTS;
-})();
+/**
+ * The per-route subjects every run hydrates in a real browser: Field, Select and
+ * Combobox (row 306) and Tag Group (row 332), the markup class's own subjects.
+ */
+const SUBJECTS = ["field", "select", "combobox", "tag_group"];
+const ONLY = (process.env.FIRST_PAINT_ROUTES ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+/** The per-route tests' routes: every component in the deploy's sweep, `FIRST_PAINT_ROUTES` when it lists slugs, `SUBJECTS` otherwise. */
+const COMPONENTS: string[] = ONLY.includes("all") ? ALL_COMPONENTS : ALL_COMPONENTS.filter((c) => (ONLY.length ? ONLY : SUBJECTS).includes(c));
 
 /** The four sheets `GlobalHead` links on every route; the bundle must come right after them. */
 const GLOBAL_SHEET_PREFIXES = ["main-", "dx-components-theme-", "dx-effects-", "theme-presets-"];
@@ -163,10 +175,10 @@ const summarize = (diffs: string[]) =>
   `${diffs.length} difference(s); first: ${diffs.slice(0, Number(process.env.FIRST_PAINT_DIFFS ?? 6)).join(" | ")}`;
 
 /**
- * Both loads use the fallback face. Geist is self-hosted now (`font-display: optional`: it is used only if it lands inside the
+ * Both loads use the fallback face. Geist is self-hosted (`font-display: optional`: it is used only if it lands inside the
  * ~100ms block window, else not at all for this page), so with the woff2 reachable the JS-off page and the hydrated page race the
  * font independently and one of them gets Geist's metrics (a ~3px width difference, 198 differing boxes on /component/tabs/).
- * That is font timing, not a style difference, so the woff2 files are aborted too (and Google's hosts, from before the self-hosting).
+ * That is font timing, not a style difference, so the woff2 files are aborted too (and Google's hosts).
  * `fonts-self-hosted.spec.ts` owns "the font really loads".
  */
 async function noWebFonts(page: Page) {
@@ -286,7 +298,7 @@ test.describe("1. every prerendered page's head carries the complete stylesheet 
   });
 
   test("web fonts cannot shift the layout: the latin woff2 files are preloaded and the font stylesheet is display=optional", async ({ request }) => {
-    // Measured (css +100 ms, files +200 ms): `display=swap` = CLS 0.117 on /component/form/, 0.048 on /carousel/; preload + optional = 0.000
+    // With css +100 ms and files +200 ms: `display=swap` = CLS 0.117 on /component/form/, 0.048 on /carousel/; preload + optional = 0.000
     // on both, with Geist in use at first contentful paint; a stale preload URL under `optional` stays 0.000 (under `swap` it is 0.117 again).
     const problems: string[] = [];
     for (const url of ["/", "/docs", "/component/field/", "/component/form/", "/charts/"]) {
@@ -314,7 +326,7 @@ test.describe("1. every prerendered page's head carries the complete stylesheet 
     const bundle = sheetLinks(head).find((t) => t.includes("data-dx-css-bundle"));
     expect(bundle, "the field page's head has a bundle link").toBeTruthy();
     // The href is root-relative INCLUDING any `--base-path` prefix, and BASE already carries that prefix when the
-    // site is served under one, so resolve it as a URL rather than gluing it on (that doubled the prefix: a 404 body).
+    // site is served under one, so resolve it as a URL rather than gluing it on (which doubles the prefix and returns a 404 body).
     const css = await (await request.get(new URL(hrefOf(bundle!), `${BASE}/`).toString())).text();
     expect(css.length, "the bundle is not an empty file").toBeGreaterThan(50_000);
     const walk = (dir: string, ext: string): string[] =>
@@ -339,7 +351,7 @@ test.describe("1. every prerendered page's head carries the complete stylesheet 
 // ---------------------------------------------------------------------------------------------
 
 /**
- * Routes that size or build part of themselves from a CLIENT measurement or state after mount (measured 2026-10-05 on all 76
+ * Routes that size or build part of themselves from a CLIENT measurement or state after mount (measured over all
  * routes; every other route has 0 computed-style differences between the JS-off page and the hydrated one in both schemes, and
  * between a navigation's first state and its settled one): charts take their size from a ResizeObserver (JS-off `<rect>` 46x178,
  * hydrated 70x312; a chart card 324.6 px then 342 px), a native `<select>` has no options until hydration (22 px wide, then
@@ -348,39 +360,34 @@ test.describe("1. every prerendered page's head carries the complete stylesheet 
  * delivery, so the style-parity comparisons skip these routes; the "no uncovered stylesheet" and CLS checks still apply to them
  * (the CLS bound is what holds them to "reserved space"). A route that starts differing fails until somebody looks and adds it
  * here with a reason; the list is not a place to hide a late stylesheet (that is test 1 and the late-sheet checks).
- * markdown (2026-10-19): its streaming demo composes a MessageScroller, which stays `visibility: hidden` until the client reveals it.
- * table (2026-10-22, row 343): the virtualized demo's windowed body is rendered with no rows on the server and its bottom spacer
+ * markdown: its streaming demo composes a MessageScroller, which stays `visibility: hidden` until the client reveals it.
+ * table (row 343): the virtualized demo's windowed body is rendered with no rows on the server and its bottom spacer
  * shrinks once the first rows mount (740000 px -> 739334 px), like virtual_list.
+ * virtual_grid (row 309): the find-in-page variant's server markup carries the whole text layer (every cell, 3600 px
+ * tall, so find-in-page works with JavaScript off); the hydrated grid windows it like its rows.
  */
 const CLIENT_MEASURED = new Set([
   "area_chart", "avatar", "bar_chart", "carousel", "chart", "chart_tooltip", "data_table", "drag_and_drop_list", "form", "item",
-  "line_chart", "markdown", "message_scroller", "pie_chart", "progress", "resizable", "select", "table", "toast", "top_layer", "virtual_list",
+  "line_chart", "markdown", "message_scroller", "pie_chart", "progress", "resizable", "select", "table", "toast", "top_layer", "virtual_grid", "virtual_list",
 ]);
 
 /**
- * The routes section 2 loads (row 329). A computed style that differs between the JS-off page and the hydrated one has one of
- * three causes: the markup differs (an effect writes text, a `style`, a class or a `data-*`), the browser writes something the
- * Rust did not (a measurement, an eval reply), or a sheet arrives late. The first is `cargo test`'s now:
+ * Why section 2 needs a browser at all (row 329). A computed style that differs between the JS-off page and the hydrated one
+ * has one of three causes: the markup differs (an effect writes text, a `style`, a class or a `data-*`), the browser writes
+ * something the Rust did not (a measurement, an eval reply), or a sheet arrives late. The first is `cargo test`'s:
  * `preview/src/ssr_parity.rs` compares the server markup with the first client frame on every demo and every component page,
- * so a markup-only difference fails there in seconds, naming the markup. The third is section 1 (one complete bundle in every
- * head) and section 3 (no uncovered sheet, CLS ~0 on every route). What is left for a real browser is the second cause, which
- * lives in the components that measure themselves (`CLIENT_MEASURED`: the CLS bound and the late-sheet check run there), and
- * one real hydration of the markup class's own subjects for the style diff: Field (the page of the original report), Select
- * and Combobox (row 306) and Tag Group (row 332). An explicit `FIRST_PAINT_ROUTES` runs exactly that list, `all` every route.
+ * so a markup-only difference fails there in seconds, naming the markup. The third is the build's (one complete bundle in
+ * every head, see "WHICH ROUTES"). What is left for a real browser is the second cause, which lives in the components that
+ * measure themselves (`CLIENT_MEASURED`: the CLS bound and the late-sheet check run there), and that is the deploy's sweep;
+ * every other run hydrates `COMPONENTS` (`SUBJECTS` by default) for the style diff.
  */
-const SECTION_2: string[] = (() => {
-  const only = (process.env.FIRST_PAINT_ROUTES ?? "").split(",").map((s) => s.trim()).filter(Boolean);
-  if (only.includes("all")) return ALL_COMPONENTS;
-  if (only.length) return COMPONENTS;
-  return ALL_COMPONENTS.filter((c) => CLIENT_MEASURED.has(c) || ["field", "select", "combobox", "tag_group"].includes(c));
-})();
 
 test.describe("2. hard load: the static page is the page", () => {
   test.describe.configure({ mode: "parallel" });
   test("the route list is real: every client-measured slug is a component page", () => {
     expect([...CLIENT_MEASURED].filter((c) => !ALL_COMPONENTS.includes(c)), "a stale CLIENT_MEASURED entry").toEqual([]);
   });
-  for (const slug of SECTION_2) {
+  for (const slug of COMPONENTS) {
     test(`/component/${slug}/: JavaScript off and hydrated compute the same styles, light and dark`, async ({ browser }) => {
       const read = async (js: boolean) => {
         const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, javaScriptEnabled: js, colorScheme: "light" });

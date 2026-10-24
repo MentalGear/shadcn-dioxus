@@ -2,25 +2,22 @@
 #
 # check-collection-derive.sh
 #
-# Every view of rows derives from ONE model, `primitives/src/data_view/` (backlog row 360,
-# dev-docs/research/collection-model-2026-10-22.md): one text matcher (`contains_query`), selection as a
-# set of ROW KEYS (`ViewState.selected`), one stable sort and one pipeline (`derive`). Before it, the same
-# problem was written five times -- a `to_lowercase().contains(` filter in the combobox and another in the
-# Data Table, selection as `HashSet<usize>` or `[bool; N]` in the Table demo, a ToggleGroup and a photo wall
-# (position-keyed selection that breaks the moment a sort moves a row), and a hand-rolled `sort_by` per demo
-# -- and the footer count read "3 of 1" because one of them kept the selection beside the filter. This gate
-# makes the class inexpressible instead of fixing instances:
+# Every view of rows derives from one model, `primitives/src/data_view/`: in `preview/src/components/**/*.rs` there is
+# no `.to_lowercase().contains(` (call `contains_query`), no `HashSet<usize>`, `Vec<bool>` or `[bool; N]` as a
+# selection (selection is a `HashSet<String>` of row keys in `ViewState`) and no ad-hoc `.sort_by(` / `.sort_by_key(`
+# (a `Field::sortable` through `derive`). Reasoned allowlist (ToggleGroup's deprecated index props, the catalogue
+# sort); a stale entry fails. Backlog row 360.
 #
 #   In `preview/src/components/**/*.rs` (comments stripped) none of these may appear:
 #     - `.to_lowercase().contains(`          -> call `dioxus_primitives::data_view::contains_query`
 #     - `HashSet<usize>` / `Vec<bool>` / `[bool; N]` as a selection -> a `HashSet<String>` of row keys
 #     - `.sort_by(`, `.sort_by_key(`, `.sort_unstable_by*(` -> a `Field::sortable` + `derive`
 #   The stages themselves live in `primitives/src/data_view/`, which is out of scope: the data_table folder
-#   only re-exports them.
+#   holds the table's own view (state, model, reorder) over those stages.
 #
-# EXCEPTIONS are in ALLOW below, each with a reason; an entry that no longer matches anything is itself an
+# EXCEPTIONS are in ALLOW below, each with a reason; an entry that matches nothing is itself an
 # error (a fixed site must leave the list). ToggleGroup's pressed set is a `HashSet<String>` of item values
-# since row 364; only its deprecated index props stay allowlisted.
+# (row 364); only its deprecated index props stay allowlisted.
 #
 # Usage: scripts/check-collection-derive.sh [FILE ...]   (default: every .rs under preview/src/components;
 # explicit files are for self-tests, and skip the stale-entry check)

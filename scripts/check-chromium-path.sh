@@ -2,12 +2,11 @@
 #
 # check-chromium-path.sh  (backlog row 374)
 #
-# Every local Playwright config, two specs and three scripts/*.mjs probes hard-coded the sandbox image's Chromium as
-# revision 1194 under /opt/pw-browsers. A fresh container shipped revision 1243 (in `chrome-linux64/`, not
-# `chrome-linux/`), so the configs without an exists-check failed to launch and the ones with it fell through to
-# Playwright's own resolution, which wants the revision pinned by @playwright/test and found none either. The cure
-# is one resolver, `playwright/sandbox-chromium.cjs` (`PW_CHROMIUM`, else the newest `chromium-<rev>` under
-# `PLAYWRIGHT_BROWSERS_PATH`, else Playwright's default). This gate keeps it the only one:
+# One resolver finds the sandbox's Chromium, `playwright/sandbox-chromium.cjs` (`PW_CHROMIUM`, else the newest
+# `chromium-<rev>` under `PLAYWRIGHT_BROWSERS_PATH`, else Playwright's default): no file under `playwright/` or
+# `scripts/` names a revisioned browser directory (`chromium-<digits>/`, `chromium_headless_shell-<digits>/`), every
+# `playwright/*.config.ts` that sets `executablePath` or `launchOptions` imports the resolver, and none sets
+# `executablePath:` to a string literal.
 #
 # Rule 1. No file under playwright/ or scripts/ (not node_modules, test-results, playwright-report) names a
 #         revisioned browser directory, `chromium-<digits>/` or `chromium_headless_shell-<digits>/`.

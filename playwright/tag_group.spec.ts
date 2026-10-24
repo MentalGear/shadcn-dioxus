@@ -1,6 +1,5 @@
 import { test, expect } from "./fixtures";
 import { type Page } from "@playwright/test";
-import { expectNoAxeViolations } from "./axe";
 import { BASE_URL as BASE } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
@@ -228,17 +227,11 @@ test.describe("Tag group", () => {
   });
 
   test.describe("Geometry", () => {
-    // User report (live site): "Tag group looks a bit deflated." Confirmed
-    // NOT a row-31b token-migration regression -- the pre-fix CSS
-    // (padding-block: 0.125rem, font-size: var(--dx-text-xs)) reproduces
-    // upstream PR #271 (bf007c1) byte-for-byte once its class names are
-    // adapted to the current dx- naming, measured via injected-stylesheet
-    // screenshots against the live :8080 demo. This asserts the modest,
-    // deliberate improvement toward shadcn's Badge/Toggle sizing instead
-    // (dev-docs/backlog.md): a tag is >= 28px tall (box-sizing: border-box
+    // A tag is not deflated: upstream's CSS (padding-block: 0.125rem, font-size: var(--dx-text-xs))
+    // gives a 20px-tall tag with 2px/12px padding. This asserts the sizing toward shadcn's Badge/Toggle
+    // instead (dev-docs/backlog.md): a tag is >= 28px tall (box-sizing: border-box
     // + min-height: var(--dx-space-7)) with --dx-space-1 vertical /
-    // --dx-space-3 horizontal padding. Fails on the pre-fix CSS (20px tall,
-    // 2px/12px padding), passes on the fixed one (28px, 4px/12px).
+    // --dx-space-3 horizontal padding (28px, 4px/12px).
     test("a tag is tall enough to read comfortably (not a deflated pill)", async ({
       page,
     }) => {
@@ -265,17 +258,4 @@ test.describe("Tag group", () => {
     });
   });
 
-  test.describe("Accessibility", () => {
-    test("has no automatically detectable a11y violations on the tag list", async ({
-      page,
-    }) => {
-      // No color-contrast exclusion needed: this round's theme-token fix
-      // (docs/backlog.md row 39) resolved the pre-existing finding here,
-      // and this scan is scoped to the tag grid itself, which has no code
-      // block to need the one remaining, narrower exclusion for.
-      await expectNoAxeViolations(page, "tag_group: tag list", {
-        include: '.dx-component-variant [role="grid"]',
-      });
-    });
-  });
 });

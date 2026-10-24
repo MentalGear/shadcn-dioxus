@@ -1,5 +1,5 @@
 //! Themed Data Table composition pieces -- shadcn/ui catalog parity
-//! (dev-docs/component-backlog.md row 69).
+//! (dev-docs/archive/rounds/component-backlog.md row 69).
 //!
 //! Like `Table` (row 68), there is no `dioxus_primitives::data_table`
 //! primitive: shadcn/ui's own Data Table is a composition pattern built
@@ -288,7 +288,7 @@ pub fn DataTablePagination(props: DataTablePaginationProps) -> Element {
                         default_value: page_size,
                         item_to_label: |size: usize| size.to_string(),
                         // Static trigger text: the default `SelectValue` prints "Select an option" until the options
-                        // register, then "5" (~18 px narrower), which re-flowed the footer (CLS 0.0131 > 0.01).
+                        // register, then "5" (~18 px narrower), which would re-flow the footer (CLS 0.0131 > 0.01).
                         trigger: rsx! {
                             span { "{page_size}" }
                         },

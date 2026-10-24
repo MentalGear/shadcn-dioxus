@@ -62,7 +62,7 @@ pub(super) struct SelectContext {
 
     /// Mirrors [`super::components::select::SelectProps::required`] into the
     /// context so `SelectTrigger` (`trigger.rs`) can expose it as
-    /// `aria-required` on the combobox-role trigger (docs/backlog.md row 8).
+    /// `aria-required` on the combobox-role trigger (dev-docs/backlog.md row 8).
     /// `SelectMulti` has no `required` prop of its own (see that prop's doc
     /// in `select.rs`) -- `use_select_root` wires a constant `false` signal
     /// in for it, so this field is always populated regardless of which of
@@ -72,7 +72,7 @@ pub(super) struct SelectContext {
     /// Mirrors [`super::components::select::SelectProps::scroll_lock`] (and
     /// `SelectMultiProps::scroll_lock`) into the context so
     /// `SelectListRendered` (`list.rs`) can gate its `ScrollLockGuard` on it
-    /// (docs/backlog.md row 9). Defaults to `true` (Radix parity) via both
+    /// (dev-docs/backlog.md row 9). Defaults to `true` (Radix parity) via both
     /// props' own `#[props(default = ...)]`.
     pub scroll_lock: ReadSignal<bool>,
 
@@ -80,10 +80,8 @@ pub(super) struct SelectContext {
     /// the listbox content. Neither this crate's trigger nor its listbox
     /// has an `ArrowLeft`/`ArrowRight`-driven navigation to flip (both are
     /// vertical-only, matching the APG select-only combobox pattern) --
-    /// see this lane's own `$S/batch3/rtl-rust/reference.md`'s Select row
-    /// for why Radix's own RTL-specific positioning math does not apply
-    /// here either (this crate's `SelectList` always uses anchor
-    /// positioning, never Radix's "item-aligned" mode that math is for).
+    /// Radix's own RTL-specific positioning math is for its "item-aligned"
+    /// mode and does not apply to this crate's anchor-positioned popper.
     pub direction: ReadSignal<Direction>,
 
     /// Where the listbox is placed: see [`SelectPosition`].
@@ -99,9 +97,8 @@ impl SelectContext {
     /// the popup and request focus on the currently-selected option, or the
     /// first available one if nothing is selected yet. APG select-only
     /// combobox: "focus the listbox with the current option active" --
-    /// unlike a plain click open (unchanged; leaves DOM focus on the
-    /// listbox container itself, matching this component's pre-existing,
-    /// still-green `select.spec.ts` expectation), keyboard activation must
+    /// unlike a plain click open (which leaves DOM focus on the
+    /// listbox container itself, per `select.spec.ts`), keyboard activation must
     /// land real DOM focus on an option, same as ArrowDown/ArrowUp already
     /// do just below this in `trigger.rs`.
     pub fn open_with_selected_or_first_focus(&mut self) {
@@ -117,8 +114,8 @@ impl SelectContext {
     /// The pointer (click or tap) open: the currently selected option is highlighted and focused,
     /// and scrolled into view, exactly as a keyboard open does (Base UI: a Select opens on its
     /// `selectedIndex` for every modality; a Menu, by contrast, highlights its first item for a
-    /// keyboard open only). With nothing selected, or in a multi-select, a pointer open stays as it was: no highlight,
-    /// DOM focus on the listbox container.
+    /// keyboard open only). With nothing selected, or in a multi-select, a pointer open highlights nothing and
+    /// leaves DOM focus on the listbox container.
     pub fn open_for_pointer(&mut self) {
         // Single-select only: a multi-select has no one selected option to open on, and its
         // pointer open keeps its focus on the listbox (ArrowDown then reaches the first option).

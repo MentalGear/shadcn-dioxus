@@ -34,11 +34,11 @@ test("the category view has a Chat group between Data display and Charts, holdin
   await expect(group(page, "Chat").locator("svg").first()).toBeVisible();
 });
 
-test("the chat parts are no longer in Data display, and Data display keeps its own", async ({ page }) => {
+test("the chat parts are not in Data display, and Data display keeps its own", async ({ page }) => {
   await gotoHydrated(page, PAGE);
   await page.locator('.dx-nav-sort-option[data-nav-sort-option="category"]').click();
   const data = await names(page, "Data display");
-  for (const chat of CHAT) expect(data, `${chat} left Data display`).not.toContain(chat);
+  for (const chat of CHAT) expect(data, `${chat} is not in Data display`).not.toContain(chat);
   for (const kept of ["avatar", "table", "card", "data table"]) expect(data).toContain(kept);
 });
 

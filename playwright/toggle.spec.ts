@@ -23,16 +23,13 @@ test('test', async ({ page }) => {
   await expect(toggleElement).toHaveAttribute('data-state', 'off');
 });
 
-// HARDENING (docs/backlog.md row 89), not a reproduced defect: `.dx-toggle:hover`
-// and `.dx-toggle[data-state="on"]` tie at specificity (0,2,0) -- unlike
-// calendar/tabs's own row 89 fix (an accidental extra-specificity bump from
-// a stray `:not(...)`), this was a genuine tie broken only by source order,
-// and `[data-state="on"]` already happened to be declared after `:hover` --
-// so the pressed background already survived hover on the unmodified tree
-// (verified, both themes, exact values below). `:where(:hover)` makes that
+// HARDENING (dev-docs/backlog.md row 89): `.dx-toggle:hover`
+// and `.dx-toggle[data-state="on"]` tie at specificity (0,2,0), broken only by source order
+// (`[data-state="on"]` is declared after `:hover`), so the pressed background survives hover
+// (both themes, exact values below). `:where(:hover)` makes that
 // unconditional (specificity, not source order) so reordering the rules --
-// or `:hover` later gaining an extra clause the way calendar/tabs's did --
-// can no longer silently flip the winner. Runs in both themes since the
+// or `:hover` gaining an extra clause the way calendar/tabs's did --
+// cannot silently flip the winner. Runs in both themes since the
 // tokens differ per theme.
 for (const dark of [false, true]) {
   test(`a pressed toggle keeps its "on" background while hovered (${dark ? 'dark' : 'light'} mode)`, async ({ page }) => {
@@ -53,15 +50,15 @@ for (const dark of [false, true]) {
     expect(await toggle.evaluate((el) => el.matches(':hover'))).toBe(true);
     const onAndHovered = await toggle.evaluate((el) => getComputedStyle(el).backgroundColor);
 
-    // This asserts the invariant the `:where()` fix makes durable (pressed
+    // This asserts the invariant the `:where()` construction makes durable (pressed
     // keeps its own background under the pointer), not a particular colour --
     // the pressed colour is derived from the preset-aware role tokens.
     expect(onAndHovered, `onAtRest=${onAtRest} onAndHovered=${onAndHovered}`).toBe(onAtRest);
   });
 }
 
-// The pressed background is derived from the preset-aware role tokens (it used to be the ramp step
-// `--primary-color-7`, grey under every base), so under a TINTED base it must (a) carry the tint and
+// The pressed background is derived from the preset-aware role tokens (not the ramp step
+// `--primary-color-7`, which is grey under every base), so under a TINTED base it must (a) carry the tint and
 // (b) still be three visibly different backgrounds: resting, hovered, pressed. The exhaustive base x
 // accent x mode proof is `theme-preset-contrast.spec.ts`; this keeps the same assertion next to the
 // component's own specs.
@@ -107,7 +104,7 @@ for (const dark of [false, true]) {
       expect(gap(pressed, hovered), msg).toBeGreaterThanOrEqual(GAP_PRESSED);
       expect(gap(pressed, rest), msg).toBeGreaterThanOrEqual(GAP_PRESSED);
       expect(gap(hovered, rest), msg).toBeGreaterThanOrEqual(GAP_HOVER);
-      // The tint reaches the pressed state: the old ramp step was pure grey (r == g == b) under every base.
+      // The tint reaches the pressed state: the ramp step is pure grey (r == g == b) under every base.
       expect(new Set(pressed).size, `pressed ${pressed} is neutral grey, not ${base}-tinted`).toBeGreaterThan(1);
     });
   }
@@ -174,11 +171,6 @@ test('disabled toggles (default and outline) ignore clicks', async ({ page }) =>
 });
 
 test.describe('Axe automated scan', () => {
-  test('loaded (off) has no automatically detectable a11y issues', async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/toggle/`, { timeout: 20 * 60 * 1000, waitUntil: 'networkidle' });
-    await expectNoAxeViolations(page, 'toggle: off', { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-
   test('on has no automatically detectable a11y issues', async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/toggle/`, { timeout: 20 * 60 * 1000, waitUntil: 'networkidle' });
     await page.locator('#component-preview-frame').getByRole('button', { name: 'Toggle bookmark', exact: true }).click();

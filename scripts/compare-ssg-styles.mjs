@@ -12,10 +12,10 @@
 // What it is for: scripts/ssg-css-bundle.mjs replaces each route's own stylesheet order (render order) with ONE bundle order.
 // Stylesheets of different components conflict at equal specificity (`.dx-label` vs `.dx-field-label`, `.dx-button` vs
 // `.dx-sidebar-trigger`, ...), so a wrong order silently changes pixels. Compare a `--no-css-bundle` build (A) with the bundled
-// build (B) whenever the bundler's ordering or the stylesheets change. Measured 2026-10-05 (release SSG of 001a5f0): 82 of 83 routes
-// identical in both schemes; the one difference is the HOME page, where Field's label is 14px per the home gallery's own order
-// (Label before Field) and 12.8px on the Field page and, with the bundle, everywhere -- a route-dependent cascade that already
-// existed (`field/style.css`'s `.dx-field-label` and `label/style.css`'s `.dx-label` tie on specificity).
+// build (B) whenever the bundler's ordering or the stylesheets change. Expected result: every route identical in both schemes, apart
+// from the HOME page, where Field's label is 14px per the home gallery's own order (Label before Field) and 12.8px on the
+// Field page and, with the bundle, everywhere -- a route-dependent cascade that is independent of the bundle
+// (`field/style.css`'s `.dx-field-label` and `label/style.css`'s `.dx-label` tie on specificity).
 import fs from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";

@@ -3,13 +3,13 @@
 # check-open-focus.sh
 #
 # Where focus goes when an overlay opens, and whether it rings, is decided in ONE place
-# (docs/backlog.md rows 206 and 226): `primitives/src/modality.rs` writes the interaction modality
+# (dev-docs/backlog.md rows 206 and 226): `primitives/src/modality.rs` writes the interaction modality
 # (keyboard | mouse | touch | pen) to `<html data-dx-modality>` once, `dxOpenFocus` there is the one
 # open-focus policy (`use_dialog_open_driver`, the non-modal Popover's show script, and the Command
 # palette through `data-dx-autofocus`), and `dx-components-theme.css` ("Focus modality") draws a ring
-# only for the keyboard. Every overlay that picked its own focus target used to be its own instance of
+# only for the keyboard. An overlay that picks its own focus target is its own instance of
 # the same bug on iOS: a ring around the panel, a text field focused while the panel was still being
-# placed, so the software keyboard rose and moved the layout.
+# placed, so the software keyboard rises and moves the layout.
 #
 # This gate keeps a second, private open-focus decision from coming back. In every Rust source of
 # `primitives/src` and `preview/src` that is on an open path -- it mentions `showModal`, `showPopover`,
@@ -38,8 +38,10 @@
 # component at once.
 #
 # Comment-only lines are ignored for 1-4. Usage: scripts/check-open-focus.sh [FILE=repo/name ...]
-# (explicit files are scanned as given and skip the cross-file checks; used to prove the gate red).
+# (explicit files are scanned as given and skip the cross-file checks; for proving the gate red).
 # Exit 0: clean. Exit 1: offending file:line on stdout.
+#
+# The browser half is `playwright/touch-open-focus.spec.ts`.
 
 set -euo pipefail
 
