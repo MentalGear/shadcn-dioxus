@@ -208,8 +208,12 @@ const SCROLL_BRIDGE_JS: &str = r#"
     const publish = (isScrolling) => {
         const width = Math.min(el.clientWidth, window.innerWidth) || 800;
         const height = Math.min(el.clientHeight, window.innerHeight) || 600;
-        const top = Math.round(el.scrollTop);
-        const left = Math.round(Math.abs(el.scrollLeft));
+        // Clamped to the scroll range: iOS rubber-banding reports offsets past either end
+        // (a negative `scrollTop` at the top), and the report's fields are unsigned.
+        const clamp = (value, max) => Math.round(Math.min(Math.max(value, 0), Math.max(max, 0)));
+        const rtl = getComputedStyle(el).direction === "rtl";
+        const top = clamp(el.scrollTop, el.scrollHeight - el.clientHeight);
+        const left = clamp(rtl ? -el.scrollLeft : el.scrollLeft, el.scrollWidth - el.clientWidth);
         const key = top + " " + left + " " + width + " " + height + " " + isScrolling;
         if (key === last) return;
         last = key;
@@ -261,6 +265,17 @@ mod tests {
     #[test]
     fn the_report_shape_matches_the_script() {
         assert!(SCROLL_BRIDGE_JS.contains("dioxus.send({ top, left, width, height, isScrolling })"));
+    }
+
+    /// Rubber-band offsets past either end (iOS) are clamped into the scroll range in the page,
+    /// so every report fits `ScrollReport`'s unsigned fields.
+    #[test]
+    fn the_report_clamps_offsets_into_the_scroll_range() {
+        assert!(SCROLL_BRIDGE_JS.contains("clamp(el.scrollTop, el.scrollHeight - el.clientHeight)"));
+        assert!(SCROLL_BRIDGE_JS.contains(
+            "clamp(rtl ? -el.scrollLeft : el.scrollLeft, el.scrollWidth - el.clientWidth)"
+        ));
+        assert!(!SCROLL_BRIDGE_JS.contains("Math.abs(el.scrollLeft)"));
     }
 
     #[test]

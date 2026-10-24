@@ -60,7 +60,7 @@
 //! });
 //! ```
 
-use dioxus::document::{self, Eval};
+use dioxus::document::{self, Eval, EvalError};
 use dioxus::prelude::*;
 use serde::{de::DeserializeOwned, Serialize};
 
@@ -145,15 +145,26 @@ impl JsListeners {
     /// calling component's scope. The task ends with the scope, or when the script does.
     pub fn on_message<T: DeserializeOwned + 'static>(
         self,
-        mut handler: impl FnMut(T) + 'static,
+        handler: impl FnMut(T) + 'static,
     ) -> Self {
         let mut eval = self.eval;
         spawn(async move {
-            while let Ok(message) = eval.recv::<T>().await {
-                handler(message);
-            }
+            receive(&mut eval, handler).await;
         });
         self
+    }
+}
+
+/// Hands every message `eval` receives to `handler` until the script ends. A message that does
+/// not deserialize as `T` is skipped, not taken as the end: one malformed message must not
+/// silence every later one.
+async fn receive<T: DeserializeOwned>(eval: &mut Eval, mut handler: impl FnMut(T)) {
+    loop {
+        match eval.recv::<T>().await {
+            Ok(message) => handler(message),
+            Err(EvalError::Serialization(_)) => {}
+            Err(_) => break,
+        }
     }
 }
 
@@ -163,13 +174,11 @@ impl JsListeners {
     /// (`pointer.rs`: the pointers currently held down).
     pub(crate) fn on_message_in_root<T: DeserializeOwned + 'static>(
         self,
-        mut handler: impl FnMut(T) + 'static,
+        handler: impl FnMut(T) + 'static,
     ) -> Self {
         let mut eval = self.eval;
         crate::dioxus_core::Runtime::current().spawn(ScopeId::ROOT, async move {
-            while let Ok(message) = eval.recv::<T>().await {
-                handler(message);
-            }
+            receive(&mut eval, handler).await;
         });
         self
     }
