@@ -102,7 +102,7 @@ pub mod virtual_list;
 /// generated and committed by `scripts/build-js-bundle.sh`, checked by
 /// `scripts/check-js-bundle.sh`; there is no build script). Native (Blitz)
 /// modal overlays (`dialog.rs`/`alert_dialog.rs`/`popover.rs`'s
-/// `#[cfg(not(feature = "web"))]` arms) are its only remaining
+/// `#[cfg(not(feature = "web"))]` arms) are its only
 /// consumers -- every web-arm modal overlay uses the native-dialog
 /// engine (`showModal()`'s own focus trap/restore/inertness/top-layer),
 /// the two-engine overlay architecture (dev-docs/plan.md). `#[cfg]`
@@ -126,7 +126,7 @@ pub(crate) const FOCUS_TRAP_JS: Asset = asset!("/src/js/focus-trap.js");
 /// is what actually keeps the reference out of that build's compilation
 /// unit). A no-op on the web arm:
 /// every modal overlay's web-arm focus handling comes from the browser's
-/// own `showModal()` now, so there is nothing to load there.
+/// own `showModal()`, so there is nothing to load there.
 #[cfg(not(feature = "web"))]
 pub(crate) fn focus_trap_script() -> Element {
     rsx! {
@@ -163,9 +163,9 @@ static NEXT_UNIQUE_ID: AtomicUsize = AtomicUsize::new(0);
 /// the same `dxc-{n}` namespace, such a late id could equal an SSR id still
 /// in the DOM -- two elements, one `id` -- and `getElementById` (hence every
 /// aria wiring, anchor binding and `showModal()` lookup) resolves to the
-/// wrong one. Observed: a hidden SSR checkbox input and the late-mounted
-/// command dialog both had `id="dxc-229"`, so the command palette never
-/// opened. Keeping client-allocated ids under a different prefix makes that
+/// wrong one (a hidden SSR checkbox input and a late-mounted command dialog
+/// both holding `id="dxc-229"` would keep the command palette from
+/// opening). Keeping client-allocated ids under a different prefix makes that
 /// collision impossible by construction, whatever the counters' values.
 fn format_unique_id(is_server: bool, n: usize) -> String {
     if is_server {
@@ -461,7 +461,7 @@ fn use_form_reset_listener(
 /// Drive `showModal()`/`close()` on the `<dialog>` element with the given
 /// `id` from `open`, guarded by the element's own `.open` DOM property.
 ///
-/// Docs/plan.md Phase 4.2. Ported *by construction*, not by copying code,
+/// `dev-docs/plan.md` Phase 4.2. Built *by construction*, not by copying code,
 /// from `dev-docs/archive/research/phase4-spike-findings.md`'s `use_dialog_open_driver`
 /// (experiment 2's fix for experiment 1's stranded-signal defect, see
 /// `dev-docs/reference/platform-rationale.md` Caveat 1). The guard (checking
@@ -471,7 +471,7 @@ fn use_form_reset_listener(
 /// experiment 3b).
 ///
 /// Never bind the `<dialog>` element's `open` attribute declaratively
-/// alongside this hook in the same build -- spike experiment 3c found that
+/// alongside this hook in the same build -- (spike experiment 3c) that
 /// combination doesn't crash, it silently *skips* `showModal()` (Dioxus
 /// commits the declarative attribute during render, before this effect
 /// runs, so the guard's own condition is already false by the time it
@@ -489,27 +489,27 @@ fn use_form_reset_listener(
 /// prerender is a *host* (non-wasm) binary that also belongs on this arm
 /// whenever this crate's `web` feature is on.
 ///
-/// ## Closing waits for the exit (backlog row 141; the modal-close regression)
+/// ## Closing waits for the exit (backlog row 141)
 ///
 /// `open` going `false` does **not** call `close()` on the spot. A native
 /// `close()` drops the `<dialog>` out of the top layer *synchronously*, and
 /// everything that made the panel a modal panel goes with it in that one frame: the
 /// `::backdrop` scrim, the viewport as the containing block of its `position: fixed`
 /// box, the `:modal` rules, an ancestor's `opacity` ceasing to be ignored. A
-/// closing panel is still animating out, so each of those showed as a glitch --
-/// worst on the home page, where every demo sits in a `.dx-component-card`
+/// closing panel is still animating out, so each of those would show as a glitch --
+/// worst where a demo sits in a `.dx-component-card`
 /// (`content-visibility: auto`, so layout + paint containment): out of the top
 /// layer a fixed panel is positioned against, sized by and CLIPPED to its card, so a
-/// right-hand Sheet snapped from 384x800 to 384x256 and a Drawer from 1265x346 to
-/// 1105x205 mid-slide. `transition: overlay allow-discrete` papered over that
-/// in Chromium alone, and only until the `overlay` transition ended (not in step
-/// with the panel's own exit); Firefox and Safari had no keep-alive at all.
+/// right-hand Sheet would snap from 384x800 to 384x256 and a Drawer from 1265x346 to
+/// 1105x205 mid-slide. `transition: overlay allow-discrete` covers that
+/// in Chromium alone, and only until the `overlay` transition ends (not in step
+/// with the panel's own exit); Firefox and Safari have no keep-alive at all.
 ///
 /// So this driver keeps the dialog a real, open modal -- same top layer, same
 /// geometry -- until every animation or transition running on it (the panel's own
 /// and its `::backdrop`'s) has settled, bounded by `DIALOG_EXIT_TIMEOUT_MS`, and only then
-/// calls `close()`: the same construction [`crate::popover`]'s modal arm uses, now
-/// on every engine and for every dialog-engine modal. A stylesheet therefore keys
+/// calls `close()`: the same construction [`crate::popover`]'s modal arm uses, on
+/// every engine and for every dialog-engine modal. A stylesheet therefore keys
 /// its exit on the dialog's `data-state="closed"` (set by every caller of this
 /// hook) and never needs an engine-specific keep-alive. With no animation at all
 /// (no stylesheet, reduced motion to `0s`) the wait is empty and it closes at once.
@@ -751,9 +751,8 @@ fn use_dialog_close_sync(
 /// this exact "click outside to close" pattern) tells the two apart
 /// correctly regardless of `event.target`.
 ///
-/// Shared (Phase 4.2, dev-docs/plan.md) by `popover.rs`'s modal web arm
-/// (native-dialog Popover migration), `alert_dialog.rs` and `dialog.rs`
-/// rather than reimplemented in each --
+/// Shared by `popover.rs`'s modal web arm, `alert_dialog.rs` and `dialog.rs`
+/// (Phase 4.2, dev-docs/plan.md) rather than reimplemented in each --
 /// the same trio as [`use_dialog_open_driver`]/[`use_dialog_close_sync`].
 /// `use_outside_dismiss` itself is not reusable here, because a
 /// `showModal()` backdrop click's `event.target` *is* the `<dialog>` element
@@ -844,9 +843,8 @@ fn use_dialog_close_sync(
 /// one frame (~16ms) is far shorter than the time a real second tap, or a
 /// Playwright `.click()`'s own actionability/round-trip overhead, ever
 /// takes to reach the browser. `cancelAnimationFrame` on cleanup covers the
-/// case where the dialog closes (unmounts, see `popover.rs`'s "Two
-/// execution-confirmed bugs" -- though this specific content has no exit
-/// animation) before the deferred frame ever fires, so the listener is
+/// case where the dialog closes (unmounts) before the deferred frame ever
+/// fires, so the listener is
 /// never attached to an element already gone from the DOM.
 ///
 /// ## The drag false positive (dragging UP on a bottom Drawer's handle must not close it)
@@ -1195,9 +1193,9 @@ fn chain_listeners(
 /// only accumulates and combines attributes with `namespace == Some("style")`
 /// into the single served `style="..."` -- a plain `name == "style"`,
 /// `namespace == None` attribute is a completely separate code path and is
-/// written out as its own, second `style="..."` (observed:
+/// written out as its own, second `style="..."` (e.g.
 /// `ContextMenuTrigger`'s fixed touch-suppression CSS alongside the preview
-/// app's themed wrapper's shorthand `padding`/`background`/etc. produced
+/// app's themed wrapper's shorthand `padding`/`background`/etc. would produce
 /// exactly this — two `style` attributes on one tag, WHATWG HTML's
 /// duplicate-attribute parse error, `dev-docs/conformance-harness.md`
 /// hydration-parity Rule 4). `merge_attributes` cannot help either: it
@@ -1379,9 +1377,9 @@ mod tests {
 
     /// `style` folds the way `class` does (declarations concatenated, earlier first), so a
     /// primitive's own `anchor-name`/`position-anchor` binding survives a caller-supplied
-    /// `style` instead of being replaced by it (the avatar dropdown demo's trigger rendered at
-    /// viewport (0,0) because `Button { style: "border-radius: 9999px;", attributes }` replaced
-    /// the trigger's anchor-name style).
+    /// `style` instead of being replaced by it (were `Button { style: "border-radius: 9999px;",
+    /// attributes }` to replace the trigger's anchor-name style, the avatar dropdown demo's
+    /// trigger would render at viewport (0,0)).
     #[test]
     fn style_attribute_is_folded_not_overwritten() {
         let result = merge_attributes(vec![
@@ -1521,10 +1519,10 @@ mod tests {
         assert!(result[0].volatile);
     }
 
-    /// The duplicate-attribute protections are unchanged: still exactly one attribute per
+    /// The duplicate-attribute protections hold: exactly one attribute per
     /// `(name, namespace)`, the shorthand `style` namespace is NOT folded into the plain
     /// `style` (that is `fold_style_attributes`'s job), and every non-`class`/`style` name is
-    /// still overwritten by the last occurrence.
+    /// overwritten by the last occurrence.
     #[test]
     fn duplicate_protections_still_hold() {
         let shorthand = Attribute {
@@ -1825,7 +1823,7 @@ mod unique_id_tests {
         assert_eq!(format_unique_id(false, 229), "dxc-c229");
     }
 
-    /// The regression: a client-allocated id equal in counter value to an SSR
+    /// The property: a client-allocated id equal in counter value to an SSR
     /// id (`dxc-229` vs the client's own 229th) must still differ.
     #[test]
     fn client_and_server_ids_never_collide_for_any_counter_values() {

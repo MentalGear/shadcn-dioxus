@@ -36,7 +36,7 @@
 //! marker type -- see `dioxus-html`'s `events/selection.rs`), so there is no
 //! way to read a caret position from the Dioxus event itself.
 //!
-//! Two references were read (never vendored or copied from), per
+//! Two references inform it (never vendored or copied from), per
 //! `dev-docs/guides/lifting-code.md`: upstream Dioxus PR #255 (`ealmloff`,
 //! draft) and `dignifiedquire`/`rust-ui`'s `input_otp.rs`, both for shape and
 //! edge-case awareness only.
@@ -44,8 +44,8 @@
 //! ## APG / WAI-ARIA
 //!
 //! There is no APG pattern for "OTP input" -- it is not a distinct ARIA
-//! widget, just a styled single-line text input (confirmed against APG's own
-//! pattern index; shadcn/ui's own `InputOTP` docs describe it the same way,
+//! widget, just a styled single-line text input (APG's own pattern index has
+//! no entry for it; shadcn/ui's own `InputOTP` docs describe it the same way,
 //! built on the `input-otp` library over a plain `<input>`). This component
 //! therefore follows WCAG's generic text-input requirements rather than
 //! inventing a widget role that doesn't exist: a real, focusable, labelled
@@ -486,8 +486,8 @@ pub fn InputOtp(props: InputOtpProps) -> Element {
                 // 2 while slots 1/4/5 all land at index 3. This handler
                 // recomputes the intended slot from geometry instead (the
                 // slots are `pointer-events: none`, so `elementFromPoint`
-                // can't be used -- see this module's doc on the earlier hit
-                // -target fix) and explicitly moves the caret there,
+                // can't be used -- see the overlay's `pointer-events: none`
+                // below) and explicitly moves the caret there,
                 // matching upstream `input-otp`'s own approach of not
                 // trusting native click-to-glyph mapping at all.
                 onclick: move |e: MouseEvent| {
@@ -522,11 +522,11 @@ pub fn InputOtp(props: InputOtpProps) -> Element {
             // same stacking context, and its `InputOtpSlot` boxes visually
             // cover almost the entire row. Without this, every click/tap
             // lands on a decorative, non-interactive box instead of the real
-            // input beneath it -- confirmed via `elementFromPoint` on a
-            // running instance: clicking dead-center of a visible slot
-            // resolved to that slot's own `<div>`, not `#otp-main`, and only
-            // the few-pixel gaps *between* slots (untouched by any box)
-            // reached the input at all. `pointer-events: none` makes this
+            // input beneath it: `elementFromPoint` at the dead centre of a
+            // visible slot would resolve to that slot's own `<div>`, not
+            // the input, and only the few-pixel gaps *between* slots
+            // (untouched by any box) would reach the input at all.
+            // `pointer-events: none` makes this
             // layer transparent to hit-testing, same as it already is
             // visually (`opacity: 0` on the real input, this module's doc),
             // so every click/tap across the full visible row -- slots,
@@ -547,8 +547,8 @@ pub fn InputOtp(props: InputOtpProps) -> Element {
 /// there -- overriding the browser's own (wrong, see [`InputOtp`]'s
 /// `onclick`) click-to-glyph caret placement.
 ///
-/// The slot boxes are `pointer-events: none` (the earlier "almost no hit
-/// target" fix, this module's doc), so `elementFromPoint` would just return
+/// The slot boxes are `pointer-events: none` (the overlay's hit-target rule
+/// in [`InputOtp`]), so `elementFromPoint` would just return
 /// the real input itself, never the slot underneath. Instead this reads
 /// every slot's own `getBoundingClientRect()` directly and does a plain
 /// point-in-rect test -- a fixed, non-scrolling layout, so this is exact.
@@ -594,14 +594,14 @@ pub fn InputOtp(props: InputOtpProps) -> Element {
 /// on the character *at* the caret going forward) and makes
 /// Shift+`ArrowRight`/Shift+`ArrowLeft` extend/shrink from the natural end
 /// if a caller ever drives this with a real keyboard selection. It has no
-/// effect on the unshifted nav already covered by this module's tests:
+/// effect on the unshifted nav covered by this module's tests:
 /// unshifted `ArrowLeft`/`ArrowRight` on any non-collapsed selection collapse
-/// to that selection's left/right edge regardless of direction (confirmed
-/// live and re-verified by the keyboard-nav test below, which still passes
-/// unmodified), so a single-character selection here behaves exactly like a
-/// collapsed caret already would for every keyboard interaction this
-/// component exercises -- the only user-visible change is that *typing*
-/// over it now replaces instead of inserting.
+/// to that selection's left/right edge regardless of direction (the
+/// keyboard-nav case of `playwright/input_otp.spec.ts` holds it), so a
+/// single-character selection here behaves exactly like a collapsed caret
+/// for every keyboard interaction
+/// this component exercises -- the only visible difference is that *typing*
+/// over it replaces instead of inserting.
 async fn snap_caret_to_slot(
     id: String,
     value_len: usize,
@@ -632,8 +632,8 @@ async fn snap_caret_to_slot(
                 // replaces it instead of inserting before it.
                 input.setSelectionRange(clamped, clamped + 1, 'forward');
             } else {
-                // Past the last real character -- nothing to select, same
-                // "click to continue typing" collapsed caret as before.
+                // Past the last real character -- nothing to select: the
+                // "click to continue typing" collapsed caret.
                 input.setSelectionRange(clamped, clamped, 'forward');
             }
             dioxus.send(clamped);

@@ -9,7 +9,7 @@
 //! does not own messages, models, transport or persistence -- the rows are
 //! whatever markup the caller puts inside a [`MessageScrollerItem`].
 //!
-//! # Scope (stage 1)
+//! # Scope
 //!
 //! Covered: follow-the-stream while the reader is at the live edge
 //! (`auto_scroll`), released by wheel / touch / scroll keys / a scrollbar
@@ -24,7 +24,7 @@
 //! current anchor and the visible rows), a per-call `scroll_margin`, and a live
 //! `default_scroll_position`.
 //!
-//! Still deferred (not a silent gap): handing the viewport to
+//! Not covered (a stated limit, not a silent gap): handing the viewport to
 //! [`crate::virtual_list`]. See "Virtualization" below for how long
 //! transcripts stay cheap.
 //!
@@ -97,7 +97,7 @@
 //!
 //! Mounting only a window of rows (so unmounted rows would be unreachable by
 //! native find-in-page, screen-reader history and cross-message selection)
-//! is a possible future option, deliberately not part of this API.
+//! is deliberately not part of this API.
 //!
 //! # SSR, hydration and the flash guard
 //!

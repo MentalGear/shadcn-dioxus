@@ -130,8 +130,7 @@ fn ComboboxListRendered(id: String, attributes: Vec<Attribute>, children: Elemen
     // doc. `side`/`align`/gap match this component's themed CSS
     // (`top: calc(100% + 0.25rem); left: 0` == a 4px gap past the input's
     // own bottom edge): anchored below the input, left-aligned with it,
-    // the same bottom/start convention every other migrated listbox here
-    // uses.
+    // the same bottom/start convention every other listbox here uses.
     crate::top_layer::use_anchor_position_fallback(
         id.clone(),
         ctx.input_id.cloned(),

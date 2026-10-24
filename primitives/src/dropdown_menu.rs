@@ -37,15 +37,14 @@ struct DropdownMenuContext {
     // This menu's own outer wrapping element id (set on the root `div`
     // `DropdownMenu` itself renders, the one enclosing both
     // `DropdownMenuTrigger` and `DropdownMenuContent`) -- mirrors
-    // `ContextMenuCtx::root_id` (`context_menu.rs`) exactly, added for the
-    // same reason: `dev-docs/backlog.md` row 85's fix. See
+    // `ContextMenuCtx::root_id` (`context_menu.rs`) exactly, for the
+    // same reason (`dev-docs/backlog.md` row 85). See
     // `DropdownMenuContentRendered`'s own `use_outside_dismiss` call for
     // why this id, not `trigger_id`/`content_id` individually, is what a
     // real "did focus/a click leave the whole widget" check needs to key
-    // off (root 85's root cause: `DropdownMenuTrigger`'s old `onblur` used
-    // to answer that question from `focus.any_focused()`, a Rust-tracked
-    // signal a raw external `.focus()` call never updates, instead of
-    // asking the DOM directly).
+    // off (a `DropdownMenuTrigger` `onblur` would answer that question from
+    // `focus.any_focused()`, a Rust-tracked signal a raw external
+    // `.focus()` call never updates, instead of asking the DOM directly).
     root_id: Signal<String>,
 
     // Focus state
@@ -96,9 +95,9 @@ struct DropdownMenuContext {
     // `onblur`, and the open<->focus sync effect right below) misread the
     // trigger's own blur -- fired the instant that submenu item actually
     // receives DOM focus -- as focus having left the entire widget, and
-    // close the root out from under its own still-open submenu. Root cause
-    // for `oracle/tier1-apg/menu-submenu.spec.ts`'s click/hover-open
-    // failures (`dev-docs/archive/rounds/component-backlog.md` row 68); see
+    // close the root out from under its own still-open submenu
+    // (`oracle/tier1-apg/menu-submenu.spec.ts`'s click/hover-open cases
+    // cover it; `dev-docs/archive/rounds/component-backlog.md` row 68); see
     // `DropdownMenuSub`'s own comment for how this count is kept accurate
     // across open, close, and an ancestor unmounting a still-open submenu.
     submenu_open_count: Signal<usize>,
@@ -116,8 +115,8 @@ impl DropdownMenuContext {
     /// through: request `target` as the focus placement once the content
     /// mounts, then open. Never the other order -- setting `open` first
     /// would let a render happen (or a Playwright poll observe state)
-    /// between the two with no focus request recorded yet. Fix-by-
-    /// construction for the keyboard matrix's DropdownMenu-trigger rows: see
+    /// between the two with no focus request recorded yet. This is what
+    /// the keyboard matrix's DropdownMenu-trigger rows rely on: see
     /// `oracle/tier1-apg/keyboard-matrix.spec.ts`.
     fn open_with_focus(&mut self, target: CollectionPlacement) {
         self.initial_focus.set(Some(target));
@@ -173,18 +172,16 @@ pub struct DropdownMenuProps {
 /// It implements the APG **menu button** pattern (`aria-haspopup="menu"` on
 /// the trigger, `role="menu"` on the content, `role="menuitem"` on each
 /// item -- see `crate::menu_semantics` for the shared role definitions and
-/// their APG citations). **Deliberate ARIA-contract change:** earlier
-/// versions of this component instead rendered the APG **listbox** pattern's
-/// roles (`aria-haspopup="listbox"` / `role="listbox"` / `role="option"`),
-/// inherited from being built on the same collection/roving-focus plumbing
-/// as [`crate::select`], a genuine listbox. `DropdownMenu` has no selection
-/// model (no `value`/`selected` state, no `aria-selected` on any item --
-/// activating an item is an action, via `on_select`, not a selection), so
-/// those roles were wrong for it; see `dev-docs/backlog.md` row 24 and
-/// `oracle/tier1-apg/menu-roles.spec.ts`. If your code queries
-/// `role="option"` (Playwright's `getByRole('option', ...)` or an
-/// accessibility-tree assertion) against this component's items, update it
-/// to `role="menuitem"`.
+/// their APG citations). It does **not** use the APG **listbox** pattern's
+/// roles (`aria-haspopup="listbox"` / `role="listbox"` / `role="option"`)
+/// that [`crate::select`], a genuine listbox, uses. `DropdownMenu` has no
+/// selection model (no `value`/`selected` state, no `aria-selected` on any
+/// item -- activating an item is an action, via `on_select`, not a
+/// selection), so those roles would be wrong for it; see
+/// `dev-docs/backlog.md` row 24 and `oracle/tier1-apg/menu-roles.spec.ts`.
+/// Code that queries `role="option"` (Playwright's
+/// `getByRole('option', ...)` or an accessibility-tree assertion) against
+/// this component's items should query `role="menuitem"`.
 ///
 /// ## Example
 /// ```rust
@@ -264,14 +261,14 @@ pub fn DropdownMenu(props: DropdownMenuProps) -> Element {
 
     // dev-docs/backlog.md row 53 (the "open-index container" band): this effect
     // -- keep `open` in sync with whether `focus` currently holds DOM focus,
-    // skipped while a descendant submenu is open -- is byte-identical to
-    // `ContextMenu`'s own root effect (`context_menu.rs`), so both now share
+    // skipped while a descendant submenu is open -- is
+    // `ContextMenu`'s own root effect (`context_menu.rs`), so both share
     // `menu_root::use_open_focus_sync` rather than carrying two copies. See
     // that function's own doc for why `Menubar`'s analogous (index-keyed)
     // effect stays out of this shared construction.
     crate::menu_root::use_open_focus_sync(focus, open, set_open, submenu_open_count);
 
-    // dev-docs/backlog.md row 11 (Phase 6, typeahead): one buffer for this
+    // dev-docs/backlog.md row 11 (typeahead): one buffer for this
     // menu's own root-level items (including any `DropdownMenuSubTrigger`
     // rows, which register in this same `focus` collection -- see that
     // component's own `text_value` prop). A submenu's own open content gets
@@ -338,7 +335,7 @@ pub fn DropdownMenu(props: DropdownMenuProps) -> Element {
                 // ordinary code, not a conditionally-called hook, so it
                 // carries none of that lesson's hook-order hazard -- no
                 // component-boundary split needed for this one arm. Native
-                // (Blitz) arm: unchanged, still closes here directly (Blitz
+                // (Blitz) arm: closes here directly (Blitz
                 // has no popover-API light dismiss to defer to).
                 if cfg!(feature = "web") {
                     return;
@@ -393,7 +390,7 @@ pub fn DropdownMenu(props: DropdownMenuProps) -> Element {
         event.prevent_default();
     };
 
-    // Merged (caller-wins, deduped), not set-then-spread-over: `docs/
+    // Merged (caller-wins, deduped), not set-then-spread-over: `dev-docs/
     // backlog.md` row 85 needs a stable `id` on *this* element (the one
     // wrapping both `DropdownMenuTrigger` and `DropdownMenuContent`) so
     // `DropdownMenuContentRendered`'s `use_outside_dismiss(ctx.root_id,
@@ -701,20 +698,20 @@ pub fn DropdownMenuContent(props: DropdownMenuContentProps) -> Element {
     }
 }
 
-/// Web arm (dev-docs/backlog.md item 2, non-modal-overlay migration): promote
+/// Web arm (dev-docs/backlog.md item 2): promote
 /// the menu to the top layer via `popover="auto"` so it escapes
-/// clipping/transformed ancestors, the same fix already shipped for
-/// `Tooltip`/`HoverCard`/non-modal `Popover` (dev-docs/plan.md Phase 4.4). This
-/// also gains native light dismiss (WHATWG HTML's light-dismiss algorithm --
+/// clipping/transformed ancestors, the same construction
+/// `Tooltip`/`HoverCard`/non-modal `Popover` use (dev-docs/plan.md Phase 4.4). This
+/// also gets native light dismiss (WHATWG HTML's light-dismiss algorithm --
 /// Escape and outside-pointerdown) for free from the platform.
 ///
-/// This does *not* need a full `use_outside_dismiss`/`use_global_escape_
-/// listener` removal the way `PopoverContentRendered` did, because
-/// `DropdownMenu` never called either: it already dismisses on "focus left
+/// Unlike `PopoverContentRendered`, this arm has no `use_outside_dismiss`/
+/// `use_global_escape_listener` to remove, because
+/// `DropdownMenu` never calls either: it dismisses on "focus left
 /// the whole widget" via plain `onblur` handlers on `DropdownMenuTrigger`/
 /// `DropdownMenuItem` (no hook, no JS listener, no unconditional
 /// `preventDefault()`), which cannot fight the browser's own light-dismiss
-/// default action and are left running unchanged on this arm -- a real
+/// default action and run as written on this arm -- a real
 /// outside interaction still blurs whatever item/trigger had focus in the
 /// common case, so the two mechanisms usually agree rather than race. What
 /// *would* fight it is the root `DropdownMenu`'s keydown handler
@@ -725,8 +722,8 @@ pub fn DropdownMenuContent(props: DropdownMenuContentProps) -> Element {
 /// `crate::top_layer::use_popover_sync` drives `showPopover()`/
 /// `hidePopover()` from `open` and mirrors the browser's own `toggle` event
 /// (fired on light dismiss, Escape, or any other close) back into
-/// `set_open`, so the Rust signal can never strand the way `docs/
-/// dev-docs/reference/platform-rationale.md` Caveat 1 documents for `<dialog>`'s old
+/// `set_open`, so the Rust signal can never strand the way
+/// `dev-docs/reference/platform-rationale.md` Caveat 1 documents for `<dialog>`'s
 /// one-way `showModal()`/`close()` binding. It also clears the focus
 /// collection on that path -- see its callback's own comment.
 #[cfg(feature = "web")]
@@ -812,16 +809,15 @@ fn DropdownMenuContentRendered(
     // ensure_anchor_positioning_styles`) selects on, sidestepping
     // `manganis-core`'s `css_module_parser` not scoping classes inside
     // `@supports` bodies (`dev-docs/issues/css-module-supports-scoping.md`).
-    // dev-docs/backlog.md row 25's own construction, applied here too (this
-    // component already carried `aria-labelledby`, but as a bare literal
-    // alongside `..attributes` -- the duplicate-attribute hazard
-    // `merge_attributes` exists to prevent, `dev-docs/conformance-harness.md`
-    // hydration-parity Rule 4, if a caller's own attribute list ever
+    // dev-docs/backlog.md row 25: `aria-labelledby` is not a bare literal
+    // alongside `..attributes` -- that is the duplicate-attribute hazard
+    // `merge_attributes` exists to prevent (`dev-docs/conformance-harness.md`
+    // hydration-parity Rule 4) if a caller's own attribute list ever
     // carried a same-named, empty-valued `aria-label`/`aria-labelledby`;
-    // see `has_own_accessible_name`'s own doc). Only contributed when the
+    // see `has_own_accessible_name`'s own doc. Only contributed when the
     // caller hasn't already named this content some other way, and as its
     // own `merge_attributes` input rather than a literal. dev-docs/backlog.md
-    // row 53 (the "trigger id-plumbing" band): this exact block is now
+    // row 53 (the "trigger id-plumbing" band): this block is
     // `menu_root::content_labelledby_attributes`, shared with
     // `ContextMenu`/`Menubar`'s identical construction.
     let labelledby =
@@ -901,9 +897,8 @@ fn DropdownMenuContentRendered(
 
     // `dev-docs/backlog.md` row 85 -- see the web arm's identical call above
     // for the full construction. This arm has no popover API to fall back
-    // on at all (this file's own doc, above), so it depended on
-    // `DropdownMenuTrigger`'s old `onblur` entirely for dismissal; this
-    // call is now that arm's only "did focus/a click leave" check too.
+    // on at all (this file's own doc, above), so this call is that arm's
+    // only "did focus/a click leave" check.
     use_outside_dismiss(ctx.root_id, move || {
         ctx.interacted_outside.set(true);
         ctx.focus.clear_focus();
@@ -1047,17 +1042,13 @@ pub fn DropdownMenuItem<T: Clone + PartialEq + 'static>(
         props.attributes,
         attributes!(div {
             role: crate::menu_semantics::MENU_ITEM_ROLE,
-            // Found investigating an axe `color-contrast` finding on this
-            // pattern class's disabled state (dev-docs/backlog.md row 39): the
-            // `data-disabled` styling hook alone leaves this `role=
-            // "menuitem"` exposed to assistive tech as a perfectly normal,
-            // active item -- no `aria-disabled`, so nothing here signals
-            // "not currently interactive," which is exactly the missing
-            // piece a screen reader user needs, and exactly why axe read
-            // this item's low-opacity muted text as a real, active-item
-            // contrast defect rather than an exempt disabled one.
-            // `ContextMenuItem` already sets this (`context_menu.rs`);
-            // this was the same gap here and in `MenubarItem`.
+            // The `data-disabled` styling hook alone leaves this `role=
+            // "menuitem"` exposed to assistive tech as a normal, active item,
+            // so `aria-disabled` is what tells a screen reader the item is not
+            // interactive, and what lets axe treat its low-opacity muted text
+            // as an exempt disabled item rather than a `color-contrast`
+            // defect (dev-docs/backlog.md row 39). `ContextMenuItem` and
+            // `MenubarItem` set it too.
             aria_disabled: disabled(),
             "data-disabled": disabled(),
             tabindex: if focused() { "0" } else { "-1" },
@@ -1640,8 +1631,7 @@ pub struct DropdownMenuSubTriggerProps {
 /// `aria-controls` to the submenu's own content id, so the sub-trigger
 /// unambiguously owns the popup it opens -- this crate's own choice, not
 /// an APG-required property: the pattern page above never mentions
-/// `aria-controls` at all (checked against the same pinned commit; no
-/// match), so this is additive precision, not a cited requirement.
+/// `aria-controls`, so this is added precision, not a cited requirement.
 ///
 /// ## Keyboard
 /// - `ArrowRight`/`Enter`/`Space`: same page, "Keyboard Interaction" (h2).
@@ -1851,10 +1841,10 @@ pub fn DropdownMenuSubContent(props: DropdownMenuSubContentProps) -> Element {
 /// `popover="auto"`, the same mechanism `DropdownMenuContentRendered` uses
 /// for the top-level content (see that component's doc for the general
 /// `popover`/CSS-anchor wiring this mirrors) -- Phase 4.4's top-layer
-/// engine already supports stacking one `popover="auto"` element on top of
-/// another (`dev-docs/plan.md` Phase 4.4; `dev-docs/archive/rounds/component-backlog.md` row 68
-/// cites this landing as "removes the hardest part: nested stacking +
-/// light dismiss"), so no new stacking mechanism is needed here.
+/// engine supports stacking one `popover="auto"` element on top of
+/// another (`dev-docs/plan.md` Phase 4.4; `dev-docs/archive/rounds/component-backlog.md`
+/// row 68: "nested stacking + light dismiss"), so no new stacking mechanism
+/// is needed here.
 ///
 /// `auto`, not `manual`: an outside pointerdown/Escape should light-dismiss
 /// just this submenu the same way it dismisses a top-level
@@ -1880,7 +1870,7 @@ fn DropdownMenuSubContentRendered(
     // `hover_enter_content`/`hover_leave_content`) so hovering *either* half
     // keeps the submenu open, and only leaving both (without re-entering
     // either) within the grace window actually closes it.
-    // dev-docs/backlog.md row 11 (Phase 6, typeahead): this submenu's own
+    // dev-docs/backlog.md row 11 (typeahead): this submenu's own
     // buffer, independent of the enclosing menu's root-level one -- see
     // `DropdownMenu`'s identical call for the general rationale.
     let mut typeahead = crate::typeahead::use_typeahead_state();
@@ -1913,9 +1903,9 @@ fn DropdownMenuSubContentRendered(
     // overflow the viewport, the same mechanism every other anchored
     // overlay in this crate already relies on, not new positioning math).
     // APG does not mandate a submenu's side (implementation detail), but
-    // opening to the side rather than below is how every menu-with-
-    // submenus reference this crate has looked at (Radix, native OS menus)
-    // renders one, so a submenu's items read as a continuation of the row
+    // opening to the side rather than below is how common menu references
+    // (Radix, native OS menus) render a submenu, so its items read as a
+    // continuation of the row
     // its trigger sits in. Zero gap (not the 4px `DropdownMenuContentRendered`
     // uses for its own trigger-relative gap): trigger and submenu sit
     // inside the *same* logical menu, so there is no affordance need for a
@@ -2028,7 +2018,7 @@ fn DropdownMenuSubContentRendered(
                 Key::ArrowUp => sub.focus.focus_prev(),
                 Key::Home => sub.focus.focus_first(),
                 Key::End => sub.focus.focus_last(),
-                // dev-docs/backlog.md row 11 (Phase 6, typeahead) -- see
+                // dev-docs/backlog.md row 11 (typeahead) -- see
                 // `DropdownMenu`'s identical arm for the full APG citation.
                 // Scoped to `sub.focus`, this submenu's own items, never
                 // the enclosing menu's -- matches every other navigation
@@ -2086,10 +2076,10 @@ fn DropdownMenuSubContentRendered(
     let ctx: DropdownMenuContext = use_context();
     let mut sub: crate::menu_sub::SubMenuState = use_context();
     let open = sub.open;
-    // See `SubMenuState::hover_close`'s doc: this arm still gets the same
-    // shared-timer fix as the web arm, for parity even though Blitz mouse
+    // See `SubMenuState::hover_close`'s doc: this arm uses the same
+    // shared timers as the web arm, for parity even though Blitz mouse
     // events are lower-priority here.
-    // dev-docs/backlog.md row 11 (Phase 6, typeahead): see the web arm's
+    // dev-docs/backlog.md row 11 (typeahead): see the web arm's
     // identical call above for the general rationale.
     let mut typeahead = crate::typeahead::use_typeahead_state();
 
@@ -2142,7 +2132,7 @@ fn DropdownMenuSubContentRendered(
                 Key::ArrowUp => sub.focus.focus_prev(),
                 Key::Home => sub.focus.focus_first(),
                 Key::End => sub.focus.focus_last(),
-                // dev-docs/backlog.md row 11 (Phase 6, typeahead) -- see
+                // dev-docs/backlog.md row 11 (typeahead) -- see
                 // `DropdownMenu`'s identical arm for the full APG citation.
                 // Scoped to `sub.focus`, this submenu's own items, never
                 // the enclosing menu's -- matches every other navigation
@@ -2318,7 +2308,7 @@ pub fn DropdownMenuSubItem<T: Clone + PartialEq + 'static>(
     }
 }
 
-/// `dev-docs/backlog.md` row 85 / hydration-parity Rule 4 regression coverage:
+/// `dev-docs/backlog.md` row 85 / hydration-parity Rule 4 coverage:
 /// proves `DropdownMenu`'s root `div` renders a caller-supplied `id`
 /// exactly once, with no second, internally-generated `dxc-N` id also
 /// present. Without routing the root's attributes through `merge_attributes`

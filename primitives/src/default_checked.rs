@@ -7,12 +7,12 @@
 //! (`dioxus-interpreter-js` `set_attribute.ts`, `case "initial_checked"`). Two places break it:
 //!
 //! - **SSR** (`dioxus-ssr` `renderer.rs` `write_attribute`) writes any attribute outside its
-//!   `BOOL_ATTRS` list as `name=value`, so the server HTML carried a literal `initial_checked=true`
+//!   `BOOL_ATTRS` list as `name=value`, so the server HTML would carry a literal `initial_checked=true`
 //!   and no `checked` at all.
 //! - **Hydration** (`dioxus-web` `hydration/hydrate.rs` `rehydrate_template_node`) only mounts ids
 //!   and listeners; it applies no attribute, so the `.defaultChecked` setter never ran either.
 //!
-//! So a prerendered default-checked input loaded unchecked and `<form reset>` restored the wrong
+//! So a prerendered default-checked input would load unchecked and `<form reset>` would restore the wrong
 //! state. The construction: a control renders the plain `checked` attribute (SSR writes it as a
 //! content attribute, which the parser turns into `.defaultChecked` and the live state alike; a
 //! client-created node gets the live state) and calls [`use_default_checked`], whose effect runs

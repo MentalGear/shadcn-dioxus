@@ -11,12 +11,12 @@
 // Provenance: a port of the controller in `@shadcn/react`'s
 // `message-scroller` (`use-message-scroller-controller.ts`,
 // `use-message-scroller-commands.ts`, `geometry.ts`), shadcn/ui, MIT
-// licence. Ported from shadcn-ui/ui@295a1f114a138f23b5dfee0e0c6812394dfeb90c;
-// the upstream `packages/react/src/message-scroller` is unchanged since that
-// revision. The mode machine, the tail spacer, the anchoring maths, prepend
+// licence. Ported from shadcn-ui/ui@295a1f114a138f23b5dfee0e0c6812394dfeb90c
+// (the reference revision of the upstream `packages/react/src/message-scroller`).
+// The mode machine, the tail spacer, the anchoring maths, prepend
 // preservation and the opening-position rules are theirs; the host differs:
-// React refs and `useSyncExternalStore` are replaced by DOM
-// discovery (`data-message-*` attributes), and state is written back as
+// this controller discovers the DOM (`data-message-*` attributes) instead of
+// using React refs and `useSyncExternalStore`, and writes state back as
 // `data-*` attributes. The visibility store (`useMessageScrollerVisibility`)
 // is an IntersectionObserver that runs only while Rust has a subscriber
 // (`observe` messages).
@@ -521,7 +521,7 @@ function reconcileFollowMode(state) {
   // baseline. Our own pin moves scrollTop down, but an upward move in the same
   // window (a scrollbar drag, a programmatic scroll to the top) must stay
   // visible to the commit the window's timer runs once it closes: advancing the
-  // baseline here consumed it and left follow armed (row 347).
+  // baseline here would consume it and leave follow armed (row 347).
   lastScrollTop = autoscrolling ? Math.max(lastScrollTop, scrollTop) : scrollTop;
   if (
     cfg.autoScroll &&

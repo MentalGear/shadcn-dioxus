@@ -1074,8 +1074,8 @@ pub fn DateRangePickerCalendar(props: DatePickerCalendarProps<RangeCalendarProps
 }
 
 /// The integer types a [`DateSegment`] edits (`i32` years, `u8` months and days): ordered,
-/// copyable, with `+` and `-` for the arrow-key step. A local trait instead of the
-/// `num-integer` crate, which this module used for its bound alone.
+/// copyable, with `+` and `-` for the arrow-key step. A local trait, so the module needs no
+/// `num-integer` crate for its bound alone.
 trait SegmentInt: Copy + Ord + std::ops::Add<Output = Self> + std::ops::Sub<Output = Self> {
     const ONE: Self;
 
@@ -1439,9 +1439,10 @@ fn DateSegment<T: Clone + Copy + SegmentInt + FromStr + Display + 'static>(
     // beforehand, the announced value would be identical before and after
     // -- indistinguishable from a dropped keystroke. With "no value" not
     // reported as "= default", that same first press is a real, detectable
-    // transition (the attribute goes from absent to present). `value_text` (below, in the rendered `span`) is gated on this
-    // same `Option`, so `aria-valuetext` (finding 2) tracks `aria-valuenow`
-    // in lockstep instead of drifting into its own "untouched" state.
+    // transition (the attribute goes from absent to present). `value_text`
+    // (below, in the rendered `span`) is gated on this same `Option`, so
+    // `aria-valuetext` (finding 2) tracks `aria-valuenow` in lockstep
+    // instead of drifting into its own "untouched" state.
     let now_value = use_memo(move || (props.value)());
 
     let mut ctx = use_context::<BaseDatePickerContext>();
@@ -1923,8 +1924,8 @@ impl DateRangeInputContext {
     /// segments first resolve (`DateElement`'s "sync down from
     /// selected_date" effect writes the segment signals, whose "sync up via
     /// on_date_change" effect writes this signal right back) -- see
-    /// dev-docs/backlog.md's range-hang account for the full trace (the CPU
-    /// stays pinned and memory grows until the tab crashes).
+    /// backlog row 83 for the full trace (the CPU stays pinned and memory
+    /// grows until the tab crashes).
     fn set_start_date(&mut self, date: Option<Date>) {
         if *self.start_date.peek() != date {
             self.start_date.set(date);
@@ -2003,7 +2004,7 @@ fn DateElement(props: DateElementProps) -> Element {
         // whether the new value equals the old one, so the *other* half of
         // a two-way sync has to refuse the redundant write too, or the
         // "no-op" write still wakes this effect for nothing. See
-        // dev-docs/backlog.md's range-hang account.
+        // dev-docs/backlog.md row 83.
         let date = (props.selected_date)();
         let new_year = date.map(|d| d.year());
         if *year_value.peek() != new_year {
@@ -2463,7 +2464,7 @@ mod tests {
 
     #[test]
     fn date_segment_renders_aria_label_and_no_dangling_aria_labelledby() {
-        // Regression guard for the `aria-labelledby` shape -- SSR-level
+        // Guard for the `aria-labelledby` shape -- SSR-level
         // rather than the browser-level `playwright/date-picker.spec.ts`
         // check, so it runs without needing a `dx serve --web` build; the
         // browser-level test is the fuller companion.
@@ -3567,7 +3568,7 @@ mod tests {
         );
     }
 
-    // ---- a controlled range change is never answered (the second-range page hang) -----------------
+    // ---- a controlled range change is never answered (a second range must not hang the page) -----------------
 
     /// A controlled `DateRangePicker` the way the demo uses it: the parent owns the range and
     /// applies whatever `on_range_change` reports. Everything the picker reports is recorded.
@@ -3595,8 +3596,8 @@ mod tests {
         }
     }
 
-    /// Run the VirtualDom until it is quiet -- bounded, so a regression is a failed assertion and
-    /// not a hung test (the bug this guards is an unbounded loop).
+    /// Run the VirtualDom until it is quiet -- bounded, so an unbounded loop is a failed assertion
+    /// and not a hung test.
     fn settle(dom: &mut VirtualDom) {
         for _ in 0..60 {
             dom.process_events();
@@ -3605,14 +3606,12 @@ mod tests {
     }
 
     /// A range the PARENT sets (a calendar click it has just applied, a "this week" button) must
-    /// never be reported back through `on_range_change`: the picker already holds it. Pins the
-    /// failure where, once the picker had held a different complete range, the sync-up effect
-    /// (`DateRangePickerInputValue`, subscribed to the parent's value through
-    /// `DateRangePickerContext::set_range`'s tracked read) woke ahead of the sync-down effect on a
-    /// parent change, read the PREVIOUS range from the segments and reported that, and the
-    /// two ranges then alternated forever -- completing a second range froze the tab. Which of the
-    /// two effects wakes first is hash-ordered, hence the many changes: with the bug at least one
-    /// of them wakes them the wrong way round.
+    /// never be reported back through `on_range_change`: the picker already holds it. A sync-up
+    /// effect subscribed to the parent's value (through `DateRangePickerContext::set_range`'s
+    /// tracked read) could wake ahead of the sync-down effect on a parent change, read the
+    /// PREVIOUS range from the segments and report that, and the two ranges would alternate
+    /// forever (row 83). Which of the two effects wakes first is hash-ordered, hence the many
+    /// changes: a subscribed effect wakes them the wrong way round for at least one of them.
     #[test]
     fn a_range_the_parent_sets_is_never_reported_back() {
         let harness = RangeHarness::default();

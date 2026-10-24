@@ -27,8 +27,8 @@
 //! # Checkable items
 //!
 //! shadcn's `DropdownMenu`, `ContextMenu` and `Menubar` all have a
-//! `CheckboxItem` and a `RadioGroup` + `RadioItem`. Before this module none
-//! of the three had either, and writing them three times would have been the
+//! `CheckboxItem` and a `RadioGroup` + `RadioItem`. Writing them three times
+//! would be the
 //! same trap `crate::menu_semantics` and `crate::menu_root` exist to close:
 //! three hosts hand-writing one contract, free to drift apart. So everything
 //! that is *the same* for every host lives here, and each host adds only

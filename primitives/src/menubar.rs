@@ -208,8 +208,8 @@ struct MenubarMenuContext {
     // `MenubarMenu` itself renders, the one enclosing both its
     // `MenubarTrigger` and `MenubarContent`) -- mirrors
     // `ContextMenuCtx::root_id`/`DropdownMenuContext::root_id`
-    // (`context_menu.rs`/`dropdown_menu.rs`) exactly, added for the same
-    // `dev-docs/backlog.md` row 85 fix: `MenubarContentRendered`'s own
+    // (`context_menu.rs`/`dropdown_menu.rs`) exactly, for
+    // `dev-docs/backlog.md` row 85: `MenubarContentRendered`'s own
     // `use_outside_dismiss(menu_ctx.root_id, ...)` call answers "did focus
     // leave this menu" by asking the DOM directly, instead of the
     // signal-based checks an `onblur` handler on `MenubarTrigger` or
@@ -366,7 +366,7 @@ pub fn MenubarMenu(props: MenubarMenuProps) -> Element {
         }
     });
 
-    // dev-docs/backlog.md row 11 (Phase 6, typeahead): one buffer per
+    // dev-docs/backlog.md row 11 (typeahead): one buffer per
     // `MenubarMenu`, scoped to this menu's own items (`menu_ctx.focus`),
     // never the menubar's row of triggers (`ctx.focus`) -- the APG rule
     // this implements ("Move focus to the next item in the *current menu*
@@ -833,8 +833,8 @@ fn MenubarContentRendered(id: String, attributes: Vec<Attribute>, children: Elem
 
     // Drive `showPopover()`/`hidePopover()` from `open`, and sync a native
     // close back into `ctx.open_menu` -- but *only* when this menu is still
-    // the one recorded as open. Confirmed necessary by execution's design
-    // pass, not defensive boilerplate: `Menubar`'s own effect
+    // the one recorded as open. Necessary, not defensive
+    // boilerplate: `Menubar`'s own effect
     // (`Menubar`'s `use_effect` reacting to `ctx.focus.focused_index()`)
     // can move `ctx.open_menu` straight from `Some(this index)` to
     // `Some(another index)` in one step (arrow-key navigation between
@@ -931,7 +931,7 @@ fn MenubarContentRendered(id: String, attributes: Vec<Attribute>, children: Elem
     // attribute name is exactly the duplicate-attribute hazard
     // `merge_attributes` exists to prevent (`dev-docs/conformance-harness.md`
     // hydration-parity Rule 4). dev-docs/backlog.md row 53 (the "trigger
-    // id-plumbing" band): this exact block is now
+    // id-plumbing" band): this block is
     // `menu_root::content_labelledby_attributes`, shared with
     // `DropdownMenu`/`ContextMenu`'s identical construction.
     let labelledby =
@@ -1160,12 +1160,11 @@ pub fn MenubarItem(props: MenubarItemProps) -> Element {
         props.attributes,
         attributes!(div {
             role: crate::menu_semantics::MENU_ITEM_ROLE,
-            // Found via an axe `color-contrast` finding on this pattern
-            // class's disabled state (dev-docs/backlog.md row 39): see
-            // `dropdown_menu.rs`'s identical `DropdownMenuItem` fix for the
-            // full account -- `data-disabled` alone never told assistive
-            // tech this item was disabled at all; `ContextMenuItem`
-            // (`context_menu.rs`) already set this.
+            // The disabled state of this pattern class (dev-docs/backlog.md
+            // row 39): see `dropdown_menu.rs`'s identical `DropdownMenuItem`
+            // wiring for the full account -- `data-disabled` alone never
+            // tells assistive tech this item is disabled; `ContextMenuItem`
+            // (`context_menu.rs`) sets this too.
             aria_disabled: disabled(),
             "data-disabled": disabled(),
             tabindex: if focused() { "0" } else { "-1" },
@@ -1529,10 +1528,10 @@ fn menubar_checkable_item(state: CheckableState, common: CheckableCommon) -> Ele
     }
 }
 
-/// `dev-docs/backlog.md` row 85 / hydration-parity Rule 4 regression coverage:
+/// `dev-docs/backlog.md` row 85 / hydration-parity Rule 4 coverage:
 /// proves `MenubarMenu`'s own wrapping `div` renders a caller-supplied
 /// `id` exactly once, with no second, internally-generated `dxc-N` id
-/// also present -- the identical regression `dropdown_menu.rs`'s own
+/// also present -- the identical contract `dropdown_menu.rs`'s own
 /// `ssr_tests::callers_own_id_on_the_root_is_not_duplicated` proves for
 /// `DropdownMenu`'s root. Without routing this element's attributes through
 /// `merge_attributes` both the generated id and `id="my-menu-root"` would be

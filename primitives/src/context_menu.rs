@@ -240,8 +240,8 @@ pub fn ContextMenu(props: ContextMenuProps) -> Element {
     });
 
     // dev-docs/backlog.md row 53 (the "open-index container" band): this effect
-    // was byte-identical to `DropdownMenu`'s own root effect
-    // (`dropdown_menu.rs`) -- see `menu_root::use_open_focus_sync`'s own doc
+    // is `DropdownMenu`'s own root effect
+    // (`dropdown_menu.rs`), shared -- see `menu_root::use_open_focus_sync`'s own doc
     // for the shared construction and for why `Menubar`'s analogous
     // (index-keyed) effect stays out of it.
     crate::menu_root::use_open_focus_sync(focus, open, set_open, submenu_open_count);
@@ -273,7 +273,7 @@ pub fn ContextMenu(props: ContextMenuProps) -> Element {
     // ever applies to `auto`/`hint` popovers -- a `manual` popover has no
     // Escape-triggered close of its own to suppress, so `prevent_default()`
     // unconditionally closing it here, on every target, has nothing to
-    // conflict with (checked against the WHATWG spec text for `manual`).
+    // conflict with.
     let handle_keydown = move |event: Event<KeyboardData>| {
         if open() && event.key() == Key::Escape {
             event.prevent_default();
@@ -289,9 +289,9 @@ pub fn ContextMenu(props: ContextMenuProps) -> Element {
     // top-layer oracle fixture's `id: "clip-context-menu-root"`/
     // `id: "scroll-context-menu-root"` do exactly that) --
     // `dev-docs/conformance-harness.md` hydration-parity Rule 4. `id` is
-    // caller-wins here like everything else, matching this element's
-    // existing client behavior exactly (`..props.attributes` already won
-    // there via spread order) rather than protecting it the way `toast.rs`
+    // caller-wins here like everything else, matching the client behavior
+    // of a plain spread (`..props.attributes` wins by spread order)
+    // rather than protecting it the way `toast.rs`
     // protects its always-addressed-by-id region: nothing here does its
     // own `document.getElementById(root_id)` lookup against a *fixed*
     // expectation of winning -- `use_outside_dismiss`'s lookup already
@@ -485,7 +485,7 @@ pub fn ContextMenuTrigger(props: ContextMenuTriggerProps) -> Element {
     // (`preview/src/components/context_menu/component.rs`) sets its
     // background/padding/etc. the *shorthand* way -- those combine into a
     // SEPARATE served `style="..."` from this one (see that helper's doc),
-    // so plain `merge_attributes` alone still leaves two. Folding first
+    // so plain `merge_attributes` alone leaves two. Folding first
     // reduces it to the one case `merge_attributes` already knows how to
     // dedupe (a plain `style` on both sides).
     let (caller_style, attributes) = fold_style_attributes(props.attributes);
@@ -713,7 +713,7 @@ fn ContextMenuContentRendered(
     // therefore always a same-value, idempotent no-op, kept only so this
     // content's `:popover-open` state can never strand relative to `open`
     // (the same defect class `use_popover_sync`'s own doc cites for
-    // `<dialog>`'s old one-way binding), not because this callback needs to
+    // `<dialog>`'s one-way binding), not because this callback needs to
     // *decide* anything.
     crate::top_layer::use_popover_sync(
         id.clone(),
@@ -744,7 +744,7 @@ fn ContextMenuContentRendered(
         ctx.set_open,
     );
 
-    // dev-docs/backlog.md row 11 (Phase 6, typeahead): one buffer for this
+    // dev-docs/backlog.md row 11 (typeahead): one buffer for this
     // menu's own items -- see `DropdownMenu`'s identical call
     // (`dropdown_menu.rs`) for the general rationale.
     let mut typeahead = crate::typeahead::use_typeahead_state();
@@ -762,7 +762,7 @@ fn ContextMenuContentRendered(
             }
             Key::Home => ctx.focus.focus_first(),
             Key::End => ctx.focus.focus_last(),
-            // dev-docs/backlog.md row 11 (Phase 6, typeahead) -- see
+            // dev-docs/backlog.md row 11 (typeahead) -- see
             // `DropdownMenu`'s identical arm (`dropdown_menu.rs`) for the
             // full APG citation. Only while genuinely open, matching this
             // handler's own `Key::ArrowUp` arm just above -- while closed
@@ -835,7 +835,7 @@ fn ContextMenuContentRendered(
     // entries for one attribute name is exactly the duplicate-attribute
     // hazard `merge_attributes` exists to prevent
     // (`dev-docs/conformance-harness.md` hydration-parity Rule 4). dev-docs/backlog.md
-    // row 53 (the "trigger id-plumbing" band): this exact block is now
+    // row 53 (the "trigger id-plumbing" band): this block is
     // `menu_root::content_labelledby_attributes`, shared with
     // `DropdownMenu`/`Menubar`'s identical construction.
     let labelledby =
@@ -892,7 +892,7 @@ fn ContextMenuContentRendered(
     let open = ctx.open;
     let (x, y) = (ctx.position)();
 
-    // dev-docs/backlog.md row 11 (Phase 6, typeahead): see the web arm's
+    // dev-docs/backlog.md row 11 (typeahead): see the web arm's
     // identical call above for the general rationale.
     let mut typeahead = crate::typeahead::use_typeahead_state();
 
@@ -909,7 +909,7 @@ fn ContextMenuContentRendered(
             }
             Key::Home => ctx.focus.focus_first(),
             Key::End => ctx.focus.focus_last(),
-            // dev-docs/backlog.md row 11 (Phase 6, typeahead) -- see
+            // dev-docs/backlog.md row 11 (typeahead) -- see
             // `DropdownMenu`'s identical arm (`dropdown_menu.rs`) for the
             // full APG citation. Only while genuinely open, matching this
             // handler's own `Key::ArrowUp` arm just above -- while closed
@@ -1870,8 +1870,8 @@ pub fn ContextMenuSubContent(props: ContextMenuSubContentProps) -> Element {
 /// Web arm: promote this submenu's content to the top layer via
 /// `popover="auto"` -- see
 /// [`crate::dropdown_menu::DropdownMenuSubContent`]'s identical web-arm
-/// render function for the full rationale (nested top-layer stacking
-/// already landed in Phase 4.4; `auto`, not `manual`, so an outside click
+/// render function for the full rationale (Phase 4.4 handles nested
+/// top-layer stacking; `auto`, not `manual`, so an outside click
 /// or Escape light-dismisses just this submenu). The one difference from
 /// that component: `manual`, not `auto`, is what the *enclosing*
 /// [`ContextMenuContent`] uses for itself (see that component's own doc
@@ -1898,7 +1898,7 @@ fn ContextMenuSubContentRendered(
     // `hover_enter_content`/`hover_leave_content`) so hovering *either* half
     // keeps the submenu open, and only leaving both (without re-entering
     // either) within the grace window actually closes it.
-    // dev-docs/backlog.md row 11 (Phase 6, typeahead): this submenu's own
+    // dev-docs/backlog.md row 11 (typeahead): this submenu's own
     // buffer, independent of the enclosing menu's root-level one -- see
     // `DropdownMenu`'s identical call (`dropdown_menu.rs`) for the general
     // rationale.
@@ -2009,7 +2009,7 @@ fn ContextMenuSubContentRendered(
                 Key::ArrowUp => sub.focus.focus_prev(),
                 Key::Home => sub.focus.focus_first(),
                 Key::End => sub.focus.focus_last(),
-                // dev-docs/backlog.md row 11 (Phase 6, typeahead) -- see
+                // dev-docs/backlog.md row 11 (typeahead) -- see
                 // `DropdownMenu`'s identical arm (`dropdown_menu.rs`) for
                 // the full APG citation. Scoped to `sub.focus`, this
                 // submenu's own items, never the enclosing menu's.
@@ -2112,7 +2112,7 @@ fn ContextMenuSubContentRendered(
     // See `SubMenuState::hover_close`'s doc: this arm still gets the same
     // shared-timer fix as the web arm, for parity even though Blitz mouse
     // events are lower-priority here.
-    // dev-docs/backlog.md row 11 (Phase 6, typeahead): see the web arm's
+    // dev-docs/backlog.md row 11 (typeahead): see the web arm's
     // identical call above for the general rationale.
     let mut typeahead = crate::typeahead::use_typeahead_state();
 
@@ -2138,7 +2138,7 @@ fn ContextMenuSubContentRendered(
                 Key::ArrowUp => sub.focus.focus_prev(),
                 Key::Home => sub.focus.focus_first(),
                 Key::End => sub.focus.focus_last(),
-                // dev-docs/backlog.md row 11 (Phase 6, typeahead) -- see
+                // dev-docs/backlog.md row 11 (typeahead) -- see
                 // `DropdownMenu`'s identical arm (`dropdown_menu.rs`) for
                 // the full APG citation. Scoped to `sub.focus`, this
                 // submenu's own items, never the enclosing menu's.
@@ -2272,8 +2272,7 @@ pub fn ContextMenuSubItem(props: ContextMenuSubItemProps) -> Element {
             // strictly load-bearing (unmounting the whole tree, driven by
             // `ctx.set_open.call(false)` below, already clears each via
             // `collection.rs`'s own unregister-clears-if-focused path),
-            // but matching this file's existing convention rather than
-            // silently dropping it for the new component.
+            // but matching this file's convention.
             sub.focus.clear_focus();
             ctx.focus.clear_focus();
             ctx.set_open.call(false);
