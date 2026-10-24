@@ -560,9 +560,9 @@ pub fn SelectMulti<T: Clone + PartialEq + 'static>(props: SelectMultiProps<T>) -
 
     let direction_signal = use_direction_signal(direction);
 
-    // SelectMulti has no `required` prop (dev-docs/backlog.md row 408): its
-    // hidden mirror below is a <select multiple>, whose `required` would
-    // mean "at least one selected", and no caller has asked for that yet.
+    // SelectMulti has no `required` prop: its hidden mirror below is a
+    // <select multiple>, whose `required` would mean "at least one
+    // selected", and no caller has asked for that yet.
     let (ctx, open) = use_select_root(
         values,
         set_value,
@@ -619,9 +619,9 @@ pub fn SelectMulti<T: Clone + PartialEq + 'static>(props: SelectMultiProps<T>) -
         // Hidden native <select multiple> for form participation: `Select`'s
         // mirror (above, dev-docs/plan.md Phase 1.3) with one `selected`
         // option per selected value, so the form's entry list holds one
-        // `name=value` per value (dev-docs/backlog.md row 408). No empty
-        // leading option: a <select multiple> never auto-selects one, so an
-        // empty selection already contributes nothing.
+        // `name=value` per value. No empty leading option: a <select
+        // multiple> never auto-selects one, so an empty selection already
+        // contributes nothing.
         select {
             id: hidden_select_id,
             "data-slot": "select-native",

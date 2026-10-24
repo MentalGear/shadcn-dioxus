@@ -240,7 +240,7 @@ test.describe("Rule 1 — a named control contributes name=value to FormData on 
   });
 
   test("SelectMulti: contributes one entry per selected value", async ({ page }) => {
-    // dev-docs/backlog.md row 408: `name` reaches a hidden <select multiple>.
+    // `name` reaches a hidden <select multiple> mirror.
     await gotoForm(page);
     const entries = await submitAndRead(page, "#entries-submit", formResult(page));
     expect(valuesOf(entries, "fruits-lib")).toEqual(["apple", "cherry"]);
