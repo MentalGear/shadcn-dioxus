@@ -23,6 +23,7 @@ import { createRequire } from "node:module";
 const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
 const require = createRequire(path.join(root, "playwright", "package.json"));
 const { chromium } = require("@playwright/test");
+const { sandboxLaunchOptions } = require("./sandbox-chromium.cjs"); // row 374
 
 const [A, B, ...only] = process.argv.slice(2);
 if (!A || !B) {
@@ -41,8 +42,7 @@ const comps = fs
 const all = [...comps, "/", "/docs", "/demos", "/charts/", "/charts/line/", "/dashboard/email-client", "/component/block/sidebar/main/"];
 const routes = only.length ? all.filter((r) => only.some((o) => r.includes(o))) : all;
 
-const sandbox = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome";
-const browser = await chromium.launch(fs.existsSync(sandbox) ? { executablePath: sandbox } : {});
+const browser = await chromium.launch(sandboxLaunchOptions());
 
 async function snap(base, url) {
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, javaScriptEnabled: false, reducedMotion: "reduce" });

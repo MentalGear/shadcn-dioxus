@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import type { Page, Request } from "@playwright/test";
 
 /**
  * Navigate and wait until the page is actually interactive, not merely
@@ -42,13 +42,68 @@ import type { Page } from "@playwright/test";
 export async function gotoHydrated(
   page: Page,
   url: string,
-  opts?: Parameters<Page["goto"]>[1],
+  opts?: Parameters<Page["goto"]>[1] & {
+    /** Bound for the `data-hydrated` wait (default: none of its own, the test's timeout). */
+    hydratedTimeout?: number;
+  },
 ): Promise<void> {
-  await page.goto(url, { waitUntil: "networkidle", ...opts });
-  await page.waitForSelector('html[data-hydrated="true"]', { state: "attached" });
-  if (/[?&]name=/.test(url)) {
-    const timeout = opts?.timeout;
-    await page.waitForURL((u) => !/\/component\/(block\/?)?$/.test(u.pathname), { timeout });
-    await page.waitForFunction(() => !document.querySelector(".dx-component-demo-redirect"), null, { timeout });
+  const { hydratedTimeout, ...gotoOpts } = opts ?? {};
+  const open = trackOpenRequests(page);
+  try {
+    await page.goto(url, { waitUntil: "networkidle", ...gotoOpts });
+    await page.waitForSelector('html[data-hydrated="true"]', { state: "attached", timeout: hydratedTimeout });
+    if (/[?&]name=/.test(url)) {
+      const timeout = gotoOpts.timeout;
+      await page.waitForURL((u) => !/\/component\/(block\/?)?$/.test(u.pathname), { timeout });
+      await page.waitForFunction(() => !document.querySelector(".dx-component-demo-redirect"), null, { timeout });
+    }
+  } catch (error) {
+    throw withOpenRequests(error, open.report());
+  } finally {
+    open.stop();
   }
+}
+
+/**
+ * Row 257: a `networkidle` that never arrives (one 90 s hang on /component/sidebar/ in a 575-test release chunk, never
+ * reproduced) said only "Timeout exceeded", so the request that kept the network busy was never named. Every request of
+ * every frame is recorded while `gotoHydrated` runs; on a failure the ones that neither finished nor failed are listed
+ * under the error. That includes the TEST timeout: when it fires, the pending `goto`/`waitForSelector` rejects, the
+ * error passes through here, and the report shows it beside Playwright's "Test timeout ... exceeded".
+ */
+function trackOpenRequests(page: Page) {
+  const started = Date.now();
+  const open = new Map<Request, number>();
+  const onRequest = (r: Request) => open.set(r, Date.now());
+  const onDone = (r: Request) => open.delete(r);
+  page.on("request", onRequest);
+  page.on("requestfinished", onDone);
+  page.on("requestfailed", onDone);
+  return {
+    report(): string {
+      const now = Date.now();
+      const rows = [...open].map(([r, at]) => {
+        const frame = r.frame();
+        const where = frame === page.mainFrame() ? "main frame" : `frame ${frame.url() || frame.name() || "?"}`;
+        return `  ${r.method()} ${r.resourceType()} (${where}, open ${now - at} ms): ${r.url()}`;
+      });
+      const spent = `${now - started} ms into gotoHydrated`;
+      return rows.length
+        ? `gotoHydrated: ${rows.length} requests still open (${spent}):\n${rows.join("\n")}`
+        : `gotoHydrated: no request was open (${spent}), so the network was not what it waited on`;
+    },
+    stop() {
+      page.off("request", onRequest);
+      page.off("requestfinished", onDone);
+      page.off("requestfailed", onDone);
+    },
+  };
+}
+
+function withOpenRequests(error: unknown, report: string): unknown {
+  if (error instanceof Error) {
+    error.message = `${error.message}\n\n${report}`;
+    return error;
+  }
+  return new Error(`${String(error)}\n\n${report}`);
 }

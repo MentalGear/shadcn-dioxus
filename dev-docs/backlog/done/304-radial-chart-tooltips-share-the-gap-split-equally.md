@@ -1,10 +1,10 @@
 ---
 id: 304
 title: "Radial chart tooltips share the gap, split equally per ring (lowest priority)"
-status: "PARKED (lowest priority; ask the owner before starting), owner 2026-10-19. Ask the owner whether…"
+status: "DONE 2026-10-23 (owner): the radial tooltips already split the gap equally per ring; nothing left…"
 size: "S–M (to scope)"
 area: primitives
-updated: 2026-10-19
+updated: 2026-10-23
 ---
 
 # Row 304: Radial chart tooltips share the gap, split equally per ring (lowest priority)
@@ -15,7 +15,7 @@ On radial bar charts the tooltips should divide the gap between them, each ring'
 
 ## Status / trigger
 
-PARKED (lowest priority; ask the owner before starting), owner 2026-10-19. **Ask the owner whether it's still wanted, and confirm the exact layout, before starting.**
+**DONE 2026-10-23 (owner): the radial tooltips already split the gap equally per ring; nothing left to build.** PARKED (lowest priority; ask the owner before starting), owner 2026-10-19. **Ask the owner whether it's still wanted, and confirm the exact layout, before starting.**
 
 ## Size
 

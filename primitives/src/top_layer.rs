@@ -712,7 +712,7 @@ if (!document.getElementById('dx-top-layer-ink-styles')) {
          happens to be wired up. (Select/Combobox's listboxes are plain
          <div> options, not form controls -- unaffected by this rule either
          way; both already carry their own explicit, intentionally different
-         \`color: var(--secondary-color-1)\` declared directly on the list,
+         \`color: var(--dx-popover-foreground)\` declared directly on the list,
          which already won outright before this rule existed.) Scoped to
          top-layer descendants rather than applied app-wide: this closes the
          class where it actually bites without silently restyling every
@@ -844,24 +844,15 @@ pub(crate) fn use_popover_sync(
 
     // Browser -> signal.
     let id_for_listener = id.clone();
-    crate::use_effect_with_cleanup(move || {
-        let mut eval = document::eval(
-            "const id = await dioxus.recv();
-            const el = document.getElementById(id);
-            const onToggle = (e) => dioxus.send(e.newState === 'open');
-            el.addEventListener('toggle', onToggle);
-            await dioxus.recv();
-            el.removeEventListener('toggle', onToggle);",
-        );
-        let _ = eval.send(id_for_listener.clone());
-        spawn(async move {
-            while let Ok(is_open) = eval.recv::<bool>().await {
-                set_open.call(is_open);
-            }
-        });
-        move || {
-            let _ = eval.send(true);
-        }
+    crate::js_listener::use_js_listeners(move || {
+        Some(
+            crate::js_listener::JsListeners::install(
+                "const id = await dioxus.recv();
+                listen(document.getElementById(id), 'toggle', (e) => dioxus.send(e.newState === 'open'));",
+            )
+            .arg(id_for_listener.clone())
+            .on_message(move |is_open: bool| set_open.call(is_open)),
+        )
     });
 
     // Signal -> browser.
@@ -1002,24 +993,15 @@ pub(crate) fn use_popover_shown_while_mounted(
     // own call. Native closes (light dismiss, Escape) have no such echo --
     // the browser acted first -- and still sync back.
     let id_for_listener = id.clone();
-    crate::use_effect_with_cleanup(move || {
-        let mut eval = document::eval(
-            "const id = await dioxus.recv();
-            const el = document.getElementById(id);
-            const onToggle = (e) => { if (e.newState !== 'open') dioxus.send(false); };
-            el.addEventListener('toggle', onToggle);
-            await dioxus.recv();
-            el.removeEventListener('toggle', onToggle);",
-        );
-        let _ = eval.send(id_for_listener.clone());
-        spawn(async move {
-            while let Ok(is_open) = eval.recv::<bool>().await {
-                on_native_close.call(is_open);
-            }
-        });
-        move || {
-            let _ = eval.send(true);
-        }
+    crate::js_listener::use_js_listeners(move || {
+        Some(
+            crate::js_listener::JsListeners::install(
+                "const id = await dioxus.recv();
+                listen(document.getElementById(id), 'toggle', (e) => { if (e.newState !== 'open') dioxus.send(false); });",
+            )
+            .arg(id_for_listener.clone())
+            .on_message(move |is_open: bool| on_native_close.call(is_open)),
+        )
     });
 
     // Signal -> browser, show-only: reacts to the real `open` signal (not a
@@ -1547,9 +1529,9 @@ pub(crate) fn use_anchor_position_fallback(
     // measurement eval's own script below.
     use_effect(ensure_anchor_positioning_styles);
 
-    crate::use_effect_with_cleanup(move || -> Box<dyn FnOnce()> {
+    crate::js_listener::use_js_listeners(move || {
         if !open.cloned() {
-            return Box::new(|| {});
+            return None;
         }
         let id = id.clone();
         let anchor_id = anchor_id.clone();
@@ -1581,10 +1563,10 @@ pub(crate) fn use_anchor_position_fallback(
         // dropping it before a callback deferred to a later task/frame ever
         // fires appears to tear down the JS side before that callback runs.
         // A synchronous body has no such window -- which is exactly why,
-        // below, the eval handle *is* kept alive (not dropped) for as long
-        // as tracking might need it: unlike the one-shot original, this
-        // version's `await dioxus.recv()` tail is a real pending callback.
-        let eval = document::eval(&format!(
+        // below, the script *is* kept alive (a `JsListeners`, not a dropped
+        // eval handle) for as long as tracking might need it: unlike the
+        // one-shot original, its listeners are real pending callbacks.
+        Some(crate::js_listener::JsListeners::install(&format!(
             r#"
             {inject}
             const content = document.getElementById('{id}');
@@ -2022,10 +2004,9 @@ pub(crate) fn use_anchor_position_fallback(
             // function's doc, gap 1). rAF-throttled: `rafScheduled`
             // collapses any number of scroll/resize events firing before
             // the next paint (from either source) into a single
-            // `reposition()` call. Removed on close/unmount exactly as
-            // every other eval-channel listener in this file -- the
-            // `await dioxus.recv()` tail below is unconditional now for the
-            // same reason: something always needs cleaning up.
+            // `reposition()` call. Registered through `listen`, so they are
+            // removed on close/unmount exactly as every other eval-channel
+            // listener in this file (`JsListeners`' derived teardown).
             let rafScheduled = false;
             const onTrack = () => {{
                 if (rafScheduled) return;
@@ -2044,8 +2025,8 @@ pub(crate) fn use_anchor_position_fallback(
                 if (e.target !== document && content && content.contains(e.target)) return;
                 onTrack();
             }};
-            window.addEventListener('scroll', onScroll, {{ capture: true, passive: true }});
-            window.addEventListener('resize', onTrack, {{ passive: true }});
+            listen(window, 'scroll', onScroll, {{ capture: true, passive: true }});
+            listen(window, 'resize', onTrack, {{ passive: true }});
             // An anchor inside an ANIMATING ancestor (a submenu's trigger inside its root menu's
             // `dx-pop-in`, scale .95 -> 1) is measured at the animation's current scale by
             // `getBoundingClientRect()`, so a panel opened inside that window is placed against a
@@ -2054,12 +2035,10 @@ pub(crate) fn use_anchor_position_fallback(
             const onAnimEnd = (e) => {{
                 if (trigger && e.target !== content && e.target.contains && e.target.contains(trigger)) onTrack();
             }};
-            document.addEventListener('animationend', onAnimEnd, {{ capture: true, passive: true }});
+            listen(document, 'animationend', onAnimEnd, {{ capture: true, passive: true }});
             const vv = window.visualViewport;
-            if (vv) {{
-                vv.addEventListener('resize', onTrack, {{ passive: true }});
-                vv.addEventListener('scroll', onTrack, {{ passive: true }});
-            }}
+            listen(vv, 'resize', onTrack, {{ passive: true }});
+            listen(vv, 'scroll', onTrack, {{ passive: true }});
             // Content that grows or shrinks while open (typing in a Combobox
             // changes the filtered list) is re-placed in the same frame the
             // browser lays it out, so a list opened upward never extends over
@@ -2067,24 +2046,15 @@ pub(crate) fn use_anchor_position_fallback(
             const resizeObserver = typeof ResizeObserver === 'function' && content
                 ? new ResizeObserver(onTrack)
                 : null;
-            if (resizeObserver) resizeObserver.observe(content);
-            await dioxus.recv();
+            if (resizeObserver) {{
+                resizeObserver.observe(content);
+                cleanup(() => resizeObserver.disconnect());
+            }}
             // No cleanup of data-placed-side / --dx-anchor-offset-*: a superseded run's teardown
             // resolves AFTER its successor's first (synchronous) publish and would erase it; the
             // next open republishes before paint, and a closed panel is display:none.
-            if (resizeObserver) resizeObserver.disconnect();
-            window.removeEventListener('scroll', onScroll, true);
-            window.removeEventListener('resize', onTrack);
-            document.removeEventListener('animationend', onAnimEnd, true);
-            if (vv) {{
-                vv.removeEventListener('resize', onTrack);
-                vv.removeEventListener('scroll', onTrack);
-            }}
             "#
-        ));
-        Box::new(move || {
-            let _ = eval.send(true);
-        })
+        )))
     });
 }
 

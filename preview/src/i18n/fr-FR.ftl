@@ -12,6 +12,20 @@ October = Octobre
 November = Novembre
 December = Décembre
 
+## Months (short, for the calendar's month dropdown)
+January_Short = Janv.
+February_Short = Févr.
+March_Short = Mars
+April_Short = Avr.
+May_Short = Mai
+June_Short = Juin
+July_Short = Juil.
+August_Short = Août
+September_Short = Sept.
+October_Short = Oct.
+November_Short = Nov.
+December_Short = Déc.
+
 ## Weekdays
 Monday = Lu
 Tuesday = Ma

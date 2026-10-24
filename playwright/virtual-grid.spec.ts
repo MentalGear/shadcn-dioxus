@@ -266,6 +266,44 @@ test.describe("gallery (items wrap into rows)", () => {
   });
 });
 
+// Row 369: a row's measured height keeps its fraction. The canvas once summed whole px, so rows of
+// 66.1875px ended up to a px below it (a short grid's box then overflowed by 1px); now it holds the
+// remainders, rounded up.
+test("gallery: rows with a fractional height end inside the canvas", async ({ page }) => {
+  await gotoHydrated(page, PAGE_URL);
+  const grid = gallery(page);
+  await expect(grid.locator('[data-grid-index="0"]')).toBeVisible();
+  await page.addStyleTag({
+    content: `[data-virtual-grid] > div > [role="row"] { height: 66.1875px !important; overflow: hidden; }`,
+  });
+  await grid.scrollIntoViewIfNeeded();
+  // Read once the scroll has ended and the last row is measured: the canvas height has held still
+  // for a second (while the scroll runs it is frozen at the estimates' sum, which fits trivially).
+  const settled = () =>
+    grid.evaluate(async (el) => {
+      const canvas = el.querySelector(":scope > div") as HTMLElement;
+      const heights: string[] = [];
+      for (let i = 0; i < 5; i++) {
+        heights.push(canvas.style.height);
+        await new Promise((resolve) => setTimeout(resolve, 200));
+      }
+      const rows = [...canvas.querySelectorAll(':scope > [role="row"]')];
+      const last = rows[rows.length - 1];
+      return {
+        stable: heights.every((h) => h === canvas.style.height),
+        index: last.getAttribute("aria-rowindex"),
+        height: last.getBoundingClientRect().height,
+        over: last.getBoundingClientRect().bottom - canvas.getBoundingClientRect().bottom,
+      };
+    });
+  await expect(async () => {
+    await scrollGrid(grid, 1e9, 0);
+    const state = await settled();
+    expect(state).toMatchObject({ stable: true, index: "1250", height: 66.1875 });
+    expect(state.over).toBeLessThanOrEqual(0.01);
+  }).toPass({ timeout: 15000 });
+});
+
 // Scroll chaining: at a grid's top or bottom edge the wheel must scroll the page (the grid once set
 // `overscroll-behavior: contain` and trapped it); only the inline axis stays contained.
 for (const [name, pick] of [["data grid", dataGrid], ["gallery", gallery]] as const) {

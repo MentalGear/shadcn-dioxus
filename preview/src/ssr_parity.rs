@@ -403,6 +403,9 @@ mod why {
     pub const FIND_LAYER: &str = "the find-in-page layer is mounted by an effect; it is absolutely positioned and `aria-hidden`";
     pub const TABLE_ROWCOUNT: &str = "`TableRows` hands its row count up to the `<table>` (`aria-rowcount`, an ARIA attribute, \
         no box) through the `TableScroller` context after the body renders, since the table renders first (row 343)";
+    pub const CLOCK: &str = "the date comes from the clock, which is read after hydration (an effect), never while rendering: a render-time \
+        date would be baked into the page as the build day and hydration keeps the server's text (row 377); the date's span \
+        reserves the widest date text in a hidden `::before` sharing its grid cell, so the empty -> filled text moves no box";
     pub const ANCHOR_ID: &str = "a caller-supplied `id` on a popup's content reaches the trigger's `anchor-name` only after the content's \
         effect syncs it into the root context (`PopoverCtx::content_id` and its Tooltip/HoverCard twins); the server writes the generated \
         id. `anchor-name` is a custom ident that names an anchor and paints nothing, and the client's name is the one `position-anchor` resolves";
@@ -437,6 +440,7 @@ const BASELINE: &[(&str, &str)] = &[
     ("carousel/virtual_loop_rtl", CAROUSEL),
     ("carousel/virtual_many", CAROUSEL),
     ("drag_and_drop_list/main", AVATAR),
+    ("date_picker/natural_language", CLOCK),
     ("dropdown_menu/account_switcher", AVATAR),
     ("empty/avatar", AVATAR),
     ("item/avatar", AVATAR),
@@ -452,6 +456,7 @@ const ROUTE_BASELINE: &[(&str, &str)] = &[
     ("/", AVATAR),
     ("/component/avatar/", AVATAR),
     ("/component/carousel/", CAROUSEL),
+    ("/component/date_picker/", CLOCK),
     ("/component/drag_and_drop_list/", AVATAR),
     ("/component/empty/", AVATAR),
     ("/component/item/", AVATAR),
@@ -616,6 +621,26 @@ mod tests {
         let mut basis = use_signal(|| 0.0_f64);
         use_effect(move || basis.set(50.0));
         rsx! { div { style: "flex-basis: {basis}%;" } }
+    }
+
+    /// A text input whose `value` an effect fills (row 306's Combobox half: the input showed no label
+    /// until hydration). The browser spec `first-paint-text` read `input.value`; this is that read.
+    fn effect_valued_input() -> Element {
+        let mut value = use_signal(String::new);
+        use_effect(move || value.set("SvelteKit".into()));
+        rsx! { input { r#type: "text", value: "{value}" } }
+    }
+
+    #[test]
+    fn a_value_written_by_an_effect_is_seen() {
+        let f = frames(effect_valued_input);
+        assert!(f.client.contains(r#"value="SvelteKit""#), "{}", f.client);
+        let (server, client) =
+            divergence(&view(&f.server), &view(&f.client)).expect("the two frames differ");
+        assert!(
+            client.contains("SvelteKit") && !server.contains("SvelteKit"),
+            "{server}\n{client}"
+        );
     }
 
     #[test]

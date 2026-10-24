@@ -39,7 +39,7 @@
     background: var(--dx-muted);
 }
 
-.dx-slider[data-orientation="vertical"] .dx-slider-track {
+.dx-slider[data-orientation="vertical"] > .dx-slider-track {
     width: var(--dx-space-1);
     height: 100%;
 }
@@ -57,7 +57,7 @@
    must stay `auto`. The horizontal rule's `height: 100%` would otherwise win over `top`/`bottom`
    (an over-constrained box ignores `bottom`) and the filled bar would be the whole track height,
    shifted down by `top`, escaping the slider. */
-.dx-slider[data-orientation="vertical"] .dx-slider-range {
+.dx-slider[data-orientation="vertical"] > .dx-slider-track > .dx-slider-range {
     width: 100%;
     height: auto;
 }
@@ -114,7 +114,7 @@
     inset: calc(-1 * var(--dx-coarse-slider-thumb-margin));
 }
 
-.dx-slider[data-orientation="vertical"] .dx-slider-thumb {
+.dx-slider[data-orientation="vertical"] > .dx-slider-track > .dx-slider-thumb {
     /* The primitive positions this thumb with inline `bottom: X%`; the horizontal rule's
        `top: 50%` would otherwise win over it (an over-constrained box ignores `bottom`) and pin
        the thumb to the middle of the track whatever the value. */

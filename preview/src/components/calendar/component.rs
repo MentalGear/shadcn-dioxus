@@ -15,7 +15,7 @@ fn fixed_date(year: i32, month: Month, day: u8) -> Date {
     Date::from_calendar_date(year, month, day).expect("valid fixed date")
 }
 
-fn weekday_abbreviation(weekday: Weekday) -> &'static str {
+pub(crate) fn weekday_abbreviation(weekday: Weekday) -> &'static str {
     match weekday {
         Weekday::Monday => "Mo",
         Weekday::Tuesday => "Tu",

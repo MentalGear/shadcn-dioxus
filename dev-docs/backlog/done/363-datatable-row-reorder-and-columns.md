@@ -32,3 +32,9 @@ See the design note's "The model", "Migration path" and "Backlog impact" section
 - Table "rich" demo renders from `use_data_table` (rows, keys, selection, header tri-state).
 - Demo `data_table` variant `reorder`; spec `playwright/data_table_reorder.spec.ts` (7 tests).
 - Primitives: small additions to `data_view/state.rs` (reorder/selection helpers).
+- Follow-up 2026-10-23 (lane demofix2, owner feedback): every drop indicator is the accent colour by
+  construction: one theme token `--dx-drop-indicator` (default `var(--dx-primary)`, which follows the accent
+  preset), read by Drag and Drop List (line and drop-at-origin border), Data Table row reorder and the Virtual
+  List reorder demo instead of the grey `--dx-ring-color`. Specs: "drop indicator colour" in
+  `drag_and_drop_list`, `data_table_reorder` and `item-key` (painted colour equals `--dx-primary` under the
+  blue accent, light and dark, and differs from the ring).

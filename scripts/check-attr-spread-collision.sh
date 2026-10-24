@@ -244,14 +244,47 @@ check_one() {
 check_one "spread" "spread" "$SPREAD_BASELINE"
 check_one "component-attributes-forward" "component-attributes-forward" "$COMPONENT_FORWARD_BASELINE"
 
+# The third check (backlog row 97): a dynamic child inside a raw-text element (`style`,
+# `script`, `textarea`, `title`, ...; the analyzer's `RAW_TEXT_ELEMENTS`). SSR wraps dynamic
+# text in `<!--node-idN-->`/`<!--#-->` hydration markers, which the HTML parser keeps as
+# literal text inside these elements: a `<style>`'s rule is swallowed, a `<textarea>`'s value
+# shows the markers, and hydration never binds the node (measured in
+# dev-docs/issues/raw-text-hydration-markers.md). It is a different defect from the two
+# above, and lives here only because this analyzer already parses every `rsx!` body. No
+# baseline: there were 0 sites when it was added, so any finding fails, and
+# --update-baseline does not apply to it. It scans the whole preview crate (the shell and
+# docs pages too, not only components) plus the starter template, all inside
+# cargo-inputs-hash.sh's roots, so a reused PASS of this gate still covers them.
+raw_text_failed=0
+if [[ "$update_mode" -eq 0 ]]; then
+  raw_text_tsv="$(mktemp -t raw-text-dynamic-child.XXXXXX.tsv)"
+  trap 'rm -f "$raw_tsv" "$raw_text_tsv"' EXIT
+  "$BIN" primitives/src preview/src templates 2>/dev/null \
+    | awk -F'\t' '$1=="raw-text-dynamic-child"' >"$raw_text_tsv"
+  raw_text_count="$(grep -c . "$raw_text_tsv" || true)"
+  if [[ "$raw_text_count" -gt 0 ]]; then
+    raw_text_failed=1
+    echo "check-attr-spread-collision: $raw_text_count dynamic child(ren) inside a raw-text element (no baseline):" >&2
+    awk -F'\t' '{printf "%s:%s: `%s` in `%s` -- %s\n", $2, $3, $5, $4, $6}' "$raw_text_tsv" >&2
+    echo >&2
+  fi
+  echo "check-attr-spread-collision: raw-text-dynamic-child: $raw_text_count found (zero tolerance)." >&2
+fi
+
 if [[ "$update_mode" -eq 1 ]]; then
   echo "check-attr-spread-collision: baseline(s) updated." >&2
   exit 0
+fi
+
+if [[ "$raw_text_failed" -ne 0 ]]; then
+  echo "check-attr-spread-collision: FAILED -- dynamic content inside a raw-text element (listed above). Render static text, or pass the string through \`dangerous_inner_html\` (a \`textarea\`: its \`value\`, which applies at hydration); dev-docs/issues/raw-text-hydration-markers.md." >&2
 fi
 
 if [[ "$overall_status" -ne 0 ]]; then
   echo "check-attr-spread-collision: FAILED -- $total_new new site(s) beyond the checked-in baseline ($total_baseline pre-existing, tracked as debt -- dev-docs/issues/duplicate-attribute-findings.md). Either fix the new site(s) (typed field, or merge_attributes -- see that doc) or, if genuinely intentional, add them via --update-baseline and say why in the commit." >&2
   exit 1
 fi
+
+[[ "$raw_text_failed" -eq 0 ]] || exit 1
 
 echo "check-attr-spread-collision: OK -- 0 new site(s) beyond the $total_baseline-entry baseline (debt register, not an approval -- dev-docs/issues/duplicate-attribute-findings.md)."

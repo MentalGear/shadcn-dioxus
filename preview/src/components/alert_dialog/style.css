@@ -147,6 +147,15 @@ dialog.dx-alert-dialog[open][data-state="open"] {
   gap: var(--dx-space-4);
   text-align: center;
   transform: translate(-50%, -50%); /* rtl-physical: see comment above */
+
+  /* Size slots (`default`; `data-size="sm"` re-declares them below). Every root declares all of
+     them, so an AlertDialog nested inside another one never inherits the outer size through a
+     `[data-size] .dx-alert-dialog-*` descendant selector. */
+  --dx-alert-dialog-media-size: var(--dx-space-16);
+  --dx-alert-dialog-media-icon-size: var(--dx-space-8);
+  --dx-alert-dialog-media-margin-inline: auto;
+  --dx-alert-dialog-actions-display: flex;
+  --dx-alert-dialog-actions-columns: none;
 }
 
 /* Nova groups title and description in a header with `gap-1.5` inside the panel's `gap-4`; this
@@ -168,7 +177,7 @@ dialog.dx-alert-dialog[open][data-state="open"] {
 }
 
 .dx-alert-dialog-actions {
-  display: flex;
+  display: var(--dx-alert-dialog-actions-display);
   flex-direction: column-reverse;
   padding: var(--dx-space-4);
   border-top: 1px solid var(--dx-border);
@@ -176,6 +185,7 @@ dialog.dx-alert-dialog[open][data-state="open"] {
   border-end-end-radius: var(--dx-radius-xl);
   border-end-start-radius: var(--dx-radius-xl);
   gap: var(--dx-space-2);
+  grid-template-columns: var(--dx-alert-dialog-actions-columns);
   margin-block-end: calc(var(--dx-space-4) * -1);
   margin-inline: calc(var(--dx-space-4) * -1);
 }
@@ -189,6 +199,8 @@ dialog.dx-alert-dialog[open][data-state="open"] {
   .dx-alert-dialog {
     max-width: 24rem;
     text-align: start;
+
+    --dx-alert-dialog-media-margin-inline: 0;
   }
 }
 
@@ -296,35 +308,19 @@ dialog.dx-alert-dialog[open][data-state="open"] {
  * `size-10` / 24px and keeps it centred. */
 .dx-alert-dialog-media {
   display: inline-flex;
-  width: var(--dx-space-16);
-  height: var(--dx-space-16);
+  width: var(--dx-alert-dialog-media-size);
+  height: var(--dx-alert-dialog-media-size);
   align-items: center;
   justify-content: center;
   border-radius: var(--dx-radius-md);
   background-color: var(--dx-muted);
   color: var(--dx-foreground);
-  margin-inline: auto;
+  margin-inline: var(--dx-alert-dialog-media-margin-inline);
 }
 
 .dx-alert-dialog-media svg:not(:where([popover], dialog) :where([popover], dialog) *) {
-  width: var(--dx-space-8);
-  height: var(--dx-space-8);
-}
-
-@media (width >= 40rem) {
-  .dx-alert-dialog:not([data-size="sm"]) .dx-alert-dialog-media {
-    margin-inline: 0;
-  }
-}
-
-.dx-alert-dialog[data-size="sm"] .dx-alert-dialog-media {
-  width: var(--dx-space-10);
-  height: var(--dx-space-10);
-}
-
-.dx-alert-dialog[data-size="sm"] .dx-alert-dialog-media svg:not(:where([popover], dialog) :where([popover], dialog) *) {
-  width: var(--dx-space-6);
-  height: var(--dx-space-6);
+  width: var(--dx-alert-dialog-media-icon-size);
+  height: var(--dx-alert-dialog-media-icon-size);
 }
 
 /* `size="sm"`: `max-w-xs` and centred text at every width, the actions in one two-column row
@@ -333,11 +329,12 @@ dialog.dx-alert-dialog[open][data-state="open"] {
 .dx-alert-dialog[data-size="sm"] {
   max-width: min(20rem, calc(100% - var(--dx-space-8)));
   text-align: center;
-}
 
-.dx-alert-dialog[data-size="sm"] .dx-alert-dialog-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  --dx-alert-dialog-media-size: var(--dx-space-10);
+  --dx-alert-dialog-media-icon-size: var(--dx-space-6);
+  --dx-alert-dialog-media-margin-inline: auto;
+  --dx-alert-dialog-actions-display: grid;
+  --dx-alert-dialog-actions-columns: 1fr 1fr;
 }
 
 /* On-screen keyboard (`primitives/src/keyboard_inset.rs`). While it is open the helper puts

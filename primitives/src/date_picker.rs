@@ -840,6 +840,11 @@ pub struct DatePickerCalendarProps<T: DefaultCalendarProps + Properties + Partia
     #[props(default = Callback::new(|month: Month| month.to_string()))]
     pub on_format_month: Callback<Month, String>,
 
+    /// Callback when displaying a month inside a month dropdown; forwarded to the calendar's
+    /// `on_format_month_short` (`None` derives it from `on_format_month`).
+    #[props(default)]
+    pub on_format_month_short: Option<Callback<Month, String>>,
+
     /// The month being viewed
     #[props(default = ReadSignal::new(Signal::new(OffsetDateTime::now_local_date())))]
     pub view_date: ReadSignal<Date>,
@@ -966,6 +971,7 @@ pub fn DatePickerCalendar(props: DatePickerCalendarProps<CalendarProps>) -> Elem
             disabled_ranges: base_ctx.available_ranges.read().to_disabled_ranges(),
             on_format_weekday: props.on_format_weekday,
             on_format_month: props.on_format_month,
+            on_format_month_short: props.on_format_month_short,
             view_date: view_date(),
             on_view_change: move |date| {
                 base_ctx.dwell.cancel();
@@ -1052,6 +1058,7 @@ pub fn DateRangePickerCalendar(props: DatePickerCalendarProps<RangeCalendarProps
             disabled_ranges: base_ctx.available_ranges.read().to_disabled_ranges(),
             on_format_weekday: props.on_format_weekday,
             on_format_month: props.on_format_month,
+            on_format_month_short: props.on_format_month_short,
             view_date: view_date(),
             on_view_change: move |date| {
                 base_ctx.dwell.cancel();

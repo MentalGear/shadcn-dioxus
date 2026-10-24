@@ -14,7 +14,7 @@ use dioxus_primitives::{
     ContentAlign,
 };
 use std::time::Duration;
-use time::{Date, Month};
+use time::{Date, Month, Weekday};
 
 use super::super::calendar::*;
 use super::super::popover::*;
@@ -42,6 +42,7 @@ fn fixed_date(year: i32, month: Month, day: u8) -> Date {
 struct StyledDatePickerContext {
     month_count: u8,
     caption_layout: CaptionLayout,
+    calendar_format: CalendarFormat,
     apply_label: ReadSignal<String>,
     cancel_label: ReadSignal<String>,
 }
@@ -58,6 +59,26 @@ fn styled_caption_layout() -> CaptionLayout {
     try_use_context::<StyledDatePickerContext>()
         .map(|ctx| ctx.caption_layout)
         .unwrap_or_default()
+}
+
+/// The calendar formatting callbacks the picker root carries to the calendar in its popover.
+#[derive(Clone, Copy)]
+struct CalendarFormat {
+    weekday: Callback<Weekday, String>,
+    month: Callback<Month, String>,
+    month_short: Option<Callback<Month, String>>,
+}
+
+/// The picker root's [`CalendarFormat`], or the calendar's own defaults for an input used
+/// outside a styled picker.
+fn styled_calendar_format() -> CalendarFormat {
+    try_use_context::<StyledDatePickerContext>()
+        .map(|ctx| ctx.calendar_format)
+        .unwrap_or_else(|| CalendarFormat {
+            weekday: Callback::new(|weekday: Weekday| weekday_abbreviation(weekday).to_string()),
+            month: Callback::new(|month: Month| month.to_string()),
+            month_short: None,
+        })
 }
 
 fn styled_month_count() -> u8 {
@@ -105,11 +126,21 @@ pub struct DatePickerProps {
     #[props(default = Callback::new(|_| "Y".to_string()))]
     pub on_format_year_placeholder: Callback<(), String>,
 
-    /// Locale-aware month name for the month segment's `aria-valuetext`
-    /// (backlog row 84 finding 2) -- see
-    /// `dioxus_primitives::date_picker::DateElementProps::on_format_month`.
+    /// Locale-aware month name, for the month segment's `aria-valuetext` (backlog row 84
+    /// finding 2, see `dioxus_primitives::date_picker::DateElementProps::on_format_month`) and
+    /// for the caption of the calendar in the popover.
     #[props(default = Callback::new(|month: Month| month.to_string()))]
     pub on_format_month: Callback<Month, String>,
+
+    /// Short month name for the calendar's month dropdown ("Oct"). `None` keeps the first three
+    /// characters of `on_format_month`; pass a callback for a language where that cut is wrong
+    /// (French "juin" and "juillet" both cut to "jui").
+    #[props(default)]
+    pub on_format_month_short: Option<Callback<Month, String>>,
+
+    /// Weekday name for the calendar's column headers ("Su").
+    #[props(default = Callback::new(|weekday: Weekday| weekday_abbreviation(weekday).to_string()))]
+    pub on_format_weekday: Callback<Weekday, String>,
 
     /// How the calendar's month caption is drawn (shadcn's `captionLayout`): plain text by default,
     /// or month and/or year dropdowns for a far-away date such as a date of birth.
@@ -201,6 +232,14 @@ pub struct DateRangePickerProps {
     #[props(default = Callback::new(|month: Month| month.to_string()))]
     pub on_format_month: Callback<Month, String>,
 
+    /// See `DatePickerProps::on_format_month_short`.
+    #[props(default)]
+    pub on_format_month_short: Option<Callback<Month, String>>,
+
+    /// See `DatePickerProps::on_format_weekday`.
+    #[props(default = Callback::new(|weekday: Weekday| weekday_abbreviation(weekday).to_string()))]
+    pub on_format_weekday: Callback<Weekday, String>,
+
     /// How the calendar's month caption is drawn (shadcn's `captionLayout`): plain text by default,
     /// or month and/or year dropdowns for a far-away date such as a date of birth.
     #[props(default)]
@@ -259,6 +298,11 @@ pub fn DatePicker(props: DatePickerProps) -> Element {
     use_context_provider(|| StyledDatePickerContext {
         month_count,
         caption_layout: props.caption_layout,
+        calendar_format: CalendarFormat {
+            weekday: props.on_format_weekday,
+            month: props.on_format_month,
+            month_short: props.on_format_month_short,
+        },
         apply_label: props.apply_label,
         cancel_label: props.cancel_label,
     });
@@ -323,6 +367,11 @@ pub fn DateRangePicker(props: DateRangePickerProps) -> Element {
     use_context_provider(|| StyledDatePickerContext {
         month_count,
         caption_layout: props.caption_layout,
+        calendar_format: CalendarFormat {
+            weekday: props.on_format_weekday,
+            month: props.on_format_month,
+            month_short: props.on_format_month_short,
+        },
         apply_label: props.apply_label,
         cancel_label: props.cancel_label,
     });
@@ -376,6 +425,7 @@ pub(crate) fn DatePickerInput(props: DatePickerInputProps) -> Element {
     let extra_children = props.children;
     let month_count = styled_month_count();
     let caption_layout = styled_caption_layout();
+    let format = styled_calendar_format();
 
     rsx! {
         date_picker::DatePickerInput {
@@ -399,7 +449,11 @@ pub(crate) fn DatePickerInput(props: DatePickerInputProps) -> Element {
             }
             DatePickerPopoverTrigger {}
             DatePickerPopoverContent { align: ContentAlign::Center,
-                date_picker::DatePickerCalendar { calendar: CalendarRoot,
+                date_picker::DatePickerCalendar {
+                    calendar: CalendarRoot,
+                    on_format_weekday: format.weekday,
+                    on_format_month: format.month,
+                    on_format_month_short: format.month_short,
                     for offset in 0..month_count {
                         CalendarMonthView {
                             key: "{offset}",
@@ -424,6 +478,7 @@ pub(crate) fn DateRangePickerInput(props: DatePickerInputProps) -> Element {
     let extra_children = props.children;
     let month_count = styled_month_count();
     let caption_layout = styled_caption_layout();
+    let format = styled_calendar_format();
 
     rsx! {
         date_picker::DateRangePickerInput {
@@ -460,6 +515,9 @@ pub(crate) fn DateRangePickerInput(props: DatePickerInputProps) -> Element {
                 align: ContentAlign::Center,
                 date_picker::DateRangePickerCalendar {
                     calendar: RangeCalendarRoot,
+                    on_format_weekday: format.weekday,
+                    on_format_month: format.month,
+                    on_format_month_short: format.month_short,
                     for offset in 0..month_count {
                         CalendarMonthView {
                             key: "{offset}",

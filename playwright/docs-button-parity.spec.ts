@@ -5,9 +5,10 @@ import { BASE_URL } from "./base-url";
 
 // The docs Button page paints with shadcn's base-nova text colours (docs-site lane, backlog row 231). Expected
 // values are what https://ui.shadcn.com/docs/components/base/button computes with no preset (its `:root` and
-// `.dark` blocks: --foreground #000 / #fafafa, --primary-foreground #fafafa / #171717, --secondary-foreground
-// #171717 / #fafafa, --primary #000 / #e5e5e5, --secondary #f5f5f5 / #262626, --border #e5e5e5), read in
-// Chromium from a local replica of that page. The Destructive Button is the one deliberate difference (row 134:
+// `.dark` blocks: --foreground oklch(0.145) = #0a0a0a / #fafafa, --primary-foreground #fafafa / #171717,
+// --secondary-foreground #171717 / #fafafa, --primary oklch(0.205) = #171717 / #e5e5e5, --secondary #f5f5f5 / #262626,
+// --border #e5e5e5), read in Chromium from a local replica of that page. The theme's light ink and primary are
+// shadcn's near-black (backlog row 373). The Destructive Button is the one deliberate difference (row 134:
 // a solid fill, because shadcn's 10% tint fails 4.5:1 for text): its fill is the destructive role and its ink
 // stays light; it is asserted separately so a change is a decision, not an accident.
 // Run against the SSG lane.
@@ -40,11 +41,11 @@ async function paint(page: Page, label: string) {
 
 const EXPECTED = {
   light: {
-    Primary: { bg: "#000000", color: "#fafafa" },
+    Primary: { bg: "#171717", color: "#fafafa" },
     Secondary: { bg: "#f5f5f5", color: "#171717" },
-    Outline: { bg: "#ffffff", color: "#000000" },
-    Ghost: { bg: "transparent", color: "#000000" },
-    Link: { bg: "transparent", color: "#000000" },
+    Outline: { bg: "#ffffff", color: "#0a0a0a" },
+    Ghost: { bg: "transparent", color: "#0a0a0a" },
+    Link: { bg: "transparent", color: "#171717" }, // `--dx-primary-ink`: the link ink is the primary, clamped to L <= 0.5
   },
   dark: {
     Primary: { bg: "#e5e5e5", color: "#171717" },
@@ -77,10 +78,10 @@ for (const mode of ["light", "dark"] as const) {
       await gotoHydrated(page, `${BASE_URL}/component/button/`);
       await page.evaluate((m) => (window as unknown as { __dxApplyMode: (m: string) => void }).__dxApplyMode(m), mode);
       const got = await paint(page, "Destructive");
-      // Light: the destructive role itself (shadcn's #e40014); dark: 60% of it over the page. Either way a FILL
+      // Light: the destructive role itself (shadcn's oklch(0.577 0.245 27.325) = #e7000b); dark: 60% of it over the page. Either way a FILL
       // (not shadcn's transparent tint) carrying light text.
       expect(got.bg).not.toBe("transparent");
-      if (mode === "light") expect(got.bg).toBe("#e40014");
+      if (mode === "light") expect(got.bg).toBe("#e7000b");
       expect(got.color).not.toBe(got.bg);
     });
   });

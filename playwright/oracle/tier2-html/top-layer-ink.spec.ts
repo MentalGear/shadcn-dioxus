@@ -66,8 +66,8 @@
  * property can be read *as a color*: by assigning it to a probe element's
  * `color` and reading that element's own `getComputedStyle().color` back
  * (`getPropertyValue('--dx-foreground')` alone would return the raw,
- * unresolved token text -- literally `"var(--foreground, var(--light, #000)
- * var(--dark, #fafafa))"` per `preview/assets/dx-components-theme.css`, not a color). Every
+ * unresolved token text -- literally `"var(--foreground, var(--light, oklch(14.5% 0 0deg))
+ * var(--dark, oklch(98.5% 0 0deg)))"` per `preview/assets/dx-components-theme.css`, not a color). Every
  * assertion below compares a surface's own computed `color` against that
  * resolved value, so this file survives a theme retune untouched.
  *
@@ -92,7 +92,7 @@
  * --dx-foreground)`; `.dx-tooltip-content` declares its own
  * *intentionally different* `color: var(--dx-background)`; `.dx-select-
  * list`/`.dx-combobox-list` declare their own *intentionally different*
- * `color: var(--secondary-color-1)`. Every one of these is author-origin
+ * `color: var(--secondary-color-1)` (the ramp token the popover role later replaced, row 111). Every one of these is author-origin
  * and already wins over the UA default with no help from this fix -- each
  * is asserted against its OWN actual token (`expectedVar`), not assumed to
  * be the general ink token, so a real regression in any of them still
@@ -130,7 +130,7 @@ const NAV_TIMEOUT = 20 * 60 * 1000; // first run compiles the app
 
 // The page ink: `body { color: var(--dx-foreground) }` (`preview/assets/main.css`). Read as a token at
 // runtime by `resolvedColor`, never as a literal, so a retune of the ink (row 231 moved it from the
-// ramp's `--secondary-color-4` #111 to shadcn's `--foreground` #000) cannot stale this file again.
+// ramp's `--secondary-color-4` #111 to shadcn's `--foreground`, and row 373 from #000 to oklch(0.145)) cannot stale this file again.
 const INK_TOKEN = "--dx-foreground";
 
 const url = (name: string) => `${BASE_URL}/component/${name}/`;

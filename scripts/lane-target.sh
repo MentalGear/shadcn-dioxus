@@ -4,15 +4,26 @@
 #   scripts/lane-target.sh create <name> [--template DIR | --release [--base-path P]] [--root DIR] [--force]
 #   scripts/lane-target.sh warm-release [--base-path P] [--root DIR] [--force]
 #   scripts/lane-target.sh prune  [--root DIR] [--older-than DAYS] [--apply]
+#   scripts/lane-target.sh slim   [--root DIR] [--apply]
 #   scripts/lane-target.sh du     [--root DIR]
 #
-# `create` copies a warm template (cp -a --reflink=auto) to <root>/<name> and prints
+# `create` copies a warm template (scripts/lane-slot-target.sh copy) to <root>/<name> and prints
 # `export CARGO_TARGET_DIR=<abs path>` -- use `eval "$(scripts/lane-target.sh create x)"`
 # (progress goes to stderr, only the export lines to stdout). The path is always
 # absolute (dx --ssg breaks on relative ones, row 98) and never the shared repo `target/`.
 # It also exports `CARGO_INCREMENTAL=0` (row 168: incremental state regrew a target dir
 # by ~10-13 GB per lane-hour); `LANE_CARGO_INCREMENTAL=1` opts back in, at the cost of
 # running `prune` afterwards.
+#
+# Row 367: every lane command runs with CARGO_INCREMENTAL=0, which neither reads nor writes cargo's
+# `incremental/` dirs, so they are dead weight (about 3 of the template's 6.8 GB). `create`
+# leaves them out of the copy (the same `lane-slot-target.sh copy` lane-ssg.sh uses) and sizes its disk
+# check without them. `slim` deletes them from every tree under the root: once is enough to free the
+# template's 3.0 GB for good. A tree created with LANE_CARGO_INCREMENTAL=1 keeps the full copy and gets
+# a `.keep-incremental` stamp that `slim` respects. `slim --apply` holds every build slot (and the legacy
+# lock) with a non-blocking flock while it deletes, because a copy reading a tree mid-delete fails; with a
+# build running it refuses and changes nothing. `prune --apply` runs `slim` after its own deletions and
+# only warns when the slots are busy.
 #
 # The template must be base-path-free (row 100: a tree that ever held a
 # `--base-path shadcn-dioxus` build keeps emitting prefixed URLs even after
@@ -46,7 +57,7 @@ template="${LANE_TARGET_TEMPLATE:-}"
 older_than=2 apply=0 force=0 release=0 base_path="" explicit_template=0
 
 die() { echo "lane-target: $*" >&2; exit 1; }
-usage() { sed -n '2,8p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//' >&2; exit 2; }
+usage() { sed -n '2,9p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//' >&2; exit 2; }
 
 cmd="${1:-}"; [ -n "$cmd" ] || usage; shift
 name=""
@@ -91,6 +102,41 @@ contaminated() { # $1 = tree; prints why and returns 0 if it holds a base-path b
   return 1
 }
 
+# incremental_dirs <tree>: cargo's incremental dirs, at <tree>/<profile>/ and <tree>/<triple>/<profile>/.
+incremental_dirs() { find "$1" -mindepth 2 -maxdepth 3 -type d -name incremental -prune 2>/dev/null; }
+# slim <apply> <strict>: list (and with apply=1 delete) the incremental dirs of every tree under $root.
+# Applying holds every slot lock and the legacy lock non-blocking; busy -> refuse (strict=1: exit 1, else warn).
+slim() {
+  local apply="$1" strict="$2" q="$root/lockq" legacy="${LANE_LEGACY_LOCK-$root/ssg.lock}" f fd d inc total=0 kb i
+  local -A locks=()
+  if [ "$apply" -eq 1 ]; then
+    mkdir -p "$q"
+    # every slot LANE_SLOTS names plus any slot file a run with more slots left behind, each once
+    # (a second fd on the same file would conflict with our own first flock)
+    for (( i = 0; i < ${LANE_SLOTS:-2}; i++ )); do locks["$q/slot-$i.lock"]=1; done
+    for f in "$q"/slot-*.lock; do [ -e "$f" ] && locks["$f"]=1; done
+    [ -z "$legacy" ] || locks["$legacy"]=1
+    for f in "${!locks[@]}"; do
+      exec {fd}>>"$f"
+      if ! flock -n "$fd"; then
+        echo "lane-target: slim: a build holds ${f#"$root"/}; nothing deleted, run it again when \`scripts/lane-lock.sh --status\` is idle" >&2
+        [ "$strict" -eq 1 ] && exit 1; return 0
+      fi
+    done
+  fi
+  echo "incremental dirs under $root ($([ "$apply" -eq 1 ] && echo REMOVING || echo "dry run, pass --apply")); unused while CARGO_INCREMENTAL=0 (row 367):"
+  for d in "$root"/*/; do
+    d="${d%/}"; [ -d "$d" ] || continue; [ "$d" != "$q" ] || continue
+    if [ -e "$d/.keep-incremental" ]; then echo "  kept  $d (.keep-incremental)"; continue; fi
+    while IFS= read -r inc; do
+      kb="$(du -sk "$inc" | cut -f1)"; total=$(( total + kb ))
+      printf '  %s MiB  %s\n' "$(( kb / 1024 ))" "$inc"
+      [ "$apply" -ne 1 ] || rm -rf "$inc"
+    done < <(incremental_dirs "$d")
+  done
+  echo "  total $(( total / 1024 )) MiB"
+}
+
 case "$cmd" in
   create)
     [[ "$name" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]] || die "bad lane name '$name'"
@@ -103,12 +149,16 @@ case "$cmd" in
     why="$(contaminated "$template")" && die "refusing template $template: $why (base-path build, backlog row 100). Build a clean template."
     dest="$root/$name"
     [ ! -e "$dest" ] || die "$dest already exists (prune it or pick another name)"
-    need_kb="$(du -sk "$template" | cut -f1)"; free_kb="$(df -Pk "$root" | awk 'NR==2{print $4}')"
+    keep_inc="${LANE_CARGO_INCREMENTAL:-0}"
+    need_kb="$(du -sk $([ "$keep_inc" = 1 ] || echo --exclude=incremental) "$template" | cut -f1)"; free_kb="$(df -Pk "$root" | awk 'NR==2{print $4}')"
     if [ "$force" -ne 1 ] && [ "$free_kb" -lt "$need_kb" ]; then
       die "only $((free_kb/1024)) MiB free under $root, template is $((need_kb/1024)) MiB (reflink may not apply; --force to try)"
     fi
     echo "lane-target: copying $template -> $dest ($((need_kb/1024)) MiB) ..." >&2
-    mkdir -p "$root"; cp -a --reflink=auto "$template" "$dest"
+    mkdir -p "$root"
+    LANE_COPY_INCREMENTAL="$keep_inc" "$(dirname "${BASH_SOURCE[0]}")/lane-slot-target.sh" copy "$template" "$dest" \
+      || { rm -rf "$dest"; die "copy of $template failed"; }
+    [ "$keep_inc" != 1 ] || : > "$dest/.keep-incremental"
     rm -rf "$dest"/dx/*/*/web/public   # never inherit another build's served output
     rm -f "$dest/.tree-owner"           # the first run in a new target always touches the sources (row 216)
     echo "export CARGO_TARGET_DIR=$dest"
@@ -151,6 +201,12 @@ case "$cmd" in
       printf '  %s  %s\n' "$(du -sh "$d" | cut -f1)" "$d"
       [ "$apply" -ne 1 ] || rm -rf "$d"
     done
+    slim "$apply" 0
+    df -h "$root" | tail -1
+    ;;
+  slim)
+    [ -d "$root" ] || die "no such root: $root"
+    slim "$apply" 1
     df -h "$root" | tail -1
     ;;
   *) usage ;;

@@ -22,6 +22,7 @@ A component that composes `Label` (such as `FieldLabel`) retunes it by setting a
 | `--dx-label-font-size` | `var(--dx-text-sm)` | `font-size` |
 | `--dx-label-font-weight` | `500` | `font-weight` |
 | `--dx-label-line-height` | `1` | `line-height` |
+| `--dx-label-opacity` | `1` | `opacity` |
 
 ```css
 /* In the composing component's own stylesheet, on the label's element: */

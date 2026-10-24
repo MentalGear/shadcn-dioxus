@@ -1,10 +1,10 @@
 ---
 id: 15
 title: "scrollbar-gutter on older WebKit + iOS momentum scroll"
-status: "A product decision that those targets matter"
+status: "CLOSED 2026-10-23 (owner): older WebKit and iOS momentum scroll are not targets; old engines keep…"
 size: "M"
 area: misc
-updated: unknown
+updated: 2026-10-23
 ---
 
 # Row 15: scrollbar-gutter on older WebKit + iOS momentum scroll
@@ -15,7 +15,7 @@ updated: unknown
 
 ## Status / trigger
 
-A product decision that those targets matter
+**CLOSED 2026-10-23 (owner): older WebKit and iOS momentum scroll are not targets; old engines keep today's behaviour, documented as a known limit in scroll_lock.rs.** A product decision that those targets matter
 
 ## Size
 

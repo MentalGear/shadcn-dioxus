@@ -1,5 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 import { perTestTimeoutMs, timingSpecIgnore } from "./base-url";
+import { sandboxLaunchOptions } from "./sandbox-chromium.cjs";
 // Local-only: use the image's preinstalled Chromium and the already-running dx server.
 // Modeled on oracle.local.config.ts, but parallelized for a full-suite baseline run.
 export default defineConfig({
@@ -18,7 +19,7 @@ export default defineConfig({
     grepInvert: /mobile/,
     use: {
       ...devices["Desktop Chrome"],
-      launchOptions: { executablePath: "/opt/pw-browsers/chromium-1194/chrome-linux/chrome", args: ["--no-sandbox"] },
+      launchOptions: { ...sandboxLaunchOptions(), args: ["--no-sandbox"] }, // sandbox-chromium.cjs (row 374)
     },
   }],
 });

@@ -21,7 +21,12 @@ Session tooling (paths below default to `LANE_TGT=/home/user/tgt`):
   only when `Cargo.lock`, the toolchain or dx changed (it says "is current" and exits otherwise); the deploy refreshes
   `release` itself. Never build with the other's base path: `deploy-preview.sh` refuses the `release-template` tree.
 - Setup for a new container: `CARGO_TARGET_DIR=$LANE_TGT/template scripts/build-ssg.sh debug` once (the warm
-  template), `mkdir -p $LANE_TGT`.
+  template), `mkdir -p $LANE_TGT`, then `scripts/lane-target.sh slim --apply` (row 367: drops cargo's `incremental/`
+  dirs, ~3 GB of a 6.8 GB template, which no lane command reads because they all run with `CARGO_INCREMENTAL=0`).
+- `scripts/lane-target.sh slim [--apply]` -- lists (deletes with `--apply`) the `incremental/` dirs of every tree
+  under `$LANE_TGT` except one stamped `.keep-incremental` (`create` stamps it under `LANE_CARGO_INCREMENTAL=1`).
+  `--apply` refuses, changing nothing, while any build slot is held; `prune --apply` runs it too. Copies
+  (`create`, `lane-ssg.sh`, the slot-1 warm copies) already leave the dirs out, so this only reclaims the source trees.
 
 ## Worktree and files
 - Work ONLY in your own git worktree, on its own branch (`lane/<name>`). Never touch the main checkout or another
@@ -86,8 +91,8 @@ Use the cheapest tool that answers the question, in this order:
    pnpm run test:changed -- --workers=2` (details in "Before handback" step 3; `node tools/select.mjs --explain`
    says which specs and why; `CHANGED_RANGE=A..B` for a range other than your branch). Specs run on SSG output,
    not on `dx serve`, because the first paint and hydration are what they test.
-3. **The full suite is the main loop's**, once per merge batch (`playwright/tools/run-suite.sh`, "Running the
-   suite"). A lane never runs it.
+3. **The full suite is the deploy's**, once per deploy on a release build (`scripts/deploy-preview.sh`, row 322;
+   "Running the suite" for the chunking). A lane never runs it.
 
 ## Before handback (rows 221, 224; gate step changed 2026-10-18)
 1. Merge the current session branch into your lane branch (`git merge <session branch>`, no rebase). New gates may have
@@ -178,7 +183,7 @@ Facts, all from one debug SSG build of one tree on this 4-core / 15 GB box share
   milliseconds (under 2 % even if every one ran once) and most are "stays closed for N ms" negatives, so they were left alone.
 - **Release vs debug**: release runs the suite 1.47x faster and also runs the timing specs (`main-thread`,
   `scroll-main-thread`), but a cold release build took 37-50 min here (9 min for a debug build from the warm template).
-  Use release for the main loop's one full run per merge batch (saves ~40 min of `pw.lock` per run and makes the timing
+  Use release for the one full run per deploy (row 322; saves ~40 min of `pw.lock` per run and makes the timing
   specs valid), not for a lane's own spec runs.
 - **Workers**: 2 is the lane cap. Measured Chromium RSS: 2 workers peak 3.8 GB (mean 1.7 GB); 3 workers peak 4.3 GB (p95
   3.2 GB), lowest `MemAvailable` 4.4 GB beside other lanes' builds, so 3 fits next to one cargo build. 3 workers ran the
@@ -218,19 +223,28 @@ full gates for batch A), and two deploys collided. So there is ONE merge owner (
 2. **The owner** merges the queued branches in batches (4-5, see "Gate procedure") onto a fresh branch from main
    (`claude/queue-N`, `--no-ff`, in queue order; conflicts keep both sides, `playwright/durations.json` keeps every
    entry and recomputes its header, `dev-docs/backlog.md` is regenerated with `scripts/backlog-index.sh`), then runs ONE
-   full `scripts/run-gates.sh` and ONE full Playwright suite run (`playwright/tools/run-suite.sh`) per batch on the
-   merged tree, plus `scripts/registry-install-smoke.sh` when a component's files changed.
+   full `scripts/run-gates.sh` per batch on the merged tree, the specs the batch's diff selects
+   (`CHANGED_RANGE=origin/main...HEAD pnpm run test:changed`) plus the cross-component oracles
+   (`popup-style-isolation`, `first-paint-styles`, `oracle/hydration-parity`), and `scripts/registry-install-smoke.sh`
+   when a component's files changed. The FULL Playwright suite is not run per batch (row 322): it runs once per deploy,
+   inside `scripts/deploy-preview.sh` (step 4).
 3. A red caused by one queued branch is fixed on the batch branch when small and in scope, otherwise the branch is
    dropped from the batch and sent back; a red that also fails on main is not the batch's.
 4. The owner merges the batch to main, **deploys once** (`scripts/deploy-preview.sh`, docs commit), deletes the merged
-   `lane/*` branches, and marks the rows merged (removes them from the QUEUE table, notes the merge commit).
+   `lane/*` branches, and marks the rows merged (removes them from the QUEUE table, notes the merge commit). The deploy
+   refuses to build until the full Playwright suite is green on a RELEASE build of the exact tree it deploys (row 322):
+   it reuses a stamp `$LANE_TGT/release-suite/<tree>.pass` or makes one (no-base-path release build in a copy of
+   `release-template`, `run-suite.sh`, 3 workers, ~66-82 min), and stops with the failing titles on a red.
+   `scripts/deploy-preview.sh --suite-only` runs just that step (ahead of a deploy, or nightly); several batches may be
+   merged before one deploy. `DEPLOY_SUITE=skip:<reason>` is for an emergency fix only.
 
 ## Conventions the gates enforce
 Listeners in eval JS through `primitives/src/js_listener.rs` `listen`; passive scroll listeners; motion through
 `use_motion` / `use_interval_while`; no `transform` in component `@keyframes`; state recipes and focus rings from the
 theme tokens; destructive text through `--dx-destructive-text`; no cross-component property overrides (compose through
 slot variables); every `:hover` inside `@media (hover: hover) and (pointer: fine)`; descendant selectors on generic
-elements end with `:not(:where([popover], dialog) *)`; overlays bounded in specs with `fixedViewportBox(page)`; demo
+elements end with `:not(:where([popover], dialog) *)`; variant rules (`[data-variant|size|orientation|spacing]`) reach
+their parts through slot variables the root re-declares, never through a descendant combinator; overlays bounded in specs with `fixedViewportBox(page)`; demo
 controls located by role and position inside the demo frame, never by demo copy (row 220); geometry measured only at
 rest (row 222).
 

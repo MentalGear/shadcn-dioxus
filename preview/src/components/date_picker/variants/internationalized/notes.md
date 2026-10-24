@@ -1,1 +1,1 @@
-`confirm: false`: stays open. Mirrors shadcn's `date-picker-rtl`.
+`confirm: false`: stays open. Mirrors shadcn's `date-picker-rtl`. The locale also reaches the calendar in the popover: `on_format_weekday` and `on_format_month` for the headers and caption, `on_format_month_short` for the month dropdown (French "Juin" and "Juil." instead of a three-letter cut).

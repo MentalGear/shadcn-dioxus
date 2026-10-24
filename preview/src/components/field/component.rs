@@ -44,18 +44,25 @@ pub fn Field(
     /// label/control and is meant to be paired with a [`FieldError`].
     #[props(default)]
     invalid: bool,
+    /// Marks the whole row as disabled -- dims its [`FieldLabel`]s (shadcn's
+    /// `data-disabled` on `Field`). Styling only: give the control its own
+    /// `disabled` too, which is what keeps it out of focus and the form.
+    #[props(default)]
+    disabled: bool,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
     children: Element,
 ) -> Element {
     let base = attributes!(div { class: "dx-field", "data-dx-root": "" });
-    // `role`/`data-orientation`/`data-invalid` reflect this wrapper's own
-    // typed `orientation`/`invalid` props, not a caller-overridable default,
+    // `role`/`data-orientation`/`data-invalid`/`data-disabled` reflect this
+    // wrapper's own typed `orientation`/`invalid`/`disabled` props, not a
+    // caller-overridable default,
     // so they are merged in LAST (owned wins) -- see the merge-precedence
     // policy in dev-docs/issues/duplicate-attribute-findings.md.
     let owned = attributes!(div {
         role: "group",
         "data-orientation": orientation.class(),
         "data-invalid": invalid,
+        "data-disabled": disabled,
     });
     let merged = merge_attributes(vec![base, attributes, owned]);
 

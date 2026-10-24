@@ -138,6 +138,13 @@
   --dx-label-color: var(--dx-destructive-text);
 }
 
+/* `Field { disabled }`: Nova's `group-data-[disabled=true]/field:opacity-50` on `FieldLabel` (the
+ * description keeps its ink). Through Label's opacity slot, set on the label's own element, for the same
+ * reason as the line height above. The control is disabled by its own `disabled`; this only dims the row. */
+.dx-field[data-disabled="true"] .dx-field-label {
+  --dx-label-opacity: var(--dx-opacity-disabled);
+}
+
 /*
  * `> button`/`> input` (element selectors, not classes) rather than naming
  * `Checkbox`/`Switch`/`RadioItem`'s own `dx-*` classes directly -- all

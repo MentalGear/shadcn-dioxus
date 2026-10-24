@@ -1,9 +1,12 @@
 // Message scroller controller -- one instance per `MessageScrollerProvider`.
 //
-// This file is the body of a `document::eval` async function (see
-// `MESSAGE_SCROLLER_JS` in `message_scroller.rs`): `dioxus.recv()` /
-// `dioxus.send()` are its only bridge to Rust, and a top-level `return` /
-// `await` is legal.
+// This file is the body of a `JsListeners` script (see `MESSAGE_SCROLLER_JS`
+// in `message_scroller.rs` and `primitives/src/js_listener.rs`):
+// `dioxus.recv()` / `dioxus.send()` are its only bridge to Rust, a top-level
+// `return` / `await` is legal, and every event listener goes through `listen`,
+// whose removal is derived (the script's teardown), never written here. The
+// `teardown` message ends the main loop below; Rust sends it right before it
+// drops the script.
 //
 // Provenance: a port of the controller in `@shadcn/react`'s
 // `message-scroller` (`use-message-scroller-controller.ts`,
@@ -929,14 +932,16 @@ function bind() {
   content = ct;
   spacer = ct.querySelector(":scope > [data-message-scroller-spacer]");
   spacerGap = flexGap(ct);
-  viewport.addEventListener("scroll", onScroll, { passive: true });
-  viewport.addEventListener("wheel", onWheel, { passive: true });
-  viewport.addEventListener("touchstart", onTouchStart, { passive: true });
-  viewport.addEventListener("touchmove", onTouchMove, { passive: true });
-  viewport.addEventListener("keydown", onKeyDown);
-  viewport.addEventListener("focusin", scheduleKeepSync);
-  viewport.addEventListener("focusout", scheduleKeepSync);
-  document.addEventListener("selectionchange", scheduleKeepSync);
+  // `listen` (the `JsListeners` prelude, `primitives/src/js_listener.rs`): these are removed
+  // when the provider's script is dropped, after `teardown()` below has run.
+  listen(viewport, "scroll", onScroll, { passive: true });
+  listen(viewport, "wheel", onWheel, { passive: true });
+  listen(viewport, "touchstart", onTouchStart, { passive: true });
+  listen(viewport, "touchmove", onTouchMove, { passive: true });
+  listen(viewport, "keydown", onKeyDown);
+  listen(viewport, "focusin", scheduleKeepSync);
+  listen(viewport, "focusout", scheduleKeepSync);
+  listen(document, "selectionchange", scheduleKeepSync);
   resizeObserver.observe(viewport);
   resizeObserver.observe(content);
   mutationObserver.observe(content, { childList: true });
@@ -952,18 +957,8 @@ function teardown() {
   cancelAnimationFrame(keepFrame);
   stopVisibility();
   clearTimeout(autoscrollingTimer);
-  document.removeEventListener("selectionchange", scheduleKeepSync);
   resizeObserver.disconnect();
   mutationObserver.disconnect();
-  if (viewport) {
-    viewport.removeEventListener("scroll", onScroll);
-    viewport.removeEventListener("wheel", onWheel);
-    viewport.removeEventListener("touchstart", onTouchStart);
-    viewport.removeEventListener("touchmove", onTouchMove);
-    viewport.removeEventListener("keydown", onKeyDown);
-    viewport.removeEventListener("focusin", scheduleKeepSync);
-    viewport.removeEventListener("focusout", scheduleKeepSync);
-  }
   for (const el of kept) el.removeAttribute("data-keep-rendered");
   kept = new Set();
   bound = false;

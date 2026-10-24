@@ -282,10 +282,20 @@ for (const mode of ["light", "dark"] as Mode[]) {
         const first = menu.getByRole("menuitem").first();
         await page.keyboard.press("ArrowDown"); // the destructive item is last: wraps to the first
         await expect(first).toBeFocused();
-        const accent = await resolveColor(page, "var(--dx-accent)");
-        expect((await contrastOf(first)).bg.map(String).join(","), "an ordinary highlight is the accent fill").toBe(
-          accent.match(/\d+/g)!.slice(0, 3).join(","),
-        );
+        // The accent is `oklch()` (shadcn's own spelling, row 373), which getComputedStyle serialises as lab(); read
+        // it as 8-bit sRGB through a canvas rather than parsing digits out of the string.
+        const accent = await page.evaluate(() => {
+          const probe = document.createElement("div");
+          probe.style.color = "var(--dx-accent)";
+          document.body.appendChild(probe);
+          const cx = document.createElement("canvas").getContext("2d", { colorSpace: "srgb" })!;
+          cx.clearRect(0, 0, 1, 1);
+          cx.fillStyle = getComputedStyle(probe).color;
+          cx.fillRect(0, 0, 1, 1);
+          probe.remove();
+          return Array.from(cx.getImageData(0, 0, 1, 1).data.slice(0, 3)).join(",");
+        });
+        expect((await contrastOf(first)).bg.map(String).join(","), "an ordinary highlight is the accent fill").toBe(accent);
 
         // Pointer highlight.
         await page.mouse.move(1, 1);

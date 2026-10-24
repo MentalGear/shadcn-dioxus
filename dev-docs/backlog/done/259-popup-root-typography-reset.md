@@ -26,7 +26,7 @@ M
 
 ## Detail
 
-Split out of [row 218](../218-popup-style-isolation-top-layer-popups-stay-dom.md) (owner-approved typography-reset half; the
+Split out of [row 218](218-popup-style-isolation-top-layer-popups-stay-dom.md) (owner-approved typography-reset half; the
 variant-slot gate half stays open there). Descendant selectors were already closed by `check-popup-boundary.sh`; this is the
 inheritance half, by construction.
 

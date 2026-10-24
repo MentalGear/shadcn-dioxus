@@ -61,7 +61,8 @@
  * width, 120-630 boxes), which is a separate defect in the chart primitive, not in the layout; it is its own
  * backlog item, and adding the route here belongs with that fix.
  *
- * `LS_DUMP=1` prints every late box event of a failing width. `LS_WIDTHS=480,1280` runs just those widths.
+ * `LS_DUMP=1` prints every late box event of a failing width. `LS_WIDTHS=480,1280` runs just those widths. `LS_CPU=4` slows
+ * the pages' CPU four times, the way a loaded box does (row 377).
  *
  * Chromium only. Debug builds are fine: this counts box changes, not milliseconds.
  */
@@ -98,6 +99,13 @@ const RECORDER = `
     for (const e of els) {
       if (e.closest('#main-content') && ++main > 700) continue;
       if (++n > 1000) break;
+      // Content that is not rendered has no box anyone sees: inside \`content-visibility: hidden\` (a closed
+      // \`hidden="until-found"\` collapsible, such as the manual-install code blocks) the browser lays an element out only
+      // because this script asks, from whatever the parser has delivered so far, so a half-parsed code block "grows"
+      // sideways and downwards (724x1029 -> 1001x6603) without anything having been on screen (backlog row 377). Such
+      // an element is not measured and has no baseline: its first rendered box is its first one. (An element that is
+      // \`display: none\` has no client rects and is still measured, so a visible box that disappears still counts.)
+      if (!e.checkVisibility() && e.getClientRects().length > 0) { prev.delete(e); continue; }
       const b = e.getBoundingClientRect();
       const cur = { x: r(b.x), y: r(b.y + window.scrollY), w: r(b.width), h: r(b.height) };
       const p = prev.get(e);
@@ -140,6 +148,8 @@ const HEIGHT = 800;
 /** Pages measuring widths at once inside one group's context (`LS_POOL=1` is the old one-at-a-time sweep). */
 const POOL = Math.max(1, Number(process.env.LS_POOL ?? 2));
 const ONLY = (process.env.LS_WIDTHS ?? "").split(",").filter(Boolean).map(Number);
+/** CPU slowdown of the sweep's pages (CDP `Emulation.setCPUThrottlingRate`); `LS_CPU=4` makes the parse and the hydration land in different frames the way a loaded box does. 1 = none. */
+const CPU = Math.max(1, Number(process.env.LS_CPU ?? 1));
 
 const GROUPS: { route: string; scheme: "light" | "dark"; widths: number[]; pool?: number }[] = [
   // The home page keeps ONE page at a time: it is the long, progressively parsed page, and with two pages (four browsers
@@ -147,12 +157,18 @@ const GROUPS: { route: string; scheme: "light" | "dark"; widths: number[]; pool?
   // in three pooled runs). Every other page is pooled.
   { route: "/", scheme: "light", widths: ALL_WIDTHS, pool: 1 },
   { route: "/", scheme: "dark", widths: FULL ? ALL_WIDTHS : KEY_WIDTHS, pool: 1 },
-  ...["/docs/", "/demos/", "/component/avatar/", "/component/button/"].map((route) => ({
+  ...["/docs/", "/demos/", "/component/button/"].map((route) => ({
     route,
     scheme: "light" as const,
     widths: FULL ? ALL_WIDTHS : KEY_WIDTHS,
   })),
-  { route: "/component/avatar/", scheme: "dark", widths: FULL ? ALL_WIDTHS : [768, 1024, 1180, 1194, 1366] },
+  // Cause 1 (SSR != hydrated) is `cargo test`'s first (row 329): `preview/src/ssr_parity.rs` fails on any markup that
+  // differs between the server and the first client frame, and pins the avatar's `empty` -> `loading` as the one known
+  // case. What it cannot see is whether that change moves a box, which is a property of the avatar's sheet, not of the
+  // width; so the avatar page keeps one width per layout regime (phone, tablet, laptop) and one dark one, and the home
+  // page's twelve avatars stay in its full sweep above.
+  { route: "/component/avatar/", scheme: "light", widths: FULL ? ALL_WIDTHS : [360, 768, 1280] },
+  { route: "/component/avatar/", scheme: "dark", widths: FULL ? ALL_WIDTHS : [1024] },
 ];
 
 const fmt = (b: Box) => `${b.x},${b.y} ${b.w}x${b.h}`;
@@ -205,6 +221,7 @@ for (const { route, scheme, widths, pool = POOL } of GROUPS) {
       contexts.push(context);
       await context.addCookies([{ name: "dx_theme", value: scheme, url: BASE_URL }]);
       const page = await context.newPage();
+      if (CPU > 1) await (await context.newCDPSession(page)).send("Emulation.setCPUThrottlingRate", { rate: CPU });
       await page.addInitScript(RECORDER);
       // Hydration waits until the prerendered page has been painted (+200 ms): the slow-wasm case, the worst one for
       // a prerendered page, and the only one in which every prerendered-vs-hydrated difference is on screen. Without

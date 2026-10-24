@@ -39,7 +39,7 @@ mod utils;
 mod virtualizer;
 mod window;
 
-pub(crate) use bridge::{measured_px, use_virtual_bridge, Bridge};
+pub(crate) use bridge::{use_virtual_bridge, Bridge};
 pub(crate) use cv_chunks::{cv_chunks, ChunkSkip, CHUNK_ROWS};
 pub(crate) use grid::{GridEngine, GridKey, GridShape};
 pub(crate) use identity::{engine_keys, engine_row_keys, render_key, resolve_index};

@@ -1,10 +1,10 @@
 ---
 id: 154
 title: "Shared virtualization engine: ONE engine in primitives/src/virtual/ (core, strategy, DOM bridge) that every…"
-status: "DESIGN NOTE -- first note recorded 2026-10-05 from the owner question whether the virtualized…"
+status: "FOLDED 2026-10-23 into row 309 (owner): this is the engine's design note, kept here for reference…"
 size: "S (note); the build is not estimated"
 area: virtual
-updated: 2026-10-20
+updated: 2026-10-23
 ---
 
 # Row 154: Shared virtualization engine: ONE engine in primitives/src/virtual/ (core, strategy, DOM bridge) that every…
@@ -15,7 +15,7 @@ Shared virtualization engine: ONE engine in `primitives/src/virtual/` (core, str
 
 ## Status / trigger
 
-**DESIGN NOTE** -- first note recorded 2026-10-05 from the owner question whether the virtualized components should share an implementation; the **owner's three-layer outline was added the same day**. Not scheduled: it waits for row 143 to land, and its first consumer is `message_scroller` (with row 146). No code change here. **Owner decision 2026-10-05: stays BACKLOG, with a REQUIRED first step: research the impact on Carousel before any migration (first paragraph of the notes)**
+**FOLDED 2026-10-23 into row 309 (owner): this is the engine's design note, kept here for reference; open engine work lives in row 309.** **DESIGN NOTE** -- first note recorded 2026-10-05 from the owner question whether the virtualized components should share an implementation; the **owner's three-layer outline was added the same day**. Not scheduled: it waits for row 143 to land, and its first consumer is `message_scroller` (with row 146). No code change here. **Owner decision 2026-10-05: stays BACKLOG, with a REQUIRED first step: research the impact on Carousel before any migration (first paragraph of the notes)**
 
 ## Size
 
