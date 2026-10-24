@@ -12,12 +12,9 @@ use dioxus::prelude::*;
 /// `crate::collection` directly rather than `Tabs`/`TabTrigger` (manual
 /// activation there is the wrong contract).
 ///
-/// Merges what used to be two separate demos -- `tabs` (this one, renamed
-/// from `CarouselTabList`/`CarouselTab`) and a plain `indicators` demo (a
-/// custom `use_carousel()`-built dot picker, unrelated to this tablist
-/// component despite the name collision) -- into this single "Indicators"
-/// demo. The custom `use_carousel()` picker lives on as the `api` demo
-/// instead.
+/// This is the one "Indicators" demo. A plain custom `use_carousel()`-built
+/// dot picker is unrelated to this tablist component despite the shared
+/// name; it lives in the `api` demo.
 #[component]
 pub fn Demo() -> Element {
     rsx! {

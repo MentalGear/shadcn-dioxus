@@ -1,7 +1,7 @@
 /*
  * Chart theme -- styles the primitive's unstyled `data-slot`/`data-series`
- * DOM (`$S/chart-api.md`, the binding contract between the chart-primitive
- * and chart-preview lanes; dev-docs/archive/research/chart-2026-09-19.md §6).
+ * DOM (chart-api.md is the binding contract between the chart primitive
+ * and this theme; dev-docs/archive/research/chart-2026-09-19.md §6).
  *
  * Every rule below is scoped under one of the three classes the wrapper
  * components in `component.rs` attach (`.dx-chart` on `ChartContainer`,
@@ -33,22 +33,21 @@
  * own logical width/height (`ChartLayout`, shared via context), i.e. of
  * the svg's own box, so its containing block must be pixel-exact with
  * that box regardless of what else lives in `.dx-chart` -- the legend's
- * size, or which side it's on. A flex column (this rule's previous shape)
- * cannot give that guarantee: `ChartTooltip` is `.dx-chart`'s child too,
+ * size, or which side it's on. A flex column cannot give that guarantee: `ChartTooltip` is `.dx-chart`'s child too,
  * so its only containing-block option there is `.dx-chart` itself, whose
  * total box includes the legend's own height -- the wrong basis for a
  * percentage calibrated to the svg alone.
  *
- * This was a real, measured bug, not a theoretical one: with
+ * The failure is real and measurable, not theoretical: with
  * `ChartLegend`'s `vertical_align: Top` (`data-align="top"`, the `bar`
  * demo variant), `.dx-chart`'s total height included the legend's ~16px
  * ABOVE the chart's own top edge, and every `top:X%` the primitive wrote
  * was computed as X% of the *svg's* height, then resolved by the browser
  * as X% of the *combined* (legend + svg) height measured from
  * `.dx-chart`'s own top -- landing the tooltip's anchor, and often its
- * whole body, inside the legend's row (confirmed: hovering the `bar`
- * demo's 2nd bar rendered the tooltip directly over the legend, obscuring
- * "Desktop" entirely -- $S/chart-legend-overlap/before-bar-crop-light.png).
+ * whole body, inside the legend's row (hovering the `bar`
+ * demo's 2nd bar would render the tooltip directly over the legend, obscuring
+ * "Desktop" entirely).
  * The default (bottom-aligned) legend is calibrated wrong by the same
  * arithmetic, just less visibly with this package's current demo data
  * (every series value the demos use is far enough from zero that the
@@ -57,7 +56,7 @@
  *
  * `legend-before`/`legend-after` are always present as grid rows so the
  * legend's own `data-align` (an ordinary attribute selector on the legend
- * itself, same idiom this rule previously used for `order`) can move it to
+ * itself) can move it to
  * either side of the fixed "chart" row without moving the row `Chart`/
  * `ChartTooltip` share. The row `ChartLegend` doesn't occupy is empty and
  * collapses to 0 height (an `auto`-sized grid row with no content). */
@@ -195,7 +194,7 @@
  * the values and labels the chart itself draws (`--secondary-color-4`, the
  * base rule above). `--secondary-color-5` is #707070 on the white card
  * (4.95:1) and #a1a1a1 on the dark card #171717 (6.94:1) -- both clear 4.5:1
- * -- whereas the token this used to read, `--dx-chart-axis-text`, is the body
+ * -- whereas `--dx-chart-axis-text` is the body
  * text colour. That token stays for the cursor, which is not a tick. */
 .dx-chart [data-slot="chart-axis"] text {
   fill: var(--dx-muted-foreground);
@@ -559,10 +558,9 @@
 
   /* Block-start breathing room between the chart and the legend -- shadcn's
    * own `ChartLegendContent` convention (`pt-3`/`pb-3` depending on
-   * `verticalAlign`; `$S/refs/ui/apps/v4/registry/new-york-v4/ui/chart.tsx`).
-   * Previously absent: the legend sat flush against the svg's own box (a
-   * real, if minor, visual-crowding issue independent of the `grid-area`
-   * fix above -- the two were found and fixed together, not conflated). */
+   * `verticalAlign`; shadcn-ui/ui `apps/v4/registry/new-york-v4/ui/chart.tsx`).
+   * Without it the legend sits flush against the svg's own box (a minor
+   * visual-crowding issue independent of the `grid-area` rule above). */
   padding-block-start: var(--dx-space-3);
   padding-inline-start: 0;
 }
@@ -623,8 +621,7 @@
 
 /* ---------------------------------------------------------------------- *
  * Tooltip indicators, per-series icons, a formatter-built total row
- * (`chart_tooltip` gallery -- s2-tooltip lane, §4(e) of the stage-2 chart
- * handoff). Dot (the default) already matches the base swatch rule above
+ * (`chart_tooltip` gallery). Dot (the default) already matches the base swatch rule above
  * unchanged; None/hide_indicator render no swatch element at all, so
  * neither needs a rule here -- only Line and Dashed do.
  * ---------------------------------------------------------------------- */

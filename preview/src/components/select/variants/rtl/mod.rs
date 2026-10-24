@@ -23,7 +23,7 @@ use dioxus_primitives::direction::{Direction, DirectionProvider};
 /// `select.spec.ts`'s own `singleSelectTrigger` helper matches exactly
 /// that placeholder text, and every variant renders on the same page at
 /// once, so an unselected trigger here would make that locator ambiguous
-/// too (confirmed live).
+/// too.
 #[component]
 pub fn Demo() -> Element {
     rsx! {

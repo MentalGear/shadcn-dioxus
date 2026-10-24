@@ -4,7 +4,7 @@
  * dark:has-disabled:bg-input/80 has-disabled:opacity-50`; its fill is Input's
  * (`../input/style.css`). HEIGHT: Nova's `InputGroup` is `h-8` and the popup's own search box
  * is `*:data-[slot=input-group]:h-8`, so the input reads `--dx-control-height-default`
- * (32px), no longer `--dx-control-height-lg` (36px). Items: `rounded-md py-1 pr-8 pl-1.5
+ * (32px, not `--dx-control-height-lg`'s 36px). Items: `rounded-md py-1 pr-8 pl-1.5
  * text-sm gap-2`, indicator `absolute right-2 size-4`; empty: `py-2 text-center text-sm
  * text-muted-foreground`; list `max-h-72`; trigger icon `text-muted-foreground size-4`. */
 .dx-combobox {
@@ -20,10 +20,10 @@
  * `.dx-component-preview-frame` (`preview/assets/main.css`), a
  * column-direction flexbox; without an explicit `width` that div
  * shrink-wraps to its content instead of reaching its `max-width` cap
- * (dev-docs/backlog.md row 94, confirmed here: rendered at 200/200/236px
- * against this 320px cap before `width: 100%`). `display`/`gap` stay
- * inline per variant (they differ slightly), only the shared, previously
- * bugged `max-width`/`width` pair moves here.
+ * (dev-docs/backlog.md row 94: 200/200/236px against this 320px cap
+ * without `width: 100%`). `display`/`gap` stay
+ * inline per variant (they differ slightly), only the shared
+ * `max-width`/`width` pair lives here.
  */
 .dx-combobox-demo {
   width: 100%;
@@ -121,10 +121,10 @@
    * Edge, radius, `popover` fill and ink, shadow, padding, stacking and the pop-in/out come from the
    * theme's floating-surface recipe (`data-dx-surface="floating"`, emitted by `ComboboxList`); its
    * `border`/`padding` undo the UA popover stylesheet's `[popover] { border: solid; ... }` (WHATWG
-   * HTML's popover section): on the web arm (Migration A slice 3/3) this listbox carries the
+   * HTML's popover section): on the web arm this listbox carries the
    * `popover` attribute. `overflow` is this list's own (`hidden auto`, a scrolling list; the
    * recipe's `visible` loses to it). The stacking is the recipe's `--dx-z-overlay`, not the
-   * `--dx-z-local-xl` (50) it used to declare, which only mattered on the native/Blitz arm: the top
+   * `--dx-z-local-xl` (50), which would only matter on the native/Blitz arm: the top
    * layer hides it on the web. The matching `margin`/`inset` reset, and the `@supports (anchor-name:
    * --a)` anchor-positioning rules that keep this listbox anchored to `ComboboxInput` once promoted
    * to the top layer, live in the shared, engine-injected stylesheet every `dx-anchor-*`-marked

@@ -2,7 +2,7 @@ use super::super::component::*;
 use dioxus::prelude::*;
 
 /// Non-modal variant with `is_modal: false` spelled out -- shadcn's default, and
-/// the primitive's since the flip (dev-docs/backlog.md row 169), so this is the
+/// the primitive's (dev-docs/backlog.md row 169), so this is the
 /// same behaviour as `main` in a smaller panel. A non-modal popover does not trap
 /// focus or block the rest of the page and paints no overlay at all (shadcn's
 /// `Popover` has none); it is light-dismissed by the browser (`popover="auto"`).
@@ -12,7 +12,7 @@ use dioxus::prelude::*;
 /// header of shadcn's own canonical Popover example ("Dimensions" / "Set the
 /// dimensions for the layer."), without the form rows, to keep this demo small.
 ///
-/// This variant also gives `playwright/popover.spec.ts`'s close-fade regression
+/// This variant also gives `playwright/popover.spec.ts`'s close-fade check
 /// (dev-docs/backlog.md rows 19, 7) a themed, non-modal subject to sample: the
 /// `top_layer` oracle fixture's `#stack-popover-*` instance composes the raw
 /// `dioxus_primitives::popover` primitive directly

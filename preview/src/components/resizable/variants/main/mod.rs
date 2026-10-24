@@ -7,11 +7,11 @@ use dioxus::prelude::*;
 // panel's pixel height with JS and grows the group to fit, but this crate's ResizablePanel is
 // pure-CSS percentage-of-the-group's-real-size with `overflow: hidden` (primitives/src/
 // resizable.rs's own documented contract), so a FIXED 200px content height silently clips
-// (confirmed by screenshot: the nested group's 25%-share "Top" panel, well under 200px tall,
-// truncated its own label mid-glyph). `height: 100%` is the construction that can never
+// (the nested group's 25%-share "Top" panel, well under 200px tall,
+// would truncate its own label mid-glyph). `height: 100%` is the construction that can never
 // overflow its panel regardless of split percentage or a later drag/resize -- the two
 // `DemoGroup` calls below restore an explicit group height precisely so this has a reliably
-// generous share to fill, matching this demo's own original (pre-shadcn-translation) height.
+// generous share to fill.
 fn panel_content(label: &'static str) -> Element {
     rsx! {
         div {

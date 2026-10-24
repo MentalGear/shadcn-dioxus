@@ -15,7 +15,7 @@ fn panel_content(label: &'static str) -> Element {
 /// doc for the general shape. A single horizontal group (no Radix/shadcn
 /// original exists for Resizable -- see `primitives/src/resizable.rs`'s
 /// own doc on `ResizableGroupContext::text_direction` for the
-/// extrapolation this lane based the key-flip on). Deliberately horizontal
+/// extrapolation the key-flip is based on). Deliberately horizontal
 /// only: a vertical `ResizablePanelGroup` never consults direction at all.
 #[component]
 pub fn Demo() -> Element {

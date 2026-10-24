@@ -68,7 +68,7 @@
    * pop-in/out come from the theme's floating-surface recipe (`data-dx-surface="floating"`, emitted
    * by `MenubarContent`); its `border`/`overflow`/`padding` undo the UA popover stylesheet's
    * `[popover] { border: solid; overflow: auto; ... }` (WHATWG HTML's popover section) -- on the web
-   * arm (Migration A slice 2/3) this content carries the `popover` attribute. The matching
+   * arm this content carries the `popover` attribute. The matching
    * `margin`/`inset` reset, and the `@supports (anchor-name: --a)` anchor-positioning rules that
    * keep each menu anchored to its own trigger once promoted to the top layer, live in the shared,
    * engine-injected stylesheet every `dx-anchor-*`-marked overlay gets for free -- see

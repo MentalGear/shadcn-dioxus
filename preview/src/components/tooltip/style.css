@@ -154,7 +154,7 @@
   /* logical: `align="start"` is a reading-direction concept for a
      top/bottom-placed overlay's cross axis (Radix's Floating UI resolves
      align logically from `dir` -- packages/react/popper/src/popper.tsx,
-     radix-ui/primitives commit f7ecd5a). No transform to desync from
+     radix-ui/primitives@f7ecd5a). No transform to desync from
      (`transform: none` below), so this is a plain, safe conversion. */
   inset-inline-start: 0;
   transform: none;
@@ -208,16 +208,13 @@
  * `position-try-fallbacks: flip-block, flip-inline` (dev-docs/backlog.md row 10)
  * as its own collision-avoidance primitive on top.
  *
- * The `@supports (anchor-name: --a)` block that used to live here (per-
+ * The `@supports (anchor-name: --a)` block (per-
  * `[data-side]`/`[data-align]` `anchor()` rules keyed on the
- * `.dx-anchor-tooltip` marker class) now lives in a single, engine-injected
+ * `.dx-anchor-tooltip` marker class) lives in a single, engine-injected
  * stylesheet shared by every `dx-anchor-*`-marked overlay in the app --
  * `primitives/src/top_layer.rs`'s `ensure_anchor_positioning_styles` doc has
- * the full rationale (dev-docs/backlog.md item 1, 2026-09-01): hand-copying this
- * block into every consuming page's own stylesheet is exactly the "forgot to
- * duplicate it" bug class that bit `color_picker`/`date_picker`, and
- * `#[css_module]` can't scope a class referenced only inside `@supports`
- * anyway (`dev-docs/issues/css-module-supports-scoping.md`), so there was never
- * a reason for this to be per-page CSS rather than a single, engine-level
- * rule keyed on the shared marker class.
+ * the full rationale (dev-docs/backlog.md item 1): hand-copying this
+ * block into every consuming page's own stylesheet is the "forgot to
+ * duplicate it" bug class (`color_picker`/`date_picker`), so it is a single,
+ * engine-level rule keyed on the shared marker class, never per-page CSS.
  */

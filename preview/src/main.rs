@@ -67,7 +67,7 @@ mod wasm_libc_shim;
 /// `document::Title` suffix (`charts_gallery`) and the Open Graph `og:site_name`. The static shell's
 /// `<title>` in `index.html` is the one place Rust cannot reach; `site_name_tests` pins it to this.
 /// The crates keep their own names (`dioxus-primitives`), and so does the Git repository, which is
-/// also the GitHub Pages path (`--base-path shadcn-dioxus`, renamed from `dioxus-components` on 2026-10-10): this is the SITE's name only.
+/// also the GitHub Pages path (`--base-path shadcn-dioxus`): this is the SITE's name only.
 pub(crate) const SITE_NAME: &str = "shadcn-dioxus";
 
 /// This repository as a `dx components` registry: the root `component.json` plus every
@@ -542,40 +542,26 @@ impl Route {
 /// routes that both sit outside `NavigationLayout`
 /// (`ComponentBlockDemo`/`ComponentBlockDemoPath`/`EmailClientDashboard`).
 ///
-/// **Row 46 finding:** before this construction, those three routes each
-/// called `GlobalHead {}` themselves (the same shape, three separate call
-/// sites -- CLAUDE.md's "two or more occurrences is a class" case). That
-/// was harmless as long as the ONLY way to reach any of them was a hard
-/// page load, but `ComponentBlockDemo`'s new client-side redirect (this
-/// same row) to `ComponentBlockDemoPath` made it the first construction in
-/// this app to ever SPA-navigate between two routes that each mount their
-/// own independent `GlobalHead` instance -- and doing so silently dropped
-/// `main.css`/`dx-components-theme.css`/the Google Fonts `<link>`s
-/// entirely (confirmed by reading `document.styleSheets` before/after:
-/// present on a hard load of the destination route directly, absent after
-/// the redirect transition) rather than erroring, a hydration-adjacent
-/// silent-CSS-loss defect of the exact same *class* `oracle/tier2-html/
-/// global-stylesheet.spec.ts` already exists to catch for the `@import`
-/// case. Root cause (corrected 2026-10-04, see `eager_head`'s module docs):
-/// `document::Link` records its href in a de-duplication set while it
-/// RENDERS but only appends the `<link>` from an effect queued on its own
-/// scope, and a removed scope's queued effects are dropped -- so the FIRST
-/// `GlobalHead` instance, torn down by the redirect in the turn it first
-/// rendered, never inserted anything, and the SECOND instance's identical
-/// `document::Link`s were skipped as duplicates of links that were never
-/// there. (Unmounting does not remove head elements, so the sheets could
-/// only have been absent because they were never inserted.) This layout's
-/// once-only mount fixes that instance for these four sheets; the class --
-/// every other component's link on any torn-down subtree -- is fixed by
-/// `eager_head`, installed in `App`. `GlobalHead` now mounts exactly once,
-/// here, and simply never unmounts for the lifetime of the app.
-/// Subsumes all three prior call sites
-/// (`NavigationLayout`, `ComponentBlockDemo`/`ComponentBlockDemoPath`,
-/// `EmailClientDashboard`); does not need a matching fix for
-/// `NavigationLayout`'s own `hero.css` link, which stays where it is --
-/// no evidence of the same defect there (nothing outside `NavigationLayout`
-/// ever needed `hero.css`, so no cross-layout transition has ever unmounted
-/// it under a sibling that also renders it).
+/// **Why `GlobalHead` mounts here, once (row 46):** if each of those three routes called
+/// `GlobalHead {}` itself, the first client-side navigation between two routes that each mount their
+/// own independent `GlobalHead` instance (`ComponentBlockDemo`'s redirect to `ComponentBlockDemoPath`)
+/// would silently drop `main.css`/`dx-components-theme.css`/the Google Fonts `<link>`s entirely
+/// (present on a hard load of the destination route directly, absent after the redirect transition)
+/// rather than erroring: a hydration-adjacent silent-CSS-loss defect of the same *class*
+/// `oracle/tier2-html/global-stylesheet.spec.ts` exists to catch for the `@import` case. Root cause
+/// (see `eager_head`'s module docs): `document::Link` records its href in a de-duplication set while
+/// it RENDERS but only appends the `<link>` from an effect queued on its own scope, and a removed
+/// scope's queued effects are dropped -- so the FIRST `GlobalHead` instance, torn down by the redirect
+/// in the turn it first rendered, never inserts anything, and the SECOND instance's identical
+/// `document::Link`s are skipped as duplicates of links that were never there. (Unmounting does not
+/// remove head elements, so the sheets can only be absent because they were never inserted.) This
+/// layout's once-only mount covers these four sheets; the class -- every other component's link on
+/// any torn-down subtree -- is covered by `eager_head`, installed in `App`. `GlobalHead` therefore
+/// mounts exactly once, here, and never unmounts for the lifetime of the app. It replaces a call per
+/// route (`NavigationLayout`, `ComponentBlockDemo`/`ComponentBlockDemoPath`, `EmailClientDashboard`);
+/// `NavigationLayout`'s own `hero.css` link stays where it is, since nothing outside
+/// `NavigationLayout` needs `hero.css`, so no cross-layout transition unmounts it under a sibling
+/// that also renders it.
 #[component]
 fn AppLayout() -> Element {
     use_effect(move || {
@@ -628,10 +614,9 @@ fn NavigationLayout() -> Element {
 /// The site's persistent top nav. Rendered as a descendant of `DocsLayout`'s
 /// `SidebarProvider` on every route that has a sidebar (`Docs`, `Home`,
 /// `ComponentDemo`/`ComponentHighlight`) so its leading `SidebarTrigger` can
-/// sit inside this same row instead of a separate strip below it (the
-/// previous layout: `NavigationLayout` rendered `Navbar {}` as a sibling of,
-/// and before, `Outlet::<Route> {}`, so it was never a descendant of
-/// `DocsLayout`'s `SidebarProvider` -- `DocsLayout` instead rendered its own
+/// sit inside this same row instead of a separate strip below it (a `Navbar {}`
+/// rendered as a sibling of `Outlet::<Route> {}` would not be a descendant of
+/// `DocsLayout`'s `SidebarProvider`, and `DocsLayout` would need its own
 /// separate `header { class: "dx-docs-inset-topbar", SidebarTrigger {} }`
 /// strip). `Demos` has no sidebar and renders `Navbar {}` directly (as does
 /// `ComponentDemo`'s own "not found" branch, which also bypasses
@@ -875,7 +860,7 @@ fn PreviewCode(source: HighlightedSource) -> Element {
 ///
 /// In release/SSG builds this carries the text highlighted (and embedded)
 /// at compile time via `dioxus_code::code!()`, exactly like
-/// `HighlightedCode` -- unchanged from before this type existed. In debug
+/// `HighlightedCode`. In debug
 /// builds (`dx serve`'s own dev loop) `code!()` is deliberately NOT used:
 /// it expands to `include_str!(path)`, which makes rustc track the `.css`
 /// file as a source dependency of this crate. `dx serve`'s file watcher
@@ -886,8 +871,8 @@ fn PreviewCode(source: HighlightedSource) -> Element {
 /// instead of the sub-second asset hot-reload every *other* `style.css`
 /// edit already gets from its own separate `asset!()` stylesheet link
 /// (`hotreload_bundled_assets`, checked first, but overridden once
-/// `needs_full_rebuild` is also true for that same file). Measured
-/// before/after and the full mechanism: `dev-docs/dev-loop.md`'s CSS
+/// `needs_full_rebuild` is also true for that same file). The measurement
+/// and the full mechanism: `dev-docs/dev-loop.md`'s CSS
 /// section. Debug builds instead carry only the file's own bundled
 /// `asset!()` URL -- `asset!()` does not embed the file's text at compile
 /// time, so referencing it costs nothing extra; `CssCodeBlock` below
@@ -1362,10 +1347,9 @@ enum DocsNavActive {
     Overview,
     /// A `/component/?name=...` page, keyed by the component's raw name.
     Component(&'static str),
-    /// The homepage (`/`) -- part of this same nav now, but distinct from
-    /// `Overview`: before the homepage had a sidebar at all, `None` here
-    /// meant "on Docs", so a bare `Option<&'static str>` would have wrongly
-    /// lit up "Overview" while browsing the gallery too.
+    /// The homepage (`/`) -- part of this same nav, but distinct from
+    /// `Overview`: with a bare `Option<&'static str>` where `None` meant "on
+    /// Docs", the gallery page would wrongly light up "Overview".
     Home,
     /// The demo-apps index (`/demos`): "Start" > "Demos" (backlog row 303).
     Demos,
@@ -1409,7 +1393,7 @@ fn page_sections_submenu(sections: &'static [&'static str]) -> Element {
 /// `SidebarInset` whose own leading `header` holds just the `SidebarTrigger`
 /// (mirrors both that demo's `Demo()` and the email-client dashboard's
 /// `EmailClient()`, `dashboard/views/email_client/mod.rs`). `page` content
-/// renders as the inset's children -- callers no longer wrap it in a `<main>`
+/// renders as the inset's children -- callers do not wrap it in a `<main>`
 /// themselves, since `SidebarInset` already renders the page's one `<main>`
 /// landmark (see `EmailClient()`'s own comment on that same point).
 #[component]
@@ -1445,7 +1429,7 @@ fn DocsLayout(
     // separate prop -- or a separate `SidebarMenuSub` rendering block --
     // per page. `ComponentHighlight()` leaves this `None` and keeps
     // rendering both "Home" and "Overview" as plain, sub-item-less
-    // entries, same as before this page had sections of its own.
+    // entries.
     #[props(default)] page_sections: Option<&'static [&'static str]>,
     children: Element,
 ) -> Element {
@@ -1642,11 +1626,10 @@ fn Demos(dark_mode: Option<bool>) -> Element {
 /// backlog.md row 46). Renders the SAME markup regardless of `name` -- a
 /// generic, name-agnostic loading shell -- on every platform, so there is
 /// nothing for a server prerender and a client hydration to ever disagree
-/// on structurally (unlike the old behavior this replaces, which tried to
-/// resolve `name` against `components::DEMOS` here and rendered the
-/// "Component not found" shell server-side for every X, since `dx build
-/// --ssg` only ever prerenders this route with an EMPTY query -- see
-/// `Route::ComponentDemo`'s own doc comment). Once mounted client-side (in
+/// on structurally (resolving `name` against `components::DEMOS` here would
+/// render the "Component not found" shell server-side for every X, since
+/// `dx build --ssg` only ever prerenders this route with an EMPTY query --
+/// see `Route::ComponentDemo`'s own doc comment). Once mounted client-side (in
 /// a real browser, where `name` IS available from the real URL), redirects
 /// to the canonical `ComponentDemoPath` route so old links/bookmarks/specs
 /// keep landing on the right component.
@@ -1892,8 +1875,8 @@ fn ComponentHighlight(demo: ComponentDemoData) -> Element {
                         },
                     }
                 }
-                // Installation and the docs.md sections are ONE `Accordion` of the library's own (owner
-                // 2026-10-19: the docs are built from its components, so they look and move like them):
+                // Installation and the docs.md sections are ONE `Accordion` of the library's own (dev-docs/
+                // decisions.md: the docs are built from its components, so they look and move like them):
                 // several may be open, every item starts closed, and closed content stays in the server
                 // markup as `hidden="until-found"`, so find-in-page and `#fragment` links still reach it
                 // and hydration changes nothing the reader sees. Each `h2` wraps its trigger (shadcn's
@@ -2181,22 +2164,20 @@ fn ComponentVariantHighlight(
     // "Examples" section below loops over all of them, main included --
     // see `ComponentHighlight` above), so a literal `"component-preview-
     // frame"` id can't be shared across more than one of these `TabContent`s
-    // without producing duplicate ids -- confirmed by execution: adding
-    // `popover`'s `non_modal` variant (dev-docs/backlog.md rows 19/7) gave
-    // the popover page two, and `popover.spec.ts`'s basic test (`page.
-    // locator("#component-preview-frame")`, no `.first()`) failed with a
-    // strict-mode "2 elements" violation. Fixed by construction, not
-    // per-instance: `main_variant` (already the exact signal distinguishing
+    // without producing duplicate ids (dev-docs/backlog.md rows 19/7: a
+    // second `popover` variant would make `popover.spec.ts`'s basic test
+    // (`page.locator("#component-preview-frame")`, no `.first()`) fail with a
+    // strict-mode "2 elements" violation). Made unique by construction, not
+    // per-instance: `main_variant` (the exact signal distinguishing
     // the one call site above from every entry in the loop below) picks
-    // exactly `component-preview-frame` for `main` -- unchanged, so every
-    // existing single-variant component page and every spec that already
-    // targets that literal id keeps working untouched -- and
+    // exactly `component-preview-frame` for `main`, so every
+    // single-variant component page and every spec that targets that
+    // literal id works untouched, and
     // `component-preview-frame-<name>` for every other variant, unique per
-    // variant name so two additional variants on the same page (e.g.
+    // variant name so several additional variants on the same page (e.g.
     // `calendar[simple, internationalized, range, multi_month,
-    // unavailable_dates]`, already exposed to this same defect before this
-    // fix, silently tolerated via `.first()` in `calendar.spec.ts`) can
-    // never collide with each other either.
+    // unavailable_dates]`, which `calendar.spec.ts` tolerates via
+    // `.first()`) never collide with each other either.
     let frame_id = if main_variant {
         "component-preview-frame".to_string()
     } else {
@@ -2369,11 +2350,10 @@ fn BlockComponentVariantHighlight(
                         src: "{iframe_src}",
                         width: "100%",
                         // Block demos embed here at whatever width this
-                        // page's own layout leaves them -- since the site
-                        // nav itself became a real `Sidebar` (`DocsLayout`,
-                        // this file), that can now be under 768px on a
-                        // normal desktop viewport (e.g. ~684px measured on
-                        // the live `sidebar` demo). Any block component
+                        // page's own layout leaves them -- the site nav is a
+                        // real `Sidebar` (`DocsLayout`, this file), so that
+                        // can be under 768px on a normal desktop viewport
+                        // (e.g. ~684px on the live `sidebar` demo). Any block component
                         // that (like `Sidebar` itself, `components/sidebar/
                         // component.rs`'s `MOBILE_BREAKPOINT`) switches to
                         // a different, closed-by-default layout below that
@@ -2383,22 +2363,21 @@ fn BlockComponentVariantHighlight(
                         // it has no way to know it's being squeezed rather
                         // than genuinely viewed on a narrow screen.
                         //
-                        // A PREVIOUS fix forced a flat, always-on
-                        // `min-width: 820px` here to keep the preview
-                        // desktop-sized -- but that ALSO fired for a
-                        // genuinely narrow real device/window, forcing an
-                        // 820px-wide iframe into e.g. a 390px mobile
-                        // viewport (confirmed live + locally: the iframe's
-                        // own `getBoundingClientRect()` reported `width:
-                        // 822` inside a 390px viewport, clipped/garbled
-                        // rather than scrolled to, since `overflow-x: clip`
-                        // on `html`/`body` hides the escape without giving
-                        // a scrollbar). A real mobile visitor SHOULD see
+                        // A flat, always-on `min-width: 820px` here would
+                        // keep the preview desktop-sized -- but it ALSO
+                        // fires for a genuinely narrow real device/window,
+                        // forcing an 820px-wide iframe into e.g. a 390px
+                        // mobile viewport (the iframe's own
+                        // `getBoundingClientRect()` reports `width: 822`
+                        // inside a 390px viewport, clipped/garbled rather
+                        // than scrolled to, since `overflow-x: clip` on
+                        // `html`/`body` hides the escape without giving a
+                        // scrollbar). A real mobile visitor SHOULD see
                         // this block's own mobile rendering (e.g.
                         // `Sidebar`'s Sheet-trigger button) -- forcing
                         // desktop width there is wrong, not just ugly.
                         //
-                        // The fix is `.dx-block-demo-iframe` in
+                        // So the rule is `.dx-block-demo-iframe` in
                         // `assets/main.css`: the `min-width: 820px` rule
                         // lives behind `@media (min-width: 768px)` in THAT
                         // file, not this iframe's own document. A media
@@ -2457,15 +2436,15 @@ const GEIST_MONO_WOFF2: Asset = asset!("/assets/fonts/GeistMono-Latin-Variable.w
 const LATIN_RANGE: &str = "U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD";
 
 /// The head links every route shares, in one place so the three route roots
-/// cannot drift apart (they used to repeat this block by hand).
+/// cannot drift apart.
 ///
 /// The Geist fonts are self-hosted (row 162): no request leaves the origin, and the preloads and the
 /// `@font-face` rules are written here from the same `asset!` URLs (they cannot be in `main.css`, which
 /// does not rewrite `url()` to the hashed names). Never `@import` a font from `main.css`: a stylesheet
-/// whose `@import` is still loading is not applied at all (found 2026-09-02, see the top of
+/// whose `@import` is still loading is not applied at all (see the top of
 /// `assets/main.css` and `playwright/oracle/tier2-html/global-stylesheet.spec.ts`).
 ///
-/// **No font-swap layout shift (measured 2026-10-05, hard load, CLS summed):** with `display=swap` the
+/// **No font-swap layout shift (hard load, CLS summed):** with `display=swap` the
 /// page paints in the fallback face and re-wraps when Geist arrives (0.117 on /component/form/). Two
 /// things, together: the two LATIN woff2 files are `preload`ed from the head so they are ready by first
 /// paint, and the faces say `font-display: optional`, so a face that is not ready in time keeps the
@@ -2551,19 +2530,19 @@ fn GlobalHead() -> Element {
 fn EmailClientDashboard(dark_mode: Option<bool>) -> Element {
     // `GlobalHead` renders once, in `AppLayout` (this route's own ancestor
     // layout) -- see that component's doc comment (row 46) for why it moved
-    // there rather than being called per-route as it used to be here.
+    // there rather than per-route.
     rsx! {
         dashboard::views::email_client::EmailClient {}
     }
 }
 
 // Visually-hidden clip-rect, for `ComponentBlockDemo`'s heading below. The
-// same construction already exists, duplicated per css_module, in this repo
-// (e.g. `preview/src/components/sidebar/style.css`'s `.dx-sr-only`, with its
-// own "TODO: abstract as Utility class" note) -- inlined here as a style
-// string instead of a shared class because `main.rs` has no css_module of
-// its own (it links `preview/assets/main.css` as a plain global stylesheet
-// instead), and this fix's own file lane does not include any stylesheet.
+// same construction exists, duplicated per component sheet, in this repo
+// (e.g. `preview/src/components/sidebar/style.css`'s `.dx-sidebar-sr-only`,
+// with its own TODO to abstract it as a utility class) -- inlined here as a
+// style string instead of a shared class because `main.rs` has no component
+// sheet of its own (it links `preview/assets/main.css` as a plain global
+// stylesheet instead).
 const SR_ONLY_STYLE: &str = "position: absolute; overflow: hidden; width: 1px; height: 1px; padding: 0; border: 0; margin: -1px; clip-path: inset(50%); white-space: nowrap;";
 
 /// Legacy query-string block-demo deep link (`/component/block/?name=<x>&
@@ -2572,8 +2551,8 @@ const SR_ONLY_STYLE: &str = "position: absolute; overflow: hidden; width: 1px; h
 /// on server and client, that redirects to the canonical
 /// `ComponentBlockDemoPath` once mounted in a real browser. Resolves the
 /// same "no variant specified -> use the demo's first (\"main\") variant"
-/// default the old direct-render code used to apply, so an old link that
-/// never named a variant still redirects to the content it used to render
+/// default the direct-render path applied, so an old link that
+/// never named a variant still redirects to the content it rendered
 /// directly.
 #[component]
 fn ComponentBlockDemo(name: String, variant: Option<String>, dark_mode: Option<bool>) -> Element {
@@ -2907,20 +2886,20 @@ fn MasonryColumn(slot: MasonrySlot) -> Element {
 /// scope and its hooks live in it.
 ///
 /// It must NOT be passed as a `Callback<(), Element>` that this component then
-/// invokes (`component.call(())` around `(entry.component)()`, which is what
-/// this used to do): `Callback::call` runs its closure with the scope it was
+/// invokes (`component.call(())` around `(entry.component)()`):
+/// `Callback::call` runs its closure with the scope it was
 /// CREATED in on top of the stack (dioxus-core `events.rs`, `with_scope_on_stack`),
 /// i.e. `WidgetMasonry`'s, not this card's. A block that calls hooks directly
 /// (`BlockPlayer`, `BlockColorPalette`, `BlockCommand`, `BlockComposer`) then
-/// pushed them onto `WidgetMasonry`'s hook list, whose `hook_index` is only
+/// pushes them onto `WidgetMasonry`'s hook list, whose `hook_index` is only
 /// reset when `WidgetMasonry` itself re-renders (never). Every later re-render of
-/// the card therefore ran those hooks at an index past the end of the list and
-/// allocated a FRESH set (new signal at its initial value, new memo, new
-/// effect) while the old ones lived on, unreachable and never dropped. For
-/// `BlockPlayer` that was a new, never-cleared 100 ms `setInterval` per
+/// the card would run those hooks at an index past the end of the list and
+/// allocate a FRESH set (new signal at its initial value, new memo, new
+/// effect) while the old ones live on, unreachable and never dropped. For
+/// `BlockPlayer` that is a new, never-cleared 100 ms `setInterval` per
 /// re-render (one a second, since each fresh player re-renders when its label
-/// ticks), and the readout never got past 1:24 because every fresh signal
-/// restarted at 84 s (dev-docs/archive/research/scroll-jank-2026-10-04.md, Cause 1).
+/// ticks), and the readout never gets past 1:24 because every fresh signal
+/// restarts at 84 s (dev-docs/archive/research/scroll-jank-2026-10-04.md, Cause 1).
 #[component]
 fn MasonryCard(#[props(default)] popout: bool, children: Element) -> Element {
     let class = if popout {
@@ -3026,9 +3005,9 @@ fn BlockStats() -> Element {
                 }
                 Badge {
                     variant: BadgeVariant::Secondary,
-                    // axe `color-contrast`, in BOTH themes (dev-docs/backlog.md row 39, then the
-                    // 2026-10-05 sweep): the first fix was a literal green pair measured on the light page
-                    // only, and it was 2.3:1 in dark (#137337 on #173321). Tokens fix both: the
+                    // axe `color-contrast`, in BOTH themes (dev-docs/backlog.md row 39): a literal green pair
+                    // measured on the light page only would be 2.3:1 in dark (#137337 on #173321). Tokens
+                    // serve both: the
                     // `--dx-success-subtle` ground is pale in light and deep in dark; the ink is the
                     // success colour itself in dark (pale mint, high contrast) and, in light, that colour
                     // with its OKLCH lightness clamped to 0.45 (the `--dx-primary-ink` idea; #10b981
@@ -3590,8 +3569,8 @@ fn ComponentGallery() -> Element {
             // and this filter only narrows the *gallery grid's* iteration)
             // -- see dev-docs/backlog.md for the landed row and
             // dev-docs/conformance-harness.md's hydration-parity section for
-            // Rule 4b's replacement subject, now that its old one
-            // (the fixture's toast region) no longer renders on `/`.
+            // Rule 4b's subject (the fixture's toast region does not render
+            // on `/`).
             for component in components::DEMOS.iter().filter(|c| c.name != "top_layer").cloned() {
                 ComponentGalleryPreview { component }
             }

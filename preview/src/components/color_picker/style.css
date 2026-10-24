@@ -1,6 +1,6 @@
 /* Colour picker: not a shadcn component (Nova has no `.cn-color-picker`), so there is no block to
- * match. It follows Nova's tokens: the area track's corner is the theme's `--dx-radius-lg` (it
- * was the literal 10px, the same value at the default radius), and the swatch / slider track /
+ * match. It follows Nova's tokens: the area track's corner is the theme's `--dx-radius-lg` (10px at
+ * the default radius), and the swatch / slider track /
  * field chrome already read the role tokens. The thumbs' black ring layers are NOT theme colours
  * on purpose: the thumb sits on an arbitrary user colour, so its outline layers are fixed black
  * (around a `--dx-primary` ring) rather than theme colours. */
@@ -86,9 +86,9 @@
     border-radius: 50%;
     margin: 0;
 
-    /* The native-button reset this rule used to take from `all: unset`, spelled out: `all:` (0,1,0) beat
+    /* The native-button reset, spelled out (not `all: unset`): `all:` (0,1,0) beats
        every zero-specificity theme baseline (user-select, touch-action, press feedback, box-sizing), and
-       scripts/check-theme-baseline.sh now bans it. The resets are the ones a native button needs and this rule does not set itself. */
+       scripts/check-theme-baseline.sh bans it. The resets are the ones a native button needs and this rule does not set itself. */
     appearance: none;
     background-color: transparent;
     box-shadow: black 0 0 0 1px, black 0 0 0 1px inset;
@@ -103,7 +103,7 @@
     text-transform: none;
 
     /* rtl-physical: this thumb's horizontal position is set inline by the
-       primitive (out of this lane's ownership, like slider/style.css's
+       primitive (like slider/style.css's
        identical note) -- `translate(-50%, -50%)` only self-centers the
        thumb on whatever point that inline style lands it at. */
     transform: translate(-50%, -50%) scale(1);
@@ -156,9 +156,9 @@
     border-radius: 50%;
     margin: 0;
 
-    /* The native-button reset this rule used to take from `all: unset`, spelled out: `all:` (0,1,0) beat
+    /* The native-button reset, spelled out (not `all: unset`): `all:` (0,1,0) beats
        every zero-specificity theme baseline (user-select, touch-action, press feedback, box-sizing), and
-       scripts/check-theme-baseline.sh now bans it. The resets are the ones a native button needs and this rule does not set itself. */
+       scripts/check-theme-baseline.sh bans it. The resets are the ones a native button needs and this rule does not set itself. */
     appearance: none;
     background-color: transparent;
     box-shadow: black 0 0 0 1px, black 0 0 0 1px inset;
@@ -239,9 +239,9 @@
 
 .dx-color-picker-popover {
     /* Slots of the theme's floating-surface recipe (`data-dx-surface="floating"`, emitted by
-       `ColorPickerPopover`): the 4px drop, and the recipe's own 4px padding (the UA popover padding
-       this panel always had, now a token). The recipe also supplies the edge, radius, fill, shadow and
-       stacking, and replaces the UA `dialog`'s 3px solid border that this panel used to wear. */
+       `ColorPickerPopover`): the 4px drop, and the recipe's own 4px padding (the UA popover padding,
+       as a token). The recipe also supplies the edge, radius, fill, shadow and
+       stacking, and replaces the UA `dialog`'s 3px solid border. */
     --dx-floating-enter: dx-drop-in;
     --dx-floating-exit: dx-drop-out;
 
@@ -253,14 +253,13 @@
 }
 
 /*
- * Historical wiring-gap fix (2026-09-01, live-site report): this popover is
- * composed from `dioxus_primitives::popover` directly (`ColorPickerRoot`/
- * `ColorPickerPopover` in `component.rs`), not from this workspace's
- * "Popover" preview page. This page used to carry its own hand-copied
- * `[popover]` UA-stylesheet reset and `@supports (anchor-name: --a)` block --
- * both now live in a single, engine-injected stylesheet shared by every
- * `dx-anchor-*`-marked overlay in the app instead, closing the underlying
- * bug class rather than just this one instance of it. See
+ * This popover is composed from `dioxus_primitives::popover` directly
+ * (`ColorPickerRoot`/`ColorPickerPopover` in `component.rs`), not from this
+ * workspace's "Popover" preview page, so a hand-copied `[popover]`
+ * UA-stylesheet reset and `@supports (anchor-name: --a)` block would have to
+ * be repeated here. Both live in a single, engine-injected stylesheet
+ * shared by every `dx-anchor-*`-marked overlay in the app instead, closing
+ * that bug class for every overlay at once. See
  * `primitives/src/top_layer.rs`'s `ensure_anchor_positioning_styles` doc
  * (dev-docs/backlog.md item 1) for the full rationale, and
  * `../tooltip/style.css`'s identical comment.
@@ -268,7 +267,7 @@
  * The 4px drop is the theme's `dx-drop-in`/`dx-drop-out` and animates `translate`, NOT `transform`.
  * The anchored panel centres itself on its trigger with `transform: translateX(-50%)` (top_layer.rs's
  * engine stylesheet); a keyframe that sets `transform` replaces that for as long as the animation
- * runs, so the panel played its whole fade 133px off-centre and snapped back on the last frame, on
+ * runs, so the panel would play its whole fade off-centre and snap back on the last frame, on
  * every open and close. `scripts/check-anchored-keyframes.sh` holds the line for every popover-family
  * stylesheet.
  */

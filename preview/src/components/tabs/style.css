@@ -31,9 +31,9 @@
 
     /* Variant slots (`default`; `line` re-declares them below). Every root declares all of
        them, so a Tabs nested inside another Tabs' panel -- every docs-site demo sits in the
-       DEMO/CODE `line` tabs -- never inherits the outer variant's look through a
-       `[data-variant] .dx-tabs-*` descendant selector, which used to strip the muted pill off
-       every default Tabs on a docs page and draw the line bar on its active trigger. */
+       DEMO/CODE `line` tabs -- never inherits the outer variant's look: a
+       `[data-variant] .dx-tabs-*` descendant selector would strip the muted pill off every
+       default Tabs on a docs page and draw the line bar on its active trigger. */
     --dx-tabs-list-background: var(--dx-muted);
     --dx-tabs-list-gap: 0;
     --dx-tabs-bar-color: transparent;
@@ -118,7 +118,7 @@
     gap: var(--dx-tabs-list-gap);
 }
 
-/* The `line` variant (`TabsVariant::Ghost` is its old name) is shadcn's (`registry/bases/base/ui/tabs.tsx`:
+/* The `line` variant (`TabsVariant::Ghost` is an alias of it) is shadcn's (`registry/bases/base/ui/tabs.tsx`:
    `cn-tabs-list-variant-line gap-1 bg-transparent`; the active trigger has no fill,
    shadow or border and carries a 2px `foreground` bar, `after:bottom-[-5px] after:h-0.5`,
    that fades in; vertical: `after:inset-y-0 after:-right-1 after:w-0.5`, see the slot
@@ -191,9 +191,8 @@
    [data-state="active"] colour, so it is kept at zero specificity with
    :where() (same class of bug as calendar/style.css's day hover: clicking a
    tab leaves the pointer on it, and a hover tint with normal specificity
-   would repaint the active tab). Hover and active now resolve to the same
-   `foreground`, but the guard stays so a retuned active colour cannot
-   regress. */
+   would repaint the active tab). Hover and active resolve to the same
+   `foreground`; the guard keeps a retuned active colour from regressing. */
 @media (hover: hover) and (pointer: fine) {
     :where(.dx-tabs-trigger:hover:not([data-disabled="true"])) {
         color: var(--dx-foreground);
@@ -248,7 +247,7 @@
    the rules above apply again. */
 
 /* Every panel sits inside a Tabs root (which always carries `data-variant`), so no variant ancestor is
-   named; the doubled class keeps the specificity (0,3,0) the old `[data-variant]` ancestor gave, so a
+   named; the doubled class gives the specificity (0,3,0) a `[data-variant]` ancestor would, so a
    themed or caller frame class on the same panel still loses. */
 .dx-tabs-content.dx-tabs-content[hidden="until-found"] {
     position: absolute;

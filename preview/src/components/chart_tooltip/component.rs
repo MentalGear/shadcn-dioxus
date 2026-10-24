@@ -1,5 +1,5 @@
 //! `ChartTooltip`'s gallery -- shadcn/ui's nine `chart-tooltip-*.tsx` demos
-//! (`$S/refs/ui/apps/v4/registry/new-york-v4/charts/chart-tooltip-*.tsx`,
+//! (shadcn-ui/ui `apps/v4/registry/new-york-v4/charts/chart-tooltip-*.tsx`,
 //! `dev-docs/archive/research/chart-2026-09-19.md` §1.2's "Tooltip variants: 9"
 //! row), each showing one tooltip/legend option this crate's `chart`
 //! package exposes: the indicator shape (dot/line/dashed/none), hiding the
@@ -48,8 +48,7 @@ pub use dioxus_primitives::chart::{ChartIcon, ChartSeries, TooltipIndicator, Too
 /// (`scripts/check-dx-class-prefix.sh`), and the scoping hook `style.css`'s
 /// indicator/icon rules use so they apply only within this page, never
 /// `chart`'s own gallery elsewhere on the site (those rules are a
-/// temporary copy of a request filed to `$S/stage2-lanes.md`'s "requests
-/// for the refactor owner" -- see `style.css`'s own header comment).
+/// scoped copy of `chart/style.css`'s -- see `style.css`'s own header comment).
 #[component]
 pub fn Gallery(children: Element) -> Element {
     rsx! {

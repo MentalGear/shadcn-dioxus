@@ -4,8 +4,8 @@ use super::super::component::*;
 
 // dev-docs/backlog.md row 32: no `#[css_module]` of its own here, and no
 // `document::Link` needed either -- this `Demo` always renders several
-// `Badge` themed-wrapper instances below, each of which (as of this
-// migration) now carries its own `document::Link` for `style.css`.
+// `Badge` themed-wrapper instances below, each of which
+// carries its own `document::Link` for `style.css`.
 // `document::Link` dedupes on `(href, rel)`, so those links cover this page.
 #[component]
 pub fn Demo() -> Element {

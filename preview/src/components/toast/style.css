@@ -49,19 +49,17 @@
 /*
  * Undoes the WHATWG popover UA stylesheet's `[popover] { inset: 0; margin:
  * auto; border: solid; padding: 0.25em; overflow: auto; background-color:
- * Canvas; color: CanvasText; }` -- on the web arm (Migration A slice 3/3,
- * final), this region carries `popover="manual"` so toasts are promoted to
- * the top layer (never clipped, always above). Confirmed by execution to
- * matter, not a defensive guess: `right`/`bottom` above are author-origin
- * and already beat the UA default regardless of the popover attribute, but
- * this element declares no `top`/`left`/`margin` of its own, so without
- * this reset the UA's `inset: 0` (supplying `top: 0; left: 0`) plus
- * `margin: auto` (never triggered before the popover attribute existed,
- * since the pre-popover initial value of `margin` is `0`, not `auto`)
- * together stretched this region across nearly the entire viewport instead
- * of shrink-wrapping the toast list into its corner -- and the UA's
- * `border`/`padding`/`background-color`/`color` painted a visible boxed
- * panel behind the toasts that was never there before, since this element
+ * Canvas; color: CanvasText; }` -- on the web arm, this region carries
+ * `popover="manual"` so toasts are promoted to the top layer (never
+ * clipped, always above). The reset is needed, not defensive: `right`/
+ * `bottom` above are author-origin and already beat the UA default
+ * regardless of the popover attribute, but this element declares no
+ * `top`/`left`/`margin` of its own, so without this reset the UA's
+ * `inset: 0` (supplying `top: 0; left: 0`) plus `margin: auto` (a non-popover
+ * element's initial `margin` is `0`) together stretch this region across
+ * nearly the entire viewport instead of shrink-wrapping the toast list into
+ * its corner -- and the UA's `border`/`padding`/`background-color`/`color`
+ * paint a visible boxed panel behind the toasts, since this element
  * declares none of those either (only its child `.dx-toast`s do). See
  * `primitives/src/top_layer.rs`'s `ensure_anchor_positioning_styles` doc
  * for the same-spirited `margin: 0; inset: auto;` reset applied there, for
@@ -95,8 +93,8 @@
 }
 
 /* The region is a `popover="manual"` that the client opens once, on mount (`ToastRegionRendered`), and never
- * closes. The UA hides a CLOSED popover with `display: none`, so the server HTML (and any JS-off load) had a
- * `none` region that hydration flipped to `block`: a computed-style difference between the static page and the
+ * closes. The UA hides a CLOSED popover with `display: none`, so the server HTML (and any JS-off load) would have
+ * a `none` region that hydration flips to `block`: a computed-style difference between the static page and the
  * hydrated one on every page that mounts a `ToastProvider` (/component/bubble/ in the first-paint oracle).
  * The region is only ever empty before it opens (a toast needs an event handler to exist), has no box of its
  * own, and is `position: fixed`, so showing it in the closed state paints and moves nothing; the open state is
@@ -344,7 +342,7 @@
 
    A toast floats over arbitrary page content and the dark fill is translucent (60%), so the fill is
    composited onto the page colour INSIDE the toast: an opaque `background-color` with the fill as a flat
-   gradient layer above it. The surface, and so the ink's contrast, no longer depends on what is behind. The
+   gradient layer above it. The surface, and so the ink's contrast, does not depend on what is behind. The
    layer is handed over through `--dx-press-under` (a gradient in `background-image`, scripts/check-press-under.sh). */
 .dx-toast[data-type="error"] {
   --dx-toast-foreground: var(--dx-destructive-foreground);

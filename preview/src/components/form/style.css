@@ -91,7 +91,7 @@
 }
 
 /*
- * Item 2 fix (2026-09-01, live-site report): visible feedback for a blocked
+ * Visible feedback for a blocked
  * "Required blocking" submit. `required` lives on each library control's
  * visually-hidden native mirror, which Chrome cannot focus or show its own
  * validation bubble on -- see `component.rs`'s `watch_invalid_js` doc for
