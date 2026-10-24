@@ -1,10 +1,10 @@
 ---
 id: 309
 title: "VirtualList and VirtualGrid share one engine: DOM bridge, pinned focus, fade (two components, one engine)"
-status: "OPEN (deferred: grid content-visibility mode, grid find-in-page placeholders; the rest merged)…"
+status: "OPEN (all parts built; the grid find-in-page placeholders and content-visibility mode landed…"
 size: "M"
 area: virtual
-updated: 2026-10-20
+updated: 2026-10-24
 ---
 
 # Row 309: VirtualList and VirtualGrid share one engine: DOM bridge, pinned focus, fade (two components, one engine)
@@ -15,7 +15,7 @@ Owner decision 2026-10-20: keep `VirtualList` and `VirtualGrid` as two component
 
 ## Status / trigger
 
-**OPEN (deferred: grid content-visibility mode, grid find-in-page placeholders; the rest merged):** **LANDED 2026-10-20 on lane/vgrid-justified (owner go), pending the merge batch** -- shared DOM bridge and pinned-focus strategy; the grids gained `fade`, the windowed list keeps its focused row; `VirtualJustifiedGrid` (owner approved 2026-10-20) packs variable-aspect items into gapless, uncropped justified rows on the same engine, with a `justified` demo and a Grid/Justified switch on the photo wall (Grid keeps uniform cells and fits each photo with `object-fit`); open items in the notes.
+**OPEN (all parts built; the grid find-in-page placeholders and content-visibility mode landed 2026-10-24 on `claude/row-309-grid-find-cv`, pending the merge queue):** **LANDED 2026-10-20 on lane/vgrid-justified (owner go), pending the merge batch** -- shared DOM bridge and pinned-focus strategy; the grids gained `fade`, the windowed list keeps its focused row; `VirtualJustifiedGrid` (owner approved 2026-10-20) packs variable-aspect items into gapless, uncropped justified rows on the same engine, with a `justified` demo and a Grid/Justified switch on the photo wall (Grid keeps uniform cells and fits each photo with `object-fit`); open items in the notes.
 
 ## Size
 
@@ -36,8 +36,8 @@ The engine's design note (row 154, folded here 2026-10-23) is in [done/154](done
 | `scroll_to(index)` | `beforematch` -> `scroll_target` -> write | none (focus move scrolls by DOM rects past the sticky edges) | **shared** `Bridge::reveal`; the grid's sticky-aware focus scroll stays per component |
 | Keep the focused item rendered | none: a focused row that left the window was unmounted (focus fell to `<body>`) | `with_pinned` (active cell) | **shared** `virtual/pin.rs`: `with_pinned` for absolute layouts, `pin_in_flow` for the list's flow layout (detached row drawn at its own position, same parent and key, so it rejoins the flow without remounting); **VirtualList gained it** |
 | ScrollFade `fade` prop | yes | no | **VirtualGrid and VirtualWrapGrid gained it** (+ `dx-effects.css` in `globalAssets`, a `fade` demo) |
-| Content-visibility strategy | `cv_chunks` mode + `Auto` threshold | none | stays list-only for now: a grid CV mode needs its own keyboard/pinning story over flow rows (open item below) |
-| Find-in-page placeholders | opt-in `text_value` (row 153) | none | stays list-only (a grid's cell text would need 2-D placeholders); the reveal half is shared (`Bridge::reveal`) |
+| Content-visibility strategy | `cv_chunks` mode + `Auto` threshold | none | **shared** (2026-10-24): `VirtualGrid` and `VirtualWrapGrid` take `virtualize` / `auto_threshold` (counted in cells) and render every cell in flow rows through `cv_chunks`; the keyboard model is the same, nothing needs pinning |
+| Find-in-page placeholders | opt-in `text_value` (row 153) | none | **shared** (2026-10-24): `virtual/find.rs` (`FindLayer`, `use_find_in_page`), one layer for the list's rows, the data grid's cells (`"row:column"`, placed exactly) and the wrapping grid's items |
 | Overscroll / scroll chaining | none (chains to the page) | `overscroll-behavior: contain` in its sheet (row 308 changes it) | no engine policy: it is CSS on each component's container, reconciled with [row 308](./done/308-virtualgrid-scroll-trap-at-the-edges.md) |
 | RTL | n/a (vertical) | `use_direction` key map, `\|scrollLeft\|` | the report's RTL-neutral `left` is shared; the key map stays grid-only |
 | Keyboard model, ARIA, sticky edges | list semantics | grid pattern, sticky header/column | per component (the reason there are two) |
@@ -54,4 +54,11 @@ The engine's design note (row 154, folded here 2026-10-23) is in [done/154](done
 
 **Evidence.** `cargo test -p dioxus-primitives --lib virtual`: 90 passed (new: 5 bridge, 4 pin tests). `cargo clippy -p dioxus-primitives --features web --all-targets -- -D warnings`: clean. Fast gates (`run-gates.sh --skip` the cargo ones): 52/52 PASS. Debug lane-ssg build containing the change: `playwright/virtual-engine.spec.ts` 3/3 (wrap-grid and data-grid fade, list focused row kept as the same node and rejoining the flow); `virtual-grid`, `virtual_list`, `virtual-list-find`, `scroll-fade`: 43 passed, 1 skipped (CDP timing, debug). `registry-install-smoke.sh --only virtual_grid,virtual_list`: OK, 2/2.
 
-**Open.** (1) ~~`scripts/check-js-listeners.sh`'s `PAIRED_BY_HAND` entry for `primitives/src/virtual_list.rs` is now stale~~ deleted by lane vgrid-justified. (2) A content-visibility mode for the grids (needs flow rows plus the grid's keyboard/pinning story) and find-in-page placeholders for grids were not built. (3) No engine-level overscroll policy: each container's sheet decides ([row 308](./done/308-virtualgrid-scroll-trap-at-the-edges.md)); the list has none and chains to the page.
+**Open.** (1) ~~`scripts/check-js-listeners.sh`'s `PAIRED_BY_HAND` entry for `primitives/src/virtual_list.rs` is now stale~~ deleted by lane vgrid-justified. (2) ~~A content-visibility mode for the grids and find-in-page placeholders for grids were not built~~ built 2026-10-24, see below. (3) No engine-level overscroll policy: each container's sheet decides ([row 308](./done/308-virtualgrid-scroll-trap-at-the-edges.md)); the list has none and chains to the page. (4) `VirtualJustifiedGrid` stays always windowed and has no placeholders (a tile's place depends on the layout of every row above it, so a placeholder layer would have to re-run the justified layout).
+
+**Built 2026-10-24 (branch `claude/row-309-grid-find-cv`): the two deferred grid parts.**
+
+- **One find layer.** `primitives/src/virtual/find.rs` holds what `virtual_list.rs` had privately: the `beforematch` bridge (`use_find_in_page`, which now sends the placeholder's `data-find-index` as a string), the chunked `hidden="until-found"` layer (`FindLayer`, chunks of 100 rows, each a `content-visibility: auto` box, the `::search-text` rule, the re-hide in the next frame) and a `FindLayout`: `Rows` (the list, one element per row as before, so its node count and spec are unchanged), `Columns` (a data grid: one placeholder per non-empty cell at the column's exact inline offset, named `"row:column"`) and `Tracks` (a wrapping grid: the item index in rows of equal tracks). `text_value` on `VirtualGrid` is `Callback<(usize, usize), String>`, on `VirtualWrapGrid` `Callback<usize, String>`; one shared prop doc (`check-virtual-docs-parity.sh`).
+- **What a match does.** The data grid's placeholders sit exactly where the cells do (row heights and column widths are known), so the browser's own scroll mounts the cell; the grid marks it `data-find-match` and runs the focus scroll without focusing (`reveal_cell`: clear of the sticky header and column, or first to the cell's computed place when the reveal did not scroll there, e.g. a dispatched event). The wrapping grid's rows are measured, so its placeholders sit at the estimates; a match centres the item's row through `Bridge::reveal`, as the list does.
+- **Content-visibility mode.** `VirtualGrid` and `VirtualWrapGrid` split into a mode body each, like `VirtualList` (`VirtualGridWindowed` / `VirtualGridContentVisibility`, same for the wrap grid), chosen by `virtualize.resolve(cells, auto_threshold)` with cells = `row_count x column_count` or `count`. The content-visibility bodies render every row through `cv_chunks` (chunks of 20 skipped by the browser), columns in flow (the sticky header and first column are `position: sticky` in flow), no engine and no listener; the active cell, `row_key` resolution, `on_active_change` and the key map are one `GridFocus` / `WrapFocus` value both bodies use, and PageUp/PageDown count the viewport's rows from the container's measured height. Default `Auto`, so a grid of up to 1,000 cells is no longer windowed: the `short` demo (row 368's windowed first paint) and `DataTable`'s grid (a filter would re-mount it mid-typing) pin `Windowed`.
+- **Demos and spec.** `virtual_grid` variants `find_in_page` (a 2,000 x 8 data grid and a 3,000-item gallery, both windowed with `text_value`) and `content_visibility` (60 x 12 and 240 tiles under `Auto`); `playwright/virtual-grid-modes.spec.ts`.
