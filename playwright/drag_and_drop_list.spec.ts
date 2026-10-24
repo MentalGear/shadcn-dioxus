@@ -677,7 +677,7 @@ test.describe("Drop gap", () => {
  * component's own demo in the catalog -- and both sit in a card with
  * `content-visibility: auto` (paint containment). The ghost and the drop gap
  * must be the component's defaults there too, and the room the gap opens must
- * not be clipped by the card. Owner report, round 4: "the dnd list on the main
+ * not be clipped by the card. The check guards the report "the dnd list on the main
  * overview demo doesn't have the new ghost / gap".
  */
 test.describe("Home page lists", () => {

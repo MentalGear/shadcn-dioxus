@@ -14,8 +14,8 @@ const GOTO = { timeout: 20 * 60 * 1000 };
 // `cursor` is `default`: the interactive-element cursor is the theme's one rule (`data-dx-interactive-element-cursor`,
 // cursor-option.spec.ts, backlog row 381), and shadcn v4's arrow is its default.
 //
-// Row 331 verdict (2026-10-21): KEPT. Re-checked against today's build: all four records still equal the
-// pre-change values, so no re-baseline was needed. What only this snapshot catches: a probe that appended
+// Row 331 verdict: KEPT. All four records equal the values from before the theme-baseline change, so no
+// re-baseline is needed. What only this snapshot catches: a probe that appended
 // `cursor: default`, `text-indent`, `appearance: auto`, `transition-property: none`, `letter-spacing`, `border-width`
 // and `text-shadow`/`word-spacing` declarations (appended to the shipped sheet) to the four controls went red
 // here (4 of 4) while this file's per-control tests, `switch.spec`, `slider.spec`, `slider-thumb-clip.spec`,
@@ -204,8 +204,8 @@ for (const which of Object.keys(BEFORE)) {
         o.rect = `${r2(r.width)}x${r2(r.height)}`;
         return o;
       }, props);
-      // The slider thumb's border is the focus-ring colour token, which the golden recorded as the old default
-      // blue (rgb(43, 127, 255)); it is now shadcn's grey, so the border is compared to the token itself and
+      // The slider thumb's border is the focus-ring colour token (shadcn's grey), which the golden recorded as
+      // blue (rgb(43, 127, 255)), so the border is compared to the token itself and
       // every other property to the golden (`all: unset` equivalence is about the rest).
       const expected: Record<string, string> = { ...BEFORE[which] };
       if (which === "slider-thumb") {
@@ -218,8 +218,8 @@ for (const which of Object.keys(BEFORE)) {
           return c;
         });
       }
-      // Two golden values were the old pure-black defaults: `color` (the page ink, `--dx-foreground`) and the thumbs'
-      // `border-top-color` (`--dx-primary`). Both are shadcn's near-black now (row 373), so they are compared to the
+      // Two golden values are pure black: `color` (the page ink, `--dx-foreground`) and the thumbs'
+      // `border-top-color` (`--dx-primary`). Both are shadcn's near-black (row 373), so they are compared to the
       // token itself, like the ring colour above; every other property still equals the golden.
       const token = async (name: string) =>
         page.evaluate((n) => {

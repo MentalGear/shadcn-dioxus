@@ -11,8 +11,7 @@
  * own scripts run, buffers what they report, and gives the spec a small
  * measure-one-gesture-at-a-time API.
  *
- * Field/threshold sources (both verified reachable, HTTP 200, checked
- * 2026-09-18):
+ * Field/threshold sources:
  *   - Long Tasks API -- `PerformanceLongTaskTiming.attribution`
  *     (`TaskAttributionTiming`'s `containerType`/`containerSrc`/
  *     `containerId`/`containerName`):
@@ -262,9 +261,9 @@ export interface AssertResponsiveOptions {
  * throw for a reason that has nothing to do with main-thread timing: a
  * real pointer drag occasionally not registering under this sandbox's own
  * CPU contention is exactly the kind of transient failure the retry
- * policy exists to absorb (found live while writing this file: an
- * un-caught throw from attempt 1 used to escape this loop entirely,
- * skipping attempts 2-3 and this function's own summary/annotation).
+ * policy exists to absorb (an un-caught throw from attempt 1 would escape
+ * this loop entirely, skipping attempts 2-3 and this function's own
+ * summary/annotation).
  * Each attempt is therefore wrapped in its own try/catch: a thrown
  * attempt counts against the attempt budget and is retried like an
  * over-threshold one, and only a `gesture` that fails on literally every

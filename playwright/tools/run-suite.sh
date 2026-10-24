@@ -30,8 +30,8 @@ if [ -z "$table" ]; then
   else table="$out/list.json"; PLAYWRIGHT_JSON_OUTPUT_FILE="$table" pnpm exec playwright test --config="$config" --list --reporter=json >/dev/null || exit 2; fi
 fi
 # Snapshot the table and cut ALL the chunks up front: every chunk is a slice of ONE partition. (Cutting chunk i just
-# before it runs re-reads durations.json each time; editing the table mid-run then put 34 files in two chunks and 34 in
-# none on the first full run, 2026-10-19.)
+# before it runs re-reads durations.json each time, so editing the table mid-run could put a file in two chunks
+# and in none.)
 cp "$table" "$out/table.json"; table="$out/table.json"
 : > "$out/loads.txt"
 for i in $(seq 1 "$chunks"); do

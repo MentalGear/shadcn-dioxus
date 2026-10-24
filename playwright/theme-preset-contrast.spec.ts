@@ -37,8 +37,8 @@ const AA = 4.5;
 const DISTINCT_PRESSED = 16;
 const DISTINCT_HOVER = 6;
 /**
- * The docs link blue in light, as sRGB: `--dx-docs-blue` is oklch(0.555 0.241 260.95) = rgb(0, 99, 252) since the colour
- * audit (2026-10-23, contrast-mode.spec.ts "fixed for everyone"); #0065ff was 4.47:1 on `--dx-muted`, this clears 4.5:1.
+ * The docs link blue in light, as sRGB: `--dx-docs-blue` is oklch(0.555 0.241 260.95) = rgb(0, 99, 252) (contrast-mode.spec.ts
+ * "fixed for everyone"); #0065ff would be 4.47:1 on `--dx-muted`, this clears 4.5:1.
  */
 const DOCS_BLUE_LIGHT = [0, 99, 252] as const;
 

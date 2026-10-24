@@ -79,8 +79,8 @@ test("opens via CommandDialog with the input focused", async ({ page }) => {
 
 test("first mouse-click open focuses the command input, and a second open still does", async ({ page }) => {
     // Live-site user report: opening the command palette by mouse click the
-    // *first* time doesn't focus the input. `primitives/src/command.rs`'s
-    // `CommandInput` doc has the account of the original report; focus is now
+    // *first* time must focus the input. `primitives/src/command.rs`'s
+    // `CommandInput` doc has the account of the original report; focus is
     // set once, explicitly, by the dialog driver's open-focus policy.
     await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
     await page.waitForLoadState("networkidle");
@@ -112,7 +112,7 @@ test("first mouse-click open focuses the command input, and a second open still 
 });
 
 test("first mouse-click open focuses the command input on the overview page", async ({ page }) => {
-    // Same defect, on the page the user actually reported it on: the
+    // Same claim, on the page the user reported it on: the
     // overview/home page's demo gallery (`preview/src/main.rs`'s
     // `ComponentGallery`), which mounts every demo -- including this one --
     // alongside dozens of others, unlike the isolated component page above.

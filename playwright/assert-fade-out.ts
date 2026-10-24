@@ -6,10 +6,10 @@
  * from the web leaves in `tooltip.rs`/`hover_card.rs`/`popover.rs`) and
  * held mounted by `use_animated_open` (`primitives/src/lib.rs`) for its
  * whole CSS close animation (plus a settle hold) before actually
- * unmounting. Row 19 was that the old `use_popover_sync` called
- * `hidePopover()` the instant `open` went `false`, so the UA rule
- * `[popover]:not(:popover-open) { display: none }` hid the element before
- * the close animation this file's stylesheets define (row 7) ever got a
+ * unmounting. Row 19: `use_popover_sync` must not call
+ * `hidePopover()` the instant `open` goes `false`, or the UA rule
+ * `[popover]:not(:popover-open) { display: none }` hides the element before
+ * the close animation this file's stylesheets define (row 7) ever gets a
  * chance to play. This file provides the regression check for both: it
  * samples the closing content every animation frame while it is still in
  * the DOM and asserts it (a) stays displayed with decreasing opacity for a
@@ -243,9 +243,9 @@ export function analyzeFadeSamples(capture: FadeCapture): FadeOutReport {
     );
   }
 
-  // Row 19's actual defect, restated as an invariant: while still mounted,
-  // the content must never be display:none (the old `hidePopover()`-on-
-  // `open`-false bug) nor lose `:popover-open` on the web arm (the same
+  // Row 19's defect, restated as an invariant: while still mounted,
+  // the content must never be display:none (a `hidePopover()`-on-
+  // `open`-false) nor lose `:popover-open` on the web arm (the same
   // bug, restated in Popover-API terms -- losing `:popover-open` is what
   // *makes* the UA's `display: none` rule apply in the first place).
   for (const s of mountedSamples) {

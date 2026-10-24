@@ -1,5 +1,5 @@
 /**
- * Row 188 / 187, lane "parts": the component parts that were missing, each a typed prop with a demo:
+ * Row 188 / 187, the component "parts", each a typed prop with a demo:
  * AlertDialog `size` / `AlertDialogMedia` / `AlertDialogActionVariant`, Card `size`, Spinner `size`,
  * Button `radius`. Also pins the demos for parts that already existed (InputGroup block addons, Button
  * `as`, Dialog built-in close, Sheet `side`). Controls are located by role inside the demo frame;

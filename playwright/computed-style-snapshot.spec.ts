@@ -99,9 +99,9 @@ import type { StateCoverage } from "./computed-style-states";
  *    Hover-before-click: the pointer is put on a trigger and given `HOVER_INTENT_WAIT_MS` (see
  *    `computed-style-states.ts`) BEFORE the click strategy; a trigger that opens on hover (navbar, navigation
  *    menu, hover cards: hover-intent) is recorded `via: "hover"` and not clicked, because the click would toggle
- *    the hover-opened panel shut and the snapshot would see no open state. Others click exactly as before.
+ *    the hover-opened panel shut and the snapshot would see no open state. Others just click.
  *
- * Determinism (A/A; every item was found by an A/A failure): every read is preceded by `settle()` (finite
+ * Determinism (A/A: two runs of the same build must agree, and every item here exists because an A/A run disagreed): every read is preceded by `settle()` (finite
  * animations/transitions finished, infinite ones parked on frame 0) and by a DOM-quiescence wait; the pointer is
  * parked on a fixed inert spot between targets and right after a click (an overlay opens UNDER the pointer, and
  * which node is `:hover` is then a hit-test race); the page is only captured once the legacy-route "Loading

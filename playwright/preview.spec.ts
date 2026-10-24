@@ -13,8 +13,8 @@ test.describe("homepage", () => {
     let heroSection = page.locator("#hero");
     await heroSection.waitFor({ state: "visible" });
 
-    // No color-contrast exclusion needed here: this round's theme-token fix
-    // (dev-docs/backlog.md row 39) resolved it, and this route has no
+    // No color-contrast exclusion needed here: the theme-token fix
+    // (dev-docs/backlog.md row 39) resolves it, and this route has no
     // `.dx-code-block` to need the one remaining, narrower exclusion for.
     await expectNoAxeViolations(page, "homepage");
   });
@@ -44,8 +44,8 @@ test.describe("style tab", () => {
     // Regression guard for the `css_highlight!` construction
     // (preview/src/components/mod.rs, preview/src/main.rs -- dev-docs/
     // dev-loop.md's CSS section, backlog rows 72/76): in debug builds the
-    // Style tab no longer compile-time-embeds `style.css` via
-    // `dioxus_code::code!()` (that macro's `include_str!` forced a full
+    // Style tab does not compile-time-embed `style.css` via
+    // `dioxus_code::code!()` (that macro's `include_str!` would force a full
     // rebuild on every edit); it fetches the file's own `asset!()` URL at
     // runtime instead. This asserts that fetch actually lands real CSS
     // text, not a blank/loading/error placeholder.
