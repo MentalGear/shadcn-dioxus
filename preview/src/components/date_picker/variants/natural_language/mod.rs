@@ -146,8 +146,8 @@ fn format_date(date: Date) -> String {
 /// - `in N day(s)/week(s)/month(s)`, `in a day/week/month`, and `N day(s)/week(s)/month(s) ago`;
 /// - `next week` (+7 days), `next month`, `last week`, `last month`;
 /// - `[this|next] <weekday>` (also `mon`, `tue`, ...): the next such weekday strictly after today;
-/// - explicit dates: `2026-10-20`, `October 20`, `October 20, 2026`, `Oct 20th 2026`,
-///   `20 October 2026` (a missing year is the current one) -- which includes what the calendar
+/// - explicit dates: `2026-07-20`, `July 20`, `July 20, 2026`, `Jul 20th 2026`,
+///   `20 July 2026` (a missing year is the current one) -- which includes what the calendar
 ///   writes back into the field, so a picked date parses to itself.
 fn parse_phrase(input: &str, today: Date) -> Option<Date> {
     let lowered = input.replace(',', " ").to_lowercase();

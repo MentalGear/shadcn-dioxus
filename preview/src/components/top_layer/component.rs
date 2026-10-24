@@ -119,12 +119,9 @@ pub fn TopLayerFixture() -> Element {
                     }
 
                     // DropdownMenu (dev-docs/backlog.md item 2): web-arm
-                    // `popover="auto"` migration, added alongside the three
-                    // Phase 4.4 exemplars above -- see this rule's addition
-                    // in `top-layer.spec.ts` (RED before the migration:
-                    // `DropdownMenuContent` was a plain, non-`popover` div,
-                    // so it clipped exactly like the pre-4.4 behavior these
-                    // three did).
+                    // `popover="auto"`, like the three exemplars above -- see
+                    // this rule in `top-layer.spec.ts` (a plain, non-`popover`
+                    // `DropdownMenuContent` div would clip at the ancestor).
                     DropdownMenu { id: "clip-dropdown-menu-root",
                         DropdownMenuTrigger { id: "clip-dropdown-menu-trigger", "DropdownMenu trigger" }
                         DropdownMenuContent {
@@ -220,17 +217,13 @@ pub fn TopLayerFixture() -> Element {
                         }
                     }
 
-                    // 2026-09-03, finding C: `NavbarNav`'s web arm ->
-                    // `popover="auto"` (`NavbarContentRendered`,
-                    // `navbar.rs`) -- `Navbar` never migrated onto the
-                    // top-layer engine during Migration A, so it never got
-                    // clipping escape, top-layer stacking, or (Rule 5-style
-                    // below) viewport-edge flip the way `DropdownMenu`/
-                    // `Menubar`/`Select` did. Written RED first against the
-                    // pre-migration plain, `position: absolute`-only div
-                    // (confirmed by execution: it clipped at the 60px
-                    // ancestor exactly like `Menubar`'s identical
-                    // pre-migration shape did).
+                    // `NavbarNav`'s web arm is `popover="auto"`
+                    // (`NavbarContentRendered`, `navbar.rs`), so `Navbar`
+                    // gets clipping escape, top-layer stacking and (Rule
+                    // 5-style below) viewport-edge flip the way
+                    // `DropdownMenu`/`Menubar`/`Select` do. A plain,
+                    // `position: absolute`-only div would clip at the 60px
+                    // ancestor.
                     Navbar { id: "clip-navbar-root", aria_label: "Clip navbar test",
                         NavbarNav { index: 0usize,
                             NavbarTrigger { id: "clip-navbar-trigger", "Navbar trigger" }
@@ -554,7 +547,7 @@ pub fn TopLayerFixture() -> Element {
                         }
                     }
 
-                    // 2026-09-03, finding C: unlike `Tooltip`/`HoverCard`/
+                    // Unlike `Tooltip`/`HoverCard`/
                     // `PopoverContent` above, `NavbarContent` has no `side`
                     // prop -- its placement is always below/start-aligned,
                     // the same fixed convention `MenubarContent`/
@@ -563,10 +556,9 @@ pub fn TopLayerFixture() -> Element {
                     // pinning the *trigger* at the bottom edge instead of by
                     // an explicit `side` prop -- the same shape a real page
                     // footer or bottom nav bar would put a `Navbar` in.
-                    // Written RED first against the pre-migration plain,
-                    // `position: absolute; top: 100%`-only div (confirmed by
-                    // execution: no flip of any kind, content rendered
-                    // straight off the bottom of the viewport).
+                    // A plain `position: absolute; top: 100%`-only div would
+                    // never flip: the content would render straight off the
+                    // bottom of the viewport.
                     Navbar { id: "edge-bottom-navbar-root", aria_label: "Edge bottom navbar test",
                         NavbarNav { index: 0usize,
                             NavbarTrigger { id: "edge-bottom-navbar-trigger", "Bottom navbar" }

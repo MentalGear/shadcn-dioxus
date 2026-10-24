@@ -74,9 +74,9 @@
     border-radius: 50%;
     margin: 0;
 
-    /* The native-button reset this rule used to take from `all: unset`, spelled out: `all:` (0,1,0) beat
+    /* The native-button reset, spelled out (not `all: unset`): `all:` (0,1,0) beats
        every zero-specificity theme baseline (user-select, touch-action, press feedback, box-sizing), and
-       scripts/check-theme-baseline.sh now bans it. The resets are the ones a native button needs and this rule does not set itself. */
+       scripts/check-theme-baseline.sh bans it. The resets are the ones a native button needs and this rule does not set itself. */
     appearance: none;
     background-color: transparent;
     background-color: white;

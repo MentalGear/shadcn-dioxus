@@ -14,30 +14,22 @@ use dioxus_primitives::use_controlled;
 
 // dev-docs/backlog.md row 32: `#[css_module]` is gone -- see checkbox/component.rs's
 // header comment for the full delivery-mechanism rationale (asset!() +
-// document::Link). This is the heaviest component on the migration: every
-// exported entry point in this file gets its own `document::Link` (dedup on
-// (href, rel) makes that free), and `variants/{main,inset,floating}/mod.rs`
-// each carried their OWN `#[css_module("/src/components/sidebar/style.css")]
-// struct Styles;` pointing at this same sheet -- those are simply deleted
-// (their `Styles::` refs swapped to literals, same as here) rather than given
-// their own `Link`, because every one of those variant demo pages always
-// also renders the real themed wrapper (`SidebarProvider`/`Sidebar`) from
-// THIS file, whose `Link` already covers the sheet. Those three variant
-// files also each carry a second, genuinely separate
-// `#[css_module("/src/components/sidebar/variants/demo.css")] struct
-// DemoStyles;` for their own demo-only decorative classes (team-switcher
-// icon/info-block/chevron, `dx-sidebar-hide-on-collapse`) -- that sheet is
-// NOT this component's own `style.css` and nothing else links it, so each
-// variant's own `Demo()` now carries its own `asset!()` + `document::Link`
-// for `demo.css` instead.
+// document::Link). Every exported entry point in this file gets its own
+// `document::Link` (dedup on (href, rel) makes that free), and
+// `variants/{main,inset,floating}/mod.rs` carry no `Link` for this sheet
+// because every one of those variant demo pages also renders the real themed
+// wrapper (`SidebarProvider`/`Sidebar`) from THIS file, whose `Link` already
+// covers it. Those three variant files do link a second, genuinely separate
+// sheet, `/src/components/sidebar/variants/demo.css`, for their own demo-only
+// decorative classes (team-switcher icon/info-block/chevron,
+// `dx-sidebar-hide-on-collapse`): it is NOT this component's own `style.css`
+// and nothing else links it, so each variant's `Demo()` carries its own
+// `asset!()` + `document::Link` for it.
 //
-// This component is also on the row-32 "not already namespaced" lane: its
-// screen-reader-only helper used to be the bare `dx-sr-only`, which
-// `pagination/style.css` also defines (byte-identical). `#[css_module]`'s
-// hash kept the two apart; renamed to `dx-sidebar-sr-only` in the same
-// change that drops the macro (`pagination` gets its own
-// `dx-pagination-sr-only` copy) -- see `style.css`'s comment on that rule
-// and `scripts/check-dx-class-prefix.sh`.
+// Its screen-reader-only helper is `dx-sidebar-sr-only`, not a bare
+// `dx-sr-only` that `pagination/style.css` would also define byte-identically
+// (`pagination` has its own `dx-pagination-sr-only` copy) -- see `style.css`'s
+// comment on that rule and `scripts/check-dx-class-prefix.sh`.
 
 // constants
 const SIDEBAR_WIDTH: &str = "16rem";
@@ -159,8 +151,8 @@ pub fn use_is_mobile() -> Signal<bool> {
     let mut is_mobile = use_signal(|| false);
 
     // The resize listener belongs to this component: `use_js_listeners` removes it when the
-    // provider unmounts (it used to be reachable only through a `window.__sidebarResizeHandler`
-    // global, so a second provider, or a remount before the drop ran, orphaned the first).
+    // provider unmounts (a `window.__sidebarResizeHandler` global would let a second provider, or a
+    // remount before the drop ran, orphan the first).
     use_js_listeners(move || {
         Some(
             JsListeners::install(&format!(

@@ -29,7 +29,7 @@
   box-shadow: var(--dx-ring-focus-inset);
 }
 
-/* Deliberate deviation from shadcn (`hover:underline` on every trigger, row 299, owner 2026-10-20): a
+/* Deliberate deviation from shadcn (`hover:underline` on every trigger, row 299): a
  * collapsed header does not underline on hover, an open one does. */
 @media (hover: hover) and (pointer: fine) {
   .dx-accordion-trigger[aria-expanded="true"]:hover:not(:disabled) {

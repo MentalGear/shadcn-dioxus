@@ -375,8 +375,8 @@
  * its `padding`/`gap`/`border-radius` silently lost to that rule's.
  *
  * The surface is Nova's `from-muted/50 to-muted`: `--dx-muted`, a step lighter than `--dx-popover` in
- * both modes (dark #262626 on #171717 since the palette change; it was the SAME colour as the
- * popover before, which is why this used to mix `--dx-accent` into it). The hover is the same
+ * both modes (dark #262626 on #171717), so no `--dx-accent` mix is needed to tell it from the
+ * popover. The hover is the same
  * surface pushed 8% toward the ink: a plain `bg-muted` hover would paint the card's own colour
  * (a tie in dark, where muted == accent), so the card derives its second state instead. */
 .dx-navigation-menu-content .dx-navigation-menu-featured {

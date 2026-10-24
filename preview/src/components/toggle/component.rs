@@ -99,8 +99,7 @@ pub fn Toggle(props: ToggleProps) -> Element {
     // Merges `class` the same way `../popover/component.rs`'s
     // `PopoverContent` and `../radio_group/component.rs`'s `RadioItem` do:
     // a caller's own class should extend, not replace, this theme's
-    // `"dx-toggle"` -- see commit 724bfee ("merge the caller's class
-    // instead of clobbering") for the clobber bug this shape avoids.
+    // `"dx-toggle"` -- this shape avoids the clobber bug (backlog row 12).
     let class = if let Some(class) = props.class {
         format!("{} {}", "dx-toggle", class)
     } else {
@@ -155,7 +154,7 @@ mod tests {
         let html = dioxus_ssr::render(&dom);
 
         // A caller's own class must extend, not replace, the theme's
-        // "dx-toggle" -- see commit 724bfee.
+        // "dx-toggle" (backlog row 12).
         assert!(html.contains(r#"class="dx-toggle caller-class""#));
     }
 

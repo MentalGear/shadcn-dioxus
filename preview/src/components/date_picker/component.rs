@@ -27,13 +27,9 @@ use crate::components::button::{Button, ButtonSize, ButtonVariant};
 // both of ITS two entry points, since a caller uses exactly one of the two
 // and never both).
 //
-// This component is also on the row-32 "not already namespaced" lane: the
-// segment class used to be the bare `dx-date-segment`, not
-// `dx-date-picker-segment`. `#[css_module]`'s hash kept it collision-safe
-// regardless, but a plain `dx-date-segment` isn't provably this
-// component's own once the hash is gone. Renamed to `dx-date-picker-segment`
-// in the same change that drops the macro, in both this file and
-// `style.css` -- see `scripts/check-dx-class-prefix.sh`.
+// The segment class is `dx-date-picker-segment`, not a bare `dx-date-segment`:
+// without a hash suffix, a plain `dx-date-segment` isn't provably this
+// component's own -- see `scripts/check-dx-class-prefix.sh`.
 fn fixed_date(year: i32, month: Month, day: u8) -> Date {
     Date::from_calendar_date(year, month, day).expect("valid fixed date")
 }
@@ -331,18 +327,17 @@ pub fn DatePicker(props: DatePickerProps) -> Element {
                 confirm: props.confirm,
                 attributes: merged,
                 date_picker::DatePickerPopover {
-                    // Item 3 fix (2026-09-01, live-site report): matches
-                    // `ColorPickerPopover`'s own `is_modal: false`
+                    // Matches `ColorPickerPopover`'s own `is_modal: false`
                     // (`../color_picker/component.rs`) -- a calendar
                     // dropdown, like a color swatch popover, is meant to sit
                     // anchored next to its trigger, not centered as a modal
                     // dialog. Requires `primitives/src/date_picker.rs`'s
-                    // `DatePickerPopover` to actually forward `is_modal` to
-                    // `PopoverRoot` (previously dropped -- see that fix's
-                    // comment) and this page's `style.css` to carry the
+                    // `DatePickerPopover` to forward `is_modal` to
+                    // `PopoverRoot`, and the engine-injected
                     // `@supports (anchor-name: --a)` block every other
-                    // non-modal-arm consumer has, or this would only trade
-                    // one broken position for another.
+                    // non-modal-arm consumer has (`primitives/src/top_layer.rs`),
+                    // or this would only trade one broken position for
+                    // another.
                     popover_root: PopoverRoot,
                     is_modal: false,
                     DatePickerInput {

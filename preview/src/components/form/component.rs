@@ -15,11 +15,10 @@
 // composition.sh` enforces this over `preview/src`; see
 // `dev-docs/preview-composition.md` for the full rule and rationale.
 //
-// Two confirmed incidents of violating it, both by construction (execution-
-// verified, not just plausible):
+// Two ways violating it goes wrong, both by construction:
 //
-// Item 1 fix (2026-09-01, live-site report): "checkboxes and radio buttons
-// collapse visually when toggled on/off." This fixture imported the *raw*
+// 1. Checkboxes and radio buttons collapse visually when toggled on/off if
+// the fixture imports the *raw*
 // `dioxus_primitives::checkbox::{Checkbox, CheckboxIndicator}` and
 // `dioxus_primitives::radio_group::{RadioGroup, RadioItem}` primitives
 // directly. Without the theme class, `Checkbox`'s `<button>` has no explicit
@@ -32,30 +31,29 @@
 // `.dx-radio-item::before` pseudo-element that plain
 // `dioxus_primitives::radio_group::RadioItem` never gets without that class,
 // so its `<button>` collapses to whatever a bare, empty `<button>` renders as
-// in every state. Confirmed by measurement against `/component/?name=checkbox`
-// and `/component/?name=radio_group` (both themed, both stable-sized in every
-// state) vs. this fixture pre-fix (both collapsing). Fixed here, not in
+// in every state (the themed `/component/?name=checkbox` and
+// `/component/?name=radio_group` are stable-sized in every state). The fix
+// belongs in the fixture, not in
 // `primitives/src/checkbox.rs` or `radio_group.rs`: the *conditional-children*
 // behavior of `CheckboxIndicator` is correct, documented API (a consumer's
 // indicator content need not be a fixed-size glyph), and `RadioItem`'s
 // primitive renders no built-in visual by design (it is a headless
-// primitive) -- the actual defect was this one fixture forgetting the theme
-// layer every sibling fixture already applies.
+// primitive) -- the defect is a fixture skipping the theme
+// layer every sibling fixture applies.
 //
-// Item 2 fix (2026-09-01, live-site report): "Notifications (library switch)"
-// and "Opt-in, required (library switch)" render visually collapsed, the same
-// way. This fixture also imported the *raw* `dioxus_primitives::switch::
+// 2. The "Notifications (library switch)" and "Opt-in, required (library
+// switch)" fields render visually collapsed, the same way, if the fixture
+// imports the *raw* `dioxus_primitives::switch::
 // {Switch, SwitchThumb}` and `dioxus_primitives::select::{Select, SelectList,
 // SelectOption, SelectTrigger, SelectValue}` primitives directly, the same
-// root cause as Item 1: `Switch`'s `<button>` gets no `width`/`height`
+// root cause as case 1: `Switch`'s `<button>` gets no `width`/`height`
 // without `.dx-switch` (`../switch/style.css`: `all: unset; width: 2rem;
 // height: 1.15rem; ...`), so it collapses to an empty button's intrinsic
-// size. Confirmed by an SSR test below asserting `#switch-lib` carries a
-// `dx-switch`-prefixed class, red before this fix (no `class` attribute on
-// that button at all) and green after. Fixed here by switching to
+// size. An SSR test below asserts `#switch-lib` carries the `dx-switch`
+// class. The fixture therefore uses
 // `crate::components::switch::Switch` (which renders its own themed
-// `SwitchThumb` internally -- the explicit `SwitchThumb {}` child this
-// fixture previously passed is gone) and `crate::components::select::*`.
+// `SwitchThumb` internally, so no explicit `SwitchThumb {}` child) and
+// `crate::components::select::*`.
 use crate::components::checkbox::Checkbox;
 use crate::components::radio_group::{RadioGroup, RadioItem};
 use crate::components::select::{Select, SelectOption};
@@ -182,25 +180,25 @@ fn read_form_data_js(form_id: &str, result_id: &str) -> String {
 /// (via a microtask) into a single, replacing write so repeated attempts
 /// don't accumulate stale entries.
 ///
-/// Item 2 fix (2026-09-01, live-site report): "Required blocking (form B)
-/// seems broken, at least visually." The block itself always worked (tier-2
-/// rule 4 in `form-participation.spec.ts` was already green) -- `required`
+/// The "Required blocking (form B)" fixture needs this for visible feedback.
+/// The block itself works (tier-2
+/// rule 4 in `form-participation.spec.ts`) -- `required`
 /// lives on each control's visually-hidden native mirror (`BubbleInput` in
 /// `primitives/src/checkbox.rs`, the hidden `<input type="radio">` in
 /// `radio_group.rs`, the hidden `<select>` in `select/components/select.rs`,
 /// all marked `aria-hidden="true" tabindex="-1"`), and Chrome refuses to
 /// focus a non-focusable hidden control or show its native validation
-/// bubble on one -- confirmed via the browser console on submit: "An
-/// invalid form control with name='...' is not focusable." So the missing
-/// piece was purely user-visible feedback, not the blocking mechanics.
+/// bubble on one (the console says "An
+/// invalid form control with name='...' is not focusable."). So the missing
+/// piece is user-visible feedback, not the blocking mechanics.
 ///
-/// Fixed here, in the fixture, rather than in the primitives: bridging
+/// It lives here, in the fixture, rather than in the primitives: bridging
 /// native constraint-validation feedback onto a *visible* stand-in for an
 /// invalid hidden control is a UI-layer decision each consumer's markup is
 /// best placed to make (which element counts as "the visible one," how to
 /// style it) -- a primitives-level validity bridge would need a public API
 /// for a library-wide default that this one fixture's fix does not have to
-/// invent (see this session's report, "follow-up candidates").
+/// invent.
 ///
 /// The mapping from an invalid hidden control to its visible counterpart is
 /// the same trick across every control this fixture pairs a hidden mirror
@@ -376,8 +374,8 @@ pub fn FormFixture() -> Element {
     // Wire the capturing `invalid` listener (and the `document`-level ones that clear the
     // markers again) after the required-blocking form mounts. They belong to this component:
     // `use_js_listeners` removes every one of them when the fixture unmounts -- the `document`
-    // `click`/`keyup` ones used to stay on the page after the route was left, one more pair
-    // per visit. This reads no reactive signals, so it only runs once.
+    // `click`/`keyup` ones would otherwise stay on the page after the route was left, one more
+    // pair per visit. This reads no reactive signals, so it only runs once.
     use_js_listeners(move || {
         Some(JsListeners::install(&watch_invalid_js(
             "form-required",
@@ -865,13 +863,10 @@ mod tests {
         }
     }
 
-    /// Item 1 fix (2026-09-01, live-site report): a themed control's class
+    /// A themed control's class
     /// is what actually carries its fixed size (see this file's header
-    /// comment, and `../switch/style.css`'s `.dx-switch { all: unset; width:
-    /// 2rem; ...}`). `#[css_module]` hash-suffixes every class it generates
-    /// (confirmed by execution -- the rendered class is `dx-switch-<8 hex
-    /// chars>`, never the literal `dx-switch`), so this matches on the
-    /// prefix rather than the exact class name.
+    /// comment, and `../switch/style.css`'s `.dx-switch`), so the library
+    /// switch must wear the plain `dx-switch` class.
     #[test]
     fn switch_lib_carries_the_themed_dx_switch_class() {
         let mut dom = VirtualDom::new(FormFixture);
@@ -880,13 +875,9 @@ mod tests {
 
         let tag = tag_containing(&html, "id=\"switch-lib\"");
         let class = attr_value(tag, "class");
-        // dev-docs/backlog.md row 32: this used to look for a `dx-switch-<hash>`
-        // token, because `#[css_module]` appended a scope hash to every class.
-        // With the hashing dropped the themed class is the plain `dx-switch`,
-        // so the old prefix match (`starts_with("dx-switch-")`, note the
-        // trailing hyphen) no longer matches anything. Asserting the exact
-        // token is a stricter check than the prefix ever was: it would now
-        // also catch a stray re-hashed class coming back.
+        // dev-docs/backlog.md row 32: classes carry no scope hash, so the themed
+        // class is the plain `dx-switch`. Asserting the exact token (not a
+        // `dx-switch-` prefix) also catches a stray re-hashed class.
         assert!(
             class.split_whitespace().any(|token| token == "dx-switch"),
             "expected the unhashed `dx-switch` class on #switch-lib (see \

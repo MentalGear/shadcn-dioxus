@@ -92,8 +92,7 @@
 }
 
 /* rtl-physical: matches shadcn's own calendar.tsx RTL treatment exactly
-   (`apps/v4/registry/new-york-v4/ui/calendar.tsx`, radix-ui/ui commit
-   a87a63b: `rtl:**:[.rdp-button_next>svg]:rotate-180` /
+   (`apps/v4/registry/new-york-v4/ui/calendar.tsx`, radix-ui/ui@a87a63b: `rtl:**:[.rdp-button_next>svg]:rotate-180` /
    `..._previous>svg]:rotate-180`) -- button position stays physical, only
    the chevron glyph rotates in RTL (see the `[dir="rtl"] ... svg` rule
    below). Every other shadcn component checked (dialog close button,
@@ -294,7 +293,7 @@
 }
 
 .dx-calendar-grid-cell[data-month="current"][data-unavailable="true"] {
-    /* axe `color-contrast` (dev-docs/backlog.md row 39, filed 2026-09-03): an
+    /* axe `color-contrast` (dev-docs/backlog.md row 39): an
      * unavailable day is drawn with the muted-text token at FULL opacity plus
      * the line-through, the same ink as other-month and disabled days two rules
      * up. Nova fades a disabled day (`text-muted-foreground opacity-50`); that

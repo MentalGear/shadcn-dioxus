@@ -8,13 +8,10 @@ use dioxus_icons::lucide::{ChevronLeft, ChevronRight};
 /// entirely from [`use_carousel`]'s public [`CarouselApi`], the same
 /// public escape hatch docs.md's own "A custom picker" section documents.
 ///
-/// This is also where the pre-shadcn-parity `indicators` demo's custom
-/// dot-picker composition technique lives on, now that its own exported
-/// helper's name (`CarouselIndicators`) was reused by the APG tablist
-/// component it was renamed from `CarouselTabList` to (see `component.rs`'s
-/// own doc on that rename) -- `use_carousel()` itself was never renamed or
-/// removed, so this demo (and any consumer) can still build any custom
-/// picker UI it wants directly on top of it.
+/// This is also where the custom dot-picker composition lives: the exported
+/// name `CarouselIndicators` belongs to the APG tablist component (see
+/// `component.rs`'s own doc), so a plain picker is built directly on
+/// `use_carousel()`, which any consumer can do for any custom picker UI.
 #[component]
 pub fn Demo() -> Element {
     rsx! {

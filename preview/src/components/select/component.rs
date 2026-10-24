@@ -12,9 +12,8 @@ pub use dioxus_primitives::select::{SelectGroup, SelectPosition};
 // select`-copied component needs no extra wiring). This file has TWO
 // independent entry components (`Select` and `SelectMulti` -- callers use
 // exactly one, never both), so the stylesheet Link is placed in both of
-// them rather than only the first, mirroring how `#[css_module]`'s own
-// single `OnceLock`-guarded injection used to fire from whichever of the
-// two happened to render first. `SelectGroupLabel`/`SelectOption` are
+// them rather than only the first (a single injection would have to fire from
+// whichever of the two happens to render first). `SelectGroupLabel`/`SelectOption` are
 // always composed as children of one of those two (never standalone, per
 // this crate's own API), so they don't need their own copy --
 // `document::Link`'s `(href, rel)` dedup makes it harmless either way if a

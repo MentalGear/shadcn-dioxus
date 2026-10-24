@@ -118,7 +118,7 @@
     gap: var(--dx-tabs-list-gap);
 }
 
-/* The `line` variant (`TabsVariant::Ghost` is its old name) is shadcn's (`registry/bases/base/ui/tabs.tsx`:
+/* The `line` variant (`TabsVariant::Ghost` is an alias of it) is shadcn's (`registry/bases/base/ui/tabs.tsx`:
    `cn-tabs-list-variant-line gap-1 bg-transparent`; the active trigger has no fill,
    shadow or border and carries a 2px `foreground` bar, `after:bottom-[-5px] after:h-0.5`,
    that fades in; vertical: `after:inset-y-0 after:-right-1 after:w-0.5`, see the slot

@@ -11,7 +11,7 @@ use dioxus_icons::lucide::{ChevronDown, ChevronUp};
 ///
 /// Unlike the horizontal variants (`main`/`indicators`/`rtl`/`multiple`),
 /// this wrapper needs no compensating size bump for `.dx-carousel`'s own
-/// arrow-reservation padding (style.css, `7ad791c`). That reservation
+/// arrow-reservation padding (style.css). That reservation
 /// costs a horizontal wrapper track width because `CarouselContent` has no
 /// explicit width of its own there -- it fills whatever's left of
 /// `.dx-carousel`'s fixed `width: 100%` after `padding-inline` is carved
@@ -20,19 +20,14 @@ use dioxus_icons::lucide::{ChevronDown, ChevronUp};
 /// -- so the reservation's `padding-block` has no fixed budget to be
 /// carved out of; `.dx-carousel` (a plain block box, no explicit height)
 /// just grows 6rem taller to fit both, and the visible slide stays 12rem.
-/// Measured live (lane `carousel-wrapper-width`): unchanged at 192px
-/// across every viewport/theme swept, with or without the reservation.
+/// The slide stays 192px across every viewport and theme, with or without
+/// the reservation.
 ///
-/// This wrapper previously also carried its own `padding-block:
-/// var(--dx-space-12)` -- headroom for the pre-`7ad791c` construction,
-/// where Previous/Next sat `calc(-1 * var(--dx-space-12))` *outside*
-/// `.dx-carousel`'s own box and could straddle
-/// `.dx-component-preview-frame`'s border. `7ad791c` moved those buttons
-/// to sit *inside* `.dx-carousel`'s own (now self-expanding) box instead,
-/// so nothing here needs external headroom for them any more -- style.css's
-/// own comment on the vertical `padding-block` rule already called this
-/// redundant, and removing it and re-measuring confirms it: no button
-/// escapes the frame at any swept viewport/theme without it.
+/// This wrapper carries no `padding-block` of its own: Previous/Next sit
+/// *inside* `.dx-carousel`'s own (self-expanding) box, so nothing here needs
+/// external headroom for them, and no button straddles
+/// `.dx-component-preview-frame`'s border (style.css's vertical
+/// `padding-block` rule says the same).
 ///
 /// Sizing follows shadcn's own `carousel-orientation.tsx` (not this file's
 /// pre-shadcn-parity single-slide layout): `--dx-carousel-per-view: 2`
@@ -47,14 +42,12 @@ use dioxus_icons::lucide::{ChevronDown, ChevronUp};
 /// **The `Card` must be `box-sizing: border-box`** -- and is, from the
 /// theme (`dx-components-theme.css`'s box-model rule), not from this demo.
 /// `Card` (`.dx-card`) carries `padding: 24px 0` plus a 1px border, so
-/// under the browser's `content-box` default `height: 100%` meant "the
+/// under the browser's `content-box` default `height: 100%` means "the
 /// slide's usable block size *plus* 50px of padding/border on top".
-/// Measured live before the fix (`09cd59e`, which declared it inline here):
-/// each item is 135px (half of the 270px content box), 119px of it usable
-/// after the 16px leading gap padding, and the Card rendered 169px tall
-/// (119 + 48 + 2; the Nova card pass has since changed the padding to
-/// `--dx-card-spacing` and dropped the border) -- card 2 overlapped card 1
-/// and the bottom card ran past the clip viewport. `border-box` makes the
+/// Without it each item is 135px (half of the 270px content box), 119px of it
+/// usable after the 16px leading gap padding, and the Card would render
+/// taller than that (119 + the padding and border) -- card 2
+/// overlaps card 1 and the bottom card runs past the clip viewport. `border-box` makes the
 /// Card exactly the slide's usable size; `CardContent` then takes the Card's
 /// remaining height with `flex: 1` (the Card is a flex column) instead of a
 /// second, again-overflowing `height: 100%`. The gap is the default

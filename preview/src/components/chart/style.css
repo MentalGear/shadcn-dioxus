@@ -195,7 +195,7 @@
  * the values and labels the chart itself draws (`--secondary-color-4`, the
  * base rule above). `--secondary-color-5` is #707070 on the white card
  * (4.95:1) and #a1a1a1 on the dark card #171717 (6.94:1) -- both clear 4.5:1
- * -- whereas the token this used to read, `--dx-chart-axis-text`, is the body
+ * -- whereas `--dx-chart-axis-text` is the body
  * text colour. That token stays for the cursor, which is not a tick. */
 .dx-chart [data-slot="chart-axis"] text {
   fill: var(--dx-muted-foreground);

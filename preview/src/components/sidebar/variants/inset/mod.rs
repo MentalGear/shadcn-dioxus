@@ -16,25 +16,20 @@ use crate::components::skeleton::Skeleton;
 use dioxus_icons::lucide::{ChevronRight, Circle};
 use dioxus::prelude::*;
 
-// dev-docs/backlog.md row 32: this demo variant used to carry TWO
-// `#[css_module]` structs -- one for its own demo-only decorative CSS
-// (`variants/demo.css`: team-switcher icon/info-block/chevron,
-// `dx-sidebar-hide-on-collapse`), one that just re-hashed the real
-// component's own `../../style.css` (`Styles`, used here only for
-// dropdown-menu/collapsible classes composed onto sibling components).
+// dev-docs/backlog.md row 32: this demo variant uses the plain
+// `dx-sidebar-*` literals (as `sidebar/component.rs` does) for the
+// dropdown-menu/collapsible classes composed onto sibling components, with no
+// `document::Link` of its own for the component's `../../style.css`: this
+// page always renders `Sidebar`/`SidebarProvider` from that file (see
+// `Demo()` below), and THEIR `document::Link` for `../../style.css` already
+// covers it -- `document::Link` dedupes on `(href, rel)` regardless of which
+// element in the tree mounts it first.
 //
-// The `Styles` one is simply deleted (its refs swapped to the same plain
-// `dx-sidebar-*` literals `sidebar/component.rs` now uses) rather than
-// given its own `document::Link`: this page always renders `Sidebar`/
-// `SidebarProvider` from that file (see `Demo()` below), and THEIR
-// `document::Link` for `../../style.css` already covers it --
-// `document::Link` dedupes on `(href, rel)` regardless of which element
-// in the tree mounts it first.
-//
-// `demo.css`, by contrast, is a genuinely separate sheet nothing else
-// links -- ITS delivery keeps the `asset!()` + `document::Link` pattern,
-// added to `Demo()`'s own `rsx!` below (see checkbox/component.rs's
-// header comment for the general asset!()+Link rationale).
+// `variants/demo.css` (team-switcher icon/info-block/chevron,
+// `dx-sidebar-hide-on-collapse`) is a genuinely separate sheet nothing else
+// links -- its delivery is the `asset!()` + `document::Link` pattern in
+// `Demo()`'s own `rsx!` below (see checkbox/component.rs's header comment
+// for the general asset!()+Link rationale).
 
 #[derive(Clone, PartialEq)]
 struct Team {

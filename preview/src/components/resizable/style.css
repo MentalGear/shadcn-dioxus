@@ -108,8 +108,8 @@
 
 /* Nova (shadcn-ui/ui@295a1f1 registry/styles/style-nova.css, `.cn-resizable-handle-icon`):
    the optional grip is `bg-border h-6 w-1 rounded-lg` -- a bare 4 x 24px pill (the `z-10 flex shrink-0`
-   come from registry/bases/radix/ui/resizable.tsx), with no border and no glyph; it used to be shadcn
-   v4's bordered 12 x 16px box around a `GripVerticalIcon`. */
+   come from registry/bases/radix/ui/resizable.tsx), with no border and no glyph (not shadcn
+   v4's bordered 12 x 16px box around a `GripVerticalIcon`). */
 .dx-resizable-handle-grip {
   position: absolute;
   z-index: var(--dx-z-local-sm);

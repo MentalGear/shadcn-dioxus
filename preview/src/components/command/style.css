@@ -46,8 +46,8 @@
  * `<dialog>` and its animation times `use_animated_open`'s unmount hold. On the
  * non-web arm and for `is_modal: false` the content is a plain `div` with no top
  * layer and no `::backdrop`, so there this element IS the scrim, from the same
- * tokens. (It used to paint its own 30% wrapper over the UA's default 10%
- * `::backdrop` -- a second, stacked scrim -- with no blur and a 150ms fade.) */
+ * tokens. (On the web arm it must not paint its own wrapper over the UA's default
+ * `::backdrop`: that would be a second, stacked scrim.) */
 .dx-command-dialog-backdrop {
   position: fixed;
   z-index: var(--dx-z-overlay);
@@ -201,9 +201,9 @@ dialog.dx-command-dialog[open][data-state="open"] {
  *
  * The keyboard focus ring belongs to the GROUP, as InputGroup draws it (`.cn-input-group`:
  * `has-[...:focus-visible]:border-ring ring-3 ring-ring/50`; this library's `.dx-input-group`
- * does the same with `--dx-ring-field`). It used to be drawn on the borderless input's own box
- * (`box-shadow: var(--dx-ring-field)` on `.dx-command-input`), a square 1px edge plus 3px halo
- * hugging the text with no padding, which collided with the search icon. The input itself draws
+ * does the same with `--dx-ring-field`). Drawn on the borderless input's own box
+ * (`box-shadow: var(--dx-ring-field)` on `.dx-command-input`) it would be a square 1px edge plus 3px halo
+ * hugging the text with no padding, colliding with the search icon. The input itself draws
  * nothing and resets `outline`, so no UA ring shows either. */
 .dx-command-input-wrapper {
   position: relative;

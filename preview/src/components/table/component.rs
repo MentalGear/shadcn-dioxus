@@ -13,7 +13,7 @@
 //!
 //! Every component here merges its own `dx-table-*` base class with any
 //! caller-supplied `class` via `merge_attributes`, the same construction
-//! commit 724bfee fixed `Input` with (`git show 724bfee`): a literal
+//! `Input` uses (backlog row 12): a literal
 //! `class: "dx-foo"` field followed by a plain `..attributes` spread lets
 //! Dioxus's "later duplicate attribute wins" rule silently *replace* the
 //! base class instead of combining with it. `merge_attributes` special-

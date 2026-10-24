@@ -363,7 +363,7 @@
    "right"]` overrides below -- Sidebar's `side` prop is an explicit,
    physical screen-edge choice (matches shadcn's own `side="left"|"right"`,
    which carries no RTL handling -- apps/v4/registry/new-york-v4/ui/
-   sidebar.tsx, radix-ui/ui commit a87a63b), not a reading-direction one, so
+   sidebar.tsx, radix-ui/ui@a87a63b), not a reading-direction one, so
    it does not flip with `dir`. */
 [data-variant="inset"]~.dx-sidebar-inset {
   border-radius: var(--dx-radius-xl);
@@ -531,7 +531,7 @@
   padding: 0;
   margin: 0;
 
-  /* Owner 2026-10-19: new-york-v4's `gap-1` between items, not Nova's `gap-0`, so the docs shell and
+  /* new-york-v4's `gap-1` between items (dev-docs/decisions.md), not Nova's `gap-0`, so the docs shell and
      every demo show the same visible spacing (playwright/docs-sidebar-spacing.spec.ts keeps them equal). */
   gap: var(--dx-space-1);
   list-style: none;

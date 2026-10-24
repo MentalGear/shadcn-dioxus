@@ -76,7 +76,7 @@
    * the theme's floating-surface recipe (`data-dx-surface="floating"`, emitted by `NavbarContent`);
    * its `border`/`overflow`/`padding` undo the UA popover stylesheet's `[popover] { border: solid;
    * overflow: auto; ... }` (WHATWG HTML's popover section) -- this content carries the `popover`
-   * attribute on the web arm (2026-09-03, finding C migration). The motion is this content's own
+   * attribute on the web arm. The motion is this content's own
    * directional slide, below. The matching `margin`/`inset` reset, and the `@supports (anchor-name:
    * --a)` anchor-positioning rules that keep each nav anchored to its own trigger once promoted to
    * the top layer, live in the shared, engine-injected stylesheet every `dx-anchor-*`-marked overlay

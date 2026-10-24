@@ -11,18 +11,14 @@ use dioxus_primitives::tag_group::{
 // document::Link, embedded in every exported entry point of this file so a
 // `shadcn-dioxus add tag_group`-copied component needs no extra wiring).
 //
-// This component is also on the row-32 "not already namespaced" lane, and
-// its `.dx-remove-button` is one of the two genuine cross-component
-// collisions row 32 found: `drag_and_drop_list` defines its own,
-// differently-sized `.dx-remove-button` (26x26px + `margin-left: 10px` vs
-// this one's unsized, `margin-left: 0.25rem`), and unhashing both under the
-// same short name would silently restyle whichever sheet lost the CSS load
-// order. `dx-tag` and `dx-tag-list` were equally out of namespace even
-// without an active collision today. All three were renamed under the full
-// `dx-tag-group-` namespace (`dx-tag` -> `dx-tag-group-tag`, `dx-tag-list`
-// -> `dx-tag-group-list`, `dx-remove-button` -> `dx-tag-group-remove-button`)
-// in the same change that drops the macro, in both this file and
-// `style.css` -- see `scripts/check-dx-class-prefix.sh`.
+// Every class lives under the full `dx-tag-group-` namespace
+// (`dx-tag-group-tag`, `dx-tag-group-list`, `dx-tag-group-remove-button`), in
+// both this file and `style.css`. A short `.dx-remove-button` would collide
+// with `drag_and_drop_list`'s differently-sized one (26x26px +
+// `margin-left: 10px` vs this one's unsized, `margin-left: 0.25rem`) and
+// silently restyle whichever sheet lost the CSS load order (backlog row 32);
+// `dx-tag` and `dx-tag-list` would be out of namespace even without an active
+// collision -- see `scripts/check-dx-class-prefix.sh`.
 #[component]
 pub fn TagGroup(props: TagGroupProps<String>) -> Element {
     let base = attributes!(div { class: "dx-tag-group", "data-dx-root": "" });
