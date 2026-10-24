@@ -219,6 +219,15 @@
   transform-origin: center;
 }
 
+/* No selected option: the whole list sits beside the trigger (`data-side`) and grows out of it. */
+.dx-select-list[data-position="item-aligned"][data-side="bottom"] {
+  transform-origin: top;
+}
+
+.dx-select-list[data-position="item-aligned"][data-side="top"] {
+  transform-origin: bottom;
+}
+
 /*
  * Scroll buttons: sticky at the list's top and bottom edge and out of flow (the negative margin
  * cancels their height), so showing one never moves an option. Hidden unless the list can scroll

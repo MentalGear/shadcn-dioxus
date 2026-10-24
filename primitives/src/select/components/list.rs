@@ -97,7 +97,9 @@ pub fn SelectList(props: SelectListProps) -> Element {
 /// The item-aligned placement script. Reads the geometry it needs in untransformed layout units
 /// (`offsetTop`/`offsetHeight`, never a rect of the list: the pop-in animates `scale`), puts the
 /// selected option's centre on the trigger's centre, then keeps the list inside the visual
-/// viewport by moving it and, past that, scrolling the option away from the trigger line.
+/// viewport by moving it and, past that, scrolling the option away from the trigger line. With no
+/// selected option there is nothing to align, so the whole list sits below the trigger and flips
+/// above it on collision, the popper's rule (`data-side` names the side for the CSS).
 #[cfg(feature = "web")]
 const ITEM_ALIGNED_JS: &str = r#"
 const id = await dioxus.recv();
@@ -106,6 +108,7 @@ const list = document.getElementById(id);
 const trigger = document.querySelector('[style*="anchor-name: --dxa-' + triggerId + ';"]');
 if (!list || !trigger) return;
 const MARGIN = 8;
+const GAP = 4;
 const offsetIn = (el) => {
     let y = 0;
     for (let n = el; n && n !== list; n = n.offsetParent) y += n.offsetTop;
@@ -126,7 +129,20 @@ const place = () => {
     const selected = list.querySelector('[role="option"][aria-selected="true"]');
     list.style.setProperty('--dx-anchor-width', t.width + 'px');
     list.style.setProperty('--dx-available-height', Math.max(0, vh - 2 * MARGIN) + 'px');
-    const ch = list.offsetHeight;
+    let ch = list.offsetHeight;
+    // No selected option: below the trigger unless the list does not fit there and the room above is
+    // larger, then capped to the chosen side's room so it never covers the trigger.
+    let side = null;
+    if (!selected) {
+        const below = vh - MARGIN - (t.bottom + GAP);
+        const above = t.top - GAP - MARGIN;
+        side = ch <= below || below >= above ? 'bottom' : 'top';
+        list.style.setProperty('--dx-available-height', Math.max(0, side === 'bottom' ? below : above) + 'px');
+        ch = list.offsetHeight;
+        list.dataset.side = side;
+    } else {
+        delete list.dataset.side;
+    }
     const cw = list.offsetWidth;
     const maxScroll = list.scrollHeight - list.clientHeight;
     const border = list.offsetHeight - list.clientHeight;
@@ -134,7 +150,7 @@ const place = () => {
     const optTop = selected ? offsetIn(selected) + list.clientTop : 0;
     const optH = selected ? selected.offsetHeight : 0;
     const want = t.top + t.height / 2 - optH / 2;
-    let top = selected ? want - optTop : t.bottom + 4;
+    let top = selected ? want - optTop : side === 'bottom' ? t.bottom + GAP : t.top - GAP - ch;
     let scroll = 0;
     if (selected) {
         const lo = MARGIN, hi = vh - MARGIN - ch;

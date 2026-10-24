@@ -39,8 +39,12 @@ put a `SelectScrollUpButton` first and a `SelectScrollDownButton` last in the li
 (showing one never moves an option), hidden from assistive technology, and visible only while the list can scroll that
 way (`data-visible`): a passive `scroll` listener through `js_listener.rs` reports the position. Hovering one with a
 mouse scrolls the list (6 px per 16 ms tick) through `use_interval_while`, gated by `use_motion`, so a hidden tab or a
-skipped card pauses it; leaving, or reaching the end, stops it. `position="item-aligned"` is not implemented (row 268).
-See the `scroll` variant.
+skipped card pauses it; leaving, or reaching the end, stops it. See the `scroll` variant.
+
+`position: SelectPosition::ItemAligned` (shadcn's `position="item-aligned"`) opens the list over the trigger with the
+selected option on the trigger's line, moved and then scrolled to stay inside the viewport. With no selected option
+there is nothing to align: the whole list opens below the trigger and flips above it when it does not fit there and the
+room above is larger, capped to that side's room (`data-side` on the list). See the `aligned` variant.
 
 ## Open focus
 
