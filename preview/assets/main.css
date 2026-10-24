@@ -1297,7 +1297,6 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
 
 /* Block code — github-style fenced block */
 .dx-docs-prose pre {
-  /* border: 1px solid var(--primary-color-6); */
   padding: 1rem 1.1rem;
   border-radius: 0.5rem;
   margin: 0 0 1.1rem;
