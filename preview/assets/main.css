@@ -56,12 +56,23 @@
 :root[data-theme-accent] {
   --highlight-color-tertiary: var(--light, oklch(from var(--dx-primary) min(l, 0.5) c h))
     var(--dark, oklch(from var(--dx-primary) max(l, 0.75) c h));
+
+  /* Native controls take the accent's mark (row 389). */
+  accent-color: var(--dx-accent-mark);
 }
 
 /* The "Docs blue" swatch (`theme.rs` ACCENTS, `theme-presets.css`) is the default ink itself, not a clamped
  * copy of its fill: the pair above is already contrast-tuned for text on every surface. */
 :root[data-theme-accent="docs"] {
   --highlight-color-tertiary: var(--dx-docs-blue);
+}
+
+/* The picked accent on the page's own selection highlight (row 389; `accent-color`, native controls, is set in
+ * the `:root[data-theme-accent]` rule above): the accent's mark (3:1 on every surface) at 30% over the text, with
+ * the text colour left alone, so the ink on the highlight stays the foreground. No accent leaves both at the
+ * browser's. Site chrome, not the theme: an app opts in itself. */
+:root[data-theme-accent] ::selection {
+  background: color-mix(in oklab, var(--dx-accent-mark) 30%, transparent);
 }
 
 html {
@@ -933,7 +944,7 @@ html:not([data-nav-sort="category"]) .dx-nav-sort .dx-nav-sort-option[data-nav-s
 html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-option="category"] {
   background-color: var(--dx-background);
   box-shadow: var(--dx-shadow-sm);
-  color: var(--dx-foreground);
+  color: var(--dx-active-ink);
 }
 
 .dx-nav-sort .dx-nav-sort-option[data-state]:focus-visible {
@@ -2545,7 +2556,7 @@ html[data-cv-settle] {
 }
 
 .dx-charts-tab[aria-current="page"] {
-  background-color: var(--dx-muted);
+  background-color: var(--dx-accent-tint);
   color: var(--dx-accent-foreground);
 }
 

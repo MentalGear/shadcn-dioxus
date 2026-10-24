@@ -322,23 +322,25 @@
 .dx-calendar-grid-cell[data-month="last"][data-selection-between="true"],
 .dx-calendar-grid-cell[data-month="next"][data-selection-between="true"] {
     border-radius: 0;
-    background-color: var(--dx-muted);
+    background-color: var(--dx-accent-tint);
     color: var(--dx-muted-foreground);
 }
 
 .dx-calendar-grid-cell[data-month="current"][data-selection-between="true"] {
     border-radius: 0;
-    background-color: var(--dx-muted);
+    background-color: var(--dx-accent-tint);
     color: var(--dx-foreground);
 }
 
-/* Nova `range_start` / `range_end`: `rounded-l/r-(--cell-radius) bg-muted` on the day, with the endpoint
+/* The range band (the in-range cells and the two end cells' backs) is the theme's `--dx-accent-tint`: Nova's
+   `bg-muted` (`--dx-accent`, equal to it in every base), hued by a picked accent (row 389).
+   Nova `range_start` / `range_end`: `rounded-l/r-(--cell-radius) bg-muted` on the day, with the endpoint
    itself `bg-primary rounded-(--cell-radius)` (the cell rule below). */
 td:has(.dx-calendar-grid-cell[data-selection-start="true"]) {
     padding: 0;
     margin-top: 1px;
     margin-bottom: 1px;
-    background-color: var(--dx-muted);
+    background-color: var(--dx-accent-tint);
     border-end-start-radius: var(--dx-calendar-cell-radius);
     border-start-start-radius: var(--dx-calendar-cell-radius);
 }
@@ -347,7 +349,7 @@ td:has(.dx-calendar-grid-cell[data-selection-end="true"]) {
     padding: 0;
     margin-top: 1px;
     margin-bottom: 1px;
-    background-color: var(--dx-muted);
+    background-color: var(--dx-accent-tint);
     border-end-end-radius: var(--dx-calendar-cell-radius);
     border-start-end-radius: var(--dx-calendar-cell-radius);
 }

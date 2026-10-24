@@ -315,7 +315,7 @@ dialog.dx-command-dialog[open][data-state="open"] {
  * popover by the same step shadcn ships), and its trailing shortcut (`text-muted-foreground
  * group-data-selected/command-item:text-foreground`) and icons take the foreground. */
 .dx-command-item[data-highlighted="true"] {
-  background: var(--dx-accent);
+  background: var(--dx-accent-tint);
   color: var(--dx-accent-foreground);
 }
 

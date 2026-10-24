@@ -37,6 +37,7 @@
     --dx-tabs-list-background: var(--dx-muted);
     --dx-tabs-list-gap: 0;
     --dx-tabs-bar-color: transparent;
+    --dx-tabs-active-color: var(--dx-active-ink);
     --dx-tabs-active-border-color: var(--dark, var(--dx-input));
     --dx-tabs-active-background: var(--light, var(--dx-background))
         var(--dark, color-mix(in oklab, var(--dx-input) 30%, transparent));
@@ -74,7 +75,8 @@
 .dx-tabs[data-variant="line"] {
     --dx-tabs-list-background: transparent;
     --dx-tabs-list-gap: var(--dx-space-1);
-    --dx-tabs-bar-color: var(--dx-foreground);
+    --dx-tabs-bar-color: var(--dx-active-mark);
+    --dx-tabs-active-color: var(--dx-foreground);
     --dx-tabs-active-border-color: transparent;
     --dx-tabs-active-background: transparent;
     --dx-tabs-active-shadow: none;
@@ -120,7 +122,7 @@
 
 /* The `line` variant (`TabsVariant::Ghost` is an alias of it) is shadcn's (`registry/bases/base/ui/tabs.tsx`:
    `cn-tabs-list-variant-line gap-1 bg-transparent`; the active trigger has no fill,
-   shadow or border and carries a 2px `foreground` bar, `after:bottom-[-5px] after:h-0.5`,
+   shadow or border and carries a 2px bar (`foreground`; the picked accent's mark under an accent, row 389), `after:bottom-[-5px] after:h-0.5`,
    that fades in; vertical: `after:inset-y-0 after:-right-1 after:w-0.5`, see the slot
    variables above). Everything that differs from `default` is a slot variable set on the
    root: a transparent list, no active fill, shadow or border, no panel frame, and the bar. */
@@ -179,7 +181,7 @@
     border-color: var(--dx-tabs-active-border-color);
     background-color: var(--dx-tabs-active-background);
     box-shadow: var(--dx-tabs-active-shadow);
-    color: var(--dx-foreground);
+    color: var(--dx-tabs-active-color);
 }
 
 .dx-tabs-trigger[data-disabled="true"] {
@@ -192,7 +194,7 @@
    :where() (same class of bug as calendar/style.css's day hover: clicking a
    tab leaves the pointer on it, and a hover tint with normal specificity
    would repaint the active tab). Hover and active resolve to the same
-   `foreground`; the guard keeps a retuned active colour from regressing. */
+   `foreground` with no accent picked; the guard keeps a retuned active colour from regressing. */
 @media (hover: hover) and (pointer: fine) {
     :where(.dx-tabs-trigger:hover:not([data-disabled="true"])) {
         color: var(--dx-foreground);
@@ -207,6 +209,11 @@
     box-shadow: var(--dx-ring-focus);
     color: var(--dx-foreground);
     outline: 1px solid var(--dx-ring-color);
+}
+
+/* A focused active tab keeps its active label colour (the accent ink under a picked accent, row 389). */
+.dx-tabs-trigger[data-state="active"]:focus-visible {
+    color: var(--dx-tabs-active-color);
 }
 
 /* `.cn-tabs-content`: `text-sm` and nothing else -- no padding (row 132). A

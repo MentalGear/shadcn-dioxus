@@ -177,7 +177,7 @@
 }
 
 .dx-combobox-option[data-highlighted="true"] {
-  background: var(--dx-accent);
+  background: var(--dx-accent-tint);
   color: var(--dx-accent-foreground);
 }
 
@@ -192,7 +192,7 @@
   position: absolute;
   width: var(--dx-menu-item-indicator-size);
   height: var(--dx-menu-item-indicator-size);
-  color: var(--dx-muted-foreground);
+  color: var(--dx-accent-ink, var(--dx-muted-foreground));
   inset-block: 0;
   inset-inline-end: var(--dx-menu-item-indicator-inset);
   margin-block: auto;

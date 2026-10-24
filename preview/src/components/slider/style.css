@@ -50,7 +50,7 @@
 
     /* Rounds the range's ends to the track's radius (the track itself does not clip, so the thumb is never cut). */
     border-radius: inherit;
-    background-color: var(--dx-primary);
+    background-color: var(--dx-primary-mark);
 }
 
 /* Vertical: the primitive sizes the range with inline `bottom: A%; top: B%`, so the block size
