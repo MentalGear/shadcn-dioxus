@@ -1,15 +1,8 @@
 # check-comment-refs baseline: dead `row N` / repo-path citations in code comments (shrink-only debt).
 # file<TAB>kind<TAB>ref. Fix the citation, then scripts/check-comment-refs.sh --update-baseline.
-playwright/carousel.spec.ts	path	dev-docs/research/shadcn-carousel-parity.md
 playwright/oracle/hydration-parity.spec.ts	path	.github/workflows/web.yml
 preview/assets/dx-utilities.css	path	docs/demo
-preview/src/components/carousel/variants/peek/mod.rs	path	dev-docs/research/shadcn-carousel-parity.md
-preview/src/components/carousel/variants/sizes/mod.rs	path	dev-docs/research/shadcn-carousel-parity.md
-preview/src/components/pie_chart/component.rs	path	docs/gallery
-preview/src/components/radar_chart/component.rs	path	docs/gallery
-preview/src/components/radial_chart/component.rs	path	docs/gallery
 primitives/src/activity.rs	path	dev-docs/research/scroll-profile-2026-10-10.md
-primitives/src/carousel.rs	path	dev-docs/research/shadcn-carousel-parity.md
 scripts/check-direction-keys.sh	path	playwright/rtl-toggle.spec.ts
 scripts/deploy-preview.sh	path	preview/gallery
 scripts/run-gates.sh	path	primitives/web

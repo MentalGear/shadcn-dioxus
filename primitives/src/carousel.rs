@@ -6753,7 +6753,7 @@ mod ssr_tests {
     }
 
     #[test]
-    fn caller_style_still_overrides_the_gap_prop() {
+    fn caller_style_overrides_the_gap_prop() {
         // The caller's own inline style comes later in the same attribute,
         // so a caller-set `--dx-carousel-gap` wins over the prop -- and it
         // is one merged `style` attribute, never two.
@@ -6871,7 +6871,7 @@ mod ssr_tests {
     }
 
     #[test]
-    fn caller_style_still_overrides_the_nav_disabled_opacity_prop() {
+    fn caller_style_overrides_the_nav_disabled_opacity_prop() {
         let html = render_props(
             NavOpacityCarousel,
             NavOpacityCarouselProps {

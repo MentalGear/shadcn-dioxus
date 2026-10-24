@@ -541,7 +541,7 @@ for (const key of ["Enter", "Space"] as const) {
 }
 
 test.describe("Rule 7c — a real pointer click on the backdrop dismisses", () => {
-  test("opening the dialog by keyboard, a real mouse click far outside it still dismisses", async ({ page }) => {
+  test("opening the dialog by keyboard, a real mouse click far outside it dismisses", async ({ page }) => {
     await gotoDialog(page);
     const trigger = demoRole(page, "button");
     await trigger.focus();

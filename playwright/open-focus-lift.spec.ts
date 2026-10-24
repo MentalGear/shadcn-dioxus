@@ -290,7 +290,7 @@ test.describe("modality writer", () => {
     expect(await modality(page)).toBe("mouse");
   });
 
-  test("a field focused by a mouse open still matches :focus-visible (no focusVisible:false in the policy)", async ({ page }) => {
+  test("a field focused by a mouse open matches :focus-visible (no focusVisible:false in the policy)", async ({ page }) => {
     await gotoHydrated(page, url("dialog/"), GOTO);
     await trig(page, "Open Dialog").click();
     await ready(page, "dialog.dx-dialog[open]");

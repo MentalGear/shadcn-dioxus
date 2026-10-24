@@ -1,6 +1,6 @@
 //! Radar chart -- part of the shared `chart` package (`ChartContainer`,
 //! `Chart`, `ChartTooltip`, `ChartLegend`; `RadarOptions`/`RadarGrid`
-//! configure the `Radar` family). This folder is a docs/gallery page for
+//! configure the `Radar` family). This folder is a docs and gallery page for
 //! that family, not a separate installable package -- installing `chart`
 //! (`componentDependencies: ["chart"]`, this folder's own `component.json`)
 //! already gives you everything below.

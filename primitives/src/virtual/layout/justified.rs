@@ -725,7 +725,7 @@ mod tests {
         }
 
         #[test]
-        fn a_trailing_single_tile_row_created_by_backoff_still_clears_the_floor() {
+        fn a_trailing_single_tile_row_created_by_backoff_clears_the_floor() {
             // Three items just barely reach the threshold together; backing the first row off to
             // two tiles leaves one leftover item as its own trailing (genuinely last) row, which
             // must not be re-capped at the target height (105px against a 140px floor).
@@ -1041,7 +1041,7 @@ mod tests {
     // --- Right-to-left ---------------------------------------------------------------------
 
     #[test]
-    fn a_mirrored_row_still_fills_edge_to_edge_in_reverse_order() {
+    fn a_mirrored_row_fills_edge_to_edge_in_reverse_order() {
         let r = run(&[1.0; 40], &OPTS);
         let row0: Vec<Tile> = r
             .row_tiles(0)

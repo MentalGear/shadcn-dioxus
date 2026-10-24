@@ -1524,7 +1524,7 @@ mod tests {
     /// `style` (that is `fold_style_attributes`'s job), and every non-`class`/`style` name is
     /// overwritten by the last occurrence.
     #[test]
-    fn duplicate_protections_still_hold() {
+    fn duplicate_protections_hold() {
         let shorthand = Attribute {
             name: "padding",
             namespace: Some("style"),
@@ -1551,7 +1551,7 @@ mod tests {
     /// `fold_style_attributes` is the other half (shorthand + plain into one string) and is
     /// untouched by `merge_attributes` folding `style`.
     #[test]
-    fn fold_style_attributes_still_collects_plain_and_shorthand() {
+    fn fold_style_attributes_collects_plain_and_shorthand() {
         let shorthand = Attribute {
             name: "padding",
             namespace: Some("style"),
@@ -1605,7 +1605,7 @@ mod tests {
     }
 
     #[test]
-    fn unsorted_input_still_works() {
+    fn unsorted_input_works() {
         // Even if inputs aren't sorted, the function should handle it
         let result = merge_attributes(vec![
             vec![attr("z", "1"), attr("a", "2")],

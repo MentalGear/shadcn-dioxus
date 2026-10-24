@@ -1708,7 +1708,7 @@ mod tests {
     }
 
     #[test]
-    fn stacked_area_still_renders_one_area_and_line_per_series() {
+    fn stacked_area_renders_one_area_and_line_per_series() {
         let html = render(ChartKind::Area, true, true);
         assert_eq!(html.matches(r#"data-slot="chart-area""#).count(), 2);
         assert_eq!(html.matches(r#"data-slot="chart-line""#).count(), 2);

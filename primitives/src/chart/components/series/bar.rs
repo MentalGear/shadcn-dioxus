@@ -830,7 +830,7 @@ mod tests {
     }
 
     #[test]
-    fn hidden_table_still_lists_every_datum_regardless_of_orientation() {
+    fn hidden_table_lists_every_datum_regardless_of_orientation() {
         // The hidden data table is `chart.rs`'s own job -- pinning here
         // only that this family's own rendering
         // doesn't somehow interfere with it (e.g. by consuming `ctx.data`

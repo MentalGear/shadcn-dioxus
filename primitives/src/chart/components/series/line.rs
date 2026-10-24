@@ -440,7 +440,7 @@ mod tests {
     }
 
     #[test]
-    fn a_gap_still_draws_no_dot_for_that_index() {
+    fn a_gap_draws_no_dot_for_that_index() {
         let data = vec![
             ChartDatum {
                 label: "January".to_string(),

@@ -12,8 +12,8 @@ use dioxus_icons::lucide::{ChevronLeft, ChevronRight};
 /// own `size` variant uses for responsive demo layout.
 ///
 /// A bare `flex-basis: 40%` override would not be `1/n` for any small
-/// whole `n` and would overflow the track (`dev-docs/research/shadcn-carousel-parity.md`'s
-/// "2½ slides" finding). The "partially visible neighbour" drag test in
+/// whole `n` and would overflow the track (backlog row 91's "2½ slides"
+/// finding). The "partially visible neighbour" drag test in
 /// `playwright/carousel.spec.ts` that needs a fractional peek targets the
 /// `peek` variant instead, which exists precisely for that opt-in case.
 #[component]
@@ -58,4 +58,3 @@ pub fn Demo() -> Element {
         }
     }
 }
-

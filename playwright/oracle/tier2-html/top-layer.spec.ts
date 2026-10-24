@@ -826,7 +826,7 @@ test.describe("Rule 6 — inline-axis flip: a right-edge trigger with side=\"rig
   });
 });
 
-test.describe("Rule 7 — normal mid-viewport placement is unchanged (no spurious flip)", () => {
+test.describe("Rule 7 — normal mid-viewport placement does not flip", () => {
   // Regression guard for the primitives/src/top_layer.rs
   // `use_anchor_position_fallback` interaction: that hook's JS fallback
   // accepts *either* the primary or the flipped placement as

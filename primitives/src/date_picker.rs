@@ -2796,7 +2796,7 @@ mod tests {
     }
 
     #[test]
-    fn key_effects_non_digit_character_still_blocks_default_but_does_not_edit() {
+    fn key_effects_non_digit_character_blocks_default_but_does_not_edit() {
         let (ctrl, meta, alt) = no_modifiers();
         let effects = key_effects(
             &Key::Character("x".to_string()),

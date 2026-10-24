@@ -1,6 +1,6 @@
 //! `Pie chart` -- part of the shared `chart` package (`ChartContainer`,
 //! `Chart`, `ChartTooltip`, `ChartLegend`; `PieOptions`/`PieLabels`
-//! configure `ChartKind::Pie`). This folder is a docs/gallery page for that
+//! configure `ChartKind::Pie`). This folder is a docs and gallery page for that
 //! one polar family, not a separate installable package -- installing
 //! `chart` (`componentDependencies: ["chart", "card"]`, this folder's own
 //! `component.json`) already gives you everything below.
