@@ -7,8 +7,8 @@ use dioxus_icons::lucide::{ChevronLeft, ChevronRight};
 /// of the *next* slide alongside the current one; `--dx-carousel-per-view`
 /// stays at its default (one whole slide). Not shadcn parity -- shadcn's
 /// own `base` docs have no separate peek example at all
-/// (`dev-docs/research/shadcn-carousel-parity.md`'s own finding: "Sizes
-/// *is* their multi-slide demo, and it always shows whole slides") -- this
+/// (backlog row 91's shadcn-parity research: "Sizes *is* their
+/// multi-slide demo, and it always shows whole slides") -- this
 /// demo exists so the feature is demonstrated somewhere, clearly labeled
 /// as an opt-in rather than the default (see docs.md's own "Sizes"
 /// section).

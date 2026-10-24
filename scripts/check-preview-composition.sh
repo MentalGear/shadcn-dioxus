@@ -2,7 +2,11 @@
 #
 # check-preview-composition.sh
 #
-# Enforces the preview app's composition rule (dev-docs/preview-composition.md):
+# Preview markup composes only themed wrappers from `crate::components::*`: a raw `dioxus_primitives::` component or
+# module import is allowed only inside the wrapper's own `preview/src/components/<name>/component.rs` and, elsewhere
+# in `preview/src`, for a small allowlist of non-markup items (hooks such as `use_toast`, plain value types and enums
+# such as `CheckboxState` or `DateRange`). Composing a raw primitive in a demo skips the theme wrapper's classes.
+# Rationale: dev-docs/preview-composition.md.
 #
 #   Preview markup composes ONLY themed wrappers from `crate::components::*`.
 #   A raw `dioxus_primitives::` import is legitimate in exactly two places:
@@ -10,7 +14,7 @@
 #     1. Inside the themed wrapper itself
 #        (`preview/src/components/<name>/component.rs`) -- that file *is*
 #        the layer responsible for pulling in the raw primitive and
-#        attaching the theme's `css_module` class. Importing the raw
+#        attaching the theme's `dx-` class. Importing the raw
 #        primitive there is the wrapper doing its job, not a violation.
 #
 #     2. Anywhere else in `preview/src`, for a small, explicit allowlist of
@@ -24,9 +28,9 @@
 #   or a module alias like `dioxus_primitives::select as primitive_select`
 #   that pulls in a whole family of such components -- must come from
 #   `crate::components::*` instead. Composing the raw primitive directly
-#   skips the theme wrapper's `css_module` class, which is exactly the bug
+#   skips the theme wrapper's `dx-` class, which is exactly the bug
 #   this script exists to catch (see dev-docs/preview-composition.md for the
-#   two real incidents that motivated it).
+#   real incidents).
 #
 # Usage: scripts/check-preview-composition.sh
 # Exit status: 0 if the tree is clean, 1 and a listing of every offending
@@ -45,9 +49,9 @@ fail=0
 # ---------------------------------------------------------------------------
 #
 # By default every `preview/src/components/<name>/component.rs` is exempt:
-# for the ~45 components that follow the normal pattern (Switch, Checkbox,
+# for the ordinary components that follow the normal pattern (Switch, Checkbox,
 # Select, ...), that file's entire job is importing
-# `dioxus_primitives::<name>::*` and attaching the theme's `css_module`
+# `dioxus_primitives::<name>::*` and attaching the theme's `dx-`
 # class -- see e.g. preview/src/components/switch/component.rs.
 #
 # Two named files break that pattern and are handled explicitly instead of
@@ -57,8 +61,8 @@ fail=0
 #     there is no `dioxus_primitives::form` primitive. It is a fixture page
 #     (dev-docs/conformance-harness.md tier 2) whose job is to compose *other*
 #     components' THEMED wrappers, per its own header comment. This is the
-#     file the reported bug (collapsed library Switch/Select in the form
-#     fixture) lives in, so it is explicitly re-included in the scan below
+#     file the bug (collapsed library Switch/Select in the form
+#     fixture) shows up in, so it is explicitly re-included in the scan below
 #     rather than exempted by the general glob.
 #
 #   - preview/src/components/top_layer/component.rs is also not a themed
@@ -70,11 +74,10 @@ fail=0
 #     exercise native top-layer/promotion behaviour against native
 #     `<dialog>`/`popover` references -- see its own header comment and
 #     playwright/oracle/tier2-html/{top-layer,native-dialog}.spec.ts. That
-#     is a deliberate, pre-existing, already-independently-tested choice
-#     about interaction/positioning behaviour, not a theming bug, and
-#     nobody has asked for it to change. Flagging it here would be exactly
+#     is a deliberate, independently tested choice about
+#     interaction/positioning behaviour, not a theming bug. Flagging it here would be exactly
 #     the kind of false positive that gets a lint deleted rather than
-#     fixed, so it stays exempt like the ~45 ordinary wrappers. If it is
+#     fixed, so it stays exempt like the ordinary wrappers. If it is
 #     ever migrated to compose themed wrappers, this exemption should be
 #     removed in the same change.
 is_exempt_wrapper_file() {
@@ -100,10 +103,10 @@ is_exempt_wrapper_file() {
 
 # Generated/docs-code files: preview/build.rs renders component markdown
 # and highlighted code snippets, but writes its output under Cargo's
-# `OUT_DIR` (outside the source tree), not into `preview/src` -- confirmed
-# by reading preview/build.rs. There is no generated `.rs` under
-# `preview/src` today, so no such exclusion is needed; this comment
-# documents that the case was checked, not skipped.
+# `OUT_DIR` (outside the source tree), not into `preview/src`.
+# There is no generated `.rs` under
+# `preview/src`, so no such exclusion is needed; this comment
+# records that the case is covered, not skipped.
 
 mapfile -t all_files < <(find "$preview_src" -name '*.rs' | sort)
 
@@ -121,7 +124,7 @@ done
 # Keys are "module::Item" (the path segment(s) between `dioxus_primitives::`
 # and the final imported name), or a bare item name for the handful of
 # items re-exported straight off the crate root (e.g. `ContentSide`). Every
-# entry below was verified by inspection against every
+# entry below covers a
 # `dioxus_primitives::` reference left in a non-exempt file, and is
 # commented with why it's a value/hook rather than markup, and where it's
 # used.
@@ -215,7 +218,7 @@ for f in "${target_files[@]}"; do
     while IFS=: read -r line_no line; do
         handled=0
 
-        # Ignore anything after a `//` -- this repo's fixtures document past
+        # Ignore anything after a `//` -- this repo's fixtures document
         # incidents in prose that itself mentions raw `dioxus_primitives::`
         # paths (see the header comment in preview/src/components/form/
         # component.rs), and those mentions are not imports. Matches this

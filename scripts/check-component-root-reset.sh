@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
 #
-# check-component-root-reset.sh  (backlog row 328; replaces check-declared-typography.sh and its baseline)
+# check-component-root-reset.sh  (backlog row 328)
 #
-# An in-flow component sits inside a card footer, a muted or centred block, a `white-space: nowrap` toolbar or a
-# prose column, and every INHERITED property still flows from that host into the component's text (hostile-host
-# probe, row 328: a `line-height: 3` host re-spaced 63 leaf boxes across 34 components, `font-weight: 800` re-weighted
-# 48, a 23px host resized 15). The first answer was a per-root gate (each of 64 stylesheets declares its root's size and
-# line height, shrink-only baseline of 83 rows). This is the same fix BY CONSTRUCTION, once, the in-flow twin of
-# check-popup-root-reset.sh:
+# An in-flow component must not inherit its host's typography, once and by construction: every namesake component root
+# (`dx-<dir>`, read from `component.rs`; the four `<dialog>`-panel roots are left to the popup-root rule) carries
+# `"data-dx-root": ""`, or a reasoned `typography-inherit(dx-<dir>): <reason>` comment for a wrapper around the
+# caller's content, and the theme's one zero-specificity `:where([data-dx-root]:not([data-dx-root] *, button, input,
+# select, textarea))` rule resets the inherited text properties (line-height, weight, style, spacing, transform,
+# alignment, white-space, ...) to the theme base on the outermost root. Font family, colour, direction, cursor,
+# pointer-events, visibility, user-select, form controls and `font-size` keep inheriting. The gate checks the rule is
+# single, zero-specificity and complete against mdn-data's inherited properties; its self-test mutations must turn
+# red.
 #
 #   * every component's namesake root (`dx-<dir>` in preview/src/components/<dir>/component.rs) carries the
 #     valueless attribute `data-dx-root`, and

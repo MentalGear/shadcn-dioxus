@@ -1,6 +1,6 @@
 //! Defines the [`DialogRoot`] component and its sub-components.
 //!
-//! ## Native `<dialog>` modality (Phase 4.2, docs/plan.md)
+//! ## Native `<dialog>` modality (Phase 4.2, dev-docs/plan.md)
 //!
 //! [`DialogContent`] dispatches, per render, to one of two real
 //! child-component boundaries depending on `is_modal` -- the same pattern
@@ -14,29 +14,30 @@
 //! unconditionally while any instance using it is mounted, which would fight
 //! the native `<dialog>`'s own `cancel`/`close` handling if a gated-callback
 //! version of `use_global_escape_listener` were merely installed and told to
-//! do nothing (docs/backlog.md row 3's warning, given when Phase 4.4 landed
-//! the same lesson for Popover).
+//! do nothing (dev-docs/backlog.md row 3's warning; Popover follows the same
+//! rule).
 //!
-//! `DialogContentNonModal` (`is_modal: false`) is unchanged from before this
-//! slice on both targets, per docs/plan.md Phase 4.2's scope.
+//! `DialogContentNonModal` (`is_modal: false`) is the plain non-native arm on
+//! both targets (dev-docs/plan.md Phase 4.2 scopes native `<dialog>` to the modal path).
 //! `DialogContentModal` (`is_modal: true`) is cfg-split
-//! (`docs/phase4-spike-findings.md` Construction B):
-//! - `#[cfg(not(feature = "web"))]`: byte-for-byte the pre-existing
+//! (`dev-docs/archive/research/phase4-spike-findings.md` Construction B):
+//! - `#[cfg(not(feature = "web"))]`: the plain
 //!   `div` + vendored `FocusTrap` path.
 //! - `#[cfg(feature = "web")]`: a real `<dialog>` element, `open`
-//!   never bound as an attribute (Construction B's central finding: binding
+//!   never bound as an attribute (binding
 //!   it declaratively in the same build as a guarded `showModal()` call
-//!   doesn't crash, it silently skips the modal state entirely), driven by
-//!   `crate::use_dialog_open_driver`/`crate::use_dialog_close_sync` (the
-//!   fix for the historical stranded-signal defect,
-//!   `docs/recommended-implementations.md` Caveat 1) plus
-//!   `crate::use_dialog_backdrop_dismiss` (now shared with `popover.rs`'s
-//!   modal web arm too) for the "click far outside the dialog" behaviour
+//!   doesn't crash, it silently skips the modal state entirely: Construction
+//!   B of the spike findings above), driven by
+//!   `crate::use_dialog_open_driver`/`crate::use_dialog_close_sync` (which
+//!   prevents the stranded-signal defect,
+//!   `dev-docs/reference/platform-rationale.md` Caveat 1) plus
+//!   `crate::use_dialog_backdrop_dismiss` (shared with `popover.rs`'s
+//!   modal web arm) for the "click far outside the dialog" behaviour
 //!   `dialog.spec.ts` already covers -- `use_outside_dismiss`
 //!   itself is not reusable here, because a `showModal()` backdrop click's
 //!   `event.target` *is* the `<dialog>` element (it contains itself), so
 //!   `use_outside_dismiss`'s `!root.contains(e.target)` check can never fire
-//!   for it (`docs/phase4-spike-findings.md` experiment 6's
+//!   for it (`dev-docs/archive/research/phase4-spike-findings.md` experiment 6's
 //!   `elementFromPoint` finding). No `use_global_escape_listener` and no
 //!   focus-trap eval on this arm: the browser's own `showModal()` supplies
 //!   the focus trap, focus restore, inertness, and top layer, and its
@@ -58,7 +59,7 @@
 //! Known limit of reading `:focus-visible`: a mouse click on an opener that ALREADY holds
 //! keyboard focus (a keyboard open, Escape, then a click on the same trigger with no other
 //! pointer interaction between) is still `:focus-visible`, so that open keeps the browser
-//! default (the first control), which is today's behaviour.
+//! default (the first control).
 //!
 //! ### Closing keeps the dialog modal until its exit has played
 //!
@@ -69,8 +70,8 @@
 //! `<dialog>` therefore carries its own `data-state` (`"open"`/`"closed"`) --
 //! `[open]` stays set for the whole exit, so a stylesheet keys the exit on
 //! `[data-state="closed"]` -- and stays a real modal in the top layer, with the
-//! viewport as its containing block, until the end. See that hook's doc for the
-//! regression this closes (a closing Sheet/Drawer/Dialog changing size and
+//! viewport as its containing block, until the end. See that hook's doc for what
+//! this prevents (a closing Sheet/Drawer/Dialog changing size and
 //! position, clipped to a `content-visibility` ancestor, the moment it left the
 //! top layer).
 
@@ -152,7 +153,7 @@ pub struct DialogRootProps {
     pub overlay: ReadSignal<bool>,
 
     /// Base UI's `disablePointerDismissal`: when `true`, a press outside the panel and focus
-    /// moving outside it no longer close the dialog (a modal's backdrop click included), so the
+    /// moving outside it do not close the dialog (a modal's backdrop click included), so the
     /// first press on the page of a non-modal dialog only acts on the page. Escape and the
     /// dialog's own close controls still close it. Defaults to `false`.
     #[props(default = ReadSignal::new(Signal::new(false)))]
@@ -257,7 +258,7 @@ pub fn DialogRoot(props: DialogRootProps) -> Element {
     let render = use_animated_open(id, open);
 
     // Owned by this component -- open state must win over a caller's own
-    // attributes (`docs/backlog.md` row 93's duplicate-attribute hazard).
+    // attributes (`dev-docs/backlog.md` row 93's duplicate-attribute hazard).
     let attributes = merge_attributes(vec![
         props.attributes,
         attributes!(div {
@@ -371,7 +372,7 @@ pub fn DialogContent(props: DialogContentProps) -> Element {
 
     // Lock page scroll while the dialog is open and modal -- native
     // `<dialog>`/focus-trap semantics don't cover this. See
-    // docs/plan.md Phase 3.2.
+    // dev-docs/plan.md Phase 3.2.
     let scroll_lock_active = use_memo(move || is_modal() && open());
     crate::scroll_lock::use_scroll_lock(scroll_lock_active);
 
@@ -415,8 +416,8 @@ pub fn DialogContent(props: DialogContentProps) -> Element {
     }
 }
 
-/// `is_modal: false` arm -- unchanged from before Phase 4.2 on both targets
-/// (docs/plan.md Phase 4.2 scopes native `<dialog>` to the modal path only).
+/// `is_modal: false` arm -- the plain non-native arm on both targets
+/// (dev-docs/plan.md Phase 4.2 scopes native `<dialog>` to the modal path only).
 #[component]
 fn DialogContentNonModal(
     id: Memo<String>,
@@ -440,7 +441,7 @@ fn DialogContentNonModal(
     });
 
     // Owned by this component -- dialog role/aria wiring must win over a
-    // caller's own attributes (`docs/backlog.md` row 93's
+    // caller's own attributes (`dev-docs/backlog.md` row 93's
     // duplicate-attribute hazard).
     let attributes = merge_attributes(vec![
         attributes,
@@ -464,8 +465,8 @@ fn DialogContentNonModal(
     }
 }
 
-/// `is_modal: true` arm, native (Blitz) target -- byte-for-byte the
-/// pre-Phase-4.2 path: a plain `div` with the vendored `FocusTrap`.
+/// `is_modal: true` arm, native (Blitz) target: a plain `div` with the
+/// vendored `FocusTrap` (no native `<dialog>`).
 #[cfg(not(feature = "web"))]
 #[component]
 fn DialogContentModal(
@@ -509,7 +510,7 @@ fn DialogContentModal(
     });
 
     // Owned by this component -- see `DialogContentNonModal`'s identical
-    // construction above (`docs/backlog.md` row 93).
+    // construction above (`dev-docs/backlog.md` row 93).
     let attributes = merge_attributes(vec![
         attributes,
         attributes!(div {
@@ -532,7 +533,7 @@ fn DialogContentModal(
     }
 }
 
-/// `is_modal: true` arm, web target (Phase 4.2, docs/plan.md) -- a real
+/// `is_modal: true` arm, web target (Phase 4.2, dev-docs/plan.md) -- a real
 /// `<dialog>` opened with `showModal()`. `open` is never bound as an
 /// attribute here (see this module's doc comment); the browser supplies the
 /// focus trap, focus restore, background inertness, and top-layer
@@ -552,8 +553,8 @@ fn DialogContentModal(
     let open = ctx.open;
     let set_open = ctx.set_open;
 
-    // Browser -> signal (the fix for the historical stranded-signal defect,
-    // docs/recommended-implementations.md Caveat 1) and signal -> browser
+    // Browser -> signal (which prevents the stranded-signal defect,
+    // dev-docs/reference/platform-rationale.md Caveat 1) and signal -> browser
     // (guarded against `InvalidStateError`), both from `lib.rs`.
     crate::use_dialog_close_sync(id, set_open);
     crate::use_dialog_open_driver(id, open);
@@ -568,7 +569,7 @@ fn DialogContentModal(
     });
 
     // Owned by this component -- see `DialogContentNonModal`'s identical
-    // construction above (`docs/backlog.md` row 93).
+    // construction above (`dev-docs/backlog.md` row 93).
     let attributes = merge_attributes(vec![
         attributes,
         attributes!(dialog {
@@ -578,7 +579,7 @@ fn DialogContentModal(
             aria_describedby: describedby,
             // The dialog's own state, not just the root wrapper's: closing keeps the
             // `<dialog>` open (and modal) while it animates out
-            // (`crate::use_dialog_open_driver`), so `[open]` no longer says "closing" and a
+            // (`crate::use_dialog_open_driver`), so `[open]` does not say "closing" and a
             // stylesheet keys the exit on `[data-state="closed"]` instead.
             "data-state": if open() { "open" } else { "closed" },
             "data-dx-overlay": overlay_off(ctx.overlay),

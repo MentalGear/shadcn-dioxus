@@ -7,11 +7,10 @@
 //!
 //! # Why this seam exists
 //!
-//! Per this session's 2026-09-19 user decision (recorded in this repo's
-//! own chart-development ledger): this engine is intended, once the
-//! `Chart` component has landed here and proven itself (oracle green,
-//! deployed), to be offered upstream to the `dioxus-community/
-//! dioxus-charts` project. That only works if this folder is *actually*
+//! This engine is meant to be offered upstream to the `dioxus-community/
+//! dioxus-charts` project (see `dev-docs/archive/research/chart-2026-09-19.md`),
+//! once the `Chart` component has proven itself (oracle green, deployed).
+//! That only works if this folder is *actually*
 //! liftable into another crate unchanged -- not merely "conceptually
 //! separable" while quietly importing `crate::direction` or a `dioxus`
 //! `Signal` somewhere. Concretely, that means every item in this module
@@ -52,14 +51,12 @@
 //! - [`table`] -- [`table::table_rows`], the hidden data table's row
 //!   model.
 //! - [`data`] -- the plain data types ([`data::ChartDatum`],
-//!   [`data::ChartKind`]). `ChartConfig`/`ChartSeries` are NOT here --
-//!   see `super::config`'s own module doc for why the series model
-//!   specifically had to move out of this dioxus-free tree.
+//!   [`data::ChartKind`]). `ChartConfig`/`ChartSeries` are NOT here: they
+//!   hold a `Callback`, so they live in `super::config` (see its module doc).
 //! - [`placement`] -- [`placement::place_tooltip`], the tooltip's
 //!   offset/flip/clamp rule (shadcn/Recharts' `getTooltipTranslate`).
-//! - [`polar`]/[`radar`] -- reserved, currently-empty modules for the
-//!   Pie/RadialBar and Radar families' own math (owned by later stage-2
-//!   lanes `s2-polar`/`s2-radar`; see each module's own doc comment).
+//! - [`polar`]/[`radar`] -- the Pie/RadialBar and Radar families' own math
+//!   (see each module's own doc comment).
 //!
 //! Every public item here is also re-exported flatly from
 //! [`crate::chart`] (e.g. `dioxus_primitives::chart::LinearScale`), so this

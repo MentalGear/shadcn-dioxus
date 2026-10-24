@@ -9,7 +9,7 @@
 # stylesheets-present.spec.ts, so with CI frozen this is the cheap static
 # half of that oracle.
 #
-# THE DEFECT (dev-docs/backlog.md, stylesheet-dedupe finding, 2026-10-04):
+# THE DEFECT (dev-docs/research/round3-2026-10-05.md section 2):
 # dioxus-document 0.7.9's `Link` records its href in a de-duplication set
 # while the component renders (`elements/link.rs:123-137`) but the web
 # document appends the `<link>` from `queue_effect` on that component's own
@@ -18,8 +18,8 @@
 # 193`). A subtree torn down in the turn it first rendered -- the legacy
 # `/component/?name=X` shell renders `Navbar`, then redirects -- therefore
 # never inserts its links, yet every later component on the page is skipped
-# as "already present". It lost `language-select-*.css`, the theme picker's
-# `Popover`/`Button` CSS, and (row 46) `main.css` after a redirect.
+# as "already present" (`language-select-*.css`, the theme picker's
+# `Popover`/`Button` CSS and, row 46, `main.css` after a redirect are lost).
 #
 # What this enforces, so the fix cannot be un-done by an innocent edit:
 #   1. preview/src/eager_head.rs exists, implements `Document` for a wrapper,

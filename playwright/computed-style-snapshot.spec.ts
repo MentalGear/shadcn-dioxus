@@ -11,7 +11,7 @@ import type { StateCoverage } from "./computed-style-states";
  * snapshot of every themed component page (and a few chrome routes), in BOTH
  * colour schemes.
  *
- * Purpose (docs/backlog.md row 31b, row 111): a literal/ramp -> token
+ * Purpose (dev-docs/backlog.md row 31b, row 111): a literal/ramp -> token
  * migration is meant to be value-PRESERVING. The honest check is not "does it
  * still look plausible" but "did any computed value change at all". Capture
  * before, capture after, diff: an empty diff is the proof.
@@ -99,9 +99,9 @@ import type { StateCoverage } from "./computed-style-states";
  *    Hover-before-click: the pointer is put on a trigger and given `HOVER_INTENT_WAIT_MS` (see
  *    `computed-style-states.ts`) BEFORE the click strategy; a trigger that opens on hover (navbar, navigation
  *    menu, hover cards: hover-intent) is recorded `via: "hover"` and not clicked, because the click would toggle
- *    the hover-opened panel shut and the snapshot would see no open state. Others click exactly as before.
+ *    the hover-opened panel shut and the snapshot would see no open state. Others just click.
  *
- * Determinism (A/A; every item was found by an A/A failure): every read is preceded by `settle()` (finite
+ * Determinism (A/A: two runs of the same build must agree, and every item here guards an A/A disagreement): every read is preceded by `settle()` (finite
  * animations/transitions finished, infinite ones parked on frame 0) and by a DOM-quiescence wait; the pointer is
  * parked on a fixed inert spot between targets and right after a click (an overlay opens UNDER the pointer, and
  * which node is `:hover` is then a hit-test race); the page is only captured once the legacy-route "Loading
@@ -188,7 +188,7 @@ const COLOR_PROPERTIES = [
 
 /** Geometry / motion properties (the original row 31b set). */
 const LAYOUT_PROPERTIES = [
-  // Added with format 3 (row 135): what an open overlay / hovered control changes is often not a colour at
+  // Format 3 (row 135): what an open overlay / hovered control changes is often not a colour at
   // all -- it is `display`, where it sits (`position`/`top`/`left`/`transform`/`translate`/`scale`) or whether
   // it takes the pointer. Without them a delta against a closed baseline could not even see content appear.
   // Row 246: `user-select` (a control's text must not be selectable by a drag, user-select-inventory-2026-10-17).
@@ -230,8 +230,8 @@ function settleAndCapture(args: CaptureArgs) {
     const settle = () => {
       // Make animated/transitioning values deterministic: finish transitions
       // and finite animations at their end state; park infinite animations on
-      // their first frame (e.g. dx-progress-indicator re-sampled 34/54/32/54px
-      // on one unchanged build before this).
+      // their first frame (e.g. dx-progress-indicator re-samples to a different
+      // width on every capture of one unchanged build).
       for (const a of document.getAnimations()) {
         try {
           const isTransition = w.CSSTransition && a instanceof w.CSSTransition;
@@ -250,8 +250,8 @@ function settleAndCapture(args: CaptureArgs) {
 
     const root = document.documentElement;
     // Lay every `content-visibility: auto` card out for real (`--dx-cv`, main.css): with `auto` a card near the
-    // viewport is rendered (and its height remembered) at a moment that depends on machine load, and the
-    // document height differed by 12 px between two captures of one build taken under load.
+    // viewport is rendered (and its height remembered) at a moment that depends on machine load, so the
+    // document height would differ between two captures of one build.
     root.style.setProperty("--dx-cv", "visible");
     const themeAttr = root.getAttribute("data-theme");
     const mediaDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -309,10 +309,9 @@ function settleAndCapture(args: CaptureArgs) {
     if (!args.doFocus) return result;
 
     // The focus pass YIELDS to the event loop between elements. Run as one
-    // synchronous loop it hung the renderer at 100% CPU on `calendar` (focus
-    // handlers of ~200 grid cells in a row; reproduced with a plain
-    // focus()/blur() loop, no snapshot code involved, and never when each
-    // focus() is its own task). The base/pseudo sections above are already
+    // synchronous loop it hangs the renderer at 100% CPU on `calendar` (focus
+    // handlers of ~200 grid cells in a row; a plain focus()/blur() loop does
+    // the same, and each focus() as its own task does not). The base/pseudo sections above are already
     // read, so yielding here cannot change them.
     const focusable = 'a[href], button, input, textarea, select, summary, [tabindex], [contenteditable="true"]';
     const targets: [Element, number][] = [];
@@ -458,13 +457,10 @@ test.describe("computed style snapshot", () => {
       },
     };
 
-    // Two demos advance their own state from a `setInterval(() => dioxus.send(...))`
-    // ticker (progress: `Math.random() * 30` every 1s; the home music player:
-    // elapsed wall-clock every 100ms), so `.dx-progress-indicator` (0/18/26px) and
-    // the player's `.dx-slider-range` (116.891 vs 116.922px) differed between two
-    // captures of an unchanged build. Their value depends on how many ticks ran
-    // before the read, which no wait can make equal. Freeze every such ticker (the
-    // demos stay at their initial value); no other preview code uses setInterval.
+    // Timers must not advance a demo between two captures of an unchanged build, or a value that depends on how
+    // many ticks ran (the progress indicator, the home music player's `.dx-slider-range`) would differ: gated
+    // timers are stopped by reporting the document hidden (below), and a JS `setInterval` whose handler calls
+    // `dioxus.send(` is replaced by a no-op.
     const freezeTickers = () => {
       // Gated motion (use_motion / use_interval_while / use_timeout_while, primitives/src/activity.rs) runs only
       // while the document is visible and the element on screen -- the home page's music player ticks once a
@@ -524,7 +520,7 @@ test.describe("computed style snapshot", () => {
           await ctx.addInitScript(freezeTickers);
           // Web fonts (Google Fonts, the SSG's font preload) are fetched from the network, and whether that
           // beats `font-display: optional`'s block period decides which font the whole page view uses: two
-          // loads of one page differed in every text width (navbar brand 132.3 vs 136.7 px). Fail them at once,
+          // loads of one page can differ in every text width. Fail them at once,
           // always: the snapshot is of the fallback fonts, the same on every machine and every run.
           await ctx.route(/^https:\/\/fonts\.(googleapis|gstatic)\.com\//, (route) => route.abort());
           const page = await ctx.newPage();
@@ -582,8 +578,8 @@ test.describe("computed style snapshot", () => {
     // back reliably: `cls` is a space-separated class list inside a space-separated line).
     const diffs: Record<string, unknown>[] = [];
 
-    // A property set that differs (a harness upgrade between the two captures: S0 was taken by format 3, a later
-    // capture by format 4) is not a style difference: compare the properties both files have and say so. The
+    // A property set that differs (a harness upgrade between the two captures: one taken by an older format, the
+    // other by a newer one) is not a style difference: compare the properties both files have and say so. The
     // `compare` still fails on any value difference, and on any section/record one side lacks.
     const pa0: string[] = a.meta?.properties ?? [];
     const pb0: string[] = b.meta?.properties ?? [];

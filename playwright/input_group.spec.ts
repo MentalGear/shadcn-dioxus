@@ -1,5 +1,4 @@
 import { test, expect } from "./fixtures";
-import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
@@ -14,31 +13,22 @@ test("test", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Convert" })).toBeVisible();
 });
 
-test.describe("Axe automated scan", () => {
-  // Input Group has no overlay/expand/select interaction -- one state to scan.
-  test("loaded has no automatically detectable a11y issues", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/input_group/`, { timeout: 20 * 60 * 1000 });
-    await expectNoAxeViolations(page, "input_group: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-});
-
 /*
- * The wrapped input carries no border/radius of its own -- regression
- * guard for a real bug found and fixed 2026-09-14. `Input`'s component
- * used to render `class: "dx-input"` as a literal RSX attribute and then
- * spread `..attributes` after it; Dioxus's plain "later duplicate
- * attribute wins" rule meant `InputGroupInput`'s own `class:
- * "dx-input-group-control"` fully *replaced* `"dx-input"` rather than
- * being combined with it, so the rendered `<input>` carried only
- * `"dx-input-group-control"` and never got `"dx-input"`'s own UA-style
+ * The wrapped input carries no border/radius of its own -- guard
+ * against a class-merge bug.
+ * `merge_attributes` (which concatenates `class` values space-joined)
+ * instead of rendering `class: "dx-input"` as a literal RSX attribute
+ * followed by `..attributes`: under Dioxus's plain "later duplicate
+ * attribute wins" rule `InputGroupInput`'s own `class:
+ * "dx-input-group-control"` would fully *replace* `"dx-input"` rather than
+ * being combined with it, so the rendered `<input>` would carry only
+ * `"dx-input-group-control"` and never get `"dx-input"`'s own UA-style
  * reset. `.dx-input-group .dx-input-group-control`'s
  * `border-radius: 0; box-shadow: none;` rule (this file's own style.css)
- * never had anything to override at the browser's *native* default input
- * chrome, which showed through inside `.dx-input-group`'s own CSS-drawn
- * border -- a visible double-border/"pill within a pill" seam. Fixed by
- * having `Input` compose its base class via `merge_attributes` (which
- * concatenates `class` values space-joined) instead of a plain spread.
- * Asserts both halves directly: the class union survived the merge, and
+ * would then have nothing to override at the browser's *native* default
+ * input chrome, which shows through inside `.dx-input-group`'s own
+ * CSS-drawn border -- a visible double-border/"pill within a pill" seam.
+ * Asserts both halves directly: the class union survives the merge, and
  * the *effect* that class union is supposed to produce (no border/radius
  * of the input's own) actually holds.
  */

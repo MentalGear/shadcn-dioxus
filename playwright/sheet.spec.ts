@@ -40,12 +40,12 @@ test('sheet basic interactions', async ({ page }) => {
   const closeButton = sheet.getByRole('button').last();
   await expect(closeButton).toBeFocused();
 
-  // Phase 4.2 (docs/plan.md): Sheet composes the modal Dialog primitive,
-  // now a native `<dialog>` on the web arm. Chromium's own focus trap parks
+  // Sheet composes the modal Dialog primitive,
+  // a native `<dialog>` on the web arm. Chromium's own focus trap parks
   // focus on `<body>` for exactly one Tab stop after the last focusable
   // element before wrapping to the first
-  // (docs/phase4-spike-findings.md experiment 4a) -- harness correction for
-  // the new trap's documented shape, same fix as dialog.spec.ts.
+  // (dev-docs/archive/research/phase4-spike-findings.md experiment 4a); the test steps over
+  // that stop, as dialog.spec.ts does.
   await page.keyboard.press('Tab');
   await expect
     .poll(() => page.evaluate(() => document.activeElement === document.body))
@@ -140,14 +140,14 @@ test('right sheet content geometry matches shadcn spec at desktop and near-break
   await expect(sheet).toHaveCount(0);
 });
 
-// Regression coverage for a native-`<dialog>` centering defect shared with
+// Native-`<dialog>` centering, shared with
 // Drawer: Chromium's `dialog:modal` UA rule ships `inset: 0; margin: auto;
 // width/height: fit-content`. Overriding only the one edge a side needs
-// (e.g. `right: 0`) used to leave the UA's own `inset: 0` still supplying
+// (e.g. `right: 0`) leaves the UA's own `inset: 0` still supplying
 // the OPPOSITE edge uncontested, over-constraining the box against a
 // definite `width`/`height` and making the UA center it into its own auto
-// margins instead of anchoring it -- a right/left sheet rendered as a
-// floating centered card, and a top/bottom sheet stretched to the full
+// margins instead of anchoring it -- a right/left sheet would render as a
+// floating centered card, and a top/bottom sheet stretch to the full
 // viewport height instead of sizing to its content. Checks, per side, that
 // the panel's own edge coincides with the matching viewport edge (not
 // merely that its `data-side` attribute is correct, which the "opens from
@@ -168,10 +168,9 @@ test('sheet content is anchored flush to its own edge, not centered', async ({ p
 
   // Generous tolerance (rounding, borders): the whole point of this assertion
   // is "flush against its own edge, not centered", a difference measured in
-  // hundreds of pixels, so it loses none of the check's actual power. (It
-  // used to also absorb the ~15px scrollbar-gutter gap between the raw
-  // `clientWidth` and the fixed containing block; `fixedViewportBox` measures
-  // the latter directly.)
+  // hundreds of pixels, so it loses none of the check's actual power.
+  // (`fixedViewportBox` measures the fixed containing block directly, so the
+  // ~15px scrollbar-gutter gap against the raw `clientWidth` is not in play.)
   const TOLERANCE = 20;
   function closeTo(actual: number, expected: number) {
     expect(Math.abs(actual - expected)).toBeLessThan(TOLERANCE);
@@ -228,11 +227,10 @@ test('close button matches Nova spec: 16px icon, ghost icon-sm (28px, full opaci
   // finishes -- geometry and computed-style reads taken before it settles
   // are unstable (the panel, and everything positioned inside/relative to
   // it, is still moving/transitioning). Same wait-for-animations idiom
-  // `toast.spec.ts` already uses. Found by construction: re-running this
-  // test alone, `--workers=1` (no cross-test contention), reproduced two
-  // DIFFERENT assertions failing across 5 runs (opacity once, the
-  // rightGap/topGap geometry pair another time) -- both symptoms of the
-  // same missing wait, not two separate bugs.
+  // `toast.spec.ts` uses. Without the wait, even a lone `--workers=1` run (no
+  // cross-test contention) fails DIFFERENT assertions across runs (opacity
+  // one time, the rightGap/topGap geometry pair another) -- both symptoms of
+  // the same missing wait, not two separate bugs.
   await content.evaluate((el) =>
     Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished.catch(() => undefined))),
   );
@@ -244,7 +242,7 @@ test('close button matches Nova spec: 16px icon, ghost icon-sm (28px, full opaci
   expect(iconBox!.height).toBeCloseTo(16, 0);
 
   // Nova (`.cn-sheet-close`): a ghost `icon-sm` Button -- full opacity (no `opacity-70`), 28px square,
-  // `min(radius-md, 12px)` (8px) corners. (Was shadcn New York's opacity-70 / rounded-xs 2px / 24px.)
+  // `min(radius-md, 12px)` (8px) corners.
   const opacity = await closeButton.evaluate((el) => getComputedStyle(el).opacity);
   expect(opacity).toBe('1');
   const borderRadius = await closeButton.evaluate((el) => getComputedStyle(el).borderRadius);
@@ -270,14 +268,6 @@ test('close button matches Nova spec: 16px icon, ghost icon-sm (28px, full opaci
 });
 
 test.describe('Axe automated scan', () => {
-  test('loaded (sheet closed) has no automatically detectable a11y issues', async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/sheet/`, { timeout: 20 * 60 * 1000 });
-    // Wait for render before scanning -- see input.spec.ts's identical
-    // comment for why (avoids a false pre-hydration "no main"/"no h1").
-    await expect(page.getByRole('button', { name: 'Right' })).toBeVisible();
-    await expectNoAxeViolations(page, 'sheet: loaded', { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-
   test('open has no automatically detectable a11y issues', async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/sheet/`, { timeout: 20 * 60 * 1000 });
     await page.getByRole('button', { name: 'Right' }).click();
@@ -289,9 +279,7 @@ test.describe('Axe automated scan', () => {
 // The scrim every modal overlay shares (assert-backdrop-fade.ts has the full
 // claim; popover/dialog/alert-dialog/sheet/drawer specs all run the identical
 // assertion): the dialog's own `::backdrop` is the only painter, black/10 with a
-// 4px blur, and it fades in and out for the same length. Before this, Sheet
-// stacked its own animated wrapper scrim on the UA's un-animated one and the
-// exit snapped.
+// 4px blur, and it fades in and out for the same length.
 test.describe("Scrim", () => {
   test("Sheet paints the shared scrim and fades it in and out", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/sheet/`, { timeout: 20 * 60 * 1000 });

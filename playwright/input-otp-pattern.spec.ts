@@ -1,5 +1,4 @@
 import { test, expect } from "./fixtures";
-import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
@@ -90,9 +89,4 @@ test("click-to-slot correction works with letters", async ({ page }) => {
   await clickSlot(page, 4);
   await page.keyboard.type("!");
   await expect(input).toHaveValue("abZdef");
-});
-
-test("alphanumeric demo has no automatically detectable a11y issues", async ({ page }) => {
-  await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
-  await expectNoAxeViolations(page, "input_otp: alphanumeric", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
 });

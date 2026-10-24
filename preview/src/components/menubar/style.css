@@ -47,7 +47,7 @@
 }
 
 /* Not in Nova (its trigger is `outline-hidden` and only fills): in dark the muted fill is the same
- * #262626 as the hover, 1.4:1 on the page, so keyboard focus also draws the shared focus halo. */
+ * #262626 as the hover, 1.3:1 on the page, so keyboard focus also draws the shared focus halo. */
 .dx-menubar-trigger:focus-visible {
   background: var(--dx-muted);
   box-shadow: var(--dx-ring-focus);
@@ -68,7 +68,7 @@
    * pop-in/out come from the theme's floating-surface recipe (`data-dx-surface="floating"`, emitted
    * by `MenubarContent`); its `border`/`overflow`/`padding` undo the UA popover stylesheet's
    * `[popover] { border: solid; overflow: auto; ... }` (WHATWG HTML's popover section) -- on the web
-   * arm (Migration A slice 2/3) this content carries the `popover` attribute. The matching
+   * arm this content carries the `popover` attribute. The matching
    * `margin`/`inset` reset, and the `@supports (anchor-name: --a)` anchor-positioning rules that
    * keep each menu anchored to its own trigger once promoted to the top layer, live in the shared,
    * engine-injected stylesheet every `dx-anchor-*`-marked overlay gets for free -- see

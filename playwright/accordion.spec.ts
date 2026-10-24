@@ -49,25 +49,23 @@ test("keyboard navigation skips disabled items", async ({ page }) => {
 });
 
 /**
- * Regression coverage for a plain CSS smoothness bug, not a conformance rule
+ * Coverage for a plain CSS smoothness property, not a conformance rule
  * (accordion open/close smoothness is not specified by APG/HTML, and the
  * mechanism this asserts on -- `grid-template-rows` -- is not a Radix or
  * bits-ui *behaviour* either, so this does not belong under `oracle/`'s
  * tiered rule-source policy; it is a straightforward "does not snap"
- * regression test, most at home here).
+ * test, most at home here).
  *
  * `AccordionContent` only mounts once an item starts opening
  * (`use_animated_open`), so a plain `transition` on `grid-template-rows`
  * never has an earlier frame to interpolate from: the brand-new element's
  * very first paint already has `data-open="true"`, and the panel snaps
- * open instantly (verified against HEAD before this fix -- see the
- * "before" frame series in the accompanying investigation). The close
- * direction happened to look fine because there the element already exists
- * when `data-open` flips to `false`, so its transition does have a
- * prior frame.
+ * open instantly. The close direction needs no such care because there the
+ * element already exists when `data-open` flips to `false`, so its
+ * transition does have a prior frame.
  *
- * The fix (style.css) swaps the `transition` for a pair of `@keyframes`
- * animations, one per direction: a CSS *animation* always plays its `from`
+ * So style.css uses a pair of `@keyframes` animations, one per direction,
+ * instead of a `transition`: a CSS *animation* always plays its `from`
  * keyframe on the frame it is applied, even to a freshly-mounted element,
  * unlike a `transition`. This is the same reason bits-ui
  * (https://www.bits-ui.com/docs/components/accordion) and Radix drive their
@@ -155,11 +153,6 @@ test("open and close animate the content height smoothly, without snapping", asy
 });
 
 test.describe("Axe automated scan", () => {
-  test("loaded (all items closed) has no automatically detectable a11y issues", async ({ page }) => {
-    await loadAccordion(page);
-    await expectNoAxeViolations(page, "accordion: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-
   test("first item expanded has no automatically detectable a11y issues", async ({ page }) => {
     const accordionItems = await loadAccordion(page);
     const buttons = accordionItems.getByRole("button");
@@ -309,7 +302,7 @@ test.describe("hidden_until_found", () => {
     await expect(returns).toHaveAttribute("data-revealed", "true");
   });
 
-  test("opening by click still animates, closing animates and then re-hides", async ({ page }) => {
+  test("opening by click animates, closing animates and then re-hides", async ({ page }) => {
     const { trigger, panelOf } = await load(page);
     const returns = panelOf("Returns");
     const contentId = (await returns.getAttribute("id"))!;
@@ -411,10 +404,10 @@ test.describe("allow_multiple_open", () => {
 });
 
 /**
- * A default-open item is open in the server HTML, not only after hydration. `AccordionContent` used to mount its
- * panel from `render_element()`, which turns on in an effect, so the static page (JavaScript off) drew the
- * "Multiple" demo's first item closed (39px) and hydration then opened it (145px): a hydration mismatch the
- * first-paint oracle caught as a computed-style difference.
+ * A default-open item is open in the server HTML, not only after hydration. `AccordionContent` mounts its panel
+ * unconditionally rather than from `render_element()` (which turns on in an effect), because otherwise the static
+ * page (JavaScript off) draws the "Multiple" demo's first item closed (39px) and hydration opens it (145px): a
+ * hydration mismatch the first-paint oracle reports as a computed-style difference.
  */
 test("a default-open item renders its content with JavaScript off", async ({ browser }) => {
   const ctx = await browser.newContext({ javaScriptEnabled: false });

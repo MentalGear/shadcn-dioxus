@@ -1,7 +1,7 @@
 //! The stage helpers of the view pipeline: sort, filter, paginate and the
 //! header checkbox's tri-state. Plain generic functions over slices and
-//! closures (lifted unchanged from the Data Table's `state.rs`, backlog row
-//! 360); [`derive`](super::derive) composes them over indices.
+//! closures (backlog row 360); [`derive`](super::derive) composes them over
+//! indices.
 
 use crate::checkbox::CheckboxState;
 

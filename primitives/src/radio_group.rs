@@ -334,18 +334,18 @@ pub fn RadioItem(props: RadioItemProps) -> Element {
     let onmounted = item.onmounted();
 
     // Hidden native radio mirroring this item, so the group participates in
-    // HTML form submission -- see docs/plan.md Phase 1.2. Rendered
+    // HTML form submission -- see dev-docs/plan.md Phase 1.2. Rendered
     // unconditionally, matching Checkbox's BubbleInput: this repo's decision
-    // table (docs/recommended-implementations.md §1) follows upstream over
+    // table (dev-docs/reference/platform-rationale.md §1) follows upstream over
     // Radix's `closest('form')` gate, which Dioxus has no cheap equivalent
     // for. Shape ported from dignifiedquire/dx-components (MIT OR
     // Apache-2.0), primitives/src/radio_group.rs (RadioGroupItem's hidden
     // `input`, ~L260-273 as read from that fork's tree) -- adapted to this
     // repo's per-item `checked` memo, the `checked`/`.defaultChecked` split
     // (`use_default_checked`) needed for correct `<form reset>` behavior (that
-    // fork's own hidden input has the same defect as this repo's
-    // `Checkbox::BubbleInput` had; see checkbox.rs), and a `reset` listener that resyncs the Dioxus-side
-    // selection, which neither fork implements.
+    // fork's own hidden input lacks the split, as a bare `checked` binding
+    // does; see `Checkbox::BubbleInput` in checkbox.rs), and a `reset` listener
+    // that resyncs the Dioxus-side selection, which neither fork implements.
     let hidden_input_id = use_unique_id();
     use_form_reset_listener(hidden_input_id, move || {
         ctx.set_value(ctx.default_value.cloned());

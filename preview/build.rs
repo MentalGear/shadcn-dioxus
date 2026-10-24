@@ -1,4 +1,3 @@
-// chatkit lane: new components code_block, trace, checkpoint (retrigger)
 use dioxus::prelude::*;
 
 // The `#[derive(Props)]` scanner shared with the `scripts/check-props-docs.sh` gate (backlog row 165).
@@ -9,39 +8,38 @@ fn main() {
     let out_dir = std::env::var("OUT_DIR").unwrap();
     let out_dir = std::path::PathBuf::from(out_dir);
     // Deliberately NOT `cargo:rerun-if-changed=src/components`. That
-    // blanket, recursive directory watch made cargo rerun this script on
+    // blanket, recursive directory watch would rerun this script on
     // ANY change under any component folder -- including `component.rs`/
     // `style.css`/`variants/**`, none of which this script reads -- and
     // `walk_markdown_dir` below unconditionally rewrites every component's
     // `description.txt`/`docs_sections.rs` in `OUT_DIR` on every run regardless of
     // which file triggered it. Since `components/mod.rs` `include_str!`s
-    // those two per component, their bumped mtimes made cargo treat
+    // those two per component, their bumped mtimes would make cargo treat
     // `preview` itself as dirty too, compounding the separate compile-time
     // CSS embed that `dev-docs/dev-loop.md`'s CSS section root-causes as
-    // the primary reason a component `style.css` edit forced a full
+    // the primary reason a component `style.css` edit forces a full
     // rebuild instead of hot-reloading. This script only ever reads `*.md`
-    // and `component.json` files; each one already registers its own
+    // and `component.json` files; each one registers its own
     // precise `cargo:rerun-if-changed` below (`process_markdown_to_html`/
     // `read_component_description`), which is the complete, correct watch
-    // list for what this script actually does -- narrowing to just that
-    // removes the compounding, on top of the primary fix in `main.rs`/
+    // list for what this script does -- watching just those avoids
+    // the compounding, on top of the primary fix in `main.rs`/
     // `components/mod.rs`.
     //
-    // (Row 219 update: this script now also registers `src/components/mod.rs` and every
+    // (Row 219: this script also registers `src/components/mod.rs` and every
     // component's `variants/` directory, so adding a component -- which edits `CATALOG` in
     // `mod.rs` -- or a variant re-runs it. The trade-off below still holds for a new `.md` file
     // alone.)
     //
     // Known, accepted trade-off: a brand new `.md` file inside an EXISTING component (one this
     // script has never seen) isn't watched until something else causes it to rerun -- cargo has no
-    // "watch this directory for new entries only" primitive, only the recursive watch just removed.
-    // A new COMPONENT or variant no longer needs a manual `touch` (backlog row 92, moot since row
-    // 219): adding a component edits `CATALOG` in `components/mod.rs`, and the
+    // "watch this directory for new entries only" primitive, only the recursive watch this script avoids.
+    // A new COMPONENT or variant needs no manual `touch` (backlog rows 92 and 219): adding a
+    // component edits `CATALOG` in `components/mod.rs`, and the
     // `rerun-if-changed` on that file and on every `variants/` directory below re-runs this script,
-    // so `OUT_DIR` gets the component's `description.txt`/`docs.html` without help. (Before row
-    // 219 this was NOT self-healing: `cargo clippy`/`test`/`doc` failed with `couldn't read
-    // .../out/<name>/description.txt` until `touch preview/build.rs`; observed 2026-09-20 when
-    // Carousel landed.)
+    // so `OUT_DIR` gets the component's `description.txt`/`docs.html` without help. (Without
+    // that, `cargo clippy`/`test`/`doc` fail with `couldn't read
+    // .../out/<name>/description.txt` until `touch preview/build.rs`.)
     // Process all markdown files in each component folder.
     for folder in std::fs::read_dir("src/components").unwrap().flatten() {
         if !folder.file_type().unwrap().is_dir() {
@@ -212,7 +210,7 @@ fn walk_markdown_dir(dir: &std::path::Path, out_dir: &std::path::Path) -> std::i
         }
         if file.path().extension() == Some(std::ffi::OsStr::new("md")) {
             // A component's own `docs.md` (not a variant note) is a page of sections: structured
-            // data the page renders as its own `Accordion` (backlog row 233; owner 2026-10-19).
+            // data the page renders as its own `Accordion` (backlog row 233).
             if file.file_name() == "docs.md"
                 && dir.parent() == Some(std::path::Path::new("src/components"))
             {
@@ -319,7 +317,7 @@ fn doc_html(doc: &str) -> String {
     let doc = doc.replace("[`", "`").replace("`]", "`");
     let mut out = String::new();
     // A doc comment is content under the page's own `<h3>` (struct) or inside a table cell: its `# Example` /
-    // `## Styling` headings must never join the page outline (they rendered an `<h1>` and `<h2>`s in the docs
+    // `## Styling` headings must never join the page outline (they would render an `<h1>` and `<h2>`s in the docs
     // prose), so every heading level is demoted to `<h4>`.
     use pulldown_cmark::{Event, HeadingLevel, Tag, TagEnd};
     let events = pulldown_cmark::Parser::new(&doc).map(|event| match event {
@@ -464,7 +462,7 @@ fn markdown_events(markdown_input: &str) -> Vec<pulldown_cmark::Event<'_>> {
     let mut options = Options::empty();
     options.insert(Options::ENABLE_GFM);
     // `ENABLE_GFM` alone does not turn on pipe tables (nor the other GFM
-    // extensions), so they shipped as raw `|` text.
+    // extensions), so tables would stay raw `|` text.
     options.insert(Options::ENABLE_TABLES);
     options.insert(Options::ENABLE_STRIKETHROUGH);
     options.insert(Options::ENABLE_TASKLISTS);

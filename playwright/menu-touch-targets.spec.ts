@@ -9,11 +9,11 @@ import { measureAtRest } from "./animations";
  *
  * Nova's menu row is ~28px, too small for a finger. `dx-components-theme.css` declares four slots
  * (`--dx-menu-item-min-height`, `--dx-menu-item-font-size`, `--dx-menu-trigger-min-height`,
- * `--dx-menu-trigger-padding`) and replaces them under `(pointer: coarse)` (row 349 moved them behind the
- * `data-dx-coarse` switch, `coarse-sizing.spec.ts`); every menu / listbox / palette sheet reads the slots, so none carries a `@media` copy.
+ * `--dx-menu-trigger-padding`) and replaces them for touch (behind the
+ * `data-dx-coarse` switch, row 349, `coarse-sizing.spec.ts`); every menu / listbox / palette sheet reads the slots, so none carries a `@media` copy.
  *
  * Real touch emulation (`hasTouch` + `isMobile`) matches that query in Chromium; a plain desktop context does
- * not, and must keep today's dense rows.
+ * not, and must keep the dense rows.
  *
  *   PLAYWRIGHT_BASE_URL=http://127.0.0.1:8106 npx playwright test --config=ssg.local.config.ts menu-touch-targets.spec.ts
  */

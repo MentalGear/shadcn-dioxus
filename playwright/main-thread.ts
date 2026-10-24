@@ -11,8 +11,7 @@
  * own scripts run, buffers what they report, and gives the spec a small
  * measure-one-gesture-at-a-time API.
  *
- * Field/threshold sources (both verified reachable, HTTP 200, checked
- * 2026-09-18):
+ * Field/threshold sources:
  *   - Long Tasks API -- `PerformanceLongTaskTiming.attribution`
  *     (`TaskAttributionTiming`'s `containerType`/`containerSrc`/
  *     `containerId`/`containerName`):
@@ -83,7 +82,7 @@ export interface GestureReport {
 }
 
 /**
- * dev-docs/recommended-implementations.md §11 (kciter, "The Browser's Main
+ * dev-docs/reference/platform-rationale.md §11 (kciter, "The Browser's Main
  * Thread Is Expensive"): "any single task over 50 ms is a 'long task'".
  * This is a reference value from that article, not a tuning knob -- never
  * lower it to make a test pass; see main-thread.spec.ts's header.
@@ -135,8 +134,8 @@ export async function installMainThreadObserver(page: Page): Promise<void> {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         }).observe({ type: "longtask", buffered: true } as any);
       } catch {
-        // Long Tasks API unsupported in this engine (Firefox/WebKit as of
-        // this writing) -- leave the array empty rather than throwing out
+        // Long Tasks API unsupported in this engine (Firefox/WebKit)
+        // -- leave the array empty rather than throwing out
         // of an init script, which would break every page load in the
         // test. main-thread.spec.ts skips non-Chromium projects outright;
         // this try/catch is the second line of defense for any other
@@ -181,8 +180,7 @@ export async function readMainThreadReport(
 
 /** Clears the buffered entries in the page. Used by `withGesture` right
  * before each gesture so first-load/earlier-test noise never counts
- * toward the gesture being measured; exposed standalone too, per this
- * file's design brief. */
+ * toward the gesture being measured; exposed standalone too. */
 export async function resetMainThreadReport(page: Page): Promise<void> {
   await page.evaluate((key) => {
     const w = window as any;
@@ -262,9 +260,9 @@ export interface AssertResponsiveOptions {
  * throw for a reason that has nothing to do with main-thread timing: a
  * real pointer drag occasionally not registering under this sandbox's own
  * CPU contention is exactly the kind of transient failure the retry
- * policy exists to absorb (found live while writing this file: an
- * un-caught throw from attempt 1 used to escape this loop entirely,
- * skipping attempts 2-3 and this function's own summary/annotation).
+ * policy exists to absorb (an un-caught throw from attempt 1 would escape
+ * this loop entirely, skipping attempts 2-3 and this function's own
+ * summary/annotation).
  * Each attempt is therefore wrapped in its own try/catch: a thrown
  * attempt counts against the attempt budget and is retried like an
  * over-threshold one, and only a `gesture` that fails on literally every

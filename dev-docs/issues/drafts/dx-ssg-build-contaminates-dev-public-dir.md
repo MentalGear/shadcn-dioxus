@@ -6,7 +6,7 @@
 
 **Target repo:** `DioxusLabs/dioxus` (the `dx` CLI).
 
-**Versions in use** (from this repo's `Cargo.lock`): `dioxus 0.7.9`, `dioxus-fullstack 0.7.9`. `dx`'s own version is not a `Cargo.lock` entry (it's a separate binary, not a workspace dependency) — confirm the exact `dx --version` in use before filing; this repo's docs record it only as "must match the lockfile" (`dev-docs/lifting-from-forks.md` §6), not a pinned number.
+**Versions in use** (from this repo's `Cargo.lock`): `dioxus 0.7.9`, `dioxus-fullstack 0.7.9`. `dx`'s own version is not a `Cargo.lock` entry (it's a separate binary, not a workspace dependency) — confirm the exact `dx --version` in use before filing; this repo's docs record it only as "must match the lockfile" (`dev-docs/archive/fork-research/lifting-from-forks.md` §6), not a pinned number.
 
 ## Title
 

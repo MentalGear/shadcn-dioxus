@@ -3,7 +3,7 @@ import type { Page } from "@playwright/test";
 import { gotoHydrated } from "./hydration";
 import { BASE_URL } from "./base-url";
 
-// The docs Button page paints with shadcn's base-nova text colours (docs-site lane, backlog row 231). Expected
+// The docs Button page paints with shadcn's base-nova text colours (backlog row 231). Expected
 // values are what https://ui.shadcn.com/docs/components/base/button computes with no preset (its `:root` and
 // `.dark` blocks: --foreground oklch(0.145) = #0a0a0a / #fafafa, --primary-foreground #fafafa / #171717,
 // --secondary-foreground #171717 / #fafafa, --primary oklch(0.205) = #171717 / #e5e5e5, --secondary #f5f5f5 / #262626,
@@ -68,7 +68,7 @@ for (const mode of ["light", "dark"] as const) {
         const got = await paint(page, label);
         expect.soft(got.color, `${label} text`).toBe(want.color);
         if (want.bg !== null) expect.soft(got.bg, `${label} fill`).toBe(want.bg);
-        // Geometry was already shadcn's: radius 10px, default height 32px.
+        // Geometry is shadcn's: radius 10px, default height 32px.
         expect.soft(got.radius, `${label} radius`).toBe("10px");
         expect.soft(got.height, `${label} height`).toBe("32px");
       }
@@ -105,8 +105,8 @@ test("the demo frame is shadcn's preview frame: rounded-2xl, no border, 40px pad
   const frame = page.locator("#component-preview-frame");
   await expect(frame).toHaveCSS("border-top-left-radius", "16px");
   await expect(frame).toHaveCSS("padding-top", "40px");
-  // Owner request (docs-css lane): no border, a soft fill between the page and the card token
-  // (`--dx-docs-preview-surface`), so the frame is no longer transparent.
+  // No border, a soft fill between the page and the card token
+  // (`--dx-docs-preview-surface`), so the frame is not transparent.
   await expect(frame).toHaveCSS("border-top-width", "0px");
   await expect(frame).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   await expect(frame).toHaveCSS("background-image", "none");

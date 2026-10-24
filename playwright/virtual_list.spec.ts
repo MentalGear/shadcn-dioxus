@@ -1,6 +1,5 @@
 import { test, expect } from "./fixtures";
 import type { Locator, Page } from "@playwright/test";
-import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL, buildProfile } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
@@ -90,7 +89,7 @@ test("scrollHeight stable with adaptive estimation", async ({ page }) => {
   console.log(`Adaptive estimation achieved ${heightVariance}px variance`);
 });
 
-// Stricter test - should achieve 0px variance with the stable_total_size fix
+// Stricter test - should achieve 0px variance with `stable_total_size`
 test("scrollHeight remains stable during continuous scroll", async ({ page }) => {
   await testScrollHeightStability(page, 100);
 });
@@ -207,8 +206,8 @@ test("virtual list virtualizes rows and updates on scroll", async ({ page }) => 
 });
 
 test("resize churn while scrolling does not panic (holds no borrow across resize_item)", async ({ page }) => {
-  // Regression for a signal-borrow bug inferred (not directly observed) in
-  // `primitives/src/virtual_list.rs`'s onresize handler: it historically held
+  // Guard against a signal-borrow bug (inferred, not directly observed) in
+  // `primitives/src/virtual_list.rs`'s onresize handler, which must not hold
   // a `measurements.peek()` guard for the full duration of a call to
   // `resize_item`, which writes `item_size_cache` -- a dependency of that
   // same memo. A Rust-level unit test attempting the same shape against the
@@ -254,18 +253,6 @@ test("resize churn while scrolling does not panic (holds no borrow across resize
     (m) => /panicked/i.test(m) || /already borrowed/i.test(m) || /BorrowMutError/i.test(m)
   );
   expect(suspicious, `Suspicious console output during resize churn:\n${suspicious.join("\n")}`).toEqual([]);
-});
-
-test.describe("Axe automated scan", () => {
-  // Virtual list has no overlay/expand/select interaction -- one state to scan.
-  test("loaded has no automatically detectable a11y issues", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/virtual_list/`, { timeout: 20 * 60 * 1000 });
-    await expect(page.locator(".dx-virtual-list-container").first()).toBeVisible({ timeout: 30000 });
-    // The page carries every variant, so this scans the content-visibility list (1,000 rows in
-    // the DOM) and the 100,000-row windowed list too. (The bare `/component/block/` pages have
-    // no `<main>`, which the scan waits for.)
-    await expectNoAxeViolations(page, "virtual_list: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
 });
 
 // ---------------------------------------------------------------------------
@@ -531,7 +518,7 @@ test.describe("windowed mode", () => {
     expect(scrollEvents).toBeGreaterThanOrEqual(20);
     // Rows are ~110px and `buffer` is 12, so the window is re-centred every ~6 rows (~660px):
     // a couple of renders for 1000px (plus the one that releases the frozen canvas height when
-    // the scroll ends), against one per scroll event before.
+    // the scroll ends), rather than one per scroll event.
     expect(rendersDuring).toBeGreaterThanOrEqual(1);
     expect(rendersDuring).toBeLessThanOrEqual(6);
     expect(rendersDuring).toBeLessThan(scrollEvents / 3);

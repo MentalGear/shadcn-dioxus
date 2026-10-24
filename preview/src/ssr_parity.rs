@@ -20,7 +20,7 @@
 //!
 //! What this can see is what the component's own Rust does between the two frames. What it cannot see is
 //! anything that only the browser produces: layout, measurement, `document::eval` replies, web-sys
-//! events, the interpreter's DOM writes. See `dev-docs/research/row-329-ssr-first-render-parity-spike.md`.
+//! events, the interpreter's DOM writes. See `dev-docs/archive/research/row-329-ssr-first-render-parity-spike.md`.
 
 use crate::components::DEMOS;
 use crate::ComponentType;
@@ -400,7 +400,10 @@ mod why {
         share one grid cell, so no box moves (row 204)";
     pub const CAROUSEL: &str = "slide count, and so the previous/next `disabled` state, is read from the mounted track in an \
         effect; the buttons keep their box";
-    pub const FIND_LAYER: &str = "the find-in-page layer is mounted by an effect; it is absolutely positioned and `aria-hidden`";
+    pub const FIND_LAYER: &str = "the find-in-page layer (`primitives/src/virtual/find.rs`, rows 153 and 309) is mounted after hydration \
+        on purpose: it is one hidden placeholder per row or cell (the data-grid demo's is 16,000, the wrapping grid's 3,000), which the \
+        server would ship as page weight and the client would hydrate for nothing the visitor sees; it is absolutely positioned, \
+        `aria-hidden`, `pointer-events: none`, transparent and `hidden=\"until-found\"`, so it has no box in the flow and paints nothing";
     pub const TABLE_ROWCOUNT: &str = "`TableRows` hands its row count up to the `<table>` (`aria-rowcount`, an ARIA attribute, \
         no box) through the `TableScroller` context after the body renders, since the table renders first (row 343)";
     pub const CLOCK: &str = "the date comes from the clock, which is read after hydration (an effect), never while rendering: a render-time \
@@ -447,6 +450,7 @@ const BASELINE: &[(&str, &str)] = &[
     ("item/group", AVATAR),
     ("table/virtualized", TABLE_ROWCOUNT),
     ("table/reorder", TABLE_ROWCOUNT),
+    ("virtual_grid/find_in_page", FIND_LAYER),
     ("virtual_list/find_in_page", FIND_LAYER),
 ];
 
@@ -461,6 +465,7 @@ const ROUTE_BASELINE: &[(&str, &str)] = &[
     ("/component/empty/", AVATAR),
     ("/component/item/", AVATAR),
     ("/component/table/", TABLE_ROWCOUNT),
+    ("/component/virtual_grid/", FIND_LAYER),
     ("/component/virtual_list/", FIND_LAYER),
 ];
 
@@ -623,8 +628,8 @@ mod tests {
         rsx! { div { style: "flex-basis: {basis}%;" } }
     }
 
-    /// A text input whose `value` an effect fills (row 306's Combobox half: the input showed no label
-    /// until hydration). The browser spec `first-paint-text` read `input.value`; this is that read.
+    /// A text input whose `value` an effect fills (row 306's Combobox half: the input shows no label
+    /// until hydration). The browser spec `first-paint-text` reads `input.value`; this is that read.
     fn effect_valued_input() -> Element {
         let mut value = use_signal(String::new);
         use_effect(move || value.set("SvelteKit".into()));

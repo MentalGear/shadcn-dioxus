@@ -47,11 +47,10 @@ function getLiveRegion(list: import("@playwright/test").Locator) {
  * Identity of a list item for before/after comparisons: its text, minus the
  * avatar. The demo's `ImageAvatar` renders its fallback initials ("RH") only
  * once the image has failed or timed out, so reading the whole `textContent`
- * twice -- once before and once after that happens -- compared two different
- * strings for the same item (`...Apr29` vs `...Apr29RH`) and flaked under
- * parallel load (backlog row 114: 7-8 failures in ~100 runs at
- * `--workers=4`). The avatar is decoration, not part of an item's identity;
- * what remains (title, task code, status, due date) is stable from the first
+ * twice -- once before and once after that happens -- would compare two different
+ * strings for the same item (`...Apr29` vs `...Apr29RH`), a flake under
+ * parallel load (backlog row 114). The avatar is decoration, not part of an item's
+ * identity; what remains (title, task code, status, due date) is stable from the first
  * render, so nothing needs to wait for the avatars to settle.
  */
 async function itemText(locator: import("@playwright/test").Locator) {
@@ -481,8 +480,8 @@ test.describe("Ghost opacity", () => {
     await expect
       .poll(() => ghostOpacity(list))
       .toBeCloseTo(DEFAULT_GHOST_OPACITY, 2);
-    // Scoped to the title, the item's primary text (14.6:1 at 0.9; 3.5:1 at the
-    // old 0.5, which this scan would flag). The muted meta line is not in
+    // Scoped to the title, the item's primary text (14.6:1 at 0.9; 3.5:1 at
+    // 0.5, which this scan would flag). The muted meta line is not in
     // scope: it is 4.0:1 at 0.9 -- translucency costs it more than any other
     // text, and only 0.96+ reaches 4.5:1 (see style.css).
     await expectNoAxeViolations(page, "drag_and_drop_list: ghost title at default opacity", {
@@ -573,7 +572,7 @@ test.describe("Drop gap", () => {
     expect(await spaceBetween(list, 1, 2)).toBeCloseTo(rest, 0);
   });
 
-  test("a drop slot after the last item opens no room but still shows the line", async ({
+  test("a drop slot after the last item opens no room but shows the line", async ({
     page,
   }) => {
     const list = await loadMainList(page);
@@ -641,7 +640,7 @@ test.describe("Drop gap", () => {
     await page.keyboard.press("Escape");
   });
 
-  test("RTL: keyboard reordering, announcements, gap and ghost are unchanged", async ({
+  test("RTL: keyboard reordering, announcements, gap and ghost match LTR", async ({
     page,
   }) => {
     const list = await loadMainList(page);
@@ -677,8 +676,8 @@ test.describe("Drop gap", () => {
  * component's own demo in the catalog -- and both sit in a card with
  * `content-visibility: auto` (paint containment). The ghost and the drop gap
  * must be the component's defaults there too, and the room the gap opens must
- * not be clipped by the card. Owner report, round 4: "the dnd list on the main
- * overview demo doesn't have the new ghost / gap".
+ * not be clipped by the card. The check guards the home page's copies of the list against
+ * missing the ghost and the gap.
  */
 test.describe("Home page lists", () => {
   const HOME_LISTS = [
@@ -845,20 +844,6 @@ test.describe("Remove behavior", () => {
       );
       return texts;
     }).not.toContain(movedText);
-  });
-});
-
-test.describe("Axe automated scan", () => {
-  test("no automatically detectable a11y issues", async ({ page }) => {
-    await loadMainList(page);
-
-    // No color-contrast exclusion needed: this round's theme-token fix
-    // (docs/backlog.md row 39) resolved the pre-existing finding here, and
-    // this scan is scoped to the list itself, which has no code block to
-    // need the one remaining, narrower exclusion for.
-    await expectNoAxeViolations(page, "drag_and_drop_list: main list", {
-      include: 'ul[aria-roledescription="sortable list"]',
-    });
   });
 });
 

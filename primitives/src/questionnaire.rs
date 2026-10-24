@@ -1,5 +1,5 @@
 //! Defines the [`Questionnaire`] component and its parts: a multi-step question flow (shadcn's
-//! `@shadcn/react/questionnaire`, 2026-08) with single and multiple choice, a freeform "other" answer, explicit
+//! `@shadcn/react/questionnaire`) with single and multiple choice, a freeform "other" answer, explicit
 //! skip, previous/next/submit, required and external validation, controlled navigation, resume with default
 //! answers, conditional items, optional letter or number answer shortcuts, and native `<form>` serialization.
 //!

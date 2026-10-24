@@ -4,10 +4,10 @@ import { gotoHydrated } from "./hydration";
 import { BASE_URL } from "./base-url";
 
 // Backlog row 126. `dioxus_router::Link` computes `aria-current` as
-// `href == router.full_route_string()`; our routes carry `?:dark_mode`, so the
-// prerendered HTML had `aria-current="page"` and the hydrated DOM lost it
-// (and a `Link` given `aria_current` emitted it twice). Every navigation link
-// is a `NavLink` (`preview/src/nav_link.rs`) now: exactly one `aria-current`,
+// `href == router.full_route_string()`; our routes carry `?:dark_mode`, so a `Link` would put
+// `aria-current="page"` in the prerendered HTML and lose it when hydrated (and a `Link` given
+// `aria_current` emits it twice). Every navigation link is therefore a `NavLink`
+// (`preview/src/nav_link.rs`): exactly one `aria-current`,
 // from a path comparison identical on the server and in the browser.
 // Run against the SSG lane (the prerendered HTML is half of the claim).
 
@@ -116,7 +116,7 @@ test("modified and middle clicks leave the router alone (new tab), plain click n
   await expect(page).toHaveURL(/\/demos\/?\??$/);
 });
 
-// Row 126 library residue: `NavbarItem` (a shipped component) renders the same
+// Row 126: `NavbarItem` (a shipped component) renders the same
 // `NavLink` construction, so no anchor of its demo pages carries two `aria-current`.
 test("the library NavbarItem emits at most one aria-current per anchor in the prerendered HTML", async ({
   request,

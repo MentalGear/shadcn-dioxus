@@ -12,8 +12,8 @@ import { gotoHydrated } from './hydration';
 //
 // Every hover-opening menu primitive of this repo that has the pattern (the navbar and the
 // navigation menu share `primitives/src/hover_intent.rs`) is held to the same four rules below,
-// so the class cannot regress for one of them alone. The user report that added this: "the
-// nav-bar's hover menu keeps its menu open even though the mouse doesn't hover it anymore".
+// so the class cannot regress for one of them alone: a hover menu must not stay open
+// once the mouse no longer hovers it (backlog row 194).
 
 const GOTO = { timeout: 20 * 60 * 1000 };
 /** Longer than the 300 ms close grace plus the exit animation, short enough to prove "promptly". */

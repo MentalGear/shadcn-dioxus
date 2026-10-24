@@ -2,9 +2,10 @@
 #
 # check-component-fonts.sh
 #
-# A component stylesheet must never pick a typeface. The library inherits the host app's font; the
-# only place a font is chosen is the docs site's own `preview/assets/main.css` (`body`). So in every
-# `preview/src/components/*/style.css`, a `font-family` may be exactly one of:
+# A component stylesheet never picks a typeface: in every `preview/src/components/*/style.css` a `font-family` is
+# exactly `inherit` (for the elements the UA does not inherit for: button, input, textarea, select) or a
+# `var(--dx-font-<name>)` theme token, the `font` shorthand may only be `font: inherit`, and an `@font-face` is
+# flagged too. The app picks the font, so an overlay can never fall back to a hard-coded system stack.
 #
 #   font-family: inherit;                  -- for the elements the UA does NOT inherit for (button, input,
 #                                             textarea, select, optgroup), which would otherwise fall back to
@@ -14,16 +15,16 @@
 #
 # and the `font` shorthand (which resets the family too) may only be `font: inherit`.
 #
-# THE DEFECT (found 2026-10-05): dialog, alert-dialog, sheet, drawer and calendar each hard-coded
-# `font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif`. A
-# top-layer `<dialog>` still inherits from its DOM parent, so none of that was needed -- it only meant that
-# every overlay (and the calendar) rendered in the system UI font on the docs site while the page around it
-# was Geist, and would have ignored the app font of any consumer. Five stylesheets with the same stack is a
-# class, not five typos, so the gate makes the class unable to recur: a literal family is simply not
-# expressible in a component stylesheet any more.
+# THE CLASS (dev-docs/research/round3-2026-10-05.md, row 162): a hard-coded
+# `font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif` in a
+# component sheet. A top-layer `<dialog>` still inherits from its DOM parent, so none of that is needed -- it
+# only makes every overlay (and the calendar) render in the system UI font while the page around it is Geist,
+# and ignore the app font of any consumer. The same stack in five sheets (dialog, alert-dialog, sheet, drawer, calendar)
+# is a class, not five typos, so the gate makes the class unable to recur: a literal
+# family is simply not expressible in a component stylesheet.
 #
 # Comments are stripped before scanning, so prose that mentions a font is fine; a declaration that spans
-# several lines (the old calendar rule did) is matched as one. `@font-face` descriptors are flagged on
+# several lines is matched as one. `@font-face` descriptors are flagged on
 # purpose: a component must not ship a face either.
 #
 # If you are here because it failed: delete the declaration (the element inherits already) or use

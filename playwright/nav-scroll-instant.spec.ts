@@ -2,11 +2,10 @@
  * Smooth scrolling is opt-in per interaction, never ambient (dev-docs/backlog.md row 228; gate
  * `scripts/check-scroll-behavior.sh`).
  *
- * The owner: "clicking a demo link (header) from the main overview navigates to the component page, but to
- * its bottom". `html { scroll-behavior: smooth }` made the router's `scrollTo(0, 0)` after a push a SMOOTH
- * scroll started on the long overview page; the short component page replaced it mid-animation, the browser
- * clamped the offset to the new page's bottom, and the visitor saw the bottom and then watched it glide up.
- * Back is the mirror (the overview rendered at 0 and glided to the saved offset).
+ * The failure it guards: with an ambient `html { scroll-behavior: smooth }` the router's `scrollTo(0, 0)` after a push is a SMOOTH
+ * scroll started on the long overview page; the short component page replaces it mid-animation, the browser
+ * clamps the offset to the new page's bottom, and the visitor sees the bottom and then watches it glide up.
+ * Back is the mirror (the overview renders at 0 and glides to the saved offset).
  *
  * This spec records `scrollY` and `location.pathname` on EVERY animation frame across the navigation and
  * asserts what the visitor can see:
@@ -16,10 +15,9 @@
  *   3. a same-page anchor click on /docs still scrolls SMOOTHLY (>= 2 intermediate frames), and the opt-in
  *      attribute is gone once the jump has settled (so the next router scroll is instant again).
  *
- * The shared `fixtures.ts` forces `html { scroll-behavior: auto !important }` on every context (it keeps
- * Playwright's own actionability pre-scroll from animating under the old ambient rule), which would hide
- * exactly the defect this spec exists for and would turn the anchor jump instant; `unmask()` removes that one
- * inline property after load. Functional (not timing-sensitive), so it is fine on a debug build.
+ * The shared `fixtures.ts` overrides no `scroll-behavior` (row 228), so the page's own CSS decides; a forced
+ * `html { scroll-behavior: auto !important }` would hide exactly the defect this spec exists for and would
+ * turn the anchor jump instant, and `unmask()` removes any such inline property after load. Functional (not timing-sensitive), so it is fine on a debug build.
  *
  *   PLAYWRIGHT_BASE_URL=http://127.0.0.1:8147 npx playwright test --config=ssg.local.config.ts nav-scroll-instant.spec.ts
  */
@@ -46,7 +44,7 @@ async function open(page: Page, path: string) {
   await unmask(page);
 }
 
-/** Remove the fixture's `scroll-behavior: auto !important` so the page's own CSS decides (see the header). */
+/** Remove any inline `scroll-behavior` so the page's own CSS decides (see the header). */
 async function unmask(page: Page) {
   await page.evaluate(() => document.documentElement.style.removeProperty("scroll-behavior"));
   expect(await page.evaluate(() => document.documentElement.style.getPropertyValue("scroll-behavior"))).toBe("");
@@ -145,11 +143,11 @@ for (const [label, use] of [
 
       const home = frames.filter((f) => f.path === "/");
       const finalY = home[home.length - 1].y;
-      expect(finalY, "Back restored the scroll position").toBeGreaterThan(5000);
+      expect(finalY, "Back restores the scroll position").toBeGreaterThan(5000);
       // A glide shows a run of distinct offsets (dozens of frames over the ~500 ms a smooth scroll takes). The
       // overview's `content-visibility: auto` cards are laid out at their `contain-intrinsic-block-size` estimate until
-      // they are rendered, so on a phone viewport the restored offset can be corrected ONCE (43161 -> 43006, 155 px,
-      // measured on main 1353a5a0, so not a round-1 effect): that is a layout settle, not an animation, so up to two distinct
+      // they are rendered, so on a phone viewport the restored offset can be corrected ONCE (43161 -> 43006, 155 px):
+      // that is a layout settle, not an animation, so up to two distinct
       // intermediate offsets are tolerated.
       const between = [...new Set(home.filter((f) => f.y > 2 && Math.abs(f.y - finalY) > 2).map((f) => f.y))];
       expect(
@@ -160,7 +158,7 @@ for (const [label, use] of [
   });
 }
 
-test.describe("same-page anchors still scroll smoothly (1280x800)", () => {
+test.describe("same-page anchors scroll smoothly (1280x800)", () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
   test("a /docs sidebar anchor glides, then the opt-in clears", async ({ page }) => {

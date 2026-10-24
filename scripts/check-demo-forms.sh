@@ -8,13 +8,12 @@
 # `cargo test` -- a bare `form { .. }` compiles and looks right -- and only a click finds it, so with CI
 # frozen this is the cheap static half of that oracle.
 #
-# THE DEFECT (owner report 2026-10-05: "submit buttons in the demo / docs pages should not trigger / reload
-# the page"): a `<form>` with no `onsubmit` is a real HTML form. Clicking its submit button -- or pressing
+# THE DEFECT (submit buttons in the demo / docs pages must not trigger or reload the page): a `<form>` with no `onsubmit` is a real HTML form. Clicking its submit button -- or pressing
 # Enter in one of its fields -- runs the browser's form submission algorithm, which navigates to the form's
 # action URL with the entry list as the query string (`/component/card/` -> `/component/card/?`): a full
 # reload. Dioxus does not prevent it on its own: dioxus-web-0.7.9/src/dom.rs:113-116 calls `preventDefault`
 # only when a handler cleared `Event::default_action_enabled()`, and a form with no handler never does.
-# Found on the card's login form; the same class is any new demo form that forgets `prevent_default()`,
+# The card's login form is the example; the same class is any new demo form that forgets `prevent_default()`,
 # and -- independent of the handler -- the whole pre-hydration window of the SSG pages, where no Rust
 # handler is attached yet and a submit (or any submit with scripting off) is a native navigation.
 #
@@ -40,7 +39,7 @@
 #
 # If you are here because it failed: replace `form {` with `DemoForm {` (`use crate::components::form::DemoForm;`,
 # same attributes and children; add `show_status: false` if the page already reports the result itself, and
-# pass the old `onsubmit` body as `onsubmit:` -- the `prevent_default()` is now DemoForm's). Do not weaken the
+# pass your `onsubmit` body as `onsubmit:` -- `prevent_default()` is DemoForm's). Do not weaken the
 # gate to make a raw form pass.
 #
 # Usage: scripts/check-demo-forms.sh [SRC_ROOT]      (default: preview/src; a different root is for self-tests)

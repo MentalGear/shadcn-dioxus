@@ -109,7 +109,7 @@ pub(crate) enum HitTest {
         band: CategoryScale,
         /// The plot rectangle `(x0, y0, x1, y1)`, in the chart's px.
         plot: (f64, f64, f64, f64),
-        /// The chart's size (the viewBox), used to map the pointer's CSS
+        /// The chart's size (the viewBox): it maps the pointer's CSS
         /// pixels into the chart's px (an identity once measured, but not
         /// under a scaled ancestor or before the first measurement).
         view: (f64, f64),

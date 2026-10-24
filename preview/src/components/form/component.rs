@@ -2,24 +2,23 @@
 // ONLY themed wrappers from `crate::components::*`, never a bare
 // `dioxus_primitives::` component directly. `preview/src/components/<name>/
 // component.rs` is the one place per component where the raw primitive is
-// imported and given its `css_module` theme class (e.g. `.dx-checkbox` in
+// imported and given its theme class (e.g. `.dx-checkbox` in
 // `../checkbox/style.css`, `.dx-switch` in `../switch/style.css`); every
 // *other* file, this one included, is expected to reach for that themed
 // wrapper the same way `components/slider/variants/dynamic_range/mod.rs`
 // imports `crate::components::switch::Switch` or `components/card/variants/
 // main/mod.rs` imports `crate::components::{button, input, label}`. This
-// file being itself a `component.rs` does not exempt it: unlike the ~45
+// file being itself a `component.rs` does not exempt it: unlike the
 // wrapper files, there is no `dioxus_primitives::form` primitive for it to
 // wrap -- it is a fixture composing *other* components, so the rule applies
 // to it exactly as it does to a variant demo. `scripts/check-preview-
 // composition.sh` enforces this over `preview/src`; see
-// `docs/preview-composition.md` for the full rule and rationale.
+// `dev-docs/preview-composition.md` for the full rule and rationale.
 //
-// Two confirmed incidents of violating it, both by construction (execution-
-// verified, not just plausible):
+// Two ways violating it goes wrong, both by construction:
 //
-// Item 1 fix (2026-09-01, live-site report): "checkboxes and radio buttons
-// collapse visually when toggled on/off." This fixture imported the *raw*
+// 1. Checkboxes and radio buttons collapse visually when toggled on/off if
+// the fixture imports the *raw*
 // `dioxus_primitives::checkbox::{Checkbox, CheckboxIndicator}` and
 // `dioxus_primitives::radio_group::{RadioGroup, RadioItem}` primitives
 // directly. Without the theme class, `Checkbox`'s `<button>` has no explicit
@@ -32,30 +31,29 @@
 // `.dx-radio-item::before` pseudo-element that plain
 // `dioxus_primitives::radio_group::RadioItem` never gets without that class,
 // so its `<button>` collapses to whatever a bare, empty `<button>` renders as
-// in every state. Confirmed by measurement against `/component/?name=checkbox`
-// and `/component/?name=radio_group` (both themed, both stable-sized in every
-// state) vs. this fixture pre-fix (both collapsing). Fixed here, not in
+// in every state (the themed `/component/?name=checkbox` and
+// `/component/?name=radio_group` are stable-sized in every state). The theme
+// layer belongs in the fixture, not in
 // `primitives/src/checkbox.rs` or `radio_group.rs`: the *conditional-children*
 // behavior of `CheckboxIndicator` is correct, documented API (a consumer's
 // indicator content need not be a fixed-size glyph), and `RadioItem`'s
 // primitive renders no built-in visual by design (it is a headless
-// primitive) -- the actual defect was this one fixture forgetting the theme
-// layer every sibling fixture already applies.
+// primitive) -- a fixture that skips the theme
+// layer every sibling fixture applies is what collapses.
 //
-// Item 2 fix (2026-09-01, live-site report): "Notifications (library switch)"
-// and "Opt-in, required (library switch)" render visually collapsed, the same
-// way. This fixture also imported the *raw* `dioxus_primitives::switch::
+// 2. The "Notifications (library switch)" and "Opt-in, required (library
+// switch)" fields render visually collapsed, the same way, if the fixture
+// imports the *raw* `dioxus_primitives::switch::
 // {Switch, SwitchThumb}` and `dioxus_primitives::select::{Select, SelectList,
 // SelectOption, SelectTrigger, SelectValue}` primitives directly, the same
-// root cause as Item 1: `Switch`'s `<button>` gets no `width`/`height`
+// root cause as case 1: `Switch`'s `<button>` gets no `width`/`height`
 // without `.dx-switch` (`../switch/style.css`: `all: unset; width: 2rem;
 // height: 1.15rem; ...`), so it collapses to an empty button's intrinsic
-// size. Confirmed by an SSR test below asserting `#switch-lib` carries a
-// `dx-switch`-prefixed class, red before this fix (no `class` attribute on
-// that button at all) and green after. Fixed here by switching to
+// size. An SSR test below asserts `#switch-lib` carries the `dx-switch`
+// class. The fixture therefore uses
 // `crate::components::switch::Switch` (which renders its own themed
-// `SwitchThumb` internally -- the explicit `SwitchThumb {}` child this
-// fixture previously passed is gone) and `crate::components::select::*`.
+// `SwitchThumb` internally, so no explicit `SwitchThumb {}` child) and
+// `crate::components::select::*`.
 use crate::components::checkbox::Checkbox;
 use crate::components::radio_group::{RadioGroup, RadioItem};
 use crate::components::select::{Select, SelectOption};
@@ -67,7 +65,7 @@ use dioxus_primitives::js_listener::{use_js_listeners, JsListeners};
 
 /// The ONLY way a preview page renders a `<form>` (`scripts/check-demo-forms.sh` fails on any other).
 ///
-/// # The defect this exists for (owner report: "submit buttons in the demo / docs pages reload the page")
+/// # What it guards against (submit buttons in the demo / docs pages reloading the page)
 ///
 /// A bare `form { .. }` with no `onsubmit` is a real HTML form: clicking its submit button, or pressing
 /// Enter in one of its fields, runs the browser's form submission algorithm, which NAVIGATES to the form's
@@ -76,7 +74,7 @@ use dioxus_primitives::js_listener::{use_js_listeners, JsListeners};
 /// calls `preventDefault` only when a handler explicitly cleared `Event::default_action_enabled()`, and a
 /// form with no `onsubmit` has no handler to do so. Two independent windows, so the cure needs both halves:
 ///
-/// 1. HYDRATED: an `onsubmit` that calls `prevent_default()`. Forgotten once (the card's login form), it is
+/// 1. HYDRATED: an `onsubmit` that calls `prevent_default()`. A forgotten one is
 ///    forgotten silently: nothing fails until someone clicks.
 /// 2. PRE-HYDRATION: the SSG page is plain HTML until the wasm bundle boots and hydration attaches
 ///    listeners (`data-node-hydration="..,submit:1"` is the only trace of a handler in the served markup).
@@ -151,7 +149,7 @@ fn fruit_label(value: String) -> String {
 
 /// Builds JS that reads `new FormData(form)` and writes one `name=value` line
 /// per entry, in insertion order, into the result element -- this is the
-/// tier 2 (HTML) entry-list rule from `docs/conformance-harness.md`, read
+/// tier 2 (HTML) entry-list rule from `dev-docs/conformance-harness.md`, read
 /// straight from the browser's own algorithm rather than through any
 /// Dioxus-side approximation of it. A `data-submit-count` bump lets
 /// Playwright await the update deterministically.
@@ -182,25 +180,25 @@ fn read_form_data_js(form_id: &str, result_id: &str) -> String {
 /// (via a microtask) into a single, replacing write so repeated attempts
 /// don't accumulate stale entries.
 ///
-/// Item 2 fix (2026-09-01, live-site report): "Required blocking (form B)
-/// seems broken, at least visually." The block itself always worked (tier-2
-/// rule 4 in `form-participation.spec.ts` was already green) -- `required`
+/// The "Required blocking (form B)" fixture needs this for visible feedback.
+/// The block itself works (tier-2
+/// rule 4 in `form-participation.spec.ts`) -- `required`
 /// lives on each control's visually-hidden native mirror (`BubbleInput` in
 /// `primitives/src/checkbox.rs`, the hidden `<input type="radio">` in
 /// `radio_group.rs`, the hidden `<select>` in `select/components/select.rs`,
 /// all marked `aria-hidden="true" tabindex="-1"`), and Chrome refuses to
 /// focus a non-focusable hidden control or show its native validation
-/// bubble on one -- confirmed via the browser console on submit: "An
-/// invalid form control with name='...' is not focusable." So the missing
-/// piece was purely user-visible feedback, not the blocking mechanics.
+/// bubble on one (the console says "An
+/// invalid form control with name='...' is not focusable."). So the missing
+/// piece is user-visible feedback, not the blocking mechanics.
 ///
-/// Fixed here, in the fixture, rather than in the primitives: bridging
+/// It lives here, in the fixture, rather than in the primitives: bridging
 /// native constraint-validation feedback onto a *visible* stand-in for an
 /// invalid hidden control is a UI-layer decision each consumer's markup is
 /// best placed to make (which element counts as "the visible one," how to
 /// style it) -- a primitives-level validity bridge would need a public API
-/// for a library-wide default that this one fixture's fix does not have to
-/// invent (see this session's report, "follow-up candidates").
+/// for a library-wide default that this one fixture does not need to
+/// invent.
 ///
 /// The mapping from an invalid hidden control to its visible counterpart is
 /// the same trick across every control this fixture pairs a hidden mirror
@@ -229,9 +227,8 @@ fn watch_invalid_js(form_id: &str, report_id: &str) -> String {
         const report = document.getElementById('{report_id}');
         if (form && report) {{
             // `[class*="dx-form-field"]` rather than `.dx-form-field`: this is
-            // deliberately loose (docs/backlog.md row 32 dropped `#[css_module]`'s
-            // hashing, so the rendered class is now the plain `dx-form-field`
-            // literal and an exact selector would work too), kept this way so it
+            // deliberately loose (the rendered class is the plain `dx-form-field`
+            // literal, see dev-docs/backlog.md row 32, so an exact selector would work too), kept this way so it
             // keeps matching regardless of any extra classes a future edit appends
             // alongside it.
             function fieldContainerOf(el) {{
@@ -282,9 +279,8 @@ fn watch_invalid_js(form_id: &str, report_id: &str) -> String {
             // driven by `document::eval` setting `.checked`/`.value`
             // directly -- which, unlike a real user interacting with a
             // native control, never dispatches a `change`/`input` event
-            // (confirmed by execution: a plain `change` listener here never
-            // fired for any library control, only the native reference
-            // ones). So instead of reacting to a specific event, any
+            // (a plain `change` listener here never fires for any library
+            // control, only the native reference ones). So instead of reacting to a specific event, any
             // plausible interaction (click, key release, or a real
             // `change`/`input` from a native control) triggers a re-check
             // of every currently-marked control's *actual* validity --
@@ -297,22 +293,22 @@ fn watch_invalid_js(form_id: &str, report_id: &str) -> String {
             // the click. Deferred a macrotask out (`setTimeout(_, 0)`): the
             // click/keyup that toggles a library control fires *before*
             // that control's own Dioxus effect has re-run and pushed the
-            // new checked/value onto its hidden mirror (confirmed by
-            // execution -- checking synchronously on click always saw the
-            // mirror's *pre*-click validity), so this needs to wait for
-            // that settle first, same as the `reset` listener below.
+            // new checked/value onto its hidden mirror (a synchronous
+            // check on click sees the mirror's *pre*-click validity), so
+            // this needs to wait for that settle first, same as the
+            // `reset` listener below.
             //
             // Reads `.validity.valid`, never calls `.checkValidity()`:
-            // confirmed by execution, the latter is not the passive read it
+            // the latter is not the passive read it
             // looks like -- per spec it *fires `invalid` on the element
             // when the check fails*, which this file's own capturing
             // `invalid` listener above would immediately see and re-mark
             // `data-invalid` from, undoing the very clear this function was
-            // trying to make (a self-reinforcing loop that, before this
-            // fix, made every required library control's marker outlive a
-            // form reset -- the native references were unaffected only
+            // trying to make (a self-reinforcing loop that would make
+            // every required library control's marker outlive a
+            // form reset -- the native references escape it only
             // because their reset finishes synchronously, before this
-            // function's deferred re-check ever ran). `.validity` is a
+            // function's deferred re-check runs). `.validity` is a
             // live `ValidityState` read with no such side effect.
             function reviewInvalidMarkers() {{
                 setTimeout(() => {{
@@ -339,9 +335,9 @@ fn watch_invalid_js(form_id: &str, report_id: &str) -> String {
             // the `invalid` batching above): each library control's own
             // `use_form_reset_listener` is *also* a `reset` listener on this
             // same form, resyncing its Dioxus-side state and re-rendering --
-            // confirmed by execution, clearing synchronously here raced that
-            // re-render and the marker came right back on every library
-            // control (only the native references' cleared for good), so
+            // clearing synchronously here races that
+            // re-render and the marker comes right back on every library
+            // control (only the native references' clear for good), so
             // this waits for that settle first.
             listen(form, 'reset', () => {{
                 setTimeout(() => {{
@@ -355,13 +351,12 @@ fn watch_invalid_js(form_id: &str, report_id: &str) -> String {
 
 /// A real `<form>` fixture pairing this library's form controls with native
 /// reference controls, for the tier 2 (HTML) rule checklist in
-/// `docs/conformance-harness.md`.
+/// `dev-docs/conformance-harness.md`.
 ///
-/// `RadioGroup` and `Select` currently document `name` (and `RadioGroup`
-/// also documents `required`) without rendering a submittable element for
-/// either -- see `docs/plan.md` Phase 1. This fixture sets those props per
-/// their documented API anyway, so it fails today and passes once Phase 1
-/// lands.
+/// `RadioGroup` and `Select` document `name` (and `RadioGroup` also documents
+/// `required`) and render a hidden native mirror that submits it (see
+/// `dev-docs/plan.md` Phase 1). This fixture sets those props per their
+/// documented API, so it is the oracle for that submission.
 #[component]
 pub fn FormFixture() -> Element {
     // The native reference inputs below that start checked render a plain `checked` (the server
@@ -376,8 +371,8 @@ pub fn FormFixture() -> Element {
     // Wire the capturing `invalid` listener (and the `document`-level ones that clear the
     // markers again) after the required-blocking form mounts. They belong to this component:
     // `use_js_listeners` removes every one of them when the fixture unmounts -- the `document`
-    // `click`/`keyup` ones used to stay on the page after the route was left, one more pair
-    // per visit. This reads no reactive signals, so it only runs once.
+    // `click`/`keyup` ones would otherwise stay on the page after the route was left, one more
+    // pair per visit. This reads no reactive signals, so it only runs once.
     use_js_listeners(move || {
         Some(JsListeners::install(&watch_invalid_js(
             "form-required",
@@ -430,7 +425,7 @@ pub fn FormFixture() -> Element {
                                 // default the HTML reset algorithm reads is set by
                                 // `use_default_checked("chk-native", ..)` above, so this reference
                                 // control restores on <form> reset like a plain static
-                                // `<input checked>` would. See docs/conformance-harness.md rule 6.
+                                // `<input checked>` would. See dev-docs/conformance-harness.md rule 6.
                                 checked: true,
                             }
                         }
@@ -636,7 +631,7 @@ pub fn FormFixture() -> Element {
                     code { "required" }
                     " per its documented API, including "
                     code { "Select" }
-                    " -- see docs/plan.md Phase 1.3. "
+                    " -- see dev-docs/plan.md Phase 1.3. "
                     "Blocked submits fire "
                     code { "invalid" }
                     " on the offending controls, listed below in insertion order."
@@ -865,13 +860,10 @@ mod tests {
         }
     }
 
-    /// Item 1 fix (2026-09-01, live-site report): a themed control's class
+    /// A themed control's class
     /// is what actually carries its fixed size (see this file's header
-    /// comment, and `../switch/style.css`'s `.dx-switch { all: unset; width:
-    /// 2rem; ...}`). `#[css_module]` hash-suffixes every class it generates
-    /// (confirmed by execution -- the rendered class is `dx-switch-<8 hex
-    /// chars>`, never the literal `dx-switch`), so this matches on the
-    /// prefix rather than the exact class name.
+    /// comment, and `../switch/style.css`'s `.dx-switch`), so the library
+    /// switch must wear the plain `dx-switch` class.
     #[test]
     fn switch_lib_carries_the_themed_dx_switch_class() {
         let mut dom = VirtualDom::new(FormFixture);
@@ -880,13 +872,9 @@ mod tests {
 
         let tag = tag_containing(&html, "id=\"switch-lib\"");
         let class = attr_value(tag, "class");
-        // docs/backlog.md row 32: this used to look for a `dx-switch-<hash>`
-        // token, because `#[css_module]` appended a scope hash to every class.
-        // With the hashing dropped the themed class is the plain `dx-switch`,
-        // so the old prefix match (`starts_with("dx-switch-")`, note the
-        // trailing hyphen) no longer matches anything. Asserting the exact
-        // token is a stricter check than the prefix ever was: it would now
-        // also catch a stray re-hashed class coming back.
+        // dev-docs/backlog.md row 32: classes carry no scope hash, so the themed
+        // class is the plain `dx-switch`. Asserting the exact token (not a
+        // `dx-switch-` prefix) also catches a stray re-hashed class.
         assert!(
             class.split_whitespace().any(|token| token == "dx-switch"),
             "expected the unhashed `dx-switch` class on #switch-lib (see \

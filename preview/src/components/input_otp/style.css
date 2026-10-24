@@ -18,8 +18,8 @@
  * The edge stays an inset box-shadow (the `--dx-ring-field` family `focus-ring.spec.ts` holds
  * every text field to), drawn exactly as Nova draws borders: every slot paints top, bottom and
  * inline-end, the first slot adds inline-start, so each internal divider is ONE 1px line.
- * (A full edge per slot overlapped by -1px put two translucent layers on the shared pixel:
- * the dark fill is `--dx-input` at 30% and the dark edge is 15% white, so the divider read
+ * (A full edge per slot overlapped by -1px would put two translucent layers on the shared pixel:
+ * the dark fill is `--dx-input` at 30% and the dark edge is 15% white, so the divider would read
  * about twice as strong as the outer border.) The inline sides are physical offsets, so RTL
  * swaps them under `[dir="rtl"]` (not `:dir(rtl)`: the build's CSS transform lowers it to a
  * `:lang(ar, ...)` list, which never matches a page that sets `dir` without `lang`). */
@@ -143,7 +143,7 @@
   color: var(--dx-muted-foreground);
 
   /* The root (`primitives/src/input_otp.rs`) is a bare `inline-flex` with no gap of its own, so
-     without this the separator's 4px dot sat flush against slot 3 and slot 4 began 4px after
+     without this the separator's 4px dot would sit flush against slot 3 and slot 4 would begin 4px after
      it. Padding the separator gives the same `gap-2` on each side that shadcn's container
      applies between groups and separators (8px + glyph + 8px). */
   padding-inline: var(--dx-space-2);

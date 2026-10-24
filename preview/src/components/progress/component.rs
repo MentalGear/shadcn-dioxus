@@ -6,7 +6,7 @@ use dioxus_primitives::progress::{self, ProgressLabelProps, ProgressProps, Progr
 /// A progress bar. The root is the `progressbar` and a flex-wrap row (shadcn's `cn-progress-root`,
 /// `flex flex-wrap gap-3`): put a [`ProgressLabel`] and a [`ProgressValue`] in it and they sit on the first
 /// line, the label at the start and the value at the end, above the full-width track. With neither, it is the
-/// bare 4px track as before.
+/// bare 4px track.
 #[component]
 pub fn Progress(props: ProgressProps) -> Element {
     let base = attributes!(div { class: "dx-progress", "data-dx-root": "" });

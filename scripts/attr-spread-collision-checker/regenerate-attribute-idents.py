@@ -23,7 +23,7 @@
 # `#[props(extends = GlobalAttributes)]` struct's derived builder generates an ad-hoc
 # setter for. The checker's secondary, `component-attributes-forward` check (see
 # scripts/attr-spread-collision-checker/src/main.rs) uses this second list to recognize
-# the `5fc1439`-shaped collision shape without needing to hardcode or guess the set of
+# the forwarded-`attributes` collision shape without needing to hardcode or guess the set of
 # names that mechanism can carry.
 #
 # Usage: python3 scripts/attr-spread-collision-checker/regenerate-attribute-idents.py
@@ -138,8 +138,8 @@ def extract(path: Path):
             style_idents.add(ident)
         elif ns is None:
             global_idents.add(ident)
-        # else: some other namespace -- none observed in dioxus-html-0.7.9's
-        # global_attributes! block (verified: only "style" occurs), so intentionally not
+        # else: some other namespace -- dioxus-html-0.7.9's global_attributes! block
+        # has only "style", so a different one is intentionally not
         # bucketed as either; if this ever fires, it needs a human to look, not a guess.
     return style_idents, global_idents
 

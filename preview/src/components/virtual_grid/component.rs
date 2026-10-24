@@ -2,6 +2,7 @@ use dioxus::prelude::*;
 #[allow(unused_imports)] // a consumer-facing surface; this crate's own demos use a subset
 pub use dioxus_primitives::virtual_grid::{
     ScrollFade, SortDirection, TileRect, VirtualGridProps, VirtualJustifiedGridProps, VirtualWrapGridProps,
+    VirtualizeMode, DEFAULT_AUTO_THRESHOLD,
 };
 use dioxus_primitives::{dioxus_attributes::attributes, merge_attributes};
 
@@ -22,6 +23,7 @@ pub fn VirtualGrid(props: VirtualGridProps) -> Element {
             row_key: props.row_key,
             column_width: props.column_width,
             render_cell: props.render_cell,
+            text_value: props.text_value,
             render_header: props.render_header,
             column_sort: props.column_sort,
             row_selected: props.row_selected,
@@ -31,6 +33,8 @@ pub fn VirtualGrid(props: VirtualGridProps) -> Element {
             column_buffer: props.column_buffer,
             dir: props.dir,
             on_active_change: props.on_active_change,
+            virtualize: props.virtualize,
+            auto_threshold: props.auto_threshold,
             fade: props.fade,
             attributes: merged,
         }
@@ -54,9 +58,12 @@ pub fn VirtualWrapGrid(props: VirtualWrapGridProps) -> Element {
             estimate_row_height: props.estimate_row_height,
             render_item: props.render_item,
             item_key: props.item_key,
+            text_value: props.text_value,
             buffer: props.buffer,
             dir: props.dir,
             on_active_change: props.on_active_change,
+            virtualize: props.virtualize,
+            auto_threshold: props.auto_threshold,
             fade: props.fade,
             attributes: merged,
         }

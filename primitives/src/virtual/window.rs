@@ -1,10 +1,10 @@
 //! Pure "which items are in the window" math, shared by [`crate::virtual_list`] and
-//! (eventually) a looping virtual carousel.
+//! the looping virtual carousel.
 //!
 //! [`window`] is the single implementation of "given a logical range of positions plus
 //! overscan padding, which data indices should be rendered, in which order, keyed by
 //! which stable identity". `virtual_list`'s [`super::utils::default_range_extractor`]
-//! delegates to it with `wrap: false`; a future `CarouselVirtual` will call it with
+//! delegates to it with `wrap: false`; the carousel calls it with
 //! `wrap: true` to compute a looping window around a settled anchor index.
 
 /// One rendered position in a virtual window.
@@ -22,7 +22,7 @@ pub(crate) struct WindowItem {
 /// in ascending `position` order.
 ///
 /// - `wrap == false`: positions are clamped to `0..count` (the exact behaviour of
-///   today's `default_range_extractor`).
+///   `default_range_extractor`).
 /// - `wrap == true`: every position `p` in `start - overscan ..= end + overscan` is kept
 ///   and maps to `data_index = p.rem_euclid(count)`.
 /// - `count == 0` → empty. `start > end` → treated as the single range `start..=start`

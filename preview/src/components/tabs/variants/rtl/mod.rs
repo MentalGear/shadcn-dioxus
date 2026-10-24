@@ -13,14 +13,11 @@ use dioxus_primitives::direction::{Direction, DirectionProvider};
 ///
 /// Labelled "One"/"Two"/"Three" rather than reusing the `main` variant's
 /// "Tab 1"/"Tab 2"/"Tab 3" (every component page renders every one of its
-/// variants at once -- `preview/src/main.rs`'s `ComponentHighlight` --  so
-/// identical labels make `main`'s own pre-existing `tabs.spec.ts` locators
-/// ambiguous the moment a second variant exists; confirmed live: adding
-/// this fixture with the `main` labels made every `tabs.spec.ts` assertion
-/// that queries `getByRole("tab", { name: "Tab 2" })` (no `exact`, so a
-/// substring match too) throw a strict-mode "resolved to 2 elements"
-/// error). Distinct words side-step it without touching that spec file,
-/// which this lane's brief puts out of scope.
+/// variants at once -- `preview/src/main.rs`'s `ComponentHighlight` -- so
+/// identical labels make `main`'s `tabs.spec.ts` locators ambiguous: a
+/// `getByRole("tab", { name: "Tab 2" })` (no `exact`, so a substring match
+/// too) throws a strict-mode "resolved to 2 elements" error). Distinct words
+/// avoid it without touching that spec file.
 #[component]
 pub fn Demo() -> Element {
     rsx! {

@@ -1,10 +1,10 @@
 ---
 id: 4
 title: "First 3-browser CI run — treat as calibration. Not done — see 2026-09-04 Notes below for what's now known and…"
-status: "A manual dispatch of playwright.yml on a GitHub-hosted runner: all workflows are…"
+status: "WAITING ON OWNER: CI reactivation (off until further notice, 2026-08-30). The GitHub-hosted…"
 size: "S–M"
 area: ci
-updated: 2026-09-04
+updated: 2026-10-24
 ---
 
 # Row 4: First 3-browser CI run — treat as calibration. Not done — see 2026-09-04 Notes below for what's now known and…
@@ -15,7 +15,7 @@ First 3-browser CI run — treat as calibration. **Not done — see 2026-09-04 N
 
 ## Status / trigger
 
-A manual dispatch of `playwright.yml` on a GitHub-hosted runner: all workflows are `workflow_dispatch`-only as of 2026-08-30, so no PR fires this automatically. **2026-09-04: partially superseded locally** — this sandbox has a working Playwright container with all three engines installed for the first time (see the Fresh-session order environment note above), so a local calibration pass is now possible without CI; the GitHub-hosted `workflow_dispatch` run itself has still never executed
+**WAITING ON OWNER: CI reactivation (off until further notice, 2026-08-30).** The GitHub-hosted `workflow_dispatch` calibration run of the 3-browser Playwright job has never executed; local calibration is possible (all three engines installed since 2026-09-04). The dispatch-only `main.yml`, `all_components.yml`, `playwright.yml` and `stylelint.yml` were deleted by row 266 (their checks run in `scripts/run-gates.sh`, the Playwright suite and `scripts/registry-install-smoke.sh`); reactivating CI restores them from git history (`git show e5bdf652^:.github/workflows/<name>.yml`).
 
 ## Size
 

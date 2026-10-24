@@ -4,12 +4,11 @@ import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
 /**
- * Backlog row 155 (last open follow-up): the styled `DatePicker`/`DateRangePicker` carry the
+ * Backlog row 155: the styled `DatePicker`/`DateRangePicker` carry the
  * calendar's formatting callbacks -- `on_format_weekday`, `on_format_month` and
- * `on_format_month_short` -- to the calendar inside the popover. Before, only the input's month
- * segment got `on_format_month`, so the internationalized demo's popover calendar stayed English,
- * and the month dropdown could only derive its short names by cutting the full name to three
- * characters, which gives French "Jui" for both juin and juillet.
+ * `on_format_month_short` -- to the calendar inside the popover, so the internationalized demo's popover
+ * calendar is localised, and the month dropdown takes its short names from `on_format_month_short` instead of
+ * cutting the full name to three characters (which gives French "Jui" for both juin and juillet).
  */
 const PAGE_URL = `${BASE_URL}/component/date_picker/`;
 const NAV_TIMEOUT = 20 * 60 * 1000; // first run compiles the app

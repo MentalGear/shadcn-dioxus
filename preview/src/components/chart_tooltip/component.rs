@@ -1,6 +1,6 @@
 //! `ChartTooltip`'s gallery -- shadcn/ui's nine `chart-tooltip-*.tsx` demos
-//! (`$S/refs/ui/apps/v4/registry/new-york-v4/charts/chart-tooltip-*.tsx`,
-//! `dev-docs/research/chart-2026-09-19.md` §1.2's "Tooltip variants: 9"
+//! (shadcn-ui/ui `apps/v4/registry/new-york-v4/charts/chart-tooltip-*.tsx`,
+//! `dev-docs/archive/research/chart-2026-09-19.md` §1.2's "Tooltip variants: 9"
 //! row), each showing one tooltip/legend option this crate's `chart`
 //! package exposes: the indicator shape (dot/line/dashed/none), hiding the
 //! label and/or indicator, a custom label, a label formatter, a fully
@@ -34,7 +34,7 @@
 //! Every demo below renders through the plain themed
 //! `crate::components::chart::ChartTooltip`, re-exported via the glob
 //! below: that wrapper forwards every `ChartTooltipProps` field through a
-//! `..props` struct-update spread (§4(a) of the stage-2 handoff), so
+//! `..props` struct-update spread, so
 //! `indicator`/`label_key`/`name_key`/`formatter` all reach the real
 //! primitive with no gallery-local pass-through needed.
 
@@ -48,8 +48,7 @@ pub use dioxus_primitives::chart::{ChartIcon, ChartSeries, TooltipIndicator, Too
 /// (`scripts/check-dx-class-prefix.sh`), and the scoping hook `style.css`'s
 /// indicator/icon rules use so they apply only within this page, never
 /// `chart`'s own gallery elsewhere on the site (those rules are a
-/// temporary copy of a request filed to `$S/stage2-lanes.md`'s "requests
-/// for the refactor owner" -- see `style.css`'s own header comment).
+/// scoped copy of `chart/style.css`'s -- see `style.css`'s own header comment).
 #[component]
 pub fn Gallery(children: Element) -> Element {
     rsx! {
@@ -61,15 +60,15 @@ pub fn Gallery(children: Element) -> Element {
 /// Parses a `"YYYY-MM-DD"` date string and returns its short English
 /// weekday name (`"Mon"`..`"Sun"`) via Sakamoto's algorithm (public domain
 /// -- Wikipedia, "Determination of the day of the week"), used instead of
-/// a date-handling dependency per this workspace's no-new-Cargo-deps rule
-/// for the chart round (`$S/chart-common.md`). Falls back to `iso_date`
+/// a date-handling dependency per this workspace's no-new-Cargo-deps rule.
+/// Falls back to `iso_date`
 /// unchanged when it isn't exactly `"YYYY-MM-DD"` with a month in `1..=12`
 /// -- this is demo-only formatting, not primitive code, so a malformed
 /// input degrades to "show the raw string" rather than panicking.
 ///
 /// Every one of this gallery's nine demos ports shadcn's own per-file
 /// `tickFormatter={(value) => new Date(value).toLocaleDateString("en-US",
-/// { weekday: "short" })}` (`$S/refs/ui/.../charts/chart-tooltip-*.tsx`,
+/// { weekday: "short" })}` (`charts/chart-tooltip-*.tsx` in shadcn's new-york-v4 registry,
 /// repeated identically in each of the nine source files); this is the one
 /// shared Rust equivalent so the nine variant files don't each duplicate a
 /// date algorithm the way the source duplicates the one-liner.

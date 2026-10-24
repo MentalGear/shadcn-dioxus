@@ -31,7 +31,7 @@
 /*
  * Not inside the popover panel: the calendar's day cells are `data-disabled="true"` too when a day is
  * unavailable, and that state is already drawn by calendar/style.css (the muted-foreground token +
- * line-through, at full opacity). Fading it a second time here washed unavailable days out to ~2:1
+ * line-through, at full opacity). Fading it a second time here would wash unavailable days out to ~2:1
  * contrast instead of the designed look.
  */
 .dx-date-picker[data-disabled="true"],
@@ -65,8 +65,8 @@
  * (`../input/style.css`'s `.dx-input:focus-visible`). The group is the field -- it draws the chrome and
  * its segments are bare `contenteditable` spans -- so, as `InputGroup` does, the ring goes on the group
  * while a segment has focus; the focused segment keeps its own highlight (below). The calendar trigger is
- * a button inside the field and takes the same ring on its own box (it reset nothing, so the UA's
- * outline used to be the only mark). `playwright/focus-ring.spec.ts` holds both to Input's.
+ * a button inside the field and takes the same ring on its own box (it resets nothing, so the UA's
+ * outline would be the only mark otherwise). `playwright/focus-ring.spec.ts` holds both to Input's.
  */
 .dx-date-picker-group:has(.dx-date-picker-segment:focus-visible) {
     box-shadow: var(--dx-ring-field);
@@ -88,11 +88,11 @@
 
 /*
  * The panel is sized by what it holds. `.dx-popover-content` (popover/style.css) gives every
- * popover a fixed one-month width (`width: 18rem`), which is why a second month used to render
- * OUTSIDE the panel: the calendar's months overflowed a box sized for one. `max-content` makes
+ * popover a fixed one-month width (`width: 18rem`), so a second month would render
+ * OUTSIDE the panel: the calendar's months overflow a box sized for one. `max-content` makes
  * the panel as wide as its months side by side (and, for one month, hugs the calendar instead of
  * leaving a dead strip beside it); `max-width` is the same one-gutter-each-side viewport cap
- * `.dx-popover-content` has (it used to be dropped here with `unset`), so on a phone the panel
+ * `.dx-popover-content` has (not dropped here with `unset`), so on a phone the panel
  * stops growing, the months wrap onto their own rows (calendar/style.css) and the panel stays
  * inside the viewport -- where `top_layer.rs`'s clamp can place it.
  */
@@ -116,18 +116,16 @@
 }
 
 /*
- * Historical wiring-gap fix (2026-09-01, live-site report; backlog row
- * 20/item 3): this page used to carry its own hand-copied `[popover]`
- * UA-stylesheet reset and `@supports (anchor-name: --a)` block -- both now
+ * The `[popover]` UA-stylesheet reset and the `@supports (anchor-name: --a)` block
  * live in a single, engine-injected stylesheet shared by every
- * `dx-anchor-*`-marked overlay in the app instead (`primitives/src/top_layer.rs`'s
- * `ensure_anchor_positioning_styles` doc, docs/backlog.md item 1).
+ * `dx-anchor-*`-marked overlay in the app (`primitives/src/top_layer.rs`'s
+ * `ensure_anchor_positioning_styles` doc, backlog row 20, dev-docs/backlog.md item 1).
  *
  * The open/close motion is the theme's floating-surface recipe with the 4px drop (`dx-drop-in` /
  * `dx-drop-out`, set through the slots above). It animates `translate`, NOT `transform`: the anchored
  * panel centres itself on its trigger with `transform: translateX(-50%)` (top_layer.rs's engine
  * stylesheet), and a keyframe that sets `transform` replaces that for as long as the animation runs,
- * so the panel used to play its whole fade 144px off-centre (more for two months) and snap back on
+ * so the panel would play its whole fade off-centre and snap back on
  * the last frame. `translate` composes with `transform`, so the centring survives.
  */
 

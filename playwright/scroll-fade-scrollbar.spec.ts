@@ -1,8 +1,8 @@
 /**
  * A scroll fade never covers its scrollbar. The `dx-scroll-fade` utility of `assets/dx-effects.css` is a
  * `mask-image` on the scroll container, and a mask covers the whole border box, scrollbars included, so a
- * classic scrollbar used to dissolve with the content at every faded edge (most visible with
- * `ScrollFade::Both`, where all four ends of both scrollbars faded). The mask is now a stack of layers
+ * classic scrollbar would dissolve with the content at every faded edge (most visible with
+ * `ScrollFade::Both`, where all four ends of both scrollbars fade). The mask is a stack of layers
  * whose content area is the padding box minus the scrollbar gutters, which the scroller's script writes
  * as `--dx-scrollbar-inline-size` / `--dx-scrollbar-block-size`; the gutters stay opaque.
  *
@@ -11,14 +11,14 @@
  * hover (`main.css`), so the spec gives the scroller an opaque `scrollbar-color` (a red thumb on a blue
  * track) and screenshots it. At a scroll position where both edges of an axis are faded, the track is
  * sampled in the middle of the gutter right at the faded end and again at the middle of the track; with
- * the mask in the way the first pixel is a blend towards the card behind it, with the fix it is the
+ * the mask in the way the first pixel is a blend towards the card behind it, with the gutters excluded it is the
  * track's own colour. The same is read for the horizontal scrollbar of a `Both` grid, and in RTL, where
  * the classic scrollbar moves to the left. A control reads the content area at the same edge and proves
  * the fade really is on (the content pixel differs from its interior value), so a pass cannot mean "the
  * fade was off".
  *
  * Overlay scrollbars (macOS, iOS) are 0px wide: the gutters measure 0, the content area is the whole box
- * and the mask is the plain gradient it was, so there is nothing to sample there.
+ * and the mask is the plain gradient, so there is nothing to sample there.
  *
  * Functional spec: no millisecond thresholds. Nothing here bounds an overlay in the viewport.
  */
@@ -191,7 +191,7 @@ test.describe("scroll fade leaves the scrollbar opaque", () => {
     await expectHorizontalBarOpaque(page, grid);
   });
 
-  test("VirtualGrid in RTL: the scrollbar moved to the left and is still opaque", async ({ page }) => {
+  test("VirtualGrid in RTL: the scrollbar is on the left and opaque", async ({ page }) => {
     await gotoHydrated(page, url("virtual_grid"), GOTO_OPTS);
     await page.locator("#dx-direction-toggle").click();
     await expect(frame(page)).toHaveAttribute("dir", "rtl");
@@ -239,7 +239,7 @@ test.describe("scroll fade leaves the scrollbar opaque", () => {
     await expect.poll(size).not.toBe("0px");
   });
 
-  test(".dx-scroll-fade-none still turns the whole mask off", async ({ page }) => {
+  test(".dx-scroll-fade-none turns the whole mask off", async ({ page }) => {
     await gotoHydrated(page, url("virtual_list"), GOTO_OPTS);
     const list = frame(page).locator('[data-demo="fade-windowed"] [role="list"]');
     await expect(list.locator('[role="listitem"]').first()).toBeVisible({ timeout: 60_000 });

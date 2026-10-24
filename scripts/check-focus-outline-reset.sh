@@ -6,9 +6,9 @@
 # `--dx-ring-focus-inset`, see "State recipes" in `preview/assets/dx-components-theme.css`), and
 # "`outline` is never the ring (`outline: none` + a token)". A focusable element that paints that
 # shadow but never neutralises the UA focus outline shows BOTH: the browser's own outline, drawn
-# outside the ring, in the UA colour. (Checkbox and Tag Group's tag did exactly this: their rings
-# were correct and their rule-sets looked finished, because the UA outline only appears on a real
-# keyboard focus, which no snapshot takes.)
+# outside the ring, in the UA colour. (Checkbox and Tag Group's tag are the shape: the ring is correct and the
+# rule-set looks finished, because the UA outline only appears on a real keyboard focus, which no
+# snapshot takes.)
 #
 # This gate fails when, in a component `style.css` (comments stripped):
 #

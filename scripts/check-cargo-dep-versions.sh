@@ -2,11 +2,19 @@
 #
 # check-cargo-dep-versions.sh
 #
+# What a user's `dx components add` puts in their Cargo.toml comes only from `component.json`, so over every
+# `cargoDependencies` entry: the version is `x.y.z`, `^`, `~` or `=` with a floor equal to the `Cargo.lock` version,
+# the crate is a `preview` dependency, `dioxus-icons` and `pulldown-cmark` are pinned `=x.y.z`, only an allowlisted
+# component (`markdown`) may list a markdown, HTML or syntax parser, the `dioxus-primitives` `rev`s are all unstamped
+# or all one 40-hex value (`scripts/stamp-release-rev.sh <sha>` writes it at release time), and every primitives
+# module behind a cargo feature that a component's installed Rust files name has that feature in its closure's
+# `features`.
+#
 # What a user's `dx components add <name>` puts in their Cargo.toml is `cargo add <crate>[@<version>]
 # [--features ..]` for every `cargoDependencies` entry of the component and of its `componentDependencies`
 # closure (dioxus-cli 0.7.9 `add_rust_dependencies`; `shadcn-dioxus add` the same). Our `Cargo.lock` never reaches
-# a user, so the version text in `component.json` is the ONLY thing tying what we tested to what ships. Before this
-# gate `time` was declared `0.3.44` while the lock (and so every test) ran 0.3.47. dev-docs/backlog.md row 217,
+# a user, so the version text in `component.json` is the ONLY thing tying what we tested to what ships. Without this
+# gate a declared `time` `0.3.44` can sit beside a lock (and so every test) at 0.3.47. dev-docs/backlog.md row 217,
 # dev-docs/research/dependency-audit-2026-10-14.md section A4. Rules over
 # preview/src/components/*/component.json:
 #   1. VERSIONS MATCH THE LOCK. Every entry with a `version` is `x.y.z`, `^x.y.z`, `~x.y.z` or `=x.y.z` (a floor
@@ -33,6 +41,9 @@
 #      `scripts/check-primitives-features.sh` is the compile half; `scripts/registry-install-smoke.sh` the
 #      definitive pre-merge one.
 #
+# `scripts/stamp-release-rev.sh <sha>` writes the release rev into every `dioxus-primitives` entry; `--check` verifies
+# it and `--remove` returns the tree to the unstamped development state.
+#
 # Usage: scripts/check-cargo-dep-versions.sh
 # Exit status: 0 when clean, 1 on a violation.
 
@@ -45,11 +56,11 @@ import glob, json, os, re, sys, tomllib
 # crate -> reason; written `=x.y.z` in component.json.
 EXACT_ONLY = {
     "dioxus-icons": "leaf crate used by 27 components, pre-1.0 and one maintainer: an exact pin keeps every install on the version we render with",
-    "pulldown-cmark": "markdown parser (owner decision E2: exact pin; a panic fix landed between 0.13.3 and 0.13.4)",
+    "pulldown-cmark": "markdown parser (owner decision E2: exact pin, because model output reaches this parser and 0.13.4 carries a panic fix)",
 }
 # Markdown / HTML / syntax parser crates: a component may list one only if PARSER_ALLOW[crate] names it.
 PARSER_ALLOW = {
-    "pulldown-cmark": ["markdown"],   # round 3 (dev-docs/backlog.md row 213); absent until that component lands
+    "pulldown-cmark": ["markdown"],   # the markdown component (dev-docs/backlog.md row 213)
     "pulldown-cmark-escape": ["markdown"],
 }
 PARSERS = set(PARSER_ALLOW) | {

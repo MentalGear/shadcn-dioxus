@@ -1,5 +1,5 @@
 /* Radial Chart gallery -- shadcn/ui `chart-radial-*` demo parity
- * (dev-docs/research/chart-2026-09-19.md §1.2). Every demo composes the
+ * (dev-docs/archive/research/chart-2026-09-19.md §1.2). Every demo composes the
  * installable `chart` package's own themed pieces (Chart/ChartContainer/
  * ChartTooltip/ChartLegend, styled by `chart/style.css`, which is where
  * every `[data-slot="chart-arc"]`/`chart-arc-label`/`chart-pie-center-text`/

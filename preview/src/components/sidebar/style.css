@@ -26,18 +26,14 @@
  * allowlist). A floating sidebar's `ring-1` is drawn as a 1px border so
  * it can sit beside `--dx-shadow-sm` (which is `none` in dark and cannot share a `box-shadow`). */
 
-/* docs/backlog.md row 32: renamed from the bare `.dx-sr-only` to
- * `.dx-sidebar-sr-only` -- `pagination/style.css` defines a byte-identical
- * rule under the same short name, and `#[css_module]`'s hash was the only
- * thing keeping the two apart. Now that this component's hashing is gone,
- * this copy is namespaced like everything else here.
- * TODO(row 31a): still the better long-term home is one shared
- * `dx-sr-only` utility class in `preview/assets/dx-utilities.css` (a
- * GENERATED file, not hand-edited -- see
- * `scripts/generate-dx-utilities.js`) so this exact duplication with
- * `pagination/style.css` collapses into a single definition; out of scope
- * for this migration, so both components keep their own namespaced copy
- * for now. */
+/* dev-docs/backlog.md row 32: `.dx-sidebar-sr-only`, namespaced like
+ * everything else here, because `pagination/style.css` defines a
+ * byte-identical rule and a bare `.dx-sr-only` would be declared by both.
+ * TODO(row 31a): the better long-term home is one shared `dx-sr-only`
+ * utility class in `preview/assets/dx-utilities.css` (a GENERATED file, not
+ * hand-edited -- see `scripts/generate-dx-utilities.js`) so this duplication
+ * with `pagination/style.css` collapses into a single definition; until then
+ * both components keep their own namespaced copy. */
 .dx-sidebar-sr-only {
   position: absolute;
   overflow: hidden;
@@ -67,10 +63,9 @@
    * `.dx-sidebar-desktop[data-side="right"]`) so this mirrors for every
    * `Sidebar` render path that carries `data-side`, not just the
    * expanded/collapsible desktop one -- see `component.rs`'s
-   * `SidebarCollapsible::None` branch (`.dx-sidebar-static`), which used
-   * to omit `data-side` entirely and so never reversed for
-   * `side: SidebarSide::Right` (dev-docs/backlog.md: sidebar right-side
-   * alignment bug). Both branches share the `data-slot="sidebar"`
+   * `SidebarCollapsible::None` branch (`.dx-sidebar-static`), which must
+   * carry `data-side` too, or `side: SidebarSide::Right` would never
+   * reverse there. Both branches share the `data-slot="sidebar"`
    * attribute, so one selector covers both by construction instead of
    * needing a second copy of this rule per branch. */
   .dx-sidebar-wrapper:has([data-slot="sidebar"][data-side="right"]) {
@@ -202,17 +197,13 @@
   color: var(--dx-sidebar-foreground);
 }
 
-/* `position: relative` above (not just a stray addition -- it fixes a
- * second symptom of the same root cause as the `data-side` fix in
- * `component.rs`'s `SidebarCollapsible::None` branch): without any
- * `position` here, `.dx-sidebar-rail` (`position: absolute`, sized via
- * `[data-side="…"] .dx-sidebar-rail { left/right: … }` below) had no
- * positioned ancestor to anchor to short of the initial containing
- * block, so it rendered pinned to a corner of the whole page instead of
- * the sidebar's own edge -- for EITHER side, not just `right`. This
- * gives `SidebarRail` the same containing block the collapsible desktop
- * branch already gets for free from `.dx-sidebar-container`'s
- * `position: fixed`. */
+/* `position: relative` above is load-bearing: without any `position` here,
+ * `.dx-sidebar-rail` (`position: absolute`, sized via
+ * `[data-side="…"] .dx-sidebar-rail { left/right: … }` below) has no
+ * positioned ancestor short of the initial containing block, so it pins to
+ * a corner of the whole page instead of the sidebar's own edge, for EITHER
+ * side. It gives `SidebarRail` the same containing block the collapsible
+ * desktop branch gets from `.dx-sidebar-container`'s `position: fixed`. */
 
 .dx-sidebar-sheet {
   width: var(--dx-sidebar-width-mobile) !important;
@@ -336,22 +327,16 @@
 
   /* Without this, a flex item's automatic minimum width is its content's
    * min-content size (CSS Flexbox spec, "automatic minimum size"), not 0 --
-   * `flex: 1 1 0%` alone does not override that. Most pages' content never
-   * reaches that min-content width in practice, so this stayed invisible
-   * since the site-nav dogfooding that first made `.dx-sidebar-wrapper` a
-   * flex row with real sidebar content as this item's sibling -- until the
-   * homepage's `WidgetMasonry` widget grid (unrelated to any one card) hit
-   * it: this inset refused to shrink below that content's min-content
-   * width and overflowed `.dx-sidebar-wrapper` by 250px+ at a plain
-   * 1280px viewport, silently clipped rather than scrolled (`overflow-x:
-   * clip` on `html`/`body`, `assets/main.css`) -- which in turn widened
-   * every sibling section sharing this inset's `width: 100%`, including
-   * the component gallery grid below it, so any gallery card whose own
-   * content reaches flush to its card's true (now off-screen) edge became
-   * genuinely unreachable, not just visually cramped. Fixing the one flex
-   * item that needs to shrink, rather than re-constraining whichever
-   * content happens to expose it, covers today's `WidgetMasonry` case and
-   * any future one by construction. */
+   * `flex: 1 1 0%` alone does not override that. A wide child (the
+   * homepage's `WidgetMasonry` grid) would then keep this inset from
+   * shrinking below its min-content width and overflow
+   * `.dx-sidebar-wrapper` at a plain 1280px viewport, silently clipped
+   * rather than scrolled (`overflow-x: clip` on `html`/`body`,
+   * `assets/main.css`), which widens every sibling section sharing this
+   * inset's `width: 100%` and leaves cards that reach their true edge
+   * unreachable. Letting the one flex item that needs to shrink do so,
+   * rather than re-constraining whichever content exposes it, covers every
+   * wide child by construction. */
   min-width: 0;
   flex: 1 1 0%;
   flex-direction: column;
@@ -363,7 +348,7 @@
    "right"]` overrides below -- Sidebar's `side` prop is an explicit,
    physical screen-edge choice (matches shadcn's own `side="left"|"right"`,
    which carries no RTL handling -- apps/v4/registry/new-york-v4/ui/
-   sidebar.tsx, radix-ui/ui commit a87a63b), not a reading-direction one, so
+   sidebar.tsx, radix-ui/ui@a87a63b), not a reading-direction one, so
    it does not flip with `dir`. */
 [data-variant="inset"]~.dx-sidebar-inset {
   border-radius: var(--dx-radius-xl);
@@ -437,16 +422,15 @@
   font-weight: 500;
 
   /* gap: matches `.dx-sidebar-menu-button[data-sidebar="menu-button"]`'s own
-     icon+label spacing (this file, ~line 568) -- this label started as a
-     text-only child, so it had no gap of its own until a leading icon
-     (e.g. `Docs`'s "Start"/each `ComponentCategory` group) needed the same
-     icon+text pairing that button already supports. */
+     icon+label spacing (this file), so a leading icon (e.g.
+     `Docs`'s "Start"/each `ComponentCategory` group) pairs with the text
+     the same way that button does. */
   gap: var(--dx-space-2);
   outline: none;
   transition: margin var(--dx-motion-duration-slow) var(--dx-sidebar-ease), opacity var(--dx-motion-duration-slow) var(--dx-sidebar-ease);
 }
 
-/* Nova: `ring-sidebar-ring focus-visible:ring-2` (`outline: none` above hid it). */
+/* Nova: `ring-sidebar-ring focus-visible:ring-2` (`outline: none` above would hide it). */
 .dx-sidebar-group-label:focus-visible {
   box-shadow: 0 0 0 2px var(--dx-sidebar-ring);
 }
@@ -487,7 +471,7 @@
   }
 }
 
-/* `outline: none` above left this button with no focus indicator at all: ring it like its siblings. */
+/* `outline: none` above would leave this button with no focus indicator at all: ring it like its siblings. */
 .dx-sidebar-group-action:focus-visible {
   box-shadow: 0 0 0 2px var(--dx-sidebar-ring);
 }
@@ -531,7 +515,7 @@
   padding: 0;
   margin: 0;
 
-  /* Owner 2026-10-19: new-york-v4's `gap-1` between items, not Nova's `gap-0`, so the docs shell and
+  /* new-york-v4's `gap-1` between items (dev-docs/decisions.md), not Nova's `gap-0`, so the docs shell and
      every demo show the same visible spacing (playwright/docs-sidebar-spacing.spec.ts keeps them equal). */
   gap: var(--dx-space-1);
   list-style: none;
@@ -764,7 +748,7 @@
   }
 }
 
-/* `outline: none` above left this button with no focus indicator at all: ring it like its siblings. */
+/* `outline: none` above would leave this button with no focus indicator at all: ring it like its siblings. */
 .dx-sidebar-menu-action[data-sidebar="menu-action"]:focus-visible {
   box-shadow: 0 0 0 2px var(--dx-sidebar-ring);
 }

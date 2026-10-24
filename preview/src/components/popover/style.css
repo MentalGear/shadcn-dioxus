@@ -126,7 +126,7 @@
   /* logical: `align="start"` is a reading-direction concept for a
      top/bottom-placed overlay's cross axis (Radix's Floating UI resolves
      align logically from `dir` -- packages/react/popper/src/popper.tsx,
-     radix-ui/primitives commit f7ecd5a). No transform to desync from
+     radix-ui/primitives@f7ecd5a). No transform to desync from
      (`transform: none` below), so this is a plain, safe conversion. */
   inset-inline-start: 0;
   transform: none;
@@ -161,7 +161,7 @@
 /* Header, title and description: Nova's `cn-popover-header` (flex column,
  * gap-0.5, text-sm), `cn-popover-title` (font-medium) and
  * `cn-popover-description` (muted). `.dx-popover-content-title`/`-description`
- * are the previous names, kept so a copied-out page that still uses them
+ * are aliases of those, kept so a copied-out page that uses them
  * renders the same. */
 .dx-popover-header {
   display: flex;

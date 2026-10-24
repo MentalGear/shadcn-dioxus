@@ -243,9 +243,8 @@ fn nth_month_previous(date: Date, n: u8) -> Option<Date> {
 /// this crate does (`Direction::resolve_horizontal`): the day "to the
 /// right" is always `+1` day in LTR and `-1` day in RTL, since a calendar's
 /// week row is itself a horizontal, direction-mirrored layout (the same
-/// spatial-arrow-key convention this lane found unanimous across every
-/// Radix source it read for roving focus, Slider, and the menu family --
-/// see `$S/batch3/rtl-rust/reference.md`; no Radix/shadcn Calendar exists
+/// spatial-arrow-key convention every Radix source uses for roving focus,
+/// Slider, and the menu family; no Radix/shadcn Calendar exists
 /// to cite directly, since shadcn's own Calendar wraps `react-day-picker`,
 /// not a Radix primitive). `ArrowUp`/`ArrowDown` (`±7 days`, a full week
 /// row) are never direction-dependent and stay outside this function,
@@ -2862,14 +2861,14 @@ pub fn calendar_day_attributes(state: &CalendarDayState) -> Vec<Attribute> {
         attrs.push(attr("data-unavailable", Bool(true)));
     }
     attrs.push(attr("data-disabled", Bool(state.disabled)));
-    // backlog row 84 finding 1: an unavailable day (or a day inside a
+    // backlog row 84: an unavailable day (or a day inside a
     // disabled calendar -- `state.disabled` is already `(calendar disabled)
-    // || unavailable`, see `day_state`) never told assistive tech it could
-    // not be chosen: the cell has no native `disabled` attribute (a
+    // || unavailable`, see `day_state`) must tell assistive tech it cannot
+    // be chosen: the cell has no native `disabled` attribute (a
     // genuinely disabled `<button>` would drop out of the tab order, which
     // `SingleCalendarDay`/`RangeCalendarDay` deliberately avoid so the grid
     // keeps a single roving tabstop -- see their own `handle_day_select`
-    // early-return instead), and until now nothing else stood in for it.
+    // early-return instead), so nothing else stands in for it.
     // `aria-disabled` (unlike a native `disabled` attribute) does not
     // remove the element from the tab order, so this is the correct
     // "focusable but not operable" signal -- matches this crate's own
@@ -3053,10 +3052,8 @@ fn SingleCalendarDay(props: CalendarDayProps) -> Element {
 
     // `type` is an overridable default; the roving-focus `tabindex` and
     // `calendar_day_attributes`'s aria/data state are owned, so they merge
-    // in last -- same precedence (owned wins) production already had via
-    // the old first-literal-wins SSR/last-wins CSR split (backlog row 93),
-    // just without the duplicate attribute a caller override used to
-    // silently collide with after hydration.
+    // in last (owned wins; backlog row 93), with no duplicate attribute
+    // for a caller override to collide with after hydration.
     let defaults = attributes!(button { r#type: "button" });
     let owned = merge_attributes(vec![
         calendar_day_attributes(&state),
@@ -3467,7 +3464,7 @@ mod tests {
             assert!(state.outside_month);
             assert_eq!(state.relative_month, RelativeMonth::Next);
 
-            // `focused`/`selected`/`range_*` pass through unchanged.
+            // `focused`/`selected`/`range_*` pass through as given.
             let state = day_state(
                 date!(2024 - 06 - 01),
                 &base_ctx,
@@ -3527,9 +3524,9 @@ mod tests {
             find_attr(&attrs, "data-disabled").unwrap().value,
             Bool(false)
         );
-        // backlog row 84 finding 1: `aria-disabled` mirrors `data-disabled`
+        // backlog row 84: `aria-disabled` mirrors `data-disabled`
         // exactly (same source value, same unconditional presence) -- see
-        // the fix's own comment in `calendar_day_attributes`.
+        // the comment in `calendar_day_attributes`.
         assert_eq!(
             find_attr(&attrs, "aria-disabled").unwrap().value,
             Bool(false)
@@ -3538,7 +3535,7 @@ mod tests {
             find_attr(&attrs, "data-month").unwrap().value,
             Text("current".to_string())
         );
-        // Booleans that are false today are omitted entirely, matching the
+        // Booleans that are false are omitted entirely, matching the
         // built-in cell's `if cond { true }` (no-else) attributes.
         assert!(find_attr(&attrs, "data-today").is_none());
         assert!(find_attr(&attrs, "data-unavailable").is_none());
@@ -3661,7 +3658,7 @@ mod tests {
     fn use_calendar_day_state_matches_day_state_for_a_single_calendar() {
         // The hook must compute the *same* `CalendarDayState` `day_state`
         // does for the built-in cell -- that's the "one source of truth"
-        // this refactor exists for.
+        // this hook exists for.
         with_runtime(|| {
             let disabled_ranges = [DateRange::new(date!(2024 - 06 - 18), date!(2024 - 06 - 19))];
             let mut base_ctx = make_base_ctx_for_relative_month(DateRange::new(
@@ -3798,9 +3795,9 @@ mod tests {
     #[test]
     fn unavailable_calendar_day_renders_aria_disabled_true_and_available_day_renders_aria_disabled_false(
     ) {
-        // backlog row 84 finding 1: "Calendar's unavailable days carry no
-        // aria-disabled" -- an end-to-end (full `Calendar`, real
-        // `disabled_ranges`, `dioxus_ssr::render`) regression guard rather
+        // backlog row 84: an unavailable day carries `aria-disabled` --
+        // an end-to-end check (full `Calendar`, real
+        // `disabled_ranges`, `dioxus_ssr::render`) rather
         // than only the lower-level `calendar_day_attributes` fixture tests
         // above, so this also exercises `is_unavailable`/`day_state`'s own
         // wiring, not just the attribute-building function in isolation.
@@ -3965,7 +3962,7 @@ mod tests {
     fn test_calendar_grid_weeks() {
         // Calls the real `calendar_grid_weeks` (the function `CalendarGrid`/
         // `use_calendar_grid` actually use to build the rendered month grid) --
-        // not a hand-copied reimplementation. See docs/mutants-baseline.md fix #1.
+        // not a hand-copied reimplementation. See dev-docs/reference/mutants-baseline.md.
 
         // Test February 2021: starts on Monday, 28 days
         // When first day of week is Monday, should fit in exactly 4 weeks
@@ -4045,7 +4042,7 @@ mod tests {
     }
 
     // -----------------------------------------------------------------
-    // Pure predicates (docs/mutants-baseline.md fix #8)
+    // Pure predicates (dev-docs/reference/mutants-baseline.md)
     // -----------------------------------------------------------------
 
     #[test]
@@ -4266,7 +4263,7 @@ mod tests {
     }
 
     // -----------------------------------------------------------------
-    // Context accessors (docs/mutants-baseline.md fix #8)
+    // Context accessors (dev-docs/reference/mutants-baseline.md)
     // -----------------------------------------------------------------
 
     /// Run a closure inside a Dioxus runtime context so that Signal/Memo/Callback
@@ -4464,8 +4461,8 @@ mod tests {
             );
             assert_eq!(ctx.view_registrations.read().len(), 1);
 
-            // Unregistering the *only* remaining view must still remove it (regression
-            // guard for the "nothing to remove" short-circuit misfiring when every
+            // Unregistering the *only* remaining view must still remove it (guards
+            // the "nothing to remove" short-circuit against misfiring when every
             // registered view happens to share the target id).
             ctx.unregister_calendar_view(a);
             assert!(

@@ -7,12 +7,12 @@
 #   scripts/lane-slot-target.sh release             drops it (also dropped when the pid dies)
 #   scripts/lane-slot-target.sh copy <src> <dest>   copy of src without .tree-owner and without `incremental/` dirs
 #
-# Slot 0 uses $LANE_TGT/<name> (check, gates, ...), exactly as before. A slot >= 1 compiles
+# Slot 0 uses $LANE_TGT/<name> (check, gates, ...), the dir a single-slot run uses. A slot >= 1 compiles
 # at the same time as slot 0 and so cannot share its target dir; its dir (<name>-s1) is created
 # lazily, on first use, as a WARM copy of the slot-0 dir when that is idle (the copy runs holding
 # slot 0's lock and the legacy lock, so nothing builds into the source meanwhile) and as an empty
 # COLD dir otherwise. Either way it refuses (exit 1) when free disk is below the source size + 20% +
-# 2 GB: a full disk killed lanes before (row 168). Run it INSIDE lane-lock.sh (LANE_SLOT_SUFFIX).
+# 2 GB: a full disk kills a lane's build (row 168). Run it INSIDE lane-lock.sh (LANE_SLOT_SUFFIX).
 set -euo pipefail
 T="${LANE_TGT:-/home/user/tgt}"
 Q="$T/lockq"
@@ -23,9 +23,9 @@ die() { echo "lane-slot-target: $*" >&2; exit 1; }
 # Under one flock on $Q/disk.lock: free space minus the bytes live copies already reserved
 # ($Q/disk-reserve/<pid>, one file per owner pid, ignored and removed when that pid is dead) must
 # cover this copy; the reservation is written before the lock is released and dropped by `release`.
-# Row 367: a copy never carries cargo's `incremental/` dirs (3.0 of the template's 6.8 GB): every lane command runs
+# Row 367: a copy never carries cargo's `incremental/` dirs (about half of a template's size): every lane command runs
 # with CARGO_INCREMENTAL=0 (lane-cargo.sh, lane-ssg.sh, run-gates.sh), which neither reads nor writes them, so they
-# were dead weight that made each lane build need 10.4 GB free. The guard's size estimate leaves them out too
+# would be dead weight in the copy and in the free-disk requirement. The guard's size estimate leaves them out too
 # (`du --exclude`). LANE_COPY_INCREMENTAL=1 keeps them (for a hand-run incremental build).
 # Test hooks: LANE_FREE_KB (fake free space), LANE_DISK_MARGIN_KB (default 2 GB), LANE_RESERVE_PID.
 RES="$Q/disk-reserve"

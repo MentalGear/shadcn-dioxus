@@ -11,8 +11,9 @@
 #   .dx-card[data-size="sm"] .dx-card-title { font-size: var(--dx-text-sm); }
 #
 # That also matches the title of every default-size Card nested anywhere inside the small one: the inner
-# root carries no `data-size="sm"`, but its ancestor does. The docs page's DEMO/CODE `line` Tabs restyled
-# every Tabs demo inside it this way (fixed for Tabs by `lane/p5tabs`); check-popup-boundary.sh does not
+# root carries no `data-size="sm"`, but its ancestor does. The docs page's DEMO/CODE `line` Tabs would restyle
+# every Tabs demo inside it this way (Tabs re-declares its slot variable per variant, row 218);
+# check-popup-boundary.sh does not
 # see it, because its subjects are `dx-` classes. The same reach comes from a `:has()` that finds the
 # variant through a descendant combinator (`.dx-message:has([data-variant="ghost"]) ...` matches an outer
 # message whose NESTED message holds a ghost bubble) and from a bare `[data-variant="x"]` compound, which
@@ -47,6 +48,10 @@
 # THE ALLOWLIST below is for sites where the component cannot be nested inside itself, with the reason. An
 # entry is `(component dir, regex searched in the selector, reason)`; it must match at least one flagged
 # selector (a stale entry fails), and a reason is mandatory. Prefer the construction to an entry.
+#
+# The browser half is `playwright/variant-nesting.spec.ts`: on every page of a component whose sheet styles by a
+# variant attribute, each other-variant instance is cloned into a neutral host inside and beside each variant
+# instance, and every computed property must agree.
 #
 # Usage: scripts/check-variant-scope.sh [--list]      (--list prints every flagged site, allowlisted or not)
 # Exit status: 0 = every variant rule is scoped or allowlisted; 1 = a new one; 2 = bad usage.

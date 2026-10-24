@@ -9,10 +9,9 @@
 # component's items is `crate::components::<name>::Item` (or `::*`). Inside
 # this repo `examples!` (preview/src/components/mod.rs) keeps `component`
 # private for the same reason, so such a path fails to compile here too -- but
-# it hit twice before that was true (the `pub use
-# crate::components::chart::component::*;` in every *_chart/component.rs, and
-# the `use crate::components::button::component::Button;` in six variants),
-# each compiling fine in the repo and failing in an installed tree.
+# a path like `pub use crate::components::chart::component::*;` or
+# `use crate::components::button::component::Button;` compiles fine in a tree
+# where `component` is public and fails in an installed one.
 #
 # Rule: no `components::<name>::component::` path anywhere in
 # preview/src/**/*.rs outside comments (the app shell in main.rs may name
@@ -28,8 +27,8 @@
 # `componentDependencies` entry the same way, and appending `pub mod <name>;` to the user's
 # `src/components/mod.rs`. There is no `files` field. So a component installs and compiles only if its
 # directory itself holds a `mod.rs` that declares `component` (preview's `examples!` declares the module
-# inline and never reads that file, so a missing one compiled fine here and broke with E0583 in a user's
-# tree for 27 components). For every `preview/src/components/*/component.json` this checks:
+# inline and never reads that file, so a missing one compiles here and breaks with E0583 in a user's
+# tree). For every `preview/src/components/*/component.json` this checks:
 #   - the dir is a member of the root `component.json` and the manifest `name` is the dir name (a dir that
 #     is deliberately not installable goes in NOT_INSTALLABLE below, with the reason);
 #   - `mod.rs` exists and is exactly `mod component; pub use component::*;`, `component.rs` exists;
@@ -44,9 +43,9 @@
 #     `cargoDependencies` entry of the component itself or of one in its `componentDependencies` closure. Both
 #     installers run `cargo add` for the whole closure (dx: `run`, "collect all required rust dependencies";
 #     `shadcn-dioxus`: `add.rs`, `to_install`), and nothing else puts the crate in the user's Cargo.toml: an
-#     app that was not made from `templates/starter` has no `dioxus-primitives`, and `kbd`, `area_chart`,
-#     `bubble`, `empty` and `message` (no `cargoDependencies`) failed there with E0433 while the starter
-#     template, the preview and the smoke script all pre-declared it.
+#     app that was not made from `templates/starter` has no `dioxus-primitives`, and a component with no
+#     `cargoDependencies` fails there
+#     with E0433 while the starter template, the preview and the smoke script all pre-declare it.
 # `scripts/registry-install-smoke.sh` is the definitive (slow, pre-merge) check that this approximates.
 #
 # Usage: scripts/check-installed-paths.sh

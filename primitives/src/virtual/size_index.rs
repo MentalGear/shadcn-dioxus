@@ -1,15 +1,15 @@
 //! Item geometry for the windowed list: prefix sums over per-item sizes with `O(log N)` point
 //! update and `O(log N)` position lookup.
 //!
-//! The previous engine kept a `Vec<VirtualItem>` (`start`, `size` per item) that was rebuilt in
-//! full, `O(N)`, whenever a row was measured, and cloned in full, `O(N)`, on every row resize
+//! A flat `Vec<VirtualItem>` (`start`, `size` per item) would be rebuilt in
+//! full, `O(N)`, whenever a row is measured, and cloned in full, `O(N)`, on every row resize
 //! event. At 1M rows that is ~24 MB allocated per measurement. A [`SizeIndex`] is a Fenwick tree
 //! (binary indexed tree), so measuring a row is one `O(log N)` update and "which row is at pixel
 //! `y`" is one `O(log N)` descent. Nothing is copied.
 //!
 //! # What an unmeasured item weighs
 //!
-//! Exactly what the old `compute_measurements` did, so the numbers on screen do not change:
+//! The numbers are those of the naive per-item walk (the test oracle `naive_items`):
 //!
 //! - with a per-item estimate (`estimate_size` given): the estimate, until the item is measured;
 //! - without one ("adaptive"): the integer average of every measured size so far, or
@@ -108,8 +108,7 @@ pub(crate) struct SizeIndex {
     source: SizeEstimates,
     /// Measured sizes by item key (the index without an `item_key`). Entries of items that are
     /// not in the list now are kept, so a list that shrinks and grows back, or an item that
-    /// leaves a filter and returns, remembers them (the old `item_size_cache` never evicted
-    /// either).
+    /// leaves a filter and returns, remembers them (entries are never evicted).
     measured: HashMap<u64, u32>,
     measured_sum: u64,
     /// 1-based Fenwick array of length `count + 1`.
@@ -319,7 +318,7 @@ impl SizeIndex {
 mod tests {
     use super::*;
 
-    /// The old engine, verbatim: the oracle every `SizeIndex` answer is compared with.
+    /// The naive per-item engine, kept verbatim as the oracle every `SizeIndex` answer is compared with.
     fn naive_items(
         count: usize,
         measured: &HashMap<usize, u32>,
@@ -343,14 +342,14 @@ mod tests {
         items
     }
 
-    /// The old `find_nearest_binary_search`.
+    /// The nearest-item binary search, as the oracle's reference.
     fn naive_nearest(items: &[VirtualItem], offset: u32) -> usize {
         items
             .binary_search_by(|item| item.start().cmp(&offset))
             .unwrap_or_else(|idx| idx.saturating_sub(1))
     }
 
-    /// The old end-of-viewport walk, from `start`.
+    /// The naive end-of-viewport walk, from `start`.
     fn naive_end(items: &[VirtualItem], start: usize, position: u32) -> usize {
         let last = items.len() - 1;
         let mut end = start;
@@ -409,8 +408,8 @@ mod tests {
             return;
         }
         let total = items.last().unwrap().end();
-        // Unique starts only: with a zero-sized item the old binary search picked an arbitrary
-        // one of several equal starts, the index picks the last. Real sizes are >= 1.
+        // Unique starts only: with a zero-sized item a binary search may pick any one of several
+        // equal starts, while the index picks the last. Real sizes are >= 1.
         let unique = items.windows(2).all(|w| w[0].start() < w[1].start());
         for _ in 0..200 {
             let offset = rng.below(total as u64 + 50) as u32;
@@ -501,7 +500,7 @@ mod tests {
 
     #[test]
     fn adaptive_average_counts_every_measurement_even_past_the_end() {
-        // The old `item_size_cache` average included entries at or beyond `count`.
+        // The average counts entries at or beyond `count` too.
         let mut index = SizeIndex::new(SizeEstimates::evaluate(4, None), HashMap::new());
         index.set_measured(100, 300);
         assert_eq!(index.size(0), 300);
@@ -524,20 +523,20 @@ mod tests {
         assert_eq!(index.index_at_or_before(at - 1), 499_999);
     }
 
-    /// Cost of one row measurement: the old engine rebuilt and cloned the whole geometry, the
-    /// index updates one tree path. Run with
+    /// Cost of one row measurement: a full rebuild clones the whole geometry, the index updates
+    /// one tree path. Run with
     /// `cargo test --release -p dioxus-primitives size_index -- --ignored --nocapture`.
     #[test]
     #[ignore = "benchmark, run by hand"]
-    fn bench_one_measurement_old_rebuild_against_the_index() {
+    fn bench_one_measurement_naive_rebuild_against_the_index() {
         use std::time::Instant;
         let estimate: &dyn Fn(usize) -> u32 = &|i| 40 + (i % 7) as u32;
         for count in [10_000usize, 100_000, 1_000_000] {
             let rounds = if count >= 1_000_000 { 20 } else { 200 };
             let mut measured: HashMap<usize, u32> = HashMap::new();
 
-            // Old: every new measurement rebuilt the Vec<VirtualItem> (the memo), and every
-            // resize event cloned it (`measurements.peek().clone()`).
+            // Naive: every new measurement rebuilds the Vec<VirtualItem> (the memo), and every
+            // resize event clones it (`measurements.peek().clone()`).
             let t = Instant::now();
             let mut keep = 0u64;
             for i in 0..rounds {
@@ -548,7 +547,7 @@ mod tests {
             }
             let old = t.elapsed() / rounds as u32;
 
-            // New: one tree update, one position lookup.
+            // Index: one tree update, one position lookup.
             let mut index = SizeIndex::new(
                 SizeEstimates::evaluate(count, Some(estimate)),
                 HashMap::new(),
@@ -567,7 +566,7 @@ mod tests {
             let built = SizeIndex::new(source, HashMap::new());
             let build = t.elapsed();
             keep += built.total() as u64;
-            println!("N={count:>9}: old {old:>10.2?} / measurement, index {new:>8.2?} / measurement, one-off build {build:>9.2?} (ignore {keep})");
+            println!("N={count:>9}: naive rebuild {old:>10.2?} / measurement, index {new:>8.2?} / measurement, one-off build {build:>9.2?} (ignore {keep})");
         }
     }
 

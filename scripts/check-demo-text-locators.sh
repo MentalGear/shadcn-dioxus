@@ -4,9 +4,9 @@
 #
 # A SHARED spec -- one that drives the demo pages of many components (the oracle suites, the theme-contrast
 # sweep, focus restore, overlay switching) -- must not locate a demo's controls by the demo's visible COPY.
-# Copy is wording nobody meant as a contract: three rounds in one session a demo that mirrored shadcn's example
-# more closely (row 212's labelled demos, row 155 group 3's toggles) renamed a button and broke
-# `keyboard-matrix`, `main-thread`, `rtl` and `theme-preset-contrast` at once. The construction is
+# Copy is wording nobody meant as a contract: a demo that mirrors shadcn's example more closely (row 212's
+# labelled demos, row 155 group 3's toggles) renames a button and breaks `keyboard-matrix`, `main-thread`,
+# `rtl` and `theme-preset-contrast` at once (backlog row 220). The construction is
 # `playwright/demo-frame.ts`: a control is named by its ARIA ROLE and its POSITION inside the demo frame
 # (`demoRole(page, "button")`, `demoRole(page, "tab", 2)`, `demoRole(page, "button", 0, "checkboxes")` for the
 # `#component-preview-frame-checkboxes` variant), and an item of an open popup by its position in that popup
@@ -50,9 +50,9 @@ import sys
 explicit = sys.argv[1:]
 
 # Shared specs outside playwright/oracle/ (path under playwright/).
-# NOT yet in scope: `modal-exit.spec.ts` and `modal-initial-focus.spec.ts` drive the `CONSUMERS` table of
-# `modal-consumers.ts`, which still carries each demo's trigger and closer COPY (`trigger: "Show Dialog"`); moving it to
-# role/position changes the table's type for both specs, so it goes in with the lane that owns modal-initial-focus.
+# Not in scope: `modal-exit.spec.ts` and `modal-initial-focus.spec.ts` drive the `CONSUMERS` table of
+# `modal-consumers.ts`, which carries each demo's trigger and closer COPY (`trigger: "Show Dialog"`); moving it to
+# role/position changes the table's type for both specs.
 EXTRA_SPECS = [
     "theme-preset-contrast.spec.ts",
     "oracle-focus-restore.spec.ts",

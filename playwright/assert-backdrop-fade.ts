@@ -5,15 +5,14 @@
  * the same scrim and fade it the same way in and out" is one claim, not six copies
  * of a measurement.
  *
- * WHAT WENT WRONG BEFORE (measured, not guessed): each component painted its own
- * scrim -- a hand-rolled wrapper `div` with its own colour and its own 100-200ms
- * keyframes -- on top of the UA's default `dialog::backdrop`
- * (`rgba(0 0 0 / 10%)`, no transition). The two stacked (peak 19% on Dialog, 37%
- * on AlertDialog, 55% on Drawer), and where there was no wrapper (modal Popover,
- * Sheet) the UA layer was the whole scrim and it snapped in and out in one frame.
- * Underneath that sits one platform fact: `dialog.close()` removes the dialog from
- * the top layer synchronously and the `::backdrop` goes with it, so no exit
- * transition could play however long it was declared.
+ * WHY ONE PAINTER (measured, not guessed): a component that paints its own scrim -- a
+ * hand-rolled wrapper `div` with its own colour and its own 100-200ms keyframes -- stacks it on
+ * top of the UA's default `dialog::backdrop` (`rgba(0 0 0 / 10%)`, no transition): the peak then
+ * reads 19% on Dialog, 37% on AlertDialog, 55% on Drawer. Where there is no wrapper (modal
+ * Popover, Sheet) the UA layer is the whole scrim and it snaps in and out in one frame.
+ * Underneath that sits one platform fact: `dialog.close()` removes the dialog from the top layer
+ * synchronously and the `::backdrop` goes with it, so no exit transition could play however long
+ * it was declared.
  *
  * THE CONSTRUCTION these assertions pin down (see the six `style.css` files): the
  * dialog's own `::backdrop` is the ONLY painter (the wrapper is transparent), it
@@ -25,7 +24,7 @@
  * shared `use_dialog_open_driver` (`primitives/src/lib.rs`); the modal Popover from
  * `popover.rs`'s own driver of the same construction. Their stylesheets key the exit on
  * `data-state="closed"` and carry no `transition: overlay allow-discrete` (Chromium-only
- * keep-alive that this replaced). `assert-modal-exit.ts` pins the panel half of that
+ * keep-alive these sheets do not use). `assert-modal-exit.ts` pins the panel half of that
  * (same size, always modal, `close()` after the exit); `modal-exit.spec.ts` runs both
  * over every consumer derived from the source. The numbers come from one token set
  * (`--dx-overlay-duration`, `-ease`, `-scrim`, `-blur`) defined once in
@@ -93,8 +92,8 @@ export async function captureBackdrop(
       const c4 = /color\(.*\/\s*([\d.]+)\)/.exec(c);
       return c4 ? Number(c4[1]) : c.startsWith("color(") ? 1 : 0;
     };
-    // The scrim a component used to paint itself, on the wrapper around the dialog.
-    // On the web arm it must now contribute nothing.
+    // The wrapper around the dialog must contribute no scrim of its own on the web arm: the dialog's
+    // `::backdrop` is the one scrim.
     const WRAPPERS = [
       ".dx-dialog-backdrop",
       ".dx-alert-dialog-backdrop",
@@ -115,7 +114,7 @@ export async function captureBackdrop(
         // The transition's own duration, read from the `::backdrop`'s computed `transition-*` lists
         // (what the browser used), not from the running animation: `transitionrun` is dispatched at the
         // next frame, and on a starved main thread a short transition can already have finished -- and
-        // left `getAnimations()` -- by then, which read as a 0ms "snap" (backlog row 115's class).
+        // left `getAnimations()` -- by then, which would read as a 0ms "snap" (backlog row 115's class).
         const cs = getComputedStyle(dlg, "::backdrop");
         const props = cs.transitionProperty.split(",").map((p) => p.trim());
         const durs = cs.transitionDuration.split(",").map((p) => p.trim());
@@ -225,7 +224,7 @@ export async function captureBackdrop(
 
 /**
  * The overlay duration the page actually resolves: `--dx-overlay-duration`, defined by the theme. The
- * `--dx-motion-duration-slow` read is only a guard for a theme copy that predates the token.
+ * `--dx-motion-duration-slow` read is only a guard for a theme copy without the token.
  */
 export async function resolveOverlayMs(page: Page): Promise<number> {
   return page.evaluate((fallbackMs) => {
@@ -255,7 +254,7 @@ export function assertSharedBackdrop(capture: BackdropCapture, overlayMs: number
   const backdropPeak = Math.max(...samples.map((s) => s[2]));
 
   // One painter. A wrapper that paints too stacks a second scrim under the first
-  // (Dialog 19%, AlertDialog 37%, Drawer 55%, CommandDialog 40% before this).
+  // (Dialog 19%, AlertDialog 37%, Drawer 55%, CommandDialog 40%).
   if (wrapperPeak > 0.001) fail(`the wrapper painted ${wrapperPeak} of black on top of the dialog's ::backdrop (a second scrim)`);
 
   // The same scrim everywhere: Nova's black/10 with a 4px blur.
@@ -264,7 +263,7 @@ export function assertSharedBackdrop(capture: BackdropCapture, overlayMs: number
   if (!blur || Math.abs(Number(blur[1]) - SCRIM_BLUR_PX) > 0.01) fail(`::backdrop blur was "${settled.backdropFilter}", expected blur(${SCRIM_BLUR_PX}px)`);
 
   // It fades rather than snaps, in AND out, for the same length. `transitionrun`
-  // events are the proof: before this the UA ::backdrop never ran one at all.
+  // events are the proof: the UA's default ::backdrop never runs one.
   const bg = (phase: "open" | "close") => transitions.filter((t) => t.phase === phase && t.property === "background-color");
   for (const phase of ["open", "close"] as const) {
     const run = bg(phase);

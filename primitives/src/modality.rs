@@ -4,14 +4,14 @@
 //!
 //! ## The class this removes
 //!
-//! Every overlay has to decide two things when it opens, and each used to decide them on its own:
+//! Every overlay has to decide two things when it opens, and none decides them on its own:
 //!
 //! 1. **Where does focus go?** `showModal()`/`showPopover()` focus the first focusable descendant,
 //!    which for a text field raises the on-screen keyboard while the panel is still being placed. A
-//!    keyboard user wants exactly that; a finger does not. Row 206 read the opener's
-//!    `:focus-visible` to tell them apart, which is wrong on iOS: Safari does not focus a tapped
+//!    keyboard user wants exactly that; a finger does not. The opener's
+//!    `:focus-visible` cannot tell them apart (row 206): iOS Safari does not focus a tapped
 //!    button, and keeps focus on a previously tapped text input, which always matches
-//!    `:focus-visible`, so a tap after typing was read as a keyboard open.
+//!    `:focus-visible`, so a tap after typing would read as a keyboard open.
 //! 2. **Does the focused thing paint a ring?** A script-focused `<dialog>`/popover panel gets the
 //!    UA `outline: auto`, and a script-focused trigger gets the library's box-shadow ring, because
 //!    script focus with no pointer-focus before it counts as keyboard-ish.
@@ -32,7 +32,7 @@
 //!   `use_dialog_open_driver` (every native-`<dialog>` modal), `use_popover_shown_while_mounted`
 //!   for a `<dialog popover>` (the non-modal Popover, hence DatePicker and ColorPicker) and, through
 //!   `data-dx-autofocus`, by the Command palette. Keyboard and mouse (Base UI's default open-focus
-//!   policy, owner decision 2026-10-18): the browser default -- an `[autofocus]` target, else the
+//!   policy, backlog row 206): the browser default -- an `[autofocus]` target, else the
 //!   first focusable control, a text field included -- and an element marked `data-dx-autofocus`
 //!   (a palette's search box) explicitly. Touch and pen: the panel, never an editable element, so
 //!   the on-screen keyboard does not rise while the panel is placed; a plain `[autofocus]` wins
@@ -83,7 +83,7 @@ pub const MODALITY_JS: &str = "(function(){var W=window,R=document.documentEleme
 ///
 /// Script focus here never passes `focusVisible` (Chrome 144+): it would override the text-field
 /// rule (a focused field matches `:focus-visible` after any modality, `--dx-ring-field`), and the
-/// non-field rings are already decided by the modality attribute. See the backlog row 240 update.
+/// non-field rings are already decided by the modality attribute (backlog row 240).
 pub const OPEN_FOCUS_JS: &str = r#"
 function dxModality() {
     const m = document.documentElement.getAttribute('data-dx-modality');

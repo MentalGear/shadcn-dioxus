@@ -38,7 +38,7 @@
 //!
 //! [`PieOptions::active_index`] is Recharts' `shape` override shadcn uses
 //! for `chart-pie-donut-active`: that slice is drawn 10px further out (its
-//! hole unchanged), and with [`PieOptions::active_halo`] also gets the
+//! hole keeps its radius), and with [`PieOptions::active_halo`] also gets the
 //! separate ring 12..25px beyond the rim `chart-pie-interactive` draws. The
 //! geometry is computed here, not scaled in CSS, so the hole stays put.
 //! Hover only marks the hovered slice `data-active` for the tooltip;
@@ -129,7 +129,7 @@ pub struct PieOptions {
     pub corner_radius: f64,
     /// Per-slice text -- see [`PieLabels`].
     pub labels: PieLabels,
-    /// Draw this slice active: 10px further out, hole unchanged (shadcn's
+    /// Draw this slice active: 10px further out, the hole keeps its radius (shadcn's
     /// `chart-pie-donut-active` / `chart-pie-interactive` shape override).
     pub active_index: Option<usize>,
     /// With [`Self::active_index`], also draw the active slice's halo ring

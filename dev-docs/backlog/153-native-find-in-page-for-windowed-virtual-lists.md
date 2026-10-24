@@ -1,10 +1,10 @@
 ---
 id: 153
 title: "Native find-in-page for WINDOWED virtual lists: keep per-item text in the DOM as hidden=\"until-found\"…"
-status: "PROTOTYPED 2026-10-19 (lane virtual-grid, round 4); Chromium Ctrl+F verified 2026-10-23 -- works in…"
+status: "Left: a Firefox 139+ and Safari 26.2 run of the find bar, and a release-build mount timing for 100k…"
 size: "M"
 area: virtual
-updated: 2026-10-23
+updated: 2026-10-24
 ---
 
 # Row 153: Native find-in-page for WINDOWED virtual lists: keep per-item text in the DOM as hidden="until-found"…
@@ -15,7 +15,7 @@ Native find-in-page for WINDOWED virtual lists: keep per-item text in the DOM as
 
 ## Status / trigger
 
-**PROTOTYPED 2026-10-19 (lane `virtual-grid`, round 4); Chromium Ctrl+F verified 2026-10-23** -- works in Chromium as an opt-in `text_value` prop, now checked with the real find bar (see below); still open before it loses "experimental": a Firefox 139+/Safari 26.2 run and a release-build mount timing for 100k rows (owner idea 2026-10-05)
+**Left: a Firefox 139+ and Safari 26.2 run of the find bar, and a release-build mount timing for 100k rows** (Chromium Ctrl+F verified 2026-10-23, 3.5 s debug). The opt-in `text_value` prop works in `VirtualList` and, since row 309 (7d08f034), in `VirtualGrid` and `VirtualWrapGrid` through the shared layer `primitives/src/virtual/find.rs`; it stays "experimental" until those two runs are in.
 
 ## Size
 

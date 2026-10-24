@@ -1,6 +1,6 @@
 /**
  * The shared windowing engine (backlog row 309): VirtualList and VirtualGrid consume one DOM
- * bridge and one "keep the focused item rendered" strategy, and each gained the other's strength.
+ * bridge and one "keep the focused item rendered" strategy, and each has the other's strength.
  *
  *  - VirtualGrid / VirtualWrapGrid take the `fade: ScrollFade` prop VirtualList and ScrollArea
  *    have: the `dx-scroll-fade-*` mask lands on the grid's scroll container and follows its scroll

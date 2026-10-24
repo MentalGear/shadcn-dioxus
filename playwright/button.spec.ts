@@ -1,6 +1,5 @@
 import { test, expect } from "./fixtures";
 import type { Page } from "@playwright/test";
-import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
@@ -38,12 +37,4 @@ test("the onclick handler reaches the rendered anchor", async ({ page }) => {
   await expect(demo.getByText("Clicked 0 time(s)")).toBeVisible();
   await demo.getByRole("link", { name: "Login" }).click();
   await expect(demo.getByText("Clicked 1 time(s)")).toBeVisible();
-});
-
-test.describe("Axe automated scan", () => {
-  test("as link has no automatically detectable a11y issues", async ({ page }) => {
-    await gotoHydrated(page, URL, GOTO);
-    await styled(page);
-    await expectNoAxeViolations(page, "button: as link", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
 });

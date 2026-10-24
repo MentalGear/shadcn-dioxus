@@ -1,6 +1,6 @@
 /**
- * Popover is NON-MODAL by default (dev-docs/backlog.md row 169, owner decision 2026-10-10 and the
- * 2026-10-11 page-scroll item: shadcn / Radix / Base UI parity). This file is the coverage for the
+ * Popover is NON-MODAL by default (dev-docs/backlog.md row 169: shadcn / Radix / Base UI parity,
+ * including page scroll). This file is the coverage for the
  * non-modal contract; `popover.spec.ts` keeps the modal arm (`variant=modal`, `is_modal: true`)
  * and `oracle/tier3-radix/scroll-lock.spec.ts` pins the modal lock/unlock on the same variant.
  *
@@ -224,7 +224,7 @@ test.describe("non-modal Popover (the default): the page keeps scrolling and hol
     await page.keyboard.press("PageDown");
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
     // End must reach the bottom. Not "further than after PageDown": on a short page PageDown alone
-    // can already reach the bottom (seen under load, scrollY 577 = max), which made that red.
+    // can already reach the bottom (seen under load, scrollY 577 = max).
     await page.keyboard.press("End");
     const maxY = await page.evaluate(
       () => document.documentElement.scrollHeight - document.documentElement.clientHeight,
@@ -258,7 +258,7 @@ test.describe("non-modal Popover (the default): the page keeps scrolling and hol
   });
 });
 
-test.describe("modal Popover (is_modal: true) is still available -- and the probes can tell it apart", () => {
+test.describe("modal Popover (is_modal: true) is available -- and the probes can tell it apart", () => {
   test("the modal variant is :modal, holds the scroll lock while open and releases it on Escape", async ({ page }) => {
     await gotoHydrated(page, MODAL_URL, { timeout: NAV_TIMEOUT });
     await ensureScrollable(page);

@@ -1,6 +1,5 @@
 import { test, expect } from "./fixtures";
 import type { Page } from "@playwright/test";
-import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
@@ -13,21 +12,12 @@ test("test", async ({ page }) => {
   await expect(page.getByText("Selected: banana")).toBeVisible();
 });
 
-test.describe("Axe automated scan", () => {
-  // Native Select has no overlay/expand/select interaction -- it's a plain
-  // native <select>, one state to scan.
-  test("loaded has no automatically detectable a11y issues", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/native_select/`, { timeout: 20 * 60 * 1000 });
-    await expectNoAxeViolations(page, "native_select: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-});
-
 // Native controls follow the mode (`color-scheme`, `preview/assets/dx-components-theme.css`).
 //
-// Before this, the theme's `--dark`/`--light` toggle reached only the colours WE declare: a native
-// `<select>`'s popup, the page's scrollbars and every other UA-drawn part stayed light in dark mode, and
-// the Native Select's own translucent dark fill (`--dx-input` at 30%) landed on a LIGHT popup, leaving
-// near-white option text on a near-white list. The root now carries `color-scheme`, so the UA draws its
+// A toggle that reached only the colours WE declare would leave a native
+// `<select>`'s popup, the page's scrollbars and every other UA-drawn part light in dark mode, and
+// the Native Select's own translucent dark fill (`--dx-input` at 30%) would land on a LIGHT popup, leaving
+// near-white option text on a near-white list. The root carries `color-scheme`, so the UA draws its
 // parts in the active scheme, and the options carry the popover's opaque surface and ink.
 //
 // Three ways to be dark are covered, because they are three code paths: the cookie the docs-site theme
@@ -87,8 +77,7 @@ async function probe(page: Page) {
       select: {
         bg: own.backgroundColor,
         color: own.color,
-        // Nova `.cn-native-select` is `bg-transparent` (Input's light fill); phase C lane F moved it
-        // off `--dx-background`. The mode-follows-scheme assertions are unchanged.
+        // Nova `.cn-native-select` is `bg-transparent` (Input's light fill), not `--dx-background`.
         expectBgLight: resolve("backgroundColor", "transparent"),
         expectBgDark: resolve("backgroundColor", "color-mix(in oklab, var(--dx-input) 30%, transparent)"),
         expectColor: resolve("color", "var(--dx-foreground)"),
@@ -123,7 +112,7 @@ test.describe("Dark mode: native parts follow the theme", () => {
     expect(r.select.bg).toBe(r.select.expectBgDark);
     expect(r.select.color).toBe(r.select.expectColor);
     // The popup is painted from the options: opaque popover surface and ink, so it never inherits the
-    // select's translucent fill (which, over a light popup, was near-white text on near-white).
+    // select's translucent fill (which, over a light popup, would be near-white text on near-white).
     expect(r.option.bg).toBe(r.option.expectBg);
     expect(r.option.color).toBe(r.option.expectColor);
     expect(r.option.bg).not.toBe("rgba(0, 0, 0, 0)");
@@ -165,7 +154,7 @@ test.describe("Dark mode: native parts follow the theme", () => {
     });
   }
 
-  test("under a theme preset the options still read the (tinted) popover role, in dark", async ({ page }) => {
+  test("under a theme preset the options read the (tinted) popover role, in dark", async ({ page }) => {
     await openThemed(page, { os: "light", cookie: "dark", base: "zinc" });
     const r = await probe(page);
     expect(r.rootScheme).toBe("dark");

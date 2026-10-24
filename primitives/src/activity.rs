@@ -2,10 +2,10 @@
 //! element's motion right now?
 //!
 //! A looping animation or a self-driven timer costs main-thread work whether or not anyone is
-//! looking at it. A page full of live demos paid for hundreds of animation frames per scroll for
-//! spinners and skeletons in cards that were not on screen
-//! (`dev-docs/research/scroll-profile-2026-10-10.md`: removing the infinite animations alone took
-//! 15% off the scroll busy time). Pausing them one by one at each call site is the same
+//! looking at it. A page full of live demos would spend hundreds of animation frames per scroll on
+//! spinners and skeletons in cards that are not on screen
+//! (`dev-docs/research/scroll-profile-2026-10-10.md`: the infinite animations alone were 15% of
+//! the scroll busy time). Pausing them one by one at each call site is the same
 //! mistake as the uncleared `setInterval` (`interval.rs`): the next animation added forgets to.
 //! Here "is this visible" is answered once, in one place, and components subscribe to the answer.
 //!

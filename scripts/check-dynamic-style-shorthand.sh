@@ -2,6 +2,13 @@
 #
 # check-dynamic-style-shorthand.sh
 #
+# An rsx `style:` string with an interpolation may not declare a shorthand whose value holds a `var()` (`border`,
+# `background`, `border-radius`, ...), and a `style:` chosen by `if`/`match` is banned: Dioxus's web renderer drops a
+# `var()`-valued shorthand from an inline `style` the first time the string is re-set (the server markup is right, the
+# hydrated page loses the border) and keeps stale longhands when one string is swapped for another. Declare the
+# shorthand in a stylesheet or `style {}` rule keyed by a class or data attribute and keep only computed numbers
+# inline, spell the longhands, or paint by `data-state`. Reasoned allowlists, stale entries fail.
+#
 # Dioxus's web renderer (dioxus-interpreter-js 0.7.x, `setAttributeInner`, case "style") re-sets an inline
 # `style` like this: remember every longhand the element's style declares, `setAttribute("style", value)`,
 # then put back each remembered longhand whose value reads empty. A shorthand whose value holds a `var()`
@@ -9,18 +16,19 @@
 # pending-substitution longhands that all read "", so the "put back" writes `setProperty(longhand, "")`, which
 # REMOVES them -- and the whole shorthand with them. The string you wrote is right and the markup the server
 # sent is right (the SSG page shows the border); the first time the string is re-set on the client the
-# declaration silently disappears. Seen twice: the carousel's active dot lost its colour and radius after the
-# first click (documented in carousel/docs.md), and the photo wall's minimap box lost its border and fill as
-# soon as the wall mounted its first tiles (`first-paint-styles` found it as "border 2px -> 0 on
-# /component/virtual_grid/": the JS-off page and the hydrated page computed different styles).
+# declaration silently disappears. Examples: a carousel's active dot would lose its colour and radius after the
+# first click (documented in carousel/docs.md), and a photo wall's minimap box would lose its border and fill as
+# soon as the wall mounts its first tiles (`first-paint-styles` would report "border 2px -> 0 on
+# /component/virtual_grid/": the JS-off page and the hydrated page compute different styles).
 #
 # The same re-set also makes the opposite swap wrong: a string swapped for another string or for "" leaves
-# the remembered longhands in place, because they were remembered before the swap and are only put back when
-# they read empty. The questionnaire `progress` demo painted its checkpoint segments with
+# the remembered longhands in place, because they were remembered before the swap and are restored only if
+# they read empty. A checkpoint bar painted with
 # `style: if done { "...; background: var(--dx-primary);" } else { "...; background: var(--dx-muted);" }`: after
-# two steps the segments that had changed kept only `height` and `flex` (computed background transparent), so
-# the bar showed one bright segment, two invisible ones and one dark one; the collapsible `file_tree` and
-# bubble `collapsible` chevrons (`style: if open() { "rotate: ..." } else { "" }`) stayed rotated after closing.
+# two steps the segments that changed keep only `height` and `flex` (computed background transparent), so
+# the bar shows one bright segment, two invisible ones and one dark one; a chevron
+# (`style: if open() { "rotate: ..." } else { "" }`) stays rotated after closing (the shape of the questionnaire `progress`
+# demo and of `file_tree` / bubble `collapsible` chevrons).
 # Both are the one interpreter behaviour, so the gate has two arms.
 #
 # A static `style: "..."` is never re-set, so only a string with an interpolation, or a `style:` whose value is
@@ -44,7 +52,7 @@
 #
 # Scope: preview/src/**, primitives/src/**, templates/** (`*.rs`). Comments are blanked first.
 # EXCEPTIONS are in ALLOW below, each with its reason; an entry that no longer matches is an error (a fixed
-# site must leave the list). The list starts empty.
+# site must leave the list). The list is empty.
 #
 # Usage: scripts/check-dynamic-style-shorthand.sh [FILE ...]   (default: every *.rs under the scopes; explicit
 # files are for self-tests, and skip the allowlist stale-entry check)
@@ -75,8 +83,8 @@ ALLOW = [
 ]
 used = set()
 
-# ARM 2 exceptions: (file suffix, substring of the line, reason). Each is the same shape as the defect; checked on
-# the built site 2026-10-21 and none misrenders, because the choice is made once and never swapped live.
+# ARM 2 exceptions: (file suffix, substring of the line, reason). Each is the same shape as the defect, but none
+# misrenders on the built site, because the choice is made once and never swapped live.
 ALLOW_CHOICE = [
     ("preview/src/main.rs", "style: match member.2 {", "docs-site member status dot: the status is fixed per row and never changes after render, and every arm declares the same longhands (background-color is a longhand)"),
     ("primitives/src/chart/components/series/radar.rs", "style: if ring_fill {", "sets only a custom property, or nothing; ring_fill is fixed for a chart's lifetime, so the string is never swapped"),

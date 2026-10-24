@@ -15,7 +15,7 @@ updated: 2026-10-05
 
 ## Status / trigger
 
-**LANDED 2026-10-05 (round 3; widened into and fixed by row 159)** -- found 2026-10-04 by the scroll-jank investigation (`dev-docs/research/scroll-jank-2026-10-04.md` section 7.3); not fixed there because the file belonged to another lane
+**LANDED 2026-10-05 (round 3; widened into and fixed by row 159)** -- found 2026-10-04 by the scroll-jank investigation (`dev-docs/archive/research/scroll-jank-2026-10-04.md` section 7.3); not fixed there because the file belonged to another lane
 
 ## Size
 

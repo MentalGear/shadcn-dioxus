@@ -6,8 +6,8 @@
 `python3 -m http.server` answers an unknown URL with its own bare 404 page. The deployed site is served by GitHub
 Pages, which answers it with the site's `404.html` (status 404, scripts/emit-404.sh): a real prerendered page that
 boots the app, whose router then renders the not-found page. So a spec of a not-found route (theme-picker-phone's
-`/component/no-such-component/`, `/charts/no-such-chart/`) timed out at 90 s on the bare server, four tests = 6 of the
-121 minutes of a full debug run, and was a red that said nothing about the site. This server does what Pages does:
+`/component/no-such-component/`, `/charts/no-such-chart/`) would time out at 90 s on the bare server (four tests = 6 of the
+121 minutes of a full debug run) and be a red that says nothing about the site. This server does what Pages does:
 status 404 with `<dir>/404.html` as the body when that file exists, the stock 404 otherwise.
 """
 import functools

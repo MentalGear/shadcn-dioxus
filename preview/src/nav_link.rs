@@ -22,8 +22,8 @@
 //! only a primary-button click with no modifier is taken over and sent to the
 //! router (`navigator().push`); Ctrl/Cmd/Shift/Alt and middle clicks fall
 //! through to the browser (new tab, ...). The `href` carries the router's
-//! history prefix (`/shadcn-dioxus` on Pages). If a dioxus-router upgrade
-
+//! history prefix (`/shadcn-dioxus` on Pages). If a dioxus-router upgrade changes how `Link`
+//! handles clicks, re-check this component.
 //!
 //! **Rule:** a router `Link {` in `preview/src` must be a `NavLink` instead,
 //! unless it is an external target or a content link that can never point at

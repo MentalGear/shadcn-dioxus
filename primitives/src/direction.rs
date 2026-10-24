@@ -1,11 +1,11 @@
 //! Text/layout direction (LTR/RTL) — matches Radix's `@radix-ui/react-direction`
-//! (`packages/react/direction/src/direction.tsx`, `radix-ui/primitives` commit
-//! `f7ecd5ab16f5e1e820eb5786a1419a98a2d594ae`) and, per
-//! `docs/recommended-implementations.md` §9, takes
+//! (`packages/react/direction/src/direction.tsx`, radix-ui/primitives
+//! @ f7ecd5ab16f5e1e820eb5786a1419a98a2d594ae) and, per
+//! `dev-docs/reference/platform-rationale.md` §9, takes
 //! `dignifiedquire/dx-components`'s own Rust port of it
-//! (`primitives/src/direction.rs`, MIT OR Apache-2.0, commit
-//! `5af3cc292559a0e8d73c7b9a827c4ca08ef34d99`) as-is for the context/provider
-//! shape, renaming its `DirectionProvider` field from `dir` to `direction`
+//! (`primitives/src/direction.rs`, MIT OR Apache-2.0, dioxus-components
+//! @ 5af3cc292559a0e8d73c7b9a827c4ca08ef34d99) as-is for the context/provider
+//! shape, with its `DirectionProvider` field named `direction`
 //! (this crate's own choice, to avoid a name clash with the per-component
 //! `dir: Option<Direction>` *prop* every RTL-aware root also exposes).
 //!
@@ -30,8 +30,7 @@
 //! instead, so every one of those handlers (plus the menu family's
 //! submenu-open/close keys, plus `slider.rs`'s keyboard mapping) calls it
 //! rather than each hand-writing its own `Key::ArrowLeft`/`Key::ArrowRight`
-//! swap. See `$S/batch3/rtl-rust/reference.md` (this lane's own report) for
-//! the full per-component table this was derived from.
+//! swap.
 //!
 //! **Reactive**: [`DirectionProvider`] provides a `Signal<Direction>` and
 //! writes its `direction` prop into it on every render, and
@@ -74,8 +73,7 @@ impl Direction {
     /// `MAP_KEY_TO_FOCUS_INTENT`, restricted to the two horizontal keys:
     /// `ArrowLeft` is [`HorizontalNav::Prev`] in LTR and
     /// [`HorizontalNav::Next`] in RTL; `ArrowRight` is the mirror image.
-    /// Every consumer already gates this on its own `horizontal`/
-    /// orientation flag the same way it did before this call existed —
+    /// Every consumer gates this on its own `horizontal`/orientation flag;
     /// this function does not know or care about orientation.
     ///
     /// ```

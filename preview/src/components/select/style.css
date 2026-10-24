@@ -2,7 +2,7 @@
  * `.cn-select-*`): a 32px trigger (`rounded-lg`, `input` border, transparent
  * in light / `input/30` in dark, `pl-2.5 pr-2`, gap-1.5, text-sm), content on
  * `popover` with a 1px `foreground/10` edge and `shadow-md`, items `rounded-md`
- * with `py-1 pl-1.5`. The trigger's border is an inset box-shadow, as before. */
+ * with `py-1 pl-1.5`. The trigger's border is an inset box-shadow. */
 .dx-select {
   position: relative;
 }
@@ -16,14 +16,14 @@
   display: flex;
 
   /* A caller who never sets an explicit width (e.g. the `form` conformance
-   * fixture's library-select fields) previously shrank to fit whatever
-   * text happened to be selected -- as little as 85px for "apple". Since
+   * fixture's library-select fields) would shrink to fit whatever
+   * text happens to be selected -- as little as 85px for "apple". Since
    * `SelectList`'s own width is tied 1:1 to this trigger's rendered width
-   * (`--dx-anchor-width`, docs/backlog.md row 47), that left the options
-   * barely any room, so a short list read as cramped. A sensible floor here
+   * (`--dx-anchor-width`, dev-docs/backlog.md row 47), that leaves the options
+   * barely any room, so a short list reads as cramped. A sensible floor here
    * fixes it at the source, for every Select trigger this stylesheet
-   * themes, not just this one demo field. (The check-to-label spacing inside
-   * an option no longer depends on that width at all: it is the reserved
+   * themes, not just one demo field. (The check-to-label spacing inside
+   * an option does not depend on that width: it is the reserved
    * indicator slot below.)
    */
   min-width: 8rem;
@@ -124,7 +124,7 @@
    * and the pop-in/out all come from the theme's floating-surface recipe
    * (`data-dx-surface="floating"`, emitted by `SelectList`). Its `border`/`overflow`/`padding` undo
    * the UA popover stylesheet's `[popover] { border: solid; overflow: auto; ... }` (WHATWG HTML's
-   * popover section): on the web arm (Migration A slice 3/3) this listbox carries the `popover`
+   * popover section): on the web arm this listbox carries the `popover`
    * attribute. The matching `margin`/`inset` reset, and the `@supports (anchor-name: --a)`
    * anchor-positioning rules that keep this listbox anchored to its trigger once promoted to the top
    * layer, live in the shared, engine-injected stylesheet every `dx-anchor-*`-marked overlay gets
@@ -145,55 +145,25 @@
 }
 
 /*
- * `min-width: var(--dx-anchor-width, 100%)` above (docs/backlog.md row 47,
- * 2026-09-04 -- landed fix for the "Select listbox renders full viewport
- * width" device/gallery report):
+ * `min-width: var(--dx-anchor-width, 100%)` above (dev-docs/backlog.md row 47; without it the listbox
+ * would span the full viewport width):
  *
- * `min-width: 100%` alone resolves against this element's containing block
- * -- pre-migration, that was `.dx-select` (the trigger+list wrapper,
- * `position: relative` above, so 100% meant "as wide as the trigger");
- * post-migration, promoting this listbox to the top layer makes its
- * containing block the *viewport* instead (see
- * `primitives/src/top_layer.rs`'s `position_anchor_style` doc), so the same
- * percentage silently started meaning "100% of the viewport width" -- the
- * reported symptom, reproduced at 1265px on a 1280px-wide viewport.
+ * `min-width: 100%` alone resolves against this element's containing block. On the native/non-web
+ * arm that is `.dx-select` (the trigger+list wrapper, `position: relative` above, so 100% means "as
+ * wide as the trigger"); on the web arm the listbox is promoted to the top layer, whose containing
+ * block is the *viewport* (see `primitives/src/top_layer.rs`'s `position_anchor_style` doc), so the
+ * same percentage would mean "100% of the viewport width".
  *
- * An `@supports (anchor-name: --a) { .dx-select-list[popover] { min-width:
- * anchor-size(width); } }` rule was previously added here to restore
- * trigger-relative sizing via CSS Anchor Positioning's own `anchor-size()`,
- * but was **dead in the actually-served stylesheet**: this component goes
- * through `#[css_module]` (`component.rs`), whose class-hashing does not
- * scope selectors written only inside an `@supports` body
- * (`docs/issues/css-module-supports-scoping.md`) -- the served CSS still
- * targeted the unhashed `.dx-select-list` while the live element carries
- * `.dx-select-list-<hash>`, so the rule never matched anything. This is the
- * same scoping gap `primitives/src/top_layer.rs`'s
- * `ensure_anchor_positioning_styles` doc describes for the shared engine
- * stylesheet, now confirmed a second time in a *component's own*
- * stylesheet rather than a hand-copied engine snippet -- row 32's planned
- * migration off `#[css_module]` entirely (dropping this class-hashing
- * mechanism) closes the bug *class*; until then, every themed stylesheet
- * must avoid writing selectors inside `@supports` bodies, the way this rule
- * used to.
- *
- * The fix instead moves off `@supports`/`anchor-size()` in this stylesheet
- * entirely and onto a plain custom property: `--dx-anchor-width` is set on
- * every anchored content element by the *engine*, not this stylesheet --
- * both by `use_anchor_position_fallback`'s own JS measurement (every
- * engine, every positioning path, kept fresh by its existing scroll/resize/
- * visualViewport tracking) and, belt-and-suspenders, by the shared
- * `@supports` stylesheet `ensure_anchor_positioning_styles` injects
- * (verified by execution to work: `anchor-size()` *does* substitute
- * correctly when only referenced from inside a custom-property declaration
- * and read back through `var()` at a sizing property's use site -- see
- * that stylesheet's own comment). Because that property lives on the
- * unhashed marker class (`.dx-anchor-select[popover]`) in the engine-
- * injected stylesheet, not on a `css_module`-hashed selector, it is immune
- * to the scoping gap above -- `var(--dx-anchor-width, 100%)` here just
- * reads whatever the engine already published, with the pre-migration
- * `100%` behaviour (correct for the native/non-web arm, where this list is
- * still `position: absolute` inside a `position: relative` root) as the
- * fallback when the property is unset.
+ * Trigger-relative sizing therefore does not use `@supports`/`anchor-size()` in this stylesheet but a
+ * plain custom property: `--dx-anchor-width` is set on every anchored content element by the
+ * *engine*, not this stylesheet -- both by `use_anchor_position_fallback`'s own JS measurement (every
+ * engine, every positioning path, kept fresh by its scroll/resize/visualViewport tracking) and,
+ * belt-and-suspenders, by the shared `@supports` stylesheet `ensure_anchor_positioning_styles`
+ * injects (`anchor-size()` substitutes correctly when only referenced from inside a custom-property
+ * declaration and read back through `var()` at a sizing property's use site -- see that
+ * stylesheet's own comment). `var(--dx-anchor-width, 100%)` here just reads whatever the engine
+ * already published, with `100%` (correct for the native arm, where this list is `position:
+ * absolute` inside a `position: relative` root) as the fallback when the property is unset.
  */
 
 /* The pop-in/out (`scale`/`translate`, never `transform`: an animated `transform` REPLACES the

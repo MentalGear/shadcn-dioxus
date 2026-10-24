@@ -6,7 +6,7 @@
 //! (components) and, for global assets such as the theme, by file name. A file whose current hash equals
 //! the recorded one is untouched by you and may be replaced; any other difference is a local edit and is
 //! never overwritten without `--force`. Components installed without this tool (`dx components add`) or
-//! before this file existed have no baseline: their files are compared with the registry only, and a
+//! without this file have no baseline: their files are compared with the registry only, and a
 //! difference is treated as an edit.
 //!
 //! The hash is FNV-1a (64 bit): it detects edits, it is not a security boundary.

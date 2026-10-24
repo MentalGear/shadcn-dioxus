@@ -3,7 +3,7 @@ import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
 /**
- * Backlog row 155 g8 follow-ups: the month dropdown prints the SHORT month name ("Oct") while the
+ * Backlog row 155 g8: the month dropdown prints the SHORT month name ("Oct") while the
  * caption label keeps the full one, the ISO week-number demo, and the `--dx-calendar-cell-size`
  * slot (shadcn's `--cell-size`).
  */

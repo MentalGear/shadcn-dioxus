@@ -2,8 +2,8 @@
 #
 # check-supply-chain-doc.sh
 #
-# `dev-docs/supply-chain/README.md` is the repository's supply-chain playbook (owner ask 2026-10-23: document the
-# dependency and repo security properly and separately, so that other projects can inspect and lift the approach).
+# `dev-docs/supply-chain/README.md` is the repository's supply-chain playbook (the dependency and repo security
+# approach is documented separately so that other projects can inspect and lift it).
 # A playbook that names controls is only worth copying while it is true, so the controls table is made a property of
 # the tree, not of a reviewer's memory. By construction this gate parses the table (`## Controls`, one row per
 # control: ID, Control, Threat it stops, Enforcing script, Config, Runs in, Status, Adopt) and fails on:

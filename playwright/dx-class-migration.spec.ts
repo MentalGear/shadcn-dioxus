@@ -3,20 +3,18 @@ import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
 /**
- * Row 32 migration oracle — every themed component must render UNHASHED
- * `dx-` classes AND still have its own stylesheet actually delivered.
+ * Row 32 oracle: every themed component must render UNHASHED
+ * `dx-` classes AND have its own stylesheet actually delivered.
  *
- * Rule source: this repo's own row 32 decision (`docs/backlog.md`) — plain
+ * Rule source: this repo's own row 32 decision (`dev-docs/backlog.md`) — plain
  * `dx-`-prefixed CSS with no `#[css_module]` class hashing. Not an external
  * conformance rule, so this lives with the component specs rather than under
  * `oracle/` (whose three tiers are APG / HTML / Radix-opinion).
  *
- * Why it must exist: dropping `#[css_module]` removes two things at once and
- * only one of them is the point. The macro hashed class names (what row 32
- * wants gone) but it ALSO bundled and injected the stylesheet (what must keep
- * working). A migration that deletes the macro and forgets the delivery half
- * leaves a component rendering a correct-looking `class` attribute with no CSS
- * behind it — and NOTHING else in this suite would notice, because every other
+ * Why it must exist: plain `dx-` CSS has two halves, and only one of them is visible in the DOM. The
+ * class names are unhashed (row 32), and the component's stylesheet is delivered by its own
+ * `document::Link`. A component that renders a correct-looking `class` attribute with no CSS
+ * behind it fails silently -- and NOTHING else in this suite would notice, because every other
  * spec selects by role and accessible name, never by class or appearance. That
  * silent-failure shape is what this file exists to make loud.
  *
@@ -30,28 +28,27 @@ import { gotoHydrated } from "./hydration";
  *      component's sheet arrived". If the `document::Link` were missing, no
  *      such rule would be present anywhere.
  *   2. **Unhashed** — no element anywhere on the page carries a class of the
- *      shape `dx-…-<8 hex>`, the exact signature `#[css_module]` used to
- *      append (`.dx-checkbox` -> `.dx-checkbox-7ca1a710`).
- *   3. **Composed delivery** (docs/backlog.md row 51) — assertion 1 only ever
+ *      shape `dx-…-<8 hex>`, the signature `#[css_module]` appends
+ *      (`.dx-checkbox` -> `.dx-checkbox-7ca1a710`).
+ *   3. **Composed delivery** (dev-docs/backlog.md row 51) — assertion 1 only ever
  *      checks the CURRENT route's own prefix, so it cannot see a themed
  *      component silently losing a DIFFERENT component's CSS by composing
  *      that other component's building blocks directly (`date_picker`
  *      rendering calendar's `CalendarRoot`/`CalendarMonthView` without ever
- *      rendering `calendar::Calendar`, the one place the `Link` used to
- *      live — the exact row-51 bug). This assertion instead looks at every
+ *      rendering `calendar::Calendar`, the one place the `Link` lives
+ *      -- row 51). This assertion instead looks at every
  *      `dx-<known-component>` prefix actually rendered ANYWHERE on the page,
  *      for every element, and requires each one's own stylesheet to be
  *      reachable too — so it catches that shape for any pair of components,
  *      not just calendar/date_picker, and needs no per-component list of
  *      "what does X compose" to stay accurate as composition changes.
  *
- * Deliberately generic: an earlier draft used a hand-written locator and
- * computed-property pair per component, which meant ~45 bespoke, fragile
- * selectors asserting the same two facts. The prefix invariant the lint
- * already enforces makes that unnecessary.
+ * Deliberately generic: a hand-written locator and computed-property pair per
+ * component would mean ~45 bespoke, fragile selectors asserting the same two
+ * facts. The prefix invariant the lint already enforces makes that unnecessary.
  */
 
-/** Every component migrated off `#[css_module]` that ships its own stylesheet. */
+/** Every component that ships its own stylesheet. */
 const MIGRATED: string[] = [
   "accordion",
   "alert",
@@ -110,7 +107,7 @@ const MIGRATED: string[] = [
 /** Every known component's own `dx-` prefix, longest first so a prefix
  * match against a rendered class picks the most specific owner (matters if
  * one component's name is itself a prefix of another's -- not the case in
- * `MIGRATED` today, but this keeps the mapping correct if it ever is). */
+ * `MIGRATED`, but this keeps the mapping correct if it ever is). */
 const KNOWN_PREFIXES = [...MIGRATED]
   .map((n) => `dx-${n.replace(/_/g, "-")}`)
   .sort((a, b) => b.length - a.length);
@@ -160,11 +157,11 @@ async function prefixReachesAnyFrame(
 }
 
 /**
- * Row 331: 52 pages -> 31. The sweep's one assertion no gate or other spec owns is (2), a hashed `dx-...-<8 hex>` class
+ * Row 331: the sweep covers 31 pages. Its one assertion no gate or other spec owns is (2), a hashed `dx-...-<8 hex>` class
  * in the DOM (`#[css_module]` is still in the tree and `check-dx-class-prefix.sh` only warns for it); (1) and (3)
  * ask whether a sheet reached the page, which `first-paint-styles.spec.ts` "the bundle is complete" proves for every
- * `asset!()`-linked sheet at request level. So the pages are chosen to RENDER every class the old sweep rendered:
- * on a debug SSG build each of the 52 pages was probed (across frames, scoped as assertion 3 scopes it) for its
+ * `asset!()`-linked sheet at request level. So the pages are chosen to RENDER every class a sweep of all 52 component pages renders:
+ * on a debug SSG build each page is probed (across frames, scoped as assertion 3 scopes it) for its
  * distinct `dx-` classes, minus the 44 the site chrome puts on every page; 257 classes remain, and these 31 pages
  * carry all of them (greedy cover, most-uncovered-first, ties by the MIGRATED order). A hashed class on a component
  * part that a dropped page rendered is therefore on a kept page too. All three assertions still run on each.
@@ -188,7 +185,7 @@ for (const name of MIGRATED.filter((n) => SAMPLED.has(n))) {
     // after `goto(load)` on the tabs route, 5 of 12 loads had no article and
     // exactly that class; 0 of 7 once `data-hydrated` was set. Under
     // `--workers=4` the `load` event routinely fires before hydration, so
-    // this failed tabs/sidebar/navbar 5 times in ~1400 runs.
+    // a bare `load` flakes tabs/sidebar/navbar.
     await gotoHydrated(page, `${BASE_URL}/component/${name}/`);
     // The page's own demo must have rendered before the sheet is meaningful.
     await expect(page.locator("body")).toBeVisible();
@@ -203,7 +200,7 @@ for (const name of MIGRATED.filter((n) => SAMPLED.has(n))) {
         message:
           `no CSS rule mentioning .${prefix} reached any frame of the page — ` +
           `the component's own stylesheet was not delivered (a missing ` +
-          `document::Link after the #[css_module] removal, docs/backlog.md row 32)`,
+          `document::Link after the #[css_module] removal, dev-docs/backlog.md row 32)`,
         timeout: 15000,
       })
       .toBe(true);
@@ -220,7 +217,7 @@ for (const name of MIGRATED.filter((n) => SAMPLED.has(n))) {
       `found css_module-style hashed class names still in the DOM`,
     ).toEqual([]);
 
-    // Assertion 3 (docs/backlog.md row 51): every OTHER known component's
+    // Assertion 3 (dev-docs/backlog.md row 51): every OTHER known component's
     // prefix that actually shows up on a rendered element's class list must
     // be delivered too -- catches a themed component composing another
     // component's building blocks (rather than its top-level entry point)
@@ -236,7 +233,7 @@ for (const name of MIGRATED.filter((n) => SAMPLED.has(n))) {
     // navbar/footer/language-picker chrome that wraps every route: it hand-
     // rolls a `dx-navbar-*`/`dx-select-expand-icon`-prefixed class or two of
     // its own (collisions with the `navbar`/`select` components' own
-    // prefixes, confirmed by reading `preview/src/main.rs` and
+    // prefixes, see `preview/src/main.rs` and
     // `preview/assets/main.css`/`language-select.css`) that are unrelated
     // to this route's OWN composition and would otherwise make this
     // assertion fail on almost every component page for a reason that has
@@ -267,7 +264,7 @@ for (const name of MIGRATED.filter((n) => SAMPLED.has(n))) {
             `elements with a .${composed} class render on the "${name}" route, ` +
             `but no CSS rule mentioning .${composed} reached any frame — this ` +
             `component composes ${composed.replace(/^dx-/, "")}'s markup without ` +
-            `delivering its stylesheet (docs/backlog.md row 51)`,
+            `delivering its stylesheet (dev-docs/backlog.md row 51)`,
           timeout: 15000,
         })
         .toBe(true);

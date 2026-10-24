@@ -1,7 +1,7 @@
 /**
  * ORACLE: tier 2 (HTML) — form participation.
  *
- * Source: docs/conformance-harness.md, "Tier 2 — HTML forms", drawing on:
+ * Source: dev-docs/conformance-harness.md, "Tier 2 — HTML forms", drawing on:
  *   - WHATWG HTML §form-control-infrastructure
  *     https://html.spec.whatwg.org/multipage/form-control-infrastructure.html
  *     (submittable elements, the `name` attribute, the constraint validation
@@ -20,12 +20,12 @@
  * `invalid` listener on the required-fields form records which controls the
  * browser itself refused to submit through.
  *
- * Calibration (docs/conformance-harness.md, "Calibration"): every rule below
+ * Calibration (dev-docs/conformance-harness.md, "Calibration"): every rule below
  * runs against the native reference control first (prefixed CALIBRATION: in
  * the test name) and the library control second. A CALIBRATION failure means
  * the *test* is wrong, not the component, and must be fixed before anything
- * else — see "Harness adjustment" below for the one fixture bug this
- * process actually found and fixed.
+ * else — see "Fixture note" below for the one fixture detail this
+ * rule governs.
  *
  * Rules implemented (numbering per conformance-harness.md's tier-2 checklist):
  *   1. A named control contributes `name=value` to FormData on submit.
@@ -41,67 +41,49 @@
  *      `willValidate` (rule 3) and `validity.valueMissing` (rule 4) on the
  *      exact controls that matter; a separate rule 5 suite would mostly
  *      re-assert the same wiring under a different name rather than reach
- *      new component behaviour. Left for a future pass if a control ever
+ *      new component behaviour. Add it if a control ever
  *      needs `checkValidity()`/`reportValidity()` called programmatically
- *      (e.g. a "Validate" button), which this fixture has no reason to add yet.
+ *      (e.g. a "Validate" button), which this fixture has no reason to add.
  *   7. <label> association (focus + activation). This is a real, distinct
  *      rule (every control here already has a paired <label for>), but it
  *      needs its own click/focus assertions rather than entry-list ones, and
  *      mixing "which element received focus" assertions into this file would
- *      blur it with the tier-1 focus-restore oracle. Left for a follow-up file.
- *   8. (LANDED: see form-attribute.spec.ts.) The `form` attribute (a control rendered outside the <form>). The
- *      fixture has no such control today; adding one is a fixture change with
- *      no bearing on the defects rules 1-4/6 already surface. Left for later.
+ *      blur it with the tier-1 focus-restore oracle. Not covered here.
+ *   8. (see form-attribute.spec.ts.) The `form` attribute (a control rendered outside the <form>).
  *
- * Harness adjustment made during calibration (fixture, not primitive):
+ * Fixture note (the fixture, not a primitive):
  *   `preview/src/components/form/component.rs`'s native `#chk-native` and
- *   `#chk-disabled-native` reference inputs originally used the rsx attribute
- *   `checked: true`. Per dioxus-interpreter-js's `set_attribute.ts`, the rsx
- *   name `checked` maps to the live `.checked` IDL *property*, while
- *   `initial_checked` maps to `.defaultChecked` (the `checked` *content
- *   attribute*). The HTML "reset algorithm" for checkboxes reads the content
- *   attribute, not the live property — so with `checked: true`, resetting the
- *   fixture's own native calibration control did NOT restore it to checked,
- *   which would have made rule 6's CALIBRATION assertion fail on a plain
- *   native `<input>` (a contradiction: native checkboxes correctly restore on
- *   reset in every real browser). That is squarely "the test [fixture] is
- *   wrong, not the component" per conformance-harness.md — fixed by switching
- *   those two inputs to `initial_checked: true`. This does not touch
+ *   `#chk-disabled-native` reference inputs use the rsx attribute
+ *   `initial_checked: true`, not `checked: true`. Per
+ *   dioxus-interpreter-js's `set_attribute.ts`, the rsx name `checked` maps
+ *   to the live `.checked` IDL *property*, while `initial_checked` maps to
+ *   `.defaultChecked` (the `checked` *content attribute*). The HTML "reset
+ *   algorithm" for checkboxes reads the content attribute, not the live
+ *   property -- so with `checked: true`, resetting the fixture's own native
+ *   calibration control would not restore it to checked, and rule 6's
+ *   CALIBRATION assertion would fail on a plain native `<input>` (a
+ *   contradiction: native checkboxes correctly restore on reset in every
+ *   real browser). That is squarely "the test [fixture] is wrong, not the
+ *   component" per conformance-harness.md. This does not touch
  *   primitives/src or any component behaviour.
  *
- * A parallel, *uncorrected* instance of the same root cause was found to be
- * real inside Checkbox's own primitive (`BubbleInput`, in primitives/src) --
- * that one, and the equivalent gaps in `Switch`, `RadioGroup` and `Select`,
- * are what docs/plan.md Phase 1 closes. See "Post-Phase-1 harness updates"
- * below for exactly which assertions changed as a result, and why a changed
- * assertion here is a harness correction rather than moving the goalposts:
- * each one previously asserted the *absence* of a submittable element/listener
- * (a true fact about the pre-Phase-1 code) and now asserts the presence of
- * the correct, spec-driven behaviour that replaced it -- the same rule,
- * evaluated against different (now-conforming) code.
+ * The primitives' own mirror inputs (Checkbox's `BubbleInput`, `Switch`,
+ * `RadioGroup`, `Select`) are held to the same rule (dev-docs/plan.md
+ * Phase 1): every assertion states the spec-driven behaviour (a submittable
+ * element, a reset listener).
  *
- * Post-Phase-1 harness updates (Phase 1 landed; see docs/plan.md):
- *   - Rule 1 (`RadioGroup`, `Select`): assertions were already forward-looking
- *     ("contributes name=value") and needed no change -- they went red before
- *     Phase 1 and green after, exactly as the harness is meant to.
+ * How assertions are graded:
+ *   - Rule 1 (`RadioGroup`, `Select`): each assertion states
+ *     the spec-driven behaviour ("contributes name=value").
  *   - Rule 4 (`Switch`, `RadioGroup`) and rule 6 (`Checkbox`, `RadioGroup`,
- *     `Select`): these previously asserted the *bug* (e.g. "required does
- *     NOT block submission") because that was, at the time, the true and only
- *     observable behaviour -- there was no submittable element to assert
- *     anything else about. Phase 1 flipped the underlying behaviour, so the
- *     assertions were rewritten to match (e.g. "required blocks submission
- *     and fires invalid"), following the same shape as the CALIBRATION test
- *     and the already-green Checkbox rule 4 test in the same describe block.
- *   - Rule 4 (`Select`): `Select` had no `required` prop before Phase 1.3, so
- *     there was nothing to assert; Phase 1.3 added the prop, so a new test
- *     was added here (mirroring the Checkbox/CALIBRATION shape) rather than
- *     rewriting an existing one. The fixture
- *     (`preview/src/components/form/component.rs`) was updated in the same
- *     change to set `required: true` on its "fruit-required-lib" Select,
- *     since the whole point of this fixture is exercising components per
- *     their *documented* API -- leaving `required` off a prop that now exists
- *     would just be re-testing "an absent field has no effect", per this
- *     file's own rule-4 comment from before Phase 1.3.
+ *     `Select`): "required blocks submission and fires invalid", following
+ *     the same shape as the CALIBRATION test and the Checkbox rule 4 test in
+ *     the same describe block.
+ *   - Rule 4 (`Select`): `Select` has a `required` prop; the
+ *     fixture (`preview/src/components/form/component.rs`) sets
+ *     `required: true` on its "fruit-required-lib" Select, since the whole
+ *     point of this fixture is exercising components per their *documented*
+ *     API.
  */
 
 import { test, expect } from "../../fixtures";
@@ -196,7 +178,7 @@ test.describe("Rule 1 — a named control contributes name=value to FormData on 
     expect(
       hasEntry(entries, "plan-lib", "pro"),
       "RadioGroup declares `name` but RadioItem never renders a submittable " +
-        "element (no <input>, no BubbleInput) — see capability-gaps.md.",
+        "element (no <input>, no BubbleInput) — see dev-docs/archive/fork-research/capability-gaps.md.",
     ).toBe(true);
   });
 
@@ -211,8 +193,8 @@ test.describe("Rule 1 — a named control contributes name=value to FormData on 
 
   test("Select: contributes its selected option's value", async ({ page }) => {
     await gotoForm(page);
-    // docs/backlog.md row 8: SelectTrigger's role is now "combobox" (APG
-    // select-only combobox pattern) rather than an implicit button.
+    // dev-docs/backlog.md row 8: SelectTrigger's role is "combobox" (APG
+    // select-only combobox pattern), not an implicit button.
     const trigger = page.getByRole("combobox", { name: "Fruit (library)" });
     await trigger.click();
     await page.getByLabel("Fruit options (library)").getByRole("option", { name: "Banana" }).click();
@@ -225,7 +207,7 @@ test.describe("Rule 1 — a named control contributes name=value to FormData on 
     expect(
       hasKey(entries, "fruit-lib"),
       "Select declares `name` but never renders a submittable element for it " +
-        "(no <select>, no hidden input) — see capability-gaps.md.",
+        "(no <select>, no hidden input) — see dev-docs/archive/fork-research/capability-gaps.md.",
     ).toBe(true);
   });
 });
@@ -273,14 +255,9 @@ test.describe("Rule 2 — an unchecked/unselected control contributes nothing (n
   test("RadioGroup: none checked by default, contributes nothing", async ({ page }) => {
     await gotoForm(page);
     const entries = await submitAndRead(page, "#entries-submit", formResult(page));
-    // NOTE: this passes today, but not for the reason the rule intends — see
-    // "RadioGroup: once an item is checked, contributes name=value" (rule 1)
-    // above, which is RED. RadioGroup contributes nothing in *every* state,
-    // checked or not, because it never renders a submittable element at all;
-    // an absent entry here is not evidence the "unchecked" state specifically
-    // is handled, only that nothing is. Kept as a real (if weak) assertion:
-    // it is still a spec-true fact about the current DOM, and would catch a
-    // regression where an unselected item started leaking a stray entry.
+    // The "once an item is checked, contributes name=value" test (rule 1)
+    // above is this one's counterpart: this one guards that an unselected
+    // item does not leak a stray entry.
     expect(hasKey(entries, "plan-lib")).toBe(false);
   });
 });
@@ -317,8 +294,8 @@ test.describe("Rule 4 — required with no value blocks submission and sets vali
   // required control in the form unsatisfied at once, so one submission
   // exercises every control below in the same `invalid` batch (see
   // component.rs's watch_invalid_js: a capturing listener, batched via
-  // microtask into one write per attempt). Each test reloads first, per the
-  // task's "reset state between tests via page reload".
+  // microtask into one write per attempt). Each test reloads first, so
+  // no state carries from one test to the next.
 
   test("CALIBRATION: required native checkbox blocks submission and fires invalid", async ({ page }) => {
     await gotoForm(page);
@@ -350,12 +327,10 @@ test.describe("Rule 4 — required with no value blocks submission and sets vali
   });
 
   test("Switch: required blocks submission and fires invalid", async ({ page }) => {
-    // Phase 1.1 (docs/plan.md): Switch's hidden mirror <input> now forwards
-    // `required: props.required` (primitives/src/switch.rs) alongside the
-    // `name`/`value`/`checked`/`disabled` it already forwarded. Previously
-    // this assertion recorded the opposite (required missing from the DOM
-    // node, so the browser never blocked or fired `invalid` on it) -- see
-    // the file header's "Post-Phase-1 harness updates".
+    // Switch's hidden mirror <input> forwards `required: props.required`
+    // (primitives/src/switch.rs) alongside `name`/`value`/`checked`/
+    // `disabled`, so the browser blocks submission and fires `invalid` on
+    // it (dev-docs/plan.md Phase 1.1).
     await gotoForm(page);
     const { blocked, submitCount } = await submitRequiredAndRead(page);
     expect(blocked).toContain("opt-in-required-lib");
@@ -374,11 +349,9 @@ test.describe("Rule 4 — required with no value blocks submission and sets vali
   });
 
   test("RadioGroup: required blocks submission and fires invalid", async ({ page }) => {
-    // Phase 1.2 (docs/plan.md): each RadioItem now renders a hidden
-    // <input type="radio"> carrying the group's `name` and `required`.
-    // Previously this asserted the opposite (no <input> at all, so nothing
-    // could ever fire `invalid`) -- see the file header's "Post-Phase-1
-    // harness updates".
+    // Each RadioItem renders a hidden <input type="radio"> carrying the
+    // group's `name` and `required`, so something can fire `invalid`
+    // (dev-docs/plan.md Phase 1.2).
     await gotoForm(page);
     const hiddenInputs = page.locator('input[name="tier-required-lib"]');
     await expect(
@@ -410,13 +383,9 @@ test.describe("Rule 4 — required with no value blocks submission and sets vali
   });
 
   test("Select: required blocks submission on its empty placeholder value and fires invalid", async ({ page }) => {
-    // Phase 1.3 (docs/plan.md) added `required` to `SelectProps`, wired to
-    // the hidden native <select> from the same phase (Rule 1 above). This
-    // test did not exist before Phase 1.3 -- there was no `required` prop to
-    // exercise, and the fixture's own Select here had no `required` set (see
-    // the file header's "Post-Phase-1 harness updates" for why adding both
-    // the test and the fixture attribute is a harness upgrade, not a new
-    // requirement invented for this test).
+    // `SelectProps` has `required`, wired to the hidden native <select>
+    // (Rule 1 above; dev-docs/plan.md Phase 1.3); the fixture's Select sets
+    // it (see the file header's "How assertions are graded").
     await gotoForm(page);
     const { blocked, submitCount } = await submitRequiredAndRead(page);
     expect(blocked).toContain("fruit-required-lib");
@@ -429,14 +398,12 @@ test.describe("Rule 4 — required with no value blocks submission and sets vali
 });
 
 /**
- * Rule 4 extension — visible feedback for a blocked submit (live-site
- * report, item 2, 2026-09-01). Rule 4 above already proves the *block*
- * itself works (submitCount stays "0"); what was missing is that
- * `required` lives on each library control's visually-hidden native mirror
+ * Rule 4 extension — visible feedback for a blocked submit. Rule 4 above
+ * proves the *block* itself works (submitCount stays "0"); this block
+ * covers that `required` lives on each library control's visually-hidden native mirror
  * (`aria-hidden="true"`), and Chrome refuses to focus a non-focusable
- * hidden control or show its native validation bubble on one -- confirmed
- * via the browser console on submit: "An invalid form control ... is not
- * focusable." `component.rs`'s `watch_invalid_js` bridges this onto the
+ * hidden control or show its native validation bubble on one (the console
+ * says "An invalid form control ... is not focusable."). `component.rs`'s `watch_invalid_js` bridges this onto the
  * VISIBLE control (fixture-only fix, not a primitives change -- see that
  * function's doc for why): `data-invalid="true"` on every blocked control's
  * visible counterpart, and focus on the first one, matching a real
@@ -462,7 +429,7 @@ test.describe("Rule 4 extension — a blocked submit gives visible feedback on t
     // focuses/anchors on the first radio of an unsatisfied required group,
     // so this fixture's bridge follows the same convention.
     await expect(page.locator("#tier-lib-small")).toHaveAttribute("data-invalid", "true");
-    // docs/backlog.md row 8: SelectTrigger's role is now "combobox".
+    // dev-docs/backlog.md row 8: SelectTrigger's role is "combobox".
     await expect(
       page.getByRole("combobox", { name: "Fruit, required (library)" }),
     ).toHaveAttribute("data-invalid", "true");
@@ -520,15 +487,13 @@ test.describe("Rule 6 — form reset restores the initial value", () => {
   });
 
   test("Checkbox: reset restores checked-by-default", async ({ page }) => {
-    // Phase 1.4 (docs/plan.md): `BubbleInput` (primitives/src/checkbox.rs)
-    // now sets the mirror <input>'s default via `initial_checked` (->
-    // `.defaultChecked`, the `checked` *content attribute* the HTML reset
-    // algorithm reads) instead of `checked` (-> only the live `.checked`
-    // IDL property). It also listens for the owning form's `reset` event to
-    // resync the component's own (Dioxus-side) checked state -- the browser
-    // reset only touches this hidden input's own DOM state. Previously this
-    // assertion recorded the opposite (reset had no effect at all); see the
-    // file header's "Post-Phase-1 harness updates".
+    // `BubbleInput` (primitives/src/checkbox.rs) sets the mirror <input>'s
+    // default via `initial_checked` (-> `.defaultChecked`, the `checked`
+    // *content attribute* the HTML reset algorithm reads), not `checked`
+    // (-> only the live `.checked` IDL property). It also listens for the
+    // owning form's `reset` event to resync the component's own
+    // (Dioxus-side) checked state -- the browser reset only touches this
+    // hidden input's own DOM state (dev-docs/plan.md Phase 1.4).
     await gotoForm(page);
     const hidden = page.locator('input[name="terms-lib"]');
     await page.locator("#chk-lib").click(); // uncheck it
@@ -556,17 +521,16 @@ test.describe("Rule 6 — form reset restores the initial value", () => {
   });
 
   test("Switch: reset restores unchecked-by-default", async ({ page }) => {
-    // Phase 1.1/1.4 (docs/plan.md): the hidden input now sets
-    // `initial_checked` and Switch listens for the owning form's `reset`
-    // event to resync its own visible state (primitives/src/switch.rs).
-    // Before Phase 1.1 this test's DOM-only assertion passed *by
-    // coincidence* -- an absent `checked` content attribute already means
-    // "unchecked" regardless of whether the fix landed, since this fixture's
+    // The hidden input sets `initial_checked` and Switch listens for the
+    // owning form's `reset` event to resync its own visible state
+    // (primitives/src/switch.rs; dev-docs/plan.md Phase 1.1/1.4). The
+    // DOM-only assertion passes *by coincidence* -- an absent `checked`
+    // content attribute already means "unchecked", and this fixture's
     // Switch default happens to be unchecked (a `default_checked: true`
-    // Switch would have failed for the identical reason Checkbox did; see
-    // its rule 6 test). The `data-state` assertion below is the part that
-    // could not have passed by coincidence: nothing but a working reset
-    // listener flips the *visible* button back after it was toggled on.
+    // Switch would fail for the reason Checkbox would; see its rule 6
+    // test). The `data-state` assertion below is the part that cannot pass
+    // by coincidence: nothing but a working reset listener flips the
+    // *visible* button back after it was toggled on.
     await gotoForm(page);
     const hidden = page.locator('input[name="notify-lib"]');
     await page.locator("#switch-lib").click(); // check it
@@ -588,15 +552,13 @@ test.describe("Rule 6 — form reset restores the initial value", () => {
   });
 
   test("RadioGroup: reset restores none-checked", async ({ page }) => {
-    // Phase 1.2 (docs/plan.md): each RadioItem's hidden radio now sets
+    // Each RadioItem's hidden radio sets
     // `initial_checked` from the group's `default_value`, and registers a
     // `reset` listener on its owning form that resyncs the group's own
     // (Dioxus-side) selection -- there is no single form-associated element
     // "the group" can listen on, so each item's own hidden radio does it
     // (idempotently: they all set the same group value back to the same
-    // default). Previously this asserted the opposite (reset had no
-    // observable effect at all); see the file header's "Post-Phase-1
-    // harness updates".
+    // default (dev-docs/plan.md Phase 1.2).
     await gotoForm(page);
     await page.locator("#plan-lib-pro").click();
     await expect(page.locator("#plan-lib-pro")).toHaveAttribute("data-state", "checked");
@@ -614,14 +576,12 @@ test.describe("Rule 6 — form reset restores the initial value", () => {
   });
 
   test("Select: reset restores the default option", async ({ page }) => {
-    // Phase 1.3 (docs/plan.md): the hidden native <select> now marks its
-    // default-value <option> `initial_selected`, and Select registers a
-    // `reset` listener on its owning form that resyncs its own (Dioxus-side)
-    // value back to `default_value`. Previously this asserted the opposite
-    // (reset had no observable effect at all); see the file header's
-    // "Post-Phase-1 harness updates".
+    // The hidden native <select> marks its default-value <option>
+    // `initial_selected`, and Select registers a `reset` listener on its
+    // owning form that resyncs its own (Dioxus-side) value back to
+    // `default_value` (dev-docs/plan.md Phase 1.3).
     await gotoForm(page);
-    // docs/backlog.md row 8: SelectTrigger's role is now "combobox".
+    // dev-docs/backlog.md row 8: SelectTrigger's role is "combobox".
     const trigger = page.getByRole("combobox", { name: "Fruit (library)" });
     await trigger.click();
     await page.getByLabel("Fruit options (library)").getByRole("option", { name: "Banana" }).click();

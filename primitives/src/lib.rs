@@ -102,13 +102,13 @@ pub mod virtual_list;
 /// generated and committed by `scripts/build-js-bundle.sh`, checked by
 /// `scripts/check-js-bundle.sh`; there is no build script). Native (Blitz)
 /// modal overlays (`dialog.rs`/`alert_dialog.rs`/`popover.rs`'s
-/// `#[cfg(not(feature = "web"))]` arms) are its only remaining
-/// consumers -- every web-arm modal overlay now uses the native-dialog
+/// `#[cfg(not(feature = "web"))]` arms) are its only
+/// consumers -- every web-arm modal overlay uses the native-dialog
 /// engine (`showModal()`'s own focus trap/restore/inertness/top-layer),
-/// completing the two-engine overlay architecture (docs/plan.md). `#[cfg]`
+/// the two-engine overlay architecture (dev-docs/plan.md). `#[cfg]`
 /// -gated on this crate's `web` feature (not `target_family = "wasm"` --
-/// see `docs/recommended-implementations.md` Caveat 1 for why that axis was
-/// corrected) so that neither the wasm client nor a host build with `web`
+/// see `dev-docs/reference/platform-rationale.md` Caveat 1 for why that axis is
+/// wrong) so that neither the wasm client nor a host build with `web`
 /// on (the fullstack SSG server) ever references, and therefore never
 /// bundles, this asset at all -- see [`focus_trap_script`] (this file), the
 /// only thing that ever names this constant.
@@ -126,7 +126,7 @@ pub(crate) const FOCUS_TRAP_JS: Asset = asset!("/src/js/focus-trap.js");
 /// is what actually keeps the reference out of that build's compilation
 /// unit). A no-op on the web arm:
 /// every modal overlay's web-arm focus handling comes from the browser's
-/// own `showModal()` now, so there is nothing to load there.
+/// own `showModal()`, so there is nothing to load there.
 #[cfg(not(feature = "web"))]
 pub(crate) fn focus_trap_script() -> Element {
     rsx! {
@@ -163,9 +163,9 @@ static NEXT_UNIQUE_ID: AtomicUsize = AtomicUsize::new(0);
 /// the same `dxc-{n}` namespace, such a late id could equal an SSR id still
 /// in the DOM -- two elements, one `id` -- and `getElementById` (hence every
 /// aria wiring, anchor binding and `showModal()` lookup) resolves to the
-/// wrong one. Observed: a hidden SSR checkbox input and the late-mounted
-/// command dialog both had `id="dxc-229"`, so the command palette never
-/// opened. Keeping client-allocated ids under a different prefix makes that
+/// wrong one (a hidden SSR checkbox input and a late-mounted command dialog
+/// both holding `id="dxc-229"` would keep the command palette from
+/// opening). Keeping client-allocated ids under a different prefix makes that
 /// collision impossible by construction, whatever the counters' values.
 fn format_unique_id(is_server: bool, n: usize) -> String {
     if is_server {
@@ -396,7 +396,7 @@ pub fn use_previous<T: Clone + PartialEq + 'static>(value: ReadSignal<T>) -> Mem
 /// Ported from dignifiedquire/dx-components (MIT OR Apache-2.0),
 /// `primitives/src/lib.rs` @ 5af3cc292559a0e8d73c7b9a827c4ca08ef34d99
 /// (`use_refocus_on_close_unless`). Adapted: none -- taken as-is; only the
-/// per-component wiring of `interacted_outside` is new (docs/plan.md
+/// per-component wiring of `interacted_outside` is new (dev-docs/plan.md
 /// Phase 3.1).
 ///
 /// Matches Radix's `onCloseAutoFocus` on `DropdownMenuContent`/
@@ -461,23 +461,23 @@ fn use_form_reset_listener(
 /// Drive `showModal()`/`close()` on the `<dialog>` element with the given
 /// `id` from `open`, guarded by the element's own `.open` DOM property.
 ///
-/// Docs/plan.md Phase 4.2. Ported *by construction*, not by copying code,
-/// from `docs/phase4-spike-findings.md`'s `use_dialog_open_driver`
+/// `dev-docs/plan.md` Phase 4.2. Built *by construction*, not by copying code,
+/// from `dev-docs/archive/research/phase4-spike-findings.md`'s `use_dialog_open_driver`
 /// (experiment 2's fix for experiment 1's stranded-signal defect, see
-/// `docs/recommended-implementations.md` Caveat 1). The guard (checking
+/// `dev-docs/reference/platform-rationale.md` Caveat 1). The guard (checking
 /// `dialog.open` before calling either method) mirrors
 /// [`crate::top_layer::use_popover_sync`]'s `:popover-open` check for the
 /// identical reason: a redundant call throws `InvalidStateError` (spike
 /// experiment 3b).
 ///
 /// Never bind the `<dialog>` element's `open` attribute declaratively
-/// alongside this hook in the same build -- spike experiment 3c found that
+/// alongside this hook in the same build -- (spike experiment 3c) that
 /// combination doesn't crash, it silently *skips* `showModal()` (Dioxus
 /// commits the declarative attribute during render, before this effect
 /// runs, so the guard's own condition is already false by the time it
 /// checks). That is exactly why this hook only exists in the
 /// `#[cfg(feature = "web")]` leaf of `dialog.rs`/`alert_dialog.rs`'s
-/// component split (`docs/phase4-spike-findings.md` Construction B) -- the
+/// component split (`dev-docs/archive/research/phase4-spike-findings.md` Construction B) -- the
 /// `not(feature = "web")` arm never binds `open` as an attribute either,
 /// since that arm renders a plain `div`, not a `<dialog>`, at all.
 ///
@@ -485,32 +485,31 @@ fn use_form_reset_listener(
 /// reason [`crate::top_layer::use_popover_sync`] is (see that function's
 /// doc): `dioxus-desktop` is a non-wasm binary with a real, working webview
 /// `eval` and belongs on this same arm, not on native/Blitz's no-op one --
-/// and, confirmed by the 2026-09-01 production incident
-/// (`docs/recommended-implementations.md` Caveat 1), the fullstack SSG
+/// and, per `dev-docs/reference/platform-rationale.md` Caveat 1, the fullstack SSG
 /// prerender is a *host* (non-wasm) binary that also belongs on this arm
 /// whenever this crate's `web` feature is on.
 ///
-/// ## Closing waits for the exit (backlog row 141; the modal-close regression)
+/// ## Closing waits for the exit (backlog row 141)
 ///
 /// `open` going `false` does **not** call `close()` on the spot. A native
 /// `close()` drops the `<dialog>` out of the top layer *synchronously*, and
 /// everything that made the panel a modal panel goes with it in that one frame: the
 /// `::backdrop` scrim, the viewport as the containing block of its `position: fixed`
-/// box, the `:modal` rules, an ancestor's `opacity` no longer being ignored. A
-/// closing panel is still animating out, so each of those showed as a glitch --
-/// worst on the home page, where every demo sits in a `.dx-component-card`
+/// box, the `:modal` rules, an ancestor's `opacity` ceasing to be ignored. A
+/// closing panel is still animating out, so each of those would show as a glitch --
+/// worst where a demo sits in a `.dx-component-card`
 /// (`content-visibility: auto`, so layout + paint containment): out of the top
 /// layer a fixed panel is positioned against, sized by and CLIPPED to its card, so a
-/// right-hand Sheet snapped from 384x800 to 384x256 and a Drawer from 1265x346 to
-/// 1105x205 mid-slide. `transition: overlay allow-discrete` papered over that
-/// in Chromium alone, and only until the `overlay` transition ended (not in step
-/// with the panel's own exit); Firefox and Safari had no keep-alive at all.
+/// right-hand Sheet would snap from 384x800 to 384x256 and a Drawer from 1265x346 to
+/// 1105x205 mid-slide. `transition: overlay allow-discrete` covers that
+/// in Chromium alone, and only until the `overlay` transition ends (not in step
+/// with the panel's own exit); Firefox and Safari have no keep-alive at all.
 ///
 /// So this driver keeps the dialog a real, open modal -- same top layer, same
 /// geometry -- until every animation or transition running on it (the panel's own
 /// and its `::backdrop`'s) has settled, bounded by `DIALOG_EXIT_TIMEOUT_MS`, and only then
-/// calls `close()`: the same construction [`crate::popover`]'s modal arm uses, now
-/// on every engine and for every dialog-engine modal. A stylesheet therefore keys
+/// calls `close()`: the same construction [`crate::popover`]'s modal arm uses, on
+/// every engine and for every dialog-engine modal. A stylesheet therefore keys
 /// its exit on the dialog's `data-state="closed"` (set by every caller of this
 /// hook) and never needs an engine-specific keep-alive. With no animation at all
 /// (no stylesheet, reduced motion to `0s`) the wait is empty and it closes at once.
@@ -614,7 +613,7 @@ fn use_dialog_open_driver(
 /// Row 223: a modal that is animating out is still a real modal, so the page behind it (the
 /// trigger included) stays blocked and unfocusable until the native `close()` -- a `.focus()` on
 /// the opener is a no-op, and `inert` on the dialog does not unblock it (measured). Enter, Escape,
-/// Enter on a trigger therefore used to type its second Enter into the closing panel and lose the
+/// Enter on a trigger would therefore type its second Enter into the closing panel and lose the
 /// reopen. The construction: from the moment the close starts (or a `cancel` has been seen but the
 /// state has not flipped yet, up to 250 ms), an Enter or Space aimed at the closing dialog ends the
 /// exit on the spot -- the real `close()`, which returns focus -- and activates the opener the
@@ -676,14 +675,14 @@ const DIALOG_EXIT_TIMEOUT_MS: u32 = 1500;
 /// script-driven alike -- back into `set_open`, so the Rust signal can never
 /// strand.
 ///
-/// This is the fix for the exact defect class
-/// `docs/recommended-implementations.md` Caveat 1 documents for upstream's
-/// first `<dialog>` (`b3f6de53`): a one-way `showModal()`/`close()` binding
+/// This closes the defect class
+/// `dev-docs/reference/platform-rationale.md` Caveat 1 documents for upstream's
+/// first `<dialog>` @ b3f6de53: a one-way `showModal()`/`close()` binding
 /// with no listener on the browser's own `close` event, so a native Escape
-/// left the `open` signal stranded at `true` and the dialog could never
-/// reopen (reproduced by execution in `docs/phase4-spike-findings.md`
-/// experiment 1; fixed the same way here as experiment 2's
-/// `use_dialog_close_sync`). Same eval-channel shape as
+/// leaves the `open` signal stranded at `true` and the dialog can never
+/// reopen (`dev-docs/archive/research/phase4-spike-findings.md`
+/// experiment 1 reproduces it; experiment 2's `use_dialog_close_sync`
+/// is the fix). Same eval-channel shape as
 /// `use_form_reset_listener` above and
 /// [`crate::top_layer::use_popover_sync`]'s browser-to-signal half.
 ///
@@ -739,7 +738,7 @@ fn use_dialog_close_sync(
 ///
 /// `showModal()`'s `::backdrop` covers the entire viewport and owns
 /// hit-testing everywhere while the dialog is open
-/// (`docs/phase4-spike-findings.md` experiment 6: `elementFromPoint`
+/// (`dev-docs/archive/research/phase4-spike-findings.md` experiment 6: `elementFromPoint`
 /// resolves to the `<dialog>` element at every coordinate) -- and every
 /// pointer event over a `::backdrop` (or any other pseudo-element) is
 /// dispatched with its `target` set to the host element, i.e. the `<dialog>`
@@ -752,16 +751,15 @@ fn use_dialog_close_sync(
 /// this exact "click outside to close" pattern) tells the two apart
 /// correctly regardless of `event.target`.
 ///
-/// Originally `dialog.rs`-only (Phase 4.2, docs/plan.md); moved here so
-/// `popover.rs`'s modal web arm (native-dialog Popover migration) can share
-/// it with `alert_dialog.rs`/`dialog.rs` rather than reimplementing it --
+/// Shared by `popover.rs`'s modal web arm, `alert_dialog.rs` and `dialog.rs`
+/// (Phase 4.2, dev-docs/plan.md) rather than reimplemented in each --
 /// the same trio as [`use_dialog_open_driver`]/[`use_dialog_close_sync`].
 /// `use_outside_dismiss` itself is not reusable here, because a
 /// `showModal()` backdrop click's `event.target` *is* the `<dialog>` element
 /// (it contains itself), so `use_outside_dismiss`'s
 /// `!root.contains(e.target)` check can never fire for it.
 ///
-/// ## The nested-dialog false positive (live-site bug report, 2026-09-01)
+/// ## The nested-dialog false positive
 ///
 /// The rect test alone is not a sufficient discriminator, because the
 /// listener is bound directly on the `<dialog>` element and a native `click`
@@ -798,24 +796,24 @@ fn use_dialog_close_sync(
 /// styling) then forces the still-open nested dialog out of the top layer,
 /// which fires its own `close` event a moment later too -- the nested dialog
 /// visibly opens and then immediately closes, with focus never durably
-/// landing on anything inside it. See `docs/plan.md`/this crate's
-/// `native-dialog.spec.ts` Rule 7 for the oracle rules this fixes.
+/// landing on anything inside it. See `dev-docs/plan.md`/this crate's
+/// `native-dialog.spec.ts` Rule 7 for the oracle rules this satisfies.
 ///
-/// ## The opening-gesture false positive (user device report, 2026-09-03)
+/// ## The opening-gesture false positive
 ///
-/// User report (iOS Safari, touch): opening the home page's default
-/// (modal, `is_modal` defaults to `true`) `Popover` -- "Show Popover" --
-/// shows only its `::backdrop`; the popover itself flashes and disappears.
+/// On iOS Safari (touch), a default (modal, `is_modal` defaults to
+/// `true`) `Popover` would show only its `::backdrop`, the popover itself
+/// flashing and disappearing, if the opening tap also dismissed it.
 /// This hook is a modal `Popover`/`Dialog`'s only dismissal path -- the web
 /// arm calls neither `use_global_escape_listener` nor `use_outside_dismiss`
 /// (the browser's own `showModal()` already supplies focus trap/restore and
 /// inertness; this hook is what supplies backdrop-click dismiss) -- so a
-/// dismiss firing on the *opening* tap itself matches the report exactly.
+/// dismiss firing on the *opening* tap itself is exactly the
+/// flash-and-disappear symptom described above.
 ///
-/// Reproduction attempted (this session): touch-emulated (`hasTouch`,
-/// `locator.tap()`) opens of this exact popover, in this sandbox's
-/// Chromium, keep it open -- confirmed by execution, no self-dismiss. That
-/// is expected, not a sign there is nothing to fix: this listener is bound
+/// Touch-emulated (`hasTouch`, `locator.tap()`) opens of this exact
+/// popover in the sandbox's Chromium keep it open, with no self-dismiss.
+/// That is expected, not a sign there is nothing to guard: this listener is bound
 /// directly on the `<dialog>` element, and the button that opens it is a
 /// *sibling* of that dialog, not an ancestor -- the one native `click`
 /// event dispatched for the opening tap has `event.target` fixed to the
@@ -833,39 +831,36 @@ fn use_dialog_close_sync(
 /// position, which sits outside a trigger-anchored (not viewport-centered;
 /// see `popover.rs`'s module doc) modal `Popover`'s own rendered box. This
 /// is engine behavior this sandbox cannot exercise (no such click-retarget
-/// quirk exists in this Chromium build to reproduce against), so this
-/// remains device-only, per this session's own instruction not to claim a
-/// reproduction that was not actually achieved.
+/// quirk exists in this Chromium build to reproduce against), so the
+/// iOS case is device-only; no reproduction is claimed here.
 ///
-/// Fixed by construction regardless: `dialog.addEventListener('click', ...)`
+/// Guarded by construction regardless: `dialog.addEventListener('click', ...)`
 /// is deferred by one `requestAnimationFrame`, so the very click that opened
 /// this dialog -- and any same-gesture follow-up event an engine might
 /// synthesize immediately after it -- can never reach this listener at all,
 /// on any engine, by construction rather than by guessing at Safari's exact
-/// timing. A *separate*, later dismiss click still works exactly as before:
+/// timing. A *separate*, later dismiss click still works:
 /// one frame (~16ms) is far shorter than the time a real second tap, or a
 /// Playwright `.click()`'s own actionability/round-trip overhead, ever
 /// takes to reach the browser. `cancelAnimationFrame` on cleanup covers the
-/// case where the dialog closes (unmounts, see `popover.rs`'s "Two
-/// execution-confirmed bugs" -- though this specific content has no exit
-/// animation) before the deferred frame ever fires, so the listener is
+/// case where the dialog closes (unmounts) before the deferred frame ever
+/// fires, so the listener is
 /// never attached to an element already gone from the DOM.
 ///
-/// ## The drag false positive (owner report, 2026-10-05: "dragging UP on a bottom
-/// Drawer's handle closes it")
+/// ## The drag false positive (dragging UP on a bottom Drawer's handle must not close it)
 ///
 /// A `click` is dispatched on the nearest common ancestor of where the press and
 /// the release landed. A press on the Drawer handle (or on text, or in an input)
 /// and a release over the `::backdrop` above the panel have the dialog itself as
-/// that ancestor, so the release produced a `click` with `target === dialog` and
+/// that ancestor, so the release produces a `click` with `target === dialog` and
 /// coordinates outside the dialog's box -- indistinguishable, by the checks above,
-/// from a real backdrop click. Every drag that began inside a dialog and ended
-/// outside it (a text selection, a slider, a Drawer pulled the wrong way) closed
-/// it. A dismissal is a *click on the backdrop*, so the press must have started
+/// from a real backdrop click. Every drag that begins inside a dialog and ends
+/// outside it (a text selection, a slider, a Drawer pulled the wrong way) would
+/// close it. A dismissal is a *click on the backdrop*, so the press must have started
 /// there too: a `pointerdown` whose target is the dialog and which landed outside
 /// its box arms the next `click`, and any other press disarms it. Not tied to the
 /// Drawer: this is the shared hook for Dialog, Sheet, Drawer, CommandDialog and
-/// the modal Popover, so the whole class is closed here.
+/// the modal Popover, so the whole class is handled here.
 #[cfg(feature = "web")]
 fn use_dialog_backdrop_dismiss(
     id: impl Readable<Target = String> + Copy + 'static,
@@ -1198,11 +1193,11 @@ fn chain_listeners(
 /// only accumulates and combines attributes with `namespace == Some("style")`
 /// into the single served `style="..."` -- a plain `name == "style"`,
 /// `namespace == None` attribute is a completely separate code path and is
-/// written out as its own, second `style="..."` (confirmed by execution:
+/// written out as its own, second `style="..."` (e.g.
 /// `ContextMenuTrigger`'s fixed touch-suppression CSS alongside the preview
-/// app's themed wrapper's shorthand `padding`/`background`/etc. produced
+/// app's themed wrapper's shorthand `padding`/`background`/etc. would produce
 /// exactly this — two `style` attributes on one tag, WHATWG HTML's
-/// duplicate-attribute parse error, `docs/conformance-harness.md`
+/// duplicate-attribute parse error, `dev-docs/conformance-harness.md`
 /// hydration-parity Rule 4). `merge_attributes` cannot help either: it
 /// dedupes by `(name, namespace)`, and these two forms use different
 /// `name`s (`"style"` vs `"padding"`/`"background"`/...), so from its
@@ -1257,7 +1252,7 @@ pub(crate) fn fold_style_attributes(attrs: Vec<Attribute>) -> (Option<String>, V
 /// through unconditionally (`Some("")`/absent or not), so an attribute
 /// named `aria-label` can be *present* in `attributes` with an
 /// empty/`dioxus_core::AttributeValue::None` value even when no real caller ever
-/// supplied one (confirmed by execution: this crate's own themed `Select`
+/// supplied one (for example this crate's own themed `Select`
 /// wrapper, `preview/src/components/select/component.rs`, does exactly
 /// this). Only a genuinely non-empty text value counts as caller-supplied.
 pub(crate) fn has_own_accessible_name(attributes: &[Attribute]) -> bool {
@@ -1382,9 +1377,9 @@ mod tests {
 
     /// `style` folds the way `class` does (declarations concatenated, earlier first), so a
     /// primitive's own `anchor-name`/`position-anchor` binding survives a caller-supplied
-    /// `style` instead of being replaced by it (the avatar dropdown demo's trigger rendered at
-    /// viewport (0,0) because `Button { style: "border-radius: 9999px;", attributes }` replaced
-    /// the trigger's anchor-name style).
+    /// `style` instead of being replaced by it (were `Button { style: "border-radius: 9999px;",
+    /// attributes }` to replace the trigger's anchor-name style, the avatar dropdown demo's
+    /// trigger would render at viewport (0,0)).
     #[test]
     fn style_attribute_is_folded_not_overwritten() {
         let result = merge_attributes(vec![
@@ -1524,12 +1519,12 @@ mod tests {
         assert!(result[0].volatile);
     }
 
-    /// The duplicate-attribute protections are unchanged: still exactly one attribute per
+    /// The duplicate-attribute protections hold: exactly one attribute per
     /// `(name, namespace)`, the shorthand `style` namespace is NOT folded into the plain
     /// `style` (that is `fold_style_attributes`'s job), and every non-`class`/`style` name is
-    /// still overwritten by the last occurrence.
+    /// overwritten by the last occurrence.
     #[test]
-    fn duplicate_protections_still_hold() {
+    fn duplicate_protections_hold() {
         let shorthand = Attribute {
             name: "padding",
             namespace: Some("style"),
@@ -1556,7 +1551,7 @@ mod tests {
     /// `fold_style_attributes` is the other half (shorthand + plain into one string) and is
     /// untouched by `merge_attributes` folding `style`.
     #[test]
-    fn fold_style_attributes_still_collects_plain_and_shorthand() {
+    fn fold_style_attributes_collects_plain_and_shorthand() {
         let shorthand = Attribute {
             name: "padding",
             namespace: Some("style"),
@@ -1610,7 +1605,7 @@ mod tests {
     }
 
     #[test]
-    fn unsorted_input_still_works() {
+    fn unsorted_input_works() {
         // Even if inputs aren't sorted, the function should handle it
         let result = merge_attributes(vec![
             vec![attr("z", "1"), attr("a", "2")],
@@ -1828,7 +1823,7 @@ mod unique_id_tests {
         assert_eq!(format_unique_id(false, 229), "dxc-c229");
     }
 
-    /// The regression: a client-allocated id equal in counter value to an SSR
+    /// The property: a client-allocated id equal in counter value to an SSR
     /// id (`dxc-229` vs the client's own 229th) must still differ.
     #[test]
     fn client_and_server_ids_never_collide_for_any_counter_values() {

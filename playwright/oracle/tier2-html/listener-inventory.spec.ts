@@ -1,10 +1,10 @@
 /**
  * ORACLE: tier 2 (HTML) -- JS listeners are owned by the scope that added them.
  *
- * Source: dev-docs/backlog.md rows 149 and 159 (`scroll_lock.rs` left non-passive `wheel`/`touchmove`
- * listeners on `window` for the rest of the visit after the first modal had opened; the same shape --
- * an `addEventListener` inside a `document::eval` script that nothing removes -- was in the form
- * fixture, the sidebar, `pointer.rs` and the focus trap). Rule sources, per this tier's policy of citing
+ * Source: dev-docs/backlog.md rows 149 and 159 (the hazard: an `addEventListener` inside a `document::eval` script that
+ * nothing removes, e.g. non-passive `wheel`/`touchmove` listeners on `window` that outlive the modal that installed
+ * them, in a lock, the form fixture, the sidebar, a pointer bridge or a focus trap). Rule sources, per this tier's
+ * policy of citing
  * a standard rather than an opinion:
  *   - DOM Standard, `AddEventListenerOptions.passive` and `removeEventListener`: a registration lives until
  *     it is removed, whatever script made it:
@@ -39,9 +39,9 @@
  *   PLAYWRIGHT_BASE_URL=http://127.0.0.1:8083 npx playwright test --config=baseline.local.config.ts \
  *     ./oracle/tier2-html/listener-inventory.spec.ts
  *
- * Red proof (2026-10-05), against the tree before the helper (`scroll_lock.rs` installing its four listeners
- * at the first lock and keeping them; `form` adding two `document` listeners per visit; `pointer.rs`
- * installing four on `window` on first use): see dev-docs/backlog.md row 159.
+ * Red proof: a listener installed outside `listen()` (a lock that installs its four listeners at the first use and
+ * keeps them; a form adding two `document` listeners per visit; a pointer bridge installing four on `window` on first
+ * use) makes the inventory grow with visits: see dev-docs/backlog.md row 159.
  */
 import { test, expect } from "../../fixtures";
 import type { CDPSession, Page } from "@playwright/test";
@@ -258,8 +258,8 @@ test.describe("listener inventory: every overlay returns window/document to its 
     });
   }
 
-  // The home page mounts the form fixture (its demo card); `/charts/` does not. Every docs-shell page (since row 303
-  // that includes `/charts/`) mounts the sidebar provider, so that scenario hops between two docs-shell routes: each
+  // The home page mounts the form fixture (its demo card); `/charts/` does not. Every docs-shell page (`/charts/` included, row 303)
+  // mounts the sidebar provider, so that scenario hops between two docs-shell routes: each
   // hop unmounts one provider and mounts the next, and the inventory must still end where it began.
   // Link hrefs carry the deployment's base path (`/shadcn-dioxus/...` on the Pages build); BASE_URL does too.
   const BASE_PATH = new URL(BASE_URL).pathname.replace(/\/$/, "");

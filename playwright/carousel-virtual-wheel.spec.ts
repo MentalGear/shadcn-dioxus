@@ -1,30 +1,29 @@
 /**
  * Carousel: trackpad/wheel scrolling ends cleanly on the virtualised
- * (`CarouselVirtualContent`) demos -- the owner's real-trackpad report
- * (MacBook, Firefox 156): "trackpad custom scroll end snap interferes with
- * looping/virtual slider".
+ * (`CarouselVirtualContent`) demos -- real macOS Firefox trackpad input
+ * must not let the custom scroll-end snap interfere with a looping or
+ * virtual slider.
  *
- * Two root causes, one test group each (see `primitives/src/carousel.rs`,
+ * Two failure classes, one test group each (see `primitives/src/carousel.rs`,
  * `CAROUSEL_SCROLL_TRACKING_JS`'s "Browser-idle gate" and
  * `item_basis_style`'s own docs):
  *
  * 1. OVERSIZED SNAP AREAS. The gap model puts each slide's gap inside its
  *    own box as `padding-inline-start` next to `flex-basis: 100%`, which is
- *    only a whole slide under `box-sizing: border-box`. That box-sizing came
- *    only from the themed `.dx-carousel-item` class, which the virtual
- *    slides (rendered by the primitive itself) never carry -- so each one
- *    was one gap (16px) wider than the snapport. A snap area larger than
- *    the snapport makes every position inside it a valid rest position, so
- *    the browser stopped snapping and the component's own re-centre then
- *    "snapped" the leftover 16px itself at scroll end, as an instant
- *    `scrollBy`.
- * 2. SCROLL-END REACTIONS FIRED BEFORE THE BROWSER WAS IDLE. The settle ran
- *    on the first `scrollend`, even with wheel input still arriving, and
- *    everything downstream of it (the `selected` update, the virtual
- *    window's re-anchor and re-render, the instant re-align `scrollBy` with
- *    snapping suspended) ran mid-gesture -- writing the scroll position
- *    while the browser was still scrolling (THE RULE, `carousel.rs` module
- *    doc).
+ *    only a whole slide under `box-sizing: border-box`. The themed
+ *    `.dx-carousel-item` class is not there on the virtual slides (rendered by
+ *    the primitive itself), so `item_basis_style` declares that box-sizing
+ *    inline; without it each slide would be one gap (16px) wider than the
+ *    snapport. A snap area larger than the snapport makes every position inside
+ *    it a valid rest position, so the browser would stop snapping and the
+ *    component's own re-centre would then "snap" the leftover 16px itself at
+ *    scroll end, as an instant `scrollBy`.
+ * 2. SCROLL-END REACTIONS WAIT FOR THE BROWSER TO BE IDLE. Settling on the
+ *    first `scrollend` while wheel input is still arriving would run everything
+ *    downstream of it (the `selected` update, the virtual window's re-anchor and
+ *    re-render, the instant re-align `scrollBy` with snapping suspended)
+ *    mid-gesture -- writing the scroll position while the browser is still
+ *    scrolling (THE RULE, `carousel.rs` module doc).
  *
  * METHOD. A probe installed before the app boots wraps every scroll write
  * (`scrollBy`/`scrollTo`/`scroll`/`scrollIntoView` and the
@@ -38,7 +37,7 @@
  * which never scroll (untrusted) but are exactly what the component's input
  * tracking sees. Headless Chromium cannot reproduce a real trackpad's
  * compositor momentum or Firefox's own scroll-end timing; these tests pin
- * the ordering contract, and the feel remains the owner's real-device
+ * the ordering contract, and the feel remains a real-device
  * check.
  */
 
@@ -298,7 +297,7 @@ test.describe("Carousel: scroll-end reactions wait until the browser is truly id
     // One real wheel that moves past half a slide: the browser finishes that
     // scroll (and fires scrollend) while the in-page "momentum" below is still
     // arriving -- the Firefox trackpad shape (scrollend between the pan and
-    // its momentum, or at a clamp) the owner's report points at.
+    // its momentum, or at a clamp) real trackpad input produces.
     await page.mouse.wheel(220, 0);
     await syntheticInputFor(content, 700, 1);
     const rec = await stopRecording(content, 1200);
@@ -329,7 +328,7 @@ test.describe("Carousel: scroll-end reactions wait until the browser is truly id
     })()]);
     const rec = await stopRecording(content, 1200);
     const last = rec.wheels[rec.wheels.length - 1];
-    expect(rec.writes.length, "Next still pages").toBeGreaterThan(0);
+    expect(rec.writes.length, "Next pages").toBeGreaterThan(0);
     expect(rec.writes[0].t - last, "the paging write waits for input to go quiet").toBeGreaterThanOrEqual(100);
     const end = rec.frames[rec.frames.length - 1];
     expect(end.sel).toBe("2 of 5");
@@ -338,15 +337,14 @@ test.describe("Carousel: scroll-end reactions wait until the browser is truly id
 });
 
 /*
- * The wheel band only engages at a TRUE end of the data -- the owner's
- * approved rule, one predicate (`isTrueEnd`) in `CAROUSEL_WHEEL_BAND_JS`,
+ * The wheel band only engages at a TRUE end of the data -- one predicate (`isTrueEnd`) in `CAROUSEL_WHEEL_BAND_JS`,
  * read per gesture from `data-loop`/`data-slide-count` on the scroller and
  * the `data-index` of the slide at that physical edge:
  * - any looping carousel (`r#loop`, any `LoopMode`, plain or virtual): never;
  * - virtual, non-looping: only when its real first/last item is the slide at
  *   the edge the scroller rests at -- never at the rendered slice's edge
  *   mid-list (the browser clamps there; the window re-centres once idle);
- * - plain, non-looping: unchanged (both ends; carousel.spec.ts's own mode-D
+ * - plain, non-looping: both ends (carousel.spec.ts's own mode-D
  *   block, e.g. "real (trusted) wheel input at the start and end edges").
  *
  * HOLDING A SLICE EDGE. A virtual window only rests at its slice's edge
@@ -414,7 +412,7 @@ async function holdInputOpen(content: Locator): Promise<void> {
     const tick = () => node.dispatchEvent(new WheelEvent("wheel", { deltaY: 1, bubbles: true, cancelable: true }));
     // The first event goes out NOW: an interval's first tick is 16ms away,
     // and a placement inside that window would find input quiet and let the
-    // window re-centre (found live -- it did, 2ms after the placement).
+    // window re-centre (it does, 2ms after the placement).
     tick();
     w.__dxKeepAlive = window.setInterval(tick, 16);
   });
@@ -447,8 +445,8 @@ async function expectStillAtEdge(content: Locator, side: "min" | "max"): Promise
  * (instantly). Test setup only: snapping (with `scroll-snap-stop: always`)
  * holds the scroller against a multi-slide instant jump, so it is suspended
  * for the placement AND kept suspended until `releaseInput` -- restoring it
- * straight away lets Chrome re-snap to the previously snapped slide (found
- * live: the scroller moved back 672px with no write of ours, before the
+ * straight away lets Chrome re-snap to the earlier snapped slide (the
+ * scroller moves back 672px with no write of ours, before the
  * push). The push itself happens at a clamped edge, where snapping has no
  * say. Returns the `data-index` of the slide now sitting at that edge.
  */
@@ -813,7 +811,7 @@ async function pitchOf(content: Locator): Promise<number> {
 }
 
 test.describe("Carousel drag band: only at a true end of the data", () => {
-  test("plain main: dragging past the first slide still bands (unchanged), then rests cleanly", async ({ page }) => {
+  test("plain main: dragging past the first slide bands, then rests cleanly", async ({ page }) => {
     const { content } = await open(page, "main");
     const r = await dragIntoEdge(page, content, "min", "x", (await pitchOf(content)) * 1.2);
     expect(r.band).toBeGreaterThan(5);
@@ -924,18 +922,17 @@ test.describe("Carousel drag band: only at a true end of the data", () => {
 });
 
 /*
- * Fast trackpad flicks: the owner's real-trackpad report ("quick trackpad
- * scrolls still produce an 'end of slides' rubberband effect when there are
- * still more slides to come"). Measured: a flick shaped like the owner's
- * hardest recordings holds a virtual window's scroller clamped against its
+ * Fast trackpad flicks must not produce an 'end of slides' rubberband
+ * effect while there are still more slides to come. A flick shaped like the
+ * hardest real trackpad recordings holds a virtual window's scroller clamped against its
  * rendered slice's physical end mid-list (and a looping carousel's against
  * its physical ends) for ~1s -- where macOS Firefox draws its own native
  * bounce whenever `overscroll-behavior` is `auto`. This crate's own band
- * never fired there. The rule under test (`content_overscroll_style` in
+ * never fires there. The rule under test (`content_overscroll_style` in
  * `primitives/src/carousel.rs`): the scroll axis is `overscroll-behavior:
  * none` unless BOTH ends of the rendered slides are true ends, so wherever a
  * flick can clamp at a false end, the platform cannot bounce. (Whether
- * Firefox then shows no bounce is the owner's real-device check: headless
+ * Firefox then shows no bounce is a real-device check: headless
  * Chromium draws no elastic overscroll at all, so the rendered style is what
  * can be proven here.)
  */
@@ -1066,32 +1063,31 @@ test.describe("Carousel fast flicks: the platform may only bounce at a true end"
 });
 
 /*
- * The owner's real "it stopped when it shouldn't" flicks (lab session,
- * Firefox 156, MacBook trackpad; /home/user/wheel-recordings/lab-sessions/
- * merged.json, marks 3, 4 and 6 on virtual_many): the uninterrupted wheel
+ * Recorded real-trackpad flicks that must not stop early (Firefox, MacBook
+ * trackpad, the lab's marks 3, 4 and 6 on virtual_many): the uninterrupted wheel
  * stream that preceded each mark, as [ms since its first event, deltaX]
  * (the small deltaY components are dropped: replayed headlessly they would
  * scroll the page out from under the pointer, and the carousel reacts only
- * to its own axis anyway). Each carried 16-25 slides of input; on the
- * radius-2 build the scroller reached the rendered slice's end after 0-2
- * slides and sat pinned there for most of the stream.
+ * to its own axis anyway). Each carried 16-25 slides of input; with a
+ * radius of 2 the scroller reaches the rendered slice's end after 0-2
+ * slides and sits pinned there for most of the stream.
  *
  * Under test: the default radius of 10 (most flicks never reach a slice
  * end) plus the pinned-at-a-false-end re-centre (the tail that does reach
  * one re-centres within a couple of frames instead of waiting for idle) --
- * so the carousel travels well past the old 2-slide limit and never sits
+ * so the carousel travels well past a 2-slide limit and never sits
  * pinned at a false end for more than ~200ms while input continues.
  * Replayed with trusted page.mouse.wheel at the recorded timing; sampled
  * in-page every frame. Chromium moves at most one slide per wheel event
  * (scroll-snap-stop: always per operation); Firefox's longer per-gesture
- * travel is the owner's real-device check, via the lab's trace.
+ * travel is a real-device check, via the lab's trace.
  */
-const OWNER_FLICKS: Record<"mark3" | "mark4" | "mark6", [number, number][]> = {"mark3":[[0,6],[16,9],[32,32],[49,72],[65,81],[82,50],[99,60],[100,93],[118,99],[135,98],[153,94],[168,91],[186,87],[203,87],[219,82],[236,77],[253,72],[269,68],[286,63],[300,59],[319,55],[335,51],[352,47],[368,43],[384,41],[402,37],[419,34],[434,32],[452,29],[469,26],[486,24],[502,22],[519,20],[535,19],[552,17],[615,4],[632,22],[649,19],[665,44],[682,64],[697,81],[714,87],[731,86],[747,83],[764,80],[781,77],[797,77],[814,74],[831,68],[848,64],[864,60],[881,55],[898,51],[915,47],[931,45],[948,41],[964,38],[981,35],[1032,2],[1049,10],[1065,47],[1083,68],[1099,81],[1116,71],[1133,87],[1150,62],[1160,106],[1176,110],[1193,109],[1209,106],[1225,102],[1243,97],[1259,95],[1275,90],[1293,85],[1310,81],[1326,76],[1342,70],[1359,66],[1377,62],[1392,58],[1410,53],[1450,4],[1467,10],[1483,13],[1501,32],[1517,39],[1534,46],[1543,61],[1559,68],[1576,68],[1592,66],[1609,65],[1626,61],[1642,63],[1660,60],[1700,-6],[1716,-23],[1733,-62],[1749,-165],[1767,-214],[1783,-155],[1800,-93],[1817,-62],[1824,-160],[1839,-168],[1858,-166],[1873,-160],[1890,-153],[1907,-145],[1923,-136],[1940,-131],[1956,-124],[1973,-119],[1990,-113],[2006,-107],[2050,-27],[2050,-7],[2066,-54],[2083,-127],[2100,-126],[2116,-73],[2126,-126],[2142,-136],[2159,-136],[2176,-131],[2193,-126],[2210,-122],[2226,-121],[2242,-115],[2372,-8],[2373,-579],[2383,-133],[2385,-221],[2402,-230],[2419,-224],[2434,-215],[2453,-203],[2469,-193],[2486,-179],[2502,-170],[2519,-162],[2536,-155],[2552,-148],[2600,-34],[2601,-6],[2617,-56],[2633,-111],[2650,-109],[2667,-122],[2682,-132],[2700,-128],[2715,-125],[2733,-120],[2749,-117],[2766,-117],[2783,-109],[2833,-3],[2850,-25],[2866,-66],[2883,-151],[2900,-207],[2918,-174],[2925,-243],[2942,-248],[2958,-241],[2975,-229],[2992,-219],[3009,-207],[3025,-193],[3042,-184],[3060,-175],[3075,-167],[3092,-158],[3109,-151]],"mark4":[[0,-1],[17,-7],[33,-34],[50,-50],[68,-149],[83,-79],[100,-37],[117,-37],[120,-76],[136,-85],[155,-86],[170,-83],[188,-80],[203,-77],[219,-79],[236,-75],[254,-70],[270,-66],[288,-61],[305,-57],[384,-17],[400,-13],[416,-59],[434,-99],[450,-105],[468,-75],[481,-123],[497,-128],[515,-125],[531,-121],[547,-115],[564,-109],[582,-103],[598,-99],[614,-93],[631,-89],[647,-84],[665,-79],[681,-75],[698,-70],[715,-66],[767,-7],[784,-8],[800,-19],[817,-15],[834,-29],[884,-108],[901,-50],[956,-65],[985,-282],[1002,-132],[1019,-62],[1035,-59],[1052,-55],[1069,-50],[1086,-46],[1102,-43],[1119,-39],[1136,-36],[1181,-33],[1199,-58],[1252,-25],[1266,-2],[1284,-2],[1300,-3],[1317,-3],[1334,-3],[1350,-3],[1367,-4],[1384,-3],[1400,-3],[1417,-5],[1435,-8],[1451,-23],[1468,-73],[1485,-174],[1501,-186],[1516,-204],[1532,-205],[1548,-196],[1565,-184],[1583,-174],[1599,-166],[1624,-152],[1631,-143],[1649,-137],[1665,-132],[1682,-127]],"mark6":[[0,-5],[17,-42],[92,-40],[111,-90],[170,-44],[172,-273],[180,-29],[195,-26],[214,-24],[229,-22],[247,-20],[264,-19],[280,-17],[297,-16],[313,-14],[329,-13],[347,-12],[363,-11],[380,-10],[397,-9],[411,-8],[431,-8],[447,-7],[463,-7],[480,-6],[497,-5],[513,-5],[531,-5],[547,-5],[564,-4],[578,-4],[597,-4],[658,-2],[674,-24],[691,-32],[707,-56],[724,-61],[741,-57],[750,-87],[766,-93],[783,-92],[800,-89],[816,-84],[833,-81],[850,-80],[866,-77],[883,-72],[900,-68],[916,-62],[933,-59],[950,-55],[966,-51],[983,-47],[1000,-43],[1016,-41],[1033,-37],[1051,-34],[1066,-32],[1083,-29],[1100,-26],[1116,-24],[1132,-22],[1149,-20],[1166,-19],[1182,-17],[1200,-16],[1258,-2],[1260,-2],[1275,-27],[1291,-47],[1308,-87],[1325,-96],[1341,-88],[1358,-76],[1375,-44],[1391,-97],[1407,-102],[1425,-100],[1441,-97],[1458,-93],[1474,-89],[1491,-88],[1507,-84],[1525,-79],[1541,-74],[1558,-70],[1574,-64],[1591,-60],[1607,-57],[1624,-53],[1640,-49],[1658,-45],[1675,-41],[1692,-39],[1708,-35],[1724,-33],[1741,-30],[1757,-28],[1774,-24],[1824,2],[1841,4],[1858,2],[1941,-1],[1958,-4],[1975,-8],[1991,-17],[2008,-29],[2024,-38],[2041,-43],[2055,-54],[2073,-58],[2090,-60],[2105,-58],[2123,-57],[2139,-55],[2155,-57],[2173,-54],[2189,-50],[2206,-46],[2223,-42],[2239,-39],[2255,-36],[2273,-33],[2289,-29],[2306,-27],[2323,-25],[2340,-23],[2355,-21],[2373,-20],[2389,-18],[2405,-17],[2422,-14],[2439,-13],[2456,-12],[2524,-4],[2541,-30],[2558,-36],[2576,-54],[2592,-61],[2608,-62],[2625,-51],[2628,-78],[2645,-85],[2662,-87],[2678,-84],[2697,-81],[2712,-78],[2730,-80],[2744,-76],[2761,-70],[2778,-66],[2794,-61],[2813,-56],[2830,-52],[2846,-49],[2863,-45],[2878,-41],[2895,-38],[2913,-34],[2930,-32],[2946,-30],[2963,-27],[2979,-24],[2995,-22],[3013,-19],[3029,-18],[3045,-16],[3063,-15],[3078,-15],[3096,-12],[3113,-11],[3130,-10],[3145,-10],[3162,-9],[3178,-8],[3196,-8],[3213,-6],[3229,-6],[3247,-5],[3263,-5],[3278,-5],[3296,-4],[3313,-4],[3329,-4],[3346,-4],[3363,-3],[3379,-3],[3396,-3],[3413,-3],[3429,-2],[3446,-2],[3463,-2],[3479,-2],[3496,-2],[3513,-2],[3528,-2],[3546,-1],[3562,-1],[3579,-1],[3596,-1],[3612,-1],[3629,-1],[3647,-1],[3679,-1],[3696,-1],[3713,0],[3728,-1],[3808,-1],[3826,-7],[3842,-16],[3859,-32],[3875,-47],[3892,-54],[3908,-48],[3923,-73],[3939,-79],[3956,-78],[3973,-76],[3990,-74],[4007,-71],[4023,-71],[4039,-68],[4056,-62],[4073,-59],[4089,-55],[4106,-51],[4123,-47],[4141,-43]]};
+const RECORDED_TRACKPAD_FLICKS: Record<"mark3" | "mark4" | "mark6", [number, number][]> = {"mark3":[[0,6],[16,9],[32,32],[49,72],[65,81],[82,50],[99,60],[100,93],[118,99],[135,98],[153,94],[168,91],[186,87],[203,87],[219,82],[236,77],[253,72],[269,68],[286,63],[300,59],[319,55],[335,51],[352,47],[368,43],[384,41],[402,37],[419,34],[434,32],[452,29],[469,26],[486,24],[502,22],[519,20],[535,19],[552,17],[615,4],[632,22],[649,19],[665,44],[682,64],[697,81],[714,87],[731,86],[747,83],[764,80],[781,77],[797,77],[814,74],[831,68],[848,64],[864,60],[881,55],[898,51],[915,47],[931,45],[948,41],[964,38],[981,35],[1032,2],[1049,10],[1065,47],[1083,68],[1099,81],[1116,71],[1133,87],[1150,62],[1160,106],[1176,110],[1193,109],[1209,106],[1225,102],[1243,97],[1259,95],[1275,90],[1293,85],[1310,81],[1326,76],[1342,70],[1359,66],[1377,62],[1392,58],[1410,53],[1450,4],[1467,10],[1483,13],[1501,32],[1517,39],[1534,46],[1543,61],[1559,68],[1576,68],[1592,66],[1609,65],[1626,61],[1642,63],[1660,60],[1700,-6],[1716,-23],[1733,-62],[1749,-165],[1767,-214],[1783,-155],[1800,-93],[1817,-62],[1824,-160],[1839,-168],[1858,-166],[1873,-160],[1890,-153],[1907,-145],[1923,-136],[1940,-131],[1956,-124],[1973,-119],[1990,-113],[2006,-107],[2050,-27],[2050,-7],[2066,-54],[2083,-127],[2100,-126],[2116,-73],[2126,-126],[2142,-136],[2159,-136],[2176,-131],[2193,-126],[2210,-122],[2226,-121],[2242,-115],[2372,-8],[2373,-579],[2383,-133],[2385,-221],[2402,-230],[2419,-224],[2434,-215],[2453,-203],[2469,-193],[2486,-179],[2502,-170],[2519,-162],[2536,-155],[2552,-148],[2600,-34],[2601,-6],[2617,-56],[2633,-111],[2650,-109],[2667,-122],[2682,-132],[2700,-128],[2715,-125],[2733,-120],[2749,-117],[2766,-117],[2783,-109],[2833,-3],[2850,-25],[2866,-66],[2883,-151],[2900,-207],[2918,-174],[2925,-243],[2942,-248],[2958,-241],[2975,-229],[2992,-219],[3009,-207],[3025,-193],[3042,-184],[3060,-175],[3075,-167],[3092,-158],[3109,-151]],"mark4":[[0,-1],[17,-7],[33,-34],[50,-50],[68,-149],[83,-79],[100,-37],[117,-37],[120,-76],[136,-85],[155,-86],[170,-83],[188,-80],[203,-77],[219,-79],[236,-75],[254,-70],[270,-66],[288,-61],[305,-57],[384,-17],[400,-13],[416,-59],[434,-99],[450,-105],[468,-75],[481,-123],[497,-128],[515,-125],[531,-121],[547,-115],[564,-109],[582,-103],[598,-99],[614,-93],[631,-89],[647,-84],[665,-79],[681,-75],[698,-70],[715,-66],[767,-7],[784,-8],[800,-19],[817,-15],[834,-29],[884,-108],[901,-50],[956,-65],[985,-282],[1002,-132],[1019,-62],[1035,-59],[1052,-55],[1069,-50],[1086,-46],[1102,-43],[1119,-39],[1136,-36],[1181,-33],[1199,-58],[1252,-25],[1266,-2],[1284,-2],[1300,-3],[1317,-3],[1334,-3],[1350,-3],[1367,-4],[1384,-3],[1400,-3],[1417,-5],[1435,-8],[1451,-23],[1468,-73],[1485,-174],[1501,-186],[1516,-204],[1532,-205],[1548,-196],[1565,-184],[1583,-174],[1599,-166],[1624,-152],[1631,-143],[1649,-137],[1665,-132],[1682,-127]],"mark6":[[0,-5],[17,-42],[92,-40],[111,-90],[170,-44],[172,-273],[180,-29],[195,-26],[214,-24],[229,-22],[247,-20],[264,-19],[280,-17],[297,-16],[313,-14],[329,-13],[347,-12],[363,-11],[380,-10],[397,-9],[411,-8],[431,-8],[447,-7],[463,-7],[480,-6],[497,-5],[513,-5],[531,-5],[547,-5],[564,-4],[578,-4],[597,-4],[658,-2],[674,-24],[691,-32],[707,-56],[724,-61],[741,-57],[750,-87],[766,-93],[783,-92],[800,-89],[816,-84],[833,-81],[850,-80],[866,-77],[883,-72],[900,-68],[916,-62],[933,-59],[950,-55],[966,-51],[983,-47],[1000,-43],[1016,-41],[1033,-37],[1051,-34],[1066,-32],[1083,-29],[1100,-26],[1116,-24],[1132,-22],[1149,-20],[1166,-19],[1182,-17],[1200,-16],[1258,-2],[1260,-2],[1275,-27],[1291,-47],[1308,-87],[1325,-96],[1341,-88],[1358,-76],[1375,-44],[1391,-97],[1407,-102],[1425,-100],[1441,-97],[1458,-93],[1474,-89],[1491,-88],[1507,-84],[1525,-79],[1541,-74],[1558,-70],[1574,-64],[1591,-60],[1607,-57],[1624,-53],[1640,-49],[1658,-45],[1675,-41],[1692,-39],[1708,-35],[1724,-33],[1741,-30],[1757,-28],[1774,-24],[1824,2],[1841,4],[1858,2],[1941,-1],[1958,-4],[1975,-8],[1991,-17],[2008,-29],[2024,-38],[2041,-43],[2055,-54],[2073,-58],[2090,-60],[2105,-58],[2123,-57],[2139,-55],[2155,-57],[2173,-54],[2189,-50],[2206,-46],[2223,-42],[2239,-39],[2255,-36],[2273,-33],[2289,-29],[2306,-27],[2323,-25],[2340,-23],[2355,-21],[2373,-20],[2389,-18],[2405,-17],[2422,-14],[2439,-13],[2456,-12],[2524,-4],[2541,-30],[2558,-36],[2576,-54],[2592,-61],[2608,-62],[2625,-51],[2628,-78],[2645,-85],[2662,-87],[2678,-84],[2697,-81],[2712,-78],[2730,-80],[2744,-76],[2761,-70],[2778,-66],[2794,-61],[2813,-56],[2830,-52],[2846,-49],[2863,-45],[2878,-41],[2895,-38],[2913,-34],[2930,-32],[2946,-30],[2963,-27],[2979,-24],[2995,-22],[3013,-19],[3029,-18],[3045,-16],[3063,-15],[3078,-15],[3096,-12],[3113,-11],[3130,-10],[3145,-10],[3162,-9],[3178,-8],[3196,-8],[3213,-6],[3229,-6],[3247,-5],[3263,-5],[3278,-5],[3296,-4],[3313,-4],[3329,-4],[3346,-4],[3363,-3],[3379,-3],[3396,-3],[3413,-3],[3429,-2],[3446,-2],[3463,-2],[3479,-2],[3496,-2],[3513,-2],[3528,-2],[3546,-1],[3562,-1],[3579,-1],[3596,-1],[3612,-1],[3629,-1],[3647,-1],[3679,-1],[3696,-1],[3713,0],[3728,-1],[3808,-1],[3826,-7],[3842,-16],[3859,-32],[3875,-47],[3892,-54],[3908,-48],[3923,-73],[3939,-79],[3956,-78],[3973,-76],[3990,-74],[4007,-71],[4023,-71],[4039,-68],[4056,-62],[4073,-59],[4089,-55],[4106,-51],[4123,-47],[4141,-43]]};
 
 type FlickRun = { travel: number; maxPinnedMs: number; pinnedFrames: number; startPos: number; endPos: number };
 
-/** Replay one owner flick (trusted wheel, recorded timing) and measure travel and pinned-at-a-false-end stalls. */
-async function replayOwnerFlick(page: Page, content: Locator, events: [number, number][]): Promise<FlickRun> {
+/** Replay one recorded flick (trusted wheel, recorded timing) and measure travel and pinned-at-a-false-end stalls. */
+async function replayRecordedFlick(page: Page, content: Locator, events: [number, number][]): Promise<FlickRun> {
   await content.evaluate((node) => {
     const el = node as HTMLElement;
     const w = window as unknown as { __dxOwner: { frames: unknown[]; lastWheel: number; run: boolean } };
@@ -1164,38 +1160,38 @@ async function replayOwnerFlick(page: Page, content: Locator, events: [number, n
   return { travel: Math.abs(endPos - startPos), maxPinnedMs, pinnedFrames, startPos, endPos };
 }
 
-test.describe("Carousel: the owner's long real flicks never stall at a rendered slice end", () => {
+test.describe("Carousel: long real flicks never stall at a rendered slice end", () => {
   for (const mark of ["mark3", "mark4", "mark6"] as const) {
-    test(`virtual_many, owner's ${mark}: travels well past the old 2-slide limit and never sits pinned at a false end for more than ~200ms`, async ({
+    test(`virtual_many, recorded flick ${mark}: travels well past a 2-slide radius and never sits pinned at a false end for more than ~200ms`, async ({
       page,
     }) => {
       test.setTimeout(180_000);
       const { frame, content } = await open(page, "virtual_many");
       await pageTo(page, frame, "60 of 200");
-      const r = await replayOwnerFlick(page, content, OWNER_FLICKS[mark]);
+      const r = await replayRecordedFlick(page, content, RECORDED_TRACKPAD_FLICKS[mark]);
       console.log(`${mark} virtual_many: ${JSON.stringify(r)}`);
-      expect(r.travel, "travelled beyond the old radius-2 slice").toBeGreaterThan(3);
+      expect(r.travel, "travelled beyond a radius-2 slice").toBeGreaterThan(3);
       expect(r.maxPinnedMs, "longest pinned-at-a-false-end stall while input continued").toBeLessThanOrEqual(200);
     });
   }
 
-  test("virtual_loop (seamless, effective radius 5 of 12): the owner's mark4 never stalls at a slice end either", async ({ page }) => {
+  test("virtual_loop (seamless, effective radius 5 of 12): the recorded flick mark4 never stalls at a slice end either", async ({ page }) => {
     test.setTimeout(180_000);
     const { frame, content } = await open(page, "virtual_loop");
     await pageTo(page, frame, "6 of 12");
     expect(await content.locator("> *").count(), "12 looping items render 11 positions, never a repeat").toBe(11);
-    const r = await replayOwnerFlick(page, content, OWNER_FLICKS.mark4);
+    const r = await replayRecordedFlick(page, content, RECORDED_TRACKPAD_FLICKS.mark4);
     console.log(`mark4 virtual_loop: ${JSON.stringify(r)}`);
     expect(r.travel).toBeGreaterThan(3);
     expect(r.maxPinnedMs).toBeLessThanOrEqual(200);
   });
 
-  test("a true end is unchanged: a flick back to virtual_many's real first item stays there, with no re-centre", async ({ page }) => {
+  test("at a true end: a flick back to virtual_many's real first item stays there, with no re-centre", async ({ page }) => {
     test.setTimeout(120_000);
     await enableWheelDebug(page);
     const { frame, content } = await open(page, "virtual_many");
     await pageTo(page, frame, "4 of 200");
-    await replayOwnerFlick(page, content, OWNER_FLICKS.mark4);
+    await replayRecordedFlick(page, content, RECORDED_TRACKPAD_FLICKS.mark4);
     await expect(frame.locator('[data-selected="true"]').first()).toHaveAttribute("aria-label", "1 of 200");
     const recentres = await content.evaluate((el) =>
       ((window as unknown as { __dxCarouselTrace?: { id: string; kind: string; edgeIndex?: string }[] }).__dxCarouselTrace ?? []).filter(

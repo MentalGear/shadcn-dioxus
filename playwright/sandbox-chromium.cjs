@@ -8,7 +8,7 @@
 //   2. Otherwise the newest `chromium-<revision>/chrome-linux*/chrome` under `PLAYWRIGHT_BROWSERS_PATH` (the
 //      preinstalled browsers of this sandbox image, `/opt/pw-browsers`), by numeric revision. Always the full
 //      Chrome, never `chromium_headless_shell-*`: with `executablePath` set Playwright runs it in new headless mode,
-//      which is what every config here has always run.
+//      which is what every config here runs.
 //   3. Otherwise `undefined`: no `executablePath`, Playwright resolves its own browser (a CI runner after
 //      `npx playwright install --with-deps chromium`).
 //

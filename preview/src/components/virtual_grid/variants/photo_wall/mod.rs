@@ -44,8 +44,8 @@ fn aspect(index: usize) -> (u32, u32) {
 /// The `data:` URI of generated photo `index`: a sky gradient, a sun and two hills whose colours
 /// and positions derive from the index, drawn at the photo's own aspect ratio (so the image has
 /// that intrinsic ratio: `width`/`height` are twice the viewBox's, in the same ratio; a 2:1 box
-/// around every drawing once made `contain` letterbox each photo a second time inside its own
-/// image, so a photo filled about half its cell). Nothing is fetched.
+/// around every drawing would make `contain` letterbox each photo a second time inside its own
+/// image, so a photo would fill about half its cell). Nothing is fetched.
 fn photo_src(index: usize) -> String {
     let (aw, ah) = aspect(index);
     let w = 100.0 * aw as f32 / ah as f32;
@@ -309,7 +309,7 @@ pub fn Demo() -> Element {
             // The `var()` shorthands of the minimap box and the preview live here, not in their inline
             // `style`: those strings change with the scroll position and the chosen photo, and Dioxus's
             // web renderer drops a `var()` shorthand from an inline `style` the first time it is re-set
-            // (the box lost its border and fill once the wall mounted its first tiles).
+            // (the box would lose its border and fill once the wall mounts its first tiles).
             style {
                 "[data-photo-img] {{ display: block; width: 100%; height: 100%; object-fit: contain; }} [data-fit=\"cover\"] [data-photo-img] {{ object-fit: cover; }} [data-photo-wall-viewport] {{ border: 2px solid var(--dx-primary); background: var(--dx-accent); }} [data-photo-preview] {{ border-radius: var(--dx-radius-md); }}"
             }

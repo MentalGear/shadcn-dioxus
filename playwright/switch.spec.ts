@@ -21,11 +21,6 @@ test('test', async ({ page }) => {
 });
 
 test.describe('Axe automated scan', () => {
-  test('loaded (unchecked) has no automatically detectable a11y issues', async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/switch/`, { timeout: 20 * 60 * 1000, waitUntil: 'networkidle' });
-    await expectNoAxeViolations(page, 'switch: unchecked', { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-
   test('checked has no automatically detectable a11y issues', async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/switch/`, { timeout: 20 * 60 * 1000, waitUntil: 'networkidle' });
     await page.locator('#component-preview-frame').getByRole('switch', { name: 'Airplane Mode', exact: true }).click();

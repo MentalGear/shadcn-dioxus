@@ -7,12 +7,11 @@ use dioxus_primitives::hover_card::{HoverCard, HoverCardContent, HoverCardTrigge
 use dioxus_primitives::menubar::{Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarTrigger};
 use dioxus_primitives::navbar::{Navbar, NavbarContent, NavbarItem, NavbarNav, NavbarTrigger};
 use dioxus_primitives::popover::{PopoverContent, PopoverRoot, PopoverTrigger};
-// Themed wrapper, not the raw primitive -- docs/backlog.md row 72 follow-up
-// (Navigation Menu oracle coverage) asked for this one new fixture family to
-// compose `crate::components::navigation_menu::*` specifically, unlike every
-// other overlay in this file (this file's own composition-rule exemption in
-// `scripts/check-preview-composition.sh` covers either choice; the themed
-// wrapper is used here per that instruction).
+// Themed wrapper, not the raw primitive: the Navigation Menu fixture family
+// (dev-docs/backlog.md row 72) composes `crate::components::navigation_menu::*`
+// specifically, unlike every other overlay in this file (this file's own
+// composition-rule exemption in `scripts/check-preview-composition.sh` covers
+// either choice).
 use crate::components::navigation_menu::{
     NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink,
     NavigationMenuList, NavigationMenuTrigger,
@@ -29,32 +28,32 @@ use dioxus_primitives::ContentSide;
 #[css_module("/src/components/top_layer/style.css")]
 struct Styles;
 
-/// A fixture for the Phase 4.4 (docs/plan.md) top-layer oracle
+/// A fixture for the top-layer oracle (Phase 4.4, dev-docs/plan.md)
 /// (`playwright/oracle/tier2-html/top-layer.spec.ts`).
 ///
 /// Every rule the oracle checks is calibrated against a native reference --
 /// a plain `<div popover>` + `<button popovertarget>`, the browser's own
-/// implementation of the exact same WHATWG HTML feature our components now
+/// implementation of the exact same WHATWG HTML feature our components
 /// use -- placed in the same fixture, tier-2 style (see
-/// `docs/conformance-harness.md` and `preview/src/components/form` for the
+/// `dev-docs/conformance-harness.md` and `preview/src/components/form` for the
 /// established pattern).
 ///
-/// Reachable only at its own page, `/component/?name=top_layer&` --
+/// Reachable only at its own page, `/component/top_layer/` --
 /// `preview/src/main.rs`'s `ComponentGallery` deliberately excludes
 /// `top_layer` from the `/` home-page catalog grid (it is not an
 /// installable component, just this large oracle probe surface), while
 /// `components::DEMOS`/`DocsSidebar` still list it under "Overlays" so it
-/// stays navigable. See `docs/backlog.md` for the landed row.
+/// stays navigable.
 #[component]
 pub fn TopLayerFixture() -> Element {
-    // Additive fixture for the Phase 4.2 oracle
+    // Fixture for the native-dialog oracle
     // (`playwright/oracle/tier2-html/native-dialog.spec.ts`): the modal
     // `Dialog` renders a real `<dialog>` + `showModal()` on the web arm
-    // (docs/plan.md Phase 4.2). Calibrated against a plain native `<dialog>`
+    // (dev-docs/plan.md Phase 4.2). Calibrated against a plain native `<dialog>`
     // opened by a single `showModal()` call -- there is no fully declarative
     // opener for `<dialog>` here (the Invoker Commands API's
     // `command="show-modal"` would give one, but its cross-engine support
-    // wasn't something this slice could verify) -- so the reference below
+    // is not verified) -- so the reference below
     // has exactly one line of JS to open it and closes natively via
     // `<form method="dialog">`, same spirit as the `popovertarget` reference
     // above: no library state or logic under test, just the platform
@@ -62,7 +61,7 @@ pub fn TopLayerFixture() -> Element {
     let mut dialog_clip_open = use_signal(|| false);
     let mut dialog_inert_open = use_signal(|| false);
     let mut bg_clicks = use_signal(|| 0u32);
-    // Additive fixture for the two-engine overlay architecture completion
+    // Fixture for the two-engine overlay architecture
     // (modal `Popover` -> native `<dialog>`/`showModal()` on the web arm):
     // its own background-inertness click counter, mirroring `bg_clicks`
     // above but kept separate so the two sections' assertions can never
@@ -118,13 +117,10 @@ pub fn TopLayerFixture() -> Element {
                         }
                     }
 
-                    // DropdownMenu (docs/backlog.md item 2): web-arm
-                    // `popover="auto"` migration, added alongside the three
-                    // Phase 4.4 exemplars above -- see this rule's addition
-                    // in `top-layer.spec.ts` (RED before the migration:
-                    // `DropdownMenuContent` was a plain, non-`popover` div,
-                    // so it clipped exactly like the pre-4.4 behavior these
-                    // three did).
+                    // DropdownMenu (dev-docs/backlog.md item 2): web-arm
+                    // `popover="auto"`, like the three exemplars above -- see
+                    // this rule in `top-layer.spec.ts` (a plain, non-`popover`
+                    // `DropdownMenuContent` div would clip at the ancestor).
                     DropdownMenu { id: "clip-dropdown-menu-root",
                         DropdownMenuTrigger { id: "clip-dropdown-menu-trigger", "DropdownMenu trigger" }
                         DropdownMenuContent {
@@ -139,14 +135,12 @@ pub fn TopLayerFixture() -> Element {
                         }
                     }
 
-                    // Migration A slice 2/3: ContextMenu's web arm ->
-                    // `popover="manual"` (`ContextMenuContentRendered`,
-                    // `context_menu.rs`). Written RED first against the
-                    // pre-migration plain, `position: fixed`-only div
-                    // (confirmed by execution: it clipped at the 60px
-                    // ancestor exactly like DropdownMenu did pre-4.4/pre-
-                    // slice-2). Opened by right-click, like every other
-                    // `ContextMenu` in this workspace.
+                    // ContextMenu's web arm is `popover="manual"`
+                    // (`ContextMenuContentRendered`, `context_menu.rs`). The
+                    // case is red against a plain, `position: fixed`-only
+                    // div, which clips at the 60px ancestor. Opened by
+                    // right-click, like every other `ContextMenu` in this
+                    // workspace.
                     ContextMenu { id: "clip-context-menu-root",
                         ContextMenuTrigger { id: "clip-context-menu-trigger", "ContextMenu trigger (right-click)" }
                         ContextMenuContent {
@@ -161,13 +155,11 @@ pub fn TopLayerFixture() -> Element {
                         }
                     }
 
-                    // Migration A slice 2/3: Menubar menus' web arm ->
-                    // `popover="auto"`, anchored to their own trigger
-                    // (`MenubarContentRendered`, `menubar.rs`). Written RED
-                    // first against the pre-migration plain,
-                    // `position: absolute`-only div (confirmed by
-                    // execution: it clipped at the 60px ancestor exactly
-                    // like DropdownMenu did pre-4.4/pre-slice-2).
+                    // Menubar menus' web arm is `popover="auto"`, anchored
+                    // to their own trigger (`MenubarContentRendered`,
+                    // `menubar.rs`). The case is red against a plain,
+                    // `position: absolute`-only div, which clips at the
+                    // 60px ancestor.
                     Menubar { id: "clip-menubar-root",
                         MenubarMenu { index: 0usize,
                             MenubarTrigger { id: "clip-menubar-trigger", "Menubar trigger" }
@@ -184,11 +176,10 @@ pub fn TopLayerFixture() -> Element {
                         }
                     }
 
-                    // Migration A slice 3/3 (final): Select's web arm ->
-                    // `popover="auto"` (`SelectListRendered`, `list.rs`).
-                    // Written RED first against the pre-migration plain div
-                    // (confirmed by execution: it clipped at the 60px
-                    // ancestor exactly like the others did pre-migration).
+                    // Select's web arm is `popover="auto"`
+                    // (`SelectListRendered`, `list.rs`). The case is red
+                    // against a plain div, which clips at the 60px ancestor
+                    // like the others.
                     Select::<String> { id: "clip-select-root", item_to_label: |value: String| value,
                         SelectTrigger { id: "clip-select-trigger", SelectValue { placeholder: "Select trigger" } }
                         SelectList {
@@ -202,11 +193,10 @@ pub fn TopLayerFixture() -> Element {
                         }
                     }
 
-                    // Migration A slice 3/3 (final): Combobox's web arm ->
-                    // `popover="auto"` (`ComboboxListRendered`, `list.rs`).
-                    // Written RED first against the pre-migration plain div
-                    // (confirmed by execution: it clipped at the 60px
-                    // ancestor exactly like the others did pre-migration).
+                    // Combobox's web arm is `popover="auto"`
+                    // (`ComboboxListRendered`, `list.rs`). The case is red
+                    // against a plain div, which clips at the 60px ancestor
+                    // like the others.
                     Combobox::<String> { id: "clip-combobox-root", item_to_label: |value: String| value,
                         ComboboxInput { id: "clip-combobox-trigger", aria_label: "Combobox trigger" }
                         ComboboxList {
@@ -220,17 +210,13 @@ pub fn TopLayerFixture() -> Element {
                         }
                     }
 
-                    // 2026-09-03, finding C: `NavbarNav`'s web arm ->
-                    // `popover="auto"` (`NavbarContentRendered`,
-                    // `navbar.rs`) -- `Navbar` never migrated onto the
-                    // top-layer engine during Migration A, so it never got
-                    // clipping escape, top-layer stacking, or (Rule 5-style
-                    // below) viewport-edge flip the way `DropdownMenu`/
-                    // `Menubar`/`Select` did. Written RED first against the
-                    // pre-migration plain, `position: absolute`-only div
-                    // (confirmed by execution: it clipped at the 60px
-                    // ancestor exactly like `Menubar`'s identical
-                    // pre-migration shape did).
+                    // `NavbarNav`'s web arm is `popover="auto"`
+                    // (`NavbarContentRendered`, `navbar.rs`), so `Navbar`
+                    // gets clipping escape, top-layer stacking and (Rule
+                    // 5-style below) viewport-edge flip the way
+                    // `DropdownMenu`/`Menubar`/`Select` do. A plain,
+                    // `position: absolute`-only div would clip at the 60px
+                    // ancestor.
                     Navbar { id: "clip-navbar-root", aria_label: "Clip navbar test",
                         NavbarNav { index: 0usize,
                             NavbarTrigger { id: "clip-navbar-trigger", "Navbar trigger" }
@@ -247,8 +233,8 @@ pub fn TopLayerFixture() -> Element {
                         }
                     }
 
-                    // docs/backlog.md row 72 follow-up (Navigation Menu oracle
-                    // coverage): `NavigationMenuContent`'s web arm ->
+                    // dev-docs/backlog.md row 72 (Navigation Menu oracle
+                    // coverage): `NavigationMenuContent`'s web arm is
                     // `popover="manual"`, anchored to its own trigger
                     // (`NavigationMenuContentRendered`, `navigation_menu.rs`)
                     // -- the same top-layer engine `NavbarContent` above
@@ -330,11 +316,10 @@ pub fn TopLayerFixture() -> Element {
                             // through `#[css_module]`'s hashing, deliberately:
                             // that hashing only rewrites selectors it finds as
                             // flat top-level rules, not ones nested inside an
-                            // `@supports` block (confirmed by execution: the
-                            // hashed class landed on this element, but the
-                            // `@supports`-scoped rule below kept referencing
-                            // the *unhashed* name, so it silently never
-                            // matched). Same reasoning and the same fix as
+                            // `@supports` block, so the hashed class would
+                            // land on this element while the `@supports`-scoped
+                            // rule kept referencing the *unhashed* name and
+                            // silently never match. Same reasoning and fix as
                             // `primitives/src/tooltip.rs`'s `dx-anchor-tooltip`
                             // (see its comment) -- this fixture just needs its
                             // own instance since it isn't a primitives
@@ -353,7 +338,7 @@ pub fn TopLayerFixture() -> Element {
             }
 
             section { class: Styles::dx_top_layer_section,
-                h2 { "Toast top-layer stacking (Migration A slice 3/3, final)" }
+                h2 { "Toast top-layer stacking" }
                 p { class: Styles::dx_top_layer_hint,
                     "The small red panel is a high-"
                     code { "z-index" }
@@ -366,8 +351,8 @@ pub fn TopLayerFixture() -> Element {
                     "(top-layer stacking, the same rule as the section above). "
                     "Click the trigger to add a toast and cover the sibling."
                 }
-                // `position: fixed`, not `absolute`, on both -- confirmed by
-                // execution to matter, not a style preference: moving an
+                // `position: fixed`, not `absolute`, on both -- this matters,
+                // it is not a style preference: moving an
                 // element into the top layer changes its containing block
                 // to the *initial* containing block regardless of its own
                 // `position` value (see `crate::top_layer::anchor_name_
@@ -375,15 +360,13 @@ pub fn TopLayerFixture() -> Element {
                 // general rule this is an instance of), and for `position:
                 // absolute` specifically that initial containing block is
                 // sized like the viewport but anchored to the *document's*
-                // origin, not the current scroll position -- an earlier
-                // version of this fixture used `position: absolute; top: 0;
-                // left: 0` on the (popover-promoted) toast region nested
-                // inside a `position: relative` wrapper, which rendered
-                // correctly relative to that wrapper only when the page
-                // happened to be scrolled to the very top, and hundreds of
-                // pixels off-screen otherwise -- exactly the "toast not
-                // findable" failure this rule caught. `position: fixed`
-                // sidesteps this: fixed's containing block is the viewport
+                // origin, not the current scroll position -- so `position:
+                // absolute; top: 0; left: 0` on the (popover-promoted) toast
+                // region nested inside a `position: relative` wrapper would
+                // render correctly relative to that wrapper only when the
+                // page is scrolled to the very top, and hundreds of pixels
+                // off-screen otherwise (the "toast not findable" failure).
+                // `position: fixed` sidesteps this: fixed's containing block is the viewport
                 // itself either way, top layer or not, so `top: 0; left: 0`
                 // reliably means the actual visible viewport corner
                 // regardless of scroll -- matching this component's own
@@ -395,39 +378,35 @@ pub fn TopLayerFixture() -> Element {
                     style: "position: fixed; bottom: 0; right: 0; z-index: 99999; width: 40px; height: 20px; background: crimson;",
                 }
                 // No `id` here, deliberately: `ToastProviderProps` has no
-                // dedicated `id` field (the region's id has always been
+                // dedicated `id` field (the region's id is
                 // purely internal, generated by `use_unique_id` inside
                 // `toast.rs`, since the F6-focus-region wiring needs one
                 // but nothing caller-visible does) -- an `id` passed here
                 // would be absorbed by its `#[props(extends =
                 // GlobalAttributes)]` catch-all into `attributes`.
-                // `ToastRegionRendered` now drops any `id` found there
+                // `ToastRegionRendered` drops any `id` found there
                 // explicitly before merging (see its doc, "Attribute-
-                // override dedup") rather than relying on spread order, but
-                // an earlier version relied on `..attributes` losing to a
-                // preceding `id: id.clone()` on the client only -- which an
-                // id passed here would have silently overridden, stranding
+                // override dedup") rather than relying on spread order;
+                // spread order alone would let an id passed here override
+                // the generated one, stranding
                 // `use_popover_shown_while_mounted`'s `document.
-                // getElementById` -- confirmed by execution: this is
-                // exactly why an earlier version of this fixture's toast
-                // never became `:popover-open` at all.
+                // getElementById`, so the toast would never become
+                // `:popover-open`.
                 //
                 // `top: auto; left: auto; margin: 0;` alongside `bottom`/
-                // `right` -- also confirmed necessary by execution, and the
-                // exact reason `preview/src/components/toast/style.css`'s
+                // `right` -- also necessary, and the exact reason `preview/src/components/toast/style.css`'s
                 // real `.dx-toast-container[popover]` rule resets all four
                 // sides plus `margin`, not just the two this fixture cares
                 // about: the WHATWG popover UA stylesheet's `[popover] {
                 // inset: 0; margin: auto; ... }` still supplies `top: 0;
                 // left: 0` for the two sides this element's own style never
                 // mentions, and combined with the UA's own `margin: auto`
-                // (never triggered pre-popover, since the ordinary initial
-                // value of `margin` is `0`) that is exactly the four-sides-
-                // plus-auto-margin shape CSS's own centering algorithm
-                // looks for -- an earlier version of this fixture, setting
-                // only `bottom`/`right`, rendered the toast dead-centered
-                // in the viewport instead of at the corner, nowhere near
-                // the sibling.
+                // (a non-popover element's initial `margin` is `0`) that is
+                // exactly the four-sides-plus-auto-margin shape CSS's own
+                // centering algorithm looks for -- setting only
+                // `bottom`/`right` renders the toast dead-centered in the
+                // viewport instead of at the corner, nowhere near the
+                // sibling.
                 ToastProvider {
                     style: "position: fixed; top: auto; right: 0; bottom: 0; left: auto; margin: 0;",
                     // The app shell already mounts a toast region on every
@@ -446,7 +425,7 @@ pub fn TopLayerFixture() -> Element {
             }
 
             section { class: Styles::dx_top_layer_section,
-                h2 { "Point-positioned vs. anchored scroll behavior (Migration A slice 2/3)" }
+                h2 { "Point-positioned vs. anchored scroll behavior" }
                 p { class: Styles::dx_top_layer_hint,
                     "Both controls below sit normally in-flow (no clip ancestor, plenty of "
                     "room on every side) so a modest scroll cannot itself cross a "
@@ -454,9 +433,8 @@ pub fn TopLayerFixture() -> Element {
                     "flipping (Rules 5-7 already cover that), they're about what "
                     "happens to already-open content while the page scrolls. "
                     code { "ContextMenu" }
-                    " opens at a raw click point with no anchor -- pre-migration "
-                    "behavior (measured, then preserved by this migration) is "
-                    "that its content stays at the click's "
+                    " opens at a raw click point with no anchor -- its content "
+                    "stays at the click's "
                     code { "viewport" }
                     "-relative position, i.e. it does not move on screen as the "
                     "page scrolls underneath it (same as a native OS context "
@@ -554,7 +532,7 @@ pub fn TopLayerFixture() -> Element {
                         }
                     }
 
-                    // 2026-09-03, finding C: unlike `Tooltip`/`HoverCard`/
+                    // Unlike `Tooltip`/`HoverCard`/
                     // `PopoverContent` above, `NavbarContent` has no `side`
                     // prop -- its placement is always below/start-aligned,
                     // the same fixed convention `MenubarContent`/
@@ -563,10 +541,9 @@ pub fn TopLayerFixture() -> Element {
                     // pinning the *trigger* at the bottom edge instead of by
                     // an explicit `side` prop -- the same shape a real page
                     // footer or bottom nav bar would put a `Navbar` in.
-                    // Written RED first against the pre-migration plain,
-                    // `position: absolute; top: 100%`-only div (confirmed by
-                    // execution: no flip of any kind, content rendered
-                    // straight off the bottom of the viewport).
+                    // A plain `position: absolute; top: 100%`-only div would
+                    // never flip: the content would render straight off the
+                    // bottom of the viewport.
                     Navbar { id: "edge-bottom-navbar-root", aria_label: "Edge bottom navbar test",
                         NavbarNav { index: 0usize,
                             NavbarTrigger { id: "edge-bottom-navbar-trigger", "Bottom navbar" }
@@ -582,7 +559,7 @@ pub fn TopLayerFixture() -> Element {
                         }
                     }
 
-                    // docs/backlog.md row 72 follow-up. Like `Navbar` just
+                    // dev-docs/backlog.md row 72 (Navigation Menu oracle coverage). Like `Navbar` just
                     // above, `NavigationMenuContent` has no `side` prop
                     // (always below/start-aligned -- see
                     // `navigation_menu.rs`'s `NavigationMenuContentRendered`,
@@ -675,7 +652,7 @@ pub fn TopLayerFixture() -> Element {
             }
 
             section { class: Styles::dx_top_layer_section,
-                h2 { "Native <dialog> clipping escape (Phase 4.2)" }
+                h2 { "Native <dialog> clipping escape" }
                 p { class: Styles::dx_top_layer_hint,
                     "The modal "
                     code { "Dialog" }
@@ -738,7 +715,7 @@ pub fn TopLayerFixture() -> Element {
             }
 
             section { class: Styles::dx_top_layer_section,
-                h2 { "Native <dialog> background inertness (Phase 4.2)" }
+                h2 { "Native <dialog> background inertness" }
                 p { class: Styles::dx_top_layer_hint,
                     "While the alert dialog below is open, the background "
                     "button/input here must be behaviourally inert: a real "
@@ -750,7 +727,7 @@ pub fn TopLayerFixture() -> Element {
                     code { "Element.inert" }
                     " for "
                     code { "<body>" }
-                    " -- docs/phase4-spike-findings.md -- so this fixture is measured "
+                    " -- dev-docs/archive/research/phase4-spike-findings.md -- so this fixture is measured "
                     "behaviourally, not via that property.) Uses "
                     code { "AlertDialog" }
                     ", not "
@@ -795,13 +772,13 @@ pub fn TopLayerFixture() -> Element {
             }
 
             section { class: Styles::dx_top_layer_section,
-                h2 { "Native <dialog> modal Popover (two-engine completion)" }
+                h2 { "Native <dialog> modal Popover" }
                 p { class: Styles::dx_top_layer_hint,
                     "The modal "
                     code { "Popover" }
                     " below (explicit "
                     code { "is_modal: true" }
-                    "; the primitive's default is non-modal) now renders a real "
+                    "; the primitive's default is non-modal) renders a real "
                     code { "<dialog>" }
                     " opened with "
                     code { "showModal()" }
@@ -825,7 +802,7 @@ pub fn TopLayerFixture() -> Element {
                     "corner, far from the viewport center, so a "
                     "viewport-centered "
                     code { "showModal()" }
-                    " (the UA default this migration must override) would "
+                    " (the UA default) would "
                     "measurably disagree with a trigger-anchored one."
                 }
                 div { id: "popover-modal-clip-box", class: Styles::dx_top_layer_clip_box,
@@ -878,59 +855,36 @@ pub fn TopLayerFixture() -> Element {
                 // pair).
                 //
                 // `top: calc(var(--dx-navbar-height) + 20px)`, not a plain
-                // `40px` -- found by execution
-                // (`oracle/tier2-html/native-dialog.spec.ts` 6c/6d/6e, SSG
-                // lane only): a plain `40px` sits partly underneath
-                // `.dx-preview-navbar` (`position: sticky; top: 0`, ~54px
-                // tall), which is a real, ordinary `position: fixed`
-                // element (no scrolling involved for
-                // `scrollIntoViewIfNeeded` to correct via the sticky-nav
-                // `scroll-padding-top` added in `main.css` -- that only
-                // helps things that actually scroll into place), so it
-                // needs its own clearance instead. Only reliably visible
-                // pre-JS on a fullstack SSG prerender, where the sticky
-                // nav's CSS is already in effect at first paint; on the
-                // CSR dev server the same collision was masked in this
-                // session's testing by an unrelated, environment-specific
-                // race (`main.css`'s Google Fonts `@import` and this
-                // dev-only page's own `document::Link` head injection both
-                // taking long enough that the nav was still briefly
-                // `position: static` when Playwright clicked) -- not a
-                // structural difference between the two lanes, so this is
-                // still fixed here rather than only in the SSG build.
+                // `40px` (`oracle/tier2-html/native-dialog.spec.ts`
+                // 6c/6d/6e, SSG lane only): a plain `40px` sits partly underneath
+                // `.dx-preview-navbar` (`position: sticky; top: 0`), which is an
+                // ordinary fixed-position element that `scrollIntoViewIfNeeded`
+                // cannot correct (the sticky-nav `scroll-padding-top` in
+                // `main.css` only helps things that scroll into place), so the
+                // trigger needs its own clearance. The clearance is not specific
+                // to the SSG build: on the CSR dev server the nav can still be
+                // `position: static` for a moment after load (the Google Fonts
+                // `@import` and this page's own `document::Link` head injection
+                // delay its CSS), which only masks the same overlap.
                 //
-                // `z-index: var(--dx-z-top, 9999)` -- added for a SECOND,
-                // later collision with a DIFFERENT permanently-mounted
-                // fixed-position element: once every route started
-                // rendering `DocsLayout`'s `Sidebar`
-                // (`preview/src/components/sidebar/style.css`'s
+                // `z-index: var(--dx-z-top, 9999)`: every route renders
+                // `DocsLayout`'s `Sidebar` (`preview/src/components/sidebar/style.css`'s
                 // `.dx-sidebar-container`, `position: fixed; z-index:
                 // var(--dx-z-local-sm)` = 10, occupying `left: 0` through
-                // `width: var(--dx-sidebar-width)` = 16rem), this trigger's
-                // `left: 40px` placed it inside that column too, and with
-                // no `z-index` of its own it lost hit-testing to the
-                // Sidebar exactly the way it once lost visual clearance to
-                // the navbar above (`oracle/tier2-html/native-dialog.spec.ts`
-                // Rule 6c/6d/6e; confirmed by execution -- Playwright's
-                // actionability retry log named
-                // `.dx-sidebar-desktop`/`.dx-sidebar-group-label` as the
-                // interceptor). A THIRD one-off `top`/`left` nudge would
-                // only fix the Sidebar specifically and leave the same
-                // mechanism free to recur against whatever permanently-
-                // mounted chrome comes next -- this repo's own "same
-                // problem more than once -> fix the class" rule (CLAUDE.md)
-                // -- so this is a `z-index` raise instead, using this
-                // fixture's own existing "must clear ordinary page chrome"
-                // convention (`--dx-z-top`, already used by
-                // `.dx-top-layer-stack-sibling` in style.css; see
-                // style.css's matching comment on
-                // `.dx-top-layer-edge-bottom-row`/`-edge-right-col`, the
-                // same collision against the same Sidebar, fixed the same
-                // way): far enough above *any* normal-range chrome
-                // z-index that a next one doesn't need its own fix here,
-                // with this trigger's actual position -- the geometry
-                // Rule 6e's trigger-anchored placement measurement and the
-                // Escape/focus-restore cycles depend on -- left untouched.
+                // `width: var(--dx-sidebar-width)` = 16rem), and this trigger's
+                // `left: 40px` places it inside that column, where with no `z-index`
+                // of its own it loses hit-testing to the Sidebar
+                // (`oracle/tier2-html/native-dialog.spec.ts` Rule 6c/6d/6e). A
+                // `top`/`left` nudge would only dodge that one element and leave the
+                // same mechanism free to recur against whatever permanently-mounted
+                // chrome comes next, so the fix is a `z-index` raise using this
+                // fixture's "must clear ordinary page chrome" convention
+                // (`--dx-z-top`, also used by `.dx-top-layer-stack-sibling` in
+                // style.css; see style.css's matching comment on
+                // `.dx-top-layer-edge-bottom-row`/`-edge-right-col`): far above *any*
+                // normal-range chrome z-index, with this trigger's actual position --
+                // the geometry Rule 6e's trigger-anchored placement measurement and
+                // the Escape/focus-restore cycles depend on -- left untouched.
                 div {
                     style: "position: fixed; top: calc(var(--dx-navbar-height, 60px) + 20px); left: 40px; z-index: var(--dx-z-top, 9999);",
                     PopoverRoot { id: "popover-modal-anchor-root", is_modal: true,
@@ -943,9 +897,9 @@ pub fn TopLayerFixture() -> Element {
             }
 
             section { class: Styles::dx_top_layer_section,
-                h2 { "Select scroll_lock opt-out (docs/backlog.md rows 9/72)" }
+                h2 { "Select scroll_lock opt-out (dev-docs/backlog.md rows 9/72)" }
                 p { class: Styles::dx_top_layer_hint,
-                    "Row 9 landed an opt-out "
+                    "The "
                     code { "scroll_lock: ReadSignal<bool>" }
                     " prop (default "
                     code { "true" }
@@ -953,16 +907,16 @@ pub fn TopLayerFixture() -> Element {
                     code { "Select" }
                     "/"
                     code { "SelectMulti" }
-                    ", but no fixture exercised "
+                    " opts out of the page scroll lock. The trigger below sets "
                     code { "scroll_lock=false" }
-                    " -- the trigger below sets it explicitly, so opening its "
+                    " explicitly, so opening its "
                     "listbox must leave page scroll unlocked (a wheel event "
                     "still scrolls the page), unlike every other overlay on "
                     "this page and unlike Select's own default-"
                     code { "true" }
                     " instance ("
                     code { "playwright/oracle/tier3-radix/scroll-lock.spec.ts" }
-                    "'s pre-existing case, on Select's own gallery page)."
+                    "'s default case, on Select's own gallery page)."
                 }
                 Select::<String> {
                     id: "scroll-lock-select-root",

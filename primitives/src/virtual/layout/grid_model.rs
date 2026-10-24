@@ -307,7 +307,7 @@ pub(crate) struct SquareOptions {
 }
 
 /// A uniform square grid (an "all photos" wall): fixed square tiles, no headers, the same
-/// [`GridModel`] shape so the windowing is unchanged.
+/// [`GridModel`] shape so the same windowing applies.
 pub(crate) fn square_grid_model(count: usize, opts: &SquareOptions) -> GridModel {
     let (container_width, target) = (opts.container_width, opts.target_size);
     let valid = |v: f64| v.is_finite() && v > 0.0;

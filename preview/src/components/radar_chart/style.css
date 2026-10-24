@@ -1,5 +1,5 @@
 /* Radar Chart gallery -- shadcn/ui `chart-radar-*` demo parity
- * (dev-docs/research/chart-2026-09-19.md §1.2). Every demo composes the
+ * (dev-docs/archive/research/chart-2026-09-19.md §1.2). Every demo composes the
  * installable `chart` package's own themed pieces (Chart/ChartContainer/
  * ChartTooltip/ChartLegend, styled by `chart/style.css`) plus `Card` --
  * unlike `bar_chart`/`chart_tooltip`, none of this gallery's 14 demos need

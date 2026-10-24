@@ -38,8 +38,8 @@ pub fn Drawer(props: DrawerRootProps) -> Element {
 pub fn DrawerContent(props: DrawerContentProps) -> Element {
     // Merges `class` the same way `../popover/component.rs`'s `PopoverContent`
     // and `../toggle/component.rs`'s `Toggle` do: a caller's own class extends
-    // this theme's `"dx-drawer"`, it does not replace it (this wrapper used to
-    // pass `class: None` and drop `props.class` on the floor). It travels as the
+    // this theme's `"dx-drawer"`, it does not replace it (`props.class` is never
+    // dropped). It travels as the
     // primitive's typed `class` prop, so it is ONE literal on the dialog element
     // and never rides beside the `..attributes` spread
     // (`scripts/check-attr-spread-collision.sh`).
@@ -187,8 +187,8 @@ mod tests {
         dioxus_ssr::render(&dom)
     }
 
-    /// The `class` forwarding regression: the themed wrapper passed `class: None`
-    /// to the primitive, so a caller's own class never reached the element.
+    /// The `class` forwarding contract: the themed wrapper must pass the caller's
+    /// `class` to the primitive, or it never reaches the element.
     #[test]
     fn caller_class_and_theme_class_both_render_on_the_drawer_content() {
         let html = render_open(DrawerWithCallerClass);

@@ -10,14 +10,14 @@
 //! both this module's own cited sources:
 //!
 //! - d3-shape's `pointRadial` (`src/pointRadial.js`, ISC,
-//!   `d3/d3-shape@a82254af78` (2023-10-06), read in full):
+//!   `d3/d3-shape@a82254af78`, 2023-10-06):
 //!   `(y * cos(x - PI/2), y * sin(x - PI/2))`. Expanding the angle
 //!   subtraction (`cos(a - PI/2) = sin(a)`, `sin(a - PI/2) = -cos(a)`)
 //!   gives `(y * sin(x), -y * cos(x))` -- exactly [`point_radial`]'s
 //!   formula below, independently re-derived from that trig identity, not
 //!   transcribed.
-//! - Recharts' own `RadarChart` (`recharts/recharts` commit
-//!   `86ad3632ff3f83a742001ae6fc079dd27961a2a4`, MIT,
+//! - Recharts' own `RadarChart` (recharts/recharts
+//!   @ 86ad3632ff3f83a742001ae6fc079dd27961a2a4, MIT,
 //!   `src/chart/RadarChart.tsx`'s `defaultProps: { startAngle: 90,
 //!   endAngle: -270 }`, combined with `src/util/PolarUtils.ts`'s
 //!   `polarToCartesian`): substituting `angle_recharts = 90 -
@@ -26,30 +26,30 @@
 //!   simplifying algebraically lands on the exact same `(r * sin(a), -r *
 //!   cos(a))` offset -- confirming this is not merely d3's abstract
 //!   convention but shadcn/Recharts' own actual radar orientation (first
-//!   category at top, clockwise), the thing this port needs to match for
-//!   visual parity with the demos in `$S/refs/ui/.../charts/chart-radar-*.tsx`.
+//!   category at top, clockwise), which this engine matches for visual
+//!   parity with the demos in shadcn-ui/ui `.../charts/chart-radar-*.tsx`.
 //!
 //! # Scope: `Curve::Linear` only, by construction of the chart family being ported
 //!
-//! `$S/chart-api.md`'s [`super::curve::Curve`] enum (`Linear`/`Monotone`/
+//! `dev-docs/archive/research/chart-2026-09-19.md`'s [`super::curve::Curve`] enum (`Linear`/`Monotone`/
 //! `Step`) is a Cartesian *open-line* concept: d3-shape's `curveRadial`
 //! (`src/curve/radial.js`) generalizes it to a closed radial curve by
 //! wrapping any of its Cartesian curve generators, and `lineRadial`/
-//! `areaRadial` (`src/lineRadial.js`/`src/areaRadial.js`, both read in
-//! full) are thin wrappers applying that same generalization to `line`/
+//! `areaRadial` (`src/lineRadial.js`/`src/areaRadial.js`) are
+//! thin wrappers applying that same generalization to `line`/
 //! `area`. This module ports only the straight-line (`curveLinearClosed`-
 //! equivalent) case, **not** a general closed-curve interpolator for
 //! every [`super::curve::Curve`] variant -- a periodic monotone spline
 //! closing back on itself is a materially different (and harder) problem
 //! than an open one (the tangent at the seam must be consistent with both
-//! neighbors, not one-sided), and is out of scope for this MVP.
+//! neighbors, not one-sided), and is out of scope here.
 //!
 //! This narrowing costs nothing against the actual port target: Recharts'
-//! own `<Radar>` component (`src/polar/Radar.tsx`, read in full) has **no
+//! own `<Radar>` component (`src/polar/Radar.tsx`) has **no
 //! curve/interpolation prop at all** -- it always renders through
 //! `Polygon` (`src/shape/Polygon.tsx`), a straight-sided closed shape, and
 //! not one of the fourteen shadcn radar demos in
-//! `$S/refs/ui/.../charts/chart-radar-*.tsx` passes anything resembling a
+//! shadcn-ui/ui `.../charts/chart-radar-*.tsx` passes anything resembling a
 //! smoothing option. `Curve::Linear` is not a narrowing of the port
 //! target's own behavior; it is the whole of it.
 //!
@@ -68,7 +68,7 @@ use super::scale::{fmt_num, LinearScale};
 /// o'clock, increasing clockwise -- see the module doc). Mirrors how
 /// Recharts' angle axis divides a categorical domain: `count` points
 /// spaced `360 / count` degrees apart spanning the full circle, the first
-/// one at the start angle (here, always the top) -- confirmed against
+/// one at the start angle (here, always the top) -- matching
 /// `RadarChart`'s own `startAngle: 90, endAngle: -270` defaults (a full
 /// 360° span), see the module doc's citation.
 ///
@@ -240,7 +240,7 @@ pub fn grid_polygon_path(angles: &[f64], radius: f64) -> String {
 /// -- the shape a pointer anywhere "in category `i`'s wedge" hits, with no
 /// coordinate math needed at hover time: the wedge's own SVG boundary does
 /// the work natively, the same "the hit target's own shape carries the
-/// geometry" principle `$S/chart-api.md`'s Cartesian hit-bands use (a
+/// geometry" principle `dev-docs/archive/research/chart-2026-09-19.md`'s Cartesian hit-bands use (a
 /// `rect`'s bounds there; an `A`-command wedge here, since a radar's
 /// per-category hover region is angular, not a vertical band).
 ///

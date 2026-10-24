@@ -55,7 +55,7 @@ AlertDialog {
 
 `size: AlertDialogSize::Sm` (shadcn's `size="sm"`) renders a compact, centred panel, `max-width: 20rem` at every viewport width, with the two actions on one two-column row; the panel carries `data-size`. `AlertDialogMedia` puts an icon (or image) tile above the title, 64px with a 32px icon, or 40px / 24px in `Sm`.
 
-`AlertDialogAction { variant }` takes `AlertDialogActionVariant::Destructive` (the default, the long-standing red confirm button) or `Primary` for a prompt that is not destructive; the button carries `data-style`, the Button vocabulary.
+`AlertDialogAction { variant }` takes `AlertDialogActionVariant::Destructive` (the default, a red confirm button) or `Primary` for a prompt that is not destructive; the button carries `data-style`, the Button vocabulary.
 
 ```rust
 AlertDialog { size: AlertDialogSize::Sm, open: open(), on_open_change: move |v| open.set(v),

@@ -12,10 +12,10 @@ import { ACCENT, applyModeAndAccent, paintedColour, resolvedToken, type Mode } f
 //
 // The Virtual List `reorder` demo always sets `item_key` (the demo has no toggle), so
 // this file proves the key-ON behaviour there. The key-OFF behaviour of the VirtualList engine ("a row is
-// its slot": the DOM node, its state and the measured size stay on the index) moved to the engine's own
+// its slot": the DOM node, its state and the measured size stay on the index) is pinned by the engine's own
 // unit tests: `without_an_item_key_a_row_is_its_slot` (primitives/src/virtual/identity.rs) and
 // `without_keys_a_measured_size_stays_on_its_slot` (primitives/src/virtual/virtualizer.rs), with their
-// key-on twins. The Table `reorder` demo still has its item_key toggle, so its key-off test stays here.
+// key-on twins. The Table `reorder` demo has an item_key toggle, so its key-off test is here.
 //
 // `reorder` demos, button positions: virtual_list = Reverse (0), Shuffle (1); table = Sort descending (0),
 // Move first to last (1), item_key toggle (2).

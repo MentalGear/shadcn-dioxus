@@ -15,10 +15,10 @@ static POINTERS: GlobalSignal<Vec<Pointer>> = Global::new(Vec::new);
 thread_local! {
     /// The `window` pointer listeners that feed [`POINTERS`]. They exist exactly while at
     /// least one pointer is tracked: installed by the first [`add_pointer`], dropped (which
-    /// removes them) when the last pointer goes up. They used to be installed once by the
-    /// global signal's initializer and kept for the rest of the visit, so after the first
+    /// removes them) when the last pointer goes up. They are not installed once by the
+    /// global signal's initializer and kept for the rest of the visit: after the first
     /// slider or resizable handle was touched, every `pointermove` anywhere on the page
-    /// crossed the JS/wasm boundary for good (backlog row 159).
+    /// would cross the JS/wasm boundary for good (backlog row 159).
     static BRIDGE: RefCell<Option<JsListeners>> = const { RefCell::new(None) };
 }
 

@@ -3,26 +3,25 @@ import type { Page } from "@playwright/test";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
-// Row 239: `all: unset` (0,1,0) outranked every zero-specificity theme baseline on Switch, the Slider thumb and both
-// ColorPicker thumbs. The `all:` resets are gone (scripts/check-theme-baseline.sh bans them) and spelled out; this
-// spec pins (a) the theme baselines now reaching those four controls and (b) that the visual computed style is
-// exactly what `all: unset` produced (captured on the pre-change build, light scheme).
+// Row 239: `all: unset` (0,1,0) would outrank every zero-specificity theme baseline, so Switch, the Slider thumb and both
+// ColorPicker thumbs spell their resets out (scripts/check-theme-baseline.sh bans `all:`). This
+// spec pins (a) the theme baselines reaching those four controls and (b) that the visual computed style is
+// exactly the `all: unset` golden (captured in the light scheme).
 const GOTO = { timeout: 20 * 60 * 1000 };
 
-// Computed values of the pre-change build (light). `rect` is the border box, rounded to 2 decimals.
+// Computed values of the theme baseline (light). `rect` is the border box, rounded to 2 decimals.
 //
 // `cursor` is `default`: the interactive-element cursor is the theme's one rule (`data-dx-interactive-element-cursor`,
 // cursor-option.spec.ts, backlog row 381), and shadcn v4's arrow is its default.
 //
-// Row 331 verdict (2026-10-21): KEPT. Re-checked against today's build: all four records still equal the
-// pre-change values, so no re-baseline was needed. What only this snapshot catches: a probe that appended
-// `cursor: default`, `text-indent`, `appearance: auto`, `transition-property: none`, `letter-spacing`, `border-width`
-// and `text-shadow`/`word-spacing` declarations (appended to the shipped sheet) to the four controls went red
+// Row 331: the four records are the theme baseline's values. What only this snapshot catches: a sheet-level
+// change that adds `cursor: default`, `text-indent`, `appearance: auto`, `transition-property: none`,
+// `letter-spacing`, `border-width` or `text-shadow`/`word-spacing` declarations to the four controls goes red
 // here (4 of 4) while this file's per-control tests, `switch.spec`, `slider.spec`, `slider-thumb-clip.spec`,
-// `color-picker*.spec` and `overlay-switch.spec` stayed green. The gates `check-theme-baseline.sh` (bans `all:`,
+// `color-picker*.spec` and `overlay-switch.spec` stay green. The gates `check-theme-baseline.sh` (bans `all:`,
 // checks the two theme rules) and `check-popup-root-reset.sh` (checks the popup-root rule) scan sources for those
 // shapes and read no computed value, and `popup-style-isolation` compares a popup with its own clone, so a
-// sheet-level change reaches both sides: by their construction, not by a run on the probe.
+// sheet-level change reaches both sides: by their construction.
 const BEFORE: Record<string, Record<string, string>> = {
   "switch": {
     "display": "flex",
@@ -204,8 +203,8 @@ for (const which of Object.keys(BEFORE)) {
         o.rect = `${r2(r.width)}x${r2(r.height)}`;
         return o;
       }, props);
-      // The slider thumb's border is the focus-ring colour token, which the golden recorded as the old default
-      // blue (rgb(43, 127, 255)); it is now shadcn's grey, so the border is compared to the token itself and
+      // The slider thumb's border is the focus-ring colour token (shadcn's grey); the golden holds
+      // blue (rgb(43, 127, 255)) for it, so the border is compared to the token itself and
       // every other property to the golden (`all: unset` equivalence is about the rest).
       const expected: Record<string, string> = { ...BEFORE[which] };
       if (which === "slider-thumb") {
@@ -218,8 +217,8 @@ for (const which of Object.keys(BEFORE)) {
           return c;
         });
       }
-      // Two golden values were the old pure-black defaults: `color` (the page ink, `--dx-foreground`) and the thumbs'
-      // `border-top-color` (`--dx-primary`). Both are shadcn's near-black now (row 373), so they are compared to the
+      // Two golden values are pure black: `color` (the page ink, `--dx-foreground`) and the thumbs'
+      // `border-top-color` (`--dx-primary`). Both are shadcn's near-black (row 373), so they are compared to the
       // token itself, like the ring colour above; every other property still equals the golden.
       const token = async (name: string) =>
         page.evaluate((n) => {

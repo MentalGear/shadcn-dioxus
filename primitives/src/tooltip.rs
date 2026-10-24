@@ -141,14 +141,14 @@ pub fn Tooltip(props: TooltipProps) -> Element {
     // Install the shared anchor-positioning stylesheet (`top_layer.rs`'s
     // `ensure_anchor_positioning_styles`) as early as possible -- from this
     // always-mounted root, not only from `use_anchor_position_fallback`
-    // (called only once `TooltipContent` first opens). Confirmed necessary
-    // by execution, not just tidier: CSS Anchor Positioning's `anchor()`
+    // (called only once `TooltipContent` first opens). Necessary, not just
+    // tidier: CSS Anchor Positioning's `anchor()`
     // resolution needs the stylesheet to have been part of the document for
     // at least one full rendering lifecycle before the *very first* anchored
     // element ever measures against it -- installing it only in the same
-    // script as that first measurement (tried first) left a real, if
-    // narrow, window where `anchor()` had not yet resolved by the time
-    // `getBoundingClientRect()` ran, wrongly tripping the JS fallback on a
+    // script as that first measurement leaves a real, if
+    // narrow, window where `anchor()` has not yet resolved by the time
+    // `getBoundingClientRect()` runs, wrongly tripping the JS fallback on a
     // cold first open. Mounting `Tooltip` happens well before hover/focus
     // can ever open its content, so by the time a real user (or a test)
     // triggers the first open, the browser has had many rendering
@@ -178,7 +178,7 @@ pub fn Tooltip(props: TooltipProps) -> Element {
     });
 
     // Owned by this component -- open/disabled state must win over a
-    // caller's own attributes (`docs/backlog.md` row 93's
+    // caller's own attributes (`dev-docs/backlog.md` row 93's
     // duplicate-attribute hazard).
     let attributes = merge_attributes(vec![
         props.attributes,
@@ -378,7 +378,7 @@ pub fn TooltipContent(props: TooltipContentProps) -> Element {
     // hook calls to *this* component's own scope, where `render()` toggling
     // on every open/close would change the hook count/order across renders
     // of the same mounted `TooltipContent` -- exactly the hazard
-    // `docs/phase4-spike-findings.md` Construction B's root-cause analysis
+    // `dev-docs/archive/research/phase4-spike-findings.md` Construction B's root-cause analysis
     // describes for a different case (binding `open` vs. calling
     // `showModal()` in the same render pass); see `popover.rs`'s
     // `PopoverContentRendered` for the same fix applied there.
@@ -397,19 +397,19 @@ pub fn TooltipContent(props: TooltipContentProps) -> Element {
     }
 }
 
-/// Web arm (Phase 4.4, docs/plan.md): promote the tooltip to the top layer
+/// Web arm (Phase 4.4, dev-docs/plan.md): promote the tooltip to the top layer
 /// via `popover="manual"` so it escapes clipping/transformed ancestors
-/// (docs/phase4-spike-findings.md experiment 7). `manual`, not `auto`: a
+/// (dev-docs/archive/research/phase4-spike-findings.md experiment 7). `manual`, not `auto`: a
 /// Tooltip already owns its entire open/close lifecycle through
 /// `TooltipTrigger`'s hover/focus/Escape handlers, and `auto`'s light
 /// dismiss (WHATWG HTML §popover-light-dismiss) would fight that — an
-/// outside pointerdown that the browser used to (harmlessly) ignore would
-/// now race our own signal to close it, and there is no separate
+/// outside pointerdown that the browser otherwise (harmlessly) ignores would
+/// race our own signal to close it, and there is no separate
 /// interaction this component wants Escape or click-outside to mean beyond
 /// what the trigger already does.
 ///
 /// Uses `crate::top_layer::use_popover_shown_while_mounted`, not
-/// `use_popover_sync` (docs/backlog.md row 19). This component is mounted
+/// `use_popover_sync` (dev-docs/backlog.md row 19). This component is mounted
 /// by `render()` in `TooltipContent` above -- `use_animated_open` -- which
 /// keeps it in the DOM with `data-state="closed"` for its whole CSS close
 /// animation (plus a settle hold) before actually unmounting it.
@@ -466,8 +466,8 @@ fn TooltipContentRendered(
     // `@supports (anchor-name: --a)` block for why this is required: that
     // macro's parser (`manganis-core`'s `css_module_parser`) only recurses
     // into `@media`/`@layer`/`@container`/`@include` bodies when rewriting
-    // class selectors to their per-module hashed form (confirmed by
-    // inspecting `css_module_parser.rs`'s `at_rule` match arm) -- `@supports`
+    // class selectors to their per-module hashed form (see
+    // `css_module_parser.rs`'s `at_rule` match arm) -- `@supports`
     // is not in that list, so a selector like `.dx-tooltip-content[popover]`
     // written inside one is left completely unscoped in the compiled
     // stylesheet and can never match the real (hashed-class) element the
@@ -483,7 +483,7 @@ fn TooltipContentRendered(
         }),
         // Owned by this component -- role/top-layer wiring/positioning
         // state must win over a caller's own attributes
-        // (`docs/backlog.md` row 93's duplicate-attribute hazard).
+        // (`dev-docs/backlog.md` row 93's duplicate-attribute hazard).
         attributes!(div {
             role: "tooltip",
             popover: crate::top_layer::PopoverKind::Manual.as_str(),
@@ -496,7 +496,7 @@ fn TooltipContentRendered(
     // one `style` attribute -- see `top_layer::anchored_content_attributes`'s
     // doc for why a bare `style: position_anchor_style(&id)` literal
     // alongside `..attributes` is the duplicate-`style` hazard
-    // (`docs/conformance-harness.md` hydration-parity Rule 4).
+    // (`dev-docs/conformance-harness.md` hydration-parity Rule 4).
     let attributes = crate::top_layer::anchored_content_attributes(&id, attributes);
 
     // Hoverable content (WCAG 1.4.13): with a `close_delay` above 0 the
@@ -515,9 +515,9 @@ fn TooltipContentRendered(
     }
 }
 
-/// Native (Blitz) arm: unchanged from before this slice. Blitz implements
+/// Native (Blitz) arm: Blitz implements
 /// neither the `popover` attribute nor `document::eval`
-/// (`docs/recommended-implementations.md` Caveat 2), so this is the
+/// (`dev-docs/reference/platform-rationale.md` Caveat 2), so this is the
 /// functional floor — a plain, always-in-flow div, visible exactly when
 /// `render()` (above) mounts it.
 #[cfg(not(feature = "web"))]
@@ -526,7 +526,7 @@ fn TooltipContentRendered(
     id: String,
     open: Memo<bool>,
     // Unused on this arm -- kept as a same-named field so the shared,
-    // cfg-independent call site in `TooltipContent` compiles unchanged on
+    // cfg-independent call site in `TooltipContent` compiles on
     // both arms.
     set_open: Callback<bool>,
     side: ContentSide,
@@ -536,7 +536,7 @@ fn TooltipContentRendered(
 ) -> Element {
     let _ = set_open;
     // Owned by this component -- see the web arm's identical construction
-    // above (`docs/backlog.md` row 93).
+    // above (`dev-docs/backlog.md` row 93).
     let attributes = merge_attributes(vec![
         attributes,
         attributes!(div {
@@ -559,18 +559,18 @@ fn TooltipContentRendered(
     }
 }
 
-// SSR regression test for the duplicate-`style` hazard this file used to
-// carry: `TooltipContentRendered` set `style: position_anchor_style(&id)` as
-// a bare literal alongside `..attributes`, so a caller-supplied `style` (as
+// SSR test for the duplicate-`style` hazard: a
+// `TooltipContentRendered` that set `style: position_anchor_style(&id)` as
+// a bare literal alongside `..attributes` would render a caller-supplied `style` (as
 // `TooltipContent`'s own doc example demonstrates, and as the `top_layer`
-// preview fixture's anchored components do) rendered as a *second*, later
-// `style="..."` on the SSR'd element -- `docs/conformance-harness.md`
+// preview fixture's anchored components do) as a *second*, later
+// `style="..."` on the SSR'd element -- `dev-docs/conformance-harness.md`
 // hydration-parity Rule 4 (`dioxus-ssr`'s renderer keeps only the first
 // `style` it accumulates per element; the WASM client's `set_attribute`
 // keeps the last, so SSR and CSR silently disagree about which one wins,
 // and the anchor binding this whole module exists to set up is lost on the
 // client). Reverting `top_layer::anchored_content_attributes`'s use below
-// (confirmed by temporarily doing exactly that) reproduces this: the SSR'd
+// reproduces this: the SSR'd
 // HTML gets two `style="..."` attributes on the content element instead of
 // one folded string, and the assertion below goes red.
 #[cfg(all(test, feature = "web"))]
@@ -610,7 +610,7 @@ mod anchor_style_hydration_parity {
         dom.render_immediate(&mut NoOpMutations);
         let html = dioxus_ssr::render(&dom);
 
-        // Backlog row 108: found via an order-independent attribute-map
+        // Backlog row 108: read through an order-independent attribute-map
         // lookup, not by slicing forward from the `id="..."` match's own
         // position to the next `>` -- `TooltipContent`'s attributes go
         // through `merge_attributes` (this module's own `attributes`

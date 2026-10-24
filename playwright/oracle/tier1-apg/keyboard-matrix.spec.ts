@@ -4,8 +4,8 @@
  * One row = (component, key, APG-specified expectation, observed behaviour).
  * Every row's expectation is quoted from a W3C ARIA Authoring Practices Guide
  * (APG) pattern's own "Keyboard Interaction" section — never from memory.
- * The quotes below were read from a fresh, read-only clone of
- * `w3c/aria-practices` checked out at the SAME pinned commit this repo
+ * The quotes below are from
+ * `w3c/aria-practices` at the SAME pinned commit this repo
  * already vendors executable reference pages from
  * (`playwright/oracle/reference/7e4034b/`, see that directory's README):
  *
@@ -17,8 +17,8 @@
  * needs many more patterns' own prose ("Keyboard Interaction" section of each
  * pattern's narrative page, e.g. `content/patterns/menubar/
  * menu-and-menubar-pattern.html#keyboard_interaction`) for citation, which
- * were never vendored because nothing before this file needed to *run*
- * against them. Rather than invent quotes from memory, each was read
+ * are not vendored because nothing needs to *run*
+ * against them. Each quote is taken, never from memory,
  * straight from that pinned commit's tree; the exact path is named in each
  * row's comment, and https://www.w3.org/WAI/ARIA/apg/patterns/<pattern>/ is
  * the same content's live (unpinned) URL for convenience. Where a pattern's
@@ -28,14 +28,14 @@
  * library's demos against the prose, not to re-run the calibration that file
  * already owns.
  *
- * Design (task brief, "keyboard matrix oracle"): assert behaviour (open
+ * Design ("keyboard matrix oracle"): assert behaviour (open
  * state via data-state/aria-expanded/visibility, focus via
  * document.activeElement comparisons, aria-activedescendant), not
  * implementation details. Every test is titled
  * "<Component> — <Key>: <APG expectation>". A row the demo pages cannot
  * exercise is `test.skip`ped with a reason ("no fixture") rather than
  * inventing markup. This file does NOT fix anything it finds red -- reds are
- * the deliverable; see docs/conformance-harness.md's tier-1 policy.
+ * the deliverable; see dev-docs/conformance-harness.md's tier-1 policy.
  */
 
 import { test, expect } from "../../fixtures";
@@ -96,21 +96,19 @@ test.describe("APG Menu Button pattern — DropdownMenu trigger", () => {
 
     await page.keyboard.press("Enter");
 
-    // Split assertion on purpose -- the two halves of the APG requirement
-    // diverge here (see file header + report): the menu DOES open...
+    // Two assertions, one per half of the APG requirement: the menu opens (this one),
+    // and focus moves to the first item (the second).
     await expect(trigger, "Enter must open the menu").toHaveAttribute("data-state", "open");
-    // ...but focus does not move to the first item as APG requires. Asserting
-    // the APG requirement directly (not the observed behaviour) so the gap
-    // shows up as a red, per this file's brief ("reds are the deliverable").
+    // Asserting the APG requirement directly, so a regression shows up as a red.
     // Source: primitives/src/dropdown_menu.rs DropdownMenu::handle_keydown's
-    // Key::Enter arm only toggles `open`; it never calls
-    // `ctx.focus.focus_first()` the way the ArrowDown arm does.
+    // Key::Enter arm calls `ctx.open_with_focus(CollectionPlacement::First)`, the
+    // same path its ArrowDown arm uses from a closed trigger.
     const active = await activeElement(page);
     expect(
       active.role,
       "APG requires focus to move to the first menu item on Enter. " +
-        `OBSERVED: focus stays on the trigger button (role=${active.role}, ` +
-        `text="${active.text}") instead.`,
+        `Focus is on the trigger button (role=${active.role}, ` +
+        `text="${active.text}").`,
     ).toBe("menuitem");
   });
 
@@ -123,17 +121,14 @@ test.describe("APG Menu Button pattern — DropdownMenu trigger", () => {
 
     await expect(
       trigger,
-      "Space opens the menu here via the native <button> click -- the root " +
-        "keydown handler never Key::Character(\" \")-matches or prevents it, " +
-        "and DropdownMenuTrigger's onclick just flips `open`.",
+      "Space opens the menu: the root keydown handler routes it through " +
+        "`open_with_focus`, the same path as Enter.",
     ).toHaveAttribute("data-state", "open");
     const active = await activeElement(page);
     expect(
       active.role,
       "APG requires focus to move to the first menu item on Space, same as " +
-        `Enter. OBSERVED: focus stays on the trigger (role=${active.role}) -- ` +
-        "DropdownMenuTrigger's onclick explicitly refocuses the TRIGGER " +
-        "itself (`data.set_focus(true)`), not the first item.",
+        `Enter (role=${active.role}).`,
     ).toBe("menuitem");
   });
 
@@ -146,18 +141,13 @@ test.describe("APG Menu Button pattern — DropdownMenu trigger", () => {
     await page.waitForTimeout(150);
 
     // APG (Optional): Down Arrow should open the menu and move focus to the
-    // first item. OBSERVED: from a cold (never-opened) trigger this does
-    // nothing at all -- the menu does not even open. Source:
-    // DropdownMenu::handle_keydown's Key::ArrowDown arm only calls
-    // `ctx.focus.focus_next()`; with the menu closed, DropdownMenuContent
-    // (and its items) are unmounted (`use_animated_open`), so there is
-    // nothing in the roving-focus collection to move to, and the
-    // open<->focused sync effect never fires.
+    // first item. Source: DropdownMenu::handle_keydown's Key::ArrowDown arm calls
+    // `ctx.open_with_focus(CollectionPlacement::First)` from a closed trigger and
+    // `focus_next()` once open.
     expect(
       await trigger.getAttribute("data-state"),
-      "APG (Optional): Down Arrow should open the menu. OBSERVED: a cold " +
-        "ArrowDown press does not open the menu at all, unlike a cold " +
-        "Enter/Space press, which do (see those rows above).",
+      "APG (Optional): Down Arrow should open the menu, as a cold " +
+        "Enter/Space press does (see those rows above).",
     ).toBe("open");
   });
 
@@ -170,13 +160,12 @@ test.describe("APG Menu Button pattern — DropdownMenu trigger", () => {
     await page.waitForTimeout(150);
 
     // APG (Optional): Up Arrow should open the menu and move focus to the
-    // last item. OBSERVED: DropdownMenu::handle_keydown's Key::ArrowUp arm
-    // is guarded `if open()` -- from closed, it is a complete no-op.
+    // last item. Source: DropdownMenu::handle_keydown's Key::ArrowUp arm calls
+    // `ctx.open_with_focus(CollectionPlacement::Last)` from a closed trigger.
     expect(
       await trigger.getAttribute("data-state"),
-      "APG (Optional): Up Arrow should open the menu. OBSERVED: cold " +
-        "ArrowUp does not open the menu at all (guarded `if open()` in " +
-        "dropdown_menu.rs) -- this optional row is entirely unimplemented.",
+      "APG (Optional): Up Arrow should open the menu (the Key::ArrowUp arm " +
+        "of dropdown_menu.rs does, focusing the last item).",
     ).toBe("open");
   });
 });
@@ -249,7 +238,7 @@ test.describe("APG Menu (opened from a menu button) pattern — DropdownMenu con
     await expect(demoFrame(page), "the demo reports the chosen item").toContainText(chosen);
   });
 
-  // docs/backlog.md row 11 (Phase 6, typeahead). Demo item order (see
+  // dev-docs/backlog.md row 11 (typeahead). Demo item order (see
   // dropdown_menu/variants/main/mod.rs's own top-of-file comment): Edit=0,
   // Undo=1 (disabled), Duplicate=2, "More tools" (a DropdownMenuSubTrigger,
   // no text_value in this demo, so unsearchable) =3, Delete=4 -- Duplicate
@@ -264,7 +253,7 @@ test.describe("APG Menu (opened from a menu button) pattern — DropdownMenu con
     await page.keyboard.press("ArrowDown"); // Edit
     await page.keyboard.press(await labelChar(popupItem(page, "menu", "menuitem", 2), 0)); // "d"
     await expect(popupItem(page, "menu", "menuitem", 2)).toBeFocused();
-    await page.keyboard.press(await labelChar(popupItems(page, "menu", "menuitem").last(), 1)); // "e": buffer "de" -- Duplicate no longer matches, Delete does
+    await page.keyboard.press(await labelChar(popupItems(page, "menu", "menuitem").last(), 1)); // "e": buffer "de" -- Duplicate stops matching, Delete still does
     await expect(popupItems(page, "menu", "menuitem").last()).toBeFocused();
   });
 
@@ -319,14 +308,13 @@ test.describe("APG Menu and Menubar pattern — Menubar", () => {
     );
     // APG requires focus to land on the submenu's first item. Asserting that
     // requirement directly. Source: menubar.rs MenubarMenu's onkeydown
-    // Key::Enter arm only calls `ctx.set_open_menu.call(...)`; it never sets
-    // `menu_ctx.initial_focus` the way the ArrowDown arm two lines below it
-    // does, so OBSERVED focus stays on the File trigger instead.
+    // Key::Enter arm sets `menu_ctx.initial_focus` to `CollectionPlacement::First`
+    // before opening, the same path as the ArrowDown arm.
     await expect(
       fileMenu.getByRole("menuitem").first(),
       "APG requires Enter to place focus on the submenu's first item. " +
-        "OBSERVED: focus stays on the File trigger itself, unlike ArrowDown " +
-        "on the same trigger (next row), which does move focus correctly.",
+        "Same as ArrowDown " +
+        "on the same trigger (next row).",
     ).toBeFocused();
   });
 
@@ -339,17 +327,14 @@ test.describe("APG Menu and Menubar pattern — Menubar", () => {
 
     const fileMenu = page.locator(".dx-menubar-content");
     // APG (Optional): Space should open the submenu (and place focus on its
-    // first item). Source of the observed gap: MenubarMenu's onkeydown match
-    // has no Key::Character(" ") arm (falls to `_ => return`), and
-    // MenubarTrigger wires only `onpointerup`, never `onclick` -- so the
-    // native <button> click a focused-button Space key synthesizes has no
-    // listener to act on it either.
+    // first item). Source: MenubarMenu's onkeydown has an explicit
+    // Key::Character(" ") arm; `MenubarTrigger` wires only `onpointerup`, never
+    // `onclick`, so the native <button> click a focused-button Space key
+    // synthesizes would have no listener to act on it.
     expect(
       await fileMenu.count(),
-      "APG (Optional): Space should open the submenu. OBSERVED: Space does " +
-        "nothing at all on a menubar trigger -- neither opens nor moves " +
-        "focus -- unlike Enter (opens, wrong focus) and ArrowDown (opens, " +
-        "correct focus) on the exact same trigger.",
+      "APG (Optional): Space should open the submenu, as Enter and " +
+        "ArrowDown do on the exact same trigger.",
     ).toBe(1);
   });
 
@@ -363,9 +348,8 @@ test.describe("APG Menu and Menubar pattern — Menubar", () => {
     await expect(fileMenu).toHaveAttribute("data-state", "open");
     await expect(
       fileMenu.getByRole("menuitem").first(),
-      "ArrowDown is the ONLY trigger key that fully satisfies this row " +
-        "(opens AND focuses first item) -- see the Enter/Space rows above " +
-        "for the same trigger failing one or both halves.",
+      "ArrowDown opens AND focuses the first item, the same as Enter and " +
+        "Space (rows above).",
     ).toBeFocused();
   });
 
@@ -378,7 +362,7 @@ test.describe("APG Menu and Menubar pattern — Menubar", () => {
     await page.keyboard.press("ArrowRight");
     await expect(
       fileButton,
-      "OBSERVED: wraps from the last menubar item back to the first " +
+      "Wraps from the last menubar item back to the first " +
         "(APG marks wrapping optional either way).",
     ).toBeFocused();
   });
@@ -418,10 +402,10 @@ test.describe("APG Menu and Menubar pattern — Menubar", () => {
     await expect(fileMenu).toHaveCount(0);
   });
 
-  // docs/backlog.md row 11 (Phase 6, typeahead). The "Edit" menu (Cut=0,
+  // dev-docs/backlog.md row 11 (typeahead). The "Edit" menu (Cut=0,
   // Copy=1, Paste=2) is the pair sharing a first letter ("C") these rows
   // target -- the "File" menu (New/Open/Save) has no such pair. Opened via
-  // ArrowDown on the trigger, the one trigger key that both opens the menu
+  // ArrowDown on the trigger, which opens the menu
   // and places focus on its first item (see the "Down Arrow" row above).
   test("MenubarItem — printable character (Optional): \"Move focus to the next item in the current menu whose label begins with that printable character\" (first match, wrapping)", async ({ page }) => {
     const editTrigger = demoRole(page, "menuitem", 1);
@@ -476,19 +460,15 @@ test.describe("APG Menu and Menubar pattern — Menubar", () => {
 // class both implement (see menu-roles.spec.ts's "APG Menu and Menubar
 // pattern — Navbar nav dropdowns" describe block and menu_semantics.rs's
 // module doc). `Navbar` implements the identical keyboard contract Menubar
-// does (Enter/ArrowDown/ArrowUp opening with focus, Escape closing) but
-// SPLITS it three ways (docs/backlog.md row 53): `Navbar` itself owns
+// does (Enter/ArrowDown/ArrowUp opening with focus, Escape closing) but SPLITS
+// it three ways (dev-docs/backlog.md row 53): `Navbar` itself owns
 // Escape/ArrowLeft/ArrowRight/Home/End, `NavbarNav` owns Enter/ArrowDown/
-// ArrowUp. This is the Escape-refocus divergence row 53 flagged for
-// separate investigation ("Menubar explicitly refocuses its trigger on
-// Escape and Navbar does not") and root-caused as a genuine oversight, not
-// an intentional hover-driven-model exemption: Navbar fully supports
-// keyboard-driven opening (ArrowDown/ArrowUp move focus into the open
-// content exactly the way Menubar's do), so a keyboard user who arrows into
-// an open nav and presses Escape faces exactly the same "where does focus
-// go" question Menubar already answers -- and no test asserted either
-// behavior before this fix (checked: no Escape case existed in this file or
-// in navbar.spec.ts).
+// ArrowUp. Escape returns focus to the nav's own trigger, as Menubar's does:
+// Navbar fully supports keyboard-driven opening (ArrowDown/ArrowUp move focus
+// into the open content exactly the way Menubar's do), so a keyboard user who
+// arrows into an open nav and presses Escape faces the same "where does focus
+// go" question Menubar answers -- and the Escape case below, with
+// navbar.spec.ts, asserts it.
 // ============================================================================
 test.describe("APG Menu and Menubar pattern — Navbar nav dropdowns", () => {
   test.beforeEach(async ({ page }) => {
@@ -512,7 +492,7 @@ test.describe("APG Menu and Menubar pattern — Navbar nav dropdowns", () => {
     await expect(
       inputsTrigger,
       "Escape must return focus to this nav's own trigger, matching " +
-        "MenubarMenu's identical contract (docs/backlog.md row 53)",
+        "MenubarMenu's identical contract (dev-docs/backlog.md row 53)",
     ).toBeFocused();
   });
 });
@@ -527,21 +507,20 @@ test.describe("APG Menu and Menubar pattern — Navbar nav dropdowns", () => {
 // focus-restore-reference.spec.ts, which documents that page's DOM-focus-
 // stays-on-combobox/aria-activedescendant technique).
 //
-// UPDATED ROLE CAVEAT (docs/backlog.md row 8, was "IMPORTANT ROLE CAVEAT"):
-// this library's SelectTrigger now carries role="combobox" with
+// ROLE CAVEAT (dev-docs/backlog.md row 8):
+// this library's SelectTrigger carries role="combobox" with
 // aria-haspopup="listbox"/aria-expanded/aria-controls/aria-autocomplete=none
 // (and aria-required when the Select is required) -- see
 // select-only-combobox.spec.ts's R1/R2 for the dual-subject-calibrated
-// conformance rules this restores. What remains a DELIBERATE divergence from
-// the pattern (kept intentionally, per that row's own brief -- "keep this
-// repo's existing focus model, do NOT switch to aria-activedescendant"):
+// conformance rules for the roles. The DELIBERATE divergence from
+// the pattern (row 8's rule: "keep this repo's existing focus model, do NOT
+// switch to aria-activedescendant"):
 // SelectList still uses real roving DOM focus on role="option" children,
 // not the reference example's aria-activedescendant technique
 // (focus-restore-reference.spec.ts documents that page's own technique).
-// So "Select" carries the combobox pattern's *roles* now, but not its
-// activedescendant focus-management technique -- graded here (as before)
-// because the task and the live bug report both name it as this library's
-// stand-in for the pattern.
+// So "Select" carries the combobox pattern's *roles*, but not its
+// activedescendant focus-management technique -- graded here because it is
+// this library's stand-in for the pattern.
 // ============================================================================
 test.describe("APG Combobox pattern (select-only) — Select trigger", () => {
   const trigger = (page: Page) =>
@@ -558,7 +537,7 @@ test.describe("APG Combobox pattern (select-only) — Select trigger", () => {
     await expect(listbox).toHaveAttribute("data-state", "open");
   });
 
-  test("Select trigger — Enter: focus lands on the listbox container, not the active option (contrast with APG's own aria-activedescendant technique)", async ({ page }) => {
+  test("Select trigger — Enter: focus lands on an option, not the listbox container (roving DOM focus, not APG's own aria-activedescendant technique)", async ({ page }) => {
     await goto(page, "select");
     const t = trigger(page);
     await t.focus();
@@ -566,25 +545,20 @@ test.describe("APG Combobox pattern (select-only) — Select trigger", () => {
     await page.keyboard.press("Enter");
 
     const active = await activeElement(page);
-    // This component's own ArrowDown/ArrowUp rows (below) show it CAN put
-    // real DOM focus on an option -- so that is the bar Enter/Space are held
-    // to here, not APG's aria-activedescendant technique (which this
-    // component doesn't use at all; see the describe-block header).
-    // OBSERVED root cause (see written report): SelectListRendered's
-    // `focused = open() && !ctx.selectable.collection.any_focused()` decides
-    // who gets real DOM focus. Enter/Space open via SelectTrigger's plain
-    // `onclick`, which never sets `ctx.selectable.initial_focus` (only the
-    // ArrowUp/ArrowDown keydown arms do) -- so no option is ever
-    // programmatically focused, `any_focused()` stays false forever, and the
-    // listbox <div role="listbox"> itself keeps DOM focus for the whole time
-    // the popup is open. This is the exact behaviour the live bug report
-    // names: "Select opened by keyboard puts focus on the listbox container
-    // rather than the active option."
+    // This component's own ArrowDown/ArrowUp rows (below) put real DOM focus on
+    // an option, so that is the bar Enter/Space are held to here, not APG's
+    // aria-activedescendant technique (which this component doesn't use at all;
+    // see the describe-block header). SelectListRendered's
+    // `focused = open() && !ctx.selectable.collection.any_focused()` decides who
+    // gets real DOM focus; keyboard activation opens through
+    // `SelectContext::open_with_selected_or_first_focus`, which sets
+    // `ctx.selectable.initial_focus`, so an option is focused programmatically
+    // and the listbox <div role="listbox"> does not keep DOM focus while the
+    // popup is open.
     expect(
       active.role,
-      `OBSERVED: focus after Enter lands on the listbox container (role=${active.role}) ` +
-        "instead of the first/active option, unlike this same component's " +
-        "ArrowDown/ArrowUp (below), which do focus an option.",
+      `Focus after Enter must land on an option, not the listbox container (role=${active.role}), ` +
+        "as it does for this same component's ArrowDown/ArrowUp (below).",
     ).toBe("option");
   });
 
@@ -603,14 +577,13 @@ test.describe("APG Combobox pattern (select-only) — Select trigger", () => {
 
     await page.keyboard.press("ArrowDown");
 
-    // Unlike Enter/Space, ArrowDown DOES land focus on the first option --
-    // SelectTrigger's onkeydown explicitly sets
-    // `initial_focus = collection.first_available_index()` before opening.
+    // ArrowDown lands focus on the first option -- SelectTrigger's onkeydown
+    // sets `initial_focus = collection.first_available_index()` before opening
+    // (Enter/Space reach the same result through `open_with_selected_or_first_focus`).
     await expect(
       page.getByRole("listbox").getByRole("option").first(),
-      "ArrowDown correctly focuses the first option -- Enter/Space (same " +
-        "trigger, same widget) do not; this is the intra-component " +
-        "inconsistency the live bug report describes.",
+      "ArrowDown focuses the first option, the same as Enter/Space on the " +
+        "same trigger.",
     ).toBeFocused();
   });
 
@@ -631,16 +604,14 @@ test.describe("APG Combobox pattern (select-only) — Select trigger", () => {
 
     await page.keyboard.press("Alt+ArrowDown");
 
-    // Source of the observed gap: SelectTrigger's onkeydown matches on
-    // `event.key()` alone (Key::ArrowDown), which does not distinguish a
-    // held Alt modifier from plain ArrowDown.
+    // Source: SelectTrigger's onkeydown checks `event.modifiers().alt()` on
+    // ArrowDown and opens with `keep_trigger_focus` set (see
+    // `SelectContext::keep_trigger_focus`), so focus stays on the trigger.
     await expect(page.getByRole("listbox")).toHaveAttribute("data-state", "open");
     await expect(
       t,
       "APG (Optional): Alt+ArrowDown should open the popup WITHOUT moving " +
-        "focus off the trigger. OBSERVED: focus moves to the first option " +
-        "instead (same as plain ArrowDown) -- Alt is not distinguished from " +
-        "plain ArrowDown at all.",
+        "focus off the trigger, unlike plain ArrowDown.",
     ).toBeFocused();
   });
 
@@ -690,8 +661,8 @@ test.describe("APG Combobox pattern (select-only) — Select trigger", () => {
 // This component IS built with role="combobox" + aria-activedescendant
 // (input.rs) -- the correct APG technique -- unlike Select above. Rows below
 // are lighter-weight than Select's because combobox.spec.ts already covers
-// this component in depth; this file adds only the matrix rows the task
-// asks for, titled per this file's convention.
+// this component in depth; this file adds only the matrix rows, titled per
+// this file's convention.
 // ============================================================================
 test.describe("APG Combobox pattern (editable) — Combobox", () => {
   const input = (page: Page) => demoRole(page, "combobox");
@@ -768,7 +739,7 @@ test.describe("APG Disclosure pattern — Collapsible", () => {
 
 test.describe("APG Accordion pattern — Accordion", () => {
   // Source: content/patterns/accordion/accordion-pattern.html#keyboard_interaction.
-  // Quoted in full because the finding below turns on exactly what this
+  // Quoted in full because the skipped row below turns on exactly what this
   // section does and does not say:
   //   "Enter or Space: When focus is on the accordion header for a collapsed
   //   panel, expands the associated panel. ... Tab: Moves focus to the next
@@ -888,7 +859,7 @@ test.describe("APG Alert Dialog pattern — AlertDialog", () => {
 // The pattern permits either automatic activation (arrow moves = activates)
 // or manual ("Space or Enter: Activates the tab if it was not activated
 // automatically on focus"). Which mode a component implements must be
-// recorded, per the task brief.
+// recorded.
 // ============================================================================
 test.describe("APG Tabs pattern — Tabs", () => {
   const activeTabPanel = (page: Page) =>
@@ -1005,16 +976,15 @@ test.describe("APG Switch pattern — Switch", () => {
     const el = demoRole(page, "switch");
     await el.focus();
     await page.keyboard.press("Enter");
-    // OBSERVED (deliberate, per switch.rs's own comment: "Switches should
-    // only toggle on Space, not Enter" -- e.prevent_default() on Enter):
-    // this implementation exercises the non-Enter half of APG's optional
-    // wording. Not a violation (Enter is explicitly optional), but the
-    // opposite choice from Toggle (below), which DOES respond to Enter --
-    // recorded as an intra-library inconsistency across otherwise-identical
-    // "press a button-like control to flip a boolean" components.
+    // Deliberate (switch.rs: "Switches should only toggle on Space, not Enter" --
+    // e.prevent_default() on Enter): this implementation takes the non-Enter half
+    // of APG's optional wording. Not a violation (Enter is explicitly optional),
+    // but the opposite choice from Toggle (below), which DOES respond to Enter --
+    // an intra-library difference across otherwise-identical "press a
+    // button-like control to flip a boolean" components.
     await expect(
       el,
-      "OBSERVED: this component deliberately suppresses Enter (switch.rs " +
+      "This component deliberately suppresses Enter (switch.rs " +
         "onkeydown calls prevent_default() on Key::Enter) -- a same-class " +
         "control (Toggle) responds to Enter for the identical action.",
     ).toHaveAttribute("data-state", "unchecked");
@@ -1122,16 +1092,14 @@ test.describe("APG Slider pattern — Slider", () => {
 
     // Home is REQUIRED by this pattern's Keyboard Interaction section (no
     // "(Optional)" qualifier), unlike Page Up/Page Down below it, which the
-    // same section does mark optional. Source of the observed gap:
-    // MoveEvent::from_keyboard (move_interaction.rs) matches only
-    // Key::ArrowUp/Down/Left/Right; Key::Home falls through its `_ => return
-    // None`, and slider.rs's onkeydown returns immediately when
-    // `from_keyboard` yields `None`.
+    // same section does mark optional. Source: slider.rs's onkeydown maps
+    // Key::Home/Key::End through `home_end_target` to the thumb's own min/max;
+    // the arrows and Page Up/Down go through MoveEvent::from_keyboard
+    // (move_interaction.rs).
     expect(
       await t.getAttribute("aria-valuenow"),
       "APG requires Home to set the slider to its minimum value (0, per " +
-        "this demo's min=0.0). OBSERVED: the value is unchanged at 50 -- " +
-        "Home is not implemented at all.",
+        "this demo's min=0.0).",
     ).toBe("0");
   });
 
@@ -1144,8 +1112,7 @@ test.describe("APG Slider pattern — Slider", () => {
     expect(
       await t.getAttribute("aria-valuenow"),
       "APG requires End to set the slider to its maximum value (100, per " +
-        "this demo's max=100.0). OBSERVED: the value is unchanged at 50 -- " +
-        "End is unimplemented, for the same reason as Home above.",
+        "this demo's max=100.0).",
     ).toBe("100");
   });
 
@@ -1155,12 +1122,11 @@ test.describe("APG Slider pattern — Slider", () => {
     await t.focus();
     await page.keyboard.press("PageUp");
     await page.waitForTimeout(150);
-    // Optional row -- graded here for completeness, not as a hard failure.
+    // Optional row, asserted for completeness.
     expect(
       await t.getAttribute("aria-valuenow"),
       "APG (Optional): Page Up should increase the value by more than one " +
-        "step. OBSERVED: unimplemented (same root cause as Home/End above) " +
-        "-- the value does not move at all.",
+        "step (MoveEvent::from_keyboard moves it by ten steps).",
     ).not.toBe("50");
   });
 });
@@ -1173,7 +1139,7 @@ test.describe("APG Slider pattern — Slider", () => {
 // this library models it as a hover/focus-triggered popup sharing role
 // "tooltip" with Tooltip and an almost identical show-on-focus/hide-on-blur
 // mechanism (hover_card.rs), so it is graded against the same pattern class
-// the task brief names it under.
+// the matrix names it under.
 // ============================================================================
 test.describe("APG Tooltip pattern — Tooltip", () => {
   test("Tooltip trigger — focus: tooltip becomes visible", async ({ page }) => {
@@ -1202,7 +1168,7 @@ test.describe("Tooltip-class pattern — HoverCard (no dedicated APG pattern; gr
     await expect(page.getByRole("tooltip")).toBeVisible();
   });
 
-  test("HoverCard — Escape: does NOT dismiss the card (inconsistent with Tooltip, the same-class sibling that does)", async ({ page }) => {
+  test("HoverCard — Escape: dismisses the card (matches Tooltip, the same-class sibling)", async ({ page }) => {
     await goto(page, "hover_card");
     await page.locator("#component-preview-frame").focus();
     await page.keyboard.press("Tab");
@@ -1211,36 +1177,23 @@ test.describe("Tooltip-class pattern — HoverCard (no dedicated APG pattern; gr
 
     await page.keyboard.press("Escape");
 
-    // UPDATED (dev-docs/backlog.md rows 19/7 integration round): this row's
-    // title/this comment used to say HoverCard has no keydown handler at
-    // all -- stale even before rows 19/7. `HoverCardTrigger`'s own
-    // `handle_keydown` (primitives/src/hover_card.rs) already closes on
-    // Key::Escape, matching `tooltip.rs`'s `handle_keydown` exactly (a
-    // separate, earlier fix; not this round's). Graded against Tooltip's
-    // own APG citation ("Escape: Dismisses the Tooltip"), which this
-    // same-class control does match.
+    // `HoverCardTrigger`'s own `handle_keydown` (primitives/src/hover_card.rs)
+    // closes on Key::Escape, matching `tooltip.rs`'s `handle_keydown`
+    // exactly. Graded against Tooltip's own APG citation ("Escape:
+    // Dismisses the Tooltip"), which this same-class control matches.
     //
-    // No fixed `waitForTimeout` before this assertion (there used to be
-    // one, 200ms): `toHaveCount` already polls up to its own timeout below,
-    // and a fixed pre-wait was never anything but an extra, now-actively-
-    // misleading delay tuned to the PRE-row-19 bug -- `use_popover_sync`
-    // used to call `hidePopover()` the instant `open` went false, hiding
-    // this content via the UA's `display: none` rule before
-    // `use_animated_open`'s close animation ever got a chance to play, so
-    // the card unmounted in ~1 animation frame regardless of any real
-    // animation duration. `use_popover_shown_while_mounted` (row 19) fixed
-    // that: this Escape now correctly holds the card mounted through its
-    // real CSS close animation (`--dx-motion-duration-fast`, 100ms) plus a
-    // 250ms settle hold (`use_animated_open`'s own doc, primitives/src/
-    // lib.rs) before it actually unmounts -- correct, intended behaviour,
-    // not a regression, but real wall-clock time `toHaveCount`'s poll must
-    // be given room for. An explicit, generous timeout here (not just the
-    // default 5000ms) documents that intent rather than leaving it
-    // implicit; measured at ~350ms unloaded and ~750ms even under 20x CPU
-    // throttling (CDP `Emulation.setCPUThrottlingRate`) in this session's
-    // own reproduction, so 3000ms is comfortable margin, not a loosened
-    // requirement -- the row still requires genuine dismissal, same as
-    // before.
+    // No fixed `waitForTimeout` before this assertion: `toHaveCount` polls
+    // up to its own timeout below. `use_popover_shown_while_mounted` (row 19)
+    // keeps the card mounted through its real CSS close animation
+    // (`--dx-motion-duration-fast`, 100ms) plus a 250ms settle hold
+    // (`use_animated_open`'s own doc, primitives/src/lib.rs) before it
+    // unmounts -- real wall-clock time `toHaveCount`'s poll must be given
+    // room for. An explicit, generous timeout here (not just the default
+    // 5000ms) documents that intent rather than leaving it implicit; the
+    // close takes ~350ms unloaded and ~750ms even under 20x CPU throttling
+    // (CDP `Emulation.setCPUThrottlingRate`), so 3000ms is comfortable
+    // margin, not a loosened requirement -- the row still requires genuine
+    // dismissal.
     await expect(
       card,
       "Graded against Tooltip's own APG citation (\"Escape: Dismisses the " +
@@ -1265,18 +1218,15 @@ test.describe("APG Menu pattern (context-menu invocation) — ContextMenu", () =
 
     await page.keyboard.press("Shift+F10");
 
-    // OBSERVED (pass, but not via this component's own code): context_menu.rs
-    // wires only `oncontextmenu` (context_menu.rs ContextMenuTrigger); there
-    // is no Shift+F10/keydown handling anywhere in the primitive. This
-    // passes only because Chromium itself synthesizes a native
-    // `contextmenu` DOM event for Shift+F10 (and the keyboard "Menu" key),
-    // which `oncontextmenu` then picks up for free -- confirmed empirically,
-    // not inferred from the source, since the source alone would predict a
-    // fail here.
+    // Passes via Chromium, not this component's own code: context_menu.rs wires
+    // only `oncontextmenu` (ContextMenuTrigger); there is no Shift+F10/keydown
+    // handling anywhere in the primitive. Chromium itself synthesizes a native
+    // `contextmenu` DOM event for Shift+F10 (and the keyboard "Menu" key), which
+    // `oncontextmenu` then picks up for free.
     await expect(page.getByRole("menu")).toBeVisible();
   });
 
-  // docs/backlog.md row 11 (Phase 6, typeahead). Demo item order (see
+  // dev-docs/backlog.md row 11 (typeahead). Demo item order (see
   // context_menu/variants/main/mod.rs's own top-of-file comment): Edit=0,
   // Undo=1 (disabled), Duplicate=2, Delete=3, "More tools" (a
   // ContextMenuSubTrigger, no text_value in this demo, so unsearchable) =4
@@ -1298,7 +1248,7 @@ test.describe("APG Menu pattern (context-menu invocation) — ContextMenu", () =
     await page.keyboard.press("ArrowDown"); // Edit
     await page.keyboard.press(await labelChar(popupItem(page, "menu", "menuitem", 2), 0)); // "d"
     await expect(popupItem(page, "menu", "menuitem", 2)).toBeFocused();
-    await page.keyboard.press(await labelChar(popupItem(page, "menu", "menuitem", 3), 1)); // "e": buffer "de" -- Duplicate no longer matches, Delete does
+    await page.keyboard.press(await labelChar(popupItem(page, "menu", "menuitem", 3), 1)); // "e": buffer "de" -- Duplicate stops matching, Delete still does
     await expect(popupItem(page, "menu", "menuitem", 3)).toBeFocused();
   });
 

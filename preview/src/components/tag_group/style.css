@@ -1,7 +1,7 @@
 /* Tag group has no shadcn component and no Nova block (registry/styles/style-nova.css
- * has no `.cn-tag*`), so there is no recipe to cite and the sheet is unchanged in
- * phase C: its focus ring, disabled opacity and edge already read the theme
- * tokens, and its hover (muted on the page-coloured tag) has no muted/accent tie. */
+ * has no `.cn-tag*`), so there is no recipe to cite: its focus ring, disabled opacity
+ * and edge read the theme tokens, and its hover (muted on the page-coloured tag) has
+ * no muted/accent tie. */
 .dx-tag-group {
   display: flex;
   flex-direction: column;

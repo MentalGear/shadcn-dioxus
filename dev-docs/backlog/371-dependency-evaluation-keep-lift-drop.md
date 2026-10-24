@@ -1,10 +1,10 @@
 ---
 id: 371
 title: "Dependency evaluation: keep, feature-gate, replace, lift or drop (rule of 2026-10-23)"
-status: "PARKED by the owner 2026-10-23 (\"its own item, and not yet\"). Inventory done; no outcome is…"
+status: "WAITING ON OWNER: parked (\"its own item, and not yet\", 2026-10-23); no work until he reopens it.…"
 size: "S each outcome"
 area: build
-updated: 2026-10-23
+updated: 2026-10-24
 ---
 
 # Row 371: Dependency evaluation: keep, feature-gate, replace, lift or drop
@@ -15,7 +15,7 @@ Apply the owner's dependency rule (2026-10-23) to every dependency a user's `dx 
 
 ## Status / trigger
 
-PARKED by the owner 2026-10-23 ("its own item, and not yet"). Inventory done; no outcome is approved.
+**WAITING ON OWNER: parked ("its own item, and not yet", 2026-10-23); no work until he reopens it.** Inventory done, no outcome approved.
 
 Owner notes for when it is picked up:
 

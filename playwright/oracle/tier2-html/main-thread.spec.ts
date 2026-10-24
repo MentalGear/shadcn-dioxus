@@ -2,23 +2,21 @@
  * ORACLE: tier 2 (HTML) -- main-thread responsiveness (INP / long tasks).
  *
  * Source: dev-docs/backlog.md row 45, drawing on
- * dev-docs/recommended-implementations.md §11 ("Main-thread responsiveness
- * (interaction latency)", 2026-09-03), which is itself built on kciter,
+ * dev-docs/reference/platform-rationale.md §11 ("Main-thread responsiveness
+ * (interaction latency)"), which is itself built on kciter,
  * "The Browser's Main Thread Is Expensive"
  * (https://kciter.so/posts/the-expensive-main-thread/en/). §11's own
  * words: "Install a PerformanceObserver for longtask (and event timing
  * with durationThreshold) before an interaction and assert no task over
  * 50 ms and no interaction over 200 ms fired during open/close of each
- * overlay ... Until it exists, rules 1-5 are enforced by review only."
- * This file is that oracle -- rules 1-5 (no same-handler layout
- * read+write, passive scroll/touch listeners unless preventDefault,
+ * overlay ..." This file is that oracle -- rules 1-5 (no same-handler
+ * layout read+write, passive scroll/touch listeners unless preventDefault,
  * compositor-only animation unless bounded+sampled, no busy-wait, heavy
  * work kept out of render) stay review-enforced; this file is the
- * mechanical backstop that would have caught the two live incidents this
- * *type* of bug has already produced.
+ * mechanical backstop for this *type* of bug.
  *
- * Normative sources for the two APIs this file drives directly (both
- * verified reachable, HTTP 200, checked 2026-09-18) -- see
+ * Normative sources for the two APIs this file drives directly --
+ * see
  * `../../main-thread.ts`'s header for the exact interfaces/attributes
  * each one contributes to `GestureReport`:
  *   - W3C Long Tasks API -- a "long task" is, verbatim, "any of the
@@ -34,69 +32,46 @@
  *     is therefore the floor this file passes, not an arbitrary choice),
  *     `interactionId` (nonzero only for a discrete user interaction; 0 for
  *     e.g. a `pointermove`/`mousemove` mid-drag -- which is exactly the
- *     entry type that would have caught row 73, see below), and
+ *     entry type that catches the row 73 shape, see below), and
  *     `processingStart`/`processingEnd`:
  *     https://www.w3.org/TR/event-timing/#dom-performanceobserverinit-durationthreshold
  *     https://www.w3.org/TR/event-timing/#dom-performanceeventtiming-interactionid
  *
- * What this would have caught (the trigger that fired this row twice in
- * one month):
- *   - Row 73 (drawer drag hang): `DrawerContent`'s drag-continuation
- *     `use_effect` read `raw_offset()` with tracked syntax and then wrote
- *     that same signal in the same run, re-triggering itself forever from
- *     the first `pointerdown` -- the tab's whole main thread wedged, and
- *     the live integration run's own `page.mouse.down()` hung the 5-minute
- *     ceiling with no panic, no console output. This oracle's drawer-drag
- *     test drives the *identical* gesture shape (`page.mouse.down()` then
- *     several `mouse.move` steps) that hung, under a `test.info()` timeout
- *     far shorter than 5 minutes, with a `longtask` observer that was
- *     already running before the first `pointerdown` -- an infinite
- *     synchronous re-trigger loop is, definitionally, one arbitrarily long
- *     task, and would have failed this file's `maxTaskMs <= 50`
- *     assertion (or simply timed out the test, which is its own kind of
- *     red) long before a live device report or a 5-minute CI hang did.
- *   - Row 74 (first-render panic): out of this file's own scope (a wasm
- *     `unreachable` trap is not a slow task, it is a crash), but the same
- *     round surfaced the general hazard this file's subject list has to
- *     respect -- see "A note on row 74's other lesson" below.
+ * The failure shapes it catches (row 45):
+ *   - Row 73 (drawer drag hang): a `use_effect` that reads a signal with tracked syntax and then
+ *     writes that same signal in the same run re-triggers itself forever from the first
+ *     `pointerdown`, and the tab's whole main thread wedges with no panic and no console output.
+ *     This oracle's drawer-drag test drives the *identical* gesture shape (`page.mouse.down()` then
+ *     several `mouse.move` steps), under a `test.info()` timeout far shorter than 5 minutes, with a
+ *     `longtask` observer already running before the first `pointerdown` -- an infinite synchronous
+ *     re-trigger loop is, definitionally, one arbitrarily long task, and fails this file's
+ *     `maxTaskMs <= 50` assertion (or simply times out the test, which is its own kind of red).
+ *   - Row 74 (first-render panic): out of this file's own scope (a wasm `unreachable` trap is not a
+ *     slow task, it is a crash), but it carries the general hazard this file's subject list has to
+ *     respect -- see "A note on scoping" below.
  *
- * Subjects (per this row's own scope: every overlay's open/close, every
- * form control's primary interaction), all driven against the shared
+ * Subjects (every overlay's open/close, every form control's primary
+ * interaction), all driven against the shared
  * read-only dev server (`BASE_URL`, :8080 unless `PLAYWRIGHT_BASE_URL`) -- see `OVERLAY_SUBJECTS`/
- * `FORM_CONTROL_SUBJECTS` below for the full, current list and exactly
- * which gesture/locator each one uses. Locators are read from each
- * component's own existing spec (dialog.spec.ts, slider.spec.ts, etc.) as
- * a guide -- proven working against this exact app -- but this file
- * declares its own copies rather than importing them, per this row's
- * "keep this file independent" instruction, so a change to another spec's
+ * `FORM_CONTROL_SUBJECTS` below for the full list and exactly
+ * which gesture/locator each one uses. Locators follow each
+ * component's own spec (dialog.spec.ts, slider.spec.ts, etc.), but this
+ * file declares its own copies rather than importing them (row 45 keeps
+ * this file independent), so a change to another spec's
  * internals cannot silently change what this oracle measures.
  *
- * A note on row 74's other lesson ("one bad demo takes down /", and more
- * generally: unscoped accessible-role/name queries can silently resolve
- * against the site's own persistent chrome instead of the demo). This
- * file hit a live instance of the same *class* while being written,
- * independent of row 74's own two root causes: on `/component/?name=
- * virtual_list&`, the persistent sidebar navigation renders seven of its
- * own `<ul>` elements (implicit `role="list"`) before the actual demo's
- * two `.dx-virtual-list-container` elements in DOM order, so a bare
- * `page.getByRole("list").first()` -- confirmed live, 2026-09-18, against
- * the integration server that already carries the batch-2 Sidebar lane --
- * silently resolves to a 68px-tall sidebar menu, not the scrollable
- * virtualized list; scrolling it is consequently a no-op, provably (a
- * real wheel gesture on the *correct* element moves `scrollTop` from 0 to
- * 800; the same gesture through `.first()` never moves it). This file's
- * own virtual_list subject therefore scopes by the demo's own CSS class
- * (`.dx-virtual-list-container`) instead. `playwright/virtual_list.spec.ts`
- * itself still uses the unscoped `.getByRole("list").first()` form (this
- * lane does not own that file, so it is reported rather than fixed here)
- * -- worth a backlog line: any *sibling* spec using an unscoped
- * `getByRole("list")` against a route that also renders the sidebar
- * should be re-checked now that the sidebar (batch 2) has landed, the
- * same way row 74 already had to rescope `getByRole('link', ...)` once
- * the persistent chrome grew a "Docs" link.
+ * A note on scoping ("one bad demo takes down /", and more generally: unscoped accessible-role/name
+ * queries can silently resolve against the site's own persistent chrome instead of the demo; row 74).
+ * On `/component/virtual_list/` the persistent sidebar navigation renders seven of its own `<ul>`
+ * elements (implicit `role="list"`) before the demo's two `.dx-virtual-list-container` elements in DOM
+ * order, so a bare `page.getByRole("list").first()` resolves to a 68px-tall sidebar menu, not the
+ * scrollable virtualized list, and scrolling it is a no-op. This file's virtual_list subject therefore
+ * scopes by the demo's own CSS class (`.dx-virtual-list-container`) instead. A spec using an unscoped
+ * `getByRole("list")` or `getByRole('link', ...)` against a route that also renders the sidebar
+ * should be scoped the same way.
  *
- * Robustness under load (design requirement, not an afterthought -- this
- * sandbox runs several lanes' builds/servers concurrently, so a single
+ * Robustness under load (design requirement -- this
+ * sandbox runs several builds/servers concurrently, so a single
  * scheduling hiccup landing inside a gesture's measurement window is a
  * real, expected occurrence, not a hypothetical): every gesture goes
  * through `assertResponsive` (`../../main-thread.ts`), which runs it up
@@ -104,7 +79,7 @@
  * a genuine main-thread block (row 73's shape: an infinite synchronous
  * re-trigger loop) reproduces on every single attempt, deterministically,
  * because it is a property of the code, not of scheduling; a scheduling
- * hiccup (another lane's `rustc`/`dx` competing for the same 4 cores for
+ * hiccup (another build's `rustc`/`dx` competing for the same 4 cores for
  * one unlucky frame) does not reproduce on a clean retry. This makes the
  * retry a strictly *more* trustworthy signal than a single run, not a
  * weaker one -- and the thresholds themselves (`LONG_TASK_THRESHOLD_MS`,
@@ -124,22 +99,15 @@
  * (stop-the-file-on-first-failure) is the wrong choice for an inventory
  * file where every subject's result is independently meaningful.
  *
- * Red proof (this row's own requirement): proven without a build, by
- * temporarily injecting a synthetic busy handler via a throwaway script
- * (kept out of this committed file entirely, per this row's own
- * instruction) -- see this lane's report for the exact busy-handler code
- * and both red transcripts. Summary: (a) a `pointerdown` listener that
- * spins 120ms (over the 50ms long-task threshold) turns the drawer-drag
- * and slider-drag tests red on `maxTaskMs`; (b) a `click` handler that
- * spins 250ms (over the 200ms interaction threshold) turns a click-based
- * test red on `maxInteractionMs`. Neither change is present in this file
- * or in `../../main-thread.ts` -- there is no env var or flag anywhere in
- * the committed code path that can re-enable it.
+ * Sensitivity: a handler that spins past a threshold turns the matching tests red -- a `pointerdown`
+ * listener spinning 120ms (over the 50ms long-task threshold) the drawer-drag and slider-drag tests on
+ * `maxTaskMs`, a `click` handler spinning 250ms (over the 200ms interaction threshold) a click-based test
+ * on `maxInteractionMs`. No env var or flag in this file or in `../../main-thread.ts` injects one.
  *
- * Chromium-only, deliberately (row 45's own caveat, repeated here because
- * it changes this file's shape, not just its README entry): the Long
+ * Chromium-only, deliberately (row 45's caveat, which
+ * changes this file's shape, not just its README entry): the Long
  * Tasks and Event Timing APIs are not implemented the same way in Firefox
- * or WebKit as of this writing, so `test.beforeEach` below skips both
+ * or WebKit, so `test.beforeEach` below skips both
  * non-Chromium projects outright rather than silently recording all-zero
  * (vacuously "passing") reports for them -- a skip is an honest "not
  * measured here"; a silent zero would read as a false "measured and
@@ -179,12 +147,11 @@ async function goto(page: Page, name: string, extra = ""): Promise<void> {
 // exists to absorb, not a second, self-inflicted source of it.
 //
 // Deliberately NOT `test.describe.configure({ mode: "serial" })`: that
-// mode's well-documented other effect is stopping the whole file on the
-// first failure and skipping every remaining test (observed directly
-// while writing this file -- one genuine/noise-induced red on subject 21
-// of 58 silently skipped the other 37, which is exactly the wrong
+// mode's other effect is stopping the whole file on the
+// first failure and skipping every remaining test (one red on subject 21
+// of 58 would silently skip the other 37), which is exactly the wrong
 // behaviour for a broad regression-guard inventory where every subject's
-// own pass/fail is independently meaningful). Every subject here is
+// own pass/fail is independently meaningful. Every subject here is
 // fully independent (its own `goto`), so the only property wanted is "not
 // concurrent with each other", which `PW_WORKERS=1` already gives without
 // that side effect.
@@ -193,7 +160,7 @@ test.beforeEach(async ({ browserName }) => {
   test.skip(
     browserName !== "chromium",
     "Long Tasks API / Event Timing API are Chromium-only in this sandbox (dev-docs/backlog.md row 45; " +
-      "dev-docs/recommended-implementations.md §11) -- skipped, not silently reported as a passing zero."
+      "dev-docs/reference/platform-rationale.md §11) -- skipped, not silently reported as a passing zero."
   );
 });
 
@@ -307,8 +274,7 @@ const OVERLAY_SUBJECTS: OverlaySubject[] = [
     // Non-modal arm with `is_modal: false` spelled out: native `popover="auto"`, not the
     // `<dialog>` engine the `popover_modal` entry above uses (see popover.spec.ts's own
     // close-fade-animation comments) -- Escape closes a light-dismissible native popover per the
-    // HTML popover API regardless, confirmed live (2026-09-18: dialog count
-    // 1 -> 0 on Escape) before being relied on here.
+    // HTML popover API regardless (dialog count 1 -> 0 on Escape).
     name: "popover_non_modal",
     goto: (page) => goto(page, "popover", "variant=non_modal&"),
     open: async (page) => {
@@ -347,9 +313,9 @@ const OVERLAY_SUBJECTS: OverlaySubject[] = [
     },
   },
   {
-    // menubar's own page also carries other (closed) role=menu nodes --
-    // confirmed live (baseline count 2, 3 with File open, 2 again after
-    // Escape) -- so this scopes by content the way menubar.spec.ts's own
+    // menubar's own page also carries other (closed) role=menu nodes
+    // (baseline count 2, 3 with File open, 2 again after
+    // Escape), so this scopes by content the way menubar.spec.ts's own
     // `fileMenuContent` does, rather than counting `role=menu` directly.
     name: "menubar",
     goto: (page) => goto(page, "menubar"),
@@ -489,7 +455,7 @@ const OVERLAY_SUBJECTS: OverlaySubject[] = [
       await expect(navbarInputsMenu(page)).toHaveAttribute("data-state", "open");
     },
     close: async (page) => {
-      // Confirmed live (2026-09-18): Escape closes the navbar dropdown the
+      // Escape closes the navbar dropdown the
       // same way it closes dropdown_menu/context_menu/menubar -- not
       // exercised by navbar.spec.ts itself, which only tests navigation
       // away (a real click that leaves the page), not in-place closing.
@@ -540,7 +506,7 @@ interface FormControlSubject {
 
 /** Mirrors slider.spec.ts's own `sliderGroup`/`sliderTrack`/`sliderTrackPoint`
  * helpers (proven against this exact app) -- copied, not imported, per
- * this row's "keep this file independent" instruction. */
+ * row 45 (this file stays independent). */
 function sliderGroup(page: Page) {
   return demoRole(page, "slider")
     .locator('xpath=ancestor::*[@role="group" and @data-orientation="horizontal"][1]');
@@ -727,8 +693,8 @@ const FORM_CONTROL_SUBJECTS: FormControlSubject[] = [
     // drag past the dismiss threshold, several separately-timed
     // `mouse.move` steps -- byte-for-byte the shape of drawer.spec.ts's own
     // "a long, slow drag past the dismiss threshold closes the drawer",
-    // which is the exact test that hung at `page.mouse.down()` before the
-    // fix (dev-docs/backlog.md row 73).
+    // whose drag-continuation effect would wedge the main thread at
+    // `page.mouse.down()` if it re-triggered itself (dev-docs/backlog.md row 73).
     name: "drawer (drag)",
     // The demo drawer takes `EdgeSide::Auto`: the bottom below the `md` breakpoint (768px), a floating right panel (no
     // grab handle, dragged sideways) at and above it. This gesture is the BOTTOM drawer's vertical handle drag, so it
@@ -744,9 +710,8 @@ const FORM_CONTROL_SUBJECTS: FormControlSubject[] = [
       await expect(root).toHaveAttribute("data-state", "open");
       const content = page.locator('[data-slot="drawer-content"]');
       // `data-state="open"` is set when the slide-in STARTS, not when it lands. Read straight away, the handle is
-      // still below the fold (y=751 of 720 at the first frame): the press then hits nothing, no drag begins, and the
-      // drawer never dismisses -- measured on the release deploy build, 9 of 10 immediate runs, against 10 of 10 after
-      // the slide-in settled. So wait until the handle has stopped moving (two equal reads 100 ms apart).
+      // still below the fold: the press then hits nothing, no drag begins, and the drawer never dismisses. So wait
+      // until the handle has stopped moving (two equal reads 100 ms apart).
       const handle = page.locator('[data-slot="drawer-handle"]');
       let lastHandleBox = "";
       await expect
@@ -826,7 +791,7 @@ const FORM_CONTROL_SUBJECTS: FormControlSubject[] = [
   },
   {
     // Scoped by the demo's own CSS class, not `getByRole("list")` -- see
-    // this file's header, "A note on row 74's other lesson".
+    // this file's header, "A note on scoping".
     name: "virtual_list (scroll)",
     goto: async (page) => {
       await goto(page, "virtual_list");

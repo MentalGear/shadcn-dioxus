@@ -32,7 +32,7 @@ test("a non-modal panel has no aria-modal and passes axe", async ({ page }) => {
   expect(results.violations.filter((v) => v.id.startsWith("aria-"))).toEqual([]);
 });
 
-test("a modal dialog still has aria-modal=true", async ({ page }) => {
+test("a modal dialog has aria-modal=true", async ({ page }) => {
   await gotoHydrated(page, `${BASE_URL}/component/dialog/`, GOTO_OPTS);
   await demoRole(page, "button", 0).click();
   await expect(page.locator('dialog[open][role="dialog"]')).toHaveAttribute("aria-modal", "true");
@@ -47,7 +47,7 @@ test("disable_pointer_dismissal: an outside press acts on the page and the drawe
   await expect(page.locator(ROOT)).toHaveAttribute("data-state", "open");
 });
 
-test("disable_pointer_dismissal: Escape and Close still close it", async ({ page }) => {
+test("disable_pointer_dismissal: Escape and Close close it", async ({ page }) => {
   await openNonModal(page, 2);
   await page.keyboard.press("Escape");
   await expect(page.locator(ROOT)).toHaveCount(0);

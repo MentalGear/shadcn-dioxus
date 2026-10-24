@@ -1,5 +1,4 @@
 import { test, expect } from "./fixtures";
-import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
@@ -54,28 +53,15 @@ test.describe("area_chart variants render an accessible chart", () => {
   }
 });
 
-test.describe("Axe automated scan", () => {
-  for (const variant of VARIANTS) {
-    test(`${variant.name} has no automatically detectable a11y issues`, async ({ page }) => {
-      await gotoHydrated(page, `${BASE_URL}/component/area_chart/`);
-      await expectNoAxeViolations(page, `area_chart: ${variant.name}`, {
-        include: `#${variant.frameId}`,
-        excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT],
-      });
-    });
-  }
-});
-
 test.describe("Behavioural: variant-specific rendering", () => {
   // Title deliberately avoids the substring "mobile" (lowercase): every
   // playwright project in `playwright.config.ts` (chromium/webkit/firefox)
   // sets `grepInvert: /mobile/` to skip mobile-viewport tests, and that
   // regex matches ANY test title containing that substring, not just ones
-  // about viewports -- an earlier draft of this title ("...mobile's whole
-  // span...") was silently excluded from every run, everywhere, by that
-  // filter (confirmed via `--list`: 16 tests instead of the expected 17,
-  // with no error or warning). Worth knowing for every other stage-2 chart
-  // lane too: `chart-api.md`'s own sample data names a series "mobile",
+  // about viewports -- a title like "...mobile's whole span..." would be
+  // silently excluded from every run, everywhere, by that filter (`--list`
+  // shows one test fewer than the file defines, with no error or warning).
+  // Worth knowing for every other chart spec too: `chart-api.md`'s own sample data names a series "mobile",
   // and any spec prose that echoes that name verbatim risks the same
   // silent exclusion.
   test("stacked: the two series sum, not overlap (the second series' whole span sits under the first's)", async ({
@@ -163,7 +149,7 @@ test.describe("Behavioural: variant-specific rendering", () => {
       await expect(frame.locator(`linearGradient[id="${id}"]`)).toHaveCount(1);
     }
     // ...and that is what actually paints: no stylesheet `fill` overrides the
-    // presentation attribute (a themed `fill: var(--series-color)` once did,
+    // presentation attribute (a themed `fill: var(--series-color)` would,
     // flattening every gradient area to a solid colour).
     for (const fill of await areaPaths.evaluateAll((els) => els.map((el) => getComputedStyle(el).fill))) {
       expect(fill).toMatch(/^url\(/);

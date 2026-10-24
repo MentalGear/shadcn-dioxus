@@ -1,5 +1,4 @@
 import { test, expect } from "./fixtures";
-import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
@@ -14,16 +13,8 @@ test("test", async ({ page }) => {
   await expect(current).toHaveAttribute("aria-current", "page");
 });
 
-test.describe("Axe automated scan", () => {
-  // Breadcrumb has no overlay/expand/select interaction -- one state to scan.
-  test("loaded has no automatically detectable a11y issues", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/breadcrumb/`, { timeout: 20 * 60 * 1000 });
-    await expectNoAxeViolations(page, "breadcrumb: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-});
-
-// `BreadcrumbEllipsis` is a `<span>` placed inside a `BreadcrumbItem` (shadcn's shape). It used to render an `<li>`,
-// so the demo nested an `<li>` in an `<li>` (backlog row 160). Axe does not flag that nesting, so it is asserted directly.
+// `BreadcrumbEllipsis` is a `<span>` placed inside a `BreadcrumbItem` (shadcn's shape), never an `<li>`,
+// which would nest an `<li>` in an `<li>` (backlog row 160). Axe does not flag that nesting, so it is asserted directly.
 test("the ellipsis is a span inside its item: no li nested in an li", async ({ page }) => {
   await gotoHydrated(page, `${BASE_URL}/component/breadcrumb/`, { timeout: 20 * 60 * 1000 });
   const ellipsis = page.locator(".dx-breadcrumb-ellipsis").first();

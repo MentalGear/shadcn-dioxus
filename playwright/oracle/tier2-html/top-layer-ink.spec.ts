@@ -2,7 +2,7 @@
  * ORACLE: tier 2 (HTML/CSS) — top-layer text color (`[popover]`/`<dialog>`
  * UA `color: CanvasText` beats DOM-tree inheritance).
  *
- * ## The bug class (already diagnosed; this file is the regression oracle)
+ * ## The bug class (this file is its oracle)
  *
  * Both the `[popover]` and `<dialog>` user-agent stylesheets set `color:
  * CanvasText` **directly on the element**:
@@ -30,7 +30,7 @@
  * default instead of quietly inheriting the app's ink token
  * (`--dx-foreground`) the way every other element on the page does.
  *
- * ## The fix under test
+ * ## The construction under test
  *
  * `primitives/src/top_layer.rs`'s `ensure_top_layer_ink_styles` installs a
  * pair of engine-injected, zero-specificity baselines:
@@ -77,7 +77,7 @@
  * *painted*; CSS inheritance follows the DOM tree, not paint order. So
  * `color: inherit` on a promoted element resolves through its real DOM
  * ancestors back to `body`'s declaration regardless of which visual layer
- * it paints in -- which is also why this fix applies equally to a fully
+ * it paints in -- which is also why the rule holds equally for a fully
  * themed component (`.dx-menubar-content`) and to a bare, unthemed
  * primitive (the `top_layer` fixture's raw `PopoverContent`, used below for
  * the non-modal `Popover` arm): neither declares `color` itself, both climb
@@ -85,39 +85,34 @@
  *
  * ## Coverage
  *
- * Every top-layer surface named in the task, plus several previously-
- * *masked* siblings kept as living proof the fix doesn't regress an
- * already-correct case: `.dx-navbar-item`/`.dx-toast-title`/`.dx-dialog`/
+ * Every top-layer surface, plus several *masked* siblings kept as living
+ * proof the baseline doesn't regress an already-correct case: `.dx-navbar-item`/`.dx-toast-title`/`.dx-dialog`/
  * `.dx-alert-dialog`/`.dx-sheet` already declare their own `color: var(
  * --dx-foreground)`; `.dx-tooltip-content` declares its own
  * *intentionally different* `color: var(--dx-background)`; `.dx-select-
  * list`/`.dx-combobox-list` declare their own *intentionally different*
- * `color: var(--secondary-color-1)` (the ramp token the popover role later replaced, row 111). Every one of these is author-origin
- * and already wins over the UA default with no help from this fix -- each
+ * `color: var(--dx-popover-foreground)` (the popover role, row 111). Every one of these is author-origin
+ * and wins over the UA default with no help from the baseline -- each
  * is asserted against its OWN actual token (`expectedVar`), not assumed to
  * be the general ink token, so a real regression in any of them still
  * fails this file:
  *   menubar, navbar, dropdown_menu, context_menu, popover (non-modal arm,
  *   unthemed via the `top_layer` fixture's raw `PopoverContent`, and themed via
- *   the default `/component/?name=popover&` demo, since `PopoverRootProps::is_modal`
- *   defaults `false` as of dev-docs/backlog.md row 169), popover (modal arm,
+ *   the default `/component/popover/` demo, since `PopoverRootProps::is_modal`
+ *   defaults `false` (dev-docs/backlog.md row 169)), popover (modal arm,
  *   the explicit `variant=modal` demo),
  *   hover_card, tooltip, date_picker, select, combobox, dialog,
  *   alert_dialog, sheet, toast. Every one of these opens cleanly in this
- *   harness -- none needed to be skipped. (`date_picker`'s text case is a
- *   real `<button>`, exercising `ensure_top_layer_ink_styles`'s second,
- *   form-control-scoped rule rather than the wrapper rule -- see that
- *   surface's own comment below for a separate, pre-existing, unrelated
- *   defect it also surfaced: `Calendar`'s own stylesheet isn't loaded on
- *   this route at all, out of this fix's scope, reported separately.)
+ *   harness. (`date_picker`'s text case is a real `<button>`, exercising
+ *   `ensure_top_layer_ink_styles`'s second, form-control-scoped rule rather
+ *   than the wrapper rule -- see that surface's own comment below.)
  *
  * Each surface is checked in both `colorScheme: 'light'` and `colorScheme:
  * 'dark'` (a separate `test.describe` per scheme, sharing one `run()`) --
- * per the task brief, dark is where this bug is worst (UA `CanvasText`
+ * dark is where this bug is worst (UA `CanvasText`
  * resolves near-white-on-dark in dark mode on some engines, but Chromium's
  * concrete default is a fixed opaque black in both schemes, so the visible
- * failure mode here is "black wrapper text on a dark themed background,"
- * confirmed by execution against this repo's dev server pre-fix).
+ * failure mode here is "black wrapper text on a dark themed background").
  */
 
 import { test, expect } from "../../fixtures";
@@ -129,8 +124,8 @@ import { demoFrame, demoRole } from "../../demo-frame";
 const NAV_TIMEOUT = 20 * 60 * 1000; // first run compiles the app
 
 // The page ink: `body { color: var(--dx-foreground) }` (`preview/assets/main.css`). Read as a token at
-// runtime by `resolvedColor`, never as a literal, so a retune of the ink (row 231 moved it from the
-// ramp's `--secondary-color-4` #111 to shadcn's `--foreground`, and row 373 from #000 to oklch(0.145)) cannot stale this file again.
+// runtime by `resolvedColor`, never as a literal, so a retune of the ink (rows 231, 373)
+// cannot stale this file.
 const INK_TOKEN = "--dx-foreground";
 
 const url = (name: string) => `${BASE_URL}/component/${name}/`;
@@ -223,7 +218,7 @@ const SURFACES: Surface[] = [
     // Non-modal `Popover` arm (`popover="auto"`, not a modal `<dialog>`).
     // The `top_layer` fixture's `clip-popover-*` instance is a real,
     // deliberately *unthemed* `is_modal: false` `PopoverRoot`/`PopoverContent`,
-    // which doubles as proof this fix works with zero component-authored CSS
+    // which doubles as proof the rule holds with zero component-authored CSS
     // in play at all, relying only on the DOM-tree inheritance chain up to
     // `body`. The themed default demo is the next entry.
     name: "popover (non-modal arm, unthemed)",
@@ -236,7 +231,7 @@ const SURFACES: Surface[] = [
     text: (page) => page.locator("#clip-popover-content"),
   },
   {
-    // Themed non-modal `Popover` (the primitive's default since row 169): `popover="auto"`
+    // Themed non-modal `Popover` (the primitive's default, row 169): `popover="auto"`
     // through `use_popover_shown_while_mounted`.
     name: "popover (non-modal arm, themed default)",
     open: async (page) => {
@@ -249,7 +244,7 @@ const SURFACES: Surface[] = [
   },
   {
     // Modal `Popover` arm (`is_modal: true`, the `modal` demo): a real `<dialog>` +
-    // `showModal()` on the web arm (native-dialog engine migration) -- reaches the fix
+    // `showModal()` on the web arm (the native-dialog engine) -- reaches the fix
     // through `use_dialog_open_driver`, not `use_popover_sync`.
     name: "popover (modal arm)",
     open: async (page) => {
@@ -260,11 +255,9 @@ const SURFACES: Surface[] = [
       await expect(page.locator('.dx-popover-content[data-state="open"]')).toBeVisible();
     },
     wrapper: (page) => page.locator('.dx-popover-content[data-state="open"]'),
-    // The demo's "Dimensions" heading (`PopoverTitle`, `.dx-popover-title`). The demo used to be a
-    // "Delete Item?" confirm stack; the popover lane (round 2, 2026-10-04) replaced it with shadcn's
-    // Dimensions form. The heading still has to pick up its class's declared color (a separate,
-    // non-inherited fix); still asserted against the shared ink token here since that's also
-    // `.dx-popover-title`'s own declared value.
+    // The demo's "Dimensions" heading (`PopoverTitle`, `.dx-popover-title`) in shadcn's Dimensions form. The
+    // heading has to pick up its class's declared color (not inherited); asserted against the shared ink token
+    // here since that's also `.dx-popover-title`'s own declared value.
     text: (page) => page.locator(".dx-popover-content .dx-popover-title"),
   },
   {
@@ -299,13 +292,11 @@ const SURFACES: Surface[] = [
     // of the bug. Text: a calendar day-grid cell -- a real `<button>`, so
     // it exercises the *second*, form-control-scoped `:where()` rule
     // (`ensure_top_layer_ink_styles`'s own doc, "one level deeper"), not
-    // just the wrapper rule. Both matter here specifically: confirmed by
-    // execution this session that `Calendar`'s own stylesheet is not even
-    // loaded on this route (`document.styleSheets` has no `calendar` entry)
-    // -- a separate, pre-existing composition defect, out of this fix's
-    // scope (see this session's report) -- so without the form-control rule
-    // these buttons would have no author `color` of any kind to fall back
-    // to, only the UA default this file exists to catch.
+    // just the wrapper rule. Both matter here specifically: `Calendar`'s own
+    // stylesheet is not loaded on this route (`document.styleSheets` has no
+    // `calendar` entry), so without the form-control rule these buttons
+    // would have no author `color` of any kind to fall back to, only the UA
+    // default this file exists to catch.
     name: "date_picker",
     open: async (page) => {
       await goto(page, "date_picker");
@@ -318,23 +309,19 @@ const SURFACES: Surface[] = [
   {
     // `.dx-select-list` declares its own `color: var(--dx-popover-foreground)`
     // directly (author origin, already winning over the UA default with no
-    // help needed from this file's fix). Row 111 moved it from the ramp's
-    // `--secondary-color-1` to the popover role, which resolves to
+    // help needed from this file's fix). Row 111: it takes the popover role,
+    // which resolves to
     // `--dx-popover-foreground`, so `expectedVar` names that
-    // token; it is still the surface's OWN declared colour, not an instance
+    // token; it is the surface's OWN declared colour, not an instance
     // of the bug. This case exists
     // to prove the shared `:where()` rule leaves it alone, the same
     // load-bearing negative shape as the Tooltip case above.
     name: "select",
     open: async (page) => {
       await goto(page, "select");
-      // `SelectTrigger` renders `role="combobox"`, not an implicit button,
-      // since `dev-docs/backlog.md` row 8 -- this locator predates that
-      // change and never matched afterward, hanging the click (and this
-      // test) until the 5-minute ceiling; found by the first full-suite run
-      // since row 8 landed. Same missed-locator class row 8's own account
-      // already names two instances of (the initial repo-wide grep, then
-      // `oracle-focus-restore.spec.ts` found separately) -- this is a third.
+      // `SelectTrigger` renders `role="combobox"`, not an implicit button
+      // (`dev-docs/backlog.md` row 8); a `button` locator never matches and
+      // hangs the click (and the test) until the 5-minute ceiling.
       await demoRole(page, "combobox").click();
       await expect(page.locator('.dx-select-list[data-state="open"]')).toBeVisible();
     },
@@ -345,7 +332,7 @@ const SURFACES: Surface[] = [
   {
     // Same shape as `select` immediately above: `.dx-combobox-list` also
     // declares its own `color: var(--dx-foreground)` directly
-    // (the popover role, row 111; was `--secondary-color-1`).
+    // (the popover role, row 111).
     name: "combobox",
     open: async (page) => {
       await goto(page, "combobox");
@@ -356,7 +343,7 @@ const SURFACES: Surface[] = [
     },
     wrapper: (page) => page.locator('.dx-combobox-list[data-state="open"]'),
     // The first option is highlighted on open and so carries `--dx-accent-foreground`
-    // (its own, deliberate colour since row 111); the first un-highlighted one inherits the list's.
+    // (its own, deliberate colour, row 111); the first un-highlighted one inherits the list's.
     text: (page) =>
       page.locator('.dx-combobox-list[data-state="open"] .dx-combobox-option:not([data-highlighted="true"])').first(),
     expectedVar: "--dx-popover-foreground",
@@ -387,10 +374,10 @@ const SURFACES: Surface[] = [
     // passes that class to `dialog::DialogRoot`, which renders it onto a
     // plain, always-in-flow context-provider `div` (`primitives/src/
     // dialog.rs`'s `DialogRoot`); the real `<dialog>` (rendered by
-    // `DialogContent`'s web arm) carries `.dx-sheet` instead. Confirmed by
-    // execution (this session's red run): asserting against `.dx-sheet-root`
-    // silently passed even pre-fix, because a plain `div` was never subject
-    // to the `[popover]`/`dialog` UA default in the first place -- exactly
+    // `DialogContent`'s web arm) carries `.dx-sheet` instead. Asserting
+    // against `.dx-sheet-root` passes even without the baseline, because a
+    // plain `div` is not subject to the `[popover]`/`dialog` UA default in
+    // the first place -- exactly
     // the false-negative this file's own header doc warns against
     // ("assert against the resolved token," not against whichever element
     // happens to be nearby).
@@ -406,8 +393,8 @@ const SURFACES: Surface[] = [
   {
     // `.dx-toast-container[popover]` is a zero-height flex row by design
     // (its `.dx-toast` children stack via `position: absolute` -- see
-    // `preview/src/components/toast/style.css`) -- confirmed by execution
-    // this session: `getBoundingClientRect()` is genuinely `{width: 288,
+    // `preview/src/components/toast/style.css`):
+    // `getBoundingClientRect()` is genuinely `{width: 288,
     // height: 0}` even once a toast is showing, which fails Playwright's
     // `toBeVisible()` (a real, on-screen box is part of that check) despite
     // the container being exactly as intended. So this surface's "opened"
@@ -451,7 +438,7 @@ test.describe("light color scheme", () => {
   runSurfaceChecks();
 });
 
-test.describe("dark color scheme (worst case for this bug)", () => {
+test.describe("dark color scheme (the worst case for ink contrast)", () => {
   test.use({ colorScheme: "dark" });
   runSurfaceChecks();
 });

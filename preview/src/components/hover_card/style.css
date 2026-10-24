@@ -12,7 +12,7 @@
 
 .dx-hover-card-content {
   /* Slots of the theme's floating-surface recipe (`data-dx-surface="floating"`, emitted by
-     `HoverCardContent`): the fade, and Nova's `p-2.5` (it was 5px). */
+     `HoverCardContent`): the fade, and Nova's `p-2.5` (10px). */
   --dx-floating-enter: dx-fade-in;
   --dx-floating-exit: dx-fade-out;
   --dx-floating-padding: var(--dx-space-2-5);
@@ -28,8 +28,8 @@
   font-size: var(--dx-text-sm);
 
   /*
-   * This content carries the `popover` attribute on the web arm (Phase 4.4,
-   * docs/plan.md), which comes with a UA stylesheet rule
+   * This content carries the `popover` attribute on the web arm
+   * (dev-docs/plan.md), which comes with a UA stylesheet rule
    * (`[popover] { inset: 0; margin: auto; overflow: auto; border: solid;
    * ... }`, WHATWG HTML's popover section) that would otherwise leak through
    * any property this rule leaves unset. The theme's floating-surface recipe
@@ -37,7 +37,7 @@
    * reset is needed for those. The one property neither sets -- `inset` -- is
    * reset by the shared, engine-injected stylesheet every `dx-anchor-*`-marked
    * overlay gets for free; see `primitives/src/top_layer.rs`'s
-   * `ensure_anchor_positioning_styles` doc (docs/backlog.md item 1).
+   * `ensure_anchor_positioning_styles` doc (dev-docs/backlog.md item 1).
    */
 }
 
@@ -80,7 +80,7 @@
   /* logical: `align="start"` is a reading-direction concept for a
      top/bottom-placed overlay's cross axis (Radix's Floating UI resolves
      align logically from `dir` -- packages/react/popper/src/popper.tsx,
-     radix-ui/primitives commit f7ecd5a). No transform to desync from
+     radix-ui/primitives@f7ecd5a). No transform to desync from
      (`transform: none` below), so this is a plain, safe conversion. */
   inset-inline-start: 0;
   transform: none;
@@ -124,15 +124,15 @@
 }
 
 /*
- * Phase 4.4 (docs/plan.md): HoverCardContent's web arm carries a `popover`
+ * HoverCardContent's web arm (dev-docs/plan.md) carries a `popover`
  * attribute (top-layer promotion for clipping escape), which changes its
  * containing block to the viewport, so the `[data-side]` rules above need
  * CSS Anchor Positioning to still resolve relative to the trigger.
  *
- * The `@supports (anchor-name: --a)` block that used to live here (keyed on
- * the `.dx-anchor-hover-card` marker class) now lives in the single,
+ * The `@supports (anchor-name: --a)` block (keyed on
+ * the `.dx-anchor-hover-card` marker class) lives in the single,
  * engine-injected stylesheet shared by every `dx-anchor-*`-marked overlay in
  * the app -- see `primitives/src/top_layer.rs`'s
- * `ensure_anchor_positioning_styles` doc (docs/backlog.md item 1) and
+ * `ensure_anchor_positioning_styles` doc (dev-docs/backlog.md item 1) and
  * `../tooltip/style.css`'s identical comment for the full rationale.
  */

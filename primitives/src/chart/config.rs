@@ -10,23 +10,20 @@
 //! type, ever, anywhere in that tree (it's meant to be liftable into a
 //! standalone upstream crate unchanged). [`ChartSeries::icon`] is a
 //! `Callback<(), Element>`-backed [`ChartIcon`] -- a real `dioxus_core`
-//! type, added deliberately (stage-2 chart round, unused until a later
-//! lane wires it into `ChartLegend`/`ChartTooltip`) so a caller can supply
-//! a custom per-series icon. The moment [`ChartSeries`] carries that field,
-//! it can no longer honestly claim to be dioxus-free -- so it (and
+//! type, there so a caller can supply a custom per-series icon for
+//! `ChartLegend`/`ChartTooltip`. A [`ChartSeries`] carrying that field
+//! cannot honestly claim to be dioxus-free -- so it (and
 //! [`ChartConfig`], which only exists to hold an ordered `Vec<ChartSeries>`)
-//! moved out of `engine/data.rs` into this file instead, mirroring exactly
-//! why [`super::context`] itself is "the one place in `chart/` that is
+//! lives in this file, not in `engine/data.rs`, for the same reason
+//! [`super::context`] itself is "the one place in `chart/` that is
 //! deliberately not part of the `engine` seam" (that module's own doc).
-//! [`super::engine::ChartDatum`]/[`super::engine::ChartKind`] needed no such
-//! move: [`super::engine::ChartDatum::color`] (added the same round) is a
-//! plain `Option<String>`, so `ChartDatum` stays exactly where it was.
+//! [`super::engine::ChartDatum`]/[`super::engine::ChartKind`] hold no
+//! dioxus type ([`super::engine::ChartDatum::color`] is a
+//! plain `Option<String>`), so `ChartDatum` stays in `engine`.
 //!
-//! Nothing under `engine/` ever names [`ChartConfig`]/[`ChartSeries`] (this
-//! was true before this move and remains true after it -- checked directly
-//! against every file in that tree), so relocating them here changes no
-//! internal dependency edge, only which file the definition lives in; every
-//! public item here is still re-exported flatly from [`crate::chart`], so
+//! Nothing under `engine/` names [`ChartConfig`]/[`ChartSeries`], so which
+//! file they live in adds no internal dependency edge; every
+//! public item here is re-exported flatly from [`crate::chart`], so
 //! this is invisible to this crate's own consumers.
 
 use dioxus::prelude::*;
@@ -97,12 +94,9 @@ pub struct ChartSeries {
     /// `var(--dx-chart-N)` reference into this crate's categorical palette.
     pub color: String,
     /// An optional custom icon for this series, rendered next to its label
-    /// wherever one is shown (legend, tooltip). **Unused for now** -- added
-    /// (stage-2 chart round) as an extension point for a later lane to wire
-    /// up; every series currently renders with no icon regardless of this
-    /// field. `None` via [`ChartConfig::series`]; set it with a struct
-    /// update (`ChartSeries { icon: Some(ChartIcon(my_callback)), ..series }`)
-    /// once a lane gives this a builder method of its own.
+    /// wherever one is shown (legend, tooltip). `None` via
+    /// [`ChartConfig::series`] (no icon); set it with a struct
+    /// update (`ChartSeries { icon: Some(ChartIcon(my_callback)), ..series }`).
     pub icon: Option<ChartIcon>,
 }
 
@@ -148,7 +142,7 @@ fn sanitize_key(key: &str) -> String {
 /// `Debug` is required here, not merely inherited for free: [`ChartSeries`]
 /// itself derives `Debug`, so every field type it holds -- this one
 /// included -- must implement it too, or that derive fails to compile.
-/// **Unused for now**, alongside [`ChartSeries::icon`] itself.
+/// See [`ChartSeries::icon`].
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct ChartIcon(pub Callback<(), Element>);
 

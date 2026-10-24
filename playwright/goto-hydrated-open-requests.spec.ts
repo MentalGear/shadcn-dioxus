@@ -1,13 +1,13 @@
 /**
  * A `gotoHydrated` that times out names the requests that were still open (backlog row 257).
  *
- * Row 257: one `page.goto(..., { waitUntil: "networkidle" })` on /component/sidebar/ hung to the 90 s test timeout in a
- * 575-test release chunk and never reproduced (17 of 17 green since). The error said only "Timeout 90000ms exceeded",
- * so nobody could tell which request kept the network busy: a font, a block-demo iframe, a wasm chunk, the static
- * server dropping a connection. The fix is not a retry (that would hide the next one) but a better error, by
- * construction for every spec: `gotoHydrated` records the page's requests (every frame) while it navigates and, when
- * the navigation or the hydration wait fails, appends the ones that never finished -- method, resource type, frame,
- * age and URL -- to the thrown error, so the one-off is diagnosable from the report the first time it recurs.
+ * Row 257: a `page.goto(..., { waitUntil: "networkidle" })` on /component/sidebar/ once hung to the 90 s test timeout in a
+ * 575-test release chunk and did not reproduce. A bare "Timeout 90000ms exceeded" cannot say which request kept the
+ * network busy: a font, a block-demo iframe, a wasm chunk, the static server dropping a connection. The answer is
+ * not a retry (that would hide the next one) but a better error, by construction for every spec: `gotoHydrated`
+ * records the page's requests (every frame) while it navigates and, when the navigation or the hydration wait
+ * fails, appends the ones that never finished -- method, resource type, frame, age and URL -- to the thrown error,
+ * so a one-off is diagnosable from the report.
  *
  * Hermetic: the page and its never-answered image are fulfilled by `page.route`, so no server is needed.
  */

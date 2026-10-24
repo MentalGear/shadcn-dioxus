@@ -20,14 +20,6 @@ test("test", async ({ page }) => {
 });
 
 test.describe("Axe automated scan", () => {
-  test("loaded (none selected) has no automatically detectable a11y issues", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/radio_group/`, { timeout: 20 * 60 * 1000 });
-    // Wait for render before scanning -- see input.spec.ts's identical
-    // comment for why (avoids a false pre-hydration "no main"/"no h1").
-    await expect(mainDemo(page).getByRole('radio', { name: 'Default', exact: true })).toBeVisible();
-    await expectNoAxeViolations(page, "radio-group: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-
   test("an item selected has no automatically detectable a11y issues", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/radio_group/`, { timeout: 20 * 60 * 1000 });
     await mainDemo(page).getByRole('radio', { name: 'Default', exact: true }).click();

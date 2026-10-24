@@ -2,7 +2,11 @@
 #
 # check-component-catalog.sh
 #
-# Two manifest-consistency rules over preview/src/components/<dir>/component.json.
+# Two manifest rules over `preview/src/components/<dir>/component.json`: every component directory is classified in
+# `CATALOG` (`preview/src/components/mod.rs`) as `Origin::Shadcn` or `Origin::Extra("<why>")` (a missing, stale,
+# duplicated or malformed row fails, so a new component cannot silently skip the Extra badge), and every component
+# with a `style.css` lists the theme in its `globalAssets` and links its own sheet through an `asset!`
+# `document::Link`, because only that ships it.
 #
 # 1. EVERY COMPONENT IS CLASSIFIED (shadcn or extra).
 #    `CATALOG` in preview/src/components/mod.rs is the one list saying whether a
@@ -28,23 +32,22 @@
 #    `../../../assets/dx-components-theme.css` in its component.json
 #    `globalAssets`, else `dx components add <name>` ships `.dx-<name>` rules
 #    without the role tokens, the scoped box-sizing rule or the radius scale.
-#    navbar was the one component that lacked it.
 #
 # 2b. EVERY STYLED COMPONENT LINKS ITS OWN SHEET.
 #    A style.css with rules must be named by an `asset!("/src/components/<dir>/style.css")` in the
 #    component's own Rust files (`document::Link`), because only that ships it. A debug build also puts
 #    every style.css in dx's asset manifest (`css_highlight!` under `debug_assertions`), and the SSG
 #    bundle then includes it, so a forgotten Link is invisible in every debug build and spec run and
-#    shows only in the release preview: virtual_grid shipped unstyled (overflow: visible, nothing
-#    scrolled) from PR #107. A comment-only sheet (scroll_area, virtual_list) is exempt.
+#    shows only in the release preview (an unlinked virtual_grid sheet ships unstyled: overflow:
+#    visible, nothing scrolled). A comment-only sheet (scroll_area, virtual_list) is exempt.
 #
 # 3. EVERY SIBLING COMPONENT A COMPONENT IMPORTS IS A DECLARED DEPENDENCY.
 #    `dx components add <name>` installs the component's own files plus the
 #    `componentDependencies` of its component.json, and nothing else. A
 #    component's installed files (everything outside `variants/`, which is
 #    repo-only) that reach `crate::components::<other>` must therefore list
-#    `<other>`, else the installed tree does not compile (`form` missed four,
-#    `top_layer` one, until 2026-10-05). Comments and string literals are
+#    `<other>`, else the installed tree does not compile (a missed one is an E0433 in the
+#    installed app). Comments and string literals are
 #    ignored; `crate::components::{a, b::{X}}` groups are read. The reverse
 #    (a dependency declared but never imported) installs unused code but
 #    compiles, so it is only a note.

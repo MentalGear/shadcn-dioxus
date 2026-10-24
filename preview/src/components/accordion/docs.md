@@ -17,7 +17,7 @@ Accordion {
 }
 ```
 
-`AccordionContent` supplies shadcn's Nova spacing itself (`text-sm`, no top padding, 10px below), so content needs no padding of its own. The trigger is `text-sm font-medium` with 10px of vertical padding and a 16px chevron in `muted-foreground`. Content wrapped in an extra bottom padding (the old demos used 1rem) now leaves a larger gap than Nova.
+`AccordionContent` supplies shadcn's Nova spacing itself (`text-sm`, no top padding, 10px below), so content needs no padding of its own. The trigger is `text-sm font-medium` with 10px of vertical padding and a 16px chevron in `muted-foreground`. Content that adds its own bottom padding (for example 1rem) leaves a larger gap than Nova.
 
 ## Multiple open items
 
@@ -66,7 +66,7 @@ Accordion {
 }
 ```
 
-Animations are unchanged: opening and closing by trigger animate the height as before, and the content is re-hidden once the close animation finishes. Opening because of a match is not animated, because the browser has already scrolled to the match at full size. `AccordionContent` exposes `data-closing` (only while the close animation runs) and `data-revealed` (open because of a match) for styling this; key a close animation on `data-closing`, not on `data-open="false"`, which is also how a closed panel looks at rest.
+Opening and closing by trigger animate the height as usual, and the content is re-hidden once the close animation finishes. Opening because of a match is not animated, because the browser has already scrolled to the match at full size. `AccordionContent` exposes `data-closing` (only while the close animation runs) and `data-revealed` (open because of a match) for styling this; key a close animation on `data-closing`, not on `data-open="false"`, which is also how a closed panel looks at rest.
 
 Cost: every item's content is mounted (and, on a server-rendered page, hydrated) while closed, and it is in the server-rendered HTML. That is why it is opt-in.
 

@@ -8,18 +8,14 @@ use dioxus_primitives::{
 };
 use std::collections::HashSet;
 
-// docs/backlog.md row 32: `#[css_module]` is gone -- see checkbox/component.rs's
+// dev-docs/backlog.md row 32: see checkbox/component.rs's
 // header comment for the full delivery-mechanism rationale (asset!() +
 // document::Link, embedded in both exported entry points so a
 // `shadcn-dioxus add toggle_group`-copied component needs no extra wiring).
 //
-// This component is also on the row-32 "not already namespaced" lane: its
-// item class used to be the bare `dx-toggle-item`, not
-// `dx-toggle-group-item`. `#[css_module]`'s hash kept it collision-safe
-// regardless, but a plain `dx-toggle-item` isn't provably this component's
-// own once the hash is gone. Renamed to `dx-toggle-group-item` in the same
-// change that drops the macro, in both this file and `style.css` -- see
-// `scripts/check-dx-class-prefix.sh`.
+// Its item class is `dx-toggle-group-item`, not a bare `dx-toggle-item`:
+// without a hash suffix, a plain `dx-toggle-item` isn't provably this
+// component's own -- see `scripts/check-dx-class-prefix.sh`.
 
 /// The props for the themed [`ToggleGroup`]: the primitive's, plus `variant`,
 /// `size` and `spacing` (shadcn's `ToggleGroup` props, which every item inherits).
@@ -100,8 +96,8 @@ pub fn ToggleGroup(props: ToggleGroupProps) -> Element {
     // theme class and a caller-supplied class both have to travel through
     // the shared `attributes` bucket -- a literal `class: "dx-toggle-group"`
     // shorthand here alongside an explicit `attributes: props.attributes`
-    // field would hit the exact same clobber-not-merge bug commit 724bfee
-    // fixed for `Input`, so this merges them the same way
+    // field would hit the same clobber-not-merge bug `Input` avoids
+    // (backlog row 12), so this merges them the same way
     // `../popover/component.rs`'s `PopoverRoot` does.
     //
     // `variant` / `size` / `spacing` are slot variables, not per-item props: the
@@ -186,7 +182,7 @@ mod tests {
         let html = dioxus_ssr::render(&dom);
 
         // A caller's own class must extend, not replace, the theme's
-        // "dx-toggle-group"/"dx-toggle-group-item" -- see commit 724bfee.
+        // "dx-toggle-group"/"dx-toggle-group-item" (backlog row 12).
         assert!(html.contains(r#"class="dx-toggle-group caller-group-class""#));
         assert!(html.contains(r#"class="dx-toggle-group-item caller-item-class""#));
     }

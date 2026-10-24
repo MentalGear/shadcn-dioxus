@@ -41,7 +41,7 @@ pub struct SheetProps {
     pub on_open_change: Callback<bool>,
 
     /// Which edge the sheet slides in from. Defaults to [`SheetSide::Right`]. A raw
-    /// `"data-side"` attribute (the pre-typed-prop spelling, still used by `Sidebar`)
+    /// `"data-side"` attribute (the untyped spelling, which `Sidebar` uses)
     /// overrides it.
     #[props(default = ReadSignal::new(Signal::new(SheetSide::Right)))]
     pub side: ReadSignal<SheetSide>,
@@ -110,11 +110,11 @@ fn SheetPanel(
 
 #[component]
 pub fn SheetContentClose(#[props(extends = GlobalAttributes)] attributes: Vec<Attribute>) -> Element {
-    // axe `button-name` (docs/backlog.md row 34's own round): this button's
+    // axe `button-name` (dev-docs/backlog.md row 34): this button's
     // only content is the `X` icon, with no text and no accessible name --
-    // mirrors the fix already applied per-call-site for `DialogClose`/
-    // `AlertDialogClose` (`dialog/variants/main/mod.rs`'s `aria_label:
-    // "Close"`), baked in here instead since both current call sites
+    // `DialogClose`/`AlertDialogClose` get theirs per call site
+    // (`dialog/variants/main/mod.rs`'s `aria_label: "Close"`); it is baked in
+    // here because both call sites
     // (`sheet/variants/main/mod.rs`, `sidebar/component.rs`) render this
     // shared wrapper with no children of their own to derive a name from.
     let base = attributes!(button {

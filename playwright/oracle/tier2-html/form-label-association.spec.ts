@@ -1,7 +1,7 @@
 /**
  * ORACLE: tier 2 (HTML) — <label> association.
  *
- * Source: docs/conformance-harness.md, "Tier 2 — HTML forms", rule checklist
+ * Source: dev-docs/conformance-harness.md, "Tier 2 — HTML forms", rule checklist
  * item 7 ("A <label> association focuses and activates the control"), citing
  * WHATWG HTML's the-label-element:
  *   https://html.spec.whatwg.org/multipage/forms.html#the-label-element
@@ -12,7 +12,7 @@
  * expose a *labelable, focusable, click-activatable* element at the `id` a
  * caller's `<label for>` points at, the same way a native control does).
  *
- * This file was split out of `form-participation.spec.ts` deliberately (see
+ * This file is separate from `form-participation.spec.ts` deliberately (see
  * that file's own header, rule 7's deferral note): a focus/activation
  * assertion is a different shape from that file's entry-list assertions, and
  * mixing the two would blur this oracle with the tier-1 focus-restore one.
@@ -21,9 +21,9 @@
  * `form-participation.spec.ts` — every row there already pairs a
  * `label[for]` with a native reference control AND (for every control
  * *except* Select, see "Known fixture gap" below) the library control, so no
- * fixture change was needed for this rule.
+ * fixture change is needed for this rule.
  *
- * Calibration (docs/conformance-harness.md, "Calibration"): every rule below
+ * Calibration (dev-docs/conformance-harness.md, "Calibration"): every rule below
  * runs against the native reference control first (prefixed CALIBRATION: in
  * the test name) and the library control second. A CALIBRATION failure would
  * mean the *test* is wrong, not the component.
@@ -43,8 +43,8 @@
  * technique is used everywhere below for one consistent method across every
  * rule 7 case.
  *
- * Known fixture gap, found while writing this file (recorded, not fixed
- * here — a `FormFixture` composition decision, not a rule-7 defect in any
+ * Known fixture gap (not fixed
+ * here: a `FormFixture` composition decision, not a rule-7 defect in any
  * primitive): the library `Select`'s field
  * (`preview/src/components/form/component.rs`, "Fruit (library select)")
  * uses a plain `span` for its caption, not a `label[for]`, unlike every

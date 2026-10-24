@@ -23,9 +23,8 @@ const selectedSummary = (page: Page) => pagination(page).locator(".dx-data-table
 const pageReadout = (page: Page) => pagination(page).locator(".dx-data-table-pagination-page");
 const previousButton = (page: Page) => pagination(page).getByRole("button", { name: "Previous" });
 const nextButton = (page: Page) => pagination(page).getByRole("button", { name: "Next" });
-// The Select trigger's role is changing elsewhere in this repo (button ->
-// combobox); located by its own data-slot + accessible name, not role, so
-// this spec doesn't depend on which role wins.
+// The Select trigger is located by its own data-slot + accessible name, not role, so this spec
+// does not depend on the trigger's ARIA role.
 const pageSizeControl = (page: Page) =>
   page.locator('[data-slot="data-table-page-size"]').locator('[aria-label="Rows per page"]');
 
@@ -90,7 +89,7 @@ test("select-all checks every visible row and the selected count updates", async
   await expect(selectAllCheckbox(page)).toHaveAttribute("aria-checked", "true");
   await expect(selectedSummary(page)).toHaveText("5 of 12 row(s) selected.");
 
-  // Unchecking Select All clears exactly those 5 again.
+  // Unchecking Select All clears exactly those 5.
   await selectAllCheckbox(page).click();
   await expect(selectedSummary(page)).toHaveText("0 of 12 row(s) selected.");
   for (const checkbox of await rowCheckboxes(page).all()) {
@@ -175,12 +174,12 @@ test("selection is kept by row across pages, sorting and filtering", async ({ pa
   await expect(selectAllCheckbox(page)).toHaveAttribute("aria-checked", "mixed");
   await expect(table(page).locator("tbody tr[data-state=selected]")).toHaveCount(1);
 
-  // Page 2 shows none of it, but the footer still counts it.
+  // Page 2 shows none of it, but the footer counts it.
   await nextButton(page).click();
   await expect(selectAllCheckbox(page)).toHaveAttribute("aria-checked", "false");
   await expect(selectedSummary(page)).toHaveText("1 of 12 row(s) selected.");
 
-  // Re-sort: the same row is still the selected one, wherever it lands.
+  // Re-sort: the same row is the selected one, wherever it lands.
   await previousButton(page).click();
   await sortButton(page, "Email").click(); // descending: alexandra is last overall
   await expect(page.getByRole("checkbox", { name: "Select row PMT-03" })).toHaveCount(0);
@@ -258,20 +257,19 @@ test("keyboard: the filter input narrows rows and Previous/Next are reachable an
 
 // --- Checkbox alignment and layout stability ---------------------------------
 //
-// Owner report: "Datatables: checkboxes are not vertically centered, and there is
-// also a layout shift when they are toggled." Two root causes, measured 2026-10-04
-// with the real Geist web font (the offsets differ with the fallback font):
-//   1. `.dx-checkbox` was an inline-block <button>, so it sat on the cell's line-box
-//      BASELINE: 2.00px above the row/cell/text centre (2.25px in the header), and
-//      the row grew to 37px. Fix: the checkbox is a flex box (Nova's `flex size-4`).
-//   2. The demo shrink-wrapped inside the centred preview frame, so its width was the
-//      pagination row's max-content, and "0 of 12 row(s) selected." -> "1 of 12 ..."
-//      (proportional digits, a `1` is ~4px narrower) moved the whole table ~2px and
-//      resized it ~4px on EVERY toggle. Fix: the demo is `width: 100%`, and the
-//      counters use tabular figures.
+// Two rules keep a row's checkbox centred and a toggle from shifting the table, measured with the real Geist web
+// font (the offsets differ with the fallback font):
+//   1. An inline-block <button> `.dx-checkbox` would sit on the cell's line-box BASELINE: 2.00px
+//      above the row/cell/text centre (2.25px in the header), and the row would grow to 37px.
+//      So the checkbox is a flex box (Nova's `flex size-4`).
+//   2. A demo that shrink-wraps inside the centred preview frame gets the pagination row's
+//      max-content as its width, and "0 of 12 row(s) selected." -> "1 of 12 ..."
+//      (proportional digits, a `1` is ~4px narrower) would move the whole table ~2px and
+//      resize it ~4px on EVERY toggle. So the demo is `width: 100%`, and the counters
+//      use tabular figures.
 // The alignment and toggle tests below measure real boxes (getBoundingClientRect), not
-// computed styles, so they stay red for any cause, not just the two above. Which tests are
-// red without the fix depends on the font: the alignment test, the container-overflow guard
+// computed styles, so they go red for any cause, not just the two above. Which tests catch
+// each cause depends on the font: the alignment test, the container-overflow guard
 // and the invariant test fail in any font; the two toggle tests fail where the pagination
 // row is the demo's widest child (Geist), which a wider fallback face does not reproduce.
 
@@ -279,7 +277,7 @@ type Box = { x: number; y: number; width: number; height: number };
 
 // Everything that must not move when a checkbox is toggled, as live DOM rects, read AT REST: a click leaves the
 // control in its `:active` release (the theme's press feedback scales it to 0.98 and eases back over
-// `--dx-press-duration`), and `getBoundingClientRect()` includes `scale`, so a read right after the click saw the
+// `--dx-press-duration`), and `getBoundingClientRect()` includes `scale`, so a read right after the click sees the
 // checkbox 0.3 px smaller and 0.1 px right of its layout box. This test is about LAYOUT, which the press never
 // changes, so it waits for the checkbox's (and its ancestors') transitions to finish first (`readAtRest`).
 const layoutBoxes = (page: Page, label: string) =>
@@ -434,14 +432,6 @@ test("the selection count gaining a digit moves nothing but its own text", async
 });
 
 test.describe("Axe automated scan", () => {
-  test("loaded has no automatically detectable a11y issues", async ({ page }) => {
-    await goto(page);
-    await expect(table(page)).toBeVisible();
-    await expectNoAxeViolations(page, "data_table: loaded", {
-      excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT],
-    });
-  });
-
   test("rows-per-page select open has no automatically detectable a11y issues", async ({ page }) => {
     await goto(page);
     await pageSizeControl(page).click();

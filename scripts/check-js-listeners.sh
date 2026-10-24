@@ -10,11 +10,10 @@
 # a shipped or inline script) belongs to the PAGE, not to the Dioxus scope that evaluated the script.
 # Dropping the component drops the Rust task that listens to the eval; the `addEventListener`
 # registration stays on `window`/`document` for the rest of the visit, and a script that is re-run
-# (an effect, a second visit to the route) adds another one on top. Found in the form fixture (6
-# adds, 0 removes: two of them on `document`, one more pair per visit), the sidebar, `pointer.rs`,
-# the focus trap and `scroll_lock.rs`; for a non-passive `wheel`/`touchmove` listener on `window`
-# it also made every wheel tick on the page wait for the main thread after the first modal had
-# opened once. Fixed by construction, not per instance: the one sanctioned way is
+# (an effect, a second visit to the route) adds another one on top (rows 149, 159);
+# a non-passive `wheel`/`touchmove`
+# listener on `window` also makes every wheel tick on the page wait for the main thread once a modal
+# has opened. The fix is by construction, not per instance: the one sanctioned way is
 # `primitives/src/js_listener.rs` (`JsListeners` / `use_js_listeners`): the script registers through
 # `listen(target, type, handler, options)`, the removal is DERIVED (undone when the value drops, i.e.
 # when the component unmounts, the effect re-runs or the lock releases), and wheel/touch listeners
@@ -28,8 +27,8 @@
 #      call, in a `\`-joined one-line string use the allowlist below).
 #
 # A correct hand-written add/remove pair fails too: the teardown is written, so a later edit can
-# break it. The hand-paired files row 159 grandfathered (its `PAIRED_BY_HAND` ratchet, 52 sites
-# in 11 files) were all moved onto the helper by row 167 and the ratchet is gone. The move is
+# break it. There is no hand-paired allowlist (row 167).
+# The conversion is
 # mechanical: `x.addEventListener(t, h, o)` -> `listen(x, t, h, o)`, delete the
 # `await dioxus.recv()` and the matching removes, wrap in `use_js_listeners`; a listener narrower
 # than its script (one drag's window listeners) keeps the `off` that `listen` returns.
@@ -47,7 +46,7 @@
 # and route has been opened and closed again.
 #
 # Usage: scripts/check-js-listeners.sh [file[=repo/relative/name] ...]
-#   No arguments scans the tree; explicit files are scanned as given (used to prove the gate red
+#   No arguments scans the tree; explicit files are scanned as given (for proving the gate red
 #   against old code: `git show HEAD:primitives/src/pointer.rs > /tmp/old.rs;
 #   scripts/check-js-listeners.sh /tmp/old.rs=primitives/src/pointer.rs` scans the old text as if it
 #   were that file, so the allowlists apply to it exactly as they would in the tree).
@@ -75,7 +74,7 @@ from pathlib import Path
 
 HELPER = "primitives/src/js_listener.rs"
 
-# Generated, not source: primitives/build.rs bundles primitives/src/ts/focus-trap.ts into it.
+# Generated, not source: scripts/build-js-bundle.sh bundles primitives/src/ts/focus-trap.ts into it.
 GENERATED = ("primitives/src/js/",)
 
 # Registrations that are NOT hand-paired but still legitimate, in files whose owner has not

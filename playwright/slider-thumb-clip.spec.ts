@@ -3,11 +3,10 @@ import { type Page } from "@playwright/test";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
-// dev-docs/backlog.md row 293 -- the Slider thumb showed as a sliver and its focus ring was cut off. The
-// primitive renders `SliderThumb` INSIDE `SliderTrack`; the 4px track had `overflow: hidden` (copied from
-// Nova, where the thumb is a sibling outside the track), so it clipped the 12px thumb, its ring and its
-// `::after` hit area. By construction no ancestor of a thumb below the slider root may clip it: the
-// clipping moved to `.dx-slider-range`.
+// dev-docs/backlog.md row 293 -- the primitive renders `SliderThumb` INSIDE `SliderTrack`, so a 4px track with
+// `overflow: hidden` (Nova's, where the thumb is a sibling outside the track) would clip the 12px thumb to a
+// sliver, with its ring and its `::after` hit area. By construction no ancestor of a thumb below the
+// slider root may clip it: the clipping is on `.dx-slider-range`.
 
 const URL = `${BASE_URL}/component/slider/`;
 const RING = 3; // the 3px focus halo (`--dx-ring-focus`)

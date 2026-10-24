@@ -8,13 +8,10 @@ use dioxus_icons::lucide::{ChevronLeft, ChevronRight};
 /// entirely from [`use_carousel`]'s public [`CarouselApi`], the same
 /// public escape hatch docs.md's own "A custom picker" section documents.
 ///
-/// This is also where the pre-shadcn-parity `indicators` demo's custom
-/// dot-picker composition technique lives on, now that its own exported
-/// helper's name (`CarouselIndicators`) was reused by the APG tablist
-/// component it was renamed from `CarouselTabList` to (see `component.rs`'s
-/// own doc on that rename) -- `use_carousel()` itself was never renamed or
-/// removed, so this demo (and any consumer) can still build any custom
-/// picker UI it wants directly on top of it.
+/// This is also where the custom dot-picker composition lives: the exported
+/// name `CarouselIndicators` belongs to the APG tablist component (see
+/// `component.rs`'s own doc), so a plain picker is built directly on
+/// `use_carousel()`, which any consumer can do for any custom picker UI.
 #[component]
 pub fn Demo() -> Element {
     rsx! {
@@ -23,8 +20,8 @@ pub fn Demo() -> Element {
         // `.dx-carousel` reserves its own 6rem of `padding-inline` for those
         // buttons INSIDE its box (style.css), so the wrapper is `20rem +
         // 6rem` -- the same pairing `variants/main/mod.rs` documents -- or
-        // the slide shrinks by the reservation (the old `10rem` wrapper left
-        // a 64x83 sliver and wrapped the caption to "Slide 1 / of 5").
+        // the slide shrinks by the reservation (a `10rem` wrapper leaves
+        // a 64x83 sliver and wraps the caption to "Slide 1 / of 5").
         // `width: 100%` is load-bearing next to `max-width` (row 94).
         div { style: "width: 100%; max-width: 26rem; margin: 0 auto;",
             Carousel { aria_label: "API demo gallery",
@@ -84,14 +81,13 @@ fn SlideCounter() -> Element {
     }
 }
 
-/// The pre-shadcn-parity `indicators` demo's own dot-picker composition,
-/// carried forward verbatim (same `data-active` state attribute, same
+/// A dot-picker composition (a `data-active` state attribute, a
 /// `scroll_to(i)` click handler) -- demo-local markup, not an exported
 /// component, since the point here is exactly that a caller CAN build
 /// this without any dedicated primitive at all, matching docs.md's own "A
 /// custom picker" section example. Deliberately does not reuse
-/// `.dx-carousel-indicator`'s own class/CSS -- that class now belongs to
-/// the renamed APG tablist `CarouselIndicator` (`role="tab"`,
+/// `.dx-carousel-indicator`'s own class/CSS -- that class belongs to
+/// the APG tablist `CarouselIndicator` (`role="tab"`,
 /// `aria-selected`), a different ARIA pattern than this plain, non-tablist
 /// picker (`data-active`, no roving tabindex).
 ///
@@ -99,7 +95,7 @@ fn SlideCounter() -> Element {
 /// by `data-active` -- NOT an inline `style` that changes with the state:
 /// dioxus-interpreter-js 0.7.9 drops every `var()`-valued shorthand
 /// (`border-radius`, `background`) from an inline `style` the first time
-/// that attribute is re-set, which turned the previously- and newly-active
+/// that attribute is re-set, which would turn the previously- and newly-active
 /// dots square. See the rule's own comment in `style.css`.
 #[component]
 fn CustomDotPicker() -> Element {

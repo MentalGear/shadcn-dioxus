@@ -4,20 +4,20 @@
  * Every Normal component page has an RTL button (`#dx-direction-toggle`, preview/src/main.rs) that sets `dir`
  * on each demo frame and wraps each demo in a `DirectionProvider` reading one global signal. These tests prove
  * the three halves of that construction through the toggle, on the MAIN demo of each component (no hand-built
- * `rtl` variant): (1) the provider is reactive (the keys mirror live, both ways); (2) the five primitives that
- * used to ignore the direction (tag_group, date_picker, navigation_menu, accordion via its unit logic, tabs as
- * the control) mirror ArrowLeft/ArrowRight; (3) anchored popups resolve `align` logically (row 13's open
- * question about `top_layer.rs`: it was NOT direction-aware, now is); (4) a sweep of the components whose primitive
+ * `rtl` variant): (1) the provider is reactive (the keys mirror live, both ways); (2) the five primitives whose
+ * keys are direction-sensitive (tag_group, date_picker, navigation_menu, accordion via its unit logic, tabs as
+ * the control) mirror ArrowLeft/ArrowRight; (3) anchored popups resolve `align` logically (row 13's question
+ * about `top_layer.rs`: it is direction-aware); (4) a sweep of the components whose primitive
  * reads the direction: the toggle flips, nothing throws and nothing overflows the page horizontally.
  *
- * Row 331 shrank (4) from every Normal component (82 pages) to `DIRECTION_AWARE` (below). The sampling rule is
+ * Row 331: (4) sweeps `DIRECTION_AWARE` (below), not every Normal component (82 pages). The sampling rule is
  * derived, not picked: a component is in the sweep when its primitive calls `use_direction`, `resolve_horizontal`
  * or `ltr_equivalent` (`grep -rlE "resolve_horizontal|ltr_equivalent|use_direction" primitives/src`, the same
  * set `scripts/check-direction-keys.sh` polices), one catalog page per such primitive. A component that never
  * reads the direction has no RTL code path the toggle can reach, so its page is an LTR page with a button on it.
- * Measured on a debug SSG build (2026-10-21): the 82 pages took 184 s of the file's 194 s.
+ * (On a debug SSG build, sweeping all 82 pages costs 184 s of the file's 194 s.)
  *
- * The overflow probe is NOT vacuous, but narrower than it reads (one browser probe, same day, `/component/card/`):
+ * The overflow probe is NOT vacuous, but narrower than it reads (a browser probe on `/component/card/`):
  * `html` and `body` are `overflow-x: clip`/`hidden`, so an in-flow element 2000 px wide adds nothing to
  * `scrollWidth - clientWidth` (-15, the scrollbar gutter) while an absolutely positioned element that escapes
  * `body` (`right: -2000px`) adds 2000 (1985), in LTR and under the toggle alike. It therefore catches a
@@ -61,7 +61,7 @@ test.describe("the toggle makes the provider live", () => {
   });
 });
 
-test.describe("the five primitives that ignored the direction now mirror", () => {
+test.describe("the five direction-aware primitives mirror under RTL", () => {
   test("tag_group: ArrowLeft moves to the NEXT tag under RTL", async ({ page }) => {
     await open(page, "tag_group");
     await setDirection(page, "rtl");

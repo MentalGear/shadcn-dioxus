@@ -4,13 +4,13 @@
 #
 # The cursor of an interactive element is decided ONCE, by the theme, so every pressable element shows the
 # same cursor and an app chooses it in one place (backlog row 381 records the decision). Per-sheet
-# `cursor: pointer` / `cursor: default` declarations made one press look different in each component.
+# `cursor: pointer` / `cursor: default` declarations make one press look different in each component.
 #
-# `preview/assets/dx-components-theme.css` ("Interactive-element cursor") now has ONE zero-specificity rule,
+# `preview/assets/dx-components-theme.css` ("Interactive-element cursor") has ONE zero-specificity rule,
 # the same shape as the `touch-action` and `user-select` baselines, that gives every pressable `dx-` element
 # `cursor: var(--dx-interactive-element-cursor, default)`; `<html data-dx-interactive-element-cursor="pointer">`
 # (or any container) sets the variable to `pointer`. shadcn v4 leaves a button at the arrow, so that is the
-# default. This gate makes the per-sheet copies inexpressible again, so the class cannot grow back:
+# default. This gate makes the per-sheet copies inexpressible, so the class cannot grow back:
 #
 #  1. No component sheet (`preview/src/components/*/style.css`) and no `preview/assets/main.css` rule may
 #     declare `cursor: pointer`, `cursor: default` or `cursor: auto`: at (0,1,0) it out-ranks the theme rule
@@ -19,8 +19,8 @@
 #     theme list cannot name (a `label` that wraps a radio, a drag thumb, an SVG hit band, a selectable chip)
 #     is `cursor: var(--dx-interactive-element-cursor, default)`; any other `var()` fails.
 #     A genuine exception goes on ALLOW below with its reason; an entry that matches nothing is a FAILURE.
-#  2. The theme has no other `cursor: pointer`/`default` declaration than the baseline rule (the shared
-#     menu-item row had one: equal specificity, later in the file, it would have won).
+#  2. The theme has no other `cursor: pointer`/`default` declaration than the baseline rule (a second one, such as the shared
+#     menu-item row's, has equal specificity and wins by coming later in the file).
 #  3. The theme rule itself is still there, and complete: a zero-specificity selector list (every entry a
 #     `:where()`) covering `button`, `summary`, `select` (both class-prefix spellings), the roles button,
 #     menuitem, menuitemcheckbox, menuitemradio, option, tab, switch, checkbox, radio and slider, and the

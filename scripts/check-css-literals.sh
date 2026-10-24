@@ -13,7 +13,7 @@
 # Why: a token set only pays for itself if the components actually read from
 # it. A literal that duplicates a token's value is a value that will silently
 # fail to follow when the token is retuned -- exactly the drift row 31a's
-# survey found across the 46 stylesheets, and the reason row 31b exists.
+# survey found across the component stylesheets, and the reason row 31b exists.
 #
 # WHAT IS AND IS NOT AN ERROR
 #

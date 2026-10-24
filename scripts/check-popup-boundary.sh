@@ -2,8 +2,12 @@
 #
 # check-popup-boundary.sh
 #
-# A component stylesheet's DESCENDANT selector on a generic element must not reach into a popup that happens to
-# be rendered inside it.
+# A popover or dialog stays a DOM descendant of its trigger, so a component sheet's descendant selector on a generic
+# element (`.dx-x svg`, `.dx-x a`, `.dx-x button`, `.dx-x [role=...]`, `*`) also styles the panel of any popup
+# rendered inside it. End such a selector with the zero-specificity `:not(:where([popover], dialog) *)` or select the
+# component's own part by class; otherwise a reasoned allowlist entry says why no popup can sit inside the ancestor
+# (stale entries fail). Browser half: `playwright/popup-style-isolation.spec.ts` opens one representative popup per
+# popup component, alone and under a hostile parent, and requires the same computed style.
 #
 # The failure. Our popovers and dialogs are top-layer elements (`popover` attribute / native `<dialog>`), but
 # top-layer promotion changes PAINTING, not the DOM: the panel stays a descendant of its trigger's wrapper. So
@@ -11,7 +15,7 @@
 #   .dx-input-group-addon button { height: var(--dx-control-height-xs); padding: 0 var(--dx-space-2) }
 #   .dx-input-group-addon svg    { width: 1rem; height: 1rem }
 #
-# also matched every day cell and chevron of the Date Picker calendar whose trigger sits in an addon (28x24
+# also matches every day cell and chevron of the Date Picker calendar whose trigger sits in an addon (28x24
 # cells, 16px chevrons) -- invisible on the Date Picker's own page, wrong only in the one demo that nests it.
 # Any `.dx-x <bare element | [role] | *>` rule has the same reach: Popover, DropdownMenu, Select, Tooltip,
 # HoverCard, Combobox, Dialog/Sheet/Drawer, DatePicker/ColorPicker and Command all render inside their trigger.
@@ -67,7 +71,7 @@ LEAF = "the ancestor is a leaf part of the component (a label, icon holder or co
 OWN = "the ancestor is the component's own control and the subject its own icon/internal; the component renders no popup inside it"
 DIRECT = "a direct-child (`>`) rule: the matched child is one of the component's own items, and a popup panel is never a direct child of this host (it sits one wrapper deeper)"
 SVGINNER = "the subject is an SVG-internal element (`text`, `line`, `path`, `tspan`, ...) of the chart's own <svg>; HTML cannot be nested in it, so no popup is reachable"
-PENDING = "a free-content slot a user can put a link (and so a HoverCard/Popover trigger) in; sheet owned by a batch-2 lane, so the boundary is not added here -- add `:not(:where([popover], dialog) *)` to the subject when that lane merges and delete this entry"
+PENDING = "a free-content slot a user can put a link (and so a HoverCard/Popover trigger) in; the boundary is not on this selector yet -- add `:not(:where([popover], dialog) *)` to the subject and delete this entry"
 ALLOW = [
     ("alert", r"^\.dx-alert > svg$", DIRECT),
     ("attachment", r"\.dx-attachment-media", "the ancestor is the attachment's media tile, which holds one icon or one image"),

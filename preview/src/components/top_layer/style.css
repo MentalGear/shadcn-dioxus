@@ -2,11 +2,10 @@
   display: flex;
 
   /* Also never wider than the (flex-centred, 341px on a 390px viewport)
-     preview frame: a fixed 42rem max-width alone let this fixture overflow
-     the frame on BOTH sides (x = -149 .. 524), which put its clip-box
-     triggers off-screen and unreachable under `body { overflow-x: clip }`.
-     Found by execution 2026-09-02, the first run with main.css actually
-     applied (oracle/tier2-html/global-stylesheet.spec.ts). */
+     preview frame: a fixed 42rem max-width alone would let this fixture overflow
+     the frame on BOTH sides (x = -149 .. 524), which would put its clip-box
+     triggers off-screen and unreachable under `body { overflow-x: clip }`
+     (oracle/tier2-html/global-stylesheet.spec.ts). */
   width: 100%;
   max-width: 42rem;
   flex-direction: column;
@@ -28,21 +27,20 @@
   overflow: hidden;
 
   /* Never wider than the page: this box shrink-wraps its 670px of trigger
-     content, and on a 390px viewport it used to hang off both edges (x from
+     content, and on a 390px viewport it would hang off both edges (x from
      -149 to 524) -- with `body { overflow-x: clip }` (main.css) those
-     triggers were unreachable, for real mobile visitors and for Playwright
+     triggers would be unreachable, for real mobile visitors and for Playwright
      alike. The clipping under test is of the box's CHILDREN by this
      `overflow: hidden`, which a fitted box still does; the overflow is
-     reachable by (programmatic) horizontal scroll of the box itself. Found
-     by execution 2026-09-02, the first run with main.css actually applied
-     (see oracle/tier2-html/global-stylesheet.spec.ts). */
+     reachable by (programmatic) horizontal scroll of the box itself (see
+     oracle/tier2-html/global-stylesheet.spec.ts). */
   max-width: 100%;
   height: 60px;
   align-items: center;
 
   /* Start-aligned on purpose: centred flex content that overflows spills to
      BOTH sides, and the left spill can never be scrolled to (scrollLeft has
-     no negative range) -- the tooltip trigger sat at x = -132 on a 390px
+     no negative range) -- the tooltip trigger would sit at x = -132 on a 390px
      viewport. Start alignment keeps every trigger reachable by scrolling
      the box. */
   justify-content: flex-start;
@@ -56,39 +54,25 @@
   position: relative;
 
   /* 160px of room below the 90px padding-top: border-box (theme) counts the
-     padding, so it is spelled out to keep the fixture exactly as tall as
-     before. */
+     padding, so it is spelled out: 250px in all, the fixture's one height. */
   min-height: 250px;
   padding-top: 90px;
 }
 
 /*
- * `position: absolute` within `.dx-top-layer-stack-area`, back to in-flow
- * layout (2026-09-01) -- not `position: fixed` at literal viewport
- * coordinates, which this rule used for one prior round after a live-site
- * report surfaced a second, unrelated bug: `position: fixed` here made this
- * whole section float over the page during ordinary scrolling on the demo
- * site regardless of whether anything was open, which is exactly the
- * "user-visible pollution" the report flagged. That prior round's own
- * comment (preserved in git history on this line) explains *why* `fixed`
- * was reached for in the first place: `Popover`'s non-modal content used to
- * be positioned by `top_layer.rs`'s `use_anchor_position_fallback` as a
- * strictly *one-shot* measurement -- correct when the popover opened, but
- * never recalculated if the page scrolled afterward, which made
- * `playwright/oracle/tier2-html/top-layer.spec.ts` Rule 4's
- * `scrollIntoViewIfNeeded()` (needed because this section could render
- * below the fold) drag the sibling on-screen while the popover content,
- * pinned by stale pixel values, stayed put -- no longer overlapping by the
- * time the test measured. Pinning this section to the viewport worked
- * around that by making the scroll a no-op, but traded a test-harness
- * problem for a real one on the live page.
+ * `position: absolute` within `.dx-top-layer-stack-area`, in-flow layout -- not `position: fixed` at
+ * literal viewport coordinates, which would make this whole section float over the page during
+ * ordinary scrolling on the demo site regardless of whether anything was open ("user-visible
+ * pollution"). Fixed positioning would only be needed if `Popover`'s non-modal content were
+ * positioned by `top_layer.rs`'s `use_anchor_position_fallback` as a strictly one-shot measurement
+ * (never recalculated if the page scrolled afterward), which would make
+ * `playwright/oracle/tier2-html/top-layer.spec.ts` Rule 4's `scrollIntoViewIfNeeded()` (needed
+ * because this section can render below the fold) drag the sibling on-screen while the popover
+ * content, pinned by stale pixel values, stayed put.
  *
- * `use_anchor_position_fallback` now re-measures on scroll/resize whenever
- * it owns positioning (see that function's doc, "Scroll/resize tracking")
- * -- the actual fix for the underlying staleness, not just this fixture's
- * symptom of it -- which is what makes reverting to in-flow layout safe
- * again: `top-layer.spec.ts`'s own scroll-tracking rule now covers exactly
- * the scenario this section's fixed positioning used to paper over.
+ * `use_anchor_position_fallback` re-measures on scroll/resize whenever it owns positioning (see that
+ * function's doc, "Scroll/resize tracking"), which is what makes in-flow layout safe:
+ * `top-layer.spec.ts`'s own scroll-tracking rule covers exactly that scenario.
  */
 .dx-top-layer-stack-sibling {
   position: absolute;
@@ -138,7 +122,7 @@
 }
 
 /*
- * Near-viewport-edge flip fixture (docs/backlog.md row 10; W3C CSS Anchor
+ * Near-viewport-edge flip fixture (dev-docs/backlog.md row 10; W3C CSS Anchor
  * Positioning's `position-try-fallbacks`, not a WHATWG HTML feature -- see
  * `playwright/oracle/tier2-html/top-layer.spec.ts`'s header for why this
  * rule lives in this tier-2 file anyway). `position: fixed` at a real
@@ -150,27 +134,27 @@
  * written -- see the `z-index` note below for the one thing that does need
  * to change here.
  *
- * `z-index: var(--dx-z-top, 9999)` on both rows (docs/backlog.md, the
- * axe/fixture-hardening round): every route on this preview site now
+ * `z-index: var(--dx-z-top, 9999)` on both rows (axe/fixture hardening,
+ * dev-docs/backlog.md): every route on this preview site
  * permanently mounts `DocsLayout`'s `Sidebar`
  * (`preview/src/components/sidebar/style.css`'s `.dx-sidebar-container`,
  * `position: fixed; z-index: var(--dx-z-local-sm)` = 10), which occupies a
  * left-edge column (`left: 0`, `width: var(--dx-sidebar-width)` = 16rem).
  * `.dx-top-layer-edge-bottom-row` spans `left: 1rem` to `right: 1rem` --
  * i.e. almost the full viewport width -- so its leftmost children
- * (confirmed by execution: the Tooltip/HoverCard triggers, first in DOM
+ * (the Tooltip/HoverCard triggers, first in DOM
  * order) sit under that column; with no `z-index` of its own (`auto`) a
  * `position: fixed` box always loses hit-testing to a sibling stacking
  * context with an explicit positive `z-index`, regardless of DOM order, so
  * Playwright's real `.click()`/`.hover()` (unlike a same-origin
- * `.evaluate(el => el.click())`, which bypasses hit-testing) retried until
- * the outer test timeout killed it
+ * `.evaluate(el => el.click())`, which bypasses hit-testing) retries until
+ * the outer test timeout kills it
  * (`oracle/tier2-html/top-layer.spec.ts` Rule 5's Tooltip/HoverCard
  * flip cases). `.dx-top-layer-edge-right-col` sits at the opposite,
- * right-hand edge and was not observed failing at the current sidebar
+ * right-hand edge and does not fail at the current sidebar
  * width/viewport, but is the identical mechanism at a different edge, so
  * it gets the same clearance preventively rather than waiting for a
- * viewport size or a sidebar width change to make it visible too -- one
+ * viewport size or a sidebar width change to expose it -- one
  * root cause ("this fixture's fixed-position probes are not kept clear
  * of, or stacked above, the permanently-mounted chrome") subsuming both
  * rows by construction, not a per-trigger patch. `--dx-z-top` (9999,
@@ -214,7 +198,7 @@
  * rules, safe to route through `#[css_module]`'s normal hashing (only
  * selectors nested inside `@supports` need the hand-written
  * `dx-anchor-*` marker-class workaround; see
- * docs/issues/css-module-supports-scoping.md).
+ * dev-docs/issues/css-module-supports-scoping.md).
  */
 .dx-top-layer-edge-native-trigger-bottom {
   anchor-name: --dx-edge-bottom-native;

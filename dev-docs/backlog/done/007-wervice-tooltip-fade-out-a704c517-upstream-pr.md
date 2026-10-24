@@ -23,4 +23,4 @@ S
 
 ## Detail
 
-Provenance ledger entry: `lifting-from-forks.md` §8, 2026-09-18. `Wervice`'s own fork branch no longer carries `a704c517` — fetched from upstream PR #293's head (`refs/pull/293/head`), per row 66's fork re-check
+Provenance ledger entry: `dev-docs/archive/fork-research/lifting-from-forks.md` §8, 2026-09-18. `Wervice`'s own fork branch no longer carries `a704c517` — fetched from upstream PR #293's head (`refs/pull/293/head`), per row 66's fork re-check

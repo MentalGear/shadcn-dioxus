@@ -2,14 +2,14 @@
 #
 # check-css-logical-properties.sh
 #
-# Enforces dev-docs/backlog.md row 13 (Phase 6 RTL, styling half): a themed
+# Enforces dev-docs/backlog.md row 13 (RTL, styling half): a themed
 # component stylesheet must not hard-code an inline-axis PHYSICAL property
 # (one that means "left" or "right" no matter what direction the page
 # reads) where a logical property (`margin-inline-start`, `inset-inline-end`,
 # `border-start-start-radius`, `text-align: start`, ...) would express the
 # same rule and mirror correctly under `dir="rtl"`.
 #
-# Scanned properties (dev-docs "RTL-CSS" lane brief, Step 2):
+# Scanned properties:
 #   margin-left/right, padding-left/right, left/right (incl. asymmetric
 #   4-value `inset`), border-left/right(-color/-width/-style),
 #   border-{top,bottom}-{left,right}-radius (and asymmetric border-radius
@@ -21,8 +21,7 @@
 #   direction-aware, so a real sign always encodes a physical side),
 #   transform-origin: left/right, background-position: left/right.
 #
-# A hit is not automatically an error. Two escape hatches, matching the
-# lane brief's own convention:
+# A hit is not automatically an error. Two escape hatches:
 #
 #  1. STRUCTURAL: any declaration inside a rule whose selector mentions
 #     `data-side=` is exempt, with no per-line comment needed. `data-side`
@@ -46,10 +45,10 @@
 # WHAT THIS DOES NOT CATCH (say plainly, per this repo's own convention):
 #   - A future misuse of `data-side` for something that genuinely should
 #     mirror would be silently exempted (the structural trust boundary
-#     above). Nothing currently in this codebase does that (verified by
-#     reading every `data-side` rule this script exempts -- see
+#     above). Nothing currently in this codebase does that (every `data-side` rule this script exempts is a physical side;
+#     see
 #     reference.md); a reviewer adding a new one should check by hand.
-#   - `[dir="rtl"]` OVERRIDE rules this lane added (the correct fix for a
+#   - `[dir="rtl"]` OVERRIDE rules (the correct fix for a
 #     transform/translate that must differ under RTL) still contain a
 #     literal physical value by construction and are allowlisted the same
 #     way as their LTR sibling -- this script does not verify the override
@@ -58,14 +57,10 @@
 #     4-value form whose left/right halves already match) are not hits at
 #     all: they are already direction-safe (swapping left and right is a
 #     no-op), so flagging them would be noise, not signal.
-#   - Batch-2-owned stylesheets (drawer, tag_group, sheet, resizable,
-#     navigation_menu) and the date-picker/data_table/top_layer lanes'
-#     stylesheets were out of scope for the rtl-css lane itself, but were
-#     finished at batch-3 integration (drawer/sheet's per-side slide
-#     keyframes and resizable's transform-paired centering allowlisted;
-#     navigation_menu's anchor reset and tag_group's tag/remove-button gap
-#     converted to logical properties; date_picker/data_table/top_layer had
-#     no hits) -- no folder is excluded from the scan any more.
+#   - No folder is excluded from the scan (drawer/sheet's per-side slide
+#     keyframes and resizable's transform-paired centering are allowlisted
+#     line by line; navigation_menu's anchor reset and tag_group's
+#     tag/remove-button gap use logical properties).
 #
 # Usage: scripts/check-css-logical-properties.sh
 # Exit status: 0 if clean, 1 if any unallowlisted physical property remains.
@@ -83,14 +78,10 @@ import json
 
 THEME = "preview/assets/dx-components-theme.css"
 
-# Component folders excluded from the scan. Empty: the batch-2-owned
-# stylesheets and the date-picker/data_table/top_layer lanes' stylesheets
-# (originally excluded here, out of the rtl-css lane's own editable scope)
-# were audited and finished at batch-3 integration -- see this script's
-# header. Kept as a set, not removed outright, so a future lane can name a
-# folder here again if it ever needs a deliberate, reviewed exemption from
-# the whole scan (rather than allowlisting each line) -- see this script's
-# header for why that must stay a rare, named exception, not a default.
+# Component folders excluded from the scan. Empty: every component stylesheet is
+# scanned. Kept as a set so a folder can be named here if it ever needs a
+# deliberate, reviewed exemption from the whole scan (rather than allowlisting
+# each line); that must stay a rare, named exception, not a default.
 EXCLUDE = set()
 
 members = set()

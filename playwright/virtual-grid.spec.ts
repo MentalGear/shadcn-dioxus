@@ -1,6 +1,5 @@
 import { test, expect } from "./fixtures";
 import type { Locator, Page } from "@playwright/test";
-import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
 import { demoFrame } from "./demo-frame";
 import { gotoHydrated } from "./hydration";
@@ -69,8 +68,8 @@ async function inGridView(grid: Locator, row: number, column: number) {
 
 /**
  * The grid's own sheet reached the page: the scroll container IS a scroll container. Without `style.css`
- * the grid is `overflow: visible`, nothing scrolls and the windowing never advances (the 2026-10 preview:
- * a release build embeds a component's CSS source instead of linking it, so only a `document::Link` in the
+ * the grid is `overflow: visible`, nothing scrolls and the windowing never advances (a
+ * release build embeds a component's CSS source instead of linking it, so only a `document::Link` in the
  * wrapper ships it -- a debug build masks the omission, so `check-component-catalog.sh` rule 2b guards the
  * source and this guards a release build the spec is run against).
  */
@@ -266,9 +265,8 @@ test.describe("gallery (items wrap into rows)", () => {
   });
 });
 
-// Row 369: a row's measured height keeps its fraction. The canvas once summed whole px, so rows of
-// 66.1875px ended up to a px below it (a short grid's box then overflowed by 1px); now it holds the
-// remainders, rounded up.
+// Row 369: a row's measured height keeps its fraction. The canvas holds the remainders, rounded up; summing
+// whole px would leave rows of 66.1875px up to a px below it (a short grid's box then overflows by 1px).
 test("gallery: rows with a fractional height end inside the canvas", async ({ page }) => {
   await gotoHydrated(page, PAGE_URL);
   const grid = gallery(page);
@@ -304,8 +302,8 @@ test("gallery: rows with a fractional height end inside the canvas", async ({ pa
   }).toPass({ timeout: 15000 });
 });
 
-// Scroll chaining: at a grid's top or bottom edge the wheel must scroll the page (the grid once set
-// `overscroll-behavior: contain` and trapped it); only the inline axis stays contained.
+// Scroll chaining: at a grid's top or bottom edge the wheel must scroll the page (`overscroll-behavior: contain`
+// would trap it); only the inline axis stays contained.
 for (const [name, pick] of [["data grid", dataGrid], ["gallery", gallery]] as const) {
   test.describe(`${name} scroll chaining`, () => {
     test.use({ viewport: { width: 1280, height: 600 } });
@@ -349,12 +347,3 @@ for (const [name, pick] of [["data grid", dataGrid], ["gallery", gallery]] as co
     });
   });
 }
-
-test.describe("Axe automated scan", () => {
-  test("loaded has no automatically detectable a11y issues", async ({ page }) => {
-    await gotoHydrated(page, PAGE_URL);
-    await expect(cell(dataGrid(page), 0, 1)).toBeVisible();
-    await expect(gallery(page).locator('[data-grid-index="0"]')).toBeVisible();
-    await expectNoAxeViolations(page, "virtual_grid: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-});

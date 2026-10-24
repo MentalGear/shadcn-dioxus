@@ -45,8 +45,8 @@
 
 /* The picture and the fallback share ONE grid cell, the picture on top, so neither one's box depends on whether
  * the other exists. The prerendered page is `data-state="empty"`, which renders BOTH (the fallback only leaves
- * once the hydrated component reaches `loaded`): as a centred flex row the picture sat ~8px left of the circle
- * with the initials beside it, and jumped to the centre at hydration, on every avatar of the home page's
+ * once the hydrated component reaches `loaded`): as a centred flex row would seat the picture ~8px left of the circle
+ * with the initials beside it, then jump it to the centre at hydration, on every avatar of the home page's
  * masonry (`playwright/layout-stability.spec.ts`). Stacked, the prerendered and the hydrated avatar are the
  * same picture; with no picture (error) the fallback fills the cell alone. */
 .dx-avatar > * {
@@ -125,8 +125,8 @@
 /* `.cn-avatar-fallback`: `bg-muted text-muted-foreground`. It is rendered in every state but `loaded`
  * (Base UI: while the picture is loading, after an error and with no picture; only a loaded picture removes it,
  * so there is no blank frame before the picture, `playwright/avatar-loading.spec.ts`). The size follows the root's
- * `data-size` through `font-size: inherit`: a fixed size overflowed and
- * clipped two-letter initials in the small avatar. */
+ * `data-size` through `font-size: inherit`: a fixed size would overflow and
+ * clip two-letter initials in the small avatar. */
 .dx-avatar-fallback {
     display: flex;
     width: 100%;

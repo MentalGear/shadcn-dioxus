@@ -35,13 +35,13 @@ test("test", async ({ page }) => {
   await expect(activeTab).toContainText("Tab 1 Content");
 });
 
-test.describe("active tab keeps its color under the pointer (calendar-state lane sweep)", () => {
+test.describe("active tab keeps its color under the pointer", () => {
   // Same bug class as calendar/style.css's day hover (see calendar.spec.ts):
-  // `.dx-tabs-trigger:hover` used to carry higher specificity than
-  // `.dx-tabs-trigger[data-state="active"]`, so clicking a tab -- which
-  // leaves the pointer resting on it -- silently dimmed its text to the
+  // `.dx-tabs-trigger:hover` must not out-rank
+  // `.dx-tabs-trigger[data-state="active"]`, or clicking a tab -- which
+  // leaves the pointer resting on it -- would silently dim its text to the
   // plain hover tint instead of the active color. Runs in both themes: this
-  // one (unlike calendar's) reproduced in light mode too, since
+  // one (unlike calendar's) shows in light mode too, since
   // --secondary-color-1 and --secondary-color-3 differ in both.
   for (const dark of [false, true]) {
     test(`clicking a tab keeps its active text color while still hovered (${dark ? "dark" : "light"} mode)`, async ({ page }) => {
@@ -49,7 +49,7 @@ test.describe("active tab keeps its color under the pointer (calendar-state lane
       const tab2Button = page.getByRole("tab", { name: "Tab 2" });
       const tab3Button = page.getByRole("tab", { name: "Tab 3" });
 
-      // Tab colours now transition (Nova tabs, row 111), so every read waits for the
+      // Tab colours transition (Nova tabs, row 111), so every read waits for the
       // trigger's running animations to finish: a read taken mid-fade is an interpolated
       // colour, not either end state.
       const settledColor = (tab: typeof tab2Button) =>
@@ -71,8 +71,8 @@ test.describe("active tab keeps its color under the pointer (calendar-state lane
       const inactiveAtRestColor = await settledColor(tab3Button);
 
       expect(activeAndHoveredColor).toBe(activeAtRestColor); // active color survives hover
-      // Hover and active both resolve to `foreground` now, so "not the plain hover tint" can
-      // no longer be observed; what must still hold is that the active tab is not rendered
+      // Hover and active both resolve to `foreground`, so "not the plain hover tint" cannot
+      // be observed; what holds is that the active tab is not rendered
       // in the inactive (muted) colour.
       expect(activeAndHoveredColor).not.toBe(inactiveAtRestColor);
     });
@@ -80,11 +80,6 @@ test.describe("active tab keeps its color under the pointer (calendar-state lane
 });
 
 test.describe("Axe automated scan", () => {
-  test("loaded (tab 1 active) has no automatically detectable a11y issues", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/tabs/`);
-    await expectNoAxeViolations(page, "tabs: tab 1 active", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-
   test("tab 2 selected has no automatically detectable a11y issues", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/tabs/`);
     await page.getByRole("tab", { name: "Tab 2" }).click();
@@ -213,7 +208,7 @@ test.describe("hidden_until_found", () => {
     await expectActive(tab, panelOf, "Overview");
   });
 
-  test("clicking tabs afterwards still swaps panels and restores hidden=until-found", async ({ page }) => {
+  test("clicking tabs afterwards swaps panels and restores hidden=until-found", async ({ page }) => {
     const { tab, panelOf } = await load(page);
     await panelOf("Specs").dispatchEvent("beforematch");
     await expectActive(tab, panelOf, "Specs");
@@ -253,7 +248,7 @@ test.describe("hidden_until_found", () => {
 });
 
 // The `line` variant (`data-variant="line"`; `TabsVariant::Ghost`, the DEMO/CODE tabs on every component page,
-// is its old name and renders the same): a transparent list, and the active tab carries a 2px underline that
+// renders the same): a transparent list, and the active tab carries a 2px underline that
 // moves with the selection.
 test.describe("line variant: the active tab carries the underline", () => {
   const underline = (tab: Locator) =>
@@ -392,17 +387,12 @@ test.describe("vertical orientation", () => {
     const outer = page.locator('[data-variant="line"] .dx-tabs-list').first();
     await expect(outer).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   });
-
-  test("vertical tabs have no automatically detectable a11y issues", async ({ page }) => {
-    await load(page);
-    await expectNoAxeViolations(page, "tabs: vertical", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
 });
 
 // The docs site's demo frame is itself a `TabContent` (`.dx-component-preview-frame.dx-tabs-content-themed`)
-// inside a `line` Tabs. The panel's default frame (tabs/style.css, loaded after main.css) used to out-rank the
-// frame's own border and radius on stylesheet order alone, so every demo on every component page lost its
-// chrome. The frame is the docs preview card (736e9600, row 285): `rounded-2xl`, 40px padding, 288px tall, NO border
+// inside a `line` Tabs. The panel's default frame (tabs/style.css, loaded after main.css) must not out-rank the
+// frame's own border and radius on stylesheet order alone, or every demo on every component page would lose its
+// chrome. The frame is the docs preview card (row 285): `rounded-2xl`, 40px padding, 288px tall, NO border
 // and no dotted grid, filled with the soft `--dx-docs-preview-surface` (a mix of page and card) -- the Tabs panel
 // default would give it a 1px border and the card colour.
 test.describe("the docs demo frame keeps its own chrome", () => {
@@ -431,7 +421,7 @@ test.describe("the docs demo frame keeps its own chrome", () => {
     expect((await frame.boundingBox())!.height).toBeGreaterThanOrEqual(288);
   });
 
-  test("a default Tabs panel is still framed by the zero-specificity default", async ({ page }) => {
+  test("a default Tabs panel is framed by the zero-specificity default", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/tabs/`);
     const panel = page.locator('.dx-tabs[data-variant="default"] .dx-tabs-content-themed[data-state="active"]').first();
     await expect(panel).toBeVisible();

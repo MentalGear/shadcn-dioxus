@@ -1,6 +1,6 @@
 /**
  * ORACLE: tier 1 (APG) -- Select trigger's combobox role, calibrated against
- * W3C's own reference implementation (docs/backlog.md row 8).
+ * W3C's own reference implementation (dev-docs/backlog.md row 8).
  *
  * Source pattern: W3C ARIA Authoring Practices Guide, Combobox pattern,
  * "Select-Only Combobox Example"
@@ -42,9 +42,9 @@
  *     aria-required="true", and they have an accessible name that is
  *     distinct from their value."
  *   Single-subject (this library only): the vendored select-only example
- *   ("Favorite Fruit") has no required-field variant -- confirmed by reading
- *   both its static markup and `examples/js/select-only.js` directly (no
- *   `aria-required` in either) -- so there is nothing to calibrate this rule
+ *   ("Favorite Fruit") has no required-field variant:
+ *   its static markup and `examples/js/select-only.js` carry no
+ *   `aria-required` -- so there is nothing to calibrate this rule
  *   against on the reference side. Subject: the `form` conformance fixture
  *   route (`/component/?name=form&`, `preview/src/components/form/
  *   component.rs`), which has a "Fruit, required (library)" `Select`.
@@ -58,24 +58,21 @@
  *   conforming ARIA-in-HTML combination. Single-subject (this library
  *   only) -- axe is a static DOM scan, not a behavioural comparison, so
  *   there is no meaningful "run axe against the reference page" analogue
- *   here the way R1's behavioural check has one. Scanned at both closed and
- *   open, per axe.ts's own "two-state convention". This duplicates (does
- *   not replace) `select.spec.ts`'s pre-existing "Axe automated scan"
- *   describe block, which already scans this same route/states and now
- *   benefits from the same role change; kept here too since this file's own
- *   mandate is to hold role-conformance rules R1-R3 as a self-contained set
- *   next to the sources they're drawn from.
+ *   here the way R1's behavioural check has one. Scanned closed and open.
+ *   The closed scan repeats `all-routes.spec.ts`'s at-rest scan of the same
+ *   route and the open one `select.spec.ts`'s; both are kept here because
+ *   this file's mandate is to hold role-conformance rules R1-R3 as a
+ *   self-contained set next to the sources they're drawn from.
  *
  * NOT covered by role="combobox"/aria-autocomplete="none": this library
  * deliberately keeps its existing real-roving-DOM-focus model rather than
- * adopting the reference example's `aria-activedescendant` technique (task
- * brief for this row: "keep this repo's existing focus model, do NOT switch
- * to aria-activedescendant") -- see keyboard-matrix.spec.ts's Select
- * section for the (unchanged by this row) behavioural rows that already
- * document that divergence. `aria-autocomplete="none"` itself is NOT part
+ * adopting the reference example's `aria-activedescendant` technique (row 8:
+ * "keep this repo's existing focus model, do NOT switch to
+ * aria-activedescendant") -- see keyboard-matrix.spec.ts's Select
+ * section for the behavioural rows that document that divergence. `aria-autocomplete="none"` itself is NOT part
  * of R1's dual-subject check: the vendored reference page does not set it
- * anywhere in its static markup or `select-only.js` (confirmed by reading
- * both) even though combobox-pattern.html's prose says every combobox
+ * anywhere in its static markup or `select-only.js`
+ * even though combobox-pattern.html's prose says every combobox
  * "has aria-autocomplete set to a value that corresponds to its autocomplete
  * behavior" -- this library sets it to match Radix's trigger regardless
  * (see `primitives/src/select/components/trigger.rs`'s own comment), but
@@ -108,7 +105,7 @@ const goto = (page: Page, name: string) =>
   gotoHydrated(page, `${BASE}${name}/`, { timeout: 20 * 60 * 1000 });
 
 // Same role/locator convention as select.spec.ts's `singleSelectTrigger` --
-// docs/backlog.md row 8 gave the trigger role="combobox".
+// dev-docs/backlog.md row 8: the trigger has role="combobox".
 const librarySelectTrigger = (page: Page) => demoRole(page, "combobox");
 
 test.describe("R1 -- combobox role/aria-haspopup/aria-expanded/aria-controls contract", () => {

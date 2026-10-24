@@ -1083,7 +1083,7 @@ mod tests {
 
     #[test]
     fn every_list_describes_itself_with_its_own_instructions_id() {
-        // Backlog row 120: a hard-coded `id="dnd-instructions"` made every
+        // Backlog row 120: a hard-coded `id="dnd-instructions"` would make every
         // list on a page point at whichever instructions element came first.
         let html = render(TwoLists);
         let described_by = attribute_values(&html, "aria-describedby");

@@ -4,8 +4,8 @@ import { BASE_URL } from "./base-url";
 import { measureAtRest } from "./animations";
 import { gotoHydrated } from "./hydration";
 
-// Touch taps on the Color Picker panel (owner report: on iOS the panel opened but a tap on the color
-// area, and on other controls in it, never changed the color). The color area and the hue slider share
+// Touch taps on the Color Picker panel (on iOS a tap on the color
+// area, and on other controls in it, must change the color). The color area and the hue slider share
 // `MoveInteraction` + the window pointer bridge (`primitives/src/pointer.rs`); the failure mode they
 // share is a pointer that stays "active" after its release was never seen, which makes every later
 // pointerdown on that control be ignored. Real touch input only (`touchscreen.tap`, CDP touch events).

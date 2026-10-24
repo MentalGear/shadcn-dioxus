@@ -3,16 +3,14 @@
  * inside its own slide box AND inside the viewport's clip rect, no two
  * Cards may overlap, and Previous/Next must never sit on top of a slide.
  *
- * Regression for the owner report "vertical slider css is messed up": the
- * demo gave the (content-box) `Card` `height: 100%` of the slide's usable
- * block size (119px) and the Card's own `padding: 24px 0` + 1px borders
- * were added on top, so each Card rendered 169px tall inside a 135px slide.
- * Card 2 overlapped card 1 and the bottom Card was cut off by the clip
- * viewport. See `preview/src/components/carousel/variants/vertical/mod.rs`.
+ * The failure it guards: a demo that gives the (content-box) `Card` `height: 100%` of the
+ * slide's usable block size (119px) has the Card's own `padding: 24px 0` + 1px borders added
+ * on top, so each Card renders 169px tall inside a 135px slide, card 2 overlaps card 1
+ * and the bottom Card is cut off by the clip viewport. See `preview/src/components/carousel/variants/vertical/mod.rs`.
  *
  * The demo also uses the default `gap` (16px), the same as the horizontal
- * demos. An earlier 4px gap was filled by the Card's own shadow and read as
- * no gap at all (owner report), so the space between adjacent visible
+ * demos. A 4px gap would be filled by the Card's own shadow and read as
+ * no gap at all, so the space between adjacent visible
  * cards must be clearly visible (>= MIN_GAP) and equal to the horizontal
  * default's.
  *
@@ -133,8 +131,8 @@ for (const width of [1280, 390]) {
       await expect.poll(async () => problems(await readGeometry(page))).toEqual([]);
 
       // Page to the end (Next disables at the last snap point): the last
-      // slides must be whole too -- the bottom card was the one cut off by
-      // the clip in the broken layout.
+      // slides must be whole too -- the bottom card is the one cut off by
+      // the clip in a broken layout.
       const next = frame.getByRole("button", { name: "Next slide" });
       for (let i = 0; i < 4 && (await next.isEnabled()); i++) {
         await next.click();

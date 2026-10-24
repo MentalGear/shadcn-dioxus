@@ -1,30 +1,27 @@
-//! One file per mark family -- the stage-2 chart round's extension points.
+//! One file per mark family -- the chart's extension points.
 //! `components::chart::Chart` dispatches on `ChartKind` to exactly one
 //! family's `super::layout::SeriesRenderContext`-consuming `render` per
 //! render; everything else about how that family draws itself lives in its
 //! own file, out of `Chart`'s own body, and out of every *other* family's
 //! file.
 //!
-//! ## Ownership map (stage-2 chart round; `$S/stage2-lanes.md` is the
-//! ledger of record if this drifts)
+//! ## One file per family
 //!
-//! | File | Owner | Status |
+//! | File | Options | Also holds |
 //! |---|---|---|
-//! | `area.rs` (`AreaOptions`) | `s2-area` | landing |
-//! | `bar.rs` (`BarOptions`) | `s2-bar` (also owns `components::layout`) | landing |
-//! | `line.rs` (`LineOptions`) | `s2-line` (also owns `engine::curve`/`engine::data`) | landing |
-//! | `pie.rs` (`PieOptions`) | `s2-polar` (also owns `engine::polar`) | **stub** |
-//! | `radial.rs` (`RadialOptions`) | `s2-polar` (also owns `engine::polar`) | **stub** |
-//! | `radar.rs` (`RadarOptions`) | `s2-radar` (also owns `engine::radar`) | **stub** |
-//! | `mod.rs` (this file), `../chart.rs`, `../container.rs`, `../mod.rs`, `../../mod.rs`, `../../engine/mod.rs` | `s2-refactor` only, forever | **done** |
+//! | `area.rs` | `AreaOptions` | |
+//! | `bar.rs` | `BarOptions` | `components::layout` |
+//! | `line.rs` | `LineOptions` | `engine::curve`, `engine::data` |
+//! | `pie.rs` | `PieOptions` | `engine::polar` |
+//! | `radial.rs` | `RadialOptions` | `engine::polar` |
+//! | `radar.rs` | `RadarOptions` | `engine::radar` |
 //!
-//! A lane other than the one named above needing a change to a file it
-//! doesn't own (most likely: `layout.rs`, or one of the two refactor-owned
-//! `mod.rs` files) appends a request to `$S/stage2-lanes.md` under
-//! "requests for the refactor owner" instead of editing it directly --
-//! see `$S/stage2-common.md`'s own structural-construction section.
+//! `mod.rs` (this file), `../chart.rs`, `../container.rs`, `../mod.rs`,
+//! `../../mod.rs` and `../../engine/mod.rs` hold the dispatch and the
+//! shared structure; a family's own file holds its `*Options` and its
+//! `render`.
 //!
-//! ## Shared vs. per-family props, decided here (`s2-refactor`)
+//! ## Shared vs. per-family props
 //!
 //! Two props apply to more than one family, and both stay on `ChartProps`
 //! itself rather than being duplicated onto every family's own `*Options`
@@ -39,14 +36,13 @@
 //!   `area.rs` nor `bar.rs` re-checks `kind` itself.
 //! - **`curve`** applies to Area and Line (every family with a drawn edge
 //!   to interpolate -- Bar has none). It reaches both through
-//!   `SeriesRenderContext::curve` unchanged, never duplicated onto
+//!   `SeriesRenderContext::curve` as given, never duplicated onto
 //!   `AreaOptions`/`LineOptions`.
 //!
-//! One prop moved from `ChartProps` onto a single family's own options
-//! struct, since only that family ever used it: `show_dots` (Line-only) is
-//! now [`LineOptions::dots`] -- `line: LineOptions { dots: true,
-//! ..Default::default() }` where a caller previously wrote
-//! `show_dots: true`.
+//! One option lives on a single family's own options struct rather than on
+//! `ChartProps`, since only that family uses it: the Line-only dots
+//! switch is [`LineOptions::dots`] -- `line: LineOptions { dots: true,
+//! ..Default::default() }`.
 //!
 //! Every family's per-series marks loop (`for (s, series) in
 //! ctx.config.series.iter().enumerate() { g { "data-series": ..., ... } }`)
@@ -54,8 +50,7 @@
 //! than factored into one shared helper here: each loop's *body* differs
 //! enough (stacked-vs-not branching, grouped-bar sub-positioning, the dots
 //! overlay) that a generic higher-order-function wrapper would cost more
-//! clarity than the ~15 duplicated lines it would save, especially for a
-//! change whose primary goal is zero behavior change. `series_values`
+//! clarity than the ~15 duplicated lines it would save. `series_values`
 //! (pure data extraction, not drawing logic) IS shared, as a
 //! `SeriesRenderContext` method -- see that type's own doc.
 
@@ -70,20 +65,16 @@ pub mod radial;
 pub use area::AreaOptions;
 pub use bar::{BarOptions, BarRadius};
 // `line`'s own nested extension-point types (`DotContext`/`DotRenderer`/
-// `LineLabels`, stage-2 `s2-line`), not just `LineOptions` itself: this
-// file's own module doc lists it as `s2-refactor`-owned forever, but a
+// `LineLabels`), not just `LineOptions` itself: a
 // caller-facing type gains no reachability at all from being `pub` inside
 // `line.rs` alone -- `components`/`series` are both non-`pub` modules
 // (`chart/mod.rs`/this file's own doc), so nothing outside `chart::`
 // reaches past them except through exactly this line's own re-export
-// list, however long. Filed as a request (`$S/stage2-lanes.md`, "requests
-// for the refactor owner") before making it, then applied directly here
-// once no response landed in time to unblock this lane's own
-// `dots_custom`/`label`/`label_custom` gallery variants (all three name
-// one of these types) -- narrowed to exactly this one family's own line,
-// the same one-line-per-lane shape `preview/src/components/mod.rs`'s
-// `examples!` list and the root `component.json` already use for six
-// lanes editing the same shared file concurrently without conflict.
+// list, however long. The `dots_custom`/`label`/`label_custom` gallery
+// variants each name one of these types. One line per family keeps six
+// families editing this shared file without conflict, the same shape as
+// `preview/src/components/mod.rs`'s `examples!` list and the root
+// `component.json`.
 pub use line::{DotContext, DotRenderer, LineLabels, LineOptions};
 // `PieLabels`, not just `PieOptions` itself: the `pie_chart` gallery's
 // `label`/`label_list`/`label_custom` variants all name one of its variants

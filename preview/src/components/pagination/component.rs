@@ -3,17 +3,15 @@ use dioxus_icons::lucide::{ChevronLeft, ChevronRight, Ellipsis};
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::merge_attributes;
 
-// docs/backlog.md row 32: `#[css_module]` is gone -- see checkbox/component.rs's
+// dev-docs/backlog.md row 32: see checkbox/component.rs's
 // header comment for the full delivery-mechanism rationale (asset!() +
 // document::Link, embedded in every exported entry point of this file so a
 // `shadcn-dioxus add pagination`-copied component needs no extra wiring).
 //
-// This component is also on the row-32 "not already namespaced" lane: its
-// screen-reader-only helper used to be the bare `dx-sr-only`, which
-// `sidebar/style.css` also defines (byte-identical). `#[css_module]`'s hash
-// kept the two apart; renamed to `dx-pagination-sr-only` in the same change
-// that drops the macro (`sidebar` gets its own `dx-sidebar-sr-only` copy) --
-// see `style.css`'s comment on that rule and `scripts/check-dx-class-prefix.sh`.
+// Its screen-reader-only helper is `dx-pagination-sr-only`, not a bare
+// `dx-sr-only` that `sidebar/style.css` would also define byte-identically
+// (`sidebar` has its own `dx-sidebar-sr-only` copy) -- see `style.css`'s
+// comment on that rule and `scripts/check-dx-class-prefix.sh`.
 #[derive(Copy, Clone, PartialEq, Default)]
 #[non_exhaustive]
 pub enum PaginationLinkSize {

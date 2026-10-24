@@ -19,8 +19,8 @@
 //! content does -- so that positioning call is identical for both and does
 //! belong here in spirit, but the actual `use_anchor_position_fallback`
 //! call still has to live in each file's own `#[cfg(feature = "web")]`
-//! leaf render function, because `top_layer.rs` (out of scope for this
-//! lane -- another lane owns it) hard-codes a fixed list of `dx-anchor-*`
+//! leaf render function, because `top_layer.rs` hard-codes a fixed list
+//! of `dx-anchor-*`
 //! marker classes for its shared stylesheet, and both hosts' submenus reuse
 //! the existing `dx-anchor-dropdown-menu` entry rather than a class that
 //! doesn't exist in that list -- see each `*SubContentRendered`'s own doc
@@ -38,9 +38,9 @@
 //!   entering the other. This crate's only prior art for a timed
 //!   pointer-driven open/close is `context_menu.rs`'s long-press timer
 //!   (`LONG_PRESS_DURATION`, `crate::sleep::sleep` + `spawn`/`Task`) --
-//!   [`DelayedAction`] is that same primitive, factored out so it isn't
-//!   reinvented a third and fourth time for `DropdownMenuSubTrigger`/
-//!   `ContextMenuSubTrigger`.
+//!   [`DelayedAction`] is that same primitive, shared so
+//!   `DropdownMenuSubTrigger`/`ContextMenuSubTrigger` do not each
+//!   reinvent it.
 //! - The **`open_on_hover` switch** ([`SubMenuState::open_on_hover`]) and the
 //!   four pointer-hover entry points ([`SubMenuState::hover_enter_trigger`],
 //!   [`SubMenuState::hover_leave_trigger`], [`SubMenuState::hover_enter_content`],
@@ -65,7 +65,7 @@
 //! `SubMenuState` levels enclose it before finding the true root, which
 //! this module's single `SubMenuState` type (identical at every depth,
 //! indistinguishable from its neighbours by type alone) cannot resolve on
-//! its own. `docs/component-backlog.md` row 68 budgets nested submenus as
+//! its own. `dev-docs/archive/rounds/component-backlog.md` row 68 budgets nested submenus as
 //! "L" effort against a `molikto` patch that is "shape only, not
 //! cherry-pickable" for exactly this one level -- recursive `Sub`-in-`Sub`
 //! is not part of that budget, and is left out here rather than half-built
@@ -96,7 +96,7 @@ use crate::use_unique_id;
 /// hover entirely -- opening on hover is a widely-implemented UX
 /// convention (Radix, native OS menus), not an APG normative requirement,
 /// so this delay is this crate's own choice, not a citation (see
-/// `docs/component-backlog.md` row 68's "budget as fresh design work
+/// `dev-docs/archive/rounds/component-backlog.md` row 68's "budget as fresh design work
 /// against Radix `Sub`/`Portal` semantics"). A short delay, not an instant
 /// open, keeps a pointer merely passing over the trigger on its way
 /// elsewhere from flashing open every submenu it crosses -- the exact
@@ -122,12 +122,11 @@ pub(crate) const SUBMENU_CLOSE_GRACE_DELAY: Duration = Duration::from_millis(200
 /// key -- `ArrowRight` in LTR, `ArrowLeft` in RTL. Callers combine this with
 /// their own `Enter`/`Space` arms (direction-independent), matching Radix's
 /// `SUB_OPEN_KEYS[dir]` (`packages/react/menu/src/menu.tsx`,
-/// `radix-ui/primitives` commit `f7ecd5ab16f5e1e820eb5786a1419a98a2d594ae`,
+/// radix-ui/primitives @ f7ecd5ab16f5e1e820eb5786a1419a98a2d594ae,
 /// lines 41-43) with `SELECTION_KEYS` (`['Enter', ' ']`) split out: that
 /// union equals `SELECTION_KEYS` plus exactly the arrow
 /// [`Direction::resolve_horizontal`] maps to [`HorizontalNav::Next`] for
-/// `dir` (`ArrowRight` under LTR, `ArrowLeft` under RTL) -- see this
-/// crate's own `$S/batch3/rtl-rust/reference.md` §5 for the equivalence.
+/// `dir` (`ArrowRight` under LTR, `ArrowLeft` under RTL).
 pub(crate) fn is_submenu_open_arrow_key(key: &Key, direction: Direction) -> bool {
     direction.resolve_horizontal(key) == Some(HorizontalNav::Next)
 }
@@ -139,8 +138,8 @@ pub(crate) fn is_submenu_open_arrow_key(key: &Key, direction: Direction) -> bool
 /// [`Direction::resolve_horizontal`] maps to [`HorizontalNav::Prev`].
 ///
 /// Unlike upstream, this crate's `*SubContentRendered` folds `Escape` into
-/// the *same* handler as this arrow key (a pre-existing design choice, not
-/// changed by this function) -- callers `matches!(key, Key::Escape) ||
+/// the *same* handler as this arrow key (a design choice of those
+/// components, not of this function) -- callers `matches!(key, Key::Escape) ||
 /// is_submenu_close_arrow_key(key, direction)`, rather than this function
 /// covering `Escape` itself, so it stays a precise, direction-only
 /// predicate a caller can also use standalone.
@@ -220,7 +219,7 @@ pub(crate) struct SubMenuState {
     pub(crate) initial_focus: Signal<Option<CollectionPlacement>>,
     /// This submenu's own trigger element id -- `*SubContent` labels
     /// itself `aria-labelledby` from it (APG menu accessible-name
-    /// requirement, `docs/backlog.md` row 25's construction, reused here
+    /// requirement, `dev-docs/backlog.md` row 25's construction, reused here
     /// rather than reintroduced ad hoc), and Escape/ArrowLeft return focus
     /// here.
     pub(crate) trigger_id: Signal<String>,
@@ -243,22 +242,21 @@ pub(crate) struct SubMenuState {
     /// its trigger and its own content -- can cancel and reschedule the
     /// *same* timer from their own `onmouseenter`/`onmouseleave`.
     ///
-    /// This is the fix for the "hovering the submenu closes it" defect: the
+    /// This prevents the "hovering the submenu closes it" defect: the
     /// trigger's `onmouseleave` schedules this close, on the assumption
     /// that the pointer either lands back on the trigger or inside this
     /// submenu's own content before the grace delay elapses -- but if the
-    /// timer is private to the trigger, only the trigger's own
-    /// `onmouseenter` can cancel it, and `*SubContent`/`*SubContentRendered`
-    /// never called anything of the kind. A pointer that leaves the trigger
+    /// timer were private to the trigger, only the trigger's own
+    /// `onmouseenter` could cancel it. A pointer that leaves the trigger
     /// and moves into the submenu content (the *expected* path to select an
-    /// item) never touched the trigger again, so the close the trigger
-    /// scheduled on its way out fired unconditionally ~200ms later and
-    /// closed the submenu out from under a pointer legitimately hovering
+    /// item) never touches the trigger again, so the close the trigger
+    /// scheduled on its way out would fire unconditionally ~200ms later and
+    /// close the submenu out from under a pointer legitimately hovering
     /// it, making its items unselectable by mouse. Sharing this one
     /// `DelayedAction` and having `*SubContentRendered` cancel it on its
     /// own `onmouseenter` (and reschedule it on its own `onmouseleave`, the
-    /// same contract the trigger already has) closes that gap: the submenu
-    /// now only closes once the pointer has left *both* the trigger and its
+    /// same contract the trigger has) closes that gap: the submenu
+    /// only closes once the pointer has left *both* the trigger and its
     /// content without re-entering either within the grace window.
     hover_close: DelayedAction,
     /// Whether a pointer *hovering* (rather than clicking) opens this
@@ -393,7 +391,7 @@ pub(crate) fn use_sub_menu_state(
     }
 }
 
-/// `docs/backlog.md` row 85's construction, generalized to a `Sub`'s own
+/// `dev-docs/backlog.md` row 85's construction, generalized to a `Sub`'s own
 /// shape. `crate::use_outside_dismiss` (`lib.rs`) already answers "did
 /// focus/a click leave the tracked subtree" by asking the DOM directly --
 /// a native `focusin` listener plus `element.contains(event.target)` --
@@ -404,22 +402,22 @@ pub(crate) fn use_sub_menu_state(
 /// full root-cause writeup this reuses. It cannot be called as-is for a
 /// `Sub`, though: it takes exactly *one* container id, and a `Sub`'s own
 /// trigger and content are never wrapped by a common element the way a
-/// top-level host's trigger+content pair now are (`DropdownMenuSub`/
+/// top-level host's trigger+content pair are (`DropdownMenuSub`/
 /// `ContextMenuSub` render no wrapper of their own -- see this module's
 /// own doc, "Why this module exists"). This is the same construction with
 /// two ids instead of one: "inside" means a descendant of *either*.
 ///
 /// Deliberately narrower than `use_outside_dismiss` in one respect: no
 /// `pointerdown` handling. A click anywhere outside a `Sub`'s own
-/// trigger+content already closes the *whole* enclosing menu today (every
+/// trigger+content already closes the *whole* enclosing menu (every
 /// item's `onclick` calls the host's own `set_open.call(false)`, and a
 /// `Sub` renders nothing once its enclosing `*Content` unmounts -- see
 /// `DropdownMenuSub`'s own cleanup effect), so a second, submenu-scoped
 /// pointerdown check would be redundant. Only the focus-based check is
 /// this module's own gap: closing *just* this submenu (not the whole
 /// menu) when focus moves elsewhere within the still-open enclosing menu
-/// is a case only `*SubTrigger`'s own (removed) `onblur` used to attempt,
-/// with the exact same signal-staleness hazard `DropdownMenuTrigger`'s did.
+/// is a case a `*SubTrigger` `onblur` cannot handle, because of the signal-
+/// staleness hazard (backlog row 85) a trigger `onblur` has.
 pub(crate) fn use_sub_outside_dismiss(
     trigger_id: impl Readable<Target = String> + Copy + 'static,
     content_id: impl Readable<Target = String> + Copy + 'static,

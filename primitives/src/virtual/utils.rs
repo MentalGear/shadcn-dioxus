@@ -10,9 +10,8 @@ use super::window::window;
 /// implementation of "which indices are in the window, with overscan" — the same
 /// one a looping virtual carousel uses with `wrap: true`. `range` is passed through
 /// verbatim (its `end` is the caller's exclusive bound, not an inclusive position);
-/// `window`'s clamp-and-pad arithmetic is applied to `range.start`/`range.end` exactly
-/// as this function historically applied it directly, which is what reproduces the
-/// existing numeric behaviour bit-for-bit.
+/// `window`'s clamp-and-pad arithmetic is applied to `range.start`/`range.end` as given,
+/// with no inclusive/exclusive adjustment.
 pub(crate) fn default_range_extractor(
     range: std::ops::Range<usize>,
     overscan: usize,

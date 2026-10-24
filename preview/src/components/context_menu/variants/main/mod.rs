@@ -1,18 +1,18 @@
 use super::super::component::*;
 use dioxus::prelude::*;
 
-// Index layout (docs/component-backlog.md row 68 added the submenu):
+// Index layout (the submenu is dev-docs/archive/rounds/component-backlog.md row 68):
 // Edit=0, Undo=1 (disabled), Duplicate=2, Delete=3, the submenu trigger=4.
 // `playwright/context-menu.spec.ts`'s "keyboard navigation" test
-// hard-depends on this demo's existing shape -- Edit first, Undo disabled
+// depends on this demo's shape -- Edit first, Undo disabled
 // (so a 2nd ArrowDown from Edit skips it and lands on Duplicate) -- so
-// those first four items are left exactly as they were; the submenu is
-// added on at index 4 rather than interleaved (unlike `dropdown_menu`'s
-// demo, no context_menu spec depends on which item Home/End treat as
-// first/last, so there is no ordering constraint left to satisfy there).
+// those first four items stay in that order; the submenu sits at index 4
+// rather than interleaved (unlike `dropdown_menu`'s demo, no context_menu
+// spec depends on which item Home/End treat as first/last, so there is no
+// ordering constraint on it).
 //
 // shadcn's own context-menu demo ends with two checkbox items and a radio
-// group ("People"), so they are appended the same way, at indices 5-8 --
+// group ("People"), so they follow the same way, at indices 5-8 --
 // after everything the specs above pin. They use the primitive's default
 // close behaviour (selecting closes the menu, Radix's `onSelect` default), so
 // this is the demo that shows it; the `checkboxes` and `radio_group` variants
@@ -67,9 +67,9 @@ pub fn Demo() -> Element {
                     },
                     "Delete"
                 }
-                // Nested submenu (docs/component-backlog.md row 68): see
-                // this file's top-of-file comment for why this is appended
-                // at index 4 rather than interleaved with the items above.
+                // Nested submenu (dev-docs/archive/rounds/component-backlog.md row 68): see
+                // this file's top-of-file comment for why this sits at
+                // index 4 rather than interleaved with the items above.
                 ContextMenuSub {
                     ContextMenuSubTrigger { index: 4usize, "More tools" }
                     ContextMenuSubContent {

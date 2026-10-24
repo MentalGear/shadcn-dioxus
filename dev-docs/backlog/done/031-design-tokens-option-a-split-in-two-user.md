@@ -23,4 +23,4 @@ CLOSED 2026-10-19 (bookkeeping: status already said done). **31a: landed 2026-09
 
 ## Detail
 
-Evidence and per-axis counts: the 2026-09-02 design-system research (`recommended-implementations.md`, design-system note); non-breaking for consumers either way (`dx components add` copies the same theme file, richer)
+Evidence and per-axis counts: the 2026-09-02 design-system research (`dev-docs/reference/platform-rationale.md`, design-system note); non-breaking for consumers either way (`dx components add` copies the same theme file, richer)

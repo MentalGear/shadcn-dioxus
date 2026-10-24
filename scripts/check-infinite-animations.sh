@@ -6,13 +6,13 @@
 # `rotate`, `opacity` -- unless its @keyframes is allowlisted below with a reason. Invisible to cargo and
 # clippy, and with CI frozen (dev-docs/backlog.md row 33) nothing else would notice.
 #
-# THE CLASS (row 174, the 2026-10-10 scroll re-profile): an animation that runs forever is main-thread work on
+# THE CLASS (row 174, the scroll re-profile): an animation that runs forever is main-thread work on
 # EVERY vsync for as long as its element exists, unless the browser can hand it to the compositor. Only
 # `transform`/`translate`/`scale`/`rotate`/`opacity` (and `filter`/`backdrop-filter`, which this gate does not
 # allow: they can move pixels) are eligible; anything else (`background-position`, `width`, `color`,
 # `clip-path`, `box-shadow`, a registered custom property ...) re-runs style, and usually paint, 60 times a
-# second per instance. The home page's skeleton, spinner and text shimmer kept the main thread awake through
-# every scroll (630-730 "Animation" style recalcs per scroll just for the skeletons). A finite animation is
+# second per instance. A skeleton, spinner or text shimmer made that way keeps the main thread awake through
+# every scroll (row 174 measured 630-730 "Animation" style recalcs per scroll from the skeletons alone). A finite animation is
 # bounded, so it is not this class; only `infinite` is checked.
 #
 # HOW IT READS THE CSS: every `*.css` under `preview/src` and `preview/assets` (node_modules and build output

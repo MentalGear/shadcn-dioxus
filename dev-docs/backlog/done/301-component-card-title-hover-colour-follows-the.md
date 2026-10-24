@@ -35,7 +35,7 @@ S
 
 ## Landed
 
-- **Swatch "Docs blue"** (slug `docs`, first accent after "Default"): `theme.rs` `ACCENTS`, a `[data-theme-accent="docs"]` block in `theme-presets.css` (fill `oklch(0.562 0.242 260)` = #0065ff, in both modes because white on the dark-mode #4d94ff is 2.9:1; secondary and charts are shadcn's blue). The block is not shadcn data, so `gen_presets.mjs` emits it from a `SITE_ACCENTS` literal and a regeneration reproduces the file.
+- **Swatch "Docs blue"** (slug `docs`, first accent after "Default"): `theme.rs` `ACCENTS`, a `[data-theme-accent="docs"]` block in `theme-presets.css` (fill `oklch(0.562 0.242 260)` = #0065ff, in both modes because white on the dark-mode #4d94ff is 2.9:1; secondary and charts are shadcn's blue). The block is not shadcn data, so `dev-docs/archive/research/theme-2026-10-03/tools/gen_presets.mjs` emits it from a `SITE_ACCENTS` literal and a regeneration reproduces the file.
 - **Ink**: `main.css` names the default pair once (`--dx-docs-blue`) and `:root[data-theme-accent="docs"]` points `--highlight-color-tertiary` at it, so picking the swatch gives exactly today's #0065ff / #4d94ff (the generic clamp, `min(l, 0.5)`, would have darkened the light value). The card title hover already followed every other accent (`main.css` derives it from `--dx-primary`), now asserted by the spec for default, Docs blue and orange in both modes.
 - Contrast sweep (`theme-preset-contrast.spec.ts`, 18 accents x 9 bases x 2 modes) stays green; counts in `theme-preset.spec.ts` are 1 + 18.
 - Screenshots: `/home/user/tgt/shots-theme-touch/301-picker-docs-blue-{light,dark}.png`.

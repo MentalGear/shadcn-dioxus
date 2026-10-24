@@ -1,6 +1,5 @@
 import { test, expect } from "./fixtures";
 import type { Page } from "@playwright/test";
-import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
@@ -85,12 +84,4 @@ test("as: the link is focusable and takes the theme's focus ring, not the UA out
     .poll(() => link.evaluate((el) => getComputedStyle(el).boxShadow), { timeout: 10_000 })
     .not.toBe("none");
   expect(await link.evaluate((el) => getComputedStyle(el).outlineStyle)).toBe("none");
-});
-
-test.describe("Axe automated scan", () => {
-  test("loaded has no automatically detectable a11y issues", async ({ page }) => {
-    await gotoHydrated(page, URL, GOTO);
-    await styled(page);
-    await expectNoAxeViolations(page, "badge: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
 });

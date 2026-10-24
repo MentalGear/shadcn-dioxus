@@ -278,7 +278,7 @@ pub fn Demo() -> Element {
 }}
 
 /* The preview frame centres its child on the cross axis, so a wrapper with no width of its own
-   shrinks to its content (the list was as wide as its longest label). Keyed by the data attribute:
+   shrinks to its content (the list would be as wide as its longest label). Keyed by the data attribute:
    every variant of this page declares `.dx-virtual-list-demo`, and the last stylesheet wins. */
 .dx-virtual-list-demo[data-vl-reorder-demo] {{
   width: 100%;

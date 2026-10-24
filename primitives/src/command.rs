@@ -3,12 +3,12 @@
 //!
 //! This module is **original composition against this repo's own house
 //! infrastructure**, not a port of either reference fork below. It builds
-//! on exactly the pieces `docs/component-backlog.md`'s "Command palette --
-//! plan (2026-09-03)" section names:
+//! on exactly the pieces `dev-docs/archive/rounds/component-backlog.md`'s "Command palette --
+//! plan" section names:
 //!
 //! - **`Dialog`** (`dialog.rs`) -- [`CommandDialog`] is a thin wrapper over
 //!   [`crate::dialog::DialogRoot`] + [`crate::dialog::DialogContent`],
-//!   unchanged, reusing its native `<dialog>`/`showModal()` modal machinery
+//!   reusing its native `<dialog>`/`showModal()` modal machinery
 //!   (focus trap, restore, inertness, top layer) as-is.
 //! - **`Combobox`** (`combobox/`) -- not the `Combobox`/`ComboboxList`
 //!   *components* (see "Why a sibling context" below), but the same
@@ -24,16 +24,15 @@
 //!   [`crate::combobox::default_combobox_filter`], reused, not
 //!   reimplemented.
 //! - **`SelectGroup`/`SelectGroupLabel`** (`select/components/group.rs`) --
-//!   [`CommandGroup`]/[`CommandGroupLabel`] port that exact shape: a
+//!   [`CommandGroup`]/[`CommandGroupLabel`] follow that exact shape: a
 //!   `role="group"` element plus a mount-time `use_effect` in the label that
 //!   sets a context signal the group reads into `aria-labelledby`.
 //!
 //! ## Why a sibling context, not `combobox::ComboboxContext`
 //!
-//! The plan's open design question recommended a sibling module over a new
-//! `Combobox`/`ComboboxList` display mode, and left one detail to confirm by
-//! execution: whether `Command` could reuse `ComboboxContext` itself.
-//! Reading `combobox/context.rs` settles it -- `ComboboxContext` is
+//! `Command` is a sibling module of `Combobox`, not a `Combobox`/`ComboboxList`
+//! display mode, and it cannot reuse `ComboboxContext` itself:
+//! `ComboboxContext` is
 //! `pub(super)`, private to the `combobox` module tree, so no sibling module
 //! can name it at all. What *is* reachable from anywhere in this crate is
 //! the lower layer `ComboboxContext` is itself built from --
@@ -41,20 +40,18 @@
 //! modules whose items are `pub(crate)`, i.e. visible crate-wide. `Command`
 //! therefore defines its own small `CommandContext`, built on that same
 //! `pub(crate)` layer, rather than either vendoring `ComboboxContext`'s
-//! private shape or modifying `combobox/` to export it -- consistent with
-//! this module's other files being off limits to edit.
+//! private shape or modifying `combobox/` to export it.
 //!
-//! `CommandContext` ends up smaller than `ComboboxContext`, not just
-//! differently-scoped: the plan predicted "`Command` mostly needs *less* of
-//! what `Combobox` does, not more," and reading `ComboboxContext` end to end
-//! confirms exactly which pieces drop out --
+//! `CommandContext` is smaller than `ComboboxContext`, not just
+//! differently-scoped: `Command` needs *less* of what `Combobox` does, not
+//! more, and these are the pieces that drop out --
 //!
 //! - No `input_id`: that field exists solely so `ComboboxList`'s web arm can
 //!   anchor-position itself against `ComboboxInput` once promoted to the top
 //!   layer (`top_layer::anchor_name_style`). `CommandList` is never promoted
 //!   anywhere -- it is always an in-flow child of `Command`, the same shape
 //!   `ComboboxListRendered`'s `#[cfg(not(feature = "web"))]` arm already
-//!   renders unconditionally today -- so there is no anchor to bind.
+//!   renders unconditionally -- so there is no anchor to bind.
 //! - No `set_open`/`open_with_empty_query_and_focus_first`/`_last`: a
 //!   command palette's list has no open/closed state of its own to toggle --
 //!   the surrounding `CommandDialog` (or whatever the caller composes
@@ -70,7 +67,7 @@
 //!
 //! ## References -- read-never-vendor
 //!
-//! Per `docs/lifting-from-forks.md` §1 and the plan doc's own "References"
+//! Per `dev-docs/guides/lifting-code.md` and the plan doc's own "References"
 //! section, both of the below were read for shape only. Nothing from either
 //! was copied; no provenance header applies.
 //!
@@ -138,7 +135,7 @@ impl CommandContext {
 
     /// An option that has not registered yet counts as visible, so the static (SSG / JS-off)
     /// render and the hydration render both contain every item rather than an empty list. Once
-    /// the root's `registered` flag is set, an option that is absent is filtered out as before.
+    /// the root's `registered` flag is set, an option that is absent is filtered out.
     fn is_visible(&self, tab_index: usize) -> bool {
         let predicate = self.predicate();
         match self
@@ -205,7 +202,7 @@ pub struct CommandProps<T: Clone + PartialEq + 'static = String> {
     #[props(default)]
     pub disabled: ReadSignal<bool>,
 
-    /// The controlled text query used to filter items.
+    /// The controlled text query that filters items.
     #[props(default)]
     pub query: ReadSignal<Option<String>>,
 
@@ -325,7 +322,7 @@ pub fn Command<T: Clone + PartialEq + 'static>(props: CommandProps<T>) -> Elemen
     use_command_root(&props);
 
     // Owned by this component -- disabled state must win over a caller's
-    // own attributes (`docs/backlog.md` row 93's duplicate-attribute
+    // own attributes (`dev-docs/backlog.md` row 93's duplicate-attribute
     // hazard).
     let attributes = merge_attributes(vec![
         props.attributes,
@@ -391,7 +388,7 @@ pub struct CommandInputProps {
 ///
 /// Without a `<dialog>` to open (an inline `Command` with an explicit `autofocus: Some(true)`, or
 /// the non-web arms) the input renders the plain `autofocus` attribute and focuses itself once
-/// mounted, as before. An inline `Command` that grabbed focus on mount would pull the page's focus
+/// mounted. An inline `Command` that grabbed focus on mount would pull the page's focus
 /// (and scroll) to itself on every load, so `None` is `false` there.
 #[component]
 pub fn CommandInput(props: CommandInputProps) -> Element {
@@ -407,7 +404,7 @@ pub fn CommandInput(props: CommandInputProps) -> Element {
     let in_dialog = try_use_context::<CommandDialogContext>().is_some();
     let autofocus = props.autofocus.unwrap_or(in_dialog);
     // On the web arm a dialog's open driver chooses the initial focus from the opening modality
-    // (`data-dx-autofocus`); everywhere else the input focuses itself the old way.
+    // (`data-dx-autofocus`); everywhere else the input focuses itself.
     let driver_autofocus = autofocus && in_dialog && cfg!(feature = "web");
     let self_autofocus = autofocus && !driver_autofocus;
 
@@ -447,7 +444,7 @@ pub fn CommandInput(props: CommandInputProps) -> Element {
     };
 
     // Owned by this component -- input semantics/aria wiring/state must
-    // win over a caller's own attributes (`docs/backlog.md` row 93's
+    // win over a caller's own attributes (`dev-docs/backlog.md` row 93's
     // duplicate-attribute hazard).
     let attributes = merge_attributes(vec![
         props.attributes,
@@ -530,7 +527,7 @@ pub fn CommandList(props: CommandListProps) -> Element {
     let id = use_listbox_id(props.id, ctx.selectable.list_id);
 
     // Owned by this component -- role must win over a caller's own
-    // attributes (`docs/backlog.md` row 93's duplicate-attribute hazard).
+    // attributes (`dev-docs/backlog.md` row 93's duplicate-attribute hazard).
     let attributes = merge_attributes(vec![props.attributes, attributes!(div { role: "listbox" })]);
 
     rsx! {
@@ -567,7 +564,7 @@ pub fn CommandEmpty(props: CommandEmptyProps) -> Element {
     }
 
     // Owned by this component -- role must win over a caller's own
-    // attributes (`docs/backlog.md` row 93's duplicate-attribute hazard).
+    // attributes (`dev-docs/backlog.md` row 93's duplicate-attribute hazard).
     let attributes = merge_attributes(vec![
         props.attributes,
         attributes!(div {
@@ -581,8 +578,8 @@ pub fn CommandEmpty(props: CommandEmptyProps) -> Element {
 }
 
 /// Context for [`CommandGroupLabel`] to publish its id into, read back by
-/// [`CommandGroup`]'s `aria-labelledby`. Ported from
-/// `select::SelectGroupContext`'s identical shape.
+/// [`CommandGroup`]'s `aria-labelledby`. The same shape as
+/// `select::SelectGroupContext`.
 #[derive(Clone, Copy)]
 struct CommandGroupContext {
     labeled_by: Signal<Option<String>>,
@@ -608,8 +605,8 @@ pub struct CommandGroupProps {
     pub children: Element,
 }
 
-/// Groups related [`CommandItem`]s inside a [`CommandList`]. Ported from
-/// `select::SelectGroup`'s exact shape (`role="group"` +
+/// Groups related [`CommandItem`]s inside a [`CommandList`]. The same shape as
+/// `select::SelectGroup` (`role="group"` +
 /// `aria-labelledby`), minus the `render`/`ListboxContext` gate `SelectGroup`
 /// reads -- `CommandList` is always rendered, so there is nothing to gate on.
 #[component]
@@ -621,7 +618,7 @@ pub fn CommandGroup(props: CommandGroupProps) -> Element {
     use_context_provider(|| CommandGroupContext { labeled_by });
 
     // Owned by this component -- role/disabled/labelledby wiring must win
-    // over a caller's own attributes (`docs/backlog.md` row 93's
+    // over a caller's own attributes (`dev-docs/backlog.md` row 93's
     // duplicate-attribute hazard).
     let attributes = merge_attributes(vec![
         props.attributes,
@@ -656,8 +653,8 @@ pub struct CommandGroupLabelProps {
     pub children: Element,
 }
 
-/// Labels a [`CommandGroup`]. Must be used inside one. Ported from
-/// `select::SelectGroupLabel`'s exact shape: a mount-time `use_effect` sets
+/// Labels a [`CommandGroup`]. Must be used inside one. The same shape as
+/// `select::SelectGroupLabel`: a mount-time `use_effect` sets
 /// the enclosing group's `aria-labelledby` target.
 #[component]
 pub fn CommandGroupLabel(props: CommandGroupLabelProps) -> Element {
@@ -755,7 +752,7 @@ pub fn CommandItem<T: PartialEq + Clone + 'static>(props: CommandItemProps<T>) -
     }
 
     // Owned by this component -- role/selection state must win over a
-    // caller's own attributes (`docs/backlog.md` row 93's
+    // caller's own attributes (`dev-docs/backlog.md` row 93's
     // duplicate-attribute hazard).
     let attributes = merge_attributes(vec![
         props.attributes,
@@ -853,9 +850,9 @@ pub struct CommandDialogProps {
 
 /// `CommandDialog` = [`crate::dialog::DialogRoot`] +
 /// [`crate::dialog::DialogContent`] wrapping a [`Command`]. A thin
-/// composition, unmodified from `Dialog`'s own modal machinery -- see the
-/// module doc. Initial focus lands on [`CommandInput`] via its own
-/// `autofocus` attribute (see that component's doc) rather than anything
+/// composition over `Dialog`'s own modal machinery -- see the
+/// module doc. Initial focus lands on [`CommandInput`] via the shared open-focus
+/// policy (`data-dx-autofocus`, see that component's doc) rather than anything
 /// this wrapper does itself.
 ///
 /// Carries two literal default classes (`dx-command-dialog-backdrop` on the
@@ -863,8 +860,8 @@ pub struct CommandDialogProps {
 /// something to attach styling to without needing this wrapper to expose
 /// two separate attribute-forwarding props of its own -- the same
 /// hardcoded-default-class shape `DialogContent`'s own `"dx-dialog"`
-/// fallback already uses (`dialog.rs`), not a new pattern. A caller's own
-/// `attributes` still merge in alongside it (unchanged from `Dialog`'s own
+/// fallback uses (`dialog.rs`). A caller's own
+/// `attributes` still merge in alongside it (as in `Dialog`'s own
 /// `class`-plus-`..attributes` shape).
 ///
 /// ## Example

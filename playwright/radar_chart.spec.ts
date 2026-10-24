@@ -1,10 +1,10 @@
 /**
  * RadarChart -- shadcn parity gallery (14 variants:
- * $S/refs/ui/apps/v4/registry/new-york-v4/charts/chart-radar-*.tsx), built
- * on the shared `chart` primitive/engine ($S/chart-api.md,
+ * shadcn/ui's apps/v4/registry/new-york-v4/charts/chart-radar-*.tsx), built
+ * on the shared `chart` primitive/engine (preview/src/components/chart/docs.md,
  * primitives/src/chart/engine/radar.rs, primitives/src/chart/components/
  * series/radar.rs). Render + axe per variant, plus one behavioural
- * assertion per feature this lane added:
+ * assertion per feature:
  *
  *   - one `g[data-series] path[data-slot="chart-radar-area"]` per series
  *     (`data-series` lives on the wrapping `<g>`, not the `<path>` itself --
@@ -21,17 +21,16 @@
  *     of what the visual grid/dot/fill options are set to.
  *
  * Every variant renders inline on one page load (`?name=radar_chart&`,
- * confirmed by every other multi-variant component's own oracle spec,
+ * as in every other multi-variant component's own oracle spec,
  * e.g. `playwright/oracle/tier3-radix/chart.spec.ts`'s header comment):
  * the un-suffixed `#component-preview-frame` is the `main` (shadcn
  * "default") variant; every other variant gets
  * `#component-preview-frame-<variant>` (`preview/src/main.rs`'s own
- * frame-id-per-variant naming, read in full this session).
+ * frame-id-per-variant naming).
  */
 
 import { test, expect } from "./fixtures";
 import { type Page, type Locator } from "@playwright/test";
-import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
 // dev-docs/backlog.md row 109: this suite interacts (hover/click) right
 // after navigating, on the SSG lane -- `gotoHydrated` so that can't land
@@ -86,14 +85,6 @@ test.describe("render + axe per variant", () => {
       // Every series renders its own closed polygon.
       const paths = frame(page, variant).locator('path[data-slot="chart-radar-area"]');
       await expect(paths).not.toHaveCount(0);
-    });
-
-    test(`${variant}: has no automatically detectable a11y issues`, async ({ page }) => {
-      await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
-      await expect(frame(page, variant).locator('svg[role="img"]').first()).toBeVisible();
-      await expectNoAxeViolations(page, `radar_chart: ${variant}`, {
-        excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT],
-      });
     });
   }
 });

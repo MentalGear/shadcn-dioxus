@@ -1,19 +1,19 @@
 //! Themed `Table` -- shadcn/ui catalog parity
-//! (dev-docs/component-backlog.md row 68).
+//! (dev-docs/archive/rounds/component-backlog.md row 68).
 //!
 //! Unlike almost every other component in this crate, there is no
 //! `dioxus_primitives::table` module to wrap: shadcn/ui's own `table.tsx`
 //! is plain, unstyled semantic HTML (`<table>`/`<thead>`/`<tbody>`/
 //! `<tfoot>`/`<tr>`/`<th>`/`<td>`/`<caption>`) with no Radix primitive and
 //! no ARIA widget role underneath -- confirmed against shadcn's own source
-//! and recorded in dev-docs/component-backlog.md row 68 ("none -- plain
+//! and recorded in dev-docs/archive/rounds/component-backlog.md row 68 ("none -- plain
 //! semantic `<table>` markup, no ARIA engineering needed"). So this file
 //! *is* both the "primitive" and the theme layer: every element below is
 //! the plain HTML tag plus this crate's `dx-table-*` class, nothing more.
 //!
 //! Every component here merges its own `dx-table-*` base class with any
 //! caller-supplied `class` via `merge_attributes`, the same construction
-//! commit 724bfee fixed `Input` with (`git show 724bfee`): a literal
+//! `Input` uses (backlog row 12): a literal
 //! `class: "dx-foo"` field followed by a plain `..attributes` spread lets
 //! Dioxus's "later duplicate attribute wins" rule silently *replace* the
 //! base class instead of combining with it. `merge_attributes` special-
@@ -179,7 +179,7 @@ pub fn TableRow(props: TableRowProps) -> Element {
 }
 
 /// `<th>`. Defaults to `scope="col"` (this crate's `TableHead` is always
-/// used as a column header in every demo/consumer so far -- a row-header
+/// used as a column header in every demo/consumer -- a row-header
 /// `<th scope="row">` remains reachable by passing `scope: "row"`
 /// explicitly, which overrides the default; see this file's header doc for
 /// the override mechanism).

@@ -1,10 +1,10 @@
 ---
 id: 28
 title: "Verify the 2026-09-02 iOS-keyboard anchor-tracking fix (use_anchor_position_fallback…"
-status: "User re-test after deploy — the sandbox has no WebKit, and page.setViewportSize() cannot reproduce…"
+status: "WAITING ON OWNER: re-test on a real iPhone after deploy. The fix is in; the sandbox has no WebKit…"
 size: "S to verify"
 area: overlays
-updated: 2026-09-03
+updated: 2026-10-24
 ---
 
 # Row 28: Verify the 2026-09-02 iOS-keyboard anchor-tracking fix (use_anchor_position_fallback…
@@ -15,7 +15,7 @@ Verify the 2026-09-02 iOS-keyboard anchor-tracking fix (`use_anchor_position_fal
 
 ## Status / trigger
 
-User re-test after deploy — the sandbox has no WebKit, and `page.setViewportSize()` cannot reproduce a real iOS keyboard's `window.visualViewport`-only shrink (`window.inner{Width,Height}` stay put on a real device but do change under Playwright's viewport resize, so the oracle's simulation cannot fully exercise the `visualViewport`-vs-`window.inner*` split the fix reads)
+**WAITING ON OWNER: re-test on a real iPhone after deploy.** The fix is in; the sandbox has no WebKit, and `page.setViewportSize()` cannot reproduce a real iOS keyboard's `visualViewport`-only shrink (`window.inner*` stay put on a device, but change under Playwright's resize), so the oracle cannot fully exercise the `visualViewport`-vs-`window.inner*` split the fix reads.
 
 ## Size
 

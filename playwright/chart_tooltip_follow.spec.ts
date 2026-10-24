@@ -483,10 +483,10 @@ async function recordStates(page: Page, frameSel = "#component-preview-frame") {
 }
 
 test.describe("Polar tooltips do not blink while hovering", () => {
-  // Regression: hover used to ride on pointerenter/leave of the arcs, whose
+  // Hover must not ride on pointerenter/leave of the arcs, whose
   // active affordance (`scale(1.05)`) moves the very hit target under the
-  // pointer, so a pointer near an arc's edge flipped open/closed in a loop.
-  // Hover is now resolved from coordinates against the resting geometry.
+  // pointer, so a pointer near an arc's edge would flip open/closed in a loop.
+  // Hover is resolved from coordinates against the resting geometry.
   test.beforeEach(async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
   });
@@ -659,7 +659,7 @@ test.describe("A late pointer result never reopens a closed tooltip", () => {
     await gotoHydrated(page, area, { timeout: 20 * 60 * 1000 });
     await chartOf(page).scrollIntoViewIfNeeded();
     // The rect read behind a pointermove is async; a close in the same task
-    // used to be overtaken by it (30/30 stuck open before the fix).
+    // must not be overtaken by it (the tooltip would stay stuck open).
     const stuck = await page.evaluate(async () => {
       const wrapper = document.querySelector('#component-preview-frame [data-slot="chart"]')!;
       const svg = wrapper.querySelector("svg")!;
@@ -678,7 +678,7 @@ test.describe("A late pointer result never reopens a closed tooltip", () => {
     expect(stuck, "tooltip stuck open after move+leave").toBe(0);
   });
 
-  test("a real hover afterwards still opens it", async ({ page }) => {
+  test("a real hover afterwards opens it", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await gotoHydrated(page, area, { timeout: 20 * 60 * 1000 });
     const m = await measure(page);

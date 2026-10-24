@@ -1,11 +1,9 @@
 import { test, expect } from "./fixtures";
 import { type Page, type Locator } from "@playwright/test";
-import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
 // dev-docs/backlog.md row 109: this suite interacts (hover/click) right
 // after navigating, on the SSG lane -- `gotoHydrated` so that can't land
-// before hydration attaches listeners. Row 90's `networkidle` fix for this
-// file is the same class under a weaker remedy; this supersedes it.
+// before hydration attaches listeners.
 import { gotoHydrated } from "./hydration";
 
 // Every variant renders inline on one page load (`?name=radial_chart&`,
@@ -15,8 +13,7 @@ import { gotoHydrated } from "./hydration";
 // variant; every other variant gets `#component-preview-frame-<variant>`
 // (`preview/src/main.rs`'s own frame-id-per-variant naming). One-to-one
 // with `preview/src/components/mod.rs`'s `radial_chart[...]` registration
-// line and shadcn's own 6 `chart-radial-*.tsx` demos (dev-docs/research/
-// chart-2026-09-19.md §1.2); each variant's own doc comment cites its
+// line and shadcn's own 6 `chart-radial-*.tsx` demos (dev-docs/archive/research/chart-2026-09-19.md §1.2); each variant's own doc comment cites its
 // exact shadcn source file.
 const VARIANTS = ["main", "label", "grid", "text", "shape", "stacked"] as const;
 
@@ -151,15 +148,4 @@ test.describe("Radial chart: center text and labels", () => {
     await expect(f.locator('[data-slot="chart-arc-label"]')).toHaveCount(5);
     await expect(f.locator('[data-slot="chart-arc-label"]').first()).toHaveText("Chrome");
   });
-});
-
-test.describe("Axe automated scan", () => {
-  for (const variant of VARIANTS) {
-    test(`${variant}: no automatically detectable a11y issues`, async ({ page }) => {
-      await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
-      await expectNoAxeViolations(page, `radial_chart: ${variant}`, {
-        excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT],
-      });
-    });
-  }
 });

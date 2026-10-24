@@ -2,7 +2,14 @@
 #
 # check-markdown-parser.sh
 #
-# The parser allowlist for the optional `markdown` component (owner decisions 2026-10-15, backlog row 213):
+# The parser allowlist of the optional `markdown` component: its `component.json` names exactly `dioxus-primitives`
+# and `pulldown-cmark` (no default features), `preview/Cargo.toml` pins `pulldown-cmark` as `=<locked version>` with
+# `default-features = false`, the lock's parser has only its four allowed dependencies, `pulldown_cmark` is named only
+# inside `preview/src/components/markdown/` (never its `html` renderer) with only the ENABLE_TABLES,
+# ENABLE_STRIKETHROUGH and ENABLE_TASKLISTS options, and no `dangerous_inner_html` appears, so model output has no
+# path to the DOM as raw HTML.
+#
+# The parser allowlist for the optional `markdown` component (owner decisions, backlog row 213):
 # what the component may pull in and which parser features it may switch on. The OTHER half -- only an
 # allowlisted component may list a parser crate in its `component.json`, and every `component.json` version
 # equals `Cargo.lock` -- is `scripts/check-cargo-dep-versions.sh`; this gate covers what that one cannot see.
@@ -19,6 +26,9 @@
 #      ENABLE_TABLES, ENABLE_STRIKETHROUGH and ENABLE_TASKLISTS: heading attributes, metadata blocks, footnotes,
 #      math, definition lists, smart punctuation and GFM alerts are injection surface and stay off. No
 #      `dangerous_inner_html` in the component or its demos: unsafe markup has no path to the DOM.
+#
+# The Rust half of the same promise is the component's closed node tree and `SafeHref`: no markdown node can carry raw
+# HTML or an unsafe link target.
 #
 # Usage: scripts/check-markdown-parser.sh
 # Exit status: 0 when clean, 1 on a violation.

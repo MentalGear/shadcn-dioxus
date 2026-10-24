@@ -72,8 +72,8 @@
  * `Label`). Field retunes the label through `Label`'s SLOT VARIABLES
  * (label/style.css), set on the label's own element, and never declares
  * `font-size`/`line-height`/`color` on it: `.dx-label` and `.dx-field-label`
- * are both (0,1,0), so a property both declared was decided by which sheet
- * loaded last -- 12.8px on /component/field/, 14px on the home gallery. A
+ * are both (0,1,0), so a property both declared is decided by which sheet
+ * loads last -- 12.8px on /component/field/, 14px on the home gallery. A
  * custom property is not the property `.dx-label` declares, so there is no
  * contest in any load order (and no `.dx-label` selector here, which would
  * leave Field's own namespace, `scripts/check-dx-class-prefix.sh`;
@@ -148,7 +148,7 @@
 /*
  * `> button`/`> input` (element selectors, not classes) rather than naming
  * `Checkbox`/`Switch`/`RadioItem`'s own `dx-*` classes directly -- all
- * three render as `<button>` (docs/preview-composition.md), and `Input`/
+ * three render as `<button>` (dev-docs/preview-composition.md), and `Input`/
  * `NativeSelect` as `<input>`/`<select>`, so this reaches every control
  * `Field` is meant to hold without this stylesheet ever selecting outside
  * its own `dx-field-*` namespace (scripts/check-dx-class-prefix.sh).

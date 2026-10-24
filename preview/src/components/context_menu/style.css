@@ -4,7 +4,7 @@
   --dx-menu-item-indicator-inset: var(--dx-space-2);
 
   /*
-   * Migration A (slice 2/3): on the web arm this content carries
+   * On the web arm this content carries
    * `popover="manual"` (`primitives/src/context_menu.rs`,
    * `ContextMenuContentRendered`) so it renders in the top layer instead of
    * clipping inside `overflow: hidden`/transformed ancestors. Unlike
@@ -57,7 +57,7 @@
    identical rule; see that file's comment for the full rationale (shadcn Nova's `pr-8` +
    `absolute right-2`; `visibility`, not `display`, so an unchecked item keeps its slot and labels
    never shift). `.dx-context-menu-sub-trigger` layers onto `.dx-context-menu-item` (always applied
-   together, see `component.rs`). Nested submenu: docs/component-backlog.md row 68. */
+   together, see `component.rs`). Nested submenu: dev-docs/archive/rounds/component-backlog.md row 68. */
 .dx-context-menu-sub-trigger,
 .dx-context-menu-checkable-item {
   padding-inline-end: calc(var(--dx-menu-item-indicator-inset) + var(--dx-menu-item-indicator-size) + var(--dx-menu-item-indicator-gap));
@@ -70,7 +70,7 @@
    own: Nova draws it in the item's ink (`.cn-context-menu-sub-trigger`), and
    the theme's indicator slot places and sizes it. */
 
-/* Cross-lane handoff (rtl-rust, $S/batch3/rtl-rust/css-needs.md): same
+/* RTL: same
    reasoning as `../dropdown_menu/style.css`'s identical rule -- a real SVG
    that must flip to match the submenu's RTL-flipped open side. */
 [dir="rtl"] .dx-context-menu-sub-trigger-icon {

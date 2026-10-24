@@ -1,10 +1,10 @@
 ---
 id: 295
 title: "Press feedback on touch taps: already on by default, so check why taps don't show it"
-status: "PARTLY LANDED 2026-10-20 (theme-touch lane 1ba0b2e5, cf64037a); device re-test open. Row 205…"
+status: "WAITING ON OWNER: iPhone re-test of press feedback on /component/tabs/, /component/menubar/…"
 size: "S (or none)"
 area: theme
-updated: 2026-10-20
+updated: 2026-10-24
 ---
 
 # Row 295: Press feedback on touch taps: already on by default, so check why taps don't show it
@@ -15,7 +15,7 @@ updated: 2026-10-20
 
 ## Status / trigger
 
-**PARTLY LANDED 2026-10-20 (theme-touch lane 1ba0b2e5, cf64037a); device re-test open.** Row 205 (LANDED 2026-10-14) **already ships press feedback on by default**, for every pointer. Turning it off takes `html[data-dx-press-feedback="off"]`, set by the theme picker switch (`theme.rs:~625`).
+**WAITING ON OWNER: iPhone re-test of press feedback** on `/component/tabs/`, `/component/menubar/`, `/component/toolbar/`, a Button and a dropdown-menu item (tap about 50 ms, then hold a second; the control should dip and show a darker wash, then ease back over 150-200 ms). Landed 2026-10-20 (theme-touch lane 1ba0b2e5, cf64037a; row 205 ships the feedback on by default). If it fails: a passive page-lifetime `touchstart` no-op in the modality writer (`modality.rs`, `PREPAINT_JS`, `preview/index.html`, byte-identical).
 
 ## Size
 

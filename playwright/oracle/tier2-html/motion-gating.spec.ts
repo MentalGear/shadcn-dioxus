@@ -1,8 +1,8 @@
 /**
  * ORACLE: tier 2 (HTML) -- motion nobody can see does not run, in the components themselves.
  *
- * Source: the owner's brief (2026-10-10): "animations running in the background are not about cards,
- * but the actual components and their animations". Rule sources:
+ * Source: dev-docs/backlog.md row 176: the rule is about the components and their animations, not about cards.
+ * Rule sources:
  *   - Web Animations: `Animation.playState` is `"paused"` once `animation-play-state: paused` applies,
  *     and a paused CSS animation keeps its phase and resumes from it:
  *       https://www.w3.org/TR/css-animations-1/#animation-play-state
@@ -197,8 +197,8 @@ test.describe("motion gating", () => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await gotoHydrated(page, `${BASE_URL}/component/toast/`, NAV);
     // The `pause` variant's toast lasts a real 3 s (the main demo's lasts 60 s, too long to wait for). The countdown is
-    // the provider's visibility- and pause-gated 50 ms tick (`ToastTimer`), not one long `setTimeout`, so the old way of
-    // speeding a 60 s toast up -- shimming `setTimeout(60000)` -- no longer touches anything (backlog row 255).
+    // the provider's visibility- and pause-gated 50 ms tick (`ToastTimer`), not one long `setTimeout`, so shimming
+    // `setTimeout(60000)` does not speed a 60 s toast up (backlog row 255).
     const DURATION = 3000;
     const trigger = demoRole(page, "button", 0, "pause");
     await expect(trigger).toBeVisible({ timeout: 5 * 60 * 1000 });
@@ -263,7 +263,7 @@ test.describe("motion gating", () => {
     await page.waitForTimeout(800);
     expect(await animated(), "10% visible is not 'seen'").toBeNull();
 
-    // 70% visible: now it plays, once.
+    // 70% visible: it plays, once.
     await page.evaluate((y) => window.scrollTo(0, y), g.top - g.vh + g.height * 0.7);
     await expect.poll(animated, { timeout: 5000 }).toBe("true");
 

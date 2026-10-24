@@ -3,11 +3,11 @@ import type { Page } from "@playwright/test";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
-// Backlog row 153 (prototype): a windowed VirtualList with `text_value` keeps every UNMOUNTED row's text
+// Backlog row 153: a windowed VirtualList with `text_value` keeps every UNMOUNTED row's text
 // in the DOM inside a `hidden="until-found"` placeholder. The browser's find-in-page can match it, and a
 // reveal fires `beforematch` on that placeholder, which names the row; the list then scrolls the real row
 // into view. Playwright cannot drive the browser's Ctrl+F bar; `window.find` searches the same text but
-// does not reveal or fire `beforematch` (survey section 4, re-measured here), and a `#:~:text=` text
+// does not reveal or fire `beforematch` (measured), and a `#:~:text=` text
 // fragment does both, so it stands in for the reveal path.
 
 const URL = `${BASE_URL}/component/block/?name=virtual_list&variant=find_in_page`;
@@ -61,8 +61,8 @@ test.describe("windowed find-in-page placeholders (row 153 prototype)", () => {
     await gotoHydrated(page, URL);
     await expect(row(page, 0)).toBeVisible();
     // The browser removes `hidden` when it reveals a match. Left revealed, the placeholder's text
-    // (and the find bar's active-match highlight on it) sat over the real row, offset by the
-    // row's padding: measured with the real Ctrl+F bar in headed Chromium 153. Hidden again in
+    // (and the find bar's active-match highlight on it) would sit over the real row, offset by the
+    // row's padding (measured with the real Ctrl+F bar in headed Chromium 153). Hidden again in
     // the next frame, find-next still walks on in order, forwards and back (same probe).
     const reveal = (index: number) =>
       placeholder(page, index).evaluate((el) => {
@@ -153,7 +153,7 @@ test.describe("windowed find-in-page placeholders (row 153 prototype)", () => {
     const mountMs = Date.now() - t0;
     const at100k = await metrics();
     // Every row has its placeholder (a single parent receiving 65,536+ new children in one edit
-    // kept only the last n mod 65536 of them in Dioxus 0.7.9; the layer nests them in chunks).
+    // keeps only the last n mod 65536 of them in Dioxus 0.7.9; the layer nests them in chunks).
     expect(await list(page).locator("[data-find-index]").count()).toBe(100_000);
     // A window move with 100,000 placeholders re-renders only the chunks it touches.
     const scrollMs = await scroll20();
