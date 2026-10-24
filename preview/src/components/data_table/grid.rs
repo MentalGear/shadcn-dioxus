@@ -10,7 +10,7 @@
 use super::columns::{use_data_table_index, DataTableOptions, DEFAULT_GRID_COLUMN_WIDTH};
 use super::{Column, DataTableProps, DataTableSortButton, DataTableToolbar};
 use crate::components::checkbox::Checkbox;
-use crate::components::virtual_grid::VirtualGrid;
+use crate::components::virtual_grid::{VirtualGrid, VirtualizeMode};
 use dioxus::prelude::*;
 use dioxus_primitives::checkbox::CheckboxState;
 use dioxus_primitives::dioxus_attributes::attributes;
@@ -160,6 +160,9 @@ pub(super) fn DataTableGrid<T: Clone + PartialEq + 'static>(props: DataTableProp
             }
             VirtualGrid {
                 row_count: filtered_count,
+                // Windowed at every count: a filter that crossed `Auto`'s threshold would re-mount
+                // the body in the other mode mid-typing.
+                virtualize: VirtualizeMode::Windowed,
                 column_count,
                 row_height: |_| GRID_ROW_HEIGHT,
                 header_height: GRID_HEADER_HEIGHT,

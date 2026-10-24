@@ -104,12 +104,12 @@ Three hooks let the grid host a data table. All are optional.
 
 ## What windowing costs
 
-A `VirtualGrid` cell taller than its row overflows it (rows are not measured). For a grid of a few thousand cells, a plain CSS grid with `content-visibility: auto` on each row may be the simpler answer: everything stays in the DOM and the browser skips the rows that are off-screen. Find-in-page, the accessibility tree and the server are covered under "Find-in-page and the windowed DOM" below.
+A `VirtualGrid` cell taller than its row overflows it (rows are not measured). A grid of up to `auto_threshold` cells (1,000) is not windowed at all under the default `Auto`: every cell stays in the DOM, columns in flow, and the browser skips the rows that are off-screen in chunks of 20 (`data-virtualize="content-visibility"`, the `content_visibility` variant); the keyboard model, the sticky header and column, sorting, selection and controls in cells are the same in both modes. Pass `virtualize: VirtualizeMode::Windowed` (or `ContentVisibility`) to choose. Find-in-page, the accessibility tree and the server are covered under "Find-in-page and the windowed DOM" below.
 
 <!-- shared:virtual-engine:modes -->
 ## The three modes and what they cost
 
-One mode type, `VirtualizeMode`, lives in the shared engine and is the `virtualize` prop of every component that chooses between keeping rows in the DOM and windowing them: `VirtualList`, and `TableRows` (the data body of a `Table`). `VirtualGrid` is always windowed today; it adopts the same type with row 341. `auto_threshold` (default 1,000) is the one switch point of `Auto`.
+One mode type, `VirtualizeMode`, lives in the shared engine and is the `virtualize` prop of every component that chooses between keeping rows in the DOM and windowing them: `VirtualList`, `VirtualGrid`, `VirtualWrapGrid` and `TableRows` (the data body of a `Table`). `auto_threshold` (default 1,000) is the one switch point of `Auto`, counted in items: a list's rows, a grid's cells (`row_count x column_count`, or a wrapping grid's `count`). `VirtualJustifiedGrid` is always windowed.
 
 | | `ContentVisibility` | `Windowed` | `Auto` (the default) |
 |---|---|---|---|
@@ -118,7 +118,7 @@ One mode type, `VirtualizeMode`, lives in the shared engine and is the `virtuali
 | Find-in-page (Ctrl+F), selection | reach every row (skipped content: not Safari 18-25) | only the mounted window | follows the mode |
 | Screen readers | every row | only the window, each row announcing its place (`3 of 100000`) | follows the mode |
 | Cost grows with the row count | yes: DOM and memory are linear | no: flat to millions of rows | follows the mode |
-| How off-screen rows are kept cheap | a list: the browser skips them in chunks of 20 (`content-visibility: auto`); a table: not at all, browsers do not skip table rows | not mounted | follows the mode |
+| How off-screen rows are kept cheap | a list or grid: the browser skips them in chunks of 20 rows (`content-visibility: auto`); a table: not at all, browsers do not skip table rows | not mounted | follows the mode |
 
 The mode follows the live `count`, so a component whose count crosses the threshold re-mounts its rows in the other mode (its scroll position resets); choose an explicit mode when the count hovers around the threshold.
 <!-- /shared:virtual-engine:modes -->
@@ -154,7 +154,7 @@ None of the virtual components traps the page's scroll: at the top or bottom edg
 <!-- shared:virtual-engine:find-in-page -->
 ## Find-in-page and the windowed DOM
 
-Items outside the window do not exist: the browser's find-in-page and `#:~:text=` links cannot reach them, the accessibility tree holds only what is mounted (each mounted row or cell announces its position in the whole, with `aria-posinset` or `aria-rowindex`), and the server renders none of them or only the active one. The opt-in `text_value` of a windowed `VirtualList` keeps every row's plain text in the DOM as a `hidden="until-found"` placeholder, so find-in-page can match rows that are not mounted (the `find_in_page` variant); the grids have no such placeholders, because a cell is not a line of text. Where findability matters more than a flat cost, a plain list or CSS grid of a few thousand items with `content-visibility: auto` keeps everything findable while the browser skips the off-screen work (`VirtualList`'s content-visibility mode is exactly that).
+Items outside the window do not exist: the browser's find-in-page and `#:~:text=` links cannot reach them, the accessibility tree holds only what is mounted (each mounted row or cell announces its position in the whole, with `aria-posinset` or `aria-rowindex`), and the server renders none of them or only the active one. The opt-in `text_value` of a windowed `VirtualList`, `VirtualGrid` or `VirtualWrapGrid` keeps every row's, cell's or item's plain text in the DOM as a `hidden="until-found"` placeholder (one shared layer, `primitives/src/virtual/find.rs`), so find-in-page can match items that are not mounted; the component brings the matched one into view and marks it `data-find-match` (the `find_in_page` variants). `VirtualJustifiedGrid` has no placeholders yet. Where findability matters more than a flat cost, a plain list or CSS grid of a few thousand items with `content-visibility: auto` keeps everything findable while the browser skips the off-screen work (`VirtualList`'s content-visibility mode is exactly that).
 <!-- /shared:virtual-engine:find-in-page -->
 
 <!-- shared:virtual-engine:fade -->

@@ -54,10 +54,10 @@
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 
-use crate::js_listener::{use_js_listeners, JsListeners};
 use crate::r#virtual::{
-    cv_chunks, engine_keys, pin_in_flow, render_key, resolve_index, use_virtual_bridge, Bridge,
-    ChunkSkip, Engine, SizeEstimates, CHUNK_ROWS, DEFAULT_SIZE,
+    cv_chunks, engine_keys, pin_in_flow, render_key, resolve_index, use_find_in_page,
+    use_virtual_bridge, Bridge, ChunkSkip, Engine, FindLayer, FindLayout, SizeEstimates,
+    CHUNK_ROWS, DEFAULT_SIZE,
 };
 pub use crate::r#virtual::{VirtualizeMode, DEFAULT_AUTO_THRESHOLD};
 use crate::scroll_area::use_scroll_fade;
@@ -103,23 +103,26 @@ pub struct VirtualListProps {
     /// while it holds focus and the measured sizes follow the item instead of the slot. Read
     /// while rendering, so signals it reads re-render the component.
     pub item_key: Option<Callback<usize, String>>,
-    /// Windowed mode, opt-in (experimental, backlog row 153): the searchable text of item `idx`,
-    /// plain text without markup. When given, every row's text is also kept in the DOM inside a
-    /// `hidden="until-found"` placeholder, so the browser's find-in-page (and a `#:~:text=` link)
-    /// can match rows that are not mounted; when the browser reveals a match it fires
-    /// `beforematch` on that placeholder and the list scrolls the real row into view and marks it
-    /// `data-find-match="true"` (the find bar highlights the hidden placeholder, not the row, so
-    /// style the attribute to show which row matched). Costs about
-    /// two DOM nodes per row, mounted after hydration (not server-rendered), and a mounted row's
-    /// match counts twice. Engines without `until-found` (Firefox before 139, Safari before
-    /// 26.2) treat it as `hidden`: rows that are not mounted stay unfindable, as without the
-    /// prop. Ignored by content-visibility mode, whose rows are all in the DOM already.
+    /// Windowed layouts, opt-in (experimental, backlog rows 153 and 309): the searchable text of
+    /// an item, plain text without markup (a `VirtualList` row or a `VirtualWrapGrid` item by
+    /// index, a `VirtualGrid` cell by `(row, column)`). When given, every item's text is also kept
+    /// in the DOM inside a `hidden="until-found"` placeholder, so the browser's find-in-page (and a
+    /// `#:~:text=` link) can match items that are not mounted; when the browser reveals a match it
+    /// fires `beforematch` on that placeholder, and the component scrolls the real item into view
+    /// and marks it `data-find-match="true"` (the find bar highlights the hidden placeholder, not
+    /// the item, so style the attribute to show which item matched). Costs about two DOM nodes
+    /// per item (an empty text gets no placeholder), mounted after hydration (not
+    /// server-rendered), and a mounted item's match counts twice. Engines without `until-found`
+    /// (Firefox before 139, Safari before 26.2) treat it as `hidden`: items that are not mounted
+    /// stay unfindable, as without the prop. Ignored by content-visibility mode, whose items are
+    /// all in the DOM already.
     pub text_value: Option<Callback<usize, String>>,
-    /// How off-screen rows are kept cheap. Defaults to [`VirtualizeMode::Auto`].
+    /// How off-screen items are kept cheap. Defaults to [`VirtualizeMode::Auto`].
     #[props(default = ReadSignal::new(Signal::new(VirtualizeMode::Auto)))]
     pub virtualize: ReadSignal<VirtualizeMode>,
-    /// With [`VirtualizeMode::Auto`]: the largest `count` that keeps every row in the DOM.
-    /// Defaults to [`DEFAULT_AUTO_THRESHOLD`] (1000).
+    /// With [`VirtualizeMode::Auto`]: the largest number of items that keeps every item in the
+    /// DOM (a list counts its rows, a grid its cells: `count` for `VirtualWrapGrid`,
+    /// `row_count x column_count` for `VirtualGrid`). Defaults to [`DEFAULT_AUTO_THRESHOLD`] (1000).
     #[props(default = ReadSignal::new(Signal::new(DEFAULT_AUTO_THRESHOLD)))]
     pub auto_threshold: ReadSignal<usize>,
     /// A scroll-edge fade on the container, which is the element that scrolls (the `dx-scroll-fade-*`
@@ -334,27 +337,17 @@ fn VirtualListWindowed(props: ListBodyProps) -> Element {
     let mut pin = use_hook(|| CopyValue::new(None::<(usize, Option<String>)>));
     let mut pin_tick = use_signal(|| 0u32);
 
-    // Find-in-page placeholders (opt-in, row 153): one capturing `beforematch` listener on the
-    // container names the item whose placeholder the browser is about to reveal; the list then
+    // Find-in-page placeholders (opt-in, row 153; the shared layer is `virtual/find.rs`): the
+    // `beforematch` listener names the item whose placeholder the browser is about to reveal; the list then
     // scrolls that row's real position into the middle of the viewport, which mounts it, and
     // marks it as the match (`data-find-match`), because the find bar's own highlight is on the
     // placeholder, not on the row.
-    let find_enabled = text_value.is_some();
     let mut find_match = use_signal(|| None::<usize>);
-    let mut hydrated = use_signal(|| false);
-    use_effect(move || hydrated.set(true));
-    use_js_listeners(move || {
-        if !find_enabled {
-            return None;
+    let hydrated = use_find_in_page(container_id, text_value.is_some(), move |index: String| {
+        if let Ok(index) = index.parse() {
+            find_match.set(Some(index));
+            bridge.reveal(index);
         }
-        Some(
-            JsListeners::install(BEFOREMATCH_BRIDGE_JS)
-                .arg(container_id.cloned())
-                .on_message(move |index: usize| {
-                    find_match.set(Some(index));
-                    bridge.reveal(index);
-                }),
-        )
     });
 
     let onresize = move |idx| {
@@ -411,7 +404,12 @@ fn VirtualListWindowed(props: ListBodyProps) -> Element {
             div {
                 style: "position: relative; height:{plan.canvas_height}px; width: 100%;",
                 if let Some(text_value) = text_value.filter(|_| hydrated()) {
-                    FindPlaceholders { count: rows_total, estimate_size, text_value }
+                    FindLayer {
+                        rows: rows_total,
+                        layout: FindLayout::Rows,
+                        row_height: move |idx| estimate_size.map_or(DEFAULT_SIZE, |f| f(idx)),
+                        text: move |(idx, _)| text_value(idx),
+                    }
                 }
                 div {
                     style: "position: absolute; inset: 0 auto auto 0; width: 100%; transform: translateY({plan.top_offset}px); will-change: transform;",
@@ -451,108 +449,3 @@ fn VirtualListWindowed(props: ListBodyProps) -> Element {
         }
     }
 }
-
-/// How many placeholders one [`FindChunk`] holds, so a count change re-renders the layer as
-/// `count / FIND_CHUNK` components rather than one component of `count` children.
-const FIND_CHUNK: usize = 100;
-
-/// The find-in-page layer (row 153): a column of `hidden="until-found"` text placeholders, one per
-/// row, laid over the canvas. It depends only on the count, the estimates and the text, so a
-/// scroll never re-renders it: the DOM the browser's find walks stays stable while it walks it
-/// (a layer that dropped the placeholders of mounted rows had to change on every window move,
-/// and find-next then skipped rows; see the row file). The price is that a mounted row's text
-/// is in the DOM twice, so its match counts twice. Each placeholder is as tall as its row's
-/// estimate, so the browser's own scroll to a match lands near the real row (the `beforematch`
-/// scroll then puts the row itself in the middle). A revealed placeholder is hidden again in the
-/// next frame and the find bar's highlight on it is transparent (`::search-text`): the
-/// placeholder's text never lines up with the row's own, so either would paint a stray copy over
-/// the row. The layer is transparent and ignores the pointer.
-#[component]
-fn FindPlaceholders(
-    /// The number of rows.
-    count: usize,
-    /// The row height estimate, by index.
-    estimate_size: Option<Callback<usize, u32>>,
-    /// The searchable text of a row.
-    text_value: Callback<usize, String>,
-) -> Element {
-    let chunks = count.div_ceil(FIND_CHUNK);
-    rsx! {
-        div {
-            "data-find-layer": "",
-            "aria-hidden": "true",
-            style: "position: absolute; inset: 0 0 auto 0; pointer-events: none; color: transparent;",
-            // The find bar's highlight is not painted on a placeholder (Chromium 144+; elsewhere
-            // the re-hide in `BEFOREMATCH_BRIDGE_JS` keeps it to one frame).
-            style { "[data-find-index]::search-text {{ color: transparent; background-color: transparent; }}" }
-            {(0..chunks).map(|chunk| {
-                let start = chunk * FIND_CHUNK;
-                let end = (start + FIND_CHUNK).min(count) - 1;
-                rsx! {
-                    // key-ok: a chunk of find placeholders is a slice of positions, not an item
-                    FindChunk { key: "{chunk}", start, end, estimate_size, text_value }
-                }
-            })}
-        }
-    }
-}
-
-/// Rows `start..=end` of the find layer.
-#[component]
-fn FindChunk(
-    /// The first row of the chunk.
-    start: usize,
-    /// The last row of the chunk, inclusive.
-    end: usize,
-    /// The row height estimate, by index.
-    estimate_size: Option<Callback<usize, u32>>,
-    /// The searchable text of a row.
-    text_value: Callback<usize, String>,
-) -> Element {
-    // A wrapper element per chunk, not a fragment: Dioxus 0.7.9's web interpreter appends new
-    // children with a 16-bit count, so a single parent that receives 65,536 or more new children in
-    // one edit silently keeps only the last `n mod 65536` (switching this demo from 10,000 to
-    // 100,000 rows lost rows 10,000..75,535 with fragment chunks).
-    //
-    // The chunk is also a `content-visibility: auto` box of its rows' summed estimate: without it
-    // every window move re-laid out all the placeholders (100,000 rows: 20 scroll frames took
-    // 2.6 s against 0.3 s without the layer, debug build); find-in-page still searches skipped
-    // content.
-    let heights: Vec<u32> = (start..=end)
-        .map(|idx| estimate_size.map_or(DEFAULT_SIZE, |f| f(idx)))
-        .collect();
-    let total: u32 = heights.iter().sum();
-    rsx! {
-        div { style: "content-visibility: auto; contain-intrinsic-block-size: {total}px;",
-            {(start..=end).zip(heights).map(|(idx, height)| {
-            rsx! {
-                div {
-                    // key-ok: a placeholder is a position's text, rebuilt from `text_value(idx)`
-                    key: "{idx}",
-                    // Upper case on purpose: Dioxus' web interpreter treats an attribute NAMED
-                    // `hidden` as boolean and drops "until-found"; `setAttribute` lower-cases the
-                    // name (the same slot as `collapsible::hidden_attribute`).
-                    "HIDDEN": "until-found",
-                    "data-find-index": "{idx}",
-                    style: "height: {height}px; overflow: hidden;",
-                    {text_value(idx)}
-                }
-            }
-        })} }
-    }
-}
-
-/// Tells Rust which row's placeholder the browser is about to reveal for a find-in-page or
-/// text-fragment match. `beforematch` bubbles; one capturing listener on the container sees all.
-/// The browser removes `hidden` after the event; the placeholder gets it back in the next frame,
-/// which the real find bar (headed Chromium 153) walks past in order, forwards and back.
-const BEFOREMATCH_BRIDGE_JS: &str = r#"
-    const container = document.getElementById(await dioxus.recv());
-    if (!container) return;
-    listen(container, "beforematch", (event) => {
-        const holder = event.target.closest && event.target.closest("[data-find-index]");
-        if (!holder) return;
-        dioxus.send(Number(holder.dataset.findIndex));
-        requestAnimationFrame(() => holder.setAttribute("hidden", "until-found"));
-    }, true);
-"#;
