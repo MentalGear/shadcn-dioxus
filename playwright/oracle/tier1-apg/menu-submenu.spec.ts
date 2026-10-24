@@ -234,7 +234,7 @@ test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
       'general APG menu rule (menu-roles.spec.ts\'s own citation): "An ' +
         "element with role menu either has: aria-labelledby set to a value " +
         'that refers to the menuitem or button that controls its display." ' +
-        "-- docs/backlog.md row 25 fixed this for ContextMenu/Menubar's " +
+        "-- dev-docs/backlog.md row 25 fixed this for ContextMenu/Menubar's " +
         "existing submenus; must not reopen for this new component.",
     ).toBe(await subTrigger.getAttribute("id"));
   });
@@ -518,7 +518,7 @@ test.describe("APG Menu and Menubar pattern — ContextMenu.Sub", () => {
     await expect(submenu).toHaveAttribute("data-state", "open");
     expect(
       await submenu.getAttribute("aria-labelledby"),
-      "docs/backlog.md row 25's rule, applied to this new component -- " +
+      "dev-docs/backlog.md row 25's rule, applied to this new component -- " +
         "must not reopen the gap that row closed for ContextMenu's " +
         "existing (non-nested) submenu shape",
     ).toBe(await subTrigger.getAttribute("id"));

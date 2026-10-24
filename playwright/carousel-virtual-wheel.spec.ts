@@ -1164,9 +1164,9 @@ async function replayOwnerFlick(page: Page, content: Locator, events: [number, n
   return { travel: Math.abs(endPos - startPos), maxPinnedMs, pinnedFrames, startPos, endPos };
 }
 
-test.describe("Carousel: the owner's long real flicks never stall at a rendered slice end", () => {
+test.describe("Carousel: long real flicks never stall at a rendered slice end", () => {
   for (const mark of ["mark3", "mark4", "mark6"] as const) {
-    test(`virtual_many, owner's ${mark}: travels well past the old 2-slide limit and never sits pinned at a false end for more than ~200ms`, async ({
+    test(`virtual_many, recorded flick ${mark}: travels well past a 2-slide radius and never sits pinned at a false end for more than ~200ms`, async ({
       page,
     }) => {
       test.setTimeout(180_000);
@@ -1174,12 +1174,12 @@ test.describe("Carousel: the owner's long real flicks never stall at a rendered 
       await pageTo(page, frame, "60 of 200");
       const r = await replayOwnerFlick(page, content, OWNER_FLICKS[mark]);
       console.log(`${mark} virtual_many: ${JSON.stringify(r)}`);
-      expect(r.travel, "travelled beyond the old radius-2 slice").toBeGreaterThan(3);
+      expect(r.travel, "travelled beyond a radius-2 slice").toBeGreaterThan(3);
       expect(r.maxPinnedMs, "longest pinned-at-a-false-end stall while input continued").toBeLessThanOrEqual(200);
     });
   }
 
-  test("virtual_loop (seamless, effective radius 5 of 12): the owner's mark4 never stalls at a slice end either", async ({ page }) => {
+  test("virtual_loop (seamless, effective radius 5 of 12): the recorded flick mark4 never stalls at a slice end either", async ({ page }) => {
     test.setTimeout(180_000);
     const { frame, content } = await open(page, "virtual_loop");
     await pageTo(page, frame, "6 of 12");

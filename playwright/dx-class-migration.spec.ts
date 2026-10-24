@@ -202,7 +202,7 @@ for (const name of MIGRATED.filter((n) => SAMPLED.has(n))) {
         message:
           `no CSS rule mentioning .${prefix} reached any frame of the page — ` +
           `the component's own stylesheet was not delivered (a missing ` +
-          `document::Link after the #[css_module] removal, docs/backlog.md row 32)`,
+          `document::Link after the #[css_module] removal, dev-docs/backlog.md row 32)`,
         timeout: 15000,
       })
       .toBe(true);
@@ -266,7 +266,7 @@ for (const name of MIGRATED.filter((n) => SAMPLED.has(n))) {
             `elements with a .${composed} class render on the "${name}" route, ` +
             `but no CSS rule mentioning .${composed} reached any frame — this ` +
             `component composes ${composed.replace(/^dx-/, "")}'s markup without ` +
-            `delivering its stylesheet (docs/backlog.md row 51)`,
+            `delivering its stylesheet (dev-docs/backlog.md row 51)`,
           timeout: 15000,
         })
         .toBe(true);

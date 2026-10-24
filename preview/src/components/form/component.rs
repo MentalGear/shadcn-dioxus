@@ -632,7 +632,7 @@ pub fn FormFixture() -> Element {
                     code { "required" }
                     " per its documented API, including "
                     code { "Select" }
-                    " -- see docs/plan.md Phase 1.3. "
+                    " -- see dev-docs/plan.md Phase 1.3. "
                     "Blocked submits fire "
                     code { "invalid" }
                     " on the offending controls, listed below in insertion order."

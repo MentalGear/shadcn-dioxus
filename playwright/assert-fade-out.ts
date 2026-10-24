@@ -252,13 +252,13 @@ export function analyzeFadeSamples(capture: FadeCapture): FadeOutReport {
     if (s.display === "none") {
       throw new Error(
         `content had display: none while still mounted at t=${s.t.toFixed(1)}ms -- the close animation ` +
-          `cannot play once the element is display:none (docs/backlog.md row 19). Samples: ${JSON.stringify(mountedSamples)}`,
+          `cannot play once the element is display:none (dev-docs/backlog.md row 19). Samples: ${JSON.stringify(mountedSamples)}`,
       );
     }
     if (s.popoverOpen === false) {
       throw new Error(
         `content lost :popover-open while still mounted at t=${s.t.toFixed(1)}ms -- hidePopover() ran ` +
-          `before the close animation finished (docs/backlog.md row 19). Samples: ${JSON.stringify(mountedSamples)}`,
+          `before the close animation finished (dev-docs/backlog.md row 19). Samples: ${JSON.stringify(mountedSamples)}`,
       );
     }
   }
@@ -306,7 +306,7 @@ export function assertFadesOutThenUnmounts(capture: FadeCapture): FadeOutReport 
   if (!report.sawOpacityAnimation) {
     throw new Error(
       `no opacity animation/transition (duration > 0) ever started on the closing content -- it snapped ` +
-        `rather than faded (docs/backlog.md row 7). Animations seen: ${JSON.stringify(capture.animations)}. ` +
+        `rather than faded (dev-docs/backlog.md row 7). Animations seen: ${JSON.stringify(capture.animations)}. ` +
         `Samples: ${JSON.stringify(report.mountedSamples)}`,
     );
   }

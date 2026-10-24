@@ -120,7 +120,7 @@ test("disabled state blocks input", async ({ page }) => {
  * descendant), making it transparent to hit-testing the same way
  * `opacity: 0` makes the real input transparent to painting.
  */
-test.describe("Hit-target coverage (2026-09-17 -- almost no hit target regression)", () => {
+test.describe("Hit-target coverage: the real input covers the whole visible row", () => {
   test("the real input's bounding box covers the full visible row", async ({ page }) => {
     await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
 
@@ -220,7 +220,7 @@ test.describe("Hit-target coverage (2026-09-17 -- almost no hit target regressio
  * collapse to a wrong, uniform position) and separately document the
  * empty-field case landing at 0 for every slot on purpose.
  */
-test.describe("Click-to-caret positioning (2026-09-17 -- second, deeper hit-target regression)", () => {
+test.describe("Click-to-caret positioning: a click on a slot places the caret at that slot", () => {
   const slotCenter = async (page: import("@playwright/test").Page, prefix: string, index: number) => {
     const box = await page.locator(`${prefix} + div [data-slot-index="${index}"]`).boundingBox();
     if (!box) throw new Error(`slot ${index} has no bounding box`);
@@ -324,7 +324,7 @@ test.describe("Click-to-caret positioning (2026-09-17 -- second, deeper hit-targ
  * `snap_caret_to_slot` doc for the full rationale, including why
  * `'forward'` was chosen for the selection direction.
  */
-test.describe("Click-then-type replace (2026-09-17 -- selection-vs-collapsed-caret regression)", () => {
+test.describe("Click-then-type replace: a click selects the slot so the next key replaces it", () => {
   const slotCenter = async (page: import("@playwright/test").Page, prefix: string, index: number) => {
     const box = await page.locator(`${prefix} + div [data-slot-index="${index}"]`).boundingBox();
     if (!box) throw new Error(`slot ${index} has no bounding box`);

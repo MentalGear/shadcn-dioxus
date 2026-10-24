@@ -139,7 +139,7 @@ test('the plain top-level link is a real link', async ({ page }) => {
   await expect(page).toHaveURL(/\/docs/);
 });
 
-test.describe('Open animation never reflows the content (user-reported)', () => {
+test.describe('Open animation never reflows the content', () => {
   // The user report: "hovering to show menus -- the menu
   // items' text reflows, which indicates the width is animated in a way
   // that is wrong; it should not be width." shadcn/Radix's own

@@ -690,8 +690,8 @@ test.describe("hydration parity — SSG server markup vs. wasm client", () => {
     await expect(
       trigger,
       "clicking 'Open Menu' on a hard-loaded page did not open the menu " +
-        "(data-state never became 'open') — the literal user-reported " +
-        "symptom this rule regression-tests",
+        "(data-state never became 'open'): a hard-loaded page must be " +
+        "interactive after hydration",
     ).toHaveAttribute("data-state", "open");
     // `menuitem`, not `option`: DropdownMenu's items carry the APG Menu
     // Button pattern role (dev-docs/backlog.md row 24, `menu-roles.spec.ts`),
@@ -833,7 +833,7 @@ test.describe("hydration parity — SSG server markup vs. wasm client", () => {
 test.describe("hydration parity — per-component pages (row 46)", () => {
   test.skip(
     COMPONENT_NAMES.length === 0,
-    "SSG_SITE_DIR not set -- export it to the SSG build's public/ dir (or run via this lane's CI job) to enumerate every prerendered component page; see this file's header.",
+    "SSG_SITE_DIR not set -- export it to the SSG build's public/ dir (or run via the CI job that builds the SSG) to enumerate every prerendered component page; see this file's header.",
   );
 
   test("Rule 5: no prerendered component page served the not-found shell", async ({ request }) => {
@@ -849,7 +849,7 @@ test.describe("hydration parity — per-component pages (row 46)", () => {
     expect(
       offenders,
       `component page(s) served the "Component not found" shell instead of their real content ` +
-        `-- this is the row 46 regression itself: ${offenders.join(", ")}`,
+        `-- every prerendered page must carry its own content (row 46): ${offenders.join(", ")}`,
     ).toHaveLength(0);
   });
 

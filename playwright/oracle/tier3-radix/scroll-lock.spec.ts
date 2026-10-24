@@ -564,7 +564,7 @@ test.describe("scrollbar-gutter reservation survives the lock itself, not just i
   });
 });
 
-test.describe("Breakpoint-flip regression: exact 1027px viewport with a classic scrollbar", () => {
+test.describe("Breakpoint flip: exact 1027px viewport with a classic scrollbar", () => {
   /**
    * Ties this suite's generic gutter check above (measured at
    * whatever width `xvfb.local.config.ts`'s default viewport happens to

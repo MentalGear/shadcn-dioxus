@@ -35,7 +35,7 @@ const used = (el: Locator) =>
   el.evaluate((e) => [parseFloat(getComputedStyle(e).width), parseFloat(getComputedStyle(e).height)]);
 
 for (const mode of ["light", "dark"] as const) {
-  test.describe(`row 188 batch 3, ${mode}`, () => {
+  test.describe(`field, input group button and badge spinner demos, ${mode}`, () => {
     test.use({ colorScheme: mode });
 
     test(`field/disabled: a disabled field dims its labels, not its description`, async ({ page }) => {

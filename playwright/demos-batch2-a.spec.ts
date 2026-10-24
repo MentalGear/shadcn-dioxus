@@ -22,7 +22,7 @@ async function open(page: Page, name: string, variant: string, mode: "light" | "
 }
 
 for (const mode of ["light", "dark"] as const) {
-  test.describe(`demos batch 2 A, ${mode}`, () => {
+  test.describe(`menu, overlay and floating demos, ${mode}`, () => {
     test.use({ colorScheme: mode });
 
     test(`tooltip/sides: each trigger opens its tooltip on its side`, async ({ page }) => {

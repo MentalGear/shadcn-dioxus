@@ -60,7 +60,7 @@ test('keyboard navigation', async ({ page }) => {
   await expect(page).toHaveURL(/\/component\/checkbox\//);
 });
 
-test.describe('Close animation is not skipped (docs/backlog.md row 77 follow-up)', () => {
+test.describe('Close animation is not skipped (dev-docs/backlog.md row 77 follow-up)', () => {
   // Row 77 (Navigation Menu) and this row share one construction: `navbar.rs` pairs
   // `use_animated_open` with `use_popover_sync`, and a synchronous `hidePopover()` (called
   // the instant `open` goes `false`) would remove the element before `use_animated_open`'s

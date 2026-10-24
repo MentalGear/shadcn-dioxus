@@ -691,7 +691,7 @@ test.describe("Tab order", () => {
   });
 });
 
-test.describe("aria-valuenow / aria-valuetext, and the fixed dangling aria-labelledby", () => {
+test.describe("aria-valuenow / aria-valuetext, and no dangling aria-labelledby", () => {
   test("aria-valuenow mirrors the live value on every arrow-key change (already exercised above); before any date is chosen it is entirely absent, not today's date -- backlog row 84 finding 3", async ({ page }) => {
     // `now_value` in `date_picker.rs` must not be `value().unwrap_or(default)`:
     // `default` is today's year/month/day, so an untouched segment's
@@ -793,7 +793,7 @@ test.describe("aria-valuenow / aria-valuetext, and the fixed dangling aria-label
     expect(Number(after)).toBe(today);
   });
 
-  test("every spinbutton's aria-labelledby, if present, references an element that exists (fix regression guard)", async ({ page }) => {
+  test("every spinbutton's aria-labelledby, if present, references an element that exists", async ({ page }) => {
     // `spinbutton-pattern.html`'s Roles/States/Properties section: "If the
     // spinbutton has a visible label, it is referenced by aria-labelledby
     // ... . Otherwise, the spinbutton element has a label provided by
@@ -857,7 +857,7 @@ test.describe("Range picker (DateRangePicker, variant=range)", () => {
     expect(activeId).toBe(endYearId);
   });
 
-  test("typing into the start and end year/month segments updates each independently (stops short of completing either date -- see the regression guard below)", async ({ page }) => {
+  test("typing into the start and end year/month segments updates each independently (stops short of completing either date -- see the Home-key test below)", async ({ page }) => {
     // `DateRangePickerInputValue`'s own commit effect (`date_picker.rs`)
     // only calls `on_date_change`/touches the calendar once a side's
     // year+month+day all resolve to `Some` -- this exercises everything up
@@ -917,7 +917,7 @@ test.describe("Range picker (DateRangePicker, variant=range)", () => {
     await Promise.race([
       page.keyboard.press("Home"),
       new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Home on the day segment did not resolve within 5s (regression -- see this test's own comment)")), 5000)
+        setTimeout(() => reject(new Error("Home on the day segment did not resolve within 5s (see this test's own comment)")), 5000)
       ),
     ]);
 
@@ -1682,7 +1682,7 @@ test.describe("Apply / Cancel footer (confirm, the default) -- single picker (va
     await expect(footerButton(dialog, "Cancel")).toHaveClass(/dx-button/);
   });
 
-  test("picking a day stages it: the calendar shows it, the input is unchanged, the popover stays open (well past the old dwell)", async ({ page }) => {
+  test("picking a day stages it: the calendar shows it, the input is unchanged, the popover stays open (well past a 300 ms dwell)", async ({ page }) => {
     await gotoDatePicker(page);
     const before = await committedDay(page);
     await pickerTrigger(page).click();

@@ -572,7 +572,7 @@ test.describe("Carousel: shadcn-parity geometry (size, shadow, outside placement
  * construction overflows by 12-15px on the horizontal variants at these
  * same viewports, tens of times this tolerance.
  */
-test.describe("Carousel: arrows never overflow their frame (carousel-narrow regression)", () => {
+test.describe("Carousel: arrows never overflow their frame", () => {
   const VIEWPORTS = [1280, 900, 768, 640, 480, 390];
   const OVERFLOW_TOLERANCE_PX = 0.5;
 
@@ -825,7 +825,7 @@ test.describe("Axe automated scan", () => {
  * scroll motion rather than "the code chose smooth", which a wording-only check could pass by
  * coincidence.
  */
-test.describe("Carousel: the first paged transition actually animates (round5 regression)", () => {
+test.describe("Carousel: the first paged transition actually animates", () => {
   test("clicking Next from slide 1 passes through an intermediate scroll position, not an instant jump", async ({ page }) => {
     await goto(page, "main");
     const reducedMotion = await page.evaluate(
@@ -996,7 +996,7 @@ test.describe("Carousel: pointer drag (mouse/pen)", () => {
  * paged transition actually animates" describe block isolates a single
  * button click.
  */
-test.describe("Carousel: a drag release actually animates to the nearest slide (item 2 regression)", () => {
+test.describe("Carousel: a drag release actually animates to the nearest slide", () => {
   test("releasing a drag passes through several intermediate scrollLeft values, not an instant jump", async ({
     page,
   }) => {
@@ -1364,7 +1364,7 @@ test.describe("Carousel: edge rubber-band, pointer (mode B3)", () => {
     await expect(slide(1)).toHaveAttribute("data-selected", "true");
   });
 
-  test("a mid-range pointer drag produces no transform and still pages correctly (regression guard)", async ({
+  test("a mid-range pointer drag produces no transform and still pages correctly", async ({
     page,
   }) => {
     await goto(page, "main");
@@ -1696,7 +1696,7 @@ test.describe("Carousel: wheel/trackpad edge band (mode D, platform-aware)", () 
     expect(rec.owned).toBe(false);
   });
 
-  test("after coasting into slide 1, the owner's dip-then-rise re-push starts a new, owned gesture and draws a band", async ({
+  test("after coasting into slide 1, a dip-then-rise re-push starts a new, owned gesture and draws a band", async ({
     page,
   }) => {
     await enableWheelDebug(page);
@@ -2006,7 +2006,7 @@ test.describe("Carousel: wheel/trackpad edge band (mode D, platform-aware)", () 
     await expect(slide(5)).toHaveAttribute("data-selected", "true");
   });
 
-  test("a mid-range wheel scroll produces no lingering transform and still pages correctly (regression guard)", async ({
+  test("a mid-range wheel scroll produces no lingering transform and still pages correctly", async ({
     page,
   }) => {
     await goto(page, "main");
@@ -2762,7 +2762,7 @@ test.describe("Carousel: indicators (tablist/dot-picker) variant", () => {
  *   `scrollIntoView()`-based one, the one signal that distinguishes this
  *   bug from that unrelated mechanism.
  */
-test.describe("Carousel: paging never scrolls the page (ancestor-scroll regression)", () => {
+test.describe("Carousel: paging never scrolls the page", () => {
   /** Poll `window.scrollY` until it stops changing -- see this describe
    * block's own "Methodology notes" above for why (the page's own
    * unrelated "jump to this variant" scroll on load). */

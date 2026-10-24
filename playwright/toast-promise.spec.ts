@@ -71,7 +71,7 @@ test.describe("toast: promise (row 138 step 3)", () => {
     expect(l.added.filter((r) => r === "alert")).toHaveLength(1);
   });
 
-  test("once settled, the toast starts its normal countdown (loading no longer pins it)", async ({ page }) => {
+  test("once settled, the toast starts its normal countdown (loading does not pin it)", async ({ page }) => {
     await open(page);
     await page.getByRole("button", { name: "Promise (success)" }).click();
     const t = toasts(page, R);

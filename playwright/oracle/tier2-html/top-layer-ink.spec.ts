@@ -438,7 +438,7 @@ test.describe("light color scheme", () => {
   runSurfaceChecks();
 });
 
-test.describe("dark color scheme (worst case for this bug)", () => {
+test.describe("dark color scheme (the worst case for ink contrast)", () => {
   test.use({ colorScheme: "dark" });
   runSurfaceChecks();
 });

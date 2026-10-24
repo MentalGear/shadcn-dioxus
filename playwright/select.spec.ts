@@ -332,7 +332,7 @@ test("typeahead skips disabled options", async ({ page }) => {
  * component's CSS (this bug's actual location) and does not cover this
  * symptom. This test is the real oracle for it.
  */
-test.describe("Listbox width (docs/backlog.md row 47 -- full-viewport-width regression)", () => {
+test.describe("Listbox width tracks the trigger width (dev-docs/backlog.md row 47)", () => {
     async function assertListboxTracksTriggerWidth(
         page: Page,
         trigger: ReturnType<Page["getByRole"]>,
@@ -411,7 +411,7 @@ test.describe("Listbox width (docs/backlog.md row 47 -- full-viewport-width regr
  * layout), which would let a regression of the trigger's own CSS
  * `min-width` go unnoticed here.
  */
-test.describe("Trigger minimum width (docs/backlog.md row 10's sibling fix, 2026-09-14)", () => {
+test.describe("Trigger minimum width (dev-docs/backlog.md row 10)", () => {
     test("a selected option's checkmark reaches the row's own right edge, not just the label", async ({ page }) => {
         await gotoHydrated(page, `${BASE_URL}/component/form/`);
         const trigger = page.getByRole("combobox", { name: "Fruit, required (library)" });

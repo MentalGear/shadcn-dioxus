@@ -56,7 +56,7 @@ import glob, json, os, re, sys, tomllib
 # crate -> reason; written `=x.y.z` in component.json.
 EXACT_ONLY = {
     "dioxus-icons": "leaf crate used by 27 components, pre-1.0 and one maintainer: an exact pin keeps every install on the version we render with",
-    "pulldown-cmark": "markdown parser (owner decision E2: exact pin; a panic fix landed between 0.13.3 and 0.13.4)",
+    "pulldown-cmark": "markdown parser (owner decision E2: exact pin, because model output reaches this parser and 0.13.4 carries a panic fix)",
 }
 # Markdown / HTML / syntax parser crates: a component may list one only if PARSER_ALLOW[crate] names it.
 PARSER_ALLOW = {

@@ -1641,7 +1641,7 @@ mod tests {
     }
 
     #[test]
-    fn without_snap_points_the_release_is_the_old_close_or_stay() {
+    fn without_snap_points_the_release_is_a_plain_close_or_stay() {
         assert_eq!(
             settle_on_release(&[0.0], 0.0, 120.0, Some(400.0), 0.0),
             Settle::Close

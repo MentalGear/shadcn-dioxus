@@ -87,7 +87,7 @@ pub fn ContrastDocs() -> Element {
             }
         }
         p {
-            "Each calibrated value is a relative-colour lightness bound on the role's own source (a preset's tint and a pasted shadcn theme's colours still come through; only a value that fails is moved). Selected fills, slider and progress tracks and the Tabs pill stay shadcn's, because each carries a second cue. The status colours that have no shadcn original (the error Toast surface, the success green, the docs link blue) are fixed in both settings."
+            "Each calibrated value is a relative-colour lightness bound on the role's own source (a preset's tint and a pasted shadcn theme's colours still come through; only a value that fails is moved). Selected fills, slider and progress tracks and the Tabs pill stay shadcn's, because each carries a second cue. The status colours that have no shadcn original (the error Toast surface, the success green, the docs link blue) are the same in both settings."
         }
         h3 { id: "contrast-mode-use", "Using it" }
         DocsPre {

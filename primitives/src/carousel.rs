@@ -6986,7 +6986,7 @@ mod ssr_tests {
     }
 
     #[test]
-    fn an_inline_flex_basis_override_still_wins_over_the_new_default_calc() {
+    fn an_inline_flex_basis_override_wins_over_the_default_calc() {
         // The "override flex-basis per item via inline style"
         // escape hatch (docs.md's own "Sizing slides" section)
         // must keep working: a caller-supplied

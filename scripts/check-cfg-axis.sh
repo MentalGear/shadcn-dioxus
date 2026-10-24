@@ -89,8 +89,7 @@ if [[ -n "$VIOLATIONS" ]]; then
   echo >&2
   echo "Markup/structure/attribute cfgs must split on feature = \"web\", not" >&2
   echo "target_family = \"wasm\" -- see dev-docs/reference/platform-rationale.md" >&2
-  echo "Caveat 1 for the corrected axis rule and the 2026-09-01 incident" >&2
-  echo "that proved it." >&2
+  echo "Caveat 1 for the axis rule and why target_family is the wrong axis." >&2
   exit 1
 fi
 

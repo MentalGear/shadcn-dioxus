@@ -157,12 +157,11 @@ export interface AxeRegionExclusion {
 export const EXCLUDE_VENDORED_CODE_HIGHLIGHT: AxeRegionExclusion = {
   selector: "",
   reason:
-    "no-op, retained only for call-site compatibility -- the github-light " +
-    "theme's comment-token contrast defect this used to exclude " +
-    "(#6e7781 on #fbfbfb, 4.39:1) was fixed by construction, in source " +
-    "(preview/assets/main.css overrides the theme's comment tokens -> " +
-    "#59636e, 5.91:1, since the theme's own generated CSS is reverted by " +
-    "every deploy); see docs/backlog.md row 39 and this file's header doc",
+    "no-op, kept only for call-site compatibility -- nothing needs excluding: " +
+    "preview/assets/main.css overrides the github-light theme's comment " +
+    "tokens (#6e7781 on #fbfbfb is 4.39:1) with #59636e (5.91:1), because " +
+    "the theme's own generated CSS is reverted by every deploy; see " +
+    "dev-docs/backlog.md row 39 and this file's header doc",
 };
 
 export interface AxeScanOptions {

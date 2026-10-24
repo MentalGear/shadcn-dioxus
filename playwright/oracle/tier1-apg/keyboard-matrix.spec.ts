@@ -511,7 +511,7 @@ test.describe("APG Menu and Menubar pattern — Navbar nav dropdowns", () => {
     await expect(
       inputsTrigger,
       "Escape must return focus to this nav's own trigger, matching " +
-        "MenubarMenu's identical contract (docs/backlog.md row 53)",
+        "MenubarMenu's identical contract (dev-docs/backlog.md row 53)",
     ).toBeFocused();
   });
 });

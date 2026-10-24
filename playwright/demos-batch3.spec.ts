@@ -27,7 +27,7 @@ const px = (el: import("@playwright/test").Locator, prop: "width" | "height") =>
 const bg = (el: import("@playwright/test").Locator) => el.evaluate((e) => getComputedStyle(e).backgroundColor);
 
 for (const mode of ["light", "dark"] as const) {
-  test.describe(`demos batch 3 (parts), ${mode}`, () => {
+  test.describe(`component parts demos, ${mode}`, () => {
     test.use({ colorScheme: mode });
 
     test(`alert_dialog/small: data-size sm, two actions on one row`, async ({ page }) => {

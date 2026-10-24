@@ -528,7 +528,7 @@ mod tests {
     /// `cargo test --release -p dioxus-primitives size_index -- --ignored --nocapture`.
     #[test]
     #[ignore = "benchmark, run by hand"]
-    fn bench_one_measurement_old_rebuild_against_the_index() {
+    fn bench_one_measurement_naive_rebuild_against_the_index() {
         use std::time::Instant;
         let estimate: &dyn Fn(usize) -> u32 = &|i| 40 + (i % 7) as u32;
         for count in [10_000usize, 100_000, 1_000_000] {
@@ -566,7 +566,7 @@ mod tests {
             let built = SizeIndex::new(source, HashMap::new());
             let build = t.elapsed();
             keep += built.total() as u64;
-            println!("N={count:>9}: old {old:>10.2?} / measurement, index {new:>8.2?} / measurement, one-off build {build:>9.2?} (ignore {keep})");
+            println!("N={count:>9}: naive rebuild {old:>10.2?} / measurement, index {new:>8.2?} / measurement, one-off build {build:>9.2?} (ignore {keep})");
         }
     }
 
