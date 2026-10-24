@@ -13,7 +13,7 @@
 #     `--update-baseline` to lock the drop in (shrink-only, so history cannot creep back into a file that was cleaned).
 #
 # WHAT COUNTS (a comment line, per scripts/comment-scan.py: Rust `//` `///` `//!` `/* */`, CSS `/* */`, TS/JS `//`
-# `/* */` (a regex literal is skipped, so `/[/*]/` opens nothing), Python `#` and docstrings, shell `#`; a marker
+# `/* */` (a regex literal is skipped, so `/[/*]/` opens nothing), HTML `<!-- -->` and inline `<script>`/`<style>` bodies, Python `#` and docstrings, shell `#`; a marker
 # inside a string is not a comment -- except the comments of JS or CSS held in a Rust string literal (an eval script,
 # a `style { r#"..."# }` sheet): a string that reads as code is scanned for its `//` and `/* */`, a URL or a prose
 # string with a `//` is not, a triple-quoted Python string that is not a docstring is data, and a shell
@@ -42,7 +42,10 @@
 #            (status header); "tried first", "the hard way", "renamed from/to", "exactly as before", "unchanged from before",
 #            "the original asserted/report/defect", "the previous engine", "pre-shadcn-parity", "historical defect",
 #            "Phase 4.4 solved", "before Phase 1.1", "as it did before", "before this prop existed", "not clamped any more"
-#            (past framing); "owner report", "user/bug/live-site report", "owner's lab session", "incident behind",
+#            (past framing); the before/after forms of round 3: "unchanged from before/the ...", "as before" (not "same reason
+#            as before:", which points at the text above), "as they always were", "exactly as it did", "the same defect as X
+#            had", "had to fix", "was exposed to the same ...", "not yet caught", "regressed when", "the first attempt at/was/
+#            used" (not "accepts the first attempt that clears ..."), "why it moved", "replaces a call per"; "owner report", "user/bug/live-site report", "owner's lab session", "incident behind",
 #            "PR #47" (a PR number, not an `upstream PR #N`) (report); a `$S/...` scratchpad pointer; a month-only
 #            "2026-08" date. NOT history: a path ("dev-docs/research/round3-2026-10-05.md" is a link, so it is masked
 #            before the rules run), a pinned upstream revision in a provenance frame (`<repo> commit <sha>`, `<sha> of

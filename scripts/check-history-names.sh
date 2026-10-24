@@ -10,6 +10,16 @@
 # "no longer", "follow-up", or a "(... lane)" tag. It reuses comment-scan.py's phrase tables (`history_reason`: "used to",
 # "previously", "now uses", SHAs, ...) and adds the name-only forms (NAME_MARKERS in scripts/history-names.py).
 #
+# Before/after CONTRAST is history too (round 3): a title that says what a change did not move compares the code with its
+# earlier shape. `contrast_reason` in scripts/history-names.py flags `still <verb>` ("selecting a sub-item still closes
+# the whole menu", "hovering still scrolls"), `is unchanged:` / a title that leads with `unchanged` / `(unchanged)` /
+# `is unchanged` with no operation in the title ("keyboard is unchanged: ArrowRight ..."), `regained`, `is restored`
+# ending a clause and `works/passes/green again`. A guarantee under a condition ("the scrim blocks pointer events while
+# disabled", "... still over it" after `while`, "under RTL ... still wraps", "after X the fade still follows"), `still`
+# before an adjective or participle ("still popover-open", "a still shape"), `and still ...` continuing a predicate,
+# `the order is unchanged` after `Escape cancels a lift`, and a Rust `..._is_unchanged` (an identity test) stay. The
+# unchanged rules read titles only, never Rust or file names.
+#
 # A separate gate and not a mode of check-history-comments.sh, because the failure shape differs: comments are
 # counted against a shrink-only per-file baseline (old text is debt), while a name is clean or it is not, so there is
 # no baseline: any hit fails, and the only exemption is a reasoned ALLOW entry (path, name substring, reason) in

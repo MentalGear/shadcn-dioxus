@@ -51,6 +51,73 @@ NAME_MARKERS = [
 # A slug read as prose: `-`/`_` are spaces, camelCase and digits stay.
 _SLUG = re.compile(r"[-_]+")
 
+# Before/after CONTRAST (row 384): a title that says what a change did not move ("selecting a sub-item still closes the
+# whole menu", "keyboard is unchanged: ArrowRight ...", "hovering still scrolls") compares the code with its earlier
+# shape, which is history even with no date in it. The rules are narrow on purpose; a title that states a guarantee
+# under a condition or after an operation is a present-tense assertion and stays:
+#   still       `still` followed by a finite verb (`still closes`, `still scrolls`, `still drag`: a word in -s, or a base
+#               verb from _STILL_VERBS) unless the title names a condition or an operation the guarantee holds under
+#               (while / when / once / until / if / under / with / without / inside / after / afterwards / during /
+#               across ...: "keeps its background while the pointer is still over it", "under RTL, Rewind still
+#               wraps", "after prepending history the fade still follows" are guarantees under a condition) or a
+#               determiner stands right before it (`a still shape`, `the still matching item`
+#               are adjectives), or it continues a predicate (`... and still pages correctly`: a conjunction or comma
+#               right before it). `still` before an adjective, preposition or participle (`still popover-open`, `still in
+#               flight`, `is still opaque`, `is still a click`) describes a state the test observes and stays
+#   unchanged   (a) `is|are unchanged:` -- the claim as a label for the cases after the colon; (b) the title LEADS with
+#               `unchanged` (after an optional short `label: `); (c) a parenthetical `(unchanged)`; (d) `is|are
+#               unchanged` with no operation named in the title (nothing was clicked, scrolled, cancelled, reset ... so
+#               what it is compared with can only be the old build). `the order is unchanged` after `Escape cancels a
+#               lift`, `offset ... is unchanged after scrolling` and a Rust `..._is_unchanged` (an identity test:
+#               output equals input) are assertions and stay; the unchanged rules do not read Rust or file names
+#   regained / restored / again   `regained`, `is restored` as the end of a clause, and `again` only after a
+#               works/passes/green verb (`works again`, `is green again`), each unless a condition or operation word
+#               is in the title; `closing it again restores X`, `focus restored` and `scroll is locked while open and
+#               restored after Escape` repeat or undo an action the test performs, which is behaviour
+_COND = re.compile(r"\b(?:while|whilst|when|whenever|once|until|if|unless|as long as|so long as|provided)\b")
+_DETERMINER_BEFORE = re.compile(r"\b(?:a|an|the|its|their|this|that|any|each|every|no|one|my|our)\s+$")
+_CONJ_BEFORE = re.compile(r"(?:\b(?:and|but|or|yet|so|also)|,)\s+$")
+_OPERATION = re.compile(
+    r"\b(?:after|before|across|during|past|following|then|cancel\w*|escape|esc|leav\w+|reset|reload\w*|click\w*|press\w*|"
+    r"typ(?:e|es|ed|ing)|hover\w*|scroll\w*|drag\w*|pick\w*|stag\w+|toggl\w+|clos\w+|open\w+|switch\w*|select\w*|"
+    r"resiz\w+|blur\w*|focus\w*|revert\w*|undo\w*|reject\w*|block\w*|clamp\w*|apply|applied|commit\w*|submit\w*|"
+    r"navigat\w+|re-?render\w*|re-?mount\w*|paging|page|flick\w*|tap\w*|key(?:s|stroke\w*)?|enter|arrow\w*)\b")
+_STILL_COND = re.compile(r"\b(?:while|whilst|when|whenever|once|until|if|unless|as long as|so long as|provided|under|with|without|inside|"
+                         r"within|after|afterwards|following|during|across|then|later|past)\b")
+_STILL_VERBS = ("be do have hold work apply drag drive glide close open fire run move show hide match render pass keep follow "
+                "dismiss flip count ring band win fill lose clip trap turn mask read stack scroll submit select toggle resolve "
+                "swap restore reorder paint center centre stay remain reach cover exist use get take make give let set sit "
+                "start stop fit land jump snap survive resume animate persist propagate respond behave update clear cancel "
+                "block fail fall flow grow pick point press reject reveal rest return sort split step switch trigger wrap")
+# `still` + verb: a 3rd-person -s word (not an adverb or noun in -ss/-us/-ous) or a base verb for a plural subject
+_STILL = re.compile(r"\bstill\s+(?!(?:less|across|status|focus|process|always|thus|plus|various|previous|its|this|us|as)\b)"
+                    r"(?:\w{2,}s|%s)\b(?!-)" % "|".join(_STILL_VERBS.split()))
+_UNCHANGED_LABEL = re.compile(r"\b(?:is|are) unchanged\s*:")
+_UNCHANGED_LEAD = re.compile(r"^\W*(?:[\w ,()/.'+-]{1,40}:\s*)?unchanged\b")
+_UNCHANGED_PAREN = re.compile(r"\(\s*unchanged\s*\)")
+_UNCHANGED_IS = re.compile(r"\b(?:is|are) unchanged\b")
+_REGAINED = re.compile(r"\bregained\b")
+_RESTORED_END = re.compile(r"\b(?:is|are|was|were|has been|have been|got) (?:now |fully )?restored\s*(?:[:;,)]|$)")
+_AGAIN = re.compile(r"\b(?:works?|passes|is green|are green|green|recovers?) again\b|\bagain (?:works|passes|green)\b")
+
+
+def contrast_reason(text, slug=False):
+    """A before/after contrast in a lower-cased title or slug (see the table above), or None."""
+    for m in _STILL.finditer(text):
+        before = text[:m.start()]
+        if _STILL_COND.search(text) or _DETERMINER_BEFORE.search(before) or _CONJ_BEFORE.search(before):
+            continue
+        return "still (before/after)"
+    if not slug:
+        if _UNCHANGED_LABEL.search(text) or _UNCHANGED_LEAD.search(text) or _UNCHANGED_PAREN.search(text):
+            return "unchanged (before/after)"
+        if _UNCHANGED_IS.search(text) and not _OPERATION.search(text) and not _COND.search(text):
+            return "unchanged (before/after)"
+    if not _COND.search(text) and not _OPERATION.search(text):
+        if _REGAINED.search(text) or _RESTORED_END.search(text) or _AGAIN.search(text):
+            return "regained/restored/again"
+    return None
+
 
 def reason_for(name, slug=False):
     """Why `name` carries history, or None."""
@@ -61,6 +128,9 @@ def reason_for(name, slug=False):
     for rx, why in NAME_MARKERS:
         if rx.search(text):
             return why
+    why = contrast_reason(text, slug)
+    if why:
+        return why
     why = cs.history_reason(name if not slug else _SLUG.sub(" ", name))
     return why
 
@@ -249,6 +319,23 @@ MUST_FLAG = [
     ("slug", "select_pre_fix_overflow", "pre-fix"),
     ("slug", "menu_before_the_fix", "pre-fix"),
     ("slug", "owners_report_label", "reported by"),
+    # round 3 (row 384): before/after contrast
+    ("title", "selecting a sub-item still closes the whole menu", "still (before/after)"),
+    ("title", "hovering still scrolls", "still (before/after)"),
+    ("title", "keyboard: ArrowDown still opens the menu and focuses its first item", "still (before/after)"),
+    ("title", "the older ones still glide", "still (before/after)"),
+    ("title", "Escape and Close still close it", "still (before/after)"),
+    ("slug", "caller_style_still_overrides_the_gap_prop", "still (before/after)"),
+    ("title", "keyboard is unchanged: ArrowRight moves to the next item", "unchanged (before/after)"),
+    ("title", "wcag, dark: unchanged, a bare ratio is still held", "unchanged (before/after)"),
+    ("title", "unchanged: the thumb keeps its size", "unchanged (before/after)"),
+    ("title", "neither: prefers-color-scheme decides (unchanged)", "unchanged (before/after)"),
+    ("title", "desktop is unchanged on the routes that had no phone entry", "unchanged (before/after)"),
+    ("title", "the keyboard counterpart is unchanged", "unchanged (before/after)"),
+    ("title", "the thumb regained its ring", "regained/restored/again"),
+    ("title", "the divider is restored", "regained/restored/again"),
+    ("title", "the divider works again", "regained/restored/again"),
+    ("title", "the suite is green again", "regained/restored/again"),
 ]
 MUST_NOT_FLAG = [
     ("title", "opens on click and closes on Escape"),
@@ -273,6 +360,36 @@ MUST_NOT_FLAG = [
     ("slug", "carousel_wheel_replay"),
     ("slug", "popover_stays_anchored"),
     ("slug", "parses_iso_dates_2024_10_19"),
+    # round 3: the same words as a guarantee under a condition, an observed state, or an action the test repeats
+    ("title", "the scrim blocks pointer events while disabled"),
+    ("title", "a selected day keeps its background while the pointer is still over it"),
+    ("title", "clicking a tab keeps its active text color while still hovered"),
+    ("title", "under RTL, loop_mode Rewind still wraps both directions"),
+    ("title", "a click inside a slide still works when the pointer never crosses the drag threshold"),
+    ("title", "after prepending history the fade still follows the scroll position"),
+    ("title", "light/dark toggle still flips with a preset active"),
+    ("title", "a mid-range pointer drag produces no transform and still pages correctly"),
+    ("title", "content fades out (opacity -> 0, still popover-open) before unmounting"),
+    ("title", "a press on the close button is still a click, not a swipe"),
+    ("title", "the scrollbar is still opaque"),
+    ("title", "reduced motion stops every loop and keeps a still 'loading' shape"),
+    ("slug", "a_narrowing_search_keeps_the_still_matching_current_item"),
+    ("slug", "a_close_voids_a_measurement_still_in_flight"),
+    ("slug", "key_effects_stillness_is_measured"),
+    ("title", "Escape cancels a lift and the order is unchanged"),
+    ("title", "offset to trigger is unchanged after scrolling"),
+    ("title", "picking a day stages it: the calendar shows it, the input is unchanged, the popover stays open"),
+    ("title", "a non-digit keystroke is blocked and leaves the segment's value unchanged"),
+    ("slug", "clamp_selected_within_bounds_is_unchanged"),
+    ("slug", "resolve_horizontal_ltr_unchanged"),
+    ("title", "closing it again restores hidden=until-found"),
+    ("title", "pressing the active role again keeps it selected"),
+    ("title", "a reveal after the user closed it opens it again"),
+    ("title", "mobile: opens as a sheet and closes with Escape (focus restored)"),
+    ("title", "scroll is locked while open and restored after Escape"),
+    ("title", "Back restores the saved offset in one step"),
+    ("title", "a revealed placeholder is hidden again, and the real row is marked as the match"),
+    ("title", "the thumb regains focus when Escape closes the popup"),
 ]
 
 
@@ -336,6 +453,11 @@ def self_test():
         ("spec file named for a batch fails", {"playwright/demos-batch3.spec.ts": 'test("opens", () => {});\n'}, 1),
         ("spec file named for a date fails", {"playwright/menu-2026-10-19.spec.ts": 'test("opens", () => {});\n'}, 1),
         ("Rust test named for a regression fails", {"a/src/lib.rs": "#[test]\nfn regression_closes() {}\n"}, 1),
+        ("a `still <verb>s` title fails", {"playwright/menu.spec.ts": 'test("selecting a sub-item still closes the whole menu", () => {});\n'}, 1),
+        ("a template title with `is unchanged:` fails", {"playwright/menu.spec.ts": "test(`${x}: keyboard is unchanged: ArrowRight`, () => {});\n"}, 1),
+        ("a `still` guarantee under a condition passes", {"playwright/menu.spec.ts": 'test("the scrim still blocks pointer events while disabled", () => {});\n'}, 0),
+        ("Rust test named `..._still_works` fails", {"a/src/lib.rs": "#[test]\nfn unsorted_input_still_works() {}\n"}, 1),
+        ("Rust identity test `..._is_unchanged` passes", {"a/src/lib.rs": "#[test]\nfn clamp_within_bounds_is_unchanged() {}\n"}, 0),
         ("Rust helper (no #[test]) is not a test name", {"a/src/lib.rs": "fn regression_closes() {}\n"}, 0),
         ("a commented-out history title is not a title", {"playwright/menu.spec.ts": '// test("round 5 menu", () => {});\n'}, 0),
         ("the vendored reference tree is skipped", {"playwright/oracle/reference/x/y.spec.ts": 'test("the old way", () => {});\n'}, 0),

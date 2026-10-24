@@ -26,8 +26,8 @@ upstream changelog marked `history-ok: <reason>`.
 
 ## How the ratchet works
 
-Two gates, one comment extractor (`scripts/comment-scan.py`: Rust `//` `///` `//!` `/* */`, CSS `/* */`, TS/JS (regex
-literals skipped), Python `#` and docstrings, shell `#`; a marker inside a string is not a comment, a Python triple-quoted
+Two gates, one comment extractor (`scripts/comment-scan.py`: Rust `//` `///` `//!` `/* */`, CSS `/* */`, HTML `<!-- -->` and
+the comments of inline `<script>`/`<style>`, TS/JS (regex literals skipped), Python `#` and docstrings, shell `#`; a marker inside a string is not a comment, a Python triple-quoted
 string that is not a docstring is data, and a shell heredoc body is data unless it is code: an interpreter on the command
 line, a `PY`/`JS` delimiter or a `> file.py` target; the one exception to "a marker inside a string is not a comment" is
 JS or CSS held in a Rust string literal, whose own comments are read, below). Both are in `scripts/run-gates.sh` and run their own `--self-test`.
@@ -42,14 +42,17 @@ JS or CSS held in a Rust string literal, whose own comments are read, below). Bo
   `lane/p5tabs`, `the STYLE-DELIVERY lane`, `found twice`, `the first version`, `an earlier note`, and the retold-work forms of round 2: a lane or session told in the code (`this
   lane`, `this session`, `this fix`, `the task brief`, `$S/...`), how a finding was made (`confirmed live`, `found by
   execution`, `red-then-green`, `pre-fix`, `without the fix`), a status header (`STATUS AT WRITE TIME`, `UPDATE (`), past
-  framing (`exactly as before`, `renamed from`, `the original asserted`, `historical defect`, `before Phase 1.1`) and who
-  asked (`owner report`, `bug report`, `PR #47`), plus a month-only date `2026-08`). The counts are in
+  framing (`exactly as before`, `renamed from`, `the original asserted`, `historical defect`, `before Phase 1.1`), the
+  before/after forms of round 3 (`unchanged from before`, `as before`, `as they always were`, `exactly as it did`, `the same
+  defect as X had`, `had to fix`, `was exposed to the same`, `not yet caught`, `regressed when`, `the first attempt at`,
+  `why it moved`, `replaces a call per`) and who asked (`owner report`, `bug report`, `PR #47`), plus a month-only date `2026-08`). The counts are in
   `scripts/check-history-comments.baseline.tsv` (`path<TAB>count`). The gate **fails** when a file's count rises, when a
   new file has a non-zero count, and when a count **fell** while the baseline still allows the old number (run
   `scripts/check-history-comments.sh --update-baseline` to lock the drop in). Shrink-only: `--update-baseline` refuses
   to raise a count unless `--allow-grow` is given and the commit says why.
 - **`scripts/check-comment-refs.sh`** checks that every `row N` in a comment resolves to `dev-docs/backlog/NNN-*.md` or
-  `done/NNN-*.md`, and that every cited repo path exists. The dead ones that predate the gate (mostly the old `docs/`
+  `done/NNN-*.md`, and that every cited repo path exists (CSS block comments and the comments of `preview/index.html`
+  included; `dir/{dir/a.md,dir/b.tsv}` is a list of paths and each is checked). The dead ones that predate the gate (mostly the old `docs/`
   prefix, which is the deployed site now; the project docs are `dev-docs/`) are in
   `scripts/check-comment-refs.baseline.tsv` (`file<TAB>kind<TAB>ref`), shrink-only the same way.
 - **`scripts/check-history-names.sh`** is the same rule for NAMES (row 384): a Playwright `test(`/`test.describe(`/
@@ -59,6 +62,16 @@ JS or CSS held in a Rust string literal, whose own comments are read, below). Bo
   `comment-scan.py`'s `history_reason` flags (`used to`, `previously`, `now uses`). A name has no baseline: a hit fails,
   the only exemption is a reasoned `ALLOW` entry in `scripts/history-names.py`, and a stale entry fails. A title says
   what the test asserts in the present tense; `row N` pointers stay (links). `--inventory` lists the hits.
+  **Before/after contrast** is history without a date (round 3): `still <verb>` (`selecting a sub-item still closes the
+  whole menu`), `is unchanged:` / a title that leads with `unchanged` / `(unchanged)` / `is unchanged` with no operation
+  named (`keyboard is unchanged: ArrowRight ...`), `regained`, an ending `is restored`, `works/passes/green again`. The rule
+  that keeps guarantees out: a condition or operation in the title (`while`, `when`, `once`, `until`, `if`, `under`,
+  `with`, `without`, `inside`, `after`, `during`, `across` ...) means `still` states what holds under it (`the scrim
+  blocks pointer events while disabled`, `under RTL, Rewind still wraps`), `still` before an adjective or participle
+  (`still popover-open`), after a determiner (`a still shape`) or continuing a predicate (`... and still pages`) is a state
+  or an adjective, and `unchanged` after a named operation (`Escape cancels a lift and the order is unchanged`) or in a Rust
+  `..._is_unchanged` identity test is an assertion. Not adopted: a bare `again` (`closing it again restores X` repeats an
+  action), a bare `restored` (`focus restored`, `scroll is restored after Escape`) and `regains focus` (behaviour).
 
 Skipped: `dev-docs/archive/` (history belongs there; code files elsewhere under `dev-docs/` are scanned), `docs/`,
 `*.md`, the vendored APG reference tree, generated `primitives/src/js/*.js`, lock files, and the gates' own sources.
