@@ -17,6 +17,9 @@ use crate::components::navigation_menu::{
     NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink,
     NavigationMenuList, NavigationMenuTrigger,
 };
+// Themed `Dialog` for the scroll-lock handoff fixture below: the real exit animation is what
+// keeps the closing dialog (and its lock) alive while the next one opens.
+use crate::components::dialog as themed_dialog;
 use dioxus_primitives::tooltip::{Tooltip, TooltipContent, TooltipTrigger};
 use dioxus_primitives::select::{Select, SelectList, SelectOption, SelectTrigger, SelectValue};
 use dioxus_primitives::combobox::{Combobox, ComboboxInput, ComboboxList, ComboboxOption};
@@ -65,6 +68,9 @@ pub fn TopLayerFixture() -> Element {
     // above but kept separate so the two sections' assertions can never
     // cross-contaminate each other's counts.
     let mut popover_modal_bg_clicks = use_signal(|| 0u32);
+    // Scroll-lock handoff (backlog row 375): two SIBLING dialogs, one click closes A and opens B.
+    let mut handoff_a_open = use_signal(|| false);
+    let mut handoff_b_open = use_signal(|| false);
 
     rsx! {
         div { class: Styles::dx_top_layer_fixture,
@@ -973,6 +979,51 @@ pub fn TopLayerFixture() -> Element {
                             value: "one",
                             "Option one"
                         }
+                    }
+                }
+            }
+
+            section { class: Styles::dx_top_layer_section,
+                h2 { "Scroll-lock handoff between sibling dialogs (backlog row 375)" }
+                p { class: Styles::dx_top_layer_hint,
+                    "One click closes dialog A and opens dialog B, a sibling, not a nested dialog. "
+                    "A keeps its lock through its exit animation while B already holds one; the page "
+                    "must not move under B when A's lock lets go ("
+                    code { "playwright/oracle/tier3-radix/scroll-lock.spec.ts" }
+                    ")."
+                }
+                button {
+                    id: "handoff-a-trigger",
+                    onclick: move |_| handoff_a_open.set(true),
+                    "Open dialog A"
+                }
+                themed_dialog::Dialog {
+                    open: handoff_a_open(),
+                    on_open_change: move |v| handoff_a_open.set(v),
+                    themed_dialog::DialogHeader {
+                        themed_dialog::DialogTitle { "Handoff dialog A" }
+                        themed_dialog::DialogDescription { "Continue closes this dialog and opens dialog B." }
+                    }
+                    button {
+                        id: "handoff-a-continue",
+                        onclick: move |_| {
+                            handoff_a_open.set(false);
+                            handoff_b_open.set(true);
+                        },
+                        "Continue"
+                    }
+                }
+                themed_dialog::Dialog {
+                    open: handoff_b_open(),
+                    on_open_change: move |v| handoff_b_open.set(v),
+                    themed_dialog::DialogHeader {
+                        themed_dialog::DialogTitle { "Handoff dialog B" }
+                        themed_dialog::DialogDescription { "Opened by the same click that closed dialog A." }
+                    }
+                    button {
+                        id: "handoff-b-close",
+                        onclick: move |_| handoff_b_open.set(false),
+                        "Done"
                     }
                 }
             }

@@ -17,6 +17,7 @@
     }
   ],
   "componentDependencies": [
+    { "name": "dialog", "git": "https://github.com/MentalGear/shadcn-dioxus" },
     { "name": "navigation_menu", "git": "https://github.com/MentalGear/shadcn-dioxus" }
   ],
   "globalAssets": [

@@ -667,3 +667,76 @@ test.describe("Breakpoint-flip regression: exact 1027px viewport with a classic 
     ).toEqual(navBefore);
   });
 });
+
+/**
+ * Backlog row 375: a lock handed from one surface to another in ONE click. The `top_layer` fixture's
+ * "Scroll-lock handoff" section renders two SIBLING themed dialogs (not nested): A's "Continue" closes A and
+ * opens B. A keeps its lock through its exit animation (the release waits for the `<dialog>`'s `close`
+ * event), so for a moment both are held. When locks were counted per nesting chain, the two siblings had two
+ * counters, and A's last release ran `window.scrollTo(A's saved position)` while B was open, moving the page
+ * under B. With one page-wide lock, A's release is not the last one and touches nothing; B's close restores.
+ *
+ * What the restore does to the page depends on whether anything moved it after A's capture (a `showModal()`
+ * focus jump, an app's own scroll): headless Chromium moves nothing here, so A's stray restore lands on the
+ * same Y and `scrollY` alone stays flat (measured on the per-chain build: one `scrollTo(0, 400)` ~730 ms
+ * after B opened, page already at 400). The test therefore also spies on `window.scrollTo` and asserts that
+ * nothing restores the page while B holds it, which is red on the per-chain build in every run.
+ *
+ * The page is scrolled to a non-zero Y first, and every click on a page-level trigger goes through
+ * `el.click()` so Playwright's actionability auto-scroll never moves the page itself.
+ */
+test.describe("Scroll lock handed from one dialog to a sibling in one click", () => {
+  const scrollY = (page: Page) => page.evaluate(() => window.scrollY);
+
+  test("the page does not move under B when A's lock lets go, and B's close restores it", async ({ page }) => {
+    await goto(page, "top_layer");
+    await assertPageIsScrollable(page);
+    await page.evaluate(() => window.scrollTo(0, 400));
+    await expect.poll(() => scrollY(page)).toBe(400);
+
+    await page.locator("#handoff-a-trigger").evaluate((el) => (el as HTMLElement).click());
+    const continueButton = page.locator("#handoff-a-continue");
+    await expect(continueButton).toBeVisible();
+    // Anything the open moved is the open's business (covered above); this test is about the handoff.
+    await page.waitForTimeout(500);
+    const atOpen = await scrollY(page);
+    await page.evaluate(() => {
+      const calls: string[] = ((window as any).__handoffScrollTo = []);
+      const original = window.scrollTo.bind(window);
+      (window as any).scrollTo = (...args: unknown[]) => {
+        calls.push(JSON.stringify(args));
+        return (original as (...a: unknown[]) => void)(...args);
+      };
+    });
+
+    await continueButton.evaluate((el) => (el as HTMLElement).click());
+    await expect(page.locator("#handoff-b-close")).toBeVisible();
+    const samples: number[] = [];
+    const start = Date.now();
+    for (const at of [0, 100, 400, 800]) {
+      await page.waitForTimeout(Math.max(0, at - (Date.now() - start)));
+      samples.push(await scrollY(page));
+    }
+    expect(
+      samples,
+      `window.scrollY sampled at 0/100/400/800 ms after B opened (A was open at ${atOpen})`,
+    ).toEqual([samples[0], samples[0], samples[0], samples[0]]);
+    // A's lock lets go at its `close` event, after the exit; its content unmounts ~250 ms later.
+    await expect(continueButton).toHaveCount(0);
+    await page.waitForTimeout(200);
+    expect(await scrollY(page), "the page did not move under B once A was gone").toBe(samples[0]);
+    expect(
+      await page.evaluate(() => (window as any).__handoffScrollTo),
+      "no scroll restore may run while B holds the page (A's release is not the last one)",
+    ).toEqual([]);
+    expect(await page.evaluate(() => (window as any).__dxScrollLocked), "B still holds the lock").toBe(true);
+    await assertScrollIsLocked(page);
+
+    await page.locator("#handoff-b-close").click();
+    await expect(page.locator("#handoff-b-close")).toHaveCount(0);
+    await expect
+      .poll(() => scrollY(page), { message: "B's close restores the position from before A opened" })
+      .toBe(400);
+    await expect.poll(() => page.evaluate(() => (window as any).__dxScrollLocked)).toBe(false);
+  });
+});
