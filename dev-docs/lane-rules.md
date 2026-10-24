@@ -245,7 +245,9 @@ Facts, all from one debug SSG build of one tree on this 4-core / 15 GB box share
   not-found routes (4 tests) hung to the 90 s timeout (6 min of the 121 and four reds). `scripts/serve-spa.py` serves
   `404.html` with status 404 as GitHub Pages does, `scripts/emit-404.sh` now also accepts a no-base-path build, and
   `lane-ssg.sh` emits the page and serves through it. Serving a different build by hand: `scripts/emit-404.sh <public>`
-  then `python3 scripts/serve-spa.py <public> <port>`.
+  then `python3 scripts/serve-spa.py <public> <port>`. `test:changed` and `run-suite.sh` probe the server first and refuse
+  one that answers an unknown URL without the app shell; with `SSG_SITE_DIR=<public>` and no `PLAYWRIGHT_BASE_URL` they
+  serve the dir themselves (`playwright/tools/site-server.sh`, row 407).
 - **External requests**: none to block. Visiting all 95 prerendered routes in a fresh Chromium makes exactly two
   third-party requests, the deliberate `httpbin.org/delay/3600` and `invalid-url.example` of the avatar demos that
   `avatar-loading.spec.ts` asserts on; the fonts are self-hosted.

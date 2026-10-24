@@ -7,7 +7,8 @@
 #
 #   playwright/tools/run-suite.sh --out DIR [--chunks N] [--workers W] [--config suite.local.config.ts]
 #                                 [--table FILE] [--lock FILE] [--only-chunk I]
-#   needs PLAYWRIGHT_BASE_URL (and PW_BUILD_PROFILE, SSG_SITE_DIR) exported for the build under test.
+#   needs PLAYWRIGHT_BASE_URL (and PW_BUILD_PROFILE, SSG_SITE_DIR) exported for the build under test, or SSG_SITE_DIR
+#   alone (then it serves that dir itself); the server must answer unknown URLs as the site does (tools/site-server.sh).
 #
 # Prints one line per chunk: tests passed/failed, wall seconds INSIDE the lock (queue time excluded), and the sum.
 set -uo pipefail
@@ -25,6 +26,8 @@ mkdir -p "$out"
 # hydration-parity.spec.ts only runs the attr-synth binary; build it here, through the build lock, before any
 # `--list` or chunk loads the spec (row 338).
 tools/ensure-attr-synth.sh || exit 2
+source tools/site-server.sh
+site_server_ready run-suite || exit 2
 if [ -z "$table" ]; then
   if [ -f durations.json ]; then table=durations.json
   else table="$out/list.json"; PLAYWRIGHT_JSON_OUTPUT_FILE="$table" pnpm exec playwright test --config="$config" --list --reporter=json >/dev/null || exit 2; fi
