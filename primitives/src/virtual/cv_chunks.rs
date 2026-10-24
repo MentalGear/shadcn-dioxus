@@ -1,5 +1,6 @@
 //! `content-visibility` chunking: the one place that decides how rows are grouped for skipping.
-//! Used by [`crate::virtual_list::VirtualList`] (content-visibility mode) and by
+//! Used by [`crate::virtual_list::VirtualList`], [`crate::virtual_grid::VirtualGrid`] and
+//! [`crate::virtual_grid::VirtualWrapGrid`] (content-visibility mode) and by
 //! [`crate::message_scroller::MessageScrollerRows`].
 //!
 //! # Why rows are skipped in chunks, not one by one

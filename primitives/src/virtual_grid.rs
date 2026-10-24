@@ -59,13 +59,18 @@
 //! and `Space` / `Enter` act on the control natively. A cell with a text field, a select or
 //! several controls needs the APG's Enter/F2 interaction mode, which the grid does not provide.
 //!
-//! # What windowing costs
+//! # Modes, and what windowing costs
 //!
-//! Cells outside the window do not exist: find-in-page cannot reach them, the accessibility
-//! tree holds only the window (the row and column indices say where it is), and the server
-//! renders only the active cell. For a grid of a few thousand cells, a plain CSS grid with
-//! `content-visibility: auto` on its rows is the cheaper answer (survey
-//! `dev-docs/research/virtualization-survey-2026-10-04.md`).
+//! [`VirtualGrid`] and [`VirtualWrapGrid`] take the same `virtualize` / `auto_threshold` props as
+//! `VirtualList` ([`VirtualizeMode`], counted in cells). Windowed, cells outside the window do not
+//! exist: the accessibility tree holds only the window (the row and column indices say where it
+//! is), the server renders only the active cell, and find-in-page reaches them only through the
+//! opt-in `text_value` placeholders (`virtual/find.rs`, shared with `VirtualList`). In
+//! content-visibility mode (the `Auto` default up to 1,000 cells) every cell is mounted, columns
+//! in flow, and the browser skips off-screen rows in chunks of 20 (`content-visibility: auto`):
+//! no engine and no scroll listener, the same keyboard model (every cell exists, so nothing
+//! needs pinning), and find-in-page, selection and the accessibility tree reach every cell.
+//! [`VirtualJustifiedGrid`] is always windowed and has no placeholders.
 
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
@@ -73,10 +78,12 @@ use dioxus_attributes::attributes;
 pub use crate::data_view::SortDirection;
 use crate::direction::{use_direction, Direction, HorizontalNav};
 use crate::r#virtual::{
-    engine_row_keys, justified_navigate, render_key, resolve_index, use_virtual_bridge,
-    with_pinned, Bridge, Engine, GridEngine, GridKey, GridShape, JustifiedEngine, JustifiedOptions,
-    RowPlan, ScrollReport, SizeEstimates,
+    cv_chunks, engine_row_keys, justified_navigate, parse_cell, render_key, resolve_index,
+    use_find_in_page, use_virtual_bridge, with_pinned, Bridge, ChunkSkip, Engine, FindLayer,
+    FindLayout, GridEngine, GridKey, GridShape, JustifiedEngine, JustifiedOptions, RowPlan,
+    ScrollReport, SizeEstimates, DEFAULT_SIZE,
 };
+pub use crate::r#virtual::{VirtualizeMode, DEFAULT_AUTO_THRESHOLD};
 use crate::scroll_area::use_scroll_fade;
 pub use crate::scroll_area::ScrollFade;
 use crate::{merge_attributes, use_unique_id};
@@ -107,6 +114,20 @@ pub struct VirtualGridProps {
     pub column_width: Option<Callback<usize, u32>>,
     /// Renders the content of the cell at `(row, column)`.
     pub render_cell: Callback<(usize, usize), Element>,
+    /// Windowed layouts, opt-in (experimental, backlog rows 153 and 309): the searchable text of
+    /// an item, plain text without markup (a `VirtualList` row or a `VirtualWrapGrid` item by
+    /// index, a `VirtualGrid` cell by `(row, column)`). When given, every item's text is also kept
+    /// in the DOM inside a `hidden="until-found"` placeholder, so the browser's find-in-page (and a
+    /// `#:~:text=` link) can match items that are not mounted; when the browser reveals a match it
+    /// fires `beforematch` on that placeholder, and the component scrolls the real item into view
+    /// and marks it `data-find-match="true"` (the find bar highlights the hidden placeholder, not
+    /// the item, so style the attribute to show which item matched). Costs about two DOM nodes
+    /// per item (an empty text gets no placeholder), mounted after hydration (not
+    /// server-rendered), and a mounted item's match counts twice. Engines without `until-found`
+    /// (Firefox before 139, Safari before 26.2) treat it as `hidden`: items that are not mounted
+    /// stay unfindable, as without the prop. Ignored by content-visibility mode, whose items are
+    /// all in the DOM already.
+    pub text_value: Option<Callback<(usize, usize), String>>,
     /// Renders the header of a column. When given, a header row of `role="columnheader"` cells
     /// sticks to the top of the grid while it scrolls.
     pub render_header: Option<Callback<usize, Element>>,
@@ -143,6 +164,14 @@ pub struct VirtualGridProps {
     pub dir: Option<Direction>,
     /// Called with `(row, column)` when the active cell changes (by keyboard, click or focus).
     pub on_active_change: Option<Callback<(usize, usize)>>,
+    /// How off-screen items are kept cheap. Defaults to [`VirtualizeMode::Auto`].
+    #[props(default = ReadSignal::new(Signal::new(VirtualizeMode::Auto)))]
+    pub virtualize: ReadSignal<VirtualizeMode>,
+    /// With [`VirtualizeMode::Auto`]: the largest number of items that keeps every item in the
+    /// DOM (a list counts its rows, a grid its cells: `count` for `VirtualWrapGrid`,
+    /// `row_count x column_count` for `VirtualGrid`). Defaults to [`DEFAULT_AUTO_THRESHOLD`] (1000).
+    #[props(default = ReadSignal::new(Signal::new(DEFAULT_AUTO_THRESHOLD)))]
+    pub auto_threshold: ReadSignal<usize>,
     /// A scroll-edge fade on the container, which is the element that scrolls (the `dx-scroll-fade-*`
     /// classes of `dx-effects.css`; see [`ScrollFade`]). Defaults to [`ScrollFade::None`]. It follows
     /// the container's own scroll offset, whatever rows or cells are mounted, and a container whose
@@ -159,8 +188,9 @@ pub struct VirtualGridProps {
 
 /// # VirtualGrid
 ///
-/// A data grid that mounts only the cells in view: rows AND columns are windowed. See the
-/// module documentation for the layouts, the keyboard model and the trade-offs.
+/// A data grid that, windowed, mounts only the cells in view: rows AND columns are windowed (a
+/// grid of up to `auto_threshold` cells keeps every cell instead, see [`VirtualizeMode`]). See
+/// the module documentation for the layouts, the keyboard model and the trade-offs.
 ///
 /// ## Example
 ///
@@ -195,6 +225,184 @@ pub struct VirtualGridProps {
 /// inline styles; give the sticky header and column a background.
 #[component]
 pub fn VirtualGrid(props: VirtualGridProps) -> Element {
+    let mut props = props;
+    props.attributes = merge_attributes(vec![
+        std::mem::take(&mut props.attributes),
+        use_scroll_fade(props.fade),
+    ]);
+    let (row_count, column_count) = (props.row_count, props.column_count);
+    let (virtualize, auto_threshold) = (props.virtualize, props.auto_threshold);
+
+    // The mode body is a separate component, as in `VirtualList`: switching modes drops the old
+    // body's scope (the windowed engine and its listeners) with it, and only a change of mode
+    // re-renders this component.
+    let windowed = use_memo(move || {
+        let cells = row_count().saturating_mul(column_count());
+        virtualize().resolve(cells, auto_threshold()) == VirtualizeMode::Windowed
+    });
+
+    if windowed() {
+        rsx! {
+            VirtualGridWindowed { grid: props }
+        }
+    } else {
+        rsx! {
+            VirtualGridContentVisibility { grid: props }
+        }
+    }
+}
+
+/// What both mode bodies of [`VirtualGrid`] keep the same way: the active cell (the one tab stop),
+/// which follows its row through a reorder, and the focus request a keyboard move makes.
+#[derive(Clone, Copy)]
+struct GridFocus {
+    active: Signal<(usize, usize)>,
+    active_key: CopyValue<Option<String>>,
+    focus_request: Signal<u64>,
+    row_key: Option<Callback<usize, String>>,
+    on_active_change: Option<Callback<(usize, usize)>>,
+}
+
+impl GridFocus {
+    /// The hook: the active cell starts at `(0, 0)`, and when the rows are reordered it moves to
+    /// where its row (by `row_key`) is now.
+    fn use_new(
+        row_key: Option<Callback<usize, String>>,
+        row_count: ReadSignal<usize>,
+        on_active_change: Option<Callback<(usize, usize)>>,
+    ) -> Self {
+        let active = use_signal(|| (0usize, 0usize));
+        let active_key = use_hook(|| CopyValue::new(None::<String>));
+        let focus_request = use_signal(|| 0u64);
+        {
+            let (row, column) = active();
+            let key = active_key.peek().clone();
+            let now = resolve_index(row_key, key.as_deref(), row, row_count());
+            if let Some(now) = now.filter(|now| *now != row) {
+                let mut active = active;
+                active.set((now, column));
+            }
+        }
+        Self {
+            active,
+            active_key,
+            focus_request,
+            row_key,
+            on_active_change,
+        }
+    }
+
+    /// Make `cell` the active one (a click, a focus, or a key press).
+    fn set(self, cell: (usize, usize)) {
+        let (mut active, mut active_key) = (self.active, self.active_key);
+        active_key.set(self.row_key.map(|_| render_key(self.row_key, cell.0)));
+        if *active.peek() != cell {
+            active.set(cell);
+            if let Some(callback) = self.on_active_change {
+                callback.call(cell);
+            }
+        }
+    }
+
+    /// The grid pattern's key map: move the active cell for `event` (a page is `page` rows) and
+    /// ask for it to be focused. Keys the grid does not handle keep their default action.
+    fn on_key(self, event: &KeyboardEvent, direction: Direction, shape: GridShape, page: usize) {
+        let Some(key) = grid_key(&event.data(), direction) else {
+            return;
+        };
+        event.prevent_default();
+        let from = *self.active.peek();
+        self.set(shape.navigate(from, key, page));
+        let mut focus_request = self.focus_request;
+        focus_request += 1;
+    }
+}
+
+/// One data or sticky cell of a [`VirtualGrid`], positioned by `style`.
+#[allow(clippy::too_many_arguments)]
+fn grid_cell(
+    cell: (usize, usize),
+    is_sticky: bool,
+    focusable: bool,
+    find_match: bool,
+    style: String,
+    render_cell: Callback<(usize, usize), Element>,
+    focus: GridFocus,
+) -> Element {
+    let (row, column) = cell;
+    rsx! {
+        div {
+            // key-ok: a column is a position of the grid, not an item (`row_key` names rows)
+            key: "{column}",
+            role: if is_sticky { "rowheader" } else { "gridcell" },
+            "aria-colindex": column + 1,
+            "data-grid-cell": "{row}:{column}",
+            "data-grid-sticky": is_sticky.then_some("true"),
+            "data-grid-active": focusable.then_some("true"),
+            "data-find-match": find_match.then_some("true"),
+            tabindex: if focusable { "0" } else { "-1" },
+            style,
+            // `focusin`, not `focus`: it also fires for a control inside the cell, so a click
+            // or Tab that lands on one makes its cell the active one.
+            onfocusin: move |_| focus.set(cell),
+            {render_cell(cell)}
+        }
+    }
+}
+
+/// One column header of a [`VirtualGrid`], positioned by `style`.
+fn header_cell(
+    column: usize,
+    is_sticky: bool,
+    style: String,
+    render_header: Callback<usize, Element>,
+    column_sort: Option<Callback<usize, Option<SortDirection>>>,
+) -> Element {
+    rsx! {
+        div {
+            // key-ok: a column header is a position of the grid
+            key: "{column}",
+            role: "columnheader",
+            "aria-colindex": column + 1,
+            "data-grid-cell": "header:{column}",
+            "aria-sort": sort_token(column_sort, column),
+            "data-grid-sticky": is_sticky.then_some("true"),
+            style,
+            {render_header(column)}
+        }
+    }
+}
+
+/// The style of a sticky first-column cell: in flow at the row's inline start.
+fn sticky_cell_style(width: u32) -> String {
+    format!("position: sticky; inset-inline-start: 0; z-index: 1; flex: none; box-sizing: border-box; width: {width}px; height: 100%;")
+}
+
+/// The column widths of a [`VirtualGrid`] and the sticky first column's width (0 without one).
+fn column_widths(
+    column_count: usize,
+    column_width: Option<Callback<usize, u32>>,
+    sticky_first_column: bool,
+) -> (Vec<u32>, u32) {
+    let widths: Vec<u32> = (0..column_count)
+        .map(|column| column_width.map_or(DEFAULT_COLUMN_WIDTH, |f| f(column)))
+        .collect();
+    let sticky = if sticky_first_column {
+        widths.first().copied().unwrap_or(0)
+    } else {
+        0
+    };
+    (widths, sticky)
+}
+
+/// Every cell mounted, every column in flow, chunks of rows skipped by the browser while
+/// off-screen: no engine, no scroll listener, find-in-page and the accessibility tree reach every
+/// cell.
+#[component]
+fn VirtualGridContentVisibility(
+    /// The grid's props, the fade already merged into `attributes`.
+    grid: VirtualGridProps,
+) -> Element {
     let VirtualGridProps {
         row_count,
         column_count,
@@ -207,14 +415,136 @@ pub fn VirtualGrid(props: VirtualGridProps) -> Element {
         row_selected,
         header_height,
         sticky_first_column,
+        dir,
+        on_active_change,
+        attributes,
+        ..
+    } = grid;
+
+    let direction = use_direction(dir);
+    let container_id = use_unique_id();
+    use_cell_controls(container_id);
+    let focus = GridFocus::use_new(row_key, row_count, on_active_change);
+    let header = if render_header.is_some() {
+        header_height
+    } else {
+        0
+    };
+    let geometry =
+        use_memo(move || column_widths(column_count(), column_width, sticky_first_column()));
+    let sticky_width = geometry.read().1;
+    use_focus_active_cell(
+        container_id,
+        focus.active,
+        focus.focus_request,
+        true,
+        header,
+        sticky_width,
+    );
+    // The viewport's height, for PageUp/PageDown (a viewport of rows).
+    let mut viewport = use_signal(|| 0u32);
+
+    let shape = GridShape::full(row_count(), column_count());
+    let tab_stop = shape.clamp((focus.active)());
+    let onkeydown = move |event: KeyboardEvent| {
+        let row = row_height
+            .map_or(DEFAULT_ROW_HEIGHT, |f| f(focus.active.peek().0))
+            .max(1);
+        let page = (viewport.peek().saturating_sub(header) / row) as usize;
+        focus.on_key(&event, direction, shape, page);
+    };
+
+    let header_rows = usize::from(render_header.is_some());
+    let geometry = geometry.read();
+    let widths = &geometry.0;
+    let sticky = usize::from(sticky_first_column() && !widths.is_empty());
+    let width: u32 = widths.iter().copied().fold(0, u32::saturating_add);
+
+    let owned = attributes!(div {
+        id: container_id,
+        role: "grid",
+        "aria-rowcount": shape.rows() + header_rows,
+        "aria-colcount": column_count(),
+        "data-virtual-grid": "grid",
+        "data-virtualize": "content-visibility",
+    });
+    let merged = merge_attributes(vec![attributes, owned]);
+    let skip = ChunkSkip::Inline {
+        estimate: row_height,
+        fallback: DEFAULT_ROW_HEIGHT,
+    };
+    let in_flow = |width: u32| format!("flex: none; box-sizing: border-box; width: {width}px;");
+
+    rsx! {
+        div {
+            onkeydown,
+            onresize: move |event: Event<ResizeData>| {
+                let size = event.data().get_border_box_size().unwrap_or_default();
+                viewport.set(size.height.max(0.0) as u32);
+            },
+            ..merged,
+            div { style: "position: relative; width: {width}px; min-width: 100%;",
+                if let Some(render_header) = render_header {
+                    div {
+                        role: "row",
+                        "aria-rowindex": 1,
+                        "data-grid-header": "true",
+                        style: "position: sticky; top: 0; z-index: 2; display: flex; width: {width}px; min-width: 100%; height: {header}px;",
+                        {widths.iter().enumerate().map(|(column, &size)| {
+                            let style = if column < sticky { sticky_cell_style(size) } else { in_flow(size) };
+                            header_cell(column, column < sticky, style, render_header, column_sort)
+                        })}
+                    }
+                }
+                {cv_chunks(shape.rows(), 0, skip, &[], |row| {
+                    let height = row_height.map_or(DEFAULT_ROW_HEIGHT, |f| f(row));
+                    rsx! {
+                        div {
+                            key: "{render_key(row_key, row)}",
+                            role: "row",
+                            "aria-rowindex": row + 1 + header_rows,
+                            "aria-selected": selected_token(row_selected, row_key, row),
+                            "data-state": selected_state(row_selected, row_key, row),
+                            style: "display: flex; width: {width}px; min-width: 100%; height: {height}px;",
+                            {widths.iter().enumerate().map(|(column, &size)| {
+                                let style = if column < sticky { sticky_cell_style(size) } else { in_flow(size) };
+                                let focusable = tab_stop == Some((row, column));
+                                grid_cell((row, column), column < sticky, focusable, false, style, render_cell, focus)
+                            })}
+                        }
+                    }
+                })}
+            }
+        }
+    }
+}
+
+/// Only the cells in view (plus a buffer of rows and columns) mounted over a full-size canvas.
+#[component]
+fn VirtualGridWindowed(
+    /// The grid's props, the fade already merged into `attributes`.
+    grid: VirtualGridProps,
+) -> Element {
+    let VirtualGridProps {
+        row_count,
+        column_count,
+        row_height,
+        row_key,
+        column_width,
+        render_cell,
+        text_value,
+        render_header,
+        column_sort,
+        row_selected,
+        header_height,
+        sticky_first_column,
         row_buffer,
         column_buffer,
         dir,
         on_active_change,
-        fade,
         attributes,
-    } = props;
-    let attributes = merge_attributes(vec![attributes, use_scroll_fade(fade)]);
+        ..
+    } = grid;
 
     let direction = use_direction(dir);
     let container_id = use_unique_id();
@@ -230,19 +560,7 @@ pub fn VirtualGrid(props: VirtualGridProps) -> Element {
         },
     );
     let engine = bridge.engine();
-    let active = use_signal(|| (0usize, 0usize));
-    // Who the active row is (with a `row_key`): the active cell follows its row through a reorder.
-    let mut active_key = use_hook(|| CopyValue::new(None::<String>));
-    {
-        let (row, column) = active();
-        let key = active_key.peek().clone();
-        let now = resolve_index(row_key, key.as_deref(), row, row_count());
-        if let Some(now) = now.filter(|now| *now != row) {
-            let mut active = active;
-            active.set((now, column));
-        }
-    }
-    let focus_request = use_signal(|| 0u64);
+    let focus = GridFocus::use_new(row_key, row_count, on_active_change);
 
     let row_estimates = use_memo(move || {
         let height = move |row: usize| row_height.map_or(DEFAULT_ROW_HEIGHT, |f| f(row));
@@ -274,36 +592,60 @@ pub fn VirtualGrid(props: VirtualGridProps) -> Element {
     };
     use_focus_active_cell(
         container_id,
-        active,
-        focus_request,
+        focus.active,
+        focus.focus_request,
         true,
         header,
         sticky_width,
     );
 
-    let shape = GridShape::full(row_count(), column_count());
-    let tab_stop = shape.clamp(active());
-    let mut set_active = move |cell: (usize, usize)| {
-        let mut active = active;
-        active_key.set(row_key.map(|_| render_key(row_key, cell.0)));
-        if *active.peek() != cell {
-            active.set(cell);
-            if let Some(callback) = on_active_change {
-                callback.call(cell);
-            }
+    // Find-in-page placeholders (opt-in, `virtual/find.rs`): a placeholder sits exactly where its
+    // cell would (rows and columns have known sizes), so the browser's own scroll to a match
+    // mounts the real cell; the grid marks it and scrolls it clear of the sticky edges (or to
+    // its place first, when a reveal did not scroll there).
+    // Every column's `(start, width)` on the canvas, the sticky one included.
+    let find_columns = use_memo(move || {
+        let (widths, _) = column_widths(column_count(), column_width, false);
+        let mut start = 0u32;
+        widths
+            .into_iter()
+            .map(|width| {
+                let cell = (start, width);
+                start = start.saturating_add(width);
+                cell
+            })
+            .collect::<Vec<_>>()
+    });
+    let mut find_match = use_signal(|| None::<(usize, usize)>);
+    let hydrated = use_find_in_page(container_id, text_value.is_some(), move |index: String| {
+        if let Some(cell) = parse_cell(&index) {
+            find_match.set(Some(cell));
         }
-    };
+    });
+    use_effect(move || {
+        if let Some((row, column)) = find_match() {
+            let top = (0..row)
+                .map(|row| row_height.map_or(DEFAULT_ROW_HEIGHT, |f| f(row)))
+                .fold(0u32, u32::saturating_add);
+            let start = find_columns
+                .peek()
+                .get(column)
+                .map_or(0, |(start, _)| *start);
+            reveal_cell(
+                container_id.peek().clone(),
+                format!(r#"[data-grid-cell="{row}:{column}"]"#),
+                header,
+                column_geometry.peek().2,
+                (top, start),
+            );
+        }
+    });
 
+    let shape = GridShape::full(row_count(), column_count());
+    let tab_stop = shape.clamp((focus.active)());
     let onkeydown = move |event: KeyboardEvent| {
-        let Some(key) = grid_key(&event.data(), direction) else {
-            return;
-        };
-        event.prevent_default();
         let page = engine.read().page_rows();
-        let from = *active.peek();
-        set_active(shape.navigate(from, key, page));
-        let mut focus_request = focus_request;
-        focus_request += 1;
+        focus.on_key(&event, direction, shape, page);
     };
 
     // Subscribe: this render runs again whenever the bridge publishes a new window.
@@ -321,6 +663,7 @@ pub fn VirtualGrid(props: VirtualGridProps) -> Element {
     let header_rows = usize::from(render_header.is_some());
     let width = sticky_width + plan.pane_width;
     let columns = plan.columns;
+    let find_match = find_match();
 
     let owned = attributes!(div {
         id: container_id,
@@ -328,6 +671,7 @@ pub fn VirtualGrid(props: VirtualGridProps) -> Element {
         "aria-rowcount": shape.rows() + header_rows,
         "aria-colcount": column_count(),
         "data-virtual-grid": "grid",
+        "data-virtualize": "windowed",
     });
     let merged = merge_attributes(vec![attributes, owned]);
 
@@ -336,32 +680,26 @@ pub fn VirtualGrid(props: VirtualGridProps) -> Element {
     let cell = move |row: usize, column: usize, start: u32, size: u32| {
         let is_sticky = column < sticky;
         let style = if is_sticky {
-            format!("position: sticky; inset-inline-start: 0; z-index: 1; flex: none; box-sizing: border-box; width: {size}px; height: 100%;")
+            sticky_cell_style(size)
         } else {
             format!("position: absolute; inset-block: 0; inset-inline-start: {start}px; box-sizing: border-box; width: {size}px;")
         };
         let focusable = tab_stop == Some((row, column));
-        rsx! {
-            div {
-                // key-ok: a column is a position of the grid, not an item (`row_key` names rows)
-                key: "{column}",
-                role: if is_sticky { "rowheader" } else { "gridcell" },
-                "aria-colindex": column + 1,
-                "data-grid-cell": "{row}:{column}",
-                "data-grid-sticky": is_sticky.then_some("true"),
-                "data-grid-active": focusable.then_some("true"),
-                tabindex: if focusable { "0" } else { "-1" },
-                style,
-                // `focusin`, not `focus`: it also fires for a control inside the cell, so a click
-                // or Tab that lands on one makes its cell the active one.
-                onfocusin: move |_| set_active((row, column)),
-                {render_cell((row, column))}
-            }
-        }
+        let matched = find_match == Some((row, column));
+        grid_cell(
+            (row, column),
+            is_sticky,
+            focusable,
+            matched,
+            style,
+            render_cell,
+            focus,
+        )
     };
     let sticky_column_width = sticky_width;
     let pane_width = plan.pane_width;
     let header_cells = columns.clone();
+    let body_rows = shape.rows();
 
     rsx! {
         div { onkeydown, ..merged,
@@ -373,33 +711,28 @@ pub fn VirtualGrid(props: VirtualGridProps) -> Element {
                         "data-grid-header": "true",
                         style: "position: sticky; top: 0; z-index: 2; display: flex; width: {width}px; min-width: 100%; height: {header}px;",
                         if sticky == 1 {
-                            div {
-                                role: "columnheader",
-                                "aria-colindex": 1,
-                                "data-grid-cell": "header:0",
-                                "aria-sort": sort_token(column_sort, 0),
-                                "data-grid-sticky": "true",
-                                style: "position: sticky; inset-inline-start: 0; z-index: 1; flex: none; box-sizing: border-box; width: {sticky_column_width}px; height: 100%;",
-                                {render_header(0)}
-                            }
+                            {header_cell(0, true, sticky_cell_style(sticky_column_width), render_header, column_sort)}
                         }
                         div { style: "position: relative; flex: none; width: {pane_width}px;",
-                            for column in header_cells {
-                                div {
-                                    // key-ok: a column header is a position of the grid
-                                    key: "{column.index()}",
-                                    role: "columnheader",
-                                    "aria-colindex": column.index() + 1,
-                                    "data-grid-cell": "header:{column.index()}",
-                                    "aria-sort": sort_token(column_sort, column.index()),
-                                    style: "position: absolute; inset-block: 0; inset-inline-start: {column.start()}px; box-sizing: border-box; width: {column.size()}px;",
-                                    {render_header(column.index())}
-                                }
-                            }
+                            {header_cells.iter().map(|column| header_cell(
+                                column.index(),
+                                false,
+                                format!("position: absolute; inset-block: 0; inset-inline-start: {}px; box-sizing: border-box; width: {}px;", column.start(), column.size()),
+                                render_header,
+                                column_sort,
+                            ))}
                         }
                     }
                 }
                 div { style: "position: relative; width: {width}px; min-width: 100%; height: {plan.body_height}px;",
+                    if let Some(text_value) = text_value.filter(|_| hydrated()) {
+                        FindLayer {
+                            rows: body_rows,
+                            layout: FindLayout::Columns(find_columns()),
+                            row_height: move |row| row_height.map_or(DEFAULT_ROW_HEIGHT, |f| f(row)),
+                            text: text_value,
+                        }
+                    }
                     for row in plan.rows {
                         div {
                             key: "{render_key(row_key, row.index())}",
@@ -444,6 +777,20 @@ pub struct VirtualWrapGridProps {
     /// while it holds focus and the measured sizes follow the item instead of the slot. Read
     /// while rendering, so signals it reads re-render the component.
     pub item_key: Option<Callback<usize, String>>,
+    /// Windowed layouts, opt-in (experimental, backlog rows 153 and 309): the searchable text of
+    /// an item, plain text without markup (a `VirtualList` row or a `VirtualWrapGrid` item by
+    /// index, a `VirtualGrid` cell by `(row, column)`). When given, every item's text is also kept
+    /// in the DOM inside a `hidden="until-found"` placeholder, so the browser's find-in-page (and a
+    /// `#:~:text=` link) can match items that are not mounted; when the browser reveals a match it
+    /// fires `beforematch` on that placeholder, and the component scrolls the real item into view
+    /// and marks it `data-find-match="true"` (the find bar highlights the hidden placeholder, not
+    /// the item, so style the attribute to show which item matched). Costs about two DOM nodes
+    /// per item (an empty text gets no placeholder), mounted after hydration (not
+    /// server-rendered), and a mounted item's match counts twice. Engines without `until-found`
+    /// (Firefox before 139, Safari before 26.2) treat it as `hidden`: items that are not mounted
+    /// stay unfindable, as without the prop. Ignored by content-visibility mode, whose items are
+    /// all in the DOM already.
+    pub text_value: Option<Callback<usize, String>>,
     /// How many rows to mount beyond each edge of the viewport, so a scroll never shows a blank edge
     /// (the window is re-centred once fewer than half of them remain, so between `buffer / 2` and
     /// `buffer` rows are always mounted beyond each edge). Only a windowed layout reads it:
@@ -456,6 +803,14 @@ pub struct VirtualWrapGridProps {
     pub dir: Option<Direction>,
     /// Called with the item index when the active item changes (by keyboard, click or focus).
     pub on_active_change: Option<Callback<usize>>,
+    /// How off-screen items are kept cheap. Defaults to [`VirtualizeMode::Auto`].
+    #[props(default = ReadSignal::new(Signal::new(VirtualizeMode::Auto)))]
+    pub virtualize: ReadSignal<VirtualizeMode>,
+    /// With [`VirtualizeMode::Auto`]: the largest number of items that keeps every item in the
+    /// DOM (a list counts its rows, a grid its cells: `count` for `VirtualWrapGrid`,
+    /// `row_count x column_count` for `VirtualGrid`). Defaults to [`DEFAULT_AUTO_THRESHOLD`] (1000).
+    #[props(default = ReadSignal::new(Signal::new(DEFAULT_AUTO_THRESHOLD)))]
+    pub auto_threshold: ReadSignal<usize>,
     /// A scroll-edge fade on the container, which is the element that scrolls (the `dx-scroll-fade-*`
     /// classes of `dx-effects.css`; see [`ScrollFade`]). Defaults to [`ScrollFade::None`]. It follows
     /// the container's own scroll offset, whatever rows or cells are mounted, and a container whose
@@ -508,19 +863,229 @@ pub struct VirtualWrapGridProps {
 /// has been measured, so a stylesheet or a test can tell an estimated canvas from a measured one.
 #[component]
 pub fn VirtualWrapGrid(props: VirtualWrapGridProps) -> Element {
+    let mut props = props;
+    props.attributes = merge_attributes(vec![
+        std::mem::take(&mut props.attributes),
+        use_scroll_fade(props.fade),
+    ]);
+    let (count, virtualize, auto_threshold) = (props.count, props.virtualize, props.auto_threshold);
+
+    // One body per mode, as in `VirtualGrid`.
+    let windowed = use_memo(move || {
+        virtualize().resolve(count(), auto_threshold()) == VirtualizeMode::Windowed
+    });
+
+    if windowed() {
+        rsx! {
+            VirtualWrapGridWindowed { grid: props }
+        }
+    } else {
+        rsx! {
+            VirtualWrapGridContentVisibility { grid: props }
+        }
+    }
+}
+
+/// The active item of a [`VirtualWrapGrid`] (the one tab stop), which follows its item through a
+/// reorder, and the focus request a keyboard move makes; the same in both mode bodies.
+#[derive(Clone, Copy)]
+struct WrapFocus {
+    active: Signal<usize>,
+    active_key: CopyValue<Option<String>>,
+    focus_request: Signal<u64>,
+    item_key: Option<Callback<usize, String>>,
+    on_active_change: Option<Callback<usize>>,
+}
+
+impl WrapFocus {
+    /// The hook: the active item starts at 0, and when the items are reordered it moves to where
+    /// its item (by `item_key`) is now.
+    fn use_new(
+        item_key: Option<Callback<usize, String>>,
+        count: ReadSignal<usize>,
+        on_active_change: Option<Callback<usize>>,
+    ) -> Self {
+        let active = use_signal(|| 0usize);
+        let active_key = use_hook(|| CopyValue::new(None::<String>));
+        let focus_request = use_signal(|| 0u64);
+        {
+            let index = active();
+            let key = active_key.peek().clone();
+            let now = resolve_index(item_key, key.as_deref(), index, count());
+            if let Some(now) = now.filter(|now| *now != index) {
+                let mut active = active;
+                active.set(now);
+            }
+        }
+        Self {
+            active,
+            active_key,
+            focus_request,
+            item_key,
+            on_active_change,
+        }
+    }
+
+    /// Make item `index` the active one.
+    fn set(self, index: usize) {
+        let (mut active, mut active_key) = (self.active, self.active_key);
+        active_key.set(self.item_key.map(|_| render_key(self.item_key, index)));
+        if *active.peek() != index {
+            active.set(index);
+            if let Some(callback) = self.on_active_change {
+                callback.call(index);
+            }
+        }
+    }
+
+    /// The grid pattern's key map over rows of `columns` items (a page is `page` rows).
+    fn on_key(
+        self,
+        event: &KeyboardEvent,
+        direction: Direction,
+        shape: GridShape,
+        columns: usize,
+        page: usize,
+    ) {
+        let Some(key) = grid_key(&event.data(), direction) else {
+            return;
+        };
+        event.prevent_default();
+        let from = index_to_cell(*self.active.peek(), columns);
+        let (row, column) = shape.navigate(from, key, page);
+        self.set(row * columns + column);
+        let mut focus_request = self.focus_request;
+        focus_request += 1;
+    }
+}
+
+/// The cells of row `row` of a [`VirtualWrapGrid`].
+#[allow(clippy::too_many_arguments)]
+fn wrap_row_cells(
+    row: usize,
+    shape: GridShape,
+    columns: usize,
+    tab_stop: Option<(usize, usize)>,
+    find_match: Option<usize>,
+    item_key: Option<Callback<usize, String>>,
+    render_item: Callback<usize, Element>,
+    focus: WrapFocus,
+) -> Element {
+    rsx! {
+        {(0..shape.row_len(row)).map(|column| {
+            let index = row * columns + column;
+            let focusable = tab_stop == Some((row, column));
+            rsx! {
+                div {
+                    key: "{render_key(item_key, index)}",
+                    role: "gridcell",
+                    "aria-colindex": column + 1,
+                    "data-grid-cell": "{row}:{column}",
+                    "data-grid-index": index,
+                    "data-find-match": (find_match == Some(index)).then_some("true"),
+                    tabindex: if focusable { "0" } else { "-1" },
+                    style: "min-width: 0;",
+                    onfocus: move |_| focus.set(index),
+                    {render_item(index)}
+                }
+            }
+        })}
+    }
+}
+
+/// Every item mounted in rows of `columns` tracks, chunks of rows skipped by the browser while
+/// off-screen: no engine, no measuring, no scroll listener.
+#[component]
+fn VirtualWrapGridContentVisibility(
+    /// The grid's props, the fade already merged into `attributes`.
+    grid: VirtualWrapGridProps,
+) -> Element {
     let VirtualWrapGridProps {
         count,
         columns,
         estimate_row_height,
         render_item,
         item_key,
+        dir,
+        on_active_change,
+        attributes,
+        ..
+    } = grid;
+
+    let direction = use_direction(dir);
+    let container_id = use_unique_id();
+    let focus = WrapFocus::use_new(item_key, count, on_active_change);
+    let active_cell = use_active_cell(focus.active, columns);
+    use_focus_active_cell(container_id, active_cell, focus.focus_request, false, 0, 0);
+    // The viewport's height, for PageUp/PageDown (a viewport of rows).
+    let mut viewport = use_signal(|| 0u32);
+
+    let columns_now = columns().max(1);
+    let shape = GridShape::wrapping(count(), columns_now);
+    let tab_stop = shape.clamp(index_to_cell((focus.active)(), columns_now));
+    let row_height = move |row: usize| estimate_row_height.map_or(DEFAULT_SIZE, |f| f(row));
+    let onkeydown = move |event: KeyboardEvent| {
+        let row = row_height(index_to_cell(*focus.active.peek(), columns_now).0).max(1);
+        let page = (*viewport.peek() / row) as usize;
+        focus.on_key(&event, direction, shape, columns_now, page);
+    };
+
+    let owned = attributes!(div {
+        id: container_id,
+        role: "grid",
+        "aria-rowcount": shape.rows(),
+        "aria-colcount": columns_now,
+        "data-virtual-grid": "wrap",
+        "data-virtualize": "content-visibility",
+    });
+    let merged = merge_attributes(vec![attributes, owned]);
+    let skip = ChunkSkip::Inline {
+        estimate: estimate_row_height,
+        fallback: DEFAULT_SIZE,
+    };
+
+    rsx! {
+        div {
+            onkeydown,
+            onresize: move |event: Event<ResizeData>| {
+                let size = event.data().get_border_box_size().unwrap_or_default();
+                viewport.set(size.height.max(0.0) as u32);
+            },
+            ..merged,
+            {cv_chunks(shape.rows(), 0, skip, &[], |row| rsx! {
+                div {
+                    // key-ok: a wrapping grid's row is a slot of `columns` items; its cells are keyed
+                    key: "{row}",
+                    role: "row",
+                    "aria-rowindex": row + 1,
+                    style: "box-sizing: border-box; display: grid; grid-template-columns: repeat({columns_now}, minmax(0, 1fr));",
+                    {wrap_row_cells(row, shape, columns_now, tab_stop, None, item_key, render_item, focus)}
+                }
+            })}
+        }
+    }
+}
+
+/// Only the rows in view (plus a buffer) mounted over a full-height canvas, rows measured as
+/// they render.
+#[component]
+fn VirtualWrapGridWindowed(
+    /// The grid's props, the fade already merged into `attributes`.
+    grid: VirtualWrapGridProps,
+) -> Element {
+    let VirtualWrapGridProps {
+        count,
+        columns,
+        estimate_row_height,
+        render_item,
+        item_key,
+        text_value,
         buffer,
         dir,
         on_active_change,
-        fade,
         attributes,
-    } = props;
-    let attributes = merge_attributes(vec![attributes, use_scroll_fade(fade)]);
+        ..
+    } = grid;
 
     let direction = use_direction(dir);
     let container_id = use_unique_id();
@@ -530,19 +1095,7 @@ pub fn VirtualWrapGrid(props: VirtualWrapGridProps) -> Element {
     let engine = bridge.engine();
     let laid_out_for = use_hook(|| CopyValue::new(0usize));
     // The active item, as an index: it keeps its item when the column count changes.
-    let active = use_signal(|| 0usize);
-    // Who the active item is (with an `item_key`): the tab stop follows it through a reorder.
-    let mut active_key = use_hook(|| CopyValue::new(None::<String>));
-    {
-        let index = active();
-        let key = active_key.peek().clone();
-        let now = resolve_index(item_key, key.as_deref(), index, count());
-        if let Some(now) = now.filter(|now| *now != index) {
-            let mut active = active;
-            active.set(now);
-        }
-    }
-    let focus_request = use_signal(|| 0u64);
+    let focus = WrapFocus::use_new(item_key, count, on_active_change);
 
     let estimates = use_memo(move || {
         let shape = GridShape::wrapping(count(), columns());
@@ -554,34 +1107,26 @@ pub fn VirtualWrapGrid(props: VirtualWrapGridProps) -> Element {
         .with_keys(engine_row_keys(item_key, count(), columns()))
     });
 
-    let active_cell = use_active_cell(active, columns);
-    use_focus_active_cell(container_id, active_cell, focus_request, false, 0, 0);
+    let active_cell = use_active_cell(focus.active, columns);
+    use_focus_active_cell(container_id, active_cell, focus.focus_request, false, 0, 0);
+
+    // Find-in-page placeholders (opt-in, `virtual/find.rs`): rows of placeholders at the
+    // estimated row heights; a match names the item, and the grid centres its row (which mounts
+    // it) and marks it.
+    let mut find_match = use_signal(|| None::<usize>);
+    let hydrated = use_find_in_page(container_id, text_value.is_some(), move |index: String| {
+        if let Ok(index) = index.parse::<usize>() {
+            find_match.set(Some(index));
+            bridge.reveal(index / columns.peek().max(1));
+        }
+    });
 
     let columns_now = columns().max(1);
     let shape = GridShape::wrapping(count(), columns_now);
-    let tab_stop = shape.clamp(index_to_cell(active(), columns_now));
-    let mut set_active = move |index: usize| {
-        let mut active = active;
-        active_key.set(item_key.map(|_| render_key(item_key, index)));
-        if *active.peek() != index {
-            active.set(index);
-            if let Some(callback) = on_active_change {
-                callback.call(index);
-            }
-        }
-    };
-
+    let tab_stop = shape.clamp(index_to_cell((focus.active)(), columns_now));
     let onkeydown = move |event: KeyboardEvent| {
-        let Some(key) = grid_key(&event.data(), direction) else {
-            return;
-        };
-        event.prevent_default();
         let page = engine.read().visible_len();
-        let from = index_to_cell(*active.peek(), columns_now);
-        let (row, column) = shape.navigate(from, key, page);
-        set_active(row * columns_now + column);
-        let mut focus_request = focus_request;
-        focus_request += 1;
+        focus.on_key(&event, direction, shape, columns_now, page);
     };
 
     let onresize = move |row: usize| {
@@ -610,6 +1155,8 @@ pub fn VirtualWrapGrid(props: VirtualWrapGridProps) -> Element {
     // Whether the canvas height comes from measured rows (the client, after mount) or from the
     // estimates alone (the server, and the client's first frame).
     let measured = engine.read().has_measurements();
+    let find_match = find_match();
+    let items = count();
 
     let owned = attributes!(div {
         id: container_id,
@@ -617,6 +1164,7 @@ pub fn VirtualWrapGrid(props: VirtualWrapGridProps) -> Element {
         "aria-rowcount": shape.rows(),
         "aria-colcount": columns_now,
         "data-virtual-grid": "wrap",
+        "data-virtualize": "windowed",
     });
     let merged = merge_attributes(vec![attributes, owned]);
 
@@ -625,6 +1173,14 @@ pub fn VirtualWrapGrid(props: VirtualWrapGridProps) -> Element {
             div {
                 "data-measured": "{measured}",
                 style: "position: relative; height: {height}px;",
+                if let Some(text_value) = text_value.filter(|_| hydrated()) {
+                    FindLayer {
+                        rows: shape.rows(),
+                        layout: FindLayout::Tracks { count: items, columns: columns_now },
+                        row_height: move |row| estimate_row_height.map_or(DEFAULT_SIZE, |f| f(row)),
+                        text: move |(row, slot): (usize, usize)| text_value(row * columns_now + slot),
+                    }
+                }
                 for row in rows {
                     div {
                         // key-ok: a wrapping grid's row is a slot of `columns` items; its cells are keyed
@@ -633,23 +1189,7 @@ pub fn VirtualWrapGrid(props: VirtualWrapGridProps) -> Element {
                         "aria-rowindex": row.index() + 1,
                         style: "position: absolute; inset-inline: 0; top: {row.start()}px; box-sizing: border-box; display: grid; grid-template-columns: repeat({columns_now}, minmax(0, 1fr));",
                         onresize: onresize(row.index()),
-                        {(0..shape.row_len(row.index())).map(|column| {
-                            let index = row.index() * columns_now + column;
-                            let focusable = tab_stop == Some((row.index(), column));
-                            rsx! {
-                                div {
-                                    key: "{render_key(item_key, index)}",
-                                    role: "gridcell",
-                                    "aria-colindex": column + 1,
-                                    "data-grid-cell": "{row.index()}:{column}",
-                                    "data-grid-index": index,
-                                    tabindex: if focusable { "0" } else { "-1" },
-                                    style: "min-width: 0;",
-                                    onfocus: move |_| set_active(index),
-                                    {render_item(index)}
-                                }
-                            }
-                        })}
+                        {wrap_row_cells(row.index(), shape, columns_now, tab_stop, find_match, item_key, render_item, focus)}
                     }
                 }
             }
@@ -1194,24 +1734,49 @@ fn focus_and_reveal(
         control_selector,
         header,
         sticky_width,
+        true,
+        None::<(u32, u32)>,
     ));
 }
 
+/// Scrolls the cell `selector` names into view beside the sticky edges, without moving focus:
+/// where a find-in-page match landed (the find bar keeps focus). `at` is the cell's place on the
+/// canvas (its row's top, its column's start), for a cell the window does not hold yet.
+fn reveal_cell(
+    container_id: String,
+    selector: String,
+    header: u32,
+    sticky_width: u32,
+    at: (u32, u32),
+) {
+    let eval = document::eval(FOCUS_CELL_JS);
+    let _ = eval.send((container_id, selector, "", header, sticky_width, false, at));
+}
+
 /// Focuses the active cell once it is in the DOM (it is pinned, so the render that made it
-/// active mounts it) and scrolls the container just enough to show it beside the sticky edges.
+/// active mounts it; with `focus` false it only waits for it) and scrolls the container just
+/// enough to show it beside the sticky edges.
 const FOCUS_CELL_JS: &str = r#"
-    const [id, selector, controlSelector, header, stickyWidth] = await dioxus.recv();
+    const [id, selector, controlSelector, header, stickyWidth, focus, at] = await dioxus.recv();
     let tries = 0;
     const go = () => {
         const grid = document.getElementById(id);
         if (!grid) return;
         const cell = grid.querySelector(selector);
         if (!cell) {
-            if (tries++ < 10) requestAnimationFrame(go);
+            // A cell that is not mounted but whose place is known (`at`: its row's top and its
+            // column's start on the canvas): scroll there once, which moves the window onto it.
+            if (at && tries === 0) {
+                const [y, x] = at;
+                grid.scrollTop = Math.max(0, y - (grid.clientHeight - header) / 2);
+                const inline = Math.max(0, x - stickyWidth - (grid.clientWidth - stickyWidth) / 2);
+                grid.scrollLeft = getComputedStyle(grid).direction === "rtl" ? -inline : inline;
+            }
+            if (tries++ < 30) requestAnimationFrame(go);
             return;
         }
         // focus-ok: the grid pattern's roving tab stop; the key press already holds focus inside the grid
-        (controlSelector && cell.querySelector(controlSelector) || cell).focus({ preventScroll: true });
+        if (focus) (controlSelector && cell.querySelector(controlSelector) || cell).focus({ preventScroll: true });
         const box = grid.getBoundingClientRect();
         const rect = cell.getBoundingClientRect();
         const top = box.top + grid.clientTop + header;

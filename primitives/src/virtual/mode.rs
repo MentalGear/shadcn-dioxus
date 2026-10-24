@@ -1,7 +1,8 @@
 //! [`VirtualizeMode`]: the one "how are off-screen rows kept cheap" type of every virtual
-//! consumer (backlog row 343). `VirtualList`, the data body of `Table` ([`crate::table_rows`])
-//! and, from row 341, `VirtualGrid` all take the same `virtualize` and `auto_threshold` props, so
-//! no consumer has its own threshold logic, its own default, or no `Auto`.
+//! consumer (backlog row 343). `VirtualList`, the data body of `Table` ([`crate::table_rows`]),
+//! `VirtualGrid` and `VirtualWrapGrid` (row 309; they count cells) all take the same `virtualize`
+//! and `auto_threshold` props, so no consumer has its own threshold logic, its own default, or no
+//! `Auto`.
 //!
 //! # The three modes
 //!

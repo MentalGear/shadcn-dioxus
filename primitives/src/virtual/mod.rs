@@ -20,6 +20,8 @@
 //! - [`mode`]: [`VirtualizeMode`] (`Auto | ContentVisibility | Windowed`) and its `auto_threshold`,
 //!   the one "how are off-screen rows kept cheap" choice of `VirtualList`, `Table`'s data body
 //!   and `VirtualGrid` (backlog row 343).
+//! - [`find`]: the find-in-page layer of `hidden="until-found"` placeholders a windowed
+//!   `VirtualList`, `VirtualGrid` and `VirtualWrapGrid` lay over their canvas (rows 153, 309).
 //! - [`bridge`]: the DOM bridge every windowed component consumes (one passive scroll
 //!   listener, one ResizeObserver, scope-owned cleanup, a render only when the window moves).
 //!
@@ -27,6 +29,7 @@
 
 mod bridge;
 mod cv_chunks;
+mod find;
 mod grid;
 mod identity;
 mod justified_engine;
@@ -41,6 +44,7 @@ mod window;
 
 pub(crate) use bridge::{use_virtual_bridge, Bridge};
 pub(crate) use cv_chunks::{cv_chunks, ChunkSkip, CHUNK_ROWS};
+pub(crate) use find::{parse_cell, use_find_in_page, FindLayer, FindLayout};
 pub(crate) use grid::{GridEngine, GridKey, GridShape};
 pub(crate) use identity::{engine_keys, engine_row_keys, render_key, resolve_index};
 pub(crate) use justified_engine::{navigate as justified_navigate, JustifiedEngine, RowPlan};
