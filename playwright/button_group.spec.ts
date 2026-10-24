@@ -21,3 +21,26 @@ test.describe("Axe automated scan", () => {
     await expectNoAxeViolations(page, "button_group: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 });
+
+// Backlog row 188 (g): the popover demo's chevron trigger wears the Button recipe (shadcn's
+// `<Button variant="outline" size="icon">`), so it is the icon Button's 32px square with a 16px icon,
+// as tall as the "Assistant" button it is joined to.
+test("popover trigger is an outline icon Button beside its group sibling", async ({ page }) => {
+  await gotoHydrated(page, `${BASE_URL}/component/button_group/`, { timeout: 20 * 60 * 1000 });
+  const frame = page.locator("#component-preview-frame-popover").first();
+  const trigger = frame.getByRole("button", { name: "Assistant options" });
+  await expect(trigger).toBeVisible({ timeout: 60_000 });
+  const box = await trigger.evaluate((e) => {
+    const r = e.getBoundingClientRect();
+    const icon = e.querySelector("svg")!.getBoundingClientRect();
+    return { w: r.width, h: r.height, iconW: icon.width, iconH: icon.height };
+  });
+  const siblingH = await frame
+    .getByRole("button", { name: "Assistant", exact: true })
+    .evaluate((e) => e.getBoundingClientRect().height);
+  expect(box.w).toBeCloseTo(32, 0);
+  expect(box.h).toBeCloseTo(32, 0);
+  expect(box.iconW).toBeCloseTo(16, 0);
+  expect(box.iconH).toBeCloseTo(16, 0);
+  expect(box.h).toBeCloseTo(siblingH, 0);
+});
