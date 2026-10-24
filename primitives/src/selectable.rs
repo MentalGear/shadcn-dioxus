@@ -61,7 +61,7 @@ pub(crate) struct SelectableOption<T: Clone + PartialEq + 'static> {
     pub(crate) disabled: Memo<bool>,
     pub(crate) selected: Memo<bool>,
     pub(crate) focused: Memo<bool>,
-    pub(crate) down_pos: Signal<Option<(f64, f64)>>,
+    pub(crate) down_pos: Signal<Option<ItemPress>>,
     pub(crate) index: ReadSignal<usize>,
     pub(crate) value: ReadSignal<T>,
 }
@@ -282,7 +282,7 @@ pub(crate) fn use_selectable_option<T: Clone + PartialEq + 'static>(
     );
     let selected = use_memo(move || selectable.is_selected(&RcPartialEqValue::new(value.cloned())));
     let focused = use_memo(move || selectable.collection.is_focused(index()));
-    let down_pos: Signal<Option<(f64, f64)>> = use_signal(|| None);
+    let down_pos: Signal<Option<ItemPress>> = use_signal(|| None);
 
     use_context_provider(|| ListboxOptionContext {
         selected: selected.into(),
@@ -299,41 +299,75 @@ pub(crate) fn use_selectable_option<T: Clone + PartialEq + 'static>(
     }
 }
 
+/// A press on a selectable item, recorded on `pointerdown` and committed on release.
+///
+/// A mouse press commits on `pointerup`. A touch or pen press commits on the `click` that follows
+/// the release instead: committing closes the popup, and on a touch screen the browser fires that
+/// `click` after the release, hit-tested at the tap point, so a popup already closed on `pointerup`
+/// would hand the tap to whatever lies under it (on iOS, a native `<select>` below the list opens).
+/// Committing on the `click` consumes it on the item itself. A touch that turns into a scroll gets
+/// a `pointercancel` and no `click`, so it never selects.
+#[derive(Clone, Copy, PartialEq)]
+pub(crate) struct ItemPress {
+    x: f64,
+    y: f64,
+    mouse: bool,
+}
+
+/// The `pointerdown` half of an item press: records it, so only a press that started on this
+/// item can select it (a long-press that opened the menu and lifts over an item does not).
 pub(crate) fn pointer_select_start(
     event: &Event<PointerData>,
     disabled: bool,
-    mut down_pos: Signal<Option<(f64, f64)>>,
+    mut press: Signal<Option<ItemPress>>,
 ) {
     if disabled || event.trigger_button() != Some(MouseButton::Primary) {
         return;
     }
     event.prevent_default();
     let p = event.client_coordinates();
-    down_pos.set(Some((p.x, p.y)));
+    press.set(Some(ItemPress {
+        x: p.x,
+        y: p.y,
+        mouse: event.pointer_type() == "mouse",
+    }));
 }
 
+/// The `pointerup` half: `true` when a mouse press on this item ends here and selects it. A touch
+/// or pen press stays recorded for [`pointer_select_click`].
 pub(crate) fn pointer_select_commit(
     event: &Event<PointerData>,
     disabled: bool,
-    mut down_pos: Signal<Option<(f64, f64)>>,
+    mut press: Signal<Option<ItemPress>>,
 ) -> bool {
     if disabled || event.trigger_button() != Some(MouseButton::Primary) {
         return false;
     }
-    let Some((x0, y0)) = down_pos.take() else {
-        return false;
-    };
-    if event.pointer_type() == "touch" {
-        let p = event.client_coordinates();
-        let dx = p.x - x0;
-        let dy = p.y - y0;
-        if dx * dx + dy * dy > 25.0 {
-            return false;
+    match press() {
+        Some(p) if p.mouse => {
+            press.set(None);
+            true
         }
+        Some(p) => {
+            let up = event.client_coordinates();
+            let (dx, dy) = (up.x - p.x, up.y - p.y);
+            if dx * dx + dy * dy > 25.0 {
+                press.set(None);
+            }
+            false
+        }
+        None => false,
     }
-    true
 }
 
-pub(crate) fn pointer_select_cancel(mut down_pos: Signal<Option<(f64, f64)>>) {
-    down_pos.set(None);
+/// The `click` half: `true` when a touch or pen press on this item ends here and selects it.
+pub(crate) fn pointer_select_click(disabled: bool, mut press: Signal<Option<ItemPress>>) -> bool {
+    match press.take() {
+        Some(p) => !p.mouse && !disabled,
+        None => false,
+    }
+}
+
+pub(crate) fn pointer_select_cancel(mut press: Signal<Option<ItemPress>>) {
+    press.set(None);
 }
