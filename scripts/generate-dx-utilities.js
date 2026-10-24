@@ -38,7 +38,7 @@
 // scanning of markup for class usage -- every class below is emitted
 // unconditionally, every run, which is what makes `--check` below
 // meaningful. Variants stay hand-written in component `style.css` rules,
-// same as before this round.
+// as everywhere else.
 //
 // Each generated rule is intentionally atomic (one selector, one
 // declaration) -- composing e.g. `dx-flex dx-flex-row dx-items-center`
