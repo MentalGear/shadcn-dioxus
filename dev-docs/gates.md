@@ -195,6 +195,8 @@ Exit 1 is a red gate, exit 2 bad usage or environment, exit 3 a green but partia
 
 **`check-lane-target`** ([`scripts/check-lane-target.sh`](../scripts/check-lane-target.sh)): The warm release trees keep their promise that a tree never holds the other's base-path setting, proven on tiny fake trees with no build: `lane-target.sh create <n> --release` copies `release-template` (no base path), a base-path copy only comes from `release` when its marker records that path, a tainted or sentinel tree is refused, `prune --apply` never removes either warm tree, `warm-release` skips a current tree, and `scripts/deploy-preview.sh` refuses the validation tree before it builds anything.
 
+**`check-merge-drivers`** ([`scripts/check-merge-drivers.sh`](../scripts/check-merge-drivers.sh)): The generated backlog indexes and the durations table never conflict textually on a merge of lane branches: `.gitattributes` maps `dev-docs/backlog.md`, `dev-docs/backlog-done.md` and `playwright/durations.json` to merge drivers (scripts/merge-driver-backlog-index.py, playwright/tools/durations-merge.mjs) that merge by row id and by spec entry, registered per clone by scripts/setup-merge-drivers.sh from the SessionStart hook. This gate checks the attributes, the driver scripts, the registration command and the hook wiring exist, runs both drivers' self-tests, and does a real merge in a throwaway git repo (two branches each adding a backlog row file and a durations entry, registered through setup-merge-drivers.sh itself) that must finish with no conflict and a valid index and table.
+
 ## Rust build, lint, test and style
 
 **`fmt`**: Every Rust file is rustfmt-formatted (`cargo fmt --all -- --check`). Never reused from the store: it takes under a second.

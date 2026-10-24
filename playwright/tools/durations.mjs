@@ -11,6 +11,9 @@
 import fs from "node:fs";
 import path from "node:path";
 
+// Entries are sorted by code point, not localeCompare: the order must not depend on the machine's ICU data, because
+// playwright/tools/durations-merge.mjs (the git merge driver, row 400) writes the same order.
+const byCodePoint = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
 const argv = process.argv.slice(2);
 const reportPaths = []; while (argv.length && !argv[0].startsWith("--")) reportPaths.push(argv.shift());
 const rest = argv; const reportPath = reportPaths[0];
@@ -81,11 +84,11 @@ if (write && merge) {
   const merged = { ...old.files, ...files };
   const sum = Object.values(merged).reduce((a, e) => a + e.seconds, 0);
   const out = { meta: { ...old.meta, ...meta, tests: Object.values(merged).reduce((a, e) => a + e.tests, 0), files: Object.keys(merged).length, total_seconds: Math.round(sum) },
-    files: Object.fromEntries(Object.entries(merged).sort(([a], [b]) => a.localeCompare(b))) };
+    files: Object.fromEntries(Object.entries(merged).sort(([a], [b]) => byCodePoint(a, b))) };
   fs.writeFileSync(write, JSON.stringify(out, null, 1) + "\n");
   console.log(`merged ${Object.keys(files).length} files into ${write} (total ${Math.round(sum)} s, budget ${old.meta.budget_seconds ?? "unset"} s)`);
 } else if (write) {
-  const out = { meta: { ...meta, tests: tests.length, files: sorted.length, total_seconds: Math.round(total) }, files: Object.fromEntries(Object.entries(files).sort(([a], [b]) => a.localeCompare(b))) };
+  const out = { meta: { ...meta, tests: tests.length, files: sorted.length, total_seconds: Math.round(total) }, files: Object.fromEntries(Object.entries(files).sort(([a], [b]) => byCodePoint(a, b))) };
   fs.writeFileSync(write, JSON.stringify(out, null, 1) + "\n");
   console.log(`wrote ${write}`);
 }

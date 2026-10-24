@@ -161,6 +161,7 @@ gates=(
   "check-lane-lock|scripts/check-lane-lock.sh"
   "check-gate-reuse|scripts/check-gate-reuse.sh"
   "check-lane-target|scripts/check-lane-target.sh"
+  "check-merge-drivers|scripts/check-merge-drivers.sh"
 
   # group: Rust build, lint, test and style
   # Every Rust file is rustfmt-formatted (`cargo fmt --all -- --check`). Never reused from the store: it takes under a second.
