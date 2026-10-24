@@ -83,6 +83,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [398](backlog/398-docs-review-api-gaps.md) | API gaps the docs review found | BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in… | M | components |
 | [399](backlog/399-docs-review-demos.md) | Demo batch from the docs review | BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in… | S | docs |
 | [402](backlog/402-load-robust-timing-specs.md) | Release timing specs compare same-run measurements, not absolute milliseconds | Done on lane/timing-relative (numbers below). Trigger for reopening: a release timing spec that… | S | tests |
-| [407](backlog/407-load-flakes-and-not-found-routes.md) | Load flakes (docs sidebar shift, non-modal popover scroll, carousel edge band) and spec runs that serve unknown URLs like the site | Done on lane/flake-roots. Trigger for reopening: one of these specs red under load on an unchanged… | M | tests |
+| [407](backlog/407-load-flakes-and-not-found-routes.md) | Load flakes (docs sidebar shift, avatar demo re-centring, non-modal popover scroll, carousel edge band) and spec runs that serve unknown URLs like the site | Done on lane/flake-roots. Trigger for reopening: one of these specs red under load on an unchanged… | M | tests |
 
 <!-- END GENERATED -->
