@@ -3054,9 +3054,9 @@ fn SingleCalendarDay(props: CalendarDayProps) -> Element {
     // `type` is an overridable default; the roving-focus `tabindex` and
     // `calendar_day_attributes`'s aria/data state are owned, so they merge
     // in last -- same precedence (owned wins) production already had via
-    // the old first-literal-wins SSR/last-wins CSR split (backlog row 93),
-    // just without the duplicate attribute a caller override used to
-    // silently collide with after hydration.
+    // the first-literal-wins SSR / last-wins CSR split (backlog row 93),
+    // with no duplicate attribute for a caller override to collide with
+    // after hydration.
     let defaults = attributes!(button { r#type: "button" });
     let owned = merge_attributes(vec![
         calendar_day_attributes(&state),

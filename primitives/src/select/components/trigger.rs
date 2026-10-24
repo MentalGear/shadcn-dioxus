@@ -93,27 +93,25 @@ pub fn SelectTrigger(props: SelectTriggerProps) -> Element {
     // Merged (caller-wins, deduped) rather than set here and then spread
     // over by `..props.attributes` below: a caller `id`/`aria_label`/etc.
     // override (e.g. the top-layer oracle fixture's
-    // `id: "clip-select-trigger"`) used to duplicate the attribute in the
+    // `id: "clip-select-trigger"`) would duplicate the attribute in the
     // SSR'd HTML instead of replacing it -- WHATWG HTML's duplicate-
     // attribute parse error keeps the *first* (this component's own
     // default) while the CSR/hydrated DOM path keeps the *last* (the
     // caller's), so server and client disagreed
     // (`dev-docs/conformance-harness.md` hydration-parity Rule 4; see
-    // `toast.rs`'s `ToastRegionRendered` doc for the first component this
-    // was found and fixed in).
+    // `toast.rs`'s `ToastRegionRendered` doc for the first component with
+    // this construction).
     //
-    // axe `button-name` (found integrating this round's row 8 landing,
-    // 2026-09-18): a plain `<button>`'s accessible name computes from its
-    // own text content ("name from content"), but that computation step
-    // does not apply to `role="combobox"` below -- so the moment the role
-    // changed from an implicit button to `combobox`, every caller that
-    // relied on this trigger's rendered content (its `SelectValue`'s
-    // placeholder or selected-option text, or fully custom `children`) for
-    // a "free" accessible name lost it silently. Confirmed by execution:
+    // axe `button-name` (backlog row 8): a plain `<button>`'s accessible
+    // name computes from its own text content ("name from content"), but
+    // that computation step does not apply to `role="combobox"` below -- so
+    // every caller that relies on this trigger's rendered content (its
+    // `SelectValue`'s placeholder or selected-option text, or fully custom
+    // `children`) for a "free" accessible name would lose it silently.
     // `select.spec.ts`'s own demo (no `aria_label`), the `top_layer` oracle
     // fixture's `#clip-select-trigger`, and the homepage gallery preview
-    // all started failing axe's `button-name` (critical) the moment
-    // role="combobox" landed -- three independent call sites, not one,
+    // all fail axe's `button-name` (critical) without it -- three
+    // independent call sites, not one,
     // which is why this is a primitive-level default rather than a
     // per-call-site `aria_label` patch (CLAUDE.md: two or more occurrences
     // of the same defect are a class, fixed by construction). Checked
@@ -145,15 +143,15 @@ pub fn SelectTrigger(props: SelectTriggerProps) -> Element {
             // examples/combobox-select-only.html's #combo1 -- "role=combobox
             // ... aria-controls=listbox1 aria-expanded=false
             // aria-haspopup=listbox") -- and Radix's Select trigger, which
-            // does the same. This *replaces* the prior implicit-button role:
+            // does the same. This is not the implicit-button role:
             // a plain button cannot carry aria-required at all (axe flags
-            // it, per the NOTE this comment itself used to carry here), but
+            // it), but
             // a combobox can -- the pattern's own prose says so directly:
             // "Comboboxes and listboxes can be marked as required with
             // aria-required=true" (combobox-pattern.html, "About This
-            // Pattern"). `aria-controls`/`aria-expanded` were already
-            // correct for combobox's requirements; only the role,
-            // `aria-autocomplete`, and `aria-required` below are new.
+            // Pattern"). `aria-controls`/`aria-expanded` are what
+            // combobox requires; the role, `aria-autocomplete`, and
+            // `aria-required` below complete it.
             role: "combobox",
             aria_haspopup: "listbox",
             aria_expanded: open(),

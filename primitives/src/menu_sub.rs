@@ -122,7 +122,7 @@ pub(crate) const SUBMENU_CLOSE_GRACE_DELAY: Duration = Duration::from_millis(200
 /// key -- `ArrowRight` in LTR, `ArrowLeft` in RTL. Callers combine this with
 /// their own `Enter`/`Space` arms (direction-independent), matching Radix's
 /// `SUB_OPEN_KEYS[dir]` (`packages/react/menu/src/menu.tsx`,
-/// `radix-ui/primitives` commit `f7ecd5ab16f5e1e820eb5786a1419a98a2d594ae`,
+/// radix-ui/primitives @ f7ecd5ab16f5e1e820eb5786a1419a98a2d594ae,
 /// lines 41-43) with `SELECTION_KEYS` (`['Enter', ' ']`) split out: that
 /// union equals `SELECTION_KEYS` plus exactly the arrow
 /// [`Direction::resolve_horizontal`] maps to [`HorizontalNav::Next`] for
@@ -418,8 +418,8 @@ pub(crate) fn use_sub_menu_state(
 /// pointerdown check would be redundant. Only the focus-based check is
 /// this module's own gap: closing *just* this submenu (not the whole
 /// menu) when focus moves elsewhere within the still-open enclosing menu
-/// is a case only `*SubTrigger`'s own (removed) `onblur` used to attempt,
-/// with the exact same signal-staleness hazard `DropdownMenuTrigger`'s did.
+/// is a case a `*SubTrigger` `onblur` cannot handle, because of the signal-
+/// staleness hazard (backlog row 85) a trigger `onblur` has.
 pub(crate) fn use_sub_outside_dismiss(
     trigger_id: impl Readable<Target = String> + Copy + 'static,
     content_id: impl Readable<Target = String> + Copy + 'static,

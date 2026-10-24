@@ -16,8 +16,8 @@
 //!   gives `(y * sin(x), -y * cos(x))` -- exactly [`point_radial`]'s
 //!   formula below, independently re-derived from that trig identity, not
 //!   transcribed.
-//! - Recharts' own `RadarChart` (`recharts/recharts` commit
-//!   `86ad3632ff3f83a742001ae6fc079dd27961a2a4`, MIT,
+//! - Recharts' own `RadarChart` (recharts/recharts
+//!   @ 86ad3632ff3f83a742001ae6fc079dd27961a2a4, MIT,
 //!   `src/chart/RadarChart.tsx`'s `defaultProps: { startAngle: 90,
 //!   endAngle: -270 }`, combined with `src/util/PolarUtils.ts`'s
 //!   `polarToCartesian`): substituting `angle_recharts = 90 -

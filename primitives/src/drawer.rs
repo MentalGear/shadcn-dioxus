@@ -49,10 +49,9 @@
 //!   physical right, in RTL too, exactly as `Sheet`'s do), so no `dir` flip
 //!   belongs here.
 //!
-//! A drag that began inside the drawer and ended over its `::backdrop` used to be
-//! read as a backdrop click by `crate::use_dialog_backdrop_dismiss` and closed the
-//! drawer whichever way it was dragged; that hook now requires the PRESS to have
-//! started on the backdrop too, so it is a dialog-wide fix, not a drawer one.
+//! A drag that began inside the drawer and ended over its `::backdrop` is not a
+//! backdrop click: `crate::use_dialog_backdrop_dismiss` requires the PRESS to have
+//! started on the backdrop too, so that rule is dialog-wide, not drawer-specific.
 //!
 //! Gating *where* a drag may start still needs the real DOM target (Dioxus's
 //! synthetic `PointerData` has no `event.target`): a press on an interactive
@@ -122,7 +121,7 @@
 //! otherwise settles on the snap point nearest the release position projected by the release velocity.
 //! `active_snap_point` / `default_active_snap_point` / `on_active_snap_point_change` make the active point
 //! controlled or not; a controlled value the parent does not change snaps the panel back. Without
-//! `snap_points` the same code runs on the one rest `0` (the old behaviour, unchanged).
+//! `snap_points` the same code runs on the one rest `0` (a plain drawer).
 //!
 //! ## Non-modal
 //!
@@ -1238,7 +1237,7 @@ pub fn DrawerHandle(props: DrawerHandleProps) -> Element {
 
 /// # DrawerTitle
 ///
-/// The title of the drawer, used to label it for accessibility. Thin
+/// The title of the drawer; it labels the drawer for accessibility. Thin
 /// wrapper over [`crate::dialog::DialogTitle`] -- must be used inside a
 /// [`DrawerContent`]. An accessible name is required:
 /// [`crate::dialog::DialogRoot`] always wires the dialog's
@@ -1268,7 +1267,7 @@ pub fn DrawerTitle(props: DialogTitleProps) -> Element {
 
 /// # DrawerDescription
 ///
-/// The description of the drawer, used to describe it for accessibility.
+/// The description of the drawer; it describes the drawer for accessibility.
 /// Thin wrapper over [`crate::dialog::DialogDescription`] -- must be used
 /// inside a [`DrawerContent`].
 ///

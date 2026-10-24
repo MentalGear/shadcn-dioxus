@@ -403,8 +403,8 @@ pub fn TooltipContent(props: TooltipContentProps) -> Element {
 /// Tooltip already owns its entire open/close lifecycle through
 /// `TooltipTrigger`'s hover/focus/Escape handlers, and `auto`'s light
 /// dismiss (WHATWG HTML §popover-light-dismiss) would fight that — an
-/// outside pointerdown that the browser used to (harmlessly) ignore would
-/// now race our own signal to close it, and there is no separate
+/// outside pointerdown that the browser otherwise (harmlessly) ignores would
+/// race our own signal to close it, and there is no separate
 /// interaction this component wants Escape or click-outside to mean beyond
 /// what the trigger already does.
 ///
@@ -559,18 +559,18 @@ fn TooltipContentRendered(
     }
 }
 
-// SSR regression test for the duplicate-`style` hazard this file used to
-// carry: `TooltipContentRendered` set `style: position_anchor_style(&id)` as
-// a bare literal alongside `..attributes`, so a caller-supplied `style` (as
+// SSR regression test for the duplicate-`style` hazard: a
+// `TooltipContentRendered` that set `style: position_anchor_style(&id)` as
+// a bare literal alongside `..attributes` would render a caller-supplied `style` (as
 // `TooltipContent`'s own doc example demonstrates, and as the `top_layer`
-// preview fixture's anchored components do) rendered as a *second*, later
+// preview fixture's anchored components do) as a *second*, later
 // `style="..."` on the SSR'd element -- `dev-docs/conformance-harness.md`
 // hydration-parity Rule 4 (`dioxus-ssr`'s renderer keeps only the first
 // `style` it accumulates per element; the WASM client's `set_attribute`
 // keeps the last, so SSR and CSR silently disagree about which one wins,
 // and the anchor binding this whole module exists to set up is lost on the
 // client). Reverting `top_layer::anchored_content_attributes`'s use below
-// (confirmed by temporarily doing exactly that) reproduces this: the SSR'd
+// reproduces this: the SSR'd
 // HTML gets two `style="..."` attributes on the content element instead of
 // one folded string, and the assertion below goes red.
 #[cfg(all(test, feature = "web"))]

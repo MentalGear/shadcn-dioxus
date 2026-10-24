@@ -18,7 +18,7 @@
 //! `role="application"`, a real hidden `<table>` as the actual
 //! screen-reader-facing data path, and an *optional* sighted-keyboard
 //! stepping layer mirroring Recharts' own `accessibilityLayer`
-//! (`recharts/recharts` commit `86ad3632ff3f83a742001ae6fc079dd27961a2a4`,
+//! (recharts/recharts @ 86ad3632ff3f83a742001ae6fc079dd27961a2a4,
 //! `src/state/keyboardEventsMiddleware.ts`). Legend swatches use
 //! `role="graphics-symbol"` per the W3C WAI-ARIA Graphics Module 1.0
 //! (`https://www.w3.org/TR/graphics-aria-1.0/` -- an atomic, presentational-

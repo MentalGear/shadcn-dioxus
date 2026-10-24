@@ -399,12 +399,12 @@ pub fn HoverCardTrigger(props: HoverCardTriggerProps) -> Element {
     // `[data-side]` CSS still resolves relative to this trigger once the
     // content is promoted to the top layer -- see
     // `crate::top_layer::anchor_name_style`/`anchored_trigger_attributes`.
-    // Previously a bare `style: anchor_name_style(..)` literal directly
+    // Not a bare `style: anchor_name_style(..)` literal directly
     // alongside the `..props.attributes` spread below: a caller supplying
-    // their own `style` then produced two `style` attributes on this same
-    // element (`dev-docs/conformance-harness.md` hydration-parity Rule 4;
-    // `scripts/check-attr-spread-collision.sh`). Folding it here first,
-    // like every other anchored trigger, fixes that and (unlike plain
+    // their own `style` would then produce two `style` attributes on this
+    // same element (`dev-docs/conformance-harness.md` hydration-parity
+    // Rule 4; `scripts/check-attr-spread-collision.sh`). Folding it here
+    // first, like every other anchored trigger, avoids that and (unlike plain
     // `merge_attributes`, which folds a plain `style` attribute but leaves
     // shorthand style props -- `padding: ".."`, namespace `Some("style")`
     // -- as separate attributes) renders exactly one `style` carrying the

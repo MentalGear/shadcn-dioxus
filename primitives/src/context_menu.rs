@@ -94,8 +94,8 @@ struct ContextMenuCtx {
     // Reset to `false` whenever the menu opens.
     interacted_outside: Signal<bool>,
 
-    // Set briefly after a touch long-press opens the menu. Used to (a) swallow
-    // Android Chrome's spurious `contextmenu` ~500ms later, and (b) ignore the
+    // Set briefly after a touch long-press opens the menu. It (a) swallows
+    // Android Chrome's spurious `contextmenu` ~500ms later, and (b) ignores the
     // pointer re-dispatch Android sends to whatever element is now under the
     // still-held finger — that would otherwise look like an instant tap on the
     // menu item the menu just rendered over.
@@ -1662,7 +1662,7 @@ pub fn ContextMenuSub(props: ContextMenuSubProps) -> Element {
 #[derive(Props, Clone, PartialEq)]
 pub struct ContextMenuSubTriggerProps {
     /// The index of this sub-trigger within the enclosing
-    /// [`ContextMenuContent`]. Used to order it for keyboard navigation,
+    /// [`ContextMenuContent`]. Orders it for keyboard navigation,
     /// the same as [`ContextMenuItemProps::index`].
     pub index: ReadSignal<usize>,
 
@@ -1792,13 +1792,13 @@ pub fn ContextMenuSubTrigger(props: ContextMenuSubTriggerProps) -> Element {
             event.stop_propagation();
         },
 
-        // `dev-docs/backlog.md` row 85: see `DropdownMenuSubTrigger`'s
-        // identical removal (`dropdown_menu.rs`) for the full root-cause
-        // writeup -- this handler used to close the submenu whenever
-        // `focused() && !sub.focus.any_focused()`, a synchronous read of a
+        // No `onblur` here (`dev-docs/backlog.md` row 85): see
+        // `DropdownMenuSubTrigger`'s comment (`dropdown_menu.rs`) for the
+        // root cause -- closing the submenu whenever
+        // `focused() && !sub.focus.any_focused()` is a synchronous read of a
         // Rust-tracked signal a raw external `.focus()` call never
         // updates. `ContextMenuSubContentRendered`'s own
-        // `crate::menu_sub::use_sub_outside_dismiss` call now gives this
+        // `crate::menu_sub::use_sub_outside_dismiss` call gives this
         // submenu the DOM-truth-based construction instead.
     });
     let merged = merge_attributes(vec![

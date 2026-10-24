@@ -4,7 +4,7 @@
 //! This module is **original composition against this repo's own house
 //! infrastructure**, not a port of either reference fork below. It builds
 //! on exactly the pieces `dev-docs/archive/rounds/component-backlog.md`'s "Command palette --
-//! plan (2026-09-03)" section names:
+//! plan" section names:
 //!
 //! - **`Dialog`** (`dialog.rs`) -- [`CommandDialog`] is a thin wrapper over
 //!   [`crate::dialog::DialogRoot`] + [`crate::dialog::DialogContent`],
@@ -205,7 +205,7 @@ pub struct CommandProps<T: Clone + PartialEq + 'static = String> {
     #[props(default)]
     pub disabled: ReadSignal<bool>,
 
-    /// The controlled text query used to filter items.
+    /// The controlled text query that filters items.
     #[props(default)]
     pub query: ReadSignal<Option<String>>,
 

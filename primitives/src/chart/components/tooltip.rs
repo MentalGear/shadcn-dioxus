@@ -587,15 +587,13 @@ mod tests {
     /// and Dioxus renders children top-to-bottom within one pass,
     /// `ChartTooltip` observes the already-set value on `dioxus_ssr`'s
     /// very first render -- no second render/diff needed at all.
-    /// Previously `use_effect` (deferred to the NEXT `render_immediate`
-    /// call, needing a real two-pass mount-then-diff dance every test here
-    /// relied on): switched after finding a real `dioxus_ssr` limitation
-    /// that dance exposes for a spread-heavy root element specifically
-    /// (`render_with`'s own doc, stage-2 chart round) -- `use_hook`
-    /// sidesteps needing a diff at all, for every test in this file, not
-    /// just the ones that found it. Never reads `active_index` itself
-    /// (only writes it once), so this was never a self-subscribing effect
-    /// either way.
+    /// A `use_effect` would be deferred to the NEXT `render_immediate`
+    /// call, needing a real two-pass mount-then-diff dance, and that dance
+    /// hits a real `dioxus_ssr` limitation for a spread-heavy root element
+    /// specifically (`render_with`'s own doc) -- `use_hook`
+    /// sidesteps needing a diff at all, for every test in this file.
+    /// Never reads `active_index` itself (only writes it once), so it is
+    /// not a self-subscribing effect either.
     #[component]
     fn ActiveIndexSetter(index: Option<usize>) -> Element {
         let ctx = use_chart();
@@ -1014,11 +1012,10 @@ mod tests {
     /// stage-2 handoff), which sorts them by name, so `data-slot` is very
     /// often NOT the tag's first attribute (e.g. `aria-hidden`/
     /// `data-indicator` both sort before it), and slicing from the match
-    /// itself used to silently drop every attribute that sorts earlier --
-    /// found via a root-tag assertion that failed despite the merged
-    /// `Vec<Attribute>` being verified correct immediately before the
-    /// `rsx!` spread; the dropped attributes were real, just outside this
-    /// fn's own (buggy) slice.
+    /// itself would silently drop every attribute that sorts earlier (a
+    /// root-tag assertion fails even though the merged `Vec<Attribute>` is
+    /// correct before the `rsx!` spread: the dropped attributes are real,
+    /// just outside such a slice).
     fn tooltip_fragment(html: &str) -> &str {
         let root = find_element(html, |attrs| {
             attrs.get("data-slot").map(String::as_str) == Some("chart-tooltip")

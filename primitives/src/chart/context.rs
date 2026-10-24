@@ -27,18 +27,17 @@ use super::engine::{ChartDatum, ChartKind};
 /// nothing can set `active_index` to `Some` before `Chart` -- the thing
 /// that owns the hit bands that set it -- has rendered.
 ///
-/// Family-agnostic by construction (stage-2 chart round, §4(d) of the
-/// handoff): this used to store the raw `x_scale: BandScale`/`y_scale:
-/// LinearScale`/`top_value: Vec<f64>` `ChartTooltip` combined into a
-/// percent position itself, which only works for a Cartesian
-/// (Area/Bar/Line) layout -- `BandScale::center(i)` is an affine function
-/// of the datum index `i`, but a polar family's vertex position (e.g.
-/// Radar's `center + point_radial(angle(i), radius(value))`) is a
-/// sinusoidal function of `i` that no `BandScale` can reproduce. Storing
-/// the already-resolved `(left%, top%)` per datum instead moves that
-/// family-specific math to whichever side computed the layout in the
-/// first place (`Chart`'s own Cartesian dispatch today; a family like
-/// Radar's own `render`, once it needs an open tooltip, tomorrow), so
+/// Family-agnostic by construction: it does not store raw scales
+/// (`x_scale: BandScale`/`y_scale: LinearScale`/`top_value: Vec<f64>`) for
+/// `ChartTooltip` to combine into a percent position itself, which only
+/// works for a Cartesian (Area/Bar/Line) layout -- `BandScale::center(i)`
+/// is an affine function of the datum index `i`, but a polar family's
+/// vertex position (e.g. Radar's `center + point_radial(angle(i),
+/// radius(value))`) is a sinusoidal function of `i` that no `BandScale`
+/// can reproduce. Storing the already-resolved `(left%, top%)` per datum
+/// instead puts that family-specific math on whichever side computed the
+/// layout in the first place (`Chart`'s own Cartesian dispatch; a family
+/// like Radar's own `render` when it needs an open tooltip), so
 /// `ChartTooltip` itself indexes this uniformly with no per-`ChartKind`
 /// branch of its own.
 #[derive(Clone, PartialEq, Debug)]

@@ -571,14 +571,12 @@ pub fn InputOtp(props: InputOtpProps) -> Element {
 /// caller makes no change and the browser's own (harmless there, since
 /// there's no slot grid to misalign with) placement stands.
 ///
-/// Selection, not just a collapsed caret (2026-09-17 production report:
-/// "I'm in the selected field then typing a number right [and it doesn't
-/// correct]"): when the clamped index falls on an *existing* character
+/// Selection, not just a collapsed caret (typing a digit into the clicked
+/// field must correct it): when the clamped index falls on an *existing* character
 /// (`clamped < value_len`), this selects that one character --
 /// `setSelectionRange(clamped, clamped + 1, ...)` -- instead of collapsing
 /// to `(clamped, clamped)`. A collapsed caret makes native typing *insert*
-/// at that position rather than overwrite, which produced two confirmed
-/// symptoms: on a full value (already at `maxlength`), the browser silently
+/// at that position rather than overwrite, which has two symptoms: on a full value (already at `maxlength`), the browser silently
 /// refuses the keystroke outright (inserting would exceed `maxlength`), and
 /// on a partial value, typing a digit shifts every character after the
 /// caret one slot right instead of correcting the clicked one. Typing over

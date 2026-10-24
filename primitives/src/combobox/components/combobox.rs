@@ -49,7 +49,7 @@ pub struct ComboboxProps<T: Clone + PartialEq + 'static = String> {
     #[props(default)]
     pub on_open_change: Callback<bool>,
 
-    /// The controlled text query used to filter options: the input's own text
+    /// The controlled text query that filters options: the input's own text
     /// from the user's first edit after the popup opens (empty before it --
     /// opening over a selection leaves the label in the input and lists every
     /// option).

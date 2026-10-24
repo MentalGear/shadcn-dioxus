@@ -71,7 +71,7 @@ use crate::{merge_attributes, use_unique_id};
 /// and is shared with `MessageScroller`.
 pub const CONTENT_VISIBILITY_CHUNK: usize = CHUNK_ROWS;
 
-/// The old name of [`VirtualizeMode`], which now lives in the shared virtual engine (backlog row
+/// A deprecated alias of [`VirtualizeMode`], which lives in the shared virtual engine (backlog row
 /// 343) and is the one `virtualize` type of every virtual component. Kept for one release.
 #[deprecated(since = "0.1.0", note = "renamed `VirtualizeMode`")]
 pub type VirtualListMode = VirtualizeMode;

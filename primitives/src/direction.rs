@@ -1,10 +1,10 @@
 //! Text/layout direction (LTR/RTL) — matches Radix's `@radix-ui/react-direction`
-//! (`packages/react/direction/src/direction.tsx`, `radix-ui/primitives` commit
-//! `f7ecd5ab16f5e1e820eb5786a1419a98a2d594ae`) and, per
+//! (`packages/react/direction/src/direction.tsx`, radix-ui/primitives
+//! @ f7ecd5ab16f5e1e820eb5786a1419a98a2d594ae) and, per
 //! `dev-docs/reference/platform-rationale.md` §9, takes
 //! `dignifiedquire/dx-components`'s own Rust port of it
-//! (`primitives/src/direction.rs`, MIT OR Apache-2.0, commit
-//! `5af3cc292559a0e8d73c7b9a827c4ca08ef34d99`) as-is for the context/provider
+//! (`primitives/src/direction.rs`, MIT OR Apache-2.0, dioxus-components
+//! @ 5af3cc292559a0e8d73c7b9a827c4ca08ef34d99) as-is for the context/provider
 //! shape, renaming its `DirectionProvider` field from `dir` to `direction`
 //! (this crate's own choice, to avoid a name clash with the per-component
 //! `dir: Option<Direction>` *prop* every RTL-aware root also exposes).

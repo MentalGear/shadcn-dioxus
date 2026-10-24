@@ -7,7 +7,7 @@
 //!
 //! # Why this seam exists
 //!
-//! Per this session's 2026-09-19 user decision (recorded in this repo's
+//! By owner decision (recorded in this repo's
 //! own chart-development ledger): this engine is intended, once the
 //! `Chart` component has landed here and proven itself (oracle green,
 //! deployed), to be offered upstream to the `dioxus-community/

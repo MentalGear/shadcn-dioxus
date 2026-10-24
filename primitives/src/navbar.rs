@@ -631,13 +631,13 @@ pub fn NavbarTrigger(props: NavbarTriggerProps) -> Element {
     // relative to *this* trigger once promoted to the top layer -- keyed on
     // `nav_ctx.content_id`, not this nav's own index, for the same reason
     // `MenubarTrigger` keys off `menu_ctx.content_id` (see that doc).
-    // Previously a bare `style: anchor_name_style(..)` literal directly on
+    // Not a bare `style: anchor_name_style(..)` literal directly on
     // this element, beside `..attributes` below: a caller supplying their
-    // own `style` then produced two `style` attributes on this same tag
+    // own `style` would then produce two `style` attributes on this same tag
     // (`dev-docs/conformance-harness.md` hydration-parity Rule 4;
     // `scripts/check-attr-spread-collision.sh`). Folding it into
-    // `attributes` here instead, via `top_layer::anchored_trigger_attributes`,
-    // fixes that and (unlike plain `merge_attributes`, which folds a plain
+    // `attributes` here, via `top_layer::anchored_trigger_attributes`,
+    // avoids that and (unlike plain `merge_attributes`, which folds a plain
     // `style` attribute but leaves shorthand style props -- `padding:
     // ".."`, namespace `Some("style")` -- as separate attributes) renders
     // exactly one `style` carrying the anchor binding plus whatever the
@@ -841,21 +841,18 @@ pub fn NavbarContent(props: NavbarContentProps) -> Element {
     }
 }
 
-/// Web arm (2026-09-03, finding C): promote each nav's content to the top
+/// Web arm: promote each nav's content to the top
 /// layer via `popover="auto"`, anchored to its own trigger -- the same
 /// mechanism `MenubarContentRendered`/`DropdownMenuContentRendered` use
 /// (`menubar.rs`/`dropdown_menu.rs`), which see for the general
-/// `popover`/CSS-anchor wiring this mirrors. Before this fix, `NavbarNav`
-/// never migrated onto the top-layer engine at all (dev-docs/plan.md Phase
-/// 4.4/Migration A never reached it) -- its content stayed a plain `div`,
+/// `popover`/CSS-anchor wiring this mirrors. A content left a plain `div`
 /// positioned by ordinary CSS (`position: absolute; top: 100%; left: 0`
 /// inside `.dx-navbar-nav`'s `position: relative` wrapper,
-/// `preview/src/components/navbar/style.css`), with no viewport-edge
+/// `preview/src/components/navbar/style.css`) would have no viewport-edge
 /// collision handling of any kind -- unlike `DropdownMenu`/`Menubar`/
-/// `Select`, whose menus all flip when they would run off-viewport. User
-/// report: "why does the Navbar menu not auto-flip when it gets cut off at
-/// the bottom/top like the other menus?" -- this migration is the fix:
-/// once anchored the same way, the same shared, engine-injected
+/// `Select`, whose menus all flip when they would run off-viewport. So the
+/// Navbar menu auto-flips when it gets cut off at the bottom/top like the
+/// other menus: anchored the same way, the same shared, engine-injected
 /// anchor-positioning stylesheet (`top_layer::ensure_anchor_positioning_
 /// styles`) and `use_anchor_position_fallback`'s JS fallback both apply
 /// `position-try-fallbacks: flip-block, flip-inline` (or its JS-measured

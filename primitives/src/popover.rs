@@ -393,16 +393,12 @@ pub fn PopoverContent(props: PopoverContentProps) -> Element {
         props.final_focus,
     ));
 
-    // The vendored focus-trap eval used to live here, installed whenever
-    // `is_modal()` was true regardless of target -- that was correct before
-    // this migration, when the modal arm was a plain `div` on *both*
-    // targets. Now that the web modal arm is a real `<dialog>` +
-    // `showModal()` (see this module's doc comment), installing the trap
-    // there would fight the browser's own focus management, so trap
-    // installation moved to `PopoverModalContent`'s
-    // `#[cfg(not(feature = "web"))]` arm, the only one that still
-    // needs it -- mirroring `dialog.rs`'s `DialogContentModal` native arm
-    // exactly.
+    // No vendored focus-trap eval here: the web modal arm is a real
+    // `<dialog>` + `showModal()` (see this module's doc comment), and
+    // installing the trap there would fight the browser's own focus
+    // management. Trap installation lives in `PopoverModalContent`'s
+    // `#[cfg(not(feature = "web"))]` arm, the only one that needs it --
+    // mirroring `dialog.rs`'s `DialogContentModal` native arm exactly.
 
     rsx! {
         {crate::focus_trap_script()}
@@ -480,11 +476,9 @@ pub fn PopoverContentRendered(
     }
 }
 
-/// Native (Blitz) arm: byte-for-byte the pre-migration `div` + vendored
-/// `FocusTrap` path -- see this module's doc comment. The focus-trap eval
-/// that used to live in `PopoverContent` (installed there whenever
-/// `is_modal()` was true, regardless of target) now lives here instead,
-/// since this is the only arm that still needs it.
+/// Native (Blitz) arm: a plain `div` + vendored `FocusTrap` path -- see this
+/// module's doc comment. The focus-trap eval lives here (not in
+/// `PopoverContent`), since this is the only arm that needs it.
 #[cfg(not(feature = "web"))]
 #[component]
 #[allow(clippy::too_many_arguments)]
@@ -574,8 +568,8 @@ fn PopoverModalContent(
 /// native `close()` takes the dialog out of the top layer synchronously: the
 /// `::backdrop` scrim would vanish in one frame, and the anchored-position rules,
 /// keyed on `:modal` in `top_layer.rs`, would stop matching mid-fade.) The shared
-/// `close_sync` also routes Escape's `cancel` through state, which is what used to be
-/// a second, duplicate handler here. No
+/// `close_sync` also routes Escape's `cancel` through state, so this arm needs no
+/// second, duplicate Escape handler. No
 /// `use_global_escape_listener`/`use_outside_dismiss` and no focus-trap eval on this
 /// arm -- the browser's own `showModal()` supplies the focus trap, focus restore,
 /// background inertness, and top-layer rendering.
@@ -931,16 +925,15 @@ pub fn PopoverTrigger(props: PopoverTriggerProps) -> Element {
     // `id` is deliberately NOT included in the `merge_attributes` call
     // below, unlike `type`/`style`: it stays on its own single explicit
     // binding (above) rather than also being carried, a second time, in
-    // `attributes` -- the two used to disagree in a way that mattered.
+    // `attributes` -- the two could disagree in a way that matters.
     // `id_attribute`, above, already captures a caller override; dropping
     // its copy out of the spread here just stops it from ALSO being
     // serialized as a second, duplicate `id="..."` on this same start tag
     // in the SSR'd HTML (WHATWG HTML's duplicate-attribute parse error --
     // `dev-docs/conformance-harness.md` hydration-parity Rule 4; the top-layer
-    // oracle fixture's `id: "clip-popover-trigger"` et al. hit exactly
+    // oracle fixture's `id: "clip-popover-trigger"` et al. exercise exactly
     // this). The single `id,` binding above still ends up holding the
-    // caller's value once the `use_effect` above has run, same as before
-    // this fix -- unchanged.
+    // caller's value once the `use_effect` above has run.
     let attributes: Vec<Attribute> = props
         .attributes
         .into_iter()

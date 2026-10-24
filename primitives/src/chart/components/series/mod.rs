@@ -42,11 +42,10 @@
 //!   `SeriesRenderContext::curve` unchanged, never duplicated onto
 //!   `AreaOptions`/`LineOptions`.
 //!
-//! One prop moved from `ChartProps` onto a single family's own options
-//! struct, since only that family ever used it: `show_dots` (Line-only) is
-//! now [`LineOptions::dots`] -- `line: LineOptions { dots: true,
-//! ..Default::default() }` where a caller previously wrote
-//! `show_dots: true`.
+//! One option lives on a single family's own options struct rather than on
+//! `ChartProps`, since only that family uses it: the Line-only dots
+//! switch is [`LineOptions::dots`] -- `line: LineOptions { dots: true,
+//! ..Default::default() }`.
 //!
 //! Every family's per-series marks loop (`for (s, series) in
 //! ctx.config.series.iter().enumerate() { g { "data-series": ..., ... } }`)

@@ -14,8 +14,8 @@ use std::rc::Rc;
 /// physically mirrored for RTL. Only ever true when `horizontal` -- a
 /// vertical slider never consults direction at all, matching Radix
 /// (`SliderVertical` in `slider.tsx` takes no `dir` prop; only
-/// `SliderHorizontal` does -- `radix-ui/primitives` commit
-/// `f7ecd5ab16f5e1e820eb5786a1419a98a2d594ae`, lines 318, 400).
+/// `SliderHorizontal` does -- radix-ui/primitives
+/// @ f7ecd5ab16f5e1e820eb5786a1419a98a2d594ae, lines 318, 400).
 fn mirror_horizontal(horizontal: bool, direction: Direction) -> bool {
     horizontal && direction == Direction::Rtl
 }

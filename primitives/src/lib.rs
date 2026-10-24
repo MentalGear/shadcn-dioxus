@@ -103,12 +103,12 @@ pub mod virtual_list;
 /// `scripts/check-js-bundle.sh`; there is no build script). Native (Blitz)
 /// modal overlays (`dialog.rs`/`alert_dialog.rs`/`popover.rs`'s
 /// `#[cfg(not(feature = "web"))]` arms) are its only remaining
-/// consumers -- every web-arm modal overlay now uses the native-dialog
+/// consumers -- every web-arm modal overlay uses the native-dialog
 /// engine (`showModal()`'s own focus trap/restore/inertness/top-layer),
-/// completing the two-engine overlay architecture (dev-docs/plan.md). `#[cfg]`
+/// the two-engine overlay architecture (dev-docs/plan.md). `#[cfg]`
 /// -gated on this crate's `web` feature (not `target_family = "wasm"` --
-/// see `dev-docs/reference/platform-rationale.md` Caveat 1 for why that axis was
-/// corrected) so that neither the wasm client nor a host build with `web`
+/// see `dev-docs/reference/platform-rationale.md` Caveat 1 for why that axis is
+/// wrong) so that neither the wasm client nor a host build with `web`
 /// on (the fullstack SSG server) ever references, and therefore never
 /// bundles, this asset at all -- see [`focus_trap_script`] (this file), the
 /// only thing that ever names this constant.
@@ -485,8 +485,7 @@ fn use_form_reset_listener(
 /// reason [`crate::top_layer::use_popover_sync`] is (see that function's
 /// doc): `dioxus-desktop` is a non-wasm binary with a real, working webview
 /// `eval` and belongs on this same arm, not on native/Blitz's no-op one --
-/// and, confirmed by the 2026-09-01 production incident
-/// (`dev-docs/reference/platform-rationale.md` Caveat 1), the fullstack SSG
+/// and, per `dev-docs/reference/platform-rationale.md` Caveat 1, the fullstack SSG
 /// prerender is a *host* (non-wasm) binary that also belongs on this arm
 /// whenever this crate's `web` feature is on.
 ///
@@ -614,7 +613,7 @@ fn use_dialog_open_driver(
 /// Row 223: a modal that is animating out is still a real modal, so the page behind it (the
 /// trigger included) stays blocked and unfocusable until the native `close()` -- a `.focus()` on
 /// the opener is a no-op, and `inert` on the dialog does not unblock it (measured). Enter, Escape,
-/// Enter on a trigger therefore used to type its second Enter into the closing panel and lose the
+/// Enter on a trigger would therefore type its second Enter into the closing panel and lose the
 /// reopen. The construction: from the moment the close starts (or a `cancel` has been seen but the
 /// state has not flipped yet, up to 250 ms), an Enter or Space aimed at the closing dialog ends the
 /// exit on the spot -- the real `close()`, which returns focus -- and activates the opener the
@@ -676,14 +675,14 @@ const DIALOG_EXIT_TIMEOUT_MS: u32 = 1500;
 /// script-driven alike -- back into `set_open`, so the Rust signal can never
 /// strand.
 ///
-/// This is the fix for the exact defect class
+/// This closes the defect class
 /// `dev-docs/reference/platform-rationale.md` Caveat 1 documents for upstream's
-/// first `<dialog>` (`b3f6de53`): a one-way `showModal()`/`close()` binding
+/// first `<dialog>` @ b3f6de53: a one-way `showModal()`/`close()` binding
 /// with no listener on the browser's own `close` event, so a native Escape
-/// left the `open` signal stranded at `true` and the dialog could never
-/// reopen (reproduced by execution in `dev-docs/archive/research/phase4-spike-findings.md`
-/// experiment 1; fixed the same way here as experiment 2's
-/// `use_dialog_close_sync`). Same eval-channel shape as
+/// leaves the `open` signal stranded at `true` and the dialog can never
+/// reopen (`dev-docs/archive/research/phase4-spike-findings.md`
+/// experiment 1 reproduces it; experiment 2's `use_dialog_close_sync`
+/// is the fix). Same eval-channel shape as
 /// `use_form_reset_listener` above and
 /// [`crate::top_layer::use_popover_sync`]'s browser-to-signal half.
 ///
@@ -752,16 +751,16 @@ fn use_dialog_close_sync(
 /// this exact "click outside to close" pattern) tells the two apart
 /// correctly regardless of `event.target`.
 ///
-/// Originally `dialog.rs`-only (Phase 4.2, dev-docs/plan.md); moved here so
-/// `popover.rs`'s modal web arm (native-dialog Popover migration) can share
-/// it with `alert_dialog.rs`/`dialog.rs` rather than reimplementing it --
+/// Shared (Phase 4.2, dev-docs/plan.md) by `popover.rs`'s modal web arm
+/// (native-dialog Popover migration), `alert_dialog.rs` and `dialog.rs`
+/// rather than reimplemented in each --
 /// the same trio as [`use_dialog_open_driver`]/[`use_dialog_close_sync`].
 /// `use_outside_dismiss` itself is not reusable here, because a
 /// `showModal()` backdrop click's `event.target` *is* the `<dialog>` element
 /// (it contains itself), so `use_outside_dismiss`'s
 /// `!root.contains(e.target)` check can never fire for it.
 ///
-/// ## The nested-dialog false positive (live-site bug report, 2026-09-01)
+/// ## The nested-dialog false positive
 ///
 /// The rect test alone is not a sufficient discriminator, because the
 /// listener is bound directly on the `<dialog>` element and a native `click`
@@ -799,23 +798,22 @@ fn use_dialog_close_sync(
 /// which fires its own `close` event a moment later too -- the nested dialog
 /// visibly opens and then immediately closes, with focus never durably
 /// landing on anything inside it. See `dev-docs/plan.md`/this crate's
-/// `native-dialog.spec.ts` Rule 7 for the oracle rules this fixes.
+/// `native-dialog.spec.ts` Rule 7 for the oracle rules this satisfies.
 ///
-/// ## The opening-gesture false positive (user device report, 2026-09-03)
+/// ## The opening-gesture false positive
 ///
-/// User report (iOS Safari, touch): opening the home page's default
-/// (modal, `is_modal` defaults to `true`) `Popover` -- "Show Popover" --
-/// shows only its `::backdrop`; the popover itself flashes and disappears.
+/// On iOS Safari (touch), opening a default (modal, `is_modal` defaults to
+/// `true`) `Popover` could show only its `::backdrop`, the popover itself
+/// flashing and disappearing.
 /// This hook is a modal `Popover`/`Dialog`'s only dismissal path -- the web
 /// arm calls neither `use_global_escape_listener` nor `use_outside_dismiss`
 /// (the browser's own `showModal()` already supplies focus trap/restore and
 /// inertness; this hook is what supplies backdrop-click dismiss) -- so a
 /// dismiss firing on the *opening* tap itself matches the report exactly.
 ///
-/// Reproduction attempted (this session): touch-emulated (`hasTouch`,
-/// `locator.tap()`) opens of this exact popover, in this sandbox's
-/// Chromium, keep it open -- confirmed by execution, no self-dismiss. That
-/// is expected, not a sign there is nothing to fix: this listener is bound
+/// Touch-emulated (`hasTouch`, `locator.tap()`) opens of this exact
+/// popover in the sandbox's Chromium keep it open, with no self-dismiss.
+/// That is expected, not a sign there is nothing to guard: this listener is bound
 /// directly on the `<dialog>` element, and the button that opens it is a
 /// *sibling* of that dialog, not an ancestor -- the one native `click`
 /// event dispatched for the opening tap has `event.target` fixed to the
@@ -833,11 +831,10 @@ fn use_dialog_close_sync(
 /// position, which sits outside a trigger-anchored (not viewport-centered;
 /// see `popover.rs`'s module doc) modal `Popover`'s own rendered box. This
 /// is engine behavior this sandbox cannot exercise (no such click-retarget
-/// quirk exists in this Chromium build to reproduce against), so this
-/// remains device-only, per this session's own instruction not to claim a
-/// reproduction that was not actually achieved.
+/// quirk exists in this Chromium build to reproduce against), so the
+/// iOS case is device-only; no reproduction is claimed here.
 ///
-/// Fixed by construction regardless: `dialog.addEventListener('click', ...)`
+/// Guarded by construction regardless: `dialog.addEventListener('click', ...)`
 /// is deferred by one `requestAnimationFrame`, so the very click that opened
 /// this dialog -- and any same-gesture follow-up event an engine might
 /// synthesize immediately after it -- can never reach this listener at all,
@@ -851,21 +848,20 @@ fn use_dialog_close_sync(
 /// animation) before the deferred frame ever fires, so the listener is
 /// never attached to an element already gone from the DOM.
 ///
-/// ## The drag false positive (owner report, 2026-10-05: "dragging UP on a bottom
-/// Drawer's handle closes it")
+/// ## The drag false positive (dragging UP on a bottom Drawer's handle must not close it)
 ///
 /// A `click` is dispatched on the nearest common ancestor of where the press and
 /// the release landed. A press on the Drawer handle (or on text, or in an input)
 /// and a release over the `::backdrop` above the panel have the dialog itself as
-/// that ancestor, so the release produced a `click` with `target === dialog` and
+/// that ancestor, so the release produces a `click` with `target === dialog` and
 /// coordinates outside the dialog's box -- indistinguishable, by the checks above,
-/// from a real backdrop click. Every drag that began inside a dialog and ended
-/// outside it (a text selection, a slider, a Drawer pulled the wrong way) closed
-/// it. A dismissal is a *click on the backdrop*, so the press must have started
+/// from a real backdrop click. Every drag that begins inside a dialog and ends
+/// outside it (a text selection, a slider, a Drawer pulled the wrong way) would
+/// close it. A dismissal is a *click on the backdrop*, so the press must have started
 /// there too: a `pointerdown` whose target is the dialog and which landed outside
 /// its box arms the next `click`, and any other press disarms it. Not tied to the
 /// Drawer: this is the shared hook for Dialog, Sheet, Drawer, CommandDialog and
-/// the modal Popover, so the whole class is closed here.
+/// the modal Popover, so the whole class is handled here.
 #[cfg(feature = "web")]
 fn use_dialog_backdrop_dismiss(
     id: impl Readable<Target = String> + Copy + 'static,

@@ -3,7 +3,7 @@
 //! # Scope (v1)
 //!
 //! Built per `dev-docs/archive/research/carousel-2026-09-19.md` and the approved
-//! decisions (2026-09-19): the APG "basic" (prev/next, no picker) style
+//! decisions: the APG "basic" (prev/next, no picker) style
 //! only (`carousel-1-prev-next` in the vendored reference). Deliberately
 //! **not** in v1, each filed as a fast-follow rather than a silent gap:
 //! infinite `loop`ing (§8.2), autoplay / a rotation control and the
@@ -299,16 +299,14 @@ fn item_gap_padding(orientation: CarouselOrientation) -> &'static str {
 /// **`box-sizing: border-box` is declared here, inline, because that
 /// sentence is only true under it.** Under the default `content-box` the gap
 /// padding is added *on top of* the basis, so every slide is one gap wider
-/// than the snapport. Found from the owner's real-trackpad report ("trackpad
-/// custom scroll end snap interferes with looping/virtual slider"): the
-/// box-sizing used to come only from the themed `.dx-carousel-item` class,
-/// which [`CarouselVirtualContent`]'s own slides (rendered by this
-/// primitive, with no class) never carried, so they measured 352px in a
-/// 336px snapport. A snap area larger than the snapport makes every
+/// than the snapport. A themed `.dx-carousel-item` class cannot supply it:
+/// [`CarouselVirtualContent`]'s own slides (rendered by this
+/// primitive, with no class) never carry that class, so they would
+/// measure 352px in a 336px snapport. A snap area larger than the snapport makes every
 /// position inside it a valid rest position (CSS Scroll Snap: snap areas
-/// larger than the snapport), so the browser stopped snapping those slides
-/// at all -- a wheel/trackpad gesture came to rest up to one gap off a slide
-/// boundary, and the virtual window's own re-align then "snapped" the
+/// larger than the snapport), so the browser would not snap those slides
+/// at all -- a wheel/trackpad gesture would come to rest up to one gap off a
+/// slide boundary, and the virtual window's own re-align would then "snap" the
 /// leftover itself, as a visible instant `scrollBy` at scroll end
 /// (`playwright/carousel-virtual-wheel.spec.ts`). Declaring it on the one
 /// style every slide renderer shares ([`CarouselItem`] and
@@ -3275,35 +3273,27 @@ pub fn Carousel(props: CarouselProps) -> Element {
     // visibly animates in on page load, and must be consumed *exactly*
     // once, by that mount-time settle -- never by a later navigation.
     //
-    // It used to be consumed by "the first run that finds a valid item
-    // id," which silently assumed that run was always the mount settle.
-    // That assumption broke for the overwhelmingly common
-    // `default_value == 0` case: `clamp_selected(0, count)` is `0` both
-    // before and after registration, so `selected()`'s own *value* never
-    // changes when items register, and (since `item_ids` below is read
-    // through `.peek()`, deliberately not a tracked dependency) this
-    // effect was never scheduled to re-run once they did. Its very first
-    // execution -- mount, before any `CarouselItem` has registered --
-    // early-returned with `is_first` still `true`, and nothing ran this
-    // effect again until the user's first real navigation, which then
-    // found a valid id for the first time and inherited that stale
-    // `instant: true` by mistake. Reproduced live (round5,
-    // `$S/round5/carousel-drag/item1-repro-{main,rtl}.log`): clicking
-    // Next from slide 1 sent `{instant: true, behavior: 'auto'}` while
-    // every later click sent `{instant: false, behavior: 'smooth'}`, on
-    // an unmodified tree, with the test browser reporting
-    // `prefers-reduced-motion: no-preference` and `.dx-carousel-content`
-    // itself computing `scroll-behavior: auto` throughout (the global
-    // `html { scroll-behavior: smooth }` rule in
-    // `preview/assets/main.css` never reaches it -- `scroll-behavior` is
-    // not an inherited property, and this element is its own independent
-    // scroll container) -- ruling out both cheap alternative
-    // explanations before accepting this one.
+    // The flag must not be consumed by "the first run that finds a valid
+    // item id": that run is not always the mount settle. In the
+    // overwhelmingly common `default_value == 0` case `clamp_selected(0,
+    // count)` is `0` both before and after registration, so `selected()`'s
+    // own *value* never changes when items register, and (since `item_ids`
+    // below is read through `.peek()`, deliberately not a tracked
+    // dependency) this effect would not be scheduled to re-run once they
+    // did. Its first execution -- mount, before any `CarouselItem` has
+    // registered -- early-returns, and nothing would run it again until the
+    // user's first real navigation, which would then inherit a stale
+    // `instant: true` (Next from slide 1 sending `{instant: true, behavior:
+    // 'auto'}` while every later click sends `{instant: false, behavior:
+    // 'smooth'}`). The global `html { scroll-behavior: smooth }` rule in
+    // `preview/assets/main.css` does not reach this element:
+    // `scroll-behavior` is not inherited and this element is its own scroll
+    // container.
     //
-    // Fixed by construction, not by timing: `count()` below is read with
-    // tracked syntax (unlike the `item_ids.peek()` a few lines down), so
-    // registration completing re-runs this effect the instant it does,
-    // even though `selected()`'s own clamped value stayed the same --
+    // So it is consumed by construction, not by timing: `count()` below is
+    // read with tracked syntax (unlike the `item_ids.peek()` a few lines
+    // down), so registration completing re-runs this effect the instant it
+    // does, even though `selected()`'s own clamped value stayed the same --
     // and `is_first` is consumed unconditionally the moment `count() > 0`
     // on *that* run, regardless of whether this particular index's id
     // happens to resolve this same tick. So the flag can never survive
@@ -3312,9 +3302,8 @@ pub fn Carousel(props: CarouselProps) -> Element {
     // synchronously within the same initial render/effect-flush wave
     // that mounts this component (long before a user could physically
     // interact with it), can never coincide with a genuine navigation.
-    // This subsumes both the `default_value == 0` case above (the leak
-    // this construction closes) and the already-correct nonzero-
-    // `default_value` case (still instant, still consumed at the same
+    // This covers both the `default_value == 0` case above and the
+    // nonzero-`default_value` case (still instant, consumed at the same
     // conceptual point, just via a value change rather than a `count()`
     // retry).
     let mut is_first = use_signal(|| true);
@@ -3808,26 +3797,25 @@ fn snap_type_value(orientation: CarouselOrientation, drag_free: bool) -> &'stati
 /// untouched; this is what dissolves that problem rather than working
 /// around it (research doc §5).
 ///
-/// **Correction, filed [2026-09-25](../../dev-docs/archive/research/carousel-overscroll-2026-09-23.md):
-/// this element does *not* self-clip a translated overdrag, and an earlier
-/// version of this doc claimed it did.** An element's own `overflow`
+/// **This element does *not* self-clip a translated overdrag**
+/// ([research](../../dev-docs/archive/research/carousel-overscroll-2026-09-23.md)).
+/// An element's own `overflow`
 /// clips relative to *its own* box, and a `transform` moves that box (and
 /// its clip region) as one unit -- it does not clip the box against where
 /// it would have painted before the transform. So translating this
 /// element by its own overdrag moves its clip boundary along with its
-/// content, and nothing clips the result: on real hardware a trackpad
-/// overdrag pushed the whole visible slide track outside the carousel,
-/// unclipped, overlapping whatever sat beside it on the page. The fix is
-/// the bench's own construction, restored rather than reinvented: a
-/// *stationary* wrapper -- `data-slot="carousel-viewport"`, `overflow:
+/// content, and nothing clips the result: a trackpad overdrag would push
+/// the whole visible slide track outside the carousel, unclipped,
+/// overlapping whatever sits beside it on the page. So the construction is
+/// the bench's own: a *stationary* wrapper -- `data-slot="carousel-viewport"`, `overflow:
 /// clip` -- around this element, so the element inside it is what
 /// translates while the clip boundary around it never moves.
 /// `overflow: clip`, not `overflow: hidden`: a `hidden` box is still a
 /// scroll container, and this module's paging/drag-release-settle paths
-/// no longer risk scrolling it even so -- both now call `scrollBy()` on
+/// do not risk scrolling it even so -- both call `scrollBy()` on
 /// the scroller element directly rather than `scrollIntoView()` on a
-/// slide (see [`CAROUSEL_SCROLL_TO_JS`]'s own doc for why, and for the
-/// incident that made that a hard requirement rather than a nice-to-have)
+/// slide (see [`CAROUSEL_SCROLL_TO_JS`]'s own doc for why, a hard
+/// requirement rather than a nice-to-have)
 /// -- but `clip` establishes no scrollport at all regardless, so nothing
 /// here (or added later) can ever scroll this wrapper by accident, the
 /// same defense-in-depth reasoning as never giving it an `id`/ARIA for a
@@ -6448,26 +6436,19 @@ mod ssr_tests {
 
     #[test]
     fn slide_declares_scroll_snap_stop_always_inline() {
-        // `scroll-snap-stop: always` used to be applied via a scoped
-        // `<style>` tag rendered as `CarouselContent`'s own preceding
-        // sibling, gated by `@supports` -- removed; see `CarouselContent`'s
+        // `scroll-snap-stop: always` is a plain inline declaration on each
+        // slide, alongside `scroll-snap-align`, not a scoped `<style>` tag
+        // gated by `@supports`: Dioxus's hydration marker comments inside a
+        // `<style>` tag's text content corrupt the CSS parse (every slide
+        // would compute `scroll-snap-stop: normal`). See `CarouselContent`'s
         // own doc, "scroll-snap-stop" section ("Why a plain inline
-        // declaration, not `@supports`"), for the full write-up. Measured
-        // live against a hydrated release SSG build, that construction
-        // never took effect at all: Dioxus's own hydration marker comments
-        // inside the `<style>` tag's text content corrupted the CSS parse,
-        // so `styleElement.sheet.cssRules.length` was `0` and every slide
-        // computed `scroll-snap-stop: normal` regardless. It is now a
-        // plain inline declaration on each slide, alongside
-        // `scroll-snap-align`, matching every other layout-critical
-        // property this module already sets this way. This is the
-        // SSR-checkable half of that fix; the computed-style/behavioral
+        // declaration, not `@supports`"), for the full write-up. This is the
+        // SSR-checkable half; the computed-style/behavioral
         // half needs a real browser -- `playwright/carousel.spec.ts`'s own
         // "scroll-snap-stop" describe block.
         let html = render(ThreeSlideCarousel);
         assert!(html.contains("scroll-snap-stop:always"));
-        // The earlier, broken `<style>`-tag construction is gone entirely,
-        // not just replaced with a working version of itself.
+        // No scoped `<style>` tag is rendered at all.
         assert!(!html.contains("<style>"));
     }
 

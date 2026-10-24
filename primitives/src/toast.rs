@@ -632,15 +632,15 @@ thread_local! {
 /// `preview/src/components/top_layer/component.rs`'s oracle fixture
 /// deliberately composes this raw primitive with no such class at all (its
 /// own header doc: calibrated against native `popover`/top-layer mechanics,
-/// not a themed look), so before this function existed its toast had
+/// not a themed look), so without this function its toast has
 /// whatever box the *engine's own* UA popover-stylesheet defaults
 /// (`[popover] { inset: 0; margin: auto; border: solid; padding: 0.25em;
 /// overflow: auto; background-color: Canvas; }`) plus `fit-content` sizing
 /// happened to produce -- per dev-docs/backlog.md row 44's own root-cause
 /// analysis, this is a real gap between engines: Chromium's default gives
 /// it a small (~105x40px) on-screen box (confirmed there by execution
-/// against a real build), while a 2026-09-03 iOS 18 device report of the
-/// fixture's "Add toast" appearing dead is the unverified-but-plausible
+/// against a real build), while the fixture's "Add toast" appearing dead
+/// on an iOS 18 device is the unverified-but-plausible
 /// WebKit instance of the same gap -- this crate has no WebKit build to
 /// confirm that half against directly. Rather than tie the
 /// fixture's deliberately-raw composition to the theme (which would also
@@ -791,11 +791,11 @@ if (!document.getElementById('dx-toast-base-styles')) {
 /// component's own stylesheet instead of that shared engine, since this
 /// region needs the reset without ever wanting anchor positioning itself.
 ///
-/// ## Attribute-override dedup (found by execution, 2026-09-01)
+/// ## Attribute-override dedup
 ///
-/// `attributes` used to be spread (`..attributes`) directly after this
+/// `attributes` is not spread (`..attributes`) directly after this
 /// element's own explicit `id`/`role`/`aria_label`/`tabindex`/`popover`/
-/// `style`. On the client that's harmless -- Dioxus applies attributes to
+/// `style`. On the client that would be harmless -- Dioxus applies attributes to
 /// the DOM sequentially, so a caller's later value in `..attributes` simply
 /// wins -- but the SSR renderer serializes both the explicit attribute and
 /// the caller's override as two separate `attr="..."` occurrences in the
@@ -804,7 +804,7 @@ if (!document.getElementById('dx-toast-base-styles')) {
 /// about which value won (`dev-docs/conformance-harness.md`'s hydration-parity
 /// Rule 4) -- concretely, a caller's `aria_label` override (two
 /// `ToastProvider`s on one page needing distinct accessible names, e.g.
-/// `preview/src/components/top_layer/component.rs`) rendered as the
+/// `preview/src/components/top_layer/component.rs`) would render as the
 /// *primitive's* default `"{length} notifications"` in the served HTML
 /// while the live DOM showed the caller's text, failing axe's
 /// `landmark-unique` only on the prerendered/SSG lane. Every attribute
