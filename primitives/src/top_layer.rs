@@ -8,8 +8,8 @@
 //! a dependency, and `dev-docs/archive/fork-research/lifting-from-forks.md` §4 says not to take dependency
 //! edits when a lift can avoid them. Narrowed to the Popover API only; the
 //! fork's `TopLayerKind::DialogModal` arm is dropped, since native
-//! `<dialog>` + `showModal()` is Phase 4.2's job (dev-docs/plan.md), not this
-//! slice's.
+//! `<dialog>` + `showModal()` is the modal engine's job (`dialog.rs`), not
+//! this module's.
 //!
 //! Two WHATWG HTML spec sections define everything below:
 //! - The `popover` attribute and its `auto`/`manual` states:
@@ -61,7 +61,7 @@ thread_local! {
 /// hot-reload resetting Rust statics but leaving the already-injected tag in
 /// the live DOM).
 ///
-/// ## The bug class this closes (dev-docs/backlog.md item 1)
+/// ## The bug class this closes
 ///
 /// The `@supports (anchor-name: --a)` block
 /// (per-`[data-side]`/`[data-align]` `anchor()` rules, `position-try-
@@ -75,11 +75,9 @@ thread_local! {
 /// (`dev-docs/issues/css-module-supports-scoping.md`) -- so each copy would
 /// have to be a plain, unhashed `dx-anchor-*` marker class rather than a
 /// `Styles::`-routed one. A consuming page that lacked its copy
-/// (`color_picker` and `date_picker` did) silently fell back to un-anchored
-/// positioning -- a bug class, not a one-off: every *future*
-/// `dx-anchor-*`-marked overlay would have to
-/// remember to duplicate this same block into its own page's stylesheet, or
-/// fail the identical way. Injecting this once, engine-side, from the same
+/// silently fell back to un-anchored positioning -- a bug class, not a one-off: every `dx-anchor-*`-marked
+/// overlay would have to remember to duplicate this same block into its own
+/// page's stylesheet, or fail the identical way. Injecting this once, engine-side, from the same
 /// Rust module that defines the marker-class contract
 /// (`anchor_name_style`/`position_anchor_style` below) makes anchor
 /// positioning "just work" for `dx-anchor-tooltip`/`dx-anchor-hover-card`/
@@ -175,8 +173,7 @@ fn anchor_positioning_inject_js() -> String {
 /// deliberately not part of it.
 ///
 /// Every `.dx-anchor-popover[popover]` selector below has a
-/// `.dx-anchor-popover:modal` sibling (native-dialog engine migration,
-/// two-engine overlay architecture completion): a modal `Popover`'s web arm
+/// `.dx-anchor-popover:modal` sibling: a modal `Popover`'s web arm
 /// is a real `<dialog>` opened with `showModal()`, so it carries the
 /// `dx-anchor-popover` marker class the same way the non-modal arm's
 /// `<dialog popover="auto">` does, but never the `popover` attribute itself
@@ -613,7 +610,7 @@ const ANCHOR_POSITIONING_CSS_JS_LITERAL: &str = r#"`
 /// all, so it never calls [`use_anchor_position_fallback`] -- putting this
 /// rule only there would leave every native-`<dialog>` consumer unfixed.
 ///
-/// ## First-paint window (dev-docs/backlog.md row 50 residue, closed)
+/// ## First-paint window (dev-docs/backlog.md row 50)
 ///
 /// Calling this from a `use_effect` at each hook above is a **best-effort
 /// early install** only -- exactly the same relationship
@@ -632,9 +629,9 @@ const ANCHOR_POSITIONING_CSS_JS_LITERAL: &str = r#"`
 /// declaration order) by prepending the injection statement directly into
 /// the dependent eval's own script, so both run as one synchronous JS
 /// program with no cross-eval ordering assumption left to make. This
-/// function's own three call sites have the same shape and, per
-/// dev-docs/backlog.md row 50, the same residue (a surface measured
-/// mid-window in repeated runs of `top-layer-ink.spec.ts`) -- so [`TOP_LAYER_INK_STYLES_INJECT_JS`] is
+/// function's own three call sites have the same shape and the same
+/// residue (a surface measured mid-window, dev-docs/backlog.md row 50;
+/// `top-layer-ink.spec.ts` guards it) -- so [`TOP_LAYER_INK_STYLES_INJECT_JS`] is
 /// prepended the identical way, into the "signal -> browser" show scripts
 /// in [`use_popover_sync`], [`use_popover_shown_while_mounted`], and
 /// `lib.rs`'s `use_dialog_open_driver` (the same three exhaustive call
@@ -760,7 +757,7 @@ pub(crate) enum PopoverKind {
     /// also `context_menu.rs` (a point-opened menu with no persistent
     /// trigger for `auto` to reason about) and `combobox/components/
     /// list.rs`'s `ComboboxListRendered` (`auto` fails there -- see that
-    /// component's doc for the concrete regression).
+    /// component's doc for the concrete failure).
     Manual,
 }
 
@@ -779,8 +776,8 @@ impl PopoverKind {
 /// light-dismiss (`auto`), Escape (`auto`), or any other script/UA-driven
 /// close — back into `set_open`, so the Rust signal never strands. This is
 /// the same defect class `dev-docs/reference/platform-rationale.md` Caveat 1
-/// documents for `<dialog>`'s one-way `showModal()`/`close()` binding
-/// (an upstream regression of that binding); the eval-channel
+/// documents for `<dialog>`'s one-way `showModal()`/`close()` binding;
+/// the eval-channel
 /// pattern that fixes it here is the same one already used by
 /// `use_form_reset_listener` (`lib.rs`).
 ///
@@ -970,8 +967,8 @@ pub(crate) fn use_popover_shown_while_mounted(
     // focus-out/mouse-leave in the same beat as the open: input events
     // outrank that queued task under main-thread load). Mirroring that
     // stale "open" back would flip `open` to `true` with nothing left to
-    // close it -- a tooltip/hover card stuck open forever (reproduced
-    // deterministically by calling `blur()` right after `showPopover()`).
+    // close it -- a tooltip/hover card stuck open forever (calling `blur()`
+    // right after `showPopover()` triggers it deterministically).
     // The `open` direction is never needed: this hook's effect below is the
     // only `showPopover()` caller for the element (the signal always opens
     // it, never the browser), so a native "open" can only be an echo of our
@@ -1024,8 +1021,8 @@ pub(crate) fn use_popover_shown_while_mounted(
 }
 
 /// JS-measured static positioning fallback/self-check for engines where CSS
-/// Anchor Positioning doesn't land the content next to its trigger. Confirmed
-/// by execution to be *required*, not merely a nice-to-have: once an element
+/// Anchor Positioning doesn't land the content next to its trigger. It is
+/// *required*, not merely a nice-to-have: once an element
 /// is promoted to the top layer via `popover`, its containing block becomes
 /// the viewport regardless of its own `position` value (see
 /// [`position_anchor_style`]'s doc) -- which means the `[data-side]`
@@ -2038,11 +2035,9 @@ pub(crate) fn use_anchor_position_fallback(
 /// content can occupy is the viewport *minus the classic scrollbar* -- a
 /// 15px gutter on a desktop browser with always-on scrollbars, on both
 /// axes. `window.innerWidth/innerHeight` always include it, and engines
-/// disagree on whether `visualViewport.width/height` do (this sandbox's
-/// Chromium 1194 excludes it; a clamp that read the scrollbar-inclusive
-/// value landed an overlay `vw - 4` = ~11px past the content area: the
-/// navigation-menu "Reference" panel's right edge at 386 vs a 375px content
-/// width at a 390px viewport, a "Resources" panel at 1276 vs 1265 at 1280).
+/// disagree on whether `visualViewport.width/height` do (Chromium
+/// excludes it; a clamp that read the scrollbar-inclusive value would land
+/// an overlay `vw - 4` = ~11px past the content area).
 /// `document.documentElement.clientWidth/clientHeight` is the layout
 /// viewport with scrollbars excluded, by definition, in every engine.
 ///
@@ -2304,7 +2299,7 @@ pub(crate) const MEASURE_AT_FULL_WIDTH_JS: &str = r#"
 ///
 /// **A parallel, smaller construction, not a branch inside
 /// [`use_anchor_position_fallback`]**: that function's script is already a
-/// long, heavily cross-referenced, execution-verified sequence (flip
+/// long, heavily cross-referenced sequence (flip
 /// decision, inline/vertical shift, size clamp, `--dx-anchor-width`
 /// publication, scroll/resize/`visualViewport` tracking, a multi-frame
 /// settle loop) built and tested entirely around resolving and measuring an
@@ -2469,7 +2464,7 @@ pub(crate) fn use_point_anchor_clamp(
 ///
 /// CSS Anchor Positioning is the platform's own, still-CSS answer (no
 /// `floating-ui`, no JS-computed geometry — that stays out of scope; see
-/// `dev-docs/plan.md` Phase 5, "Collision detection", which this is not): an
+/// `dev-docs/plan.md` "Collision detection", which this is not): an
 /// `anchor-name` declared on the trigger and referenced from the content
 /// via `position-anchor` lets `top`/`left`/etc. in the *stylesheet* use
 /// `anchor()` to mean "relative to that named anchor" even from the top

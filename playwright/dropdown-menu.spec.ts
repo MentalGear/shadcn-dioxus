@@ -446,7 +446,7 @@ test.describe('DropdownMenuSub open_on_hover: false (click activation)', () => {
     await expect(sub).toHaveAttribute('aria-expanded', 'true');
   });
 
-  test('keyboard is unchanged: ArrowRight / Enter / Space open, ArrowLeft / Escape close', async ({ page }) => {
+  test('keyboard: ArrowRight / Enter / Space open, ArrowLeft / Escape close', async ({ page }) => {
     const { trigger, sub } = await openMenu(page);
     await page.keyboard.press('ArrowDown'); // Share
     await page.keyboard.press('ArrowDown'); // Export as
@@ -471,7 +471,7 @@ test.describe('DropdownMenuSub open_on_hover: false (click activation)', () => {
     await expect(page.getByRole('menuitem', { name: 'PDF document' })).toBeFocused();
   });
 
-  test('selecting a sub-item still closes the whole menu', async ({ page }) => {
+  test('selecting a sub-item closes the whole menu', async ({ page }) => {
     const { trigger, sub } = await openMenu(page);
     await sub.click();
     await page.getByRole('menuitem', { name: 'Plain text' }).click();
@@ -479,7 +479,7 @@ test.describe('DropdownMenuSub open_on_hover: false (click activation)', () => {
     await expect(page.getByText('Chosen: text')).toBeVisible();
   });
 
-  test('default (open_on_hover: true) is unchanged: hovering More tools still opens it', async ({ page }) => {
+  test('default (open_on_hover: true): hovering More tools opens it', async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/dropdown_menu/`, { timeout: 20 * 60 * 1000 });
     await page.getByRole('button', { name: 'Open Menu' }).click();
     const sub = page.getByRole('menuitem', { name: 'More tools' });

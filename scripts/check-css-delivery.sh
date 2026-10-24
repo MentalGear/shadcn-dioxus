@@ -6,15 +6,15 @@
 # the web fonts, from arriving after first paint cannot be un-done by an innocent edit. Invisible to cargo and clippy, and
 # with CI frozen (dev-docs/backlog.md row 33) nothing else would notice.
 #
-# THE CLASS (dev-docs/research/round3-2026-10-05.md section 2): a stylesheet discovered at RENDER time is inserted after first paint, and a late
-# `<link>` is not render-blocking (`blocking=render` measured as a no-op once <body> exists). A client-side navigation to
-# /component/field/ or a popover's first open therefore paints white UA inputs / UA buttons, then reflows (measured: 5-10 late
-# sheets, 150-270 ms unstyled, CLS 0.02-0.08 on 8 of 8 pages sampled). The construction:
+# THE CLASS (dev-docs/research/round3-2026-10-05.md section 2 has the measurements): a stylesheet discovered at RENDER time is
+# inserted after first paint, and a late `<link>` is not render-blocking (`blocking=render` is a no-op once <body> exists). A
+# client-side navigation to /component/field/ or a popover's first open therefore paints white UA inputs / UA buttons, then
+# reflows. The construction:
 #   1. scripts/ssg-css-bundle.mjs puts every component stylesheet in every page's <head> as ONE render-blocking bundle;
 #   2. scripts/build-ssg.sh runs it by default (guard 4b) and scripts/deploy-preview.sh never turns it off;
 #   3. preview/src/eager_head.rs skips a stylesheet link whose file the bundle already carries (data-covers);
 #   4. GlobalHead preloads the two self-hosted latin Geist woff2 files and its @font-face rules say font-display: optional, so the font swap cannot
-#      re-wrap text after first paint (CLS 0.117 -> 0.000 on /component/form/).
+#      re-wrap text after first paint (no layout shift from the font).
 #
 # Usage: scripts/check-css-delivery.sh
 # Exit 0: clean. Exit 1: a violation, with detail on stderr.

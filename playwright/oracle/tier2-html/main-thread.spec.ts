@@ -37,23 +37,18 @@
  *     https://www.w3.org/TR/event-timing/#dom-performanceobserverinit-durationthreshold
  *     https://www.w3.org/TR/event-timing/#dom-performanceeventtiming-interactionid
  *
- * The failure shapes it catches (the two incidents that motivated row 45):
- *   - Row 73 (drawer drag hang): `DrawerContent`'s drag-continuation
- *     `use_effect` read `raw_offset()` with tracked syntax and then wrote
- *     that same signal in the same run, re-triggering itself forever from
- *     the first `pointerdown` -- the tab's whole main thread wedged with no
- *     panic and no console output. This oracle's drawer-drag test drives
- *     the *identical* gesture shape (`page.mouse.down()` then several
- *     `mouse.move` steps), under a `test.info()` timeout far shorter than
- *     5 minutes, with a `longtask` observer already running before the
- *     first `pointerdown` -- an infinite synchronous re-trigger loop is,
- *     definitionally, one arbitrarily long task, and fails this file's
- *     `maxTaskMs <= 50` assertion (or simply times out the test, which is
- *     its own kind of red).
- *   - Row 74 (first-render panic): out of this file's own scope (a wasm
- *     `unreachable` trap is not a slow task, it is a crash), but it
- *     surfaced the general hazard this file's subject list has to
- *     respect -- see "A note on row 74's other lesson" below.
+ * The failure shapes it catches (row 45):
+ *   - Row 73 (drawer drag hang): a `use_effect` that reads a signal with tracked syntax and then
+ *     writes that same signal in the same run re-triggers itself forever from the first
+ *     `pointerdown`, and the tab's whole main thread wedges with no panic and no console output.
+ *     This oracle's drawer-drag test drives the *identical* gesture shape (`page.mouse.down()` then
+ *     several `mouse.move` steps), under a `test.info()` timeout far shorter than 5 minutes, with a
+ *     `longtask` observer already running before the first `pointerdown` -- an infinite synchronous
+ *     re-trigger loop is, definitionally, one arbitrarily long task, and fails this file's
+ *     `maxTaskMs <= 50` assertion (or simply times out the test, which is its own kind of red).
+ *   - Row 74 (first-render panic): out of this file's own scope (a wasm `unreachable` trap is not a
+ *     slow task, it is a crash), but it carries the general hazard this file's subject list has to
+ *     respect -- see "A note on scoping" below.
  *
  * Subjects (every overlay's open/close, every form control's primary
  * interaction), all driven against the shared
@@ -65,23 +60,15 @@
  * this file independent), so a change to another spec's
  * internals cannot silently change what this oracle measures.
  *
- * A note on row 74's other lesson ("one bad demo takes down /", and more
- * generally: unscoped accessible-role/name queries can silently resolve
- * against the site's own persistent chrome instead of the demo). The same
- * *class* of hazard applies to this file, independent of row 74's own two
- * root causes: on `/component/virtual_list/`, the persistent sidebar
- * navigation renders seven of its own `<ul>` elements (implicit
- * `role="list"`) before the actual demo's two `.dx-virtual-list-container`
- * elements in DOM order, so a bare `page.getByRole("list").first()`
- * silently resolves to a 68px-tall sidebar menu, not the scrollable
- * virtualized list; scrolling it is consequently a no-op, provably (a
- * real wheel gesture on the *correct* element moves `scrollTop` from 0 to
- * 800; the same gesture through `.first()` never moves it). This file's
- * virtual_list subject therefore scopes by the demo's own CSS class
- * (`.dx-virtual-list-container`) instead. Any spec using an unscoped
- * `getByRole("list")` against a route that also renders the sidebar
- * should be scoped the same way row 74 rescoped `getByRole('link', ...)`
- * once the persistent chrome grew a "Docs" link.
+ * A note on scoping ("one bad demo takes down /", and more generally: unscoped accessible-role/name
+ * queries can silently resolve against the site's own persistent chrome instead of the demo; row 74).
+ * On `/component/virtual_list/` the persistent sidebar navigation renders seven of its own `<ul>`
+ * elements (implicit `role="list"`) before the demo's two `.dx-virtual-list-container` elements in DOM
+ * order, so a bare `page.getByRole("list").first()` resolves to a 68px-tall sidebar menu, not the
+ * scrollable virtualized list, and scrolling it is a no-op. This file's virtual_list subject therefore
+ * scopes by the demo's own CSS class (`.dx-virtual-list-container`) instead. A spec using an unscoped
+ * `getByRole("list")` or `getByRole('link', ...)` against a route that also renders the sidebar
+ * should be scoped the same way.
  *
  * Robustness under load (design requirement -- this
  * sandbox runs several builds/servers concurrently, so a single
@@ -112,14 +99,10 @@
  * (stop-the-file-on-first-failure) is the wrong choice for an inventory
  * file where every subject's result is independently meaningful.
  *
- * Red proof: a synthetic busy handler, injected by a throwaway script that
- * is never committed. (a) a `pointerdown` listener that
- * spins 120ms (over the 50ms long-task threshold) turns the drawer-drag
- * and slider-drag tests red on `maxTaskMs`; (b) a `click` handler that
- * spins 250ms (over the 200ms interaction threshold) turns a click-based
- * test red on `maxInteractionMs`. Neither change is present in this file
- * or in `../../main-thread.ts` -- there is no env var or flag anywhere in
- * the committed code path that can re-enable it.
+ * Sensitivity: a handler that spins past a threshold turns the matching tests red -- a `pointerdown`
+ * listener spinning 120ms (over the 50ms long-task threshold) the drawer-drag and slider-drag tests on
+ * `maxTaskMs`, a `click` handler spinning 250ms (over the 200ms interaction threshold) a click-based test
+ * on `maxInteractionMs`. No env var or flag in this file or in `../../main-thread.ts` injects one.
  *
  * Chromium-only, deliberately (row 45's caveat, which
  * changes this file's shape, not just its README entry): the Long
@@ -710,8 +693,8 @@ const FORM_CONTROL_SUBJECTS: FormControlSubject[] = [
     // drag past the dismiss threshold, several separately-timed
     // `mouse.move` steps -- byte-for-byte the shape of drawer.spec.ts's own
     // "a long, slow drag past the dismiss threshold closes the drawer",
-    // which is the exact test that hung at `page.mouse.down()` before the
-    // fix (dev-docs/backlog.md row 73).
+    // whose drag-continuation effect would wedge the main thread at
+    // `page.mouse.down()` if it re-triggered itself (dev-docs/backlog.md row 73).
     name: "drawer (drag)",
     // The demo drawer takes `EdgeSide::Auto`: the bottom below the `md` breakpoint (768px), a floating right panel (no
     // grab handle, dragged sideways) at and above it. This gesture is the BOTTOM drawer's vertical handle drag, so it
@@ -727,9 +710,8 @@ const FORM_CONTROL_SUBJECTS: FormControlSubject[] = [
       await expect(root).toHaveAttribute("data-state", "open");
       const content = page.locator('[data-slot="drawer-content"]');
       // `data-state="open"` is set when the slide-in STARTS, not when it lands. Read straight away, the handle is
-      // still below the fold (y=751 of 720 at the first frame): the press then hits nothing, no drag begins, and the
-      // drawer never dismisses (9 of 10 immediate runs on the release deploy build, against 10 of 10 after the
-      // slide-in settled). So wait until the handle has stopped moving (two equal reads 100 ms apart).
+      // still below the fold: the press then hits nothing, no drag begins, and the drawer never dismisses. So wait
+      // until the handle has stopped moving (two equal reads 100 ms apart).
       const handle = page.locator('[data-slot="drawer-handle"]');
       let lastHandleBox = "";
       await expect
@@ -809,7 +791,7 @@ const FORM_CONTROL_SUBJECTS: FormControlSubject[] = [
   },
   {
     // Scoped by the demo's own CSS class, not `getByRole("list")` -- see
-    // this file's header, "A note on row 74's other lesson".
+    // this file's header, "A note on scoping".
     name: "virtual_list (scroll)",
     goto: async (page) => {
       await goto(page, "virtual_list");

@@ -274,7 +274,7 @@ fn server_static_routes() -> Vec<String> {
 pub fn App() -> Element {
     // Insert every `document::Link`/`Stylesheet`/`Meta` into `<head>` as it renders, not from an effect
     // that a same-turn teardown drops while Dioxus's de-duplication still counts the link as present
-    // (the legacy `/component/?name=X` shell lost the header's `Popover` CSS that way).
+    // (the legacy `/component/?name=X` shell loses the header's `Popover` CSS that way).
     // First, so it is in place before any component can render a link. Client builds only: the server's
     // `ServerDocument` must keep collecting the SSR head. See `eager_head`.
     #[cfg(not(feature = "server"))]
@@ -338,8 +338,8 @@ pub enum Route {
         dark_mode: Option<bool>,
     },
     // Legacy query-string deep link (dev-docs/backlog.md row 46). Kept ONLY
-    // so old bookmarks/external links/the hundreds of existing Playwright
-    // specs using this URL form keep working -- it is NOT SSG-enumerable by
+    // so old bookmarks, external links and the Playwright specs that still use
+    // this URL form keep working -- it is NOT SSG-enumerable by
     // construction (a query string can never become a distinct static FILE:
     // `dioxus-server-0.7.9`'s `FileSystemCache::map_path` strips everything
     // from `?` onward before mapping a route to a file path, so every
@@ -558,7 +558,8 @@ impl Route {
 /// layout's once-only mount covers these four sheets; the class -- every other component's link on
 /// any torn-down subtree -- is covered by `eager_head`, installed in `App`. `GlobalHead` therefore
 /// mounts exactly once, here, and never unmounts for the lifetime of the app. It replaces a call per
-/// route (`NavigationLayout`, `ComponentBlockDemo`/`ComponentBlockDemoPath`, `EmailClientDashboard`);
+/// route (`NavigationLayout`, `ComponentBlockDemo`/`ComponentBlockDemoPath`, `EmailClientDashboard`),
+/// so no route calls it;
 /// `NavigationLayout`'s own `hero.css` link stays where it is, since nothing outside
 /// `NavigationLayout` needs `hero.css`, so no cross-layout transition unmounts it under a sibling
 /// that also renders it.
@@ -1345,7 +1346,7 @@ fn Docs(dark_mode: Option<bool>) -> Element {
 enum DocsNavActive {
     /// The `/docs` written-guide page ("Start" > "Overview").
     Overview,
-    /// A `/component/?name=...` page, keyed by the component's raw name.
+    /// A component page, keyed by the component's raw name.
     Component(&'static str),
     /// The homepage (`/`) -- part of this same nav, but distinct from
     /// `Overview`: with a bare `Option<&'static str>` where `None` meant "on
@@ -1480,7 +1481,7 @@ fn DocsLayout(
                                     // -- see `DocsLayout`'s prop doc comment and
                                     // `page_sections_submenu`. On `/docs` or a component page
                                     // this is `None`/doesn't match `active`, so "Home" stays
-                                    // the plain, sub-item-less link it always was.
+                                    // the plain, sub-item-less link.
                                     if active == DocsNavActive::Home {
                                         if let Some(sections) = page_sections {
                                             {page_sections_submenu(sections)}
@@ -1731,7 +1732,7 @@ include!(concat!(env!("OUT_DIR"), "/variant_notes.rs"));
 /// onto root-absolute `href="/..."` links in the build-time rendered
 /// `docs.md` HTML. `build.rs` bakes that HTML before the base path is
 /// known, and a root-absolute href otherwise escapes the base path when
-/// opened in a new tab or without JS (it hit `host/component/...`, a 404,
+/// opened in a new tab or without JS (it resolves to `host/component/...`, a 404,
 /// on the Pages deploy). Uses the router's own prefix -- the same value
 /// every `Link` prepends -- so server and client render identically.
 fn prefix_internal_hrefs(docs: &'static str) -> String {
@@ -2284,15 +2285,15 @@ fn BlockComponentVariantHighlight(
         None => route_path,
     };
 
-    // Same defect, same construction as `ComponentVariantHighlight`'s
-    // identical `frame_id` above (see its doc comment for the full
-    // rationale) -- this is the Block-kind sibling of that function, and
+    // Same construction as `ComponentVariantHighlight`'s identical
+    // `frame_id` above (see its doc comment for the full rationale) --
+    // this is the Block-kind sibling of that function, and
     // every "Block" component with more than one variant (e.g. `sidebar(
     // block)[floating, inset]`) renders all of them on this same
     // `/component/?name=<name>&` page (`ComponentHighlight` above doesn't
     // branch on kind for *that* -- only for which of these two functions
-    // renders each variant), so it was exposed to the identical duplicate-
-    // id defect, just not yet caught by a spec: `sidebar.spec.ts` only ever
+    // renders each variant), so it needs the identical duplicate-id
+    // guard; `sidebar.spec.ts` only
     // drives the single-variant `/component/block/?name=sidebar&variant=
     // ...&` route (`ComponentBlockDemo`, a different function entirely,
     // one variant per page by construction), never this one.
@@ -2529,7 +2530,7 @@ fn GlobalHead() -> Element {
 #[component]
 fn EmailClientDashboard(dark_mode: Option<bool>) -> Element {
     // `GlobalHead` renders once, in `AppLayout` (this route's own ancestor
-    // layout) -- see that component's doc comment (row 46) for why it moved
+    // layout) -- see that component's doc comment (row 46) for why it lives
     // there rather than per-route.
     rsx! {
         dashboard::views::email_client::EmailClient {}
@@ -2551,7 +2552,7 @@ const SR_ONLY_STYLE: &str = "position: absolute; overflow: hidden; width: 1px; h
 /// on server and client, that redirects to the canonical
 /// `ComponentBlockDemoPath` once mounted in a real browser. Resolves the
 /// same "no variant specified -> use the demo's first (\"main\") variant"
-/// default the direct-render path applied, so a link that
+/// default the direct-render path applies, so a link that
 /// never names a variant still redirects to the content the direct
 /// render shows.
 #[component]
@@ -2621,7 +2622,7 @@ fn ComponentBlockDemoPath(name: String, variant: String, dark_mode: Option<bool>
     // directly -- rather than embedded in the main preview page's
     // `<iframe>`, where a separate document root makes the absence a
     // non-issue, see `sidebar.spec.ts`'s "preview page renders block" test
-    // -- this route rendered no page-level heading or landmark of its own
+    // -- this route has no page-level heading or landmark of its own
     // at all. A visually-hidden `<h1>` below names the block for that
     // direct-visit case; it's wrapped in its own `<header>` (an implicit
     // "banner" landmark here, since it isn't nested inside any sectioning
@@ -2630,8 +2631,8 @@ fn ComponentBlockDemoPath(name: String, variant: String, dark_mode: Option<bool>
     // `inset` variants) already renders its own `<main>` via
     // `SidebarInset`, so a second, outer `<main>` here would nest one
     // `<main>` inside another (`landmark-no-duplicate-main`/
-    // `landmark-main-is-top-level` -- the same defect row 34 already had
-    // to fix in the dashboard). This way the block's own landmarks stay
+    // `landmark-main-is-top-level` -- the same defect row 34 covers for
+    // the dashboard). This way the block's own landmarks stay
     // untouched and nothing is duplicated; see `Sidebar`'s own component
     // (`components/sidebar/component.rs`) for the matching fix that gives
     // the block's *sidebar* content itself a landmark, so `region` has no
@@ -3558,19 +3559,18 @@ fn ComponentGallery() -> Element {
             // `playwright/oracle/tier2-html/top-layer.spec.ts` and
             // `native-dialog.spec.ts` (clipping-escape triggers, background-
             // inertness probes, native `<dialog>`/`<div popover>` references,
-            // ...). Embedding it inline on `/` put dozens of raw
+            // ...). Embedding it inline on `/` would put dozens of raw
             // `dioxus_primitives::` elements and duplicate landmark-shaped
             // markup into the one page every visitor and every gallery-wide
             // oracle (`preview.spec.ts`, hydration-parity Rule 4b) scans,
             // for a fixture no one browsing the catalog is here to see. It
             // stays fully reachable at its own page,
-            // `/component/?name=top_layer&` (still listed under Overlays in
-            // `DocsSidebar`, since `components::DEMOS` itself is unchanged
+            // `/component/top_layer/` (still listed under Overlays in
+            // `DocsSidebar`, since `components::DEMOS` itself lists it
             // and this filter only narrows the *gallery grid's* iteration)
-            // -- see dev-docs/backlog.md for the landed row and
-            // dev-docs/conformance-harness.md's hydration-parity section for
-            // Rule 4b's subject (the fixture's toast region does not render
-            // on `/`).
+            // -- see dev-docs/conformance-harness.md's hydration-parity
+            // section for Rule 4b's subject (the fixture's toast region does
+            // not render on `/`).
             for component in components::DEMOS.iter().filter(|c| c.name != "top_layer").cloned() {
                 ComponentGalleryPreview { component }
             }

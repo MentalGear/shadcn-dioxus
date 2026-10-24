@@ -65,7 +65,7 @@ use dioxus_primitives::js_listener::{use_js_listeners, JsListeners};
 
 /// The ONLY way a preview page renders a `<form>` (`scripts/check-demo-forms.sh` fails on any other).
 ///
-/// # The defect this exists for (submit buttons in the demo / docs pages reloading the page)
+/// # What it guards against (submit buttons in the demo / docs pages reloading the page)
 ///
 /// A bare `form { .. }` with no `onsubmit` is a real HTML form: clicking its submit button, or pressing
 /// Enter in one of its fields, runs the browser's form submission algorithm, which NAVIGATES to the form's
@@ -74,7 +74,7 @@ use dioxus_primitives::js_listener::{use_js_listeners, JsListeners};
 /// calls `preventDefault` only when a handler explicitly cleared `Event::default_action_enabled()`, and a
 /// form with no `onsubmit` has no handler to do so. Two independent windows, so the cure needs both halves:
 ///
-/// 1. HYDRATED: an `onsubmit` that calls `prevent_default()`. Forgotten once (the card's login form), it is
+/// 1. HYDRATED: an `onsubmit` that calls `prevent_default()`. A forgotten one is
 ///    forgotten silently: nothing fails until someone clicks.
 /// 2. PRE-HYDRATION: the SSG page is plain HTML until the wasm bundle boots and hydration attaches
 ///    listeners (`data-node-hydration="..,submit:1"` is the only trace of a handler in the served markup).
@@ -293,10 +293,10 @@ fn watch_invalid_js(form_id: &str, report_id: &str) -> String {
             // the click. Deferred a macrotask out (`setTimeout(_, 0)`): the
             // click/keyup that toggles a library control fires *before*
             // that control's own Dioxus effect has re-run and pushed the
-            // new checked/value onto its hidden mirror (confirmed by
-            // execution -- checking synchronously on click always saw the
-            // mirror's *pre*-click validity), so this needs to wait for
-            // that settle first, same as the `reset` listener below.
+            // new checked/value onto its hidden mirror (a synchronous
+            // check on click sees the mirror's *pre*-click validity), so
+            // this needs to wait for that settle first, same as the
+            // `reset` listener below.
             //
             // Reads `.validity.valid`, never calls `.checkValidity()`:
             // the latter is not the passive read it
@@ -353,10 +353,10 @@ fn watch_invalid_js(form_id: &str, report_id: &str) -> String {
 /// reference controls, for the tier 2 (HTML) rule checklist in
 /// `dev-docs/conformance-harness.md`.
 ///
-/// `RadioGroup` and `Select` currently document `name` (and `RadioGroup`
-/// also documents `required`) without rendering a submittable element for
-/// either -- see `dev-docs/plan.md` Phase 1. This fixture sets those props per
-/// their documented API anyway, so it is the oracle for that gap.
+/// `RadioGroup` and `Select` document `name` (and `RadioGroup` also documents
+/// `required`) and render a hidden native mirror that submits it (see
+/// `dev-docs/plan.md` Phase 1). This fixture sets those props per their
+/// documented API, so it is the oracle for that submission.
 #[component]
 pub fn FormFixture() -> Element {
     // The native reference inputs below that start checked render a plain `checked` (the server

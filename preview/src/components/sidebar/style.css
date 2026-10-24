@@ -63,10 +63,9 @@
    * `.dx-sidebar-desktop[data-side="right"]`) so this mirrors for every
    * `Sidebar` render path that carries `data-side`, not just the
    * expanded/collapsible desktop one -- see `component.rs`'s
-   * `SidebarCollapsible::None` branch (`.dx-sidebar-static`), which used
-   * to omit `data-side` entirely and so never reversed for
-   * `side: SidebarSide::Right` (dev-docs/backlog.md: sidebar right-side
-   * alignment bug). Both branches share the `data-slot="sidebar"`
+   * `SidebarCollapsible::None` branch (`.dx-sidebar-static`), which must
+   * carry `data-side` too, or `side: SidebarSide::Right` would never
+   * reverse there. Both branches share the `data-slot="sidebar"`
    * attribute, so one selector covers both by construction instead of
    * needing a second copy of this rule per branch. */
   .dx-sidebar-wrapper:has([data-slot="sidebar"][data-side="right"]) {

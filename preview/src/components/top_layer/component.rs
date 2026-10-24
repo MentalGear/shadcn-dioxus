@@ -7,12 +7,11 @@ use dioxus_primitives::hover_card::{HoverCard, HoverCardContent, HoverCardTrigge
 use dioxus_primitives::menubar::{Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarTrigger};
 use dioxus_primitives::navbar::{Navbar, NavbarContent, NavbarItem, NavbarNav, NavbarTrigger};
 use dioxus_primitives::popover::{PopoverContent, PopoverRoot, PopoverTrigger};
-// Themed wrapper, not the raw primitive -- dev-docs/backlog.md row 72 follow-up
-// (Navigation Menu oracle coverage) asked for this one new fixture family to
-// compose `crate::components::navigation_menu::*` specifically, unlike every
-// other overlay in this file (this file's own composition-rule exemption in
-// `scripts/check-preview-composition.sh` covers either choice; the themed
-// wrapper is used here per that instruction).
+// Themed wrapper, not the raw primitive: the Navigation Menu fixture family
+// (dev-docs/backlog.md row 72) composes `crate::components::navigation_menu::*`
+// specifically, unlike every other overlay in this file (this file's own
+// composition-rule exemption in `scripts/check-preview-composition.sh` covers
+// either choice).
 use crate::components::navigation_menu::{
     NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink,
     NavigationMenuList, NavigationMenuTrigger,
@@ -34,17 +33,17 @@ struct Styles;
 ///
 /// Every rule the oracle checks is calibrated against a native reference --
 /// a plain `<div popover>` + `<button popovertarget>`, the browser's own
-/// implementation of the exact same WHATWG HTML feature our components now
+/// implementation of the exact same WHATWG HTML feature our components
 /// use -- placed in the same fixture, tier-2 style (see
 /// `dev-docs/conformance-harness.md` and `preview/src/components/form` for the
 /// established pattern).
 ///
-/// Reachable only at its own page, `/component/?name=top_layer&` --
+/// Reachable only at its own page, `/component/top_layer/` --
 /// `preview/src/main.rs`'s `ComponentGallery` deliberately excludes
 /// `top_layer` from the `/` home-page catalog grid (it is not an
 /// installable component, just this large oracle probe surface), while
 /// `components::DEMOS`/`DocsSidebar` still list it under "Overlays" so it
-/// stays navigable. See `dev-docs/backlog.md` for the landed row.
+/// stays navigable.
 #[component]
 pub fn TopLayerFixture() -> Element {
     // Fixture for the native-dialog oracle
@@ -62,7 +61,7 @@ pub fn TopLayerFixture() -> Element {
     let mut dialog_clip_open = use_signal(|| false);
     let mut dialog_inert_open = use_signal(|| false);
     let mut bg_clicks = use_signal(|| 0u32);
-    // Additive fixture for the two-engine overlay architecture completion
+    // Fixture for the two-engine overlay architecture
     // (modal `Popover` -> native `<dialog>`/`showModal()` on the web arm):
     // its own background-inertness click counter, mirroring `bg_clicks`
     // above but kept separate so the two sections' assertions can never
@@ -234,8 +233,8 @@ pub fn TopLayerFixture() -> Element {
                         }
                     }
 
-                    // dev-docs/backlog.md row 72 follow-up (Navigation Menu oracle
-                    // coverage): `NavigationMenuContent`'s web arm ->
+                    // dev-docs/backlog.md row 72 (Navigation Menu oracle
+                    // coverage): `NavigationMenuContent`'s web arm is
                     // `popover="manual"`, anchored to its own trigger
                     // (`NavigationMenuContentRendered`, `navigation_menu.rs`)
                     // -- the same top-layer engine `NavbarContent` above
@@ -560,7 +559,7 @@ pub fn TopLayerFixture() -> Element {
                         }
                     }
 
-                    // dev-docs/backlog.md row 72 follow-up. Like `Navbar` just
+                    // dev-docs/backlog.md row 72 (Navigation Menu oracle coverage). Like `Navbar` just
                     // above, `NavigationMenuContent` has no `side` prop
                     // (always below/start-aligned -- see
                     // `navigation_menu.rs`'s `NavigationMenuContentRendered`,
@@ -858,52 +857,34 @@ pub fn TopLayerFixture() -> Element {
                 // `top: calc(var(--dx-navbar-height) + 20px)`, not a plain
                 // `40px` (`oracle/tier2-html/native-dialog.spec.ts`
                 // 6c/6d/6e, SSG lane only): a plain `40px` sits partly underneath
-                // `.dx-preview-navbar` (`position: sticky; top: 0`, ~54px
-                // tall), which is a real, ordinary `position: fixed`
-                // element (no scrolling involved for
-                // `scrollIntoViewIfNeeded` to correct via the sticky-nav
-                // `scroll-padding-top` added in `main.css` -- that only
-                // helps things that actually scroll into place), so it
-                // needs its own clearance instead. Only reliably visible
-                // pre-JS on a fullstack SSG prerender, where the sticky
-                // nav's CSS is already in effect at first paint; on the
-                // CSR dev server the same collision can be masked by an
-                // environment-specific race (`main.css`'s Google Fonts
-                // `@import` and this dev-only page's own `document::Link`
-                // head injection can take long enough that the nav is still
-                // briefly `position: static` when Playwright clicks), so the
-                // clearance is not specific to the SSG build.
+                // `.dx-preview-navbar` (`position: sticky; top: 0`), which is an
+                // ordinary fixed-position element that `scrollIntoViewIfNeeded`
+                // cannot correct (the sticky-nav `scroll-padding-top` in
+                // `main.css` only helps things that scroll into place), so the
+                // trigger needs its own clearance. The clearance is not specific
+                // to the SSG build: on the CSR dev server the nav can still be
+                // `position: static` for a moment after load (the Google Fonts
+                // `@import` and this page's own `document::Link` head injection
+                // delay its CSS), which only masks the same overlap.
                 //
-                // `z-index: var(--dx-z-top, 9999)` -- a SECOND collision,
-                // with a DIFFERENT permanently-mounted fixed-position
-                // element: every route renders `DocsLayout`'s `Sidebar`
-                // (`preview/src/components/sidebar/style.css`'s
+                // `z-index: var(--dx-z-top, 9999)`: every route renders
+                // `DocsLayout`'s `Sidebar` (`preview/src/components/sidebar/style.css`'s
                 // `.dx-sidebar-container`, `position: fixed; z-index:
                 // var(--dx-z-local-sm)` = 10, occupying `left: 0` through
-                // `width: var(--dx-sidebar-width)` = 16rem), this trigger's
-                // `left: 40px` places it inside that column too, and with
-                // no `z-index` of its own it loses hit-testing to the
-                // Sidebar exactly the way it loses visual clearance to
-                // the navbar above (`oracle/tier2-html/native-dialog.spec.ts`
-                // Rule 6c/6d/6e; Playwright's actionability retry log names
-                // `.dx-sidebar-desktop`/`.dx-sidebar-group-label` as the
-                // interceptor). A one-off `top`/`left` nudge would only
-                // fix the Sidebar specifically and leave the same
-                // mechanism free to recur against whatever permanently-
-                // mounted chrome comes next (the repo's "same problem more
-                // than once -> fix the class" rule, CLAUDE.md), so this is
-                // a `z-index` raise instead, using this
-                // fixture's own existing "must clear ordinary page chrome"
-                // convention (`--dx-z-top`, already used by
-                // `.dx-top-layer-stack-sibling` in style.css; see
-                // style.css's matching comment on
-                // `.dx-top-layer-edge-bottom-row`/`-edge-right-col`, the
-                // same collision against the same Sidebar, fixed the same
-                // way): far enough above *any* normal-range chrome
-                // z-index that a next one doesn't need its own fix here,
-                // with this trigger's actual position -- the geometry
-                // Rule 6e's trigger-anchored placement measurement and the
-                // Escape/focus-restore cycles depend on -- left untouched.
+                // `width: var(--dx-sidebar-width)` = 16rem), and this trigger's
+                // `left: 40px` places it inside that column, where with no `z-index`
+                // of its own it loses hit-testing to the Sidebar
+                // (`oracle/tier2-html/native-dialog.spec.ts` Rule 6c/6d/6e). A
+                // `top`/`left` nudge would only dodge that one element and leave the
+                // same mechanism free to recur against whatever permanently-mounted
+                // chrome comes next, so the fix is a `z-index` raise using this
+                // fixture's "must clear ordinary page chrome" convention
+                // (`--dx-z-top`, also used by `.dx-top-layer-stack-sibling` in
+                // style.css; see style.css's matching comment on
+                // `.dx-top-layer-edge-bottom-row`/`-edge-right-col`): far above *any*
+                // normal-range chrome z-index, with this trigger's actual position --
+                // the geometry Rule 6e's trigger-anchored placement measurement and
+                // the Escape/focus-restore cycles depend on -- left untouched.
                 div {
                     style: "position: fixed; top: calc(var(--dx-navbar-height, 60px) + 20px); left: 40px; z-index: var(--dx-z-top, 9999);",
                     PopoverRoot { id: "popover-modal-anchor-root", is_modal: true,

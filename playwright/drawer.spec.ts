@@ -125,13 +125,13 @@ test('opens from the top side with side-specific data attributes', async ({ page
 });
 
 test('the panel sits flush against its own edge at rest, bottom and top variants', async ({ page }) => {
-  // Regression: the web arm's `DrawerContent` is a real, modal `<dialog>`
+  // The web arm's `DrawerContent` is a real, modal `<dialog>`
   // (primitives/src/dialog.rs), and Chromium's own `dialog`/`dialog:modal`
   // UA rules (`margin: auto` + `inset-block: 0` with no `inset-inline` +
   // `width`/`height: fit-content`) would center it -- both axes -- instead of
   // anchoring it to any edge: the bottom variant's computed `margin` would
-  // be `223px 496.594px` (equal top/bottom AND left/right margins) on an
-  // 800x1280 viewport, i.e. a floating card, not a bottom sheet.
+  // have equal top/bottom AND left/right values, i.e. a floating card, not a
+  // bottom sheet.
   await gotoHydrated(page, URL, GOTO_OPTS);
   const viewport = await fixedViewportBox(page);
 
@@ -183,7 +183,7 @@ test('a drag away from the dismiss direction never exposes the viewport edge', a
   // Read while the pointer is still down, so a `getComputedStyle` cannot land on a
   // closed/unmounted panel (backlog row 115). This gesture ends 160px above the handle,
   // over the dialog's `::backdrop`; `use_dialog_backdrop_dismiss` must not read that as a
-  // backdrop click that closes the drawer (the "dragging UP closes it" report) -- the
+  // backdrop click that closes the drawer (dragging UP must not close it) -- the
   // dedicated tests below pin that.
   const filterValue = await content.evaluate((el) => getComputedStyle(el).filter);
   await page.mouse.up();
@@ -222,7 +222,7 @@ test('dragging over the handle or the drawer content does not select text', asyn
   const handleSelection = await page.evaluate(() => window.getSelection()?.toString() ?? '');
   expect(handleSelection).toBe('');
 
-  // Drag #2: the actual reproduction. A drag gesture starts from a
+  // Drag #2: the case that matters. A drag gesture starts from a
   // `pointerdown` anywhere on the content not gated out
   // (primitives/src/drawer.rs's `GESTURE_JS`), which
   // includes ordinary text -- sweep across the description paragraph the
@@ -313,7 +313,7 @@ test('a short, slow drag snaps back without closing the drawer', async ({ page }
   // each `pointermove`'s `timeStamp` over the last 100ms before the release
   // (primitives/src/drawer.rs `GESTURE_JS`), so the two explicit moves with real pauses between
   // them (and after) are what make this a non-flick. Timing samples by when a
-  // reactive effect happens to run would close this drawer in roughly 1 run in 3.
+  // reactive effect happens to run would let a slow drag read as a flick.
   await page.mouse.move(startX, startY);
   await page.mouse.down();
   await page.mouse.move(startX, startY + 7, { steps: 1 });
@@ -331,8 +331,8 @@ test('a short, slow drag snaps back without closing the drawer', async ({ page }
 });
 
 // ---------------------------------------------------------------------------------------
-// Drag direction, threshold and flick (the report: "a mouse drag UPWARDS on the
-// handle closes a bottom drawer"). Only movement toward the drawer's own closing edge may
+// Drag direction, threshold and flick ("a mouse drag UPWARDS on the
+// handle closes a bottom drawer" must not happen). Only movement toward the drawer's own closing edge may
 // dismiss it -- down for the bottom drawer, up for the top one -- and only past
 // DISMISS_DRAG_RATIO of its size or as a flick (>= 0.5px/ms over the last 100ms, after at
 // least 10px). Everything else snaps back, and a drag the other way rubber-bands.
@@ -442,7 +442,7 @@ test("a mouse drag UP on a bottom drawer's handle never closes it, however far, 
 });
 
 test('a text selection or drag that starts inside a dialog and ends on its backdrop does not dismiss it', async ({ page }) => {
-  // The class behind the drawer report, on the shared hook: a press inside the panel and a
+  // The shared hook's rule: a press inside the panel and a
   // release over the `::backdrop` produce a `click` on the dialog itself. Only a press that
   // ALSO began on the backdrop is a dismissal.
   await openBottom(page);
@@ -534,7 +534,7 @@ test('a real-mouse flick closes a bottom drawer; a drag-close carries on from th
 
   // Sample the panel's top edge from the release on. The panel was let go ~35% down; the exit
   // must carry it on from there (monotonically toward the bottom edge), not ease it back to rest
-  // while the exit keyframe slides it out (the hitch that read as the Drawer "glitching" on close).
+  // while the exit keyframe slides it out (a visible hitch on close).
   await page.mouse.move(startX, startY);
   await page.mouse.down();
   for (let i = 1; i <= 5; i++) {
@@ -582,19 +582,17 @@ test.describe('Axe automated scan', () => {
     await page.getByRole('button', { name: 'Move Goal' }).click();
     await expect(page.locator('[data-slot="drawer-root"]')).toHaveAttribute('data-state', 'open');
     // Named via DrawerTitle so axe's `aria-dialog-name` rule passes -- see
-    // primitives/src/drawer.rs's `DrawerTitle` doc for the lesson this
-    // repeats from `primitives/src/command.rs`'s `CommandDialog`.
+    // primitives/src/drawer.rs's `DrawerTitle` doc (the same rule as
+    // `primitives/src/command.rs`'s `CommandDialog`).
     await expectNoAxeViolations(page, 'drawer: open', { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 
   test('top variant, dark mode, open has no automatically detectable a11y issues', async ({ page }) => {
-    // Regression: `DrawerClose`'s default (no `as` override) rendering --
-    // exactly the "Close" button in this component's own top-side demo --
-    // needs a CSS rule of its own, or its `background-color` is the
-    // UA's `ButtonFace`, which never responds to `data-theme`: in dark mode
-    // `color: rgb(212, 212, 212)` (correctly inverted, inherited from
-    // `.dx-drawer`) on `background-color: rgb(239, 239, 239)` (NOT inverted,
-    // the same value as light mode) -- light text on a near-white
+    // `DrawerClose`'s default (no `as` override) rendering -- exactly the
+    // "Close" button in this component's own top-side demo -- needs a CSS
+    // rule of its own: otherwise its `background-color` is the UA's
+    // `ButtonFace`, which never responds to `data-theme`, and in dark mode
+    // the inherited light text (from `.dx-drawer`) sits on a near-white
     // background.
     await gotoHydrated(page, `${URL}?dark_mode=true`, GOTO_OPTS);
     await page.getByRole('button', { name: 'Open from Top' }).click();
@@ -608,9 +606,9 @@ test.describe('Axe automated scan', () => {
 // The scrim every modal overlay shares (assert-backdrop-fade.ts has the full
 // claim; popover/dialog/alert-dialog/sheet/drawer specs all run the identical
 // assertion): the dialog's own `::backdrop` is the only painter, black/10 with a
-// 4px blur, and it fades in and out for the same length. Before this, Drawer
-// stacked its own animated wrapper scrim on the UA's un-animated one and the
-// exit snapped.
+// 4px blur, and it fades in and out for the same length (the drawer paints no
+// scrim wrapper of its own, which would stack on the UA's un-animated one and
+// make the exit snap).
 test.describe("Scrim", () => {
   test("Drawer paints the shared scrim and fades it in and out", async ({ page }) => {
     await gotoHydrated(page, URL, GOTO_OPTS);

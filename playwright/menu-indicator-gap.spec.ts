@@ -7,12 +7,10 @@ import { fixedViewportBox } from "./viewport-box";
 /**
  * Menu-item indicator slot -- the class guard.
  *
- * The same defect shows in two reports ("Select: check icon too close",
- * "Dropdown Menu: there needs to be min margin between the check icon and the
- * label"): a menu-like item draws an indicator (check / radio dot / chevron /
- * shortcut) next to its label and reserves no room for it, so a label as wide
- * as the row meets the icon. That is a class, not two coincidences, so the fix
- * is one construction applied to every menu-like stylesheet (select, combobox,
+ * A menu-like item draws an indicator (check / radio dot / chevron /
+ * shortcut) next to its label; if it reserves no room for it, a label as wide
+ * as the row meets the icon. That is a class (select, dropdown menu and the
+ * rest alike), so the guard is one construction applied to every menu-like stylesheet (select, combobox,
  * native_select, dropdown_menu, context_menu, menubar, command): the item
  * reserves `inset + size + gap` of inline padding and the indicator is
  * absolutely positioned inside that reserved room -- shadcn's `pr-8` +
@@ -40,8 +38,7 @@ import { fixedViewportBox } from "./viewport-box";
  * variant is covered by the same assertion.
  *
  * MIN_GAP is 8px: shadcn's own clear space (item `pr-8` = 32px, minus the
- * indicator's `right-2` 8px inset and `size-4` 16px). Before this construction
- * the select option measured 6px, the combobox input and native select 4px.
+ * indicator's `right-2` 8px inset and `size-4` 16px).
  */
 const MIN_GAP = 8;
 
@@ -254,7 +251,7 @@ test.describe("Menu-item indicator slot: label never meets the indicator", () =>
         await trigger.click();
         const listbox = page.getByRole("listbox");
         await expect(listbox).toHaveAttribute("data-state", "open");
-        // The owner's screenshot: the longest option, selected.
+        // The longest option, selected.
         await listbox.getByRole("option", { name: "Watermelon" }).click();
         await expect(listbox).toHaveCount(0);
         await trigger.click();

@@ -2861,14 +2861,14 @@ pub fn calendar_day_attributes(state: &CalendarDayState) -> Vec<Attribute> {
         attrs.push(attr("data-unavailable", Bool(true)));
     }
     attrs.push(attr("data-disabled", Bool(state.disabled)));
-    // backlog row 84 finding 1: an unavailable day (or a day inside a
+    // backlog row 84: an unavailable day (or a day inside a
     // disabled calendar -- `state.disabled` is already `(calendar disabled)
-    // || unavailable`, see `day_state`) never told assistive tech it could
-    // not be chosen: the cell has no native `disabled` attribute (a
+    // || unavailable`, see `day_state`) must tell assistive tech it cannot
+    // be chosen: the cell has no native `disabled` attribute (a
     // genuinely disabled `<button>` would drop out of the tab order, which
     // `SingleCalendarDay`/`RangeCalendarDay` deliberately avoid so the grid
     // keeps a single roving tabstop -- see their own `handle_day_select`
-    // early-return instead), and until now nothing else stood in for it.
+    // early-return instead), so nothing else stands in for it.
     // `aria-disabled` (unlike a native `disabled` attribute) does not
     // remove the element from the tab order, so this is the correct
     // "focusable but not operable" signal -- matches this crate's own
@@ -3052,10 +3052,8 @@ fn SingleCalendarDay(props: CalendarDayProps) -> Element {
 
     // `type` is an overridable default; the roving-focus `tabindex` and
     // `calendar_day_attributes`'s aria/data state are owned, so they merge
-    // in last -- same precedence (owned wins) production already had via
-    // the first-literal-wins SSR / last-wins CSR split (backlog row 93),
-    // with no duplicate attribute for a caller override to collide with
-    // after hydration.
+    // in last (owned wins; backlog row 93), with no duplicate attribute
+    // for a caller override to collide with after hydration.
     let defaults = attributes!(button { r#type: "button" });
     let owned = merge_attributes(vec![
         calendar_day_attributes(&state),
@@ -3526,9 +3524,9 @@ mod tests {
             find_attr(&attrs, "data-disabled").unwrap().value,
             Bool(false)
         );
-        // backlog row 84 finding 1: `aria-disabled` mirrors `data-disabled`
+        // backlog row 84: `aria-disabled` mirrors `data-disabled`
         // exactly (same source value, same unconditional presence) -- see
-        // the fix's own comment in `calendar_day_attributes`.
+        // the comment in `calendar_day_attributes`.
         assert_eq!(
             find_attr(&attrs, "aria-disabled").unwrap().value,
             Bool(false)
@@ -3660,7 +3658,7 @@ mod tests {
     fn use_calendar_day_state_matches_day_state_for_a_single_calendar() {
         // The hook must compute the *same* `CalendarDayState` `day_state`
         // does for the built-in cell -- that's the "one source of truth"
-        // this refactor exists for.
+        // this hook exists for.
         with_runtime(|| {
             let disabled_ranges = [DateRange::new(date!(2024 - 06 - 18), date!(2024 - 06 - 19))];
             let mut base_ctx = make_base_ctx_for_relative_month(DateRange::new(
@@ -3797,9 +3795,9 @@ mod tests {
     #[test]
     fn unavailable_calendar_day_renders_aria_disabled_true_and_available_day_renders_aria_disabled_false(
     ) {
-        // backlog row 84 finding 1: "Calendar's unavailable days carry no
-        // aria-disabled" -- an end-to-end (full `Calendar`, real
-        // `disabled_ranges`, `dioxus_ssr::render`) regression guard rather
+        // backlog row 84: an unavailable day carries `aria-disabled` --
+        // an end-to-end check (full `Calendar`, real
+        // `disabled_ranges`, `dioxus_ssr::render`) rather
         // than only the lower-level `calendar_day_attributes` fixture tests
         // above, so this also exercises `is_unavailable`/`day_state`'s own
         // wiring, not just the attribute-building function in isolation.

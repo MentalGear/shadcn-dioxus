@@ -18,10 +18,10 @@
 # `use_signal`) *inside* the closure passed to `use_context_provider`.
 # Because `ComponentGallery` (the home page) renders every demo to build
 # its gallery, one such demo's first-render panic takes down the entire
-# home page and every home-page-dependent test with it. The fix is always
-# to hoist the calls out of the closure into the component body. Row 74
-# holds the one real instance (`navigation_menu.rs`): this script flags
-# the hook-in-closure shape there and passes once the calls are hoisted.
+# home page and every home-page-dependent test with it. The remedy is always
+# to hoist the calls out of the closure into the component body, as
+# `navigation_menu.rs` does (`blur_close` is created before
+# `use_context_provider`).
 #
 # What this catches: a call shaped like a hook -- `use_[a-z0-9_]+(`,
 # called as a free function or path-qualified function, never as a
@@ -36,11 +36,9 @@
 #
 # Detection is deliberately conservative: it flags every `use_*(`-shaped
 # free-function call found in that span without first trying to prove the
-# callee really is a hook. Across this crate's own
-# ~60 `fn use_*` definitions and ~300 call sites, every one of
-# them -- including less obviously-named ones like `use_controlled` -- is
-# in fact a hook, so the tree runs clean with no entries in the
-# NON_HOOK_NAMES exclusion below. `.method()`-style calls are
+# callee really is a hook. Every `fn use_*` this crate defines --
+# including less obviously-named ones like `use_controlled` -- is a
+# hook, so NON_HOOK_NAMES below is empty. `.method()`-style calls are
 # excluded from matching (this crate defines no `.use_something()`
 # method today, but a future one would not be a free-function hook call
 # in the sense this check cares about); so are nested `fn use_*` *item*
@@ -90,9 +88,8 @@ OUTER_HOOKS = [
 ]
 
 # Free functions matching `use_[a-z0-9_]+` confirmed NOT to be hooks,
-# should one ever be added to this crate. Empty today: an audit of every
-# `fn use_*` this crate defines (dev-docs/backlog.md row 74's own script)
-# found none that aren't real hooks. Kept as a real allowlist, not a
+# should one ever be added to this crate. Empty today: every
+# `fn use_*` this crate defines is a real hook (dev-docs/backlog.md row 74). Kept as a real allowlist, not a
 # hardcoded assumption, so a single narrowly-scoped exception doesn't
 # require rewriting this script's logic, only adding a name here.
 NON_HOOK_NAMES = {
