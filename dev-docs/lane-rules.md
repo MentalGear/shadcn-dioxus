@@ -2,7 +2,8 @@
 
 The durable version of the rules that grew during the 2026-10-14/15 rounds (backlog rows 216, 221, 224). Give every
 lane agent this file plus its own prompt. Terminology: a **lane** is a work stream with its own file set and worktree;
-an **agent** is the Haiku or Sonnet subagent that executes it (model choice: `agent-model-fit.md`).
+an **agent** is the Haiku or Sonnet subagent that executes it (model choice: `agent-model-fit.md`; lanes add no rows
+to it, its evidence log is closed).
 
 Session tooling (paths below default to `LANE_TGT=/home/user/tgt`):
 - `scripts/lane-lock.sh [gate|lane] [--label T] -- cmd...` / `--status` -- the one build lock (a FIFO ticket queue
@@ -30,15 +31,49 @@ Session tooling (paths below default to `LANE_TGT=/home/user/tgt`):
 
 ## Worktree and files
 - Work ONLY in your own git worktree, on its own branch (`lane/<name>`). Never touch the main checkout or another
-  lane's worktree. Do not push. Symlink `playwright/node_modules` and `preview/node_modules` from the main checkout
+  lane's worktree. Push your branch after every commit ("Nothing lives only in the container"). Symlink `playwright/node_modules` and `preview/node_modules` from the main checkout
   (installed there with `pnpm install --frozen-lockfile`; pnpm's layout is relative symlinks into `.pnpm`, so the
   symlink resolves), or run `pnpm install --frozen-lockfile` inside the worktree (hard links from the shared store,
   seconds). Never `pnpm add`/`update` or any install that rewrites the lock: the lockfile pins the Playwright that
-  matches `/opt/pw-browsers` (backlog rows 72, 359).
+  matches `/opt/pw-browsers` (backlog rows 72, 359). Both folders pin every direct dependency exactly, refuse versions
+  younger than 30 days (`minimumReleaseAge` in `pnpm-workspace.yaml`) and run no dependency install script; never
+  `npm install`.
 - Edit ONLY the files your prompt says you own. If you must touch another file, stop and say so in the report.
 - Commit with the default git identity (never `-c user.email`, `GIT_AUTHOR_*`/`GIT_COMMITTER_*` or a worktree config
   identity: GitHub shows any other committer as Unverified). Commit in your worktree: Conventional Commits `type(scope): subject`, a body with the why and the evidence, and the
   attribution trailers your harness gives you.
+
+## Build environment (rows 98, 100, 116, 168, 216)
+- **Every `CARGO_TARGET_DIR` is an absolute, isolated path, never the shared repo-root `target/`.** `dx build --ssg`
+  fails with `No such file or directory (os error 2)` on a relative one (`dioxus-cli-0.7.9`'s `pre_render_static_routes`
+  runs the server binary with `current_dir(server_exe.parent())` while the path is still relative, row 98). The
+  isolation half earns its keep on its own: a no-`--base-path` build made in the shared `target/`, which
+  `scripts/deploy-preview.sh` also writes to WITH a base path, emitted 89 base-path references per page and turned a
+  green 57-test suite entirely red, while the same build into a fresh isolated tree emitted none (row 100); `rm -rf
+  public` cannot fix that, because the tree is the problem. One construction, two failure classes.
+- **Build the SSG only through `scripts/build-ssg.sh [debug|release] [--base-path P]`.** It enforces the absolute
+  isolated dir, wipes a stale `public/` (dx 0.7.9 `--ssg` leaves every route but `index.html` stale in a reused tree,
+  row 116) and refuses a base-path mismatch. Copy warm trees with `scripts/lane-target.sh create <name>` rather than
+  building cold.
+- **`CARGO_INCREMENTAL=0` for every lane cargo run.** Incremental state regrew a target dir by ~10-13 GB per
+  lane-hour and filled the disk (row 168). `scripts/run-gates.sh` defaults it off and `lane-target.sh create` exports
+  it with the target dir, so only a hand-exported `CARGO_TARGET_DIR` needs it said (opt back in with
+  `LANE_CARGO_INCREMENTAL=1`, then `scripts/lane-target.sh prune`).
+- **Touch your sources before every cargo or dx run on a shared or copied target** (row 216, next section).
+- **Session bootstrap.** A fresh remote container is set up by the SessionStart hook (`scripts/session-setup.sh`: dx
+  0.7.9, wasm32, dx tools, `pnpm install --frozen-lockfile`, `cargo fetch`; ~8 s, ~1 s when already set up). If `dx` is
+  missing, run the script by hand; never `cargo install dioxus-cli` (~21 min) or hand-seed the dx tools.
+- **Install check.** `scripts/registry-install-smoke.sh` is not in `run-gates.sh` (a cold `cargo check` of dioxus plus
+  the primitives takes minutes and several GB). Run it whenever a `component.json` or a component's
+  `component.rs`/`mod.rs`/`style.css` changes, or a component is added or renamed. It copies the working tree into a
+  throwaway `file://` git registry (rewriting `REGISTRY_GIT_URL` in the copy, otherwise component dependencies and the
+  `dioxus-primitives` crate would come from github.com's main, not this tree), renders `templates/starter` as the
+  user's app with its `dioxus-primitives` line stripped (the install must add every crate itself), runs `dx components
+  add <every member> --git file://...` (or `--cli <shadcn-dioxus binary>`; `--only a,b` for a subset, `--target
+  wasm32-unknown-unknown` for the shipped target), then `cargo check` with `CARGO_INCREMENTAL=0` and a scratch absolute
+  `CARGO_TARGET_DIR`, and deletes everything on exit (needs ~6 GB free; `--keep` to inspect). Green is
+  `registry-install-smoke: OK -- N/N components installed`; `check-installed-paths.sh` is its fast static
+  approximation, so a red there is cheaper to find first.
 
 ## Memory and the one build lock (row 221)
 - The machine has 4 cores and 15 GB. A `preview` rustc or clippy driver is ~2.5 GB, and ten concurrent agents were
@@ -97,11 +132,14 @@ Use the cheapest tool that answers the question, in this order:
 ## Before handback (rows 221, 224; gate step changed 2026-10-18)
 1. Merge the current session branch into your lane branch (`git merge <session branch>`, no rebase). New gates may have
    landed since you branched; on a `preview/src/components/mod.rs` conflict keep both sides' variants on every line.
-2. Push your branch (rule 1 of "Nothing lives only in the container"), then run the FAST gates without the lock and quote their summary line (owner decision 2026-10-18, see "Gate
-   procedure" below): `CARGO_TARGET_DIR=$LANE_TGT/check scripts/run-gates.sh --skip
-   '^(clippy-|test(-server)?$|check-primitives-features$|check-attr-spread-collision$)'` -- every listed gate PASS, exit 3
-   (partial by design). That is every static `check-*.sh`, fmt and stylelint, in seconds. Do NOT run the full
-   `run-gates.sh`: the main loop runs it once on the merged tree.
+2. Push your branch (rule 1 of "Nothing lives only in the container"), then run the FAST gates without the lock and
+   quote their summary line (owner decision 2026-10-18, see "Gate procedure" below):
+   `CARGO_TARGET_DIR=$LANE_TGT/check scripts/run-gates.sh --fast` -- every listed gate PASS, exit 3 (partial by design).
+   `--fast` skips the cargo gates (`CARGO_GATES` in `run-gates.sh`: the three clippy arms, `test`, `test-server`,
+   `check-rustdoc`, `check-primitives-features`, `check-attr-spread-collision`), so that is every static `check-*.sh`, fmt and
+   stylelint, in seconds. Do NOT run the full `run-gates.sh`: the main loop runs it once on the merged tree. If you
+   changed Rust, also lint the crate you touched through the lock (`scripts/lane-cargo.sh -- cargo clippy -p <crate>
+   --all-targets --features web -- -D warnings`).
 3. Run your own specs plus the existing specs of everything you touched on a `lane-ssg` build that you verified
    contains your change, with ONE command: `cd playwright && PLAYWRIGHT_BASE_URL=http://127.0.0.1:<port> flock
    /home/user/tgt/pw.lock pnpm run test:changed -- --workers=2` (`tools/test-changed.sh`: runs exactly the specs
@@ -136,6 +174,9 @@ main loop's bookkeeping). So:
 3. The main loop backs up its own unpushed (not yet gated) commits the same way, on `lane/main-loop`.
 
 ## Gate procedure (owner decision 2026-10-18; why: `dev-docs/backlog.md` row 221)
+What each gate checks is [`gates.md`](./gates.md), generated from `scripts/run-gates.sh` and the `scripts/check-*.sh` headers.
+**A new gate: write its header, register it in `run-gates.sh`, run `scripts/gates-doc.py --write`** (a stale page is a red
+gate); no other doc is edited, so a gate never causes a merge conflict in `CLAUDE.md` or here.
 One exclusive build lock serialises every compile, a full `run-gates.sh` holds it for 15-21 min, and a round of ten
 lanes that each ran it (plus reruns after a red) queued about four hours of lock time. Four rules:
 1. **Lanes run the fast gates; the full gates run once per merge batch.** A lane's compile is proven by its own
@@ -152,8 +193,8 @@ lanes that each ran it (plus reruns after a red) queued about four hours of lock
    or six lane builds an hour; more lanes than that do not finish sooner, they wait longer (and hold more disk and
    memory). Split a larger round into consecutive batches with disjoint files; the next batch's editing can start
    while the previous batch's merge gates run.
-4. **A cargo gate whose inputs did not change is not run again (row 320).** The five cargo gates are ~90 % of a full
-   run (measured on `f127233a`: `check-primitives-features` 130 s, clippy 256 + 227 + 271 s, `test` 310 s of 1,339 s).
+4. **A cargo gate whose inputs did not change is not run again (row 320).** The cargo gates (`CARGO_GATES` in
+   `run-gates.sh`) are ~90 % of a full run (measured on `f127233a`: `check-primitives-features` 130 s, clippy 256 + 227 + 271 s, `test` 310 s of 1,339 s).
    `run-gates.sh` stores each one's PASS under a key made of `scripts/cargo-inputs-hash.sh` (a content hash of every
    file under the cargo crates -- `primitives cli preview test-harness dioxus-attributes
    scripts/attr-spread-collision-checker templates`, `preview/build.rs`' `docs.md`/`notes.md`/`component.json` and the
@@ -239,14 +280,12 @@ full gates for batch A), and two deploys collided. So there is ONE merge owner (
    merged before one deploy. `DEPLOY_SUITE=skip:<reason>` is for an emergency fix only.
 
 ## Conventions the gates enforce
-Listeners in eval JS through `primitives/src/js_listener.rs` `listen`; passive scroll listeners; motion through
-`use_motion` / `use_interval_while`; no `transform` in component `@keyframes`; state recipes and focus rings from the
-theme tokens; destructive text through `--dx-destructive-text`; no cross-component property overrides (compose through
-slot variables); every `:hover` inside `@media (hover: hover) and (pointer: fine)`; descendant selectors on generic
-elements end with `:not(:where([popover], dialog) *)`; variant rules (`[data-variant|size|orientation|spacing]`) reach
-their parts through slot variables the root re-declares, never through a descendant combinator; overlays bounded in specs with `fixedViewportBox(page)`; demo
-controls located by role and position inside the demo frame, never by demo copy (row 220); geometry measured only at
-rest (row 222).
+Every convention a gate enforces (listeners through `listen`, motion through `use_motion`, state recipes and focus rings
+from the theme tokens, destructive text through `--dx-destructive-text`, no cross-component property overrides, `:hover`
+inside the hover media query, popup-boundary selectors, variant rules through slot variables, overlays bounded in specs
+with `fixedViewportBox(page)`, demo controls located by role and position never by copy, geometry read at rest, ...) is
+written once in the header of its `scripts/check-*.sh` and summarised in [`gates.md`](./gates.md); read the gate's page
+entry before you write the construction it forbids, not after it goes red.
 
 ## Web requests
 Never send the user's email, name or any account identifier to an external service (User-Agent, headers, query
