@@ -238,7 +238,7 @@ pub fn CarouselIndicators(props: CarouselIndicatorsProps) -> Element {
     }
 }
 
-/// One dot inside a [`CarouselIndicators`]. Renamed from `CarouselTab`.
+/// One dot inside a [`CarouselIndicators`].
 #[component]
 pub fn CarouselIndicator(props: CarouselIndicatorProps) -> Element {
     let base = attributes!(button {

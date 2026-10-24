@@ -1500,8 +1500,8 @@ fn DocsLayout(
                                     // Mirrors the "Home" item above, but scoped to `Docs()`
                                     // being the page being viewed instead -- same shared
                                     // `page_sections_submenu`, so `/docs`'s 3 sub-items
-                                    // (`DOCS_SECTIONS`) render exactly as they did before
-                                    // "Home" gained this same treatment.
+                                    // (`DOCS_SECTIONS`) render the same way as under
+                                    // "Home".
                                     if active == DocsNavActive::Overview {
                                         if let Some(sections) = page_sections {
                                             {page_sections_submenu(sections)}

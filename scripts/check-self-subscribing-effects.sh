@@ -22,8 +22,8 @@
 # read through `.peek()` instead of tracked syntax, the
 # read-through-`.peek()`-write-through-`.set()` discipline `lib.rs`'s
 # `use_animated_open` documents for its own generation counter. Row 73
-# names the before/after commits: this script flags `raw_offset` in the
-# pre-fix `drawer.rs` and does not flag the fixed one.
+# has the story: this script flags a `raw_offset`-shaped effect and does
+# not flag the `.peek()` form `drawer.rs` uses.
 #
 # What this catches, per `use_effect(move || { ... })` closure body: any
 # identifier read with tracked syntax -- a bare `x()` call (empty

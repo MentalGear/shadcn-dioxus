@@ -238,11 +238,10 @@
    exact same elements, so every plain state selector below (each at least
    one class + one attribute, i.e. (0,2,0) or higher) wins regardless of
    which rule comes first in the file. This is deliberately not the
-   alternative the task brief also allows, scoping hover with
-   `:not([data-selected])` chains: that only fixes the attributes it
-   enumerates today and silently stops covering the next one (range/today
-   were exactly the ones missed the first time around, see the removed
-   `[data-selected="true"]:hover` rule below). shadcn's own calendar.tsx
+   alternative of scoping hover with `:not([data-selected])` chains: that
+   only fixes the attributes it enumerates today and silently stops covering
+   the next one (range and today are exactly the ones such a chain misses).
+   shadcn's own calendar.tsx
    (`CalendarDayButton`) gets the same outcome a different way -- Tailwind
    always emits a plain `hover:` utility before a `data-[...]:` one in its
    generated stylesheet, so on the equal specificity Tailwind utilities

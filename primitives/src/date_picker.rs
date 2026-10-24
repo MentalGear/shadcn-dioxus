@@ -1381,8 +1381,8 @@ fn date_segment_key_effects<T: SegmentInt + Copy + FromStr>(
         // Up/Down which that same list marks "(Optional)"):
         // "Home: If the spinbutton has a minimum value, sets the value to
         // its minimum." / "End: ... sets the value to its maximum."
-        // (`$S/aria-practices` content/patterns/spinbutton/spinbutton-
-        // pattern.html#keyboard_interaction, commit 7e4034b -- the current,
+        // (w3c/aria-practices `content/patterns/spinbutton/spinbutton-
+        // pattern.html#keyboard_interaction` -- the current,
         // non-deprecated pattern doc, not the deprecated `datepicker-
         // spinbuttons.html` example, which predates this rule and has no
         // Home/End support of its own to conflict with it). Without these
@@ -1526,8 +1526,8 @@ fn DateSegment<T: Clone + Copy + SegmentInt + FromStr + Display + 'static>(
     // Roles/States/Properties section ("If the spinbutton has a visible
     // label, it is referenced by aria-labelledby ... . Otherwise, the
     // spinbutton element has a label provided by aria-label" --
-    // `$S/aria-practices` content/patterns/spinbutton/
-    // spinbutton-pattern.html#roles_states_properties, commit 7e4034b), and
+    // w3c/aria-practices `content/patterns/spinbutton/
+    // spinbutton-pattern.html#roles_states_properties`), and
     // every caller here (`DatePickerYearSegment` etc., below) always passes
     // a plain `aria_label: "year"`/`"month"`/`"day"` -- there never is a
     // separate *visible* label element for `aria-labelledby` to reference.
@@ -2506,7 +2506,7 @@ mod tests {
     // precedent: `move_interaction.rs`'s `MoveEvent::from_keyboard`).
     // -----------------------------------------------------------------
 
-    /// Test-only convenience wrapper matching the pre-refactor flat argument
+    /// Test-only convenience wrapper taking the flat argument
     /// list, so each case below stays a single readable call.
     #[allow(clippy::too_many_arguments)]
     fn key_effects(

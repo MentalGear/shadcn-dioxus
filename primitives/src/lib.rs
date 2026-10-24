@@ -840,7 +840,7 @@ fn use_dialog_close_sync(
 /// this dialog -- and any same-gesture follow-up event an engine might
 /// synthesize immediately after it -- can never reach this listener at all,
 /// on any engine, by construction rather than by guessing at Safari's exact
-/// timing. A *separate*, later dismiss click still works exactly as before:
+/// timing. A *separate*, later dismiss click still works:
 /// one frame (~16ms) is far shorter than the time a real second tap, or a
 /// Playwright `.click()`'s own actionability/round-trip overhead, ever
 /// takes to reach the browser. `cancelAnimationFrame` on cleanup covers the

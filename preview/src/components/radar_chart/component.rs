@@ -16,7 +16,7 @@ pub use crate::components::chart::*;
 // `ChartConfig`/`ChartDatum`/`ChartKind`/`LegendAlign`) -- re-exported here
 // rather than added to `chart/component.rs`'s own re-export line, mirroring
 // `chart_tooltip/component.rs`'s identical choice for `TooltipIndicator`/
-// `TooltipRow` (`$S/stage2-lanes.md`, s2-tooltip "FYI, not blocking").
+// `TooltipRow`.
 pub use dioxus_primitives::chart::engine::radar::RadarTick;
 pub use dioxus_primitives::chart::{
     ChartIcon, ChartMargin, RadarGrid, RadarOptions, TooltipIndicator,

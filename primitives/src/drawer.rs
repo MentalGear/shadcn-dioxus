@@ -334,7 +334,7 @@ const SNAP_PROJECTION_MAX_VELOCITY: f64 = 3.0;
 ///
 /// Closing is the ONE existing rule ([`should_close_on_release`]) applied to the travel below the lowest
 /// snap point (the largest rest) against that point's visible extent, so a drawer without snap points
-/// closes exactly as before and a snap drawer closes only by being dragged below its lowest point. Else
+/// closes by that rule alone and a snap drawer closes only by being dragged below its lowest point. Else
 /// the panel settles on the snap point nearest the release position projected by the velocity, kept
 /// within the range of the points (a flick may skip points; it never overshoots the ends).
 fn settle_on_release(

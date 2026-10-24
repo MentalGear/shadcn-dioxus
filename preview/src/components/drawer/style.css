@@ -128,10 +128,10 @@
    * which very much includes ordinary text (a title, a description) --
    * unlike a `mousedown` confined to the decorative handle, there is no
    * single element to scope this to, so it applies here, to the whole
-   * dragging content, inherited down to every descendant. Reproduced
-   * live pre-fix: a slow horizontal `mousedown`+move sweep across
-   * `DrawerDescription`'s text made `window.getSelection().toString()`
-   * return the full sentence. No `-webkit-user-select`: this repo's own
+   * dragging content, inherited down to every descendant. Without
+   * it a slow horizontal `mousedown`+move sweep across
+   * `DrawerDescription`'s text selects the full sentence
+   * (`window.getSelection().toString()`). No `-webkit-user-select`: this repo's own
    * `stylelint-config-standard` (`property-no-vendor-prefix`) flags it as
    * unneeded by this project's supported-browser data (Safari has
    * shipped unprefixed `user-select` since 15.4). */
