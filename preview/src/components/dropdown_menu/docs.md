@@ -167,3 +167,13 @@ See the `shortcuts` and `destructive` variants.
 ## Motion
 
 The menu panel fades and scales in over `--dx-motion-duration-base` (`opacity`, `scale` from 0.95 and a 2px `translate`, never `transform`, so the anchor's centring survives) and fades out with `--dx-motion-ease-in`; item highlights use `--dx-motion-duration-fast`. Retune with those tokens. Reduced motion swaps in `--dx-motion-duration-reduced`. Nothing loops. See [Motion](/docs#motion) for the tokens, reduced motion and the per-component table.
+
+## Slot variables
+
+A component that composes `DropdownMenu` (such as `Sidebar`) lays out the menu's root by setting a custom property on the root's element, never by declaring `position`, `display` or `width` on its own class: two stylesheets declaring the same property on one element are decided by which sheet loads last, and that order differs from route to route. `.dx-dropdown-menu` reads each of these with its own default, so a variable that is not set changes nothing. The variables inherit, so set them on the root only; a `DropdownMenu` nested inside it reads them too.
+
+| Variable | Default | Property |
+| --- | --- | --- |
+| `--dx-dropdown-menu-position` | `relative` | `position` |
+| `--dx-dropdown-menu-display` | `inline-block` | `display` |
+| `--dx-dropdown-menu-width` | `auto` | `width` |

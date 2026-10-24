@@ -1,7 +1,7 @@
-use crate::components::button::{Button, ButtonVariant};
+use crate::components::button::{Button, ButtonSize, ButtonVariant};
 use crate::components::separator::Separator;
 use crate::components::sheet::{
-    Sheet, SheetContentClose, SheetDescription, SheetHeader, SheetSide, SheetTitle,
+    Sheet, SheetDescription, SheetHeader, SheetSide, SheetTitle,
 };
 use crate::components::skeleton::Skeleton;
 use crate::components::tooltip::{Tooltip, TooltipContent, TooltipTrigger};
@@ -297,10 +297,11 @@ pub fn Sidebar(
                 "data-sidebar": "sidebar",
                 "data-slot": "sidebar",
                 "data-mobile": "true",
-                SheetContentClose { class: "dx-sidebar-sheet-close" }
-                SheetHeader { class: "dx-sidebar-sr-only",
-                    SheetTitle { "Sidebar" }
-                    SheetDescription { "Displays the mobile sidebar." }
+                div { class: "dx-sidebar-sr-only",
+                    SheetHeader {
+                        SheetTitle { "Sidebar" }
+                        SheetDescription { "Displays the mobile sidebar." }
+                    }
                 }
                 div { class: "dx-sidebar-mobile-inner", {children} }
             }
@@ -376,6 +377,7 @@ pub fn SidebarTrigger(
         document::Link { rel: "stylesheet", href: asset!("/src/components/sidebar/style.css") }
         Button {
             variant: ButtonVariant::Ghost,
+            size: ButtonSize::IconSm,
             onclick: move |e| {
                 if let Some(handler) = &onclick {
                     handler.call(e);

@@ -958,14 +958,15 @@
  * line over caption, with the trend line's TrendingUp icon inline after its
  * text. Lives here, not in the gallery stylesheets, because this file is the
  * one every chart demo is guaranteed to have loaded. The compound selector
- * out-ranks `.dx-card-footer` regardless of stylesheet order.
+ * sets the footer's slot variables (`card/docs.md`, "Slot variables"), so
+ * nothing contests `.dx-card-footer` whatever the stylesheet order.
  * ---------------------------------------------------------------------- */
 
-[data-slot="card-footer"].dx-chart-footer {
-  flex-direction: column;
-  align-items: start;
-  font-size: var(--dx-text-sm);
-  gap: var(--dx-space-2);
+.dx-chart-footer {
+  --dx-card-footer-direction: column;
+  --dx-card-footer-align-items: start;
+  --dx-card-footer-font-size: var(--dx-text-sm);
+  --dx-card-footer-gap: var(--dx-space-2);
 }
 
 .dx-chart-footer-trend {
@@ -986,7 +987,8 @@
  *
  * shadcn's interactive card header (`chart-bar-interactive` and
  * `chart-line-interactive`, identical chrome): the card has no block padding
- * (`py-0`); the header has none either (`!p-0`) and ends in a rule
+ * (`py-0`, the card's `--dx-card-padding-block` slot); the header, a `div`
+ * of this component's own, has none either (`!p-0`) and ends in a rule
  * (`border-b`); the title block (`px-6 pt-4 pb-3 sm:!py-0`) takes the free
  * width and the two series toggles stand at the right as full-height cells
  * (`px-6 py-4 sm:border-l sm:px-8 sm:py-6`), the total
@@ -995,18 +997,16 @@
  * galleries are guaranteed to have loaded, rather than twice in
  * `bar_chart/` and `line_chart/`: those packages' stylesheets may only name
  * their own `dx-<component>-` classes (`scripts/check-dx-class-prefix.sh`),
- * and the Card's own classes are not theirs to select. The compound
- * `[data-slot="card"...].dx-chart-interactive...` selectors (own class plus
- * the Card's `data-slot` hook, as `.dx-chart-footer` does above) out-rank the
- * Card's own `.dx-card`/`.dx-card-header`/`.dx-card-content` rules
- * (`display: grid`, `padding`) regardless of stylesheet order, which equal
- * specificity would not.
+ * and the Card's own classes are not theirs to select. The header and the
+ * content are `div`s of this component's own rather than `CardHeader` /
+ * `CardContent`, so the Card's rules (`display: grid`, `padding`) never
+ * apply to them.
  * ---------------------------------------------------------------------- */
-[data-slot="card"].dx-chart-interactive {
-  padding-block: 0;
+.dx-chart-interactive {
+  --dx-card-padding-block: 0;
 }
 
-[data-slot="card-header"].dx-chart-interactive-header {
+.dx-chart-interactive-header {
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -1068,12 +1068,12 @@
   line-height: 1;
 }
 
-[data-slot="card-content"].dx-chart-interactive-content {
+.dx-chart-interactive-content {
   padding: var(--dx-space-6) var(--dx-space-2);
 }
 
 @media (width >= 40rem) {
-  [data-slot="card-header"].dx-chart-interactive-header {
+  .dx-chart-interactive-header {
     flex-direction: row;
   }
 
@@ -1092,7 +1092,7 @@
     font-size: var(--dx-text-3xl);
   }
 
-  [data-slot="card-content"].dx-chart-interactive-content {
+  .dx-chart-interactive-content {
     padding: var(--dx-space-6);
   }
 }

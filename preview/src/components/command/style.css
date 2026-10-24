@@ -10,7 +10,7 @@
  * `rounded-lg` inside a dialog, highlight `bg-muted text-foreground`. The panel fill is the one
  * modal fill (`--dx-popover`) shared with Dialog, AlertDialog, Sheet and Drawer. */
 
-/* Visually-hidden accessible name for `CommandDialog`. A command palette
+/* Visually-hidden accessible name for `CommandDialog`: a `div` around the `DialogTitle`. A command palette
  * conventionally shows no visible heading above its search input (unlike
  * `Dialog`/`AlertDialog`, whose demos always render a *visible*
  * `DialogTitle`/`AlertDialogTitle`) -- but `dialog.rs`'s `DialogRoot`

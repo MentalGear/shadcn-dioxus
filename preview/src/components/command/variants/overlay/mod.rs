@@ -25,7 +25,9 @@ pub fn Demo() -> Element {
                     query.set(String::new());
                 }
             },
-            DialogTitle { class: "dx-command-sr-only", "Command Palette" }
+            div { class: "dx-command-sr-only",
+                DialogTitle { "Command Palette" }
+            }
             Command::<String> {
                 query: Some(query()),
                 on_query_change: move |next| query.set(next),

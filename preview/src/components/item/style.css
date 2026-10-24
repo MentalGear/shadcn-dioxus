@@ -25,7 +25,7 @@
 
 /* Item Separator */
 .dx-item-separator {
-  margin: var(--dx-space-2) 0;
+  --dx-separator-margin: var(--dx-space-2) 0;
 }
 
 /* Base Item */

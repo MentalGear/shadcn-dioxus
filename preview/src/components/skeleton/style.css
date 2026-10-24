@@ -2,9 +2,17 @@
  * `bg-muted rounded-md`; registry/bases/radix/ui/skeleton.tsx adds Tailwind's `animate-pulse`:
  * `pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite`, `50% { opacity: 0.5 }`). */
 .dx-skeleton {
-  border-radius: var(--dx-radius-md);
+  border-radius: var(--dx-skeleton-radius, var(--dx-radius-md));
   animation: dx-skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   background-color: var(--dx-muted);
+}
+
+/* The box is the caller's (an inline `style`, or a composing component's slot variables); zero specificity,
+ * so a class that sizes the skeleton still wins. */
+:where(.dx-skeleton) {
+  width: var(--dx-skeleton-width, auto);
+  height: var(--dx-skeleton-height, auto);
+  flex: var(--dx-skeleton-flex, 0 1 auto);
 }
 
 @keyframes dx-skeleton-pulse {
