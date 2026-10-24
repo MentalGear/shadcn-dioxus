@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (40)
+## Open rows (44)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -84,5 +84,9 @@ proposing one is closed as out of scope (row 337 is the first).
 | [399](backlog/399-docs-review-demos.md) | Demo batch from the docs review | BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in… | S | docs |
 | [402](backlog/402-load-robust-timing-specs.md) | Release timing specs compare same-run measurements, not absolute milliseconds | Done on lane/timing-relative (numbers below). Trigger for reopening: a release timing spec that… | S | tests |
 | [407](backlog/407-load-flakes-and-not-found-routes.md) | Load flakes (docs sidebar shift, non-modal popover scroll, carousel edge band) and spec runs that serve unknown URLs like the site | Done on lane/flake-roots. Trigger for reopening: one of these specs red under load on an unchanged… | M | tests |
+| [412](backlog/412-csp-meta-tag.md) | Docs site: a Content-Security-Policy `&lt;meta&gt;` tag | OPTIONAL: needs owner approval before it is adopted or scheduled (owner 2026-10-24). Not part of… | S | build |
+| [413](backlog/413-property-tests-and-miri.md) | Property tests and Miri on the pure logic | OPTIONAL: needs owner approval before it is adopted or scheduled (owner 2026-10-24). Not part of… | M | tests |
+| [414](backlog/414-formal-proof-spike.md) | Spike: formal proofs of one headless model (Kani, optionally Aeneas to Lean) | OPTIONAL: needs owner approval before it is adopted or scheduled (owner 2026-10-24). Not part of… | M | research |
+| [415](backlog/415-pin-actions-to-shas.md) | Pin GitHub Actions to commit SHAs | OPTIONAL: needs owner approval before it is adopted or scheduled (owner 2026-10-24). Not part of… | XS | build |
 
 <!-- END GENERATED -->

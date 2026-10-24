@@ -48,6 +48,9 @@ Independent, in parallel at any point: 188, 153, 268, 170.
 
 ## Owner inputs pending
 
+- Optional rows, each needing the owner's approval before anyone adopts or schedules it (owner 2026-10-24), not part of
+  the adopted order: 412 (docs-site CSP meta tag), 413 (property tests and Miri), 414 (Kani/Aeneas proof spike), 415
+  (GitHub Actions pinned to SHAs).
 - iPhone re-tests: rows 28, 30, 295, 296, 305, 307.
 - Enable private vulnerability reporting on the repository ([`SECURITY.md`](../SECURITY.md) names it).
 - Remote branch deletion (merged and stale `lane/*`, `claude/*` branches): awaiting the owner's go; nothing is deleted
