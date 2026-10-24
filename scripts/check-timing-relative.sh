@@ -3,9 +3,9 @@
 # check-timing-relative.sh
 #
 # A release-only timing spec compares two measurements taken in the same run, never one measurement with a
-# constant number of milliseconds: the shared 4-core box runs other lanes' builds, load multiplies the
-# measurement and not the constant, and two suites went red on `expect(msPerFrame).toBeLessThan(12)` (13.24 ms
-# measured under a build) while the component was fine. What a component promises is a relation (chunked rows cost
+# constant number of milliseconds: the shared 4-core box runs other lanes' builds, and load multiplies the
+# measurement but not the constant, so an absolute bound goes red while the component is fine. What a component
+# promises is a relation (chunked rows cost
 # a fraction of one-skippable-element-per-row), so the spec measures the component's path and a reference path on
 # the same page (`playwright/frame-cost.ts`) and asserts the ratio (backlog row 402).
 #
