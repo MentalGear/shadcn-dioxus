@@ -7,4 +7,5 @@ stacking
 swipe
 pause
 swipe_top
+position
 multiline
