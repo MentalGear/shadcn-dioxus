@@ -93,6 +93,10 @@ test("link policy: new tab for web links with noopener, none for relative, no ta
   // A real click: a new tab opens and it has no `window.opener`.
   await page.context().route("https://example.com/**", (route) => route.fulfill({ status: 200, body: "<title>ok</title>" }));
   const [popup] = await Promise.all([page.waitForEvent("popup"), web.click()]);
+  // A noopener tab can surface while still on its initial about:blank, and its
+  // navigation to the link then destroys any context read before it (Chromium 153,
+  // backlog row 378): read `window.opener` from the linked page itself.
+  await popup.waitForURL("https://example.com/page");
   expect(await popup.evaluate(() => window.opener)).toBeNull();
   await popup.close();
   await expect(page).toHaveURL(/\/component\/markdown/);
