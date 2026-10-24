@@ -458,13 +458,21 @@ fn SelectListRendered(id: String, attributes: Vec<Attribute>, children: Element)
             aria_labelledby: "{ctx.selectable.trigger_id}"
         })
     };
-    let attributes = merge_attributes(vec![
-        attributes,
+    // The marker is what the engine's anchor stylesheet selects on, so only the popper placement
+    // carries it. An item-aligned list is placed by its own script (`use_item_aligned`) in viewport
+    // px, and writes `data-side` for its own CSS: with the marker, the engine's
+    // `.dx-anchor-select[popover][data-side=...]` rules (`bottom: anchor(top)`, `margin`,
+    // `transform: translateX(-50%)`, `position-try-fallbacks`) applied on top of it, so a list opened
+    // above its trigger was scroll-compensated by the page's scroll (`top: 8px` painted at 8px minus
+    // `scrollY`), and one opened below was 8px low and half its width to the left.
+    let engine_marker: Vec<Attribute> = if (ctx.position)() == SelectPosition::Popper {
         attributes!(div {
             class: "dx-anchor-select"
-        }),
-        labelledby,
-    ]);
+        })
+    } else {
+        Vec::new()
+    };
+    let attributes = merge_attributes(vec![attributes, engine_marker, labelledby]);
     // Folds the caller's own `style` together with the anchor binding into
     // one `style` attribute -- see `top_layer::anchored_content_attributes`'s
     // doc for why a bare `style: position_anchor_style(&id)` literal
