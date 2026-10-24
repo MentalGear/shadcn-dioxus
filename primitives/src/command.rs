@@ -30,10 +30,9 @@
 //!
 //! ## Why a sibling context, not `combobox::ComboboxContext`
 //!
-//! The plan's open design question recommended a sibling module over a new
-//! `Combobox`/`ComboboxList` display mode, and left one detail to confirm by
-//! execution: whether `Command` could reuse `ComboboxContext` itself.
-//! Reading `combobox/context.rs` settles it -- `ComboboxContext` is
+//! `Command` is a sibling module of `Combobox`, not a `Combobox`/`ComboboxList`
+//! display mode, and it cannot reuse `ComboboxContext` itself:
+//! `ComboboxContext` is
 //! `pub(super)`, private to the `combobox` module tree, so no sibling module
 //! can name it at all. What *is* reachable from anywhere in this crate is
 //! the lower layer `ComboboxContext` is itself built from --
@@ -41,13 +40,11 @@
 //! modules whose items are `pub(crate)`, i.e. visible crate-wide. `Command`
 //! therefore defines its own small `CommandContext`, built on that same
 //! `pub(crate)` layer, rather than either vendoring `ComboboxContext`'s
-//! private shape or modifying `combobox/` to export it -- consistent with
-//! this module's other files being off limits to edit.
+//! private shape or modifying `combobox/` to export it.
 //!
-//! `CommandContext` ends up smaller than `ComboboxContext`, not just
-//! differently-scoped: the plan predicted "`Command` mostly needs *less* of
-//! what `Combobox` does, not more," and reading `ComboboxContext` end to end
-//! confirms exactly which pieces drop out --
+//! `CommandContext` is smaller than `ComboboxContext`, not just
+//! differently-scoped: `Command` needs *less* of what `Combobox` does, not
+//! more, and these are the pieces that drop out --
 //!
 //! - No `input_id`: that field exists solely so `ComboboxList`'s web arm can
 //!   anchor-position itself against `ComboboxInput` once promoted to the top
@@ -138,7 +135,7 @@ impl CommandContext {
 
     /// An option that has not registered yet counts as visible, so the static (SSG / JS-off)
     /// render and the hydration render both contain every item rather than an empty list. Once
-    /// the root's `registered` flag is set, an option that is absent is filtered out as before.
+    /// the root's `registered` flag is set, an option that is absent is filtered out.
     fn is_visible(&self, tab_index: usize) -> bool {
         let predicate = self.predicate();
         match self
@@ -391,7 +388,7 @@ pub struct CommandInputProps {
 ///
 /// Without a `<dialog>` to open (an inline `Command` with an explicit `autofocus: Some(true)`, or
 /// the non-web arms) the input renders the plain `autofocus` attribute and focuses itself once
-/// mounted, as before. An inline `Command` that grabbed focus on mount would pull the page's focus
+/// mounted. An inline `Command` that grabbed focus on mount would pull the page's focus
 /// (and scroll) to itself on every load, so `None` is `false` there.
 #[component]
 pub fn CommandInput(props: CommandInputProps) -> Element {
@@ -854,8 +851,8 @@ pub struct CommandDialogProps {
 /// `CommandDialog` = [`crate::dialog::DialogRoot`] +
 /// [`crate::dialog::DialogContent`] wrapping a [`Command`]. A thin
 /// composition, unmodified from `Dialog`'s own modal machinery -- see the
-/// module doc. Initial focus lands on [`CommandInput`] via its own
-/// `autofocus` attribute (see that component's doc) rather than anything
+/// module doc. Initial focus lands on [`CommandInput`] via the shared open-focus
+/// policy (`data-dx-autofocus`, see that component's doc) rather than anything
 /// this wrapper does itself.
 ///
 /// Carries two literal default classes (`dx-command-dialog-backdrop` on the
@@ -863,8 +860,8 @@ pub struct CommandDialogProps {
 /// something to attach styling to without needing this wrapper to expose
 /// two separate attribute-forwarding props of its own -- the same
 /// hardcoded-default-class shape `DialogContent`'s own `"dx-dialog"`
-/// fallback already uses (`dialog.rs`), not a new pattern. A caller's own
-/// `attributes` still merge in alongside it (unchanged from `Dialog`'s own
+/// fallback uses (`dialog.rs`). A caller's own
+/// `attributes` still merge in alongside it (as in `Dialog`'s own
 /// `class`-plus-`..attributes` shape).
 ///
 /// ## Example

@@ -20,10 +20,9 @@
 //!
 //! `select/text_search.rs`'s Levenshtein, keyboard-layout-aware matcher
 //! (driven by `select/context.rs::SelectContext::add_to_typeahead_buffer`)
-//! is deliberately kept for `Select` -- `docs/recommended-
-//! implementations.md` §8 already settled the best-of comparison in
-//! upstream's favor there ("Best-of here means recognising that upstream
-//! already wins one"). This module only reuses that file's *buffer/timeout
+//! is deliberately kept for `Select` -- the best-of comparison in
+//! `dev-docs/archive/research/recommended-implementations.md` §8 favors upstream
+//! there. This module only reuses that file's *buffer/timeout
 //! idiom* -- a `Signal<String>` buffer plus a self-cancelling
 //! `Signal<Option<Task>>` clear-after-timeout task, backed by
 //! `crate::sleep::sleep` -- never its matcher: dignifiedquire's much
@@ -40,7 +39,7 @@
 //! or keyboard events, and is exercised directly by this module's own
 //! `#[cfg(test)]` unit tests below -- the exact Radix-parity cases (wrap,
 //! skip-disabled, same-character cycling, case-insensitivity) this
-//! function was built against.
+//! function matches.
 //!
 //! [`TypeaheadState`]/[`TypeaheadState::handle_key`] is the glue: it owns
 //! the live buffer/timer (mirroring `select/context.rs`'s idiom, see

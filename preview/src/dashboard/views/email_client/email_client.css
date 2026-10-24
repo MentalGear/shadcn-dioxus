@@ -175,13 +175,12 @@
     transform: none;
 }
 
-/* dev-docs/backlog.md row 37: the message's subject/sender/snippet/tags used
- * to live directly inside `[data-slot="item-content"]`, itself a direct
- * grid child of `.ec-row` (grid-column 2). It's now wrapped one level
- * deeper in `.ec-row-open`, the real `<button>` that replaced the row's
- * old `role="button"` div (list_pane.rs's `MessageRow` has the full
- * rationale) -- so `.ec-row-open` takes over the grid-column-2 slot, and
- * `[data-slot="item-content"]` just fills the button's own content box.
+/* dev-docs/backlog.md row 37: the message's subject/sender/snippet/tags sit
+ * in `[data-slot="item-content"]`, wrapped one level deeper in `.ec-row-open`,
+ * the real `<button>` (list_pane.rs's `MessageRow` has the full
+ * rationale) -- so `.ec-row-open` takes the
+ * grid-column-2 slot of `.ec-row`, and `[data-slot="item-content"]` just
+ * fills the button's own content box.
  *
  * A `<button>` is not a `<div>`: browsers default it to `inline-block`,
  * center-aligned text, its own font/line-height, and a visible chrome

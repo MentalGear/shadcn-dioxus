@@ -5,7 +5,7 @@
    would be inert; oracle: `global-stylesheet.spec.ts`).
 
    The faces do NOT swap in after first paint: preloaded latin files plus `font-display: optional`
-   (hard-load CLS 0.117 -> 0.000 on /component/form/). The docs site picks its fonts by overriding the
+   (no layout shift on a hard load). The docs site picks its fonts by overriding the
    theme's two tokens below; everything else reads `var(--dx-font-sans)` / `var(--dx-font-mono)`. */
 
 /* Theme style variables */
@@ -43,7 +43,7 @@
 
 /* The docs site's own accent ink (the eyebrows, the `$` in the CLI chip, prose
  * links, card CTAs) follows the picker's ACCENT choice. With no accent preset
- * it is the blue above, unchanged; a base colour alone is not an accent choice.
+ * it is the blue above; a base colour alone is not an accent choice.
  *
  * It is `--dx-primary` kept readable AS TEXT, not `--dx-primary` itself:
  * shadcn's `--primary` is a fill (a dark blue in dark mode, a pale lime or
@@ -81,9 +81,8 @@ html {
      too. `ensure_scrollbar_gutter_baseline` (`primitives/src/scroll_lock.rs`)
      installs the same `scrollbar-gutter: stable` (as a zero-specificity
      `:where(html)` rule) only once the WASM runtime runs, so without this
-     the page was laid out 15px wider before hydration and shifted
-     the instant it hydrated (CLS 0.115 on /component/chart/ at 390px with
-     classic scrollbars). Declaring it statically makes the SSR and hydrated
+     the page would be laid out 15px wider before hydration and shift
+     the instant it hydrated (with classic scrollbars). Declaring it statically makes the SSR and hydrated
      layouts identical; the runtime rule is a redundant, same-valued
      declaration that this one simply outranks. */
   scrollbar-gutter: stable;
@@ -228,8 +227,8 @@ main[tabindex="-1"]:focus {
  * `touch-action: manipulation`, the second of two layers -- same construction
  * as the `@media (pointer: coarse)` font-size floor just above. The first layer
  * is `dx-components-theme.css`'s one zero-specificity rule on every `dx-`
- * control (it ships to consumers; this file does not, and the 50 per-component
- * copies it replaced are gone, `scripts/check-theme-baseline.sh`). This layer
+ * control (it ships to consumers; this file does not, and no component sheet carries its
+ * own copy, `scripts/check-theme-baseline.sh`). This layer
  * is what covers the preview's own raw elements (footer links, copy buttons,
  * the `top_layer`/`form` fixtures).
  *
@@ -806,9 +805,9 @@ button.dx-theme-phone-trigger {
  * else about the sidebar (mobile Sheet drawer, menu/group styling, the
  * trigger) is the unmodified shared component.
  *
- * `Navbar` moved inside this same `SidebarProvider` (`DocsLayout` in
+ * `Navbar` sits inside this same `SidebarProvider` (`DocsLayout` in
  * `main.rs`) so its `SidebarTrigger` can sit in the navbar row instead of
- * a separate strip below it (the removed `.dx-docs-inset-topbar`). But
+ * a separate strip below it. But
  * `SidebarProvider`'s own render is just `div { class: "dx-sidebar-wrapper",
  * {children} }` (`component.rs`), and the base `.dx-sidebar-wrapper` rule
  * (`sidebar/style.css`) is `display: flex` -- a ROW sized for exactly two
@@ -843,9 +842,9 @@ button.dx-theme-phone-trigger {
   flex-direction: column;
 }
 
-/* The former `.dx-sidebar-wrapper.dx-docs-shell` geometry (width/border/
- * centering/the sidebar-row min-height), now one level deeper since
- * `Navbar` occupies that outer wrapper's first row instead. Needs its own
+/* The `.dx-sidebar-wrapper.dx-docs-shell` geometry (width/border/
+ * centering/the sidebar-row min-height), one level deeper because
+ * `Navbar` occupies that outer wrapper's first row. Needs its own
  * `display: flex` -- unlike the outer wrapper, this is a plain new `div`,
  * not `.dx-sidebar-wrapper`, so it does not inherit that from the base
  * component rule. */
@@ -1034,8 +1033,8 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
 /* `grid-template-columns: minmax(0, 1fr)`, not the implicit `auto` track: an
  * `auto` track grows to its widest child's min-content, so an unshrinkable
  * child (the title row's `dx-component-inline-command`, `white-space:
- * nowrap`) widened the whole header past the viewport at phone widths and
- * pushed the copy button out of view. */
+ * nowrap`) would widen the whole header past the viewport at phone widths and
+ * push the copy button out of view. */
 .dx-docs-page-header,
 .dx-component-page-header {
   display: grid;
@@ -1380,7 +1379,7 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
 
 /* `BlockComponentVariantHighlight` (`preview/src/main.rs`)'s live-preview
  * iframe for a `ComponentType::Block` demo. See that iframe's own comment
- * for the full incident writeup; the short version: the `min-width: 820px`
+ * for the full reasoning; the short version: the `min-width: 820px`
  * below must be gated on THIS file's `@media` query rather than baked into
  * the iframe's inline style or a stylesheet loaded inside the iframe's own
  * document, because this file is loaded by the OUTER top-level page --
@@ -1470,7 +1469,7 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
 }
 
 /* At phone widths the frame's 32px-per-side padding plus a card's own 24px
- * content padding left a chart 159 of 305px and its text unreadable; 12px
+ * content padding would leave a chart about half the frame width and its text unreadable; 12px
  * (`--dx-space-3`) keeps a visible canvas edge without eating the demo.
  *
  * The frame element is ALSO a `.dx-tabs-content` (`ComponentVariantHighlight`,
@@ -1802,9 +1801,8 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
  * `.dx-component-variant` (the "Variants" demos stacked below a component page's main demo, up
  * to 13 live demos on the chart pages) is deliberately NOT skipped: a skipped subtree has no layout
  * box, so a demo that measures itself when it mounts (carousel slides and its virtual window, a chart's
- * width and so its default tooltip) measured 0 there and never recovered -- 33 Playwright tests red
- * (`carousel-virtual-wheel` 18, `carousel` 7, `chart_tooltip` `default_index` 8; all green with
- * variants `visible`). Home-page cards are unaffected: their demos are measured the
+ * width and so its default tooltip) would measure 0 there and never recover
+ * (`carousel-virtual-wheel`, `carousel` and the chart tooltip specs guard it). Home-page cards are unaffected: their demos are measured the
  * same with and without the skip. If variants ever get it back, those demos must re-measure on
  * un-skip first.
  *
@@ -1872,7 +1870,7 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
 /* NOT `content-visibility: auto` on the widget cards: a CSS multi-column masonry (this one is fixed column
  * groups, see `.dx-widget-masonry`) balances its
  * columns by card HEIGHT, so a card laid out at its estimate and rendered later (it enters the range, which moves
- * the next card into range, and so on) re-balanced the columns once per unskip -- three to six re-layouts of the
+ * the next card into range, and so on) would re-balance the columns once per unskip -- several re-layouts of the
  * gallery in the first ~300 ms, some after the first paint (`playwright/layout-stability.spec.ts`, backlog row
  * 204). Skipping needs the card's height to be known without rendering it, and a balanced column layout is the one
  * place where it never is. The containment that `auto` implied stays, so a card is still an independent
@@ -2130,7 +2128,7 @@ html[data-cv-settle] {
 
 /* Bare chart demos (`.dx-chart` as the frame's direct child, e.g. the
  * `chart` page's Bar/Line/Stacked variants) and chart demos wrapped in a
- * `Card` (the `*_chart` galleries) both shrink-wrapped to ~300-450px inside
+ * `Card` (the `*_chart` galleries) both would shrink-wrap to ~300-450px inside
  * the wide frame: the frame is a centred flex column and the chart's own
  * content is a `width: 100%` svg, so there is no intrinsic width to wrap to.
  * Give them one shared comfortable width instead: the frame's full width up
@@ -2305,7 +2303,7 @@ html[data-cv-settle] {
     min-height: 0;
   }
 
-  /* Keep a 16px side gutter: with `0` inline padding the h1 and prose sat
+  /* Keep a 16px side gutter: with `0` inline padding the h1 and prose would sit
    * flush against the screen edge on /docs/ and every component page. */
   .dx-docs-page,
   .dx-component-page {
@@ -2367,8 +2365,8 @@ html[data-cv-settle] {
 /* Very narrow phones. The header is one `nowrap` row whose widest page (a docs page: sidebar trigger,
  * logo, Docs, Demos, Charts | GitHub, light/dark toggle) needs ~330px of content width
  * at the 8px gaps above, plus the row's padding and 1px borders. A 390px phone offers ~356px (fits), a
- * 360px phone ~334px, a 320px phone ~294px at 12px padding, so with `min-width: 0` the two groups used
- * to draw over each other ("Charts" under the GitHub mark, ~16px at 320px). Reclaim the difference in
+ * 360px phone ~334px, a 320px phone ~294px at 12px padding, so with `min-width: 0` the two groups would draw over
+ * each other ("Charts" under the GitHub mark, ~16px at 320px). Reclaim the difference in
  * steps, spacing and text:
  *   <= 360px  tighter row padding (~8px) and 14.4px link text (~7px)
  *   <= 320px  8px row padding (~8px) and 6px gaps (~12px)

@@ -138,8 +138,8 @@ def extract(path: Path):
             style_idents.add(ident)
         elif ns is None:
             global_idents.add(ident)
-        # else: some other namespace -- none observed in dioxus-html-0.7.9's
-        # global_attributes! block (verified: only "style" occurs), so intentionally not
+        # else: some other namespace -- dioxus-html-0.7.9's global_attributes! block
+        # has only "style", so a different one is intentionally not
         # bucketed as either; if this ever fires, it needs a human to look, not a guess.
     return style_idents, global_idents
 

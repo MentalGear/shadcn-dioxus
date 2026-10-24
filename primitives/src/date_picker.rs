@@ -524,11 +524,11 @@ impl DateRangePickerContext {
     /// there, finds it differs from the parent's value, and reports the stale range back up. The
     /// parent applies it (one render later), the sync-down effect copies it into the segments,
     /// the sync-up effect reports that, and the two ranges alternate forever -- a wasm loop that
-    /// never yields to the browser (the second range completed in one page froze the tab; the
-    /// order the two effects wake in is hash-ordered, so it reproduced on some builds, and on some
-    /// opens, and not on others). `DatePickerContext::set_date` already reads its value this way,
-    /// and the `check-self-subscribing-effects.sh` gate now rejects any method an effect calls
-    /// that reads its own fields with tracked syntax.
+    /// never yields to the browser (it freezes the tab; the order the two effects wake in is
+    /// hash-ordered, so it happens on some builds and some opens and not on others).
+    /// `DatePickerContext::set_date` reads its value this way too, and the
+    /// `check-self-subscribing-effects.sh` gate rejects any method an effect calls that reads
+    /// its own fields with tracked syntax.
     pub fn set_range(&mut self, range: Option<DateRange>) {
         if *self.date_range.peek() != range {
             self.set_selected_range.call(range);
@@ -1137,8 +1137,7 @@ struct DateSegmentProps<T: Clone + SegmentInt + 'static> {
     /// An `aria-valuetext` alternative to the raw number, for a value whose
     /// number alone doesn't convey its meaning (e.g. a month name) -- per
     /// the APG spinbutton pattern's Roles/States/Properties section. `None`
-    /// (the default) renders no `aria-valuetext` at all, exactly like an
-    /// absent `value_text` always has. Always `None` while the segment has
+    /// (the default) renders no `aria-valuetext` at all. Always `None` while the segment has
     /// no value (see [`DateSegment`]'s own doc), matching `aria-valuenow`'s
     /// own absent-while-untouched rule (backlog row 84 findings 2 and 3).
     #[props(default)]
@@ -1152,8 +1151,8 @@ struct DateSegmentProps<T: Clone + SegmentInt + 'static> {
 /// A single side effect produced by interpreting a `DateSegment` keydown
 /// event, in the exact order `DateSegment`'s `onkeydown` handler should apply
 /// them. Keeping this as an ordered list (rather than, say, a handful of
-/// independent booleans/options) preserves the original code's effect
-/// ordering exactly -- which differs between branches (e.g. the empty-text
+/// independent booleans/options) keeps the effect
+/// ordering exact -- which differs between branches (e.g. the empty-text
 /// case emits the value before moving focus, while the overflow case moves
 /// focus before emitting).
 #[derive(Debug, Clone, PartialEq)]
@@ -1507,7 +1506,7 @@ fn DateSegment<T: Clone + Copy + SegmentInt + FromStr + Display + 'static>(
 
     // `id`/`spellcheck`/`enterkeyhint` are overridable defaults (this `id`
     // is a generated fallback, not referenced by any aria wiring -- see the
-    // removed `aria-labelledby` above); the rest is this segment's own
+    // "No `aria-labelledby`" note above); the rest is this segment's own
     // functional state (role/aria-value*/inputmode/contenteditable define
     // the widget, `tabindex`/the data attributes are managed) and is owned.
     let defaults = attributes!(span {
@@ -1924,9 +1923,8 @@ impl DateRangeInputContext {
     /// segments first resolve (`DateElement`'s "sync down from
     /// selected_date" effect writes the segment signals, whose "sync up via
     /// on_date_change" effect writes this signal right back) -- see
-    /// dev-docs/backlog.md's range-hang account for the full trace and the
-    /// live reproduction (CPU pinned, RSS growing ~4MB/s, until the tab
-    /// crashes) that confirmed it.
+    /// dev-docs/backlog.md's range-hang account for the full trace (the CPU
+    /// stays pinned and memory grows until the tab crashes).
     fn set_start_date(&mut self, date: Option<Date>) {
         if *self.start_date.peek() != date {
             self.start_date.set(date);
@@ -1997,7 +1995,7 @@ fn DateElement(props: DateElementProps) -> Element {
         // resolve; for a `DateRangePicker` side, that callback writes
         // straight back into the very signal this effect reads
         // (`DateRangeInputContext::set_start_date`/`set_end_date`). An
-        // unconditional `.set()` here (the previous behavior) closes that
+        // unconditional `.set()` here would close that
         // into an unbounded cycle the instant a date first completes, even
         // though `set_start_date`/`set_end_date` themselves already
         // no-op an unchanged value -- Dioxus's `Signal::set` marks a
@@ -2077,7 +2075,7 @@ pub fn DatePickerInputValue(props: DatePickerInputValueProps) -> Element {
                 // AND the one the calendar just selected (the segments re-render from it and commit
                 // it back up). Only a typed commit, which changes the value, closes the popover here:
                 // the echo of a calendar selection finds the value already set, and closing on it
-                // closed the popover on the same frame as the click -- ahead of `close_delay`, and
+                // would close the popover on the same frame as the click -- ahead of `close_delay`, and
                 // even with `close_on_select: false`. The calendar closes it itself
                 // (`BaseDatePickerContext::selection_complete`).
                 let changed = *ctx.selected_date.peek() != date;
@@ -2397,7 +2395,7 @@ mod tests {
     fn untouched_date_segments_omit_aria_valuenow_and_aria_valuetext() {
         // backlog row 84 findings 2/3/6: before any date is chosen, every
         // segment's `props.value` is `None` -- `aria-valuenow` (and the
-        // month segment's new `aria-valuetext`) must be entirely absent
+        // month segment's `aria-valuetext`) must be entirely absent
         // rather than substituting `default`/a formatted default (with
         // `now_value` as `(props.value)().unwrap_or(props.default)`,
         // `aria-valuenow="<today's year>"` etc. would always be present).
@@ -2502,8 +2500,8 @@ mod tests {
     // `date_segment_key_effects` and friends (dev-docs/reference/mutants-baseline.md fix #7)
     //
     // These exercise the pure decision logic extracted from `DateSegment`'s
-    // `onkeydown` handler (mechanical, behavior-preserving extraction --
-    // precedent: `move_interaction.rs`'s `MoveEvent::from_keyboard`).
+    // `onkeydown` handler (the same shape as `move_interaction.rs`'s
+    // `MoveEvent::from_keyboard`).
     // -----------------------------------------------------------------
 
     /// Test-only convenience wrapper taking the flat argument
@@ -3108,7 +3106,7 @@ mod tests {
     // -----------------------------------------------------------------
     // Home/End (APG spinbutton-pattern.html #keyboard_interaction --
     // playwright/date-picker.spec.ts's "Home/End" describe block is the
-    // browser-level regression guard for the same fix; these are its pure-
+    // browser-level guard for the same behavior; these are its pure-
     // function-level counterpart, mirroring every other `key_effects_*`
     // test above).
     // -----------------------------------------------------------------
@@ -3261,7 +3259,7 @@ mod tests {
     }
 
     // -----------------------------------------------------------------
-    // Context accessors (bonus: same file, same mutants-baseline gap)
+    // Context accessors
     // -----------------------------------------------------------------
 
     /// Run a closure inside a Dioxus runtime context so that Signal/Callback

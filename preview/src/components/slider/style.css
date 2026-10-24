@@ -48,7 +48,7 @@
     position: absolute;
     height: 100%;
 
-    /* What the track's `overflow: hidden` did to the range's ends, without clipping the thumb. */
+    /* Rounds the range's ends to the track's radius (the track itself does not clip, so the thumb is never cut). */
     border-radius: inherit;
     background-color: var(--dx-primary);
 }

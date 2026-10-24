@@ -2,8 +2,8 @@
 //!
 //! # Scope
 //!
-//! Built per `dev-docs/archive/research/carousel-2026-09-19.md` and the approved
-//! decisions: the APG "basic" (prev/next) style
+//! Specified by `dev-docs/archive/research/carousel-2026-09-19.md`: the APG
+//! "basic" (prev/next) style
 //! (`carousel-1-prev-next` in the vendored reference), plus the opt-in
 //! extensions the research filed (§8.2 infinite `loop`ing, §8.3 autoplay
 //! with a rotation control and its `aria-live` region, §8.5 the tablist
@@ -380,20 +380,16 @@ fn nav_disabled_vars(opacity: Option<f32>) -> String {
 /// the rubber-bands follow, `carousel_true_end_js!`): `""` (the platform's
 /// default, `auto`) when they are, `none` otherwise.
 ///
-/// **Why.** The real-trackpad symptom (MacBook, Firefox 156): "quick
-/// trackpad scrolls still produce an 'end of slides' rubberband effect when
-/// there are still more slides to come". Measured headlessly with trusted
-/// flicks shaped like the hardest recordings (peaks 131 and 266
-/// px/event): this crate's own band never fired away from a true end on any
-/// demo, but on every virtual demo a single flick held the scroller clamped
-/// against its rendered slice's physical end mid-list for 48-67 frames
-/// (e.g. `virtual_many` against indices 48/52 of 200), and `rewind`
-/// (looping, so no true end) against its physical ends for 128-146 -- with
-/// `overscroll-behavior: auto`, which is exactly where macOS Firefox draws
-/// its own native elastic bounce. The browser-idle gate deliberately keeps
-/// the window from re-centring mid-gesture (THE RULE: never write the scroll
-/// position while the browser is scrolling), and a gesture can travel far
-/// more than any slice holds (one recorded gesture: 5,255px, ~16 slides;
+/// **Why.** A quick trackpad flick must not produce an "end of slides"
+/// rubber-band while more slides are still to come. A single flick holds the
+/// scroller clamped against its rendered slice's physical end mid-list (a
+/// virtual list), or against its physical ends (a looping list, which has no
+/// true end), for many frames -- with `overscroll-behavior: auto`, which is
+/// exactly where macOS Firefox draws its own native elastic bounce. The
+/// browser-idle gate deliberately keeps the window from re-centring
+/// mid-gesture (THE RULE: never write the scroll position while the browser
+/// is scrolling), and a gesture can travel far more than any slice holds
+/// (a recorded gesture spans ~16 slides;
 /// Chromium moves up to one slide per wheel event even with
 /// `scroll-snap-stop: always`), so reaching a false end cannot be prevented
 /// by sizing the slice without abandoning virtualisation. What can be
@@ -511,7 +507,7 @@ fn prev_selected(selected: usize) -> usize {
 }
 
 /// The index one step back from `selected`, honoring `loop_enabled` --
-/// approved fast-follow decision (backlog row 91, `dev-docs/archive/research/carousel-2026-09-19.md`
+/// the approved looping model (backlog row 91, `dev-docs/archive/research/carousel-2026-09-19.md`
 /// §8.2): **rewind-style** looping. From the first slide, wraps to the
 /// last (`count - 1`) rather than saturating; the actual scroll is still a
 /// single [`CAROUSEL_SCROLL_TO_JS`] paging call to that far index
@@ -624,8 +620,8 @@ fn carousel_key_intent(
     }
 }
 
-/// THE one home of "may an edge rubber-band engage here?" -- the owner's
-/// approved rule, shared by both band bridges ([`CAROUSEL_WHEEL_BAND_JS`] and
+/// THE one home of "may an edge rubber-band engage here?" -- the rule
+/// shared by both band bridges ([`CAROUSEL_WHEEL_BAND_JS`] and
 /// [`CAROUSEL_DRAG_JS`]): only at a TRUE end of the data. Expands to one JS
 /// function literal, `dxIsTrueEnd(el, horizontal, side)`, that `concat!`
 /// splices into both scripts, so there is no second copy to drift (a
@@ -1120,8 +1116,8 @@ const CAROUSEL_SCROLL_TRACKING_JS: &str = concat!(carousel_true_end_js!(), carou
     // ---- The ONE exception to the idle gate: pinned at a false end.
     // A virtual window only re-centres at idle, so a long flick runs into
     // its rendered slice's physical end and sits there, clamped, while the
-    // rest of its input keeps arriving (a recorded session: pinned for
-    // 0.85-2.8s, 6-24 slides of momentum still to come). In exactly that
+    // rest of its input keeps arriving (seconds of momentum can still be
+    // to come). In exactly that
     // state the browser is NOT moving the scroller -- it cannot -- so a
     // re-anchor plus its instant re-align does not fight a live scroll.
     // Conditions, all required: a virtual window (`virtualWindow`); trusted
@@ -1422,12 +1418,10 @@ fn use_carousel_scroll_tracking(
 /// the overscroll bench's seamless loop re-centred while momentum was still
 /// arriving (a visible double move), and this module's own settle ran on the
 /// first `scrollend` while a trackpad was still delivering input (the
-/// virtualised demos' "trackpad custom scroll end
-/// snap interferes with looping/virtual slider" symptom;
-/// `playwright/carousel-virtual-wheel.spec.ts`). Headless evidence: a
-/// trusted wheel flick on `virtual_loop` saw the settle run at ~500ms while
-/// input kept arriving until ~1565ms, the window re-render mid-gesture, and
-/// the re-align write `scrollBy(-16)` with snapping suspended, mid-gesture.
+/// virtualised demos' custom scroll-end snap would interfere with the
+/// gesture; `playwright/carousel-virtual-wheel.spec.ts` guards it): the
+/// settle ran, the window re-rendered and the re-align write ran with
+/// snapping suspended, all mid-gesture.
 /// `scrollend` alone is not "idle": a trackpad can end the pan's scroll and
 /// keep sending its momentum, and a scroll clamped at an edge (the virtual
 /// window's own end) ends while the fingers keep pushing. So instead of
@@ -1446,7 +1440,7 @@ fn use_carousel_scroll_tracking(
 ///
 /// **Why 150.** Within one gesture, recorded trackpad events
 /// arrive every 17-20ms (p99 20ms, `playwright/fixtures/carousel-wheel-recordings.json`),
-/// and the owner-validated wheel band already treats 100ms of silence as a
+/// and the wheel band already treats 100ms of silence as a
 /// gesture boundary (`GAP_MS`). 150ms is comfortably past both, and short
 /// enough that a settle after a real lift is not visibly late.
 const CAROUSEL_INPUT_QUIET_MS: f64 = 150.0;
@@ -1996,7 +1990,7 @@ const CAROUSEL_DRAG_JS: &str = concat!(carousel_true_end_js!(), carousel_trace_j
                     // Deferred, not synchronous: setting scroll-snap-type
                     // back to mandatory on an already-stationary position is
                     // what made release never animate in the first place
-                    // (measured -- see 'Release settle'). Waiting for this
+                    // (see 'Release settle'). Waiting for this
                     // specific scroll to actually finish (`scrollend`,
                     // falling back to a timeout where unsupported -- the same
                     // feature detection `use_carousel_scroll_tracking` already
@@ -2151,7 +2145,7 @@ fn use_carousel_drag(
 /// continues from wherever the spring-back had got to
 /// (`webkitRubberInverse`), never from zero.
 ///
-/// **Deliberate differences from the bench** (all owner-approved):
+/// **Deliberate differences from the bench:**
 /// - *Axis gating.* The bench fell back to `deltaY` when `deltaX` was 0; here
 ///   a horizontal carousel reacts only to horizontal intent
 ///   (`|deltaX| > |deltaY|`, or Shift+wheel reported as `deltaY` with
@@ -2193,7 +2187,7 @@ fn use_carousel_drag(
 /// never solved by UA sniffing; the intended fix is to skip D's band where
 /// the platform is observed to draw its own at a resting edge.
 ///
-/// **Only at a true end of the data** (the owner's approved rule). Whether
+/// **Only at a true end of the data.** Whether
 /// an edge may be owned is decided by ONE predicate in the script,
 /// `isTrueEnd(side)`, at gesture start alongside the at-rest test, from
 /// rendered markup: never for a looping carousel (`data-loop="true"` --
@@ -2849,10 +2843,9 @@ impl CarouselContext {
 ///
 /// **The bug it closes.** Pressing `Enter`/`Space` on Next to reach the last
 /// slide disables Next *while it holds focus*. Chromium then runs its focus
-/// fixup and drops focus to `<body>` (measured: Chromium 141, the
-/// `main` demo, the 4th `Enter`), so the next `Tab` starts from the top of the
-/// page; a browser that skips the fixup leaves focus on the now-dead button,
-/// where no key reaches it (not measured here). Either way a keyboard user
+/// fixup and drops focus to `<body>`, so the next `Tab` starts from the top of
+/// the page; a browser that skips the fixup leaves focus on the now-dead
+/// button, where no key reaches it. Either way a keyboard user
 /// loses their place (WCAG 2.4.3). It is the same class as the slide that
 /// becomes `inert` while focused (`Carousel`'s own focus-safety effect), and
 /// the same fix applies: hand focus to the carousel's own scroller
@@ -3008,7 +3001,7 @@ pub struct CarouselProps {
     /// physical edge still rubber-bands (drag: mode B3, wheel: mode D) regardless of this flag
     /// -- there is no wrap on a drag/wheel gesture, only on Previous/Next/
     /// the root keyboard. Defaults to `false` (matches shadcn's own
-    /// `opts={{ loop: false }}` default). Approved fast-follow decision,
+    /// `opts={{ loop: false }}` default). See
     /// backlog row 91 / `dev-docs/archive/research/carousel-2026-09-19.md` §8.2.
     #[props(default)]
     pub r#loop: ReadSignal<bool>,
@@ -3269,10 +3262,10 @@ pub fn Carousel(props: CarouselProps) -> Element {
     // user's first real navigation, which would then inherit a stale
     // `instant: true` (Next from slide 1 sending `{instant: true, behavior:
     // 'auto'}` while every later click sends `{instant: false, behavior:
-    // 'smooth'}`). The global `html { scroll-behavior: smooth }` rule in
-    // `preview/assets/main.css` does not reach this element:
-    // `scroll-behavior` is not inherited and this element is its own scroll
-    // container.
+    // 'smooth'}`). A document-level `scroll-behavior: smooth` (the preview's
+    // `html[data-anchor-scroll]` rule in `preview/assets/main.css`) does not
+    // reach this element: `scroll-behavior` is not inherited and this element
+    // is its own scroll container.
     //
     // So it is consumed by construction, not by timing: `count()` below is
     // read with tracked syntax (unlike the `item_ids.peek()` a few lines
@@ -3313,8 +3306,8 @@ pub fn Carousel(props: CarouselProps) -> Element {
         // A windowed `CarouselVirtualContent` registers an EMPTY id per
         // index (it owns its own paging -- see its "Seamless loop" doc), so
         // there is no target here: skip, rather than evaluating a scroll-to
-        // that can only report "no target" (seen as noise on every virtual
-        // settle in the lab trace).
+        // that can only report "no target" (noise on every virtual
+        // settle).
         let Some(id) = item_ids
             .peek()
             .get(index)
@@ -3498,9 +3491,8 @@ pub fn Carousel(props: CarouselProps) -> Element {
     // values (`scripts/check-attr-spread-collision.sh`,
     // `dev-docs/issues/duplicate-attribute-root-cause.md`). These are all
     // structural/ARIA state this component must control, so they go last
-    // (owned-wins) -- preserves today's production (SSR+hydrate) behavior
-    // exactly, since the browser's own parser already resolves a duplicate
-    // to the first (library) value.
+    // (owned-wins) -- the same value the browser's own parser resolves a
+    // duplicate to (the first, library one) in SSR+hydrate.
     //
     // `style` is built the way `CarouselContent`'s is: the prop's variables
     // first, then whatever `style` the caller passed (so a caller-set
@@ -3608,7 +3600,7 @@ fn snap_type_value(orientation: CarouselOrientation, drag_free: bool) -> &'stati
 /// scroll area, you should make the scroll area focusable" -- a
 /// [`CarouselItem`] is not itself focusable unless its own content
 /// happens to be, and axe's `scrollable-region-focusable` rule (WCAG
-/// 2.1.1/2.1.3) confirms this by execution: without it, a keyboard user
+/// 2.1.1/2.1.3) confirms this: without it, a keyboard user
 /// who has no pointer at all has no way to reach this element's own
 /// native scroll (arrow keys/Page Up/Page Down once focused) at all --
 /// [`CarouselPrevious`]/[`CarouselNext`] page one slide at a time, but
@@ -3695,7 +3687,7 @@ fn snap_type_value(orientation: CarouselOrientation, drag_free: bool) -> &'stati
 /// comment describes the suspension): it never animates.
 /// Sampling `.dx-carousel-content`'s own `scrollLeft` across such a
 /// release yields exactly two distinct values -- the position mid-drag and
-/// the final slide -- for drags of very different lengths, both landing
+/// the final slide -- whatever the drag's length, both landing
 /// instantly. Setting `scrollSnapType` back to `'x mandatory'` on a
 /// position that is already stationary is not treated by this engine
 /// (Chromium) as "a scrolling operation resuming through skipped snap
@@ -3762,9 +3754,9 @@ fn snap_type_value(orientation: CarouselOrientation, drag_free: bool) -> &'stati
 /// pointer path to keep owning the scroll position (`feedOverdrag`, which
 /// asks the scroller for the whole of the requested motion and treats
 /// whatever it refuses as the overdrag) -- the evidence behind this
-/// asymmetry (the pointer path stayed clean for 20+ bench revisions
-/// untouched while the wheel path glitched nearly every time) is
-/// measured, not assumed; see the research doc §2.
+/// asymmetry (the pointer path is clean untouched while the wheel path
+/// glitches nearly every time) is measured, not assumed; see the research
+/// doc §2.
 ///
 /// **Why the transform lands on [`CarouselContent`]'s own *scroller*,
 /// never the [`Carousel`] root.** The bench's own mode C (a whole-element
@@ -3986,7 +3978,7 @@ fn snap_type_value(orientation: CarouselOrientation, drag_free: bool) -> &'stati
 ///
 /// The scroller is wrapped in a presentational `div
 /// [data-slot="carousel-viewport"]` (see this component's "Edge
-/// rubber-band" doc, "Correction" paragraph, above) that a caller's own
+/// rubber-band" doc, "does *not* self-clip" paragraph, above) that a caller's own
 /// stylesheet can target for purely visual purposes; it carries none of
 /// this component's own attributes/ARIA and is not part of the public
 /// props surface.
@@ -4394,15 +4386,15 @@ pub struct CarouselVirtualContentProps<T: Clone + PartialEq + 'static> {
     /// browser-idle gate: nothing writes the scroll position while the
     /// browser is scrolling), so how far ONE trackpad flick can travel
     /// before reaching the rendered slice's end is exactly `radius` slides.
-    /// Measured from the owner's real sessions (Firefox, MacBook trackpad;
+    /// Measured from recorded real sessions (Firefox, MacBook trackpad;
     /// excursion of each uninterrupted input stream, in slides of a 336px
     /// track): 252 ordinary bursts had a median of 3.0, p75 8.6, p90 15.2;
-    /// the owner's deliberate fast-flick session had a median of 10.8 and a
-    /// max of 29; the recorded fixture gestures reach 15.6. `10` absorbs
-    /// roughly 85% of everyday flicks without any mid-gesture write while
-    /// keeping the DOM at 21 slides; the long tail is caught by the
-    /// pinned-at-a-false-end re-centre (`CAROUSEL_SCROLL_TRACKING_JS`). It
-    /// was `2` (5 slides), which a single flick exhausted after 0-2 slides.
+    /// a deliberate fast-flick session had a median of 10.8 and a max of 29;
+    /// the recorded fixture gestures reach 15.6. `10` absorbs roughly 85% of
+    /// everyday flicks without any mid-gesture write while keeping the DOM at
+    /// 21 slides; the long tail is caught by the pinned-at-a-false-end
+    /// re-centre (`CAROUSEL_SCROLL_TRACKING_JS`). A radius of `2` (5 slides)
+    /// would be exhausted by a single flick after 0-2 slides.
     ///
     /// **Looping lists** never render the same item twice: the effective
     /// radius is capped at `(items.len() - 2) / 2` (5 for 12 items, so 11 of
@@ -4455,7 +4447,7 @@ pub struct CarouselVirtualContentProps<T: Clone + PartialEq + 'static> {
 /// A data-driven, virtualised drop-in for [`CarouselContent`] +
 /// [`CarouselItem`]s: used INSIDE the same [`Carousel`] root, in place of
 /// them, whenever the slides come from a plain `Vec<T>` rather than a
-/// fixed set of children (`dev-docs/backlog.md` row 91 has the approved
+/// fixed set of children (`dev-docs/backlog.md` row 91 has the
 /// construction this implements).
 ///
 /// Publishes its own count into [`CarouselContext`] the same way
@@ -4497,7 +4489,7 @@ pub struct CarouselVirtualContentProps<T: Clone + PartialEq + 'static> {
 /// `virtualize: Some(false)`), [`CarouselProps::r#loop`] has no seamless
 /// path available to it at all -- exactly like the plain children API, it
 /// is gated by [`CarouselProps::loop_mode`] (see that enum's own doc):
-/// [`LoopMode::Rewind`] is the existing APG **rewind** style, unchanged --
+/// [`LoopMode::Rewind`] is the APG **rewind** style --
 /// `position == data index` throughout, and this component publishes a
 /// real per-data-index DOM id into [`CarouselContext::item_ids`] exactly
 /// like [`CarouselItem`] does, so [`Carousel`]'s own built-in mount/
@@ -4686,7 +4678,7 @@ pub fn CarouselVirtualContent<T: Clone + PartialEq + 'static>(
     // inactive: the built-in `Carousel`-level effect (real per-data-index
     // ids, published above) already handles that case.
     //
-    // **Two load-bearing rules, both verified against a running dev server:**
+    // **Two load-bearing rules:**
     //
     // 1. This must compute the next target from `intended` (the last
     //    position THIS effect itself has already asked for), never from
@@ -4698,8 +4690,8 @@ pub fn CarouselVirtualContent<T: Clone + PartialEq + 'static>(
     //    consecutive `CarouselAutoplay` ticks close enough together)
     //    would otherwise still read the PRE-first-step anchor, compute the
     //    same target the first step already asked for, and silently
-    //    swallow one entire step (ticks 1..12 with `delay_ms:
-    //    1200` skipped index 6 outright, landing on 5 then 7). Reading
+    //    swallow one entire step (a skipped index, landing on 5 then 7).
+    //    Reading
     //    `intended` instead -- updated immediately, in the same tick this
     //    effect runs, in both branches below -- means a rapid-fire second
     //    change always computes relative to where the first one is
@@ -5042,7 +5034,7 @@ pub fn CarouselPrevious(props: CarouselPreviousProps) -> Element {
     // `type="submit"` or their own label still can); `aria_controls`/
     // `disabled` are ARIA-relationship and real-boundary state this
     // component must keep correct, so they go last -- owned-wins preserves
-    // today's production (SSR+hydrate) behavior exactly, since a caller
+    // the same markup in SSR and hydrate, since a caller
     // could otherwise (attempt to) re-enable a button already correctly
     // disabled at a real boundary.
     let attributes = merge_attributes(vec![
@@ -5224,7 +5216,7 @@ pub struct CarouselAutoplayProps {
     /// **Scope note:** a native pointer-drag or wheel/trackpad scroll
     /// does **not** count as "interaction" here -- only the discrete
     /// paging actions above do. Wiring the drag/wheel bridges too is an
-    /// open follow-up, not a silent gap: see [`AutoplayContext::note_interaction`]'s
+    /// deliberate scope cut, not a silent gap: see [`AutoplayContext::note_interaction`]'s
     /// own doc for exactly which call sites are wired.
     #[props(default = ReadSignal::new(Signal::new(true)))]
     pub stop_on_interaction: ReadSignal<bool>,
@@ -5267,8 +5259,8 @@ pub struct CarouselAutoplayProps {
 /// `aria-live` on [`CarouselContent`] (`"off"` while rotating, `"polite"`
 /// once stopped) and the rotation control's own toggling label are both
 /// driven by this component's presence -- neither exists at all in a
-/// [`Carousel`] with no [`CarouselAutoplay`] mounted, preserving every
-/// already-shipped non-autoplay variant's markup exactly.
+/// [`Carousel`] with no [`CarouselAutoplay`] mounted, so a non-autoplay
+/// carousel's markup carries neither.
 ///
 /// `prefers-reduced-motion: reduce` always forces rotation off at mount,
 /// regardless of [`CarouselAutoplayProps::default_playing`] -- checked
@@ -5526,7 +5518,7 @@ pub struct CarouselIndicatorsProps {
 /// `role="tablist"` containing one [`CarouselIndicator`] per slide. Composing
 /// this on this crate's own `crate::collection` roving-focus machinery
 /// (the same module [`crate::tabs::Tabs`] itself is built on) rather than
-/// [`crate::tabs::Tabs`]/`TabTrigger`/`TabContent` directly was a
+/// [`crate::tabs::Tabs`]/`TabTrigger`/`TabContent` directly is a
 /// deliberate choice, not an oversight -- two concrete reasons that rule
 /// out the literal composition:
 ///
@@ -5550,8 +5542,7 @@ pub struct CarouselIndicatorsProps {
 ///    directly) instead of a manual-activation component fighting its own
 ///    contract.
 ///
-/// What *is* reused, per the brief's own "compose, don't reimplement"
-/// recommendation: the exact same `collection_item`/`use_item`/
+/// What *is* reused (compose, don't reimplement): the exact same `collection_item`/`use_item`/
 /// `CollectionState` roving-tabindex machinery `TabTrigger` itself is
 /// built on (`crate::collection`, `pub(crate)` and already shared across
 /// this crate) -- so this is still composition on `tabs.rs`'s own
@@ -6376,8 +6367,8 @@ mod ssr_tests {
         // wiring into this styling hook is plain, SSR-checkable markup.
         // Unquoted `true`/`false` (not `"true"`/`"false"`) is how a `bool`
         // data attribute actually renders -- matching `calendar.rs`'s own
-        // `data-selected=true`/`data-disabled=false` assertions, confirmed
-        // by execution (the quoted form fails against this same markup).
+        // `data-selected=true`/`data-disabled=false` assertions (the quoted
+        // form fails against this same markup).
         let html = render(ThreeSlideCarousel);
         assert!(html.contains("data-draggable=true"));
     }
@@ -6479,9 +6470,9 @@ mod ssr_tests {
     #[test]
     fn carousel_viewport_wrapper_establishes_its_own_block_formatting_context() {
         // `display: flow-root`, alongside `overflow: clip` -- see the
-        // viewport wrapper's own doc for the live-measured vertical-
-        // orientation margin-collapse bug this closes (`overflow: clip`
-        // alone did not stop this wrapper's own block-axis margin from
+        // viewport wrapper's own doc for the vertical-orientation
+        // margin collapse this prevents (`overflow: clip` alone does
+        // not stop this wrapper's own block-axis margin from
         // collapsing through to `CarouselContent`'s negative
         // `margin-block-start`, under `CarouselOrientation::Vertical`).
         let html = render(ThreeSlideCarousel);
@@ -6989,7 +6980,7 @@ mod ssr_tests {
         // escape hatch (docs.md's own "Sizing slides" section)
         // must keep working: a caller-supplied
         // `flex-basis` still simply appears later in the same `style`
-        // attribute and wins, the same as it always has.
+        // attribute and wins.
         let html = render(CarouselWithBasisOverride);
         assert!(html.contains("flex-basis: 40%;"));
     }
@@ -7019,10 +7010,10 @@ mod ssr_tests {
     #[test]
     fn loop_enabled_previous_is_never_disabled_even_before_registration() {
         // Even on the very first, pre-effect render (`count == 0`, the
-        // same moment `next_button_is_disabled_before_registration_effects_run`
-        // asserts the NON-loop `CarouselNext` conservatively disables) --
+        // same moment `next_button_is_enabled_before_registration_effects_run`
+        // asserts the NON-loop `CarouselNext` is already enabled) --
         // explicit `LoopMode::Rewind` makes both buttons unconditionally
-        // not-disabled, per the approved decision (backlog row 91): they
+        // not-disabled (backlog row 91): they
         // wrap instead of ever reaching a real boundary.
         let html = render(RewindLoopCarousel);
         let previous_tag = button_tag(&html, 0);
@@ -7095,8 +7086,7 @@ mod ssr_tests {
 
     #[test]
     fn no_aria_live_without_a_carousel_autoplay() {
-        // Regression guard: a `Carousel` with no `CarouselAutoplay` at all
-        // must render byte-for-byte the same as it always has -- no
+        // A `Carousel` with no `CarouselAutoplay` at all renders no
         // `aria-live` anywhere (APG's own "optional" framing: a
         // manually-paged carousel has nothing to announce around).
         let html = render(ThreeSlideCarousel);

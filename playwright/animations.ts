@@ -16,8 +16,7 @@ export type RestBox = { x: number; y: number; width: number; height: number };
  * mounted it. On a starved main thread/compositor (the full suite at
  * `--workers=4` runs 4 Chromiums on 4 cores) that first frame can arrive
  * hundreds of ms late, so "200ms animation + 300ms slack" is not a
- * guarantee, only a probability. `drawer.spec.ts:110` read the panel's
- * bounding box mid-slide-in this way.
+ * guarantee, only a probability: a read of the panel's bounding box mid-slide-in is that race.
  *
  * Two rAFs first: the animation object does not exist until the style
  * recalc of the next frame, and "no running animations" is trivially true
@@ -57,9 +56,8 @@ export async function awaitAnimationsSettled(locator: Locator): Promise<void> {
  * The ONE way a spec reads the geometry of something that animates on enter (backlog row 222): waits for
  * `awaitAnimationsSettled`, THEN reads `locator.boundingBox()`. `boundingBox()` includes transforms, so a read
  * during `dx-pop-in` (scale 0.95 -> 1), a sheet's slide or a dialog's 200 ms enter is a race against the
- * animation clock -- `select.spec.ts` read the listbox 142.16 px wide mid-animation against 145.89 at rest, and
- * `dialog.spec.ts:188` compared the footer band with the dialog during the enter (1 in 5 runs failed alone, by
- * 1.25-1.86 px). The gate `scripts/check-spec-at-rest.sh` fails a `boundingBox()` / `getBoundingClientRect()`
+ * animation clock (a listbox is a few px narrower mid-animation than at rest, and a footer band compared with its
+ * dialog during the enter is off by the scale). The gate `scripts/check-spec-at-rest.sh` fails a `boundingBox()` / `getBoundingClientRect()`
  * read in an overlay spec that does not go through this helper (or `readAtRest`).
  *
  * Throws when the element has no box (not rendered / `display: none`) instead of returning null, so a missing

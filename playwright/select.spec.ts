@@ -8,11 +8,11 @@ import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 import { awaitAnimationsSettled, measureAtRest } from "./animations";
 
-// dev-docs/backlog.md row 8: SelectTrigger's role is now "combobox" (APG
+// dev-docs/backlog.md row 8: SelectTrigger's role is "combobox" (APG
 // select-only combobox pattern), not an implicit button -- see
-// `oracle/tier1-apg/select-only-combobox.spec.ts` for the conformance rules
-// this restores. The underlying element is still a <button>; only the
-// accessible role query changes.
+// `oracle/tier1-apg/select-only-combobox.spec.ts` for the conformance rules.
+// The underlying element is a <button>; only the accessible role query
+// differs.
 const singleSelectTrigger = (page: Page) =>
     page.getByRole("combobox").filter({ hasText: /Select an option|Apple|Banana/ });
 
@@ -308,10 +308,8 @@ test("typeahead skips disabled options", async ({ page }) => {
 });
 
 /**
- * Listbox width (dev-docs/backlog.md row 47) -- regression guard for
- * the reported symptom: opening the styled `Select` on the home page
- * gallery rendered its listbox the full width of the viewport (1265px on a
- * 1280px-wide viewport) instead of the width of its own trigger. The
+ * Listbox width (dev-docs/backlog.md row 47): the styled `Select`'s listbox is
+ * as wide as its own trigger, never the width of the viewport. The
  * mechanism: `.dx-select-list`'s `min-width: 100%` resolves against the
  * *viewport* once the listbox is promoted to the top layer (its
  * containing block is no longer `.dx-select`'s `position: relative` box),
@@ -320,17 +318,15 @@ test("typeahead skips disabled options", async ({ page }) => {
  * "Anchor width contract" (`--dx-anchor-width`, engine-published on every
  * anchored content).
  *
- * Covers both routes the report and the reproduction named: the component
- * page (`/component/?name=select&`) and the home gallery (`/`, where the
- * report actually came from -- the gallery embeds a *different* `Select`
- * instance, "Choose a fruit", alongside its own "Select an option" ones).
+ * Covers both routes: the component page and the home gallery (`/`, which
+ * embeds a *different* `Select` instance, "Choose a fruit", alongside its own
+ * "Select an option" ones).
  *
  * `oracle/tier2-html/top-layer.spec.ts`'s Rule 13 ("fit-content width") is
- * a *different*, narrower regression guard: it opens every anchored
+ * a *different*, narrower check: it opens every anchored
  * content on that spec's own unstyled fixture page, which carries no
  * `#[css_module]` stylesheet at all -- so it cannot see a themed
- * component's CSS (this bug's actual location) and does not cover this
- * symptom. This test is the real oracle for it.
+ * component's CSS (where this width comes from). This test is the oracle for it.
  */
 test.describe("Listbox width tracks the trigger width (dev-docs/backlog.md row 47)", () => {
     async function assertListboxTracksTriggerWidth(
@@ -339,7 +335,7 @@ test.describe("Listbox width tracks the trigger width (dev-docs/backlog.md row 4
         listbox: ReturnType<Page["getByRole"]>,
     ) {
         // `boundingBox()` includes transforms, and the listbox plays `dx-pop-in` (scale .95 -> 1) on open: read
-        // mid-animation it was 142.16 wide against a 144.17 trigger (scale .981), at rest it is 145.89. The
+        // mid-animation it is a few px narrower than at rest. The
         // contract is about the box at rest, so settle first (animations.ts; same class as backlog row 115).
         await awaitAnimationsSettled(listbox);
         const triggerBox = await measureAtRest(trigger);
@@ -357,7 +353,7 @@ test.describe("Listbox width tracks the trigger width (dev-docs/backlog.md row 4
         // the viewport" while still tolerating a listbox whose own option
         // text is naturally wider than a narrow trigger).
         expect(listboxBox.width, debug).toBeLessThanOrEqual(Math.max(triggerBox.width * 2, 320));
-        // The actual reported symptom: nowhere near viewport width.
+        // Nowhere near viewport width.
         expect(listboxBox.width, debug).toBeLessThan(0.6 * viewport.width);
         // Anchored near the trigger's left edge (side="bottom",
         // align="start" -- `select/components/list.rs`), not drifted to
@@ -389,17 +385,15 @@ test.describe("Listbox width tracks the trigger width (dev-docs/backlog.md row 4
 });
 
 /*
- * Trigger minimum width (`.dx-select-trigger`'s `min-width`) -- regression
- * guard for a real bug: with no width/min-width
- * of its own, a trigger that never sets one (e.g. the `form` conformance
+ * Trigger minimum width (`.dx-select-trigger`'s `min-width`): a trigger that
+ * sets no width of its own (e.g. the `form` conformance
  * fixture's "Fruit, required" library-select field, which has no
- * `trigger_class`/explicit width) shrinks to fit whatever text is
- * currently selected -- as little as 85px for "apple". Since `SelectList`
+ * `trigger_class`/explicit width) would shrink to fit whatever text is
+ * currently selected. `SelectList`
  * itself is width-locked to the trigger's rendered width
- * (`--dx-anchor-width`, row 47's own contract, tested above), that left
+ * (`--dx-anchor-width`, row 47's own contract, tested above), so a shrunken trigger leaves
  * almost no slack for a selected `.dx-select-option` between the option's
- * label and its check indicator -- a *correctly* laid-out flex row that
- * nonetheless visually read as a bug (the checkmark appearing to hug the
+ * label and its check indicator (the checkmark would appear to hug the
  * label instead of sitting at the row's own far edge). This test is
  * the direct DOM/computed-style measurement of that. (The label-to-check spacing does not depend on the row's
  * width at all -- the option reserves the check's slot and the check is
@@ -420,8 +414,8 @@ test.describe("Trigger minimum width (dev-docs/backlog.md row 10)", () => {
         await expect(listbox).toHaveAttribute("data-state", "open");
         await listbox.getByRole("option", { name: "Apple" }).click();
 
-        // The trigger itself must have real width -- the actual regression
-        // this guards (no min-width at all, shrink-to-fit "apple").
+        // The trigger itself must have real width (a missing min-width
+        // would shrink-to-fit "apple").
         const triggerBox = await measureAtRest(trigger);
         if (!triggerBox) throw new Error("trigger has no bounding box");
         expect(triggerBox.width, `trigger width ${triggerBox.width}px`).toBeGreaterThanOrEqual(100);
@@ -496,7 +490,7 @@ test.describe("trigger size (row 155 group 7)", () => {
         expect((await measureAtRest(def)).height).toBe(tokens.def);
     });
 
-    test("the sm trigger still opens and selects", async ({ page }) => {
+    test("the sm trigger opens and selects", async ({ page }) => {
         await gotoHydrated(page, `${BASE_URL}/component/select/`, {
             timeout: 20 * 60 * 1000,
         });

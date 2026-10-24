@@ -399,7 +399,7 @@ pub(crate) fn justified_layout(aspects: &[f64], opts: &JustifiedOptions) -> Just
             row_height = row_height.min(cap);
         }
         // Backstop for the cap raise above: the stretch a sparse trailing row with a very narrow
-        // aspect would need is as unbounded as the backoff case was before the peek-ahead.
+        // aspect would need is as unbounded as the backoff case without the peek-ahead.
         if min_tile_width > 0.0 && row_height > target * MAX_STRETCH {
             row_height = target * MAX_STRETCH;
         }
@@ -782,7 +782,7 @@ mod tests {
         fn a_valid_but_very_narrow_aspect_does_not_explode_row_height_either() {
             // A real, valid aspect that is just very small (0.01) is not exempted as degenerate,
             // so backoff could isolate it in its own row: 375 / 0.01 = 37500px tall, uncapped.
-            // Clamping the height alone broke edge to edge fill instead (width shrinks with the
+            // Clamping the height alone would break edge to edge fill (width shrinks with the
             // height), so the backoff peeks ahead and stops BEFORE committing to such a height.
             // Asserts the fill is preserved, not just the bound.
             let r = run(&sliver_then_squares(), &sliver_opts());
@@ -833,7 +833,7 @@ mod tests {
 
         #[test]
         fn stays_fast_when_many_tiles_in_one_row_share_the_same_narrow_aspect() {
-            // The backoff loop once rescanned the whole shrinking window on every step:
+            // A backoff loop that rescanned the whole shrinking window on every step would be
             // O(tiles) per step, O(tiles^2) per row, tens of seconds for 200k tiles. The
             // one-time prefix lookup makes it linear; a generous time budget pins that.
             let aspects = vec![0.001; 50_000];

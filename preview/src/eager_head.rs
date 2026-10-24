@@ -1,6 +1,6 @@
 //! Head elements that cannot be lost to a subtree that is torn down the turn it first renders.
 //!
-//! # The defect this exists for
+//! # The defect this guards against
 //!
 //! Every component wrapper ships its CSS as `document::Link { rel: "stylesheet", href: asset!(..) }`.
 //! In Dioxus 0.7.9 that is two steps, and they are not atomic:
@@ -21,15 +21,11 @@
 //! The condition, exactly: *an ancestor's first-run `use_effect` dirties a scope that unmounts the
 //! subtree* (effects run parents-first, `scheduler.rs` `ScopeOrder`). The legacy
 //! `/component/?name=X` shell is that: it renders `Navbar`, and its own `use_effect` calls
-//! `nav.replace(ComponentDemoPath)`. The header's `LanguageSelect` stylesheet and the theme picker's
-//! `Popover` stylesheet were recorded and never inserted, so `/component/X/` rendered them unstyled
-//! (the picker's panel computed `border 3px / radius 0` instead of `1px / 10px`).
+//! `nav.replace(ComponentDemoPath)`, so a stylesheet of the header or of a popover in it is recorded
+//! and never inserted, and `/component/X/` renders that component unstyled.
 //!
-//! It is a CLASS, not an instance (CLAUDE.md "when the same problem shows up more than once"): it is
-//! what dropped `main.css`/`dx-components-theme.css` after `ComponentBlockDemo`'s redirect (backlog
-//! row 46, whose fix moved `GlobalHead` into `AppLayout` -- sound for those four sheets, but it left
-//! every other component's link exposed), it is what once left a page with no `Button` stylesheet, and
-//! it hit `language-select-*.css` long before the theme picker existed.
+//! It is a CLASS, not an instance: any component's link is exposed to it, which is why moving
+//! `GlobalHead` into `AppLayout` (backlog row 46) covered only the four app sheets.
 //!
 //! # The construction
 //!
@@ -53,18 +49,18 @@
 //!
 //! Everything above makes the `<link>` exist; it does not make the browser wait for it. A stylesheet
 //! inserted once `<body>` exists is not render-blocking (HTML: render-blocking elements can only be added
-//! while the document "allows adding render-blocking elements"; `blocking=render` on a late link measured as
+//! while the document "allows adding render-blocking elements"; `blocking=render` on a late link is
 //! a no-op), so a route or popover that FIRST renders after the page's first paint is painted with UA defaults
 //! (a white `<input>`, a grey UA button) for one round trip, then restyled with a reflow
-//! (backlog "first-paint style delivery": 5-10 late sheets and 150-270 ms unstyled on every
-//! component page entered by client-side navigation; the date picker's calendar sheet on its first open).
+//! (backlog "first-paint style delivery": every component page entered by client-side navigation, and
+//! the date picker's calendar sheet on its first open).
 //! The construction for that class is NOT here: `scripts/ssg-css-bundle.mjs` (run by `scripts/build-ssg.sh`)
 //! puts every component stylesheet in each page's render-blocking head as one `<link data-dx-css-bundle
 //! data-covers="file file ..">`, so no route can depend on a sheet that is discovered at render time.
 //! What belongs here is the other half: `create_link` skips a stylesheet whose file is listed in `data-covers`
 //! (decided in the page's JS, so there is nothing to read back from `eval`), instead of fetching a duplicate on
 //! every navigation. With no bundle in the page (`dx serve`, a client-only build) the guard finds nothing and
-//! inserts as before.
+//! inserts as usual.
 //!
 //! Guards: `scripts/check-eager-head-document.sh` (static: the wrapper exists, never uses
 //! `queue_effect`, and `App` installs it) and `playwright/oracle/tier2-html/stylesheets-present.spec.ts`
