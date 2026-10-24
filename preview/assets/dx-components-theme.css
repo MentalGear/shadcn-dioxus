@@ -196,11 +196,11 @@ html[data-theme="light"] [class~="dxc-system"] {
    * card = popover = #171717 and muted = secondary = accent = #262626, so painting `--dx-accent` for
    * "selected" on any of them gives 1.00 to 1.19:1: the state vanishes. Light is `--dx-accent` itself
    * (zero change). Dark is the toggle's pressed recipe (toggle/style.css): the hover surface pushed 15%
-   * toward the ink in OKLab, so it is distinct from hover BY CONSTRUCTION (always accent plus a fixed
+   * toward the ink in the theme's mix space (`--dx-hover-mix-space`), so it is distinct from hover BY CONSTRUCTION (always accent plus a fixed
    * step), follows a preset's accent and foreground, and needs no per-sheet maths. Default dark values:
-   * #3d3d3d, 1.64:1 against #171717 (card, popover, sidebar), 1.39:1 against #262626 (muted, accent,
-   * secondary) and 1.81:1 against the #0a0a0a page. Use `--dx-accent-selected-foreground` for text on
-   * it (10.5:1); `--dx-muted-foreground` on it is only 4.22:1, so do not leave secondary text on a
+   * #414141, 1.76:1 against #171717 (card, popover, sidebar), 1.48:1 against #262626 (muted, accent,
+   * secondary) and 1.94:1 against the #0a0a0a page. Use `--dx-accent-selected-foreground` for text on
+   * it (9.8:1); `--dx-muted-foreground` on it is only 3.95:1, so do not leave secondary text on a
    * selected fill. Plain hover and keyboard-highlight rows on a popover keep `--dx-accent` (distinct
    * from #171717 by the same step shadcn ships). Guard: playwright/dark-surface-contrast.spec.ts. */
   --dx-accent-selected: var(--light, var(--dx-accent))
@@ -333,7 +333,7 @@ html[data-theme="light"] [class~="dxc-system"] {
   --dx-radius: var(--radius, 0.625rem);
 
   /* Type scale (dev-docs/backlog.md row 31a). Grounded in the `font-size`
-   * literals already used across the 46 themed components' `style.css` +
+   * literals of the themed components' `style.css` +
    * `preview/assets/*.css` (the value -> frequency survey). Converted to px, the values cluster tightly around the eight
    * steps below; the literals in between (0.85rem, 0.9rem, 0.92rem, ...)
    * are near-misses of these steps (moving them onto the scale is row 31b).
@@ -353,10 +353,10 @@ html[data-theme="light"] [class~="dxc-system"] {
   --dx-text-2xl: 1.5rem;   /* 24px */
   --dx-text-3xl: 1.75rem;  /* 28px */
   --dx-text-4xl: 2.5rem;   /* 40px -- display sizes (section headings, stat numbers) */
-  --dx-text-5xl: 3.5rem;   /* 56px -- the homepage hero headline, the single largest literal found */
+  --dx-text-5xl: 3.5rem;   /* 56px -- the homepage hero headline, the largest literal */
 
-  /* Spacing scale -- padding, margin, gap. The survey (395 non-zero
-   * literals) lands almost entirely on a 4px/0.25rem grid already; this
+  /* Spacing scale -- padding, margin, gap. The sheets' non-zero
+   * literals land almost entirely on a 4px/0.25rem grid; this
    * scale *is* that grid. Steps are named after Tailwind v4's own spacing
    * scale (`--spacing * N`) because they resolve to the same values for
    * every step below -- deliberate: row 32 keeps the door open to
@@ -425,8 +425,8 @@ html[data-theme="light"] [class~="dxc-system"] {
    * are NOT elevation -- a 1px inset "border replacement" technique, and
    * the focus-ring family below -- neither belongs on this scale. What's
    * left clusters into five real drop-shadow values. All five follow this
-   * app's existing dark-mode convention (already used by `tabs` and
-   * `hover_card` independently): a drop shadow is a depth cue that reads
+   * app's existing dark-mode convention (`tabs` and
+   * `hover_card` follow it independently): a drop shadow is a depth cue that reads
    * as noise on a dark surface, so it turns off (`none`) in dark mode
    * rather than getting a dark-tuned replacement. */
 
@@ -510,8 +510,8 @@ html[data-theme="light"] [class~="dxc-system"] {
   --dx-breakpoint-md: 48rem;     /* 768px -- sidebar's dominant collapse breakpoint */
   --dx-breakpoint-lg: 68.75rem;  /* 1100px -- main.css's site-chrome breakpoint */
 
-  /* Z-index. Every z-index literal found in the survey maps onto exactly
-   * one of these nine steps already. Two distinct tiers exist: a "local"
+  /* Z-index. Every z-index literal in the sheets maps onto exactly
+   * one of these nine steps. Two distinct tiers exist: a "local"
    * ladder (10/20/30/50) a component uses to order its own internal
    * layers relative to each other, and a shared "overlay" ladder (1000+)
    * for content that must sit above ordinary page flow app-wide --
@@ -530,8 +530,9 @@ html[data-theme="light"] [class~="dxc-system"] {
   /* Chart categorical palette (dev-docs/archive/research/chart-2026-09-19.md §6.3,
    * chart-api.md "Tokens"). The charts need
    * distinguishable series hues, which no other token set provides. Validated
-   * with the `dataviz` skill's own `validate_palette.js` against this
-   * theme's real card surfaces, not generic reference surfaces:
+   * with the `dataviz` skill's own `validate_palette.js` against two
+   * surfaces close to the theme's card fills (#fff light, #171717 dark); the
+   * contrast figures are for those two surfaces, not re-measured on the card fills:
    *   light (surface #fbfbfb):
    *     lightness band PASS, chroma floor PASS, CVD separation PASS (worst
    *     adjacent dE 9.1), normal-vision floor PASS (dE 19.6), contrast WARN
@@ -558,8 +559,7 @@ html[data-theme="light"] [class~="dxc-system"] {
 
   /* Shared interaction affordances -- feeds the `[data-dx-interactive]`
    * layer below. `--dx-opacity-disabled` is a straight read of the
-   * existing convention: 21 components already write `opacity: 0.5` on
-   * their own disabled state. No component dims on hover, so
+   * shadcn convention (`disabled:opacity-50`): every disabled rule reads it. No component dims on hover, so
    * `--dx-opacity-hover` is a conventional subtle default, easy to retune
    * globally. */
   --dx-opacity-hover: 0.8;
@@ -886,7 +886,7 @@ html[data-theme="light"] [class~="dxc-system"] {
 }
 
 /* ============================================================================
- * Box model (dev-docs/backlog.md row 111, phase A).
+ * Box model (dev-docs/backlog.md row 111).
  *
  * Every element we ship is `box-sizing: border-box`, so a `width`/`height`/
  * `min-*`/`max-*`/`flex-basis` means the box the user sees (padding and border
@@ -943,7 +943,7 @@ html[data-theme="light"] [class~="dxc-system"] {
  *
  * The element list is `main.css`'s catch-all list (button, link, form controls, `summary`, anything
  * focusable by `tabindex`, and the interactive ARIA widget roles) plus the roles our primitives render
- * that the list lacked (`menuitemcheckbox`/`menuitemradio`, and `spinbutton`, which the date picker's
+ * that the list does not name (`menuitemcheckbox`/`menuitemradio`, and `spinbutton`, which the date picker's
  * segments carry at `tabindex="-1"`), intersected with the `dx-` class namespace: scoped to our own
  * components, like the box-model rule, because this file is copied into the app of every
  * `dx components add` user and must not change THEIR plain `<button>`s. Every `:where()` holds one
@@ -1261,8 +1261,8 @@ html[data-theme="light"] [class~="dxc-system"] {
  *
  * The in-flow twin of "Popup root" above. A component sits inside a card footer, a muted or centred
  * block, a table cell, a `white-space: nowrap` toolbar or a prose column, and every INHERITED property
- * still flows from that host into the component's text: a `line-height: 3` host re-spaced 382 leaf
- * boxes in 27 components, a `font-weight: 800` host re-weighted 395 in 38 (hostile-host probe,
+ * still flows from that host into the component's text: a `line-height: 3` host re-spaces 382 leaf
+ * boxes in 27 components, a `font-weight: 800` host re-weights 395 in 38 (hostile-host probe,
  * dev-docs/archive/research/typography-hostile-host-probe.spec.ts.txt). A per-root gate demanding
  * that each stylesheet declare its root's size and line height would only police the copies; this is
  * the fix by construction, once:
@@ -1278,11 +1278,11 @@ html[data-theme="light"] [class~="dxc-system"] {
  *   - Only the OUTERMOST root resets (`:not([data-dx-root] *, ...)` sits inside the `:where()` and costs
  *     no specificity). A Badge inside a Card keeps the Card's declared 14px / leading / weight, so
  *     the host a component can see is another component, which is designed, and only the Card is
- *     cut from the page around it. (Resetting every root, nested ones included, moved 9 more of 100 screenshots.)
+ *     cut from the page around it. (Resetting every root, nested ones included, moves 9 more of 100 screenshots.)
  *   - It skips `button`, `input`, `select` and `textarea`: the UA sheet already gives a form control
  *     its own `font`, `text-align`, `text-transform`, `letter-spacing` and `white-space`, and an author
  *     rule beats the UA sheet whatever its specificity, so the reset would REPLACE a UA default
- *     rather than cut a host (an icon-only `<button>` lost its UA `text-align: center`, moving its
+ *     rather than cut a host (an icon-only `<button>` would lose its UA `text-align: center`, moving its
  *     glyph 5px; a `<textarea>` would have lost `white-space: pre-wrap`).
  *   - It leaves identity, interaction and document state inheriting, because that is the point of
  *     an in-flow component: `font-family`, `color`, `direction`/`writing-mode`, `cursor`,
@@ -1393,11 +1393,11 @@ html[data-theme="light"] [class~="dxc-system"] {
  * other way, unless the element can never be pressed (a reasoned allowlist).
  *
  * Timing (also row 295): the press lands INSTANTLY (`--dx-press-in-duration`, `!important` because a
- * component's own `transition` shorthand would otherwise win by specificity, and 77 sheets have one)
+ * component's own `transition` shorthand would otherwise win by specificity, and most sheets carry one)
  * and releases over the component's own transition, or `--dx-press-duration` where it has none. A tap
  * is 40-100ms on a phone; a symmetric 100ms ramp never reaches the target scale before the
  * finger lifts (nothing to see). A control whose own `transition` list names
- * neither `all` nor `scale` (29 families) still snaps back on release; the press itself is seen.
+ * neither `all` nor `scale` still snaps back on release; the press itself is seen.
  *
  * The transition belongs to the resting state (so the release animates too) and exists only under
  * `prefers-reduced-motion: no-preference`: with reduced motion the press is instant. A component
@@ -2272,10 +2272,10 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
 }
 
 /* Forced colors (Windows contrast themes, `forced-colors: active`): the UA discards `box-shadow`, and every
- * component draws its focus ring with `box-shadow` while resetting `outline` (42 `outline: none`
- * declarations in 31 sheets), so 30 controls on 23 components would have NO focus indicator. One rule closes the
- * class instead of 42 sites: a system-colour outline on every `:focus-visible` element, whatever its class
- * (the chart's focusable root is a class-less `div[data-slot="chart"]`, which a `.dx-*` filter missed).
+ * component draws its focus ring with `box-shadow` while resetting `outline` (every sheet carries
+ * `outline: none`), so those controls would have NO focus indicator. One rule closes the
+ * class instead of every site: a system-colour outline on every `:focus-visible` element, whatever its class
+ * (the chart's focusable root is a class-less `div[data-slot="chart"]`, which a `.dx-*` filter would miss).
  * `!important` is acceptable because this is a user-requested override mode. INSET (`-2px`) on purpose: an
  * outset outline is clipped by an `overflow` ancestor (the accordion trigger inside its item), an inset one
  * never is.
@@ -2337,7 +2337,7 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
  * never a literal; `pointer-events: none` OR `cursor: not-allowed`, never both in one rule (the cursor
  * of an element that takes no pointer events is never shown).
  *
- * `scripts/check-css-state-recipes.sh` keeps all three from drifting back: a literal opacity in a
+ * `scripts/check-css-state-recipes.sh` keeps all three from drifting apart: a literal opacity in a
  * disabled rule, a focus or invalid rule that paints something other than a recipe token, and a dead
  * `cursor: not-allowed` fail the gate (allowlist with reasons in the script).
  * ========================================================================== */

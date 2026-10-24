@@ -204,11 +204,9 @@
     text-align: left;
 }
 
-/* Matches this repo's per-component focus-ring convention (see
- * `dx-components-theme.css`'s `[data-dx-interactive]` comment): a shared
- * selector can't reach this class, so each
- * interactive root keeps its own `:focus-visible` rule, written against
- * the shared `--dx-ring` token. */
+/* The theme's shared `[data-dx-interactive]` focus layer is not wired onto
+ * this class, so each interactive root keeps its own `:focus-visible` rule,
+ * written against the shared `--dx-ring` token. */
 .ec-row > .ec-row-open:focus-visible {
     border-radius: 0.375rem;
     box-shadow: var(--dx-ring);

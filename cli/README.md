@@ -59,7 +59,7 @@ That record is what separates "the registry changed this file" from "you edited 
 | identical to the registry's | nothing to do |
 | identical to what was last installed (you never touched it), registry has a newer version | replaced |
 | differs from what was installed (you edited it) | the whole component is left unchanged and listed; the command exits 1 |
-| installed without this tool (`dx components add`, or before the record existed), differs from the registry | treated as your edit, same as above (a component identical to the registry is adopted into the record) |
+| installed without this tool's record (`dx components add`), differs from the registry | treated as your edit, same as above (a component identical to the registry is adopted into the record) |
 | missing locally, still in the registry | restored |
 | not in the registry any more, untouched | deleted |
 | not in the registry any more, you edited it | kept |
@@ -108,7 +108,7 @@ Changed from `dx components`:
 
 - the default registry is this repository, not `DioxusLabs/components`;
 - a bare-name `componentDependencies` entry resolves in the registry of the component that names it (dx
-  resolves it in *its* default registry, which is why `date_picker` needed `{ "name", "git" }` objects); the
+  resolves it in *its* default registry, so a dependency from another registry needs a `{ "name", "git" }` object); the
   object form still works, and our own entries naming the default URL follow the copy being installed
   (`--path`, `file://`, `--rev`) instead of the network;
 - every component copies its global assets from its own registry;
@@ -116,7 +116,7 @@ Changed from `dx components`:
 - a modified global asset (your theme) is kept unless `--force`;
 - a clone goes to a temporary directory and is renamed into the cache only when complete;
 - `init`, `new` and `update` are new; `schema` is dropped; git runs through the `git` binary instead of libgit2, and there is no
-  async runtime or `cargo metadata` call, so the crate has six dependencies.
+  async runtime or `cargo metadata` call, so the crate has five dependencies.
 
 `component.json` is parsed exactly as dx parses it (same fields, `deny_unknown_fields`), so a manifest this tool
 accepts is one `dx components add` accepts.

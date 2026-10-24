@@ -126,7 +126,7 @@ pub fn default_cache_root() -> PathBuf {
 }
 
 /// An absolute path from an environment variable, ignoring an unset, empty or relative value (the rule the
-/// XDG spec and the `dirs` crate this replaces both apply).
+/// XDG spec and the `dirs` crate both apply).
 fn env_dir(key: &str) -> Option<PathBuf> {
     std::env::var_os(key)
         .map(PathBuf::from)

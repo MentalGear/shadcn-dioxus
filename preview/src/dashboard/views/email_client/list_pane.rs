@@ -173,8 +173,8 @@ fn MessageRow(
     if flagged {
         classes.push_str(" ec-flagged");
     }
-    // dev-docs/backlog.md row 37: axe's `nested-interactive` flagged this row
-    // for wrapping the whole thing (avatar, subject/sender/snippet, AND the
+    // dev-docs/backlog.md row 37: axe's `nested-interactive` rejects a row that
+    // wraps the whole thing (avatar, subject/sender/snippet, AND the
     // per-row star/trash toggle buttons) in a single `role="button"` div --
     // a button containing buttons, which no AT can announce sensibly (the
     // toggles become unreachable "content" of the outer button per the

@@ -22,7 +22,7 @@
 //! once after mount, and on each click (which also writes `localStorage`, wrapped in try/catch, and moves the
 //! attribute). The current page's link is scrolled into view inside the sidebar's own scroller after mount and
 //! after a toggle, by arithmetic on `scrollTop`: `Element.scrollIntoView` would also scroll the page and every
-//! other ancestor (the carousel's row-91 incident).
+//! other ancestor (backlog row 91, the carousel).
 
 use crate::components::dropdown_menu::{
     DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,

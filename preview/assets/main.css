@@ -12,20 +12,20 @@
 :root {
   /* Demo preview card fill: a soft step between the page and a card. Dark mixes the page with `--dx-card`
    * (#0a0a0a / #171717); in light `--dx-card` equals the page (#fff), so it mixes with `--dx-muted` instead
-   * (#f5f5f5), only 15% of it: a 50% mix (#fafafa) left a hovered Pagination page (#f5f5f5) within 5/255 of its
-   * surface (dark-surface-contrast needs 6), and 25% (#fcfcfc) left a hovered Toggle (#f8f8f8) 5/255 from it
+   * (#f5f5f5), only 15% of it: a 50% mix (#fafafa) would leave a hovered Pagination page (#f5f5f5) within 5/255 of its
+   * surface (dark-surface-contrast needs 6), and 25% (#fcfcfc) would leave a hovered Toggle (#f8f8f8) 5/255 from it
    * (theme-preset-contrast needs 6). */
   --dx-docs-preview-surface: color-mix(in var(--dx-hover-mix-space), var(--dx-background) var(--dark, 50%) var(--light, 85%), var(--dark, var(--dx-card)) var(--light, var(--dx-muted)));
   --dx-font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --dx-font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", "Menlo", "Monaco", "Consolas", monospace;
 
   /* axe `color-contrast` (dev-docs/backlog.md row 39): the docs blue is used as `color` (not a
-   * border/background) in 11 rules across this file, so it must clear WCAG's 4.5:1 for normal text
+   * border/background) in 8 rules across this file, so it must clear WCAG's 4.5:1 for normal text
    * on every surface it is painted on. A plain #2b7fff is 3.76:1 on white, and #0065ff is
-   * 4.31:1 on the #000 dark page and 3.80:1 on the #141313 dark card, so the `--light`/`--dark`
+   * 4.06:1 on the #0a0a0a dark page and 3.68:1 on the #171717 dark card, so the `--light`/`--dark`
    * pair splits the two modes.
    *
-   * Dark: the lighter #4d94ff (7.00:1 on #000, 6.18:1 on #141313, 5.04:1 on #262626).
+   * Dark: the lighter #4d94ff (6.60:1 on #0a0a0a, 5.97:1 on #171717, 5.04:1 on #262626).
    *
    * Light: #0065ff is 4.47:1 on `--dx-muted` (#f5f5f5), where the docs paint eyebrows and links on
    * cards, 0.03 short of 4.5. oklch(0.555 0.241 260.95), the same hue and chroma 5 thousandths of
@@ -71,10 +71,10 @@ html {
      sticky nav below it (`.dx-preview-navbar`, `position: sticky; top: 0`) --
      otherwise the target ends up rendered (and, worse, hit-tested for
      pointer input) underneath the nav (`oracle/tier2-html/native-dialog.spec.ts`
-     6c/6d/6e, SSG lane only): a real user hits this with no test harness at
+     6c/6d/6e, SSG run only): a real user hits this with no test harness at
      all, on any page whose sticky header is tall enough to reach whatever
      lands at the top. See `dev-docs/conformance-harness.md`'s hydration-parity
-     section for the specific regression this closes. */
+     section for the case this covers. */
   scroll-padding-top: var(--dx-navbar-height);
 
   /* Reserve the classic-scrollbar gutter in the SSR/pre-hydration layout
@@ -453,9 +453,9 @@ summary,
 
 /* axe `color-contrast` (dev-docs/backlog.md row 39 residue): the vendored
  * `github-light` syntax-highlighter theme's comment token, `#6e7781`,
- * measures 4.39:1 against this block's own background above
- * (`--primary-color-1`, `#fbfbfb` light) -- below WCAG AA's 4.5:1 for
- * normal text. That theme is generated at compile time by the
+ * is 4.55:1 on this block's own background above (`--dx-card`, #fff
+ * light) and 4.39:1 on a #fbfbfb card, so a host whose card is not pure white
+ * falls below WCAG AA's 4.5:1 for normal text. That theme is generated at compile time by the
  * `dioxus-code`/`arborium-theme` crates (crates.io -- not source this
  * repo vendors) into `docs/assets/github-light*.css`, which
  * `scripts/deploy-preview.sh` regenerates from scratch on every deploy,
@@ -464,17 +464,17 @@ summary,
  * `.dx-preview-code-theme <theme class>` beats the theme's own
  * `<theme class>`-only rule on specificity alone (two classes vs. one),
  * so it wins regardless of stylesheet load order. `#59636e` is GitHub's
- * own newer light-theme comment color (5.91:1 against `#fbfbfb`), same
+ * own newer light-theme comment color (6.11:1 on #fff, 5.91:1 on `#fbfbfb`), same
  * hue family, same visual register as a comment. Covers every class
  * variant the theme crate generates for this theme: the plain
  * `.dxc-github-light`, its `-system-light-` pairing (both actually
  * rendered on this site), and its `-system-dark-` pairing (the
  * `github-light` theme's own dark-context slot -- generated but not
- * currently rendered anywhere, fixed anyway since it is the same theme).
+ * currently rendered anywhere, covered since it is the same theme).
  * Deliberately does NOT touch `github-dark` (used for `data-theme=dark`,
- * a wholly different theme+palette, already >= 6.28:1 against its own
- * dark background -- see playwright/axe.ts's header doc for that
- * measurement). */
+ * a wholly different theme+palette, whose comment token `#8b949e` is
+ * 5.83:1 on `--dx-card` dark, #171717; every other token is lighter -- see
+ * playwright/axe.ts's header doc for the measurement). */
 /* stylelint-disable selector-class-pattern */
 .dx-preview-code-theme .dxc-github-light,
 .dx-preview-code-theme .dxc-system-light-github-light {
@@ -822,7 +822,7 @@ button.dx-theme-phone-trigger {
  * itself just needs to span full width so `Navbar`'s sticky full-bleed
  * background still reaches the viewport edges (its base `width: 100%` and
  * `min-height: 100svh` already do that unmodified; only `height`/`overflow`
- * need overriding, same reason as before: the base's fixed `height: 100svh`
+ * need overriding, same reason as above: the base's fixed `height: 100svh`
  * + `overflow: hidden` would clip content taller than one viewport instead
  * of letting the page grow to it).
  *
@@ -1742,8 +1742,8 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
 /* Widget masonry: the columns are FIXED GROUPS decided at build time (`MasonrySlot` in `preview/src/main.rs`), never balanced
  * from the cards' heights. CSS multi-column would assign each card to a column from the
  * height of everything laid out so far: the ~580 KB prerendered page is parsed in chunks and painted between
- * them, so every parsed card re-balanced the columns and cards jumped between them while the page loaded
- * (backlog row 214, seen at iPad widths). Here a card's column is a function of its DOM position only, and
+ * them, so every parsed card would re-balance the columns and cards would jump between them while the page loads
+ * (backlog row 214: iPad widths). Here a card's column is a function of its DOM position only, and
  * a card that has not arrived leaves everything already painted where it is (an element only ever grows
  * downward into space that no later card occupies yet).
  *
@@ -1785,7 +1785,7 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
 
 /* Scroll cost (dev-docs/archive/research/scroll-jank-2026-10-04.md, Cause 3): the home page is 70 live
  * demos + 14 blocks (~4.4k nodes, ~29k px), so any main-thread frame -- a skeleton pulse, a
- * spinner, a ticking player -- re-walked ALL of it (`PrePaint` 1.85 s over one scroll). Cards
+ * spinner, a ticking player -- re-walks ALL of it (`PrePaint` 1.85 s over one scroll, measured). Cards
  * that are off screen are skipped entirely (no style, layout or paint; their animations stop
  * costing frames); visible ones are an independent layout/paint/style boundary, so a pulse in
  * one card never re-walks the page. `auto` in `contain-intrinsic-block-size` remembers a
@@ -1802,7 +1802,7 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
  * box, so a demo that measures itself when it mounts (carousel slides and its virtual window, a chart's
  * width and so its default tooltip) would measure 0 there and never recover
  * (`carousel-virtual-wheel`, `carousel` and the chart tooltip specs guard it). Home-page cards are unaffected: their demos are measured the
- * same with and without the skip. If variants ever get it back, those demos must re-measure on
+ * same with and without the skip. If variants get it, those demos must re-measure on
  * un-skip first.
  *
  * `--dx-cv` is the ONE switch for all of them: every `content-visibility: auto` in this file is
@@ -1817,7 +1817,7 @@ html[data-nav-sort="category"] .dx-nav-sort .dx-nav-sort-option[data-nav-sort-op
 
 /* `overflow-clip-margin`: `content-visibility: auto` implies paint containment, which clips at
  * the box's padding edge, and these two boxes have no horizontal padding -- a focus ring on the
- * title link at the card's left edge (`outline-offset: 3px`) lost its left side. The margin
+ * title link at the card's left edge (`outline-offset: 3px`) would lose its left side. The margin
  * lets such ink out by 0.75rem without changing layout (not Safari: there the ring is clipped). */
 
 /* `contain-intrinsic-block-size` is the size of the CONTENT box, and both cards add padding (a component
@@ -2021,8 +2021,8 @@ html[data-cv-settle] {
 
 /* A card shows its meta and its preview side by side only when the GALLERY (not the viewport: the
  * docs sidebar takes ~175px of it when open) is wide enough for the widest demo to fit its preview
- * column. Below that it stacks, as on a phone. A viewport breakpoint gave 286px preview columns at
- * 780px (two columns of a 605px gallery) and clipped Field, Input Group, Pagination, Skeleton, Chart
+ * column. Below that it stacks, as on a phone. A viewport breakpoint would give 286px preview columns at
+ * 780px (two columns of a 605px gallery) and clip Field, Input Group, Pagination, Skeleton, Chart
  * Tooltip and Resizable between 780 and 1160px (backlog row 280). 67rem: Resizable's 450px group plus
  * the preview's 2rem padding a side is 516px, twice that plus the 2rem column gap is 1064px.
  * `playwright/card-fit.spec.ts` sweeps the widths and fails on any preview or showcase card whose
@@ -2248,7 +2248,7 @@ html[data-cv-settle] {
 }
 
 @media (width <= 760px) {
-  /* One compact row at phone widths (measured 54px at 360/390 vs 151px when
+  /* One compact row at phone widths (54px at 360/390, 151px if
    * it wrapped to three rows): no wrapping, tighter gaps, and the brand
    * wordmark visually hidden -- the logo stays as the home link, and the
    * text stays in the accessibility tree. */
@@ -2602,7 +2602,7 @@ html[data-cv-settle] {
 .dx-charts-card-body .dx-card {
   /* The Tooltips tab wraps each card in a block (not the flex row the other
    * tabs use), where a content-box `width: 100%` plus the card's border
-   * overflowed the cell. `.dx-card` is border-box from the theme's box-model
+   * would overflow the cell. `.dx-card` is border-box from the theme's box-model
    * rule (dx-components-theme.css), so `width: 100%` is the cell. */
   width: 100%;
   min-width: 0;
