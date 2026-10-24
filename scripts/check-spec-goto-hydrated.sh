@@ -18,7 +18,7 @@
 # Rule 1. In every `playwright/**/*.ts` (not `node_modules`, `fixtures/`, or `hydration.ts` itself), comments
 # stripped, a `.goto(` call whose argument is not the bare identifier `page` (that is a spec-local
 # `subject.goto(page)` helper, not Playwright's) fails unless the line, or the line directly above it, carries
-# `goto-ok: <reason>` -- a navigation that must not wait for hydration (a first-paint or pre-hydration oracle, a
+# `goto-ok: <reason>` -- a navigation that must not wait for hydration (a first-paint or pre-hydration oracle, `about:blank`, a
 # JavaScript-disabled or wasm-blocked context, a static fixture page that never sets the flag).
 #
 # Rule 2. A spec names a component page by its PATH route (`/component/<name>/`), never the legacy query form

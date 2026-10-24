@@ -142,7 +142,7 @@ while IFS=$'\t' read -r name cmd; do
       bad "gate $name runs cargo but is neither in CARGO_GATES nor reviewed as never-reused: $cmd" ;;
   esac
 done < <(scripts/run-gates.sh --list 2>/dev/null)
-for must in check-primitives-features check-attr-spread-collision clippy-default clippy-web clippy-server test test-server rustdoc; do
+for must in check-primitives-features check-attr-spread-collision clippy-default clippy-web clippy-server test test-server check-rustdoc; do
   [[ "$must" =~ $cargo_gates_re ]] || bad "$must is not reusable but must be"
 done
 [[ "fmt" =~ $cargo_gates_re ]] && bad "fmt must not be in CARGO_GATES"

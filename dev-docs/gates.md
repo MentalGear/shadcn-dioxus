@@ -10,11 +10,10 @@ its first paragraph and links the script.
 `CARGO_TARGET_DIR=<absolute isolated dir> scripts/run-gates.sh` runs every gate, in the order below, with timings.
 Green is **`ALL GREEN` with exit 0** and quotes only the tree it ran on (the summary prints HEAD plus a diff hash).
 Exit 1 is a red gate, exit 2 bad usage or environment, exit 3 a green but partial run (`--only REGEX`,
-`--skip REGEX`, `--stop-on-fail`): none of them is the full gate. `--list` prints the names.
+`--skip REGEX`, `--fast`, `--stop-on-fail`): none of them is the full gate. `--list` prints the names.
 
-- **Lanes** run the fast gates, everything except the cargo ones:
-  `scripts/run-gates.sh --skip '^(clippy-|test(-server)?$|rustdoc$|check-primitives-features$|check-attr-spread-collision$)'`
-  (exit 3 is expected). The main loop runs the one full run per merge batch
+- **Lanes** run the fast gates, everything except the cargo ones (every static check, `fmt` and `stylelint`, in
+  seconds, no build lock): `scripts/run-gates.sh --fast` (exit 3 is expected). The main loop runs the one full run per merge batch
   ([`lane-rules.md`](./lane-rules.md), "Gate procedure").
 - **Cargo-gate reuse (row 320).** A cargo gate stores its PASS under a key made of `scripts/cargo-inputs-hash.sh`
   (every file the cargo gates can read: the cargo crates by content, asset-only `css`, `svg`, images and fonts by path,
@@ -210,6 +209,6 @@ Exit 1 is a red gate, exit 2 bad usage or environment, exit 3 a green but partia
 
 **`test-server`** *(cargo gate)*: `cargo test -p preview --features server`: the arm `dx build --ssg` ships, where `ssr_parity` and the web-only effects differ from the plain arm.
 
-**`rustdoc`** *(cargo gate)*: Rustdoc builds without a warning: `cargo doc --no-deps --document-private-items` with `-D warnings`, on the default arm of the whole workspace and on the `web` arm of primitives and preview, so a broken intra-doc link, an unclosed HTML tag or a bare URL in a doc comment is red before docs.rs shows it.
+**`check-rustdoc`** *(cargo gate)* ([`scripts/check-rustdoc.sh`](../scripts/check-rustdoc.sh)): Rustdoc builds without a new warning: `cargo doc --no-deps --document-private-items` on the default arm of the whole workspace and on the `web` arm of primitives and preview, so a broken intra-doc link, an unclosed HTML tag, a bare URL or a public doc comment that links a private item is red before docs.rs shows it. The warnings that exist are a shrink-only debt register, `scripts/check-rustdoc.baseline.tsv` (`file<TAB>message`, no line numbers, so an edit above a site does not disturb it, a multiset): the gate fails on a warning that is not in it, on any rustdoc error, and on a baseline entry that no longer fires (delete the line, or run `--update-baseline`, which refuses to add one unless `--allow-grow` is given and the commit says why). Fix a site by rewriting the doc comment: link only items that are public, use a plain code span for a private one, escape or fence a literal `<tag>`, write a URL as `<url>`.
 
 **`stylelint`**: Stylelint over every stylesheet under `preview/src` and `preview/assets` (run with `pnpm exec`, which never downloads: a worktree without `node_modules` fails loudly).

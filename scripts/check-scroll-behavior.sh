@@ -32,6 +32,9 @@
 # ALLOW format: (path, fnmatch pattern on the whitespace-normalised selector entry or the script line, reason).
 # An entry that matches nothing fails the run as stale, so the list cannot rot into blanket permission.
 #
+# The browser half is `playwright/nav-scroll-instant.spec.ts`; it must not run through a fixture that forces
+# `scroll-behavior: auto !important`, which would mask the very bug it guards.
+#
 # Usage: scripts/check-scroll-behavior.sh [FILE ...]   (explicit files are for self-tests; the positive checks that
 # main.css still has the opt-in rule and index.html still sets it run only on the default scan)
 # Exit status: 0 when clean.

@@ -7,6 +7,7 @@
 #
 #   --only REGEX      run only gates whose name matches REGEX (egrep)
 #   --skip REGEX      skip gates whose name matches REGEX
+#   --fast            skip the cargo gates (what a lane runs: every static check, fmt and stylelint, in seconds)
 #   --stop-on-fail    stop at the first red gate (default: run everything, report all reds)
 #   --log-dir DIR     per-gate logs + summary.tsv (default: $CARGO_TARGET_DIR/run-gates)
 #   --list            print the gate names and exit
@@ -37,7 +38,7 @@
 #     (`cd preview && pnpm install --frozen-lockfile`, or symlink the main checkout's node_modules --
 #     backlog rows 72, 359) instead of fetching an unvetted version.
 #  6. Reuse (backlog row 320). The cargo gates (CARGO_GATES: check-primitives-features, check-attr-spread-collision,
-#     the three clippy arms, `cargo test`, `cargo test` on the server arm, rustdoc) are ~90 % of a full run, and a
+#     the three clippy arms, `cargo test`, `cargo test` on the server arm, check-rustdoc) are ~90 % of a full run, and a
 #     CSS-, spec- or docs-only batch cannot change their result. So a PASS is stored per (cargo-input hash,
 #     toolchain, command line) -- the key of scripts/gate-reuse.sh, whose inputs are scripts/cargo-inputs-hash.sh's
 #     working-tree file set -- and a later run with the SAME key reuses it, printing `reused from <tree>`; the
@@ -47,6 +48,9 @@
 #     $GATE_REUSE_DIR, default ${LANE_TGT:-/home/user/tgt}/gate-reuse.
 set -uo pipefail
 
+# The cargo gates: the slow ones, whose PASS is reused for an identical cargo-input key (guard 6) and which --fast leaves out.
+CARGO_GATES='^(clippy-|test(-server)?$|check-rustdoc$|check-primitives-features$|check-attr-spread-collision$)'
+
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 # shellcheck source=scripts/gate-reuse.sh
@@ -54,25 +58,25 @@ cd "$repo_root"
 
 die() { echo "run-gates: $*" >&2; exit 2; }
 
-only="" skip="" stop_on_fail=0 list=0 log_dir="" reuse=1
+only="" skip="" fast=0 stop_on_fail=0 list=0 log_dir="" reuse=1
 [ "${GATE_REUSE:-1}" = 0 ] && reuse=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --only) only="${2:?--only needs a REGEX}"; shift 2 ;;
     --skip) skip="${2:?--skip needs a REGEX}"; shift 2 ;;
+    --fast) fast=1; shift ;;
     --stop-on-fail) stop_on_fail=1; shift ;;
     --log-dir) log_dir="${2:?--log-dir needs a DIR}"; shift 2 ;;
     --list) list=1; shift ;;
     --no-reuse) reuse=0; shift ;;
-    -h|--help) sed -n '2,16p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help) sed -n '2,24p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) die "unknown option: $1 (try --help)" ;;
   esac
 done
+[ "$fast" = 0 ] || skip="${skip:+($skip)|}$CARGO_GATES"
 
 # --- the gate list, by group. name | command (run with bash -c from the repo root) -------
 CLIPPY_FLAGS='--all-targets -- -D warnings'
-DOC_FLAGS='--no-deps --document-private-items'
-RUSTDOC_CMD="RUSTDOCFLAGS='-D warnings' cargo doc --workspace $DOC_FLAGS && RUSTDOCFLAGS='-D warnings' cargo doc -p dioxus-primitives -p preview --features dioxus-primitives/web,preview/web $DOC_FLAGS"
 gates=(
   # group: Rust and rsx source rules
   "check-preview-composition|scripts/check-preview-composition.sh"
@@ -171,8 +175,7 @@ gates=(
   "test|cargo test --workspace"
   # `cargo test -p preview --features server`: the arm `dx build --ssg` ships, where `ssr_parity` and the web-only effects differ from the plain arm.
   "test-server|cargo test -p preview --features server"
-  # Rustdoc builds without a warning: `cargo doc --no-deps --document-private-items` with `-D warnings`, on the default arm of the whole workspace and on the `web` arm of primitives and preview, so a broken intra-doc link, an unclosed HTML tag or a bare URL in a doc comment is red before docs.rs shows it.
-  "rustdoc|$RUSTDOC_CMD"
+  "check-rustdoc|scripts/check-rustdoc.sh"
   # Stylelint over every stylesheet under `preview/src` and `preview/assets` (run with `pnpm exec`, which never downloads: a worktree without `node_modules` fails loudly).
   "stylelint|cd preview && pnpm exec stylelint \"src/**/*.css\" \"assets/**/*.css\""
 )
@@ -228,7 +231,6 @@ now() { date +%s.%N; }
 # mtime, so touch this worktree's sources once, right before the first cargo gate that actually runs (a
 # fast-gates-only run builds nothing and must not stamp the target). lane-touch skips it when the target's
 # `.tree-owner` stamp already names this worktree.
-CARGO_GATES='^(clippy-|test(-server)?$|rustdoc$|check-primitives-features$|check-attr-spread-collision$)'
 touched=0
 
 # Guard 6 state: the reuse key is computed once, lazily, at the first cargo gate that would run.

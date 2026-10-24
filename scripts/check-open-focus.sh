@@ -40,6 +40,8 @@
 # Comment-only lines are ignored for 1-4. Usage: scripts/check-open-focus.sh [FILE=repo/name ...]
 # (explicit files are scanned as given and skip the cross-file checks; used to prove the gate red).
 # Exit 0: clean. Exit 1: offending file:line on stdout.
+#
+# The browser half is `playwright/touch-open-focus.spec.ts`.
 
 set -euo pipefail
 

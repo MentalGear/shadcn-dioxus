@@ -27,6 +27,9 @@
 #      math, definition lists, smart punctuation and GFM alerts are injection surface and stay off. No
 #      `dangerous_inner_html` in the component or its demos: unsafe markup has no path to the DOM.
 #
+# The Rust half of the same promise is the component's closed node tree and `SafeHref`: no markdown node can carry raw
+# HTML or an unsafe link target.
+#
 # Usage: scripts/check-markdown-parser.sh
 # Exit status: 0 when clean, 1 on a violation.
 

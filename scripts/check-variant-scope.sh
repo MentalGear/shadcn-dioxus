@@ -48,6 +48,10 @@
 # entry is `(component dir, regex searched in the selector, reason)`; it must match at least one flagged
 # selector (a stale entry fails), and a reason is mandatory. Prefer the construction to an entry.
 #
+# The browser half is `playwright/variant-nesting.spec.ts`: on every page of a component whose sheet styles by a
+# variant attribute, each other-variant instance is cloned into a neutral host inside and beside each variant
+# instance, and every computed property must agree.
+#
 # Usage: scripts/check-variant-scope.sh [--list]      (--list prints every flagged site, allowlisted or not)
 # Exit status: 0 = every variant rule is scoped or allowlisted; 1 = a new one; 2 = bad usage.
 

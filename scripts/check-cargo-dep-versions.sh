@@ -41,6 +41,9 @@
 #      `scripts/check-primitives-features.sh` is the compile half; `scripts/registry-install-smoke.sh` the
 #      definitive pre-merge one.
 #
+# `scripts/stamp-release-rev.sh <sha>` writes the release rev into every `dioxus-primitives` entry; `--check` verifies
+# it and `--remove` returns the tree to the unstamped development state.
+#
 # Usage: scripts/check-cargo-dep-versions.sh
 # Exit status: 0 when clean, 1 on a violation.
 
