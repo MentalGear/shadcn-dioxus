@@ -114,8 +114,8 @@ impl SelectContext {
     /// The pointer (click or tap) open: the currently selected option is highlighted and focused,
     /// and scrolled into view, exactly as a keyboard open does (Base UI: a Select opens on its
     /// `selectedIndex` for every modality; a Menu, by contrast, highlights its first item for a
-    /// keyboard open only). With nothing selected, or in a multi-select, a pointer open stays as it was: no highlight,
-    /// DOM focus on the listbox container.
+    /// keyboard open only). With nothing selected, or in a multi-select, a pointer open highlights nothing and
+    /// leaves DOM focus on the listbox container.
     pub fn open_for_pointer(&mut self) {
         // Single-select only: a multi-select has no one selected option to open on, and its
         // pointer open keeps its focus on the listbox (ArrowDown then reaches the first option).

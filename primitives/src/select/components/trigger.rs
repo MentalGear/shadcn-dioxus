@@ -97,10 +97,9 @@ pub fn SelectTrigger(props: SelectTriggerProps) -> Element {
     // SSR'd HTML instead of replacing it -- WHATWG HTML's duplicate-
     // attribute parse error keeps the *first* (this component's own
     // default) while the CSR/hydrated DOM path keeps the *last* (the
-    // caller's), so server and client disagreed
+    // caller's), so server and client disagree
     // (`dev-docs/conformance-harness.md` hydration-parity Rule 4; see
-    // `toast.rs`'s `ToastRegionRendered` doc for the first component with
-    // this construction).
+    // `toast.rs`'s `ToastRegionRendered` doc for this construction).
     //
     // axe `button-name` (backlog row 8): a plain `<button>`'s accessible
     // name computes from its own text content ("name from content"), but
@@ -215,7 +214,7 @@ pub fn SelectTrigger(props: SelectTriggerProps) -> Element {
         // `#clip-select-trigger`) is in the unselected/default-placeholder
         // state, where this fallback matches the visible text exactly).
         // Same `has_caller_name` gate and merge-order reasoning as the
-        // `aria-labelledby` attempt above and as `list.rs`'s identical
+        // `aria-labelledby` approach above and as `list.rs`'s identical
         // pattern: only when the caller has not already supplied a real
         // `aria-label`/`aria-labelledby` (this component's own doc example
         // demonstrates `aria_label: "Select Trigger"` as the intended

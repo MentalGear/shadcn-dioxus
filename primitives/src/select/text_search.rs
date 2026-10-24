@@ -36,7 +36,7 @@ pub(super) fn normalized_distance(
     value_characters: &[char],
     keyboard: &AdaptiveKeyboard,
 ) -> f32 {
-    // Only use the the start of the value characters
+    // Only use the start of the value characters
     let value_characters =
         &value_characters[..value_characters.len().min(typeahead_characters.len())];
     // Only use the end of the typeahead characters

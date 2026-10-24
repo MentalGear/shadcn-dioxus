@@ -349,8 +349,8 @@ pub struct ResizablePanelGroupProps {
     pub disabled: ReadSignal<bool>,
 
     /// The text direction. Only affects a `Horizontal` group: its panels
-    /// render in reverse visual order (`flex-direction: row-reverse`) and
-    /// its handles' `ArrowLeft`/`ArrowRight` swap roles, so the physically-
+    /// mirror (the container stays a plain `flex-direction: row`, which `dir="rtl"`
+    /// reverses) and its handles' `ArrowLeft`/`ArrowRight` swap roles, so the physically-
     /// left arrow key always shrinks whichever panel is visually on the
     /// left. A `Vertical` group ignores this entirely. Defaults to the
     /// nearest [`crate::direction::DirectionProvider`], or LTR if there is

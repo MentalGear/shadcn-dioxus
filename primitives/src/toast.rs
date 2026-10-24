@@ -74,8 +74,8 @@ impl ToastId {
     }
 }
 
-/// Lets an event handler end in `toast.info(..)` without a semicolon, as it could before `show`
-/// returned a handle: a `ToastId` is a plain value, so "returning it from a handler" does nothing.
+/// Lets an event handler end in `toast.info(..)` without a semicolon although `show` returns a
+/// handle: a `ToastId` is a plain value, so "returning it from a handler" does nothing.
 impl crate::dioxus_core::SpawnIfAsync<()> for ToastId {
     fn spawn(self) {}
 }
@@ -622,7 +622,7 @@ thread_local! {
 /// primitive's own markup, at most once per WASM instance -- dev-docs/backlog.md
 /// row 44, construction (2).
 ///
-/// ## The bug this closes
+/// ## Why the primitive carries a baseline
 ///
 /// `ToastRegionRendered`'s `div[popover]` and [`Toast`]'s
 /// `div[role="alertdialog"]` carry no layout CSS of their own; every real
@@ -636,17 +636,16 @@ thread_local! {
 /// whatever box the *engine's own* UA popover-stylesheet defaults
 /// (`[popover] { inset: 0; margin: auto; border: solid; padding: 0.25em;
 /// overflow: auto; background-color: Canvas; }`) plus `fit-content` sizing
-/// happened to produce -- per dev-docs/backlog.md row 44's own root-cause
-/// analysis, this is a real gap between engines: Chromium's default gives
-/// it a small (~105x40px) on-screen box (measured there
-/// on a real build), while the fixture's "Add toast" appearing dead
-/// on an iOS 18 device is the unverified-but-plausible
-/// WebKit instance of the same gap -- this crate has no WebKit build to
-/// confirm that half against directly. Rather than tie the
-/// fixture's deliberately-raw composition to the theme (which would also
-/// mean removing `scripts/check-preview-composition.sh`'s stated exemption
-/// for it, a bigger and unrelated call), this gives the *primitive itself*
-/// a minimal, engine-independent layout baseline -- the same idea
+/// happened to produce -- a gap between engines (dev-docs/backlog.md row
+/// 44): Chromium's default gives it a small (~105x40px) on-screen box
+/// (measured on a real build), and WebKit's is the plausible but
+/// unverified cause of an "Add toast" that looks dead on iOS 18 (this
+/// crate has no WebKit build to confirm that half against directly).
+/// Rather than tie the fixture's deliberately-raw composition to the
+/// theme (which would also mean removing
+/// `scripts/check-preview-composition.sh`'s stated exemption for it), this
+/// gives the *primitive itself* a minimal, engine-independent layout
+/// baseline -- the same idea
 /// `top_layer.rs`'s `ensure_anchor_positioning_styles` already applies for
 /// anchor positioning, just for toast's own box instead.
 ///
@@ -845,7 +844,7 @@ fn ToastRegionRendered(
     // on this).
 
     // Installs `ensure_toast_base_styles`'s engine-injected fallback
-    // stylesheet -- see its own doc for the bug this closes (dev-docs/backlog.md
+    // stylesheet -- see its own doc for the gap it fills (dev-docs/backlog.md
     // row 44) and why zero relative-ordering risk exists here (unlike
     // `use_anchor_position_fallback`'s pairing with a same-tick measurement
     // eval, nothing below reads computed layout, so a separate `use_effect`
@@ -930,7 +929,7 @@ fn ToastRegionRendered(
     onmounted: EventHandler<MountedEvent>,
     children: Element,
 ) -> Element {
-    // Same `style`-clobber fix as the web arm above (dev-docs/backlog.md row
+    // Same `style` fold as the web arm above (dev-docs/backlog.md row
     // 44) -- kept in both arms for the reason this file's own "Native
     // (Blitz) arm" doc gives for the identical id/attribute-dedup choice:
     // both arms' semantics should agree by construction, not by accident of
@@ -1233,11 +1232,10 @@ pub fn Toast(props: ToastProps) -> Element {
     // makes `merge_attributes` treat them as a single collision and keep
     // only the caller's -- silently dropping the index the themed
     // stylesheet's `z-index: calc(var(--toast-count) - var(--toast-index))`
-    // reads. No caller in this repo passes a per-toast `style`, so this is
-    // prevention rather than a live defect; the identical clobber on the
-    // sibling element of the one row 44 covers would otherwise be a second
-    // independent instance of the same bug. `--toast-index` goes first so a
-    // caller can override any property but never drop the counter.
+    // reads. No caller in this repo passes a per-toast `style`; the fold keeps
+    // this element from the same clobber as the region above (row 44).
+    // `--toast-index` goes first so a caller can override any property but
+    // never drop the counter.
     let (caller_style, props_attributes) = crate::fold_style_attributes(props.attributes);
     let item_style = match caller_style {
         Some(caller_style) => format!(

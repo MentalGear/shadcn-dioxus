@@ -13,14 +13,14 @@
 //!
 //! - **a stable layer**: it depends only on the count, the layout and the text, so a scroll never
 //!   re-renders it and the DOM the browser's find walks stays put while it walks it (a layer that
-//!   dropped the placeholders of mounted items changed on every window move, and find-next then
-//!   skipped items, row 153). The price is that a mounted item's text is in the DOM twice, so its
+//!   dropped the placeholders of mounted items would change on every window move, and find-next
+//!   would skip items, row 153). The price is that a mounted item's text is in the DOM twice, so its
 //!   match counts twice;
 //! - **chunks**: rows in groups of [`FIND_CHUNK`], each a wrapper element (Dioxus 0.7.9 appends new
 //!   children with a 16-bit count, so one parent receiving 65,536 or more in one edit keeps only
 //!   the last `n mod 65536`) and a `content-visibility: auto` box of its rows' summed estimate
-//!   (without it every window move re-laid out every placeholder: 100,000 rows, 20 scroll frames
-//!   took 2.6 s against 0.3 s, debug build); find-in-page still searches skipped content;
+//!   (without it every window move re-lays out every placeholder: 100,000 rows, 20 scroll frames
+//!   take 2.6 s against 0.3 s, debug build); find-in-page still searches skipped content;
 //! - **no stray paint**: a revealed placeholder is hidden again in the next frame, and the find
 //!   bar's highlight on it is transparent (`::search-text`, Chromium 144+): a placeholder sits at
 //!   its item's estimated position, not on the item's own text;

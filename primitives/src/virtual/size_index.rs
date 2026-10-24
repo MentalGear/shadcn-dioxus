@@ -342,7 +342,7 @@ mod tests {
         items
     }
 
-    /// The old `find_nearest_binary_search`.
+    /// The nearest-item binary search, as the oracle's reference.
     fn naive_nearest(items: &[VirtualItem], offset: u32) -> usize {
         items
             .binary_search_by(|item| item.start().cmp(&offset))
@@ -500,7 +500,7 @@ mod tests {
 
     #[test]
     fn adaptive_average_counts_every_measurement_even_past_the_end() {
-        // The old `item_size_cache` average included entries at or beyond `count`.
+        // The average counts entries at or beyond `count` too.
         let mut index = SizeIndex::new(SizeEstimates::evaluate(4, None), HashMap::new());
         index.set_measured(100, 300);
         assert_eq!(index.size(0), 300);
@@ -535,8 +535,8 @@ mod tests {
             let rounds = if count >= 1_000_000 { 20 } else { 200 };
             let mut measured: HashMap<usize, u32> = HashMap::new();
 
-            // Old: every new measurement rebuilt the Vec<VirtualItem> (the memo), and every
-            // resize event cloned it (`measurements.peek().clone()`).
+            // Naive: every new measurement rebuilds the Vec<VirtualItem> (the memo), and every
+            // resize event clones it (`measurements.peek().clone()`).
             let t = Instant::now();
             let mut keep = 0u64;
             for i in 0..rounds {
@@ -547,7 +547,7 @@ mod tests {
             }
             let old = t.elapsed() / rounds as u32;
 
-            // New: one tree update, one position lookup.
+            // Index: one tree update, one position lookup.
             let mut index = SizeIndex::new(
                 SizeEstimates::evaluate(count, Some(estimate)),
                 HashMap::new(),

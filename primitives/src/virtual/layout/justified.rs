@@ -739,7 +739,7 @@ mod tests {
         fn a_degenerate_aspect_with_a_floor_does_not_explode_row_height() {
             // A degenerate item (floored to the 1:20 sliver) at the start of a row must not make
             // every backoff candidate look sub-floor, cascading to a one tile row and dividing by
-            // about 0.05: a 375px container exploded to 7500px tall. Such a row is exempt from
+            // about 0.05: a 375px container would explode to 7500px tall. Such a row is exempt from
             // the floor entirely, matching the no-floor baseline exactly.
             let mut aspects = vec![0.0];
             aspects.extend([1.0; 8]);

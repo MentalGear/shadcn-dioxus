@@ -140,7 +140,7 @@ impl ScrollFade {
 ///   it floats over the content and fades with it. A `ResizeObserver` on the scroller's content box sees
 ///   a scrollbar appear or go, so nothing listens to scroll for this.
 /// - Where a browser has no scroll-driven animations (`animation-timeline: scroll()`), `dx-effects.css`
-///   can only draw every fade edge statically, so a faded scroller showed a fade past which there was
+///   can only draw every fade edge statically, which would show a fade past which there is
 ///   nothing to scroll to; there the script also sets the four depth properties itself from the scroll
 ///   position and the distance left (`|scrollLeft|`, so RTL reads like LTR). Where the animations exist
 ///   the CSS drives them and no scroll listener is added.
@@ -299,7 +299,7 @@ pub fn ScrollArea(props: ScrollAreaProps) -> Element {
     //
     // The overflow is a `style` attribute of the same list, not separate style fields next to the
     // spread: a spread `style` placed beside explicit style fields replaces them (a group given
-    // `style: "width: 100%"` lost its `overflow-x: auto` and spilled out of the page).
+    // `style: "width: 100%"` would lose its `overflow-x: auto` and spill out of the page).
     let overflow_style = format!(
         "overflow-x: {}; overflow-y: {};",
         overflow_x.unwrap_or("visible"),
