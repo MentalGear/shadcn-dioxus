@@ -636,7 +636,7 @@ pub(in crate::chart) fn fmt_decimal(v: f64, decimals: u8) -> String {
 }
 
 /// Format a coordinate for an SVG attribute: at most 3 decimal places (per
-/// `$S/chart-api.md`'s numeric-formatting rule). See [`fmt_decimal`].
+/// `dev-docs/archive/research/chart-2026-09-19.md`'s numeric-formatting rule). See [`fmt_decimal`].
 pub(in crate::chart) fn fmt_num(v: f64) -> String {
     fmt_decimal(v, 3)
 }

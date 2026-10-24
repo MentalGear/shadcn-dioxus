@@ -1,15 +1,14 @@
 //! The [`ChartKind::Area`](crate::chart::ChartKind::Area) family: a filled
-//! area under a (possibly curved) line, optionally stacked. Ported
-//! unchanged (stage-2 `s2-refactor` lane) from `components::chart`'s own
-//! `SeriesMarks` -- see `components::layout` for the scale/margin math this
+//! area under a (possibly curved) line, optionally stacked. See
+//! `components::layout` for the scale/margin math this
 //! reads via `SeriesRenderContext`, and `components::series`'s own module
-//! doc for the `stacked`/`curve`-stay-on-`ChartProps` decision.
+//! doc for why `stacked`/`curve` live on `ChartProps`.
 //!
-//! ## Stage-2 `s2-area` additions: [`AreaOptions`]
+//! ## [`AreaOptions`]
 //!
-//! Four fields, each self-contained in this file (no edit to any other
-//! stage-2 lane's owned file -- `components::layout`/`engine::geometry` --
-//! was needed for any of them; see each field's own doc for how):
+//! Four fields, each self-contained in this file (none needs a change to
+//! `components::layout`/`engine::geometry`; see each field's own doc for
+//! how):
 //! - [`AreaOptions::fill_opacity`] -- an inline `style="fill-opacity:..."`
 //!   on the area path itself, which (ordinary CSS cascade: inline beats a
 //!   stylesheet class selector) overrides the themed package's own
@@ -23,23 +22,22 @@
 //!   `use_chart` is `try_consume_context`-based, not hook-list-based (see
 //!   its own doc), so calling it here, one plain-function frame below
 //!   `Chart`'s own render body (which already called it once), is exactly
-//!   as sound as calling it from `Chart` itself, and needs no new field on
-//!   a struct owned by another lane. SSR-stable: derived only from `id`
+//!   as sound as calling it from `Chart` itself, and needs no new
+//!   `SeriesRenderContext` field. SSR-stable: derived only from `id`
 //!   (already SSR-stable, `ChartContainer`'s own `use_id_or`/
 //!   `use_unique_id`) and each series' own already-sanitized `slot()` --
 //!   nothing randomized, nothing client-only.
 //! - [`AreaOptions::connect_nulls`] -- pre-compacts this series' `(x,
 //!   value)` pairs to only the defined ones *before* calling
 //!   [`plot_runs`], rather than changing what counts as a gap inside that
-//!   shared (`engine::geometry`, `s2-bar`-owned) function itself: with no
+//!   shared (`engine::geometry`) function itself: with no
 //!   `None` left in the input, `plot_runs` already returns one unbroken
 //!   run spanning every defined point, exactly the "skip it, connect
 //!   across it" behavior this prop asks for, via a function this file
 //!   doesn't need to touch.
 //! - [`AreaOptions::stack_mode`] -- percent ("100%"/"expand") stacking.
 //!   `components::chart` threads this field through to `components::
-//!   layout::build`'s own `LayoutParams::stack_mode` (stage-2 chart round,
-//!   §4(c) of the handoff), so `ctx.y_scale`/`ctx.stacked_spans` already
+//!   layout::build`'s own `LayoutParams::stack_mode`, so `ctx.y_scale`/`ctx.stacked_spans` already
 //!   reflect [`StackMode::Expand`]'s normalized 0..1 domain by the time
 //!   this file's own `render` reads them -- no local recompute needed
 //!   here, and `Chart`'s shared grid lines/y-axis ticks/tooltip anchor
@@ -56,8 +54,7 @@ use crate::chart::engine::scale::fmt_num;
 use crate::chart::engine::stack::StackMode;
 
 /// [`crate::chart::ChartKind::Area`]'s own options. See this module's own
-/// doc for how each field is implemented without touching any other
-/// stage-2 lane's file.
+/// doc for how each field is implemented.
 #[derive(Clone, PartialEq, Debug)]
 pub struct AreaOptions {
     /// Fill each series' area with a top-to-bottom `<linearGradient>`
@@ -158,9 +155,9 @@ fn render_one(ctx: &SeriesRenderContext, s: usize, opts: &AreaOptions, fill: &st
     if ctx.stacked {
         let n = ctx.xs.len();
         // `ctx.y_scale`/`ctx.stacked_spans` already reflect `opts.stack_mode`
-        // (`components::layout::build` reads `LayoutParams::stack_mode`,
-        // §4(c) of the stage-2 handoff -- `components::chart` threads
-        // `AreaOptions::stack_mode` through to it), so `StackMode::Normal`
+        // (`components::layout::build` reads `LayoutParams::stack_mode`;
+        // `components::chart` threads `AreaOptions::stack_mode` through to
+        // it), so `StackMode::Normal`
         // and `StackMode::Expand` read the identical shared scale/spans
         // here; no per-mode branch or local recompute needed. Each arm's
         // own `.collect::<Vec<_>>()` turbofish (not an outer

@@ -1,8 +1,7 @@
 //! The [`ChartKind::Line`](crate::chart::ChartKind::Line) family: a
 //! (possibly curved) line with no fill, optionally with a dot and/or a
-//! text label at each defined data point. Ported (stage-2 `s2-refactor`
-//! lane) from `components::chart`'s own `SeriesMarks`, then extended
-//! (stage-2 `s2-line` lane) with everything shadcn's own ten
+//! text label at each defined data point. It covers
+//! everything shadcn's own ten
 //! `chart-line-*` demos need beyond a plain line: a configurable dot
 //! radius and stroke width, a caller-supplied custom dot renderer, a
 //! per-point label, and active-dot enlargement on hover/keyboard-focus --
@@ -69,9 +68,9 @@ pub enum LineLabels {
 /// [`crate::chart::ChartKind::Line`]'s own options.
 #[derive(Clone, PartialEq, Debug)]
 pub struct LineOptions {
-    /// Show a dot at each defined data point. Renamed from `ChartProps`'
-    /// pre-stage-2 `show_dots` prop (`components::series`'s own module doc)
-    /// -- this was already the only prop that was ever Line-specific.
+    /// Show a dot at each defined data point. It lives here, not on
+    /// `ChartProps` (`components::series`'s own module doc), because it is
+    /// the only Line-specific prop.
     /// Ignored (a dot is drawn regardless of this flag) when [`Self::dot`]
     /// is `Some`: a caller supplying a custom renderer wants it drawn at
     /// every point, not gated behind a second flag it would always also
@@ -81,7 +80,7 @@ pub struct LineOptions {
     /// (hovered/keyboard-focused) point's dot renders at twice this radius
     /// -- shadcn's own `activeDot={{ r: 6 }}` paired with an implicit
     /// default dot radius of `3` (Recharts' own default), the exact 3-to-6
-    /// jump this crate's pre-stage-2 hardcoded `r="3"` already implied.
+    /// jump of this crate's default `r="3"`.
     /// Has no effect when [`Self::dot`] is `Some`: a custom renderer is
     /// given [`DotContext::active`] instead and decides its own sizing.
     pub dot_radius: f64,
@@ -97,8 +96,8 @@ pub struct LineOptions {
     /// data point.
     pub labels: LineLabels,
     /// The line's stroke width, in SVG user units. Every shadcn line demo
-    /// sets this to `2` explicitly, matching this crate's pre-stage-2
-    /// hardcoded value -- a real, caller-settable prop nonetheless (not
+    /// sets this to `2` explicitly, matching this crate's default of `2`
+    /// -- a real, caller-settable prop nonetheless (not
     /// merely for parity), so nothing about a themed line's weight is
     /// stuck in CSS-only territory the way a fully unstyled primitive
     /// shouldn't be.
@@ -218,7 +217,7 @@ fn render_dot(
     // own `[data-slot="chart-dot"] { fill: var(--series-color); ... }`
     // rule already matches every dot unconditionally. The same reasoning
     // `ChartContainer`'s own `--color-<key>` custom property already
-    // relies on (`$S/chart-api.md`), applied per-element instead of
+    // relies on (`dev-docs/archive/research/chart-2026-09-19.md`), applied per-element instead of
     // per-series.
     let dot_style = ctx
         .data
@@ -302,7 +301,7 @@ mod tests {
                     // exercise the *active* dot's doubled radius. That
                     // path is covered live instead
                     // (`playwright/line_chart.spec.ts`'s hover assertion),
-                    // the same split `chart.rs`'s own pre-existing
+                    // the same split `chart.rs`'s own
                     // `cursor_group_is_present_but_empty_before_any_hover`
                     // test already draws for the same reason.
                     keyboard: false,
@@ -431,12 +430,11 @@ mod tests {
         assert!(html.contains(r#"r="5""#));
         // A `bool`-valued attribute (unlike every `&str`/`String` one)
         // renders unquoted (`data-active=false`, not `data-active="false"`)
-        // -- `chart.rs`'s own pre-existing `tabindex=0` test already pins
+        // -- `chart.rs`'s own `tabindex=0` test already pins
         // this exact dioxus-ssr behavior for a numeric attribute; the same
         // renderer code path (`AttributeValue::Bool`/`::Int` both go
         // through `write_attribute`'s plain `{name}={value}` branch, not
-        // the quoted `::Text` one) applies here too -- confirmed by
-        // actually hitting the quoted form's assertion failure first.
+        // the quoted `::Text` one) applies here too.
         assert!(html.contains("data-active=false"));
         assert!(!html.contains("data-active=true"));
     }
@@ -644,10 +642,10 @@ mod tests {
 
     #[test]
     fn line_options_default_matches_pre_stage_2_hardcoded_values() {
-        // Pins the exact pre-stage-2 constants (`r="3"`, `stroke-width: 2`
+        // Pins the plain-line constants (`r="3"`, `stroke-width: 2`
         // from `chart/style.css`) as this struct's own defaults, so a
-        // caller who never touches `LineOptions` sees byte-identical
-        // output to before this round.
+        // caller who never touches `LineOptions` gets exactly a plain
+        // line.
         let opts = LineOptions::default();
         assert!(!opts.dots);
         assert_eq!(opts.dot_radius, 3.0);

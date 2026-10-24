@@ -15,7 +15,7 @@ use super::engine::{ChartDatum, ChartKind};
 
 /// The pixel-space layout `Chart` computed for its own SVG, shared so
 /// `ChartTooltip` can position itself "from the same scales" (per
-/// `$S/chart-api.md`) with no DOM measurement of its own. `Chart` is the
+/// `dev-docs/archive/research/chart-2026-09-19.md`) with no DOM measurement of its own. `Chart` is the
 /// only writer (a plain assignment during its own render, not inside an
 /// effect -- its width/height/axis-visibility props are the only inputs
 /// this depends on, so it's cheap and correct to just recompute and
@@ -195,9 +195,8 @@ pub struct ChartContext {
     /// `Chart`'s own computed pixel layout, shared for `ChartTooltip`'s
     /// benefit -- see [`ChartLayout`]'s own doc. Not part of this crate's
     /// public API surface (`pub(crate)`, unlike every other field here):
-    /// an internal wiring detail this design needed, not a contract this
-    /// lane commits to keeping stable for outside callers of
-    /// [`use_chart`].
+    /// an internal wiring detail, not a contract kept stable for outside
+    /// callers of [`use_chart`].
     pub(crate) layout: Signal<Option<ChartLayout>>,
     /// The pointer, relative to the chart box -- see [`Cursor`]. Written by
     /// `Chart`'s pointer/keyboard handlers, read by `ChartTooltip`.
@@ -310,7 +309,7 @@ pub fn use_chart() -> ChartContext {
 // `unwrap_or_else(|| panic!(...))`, and isn't independently unit-tested
 // here: Dioxus's `VirtualDom` catches a panic raised from inside a
 // component body at the component boundary (so the rest of a page doesn't
-// go down with it -- confirmed empirically this lane, not assumed), which
+// go down with it), which
 // makes `#[should_panic]` unable to observe it through `rebuild_in_place`.
 // The success path (`use_chart` returning the provided context) is
 // exercised by every other test in this module tree that renders a

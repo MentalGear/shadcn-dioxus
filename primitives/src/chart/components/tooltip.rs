@@ -12,7 +12,7 @@ use crate::{fold_style_attributes, merge_attributes};
 
 /// The shape of a [`ChartTooltip`] row's color indicator -- shadcn's
 /// `ChartTooltipContent`'s own `indicator` prop (`"dot" | "line" |
-/// "dashed"`, `$S/refs/ui/apps/v4/registry/new-york-v4/ui/chart.tsx`), plus
+/// "dashed"`, shadcn-ui/ui `apps/v4/registry/new-york-v4/ui/chart.tsx`), plus
 /// a `None` variant [`ChartTooltipProps::hide_indicator`] already covers as
 /// a separate bool -- kept here too so a caller can express "no indicator"
 /// either way (`hide_indicator: true`, matching shadcn's own distinct
@@ -265,8 +265,7 @@ pub fn ChartTooltip(props: ChartTooltipProps) -> Element {
     let indicator_str = props.indicator.as_str();
 
     // The active index's own `(left%, top%)` anchor, computed by whichever
-    // family rendered (§4(d) of the stage-2 handoff -- `ChartLayout`'s own
-    // doc) -- never read when `data-state="closed"` (a themed stylesheet
+    // family rendered (`ChartLayout`'s own doc) -- never read when `data-state="closed"` (a themed stylesheet
     // hides it), so an arbitrary fallback is fine whenever either half of
     // this is still unset (no layout yet, or this family hasn't populated
     // an anchor for the active index).
@@ -967,7 +966,7 @@ mod tests {
         assert_eq!(rows[1].value, None);
     }
 
-    /// Every field defaulted -- the base every stage-2 test below starts
+    /// Every field defaulted -- the base every test below starts
     /// from via struct-update (`ChartTooltipProps { field: val,
     /// ..default_tooltip_props() }`), since `ChartTooltipProps` has no
     /// `Default` impl of its own (`Callback`-holding props structs
@@ -989,7 +988,7 @@ mod tests {
     }
 
     /// Renders `ChartTooltip` with the given props, always open at index 0
-    /// -- the shared harness every stage-2 test below builds on. Takes the
+    /// -- the shared harness every test below builds on. Takes the
     /// already-built `ChartTooltipProps` directly (not a closure over
     /// [`default_tooltip_props`]): a closure's anonymous type never
     /// implements `PartialEq`, which `#[derive(Props)]` requires of every
@@ -1008,8 +1007,8 @@ mod tests {
     /// Backlog row 108: located via [`find_element`] (an order-independent
     /// attribute-map lookup), not by slicing the raw HTML string from the
     /// `data-slot="chart-tooltip"` match's own position -- the root
-    /// `<div>`'s attributes go through `merge_attributes` (§4(a) of the
-    /// stage-2 handoff), which sorts them by name, so `data-slot` is very
+    /// `<div>`'s attributes go through `merge_attributes`, which sorts
+    /// them by name, so `data-slot` is very
     /// often NOT the tag's first attribute (e.g. `aria-hidden`/
     /// `data-indicator` both sort before it), and slicing from the match
     /// itself would silently drop every attribute that sorts earlier (a
@@ -1053,8 +1052,7 @@ mod tests {
             ..default_tooltip_props()
         });
         // Not one concatenated substring match: the root's three
-        // attributes go through `merge_attributes` (§4(a) of the stage-2
-        // handoff), which sorts by name -- correct, SSR/CSR-consistent
+        // attributes go through `merge_attributes`, which sorts by name -- correct, SSR/CSR-consistent
         // output, just not necessarily in the order they were written in
         // this file's own `attributes!` call. Each attribute's own
         // presence/value is what matters, not their relative order, so

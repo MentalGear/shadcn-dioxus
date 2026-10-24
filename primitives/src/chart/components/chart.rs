@@ -1916,18 +1916,14 @@ mod tests {
         assert!(html.contains(r#"data-slot="chart-grid""#));
     }
 
-    // -- Stage-2 polar kinds (Pie/RadialBar) --------------------------------
+    // -- Polar kinds (Pie/Radar/RadialBar) ----------------------------------
     //
     // Each kind renders the same `Harness` used by every Cartesian test
-    // above (it's generic over `kind`). RadialBar is still `s2-refactor`'s
-    // placeholder stub; Pie is `s2-polar`'s own real `series::pie::render`
-    // -- see that module's own doc for why `sample_config`'s two series
+    // above (it's generic over `kind`). Pie is `series::pie::render` -- see
+    // that module's own doc for why `sample_config`'s two series
     // (desktop/mobile) make this a *stacked* (two-ring) pie, not the
     // single-ring case (covered in detail by `series::pie`'s own test
-    // module instead). `ChartKind::Radar` moved out of this section (below,
-    // "Radar (landed, s2-radar)") once `s2-radar` replaced its own stub --
-    // see that test's own comment for why this section's original
-    // assertions about it went stale, not wrong-from-the-start.
+    // module instead).
 
     #[test]
     fn pie_kind_renders_one_ring_per_series_and_the_table_without_panicking() {
@@ -1948,23 +1944,15 @@ mod tests {
         assert!(!html.contains(r#"data-slot="chart-cursor""#));
     }
 
-    // -- Radar (landed, s2-radar) -------------------------------------------
+    // -- Radar -------------------------------------------------------------
     //
-    // `series::radar::render` replaced its own placeholder body (stage-2
-    // chart round, `s2-radar` lane) with real per-category-angle geometry:
-    // its own grid/spokes/rim labels and angular hit-sectors (`is_cartesian`
-    // is still `false` for `Radar`, so none of that comes from `Chart`'s own
-    // Cartesian-only rendering above -- `series::radar`'s own module doc has
-    // the full account). This test's ORIGINAL two assertions (`!contains
-    // "chart-grid"`, `!contains "chart-hit-bands"`) encoded that placeholder
-    // state, not a permanent contract -- flipped here to match, rather than
-    // left stale, since a green `cargo test --workspace` gate can't
-    // otherwise pass once that family has real content. `chart.rs` is
-    // "`s2-refactor` only, forever" per `$S/stage2-lanes.md`'s ownership
-    // table for everything else in this file; this one pre-existing test's
-    // now-incorrect assertions about a specific `ChartKind`'s stub state are
-    // the documented, narrow exception -- `series::radar`'s own module tests
-    // carry the actual grid/hit-sector/dot/label coverage.
+    // `series::radar::render` draws its own grid/spokes/rim labels and
+    // angular hit-sectors (`is_cartesian` is `false` for `Radar`, so none of
+    // that comes from `Chart`'s own Cartesian-only rendering above --
+    // `series::radar`'s own module doc has the full account). This test only
+    // checks that a `ChartKind` with real content renders the family's
+    // marks -- `series::radar`'s own module tests carry the actual
+    // grid/hit-sector/dot/label coverage.
     #[test]
     fn radar_kind_renders_its_own_grid_and_hit_sectors() {
         let html = render(ChartKind::Radar, false, true);

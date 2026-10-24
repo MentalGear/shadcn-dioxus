@@ -7,9 +7,9 @@
 //!
 //! # Why this seam exists
 //!
-//! By owner decision (recorded in this repo's
-//! own chart-development ledger): this engine is intended, once the
-//! `Chart` component has landed here and proven itself (oracle green,
+//! By owner decision (see `dev-docs/archive/research/chart-2026-09-19.md`):
+//! this engine is intended, once the
+//! `Chart` component has proven itself (oracle green,
 //! deployed), to be offered upstream to the `dioxus-community/
 //! dioxus-charts` project. That only works if this folder is *actually*
 //! liftable into another crate unchanged -- not merely "conceptually
@@ -57,9 +57,8 @@
 //!   specifically had to move out of this dioxus-free tree.
 //! - [`placement`] -- [`placement::place_tooltip`], the tooltip's
 //!   offset/flip/clamp rule (shadcn/Recharts' `getTooltipTranslate`).
-//! - [`polar`]/[`radar`] -- reserved, currently-empty modules for the
-//!   Pie/RadialBar and Radar families' own math (owned by later stage-2
-//!   lanes `s2-polar`/`s2-radar`; see each module's own doc comment).
+//! - [`polar`]/[`radar`] -- the Pie/RadialBar and Radar families' own math
+//!   (see each module's own doc comment).
 //!
 //! Every public item here is also re-exported flatly from
 //! [`crate::chart`] (e.g. `dioxus_primitives::chart::LinearScale`), so this

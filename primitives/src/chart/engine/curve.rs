@@ -214,8 +214,8 @@ enum Edge {
 /// edge needs: retracing an already-built curve backward, not recomputing
 /// a curve algorithm on reversed input. The latter happens to be
 /// numerically correct for `Linear` and `Monotone` (Steffen's tangent
-/// formula is symmetric under point-order reversal, confirmed by direct
-/// computation while building this module) but is *wrong* for `Step`: its
+/// formula is symmetric under point-order reversal, checked by direct
+/// computation in the tests) but is *wrong* for `Step`: its
 /// "after" corner is a real anchor point, and naively recomputing "step
 /// after" on reversed input silently produces a "step before" shape
 /// instead of the same curve traced backward. Representing the corner as
@@ -493,8 +493,7 @@ mod tests {
         // unequal x-spacing (h0=1, h1=2) makes the end tangent genuinely
         // different from "just the outer secant", which a naive
         // Fritsch-Carlson port (`m[0] = secant[0]`) would get wrong.
-        // Hand-derived (see this lane's commit message for the arithmetic)
-        // and cross-checked against `d3-shape`'s own `monotone.js` (module
+        // Hand-derived and cross-checked against `d3-shape`'s own `monotone.js` (module
         // doc) fed the same three points.
         let tangents = monotone_tangents(&[(0.0, 0.0), (1.0, 1.0), (3.0, 2.0)]);
         assert_eq!(tangents.len(), 3);

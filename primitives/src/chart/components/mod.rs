@@ -9,12 +9,9 @@
 //! every family's `*Options` struct is real, caller-facing API -- see its
 //! own module doc for the extension-point ownership map.
 //!
-//! Glob re-exported (stage-2 chart round): a lane adding a new `pub` item
-//! to a file it owns under this tree (e.g. `tooltip.rs`) needs no edit
-//! here to expose it -- see `series`'s own doc for the one file tree this
-//! does NOT cover (`chart.rs`/`container.rs`/`mod.rs`/`series/mod.rs`
-//! themselves stay refactor-lane-owned regardless, per
-//! `$S/stage2-common.md`'s structural-construction section).
+//! Glob re-exported: a new `pub` item in a file under this tree (e.g.
+//! `tooltip.rs`) needs no edit here to expose it -- see `series`'s own doc
+//! for the structure of the per-family files.
 
 mod center_text;
 pub mod chart;

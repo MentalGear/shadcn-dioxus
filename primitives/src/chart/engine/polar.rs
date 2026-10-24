@@ -29,13 +29,11 @@
 //!
 //! [`arc_path`]'s padAngle handling and [`pie_layout`] are clean-room Rust
 //! ports of `d3-shape`'s `src/arc.js` and `src/pie.js` (ISC license, Mike
-//! Bostock, `d3/d3-shape@a82254af78f08799c71d7ab25df557c4872a3c51`, both
-//! read in full this lane; a working copy of the same commit is at
-//! `$S/refs/d3-shape` for this repo's own future reference). Reference
-//! outputs quoted in this file's tests were computed by installing the
-//! real `d3-shape@3.2.0` npm package and calling its actual `arc()`/
-//! `pie()` (`$S/stage2/s2-polar/d3ref/ref.mjs`), not transcribed from
-//! memory or from reading the source alone.
+//! Bostock, `d3/d3-shape@a82254af78f08799c71d7ab25df557c4872a3c51`).
+//! Reference outputs quoted in this file's tests were computed by
+//! installing the real `d3-shape@3.2.0` npm package and calling its actual
+//! `arc()`/`pie()`, not transcribed from memory or from reading the source
+//! alone.
 //!
 //! **`arc_path`'s `corner_radius` handling is this module's own
 //! simplification, not a port of `d3-shape`'s `intersect`/
@@ -60,9 +58,8 @@
 //! and is what the tests below hold to exact parity; the rounded-corner
 //! tests check shape sanity (valid, closed, continuous path; corner
 //! points land where this module's own formula says they should) rather
-//! than parity with `d3-shape`'s own algorithm. Reasonable per this
-//! lane's own brief ("simplified corner-radius handling is acceptable if
-//! documented"). It is, however, the same construction as Recharts'
+//! than parity with `d3-shape`'s own algorithm (simplified corner-radius
+//! handling is acceptable when documented, as here). It is, however, the same construction as Recharts'
 //! `getSectorWithCorner` (what shadcn's rounded radial bars are drawn
 //! with): `arc_path_rounded_inner_fillets_land_on_the_inner_ring` holds a
 //! rounded sector to Recharts' own path string.
@@ -244,7 +241,7 @@ pub fn arc_path(
     // is never `NaN` here -- `r1 <= EPSILON` is a plain, clippy-clean
     // total-order comparison, not `d3-shape`'s own `!(r1 > epsilon)`
     // partial-order idiom, which only differs from this for a `NaN` this
-    // function can no longer receive.)
+    // function cannot receive.)
     if r1 <= EPSILON {
         path.move_to(0.0, 0.0);
         path.close();
@@ -803,7 +800,7 @@ mod tests {
     use super::*;
 
     // --- arc_path: exact parity with real d3-shape@3.2.0 output
-    //     ($S/stage2/s2-polar/d3ref/ref.mjs) for every corner_radius=0.0
+    //     for every corner_radius=0.0
     //     case (see the module doc for why corner_radius > 0.0 isn't
     //     held to exact parity). ---
 
@@ -968,7 +965,7 @@ L-29.04,79.785A4,4,0,0,0,-31.255,74.727A81,81,0,1,1,80.91,-3.812A4,4,0,0,0,84.90
     }
 
     // --- pie_layout: exact parity with real d3-shape for every case
-    //     computed in $S/stage2-lanes.md's referenced ref.mjs run. ---
+    //     computed from the real package. ---
 
     fn approx(a: f64, b: f64) {
         assert!((a - b).abs() < 1e-9, "{a} not close to {b}");
