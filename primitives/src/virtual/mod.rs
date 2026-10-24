@@ -10,7 +10,7 @@
 //!   mounted range (quantised so a scroll re-renders only when it must), the frozen scroll
 //!   canvas, and the scroll corrections for rows that resize above the viewport.
 //! - [`grid`]: the second axis. `VirtualGrid`'s engine is one [`Engine`] per axis, plus the
-//!   sticky edges and the grid pattern's key map.
+//!   pinned edges and the grid pattern's key map.
 //! - [`layout`]: pure photo-wall geometry (justified rows, two-axis windowing), and
 //!   [`justified_engine`]: `VirtualJustifiedGrid`'s engine and spatial keyboard model on top of it.
 //! - [`pin`]: keep the focused item rendered when it leaves the window, shared by the grids'
@@ -45,7 +45,7 @@ mod window;
 pub(crate) use bridge::{use_virtual_bridge, Bridge};
 pub(crate) use cv_chunks::{cv_chunks, ChunkSkip, CHUNK_ROWS};
 pub(crate) use find::{parse_cell, use_find_in_page, FindLayer, FindLayout};
-pub(crate) use grid::{GridEngine, GridKey, GridShape};
+pub(crate) use grid::{GridEngine, GridKey, GridShape, Pins};
 pub(crate) use identity::{engine_keys, engine_row_keys, render_key, resolve_index};
 pub(crate) use justified_engine::{navigate as justified_navigate, JustifiedEngine, RowPlan};
 pub(crate) use layout::justified::JustifiedOptions;

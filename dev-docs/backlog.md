@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (35)
+## Open rows (36)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -70,6 +70,7 @@ proposing one is closed as out of scope (row 337 is the first).
 | [385](backlog/385-accent-focus-ring-clamped.md) | The focus ring follows the picked accent, clamped to 3:1 per mode | DECIDED 2026-10-24 (owner), BUILT on lane/accent-ring. With an accent picked the ring takes the… | S | theme |
 | [386](backlog/386-virtual-grid-header-hover-see-through.md) | Virtual Grid: hovering the sticky header row makes it see-through (a translucent row hover replaced the opaque cover) | FIXED on lane/grid-header-hover, merge pending. | S | components |
 | [387](backlog/387-docs-clarity-review.md) | Standing docs-clarity review: a technical-writer pass over every component's docs and props for implicit behaviour | STANDING. Run after every round that adds a component or changes a public prop, and before row… | M | docs |
+| [388](backlog/388-virtual-grid-pinning-api.md) | Virtual Grid: explicit row and column pinning in the API and the docs (pinned_columns_start, pinned_columns_end, pin_header) | Owner decision 2026-10-24 (Tom): "API and docs". Pre-1.0, so the breaking rename is accepted. DONE… | M | components |
 | [391](backlog/391-wrappers-forward-primitive-props.md) | Themed wrappers forward every primitive prop, enforced by a props-diff gate | BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in… | M | components |
 | [392](backlog/392-docs-snippets-compile.md) | Compile-check the docs.md code samples; samples use the uncontrolled props | BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in… | M | docs |
 | [393](backlog/393-docs-contradict-code.md) | Fix the docs statements the code contradicts | BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in… | S | docs |

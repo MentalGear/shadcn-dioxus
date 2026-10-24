@@ -1,0 +1,1 @@
+A 5,000-row grid with `pinned_columns_start: 2` (Site, Region), `pinned_columns_end: 1` (the Select checkbox) and a header row that follows the "Pin the header row" switch (`pin_header`). Pinned cells stay opaque over the scrolling cells, take the row's hover and selected fill, and the arrow keys, Home and End scroll the active cell clear of every pinned edge.

@@ -54,7 +54,7 @@ pub fn Demo() -> Element {
                 "data-demo": "fade-grid",
                 style: "border: 1px solid var(--dx-border); border-radius: var(--dx-radius-lg); overflow: hidden;",
                 // Rows AND columns scroll, so all four edges fade (each only while there is more past it).
-                // No sticky header: the mask covers everything inside the container, header included.
+                // No pinned header: the mask covers everything inside the container, header included.
                 VirtualGrid {
                     row_count: 1_000usize,
                     column_count: 30usize,
