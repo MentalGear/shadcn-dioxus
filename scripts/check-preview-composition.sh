@@ -2,7 +2,11 @@
 #
 # check-preview-composition.sh
 #
-# Enforces the preview app's composition rule (dev-docs/preview-composition.md):
+# Preview markup composes only themed wrappers from `crate::components::*`: a raw `dioxus_primitives::` component or
+# module import is allowed only inside the wrapper's own `preview/src/components/<name>/component.rs` and, elsewhere
+# in `preview/src`, for a small allowlist of non-markup items (hooks such as `use_toast`, plain value types and enums
+# such as `CheckboxState` or `DateRange`). Composing a raw primitive in a demo skips the theme wrapper's classes.
+# Rationale: dev-docs/preview-composition.md.
 #
 #   Preview markup composes ONLY themed wrappers from `crate::components::*`.
 #   A raw `dioxus_primitives::` import is legitimate in exactly two places:

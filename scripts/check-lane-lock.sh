@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
-# Gate: scripts/lane-lock.sh (the FIFO ticket queue in front of the build slots, backlog row 221)
-# keeps the properties lane-rules.md promises. A deterministic shell test, no network, no build,
-# a few seconds; every scenario runs in its own throwaway LANE_TGT with a short poll interval.
+# The build lock `scripts/lane-lock.sh` (a FIFO ticket queue in front of the build slots) keeps the properties
+# `lane-rules.md` promises, in a deterministic shell test of a few seconds with no network and no build: a gate jumps
+# waiting lanes and lanes keep arrival order, a SIGKILLed holder or waiter never blocks the queue, two slots give
+# distinct `LANE_SLOT`, low `MemAvailable` keeps slot 1 closed, a long-lived child leaks no lock fd, TERM stops the
+# command's process group, exit status and slot env pass through, the legacy `ssg.lock` excludes slot 0 both ways, and
+# the disk guard and slim copies behave. Every scenario runs in its own throwaway `LANE_TGT`.
 #
 #   1 fifo           gate jumps waiting lanes; lanes keep arrival order
 #   2 killed-holder  SIGKILL of the wrapper frees the slot (the documented gap: its command runs on)

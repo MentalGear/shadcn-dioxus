@@ -2,6 +2,13 @@
 #
 # check-markdown-parser.sh
 #
+# The parser allowlist of the optional `markdown` component: its `component.json` names exactly `dioxus-primitives`
+# and `pulldown-cmark` (no default features), `preview/Cargo.toml` pins `pulldown-cmark` as `=<locked version>` with
+# `default-features = false`, the lock's parser has only its four allowed dependencies, `pulldown_cmark` is named only
+# inside `preview/src/components/markdown/` (never its `html` renderer) with only the ENABLE_TABLES,
+# ENABLE_STRIKETHROUGH and ENABLE_TASKLISTS options, and no `dangerous_inner_html` appears, so model output has no
+# path to the DOM as raw HTML.
+#
 # The parser allowlist for the optional `markdown` component (owner decisions 2026-10-15, backlog row 213):
 # what the component may pull in and which parser features it may switch on. The OTHER half -- only an
 # allowlisted component may list a parser crate in its `component.json`, and every `component.json` version

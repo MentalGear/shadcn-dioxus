@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Hash of everything the cargo gates (check-primitives-features, check-attr-spread-collision, clippy x3, test, test-server)
+# Hash of everything the cargo gates (check-primitives-features, check-attr-spread-collision, clippy x3, test, test-server, rustdoc)
 # can read, so scripts/run-gates.sh can reuse their PASS for an identical hash (backlog row 320).
 #
 #   scripts/cargo-inputs-hash.sh [--root DIR] [--list]

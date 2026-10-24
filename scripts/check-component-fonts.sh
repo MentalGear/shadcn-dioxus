@@ -2,9 +2,10 @@
 #
 # check-component-fonts.sh
 #
-# A component stylesheet must never pick a typeface. The library inherits the host app's font; the
-# only place a font is chosen is the docs site's own `preview/assets/main.css` (`body`). So in every
-# `preview/src/components/*/style.css`, a `font-family` may be exactly one of:
+# A component stylesheet never picks a typeface: in every `preview/src/components/*/style.css` a `font-family` is
+# exactly `inherit` (for the elements the UA does not inherit for: button, input, textarea, select) or a
+# `var(--dx-font-<name>)` theme token, the `font` shorthand may only be `font: inherit`, and an `@font-face` is
+# flagged too. The app picks the font, so an overlay can never fall back to a hard-coded system stack.
 #
 #   font-family: inherit;                  -- for the elements the UA does NOT inherit for (button, input,
 #                                             textarea, select, optgroup), which would otherwise fall back to

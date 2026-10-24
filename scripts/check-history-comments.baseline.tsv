@@ -194,14 +194,13 @@ scripts/check-anchored-keyframes.sh	1
 scripts/check-attr-spread-collision.sh	4
 scripts/check-blocking-scroll-listeners.sh	1
 scripts/check-cargo-locks.sh	2
-scripts/check-cfg-axis.sh	2
+scripts/check-cfg-axis.sh	1
 scripts/check-component-call.sh	1
 scripts/check-component-catalog.sh	1
 scripts/check-component-fonts.sh	1
 scripts/check-css-delivery.sh	1
 scripts/check-css-state-recipes.sh	1
 scripts/check-demo-forms.sh	1
-scripts/check-docs-own-components.sh	1
 scripts/check-duplicate-keyframes.sh	1
 scripts/check-dx-class-prefix.sh	1
 scripts/check-dynamic-style-shorthand.sh	1
@@ -218,7 +217,6 @@ scripts/check-raw-text-interpolation.sh	1
 scripts/check-select-css.sh	3
 scripts/check-self-subscribing-effects.sh	7
 scripts/check-spec-goto-hydrated.sh	1
-scripts/check-theme-baseline.sh	1
 scripts/check-uncleared-intervals.sh	1
 scripts/compare-ssg-styles.mjs	1
 scripts/deploy-preview.sh	1

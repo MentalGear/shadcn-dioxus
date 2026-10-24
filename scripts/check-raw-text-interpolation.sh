@@ -2,9 +2,11 @@
 #
 # check-raw-text-interpolation.sh
 #
-# Forbids any interpolation inside the children of an rsx `style { ... }`,
-# `script { ... }`, `noscript { ... }` or `textarea { ... }` ELEMENT (not the
-# `style: "..."` attribute), including path-qualified spellings:
+# No interpolation inside the children of an rsx `style { }`, `script { }`, `noscript { }` or `textarea { }` element
+# (the `style:` attribute is fine): Dioxus SSR/SSG emits a hydration marker comment before every dynamic text node,
+# which inside a raw-text element turns the first CSS rule or script statement into garbage and inside
+# `<textarea>`/`<noscript>` ships as visible text. Put dynamic CSS in an inline `style:` attribute or a stylesheet
+# asset, set a textarea's `value:` attribute, or use a string literal child with `{{`/`}}` escapes.
 #
 #   style { "{css}" }          style { {CSS_CONST} }          style { "a {x} b" }
 #   dioxus::html::style { "{css}" }      html::script { {JS} }

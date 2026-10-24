@@ -2,8 +2,12 @@
 #
 # check-motion-gating.sh
 #
-# Motion nobody can see must not cost anything. cargo, clippy and `cargo test` cannot tell a ticking
-# component from a gated one, and with CI frozen (dev-docs/backlog.md row 33) nothing else would.
+# Motion nobody can see must not run, by construction. `primitives/src/activity.rs` answers "is this visible" once for
+# the whole page, so a bare `use_interval` or a hand-rolled `loop` plus `sleep` tick must be the visibility-gated
+# `use_interval_while` / `use_timeout_while` (or sit after a `use_motion` gate), or carry `// motion-ok: <reason>`;
+# and every component `style.css` with an `infinite` animation needs a component or primitive that applies
+# `use_motion`, whose one `[data-dx-motion="paused"]` theme rule then pauses it, or a reasoned allowlist entry.
+# Utility loops (`.dx-shimmer`) are gated at their host.
 #
 # THE CLASS (owner, 2026-10-10: "animations running in the background are not about cards, but the actual
 # components and their animations"): a component that keeps a loop or a timer alive while it is scrolled off

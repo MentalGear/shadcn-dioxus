@@ -2,14 +2,10 @@
 #
 # check-destructive-text.sh
 #
-# `--dx-destructive` is a FILL colour (dark #a22e2e, light #dc2626): as text it measures 2.1-2.8:1 on
-# every dark surface (backlog row 134; the same pair that kept `DESTRUCTIVE_AS_TEXT` and
-# `FIELD_ERROR_TEXT` in all-routes.spec.ts's KNOWN_AXE). The theme defines the text-grade role ONCE,
-# `--dx-destructive-text` (OKLCH lightness clamped like `--dx-primary-ink`, >= 4.5:1 on background, card,
-# popover and muted in both modes), so a component says "this is destructive TEXT" by reading it and the
-# fill role by reading `--dx-destructive`. This gate makes the wrong pairing inexpressible, so the class
-# (error messages, destructive items, alert destructive, a demo's "required" star) cannot grow back one
-# instance at a time:
+# Destructive text is the theme's one clamped role `--dx-destructive-text` (at least 4.5:1 on every surface in both
+# modes): no `color`, `caret-color`, `text-decoration-color` or `*-ink`/`*-color` custom property in `preview/src` or
+# `primitives/src` (`*.css`, `*.rs`, inline `style:` strings) may read the fill-grade `var(--dx-destructive)`, bare or
+# inside `color-mix`. Borders, backgrounds, fills, rings and shadows keep it. Reasoned allowlist, stale entries fail.
 #
 #   A declaration that paints TEXT -- `color`, `caret-color`, `text-decoration-color`,
 #   `-webkit-text-fill-color`, `text-emphasis-color`, or a custom property that is a text ink

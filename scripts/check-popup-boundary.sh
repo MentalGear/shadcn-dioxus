@@ -2,8 +2,12 @@
 #
 # check-popup-boundary.sh
 #
-# A component stylesheet's DESCENDANT selector on a generic element must not reach into a popup that happens to
-# be rendered inside it.
+# A popover or dialog stays a DOM descendant of its trigger, so a component sheet's descendant selector on a generic
+# element (`.dx-x svg`, `.dx-x a`, `.dx-x button`, `.dx-x [role=...]`, `*`) also styles the panel of any popup
+# rendered inside it. End such a selector with the zero-specificity `:not(:where([popover], dialog) *)` or select the
+# component's own part by class; otherwise a reasoned allowlist entry says why no popup can sit inside the ancestor
+# (stale entries fail). Browser half: `playwright/popup-style-isolation.spec.ts` opens one representative popup per
+# popup component, alone and under a hostile parent, and requires the same computed style.
 #
 # The failure. Our popovers and dialogs are top-layer elements (`popover` attribute / native `<dialog>`), but
 # top-layer promotion changes PAINTING, not the DOM: the panel stays a descendant of its trigger's wrapper. So

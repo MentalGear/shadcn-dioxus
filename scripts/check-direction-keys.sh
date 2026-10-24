@@ -2,7 +2,13 @@
 #
 # check-direction-keys.sh
 #
-# Horizontal keyboard and gesture handling in primitives/ must be direction-aware by construction (backlog row 137).
+# Horizontal keyboard and gesture handling in `primitives/` is direction-aware by construction:
+# `primitives/src/direction.rs` owns the one mirroring rule (`Direction::resolve_horizontal`, and `ltr_equivalent`
+# built on it), so a non-test, non-comment line under `primitives/src` that names `Key::ArrowLeft`, `Key::ArrowRight`
+# or `delta_x` puts its file on the hook: the file must also call `resolve_horizontal`, `ltr_equivalent` or
+# `use_direction`, or sit on the reasoned ALLOWLIST (nothing to flip; a stale entry fails). Context structs hold the
+# `ReadSignal<Direction>`, never a mount-time copy, so the RTL toggle reaches mounted descendants. Browser half:
+# `playwright/oracle/tier3-radix/rtl.spec.ts` and `playwright/rtl-toggle.spec.ts`. Backlog row 137.
 #
 # THE CLASS: a handler that maps `Key::ArrowLeft`/`Key::ArrowRight` (or a physical horizontal pointer delta,
 # `delta_x`) to "previous"/"next"/"decrease"/"increase" without asking the text direction is right in LTR and

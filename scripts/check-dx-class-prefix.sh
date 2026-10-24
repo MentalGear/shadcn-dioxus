@@ -2,8 +2,10 @@
 #
 # check-dx-class-prefix.sh
 #
-# Enforces the class-collision-safety rule dev-docs/backlog.md row 32 replaces
-# `#[css_module]`'s hashing with, now that the hashing is gone:
+# Every class selector in a component's own `preview/src/components/<name>/style.css` is spelled `dx-<name>` or
+# `dx-<name>-...` (the folder name with `_` written as `-`), so classes stay collision-safe now that nothing hashes
+# them. Selectors are read in selector position inside every at-rule; declaration bodies and comments are never
+# scanned. Demo-only stylesheets under `variants/` are out of scope.
 #
 #   Every class selector defined in a themed component's own stylesheet
 #   (`preview/src/components/<name>/style.css`) must be spelled

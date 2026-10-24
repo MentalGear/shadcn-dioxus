@@ -2,6 +2,12 @@
 #
 # check-js-bundle.sh
 #
+# `primitives/src/js/*.js` is generated from `primitives/src/ts/*.ts` and committed (dioxus-primitives has no build
+# script), so `primitives/src/js/bundle.manifest`, written only by `scripts/build-js-bundle.sh`, records the sha256 of
+# every `.ts` and `.js`: the gate fails on an edit of either side without a rebuild, an orphan, or a hand-edited
+# `.js`. When the installed `bun` is the recorded version it also rebuilds and requires identical bytes, otherwise it
+# reports the rebuild half as skipped. No network.
+#
 # `primitives/src/js/*.js` is GENERATED from `primitives/src/ts/*.ts` and committed, so dioxus-primitives needs no
 # build script (it used to have `build.rs` + the `lazy-js-bundle` crate, which ran in every consumer's build;
 # dev-docs/backlog.md row 217). Committing a generated file makes one class possible: the source and the artifact

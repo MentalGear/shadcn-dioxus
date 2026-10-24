@@ -2,10 +2,11 @@
 #
 # check-slow-spec-budget.sh   (backlog row 152a)
 #
-# The Playwright suite is ~3,500 tests and its cost is TOTAL WORK (a debug full run took ~106 min on two workers
-# before row 152a), so it only stays runnable if growth is a decision, not an accident. `playwright/durations.json`
-# is the measured per-file table (written by `playwright/tools/durations.mjs` from a JSON-reporter run; it is also what
-# `playwright/tools/shard.mjs` balances shards on) and carries the budget in `meta`:
+# The Playwright suite's cost is total work, so its growth is a decision: `playwright/durations.json` is the measured
+# per-file seconds table (written by `playwright/tools/durations.mjs`, balanced on by `playwright/tools/shard.mjs`)
+# with `budget_seconds` and `max_file_seconds`, and this gate, with no browser, fails on a spec file with no entry, an
+# entry for a deleted spec, a `total_seconds` that is not the sum of the entries, a sum over the budget, or a file
+# over the cap. Raising a budget is a one-number diff whose commit says why the suite may grow.
 #
 #   budget_seconds        the sum of every file's measured seconds may not exceed it
 #   max_file_seconds      no single file may exceed it (a file that big needs splitting or trimming first)

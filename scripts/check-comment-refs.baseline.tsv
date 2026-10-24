@@ -247,10 +247,8 @@ primitives/src/typeahead.rs	path	docs/backlog.md
 primitives/src/typeahead.rs	path	docs/plan.md
 primitives/src/typeahead.rs	path	docs/recommended-implementations.md
 scripts/build-js-bundle.sh	path	primitives/build.rs
-scripts/check-css-state-recipes.sh	path	docs/backlog.md
 scripts/check-direction-keys.sh	path	playwright/rtl-toggle.spec.ts
 scripts/check-js-listeners.sh	path	primitives/build.rs
 scripts/check-open-focus.sh	path	docs/backlog.md
-scripts/check-theme-baseline.sh	path	docs/backlog.md
 scripts/deploy-preview.sh	path	preview/gallery
 scripts/run-gates.sh	path	primitives/web

@@ -2,6 +2,13 @@
 #
 # check-dynamic-style-shorthand.sh
 #
+# An rsx `style:` string with an interpolation may not declare a shorthand whose value holds a `var()` (`border`,
+# `background`, `border-radius`, ...), and a `style:` chosen by `if`/`match` is banned: Dioxus's web renderer drops a
+# `var()`-valued shorthand from an inline `style` the first time the string is re-set (the server markup is right, the
+# hydrated page loses the border) and keeps stale longhands when one string is swapped for another. Declare the
+# shorthand in a stylesheet or `style {}` rule keyed by a class or data attribute and keep only computed numbers
+# inline, spell the longhands, or paint by `data-state`. Reasoned allowlists, stale entries fail.
+#
 # Dioxus's web renderer (dioxus-interpreter-js 0.7.x, `setAttributeInner`, case "style") re-sets an inline
 # `style` like this: remember every longhand the element's style declares, `setAttribute("style", value)`,
 # then put back each remembered longhand whose value reads empty. A shorthand whose value holds a `var()`

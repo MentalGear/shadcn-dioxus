@@ -2,10 +2,14 @@
 #
 # check-theme-baseline.sh
 #
-# The theme baseline (docs/backlog.md row 145, lane T) moved two things that every component
-# stylesheet used to paste into ONE zero-specificity rule in `preview/assets/dx-components-theme.css`,
-# keyed on the `dx-` class prefix (the row-111 border-box precedent). This gate makes the copies
-# inexpressible again, so the class cannot grow back one stylesheet at a time:
+# What the theme owns once is not declared per component. No component `style.css` may declare `touch-action:
+# manipulation` (the theme's one zero-specificity rule covers every `dx-` button, link, form control, `tabindex` and
+# interactive ARIA role; a drag surface may still declare `none` or `pan-*`), paint a `::backdrop` (the modal scrim is
+# the theme's one rule on `dialog[class^="dx-"]`, retuned by the `--dx-overlay-*` tokens), reset with `all:` (it
+# outranks every zero-specificity theme rule), or re-declare `user-select: none` for an element the theme's one
+# control rule already covers (every other use sits on the gate's reasoned `USER_SELECT_ALLOW`). The theme's
+# `:where(dialog[class^="dx-"]) { padding: 0 }` reset means every dialog sheet declares its own inset. All these theme
+# rules must still exist, and the vendor-prefixed line carries the one scoped `property-no-vendor-prefix` disable.
 #
 #  1. `touch-action: manipulation` (no double-tap-to-zoom on a control). It was declared 50 times in 33
 #     component stylesheets, with a 400-character comment copied 44 times, and kept in step by hand

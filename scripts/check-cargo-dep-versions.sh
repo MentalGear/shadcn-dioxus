@@ -2,6 +2,14 @@
 #
 # check-cargo-dep-versions.sh
 #
+# What a user's `dx components add` puts in their Cargo.toml comes only from `component.json`, so over every
+# `cargoDependencies` entry: the version is `x.y.z`, `^`, `~` or `=` with a floor equal to the `Cargo.lock` version,
+# the crate is a `preview` dependency, `dioxus-icons` and `pulldown-cmark` are pinned `=x.y.z`, only an allowlisted
+# component (`markdown`) may list a markdown, HTML or syntax parser, the `dioxus-primitives` `rev`s are all unstamped
+# or all one 40-hex value (`scripts/stamp-release-rev.sh <sha>` writes it at release time), and every primitives
+# module behind a cargo feature that a component's installed Rust files name has that feature in its closure's
+# `features`.
+#
 # What a user's `dx components add <name>` puts in their Cargo.toml is `cargo add <crate>[@<version>]
 # [--features ..]` for every `cargoDependencies` entry of the component and of its `componentDependencies`
 # closure (dioxus-cli 0.7.9 `add_rust_dependencies`; `shadcn-dioxus add` the same). Our `Cargo.lock` never reaches

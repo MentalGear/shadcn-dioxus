@@ -2,7 +2,11 @@
 #
 # check-component-catalog.sh
 #
-# Two manifest-consistency rules over preview/src/components/<dir>/component.json.
+# Two manifest rules over `preview/src/components/<dir>/component.json`: every component directory is classified in
+# `CATALOG` (`preview/src/components/mod.rs`) as `Origin::Shadcn` or `Origin::Extra("<why>")` (a missing, stale,
+# duplicated or malformed row fails, so a new component cannot silently skip the Extra badge), and every component
+# with a `style.css` lists the theme in its `globalAssets` and links its own sheet through an `asset!`
+# `document::Link`, because only that ships it.
 #
 # 1. EVERY COMPONENT IS CLASSIFIED (shadcn or extra).
 #    `CATALOG` in preview/src/components/mod.rs is the one list saying whether a

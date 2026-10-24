@@ -2,8 +2,12 @@
 #
 # check-cross-component-overrides.sh
 #
-# Flags a NON-custom property declared, in component X's stylesheet, on an element that is
-# really component Y's:
+# A component's stylesheet must not declare a non-custom property on an element that is really another component's:
+# one element wearing both `dx-Y` and `dx-X-...`, or a bare `> button`/`input`/`select`/`textarea`/`label` selector.
+# Two sheets declaring one property are decided by per-route stylesheet order, so compose through slot variables
+# instead (the base reads `font-size: var(--dx-label-font-size, var(--dx-text-sm))`, the parent sets the variable).
+# Existing sites are a shrink-only baseline, `scripts/check-cross-component-overrides.baseline.tsv`; the gate fails on
+# a site that is not in it.
 #
 #   .dx-field-label { font-size: var(--dx-text-sm); }   /* in field/style.css */
 #   .dx-label       { font-size: 0.8rem; }              /* in label/style.css; same element */

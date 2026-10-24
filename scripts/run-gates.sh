@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-# The ONE way to run every pre-commit gate from CLAUDE.md, in order, with timings and a summary.
-# Every workflow is `workflow_dispatch`-only (CI freeze, dev-docs/backlog.md row 33), so nothing
-# else runs these -- and a green that was taken on a different tree, or with a weaker command
-# than the one documented, is how a clippy error reached `main` (see "Clippy arms" below).
+# The ONE way to run every pre-commit gate, in order, with timings and a summary. What each gate checks is
+# dev-docs/gates.md, generated from the gate list below and the headers of scripts/check-*.sh. Every workflow
+# is `workflow_dispatch`-only (CI freeze, dev-docs/backlog.md row 33), so nothing else runs these.
 #
 #   CARGO_TARGET_DIR=/abs/isolated/dir scripts/run-gates.sh [options]
 #
@@ -12,49 +11,40 @@
 #   --log-dir DIR     per-gate logs + summary.tsv (default: $CARGO_TARGET_DIR/run-gates)
 #   --list            print the gate names and exit
 #   --no-reuse        run every cargo gate even when its result is stored for an identical cargo-input hash
-#                     (also GATE_REUSE=0); see guard 7
+#                     (also GATE_REUSE=0); see guard 6
 #
 # Exit codes: 0 = every gate ran and passed; 1 = at least one gate red; 2 = bad usage /
 # environment; 3 = green but PARTIAL (--only/--skip/--stop-on-fail hid some gates) -- a partial
 # run can therefore never be mistaken for the full gate.
 #
+# A new gate: write the script's header (its first comment paragraph is the summary gates.md prints), add one
+# line to the gate list under its group, run `scripts/gates-doc.py --write`. Nothing else names a gate: not
+# CLAUDE.md, not lane-rules.md.
+#
+# The gate list is grouped by `# group: <title>` lines; the comment lines above an entry that is not a
+# scripts/check-*.sh describe it (gates.md prints them), a check script is described by its own header.
+#
 # Guards -- each one closes a failure class by construction instead of relying on the caller:
 #  1. CARGO_TARGET_DIR must be set and ABSOLUTE, and must not be the shared repo-root `target/`
 #     (dev-docs/backlog.md rows 98/100; check-attr-spread-collision.sh also builds into it).
-#  2. Clippy arms. `cargo clippy --workspace` with no `--features` lints ONLY the
-#     `#[cfg(not(feature = "web"))]` arm of primitives (104 `feature = "web"` cfg sites) and none of
-#     preview's `feature = "server"` code -- yet both are what ships: `dx build --platform web
-#     --ssg --features fullstack` compiles the client with `web` and the prerender server with
-#     `server` (-> primitives/web). So the gate lints each arm explicitly:
-#        default  -- the not(web)/native arm, every workspace member
-#        web      -- primitives + preview with `web` (the browser client's arm)
-#        server   -- preview with `server` (SSG prerender server; implies fullstack + primitives/web)
-#     `--all-features` is NOT usable instead: preview's `desktop` needs webkit2gtk/gtk (absent in
-#     the remote container -- no pkg-config entry) and `web`/`desktop`/`native` are alternative
-#     renderers that are not meant to be enabled together; it would also switch `web` on
-#     everywhere and so stop linting the not(web) arm. `--all-targets` (plan.md "Definition of
-#     done" item 4) is used on every arm, which is a superset of CLAUDE.md's old
-#     `--tests --examples` (adds the plain bin and benches), so the two definitions agree.
-#  3. A clippy gate is red if its log contains a "generated N warning(s)" summary even when cargo
-#     exited 0. `-D warnings` makes this impossible for a fresh lint, but a command run without it
-#     (or a future cargo that replays cached diagnostics as warnings) exits 0 with the lint printed.
-#     Proven NOT to be the cause of the navbar miss (cargo re-lints after a no-`-D` run and after a
-#     `cargo check`), kept because the check is free and makes exit-code-only greens impossible.
-#  4. The summary names the tree the gates ran on (HEAD + a hash of the uncommitted diff), so a
+#  2. A clippy gate is red if its log contains a "generated N warning(s)" summary even when cargo
+#     exited 0 (a command run without `-D warnings`, or a cargo that replays cached diagnostics as warnings).
+#  3. The summary names the tree the gates ran on (HEAD + a hash of the uncommitted diff), so a
 #     green cannot be quoted for a commit it was not taken on.
-#  5. Any scripts/check-*.sh that is not in the list below fails the run, so a newly added check
-#     cannot silently stay out of the gate set. Add it here AND to CLAUDE.md.
-#  6. stylelint runs with `pnpm exec`, which never downloads: a worktree without node_modules fails loudly
+#  4. Any scripts/check-*.sh that is not in the list below fails the run, so a newly added check
+#     cannot silently stay out of the gate set.
+#  5. stylelint runs with `pnpm exec`, which never downloads: a worktree without node_modules fails loudly
 #     (`cd preview && pnpm install --frozen-lockfile`, or symlink the main checkout's node_modules --
 #     backlog rows 72, 359) instead of fetching an unvetted version.
-#  7. Reuse (backlog row 320). The cargo gates (CARGO_GATES: check-primitives-features, check-attr-spread-collision,
-#     the three clippy arms, `cargo test`, `cargo test` on the server arm) are ~20 of the full gate's ~22 minutes, and a CSS-, spec- or docs-only batch
-#     cannot change their result. So a PASS is stored per (cargo-input hash, toolchain, command line) -- the key of
-#     scripts/gate-reuse.sh, whose inputs are scripts/cargo-inputs-hash.sh's working-tree file set -- and a later run
-#     with the SAME key reuses it, printing `reused from <tree>`; the summary lists every reused gate with the tree it
-#     really ran on and the final line says how many. Only a PASS is stored, a FAIL deletes the stored PASS, a
-#     changed byte in any input is a different key, and --no-reuse (or GATE_REUSE=0) forces the real run. fmt is
-#     never reused (it is under a second). The store is $GATE_REUSE_DIR, default ${LANE_TGT:-/home/user/tgt}/gate-reuse.
+#  6. Reuse (backlog row 320). The cargo gates (CARGO_GATES: check-primitives-features, check-attr-spread-collision,
+#     the three clippy arms, `cargo test`, `cargo test` on the server arm, rustdoc) are ~90 % of a full run, and a
+#     CSS-, spec- or docs-only batch cannot change their result. So a PASS is stored per (cargo-input hash,
+#     toolchain, command line) -- the key of scripts/gate-reuse.sh, whose inputs are scripts/cargo-inputs-hash.sh's
+#     working-tree file set -- and a later run with the SAME key reuses it, printing `reused from <tree>`; the
+#     summary lists every reused gate with the tree it really ran on and the final line says how many. Only a
+#     PASS is stored, a FAIL deletes the stored PASS, a changed byte in any input is a different key, and
+#     --no-reuse (or GATE_REUSE=0) forces the real run. fmt is never reused (it is under a second). The store is
+#     $GATE_REUSE_DIR, default ${LANE_TGT:-/home/user/tgt}/gate-reuse.
 set -uo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -79,44 +69,43 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-# --- the gate list: CLAUDE.md order. name | command (run with bash -c from the repo root) -------
+# --- the gate list, by group. name | command (run with bash -c from the repo root) -------
 CLIPPY_FLAGS='--all-targets -- -D warnings'
+DOC_FLAGS='--no-deps --document-private-items'
+RUSTDOC_CMD="RUSTDOCFLAGS='-D warnings' cargo doc --workspace $DOC_FLAGS && RUSTDOCFLAGS='-D warnings' cargo doc -p dioxus-primitives -p preview --features dioxus-primitives/web,preview/web $DOC_FLAGS"
 gates=(
+  # group: Rust and rsx source rules
   "check-preview-composition|scripts/check-preview-composition.sh"
   "check-cfg-axis|scripts/check-cfg-axis.sh"
-  "check-dx-class-prefix|scripts/check-dx-class-prefix.sh"
-  "check-cross-component-overrides|scripts/check-cross-component-overrides.sh"
-  "check-css-literals|scripts/check-css-literals.sh"
   "check-hooks-in-closures|scripts/check-hooks-in-closures.sh"
   "check-self-subscribing-effects|scripts/check-self-subscribing-effects.sh"
   "check-component-call|scripts/check-component-call.sh"
-  "check-direction-keys|scripts/check-direction-keys.sh"
-  "check-css-logical-properties|scripts/check-css-logical-properties.sh"
   "check-attr-spread-collision|scripts/check-attr-spread-collision.sh"
-  "check-demo-wrapper-width|scripts/check-demo-wrapper-width.sh"
-  "check-playwright-fixture-import|scripts/check-playwright-fixture-import.sh"
+  "check-direction-keys|scripts/check-direction-keys.sh"
+  "check-render-keys|scripts/check-render-keys.sh"
+  "check-render-clock|scripts/check-render-clock.sh"
+  "check-collection-derive|scripts/check-collection-derive.sh"
   "check-raw-text-interpolation|scripts/check-raw-text-interpolation.sh"
-  "check-internal-hrefs|scripts/check-internal-hrefs.sh"
-  "check-installed-paths|scripts/check-installed-paths.sh"
+  "check-dynamic-style-shorthand|scripts/check-dynamic-style-shorthand.sh"
+  # group: Timers, listeners, motion and focus
+  "check-uncleared-intervals|scripts/check-uncleared-intervals.sh"
+  "check-blocking-scroll-listeners|scripts/check-blocking-scroll-listeners.sh"
+  "check-js-listeners|scripts/check-js-listeners.sh"
+  "check-motion-gating|scripts/check-motion-gating.sh"
+  "check-infinite-animations|scripts/check-infinite-animations.sh"
+  "check-open-focus|scripts/check-open-focus.sh"
+  "check-theme-mode-writer|scripts/check-theme-mode-writer.sh"
+  # group: Theme and component CSS
+  "check-dx-class-prefix|scripts/check-dx-class-prefix.sh"
+  "check-cross-component-overrides|scripts/check-cross-component-overrides.sh"
+  "check-css-literals|scripts/check-css-literals.sh"
+  "check-css-logical-properties|scripts/check-css-logical-properties.sh"
   "check-css-vars-defined|scripts/check-css-vars-defined.sh"
   "check-hover-mix-space|scripts/check-hover-mix-space.sh"
   "check-coarse-sizing|scripts/check-coarse-sizing.sh"
   "check-press-under|scripts/check-press-under.sh"
-  "check-cargo-locks|scripts/check-cargo-locks.sh"
-  "check-uncleared-intervals|scripts/check-uncleared-intervals.sh"
-  "check-blocking-scroll-listeners|scripts/check-blocking-scroll-listeners.sh"
-  "check-props-docs|scripts/check-props-docs.sh"
-  "check-js-listeners|scripts/check-js-listeners.sh"
-  "check-eager-head-document|scripts/check-eager-head-document.sh"
-  "check-css-delivery|scripts/check-css-delivery.sh"
   "check-anchored-keyframes|scripts/check-anchored-keyframes.sh"
-  "check-infinite-animations|scripts/check-infinite-animations.sh"
-  "check-component-catalog|scripts/check-component-catalog.sh"
-  "check-demo-forms|scripts/check-demo-forms.sh"
-  "check-demo-remote-assets|scripts/check-demo-remote-assets.sh"
-  "check-component-fonts|scripts/check-component-fonts.sh"
-  "check-registry-url|scripts/check-registry-url.sh"
-  "check-motion-gating|scripts/check-motion-gating.sh"
+  "check-duplicate-keyframes|scripts/check-duplicate-keyframes.sh"
   "check-theme-baseline|scripts/check-theme-baseline.sh"
   "check-cursor-baseline|scripts/check-cursor-baseline.sh"
   "check-popup-boundary|scripts/check-popup-boundary.sh"
@@ -124,45 +113,67 @@ gates=(
   "check-popup-root-reset|scripts/check-popup-root-reset.sh"
   "check-component-root-reset|scripts/check-component-root-reset.sh"
   "check-destructive-text|scripts/check-destructive-text.sh"
-  "check-collection-derive|scripts/check-collection-derive.sh"
   "check-css-state-recipes|scripts/check-css-state-recipes.sh"
   "check-focus-outline-reset|scripts/check-focus-outline-reset.sh"
-  "check-spec-viewport-bound|scripts/check-spec-viewport-bound.sh"
-  "check-ssg-verify|scripts/check-ssg-verify.sh"
-  "check-duplicate-keyframes|scripts/check-duplicate-keyframes.sh"
   "check-hover-media|scripts/check-hover-media.sh"
-  "check-render-keys|scripts/check-render-keys.sh"
-  "check-theme-mode-writer|scripts/check-theme-mode-writer.sh"
-  "check-open-focus|scripts/check-open-focus.sh"
   "check-scroll-behavior|scripts/check-scroll-behavior.sh"
-  "check-js-bundle|scripts/check-js-bundle.sh"
+  "check-select-css|scripts/check-select-css.sh"
+  "check-component-fonts|scripts/check-component-fonts.sh"
+  "check-demo-wrapper-width|scripts/check-demo-wrapper-width.sh"
+  # group: Docs site, demos and delivery
+  "check-eager-head-document|scripts/check-eager-head-document.sh"
+  "check-css-delivery|scripts/check-css-delivery.sh"
+  "check-internal-hrefs|scripts/check-internal-hrefs.sh"
+  "check-demo-forms|scripts/check-demo-forms.sh"
+  "check-demo-remote-assets|scripts/check-demo-remote-assets.sh"
+  "check-docs-no-demo-list|scripts/check-docs-no-demo-list.sh"
+  "check-docs-own-components|scripts/check-docs-own-components.sh"
+  "check-props-docs|scripts/check-props-docs.sh"
+  "check-virtual-docs-parity|scripts/check-virtual-docs-parity.sh"
+  "check-ssg-verify|scripts/check-ssg-verify.sh"
+  # group: Registry and installed components
+  "check-component-catalog|scripts/check-component-catalog.sh"
+  "check-installed-paths|scripts/check-installed-paths.sh"
+  "check-registry-url|scripts/check-registry-url.sh"
   "check-cargo-dep-versions|scripts/check-cargo-dep-versions.sh"
   "check-markdown-parser|scripts/check-markdown-parser.sh"
-  "check-demo-text-locators|scripts/check-demo-text-locators.sh"
+  "check-js-bundle|scripts/check-js-bundle.sh"
+  "check-cargo-locks|scripts/check-cargo-locks.sh"
+  # group: Playwright specs
+  "check-playwright-fixture-import|scripts/check-playwright-fixture-import.sh"
+  "check-spec-viewport-bound|scripts/check-spec-viewport-bound.sh"
   "check-spec-at-rest|scripts/check-spec-at-rest.sh"
-  "check-render-clock|scripts/check-render-clock.sh"
   "check-spec-goto-hydrated|scripts/check-spec-goto-hydrated.sh"
-  "check-dynamic-style-shorthand|scripts/check-dynamic-style-shorthand.sh"
-  "check-virtual-docs-parity|scripts/check-virtual-docs-parity.sh"
+  "check-demo-text-locators|scripts/check-demo-text-locators.sh"
+  "check-slow-spec-budget|scripts/check-slow-spec-budget.sh"
+  "check-chromium-path|scripts/check-chromium-path.sh"
+  # group: Repo docs and tooling
   "check-backlog-index|scripts/check-backlog-index.sh"
   "check-history-comments|scripts/check-history-comments.sh"
   "check-comment-refs|scripts/check-comment-refs.sh"
   "check-supply-chain-doc|scripts/check-supply-chain-doc.sh"
+  "check-gates-doc|scripts/check-gates-doc.sh"
   "check-lane-lock|scripts/check-lane-lock.sh"
-  "check-slow-spec-budget|scripts/check-slow-spec-budget.sh"
-  "check-docs-no-demo-list|scripts/check-docs-no-demo-list.sh"
-  "check-docs-own-components|scripts/check-docs-own-components.sh"
   "check-gate-reuse|scripts/check-gate-reuse.sh"
   "check-lane-target|scripts/check-lane-target.sh"
-  "check-chromium-path|scripts/check-chromium-path.sh"
-  "check-select-css|scripts/check-select-css.sh"
+
+  # group: Rust build, lint, test and style
+  # Every Rust file is rustfmt-formatted (`cargo fmt --all -- --check`). Never reused from the store: it takes under a second.
   "fmt|cargo fmt --all -- --check"
   "check-primitives-features|scripts/check-primitives-features.sh"
+  # Clippy, default arm: `cargo clippy --workspace --all-targets -- -D warnings` lints the `not(feature = "web")` arm of primitives and every workspace member. A plain `cargo clippy --workspace` never enables primitives' `web` feature or preview's `server` feature, and those two are what ships (`dx build --ssg` compiles the browser client with `web` and the prerender server with `server`), so each arm is its own gate; `--all-features` cannot replace them (preview's `desktop` needs gtk and webkit2gtk, the renderers are alternatives, and it would stop linting the `not(web)` arm). Every clippy gate is also red when its log holds a `generated N warning(s)` line although cargo exited 0.
   "clippy-default|cargo clippy --workspace $CLIPPY_FLAGS"
+  # Clippy, `web` arm: primitives and preview with their `web` features, the code the wasm client compiles (about 100 `feature = "web"` cfg sites in primitives alone).
   "clippy-web|cargo clippy -p dioxus-primitives -p preview --features dioxus-primitives/web,preview/web $CLIPPY_FLAGS"
+  # Clippy, `server` arm: preview with `server` (the SSG prerender server; implies fullstack and primitives/web).
   "clippy-server|cargo clippy -p preview --features server $CLIPPY_FLAGS"
+  # `cargo test --workspace`: every unit and integration test of the workspace on the plain arm (no `web` or `server` feature); the server arm is `test-server`.
   "test|cargo test --workspace"
+  # `cargo test -p preview --features server`: the arm `dx build --ssg` ships, where `ssr_parity` and the web-only effects differ from the plain arm.
   "test-server|cargo test -p preview --features server"
+  # Rustdoc builds without a warning: `cargo doc --no-deps --document-private-items` with `-D warnings`, on the default arm of the whole workspace and on the `web` arm of primitives and preview, so a broken intra-doc link, an unclosed HTML tag or a bare URL in a doc comment is red before docs.rs shows it.
+  "rustdoc|$RUSTDOC_CMD"
+  # Stylelint over every stylesheet under `preview/src` and `preview/assets` (run with `pnpm exec`, which never downloads: a worktree without `node_modules` fails loudly).
   "stylelint|cd preview && pnpm exec stylelint \"src/**/*.css\" \"assets/**/*.css\""
 )
 
@@ -188,7 +199,7 @@ mkdir -p "$log_dir" || die "cannot create log dir $log_dir"
 summary_tsv="$log_dir/summary.tsv"
 : > "$summary_tsv"
 
-# --- guard 5: every scripts/check-*.sh must be in the list -----------------------------------
+# --- guard 4: every scripts/check-*.sh must be in the list -----------------------------------
 unlisted=()
 for f in scripts/check-*.sh; do
   [ -e "$f" ] || continue
@@ -199,11 +210,11 @@ for f in scripts/check-*.sh; do
   [ "$listed" = 1 ] || unlisted+=("$f")
 done
 if [ "${#unlisted[@]}" -gt 0 ]; then
-  echo "run-gates: scripts not in the gate list (add to run-gates.sh AND CLAUDE.md): ${unlisted[*]}" >&2
+  echo "run-gates: scripts not in the gate list (add to run-gates.sh, then scripts/gates-doc.py --write): ${unlisted[*]}" >&2
   exit 2
 fi
 
-# --- guard 4: which tree is this green about -----------------------------------------------
+# --- guard 3: which tree is this green about -----------------------------------------------
 head_sha="$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
 dirty_files="$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')"
 diff_hash="$( { git diff HEAD 2>/dev/null; git ls-files -o --exclude-standard 2>/dev/null | sort | xargs -r sha1sum 2>/dev/null; } | sha1sum | cut -c1-12 )"
@@ -217,10 +228,10 @@ now() { date +%s.%N; }
 # mtime, so touch this worktree's sources once, right before the first cargo gate that actually runs (a
 # fast-gates-only run builds nothing and must not stamp the target). lane-touch skips it when the target's
 # `.tree-owner` stamp already names this worktree.
-CARGO_GATES='^(clippy-|test(-server)?$|check-primitives-features$|check-attr-spread-collision$)'
+CARGO_GATES='^(clippy-|test(-server)?$|rustdoc$|check-primitives-features$|check-attr-spread-collision$)'
 touched=0
 
-# Guard 7 state: the reuse key is computed once, lazily, at the first cargo gate that would run.
+# Guard 6 state: the reuse key is computed once, lazily, at the first cargo gate that would run.
 cargo_cmds=() reuse_key="" reuse_state=unset reuse_pending=() reused=() reused_from=""
 tree_label="$head_sha"; [ "$dirty_files" = 0 ] || tree_label="$head_sha+dirty:$diff_hash"
 reuse_init() { # sets reuse_state to on|off
@@ -273,7 +284,7 @@ for g in "${gates[@]}"; do
   if [ "$rc" -ne 0 ]; then
     status=FAIL why="exit $rc"
   elif [[ "$name" == clippy-* ]] && grep -Eq 'generated [0-9]+ warnings?' "$log"; then
-    status=FAIL why="exit 0 but clippy printed warnings (guard 3)"
+    status=FAIL why="exit 0 but clippy printed warnings (guard 2)"
   fi
   ran=$((ran + 1))
   printf '%s  %7ss  %s\n' "$status" "$secs" "$why"
@@ -288,7 +299,7 @@ for g in "${gates[@]}"; do
   fi
 done
 
-# Guard 7: store the PASSes of the cargo gates that really ran -- only if the cargo inputs are still what the key
+# Guard 6: store the PASSes of the cargo gates that really ran -- only if the cargo inputs are still what the key
 # was taken on (a tree edited under a running gate must not vouch for the new bytes).
 if [ "${#reuse_pending[@]}" -gt 0 ]; then
   if [ "$(gate_reuse_key "$repo_root" "${cargo_cmds[@]}" 2>/dev/null)" = "$reuse_key" ]; then

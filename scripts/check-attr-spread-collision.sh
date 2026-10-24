@@ -2,8 +2,14 @@
 #
 # check-attr-spread-collision.sh
 #
-# Flags a literal attribute rendered beside a raw `..spread` on the same element, where
-# the enclosing component's props have no typed field claiming that name:
+# A literal attribute rendered beside a raw `..attributes` spread on the same element, where the component's props
+# have no typed field claiming that name, is flagged. If a caller passes the same attribute, SSR emits both and the
+# browser's HTML parser keeps the first (the component's own), client rendering keeps the last (the caller's) and
+# hydration does not reconcile them, so a caller's override works under `dx serve` and is silently dropped in the SSR
+# plus hydrate deployment; a typed prop field of that name is the discriminator, because it merges into one literal.
+# Existing sites are a debt register in two shrink-only baselines
+# (`scripts/check-attr-spread-collision*.baseline.tsv`): the gate fails only on a site that is not in them. Root
+# cause: dev-docs/issues/duplicate-attribute-root-cause.md.
 #
 #   div {
 #       class: "dx-alert",          // literal

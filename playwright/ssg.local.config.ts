@@ -20,9 +20,8 @@ import { sandboxLaunchOptions } from "./sandbox-chromium.cjs";
 // `PLAYWRIGHT_BASE_URL`, base-url.ts's `baseUrlOr`), and reads `SSG_SITE_DIR` (the same site dir this config's own comment
 // above names) to enumerate every prerendered component page for its row
 // 46 rules -- see that file's own header. See dev-docs/conformance-
-// harness.md, "SSG lane", for the full build+serve recipe this mirrors, and
-// `.github/workflows/playwright.yml`'s `ssg-hydration-parity` job for how
-// CI drives this same config (dev-docs/backlog.md row 22).
+// harness.md, "SSG lane", for the full build+serve recipe this mirrors
+// (dev-docs/backlog.md row 22).
 //
 // `executablePath` comes from `sandbox-chromium.cjs` (row 374): `PW_CHROMIUM`,
 // else the newest Chromium preinstalled under `PLAYWRIGHT_BROWSERS_PATH` (this

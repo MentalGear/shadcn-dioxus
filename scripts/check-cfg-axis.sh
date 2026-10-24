@@ -2,16 +2,12 @@
 #
 # check-cfg-axis.sh
 #
-# Enforces the corrected cfg axis documented in
-# dev-docs/recommended-implementations.md, Caveat 1 (2026-09-01 update):
-#
-#   Rendered markup, component structure, and attribute choice must split
-#   on the `web` Cargo feature (`#[cfg(feature = "web")]` /
-#   `#[cfg(not(feature = "web"))]`), never on `target_family = "wasm"`.
-#   `web` is a *renderer* question -- true for both the wasm browser client
-#   AND a host (non-wasm) fullstack SSG server build -- while
-#   `target_family = "wasm"` is an *execution-target* question that a host
-#   SSG server build fails.
+# Rendered markup, component structure and attribute choice split on the `web` Cargo feature (`#[cfg(feature =
+# "web")]` / `#[cfg(not(feature = "web"))]`), never on `target_family = "wasm"`: `web` is a renderer question, true
+# for the wasm client and for a host fullstack SSG server build alike, while `target_family` is an execution-target
+# question the SSG server build answers wrongly, so the prerendered markup would differ structurally from what the
+# client hydrates. `target_family = "wasm"` stays legitimate only for genuinely wasm-only execution internals, inside
+# a hook's body, on the gate's allowlist.
 #
 # The 2026-09-01 production incident this guards against: primitives split
 # markup on `target_family = "wasm"`, so the fullstack SSG prerender (a host

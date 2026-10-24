@@ -2,7 +2,11 @@
 #
 # check-docs-own-components.sh
 #
-# The docs site is built from the library's own components (owner 2026-10-19).
+# The docs site is built from the library's own components: no `details {` or `summary {` rsx element in the docs
+# chrome sources and no `<details`/`<summary` emitted by `preview/build.rs`, which hands docs.md sections to the page
+# as data. A hand-rolled disclosure is a second, unreviewed implementation of Accordion and Collapsible. Reasoned
+# allowlist, stale entries fail; the browser half is `playwright/docs-accordion.spec.ts` and
+# `playwright/docs-structure.spec.ts`.
 #
 # THE CLASS: the component pages' sections were native `<details>`/`<summary>` disclosures (Installation, every
 # docs.md `##` section, the Props reference, "Manual installation files", a demo's "About this example"). They drifted

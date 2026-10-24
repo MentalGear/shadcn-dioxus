@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
-# check-gate-reuse.sh -- the promises of cargo-gate reuse (backlog row 320), in a deterministic shell test.
+# check-gate-reuse.sh
+#
+# Pins the promises of cargo-gate reuse in a deterministic shell test: the inputs hash changes with every byte a cargo
+# gate can read (`.rs`, `Cargo.lock`, a component `docs.md`, a primitives `.ts`, an `include_str!` target, an added or
+# renamed asset-only file) and not with what they cannot (dev-docs, playwright, other scripts, a css body), the store
+# reuses only a PASS for an identical key, and on the real repo every cargo-running gate is classified and every
+# `CARGO_MANIFEST_DIR` file reader is reviewed. No network, no cargo build, no browser; a few seconds.
 #
 # scripts/run-gates.sh stores a PASS of each cargo gate under a key made from scripts/cargo-inputs-hash.sh and reuses
 # it for an identical key. A wrong "identical" would turn ALL GREEN into a lie, so this pins:
@@ -136,7 +142,7 @@ while IFS=$'\t' read -r name cmd; do
       bad "gate $name runs cargo but is neither in CARGO_GATES nor reviewed as never-reused: $cmd" ;;
   esac
 done < <(scripts/run-gates.sh --list 2>/dev/null)
-for must in check-primitives-features check-attr-spread-collision clippy-default clippy-web clippy-server test test-server; do
+for must in check-primitives-features check-attr-spread-collision clippy-default clippy-web clippy-server test test-server rustdoc; do
   [[ "$must" =~ $cargo_gates_re ]] || bad "$must is not reusable but must be"
 done
 [[ "fmt" =~ $cargo_gates_re ]] && bad "fmt must not be in CARGO_GATES"
