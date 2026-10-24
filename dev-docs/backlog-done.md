@@ -344,6 +344,6 @@ resolves here by id.
 | [379](backlog/done/379-session-setup-fetches-detached-locks.md) | Session setup fetches every committed Cargo.lock, so check-cargo-locks resolves offline in a fresh container | 2026-10-24 |
 | [380](backlog/done/380-calendar-clock-read-after-mount.md) | Calendars read the visitor's clock after mount, so a prerendered page never keeps the build day | 2026-10-24 |
 | [381](backlog/done/381-interactive-element-cursor-option.md) | Interactive-element cursor is one theme option, data-dx-interactive-element-cursor | 2026-10-24 |
-| [385](backlog/done/385-theme-picker-in-the-phone-header-on-every-page.md) | The theme picker's palette icon is in the phone header on every page | 2026-10-24 |
+| [403](backlog/done/403-theme-picker-in-the-phone-header-on-every-page.md) | The theme picker's palette icon is in the phone header on every page | 2026-10-24 |
 
 <!-- END GENERATED -->

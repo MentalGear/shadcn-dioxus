@@ -1,5 +1,5 @@
 ---
-id: 385
+id: 403
 title: "The theme picker's palette icon is in the phone header on every page"
 status: "LANDED (pending merge) -- owner iOS feedback 2026-10-24: \"The palette icon for customization should…"
 size: "S"
@@ -7,7 +7,7 @@ area: docs
 updated: 2026-10-24
 ---
 
-# Row 385: the theme picker's palette icon is in the phone header on every page
+# Row 403: the theme picker's palette icon is in the phone header on every page
 
 ## Item
 

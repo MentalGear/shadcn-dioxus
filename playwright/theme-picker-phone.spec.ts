@@ -5,7 +5,7 @@ import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
 /**
- * Backlog rows 142 and 385: a phone reaches the theme picker from the header on EVERY page that has
+ * Backlog rows 142 and 403: a phone reaches the theme picker from the header on EVERY page that has
  * the site header, with or without a navigation sheet.
  *
  * `theme::ThemePicker` renders the popover's trigger and `ThemePickerPhoneTrigger` side by side in the
