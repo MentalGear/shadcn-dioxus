@@ -61,19 +61,15 @@ test('keyboard navigation', async ({ page }) => {
 });
 
 test.describe('Close animation is not skipped (docs/backlog.md row 77 follow-up)', () => {
-  // row 77 landed the identical fix for Navigation Menu and flagged --
-  // but never investigated -- that `navbar.rs` pairs the same
-  // `use_animated_open` + `use_popover_sync` combination, so it likely
-  // carries the same dead exit-animation defect. Confirmed by execution
-  // (an isolated dev server, this lane): sampling `.dx-navbar-content`
-  // every animation frame across a real close showed `opacity`/`transform`
-  // jump straight from the open resting value to the closed target between
-  // two consecutive frames, with the content already disconnected from the
-  // DOM one frame later -- `use_popover_sync`'s synchronous `hidePopover()`
-  // (called the instant `open` went `false`) removed the element before
-  // `use_animated_open`'s own rAF-deferred `getAnimations()` check ever
-  // ran, so the ~150ms fade-and-scale-down plus its ~250ms settle hold
-  // (`primitives/src/lib.rs`'s `use_animated_open`) were skipped outright.
+  // Row 77 (Navigation Menu) and this row share one construction: `navbar.rs` pairs
+  // `use_animated_open` with `use_popover_sync`, and a synchronous `hidePopover()` (called
+  // the instant `open` goes `false`) would remove the element before `use_animated_open`'s
+  // own rAF-deferred `getAnimations()` check ever ran, so the ~150ms fade-and-scale-down
+  // plus its ~250ms settle hold (`primitives/src/lib.rs`'s `use_animated_open`) would be
+  // skipped outright: sampling `.dx-navbar-content` every animation frame across a real
+  // close would show `opacity`/`transform` jumping straight from the open resting value
+  // to the closed target between two consecutive frames, with the content already
+  // disconnected from the DOM one frame later.
   // This block asserts the construction directly: the content must stay
   // mounted and mid-animation for a real stretch of frames after closing,
   // not vanish within one or two.
@@ -91,10 +87,10 @@ test.describe('Close animation is not skipped (docs/backlog.md row 77 follow-up)
   // real key press below is what guarantees the sampler's first frame is
   // already scheduled before the close fires -- an evaluate whose own
   // Promise executor is still in flight when a following Node-side action
-  // fires is a real, observed race (an earlier draft of this test, with no
-  // synchronizing step in between, intermittently sampled zero frames at
-  // all -- `document.querySelector` had nothing to find yet by the time it
-  // ran). The loop itself still runs entirely in-page via `requestAnimationFrame`
+  // fires is a real race (without a
+  // synchronizing step in between, the sampler intermittently sees zero frames
+  // at all -- `document.querySelector` has nothing to find yet by the time it
+  // runs). The loop itself still runs entirely in-page via `requestAnimationFrame`
   // (row 112: sample in-page, not across await round trips) -- only its
   // start is synchronized with Node.
   async function startSampling(page: Page) {
@@ -162,9 +158,9 @@ test.describe('Close animation is not skipped (docs/backlog.md row 77 follow-up)
     // Real close animations are never instant: some meaningful stretch of
     // frames must show the content still connected to the DOM with
     // `data-state="closed"` (the animating-out phase `use_animated_open`
-    // holds it in during) before it actually unmounts. Pre-fix, this
-    // window was one frame wide (often zero, since the very next sample
-    // already read `connected: false`) -- this asserts a real hold, not a
+    // holds it in during) before it actually unmounts. Without the hold this
+    // window is one frame wide (often zero, since the very next sample
+    // already reads `connected: false`) -- this asserts a real hold, not a
     // one-frame technicality.
     const closedWhileConnected = samples.filter((s) => s.dataState === 'closed' && s.connected);
     expect(closedWhileConnected.length).toBeGreaterThan(3);
@@ -172,7 +168,7 @@ test.describe('Close animation is not skipped (docs/backlog.md row 77 follow-up)
     // The fade must be gradual: at least one sampled frame mid-close reads
     // an opacity strictly between the open (1) and closed (0) resting
     // values -- impossible if `opacity` jumps directly from one to the
-    // other between two consecutive frames, exactly the pre-fix defect.
+    // other between two consecutive frames, exactly the skipped-animation defect.
     const midFadeOpacities = closedWhileConnected
       .map((s) => Number.parseFloat(s.opacity))
       .filter((o) => Number.isFinite(o) && o > 0 && o < 1);
@@ -283,11 +279,10 @@ test.describe('open_on_hover: false (click activation)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Open/close fade vs. the anchor's centring transform (2026-10-05). An anchored overlay centres itself
+// Open/close fade vs. the anchor's centring transform . An anchored overlay centres itself
 // with `transform: translateX(-50%)` (top_layer.rs's engine stylesheet); a `@keyframes` that sets
-// `transform` REPLACES it for as long as it runs (the date picker played its fade 144px off-centre, the
-// colour picker 133px). `NavbarContent` sets no `data-side`, so it has no centring to lose today -- the same
-// shape, latent -- so this probes the rendered keyframes instead of sampling a position that could not
+// `transform` REPLACES it for as long as it runs (the panel then plays its fade off-centre). `NavbarContent` sets
+// no `data-side`, so it has no centring to lose today -- the same shape, latent -- so this probes the rendered keyframes instead of sampling a position that could not
 // move anyway: `assert-anchor-transform.ts` supplies an inline `transform`, seeks the element's own
 // CSS animation to its start/midpoint/end, and asserts the transform survives while `scale`/`translate`
 // do the moving. Source-level guard: scripts/check-anchored-keyframes.sh.
@@ -313,12 +308,12 @@ test.describe('Open/close animation', () => {
   // The slide offsets are physical (`translate: -100% 0` / `100% 0`, "rtl-physical" in the stylesheet): a
   // transform or `translate` is never direction-aware, so each `start`/`end` close variant has an explicit
   // `[dir="rtl"]` twin with the sign flipped (`dx-navbar-content-animate-out-{start,end}-rtl`).
-  // scripts/check-css-logical-properties.sh scans the `translate` property for exactly this since
-  // 2026-10-05; this proves the twins really are selected and really mirror, and keep `transform` alone.
+  // scripts/check-css-logical-properties.sh scans the `translate` property for exactly this;
+  // this proves the twins really are selected and really mirror, and keep `transform` alone.
   test('RTL: the start/end close slides mirror under dir=rtl and the twins leave transform alone', async ({ page }) => {
     // One page load per direction, with `dir` set while every nav is still closed: flipping it under an open
     // nav reverses the row beneath a stationary pointer, which hovers a SIBLING nav, closes this one and opens
-    // that one (observed in about half of the runs, and the sibling then stays open).
+    // that one (in about half of the runs, and the sibling then stays open).
     const slideEndX = async (rtl: boolean, direction: string): Promise<string> => {
       // The pointer from the previous load still rests on the trigger's coordinates; park it away first, or the
       // hydrated page starts with its nav hovered and the later `hover()` is no enter at all.

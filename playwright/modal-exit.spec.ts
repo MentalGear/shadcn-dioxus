@@ -3,8 +3,8 @@
  * (`modal-consumers.ts`): Dialog, AlertDialog, Sheet (all four sides), Drawer (bottom and
  * top) and CommandDialog -- every component that opens a dialog through the shared
  * `use_dialog_open_driver`. The claims live in `assert-modal-exit.ts` (a closing modal stays
- * a modal in the top layer at one size and place until its exit has played; owner report
- * 2026-10-05) and `assert-backdrop-fade.ts` (one scrim, faded in and out for the same
+ * a modal in the top layer at one size and place until its exit has played; backlog
+ * row 141) and `assert-backdrop-fade.ts` (one scrim, faded in and out for the same
  * length); this file only applies them to the whole list, so adding a modal component
  * without registering it here fails the first test below instead of silently skipping both.
  *
@@ -42,8 +42,7 @@ test("the modal consumers this spec covers are exactly the ones the source compo
   expect(stale, `playwright/modal-consumers.ts lists component(s) that no longer compose a modal: ${stale.join(", ")}`).toEqual([]);
 
   // The primitive layer: the only native-dialog openers are the shared driver's callers (the modal
-  // Popover's web arm used to carry a deferred-close driver of its own; it calls the shared one now,
-  // so the deferred close has one implementation), and the only file that calls showModal() itself is
+  // Popover's web arm calls the shared driver, so the deferred close has one implementation), and the only file that calls showModal() itself is
   // the driver's (lib.rs).
   const { viaDriver, ownShowModal } = derivePrimitiveOpeners();
   expect(viaDriver, "primitives calling use_dialog_open_driver").toEqual(["alert_dialog.rs", "dialog.rs", "popover.rs"]);

@@ -40,9 +40,9 @@ test.use({ viewport: PHONE });
 // The entrance slide-in keyframe runs over `--dx-motion-duration-slow`
 // (200ms, preview/assets/dx-components-theme.css) with `animation-fill-mode:
 // forwards`; a geometry assertion taken before it finishes reads a mid-
-// transform position, not the resting one (confirmed live: reading
+// transform position, not the resting one (reading
 // `getBoundingClientRect()` immediately after the trigger click, with no
-// wait, showed the panel still at its pre-animation `translateY(100%)`
+// wait, shows the panel still at its pre-animation `translateY(100%)`
 // position). Waited for with `awaitAnimationsSettled` (./animations.ts), NOT
 // a fixed `waitForTimeout`: the animation's clock starts at the first frame
 // rendered after mount, which under parallel load can be hundreds of ms
@@ -128,11 +128,10 @@ test('the panel sits flush against its own edge at rest, bottom and top variants
   // Regression: the web arm's `DrawerContent` is a real, modal `<dialog>`
   // (primitives/src/dialog.rs), and Chromium's own `dialog`/`dialog:modal`
   // UA rules (`margin: auto` + `inset-block: 0` with no `inset-inline` +
-  // `width`/`height: fit-content`) centered it -- both axes -- instead of
-  // anchoring it to any edge. Measured live pre-fix: the bottom variant's
-  // computed `margin` was `223px 496.594px` (equal top/bottom AND
-  // left/right margins) on an 800x1280 viewport, i.e. a floating card, not
-  // a bottom sheet.
+  // `width`/`height: fit-content`) would center it -- both axes -- instead of
+  // anchoring it to any edge: the bottom variant's computed `margin` would
+  // be `223px 496.594px` (equal top/bottom AND left/right margins) on an
+  // 800x1280 viewport, i.e. a floating card, not a bottom sheet.
   await gotoHydrated(page, URL, GOTO_OPTS);
   const viewport = await fixedViewportBox(page);
 
@@ -183,9 +182,9 @@ test('a drag away from the dismiss direction never exposes the viewport edge', a
   }
   // Read while the pointer is still down, so a `getComputedStyle` cannot land on a
   // closed/unmounted panel (backlog row 115). This gesture ends 160px above the handle,
-  // over the dialog's `::backdrop`; that used to be read as a backdrop click and closed the
-  // drawer (the owner's "dragging UP closes it" report, fixed in
-  // `use_dialog_backdrop_dismiss`) -- the dedicated tests below pin that.
+  // over the dialog's `::backdrop`; `use_dialog_backdrop_dismiss` must not read that as a
+  // backdrop click that closes the drawer (the "dragging UP closes it" report) -- the
+  // dedicated tests below pin that.
   const filterValue = await content.evaluate((el) => getComputedStyle(el).filter);
   await page.mouse.up();
 
@@ -228,9 +227,9 @@ test('dragging over the handle or the drawer content does not select text', asyn
   // (primitives/src/drawer.rs's `GESTURE_JS`), which
   // includes ordinary text -- sweep across the description paragraph the
   // same way a user's finger/mouse would while trying to grab the panel by
-  // its content rather than precisely on the handle. Confirmed live
-  // pre-fix: this exact sweep made `getSelection().toString()` return the
-  // full sentence.
+  // its content rather than precisely on the handle. Without the
+  // gesture's selection guard this exact sweep makes `getSelection().toString()`
+  // return the full sentence.
   await page.evaluate(() => window.getSelection()?.removeAllRanges());
   const desc = page.locator('[data-slot="drawer-description"]');
   const descBox = await measureAtRest(desc);
@@ -313,8 +312,8 @@ test('a short, slow drag snaps back without closing the drawer', async ({ page }
   // Slow means slow in the browser's own event time: the drawer reads the release velocity from
   // each `pointermove`'s `timeStamp` over the last 100ms before the release
   // (primitives/src/drawer.rs `GESTURE_JS`), so the two explicit moves with real pauses between
-  // them (and after) are what make this a non-flick. The old design timed its samples by when a
-  // reactive effect happened to run and closed this drawer in roughly 1 run in 3.
+  // them (and after) are what make this a non-flick. Timing samples by when a
+  // reactive effect happens to run would close this drawer in roughly 1 run in 3.
   await page.mouse.move(startX, startY);
   await page.mouse.down();
   await page.mouse.move(startX, startY + 7, { steps: 1 });
@@ -332,7 +331,7 @@ test('a short, slow drag snaps back without closing the drawer', async ({ page }
 });
 
 // ---------------------------------------------------------------------------------------
-// Drag direction, threshold and flick (owner report 2026-10-05: "a mouse drag UPWARDS on the
+// Drag direction, threshold and flick (the report: "a mouse drag UPWARDS on the
 // handle closes a bottom drawer"). Only movement toward the drawer's own closing edge may
 // dismiss it -- down for the bottom drawer, up for the top one -- and only past
 // DISMISS_DRAG_RATIO of its size or as a flick (>= 0.5px/ms over the last 100ms, after at
@@ -423,8 +422,8 @@ test("a mouse drag UP on a bottom drawer's handle never closes it, however far, 
   const startY = handleBox.y + handleBox.height / 2;
 
   // Slow, long, and ending far above the panel -- on the dialog's `::backdrop`. The release's
-  // `click` has the dialog as its target, outside its box: before the fix that was a backdrop
-  // dismiss, whichever way the drawer had been dragged.
+  // `click` has the dialog as its target, outside its box: that must not count as a backdrop
+  // dismiss, whichever way the drawer was dragged.
   await page.mouse.move(startX, startY);
   await page.mouse.down();
   for (let i = 1; i <= 8; i++) {
@@ -591,12 +590,12 @@ test.describe('Axe automated scan', () => {
   test('top variant, dark mode, open has no automatically detectable a11y issues', async ({ page }) => {
     // Regression: `DrawerClose`'s default (no `as` override) rendering --
     // exactly the "Close" button in this component's own top-side demo --
-    // had no CSS rule of its own at all, so its `background-color` was the
-    // UA's `ButtonFace`, which never responds to `data-theme`. Measured
-    // live pre-fix in dark mode: `color: rgb(212, 212, 212)` (correctly
-    // inverted, inherited from `.dx-drawer`) on `background-color: rgb(239,
-    // 239, 239)` (NOT inverted, the same value as light mode) -- light text
-    // on a near-white background.
+    // needs a CSS rule of its own, or its `background-color` is the
+    // UA's `ButtonFace`, which never responds to `data-theme`: in dark mode
+    // `color: rgb(212, 212, 212)` (correctly inverted, inherited from
+    // `.dx-drawer`) on `background-color: rgb(239, 239, 239)` (NOT inverted,
+    // the same value as light mode) -- light text on a near-white
+    // background.
     await gotoHydrated(page, `${URL}?dark_mode=true`, GOTO_OPTS);
     await page.getByRole('button', { name: 'Open from Top' }).click();
     await expect(page.locator('[data-slot="drawer-root"]')).toHaveAttribute('data-state', 'open');
@@ -631,7 +630,7 @@ test.describe("Scrim", () => {
 // the bottom below the `md` breakpoint (768px) and the right at and above it; an explicit side is
 // exactly that side at every width. A bottom drawer is docked flush and rounds the corners facing the
 // page; a left/right one floats inset from the viewport edge with all four corners rounded. Tier 3
-// ("opinion"): shadcn's demo is a bottom Vaul drawer, the owner asked for `Auto` as the default.
+// ("opinion"): shadcn's demo is a bottom Vaul drawer, and `Auto` is the chosen default.
 // ---------------------------------------------------------------------------------------
 
 /** The panel's resolved placement: the edge gaps to the fixed viewport box, the radii and the handle. */

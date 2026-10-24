@@ -54,8 +54,8 @@ test('test', async ({ page }) => {
   await expect(menuElement).toHaveAttribute('data-state', 'closed');
 });
 
-// Regression guard for the 2026-09-04 user report ("dropdown menu has full
-// page width"): `DropdownMenuContent` is a fit-content popover positioned
+// Regression guard for the user report "dropdown menu has full
+// page width": `DropdownMenuContent` is a fit-content popover positioned
 // under its trigger, not a full-viewport-width one. See
 // `oracle/tier2-html/top-layer.spec.ts`'s "Rule 13" for the full mechanism
 // this guards against (a duplicated/un-folded `style` attribute letting the
@@ -87,23 +87,19 @@ test('open content is fit-content width, not full page width, and sits near its 
 // REGRESSION (dev-docs/backlog.md row 85): a raw DOM `.focus()` call landing
 // directly on a menu item -- the exact thing a Playwright test driving
 // focus programmatically does, and an assistive-technology focus-
-// restoration path plausibly could -- used to close the whole menu and
-// revert focus to the trigger, instead of simply focusing the item in
-// place. Root cause: `DropdownMenuTrigger`'s own `onblur` decided "did
-// focus leave the whole menu" by synchronously reading `ctx.focus.
-// any_focused()`, a Rust-tracked roving-focus signal this crate's own
-// click/keyboard code always updates *before* moving DOM focus -- but a
-// raw external `.focus()` call updates nothing, so the guard read stale
-// "nothing focused" state and closed. Confirmed RED on the unmodified
-// tree: `trigger` ended up `data-state="closed"` after this exact
-// sequence. Fixed by construction: `DropdownMenuContentRendered` now
-// calls `use_outside_dismiss` (the same DOM-truth-based "did focus/a
-// click land outside" check `ContextMenu`'s own root already used, never
-// vulnerable to this because it asks `element.contains(event.target)`
-// rather than trusting a signal), and the fragile `onblur` branch is
-// removed. See `DropdownMenuSubTrigger`'s identical fix
-// (`oracle/tier1-apg/menu-submenu.spec.ts`) for the sub-trigger instance
-// of the same class.
+// restoration path plausibly could -- must not close the whole menu and
+// revert focus to the trigger; it simply focuses the item in place. By
+// construction `DropdownMenuContentRendered` calls `use_outside_dismiss` (the
+// same DOM-truth-based "did focus/a click land outside" check `ContextMenu`'s
+// own root uses, which asks `element.contains(event.target)` rather than
+// trusting a signal). An `onblur` on `DropdownMenuTrigger` that decides "did
+// focus leave the whole menu" from `ctx.focus.any_focused()` would read stale
+// "nothing focused" state, because that Rust-tracked roving-focus signal is
+// updated by this crate's own click/keyboard code *before* moving DOM focus,
+// and a raw external `.focus()` call updates nothing; `trigger` would end up
+// `data-state="closed"` after this exact sequence. See `DropdownMenuSubTrigger`'s
+// identical construction (`oracle/tier1-apg/menu-submenu.spec.ts`) for the
+// sub-trigger instance of the same class.
 test('a raw .focus() call on a plain item does not close the menu (row 85)', async ({ page }) => {
   await gotoHydrated(page, `${BASE_URL}/component/dropdown_menu/`);
   const trigger = page.getByRole('button', { name: 'Open Menu' });
@@ -493,11 +489,10 @@ test.describe('DropdownMenuSub open_on_hover: false (click activation)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Open/close fade vs. the anchor's centring transform (2026-10-05). An anchored overlay centres itself
+// Open/close fade vs. the anchor's centring transform . An anchored overlay centres itself
 // with `transform: translateX(-50%)` (top_layer.rs's engine stylesheet); a `@keyframes` that sets
-// `transform` REPLACES it for as long as it runs (the date picker played its fade 144px off-centre, the
-// colour picker 133px). `DropdownMenuContent` sets no `data-side`, so it has no centring to lose today -- the same
-// shape, latent -- so this probes the rendered keyframes instead of sampling a position that could not
+// `transform` REPLACES it for as long as it runs (the panel then plays its fade off-centre). `DropdownMenuContent` sets
+// no `data-side`, so it has no centring to lose today -- the same shape, latent -- so this probes the rendered keyframes instead of sampling a position that could not
 // move anyway: `assert-anchor-transform.ts` supplies an inline `transform`, seeks the element's own
 // CSS animation to its start/midpoint/end, and asserts the transform survives while `scale`/`translate`
 // do the moving. Source-level guard: scripts/check-anchored-keyframes.sh.

@@ -1,6 +1,6 @@
 /**
- * A MOUSE open focuses the first control, exactly like a keyboard open (owner decision 2026-10-18,
- * follow-up to backlog row 226): Base UI's default open-focus policy returns the popup only for
+ * A MOUSE open focuses the first control, exactly like a keyboard open (backlog row 226 and its
+ * follow-up): Base UI's default open-focus policy returns the popup only for
  * touch (`createDefaultInitialFocus`, utils/popups/popupStoreUtils.js). So, on one modality writer
  * and one policy (`dxOpenFocus`, `primitives/src/modality.rs`):
  *

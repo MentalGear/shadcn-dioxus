@@ -7,7 +7,7 @@
  *
  * Two drivers, for all four sides: synthetic touch Pointer Events (deterministic geometry, the wobble
  * and the diagonal) and, on Chromium, real touch input through CDP `Input.dispatchTouchEvent` (a real
- * browser scroll with sideways wobble). WebKit, where the bug was reported, is not available here:
+ * browser scroll with sideways wobble). WebKit, where the bug shows, is not available here:
  * a real iPhone re-test is still required.
  */
 import { test, expect } from './fixtures';

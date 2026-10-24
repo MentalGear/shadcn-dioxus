@@ -6,10 +6,10 @@ import { gotoHydrated } from "./hydration";
 /**
  * Menu item parts, hoisted (backlog row 155 follow-up g2).
  *
- * The separator, shortcut, destructive and inset CSS used to be repeated in the Dropdown, Context and Menubar
- * sheets; it is now one `data-dx-menu-*` section of the theme. This spec proves the hoist is equivalent: the
+ * The separator, shortcut, destructive and inset CSS is one `data-dx-menu-*` section of the theme, shared by the
+ * Dropdown, Context and Menubar sheets. This spec proves the hoist is equivalent: the
  * computed style of a menu item, its separator, its shortcut and a destructive item is read from each of the
- * three menus and (a) has the same absolute values the three old sheets declared, (b) is identical across the
+ * three menus and (a) has the absolute values the per-menu sheets once declared, (b) is identical across the
  * three hosts, so a part can no longer drift between them. It also checks the opt-in attributes the wrappers write.
  */
 

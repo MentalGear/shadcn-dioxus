@@ -80,12 +80,9 @@ test("Select returns focus to its trigger on Escape", async ({ page }) => {
   await open(page, "select");
 
   // role=combobox, not button (dev-docs/backlog.md row 8) -- SelectTrigger's
-  // ARIA role since the APG select-only-combobox trigger contract landed
-  // this round (primitives/src/select/components/trigger.rs); this locator
-  // was missed when select.spec.ts's identical one was updated because it
-  // predates that change and lives in a file row 8's own lane never
-  // touched, found integrating this round (2026-09-18, `getByRole("button")`
-  // no longer matches the trigger, so this test could never find it).
+  // ARIA role under the APG select-only-combobox trigger contract
+  // (primitives/src/select/components/trigger.rs), so `getByRole("button")`
+  // does not match the trigger.
   const trigger = demoRole(page, "combobox");
   await trigger.click();
   await expect(page.getByRole("listbox")).toHaveAttribute("data-state", "open");

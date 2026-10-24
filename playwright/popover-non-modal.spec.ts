@@ -1,6 +1,6 @@
 /**
- * Popover is NON-MODAL by default (dev-docs/backlog.md row 169, owner decision 2026-10-10 and the
- * 2026-10-11 page-scroll item: shadcn / Radix / Base UI parity). This file is the coverage for the
+ * Popover is NON-MODAL by default (dev-docs/backlog.md row 169: shadcn / Radix / Base UI parity,
+ * including page scroll). This file is the coverage for the
  * non-modal contract; `popover.spec.ts` keeps the modal arm (`variant=modal`, `is_modal: true`)
  * and `oracle/tier3-radix/scroll-lock.spec.ts` pins the modal lock/unlock on the same variant.
  *

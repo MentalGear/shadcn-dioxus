@@ -7,8 +7,8 @@
  *
  * Two derivations, both by reading the repo (the grep a reviewer would run):
  *   - PRIMITIVE CALLERS: every `primitives/src/*.rs` that calls `use_dialog_open_driver(`
- *     (today `dialog.rs`, `alert_dialog.rs` and `popover.rs`, whose modal arm used to carry a
- *     deferred-close driver of its own and is covered by `popover.spec.ts`) and every one that
+ *     (today `dialog.rs`, `alert_dialog.rs` and `popover.rs`, whose modal arm is covered by
+ *     `popover.spec.ts`) and every one that
  *     calls `.showModal()` itself (today only `lib.rs` -- the driver). A new file on either
  *     list fails `modal-exit.spec.ts` until it is accounted for here.
  *   - THEMED CONSUMERS: every `preview/src/components/<name>/component.rs` that composes one

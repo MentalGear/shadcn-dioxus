@@ -10,7 +10,7 @@
 // 4. the title shapes of the matrix specs (select-titles.mjs) against the real spec files: a spec whose titles no longer
 //    follow the shape the table expects fails here, instead of silently keeping every test;
 // 5. the `--grep-invert` pattern select.mjs builds really drops exactly the dropped tests (escaping, anchoring);
-// 6. the real tree: `--pages` narrows the biggest matrix spec and the old behaviour comes back with --no-css-narrow.
+// 6. the real tree: `--pages` narrows the biggest matrix spec and the broad behaviour comes back with --no-css-narrow.
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";

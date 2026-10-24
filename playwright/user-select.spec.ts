@@ -45,11 +45,11 @@ const CONTROLS = [
   .join(", ");
 
 /**
- * Row 331: 36 pages -> 12. Chosen by a greedy set cover, not by taste: on a debug SSG build every page of the old
+ * Row 331: 12 pages, chosen by a greedy set cover, not by taste: on a debug SSG build every page of a 36-page
  * sweep was probed for the (CONTROLS clause, first `dx-` class) pairs it renders, 38 distinct pairs in all, and
- * these 12 pages carry every one of them (picked most-uncovered-first, ties by the old list's order). A page not
+ * these 12 pages carry every one of them (picked most-uncovered-first, ties by list order). A page not
  * listed adds no clause/class pair the listed ones lack, so a component sheet that re-declares `user-select` on
- * its control still fails here. The old 36 took 77 s; the gate (`check-theme-baseline.sh`, arm 4) cannot see a
+ * its control still fails here (the 36-page sweep takes 77 s); the gate (`check-theme-baseline.sh`, arm 4) cannot see a
  * `user-select: text` override, a main.css or inline style, or an element the `[class^="dx-"]` selector misses.
  */
 const SWEEP = [
