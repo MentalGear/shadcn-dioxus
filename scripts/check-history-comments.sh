@@ -46,7 +46,12 @@
 #            as before:", which points at the text above), "as they always were", "exactly as it did", "the same defect as X
 #            had", "had to fix", "was exposed to the same ...", "not yet caught", "regressed when", "the first attempt at/was/
 #            used" (not "accepts the first attempt that clears ..."), "why it moved", "replaces a call per"; "owner report", "user/bug/live-site report", "owner's lab session", "incident behind",
-#            "PR #47" (a PR number, not an `upstream PR #N`) (report); a `$S/...` scratchpad pointer; a month-only
+#            "PR #47" (a PR number, not an `upstream PR #N`) (report); round 6 (row 384): "owner asked/wanted/requested",
+#            "requested/reported by the owner|user|reviewer", "issue #262" as a credit (not `upstream issue #N`), "the (product)
+#            bug behind", "surveyed ... found", "the survey found", "re-profile", "re-test is still required", "version 4
+#            plus", "landed silently/in main/as part of" (a click that "landed on" an element is geometry and stays); `#`
+#            lines of a component's `variants/order.txt` and the other `.txt` data files under the component, primitives,
+#            template and cli trees; a `$S/...` scratchpad pointer; a month-only
 #            "2026-08" date. NOT history: a path ("dev-docs/research/round3-2026-10-05.md" is a link, so it is masked
 #            before the rules run), a pinned upstream revision in a provenance frame (`<repo> commit <sha>`, `<sha> of
 #            <repo>`, `pinned/upstream ... <sha>`, `<path> @ <sha>`), "no longer" as a state ("Duplicate no longer matches",

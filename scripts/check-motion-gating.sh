@@ -12,7 +12,7 @@
 # THE CLASS (backlog row 177):
 # a component that keeps a loop or a timer alive while it is scrolled off
 # screen, inside a skipped `content-visibility` card, or in a hidden tab spends main-thread work on
-# nothing. The scroll re-profile measured the infinite animations alone at -15% scroll busy time, and the
+# nothing. Infinite animations alone cost ~15% of scroll busy time, and the
 # home page's 1 Hz tickers wake the page every second for cards nobody is looking at. The fix is by construction,
 # not per instance: `primitives/src/activity.rs` answers "is this visible" once for the whole page (one shared
 # IntersectionObserver + `visibilitychange` + `contentvisibilityautostatechange`); a CSS loop is paused by ONE

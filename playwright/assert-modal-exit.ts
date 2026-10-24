@@ -5,8 +5,8 @@
  * "a closing modal stays a modal, at the same size and place, until its exit has
  * played" is one claim, not five copies of a measurement.
  *
- * THE FAILURE IT GUARDS (backlog row 141: Dialog close "glitches", the right/left Sheet "changes
- * size" while closing, the Drawer "glitches" on close). A native `dialog.close()` drops the
+ * THE FAILURE IT GUARDS (backlog row 141): a native `dialog.close()` drops the dialog out of the top
+ * layer mid-exit, so its box changes size and place. A native `dialog.close()` drops the
  * dialog out of the top layer in one frame, so a driver that calls it the moment `open` goes
  * false loses the top layer mid-exit. Out of the top layer a `position: fixed` box is no longer
  * resolved against the viewport but against the nearest ancestor with layout containment -- on

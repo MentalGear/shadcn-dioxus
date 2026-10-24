@@ -1,5 +1,5 @@
 # Display order of this component's demos after `main`; a variants/<name>/ directory not listed here follows, sorted by name.
-# The multiple-selection demos come first (backlog row 311: owner asked for `multiple` higher on the page).
+# The multiple-selection demos come first (backlog row 311).
 multiple
 multiple_clear
 multiple_form

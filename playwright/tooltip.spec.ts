@@ -27,9 +27,8 @@ test("test", async ({ page }) => {
   await expect(tooltip).toHaveCount(0);
 });
 
-// dev-docs/backlog.md row 115 -- the product bug behind this file's load-only
-// "tabbing out of the trigger element should hide the tooltip" flake. The
-// popover's `toggle` event is dispatched asynchronously, AFTER `showPopover()`
+// dev-docs/backlog.md row 115 -- a focus-out must close the content even under
+// main-thread load. The popover's `toggle` event is dispatched asynchronously, AFTER `showPopover()`
 // returns; `use_popover_shown_while_mounted` must not mirror that event's
 // `newState === "open"` back into the `open` signal. When the focus-out (or
 // mouse-leave) lands before that queued event -- input events outrank it

@@ -10,7 +10,7 @@
 #   1. an `enforced` or `manual` row that names no repository path, or names a script or config path (a backticked
 #      token with a `/` or a file extension; a `*` is a glob) that does not exist;
 #   2. a `planned` row whose script already exists (the row must be flipped to `enforced` or `manual`: a planned
-#      control that landed silently is documentation drift);
+#      control shipped without flipping its row is documentation drift);
 #   3. a script in SUPPLY_CHAIN_SCRIPTS (the declared set kept at the top of this file) that no row names, or one
 #      that no longer exists: a new supply-chain script cannot land without a table row, and a deleted one cannot
 #      stay documented. Adding a supply-chain script means adding it to that list and to the table in one commit;

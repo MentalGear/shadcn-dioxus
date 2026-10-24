@@ -5,7 +5,7 @@
 # Focus, invalid and disabled are shared tokens in the theme's "State recipes" section, so a component sheet may say
 # where a ring paints but not what it is: a disabled `opacity` other than `var(--dx-opacity-disabled)`, a hand-written
 # focus `box-shadow`, `outline` or `border-color`, a focus ring on a text-entry control that is transparent outside
-# keyboard modality, the legacy 2px `--dx-ring`, a hand-mixed destructive invalid ring, or a `cursor: not-allowed`
+# keyboard modality, the 2px `--dx-ring`, a hand-mixed destructive invalid ring, or a `cursor: not-allowed`
 # beside `pointer-events: none` fails, with a reasoned allowlist. New control states compose through the tokens and
 # slot variables.
 #
