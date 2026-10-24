@@ -13,11 +13,10 @@
 # write -- forever, if nothing else in that same run breaks the cycle.
 #
 # The shape this guards against (dev-docs/backlog.md row 73): an effect that reads a signal with
-# tracked syntax and writes a new value to that same signal on every pointermove while dragging
-# (`DrawerContent`'s drag-continuation `use_effect` read `raw_offset()`) with nothing on the path
-# to break the cycle re-invokes itself synchronously from the first `pointerdown`, wedging the
-# tab's whole main thread (not just the component -- a `page.evaluate` in the same tab hangs
-# too). The cure is to read through `.peek()` instead of tracked syntax, the
+# tracked syntax and writes a new value to that same signal on every pointermove while dragging,
+# with nothing on the path to break the cycle, re-invokes itself synchronously from the first
+# `pointerdown`, wedging the tab's whole main thread (not just the component -- a
+# `page.evaluate` in the same tab hangs too). The cure is to read through `.peek()` instead of tracked syntax, the
 # read-through-`.peek()`-write-through-`.set()` discipline `lib.rs`'s `use_animated_open`
 # documents for its own generation counter. Row 73 has the full account: this script flags a
 # `raw_offset`-shaped effect and does not flag the `.peek()` form `drawer.rs` uses.

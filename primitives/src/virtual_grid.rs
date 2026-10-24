@@ -136,7 +136,7 @@ pub struct VirtualGridProps {
     /// in the DOM inside a `hidden="until-found"` placeholder, so the browser's find-in-page (and a
     /// `#:~:text=` link) can match items that are not mounted; when the browser reveals a match it
     /// fires `beforematch` on that placeholder, and the component scrolls the real item into view
-    /// and marks it `data-find-match="true"` (the find bar highlights the hidden placeholder, not
+    /// (by the item's own box, so row estimates that are off do not matter) and marks it `data-find-match="true"` (the find bar highlights the hidden placeholder, not
     /// the item, so style the attribute to show which item matched). Costs about two DOM nodes
     /// per item (an empty text gets no placeholder), mounted after hydration (not
     /// server-rendered), and a mounted item's match counts twice. Engines without `until-found`
@@ -826,11 +826,16 @@ fn VirtualGridWindowed(
             .collect::<Vec<_>>()
     });
     let mut find_match = use_signal(|| None::<(usize, usize)>);
-    let hydrated = use_find_in_page(container_id, text_value.is_some(), move |index: String| {
-        if let Some(cell) = parse_cell(&index) {
-            find_match.set(Some(cell));
-        }
-    });
+    let hydrated = use_find_in_page(
+        container_id,
+        text_value.is_some(),
+        None,
+        move |index: String| {
+            if let Some(cell) = parse_cell(&index) {
+                find_match.set(Some(cell));
+            }
+        },
+    );
     use_effect(move || {
         if let Some((row, column)) = find_match() {
             let top = (0..row)
@@ -1006,7 +1011,7 @@ pub struct VirtualWrapGridProps {
     /// in the DOM inside a `hidden="until-found"` placeholder, so the browser's find-in-page (and a
     /// `#:~:text=` link) can match items that are not mounted; when the browser reveals a match it
     /// fires `beforematch` on that placeholder, and the component scrolls the real item into view
-    /// and marks it `data-find-match="true"` (the find bar highlights the hidden placeholder, not
+    /// (by the item's own box, so row estimates that are off do not matter) and marks it `data-find-match="true"` (the find bar highlights the hidden placeholder, not
     /// the item, so style the attribute to show which item matched). Costs about two DOM nodes
     /// per item (an empty text gets no placeholder), mounted after hydration (not
     /// server-rendered), and a mounted item's match counts twice. Engines without `until-found`
@@ -1182,6 +1187,11 @@ impl WrapFocus {
     }
 }
 
+/// The selector of the mounted item a find match names (`data-find-index` is the item index).
+fn wrap_item_selector(index: &str) -> String {
+    format!(r#"[data-grid-index="{index}"]"#)
+}
+
 /// The cells of row `row` of a [`VirtualWrapGrid`].
 #[allow(clippy::too_many_arguments)]
 fn wrap_row_cells(
@@ -1351,12 +1361,17 @@ fn VirtualWrapGridWindowed(
     // estimated row heights; a match names the item, and the grid centres its row (which mounts
     // it) and marks it.
     let mut find_match = use_signal(|| None::<usize>);
-    let hydrated = use_find_in_page(container_id, text_value.is_some(), move |index: String| {
-        if let Ok(index) = index.parse::<usize>() {
-            find_match.set(Some(index));
-            bridge.reveal(index / columns.peek().max(1));
-        }
-    });
+    let hydrated = use_find_in_page(
+        container_id,
+        text_value.is_some(),
+        Some(wrap_item_selector),
+        move |index: String| {
+            if let Ok(index) = index.parse::<usize>() {
+                find_match.set(Some(index));
+                bridge.reveal(index / columns.peek().max(1));
+            }
+        },
+    );
 
     let columns_now = columns().max(1);
     let shape = GridShape::wrapping(count(), columns_now);

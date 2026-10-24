@@ -168,8 +168,8 @@ const CPU = Math.max(1, Number(process.env.LS_CPU ?? 1));
 
 const GROUPS: { route: string; scheme: "light" | "dark"; widths: number[]; pool?: number }[] = [
   // The home page keeps ONE page at a time: it is the long, progressively parsed page, and with two pages (four browsers
-  // on the box) the first paint lands earlier in the parse and a card below the fold can be counted as moving (833px, once
-  // in three pooled runs). Every other page is pooled.
+  // on the box) the first paint lands earlier in the parse and a card below the fold can be counted as moving. Every other
+  // page is pooled.
   { route: "/", scheme: "light", widths: ALL_WIDTHS, pool: 1 },
   { route: "/", scheme: "dark", widths: FULL ? ALL_WIDTHS : KEY_WIDTHS, pool: 1 },
   ...["/docs/", "/demos/", "/component/button/"].map((route) => ({

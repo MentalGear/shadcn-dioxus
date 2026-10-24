@@ -54,3 +54,9 @@ resumed by message with its context, which beat a fresh agent.
 Reviews the diff, and re-verifies lane results that ran on a shared cargo target on the merged tree: the mtime hazard
 ([`lane-rules.md`](./lane-rules.md), "Shared targets judge freshness by mtime", row 216) makes any model's "clippy clean"
 on a shared or copied target untrustworthy until the sources were touched. Squash a lane's wip commits on merge.
+
+## Running log (reopened 2026-10-24)
+
+| Date | Lane | Agent | Result |
+|---|---|---|---|
+| 2026-10-24 | `find-photo-wall` (row 406: a find-in-page match landed on the item's estimate; shared `primitives/src/virtual/find.rs`) | Sonnet (root cause with a real find bar under Xvfb, shared-layer fix, spec) | Root-caused by measurement, fixed in the layer so the list and the wrapping grid share the step; a Haiku agent would not fit (primitives, a debugging hypothesis). |

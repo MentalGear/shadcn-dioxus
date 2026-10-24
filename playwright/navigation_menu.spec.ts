@@ -289,8 +289,7 @@ test.describe('Panel layout matches shadcn: panel width, featured card and list 
     const trigger = nav(page).getByRole('button', { name });
     // Hover, not click: the menu's default activation is hover-intent (150ms), and
     // `click()` moves the pointer onto the trigger first. Under load the intent timer can
-    // fire between that move and the click, which then TOGGLES the just-opened panel shut
-    // (seen once in 340 runs at --workers=4: aria-expanded stayed "false" for 5s).
+    // fire between that move and the click, which then TOGGLES the just-opened panel shut.
     // These tests are about the panel's layout, not its activation.
     await trigger.hover();
     await expect(trigger).toHaveAttribute('aria-expanded', 'true');

@@ -56,7 +56,7 @@
 // `crate::components::select::*`.
 use crate::components::checkbox::Checkbox;
 use crate::components::radio_group::{RadioGroup, RadioItem};
-use crate::components::select::{Select, SelectOption};
+use crate::components::select::{Select, SelectMulti, SelectOption};
 use crate::components::switch::Switch;
 use dioxus::prelude::*;
 use dioxus_primitives::checkbox::CheckboxState;
@@ -353,9 +353,12 @@ fn watch_invalid_js(form_id: &str, report_id: &str) -> String {
 /// reference controls, for the tier 2 (HTML) rule checklist in
 /// `dev-docs/conformance-harness.md`.
 ///
-/// `RadioGroup` and `Select` document `name` (and `RadioGroup` also documents
-/// `required`) and render a hidden native mirror that submits it (see
-/// `dev-docs/plan.md` Phase 1). This fixture sets those props per their
+/// `RadioGroup`, `Select` and `SelectMulti` document `name` (and `RadioGroup`
+/// also documents `required`) and render a hidden native mirror that submits
+/// it (see `dev-docs/plan.md` Phase 1). The native multi-select reference
+/// marks its defaults `selected`, which the server HTML carries as the content
+/// attribute `<form reset>` restores from; `initial_selected` would be written
+/// as a literal attribute and never applied (row 253, as for `initial_checked`). This fixture sets those props per their
 /// documented API, so it is the oracle for that submission.
 #[component]
 pub fn FormFixture() -> Element {
@@ -530,6 +533,32 @@ pub fn FormFixture() -> Element {
                                 option { value: "apple", "Apple" }
                                 option { value: "banana", "Banana" }
                                 option { value: "cherry", "Cherry" }
+                                option { value: "date", "Date" }
+                            }
+                        }
+                    }
+
+                    div { class: "dx-form-row",
+                        div { class: "dx-form-field",
+                            span { "Fruits (library multi-select)" }
+                            SelectMulti::<String> {
+                                item_to_label: fruit_label,
+                                name: "fruits-lib",
+                                default_values: vec!["apple".to_string(), "cherry".to_string()],
+                                trigger_aria_label: "Fruits (library)",
+                                list_aria_label: "Fruits options (library)",
+                                SelectOption::<String> { index: 0usize, value: "apple", "Apple" }
+                                SelectOption::<String> { index: 1usize, value: "banana", "Banana" }
+                                SelectOption::<String> { index: 2usize, value: "cherry", "Cherry" }
+                                SelectOption::<String> { index: 3usize, value: "date", "Date" }
+                            }
+                        }
+                        div { class: "dx-form-field",
+                            label { r#for: "fruits-native", "Fruits (native reference)" }
+                            select { id: "fruits-native", name: "fruits-native", multiple: true,
+                                option { value: "apple", selected: true, "Apple" }
+                                option { value: "banana", "Banana" }
+                                option { value: "cherry", selected: true, "Cherry" }
                                 option { value: "date", "Date" }
                             }
                         }

@@ -5,7 +5,7 @@ the page as stale and check `git log` and the flag files named here.** What each
 backlog row files, not here: this page says only what is deployed, what runs, what is next and what waits for the owner.
 
 Last updated: **2026-10-24**. Several sessions work in parallel; who holds what is on the `claims` branch (`CLAIMS.md`).
-Preview site: https://mentalgear.github.io/shadcn-dioxus/ (deployed from main `b8357ca8`, PR #140, merge queue batch 13).
+Preview site: https://mentalgear.github.io/shadcn-dioxus/ (deployed from main `206e7e4d`, merge queue batch 15).
 
 ## Merge queue
 
@@ -17,33 +17,39 @@ deploy running the full Playwright suite on a release build. Procedure:
 
 ## Merged and deployed
 
-Merge queue batches 1-13 are on main (PRs #121-#140), batch 13 as `b8357ca8`.
+Merge queue batches 1-15 are on main (PRs #121-#142), batch 15 as `206e7e4d`.
 
 ## In the queue
 
-Batch 14 (`queue/batch-14`): row 375 (one page-wide scroll lock with a deferred final release), 376 (toast height follows
-its content), 374 and 378 (one Chromium resolver; the Chromium 153 spec reds and the anchored-overlay fixes), 379
-(session setup fetches every Cargo.lock), 380 (calendars read the visitor's clock after mount), 381 (one interactive
-cursor option), Select item-aligned flip, nested Spinner sizes (188 leftovers). The cleanup lanes of row 266 (this
-sweep: `gates.md`, the `rustdoc` gate, the CLAUDE.md trim, the archive moves) come after it.
+Batch 16 (`queue/batch-16`): rows 385 (focus ring follows the accent), 386 (grid header hover), 387 (docs-clarity review), 388
+(grid pinning API, breaking: `sticky_first_column` -> `pinned_columns_start`), 389 (accent states), 390 (base and accent
+presets own disjoint variables), 400 (merge drivers), 401, 402 (timing specs as same-run ratios), 404, 405, 406 (find
+match settles on the real item), 408 (SelectMulti `name`), 409 (CSS vars declared), 410 (history cold read), row 170,
+the Scroll Area horizontal demo and the palette icon on phones. Waiting on row 407 (layout-stability flakes) before the
+release suite reruns.
 
 ## Running
 
-Rows 309 (VirtualList and the grids on one engine; the grid `content-visibility` mode and find-in-page placeholders are
-deferred), 325 (the heavy cross-page oracles) and 152 (suite review; the 152b prune goes last).
+Row 407 (flake roots: layout-stability, popover-non-modal, carousel edge band, test:changed 404 routes).
 
 ## Next
 
-The cleanup sweep, in this order: **266** (repo cleanup: archive moves, doc trims, generated `gates.md`) -> **267**
-(split oversized source files) -> **355** (workspace lint table and Rust conventions,
-[`guides/rust-conventions.md`](./guides/rust-conventions.md)) -> **365** (final sweep: refactor and root-cause review),
-then the 152b suite prune. Order and reasons: [`research/backlog-order-2026-10-18.md`](./research/backlog-order-2026-10-18.md).
+Owner order of 2026-10-24 (backlog thread), each stage reading the finished output of the one before:
+
+1. Open bugs: 397.
+2. API shape, pre-1.0: **396**, **395**, **398**, **391**.
+3. Structure: **267** with **384**, at a quiet point in the queue; then **355** and **382**.
+4. Dependency review **371** (outcomes to the owner).
+5. One review pass: the code-quality review sweep together with **365**.
+6. Docs on the settled API: **393**, **392**, **394**, **399**, then the standing review **387**.
+7. The 152b suite prune, then **383** last.
+
+Independent, in parallel at any point: 188, 153, 268, 170.
 
 ## Owner inputs pending
 
 - iPhone re-tests: rows 28, 30, 295, 296, 305, 307.
 - Enable private vulnerability reporting on the repository ([`SECURITY.md`](../SECURITY.md) names it).
-- Row 371 (dependency evaluation: keep, lift, drop) is parked by the owner (2026-10-23), no work until he reopens it.
 - Remote branch deletion (merged and stale `lane/*`, `claude/*` branches): awaiting the owner's go; nothing is deleted
   without it.
 - CI back on (rows 4, 33): every workflow except `mutants.yml` is deleted, so reactivation means a new workflow that
