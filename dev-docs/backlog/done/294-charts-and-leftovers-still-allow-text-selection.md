@@ -42,4 +42,4 @@ Checked against `dev-docs/archive/research/user-select-inventory-2026-10-17.md`,
 
 Each gets `-webkit-user-select: none; user-select: none` (the prefixed line carries the scoped `property-no-vendor-prefix` disable). A text field in an input group stays selectable. Left alone, as the sweep said: progress, badge, card header, tab text and slider (shadcn leaves them selectable or the role is already covered). The scroll-area `select-none` in shadcn is on the scrollbar track, which holds no text, so there is nothing to select and no declaration was added.
 
-Spec: `playwright/leftover-user-select.spec.ts` (a new file, not `user-select.spec.ts`, which row 331 is shrinking): computed style on `/component/kbd/`, `label/`, `field/`, `input_group/`, a double-click on a label selects nothing, the input beside an addon keeps a selectable value. 6 tests, all pass.
+Spec: `playwright/user-select-kbd-label-addon.spec.ts` (a new file, not `user-select.spec.ts`, which row 331 is shrinking): computed style on `/component/kbd/`, `label/`, `field/`, `input_group/`, a double-click on a label selects nothing, the input beside an addon keeps a selectable value. 6 tests, all pass.

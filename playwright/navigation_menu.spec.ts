@@ -273,7 +273,7 @@ test.describe('Open animation never reflows the content', () => {
   });
 });
 
-test.describe('Panel layout matches shadcn (owner report: oversized panel, invisible featured card, mismatched list items)', () => {
+test.describe('Panel layout matches shadcn: panel width, featured card and list items', () => {
   // The report (dark mode, "Getting started" open): a panel ~900px+ wide
   // (a `width: max-content` box around `fr` tracks with no width
   // contract), a featured card indistinguishable from the panel

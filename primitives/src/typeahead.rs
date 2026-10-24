@@ -295,7 +295,7 @@ mod tests {
     }
 
     #[test]
-    fn a_narrowing_search_moves_on_when_the_current_item_no_longer_matches() {
+    fn a_narrowing_search_moves_on_when_the_current_item_stops_matching() {
         let items = vec![item(0, "Duplicate"), item(1, "Delete")];
         assert_eq!(find_next_match(&items, Some(0), "de"), Some(1));
     }

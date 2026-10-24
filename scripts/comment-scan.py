@@ -16,8 +16,8 @@ JS word, CSS with a `{ prop: value }` rule and a `/* */`) is scanned for the `//
 
 Scanned: `git ls-files` with the extensions above, minus SKIP_PREFIXES (dev-docs/archive/ is where history belongs, the
 prose under dev-docs/ is not code so no extension picks it up, but its code files are scanned;
-docs/ is the deployed site; the APG reference tree is vendored; generated primitives JS), the two gates'
-own sources, lock files.
+docs/ is the deployed site; the APG reference tree is vendored; generated primitives JS), the gates'
+own sources (this file, the history and refs wrappers, history-names.py and its wrapper), lock files.
 
 Exit status: 0 clean, 1 violation, 2 bad usage.
 """
@@ -50,6 +50,8 @@ SKIP_PREFIXES = (
     "scripts/comment-scan.py",
     "scripts/check-history-comments.sh",
     "scripts/check-comment-refs.sh",
+    "scripts/history-names.py",
+    "scripts/check-history-names.sh",
 )
 SKIP_PARTS = ("/node_modules/", "/vendor/", "/vendored/")
 SKIP_SUFFIXES = (".min.js", ".lock")

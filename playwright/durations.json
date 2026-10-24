@@ -556,7 +556,7 @@
    "skipped": 0,
    "retried": 0
   },
-  "demos-batch2-a.spec.ts": {
+  "demos-menu-overlay-floating.spec.ts": {
    "tests": 6,
    "seconds": 32.9,
    "passed": 6,
@@ -564,7 +564,7 @@
    "skipped": 0,
    "retried": 0
   },
-  "demos-batch2-b.spec.ts": {
+  "demos-dates-pickers-primitives.spec.ts": {
    "tests": 30,
    "seconds": 67.8,
    "passed": 30,
@@ -572,7 +572,7 @@
    "skipped": 0,
    "retried": 0
   },
-  "demos-batch3.spec.ts": {
+  "demos-component-parts.spec.ts": {
    "tests": 20,
    "seconds": 51.5,
    "passed": 20,
@@ -580,7 +580,7 @@
    "skipped": 0,
    "retried": 0
   },
-  "demos-parity3.spec.ts": {
+  "demos-field-input-group-badge.spec.ts": {
    "tests": 10,
    "seconds": 33.5,
    "passed": 10,
@@ -588,7 +588,7 @@
    "skipped": 0,
    "retried": 0
   },
-  "demos-parts188.spec.ts": {
+  "demos-input-group-textarea-breadcrumb.spec.ts": {
    "tests": 6,
    "seconds": 19.4,
    "passed": 6,
@@ -892,7 +892,7 @@
    "skipped": 0,
    "retried": 0
   },
-  "leftover-user-select.spec.ts": {
+  "user-select-kbd-label-addon.spec.ts": {
    "tests": 6,
    "seconds": 12.8,
    "passed": 6,

@@ -155,6 +155,7 @@ gates=(
   "check-backlog-index|scripts/check-backlog-index.sh"
   "check-history-comments|scripts/check-history-comments.sh"
   "check-comment-refs|scripts/check-comment-refs.sh"
+  "check-history-names|scripts/check-history-names.sh"
   "check-supply-chain-doc|scripts/check-supply-chain-doc.sh"
   "check-gates-doc|scripts/check-gates-doc.sh"
   "check-lane-lock|scripts/check-lane-lock.sh"
