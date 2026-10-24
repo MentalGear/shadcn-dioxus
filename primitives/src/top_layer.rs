@@ -1629,6 +1629,24 @@ pub(crate) fn use_anchor_position_fallback(
             const EDGE_MARGIN = 4;
             const vertical = side === 'top' || side === 'bottom';
 
+            // The panel's box where the engine placed it, without its own
+            // running animations: an open recipe's `translate` (the theme's
+            // 4px drop) or scale is already applied at the synchronous first
+            // measurement, and would make a correct `anchor()` placement miss
+            // `matches()` by its offset and hand a working CSS path to the JS
+            // fallback (backlog row 378). Each finite animation is seeked to
+            // its end for one read and put back in the same task, so nothing
+            // paints and none of them finishes.
+            function restingRect(el) {{
+                const anims = el.getAnimations().filter((a) => a.currentTime !== null && a.effect
+                    && Number.isFinite(a.effect.getComputedTiming().endTime));
+                const saved = anims.map((a) => a.currentTime);
+                for (const a of anims) a.currentTime = a.effect.getComputedTiming().endTime;
+                const r = el.getBoundingClientRect();
+                anims.forEach((a, i) => {{ a.currentTime = saved[i]; }});
+                return r;
+            }}
+
             function reposition() {{
                 if (!content || !trigger) return;
                 const t = trigger.getBoundingClientRect();
@@ -1658,7 +1676,7 @@ pub(crate) fn use_anchor_position_fallback(
                     content.style.overflowX = '';
                     content.style.boxSizing = '';
                 }}
-                const c = content.getBoundingClientRect();
+                const c = restingRect(content);
                 // `let`: re-measured at full width below once this call has
                 // committed to overriding the position (`measureAtFullWidth`).
                 let cw = content.offsetWidth;
