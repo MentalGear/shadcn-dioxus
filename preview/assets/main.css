@@ -183,8 +183,7 @@ main[tabindex="-1"]:focus {
      `input:not([type="checkbox"], [type="radio"], …)` (a selector list inside `:not()`) is
      silently dropped, entire rule, by the Dioxus asset pipeline's CSS processing: the served
      stylesheet would have no `pointer: coarse` block at all while the source did (the
-     touch-focus-zoom oracle goes red on every route). Simple selectors survive; see
-     docs/issues/asset-css-not-selector-list.md. */
+     touch-focus-zoom oracle goes red on every route). Simple selectors survive (dev-docs/archive/research/theme-2026-10-03/border-box.md). */
 
   /* A chained `:not()`, not the list form the notation rule wants: the asset pipeline drops that (above). */
   /* stylelint-disable-next-line selector-not-notation */

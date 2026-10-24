@@ -3,7 +3,6 @@
 playwright/carousel.spec.ts	path	dev-docs/research/shadcn-carousel-parity.md
 playwright/oracle/hydration-parity.spec.ts	path	.github/workflows/web.yml
 preview/assets/dx-utilities.css	path	docs/demo
-preview/assets/main.css	path	docs/issues/asset-css-not-selector-list.md
 preview/src/components/carousel/variants/peek/mod.rs	path	dev-docs/research/shadcn-carousel-parity.md
 preview/src/components/carousel/variants/sizes/mod.rs	path	dev-docs/research/shadcn-carousel-parity.md
 preview/src/components/pie_chart/component.rs	path	docs/gallery
