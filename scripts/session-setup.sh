@@ -15,7 +15,9 @@
 #   4. `pnpm install --frozen-lockfile` in playwright/ and preview/ (never a
 #      plain `pnpm add`/`install` that rewrites the lock -- backlog rows 72, 359; Playwright browsers are preinstalled at
 #      /opt/pw-browsers, so `playwright install` is deliberately NOT run)
-#   5. `cargo fetch --locked`
+#   5. `cargo fetch --locked` for every committed Cargo.lock: the root workspace
+#      and the detached crates (labs/carousel-lab, playwright/oracle/attr-synth)
+#      that scripts/check-cargo-locks.sh resolves offline (backlog row 379)
 #
 # Usage: scripts/session-setup.sh          (runs anywhere; the SessionStart hook
 #        in .claude/settings.json only invokes it when CLAUDE_CODE_REMOTE=true)
@@ -134,7 +136,20 @@ pnpm_install_if_stale "$repo_root/playwright"
 pnpm_install_if_stale "$repo_root/preview"
 
 # --- 5. crates ----------------------------------------------------------------
-# Fast when the registry/git caches are warm.
-(cd "$repo_root" && cargo fetch --locked >/dev/null 2>&1) || log "cargo fetch failed (non-fatal)"
+# One `cargo fetch --locked` per committed Cargo.lock, the same list
+# scripts/check-cargo-locks.sh walks: that gate resolves each manifest with
+# `--offline`, which needs the crates.io index entries for the detached crates
+# in the local cache (backlog row 379). A crate that already resolves offline
+# is skipped, so a warm second run costs one `cargo metadata` per lock.
+while IFS= read -r lock; do
+  dir="$repo_root/$(dirname "$lock")"
+  if cargo metadata --locked --offline --format-version 1 \
+       --manifest-path "$dir/Cargo.toml" >/dev/null 2>&1; then
+    continue
+  fi
+  log "cargo fetch --locked in ${dir#"$repo_root"/}"
+  cargo fetch --locked --manifest-path "$dir/Cargo.toml" >/dev/null 2>&1 \
+    || log "cargo fetch failed in ${dir#"$repo_root"/} (non-fatal)"
+done < <(git -C "$repo_root" ls-files '*Cargo.lock')
 
 log "done"
