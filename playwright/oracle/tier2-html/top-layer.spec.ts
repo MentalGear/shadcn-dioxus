@@ -900,14 +900,12 @@ test.describe("Rule 7 — normal mid-viewport placement is unchanged (no spuriou
  *     filed against, not this file's own `TopLayerFixture`.
  *   - The JS-measured fallback path (`use_anchor_position_fallback`'s
  *     "neither matches" branch): only engages when the CSS path failed to
- *     land the content correctly, and is the path this file's own
- *     `TopLayerFixture` exercises for its stacking `Popover` -- confirmed
- *     by execution (this session's diagnosis): even with `popover/
- *     style.css`'s `@supports` block loaded on this page, the stacking
- *     popover's content still carries inline `top`/`left` after opening,
- *     the fallback's own tell. That is exactly the scroll-detach case this
- *     rule's tracking fix targets, so it is exercised here rather than
- *     assumed.
+ *     land the content correctly. Whether an engine's CSS path lands this
+ *     fixture's stacking `Popover` is the engine's business (Chromium 153
+ *     does, backlog row 378), so the case forces the fallback itself:
+ *     `stripAnchorSupportsBlock` removes the `anchor()` rules before the
+ *     open, the no-anchor engine Rule 11(c) simulates, and the inline
+ *     `top`/`left` check below still proves the fallback is what ran.
  *
  * Both cases assert the same thing: the content-to-trigger offset,
  * measured as content's top-left corner relative to the trigger's
@@ -927,12 +925,14 @@ test.describe("Rule 8 — scroll tracking: an anchored overlay's content keeps i
     // tracking, and this rule isn't the one guarding flip behavior --
     // Rules 5-7 already do).
     await page.locator("#stack-sibling").scrollIntoViewIfNeeded();
+    // The JS path by construction, on any engine: no `anchor()` rules, so
+    // the CSS placement cannot match and the fallback takes over at open.
+    await stripAnchorSupportsBlock(page);
     await page.locator("#stack-popover-trigger").evaluate((el) => (el as HTMLElement).click());
     await expect(page.locator("#stack-popover-content")).toBeVisible();
 
     // Confirm this really is the fallback path (the case this rule exists
-    // to cover), not a false-positive pass because CSS anchoring silently
-    // took over instead: the fallback is the only thing that ever writes an
+    // to cover): the fallback is the only thing that ever writes an
     // inline `top` on this element (see `use_anchor_position_fallback`).
     const inlineTop = await page.locator("#stack-popover-content").evaluate(
       (el) => (el as HTMLElement).style.top,

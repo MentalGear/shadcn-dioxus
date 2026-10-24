@@ -133,7 +133,17 @@ function dxOpenFocus(panel, show) {
             plan = marked && !dxEditable(marked) ? marked : 'panel';
         }
     }
-    if (plan === 'browser') { show(); return; }
+    if (plan === 'browser') {
+        // The browser's own focusing step has no `preventScroll`, and Chromium 153 scrolls the
+        // page to the panel it focuses (a `<dialog popover>` focuses itself when it holds no
+        // control). Before the anchor fallback has placed the panel that can be thousands of
+        // pixels away (backlog row 378), so the page keeps its scroll, as on every other path.
+        const sx = scrollX;
+        const sy = scrollY;
+        show();
+        if (scrollX !== sx || scrollY !== sy) scrollTo({ left: sx, top: sy, behavior: 'instant' });
+        return;
+    }
     if (plan !== 'panel') {
         show();
         plan.focus({ preventScroll: true });
