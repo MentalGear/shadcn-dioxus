@@ -144,7 +144,9 @@ pub struct SelectMultiProps<T: Clone + PartialEq + 'static = String> {
     #[props(default)]
     pub on_open_change: Callback<bool>,
 
-    /// Name of the select for form submission
+    /// Name of the select for form submission: each selected value contributes one `name=value`
+    /// entry, in option order, through a hidden native `<select multiple>` (Base UI's
+    /// `<Select multiple name>`). An empty `name` contributes nothing.
     #[props(default)]
     pub name: ReadSignal<String>,
 
@@ -527,6 +529,10 @@ pub fn SelectMulti<T: Clone + PartialEq + 'static>(props: SelectMultiProps<T>) -
     // the root component (dev-docs/backlog.md row 9).
     use_effect(crate::scroll_lock::ensure_scrollbar_gutter_baseline);
 
+    // Snapshot before `use_controlled` consumes it: the hidden mirror
+    // `<select multiple>` marks these options `initial_selected`, and the
+    // form-reset listener restores the selection to them.
+    let default_values_for_reset = props.default_values.clone();
     let (multi_values, set_multi_internal) =
         use_controlled(props.values, props.default_values, props.on_values_change);
 
@@ -554,11 +560,9 @@ pub fn SelectMulti<T: Clone + PartialEq + 'static>(props: SelectMultiProps<T>) -
 
     let direction_signal = use_direction_signal(direction);
 
-    // SelectMulti has no `required` prop: a native <select multiple> can't
-    // express "at least one selected" via a single `required` attribute the
-    // way a single-select can, and `SelectMulti` renders no hidden mirror
-    // <select multiple>, so it does not submit with a form (`name` is not read
-    // here; only `Select` mirrors its value, dev-docs/plan.md Phase 1.3).
+    // SelectMulti has no `required` prop (dev-docs/backlog.md row 408): its
+    // hidden mirror below is a <select multiple>, whose `required` would
+    // mean "at least one selected", and no caller has asked for that yet.
     let (ctx, open) = use_select_root(
         values,
         set_value,
@@ -583,6 +587,21 @@ pub fn SelectMulti<T: Clone + PartialEq + 'static>(props: SelectMultiProps<T>) -
         },
     );
 
+    let options = ctx.selectable.options;
+    let current_values = values.read().clone();
+    let default_values: Vec<RcPartialEqValue> = default_values_for_reset
+        .iter()
+        .cloned()
+        .map(RcPartialEqValue::new)
+        .collect();
+
+    // See `Select`'s identical listener: native `<form reset>` restores only
+    // the hidden mirror, so the Dioxus-side selection is reset here.
+    let hidden_select_id = use_unique_id();
+    use_form_reset_listener(hidden_select_id, move || {
+        set_multi_internal.call(default_values_for_reset.clone())
+    });
+
     let owned = attributes!(div {
         "data-state": if open() { "open" } else { "closed" },
         "data-disabled": (props.disabled)(),
@@ -595,6 +614,37 @@ pub fn SelectMulti<T: Clone + PartialEq + 'static>(props: SelectMultiProps<T>) -
             dir: (ctx.direction)().as_str(),
             ..merged,
             {props.children}
+        }
+
+        // Hidden native <select multiple> for form participation: `Select`'s
+        // mirror (above, dev-docs/plan.md Phase 1.3) with one `selected`
+        // option per selected value, so the form's entry list holds one
+        // `name=value` per value (dev-docs/backlog.md row 408). No empty
+        // leading option: a <select multiple> never auto-selects one, so an
+        // empty selection already contributes nothing.
+        select {
+            id: hidden_select_id,
+            "data-slot": "select-native",
+            multiple: true,
+            name: props.name,
+            disabled: (props.disabled)(),
+            aria_hidden: "true",
+            tabindex: "-1",
+            position: "absolute",
+            pointer_events: "none",
+            opacity: "0",
+            margin: "0",
+            transform: "translateX(-100%)",
+
+            for opt in options.read().iter() {
+                option {
+                    key: "{opt.id}",
+                    value: opt.text_value.clone(),
+                    selected: current_values.contains(&opt.value),
+                    initial_selected: default_values.contains(&opt.value),
+                    {opt.text_value.clone()}
+                }
+            }
         }
     }
 }
