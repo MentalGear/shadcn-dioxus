@@ -46,7 +46,9 @@
  * paints between chunks. The clock of the sweep therefore starts at the FIRST PAINT, not at DOMContentLoaded: a frame
  * painted from a half-parsed document counts like any other. The one thing a half-parsed document may do is grow --
  * an element whose end tag has not arrived is still being filled, so while `document.readyState` is "loading" a pure
- * height change (same x, y and width) is not an event; anything that MOVES or RESIZES sideways is. The row 204 sweep
+ * height change (same x, y and width) is not an event, nor is any growth of an element that was open in the parser
+ * (an ancestor of the document's last node) on the previous frame and kept its x and y: a paragraph or an inline
+ * `code` whose text is still arriving widens too (row 407). Anything else that MOVES, SHRINKS or RESIZES sideways is. The row 204 sweep
  * delays only the wasm, so on a fast machine its parse ends before the first paint and this clause is idle there; the
  * second group of tests ("progressive paint") is what makes the parse slow: Chrome's own network and CPU throttling
  * (CDP `Network.emulateNetworkConditions` + `Emulation.setCPUThrottlingRate`), so the document really arrives in
@@ -93,6 +95,14 @@ const RECORDER = `
     rec.frames++;
     const els = document.querySelectorAll(SEL);
     let main = 0, n = 0;
+    // The parser's open elements: the ancestors of the document's last node while it is still loading. Their end
+    // tags have not arrived, so their content is still being appended (see "Progressive rendering" in the header).
+    const open = new Set();
+    if (document.readyState === 'loading') {
+      let last = document.documentElement;
+      while (last && last.lastChild) last = last.lastChild;
+      for (let a = last && (last.nodeType === 1 ? last : last.parentElement); a; a = a.parentElement) open.add(a);
+    }
     for (const e of els) {
       if (e.closest('#main-content') && ++main > 700) continue;
       if (++n > 1000) break;
@@ -104,7 +114,7 @@ const RECORDER = `
       // \`display: none\` has no client rects and is still measured, so a visible box that disappears still counts.)
       if (!e.checkVisibility() && e.getClientRects().length > 0) { prev.delete(e); continue; }
       const b = e.getBoundingClientRect();
-      const cur = { x: r(b.x), y: r(b.y + window.scrollY), w: r(b.width), h: r(b.height) };
+      const cur = { x: r(b.x), y: r(b.y + window.scrollY), w: r(b.width), h: r(b.height), open: open.has(e) };
       const p = prev.get(e);
       const moved = p && (Math.abs(p.x - cur.x) > 0.5 || Math.abs(p.y - cur.y) > 0.5 || Math.abs(p.w - cur.w) > 0.5);
       // A pure height change of a box that paints nothing itself (the page, the shell, the inset: they grow when
@@ -112,7 +122,15 @@ const RECORDER = `
       // group; the children are judged on their own.
       const grew = p && !moved && Math.min(p.y + p.h, cur.y + cur.h) >= TOP_PX;
       const growing = p && !moved && document.readyState === 'loading'; // still being filled by the parser
-      const silent = p && !moved && (grew || growing || !paints(e));
+      // An element that was open in the parser on the previous frame and only grew is being filled: a paragraph's
+      // text or an inline \`code\` still arriving widens it, from its left edge or, right-aligned, from its right
+      // one. An open element that had no area yet had nothing on screen to move (an empty inline box sits on the
+      // baseline until its text arrives). A box that shrinks or moves is an event.
+      const empty = p && (p.w < 0.5 || p.h < 0.5);
+      const anchored = p && Math.abs(p.y - cur.y) <= 0.5 &&
+        (Math.abs(p.x - cur.x) <= 0.5 || Math.abs(p.x + p.w - cur.x - cur.w) <= 0.5);
+      const filling = p && p.open && cur.w >= p.w - 0.5 && cur.h >= p.h - 0.5 && (empty || anchored);
+      const silent = p && (filling || (!moved && (grew || growing || !paints(e))));
       if (p && (moved || Math.abs(p.h - cur.h) > 0.5) && !silent && Math.min(p.y, cur.y) < TOP_PX) {
         if (!ids.has(e)) ids.set(e, ids.size);
         rec.events.push({ t: Math.round(now), f: rec.frames, id: ids.get(e), cls: String(e.getAttribute('class') || e.tagName).slice(0, 40), txt: (e.textContent || '').trim().slice(0, 24), from: p, to: cur });

@@ -34,10 +34,9 @@
   --highlight-color-tertiary: var(--dx-docs-blue);
   --dx-content-width: 1360px;
 
-  /* Comfortably >= .dx-preview-navbar's tallest steady-state rendered
-     height (measured ~54px single-row at desktop width) -- a fixed
-     assumption, not a live measurement, matching how `scroll-padding-top`
-     is normally used site-wide (see its own use below). */
+  /* The navbar's height: `.dx-preview-navbar` is at least this tall (its single-row content is ~54px), so every
+     rule that places something under it (`scroll-padding-top`, the docs sidebar's sticky `top` and height, the
+     shell's min-height) reads the box's real height, not an estimate of it (backlog row 407). */
   --dx-navbar-height: 60px;
 }
 
@@ -355,12 +354,17 @@ summary,
   display: var(--dark, none) var(--light, initial);
 }
 
+/* `min-height` is the token, so the docs sidebar's natural offset IS its sticky `top`: with a shorter navbar the
+ * sidebar is painted at its natural offset while the shell is still short (the document still parsing) and drops
+ * by the difference once the shell grows enough to let `sticky` act (backlog row 407). */
 .dx-preview-navbar {
   position: sticky;
   z-index: 1000;
   top: 0;
   display: flex;
   width: 100%;
+  min-height: var(--dx-navbar-height);
+  box-sizing: border-box;
   align-items: center;
   justify-content: center;
   padding: 0;
@@ -895,24 +899,31 @@ html:not([data-nav-sort="category"]) .dx-nav-category {
   background-color: var(--dx-sidebar-background);
 }
 
+/* The ToggleGroup (A-Z / Category) fills the pill and the chevron menu trigger sits after it, in columns fixed from
+ * the first byte: the trigger comes later in the document, and a flex row painted before it arrives gives the
+ * toggles the whole width, then takes the trigger's share back (backlog row 407). */
 .dx-nav-sort {
-  display: flex;
+  display: grid;
   align-items: center;
   padding: 2px;
   border-radius: var(--dx-radius-lg);
   background-color: var(--dx-muted);
   gap: 2px;
+  grid-template-columns: minmax(0, 1fr) var(--dx-control-height-sm);
 }
 
-/* The ToggleGroup (A-Z / Category) fills the pill; the chevron menu trigger sits after it. */
-.dx-nav-sort-toggles {
+/* Doubled: the ToggleGroup's own `display`/`width: fit-content` are one class too. Two equal columns for the two
+ * items, for the same reason as the pill's own: a flex row gives the first item the whole width until the second
+ * one has been parsed. */
+.dx-nav-sort .dx-nav-sort-toggles {
+  display: grid;
+  width: auto;
   min-width: 0;
-  flex: 1;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .dx-nav-sort .dx-nav-sort-option {
   min-width: 0;
-  flex: 1;
 }
 
 /* The pressed look comes from `<html data-nav-sort>` (set before first paint), never from the item's
