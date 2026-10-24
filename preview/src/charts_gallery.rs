@@ -35,6 +35,7 @@ use dioxus::prelude::*;
 use dioxus_icons::lucide::{
     ChartArea, ChartColumn, ChartLine, ChartPie, Check, Copy, FileCode, Gauge, MessageSquare, Radar,
 };
+use dioxus_primitives::AsChild;
 
 /// The seven tabs, in tab order.
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -518,14 +519,14 @@ fn CopyCodeButton(
 ) -> Element {
     let mut copied = use_signal(|| false);
 
-    let button = move |attributes: Vec<Attribute>| {
+    let button = move |el: AsChild| {
         let source = source.clone();
         let label = label.clone();
         rsx! {
             Button {
                 variant: ButtonVariant::Ghost,
                 size: ButtonSize::IconSm,
-                attributes,
+                attributes: el.attributes,
                 aria_label: label,
                 "data-copied": copied(),
                 onclick: move |_| {
@@ -574,7 +575,7 @@ fn CopyCodeButton(
             }
         }
     } else {
-        button(Vec::new())
+        button(AsChild::new(Vec::new(), rsx! {}))
     }
 }
 

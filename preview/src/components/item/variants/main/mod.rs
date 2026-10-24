@@ -1,6 +1,7 @@
 use super::super::component::*;
 use crate::components::button::{Button, ButtonVariant};
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 use dioxus_icons::lucide::{BadgeCheck, ChevronRight};
 
 #[component]
@@ -26,19 +27,20 @@ pub fn Demo() -> Element {
             Item {
                 variant: ItemVariant::Outline,
                 size: ItemSize::Sm,
-                as: move |attrs: Vec<Attribute>| rsx! {
-                    a { href: "#", ..attrs,
-                        ItemMedia { variant: ItemMediaVariant::Icon,
-                            BadgeCheckIcon {}
-                        }
-                        ItemContent {
-                            ItemTitle { "Your profile has been verified." }
-                        }
-                        ItemActions {
-                            ChevronRightIcon {}
-                        }
+                as: move |el: AsChild| rsx! {
+                    a { href: "#", ..el.attributes,
+                        {el.children}
                     }
                 },
+                ItemMedia { variant: ItemMediaVariant::Icon,
+                    BadgeCheckIcon {}
+                }
+                ItemContent {
+                    ItemTitle { "Your profile has been verified." }
+                }
+                ItemActions {
+                    ChevronRightIcon {}
+                }
             }
         }
     }

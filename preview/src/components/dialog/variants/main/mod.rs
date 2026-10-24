@@ -4,6 +4,7 @@ use super::super::component::{
     Dialog, DialogClose, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 };
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 
 // dev-docs/backlog.md row 32: no `#[css_module]` of its own here, and no
 // `document::Link` needed either -- this `Demo` always renders the `Dialog`
@@ -53,9 +54,10 @@ pub fn Demo() -> Element {
                 }
                 DialogFooter {
                     DialogClose {
-                        r#as: |attributes| rsx! {
-                            Button { variant: ButtonVariant::Outline, attributes, "Close Nested" }
+                        r#as: |el: AsChild| rsx! {
+                            Button { variant: ButtonVariant::Outline, attributes: el.attributes, {el.children} }
                         },
+                        "Close Nested"
                     }
                 }
             }

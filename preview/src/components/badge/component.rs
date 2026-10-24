@@ -1,4 +1,5 @@
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 use dioxus_icons::lucide::BadgeCheck;
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::merge_attributes;
@@ -41,11 +42,11 @@ pub struct BadgeProps {
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
 
-    /// Renders the badge as the element the callback returns, given the
-    /// badge's attributes (shadcn's `render` prop, as a link or a router link).
-    /// The callback then owns the children: pass them inside it, as with
-    /// `Marker`, and the `children` of the badge are not rendered.
-    pub r#as: Option<Callback<Vec<Attribute>, Element>>,
+    /// Renders the badge as the element the callback returns (shadcn's `render`
+    /// prop, as a link or a router link). The callback gets the badge's
+    /// attributes and children as an [`AsChild`]; spread the one and render
+    /// the other inside the element.
+    pub r#as: Option<Callback<AsChild, Element>>,
 
     /// The children of the badge element
     pub children: Element,
@@ -73,7 +74,7 @@ fn BadgeElement(props: BadgeProps) -> Element {
     let owned = attributes!(span { "data-style": props.variant.class() });
     let merged = merge_attributes(vec![base, props.attributes, owned]);
     if let Some(dynamic) = props.r#as {
-        dynamic.call(merged)
+        dynamic.call(AsChild::new(merged, props.children))
     } else {
         rsx! {
             span { ..merged, {props.children} }

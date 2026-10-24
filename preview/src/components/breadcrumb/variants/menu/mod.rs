@@ -4,6 +4,7 @@ use crate::components::dropdown_menu::{
     DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 };
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 
 const SECTIONS: &[&str] = &["Documentation", "Themes", "GitHub"];
 
@@ -25,14 +26,15 @@ pub fn Demo() -> Element {
                     BreadcrumbItem {
                         DropdownMenu {
                             DropdownMenuTrigger { aria_label: "Toggle menu",
-                                as: move |attributes: Vec<Attribute>| rsx! {
+                                as: move |el: AsChild| rsx! {
                                     Button {
                                         variant: ButtonVariant::Ghost,
                                         size: ButtonSize::IconSm,
-                                        attributes,
-                                        BreadcrumbEllipsis {}
+                                        attributes: el.attributes,
+                                        {el.children}
                                     }
                                 },
+                                BreadcrumbEllipsis {}
                             }
                             DropdownMenuContent {
                                 for (i , name) in SECTIONS.iter().enumerate() {

@@ -1,5 +1,6 @@
 use super::super::component::*;
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 
 // (title, artist, album, duration, cover gradient from, cover gradient to)
 const TRACKS: &[(&str, &str, &str, &str, &str, &str)] = &[
@@ -50,24 +51,25 @@ pub fn Demo() -> Element {
                 for (title , artist , album , duration , from , to) in TRACKS.iter() {
                     Item {
                         variant: ItemVariant::Outline,
-                        as: move |attrs: Vec<Attribute>| rsx! {
-                            a { href: "#", ..attrs,
-                                ItemMedia { variant: ItemMediaVariant::Image,
-                                    img {
-                                        src: cover(from, to),
-                                        alt: "{title}",
-                                        style: "filter: grayscale(1)",
-                                    }
-                                }
-                                ItemContent {
-                                    ItemTitle { "{title} — {album}" }
-                                    ItemDescription { "{artist}" }
-                                }
-                                ItemContent { flex: "none",
-                                    ItemDescription { "{duration}" }
-                                }
+                        as: move |el: AsChild| rsx! {
+                            a { href: "#", ..el.attributes,
+                                {el.children}
                             }
                         },
+                        ItemMedia { variant: ItemMediaVariant::Image,
+                            img {
+                                src: cover(from, to),
+                                alt: "{title}",
+                                style: "filter: grayscale(1)",
+                            }
+                        }
+                        ItemContent {
+                            ItemTitle { "{title} — {album}" }
+                            ItemDescription { "{artist}" }
+                        }
+                        ItemContent { flex: "none",
+                            ItemDescription { "{duration}" }
+                        }
                     }
                 }
             }

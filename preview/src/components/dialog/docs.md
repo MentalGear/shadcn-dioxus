@@ -15,7 +15,8 @@ Dialog {
     // Footer: the action row, a muted band across the foot of the panel.
     DialogFooter {
         DialogClose {
-            r#as: |attributes| rsx! { Button { variant: ButtonVariant::Outline, attributes, "Cancel" } },
+            r#as: |el: AsChild| rsx! { Button { variant: ButtonVariant::Outline, attributes: el.attributes, {el.children} } },
+            "Cancel"
         }
         Button { r#type: "submit", "Save changes" }
     }
@@ -28,7 +29,7 @@ Dialog {
 
 The button is the **last** child of the panel, in shadcn's DOM order. A dialog opened from the keyboard focuses its first control (see `use_dialog_open_driver`), so a dialog with a form lands on the first field and never on the X; a dialog with no other control lands on the X. A pointer or touch open focuses the panel itself.
 
-`DialogFooter { show_close_button: true }` appends an outline "Close" button to the footer, as shadcn's. `DialogClose` is the close behaviour on its own, shadcn's `DialogClose`: a `<button type="button">` that closes the enclosing dialog, or any element through `r#as` (the attributes carry the click handler), the way `SheetClose` takes `as`.
+`DialogFooter { show_close_button: true }` appends an outline "Close" button to the footer, as shadcn's. `DialogClose` is the close behaviour on its own, shadcn's `DialogClose`: a `<button type="button">` that closes the enclosing dialog, or any element through `r#as` (its `AsChild` carries the click handler in `attributes` and the label in `children`), the way `SheetClose` takes `as`.
 
 ## Header and footer
 

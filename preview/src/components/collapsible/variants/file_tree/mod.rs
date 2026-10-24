@@ -1,5 +1,6 @@
 use super::super::component::*;
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 use dioxus_icons::lucide::{ChevronRight, File, Folder, FolderOpen};
 
 #[derive(Clone, Copy, PartialEq)]
@@ -47,21 +48,22 @@ fn TreeNode(node: Node, default_open: bool) -> Element {
                     open: Some(open()),
                     on_open_change: move |next: bool| open.set(next),
                     CollapsibleTrigger {
-                        r#as: move |attrs: Vec<Attribute>| rsx! {
-                            button { style: "{ROW} justify-content: flex-start; width: 100%; border: none; background: transparent; cursor: pointer;", ..attrs,
-                                if open() {
-                                    ChevronRight { size: "1rem", style: "transform: rotate(90deg);" }
-                                } else {
-                                    ChevronRight { size: "1rem" }
-                                }
-                                if open() {
-                                    FolderOpen { size: "1rem" }
-                                } else {
-                                    Folder { size: "1rem" }
-                                }
-                                span { "{name}" }
+                        r#as: move |el: AsChild| rsx! {
+                            button { style: "{ROW} justify-content: flex-start; width: 100%; border: none; background: transparent; cursor: pointer;", ..el.attributes,
+                                {el.children}
                             }
                         },
+                        if open() {
+                            ChevronRight { size: "1rem", style: "transform: rotate(90deg);" }
+                        } else {
+                            ChevronRight { size: "1rem" }
+                        }
+                        if open() {
+                            FolderOpen { size: "1rem" }
+                        } else {
+                            Folder { size: "1rem" }
+                        }
+                        span { "{name}" }
                     }
                     CollapsibleContent {
                         div { style: "margin-inline-start: 0.5rem; padding-inline-start: 0.5rem; border-inline-start: 1px solid var(--dx-border);",

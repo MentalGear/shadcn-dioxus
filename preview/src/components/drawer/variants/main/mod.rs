@@ -6,6 +6,7 @@ use crate::components::{
     },
 };
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 use dioxus_icons::lucide::{Minus, Plus};
 
 const GOAL_STEP: i32 = 10;
@@ -83,9 +84,10 @@ pub fn Demo() -> Element {
                 DrawerFooter {
                     Button { onclick: move |_| open.set(false), "Submit" }
                     DrawerClose {
-                        as: |attributes| rsx! {
-                            Button { variant: ButtonVariant::Outline, attributes, "Cancel" }
+                        as: |el: AsChild| rsx! {
+                            Button { variant: ButtonVariant::Outline, attributes: el.attributes, {el.children} }
                         },
+                        "Cancel"
                     }
                 }
             }

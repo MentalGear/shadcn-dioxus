@@ -4,6 +4,7 @@ use crate::components::dropdown_menu::{
     DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 };
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 use dioxus_icons::lucide::ChevronDown;
 
 const SECTIONS: &[&str] = &["Documentation", "Themes", "GitHub"];
@@ -24,15 +25,16 @@ pub fn Demo() -> Element {
                         // `as` renders the trigger AS a compact ghost `Button` (shadcn: a
                         // flex item with `gap-1` and a 14px chevron).
                         DropdownMenuTrigger { aria_label: "Choose section: {section}",
-                            as: move |attributes: Vec<Attribute>| rsx! {
+                            as: move |el: AsChild| rsx! {
                                 Button {
                                     variant: ButtonVariant::Ghost,
                                     size: ButtonSize::Sm,
-                                    attributes,
-                                    "{section}"
-                                    ChevronDown {}
+                                    attributes: el.attributes,
+                                    {el.children}
                                 }
                             },
+                            "{section}"
+                            ChevronDown {}
                         }
                         DropdownMenuContent {
                             for (i , name) in SECTIONS.iter().enumerate() {

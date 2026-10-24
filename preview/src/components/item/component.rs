@@ -1,5 +1,6 @@
 use crate::components::separator::Separator;
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::merge_attributes;
 
@@ -116,7 +117,7 @@ pub fn Item(
     attributes: Vec<Attribute>,
     onclick: Option<EventHandler<MouseEvent>>,
     onkeydown: Option<EventHandler<KeyboardEvent>>,
-    r#as: Option<Callback<Vec<Attribute>, Element>>,
+    r#as: Option<Callback<AsChild, Element>>,
     children: Element,
 ) -> Element {
     let in_group = try_use_context::<InItemGroup>().is_some();
@@ -133,31 +134,27 @@ pub fn Item(
     if in_group && r#as.is_none() {
         base.extend(attributes!(div { role: "listitem" }));
     }
-    let merged = merge_attributes(vec![base, attributes]);
+    // The handlers are attributes, so the `as` element receives them exactly as the `div` does
+    // (row 395); `merge_attributes` chains one that also arrives through `attributes`.
+    let mut handlers = Vec::new();
+    if let Some(f) = onclick {
+        handlers.extend(attributes!(div { onclick: move |event| f.call(event) }));
+    }
+    if let Some(f) = onkeydown {
+        handlers.extend(attributes!(div { onkeydown: move |event| f.call(event) }));
+    }
+    let merged = merge_attributes(vec![base, handlers, attributes]);
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/item/style.css") }
         if let Some(dynamic) = r#as {
             if in_group {
-                div { role: "listitem", display: "contents", {dynamic.call(merged)} }
+                div { role: "listitem", display: "contents", {dynamic.call(AsChild::new(merged, children))} }
             } else {
-                {dynamic.call(merged)}
+                {dynamic.call(AsChild::new(merged, children))}
             }
         } else {
-            div {
-                onclick: move |event| {
-                    if let Some(f) = &onclick {
-                        f.call(event);
-                    }
-                },
-                onkeydown: move |event| {
-                    if let Some(f) = &onkeydown {
-                        f.call(event);
-                    }
-                },
-                ..merged,
-                {children}
-            }
+            div { ..merged, {children} }
         }
     }
 }
@@ -294,5 +291,50 @@ pub fn ItemFooter(
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/item/style.css") }
         div { ..merged,{children} }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::cell::RefCell;
+
+    thread_local! {
+        static NAMES: RefCell<Vec<String>> = const { RefCell::new(Vec::new()) };
+    }
+
+    /// With `as`, the item's children reach the caller's element and its `onclick`/`onkeydown`
+    /// ride in the attributes that element spreads (row 395).
+    #[test]
+    fn as_item_keeps_children_and_handlers() {
+        fn app() -> Element {
+            rsx! {
+                Item {
+                    onclick: |_| {},
+                    onkeydown: |_| {},
+                    r#as: |el: AsChild| {
+                        NAMES.with(|n| {
+                            n.borrow_mut().extend(el.attributes.iter().map(|a| a.name.to_string()))
+                        });
+                        rsx! {
+                            a { href: "#item", ..el.attributes, {el.children} }
+                        }
+                    },
+                    ItemContent { "Visit our documentation" }
+                }
+            }
+        }
+        NAMES.with(|n| n.borrow_mut().clear());
+        let mut dom = VirtualDom::new(app);
+        dom.rebuild_in_place();
+        let html = dioxus_ssr::render(&dom);
+        assert!(
+            html.contains(r##"href="#item""##) && html.contains("Visit our documentation"),
+            "the item's children render inside the `as` element: {html}"
+        );
+        let names = NAMES.with(|n| n.borrow().clone());
+        for handler in ["onclick", "onkeydown"] {
+            assert!(names.iter().any(|n| n == handler), "{handler} is in `attributes`: {names:?}");
+        }
     }
 }

@@ -12,6 +12,7 @@ use crate::components::dropdown_menu::{
     DropdownMenuTrigger,
 };
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 use dioxus_icons::lucide::ChevronDown;
 use dioxus_primitives::dioxus_attributes::attributes;
 
@@ -72,8 +73,8 @@ pub fn DataTableColumnsMenu(props: DataTableColumnsMenuProps) -> Element {
             DropdownMenuTrigger {
                 class: "dx-data-table-columns-trigger",
                 "data-slot": "data-table-columns-trigger",
-                r#as: move |attributes: Vec<Attribute>| rsx! {
-                    Button { variant: ButtonVariant::Outline, attributes,
+                r#as: move |el: AsChild| rsx! {
+                    Button { variant: ButtonVariant::Outline, attributes: el.attributes,
                         "{trigger_label}"
                         ChevronDown { size: "16px", "aria-hidden": "true" }
                     }

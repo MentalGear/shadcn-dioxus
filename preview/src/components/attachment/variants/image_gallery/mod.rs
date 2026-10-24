@@ -1,5 +1,6 @@
 use super::super::component::*;
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 use dioxus_icons::lucide::X;
 
 const WORKSPACE: Asset = asset!("/src/components/attachment/variants/image_gallery/workspace.svg");
@@ -39,13 +40,13 @@ pub fn Demo() -> Element {
                             }
                         }
                         AttachmentTrigger {
-                            r#as: move |attrs: Vec<Attribute>| rsx! {
+                            r#as: move |el: AsChild| rsx! {
                                 a {
                                     href: "{src}",
                                     target: "_blank",
                                     rel: "noreferrer",
                                     "aria-label": "Open {name}",
-                                    ..attrs,
+                                    ..el.attributes,
                                 }
                             },
                         }

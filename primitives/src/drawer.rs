@@ -147,7 +147,7 @@ use crate::dialog::{
     DialogContent, DialogCtx, DialogDescription, DialogDescriptionProps, DialogRoot, DialogTitle,
     DialogTitleProps,
 };
-use crate::{merge_attributes, use_id_or, use_unique_id};
+use crate::{merge_attributes, use_id_or, use_unique_id, AsChild};
 use dioxus::core::use_drop;
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
@@ -1298,8 +1298,10 @@ pub struct DrawerCloseProps {
     /// `button`, while keeping the close behaviour -- shadcn/ui's
     /// `asChild` pattern. Mirrors
     /// `preview/src/components/sheet/component.rs`'s `SheetClose`.
+    /// The callback gets the merged attributes (listeners included) and the children, see
+    /// [`AsChild`].
     #[props(default)]
-    pub r#as: Option<Callback<Vec<Attribute>, Element>>,
+    pub r#as: Option<Callback<AsChild, Element>>,
 
     /// The children of the close button.
     pub children: Element,
@@ -1338,7 +1340,7 @@ pub fn DrawerClose(props: DrawerCloseProps) -> Element {
     let merged = merge_attributes(vec![base, props.attributes]);
 
     if let Some(dynamic) = props.r#as {
-        dynamic.call(merged)
+        dynamic.call(AsChild::new(merged, props.children))
     } else {
         rsx! {
             button { ..merged, {props.children} }

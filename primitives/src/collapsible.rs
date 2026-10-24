@@ -1,7 +1,7 @@
 //! Defines the [`Collapsible`] component and its sub-components.
 
 use crate::dioxus_core::AttributeValue;
-use crate::{merge_attributes, use_controlled, use_id_or, use_unique_id};
+use crate::{merge_attributes, use_controlled, use_id_or, use_unique_id, AsChild};
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
 
@@ -149,8 +149,10 @@ pub struct CollapsibleProps {
     pub on_open_change: Callback<bool>,
 
     /// Render the root element as a custom component/element.
+    /// The callback gets the merged attributes (listeners included) and the children, see
+    /// [`AsChild`].
     #[props(default)]
-    pub r#as: Option<Callback<Vec<Attribute>, Element>>,
+    pub r#as: Option<Callback<AsChild, Element>>,
 
     /// Additional attributes for the collapsible element.
     #[props(extends = GlobalAttributes)]
@@ -213,7 +215,7 @@ pub fn Collapsible(props: CollapsibleProps) -> Element {
     let merged = merge_attributes(vec![base, props.attributes]);
 
     if let Some(dynamic) = props.r#as {
-        dynamic.call(merged)
+        dynamic.call(AsChild::new(merged, props.children))
     } else {
         rsx! {
             div {
@@ -325,8 +327,10 @@ pub fn CollapsibleContent(props: CollapsibleContentProps) -> Element {
 #[derive(Props, Clone, PartialEq)]
 pub struct CollapsibleTriggerProps {
     /// Render the trigger element as a custom component/element.
+    /// The callback gets the merged attributes (listeners included) and the children, see
+    /// [`AsChild`].
     #[props(default)]
-    pub r#as: Option<Callback<Vec<Attribute>, Element>>,
+    pub r#as: Option<Callback<AsChild, Element>>,
 
     /// Additional attributes for the collapsible trigger element.
     #[props(extends = GlobalAttributes)]
@@ -391,7 +395,7 @@ pub fn CollapsibleTrigger(props: CollapsibleTriggerProps) -> Element {
     let merged = merge_attributes(vec![base, props.attributes]);
 
     if let Some(dynamic) = props.r#as {
-        dynamic.call(merged)
+        dynamic.call(AsChild::new(merged, props.children))
     } else {
         rsx! {
             button {

@@ -1,5 +1,6 @@
 use super::super::component::*;
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 use dioxus_icons::lucide::{FileText, X};
 
 /// The trigger fills the card behind the actions, so activating the card and
@@ -41,11 +42,11 @@ pub fn Demo() -> Element {
                     AttachmentDescription { "Markdown · 12 KB" }
                 }
                 AttachmentTrigger {
-                    r#as: move |attrs: Vec<Attribute>| rsx! {
+                    r#as: move |el: AsChild| rsx! {
                         a {
                             href: "#",
                             "aria-label": "Open workspace-notes.md",
-                            ..attrs,
+                            ..el.attributes,
                         }
                     },
                 }

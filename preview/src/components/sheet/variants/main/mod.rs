@@ -8,6 +8,7 @@ use crate::components::{
     },
 };
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 
 #[component]
 pub fn Demo() -> Element {
@@ -59,9 +60,10 @@ pub fn Demo() -> Element {
             SheetFooter {
                 Button { "Save changes" }
                 SheetClose {
-                    as: |attributes| rsx! {
-                        Button { variant: ButtonVariant::Outline, attributes, "Cancel" }
+                    as: |el: AsChild| rsx! {
+                        Button { variant: ButtonVariant::Outline, attributes: el.attributes, {el.children} }
                     },
+                    "Cancel"
                 }
             }
             SheetContentClose {}

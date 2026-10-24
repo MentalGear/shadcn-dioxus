@@ -2,6 +2,7 @@ use super::super::component::*;
 use crate::components::button::{Button, ButtonVariant};
 use crate::components::kbd::{Kbd, KbdGroup};
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 
 /// shadcn's keyboard-shortcut tooltip: a "Save" button whose tooltip names the
 /// action and the shortcut that performs it.
@@ -10,8 +11,8 @@ pub fn Demo() -> Element {
     rsx! {
         Tooltip {
             TooltipTrigger {
-                as: |attributes: Vec<Attribute>| rsx! {
-                    Button { variant: ButtonVariant::Outline, attributes, "Save" }
+                as: |el: AsChild| rsx! {
+                    Button { variant: ButtonVariant::Outline, attributes: el.attributes, "Save" }
                 },
             }
             TooltipContent {

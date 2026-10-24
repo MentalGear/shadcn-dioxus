@@ -26,17 +26,18 @@ Sheet follows Nova's panel padding of 0: the header, footer and body carry the i
 
 ## SheetClose with `as` prop
 
-The `as` prop allows you to render a custom element while preserving the close behavior, similar to shadcn/ui's `asChild` pattern.
+The `as` prop renders a custom element while keeping the close behavior, as Radix's `asChild` does. The callback gets an `AsChild`: the attributes (the close `onclick` included) to spread on the element, and the children to render inside it.
 
 ```rust
 // Default: renders as <button>
 SheetClose { "Close" }
 
-// Custom element: attributes include the preset onclick handler
+// Custom element
 SheetClose {
-    as: |attributes| rsx! {
-        a { href: "#", ..attributes, "Go back" }
-    }
+    as: |el: AsChild| rsx! {
+        a { href: "#", ..el.attributes, {el.children} }
+    },
+    "Go back"
 }
 ```
 

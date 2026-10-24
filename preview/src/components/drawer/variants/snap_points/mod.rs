@@ -6,6 +6,7 @@ use crate::components::{
     },
 };
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 
 /// shadcn's `drawer-snap-points` (Base UI `snapPoints`): the drawer rests at 148px, 355px or fully open.
 /// A drag settles on the nearest point (a flick projects further), dragging below 148px closes it. The
@@ -71,9 +72,10 @@ pub fn Demo() -> Element {
                 }
                 DrawerFooter {
                     DrawerClose {
-                        as: |attributes| rsx! {
-                            Button { variant: ButtonVariant::Outline, attributes, "Close" }
+                        as: |el: AsChild| rsx! {
+                            Button { variant: ButtonVariant::Outline, attributes: el.attributes, {el.children} }
                         },
+                        "Close"
                     }
                 }
             }

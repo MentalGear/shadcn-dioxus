@@ -13,11 +13,13 @@ use dioxus_core::AttributeValue::Text;
 
 use crate::js_listener::{use_js_listeners, JsListeners};
 
+pub use as_child::AsChild;
 pub use dioxus_attributes;
 
 pub mod accordion;
 pub mod activity;
 pub mod alert_dialog;
+mod as_child;
 pub mod aspect_ratio;
 pub mod avatar;
 #[cfg(feature = "calendar")]

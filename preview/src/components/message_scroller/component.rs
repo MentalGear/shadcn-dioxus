@@ -1,5 +1,6 @@
 use crate::components::button::{Button, ButtonSize, ButtonVariant};
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 use dioxus_icons::lucide::ArrowDown;
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::merge_attributes;
@@ -171,10 +172,10 @@ pub fn MessageScrollerButton(
             behavior,
             onclick,
             attributes: merged,
-            r#as: move |attributes: Vec<Attribute>| {
+            r#as: move |el: AsChild| {
                 rsx! {
                     span { class: "dx-message-scroller-jump", "data-direction": jump_edge,
-                        Button { variant, size, attributes,
+                        Button { variant, size, attributes: el.attributes,
                             if let Some(children) = children.clone() {
                                 {children}
                             } else {

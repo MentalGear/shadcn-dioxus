@@ -136,7 +136,7 @@ use crate::r#virtual::{cv_chunks, ChunkSkip};
 pub use crate::scroll_area::ScrollFade;
 #[cfg(feature = "web")]
 use crate::use_effect_with_cleanup;
-use crate::{merge_attributes, use_unique_id};
+use crate::{merge_attributes, use_unique_id, AsChild};
 use dioxus::document::Eval;
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;
@@ -925,8 +925,10 @@ pub struct MessageScrollerButtonProps {
 
     /// Render a different element instead of the default `button`, keeping
     /// the scroll behaviour and the controller-owned state attributes.
+    /// The callback gets the merged attributes (listeners included) and the children, see
+    /// [`AsChild`].
     #[props(default)]
-    pub r#as: Option<Callback<Vec<Attribute>, Element>>,
+    pub r#as: Option<Callback<AsChild, Element>>,
 
     /// Additional attributes to apply to the button element.
     #[props(extends = GlobalAttributes)]
@@ -987,7 +989,7 @@ pub fn MessageScrollerButton(props: MessageScrollerButtonProps) -> Element {
     let merged = merge_attributes(vec![base, props.attributes]);
 
     if let Some(dynamic) = props.r#as {
-        dynamic.call(merged)
+        dynamic.call(AsChild::new(merged, props.children))
     } else {
         rsx! {
             button { ..merged, {props.children} }

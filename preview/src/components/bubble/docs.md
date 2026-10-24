@@ -29,13 +29,14 @@ BubbleGroup {
 
 Group consecutive bubbles from the same sender with `BubbleGroup`. Set `align` on each `Bubble`, not on the group; inside a `Message` the row's own alignment takes care of it.
 
-To turn a bubble into a link or button, pass `as` to `BubbleContent` and render the element yourself:
+To turn a bubble into a link or button, pass `as` to `BubbleContent` (Radix's `asChild`). The callback gets the content's attributes and children as an `AsChild`; spread the one and render the other inside your element:
 
 ```rust
 BubbleContent {
-    r#as: move |attrs: Vec<Attribute>| rsx! {
-        button { r#type: "button", onclick: move |_| reply(), ..attrs, "Click here" }
+    r#as: move |el: AsChild| rsx! {
+        button { r#type: "button", onclick: move |_| reply(), ..el.attributes, {el.children} }
     },
+    "Click here"
 }
 ```
 

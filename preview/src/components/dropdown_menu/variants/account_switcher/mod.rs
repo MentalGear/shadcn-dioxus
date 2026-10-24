@@ -4,6 +4,7 @@ use super::super::component::{
 use crate::components::avatar::{AvatarImageSize, ImageAvatar};
 use crate::components::button::{Button, ButtonSize, ButtonVariant};
 use dioxus::prelude::*;
+use dioxus_primitives::AsChild;
 use dioxus_icons::lucide::{BadgeCheck, Bell, CreditCard, LogOut, Sparkles};
 
 const AVERY_LIN: Asset = asset!("/assets/avatars/avery-lin.svg");
@@ -24,11 +25,11 @@ pub fn Demo() -> Element {
         DropdownMenu {
             DropdownMenuTrigger {
                 "aria-label": "Account switcher",
-                as: |attributes: Vec<Attribute>| rsx! {
+                as: |el: AsChild| rsx! {
                     Button {
                         variant: ButtonVariant::Ghost,
                         size: ButtonSize::Icon,
-                        attributes,
+                        attributes: el.attributes,
                         ImageAvatar {
                             size: AvatarImageSize::Small,
                             src: AVERY_LIN.to_string(),
