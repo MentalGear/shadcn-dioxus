@@ -268,7 +268,9 @@ full gates for batch A), and two deploys collided. So there is ONE merge owner (
    (`CHANGED_RANGE=origin/main...HEAD pnpm run test:changed`) plus the cross-component oracles
    (`popup-style-isolation`, `first-paint-styles`, `oracle/hydration-parity`), and `scripts/registry-install-smoke.sh`
    when a component's files changed. The FULL Playwright suite is not run per batch (row 322): it runs once per deploy,
-   inside `scripts/deploy-preview.sh` (step 4).
+   inside `scripts/deploy-preview.sh` (step 4). So do the heavy cross-page sweeps whose causes a build or a gate already
+   rules out (row 325): `first-paint-styles` runs its whole-site tests and its per-route tests on four subjects
+   (`SUBJECTS`); only the deploy passes `FIRST_PAINT_ROUTES=all`, which sweeps every route.
 3. A red caused by one queued branch is fixed on the batch branch when small and in scope, otherwise the branch is
    dropped from the batch and sent back; a red that also fails on main is not the batch's.
 4. The owner merges the batch to main, **deploys once** (`scripts/deploy-preview.sh`, docs commit), deletes the merged

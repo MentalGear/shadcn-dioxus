@@ -6,7 +6,7 @@ resolves here by id.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Done rows (324)
+## Done rows (325)
 
 | # | Item | Updated |
 |---|---|---|
@@ -285,6 +285,7 @@ resolves here by id.
 | [322](backlog/done/322-run-the-full-release-suite-per-deploy-not.md) | Run the full release suite per deploy, not per merge batch | 2026-10-23 |
 | [323](backlog/done/323-finer-spec-selection-map-changed-css-rules-to.md) | Finer spec selection: map changed CSS rules to the classes and routes that use them | 2026-10-21 |
 | [324](backlog/done/324-keep-warm-release-target-trees-for-validation-and.md) | Keep warm release target trees for validation and for deploy | 2026-10-21 |
+| [325](backlog/done/325-heavy-cross-page-oracles-construct-the-causes-away.md) | Heavy cross-page oracles: construct the causes away, run what remains per deploy | 2026-10-24 |
 | [326](backlog/done/326-lanes-iterate-with-dx-serve-hot-reload-and.md) | Lanes iterate with dx serve hot reload and verify on an SSG build | 2026-10-21 |
 | [327](backlog/done/327-audit-1-visit-each-route-once-per-scheme.md) | Audit 1: visit each route once per scheme in all-routes; measure load vs networkidle in gotoHydrated | 2026-10-21 |
 | [328](backlog/done/328-audit-2-declared-typography-every-text-or-icon.md) | Audit 2: declared typography -- every text- or icon-bearing root declares its size, only font-family, colour and direction inherit | 2026-10-21 |

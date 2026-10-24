@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (31)
+## Open rows (30)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -66,7 +66,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [307](backlog/307-ios-color-panel-does-not-pick-colors.md) | iOS: the Color Panel opens but tapping its color box does not change the color | OPEN (owner report 2026-10-20, iOS device; being investigated in the 'iOS Color Panel won't pick… | M | overlays |
 | [309](backlog/309-virtuallist-and-virtualgrid-share-one-engine.md) | VirtualList and VirtualGrid share one engine: DOM bridge, pinned focus, fade (two components, one engine) | OPEN (deferred: grid content-visibility mode, grid find-in-page placeholders; the rest merged)… | M | virtual |
 | [321](backlog/321-one-merge-queue-owner-for-main-batch-one.md) | One merge-queue owner for main (batch, one full gate and one suite per batch, deploy) | OPEN, documented (owner approved 2026-10-21; the QUEUE format is in lane-rules.md "Merge queue"… | S | process |
-| [325](backlog/325-heavy-cross-page-oracles-construct-the-causes-away.md) | Heavy cross-page oracles: construct the causes away, run what remains per deploy | PARTLY LANDED 2026-10-21: the popup half (row 259, batch A) and the all-routes half (row 327, batch… | M | tests |
 | [355](backlog/355-adopt-google-rust-style-guide-items.md) | Adopt Google Rust style guide items: workspace lint table and conventions | BACKLOG -- Round 6 sweep, after row 267's file split (owner approved 2026-10-21) | S-M | process |
 | [365](backlog/365-final-sweep-refactor-and-root-cause-review.md) | Final sweep: refactor review with the deconstruct-to-root and solve-by-construction exercise, proposals to the owner | BACKLOG (owner 2026-10-22, backlog thread: "final sweep, check for refactors and also run there the… | M for the review. Each accepted… | process |
 | [369](backlog/369-virtual-fractional-rows-grid-table.md) | VirtualGrid and TableRows: carry the exact measured size so a short body with fractional rows cannot overflow by 1px | Open. Found in batch 10 (scroll-fade 199 vs 198). | S | primitives |

@@ -31,8 +31,8 @@
  * WHAT THIS ORACLE ASSERTS (by property, over every component route -- a new component is covered the day it lands):
  *   1. every prerendered page's head has the bundle after the four global sheets, the same one on every page, complete;
  *   2. hard load: the JS-disabled computed styles of `main` equal the hydrated ones in both system colour schemes, and
- *      no stylesheet is inserted that the head/bundle did not already carry (only on the routes `SECTION_2` lists, row 329);
- *   3. client-side navigation to every component: the computed styles in the very first state the new route is in
+ *      no stylesheet is inserted that the head/bundle did not already carry (per route, on the routes `COMPONENTS` lists);
+ *   3. client-side navigation to each component `COMPONENTS` lists: the computed styles in the very first state the new route is in
  *      (the DOM the browser would paint) equal its settled ones, no uncovered sheet is inserted, CLS stays ~0;
  *   4. the date picker's calendar is styled the moment it first mounts;
  *   5. an explicit theme choice (cookie) is on `<html>` before the first paint and never changes afterwards;
@@ -43,8 +43,18 @@
  * right). Run against an SSG build, served statically (the default :8090; `dx serve` has no bundle and no
  * prerendered head):
  *   PLAYWRIGHT_BASE_URL=http://127.0.0.1:8090 npx playwright test --config=ssg.local.config.ts oracle/tier2-html/first-paint-styles.spec.ts
- * `FIRST_PAINT_ROUTES=field,date_picker` limits the per-route tests; `FIRST_PAINT_CSS_DELAY_MS` (default 150) is the
- * simulated latency of stylesheets fetched after load, which is what makes a late sheet observable on a fast loopback.
+ * `FIRST_PAINT_CSS_DELAY_MS` (default 150) is the simulated latency of stylesheets fetched after load, which is what makes
+ * a late sheet observable on a fast loopback.
+ *
+ * WHICH ROUTES (backlog row 325): the per-route tests of sections 2 and 3 sweep every route only in the per-deploy run
+ * (`scripts/deploy-preview.sh` runs the suite with `FIRST_PAINT_ROUTES=all`). Their causes are
+ * constructed away before any browser: a late sheet cannot exist because `scripts/ssg-css-bundle.mjs` puts every
+ * project sheet of dx's asset manifest into one render-blocking bundle and aborts the build when a page's head is not
+ * "four globals, then the bundle" (`scripts/check-css-delivery.sh` keeps that construction in place), and a markup
+ * difference between the first frame and the settled one fails `cargo test -p preview ssr_parity` (row 329). What is
+ * left for a browser (a component that measures itself, and the proof on every route that the two hold) is the deploy's. A lane or merge batch runs the
+ * whole-site tests (sections 1, 4-6) and the per-route tests on `SUBJECTS` only. `FIRST_PAINT_ROUTES=field,date_picker`
+ * runs exactly that list in both sections.
  * Functional, not timing: it is valid on a debug build.
  */
 import { test, expect } from "../../fixtures";
@@ -64,11 +74,14 @@ const ALL_COMPONENTS: string[] = fs
   .filter((d) => d.isDirectory() && fs.existsSync(path.join(PREVIEW, "src", "components", d.name, "docs.md")))
   .map((d) => d.name)
   .sort();
-/** `FIRST_PAINT_ROUTES=field,date_picker` narrows the per-route tests (the whole-site tests always cover every page). */
-const COMPONENTS: string[] = (() => {
-  const only = (process.env.FIRST_PAINT_ROUTES ?? "").split(",").map((s) => s.trim()).filter(Boolean);
-  return only.length && !only.includes("all") ? ALL_COMPONENTS.filter((c) => only.includes(c)) : ALL_COMPONENTS;
-})();
+/**
+ * The per-route subjects every run hydrates in a real browser: Field (the page of the original report), Select and
+ * Combobox (row 306) and Tag Group (row 332), the markup class's own subjects.
+ */
+const SUBJECTS = ["field", "select", "combobox", "tag_group"];
+const ONLY = (process.env.FIRST_PAINT_ROUTES ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+/** The per-route tests' routes: every component in the deploy's sweep, `FIRST_PAINT_ROUTES` when it lists slugs, `SUBJECTS` otherwise. */
+const COMPONENTS: string[] = ONLY.includes("all") ? ALL_COMPONENTS : ALL_COMPONENTS.filter((c) => (ONLY.length ? ONLY : SUBJECTS).includes(c));
 
 /** The four sheets `GlobalHead` links on every route; the bundle must come right after them. */
 const GLOBAL_SHEET_PREFIXES = ["main-", "dx-components-theme-", "dx-effects-", "theme-presets-"];
@@ -358,29 +371,22 @@ const CLIENT_MEASURED = new Set([
 ]);
 
 /**
- * The routes section 2 loads (row 329). A computed style that differs between the JS-off page and the hydrated one has one of
- * three causes: the markup differs (an effect writes text, a `style`, a class or a `data-*`), the browser writes something the
- * Rust did not (a measurement, an eval reply), or a sheet arrives late. The first is `cargo test`'s now:
+ * Why section 2 needs a browser at all (row 329). A computed style that differs between the JS-off page and the hydrated one
+ * has one of three causes: the markup differs (an effect writes text, a `style`, a class or a `data-*`), the browser writes
+ * something the Rust did not (a measurement, an eval reply), or a sheet arrives late. The first is `cargo test`'s:
  * `preview/src/ssr_parity.rs` compares the server markup with the first client frame on every demo and every component page,
- * so a markup-only difference fails there in seconds, naming the markup. The third is section 1 (one complete bundle in every
- * head) and section 3 (no uncovered sheet, CLS ~0 on every route). What is left for a real browser is the second cause, which
- * lives in the components that measure themselves (`CLIENT_MEASURED`: the CLS bound and the late-sheet check run there), and
- * one real hydration of the markup class's own subjects for the style diff: Field (the page of the original report), Select
- * and Combobox (row 306) and Tag Group (row 332). An explicit `FIRST_PAINT_ROUTES` runs exactly that list, `all` every route.
+ * so a markup-only difference fails there in seconds, naming the markup. The third is the build's (one complete bundle in
+ * every head, see "WHICH ROUTES"). What is left for a real browser is the second cause, which lives in the components that
+ * measure themselves (`CLIENT_MEASURED`: the CLS bound and the late-sheet check run there), and that is the deploy's sweep;
+ * every other run hydrates `COMPONENTS` (`SUBJECTS` by default) for the style diff.
  */
-const SECTION_2: string[] = (() => {
-  const only = (process.env.FIRST_PAINT_ROUTES ?? "").split(",").map((s) => s.trim()).filter(Boolean);
-  if (only.includes("all")) return ALL_COMPONENTS;
-  if (only.length) return COMPONENTS;
-  return ALL_COMPONENTS.filter((c) => CLIENT_MEASURED.has(c) || ["field", "select", "combobox", "tag_group"].includes(c));
-})();
 
 test.describe("2. hard load: the static page is the page", () => {
   test.describe.configure({ mode: "parallel" });
   test("the route list is real: every client-measured slug is a component page", () => {
     expect([...CLIENT_MEASURED].filter((c) => !ALL_COMPONENTS.includes(c)), "a stale CLIENT_MEASURED entry").toEqual([]);
   });
-  for (const slug of SECTION_2) {
+  for (const slug of COMPONENTS) {
     test(`/component/${slug}/: JavaScript off and hydrated compute the same styles, light and dark`, async ({ browser }) => {
       const read = async (js: boolean) => {
         const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, javaScriptEnabled: js, colorScheme: "light" });
