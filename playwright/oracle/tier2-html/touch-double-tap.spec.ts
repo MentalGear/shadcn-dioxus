@@ -18,24 +18,23 @@
  * `[role="button"]`/menu-item/tab/etc. controls are):
  *   https://webkit.org/blog/5610/more-responsive-tapping-on-ios/
  *
- * Reported behaviour this guards against (user device review, iOS 18
- * Safari): "If the user is quickly tapping buttons, the double-tap zoom is
+ * Reported behaviour this guards against (iOS 18 Safari): "If the user is quickly tapping buttons, the double-tap zoom is
  * triggered." Two rapid taps on/near an interactive control that has not
  * opted out of the gesture are read by Mobile Safari as a double-tap
  * zoom request instead of two independent activations.
  *
- * Fix, two layers (same construction as `touch-focus-zoom.spec.ts`'s
- * font-size floor):
+ * Construction, two layers (same shape as `touch-focus-zoom.spec.ts`'s
+ *   font-size floor):
  *   - APP LAYER (`preview/assets/main.css`): one `!important` rule
  *     covering every interactive element/role this app renders, as a
  *     catch-all for raw elements (`top_layer`'s/`form`'s
  *     `dioxus_primitives::` fixtures — dev-docs/preview-composition.md — and
- *     any future raw control added anywhere in `preview/`).
- *   - COMPONENT LAYER (`preview/src/components/<name>/style.css`): the same
- *     property, unconditionally, on every themed component's own
- *     interactive root class — load-bearing for a consumer who copies a
- *     component out via `dx components add` and never pulls in
- *     `main.css` at all.
+ *     any raw control added anywhere in `preview/`).
+ *   - THEME LAYER (`preview/assets/dx-components-theme.css`): one
+ *     zero-specificity rule on every `dx-` control (component sheets do not
+ *     repeat it, `scripts/check-theme-baseline.sh`) — load-bearing for a
+ *     consumer who copies a component out via `dx components add` and never
+ *     pulls in `main.css` at all.
  *
  * `touch-action: none` is NEVER an acceptable value here (it additionally
  * disables one-finger panning, breaking scroll) — this file treats `none`
@@ -51,7 +50,7 @@
  * defect distinct from one that uses the `manipulation` keyword.
  *
  * SELECTOR mirrors `main.css`'s app-layer rule exactly, one list shared by
- * both the fix and this oracle by construction: `button`, `[role="button"]`,
+ * both the construction and this oracle: `button`, `[role="button"]`,
  * `a[href]`, `input`, `select`, `textarea`, `summary`,
  * `[tabindex]:not([tabindex="-1"])`, `[role="menuitem"]`, `[role="option"]`,
  * `[role="tab"]`, `[role="switch"]`, `[role="checkbox"]`, `[role="radio"]`,
@@ -61,7 +60,7 @@
  * ARIA widget role from the list above, or a `tabindex` making it
  * keyboard-focusable (APG's own baseline requirement for a custom
  * control) -- a clickable element with none of those would already be a
- * separate, pre-existing a11y defect (unreachable by keyboard), not a
+ * separate a11y defect (unreachable by keyboard), not a
  * gap unique to this rule.
  *
  * Calibration (dev-docs/conformance-harness.md, "Calibration"): the first test
@@ -71,33 +70,20 @@
  * Chromium mobile-emulation environment; WebKit itself is not available
  * locally -- dev-docs/backlog.md row 4).
  *
- * RED-BEFORE-FIX EVIDENCE (captured this session by reverting
- * `preview/assets/main.css` and every `preview/src/components/<name>/style.css`
- * touch-action addition, restarting the dev server, and re-running this
- * file against the reverted tree -- see the paired fix commit for the
- * patch): **56 of 57 tests failed** -- every test except the calibration
- * one. `computed touch-action: auto` (the UA default that permits the
- * double-tap gesture) on literally every element matched by SELECTOR,
- * everywhere: no element anywhere in the app declared `touch-action`
- * before this round. Concretely, this means every single route failed --
- * even a component page with no interactive markup of its own (e.g.
- * `/component/?name=avatar&`) still failed, because this app's own shared
- * page chrome, present on every route, is itself built from unfixed
+ * What a failure looks like: `computed touch-action: auto` (the UA default
+ * that permits the double-tap gesture) on an element matched by SELECTOR.
+ * Without the layers above every route fails -- even a component page with
+ * no interactive markup of its own (e.g. `/component/avatar/`) -- because the
+ * app's shared page chrome, present on every route, is itself built from
  * interactive elements: the footer's five links (`.dx-footer-brand-link`,
  * `.dx-footer-link` x4), the component page's own "DEMO"/"CODE" tabs
  * (`.dx-tabs-trigger`, `role="tab"`), its per-code-block "Copy code"
  * button, and (route-dependent) the navbar's language `<select>`/GitHub
- * link. Representative offenders from the captured failure output (the
- * home page, `/`, and the `virtual_list` component page, which additionally
- * renders 100+ `role="listitem"`-adjacent interactive rows in its demo):
+ * link. Representative offenders:
  *
  *   <a class="dx-footer-link"> "Docs" touch-action=auto
  *   <button class="dx-tabs-trigger-..."> role="tab" "DEMO" touch-action=auto
  *   <button class="dx-copy-button"> "Copy code" touch-action=auto
- *
- * GREEN AFTER FIX: all 57 tests pass, confirmed by re-applying the patch,
- * restarting the dev server, and re-running this file against the fixed
- * tree.
  */
 
 import { test, expect, devices } from "../../fixtures";

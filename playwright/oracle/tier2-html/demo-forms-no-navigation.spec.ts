@@ -8,9 +8,9 @@
  * page load. The algorithm's `method=dialog` branch ("If form does not have an ancestor dialog element, then
  * return") is the one case that never navigates, and is what `DemoForm` relies on before hydration.
  *
- * WHAT THIS GUARDS (owner report 2026-10-05: "submit buttons in the demo / docs pages should not trigger /
- * reload the page"): the card's login form was a bare `<form>` with no `onsubmit`, so "Login" and Enter in its
- * email field reloaded `/component/card/` as `/component/card/?`. Dioxus does not prevent that by itself --
+ * WHAT THIS GUARDS (owner rule: "submit buttons in the demo / docs pages should not trigger / reload the
+ * page"): a bare `<form>` with no `onsubmit` (the card's login form is the example) would reload
+ * `/component/card/` as `/component/card/?` on "Login" or Enter in its email field. Dioxus does not prevent that by itself --
  * dioxus-web-0.7.9/src/dom.rs:113-116 calls `preventDefault` only when a Rust handler cleared
  * `Event::default_action_enabled()` -- and, independent of any handler, the SSG pages are plain HTML until the
  * wasm bundle has hydrated them. The construction is `DemoForm` (preview/src/components/form/component.rs),

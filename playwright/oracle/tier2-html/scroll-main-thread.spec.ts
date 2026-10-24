@@ -25,14 +25,14 @@
  * `main-thread.spec.ts`, which is skipped on debug):
  *   1. Page timers do not grow with the page's age. A shim counts every `setInterval` (live =
  *      created - cleared) and every timer callback that fires; over an idle window the live-interval
- *      count is constant and the wakeups per second do not climb. At HEAD a fresh 100 ms interval was
- *      created about every 1.2 s and never cleared (128 live after ~100 s, 1,326 wakeups/s at 155 s).
- *   2. The music-player block's readout advances and its play/pause works. Both were dead at HEAD
- *      (stuck at 1:24, always "playing") because the block's hooks ran in the PARENT's scope and every
- *      re-render allocated fresh ones -- the same bug that leaked the intervals (see `MasonryCard`).
+ *      count is constant and the wakeups per second do not climb. (A component whose hooks run in its
+ *      PARENT's scope allocates a fresh 100 ms interval on every re-render and never clears it: see
+ *      `MasonryCard`, backlog row 150.)
+ *   2. The music-player block's readout advances and its play/pause works (a block whose hooks run in the
+ *      PARENT's scope allocates fresh ones on every re-render: stuck readout, always "playing").
  *   3. `#main` (Dioxus' event root) has no NON-passive `wheel` / `touchstart` / `touchmove` listener,
- *      asked of Chromium itself (`DOMDebugger.getEventListeners`). At HEAD, `Input`'s unconditional
- *      `onwheel` and three `ontouchstart: prevent_default` made all of them blocking.
+ *      asked of Chromium itself (`DOMDebugger.getEventListeners`): an unconditional `onwheel` on `Input` or an
+ *      `ontouchstart: prevent_default` would make them blocking.
  *   4. A real-touch drag that starts on the slider thumb / resizable handle / color-area thumb moves the
  *      control and does NOT scroll the page or select text, with no touchstart handler to say so
  *      (`touch-action: none` does it) -- the guard for removing those three handlers.
@@ -42,20 +42,18 @@
  *      would clip their dropdown): >= 70% of the gallery cards are skipped at the top AND at the bottom of the page
  *      (`checkVisibility({ contentVisibilityAuto: true })`), and the idle page relayouts almost never
  *      (`Performance.getMetrics` LayoutCount, ceiling below). A scripted scroll's layout/recalc counts
- *      are REPORTED (annotation + console), not capped: they do not separate HEAD from the fix (see the
- *      comment at the scroll in test 5). Test 6: the same for the component pages' stacked variants.
+ *      are REPORTED (annotation + console), not capped: they do not separate a skipping page from a
+ *      non-skipping one (see the comment at the scroll in test 5). Test 6: the same for the component pages' stacked variants.
  *
  * Chromium only (CDP), like `main-thread.spec.ts`. Run against the dev server or an SSG build:
  *   PLAYWRIGHT_BASE_URL=http://127.0.0.1:8083 npx playwright test --config=oracle.local.config.ts \
  *     ./oracle/tier2-html/scroll-main-thread.spec.ts
  *
- * Red proof (2026-10-04), against the release build of HEAD (`/home/user/tgt/tip/dx/preview/release/web/public`
- * on :8090): tests 1, 2, 3, 5 and 6 fail (live setIntervals 4 -> 10 -> 15 over 12 s idle, 59 then 111 timer
- * fires/s; the player readout stuck; `#main` blocking on `wheel` + `touchstart`; no card or variant skipped).
- * All 8 pass against the fixed dev build on :8083. The three touch tests pass on both -- they guard the
- * removal of the `ontouchstart` handlers, not a HEAD defect. (The resizable one was red on the first fixed
- * build, before `main.css` exempted the handle from its `touch-action: manipulation !important` catch-all.)
- * Numbers: the research note's section 7.
+ * Red proof: without the constructions, tests 1, 2, 3, 5 and 6 fail (live setIntervals climbing over 12 s
+ * idle and timer fires/s climbing; the player readout stuck; `#main` blocking on `wheel` + `touchstart`; no
+ * card or variant skipped). The three touch tests pass either way -- they guard the removal of the
+ * `ontouchstart` handlers, not a defect of their own. The resizable handle relies on `main.css` exempting it
+ * from the `touch-action: manipulation` catch-all. Numbers: the research note's section 7.
  */
 import { test, expect } from "../../fixtures";
 import type { CDPSession, Page } from "@playwright/test";
@@ -152,11 +150,11 @@ test.describe("scroll smoothness of / (counts)", () => {
     const c = await probe(page);
 
     console.log(`[timers] live ${a.live}->${b.live}->${c.live}, created ${a.created}->${c.created}, fires/s ${((b.fires - a.fires) / 6).toFixed(1)} then ${((c.fires - b.fires) / 6).toFixed(1)}, setTimeout calls ${a.timeouts}->${c.timeouts}`);
-    // Live intervals: constant (HEAD: +1 about every 1.2 s, never cleared).
+    // Live intervals: constant (a leaked interval adds one about every 1.2 s, never cleared).
     expect(c.live, `live setIntervals over 12 s idle: ${a.live} -> ${b.live} -> ${c.live}`).toBe(a.live);
     expect(c.created, `setIntervals created over 12 s idle: ${a.created} -> ${c.created}`).toBe(a.created);
 
-    // Timer wakeups per second: bounded, and not climbing with age (HEAD: ~58/s at 8 s, ~200/s at 25 s).
+    // Timer wakeups per second: bounded, and not climbing with age.
     const firstHalf = (b.fires - a.fires) / 6;
     const secondHalf = (c.fires - b.fires) / 6;
     expect(firstHalf, `timer fires/s 3-9 s: ${firstHalf.toFixed(1)}`).toBeLessThanOrEqual(12);
@@ -170,7 +168,7 @@ test.describe("scroll smoothness of / (counts)", () => {
     await page.locator(".dx-widget-card").filter({ has: page.getByRole("button", { name: "Play or pause" }) }).first().scrollIntoViewIfNeeded();
     const start = await playerLabel(page);
     expect(start, "the player block is on the page").toMatch(/^\d+:\d\d$/);
-    // HEAD: stuck at 1:24 -- every re-render allocated a fresh signal at 84 s.
+    // A readout whose signal is reallocated on every re-render sticks instead.
     await expect.poll(async () => seconds(await playerLabel(page)) - seconds(start), { timeout: 15_000, intervals: [500] }).toBeGreaterThanOrEqual(3);
 
     const card = page.locator(".dx-widget-card").filter({ has: page.getByRole("button", { name: "Play or pause" }) }).first();
@@ -215,7 +213,7 @@ test.describe("scroll smoothness of / (counts)", () => {
     await cdp.send("Performance.enable");
 
     // At the top of the page, only the first viewport's cards take part in rendering; everything else is
-    // skipped (no style/layout/paint, their animations stop costing frames). HEAD: 0 of 70 skipped.
+    // skipped (no style/layout/paint, their animations stop costing frames).
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.waitForTimeout(1500);
     const skippedAtTop = await page.evaluate(
@@ -225,7 +223,7 @@ test.describe("scroll smoothness of / (counts)", () => {
     expect(skippedAtTop, `of ${total} gallery cards, ${skippedAtTop} are skipped at the top of the page`).toBeGreaterThanOrEqual(Math.floor(total * 0.7));
 
     // Idle at the top: a ticking demo or a pulse in an off-screen card must not keep re-laying-out the page.
-    // HEAD (release): ~28 layouts/s (the leaked 100 ms intervals); cards un-skipped: ~43/s on a debug build.
+    // Leaked 100 ms intervals or un-skipped cards each add tens of layouts per second.
     const m0 = await metrics(cdp);
     await page.waitForTimeout(4000);
     const m1 = await metrics(cdp);
@@ -261,8 +259,8 @@ test.describe("scroll smoothness of / (counts)", () => {
     // `.dx-component-variant`: the stacked "Variants" demos under a component's main demo (the chart pages
     // have up to 13 live demos each). They are deliberately outside the `content-visibility: auto` rule
     // (main.css): a skipped subtree has no layout box, so a carousel or a chart measured 0 at mount and
-    // never recovered -- carousel-virtual-wheel / carousel / chart_tooltip `default_index` went red
-    // (round-2 verification, 2026-10-04). The home cards DO keep the skip (tests 1-5).
+    // never recovered (carousel-virtual-wheel / carousel / chart_tooltip `default_index`). The home cards
+    // DO keep the skip (tests 1-5).
     await gotoHydrated(page, `${BASE_URL}/component/area_chart/?`, { timeout: 20 * 60 * 1000 });
     await page.waitForFunction(() => document.querySelectorAll(".dx-component-variant").length >= 5, undefined, { timeout: 5 * 60 * 1000 });
     await page.waitForTimeout(1500);

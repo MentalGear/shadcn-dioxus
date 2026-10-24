@@ -5,13 +5,13 @@
  *   - HTML Living Standard, "the link element" / "render-blocking": a `<link rel=stylesheet>` in `<head>` blocks the
  *     first render; one inserted after `<body>` exists does NOT (the spec only lets render-blocking elements be added
  *     while the document "allows adding render-blocking elements", i.e. while `body` is null; `blocking=render` on a
- *     late link measured as a no-op, 2026-10-05). So a stylesheet that is discovered by RENDERING something arrives
+ *     late link is a no-op). So a stylesheet that is discovered by RENDERING something arrives
  *     after that something has already been painted.
  *   - Layout Instability API (`layout-shift`): the reflow when such a sheet lands is a layout shift.
  *
- * THE REPORT this guards (owner, 2026-10-05): "elements on their component's page, on first load, show a white/light
+ * THE CLASS this guards, as the owner reported it: "elements on their component's page, on first load, show a white/light
  * version or placeholder before their dark mode or real style kicks in (also shifts layout), e.g. /component/field/.
- * Hydration?" Measured on the release SSG build of 001a5f0:
+ * Hydration?" Measured on the release SSG build:
  *   - NOT hydration and NOT the theme. A hard load is right: the JS-disabled page and the hydrated page have
  *     0 differing computed styles over `main` in light and dark (this spec's parity tests), hydration inserts no
  *     stylesheet, CLS 0.0001, and the pre-paint script has set `data-theme` before the first paint.
@@ -38,9 +38,8 @@
  *   5. an explicit theme choice (cookie) is on `<html>` before the first paint and never changes afterwards;
  *   6. the detector is not blind (a page with its stylesheet removed is reported).
  *
- * RED/GREEN: tests 1, 3 and 4 are red on a build without the bundle (`scripts/build-ssg.sh --no-css-bundle`, or any
- * build older than this oracle) and green with it; test 2 is green on both (it documents that a hard load was always
- * right). Run against an SSG build, served statically (the default :8090; `dx serve` has no bundle and no
+ * RED/GREEN: tests 1, 3 and 4 are red on a build without the bundle (`scripts/build-ssg.sh --no-css-bundle`) and green
+ * with it; test 2 is green on both (a hard load is right either way). Run against an SSG build, served statically (the default :8090; `dx serve` has no bundle and no
  * prerendered head):
  *   PLAYWRIGHT_BASE_URL=http://127.0.0.1:8090 npx playwright test --config=ssg.local.config.ts oracle/tier2-html/first-paint-styles.spec.ts
  * `FIRST_PAINT_CSS_DELAY_MS` (default 150) is the simulated latency of stylesheets fetched after load, which is what makes
@@ -176,10 +175,10 @@ const summarize = (diffs: string[]) =>
   `${diffs.length} difference(s); first: ${diffs.slice(0, Number(process.env.FIRST_PAINT_DIFFS ?? 6)).join(" | ")}`;
 
 /**
- * Both loads use the fallback face. Geist is self-hosted now (`font-display: optional`: it is used only if it lands inside the
+ * Both loads use the fallback face. Geist is self-hosted (`font-display: optional`: it is used only if it lands inside the
  * ~100ms block window, else not at all for this page), so with the woff2 reachable the JS-off page and the hydrated page race the
  * font independently and one of them gets Geist's metrics (a ~3px width difference, 198 differing boxes on /component/tabs/).
- * That is font timing, not a style difference, so the woff2 files are aborted too (and Google's hosts, from before the self-hosting).
+ * That is font timing, not a style difference, so the woff2 files are aborted too (and Google's hosts).
  * `fonts-self-hosted.spec.ts` owns "the font really loads".
  */
 async function noWebFonts(page: Page) {
@@ -299,7 +298,7 @@ test.describe("1. every prerendered page's head carries the complete stylesheet 
   });
 
   test("web fonts cannot shift the layout: the latin woff2 files are preloaded and the font stylesheet is display=optional", async ({ request }) => {
-    // Measured (css +100 ms, files +200 ms): `display=swap` = CLS 0.117 on /component/form/, 0.048 on /carousel/; preload + optional = 0.000
+    // With css +100 ms and files +200 ms: `display=swap` = CLS 0.117 on /component/form/, 0.048 on /carousel/; preload + optional = 0.000
     // on both, with Geist in use at first contentful paint; a stale preload URL under `optional` stays 0.000 (under `swap` it is 0.117 again).
     const problems: string[] = [];
     for (const url of ["/", "/docs", "/component/field/", "/component/form/", "/charts/"]) {
@@ -352,7 +351,7 @@ test.describe("1. every prerendered page's head carries the complete stylesheet 
 // ---------------------------------------------------------------------------------------------
 
 /**
- * Routes that size or build part of themselves from a CLIENT measurement or state after mount (measured 2026-10-05 on all 76
+ * Routes that size or build part of themselves from a CLIENT measurement or state after mount (measured over all
  * routes; every other route has 0 computed-style differences between the JS-off page and the hydrated one in both schemes, and
  * between a navigation's first state and its settled one): charts take their size from a ResizeObserver (JS-off `<rect>` 46x178,
  * hydrated 70x312; a chart card 324.6 px then 342 px), a native `<select>` has no options until hydration (22 px wide, then
@@ -361,8 +360,8 @@ test.describe("1. every prerendered page's head carries the complete stylesheet 
  * delivery, so the style-parity comparisons skip these routes; the "no uncovered stylesheet" and CLS checks still apply to them
  * (the CLS bound is what holds them to "reserved space"). A route that starts differing fails until somebody looks and adds it
  * here with a reason; the list is not a place to hide a late stylesheet (that is test 1 and the late-sheet checks).
- * markdown (2026-10-19): its streaming demo composes a MessageScroller, which stays `visibility: hidden` until the client reveals it.
- * table (2026-10-22, row 343): the virtualized demo's windowed body is rendered with no rows on the server and its bottom spacer
+ * markdown: its streaming demo composes a MessageScroller, which stays `visibility: hidden` until the client reveals it.
+ * table (row 343): the virtualized demo's windowed body is rendered with no rows on the server and its bottom spacer
  * shrinks once the first rows mount (740000 px -> 739334 px), like virtual_list.
  */
 const CLIENT_MEASURED = new Set([
