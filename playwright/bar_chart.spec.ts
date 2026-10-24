@@ -4,21 +4,19 @@
  *
  * Every registered variant of a "Normal"-kind component (this one included)
  * renders on the SAME `/component/?name=bar_chart&` page load, all at once
- * -- `?variant=` has no effect on this route (confirmed live for `chart`
+ * -- `?variant=` has no effect on this route (see `chart`
  * itself in `playwright/oracle/tier3-radix/chart.spec.ts`'s own header
- * comment, and re-confirmed for this route while writing this file). The
+ * comment). The
  * `main` variant's demo panel is the un-suffixed `#component-preview-frame`;
  * every other registered variant gets `#component-preview-frame-<variant>`
  * instead.
  *
  * PHASE 1 (`main` -- shadcn's `chart-bar-default.tsx`, `multiple`,
- * `stacked`, `stacked_legend`, `interactive`): the variants buildable with
- * zero primitive changes beyond what the stage-1 Chart round already
- * shipped. PHASE 2 (`horizontal`, `negative`, `mixed`, `label`,
- * `label_custom`, `active`, added once `s2-refactor` landed and this
- * lane's own `BarOptions` feature work -- `horizontal`/`value_labels`/
- * `inside_labels`/`active_index` -- was integrated): all 10/10 of shadcn's
- * `chart-bar-*` demos.
+ * `stacked`, `stacked_legend`, `interactive`): the variants that need no
+ * `BarOptions` feature. PHASE 2 (`horizontal`, `negative`, `mixed`, `label`,
+ * `label_custom`, `active`): the variants built on `BarOptions`
+ * (`horizontal`/`value_labels`/`inside_labels`/`active_index`); together all
+ * 10/10 of shadcn's `chart-bar-*` demos.
  */
 import { test, expect } from "./fixtures";
 import { type Page, type Locator } from "@playwright/test";

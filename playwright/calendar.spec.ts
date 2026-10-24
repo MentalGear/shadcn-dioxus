@@ -334,7 +334,7 @@ test.describe("selected/range state outranks :hover (user report, calendar-state
 
     // Click a day: Playwright's .click() leaves the pointer resting on the
     // element afterwards, exactly the "clicked it, mouse hasn't moved" case
-    // the user reported ("date picker: active state on selected date must
+    // the user asked for ("date picker: active state on selected date must
     // be over hover state, otherwise active states are not visible after
     // click").
     await day.click();
@@ -354,29 +354,22 @@ test.describe("selected/range state outranks :hover (user report, calendar-state
     await expect(day).toHaveAttribute("data-selected", "true");
   });
 
-  // The other real instance the sweep found: a range's in-between days (not
-  // an endpoint) had NO hover companion at all, so the generic day-hover
-  // rule -- which used to carry higher specificity than
-  // [data-selection-between="true"] -- won outright and made a hovered
-  // in-range day look like a plain single-selected endpoint instead of
-  // keeping its muted "between" look. /component/block/... isolates one
-  // variant per page, avoiding the multi-panel ambiguity every other test
+  // A range's in-between days (not an endpoint) have their own hover companion: without it the generic
+  // day-hover rule would out-rank [data-selection-between="true"] on specificity and a hovered in-range day
+  // would look like a plain single-selected endpoint instead of keeping its muted "between" look.
+  // /component/block/... isolates one variant per page, avoiding the multi-panel ambiguity every other test
   // in this file works around with #component-preview-frame.first().
   //
-  // dev-docs/backlog.md row 113 -- this test used to time out (90 s) on every
-  // run: "waiting for locator(...:not([data-disabled="true"])).nth(4)", which
-  // never resolved. The row's guess was that it depends on today's date. That
-  // guess does not hold up: with the clock pinned to 2026-09-26 (the day the
-  // row was filed), 2026-05-15, 2026-01-31 and 2026-02-28 the locator resolves
-  // to all 31 May cells every time, because the `range` demo fixes its own
-  // `view_date` to 2026-05-15 and its min/max (1995-2035) leave May 2026
-  // entirely available. What DOES reproduce that exact timeout, deterministically,
-  // is the URL: `/component/block/calendar/range/` (the path-segment form) is
-  // only ever served by the dev server's SPA fallback; the static SSG server
-  // has no prerendered file for it and answers 404 (confirmed with curl: 404
-  // vs. 200 for the query form below), so on that lane the calendar is never
-  // rendered and the first `.click()` waits out the whole test timeout. Two
-  // changes, so neither cause can come back:
+  // dev-docs/backlog.md row 113 -- the locator below ("waiting for
+  // locator(...:not([data-disabled="true"])).nth(4)") must resolve on every lane and on every
+  // day. It does not depend on today's date: the `range` demo fixes its own `view_date` to
+  // 2026-05-15 and its min/max (1995-2035) leave May 2026 entirely available, so the locator
+  // resolves to all 31 May cells whatever day this runs on. What makes it wait out the whole
+  // test timeout, deterministically, is the URL: `/component/block/calendar/range/` (the
+  // path-segment form) is only ever served by the dev server's SPA fallback; the static SSG
+  // server has no prerendered file for it and answers 404, so on that lane the calendar is
+  // never rendered and the first `.click()` waits out the timeout. Two measures keep both
+  // causes out:
   //  1. the legacy query form `/component/block/?name=calendar&variant=range&`,
   //     which both lanes serve (every other block-page spec here uses it);
   //  2. the date is pinned with Playwright's clock (`Date`/`new Date()` only --
@@ -415,15 +408,13 @@ test.describe("selected/range state outranks :hover (user report, calendar-state
 
 test.describe("aria-disabled on unavailable/disabled days -- backlog row 84 finding 1", () => {
   test("a day inside a disabled range carries aria-disabled=true; an available day still carries an explicit aria-disabled=false", async ({ page }) => {
-    // RED on the unmodified tree (verified live before this fix): unavailable
-    // days had no native `disabled` attribute (deliberately, so the grid
-    // keeps a single roving tabstop -- `handle_day_select` early-returns
-    // instead) and no `aria-disabled` either -- only `data-disabled`/
-    // `data-unavailable` plus CSS communicated it, so assistive tech had no
-    // signal at all that the day could not be chosen. Fixed by adding
-    // `aria-disabled` to `calendar_day_attributes` (primitives/src/
-    // calendar.rs), mirroring `data-disabled` exactly (same source value,
-    // unconditionally present) -- `aria-disabled` (unlike a real `disabled`
+    // Unavailable days have no native `disabled` attribute (deliberately, so
+    // the grid keeps a single roving tabstop -- `handle_day_select`
+    // early-returns instead); with only `data-disabled`/`data-unavailable`
+    // plus CSS, assistive tech would have no signal at all that the day
+    // cannot be chosen. So `calendar_day_attributes` (primitives/src/
+    // calendar.rs) emits `aria-disabled`, mirroring `data-disabled` exactly
+    // (same source value, unconditionally present) -- `aria-disabled` (unlike a real `disabled`
     // attribute) does not remove the element from the tab order, matching
     // this crate's own "focusable but not operable" convention elsewhere
     // (e.g. combobox/select/command options).

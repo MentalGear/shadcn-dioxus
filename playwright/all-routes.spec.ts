@@ -2,11 +2,10 @@
  * ORACLE: one generated sweep over EVERY page of the preview, in light and dark.
  *
  * The class this closes: a11y and layout defects that only ever showed up on a page nobody had a spec
- * for. Before this file existed, eleven components had no spec of their own, axe had never been run
- * across all routes in both themes, and the 2026-10-05 audit found by hand what a sweep finds in
- * minutes: two icon-only buttons with no name, an `ItemGroup` of non-`listitem`s, a badge that was only
- * legible in one theme, two demos wider than a phone, no skip link, and no keyboard focus indicator at
- * all in Windows high-contrast (`forced-colors`) mode on 30 controls of 23 components.
+ * for. A sweep of every route in both themes finds in minutes what a hand audit finds slowly: icon-only
+ * buttons with no name, an `ItemGroup` of non-`listitem`s, a badge legible in only one theme, demos wider
+ * than a phone, no skip link, and no keyboard focus indicator at all in Windows high-contrast
+ * (`forced-colors`) mode.
  *
  * The route list is READ from `CATALOG` in `preview/src/components/mod.rs` (the `("name", Origin::..),`
  * rows, exactly as `component-catalog.spec.ts` does), so a new component is covered the day it is added
@@ -14,10 +13,9 @@
  * CATALOG complete against the component directories; this file keeps every CATALOG row covered.) The
  * four site pages (`/`, `/docs`, `/demos`, `/charts/`) ride along.
  *
- * One NAVIGATION per route, for both schemes: the three probe families below used to be three tests, so every page
- * was loaded, hydrated and settled three times per scheme (row 327; a navigation-plus-settle is ~2 s on a debug
- * build), and then once per scheme (row 358). Now one test per route loads it once, in light, and runs every probe
- * in both schemes on that load, switching the scheme in place (`ensureScheme`: the theme is attributes and CSS,
+ * One NAVIGATION per route, for both schemes: the three probe families below share one load, because a
+ * navigation-plus-settle is ~2 s on a debug build (rows 327, 358). One test per route loads it once, in light, and
+ * runs every probe in both schemes on that load, switching the scheme in place (`ensureScheme`: the theme is attributes and CSS,
  * `__dxApplyMode` is its one writer, so the DOM does not depend on the scheme). The ORDER, and the fresh-load
  * comparison every route was checked against, are in the comment above the sweep loop. A failure in one probe does
  * not hide the others: every probe runs, and the test's error carries each failing probe's own message under its name.
@@ -247,7 +245,7 @@ async function stillViolates(page: Page, selector: string): Promise<boolean> {
 }
 
 // --- the probes ----------------------------------------------------------------------------
-// Each probe is one of the old tests, unchanged in what it asserts and in its messages. A (route, scheme) pair
+// Each probe asserts what a stand-alone test for it would assert, with the same messages. A (route, scheme) pair
 // is navigated ONCE and the probes run on that load, in the order of `PROBE ORDER` below.
 
 /** 1. axe, closed state, at the default viewport, with the page as it was loaded. */
@@ -267,12 +265,12 @@ async function probeAxe(page: Page, route: Route, scheme: Scheme) {
 }
 
 /**
- * Routes whose DOM depends on the viewport they have HAD, not only the one they have: measured with the old
- * fresh-load-at-390px reading as the reference, a viewport round trip leaves a different set of boxes on these three
+ * Routes whose DOM depends on the viewport they have HAD, not only the one they have: measured against a
+ * fresh-load-at-390px reading, a viewport round trip leaves a different set of boxes on these three
  * (`virtual_grid` renders 2,955 elements after the round trip against 2,784 on a fresh phone load, `site-home` 4,799
  * against 4,763 from `content-visibility: auto` sections, `message_scroller` moves 10 boxes), while on every other
  * route the round trip is box-for-box identical. Their phone-width reading therefore comes from a second, fresh
- * page loaded at 390px, exactly as the old test did. Row 358 added `collapsible` and `tabs`: the in-place scheme switch
+ * page loaded at 390px. `collapsible` and `tabs` are in the set too (row 358): the in-place scheme switch
  * is a second re-layout, and after one their closed find-in-page panels (`hidden="until-found"`) lay out 1-2 boxes
  * that no ancestor clips (a second viewport round trip on a fresh page does the same), so their dark reading would
  * not be a fresh dark page's. Every other route's switched reading has exactly the fresh load's unclipped boxes.
@@ -515,7 +513,7 @@ const ACTIVEDESCENDANT_LISTS: Record<string, (page: Page) => Promise<void>> = {
 };
 /**
  * 3b runs LAST on its load: it types into the list and (Command) opens a dialog, so nothing may read the page
- * after it. Forced colors is already on from `probeForcedColors` (3b needs it; the old test set it before load).
+ * after it. Forced colors is already on from `probeForcedColors` (3b needs it).
  * The option is highlighted once and its outline read in every scheme, switched in place (row 358).
  */
 async function probeActiveDescendant(page: Page, focusInput: (page: Page) => Promise<void>, schemes: Scheme[]) {
@@ -540,8 +538,8 @@ async function probeActiveDescendant(page: Page, focusInput: (page: Page) => Pro
 }
 
 /**
- * Run every probe even when an earlier one fails, so a red route reports ALL of its findings the way the old
- * one-test-per-probe layout did. A single failure is rethrown as it was thrown (Playwright's own matcher output,
+ * Run every probe even when an earlier one fails, so a red route reports ALL of its findings the way
+ * one test per probe would. A single failure is rethrown as it was thrown (Playwright's own matcher output,
  * same message); several are joined, each under its probe's name. Each probe is also a `test.step`, so the
  * report shows which of them failed.
  */
@@ -563,10 +561,10 @@ async function runProbes(probes: Array<[title: string, run: () => Promise<void>]
 }
 
 // --- the sweep: one navigation per route, both schemes on it ------------------------------------
-// PROBE ORDER, and why it is this one. Row 327 measured each order against the old one-load-per-probe layout on every
+// PROBE ORDER, and why it is this one. Row 327 measured each order against a fresh load per probe on every
 // route (`dev-docs/archive/research/row-327-all-routes-and-goto-hydrated.md`): axe's full result and the 390px reading must
 // come out as they did on a fresh load, and the forced-colors sweep may only gain controls, never lose or fail one.
-// Row 358 then checked the in-place scheme switch the same way, every route against a fresh load in each scheme
+// Row 358 checked the in-place scheme switch the same way, every route against a fresh load in each scheme
 // (`dev-docs/archive/research/row-358-one-navigation-both-schemes.md`).
 //   1. overflow   resizes to 390px once, re-settles, reads light, switches, reads dark, restores the viewport. First,
 //                 because axe and the sweep both change what a later geometry read sees (axe: closed accordions lay

@@ -13,8 +13,8 @@ test("test", async ({ page }) => {
   await expect(current).toHaveAttribute("aria-current", "page");
 });
 
-// `BreadcrumbEllipsis` is a `<span>` placed inside a `BreadcrumbItem` (shadcn's shape). It used to render an `<li>`,
-// so the demo nested an `<li>` in an `<li>` (backlog row 160). Axe does not flag that nesting, so it is asserted directly.
+// `BreadcrumbEllipsis` is a `<span>` placed inside a `BreadcrumbItem` (shadcn's shape), never an `<li>`,
+// which would nest an `<li>` in an `<li>` (backlog row 160). Axe does not flag that nesting, so it is asserted directly.
 test("the ellipsis is a span inside its item: no li nested in an li", async ({ page }) => {
   await gotoHydrated(page, `${BASE_URL}/component/breadcrumb/`, { timeout: 20 * 60 * 1000 });
   const ellipsis = page.locator(".dx-breadcrumb-ellipsis").first();

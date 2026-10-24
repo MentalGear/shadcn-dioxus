@@ -1,9 +1,9 @@
 /**
- * ORACLE: the shape of every component page's prose (backlog rows 232, 233, 236; owner 2026-10-19).
+ * ORACLE: the shape of every component page's prose (backlog rows 232, 233, 236).
  *
- * The class this closes: a component page used to explain installation up to five times (header commands, a
- * one-sentence section, "Manual installation files", the Code tab, docs.md) and put a wall of docs.md prose
- * under every header. The page is now ONE of the library's own `Accordion`s (`.dx-docs-accordion`), all items
+ * The class this closes: a component page that explains installation up to five times (header commands, a
+ * one-sentence section, "Manual installation files", the Code tab, docs.md) and puts a wall of docs.md prose
+ * under every header. The page is ONE of the library's own `Accordion`s (`.dx-docs-accordion`), all items
  * closed: "Installation" (written in `ComponentHighlight`), then every docs.md `##` section (data from
  * `build.rs`, `render_docs_sections`, so a new section is collapsed by construction), and a demo's own notes
  * are a `Collapsible` under the demo (`variants/<variant>/notes.md`). This spec reads the REAL pages for every

@@ -31,8 +31,8 @@ test('test', async ({ page }) => {
 // so the pressed background already survived hover on the unmodified tree
 // (verified, both themes, exact values below). `:where(:hover)` makes that
 // unconditional (specificity, not source order) so reordering the rules --
-// or `:hover` later gaining an extra clause the way calendar/tabs's did --
-// can no longer silently flip the winner. Runs in both themes since the
+// or `:hover` gaining an extra clause the way calendar/tabs's did --
+// cannot silently flip the winner. Runs in both themes since the
 // tokens differ per theme.
 for (const dark of [false, true]) {
   test(`a pressed toggle keeps its "on" background while hovered (${dark ? 'dark' : 'light'} mode)`, async ({ page }) => {
@@ -60,8 +60,8 @@ for (const dark of [false, true]) {
   });
 }
 
-// The pressed background is derived from the preset-aware role tokens (it used to be the ramp step
-// `--primary-color-7`, grey under every base), so under a TINTED base it must (a) carry the tint and
+// The pressed background is derived from the preset-aware role tokens (not the ramp step
+// `--primary-color-7`, which is grey under every base), so under a TINTED base it must (a) carry the tint and
 // (b) still be three visibly different backgrounds: resting, hovered, pressed. The exhaustive base x
 // accent x mode proof is `theme-preset-contrast.spec.ts`; this keeps the same assertion next to the
 // component's own specs.
@@ -107,7 +107,7 @@ for (const dark of [false, true]) {
       expect(gap(pressed, hovered), msg).toBeGreaterThanOrEqual(GAP_PRESSED);
       expect(gap(pressed, rest), msg).toBeGreaterThanOrEqual(GAP_PRESSED);
       expect(gap(hovered, rest), msg).toBeGreaterThanOrEqual(GAP_HOVER);
-      // The tint reaches the pressed state: the old ramp step was pure grey (r == g == b) under every base.
+      // The tint reaches the pressed state: the ramp step is pure grey (r == g == b) under every base.
       expect(new Set(pressed).size, `pressed ${pressed} is neutral grey, not ${base}-tinted`).toBeGreaterThan(1);
     });
   }

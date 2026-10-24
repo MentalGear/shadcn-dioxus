@@ -58,11 +58,10 @@ test.describe("Behavioural: variant-specific rendering", () => {
   // playwright project in `playwright.config.ts` (chromium/webkit/firefox)
   // sets `grepInvert: /mobile/` to skip mobile-viewport tests, and that
   // regex matches ANY test title containing that substring, not just ones
-  // about viewports -- an earlier draft of this title ("...mobile's whole
-  // span...") was silently excluded from every run, everywhere, by that
-  // filter (confirmed via `--list`: 16 tests instead of the expected 17,
-  // with no error or warning). Worth knowing for every other stage-2 chart
-  // lane too: `chart-api.md`'s own sample data names a series "mobile",
+  // about viewports -- a title like "...mobile's whole span..." would be
+  // silently excluded from every run, everywhere, by that filter (`--list`
+  // shows 16 tests instead of the expected 17, with no error or warning).
+  // Worth knowing for every other chart spec too: `chart-api.md`'s own sample data names a series "mobile",
   // and any spec prose that echoes that name verbatim risks the same
   // silent exclusion.
   test("stacked: the two series sum, not overlap (the second series' whole span sits under the first's)", async ({

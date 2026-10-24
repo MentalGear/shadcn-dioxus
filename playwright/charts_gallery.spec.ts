@@ -508,7 +508,7 @@ test("View Code opens a bottom drawer on phones", async ({ page }) => {
 
 test("the code block scrolls horizontally inside the scroll-locked drawer", async ({ page }) => {
   // Long source lines must scroll sideways, not clip: the modal scroll lock
-  // used to treat any purely horizontal wheel/touch gesture as a background
+  // must not treat a purely horizontal wheel/touch gesture as a background
   // scroll and cancel it.
   await page.setViewportSize({ width: 390, height: 844 });
   await gotoHydrated(page, `${BASE_URL}/charts/pie/`);
@@ -592,7 +592,7 @@ test.describe("Axe automated scan", () => {
 });
 
 // Row 302: the pill on a chart-type tab. The theme's press feedback paints a rounded wash while a link is
-// `:active`, which read as "the pill that does not stay"; the active tab now keeps a `muted` pill, a hovered
+// `:active`, which would read as "the pill that does not stay"; the active tab keeps a `muted` pill, a hovered
 // one shows a lighter pill, and the focus ring is keyboard-only.
 test.describe("chart-type tabs keep the pill on the active tab", () => {
   const rgba = (el: Element) => getComputedStyle(el).backgroundColor;

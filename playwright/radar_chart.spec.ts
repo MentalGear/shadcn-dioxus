@@ -4,7 +4,7 @@
  * on the shared `chart` primitive/engine ($S/chart-api.md,
  * primitives/src/chart/engine/radar.rs, primitives/src/chart/components/
  * series/radar.rs). Render + axe per variant, plus one behavioural
- * assertion per feature this lane added:
+ * assertion per feature:
  *
  *   - one `g[data-series] path[data-slot="chart-radar-area"]` per series
  *     (`data-series` lives on the wrapping `<g>`, not the `<path>` itself --
@@ -21,12 +21,12 @@
  *     of what the visual grid/dot/fill options are set to.
  *
  * Every variant renders inline on one page load (`?name=radar_chart&`,
- * confirmed by every other multi-variant component's own oracle spec,
+ * as in every other multi-variant component's own oracle spec,
  * e.g. `playwright/oracle/tier3-radix/chart.spec.ts`'s header comment):
  * the un-suffixed `#component-preview-frame` is the `main` (shadcn
  * "default") variant; every other variant gets
  * `#component-preview-frame-<variant>` (`preview/src/main.rs`'s own
- * frame-id-per-variant naming, read in full this session).
+ * frame-id-per-variant naming).
  */
 
 import { test, expect } from "./fixtures";

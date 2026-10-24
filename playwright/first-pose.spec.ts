@@ -7,16 +7,15 @@ import { BASE_URL } from "./base-url";
  * Backlog rows 344 and 353: an element's initial pose must be decided during render, never after
  * the first paint.
  *
- * 344: opening a chart tab by client-side navigation mounts a client-created chart. It used to
- * render the final drawing, and only an effect then set `data-animate`, restarting it from zero
- * (full -> gone -> animate). Now it renders `data-animate="pending"`, the entrance's start pose,
- * from its first frame. The recorder samples every `requestAnimationFrame` after the click and
+ * 344: opening a chart tab by client-side navigation mounts a client-created chart. It renders
+ * `data-animate="pending"`, the entrance's start pose, from its first frame (rendering the final
+ * drawing and letting an effect set `data-animate` would restart it from zero: full -> gone -> animate). The recorder samples every `requestAnimationFrame` after the click and
  * keeps, per chart svg, the signature of its first painted frame; that frame must already be the
  * collapsed pose, never the final one the chart ends up in.
  *
  * 353: the Carousel's Next arrow was server-rendered `disabled` (slide count unknown until the
- * items register), so it painted at 0.5 opacity and faded to 1 after hydration. Its first frame
- * is now the enabled pose, and its opacity is 1 on every sampled frame.
+ * items register), which would paint it at 0.5 opacity and fade it to 1 after hydration. Its first frame
+ * is the enabled pose, and its opacity is 1 on every sampled frame.
  *
  * Functional (what is painted on every frame), so a debug build is fine.
  */

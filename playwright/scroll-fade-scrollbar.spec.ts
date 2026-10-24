@@ -1,8 +1,8 @@
 /**
  * A scroll fade never covers its scrollbar. The `dx-scroll-fade` utility of `assets/dx-effects.css` is a
  * `mask-image` on the scroll container, and a mask covers the whole border box, scrollbars included, so a
- * classic scrollbar used to dissolve with the content at every faded edge (most visible with
- * `ScrollFade::Both`, where all four ends of both scrollbars faded). The mask is now a stack of layers
+ * classic scrollbar would dissolve with the content at every faded edge (most visible with
+ * `ScrollFade::Both`, where all four ends of both scrollbars fade). The mask is a stack of layers
  * whose content area is the padding box minus the scrollbar gutters, which the scroller's script writes
  * as `--dx-scrollbar-inline-size` / `--dx-scrollbar-block-size`; the gutters stay opaque.
  *

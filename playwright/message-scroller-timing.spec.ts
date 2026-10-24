@@ -64,10 +64,10 @@ test("appending 1,000 rows to a 2,000-row transcript while following costs the m
   console.log(`message_scroller long: ${msPerFrame.toFixed(1)} ms of main-thread time per appended-frame (10 rows)`);
   // Following still lands exactly at the end after the burst.
   await expect.poll(distance, { timeout: 10_000 }).toBeLessThanOrEqual(1);
-  // 3,000 rows in the DOM. Measured 2026-10-19 on a loaded 4-core VM against a debug SSG build (this
-  // path is JS and browser layout, which a release wasm build barely changes): 8.0 ms per frame of ten
-  // appended rows, of which about 4 ms is the page's own cost for ten rows in a plain box; appending
-  // the same rows as unchunked direct children (per-row `content-visibility`) measured 14.9 ms. 12 ms
+  // 3,000 rows in the DOM. On a loaded 4-core VM against a debug SSG build (this path is JS and
+  // browser layout, which a release wasm build barely changes) a frame of ten appended rows costs
+  // ~8.0 ms, of which about 4 ms is the page's own cost for ten rows in a plain box; appending the
+  // same rows as unchunked direct children (per-row `content-visibility`) costs ~14.9 ms. 12 ms
   // separates the two and stays under the 16.7 ms frame budget.
   expect(msPerFrame).toBeLessThan(12);
 });

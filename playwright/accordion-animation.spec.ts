@@ -1,6 +1,6 @@
 /**
  * Regression check for the accordion close animation's "residual height that
- * snaps to 0 on unmount" jank, fixed in
+ * snaps to 0 on unmount" jank, avoided by
  * preview/src/components/accordion/{component.rs, style.css}: the content
  * must animate all the way to ~0px height (not a padding-sized floor) before
  * `use_animated_open` unmounts it, with no multi-frame plateau on the way
@@ -30,7 +30,7 @@ const APP_URL =
 const MODE = process.env.ACCORDION_MODE ?? "app";
 const LOAD_TIMEOUT = 20 * 60 * 1000;
 
-/** App-lane: drive the real accordion component like accordion.spec.ts does. */
+/** App mode: drive the real accordion component like accordion.spec.ts does. */
 async function sampleCloseInApp(page: Page): Promise<Sample[]> {
   // dev-docs/backlog.md row 109: this test clicks the accordion trigger
   // right after navigating, on the SSG lane -- `gotoHydrated` (not a plain
@@ -74,7 +74,7 @@ async function sampleCloseInApp(page: Page): Promise<Sample[]> {
   return framesPromise;
 }
 
-/** Repro-lane: drive the standalone buggy.html/fixed.html harness. */
+/** Repro mode: drive the standalone buggy.html/fixed.html harness. */
 async function sampleCloseInRepro(page: Page): Promise<Sample[]> {
   await gotoHydrated(page, APP_URL);
   await page.waitForFunction(() => typeof (window as any).closeAccordion === "function");
