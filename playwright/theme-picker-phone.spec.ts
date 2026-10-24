@@ -5,21 +5,17 @@ import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
 /**
- * Backlog row 142: a phone has to be able to reach the theme picker on EVERY page that has the site
- * header, not only on the ones with a navigation sheet to host it.
+ * Backlog rows 142 and 385: a phone reaches the theme picker from the header on EVERY page that has
+ * the site header, with or without a navigation sheet.
  *
- * `theme::ThemePickerSidebarFooter` (the phone entry) lives at the foot of the
- * docs sidebar's sheet, so a route with no sidebar (the "not found"
- * pages) would have no picker at <= 760px: the header's popover trigger is hidden there and there is no sheet
- * (row 303 gave `/demos` and the `/charts/` gallery the docs shell).
- * The header's own `theme::ThemePicker` renders `ThemePickerPhoneTrigger` when (and only when) the
- * route has no `SidebarCtx`, so this spec is a SWEEP over every route type: whichever entry a page has,
- * it must have exactly one "Theme" entry reachable at phone width, that entry must open the SAME drawer,
- * and the header must still fit.
+ * `theme::ThemePicker` renders the popover's trigger and `ThemePickerPhoneTrigger` side by side in the
+ * header on every route, and `main.css` shows exactly one of them per width. So this spec is a SWEEP over
+ * every route type: each page has exactly one "Theme" entry at phone width, in the header, it opens the
+ * SAME drawer, the navigation sheet carries none, and the header still fits.
  *
- * The preset/cookie plumbing itself (every swatch, persistence across reloads, focus return from a drawer
- * stacked on the nav sheet) is `theme-preset.spec.ts`'s job; this spec only proves the routes that spec
- * does not visit reach it too, and that desktop is unaffected on them.
+ * The preset/cookie plumbing itself (every swatch, persistence across reloads, the drawer's modality) is
+ * `theme-preset.spec.ts`'s job; this spec only proves the routes that spec does not visit reach it too,
+ * and that desktop is unaffected on them.
  *
  *   PLAYWRIGHT_BASE_URL=http://127.0.0.1:8083 npx playwright test --config=baseline.local.config.ts ./theme-picker-phone.spec.ts
  */
@@ -27,22 +23,23 @@ import { gotoHydrated } from "./hydration";
 /** Opt-in: `THEME_SHOTS_DIR=/some/dir` writes a screenshot of each phone route there. */
 const SHOTS = process.env.THEME_SHOTS_DIR;
 
-/** Routes whose header has no navigation sheet: the picker's phone entry is the header's own button. */
-const HEADER_ENTRY_ROUTES = [
-  { name: "charts not found", url: "/charts/no-such-chart/" },
-  { name: "component not found", url: "/component/no-such-component/" },
-];
-
-/** Routes with the docs sidebar: the entry is the "Theme" footer of the navigation sheet. */
-const SHEET_ENTRY_ROUTES = [
+/** Routes with the docs sidebar's navigation sheet (row 303 gave `/demos` and `/charts/` the docs shell). */
+const SHEET_ROUTES = [
   { name: "home", url: "/" },
   { name: "docs", url: "/docs" },
   { name: "component page", url: "/component/button/" },
-  // Row 303: the demos index and the chart gallery render inside the docs shell, so they have the sheet too.
   { name: "demos", url: "/demos" },
   { name: "charts", url: "/charts/" },
   { name: "charts tab", url: "/charts/bar/" },
 ];
+
+/** Routes whose header has no navigation sheet. */
+const NO_SHEET_ROUTES = [
+  { name: "charts not found", url: "/charts/no-such-chart/" },
+  { name: "component not found", url: "/component/no-such-component/" },
+];
+
+const ALL_ROUTES = [...SHEET_ROUTES, ...NO_SHEET_ROUTES];
 
 const PHONES = [
   { width: 390, height: 844 },
@@ -136,11 +133,11 @@ for (const { width, height } of PHONES) {
     test.use({ viewport: { width, height }, hasTouch: true, isMobile: true });
     test.skip(({ browserName }) => browserName === "firefox", "Firefox has no mobile emulation");
 
-    for (const route of HEADER_ENTRY_ROUTES) {
+    for (const route of ALL_ROUTES) {
       test(`${route.name} (${route.url}): the header has the one "Theme" entry, it fits, and it opens the drawer`, async ({ page }) => {
         await gotoHydrated(page, `${BASE_URL}${route.url}`);
 
-        // Exactly one entry in the whole page, and it is in the header (no sheet exists to hold another).
+        // Exactly one entry in the whole page, and it is in the header.
         await expect(themeButtons(page)).toHaveCount(1);
         const trigger = headerThemeButton(page);
         await expect(trigger).toBeVisible();
@@ -191,16 +188,12 @@ for (const { width, height } of PHONES) {
       });
     }
 
-    for (const route of SHEET_ENTRY_ROUTES) {
-      test(`${route.name} (${route.url}): the entry is the navigation sheet's "Theme", not the header's`, async ({ page }) => {
+    for (const route of SHEET_ROUTES) {
+      test(`${route.name} (${route.url}): the navigation sheet carries no second "Theme" entry`, async ({ page }) => {
         await gotoHydrated(page, `${BASE_URL}${route.url}`);
-        await expect(themeButtons(page)).toHaveCount(0);
-        await expect(page.locator(".dx-theme-phone-trigger")).toHaveCount(0); // not even rendered
         await page.getByRole("button", { name: "Toggle Sidebar" }).tap();
         await expect(navSheet(page)).toBeVisible();
-        const entry = navSheet(page).getByRole("button", { name: "Theme", exact: true });
-        await expect(entry).toBeVisible();
-        await expect(themeButtons(page)).toHaveCount(1);
+        await expect(navSheet(page).getByRole("button", { name: "Theme", exact: true })).toHaveCount(0);
       });
     }
 
@@ -250,12 +243,10 @@ for (const { width, height } of PHONES) {
       await expect(drawer(page).getByRole("button", { name: "Blue", exact: true })).toHaveAttribute("aria-pressed", "true");
     });
 
-    test("/charts/: a preset recolours the charts page too, from the navigation sheet's entry", async ({ page }) => {
+    test("/charts/: a preset recolours the charts page too, from the header's entry", async ({ page }) => {
       await gotoHydrated(page, `${BASE_URL}/charts/`);
       const before = await primaryToken(page);
-      await page.getByRole("button", { name: "Toggle Sidebar" }).tap();
-      await expect(navSheet(page)).toBeVisible();
-      await navSheet(page).getByRole("button", { name: "Theme", exact: true }).tap();
+      await headerThemeButton(page).tap();
       await drawer(page).getByRole("button", { name: "Rose", exact: true }).tap();
       expect(await attr(page, "data-theme-accent")).toBe("rose");
       await expect.poll(() => primaryToken(page)).not.toBe(before);
@@ -265,8 +256,8 @@ for (const { width, height } of PHONES) {
   });
 }
 
-test.describe("desktop keeps the popover trigger on the routes whose header has no sheet", () => {
-  for (const route of HEADER_ENTRY_ROUTES.slice(0, 2)) {
+test.describe("desktop keeps the popover trigger, with or without a sheet", () => {
+  for (const route of [SHEET_ROUTES[0], NO_SHEET_ROUTES[0]]) {
     test(`1280 ${route.url}: the popover trigger is the one "Theme" button; the phone entry is rendered but hidden`, async ({ page }) => {
       await page.setViewportSize({ width: 1280, height: 800 });
       await gotoHydrated(page, `${BASE_URL}${route.url}`);
@@ -306,12 +297,10 @@ test.describe("desktop keeps the popover trigger on the routes whose header has 
 
 /**
  * The header is one `nowrap` row at phone width, so every page's row has to fit its own items: a docs page
- * spends room on the sidebar trigger, a page without a sheet on the picker's own button, and at 390px a docs
- * page's "Charts" link would draw ~4px over the GitHub mark (~16px at 320px) if its row did not fit. So this spec
- * sweeps every route type x every phone width, down to 320px (the narrowest phone), with
- * ZERO tolerance: items may touch their neighbours' gaps but never their boxes.
+ * spends room on the sidebar trigger AND the picker's button. So this spec sweeps every route type x every
+ * phone width, down to 320px (the narrowest phone), with ZERO tolerance: items may touch their neighbours'
+ * gaps but never their boxes.
  */
-const ALL_ROUTES = [...SHEET_ENTRY_ROUTES];
 
 for (const { width, height } of [...PHONES, { width: 320, height: 568 }]) {
   test.describe(`the header row fits at ${width}px`, () => {

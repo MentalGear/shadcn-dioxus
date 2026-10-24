@@ -547,7 +547,7 @@ button.dx-popover-trigger.dx-theme-picker-trigger svg {
   height: 24px;
 }
 
-/* The header's phone entry for a page with no navigation sheet (see below); hidden until the phone block.
+/* The header's phone entry (see below); hidden until the phone block.
  * `button.` + the class outranks `.dx-button` and the UA button chrome in any load order. */
 button.dx-theme-phone-trigger {
   display: none;
@@ -559,28 +559,17 @@ button.dx-theme-phone-trigger {
 
 /* Two presentations of ONE panel (theme.rs `ThemePickerPanel`), chosen here, by the header's own phone
  * breakpoint, rather than by measuring the window in Rust (different markup before and after hydration,
- * and a flash). Every entry is always rendered; exactly one is visible, so exactly one panel mounts.
+ * and a flash). Both header triggers are always rendered; exactly one is visible, so exactly one panel
+ * mounts.
  *
  *   > 760px  the header's icon button opens the panel as a popover (`.dx-popover:has(> ...)` below).
- *   <= 760px a popover anchored to a trigger near the middle of the screen would open off-screen, so
- *            the popover's trigger is hidden and the picker opens as a bottom Drawer, the native phone
- *            idiom, from ONE phone entry per page: the sidebar sheet's own "Theme" footer
- *            (`ThemePickerSidebarFooter`) on a page that has a sheet (the header's row is already full
- *            of the sidebar trigger there), or, on a page with none (`/demos`, the `/charts/` gallery,
- *            "not found"), the header's own icon button (`ThemePickerPhoneTrigger`,
- *            `.dx-theme-phone-trigger`: `display: none` above the breakpoint, a bare 24px icon like the
- *            sun/moon toggle beside it below it). `display: none` also takes the hidden ones out of the
- *            accessibility tree, so there is only ever one "Theme" button. All of them switch under the
- *            ONE query below (a unit test in theme.rs pins that), so there is no width with none or two.
- *
- * The sidebar footer's selector doubles up on classes (not bare `.dx-theme-sidebar-footer`) to outrank
- * `.dx-sidebar-footer { display: flex }` in sidebar/style.css whichever sheet loads last. 760px is the
- * header's breakpoint, not the sidebar's own 768px switch to a sheet: between the two the header still
- * has its popover trigger and the sidebar (already a sheet) correctly shows no second one. */
-.dx-sidebar-footer.dx-theme-sidebar-footer {
-  display: none;
-}
-
+ *   <= 760px a popover anchored to an icon in a phone header would open half off-screen, so the
+ *            popover's trigger is hidden and the header's phone entry (`ThemePickerPhoneTrigger`,
+ *            `.dx-theme-phone-trigger`, a bare 24px icon like the sun/moon toggle beside it) opens the
+ *            panel as a bottom Drawer, the native phone idiom. `display: none` also takes the hidden one
+ *            out of the accessibility tree, so there is only ever one "Theme" button. Both switch under
+ *            the ONE query below (a unit test in theme.rs pins that), so there is no width with none or
+ *            two. */
 @media (width <= 760px) {
   .dx-popover:has(> .dx-theme-picker-trigger) {
     display: none;
@@ -588,12 +577,6 @@ button.dx-theme-phone-trigger {
 
   button.dx-theme-phone-trigger {
     display: flex;
-  }
-
-  .dx-sidebar-footer.dx-theme-sidebar-footer {
-    display: flex;
-    padding-bottom: max(var(--dx-space-2), env(safe-area-inset-bottom));
-    border-top: 1px solid var(--dx-sidebar-border);
   }
 }
 

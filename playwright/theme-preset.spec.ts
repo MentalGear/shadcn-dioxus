@@ -318,14 +318,11 @@ const SHOTS = process.env.THEME_SHOTS_DIR; // opt-in: THEME_SHOTS_DIR=/some/dir 
 const navSheet = (page: Page) => page.locator(".dx-sidebar-sheet");
 const drawer = (page: Page) => page.locator(".dx-drawer");
 
-/** Opens the mobile navigation sheet and returns its "Theme" entry. */
-async function openNavSheet(page: Page, tap = true): Promise<Locator> {
-  const toggle = page.getByRole("button", { name: "Toggle Sidebar" });
-  if (tap) await toggle.tap();
-  else await toggle.click();
-  await expect(navSheet(page)).toBeVisible();
-  const entry = navSheet(page).getByRole("button", { name: "Theme", exact: true });
+/** The header's phone entry: the one "Theme" button at phone width. */
+async function phoneEntry(page: Page): Promise<Locator> {
+  const entry = page.locator(".dx-preview-navbar").getByRole("button", { name: "Theme", exact: true });
   await expect(entry).toBeVisible();
+  await expect(entry).toHaveClass(/dx-theme-phone-trigger/);
   return entry;
 }
 
@@ -360,33 +357,35 @@ for (const { width, height } of PHONES) {
       test.use({ viewport: { width, height }, hasTouch: true, isMobile: true, colorScheme: scheme });
       test.skip(({ browserName }) => browserName === "firefox", "Firefox has no mobile emulation");
 
-      test("the picker is not in the header; 'Theme' is in the nav sheet, on screen and tappable", async ({ page }) => {
-        // The header keeps light/dark but has no picker button (hidden, so not in the a11y tree either).
-        await expect(page.getByRole("button", { name: "Theme", exact: true })).toHaveCount(0);
+      test("'Theme' is the header's phone entry, on screen and tappable; the nav sheet has none", async ({ page }) => {
+        await expect(page.getByRole("button", { name: "Theme", exact: true })).toHaveCount(1);
         await expect(page.getByRole("button", { name: /Enable (dark|light) mode/ })).toBeVisible();
+        await expect(page.locator(".dx-theme-picker-trigger")).toBeHidden();
 
-        const entry = await openNavSheet(page);
+        const entry = await phoneEntry(page);
         await expect(entry).toHaveAttribute("aria-haspopup", "dialog");
-        // The sheet slides in from the left: wait for it to land before measuring.
-        await expect.poll(async () => (await entry.boundingBox())!.x).toBeGreaterThanOrEqual(0);
         const box = (await entry.boundingBox())!;
         expect(box.x).toBeGreaterThanOrEqual(0);
         expect(box.y).toBeGreaterThanOrEqual(0);
         expect(box.x + box.width).toBeLessThanOrEqual(width);
-        expect(box.y + box.height).toBeLessThanOrEqual(height);
-        expect(box.height).toBeGreaterThanOrEqual(32);
+        expect(Math.min(box.width, box.height)).toBeGreaterThanOrEqual(24);
         // Nothing paints over it: the point a finger would land on resolves to the entry itself.
         const hit = await entry.evaluate((el) => {
           const r = el.getBoundingClientRect();
           return el.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2));
         });
         expect(hit).toBe(true);
-        if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `mobile-${width}x${height}-${scheme}-menu.png`) });
+        if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `mobile-${width}x${height}-${scheme}-header.png`) });
+
+        // The navigation sheet carries navigation only.
+        await page.getByRole("button", { name: "Toggle Sidebar" }).tap();
+        await expect(navSheet(page)).toBeVisible();
+        await expect(navSheet(page).getByRole("button", { name: "Theme", exact: true })).toHaveCount(0);
       });
 
       test("the drawer applies a preset at once, persists it, and returns focus to the trigger", async ({ page }) => {
         const mode = scheme;
-        const entry = await openNavSheet(page);
+        const entry = await phoneEntry(page);
         await entry.tap();
         const panel = drawer(page);
         await expect(panel).toBeVisible();
@@ -420,10 +419,9 @@ for (const { width, height } of PHONES) {
           await page.screenshot({ path: path.join(SHOTS, `mobile-${width}x${height}-${scheme}-drawer.png`) });
         }
 
-        // Closing it: gone from the DOM, the sheet underneath is untouched, focus is back on the trigger.
+        // Closing it: gone from the DOM, focus is back on the trigger.
         await panel.getByRole("button", { name: "Done" }).tap();
         await expect(drawer(page)).toHaveCount(0);
-        await expect(navSheet(page)).toBeVisible();
         await expect(entry).toBeFocused();
 
         // It persisted: a hard reload re-applies it from the cookies, and the reopened panel reads it back.
@@ -431,7 +429,7 @@ for (const { width, height } of PHONES) {
         await expect(primaryButton(page)).toBeVisible();
         await expectBackground(page, primaryButton(page), blue[mode]);
         expect(await attr(page, "data-theme-radius")).toBe("0.3");
-        await (await openNavSheet(page)).tap();
+        await (await phoneEntry(page)).tap();
         await expect(drawer(page).getByRole("button", { name: "Blue", exact: true })).toHaveAttribute("aria-pressed", "true");
         await expect(drawer(page).getByRole("button", { name: "Zinc", exact: true })).toHaveAttribute("aria-pressed", "true");
         await expect(drawer(page).getByRole("button", { name: "0.3", exact: true })).toHaveAttribute("aria-pressed", "true");
@@ -447,25 +445,22 @@ for (const { width, height } of PHONES) {
   }
 }
 
-test.describe("phone modal stacking (390x844)", () => {
+test.describe("phone drawer modality (390x844)", () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, colorScheme: "light" });
   test.skip(({ browserName }) => browserName === "firefox", "Firefox has no mobile emulation");
 
-  test("the drawer opens on top of the nav sheet: one Escape, one focus trap, one scroll lock", async ({ page }) => {
+  test("the drawer is the one modal: focus trap, Escape, scrim tap and one scroll lock", async ({ page }) => {
     expect(await openDialogs(page)).toEqual([]);
     expect(await scrollLocked(page)).toBe(false);
 
-    const entry = await openNavSheet(page);
-    expect(await openDialogs(page)).toEqual(["sheet:modal"]);
-    expect(await scrollLocked(page)).toBe(true);
-
+    const entry = await phoneEntry(page);
     await entry.tap();
     await expect(drawer(page)).toBeVisible();
-    expect(await openDialogs(page)).toEqual(["sheet:modal", "drawer:modal"]);
+    expect(await openDialogs(page)).toEqual(["drawer:modal"]);
     expect(await scrollLocked(page)).toBe(true);
-    // Focus moved into the top dialog, and Tab never reaches the sheet's links or the page underneath
-    // (the first Tab past the last control leaves the document, as in any native modal dialog, and the
-    // next one is back at the top of the drawer): two full cycles.
+    // Focus moved into the dialog, and Tab never reaches the page underneath (the first Tab past the
+    // last control leaves the document, as in any native modal dialog, and the next one is back at the
+    // top of the drawer): two full cycles.
     expect(await focusIn(page, ".dx-drawer")).toBe(true);
     let reentered = false;
     for (let i = 0; i < 80; i++) {
@@ -479,39 +474,31 @@ test.describe("phone modal stacking (390x844)", () => {
     // Put focus back inside for the Escape below (headless has no browser chrome to hold it).
     await page.getByRole("dialog", { name: "Theme" }).getByRole("button", { name: "Reset" }).focus();
 
-    // Escape closes only the topmost modal: the sheet stays open, locked, and focus is back on the entry.
+    // Escape closes it, releases the lock, and focus is back on the entry.
     await page.keyboard.press("Escape");
     await expect(drawer(page)).toHaveCount(0);
-    expect(await openDialogs(page)).toEqual(["sheet:modal"]);
-    expect(await scrollLocked(page)).toBe(true);
-    await expect(navSheet(page)).toBeVisible();
-    await expect(entry).toBeFocused();
-
-    // A tap on the drawer's own scrim (far above the panel) closes the drawer, not the sheet beneath it.
-    await entry.tap();
-    await expect(drawer(page)).toBeVisible();
-    await page.touchscreen.tap(340, 40);
-    await expect(drawer(page)).toHaveCount(0);
-    expect(await openDialogs(page)).toEqual(["sheet:modal"]);
-    await expect(entry).toBeFocused();
-    expect(await scrollLocked(page)).toBe(true);
-
-    // The second Escape closes the sheet and releases the one lock.
-    await page.keyboard.press("Escape");
-    await expect(navSheet(page)).toHaveCount(0);
     expect(await openDialogs(page)).toEqual([]);
     expect(await scrollLocked(page)).toBe(false);
-    await expect(page.getByRole("button", { name: "Toggle Sidebar" })).toBeFocused();
+    await expect(entry).toBeFocused();
+
+    // A tap on the drawer's own scrim (far above the panel) closes it.
+    await entry.tap();
+    await expect(drawer(page)).toBeVisible();
+    await page.touchscreen.tap(340, 120);
+    await expect(drawer(page)).toHaveCount(0);
+    expect(await openDialogs(page)).toEqual([]);
+    expect(await scrollLocked(page)).toBe(false);
+    await expect(entry).toBeFocused();
   });
 
-  test("dragging the drawer down dismisses it and leaves the nav sheet open", async ({ page }) => {
-    const entry = await openNavSheet(page);
+  test("dragging the drawer down dismisses it", async ({ page }) => {
+    const entry = await phoneEntry(page);
     await entry.tap();
     const panel = drawer(page);
     await expect(panel).toBeVisible();
     // The gesture itself is drawer.spec.ts's business (same recipe: slow steps, a pause before release,
-    // so the DISTANCE path decides, not the velocity one). What is checked here is only that it works
-    // from inside the nav sheet and ends the drawer alone. Start once the slide-in has settled.
+    // so the DISTANCE path decides, not the velocity one). What is checked here is only that it ends the
+    // picker's drawer. Start once the slide-in has settled.
     const handle = panel.locator(".dx-drawer-handle");
     let last = -1;
     await expect
@@ -535,37 +522,16 @@ test.describe("phone modal stacking (390x844)", () => {
     await page.waitForTimeout(200);
     await page.mouse.up();
     await expect(drawer(page)).toHaveCount(0);
-    expect(await openDialogs(page)).toEqual(["sheet:modal"]);
+    expect(await openDialogs(page)).toEqual([]);
     await expect(entry).toBeFocused();
   });
-});
-
-test.describe("phone entry on every page that has a nav sheet (390x844)", () => {
-  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, colorScheme: "light" });
-  test.skip(({ browserName }) => browserName === "firefox", "Firefox has no mobile emulation");
-
-  // Home, the docs overview and a component page all render `DocsLayout`, so all three carry the entry.
-  for (const route of ["/", "/docs/", "/component/calendar/"]) {
-    test(`${route} has 'Theme' in its nav sheet and it opens the drawer`, async ({ page }) => {
-      await gotoHydrated(page, `${BASE_URL}${route}`);
-      const entry = await openNavSheet(page);
-      await entry.tap();
-      await expect(page.getByRole("dialog", { name: "Theme" })).toBeVisible();
-      await page.keyboard.press("Escape");
-      await expect(drawer(page)).toHaveCount(0);
-      await expect(entry).toBeFocused();
-    });
-  }
 });
 
 test.describe("phone keyboard (390x844, no touch)", () => {
   test.use({ viewport: { width: 390, height: 844 }, colorScheme: "light" });
 
   test("Enter on 'Theme' opens the drawer; the swatches are labelled groups; Escape returns focus", async ({ page }) => {
-    await page.getByRole("button", { name: "Toggle Sidebar" }).focus();
-    await page.keyboard.press("Enter");
-    await expect(navSheet(page)).toBeVisible();
-    const entry = navSheet(page).getByRole("button", { name: "Theme", exact: true });
+    const entry = await phoneEntry(page);
     await entry.focus();
     await page.keyboard.press("Enter");
 
@@ -592,43 +558,37 @@ test.describe("phone keyboard (390x844, no touch)", () => {
     await page.keyboard.press("Escape");
     await expect(drawer(page)).toHaveCount(0);
     await expect(entry).toBeFocused();
-    await expect(navSheet(page)).toBeVisible();
   });
 });
 
 test.describe("the breakpoint between the two presentations", () => {
-  test("desktop 1280: header trigger + popover, and no phone entry anywhere in the page", async ({ page }) => {
+  test("desktop 1280: header trigger + popover; the phone entry is rendered but hidden", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     const trigger = page.getByRole("button", { name: "Theme", exact: true });
     await expect(trigger).toHaveCount(1);
     await expect(trigger).toBeVisible();
+    await expect(trigger).toHaveClass(/dx-theme-picker-trigger/);
     expect(await trigger.evaluate((el) => !!el.closest(".dx-navbar-utilities"))).toBe(true);
-    // The phone entry exists in the sidebar's markup but is `display: none`: no box, not in the a11y tree.
-    await expect(page.locator(".dx-theme-sidebar-footer")).toBeHidden();
+    // The phone entry exists in the header's markup but is `display: none`: no box, not in the a11y tree.
+    await expect(page.locator(".dx-theme-phone-trigger")).toHaveCount(1);
+    await expect(page.locator(".dx-theme-phone-trigger")).toBeHidden();
     await trigger.click();
     await expect(page.locator(".dx-theme-picker")).toBeVisible();
     await expect(page.locator('.dx-theme-picker-panel[data-presentation="popover"]')).toBeVisible();
     await expect(page.locator(".dx-drawer")).toHaveCount(0);
   });
 
-  test("760px is a phone, 761px is not: exactly one 'Theme' button at each", async ({ page }) => {
+  test("760px is a phone, 761px is not: exactly one 'Theme' button at each, always in the header", async ({ page }) => {
     const header = page.locator(".dx-preview-navbar").getByRole("button", { name: "Theme", exact: true });
 
     await page.setViewportSize({ width: 761, height: 800 });
-    await expect(header).toBeVisible();
-    // The sidebar is already a sheet below 768px (its own switch, in Rust), but it must not add a second entry.
-    await page.getByRole("button", { name: "Toggle Sidebar" }).click();
-    await expect(navSheet(page)).toBeVisible();
-    await expect(page.locator(".dx-theme-sidebar-footer")).toBeHidden();
     await expect(page.getByRole("button", { name: "Theme", exact: true })).toHaveCount(1);
-    await page.keyboard.press("Escape");
-    await expect(navSheet(page)).toHaveCount(0);
+    await expect(header).toHaveClass(/dx-theme-picker-trigger/);
+    await expect(page.locator(".dx-theme-phone-trigger")).toBeHidden();
 
     await page.setViewportSize({ width: 760, height: 800 });
-    await expect(header).toBeHidden();
-    await page.getByRole("button", { name: "Toggle Sidebar" }).click();
-    await expect(navSheet(page)).toBeVisible();
-    await expect(page.locator(".dx-theme-sidebar-footer")).toBeVisible();
     await expect(page.getByRole("button", { name: "Theme", exact: true })).toHaveCount(1);
+    await expect(header).toHaveClass(/dx-theme-phone-trigger/);
+    await expect(page.locator(".dx-theme-picker-trigger")).toBeHidden();
   });
 });
