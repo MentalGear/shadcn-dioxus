@@ -465,8 +465,8 @@ test.describe("Carousel: focus when the focused arrow becomes disabled", () => {
     page,
   }) => {
     // The `main` demo has the DEFAULT 0.5 look: the hand-off is not specific
-    // to the hidden arrow, because Chromium already dropped focus to <body>
-    // here before this change.
+    // to the hidden arrow, because Chromium drops focus to <body> here
+    // on its own.
     await goto(page, "main");
     const root = frame(page, "main").locator(".dx-carousel");
     await nextOf(root).focus();

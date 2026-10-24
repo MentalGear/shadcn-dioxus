@@ -37,7 +37,7 @@
  *      control and does NOT scroll the page or select text, with no touchstart handler to say so
  *      (`touch-action: none` does it) -- the guard for removing those three handlers.
  *   5. The demo cards are skipped off screen (`content-visibility: auto` on `.dx-component-card`; the
- *      `.dx-widget-card` masonry cards are contained but not skipped since row 204: a balanced multi-column
+ *      `.dx-widget-card` masonry cards are contained but not skipped (row 204): a balanced multi-column
  *      layout cannot place a card whose height is only an estimate; popout cards stay `visible`, containment
  *      would clip their dropdown): >= 70% of the gallery cards are skipped at the top AND at the bottom of the page
  *      (`checkVisibility({ contentVisibilityAuto: true })`), and the idle page relayouts almost never

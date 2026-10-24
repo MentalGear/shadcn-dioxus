@@ -1,5 +1,5 @@
 /**
- * Row 188, batch 3 (demo parity second audit): the parts the audit still listed as missing.
+ * Row 188 demo parity: the parts the parity audit lists that no other spec covers.
  *
  * - `Field { disabled }`: Nova's `group-data-[disabled=true]/field:opacity-50` on `FieldLabel`, read through
  *   Label's `--dx-label-opacity` slot (the label also wears `dx-label`, so Field declares no property on it).

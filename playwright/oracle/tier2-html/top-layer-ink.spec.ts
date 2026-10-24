@@ -231,7 +231,7 @@ const SURFACES: Surface[] = [
     text: (page) => page.locator("#clip-popover-content"),
   },
   {
-    // Themed non-modal `Popover` (the primitive's default since row 169): `popover="auto"`
+    // Themed non-modal `Popover` (the primitive's default, row 169): `popover="auto"`
     // through `use_popover_shown_while_mounted`.
     name: "popover (non-modal arm, themed default)",
     open: async (page) => {
@@ -343,7 +343,7 @@ const SURFACES: Surface[] = [
     },
     wrapper: (page) => page.locator('.dx-combobox-list[data-state="open"]'),
     // The first option is highlighted on open and so carries `--dx-accent-foreground`
-    // (its own, deliberate colour since row 111); the first un-highlighted one inherits the list's.
+    // (its own, deliberate colour, row 111); the first un-highlighted one inherits the list's.
     text: (page) =>
       page.locator('.dx-combobox-list[data-state="open"] .dx-combobox-option:not([data-highlighted="true"])').first(),
     expectedVar: "--dx-popover-foreground",

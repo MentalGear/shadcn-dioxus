@@ -258,8 +258,8 @@ test.describe("listener inventory: every overlay returns window/document to its 
     });
   }
 
-  // The home page mounts the form fixture (its demo card); `/charts/` does not. Every docs-shell page (since row 303
-  // that includes `/charts/`) mounts the sidebar provider, so that scenario hops between two docs-shell routes: each
+  // The home page mounts the form fixture (its demo card); `/charts/` does not. Every docs-shell page (`/charts/` included, row 303)
+  // mounts the sidebar provider, so that scenario hops between two docs-shell routes: each
   // hop unmounts one provider and mounts the next, and the inventory must still end where it began.
   // Link hrefs carry the deployment's base path (`/shadcn-dioxus/...` on the Pages build); BASE_URL does too.
   const BASE_PATH = new URL(BASE_URL).pathname.replace(/\/$/, "");

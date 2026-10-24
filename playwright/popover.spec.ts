@@ -301,8 +301,8 @@ test.describe("Axe automated scan", () => {
 // the animation that CSS defines (row 7).
 //
 // Targets the `non_modal` variant (`preview/src/components/popover/
-// variants/non_modal/mod.rs`, `is_modal: false`). Since row 169 made
-// the primitive non-modal by default, this file's own `?name=popover&` *main*-variant
+// variants/non_modal/mod.rs`, `is_modal: false`). The primitive is
+// non-modal by default (row 169), so this file's own `?name=popover&` *main*-variant
 // demo is non-modal too (the modal arm is a real `<dialog>` + `showModal()`, a completely different
 // code path from `popover="auto"` that neither row 19 nor row 7 touches, with
 // its own `modal` variant).

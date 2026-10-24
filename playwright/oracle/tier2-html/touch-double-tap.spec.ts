@@ -269,12 +269,12 @@ test.describe("overlay-gated elements", () => {
   });
 });
 
-// Row 331: 46 component pages -> 23. Chosen by a greedy set cover, not by taste: on a debug SSG build every one of
-// the old pages was probed for the (tag, role, first `dx-` class or raw) families SELECTOR matches there, 75
+// Row 331: 23 component pages out of 46. Chosen by a greedy set cover, not by taste: on a debug SSG build every one of
+// the component pages was probed for the (tag, role, first `dx-` class or raw) families SELECTOR matches there, 75
 // distinct families in all (12 of them raw, no `dx-` class: the `main.css` backstop's own targets), and these 23
-// pages carry every one of them (most-uncovered-first, ties by the old list's order). Any family a dropped page had
+// pages carry every one of them (most-uncovered-first, ties by list order). Any family a dropped page had
 // is on a kept page, so a component sheet that sets `touch-action: auto` on its control, or a raw element that
-// loses the backstop, still fails. Dropped: the 23 pages whose families were all already covered (the old 46 took
+// loses the backstop, still fails. The other 23 pages add no family (all 46 take
 // 81 s). `check-theme-baseline.sh` scopes the theme rule to `dx-` and cannot see raw elements or computed values.
 const COMPONENTS = [
   "top_layer", "calendar", "form", "combobox", "drag_and_drop_list", "navbar", "tag_group", "item", "menubar",
