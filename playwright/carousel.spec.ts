@@ -148,6 +148,8 @@ async function expectSnappedToBoundary(content: Locator, item: Locator, orientat
         itemBox: { x: number; y: number };
       }>((resolve) => {
         const deadline = performance.now() + 3000;
+        let lastPos = NaN;
+        let stillFrames = 0;
         const check = () => {
           const containerRect = (contentEl as Element).getBoundingClientRect();
           const itemRect = (itemEl as Element).getBoundingClientRect();
@@ -155,11 +157,19 @@ async function expectSnappedToBoundary(content: Locator, item: Locator, orientat
             orientation === "horizontal"
               ? Math.abs(containerRect.x - itemRect.x)
               : Math.abs(containerRect.y - itemRect.y);
+          // Settled = the slide has stopped moving: the same position on
+          // three consecutive frames. Chromium 153's smooth scroll
+          // spends its last frames 1px short of the snap point, which the
+          // 2px tolerance below accepts, and the wheel band's own at-rest
+          // test (`edgeGaps`, 0.5px) does not (backlog row 378).
+          const pos = orientation === "horizontal" ? itemRect.x : itemRect.y;
+          stillFrames = Math.abs(pos - lastPos) < 0.01 ? stillFrames + 1 : 0;
+          lastPos = pos;
           // A couple of CSS pixels of tolerance for sub-pixel rounding
           // during a smooth-scroll settle -- not a loose bound: an
           // unsettled scroll (still mid-animation, or landed on the wrong
           // slide) misses by tens/hundreds of pixels, not 1-2.
-          if (delta <= 2) {
+          if (delta <= 2 && stillFrames >= 3) {
             resolve({
               ok: true,
               delta,

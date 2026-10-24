@@ -95,19 +95,20 @@ test("modified and middle clicks leave the router alone (new tab), plain click n
   await gotoHydrated(page, `${BASE_URL}/docs`);
   const demos = page.locator("nav.dx-preview-navbar").getByRole("link", { name: "Demos" });
 
+  // A new tab can surface while still on its initial about:blank, where
+  // `domcontentloaded` has already fired (Chromium 153, backlog row 378):
+  // wait for the URL itself.
   const popup = context.waitForEvent("page");
   await demos.click({ modifiers: ["ControlOrMeta"] });
   const tab = await popup;
-  await tab.waitForLoadState("domcontentloaded");
-  expect(tab.url()).toMatch(/\/demos\/?\??$/);
+  await tab.waitForURL(/\/demos\/?\??$/);
   await tab.close();
   await expect(page).toHaveURL(/\/docs\/?\??$/);
 
   const middle = context.waitForEvent("page");
   await demos.click({ button: "middle" });
   const tab2 = await middle;
-  await tab2.waitForLoadState("domcontentloaded");
-  expect(tab2.url()).toMatch(/\/demos\/?\??$/);
+  await tab2.waitForURL(/\/demos\/?\??$/);
   await tab2.close();
   await expect(page).toHaveURL(/\/docs\/?\??$/);
 
