@@ -21,15 +21,25 @@
  * accessible name) and the toast/aria-required incidents this round's
  * brief cites.
  *
- * ## The two-state convention
+ * ## Where each state is scanned
  *
- * Every component spec that reaches an open/expanded/selected state scans
- * twice: once after the page loads (the component's *closed*, at-rest
- * markup), and once after its existing "open the overlay" step (its
- * *open* markup) -- reusing whatever locator/interaction that spec already
- * has for opening it, never a new fixture invented for this file. A
- * component with no such state (e.g. a static list, an already-always-
- * visible control) scans once, at load.
+ * At rest: `all-routes.spec.ts` scans every page of the preview (every
+ * CATALOG component page, the site pages, every block demo) as it loads,
+ * in light and in dark, with this helper and no rule disabled. A component
+ * spec therefore does not scan its own page at load: that scan was the
+ * same page, the same tag set and one scheme (backlog row 152).
+ * `tools/select.mjs` adds the changed component's `all-routes` test to a
+ * `test:changed` run, so a lane still gets the at-rest scan of what it
+ * touched.
+ *
+ * Reached by interaction: every component spec that reaches an
+ * open/expanded/selected/invalid state scans it after its existing "open
+ * the overlay" step -- reusing whatever locator/interaction that spec
+ * already has, never a new fixture invented for this file. A spec also
+ * keeps an at-load scan the sweep does not reproduce: another viewport
+ * (`drawer.spec.ts` runs at phone width), a page outside the sweep
+ * (`/charts/<tab>/`, the dashboard), or markup that depends on a request
+ * the sweep aborts (`avatar.spec.ts`'s pending image).
  *
  * ## Exclusions must be audited, never used to force green
  *

@@ -279,11 +279,6 @@ test.describe("active variant (shadcn chart-bar-active.tsx)", () => {
 });
 
 test.describe("Axe automated scan", () => {
-  test("loaded has no automatically detectable a11y issues", async ({ page }) => {
-    await goto(page);
-    await expectNoAxeViolations(page, "bar_chart: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-
   // Title deliberately avoids the lowercase substring "mobile":
   // `playwright.config.ts`'s `grepInvert: /mobile/` (meant to skip
   // viewport-name tests) silently drops ANY test whose title contains that

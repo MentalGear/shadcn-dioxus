@@ -364,16 +364,6 @@ test('range dragged thumb keeps its identity past the other thumb', async ({ pag
 });
 
 test.describe('Axe automated scan', () => {
-  // Slider has no overlay/expand interaction -- loaded (default value) and
-  // a value changed via keyboard are the two meaningful states.
-  test('loaded has no automatically detectable a11y issues', async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/slider/`, { timeout: 20 * 60 * 1000 });
-    // Wait for render before scanning -- see input.spec.ts's identical
-    // comment for why (avoids a false pre-hydration "no main"/"no h1").
-    await expect(page.getByRole('slider', { name: 'Demo Slider' })).toBeVisible();
-    await expectNoAxeViolations(page, 'slider: loaded', { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-
   test('value changed has no automatically detectable a11y issues', async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/slider/`, { timeout: 20 * 60 * 1000 });
     const thumb = page.getByRole('slider', { name: 'Demo Slider' });

@@ -233,11 +233,6 @@ test("font weight: a controlled single-select of 4rem tiles that names the chose
 });
 
 test.describe("Axe automated scan", () => {
-  test("loaded (none selected) has no automatically detectable a11y issues", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/toggle_group/`);
-    await expectNoAxeViolations(page, "toggle_group: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-
   test("an item selected has no automatically detectable a11y issues", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/toggle_group/`);
     await mainDemo(page).getByRole("button", { name: "Toggle bold", exact: true }).click();

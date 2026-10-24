@@ -128,8 +128,14 @@ icon-only button with no name. (axe has no rule that checks a bare `role="menu"`
   throws otherwise, so an excluded rule is a documented false positive at that scan site, never a way to force green on a
   real defect. Exclusions are by region or rule at one site, not sitewide, with the exception of the exported constants
   (`CONTRAST_TRACKED_ELSEWHERE`, `EXCLUDE_VENDORED_CODE_HIGHLIGHT`), each naming the tracked row.
-- **The two-state convention.** A component spec that reaches an open/expanded/selected state scans twice: once at rest,
-  once after the spec's own existing "open it" step (no new fixture). A component with no such state scans once.
+- **Where each state is scanned (row 152).** The at-rest state of every page (every catalogue component page, the site
+  pages, every block demo) is scanned by `playwright/all-routes.spec.ts` in light and dark, so a component spec does not
+  scan its own page at load. A component spec scans the states it reaches by interaction (open, expanded, selected,
+  invalid) after its existing "open it" step, never a new fixture. An at-load scan stays in a component spec only where
+  the sweep cannot reproduce it: another viewport (`drawer.spec.ts` at phone width), a page outside the sweep
+  (`/charts/<tab>/`, the dashboard), or markup that depends on a request the sweep aborts (`avatar.spec.ts`).
+  `playwright/tools/select.mjs` adds a changed component's `all-routes` test to `test:changed`, so a lane keeps the
+  at-rest scan of what it touched.
 - **Fix by construction.** A finding is fixed in the primitive or the wrapper, with the accessible name derived from what
   the component already knows (a `role="menu"` popup labelled from its trigger's id, a `role="listbox"` only when the
   caller has not supplied `aria-label`/`aria-labelledby`, via the shared `has_own_accessible_name`), and merged through

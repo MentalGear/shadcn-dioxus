@@ -266,6 +266,16 @@ eq("titles: alias matches a squashed name", SCOPES["oracle/tier1-apg/keyboard-ma
   check("a build that is not a prerendered SSG (an empty shell, as a dev server serves) is not believed", devLike.specs.length >= 25 && devLike.specs.includes("all-routes.spec.ts") && !devLike.grepInvert);
   const noIndex = run("--files", "preview/assets/main.css", "--range", "HEAD~5..HEAD");
   check("no SSG build to read: the BROAD set stays", noIndex.specs.length >= 25 && noIndex.specs.includes("all-routes.spec.ts") && !noIndex.grepInvert);
+  // A component's at-rest axe scan lives only in all-routes (row 152): a change to the component runs that page's test.
+  const comp = run("--files", "preview/src/components/kbd/component.rs");
+  const ar = comp.narrowed.find((n) => n.file === "all-routes.spec.ts");
+  check("component change: all-routes runs, narrowed to the component's page", comp.specs.includes("all-routes.spec.ts") && !!ar && ar.kept >= 2 && ar.kept < 10, JSON.stringify(ar && [ar.kept, ar.total]));
+  const arTitles = LISTED?.get("all-routes.spec.ts");
+  if (arTitles && comp.grepInvert) {
+    const re = new RegExp(comp.grepInvert, "i");
+    const kept = arTitles.filter((t) => !re.test(`chromium all-routes.spec.ts ${t}`));
+    check("component change: the kept all-routes tests are the component's page and the page-less ones", kept.some((t) => t.startsWith("kbd: ")) && !kept.some((t) => /^(accordion|button|site-home): /.test(t)), kept.join(" | ").slice(0, 300));
+  }
 }
 
 }

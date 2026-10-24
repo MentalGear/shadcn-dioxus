@@ -445,16 +445,6 @@ test.describe('Panel layout matches shadcn (owner report: oversized panel, invis
 });
 
 test.describe('Axe automated scan', () => {
-  test('loaded (panel closed) has no automatically detectable a11y issues', async ({ page }) => {
-    await gotoHydrated(page, URL, GOTO);
-    // Wait for render before scanning -- see input.spec.ts's identical
-    // comment for why (avoids a false pre-hydration "no main"/"no h1").
-    await expect(nav(page).getByRole('button', { name: 'Getting started' })).toBeVisible();
-    await expectNoAxeViolations(page, 'navigation_menu: loaded', {
-      excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT],
-    });
-  });
-
   test('panel open has no automatically detectable a11y issues', async ({ page }) => {
     await gotoHydrated(page, URL, GOTO);
     const trigger = nav(page).getByRole('button', { name: 'Getting started' });

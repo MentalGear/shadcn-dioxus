@@ -30,11 +30,6 @@ test("test", async ({ page }) => {
 });
 
 test.describe("Axe automated scan", () => {
-  test("loaded (tooltip closed) has no automatically detectable a11y issues", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/chart/`);
-    await expectNoAxeViolations(page, "chart: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-
   test("tooltip open has no automatically detectable a11y issues", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/chart/`);
     const frame = page.locator("#component-preview-frame").first();

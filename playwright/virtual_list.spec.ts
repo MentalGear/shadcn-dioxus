@@ -1,6 +1,5 @@
 import { test, expect } from "./fixtures";
 import type { Locator, Page } from "@playwright/test";
-import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL, buildProfile } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
@@ -254,18 +253,6 @@ test("resize churn while scrolling does not panic (holds no borrow across resize
     (m) => /panicked/i.test(m) || /already borrowed/i.test(m) || /BorrowMutError/i.test(m)
   );
   expect(suspicious, `Suspicious console output during resize churn:\n${suspicious.join("\n")}`).toEqual([]);
-});
-
-test.describe("Axe automated scan", () => {
-  // Virtual list has no overlay/expand/select interaction -- one state to scan.
-  test("loaded has no automatically detectable a11y issues", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/virtual_list/`, { timeout: 20 * 60 * 1000 });
-    await expect(page.locator(".dx-virtual-list-container").first()).toBeVisible({ timeout: 30000 });
-    // The page carries every variant, so this scans the content-visibility list (1,000 rows in
-    // the DOM) and the 100,000-row windowed list too. (The bare `/component/block/` pages have
-    // no `<main>`, which the scan waits for.)
-    await expectNoAxeViolations(page, "virtual_list: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
 });
 
 // ---------------------------------------------------------------------------

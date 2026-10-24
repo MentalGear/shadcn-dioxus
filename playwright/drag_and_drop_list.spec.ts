@@ -848,20 +848,6 @@ test.describe("Remove behavior", () => {
   });
 });
 
-test.describe("Axe automated scan", () => {
-  test("no automatically detectable a11y issues", async ({ page }) => {
-    await loadMainList(page);
-
-    // No color-contrast exclusion needed: this round's theme-token fix
-    // (dev-docs/backlog.md row 39) resolved the pre-existing finding here, and
-    // this scan is scoped to the list itself, which has no code block to
-    // need the one remaining, narrower exclusion for.
-    await expectNoAxeViolations(page, "drag_and_drop_list: main list", {
-      include: 'ul[aria-roledescription="sortable list"]',
-    });
-  });
-});
-
 test.describe("Reported order (backlog row 362)", () => {
   const KEYS: Record<string, string> = {
     Alpha: "alpha",

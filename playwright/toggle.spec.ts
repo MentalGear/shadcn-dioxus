@@ -174,11 +174,6 @@ test('disabled toggles (default and outline) ignore clicks', async ({ page }) =>
 });
 
 test.describe('Axe automated scan', () => {
-  test('loaded (off) has no automatically detectable a11y issues', async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/toggle/`, { timeout: 20 * 60 * 1000, waitUntil: 'networkidle' });
-    await expectNoAxeViolations(page, 'toggle: off', { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-
   test('on has no automatically detectable a11y issues', async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/toggle/`, { timeout: 20 * 60 * 1000, waitUntil: 'networkidle' });
     await page.locator('#component-preview-frame').getByRole('button', { name: 'Toggle bookmark', exact: true }).click();

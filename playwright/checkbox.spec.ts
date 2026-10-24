@@ -22,11 +22,6 @@ test('test', async ({ page }) => {
 });
 
 test.describe('Axe automated scan', () => {
-  test('loaded (unchecked) has no automatically detectable a11y issues', async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/checkbox/`, { timeout: 20 * 60 * 1000, waitUntil: 'networkidle' });
-    await expectNoAxeViolations(page, 'checkbox: unchecked', { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-
   test('checked has no automatically detectable a11y issues', async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/checkbox/`, { timeout: 20 * 60 * 1000, waitUntil: 'networkidle' });
     await page.locator('#component-preview-frame').getByRole('checkbox', { name: 'Accept terms and conditions', exact: true }).click();

@@ -53,11 +53,6 @@ test("a focus-out in the same beat as the open stays closed (no stale toggle ech
 });
 
 test.describe("Axe automated scan", () => {
-  test("loaded (tooltip closed) has no automatically detectable a11y issues", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/tooltip/`);
-    await expectNoAxeViolations(page, "tooltip: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-
   test("tooltip open has no automatically detectable a11y issues", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/tooltip/`);
     await page.locator("#component-preview-frame").first().getByText("Rich content").hover();

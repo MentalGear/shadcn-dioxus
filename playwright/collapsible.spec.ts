@@ -12,11 +12,6 @@ test("test", async ({ page }) => {
 });
 
 test.describe("Axe automated scan", () => {
-  test("loaded (collapsed) has no automatically detectable a11y issues", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/collapsible/`, { timeout: 20 * 60 * 1000 });
-    await expectNoAxeViolations(page, "collapsible: collapsed", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-
   test("expanded has no automatically detectable a11y issues", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/collapsible/`, { timeout: 20 * 60 * 1000 });
     const preview = page.locator("#component-preview-frame").first();

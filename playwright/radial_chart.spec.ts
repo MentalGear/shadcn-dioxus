@@ -1,6 +1,5 @@
 import { test, expect } from "./fixtures";
 import { type Page, type Locator } from "@playwright/test";
-import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
 // dev-docs/backlog.md row 109: this suite interacts (hover/click) right
 // after navigating, on the SSG lane -- `gotoHydrated` so that can't land
@@ -151,15 +150,4 @@ test.describe("Radial chart: center text and labels", () => {
     await expect(f.locator('[data-slot="chart-arc-label"]')).toHaveCount(5);
     await expect(f.locator('[data-slot="chart-arc-label"]').first()).toHaveText("Chrome");
   });
-});
-
-test.describe("Axe automated scan", () => {
-  for (const variant of VARIANTS) {
-    test(`${variant}: no automatically detectable a11y issues`, async ({ page }) => {
-      await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
-      await expectNoAxeViolations(page, `radial_chart: ${variant}`, {
-        excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT],
-      });
-    });
-  }
 });

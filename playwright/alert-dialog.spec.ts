@@ -50,11 +50,6 @@ test('test', async ({ page }) => {
 });
 
 test.describe('Axe automated scan', () => {
-  test('loaded (dialog closed) has no automatically detectable a11y issues', async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/alert_dialog/`, { timeout: 20 * 60 * 1000 });
-    await expectNoAxeViolations(page, 'alert-dialog: loaded', { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-
   test('open has no automatically detectable a11y issues', async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/alert_dialog/`, { timeout: 20 * 60 * 1000 });
     await page.getByRole('button', { name: 'Show Alert Dialog' }).click();

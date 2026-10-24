@@ -155,11 +155,6 @@ test("open and close animate the content height smoothly, without snapping", asy
 });
 
 test.describe("Axe automated scan", () => {
-  test("loaded (all items closed) has no automatically detectable a11y issues", async ({ page }) => {
-    await loadAccordion(page);
-    await expectNoAxeViolations(page, "accordion: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-
   test("first item expanded has no automatically detectable a11y issues", async ({ page }) => {
     const accordionItems = await loadAccordion(page);
     const buttons = accordionItems.getByRole("button");

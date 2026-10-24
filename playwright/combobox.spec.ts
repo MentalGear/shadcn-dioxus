@@ -312,12 +312,6 @@ test("touch selection commits and closes", async ({ browser, browserName }) => {
 });
 
 test.describe("Axe automated scan", () => {
-    test("loaded (listbox closed) has no automatically detectable a11y issues", async ({ page }) => {
-        await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
-        await page.waitForLoadState('networkidle');
-        await expectNoAxeViolations(page, "combobox: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-    });
-
     test("listbox open has no automatically detectable a11y issues", async ({ page }) => {
         await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
         await page.waitForLoadState('networkidle');

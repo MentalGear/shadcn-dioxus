@@ -1,5 +1,4 @@
 import { test, expect } from "./fixtures";
-import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
@@ -85,10 +84,3 @@ for (const dark of [false, true]) {
     expect(otherHoveredBorder, "a non-active link must not gain a visible border on hover").toBe("rgba(0, 0, 0, 0)");
   });
 }
-
-test.describe("Axe automated scan", () => {
-  test("loaded has no automatically detectable a11y issues", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/pagination/`, { waitUntil: "networkidle" });
-    await expectNoAxeViolations(page, "pagination: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-});

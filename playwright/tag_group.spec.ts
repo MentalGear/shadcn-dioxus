@@ -1,6 +1,5 @@
 import { test, expect } from "./fixtures";
 import { type Page } from "@playwright/test";
-import { expectNoAxeViolations } from "./axe";
 import { BASE_URL as BASE } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
@@ -265,17 +264,4 @@ test.describe("Tag group", () => {
     });
   });
 
-  test.describe("Accessibility", () => {
-    test("has no automatically detectable a11y violations on the tag list", async ({
-      page,
-    }) => {
-      // No color-contrast exclusion needed: this round's theme-token fix
-      // (dev-docs/backlog.md row 39) resolved the pre-existing finding here,
-      // and this scan is scoped to the tag grid itself, which has no code
-      // block to need the one remaining, narrower exclusion for.
-      await expectNoAxeViolations(page, "tag_group: tag list", {
-        include: '.dx-component-variant [role="grid"]',
-      });
-    });
-  });
 });

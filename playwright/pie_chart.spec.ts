@@ -257,15 +257,6 @@ test.describe("Pie chart: load animation", () => {
 });
 
 test.describe("Axe automated scan", () => {
-  for (const variant of VARIANTS) {
-    test(`${variant}: no automatically detectable a11y issues`, async ({ page }) => {
-      await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
-      await expectNoAxeViolations(page, `pie_chart: ${variant}`, {
-        excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT],
-      });
-    });
-  }
-
   test("simple: hovered (active slice shown) has no automatically detectable a11y issues", async ({ page }) => {
     await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
     const f = frame(page, "main");

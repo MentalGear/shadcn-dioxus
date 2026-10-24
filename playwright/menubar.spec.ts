@@ -306,14 +306,6 @@ test.describe("Checkable items", () => {
 });
 
 test.describe("Axe automated scan", () => {
-  test("loaded (menus closed) has no automatically detectable a11y issues", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/menubar/`, { timeout: 20 * 60 * 1000 });
-    // Wait for render before scanning -- see input.spec.ts's identical
-    // comment for why (avoids a false pre-hydration "no main"/"no h1").
-    await expect(page.getByRole("menuitem", { name: "File" })).toBeVisible();
-    await expectNoAxeViolations(page, "menubar: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-
   // dev-docs/backlog.md row 25: Menubar's role="menu" popups carry no
   // aria-labelledby/aria-label at all, so an open menu has no accessible
   // name (APG menu-and-menubar pattern requires one).

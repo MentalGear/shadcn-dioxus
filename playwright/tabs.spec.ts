@@ -80,11 +80,6 @@ test.describe("active tab keeps its color under the pointer (calendar-state lane
 });
 
 test.describe("Axe automated scan", () => {
-  test("loaded (tab 1 active) has no automatically detectable a11y issues", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/tabs/`);
-    await expectNoAxeViolations(page, "tabs: tab 1 active", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-
   test("tab 2 selected has no automatically detectable a11y issues", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/tabs/`);
     await page.getByRole("tab", { name: "Tab 2" }).click();
@@ -391,11 +386,6 @@ test.describe("vertical orientation", () => {
     expect(await active.evaluate((el) => getComputedStyle(el, "::after").backgroundColor)).toBe("rgba(0, 0, 0, 0)");
     const outer = page.locator('[data-variant="line"] .dx-tabs-list').first();
     await expect(outer).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
-  });
-
-  test("vertical tabs have no automatically detectable a11y issues", async ({ page }) => {
-    await load(page);
-    await expectNoAxeViolations(page, "tabs: vertical", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 });
 

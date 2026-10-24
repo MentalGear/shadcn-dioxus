@@ -1,6 +1,5 @@
 import { test, expect } from "./fixtures";
 import { type Page } from "@playwright/test";
-import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
@@ -64,12 +63,5 @@ test.describe("label and value", () => {
     const value = (await bar.locator(".dx-progress-value").boundingBox())!;
     expect(Math.abs(root.x + root.width - (label.x + label.width))).toBeLessThan(1);
     expect(Math.abs(value.x - root.x)).toBeLessThan(1);
-  });
-});
-
-test.describe("Axe automated scan", () => {
-  test("loaded has no automatically detectable a11y issues", async ({ page }) => {
-    await gotoHydrated(page, URL, { timeout: LOAD_TIMEOUT });
-    await expectNoAxeViolations(page, "progress: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 });
