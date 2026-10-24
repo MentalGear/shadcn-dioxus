@@ -83,6 +83,37 @@ async function lockFootprint(page: Page) {
 }
 
 /**
+ * Runs `act` (a wheel or a scrolling key) and resolves with `scrollY` once the scroll it started has ENDED: moved
+ * from where it was, then unchanged for 10 frames (backlog row 407). Chromium animates wheel and keyboard scrolls,
+ * so a value read as soon as `scrollY > 0` is a frame of the animation: the next key lands on a scroll still in
+ * flight (an End pressed then is dropped), and a position read then is not where the page stops.
+ */
+async function scrollAndSettle(page: Page, act: () => Promise<void>): Promise<number> {
+  const start = await page.evaluate(() => window.scrollY);
+  await act();
+  return page.evaluate(async (from) => {
+    const frame = () => new Promise((r) => requestAnimationFrame(r));
+    const t0 = performance.now();
+    while (window.scrollY === from && performance.now() - t0 < 5000) await frame();
+    let last = window.scrollY;
+    for (let still = 0; still < 10; ) {
+      await frame();
+      still = window.scrollY === last ? still + 1 : 0;
+      last = window.scrollY;
+    }
+    return last;
+  }, start);
+}
+
+/**
+ * How far the page may scroll with the anchor still in view. A non-modal popover closes when its anchor scrolls out
+ * of the viewport (`top_layer::use_close_on_scroll`, `ScrollClose::AnchorLeavesViewport`), so a test about the page
+ * scrolling UNDER an open popover scrolls less than this.
+ */
+const scrollKeepingAnchor = (page: Page) =>
+  trigger(page).evaluate((el) => Math.floor(el.getBoundingClientRect().top - 40));
+
+/**
  * Dispatches a cancelable wheel event on the body and reports whether anything called
  * `preventDefault()` on it -- the scroll lock's window-level capture listener does exactly that.
  * Independent of what the compositor would do with a real wheel, so it is the probe that tells a
@@ -207,10 +238,13 @@ test.describe("non-modal Popover (the default): the page keeps scrolling and hol
     expect(open.clientWidth, "no scrollbar-gutter shift on open").toBe(before.clientWidth);
     expect(await wheelIsPrevented(page), "nothing may preventDefault a wheel event").toBe(false);
 
+    const room = await scrollKeepingAnchor(page);
+    expect(room, "the trigger must sit low enough for a real scroll that keeps it in view").toBeGreaterThan(100);
     await page.mouse.move(400, 300);
-    await page.mouse.wheel(0, 800);
-    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
-    await expect(dialog(page), "scrolling does not close a non-modal popover").toBeVisible();
+    expect(await scrollAndSettle(page, () => page.mouse.wheel(0, room))).toBeGreaterThan(0);
+    // Past the close-on-scroll quiet window (300 ms after the open's focus move), so a close would have landed.
+    await page.waitForTimeout(500);
+    await expect(dialog(page), "scrolling with the anchor in view does not close a non-modal popover").toBeVisible();
   });
 
   test("keyboard scrolls the page with the popover open", async ({ page }) => {
@@ -221,15 +255,15 @@ test.describe("non-modal Popover (the default): the page keeps scrolling and hol
     // Focus is inside the content's fields on open; scrolling keys must act on the page, so park
     // focus on the body first (a modal's lock would swallow PageDown/End either way).
     await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
-    await page.keyboard.press("PageDown");
-    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+    // Each key waits for the previous scroll to end: a key pressed into a scroll still in flight is dropped.
+    expect(await scrollAndSettle(page, () => page.keyboard.press("PageDown"))).toBeGreaterThan(0);
     // End must reach the bottom. Not "further than after PageDown": on a short page PageDown alone
     // can already reach the bottom.
-    await page.keyboard.press("End");
+    const endY = await scrollAndSettle(page, () => page.keyboard.press("End"));
     const maxY = await page.evaluate(
       () => document.documentElement.scrollHeight - document.documentElement.clientHeight,
     );
-    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThanOrEqual(maxY - 1);
+    expect(endY).toBeGreaterThanOrEqual(maxY - 1);
   });
 
   test("closing has nothing to undo: the scroll position is kept, no footprint is left", async ({ page }) => {
@@ -239,10 +273,13 @@ test.describe("non-modal Popover (the default): the page keeps scrolling and hol
     await trigger(page).click();
     await expect(dialog(page)).toBeVisible();
 
+    // Escape is what closes it here, so the anchor stays in view; the position is read once the scroll has ended.
+    const room = await scrollKeepingAnchor(page);
+    expect(room).toBeGreaterThan(100);
     await page.mouse.move(400, 300);
-    await page.mouse.wheel(0, 700);
-    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(300);
-    const scrolled = await page.evaluate(() => window.scrollY);
+    const scrolled = await scrollAndSettle(page, () => page.mouse.wheel(0, room));
+    expect(scrolled).toBeGreaterThan(100);
+    await expect(dialog(page)).toBeVisible();
 
     await page.keyboard.press("Escape");
     await expect(dialog(page)).toHaveCount(0);
