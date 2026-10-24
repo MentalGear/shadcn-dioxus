@@ -6,15 +6,13 @@ use dioxus_primitives::merge_attributes;
 /// The avatar's size, following shadcn's Nova style (`data-[size=sm]:size-6`, the
 /// default `size-8`, `data-[size=lg]:size-10`).
 ///
-/// The names keep the library's old spelling so existing call sites compile, but
-/// the sizes moved to shadcn's scale:
+/// The variant names keep the library's own spelling; the sizes are shadcn's scale:
 ///
-/// | variant      | now            | shadcn `size` | before |
-/// |--------------|----------------|---------------|--------|
-/// | `ExtraSmall` | 24px (new)     | `sm`          | none   |
-/// | `Small`      | 32px (default) | `default`     | 32px   |
-/// | `Medium`     | 40px           | `lg`          | 48px   |
-/// | `Large`      | removed        | none          | 64px   |
+/// | variant      | size           | shadcn `size` |
+/// |--------------|----------------|---------------|
+/// | `ExtraSmall` | 24px           | `sm`          |
+/// | `Small`      | 32px (default) | `default`     |
+/// | `Medium`     | 40px           | `lg`          |
 #[derive(Clone, Copy, PartialEq, Default)]
 pub enum AvatarImageSize {
     ExtraSmall,
@@ -214,16 +212,14 @@ pub struct ImageAvatarProps {
 
 #[component]
 pub fn ImageAvatar(props: ImageAvatarProps) -> Element {
-    // axe `role-img-alt` (dev-docs/backlog.md row 34's own round): the root
-    // `Avatar` renders `role="img"` (`avatar.rs`) and gets its accessible
-    // name from a caller-supplied `aria_label`, same as this crate's own
-    // doc example -- this convenience wrapper forwarded `alt` only to the
-    // inner `<img>` (via `AvatarImage`), never to the outer `role="img"`
-    // span, so every caller that used `alt` instead of separately also
-    // setting `aria_label` (every dashboard email-client avatar; the
-    // sidebar's user avatar) rendered an unnamed `role="img"`. Default the
-    // root's `aria_label` from `alt` -- merged caller-wins, so an explicit
-    // `aria_label` in `props.attributes` still overrides it. Contributed
+    // axe `role-img-alt` (dev-docs/backlog.md row 34): the root `Avatar` renders
+    // `role="img"` (`avatar.rs`) and gets its accessible name from a
+    // caller-supplied `aria_label`, same as this crate's own doc example.
+    // `alt` alone reaches only the inner `<img>` (via `AvatarImage`), never the
+    // outer `role="img"` span, so a caller that passes `alt` without also
+    // setting `aria_label` would leave an unnamed `role="img"`. The root's
+    // `aria_label` therefore defaults from `alt` -- merged caller-wins, so an
+    // explicit `aria_label` in `props.attributes` still overrides it. Contributed
     // only when `alt` is non-empty: an `aria-label=""` is still an empty
     // accessible name (no better than omitting it), and would additionally
     // shadow any real name the caller supplies some other way.

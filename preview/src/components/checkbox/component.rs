@@ -7,9 +7,9 @@ use dioxus_primitives::merge_attributes;
 // dev-docs/backlog.md row 32: this stylesheet is
 // plain, unhashed `dx-`-prefixed CSS (collision safety comes from
 // scripts/check-dx-class-prefix.sh instead of a hash), delivered the same
-// way `main.rs`'s `GlobalHead`/`LanguageSelect` already deliver theirs: an
-// `asset!()`-bundled path linked via `document::Link`. Unlike those two
-// call sites this one lives *inside* the themed wrapper itself so a
+// way `main.rs`'s `GlobalHead` delivers its sheets: an
+// `asset!()`-bundled path linked via `document::Link`. Unlike that
+// call site this one lives *inside* the themed wrapper itself so a
 // `shadcn-dioxus add checkbox`-copied component keeps working with zero
 // extra wiring in the consumer's own app -- `asset!()` resolves this path
 // from the crate root (manganis-macro's `resolve_path`), and `shadcn-dioxus add`

@@ -281,7 +281,7 @@
 }
 
 /* Entrance: every toast mounts as the newest, so the animation is unconditional and never keyed on the
- * pile index (a `[data-top]` or parity selector replayed it on the toast that moved up after a dismissal).
+ * pile index (a `[data-top]` or parity selector would replay it on the toast that moved up after a dismissal).
  * (the `animation` declaration on `.dx-toast` above). It animates `translate`/`scale`/`opacity`, never `transform`: the stack's own `transform: scale(...)`
  * stays in force underneath, so the keyframes do not restate it. The toast arrives from the toaster's edge. */
 @keyframes dx-toast-slide-in {
@@ -333,12 +333,12 @@
    the destructive-foreground token through the `--dx-toast-foreground` slot below instead of the
    page foreground: near-black (#111) on #dc2626 is 3.9:1 in light mode, white is 4.8:1. In dark
    the destructive-foreground (#dcdcdc on #a22e2e, 5.2:1) also clears 4.5:1 under the stacked-toast
-   brightness filter, where the page foreground (#d4d4d4) fell to 4.4:1. The other types use a
+   brightness filter, where the page foreground (#d4d4d4) falls to 4.4:1. The other types use a
    subtle tint under the page foreground (>= 8:1 in both themes).
 
    The surface is `--dx-destructive-fill`, the fill-grade role built for text on it (>= 4.57:1 in every
    preset and mode), not `--dx-destructive`: under any theme-picker preset the dark `--dx-destructive` is
-   shadcn's salmon #ff6467, which left the near-white ink at 2.77:1.
+   shadcn's salmon #ff6467, which leaves the near-white ink at 2.77:1.
 
    A toast floats over arbitrary page content and the dark fill is translucent (60%), so the fill is
    composited onto the page colour INSIDE the toast: an opaque `background-color` with the fill as a flat

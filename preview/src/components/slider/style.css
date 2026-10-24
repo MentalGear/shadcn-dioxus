@@ -29,7 +29,7 @@
     position: relative;
 
     /* Never clipping: the thumb is a child of the track (the primitive renders `SliderThumb` inside
-       `SliderTrack`) and is taller than the 4px track, so an `overflow: hidden` here cut it to a
+       `SliderTrack`) and is taller than the 4px track, so an `overflow: hidden` here would cut it to a
        sliver, along with its focus ring and hit area (row 293). Nova's track clips because its
        thumb is a sibling outside it; ours is not. The rounded clip moves to `.dx-slider-range`. */
     overflow: visible;

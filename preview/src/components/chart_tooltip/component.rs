@@ -34,7 +34,7 @@
 //! Every demo below renders through the plain themed
 //! `crate::components::chart::ChartTooltip`, re-exported via the glob
 //! below: that wrapper forwards every `ChartTooltipProps` field through a
-//! `..props` struct-update spread (§4(a) of the stage-2 handoff), so
+//! `..props` struct-update spread, so
 //! `indicator`/`label_key`/`name_key`/`formatter` all reach the real
 //! primitive with no gallery-local pass-through needed.
 

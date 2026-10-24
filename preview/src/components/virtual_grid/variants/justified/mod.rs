@@ -126,7 +126,7 @@ pub fn Demo() -> Element {
                     let (w, h) = aspect(index);
                     rsx! {
                         // The accessible name is on a wrapper and the image has an empty alt: while a photo loads the
-                        // browser paints its alt text in the tile, which flashed "Generated photo N" during a fast
+                        // browser paints its alt text in the tile, which would flash "Generated photo N" during a fast
                         // scroll. (`alt=""` on an element that also carries an aria-label is an axe
                         // presentation-role-conflict, so the label cannot sit on the image itself.)
                         div {

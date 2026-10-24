@@ -10,7 +10,7 @@ use dioxus_primitives::merge_attributes;
 // raw from `dioxus_primitives::chart` -- so every demo composes exclusively
 // through `crate::components::chart::*`, never a raw `dioxus_primitives::`
 // path outside this file (`scripts/check-preview-composition.sh`). `Curve`
-// joins this list for the stage-2 per-family gallery packages (`area_chart`,
+// is on this list for the per-family gallery packages (`area_chart`,
 // `line_chart`, ...): their own `component.rs` is a thin `pub use
 // crate::components::chart::*;` (the installable package stays `chart`
 // alone), so anything a variant demo names -- `Curve::Linear`/`Curve::Step`
@@ -20,14 +20,12 @@ use dioxus_primitives::merge_attributes;
 // `check-preview-composition.sh` would then have to special-case per
 // gallery instead of once, here, at the seam this file already is).
 //
-// `BarOptions`/`PieOptions`/`RadarOptions`/`RadialOptions` have no demo
-// using them yet (only `variants/line/mod.rs` sets `line: LineOptions { .. }`,
-// plus `area_chart`'s own `AreaOptions`-using variants) -- reserved
-// extension points, same as `ChartProps`' own
-// `bar`/`pie`/`radar`/`radial` fields, so each family's own gallery
-// can write `<Family>Options { .. }` in a
+// `BarOptions`/`PieOptions`/`RadarOptions`/`RadialOptions` (and
+// `LineOptions`/`AreaOptions`) are the per-family option structs behind
+// `ChartProps`' own `bar`/`pie`/`radar`/`radial`/`line`/`area` fields, so
+// each family's own gallery can write `<Family>Options { .. }` in a
 // demo with no edit to this shared file needed first.
-// `ChartSeries`/`ChartIcon`/`StackMode` join this list for `area_chart`'s
+// `ChartSeries`/`ChartIcon`/`StackMode` are on this list for `area_chart`'s
 // own `icons`/`stacked_expand` variants (setting a series' `icon` field
 // directly, and `AreaOptions.stack_mode`, respectively).
 #[allow(unused_imports)]

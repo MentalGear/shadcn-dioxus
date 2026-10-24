@@ -8,14 +8,14 @@ use dioxus::prelude::*;
 /// Builds this codebase's `CssHighlight` (`main.rs`) for one component's
 /// CSS file (`style.css` or a Block-kind variant's `demo.css`). See
 /// `CssHighlight`'s own doc comment for the full why: release/SSG builds
-/// keep the previous compile-time `dioxus_code::code!()` embed unchanged;
-/// debug builds (`dx serve`'s dev loop) carry only the file's own
-/// `asset!()` URL instead, so an edit hot-reloads via the asset pipeline
-/// rather than forcing a full rebuild through `code!()`'s
-/// `include_str!(path)` (which makes rustc -- and in turn `dx serve`'s own
-/// file-change classifier, which reads the compiled crate's rustc
-/// dep-info -- treat the `.css` file as a source dependency of this
-/// crate). Measured before/after: `dev-docs/dev-loop.md`'s CSS section.
+/// embed the file at compile time with `dioxus_code::code!()`; debug
+/// builds (`dx serve`'s dev loop) carry only the file's own `asset!()`
+/// URL instead, so an edit hot-reloads via the asset pipeline rather than
+/// forcing a full rebuild through `code!()`'s `include_str!(path)` (which
+/// makes rustc -- and in turn `dx serve`'s own file-change classifier,
+/// which reads the compiled crate's rustc dep-info -- treat the `.css`
+/// file as a source dependency of this crate). Rebuild cost:
+/// `dev-docs/dev-loop.md`'s CSS section.
 ///
 /// Two full, cfg-gated definitions rather than one macro with a cfg'd
 /// struct-literal field: `CssHighlight`'s own two fields are themselves

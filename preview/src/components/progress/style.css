@@ -1,6 +1,6 @@
 /* Nova progress (shadcn-ui/ui@295a1f1 registry/bases/base/ui/progress.tsx + registry/styles/style-nova.css):
  * the root is `flex flex-wrap gap-3` (the label and the value, then the track), `.cn-progress-track` is
- * `bg-muted h-1 rounded-full` (4px, was 8px here) with `relative flex w-full items-center overflow-x-hidden`,
+ * `bg-muted h-1 rounded-full` (4px) with `relative flex w-full items-center overflow-x-hidden`,
  * `.cn-progress-indicator` is `bg-primary`, `.cn-progress-label` `text-sm font-medium` and
  * `.cn-progress-value` `text-muted-foreground ml-auto text-sm tabular-nums`. */
 .dx-progress {

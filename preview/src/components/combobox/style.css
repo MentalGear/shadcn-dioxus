@@ -155,7 +155,7 @@
  *
  * The list is a flex column that scrolls, so the option must not shrink: an explicit `min-height` (the
  * theme slot's desktop value is `0px`) replaces the flex item's `auto` floor, and a constrained list
- * then squeezed every row to ~13px instead of scrolling (combobox.spec.ts "reopening scrolls"). */
+ * would squeeze every row to ~13px instead of scrolling (combobox.spec.ts "reopening scrolls"). */
 .dx-combobox-option {
   --dx-menu-item-indicator-inset: var(--dx-space-2);
 

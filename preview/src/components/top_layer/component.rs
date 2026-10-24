@@ -319,7 +319,7 @@ pub fn TopLayerFixture() -> Element {
                             // `@supports` block, so the hashed class would
                             // land on this element while the `@supports`-scoped
                             // rule kept referencing the *unhashed* name and
-                            // silently never matched. Same reasoning and fix as
+                            // silently never match. Same reasoning and fix as
                             // `primitives/src/tooltip.rs`'s `dx-anchor-tooltip`
                             // (see its comment) -- this fixture just needs its
                             // own instance since it isn't a primitives

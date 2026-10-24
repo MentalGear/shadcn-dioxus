@@ -162,13 +162,9 @@ pub fn Demo() -> Element {
 }}
 
 .dx-task-code {{
-  /* axe `color-contrast` (dev-docs/backlog.md row 39):
-   * `--secondary-color-6`'s light value (#d0d0d0) is meant for
-   * dark-surface use (its own dark-mode value, #5d5d5d, is the
-   * light-surface-appropriate one) -- as light-mode text it
-   * is 1.54:1 on white. `--secondary-color-5` (this theme's actual
-   * "muted text on light surfaces" token, used the same way in ~28 other
-   * component stylesheets) is the correct token for this role. */
+  /* axe `color-contrast` (dev-docs/backlog.md row 39): muted text is
+   * `--dx-muted-foreground`, the theme's muted-text role; a dark-surface
+   * grey such as #d0d0d0 would be 1.54:1 on white. */
   color: var(--dx-muted-foreground);
   font-family: var(--dx-font-mono);
   font-size: 10.5px;

@@ -42,9 +42,9 @@ pub use crate::components::chart::*;
 /// one raw `dioxus_primitives::chart::Curve` reference is not a violation.
 pub use dioxus_primitives::chart::Curve;
 
-/// `LineOptions` itself is already re-exported by `chart::component`
-/// (that package's own `component.rs`, added alongside the stage-2
-/// refactor's `Chart.line: LineOptions` field) -- reached here through
+/// `LineOptions` itself is re-exported by `chart::component`
+/// (that package's own `component.rs`, for `Chart.line: LineOptions`) --
+/// reached here through
 /// the `pub use crate::components::chart::*;` above. Its own
 /// nested types (`LineLabels`, `DotRenderer`, `DotContext`) are not in that
 /// re-export line; re-exported

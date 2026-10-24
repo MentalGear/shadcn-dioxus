@@ -11,10 +11,10 @@ use dioxus::prelude::*;
 // carries its own `document::Link` for `style.css`.
 // `document::Link` dedupes on `(href, rel)`, so those links cover this page.
 //
-// Index layout (dev-docs/archive/rounds/component-backlog.md row 68 added the submenu):
+// Index layout (the submenu is dev-docs/archive/rounds/component-backlog.md row 68):
 // Edit=0, Undo=1 (disabled), Duplicate=2, the submenu trigger=3, Delete=4.
-// Several existing Playwright specs hard-depend on this demo's *shape*,
-// not just its presence, so the nested submenu is slotted in without
+// Several Playwright specs depend on this demo's *shape*, not just its
+// presence, so the nested submenu is slotted in without
 // disturbing any of it: `playwright/dropdown-menu.spec.ts` and
 // `oracle/tier1-apg/keyboard-matrix.spec.ts` both require Edit first, Undo
 // disabled (so a 2nd ArrowDown from Edit skips it and lands on Duplicate),

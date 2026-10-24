@@ -11,8 +11,8 @@ fn site_href(path: &str) -> String {
 }
 
 /// One column, 25rem wide: the 3-link panels here have no featured card, so the stock 2-column,
-/// 37.5rem grid (`.dx-navigation-menu-grid`, sized for shadcn's long lists) made the panel 608px
-/// wide and the right-hand "Resources" panel ran 11px past the page content area. 25rem is the
+/// 37.5rem grid (`.dx-navigation-menu-grid`, sized for shadcn's long lists) would make the panel 608px
+/// wide and the right-hand "Resources" panel would run 11px past the page content area. 25rem is the
 /// stock grid's own `sm` tier; `max-width` keeps it inside the panel on a phone.
 const PANEL_GRID: &str = "width: 25rem; max-width: 100%; grid-template-columns: minmax(0, 1fr);";
 

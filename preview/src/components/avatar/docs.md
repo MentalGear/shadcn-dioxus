@@ -59,7 +59,7 @@ While the image is loading and there is no fallback standing in for it, the plac
 
 ## Badge
 
-`AvatarBadge` is a status dot or icon on the avatar's bottom-end corner (`absolute right-0 bottom-0`, mirrored in RTL), ringed in the page background. It is a child of `Avatar`, in the same place as `AvatarFallback`. By default it is `primary` with `primary-foreground` ink; override `background-color` for a status colour. Its size follows the avatar: 8px in the small avatar (an icon is hidden there), 10px by default and 12px in the large one, the icon always 8px. The avatar root no longer clips (a clip would cut the badge, which sits outside the circle); the picture and the fallback round themselves to the root's shape.
+`AvatarBadge` is a status dot or icon on the avatar's bottom-end corner (`absolute right-0 bottom-0`, mirrored in RTL), ringed in the page background. It is a child of `Avatar`, in the same place as `AvatarFallback`. By default it is `primary` with `primary-foreground` ink; override `background-color` for a status colour. Its size follows the avatar: 8px in the small avatar (an icon is hidden there), 10px by default and 12px in the large one, the icon always 8px. The avatar root does not clip (a clip would cut the badge, which sits outside the circle); the picture and the fallback round themselves to the root's shape.
 
 ```rust
 Avatar { aria_label: "Avery Lin, online",

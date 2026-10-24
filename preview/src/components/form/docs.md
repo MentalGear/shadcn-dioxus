@@ -68,13 +68,10 @@ Select::<String> { name: "fruit-lib",
 }
 ```
 
-## Known gap this fixture is built to expose
+## What the fixture checks
 
-`RadioGroup` and `Select` document `name` (and `RadioGroup` also documents
-`required`) as being for form submission, but neither currently renders a
-submittable element for it yet. Their rows
-contribute nothing to `FormData` today and never block submission. `Select`
-additionally has no `required` prop yet, so its row in the required-blocking
-form only has a native reference to test against. This fixture sets those
-props anyway, per each component's documented API, so the same fixture goes
-red today and green once that lands.
+`RadioGroup` and `Select` document `name` and `required` as being for form
+submission, and each renders a hidden native mirror that carries them. Their
+rows therefore contribute to `FormData` and block submission like the native
+reference beside them. This fixture sets those props per each component's
+documented API, so it is the oracle for that submission.

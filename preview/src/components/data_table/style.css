@@ -1,7 +1,6 @@
 /* Data table has no Nova block of its own (shadcn composes it from Table, Input,
  * Button and Select; see the table, input, button and select sheets for their
- * `.cn-*` recipes). This sheet is layout only (gaps and flex), so phase C leaves
- * it unchanged. */
+ * `.cn-*` recipes). This sheet is layout only (gaps and flex). */
 
 /* Data Table -- shadcn/ui catalog parity (dev-docs/archive/rounds/component-backlog.md
  * row 69). Classes namespaced `dx-data-table*`, scripts/check-dx-class-
@@ -72,7 +71,7 @@
      toggled ("0 of 12" -> "1 of 12"); proportional figures make a `1` ~2px
      narrower than a `0` in Geist, so the line's width -- and, in a demo
      that shrink-wraps to its widest child, the whole table's x and width --
-     moved on every toggle. Tabular figures keep every digit the same width. */
+     would move on every toggle. Tabular figures keep every digit the same width. */
   font-variant-numeric: tabular-nums;
 }
 

@@ -19,8 +19,8 @@ use dioxus::prelude::*;
 /// (`scripts/check-preview-composition.sh`'s documented, deliberate exemption
 /// for that fixture), so it never loads `../../style.css` and has no close
 /// animation defined at all -- `use_animated_open` sees zero running animations
-/// and unmounts immediately, which is a fixture-composition gap, not a defect in
-/// rows 19/7's fix. This variant, routed through the themed `PopoverRoot`/
+/// and unmounts immediately, so that fixture cannot sample a close fade
+/// (rows 19, 7). This variant, routed through the themed `PopoverRoot`/
 /// `PopoverTrigger`/`PopoverContent` wrappers (`use super::super::component::*`,
 /// same as `main`), loads the real stylesheet via each wrapper's own
 /// `document::Link` (`../../component.rs`) the same way every other component

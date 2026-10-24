@@ -188,8 +188,8 @@
 
 /* `scale`/`translate`, not `transform`: an animated `transform` REPLACES an anchor's own
  * centring transform (`translateX(-50%)`, `primitives/src/top_layer.rs`'s engine stylesheet)
- * for as long as the animation runs, which played the date/colour picker panels 144px/133px
- * off their anchor. This content sets no `data-side`, so no centring applies to it today; the
+ * for as long as the animation runs, which would play a date/colour picker panel 144px/133px
+ * off its anchor. This content sets no `data-side`, so no centring applies to it today; the
  * individual properties compose with `transform` and keep it safe if one ever does.
  * Guard: scripts/check-anchored-keyframes.sh. */
 @keyframes dx-navigation-menu-content-animate-out {
@@ -306,8 +306,8 @@
  * focus ring off: `**:data-[slot=navigation-menu-link]:focus:ring-0`). `font-size` is set HERE, on the link, so a link whose child is
  * bare text ("Button") renders at exactly the size of one whose child is a
  * title + description: otherwise only the `-link-title`/`-description`
- * wrappers set a size and a bare-text link inherits the page's 16px/400
- * ("Button and Input are larger and lighter than Introduction"). The link does not set `height: 100%` -- it is a direct grid child and
+ * wrappers set a size and a bare-text link inherits the page's 16px/400,
+ * so "Button" would look larger and lighter than "Introduction". The link does not set `height: 100%` -- it is a direct grid child and
  * stretches to its row on its own. */
 .dx-navigation-menu-content .dx-navigation-menu-link {
   display: flex;
@@ -359,12 +359,12 @@
  * bg-linear-to-b from-muted/50 to-muted p-4 md:p-6`), with two deliberate
  * departures: its copy is top-aligned (`flex-start`, not
  * `justify-end` -- the card is as tall as the three list rows beside it, and
- * bottom-pinned text left an empty block above it), and it keeps `p-4` at
+ * bottom-pinned text would leave an empty block above it), and it keeps `p-4` at
  * every width (`md:p-6` leaves the 211px left track 163px of text width, too
- * narrow for the 18px "Component Library" title, which then wrapped). Written as
+ * narrow for the 18px "Component Library" title, which would wrap). Written as
  * `.dx-navigation-menu-content .dx-navigation-menu-featured` (two classes) so
  * it beats the generic panel-link rule above on specificity: with one class
- * its `padding`/`gap`/`border-radius` silently lost to that rule's.
+ * its `padding`/`gap`/`border-radius` would silently lose to that rule's.
  *
  * The surface is Nova's `from-muted/50 to-muted`: `--dx-muted`, a step lighter than `--dx-popover` in
  * both modes (dark #262626 on #171717), so no `--dx-accent` mix is needed to tell it from the

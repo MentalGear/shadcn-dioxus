@@ -62,7 +62,7 @@
  * stylesheet order would decide. (A parent that owns the whole trigger look, the sidebar's menu button and
  * action, opts out of this recipe altogether with `data-style`, the `:not([data-style])` above.)
  *
- * :focus-visible ring: the shared --dx-ring token (dev-docs/backlog.md row 31a),
+ * :focus-visible ring: the shared --dx-ring-field token (dev-docs/backlog.md row 31a),
    but the RULE stays here rather than in the shared interaction layer
    (which waits on `[data-dx-interactive]` being wired onto interactive roots,
    see `dx-components-theme.css`). */
@@ -145,7 +145,7 @@
    `SelectTrigger` uses `ChevronDown` for, not CSS-generated `content:`
    text (which risks becoming part of the trigger's own accessible name --
    see `component.rs`'s doc on this class for why that distinction
-   mattered here). It carries no rule of its own: Nova draws it in the item's
+   matters). It carries no rule of its own: Nova draws it in the item's
    ink (`.cn-dropdown-menu-sub-trigger` has no icon colour, no opacity), and the theme's indicator slot places and sizes it. */
 
 /* RTL: this is a

@@ -12,7 +12,7 @@
 
 .dx-hover-card-content {
   /* Slots of the theme's floating-surface recipe (`data-dx-surface="floating"`, emitted by
-     `HoverCardContent`): the fade, and Nova's `p-2.5` (it was 5px). */
+     `HoverCardContent`): the fade, and Nova's `p-2.5` (10px). */
   --dx-floating-enter: dx-fade-in;
   --dx-floating-exit: dx-fade-out;
   --dx-floating-padding: var(--dx-space-2-5);

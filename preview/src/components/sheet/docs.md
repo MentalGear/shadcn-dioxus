@@ -20,7 +20,7 @@ Sheet {
 
 ## One edge panel with the drawer
 
-`side` is a typed prop. `SheetSide` is an alias of `EdgeSide`, the one side type the drawer uses too (`DrawerSide` is its other alias), and the panel is the theme's "Edge panel" recipe in `dx-components-theme.css` (`data-dx-surface="edge"` plus the resolved `data-side`): the `<dialog>` reset, the per-side inset, size, border and slide are written once for both components. A sheet defaults to `Right`, as shadcn's does; `SheetSide::Auto` is available (bottom below the `md` breakpoint, right at and above it) but not the default. The old `"data-side"` attribute still works and overrides the prop (`Sidebar` still passes it).
+`side` is a typed prop. `SheetSide` is an alias of `EdgeSide`, the one side type the drawer uses too (`DrawerSide` is its other alias), and the panel is the theme's "Edge panel" recipe in `dx-components-theme.css` (`data-dx-surface="edge"` plus the resolved `data-side`): the `<dialog>` reset, the per-side inset, size, border and slide are written once for both components. A sheet defaults to `Right`, as shadcn's does; `SheetSide::Auto` is available (bottom below the `md` breakpoint, right at and above it) but not the default. A raw `"data-side"` attribute is still honoured and overrides the prop (`Sidebar` passes it).
 
 Sheet follows Nova's panel padding of 0: the header, footer and body carry the inset (16px), not the panel -- so a title sits one header inset from the edge, not two.
 
@@ -42,11 +42,10 @@ SheetClose {
 
 ## Alignment with shadcn/ui v4
 
-This component's `style.css` was checked line-by-line against shadcn/ui v4's
+This component's `style.css` follows shadcn/ui v4's
 `Sheet` (`SheetOverlay`/`SheetContent`/`SheetHeader`/`SheetFooter`/
-`SheetTitle`/`SheetDescription`/`SheetPrimitive.Close`) and brought in line
-with it, translated onto this repo's own design tokens rather than copying
-Tailwind classes verbatim:
+`SheetTitle`/`SheetDescription`/`SheetPrimitive.Close`), translated onto this
+repo's own design tokens rather than copying Tailwind classes verbatim:
 
 - **Overlay**: `fixed inset-0 bg-black/50` in shadcn; here the shared overlay
   scrim every modal uses. On the web build, `.dx-sheet` is a real `<dialog>`

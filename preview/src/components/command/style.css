@@ -110,7 +110,7 @@
  * the exit is the move back to the base rule, played while the dialog is still a
  * modal in the top layer. Until `showModal()` runs (a mounted dialog's first frames)
  * and after the final `close()`, `display: none` -- the UA rule this stylesheet's own
- * `display: flex` overrode -- keeps it from being rendered outside the top layer,
+ * `display: flex` overrides -- keeps it from being rendered outside the top layer,
  * where its `position: fixed` box is resolved against, and clipped to, the nearest
  * layout-contained ancestor (the home page's `content-visibility` demo cards).
  * `dialog.` is deliberate: the non-web arm is a plain `div` that is never `[open]`

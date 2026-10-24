@@ -21,8 +21,8 @@ pub fn Demo() -> Element {
             // The "Verified" badge: a brand-blue fill (`--dx-ring-color`) with a
             // pinned white ink. The fill's OKLCH lightness is clamped to at most 0.5,
             // which is a no-op for a ring colour that is already deep and pulls a
-            // light one (the unclamped #2b7fff under the secondary variant's
-            // near-white dark-mode ink was 3.60:1) down to >= 4.5:1 for 12px text.
+            // light one (the unclamped #2b7fff gives 3.60:1 under the secondary variant's
+            // near-white dark-mode ink) down to >= 4.5:1 for 12px text.
             // `--dx-primary-ink` (theme) is the same clamp idea for ink on a page.
             Badge {
                 variant: BadgeVariant::Secondary,

@@ -38,11 +38,11 @@
  * total box includes the legend's own height -- the wrong basis for a
  * percentage calibrated to the svg alone.
  *
- * The failure is real and measurable, not theoretical: with
+ * A flex column fails measurably: with
  * `ChartLegend`'s `vertical_align: Top` (`data-align="top"`, the `bar`
- * demo variant), `.dx-chart`'s total height included the legend's ~16px
- * ABOVE the chart's own top edge, and every `top:X%` the primitive wrote
- * was computed as X% of the *svg's* height, then resolved by the browser
+ * demo variant), `.dx-chart`'s total height includes the legend's ~16px
+ * ABOVE the chart's own top edge, and every `top:X%` the primitive writes
+ * is computed as X% of the *svg's* height, then resolved by the browser
  * as X% of the *combined* (legend + svg) height measured from
  * `.dx-chart`'s own top -- landing the tooltip's anchor, and often its
  * whole body, inside the legend's row (hovering the `bar`
@@ -191,11 +191,9 @@
 }
 
 /* Axis ticks are the muted tier (shadcn: `muted-foreground`), a step below
- * the values and labels the chart itself draws (`--secondary-color-4`, the
- * base rule above). `--secondary-color-5` is #707070 on the white card
- * (4.95:1) and #a1a1a1 on the dark card #171717 (6.94:1) -- both clear 4.5:1
- * -- whereas `--dx-chart-axis-text` is the body
- * text colour. That token stays for the cursor, which is not a tick. */
+ * the values and labels the chart itself draws (`--dx-foreground`, the
+ * base rule above). `--dx-muted-foreground` is the theme's muted text role,
+ * whereas `--dx-chart-axis-text` is the body text colour. That token stays for the cursor, which is not a tick. */
 .dx-chart [data-slot="chart-axis"] text {
   fill: var(--dx-muted-foreground);
   font-size: var(--dx-text-xs);
@@ -204,7 +202,7 @@
 /* No `fill` here on purpose (as for the polar arcs below): `area.rs` sets
  * each area's fill as a presentation attribute -- `var(--series-color)`, or
  * the `url(#..)` of its `<linearGradient>` (`AreaOptions::gradient`) -- and a
- * stylesheet `fill` beats a presentation attribute, which silently painted
+ * stylesheet `fill` beats a presentation attribute, so one here would paint
  * every gradient area (gradient, interactive) as a flat colour. */
 .dx-chart [data-slot="chart-area"] {
   fill-opacity: 0.4;
@@ -396,13 +394,13 @@
  * data" path (dev-docs/archive/research/chart-2026-09-19.md §2.5/§6.4). Same
  * technique as `sidebar/style.css`'s `.dx-sidebar-sr-only` and
  * `pagination/style.css`'s `.dx-pagination-sr-only` (byte-identical there
- * too; still not collapsed into a shared utility -- see those files' own
+ * too; each component keeps its own copy -- see those files' own
  * TODO(row 31a) comment), namespaced here as this component's own copy.
  *
  * The clamp sits on the table's WRAPPER (`chart-data-wrapper`), not on the
  * table: a `table` box is sized to at least its min-content width and
  * ignores `width: 1px` / `overflow: hidden` (CSS 2.1 17.5.2), so with
- * `white-space: nowrap` cells it stayed 280-440px wide -- invisible
+ * `white-space: nowrap` cells it stays 280-440px wide -- invisible
  * (`clip-path`) yet still counted as scrollable overflow, widening the
  * whole page on phones (measured: 418-727px full-page at a 390px
  * viewport). Overriding the table's `display` instead would strip its table
@@ -445,8 +443,8 @@
  *     final on the first visible frame, and `data-motion` stays `false` for
  *     the render that shows it -- the transition is enabled only from the
  *     next position change on. Without this, a first open near the right
- *     edge showed at an estimated, unflipped position and then slid across
- *     the whole chart to the flipped one. */
+ *     edge would show at an estimated, unflipped position and then slide
+ *     across the whole chart to the flipped one. */
 .dx-chart-tooltip {
   position: absolute;
   z-index: var(--dx-z-local-md);
@@ -454,17 +452,15 @@
 
   /* shadcn's `min-w-[8rem]` under Tailwind's border-box preflight: 128px
    * including the padding, not 128px of content plus 24px of padding (which
-   * made every short tooltip 152px wide -- too wide to fit beside the pointer
-   * on either side of a 250px polar chart, so it pinned instead of following). */
+   * would make every short tooltip 152px wide -- too wide to fit beside the pointer
+   * on either side of a 250px polar chart, so it would pin instead of following). */
   min-width: 8rem;
   padding: var(--dx-space-2) var(--dx-space-3);
   border-radius: var(--dx-radius-lg);
   background-color: var(--dx-background);
   box-shadow: var(--dx-shadow-md);
 
-  /* Body text on the `--primary-color-2` surface. NOT `--primary-color`: that
-   * is the page background, so the text was invisible in both themes
-   * (white-on-white / near-black-on-near-black). `--secondary-color-4` is the
+  /* Body text on the `--dx-background` surface: `--dx-foreground`, the
    * body-text token the chart's own svg text and every other popover use. */
   color: var(--dx-foreground);
   font-size: var(--dx-text-xs);
@@ -475,9 +471,9 @@
   grid-area: chart;
   inset-block-start: 0;
 
-  /* shadcn's `text-xs` is 12px on a 16px line. Declared, not inherited: the host's line-height flowed in
-   * (a Card's 1.4286 made every row 17.14px, so the tooltip was 54.28px tall), and the primitive sizes the
-   * flip/clamp from the ceil of its border box, so a fractional height put the flipped tooltip 1.7px off
+  /* shadcn's `text-xs` is 12px on a 16px line. Declared, not inherited: the host's line-height would flow in
+   * (a Card's 1.4286 makes every row 17.14px, so the tooltip would be 54.28px tall), and the primitive sizes the
+   * flip/clamp from the ceil of its border box, so a fractional height puts the flipped tooltip 1.7px off
    * the pointer (chart_tooltip_follow "flips above the pointer near the bottom edge"). */
   line-height: 1rem;
   pointer-events: none;
@@ -620,8 +616,8 @@
 
 /* ---------------------------------------------------------------------- *
  * Tooltip indicators, per-series icons, a formatter-built total row
- * (`chart_tooltip` gallery). Dot (the default) already matches the base swatch rule above
- * unchanged; None/hide_indicator render no swatch element at all, so
+ * (`chart_tooltip` gallery). Dot (the default) is the base swatch rule above;
+ * None/hide_indicator render no swatch element at all, so
  * neither needs a rule here -- only Line and Dashed do.
  * ---------------------------------------------------------------------- */
 
@@ -1004,7 +1000,7 @@
  * the Card's `data-slot` hook, as `.dx-chart-footer` does above) out-rank the
  * Card's own `.dx-card`/`.dx-card-header`/`.dx-card-content` rules
  * (`display: grid`, `padding`) regardless of stylesheet order, which equal
- * specificity did not.
+ * specificity would not.
  * ---------------------------------------------------------------------- */
 [data-slot="card"].dx-chart-interactive {
   padding-block: 0;

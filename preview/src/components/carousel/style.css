@@ -32,7 +32,7 @@
        why: a real `gap` is additive to a fractional `flex-basis` and
        overflows the track for any per-view count above 1
        (`dev-docs/backlog.md` row 91's shadcn-parity addendum). Token-based
-       default, matching today's visual spacing; override per-instance
+       default, matching the library's visual spacing; override per-instance
        (e.g. the `spacing` demo's presets) with an inline
        `style="--dx-carousel-gap: ...;"` on `CarouselContent`. */
     --dx-carousel-gap: var(--dx-space-4);
@@ -77,12 +77,12 @@
     z-index: var(--dx-z-raise);
     display: flex;
 
-    /* 28px -- shadcn/ui's own measured size (`ui.shadcn.com/docs/components/carousel`,
-       live, JS running, 1280x800 @2x: both buttons' `getBoundingClientRect()`
-       report exactly 28x28), not the `size-9`/36px of shadcn's `icon` Button
-       variant default: the live DOM shows their carousel Button overrides
-       that default down to an explicit `size-8`-ish 28px, so this matches
-       the measured element, not the un-overridden default class. */
+    /* 28px -- the size of shadcn/ui's carousel buttons (`ui.shadcn.com/docs/components/carousel`
+       at 1280x800 @2x: both buttons' `getBoundingClientRect()` report exactly
+       28x28), not the `size-9`/36px of shadcn's `icon` Button variant default:
+       their carousel Button overrides that default down to an explicit
+       `size-8`-ish 28px, so this matches the rendered element, not the
+       un-overridden default class. */
     width: var(--dx-space-7);
     height: var(--dx-space-7);
     align-items: center;
@@ -91,12 +91,12 @@
     border-radius: var(--dx-radius-full);
     background: var(--dx-card);
 
-    /* shadcn's measured `box-shadow` is `none` in both themes (same live
-       capture as the size above -- `getComputedStyle(button).boxShadow`),
-       not the `shadow-xs` its outline-variant Button class list would
-       suggest un-measured. A flat, borderless-looking control (relying on
-       the 1px border alone) is the actual shadcn look, so `--dx-shadow-sm`
-       is dropped rather than kept for light mode only. */
+    /* shadcn's computed `box-shadow` is `none` in both themes (same page
+       as the size above -- `getComputedStyle(button).boxShadow`), not the
+       `shadow-xs` its outline-variant Button class list suggests. A flat,
+       borderless-looking control (relying on the 1px border alone) is the
+       actual shadcn look, so no `--dx-shadow-sm` is declared, not even for
+       light mode only. */
     box-shadow: none;
     color: var(--dx-foreground);
 
@@ -109,9 +109,8 @@
        `:disabled` rule to contribute a transition at all, so opacity would
        snap back to 1 instantly). Putting it on the always-applied base rule
        keeps a transition active in both the enabled and disabled computed
-       styles. Token/easing pair matches the one already used for an
-       opacity fade three times elsewhere (navbar/style.css, sidebar/
-       style.css x2) rather than inventing a new shape. No
+       styles. Token/easing pair matches the opacity fades in
+       sidebar/style.css rather than inventing a new shape. No
        prefers-reduced-motion override needed here -- these are native
        `<button>` elements, already covered by dx-components-theme.css's
        shared reduced-motion layer's bare `button` selector -- for the durations. The one thing that
@@ -157,8 +156,7 @@
    not loop; a looping carousel never disables either).
 
    `--dx-carousel-nav-disabled-opacity` is the whole look: unset it is
-   `--dx-opacity-disabled` (0.5, shadcn's `disabled:opacity-50`), exactly
-   what this rule shipped with. Set it on `.dx-carousel` -- or any ancestor, or
+   `--dx-opacity-disabled` (0.5, shadcn's `disabled:opacity-50`). Set it on `.dx-carousel` -- or any ancestor, or
    inline via `Carousel`'s `nav_disabled_opacity` prop, which does just that --
    and both arrows follow. It is read here with a fallback and deliberately
    NOT declared on `.dx-carousel` with a default: a declaration on that
@@ -234,8 +232,8 @@
    much room surrounds it, because any wrapper with a `max-width` (this
    package's own demo wrappers included -- `max-width: 20rem`) pins it to
    the SAME constant regardless of how wide or narrow its own container
-   gets, once that container is wide enough to reach the cap. Measured on
-   this exact demo: `.dx-carousel` renders at an identical 320px both at a
+   gets, once that container is wide enough to reach the cap. On
+   this exact demo `.dx-carousel` renders at an identical 320px both at a
    1280px viewport (748px frame, buttons fully clear) and at a 768px
    viewport (388px frame, buttons clipped ~14px) -- the one value a
    container query could read is the one value that does NOT change
@@ -247,7 +245,7 @@
    own outer edge (`inset-inline-start/-end: 0`), so the button's near
    (track-side) edge lands `--dx-space-12` minus its own `--dx-space-7`
    (28px) width = 20px shy of the track -- shadcn's own measured
-   `btnOutsideBy` (same live capture as the size/shadow comments above) --
+   `btnOutsideBy` (same page as the size/shadow comments above) --
    and its far edge lands exactly on this padding's own outer edge, i.e.
    `.dx-carousel`'s own border-box edge (`box-sizing: border-box` above).
    A 76px reservation would leave 28px of unexplained empty gutter past
@@ -416,11 +414,9 @@
     border: none;
     border-radius: var(--dx-radius-full);
 
-    /* Muted foreground at half opacity (inactive) / full foreground
-       (active): the previous `--primary-color-*` pair painted the ACTIVE
-       dot white on the white light-theme frame -- invisible -- and the
-       inactive ones barely off it. `--secondary-color-*` is the
-       foreground ramp. */
+    /* Muted foreground at half opacity (inactive) / `--dx-primary` at full
+       opacity (active): both are ink colours that read against the card in
+       either mode, so the ACTIVE dot never vanishes into the frame. */
     background: var(--dx-muted-foreground);
     opacity: 0.5;
 
@@ -458,11 +454,11 @@
    re-setting the attribute, then restores each longhand whose
    `getPropertyValue()` is falsy -- and a SHORTHAND whose value contains
    `var()` (`border-radius: var(--dx-radius-full)`, `background:
-   var(--secondary-color-1)`) reports empty longhands, so every such
+   var(--dx-primary)`) reports empty longhands, so every such
    declaration is silently dropped the first time the string changes.
    After one click the previously-active and newly-active dots would have
    `border-radius: 0` and no background (square, one grey, one white) while
-   the untouched dots stayed round. State in an
+   the untouched dots stay round. State in an
    attribute + paint in a class cannot hit that: the attribute is a plain
    value, the declarations never pass through that code path. */
 .dx-carousel-picker {

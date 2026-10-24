@@ -62,7 +62,7 @@ The selects are native `<select>` elements named "Month" and "Year", so they kee
 
 In a month dropdown the options and the shown value print the short month name ("Oct"), as shadcn does; the plain-text caption keeps "October". The short name is `on_format_month_short`, or, when that is `None`, the first three characters of `on_format_month`, so a localised calendar gets a localised short name; pass the callback for a language where a three-character cut is wrong.
 
-The default changed from "always both dropdowns" to `Label`, following shadcn: pass `caption_layout: CaptionLayout::Dropdown` to keep the old look. `DatePicker` and `DateRangePicker` take the same `caption_layout` prop (default `Label`) and hand it to the calendar in their popover; the `date_of_birth` variant of the Date Picker page shows the three dropdown layouts for a date of birth.
+The default is `Label`, following shadcn (migration: an app that relied on the earlier both-dropdowns default passes `caption_layout: CaptionLayout::Dropdown`). `DatePicker` and `DateRangePicker` take the same `caption_layout` prop (default `Label`) and hand it to the calendar in their popover; the `date_of_birth` variant of the Date Picker page shows the three dropdown layouts for a date of birth.
 
 ## Cell size
 

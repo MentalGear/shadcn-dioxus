@@ -5,12 +5,8 @@ use dioxus_icons::lucide::{ChevronLeft, ChevronRight};
 
 /// `CarouselVirtualContent` with `loop: true` and a small data set (12
 /// items) -- the seamless-loop path, and this component's own canonical
-/// loop demo (the plain-children `looping`/`looping_rtl` demos were
-/// retired -- see `component.rs`'s own doc on `LoopMode`; a
-/// `LoopMode::Rewind` opt-in on the plain children API has no dedicated
-/// demo of its own, since it is exactly the same visible behavior those
-/// retired demos already showed, now behind an explicit prop instead of
-/// `r#loop: true` alone). Paging past the last slide here slides
+/// loop demo (a `LoopMode::Rewind` opt-in on the plain children API is
+/// the `rewind` demo; see `component.rs`'s own doc on `LoopMode`). Paging past the last slide here slides
 /// physically forward one already-mounted window slide at a time (never a
 /// visible rewind across every intervening slide), and paging back past
 /// the first slides physically backward -- see

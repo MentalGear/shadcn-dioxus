@@ -432,8 +432,8 @@
 /* On-screen keyboard (`primitives/src/keyboard_inset.rs`). While it is open the helper puts
  * `data-dx-keyboard`, `--dx-keyboard-inset` (the keyboard's height under the layout viewport) and
  * `--dx-keyboard-top` (the visual viewport's pan offset, normally 0) on this panel; with no keyboard, or
- * a pinch-zoomed page, none of them exists and these rules do not match, so the panel is exactly what it
- * was. The panel's box is pulled into the VISIBLE band `[top, 100% - inset]` and scrolls inside it (the
+ * a pinch-zoomed page, none of them exists and these rules do not match, so the panel keeps its
+ * no-keyboard layout. The panel's box is pulled into the VISIBLE band `[top, 100% - inset]` and scrolls inside it (the
  * helper scrolls the focused field to the middle). The slide uses `translate`, so `top`/`bottom` are free
  * to move. The `0px` fallbacks are the no-keyboard values. */
 .dx-drawer[data-dx-keyboard] {

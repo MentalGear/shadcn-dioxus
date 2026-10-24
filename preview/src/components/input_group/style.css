@@ -110,8 +110,8 @@
 }
 
 /* Icons the addon holds directly. Stop at a popup boundary: an addon's trigger renders its popover/dialog
- * panel INSIDE the addon (top-layer promotion changes painting, not the DOM), so a bare `svg` selector also
- * reached every chevron and icon in a Date Picker's calendar and shrank them to 16px. The boundary is the
+ * panel INSIDE the addon (top-layer promotion changes painting, not the DOM), so a bare `svg` selector would also
+ * reach every chevron and icon in a Date Picker's calendar and shrink them to 16px. The boundary is the
  * theme-wide convention `:not(:where([popover], dialog) *)` (zero specificity: this rule's weight is
  * unchanged); `scripts/check-popup-boundary.sh` fails a bare-element descendant selector without it. */
 .dx-input-group-addon svg:not(:where([popover], dialog) *) {
@@ -119,10 +119,10 @@
   height: 1rem;
 }
 
-/* There is deliberately no `.dx-input-group-addon button` rule. It set `height: xs; padding: 0 space-2` on
- * every button in the addon, but each `Button` size already declares its own height (and the four text
- * sizes their padding) at higher specificity, so it only ever won on the icon sizes' padding (inert: the
- * width is fixed and the icon is centred), while on a Date Picker's calendar it reached every day cell and
+/* There is deliberately no `.dx-input-group-addon button` rule. A `height: xs; padding: 0 space-2` on
+ * every button in the addon would be redundant, since each `Button` size already declares its own height (and the four text
+ * sizes their padding) at higher specificity, so it could only win on the icon sizes' padding (inert: the
+ * width is fixed and the icon is centred), while on a Date Picker's calendar it would reach every day cell and
  * nav button inside the popover (28x24 cells). The button size is the `Button`'s `size` prop, as in shadcn's
  * `InputGroupButton`. */
 

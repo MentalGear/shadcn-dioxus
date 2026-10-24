@@ -9,8 +9,7 @@ pub fn Demo() -> Element {
             // A real `<label for>` rather than an aria-label: this component IS a
             // native `<select>`, so the demo should show the native labelling
             // idiom a consumer will actually use. Without it the control has no
-            // accessible name at all -- axe `select-name`, critical, which this
-            // component's own scan caught on its first run.
+            // accessible name at all -- axe `select-name`, critical.
             label { r#for: "native-select-fruit", "Favorite fruit" }
             NativeSelect {
                 id: "native-select-fruit",

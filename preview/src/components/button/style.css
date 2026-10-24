@@ -337,8 +337,8 @@
   box-shadow: var(--dx-ring-invalid);
 }
 
-/* Typed `radius`: `Full` sets the one radius slot every corner reads (line 13-16 above, which still
- * lets a ButtonGroup's per-position variables win). The extra attribute selector outweighs each size's
+/* Typed `radius`: `Full` sets the one radius slot every corner reads (the `border-*-radius` rules at the top, which still
+ * let a ButtonGroup's per-position variables win). The extra attribute selector outweighs each size's
  * own `--dx-button-radius`. */
 .dx-button[data-radius="full"][data-size] {
   --dx-button-radius: 9999px;

@@ -6,11 +6,11 @@
  *
  * Every property a composing component may need to tune is a SLOT: the label
  * reads `--dx-label-<property>` and falls back to its own default. A parent
- * (`Field`'s `FieldLabel` today) retunes the label by setting the VARIABLE on
+ * (`Field`'s `FieldLabel`) retunes the label by setting the VARIABLE on
  * the label's element, never by declaring `font-size`/`line-height`/... on a
  * class of its own. Two sheets that declare the same property at the same
  * specificity are decided by which stylesheet loads last, and that order
- * differs per route (the home gallery and `/component/field/` disagreed on
+ * differs per route (the home gallery and `/component/field/` would disagree on
  * the Field label's size); a variable is a different property, so there is no
  * contest and no order to depend on. shadcn reaches the same end with
  * `cn()`/tailwind-merge dropping the losing utility; this is its CSS form.

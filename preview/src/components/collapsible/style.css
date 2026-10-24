@@ -55,7 +55,7 @@
  * - an engine that does not know `until-found` treats it as plain `hidden`
  *   (`display: none`), so the content stays closed instead of showing.
  *
- * `:where()` keeps the rule's specificity at a single class, as it was.
+ * `:where()` keeps the rule's specificity at a single class.
  */
 .dx-collapsible-content:where(:not([hidden])) {
   display: contents;

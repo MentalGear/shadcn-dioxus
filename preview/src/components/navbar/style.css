@@ -149,8 +149,8 @@
 
 /* `scale`/`translate`, not `transform`: an animated `transform` REPLACES an anchor's own
  * centring transform (`translateX(-50%)`, `primitives/src/top_layer.rs`'s engine stylesheet)
- * for as long as the animation runs, which played the date/colour picker panels 144px/133px
- * off their anchor. This content sets no `data-side`, so no centring applies to it today; the
+ * for as long as the animation runs, which would play a date/colour picker panel 144px/133px
+ * off its anchor. This content sets no `data-side`, so no centring applies to it today; the
  * individual properties compose with `transform` and keep it safe if one ever does.
  * Guard: scripts/check-anchored-keyframes.sh. */
 @keyframes dx-navbar-content-animate-out-start {
@@ -204,7 +204,7 @@
 }
 
 /* rtl-physical: RTL counterparts of the "start"/"end" animations above, signs negated -- same
-   reasoning as the pre-existing `[dir="rtl"]` override rules this replaces. Negating the sign IS the
+   reasoning as any `[dir="rtl"]` physical-sign override. Negating the sign IS the
    other direction's keyframes (`out-start` is `-100%`, `out-end` is `100%`), so each RTL rule names
    its sibling instead of carrying a byte-identical copy (scripts/check-duplicate-keyframes.sh). */
 [dir="rtl"] .dx-navbar-content[data-state="closed"][data-open-menu-direction="start"] {
