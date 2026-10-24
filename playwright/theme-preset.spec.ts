@@ -592,3 +592,261 @@ test.describe("the breakpoint between the two presentations", () => {
     await expect(page.locator(".dx-theme-picker-trigger")).toBeHidden();
   });
 });
+
+/**
+ * The two colour axes own disjoint variables (backlog row 390, `OWNERSHIP` in `scripts/gen-theme-presets.mjs`): the base
+ * is the neutral palette, the accent is the hue. Charts and primary follow the accent, secondary the base. Each test applies
+ * attributes through `window.__dxTheme` (what the picker does) and resolves colours through the role tokens a component reads.
+ */
+test.describe("base and accent axes", () => {
+  const THEME_CSS = fs.readFileSync(path.join(__dirname, "..", "preview", "assets", "dx-components-theme.css"), "utf8");
+
+  /** `{ light, dark }` of a variable in a preset block, whether the block writes a mode pair or one value. */
+  function presetPair(axis: "base" | "accent", name: string, variable: string) {
+    const open = PRESETS_CSS.indexOf(`[data-theme-${axis}="${name}"] {`);
+    if (open < 0) throw new Error(`no ${axis} block "${name}" in theme-presets.css`);
+    const block = PRESETS_CSS.slice(open, PRESETS_CSS.indexOf("}", open));
+    const pair = block.match(new RegExp(`--${variable}: var\\(--dark, ([^;]*?)\\) var\\(--light, ([^;]*?)\\);`));
+    if (pair) return { dark: pair[1], light: pair[2] };
+    const one = block.match(new RegExp(`--${variable}: ([^;]*);`));
+    if (!one) throw new Error(`--${variable} is not written by ${axis} "${name}"`);
+    return { dark: one[1], light: one[1] };
+  }
+
+  const baseNames = [...PRESETS_CSS.matchAll(/\[data-theme-base="([a-z]+)"\] \{/g)].map((m) => m[1]);
+  const accentNames = [...PRESETS_CSS.matchAll(/\[data-theme-accent="([a-z]+)"\] \{/g)].map((m) => m[1]);
+  const CHARTS = [1, 2, 3, 4, 5].map((n) => `chart-${n}`);
+
+  /** The library's own chart palette: `--dx-chart-N: var(--chart-N, var(--dark, X) var(--light, Y))` in the theme sheet. */
+  const libraryChart = (name: string) => {
+    const m = THEME_CSS.match(new RegExp(`--dx-${name}: var\\(--${name}, var\\(--dark, ([^)]*)\\) var\\(--light, ([^)]*)\\)\\);`));
+    if (!m) throw new Error(`--dx-${name} is not a library palette pair in dx-components-theme.css`);
+    return { dark: m[1], light: m[2] };
+  };
+
+  type Sweep = { mode: "light" | "dark"; base: string | null; accent: string | null };
+
+  /**
+   * Applies `base` / `accent` / mode, then returns each role token resolved to sRGB. A token is read by painting an element
+   * with `color: var(--token)`, the way a component does, and every colour goes through one canvas, so two spellings of
+   * one colour (oklch, lab, hex) compare equal.
+   */
+  async function resolve(page: Page, sweeps: Sweep[], tokens: string[]) {
+    return page.evaluate(
+      ({ sweeps, tokens }) => {
+        const w = window as unknown as { __dxApplyMode: (m: string) => void; __dxTheme: (k: string, v: string | null) => void };
+        const cv = document.createElement("canvas");
+        cv.width = cv.height = 1;
+        const cx = cv.getContext("2d", { willReadFrequently: true })!;
+        const rgb = (css: string) => {
+          cx.clearRect(0, 0, 1, 1);
+          cx.fillStyle = "#000";
+          cx.fillStyle = css;
+          cx.fillRect(0, 0, 1, 1);
+          return Array.from(cx.getImageData(0, 0, 1, 1).data.slice(0, 3)).join(",");
+        };
+        const probe = document.createElement("div");
+        document.body.appendChild(probe);
+        const out: Record<string, Record<string, string>> = {};
+        for (const s of sweeps) {
+          w.__dxApplyMode(s.mode);
+          w.__dxTheme("theme-base", s.base);
+          w.__dxTheme("theme-accent", s.accent);
+          const row: Record<string, string> = {};
+          for (const t of tokens) {
+            probe.style.color = "";
+            probe.style.color = `var(${t})`;
+            row[t] = rgb(getComputedStyle(probe).color);
+          }
+          out[`${s.mode}|${s.base ?? "none"}|${s.accent ?? "none"}`] = row;
+        }
+        probe.remove();
+        w.__dxTheme("theme-base", null);
+        w.__dxTheme("theme-accent", null);
+        return out;
+      },
+      { sweeps, tokens },
+    );
+  }
+
+  /** `rgb(css)` of a colour string, in the same canvas path `resolve` uses. */
+  const expectedRgb = async (page: Page, css: string) => (await rgbOf(page, css)).join(",");
+
+  /** Two `r,g,b` strings within 2/255 per channel: the shipped stylesheet may carry a colour as `lab()`, the data as `oklch()`. */
+  const close = (a: string, b: string) => {
+    const [x, y] = [a, b].map((v) => v.split(",").map(Number));
+    return x.every((v, i) => Math.abs(v - y[i]) <= 2);
+  };
+
+  const MODES = ["light", "dark"] as const;
+  const bases: (string | null)[] = [null, ...baseNames];
+
+  test("no accent: every base shows the library's chart palette", async ({ page }) => {
+    const tokens = CHARTS.map((c) => `--dx-${c}`);
+    const sweeps = MODES.flatMap((mode) => bases.map((base) => ({ mode, base, accent: null })));
+    const got = await resolve(page, sweeps, tokens);
+    const wrong: string[] = [];
+    for (const mode of MODES) {
+      for (const c of CHARTS) {
+        const want = await expectedRgb(page, libraryChart(c)[mode]);
+        for (const base of bases) {
+          const have = got[`${mode}|${base ?? "none"}|none`][`--dx-${c}`];
+          if (!close(have, want)) wrong.push(`${mode} base=${base ?? "none"} --dx-${c}: ${have} (library ${want})`);
+        }
+      }
+    }
+    expect(wrong).toEqual([]);
+  });
+
+  test("an accent's chart ramp shows under every base", async ({ page }) => {
+    const tokens = CHARTS.map((c) => `--dx-${c}`);
+    const sweeps = MODES.flatMap((mode) => bases.flatMap((base) => accentNames.map((accent) => ({ mode, base, accent }))));
+    const got = await resolve(page, sweeps, tokens);
+    const wrong: string[] = [];
+    for (const mode of MODES) {
+      for (const accent of accentNames) {
+        for (const c of CHARTS) {
+          const want = await expectedRgb(page, presetPair("accent", accent, c)[mode]);
+          for (const base of bases) {
+            const have = got[`${mode}|${base ?? "none"}|${accent}`][`--dx-${c}`];
+            if (!close(have, want)) wrong.push(`${mode} base=${base ?? "none"} accent=${accent} --dx-${c}: ${have} (ramp ${want})`);
+          }
+        }
+      }
+    }
+    expect(wrong).toEqual([]);
+  });
+
+  test("an accent leaves the base's secondary alone", async ({ page }) => {
+    const tokens = ["--dx-secondary", "--dx-secondary-foreground"];
+    const sweeps = MODES.flatMap((mode) => bases.flatMap((base) => [null, ...accentNames].map((accent) => ({ mode, base, accent }))));
+    const got = await resolve(page, sweeps, tokens);
+    const wrong: string[] = [];
+    for (const mode of MODES) {
+      for (const base of bases) {
+        const rest = got[`${mode}|${base ?? "none"}|none`];
+        for (const accent of accentNames) {
+          for (const t of tokens) {
+            const have = got[`${mode}|${base ?? "none"}|${accent}`][t];
+            if (have !== rest[t]) wrong.push(`${mode} base=${base ?? "none"} accent=${accent} ${t}: ${have} (base alone ${rest[t]})`);
+          }
+        }
+      }
+    }
+    expect(wrong).toEqual([]);
+    // A tinted base shows its own tinted secondary under an accent, not a fixed grey.
+    const stone = presetPair("base", "stone", "secondary");
+    expect(close(got["light|stone|amber"]["--dx-secondary"], await expectedRgb(page, stone.light))).toBe(true);
+    expect(close(got["dark|stone|amber"]["--dx-secondary"], await expectedRgb(page, stone.dark))).toBe(true);
+  });
+
+  // What shadcn's base data gives each base as its primary with no accent picked, written down here so a change to the
+  // generator or to the slot wiring cannot move a base's primary unnoticed. `--dx-sidebar-primary-foreground-source` is the
+  // pre-clamp value of the sidebar's ink.
+  const NO_ACCENT_PRIMARY: Record<string, Record<string, [string, string]>> = {
+    neutral: { primary: ["oklch(0.205 0 0)", "oklch(0.922 0 0)"], "primary-foreground": ["oklch(0.985 0 0)", "oklch(0.205 0 0)"], "sidebar-primary": ["oklch(0.205 0 0)", "oklch(0.488 0.243 264.376)"], "sidebar-primary-foreground": ["oklch(0.985 0 0)", "oklch(0.985 0 0)"] },
+    stone: { primary: ["oklch(0.216 0.006 56.043)", "oklch(0.923 0.003 48.717)"], "primary-foreground": ["oklch(0.985 0.001 106.423)", "oklch(0.216 0.006 56.043)"], "sidebar-primary": ["oklch(0.216 0.006 56.043)", "oklch(0.488 0.243 264.376)"], "sidebar-primary-foreground": ["oklch(0.985 0.001 106.423)", "oklch(0.985 0.001 106.423)"] },
+    zinc: { primary: ["oklch(0.21 0.006 285.885)", "oklch(0.92 0.004 286.32)"], "primary-foreground": ["oklch(0.985 0 0)", "oklch(0.21 0.006 285.885)"], "sidebar-primary": ["oklch(0.21 0.006 285.885)", "oklch(0.488 0.243 264.376)"], "sidebar-primary-foreground": ["oklch(0.985 0 0)", "oklch(0.985 0 0)"] },
+    gray: { primary: ["oklch(0.21 0.034 264.665)", "oklch(0.928 0.006 264.531)"], "primary-foreground": ["oklch(0.985 0.002 247.839)", "oklch(0.21 0.034 264.665)"], "sidebar-primary": ["oklch(0.21 0.034 264.665)", "oklch(0.488 0.243 264.376)"], "sidebar-primary-foreground": ["oklch(0.985 0.002 247.839)", "oklch(0.985 0.002 247.839)"] },
+    slate: { primary: ["oklch(0.208 0.042 265.755)", "oklch(0.929 0.013 255.508)"], "primary-foreground": ["oklch(0.984 0.003 247.858)", "oklch(0.208 0.042 265.755)"], "sidebar-primary": ["oklch(0.208 0.042 265.755)", "oklch(0.488 0.243 264.376)"], "sidebar-primary-foreground": ["oklch(0.984 0.003 247.858)", "oklch(0.984 0.003 247.858)"] },
+    mauve: { primary: ["oklch(0.212 0.019 322.12)", "oklch(0.922 0.005 325.62)"], "primary-foreground": ["oklch(0.985 0 0)", "oklch(0.212 0.019 322.12)"], "sidebar-primary": ["oklch(0.212 0.019 322.12)", "oklch(0.488 0.243 264.376)"], "sidebar-primary-foreground": ["oklch(0.985 0 0)", "oklch(0.985 0 0)"] },
+    olive: { primary: ["oklch(0.228 0.013 107.4)", "oklch(0.93 0.007 106.5)"], "primary-foreground": ["oklch(0.988 0.003 106.5)", "oklch(0.228 0.013 107.4)"], "sidebar-primary": ["oklch(0.228 0.013 107.4)", "oklch(0.488 0.243 264.376)"], "sidebar-primary-foreground": ["oklch(0.988 0.003 106.5)", "oklch(0.988 0.003 106.5)"] },
+    mist: { primary: ["oklch(0.218 0.008 223.9)", "oklch(0.925 0.005 214.3)"], "primary-foreground": ["oklch(0.987 0.002 197.1)", "oklch(0.218 0.008 223.9)"], "sidebar-primary": ["oklch(0.218 0.008 223.9)", "oklch(0.488 0.243 264.376)"], "sidebar-primary-foreground": ["oklch(0.987 0.002 197.1)", "oklch(0.987 0.002 197.1)"] },
+    taupe: { primary: ["oklch(0.214 0.009 43.1)", "oklch(0.922 0.005 34.3)"], "primary-foreground": ["oklch(0.986 0.002 67.8)", "oklch(0.214 0.009 43.1)"], "sidebar-primary": ["oklch(0.214 0.009 43.1)", "oklch(0.488 0.243 264.376)"], "sidebar-primary-foreground": ["oklch(0.986 0.002 67.8)", "oklch(0.986 0.002 67.8)"] },
+  };
+
+  test("no accent: each base's primary is its own neutral primary", async ({ page }) => {
+    expect(Object.keys(NO_ACCENT_PRIMARY).sort()).toEqual([...baseNames].sort());
+    const tokens = ["--dx-primary", "--dx-primary-foreground", "--dx-sidebar-primary", "--dx-sidebar-primary-foreground-source"];
+    const sweeps = MODES.flatMap((mode) => baseNames.map((base) => ({ mode, base, accent: null })));
+    const got = await resolve(page, sweeps, tokens);
+    const wrong: string[] = [];
+    for (const mode of MODES) {
+      const at = mode === "light" ? 0 : 1;
+      for (const base of baseNames) {
+        const want = NO_ACCENT_PRIMARY[base];
+        const row = got[`${mode}|${base}|none`];
+        for (const [token, key] of [
+          ["--dx-primary", "primary"],
+          ["--dx-primary-foreground", "primary-foreground"],
+          ["--dx-sidebar-primary", "sidebar-primary"],
+          ["--dx-sidebar-primary-foreground-source", "sidebar-primary-foreground"],
+        ] as const) {
+          const w = await expectedRgb(page, want[key][at]);
+          if (!close(row[token], w)) wrong.push(`${mode} base=${base} ${token}: ${row[token]} (data ${w})`);
+        }
+      }
+    }
+    expect(wrong).toEqual([]);
+  });
+
+  test("an accent's primary overrides the base's, and a host's own --primary overrides both", async ({ page }) => {
+    const tokens = ["--dx-primary", "--dx-primary-foreground"];
+    const sweeps = MODES.flatMap((mode) => bases.map((base) => ({ mode, base, accent: "orange" })));
+    const got = await resolve(page, sweeps, tokens);
+    const orange = presetPair("accent", "orange", "primary");
+    const orangeInk = presetPair("accent", "orange", "primary-foreground");
+    for (const mode of MODES) {
+      for (const base of bases) {
+        const row = got[`${mode}|${base ?? "none"}|orange`];
+        expect(close(row["--dx-primary"], await expectedRgb(page, orange[mode])), `${mode} ${base} primary`).toBe(true);
+        expect(close(row["--dx-primary-foreground"], await expectedRgb(page, orangeInk[mode])), `${mode} ${base} ink`).toBe(true);
+      }
+    }
+    // A host that pastes shadcn's `--primary` without picking an accent keeps it over the base's slot.
+    await page.evaluate(() => {
+      const w = window as unknown as { __dxApplyMode: (m: string) => void; __dxTheme: (k: string, v: string | null) => void };
+      w.__dxApplyMode("light");
+      w.__dxTheme("theme-base", "zinc");
+      document.documentElement.style.setProperty("--primary", "rgb(1, 2, 3)");
+    });
+    const host = await primaryButton(page).evaluate((n) => getComputedStyle(n).getPropertyValue("--dx-primary").trim());
+    expect(host.replace(/\s/g, "")).toMatch(/^rgb\(1,2,3\)$/);
+    await page.evaluate(() => {
+      document.documentElement.style.removeProperty("--primary");
+      (window as unknown as { __dxTheme: (k: string, v: string | null) => void }).__dxTheme("theme-base", null);
+    });
+  });
+
+  test("each axis writes only its own variables on <html>", async ({ page }) => {
+    const own = await page.evaluate(
+      ({ baseNames, accentNames }) => {
+        const w = window as unknown as { __dxApplyMode: (m: string) => void; __dxTheme: (k: string, v: string | null) => void };
+        const root = document.documentElement;
+        const names = [
+          "primary", "primary-foreground", "chart-1", "chart-2", "chart-3", "chart-4", "chart-5", "sidebar-primary", "sidebar-primary-foreground",
+          "secondary", "secondary-foreground", "background", "foreground", "card", "popover", "muted", "muted-foreground", "accent",
+          "accent-foreground", "destructive", "border", "input", "ring", "sidebar", "sidebar-accent", "sidebar-border", "sidebar-ring",
+        ];
+        const set = (axis: "theme-base" | "theme-accent", value: string | null) => w.__dxTheme(axis, value);
+        const present = () => names.filter((n) => getComputedStyle(root).getPropertyValue(`--${n}`).trim() !== "");
+        const out: Record<string, string[]> = {};
+        w.__dxApplyMode("light");
+        for (const b of baseNames) {
+          set("theme-base", b);
+          out[`base:${b}`] = present();
+        }
+        set("theme-base", null);
+        for (const a of accentNames) {
+          set("theme-accent", a);
+          out[`accent:${a}`] = present();
+        }
+        set("theme-accent", null);
+        return out;
+      },
+      { baseNames, accentNames },
+    );
+    const accentOwned = ["primary", "primary-foreground", ...CHARTS, "sidebar-primary", "sidebar-primary-foreground"];
+    for (const [key, vars] of Object.entries(own)) {
+      if (key.startsWith("base:")) {
+        expect(vars.filter((v) => accentOwned.includes(v)), `${key} writes an accent-owned variable`).toEqual([]);
+        expect(vars).toContain("background");
+        expect(vars).toContain("secondary");
+      } else {
+        expect(vars.filter((v) => !accentOwned.includes(v)), `${key} writes a base-owned variable`).toEqual([]);
+        expect(vars).toContain("primary");
+        expect(vars).toContain("chart-1");
+      }
+    }
+  });
+});

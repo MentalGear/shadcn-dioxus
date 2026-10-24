@@ -25,7 +25,8 @@ const CHANNEL_NAME: &str = "dx-theme";
 ///   `data-theme` = system: `.dark` then follows `prefers-color-scheme`).
 /// * `Base` / `Accent` / `Radius` are `data-theme-base` / `-accent` / `-radius`,
 ///   matched by the blocks in `preview/assets/theme-presets.css`
-///   (absent = no preset = the library's own look).
+///   (absent = no preset = the library's own look). Base and accent write disjoint variables, see
+///   [`BASES`] and [`ACCENTS`].
 /// * `PressFeedback` is `data-dx-press-feedback="off"`, read by the theme's "Press feedback" rule
 ///   in `dx-components-theme.css` (absent = on, the only other state; `off` is the only value the
 ///   snippet accepts for it).
@@ -69,6 +70,13 @@ impl Pref {
 
 /// shadcn's base colours, in picker order: `(attribute value, label)`. Every slug must have a
 /// `[data-theme-base="<slug>"]` block in `theme-presets.css` (and vice versa; see the tests below).
+///
+/// The base axis is the neutral palette: it writes `--background`, `--foreground`, `--card`, `--popover`,
+/// `--secondary`, `--muted`, `--accent` (the neutral hover surface, not the picked accent), `--destructive`,
+/// `--border`, `--input`, `--ring` and the sidebar neutrals, plus the slots `--dx-base-primary(-foreground)` and
+/// `--dx-base-sidebar-primary(-foreground)` that carry its neutral primary: the theme reads them under the bare
+/// `--primary`, so with no accent picked the base's primary shows and an accent overrides it. A base writes no
+/// chart colour: with no accent the library's chart palette shows under every base.
 pub const BASES: &[(&str, &str)] = &[
     ("neutral", "Neutral"),
     ("stone", "Stone"),
@@ -84,6 +92,11 @@ pub const BASES: &[(&str, &str)] = &[
 /// shadcn's accent themes: `[data-theme-accent="<slug>"]` blocks, plus `docs`: the docs site's own link blue,
 /// not shadcn data, so the colour the site shows by default (the `Default` swatch has no colour of its own) can
 /// be picked as an accent (backlog row 301).
+///
+/// The accent axis is the hue: it writes `--primary(-foreground)`, `--chart-1..5` and
+/// `--sidebar-primary(-foreground)` (the ring tint, active marks and tints derive from `--dx-primary`) and
+/// nothing else; `--secondary` stays the base's. `scripts/gen-theme-presets.mjs` holds the ownership table and
+/// `scripts/check-theme-preset-axes.sh` enforces it (backlog row 390).
 pub const ACCENTS: &[(&str, &str)] = &[
     ("docs", "Docs blue"),
     ("amber", "Amber"),
@@ -348,7 +361,12 @@ fn use_theme_state() -> ThemeState {
 /// icon button and every option is visible at once.
 ///
 /// The swatch dots take their colours from the very same `[data-theme-*]` blocks the presets use
-/// (`main.css`, `.dx-theme-swatch`), so no colour is written down twice.
+/// (`main.css`, `.dx-theme-swatch`), so no colour is written down twice: a base swatch shows the base's
+/// `--muted-foreground`, an accent swatch the accent's `--primary`.
+///
+/// The two colour axes own disjoint variables: the base is the neutral palette, the accent is the hue
+/// (primary, charts, sidebar-primary). Charts therefore follow the accent: with none picked they are the
+/// library palette under every base. See [`BASES`] and [`ACCENTS`].
 ///
 /// # One panel, two presentations, two triggers in the header
 ///
@@ -902,7 +920,8 @@ mod tests {
         assert_eq!(radius_blocks, sorted(&non_default));
     }
 
-    /// Accent blocks override base blocks through the cascade, so they must come after every base block.
+    /// The generator emits the base blocks, then the accent blocks. Their variables are disjoint
+    /// (`check-theme-preset-axes.sh`), so the order is not load-bearing; it stays stable for readable diffs.
     #[test]
     fn accents_follow_bases_in_the_stylesheet() {
         let last_base = PRESETS_CSS.rfind("[data-theme-base=\"").unwrap();

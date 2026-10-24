@@ -173,9 +173,14 @@ html[data-theme="light"] [class~="dxc-system"] {
   /* Actions */
 
   /* Nova: `--primary` is shadcn's `oklch(0.205)` = #171717 in light (row 373) and
-   * `oklch(0.922)` = #e5e5e5 in dark (shadcn globals.css). */
-  --dx-primary: var(--primary, var(--light, oklch(20.5% 0 0deg)) var(--dark, oklch(92.2% 0 0deg)));
-  --dx-primary-foreground: var(--primary-foreground, var(--light, #fafafa) var(--dark, #171717));
+   * `oklch(0.922)` = #e5e5e5 in dark (shadcn globals.css).
+   *
+   * Primary has two owners (row 390): the accent preset writes the bare `--primary(-foreground)`, the base
+   * preset writes its neutral primary to the slots `--dx-base-primary(-foreground)` (`theme-presets.css`), so
+   * the two axes never write one variable. Reading order: a bare `--primary` (an accent, or a host's own
+   * shadcn paste) wins, then the base's slot, then the ramp. The sidebar's primary pair below reads the same way. */
+  --dx-primary: var(--primary, var(--dx-base-primary, var(--light, oklch(20.5% 0 0deg)) var(--dark, oklch(92.2% 0 0deg))));
+  --dx-primary-foreground: var(--primary-foreground, var(--dx-base-primary-foreground, var(--light, #fafafa) var(--dark, #171717)));
 
   /* Drop indicator: the line or highlight that marks where a dragged row or item will land (Drag and Drop
    * List, Data Table and Table reorder, the Virtual List reorder demo). It is the accent colour, so it
@@ -345,8 +350,8 @@ html[data-theme="light"] [class~="dxc-system"] {
    * stays #000; the calibrated branch of the contrast block picks that ink by the fill. */
   --dx-sidebar-background: var(--sidebar, var(--light, oklch(98.5% 0 0deg)) var(--dark, oklch(20.5% 0 0deg)));
   --dx-sidebar-foreground: var(--sidebar-foreground, var(--light, oklch(14.5% 0 0deg)) var(--dark, oklch(98.5% 0 0deg)));
-  --dx-sidebar-primary: var(--sidebar-primary, var(--light, oklch(20.5% 0 0deg)) var(--dark, #fafafa));
-  --dx-sidebar-primary-foreground-source: var(--sidebar-primary-foreground, var(--light, oklch(98.5% 0 0deg)) var(--dark, #000));
+  --dx-sidebar-primary: var(--sidebar-primary, var(--dx-base-sidebar-primary, var(--light, oklch(20.5% 0 0deg)) var(--dark, #fafafa)));
+  --dx-sidebar-primary-foreground-source: var(--sidebar-primary-foreground, var(--dx-base-sidebar-primary-foreground, var(--light, oklch(98.5% 0 0deg)) var(--dark, #000)));
   --dx-sidebar-primary-foreground: var(--dx-sidebar-primary-foreground-source);
   --dx-sidebar-accent: var(--sidebar-accent, var(--light, oklch(97% 0 0deg)) var(--dark, oklch(26.9% 0 0deg)));
   --dx-sidebar-accent-foreground: var(--sidebar-accent-foreground, var(--light, oklch(20.5% 0 0deg)) var(--dark, oklch(98.5% 0 0deg)));
@@ -579,7 +584,10 @@ html[data-theme="light"] [class~="dxc-system"] {
    *     contrast all >= 3:1).
    * `--dx-chart-grid`/`--dx-chart-axis-text` reuse existing grayscale
    * tokens rather than inventing new ones -- grid lines and axis labels are
-   * chrome, not data, and already have a home on this theme's neutral scale. */
+   * chrome, not data, and already have a home on this theme's neutral scale.
+   *
+   * Charts belong to the accent axis (row 390): the base presets write no `--chart-N`, so with no accent
+   * picked this palette shows under every base, and an accent preset's `--chart-1..5` ramp replaces slots 1-5. */
   --dx-chart-1: var(--chart-1, var(--dark, #3987e5) var(--light, #2a78d6));
   --dx-chart-2: var(--chart-2, var(--dark, #d95926) var(--light, #eb6834));
   --dx-chart-3: var(--chart-3, var(--dark, #199e70) var(--light, #1baf7a));
