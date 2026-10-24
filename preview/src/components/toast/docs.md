@@ -59,6 +59,17 @@ Several toasts collapse into a pile; hovering or focusing the stack (or F6) expa
 
 A toast can be swiped away with the mouse, a finger or a pen (pointer events). It dismisses after 45 px toward the edge it sits at, or a flick (at least 10 px at 0.11 px/ms or more over the last 100 ms); a shorter, slower drag springs back, and a drag the other way is resisted. The direction is the screen edge nearest the toast, so it follows wherever the stylesheet puts the toaster and flips in RTL. A drag can also go vertical, toward the nearest top or bottom edge (up for a toaster at the top, down for one at the bottom); the axis is decided by the first few pixels of the drag, and the toast moves along that axis only. A press on the close or action button is a click, never a swipe. Toasts set `touch-action: none`, so a finger that starts on a toast drags the toast, not the page. While dragging, the toast carries `data-swiping="true"` and `--toast-swipe-x` or `--toast-swipe-y`, which the stylesheet maps to `translate` (not `transform`, so the stack's `scale` is kept).
 
+## Height follows the content
+
+A toast is as tall as its content plus a constant padding (16 px on every side, one line or many): it has no fixed height and clips nothing. The skin marks the box that holds the content with `data-toast-body` (the preview skin's `.dx-toast-body`); the primitive measures it with one `ResizeObserver` and writes the toast's own height as `--toast-height` on its list item, and the front toast's as `--front-toast-height` on the list, so the stylesheet can do the pile's arithmetic, which CSS cannot read from the DOM.
+
+- Collapsed, every toast behind the front one takes the front toast's height and hides its content, so the pile looks even whatever each holds (Sonner's `--front-toast-height`); only its edge peeks out, one gap above the toast in front.
+- Expanded (hover or focus), each toast has its own height, shows its content again and the toasts are one gap apart, never overlapping.
+- A toast that leaves or arrives takes its own height plus the gap from the pile (expanded) or only the gap (collapsed), so the others glide into the freed room whatever its height.
+- A skin with no `data-toast-body` is never measured: its toasts keep their auto height and are not overlapped.
+
+The icon (a loading toast's spinner) and the action button are centred against the content, as in Sonner; the close button stays at the top of the toast, level with the first line. `playwright/toast-height.spec.ts` covers the fit, the collapsed and the expanded pile.
+
 ## Pause on hover and focus
 
 While the pointer is over the toaster (mouse or pen; a touch tap does not count) or focus is inside it, every countdown waits, and it resumes with the time that was left when you move away or focus leaves (WCAG 2.2.1, timing adjustable). It is the same condition that expands the pile (`:hover`, `:focus-within`), so what you can see expanded is what is held. Loading and permanent toasts have no countdown to pause.

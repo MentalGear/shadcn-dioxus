@@ -26,19 +26,23 @@ fn StyledToast(props: ToastProps) -> Element {
             permanent: props.permanent,
             duration: props.duration,
             attributes: merged,
-            if props.toast_type == ToastType::Loading {
-                // Hidden from assistive tech: the toast's own live region announces the title,
-                // and the spinner's `role="status"` would be a second announcement.
-                span { class: "dx-toast-spinner", aria_hidden: "true",
-                    Spinner {}
+            // `data-toast-body` marks the one box whose height is the toast's content: the primitive
+            // measures it and sizes the toast and the pile from it (`--toast-height`).
+            div { class: "dx-toast-body", "data-toast-body": "",
+                if props.toast_type == ToastType::Loading {
+                    // Hidden from assistive tech: the toast's own live region announces the title,
+                    // and the spinner's `role="status"` would be a second announcement.
+                    span { class: "dx-toast-spinner", aria_hidden: "true",
+                        Spinner {}
+                    }
                 }
+                ToastContent {
+                    ToastTitle {}
+                    ToastDescription {}
+                }
+                ToastActionButton {}
+                ToastCloseButton {}
             }
-            ToastContent {
-                ToastTitle {}
-                ToastDescription {}
-            }
-            ToastActionButton {}
-            ToastCloseButton {}
         }
     }
 }

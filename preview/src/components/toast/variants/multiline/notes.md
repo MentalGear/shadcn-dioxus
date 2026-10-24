@@ -1,0 +1,1 @@
+Add a short and a long toast. A toast is as tall as its content with the same padding on every side; the stack keeps the pile even: collapsed, every toast behind the front one takes the front toast's height and hides its content, and hovering or focusing the pile gives each toast its own height back.
