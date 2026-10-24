@@ -107,14 +107,13 @@
   content-visibility: auto;
 }
 
-/* The jump button. Centred with logical insets (no translateX, so it needs no
- * RTL flip); `data-active` is written by the controller. The attribute selector
- * outranks `.dx-button`'s own `transition: all`. */
-.dx-message-scroller-button[data-message-scroller-button] {
+/* The jump button. Its wrapper (`dx-message-scroller-jump`) is centred with logical insets (no
+ * translateX, so it needs no RTL flip), sits on the frame's start or end edge, and slides and fades
+ * when `data-active` (written on the button by the controller) turns false. */
+.dx-message-scroller-jump {
   position: absolute;
-  border-color: var(--dx-border);
-  background-color: var(--dx-background);
-  color: var(--dx-foreground);
+  display: flex;
+  width: fit-content;
   inset-inline: 0;
   margin-inline: auto;
   opacity: 1;
@@ -125,26 +124,15 @@
   translate: 0 0;
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .dx-message-scroller-button[data-message-scroller-button]:hover {
-    background-color: var(--dx-muted);
-    color: var(--dx-foreground);
-  }
-}
-
-.dx-message-scroller-button[data-direction="end"] {
+.dx-message-scroller-jump[data-direction="end"] {
   inset-block-end: var(--dx-space-4);
 }
 
-.dx-message-scroller-button[data-direction="start"] {
+.dx-message-scroller-jump[data-direction="start"] {
   inset-block-start: var(--dx-space-4);
 }
 
-.dx-message-scroller-button[data-direction="start"] svg {
-  rotate: 180deg;
-}
-
-.dx-message-scroller-button[data-active="false"] {
+.dx-message-scroller-jump:has(> [data-active="false"]) {
   opacity: 0;
   pointer-events: none;
   scale: 0.95;
@@ -152,12 +140,25 @@
   transition-timing-function: cubic-bezier(0.7, 0, 0.84, 0);
 }
 
-.dx-message-scroller-button[data-direction="end"][data-active="false"] {
+.dx-message-scroller-jump[data-direction="end"]:has(> [data-active="false"]) {
   translate: 0 100%;
 }
 
-.dx-message-scroller-button[data-direction="start"][data-active="false"] {
+.dx-message-scroller-jump[data-direction="start"]:has(> [data-active="false"]) {
   translate: 0 -100%;
+}
+
+/* Button slot variables (button/docs.md): a page-coloured outline whose own transitions are off
+ * (the wrapper animates). Its hover keeps the Button variant's fill. */
+.dx-message-scroller-button {
+  --dx-button-background: var(--dx-background);
+  --dx-button-border-color: var(--dx-border);
+  --dx-button-color: var(--dx-foreground);
+  --dx-button-transition-property: none;
+}
+
+.dx-message-scroller-button[data-direction="start"] svg {
+  rotate: 180deg;
 }
 
 .dx-message-scroller-sr-only {
@@ -173,8 +174,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .dx-message-scroller-button[data-message-scroller-button],
-  .dx-message-scroller-button[data-active="false"] {
+  .dx-message-scroller-jump,
+  .dx-message-scroller-jump:has(> [data-active="false"]) {
     transition-duration: var(--dx-motion-duration-reduced);
   }
 }
