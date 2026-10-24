@@ -227,7 +227,7 @@
 
 /* The trigger is a ghost icon-sm Button (28px square, centred icon, no padding). */
 .dx-sidebar-trigger {
-  line-height: 0;
+  --dx-button-line-height: 0;
 }
 
 /* The corner radius stays the default size's `--dx-radius-lg`: three attributes put this above Button's
