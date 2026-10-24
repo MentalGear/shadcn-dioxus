@@ -14,8 +14,8 @@
 #
 # Both selectors are (0,1,0) and both set `font-size`, so the winner is whichever stylesheet
 # loads LAST -- and the load order is per route (`<link>`s are injected as components render).
-# The STYLE-DELIVERY lane found 208 sheet pairs ordered both ways across routes, and the
-# Field label was 14px on the home gallery and 12.8px on /component/field/. Patching it with a
+# 208 sheet pairs are ordered both ways across routes, so the Field label was
+# 14px on the home gallery and 12.8px on /component/field/. Patching it with a
 # specificity bump (`label.dx-field-label`) only moves the contest; it does not remove it.
 #
 # THE CONSTRUCTION: composition through custom properties (the CSS form of shadcn's `cn()` /

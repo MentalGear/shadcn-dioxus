@@ -14,9 +14,9 @@
 #   INVALID   --dx-ring-invalid-color (edge), --dx-ring-invalid (halo), --dx-ring-invalid-field (both)
 #   DISABLED  opacity: var(--dx-opacity-disabled), and pointer-events OR cursor, never both
 #
-# Before them there were seven focus-ring families (a 2px `--dx-ring`, an `outline: 2px solid`, an inset
-# 2px, a literal 3px `color-mix`, a hard-coded blue, ...), three invalid vocabularies and 17 disabled sites
-# that wrote `opacity: 0.5` by hand, each correct on the day it was pasted and drifting from then on. A
+# Without them every sheet grows its own focus-ring family (a 2px `--dx-ring`, an `outline: 2px solid`, an inset
+# 2px, a literal 3px `color-mix`, a hard-coded blue, ...), its own invalid vocabulary and its own hand-written
+# `opacity: 0.5` for disabled, each correct on the day it is pasted and drifting from then on (row 145). A
 # component stylesheet may say WHERE the ring paints (which element, which pseudo-element); it may not
 # re-derive WHAT it is. This gate fails, per rule (comments stripped, `:not(...)` groups ignored):
 #
@@ -38,9 +38,9 @@
 #                      (`:root[data-dx-modality]:not([data-dx-modality="keyboard"])` in the theme), but a text
 #                      field the user clicked or tapped is still focused and must still ring, as in shadcn:
 #                      a field takes `--dx-ring-field` (inset edge + halo) or, when its edge is a real
-#                      border (Textarea outline), `--dx-ring-focus-halo` beside `border-color`. The outline
-#                      Textarea lost its halo after a click for exactly this (verify4, 2026-10-19).
-#   legacy-ring        `var(--dx-ring)` (the old 2px solid ring) anywhere: use `--dx-ring-focus`, or
+#                      border (Textarea outline), `--dx-ring-focus-halo` beside `border-color`. Without it the
+#                      outline Textarea loses its halo after a click.
+#   legacy-ring        `var(--dx-ring)` (the 2px solid ring) anywhere: use `--dx-ring-focus`, or
 #                      `--dx-ring-focus-inset`. (The token stays defined for `[data-dx-interactive]`.)
 #   literal-ring       `color-mix(... var(--dx-ring-color) 50% ...)` written out: that is `--dx-ring-focus`.
 #   invalid-shadow     a rule selecting `[aria-invalid]` / `[data-invalid]` declares a `box-shadow` that does

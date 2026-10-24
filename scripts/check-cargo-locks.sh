@@ -5,9 +5,9 @@
 # Every committed Cargo.lock agrees with its manifest. The repo has detached crates with their own lock
 # (`playwright/oracle/attr-synth`, an empty `[workspace]` so it never joins the root workspace, and
 # `labs/carousel-lab`) that path-depend on `primitives/`. Nothing builds them in the gates, so when a
-# primitives dependency changed (98e7ca1b dropped `dioxus-sdk-time`) their locks went stale on main
-# silently -- and the next lane whose spec run built attr-synth (hydration-parity Rule 4c) got a rewritten
-# lock in its diff as an unexplained side effect (two lanes on 2026-10-20). By construction, then: cargo
+# primitives dependency changes (a dropped `dioxus-sdk-time` left both locks stale on main, backlog row 254)
+# their locks go stale silently -- and the next lane whose spec run builds attr-synth (hydration-parity
+# Rule 4c) gets a rewritten lock in its diff as an unexplained side effect. By construction, then: cargo
 # resolves each manifest against its lock with `--locked --offline`; a lock that would have to change fails.
 #
 # Resolution against the lock happens before any download, so a dependency missing from the local cache

@@ -11,20 +11,20 @@
 # every visit to the route adds another. Nothing in `cargo check`, clippy
 # or `cargo test` can see it.
 #
-# The incident this guards against (dev-docs/archive/research/scroll-jank-2026-10-04.md,
-# Cause 1): `BlockPlayer` (`preview/src/main.rs`) started a 100 ms
-# `setInterval` from a `use_effect` and never cleared it, and its hooks were
-# being re-run (see `MasonryCard`'s doc: a block rendered through a
-# `Callback` runs its hooks in the PARENT's scope), so a fresh interval
-# appeared about every 1.2 s: 128 live intervals after ~100 s, 1,326 timer
-# wakeups per second at 155 s, 387 layouts during one scroll instead of 0-1.
-# The Progress demo had the same shape at 1 s. Fixed by construction, not
+# What this guards against (dev-docs/archive/research/scroll-jank-2026-10-04.md,
+# Cause 1): a 100 ms `setInterval` started from a `use_effect` and never
+# cleared, in a component whose hooks are re-run (see `MasonryCard`'s doc: a
+# block rendered through a `Callback` runs its hooks in the PARENT's scope),
+# gives a fresh interval about every 1.2 s: 128 live intervals after ~100 s,
+# 1,326 timer wakeups per second at 155 s, 387 layouts during one scroll
+# instead of 0-1 (`BlockPlayer` in `preview/src/main.rs` and the Progress demo
+# were the instances). The fix is by construction, not
 # per instance: the one sanctioned timer is `use_interval`
 # (`primitives/src/interval.rs`), a task spawned in the calling component's
 # scope (`primitives/src/sleep.rs`: `tokio::time::sleep` on native, `gloo_timers`
 # on wasm). It is cancelled with the scope on unmount, so there is nothing to
 # forget to clear, and there is no JS timer in it at all. This script keeps
-# the old shape from coming back: it fails on any
+# the raw shapes out: it fails on any
 #
 #   setInterval(                     (JS, including eval strings in Rust)
 #   set_interval                     (web-sys / js-sys wrappers)
@@ -52,7 +52,7 @@
 #
 # Usage: scripts/check-uncleared-intervals.sh [file ...]
 #   With no arguments scans the whole tree (well under a second). Explicit
-#   files are scanned as given (used to prove the gate red against old code).
+#   files are scanned as given (for proving the gate red against old code).
 # Exit 0: clean. Exit 1: offending lines on stderr as file:line.
 
 set -euo pipefail

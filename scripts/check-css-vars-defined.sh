@@ -18,8 +18,8 @@
 # stylesheet into a user's tree next to THEIR copy of dx-components-theme.css,
 # and an older theme copy lacks any `--dx-<role>` token added since. The
 # component then renders wrongly in exactly the consumer's tree and nowhere in
-# ours. The token-design lane also found `--primary-color-8/9/11/12` read
-# (virtual_list demo, navigation_menu dark-mode gradient) but never declared.
+# ours. The same applies to a `var(--primary-color-8/9/11/12)` read (virtual_list demo,
+# navigation_menu dark-mode gradient) that no sheet declares.
 #
 # WHAT COUNTS AS A USE
 #   * `var(--name` in preview/src/**/*.css, preview/assets/*.css,

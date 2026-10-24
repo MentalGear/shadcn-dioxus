@@ -6,7 +6,7 @@
 # `render_key(item_key, idx)` (primitives/src/virtual/identity.rs). A hand-written positional key --
 # `key: "{idx}"`, `"{row.index()}"`, `"{item.key()}"` -- ties the DOM node, and with it focus and any state
 # inside the row, to the slot, so after a sort or a reorder focus stays on a slot while the item moves
-# (row 361; the same class VirtualList, TableRows and the grids each had). By construction no renderer
+# (row 361; the same class applies to VirtualList, TableRows and the grids). By construction no renderer
 # spells a key itself.
 #
 # Scope: every rsx `key: "..."` in the windowed renderers (primitives/src/virtual_list.rs, virtual_grid.rs,

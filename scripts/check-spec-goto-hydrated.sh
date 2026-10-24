@@ -6,8 +6,8 @@
 # only when hydration walks the tree: a click or hover a spec issues right after a plain `page.goto` is DROPPED,
 # not queued (row 109 -- the flake class that carousel, tooltip and hover-card specs hit one at a time). The cure
 # is one helper, `gotoHydrated` (`playwright/hydration.ts`: `networkidle`, then `html[data-hydrated="true"]`, a
-# flag the app's root effect sets only after a client render has committed). Row 109 migrated the specs that had
-# failed; ~430 bare `page.goto(` calls were left, each a latent instance of the same race.
+# flag the app's root effect sets only after a client render has committed). Every bare `page.goto(` is a latent
+# instance of the same race (row 109).
 #
 # Why a gate and not a `page.goto` override in the shared fixture (`playwright/fixtures.ts`): an override reaches
 # only the `page` fixture, so every `browser.newContext().newPage()` (the tests that need their own viewport,
@@ -33,12 +33,12 @@
 # `gotoHydrated` waits for that redirect to land.
 #
 # Rule 3. A path route carries no query text in its `<name>` segment: `/component/popover&variant=overlay/` is a 404
-# (a migration from the legacy `?name=popover&variant=overlay&` produced exactly that, and the legacy route had
-# silently dropped the `variant`).
+# (a migration from the legacy `?name=popover&variant=overlay&` form produces exactly that, and the legacy route
+# silently drops the `variant`).
 #
 # Rule 4. Query text is never glued to a path route: `${url(name)}variant=${variant}&` and `${URL}dark_mode=true` (with
 # `URL` = `/component/drawer/`) build `/component/popover/variant=modal&`, a 404 that never sets `data-hydrated` and so
-# times the test out at 90 s (round 1's migration of `?name=drawer&dark_mode=true` left two of them, 2026-10-20). A
+# times the test out at 90 s (a migration of `?name=drawer&dark_mode=true` to the path routes can leave one). A
 # `dark_mode`/`variant`/`iframe` key must follow a `?` or `&`.
 #
 # Usage: scripts/check-spec-goto-hydrated.sh [FILE ...]   (default: every spec under playwright/)

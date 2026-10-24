@@ -8,10 +8,10 @@
 # allowlist, stale entries fail; the browser half is `playwright/docs-accordion.spec.ts` and
 # `playwright/docs-structure.spec.ts`.
 #
-# THE CLASS: the component pages' sections were native `<details>`/`<summary>` disclosures (Installation, every
-# docs.md `##` section, the Props reference, "Manual installation files", a demo's "About this example"). They drifted
-# from the library's Accordion and Collapsible in look and motion: the chevron overflowed the divider, nothing
-# animated, and a fix to the components never reached the docs. A docs page that hand-rolls a disclosure is a second,
+# THE CLASS: a native `<details>`/`<summary>` disclosure for the component pages' sections (Installation, every
+# docs.md `##` section, the Props reference, "Manual installation files", a demo's "About this example") drifts
+# from the library's Accordion and Collapsible in look and motion (chevron overflowing the divider, nothing
+# animating), and a fix to the components never reaches the docs. A docs page that hand-rolls a disclosure is a second,
 # unreviewed implementation of a component the library already ships.
 #
 # THE CONSTRUCTION: the docs chrome uses `Accordion`/`AccordionItem`/`AccordionTrigger`/`AccordionContent` and
