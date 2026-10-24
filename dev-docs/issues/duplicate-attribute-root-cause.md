@@ -17,7 +17,7 @@
 >
 > `$S` throughout the body refers to that session's scratchpad and no longer resolves. The
 > companion artifacts worth keeping were committed alongside this file as
-> `duplicate-attribute-guard-prototype.py` and its
+> `dev-docs/archive/issues/duplicate-attribute-guard-prototype.py` and its
 > `duplicate-attribute-style-shorthand-idents.txt` data file. Run it with no arguments from the
 > repo root and it reproduces the 623 findings this document cites; the raw findings list itself
 > is therefore not committed. Two changes were made to the prototype when committing it, both

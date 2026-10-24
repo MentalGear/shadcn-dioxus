@@ -10,7 +10,7 @@
 # floor, not a ceiling. Two real false-positive bugs (multi-line fn signatures; non-pub
 # Props structs) were found and fixed during its own development; more may remain.
 #
-# Usage: python3 dev-docs/issues/duplicate-attribute-guard-prototype.py
+# Usage: python3 dev-docs/archive/issues/duplicate-attribute-guard-prototype.py
 """
 Prototype static guard (v2): flag a literal `name: value,` (or
 `"kebab-name": value,`) attribute rendered in the same brace-block as a
