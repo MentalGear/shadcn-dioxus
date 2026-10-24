@@ -6,7 +6,7 @@ resolves here by id.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Done rows (335)
+## Done rows (336)
 
 | # | Item | Updated |
 |---|---|---|
@@ -345,5 +345,6 @@ resolves here by id.
 | [380](backlog/done/380-calendar-clock-read-after-mount.md) | Calendars read the visitor's clock after mount, so a prerendered page never keeps the build day | 2026-10-24 |
 | [381](backlog/done/381-interactive-element-cursor-option.md) | Interactive-element cursor is one theme option, data-dx-interactive-element-cursor | 2026-10-24 |
 | [400](backlog/done/400-merge-drivers-generated-files.md) | Merge drivers for the generated backlog index and the durations table | 2026-10-24 |
+| [401](backlog/done/401-select-css-gate-names-dead-mutation.md) | check-select-css names a mutation that died instead of printing a blank verdict | 2026-10-24 |
 
 <!-- END GENERATED -->
