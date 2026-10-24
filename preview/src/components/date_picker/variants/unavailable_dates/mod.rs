@@ -31,7 +31,10 @@ fn unavailable_ranges(today: Date) -> Vec<DateRange> {
 pub fn Demo() -> Element {
     let mut selected_range = use_signal(|| None::<DateRange>);
 
-    let disabled_ranges = use_signal(|| unavailable_ranges(UtcDateTime::now().date()));
+    // Read from the clock after hydration, never while rendering: a render-time read is baked into the prerendered
+    // page as the build day, and hydration keeps the server's markup (backlog row 377).
+    let mut disabled_ranges = use_signal(Vec::<DateRange>::new);
+    use_effect(move || disabled_ranges.set(unavailable_ranges(UtcDateTime::now().date())));
 
     rsx! {
         div {

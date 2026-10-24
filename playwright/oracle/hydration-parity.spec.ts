@@ -558,39 +558,19 @@ test.describe("hydration parity — synthesized attribute collisions (Rule 4c)",
     expect(ATTR_SYNTH.error, ATTR_SYNTH.error ?? "").toBeNull();
   });
 
-  // Exactly one case below is RED BY DESIGN, not a flake -- the same
-  // convention `oracle/tier2-html/main-thread.spec.ts` already uses for its
-  // own three known-red subjects (documented there, left as ordinary
-  // failing tests rather than skipped): `selftest:unfixed:id` is a
-  // deliberate, permanent meta-proof that this file's own detection logic
-  // can tell a real collision apart from a fixed one (see
-  // attr-synth/src/main.rs's doc comment on `self_test_unfixed_collision`)
-  // -- it is SUPPOSED to fail, every run, by construction.
-  //
-  // `navigation_menu:trigger:style` USED TO be here too: a genuine,
-  // previously-unknown defect this rule found by execution while building
-  // this extension (confirmed 2026-09-21) -- `NavigationMenuTrigger`
-  // (`primitives/src/navigation_menu.rs`) set a bare literal
-  // `style: crate::top_layer::anchor_name_style(...)` directly on its
-  // `button {}`, THEN separately spread `..attributes` (a
-  // `merge_attributes` result that, once a caller supplies their own
-  // `style`, also carried one) onto the SAME element -- the exact
-  // literal-attribute-beside-a-raw-spread shape this whole file exists to
-  // catch. Fixing it was out of THIS lane's ownership (`primitives/src/**`)
-  // at the time, so it was left red and named here so it would not be
-  // lost. The `anchor-style-class` lane (this repository's own history)
-  // then fixed it -- and, per this repo's CLAUDE.md ("when the same
-  // problem shows up more than once, stop patching instances"), audited
-  // every other `anchor_name_style` trigger call site and fixed the whole
-  // class via one shared construction, `top_layer::anchored_trigger_
-  // attributes` -- see this file's own header doc ("Rule 4c" section) for
-  // the full account of which sites were genuinely defective and which
-  // were already safe. This case is asserted like any other below now.
-  const KNOWN_RED = new Set(["selftest:unfixed:id"]);
+  // `selftest:unfixed:id` is a deliberate, permanent meta-proof that this file's own detection logic can tell a
+  // real collision apart from a fixed one (attr-synth/src/main.rs, `self_test_unfixed_collision`): the synthesized
+  // fragment carries the collision on purpose, so its assertions MUST fail. It is declared `test.fail`, so
+  // Playwright reports the failure as an expected outcome (`stats.expected`, which `deploy-preview.sh`'s verdict
+  // counts as a pass) and the case turns RED the day its assertions pass, i.e. the day the detection stops seeing
+  // the collision. Every other case is asserted as an ordinary test (backlog row 377).
+  const EXPECTED_FAILING = new Set(["selftest:unfixed:id"]);
 
   for (const c of ATTR_SYNTH.cases) {
-    const label = KNOWN_RED.has(c.case) ? " (RED BY DESIGN -- see this block's own header comment)" : "";
-    test(`Rule 4c: ${c.case} -- caller override of a literal attribute is served exactly once${label}`, () => {
+    const expectedFailing = EXPECTED_FAILING.has(c.case);
+    const label = expectedFailing ? " (expected failure: the detector's meta-proof)" : "";
+    const caseTest = expectedFailing ? test.fail : test;
+    caseTest(`Rule 4c: ${c.case} -- caller override of a literal attribute is served exactly once${label}`, () => {
       const tags = extractStartTags(c.html);
       // Finds the right tag by substring on the RAW text, not by the
       // tokenizer's first-wins effective value: when the collision is

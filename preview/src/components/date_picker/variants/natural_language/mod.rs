@@ -5,7 +5,7 @@ use crate::components::popover::{PopoverContent, PopoverRoot};
 use dioxus::prelude::*;
 use dioxus_icons::lucide::CalendarDays;
 use dioxus_primitives::{dioxus_attributes::attributes, popover::PopoverTrigger, ContentAlign};
-use time::{Date, Duration, Month, UtcDateTime, Weekday};
+use time::{macros::date, Date, Duration, Month, UtcDateTime, Weekday};
 
 /// shadcn's "Natural Language Picker" (`date-picker-natural-language`): a text field that
 /// understands phrases, with the calendar button INSIDE the field.
@@ -23,11 +23,17 @@ use time::{Date, Duration, Month, UtcDateTime, Weekday};
 /// `Popover`, exactly as in shadcn, which closes on select.
 #[component]
 pub fn Demo() -> Element {
-    let today = UtcDateTime::now().date();
     let mut text = use_signal(|| "In 2 days".to_string());
-    let mut date = use_signal(move || parse_phrase("In 2 days", today));
-    let mut view_date = use_signal(move || date().unwrap_or(today));
+    // The clock is read after hydration, never while rendering: a render-time date would be baked into the
+    // prerendered page as the BUILD day, and hydration keeps the server's text (backlog row 377).
+    let mut date = use_signal(|| None::<Date>);
+    let mut view_date = use_signal(|| date!(2026 - 05 - 15));
     let mut open = use_signal(|| false);
+    use_effect(move || {
+        let start = parse_phrase("In 2 days", utc_today());
+        date.set(start);
+        view_date.set(start.unwrap_or_else(utc_today));
+    });
 
     // The trigger is the popover primitive's bare button wearing the real `Button` recipe
     // (ghost, icon-xs), so no second `<button>` nests inside it.
@@ -61,7 +67,7 @@ pub fn Demo() -> Element {
                 InputGroupInput {
                     oninput: move |e: FormEvent| {
                         let value = e.value();
-                        if let Some(parsed) = parse_phrase(&value, today) {
+                        if let Some(parsed) = parse_phrase(&value, utc_today()) {
                             view_date.set(parsed);
                             date.set(Some(parsed));
                         }
@@ -108,6 +114,11 @@ pub fn Demo() -> Element {
             }
         }
     }
+}
+
+/// The current UTC day, read when called (an effect or an event handler, see [`Demo`]).
+fn utc_today() -> Date {
+    UtcDateTime::now().date()
 }
 
 /// shadcn's `formatDate`: `toLocaleDateString("en-US", { day: "2-digit", month: "long", year:

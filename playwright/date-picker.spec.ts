@@ -1968,13 +1968,23 @@ test.describe("confirm: false demos follow their shadcn twin", () => {
 test.describe("Natural language picker (variant=natural_language)", () => {
   const VARIANT = "natural_language";
 
-  /** `toLocaleDateString("en-US", { day: "2-digit", month: "long", year: "numeric" })` of UTC-today + `days` (the demo uses UTC today). */
-  async function expectedDate(page: Page, days: number) {
-    return page.evaluate((d) => {
-      const now = new Date();
-      const utc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + d));
-      return utc.toLocaleDateString("en-US", { timeZone: "UTC", day: "2-digit", month: "long", year: "numeric" });
-    }, days);
+  /**
+   * The page's clock, frozen at a fixed instant far from the day the site was built: the prerendered markup carries the
+   * BUILD day, so a test that compares the page with "today" passes only while the build and the run share a UTC day
+   * (a deploy that built before midnight and tested after it failed, backlog row 377). Frozen, the demo has to read the
+   * clock after hydration to show this date, and the expectation below is pure arithmetic on the same instant.
+   */
+  const FROZEN_NOW = Date.UTC(2031, 2, 31, 23, 30); // 31 March 2031, 23:30 UTC: one more day crosses a month
+
+  test.beforeEach(async ({ page }) => {
+    await page.clock.setFixedTime(FROZEN_NOW);
+  });
+
+  /** `toLocaleDateString("en-US", { day: "2-digit", month: "long", year: "numeric" })` of the frozen UTC day + `days` (the demo uses UTC today). */
+  function expectedDate(days: number) {
+    const now = new Date(FROZEN_NOW);
+    const utc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + days));
+    return utc.toLocaleDateString("en-US", { timeZone: "UTC", day: "2-digit", month: "long", year: "numeric" });
   }
 
   function field(page: Page) {
@@ -1992,7 +2002,7 @@ test.describe("Natural language picker (variant=natural_language)", () => {
     await expect(frame(page, VARIANT).getByText("Schedule Date", { exact: true })).toBeVisible();
     await expect(field(page)).toHaveValue("In 2 days");
     await expect(field(page)).toHaveAttribute("placeholder", "Tomorrow or next week");
-    await expect(boldDate(page)).toHaveText(await expectedDate(page, 2));
+    await expect(boldDate(page)).toHaveText(expectedDate(2));
     await expect(sentence(page)).toHaveText(/^Your post will be published on .+\.$/);
   });
 
@@ -2018,12 +2028,12 @@ test.describe("Natural language picker (variant=natural_language)", () => {
   test("typing 'tomorrow' sets the date and the sentence; typing garbage keeps the previous date", async ({ page }) => {
     await gotoDatePicker(page);
     await field(page).fill("tomorrow");
-    await expect(boldDate(page)).toHaveText(await expectedDate(page, 1));
+    await expect(boldDate(page)).toHaveText(expectedDate(1));
     await field(page).fill("asdf qwer");
     await expect(field(page)).toHaveValue("asdf qwer");
-    await expect(boldDate(page)).toHaveText(await expectedDate(page, 1)); // unchanged
+    await expect(boldDate(page)).toHaveText(expectedDate(1)); // unchanged
     await field(page).fill("in 3 days");
-    await expect(boldDate(page)).toHaveText(await expectedDate(page, 3));
+    await expect(boldDate(page)).toHaveText(expectedDate(3));
     await field(page).fill("2027-03-04");
     await expect(boldDate(page)).toHaveText("March 04, 2027");
   });

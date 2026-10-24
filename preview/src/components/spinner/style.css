@@ -2,36 +2,40 @@
  * style sheet has no `.cn-spinner` block). It carries no colour of its own: the ring is
  * `currentColor`, so it takes the ink of whatever it sits in (a Button, a Badge, an input addon).
  *
- * The ring's edge is `--dx-spinner-size`, read with a 1rem fallback and NOT set on the default spinner, so a
- * container that sizes its icons reaches a nested spinner by setting the variable on its own element (a Badge
- * sets 0.75rem, shadcn's `.cn-badge [&>svg]:size-3!`, where shadcn's spinner IS the svg). A container never
- * sizes the ring with a descendant `svg` rule: that rule and `.dx-spinner svg` would tie at (0,1,1) and the
- * sheet loaded last would win, which an installed app decides by render order. A typed `size` below sets the
- * variable on the spinner itself, so it beats any inherited value. */
+ * Two variables, so that no size reaches a spinner it was not meant for (backlog rows 188 and 218):
+ * - `--dx-spinner-size` is the CONTAINER slot. A container that sizes its icons sets it on its own element and a
+ *   nested spinner reads it (a Badge sets 0.75rem, shadcn's `.cn-badge [&>svg]:size-3!`, where shadcn's spinner IS
+ *   the svg). A spinner never sets it, so it never reaches another spinner.
+ * - `--dx-spinner-edge` is the spinner's OWN edge. Every root re-declares it (the default from the container slot with
+ *   a 1rem fallback, each typed size from its own value), so a default spinner nested in a small or large one never
+ *   inherits the outer size.
+ * A container never sizes the ring with a descendant `svg` rule: that rule and `.dx-spinner svg` would tie at (0,1,1)
+ * and the sheet loaded last would win, which an installed app decides by render order. */
 .dx-spinner {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  --dx-spinner-edge: var(--dx-spinner-size, 1rem);
 }
 
 .dx-spinner svg {
-  width: var(--dx-spinner-size, 1rem);
-  height: var(--dx-spinner-size, 1rem);
+  width: var(--dx-spinner-edge);
+  height: var(--dx-spinner-edge);
   animation: dx-spinner-spin 1s linear infinite;
 }
 
-/* Typed `size`: the ring's edge is one slot variable (default 1rem, the fallback above), so the four
- * sizes cannot drift apart. */
+/* Typed `size`: the ring's edge is one slot variable (default 1rem, from the container slot above), so the four
+ * sizes cannot drift apart. A typed size beats a container's slot. */
 .dx-spinner[data-size="sm"] {
-  --dx-spinner-size: 0.75rem;
+  --dx-spinner-edge: 0.75rem;
 }
 
 .dx-spinner[data-size="lg"] {
-  --dx-spinner-size: 1.5rem;
+  --dx-spinner-edge: 1.5rem;
 }
 
 .dx-spinner[data-size="xl"] {
-  --dx-spinner-size: 2rem;
+  --dx-spinner-edge: 2rem;
 }
 
 @keyframes dx-spinner-spin {
