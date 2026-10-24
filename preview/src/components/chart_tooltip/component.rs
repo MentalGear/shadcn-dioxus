@@ -60,15 +60,15 @@ pub fn Gallery(children: Element) -> Element {
 /// Parses a `"YYYY-MM-DD"` date string and returns its short English
 /// weekday name (`"Mon"`..`"Sun"`) via Sakamoto's algorithm (public domain
 /// -- Wikipedia, "Determination of the day of the week"), used instead of
-/// a date-handling dependency per this workspace's no-new-Cargo-deps rule
-/// for the chart round (`$S/chart-common.md`). Falls back to `iso_date`
+/// a date-handling dependency per this workspace's no-new-Cargo-deps rule.
+/// Falls back to `iso_date`
 /// unchanged when it isn't exactly `"YYYY-MM-DD"` with a month in `1..=12`
 /// -- this is demo-only formatting, not primitive code, so a malformed
 /// input degrades to "show the raw string" rather than panicking.
 ///
 /// Every one of this gallery's nine demos ports shadcn's own per-file
 /// `tickFormatter={(value) => new Date(value).toLocaleDateString("en-US",
-/// { weekday: "short" })}` (`$S/refs/ui/.../charts/chart-tooltip-*.tsx`,
+/// { weekday: "short" })}` (`charts/chart-tooltip-*.tsx` in shadcn's new-york-v4 registry,
 /// repeated identically in each of the nine source files); this is the one
 /// shared Rust equivalent so the nine variant files don't each duplicate a
 /// date algorithm the way the source duplicates the one-liner.

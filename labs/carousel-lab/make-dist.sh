@@ -28,7 +28,7 @@ import os, re, shutil, sys
 public, out = sys.argv[1], sys.argv[2]
 # Take exactly the files THIS build uses, never a glob of the assets dir: dx
 # does not clear old hashed assets out of a reused target dir, so a second
-# build leaves two of each there (found live). The build's own index.html
+# build leaves two of each there. The build's own index.html
 # names its glue, and the glue's own auto-boot names its wasm.
 html = open(f"{public}/index.html").read()
 js = sorted(set(re.findall(r'assets/carousel-lab-dxh\w+\.js', html)))

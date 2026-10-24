@@ -83,7 +83,7 @@
   grid-area: chart;
 }
 
-/* Keyboard contract (`$S/chart-api.md`, "API changes" #4): `Chart`'s own
+/* Keyboard contract: `Chart`'s own
  * `[data-slot="chart"]` wrapper div -- not `ChartContainer`'s `.dx-chart`
  * div, and not the svg -- is the focusable/roving root when `Chart`'s
  * `keyboard` prop is on. Ring token is the shared focus halo
@@ -383,8 +383,8 @@
   }
 }
 
-/* The whole hover mechanism (`$S/chart-api.md`: "no coordinate math, no
- * layout reads, no document::eval") -- invisible, full-height bands, one
+/* The whole hover mechanism (no coordinate math, no layout reads, no
+ * document::eval) -- invisible, full-height bands, one
  * per datum, that alone drive `active_index`. */
 .dx-chart [data-slot="chart-hit-band"] {
   cursor: var(--dx-interactive-element-cursor, default);
@@ -565,8 +565,7 @@
   padding-inline-start: 0;
 }
 
-/* `vertical_align: LegendAlign::Top` (`$S/chart-api.md`'s "API changes"
- * #6): rendered as `data-align="top"` on this element; `bottom` (the
+/* `vertical_align: LegendAlign::Top`: rendered as `data-align="top"` on this element; `bottom` (the
  * default) needs no rule since `legend-after` above already matches it.
  * Moves the legend to the `legend-before` grid row (above the fixed
  * "chart" row `Chart`/`ChartTooltip` share -- see `.dx-chart`'s own
@@ -606,7 +605,7 @@
 
 /* ---------------------------------------------------------------------- *
  * Swatch -- shared shape between the tooltip and the legend
- * (`role="graphics-symbol"`, `$S/chart-api.md`).
+ * (`role="graphics-symbol"`).
  * ---------------------------------------------------------------------- */
 
 .dx-chart-tooltip [data-slot="chart-swatch"],

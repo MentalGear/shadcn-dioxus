@@ -26,8 +26,8 @@
 //!   simplifying algebraically lands on the exact same `(r * sin(a), -r *
 //!   cos(a))` offset -- confirming this is not merely d3's abstract
 //!   convention but shadcn/Recharts' own actual radar orientation (first
-//!   category at top, clockwise), the thing this port needs to match for
-//!   visual parity with the demos in shadcn-ui/ui `.../charts/chart-radar-*.tsx`.
+//!   category at top, clockwise), which this engine matches for visual
+//!   parity with the demos in shadcn-ui/ui `.../charts/chart-radar-*.tsx`.
 //!
 //! # Scope: `Curve::Linear` only, by construction of the chart family being ported
 //!

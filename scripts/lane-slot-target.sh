@@ -7,7 +7,7 @@
 #   scripts/lane-slot-target.sh release             drops it (also dropped when the pid dies)
 #   scripts/lane-slot-target.sh copy <src> <dest>   copy of src without .tree-owner and without `incremental/` dirs
 #
-# Slot 0 uses $LANE_TGT/<name> (check, gates, ...), exactly as before. A slot >= 1 compiles
+# Slot 0 uses $LANE_TGT/<name> (check, gates, ...), the dir a single-slot run uses. A slot >= 1 compiles
 # at the same time as slot 0 and so cannot share its target dir; its dir (<name>-s1) is created
 # lazily, on first use, as a WARM copy of the slot-0 dir when that is idle (the copy runs holding
 # slot 0's lock and the legacy lock, so nothing builds into the source meanwhile) and as an empty

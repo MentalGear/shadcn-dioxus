@@ -14,8 +14,8 @@
 //! unconditionally while any instance using it is mounted, which would fight
 //! the native `<dialog>`'s own `cancel`/`close` handling if a gated-callback
 //! version of `use_global_escape_listener` were merely installed and told to
-//! do nothing (dev-docs/backlog.md row 3's warning, given when Phase 4.4 landed
-//! the same lesson for Popover).
+//! do nothing (dev-docs/backlog.md row 3's warning; Popover follows the same
+//! rule).
 //!
 //! `DialogContentNonModal` (`is_modal: false`) is the plain non-native arm on
 //! both targets (dev-docs/plan.md Phase 4.2 scopes native `<dialog>` to the modal path).
@@ -464,8 +464,8 @@ fn DialogContentNonModal(
     }
 }
 
-/// `is_modal: true` arm, native (Blitz) target -- byte-for-byte the
-/// pre-Phase-4.2 path: a plain `div` with the vendored `FocusTrap`.
+/// `is_modal: true` arm, native (Blitz) target: a plain `div` with the
+/// vendored `FocusTrap` (no native `<dialog>`).
 #[cfg(not(feature = "web"))]
 #[component]
 fn DialogContentModal(

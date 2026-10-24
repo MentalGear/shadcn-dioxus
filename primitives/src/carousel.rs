@@ -2113,9 +2113,10 @@ fn use_carousel_drag(
 /// touch `scroll-snap-type`. The band is a `transform` on this element and
 /// nothing else; `transform` is `''` (identity) whenever no band is drawn.
 ///
-/// **What D is, and why it is not B3.** Ported from the owner's bench
-/// (`bench-rev40.html`, `mode === "onewriter"`), tested on
-/// real hardware (MacBook trackpad, Firefox 156) over many revisions.
+/// **What D is, and why it is not B3.** Ported from a standalone bench
+/// (`bench-rev40.html`, `mode === "onewriter"`) and tuned on real hardware
+/// (MacBook trackpad, Firefox 156); the notes are in
+/// `dev-docs/archive/research/carousel-engineering-notes.md`.
 /// B3 draws its band whenever the scroller was clamped at an edge, so a
 /// flick from slide 3 that arrives at slide 1 with momentum gets B3's band
 /// drawn *on top of* the platform's own overscroll -- a double bounce. D

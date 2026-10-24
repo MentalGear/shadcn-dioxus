@@ -233,8 +233,8 @@ pub struct AlertDialogContentProps {
 ///     }
 /// }
 /// ```
-/// Native (Blitz) target -- byte-for-byte the pre-Phase-4.2 path: a plain
-/// `div` with the vendored `FocusTrap`.
+/// Native (Blitz) target: a plain `div` with the vendored `FocusTrap`
+/// (no native `<dialog>`; dev-docs/plan.md Phase 4.2 scopes that to the web).
 #[cfg(not(feature = "web"))]
 #[component]
 pub fn AlertDialogContent(props: AlertDialogContentProps) -> Element {

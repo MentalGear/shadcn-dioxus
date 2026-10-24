@@ -29,8 +29,8 @@ use dioxus_icons::lucide::{ChevronDown, ChevronUp};
 /// `.dx-component-preview-frame`'s border (style.css's vertical
 /// `padding-block` rule says the same).
 ///
-/// Sizing follows shadcn's own `carousel-orientation.tsx` (not this file's
-/// pre-shadcn-parity single-slide layout): `--dx-carousel-per-view: 2`
+/// Sizing follows shadcn's own `carousel-orientation.tsx` (two slides per
+/// view, not a single slide filling the box): `--dx-carousel-per-view: 2`
 /// (`basis-1/2`) against a `16.875rem` (270px) `CarouselContent` height --
 /// so each of the 2 visible slides gets half that height, split across the
 /// block axis, rather than one slide filling the whole box. Deliberately

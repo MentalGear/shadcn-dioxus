@@ -913,7 +913,7 @@ pub(crate) fn use_popover_sync(
 ///
 /// **Bug 2 (reopen-while-still-mounted, `auto` only).** Covered by
 /// `combobox.spec.ts`'s "filters and selects with the keyboard" test
-/// (it goes red intermittently without the fix):
+/// (it goes red intermittently when this is not handled):
 /// `auto`'s native light dismiss has no notion of "this input is the
 /// trigger that owns me" (`ComboboxInput`/`SelectTrigger` are never
 /// declared as this popover's invoker, and neither a `popovertarget`

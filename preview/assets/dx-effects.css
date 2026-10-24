@@ -61,7 +61,7 @@
  *   Both are measured and written by the scroller's own script (`use_scroll_fade`
  *   in `primitives/src/scroll_area.rs`, one ResizeObserver, which also drives the
  *   edges where scroll-driven animations are missing); with no script they stay
- *   0px and the scrollbar fades with the content, as it did before.
+ *   0px and the scrollbar simply fades with the content.
  *
  * In Rust: `ScrollArea`, `VirtualList` and `MessageScrollerViewport` take a
  * `fade: ScrollFade` prop (`None`, `Y`, `X`, `Both`, `Top`, `Bottom`, `Start`, `End`: one

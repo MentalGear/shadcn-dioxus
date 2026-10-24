@@ -73,8 +73,7 @@ impl Direction {
     /// `MAP_KEY_TO_FOCUS_INTENT`, restricted to the two horizontal keys:
     /// `ArrowLeft` is [`HorizontalNav::Prev`] in LTR and
     /// [`HorizontalNav::Next`] in RTL; `ArrowRight` is the mirror image.
-    /// Every consumer already gates this on its own `horizontal`/
-    /// orientation flag the same way it did before this call existed —
+    /// Every consumer gates this on its own `horizontal`/orientation flag;
     /// this function does not know or care about orientation.
     ///
     /// ```

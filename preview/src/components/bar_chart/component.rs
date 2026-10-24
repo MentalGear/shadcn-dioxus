@@ -4,7 +4,7 @@
 //! to `table`. Every demo under `variants/` composes the installable `chart`
 //! package's own themed pieces (`Chart`/`ChartContainer`/`ChartTooltip`/
 //! `ChartLegend`, all `ChartKind::Bar`) -- ten of shadcn's bar-chart stories
-//! (`$S/refs/ui/apps/v4/registry/new-york-v4/charts/chart-bar-*.tsx`), each
+//! (`charts/chart-bar-*.tsx` in shadcn's new-york-v4 registry), each
 //! cited in its own variant file. This file just re-exports those pieces
 //! (plus the plain `ChartConfig`/`ChartDatum`/`ChartKind` data
 //! types) so every variant can `use super::super::component::*;` exactly like

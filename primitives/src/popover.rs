@@ -25,7 +25,7 @@
 //! involved. A `<dialog>` shown via
 //! `showModal()` is promoted straight into the top layer regardless (its
 //! containing block becomes the viewport, same class of problem
-//! `dev-docs/plan.md` Phase 4.4 hit for `popover="auto"` content -- see
+//! `dev-docs/plan.md` Phase 4.4 describes for `popover="auto"` content -- see
 //! `top_layer.rs`'s module doc), and the UA stylesheet's `dialog:modal {
 //! position: fixed; inset: 0; margin: auto; }` actively re-centers it. So
 //! the web modal arm below carries the exact same `dx-anchor-popover`
@@ -92,16 +92,16 @@ struct PopoverCtx {
     // *this* signal, not `labelledby`: `crate::top_layer::
     // position_anchor_style` on the content side builds `--dxa-<content's
     // own id>`, so the trigger's `anchor-name` has to name that same id for
-    // `position-anchor` to ever resolve. Confirmed by execution: before this
-    // field existed, the trigger declared `anchor-name: --dxa-<labelledby>`
-    // (i.e. its own id) while the content declared
-    // `position-anchor: --dxa-<content id>` -- two different ids -- so
-    // every `anchor()` value in `../../preview/src/components/popover/
-    // style.css`'s `@supports` block silently failed to resolve (an
-    // `anchor()` naming a nonexistent `anchor-name` is invalid at
-    // computed-value time) and the non-modal popover rendered at the
-    // fallback `top:0; left:0` corner instead of next to its trigger, on
-    // *any* browser, anchor-positioning-capable or not.
+    // `position-anchor` to ever resolve. Keyed off `labelledby`, the trigger
+    // would declare `anchor-name: --dxa-<labelledby>` (i.e. its own id)
+    // while the content declares `position-anchor: --dxa-<content id>` --
+    // two different ids -- so every `anchor()` value in
+    // `../../preview/src/components/popover/style.css`'s `@supports` block
+    // would silently fail to resolve (an `anchor()` naming a nonexistent
+    // `anchor-name` is invalid at computed-value time) and the non-modal
+    // popover would render at the fallback `top:0; left:0` corner instead
+    // of next to its trigger, on *any* browser, anchor-positioning-capable
+    // or not.
     #[allow(unused)]
     content_id: Signal<String>,
 }

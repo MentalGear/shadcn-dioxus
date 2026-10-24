@@ -43,8 +43,8 @@ pub use dioxus_primitives::chart::{
 /// the outermost chart piece -- `Chart`/`ChartTooltip`/`ChartLegend` are
 /// composed as its children. The focusable/keyboard-navigable root
 /// (`Chart`'s `keyboard` prop) is `Chart`'s own `[data-slot="chart"]` div,
-/// not this container's -- see `Chart`'s doc comment below (`$S/chart-api.md`
-/// "API changes" #4: an `Element`-typed child has no way to attach
+/// not this container's -- see `Chart`'s doc comment below (an
+/// `Element`-typed child has no way to attach
 /// attributes to its already-rendered parent without a post-mount effect,
 /// which would make them absent from the first SSR render).
 ///
@@ -78,7 +78,7 @@ pub fn ChartContainer(props: ChartContainerProps) -> Element {
 /// props. Renders its own top-level `div[data-slot="chart"]` (wrapping the
 /// svg + hidden table) that carries `tabindex`/`role="group"`/
 /// `aria-roledescription="chart"`/`aria-label` and the keyboard handler when
-/// `keyboard` is on -- `$S/chart-api.md`'s "API changes" #4. No base class
+/// `keyboard` is on. No base class
 /// of its own: every mark (including this wrapper div) is unstyled by the
 /// primitive and selected off `[data-slot="..."]` inside the container's
 /// own `.dx-chart` scope (see `style.css`), so there is nothing new to
