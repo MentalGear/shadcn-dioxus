@@ -35,7 +35,7 @@
  * "<Component> — <Key>: <APG expectation>". A row the demo pages cannot
  * exercise is `test.skip`ped with a reason ("no fixture") rather than
  * inventing markup. This file does NOT fix anything it finds red -- reds are
- * the deliverable; see docs/conformance-harness.md's tier-1 policy.
+ * the deliverable; see dev-docs/conformance-harness.md's tier-1 policy.
  */
 
 import { test, expect } from "../../fixtures";
@@ -249,7 +249,7 @@ test.describe("APG Menu (opened from a menu button) pattern — DropdownMenu con
     await expect(demoFrame(page), "the demo reports the chosen item").toContainText(chosen);
   });
 
-  // docs/backlog.md row 11 (Phase 6, typeahead). Demo item order (see
+  // dev-docs/backlog.md row 11 (Phase 6, typeahead). Demo item order (see
   // dropdown_menu/variants/main/mod.rs's own top-of-file comment): Edit=0,
   // Undo=1 (disabled), Duplicate=2, "More tools" (a DropdownMenuSubTrigger,
   // no text_value in this demo, so unsearchable) =3, Delete=4 -- Duplicate
@@ -418,7 +418,7 @@ test.describe("APG Menu and Menubar pattern — Menubar", () => {
     await expect(fileMenu).toHaveCount(0);
   });
 
-  // docs/backlog.md row 11 (Phase 6, typeahead). The "Edit" menu (Cut=0,
+  // dev-docs/backlog.md row 11 (Phase 6, typeahead). The "Edit" menu (Cut=0,
   // Copy=1, Paste=2) is the pair sharing a first letter ("C") these rows
   // target -- the "File" menu (New/Open/Save) has no such pair. Opened via
   // ArrowDown on the trigger, the one trigger key that both opens the menu
@@ -477,7 +477,7 @@ test.describe("APG Menu and Menubar pattern — Menubar", () => {
 // pattern — Navbar nav dropdowns" describe block and menu_semantics.rs's
 // module doc). `Navbar` implements the identical keyboard contract Menubar
 // does (Enter/ArrowDown/ArrowUp opening with focus, Escape closing) but
-// SPLITS it three ways (docs/backlog.md row 53): `Navbar` itself owns
+// SPLITS it three ways (dev-docs/backlog.md row 53): `Navbar` itself owns
 // Escape/ArrowLeft/ArrowRight/Home/End, `NavbarNav` owns Enter/ArrowDown/
 // ArrowUp. This is the Escape-refocus divergence row 53 flagged for
 // separate investigation ("Menubar explicitly refocuses its trigger on
@@ -527,7 +527,7 @@ test.describe("APG Menu and Menubar pattern — Navbar nav dropdowns", () => {
 // focus-restore-reference.spec.ts, which documents that page's DOM-focus-
 // stays-on-combobox/aria-activedescendant technique).
 //
-// UPDATED ROLE CAVEAT (docs/backlog.md row 8, was "IMPORTANT ROLE CAVEAT"):
+// UPDATED ROLE CAVEAT (dev-docs/backlog.md row 8, was "IMPORTANT ROLE CAVEAT"):
 // this library's SelectTrigger now carries role="combobox" with
 // aria-haspopup="listbox"/aria-expanded/aria-controls/aria-autocomplete=none
 // (and aria-required when the Select is required) -- see
@@ -1276,7 +1276,7 @@ test.describe("APG Menu pattern (context-menu invocation) — ContextMenu", () =
     await expect(page.getByRole("menu")).toBeVisible();
   });
 
-  // docs/backlog.md row 11 (Phase 6, typeahead). Demo item order (see
+  // dev-docs/backlog.md row 11 (Phase 6, typeahead). Demo item order (see
   // context_menu/variants/main/mod.rs's own top-of-file comment): Edit=0,
   // Undo=1 (disabled), Duplicate=2, Delete=3, "More tools" (a
   // ContextMenuSubTrigger, no text_value in this demo, so unsearchable) =4

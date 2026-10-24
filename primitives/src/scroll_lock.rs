@@ -11,7 +11,7 @@
 //!    call site (backlog row 375: two sibling dialogs share one count;
 //!    see `ScrollLockInner`) --
 //!    so "is this the outermost lock/unlock" is decided synchronously in
-//!    Rust *before* any `document::eval` runs, per docs/plan.md Phase 3.2.
+//!    Rust *before* any `document::eval` runs, per dev-docs/plan.md Phase 3.2.
 //!    That reproduces the guard sarendipitee/dx-components' `overlay.rs`
 //!    uses against the unlock-flash (@ ~L625-655: only unlock once the
 //!    shared count reaches zero) without adopting that fork's

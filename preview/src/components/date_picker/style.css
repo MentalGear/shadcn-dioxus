@@ -121,7 +121,7 @@
  * UA-stylesheet reset and `@supports (anchor-name: --a)` block -- both now
  * live in a single, engine-injected stylesheet shared by every
  * `dx-anchor-*`-marked overlay in the app instead (`primitives/src/top_layer.rs`'s
- * `ensure_anchor_positioning_styles` doc, docs/backlog.md item 1).
+ * `ensure_anchor_positioning_styles` doc, dev-docs/backlog.md item 1).
  *
  * The open/close motion is the theme's floating-surface recipe with the 4px drop (`dx-drop-in` /
  * `dx-drop-out`, set through the slots above). It animates `translate`, NOT `transform`: the anchored

@@ -7,7 +7,7 @@
  * duplicate landmarks -- that are not themselves a numbered WCAG SC).
  *
  * This is a *different* class of check than every other oracle in this
- * harness. Tiers 1-3 (`docs/conformance-harness.md`) test *behaviour*:
+ * harness. Tiers 1-3 (`dev-docs/conformance-harness.md`) test *behaviour*:
  * does Escape move focus where APG says, does a required control block
  * form submission, does an anchored overlay track its trigger. axe tests
  * *static* accessibility rules on whatever DOM exists at the moment it
@@ -17,7 +17,7 @@
  * still fail axe (a duplicate landmark, an invalid `aria-required` on a
  * `button`, a `role="menu"` popup with no accessible name) -- exactly the
  * defect class this file exists to catch, and exactly the class that
- * caught `docs/backlog.md` row 25 (ContextMenu/Menubar menu popups with no
+ * caught `dev-docs/backlog.md` row 25 (ContextMenu/Menubar menu popups with no
  * accessible name) and the toast/aria-required incidents this round's
  * brief cites.
  *
@@ -40,7 +40,7 @@
  * positive at that specific scan site (axe misjudging something that is
  * not actually a defect there); a real, larger issue this round chose not
  * to fix (a structural markup change, a vendored third-party asset) must
- * stay enabled and RED, recorded in `docs/backlog.md` instead. The three
+ * stay enabled and RED, recorded in `dev-docs/backlog.md` instead. The three
  * pre-existing `color-contrast` exclusions (`preview.spec.ts`,
  * `drag_and_drop_list.spec.ts`, `tag_group.spec.ts`) predate this rule and
  * are grandfathered by this round's own instruction to refactor their
@@ -62,7 +62,7 @@
  * hue, clears 4.5:1 against every background it's actually paired with in
  * this app) fixed effectively the entire surface at once -- not a
  * per-scan exclusion, a real construction fix, landed in this round (see
- * `docs/backlog.md` row 39 for the full remediation list, including a
+ * `dev-docs/backlog.md` row 39 for the full remediation list, including a
  * same-class site-CSS accent color, a component's own literal inline
  * color, and two components misusing a token meant for dark surfaces as
  * light-mode text).

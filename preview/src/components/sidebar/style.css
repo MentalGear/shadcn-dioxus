@@ -26,7 +26,7 @@
  * allowlist). A floating sidebar's `ring-1` is drawn as a 1px border so
  * it can sit beside `--dx-shadow-sm` (which is `none` in dark and cannot share a `box-shadow`). */
 
-/* docs/backlog.md row 32: renamed from the bare `.dx-sr-only` to
+/* dev-docs/backlog.md row 32: renamed from the bare `.dx-sr-only` to
  * `.dx-sidebar-sr-only` -- `pagination/style.css` defines a byte-identical
  * rule under the same short name, and `#[css_module]`'s hash was the only
  * thing keeping the two apart. Now that this component's hashing is gone,

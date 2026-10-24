@@ -16,7 +16,7 @@ use crate::components::skeleton::Skeleton;
 use dioxus_icons::lucide::{ChevronRight, Circle};
 use dioxus::prelude::*;
 
-// docs/backlog.md row 32: this demo variant used to carry TWO
+// dev-docs/backlog.md row 32: this demo variant used to carry TWO
 // `#[css_module]` structs -- one for its own demo-only decorative CSS
 // (`variants/demo.css`: team-switcher icon/info-block/chevron,
 // `dx-sidebar-hide-on-collapse`), one that just re-hashed the real

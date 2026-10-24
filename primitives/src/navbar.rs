@@ -185,7 +185,7 @@ pub fn Navbar(props: NavbarProps) -> Element {
         .find_map(|attr| (attr.name == "aria-label").then(|| attr.value.clone()));
 
     // Owned by this component -- role/direction/disabled/roving-focus state
-    // must win over a caller's own attributes (`docs/backlog.md` row 93's
+    // must win over a caller's own attributes (`dev-docs/backlog.md` row 93's
     // duplicate-attribute hazard).
     let attributes = merge_attributes(vec![
         props.attributes,
@@ -222,7 +222,7 @@ pub fn Navbar(props: NavbarProps) -> Element {
                 onkeydown: move |event: Event<KeyboardData>| {
                     match event.key() {
                         Key::Escape => {
-                            // docs/backlog.md row 53's own Escape-refocus
+                            // dev-docs/backlog.md row 53's own Escape-refocus
                             // finding: root-caused as a genuine oversight,
                             // not a deliberate hover-model exemption --
                             // `Navbar` fully supports keyboard-driven
@@ -294,15 +294,15 @@ struct NavbarNavContext {
     content_id: Signal<String>,
 
     // This nav's own `NavbarTrigger` element id, so `NavbarContent` can
-    // label itself `aria_labelledby` from it -- docs/backlog.md row 41,
+    // label itself `aria_labelledby` from it -- dev-docs/backlog.md row 41,
     // mirroring `MenubarMenuContext::trigger_id`'s identical role
-    // (`menubar.rs`, docs/backlog.md row 25: an APG menu requires an
+    // (`menubar.rs`, dev-docs/backlog.md row 25: an APG menu requires an
     // accessible name from either aria-labelledby or aria-label; this
     // crate's `DropdownMenu`/`ContextMenu`/`Menubar` already do the same,
     // keyed off their own `trigger_id`). Read by `NavbarContentRendered`;
     // kept in sync with `NavbarTrigger`'s own (possibly caller-overridden)
     // `id` via `use_id_or` there -- see that component's doc
-    // (docs/backlog.md row 36) -- rather than set once via `use_unique_id`
+    // (dev-docs/backlog.md row 36) -- rather than set once via `use_unique_id`
     // the way `MenubarMenuContext::trigger_id` still is, since `Navbar` is
     // new enough to build the row-36 fix in from the start instead of
     // planting the same id-desync defect a fifth time.
@@ -440,7 +440,7 @@ pub fn NavbarNav(props: NavbarNavProps) -> Element {
     });
 
     // Owned by this component -- see `Navbar`'s identical construction
-    // above (`docs/backlog.md` row 93).
+    // above (`dev-docs/backlog.md` row 93).
     let attributes = merge_attributes(vec![
         props.attributes,
         attributes!(div {
@@ -512,7 +512,7 @@ pub fn NavbarNav(props: NavbarNavProps) -> Element {
 pub struct NavbarTriggerProps {
     /// The ID of the trigger button. If not provided, an internally
     /// generated ID is used -- see `NavbarTrigger`'s use of `use_id_or`
-    /// for why this is a typed field (docs/backlog.md row 36, applied here
+    /// for why this is a typed field (dev-docs/backlog.md row 36, applied here
     /// from the start alongside row 41 rather than shipped without it).
     pub id: ReadSignal<Option<String>>,
 
@@ -599,10 +599,10 @@ pub fn NavbarTrigger(props: NavbarTriggerProps) -> Element {
     let is_focused = move || item.focused() && !nav_ctx.focus.any_focused();
     let onmounted = item.onmounted();
     let is_open = nav_ctx.is_open;
-    // See the `onpointerdown`/`onclick` pair below (docs/backlog.md row 40).
+    // See the `onpointerdown`/`onclick` pair below (dev-docs/backlog.md row 40).
     let mut open_at_down: Signal<Option<bool>> = use_signal(|| None);
 
-    // docs/backlog.md row 36: `nav_ctx.trigger_id` is the same signal
+    // dev-docs/backlog.md row 36: `nav_ctx.trigger_id` is the same signal
     // `NavbarContent`'s `aria-labelledby` reads back (row 41, below) -- a
     // caller-supplied `id` here must resolve into it, not just win the
     // render. Feeding it straight into `use_id_or` as the generated-id
@@ -616,12 +616,12 @@ pub fn NavbarTrigger(props: NavbarTriggerProps) -> Element {
     // `..props.attributes` spread: `id` below and a caller-supplied `id` in
     // `props.attributes` would otherwise both render, the same
     // duplicate-attribute hydration hazard `merge_attributes`'s own doc
-    // warns about (docs/conformance-harness.md Rule 4) -- see
+    // warns about (dev-docs/conformance-harness.md Rule 4) -- see
     // `MenubarTrigger`'s identical construction (`menubar.rs`).
     let attributes = merge_attributes(vec![
         attributes!(button {
             // This nav's own trigger id, so `NavbarContent` can label
-            // itself `aria_labelledby` from it -- docs/backlog.md row 41.
+            // itself `aria_labelledby` from it -- dev-docs/backlog.md row 41.
             id: id.cloned(),
         }),
         props.attributes,
@@ -634,7 +634,7 @@ pub fn NavbarTrigger(props: NavbarTriggerProps) -> Element {
     // Previously a bare `style: anchor_name_style(..)` literal directly on
     // this element, beside `..attributes` below: a caller supplying their
     // own `style` then produced two `style` attributes on this same tag
-    // (`docs/conformance-harness.md` hydration-parity Rule 4;
+    // (`dev-docs/conformance-harness.md` hydration-parity Rule 4;
     // `scripts/check-attr-spread-collision.sh`). Folding it into
     // `attributes` here instead, via `top_layer::anchored_trigger_attributes`,
     // fixes that and (unlike plain `merge_attributes`, which folds a plain
@@ -645,7 +645,7 @@ pub fn NavbarTrigger(props: NavbarTriggerProps) -> Element {
     let attributes =
         crate::top_layer::anchored_trigger_attributes(&nav_ctx.content_id.cloned(), attributes);
     // Owned by this component -- role/type/roving-focus state must win
-    // over a caller's own attributes (`docs/backlog.md` row 93's
+    // over a caller's own attributes (`dev-docs/backlog.md` row 93's
     // duplicate-attribute hazard).
     let attributes = merge_attributes(vec![
         attributes,
@@ -663,7 +663,7 @@ pub fn NavbarTrigger(props: NavbarTriggerProps) -> Element {
     rsx! {
         button {
             onmounted,
-            // docs/backlog.md row 40: the toggle happens on `click`, NOT on
+            // dev-docs/backlog.md row 40: the toggle happens on `click`, NOT on
             // `pointerdown`. `NavbarContent` is `popover="auto"`, and the
             // browser's native light dismiss reads only `pointerdown` +
             // `pointerup` (WHATWG HTML "popover light dismiss"): a popover
@@ -846,7 +846,7 @@ pub fn NavbarContent(props: NavbarContentProps) -> Element {
 /// mechanism `MenubarContentRendered`/`DropdownMenuContentRendered` use
 /// (`menubar.rs`/`dropdown_menu.rs`), which see for the general
 /// `popover`/CSS-anchor wiring this mirrors. Before this fix, `NavbarNav`
-/// never migrated onto the top-layer engine at all (docs/plan.md Phase
+/// never migrated onto the top-layer engine at all (dev-docs/plan.md Phase
 /// 4.4/Migration A never reached it) -- its content stayed a plain `div`,
 /// positioned by ordinary CSS (`position: absolute; top: 100%; left: 0`
 /// inside `.dx-navbar-nav`'s `position: relative` wrapper,
@@ -905,7 +905,7 @@ fn NavbarContentRendered(
     // popover stylesheet's `[popover]:not(:popover-open) { display: none }`)
     // sets `display: none` on the content before `use_animated_open`'s own
     // rAF-deferred `getAnimations()` check ever ran -- the exact defect
-    // `docs/backlog.md` row 77 flagged as a likely (never-investigated)
+    // `dev-docs/backlog.md` row 77 flagged as a likely (never-investigated)
     // sibling of the identical `NavigationMenu` bug it fixed. Confirmed by
     // execution here too: an in-page rAF sample of a real close showed
     // `opacity`/`transform` jump straight from the open resting value to the
@@ -950,7 +950,7 @@ fn NavbarContentRendered(
     // sidestepping `manganis-core`'s `css_module_parser` not scoping
     // classes inside `@supports` bodies.
     //
-    // docs/backlog.md row 41: an APG menu requires an accessible name from
+    // dev-docs/backlog.md row 41: an APG menu requires an accessible name from
     // either aria-labelledby or aria-label -- labelled by this nav's own
     // trigger, mirroring `MenubarContent`'s identical row-25 pattern
     // (`menubar.rs`), which `NavbarContent` never picked up when it
@@ -963,7 +963,7 @@ fn NavbarContentRendered(
     // `aria-labelledby`/`aria-label` with an empty/`AttributeValue::None`
     // value, and two entries for one attribute name is exactly the
     // duplicate-attribute hazard `merge_attributes` exists to prevent
-    // (`docs/conformance-harness.md` hydration-parity Rule 4).
+    // (`dev-docs/conformance-harness.md` hydration-parity Rule 4).
     let labelledby: Vec<Attribute> = if has_own_accessible_name(&attributes) {
         Vec::new()
     } else {
@@ -978,7 +978,7 @@ fn NavbarContentRendered(
         }),
         labelledby,
         // Owned by this component -- menu semantics + top-layer wiring
-        // must win over a caller's own attributes (`docs/backlog.md` row
+        // must win over a caller's own attributes (`dev-docs/backlog.md` row
         // 93's duplicate-attribute hazard).
         attributes!(div {
             // Pattern-class popup role -- see `MenubarContentRendered`'s
@@ -994,7 +994,7 @@ fn NavbarContentRendered(
     // one `style` attribute -- see `top_layer::anchored_content_attributes`'s
     // doc for why a bare `style: position_anchor_style(&id)` literal
     // alongside `..attributes` is the duplicate-`style` hazard
-    // (`docs/conformance-harness.md` hydration-parity Rule 4). The
+    // (`dev-docs/conformance-harness.md` hydration-parity Rule 4). The
     // `top_layer` fixture's `NavbarContent { style: "min-height: 100px;" }`
     // is the exerciser: pre-fix it emitted two `style` attributes (SSR kept
     // the anchor binding, the client kept the caller's).
@@ -1025,7 +1025,7 @@ fn NavbarContentRendered(
 ) -> Element {
     let nav_ctx: NavbarNavContext = use_context();
 
-    // See the web arm's identical construction above (docs/backlog.md row
+    // See the web arm's identical construction above (dev-docs/backlog.md row
     // 41) for why this is conditional and routed through `merge_attributes`
     // rather than a bare literal alongside `..attributes`.
     let labelledby: Vec<Attribute> = if has_own_accessible_name(&attributes) {
@@ -1039,7 +1039,7 @@ fn NavbarContentRendered(
         attributes,
         labelledby,
         // Owned by this component -- see the web arm's identical
-        // construction above (`docs/backlog.md` row 93).
+        // construction above (`dev-docs/backlog.md` row 93).
         attributes!(div {
             // Pattern-class popup role -- see `MenubarContentRendered`'s
             // identical native-arm `crate::menu_semantics::MENU_ROLE`
@@ -1273,7 +1273,7 @@ pub fn NavbarItem(mut props: NavbarItemProps) -> Element {
             // (`menubar.rs`), which this mirrors.
             role: crate::menu_semantics::MENU_ITEM_ROLE,
             // Found via an axe `color-contrast` finding on this pattern
-            // class's disabled state (docs/backlog.md row 39): see
+            // class's disabled state (dev-docs/backlog.md row 39): see
             // `dropdown_menu.rs`'s identical `DropdownMenuItem` fix for the
             // full account -- this renders as an `<a>`, which (unlike a
             // `<button disabled>`) has no native disabled semantics at

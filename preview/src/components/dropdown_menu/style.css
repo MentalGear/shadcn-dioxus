@@ -62,10 +62,10 @@
  * stylesheet order would decide. (A parent that owns the whole trigger look, the sidebar's menu button and
  * action, opts out of this recipe altogether with `data-style`, the `:not([data-style])` above.)
  *
- * :focus-visible ring: the shared --dx-ring token (docs/backlog.md row 31a),
+ * :focus-visible ring: the shared --dx-ring token (dev-docs/backlog.md row 31a),
    but the RULE stays here rather than in the shared interaction layer.
    `#[css_module]` hashes this class in both the DOM and this stylesheet
-   (`.dx-x` -> `.dx-x-<hash>`, docs/issues/css-module-supports-scoping.md), so
+   (`.dx-x` -> `.dx-x-<hash>`, dev-docs/issues/css-module-supports-scoping.md), so
    an unhashed selector in the global theme sheet can never match the rendered
    element -- confirmed against the built artifact, where the wasm carries the
    hashed name. Once row 32 drops css_module hashing, this can collapse into
@@ -87,11 +87,11 @@
    * pop-in/out come from the theme's floating-surface recipe (`data-dx-surface="floating"`, emitted
    * by `DropdownMenuContent`). Its `border`/`overflow`/`padding` undo the UA popover stylesheet's
    * `[popover] { border: solid; overflow: auto; ... }` (WHATWG HTML's popover section) -- on the web
-   * arm (docs/backlog.md item 2) this content carries the `popover` attribute. The matching
+   * arm (dev-docs/backlog.md item 2) this content carries the `popover` attribute. The matching
    * `margin`/`inset` reset, and the `@supports (anchor-name: --a)` anchor-positioning rules that
    * keep this menu anchored to its trigger once promoted to the top layer, live in the shared,
    * engine-injected stylesheet every `dx-anchor-*`-marked overlay gets for free -- see
-   * `primitives/src/top_layer.rs`'s `ensure_anchor_positioning_styles` doc (docs/backlog.md item 1).
+   * `primitives/src/top_layer.rs`'s `ensure_anchor_positioning_styles` doc (dev-docs/backlog.md item 1).
    * On an engine without CSS Anchor Positioning (or the native/Blitz arm, which never sets
    * `popover` at all), this rule's own `position: absolute; top: 100%; left: 0` stays the fallback
    * placement -- irrelevant to whichever anchored path is actually active, since

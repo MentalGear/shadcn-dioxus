@@ -75,12 +75,12 @@
  *     requirement either way -- the pattern is silent on looping), this
  *     is asserted as a LIBRARY-ONLY fact in its own describe block below,
  *     not compared against a reference that doesn't exhibit it. Per
- *     `docs/conformance-harness.md`'s own Calibration policy ("if the
+ *     `dev-docs/conformance-harness.md`'s own Calibration policy ("if the
  *     REFERENCE subject ever goes red, the rule itself is wrong"), a
  *     dual-subject rule that the reference cannot pass would be exactly
  *     that kind of wrong rule.
  *
- * Calibration shape (docs/conformance-harness.md, "Calibration"; mirrors
+ * Calibration shape (dev-docs/conformance-harness.md, "Calibration"; mirrors
  * `disclosure-navigation.spec.ts`'s own two-subject layout): every R1-R4
  * rule below runs once against the pattern's own vendored example page
  * (loaded over `file://`, no network, cannot drift) and once against this

@@ -2,7 +2,7 @@ use dioxus::prelude::*;
 
 use super::super::component::*;
 
-// docs/backlog.md row 32: no `#[css_module]` of its own here, and no
+// dev-docs/backlog.md row 32: no `#[css_module]` of its own here, and no
 // `document::Link` needed either -- this `Demo` always renders several
 // `Badge` themed-wrapper instances below, each of which (as of this
 // migration) now carries its own `document::Link` for `style.css`.

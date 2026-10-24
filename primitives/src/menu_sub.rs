@@ -220,7 +220,7 @@ pub(crate) struct SubMenuState {
     pub(crate) initial_focus: Signal<Option<CollectionPlacement>>,
     /// This submenu's own trigger element id -- `*SubContent` labels
     /// itself `aria-labelledby` from it (APG menu accessible-name
-    /// requirement, `docs/backlog.md` row 25's construction, reused here
+    /// requirement, `dev-docs/backlog.md` row 25's construction, reused here
     /// rather than reintroduced ad hoc), and Escape/ArrowLeft return focus
     /// here.
     pub(crate) trigger_id: Signal<String>,
@@ -393,7 +393,7 @@ pub(crate) fn use_sub_menu_state(
     }
 }
 
-/// `docs/backlog.md` row 85's construction, generalized to a `Sub`'s own
+/// `dev-docs/backlog.md` row 85's construction, generalized to a `Sub`'s own
 /// shape. `crate::use_outside_dismiss` (`lib.rs`) already answers "did
 /// focus/a click leave the tracked subtree" by asking the DOM directly --
 /// a native `focusin` listener plus `element.contains(event.target)` --

@@ -1,6 +1,6 @@
 //! Defines the [`AlertDialogRoot`] component and its sub-components.
 //!
-//! ## Native `<dialog>` modality (Phase 4.2, docs/plan.md)
+//! ## Native `<dialog>` modality (Phase 4.2, dev-docs/plan.md)
 //!
 //! An alert dialog is always modal (APG alert-dialog pattern), so unlike
 //! `dialog.rs` there is no `is_modal` branch here -- [`AlertDialogContent`]
@@ -140,7 +140,7 @@ pub fn AlertDialogRoot(props: AlertDialogRootProps) -> Element {
     let render_element = use_animated_open(id, open);
 
     // Owned by this component -- open state must win over a caller's own
-    // attributes (`docs/backlog.md` row 93's duplicate-attribute hazard).
+    // attributes (`dev-docs/backlog.md` row 93's duplicate-attribute hazard).
     let attributes = merge_attributes(vec![
         props.attributes,
         attributes!(div {
@@ -252,7 +252,7 @@ pub fn AlertDialogContent(props: AlertDialogContentProps) -> Element {
     let id = use_id_or(gen_id, props.id);
 
     // An alert dialog is always modal, so lock page scroll for as long as
-    // it's open. See docs/plan.md Phase 3.2.
+    // it's open. See dev-docs/plan.md Phase 3.2.
     crate::scroll_lock::use_scroll_lock(open);
 
     use_effect(move || {
@@ -274,7 +274,7 @@ pub fn AlertDialogContent(props: AlertDialogContentProps) -> Element {
     });
 
     // Owned by this component -- dialog role/aria wiring must win over a
-    // caller's own attributes (`docs/backlog.md` row 93's
+    // caller's own attributes (`dev-docs/backlog.md` row 93's
     // duplicate-attribute hazard).
     let mut caller_attributes = props.attributes.clone();
     caller_attributes.extend(crate::modality::focus_attributes(
@@ -302,7 +302,7 @@ pub fn AlertDialogContent(props: AlertDialogContentProps) -> Element {
     }
 }
 
-/// Web target (Phase 4.2, docs/plan.md) -- a real `<dialog>` opened with
+/// Web target (Phase 4.2, dev-docs/plan.md) -- a real `<dialog>` opened with
 /// `showModal()`. `open` is never bound as an attribute here; the browser
 /// supplies the focus trap, focus restore, background inertness, and
 /// top-layer rendering. `role="alertdialog"` stays explicit -- see this
@@ -319,7 +319,7 @@ pub fn AlertDialogContent(props: AlertDialogContentProps) -> Element {
     let id = use_id_or(gen_id, props.id);
 
     // An alert dialog is always modal, so lock page scroll for as long as
-    // it's open. See docs/plan.md Phase 3.2.
+    // it's open. See dev-docs/plan.md Phase 3.2.
     crate::scroll_lock::use_scroll_lock(open);
 
     // Same eval-channel close-sync + `.open`-guarded open-driver pair as
@@ -334,7 +334,7 @@ pub fn AlertDialogContent(props: AlertDialogContentProps) -> Element {
     crate::use_dialog_open_driver(id, open);
 
     // Owned by this component -- see the native arm's identical
-    // construction above (`docs/backlog.md` row 93).
+    // construction above (`dev-docs/backlog.md` row 93).
     let mut caller_attributes = props.attributes.clone();
     caller_attributes.extend(crate::modality::focus_attributes(
         props.initial_focus,
@@ -419,7 +419,7 @@ pub fn AlertDialogTitle(props: AlertDialogTitleProps) -> Element {
     // Owned by this component -- `id` is the labelledby target read back by
     // `AlertDialogContent`'s `aria-labelledby`, so it must win over a
     // caller's own `id` rather than risk the SSR duplicate-attribute hazard
-    // (`docs/backlog.md` row 93 names this exact site).
+    // (`dev-docs/backlog.md` row 93 names this exact site).
     let attributes = merge_attributes(vec![
         props.attributes,
         attributes!(h2 {
@@ -484,7 +484,7 @@ pub struct AlertDialogDescriptionProps {
 pub fn AlertDialogDescription(props: AlertDialogDescriptionProps) -> Element {
     let ctx: AlertDialogCtx = use_context();
     // Owned by this component -- see `AlertDialogTitle`'s identical
-    // construction above (`docs/backlog.md` row 93 names this exact site).
+    // construction above (`dev-docs/backlog.md` row 93 names this exact site).
     let attributes = merge_attributes(vec![
         props.attributes,
         attributes!(p {
@@ -617,7 +617,7 @@ pub fn AlertDialogAction(props: AlertDialogActionProps) -> Element {
         }
     });
     // Owned by this component -- roving-focus tabindex/type must win over
-    // a caller's own attributes (`docs/backlog.md` row 93's
+    // a caller's own attributes (`dev-docs/backlog.md` row 93's
     // duplicate-attribute hazard).
     let attributes = merge_attributes(vec![
         props.attributes,
@@ -701,7 +701,7 @@ pub fn AlertDialogCancel(props: AlertDialogCancelProps) -> Element {
     });
 
     // Owned by this component -- see `AlertDialogAction`'s identical
-    // construction above (`docs/backlog.md` row 93).
+    // construction above (`dev-docs/backlog.md` row 93).
     let attributes = merge_attributes(vec![
         props.attributes,
         attributes!(button {

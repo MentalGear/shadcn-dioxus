@@ -22,7 +22,7 @@ test('test', async ({ page }) => {
   // The focus trap's tab cycle has two stops: Tab moves to the close button, and the next Tab
   // wraps back round to the first control.
   //
-  // Phase 4.2 (docs/plan.md): the modal `Dialog` is a native `<dialog>` on the web arm, so this
+  // Phase 4.2 (dev-docs/plan.md): the modal `Dialog` is a native `<dialog>` on the web arm, so this
   // cycle goes through Chromium's own focus trap. Chromium's native trap parks focus on `<body>`
   // for exactly one Tab stop after the last focusable element before wrapping to the first
   // (dev-docs/archive/research/phase4-spike-findings.md experiment 4a) -- invisible to the user and it does not let

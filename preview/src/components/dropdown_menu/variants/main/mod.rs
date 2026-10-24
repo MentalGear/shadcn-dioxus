@@ -4,7 +4,7 @@ use super::super::component::{
 };
 use dioxus::prelude::*;
 
-// docs/backlog.md row 32: no `#[css_module]` of its own here, and no
+// dev-docs/backlog.md row 32: no `#[css_module]` of its own here, and no
 // `document::Link` needed either -- this `Demo` always renders the
 // `DropdownMenu`/`DropdownMenuTrigger`/`DropdownMenuContent`/
 // `DropdownMenuItem` themed wrappers below, each of which (as of this
@@ -65,7 +65,7 @@ impl std::fmt::Display for ToolOperation {
 pub fn Demo() -> Element {
     let mut selected_operation = use_signal(|| None);
 
-    // `text_value` is set explicitly on every item below (docs/backlog.md
+    // `text_value` is set explicitly on every item below (dev-docs/backlog.md
     // row 11, typeahead): `Operation`/`ToolOperation` are plain enums, not
     // `String`/`&str`, so the item components' own value-based typeahead
     // fallback (`crate::selection::option_text_value`) can't derive a label

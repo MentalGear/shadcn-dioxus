@@ -106,7 +106,7 @@
 
 /* `animation`+`@keyframes`, not `transition` -- deliberately mirroring
  * `../navigation_menu/style.css`'s identical technique for its own content
- * panel (`docs/backlog.md` row 77's own flagged follow-up: "`navbar.rs`
+ * panel (`dev-docs/backlog.md` row 77's own flagged follow-up: "`navbar.rs`
  * pairs the identical `use_animated_open` + `use_popover_sync` combination,
  * so it likely carries the same dead exit-animation defect"). Root-caused
  * and confirmed by execution here, the same two-part class:

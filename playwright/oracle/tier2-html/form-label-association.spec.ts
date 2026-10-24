@@ -1,7 +1,7 @@
 /**
  * ORACLE: tier 2 (HTML) — <label> association.
  *
- * Source: docs/conformance-harness.md, "Tier 2 — HTML forms", rule checklist
+ * Source: dev-docs/conformance-harness.md, "Tier 2 — HTML forms", rule checklist
  * item 7 ("A <label> association focuses and activates the control"), citing
  * WHATWG HTML's the-label-element:
  *   https://html.spec.whatwg.org/multipage/forms.html#the-label-element
@@ -23,7 +23,7 @@
  * *except* Select, see "Known fixture gap" below) the library control, so no
  * fixture change was needed for this rule.
  *
- * Calibration (docs/conformance-harness.md, "Calibration"): every rule below
+ * Calibration (dev-docs/conformance-harness.md, "Calibration"): every rule below
  * runs against the native reference control first (prefixed CALIBRATION: in
  * the test name) and the library control second. A CALIBRATION failure would
  * mean the *test* is wrong, not the component.

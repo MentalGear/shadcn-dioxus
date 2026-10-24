@@ -140,7 +140,7 @@
   }
 }
 
-/* docs/backlog.md row 32: renamed from the bare `.dx-sr-only` to
+/* dev-docs/backlog.md row 32: renamed from the bare `.dx-sr-only` to
  * `.dx-pagination-sr-only` -- `sidebar/style.css` defines a byte-identical
  * rule under the same short name, and `#[css_module]`'s hash was the only
  * thing keeping the two apart. Now that this component's hashing is gone,

@@ -125,7 +125,7 @@ pub fn ToastProvider(
     let merged = merge_attributes(vec![base, attributes]);
 
     rsx! {
-        // docs/backlog.md row 32: unlike `#[css_module]`'s bundling, this
+        // dev-docs/backlog.md row 32: unlike `#[css_module]`'s bundling, this
         // `document::Link` merely appends a `<link rel="stylesheet">` to
         // the document head -- it does not reorder anything already there.
         // `primitives/src/toast.rs`'s own baseline stylesheet

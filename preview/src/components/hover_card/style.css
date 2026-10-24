@@ -29,7 +29,7 @@
 
   /*
    * This content carries the `popover` attribute on the web arm (Phase 4.4,
-   * docs/plan.md), which comes with a UA stylesheet rule
+   * dev-docs/plan.md), which comes with a UA stylesheet rule
    * (`[popover] { inset: 0; margin: auto; overflow: auto; border: solid;
    * ... }`, WHATWG HTML's popover section) that would otherwise leak through
    * any property this rule leaves unset. The theme's floating-surface recipe
@@ -37,7 +37,7 @@
    * reset is needed for those. The one property neither sets -- `inset` -- is
    * reset by the shared, engine-injected stylesheet every `dx-anchor-*`-marked
    * overlay gets for free; see `primitives/src/top_layer.rs`'s
-   * `ensure_anchor_positioning_styles` doc (docs/backlog.md item 1).
+   * `ensure_anchor_positioning_styles` doc (dev-docs/backlog.md item 1).
    */
 }
 
@@ -124,7 +124,7 @@
 }
 
 /*
- * Phase 4.4 (docs/plan.md): HoverCardContent's web arm carries a `popover`
+ * Phase 4.4 (dev-docs/plan.md): HoverCardContent's web arm carries a `popover`
  * attribute (top-layer promotion for clipping escape), which changes its
  * containing block to the viewport, so the `[data-side]` rules above need
  * CSS Anchor Positioning to still resolve relative to the trigger.
@@ -133,6 +133,6 @@
  * the `.dx-anchor-hover-card` marker class) now lives in the single,
  * engine-injected stylesheet shared by every `dx-anchor-*`-marked overlay in
  * the app -- see `primitives/src/top_layer.rs`'s
- * `ensure_anchor_positioning_styles` doc (docs/backlog.md item 1) and
+ * `ensure_anchor_positioning_styles` doc (dev-docs/backlog.md item 1) and
  * `../tooltip/style.css`'s identical comment for the full rationale.
  */

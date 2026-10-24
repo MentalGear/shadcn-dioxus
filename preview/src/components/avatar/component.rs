@@ -214,7 +214,7 @@ pub struct ImageAvatarProps {
 
 #[component]
 pub fn ImageAvatar(props: ImageAvatarProps) -> Element {
-    // axe `role-img-alt` (docs/backlog.md row 34's own round): the root
+    // axe `role-img-alt` (dev-docs/backlog.md row 34's own round): the root
     // `Avatar` renders `role="img"` (`avatar.rs`) and gets its accessible
     // name from a caller-supplied `aria_label`, same as this crate's own
     // doc example -- this convenience wrapper forwarded `alt` only to the

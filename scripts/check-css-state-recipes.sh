@@ -2,7 +2,7 @@
 #
 # check-css-state-recipes.sh
 #
-# The state recipes (docs/backlog.md row 145, lane S) put the three control states into shared
+# The state recipes (dev-docs/backlog.md row 145, lane S) put the three control states into shared
 # tokens in `preview/assets/dx-components-theme.css` ("State recipes: focus, invalid, disabled"):
 #
 #   FOCUS     --dx-ring-field (inset-edge fields), --dx-ring-focus (+ `border-color: var(--dx-ring-color)`

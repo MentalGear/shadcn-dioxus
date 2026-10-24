@@ -853,7 +853,7 @@ test.describe("Axe automated scan", () => {
     await loadMainList(page);
 
     // No color-contrast exclusion needed: this round's theme-token fix
-    // (docs/backlog.md row 39) resolved the pre-existing finding here, and
+    // (dev-docs/backlog.md row 39) resolved the pre-existing finding here, and
     // this scan is scoped to the list itself, which has no code block to
     // need the one remaining, narrower exclusion for.
     await expectNoAxeViolations(page, "drag_and_drop_list: main list", {

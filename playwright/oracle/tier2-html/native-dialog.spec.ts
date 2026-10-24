@@ -1,7 +1,7 @@
 /**
  * ORACLE: tier 2 (HTML) — native `<dialog>` modality for `Dialog`/`AlertDialog`.
  *
- * Source: docs/plan.md Phase 4.2, drawing on the WHATWG HTML Living
+ * Source: dev-docs/plan.md Phase 4.2, drawing on the WHATWG HTML Living
  * Standard's `<dialog>` chapter and the W3C ARIA Authoring Practices Guide
  * (APG) dialog-modal pattern for the keyboard rules:
  *   - The `<dialog>` element, `showModal()`, top-layer promotion, and the
@@ -50,7 +50,7 @@
  * (/component/?name=dialog, its nested-dialog fixture from Phase 3.2) for
  * rules 3-5, which need no new markup.
  *
- * Calibration (docs/conformance-harness.md, "Calibration"): rule 1 runs
+ * Calibration (dev-docs/conformance-harness.md, "Calibration"): rule 1 runs
  * against a native reference first (prefixed CALIBRATION:) — a plain
  * `<dialog>` opened by one `showModal()` call, with no library state or
  * logic involved beyond that (see the fixture's doc comment for why the
@@ -311,7 +311,7 @@ test.describe("axe: nested dialogs open", () => {
 
 /**
  * Rule 6 — modal `Popover` on the native-dialog engine (two-engine overlay
- * architecture completion, docs/plan.md). `PopoverModalContent`'s web arm
+ * architecture completion, dev-docs/plan.md). `PopoverModalContent`'s web arm
  * moves from the vendored `FocusTrap` (a plain `div`, no platform-level
  * inertness) onto the exact same `<dialog>` + `showModal()` +
  * open-driver/close-sync/backdrop-dismiss trio `Dialog`'s web modal arm
@@ -338,7 +338,7 @@ test.describe("axe: nested dialogs open", () => {
  * (no top-layer promotion, no anchor-positioning needed at all); this
  * migration's `<dialog>` is promoted straight into the top layer by
  * `showModal()` regardless, which is exactly the containing-block problem
- * `docs/plan.md` Phase 4.4 solved for `popover="auto"` content (see
+ * `dev-docs/plan.md` Phase 4.4 solved for `popover="auto"` content (see
  * `top_layer.rs`'s module doc) -- so the web modal arm now carries the same
  * `dx-anchor-popover`/`position-anchor` wiring the non-modal arm already
  * uses, and `top_layer.rs`'s shared, engine-injected anchor-positioning
@@ -654,7 +654,7 @@ test.describe("Rule 7d — a keyboard activation of a control inside the dialog 
  * layering a second, browser-native toggle onto the same click as this
  * crate's own Rust-driven one risks a double-toggle race with no clean way
  * to verify the outcome without a real device. Tracked as a documented
- * residual risk (`docs/backlog.md`), not silently dropped.
+ * residual risk (`dev-docs/backlog.md`), not silently dropped.
  */
 test.describe("Rule 8 — the opening-gesture false positive: a modal Popover's backdrop-dismiss listener is not attached until the frame after it opens", () => {
   test("black-box: a touch-emulated open of the modal (is_modal: true) Popover stays open for at least 1s and until a real outside tap", async ({

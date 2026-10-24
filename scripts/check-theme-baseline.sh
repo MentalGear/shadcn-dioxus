@@ -2,7 +2,7 @@
 #
 # check-theme-baseline.sh
 #
-# The theme baseline (docs/backlog.md row 145, lane T) moved two things that every component
+# The theme baseline (dev-docs/backlog.md row 145, lane T) moved two things that every component
 # stylesheet used to paste into ONE zero-specificity rule in `preview/assets/dx-components-theme.css`,
 # keyed on the `dx-` class prefix (the row-111 border-box precedent). This gate makes the copies
 # inexpressible again, so the class cannot grow back one stylesheet at a time:

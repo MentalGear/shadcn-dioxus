@@ -21,7 +21,7 @@
  * "needs a real title element, not a visible heading" shape for the same
  * reason -- this is that same rule, copied under this component's own
  * namespace rather than shared, for the same `#[css_module]`-hash-removed
- * reason `.dx-sidebar-sr-only`'s own header comment gives (docs/backlog.md
+ * reason `.dx-sidebar-sr-only`'s own header comment gives (dev-docs/backlog.md
  * row 32). TODO(row 31a): collapses into one shared `dx-sr-only` utility
  * once that lands. */
 .dx-command-sr-only {
@@ -37,7 +37,7 @@
 }
 
 /* Backdrop -- the wrapper `div` `DialogRoot` renders around the content, under
- * this component's own `dx-command-dialog-*` namespace (docs/backlog.md row 32:
+ * this component's own `dx-command-dialog-*` namespace (dev-docs/backlog.md row 32:
  * sharing `.dx-dialog-backdrop` would require linking `dialog/style.css` too --
  * see `component.rs`'s doc for why the primitive carries this class as its own
  * literal default). Same construction as `../dialog/style.css`: on the web arm
@@ -334,7 +334,7 @@ dialog.dx-command-dialog[open][data-state="open"] {
  * a class -- so this rule works for any element the caller passes as
  * `shortcut`, not just the themed `Kbd`/`KbdGroup` pair, and never
  * references a class outside this stylesheet's own `dx-command-...`
- * namespace (docs/backlog.md row 32 / scripts/check-dx-class-prefix.sh). */
+ * namespace (dev-docs/backlog.md row 32 / scripts/check-dx-class-prefix.sh). */
 .dx-command-item [data-command-item-shortcut] {
   flex-shrink: 0;
   margin-inline-start: auto;

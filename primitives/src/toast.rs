@@ -11,7 +11,7 @@ use std::collections::VecDeque;
 use std::time::Duration;
 
 // `document`/`Cell` are only needed for the web-arm's engine-injected
-// baseline stylesheet (`ensure_toast_base_styles`, docs/backlog.md row 44)
+// baseline stylesheet (`ensure_toast_base_styles`, dev-docs/backlog.md row 44)
 // -- same shape as `top_layer.rs`'s `ensure_anchor_positioning_styles`,
 // which this mirrors.
 #[cfg(feature = "web")]
@@ -619,7 +619,7 @@ thread_local! {
 }
 
 /// Installs a minimal, always-applied fallback stylesheet for the raw
-/// primitive's own markup, at most once per WASM instance -- docs/backlog.md
+/// primitive's own markup, at most once per WASM instance -- dev-docs/backlog.md
 /// row 44, construction (2).
 ///
 /// ## The bug this closes
@@ -628,7 +628,7 @@ thread_local! {
 /// `div[role="alertdialog"]` carry no layout CSS of their own; every real
 /// box they get comes from whatever a *consumer's* stylesheet supplies
 /// (`preview/src/components/toast/style.css`'s `.dx-toast-container[popover]`/
-/// `.dx-toast`, for the themed wrapper -- see `docs/preview-composition.md`).
+/// `.dx-toast`, for the themed wrapper -- see `dev-docs/preview-composition.md`).
 /// `preview/src/components/top_layer/component.rs`'s oracle fixture
 /// deliberately composes this raw primitive with no such class at all (its
 /// own header doc: calibrated against native `popover`/top-layer mechanics,
@@ -636,7 +636,7 @@ thread_local! {
 /// whatever box the *engine's own* UA popover-stylesheet defaults
 /// (`[popover] { inset: 0; margin: auto; border: solid; padding: 0.25em;
 /// overflow: auto; background-color: Canvas; }`) plus `fit-content` sizing
-/// happened to produce -- per docs/backlog.md row 44's own root-cause
+/// happened to produce -- per dev-docs/backlog.md row 44's own root-cause
 /// analysis, this is a real gap between engines: Chromium's default gives
 /// it a small (~105x40px) on-screen box (confirmed there by execution
 /// against a real build), while a 2026-09-03 iOS 18 device report of the
@@ -734,7 +734,7 @@ if (!document.getElementById('dx-toast-base-styles')) {
 /// top layer via `popover="manual"` so toasts are never clipped by an
 /// `overflow: hidden` ancestor and always paint above everything else on
 /// the page (WHATWG HTML's top layer), the same fix already shipped for
-/// every other non-modal overlay in this crate (docs/plan.md Phase 4.4,
+/// every other non-modal overlay in this crate (dev-docs/plan.md Phase 4.4,
 /// Migration A slices 1-3).
 ///
 /// `manual`, not `auto` -- deliberately, and unlike every other migrated
@@ -801,7 +801,7 @@ if (!document.getElementById('dx-toast-base-styles')) {
 /// the caller's override as two separate `attr="..."` occurrences in the
 /// same start tag, and WHATWG HTML's "duplicate attribute" parse error has
 /// browsers keep the *first* one instead. Server and client then disagree
-/// about which value won (`docs/conformance-harness.md`'s hydration-parity
+/// about which value won (`dev-docs/conformance-harness.md`'s hydration-parity
 /// Rule 4) -- concretely, a caller's `aria_label` override (two
 /// `ToastProvider`s on one page needing distinct accessible names, e.g.
 /// `preview/src/components/top_layer/component.rs`) rendered as the
@@ -848,7 +848,7 @@ fn ToastRegionRendered(
     // comment on this).
 
     // Installs `ensure_toast_base_styles`'s engine-injected fallback
-    // stylesheet -- see its own doc for the bug this closes (docs/backlog.md
+    // stylesheet -- see its own doc for the bug this closes (dev-docs/backlog.md
     // row 44) and why zero relative-ordering risk exists here (unlike
     // `use_anchor_position_fallback`'s pairing with a same-tick measurement
     // eval, nothing below reads computed layout, so a separate `use_effect`
@@ -866,7 +866,7 @@ fn ToastRegionRendered(
     // overridable) and merge everything else with caller-wins semantics so
     // neither lane ever emits a duplicate attribute.
     //
-    // `style` needs its own pass first, though (docs/backlog.md row 44,
+    // `style` needs its own pass first, though (dev-docs/backlog.md row 44,
     // found by execution): a caller's own plain `style` attribute (e.g. the
     // `top_layer` preview fixture's `ToastProvider { style: "position:
     // fixed; ..." }`) is the *same* `(name, namespace)` key --
@@ -933,7 +933,7 @@ fn ToastRegionRendered(
     onmounted: EventHandler<MountedEvent>,
     children: Element,
 ) -> Element {
-    // Same `style`-clobber fix as the web arm above (docs/backlog.md row
+    // Same `style`-clobber fix as the web arm above (dev-docs/backlog.md row
     // 44) -- kept in both arms for the reason this file's own "Native
     // (Blitz) arm" doc gives for the identical id/attribute-dedup choice:
     // both arms' semantics should agree by construction, not by accident of
@@ -1218,7 +1218,7 @@ pub fn Toast(props: ToastProps) -> Element {
     // `dx-toast-base-item` -- see `ensure_toast_base_styles`'s doc: the
     // plain marker class the web arm's engine-injected fallback stylesheet
     // selects on, giving a raw (unstyled-wrapper) toast a real, nonzero box
-    // cross-engine (docs/backlog.md row 44). Routed through
+    // cross-engine (dev-docs/backlog.md row 44). Routed through
     // `merge_attributes` rather than a bare literal alongside `..props.
     // attributes` below -- a themed wrapper's own `class` (e.g.
     // `preview/src/components/toast/component.rs`'s `class: Styles::
@@ -1230,7 +1230,7 @@ pub fn Toast(props: ToastProps) -> Element {
     // concatenating `class` rule is what lets both live on the one
     // resulting attribute instead.
     // `style` needs the same fold the region above does, and for the same
-    // reason (docs/backlog.md row 44): a caller's own plain `style` arrives
+    // reason (dev-docs/backlog.md row 44): a caller's own plain `style` arrives
     // in `props.attributes` under the *same* `("style", None)` key as this
     // element's own `--toast-index` literal, so spreading both onto one tag
     // makes `merge_attributes` treat them as a single collision and keep
@@ -1262,7 +1262,7 @@ pub fn Toast(props: ToastProps) -> Element {
         }),
         props_attributes,
         // Owned by this component -- role/aria wiring/state must win over
-        // a caller's own attributes (`docs/backlog.md` row 93's
+        // a caller's own attributes (`dev-docs/backlog.md` row 93's
         // duplicate-attribute hazard).
         attributes!(div {
             role: "alertdialog",
@@ -1434,7 +1434,7 @@ listen(el, 'pointercancel', end);
 #[component]
 pub fn ToastContent(props: ToastContentProps) -> Element {
     // Owned by this component -- role/aria wiring must win over a
-    // caller's own attributes (`docs/backlog.md` row 93's
+    // caller's own attributes (`dev-docs/backlog.md` row 93's
     // duplicate-attribute hazard).
     //
     // The live region: `status` (polite) for every type, `alert` (assertive) for an error.
@@ -1476,7 +1476,7 @@ pub fn ToastTitle(props: ToastTitleProps) -> Element {
     // Owned by this component -- `id` is the labelledby target `Toast`'s
     // `aria-labelledby` reads back, so it must win over a caller's own
     // `id` rather than risk the SSR duplicate-attribute hazard
-    // (`docs/backlog.md` row 93 names this exact site).
+    // (`dev-docs/backlog.md` row 93 names this exact site).
     let attributes = merge_attributes(vec![
         props.attributes,
         attributes!(div {
@@ -1500,7 +1500,7 @@ pub fn ToastDescription(props: ToastDescriptionProps) -> Element {
     let children = props.children.unwrap_or_else(|| rsx! { {description} });
 
     // Owned by this component -- see `ToastTitle`'s identical
-    // construction above (`docs/backlog.md` row 93 names this exact site).
+    // construction above (`dev-docs/backlog.md` row 93 names this exact site).
     let attributes = merge_attributes(vec![props.attributes, attributes!(div { id })]);
 
     rsx! {
@@ -1518,7 +1518,7 @@ pub fn ToastCloseButton(props: ToastCloseButtonProps) -> Element {
     // `aria-label`/`type="button"` are overridable defaults, not owned
     // state (construction policy) -- caller wins, so this is
     // `merge_attributes(vec![defaults, caller])`, not
-    // `vec![caller, owned]` (`docs/backlog.md` row 93).
+    // `vec![caller, owned]` (`dev-docs/backlog.md` row 93).
     let attributes = merge_attributes(vec![
         attributes!(button {
             aria_label: "close",

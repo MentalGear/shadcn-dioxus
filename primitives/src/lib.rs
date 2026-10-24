@@ -105,7 +105,7 @@ pub mod virtual_list;
 /// `#[cfg(not(feature = "web"))]` arms) are its only remaining
 /// consumers -- every web-arm modal overlay now uses the native-dialog
 /// engine (`showModal()`'s own focus trap/restore/inertness/top-layer),
-/// completing the two-engine overlay architecture (docs/plan.md). `#[cfg]`
+/// completing the two-engine overlay architecture (dev-docs/plan.md). `#[cfg]`
 /// -gated on this crate's `web` feature (not `target_family = "wasm"` --
 /// see `dev-docs/reference/platform-rationale.md` Caveat 1 for why that axis was
 /// corrected) so that neither the wasm client nor a host build with `web`
@@ -396,7 +396,7 @@ pub fn use_previous<T: Clone + PartialEq + 'static>(value: ReadSignal<T>) -> Mem
 /// Ported from dignifiedquire/dx-components (MIT OR Apache-2.0),
 /// `primitives/src/lib.rs` @ 5af3cc292559a0e8d73c7b9a827c4ca08ef34d99
 /// (`use_refocus_on_close_unless`). Adapted: none -- taken as-is; only the
-/// per-component wiring of `interacted_outside` is new (docs/plan.md
+/// per-component wiring of `interacted_outside` is new (dev-docs/plan.md
 /// Phase 3.1).
 ///
 /// Matches Radix's `onCloseAutoFocus` on `DropdownMenuContent`/
@@ -752,7 +752,7 @@ fn use_dialog_close_sync(
 /// this exact "click outside to close" pattern) tells the two apart
 /// correctly regardless of `event.target`.
 ///
-/// Originally `dialog.rs`-only (Phase 4.2, docs/plan.md); moved here so
+/// Originally `dialog.rs`-only (Phase 4.2, dev-docs/plan.md); moved here so
 /// `popover.rs`'s modal web arm (native-dialog Popover migration) can share
 /// it with `alert_dialog.rs`/`dialog.rs` rather than reimplementing it --
 /// the same trio as [`use_dialog_open_driver`]/[`use_dialog_close_sync`].
@@ -798,7 +798,7 @@ fn use_dialog_close_sync(
 /// styling) then forces the still-open nested dialog out of the top layer,
 /// which fires its own `close` event a moment later too -- the nested dialog
 /// visibly opens and then immediately closes, with focus never durably
-/// landing on anything inside it. See `docs/plan.md`/this crate's
+/// landing on anything inside it. See `dev-docs/plan.md`/this crate's
 /// `native-dialog.spec.ts` Rule 7 for the oracle rules this fixes.
 ///
 /// ## The opening-gesture false positive (user device report, 2026-09-03)
@@ -1202,7 +1202,7 @@ fn chain_listeners(
 /// `ContextMenuTrigger`'s fixed touch-suppression CSS alongside the preview
 /// app's themed wrapper's shorthand `padding`/`background`/etc. produced
 /// exactly this — two `style` attributes on one tag, WHATWG HTML's
-/// duplicate-attribute parse error, `docs/conformance-harness.md`
+/// duplicate-attribute parse error, `dev-docs/conformance-harness.md`
 /// hydration-parity Rule 4). `merge_attributes` cannot help either: it
 /// dedupes by `(name, namespace)`, and these two forms use different
 /// `name`s (`"style"` vs `"padding"`/`"background"`/...), so from its

@@ -65,7 +65,7 @@
  *                      role/items graded here, not the `menubar`-role
  *                      top-level container. Added in the same pass that
  *                      routed `navbar.rs`'s role literals through
- *                      `menu_semantics` -- docs/backlog.md rows 24, 25, 41 --
+ *                      `menu_semantics` -- dev-docs/backlog.md rows 24, 25, 41 --
  *                      since a fourth hand-written role set was exactly what
  *                      this file exists to catch)
  *
@@ -104,7 +104,7 @@
  * (`primitives/src/context_menu.rs`, `primitives/src/menubar.rs` -- grepped,
  * zero matches), unlike `DropdownMenu`'s, which does. That is a real,
  * pre-existing accessible-name gap distinct from the listbox/option defect
- * this file's DropdownMenu rows exist to catch (`docs/backlog.md` row 24) --
+ * this file's DropdownMenu rows exist to catch (`dev-docs/backlog.md` row 24) --
  * filed as a fresh backlog candidate, not asserted here, so as not to turn
  * an unrelated, already-latent gap into a manufactured red on components
  * this task is not fixing. Likewise, `Menubar`'s own top-level
@@ -343,7 +343,7 @@ test.describe("APG Menu pattern (context-menu invocation) — ContextMenu", () =
 
     const menu = page.getByRole("menu");
     await expect(menu).toHaveAttribute("data-state", "open");
-    // docs/backlog.md row 53: `ContextMenuContentRendered`'s aria-labelledby
+    // dev-docs/backlog.md row 53: `ContextMenuContentRendered`'s aria-labelledby
     // now comes from the shared `menu_root::content_labelledby_attributes`
     // helper (same construction as DropdownMenu's identical assertion
     // above) -- asserted here so a future drift between the two hosts'
@@ -384,7 +384,7 @@ test.describe("APG Menu and Menubar pattern — Menubar submenus", () => {
     // identical disambiguation for the same two-elements-both-role-menu shape.
     const fileMenu = page.locator(".dx-menubar-content");
     await expect(fileMenu).toHaveAttribute("data-state", "open");
-    // docs/backlog.md row 53: `MenubarContentRendered`'s aria-labelledby
+    // dev-docs/backlog.md row 53: `MenubarContentRendered`'s aria-labelledby
     // now comes from the shared `menu_root::content_labelledby_attributes`
     // helper too (same construction as DropdownMenu's/ContextMenu's
     // identical assertions above) -- asserted here so a future drift

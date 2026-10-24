@@ -1,7 +1,7 @@
 use super::super::component::AspectRatio;
 use dioxus::prelude::*;
 
-// docs/backlog.md row 32: no `#[css_module]` of its own here, and no
+// dev-docs/backlog.md row 32: no `#[css_module]` of its own here, and no
 // `document::Link` needed either -- this `Demo` always renders the real
 // `AspectRatio` themed wrapper below, which (as of this migration) now
 // carries its own `document::Link` for `style.css`. `document::Link` dedupes

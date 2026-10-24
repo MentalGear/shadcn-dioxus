@@ -44,7 +44,7 @@
  * cites ("An element with role menu either has: aria-labelledby set to a
  * value that refers to the menuitem or button that controls its display.
  * A label provided by aria-label.") -- not re-derived here, just applied to
- * a submenu's own popup instead of a root menu's. `docs/backlog.md` row 25
+ * a submenu's own popup instead of a root menu's. `dev-docs/backlog.md` row 25
  * is the earlier fix for exactly this gap on `ContextMenu`/`Menubar`'s
  * *existing* submenu-shaped popups; this file is the same rule applied to
  * the genuinely new `*SubContent` components row 68 adds, so the gap row
@@ -460,7 +460,7 @@ test.describe("APG Menu and Menubar pattern — DropdownMenu.Sub", () => {
     ).toContainText(new RegExp(renamed, "i"));
   });
 
-  // REGRESSION (`docs/backlog.md` row 85). "Calling .focus() directly on a
+  // REGRESSION (`dev-docs/backlog.md` row 85). "Calling .focus() directly on a
   // submenu's own sub-trigger element (as a test driving focus
   // programmatically does, and as an assistive-technology focus-
   // restoration path plausibly could) closes the entire menu and reverts
@@ -658,7 +658,7 @@ test.describe("APG Menu and Menubar pattern — ContextMenu.Sub", () => {
     ).toContainText(new RegExp(renamed, "i"));
   });
 
-  // CONSTRUCTION-PARITY regression, not a reproduced defect. `docs/backlog.md`
+  // CONSTRUCTION-PARITY regression, not a reproduced defect. `dev-docs/backlog.md`
   // row 85 reports this closing-everything symptom for "BOTH DropdownMenu
   // and ContextMenu" -- this lane's own investigation (`$S/round4/fix-menu-
   // toggle/`) could reproduce it for `DropdownMenu`/`DropdownMenu.Sub` (see

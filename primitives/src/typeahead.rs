@@ -2,7 +2,7 @@
 //! Menubar" pattern's menu family: [`crate::dropdown_menu`],
 //! [`crate::context_menu`] and [`crate::menubar`] (and, where the
 //! per-submenu collection already makes it free, their own
-//! [`crate::menu_sub`] submenus). `docs/backlog.md` row 11, `docs/plan.md`
+//! [`crate::menu_sub`] submenus). `dev-docs/backlog.md` row 11, `dev-docs/plan.md`
 //! Phase 6.
 //!
 //! # Rule source

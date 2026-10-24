@@ -78,7 +78,7 @@
   --dx-toggle-min-width: var(--dx-control-height-lg);
 }
 
-/* docs/backlog.md row 89: `:hover` and `[data-state="on"]` both add exactly
+/* dev-docs/backlog.md row 89: `:hover` and `[data-state="on"]` both add exactly
    one selector component on top of `.dx-toggle`, so they tie at (0,2,0) --
    unlike calendar/tabs's own row 89 fix (an *accidental* extra-specificity
    bump from a stray `:not(...)`), this is a genuine tie, broken only by

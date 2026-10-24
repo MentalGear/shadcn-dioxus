@@ -23,7 +23,7 @@
 //!   controls for, so there is no second hidden input here at all. The boxes
 //!   ([`InputOtpSlot`]) are a purely visual, `aria-hidden` overlay that mirrors
 //!   this one real input's value and caret position; per
-//!   `docs/conformance-harness.md`'s tier-2 HTML rules, the real, focusable,
+//!   `dev-docs/conformance-harness.md`'s tier-2 HTML rules, the real, focusable,
 //!   labelled `<input>` is the accessible source of truth.
 //!
 //! The caret-position bridge (`use_caret_sync`, DOM caret index -> Rust

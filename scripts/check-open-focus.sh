@@ -3,7 +3,7 @@
 # check-open-focus.sh
 #
 # Where focus goes when an overlay opens, and whether it rings, is decided in ONE place
-# (docs/backlog.md rows 206 and 226): `primitives/src/modality.rs` writes the interaction modality
+# (dev-docs/backlog.md rows 206 and 226): `primitives/src/modality.rs` writes the interaction modality
 # (keyboard | mouse | touch | pen) to `<html data-dx-modality>` once, `dxOpenFocus` there is the one
 # open-focus policy (`use_dialog_open_driver`, the non-modal Popover's show script, and the Command
 # palette through `data-dx-autofocus`), and `dx-components-theme.css` ("Focus modality") draws a ring

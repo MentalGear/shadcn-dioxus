@@ -40,7 +40,7 @@ test('hover opens the panel', async ({ page }) => {
   await expect(trigger).toHaveAttribute('aria-expanded', 'true');
 });
 
-// docs/backlog.md row 189. Hover opens the panel after the 150ms intent delay; the click a user
+// dev-docs/backlog.md row 189. Hover opens the panel after the 150ms intent delay; the click a user
 // then makes on the same trigger used to TOGGLE it shut, so the panel flashed open then closed.
 // A click on a panel the pointer opened confirms it (it stays open); the click after that is an
 // ordinary toggle. (Radix itself closes here and only blocks hover re-opening; Base UI's

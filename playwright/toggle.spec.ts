@@ -23,7 +23,7 @@ test('test', async ({ page }) => {
   await expect(toggleElement).toHaveAttribute('data-state', 'off');
 });
 
-// HARDENING (docs/backlog.md row 89), not a reproduced defect: `.dx-toggle:hover`
+// HARDENING (dev-docs/backlog.md row 89), not a reproduced defect: `.dx-toggle:hover`
 // and `.dx-toggle[data-state="on"]` tie at specificity (0,2,0) -- unlike
 // calendar/tabs's own row 89 fix (an accidental extra-specificity bump from
 // a stray `:not(...)`), this was a genuine tie broken only by source order,

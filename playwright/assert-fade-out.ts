@@ -106,7 +106,7 @@ const NEAR_ZERO_OPACITY = 0.05;
  * never increases, ends ~0, unmounts in time).
  */
 
-/** The element must be unmounted within this long of the close trigger (docs/backlog.md row 7's "~1.5s"). */
+/** The element must be unmounted within this long of the close trigger (dev-docs/backlog.md row 7's "~1.5s"). */
 const MAX_UNMOUNT_MS = 1500;
 
 /** Hard cap on the in-page sampling loop itself -- comfortably past `MAX_UNMOUNT_MS` so a genuine "too slow to unmount" failure is captured as data (`unmountedWithinCap: false`), not silently truncated at exactly the assertion threshold. */
@@ -291,7 +291,7 @@ export function analyzeFadeSamples(capture: FadeCapture): FadeOutReport {
 }
 
 /**
- * The three assertions docs/backlog.md row 7 asks for: (a) it FADES rather
+ * The three assertions dev-docs/backlog.md row 7 asks for: (a) it FADES rather
  * than snaps -- a real opacity animation/transition (duration > 0) started on
  * the closing content, stays displayed and (web arm) `:popover-open` the
  * whole time, and its opacity never increases [the per-frame invariants are

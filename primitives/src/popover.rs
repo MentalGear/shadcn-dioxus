@@ -1,7 +1,7 @@
 //! Defines the [`PopoverRoot`] component and its sub-components.
 //!
 //! ## Native `<dialog>` modality for the modal arm (two-engine completion,
-//! docs/plan.md)
+//! dev-docs/plan.md)
 //!
 //! `PopoverModalContent` is cfg-split the same way `dialog.rs`'s
 //! `DialogContentModal`/`alert_dialog.rs`'s `AlertDialogContent` are
@@ -25,7 +25,7 @@
 //! wrapper, no top-layer promotion involved. A `<dialog>` shown via
 //! `showModal()` is promoted straight into the top layer regardless (its
 //! containing block becomes the viewport, same class of problem
-//! `docs/plan.md` Phase 4.4 hit for `popover="auto"` content -- see
+//! `dev-docs/plan.md` Phase 4.4 hit for `popover="auto"` content -- see
 //! `top_layer.rs`'s module doc), and the UA stylesheet's `dialog:modal {
 //! position: fixed; inset: 0; margin: auto; }` actively re-centers it. So
 //! the web modal arm below carries the exact same `dx-anchor-popover`
@@ -262,7 +262,7 @@ pub fn PopoverRoot(props: PopoverRootProps) -> Element {
     });
 
     // Owned by this component -- open state must win over a caller's own
-    // attributes (`docs/backlog.md` row 93's duplicate-attribute hazard).
+    // attributes (`dev-docs/backlog.md` row 93's duplicate-attribute hazard).
     let attributes = merge_attributes(vec![
         props.attributes,
         attributes!(div {
@@ -437,7 +437,7 @@ pub fn PopoverContentRendered(
 
     // The scroll lock is NOT taken here. `use_scroll_lock` lives in the
     // modal arms (`PopoverModalContent`, both targets) so the non-modal arm
-    // -- the default, whose page must stay scrollable (docs/backlog.md row
+    // -- the default, whose page must stay scrollable (dev-docs/backlog.md row
     // 169) -- cannot hold, or even prepare, the lock by construction rather
     // than by a gate that a later edit could drop.
 
@@ -503,7 +503,7 @@ fn PopoverModalContent(
     let is_modal = ctx.is_modal;
 
     // Lock page scroll while the popover is open and modal. See
-    // docs/plan.md Phase 3.2.
+    // dev-docs/plan.md Phase 3.2.
     let scroll_lock_active = use_memo(move || is_modal() && open());
     crate::scroll_lock::use_scroll_lock(scroll_lock_active);
 
@@ -533,7 +533,7 @@ fn PopoverModalContent(
     });
 
     // Owned by this component -- dialog role/aria wiring/state must win
-    // over a caller's own attributes (`docs/backlog.md` row 93's
+    // over a caller's own attributes (`dev-docs/backlog.md` row 93's
     // duplicate-attribute hazard).
     //
     // `data-dx-overlay="off"` is the shared overlay switch (`PopoverRootProps::overlay`). A `div`
@@ -601,7 +601,7 @@ fn PopoverModalContent(
     let set_open = ctx.set_open;
     let is_modal = ctx.is_modal;
 
-    // Lock page scroll while the popover is open and modal (docs/plan.md
+    // Lock page scroll while the popover is open and modal (dev-docs/plan.md
     // Phase 3.2). Must stay above `use_dialog_open_driver` below, which finds
     // this lock through `use_modal_closed` to release it once the exit has
     // really finished.
@@ -640,10 +640,10 @@ fn PopoverModalContent(
     // one `style` attribute -- see `top_layer::anchored_content_attributes`'s
     // doc for why a bare `style: position_anchor_style(&id)` literal
     // alongside `..attributes` is the duplicate-`style` hazard
-    // (`docs/conformance-harness.md` hydration-parity Rule 4).
+    // (`dev-docs/conformance-harness.md` hydration-parity Rule 4).
     let attributes = crate::top_layer::anchored_content_attributes(&id, attributes);
     // Owned by this component -- see the native arm's identical
-    // construction above (`docs/backlog.md` row 93).
+    // construction above (`dev-docs/backlog.md` row 93).
     //
     // `data-dx-overlay="off"` (`PopoverRootProps::overlay`, default off) is the shared overlay
     // switch: the theme's `dialog[data-dx-overlay="off"]::backdrop` rule turns this dialog's
@@ -674,7 +674,7 @@ fn PopoverModalContent(
     }
 }
 
-/// Web arm (Phase 4.4, docs/plan.md): render the non-modal content as a
+/// Web arm (Phase 4.4, dev-docs/plan.md): render the non-modal content as a
 /// `<dialog popover="auto">`, per MDN's own guidance that `<dialog>` and the
 /// Popover API "overlap" and are meant to compose -- a `<dialog>` supplies
 /// dialog semantics (an implicit ARIA role of `"dialog"`, non-modal here
@@ -690,7 +690,7 @@ fn PopoverModalContent(
 /// that is required for correctness, not just style, on this arm.
 ///
 /// Uses `crate::top_layer::use_popover_shown_while_mounted`, not
-/// `use_popover_sync` (docs/backlog.md row 19): this content is mounted by
+/// `use_popover_sync` (dev-docs/backlog.md row 19): this content is mounted by
 /// `render()` in `PopoverContent` above -- `use_animated_open` -- which
 /// keeps it in the DOM with `data-state="closed"` for its whole CSS close
 /// animation (plus a settle hold) before actually unmounting it.
@@ -780,10 +780,10 @@ fn PopoverNonModalContent(
     // one `style` attribute -- see `top_layer::anchored_content_attributes`'s
     // doc for why a bare `style: position_anchor_style(&id)` literal
     // alongside `..attributes` is the duplicate-`style` hazard
-    // (`docs/conformance-harness.md` hydration-parity Rule 4).
+    // (`dev-docs/conformance-harness.md` hydration-parity Rule 4).
     let attributes = crate::top_layer::anchored_content_attributes(&id, attributes);
     // Owned by this component -- top-layer wiring/aria/state must win
-    // over a caller's own attributes (`docs/backlog.md` row 93's
+    // over a caller's own attributes (`dev-docs/backlog.md` row 93's
     // duplicate-attribute hazard).
     let attributes = merge_attributes(vec![
         attributes,
@@ -828,7 +828,7 @@ fn PopoverNonModalContent(
     use_outside_dismiss(ctx.root_id, move || set_open.call(false));
 
     // Owned by this component -- see the web arm's identical construction
-    // above (`docs/backlog.md` row 93).
+    // above (`dev-docs/backlog.md` row 93).
     let attributes = merge_attributes(vec![
         attributes,
         attributes!(div {
@@ -936,7 +936,7 @@ pub fn PopoverTrigger(props: PopoverTriggerProps) -> Element {
     // its copy out of the spread here just stops it from ALSO being
     // serialized as a second, duplicate `id="..."` on this same start tag
     // in the SSR'd HTML (WHATWG HTML's duplicate-attribute parse error --
-    // `docs/conformance-harness.md` hydration-parity Rule 4; the top-layer
+    // `dev-docs/conformance-harness.md` hydration-parity Rule 4; the top-layer
     // oracle fixture's `id: "clip-popover-trigger"` et al. hit exactly
     // this). The single `id,` binding above still ends up holding the
     // caller's value once the `use_effect` above has run, same as before

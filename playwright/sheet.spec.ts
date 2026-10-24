@@ -40,7 +40,7 @@ test('sheet basic interactions', async ({ page }) => {
   const closeButton = sheet.getByRole('button').last();
   await expect(closeButton).toBeFocused();
 
-  // Phase 4.2 (docs/plan.md): Sheet composes the modal Dialog primitive,
+  // Phase 4.2 (dev-docs/plan.md): Sheet composes the modal Dialog primitive,
   // now a native `<dialog>` on the web arm. Chromium's own focus trap parks
   // focus on `<body>` for exactly one Tab stop after the last focusable
   // element before wrapping to the first

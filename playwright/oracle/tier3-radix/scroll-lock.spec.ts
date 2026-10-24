@@ -1,6 +1,6 @@
 /**
  * ORACLE (tier 3 -- Radix-parity, labelled opinion; see
- * docs/conformance-harness.md "Tier 3 -- Radix-parity" and
+ * dev-docs/conformance-harness.md "Tier 3 -- Radix-parity" and
  * playwright/oracle/tier3-radix/README.md's rule-source policy).
  *
  * Rule: while a modal surface is open, the page behind it must not scroll.
@@ -25,16 +25,16 @@
  * `overlay.rs` unlock-flash guard).
  *
  * STATUS AT WRITE TIME: RED. No scroll lock exists anywhere in this tree
- * before docs/plan.md Phase 3.2 lands -- every test below is expected to
+ * before dev-docs/plan.md Phase 3.2 lands -- every test below is expected to
  * fail against current `main`, and the nested-dialog case has no fixture at
  * all until Phase 3.2 adds one (see the dialog demo's "Open Nested Dialog"
  * button, `preview/src/components/dialog/variants/main/mod.rs`).
  *
- * UPDATE 2026-09-18 (docs/backlog.md row 9): `Select`'s open listbox is now
+ * UPDATE 2026-09-18 (dev-docs/backlog.md row 9): `Select`'s open listbox is now
  * wired to this same scroll lock too -- see "Select locks and releases page
  * scroll" below. It was deliberately left out of the original Phase 3.2 pass
  * -- "Neither source fork covered it; noted in tier-3 oracle header"
- * (docs/backlog.md row 9's own "Why" column -- THIS file, the paragraph just
+ * (dev-docs/backlog.md row 9's own "Why" column -- THIS file, the paragraph just
  * replaced by this update, was that "tier-3 oracle header" note) -- and this
  * file's Select case is this repo's own construction, opt-out via a
  * `scroll_lock` prop (default `true`, matching Radix) on `Select`/
@@ -43,7 +43,7 @@
  * this on.
  * `Menubar` is correctly excluded throughout -- it is never modal.
  *
- * UPDATE 2026-09-18 (docs/backlog.md row 72, following up on row 9's own
+ * UPDATE 2026-09-18 (dev-docs/backlog.md row 72, following up on row 9's own
  * "NOT COVERED HERE" note): the `scroll_lock=false` opt-out itself now has a
  * fixture and a case too -- see "Select scroll_lock=false opt-out releases
  * page scroll" below, against a new labelled instance on the `top_layer`
@@ -376,7 +376,7 @@ test.describe("ContextMenu locks and releases page scroll", () => {
 });
 
 /**
- * docs/backlog.md row 9: `Select`'s open listbox now locks page scroll too,
+ * dev-docs/backlog.md row 9: `Select`'s open listbox now locks page scroll too,
  * via the same `ScrollLockGuard`/`use_scroll_lock` mechanism as every other
  * `test.describe` block above -- see this file's header doc, "UPDATE
  * 2026-09-18", for why this was left out of the original pass and how it's
@@ -393,7 +393,7 @@ test.describe("Select locks and releases page scroll", () => {
     const rightBefore = await rightEdgeMarkerRight(page);
 
     // Same role/locator convention as select.spec.ts's `singleSelectTrigger`
-    // -- docs/backlog.md row 8 gave the trigger role="combobox".
+    // -- dev-docs/backlog.md row 8 gave the trigger role="combobox".
     const trigger = demoRole(page, "combobox");
     await trigger.click();
     const listbox = page.getByRole("listbox");
@@ -412,7 +412,7 @@ test.describe("Select locks and releases page scroll", () => {
   });
 
   /**
-   * docs/backlog.md rows 9/72: the `scroll_lock=false` opt-out itself had no
+   * dev-docs/backlog.md rows 9/72: the `scroll_lock=false` opt-out itself had no
    * fixture exercising it (see this file's own former "NOT COVERED HERE"
    * note, which this test replaces). `preview/src/components/top_layer/
    * component.rs`'s "Select scroll_lock opt-out" section adds a labelled,

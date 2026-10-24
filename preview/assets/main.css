@@ -19,7 +19,7 @@
   --dx-font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --dx-font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", "Menlo", "Monaco", "Consolas", monospace;
 
-  /* axe `color-contrast` (docs/backlog.md row 39, filed 2026-09-03): the
+  /* axe `color-contrast` (dev-docs/backlog.md row 39, filed 2026-09-03): the
    * previous #2b7fff, used as `color` (not a border/background) in 11
    * rules across this file, measured 3.76:1 on white -- below WCAG's
    * 4.5:1 for normal text. #0065ff keeps the same hue/saturation, darker
@@ -78,7 +78,7 @@ html {
      (`oracle/tier2-html/native-dialog.spec.ts` 6c/6d/6e, SSG lane only):
      a real user hitting this needs no test harness at all, just a page
      whose sticky header is tall enough to reach whatever landed at the
-     top. See `docs/conformance-harness.md`'s hydration-parity section for
+     top. See `dev-docs/conformance-harness.md`'s hydration-parity section for
      the specific regression this closes. */
   scroll-padding-top: var(--dx-navbar-height);
 
@@ -221,7 +221,7 @@ main[tabindex="-1"]:focus {
        Found by execution: the touch-focus-zoom oracle stayed red on every
        route through the navbar's language <select> until this won the
        cascade. Scoped to coarse pointers only, so desktop sizes are
-       untouched. `var(--dx-text-base)` (docs/backlog.md row 31a) resolves
+       untouched. `var(--dx-text-base)` (dev-docs/backlog.md row 31a) resolves
        to the same `16px`/`1rem` this was hardcoded to -- it is both the
        type scale's base step and this touch floor, one token. Custom
        property resolution doesn't depend on `<link>` order (there is
@@ -276,7 +276,7 @@ main[tabindex="-1"]:focus {
  * rather than relying on any single element's own class, since several of
  * these roles are rendered by primitives this app also uses directly (the
  * `top_layer` and `form` fixtures compose `dioxus_primitives::` without
- * this app's themed wrapper classes -- docs/preview-composition.md).
+ * this app's themed wrapper classes -- dev-docs/preview-composition.md).
  *
  * Oracle: `playwright/oracle/tier2-html/touch-double-tap.spec.ts`.
  */
@@ -464,7 +464,7 @@ summary,
   white-space: pre;
 }
 
-/* axe `color-contrast` (docs/backlog.md row 39 residue): the vendored
+/* axe `color-contrast` (dev-docs/backlog.md row 39 residue): the vendored
  * `github-light` syntax-highlighter theme's comment token, `#6e7781`,
  * measures 4.39:1 against this block's own background above
  * (`--primary-color-1`, `#fbfbfb` light) -- below WCAG AA's 4.5:1 for

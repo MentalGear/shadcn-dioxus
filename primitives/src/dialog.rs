@@ -1,6 +1,6 @@
 //! Defines the [`DialogRoot`] component and its sub-components.
 //!
-//! ## Native `<dialog>` modality (Phase 4.2, docs/plan.md)
+//! ## Native `<dialog>` modality (Phase 4.2, dev-docs/plan.md)
 //!
 //! [`DialogContent`] dispatches, per render, to one of two real
 //! child-component boundaries depending on `is_modal` -- the same pattern
@@ -14,11 +14,11 @@
 //! unconditionally while any instance using it is mounted, which would fight
 //! the native `<dialog>`'s own `cancel`/`close` handling if a gated-callback
 //! version of `use_global_escape_listener` were merely installed and told to
-//! do nothing (docs/backlog.md row 3's warning, given when Phase 4.4 landed
+//! do nothing (dev-docs/backlog.md row 3's warning, given when Phase 4.4 landed
 //! the same lesson for Popover).
 //!
 //! `DialogContentNonModal` (`is_modal: false`) is unchanged from before this
-//! slice on both targets, per docs/plan.md Phase 4.2's scope.
+//! slice on both targets, per dev-docs/plan.md Phase 4.2's scope.
 //! `DialogContentModal` (`is_modal: true`) is cfg-split
 //! (`dev-docs/archive/research/phase4-spike-findings.md` Construction B):
 //! - `#[cfg(not(feature = "web"))]`: byte-for-byte the pre-existing
@@ -257,7 +257,7 @@ pub fn DialogRoot(props: DialogRootProps) -> Element {
     let render = use_animated_open(id, open);
 
     // Owned by this component -- open state must win over a caller's own
-    // attributes (`docs/backlog.md` row 93's duplicate-attribute hazard).
+    // attributes (`dev-docs/backlog.md` row 93's duplicate-attribute hazard).
     let attributes = merge_attributes(vec![
         props.attributes,
         attributes!(div {
@@ -371,7 +371,7 @@ pub fn DialogContent(props: DialogContentProps) -> Element {
 
     // Lock page scroll while the dialog is open and modal -- native
     // `<dialog>`/focus-trap semantics don't cover this. See
-    // docs/plan.md Phase 3.2.
+    // dev-docs/plan.md Phase 3.2.
     let scroll_lock_active = use_memo(move || is_modal() && open());
     crate::scroll_lock::use_scroll_lock(scroll_lock_active);
 
@@ -416,7 +416,7 @@ pub fn DialogContent(props: DialogContentProps) -> Element {
 }
 
 /// `is_modal: false` arm -- unchanged from before Phase 4.2 on both targets
-/// (docs/plan.md Phase 4.2 scopes native `<dialog>` to the modal path only).
+/// (dev-docs/plan.md Phase 4.2 scopes native `<dialog>` to the modal path only).
 #[component]
 fn DialogContentNonModal(
     id: Memo<String>,
@@ -440,7 +440,7 @@ fn DialogContentNonModal(
     });
 
     // Owned by this component -- dialog role/aria wiring must win over a
-    // caller's own attributes (`docs/backlog.md` row 93's
+    // caller's own attributes (`dev-docs/backlog.md` row 93's
     // duplicate-attribute hazard).
     let attributes = merge_attributes(vec![
         attributes,
@@ -509,7 +509,7 @@ fn DialogContentModal(
     });
 
     // Owned by this component -- see `DialogContentNonModal`'s identical
-    // construction above (`docs/backlog.md` row 93).
+    // construction above (`dev-docs/backlog.md` row 93).
     let attributes = merge_attributes(vec![
         attributes,
         attributes!(div {
@@ -532,7 +532,7 @@ fn DialogContentModal(
     }
 }
 
-/// `is_modal: true` arm, web target (Phase 4.2, docs/plan.md) -- a real
+/// `is_modal: true` arm, web target (Phase 4.2, dev-docs/plan.md) -- a real
 /// `<dialog>` opened with `showModal()`. `open` is never bound as an
 /// attribute here (see this module's doc comment); the browser supplies the
 /// focus trap, focus restore, background inertness, and top-layer
@@ -568,7 +568,7 @@ fn DialogContentModal(
     });
 
     // Owned by this component -- see `DialogContentNonModal`'s identical
-    // construction above (`docs/backlog.md` row 93).
+    // construction above (`dev-docs/backlog.md` row 93).
     let attributes = merge_attributes(vec![
         attributes,
         attributes!(dialog {

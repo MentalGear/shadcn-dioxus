@@ -148,7 +148,7 @@
 /*
  * `> button`/`> input` (element selectors, not classes) rather than naming
  * `Checkbox`/`Switch`/`RadioItem`'s own `dx-*` classes directly -- all
- * three render as `<button>` (docs/preview-composition.md), and `Input`/
+ * three render as `<button>` (dev-docs/preview-composition.md), and `Input`/
  * `NativeSelect` as `<input>`/`<select>`, so this reaches every control
  * `Field` is meant to hold without this stylesheet ever selecting outside
  * its own `dx-field-*` namespace (scripts/check-dx-class-prefix.sh).

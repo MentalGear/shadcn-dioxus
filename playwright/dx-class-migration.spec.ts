@@ -6,7 +6,7 @@ import { gotoHydrated } from "./hydration";
  * Row 32 migration oracle — every themed component must render UNHASHED
  * `dx-` classes AND still have its own stylesheet actually delivered.
  *
- * Rule source: this repo's own row 32 decision (`docs/backlog.md`) — plain
+ * Rule source: this repo's own row 32 decision (`dev-docs/backlog.md`) — plain
  * `dx-`-prefixed CSS with no `#[css_module]` class hashing. Not an external
  * conformance rule, so this lives with the component specs rather than under
  * `oracle/` (whose three tiers are APG / HTML / Radix-opinion).
@@ -32,7 +32,7 @@ import { gotoHydrated } from "./hydration";
  *   2. **Unhashed** — no element anywhere on the page carries a class of the
  *      shape `dx-…-<8 hex>`, the exact signature `#[css_module]` used to
  *      append (`.dx-checkbox` -> `.dx-checkbox-7ca1a710`).
- *   3. **Composed delivery** (docs/backlog.md row 51) — assertion 1 only ever
+ *   3. **Composed delivery** (dev-docs/backlog.md row 51) — assertion 1 only ever
  *      checks the CURRENT route's own prefix, so it cannot see a themed
  *      component silently losing a DIFFERENT component's CSS by composing
  *      that other component's building blocks directly (`date_picker`
@@ -220,7 +220,7 @@ for (const name of MIGRATED.filter((n) => SAMPLED.has(n))) {
       `found css_module-style hashed class names still in the DOM`,
     ).toEqual([]);
 
-    // Assertion 3 (docs/backlog.md row 51): every OTHER known component's
+    // Assertion 3 (dev-docs/backlog.md row 51): every OTHER known component's
     // prefix that actually shows up on a rendered element's class list must
     // be delivered too -- catches a themed component composing another
     // component's building blocks (rather than its top-level entry point)

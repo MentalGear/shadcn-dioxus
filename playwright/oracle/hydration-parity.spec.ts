@@ -790,7 +790,7 @@ test.describe("hydration parity — SSG server markup vs. wasm client", () => {
   // own default (`toast.rs`). That subject left `/` on 2026-09-03 when
   // `preview/src/main.rs`'s `ComponentGallery` stopped embedding the
   // `top_layer` fixture on the home page (it is an oracle probe surface,
-  // not an installable component -- see docs/backlog.md's landed row and
+  // not an installable component -- see dev-docs/backlog.md's landed row and
   // this file's own Rule 4 doc note above); `/component/?name=X&` cannot
   // serve as a replacement fixture for the reason Rule 4's doc already
   // gives (this app's SSG build does not prerender per query-string value).

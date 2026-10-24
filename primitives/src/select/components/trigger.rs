@@ -12,7 +12,7 @@ pub struct SelectTriggerProps {
     /// The ID of the trigger button. If not provided, an internally
     /// generated ID is used -- see `SelectTrigger`'s use of `use_id_or`
     /// below for why this is a typed field rather than left to
-    /// `GlobalAttributes` alone (docs/backlog.md row 36).
+    /// `GlobalAttributes` alone (dev-docs/backlog.md row 36).
     pub id: ReadSignal<Option<String>>,
 
     /// Additional attributes for the trigger button
@@ -77,7 +77,7 @@ pub fn SelectTrigger(props: SelectTriggerProps) -> Element {
     let mut ctx = use_context::<SelectContext>();
     let open = ctx.selectable.open;
 
-    // docs/backlog.md row 36: `ctx.selectable.trigger_id` is the same
+    // dev-docs/backlog.md row 36: `ctx.selectable.trigger_id` is the same
     // signal `SelectList`'s `aria-labelledby` (`list.rs`) and the anchor-
     // position fallback (`ctx.selectable.trigger_id.cloned()` below and in
     // `list.rs`) both read back -- so a caller-supplied `id` here must
@@ -98,7 +98,7 @@ pub fn SelectTrigger(props: SelectTriggerProps) -> Element {
     // attribute parse error keeps the *first* (this component's own
     // default) while the CSR/hydrated DOM path keeps the *last* (the
     // caller's), so server and client disagreed
-    // (`docs/conformance-harness.md` hydration-parity Rule 4; see
+    // (`dev-docs/conformance-harness.md` hydration-parity Rule 4; see
     // `toast.rs`'s `ToastRegionRendered` doc for the first component this
     // was found and fixed in).
     //
@@ -139,7 +139,7 @@ pub fn SelectTrigger(props: SelectTriggerProps) -> Element {
             type: "button",
             // ARIA attributes
             //
-            // docs/backlog.md row 8: role="combobox", matching the APG
+            // dev-docs/backlog.md row 8: role="combobox", matching the APG
             // select-only combobox pattern (vendored reference:
             // playwright/oracle/reference/7e4034b/content/patterns/combobox/
             // examples/combobox-select-only.html's #combo1 -- "role=combobox
