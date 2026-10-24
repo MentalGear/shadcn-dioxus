@@ -610,9 +610,8 @@ fn use_today_and_view(
     view_date: ReadSignal<Option<Date>>,
 ) -> (ReadSignal<Date>, ReadSignal<Date>) {
     let clock = use_today();
-    let today = use_memo(use_reactive((&today,), move |(today,)| {
-        today.unwrap_or_else(|| clock())
-    }));
+    let pick_today = use_reactive((&today,), move |(today,)| today.unwrap_or_else(|| clock()));
+    let today = use_memo(pick_today);
     let view_date = use_memo(move || view_date().unwrap_or_else(|| today()));
     (today.into(), view_date.into())
 }
