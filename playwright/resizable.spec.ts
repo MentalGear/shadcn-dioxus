@@ -308,20 +308,3 @@ test.describe('Appearance (shadcn/ui v4 translation)', () => {
     expect(box.width).toBeGreaterThanOrEqual(440);
   });
 });
-
-test.describe('Axe automated scan', () => {
-  // Resizable has no overlay/expand interaction to reach a second state --
-  // loaded (default sizes) is the only meaningful scan, per the convention
-  // axe.ts's header documents ("A component with no such state ... scans
-  // once, at load"), matching slider.spec.ts's own identical single-state
-  // scan.
-  test('loaded has no automatically detectable a11y issues', async ({ page }) => {
-    await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
-    // Wait for render before scanning -- see input.spec.ts's identical
-    // comment for why (avoids a false pre-hydration "no main"/"no h1").
-    await expect(page.getByRole('separator', { name: 'Sidebar' })).toBeVisible();
-    await expectNoAxeViolations(page, 'resizable: loaded', {
-      excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT],
-    });
-  });
-});

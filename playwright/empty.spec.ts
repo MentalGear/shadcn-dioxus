@@ -1,5 +1,4 @@
 import { test, expect } from "./fixtures";
-import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
@@ -12,12 +11,4 @@ test("test", async ({ page }) => {
   await expect(demo.getByText("No messages yet")).toBeVisible();
   await expect(demo.getByText("You don't have any messages.")).toBeVisible();
   await expect(demo.getByRole("button", { name: "New message" })).toBeVisible();
-});
-
-test.describe("Axe automated scan", () => {
-  // Empty has no overlay/expand/select interaction -- one state to scan.
-  test("loaded has no automatically detectable a11y issues", async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/empty/`, { timeout: 20 * 60 * 1000 });
-    await expectNoAxeViolations(page, "empty: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
 });

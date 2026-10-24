@@ -1,6 +1,6 @@
 import { test, expect } from "./fixtures";
 import { type Page } from "@playwright/test";
-import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
+import { expectNoAxeViolations } from "./axe";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
@@ -166,18 +166,6 @@ test.describe("Line chart", () => {
   });
 
   test.describe("Axe automated scan", () => {
-    for (const variant of Object.keys(FRAME_IDS) as (keyof typeof FRAME_IDS)[]) {
-      test(`${variant}: has no automatically detectable a11y issues`, async ({ page }) => {
-        // Scoped to this one variant's own frame -- `include` already
-        // excludes the page's other variants and the vendored code-viewer
-        // tab, so no `excludeRegions` is needed here (unlike the whole-page
-        // scan below).
-        await expectNoAxeViolations(page, `line_chart: ${variant}`, {
-          include: [`#${FRAME_IDS[variant]}`],
-        });
-      });
-    }
-
     test("interactive: Mobile selected has no automatically detectable a11y issues", async ({
       page,
     }) => {
@@ -203,14 +191,6 @@ test.describe("Line chart", () => {
       );
       await expectNoAxeViolations(page, "line_chart: multiple (tooltip open)", {
         include: [`#${FRAME_IDS.multiple}`],
-      });
-    });
-
-    test("whole page (every variant loaded) has no automatically detectable a11y issues", async ({
-      page,
-    }) => {
-      await expectNoAxeViolations(page, "line_chart: whole page loaded", {
-        excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT],
       });
     });
   });

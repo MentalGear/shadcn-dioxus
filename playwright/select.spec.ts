@@ -466,11 +466,6 @@ test.describe("Trigger minimum width (docs/backlog.md row 10's sibling fix, 2026
 });
 
 test.describe("Axe automated scan", () => {
-    test("loaded (listbox closed) has no automatically detectable a11y issues", async ({ page }) => {
-        await gotoHydrated(page, `${BASE_URL}/component/select/`);
-        await expectNoAxeViolations(page, "select: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-    });
-
     test("listbox open has no automatically detectable a11y issues", async ({ page }) => {
         await gotoHydrated(page, `${BASE_URL}/component/select/`);
         await singleSelectTrigger(page).click();

@@ -58,13 +58,11 @@
  *   conforming ARIA-in-HTML combination. Single-subject (this library
  *   only) -- axe is a static DOM scan, not a behavioural comparison, so
  *   there is no meaningful "run axe against the reference page" analogue
- *   here the way R1's behavioural check has one. Scanned at both closed and
- *   open, per axe.ts's own "two-state convention". This duplicates (does
- *   not replace) `select.spec.ts`'s pre-existing "Axe automated scan"
- *   describe block, which already scans this same route/states and now
- *   benefits from the same role change; kept here too since this file's own
- *   mandate is to hold role-conformance rules R1-R3 as a self-contained set
- *   next to the sources they're drawn from.
+ *   here the way R1's behavioural check has one. Scanned closed and open.
+ *   The closed scan repeats `all-routes.spec.ts`'s at-rest scan of the same
+ *   route and the open one `select.spec.ts`'s; both are kept here because
+ *   this file's mandate is to hold role-conformance rules R1-R3 as a
+ *   self-contained set next to the sources they're drawn from.
  *
  * NOT covered by role="combobox"/aria-autocomplete="none": this library
  * deliberately keeps its existing real-roving-DOM-focus model rather than

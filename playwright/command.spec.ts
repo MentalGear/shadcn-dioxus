@@ -267,12 +267,6 @@ test.describe("Scrim", () => {
 });
 
 test.describe("Axe automated scan", () => {
-    test("loaded (dialog closed) has no automatically detectable a11y issues", async ({ page }) => {
-        await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
-        await page.waitForLoadState("networkidle");
-        await expectNoAxeViolations(page, "command: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-    });
-
     test("dialog open has no automatically detectable a11y issues", async ({ page }) => {
         await open(page);
         await expectNoAxeViolations(page, "command: dialog open", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });

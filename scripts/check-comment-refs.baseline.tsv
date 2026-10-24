@@ -13,11 +13,9 @@ playwright/context-menu.spec.ts	path	docs/phase4-spike-findings.md
 playwright/date-picker.spec.ts	path	docs/backlog.md
 playwright/dialog.spec.ts	path	docs/phase4-spike-findings.md
 playwright/dialog.spec.ts	path	docs/plan.md
-playwright/drag_and_drop_list.spec.ts	path	docs/backlog.md
 playwright/drawer.spec.ts	path	docs/conformance-harness.md
 playwright/dropdown-menu.spec.ts	path	docs/backlog.md
 playwright/dx-class-migration.spec.ts	path	docs/backlog.md
-playwright/input_otp.spec.ts	path	docs/conformance-harness.md
 playwright/menubar.spec.ts	path	docs/backlog.md
 playwright/message_scroller.spec.ts	path	docs/conformance-harness.md
 playwright/navigation_menu.spec.ts	path	docs/backlog.md
@@ -68,7 +66,6 @@ playwright/select.spec.ts	path	docs/backlog.md
 playwright/sheet.spec.ts	path	docs/phase4-spike-findings.md
 playwright/sheet.spec.ts	path	docs/plan.md
 playwright/sidebar.spec.ts	path	docs/backlog.md
-playwright/tag_group.spec.ts	path	docs/backlog.md
 playwright/toast.spec.ts	path	docs/backlog.md
 playwright/toggle.spec.ts	path	docs/backlog.md
 playwright/toggle_group.spec.ts	path	docs/backlog.md

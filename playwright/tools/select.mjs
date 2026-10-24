@@ -10,10 +10,12 @@
 // Default diff: everything this branch changed against origin/main (`origin/main...HEAD`) plus uncommitted changes.
 //
 // The map (a COVER relation, deliberately over-inclusive: a missed spec is a hole, an extra one is only minutes):
-//   preview/src/components/<c>/**            -> specs about component <c>
+//   preview/src/components/<c>/**            -> specs about component <c>, plus all-routes' test of <c>'s page (the
+//                                               page's at-rest axe scan lives only there, row 152)
 //   primitives/src/<p>.rs | <p>/** | js/ts   -> specs of every component that uses primitive <p>, directly or through
-//                                               another primitive (transitive); if that is > BROAD_AT components the
-//                                               change is shared plumbing and the BROAD set is added
+//                                               another primitive (transitive), plus those components' all-routes
+//                                               tests; if that is > BROAD_AT components the change is shared plumbing
+//                                               and the BROAD set is added
 //   theme / main.css / main.rs / eager_head / index.html / components/mod.rs / scripts that build the site
 //                                            -> the BROAD set (below); a changed preview/assets/*.css is read rule by rule
 //                                               first and often needs only part of it (see "CSS finer", below)
@@ -137,7 +139,8 @@ for (const f of specs) {
   aboutComps.set(f, set);
 }
 const matrixSpecs = new Set(specs.filter((f) => aboutComps.get(f).size > MATRIX_AT));
-const specsOf = (c) => specs.filter((f) => aboutComps.get(f).has(c) && !matrixSpecs.has(f));
+// all-routes.spec.ts spells a few component names in its own route-list check; it is selected per page below (AT_REST)
+const specsOf = (c) => specs.filter((f) => aboutComps.get(f).has(c) && !matrixSpecs.has(f) && f !== "all-routes.spec.ts");
 
 // primitive -> consuming components (transitive through primitives)
 const primDir = path.join(ROOT, "primitives/src");
@@ -184,6 +187,10 @@ const add = (spec, why) => { if (!sel.has(spec)) sel.set(spec, new Set()); sel.g
 const addBroad = (why) => { for (const f of matrixSpecs) add(f, why); for (const f of BROAD_EXTRA) if (specs.includes(f)) add(f, why); };
 const addAll = (why) => { for (const f of specs) add(f, why); };
 const noSpec = [];
+// The at-rest axe scan of a component page lives only in all-routes.spec.ts (backlog row 152), so a component's own specs
+// do not cover it: every changed component (directly, or through a primitive it uses) adds its all-routes test(s).
+const AT_REST = "all-routes.spec.ts";
+const atRestKeys = new Set();
 const cssChanged = []; // theme / site sheets: resolved rule by rule after the loop (row 323)
 const isSheet = (f) => /^preview\/assets\/[^/]+\.css$/.test(f);
 
@@ -191,6 +198,7 @@ for (const f of changed) {
   let m;
   if ((m = f.match(/^preview\/src\/components\/([^/]+)\//)) && comps.includes(m[1])) {
     for (const s of specsOf(m[1])) add(s, f);
+    atRestKeys.add(`c:${m[1]}`);
     if (opt.matrix) for (const s of matrixSpecs) add(s, `${f} (matrix)`);
   } else if (isSheet(f) && opt.cssNarrow) {
     cssChanged.push(f);
@@ -205,6 +213,7 @@ for (const f of changed) {
   } else if ((m = f.match(/^primitives\/src\/(?:ts\/|js\/)?([^/.]+)(?:\.[a-z]+|\/)/)) && primMods.includes(m[1])) {
     const users = compsUsingPrim(m[1]);
     for (const c of users) for (const s of specsOf(c)) add(s, `${f} -> ${c}`);
+    if (users.size <= BROAD_AT) for (const c of users) atRestKeys.add(`c:${c}`);
     if (users.size > BROAD_AT) addBroad(`${f} (shared plumbing: ${users.size} components)`);
     else if (opt.matrix) for (const s of matrixSpecs) add(s, `${f} (matrix)`);
     if (users.size === 0) addBroad(`${f} (no component uses it: assume shared)`);
@@ -293,7 +302,8 @@ if (cssChanged.length || opt.pages) {
       for (const f of G) {
         const tests = TITLE_SCOPED[f] ? titles?.get(f) : null;
         if (!tests) { add(f, `${why} (spec cannot tell pages apart)`); continue; }
-        const kept = tests.filter((t) => { const ks = TITLE_SCOPED[f](t.path.join(" ")); return !ks || ks.length === 0 || ks.some((k) => PK.has(k)); });
+        const reach = f === AT_REST ? new Set([...PK, ...atRestKeys]) : PK;
+        const kept = tests.filter((t) => { const ks = TITLE_SCOPED[f](t.path.join(" ")); return !ks || ks.length === 0 || ks.some((k) => reach.has(k)); });
         cssReport.keptTests += kept.length; cssReport.droppedTests += tests.length - kept.length;
         if (kept.length === 0) continue;
         add(f, `${why}: ${kept.length}/${tests.length} tests`);
@@ -324,14 +334,30 @@ if (cssChanged.length || opt.pages) {
       for (const [sp, why] of hits) add(sp, why);
       cssReport.mentions.push(name);
     }
-    // the drop pattern: one alternative per file, exact title paths, anchored at the end
-    if (cssReport.dropped.length) {
-      const parts = cssReport.dropped.filter((d) => sel.has(d.file)).map((d) => `(?<![\\w/.-])${reEsc(d.file)} (?:${d.titles.map((t) => reEsc(t) + "$").join("|")})`);
-      let pat = parts.join("|");
-      if (pat.length > 100000) { cssReport.notes.push(`css: drop pattern is ${pat.length} chars: not applied`); pat = ""; }
-      grepInvert = pat || null;
+  }
+}
+
+// ---- the at-rest axe scan of the changed components (row 152) ------------------------------------------------
+if (atRestKeys.size && !sel.has(AT_REST) && specs.includes(AT_REST)) {
+  const why = `at-rest axe of ${[...atRestKeys].map((k) => k.slice(2)).sort().join(", ")}`;
+  const tests = opt.titles && TITLE_SCOPED[AT_REST] ? listTitles([AT_REST])?.get(AT_REST) : null;
+  if (!tests) add(AT_REST, `${why} (titles not listed: whole file)`);
+  else {
+    const kept = tests.filter((t) => { const ks = TITLE_SCOPED[AT_REST](t.path.join(" ")); return !ks || ks.length === 0 || ks.some((k) => atRestKeys.has(k)); });
+    add(AT_REST, `${why}: ${kept.length}/${tests.length} tests`);
+    if (kept.length < tests.length) {
+      const keptSet = new Set(kept);
+      cssReport.dropped.push({ file: AT_REST, kept: kept.length, total: tests.length, titles: tests.filter((t) => !keptSet.has(t)).map((t) => t.path.join(" ")) });
     }
   }
+}
+
+// the drop pattern: one alternative per file, exact title paths, anchored at the end
+if (cssReport.dropped.length) {
+  const parts = cssReport.dropped.filter((d) => sel.has(d.file)).map((d) => `(?<![\\w/.-])${reEsc(d.file)} (?:${d.titles.map((t) => reEsc(t) + "$").join("|")})`);
+  let pat = parts.join("|");
+  if (pat.length > 100000) { cssReport.notes.push(`css: drop pattern is ${pat.length} chars: not applied`); pat = ""; }
+  grepInvert = pat || null;
 }
 
 

@@ -369,14 +369,6 @@ test.describe('Checkable items', () => {
 });
 
 test.describe('Axe automated scan', () => {
-  test('loaded (menu closed) has no automatically detectable a11y issues', async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/dropdown_menu/`);
-    // Wait for render before scanning -- see input.spec.ts's identical
-    // comment for why (avoids a false pre-hydration "no main"/"no h1").
-    await expect(page.getByRole('button', { name: 'Open Menu' })).toBeVisible();
-    await expectNoAxeViolations(page, 'dropdown-menu: loaded', { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-
   test('menu open has no automatically detectable a11y issues', async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/dropdown_menu/`);
     await page.getByRole('button', { name: 'Open Menu' }).click();

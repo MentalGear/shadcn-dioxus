@@ -92,13 +92,6 @@ for (const { variant, id } of VARIANTS) {
 }
 
 test.describe("Axe automated scan", () => {
-    test("loaded has no automatically detectable a11y issues", async ({ page }) => {
-        await gotoHydrated(page, url("main"), { timeout: 20 * 60 * 1000 });
-        await page.waitForLoadState("networkidle");
-        await expect(page.locator("#default")).toBeVisible();
-        await expectNoAxeViolations(page, "textarea: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-    });
-
     test("focused has no automatically detectable a11y issues", async ({ page }) => {
         await gotoHydrated(page, url("main"), { timeout: 20 * 60 * 1000 });
         await page.waitForLoadState("networkidle");

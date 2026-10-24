@@ -434,14 +434,6 @@ test("the selection count gaining a digit moves nothing but its own text", async
 });
 
 test.describe("Axe automated scan", () => {
-  test("loaded has no automatically detectable a11y issues", async ({ page }) => {
-    await goto(page);
-    await expect(table(page)).toBeVisible();
-    await expectNoAxeViolations(page, "data_table: loaded", {
-      excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT],
-    });
-  });
-
   test("rows-per-page select open has no automatically detectable a11y issues", async ({ page }) => {
     await goto(page);
     await pageSizeControl(page).click();

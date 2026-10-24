@@ -1,5 +1,4 @@
 import { test, expect } from "./fixtures";
-import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 
@@ -50,18 +49,6 @@ test.describe("area_chart variants render an accessible chart", () => {
       await expect(tooltip).toHaveAttribute("data-state", "open");
       await page.mouse.move(0, 0);
       await expect(tooltip).toHaveAttribute("data-state", "closed");
-    });
-  }
-});
-
-test.describe("Axe automated scan", () => {
-  for (const variant of VARIANTS) {
-    test(`${variant.name} has no automatically detectable a11y issues`, async ({ page }) => {
-      await gotoHydrated(page, `${BASE_URL}/component/area_chart/`);
-      await expectNoAxeViolations(page, `area_chart: ${variant.name}`, {
-        include: `#${variant.frameId}`,
-        excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT],
-      });
     });
   }
 });

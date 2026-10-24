@@ -1,6 +1,5 @@
 import { test, expect } from "./fixtures";
 import type { Locator, Page } from "@playwright/test";
-import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
 import { demoFrame } from "./demo-frame";
 import { gotoHydrated } from "./hydration";
@@ -349,12 +348,3 @@ for (const [name, pick] of [["data grid", dataGrid], ["gallery", gallery]] as co
     });
   });
 }
-
-test.describe("Axe automated scan", () => {
-  test("loaded has no automatically detectable a11y issues", async ({ page }) => {
-    await gotoHydrated(page, PAGE_URL);
-    await expect(cell(dataGrid(page), 0, 1)).toBeVisible();
-    await expect(gallery(page).locator('[data-grid-index="0"]')).toBeVisible();
-    await expectNoAxeViolations(page, "virtual_grid: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-});

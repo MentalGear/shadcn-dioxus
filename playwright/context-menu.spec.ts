@@ -693,14 +693,6 @@ test.describe('Checkable items', () => {
 });
 
 test.describe('Axe automated scan', () => {
-  test('loaded (menu closed) has no automatically detectable a11y issues', async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/context_menu/`, { timeout: 20 * 60 * 1000 });
-    // Wait for render before scanning -- see input.spec.ts's identical
-    // comment for why (avoids a false pre-hydration "no main"/"no h1").
-    await expect(page.getByRole('button', { name: 'right click here' })).toBeVisible();
-    await expectNoAxeViolations(page, 'context-menu: loaded', { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-
   // docs/backlog.md row 25: ContextMenu's role="menu" popup carries no
   // aria-labelledby/aria-label at all, so an open menu has no accessible
   // name (APG menu-and-menubar pattern requires one) -- this is exactly the

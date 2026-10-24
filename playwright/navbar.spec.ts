@@ -187,14 +187,6 @@ test.describe('Close animation is not skipped (docs/backlog.md row 77 follow-up)
 });
 
 test.describe('Axe automated scan', () => {
-  test('loaded (dropdown closed) has no automatically detectable a11y issues', async ({ page }) => {
-    await gotoHydrated(page, `${BASE_URL}/component/navbar/`, { timeout: 20 * 60 * 1000 });
-    // Wait for render before scanning -- see input.spec.ts's identical
-    // comment for why (avoids a false pre-hydration "no main"/"no h1").
-    await expect(page.getByRole('menuitem', { name: 'Inputs' })).toBeVisible();
-    await expectNoAxeViolations(page, 'navbar: loaded', { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-
   test('Inputs dropdown open has no automatically detectable a11y issues', async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/navbar/`, { timeout: 20 * 60 * 1000 });
     const inputsNav = page.getByRole('menu').filter({ has: page.getByRole('menuitem', { name: 'Inputs' }) }).first();

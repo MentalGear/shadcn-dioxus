@@ -31,7 +31,6 @@
 
 import { test, expect } from "./fixtures";
 import { type Page, type Locator } from "@playwright/test";
-import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL } from "./base-url";
 // dev-docs/backlog.md row 109: this suite interacts (hover/click) right
 // after navigating, on the SSG lane -- `gotoHydrated` so that can't land
@@ -86,14 +85,6 @@ test.describe("render + axe per variant", () => {
       // Every series renders its own closed polygon.
       const paths = frame(page, variant).locator('path[data-slot="chart-radar-area"]');
       await expect(paths).not.toHaveCount(0);
-    });
-
-    test(`${variant}: has no automatically detectable a11y issues`, async ({ page }) => {
-      await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
-      await expect(frame(page, variant).locator('svg[role="img"]').first()).toBeVisible();
-      await expectNoAxeViolations(page, `radar_chart: ${variant}`, {
-        excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT],
-      });
     });
   }
 });

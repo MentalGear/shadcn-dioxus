@@ -178,13 +178,9 @@ test.describe("sidebar: block route", () => {
 // visually-hidden `<h1>` naming the block, in its own `<header>` landmark;
 // and `Sidebar` (`preview/src/components/sidebar/component.rs`) now gives
 // its own content a `complementary` landmark too, so nothing on the page
-// sits outside a landmark. Both scans below are expected to pass clean.
+// sits outside a landmark. The collapsed scan below and the `all-routes`
+// sweep's at-rest scan of the same route (`block-sidebar-main`) pass clean.
 test.describe("Axe automated scan", () => {
-  test("loaded (expanded) has no automatically detectable a11y issues", async ({ page }) => {
-    await gotoSidebarBlock(page);
-    await expectNoAxeViolations(page, "sidebar: expanded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
-  });
-
   test("collapsed has no automatically detectable a11y issues", async ({ page }) => {
     await gotoSidebarBlock(page);
     const sidebar = page.locator('[data-slot="sidebar"]:not([data-mobile="true"])');
