@@ -36,7 +36,7 @@ pub const REGISTRY_NAME: &str = "shadcn-dioxus";
 #[derive(Clone, Debug, Default, Args)]
 pub struct RegistryArgs {
     /// Git URL of the component registry (default: the project's `Dioxus.toml` `[components.registry]`,
-    /// else https://github.com/MentalGear/shadcn-dioxus)
+    /// else <https://github.com/MentalGear/shadcn-dioxus>)
     #[arg(long)]
     pub git: Option<String>,
 

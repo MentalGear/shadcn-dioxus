@@ -8,7 +8,7 @@
 //! the thing that actually needs to change if the ratchet policy ever changes.
 //!
 //! Output (stdout), one finding per line, fields separated by a single tab:
-//!   <kind>\t<file>\t<line>\t<enclosing-fn>\t<name>\t<reason>
+//!   `<kind>\t<file>\t<line>\t<enclosing-fn>\t<name>\t<reason>`
 //!
 //! `kind` is `spread` (the primary defect this gate ratchets against) or
 //! `component-attributes-forward` (the secondary, experimental check for the
