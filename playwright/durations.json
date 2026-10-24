@@ -3,9 +3,9 @@
   "build": "debug",
   "workers": "2",
   "date": "2026-10-21",
-  "tests": 3820,
+  "tests": 3830,
   "files": 243,
-  "total_seconds": 11374.1,
+  "total_seconds": 11400.9,
   "budget_seconds": 17000,
   "max_file_seconds": 3000,
   "note": "seconds = sum of test durations (worker time) on the DEBUG SSG build, 2 workers, 4-core box shared with other lanes; main-thread.spec.ts and scroll-main-thread.spec.ts are release-only (skipped on debug) and carry their RELEASE seconds. release_total_seconds = the same run on a release build. Refresh: playwright/tools/run-suite.sh, then durations.mjs chunk-*.json --write",
@@ -1501,8 +1501,8 @@
    "retried": 0
   },
   "ring-contrast.spec.ts": {
-   "tests": 14,
-   "seconds": 83,
+   "tests": 24,
+   "seconds": 109.8,
    "passed": 14,
    "failed": 0,
    "skipped": 0,

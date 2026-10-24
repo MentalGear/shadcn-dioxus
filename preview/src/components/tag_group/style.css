@@ -35,9 +35,13 @@
   padding-inline: var(--dx-space-3);
 }
 
+/* The fill is the ring colour, which is the accent's hue once one is picked (row 385), so the ink follows the
+ * fill: near-white at or below L 0.575, near-black above it (the `--dx-sidebar-primary-foreground` rule of the
+ * theme's "Contrast mode" block, where black and white tie at 4.58:1), >= 4.5:1 on every base x accent. */
 .dx-tag-group-tag[data-selected="true"] {
   border-color: var(--dx-ring-color);
   background-color: var(--dx-ring-color);
+  color: oklch(from var(--dx-ring-color) clamp(0.05, calc((0.575 - l) * 1000 + 0.05), 0.99) min(c, 0.014) h);
 }
 
 .dx-tag-group-tag[data-disabled="true"] {
