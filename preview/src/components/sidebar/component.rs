@@ -142,8 +142,7 @@ pub fn use_is_mobile() -> Signal<bool> {
     let mut is_mobile = use_signal(|| false);
 
     // The resize listener belongs to this component: `use_js_listeners` removes it when the
-    // provider unmounts (it used to be reachable only through a `window.__sidebarResizeHandler`
-    // global, so a second provider, or a remount before the drop ran, orphaned the first).
+    // provider unmounts, so a second provider or a remount never leaves an orphaned listener.
     use_js_listeners(move || {
         Some(
             JsListeners::install(&format!(

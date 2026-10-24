@@ -114,7 +114,6 @@ preview/src/components/color_picker/style.css	5
 preview/src/components/combobox/style.css	2
 preview/src/components/command/style.css	2
 preview/src/components/date_picker/component.rs	2
-preview/src/components/date_picker/style.css	6
 preview/src/components/date_picker/variants/natural_language/mod.rs	1
 preview/src/components/drag_and_drop_list/component.rs	1
 preview/src/components/drawer/component.rs	1
@@ -130,7 +129,6 @@ preview/src/components/radio_group/component.rs	2
 preview/src/components/resizable/style.css	1
 preview/src/components/select/component.rs	1
 preview/src/components/select/style.css	4
-preview/src/components/sidebar/component.rs	2
 preview/src/components/sidebar/style.css	2
 preview/src/components/sidebar/variants/floating/mod.rs	2
 preview/src/components/sidebar/variants/inset/mod.rs	2

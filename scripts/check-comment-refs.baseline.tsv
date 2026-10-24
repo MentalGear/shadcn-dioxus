@@ -98,7 +98,6 @@ preview/src/components/command/variants/main/mod.rs	path	docs/backlog.md
 preview/src/components/context_menu/style.css	path	docs/component-backlog.md
 preview/src/components/context_menu/variants/main/mod.rs	path	docs/component-backlog.md
 preview/src/components/date_picker/component.rs	path	docs/backlog.md
-preview/src/components/date_picker/style.css	path	docs/backlog.md
 preview/src/components/dialog/variants/main/mod.rs	path	docs/backlog.md
 preview/src/components/dialog/variants/main/mod.rs	path	docs/plan.md
 preview/src/components/drag_and_drop_list/component.rs	path	docs/backlog.md
@@ -128,7 +127,6 @@ preview/src/components/select/style.css	path	docs/backlog.md
 preview/src/components/select/style.css	path	docs/issues/css-module-supports-scoping.md
 preview/src/components/sheet/component.rs	path	docs/backlog.md
 preview/src/components/sidebar/component.rs	path	docs/backlog.md
-preview/src/components/sidebar/style.css	path	docs/backlog.md
 preview/src/components/sidebar/variants/floating/mod.rs	path	docs/backlog.md
 preview/src/components/sidebar/variants/inset/mod.rs	path	docs/backlog.md
 preview/src/components/sidebar/variants/main/mod.rs	path	docs/backlog.md
