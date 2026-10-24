@@ -1,15 +1,15 @@
 //! Item geometry for the windowed list: prefix sums over per-item sizes with `O(log N)` point
 //! update and `O(log N)` position lookup.
 //!
-//! The previous engine kept a `Vec<VirtualItem>` (`start`, `size` per item) that was rebuilt in
-//! full, `O(N)`, whenever a row was measured, and cloned in full, `O(N)`, on every row resize
+//! A flat `Vec<VirtualItem>` (`start`, `size` per item) would be rebuilt in
+//! full, `O(N)`, whenever a row is measured, and cloned in full, `O(N)`, on every row resize
 //! event. At 1M rows that is ~24 MB allocated per measurement. A [`SizeIndex`] is a Fenwick tree
 //! (binary indexed tree), so measuring a row is one `O(log N)` update and "which row is at pixel
 //! `y`" is one `O(log N)` descent. Nothing is copied.
 //!
 //! # What an unmeasured item weighs
 //!
-//! The numbers match the original `compute_measurements` walk, so the sizes on screen do not change:
+//! The numbers are those of the naive per-item walk (the test oracle `naive_items`):
 //!
 //! - with a per-item estimate (`estimate_size` given): the estimate, until the item is measured;
 //! - without one ("adaptive"): the integer average of every measured size so far, or
@@ -318,7 +318,7 @@ impl SizeIndex {
 mod tests {
     use super::*;
 
-    /// The old engine, verbatim: the oracle every `SizeIndex` answer is compared with.
+    /// The naive per-item engine, kept verbatim as the oracle every `SizeIndex` answer is compared with.
     fn naive_items(
         count: usize,
         measured: &HashMap<usize, u32>,
@@ -349,7 +349,7 @@ mod tests {
             .unwrap_or_else(|idx| idx.saturating_sub(1))
     }
 
-    /// The old end-of-viewport walk, from `start`.
+    /// The naive end-of-viewport walk, from `start`.
     fn naive_end(items: &[VirtualItem], start: usize, position: u32) -> usize {
         let last = items.len() - 1;
         let mut end = start;

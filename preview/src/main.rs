@@ -1413,7 +1413,7 @@ fn DocsLayout(
     // starts closed/out-of-the-way behind its hero + gallery content (that
     // page already has its own primary draw, and the same `SidebarTrigger`
     // in the topbar still opens it). Every other call site (`/docs`,
-    // component pages) leaves this `None` and keeps the previous, open-by-
+    // component pages) leaves this `None` and keeps the open-by-
     // default behavior -- those pages need the nav immediately usable.
     // `SidebarProvider`'s own `default_open` (`components/sidebar/
     // component.rs`) already exists for exactly this and just needed
@@ -2551,9 +2551,9 @@ const SR_ONLY_STYLE: &str = "position: absolute; overflow: hidden; width: 1px; h
 /// on server and client, that redirects to the canonical
 /// `ComponentBlockDemoPath` once mounted in a real browser. Resolves the
 /// same "no variant specified -> use the demo's first (\"main\") variant"
-/// default the direct-render path applied, so an old link that
-/// never named a variant still redirects to the content it rendered
-/// directly.
+/// default the direct-render path applied, so a link that
+/// never names a variant still redirects to the content the direct
+/// render shows.
 #[component]
 fn ComponentBlockDemo(name: String, variant: Option<String>, dark_mode: Option<bool>) -> Element {
     let nav = navigator();

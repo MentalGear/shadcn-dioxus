@@ -101,9 +101,8 @@ thread_local! {
 ///
 /// `:where(...)` (zero specificity) is used for the `[popover]` reset so it
 /// never has to out-specificity-fight a component's own rules -- author
-/// origin already beats the UA stylesheet regardless of specificity (see
-/// `tooltip.rs`'s call site... actually see the removed `../tooltip/
-/// style.css` comment history for the full citation), so zero specificity
+/// origin already beats the UA stylesheet regardless of specificity (the
+/// CSS cascade orders origin before specificity), so zero specificity
 /// here is exactly enough to win against the *UA* default while leaving any
 /// component-authored override free to still take precedence if one is ever
 /// needed.
@@ -574,8 +573,8 @@ const ANCHOR_POSITIONING_CSS_JS_LITERAL: &str = r#"`
 /// UA default (author origin always beats user-agent origin, at any
 /// specificity) but can never out-specificity-fight a component's own
 /// `color` rule -- `tooltip.rs`'s `.dx-tooltip-content` (which sets its own
-/// `color`) keeps winning exactly as before, with no change to this rule's
-/// selector needed to protect that.
+/// `color`) keeps winning, so no change to this rule's
+/// selector is needed to protect that.
 ///
 /// A second `:where()` rule (see [`TOP_LAYER_INK_STYLES_INJECT_JS`]'s own
 /// comment) closes the identical defect one DOM level deeper: `<button>`/
@@ -627,16 +626,15 @@ const ANCHOR_POSITIONING_CSS_JS_LITERAL: &str = r#"`
 /// `document::eval()` that flips `showPopover()`/`showModal()` -- have no
 /// guaranteed relative ordering against each other from Rust's point of
 /// view, even when both effects are declared, in that order, in the same
-/// function. [`anchor_positioning_inject_js`]'s own doc found and fixed the
-/// identical defect class by execution (a fresh page load ran the
+/// function. [`anchor_positioning_inject_js`]'s own doc handles the
+/// identical defect class (a fresh page load can run the
 /// *dependent* eval before the *injecting* one, despite matching
 /// declaration order) by prepending the injection statement directly into
 /// the dependent eval's own script, so both run as one synchronous JS
 /// program with no cross-eval ordering assumption left to make. This
-/// function's own three call sites had the same shape and, per
-/// dev-docs/backlog.md row 50, the same residue in execution (a surface
-/// measured mid-window, twice across repeated runs of
-/// `top-layer-ink.spec.ts`) -- so [`TOP_LAYER_INK_STYLES_INJECT_JS`] is
+/// function's own three call sites have the same shape and, per
+/// dev-docs/backlog.md row 50, the same residue (a surface measured
+/// mid-window in repeated runs of `top-layer-ink.spec.ts`) -- so [`TOP_LAYER_INK_STYLES_INJECT_JS`] is
 /// prepended the identical way, into the "signal -> browser" show scripts
 /// in [`use_popover_sync`], [`use_popover_shown_while_mounted`], and
 /// `lib.rs`'s `use_dialog_open_driver` (the same three exhaustive call
@@ -782,7 +780,7 @@ impl PopoverKind {
 /// close — back into `set_open`, so the Rust signal never strands. This is
 /// the same defect class `dev-docs/reference/platform-rationale.md` Caveat 1
 /// documents for `<dialog>`'s one-way `showModal()`/`close()` binding
-/// (the upstream regression that motivated PR #47); the eval-channel
+/// (an upstream regression of that binding); the eval-channel
 /// pattern that fixes it here is the same one already used by
 /// `use_form_reset_listener` (`lib.rs`).
 ///
@@ -876,7 +874,7 @@ pub(crate) fn use_popover_sync(
 /// `on_native_close` exactly like [`use_popover_sync`]; the difference is
 /// entirely on the "signal -> browser" side: `showPopover()` still runs
 /// reactively, every time `open` becomes `true` (not once, at mount -- see
-/// "Two execution-confirmed bugs" below for why once is not enough), but
+/// "Why this exists" below for why once is not enough), but
 /// **`hidePopover()` is never called on our own closing path at all** --
 /// only a real DOM removal (this component's caller unmounting it once its
 /// own exit animation settles) ever takes this content out of the top
@@ -913,9 +911,9 @@ pub(crate) fn use_popover_sync(
 /// exit animation plays out undisturbed on an element that is still very
 /// much `:popover-open` the whole time.
 ///
-/// **Bug 2 (reopen-while-still-mounted, `auto` only).** Seen in
+/// **Bug 2 (reopen-while-still-mounted, `auto` only).** Covered by
 /// `combobox.spec.ts`'s "filters and selects with the keyboard" test
-/// (intermittently red without the fix):
+/// (it goes red intermittently without the fix):
 /// `auto`'s native light dismiss has no notion of "this input is the
 /// trigger that owns me" (`ComboboxInput`/`SelectTrigger` are never
 /// declared as this popover's invoker, and neither a `popovertarget`
@@ -1030,12 +1028,12 @@ pub(crate) fn use_popover_shown_while_mounted(
 /// by execution to be *required*, not merely a nice-to-have: once an element
 /// is promoted to the top layer via `popover`, its containing block becomes
 /// the viewport regardless of its own `position` value (see
-/// [`position_anchor_style`]'s doc) -- which means the pre-4.4 `[data-side]`
+/// [`position_anchor_style`]'s doc) -- which means the `[data-side]`
 /// rules in `tooltip`/`hover_card`/`popover`'s `style.css` (written for the
-/// old DOM-relative `position: absolute`) do not gracefully degrade into
+/// DOM-relative `position: absolute`) do not gracefully degrade into
 /// "roughly right, just not collision-aware" on an engine that can't resolve
 /// `anchor()`; they degrade into detached from the trigger entirely -- the
-/// "tooltip not working" symptom this fixes.
+/// "tooltip not working" symptom this prevents.
 ///
 /// Deliberately does *not* gate on `CSS.supports('anchor-name: --a')` alone,
 /// unlike the CSS `@supports` blocks this pairs with (those stay -- they're
@@ -1814,8 +1812,8 @@ pub(crate) fn use_anchor_position_fallback(
                 // alignment axis): the panel may slide ALONG the anchor's
                 // edge to stay on screen, never across it. top/bottom shift
                 // horizontally, left/right vertically. The main axis is
-                // deliberately NOT clamped any more: that clamp is what used
-                // to drag a list onto its own input.
+                // deliberately NOT clamped: a clamp there would drag a
+                // list onto its own input.
                 if (vertical) {{
                     if (target.left < EDGE_MARGIN) {{
                         target = {{ top: target.top, left: EDGE_MARGIN }};
@@ -2261,10 +2259,10 @@ pub(crate) fn use_close_on_scroll(
 /// `position: fixed` panel with `width: auto` is sized by shrink-to-fit:
 /// `min(max-content, room between its `left` and the containing block's right
 /// edge)`. So the width a clamp reads depends on the very position the clamp is
-/// about to replace. A context menu opened 2px from the right edge measured its
-/// squeezed ~148px instead of its real 160px max-content width, was placed for
-/// 148 (`vw - 4 - 148`), then grew back to 160 at that `left` and ended flush
-/// with the edge instead of `EDGE_MARGIN` away from it. It stayed hidden only
+/// about to replace. A context menu opened 2px from the right edge would measure its
+/// squeezed ~148px instead of its real 160px max-content width, be placed for
+/// 148 (`vw - 4 - 148`), then grow back to 160 at that `left` and end flush
+/// with the edge instead of `EDGE_MARGIN` away from it. It stays hidden only
 /// while a large `min-width` happened to exceed the content.
 ///
 /// **The construction.** Park the panel at the viewport origin (`inset: auto`,
@@ -2463,7 +2461,7 @@ pub(crate) fn use_point_anchor_clamp(
 /// value: a `Tooltip` given `popover="manual"`
 /// with no other change keeps `position: absolute` but its rendered box
 /// jumps hundreds of pixels from its trigger, because "absolute, relative
-/// to the nearest positioned ancestor" no longer applies once the element
+/// to the nearest positioned ancestor" stops applying once the element
 /// is promoted. The `[data-side]` rules in the preview
 /// stylesheets (`tooltip`/`hover_card`/`popover` `style.css`) assume a
 /// DOM-relative containing block, so without anchoring every non-modal

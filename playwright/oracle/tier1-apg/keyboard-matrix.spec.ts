@@ -264,7 +264,7 @@ test.describe("APG Menu (opened from a menu button) pattern — DropdownMenu con
     await page.keyboard.press("ArrowDown"); // Edit
     await page.keyboard.press(await labelChar(popupItem(page, "menu", "menuitem", 2), 0)); // "d"
     await expect(popupItem(page, "menu", "menuitem", 2)).toBeFocused();
-    await page.keyboard.press(await labelChar(popupItems(page, "menu", "menuitem").last(), 1)); // "e": buffer "de" -- Duplicate no longer matches, Delete does
+    await page.keyboard.press(await labelChar(popupItems(page, "menu", "menuitem").last(), 1)); // "e": buffer "de" -- Duplicate stops matching, Delete still does
     await expect(popupItems(page, "menu", "menuitem").last()).toBeFocused();
   });
 
@@ -575,7 +575,7 @@ test.describe("APG Combobox pattern (select-only) — Select trigger", () => {
     // ArrowUp/ArrowDown keydown arms do) -- so no option is ever
     // programmatically focused, `any_focused()` stays false forever, and the
     // listbox <div role="listbox"> itself keeps DOM focus for the whole time
-    // the popup is open. This is the exact behaviour the live bug report
+    // the popup is open. This is the behaviour the reported symptom
     // names: "Select opened by keyboard puts focus on the listbox container
     // rather than the active option."
     expect(
@@ -1282,7 +1282,7 @@ test.describe("APG Menu pattern (context-menu invocation) — ContextMenu", () =
     await page.keyboard.press("ArrowDown"); // Edit
     await page.keyboard.press(await labelChar(popupItem(page, "menu", "menuitem", 2), 0)); // "d"
     await expect(popupItem(page, "menu", "menuitem", 2)).toBeFocused();
-    await page.keyboard.press(await labelChar(popupItem(page, "menu", "menuitem", 3), 1)); // "e": buffer "de" -- Duplicate no longer matches, Delete does
+    await page.keyboard.press(await labelChar(popupItem(page, "menu", "menuitem", 3), 1)); // "e": buffer "de" -- Duplicate stops matching, Delete still does
     await expect(popupItem(page, "menu", "menuitem", 3)).toBeFocused();
   });
 

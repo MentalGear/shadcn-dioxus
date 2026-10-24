@@ -15,9 +15,9 @@
 #   The stages themselves live in `primitives/src/data_view/`, which is out of scope: the data_table folder
 #   only re-exports them.
 #
-# EXCEPTIONS are in ALLOW below, each with a reason; an entry that no longer matches anything is itself an
+# EXCEPTIONS are in ALLOW below, each with a reason; an entry that matches nothing is itself an
 # error (a fixed site must leave the list). ToggleGroup's pressed set is a `HashSet<String>` of item values
-# since row 364; only its deprecated index props stay allowlisted.
+# (row 364); only its deprecated index props stay allowlisted.
 #
 # Usage: scripts/check-collection-derive.sh [FILE ...]   (default: every .rs under preview/src/components;
 # explicit files are for self-tests, and skip the stale-entry check)

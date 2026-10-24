@@ -22,7 +22,7 @@
 # /component/virtual_grid/": the JS-off page and the hydrated page compute different styles).
 #
 # The same re-set also makes the opposite swap wrong: a string swapped for another string or for "" leaves
-# the remembered longhands in place, because they were remembered before the swap and are only put back when
+# the remembered longhands in place, because they were remembered before the swap and are restored only if
 # they read empty. A checkpoint bar painted with
 # `style: if done { "...; background: var(--dx-primary);" } else { "...; background: var(--dx-muted);" }`: after
 # two steps the segments that changed keep only `height` and `flex` (computed background transparent), so

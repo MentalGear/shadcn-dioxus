@@ -1,10 +1,10 @@
 /**
- * Row 188 batch 2, part B (dates, pickers, small primitives, compositions): the demo-only items of
+ * Row 188 demo coverage, dates, pickers, small primitives and compositions: the demo-only items of
  * the research doc's section 5 (D-G): calendar presets/date_time, date_picker time and
  * natural_language, select disabled, combobox custom_items, native_select disabled/groups, separator, label,
  * slider, aspect_ratio, scroll_area, kbd, badge, resizable, field subscription, input_otp verify, accordion
  * faq/multiple, avatar, command inline, navigation_menu icons, alert, table rich, and the
- * checkbox `indeterminate` demo. The spec opens the part-B demos not covered elsewhere, checks the demo's key
+ * checkbox `indeterminate` demo. The spec opens these demos where no other spec covers them, checks the demo's key
  * control does something, and scans the demo frame with axe in light and dark.
  */
 import { test, expect } from "./fixtures";

@@ -61,8 +61,8 @@
 # false failure.
 #
 # THE RATCHET, NOT A WALL (same shape as check-attr-spread-collision.sh):
-# `scripts/check-cross-component-overrides.baseline.tsv` lists the sites that existed when the
-# gate was introduced, one `file<TAB>kind<TAB>selector<TAB>property` per line (selector with
+# `scripts/check-cross-component-overrides.baseline.tsv` lists the sites that predate the
+# gate, one `file<TAB>kind<TAB>selector<TAB>property` per line (selector with
 # whitespace collapsed; NOT file:line, so unrelated edits above a site do not disturb it; a
 # multiset, because the same selector under two media queries is two sites). The gate fails
 # only on a site that is NOT in the baseline. It is a DEBT REGISTER, NOT AN APPROVAL: do not add

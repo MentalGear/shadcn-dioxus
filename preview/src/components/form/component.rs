@@ -227,9 +227,8 @@ fn watch_invalid_js(form_id: &str, report_id: &str) -> String {
         const report = document.getElementById('{report_id}');
         if (form && report) {{
             // `[class*="dx-form-field"]` rather than `.dx-form-field`: this is
-            // deliberately loose (dev-docs/backlog.md row 32 dropped `#[css_module]`'s
-            // hashing, so the rendered class is now the plain `dx-form-field`
-            // literal and an exact selector would work too), kept this way so it
+            // deliberately loose (the rendered class is the plain `dx-form-field`
+            // literal, see dev-docs/backlog.md row 32, so an exact selector would work too), kept this way so it
             // keeps matching regardless of any extra classes a future edit appends
             // alongside it.
             function fieldContainerOf(el) {{
@@ -305,11 +304,11 @@ fn watch_invalid_js(form_id: &str, report_id: &str) -> String {
             // when the check fails*, which this file's own capturing
             // `invalid` listener above would immediately see and re-mark
             // `data-invalid` from, undoing the very clear this function was
-            // trying to make (a self-reinforcing loop that, before this
-            // fix, made every required library control's marker outlive a
-            // form reset -- the native references were unaffected only
+            // trying to make (a self-reinforcing loop that would make
+            // every required library control's marker outlive a
+            // form reset -- the native references escape it only
             // because their reset finishes synchronously, before this
-            // function's deferred re-check ever ran). `.validity` is a
+            // function's deferred re-check runs). `.validity` is a
             // live `ValidityState` read with no such side effect.
             function reviewInvalidMarkers() {{
                 setTimeout(() => {{

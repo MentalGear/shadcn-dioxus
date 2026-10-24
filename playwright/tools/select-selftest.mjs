@@ -7,7 +7,7 @@
 // 2. analyzeSelector: which classes / ids a selector REQUIRES, and what it leaves unconstrained;
 // 3. css-impact.mjs on a synthetic site: page placement, shell-wide classes, closed-popup siblings, dead classes,
 //    custom properties traced to their readers, keyframes, and every fallback to the broad set;
-// 4. the title shapes of the matrix specs (select-titles.mjs) against the real spec files: a spec whose titles no longer
+// 4. the title shapes of the matrix specs (select-titles.mjs) against the real spec files: a spec whose titles do not
 //    follow the shape the table expects fails here, instead of silently keeping every test;
 // 5. the `--grep-invert` pattern select.mjs builds really drops exactly the dropped tests (escaping, anchoring);
 // 6. the real tree: `--pages` narrows the biggest matrix spec and the broad behaviour comes back with --no-css-narrow.

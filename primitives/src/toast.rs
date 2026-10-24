@@ -128,7 +128,7 @@ struct ToastRecord {
     permanent: bool,
     action: Option<ToastAction>,
     /// Set by [`close_record`]: the toast is on its way out (its exit animation plays) and is
-    /// removed [`TOAST_EXIT`] later. A closing toast no longer counts toward the pile.
+    /// removed [`TOAST_EXIT`] later. A closing toast does not count toward the pile.
     closing: bool,
 }
 
@@ -638,8 +638,8 @@ thread_local! {
 /// overflow: auto; background-color: Canvas; }`) plus `fit-content` sizing
 /// happened to produce -- per dev-docs/backlog.md row 44's own root-cause
 /// analysis, this is a real gap between engines: Chromium's default gives
-/// it a small (~105x40px) on-screen box (confirmed there by execution
-/// against a real build), while the fixture's "Add toast" appearing dead
+/// it a small (~105x40px) on-screen box (measured there
+/// on a real build), while the fixture's "Add toast" appearing dead
 /// on an iOS 18 device is the unverified-but-plausible
 /// WebKit instance of the same gap -- this crate has no WebKit build to
 /// confirm that half against directly. Rather than tie the

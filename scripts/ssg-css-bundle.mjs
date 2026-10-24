@@ -219,7 +219,7 @@ const bundleTag = `<link rel="stylesheet" href="${bundleHref}" ${MARK} data-cove
 let rewritten = 0;
 let removed = 0;
 for (const pg of parsed) {
-  // Remove (unless --keep-links) the per-route links the bundle now carries, last to first so offsets hold.
+  // Remove (unless --keep-links) the per-route links the bundle carries, last to first so offsets hold.
   let head = pg.html.slice(0, pg.end);
   const edits = [];
   for (const s of pg.sheets) {

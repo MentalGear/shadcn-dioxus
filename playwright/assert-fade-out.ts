@@ -81,7 +81,7 @@ export interface FadeOutReport {
   finalMountedOpacity: number;
   /** Whether a real opacity animation/transition (duration > 0) started on the content while closing. */
   sawOpacityAnimation: boolean;
-  /** Whether the element was unmounted (no longer `exists`) before sampling's own cap ran out. */
+  /** Whether the element was unmounted (its `exists` is false) before sampling's own cap ran out. */
   unmountedWithinCap: boolean;
   /** ms from the close trigger to unmount, or `null` if it never unmounted within the cap. */
   timeToUnmountMs: number | null;
@@ -92,10 +92,10 @@ const NEAR_ZERO_OPACITY = 0.05;
 
 /*
  * There is deliberately NO "at least N frames of decreasing opacity"
- * threshold (the original asserted N=3). How many `requestAnimationFrame`
+ * threshold. How many `requestAnimationFrame`
  * ticks land inside a ~100-150ms fade depends on how starved the page's main
  * thread is, so any frame-count threshold is a load-dependent assertion: it
- * went red 3 times in 20 under `--workers=4`, with three different sample
+ * goes red under `--workers=4` with different sample
  * shapes (`[1, 0.04, 0]`, `[0.15, 0.04, 0]`, `[0, 0, ...]`), and under 25x
  * CPU throttling the first frame can land after the whole fade is over
  * (dev-docs/backlog.md row 115). "It fades rather than snaps" is asserted

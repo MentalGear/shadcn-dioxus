@@ -118,7 +118,7 @@ let openFrames = 0;
 // row -> whether it was a scroll anchor the last time the content changed. A row
 // only counts as a *new* anchor when it was not already an anchor: an anchor
 // that was there all along (the open transcript's user messages) must never
-// pull the reader back when an unrelated row is swapped (a typing marker
+// pull the reader back if an unrelated row is swapped (a typing marker
 // replaced by its reply keeps the row count unchanged).
 const anchorSeen = new WeakMap();
 let published = null;

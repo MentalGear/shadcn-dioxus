@@ -225,7 +225,7 @@ test.describe("Carousel wheel replay: reference (the bench's own mode D, rev 40)
    * component will deliberately differ (see block (b)), so the bench's actual
    * behaviour is only recorded as a test annotation, never asserted.
    *
-   * Measured when this file was added (Chromium, 806px track): the notched
+   * Measured on Chromium, 806px track: the notched
    * recording (4 x 3 lines) draws a 29px band that is held until the bench's
    * 1500ms idle backstop and is home ~1.8s after the last click (component
    * contract: <= 300ms); the vertical-only recording (8 x dy -100) draws a

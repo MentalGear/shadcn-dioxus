@@ -285,7 +285,7 @@ fn clone_registry(url: &str, rev: Option<&str>, dest: &Path) -> Result<()> {
 
 fn checkout_rev(dir: &Path, url: &str, rev: &str) -> Result<()> {
     // `origin/<rev>` first: after a fetch a local branch of the same name is the STALE one that the clone
-    // created (it only moves on `reset`), so trying the bare name first pinned `update` to old commits.
+    // created (it only moves on `reset`), so trying the bare name first would pin `update` to old commits.
     // Tags and commit ids have no `origin/` form and fall through to the bare name.
     git(
         Some(dir),

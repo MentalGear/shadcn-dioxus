@@ -7,12 +7,13 @@
 # demo and docs page renders the same offline, in a sandbox with an egress proxy, and on GitHub Pages --
 # deterministically, and without sending a visitor's request to a third party.
 #
-# THE DEFECT: the avatar, item, drag-and-drop and home-page demos used GitHub profile photos of real people
-# (`github.com/<user>.png`, `avatars.githubusercontent.com/u/<id>`) and `avatar.vercel.sh/<name>` gradients.
+# THE DEFECT: a remote image in a demo, such as GitHub profile photos of real people
+# (`github.com/<user>.png`, `avatars.githubusercontent.com/u/<id>`) or `avatar.vercel.sh/<name>` gradients.
+# The avatar, item, drag-and-drop and home-page demos each hot-linked them.
 # That is a privacy and licence problem (real people's photos), and a reliability one: with the network
-# blocked or slow every one of them fell back to initials (or sat on a broken-image box), and a spec that
-# reads `img[src]` or waits for `load` depends on a third party. Found three times over (avatar, item,
-# drag_and_drop_list + the home blocks), so this is a class and not one bad URL: the gate makes the class
+# blocked or slow every one of them falls back to initials (or sat on a broken-image box), and a spec that
+# reads `img[src]` or waits for `load` depends on a third party. It recurred in the avatar, item and
+# drag_and_drop_list demos and the home blocks, so this is a class and not one bad URL: the gate makes the class
 # unable to come back.
 #
 # WHAT IT FLAGS (a remote URL is `http://`, `https://` or protocol-relative `//host`), in .rs/.css/.html under
