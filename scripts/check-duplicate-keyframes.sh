@@ -9,7 +9,7 @@
 # would notice.
 #
 # THE CLASS (row 145): byte-identical `@keyframes` pasted into several sheets under different names (a menu's
-# pop-in in five, the pure opacity fade in eight, the colour picker's 4px drop in two, two directional slides
+# pop-in, the pure opacity fade, the colour picker's 4px drop, two directional slides
 # that differ only in which one a `[dir="rtl"]` rule names). Each copy is right on the day it is pasted and the
 # set drifts from then on (a duration or an offset tuned in one place). The construction
 # is one shared set in the theme -- `dx-fade-in/out`, `dx-pop-in/out`, `dx-drop-in/out`, selected through the

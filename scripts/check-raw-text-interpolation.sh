@@ -27,13 +27,13 @@
 # In `<textarea>`/`<noscript>` the marker is not even inert: it ships as
 # visible literal text (`<!--node-id7-->` in the box).
 #
-# Evidence: `style { "{style_rule}" }` in `ChartContainer` leaves
+# Example: `style { "{style_rule}" }` in a chart container leaves
 # `--color-<series>` undefined on every SSG page, so bar/area marks fall back
-# to black fill and line charts to no stroke. The same class is
-# `virtual_list/variants/random_heights` (`style { {INLINE_STYLE} }` ships
+# to black fill and line charts to no stroke. The same class covers
+# a virtual-list demo (`style { {INLINE_STYLE} }` ships
 # `<style><!--node-id746-->.dx-virtual-list-container {`, first rule dead) and
-# any `style { {CONST} }` demo (carousel `sizes`, button `size`,
-# drag_and_drop_list `main`). More than one occurrence is a class, so this
+# any `style { {CONST} }` demo.
+# It is a class, so this
 # gate bans the shape, not the instances.
 #
 # What to do instead:
@@ -51,7 +51,7 @@
 # attribute keys/values (`media: "{x}"`, `"data-x": ...`) are not text
 # children and are ignored. `document::Style`/`document::Script` (capital
 # letter, routed through the head mechanism) are out of scope, and so is
-# `title`: an SVG `<title>` child is fine (84 of them ship legitimately) and
+# `title`: an SVG `<title>` child is fine (many ship legitimately) and
 # an HTML title is set through `document::Title`. A block that is a closure
 # body (`onfocus: move |e| { ... }`, `async move { ... }`) is never a child.
 #

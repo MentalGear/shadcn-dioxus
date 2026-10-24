@@ -2,7 +2,7 @@
 #
 # check-css-logical-properties.sh
 #
-# Enforces dev-docs/backlog.md row 13 (Phase 6 RTL, styling half): a themed
+# Enforces dev-docs/backlog.md row 13 (RTL, styling half): a themed
 # component stylesheet must not hard-code an inline-axis PHYSICAL property
 # (one that means "left" or "right" no matter what direction the page
 # reads) where a logical property (`margin-inline-start`, `inset-inline-end`,
@@ -45,8 +45,8 @@
 # WHAT THIS DOES NOT CATCH (say plainly, per this repo's own convention):
 #   - A future misuse of `data-side` for something that genuinely should
 #     mirror would be silently exempted (the structural trust boundary
-#     above). Nothing currently in this codebase does that (verified by
-#     reading every `data-side` rule this script exempts -- see
+#     above). Nothing currently in this codebase does that (every `data-side` rule this script exempts is a physical side;
+#     see
 #     reference.md); a reviewer adding a new one should check by hand.
 #   - `[dir="rtl"]` OVERRIDE rules (the correct fix for a
 #     transform/translate that must differ under RTL) still contain a

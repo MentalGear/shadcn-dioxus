@@ -38,7 +38,7 @@
  *       touch-viewport font-size without changing the intentional desktop
  *       look: https://ui.shadcn.com/docs/components/input (component
  *       source: `components/ui/input.tsx` in `shadcn-ui/ui`). This repo's
- *       `Input`/`Textarea` already followed that construction (see
+ *       `Input`/`Textarea` follow that construction (see
  *       `preview/src/components/input/style.css` and `.../textarea/
  *       style.css`); this file is what proves every *other* text-entry
  *       surface in the app does too.

@@ -11,8 +11,8 @@
 # `transform`/`translate`/`scale`/`rotate`/`opacity` (and `filter`/`backdrop-filter`, which this gate does not
 # allow: they can move pixels) are eligible; anything else (`background-position`, `width`, `color`,
 # `clip-path`, `box-shadow`, a registered custom property ...) re-runs style, and usually paint, 60 times a
-# second per instance. The home page's skeleton, spinner and text shimmer keep the main thread awake through
-# every scroll (measured: 630-730 "Animation" style recalcs per scroll just for the skeletons). A finite animation is
+# second per instance. A skeleton, spinner or text shimmer made that way keeps the main thread awake through
+# every scroll (row 174 measured 630-730 "Animation" style recalcs per scroll from the skeletons alone). A finite animation is
 # bounded, so it is not this class; only `infinite` is checked.
 #
 # HOW IT READS THE CSS: every `*.css` under `preview/src` and `preview/assets` (node_modules and build output

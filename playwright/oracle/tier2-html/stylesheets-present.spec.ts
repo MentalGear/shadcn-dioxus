@@ -292,7 +292,7 @@ test("the oracle is not vacuous: a component stylesheet missing from the page is
 });
 
 test("the theme picker's popover panel is styled on the legacy component route", async ({ page }) => {
-  // The symptom: on `/component/?name=...` the panel computed border 3px /
+  // The symptom: on `/component/?name=...` the panel computes border 3px /
   // radius 0 (the UA `<dialog>`-ish default) instead of the themed 1px / 10px it has on `/`.
   const panel = async (url: string, settled?: RegExp) => {
     // goto-ok: stylesheet-presence oracle samples at domcontentloaded and across the redirect; no interaction

@@ -50,23 +50,23 @@
  * `window.scrollY` doesn't move while locked, on a desktop Chromium
  * mouse-wheel attempt. It also does not (and, per the note on
  * `assertScrollIsLocked` below, should not) assert that a scripted
- * `window.scrollTo()` call is blocked -- `overflow: hidden` never clamps
+ * `window.scrollTo()` call is blocked -- the lock's event interception never clamps
  * that, in this implementation or Radix's.
  *
  * LAYOUT-SHIFT ASSERTIONS (below, `assertNoHorizontalShift`): scroll-gap
  * compensation is exercised too, per
- * `dev-docs/archive/research/phase4-spike-findings.md` "Round 2 -- solved by construction",
- * Construction A/C. Removing a classic (non-overlay) scrollbar's `overflow:
- * hidden` without reserving its space shifts everything horizontally by the
+ * `dev-docs/archive/research/phase4-spike-findings.md` "Round 2 -- solved by construction".
+ * A lock that changed `<html>`'s `overflow` (or its overflow amount) would remove a classic
+ * (non-overlay) scrollbar's reserved space and shift everything horizontally by the
  * scrollbar's width the instant the lock engages (15px under a forced real
- * scrollbar, see `playwright/xvfb.local.config.ts`). That regression is invisible under this repo's default headless Chromium,
- * which renders 0-width overlay scrollbars even for a genuinely scrollable
+ * scrollbar, see `playwright/xvfb.local.config.ts`). That shift is invisible under this repo's default headless
+ * Chromium, which renders 0-width overlay scrollbars even for a genuinely scrollable
  * page -- so `assertNoHorizontalShift` is trivially satisfied there and only
  * bites for real when run under `xvfb.local.config.ts`. Both runs matter:
  * headless proves the lock doesn't *introduce* a shift on overlay-scrollbar
  * platforms (a transient `scrollbar-gutter` toggle is falsified for exactly
  * this reason -- see the findings doc), and the Xvfb run proves it
- * *removes* the shift on classic-scrollbar platforms.
+ * leaves classic-scrollbar platforms unshifted.
  */
 
 import { test, expect } from "../../fixtures";
@@ -103,13 +103,13 @@ async function assertPageIsScrollable(page: Page) {
  * Attempts to scroll the page the way a person actually would -- a mouse
  * wheel over the page -- and asserts `window.scrollY` did not move.
  *
- * Deliberately does NOT also try `window.scrollTo()`: `overflow: hidden`
- * (on `<html>`/`<body>`, which is what this lock -- and Radix's
- * `react-remove-scroll` -- set) blocks wheel-, touch-, and
+ * Deliberately does NOT also try `window.scrollTo()`: the lock (event
+ * interception, like Radix's
+ * `react-remove-scroll`; see scroll_lock.rs's module doc) blocks wheel-, touch-, and
  * keyboard-initiated scrolling, but does not clamp a direct, scripted
  * `scrollTo()`/`scrollTop =` call, which every browser still honors
  * regardless of overflow. On this page, with
- * `overflow: hidden` applied, `page.mouse.wheel()` leaves `scrollY` at 0,
+ * the lock held, `page.mouse.wheel()` leaves `scrollY` at 0,
  * while `window.scrollTo()` still moves it. Radix's own lock has the same
  * property (`react-remove-scroll` intercepts wheel/touch/key events; it does
  * not override `Element.scrollTo`), so asserting against a scripted
@@ -131,7 +131,7 @@ async function assertScrollIsLocked(page: Page) {
  * above).
  *
  * Retries the wheel attempt rather than making just one: the unlock
- * restores `overflow` via a `document::eval` round-trip queued from the
+ * releases through a `document::eval` round-trip queued from the
  * closing component's unmount, which lands well after Playwright observes
  * the closed element gone from the accessibility tree (empirically, over a
  * second later is not unusual) -- not an implementation defect, just two
@@ -385,7 +385,7 @@ test.describe("Select locks and releases page scroll", () => {
     const rightBefore = await rightEdgeMarkerRight(page);
 
     // Same role/locator convention as select.spec.ts's `singleSelectTrigger`
-    // -- dev-docs/backlog.md row 8 gave the trigger role="combobox".
+    // -- dev-docs/backlog.md row 8: the trigger has role="combobox".
     const trigger = demoRole(page, "combobox");
     await trigger.click();
     const listbox = page.getByRole("listbox");
@@ -404,16 +404,14 @@ test.describe("Select locks and releases page scroll", () => {
   });
 
   /**
-   * dev-docs/backlog.md rows 9/72: the `scroll_lock=false` opt-out itself had no
-   * fixture exercising it (see this file's own former "NOT COVERED HERE"
-   * note, which this test replaces). `preview/src/components/top_layer/
-   * component.rs`'s "Select scroll_lock opt-out" section adds a labelled,
-   * distinct `Select` instance with `scroll_lock: false` explicitly set --
-   * the `top_layer` fixture page is used here (not `select`'s own gallery
-   * page, which the default-`true` case above already uses) because it is
-   * already taller than the viewport (every other overlay section on it),
-   * satisfying `assertPageIsScrollable` for free, and it gives this new
-   * instance its own trigger id with no risk of colliding with the
+   * dev-docs/backlog.md rows 9/72: the `scroll_lock=false` opt-out itself has its own
+   * fixture: `preview/src/components/top_layer/component.rs`'s "Select scroll_lock
+   * opt-out" section holds a labelled, distinct `Select` instance with
+   * `scroll_lock: false` explicitly set -- the `top_layer` fixture page is used
+   * here (not `select`'s own gallery page, which the default-`true` case above
+   * already uses) because it is already taller than the viewport (every other
+   * overlay section on it), satisfying `assertPageIsScrollable` for free, and it
+   * gives this instance its own trigger id with no risk of colliding with the
    * default-Select case's own role/text-based locator above.
    */
   test("scroll_lock=false leaves the page scrollable while the listbox is open", async ({ page }) => {
@@ -444,8 +442,8 @@ test.describe("Select locks and releases page scroll", () => {
     // The opt-out itself: reuses `assertScrollIsUnlocked` as-is (it resets
     // scrollY to 0 and wheel-scrolls on each attempt, exactly the shape
     // this case needs, and already retries against the same settling delay
-    // this assertion would otherwise have to duplicate -- confirmed by a
-    // standalone repro that a bespoke single-shot `wheel()` -> immediate
+    // this assertion would otherwise have to duplicate: a
+    // bespoke single-shot `wheel()` -> immediate
     // `scrollY` read here is genuinely racy: `window.scrollY` does not
     // always update synchronously the instant `page.mouse.wheel()`
     // resolves, occasionally landing a couple hundred ms later even
@@ -471,9 +469,9 @@ test.describe("Dialog does not leave the page permanently scrolled after a lock 
    * *vertical scroll position*, `window.scrollY`, across a full open-and-
    * close cycle. A modal `<dialog>`'s `showModal()` can move the page by
    * several hundred pixels the instant it runs (its own default
-   * scroll-into-view-on-focus behavior, which `overflow: hidden` does not
-   * suppress), and a lock/unlock cycle that only restores `overflow`, never
-   * `scrollY`/`scrollX`, would leave it there: every dialog interaction would
+   * scroll-into-view-on-focus behavior, which the lock's event interception does not
+   * suppress), and a lock/unlock cycle that does not restore
+   * `scrollY`/`scrollX` would leave it there: every dialog interaction would
    * permanently scroll the user's page away from where they left it, most
    * visibly stranding this docs site's `position: sticky` top nav
    * off-screen for the rest of the session.
@@ -485,10 +483,10 @@ test.describe("Dialog does not leave the page permanently scrolled after a lock 
    * waits for `networkidle`; an under-settled page, with its layout still
    * settling mid-interaction, makes the test look red), in default headless
    * Chromium and under `playwright/xvfb.local.config.ts`'s real classic
-   * scrollbar, it passes cleanly. It stays as a regression guard: this
-   * failure mode (a native `<dialog>`'s focus/scroll-into-view behavior
+   * scrollbar, it passes cleanly. It guards a failure mode (a native
+   * `<dialog>`'s focus/scroll-into-view behavior
    * stranding the page) is well-documented upstream, and this is the one
-   * assertion that would catch it coming back.
+   * assertion that catches it.
    */
   test("closing a Dialog restores window.scrollY to where it was before opening", async ({
     page,
@@ -536,13 +534,12 @@ test.describe("scrollbar-gutter reservation survives the lock itself, not just i
    * full 1027px the instant a `Dialog` opened and locked scroll
    * (`playwright/xvfb.local.config.ts`, a real classic scrollbar).
    *
-   * Hence the lock does not touch `<html>`'s `overflow` at all (see
-   * `primitives/src/scroll_lock.rs`'s module docs, "Generation 3"): it
-   * freezes `<body>` instead (`position: fixed; top: -{scrollY}px; left: 0;
-   * right: 0;`), which blocks scrolling structurally (`<html>` has nothing
-   * left to scroll) without ever making the permanent baseline's own
-   * precondition (`overflow` computing to `auto`/`scroll` on `<html>`) stop
-   * holding.
+   * Hence the lock touches neither `<html>`'s `overflow` nor `<body>`'s
+   * position (see `primitives/src/scroll_lock.rs`'s module docs, "How this
+   * hook blocks scrolling"): it intercepts the scroll *input* instead, so no
+   * style of `<html>`/`<body>` ever changes and the permanent baseline's own
+   * precondition (`overflow` computing to `auto`/`scroll` on `<html>`) always
+   * holds.
    */
   test("Dialog: opening a modal does not widen clientWidth by the scrollbar's reserved gutter", async ({
     page,
@@ -569,7 +566,7 @@ test.describe("Breakpoint flip: exact 1027px viewport with a classic scrollbar",
    * Ties this suite's generic gutter check above (measured at
    * whatever width `xvfb.local.config.ts`'s default viewport happens to
    * be) directly to the user-facing symptom it prevents:
-   * "the page jumps and the top nav disappears at around 1027px wide."
+   * the page jumps and the top nav disappears at around 1027px wide.
    * 1027px is not an arbitrary number -- a (viewport width) of 1027px with a real
    * ~15px classic scrollbar subtracted lands at 1012px, and this repo's own
    * responsive breakpoints react to `document.documentElement.clientWidth`
@@ -610,7 +607,7 @@ test.describe("Breakpoint flip: exact 1027px viewport with a classic scrollbar",
 
     expect(
       await page.evaluate(() => document.documentElement.clientWidth),
-      "clientWidth must not change the instant the modal locks scroll, at the exact width the user's report was measured at",
+      "clientWidth must not change the instant the modal locks scroll, at 1027px, where a classic scrollbar's gutter shows",
     ).toBe(widthBefore);
     expect(
       await measureAtRest(nav),

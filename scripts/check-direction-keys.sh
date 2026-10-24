@@ -12,8 +12,7 @@
 #
 # THE CLASS: a handler that maps `Key::ArrowLeft`/`Key::ArrowRight` (or a physical horizontal pointer delta,
 # `delta_x`) to "previous"/"next"/"decrease"/"increase" without asking the text direction is right in LTR and
-# backwards in RTL. Five files shipped that way (tag_group, date_picker, accordion, navigation_menu,
-# move_interaction) next to seventeen that did not, and nothing told them apart.
+# backwards in RTL, and nothing in the source tells it apart from a handler that mirrors.
 #
 # THE CONSTRUCTION: `primitives/src/direction.rs` owns the one mirroring rule (`Direction::resolve_horizontal`, and
 # `Direction::ltr_equivalent`, which is built on it). A non-test, non-comment line under primitives/src that names

@@ -17,9 +17,9 @@
  * Calibration (dev-docs/conformance-harness.md, "Calibration" / tier1-apg/README.md):
  * `oracle-focus-restore.spec.ts` asserts this rule against this library's own
  * components, calibrated only against another of *this library's own*
- * components (Dialog) as an internal control. Per conformance-harness.md,
- * that is the weaker of the two possible references and "not yet calibrated
- * against an APG page" — this file is that upgrade. It runs the identical
+ * components (Dialog) as an internal control, the weaker of the two possible
+ * references (conformance-harness.md, "Calibration"). An APG page is the stronger
+ * one, so this file runs the identical
  * rule against the pattern's own vendored example page
  * (playwright/oracle/reference/7e4034b/, pinned commit
  * 7e4034b262bc0d25332e330d8a582aaf34113829 of w3c/aria-practices — see that

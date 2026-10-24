@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# check-component-root-reset.sh  (backlog row 328; replaces check-declared-typography.sh and its baseline)
+# check-component-root-reset.sh  (backlog row 328)
 #
 # An in-flow component must not inherit its host's typography, once and by construction: every namesake component root
 # (`dx-<dir>`, read from `component.rs`; the four `<dialog>`-panel roots are left to the popup-root rule) carries

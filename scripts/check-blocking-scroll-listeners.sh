@@ -26,9 +26,9 @@
 # safe while the touched element's EFFECTIVE `touch-action` is `none` (the
 # intersection down the ancestor chain): the slider thumb and the color area get it
 # from their non-focusable containers, but the resizable handle is itself focusable,
-# so the docs app's `touch-action: manipulation !important` catch-all beat its own
-# `none` and Chromium cancelled the drag (`pointercancel` after ~20px) until
-# `preview/assets/main.css` exempted `.dx-resizable-handle[role="separator"]`.
+# so the docs app's `touch-action: manipulation !important` catch-all would beat its own
+# `none` and Chromium would cancel the drag (`pointercancel` after ~20px), so
+# `preview/assets/main.css` exempts `.dx-resizable-handle[role="separator"]`.
 # `playwright/oracle/tier2-html/scroll-main-thread.spec.ts` drives all three with real touch.
 #
 # What it flags, in `primitives/src` and `preview/src` (`*.rs`, `*.js`) and
@@ -64,7 +64,7 @@
 #
 # Usage: scripts/check-blocking-scroll-listeners.sh [file ...]
 #   No arguments scans the tree; explicit files are scanned as given (for
-#   proving the gate red against old code).
+#   proving the gate red against a known-bad file).
 # Exit 0: clean. Exit 1: offending file:line on stderr.
 
 set -euo pipefail

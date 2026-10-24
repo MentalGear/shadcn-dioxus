@@ -66,8 +66,8 @@
 # is a proper multiset comparison, not a plain set comparison, so it stays exact.
 #
 # BASELINE ENTRIES ARE A DEBT REGISTER, NOT AN APPROVAL. Every line in either baseline
-# file is a real, live instance of the production defect described above, left unfixed
-# only because fixing ~700 call sites was out of scope when the gate was adopted (it
+# file is a real, live instance of the production defect described above, not yet fixed
+# because the gate (it
 # adds detection only) -- see dev-docs/issues/duplicate-attribute-findings.md for the
 # full, actionable breakdown. Do not add a NEW site to the baseline to make this
 # gate pass; the baseline exists only so this gate can ship without also requiring every

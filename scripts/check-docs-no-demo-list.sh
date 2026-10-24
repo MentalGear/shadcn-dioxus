@@ -3,8 +3,8 @@
 # check-docs-no-demo-list.sh
 #
 # A component page already renders every demo right below its docs, each with its own "About this example"
-# notes (`variants/<variant>/notes.md`). A `## Demos` section in docs.md only repeated that list one line per
-# demo (and drifted from it), so by construction no preview/src/components/*/docs.md may have an h2 whose text
+# notes (`variants/<variant>/notes.md`). A `## Demos` section in docs.md would only repeat that list one line per
+# demo (and drift from it), so by construction no preview/src/components/*/docs.md may have an h2 whose text
 # starts with "Demos". Put the prose about a demo in that variant's notes.md instead.
 #
 # Usage: scripts/check-docs-no-demo-list.sh

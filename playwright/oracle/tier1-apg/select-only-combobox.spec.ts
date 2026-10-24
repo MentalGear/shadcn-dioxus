@@ -42,9 +42,9 @@
  *     aria-required="true", and they have an accessible name that is
  *     distinct from their value."
  *   Single-subject (this library only): the vendored select-only example
- *   ("Favorite Fruit") has no required-field variant -- confirmed by reading
- *   both its static markup and `examples/js/select-only.js` directly (no
- *   `aria-required` in either) -- so there is nothing to calibrate this rule
+ *   ("Favorite Fruit") has no required-field variant:
+ *   its static markup and `examples/js/select-only.js` carry no
+ *   `aria-required` -- so there is nothing to calibrate this rule
  *   against on the reference side. Subject: the `form` conformance fixture
  *   route (`/component/?name=form&`, `preview/src/components/form/
  *   component.rs`), which has a "Fruit, required (library)" `Select`.
@@ -71,8 +71,8 @@
  * aria-activedescendant") -- see keyboard-matrix.spec.ts's Select
  * section for the behavioural rows that document that divergence. `aria-autocomplete="none"` itself is NOT part
  * of R1's dual-subject check: the vendored reference page does not set it
- * anywhere in its static markup or `select-only.js` (confirmed by reading
- * both) even though combobox-pattern.html's prose says every combobox
+ * anywhere in its static markup or `select-only.js`
+ * even though combobox-pattern.html's prose says every combobox
  * "has aria-autocomplete set to a value that corresponds to its autocomplete
  * behavior" -- this library sets it to match Radix's trigger regardless
  * (see `primitives/src/select/components/trigger.rs`'s own comment), but
@@ -105,7 +105,7 @@ const goto = (page: Page, name: string) =>
   gotoHydrated(page, `${BASE}${name}/`, { timeout: 20 * 60 * 1000 });
 
 // Same role/locator convention as select.spec.ts's `singleSelectTrigger` --
-// dev-docs/backlog.md row 8 gave the trigger role="combobox".
+// dev-docs/backlog.md row 8: the trigger has role="combobox".
 const librarySelectTrigger = (page: Page) => demoRole(page, "combobox");
 
 test.describe("R1 -- combobox role/aria-haspopup/aria-expanded/aria-controls contract", () => {

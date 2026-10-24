@@ -22,9 +22,9 @@
 #     keeps emitting `/<base-path>/` URLs even after `rm -rf public` (row 100 -- the
 #     tree is the problem, not its output). The marker is written HERE, before any
 #     `--base-path` build; scripts/lane-target.sh refuses marked trees as lane templates.
-#     The vice-versa direction (base-path build into an unmarked tree) is NOT refused: no
-#     evidence of harm was ever recorded, the marker cannot detect it, and refusing would block
-#     the normal first deploy into a warm tree. What is real there is a wrong *output*, so both
+#     The vice-versa direction (base-path build into an unmarked tree) is NOT refused: the marker
+#     cannot detect it, and refusing would block
+#     the normal first deploy into a warm tree. The real risk there is a wrong *output*, so both
 #     directions are checked on the output instead (step 5).
 #  3. The profile's `dx/preview/<profile>/web/public` is wiped before building. dx 0.7.9 `--ssg`
 #     only rewrites `public/index.html` when `public/` already exists; every other pre-rendered
@@ -53,7 +53,7 @@
 #     per-component `document::Link`s only reach the head of the route that SSR-renders them; on a
 #     client-side navigation or a popover's first open they are inserted after first paint and are not
 #     render-blocking, so the new content paints with UA defaults (white inputs, no radius) and then
-#     reflows. `--no-css-bundle` builds the unbundled shape, for before/after measurements only -- never deploy it.
+#     reflows. `--no-css-bundle` builds the unbundled shape, for measuring the bundle's effect only -- never deploy it.
 set -Eeuo pipefail
 
 failed_line=""
@@ -112,7 +112,7 @@ case "$target_dir" in
 esac
 export CARGO_TARGET_DIR="$target_dir"
 # The target root must EXIST before dx starts: the dx log is `tee`d into it, and tee opens its file at once,
-# racing dx/cargo, which create a cold root a moment later. Losing that race leaves no log, and guard 4 then
+# racing dx/cargo, which create a cold root a moment later. Losing that race would leave no log, and guard 4 then
 # fails a complete cold build with "dx log .../build-ssg.dx.log not found" (row 216; reproducible with
 # a stub dx that creates the root after 0.5 s). It is intermittent, so a warm rerun passes.
 mkdir -p "$target_dir"
@@ -232,7 +232,7 @@ build_once() {
     if [ "$bundle_rc" -ne 0 ]; then
       fail_reason="scripts/ssg-css-bundle.mjs failed (exit $bundle_rc): $(grep -m1 '^ssg-css-bundle:' "$bundle_log" || echo 'no message')"
       # A page links a hash the manifest lacks = a stylesheet changed between the server's compile and
-      # dx's asset bundling. Name what changed since this attempt started (usually another lane's edit).
+      # dx's asset bundling. Name what changed since this attempt started (usually a concurrent edit in the same tree).
       if grep -q "not in dx's asset manifest" "$bundle_log"; then
         retryable=1
         local drifted

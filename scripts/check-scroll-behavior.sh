@@ -7,7 +7,7 @@
 # them) unless the same selector carries `[data-anchor-scroll]`. Invisible to cargo and clippy, and with CI frozen
 # (dev-docs/backlog.md row 33) nothing else would notice.
 #
-# THE CLASS (row 228: clicking a demo link from the overview navigated to the component page, but to its bottom):
+# THE CLASS (row 228):
 # `html { scroll-behavior: smooth }` makes EVERY window scroll that names no `behavior`
 # animate, not only the in-page `#`-anchor jump it is meant for. The router's `scrollTo(0, 0)` after a push
 # starts a smooth scroll on the long page, the short destination page replaces it mid-animation, the browser

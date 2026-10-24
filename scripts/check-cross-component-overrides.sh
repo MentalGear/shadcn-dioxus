@@ -14,7 +14,7 @@
 #
 # Both selectors are (0,1,0) and both set `font-size`, so the winner is whichever stylesheet
 # loads LAST -- and the load order is per route (`<link>`s are injected as components render).
-# 208 sheet pairs are ordered both ways across routes, so the Field label was
+# 208 sheet pairs are ordered both ways across routes, so the Field label would be
 # 14px on the home gallery and 12.8px on /component/field/. Patching it with a
 # specificity bump (`label.dx-field-label`) only moves the contest; it does not remove it.
 #

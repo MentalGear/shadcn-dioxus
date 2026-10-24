@@ -12,7 +12,7 @@
 # THE CLASS (backlog row 196): dx 0.7.9 logs a failed static-route render as
 #     ERROR ssg error: reqwest::Error { kind: Request, url: "http://127.0.0.1:9999/component/table/?", ... IncompleteMessage ... }
 # and then carries on: `SSG complete`, `Server build completed successfully!`, exit 0, with only some of the
-# pages written. Nothing downstream looked at the log or at the route list, so the first symptom was a
+# pages written. Without this check nothing downstream looks at the log or at the route list, so the first symptom is a
 # confusing failure two steps later (ssg-css-bundle: "no page links main.css") or no failure at all.
 #
 # What is checked, all derived from this build's own evidence (no hard-coded route count):

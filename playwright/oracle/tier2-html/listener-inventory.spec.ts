@@ -1,10 +1,10 @@
 /**
  * ORACLE: tier 2 (HTML) -- JS listeners are owned by the scope that added them.
  *
- * Source: dev-docs/backlog.md rows 149 and 159 (`scroll_lock.rs` left non-passive `wheel`/`touchmove`
- * listeners on `window` for the rest of the visit after the first modal had opened; the same shape --
- * an `addEventListener` inside a `document::eval` script that nothing removes -- was in the form
- * fixture, the sidebar, `pointer.rs` and the focus trap). Rule sources, per this tier's policy of citing
+ * Source: dev-docs/backlog.md rows 149 and 159 (the hazard: an `addEventListener` inside a `document::eval` script that
+ * nothing removes, e.g. non-passive `wheel`/`touchmove` listeners on `window` that outlive the modal that installed
+ * them, in a lock, the form fixture, the sidebar, a pointer bridge or a focus trap). Rule sources, per this tier's
+ * policy of citing
  * a standard rather than an opinion:
  *   - DOM Standard, `AddEventListenerOptions.passive` and `removeEventListener`: a registration lives until
  *     it is removed, whatever script made it:
@@ -39,9 +39,9 @@
  *   PLAYWRIGHT_BASE_URL=http://127.0.0.1:8083 npx playwright test --config=baseline.local.config.ts \
  *     ./oracle/tier2-html/listener-inventory.spec.ts
  *
- * Red proof: without the helper (`scroll_lock.rs` installing its four listeners at the first lock and
- * keeping them; `form` adding two `document` listeners per visit; `pointer.rs` installing four on `window`
- * on first use) the inventory grows with visits: see dev-docs/backlog.md row 159.
+ * Red proof: a listener installed outside `listen()` (a lock that installs its four listeners at the first use and
+ * keeps them; a form adding two `document` listeners per visit; a pointer bridge installing four on `window` on first
+ * use) makes the inventory grow with visits: see dev-docs/backlog.md row 159.
  */
 import { test, expect } from "../../fixtures";
 import type { CDPSession, Page } from "@playwright/test";

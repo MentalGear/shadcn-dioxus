@@ -11,14 +11,14 @@
 # `primitives/src/js/*.js` is GENERATED from `primitives/src/ts/*.ts` and committed, so dioxus-primitives needs no
 # build script (a `build.rs` would run in every consumer's build; dev-docs/backlog.md row 217). Committing a generated file makes one class possible: the source and the artifact
 # drifting apart -- a `.ts` edit without a rebuild (the next build ships the stale behaviour), or a hand edit of the
-# `.js` (the next rebuild erases it; `dev-docs/guides/lifting-code.md` section 2 lists a fork fix that did exactly
-# that). This gate removes the class:
+# `.js` (the next rebuild erases it; see `dev-docs/guides/lifting-code.md` section 2 for
+# a fork fix of that shape). This gate removes the class:
 #   - `primitives/src/js/bundle.manifest` (written only by `scripts/build-js-bundle.sh`) records the sha256 of every
 #     `src/ts/*.ts` and of the `src/js/*.js` built from it; any edit of either side without a rebuild is red;
 #   - every `src/ts/<n>.ts` has a `src/js/<n>.js` and vice versa (no orphans, nothing outside the manifest);
 #   - when `bun` is installed AND its version equals the one recorded in the manifest, the gate also rebuilds each
 #     file into a temp dir and requires the bytes to be identical (the deterministic-rebuild half). A different
-#     bun minifies differently (bun 1.4.2 vs the 2024 build of the original 1517-byte file), so a version mismatch
+#     bun minifies differently, so a version mismatch
 #     is reported as "rebuild check skipped", never as a failure, and the sha256 half still holds. No network.
 #
 # Usage: scripts/check-js-bundle.sh

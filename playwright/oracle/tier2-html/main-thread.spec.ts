@@ -15,8 +15,8 @@
  * work kept out of render) stay review-enforced; this file is the
  * mechanical backstop for this *type* of bug.
  *
- * Normative sources for the two APIs this file drives directly (both
- * verified reachable) -- see
+ * Normative sources for the two APIs this file drives directly --
+ * see
  * `../../main-thread.ts`'s header for the exact interfaces/attributes
  * each one contributes to `GestureReport`:
  *   - W3C Long Tasks API -- a "long task" is, verbatim, "any of the
@@ -506,7 +506,7 @@ interface FormControlSubject {
 
 /** Mirrors slider.spec.ts's own `sliderGroup`/`sliderTrack`/`sliderTrackPoint`
  * helpers (proven against this exact app) -- copied, not imported, per
- * this row's "keep this file independent" instruction. */
+ * row 45 (this file stays independent). */
 function sliderGroup(page: Page) {
   return demoRole(page, "slider")
     .locator('xpath=ancestor::*[@role="group" and @data-orientation="horizontal"][1]');

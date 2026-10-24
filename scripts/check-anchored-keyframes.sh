@@ -6,17 +6,17 @@
 # with a reason: animate `translate` / `scale` / `rotate` instead. Invisible to cargo and clippy, and with CI
 # frozen (dev-docs/backlog.md row 33) nothing else would notice.
 #
-# THE CLASS (the date picker's panel played its fade 144px off-centre, the colour picker's 133px;
+# THE CLASS (a keyframe that sets `transform` puts the date picker's fade 144px off-centre, the colour picker's 133px;
 # dev-docs/research/round3-2026-10-05.md): an anchored overlay positions itself with `transform` -- `translateX(-50%)` for a centred
 # anchor, `-100%` for an end-aligned one, `translateY(-50%)` beside it -- in the engine stylesheet
 # `primitives/src/top_layer.rs` injects, keyed on `[data-side]`/`[data-align]`, and that stylesheet covers
 # EVERY `dx-anchor-*` overlay (tooltip, hover card, popover, dropdown menu, menubar, navbar, navigation menu,
 # select, combobox). A `@keyframes` that sets `transform` REPLACES that value for as long as the animation
-# runs (and, with `forwards`, afterwards), so the panel played its whole fade at its un-centred spot and
-# snapped to the centre on the last frame. The individual `translate`/`scale`/`rotate` properties are separate
+# runs (and, with `forwards`, afterwards), so the panel plays its whole fade at its un-centred spot and
+# snaps to the centre on the last frame. The individual `translate`/`scale`/`rotate` properties are separate
 # and compose with `transform`, so the centring survives. Every `4px drop` / `zoom-in-95` fade written the
 # obvious way (`transform: translateY()`) is the bug. Context menus, sub-menus and the menus above set no
-# `data-side` today, so they lose nothing yet -- the same shape, latent until one does.
+# `data-side` today, so they lose nothing today; the same shape applies the moment one does.
 #
 # WHY INVERTED (a ban with an allowlist, not "which stylesheets are anchored"): deriving the anchored stylesheets
 # from three primitives (popover, tooltip, hover_card) would cover exactly the consumers already known about --

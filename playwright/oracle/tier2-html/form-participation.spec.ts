@@ -25,7 +25,7 @@
  * the test name) and the library control second. A CALIBRATION failure means
  * the *test* is wrong, not the component, and must be fixed before anything
  * else — see "Fixture note" below for the one fixture detail this
- * process actually found and fixed.
+ * rule governs.
  *
  * Rules implemented (numbering per conformance-harness.md's tier-2 checklist):
  *   1. A named control contributes `name=value` to FormData on submit.
@@ -41,9 +41,9 @@
  *      `willValidate` (rule 3) and `validity.valueMissing` (rule 4) on the
  *      exact controls that matter; a separate rule 5 suite would mostly
  *      re-assert the same wiring under a different name rather than reach
- *      new component behaviour. Left for a future pass if a control ever
+ *      new component behaviour. Add it if a control ever
  *      needs `checkValidity()`/`reportValidity()` called programmatically
- *      (e.g. a "Validate" button), which this fixture has no reason to add yet.
+ *      (e.g. a "Validate" button), which this fixture has no reason to add.
  *   7. <label> association (focus + activation). This is a real, distinct
  *      rule (every control here already has a paired <label for>), but it
  *      needs its own click/focus assertions rather than entry-list ones, and
@@ -72,14 +72,14 @@
  * Phase 1): every assertion states the spec-driven behaviour (a submittable
  * element, a reset listener).
  *
- * How assertions are graded (Phase 1, dev-docs/plan.md):
- *   - Rule 1 (`RadioGroup`, `Select`): assertions are forward-looking
- *     ("contributes name=value").
+ * How assertions are graded:
+ *   - Rule 1 (`RadioGroup`, `Select`): each assertion states
+ *     the spec-driven behaviour ("contributes name=value").
  *   - Rule 4 (`Switch`, `RadioGroup`) and rule 6 (`Checkbox`, `RadioGroup`,
  *     `Select`): "required blocks submission and fires invalid", following
  *     the same shape as the CALIBRATION test and the Checkbox rule 4 test in
  *     the same describe block.
- *   - Rule 4 (`Select`): `Select` has a `required` prop (Phase 1.3); the
+ *   - Rule 4 (`Select`): `Select` has a `required` prop; the
  *     fixture (`preview/src/components/form/component.rs`) sets
  *     `required: true` on its "fruit-required-lib" Select, since the whole
  *     point of this fixture is exercising components per their *documented*
@@ -193,8 +193,8 @@ test.describe("Rule 1 — a named control contributes name=value to FormData on 
 
   test("Select: contributes its selected option's value", async ({ page }) => {
     await gotoForm(page);
-    // dev-docs/backlog.md row 8: SelectTrigger's role is now "combobox" (APG
-    // select-only combobox pattern) rather than an implicit button.
+    // dev-docs/backlog.md row 8: SelectTrigger's role is "combobox" (APG
+    // select-only combobox pattern), not an implicit button.
     const trigger = page.getByRole("combobox", { name: "Fruit (library)" });
     await trigger.click();
     await page.getByLabel("Fruit options (library)").getByRole("option", { name: "Banana" }).click();
@@ -294,8 +294,8 @@ test.describe("Rule 4 — required with no value blocks submission and sets vali
   // required control in the form unsatisfied at once, so one submission
   // exercises every control below in the same `invalid` batch (see
   // component.rs's watch_invalid_js: a capturing listener, batched via
-  // microtask into one write per attempt). Each test reloads first, per the
-  // task's "reset state between tests via page reload".
+  // microtask into one write per attempt). Each test reloads first, so
+  // no state carries from one test to the next.
 
   test("CALIBRATION: required native checkbox blocks submission and fires invalid", async ({ page }) => {
     await gotoForm(page);
@@ -429,7 +429,7 @@ test.describe("Rule 4 extension — a blocked submit gives visible feedback on t
     // focuses/anchors on the first radio of an unsatisfied required group,
     // so this fixture's bridge follows the same convention.
     await expect(page.locator("#tier-lib-small")).toHaveAttribute("data-invalid", "true");
-    // dev-docs/backlog.md row 8: SelectTrigger's role is now "combobox".
+    // dev-docs/backlog.md row 8: SelectTrigger's role is "combobox".
     await expect(
       page.getByRole("combobox", { name: "Fruit, required (library)" }),
     ).toHaveAttribute("data-invalid", "true");
@@ -581,7 +581,7 @@ test.describe("Rule 6 — form reset restores the initial value", () => {
     // owning form that resyncs its own (Dioxus-side) value back to
     // `default_value` (dev-docs/plan.md Phase 1.3).
     await gotoForm(page);
-    // dev-docs/backlog.md row 8: SelectTrigger's role is now "combobox".
+    // dev-docs/backlog.md row 8: SelectTrigger's role is "combobox".
     const trigger = page.getByRole("combobox", { name: "Fruit (library)" });
     await trigger.click();
     await page.getByLabel("Fruit options (library)").getByRole("option", { name: "Banana" }).click();

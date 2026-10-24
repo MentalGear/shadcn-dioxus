@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# check-hover-mix-space.sh  (backlog row 260, finishing row 243)
+# check-hover-mix-space.sh  (backlog rows 243, 260)
 #
 # shadcn base-nova writes its hover step as `color-mix(in oklch, var(--secondary), var(--foreground) 5%)`.
 # The theme carries that space once as `--dx-hover-mix-space` (dx-components-theme.css), and every hover /

@@ -140,27 +140,15 @@ PYEOF
 # ---------------------------------------------------------------------------
 # Scan every component's shipped stylesheet.
 # ---------------------------------------------------------------------------
-# A component that still carries `#[css_module]` is still hashed, so its
-# out-of-namespace classes cannot collide with anyone else's yet -- the hash
-# is doing the job this lint is meant to take over. For those, a violation is
-# reported as a WARNING and does not fail the run.
+# A component whose Rust source still carries a `#[css_module]` attribute is hashed, so its
+# out-of-namespace classes cannot collide with another sheet's: for those a violation is a
+# WARNING and does not fail the run (today only the `top_layer` fixture).
 #
-# Once a component's `#[css_module]` is removed (row 32's migration),
-# that protection is gone and the same violation is a hard ERROR. So the
-# exemption cannot be abused or left to rot: it expires automatically, per
-# component, exactly when it stops being true. That also enforces the correct
-# migration ORDER without anyone having to remember it -- namespace a
-# component's classes FIRST, drop its hashing SECOND.
-#
-# This ordering is not theoretical. Two pairs of components currently define
-# the same class with different rules, kept apart only by the hash:
-#   * `.dx-remove-button` -- `drag_and_drop_list` (26x26px, margin-left 10px)
-#     vs `tag_group` (unsized, margin-left 0.25rem). These genuinely differ,
-#     so unhashing both without renaming would merge them in the cascade and
-#     silently restyle whichever component's sheet loses the load order.
-#   * `.dx-sr-only` -- `pagination` and `sidebar`, byte-identical, so merging
-#     them is harmless; both carry a "TODO: abstract as Utility class" note
-#     and belong in the generated utility sheet (dev-docs/backlog.md row 31a).
+# Once the attribute is gone (row 32), that protection is gone and the same violation is a hard
+# ERROR, so the exemption expires per component exactly when it stops being true. The order is
+# enforced too: namespace a component's classes FIRST, drop its hashing SECOND, because two
+# sheets that define one class name with different rules would merge in the cascade the moment
+# both were unhashed without a rename.
 violating_components=0
 warned_components=0
 

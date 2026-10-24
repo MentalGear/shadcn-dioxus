@@ -72,7 +72,7 @@
  * library's own `navigation_menu` primitive
  * (`http://127.0.0.1:8080/component/?name=navigation_menu&`). If the
  * REFERENCE subject ever goes red, the rule itself is wrong (or
- * w3c/aria-practices's own example regressed at the pinned commit) -- not
+ * w3c/aria-practices's own example is wrong at the pinned commit) -- not
  * this library. If only the LIBRARY subject goes red, `navigation_menu`
  * regressed. R1-R5 follow this two-subject shape; R6 is Library-only (its
  * source page is not part of this file's own vendored checkout -- see R6's

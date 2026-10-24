@@ -10,12 +10,12 @@
  * about `top_layer.rs`: it is direction-aware); (4) a sweep of the components whose primitive
  * reads the direction: the toggle flips, nothing throws and nothing overflows the page horizontally.
  *
- * Row 331 shrank (4) from every Normal component (82 pages) to `DIRECTION_AWARE` (below). The sampling rule is
+ * Row 331: (4) sweeps `DIRECTION_AWARE` (below), not every Normal component (82 pages). The sampling rule is
  * derived, not picked: a component is in the sweep when its primitive calls `use_direction`, `resolve_horizontal`
  * or `ltr_equivalent` (`grep -rlE "resolve_horizontal|ltr_equivalent|use_direction" primitives/src`, the same
  * set `scripts/check-direction-keys.sh` polices), one catalog page per such primitive. A component that never
  * reads the direction has no RTL code path the toggle can reach, so its page is an LTR page with a button on it.
- * (On a debug SSG build, sweeping all 82 pages took 184 s of the file's 194 s.)
+ * (On a debug SSG build, sweeping all 82 pages costs 184 s of the file's 194 s.)
  *
  * The overflow probe is NOT vacuous, but narrower than it reads (a browser probe on `/component/card/`):
  * `html` and `body` are `overflow-x: clip`/`hidden`, so an in-flow element 2000 px wide adds nothing to

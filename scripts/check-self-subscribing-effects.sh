@@ -12,18 +12,15 @@
 # signal it read changes, so this can re-trigger the effect from its own
 # write -- forever, if nothing else in that same run breaks the cycle.
 #
-# The shape this guards against (dev-docs/backlog.md row 73):
-# `DrawerContent`'s drag-continuation `use_effect` read `raw_offset()`
-# with tracked syntax and wrote a new value to that same signal via
-# `.set()` on every pointermove while dragging -- nothing on that path
-# broke the cycle, so the effect re-invoked itself synchronously from the
-# first `pointerdown`, wedging the tab's whole main thread (not just the
-# component -- a `page.evaluate` in the same tab hung too). The fix is to
-# read through `.peek()` instead of tracked syntax, the
-# read-through-`.peek()`-write-through-`.set()` discipline `lib.rs`'s
-# `use_animated_open` documents for its own generation counter. Row 73
-# has the story: this script flags a `raw_offset`-shaped effect and does
-# not flag the `.peek()` form `drawer.rs` uses.
+# The shape this guards against (dev-docs/backlog.md row 73): an effect that reads a signal with
+# tracked syntax and writes a new value to that same signal on every pointermove while dragging
+# (`DrawerContent`'s drag-continuation `use_effect` read `raw_offset()`) with nothing on the path
+# to break the cycle re-invokes itself synchronously from the first `pointerdown`, wedging the
+# tab's whole main thread (not just the component -- a `page.evaluate` in the same tab hangs
+# too). The cure is to read through `.peek()` instead of tracked syntax, the
+# read-through-`.peek()`-write-through-`.set()` discipline `lib.rs`'s `use_animated_open`
+# documents for its own generation counter. Row 73 has the full account: this script flags a
+# `raw_offset`-shaped effect and does not flag the `.peek()` form `drawer.rs` uses.
 #
 # What this catches, per `use_effect(move || { ... })` closure body: any
 # identifier read with tracked syntax -- a bare `x()` call (empty
@@ -37,7 +34,7 @@
 #
 # Two categories are excluded by construction, not by per-name allowlist,
 # because they are provably not the mechanism this script guards against
-# (verified by reading dioxus-signals 0.7.9's own source, not assumed):
+# (per dioxus-signals 0.7.9's own source):
 #
 #   1. `CopyValue<T>` identifiers. `copy_value.rs` implements `Readable`
 #      for `CopyValue` with `fn subscribers(&self) -> Subscribers {
@@ -96,8 +93,8 @@
 # method that also EMITS (`.call(`/`.set(`/`.write(`: a setter, not a getter
 # an effect legitimately derives from) and flag every `use_effect` in the
 # same file that calls a method of that name.
-# The fix is always the same one `DatePickerContext::set_date` already
-# had: read the compared value through `.peek()` (a setter exists to
+# The fix is always the same one `DatePickerContext::set_date` applies:
+# read the compared value through `.peek()` (a setter exists to
 # EMIT, never to subscribe its caller). Name-based and per-file, so it can
 # over-flag two types that share a method name; resolve by peeking in the
 # method, or (reviewed, by the file's owner) by `TRACKED_CALLEE_ALLOWED`.
@@ -114,7 +111,7 @@
 # Reviewed bounded cases: four real `Signal`s, in three files, are read
 # with tracked syntax and written in the same `use_effect` shape, and none
 # is the row-73 shape (an unconditional write on every firing with nothing
-# to break the cycle). Each was analyzed as bounded and resolved by
+# to break the cycle). Each is bounded and resolved by
 # construction, so the allowlist stays empty:
 #   - `drawer.rs`'s `DrawerContent` drag effect: `dragging` and
 #     `active_pointer_id` are only written (to `false`/`None`) behind the

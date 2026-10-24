@@ -42,8 +42,8 @@
  *   -- same page, "Keyboard Support" -> "Rotation Control Button"
  *      (`data-test-id="carousel-key-tab"`).
  *
- * WHAT THIS FILE DELIBERATELY DOES NOT COVER, and why (v1 scope -- see
- * `primitives/src/carousel.rs`'s own module doc, "Scope (v1)"):
+ * WHAT THIS FILE DELIBERATELY DOES NOT COVER, and why (scope -- see
+ * `primitives/src/carousel.rs`'s own module doc, "Scope"):
  *
  *   - The rotation control button, `aria-live` region, and
  *     `prefers-reduced-motion` handling for the *basic* (prev/next) style
@@ -68,9 +68,9 @@
  *     `nextCarouselItem`, which each wrap the index with an explicit
  *     boundary check -- `nextIndex < 0` resets to `length - 1`,
  *     `nextIndex >= length` resets to `0` -- and never disable either
- *     button), so it never reaches the boundary state at all. Since v1
- *     deliberately
- *     has no `loop` (a real, documented scope decision, not an APG
+ *     button), so it never reaches the boundary state at all. Since the
+ *     default carousel
+ *     has no `loop` (opt-in, a documented scope decision, not an APG
  *     requirement either way -- the pattern is silent on looping), this
  *     is asserted as a LIBRARY-ONLY fact in its own describe block below,
  *     not compared against a reference that doesn't exhibit it. Per
@@ -335,7 +335,7 @@ test.describe("Library: our own carousel primitive (main variant)", () => {
   });
 });
 
-test.describe("Library-only: v1 has no loop, so Previous/Next reach a real, disabled boundary", () => {
+test.describe("Library-only: without `loop`, Previous/Next reach a real, disabled boundary", () => {
   // Not compared against the reference (see this file's header doc,
   // "WHAT THIS FILE DELIBERATELY DOES NOT COVER") -- the reference loops
   // and never disables either button, so there is nothing to calibrate
