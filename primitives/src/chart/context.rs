@@ -112,7 +112,7 @@ pub(crate) enum Cursor {
 /// closes the tooltip, a key press that takes over, a newer move that
 /// already landed -- must win over that stale result, or it would reopen a
 /// tooltip the user just closed (a synthetic move + leave in one JS task
-/// left it stuck open every time). Two counters make that unable to happen:
+/// would leave it stuck open every time). Two counters make that unable to happen:
 ///
 /// - `epoch` is bumped by every close/takeover; a [`Ticket`] issued under an
 ///   older epoch is rejected.

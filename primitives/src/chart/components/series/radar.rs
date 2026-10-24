@@ -34,7 +34,6 @@
 //! `use_signal`), safe to call any number of times from anywhere still
 //! executing inside `Chart`'s own render pass, which this function always
 //! is (`Chart`'s body calls it directly and synchronously, never deferred).
-//! No `SeriesRenderContext`/`components::layout` change needed for this.
 //!
 //! ## Tooltip position and data table (orthogonal to this file)
 //!
@@ -229,7 +228,7 @@ pub(crate) fn anchors(ctx: &SeriesRenderContext, opts: &RadarOptions) -> Vec<(f6
 
 /// The hit regions the pointer is resolved against (see
 /// `components::pointer`): one wedge per category around its spoke, out to
-/// the outermost ring -- the same wedges the (now decorative) hit-band
+/// the outermost ring -- the same wedges the (decorative) hit-band
 /// paths draw.
 pub(crate) fn sectors(ctx: &SeriesRenderContext, opts: &RadarOptions) -> Vec<Sector> {
     let RadarGeometry { outer_radius, .. } = geometry(ctx, opts);

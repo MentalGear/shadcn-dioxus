@@ -30,10 +30,8 @@
 //! [`arc_path`]'s padAngle handling and [`pie_layout`] are clean-room Rust
 //! ports of `d3-shape`'s `src/arc.js` and `src/pie.js` (ISC license, Mike
 //! Bostock, `d3/d3-shape@a82254af78f08799c71d7ab25df557c4872a3c51`).
-//! Reference outputs quoted in this file's tests were computed by
-//! installing the real `d3-shape@3.2.0` npm package and calling its actual
-//! `arc()`/`pie()`, not transcribed from memory or from reading the source
-//! alone.
+//! Reference outputs quoted in this file's tests are the real
+//! `d3-shape@3.2.0` npm package's own `arc()`/`pie()` results.
 //!
 //! **`arc_path`'s `corner_radius` handling is this module's own
 //! simplification, not a port of `d3-shape`'s `intersect`/
@@ -208,7 +206,7 @@ impl PathBuilder {
 /// use std::f64::consts::PI;
 ///
 /// // A quarter-circle pie slice (no inner radius, no pad, no corner
-/// // radius) -- verified against real d3-shape's own output.
+/// // radius) -- matching real d3-shape's own output.
 /// assert_eq!(
 ///     arc_path(0.0, 100.0, 0.0, PI / 2.0, 0.0, 0.0),
 ///     "M0,-100A100,100,0,0,1,100,0L0,0Z"
@@ -1077,7 +1075,7 @@ L-29.04,79.785A4,4,0,0,0,-31.255,74.727A81,81,0,1,1,80.91,-3.812A4,4,0,0,0,84.90
     #[test]
     fn pie_layout_ascending_sort_is_descendings_mirror() {
         let asc = pie_layout(&[1.0, 2.0, 3.0], 0.0, 0.0, TAU, PieSort::AscendingByValue);
-        // Smallest value (position 0) now claims the earliest slot.
+        // Smallest value (position 0) claims the earliest slot.
         approx(asc[0].start_angle, 0.0);
         approx(asc[0].end_angle, PI / 3.0);
     }

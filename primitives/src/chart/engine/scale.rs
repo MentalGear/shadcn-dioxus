@@ -10,7 +10,7 @@
 //! one" split in particular, which exists purely to get IEEE-754
 //! correctly-rounded results for a sub-`1.0` step -- `3.0 * 0.2` and
 //! `3.0 / 5.0` are not the same double, and only the latter is the nearest
-//! double to the true `0.6`) was cross-checked line-by-line against
+//! double to the true `0.6`) is cross-checked line-by-line against
 //! `d3-array`'s implementation of the same published algorithm
 //! (`ticks.js`, ISC license, `d3/d3-array@be0ae0d2ea` -- consulted for
 //! verification of this well-known numerical technique, not copied: no
@@ -684,7 +684,7 @@ mod tests {
     /// Assert two `f64` slices are equal to within float rounding noise.
     /// Only [`LinearScale::scale`]'s plain affine map (unrelated to the
     /// "nice" tick arithmetic, which is deliberately exact -- see the
-    /// module doc) still needs this: `1.1 * 200.0` is not bit-exact in
+    /// module doc) needs this: `1.1 * 200.0` is not bit-exact in
     /// IEEE 754, and there's no reason to special-case that away.
     fn assert_close(actual: &[f64], expected: &[f64]) {
         assert_eq!(
@@ -743,7 +743,7 @@ mod tests {
         assert_eq!(s.ticks(5), vec![0.0, 20.0, 40.0, 60.0, 80.0, 100.0]);
 
         // The canonical d3-array example: domain (0,1), count 5 -> step
-        // 0.2. This is now bit-exact (not just close), which is the whole
+        // 0.2. This is bit-exact (not just close), which is the whole
         // point of `tick_spec`'s divide-below-one branch -- see module doc.
         let unit = LinearScale {
             domain: (0.0, 1.0),

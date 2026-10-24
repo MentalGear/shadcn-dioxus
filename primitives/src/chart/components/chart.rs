@@ -334,7 +334,7 @@ pub struct ChartProps {
 /// rect, read fresh per event, give the pointer's position in the chart
 /// box. A category chart (Area/Bar/Line) resolves the nearest category from
 /// that position (the nearest point on Area/Line, the band on bars), hides
-/// the tooltip outside the plot, and works unchanged for a finger dragging
+/// the tooltip outside the plot, and works the same for a finger dragging
 /// across it; the polar families resolve the sector under the pointer.
 /// `ChartTooltip` then positions itself from the pointer and the active
 /// datum's anchor. A mouse leaving closes the tooltip; a finger lifting does
@@ -1764,8 +1764,8 @@ mod tests {
         assert!(html.contains(r#"scope="row""#));
     }
 
-    /// Regression test for the empty corner `<th>` axe's `empty-table-header`
-    /// rule (`best-practice` tag) flagged on every scan: the default
+    /// The empty corner `<th>` violates axe's `empty-table-header`
+    /// rule (`best-practice` tag): the default
     /// `x_label` ("Category") must give that cell real, non-empty text
     /// instead of `th {}`.
     #[test]
@@ -1779,8 +1779,7 @@ mod tests {
 
     /// Props for a second, more configurable test harness (`x_label`/
     /// `min_tick_gap`/an arbitrary data length) -- kept separate from
-    /// [`Harness`] above so every existing test's fixed 2-datum shape is
-    /// untouched.
+    /// [`Harness`] above so every other test keeps its fixed 2-datum shape.
     #[derive(Clone, PartialEq, Props)]
     struct AxisHarnessProps {
         #[props(default = 2)]
@@ -2015,10 +2014,9 @@ mod tests {
         assert!(html.contains(r#"<th scope="col">Percent</th>"#));
         assert!(html.contains("January"));
         assert!(html.contains("February"));
-        // January (186) is 100% of the two non-`None` values' sum -- wait,
-        // both January (186) and February (305) are real, positive
-        // `values[0]`s, so the table's percent column reads their own
-        // share of that sum (186+305=491): 186/491 ~= 37.9%.
+        // Both January (186) and February (305) are real, positive
+        // `values[0]`s, so the table's percent column reads each one's
+        // share of their sum (186+305=491): 186/491 ~= 37.9%.
         assert!(
             html.contains("37.9%"),
             "expected January's own percent share: {html}"

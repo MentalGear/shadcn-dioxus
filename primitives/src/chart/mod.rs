@@ -1,7 +1,7 @@
 //! Defines the `Chart` component and its sub-components: a pure-RSX SVG
-//! chart engine (Area/Bar/Line for the MVP), styled and composed exactly
-//! like every other primitive in this crate -- no new dependency, and
-//! data-driven props rather than children-as-configuration.
+//! chart engine (Area, Bar, Line, Pie, Radar and RadialBar), styled and
+//! composed exactly like every other primitive in this crate -- no new
+//! dependency, and data-driven props rather than children-as-configuration.
 //!
 //! ## Provenance
 //!
@@ -30,7 +30,7 @@
 //! with no dependency on this crate's other modules and no Dioxus types --
 //! see its own module doc for why (in short: it is meant to be offered
 //! upstream to `dioxus-community/dioxus-charts` once this component has
-//! landed and proven itself here). [`Chart`], [`ChartContainer`],
+//! proven itself here). [`Chart`], [`ChartContainer`],
 //! [`ChartTooltip`], and [`ChartLegend`] (this module's `components`, plus
 //! [`ChartContext`]/[`use_chart`] bridging `engine`'s data into this
 //! crate's reactivity, and `config` holding [`ChartConfig`]/

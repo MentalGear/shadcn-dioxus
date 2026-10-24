@@ -19,7 +19,7 @@
 ///   baseline down to `v`'s bottom.
 ///
 /// This is enough for a stacked bar/area whose series are all one sign (the
-/// common case, and the only one `dev-docs/archive/research/chart-2026-09-19.md`'s MVP demos need); a
+/// common case); a
 /// diverging stack (some positive, some negative, in the same row) renders
 /// as two independent towers meeting at zero, which is a reasonable and
 /// common reading but not Recharts' own (its default also does exactly
@@ -64,7 +64,7 @@ pub fn stack(rows: &[Vec<Option<f64>>]) -> Vec<Vec<(f64, f64)>> {
 }
 
 /// Per-row stack normalization: [`Normal`](StackMode::Normal) (this
-/// module's own [`stack`] behavior, unchanged) or
+/// module's own [`stack`] behavior) or
 /// [`Expand`](StackMode::Expand) (a "100% stacked" / percent-stacked
 /// chart, e.g. shadcn's `chart-area-stacked-expand`/`chart-bar-stacked`-
 /// with-`stackOffset="expand"` demos).
@@ -82,7 +82,7 @@ pub fn stack(rows: &[Vec<Option<f64>>]) -> Vec<Vec<(f64, f64)>> {
 /// family's own per-chart options struct (e.g. the `area` family's
 /// `AreaOptions`) can hold a plain `stack_mode: StackMode` field with
 /// `..Default::default()` support: `ChartProps` itself has no `stack_mode`
-/// field -- a family that wants percent stacking (area today; bar could,
+/// field -- a family that wants percent stacking (area; bar could,
 /// since both share this module's plain [`stack`]) reads the *same*
 /// [`stack_with_mode`], from its own family-specific options struct, rather
 /// than each duplicating this normalization.
@@ -101,11 +101,8 @@ pub enum StackMode {
 /// [`StackMode::Expand`] first replaces every row with
 /// `normalize_rows`'s (this module's own, private, pre-pass function)
 /// output, then stacks that exactly like `Normal`
-/// does. A new, additive function rather than a changed signature on
-/// [`stack`] itself: every existing caller/doctest/unit test of `stack`
-/// (this module's own, plus `primitives/src/chart/components/chart.rs`'s,
-/// pre-dating this stage's family split) keeps compiling and behaving
-/// identically, and a family that has no notion of percent stacking (e.g.
+/// does. A separate function rather than a parameter on [`stack`] itself: a
+/// family that has no notion of percent stacking (e.g.
 /// `Line`, where "stacked" is already meaningless -- see `ChartProps::
 /// stacked`'s own doc) never has to pass a `StackMode` it would always set
 /// to `Normal`.

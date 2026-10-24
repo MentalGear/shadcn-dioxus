@@ -11,9 +11,9 @@
 //! style `Chart { XAxis {...} Bar { data_key: "desktop" } }` that
 //! reconfigures itself from what got nested inside it cannot be built here
 //! (or in any other Rust GUI framework with the same opaque-children
-//! property). `ChartConfig`'s ordered `series` list (`super::super::config`
-//! -- not this module; see that module's own doc for why it moved out from
-//! here), not the nesting of any child component, is what determines both
+//! property). `ChartConfig`'s ordered `series` list (in `super::super::config`, outside
+//! this dioxus-free tree because `ChartSeries::icon` holds a `Callback`), not
+//! the nesting of any child component, is what determines both
 //! draw order and stacking order everywhere in this module.
 
 /// One x-axis category (e.g. a month or a day) and its value for every

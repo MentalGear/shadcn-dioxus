@@ -36,7 +36,7 @@
 //!   `area.rs` nor `bar.rs` re-checks `kind` itself.
 //! - **`curve`** applies to Area and Line (every family with a drawn edge
 //!   to interpolate -- Bar has none). It reaches both through
-//!   `SeriesRenderContext::curve` unchanged, never duplicated onto
+//!   `SeriesRenderContext::curve` as given, never duplicated onto
 //!   `AreaOptions`/`LineOptions`.
 //!
 //! One option lives on a single family's own options struct rather than on
@@ -50,8 +50,7 @@
 //! than factored into one shared helper here: each loop's *body* differs
 //! enough (stacked-vs-not branching, grouped-bar sub-positioning, the dots
 //! overlay) that a generic higher-order-function wrapper would cost more
-//! clarity than the ~15 duplicated lines it would save, especially for a
-//! change whose primary goal is zero behavior change. `series_values`
+//! clarity than the ~15 duplicated lines it would save. `series_values`
 //! (pure data extraction, not drawing logic) IS shared, as a
 //! `SeriesRenderContext` method -- see that type's own doc.
 

@@ -21,7 +21,7 @@ use crate::chart::engine::scale::{fmt_decimal, fmt_num};
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct DotContext {
     /// This point's index into the series' own value list (and into
-    /// [`crate::chart::ChartConfig`]'s underlying `data` list) -- stable
+    /// the chart's `data` list) -- stable
     /// per datum, suitable as an RSX `key`.
     pub index: usize,
     /// This point's already-scaled SVG x coordinate.
@@ -299,7 +299,7 @@ mod tests {
                     // every dot below is genuinely at rest
                     // (`data-active="false"`) and this harness cannot
                     // exercise the *active* dot's doubled radius. That
-                    // path is covered live instead
+                    // path is covered in a browser instead
                     // (`playwright/line_chart.spec.ts`'s hover assertion),
                     // the same split `chart.rs`'s own
                     // `cursor_group_is_present_but_empty_before_any_hover`

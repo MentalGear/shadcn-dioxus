@@ -10,7 +10,7 @@
 //! both this module's own cited sources:
 //!
 //! - d3-shape's `pointRadial` (`src/pointRadial.js`, ISC,
-//!   `d3/d3-shape@a82254af78` (2023-10-06), read in full):
+//!   `d3/d3-shape@a82254af78`, 2023-10-06):
 //!   `(y * cos(x - PI/2), y * sin(x - PI/2))`. Expanding the angle
 //!   subtraction (`cos(a - PI/2) = sin(a)`, `sin(a - PI/2) = -cos(a)`)
 //!   gives `(y * sin(x), -y * cos(x))` -- exactly [`point_radial`]'s
@@ -35,17 +35,17 @@
 //! `Step`) is a Cartesian *open-line* concept: d3-shape's `curveRadial`
 //! (`src/curve/radial.js`) generalizes it to a closed radial curve by
 //! wrapping any of its Cartesian curve generators, and `lineRadial`/
-//! `areaRadial` (`src/lineRadial.js`/`src/areaRadial.js`, both read in
-//! full) are thin wrappers applying that same generalization to `line`/
+//! `areaRadial` (`src/lineRadial.js`/`src/areaRadial.js`) are
+//! thin wrappers applying that same generalization to `line`/
 //! `area`. This module ports only the straight-line (`curveLinearClosed`-
 //! equivalent) case, **not** a general closed-curve interpolator for
 //! every [`super::curve::Curve`] variant -- a periodic monotone spline
 //! closing back on itself is a materially different (and harder) problem
 //! than an open one (the tangent at the seam must be consistent with both
-//! neighbors, not one-sided), and is out of scope for this MVP.
+//! neighbors, not one-sided), and is out of scope here.
 //!
 //! This narrowing costs nothing against the actual port target: Recharts'
-//! own `<Radar>` component (`src/polar/Radar.tsx`, read in full) has **no
+//! own `<Radar>` component (`src/polar/Radar.tsx`) has **no
 //! curve/interpolation prop at all** -- it always renders through
 //! `Polygon` (`src/shape/Polygon.tsx`), a straight-sided closed shape, and
 //! not one of the fourteen shadcn radar demos in
@@ -68,7 +68,7 @@ use super::scale::{fmt_num, LinearScale};
 /// o'clock, increasing clockwise -- see the module doc). Mirrors how
 /// Recharts' angle axis divides a categorical domain: `count` points
 /// spaced `360 / count` degrees apart spanning the full circle, the first
-/// one at the start angle (here, always the top) -- confirmed against
+/// one at the start angle (here, always the top) -- matching
 /// `RadarChart`'s own `startAngle: 90, endAngle: -270` defaults (a full
 /// 360° span), see the module doc's citation.
 ///

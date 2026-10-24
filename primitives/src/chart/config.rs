@@ -14,12 +14,12 @@
 //! `ChartLegend`/`ChartTooltip`. A [`ChartSeries`] carrying that field
 //! cannot honestly claim to be dioxus-free -- so it (and
 //! [`ChartConfig`], which only exists to hold an ordered `Vec<ChartSeries>`)
-//! lives in this file, not in `engine/data.rs`, mirroring exactly
-//! why [`super::context`] itself is "the one place in `chart/` that is
+//! lives in this file, not in `engine/data.rs`, for the same reason
+//! [`super::context`] itself is "the one place in `chart/` that is
 //! deliberately not part of the `engine` seam" (that module's own doc).
-//! [`super::engine::ChartDatum`]/[`super::engine::ChartKind`] need no such
-//! move: [`super::engine::ChartDatum::color`] is a
-//! plain `Option<String>`, so `ChartDatum` stays in `engine`.
+//! [`super::engine::ChartDatum`]/[`super::engine::ChartKind`] hold no
+//! dioxus type ([`super::engine::ChartDatum::color`] is a
+//! plain `Option<String>`), so `ChartDatum` stays in `engine`.
 //!
 //! Nothing under `engine/` names [`ChartConfig`]/[`ChartSeries`], so which
 //! file they live in adds no internal dependency edge; every

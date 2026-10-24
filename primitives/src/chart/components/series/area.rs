@@ -79,9 +79,9 @@ pub struct AreaOptions {
     /// unconditionally -- see [`crate::chart::stack()`]'s own doc on `None`
     /// as a zero-height span, not a break).
     pub connect_nulls: bool,
-    /// Percent ("100%"/"expand") stacking -- see this module's own doc for
-    /// the one part of this that a caller should know is not (yet) fully
-    /// self-contained (grid/axis/tooltip still reflect the raw domain).
+    /// Percent ("100%"/"expand") stacking: the y scale, grid lines, y-axis
+    /// ticks and tooltip anchor all use the normalized 0..1 domain -- see this
+    /// module's own doc.
     pub stack_mode: StackMode,
 }
 

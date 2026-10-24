@@ -149,8 +149,8 @@ pub fn ChartContainer(props: ChartContainerProps) -> Element {
     // (`<style><!--node-id444-->[data-chart=...]{...}<!--#--></style>`);
     // inside `<style>` that `<!--` is a CSS CDO token and the rest parses
     // as the selector `node-id444-- > [data-chart=...]`, which never
-    // matches, so every `--color-<slot>` stayed undefined on the deployed
-    // SSG pages (marks fell back to black fill / no stroke). An attribute
+    // matches, so every `--color-<slot>` would be undefined on the SSG
+    // pages (marks fall back to black fill / no stroke). An attribute
     // value has no such marker, so the class of bug cannot occur
     // (`scripts/check-raw-text-interpolation.sh` guards the whole class).
     //
@@ -176,9 +176,9 @@ pub fn ChartContainer(props: ChartContainerProps) -> Element {
     // ruleset on -- either being silently dropped by a caller's same-named
     // attribute would break the component, not just its styling.
     // `merge_attributes` (not a raw `..props.attributes` beside a literal,
-    // `scripts/check-attr-spread-collision.sh`'s own fix) makes that
+    // which `scripts/check-attr-spread-collision.sh` flags) makes that
     // precedence explicit and SSR/CSR-consistent instead of accidental:
-    // owned wins, listed last. The caller's own `style` was already folded
+    // owned wins, listed last. The caller's own `style` is already folded
     // into `style` above (`fold_style_attributes`), so exactly one `style`
     // attribute is ever built.
     let owned = attributes!(div {

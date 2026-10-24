@@ -3464,7 +3464,7 @@ mod tests {
             assert!(state.outside_month);
             assert_eq!(state.relative_month, RelativeMonth::Next);
 
-            // `focused`/`selected`/`range_*` pass through unchanged.
+            // `focused`/`selected`/`range_*` pass through as given.
             let state = day_state(
                 date!(2024 - 06 - 01),
                 &base_ctx,
@@ -3535,7 +3535,7 @@ mod tests {
             find_attr(&attrs, "data-month").unwrap().value,
             Text("current".to_string())
         );
-        // Booleans that are false today are omitted entirely, matching the
+        // Booleans that are false are omitted entirely, matching the
         // built-in cell's `if cond { true }` (no-else) attributes.
         assert!(find_attr(&attrs, "data-today").is_none());
         assert!(find_attr(&attrs, "data-unavailable").is_none());
@@ -3962,7 +3962,7 @@ mod tests {
     fn test_calendar_grid_weeks() {
         // Calls the real `calendar_grid_weeks` (the function `CalendarGrid`/
         // `use_calendar_grid` actually use to build the rendered month grid) --
-        // not a hand-copied reimplementation. See dev-docs/reference/mutants-baseline.md fix #1.
+        // not a hand-copied reimplementation. See dev-docs/reference/mutants-baseline.md.
 
         // Test February 2021: starts on Monday, 28 days
         // When first day of week is Monday, should fit in exactly 4 weeks
@@ -4042,7 +4042,7 @@ mod tests {
     }
 
     // -----------------------------------------------------------------
-    // Pure predicates (dev-docs/reference/mutants-baseline.md fix #8)
+    // Pure predicates (dev-docs/reference/mutants-baseline.md)
     // -----------------------------------------------------------------
 
     #[test]
@@ -4263,7 +4263,7 @@ mod tests {
     }
 
     // -----------------------------------------------------------------
-    // Context accessors (dev-docs/reference/mutants-baseline.md fix #8)
+    // Context accessors (dev-docs/reference/mutants-baseline.md)
     // -----------------------------------------------------------------
 
     /// Run a closure inside a Dioxus runtime context so that Signal/Memo/Callback
@@ -4461,8 +4461,8 @@ mod tests {
             );
             assert_eq!(ctx.view_registrations.read().len(), 1);
 
-            // Unregistering the *only* remaining view must still remove it (regression
-            // guard for the "nothing to remove" short-circuit misfiring when every
+            // Unregistering the *only* remaining view must still remove it (guards
+            // the "nothing to remove" short-circuit against misfiring when every
             // registered view happens to share the target id).
             ctx.unregister_calendar_view(a);
             assert!(

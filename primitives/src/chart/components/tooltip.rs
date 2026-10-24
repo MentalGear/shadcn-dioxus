@@ -303,13 +303,13 @@ pub fn ChartTooltip(props: ChartTooltipProps) -> Element {
     // this tooltip's own open/closed and sighted-only contract, this
     // module's own doc; `data-indicator` mirrors `ChartTooltipProps::
     // indicator` for a themed stylesheet to style each swatch by) --
-    // `merge_attributes` (`scripts/check-attr-spread-collision.sh`'s own
-    // fix, replacing a raw `..props.attributes` beside these as plain
-    // literals) makes "owned wins" explicit and SSR/CSR-consistent instead
+    // `merge_attributes` (the shape `scripts/check-attr-spread-collision.sh`
+    // enforces; a raw `..props.attributes` beside these as plain
+    // literals is flagged) makes "owned wins" explicit and SSR/CSR-consistent instead
     // of accidental.
     //
     // `style` is handled separately, via `fold_style_attributes`
-    // (`resizable.rs`'s/`context_menu.rs`'s own identical fix, cited in
+    // (the same handling as `resizable.rs`/`context_menu.rs`, see
     // that helper's own doc): this component's own position is a literal
     // `style` string, but a caller may also pass CSS the *shorthand* way
     // (e.g. a themed wrapper's `padding`), which becomes its own separate
@@ -752,7 +752,7 @@ mod tests {
 
     /// Reads the shared `ChartLayout` the way `ChartTooltip` does and prints
     /// the active index's anchor, so a test can pin `Chart`'s own anchor
-    /// arithmetic (the tooltip itself now turns it into a pixel `transform`
+    /// arithmetic (the tooltip itself turns it into a pixel `transform`
     /// with a measured box, which a server render has none of).
     #[component]
     fn AnchorProbe(index: usize) -> Element {
