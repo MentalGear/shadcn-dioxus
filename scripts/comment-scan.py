@@ -6,7 +6,8 @@
 
 Both are thin bash wrappers over this file (`python3 -I scripts/comment-scan.py <history|refs> ...`), so what
 counts as "a comment" is decided in exactly one place: Rust (`//`, `///`, `//!`, nested `/* */`), CSS (`/* */`),
-TS/JS (`//`, `/* */`, regex literals skipped so `/[/*]/` opens nothing), Python (`#` tokens and docstrings, via
+TS/JS (`//`, `/* */`, regex literals skipped so `/[/*]/` opens nothing), HTML (`<!-- -->` plus the comments of every
+inline `<script>` and `<style>`: `preview/index.html`), Python (`#` tokens and docstrings, via
 `tokenize`/`ast`; a triple-quoted string that is not a docstring is data) and shell (`#`, not in a string, not
 `$#`/`${#x}`). A heredoc body is data (a generated file's text) unless the command line names an interpreter
 (`python3 - <<'PY'`, `node <<`, `bash <<`), in which case it is read as that language. A comment marker inside a
@@ -35,6 +36,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EXT_KIND = {
     ".rs": "rust",
     ".css": "css",
+    ".html": "html",
     ".ts": "js", ".tsx": "js", ".js": "js", ".mjs": "js", ".cjs": "js",
     ".sh": "shell",
     ".py": "python",
@@ -404,7 +406,24 @@ def extract_shell(text):
             yield lineno, body
 
 
-EXTRACTORS = {"rust": extract_rust, "css": extract_css, "js": extract_js, "shell": extract_shell, "python": extract_python}
+_HTML_BLOCK = re.compile(r"<!--(.*?)-->|<(script|style)\b[^>]*>(.*?)</\2\s*>", re.S | re.I)
+
+
+def extract_html(text):
+    """`<!-- -->` comments plus the comments of every inline `<script>` (JS rules) and `<style>` (CSS rules) body: the
+    docs shell `preview/index.html` carries real prose in all three."""
+    for m in _HTML_BLOCK.finditer(text):
+        if m.group(2) is None:
+            base, inner, it = text.count("\n", 0, m.start(1)) + 1, m.group(1), None
+            yield from _block_lines(base, inner)
+            continue
+        base = text.count("\n", 0, m.start(3)) + 1
+        extractor = extract_js if m.group(2).lower() == "script" else extract_css
+        for ln, body in extractor(m.group(3)):
+            yield base + ln - 1, body
+
+
+EXTRACTORS = {"rust": extract_rust, "html": extract_html, "css": extract_css, "js": extract_js, "shell": extract_shell, "python": extract_python}
 
 
 def comments_of(root, path):
@@ -506,6 +525,19 @@ PHRASES = [
                 r"\b(?:before|after|until|since|once|when) (?:PATH )?(?:Phase|Stage) [\d.]+|\b(?:as|like|way) (?:it|they) did before\b|"
                 r"\bbefore (?:this|that|the) (?:prop|feature|option|attribute|variant|rule|construction|wait|call|type|page|component|check|gate) existed\b|"
                 r"\bnot (?:\w+ )?\w+ed any ?more\b", re.I), "past framing"),
+    # before/after contrast and the story of a fix told in the comment (row 384, round 3): "unchanged from before/the
+    # <old>", "as before" (not `same reason as before:`, which points at the text above), "as they always were", "exactly
+    # as it did", "the same defect as X had", "had to fix", "was exposed to the same ...", "just not yet caught", "regressed
+    # when", "the first attempt at/was/used" (not `accepts the first attempt that clears` -- a retry loop), "why it moved",
+    # "It replaces a call per route"
+    (re.compile(r"\bunchanged from (?:before|the)\b|(?<!reason )\bas before\b(?!:)(?!\s+(?:the|a|an|this|that|its|their|any|each|every|first|paint|mount)\b)|\b(?:it|this|that|they|the [\w-]+(?: [\w-]+)?) always (?:was|were)\b|"
+                r"\bas (?:it|they|this|that) always (?:was|were|did)\b|\bexactly as (?:before|it did|they did)\b|"
+                r"\bthe same (?:defect|bug|problem|failure|hazard|mistake|race|issue) as [^.;]{0,80}?\b(?:had|has|did)\b|"
+                r"\bhad to (?:fix|be fixed)\b|\b(?:was|were) exposed to (?:the same|this|that)\b|\b(?:just )?not yet caught\b|"
+                r"\bregressed (?:when|after|in)\b|"
+                r"\bthe first attempt (?:at|was (?:to|a|an|the)|used|tried|took|put|kept)\b|\b(?:our|my) first attempt\b|"
+                r"\bwhy it moved\b|\bwhere it moved\b(?! (?:to|on|by|when|while|during|after|if|as)\b)|"
+                r"\breplaces a call per\b", re.I), "before/after"),
     # who asked: "owner report", "the user report", "live-site report", "bug report"
     (re.compile(r"\b(?:owner|user|bug|live-site|incident)[- ](?:user )?reports?\b|\blive-site\b|\bowner-report\b|"
                 r"\bowner(?:'s)?(?: real)?[- ](?:[\w-]+ )?(?:report|session)\b|\bowner's (?:bench|lab)\b|\blab session\b|"
@@ -717,6 +749,13 @@ def cmd_history(root, opts):
 REPO_TOPS = ("dev-docs", "scripts", "primitives", "preview", "playwright", "templates", "labs", "docs", "cli",
              "dioxus-attributes", "test-harness", ".github")
 PATH_RX = re.compile(r"(?<![\w./@~-])(?:%s)/[A-Za-z0-9_.\-/\[\]*<>{}$\u2026]*" % "|".join(re.escape(t) for t in REPO_TOPS))
+_BRACE_OPEN = re.compile(r"\{(?=(?:%s)/)" % "|".join(re.escape(t) for t in REPO_TOPS))
+_BRACE_CLOSE = re.compile(r"(\.[A-Za-z0-9]{1,5})\}(?=[\s,;.)`]|$)")
+
+
+def unbrace_paths(body):
+    """`dir/{dir/a.md,dir/b.tsv}` lists repo paths in braces: drop the braces around them (a `{name}` placeholder stays)."""
+    return _BRACE_CLOSE.sub(r"\1 ", _BRACE_OPEN.sub(" ", body))
 ROW_RX = re.compile(r"\brows?\s+(\d{1,4})(?!\d|-\d\d-)[a-z]?((?:\s*(?:,|/|&|and|-|–|to)\s*\d{1,4}(?!\d|-\d\d-)[a-z]?)*)", re.I)
 ROW_NUM = re.compile(r"\d{1,4}")
 PLACEHOLDER = re.compile(r"[<>{}*$|]|NNN|XXX|NAME|\.\.\.|…|<name>|\bN\b")
@@ -765,7 +804,8 @@ def refs_in(blocks, ids):
                 for x in nums:
                     if int(x) not in ids:
                         bad.append((ln, "row", str(int(x))))
-            for m in PATH_RX.finditer(body):
+            # `dir/{dir/a.md,dir/b.tsv}`: a brace that wraps repo paths is a list of paths, not a placeholder
+            for m in PATH_RX.finditer(unbrace_paths(body)):
                 if m.end() >= len(body.rstrip()) and m.group(0).endswith("-"):
                     continue  # hyphen-wrapped onto the next comment line: the rest of the name is not on this one
                 tok = m.group(0).rstrip(".-")
@@ -1047,6 +1087,26 @@ MUST_FLAG = [
     "(the upstream regression that motivated PR #47)",
     "scrolled) from PR #107. A comment-only sheet is exempt",
     "the literal case the bug report names",
+    # round 3 (row 384): before/after contrast and the story of a fix told in the comment
+    "closures (lifted unchanged from the Data Table's `state.rs`",
+    "the border is unchanged from before the port",
+    "the trigger's border is an inset box-shadow, as before.",
+    "the caret collapses, as before",
+    "are tracked, as they always were",
+    "the default always was 2px",
+    "a menu that renders exactly as it did",
+    "renders exactly as before",
+    "the same defect as the select had: the panel clipped",
+    "the same race as Popover has",
+    "the author had to fix the offset twice",
+    "the sheet was exposed to the same inheritance leak",
+    "a path the suite has just not yet caught",
+    "the ring regressed when the wrapper was added",
+    "the first attempt at this used a timer",
+    "the first attempt was to clamp it",
+    "see that module's own doc for why it moved out of here",
+    "It replaces a call per route",
+    "this now lives in the theme",
 ]
 # ... and present-tense sentences that must NOT be (the false positives to keep out).
 MUST_NOT_FLAG = [
@@ -1133,6 +1193,19 @@ MUST_NOT_FLAG = [
     "see Phase 1.3 and the form page for the fixture",
     "the previous attempt's own gesture is cancelled",
     "the first digit of the previous point is kept",
+    # round 3: the same words in their present-tense senses
+    "need overriding, same reason as before: the base's fixed height",
+    "the label is read as before the call returns",
+    "accepts the first attempt that clears both thresholds",
+    "the first attempt succeeds unless the frame is torn",
+    "the value is passed unchanged to the callback",
+    "the input stays unchanged until Apply",
+    "the cursor goes where it moved to last",
+    "the caller was always the owner of the class list",
+    "the same defect class is checked by the gate",
+    "a bug the user had to type around",
+    "the node is exposed to assistive technology",
+    "a regression test covers it",
 ]
 
 
@@ -1158,6 +1231,10 @@ EXTRACTION_CASES = [
     ("js regex after return", "a.js", "function f(s) { return /[/*]/.test(s); }\nconst s = 'used to';\n", 0),
     ("python triple-quoted non-docstring is data", "a.py", 'x = 1\ns = """\n# used to be\nused to be\n"""\n', 0),
     ("python # comment is read", "a.py", "x = 1  # used to be 3px\n", 1),
+    ("html comment is read", "a.html", "<p>used to be</p>\n<!-- used to be 3px -->\n", 1),
+    ("html style block comment is read", "a.html", "<style>\n/* previously, 2px */\na{}\n</style>\n", 1),
+    ("html script block comment is read", "a.html", "<script>\n// no longer uses it\nvar s = 'used to';\n</script>\n", 1),
+    ("html markup and string are data", "a.html", '<p title="used to be">previously</p>\n<script>var s = "used to be";</script>\n', 0),
     ("python # in a string is not a comment", "a.py", 's = "# used to be"\n', 0),
     ("python docstring is read", "a.py", 'def f():\n    """Returns x; used to return y."""\n', 1),
     ("shell heredoc that writes a file is data", "a.sh", "cat > f <<'EOF'\n# used to be 3px\nEOF\n", 0),
@@ -1229,6 +1306,27 @@ def self_test_refs():
         ("dead row fails", {**rows, "src/a.rs": "// backlog row 999 explains it\n"}, [], 1),
         ("dead path fails", {**rows, "src/a.rs": "// see docs/research/nowhere.md for the numbers\n"}, [], 1),
         ("dead path in css fails", {**rows, "src/a.css": "/* see scripts/gone.sh */\n"}, [], 1),
+        # CSS block comments are comments like any other (row 384): a multi-line ` * `-prefixed header, a comment after rules,
+        # a `/*! */` banner and a sheet held in a Rust string are all read for dead `dev-docs/`/`docs/` paths and rows
+        ("dead dev-docs path in a multi-line css header fails",
+         {**rows, "src/a.css": "/*\n * Coarse sizing (dev-docs/backlog.md row 266).\n * Notes: dev-docs/research/gone-note.md\n */\na { color: red; }\n"}, [], 1),
+        ("dead docs/ path in a css comment after rules fails",
+         {**rows, "src/a.css": "a { color: red; }\n/* the old notes are in docs/backlog.md */\nb { color: blue; }\n"}, [], 1),
+        ("dead path in a /*! */ css banner fails", {**rows, "src/a.css": "/*! see dev-docs/gone.md */\na{}\n"}, [], 1),
+        ("dead backlog row in a css comment fails", {**rows, "src/a.css": "/* backlog row 998 explains it */\na{}\n"}, [], 1),
+        ("live paths in a css comment pass",
+         {**rows, "src/a.css": "/*\n * (dev-docs/backlog.md row 266, scripts/real.sh)\n */\na{}\n"}, [], 0),
+        ("css comment path inside a rust style string fails",
+         {**rows, "src/a.rs": 'fn s() -> &\'static str { r#"a { color: red; } /* see dev-docs/gone.md */ b { margin: 0; }"# }\n'}, [], 1),
+        ("a brace list of repo paths is checked, a dead one fails",
+         {**rows, "src/a.css": "/* (dev-docs/{dev-docs/backlog.md,dev-docs/gone.md}) */\na{}\n"}, [], 1),
+        ("a brace list of live repo paths passes",
+         {**rows, "src/a.css": "/* (see {dev-docs/backlog.md,scripts/real.sh}) */\na{}\n"}, [], 0),
+        ("a `{name}` placeholder is still skipped", {**rows, "src/a.css": "/* preview/src/components/{name}/style.css */\na{}\n"}, [], 0),
+        ("dead path in an html comment fails", {**rows, "src/a.html": "<html><!-- see dev-docs/gone.md --></html>\n"}, [], 1),
+        ("dead path in an html style block fails", {**rows, "src/a.html": "<style>\n/* see dev-docs/gone.md */\na{}\n</style>\n"}, [], 1),
+        ("dead path in an html script comment fails", {**rows, "src/a.html": "<script>\n// see dev-docs/gone.md\nvar x = 1;\n</script>\n"}, [], 1),
+        ("a path in html markup is not a comment", {**rows, "src/a.html": '<a href="dev-docs/gone.md">x</a>\n<script>var p = "dev-docs/gone.md";</script>\n'}, [], 0),
         ("dead path in ts fails", {**rows, "src/a.ts": "// see playwright/missing.spec.ts\n"}, [], 1),
         ("dead path in shell fails", {**rows, "src/a.sh": "# see primitives/src/missing.rs\n"}, [], 1),
         ("ref-ok exempts", {**rows, "src/a.rs": "// see docs/old.md ref-ok: quoted from the upstream issue\n"}, [], 0),
