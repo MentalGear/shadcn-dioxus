@@ -1,0 +1,1 @@
+.dx-separator{background-color:var(--dx-separator-background,var(--dx-border));flex-shrink:0}:where(.dx-separator){margin:var(--dx-separator-margin,0)}.dx-separator[data-orientation=horizontal]{width:100%;height:1px}.dx-separator[data-orientation=vertical]{align-self:stretch;width:1px;height:auto}
