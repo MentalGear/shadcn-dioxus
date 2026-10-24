@@ -261,7 +261,7 @@ fn select_list_onkeydown(mut ctx: SelectContext) -> impl FnMut(KeyboardEvent) {
                 // `DropdownMenu`'s identical Escape carve-out
                 // (`dropdown_menu.rs`) and for the same reason: calling
                 // both `set_open` *and* `prevent_default` unconditionally
-                // here would race it. Native (Blitz) arm: unchanged, closes
+                // here would race it. Native (Blitz) arm: closes
                 // here directly (Blitz has no popover-API light dismiss to
                 // defer to).
                 if cfg!(feature = "web") {
@@ -319,8 +319,8 @@ fn select_list_onkeydown(mut ctx: SelectContext) -> impl FnMut(KeyboardEvent) {
 ///   it is not a `pointerdown` -- so light dismiss never enters into the
 ///   `select.spec.ts` "tabbing out ... closes" cases).
 /// - **Animation**: does *not* use [`crate::top_layer::use_popover_sync`]
-///   bound to the raw `open` signal, unlike every prior `dx-anchor-*`
-///   consumer -- see [`crate::top_layer::use_popover_shown_while_mounted`]'s
+///   bound to the raw `open` signal, unlike the other `dx-anchor-*`
+///   consumers -- see [`crate::top_layer::use_popover_shown_while_mounted`]'s
 ///   doc for the animate-out race that binding would otherwise cause with
 ///   [`crate::use_animated_open`] (`SelectList`, above), and why this
 ///   mount/unmount-scoped variant avoids it.
@@ -331,7 +331,7 @@ fn SelectListRendered(id: String, attributes: Vec<Attribute>, children: Element)
     // Scroll buttons render only inside this subtree (`scroll_button.rs`).
     use_context_provider(|| InRenderedList);
     let open = ctx.selectable.open;
-    // axe `aria-input-field-name` (dev-docs/backlog.md row 34's own round): an
+    // axe `aria-input-field-name` (dev-docs/backlog.md row 34): an
     // ARIA `listbox` is an input field and needs an accessible name.
     // Default it from the trigger (whose own visible text is the
     // placeholder/selected value) -- but ONLY if the caller hasn't already
@@ -430,7 +430,7 @@ fn SelectListRendered(id: String, attributes: Vec<Attribute>, children: Element)
     // sidestepping `manganis-core`'s `css_module_parser` not scoping
     // classes inside `@supports` bodies.
     //
-    // axe `aria-input-field-name` (dev-docs/backlog.md row 34's own round): an
+    // axe `aria-input-field-name` (dev-docs/backlog.md row 34): an
     // ARIA `listbox` is an input field and needs an accessible name.
     // Default it from the trigger (whose own visible text is the
     // placeholder/selected value) -- but ONLY if the caller hasn't already
@@ -513,7 +513,7 @@ fn SelectListRendered(id: String, attributes: Vec<Attribute>, children: Element)
 /// Native (Blitz) arm: Blitz has no popover-API support at all
 /// (`dev-docs/reference/platform-rationale.md` Caveat 2), so this stays the
 /// functional floor, a plain, always-in-flow `div`. Scroll-lock is the one
-/// addition to this arm since dev-docs/backlog.md row 9 -- mirrors
+/// addition to this arm (dev-docs/backlog.md row 9) -- mirrors
 /// `DropdownMenuContentRendered`'s identical native arm
 /// (`dropdown_menu.rs`), which mounts `ScrollLockGuard` unconditionally on
 /// both arms rather than only the web one.

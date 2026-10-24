@@ -1493,7 +1493,7 @@ pub fn VirtualJustifiedGrid(props: VirtualJustifiedGridProps) -> Element {
         };
         rsx! {
             div {
-                // key-ok: the justified grid has no `item_key` yet (its items are bare aspects)
+                // key-ok: the justified grid has no `item_key` (its items are bare aspects)
                 key: "{index}",
                 role: "gridcell",
                 "aria-colindex": column + 1,

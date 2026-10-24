@@ -20,7 +20,7 @@
 //!   renders every row (about 90 ms of main-thread time for 1,000 rows and 205 ms for 5,000 in
 //!   the demo, release build). Rows are skipped in groups of [`CONTENT_VISIBILITY_CHUNK`] (20):
 //!   the browser does per-frame work for every element it may skip, so one skippable element
-//!   per row made a scroll cost O(rows) of main-thread time (7.7 ms per frame at 1,000 rows and
+//!   per row makes a scroll cost O(rows) of main-thread time (7.7 ms per frame at 1,000 rows and
 //!   31 ms at 5,000 in the demo), and one per 20 rows brings it to a windowed list's cost (1.1
 //!   and 1.5 ms, against 1.4 ms windowed).
 //! - [`VirtualizeMode::Windowed`]: only the rows in view plus `buffer` rows each side are
@@ -72,7 +72,7 @@ use crate::{merge_attributes, use_unique_id};
 pub const CONTENT_VISIBILITY_CHUNK: usize = CHUNK_ROWS;
 
 /// A deprecated alias of [`VirtualizeMode`], which lives in the shared virtual engine (backlog row
-/// 343) and is the one `virtualize` type of every virtual component. Kept for one release.
+/// 343) and is the one `virtualize` type of every virtual component.
 #[deprecated(since = "0.1.0", note = "renamed `VirtualizeMode`")]
 pub type VirtualListMode = VirtualizeMode;
 
@@ -318,7 +318,7 @@ fn VirtualListWindowed(props: ListBodyProps) -> Element {
     let engine = bridge.engine();
 
     // The estimates are evaluated in a memo so that signals the `estimate_size` callback reads
-    // are tracked, as they always were. Measurements are *not* an input: they update the engine
+    // are tracked. Measurements are *not* an input: they update the engine
     // in `O(log N)` instead of rebuilding anything.
     let estimates = use_memo(move || {
         let estimate = estimate_size.as_ref().map(|c| move |i: usize| c(i));

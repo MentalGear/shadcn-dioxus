@@ -556,8 +556,9 @@ pub fn SelectMulti<T: Clone + PartialEq + 'static>(props: SelectMultiProps<T>) -
 
     // SelectMulti has no `required` prop: a native <select multiple> can't
     // express "at least one selected" via a single `required` attribute the
-    // way a single-select can, and multi-select form participation is out of
-    // scope for dev-docs/plan.md Phase 1 (which only asks for `Select`).
+    // way a single-select can, and `SelectMulti` renders no hidden mirror
+    // <select multiple>, so it does not submit with a form (`name` is not read
+    // here; only `Select` mirrors its value, dev-docs/plan.md Phase 1.3).
     let (ctx, open) = use_select_root(
         values,
         set_value,

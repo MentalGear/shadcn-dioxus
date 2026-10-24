@@ -5,10 +5,10 @@
 //! scroll messages, resize events and prop changes mutate it, and a single reactive signal tells
 //! the component to render. That signal is written **only when [`Engine::needs_render`] says
 //! the output would differ from the last render**, which is what quantises the scroll signal.
-//! The earlier design wrote the raw scroll offset into a reactive store on every scroll event,
-//! so every event re-rendered the whole list (a vdom walk plus `render_item` for every mounted
-//! row) even when the mounted rows had not changed. Here a scroll event costs one `O(log N)`
-//! range lookup and, most of the time, nothing else.
+//! Writing the raw scroll offset into a reactive store on every scroll event would re-render the
+//! whole list (a vdom walk plus `render_item` for every mounted row) on every event, even when
+//! the mounted rows had not changed. Here a scroll event costs one `O(log N)` range lookup and,
+//! most of the time, nothing else.
 //!
 //! # What is rendered, and when that changes
 //!

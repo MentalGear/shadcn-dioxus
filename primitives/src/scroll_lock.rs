@@ -193,7 +193,7 @@
 //! scrollbars regardless of how tall the page is. Most users' actual
 //! browsers (Windows/Linux Chrome and Firefox defaults, and other engines)
 //! render classic, space-reserving scrollbars, so this is a real
-//! regression that is silent in the default test run -- see
+//! shift that is silent in the default test run -- see
 //! `playwright/oracle/tier3-radix/scroll-lock.spec.ts`'s
 //! `assertNoHorizontalShift`.
 //!
@@ -455,11 +455,11 @@ const SCROLL_BLOCK_JS: &str = r#"
 /// first lock engaged.
 ///
 /// ONE per page, not one per nesting chain (backlog row 375). The page has one scroll
-/// position, so every surface that locks it shares one count and one saved position, the
-/// way the JS side's `window.__dxScrollLockN` always did. A per-chain count gave two sibling
-/// surfaces two counters: when one click closed dialog A and opened dialog B, A's release
-/// (after its exit animation) was the last of *its* chain and ran `window.scrollTo(A's
-/// saved position)` with B open, moving the page under B.
+/// position, so every surface that locks it shares one count and one saved position. A
+/// per-chain count would give two sibling surfaces two counters: when one click closes
+/// dialog A and opens dialog B, A's release (after its exit animation) would be the last
+/// of *its* chain and run `window.scrollTo(A's saved position)` with B open, moving the
+/// page under B.
 #[derive(Default)]
 struct ScrollLockInner {
     count: usize,

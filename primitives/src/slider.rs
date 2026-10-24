@@ -842,7 +842,7 @@ pub fn SliderThumb(props: SliderThumbProps) -> Element {
             // non-passive root listener, which makes every touch (and wheel) on the whole page
             // wait for the main thread before it can scroll. Drags are pointer-driven and the
             // thumb's `touch-action: none` (slider/style.css) keeps the page from panning, so
-            // the listener bought nothing but latency (scripts/check-blocking-scroll-listeners.sh).
+            // such a listener would buy nothing but latency (scripts/check-blocking-scroll-listeners.sh).
             onmousedown: move |evt| {
                 evt.prevent_default();
             },

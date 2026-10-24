@@ -526,7 +526,7 @@ fn TooltipContentRendered(
     id: String,
     open: Memo<bool>,
     // Unused on this arm -- kept as a same-named field so the shared,
-    // cfg-independent call site in `TooltipContent` compiles unchanged on
+    // cfg-independent call site in `TooltipContent` compiles on
     // both arms.
     set_open: Callback<bool>,
     side: ContentSide,
@@ -559,7 +559,7 @@ fn TooltipContentRendered(
     }
 }
 
-// SSR regression test for the duplicate-`style` hazard: a
+// SSR test for the duplicate-`style` hazard: a
 // `TooltipContentRendered` that set `style: position_anchor_style(&id)` as
 // a bare literal alongside `..attributes` would render a caller-supplied `style` (as
 // `TooltipContent`'s own doc example demonstrates, and as the `top_layer`
