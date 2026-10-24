@@ -111,6 +111,7 @@ async function scrollAndSettle(page: Page, act: () => Promise<void>): Promise<nu
  * scrolling UNDER an open popover scrolls less than this.
  */
 const scrollKeepingAnchor = (page: Page) =>
+  // rest-ok: the trigger is a page button that does not animate; the popover's own box is never read here
   trigger(page).evaluate((el) => Math.floor(el.getBoundingClientRect().top - 40));
 
 /**
