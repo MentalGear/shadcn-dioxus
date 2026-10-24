@@ -2,9 +2,9 @@
  * LAYOUT STABILITY (dev-docs/backlog.md row 204): after a page's first paint, nothing in its top group may
  * move or resize by itself.
  *
- * The owner saw the top demo group's elements "flicker (re-layout)" at iPad-landscape widths. The cause was
- * never one rule at one width: it was a CLASS -- the page paints, and then something changes a box without
- * any input. Two members were found by recording every rAF frame from the first one (sweep 320..1440, both
+ * The top demo group's elements can "flicker (re-layout)" at iPad-landscape widths. The cause is
+ * never one rule at one width: it is a CLASS -- the page paints, and then something changes a box without
+ * any input. Two members show up when recording every rAF frame from the first one (sweep 320..1440, both
  * colour schemes, touch emulation on and off):
  *
  *   1. SSR != hydrated. `Avatar` is prerendered with `data-state="empty"`, i.e. the image AND the fallback
@@ -145,7 +145,7 @@ const FULL = !!process.env.LS_STEP;
 const STEP = Number(process.env.LS_STEP ?? 32);
 const ALL_WIDTHS = [...new Set([...sweep(STEP), ...KEY_WIDTHS])].sort((a, b) => a - b);
 const HEIGHT = 800;
-/** Pages measuring widths at once inside one group's context (`LS_POOL=1` is the old one-at-a-time sweep). */
+/** Pages measuring widths at once inside one group's context (`LS_POOL=1` sweeps one at a time). */
 const POOL = Math.max(1, Number(process.env.LS_POOL ?? 2));
 const ONLY = (process.env.LS_WIDTHS ?? "").split(",").filter(Boolean).map(Number);
 /** CPU slowdown of the sweep's pages (CDP `Emulation.setCPUThrottlingRate`); `LS_CPU=4` makes the parse and the hydration land in different frames the way a loaded box does. 1 = none. */
@@ -153,7 +153,7 @@ const CPU = Math.max(1, Number(process.env.LS_CPU ?? 1));
 
 const GROUPS: { route: string; scheme: "light" | "dark"; widths: number[]; pool?: number }[] = [
   // The home page keeps ONE page at a time: it is the long, progressively parsed page, and with two pages (four browsers
-  // on the box) the first paint landed earlier in the parse and a card below the fold was counted as moving (833px, once
+  // on the box) the first paint lands earlier in the parse and a card below the fold can be counted as moving (833px, once
   // in three pooled runs). Every other page is pooled.
   { route: "/", scheme: "light", widths: ALL_WIDTHS, pool: 1 },
   { route: "/", scheme: "dark", widths: FULL ? ALL_WIDTHS : KEY_WIDTHS, pool: 1 },

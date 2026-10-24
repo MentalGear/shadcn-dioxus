@@ -19,8 +19,8 @@
  *
  * WHAT THIS CANNOT SIMULATE (stated plainly): there is no WebKit in this environment and no real iOS
  * keyboard. A reduced viewport height shrinks the LAYOUT viewport too, which iOS does not; the pinch
- * zoom block is what separates visual from layout viewport, and it is Chromium-only. The manual
- * iPhone steps are in the commit message / lane report; a green run here is necessary, not sufficient.
+ * zoom block is what separates visual from layout viewport, and it is Chromium-only. A green run
+ * here is necessary, not sufficient: it needs a manual iPhone pass too.
  */
 import { test, expect } from "./fixtures";
 import { type Page, type Locator } from "@playwright/test";

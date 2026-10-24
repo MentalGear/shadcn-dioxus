@@ -101,7 +101,7 @@ test.describe("touch", () => {
     await expect.poll(() => style(button, "scale")).toBe("none");
   });
 
-  // Backlog row 295. A tap on a phone is 40-100ms. These pin the two reasons it used to show nothing.
+  // Backlog row 295. A tap on a phone is 40-100ms. These pin the two reasons it could show nothing.
 
   test("the press lands instantly even where a component has its own transition (a tap is 40-100ms)", async ({ page }) => {
     const button = page.locator('.dx-button[data-style="secondary"]:not([disabled])').first();
@@ -144,9 +144,10 @@ test.describe("touch", () => {
     expect(tail.length, `frames between pressed and rest after release: ${frames.join(",")}`).toBeGreaterThanOrEqual(2);
   });
 
-  // The wash used to be a zero-specificity `background-image`, wiped by any component that writes the `background`
-  // shorthand: 23 control families (Tabs, Menubar / Navbar / Navigation Menu triggers, Toolbar, ...) showed only a
-  // sub-pixel scale. These are the ones the audit found; the gate-free guard is that each paints the wash.
+  // A zero-specificity `background-image` wash would be wiped by any component that writes the `background`
+  // shorthand (Tabs, Menubar / Navbar / Navigation Menu triggers, Toolbar, ... would show only a sub-pixel
+  // scale), so the wash out-ranks them. These are representative control families; the guard is that each
+  // paints the wash.
   for (const [route, selector] of [
     ["tabs", ".dx-tabs-trigger"],
     ["menubar", ".dx-menubar-trigger"],

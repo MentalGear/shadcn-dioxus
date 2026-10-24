@@ -8,8 +8,8 @@ import { gotoHydrated } from "./hydration";
  * `--dx-ring-field` (`preview/assets/dx-components-theme.css`) -- the
  * ring-coloured 1px edge plus the shared `--dx-ring-focus` halo. Each of these
  * controls resets `outline`, so a rule that forgets the ring leaves keyboard
- * focus invisible -- which is how the combobox input and the textarea shipped,
- * and why the ring is now one token instead of a literal repeated per control.
+ * focus invisible -- which is how a combobox input or a textarea can ship
+ * without one, and why the ring is one token instead of a literal repeated per control.
  *
  * This is the class guard: ONE list of every text-entry control (its page, the
  * element that takes focus, the element that draws the ring), one generated test

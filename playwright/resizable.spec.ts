@@ -113,12 +113,12 @@ async function dragFromPoint(page: Page, x: number, y: number, dx: number, dy: n
 
 test.describe('Hit area: the whole handle drags, not just the 1px line', () => {
   // Owner report: "the handle must be draggable, not just the line". The 1px `.dx-resizable-handle`
-  // div owns the drag listener; its grip (then 12x16, now Nova's 4x24 pill) used to be `pointer-events: none` with only a 4px
-  // `::after` strip behind it, so ~4px either side of the grip -- and the same few px beside the
-  // bare line -- fell through to the panels and started nothing. shadcn's grip is a plain child
+  // div owns the drag listener; its grip (Nova's 4x24 pill) is not `pointer-events: none` with only a 4px
+  // `::after` strip behind it, which would let ~4px either side of the grip -- and the same few px beside the
+  // bare line -- fall through to the panels and start nothing. shadcn's grip is a plain child
   // (its pointerdown bubbles to the handle) inside a handle with a wider invisible hit area.
   const GRIP_INSET = 1; // px inside the grip's own edge: visibly "on the grip", far from the 1px line
-  const BESIDE_LINE = 4; // px from the line's centre: inside the hit area, outside the old 4px strip
+  const BESIDE_LINE = 4; // px from the line's centre: inside the hit area, outside a 4px strip
 
   test('grabbing the grip anywhere on its footprint drags the handle, not just its centre line', async ({ page }) => {
     await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
@@ -207,7 +207,7 @@ test.describe('Hit area: the whole handle drags, not just the 1px line', () => {
     // `hasTouch` also flips `(pointer: coarse)`, which doubles the hit area (a finger is blunter
     // than a mouse). Chromium additionally fuzzes a touch target by a few px, which is why the
     // grip's edge alone never reproduced the bug with a finger -- the 10px case does (it is
-    // outside both the old 4px strip and that fuzz, inside the new 24px coarse hit area).
+    // outside both a 4px strip and that fuzz, inside the 24px coarse hit area).
     test.use({ hasTouch: true });
 
     for (const [name, offsetFromLine, onGrip] of [
@@ -297,7 +297,7 @@ test.describe('Appearance (shadcn/ui v4 translation)', () => {
     // The handle's own direct parent is the outer ResizablePanelGroup div (panels and handles
     // are direct siblings inside it -- see primitives/src/resizable.rs's markup doc comment).
     const container = handle.locator('xpath=..');
-    // `--dx-radius-lg` (the demo's radius) is 10px since row 111's shadcn radius scale (was 8px).
+    // `--dx-radius-lg` (the demo's radius) is 10px (row 111's shadcn radius scale).
     await expect(container).toHaveCSS('border-radius', '10px');
 
     // shadcn: `max-w-md ... md:min-w-[450px]` -- before this translation the group had no width

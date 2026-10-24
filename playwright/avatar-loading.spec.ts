@@ -4,8 +4,8 @@ import { BASE_URL } from "./base-url";
 
 // Avatar loading semantics (backlog row 235), Base UI's: the fallback stands in for the picture in every state
 // but `loaded` -- while it loads, after an error, with no picture -- and only a loaded picture removes it, so
-// there is no blank frame before the picture (the old primitive removed the fallback when the status became
-// `loading`: initials, then a blank pulsing disc, then the picture). `AvatarFallback { delay }` holds the
+// there is no blank frame before the picture (removing the fallback when the status becomes
+// `loading` would give initials, then a blank pulsing disc, then the picture). `AvatarFallback { delay }` holds the
 // fallback back for that many milliseconds.
 //
 // The `states` demo's slow avatars all request `https://httpbin.org/delay/3600`, which never resolves offline;
@@ -74,7 +74,7 @@ test("while the picture loads the fallback stays, the picture then replaces it, 
 
   const avatar = page.getByLabel(WITH_FALLBACK);
   await avatar.scrollIntoViewIfNeeded();
-  // Hydrated and still loading: the fallback is there (it used to be removed here, leaving a blank pulsing disc).
+  // Hydrated and still loading: the fallback is there (a removed fallback would leave a blank pulsing disc).
   await expect(avatar).toHaveAttribute("data-state", "loading");
   await expect(avatar.locator(".dx-avatar-fallback")).toHaveText("LF");
   await expect(avatar.locator(".dx-avatar-fallback")).toBeVisible();

@@ -23,7 +23,7 @@ import { gotoHydrated } from "./hydration";
  */
 
 const NON_TEXT = 3;
-/** Neutral ring chroma must stay below this (OKLCH C): the default is grey, not the old #2b7fff (C ~0.2). */
+/** Neutral ring chroma must stay below this (OKLCH C): the default is grey, not a saturated blue such as #2b7fff (C ~0.2). */
 const NEUTRAL_CHROMA = 0.03;
 /** Hue tolerance in degrees. A ring's chroma is 0.01-0.04, so 8-bit rounding alone is a few degrees. */
 const HUE_TOLERANCE = 20;

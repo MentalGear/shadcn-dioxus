@@ -7,7 +7,7 @@
  * (preview/assets/main.css), so those read the gutter-inclusive size (390 at a 390px phone width)
  * while a fixed overlay's containing block excludes the reserved gutter (375): a panel landing 11-15px
  * past the right edge still passed. That masked a real overflow in `primitives/src/top_layer.rs`
- * (`viewportMetrics()` now uses the same probe).
+ * (`viewportMetrics()` uses the same probe).
  *
  * Measured from a temporary `position: fixed; inset: 0` element (hidden, inert, removed again), because
  * that is by definition the rectangle a fixed box resolves `inset` / `%` against. Re-measure after

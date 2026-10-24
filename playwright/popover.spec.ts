@@ -72,8 +72,8 @@ test("modal: opens a form of labelled fields, traps focus, Escape closes", async
 });
 
 test("the trigger announces a dialog popup and mirrors the open state in aria-expanded", async ({ page }) => {
-  // Radix/shadcn Popover trigger semantics: `aria-haspopup="dialog"` plus `aria-expanded`. Found missing
-  // 2026-10-04 (the themed `[aria-expanded="true"]` trigger rule had nothing to match). Located by
+  // Radix/shadcn Popover trigger semantics: `aria-haspopup="dialog"` plus `aria-expanded` (the themed
+  // `[aria-expanded="true"]` trigger rule needs it to match). Located by
   // attribute and text, not role: while the modal one is open its trigger is inert, so `getByRole`
   // would no longer find it to read the attribute back.
   await gotoHydrated(page, `${BASE_URL}/component/popover/`);
@@ -94,8 +94,8 @@ test("the trigger announces a dialog popup and mirrors the open state in aria-ex
 });
 
 test("the content is labelled form fields in a dialog, not a menu", async ({ page }) => {
-  // The previous demo was a "Delete Item?" heading over two full-width outline
-  // buttons: a confirm/cancel stack that read as a menu. A popover holds
+  // A "Delete Item?" heading over two full-width outline buttons would be a
+  // confirm/cancel stack that reads as a menu. A popover holds
   // arbitrary content; this one holds shadcn's "Dimensions" form, and nothing in
   // it has a menu role because nothing in it is a menu.
   await gotoHydrated(page, `${BASE_URL}/component/popover/`);
@@ -122,7 +122,7 @@ test("the content is labelled form fields in a dialog, not a menu", async ({ pag
 });
 
 test("the trigger is Nova's default outline button", async ({ page }) => {
-  // It used to be a card-coloured 18px-padded box of its own, unlike the
+  // Not a card-coloured 18px-padded box of its own: the same
   // `Button { data-style: "outline" }` every other overlay demo opens from.
   await gotoHydrated(page, `${BASE_URL}/component/popover/`);
   const trigger = page.getByRole("button", { name: "Show Popover" });
@@ -190,8 +190,7 @@ test(`${arm}: rapid open/close/open settles on the correct final state`, async (
   // Toggle open, closed, open again in rapid succession -- no waits, so the
   // close animation from the middle toggle is still in flight when the
   // final open fires. The middle "closed" toggle is Escape, not a second
-  // click on the trigger button: native-dialog engine migration (two-engine
-  // overlay architecture completion) -- the modal `Popover` is now a real
+  // click on the trigger button: the modal `Popover` is a real
   // `<dialog>` + `showModal()` on the web arm, and the trigger sits *outside*
   // that dialog, so it is correctly background-inert (same rule
   // `oracle/tier2-html/native-dialog.spec.ts` Rule 2 already covers for
@@ -199,7 +198,7 @@ test(`${arm}: rapid open/close/open settles on the correct final state`, async (
   // all -- Escape reaches the dialog's own `cancel`/`close` handling
   // (synced back to `open` by `use_dialog_close_sync`) the same way a user
   // closing it would, and still races `use_animated_open`'s exit cycle the
-  // exact same way a second trigger click used to.
+  // exact same way a second trigger click would.
   await popoverButton.click();
   await page.keyboard.press("Escape");
   await popoverButton.click();
@@ -291,29 +290,25 @@ test.describe("Axe automated scan", () => {
 });
 
 // dev-docs/backlog.md rows 19 and 7: on the web (popover) arm,
-// `use_popover_sync` used to call `hidePopover()` the instant `open` went
-// false, and the UA's `[popover]:not(:popover-open) { display: none }`
-// rule then hid the content before `dx-popover-fade-out`
-// (`../preview/src/components/popover/style.css`, which already had this
-// animation defined -- it just never got to play) ever got a chance to
-// run -- RED before both fixes landed (reasoned through, not executed,
-// since this lane cannot run Playwright: `display: none` from the very
-// first sample, so `assertFadesOutThenUnmounts` would fail both the "no
-// display:none while mounted" invariant and the "a few frames of
-// decreasing opacity" check immediately). GREEN once
-// `primitives/src/top_layer.rs`'s `use_popover_shown_while_mounted`
-// (row 19) keeps the popover shown through the animation that CSS already
-// defined (row 7).
+// `use_popover_sync` must not call `hidePopover()` the instant `open` goes
+// false: the UA's `[popover]:not(:popover-open) { display: none }` rule would
+// then hide the content before `dx-popover-fade-out`
+// (`../preview/src/components/popover/style.css`) ever got a chance to run
+// (`display: none` from the very first sample, so `assertFadesOutThenUnmounts`
+// fails both the "no display:none while mounted" invariant and the "a few
+// frames of decreasing opacity" check). `primitives/src/top_layer.rs`'s
+// `use_popover_shown_while_mounted` (row 19) keeps the popover shown through
+// the animation that CSS defines (row 7).
 //
 // Targets the `non_modal` variant (`preview/src/components/popover/
-// variants/non_modal/mod.rs`, `is_modal: false`). Before row 169 flipped
-// the primitive's default, this file's own `?name=popover&` *main*-variant
-// demo was modal (a real `<dialog>` + `showModal()`, a completely different
-// code path from `popover="auto"` that neither row 19 nor row 7 touches);
-// it is non-modal now too, and the modal arm has its own `modal` variant.
+// variants/non_modal/mod.rs`, `is_modal: false`). Since row 169 made
+// the primitive non-modal by default, this file's own `?name=popover&` *main*-variant
+// demo is non-modal too (the modal arm is a real `<dialog>` + `showModal()`, a completely different
+// code path from `popover="auto"` that neither row 19 nor row 7 touches, with
+// its own `modal` variant).
 //
 // This is *not* the `top_layer` oracle fixture's own `#stack-popover-*`
-// instance (an earlier version of this test used it, and that was wrong):
+// instance (using it would be wrong):
 // that fixture composes the raw `dioxus_primitives::popover` primitive
 // directly, on purpose (`scripts/check-preview-composition.sh`'s
 // documented exemption for it, for native-vs-library positioning/

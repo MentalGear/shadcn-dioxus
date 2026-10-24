@@ -8,10 +8,11 @@ import { gotoHydrated } from "./hydration";
  * Backlog row 142: a phone has to be able to reach the theme picker on EVERY page that has the site
  * header, not only on the ones with a navigation sheet to host it.
  *
- * `theme::ThemePickerSidebarFooter` (the phone entry the picker has always had) lives at the foot of the
+ * `theme::ThemePickerSidebarFooter` (the phone entry) lives at the foot of the
  * docs sidebar's sheet, so a route with no sidebar (the "not found"
- * pages; `/demos` and the `/charts/` gallery were two until row 303 gave them the docs shell) had no picker at <= 760px: the header's popover trigger is hidden there and there was no sheet.
- * The header's own `theme::ThemePicker` now renders `ThemePickerPhoneTrigger` when (and only when) the
+ * pages) would have no picker at <= 760px: the header's popover trigger is hidden there and there is no sheet
+ * (row 303 gave `/demos` and the `/charts/` gallery the docs shell).
+ * The header's own `theme::ThemePicker` renders `ThemePickerPhoneTrigger` when (and only when) the
  * route has no `SidebarCtx`, so this spec is a SWEEP over every route type: whichever entry a page has,
  * it must have exactly one "Theme" entry reachable at phone width, that entry must open the SAME drawer,
  * and the header must still fit.

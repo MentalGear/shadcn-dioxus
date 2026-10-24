@@ -3,7 +3,7 @@ import type { Page } from "@playwright/test";
 import { gotoHydrated } from "./hydration";
 import { BASE_URL } from "./base-url";
 
-// The docs sidebar lists the components A-Z by default and by category on request (docs-site lane, backlog
+// The docs sidebar lists the components A-Z by default and by category on request (backlog
 // row 234; `preview/src/docs_nav.rs`). The SSG emits the default, so the remembered choice is applied before
 // first paint from `localStorage` onto `<html data-nav-sort>`, and CSS shows one of the two lists.
 // Run against the SSG lane (the prerendered HTML is half of the claim).
@@ -193,7 +193,7 @@ test("clicking a link in the A-Z list navigates and keeps the chosen order", asy
   await expect(page.locator('.dx-nav-az a[aria-current="page"]')).toHaveText(/badge/);
 });
 
-// --- sticky switch, category jump menu, sticky group labels (docs-nav lane) ---------------------------------
+// --- sticky switch, category jump menu, sticky group labels ---------------------------------
 
 const content = (page: Page) => page.locator('[data-slot="sidebar-content"]');
 const switchGroup = (page: Page) => page.locator(".dx-nav-sort-group");

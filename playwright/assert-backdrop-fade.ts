@@ -93,8 +93,8 @@ export async function captureBackdrop(
       const c4 = /color\(.*\/\s*([\d.]+)\)/.exec(c);
       return c4 ? Number(c4[1]) : c.startsWith("color(") ? 1 : 0;
     };
-    // The scrim a component used to paint itself, on the wrapper around the dialog.
-    // On the web arm it must now contribute nothing.
+    // The wrapper around the dialog must contribute no scrim of its own on the web arm: the dialog's
+    // `::backdrop` is the one scrim.
     const WRAPPERS = [
       ".dx-dialog-backdrop",
       ".dx-alert-dialog-backdrop",

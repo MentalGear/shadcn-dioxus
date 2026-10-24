@@ -258,20 +258,20 @@ test("keyboard: the filter input narrows rows and Previous/Next are reachable an
 
 // --- Checkbox alignment and layout stability ---------------------------------
 //
-// Owner report: "Datatables: checkboxes are not vertically centered, and there is
-// also a layout shift when they are toggled." Two root causes, measured 2026-10-04
-// with the real Geist web font (the offsets differ with the fallback font):
-//   1. `.dx-checkbox` was an inline-block <button>, so it sat on the cell's line-box
-//      BASELINE: 2.00px above the row/cell/text centre (2.25px in the header), and
-//      the row grew to 37px. Fix: the checkbox is a flex box (Nova's `flex size-4`).
-//   2. The demo shrink-wrapped inside the centred preview frame, so its width was the
-//      pagination row's max-content, and "0 of 12 row(s) selected." -> "1 of 12 ..."
-//      (proportional digits, a `1` is ~4px narrower) moved the whole table ~2px and
-//      resized it ~4px on EVERY toggle. Fix: the demo is `width: 100%`, and the
-//      counters use tabular figures.
+// The user-visible bug: "Datatables: checkboxes are not vertically centered, and there is
+// also a layout shift when they are toggled." Two causes, measured with the real Geist web
+// font (the offsets differ with the fallback font):
+//   1. An inline-block <button> `.dx-checkbox` sits on the cell's line-box BASELINE: 2.00px
+//      above the row/cell/text centre (2.25px in the header), and the row grows to 37px.
+//      So the checkbox is a flex box (Nova's `flex size-4`).
+//   2. A demo that shrink-wraps inside the centred preview frame gets the pagination row's
+//      max-content as its width, and "0 of 12 row(s) selected." -> "1 of 12 ..."
+//      (proportional digits, a `1` is ~4px narrower) moves the whole table ~2px and
+//      resizes it ~4px on EVERY toggle. So the demo is `width: 100%`, and the counters
+//      use tabular figures.
 // The alignment and toggle tests below measure real boxes (getBoundingClientRect), not
-// computed styles, so they stay red for any cause, not just the two above. Which tests are
-// red without the fix depends on the font: the alignment test, the container-overflow guard
+// computed styles, so they go red for any cause, not just the two above. Which tests catch
+// each cause depends on the font: the alignment test, the container-overflow guard
 // and the invariant test fail in any font; the two toggle tests fail where the pagination
 // row is the demo's widest child (Geist), which a wider fallback face does not reproduce.
 

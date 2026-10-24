@@ -34,11 +34,10 @@ import { gotoHydrated } from "./hydration";
 // the tree, and a missed DOM event (a click, a mouseenter) is gone for
 // good, not queued. Under `dx serve` this race cannot happen (elements are
 // inserted into the DOM only once the client renders them, by which point
-// listeners are already attached), which is why this file's suite was fully
-// green there while two SSG-only interactions (carousel.spec.ts:633's first
-// click, :1512's initial hover) silently landed before hydration/mid-tick
-// and were never observed as intended. `gotoHydrated` (./hydration.ts)
-// waits on networkidle AND a real hydration-ready signal the app now sets,
+// listeners are already attached), so an SSG-only interaction (a first click,
+// an initial hover) can silently land before hydration/mid-tick and never be
+// observed as intended. `gotoHydrated` (./hydration.ts)
+// waits on networkidle AND a real hydration-ready signal the app sets,
 // closing the gap networkidle alone leaves open.
 const GOTO_OPTS = { timeout: 20 * 60 * 1000 };
 
@@ -82,20 +81,18 @@ function demoFrame(
  * Scroll `locator`'s element into view instantly, for tests that need a
  * settled, known position before their own subsequent real-coordinate math
  * (`page.mouse`-based drags below) -- NOT as a guard against Playwright's
- * own pre-`.hover()`/`.focus()` actionability scroll any more: that class
+ * own pre-`.hover()`/`.focus()` actionability scroll: that class
  * (dev-docs/backlog.md row 110 -- an unqualified scroll's default
- * `behavior: "auto"` deferring to the site's global
- * `html { scroll-behavior: smooth }`, `preview/assets/main.css`, and
- * animating for a couple hundred ms after `.hover()` already fired,
- * dragging the target out from under the cursor) is now handled once for
- * every test by `./fixtures.ts`'s shared `test`/`expect`, which forces
- * `scroll-behavior: auto` for the whole suite -- see the "hovering the
- * carousel stops rotation..." test below, which used to call this
- * defensively and no longer needs to.
+ * `behavior: "auto"` deferring to an ambient
+ * `html { scroll-behavior: smooth }` and animating for a couple hundred
+ * ms after `.hover()` already fired, dragging the target out from under
+ * the cursor) cannot happen: smooth scrolling is opt-in
+ * (`html[data-anchor-scroll]`, `preview/assets/main.css`, row 228), so
+ * the root scroll box is instant -- the "hovering the
+ * carousel stops rotation..." test below needs no guard of its own.
  *
- * `oracle/tier2-html/top-layer.spec.ts`'s own `pinNearTop` helper was the
- * other instance of that same class (2026-09-18, commit daebe40); it now
- * relies on the same shared fixture too, per that helper's own doc.
+ * `oracle/tier2-html/top-layer.spec.ts`'s `pinNearTop` helper relies on
+ * the same shared fixture, per that helper's own doc.
  */
 async function scrollIntoViewInstant(locator: Locator): Promise<void> {
   await locator.evaluate((el) =>
@@ -167,7 +164,7 @@ async function expectSnappedToBoundary(content: Locator, item: Locator, orientat
           lastPos = pos;
           // A couple of CSS pixels of tolerance for sub-pixel rounding
           // during a smooth-scroll settle -- not a loose bound: an
-          // unsettled scroll (still mid-animation, or landed on the wrong
+          // unsettled scroll (still mid-animation, or ending on the wrong
           // slide) misses by tens/hundreds of pixels, not 1-2.
           if (delta <= 2 && stillFrames >= 3) {
             resolve({
@@ -206,11 +203,11 @@ async function expectSnappedToBoundary(content: Locator, item: Locator, orientat
  * `CAROUSEL_DRAG_JS`'s own threshold/pointer-capture/click-suppression
  * logic all key off genuine `pointerdown`/`pointermove`/`pointerup`
  * events, which a script-fired fake event does not reliably reproduce
- * (`round5`'s own carousel-drag lane doc has the details).
+ * (see `primitives/src/carousel.rs`'s "Pointer drag" doc).
  */
 async function dragBy(page: Page, target: Locator, dx: number, dy: number, steps = 12) {
   // Without this, `boundingBox()` can return coordinates outside the
-  // current viewport (found by execution: `main`'s own content sat at a
+  // current viewport (`main`'s own content can sit at a
   // large negative y on first paint) -- `page.mouse` targets real
   // viewport coordinates, so a drag computed from an off-screen box
   // silently lands on nothing.
@@ -278,7 +275,7 @@ function parseTranslatePx(transform: string): number | null {
  * browser's own platform accessibility tree currently exposes (Chrome's
  * CDP `Accessibility` domain, populated from the same computation real
  * assistive tech consumes) -- deliberately not `page.getByRole`/
- * `locator.ariaSnapshot()`. Measured live (this lane): this installed
+ * `locator.ariaSnapshot()`. This installed
  * Playwright build's own ARIA-role engine does not treat `inert` as
  * excluding a node at all -- a minimal `<div role="group" inert>` still
  * matched `getByRole("group")` and appeared in `ariaSnapshot()`, while the
@@ -320,13 +317,12 @@ async function axTreeGroupNames(page: Page, rootSelector: string): Promise<strin
  * The carousel track's own per-slide pitch (px, along the given axis),
  * measured live from a rendered slide's own box rather than assumed --
  * every distance-based drag test below derives its drag length from this,
- * not a hardcoded pixel constant. A previous hardcoded-constant version of
- * these tests silently broke when a demo wrapper's rendered width changed
- * (176px -> 320px, `93d0ee7`): a distance tuned to clear 50% of the old
- * pitch cleared only ~42% of the new one, so `expectSnappedToBoundary`
- * reported the drag landing exactly one slide short. Measuring live at
- * each test's own run time is what survives the *next* geometry change
- * too, not just this one.
+ * not a hardcoded pixel constant. A hardcoded distance silently breaks
+ * when a demo wrapper's rendered width changes: a distance tuned to clear
+ * 50% of one pitch clears only ~42% of a wider one, so
+ * `expectSnappedToBoundary` reports the drag landing exactly one slide
+ * short. Measuring live at each test's own run time survives any
+ * geometry change.
  */
 async function slidePitch(item: Locator, orientation: "horizontal" | "vertical" = "horizontal"): Promise<number> {
   const box = await item.boundingBox();
@@ -349,7 +345,7 @@ async function slidePitch(item: Locator, orientation: "horizontal" | "vertical" 
  * is not the same claim as the motion actually being animated, and only
  * this sampling proves the latter.
  *
- * A fixed wall-clock sampling window (previously 600ms, opened before
+ * A fixed wall-clock sampling window (say 600ms, opened before
  * `trigger()`) is a live bug, not a hardening measure: against a `dx serve`
  * dev server the click-to-scroll latency happens to fit inside 600ms, so it
  * passes, but against a statically-served release SSG build the wasm
@@ -477,24 +473,22 @@ for (const variant of ["main", "sizes", "peek", "vertical", "rtl"] as const) {
  * outside the track -- never overlapping a slide -- on every variant and
  * axis. Values are shadcn/ui's own live-measured carousel
  * (`ui.shadcn.com/docs/components/carousel`, JS running, 1280x800 @2x):
- * `getBoundingClientRect()` on both buttons reported exactly 28x28,
- * `getComputedStyle().boxShadow` reported "none", and the near edge of each
- * button sat 20px clear of the track's own edge (`--dx-space-12`, 48px,
+ * `getBoundingClientRect()` on both buttons gives exactly 28x28,
+ * `getComputedStyle().boxShadow` gives "none", and the near edge of each
+ * button sits 20px clear of the track's own edge (`--dx-space-12`, 48px,
  * minus the button's own 28px). Their own vertical ("Orientation") demo
- * confirmed the same 20px-clear rule holds on the block axis too, not just
+ * shows the same 20px-clear rule on the block axis too, not just
  * inferred from the horizontal case -- see
  * `preview/src/components/carousel/style.css`'s own comments for the full
  * derivation and the exact numbers this asserts against.
  *
  * Clearance is measured against `.dx-carousel-content` (the track), NOT
- * `role=region` (`.dx-carousel` itself): the carousel-narrow lane moved
- * Previous/Next from a negative `inset-inline-*`/`inset-block-*` outset
- * past `.dx-carousel`'s own edge to a `padding-inline`/`padding-block`
- * RESERVATION inside it, so the buttons now sit fully inside `.dx-carousel`'s
- * own box (that containment is what the next describe block regression-
- * tests) -- `region`'s box no longer marks the track's edge, only the
- * track itself still does. The 20px-clear number is unchanged either way;
- * only which element it is measured from moved.
+ * `role=region` (`.dx-carousel` itself): Previous/Next sit in a
+ * `padding-inline`/`padding-block` RESERVATION inside `.dx-carousel`
+ * (not a negative `inset-inline-*`/`inset-block-*` outset past its edge), so
+ * the buttons sit fully inside `.dx-carousel`'s own box (that containment is
+ * what the next describe block regression-tests) -- `region`'s box does not
+ * mark the track's edge, only the track itself does.
  */
 test.describe("Carousel: shadcn-parity geometry (size, shadow, outside placement)", () => {
   const BUTTON_SIZE_PX = 28;
@@ -555,30 +549,28 @@ test.describe("Carousel: shadcn-parity geometry (size, shadow, outside placement
 });
 
 /**
- * carousel-narrow lane regression: Previous/Next must never extend beyond
+ * carousel-narrow regression: Previous/Next must never extend beyond
  * their own demo frame's box, at any viewport a real consumer's container
  * could actually be, in either theme. This is the direct, black-box
- * assertion for the bug this lane fixed (reported live on the `rtl`
- * variant: both arrows clipped at the frame edge on a narrow viewport) --
- * see `preview/src/components/carousel/style.css`'s own comment on the
+ * assertion for the `rtl` variant's failure (both arrows clipped at the
+ * frame edge on a narrow viewport) -- see
+ * `preview/src/components/carousel/style.css`'s own comment on the
  * horizontal/vertical placement rules for the construction and the
- * geometric derivation, and the lane's own report for the full before/
- * after measurement table this reproduces the shape of.
+ * geometric derivation.
  *
- * Viewports: the six the lane brief itself named as the minimum
+ * Viewports: six as the minimum
  * (1280/900/768/640/480/390) -- this page's own layout is not simply
  * narrower at a narrower viewport (a sidebar collapses around 700-750px,
  * so the rendered frame width is NOT monotonic in viewport width; 640px
  * actually yields a wider frame than 768px does) -- so this sweeps the
- * exact set asked for rather than a hand-picked "worst case" that could
+ * exact set rather than a hand-picked "worst case" that could
  * miss a non-adjacent regression the way a monotonic assumption would.
  *
  * `toBeGreaterThanOrEqual(-0.5)`/`toBeLessThanOrEqual(...+0.5)`: a half
  * pixel of slack for sub-pixel layout rounding, the same kind of tolerance
- * `MIN_CLEAR_PX` above already applies -- not a loose bound: the pre-fix
- * construction overflowed by 12-15px on the horizontal variants at these
- * same viewports (see the lane report's before/after table), tens of
- * times this tolerance.
+ * `MIN_CLEAR_PX` above already applies -- not a loose bound: a negative-outset
+ * construction overflows by 12-15px on the horizontal variants at these
+ * same viewports, tens of times this tolerance.
  */
 test.describe("Carousel: arrows never overflow their frame (carousel-narrow regression)", () => {
   const VIEWPORTS = [1280, 900, 768, 640, 480, 390];
@@ -591,7 +583,7 @@ test.describe("Carousel: arrows never overflow their frame (carousel-narrow regr
       }) => {
         await page.setViewportSize({ width, height: 900 });
         // `gotoHydrated`, not a bare `page.goto`: the frames' buttons only exist once the
-        // page has hydrated, and the 3 s `toPass` below used to race that under load (the
+        // page has hydrated, and the 3 s `toPass` below would race that under load (the
         // debug build with 4 workers, 4-10 of 12 red; row 109's class).
         await gotoHydrated(
           page,
@@ -773,10 +765,8 @@ test.describe("Carousel: vertical orientation pages on the block axis", () => {
 });
 
 test.describe("Carousel: a custom picker built on use_carousel()'s CarouselApi", () => {
-  // Lives on the `api` demo now -- the old `indicators` variant that used
-  // to host this custom, non-tablist dot picker was merged into the APG
-  // tablist demo (`CarouselIndicators`/`CarouselIndicator`, renamed from
-  // `CarouselTabList`/`CarouselTab`); see playwright/carousel.spec.ts's own
+  // Lives on the `api` demo; the `indicators` variant is the APG tablist demo
+  // (`CarouselIndicators`/`CarouselIndicator`); see playwright/carousel.spec.ts's own
   // "tablist (dot-picker) variant" describe block for that one instead.
   test("clicking a dot indicator jumps directly to that slide, and the active dot tracks the selection", async ({ page }) => {
     await goto(page, "api");
@@ -827,18 +817,13 @@ test.describe("Axe automated scan", () => {
 });
 
 /**
- * round5 regression: switching from slide 1 to slide 2 used to jump
- * instantly instead of animating (every later transition already
- * animated correctly) -- see `primitives/src/carousel.rs`'s own mount-time
- * effect doc for the root cause and construction. Confirmed live before
- * fixing it (round5, `$S/round5/carousel-drag/item1-repro-{main,rtl}.log`):
- * the first click sent `CAROUSEL_SCROLL_INTO_VIEW_JS` `{instant: true,
- * behavior: 'auto'}` while every later click sent `{instant: false,
- * behavior: 'smooth'}`, on an unmodified tree with the test browser
- * reporting `prefers-reduced-motion: no-preference` throughout -- so this
- * asserts the actual, sampled scroll motion rather than "the code chose
- * smooth", which the pre-fix code could still have passed by coincidence
- * of wording.
+ * The first paged transition (slide 1 to slide 2) animates like every later one -- see
+ * `primitives/src/carousel.rs`'s mount-time effect doc for the construction. The failure it
+ * guards: every click, the first included, sends `CAROUSEL_SCROLL_INTO_VIEW_JS`
+ * `{instant: false, behavior: 'smooth'}` while the test browser reports
+ * `prefers-reduced-motion: no-preference` throughout -- so this asserts the actual, sampled
+ * scroll motion rather than "the code chose smooth", which a wording-only check could pass by
+ * coincidence.
  */
 test.describe("Carousel: the first paged transition actually animates (round5 regression)", () => {
   test("clicking Next from slide 1 passes through an intermediate scroll position, not an instant jump", async ({ page }) => {
@@ -866,7 +851,7 @@ test.describe("Carousel: the first paged transition actually animates (round5 re
 });
 
 /**
- * round5 feature: mouse/pen drag-to-scroll on the track, layered on the
+ * Mouse/pen drag-to-scroll on the track, layered on the
  * same scroll-snap construction (see `primitives/src/carousel.rs`'s own
  * "Pointer drag" doc). Touch is deliberately never exercised here -- it
  * already scrolls natively and Playwright's own synthetic touch input
@@ -928,11 +913,10 @@ test.describe("Carousel: pointer drag (mouse/pen)", () => {
   /**
    * A drag that ends clamped against an edge comes to rest exactly on a slide,
    * so its release needs no settle scroll -- and every `scrollend` during the
-   * drag is dropped while `data-dragging` is set. Before the tracking bridge
-   * treated the end of a drag as the end of a scroll, nothing reported where
-   * it rested: dragging from slide 2 hard past slide 1 left `selected` on
-   * slide 2 with slide 1 showing (measured on this build before the fix:
-   * "2 of 5" at scrollLeft 0).
+   * drag is dropped while `data-dragging` is set. The tracking bridge
+   * therefore treats the end of a drag as the end of a scroll and reports where
+   * it rested: dragging from slide 2 hard past slide 1 must select slide 1
+   * (not leave "2 of 5" at scrollLeft 0).
    */
   test("a drag from slide 2 hard past the first slide selects slide 1 (the drag's end reports where it rested)", async ({
     page,
@@ -994,16 +978,12 @@ test.describe("Carousel: pointer drag (mouse/pen)", () => {
 });
 
 /**
- * carousel-feel lane, item 2: a drag release used to settle on the
- * nearest slide by restoring `scroll-snap-type` and trusting Chromium's
- * own re-snap to both choose the destination *and* animate the way there
- * -- measured, it never animated: sampling `scrollLeft` across a release
- * yielded exactly two distinct values (the mid-drag position and the
- * final slide), both landing instantly, for drags of very different
- * lengths. Fixed by routing the release through the same `scrollIntoView`
- * paging path `CarouselPrevious`/`CarouselNext` already use -- see
- * `primitives/src/carousel.rs`'s own `CarouselContent` doc, "Release
- * settle" section, for the construction.
+ * A drag release settles on the nearest slide through the same `scrollIntoView` paging path
+ * `CarouselPrevious`/`CarouselNext` use (see `primitives/src/carousel.rs`'s `CarouselContent` doc,
+ * "Release settle" section, for the construction), so it animates. Restoring `scroll-snap-type`
+ * and trusting Chromium's own re-snap would not: sampling `scrollLeft` across such a release
+ * yields exactly two distinct values (the mid-drag position and the final slide), both landing
+ * instantly, whatever the drag length.
  *
  * Sampling starts only once the drag has already stopped moving and is
  * sitting at a raw, unsnapped position -- `page.mouse.up()` is the only
@@ -1011,8 +991,8 @@ test.describe("Carousel: pointer drag (mouse/pen)", () => {
  * (unlike the "pointer drag" describe block above). The drag's own
  * per-move `scrollBy` calls already produce many intermediate values on
  * their own, which would make an assertion over the *whole* gesture pass
- * even if the release itself were still an instant jump -- isolating the
- * release is what actually exercises this fix, the same way the "first
+ * even if the release itself were an instant jump -- isolating the
+ * release is what exercises the settle path, the same way the "first
  * paged transition actually animates" describe block isolates a single
  * button click.
  */
@@ -1079,35 +1059,28 @@ test.describe("Carousel: a drag release actually animates to the nearest slide (
  * regardless of the requested distance, which is what this test exercises
  * directly.
  *
- * The distance matters. An earlier version of this test scrolled 2.5
- * slide widths and asserted landing on slide 2 -- a false green, because
- * "settle on whichever snap point is numerically nearest" (the un-capped
- * behaviour, indistinguishable from this property being entirely inert)
- * *also* lands on slide 2 at that distance. That version measured 54/54
- * passing against a build where `scroll-snap-stop` was inert on every
- * slide (a broken `<style>`-tag/`@supports` construction -- see
- * `CarouselContent`'s own doc for that history). Three slide widths is
- * used instead because it discriminates: uncapped, an exact 3.0-pitch
- * scroll has no rounding ambiguity and settles on slide 4; capped, the
- * scroll must stop at the very first snap position it would otherwise
- * pass, landing on slide 2 -- two different, separately checkable
- * predictions.
+ * The distance matters. At 2.5 slide widths the assertion "lands on
+ * slide 2" is a false green, because "settle on whichever snap point is
+ * numerically nearest" (the un-capped behaviour, indistinguishable from
+ * this property being entirely inert) *also* lands on slide 2 at that
+ * distance. Three slide widths discriminates: uncapped, an exact
+ * 3.0-pitch scroll has no rounding ambiguity and settles on slide 4;
+ * capped, the scroll must stop at the very first snap position it would
+ * otherwise pass, landing on slide 2 -- two different, separately
+ * checkable predictions (see `CarouselContent`'s own doc for why an inert
+ * `scroll-snap-stop` must fail this test).
  *
  * Deliberately **not** exercised here via this crate's own pointer-drag
- * gesture (`dragBy`): measured directly (isolated `page.evaluate` against
- * a release build, outside this test file) that this crate's own drag
- * path does *not* get this guarantee, because it moves the track with
- * many independently-instant, unsnapped `scrollBy` calls while
- * `scroll-snap-type` is suspended for the gesture's own duration, and
- * restoring that property afterward is a fresh, static re-evaluation of
- * an already-stationary position -- not a "scrolling operation" this
- * property constrains on this engine (Chromium). A drag-driven version of
- * this exact test was red on this same build/property (settled 2 slides
- * from the origin, not 1) before this test was rewritten to test the
- * mechanism this property actually delivers, rather than the one this
- * lane originally hoped it would also cover. See `CarouselContent`'s own
- * doc for the full write-up; that gap is being reported, not silently
- * worked around here.
+ * gesture (`dragBy`): this crate's own drag path does *not* get this
+ * guarantee, because it moves the track with many independently-instant,
+ * unsnapped `scrollBy` calls while `scroll-snap-type` is suspended for the
+ * gesture's own duration, and restoring that property afterward is a
+ * fresh, static re-evaluation of an already-stationary position -- not a
+ * "scrolling operation" this property constrains on this engine
+ * (Chromium); a drag-driven version of this test settles 2 slides from the
+ * origin, not 1. The test covers the mechanism the property actually
+ * delivers (a smooth scroll). See `CarouselContent`'s own doc for the
+ * full write-up of that gap.
  */
 test.describe("Carousel: scroll-snap-stop caps a smooth scroll to one slide", () => {
   test("a smooth scroll covering three slide widths lands exactly one slide away, not three", async ({ page }) => {
@@ -1120,8 +1093,8 @@ test.describe("Carousel: scroll-snap-stop caps a smooth scroll to one slide", ()
     const pitch = await slidePitch(slide(1));
     const contentId = await content.getAttribute("id");
     // 3 slides' worth -- see this describe block's own header for why this
-    // distance (not the previous 2.5) is the one that actually
-    // discriminates a working `scroll-snap-stop` from an inert one.
+    // distance is the one that discriminates a working `scroll-snap-stop`
+    // from an inert one.
     await page.evaluate(
       ({ id, distance }) => {
         document.getElementById(id)!.scrollBy({ left: distance, behavior: "smooth" });
@@ -1202,9 +1175,9 @@ async function sampleOpacityDuring(
 }
 
 /**
- * The disabled-state fade (round 6, user-reported): Previous/Next are
- * genuinely `disabled` at the first/last slide, and that opacity change used
- * to apply instantly. The transition lives on the BASE rule rather than
+ * The disabled-state fade: Previous/Next are
+ * genuinely `disabled` at the first/last slide, and that opacity change must
+ * not apply instantly. The transition lives on the BASE rule rather than
  * inside `:disabled` -- scoped to `:disabled` it would animate entering the
  * state but not leaving it, since the non-disabled style would then carry no
  * transition of its own. So both directions are asserted here.
@@ -1254,13 +1227,11 @@ test.describe("Carousel: the disabled-state opacity change actually fades", () =
  * See `primitives/src/carousel.rs`'s own `CarouselContent` doc, "Edge
  * rubber-band" section, for the construction these tests hold to: a
  * `transform` on `.dx-carousel-content` only, never a spacer child, and
- * never a change to `selected`. The wheel/trackpad half is mode D now; its
+ * never a change to `selected`. The wheel/trackpad half is mode D; its
  * tests are the next describe block.
  *
- * RED-FIRST: written and run against the pre-port `carousel.rs` (mode A,
- * plain clamping) before any of this file's own port landed -- every test
- * below failed (`readContentTransform` always returned `""`, since nothing
- * ever wrote `style.transform`). All pass against the ported code.
+ * Every test below needs the band to write `style.transform` (plain
+ * clamping, mode A, never does: `readContentTransform` would always return `""`).
  */
 test.describe("Carousel: edge rubber-band, pointer (mode B3)", () => {
   test("pointer overdrag past the first slide produces a bounded, nonzero transform that returns to identity on release", async ({
@@ -1666,12 +1637,12 @@ test.describe("Carousel: wheel/trackpad edge band (mode D, platform-aware)", () 
   });
 
   /**
-   * Replaces B3's "a sustained constant wheel stream ... grows sub-linearly"
-   * test. A perfectly constant stream is now, correctly, a notched wheel
+   * Sustained push (the wheel counterpart of B3's "a sustained constant stream
+   * grows sub-linearly"). A perfectly constant stream is, correctly, a notched wheel
    * (see the notched test below) and releases after 140ms, so the same two
    * curve properties are checked on a sustained push whose steps vary the
    * way a real hand's do: the band stays under the asymptote (`LIMIT` x the
-   * axis -- 0.5 now, tighter than B3's 1.0), and doubling the input less
+   * axis -- 0.5, tighter than B3's 1.0), and doubling the input less
    * than doubles the depth (WebKit's concave curve). Assertions unchanged
    * in kind; the bound is tighter, not looser.
    */
@@ -1905,8 +1876,7 @@ test.describe("Carousel: wheel/trackpad edge band (mode D, platform-aware)", () 
    * The owner's approved rule: the band only engages at a TRUE end of the
    * data (`isTrueEnd` in `CAROUSEL_WHEEL_BAND_JS`), and a looping carousel
    * has none -- including `LoopMode::Rewind`, whose ends are physical but
-   * wrap. This used to assert the opposite (Rewind bands like any physical
-   * edge); the rule changed, so the assertion did.
+   * wrap, so Rewind does not band like a physical edge.
    */
   test("loop_mode Rewind never bands, at its first, middle or last slide", async ({ page }) => {
     await enableWheelDebug(page);
@@ -2079,24 +2049,18 @@ async function paintsAt(content: Locator, x: number, y: number): Promise<boolean
 }
 
 /**
- * Clipping viewport (backlog row 102's own dated addendum, 2026-09-25):
- * `CarouselContent` translates its scroller for the edge rubber-band, but
- * an element's own `overflow` clips relative to ITS OWN box, and a
- * `transform` moves that box -- clip region included -- as one rigid unit.
- * So the scroller was never actually clipping its own overdrag; on real
- * hardware a trackpad overdrag pushed the whole visible slide track ~750px
- * past the carousel, unclipped, overlapping the rest of the page
- * (`primitives/src/carousel.rs`'s `CarouselContent` doc has the full
- * "Correction" writeup). The fix is a stationary wrapper
- * (`div[data-slot="carousel-viewport"]`, `overflow: clip`) around the
- * scroller, so translating the scroller moves content inside a clip
- * boundary that never itself moves.
- *
- * RED-FIRST: run against pre-fix `carousel.rs` (the scroller alone, no
- * wrapper) before this lane's own fix landed -- every "does not paint
- * outside the viewport" assertion below failed, since nothing clipped the
- * translated scroller at all; see this lane's own report for the actual
- * failure output. All pass against the fixed code.
+ * Clipping viewport (backlog row 102): `CarouselContent` translates its
+ * scroller for the edge rubber-band, but an element's own `overflow` clips
+ * relative to ITS OWN box, and a `transform` moves that box -- clip region
+ * included -- as one rigid unit. A scroller alone therefore never clips its
+ * own overdrag: on real hardware a trackpad overdrag pushes the whole
+ * visible slide track ~750px past the carousel, unclipped, overlapping the
+ * rest of the page (`primitives/src/carousel.rs`'s `CarouselContent` doc has
+ * the full "Correction" writeup). So a stationary wrapper
+ * (`div[data-slot="carousel-viewport"]`, `overflow: clip`) surrounds the
+ * scroller, and translating the scroller moves content inside a clip
+ * boundary that never itself moves. Every "does not paint outside the
+ * viewport" assertion below fails on a scroller without that wrapper.
  */
 test.describe("Carousel: clipping viewport (edge overdrag never paints outside the carousel)", () => {
   test("the viewport wraps the scroller, clips with overflow: clip (not hidden), and the transformed track is its descendant", async ({
@@ -2293,12 +2257,11 @@ test.describe("Carousel: clipping viewport (edge overdrag never paints outside t
 /**
  * `loop_mode: LoopMode::Rewind` -- the explicit opt-in (backlog row 91's
  * shadcn-parity addendum); `r#loop: true` alone (the default
- * `LoopMode::Seamless`) does nothing for the plain children API any more,
+ * `LoopMode::Seamless`) does nothing for the plain children API,
  * see the "library-only v1" describe block above and
- * `primitives/src/carousel.rs`'s own `LoopMode` doc. Retires the old
- * `looping`/`looping_rtl` demos (which showed this behavior unconditionally,
- * with no opt-in) in favor of one `rewind` demo, two rows (LTR/RTL) --
- * see `preview/src/components/carousel/variants/rewind/mod.rs`.
+ * `primitives/src/carousel.rs`'s own `LoopMode` doc. One `rewind` demo, two rows
+ * (LTR/RTL), shows the opt-in -- see
+ * `preview/src/components/carousel/variants/rewind/mod.rs`.
  */
 test.describe("Carousel: loop_mode Rewind (explicit opt-in wraparound)", () => {
   test("Previous and Next are never disabled, even at the first/last slide", async ({ page }) => {
@@ -2391,12 +2354,9 @@ test.describe("Carousel: loop_mode Rewind (explicit opt-in wraparound)", () => {
   });
 
   /**
-   * Rewritten for the owner's true-end rule (the drag band now follows the
-   * wheel band's shared `dxIsTrueEnd` predicate): this test used to be titled
-   * "dragging past a physical edge still rubber-bands under loop" -- though it
-   * only ever asserted that the transform ended at identity, never that a
-   * band appeared. A looping carousel has no true end, so the drag clamps at
-   * the physical edge with no band at all, and still never wraps.
+   * The owner's true-end rule (the drag band follows the wheel band's shared
+   * `dxIsTrueEnd` predicate): a looping carousel has no true end, so the drag
+   * clamps at the physical edge with no band at all, and still never wraps.
    */
   test("dragging past a looping carousel's physical edge never rubber-bands and never wraps", async ({ page }) => {
     await goto(page, "rewind");
@@ -2510,12 +2470,11 @@ test.describe("Carousel: autoplay + rotation control", () => {
     const rotation = frame.getByRole("button", { name: /automatic slide show/i });
 
     // No per-call-site guard needed here (or in the hover test below):
-    // `./fixtures.ts` (dev-docs/backlog.md row 110) forces
-    // `scroll-behavior: auto` on `<html>` for every test in this suite, so
-    // Playwright's own pre-`.focus()`/`.hover()` actionability scroll
+    // Smooth scrolling is opt-in (`html[data-anchor-scroll]`,
+    // dev-docs/backlog.md rows 110 and 228), so Playwright's own
+    // pre-`.focus()`/`.hover()` actionability scroll
     // (an unqualified scroll, which defers to that ancestor CSS) is
-    // already instant -- it cannot animate out from under the cursor the
-    // way it used to before that shared fixture existed.
+    // instant -- it cannot animate out from under the cursor.
     await content.focus();
     // The rotation control's own label reflects the user's *intent*
     // (`playing`), unaffected by an ambient, temporary pause -- only the
@@ -2546,19 +2505,11 @@ test.describe("Carousel: autoplay + rotation control", () => {
     const content = frame.locator(".dx-carousel-content");
     const rotation = frame.getByRole("button", { name: /automatic slide show/i });
 
-    // This test used to call `scrollIntoViewInstant(content)` here as a
-    // per-call-site guard: without it, Playwright's own pre-`.hover()`
-    // auto-scroll inherited the page's global smooth-scroll CSS and could
-    // still be animating when `mouseenter` fired, dragging the carousel
-    // out from under the cursor and firing a genuine `mouseleave` a few
-    // hundred ms later -- observed in this session as this exact test's
-    // flake (rotation legitimately, correctly resuming after that real
-    // `mouseleave`, not a component bug). Simplified per
-    // dev-docs/backlog.md row 110: `./fixtures.ts`'s shared `test`/`expect`
-    // (which this file now imports) forces `scroll-behavior: auto` on
-    // `<html>` for every test in this suite, so that pre-`.hover()` scroll
-    // is already instant and cannot animate out from under the cursor --
-    // no per-call-site guard needed any more.
+    // No per-call-site scroll guard (dev-docs/backlog.md rows 110, 228):
+    // smooth scrolling is opt-in (`html[data-anchor-scroll]`), so Playwright's
+    // own pre-`.hover()` scroll is instant and cannot animate the carousel out
+    // from under the cursor (which would fire a genuine `mouseleave` and
+    // resume the rotation).
     await content.hover();
     // The button's own label is unaffected (reflects intent, not the
     // ambient pause) -- only the live region does. See the focus test's
@@ -2621,12 +2572,10 @@ test.describe("Carousel: autoplay + rotation control", () => {
 
 /**
  * Indicators (tablist/dot-picker) variant -- APG's "tabbed" carousel
- * style, `CarouselIndicators`/`CarouselIndicator` (renamed from
- * `CarouselTabList`/`CarouselTab`). The `indicators` variant has 5 slides,
- * no separate Previous/Next (matching the vendored reference's own
- * structure). Merged with what used to be a separate, non-tablist
- * `indicators` demo (a custom `use_carousel()`-built dot picker) -- that
- * composition now lives on the `api` demo instead.
+ * style, `CarouselIndicators`/`CarouselIndicator`. The `indicators`
+ * variant has 5 slides, no separate Previous/Next (matching the vendored reference's own
+ * structure). A custom `use_carousel()`-built dot picker lives on the `api`
+ * demo instead.
  */
 test.describe("Carousel: indicators (tablist/dot-picker) variant", () => {
   test("roles: tablist/tab/tabpanel, roving tabindex, aria-selected sync with the current slide", async ({ page }) => {
@@ -2768,36 +2717,27 @@ test.describe("Carousel: indicators (tablist/dot-picker) variant", () => {
 });
 
 /**
- * Owner report (live site): "autoplay scrolls the main page." Root cause,
- * found by reading `primitives/src/carousel.rs`: every paging path fired
- * `target.scrollIntoView()` on the newly-selected slide, and
- * `scrollIntoView` walks and scrolls *every* scrollable ancestor between
- * the target and the viewport, including the page itself -- so a click,
- * a keypress, a tab activation, a drag release, or an unattended autoplay
- * tick would all silently drag a reader back to the carousel, wherever
- * they had scrolled to. The fix (this lane) replaces every one of those
- * call sites with `scroller.scrollBy({ left | top: delta })`, called
- * directly on the carousel's own scroller element -- `scrollBy` only
- * ever writes the element it is called on, so there is no ancestor for it
- * to reach. See `CAROUSEL_SCROLL_TO_JS`'s own doc in `carousel.rs` for the
- * full construction.
- *
- * RED-FIRST: every test below was run against the pre-fix `carousel.rs`
- * (`target.scrollIntoView()` at both call sites) before landing this
- * lane's own fix, and every one of them failed -- `window.scrollY` moved
- * by hundreds to thousands of pixels in each case (see this lane's own
- * report for the exact numbers). All pass against the fixed code.
+ * Paging never scrolls the page (live-site report: "autoplay scrolls the main page."). Every
+ * paging path calls `scroller.scrollBy({ left | top: delta })` directly on the carousel's own
+ * scroller element -- `scrollBy` only ever writes the element it is called on, so there is no
+ * ancestor for it to reach. `target.scrollIntoView()` on the newly-selected slide would walk and
+ * scroll *every* scrollable ancestor between the target and the viewport, including the page
+ * itself, so a click, a keypress, a tab activation, a drag release or an unattended autoplay
+ * tick would silently drag a reader back to the carousel, wherever they had scrolled to. See
+ * `CAROUSEL_SCROLL_TO_JS`'s own doc in `carousel.rs` for the full construction. Every test below
+ * fails if a paging path uses `scrollIntoView()`: `window.scrollY` moves by hundreds to
+ * thousands of pixels in each case.
  *
  * Methodology notes specific to this describe block:
  * - The demo page has its own "jump to the requested `variant=`" scroll
  *   on load (an unrelated, expected feature, not this bug), which is
- *   itself `smooth` (`html { scroll-behavior: smooth }`,
- *   `preview/assets/main.css`, backlog row 110) -- so every test below
+ *   may be `smooth` (`html[data-anchor-scroll] { scroll-behavior: smooth }`,
+ *   `preview/assets/main.css`, backlog row 228) -- so every test below
  *   waits for `window.scrollY` to stop changing (`waitForScrollStable`)
  *   before doing anything else, then repositions the page with an
  *   *instant* `scrollTo` (never the default/`smooth` behavior, and never
  *   Playwright's own `.click()`/`.hover()` actionability pre-scroll,
- *   which also inherits that same global smooth-scroll rule and can still
+ *   which also inherits the page's scroll-behavior and can still
  *   be mid-flight when the very next assertion reads `scrollY`).
  * - Buttons are paged with `dispatchEvent("click")`, not `.click()`, so
  *   Playwright's own pre-click `scrollIntoViewIfNeeded` never runs and
@@ -2805,23 +2745,22 @@ test.describe("Carousel: indicators (tablist/dot-picker) variant", () => {
  *   ignore.
  * - The `tabs` variant's activation test focuses its target tab with
  *   `el.focus({ preventScroll: true })` rather than Playwright's plain
- *   `.focus()`. This is deliberate, not a shortcut: found live in this
- *   session, a *plain* `.focus()` on an off-screen tab still moves the
- *   page even against the FIXED code, because focusing any off-screen
- *   element is the browser's own default, spec-mandated behavior for
- *   `element.focus()` generally -- entirely independent of this
- *   component, present for every focusable element on the web, and not
- *   something a carousel's own code can (or should) suppress from the
- *   outside. `preventScroll: true` is exactly the tool the platform gives
- *   a caller to opt out of that default when it does its own scroll
- *   positioning, which is precisely this test's situation; it isolates
- *   the thing actually under test -- `CarouselIndicator`'s own `onfocus` handler
+ *   `.focus()`. This is deliberate, not a shortcut: a *plain* `.focus()`
+ *   on an off-screen tab still moves the page even for a correct
+ *   carousel, because focusing any off-screen element is the browser's
+ *   own default, spec-mandated behavior for `element.focus()` generally
+ *   -- entirely independent of this component, present for every
+ *   focusable element on the web, and not something a carousel's own code
+ *   can (or should) suppress from the outside. `preventScroll: true` is
+ *   exactly the tool the platform gives a caller to opt out of that
+ *   default when it does its own scroll positioning, which is precisely
+ *   this test's situation; it isolates the thing actually under test --
+ *   `CarouselIndicator`'s own `onfocus` handler
  *   (`carousel_ctx.set_selected.call(...)`) -- from that unrelated native
- *   behavior. Confirmed live: plain `.focus()` moves the page on *both*
- *   pre-fix and post-fix code (the native behavior, unaffected by this
- *   lane); `el.focus({ preventScroll: true })` moves the page only on the
- *   pre-fix code and never on the fixed code, which is the one signal
- *   that actually distinguishes this bug from that unrelated mechanism.
+ *   behavior: plain `.focus()` moves the page for any carousel, while
+ *   `el.focus({ preventScroll: true })` moves it only for a
+ *   `scrollIntoView()`-based one, the one signal that distinguishes this
+ *   bug from that unrelated mechanism.
  */
 test.describe("Carousel: paging never scrolls the page (ancestor-scroll regression)", () => {
   /** Poll `window.scrollY` until it stops changing -- see this describe
@@ -2873,8 +2812,8 @@ test.describe("Carousel: paging never scrolls the page (ancestor-scroll regressi
     expect(await selectedLabel()).not.toBe(before);
     expect(await page.evaluate(() => window.scrollY)).toBe(scrollYBefore);
     expect(await page.evaluate(() => window.scrollX)).toBe(scrollXBefore);
-    // The slide the ticks landed on is still exactly snapped -- the fix
-    // changed *how* the scroller pages, never where it lands.
+    // The slide the ticks landed on is still exactly snapped -- `scrollBy`
+    // changes *how* the scroller pages, never where it lands.
     const selectedIndex = Number((await selectedLabel())!.split(" ")[0]);
     await expectSnappedToBoundary(frame.locator(".dx-carousel-content"), slide(selectedIndex));
   });
@@ -2977,7 +2916,7 @@ test.describe("Carousel: paging never scrolls the page (ancestor-scroll regressi
  * (`primitives/src/carousel.rs`'s own "Visible slides / `inert`" doc on
  * [`CarouselItem`]). `getByRole`/`ariaSnapshot` cannot verify the
  * accessibility-tree half of this (see `axTreeGroupNames`'s own doc,
- * above, for the live discrepancy this session found and worked around).
+ * above, for the discrepancy between Playwright's role engine and the platform tree).
  */
 test.describe("Carousel: only visible slides are reachable (inert)", () => {
   test("non-current slides are inert on the main variant; the accessibility tree exposes only the current one", async ({ page }) => {
@@ -3283,12 +3222,10 @@ test.describe("Carousel: only visible slides are reachable (inert)", () => {
   });
 
   test("a drag starting on a partially-visible neighbour slide still pages the carousel (inert content is not a hit-test target)", async ({ page }) => {
-    // The old `multiple` variant (a bare `flex-basis: 40%` override) is
-    // retired -- `peek` is the new, explicitly opt-in home for a genuinely
-    // partially-visible neighbour slide (`--dx-carousel-peek: 20%`); the
-    // `sizes` variant that replaced `multiple` shows only WHOLE slides by
-    // design (that is the entire point of the shadcn-parity fix), so it no
-    // longer has a partially-visible neighbour to drag-start on at all.
+    // `peek` is the explicitly opt-in home for a genuinely partially-visible
+    // neighbour slide (`--dx-carousel-peek: 20%`); the `sizes` variant shows
+    // only WHOLE slides by design (the shadcn-parity rule), so it has no
+    // partially-visible neighbour to drag-start on at all.
     await goto(page, "peek");
     const frame = demoFrame(page, "peek");
     const content = frame.locator(".dx-carousel-content");
@@ -3357,7 +3294,7 @@ test.describe("Carousel: only visible slides are reachable (inert)", () => {
  * `CarouselVirtualContent`: the data-driven, virtualised drop-in for
  * `CarouselContent` + `CarouselItem`s (`primitives/src/carousel.rs`'s own
  * `CarouselVirtualContent` doc has the construction; `dev-docs/backlog.md`
- * row 91's dated addendum has this lane's own report).
+ * row 91 has the report).
  *
  * Every slide here carries `data-index`/`data-position` (see
  * `CarouselItem`'s own doc for why every bridge in this module reads
@@ -3490,12 +3427,11 @@ test.describe("CarouselVirtualContent: seamless loop (virtual_loop)", () => {
     await expect.poll(label).toBe("1 of 12");
 
     // Poll densely (well under the 1200ms tick) rather than sampling at a
-    // period close to the tick's own -- an earlier version of this test
-    // sampled every 1300ms against a 1200ms tick and saw an apparent
-    // "skipped" index once per run purely from that beat frequency (a
-    // measurement artifact, not a product bug -- see this lane's own
-    // report). This instead records every distinct value seen and asserts
-    // the exact sequence.
+    // period close to the tick's own -- sampling every 1300ms against a
+    // 1200ms tick shows an apparent "skipped" index once per run purely from
+    // that beat frequency (a measurement artifact, not a product bug). This
+    // instead records every distinct value seen and asserts the exact
+    // sequence.
     const seen: string[] = [(await label())!];
     const deadline = Date.now() + 9000;
     while (Date.now() < deadline && seen.length < 8) {
@@ -3527,9 +3463,8 @@ test.describe("CarouselVirtualContent: seamless loop (virtual_loop)", () => {
     // far edges are positions -5 and +5),
     // the "distant dot click" re-anchor path (`CarouselVirtualContent`'s
     // own "Seamless loop" doc, second bullet). `CarouselIndicator`'s own
-    // default accessible name is "Slide {n}" (renamed from the old
-    // `CarouselTabList`/`CarouselTab` -- see `component.rs`'s own doc),
-    // not the retired custom dot-picker's "Go to slide {n}".
+    // default accessible name is "Slide {n}" (see `component.rs`'s own doc),
+    // not the custom dot-picker's "Go to slide {n}".
     await frame.getByRole("tab", { name: "Slide 7" }).click();
     await expect.poll(label).toBe("7 of 12");
     await expect(frame.locator("[data-position]")).toHaveCount(VLOOP_WINDOW);

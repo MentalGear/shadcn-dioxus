@@ -33,28 +33,14 @@ test('menu lands at the tap coordinates on touch long-press', async ({ page }) =
   // `use_point_anchor_clamp`, top_layer.rs, never has a reason to act and
   // this test stays a clean "no clamping" baseline) -- but padding only
   // *adds* to whatever height the surrounding page content already has,
-  // and that height isn't this test's to control or assume. It was 300px
-  // of padding-top here, unchanged since this test was written; on this
-  // component's actual current preview-page chrome, that pushed the
-  // trigger's own center to y ~= 735 against a 720px-tall default
-  // viewport -- 15px *past* the bottom edge, not "away from it" as the
-  // comment this replaces claimed. That was already true on this branch's
-  // parent commit (124c4d5, before use_point_anchor_clamp existed at all)
-  // -- it simply had nothing to act on it yet, so a menu positioned
-  // exactly at that tap point silently rendered a hundred-plus px past
-  // the fold and this test never noticed (it only checks the menu's
-  // top-left against the tap point, never full on-screen visibility).
-  // use_point_anchor_clamp landing gave the clamp something to correct
-  // for the first time, and correctly pulled the menu back on-screen --
-  // a real behavior change, but the intended one, not a bug in the clamp
-  // itself (confirmed by execution: instrumented logging on this exact
-  // run showed a genuinely non-zero, already-`:popover-open` content size
-  // measured before the clamp ran, and viewport/tap numbers -- vh=720,
-  // tapY=734.97, content height=168 -- for which
-  // `top + ch > vh - EDGE_MARGIN` is correctly true). Anchoring the
+  // and that height isn't this test's to control or assume (300px of
+  // padding-top put the trigger's center at y ~= 735 against a 720px-tall
+  // default viewport -- 15px *past* the bottom edge -- so
+  // `use_point_anchor_clamp` rightly pulled the menu back on-screen, and
+  // `top + ch > vh - EDGE_MARGIN` is correctly true there). Anchoring the
   // trigger's position directly, rather than adding to an unmeasured
   // ambient height, makes the "nowhere near an edge" premise true by
-  // construction instead of by an increasingly-stale coincidence.
+  // construction.
   await trigger.evaluate((el) => {
     (el as HTMLElement).style.position = 'fixed';
     (el as HTMLElement).style.top = '120px';
@@ -83,8 +69,8 @@ test('menu lands at the tap coordinates on touch long-press', async ({ page }) =
 
   await expect(contextMenu).toHaveAttribute('data-state', 'open');
   // Measure the SETTLED box: the open fade scales the panel (0.95 -> 1 about its centre), so a box read
-  // mid-fade sits up to ~5.5px right of the tap point on a 220px menu -- this failed on every load-starved
-  // run, with the old `transform` keyframes and the new `scale` ones alike (dev-docs/backlog.md row 115).
+  // mid-fade sits up to ~5.5px right of the tap point on a 220px menu -- that fails on every load-starved
+  // run (dev-docs/backlog.md row 115).
   await awaitAnimationsSettled(contextMenu);
   const menuBox = await measureAtRest(contextMenu);
   if (!menuBox) throw new Error('menu has no bounding box');
@@ -695,8 +681,8 @@ test.describe('Checkable items', () => {
 test.describe('Axe automated scan', () => {
   // dev-docs/backlog.md row 25: ContextMenu's role="menu" popup carries no
   // aria-labelledby/aria-label at all, so an open menu has no accessible
-  // name (APG menu-and-menubar pattern requires one) -- this is exactly the
-  // class of defect this round's axe coverage is meant to surface.
+  // name (APG menu-and-menubar pattern requires one) -- exactly the
+  // class of defect this axe coverage is meant to surface.
   test('menu open has no automatically detectable a11y issues', async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/context_menu/`, { timeout: 20 * 60 * 1000 });
     await page.getByRole('button', { name: 'right click here' }).click({ button: 'right' });
@@ -812,11 +798,10 @@ test.describe('ContextMenuSub open_on_hover: false (click activation)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Open/close fade vs. the anchor's centring transform (2026-10-05). An anchored overlay centres itself
+// Open/close fade vs. the anchor's centring transform . An anchored overlay centres itself
 // with `transform: translateX(-50%)` (top_layer.rs's engine stylesheet); a `@keyframes` that sets
-// `transform` REPLACES it for as long as it runs (the date picker played its fade 144px off-centre, the
-// colour picker 133px). `ContextMenuContent` sets no `data-side`, so it has no centring to lose today -- the same
-// shape, latent -- so this probes the rendered keyframes instead of sampling a position that could not
+// `transform` REPLACES it for as long as it runs (the panel then plays its fade off-centre). `ContextMenuContent` sets
+// no `data-side`, so it has no centring to lose today -- the same shape, latent -- so this probes the rendered keyframes instead of sampling a position that could not
 // move anyway: `assert-anchor-transform.ts` supplies an inline `transform`, seeks the element's own
 // CSS animation to its start/midpoint/end, and asserts the transform survives while `scale`/`translate`
 // do the moving. Source-level guard: scripts/check-anchored-keyframes.sh.

@@ -414,7 +414,7 @@ async function holdInputOpen(content: Locator): Promise<void> {
     const tick = () => node.dispatchEvent(new WheelEvent("wheel", { deltaY: 1, bubbles: true, cancelable: true }));
     // The first event goes out NOW: an interval's first tick is 16ms away,
     // and a placement inside that window would find input quiet and let the
-    // window re-centre (found live -- it did, 2ms after the placement).
+    // window re-centre (it does, 2ms after the placement).
     tick();
     w.__dxKeepAlive = window.setInterval(tick, 16);
   });
@@ -447,8 +447,8 @@ async function expectStillAtEdge(content: Locator, side: "min" | "max"): Promise
  * (instantly). Test setup only: snapping (with `scroll-snap-stop: always`)
  * holds the scroller against a multi-slide instant jump, so it is suspended
  * for the placement AND kept suspended until `releaseInput` -- restoring it
- * straight away lets Chrome re-snap to the previously snapped slide (found
- * live: the scroller moved back 672px with no write of ours, before the
+ * straight away lets Chrome re-snap to the earlier snapped slide (the
+ * scroller moves back 672px with no write of ours, before the
  * push). The push itself happens at a clamped edge, where snapping has no
  * say. Returns the `data-index` of the slide now sitting at that edge.
  */
@@ -1079,7 +1079,7 @@ test.describe("Carousel fast flicks: the platform may only bounce at a true end"
  * Under test: the default radius of 10 (most flicks never reach a slice
  * end) plus the pinned-at-a-false-end re-centre (the tail that does reach
  * one re-centres within a couple of frames instead of waiting for idle) --
- * so the carousel travels well past the old 2-slide limit and never sits
+ * so the carousel travels well past a 2-slide limit and never sits
  * pinned at a false end for more than ~200ms while input continues.
  * Replayed with trusted page.mouse.wheel at the recorded timing; sampled
  * in-page every frame. Chromium moves at most one slide per wheel event

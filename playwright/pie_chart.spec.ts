@@ -60,8 +60,7 @@ test.describe("Pie chart: renders every variant as an accessible image", () => {
 
       // The a11y contract every chart family shares (`$S/chart-api.md`):
       // a real, visually-hidden <table> lists every datum, never just the
-      // SVG -- category + value + percent for a polar chart per this
-      // lane's own brief. One row per CATEGORY (`table_rows`/
+      // SVG -- category + value + percent for a polar chart. One row per CATEGORY (`table_rows`/
       // `table_rows_pie`'s own shape), not per slice -- for every
       // single-ring variant that's the same number (one slice per
       // category), but `stacked` draws `n_series` slices per category

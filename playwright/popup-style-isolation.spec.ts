@@ -21,7 +21,7 @@
  *     the cut, instead of every popup on every page.
  *   - Descendant selectors are closed statically by `scripts/check-popup-boundary.sh` (a generic-subject
  *     descendant rule must end with `:not(:where([popover], dialog) *)`); the browser half kept here is the
- *     natural nesting that class was found in (a popup hosted in an input group addon, a card, a toolbar...),
+ *     natural nesting that class shows up in (a popup hosted in an input group addon, a card, a toolbar...),
  *     compared against the same popup alone.
  *
  * The test, by construction rather than by listing the components that happened to be hit. For each popup
@@ -62,7 +62,7 @@ const COMPONENT_NAMES = new Set(readCatalog().map((r) => r.name));
 /**
  * The popups, as `{ page, kinds }`: `kinds` are the popup roots (a `dx-` class of the `[popover]`/`<dialog>`)
  * that page must open at least once. A component missing from the catalog fails the "listed" test below, so a
- * renamed page cannot silently drop out.
+ * page that changes name cannot silently drop out.
  */
 const PAGES: Array<{ id: string; path: string; kinds: string[] }> = [
   { id: "tooltip", path: "/component/tooltip/", kinds: ["dx-tooltip-content"] },

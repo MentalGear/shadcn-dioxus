@@ -167,10 +167,9 @@ test.describe("hidden_until_found", () => {
 });
 
 /**
- * The side finding fixed alongside `hidden_until_found`: `keep_mounted` closed content used to be
- * rendered with no `hidden` at all, and the styled layer's `display: contents` then showed it.
- * The preview has no `keep_mounted` demo, so this exercises the stylesheet's contract on the
- * markup the primitive now renders (`hidden=""` for `keep_mounted`, `hidden="until-found"` for
+ * `keep_mounted` closed content carries `hidden`: without it the styled layer's `display: contents`
+ * would show it. The preview has no `keep_mounted` demo, so this exercises the stylesheet's contract
+ * on the markup the primitive renders (`hidden=""` for `keep_mounted`, `hidden="until-found"` for
  * the opt-in); the primitive half is covered by `collapsible.rs`'s SSR unit tests.
  */
 test.describe("styled content wrapper honours hidden", () => {

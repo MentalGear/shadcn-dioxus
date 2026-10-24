@@ -7,7 +7,7 @@ import { fixedViewportBox } from "./viewport-box";
 /**
  * Menu-item indicator slot -- the class guard.
  *
- * The owner reported the same defect twice ("Select: check icon too close",
+ * The same defect shows in two reports ("Select: check icon too close",
  * "Dropdown Menu: there needs to be min margin between the check icon and the
  * label"): a menu-like item draws an indicator (check / radio dot / chevron /
  * shortcut) next to its label and reserves no room for it, so a label as wide

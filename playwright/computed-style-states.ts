@@ -651,7 +651,7 @@ export function installStateLib(a: StateArgs) {
     };
   };
 
-  /** Distinct-by-style-selectors signature of a hover target (digits masked so `2026-10-12` == `2026-10-13`). */
+  /** Distinct-by-style-selectors signature of a hover target (digits masked so a date cell `12` == `13`). */
   const hoverSig = (el: Element): string => {
     // charts: every plot is its own target (its tooltip is configured per chart), never merged by class
     if (S.chartSvgs && S.chartSvgs.indexOf(el) >= 0) return `chart#${S.chartSvgs.indexOf(el)}`;
@@ -716,7 +716,7 @@ export function installStateLib(a: StateArgs) {
     const trig = S.cands[trigger];
     for (const { el } of S.lastDelta as { el: Element; n: number }[]) {
       // `.dx-skip-link` is page chrome, not part of any overlay: it is in the delta because its style changes
-      // when focus moves (row 245), sits off screen (`occluded`) and used to take hover slots.
+      // when focus moves (row 245), sits off screen (`occluded`) and would take hover slots.
       if (el !== trig && el.matches(HOVERABLE) && isControl(el) && !el.closest(ITEM_EXCLUDE)) pool.push(el);
     }
     const picked = pickHover(pool, max, trig);
@@ -958,15 +958,15 @@ async function prepRetry(page: Page, arr: string, j: number) {
 
 /** HOVER-DELAY RULE (backlog: the hover_card opener race; row 245). A hover card or tooltip opens only after the
  *  pointer has RESTED on its trigger for the component's configured `delay` (600 ms default in
- *  `primitives/src/hover_card.rs` and `tooltip.rs`, any other value per demo). The harness used to guess that
- *  delay with a fixed wait (450, then 1050 ms), and a guess is a race: a tooltip chain rendered in 1 of 4
- *  captures, and earlier two captures recorded `via: click` vs `via: focus` for one trigger.
- *  Now the delay is not guessed at all: `movePointer` arms the TIMER-DRAIN RULE (`installStateLib`) before the
+ *  `primitives/src/hover_card.rs` and `tooltip.rs`, any other value per demo). A fixed wait would only guess
+ *  that delay, and a guess is a race (a tooltip chain rendering in some captures only, one trigger recording
+ *  `via: click` in one capture and `via: focus` in another).
+ *  So the delay is not guessed at all: `movePointer` arms the TIMER-DRAIN RULE (`installStateLib`) before the
  *  pointer move and waits until every timeout the move scheduled has fired, so the opener waits out whatever
  *  delay the popup is configured with (the delays demos use 0, 10, 100, 600). The numbers below are only the
  *  short margin `waitOpen` then allows for the render after the timer, plus the click/contextmenu/focus
  *  strategies' own windows. A trigger that does not open on hover pays its configured delay (not more) and
- *  falls through to click/focus exactly as before. */
+ *  falls through to click/focus. */
 const WAIT_PROBE_MS: Record<string, number> = {
   click: 350,
   contextmenu: 350,
@@ -977,12 +977,12 @@ const WAIT_PROBE_MS: Record<string, number> = {
 /** HOVER-BEFORE-CLICK RULE (backlog: navbar hover-intent). A trigger may open on pointer hover (navbar, hover
  *  cards, ...: `primitives/src/hover_intent.rs`, `HOVER_OPEN_INTENT_DELAY` = 150 ms). A bare `mouse.click` first
  *  moves the pointer onto the trigger, so that panel opens on the hover and the click that follows TOGGLES IT
- *  CLOSED: the open pass then saw "no change" for that trigger (S2: 2 of 6 navbar triggers produced open-state
+ *  CLOSED: the open pass would then see "no change" for that trigger (2 of 6 navbar triggers produce no open-state
  *  records). So before the `click` strategy the pointer is put on the trigger and given this long (> the
  *  hover-intent delay plus the render) to open something, judged by the same `waitOpen` (additions-only) as every
  *  other strategy. If it opened, the trigger is recorded as opened `via: "hover"` and NOT clicked; otherwise the
- *  click goes ahead exactly as before. The wait is skipped when the `hover` strategy already ran for this
- *  trigger (`hoverFirst`: tooltips), so those are unchanged. A trigger that does not open on hover is unaffected
+ *  click goes ahead. The wait is skipped when the `hover` strategy already ran for this
+ *  trigger (`hoverFirst`: tooltips). A trigger that does not open on hover is unaffected
  *  apart from this pause: the click, the park, the quiesce and the delta follow in the same order. */
 const HOVER_INTENT_WAIT_MS = 450;
 

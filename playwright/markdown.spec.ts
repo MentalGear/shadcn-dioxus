@@ -1,5 +1,5 @@
 /**
- * The optional `markdown` component (backlog row 213; owner decisions 2026-10-15). What the specs pin:
+ * The optional `markdown` component (backlog row 213). What the specs pin:
  *
  * - structure: the main demo renders headings, lists, task checkboxes, a table and a code block;
  * - the link policy: web links open in a new tab with `rel="noopener noreferrer"` and a real popup has no

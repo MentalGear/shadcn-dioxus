@@ -30,10 +30,10 @@ test("test", async ({ page }) => {
 // dev-docs/backlog.md row 115 -- the product bug behind this file's load-only
 // "tabbing out of the trigger element should hide the tooltip" flake. The
 // popover's `toggle` event is dispatched asynchronously, AFTER `showPopover()`
-// returns; `use_popover_shown_while_mounted` used to mirror that event's
+// returns; `use_popover_shown_while_mounted` must not mirror that event's
 // `newState === "open"` back into the `open` signal. When the focus-out (or
-// mouse-leave) landed before that queued event -- input events outrank it
-// under main-thread load -- the stale "open" echo re-opened the content with
+// mouse-leave) lands before that queued event -- input events outrank it
+// under main-thread load -- the stale "open" echo would re-open the content with
 // nothing left to close it (stuck open, forever). Made deterministic here by
 // blurring synchronously inside `showPopover()`, i.e. strictly before its
 // `toggle` task can run.
@@ -62,18 +62,16 @@ test.describe("Axe automated scan", () => {
 });
 
 // dev-docs/backlog.md rows 19 and 7: on the web (popover) arm,
-// `use_popover_sync` used to call `hidePopover()` the instant `open` went
-// false, and the UA's `[popover]:not(:popover-open) { display: none }`
-// rule then hid the content before `dx-tooltip-fade-out`
-// (`../preview/src/components/tooltip/style.css`, cherry-picked from
-// upstream PR #293) ever got a chance to play -- RED before both fixes
-// landed (reasoned through, not executed, since this lane cannot run
-// Playwright: `display: none` from the very first sample, so
-// `assertFadesOutThenUnmounts` would fail both the "no display:none while
-// mounted" invariant and the "a few frames of decreasing opacity" check
-// immediately). GREEN once `primitives/src/top_layer.rs`'s
-// `use_popover_shown_while_mounted` (row 19) keeps the popover shown
-// through the animation that CSS defines (row 7).
+// `use_popover_sync` must not call `hidePopover()` the instant `open` goes
+// false: the UA's `[popover]:not(:popover-open) { display: none }` rule would
+// then hide the content before `dx-tooltip-fade-out`
+// (`../preview/src/components/tooltip/style.css`, taken from upstream PR
+// #293) ever got a chance to play (`display: none` from the very first
+// sample, so `assertFadesOutThenUnmounts` fails both the "no display:none
+// while mounted" invariant and the "a few frames of decreasing opacity"
+// check). `primitives/src/top_layer.rs`'s `use_popover_shown_while_mounted`
+// (row 19) keeps the popover shown through the animation that CSS defines
+// (row 7).
 test.describe("Close-fade animation (docs/backlog.md rows 19, 7)", () => {
   test("content fades out (opacity -> 0, still popover-open) before unmounting", async ({ page }) => {
     await gotoHydrated(page, `${BASE_URL}/component/tooltip/`, { timeout: 20 * 60 * 1000 });

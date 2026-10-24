@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run only the Playwright specs that cover what this branch changed (owner 2026-10-20, row 152a follow-up).
+# Run only the Playwright specs that cover what this branch changed (row 152a follow-up).
 #
 #   pnpm run test:changed                         # from playwright/: diff = origin/main...HEAD + uncommitted changes
 #   pnpm run test:changed -- --workers=2          # extra args go to `playwright test`

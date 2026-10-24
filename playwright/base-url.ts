@@ -7,12 +7,12 @@
  *   PLAYWRIGHT_BASE_URL=http://127.0.0.1:8083 \
  *     npx playwright test --config=session.local.config.ts avatar.spec.ts
  *
- * The default is unchanged (`http://127.0.0.1:8080`), so every spec that has
- * not been migrated to import this -- most of them still hardcode the
- * literal inline -- keeps working exactly as before.
+ * The default is `http://127.0.0.1:8080`, so a spec that does
+ * not import this -- some still hardcode the literal inline -- works
+ * unchanged.
  *
- * This consolidates three ad hoc variants of the same idea that predate this
- * file (kept working, not "wrong", just three names for one thing):
+ * This consolidates three ad hoc variants of the same idea (each works, they
+ * are just three names for one thing):
  *   - `drag_and_drop_list.spec.ts`: `const BASE = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:8080"`
  *   - `sidebar.spec.ts`: `const BASE_URL = "http://127.0.0.1:8080"` (no env override)
  *   - every other spec: the literal inline, repeated per `page.goto(...)` call
@@ -109,7 +109,7 @@ function profileFromMarker(siteDir: string): "debug" | "release" | "unknown" {
 /**
  * `testIgnore` for configs: timing-threshold specs (long-task / INP budgets in
  * `oracle/tier2-html/main-thread.spec.ts`) measure 64-153 ms long tasks on a
- * debug build that are 0 on release (backlog row 116, 2026-10-01: 4 false reds),
+ * debug build that are 0 on release (backlog row 116),
  * so they are skipped -- loudly, once -- when the build is known to be debug.
  * `PW_FORCE_TIMING_SPECS=1` runs them anyway (e.g. to confirm the false red).
  */

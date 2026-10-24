@@ -62,22 +62,22 @@ test("keyboard navigation", async ({ page }) => {
 
 // REGRESSION (`dev-docs/backlog.md` row 85). The most directly reproducible
 // instance of the whole class this row reports: `MenubarItem`'s own
-// `onblur` used to close this menu unconditionally whenever `focused()`
-// (it still held `menu_ctx.focus`'s roving focus the instant it blurred).
+// `onblur` must not close this menu unconditionally whenever `focused()`
+// (it holds `menu_ctx.focus`'s roving focus the instant it blurs).
 // Arrow-down onto an item so it genuinely holds DOM focus, then a raw
-// `.focus()` call directly on `MenubarTrigger` -- confirmed RED on the
-// unmodified tree: `fileMenuContent` was torn out of the DOM entirely
-// (count 0) and focus reverted to `fileMenuButton`. No mouse-opened
-// precondition needed at all here (contrast `dropdown-menu.spec.ts`'s
-// identical-shaped test, which does need one) -- `MenubarItem`'s guard
-// never had `DropdownMenuTrigger`'s `submenu_open_count`-style escape
-// hatch, so it fired on this exact sequence unconditionally. Fixed by
-// construction: `MenubarContentRendered` now calls `use_outside_dismiss`
+// `.focus()` call directly on `MenubarTrigger`: with an `onblur` close,
+// `fileMenuContent` would be torn out of the DOM entirely (count 0) and
+// focus would revert to `fileMenuButton`. No mouse-opened precondition is
+// needed here (contrast `dropdown-menu.spec.ts`'s identical-shaped test,
+// which does need one) -- `MenubarItem` has no `submenu_open_count`-style
+// escape hatch like `DropdownMenuTrigger`'s, so such a guard would fire on
+// this exact sequence unconditionally. By construction
+// `MenubarContentRendered` calls `use_outside_dismiss`
 // (`primitives/src/lib.rs`, the same DOM-truth-based check `ContextMenu`'s
-// own root already used), scoped to `MenubarMenu`'s own wrapping element
-// (`menu_ctx.root_id`, new) which covers both `MenubarTrigger` and
-// `MenubarContent` -- and `MenubarTrigger`'s/`MenubarItem`'s fragile
-// `onblur` branches are removed.
+// own root uses), scoped to `MenubarMenu`'s own wrapping element
+// (`menu_ctx.root_id`) which covers both `MenubarTrigger` and
+// `MenubarContent`, and `MenubarTrigger`/`MenubarItem` carry no `onblur`
+// close branch.
 test("a raw .focus() call on the trigger does not close its own open content (row 85)", async ({ page }) => {
   await gotoHydrated(page, `${BASE_URL}/component/menubar/`, { timeout: 20 * 60 * 1000 });
   const fileMenuButton = page.getByRole("menuitem", { name: "File" });
@@ -387,11 +387,10 @@ test.describe("open_on_hover: false (click activation)", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Open/close fade vs. the anchor's centring transform (2026-10-05). An anchored overlay centres itself
+// Open/close fade vs. the anchor's centring transform . An anchored overlay centres itself
 // with `transform: translateX(-50%)` (top_layer.rs's engine stylesheet); a `@keyframes` that sets
-// `transform` REPLACES it for as long as it runs (the date picker played its fade 144px off-centre, the
-// colour picker 133px). `MenubarContent` sets no `data-side`, so it has no centring to lose today -- the same
-// shape, latent -- so this probes the rendered keyframes instead of sampling a position that could not
+// `transform` REPLACES it for as long as it runs (the panel then plays its fade off-centre). `MenubarContent` sets
+// no `data-side`, so it has no centring to lose today -- the same shape, latent -- so this probes the rendered keyframes instead of sampling a position that could not
 // move anyway: `assert-anchor-transform.ts` supplies an inline `transform`, seeks the element's own
 // CSS animation to its start/midpoint/end, and asserts the transform survives while `scale`/`translate`
 // do the moving. Source-level guard: scripts/check-anchored-keyframes.sh.

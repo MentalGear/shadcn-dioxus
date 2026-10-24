@@ -14,10 +14,10 @@ import path from "node:path";
 // Point it at a build with PLAYWRIGHT_BASE_URL=http://127.0.0.1:<port> (every spec reads it through base-url.ts) and
 // PW_BUILD_PROFILE=debug|release (the timing specs are skipped on debug, base-url.ts).
 //
-// Not here, on purpose: blocking the external font hosts. Measured on 2026-10-19: visiting all 95 prerendered routes
+// Not here, on purpose: blocking the external font hosts. Visiting all 95 prerendered routes
 // with a fresh Chromium context issues exactly two third-party requests, both from the deliberate avatar "slow" and
 // "broken" demos (`httpbin.org/delay/3600`, `invalid-url.example`), and those are what avatar-loading.spec.ts asserts
-// on; the fonts are self-hosted since round 7. There is nothing to block that a spec does not already own.
+// on; the fonts are self-hosted. There is nothing to block that a spec does not already own.
 const launchOptions = sandboxLaunchOptions(); // the sandbox image's newest Chromium, or Playwright's own (row 374)
 
 const listFile = process.env.PW_SPECS_FILE;

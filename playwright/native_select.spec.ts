@@ -14,10 +14,10 @@ test("test", async ({ page }) => {
 
 // Native controls follow the mode (`color-scheme`, `preview/assets/dx-components-theme.css`).
 //
-// Before this, the theme's `--dark`/`--light` toggle reached only the colours WE declare: a native
-// `<select>`'s popup, the page's scrollbars and every other UA-drawn part stayed light in dark mode, and
-// the Native Select's own translucent dark fill (`--dx-input` at 30%) landed on a LIGHT popup, leaving
-// near-white option text on a near-white list. The root now carries `color-scheme`, so the UA draws its
+// A toggle that reached only the colours WE declare would leave a native
+// `<select>`'s popup, the page's scrollbars and every other UA-drawn part light in dark mode, and
+// the Native Select's own translucent dark fill (`--dx-input` at 30%) would land on a LIGHT popup, leaving
+// near-white option text on a near-white list. The root carries `color-scheme`, so the UA draws its
 // parts in the active scheme, and the options carry the popover's opaque surface and ink.
 //
 // Three ways to be dark are covered, because they are three code paths: the cookie the docs-site theme
@@ -77,8 +77,7 @@ async function probe(page: Page) {
       select: {
         bg: own.backgroundColor,
         color: own.color,
-        // Nova `.cn-native-select` is `bg-transparent` (Input's light fill); phase C lane F moved it
-        // off `--dx-background`. The mode-follows-scheme assertions are unchanged.
+        // Nova `.cn-native-select` is `bg-transparent` (Input's light fill), not `--dx-background`.
         expectBgLight: resolve("backgroundColor", "transparent"),
         expectBgDark: resolve("backgroundColor", "color-mix(in oklab, var(--dx-input) 30%, transparent)"),
         expectColor: resolve("color", "var(--dx-foreground)"),

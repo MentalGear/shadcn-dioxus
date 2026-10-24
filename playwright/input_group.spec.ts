@@ -15,20 +15,19 @@ test("test", async ({ page }) => {
 
 /*
  * The wrapped input carries no border/radius of its own -- regression
- * guard for a real bug found and fixed 2026-09-14. `Input`'s component
- * used to render `class: "dx-input"` as a literal RSX attribute and then
- * spread `..attributes` after it; Dioxus's plain "later duplicate
- * attribute wins" rule meant `InputGroupInput`'s own `class:
- * "dx-input-group-control"` fully *replaced* `"dx-input"` rather than
- * being combined with it, so the rendered `<input>` carried only
- * `"dx-input-group-control"` and never got `"dx-input"`'s own UA-style
+ * guard for a real bug. `Input`'s component composes its base class via
+ * `merge_attributes` (which concatenates `class` values space-joined)
+ * instead of rendering `class: "dx-input"` as a literal RSX attribute
+ * followed by `..attributes`: under Dioxus's plain "later duplicate
+ * attribute wins" rule `InputGroupInput`'s own `class:
+ * "dx-input-group-control"` would fully *replace* `"dx-input"` rather than
+ * being combined with it, so the rendered `<input>` would carry only
+ * `"dx-input-group-control"` and never get `"dx-input"`'s own UA-style
  * reset. `.dx-input-group .dx-input-group-control`'s
  * `border-radius: 0; box-shadow: none;` rule (this file's own style.css)
- * never had anything to override at the browser's *native* default input
- * chrome, which showed through inside `.dx-input-group`'s own CSS-drawn
- * border -- a visible double-border/"pill within a pill" seam. Fixed by
- * having `Input` compose its base class via `merge_attributes` (which
- * concatenates `class` values space-joined) instead of a plain spread.
+ * would then have nothing to override at the browser's *native* default
+ * input chrome, which shows through inside `.dx-input-group`'s own
+ * CSS-drawn border -- a visible double-border/"pill within a pill" seam.
  * Asserts both halves directly: the class union survived the merge, and
  * the *effect* that class union is supposed to produce (no border/radius
  * of the input's own) actually holds.

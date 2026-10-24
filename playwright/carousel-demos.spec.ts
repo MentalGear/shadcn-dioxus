@@ -1,13 +1,13 @@
 /**
  * Carousel demo geometry: the `indicators` and `api` demos' own layout.
  *
- * Owner-reported on the deployed build: (1) the `indicators` demo's dots
- * rendered ABOVE the slides, squeezed against (and partly hidden by) the
- * viewport's top edge, because the APG tabbed pattern puts the tablist
- * BEFORE the slides in DOM order (tier-1 oracle R9) and nothing reordered it
- * visually; (2) the `api` demo's slide was a 64x83 sliver and its caption
- * wrapped to "Slide 1 / of 5", because the wrapper was 10rem wide before
- * `.dx-carousel`'s own 6rem `padding-inline` reservation came out of it.
+ * Two layouts it keeps: (1) the `indicators` demo's dots sit BELOW the slides,
+ * not squeezed against (and partly hidden by) the viewport's top edge,
+ * although the APG tabbed pattern puts the tablist BEFORE the slides in DOM
+ * order (tier-1 oracle R9), so the order is reversed visually; (2) the `api`
+ * demo's slide is not a 64x83 sliver and its caption does not wrap to
+ * "Slide 1 / of 5", which a wrapper 10rem wide would cause once
+ * `.dx-carousel`'s own 6rem `padding-inline` reservation comes out of it.
  *
  * Geometry is read in-page (`getBoundingClientRect`), at desktop and phone
  * widths, in light and dark, so a regression in any of those four corners is
@@ -132,7 +132,7 @@ for (const vp of VIEWPORTS) {
 }
 
 /**
- * Class-level guards for the two defects reported on the deployed
+ * Class-level guards for two defect classes seen on the
  * `indicators`/`api` and `autoplay` demos (dark theme, carousel page):
  *
  *  1. Demo content must never extend past its preview frame, on ANY carousel
@@ -141,10 +141,10 @@ for (const vp of VIEWPORTS) {
  *     height / `overflow: hidden`, or lets a demo's own layout outgrow it,
  *     shows up here as content past the frame's border box or a clipping
  *     ancestor). Checked at both viewport widths, light and dark, for every
- *     frame the page renders -- not only the two the owner happened to see.
+ *     frame the page renders -- not only two known ones.
  *  2. The custom dot picker's dots must all keep the same shape/radius
- *     before AND after a state change. The shipped defect (square dots after
- *     the first click) was dioxus-interpreter-js 0.7.9 stripping `var()`
+ *     before AND after a state change. The defect (square dots after
+ *     the first click) is dioxus-interpreter-js 0.7.9 stripping `var()`
  *     shorthands (`border-radius`, `background`) out of an inline `style`
  *     the first time it was re-set, so the assertion that matters is the one
  *     made AFTER a click, not the initial render.

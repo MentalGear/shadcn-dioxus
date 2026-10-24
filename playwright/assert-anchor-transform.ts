@@ -1,5 +1,5 @@
 /**
- * Shared check that an overlay's open/close animation leaves `transform` alone (2026-10-05).
+ * Shared check that an overlay's open/close animation leaves `transform` alone.
  *
  * THE CLASS: an anchored overlay centres itself on its anchor with `transform: translateX(-50%)`
  * (`primitives/src/top_layer.rs`'s engine stylesheet, keyed on `[data-side]`/`[data-align]`). A

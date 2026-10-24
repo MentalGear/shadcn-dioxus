@@ -101,25 +101,24 @@ test("disabled state blocks input", async ({ page }) => {
 });
 
 /**
- * Hit-target coverage (2026-09-17 production report: "there is almost no
- * hit target for the input"). Root cause: the real `<input>`
- * (`primitives/src/input_otp.rs`) was already sized to the full visible row
+ * Hit-target coverage (backlog row 60: "there is almost no hit target for the
+ * input"). The real `<input>`
+ * (`primitives/src/input_otp.rs`) is sized to the full visible row
  * (`position: absolute; inset: 0` against a `display: inline-flex` parent
  * that is itself sized by the row's own content, since the decorative
  * overlay's `display: contents` wrapper promotes `InputOtpGroup`/
  * `InputOtpSlot`/`InputOtpSeparator` to be that flex container's direct
- * items) -- so bounding-box geometry alone looked fine. The actual bug was
- * paint order plus hit-testing: that `aria-hidden` overlay renders *after*,
+ * items) -- so bounding-box geometry alone looks fine. The failure mode is
+ * paint order plus hit-testing: the `aria-hidden` overlay renders *after*,
  * and therefore paints on top of, the real input in the same stacking
  * context, and its slot/separator boxes cover nearly the entire row, each
- * with the CSS default `pointer-events: auto`. `elementFromPoint` on a
- * running instance confirmed clicking dead-center of a visible slot
- * resolved to that slot's own decorative `<div>`, never `#otp-main` -- only
- * the few-pixel gaps *between* slots (the only screen area no box covered)
- * ever reached the real input. Fixed by giving the overlay wrapper
- * `pointer-events: none` (inherited by every descendant), making it
- * transparent to hit-testing the same way `opacity: 0` already makes the
- * real input transparent to painting.
+ * with the CSS default `pointer-events: auto`; `elementFromPoint` at the
+ * dead-center of a visible slot would then resolve to that slot's own
+ * decorative `<div>`, never `#otp-main` -- only the few-pixel gaps *between*
+ * slots (the only screen area no box covers) would reach the real input. So
+ * the overlay wrapper has `pointer-events: none` (inherited by every
+ * descendant), making it transparent to hit-testing the same way
+ * `opacity: 0` makes the real input transparent to painting.
  */
 test.describe("Hit-target coverage (2026-09-17 -- almost no hit target regression)", () => {
   test("the real input's bounding box covers the full visible row", async ({ page }) => {
@@ -191,19 +190,18 @@ test.describe("Hit-target coverage (2026-09-17 -- almost no hit target regressio
 });
 
 /**
- * Click-to-caret positioning (2026-09-17 production report: "first box has
- * normal hit target, but none of the others"). Root cause: the real
+ * Click-to-caret positioning (backlog row 63: "first box has normal hit
+ * target, but none of the others"). The real
  * `<input>` is `opacity: 0` with `font-family: inherit` and no
  * `letter-spacing` tuned to the visual slot grid
  * (`preview/src/components/input_otp/style.css`'s `.dx-input-otp-input`
  * sets none) -- clicking a native text input places the caret based on
  * where the browser thinks the *actual rendered glyphs* are, and since
- * those invisible glyphs' positions were never aligned to the 40px-wide
+ * those invisible glyphs' positions are not aligned to the 40px-wide
  * slot boxes, a click's x-coordinate doesn't map to the "correct" character
- * index at all. Confirmed live before this fix: on an empty field, clicking
- * slot 0, 3, or 5 all placed the caret at index 0; on a field filled with
- * "123", clicking slot 0 landed at index 2 while slots 1/4/5 all landed at
- * index 3. Fixed by computing the clicked slot from geometry (point-in-rect
+ * index at all (on a field filled with "123", clicking slot 0 would land at
+ * index 2 while slots 1/4/5 all landed at index 3). So the clicked slot is
+ * computed from geometry (point-in-rect
  * against each `[data-slot-index]`'s own `getBoundingClientRect()`, since
  * the slots are `pointer-events: none` and unreachable via
  * `elementFromPoint`) and explicitly calling `setSelectionRange` --
@@ -218,8 +216,8 @@ test.describe("Hit-target coverage (2026-09-17 -- almost no hit target regressio
  * character position to place a caret at for slot 3 when the value is
  * "" -- the caret has nowhere else valid to go). That is expected,
  * necessary behavior, not a regression: the tests below cover the concrete,
- * fixable case (a partially/fully filled value, where clicks used to
- * collapse to the wrong, uniform position) and separately document the
+ * fixable case (a partially/fully filled value, where clicks must not
+ * collapse to a wrong, uniform position) and separately document the
  * empty-field case landing at 0 for every slot on purpose.
  */
 test.describe("Click-to-caret positioning (2026-09-17 -- second, deeper hit-target regression)", () => {
@@ -262,9 +260,9 @@ test.describe("Click-to-caret positioning (2026-09-17 -- second, deeper hit-targ
     await input.click();
     await page.keyboard.type("123");
 
-    // Before the fix, every one of these landed at either 2 (slot 0) or 3
-    // (slots 1/4/5) -- clicking slot 0 never gave 0, and slots 1/4/5 were
-    // indistinguishable from each other despite being different slots.
+    // A click-to-caret that trusted the invisible glyph positions would land
+    // at either 2 (slot 0) or 3 (slots 1/4/5): clicking slot 0 would never
+    // give 0, and slots 1/4/5 would be indistinguishable from each other.
     const cases: Array<[number, number]> = [
       [0, 0],
       [1, 1],
@@ -310,21 +308,18 @@ test.describe("Click-to-caret positioning (2026-09-17 -- second, deeper hit-targ
 });
 
 /**
- * Click-then-type replace (2026-09-17 production report, found using the
- * app normally: "clicking just any field should be able to correct that
- * number. I'm in the selected field then typing a number right [and it
- * doesn't correct]"). Root cause: the previous round's click-to-caret fix
+ * Click-then-type replace (backlog row 64: "clicking just any field should be
+ * able to correct that number. I'm in the selected field then typing a number
+ * right [and it doesn't correct]"). The click-to-caret positioning
  * (`snap_caret_to_slot`, see the "Click-to-caret positioning" describe block
- * above) moved the caret with a *collapsed* selection
- * (`setSelectionRange(idx, idx)`), and native `<input>` typing *inserts* at
- * a collapsed caret rather than overwriting -- confirmed live before this
- * fix: on a full 6-digit value, clicking slot 2 and typing "9" left the
- * value completely unchanged (inserting would exceed `maxlength`, so the
- * browser silently refused the keystroke), and on a partial value "123",
- * clicking slot 1 and typing "9" produced "1923" (inserted before "2",
- * shifting "23" right) instead of correcting that one digit. Fixed by
- * selecting the clicked character (`setSelectionRange(idx, idx + 1,
- * 'forward')`) whenever one exists at that index, so typing over the
+ * above) selects the clicked character (`setSelectionRange(idx, idx + 1,
+ * 'forward')`) whenever one exists at that index, because native `<input>`
+ * typing *inserts* at a collapsed caret (`setSelectionRange(idx, idx)`)
+ * rather than overwriting: on a full 6-digit value, clicking slot 2 and typing
+ * "9" would leave the value unchanged (inserting would exceed `maxlength`, so
+ * the browser silently refuses the keystroke), and on a partial value "123",
+ * clicking slot 1 and typing "9" would produce "1923" (inserted before "2",
+ * shifting "23" right) instead of correcting that one digit. Typing over the
  * selection replaces it -- see `primitives/src/input_otp.rs`'s
  * `snap_caret_to_slot` doc for the full rationale, including why
  * `'forward'` was chosen for the selection direction.
@@ -353,7 +348,7 @@ test.describe("Click-then-type replace (2026-09-17 -- selection-vs-collapsed-car
     await expect(input).toHaveJSProperty("selectionEnd", 3);
 
     await page.keyboard.type("9");
-    // Before the fix: stayed "123456" (maxlength silently blocked the insert).
+    // An insert would stay "123456" (maxlength silently blocks it); the replace gives:
     await expect(input).toHaveValue("129456");
   });
 
@@ -372,8 +367,7 @@ test.describe("Click-then-type replace (2026-09-17 -- selection-vs-collapsed-car
     await expect(input).toHaveJSProperty("selectionEnd", 2);
 
     await page.keyboard.type("9");
-    // Before the fix: became "1923" (inserted before "2" instead of
-    // replacing it).
+    // An insert would give "1923" (before "2" instead of replacing it); the replace gives:
     await expect(input).toHaveValue("193");
   });
 

@@ -227,17 +227,13 @@ test.describe("Tag group", () => {
   });
 
   test.describe("Geometry", () => {
-    // User report (live site): "Tag group looks a bit deflated." Confirmed
-    // NOT a row-31b token-migration regression -- the pre-fix CSS
-    // (padding-block: 0.125rem, font-size: var(--dx-text-xs)) reproduces
-    // upstream PR #271 (bf007c1) byte-for-byte once its class names are
-    // adapted to the current dx- naming, measured via injected-stylesheet
-    // screenshots against the live :8080 demo. This asserts the modest,
+    // The report was "Tag group looks a bit deflated." Upstream PR #271's
+    // CSS (padding-block: 0.125rem, font-size: var(--dx-text-xs)) is the
+    // deflated one, 20px tall with 2px/12px padding. This asserts the
     // deliberate improvement toward shadcn's Badge/Toggle sizing instead
     // (dev-docs/backlog.md): a tag is >= 28px tall (box-sizing: border-box
     // + min-height: var(--dx-space-7)) with --dx-space-1 vertical /
-    // --dx-space-3 horizontal padding. Fails on the pre-fix CSS (20px tall,
-    // 2px/12px padding), passes on the fixed one (28px, 4px/12px).
+    // --dx-space-3 horizontal padding (28px, 4px/12px).
     test("a tag is tall enough to read comfortably (not a deflated pill)", async ({
       page,
     }) => {

@@ -308,20 +308,17 @@ test("typeahead skips disabled options", async ({ page }) => {
 });
 
 /**
- * Listbox width (dev-docs/backlog.md row 47, 2026-09-04) -- regression guard for
+ * Listbox width (dev-docs/backlog.md row 47) -- regression guard for
  * the reported symptom: opening the styled `Select` on the home page
  * gallery rendered its listbox the full width of the viewport (1265px on a
- * 1280px-wide viewport) instead of the width of its own trigger. Root
- * cause: `.dx-select-list`'s `min-width: 100%` resolved against the
- * *viewport* once this listbox was promoted to the top layer (its
+ * 1280px-wide viewport) instead of the width of its own trigger. The
+ * mechanism: `.dx-select-list`'s `min-width: 100%` resolves against the
+ * *viewport* once the listbox is promoted to the top layer (its
  * containing block is no longer `.dx-select`'s `position: relative` box),
- * and the `@supports (anchor-name: --a) { min-width: anchor-size(width);
- * }` rule meant to restore trigger-relative sizing never matched anything
- * served, because `#[css_module]`'s class-hashing does not scope selectors
- * written only inside an `@supports` body -- see
+ * so trigger-relative sizing comes from the engine instead: see
  * `primitives/src/top_layer.rs`'s `use_anchor_position_fallback` doc,
- * "Anchor width contract", for the full mechanism and the fix
- * (`--dx-anchor-width`, engine-published on every anchored content).
+ * "Anchor width contract" (`--dx-anchor-width`, engine-published on every
+ * anchored content).
  *
  * Covers both routes the report and the reproduction named: the component
  * page (`/component/?name=select&`) and the home gallery (`/`, where the
@@ -393,7 +390,7 @@ test.describe("Listbox width (docs/backlog.md row 47 -- full-viewport-width regr
 
 /*
  * Trigger minimum width (`.dx-select-trigger`'s `min-width`) -- regression
- * guard for a real bug found and fixed 2026-09-14: with no width/min-width
+ * guard for a real bug: with no width/min-width
  * of its own, a trigger that never sets one (e.g. the `form` conformance
  * fixture's "Fruit, required" library-select field, which has no
  * `trigger_class`/explicit width) shrinks to fit whatever text is
@@ -403,10 +400,8 @@ test.describe("Listbox width (docs/backlog.md row 47 -- full-viewport-width regr
  * almost no slack for a selected `.dx-select-option` between the option's
  * label and its check indicator -- a *correctly* laid-out flex row that
  * nonetheless visually read as a bug (the checkmark appearing to hug the
- * label instead of sitting at the row's own far edge). Root-caused by
- * direct DOM/computed-style measurement (a debug Playwright script, not
- * guesswork) before landing the fix; this test is that measurement made
- * permanent. (The label-to-check spacing no longer depends on the row's
+ * label instead of sitting at the row's own far edge). This test is
+ * the direct DOM/computed-style measurement of that. (The label-to-check spacing does not depend on the row's
  * width at all -- the option reserves the check's slot and the check is
  * absolutely positioned in it; `menu-indicator-gap.spec.ts` guards that
  * minimum gap with long labels at a narrow viewport. This test still

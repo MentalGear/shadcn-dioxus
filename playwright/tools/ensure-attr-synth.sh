@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Build playwright/oracle/attr-synth (hydration-parity.spec.ts' Rule 4c generator) THROUGH THE BUILD LOCK, once,
-# before Playwright starts (backlog row 338). The spec used to run `cargo build --release` at module load: an unqueued
-# ~3 min build, triggered by `playwright test --list` or any run that merely contains the file, competing with gate
-# and lane builds. Now the spec only RUNS the binary and fails with a clear message when it is missing; this script is
+# before Playwright starts (backlog row 338). The spec must not run `cargo build --release` at module load: an unqueued
+# ~3 min build, triggered by `playwright test --list` or any run that merely contains the file, would compete with gate
+# and lane builds. So the spec only RUNS the binary and fails with a clear message when it is missing; this script is
 # the one place that builds it (test-changed.sh when the spec is selected, run-suite.sh always).
 #
 #   playwright/tools/ensure-attr-synth.sh            # build if missing or older than its inputs

@@ -143,11 +143,11 @@ test('right sheet content geometry matches shadcn spec at desktop and near-break
 // Regression coverage for a native-`<dialog>` centering defect shared with
 // Drawer: Chromium's `dialog:modal` UA rule ships `inset: 0; margin: auto;
 // width/height: fit-content`. Overriding only the one edge a side needs
-// (e.g. `right: 0`) used to leave the UA's own `inset: 0` still supplying
+// (e.g. `right: 0`) leaves the UA's own `inset: 0` still supplying
 // the OPPOSITE edge uncontested, over-constraining the box against a
 // definite `width`/`height` and making the UA center it into its own auto
-// margins instead of anchoring it -- a right/left sheet rendered as a
-// floating centered card, and a top/bottom sheet stretched to the full
+// margins instead of anchoring it -- a right/left sheet would render as a
+// floating centered card, and a top/bottom sheet stretch to the full
 // viewport height instead of sizing to its content. Checks, per side, that
 // the panel's own edge coincides with the matching viewport edge (not
 // merely that its `data-side` attribute is correct, which the "opens from
@@ -168,10 +168,9 @@ test('sheet content is anchored flush to its own edge, not centered', async ({ p
 
   // Generous tolerance (rounding, borders): the whole point of this assertion
   // is "flush against its own edge, not centered", a difference measured in
-  // hundreds of pixels, so it loses none of the check's actual power. (It
-  // used to also absorb the ~15px scrollbar-gutter gap between the raw
-  // `clientWidth` and the fixed containing block; `fixedViewportBox` measures
-  // the latter directly.)
+  // hundreds of pixels, so it loses none of the check's actual power.
+  // (`fixedViewportBox` measures the fixed containing block directly, so the
+  // ~15px scrollbar-gutter gap against the raw `clientWidth` is not in play.)
   const TOLERANCE = 20;
   function closeTo(actual: number, expected: number) {
     expect(Math.abs(actual - expected)).toBeLessThan(TOLERANCE);
@@ -228,11 +227,10 @@ test('close button matches Nova spec: 16px icon, ghost icon-sm (28px, full opaci
   // finishes -- geometry and computed-style reads taken before it settles
   // are unstable (the panel, and everything positioned inside/relative to
   // it, is still moving/transitioning). Same wait-for-animations idiom
-  // `toast.spec.ts` already uses. Found by construction: re-running this
-  // test alone, `--workers=1` (no cross-test contention), reproduced two
-  // DIFFERENT assertions failing across 5 runs (opacity once, the
-  // rightGap/topGap geometry pair another time) -- both symptoms of the
-  // same missing wait, not two separate bugs.
+  // `toast.spec.ts` already uses. Without the wait, even a lone `--workers=1` run (no
+  // cross-test contention) fails DIFFERENT assertions across runs (opacity
+  // one time, the rightGap/topGap geometry pair another) -- both symptoms of
+  // the same missing wait, not two separate bugs.
   await content.evaluate((el) =>
     Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished.catch(() => undefined))),
   );

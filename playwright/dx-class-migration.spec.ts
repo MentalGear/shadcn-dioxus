@@ -30,25 +30,24 @@ import { gotoHydrated } from "./hydration";
  *      component's sheet arrived". If the `document::Link` were missing, no
  *      such rule would be present anywhere.
  *   2. **Unhashed** — no element anywhere on the page carries a class of the
- *      shape `dx-…-<8 hex>`, the exact signature `#[css_module]` used to
- *      append (`.dx-checkbox` -> `.dx-checkbox-7ca1a710`).
+ *      shape `dx-…-<8 hex>`, the signature `#[css_module]` appended
+ *      (`.dx-checkbox` -> `.dx-checkbox-7ca1a710`).
  *   3. **Composed delivery** (dev-docs/backlog.md row 51) — assertion 1 only ever
  *      checks the CURRENT route's own prefix, so it cannot see a themed
  *      component silently losing a DIFFERENT component's CSS by composing
  *      that other component's building blocks directly (`date_picker`
  *      rendering calendar's `CalendarRoot`/`CalendarMonthView` without ever
- *      rendering `calendar::Calendar`, the one place the `Link` used to
- *      live — the exact row-51 bug). This assertion instead looks at every
+ *      rendering `calendar::Calendar`, the one place the `Link` lives
+ *      — the row-51 bug). This assertion instead looks at every
  *      `dx-<known-component>` prefix actually rendered ANYWHERE on the page,
  *      for every element, and requires each one's own stylesheet to be
  *      reachable too — so it catches that shape for any pair of components,
  *      not just calendar/date_picker, and needs no per-component list of
  *      "what does X compose" to stay accurate as composition changes.
  *
- * Deliberately generic: an earlier draft used a hand-written locator and
- * computed-property pair per component, which meant ~45 bespoke, fragile
- * selectors asserting the same two facts. The prefix invariant the lint
- * already enforces makes that unnecessary.
+ * Deliberately generic: a hand-written locator and computed-property pair per
+ * component would mean ~45 bespoke, fragile selectors asserting the same two
+ * facts. The prefix invariant the lint already enforces makes that unnecessary.
  */
 
 /** Every component migrated off `#[css_module]` that ships its own stylesheet. */
@@ -160,11 +159,11 @@ async function prefixReachesAnyFrame(
 }
 
 /**
- * Row 331: 52 pages -> 31. The sweep's one assertion no gate or other spec owns is (2), a hashed `dx-...-<8 hex>` class
+ * Row 331: the sweep covers 31 pages. Its one assertion no gate or other spec owns is (2), a hashed `dx-...-<8 hex>` class
  * in the DOM (`#[css_module]` is still in the tree and `check-dx-class-prefix.sh` only warns for it); (1) and (3)
  * ask whether a sheet reached the page, which `first-paint-styles.spec.ts` "the bundle is complete" proves for every
- * `asset!()`-linked sheet at request level. So the pages are chosen to RENDER every class the old sweep rendered:
- * on a debug SSG build each of the 52 pages was probed (across frames, scoped as assertion 3 scopes it) for its
+ * `asset!()`-linked sheet at request level. So the pages are chosen to RENDER every class a sweep of all 52 component pages renders:
+ * on a debug SSG build each page is probed (across frames, scoped as assertion 3 scopes it) for its
  * distinct `dx-` classes, minus the 44 the site chrome puts on every page; 257 classes remain, and these 31 pages
  * carry all of them (greedy cover, most-uncovered-first, ties by the MIGRATED order). A hashed class on a component
  * part that a dropped page rendered is therefore on a kept page too. All three assertions still run on each.
