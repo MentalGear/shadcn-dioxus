@@ -6,7 +6,7 @@
 # `rotate`, `opacity` -- unless its @keyframes is allowlisted below with a reason. Invisible to cargo and
 # clippy, and with CI frozen (dev-docs/backlog.md row 33) nothing else would notice.
 #
-# THE CLASS (row 174, the scroll re-profile): an animation that runs forever is main-thread work on
+# THE CLASS (row 174): an animation that runs forever is main-thread work on
 # EVERY vsync for as long as its element exists, unless the browser can hand it to the compositor. Only
 # `transform`/`translate`/`scale`/`rotate`/`opacity` (and `filter`/`backdrop-filter`, which this gate does not
 # allow: they can move pixels) are eligible; anything else (`background-position`, `width`, `color`,

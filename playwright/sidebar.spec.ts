@@ -27,10 +27,8 @@ test("sidebar: preview page renders block", async ({ page }) => {
   // Path-segment form (dev-docs/backlog.md row 46): `preview/src/main.rs`'s
   // `BlockComponentVariantHighlight` builds this iframe's `src` from the
   // canonical, SSG-enumerable `Route::ComponentBlockDemoPath`
-  // (`/component/block/<name>/<variant>/`) rather than the legacy query
-  // form (`?name=...&variant=...`) -- the query form works (it
-  // redirects client-side to this same path), but is not what this
-  // app's own internal links emit.
+  // (`/component/block/<name>/<variant>/`). The query form
+  // (`?name=...&variant=...`) redirects client-side to this same path.
   await expect(iframe).toHaveAttribute(
     "src",
     /component\/block\/sidebar\/main\//,

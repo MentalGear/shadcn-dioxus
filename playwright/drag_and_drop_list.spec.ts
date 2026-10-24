@@ -48,8 +48,8 @@ function getLiveRegion(list: import("@playwright/test").Locator) {
  * avatar. The demo's `ImageAvatar` renders its fallback initials ("RH") only
  * once the image has failed or timed out, so reading the whole `textContent`
  * twice -- once before and once after that happens -- would compare two different
- * strings for the same item (`...Apr29` vs `...Apr29RH`), a flake under
- * parallel load (backlog row 114). The avatar is decoration, not part of an item's
+ * strings for the same item (`...Apr29` vs `...Apr29RH`), depending on
+ * load timing (backlog row 114). The avatar is decoration, not part of an item's
  * identity; what remains (title, task code, status, due date) is stable from the first
  * render, so nothing needs to wait for the avatars to settle.
  */
