@@ -615,7 +615,10 @@ pub fn TagGroupMulti<T: Clone + PartialEq + 'static>(props: TagGroupMultiProps<T
     )
 }
 
-fn typed_values<T: Clone + 'static>(values: Vec<RcPartialEqValue>, group: &str) -> Vec<T> {
+fn typed_values<T: Clone + PartialEq + 'static>(
+    values: Vec<RcPartialEqValue>,
+    group: &str,
+) -> Vec<T> {
     values
         .into_iter()
         .map(|value| {
