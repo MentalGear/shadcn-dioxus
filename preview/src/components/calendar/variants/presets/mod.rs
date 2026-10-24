@@ -1,20 +1,22 @@
 use super::super::component::*;
 use crate::components::button::Button;
 use dioxus::prelude::*;
-use time::{macros::date, Date, Duration, UtcDateTime};
+use dioxus_primitives::calendar::use_today;
+use time::{macros::date, Date, Duration};
 
 /// Preset buttons drive the controlled `selected_date` (and `view_date`) of a `Calendar`.
 ///
-/// The presets are relative to the real current date, read when a button is clicked, never while
-/// rendering: the calendar starts on a fixed month with nothing selected, so the static HTML and
-/// the hydrated DOM are identical whatever day the page is built or opened.
+/// The presets are relative to the visitor's current date ([`use_today`], read after mount), and only
+/// a click reads it: the calendar starts on a fixed month with nothing selected, so the static HTML
+/// and the hydrated DOM are identical whatever day the page is built or opened.
 #[component]
 pub fn Demo() -> Element {
     let mut selected_date = use_signal(|| None::<Date>);
     let mut view_date = use_signal(|| date!(2026 - 05 - 15));
+    let today = use_today();
 
     let mut pick = move |days: i64| {
-        let target = UtcDateTime::now().date() + Duration::days(days);
+        let target = *today.peek() + Duration::days(days);
         selected_date.set(Some(target));
         view_date.set(target);
     };

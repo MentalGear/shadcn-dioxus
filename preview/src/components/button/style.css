@@ -14,7 +14,6 @@
   border-end-start-radius: var(--dx-group-radius-end-start, var(--dx-button-radius, var(--dx-radius-lg)));
   border-start-end-radius: var(--dx-group-radius-start-end, var(--dx-button-radius, var(--dx-radius-lg)));
   border-start-start-radius: var(--dx-group-radius-start-start, var(--dx-button-radius, var(--dx-radius-lg)));
-  cursor: default;
   font-family: inherit;
   font-size: var(--dx-text-sm);
   font-weight: 500;
@@ -41,6 +40,8 @@
   pointer-events: none;
 }
 
+/* Nova's `[&_svg:not([class*='size-'])]:size-4`: an svg with a `size-` class sizes itself, so a nested
+ * Spinner (its ring wears `dx-size-own`) keeps its own edge in every button size. */
 .dx-button svg:not([class*="size-"]) {
   width: var(--dx-button-icon-size);
   height: var(--dx-button-icon-size);

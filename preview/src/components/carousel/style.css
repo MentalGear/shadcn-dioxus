@@ -101,7 +101,6 @@
        is dropped rather than kept for light mode only. */
     box-shadow: none;
     color: var(--dx-foreground);
-    cursor: pointer;
 
     /* Fades the :disabled opacity change below in both directions.
        Declared here on the base rule, not inside `:disabled`, on purpose --
@@ -376,7 +375,6 @@
     background: var(--dx-card);
     box-shadow: none;
     color: var(--dx-foreground);
-    cursor: pointer;
 }
 
 .dx-carousel-rotation-control svg {
@@ -441,7 +439,6 @@
        inactive ones barely off it. `--secondary-color-*` is the
        foreground ramp. */
     background: var(--dx-muted-foreground);
-    cursor: pointer;
     opacity: 0.5;
 
     /* The active dot fades in (opacity) and widens into a pill (width) --
@@ -499,7 +496,6 @@
     border: none;
     border-radius: var(--dx-radius-full);
     background: var(--dx-muted-foreground);
-    cursor: pointer;
     opacity: 0.5;
 }
 

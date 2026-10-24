@@ -7,9 +7,9 @@
 //! 1. That file coordinates nested locks with a `window.__dxScrollLockCount`
 //!    global read and written from inside `document::eval`. This version
 //!    keeps its refcounting and its restore-the-original-state behavior,
-//!    but moves the counter into Rust -- a lazily-provided context shared
-//!    by every call site in one nesting chain, the same pattern
-//!    `EscapeListenerStack` (`lib.rs`) uses for nested Escape-key handling --
+//!    but moves the counter into Rust -- one page-wide count shared by every
+//!    call site (backlog row 375: two sibling dialogs share one count;
+//!    see `ScrollLockInner`) --
 //!    so "is this the outermost lock/unlock" is decided synchronously in
 //!    Rust *before* any `document::eval` runs, per docs/plan.md Phase 3.2.
 //!    That reproduces the guard sarendipitee/dx-components' `overlay.rs`
@@ -362,6 +362,9 @@ thread_local! {
     /// this flag alone would not survive e.g. a hot-reload that resets Rust
     /// statics but leaves the already-injected style tag in the live DOM.
     static SCROLLBAR_GUTTER_BASELINE_INSTALLED: Cell<bool> = const { Cell::new(false) };
+
+    /// The one page-wide lock (backlog row 375). See [`ScrollLockInner`].
+    static PAGE_SCROLL_LOCK: ScrollLockState = ScrollLockState::default();
 }
 
 /// Installs the permanent `scrollbar-gutter: stable` baseline described in
@@ -407,8 +410,8 @@ pub(crate) fn ensure_scrollbar_gutter_baseline() {
 /// on release.
 const SCROLL_BLOCK_JS: &str = r#"
     dioxus.send([window.scrollX, window.scrollY]);
-    // `__dxScrollLocked` mirrors "a lock is held" (counted, because two independent
-    // lock chains can be held at once); the listeners themselves exist only while it is true.
+    // `__dxScrollLocked` mirrors "a lock is held" (counted defensively; the Rust side keeps
+    // one page-wide lock, so at most one copy runs); the listeners exist only while it is true.
     window.__dxScrollLockN = (window.__dxScrollLockN || 0) + 1;
     window.__dxScrollLocked = true;
     cleanup(() => {
@@ -491,32 +494,34 @@ const SCROLL_BLOCK_JS: &str = r#"
     }, { passive: false, capture: true });
 "#;
 
-/// Per-nesting-chain lock count, and the page scroll position captured just
-/// before the outermost lock in the chain engaged.
+/// The page's lock count, and the page scroll position captured just before the
+/// first lock engaged.
+///
+/// ONE per page, not one per nesting chain (backlog row 375). The page has one scroll
+/// position, so every surface that locks it shares one count and one saved position, the
+/// way the JS side's `window.__dxScrollLockN` always did. A per-chain count gave two sibling
+/// surfaces two counters: when one click closed dialog A and opened dialog B, A's release
+/// (after its exit animation) was the last of *its* chain and ran `window.scrollTo(A's
+/// saved position)` with B open, moving the page under B.
 #[derive(Default)]
 struct ScrollLockInner {
     count: usize,
     original_scroll: Option<(f64, f64)>,
-    /// The block listeners, alive from the 0 -> 1 transition of `count` to the 1 -> 0 one.
-    /// Dropping it is what removes them from `window`.
+    /// The block listeners, alive from the 0 -> 1 transition of `count` until a 1 -> 0 one
+    /// that is not followed by a new lock within a frame (see [`release`]). Dropping it is
+    /// what removes them from `window`.
     listeners: Option<JsListeners>,
+    /// Bumped by every 1 -> 0 and 0 -> 1 transition, so a deferred final release can tell
+    /// that a lock was taken (and possibly released again) while it waited.
+    epoch: u64,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 struct ScrollLockState(Rc<RefCell<ScrollLockInner>>);
 
-/// Finds the [`ScrollLockState`] provided by an ancestor in this nesting
-/// chain (e.g. an outer modal that is already locked), or becomes the
-/// provider itself if none exists yet -- mirrors `EscapeListenerStack`'s
-/// `try_consume_context().unwrap_or_else(...)` in `lib.rs`.
+/// The page-wide [`ScrollLockState`].
 fn use_scroll_lock_state() -> ScrollLockState {
-    use_hook(|| {
-        try_consume_context().unwrap_or_else(|| {
-            provide_context(ScrollLockState(Rc::new(RefCell::new(
-                ScrollLockInner::default(),
-            ))))
-        })
-    })
+    use_hook(|| PAGE_SCROLL_LOCK.with(Clone::clone))
 }
 
 /// Captures the page's scroll position *before* a modal surface has any
@@ -538,7 +543,7 @@ fn use_scroll_lock_state() -> ScrollLockState {
 /// received) is dispatched, and therefore executes, before the content's own
 /// `showModal()`-driving effect gets a chance to move anything.
 ///
-/// A no-op if a lock is already engaged (nested dialogs: the outer one's
+/// A no-op if a lock is already engaged anywhere on the page (the first lock's
 /// captured position is the one worth keeping) or if this cycle's position
 /// was already captured (guards a redundant capture racing with
 /// [`use_scroll_lock`]'s own, which only captures when this hasn't already
@@ -581,9 +586,11 @@ pub(crate) fn use_early_scroll_capture(open: Memo<bool>) {
 /// cycle, on an engine where that reservation depends on `<html>` never
 /// having its `overflow` changed *or* its genuine overflow amount reduced.
 ///
-/// Nested locks -- e.g. a dialog that opens a second, nested dialog -- share
-/// one counter (see module docs): only the count's 0 -> 1 transition
-/// installs the block listeners, and only its 1 -> 0 transition removes them. That
+/// Every lock on the page -- a nested dialog, a sibling dialog opened by the click
+/// that closed another, a menu item's dialog -- shares one counter
+/// ([`ScrollLockInner`]): only the count's 0 -> 1 transition installs the block
+/// listeners, and only a 1 -> 0 transition not followed by a new lock within a
+/// frame removes them. That
 /// means a still-open outer modal is never affected by an inner one
 /// closing, and there is no window in which the page is briefly, visibly
 /// unlocked between an inner modal's close and an outer modal's
@@ -625,8 +632,11 @@ pub(crate) fn use_scroll_lock(active: Memo<bool>) {
         move || {
             provide_context(ModalClosedRelease(Rc::new(move || {
                 // Still wanted (a controlled surface that was not closed, or one that
-                // reopened while the close was in flight): keep the lock.
-                if alive.get() && !active.try_peek().map(|v| *v).unwrap_or(true) {
+                // reopened while the close was in flight): keep the lock. `try_read`, not
+                // `try_peek`: a memo's peek returns its last computed value without
+                // recomputing a dirty one, so a reopen whose `open` write has not re-rendered
+                // yet (the quiet close of row 223) read as "closed" and dropped the lock.
+                if alive.get() && !active.try_read().map(|v| *v).unwrap_or(true) {
                     release(&state, &acquired);
                 }
             })))
@@ -640,12 +650,17 @@ pub(crate) fn use_scroll_lock(active: Memo<bool>) {
             return;
         }
         lock_acquired.set(true);
-        let is_outermost = {
+        let needs_listeners = {
             let mut inner = lock_state.0.borrow_mut();
             inner.count += 1;
-            inner.count == 1
+            if inner.count == 1 {
+                // Cancels a final release still waiting for its frame: the lock was handed
+                // over, so the listeners and the saved position stay as they are.
+                inner.epoch += 1;
+            }
+            inner.listeners.is_none()
         };
-        if is_outermost {
+        if needs_listeners {
             let position_state = lock_state.clone();
             let listeners =
                 JsListeners::install(SCROLL_BLOCK_JS).on_message(move |(x, y): (f64, f64)| {
@@ -701,20 +716,45 @@ pub(crate) fn use_modal_closed() -> ModalClosed {
     use_hook(|| ModalClosed(try_consume_context::<ModalClosedRelease>().map(|r| r.0)))
 }
 
-/// Gives back this instance's share of the lock, if it holds one: the last release removes
-/// the block listeners (dropping [`JsListeners`]) and restores the pre-lock scroll position.
+/// Gives back this instance's share of the lock, if it holds one. The last release removes
+/// the block listeners (dropping [`JsListeners`]) and restores the pre-lock scroll position,
+/// one frame later: a surface that closes in the same click that opens another (a menu item
+/// that opens a dialog) may release before the new one has locked, and the hand-over must not
+/// unlock or scroll the page in between. A lock taken in that frame cancels the final release.
 fn release(state: &ScrollLockState, acquired: &Cell<bool>) {
     if !acquired.replace(false) {
         return;
     }
-    let (listeners, restore) = {
+    let epoch = {
         let mut inner = state.0.borrow_mut();
         inner.count = inner.count.saturating_sub(1);
-        if inner.count == 0 {
-            (inner.listeners.take(), inner.original_scroll.take())
-        } else {
-            (None, None)
+        if inner.count > 0 {
+            return;
         }
+        inner.epoch += 1;
+        inner.epoch
+    };
+    let state = state.clone();
+    // The root scope's task: this runs from an unmount cleanup too, whose own scope is going.
+    // interval-ok: one bounded wait for a frame, not a timer
+    crate::dioxus_core::spawn_forever(async move {
+        let mut frame = document::eval(
+            "await new Promise((r) => { requestAnimationFrame(() => r()); setTimeout(r, 50); });
+            dioxus.send(true);",
+        );
+        let _ = frame.recv::<bool>().await;
+        finish_release(&state, epoch);
+    });
+}
+
+/// The deferred half of [`release`]: unlocks the page unless a lock was taken since `epoch`.
+fn finish_release(state: &ScrollLockState, epoch: u64) {
+    let (listeners, restore) = {
+        let mut inner = state.0.borrow_mut();
+        if inner.count > 0 || inner.epoch != epoch {
+            return;
+        }
+        (inner.listeners.take(), inner.original_scroll.take())
     };
     // Removes `wheel`/`keydown`/`touchstart`/`touchmove` from `window`.
     drop(listeners);

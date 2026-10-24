@@ -409,7 +409,6 @@
   background-color: var(--light, var(--dx-background))
     var(--dark, color-mix(in oklab, var(--dx-input) 30%, transparent));
   color: var(--dx-foreground);
-  cursor: default;
   font-family: inherit;
   font-size: var(--dx-text-sm);
   font-weight: 500;

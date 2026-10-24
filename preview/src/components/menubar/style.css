@@ -24,7 +24,6 @@
   border-radius: var(--dx-radius-sm);
   background: none;
   color: var(--dx-foreground);
-  cursor: pointer;
   font-size: var(--dx-menu-item-font-size);
   font-weight: 500;
   transition: background-color var(--dx-motion-duration-fast) var(--dx-motion-ease-out);

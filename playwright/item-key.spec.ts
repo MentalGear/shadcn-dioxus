@@ -27,6 +27,27 @@ const press = (page: Page, n: number, variant: string) =>
   // dispatchEvent keeps keyboard focus where it is: a real click would move it to the button
   demoRole(page, "button", n, variant).dispatchEvent("click");
 
+// The scroll bridge keeps the canvas height frozen until the scroll has been quiet for 600 ms
+// (`SCROLL_BRIDGE_JS` in primitives/src/virtual/bridge.rs), then the measured heights replace the
+// estimate. A fixed `waitForTimeout(600)` after the last scroll raced that timer: on a release build the
+// canvas sometimes still read the frozen estimate (8972) and then settled at the measured sum (8602) inside
+// the sampled frames, which the spec read as a canvas that moves. So read it once it has held still for
+// twice the quiet period.
+const SCROLL_QUIET_MS = 600;
+async function settledCanvasHeight(scroller: Locator): Promise<number> {
+  const page = scroller.page();
+  let last = -1;
+  let since = Date.now();
+  for (;;) {
+    const height = await scroller.evaluate((el) => el.scrollHeight);
+    if (height !== last) {
+      last = height;
+      since = Date.now();
+    } else if (Date.now() - since >= 2 * SCROLL_QUIET_MS) return height;
+    await page.waitForTimeout(50);
+  }
+}
+
 const itemButton = (frame: Locator, id: number) => frame.locator(`[data-item-button="${id}"]`);
 const itemCheck = (frame: Locator, id: number) => frame.locator(`[data-item-check="${id}"]`);
 
@@ -149,8 +170,7 @@ test.describe("VirtualList item_key", () => {
       await page.waitForTimeout(40);
     }
     await scroller.evaluate((el) => (el.scrollTop = 0));
-    await page.waitForTimeout(600);
-    const before = await scroller.evaluate((el) => el.scrollHeight);
+    const before = await settledCanvasHeight(scroller);
     // Sample the canvas height on every frame while the order flips.
     await scroller.evaluate((el) => {
       const samples: number[] = [];

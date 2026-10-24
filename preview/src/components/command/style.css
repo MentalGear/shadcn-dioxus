@@ -294,7 +294,6 @@ dialog.dx-command-dialog[open][data-state="open"] {
   align-items: center;
   padding: var(--dx-space-1-5) var(--dx-space-2);
   border-radius: var(--dx-radius-sm);
-  cursor: default;
   font-size: var(--dx-menu-item-font-size);
   gap: var(--dx-menu-item-indicator-gap);
   outline: none;

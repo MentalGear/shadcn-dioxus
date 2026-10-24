@@ -32,10 +32,6 @@
 /* Deliberate deviation from shadcn (`hover:underline` on every trigger, row 299, owner 2026-10-20): a
  * collapsed header does not underline on hover, an open one does. */
 @media (hover: hover) and (pointer: fine) {
-  .dx-accordion-trigger:hover:not(:disabled) {
-    cursor: pointer;
-  }
-
   .dx-accordion-trigger[aria-expanded="true"]:hover:not(:disabled) {
     text-decoration-line: underline;
   }

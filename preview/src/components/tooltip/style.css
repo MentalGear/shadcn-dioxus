@@ -186,11 +186,6 @@
   transform: none;
 }
 
-/* State styles */
-.dx-tooltip[data-disabled="true"] .dx-tooltip-trigger {
-  cursor: default;
-}
-
 /* Laid out the same in BOTH states, so a tooltip never changes layout while it fades out (row 292):
    keyed on `[data-state="open"]` alone, the closing fade fell back to the UA's block layout and a
    rich tooltip's paragraphs stacked only then. A plain `display` on `.dx-tooltip-content` would beat

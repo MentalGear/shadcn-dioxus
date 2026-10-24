@@ -10,7 +10,9 @@
  *   a 1rem fallback, each typed size from its own value), so a default spinner nested in a small or large one never
  *   inherits the outer size.
  * A container never sizes the ring with a descendant `svg` rule: that rule and `.dx-spinner svg` would tie at (0,1,1)
- * and the sheet loaded last would win, which an installed app decides by render order. */
+ * and the sheet loaded last would win, which an installed app decides by render order. A container rule that follows
+ * shadcn's `svg:not([class*="size-"])` (Button, Toggle, Tabs, ...) skips the ring altogether: the svg carries the
+ * `dx-size-own` class (component.rs), shadcn's `size-4` on its spinner svg. */
 .dx-spinner {
   display: inline-flex;
   align-items: center;

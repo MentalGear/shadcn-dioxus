@@ -39,7 +39,6 @@
   border-radius: var(--dx-radius-lg);
   background: none;
   color: var(--dx-foreground);
-  cursor: pointer;
   font-size: var(--dx-text-sm);
   font-weight: 500;
   gap: var(--dx-space-1);

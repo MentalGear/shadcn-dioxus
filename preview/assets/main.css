@@ -568,7 +568,6 @@ button.dx-theme-phone-trigger {
   border: none;
   background: none;
   color: var(--dx-foreground);
-  cursor: pointer;
 }
 
 /* Two presentations of ONE panel (theme.rs `ThemePickerPanel`), chosen here, by the header's own phone

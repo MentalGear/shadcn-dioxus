@@ -386,6 +386,13 @@ pub fn ToastProvider(props: ToastProviderProps) -> Element {
         )
     });
 
+    // Measure every toast's content and publish the heights the pile is sized from (`TOAST_SIZE_JS`).
+    crate::js_listener::use_js_listeners(move || {
+        region_ref()?;
+        let id = region_id.cloned();
+        Some(crate::js_listener::JsListeners::install(TOAST_SIZE_JS).arg(id))
+    });
+
     // Provide the context
     let ctx = use_context_provider(|| ToastCtx {
         toasts,
@@ -529,6 +536,76 @@ listen(el, 'pointerenter', (e) => { if (e.pointerType !== 'touch') { hover = tru
 listen(el, 'pointerleave', () => { hover = false; report(); });
 listen(el, 'focusin', () => { focus = true; report(); });
 listen(el, 'focusout', (e) => { focus = !!e.relatedTarget && el.contains(e.relatedTarget); report(); });
+"#;
+
+/// The ONE writer of the pile's heights. A toast is as tall as its content plus its own padding, so
+/// the stylesheet needs two numbers it cannot read from CSS: how tall each toast is, and how tall the
+/// FRONT toast is (a collapsed pile shows every toast behind it at that height, as Sonner's
+/// `--front-toast-height` does).
+///
+/// A skin marks the box that holds a toast's content with `data-toast-body` (a direct child of the
+/// toast, no margin of its own; the toast's padding and border go around it). A `ResizeObserver` watches
+/// every such box in the region's list and writes, on the toast's list item (`li`, which Rust never
+/// restyles, so a re-render cannot drop it), `--toast-height`: the body's height plus the toast's computed
+/// padding and border. The front toast, the first list item that is not closing (`data-removed`), also
+/// publishes its height as `--front-toast-height` on the list. The first measurement of a toast also sets
+/// `data-sized` on its `li` (`pending`, `true` one frame later), so a skin can keep the unmeasured to
+/// measured switch from animating. A `MutationObserver` on the list follows toasts coming, going and
+/// starting to leave, and measures a new toast as soon as it is inserted, so no frame lays it out
+/// unmeasured. Both observers end with the provider (`cleanup`). A skin
+/// without `data-toast-body` is never measured: its toasts keep their auto height and do not overlap.
+const TOAST_SIZE_JS: &str = r#"
+const id = await dioxus.recv();
+const region = document.getElementById(id);
+const list = region && region.querySelector('ol');
+if (!list) return;
+const heights = new WeakMap();
+const seen = new Set();
+const FRONT = '--front-toast-height';
+// The toast's own height: its content box plus the padding and border around it.
+const heightOf = (body, size) => {
+  const cs = getComputedStyle(body.parentElement);
+  const chrome = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom)
+    + parseFloat(cs.borderTopWidth) + parseFloat(cs.borderBottomWidth);
+  const box = size && size.borderBoxSize && size.borderBoxSize[0];
+  return (box ? box.blockSize : body.offsetHeight) + (chrome || 0);
+};
+const publishFront = () => {
+  const front = Array.from(list.children).find((li) => li.dataset.removed !== 'true');
+  const h = front && heights.get(front);
+  if (h) list.style.setProperty(FRONT, h + 'px');
+  else list.style.removeProperty(FRONT);
+};
+const record = (body, size) => {
+  const li = body.closest('li');
+  if (!li) return;
+  const h = heightOf(body, size);
+  heights.set(li, h);
+  li.style.setProperty('--toast-height', h + 'px');
+  // The first measurement must not play as a glide from the unmeasured layout: `data-sized` turns
+  // true a frame later, and the stylesheet only transitions a toast's height and margin from then on.
+  if (!li.dataset.sized) {
+    li.dataset.sized = 'pending';
+    requestAnimationFrame(() => { li.dataset.sized = 'true'; });
+  }
+};
+const sizes = new ResizeObserver((entries) => {
+  for (const entry of entries) record(entry.target, entry);
+  publishFront();
+});
+const sync = () => {
+  const now = new Set(list.querySelectorAll('[data-toast-body]'));
+  for (const body of seen) if (!now.has(body)) { sizes.unobserve(body); seen.delete(body); }
+  // A new toast is measured at once, in the mutation callback that sees it inserted: the observer's
+  // first callback comes after the next frame's rAF callbacks, so a frame would lay the pile out
+  // without the toast's height and the slot it enters through would open by the gap alone.
+  for (const body of now) if (!seen.has(body)) { seen.add(body); record(body); sizes.observe(body); }
+  publishFront();
+};
+const changes = new MutationObserver(sync);
+changes.observe(list, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-removed'] });
+cleanup(() => { changes.disconnect(); sizes.disconnect(); list.style.removeProperty(FRONT); });
+sync();
 "#;
 
 #[cfg(feature = "web")]
@@ -1063,6 +1140,8 @@ struct ToastRenderCtx {
 ///
 /// The [`Toast`] component renders toasts with the following css variables you can use to control styling:
 /// - `--toast-index`: The index of the toast in the pile (closing toasts do not count), used for z-indexing and positioning.
+/// - `--toast-height` (on the toast's list item, so the toast inherits it): the toast's own height in px, content plus padding and border, measured from the child marked `data-toast-body` (see `TOAST_SIZE_JS`). Absent until measured, and for a skin with no `data-toast-body`.
+/// - `--front-toast-height` (on the list): the height of the front toast, the first one that is not closing. A collapsed pile sizes every toast behind the front one with it.
 /// - `--toast-exit-ms`: How long a closed toast stays mounted (`200ms`); the exit transition should last that long.
 #[component]
 pub fn Toast(props: ToastProps) -> Element {

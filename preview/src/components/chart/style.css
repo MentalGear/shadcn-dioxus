@@ -388,7 +388,7 @@
  * layout reads, no document::eval") -- invisible, full-height bands, one
  * per datum, that alone drive `active_index`. */
 .dx-chart [data-slot="chart-hit-band"] {
-  cursor: pointer;
+  cursor: var(--dx-interactive-element-cursor, default);
   fill: transparent;
   pointer-events: all;
 }
@@ -1050,7 +1050,6 @@
   background-color: transparent;
   border-block-start: 1px solid var(--dx-border);
   color: inherit;
-  cursor: pointer;
   font: inherit;
   gap: var(--dx-space-1);
   text-align: start;

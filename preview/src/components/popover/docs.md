@@ -32,6 +32,24 @@ PopoverRoot {
 }
 ```
 
+## Trigger
+
+`PopoverTrigger` draws the outline Button's look, and an icon inside it is 16px like a Button's (an svg with a `size-` class keeps its own size). For any other Button variant or size, such as shadcn's `render={<Button variant="outline" size="icon" />}`, use the popover primitive's bare trigger and give it the Button recipe, so one `<button>` carries both:
+
+```rust
+use dioxus_primitives::popover::PopoverTrigger;
+
+PopoverTrigger {
+    class: "dx-button",
+    "data-style": "outline",
+    "data-size": "icon",
+    "aria-label": "Options",
+    ChevronDown {}
+}
+```
+
+The Button stylesheet must be on the page (any `Button` loads it). A composite that keeps the themed trigger but wants another icon size sets `--dx-popover-trigger-icon-size` on it, as DatePicker does for its 20px chevron.
+
 ## Motion
 
 The panel fades in and out over `--dx-overlay-duration` (default `--dx-motion-duration-slow`) with `--dx-overlay-ease`. A modal popover uses the shared dialog exit driver, staying open until its exit settles (at most 1500 ms) before it closes. The keyframes animate `opacity` only, so the anchor's own `transform` centring is never replaced. Reduced motion swaps in `--dx-motion-duration-reduced`. Nothing loops. See [Motion](/docs#motion) for the tokens, reduced motion and the per-component table.

@@ -10,8 +10,6 @@ use dioxus::prelude::*;
 #[cfg(not(feature = "web"))]
 use dioxus::prelude::{asset, manganis, Asset};
 use dioxus_core::AttributeValue::Text;
-#[cfg(feature = "calendar")]
-use time::OffsetDateTime;
 
 use crate::js_listener::{use_js_listeners, JsListeners};
 
@@ -1067,21 +1065,6 @@ impl ContentAlign {
             Self::Center => "center",
             Self::End => "end",
         }
-    }
-}
-
-#[cfg(feature = "calendar")]
-pub(crate) trait LocalDateExt {
-    /// A small extension method function to get the local date with a fallback to UTC date if this fails
-    fn now_local_date() -> time::Date;
-}
-
-#[cfg(feature = "calendar")]
-impl LocalDateExt for time::OffsetDateTime {
-    fn now_local_date() -> time::Date {
-        OffsetDateTime::now_local()
-            .map(|x| x.date())
-            .unwrap_or_else(|_| time::UtcDateTime::now().date())
     }
 }
 

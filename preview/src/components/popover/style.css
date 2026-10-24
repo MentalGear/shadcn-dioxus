@@ -209,7 +209,6 @@
   border-start-end-radius: var(--dx-group-radius-start-end, var(--dx-radius-lg));
   border-start-start-radius: var(--dx-group-radius-start-start, var(--dx-radius-lg));
   color: var(--dx-foreground);
-  cursor: default;
   font-family: inherit;
   font-size: var(--dx-text-sm);
   font-weight: 500;
@@ -220,6 +219,20 @@
   transition-property: all;
   transition-timing-function: var(--dx-motion-ease-standard);
   white-space: nowrap;
+
+  /* Icon size slot, re-declared on every trigger so it never inherits another's. */
+  --dx-popover-trigger-icon-size: 1rem;
+}
+
+/* Nova's `[&_svg:not([class*='size-'])]:size-4` of the outline button this trigger mirrors: an icon is
+ * 16px, so an icon beside a label keeps the 2rem height. A composite that wants another icon size sets
+ * the slot (DatePicker's chevron is 1.25rem). Direct children only, so nothing inside a child component
+ * is reached (backlog row 188). */
+.dx-popover-trigger > svg:not([class*="size-"], :where([popover], dialog) *) {
+  width: var(--dx-popover-trigger-icon-size);
+  height: var(--dx-popover-trigger-icon-size);
+  flex-shrink: 0;
+  pointer-events: none;
 }
 
 .dx-popover-trigger[aria-expanded="true"] {

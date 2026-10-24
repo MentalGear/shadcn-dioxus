@@ -212,6 +212,55 @@ test.describe("position=item-aligned", () => {
     expect(o.y + o.height).toBeLessThanOrEqual(l.y + l.height + 1);
   });
 
+  // No selected option: nothing to align, so the whole list sits beside the trigger, flipping on collision.
+  const placeholder = (page: Page) => page.getByRole("combobox", { name: "Placeholder zone select" });
+  const placeholderList = (page: Page) => page.getByRole("listbox", { name: "Placeholder zone options" });
+
+  for (const [edge, side] of [
+    ["bottom", "top"],
+    ["top", "bottom"],
+  ] as const) {
+    test(`with no selection, a trigger at the ${edge} edge opens the whole list on its ${side} side`, async ({ page }) => {
+      await page.setViewportSize({ width: 800, height: 420 });
+      await gotoHydrated(page, `${BASE_URL}/component/select/`);
+      await placeholder(page).evaluate((el, edge) => {
+        // The demo sits near the page's end: room below it so the page can scroll it to the top edge
+        // (a spacer, not body padding: the open select's scroll lock rewrites the body's style), and 80px,
+        // not less, keeps it clear of the sticky site header, which would make the click scroll it back.
+        const spacer = document.createElement("div");
+        spacer.style.height = "100vh";
+        document.body.appendChild(spacer);
+        // rest-ok: the trigger does not animate
+        const r = el.getBoundingClientRect();
+        // viewport-ok: only scrolls the page, no overlay is bounded by it
+        window.scrollBy(0, edge === "bottom" ? r.top - (window.innerHeight - 60) : r.top - 80);
+      }, edge);
+      await placeholder(page).click();
+      await expect(placeholderList(page)).toHaveAttribute("data-placed", "true");
+      await expect(placeholderList(page)).toHaveAttribute("data-side", side);
+      await awaitAnimationsSettled(placeholderList(page));
+      const t = await measureAtRest(placeholder(page));
+      const l = await measureAtRest(placeholderList(page));
+      const vp = await fixedViewportBox(page);
+      if (side === "top") expect(l.y + l.height, "list ends above the trigger").toBeLessThanOrEqual(t.y + 0.5);
+      else expect(l.y, "list starts below the trigger").toBeGreaterThanOrEqual(t.y + t.height - 0.5);
+      // Placed by the select's own script and by nothing else: the list sits 4px off the trigger's edge
+      // and on its left edge. The engine's `anchor()` rules for `data-side` (an 8px margin, a
+      // `translateX(-50%)`, a scroll-compensated `bottom: anchor(top)`) once also applied to this list
+      // (which writes `data-side` too) and moved it by those amounts; its first spec only bounded it.
+      if (side === "top") expect(t.y - (l.y + l.height), "4px above the trigger").toBeCloseTo(4, 0);
+      else expect(l.y - (t.y + t.height), "4px below the trigger").toBeCloseTo(4, 0);
+      expect(l.x, "on the trigger's left edge").toBeCloseTo(t.x, 0);
+      expect(l.y).toBeGreaterThanOrEqual(vp.y - 0.5);
+      expect(l.y + l.height).toBeLessThanOrEqual(vp.y + vp.height + 0.5);
+      // Capped to the chosen side's room, the 24 options still scroll.
+      await expect(placeholderList(page).locator('[data-slot="select-scroll-button"][data-direction="down"]')).toHaveAttribute(
+        "data-visible",
+        "true",
+      );
+    });
+  }
+
   test("selecting still works and the popper select is unchanged", async ({ page }) => {
     await openAligned(page);
     await alignedList(page).getByRole("option", { name: "UTC+8" }).click();

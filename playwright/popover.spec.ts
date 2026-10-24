@@ -479,3 +479,35 @@ test.describe("Scrim", () => {
     });
   }
 });
+
+// Backlog row 188 (g): an icon in the plain trigger is the outline Button's 16px, and a composite
+// sets the trigger's icon slot instead (DatePicker's chevron stays 20px).
+test.describe("Trigger icon size", () => {
+  test("an icon in the plain trigger is 16px", async ({ page }) => {
+    await gotoHydrated(page, DEFAULT_URL, { timeout: 20 * 60 * 1000 });
+    const trigger = page.getByRole("button", { name: DEFAULT_TRIGGER });
+    await expect(trigger).toBeVisible({ timeout: 60_000 });
+    const edge = await trigger.evaluate((e) => {
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("width", "24");
+      svg.setAttribute("height", "24");
+      e.prepend(svg);
+      // rest-ok: the trigger and its icon never animate; the panel is closed.
+      const r = svg.getBoundingClientRect();
+      // rest-ok: the trigger never animates.
+      return [r.width, r.height, e.getBoundingClientRect().height];
+    });
+    expect(edge[0]).toBeCloseTo(16, 0);
+    expect(edge[1]).toBeCloseTo(16, 0);
+    expect(edge[2]).toBeCloseTo(32, 0);
+  });
+
+  test("DatePicker's chevron keeps 20px through the slot", async ({ page }) => {
+    await gotoHydrated(page, `${BASE_URL}/component/date_picker/`, { timeout: 20 * 60 * 1000 });
+    const chevron = page.locator("#component-preview-frame").first().getByRole("button", { name: "Show Calendar" }).locator("svg");
+    await expect(chevron).toBeVisible({ timeout: 60_000 });
+    // rest-ok: the chevron is at rest while the picker is closed (it rotates only on open).
+    const w = await chevron.evaluate((e) => e.getBoundingClientRect().width);
+    expect(w).toBeCloseTo(20, 0);
+  });
+});

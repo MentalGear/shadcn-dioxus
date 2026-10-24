@@ -51,8 +51,11 @@ pub fn Spinner(
     // phase and costs nothing while nobody can see it.
     let motion = use_motion();
     let merged = merge_attributes(vec![base, attributes, owned, motion.attributes()]);
+    // `dx-size-own` is shadcn's `size-*` class on the spinner's svg: a container's icon rule
+    // (`.dx-button svg:not([class*="size-"])` and its kin) skips an svg that sizes itself, so the ring
+    // keeps its own edge inside a Button of any size (backlog row 188).
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/spinner/style.css") }
-        span { ..merged, LoaderCircle {} }
+        span { ..merged, LoaderCircle { class: "dx-size-own" } }
     }
 }

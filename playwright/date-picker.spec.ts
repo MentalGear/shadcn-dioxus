@@ -48,6 +48,17 @@ async function gotoDatePicker(page: Page) {
   await gotoHydrated(page, PAGE_URL, { timeout: NAV_TIMEOUT });
 }
 
+// dev-docs/backlog.md row 380: the pickers read the date after mount, so a spec that depends on
+// "today" pins the browser clock (`Date` only, timers keep running) to a day that is never the
+// build day. A page that kept the prerendered build day would then show the wrong month.
+const FROZEN_NOW = new Date("2031-03-12T12:00:00Z");
+const FROZEN = { year: 2031, month: 3, monthName: "March", day: 12 };
+
+async function gotoDatePickerFrozen(page: Page) {
+  await page.clock.setFixedTime(FROZEN_NOW);
+  await gotoDatePicker(page);
+}
+
 function trigger(page: Page) {
   return page.getByRole("button", { name: "Show Calendar" }).first();
 }
@@ -799,9 +810,9 @@ test.describe("aria-valuenow / aria-valuetext, and the fixed dangling aria-label
     // deliberately does NOT press Home first (unlike the general Up/Down
     // test above), specifically to exercise the never-touched, first-ever
     // keypress case findings 3 and 6 are both about.
-    await gotoDatePicker(page);
+    await gotoDatePickerFrozen(page);
     const month = segment(page, "month");
-    const today = await page.evaluate(() => new Date().getMonth() + 1);
+    const today = FROZEN.month;
     expect(await month.getAttribute("aria-valuenow")).toBeNull();
 
     await month.click();
@@ -1063,7 +1074,7 @@ test.describe("Unavailable dates variant (variant=unavailable_dates)", () => {
   });
 
   test("the month the picker opens on has unavailable days, all inside that month (the demo can't go stale)", async ({ page }) => {
-    await gotoDatePicker(page);
+    await gotoDatePickerFrozen(page);
     await pickerTrigger(page, "unavailable_dates").click();
     const dialog = pickerContent(page, "unavailable_dates");
     await expect(dialog).toBeVisible();
@@ -1072,10 +1083,7 @@ test.describe("Unavailable dates variant (variant=unavailable_dates)", () => {
     const unavailable = dialog.locator('.dx-calendar-grid-cell[data-unavailable="true"]');
     await expect(unavailable).toHaveCount(8);
     const labels = await unavailable.evaluateAll((els) => els.map((el) => el.getAttribute("aria-label")));
-    const now = await page.evaluate(() => {
-      const n = new Date();
-      return { year: n.getFullYear(), month: n.toLocaleString("en-US", { month: "long" }) };
-    });
+    const now = { year: FROZEN.year, month: FROZEN.monthName };
     for (const label of labels) {
       // "Friday, May 15, 2026"
       expect(label, "an unavailable day outside the month in view").toMatch(new RegExp(`, ${now.month} \\d+, ${now.year}$`));
@@ -1117,6 +1125,23 @@ test.describe("Unavailable dates variant (variant=unavailable_dates)", () => {
   }
 });
 
+// dev-docs/backlog.md row 380: the page is prerendered on the build day, so the month and the "today"
+// mark come from the visitor's clock, read after mount (`calendar::use_today`), never while rendering.
+test.describe("Today is the visitor's date, not the build day", () => {
+  for (const [name, variant] of [["main", undefined], ["range", "range"]] as const) {
+    test(`the ${name} picker opens on the visitor's month and marks the visitor's today`, async ({ page }) => {
+      await gotoDatePickerFrozen(page);
+      await pickerTrigger(page, variant).click();
+      const dialog = pickerContent(page, variant);
+      await expect(dialog).toBeVisible();
+      await expect(dialog.locator(".dx-calendar-month-title").first()).toHaveText(`${FROZEN.monthName} ${FROZEN.year}`);
+      const today = dialog.locator('.dx-calendar-grid-cell[data-today="true"]');
+      await expect(today).toHaveCount(1);
+      await expect(today).toHaveAttribute("aria-label", new RegExp(`${FROZEN.monthName} ${FROZEN.day}, ${FROZEN.year}$`));
+    });
+  }
+});
+
 test.describe("Completing a range selection via the calendar", () => {
   // This used to hang the tab -- same root cause as, and fixed by the same
   // construction as, the segments-only guard above (dev-docs/backlog.md's
@@ -1147,7 +1172,7 @@ test.describe("Completing a range selection via the calendar", () => {
   // `set_end_date` choke point. No change was needed in `calendar.rs`,
   // `popover.rs`, or `top_layer.rs`.
   test("clicking a second, different calendar day to complete a range selection resolves, and Apply closes the popover and syncs the segments", async ({ page }) => {
-    await gotoDatePicker(page);
+    await gotoDatePickerFrozen(page);
     await pickerTrigger(page, "range").click();
     const dialog = pickerContent(page, "range");
     await expect(dialog).toBeVisible();
@@ -1160,13 +1185,8 @@ test.describe("Completing a range selection via the calendar", () => {
     await expect(dialog).toBeHidden();
     // The calendar defaults to the current month/year (days 5 and 10 of it
     // are always in view, spillover-free, regardless of which day of the
-    // month "today" actually is) -- computed rather than hardcoded, per
-    // this file's own established convention (see the aria-valuenow test
-    // above and calendar.spec.ts).
-    const today = await page.evaluate(() => {
-      const now = new Date();
-      return { year: now.getFullYear(), month: now.getMonth() + 1 };
-    });
+    // month "today" actually is), with the clock pinned to `FROZEN`.
+    const today = FROZEN;
     const yyyy = String(today.year);
     const mm = String(today.month).padStart(2, "0");
     const start = { year: rangeSegment(page, "start", "year", "range"), month: rangeSegment(page, "start", "month", "range"), day: rangeSegment(page, "start", "day", "range") };
