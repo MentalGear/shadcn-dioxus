@@ -15,7 +15,7 @@ updated: 2026-10-05
 
 ## Status / trigger
 
-**LANDED 2026-10-05 (round 3)** -- found 2026-10-04 by the border-box lane (`dev-docs/research/theme-2026-10-03/border-box.md` section 2)
+**LANDED 2026-10-05 (round 3)** -- found 2026-10-04 by the border-box lane (`dev-docs/archive/research/theme-2026-10-03/border-box.md` section 2)
 
 ## Size
 

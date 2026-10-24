@@ -12,7 +12,7 @@ use dioxus_primitives::js_listener::{use_js_listeners, JsListeners};
 use dioxus_primitives::merge_attributes;
 use dioxus_primitives::use_controlled;
 
-// docs/backlog.md row 32: `#[css_module]` is gone -- see checkbox/component.rs's
+// dev-docs/backlog.md row 32: `#[css_module]` is gone -- see checkbox/component.rs's
 // header comment for the full delivery-mechanism rationale (asset!() +
 // document::Link). This is the heaviest component on the migration: every
 // exported entry point in this file gets its own `document::Link` (dedup on
@@ -265,7 +265,7 @@ pub fn Sidebar(
     let open_mobile = ctx.open_mobile;
 
     if collapsible == SidebarCollapsible::None {
-        // axe `region` (docs/backlog.md row 38): this was a plain `<div>`
+        // axe `region` (dev-docs/backlog.md row 38): this was a plain `<div>`
         // with no landmark role at all, so its content (menu items,
         // footer) sat outside every landmark on the page -- surfaced both
         // by the block-route direct-visit case (`ComponentBlockDemo`,
@@ -341,7 +341,7 @@ pub fn Sidebar(
             "data-variant": variant.as_str(),
             "data-side": side.as_str(),
             "data-slot": "sidebar",
-            // axe `region` (docs/backlog.md row 38) -- see the identical
+            // axe `region` (dev-docs/backlog.md row 38) -- see the identical
             // comment on the `collapsible == SidebarCollapsible::None`
             // branch above; this is the desktop-expanded/-collapsed
             // branch actually rendered by both known affected call sites

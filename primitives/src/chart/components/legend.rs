@@ -66,7 +66,7 @@ pub struct ChartLegendProps {
 ///
 /// One `<li>` per configured series, each with a color swatch and its
 /// label -- shadcn's `ChartLegend`/`ChartLegendContent`
-/// (`dev-docs/research/chart-2026-09-19.md` §1.1), ported as a plain
+/// (`dev-docs/archive/research/chart-2026-09-19.md` §1.1), ported as a plain
 /// sibling of [`crate::chart::Chart`] driven by the same
 /// [`crate::chart::use_chart`] context, rather than a Recharts render-prop
 /// consumer.

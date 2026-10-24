@@ -1,7 +1,7 @@
 /**
  * ORACLE: tier 2 (HTML) -- scroll smoothness of the overview page (`/`), by COUNTS.
  *
- * Source: dev-docs/research/scroll-jank-2026-10-04.md (the investigation, `scripts/measure-scroll.mjs`
+ * Source: dev-docs/archive/research/scroll-jank-2026-10-04.md (the investigation, `scripts/measure-scroll.mjs`
  * the harness, section 5 the constructions this file guards). Rule sources, per this tier's policy of
  * citing a standard rather than an opinion:
  *   - DOM Standard, `AddEventListenerOptions.passive` ("a passive listener will never call

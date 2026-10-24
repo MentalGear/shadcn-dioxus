@@ -172,7 +172,7 @@
   --dx-toggle-group-item-border-top-width: var(--dx-toggle-group-follower-border-top-width);
 }
 
-/* docs/backlog.md row 89: same construction as `toggle/style.css`'s
+/* dev-docs/backlog.md row 89: same construction as `toggle/style.css`'s
    identical fix -- see that file's own comment for the full writeup.
    `:hover` and `[data-state="on"]` tie at (0,2,0) on top of
    `.dx-toggle-group-item`, broken only by source order today (an ON item

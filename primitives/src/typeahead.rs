@@ -2,7 +2,7 @@
 //! Menubar" pattern's menu family: [`crate::dropdown_menu`],
 //! [`crate::context_menu`] and [`crate::menubar`] (and, where the
 //! per-submenu collection already makes it free, their own
-//! [`crate::menu_sub`] submenus). `docs/backlog.md` row 11, `docs/plan.md`
+//! [`crate::menu_sub`] submenus). `dev-docs/backlog.md` row 11, `dev-docs/plan.md`
 //! Phase 6.
 //!
 //! # Rule source
@@ -28,7 +28,7 @@
 //! `Signal<Option<Task>>` clear-after-timeout task, backed by
 //! `crate::sleep::sleep` -- never its matcher: dignifiedquire's much
 //! smaller `typeahead.rs` (78 lines, plain prefix matching) is the concept
-//! ported here instead, per `docs/recommended-implementations.md` §8's own
+//! ported here instead, per `dev-docs/reference/platform-rationale.md` §8's own
 //! citation.
 //!
 //! # Construction

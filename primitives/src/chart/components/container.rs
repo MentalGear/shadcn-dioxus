@@ -48,7 +48,7 @@ pub struct ChartContainerProps {
 /// custom property for each configured series as an inline `style`
 /// attribute on its own element (so it is scoped to this subtree by CSS
 /// inheritance) -- shadcn's `ChartContainer`/`ChartStyle` mechanism
-/// (`dev-docs/research/chart-2026-09-19.md` §1.1, §6.3), ported as a
+/// (`dev-docs/archive/research/chart-2026-09-19.md` §1.1, §6.3), ported as a
 /// CSS-variable technique rather than its literal React shape (the module
 /// doc explains why the rest of the API differs from shadcn's). It is an
 /// attribute and not a generated `<style>` rule because a dynamic text

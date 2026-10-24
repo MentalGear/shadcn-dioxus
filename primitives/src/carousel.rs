@@ -2,7 +2,7 @@
 //!
 //! # Scope (v1)
 //!
-//! Built per `dev-docs/research/carousel-2026-09-19.md` and the approved
+//! Built per `dev-docs/archive/research/carousel-2026-09-19.md` and the approved
 //! decisions (2026-09-19): the APG "basic" (prev/next, no picker) style
 //! only (`carousel-1-prev-next` in the vendored reference). Deliberately
 //! **not** in v1, each filed as a fast-follow rather than a silent gap:
@@ -31,7 +31,7 @@
 //! element's own scroll position). No manual RTL sign-flip step is needed
 //! either: `getBoundingClientRect`/`scrollBy`'s delta are both physical
 //! (per research §2.2's RTL paragraph and
-//! `dev-docs/research/carousel-overscroll-2026-09-23.md` §6 invariant 1),
+//! `dev-docs/archive/research/carousel-overscroll-2026-09-23.md` §6 invariant 1),
 //! so "the next slide" resolving to the correct physical position under
 //! `dir="rtl"` falls out of the same physical-delta construction the drag
 //! gesture below already uses, rather than needing its own. A second,
@@ -58,7 +58,7 @@
 //!
 //! # Accessibility
 //!
-//! Follows `dev-docs/research/carousel-2026-09-19.md` §1.2/§5.2's account
+//! Follows `dev-docs/archive/research/carousel-2026-09-19.md` §1.2/§5.2's account
 //! of the APG Carousel pattern's basic style: [`Carousel`] is
 //! `role="region"` + `aria-roledescription="carousel"` with a **required**
 //! accessible name (a `tracing::warn!` when neither `aria-label` nor
@@ -517,13 +517,13 @@ fn prev_selected(selected: usize) -> usize {
 }
 
 /// The index one step back from `selected`, honoring `loop_enabled` --
-/// approved fast-follow decision (backlog row 91, `dev-docs/research/carousel-2026-09-19.md`
+/// approved fast-follow decision (backlog row 91, `dev-docs/archive/research/carousel-2026-09-19.md`
 /// §8.2): **rewind-style** looping. From the first slide, wraps to the
 /// last (`count - 1`) rather than saturating; the actual scroll is still a
 /// single [`CAROUSEL_SCROLL_TO_JS`] paging call to that far index
 /// (a visible "rewind" across every intervening slide), not an
 /// embla-style cloned-node illusion -- clones would violate the overscroll
-/// port's own invariant 5 (`dev-docs/research/carousel-overscroll-2026-09-23.md`
+/// port's own invariant 5 (`dev-docs/archive/research/carousel-overscroll-2026-09-23.md`
 /// §6): they would enter the snap engine's own candidate list, the "N of
 /// M" slide count, and `:nth-child` styling. Falls back to
 /// [`prev_selected`]'s ordinary saturating behavior when `loop_enabled` is
@@ -577,7 +577,7 @@ fn shortest_signed_delta(old: usize, new: usize, count: usize) -> isize {
 /// `"{one-based index} of {count}"`. APG's own sanctioned exception to
 /// "don't encode position/size in an accessible name" -- `role="group"`
 /// supports neither `aria-setsize` nor `aria-posinset`
-/// (dev-docs/research/carousel-2026-09-19.md §1.2).
+/// (dev-docs/archive/research/carousel-2026-09-19.md §1.2).
 fn slide_label(index: usize, count: usize) -> String {
     format!("{} of {}", index + 1, count)
 }
@@ -738,7 +738,7 @@ macro_rules! carousel_trace_js {
 ///
 /// The delta is a `getBoundingClientRect()` difference -- a physical
 /// pixel value -- so, per invariant 1 of
-/// `dev-docs/research/carousel-overscroll-2026-09-23.md` §6, it needs no
+/// `dev-docs/archive/research/carousel-overscroll-2026-09-23.md` §6, it needs no
 /// RTL sign-flip: `scrollBy`'s delta is always physical, the same
 /// property this module's own drag gesture (`CAROUSEL_DRAG_JS`'s
 /// `feedOverdrag`) already relies on for its own `scrollBy` calls. The
@@ -921,7 +921,7 @@ const CAROUSEL_SCROLL_TO_JS: &str = concat!(carousel_trace_js!(), "\
 /// crate never drove via [`CAROUSEL_SCROLL_TO_JS`] itself.
 ///
 /// Deliberately not an `IntersectionObserver` (the shape
-/// `dev-docs/research/carousel-2026-09-19.md` §2.2 sketches as the
+/// `dev-docs/archive/research/carousel-2026-09-19.md` §2.2 sketches as the
 /// primary mechanism): that needs live per-item intersection-ratio
 /// bookkeeping and threshold tuning to avoid mid-animation flicker
 /// between two partially-visible neighbors. Settling once, on
@@ -932,7 +932,7 @@ const CAROUSEL_SCROLL_TO_JS: &str = concat!(carousel_trace_js!(), "\
 /// simpler, fires exactly once per gesture (no flicker to begin with),
 /// and is still zero-JS-dependency, feature-detected, degrade-not-break,
 /// matching this repo's own platform-features-first posture
-/// (`dev-docs/recommended-implementations.md`'s `<dialog>` finding).
+/// (`dev-docs/reference/platform-rationale.md`'s `<dialog>` finding).
 /// **"Once" means once the browser is truly idle, not on the first
 /// `scrollend`.** The settle waits on this bridge's browser-idle gate: the
 /// latest scroll has ended AND no wheel/touch input for
@@ -951,7 +951,7 @@ const CAROUSEL_SCROLL_TO_JS: &str = concat!(carousel_trace_js!(), "\
 /// One read (`getBoundingClientRect`, of the container and every slide)
 /// followed by nothing but a `dioxus.send` -- no DOM write at all in this
 /// callback -- so there is no read-then-write-layout main-thread hazard
-/// (`dev-docs/recommended-implementations.md` §11 Rule 1) to begin with.
+/// (`dev-docs/reference/platform-rationale.md` §11 Rule 1) to begin with.
 /// Both listeners are `passive: true` (§11 Rule 2).
 const CAROUSEL_SCROLL_TRACKING_JS: &str = concat!(carousel_true_end_js!(), carousel_trace_js!(), "\
     const [id, orientation, align, inputQuietMs, virtualWindow] = await dioxus.recv();
@@ -977,7 +977,7 @@ const CAROUSEL_SCROLL_TRACKING_JS: &str = concat!(carousel_true_end_js!(), carou
     let lastVisStart = null;
     let lastVisEnd = null;
     const settle = () => {
-        // Freeze rule (loop-a11y-guidance.md §7 / carousel-overscroll-2026-09-23.md
+        // Freeze rule (dev-docs/archive/research/carousel-loop-2026-09-25/loop-a11y-guidance.md §7 / dev-docs/archive/research/carousel-overscroll-2026-09-23.md
         // §6): a live mouse/pen drag (`CAROUSEL_DRAG_JS`) fires its own
         // 'scroll'/'scrollend' on every single incremental `scrollBy` it
         // issues -- confirmed live (`CAROUSEL_SCROLL_TO_JS`'s own doc,
@@ -1060,7 +1060,7 @@ const CAROUSEL_SCROLL_TRACKING_JS: &str = concat!(carousel_true_end_js!(), carou
         // never the child's own array position `i`. A bench regression
         // this generalises against: a single leading non-slide DOM child
         // sent an index-position-based version of this exact search into
-        // a runaway (`dev-docs/research/carousel-loop-2026-09-25/loop-libraries.md`).
+        // a runaway (`dev-docs/archive/research/carousel-loop-2026-09-25/loop-libraries.md`).
         let visStart = null;
         let visEnd = null;
         children.forEach((child) => {
@@ -1566,7 +1566,7 @@ const CAROUSEL_DRAG_JS: &str = concat!(carousel_true_end_js!(), carousel_trace_j
     let cancelPendingSnapRestore = null;
 
     // -- Edge rubber-band (mode B3, port of the closed design in
-    // dev-docs/research/carousel-overscroll-2026-09-23.md; the eight
+    // dev-docs/archive/research/carousel-overscroll-2026-09-23.md; the eight
     // numbered invariants below are that doc's own §6) --
     //
     // A mouse/pen drag has no native scrolling behind it, so THE RULE
@@ -2125,7 +2125,7 @@ fn use_carousel_drag(
 /// obey different rules and must not share a JS closure that could let one's
 /// state leak into the other's: a mouse/pen drag has no native scrolling
 /// behind it, so [`CAROUSEL_DRAG_JS`] may keep issuing `scrollBy` (THE RULE,
-/// dev-docs/research/carousel-overscroll-2026-09-23.md §3), while a
+/// dev-docs/archive/research/carousel-overscroll-2026-09-23.md §3), while a
 /// wheel/trackpad gesture on this same element has a compositor and a snap
 /// engine also trying to write its scroll position, so this script may
 /// **never** call `scrollBy`, `scrollLeft`/`scrollTop`, `preventDefault`, or
@@ -2798,8 +2798,8 @@ struct CarouselContext {
     tablist_present: Signal<bool>,
     /// `[start, end]` (inclusive) item indices actually inside
     /// [`CarouselContent`]'s own viewport *at rest* -- the a11y contract's
-    /// own "visible" set (`dev-docs/research/carousel-loop-2026-09-25/loop-a11y-guidance.md`
-    /// §7, `loop-libraries.md`'s cross-library convergence table).
+    /// own "visible" set (`dev-docs/archive/research/carousel-loop-2026-09-25/loop-a11y-guidance.md`
+    /// §7, `dev-docs/archive/research/carousel-loop-2026-09-25/loop-libraries.md`'s cross-library convergence table).
     /// Defaults to `(0, 0)` -- deterministic across SSR and a client's own
     /// pre-hydration first render, matching [`Self::selected`]'s own
     /// forced-`0`-until-registration value (see [`CarouselItem`]'s own
@@ -2932,7 +2932,7 @@ fn use_nav_focus_hand_off(
 /// tabbed reference's own accessibility-features prose
 /// (`examples/carousel-2-tablist.html`, "Controlling Automatic Slide
 /// Rotation"), not the basic reference's own JS (which has a documented
-/// latch bug on this exact point, `dev-docs/research/carousel-2026-09-19.md`
+/// latch bug on this exact point, `dev-docs/archive/research/carousel-2026-09-19.md`
 /// §1.3 point 3 -- deliberately not ported):
 ///
 /// - **Hover** clears freely: `hover` going back to `false` alone can make
@@ -3027,7 +3027,7 @@ pub struct CarouselProps {
     /// -- there is no wrap on a drag/wheel gesture, only on Previous/Next/
     /// the root keyboard. Defaults to `false` (matches shadcn's own
     /// `opts={{ loop: false }}` default). Approved fast-follow decision,
-    /// backlog row 91 / `dev-docs/research/carousel-2026-09-19.md` §8.2.
+    /// backlog row 91 / `dev-docs/archive/research/carousel-2026-09-19.md` §8.2.
     #[props(default)]
     pub r#loop: ReadSignal<bool>,
 
@@ -3110,7 +3110,7 @@ pub struct CarouselProps {
 /// `aria-label`/`aria-labelledby` in `attributes`) -- a
 /// `tracing::warn!` fires when neither is supplied, since the pattern
 /// requires one and shadcn's own reference component leaves this gap
-/// entirely undocumented (`dev-docs/research/carousel-2026-09-19.md`
+/// entirely undocumented (`dev-docs/archive/research/carousel-2026-09-19.md`
 /// §1.4).
 ///
 /// ## Tab order
@@ -3393,7 +3393,7 @@ pub fn Carousel(props: CarouselProps) -> Element {
         ));
     });
 
-    // Focus safety (module doc §3 / `loop-a11y-guidance.md` §7's "Focus
+    // Focus safety (module doc §3 / `dev-docs/archive/research/carousel-loop-2026-09-25/loop-a11y-guidance.md` §7's "Focus
     // handling on rotation"): whenever `selected` changes, the slide that
     // was current a moment ago is about to (or, since the DOM patch that
     // sets its `inert` attribute is already applied by the time this
@@ -3689,7 +3689,7 @@ fn snap_type_value(orientation: CarouselOrientation, drag_free: bool) -> &'stati
 /// This gesture reads pointer state maintained entirely on the JS side
 /// (see `CAROUSEL_DRAG_JS`'s own doc) and writes only a scroll position
 /// per pointer move -- never a synchronous layout *read* in the same
-/// handler (`dev-docs/recommended-implementations.md` §11 Rule 1); the one
+/// handler (`dev-docs/reference/platform-rationale.md` §11 Rule 1); the one
 /// read this construction needs (the container's own starting scroll
 /// offset) is implicit in `scrollBy`'s own *relative* delta, so it is
 /// never taken at all, on either side of the bridge. `endDrag` itself does
@@ -3759,7 +3759,7 @@ fn snap_type_value(orientation: CarouselOrientation, drag_free: bool) -> &'stati
 ///
 /// Dragging (mouse/pen) or scrolling (wheel/trackpad) past either end now
 /// produces a damped elastic bounce, ported from a closed design (five
-/// mechanisms benched side by side, `dev-docs/research/carousel-overscroll-2026-09-23.md`,
+/// mechanisms benched side by side, `dev-docs/archive/research/carousel-overscroll-2026-09-23.md`,
 /// `dev-docs/backlog.md` row 102) rather than reimplemented from scratch
 /// here. The full mechanism, its measurements, and the eight binding port
 /// invariants live in that doc's §3-§6; this section records only the
@@ -3808,7 +3808,7 @@ fn snap_type_value(orientation: CarouselOrientation, drag_free: bool) -> &'stati
 /// untouched; this is what dissolves that problem rather than working
 /// around it (research doc §5).
 ///
-/// **Correction, filed [2026-09-25](../../dev-docs/research/carousel-overscroll-2026-09-23.md):
+/// **Correction, filed [2026-09-25](../../dev-docs/archive/research/carousel-overscroll-2026-09-23.md):
 /// this element does *not* self-clip a translated overdrag, and an earlier
 /// version of this doc claimed it did.** An element's own `overflow`
 /// clips relative to *its own* box, and a `transform` moves that box (and
@@ -4077,7 +4077,7 @@ pub fn CarouselContent(props: CarouselContentProps) -> Element {
     // variant/test). `"off"` while rotating (so a screen reader is not
     // interrupted every few seconds), `"polite"` once stopped (so
     // activating a tab/pressing Previous/Next while stopped is announced)
-    // -- `dev-docs/research/carousel-2026-09-19.md` §1.2/§1.3 point 2:
+    // -- `dev-docs/archive/research/carousel-2026-09-19.md` §1.2/§1.3 point 2:
     // deliberately no `aria-atomic`, matching the tested reference rather
     // than its own (self-contradicting) prose.
     let aria_live = (ctx.autoplay.present)().then(|| {
@@ -4222,9 +4222,9 @@ pub struct CarouselItemProps {
 /// ## Visible slides / `inert`
 ///
 /// Every [`CarouselItem`] the a11y contract's own "visible" set does not
-/// include (`dev-docs/research/carousel-loop-2026-09-25/loop-a11y-guidance.md`
+/// include (`dev-docs/archive/research/carousel-loop-2026-09-25/loop-a11y-guidance.md`
 /// §7, cross-checked against every a11y-layer-having carousel library's
-/// own converged construction in `loop-libraries.md`) renders `inert` --
+/// own converged construction in `dev-docs/archive/research/carousel-loop-2026-09-25/loop-libraries.md`) renders `inert` --
 /// removed from both the Tab order and the accessibility tree in one
 /// attribute, the Chrome "make accessible carousels" recipe's own
 /// mechanism. "Visible" is the current slide (always, regardless of the
@@ -4259,7 +4259,7 @@ pub struct CarouselItemProps {
 /// `scrollend` (or the debounced-`scroll` fallback) or a `ResizeObserver`
 /// firing, explicitly skipped for as long as `data-dragging` is set -- never
 /// mid-drag, mid-momentum, or mid-smooth-page (the same rule
-/// `dev-docs/research/carousel-overscroll-2026-09-23.md` §3/§6 already
+/// `dev-docs/archive/research/carousel-overscroll-2026-09-23.md` §3/§6 already
 /// binds every other scroll-position write in this module to). A drag's own
 /// release settle reaches this only indirectly: `data-dragging` is removed
 /// before `endDrag`'s own settle `scrollBy` runs, so the resulting native
@@ -4348,7 +4348,7 @@ pub fn CarouselItem(props: CarouselItemProps) -> Element {
     // (`<div ... role="tabpanel" aria-roledescription="slide" ...>`),
     // contradicting the pattern page's own (unfollowed) prose that a
     // tabpanel "does not have the aria-roledescription property" --
-    // `dev-docs/research/carousel-2026-09-19.md` §1.3 point 1 already
+    // `dev-docs/archive/research/carousel-2026-09-19.md` §1.3 point 1 already
     // recommends following the tested example over the abstract prose.
     let role = if (ctx.tablist_present)() {
         "tabpanel"
@@ -4605,7 +4605,7 @@ pub struct CarouselVirtualContentProps<T: Clone + PartialEq + 'static> {
 ///
 /// **Deviation from the bench's own microtask-timed correction, recorded
 /// rather than silently substituted:** the bench prototype
-/// (`dev-docs/research/carousel-overscroll-bench.html`, `seamlessLoop()`)
+/// (`playwright/fixtures/carousel-overscroll-bench-rev40.html`, `seamlessLoop()`)
 /// runs this same re-alignment from a `MutationObserver` callback -- a
 /// microtask, guaranteed to run before the browser paints the DOM patch
 /// that triggered it. This component instead runs it from a plain
@@ -5242,7 +5242,7 @@ pub fn use_carousel() -> CarouselApi {
 
 /// One-shot: reads `window.matchMedia('(prefers-reduced-motion: reduce)').matches`
 /// and reports it back. The one required JS read even under this module's
-/// "almost no JS" posture (`dev-docs/research/carousel-2026-09-19.md` §5.2)
+/// "almost no JS" posture (`dev-docs/archive/research/carousel-2026-09-19.md` §5.2)
 /// that has to be observed from the *Rust* side rather than only ever
 /// branched on inside a script -- [`CarouselAutoplay`] needs the answer to
 /// decide whether to start its own timer at all, a decision that lives in
@@ -5289,7 +5289,7 @@ pub struct CarouselAutoplayProps {
     /// Whether this carousel should start rotating on mount at all --
     /// before the one-shot `prefers-reduced-motion` check below, which
     /// always forces it off regardless of this value (APG's own reference
-    /// does the same: `dev-docs/research/carousel-2026-09-19.md` §1.3
+    /// does the same: `dev-docs/archive/research/carousel-2026-09-19.md` §1.3
     /// point 4). Defaults to `true`, matching `embla-carousel-autoplay`'s
     /// own default of starting immediately.
     #[props(default = ReadSignal::new(Signal::new(true)))]
@@ -5460,7 +5460,7 @@ pub struct CarouselRotationControlProps {
 /// rotation on and off. Accessible name toggles between `"Start automatic
 /// slide show"`/`"Stop automatic slide show"` (overridable) -- deliberately
 /// **no** `aria-pressed`: the changing label itself is the state (APG's
-/// own explicit rotation-control contract, `dev-docs/research/carousel-2026-09-19.md`
+/// own explicit rotation-control contract, `dev-docs/archive/research/carousel-2026-09-19.md`
 /// §1.2/§1.3). Activating it never moves focus (native `<button>`
 /// semantics), so a user can toggle rotation repeatedly without losing
 /// their place.
@@ -5523,7 +5523,7 @@ pub fn CarouselRotationControl(props: CarouselRotationControlProps) -> Element {
             // narrowly-scoped exemption, NOT the vendored reference's own
             // broader "ignore hover/focus once explicitly started" quirk
             // (this module's own doc already declines to port that class
-            // of behavior, `dev-docs/research/carousel-2026-09-19.md` §1.3
+            // of behavior, `dev-docs/archive/research/carousel-2026-09-19.md` §1.3
             // point 3): a mouse click on this very button moves DOM focus
             // onto it (standard Chromium `<button>` behavior), and without
             // this, `focus_within` would immediately re-pause the very
@@ -5636,7 +5636,7 @@ pub fn CarouselIndicators(props: CarouselIndicatorsProps) -> Element {
 
     let has_name = has_own_accessible_name(&props.attributes);
     // "Choose slide to display" -- this crate's own design sketch's
-    // suggested name (`dev-docs/research/carousel-2026-09-19.md` §5.4);
+    // suggested name (`dev-docs/archive/research/carousel-2026-09-19.md` §5.4);
     // the vendored reference itself uses the shorter `aria-label="Slides"`
     // (`examples/carousel-2-tablist.html`) -- APG requires *a* meaningful
     // name, not this exact string, so either is conformant; overridable
@@ -6300,7 +6300,7 @@ mod ssr_tests {
         // `selected` (forced to `0`) nor inside `visible_range` (forced to
         // `(0, 0)`) on this same first render, so both must be `inert`
         // -- the a11y contract's "only visible slides are reachable"
-        // (`dev-docs/research/carousel-loop-2026-09-25/loop-a11y-guidance.md`
+        // (`dev-docs/archive/research/carousel-loop-2026-09-25/loop-a11y-guidance.md`
         // §7) already holding before a single effect has run, not
         // merely once the client catches up.
         let html = render(ThreeSlideCarousel);

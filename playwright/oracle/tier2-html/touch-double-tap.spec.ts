@@ -29,7 +29,7 @@
  *   - APP LAYER (`preview/assets/main.css`): one `!important` rule
  *     covering every interactive element/role this app renders, as a
  *     catch-all for raw elements (`top_layer`'s/`form`'s
- *     `dioxus_primitives::` fixtures — docs/preview-composition.md — and
+ *     `dioxus_primitives::` fixtures — dev-docs/preview-composition.md — and
  *     any future raw control added anywhere in `preview/`).
  *   - COMPONENT LAYER (`preview/src/components/<name>/style.css`): the same
  *     property, unconditionally, on every themed component's own
@@ -64,12 +64,12 @@
  * separate, pre-existing a11y defect (unreachable by keyboard), not a
  * gap unique to this rule.
  *
- * Calibration (docs/conformance-harness.md, "Calibration"): the first test
+ * Calibration (dev-docs/conformance-harness.md, "Calibration"): the first test
  * below asserts the iPhone 13 emulation this file relies on actually
  * yields `(pointer: coarse)` -- identical calibration to
  * `touch-focus-zoom.spec.ts`'s own first test (both files rely on the same
  * Chromium mobile-emulation environment; WebKit itself is not available
- * locally -- docs/backlog.md row 4).
+ * locally -- dev-docs/backlog.md row 4).
  *
  * RED-BEFORE-FIX EVIDENCE (captured this session by reverting
  * `preview/assets/main.css` and every `preview/src/components/<name>/style.css`
@@ -110,7 +110,7 @@ import { demoRole } from "../../demo-frame";
 // descriptor on Chromium (this repo's local lanes ship no WebKit project).
 // The rule under test is about the computed `touch-action` value, which
 // Chromium reproduces faithfully; only the underlying gesture itself needs
-// real Mobile Safari to observe directly (docs/backlog.md row 4).
+// real Mobile Safari to observe directly (dev-docs/backlog.md row 4).
 test.use({ ...devices["iPhone 13"], defaultBrowserType: "chromium" });
 
 const BASE = BASE_URL;

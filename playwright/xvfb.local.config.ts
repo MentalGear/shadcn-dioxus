@@ -5,7 +5,7 @@ import { sandboxLaunchOptions } from "./sandbox-chromium.cjs";
 //
 // This repo's default headless Chromium renders 0-width overlay scrollbars
 // even for a genuinely tall, scrollable page (see
-// docs/phase4-spike-findings.md, "Round 2 -- solved by construction",
+// dev-docs/archive/research/phase4-spike-findings.md, "Round 2 -- solved by construction",
 // Construction A/C) -- so the scroll-lock scrollbar-gap regression is
 // invisible to a normal headless run. Running headed Chromium (`headless:
 // false`) under `xvfb-run` (a virtual X server) makes Chromium render a real,

@@ -13,7 +13,7 @@
 // wrap -- it is a fixture composing *other* components, so the rule applies
 // to it exactly as it does to a variant demo. `scripts/check-preview-
 // composition.sh` enforces this over `preview/src`; see
-// `docs/preview-composition.md` for the full rule and rationale.
+// `dev-docs/preview-composition.md` for the full rule and rationale.
 //
 // Two confirmed incidents of violating it, both by construction (execution-
 // verified, not just plausible):
@@ -151,7 +151,7 @@ fn fruit_label(value: String) -> String {
 
 /// Builds JS that reads `new FormData(form)` and writes one `name=value` line
 /// per entry, in insertion order, into the result element -- this is the
-/// tier 2 (HTML) entry-list rule from `docs/conformance-harness.md`, read
+/// tier 2 (HTML) entry-list rule from `dev-docs/conformance-harness.md`, read
 /// straight from the browser's own algorithm rather than through any
 /// Dioxus-side approximation of it. A `data-submit-count` bump lets
 /// Playwright await the update deterministically.
@@ -229,7 +229,7 @@ fn watch_invalid_js(form_id: &str, report_id: &str) -> String {
         const report = document.getElementById('{report_id}');
         if (form && report) {{
             // `[class*="dx-form-field"]` rather than `.dx-form-field`: this is
-            // deliberately loose (docs/backlog.md row 32 dropped `#[css_module]`'s
+            // deliberately loose (dev-docs/backlog.md row 32 dropped `#[css_module]`'s
             // hashing, so the rendered class is now the plain `dx-form-field`
             // literal and an exact selector would work too), kept this way so it
             // keeps matching regardless of any extra classes a future edit appends
@@ -355,11 +355,11 @@ fn watch_invalid_js(form_id: &str, report_id: &str) -> String {
 
 /// A real `<form>` fixture pairing this library's form controls with native
 /// reference controls, for the tier 2 (HTML) rule checklist in
-/// `docs/conformance-harness.md`.
+/// `dev-docs/conformance-harness.md`.
 ///
 /// `RadioGroup` and `Select` currently document `name` (and `RadioGroup`
 /// also documents `required`) without rendering a submittable element for
-/// either -- see `docs/plan.md` Phase 1. This fixture sets those props per
+/// either -- see `dev-docs/plan.md` Phase 1. This fixture sets those props per
 /// their documented API anyway, so it fails today and passes once Phase 1
 /// lands.
 #[component]
@@ -430,7 +430,7 @@ pub fn FormFixture() -> Element {
                                 // default the HTML reset algorithm reads is set by
                                 // `use_default_checked("chk-native", ..)` above, so this reference
                                 // control restores on <form> reset like a plain static
-                                // `<input checked>` would. See docs/conformance-harness.md rule 6.
+                                // `<input checked>` would. See dev-docs/conformance-harness.md rule 6.
                                 checked: true,
                             }
                         }
@@ -880,7 +880,7 @@ mod tests {
 
         let tag = tag_containing(&html, "id=\"switch-lib\"");
         let class = attr_value(tag, "class");
-        // docs/backlog.md row 32: this used to look for a `dx-switch-<hash>`
+        // dev-docs/backlog.md row 32: this used to look for a `dx-switch-<hash>`
         // token, because `#[css_module]` appended a scope hash to every class.
         // With the hashing dropped the themed class is the plain `dx-switch`,
         // so the old prefix match (`starts_with("dx-switch-")`, note the

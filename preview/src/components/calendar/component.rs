@@ -270,7 +270,7 @@ pub fn RangeCalendar(props: RangeCalendarProps) -> Element {
     }
 }
 
-// docs/backlog.md row 51: the stylesheet `Link` lives HERE, on the
+// dev-docs/backlog.md row 51: the stylesheet `Link` lives HERE, on the
 // `pub(crate)` root each of this module's real entry points funnels
 // through, not on `Calendar`/`RangeCalendar` above -- `date_picker`
 // (`../date_picker/component.rs`) composes `CalendarRoot`/

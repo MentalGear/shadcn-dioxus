@@ -1,7 +1,7 @@
 /* This file contains the theme variables for the styled dioxus-components components. You only
  * need to import this file once in your project root.
  *
- * Color-contrast rule (docs/backlog.md row 39): every text/background
+ * Color-contrast rule (dev-docs/backlog.md row 39): every text/background
  * color-token pair defined in this file must resolve to >= 4.5:1 (WCAG AA,
  * normal text). This is checked by execution, not by hand math here -- the
  * axe `color-contrast` rule run across every preview route
@@ -109,7 +109,7 @@ html[data-theme="light"] [class~="dxc-system"] {
  * duplicate changes no cascade. */
 :root {
   /* ==========================================================================
-   * Semantic role tokens (docs/backlog.md row 111).
+   * Semantic role tokens (dev-docs/backlog.md row 111).
    *
    * shadcn's theme is a set of ROLES (background, card, popover, primary,
    * muted, accent, border, ...), not a numbered ramp. This is the role layer,
@@ -119,7 +119,7 @@ html[data-theme="light"] [class~="dxc-system"] {
    * its own literal (backlog row 373), so a role's default is written once,
    * here, and is shadcn's Neutral value unless a comment says why not.
    * Component sites read these roles
-   * (dev-docs/research/theme-2026-10-03/{role-token-map.md,sites.tsv}).
+   * (dev-docs/archive/research/theme-2026-10-03/{dev-docs/archive/research/theme-2026-10-03/role-token-map.md,dev-docs/archive/research/theme-2026-10-03/sites.tsv}).
    *
    * Naming: `--dx-<role>`, where <role> is shadcn's own name. Each one reads
    * the bare shadcn variable first and falls back to the default:
@@ -143,7 +143,7 @@ html[data-theme="light"] [class~="dxc-system"] {
    * `--dx-border-strong` and the status roles (`-subtle`, success/warning/info)
    * are NOT shadcn roles and have no shadcn fallback. The phase-A `-alt` /
    * `-alt-2` variants were review markers; phase B moved every site onto a
-   * base role and deleted them (see dev-docs/research/theme-2026-10-03/).
+   * base role and deleted them (see dev-docs/archive/research/theme-2026-10-03/).
    * ========================================================================== */
 
   /* Page and surfaces. Dark is shadcn's own surface ladder (phase C, option C; shadcn-ui/ui@295a1f1
@@ -226,7 +226,7 @@ html[data-theme="light"] [class~="dxc-system"] {
    * `#f5f5f5` 5.9, 10% tint on white 5.4, 20% tint on white 4.51, 10% tint on `#f5f5f5` 5.0. The old 0.55 gave
    * only 4.395:1 on the 10% tint once `--dx-destructive` became the redder #e40014, so the bound
    * is re-derived from that list, not from the plain surfaces. Dark: 5.0 to 6.9:1 on background, card,
-   * popover, muted, accent (dev-docs/research/phase-c-plan-2026-10-13.md and
+   * popover, muted, accent (dev-docs/archive/rounds/phase-c-plan-2026-10-13.md and
    * playwright/dark-surface-contrast.spec.ts). Guards: playwright/menu-item-parts.spec.ts, bubble,
    * attachment, theme-preset-contrast. Text must read this, never `--dx-destructive`:
    * scripts/check-destructive-text.sh. Fills, borders and rings keep `--dx-destructive` (and
@@ -339,7 +339,7 @@ html[data-theme="light"] [class~="dxc-system"] {
    * a rule that resolves `calc(var(--dx-radius) * k)` at the default base. */
   --dx-radius: var(--radius, 0.625rem);
 
-  /* Type scale (docs/backlog.md row 31a). Grounded in the `font-size`
+  /* Type scale (dev-docs/backlog.md row 31a). Grounded in the `font-size`
    * literals already used across the 46 themed components' `style.css` +
    * `preview/assets/*.css` (session report has the full value -> frequency
    * survey). Converted to px, the values cluster tightly around the eight
@@ -538,7 +538,7 @@ html[data-theme="light"] [class~="dxc-system"] {
   --dx-z-chrome-raised: 1200;
   --dx-z-top: 9999;             /* toast, top_layer's absolute ceiling */
 
-  /* Chart categorical palette (dev-docs/research/chart-2026-09-19.md §6.3,
+  /* Chart categorical palette (dev-docs/archive/research/chart-2026-09-19.md §6.3,
    * $S/chart-api.md "Tokens"). This repo's first component that needs
    * distinguishable series hues -- no prior token set to reuse. Validated
    * with the `dataviz` skill's own `validate_palette.js` against this
@@ -687,7 +687,7 @@ html[data-theme="light"] [class~="dxc-system"] {
 }
 
 /* ============================================================================
- * Coarse sizing: touch sizes, one switch (docs/backlog.md rows 291, 349).
+ * Coarse sizing: touch sizes, one switch (dev-docs/backlog.md rows 291, 349).
  *
  * A finger needs ~44px (Apple HIG; WCAG 2.5.5 AAA is 44 CSS px, 2.5.8 AA's 24px is a floor) and
  * iOS auto-zooms a focused text field under 16px, while Nova's dense desktop sizes (a ~28px menu
@@ -716,7 +716,7 @@ html[data-theme="light"] [class~="dxc-system"] {
  * Apps retune one size by redeclaring it (`--dx-menu-item-min-height`, ...), after this sheet.
  *
  * The sizes:
- *  - menus and option lists (docs/backlog.md row 291): `--dx-menu-item-min-height` /
+ *  - menus and option lists (dev-docs/backlog.md row 291): `--dx-menu-item-min-height` /
  *    `-font-size` / `-padding-inline` (a row of a menu, listbox or command palette: rows centre
  *    their content, so a taller row needs no padding of its own) and `--dx-menu-trigger-min-height`
  *    / `-padding` (an entry in a menu BAR: menubar, navbar, navigation-menu triggers);
@@ -902,7 +902,7 @@ html[data-theme="light"] [class~="dxc-system"] {
 }
 
 /* ============================================================================
- * Box model (docs/backlog.md row 111, phase A).
+ * Box model (dev-docs/backlog.md row 111, phase A).
  *
  * Every element we ship is `box-sizing: border-box`, so a `width`/`height`/
  * `min-*`/`max-*`/`flex-basis` means the box the user sees (padding and border
@@ -942,7 +942,7 @@ html[data-theme="light"] [class~="dxc-system"] {
 }
 
 /* ============================================================================
- * Touch: no double-tap-to-zoom on a control (docs/backlog.md row 145, lane T).
+ * Touch: no double-tap-to-zoom on a control (dev-docs/backlog.md row 145, lane T).
  *
  * `touch-action: manipulation` lets a touch pan and pinch-zoom but not double-tap-zoom
  * (https://w3c.github.io/pointerevents/#the-touch-action-css-property). iOS Safari otherwise waits on
@@ -1009,7 +1009,7 @@ html[data-theme="light"] [class~="dxc-system"] {
 
 /* ============================================================================
  * Controls are not text: a press, a double-tap or a drag that starts on one never selects its label
- * (docs/backlog.md row 229, the owner's review: "interactive elements like btns etc. should not allow
+ * (dev-docs/backlog.md row 229, the owner's review: "interactive elements like btns etc. should not allow
  * user text selection").
  *
  * Before this rule only the parts that had remembered to say so were unselectable (menu items, select
@@ -1134,7 +1134,7 @@ html[data-theme="light"] [class~="dxc-system"] {
 }
 
 /* ============================================================================
- * Popup root: a popup is not a child of whatever holds its trigger (docs/backlog.md row 218, 259).
+ * Popup root: a popup is not a child of whatever holds its trigger (dev-docs/backlog.md row 218, 259).
  *
  * A popover or dialog is painted in the top layer but stays a DOM descendant of its trigger, and
  * painting is all the top layer changes: every INHERITED property still flows from the host into the
@@ -1274,13 +1274,13 @@ html[data-theme="light"] [class~="dxc-system"] {
 }
 
 /* ============================================================================
- * Component root: an in-flow component is not a child of whatever holds it (docs/backlog.md row 328).
+ * Component root: an in-flow component is not a child of whatever holds it (dev-docs/backlog.md row 328).
  *
  * The in-flow twin of "Popup root" above. A component sits inside a card footer, a muted or centred
  * block, a table cell, a `white-space: nowrap` toolbar or a prose column, and every INHERITED property
  * still flows from that host into the component's text: a `line-height: 3` host re-spaced 382 leaf
  * boxes in 27 components, a `font-weight: 800` host re-weighted 395 in 38 (hostile-host probe,
- * dev-docs/research/typography-hostile-host-probe.spec.ts.txt, ddd9d057). The first answer was a
+ * dev-docs/archive/research/typography-hostile-host-probe.spec.ts.txt, ddd9d057). The first answer was a
  * per-root gate demanding that each stylesheet declare its root's size and line height
  * (check-declared-typography, a baseline of 83 rows); this is the same fix by construction, once:
  * every component's namesake root carries `data-dx-root` (written by the component in
@@ -1377,7 +1377,7 @@ html[data-theme="light"] [class~="dxc-system"] {
 }
 
 /* ============================================================================
- * Press feedback: a pressed control answers the finger (docs/backlog.md row 205).
+ * Press feedback: a pressed control answers the finger (dev-docs/backlog.md row 205).
  *
  * Touch has no hover, so the only acknowledgement a tap gets is the press itself. One
  * zero-specificity rule gives every `dx-` control a small `scale` and a wash while it is
@@ -1507,7 +1507,7 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
 }
 
 /* ============================================================================
- * Floating surfaces, once (docs/backlog.md row 145, lane F).
+ * Floating surfaces, once (dev-docs/backlog.md row 145, lane F).
  *
  * Twelve components draw a panel that floats over the page: Popover, Select, Combobox, Dropdown
  * Menu, Context Menu, Menubar, Navbar, Navigation Menu, Hover Card, Tooltip, Color Picker and the
@@ -1533,7 +1533,7 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
  * `margin`, `inset`), the base `opacity`/`pointer-events` its renderer toggles, and anything that is
  * really its own (Navbar and Navigation Menu keep their directional slide). The two things that
  * differ per panel and used to be re-declared as properties are SLOT VARIABLES, so no sheet contests
- * another's `padding` or `animation` (docs/backlog.md row 170):
+ * another's `padding` or `animation` (dev-docs/backlog.md row 170):
  *
  *   --dx-floating-padding   the panel's `padding` (default `--dx-space-1`; Popover 2.5, Hover Card 2.5,
  *                           Tooltip 2/3, Date Picker 0)
@@ -1762,7 +1762,7 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
   font-weight: 500;
 }
 
-/* Menu item parts (docs/backlog.md row 155 group 2, hoisted by g2): separator, shortcut,
+/* Menu item parts (dev-docs/backlog.md row 155 group 2, hoisted by g2): separator, shortcut,
  * `variant="destructive"` and `inset`, mirroring shadcn Nova's `.cn-dropdown-menu-separator`
  * (`bg-border -mx-1 my-1 h-px`), `.cn-dropdown-menu-shortcut` (`text-muted-foreground ml-auto text-xs
  * tracking-widest`, `group-focus/...:text-accent-foreground`), `[data-variant=destructive]`
@@ -1826,7 +1826,7 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
 }
 
 /* ============================================================================
- * Edge panel, once (docs/backlog.md rows 207 and 208).
+ * Edge panel, once (dev-docs/backlog.md rows 207 and 208).
  *
  * Sheet and Drawer are the same thing: a modal panel docked to one edge of the viewport that slides
  * in from it. They used to be two (two side enums, two stylesheets each re-deriving the `<dialog>`
@@ -2124,7 +2124,7 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
 }
 
 /* ============================================================================
- * Shared interaction-rules layer (docs/backlog.md row 31a).
+ * Shared interaction-rules layer (dev-docs/backlog.md row 31a).
  *
  * One place for the hover/focus/disabled/reduced-motion affordances that
  * used to be copied -- slightly differently, component to component --
@@ -2145,7 +2145,7 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
  * (`.dx-checkbox:focus-visible`, ...) in this file cannot work while
  * `#[css_module]` is in use. It hashes each class in both the DOM and the
  * component's own stylesheet (`.dx-x` -> `.dx-x-<hash>`, see
- * docs/issues/css-module-supports-scoping.md), so an unhashed selector here
+ * dev-docs/issues/css-module-supports-scoping.md), so an unhashed selector here
  * never matches the rendered element -- confirmed against the built artifact
  * (the wasm carries `dx-alert-dialog-cancel-e59ac016`, this file would have
  * said `.dx-alert-dialog-cancel`). Consolidating the per-component focus
@@ -2266,7 +2266,7 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
 }
 /* stylelint-enable declaration-no-important */
 
-/* Focus modality (docs/backlog.md row 226). `<html data-dx-modality="keyboard|mouse|touch|pen">` is written
+/* Focus modality (dev-docs/backlog.md row 226). `<html data-dx-modality="keyboard|mouse|touch|pen">` is written
  * by ONE script (`primitives/src/modality.rs`, installed from the pre-paint script and by the overlays):
  * the input the user last used. A focus ring says "you are driving this with the keyboard", so it is drawn
  * only for that.
@@ -2320,7 +2320,7 @@ html:not([data-dx-press-feedback="off"]) [role="radio"][class*=" dx-"]:not([disa
 }
 
 /* ============================================================================
- * State recipes: focus, invalid, disabled (docs/backlog.md row 145, lane S).
+ * State recipes: focus, invalid, disabled (dev-docs/backlog.md row 145, lane S).
  *
  * Seven focus-ring families, three invalid vocabularies and three disabled treatments had grown one
  * stylesheet at a time. shadcn (Nova) has ONE recipe for each, and a component composes it; it does

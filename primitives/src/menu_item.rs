@@ -365,7 +365,7 @@ impl CheckableState {
     }
 
     /// The attributes every host's checkable item owns, to be merged *after*
-    /// the caller's own so they win (`docs/backlog.md` row 93's
+    /// the caller's own so they win (`dev-docs/backlog.md` row 93's
     /// duplicate-attribute hazard).
     ///
     /// `aria-checked` is always present: WAI-ARIA 1.2 makes it a required

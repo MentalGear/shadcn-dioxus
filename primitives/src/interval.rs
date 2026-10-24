@@ -6,7 +6,7 @@
 //! which nothing could ever clear (a JS interval is owned by the page, not by the Dioxus scope
 //! that evaluated the script). Every re-run of that effect, and every visit to the page,
 //! stacked another interval on top of the old ones, so the page's idle main-thread cost grew
-//! with its age (dev-docs/research/scroll-jank-2026-10-04.md, Cause 1: 128 live intervals after
+//! with its age (dev-docs/archive/research/scroll-jank-2026-10-04.md, Cause 1: 128 live intervals after
 //! ~100 s, 1,326 timer wakeups per second at 155 s).
 //!
 //! This hook has no JS interval at all. The tick loop is a Dioxus task spawned in the calling

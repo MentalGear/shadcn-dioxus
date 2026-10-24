@@ -16,7 +16,7 @@ import { gotoHydrated } from "./hydration";
 // (`preview/src/main.rs`'s own frame-id-per-variant naming). One-to-one
 // with `preview/src/components/mod.rs`'s `radial_chart[...]` registration
 // line and shadcn's own 6 `chart-radial-*.tsx` demos (dev-docs/research/
-// chart-2026-09-19.md §1.2); each variant's own doc comment cites its
+// dev-docs/archive/research/chart-2026-09-19.md §1.2); each variant's own doc comment cites its
 // exact shadcn source file.
 const VARIANTS = ["main", "label", "grid", "text", "shape", "stacked"] as const;
 

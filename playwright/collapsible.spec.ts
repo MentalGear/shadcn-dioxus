@@ -32,7 +32,7 @@ test.describe("Axe automated scan", () => {
  * `until_found` variant ("Searchable activity").
  *
  * Headless Chromium's `window.find` finds `until-found` text but does NOT fire `beforematch` for
- * it (only fragment navigation does, see dev-docs/research/virtualization-survey-2026-10-04.md
+ * it (only fragment navigation does, see dev-docs/archive/research/virtualization-survey-2026-10-04.md
  * section 1.9), so the reveal is driven two ways: a real `#fragment` navigation (the browser
  * fires `beforematch` and removes the attribute itself) and a synthetic `beforematch`. Real Ctrl+F
  * in a headed browser takes the same code path as the fragment; that part is checked by hand.

@@ -7,7 +7,7 @@ use dioxus_primitives::hover_card::{HoverCard, HoverCardContent, HoverCardTrigge
 use dioxus_primitives::menubar::{Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarTrigger};
 use dioxus_primitives::navbar::{Navbar, NavbarContent, NavbarItem, NavbarNav, NavbarTrigger};
 use dioxus_primitives::popover::{PopoverContent, PopoverRoot, PopoverTrigger};
-// Themed wrapper, not the raw primitive -- docs/backlog.md row 72 follow-up
+// Themed wrapper, not the raw primitive -- dev-docs/backlog.md row 72 follow-up
 // (Navigation Menu oracle coverage) asked for this one new fixture family to
 // compose `crate::components::navigation_menu::*` specifically, unlike every
 // other overlay in this file (this file's own composition-rule exemption in
@@ -29,14 +29,14 @@ use dioxus_primitives::ContentSide;
 #[css_module("/src/components/top_layer/style.css")]
 struct Styles;
 
-/// A fixture for the Phase 4.4 (docs/plan.md) top-layer oracle
+/// A fixture for the Phase 4.4 (dev-docs/plan.md) top-layer oracle
 /// (`playwright/oracle/tier2-html/top-layer.spec.ts`).
 ///
 /// Every rule the oracle checks is calibrated against a native reference --
 /// a plain `<div popover>` + `<button popovertarget>`, the browser's own
 /// implementation of the exact same WHATWG HTML feature our components now
 /// use -- placed in the same fixture, tier-2 style (see
-/// `docs/conformance-harness.md` and `preview/src/components/form` for the
+/// `dev-docs/conformance-harness.md` and `preview/src/components/form` for the
 /// established pattern).
 ///
 /// Reachable only at its own page, `/component/?name=top_layer&` --
@@ -44,13 +44,13 @@ struct Styles;
 /// `top_layer` from the `/` home-page catalog grid (it is not an
 /// installable component, just this large oracle probe surface), while
 /// `components::DEMOS`/`DocsSidebar` still list it under "Overlays" so it
-/// stays navigable. See `docs/backlog.md` for the landed row.
+/// stays navigable. See `dev-docs/backlog.md` for the landed row.
 #[component]
 pub fn TopLayerFixture() -> Element {
     // Additive fixture for the Phase 4.2 oracle
     // (`playwright/oracle/tier2-html/native-dialog.spec.ts`): the modal
     // `Dialog` renders a real `<dialog>` + `showModal()` on the web arm
-    // (docs/plan.md Phase 4.2). Calibrated against a plain native `<dialog>`
+    // (dev-docs/plan.md Phase 4.2). Calibrated against a plain native `<dialog>`
     // opened by a single `showModal()` call -- there is no fully declarative
     // opener for `<dialog>` here (the Invoker Commands API's
     // `command="show-modal"` would give one, but its cross-engine support
@@ -118,7 +118,7 @@ pub fn TopLayerFixture() -> Element {
                         }
                     }
 
-                    // DropdownMenu (docs/backlog.md item 2): web-arm
+                    // DropdownMenu (dev-docs/backlog.md item 2): web-arm
                     // `popover="auto"` migration, added alongside the three
                     // Phase 4.4 exemplars above -- see this rule's addition
                     // in `top-layer.spec.ts` (RED before the migration:
@@ -247,7 +247,7 @@ pub fn TopLayerFixture() -> Element {
                         }
                     }
 
-                    // docs/backlog.md row 72 follow-up (Navigation Menu oracle
+                    // dev-docs/backlog.md row 72 follow-up (Navigation Menu oracle
                     // coverage): `NavigationMenuContent`'s web arm ->
                     // `popover="manual"`, anchored to its own trigger
                     // (`NavigationMenuContentRendered`, `navigation_menu.rs`)
@@ -582,7 +582,7 @@ pub fn TopLayerFixture() -> Element {
                         }
                     }
 
-                    // docs/backlog.md row 72 follow-up. Like `Navbar` just
+                    // dev-docs/backlog.md row 72 follow-up. Like `Navbar` just
                     // above, `NavigationMenuContent` has no `side` prop
                     // (always below/start-aligned -- see
                     // `navigation_menu.rs`'s `NavigationMenuContentRendered`,

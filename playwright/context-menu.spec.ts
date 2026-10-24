@@ -95,7 +95,7 @@ test('menu lands at the tap coordinates on touch long-press', async ({ page }) =
   expect(Math.abs(menuBox.y - tapY)).toBeLessThan(2);
 });
 
-// docs/backlog.md row 10, item 5.2 ("ContextMenu viewport clamping"): unlike
+// dev-docs/backlog.md row 10, item 5.2 ("ContextMenu viewport clamping"): unlike
 // every anchored overlay in this crate (Select/Combobox/DropdownMenu/
 // Menubar/etc, whose shift/size clamp against the viewport is covered by
 // `playwright/oracle/tier2-html/top-layer.spec.ts`'s rules 11-15), that
@@ -313,7 +313,7 @@ test('touch tap outside closes the open menu', async ({ page }) => {
   // edge can land in that strip and fail with "no element at outside
   // point" for a reason that has nothing to do with this test's actual
   // claim; the same false negative and the same fix are documented in
-  // `docs/phase4-spike-findings.md`'s spike spec.
+  // `dev-docs/archive/research/phase4-spike-findings.md`'s spike spec.
   const viewport = page.viewportSize();
   if (!viewport) throw new Error('no viewport');
   const farX = viewport.width - 30;
@@ -701,7 +701,7 @@ test.describe('Axe automated scan', () => {
     await expectNoAxeViolations(page, 'context-menu: loaded', { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 
-  // docs/backlog.md row 25: ContextMenu's role="menu" popup carries no
+  // dev-docs/backlog.md row 25: ContextMenu's role="menu" popup carries no
   // aria-labelledby/aria-label at all, so an open menu has no accessible
   // name (APG menu-and-menubar pattern requires one) -- this is exactly the
   // class of defect this round's axe coverage is meant to surface.

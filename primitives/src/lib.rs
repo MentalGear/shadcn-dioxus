@@ -105,9 +105,9 @@ pub mod virtual_list;
 /// `#[cfg(not(feature = "web"))]` arms) are its only remaining
 /// consumers -- every web-arm modal overlay now uses the native-dialog
 /// engine (`showModal()`'s own focus trap/restore/inertness/top-layer),
-/// completing the two-engine overlay architecture (docs/plan.md). `#[cfg]`
+/// completing the two-engine overlay architecture (dev-docs/plan.md). `#[cfg]`
 /// -gated on this crate's `web` feature (not `target_family = "wasm"` --
-/// see `docs/recommended-implementations.md` Caveat 1 for why that axis was
+/// see `dev-docs/reference/platform-rationale.md` Caveat 1 for why that axis was
 /// corrected) so that neither the wasm client nor a host build with `web`
 /// on (the fullstack SSG server) ever references, and therefore never
 /// bundles, this asset at all -- see [`focus_trap_script`] (this file), the
@@ -396,7 +396,7 @@ pub fn use_previous<T: Clone + PartialEq + 'static>(value: ReadSignal<T>) -> Mem
 /// Ported from dignifiedquire/dx-components (MIT OR Apache-2.0),
 /// `primitives/src/lib.rs` @ 5af3cc292559a0e8d73c7b9a827c4ca08ef34d99
 /// (`use_refocus_on_close_unless`). Adapted: none -- taken as-is; only the
-/// per-component wiring of `interacted_outside` is new (docs/plan.md
+/// per-component wiring of `interacted_outside` is new (dev-docs/plan.md
 /// Phase 3.1).
 ///
 /// Matches Radix's `onCloseAutoFocus` on `DropdownMenuContent`/
@@ -462,9 +462,9 @@ fn use_form_reset_listener(
 /// `id` from `open`, guarded by the element's own `.open` DOM property.
 ///
 /// Docs/plan.md Phase 4.2. Ported *by construction*, not by copying code,
-/// from `docs/phase4-spike-findings.md`'s `use_dialog_open_driver`
+/// from `dev-docs/archive/research/phase4-spike-findings.md`'s `use_dialog_open_driver`
 /// (experiment 2's fix for experiment 1's stranded-signal defect, see
-/// `docs/recommended-implementations.md` Caveat 1). The guard (checking
+/// `dev-docs/reference/platform-rationale.md` Caveat 1). The guard (checking
 /// `dialog.open` before calling either method) mirrors
 /// [`crate::top_layer::use_popover_sync`]'s `:popover-open` check for the
 /// identical reason: a redundant call throws `InvalidStateError` (spike
@@ -477,7 +477,7 @@ fn use_form_reset_listener(
 /// runs, so the guard's own condition is already false by the time it
 /// checks). That is exactly why this hook only exists in the
 /// `#[cfg(feature = "web")]` leaf of `dialog.rs`/`alert_dialog.rs`'s
-/// component split (`docs/phase4-spike-findings.md` Construction B) -- the
+/// component split (`dev-docs/archive/research/phase4-spike-findings.md` Construction B) -- the
 /// `not(feature = "web")` arm never binds `open` as an attribute either,
 /// since that arm renders a plain `div`, not a `<dialog>`, at all.
 ///
@@ -486,7 +486,7 @@ fn use_form_reset_listener(
 /// doc): `dioxus-desktop` is a non-wasm binary with a real, working webview
 /// `eval` and belongs on this same arm, not on native/Blitz's no-op one --
 /// and, confirmed by the 2026-09-01 production incident
-/// (`docs/recommended-implementations.md` Caveat 1), the fullstack SSG
+/// (`dev-docs/reference/platform-rationale.md` Caveat 1), the fullstack SSG
 /// prerender is a *host* (non-wasm) binary that also belongs on this arm
 /// whenever this crate's `web` feature is on.
 ///
@@ -677,11 +677,11 @@ const DIALOG_EXIT_TIMEOUT_MS: u32 = 1500;
 /// strand.
 ///
 /// This is the fix for the exact defect class
-/// `docs/recommended-implementations.md` Caveat 1 documents for upstream's
+/// `dev-docs/reference/platform-rationale.md` Caveat 1 documents for upstream's
 /// first `<dialog>` (`b3f6de53`): a one-way `showModal()`/`close()` binding
 /// with no listener on the browser's own `close` event, so a native Escape
 /// left the `open` signal stranded at `true` and the dialog could never
-/// reopen (reproduced by execution in `docs/phase4-spike-findings.md`
+/// reopen (reproduced by execution in `dev-docs/archive/research/phase4-spike-findings.md`
 /// experiment 1; fixed the same way here as experiment 2's
 /// `use_dialog_close_sync`). Same eval-channel shape as
 /// `use_form_reset_listener` above and
@@ -739,7 +739,7 @@ fn use_dialog_close_sync(
 ///
 /// `showModal()`'s `::backdrop` covers the entire viewport and owns
 /// hit-testing everywhere while the dialog is open
-/// (`docs/phase4-spike-findings.md` experiment 6: `elementFromPoint`
+/// (`dev-docs/archive/research/phase4-spike-findings.md` experiment 6: `elementFromPoint`
 /// resolves to the `<dialog>` element at every coordinate) -- and every
 /// pointer event over a `::backdrop` (or any other pseudo-element) is
 /// dispatched with its `target` set to the host element, i.e. the `<dialog>`
@@ -752,7 +752,7 @@ fn use_dialog_close_sync(
 /// this exact "click outside to close" pattern) tells the two apart
 /// correctly regardless of `event.target`.
 ///
-/// Originally `dialog.rs`-only (Phase 4.2, docs/plan.md); moved here so
+/// Originally `dialog.rs`-only (Phase 4.2, dev-docs/plan.md); moved here so
 /// `popover.rs`'s modal web arm (native-dialog Popover migration) can share
 /// it with `alert_dialog.rs`/`dialog.rs` rather than reimplementing it --
 /// the same trio as [`use_dialog_open_driver`]/[`use_dialog_close_sync`].
@@ -798,7 +798,7 @@ fn use_dialog_close_sync(
 /// styling) then forces the still-open nested dialog out of the top layer,
 /// which fires its own `close` event a moment later too -- the nested dialog
 /// visibly opens and then immediately closes, with focus never durably
-/// landing on anything inside it. See `docs/plan.md`/this crate's
+/// landing on anything inside it. See `dev-docs/plan.md`/this crate's
 /// `native-dialog.spec.ts` Rule 7 for the oracle rules this fixes.
 ///
 /// ## The opening-gesture false positive (user device report, 2026-09-03)
@@ -1202,7 +1202,7 @@ fn chain_listeners(
 /// `ContextMenuTrigger`'s fixed touch-suppression CSS alongside the preview
 /// app's themed wrapper's shorthand `padding`/`background`/etc. produced
 /// exactly this — two `style` attributes on one tag, WHATWG HTML's
-/// duplicate-attribute parse error, `docs/conformance-harness.md`
+/// duplicate-attribute parse error, `dev-docs/conformance-harness.md`
 /// hydration-parity Rule 4). `merge_attributes` cannot help either: it
 /// dedupes by `(name, namespace)`, and these two forms use different
 /// `name`s (`"style"` vs `"padding"`/`"background"`/...), so from its

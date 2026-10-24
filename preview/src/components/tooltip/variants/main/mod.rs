@@ -8,7 +8,7 @@ pub fn Demo() -> Element {
         Tooltip {
             TooltipTrigger { "Rich content" }
             TooltipContent { side: ContentSide::Left, style: "width: 200px;",
-                // axe `heading-order` (docs/backlog.md row 34's own round):
+                // axe `heading-order` (dev-docs/backlog.md row 34's own round):
                 // this demo's main-variant content sits directly after the
                 // page's own h1 (no h2/h3 between them -- see
                 // `main.rs`'s `ComponentVariantHighlight`), so an h4 here

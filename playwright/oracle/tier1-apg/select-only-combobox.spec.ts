@@ -1,6 +1,6 @@
 /**
  * ORACLE: tier 1 (APG) -- Select trigger's combobox role, calibrated against
- * W3C's own reference implementation (docs/backlog.md row 8).
+ * W3C's own reference implementation (dev-docs/backlog.md row 8).
  *
  * Source pattern: W3C ARIA Authoring Practices Guide, Combobox pattern,
  * "Select-Only Combobox Example"
@@ -108,7 +108,7 @@ const goto = (page: Page, name: string) =>
   gotoHydrated(page, `${BASE}${name}/`, { timeout: 20 * 60 * 1000 });
 
 // Same role/locator convention as select.spec.ts's `singleSelectTrigger` --
-// docs/backlog.md row 8 gave the trigger role="combobox".
+// dev-docs/backlog.md row 8 gave the trigger role="combobox".
 const librarySelectTrigger = (page: Page) => demoRole(page, "combobox");
 
 test.describe("R1 -- combobox role/aria-haspopup/aria-expanded/aria-controls contract", () => {

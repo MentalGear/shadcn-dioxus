@@ -14,7 +14,7 @@
 # touch input non-passive: before the compositor may scroll, every wheel tick
 # is dispatched to the main thread and waited for (Chromium
 # `DidHandleInputEventSentToMain` 40/40 ticks vs 0; wheel latency max 388 ms vs
-# 143 ms with a busy main thread, dev-docs/research/scroll-jank-2026-10-04.md,
+# 143 ms with a busy main thread, dev-docs/archive/research/scroll-jank-2026-10-04.md,
 # Cause 2b). On a touch device a blocking `touchstart` additionally delays every
 # scroll start.
 #
@@ -196,7 +196,7 @@ def main():
         print(
             "  Fix: drop the handler (touch-action / pointer events already cover drags), forward an optional "
             "handler only when Some, or add `// blocking-ok: <reason>` "
-            "(dev-docs/research/scroll-jank-2026-10-04.md, Cause 2b)",
+            "(dev-docs/archive/research/scroll-jank-2026-10-04.md, Cause 2b)",
             file=sys.stderr,
         )
         sys.exit(1)

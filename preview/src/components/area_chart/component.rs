@@ -1,5 +1,5 @@
 //! Area Chart gallery -- shadcn/ui `chart-area-*` demo parity
-//! (`dev-docs/research/chart-2026-09-19.md` §1.2's area inventory,
+//! (`dev-docs/archive/research/chart-2026-09-19.md` §1.2's area inventory,
 //! `$S/refs/ui/apps/v4/registry/new-york-v4/charts/chart-area-*.tsx`).
 //!
 //! This is a documentation/demo package, not a new primitive or even a new

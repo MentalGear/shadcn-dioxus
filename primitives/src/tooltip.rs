@@ -178,7 +178,7 @@ pub fn Tooltip(props: TooltipProps) -> Element {
     });
 
     // Owned by this component -- open/disabled state must win over a
-    // caller's own attributes (`docs/backlog.md` row 93's
+    // caller's own attributes (`dev-docs/backlog.md` row 93's
     // duplicate-attribute hazard).
     let attributes = merge_attributes(vec![
         props.attributes,
@@ -378,7 +378,7 @@ pub fn TooltipContent(props: TooltipContentProps) -> Element {
     // hook calls to *this* component's own scope, where `render()` toggling
     // on every open/close would change the hook count/order across renders
     // of the same mounted `TooltipContent` -- exactly the hazard
-    // `docs/phase4-spike-findings.md` Construction B's root-cause analysis
+    // `dev-docs/archive/research/phase4-spike-findings.md` Construction B's root-cause analysis
     // describes for a different case (binding `open` vs. calling
     // `showModal()` in the same render pass); see `popover.rs`'s
     // `PopoverContentRendered` for the same fix applied there.
@@ -397,9 +397,9 @@ pub fn TooltipContent(props: TooltipContentProps) -> Element {
     }
 }
 
-/// Web arm (Phase 4.4, docs/plan.md): promote the tooltip to the top layer
+/// Web arm (Phase 4.4, dev-docs/plan.md): promote the tooltip to the top layer
 /// via `popover="manual"` so it escapes clipping/transformed ancestors
-/// (docs/phase4-spike-findings.md experiment 7). `manual`, not `auto`: a
+/// (dev-docs/archive/research/phase4-spike-findings.md experiment 7). `manual`, not `auto`: a
 /// Tooltip already owns its entire open/close lifecycle through
 /// `TooltipTrigger`'s hover/focus/Escape handlers, and `auto`'s light
 /// dismiss (WHATWG HTML §popover-light-dismiss) would fight that — an
@@ -409,7 +409,7 @@ pub fn TooltipContent(props: TooltipContentProps) -> Element {
 /// what the trigger already does.
 ///
 /// Uses `crate::top_layer::use_popover_shown_while_mounted`, not
-/// `use_popover_sync` (docs/backlog.md row 19). This component is mounted
+/// `use_popover_sync` (dev-docs/backlog.md row 19). This component is mounted
 /// by `render()` in `TooltipContent` above -- `use_animated_open` -- which
 /// keeps it in the DOM with `data-state="closed"` for its whole CSS close
 /// animation (plus a settle hold) before actually unmounting it.
@@ -483,7 +483,7 @@ fn TooltipContentRendered(
         }),
         // Owned by this component -- role/top-layer wiring/positioning
         // state must win over a caller's own attributes
-        // (`docs/backlog.md` row 93's duplicate-attribute hazard).
+        // (`dev-docs/backlog.md` row 93's duplicate-attribute hazard).
         attributes!(div {
             role: "tooltip",
             popover: crate::top_layer::PopoverKind::Manual.as_str(),
@@ -496,7 +496,7 @@ fn TooltipContentRendered(
     // one `style` attribute -- see `top_layer::anchored_content_attributes`'s
     // doc for why a bare `style: position_anchor_style(&id)` literal
     // alongside `..attributes` is the duplicate-`style` hazard
-    // (`docs/conformance-harness.md` hydration-parity Rule 4).
+    // (`dev-docs/conformance-harness.md` hydration-parity Rule 4).
     let attributes = crate::top_layer::anchored_content_attributes(&id, attributes);
 
     // Hoverable content (WCAG 1.4.13): with a `close_delay` above 0 the
@@ -517,7 +517,7 @@ fn TooltipContentRendered(
 
 /// Native (Blitz) arm: unchanged from before this slice. Blitz implements
 /// neither the `popover` attribute nor `document::eval`
-/// (`docs/recommended-implementations.md` Caveat 2), so this is the
+/// (`dev-docs/reference/platform-rationale.md` Caveat 2), so this is the
 /// functional floor — a plain, always-in-flow div, visible exactly when
 /// `render()` (above) mounts it.
 #[cfg(not(feature = "web"))]
@@ -536,7 +536,7 @@ fn TooltipContentRendered(
 ) -> Element {
     let _ = set_open;
     // Owned by this component -- see the web arm's identical construction
-    // above (`docs/backlog.md` row 93).
+    // above (`dev-docs/backlog.md` row 93).
     let attributes = merge_attributes(vec![
         attributes,
         attributes!(div {
@@ -564,7 +564,7 @@ fn TooltipContentRendered(
 // a bare literal alongside `..attributes`, so a caller-supplied `style` (as
 // `TooltipContent`'s own doc example demonstrates, and as the `top_layer`
 // preview fixture's anchored components do) rendered as a *second*, later
-// `style="..."` on the SSR'd element -- `docs/conformance-harness.md`
+// `style="..."` on the SSR'd element -- `dev-docs/conformance-harness.md`
 // hydration-parity Rule 4 (`dioxus-ssr`'s renderer keeps only the first
 // `style` it accumulates per element; the WASM client's `set_attribute`
 // keeps the last, so SSR and CSR silently disagree about which one wins,

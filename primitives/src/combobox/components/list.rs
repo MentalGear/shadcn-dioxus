@@ -61,7 +61,7 @@ pub fn ComboboxList(props: ComboboxListProps) -> Element {
 /// layer via `popover="manual"`, anchored to `ComboboxInput` below/
 /// start-aligned -- the same top-layer fix already shipped for
 /// `Tooltip`/`HoverCard`/`Popover`/`DropdownMenu`/`Menubar`/`Select`
-/// (docs/plan.md Phase 4.4, Migration A slices 1-3), matching this
+/// (dev-docs/plan.md Phase 4.4, Migration A slices 1-3), matching this
 /// component's pre-migration `top: calc(100% + 0.25rem); left: 0` CSS
 /// (`../../../../preview/src/components/combobox/style.css`).
 ///
@@ -174,7 +174,7 @@ fn ComboboxListRendered(id: String, attributes: Vec<Attribute>, children: Elemen
     // one `style` attribute -- see `top_layer::anchored_content_attributes`'s
     // doc for why a bare `style: position_anchor_style(&id)` literal
     // alongside `..attributes` is the duplicate-`style` hazard
-    // (`docs/conformance-harness.md` hydration-parity Rule 4).
+    // (`dev-docs/conformance-harness.md` hydration-parity Rule 4).
     let attributes =
         crate::top_layer::anchored_content_attributes(&ctx.input_id.cloned(), attributes);
     let owned = attributes!(div {

@@ -1,7 +1,7 @@
 /*
  * Chart theme -- styles the primitive's unstyled `data-slot`/`data-series`
  * DOM (`$S/chart-api.md`, the binding contract between the chart-primitive
- * and chart-preview lanes; dev-docs/research/chart-2026-09-19.md §6).
+ * and chart-preview lanes; dev-docs/archive/research/chart-2026-09-19.md §6).
  *
  * Every rule below is scoped under one of the three classes the wrapper
  * components in `component.rs` attach (`.dx-chart` on `ChartContainer`,
@@ -394,7 +394,7 @@
 }
 
 /* The real, visually-hidden `<table>` -- the actual AT-facing "browse the
- * data" path (dev-docs/research/chart-2026-09-19.md §2.5/§6.4). Same
+ * data" path (dev-docs/archive/research/chart-2026-09-19.md §2.5/§6.4). Same
  * technique as `sidebar/style.css`'s `.dx-sidebar-sr-only` and
  * `pagination/style.css`'s `.dx-pagination-sr-only` (byte-identical there
  * too; still not collapsed into a shared utility -- see those files' own

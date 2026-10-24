@@ -1,5 +1,5 @@
 //! Pure state helpers for the Data Table composition pattern
-//! (dev-docs/component-backlog.md row 69: "a composition pattern, not a
+//! (dev-docs/archive/rounds/component-backlog.md row 69: "a composition pattern, not a
 //! new primitive").
 //!
 //! Deliberately plain, dioxus-free generic functions over slices and

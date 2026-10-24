@@ -262,7 +262,7 @@
  * `dx-anchor-*`-marked overlay in the app instead, closing the underlying
  * bug class rather than just this one instance of it. See
  * `primitives/src/top_layer.rs`'s `ensure_anchor_positioning_styles` doc
- * (docs/backlog.md item 1) for the full rationale, and
+ * (dev-docs/backlog.md item 1) for the full rationale, and
  * `../tooltip/style.css`'s identical comment.
  *
  * The 4px drop is the theme's `dx-drop-in`/`dx-drop-out` and animates `translate`, NOT `transform`.

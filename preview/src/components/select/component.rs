@@ -6,7 +6,7 @@ use std::time::Duration;
 
 pub use dioxus_primitives::select::{SelectGroup, SelectPosition};
 
-// docs/backlog.md row 32: `#[css_module]` is gone -- see checkbox/component.rs's
+// dev-docs/backlog.md row 32: `#[css_module]` is gone -- see checkbox/component.rs's
 // header comment for the full delivery-mechanism rationale (asset!() +
 // document::Link, embedded in the wrapper so a `shadcn-dioxus add
 // select`-copied component needs no extra wiring). This file has TWO
@@ -102,7 +102,7 @@ pub struct SelectProps<T: Clone + PartialEq + 'static = String> {
     #[props(default = ReadSignal::new(Signal::new(Duration::from_millis(1000))))]
     pub typeahead_timeout: ReadSignal<Duration>,
 
-    /// Whether opening the listbox locks page scroll (docs/backlog.md row
+    /// Whether opening the listbox locks page scroll (dev-docs/backlog.md row
     /// 9). See `dioxus_primitives::select::SelectProps::scroll_lock`.
     #[props(default = ReadSignal::new(Signal::new(true)))]
     pub scroll_lock: ReadSignal<bool>,
@@ -202,7 +202,7 @@ pub struct SelectMultiProps<T: Clone + PartialEq + 'static = String> {
     #[props(default = ReadSignal::new(Signal::new(Duration::from_millis(1000))))]
     pub typeahead_timeout: ReadSignal<Duration>,
 
-    /// Whether opening the listbox locks page scroll (docs/backlog.md row
+    /// Whether opening the listbox locks page scroll (dev-docs/backlog.md row
     /// 9). See `dioxus_primitives::select::SelectMultiProps::scroll_lock`.
     #[props(default = ReadSignal::new(Signal::new(true)))]
     pub scroll_lock: ReadSignal<bool>,

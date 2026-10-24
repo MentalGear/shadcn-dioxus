@@ -138,7 +138,7 @@
 }
 
 /*
- * Near-viewport-edge flip fixture (docs/backlog.md row 10; W3C CSS Anchor
+ * Near-viewport-edge flip fixture (dev-docs/backlog.md row 10; W3C CSS Anchor
  * Positioning's `position-try-fallbacks`, not a WHATWG HTML feature -- see
  * `playwright/oracle/tier2-html/top-layer.spec.ts`'s header for why this
  * rule lives in this tier-2 file anyway). `position: fixed` at a real
@@ -150,7 +150,7 @@
  * written -- see the `z-index` note below for the one thing that does need
  * to change here.
  *
- * `z-index: var(--dx-z-top, 9999)` on both rows (docs/backlog.md, the
+ * `z-index: var(--dx-z-top, 9999)` on both rows (dev-docs/backlog.md, the
  * axe/fixture-hardening round): every route on this preview site now
  * permanently mounts `DocsLayout`'s `Sidebar`
  * (`preview/src/components/sidebar/style.css`'s `.dx-sidebar-container`,
@@ -214,7 +214,7 @@
  * rules, safe to route through `#[css_module]`'s normal hashing (only
  * selectors nested inside `@supports` need the hand-written
  * `dx-anchor-*` marker-class workaround; see
- * docs/issues/css-module-supports-scoping.md).
+ * dev-docs/issues/css-module-supports-scoping.md).
  */
 .dx-top-layer-edge-native-trigger-bottom {
   anchor-name: --dx-edge-bottom-native;

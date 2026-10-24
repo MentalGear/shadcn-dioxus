@@ -1,7 +1,7 @@
 /**
  * DatePicker — calendar popover anchoring (live-site report, item 3,
  * 2026-09-01) and a minimal smoke suite. No date-picker spec existed
- * before this file (docs/backlog.md row 20) -- this closes part of that
+ * before this file (dev-docs/backlog.md row 20) -- this closes part of that
  * backlog row (an e2e spec exists now); the rest of row 20's scope
  * (segment typing/arrows/backspace, range picker) is not covered here and
  * remains open, see this session's report.

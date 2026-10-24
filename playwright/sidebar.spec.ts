@@ -166,7 +166,7 @@ test.describe("sidebar: block route", () => {
   });
 });
 
-// Fixed 2026-09-04 (docs/backlog.md row 38): the `/component/block/
+// Fixed 2026-09-04 (dev-docs/backlog.md row 38): the `/component/block/
 // ?name=sidebar&variant=main&` route (this file's `gotoSidebarBlock`) used
 // to be a bare block fixture with no page-level `<h1>`/`<main>` wrapper of
 // its own -- by design, it is normally embedded in an `<iframe>` from the

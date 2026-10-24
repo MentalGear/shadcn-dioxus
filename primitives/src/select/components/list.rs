@@ -280,7 +280,7 @@ fn select_list_onkeydown(mut ctx: SelectContext) -> impl FnMut(KeyboardEvent) {
 /// Web arm (Migration A slice 3/3, final): promote the listbox to the top
 /// layer via `popover="auto"` so it escapes clipping/transformed ancestors,
 /// the same fix already shipped for `Tooltip`/`HoverCard`/`Popover`/
-/// `DropdownMenu`/`Menubar` (docs/plan.md Phase 4.4, Migration A slices
+/// `DropdownMenu`/`Menubar` (dev-docs/plan.md Phase 4.4, Migration A slices
 /// 1-2). Anchored to `SelectTrigger` below/start-aligned, matching this
 /// component's pre-migration `top: 100%; left: 0` CSS
 /// (`../../../../preview/src/components/select/style.css`).
@@ -333,7 +333,7 @@ fn SelectListRendered(id: String, attributes: Vec<Attribute>, children: Element)
     // Scroll buttons render only inside this subtree (`scroll_button.rs`).
     use_context_provider(|| InRenderedList);
     let open = ctx.selectable.open;
-    // axe `aria-input-field-name` (docs/backlog.md row 34's own round): an
+    // axe `aria-input-field-name` (dev-docs/backlog.md row 34's own round): an
     // ARIA `listbox` is an input field and needs an accessible name.
     // Default it from the trigger (whose own visible text is the
     // placeholder/selected value) -- but ONLY if the caller hasn't already
@@ -363,7 +363,7 @@ fn SelectListRendered(id: String, attributes: Vec<Attribute>, children: Element)
     let onkeydown = select_list_onkeydown(ctx);
 
     // Lock page scroll while the listbox is open, matching Radix Select's
-    // default (docs/backlog.md row 9). Mirrors `DropdownMenuContentRendered`'s
+    // default (dev-docs/backlog.md row 9). Mirrors `DropdownMenuContentRendered`'s
     // identical `scroll_lock_active`/`ScrollLockGuard` shape
     // (`dropdown_menu.rs`) -- opt-out via `ctx.scroll_lock`
     // (`Select`/`SelectMulti`'s `scroll_lock` prop) rather than `modal`,
@@ -432,7 +432,7 @@ fn SelectListRendered(id: String, attributes: Vec<Attribute>, children: Element)
     // sidestepping `manganis-core`'s `css_module_parser` not scoping
     // classes inside `@supports` bodies.
     //
-    // axe `aria-input-field-name` (docs/backlog.md row 34's own round): an
+    // axe `aria-input-field-name` (dev-docs/backlog.md row 34's own round): an
     // ARIA `listbox` is an input field and needs an accessible name.
     // Default it from the trigger (whose own visible text is the
     // placeholder/selected value) -- but ONLY if the caller hasn't already
@@ -447,7 +447,7 @@ fn SelectListRendered(id: String, attributes: Vec<Attribute>, children: Element)
     // empty/`AttributeValue::None` value (`has_own_accessible_name`'s own
     // doc explains why), and two entries for one attribute name is exactly
     // the duplicate-attribute hazard `merge_attributes` exists to prevent
-    // (`docs/conformance-harness.md` hydration-parity Rule 4) -- a literal
+    // (`dev-docs/conformance-harness.md` hydration-parity Rule 4) -- a literal
     // plus a raw spread cannot dedupe that; only routing every contributor
     // through one `merge_attributes` call can. Ordered after `attributes`
     // so it wins over exactly that spurious caller-side empty value, while
@@ -471,7 +471,7 @@ fn SelectListRendered(id: String, attributes: Vec<Attribute>, children: Element)
     // one `style` attribute -- see `top_layer::anchored_content_attributes`'s
     // doc for why a bare `style: position_anchor_style(&id)` literal
     // alongside `..attributes` is the duplicate-`style` hazard
-    // (`docs/conformance-harness.md` hydration-parity Rule 4).
+    // (`dev-docs/conformance-harness.md` hydration-parity Rule 4).
     let attributes = crate::top_layer::anchored_content_attributes(
         &ctx.selectable.trigger_id.cloned(),
         attributes,
@@ -513,9 +513,9 @@ fn SelectListRendered(id: String, attributes: Vec<Attribute>, children: Element)
 }
 
 /// Native (Blitz) arm: Blitz has no popover-API support at all
-/// (`docs/recommended-implementations.md` Caveat 2), so this stays the
+/// (`dev-docs/reference/platform-rationale.md` Caveat 2), so this stays the
 /// functional floor, a plain, always-in-flow `div`. Scroll-lock is the one
-/// addition to this arm since docs/backlog.md row 9 -- mirrors
+/// addition to this arm since dev-docs/backlog.md row 9 -- mirrors
 /// `DropdownMenuContentRendered`'s identical native arm
 /// (`dropdown_menu.rs`), which mounts `ScrollLockGuard` unconditionally on
 /// both arms rather than only the web one.
@@ -546,9 +546,9 @@ fn SelectListRendered(id: String, attributes: Vec<Attribute>, children: Element)
     });
 
     let onkeydown = select_list_onkeydown(ctx);
-    // See the web arm's identical `scroll_lock_active` (docs/backlog.md row 9).
+    // See the web arm's identical `scroll_lock_active` (dev-docs/backlog.md row 9).
     let scroll_lock_active = use_memo(move || (ctx.scroll_lock)() && open());
-    // See the web arm's identical construction (docs/backlog.md row 34) for
+    // See the web arm's identical construction (dev-docs/backlog.md row 34) for
     // why this is conditional and routed through `merge_attributes` rather
     // than a bare literal alongside `..attributes`.
     let labelledby: Vec<Attribute> = if has_own_accessible_name(&attributes) {

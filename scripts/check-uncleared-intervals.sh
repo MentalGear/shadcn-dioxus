@@ -11,7 +11,7 @@
 # every visit to the route adds another. Nothing in `cargo check`, clippy
 # or `cargo test` can see it.
 #
-# The incident this guards against (dev-docs/research/scroll-jank-2026-10-04.md,
+# The incident this guards against (dev-docs/archive/research/scroll-jank-2026-10-04.md,
 # Cause 1): `BlockPlayer` (`preview/src/main.rs`) started a 100 ms
 # `setInterval` from a `use_effect` and never cleared it, and its hooks were
 # being re-run (see `MasonryCard`'s doc: a block rendered through a
@@ -91,7 +91,7 @@ while IFS=: read -r f lineno line; do
 done < <(grep -nHE "$pattern" "${files[@]}" 2>/dev/null || true)
 
 if [ "$bad" -ne 0 ]; then
-  echo "check-uncleared-intervals: FAIL (dev-docs/research/scroll-jank-2026-10-04.md, Cause 1)" >&2
+  echo "check-uncleared-intervals: FAIL (dev-docs/archive/research/scroll-jank-2026-10-04.md, Cause 1)" >&2
   exit 1
 fi
 echo "check-uncleared-intervals: OK -- no setInterval / spawn_forever outside an explicit interval-ok marker."

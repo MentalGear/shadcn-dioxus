@@ -7,7 +7,7 @@
 //! This package defines no new component. shadcn splits its "Line Chart"
 //! catalog entry into ten separate demo files
 //! (`chart-line-default.tsx` .. `chart-line-interactive.tsx`,
-//! `dev-docs/research/chart-2026-09-19.md` §1.2) that all compose the same
+//! `dev-docs/archive/research/chart-2026-09-19.md` §1.2) that all compose the same
 //! underlying `<ChartContainer>`/`<Line>`/`<ChartTooltip>` -- this package
 //! mirrors that same one-family/many-demos split for this repo's
 //! `ChartKind::Line`, one `variants/<demo>/mod.rs` per shadcn source file

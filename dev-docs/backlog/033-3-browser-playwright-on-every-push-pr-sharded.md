@@ -15,7 +15,7 @@ updated: 2026-08-30
 
 ## Status / trigger
 
-**CI reactivation** (user: off until further notice, 2026-08-30) — then it is a workflow-trigger change, not new capability
+**CI reactivation** (user: off until further notice, 2026-08-30) — then it is a workflow-trigger change, not new capability. The dispatch-only `main.yml`, `all_components.yml`, `playwright.yml` and `stylelint.yml` were deleted by row 266 (their checks run in `scripts/run-gates.sh`, the Playwright suite and `scripts/registry-install-smoke.sh`); reactivating CI restores them from git history (`git show e5bdf652^:.github/workflows/<name>.yml`).
 
 ## Size
 

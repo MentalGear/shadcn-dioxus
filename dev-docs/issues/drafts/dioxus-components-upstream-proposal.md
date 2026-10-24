@@ -42,11 +42,11 @@ Happy to answer any question about a specific mechanism above in more detail, or
 
 ---
 
-*Internal note (remove before filing): per-item detail and doc references live in `dev-docs/plan.md`, `dev-docs/backlog.md`, `dev-docs/recommended-implementations.md`, and `dev-docs/conformance-harness.md` in this fork — link specific sections/permalinks once a filing commit is chosen.*
+*Internal note (remove before filing): per-item detail and doc references live in `dev-docs/plan.md`, `dev-docs/backlog.md`, `dev-docs/reference/platform-rationale.md`, and `dev-docs/conformance-harness.md` in this fork — link specific sections/permalinks once a filing commit is chosen.*
 
 ## Before filing
 
 - [ ] Re-verify upstream `main`'s last-commit date is still 2026-06-29 (or update the "idle since" claim) — this proposal's framing depends on it.
-- [ ] Link specific permalinks for each of the six points above (`dev-docs/plan.md` phase entries, `dev-docs/recommended-implementations.md` Caveat 1, `dev-docs/conformance-harness.md`) at the commit this issue is filed from.
+- [ ] Link specific permalinks for each of the six points above (`dev-docs/plan.md` phase entries, `dev-docs/reference/platform-rationale.md` Caveat 1, `dev-docs/conformance-harness.md`) at the commit this issue is filed from.
 - [ ] Check the upstream PR queue again for anything that has landed or changed since 2026-08-30 (this fork's last full scan) before claiming any of the six points as still-missing upstream.
 - [ ] Confirm no naming/architecture collision with anything already merged upstream since this draft was written.

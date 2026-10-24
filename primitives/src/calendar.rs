@@ -3965,7 +3965,7 @@ mod tests {
     fn test_calendar_grid_weeks() {
         // Calls the real `calendar_grid_weeks` (the function `CalendarGrid`/
         // `use_calendar_grid` actually use to build the rendered month grid) --
-        // not a hand-copied reimplementation. See docs/mutants-baseline.md fix #1.
+        // not a hand-copied reimplementation. See dev-docs/reference/mutants-baseline.md fix #1.
 
         // Test February 2021: starts on Monday, 28 days
         // When first day of week is Monday, should fit in exactly 4 weeks
@@ -4045,7 +4045,7 @@ mod tests {
     }
 
     // -----------------------------------------------------------------
-    // Pure predicates (docs/mutants-baseline.md fix #8)
+    // Pure predicates (dev-docs/reference/mutants-baseline.md fix #8)
     // -----------------------------------------------------------------
 
     #[test]
@@ -4266,7 +4266,7 @@ mod tests {
     }
 
     // -----------------------------------------------------------------
-    // Context accessors (docs/mutants-baseline.md fix #8)
+    // Context accessors (dev-docs/reference/mutants-baseline.md fix #8)
     // -----------------------------------------------------------------
 
     /// Run a closure inside a Dioxus runtime context so that Signal/Memo/Callback

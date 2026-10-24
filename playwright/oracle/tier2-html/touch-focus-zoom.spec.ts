@@ -47,7 +47,7 @@
  * matched by SELECTOR below, on every route in this app, computes
  * `font-size >= 16px`.
  *
- * Calibration (docs/conformance-harness.md, "Calibration"): the first test
+ * Calibration (dev-docs/conformance-harness.md, "Calibration"): the first test
  * below is a CALIBRATION test -- it asserts the iPhone 13 emulation this
  * whole file relies on actually yields `(pointer: coarse)` / `(hover:
  * none)`, matching real Mobile Safari's media-query environment. If that
@@ -71,7 +71,7 @@
  *     clip-fixture Combobox-primitive trigger (`#clip-combobox-trigger`,
  *     `type="text"`) -- 13.3333px. RAW elements (this fixture composes
  *     `dioxus_primitives::` directly, per its own header comment; see
- *     `docs/preview-composition.md`).
+ *     `dev-docs/preview-composition.md`).
  *   - `form`'s two native-reference `<select>` elements (`#fruit-native`,
  *     `#fruit-required-native`) -- 13.3333px. RAW elements, deliberately
  *     (they exist *as* the tier-2 form-participation native control).
@@ -99,7 +99,7 @@
  *     does is never user-focusable so the platform behaviour cannot
  *     trigger): `Select`'s visible trigger is a `<button>`, but it does
  *     also render a hidden native `<select data-slot="select-native">`
- *     for form participation (docs/plan.md Phase 1.3, the "BubbleSelect"
+ *     for form participation (dev-docs/plan.md Phase 1.3, the "BubbleSelect"
  *     pattern) -- `tabindex="-1"` + `pointer-events: none` + `opacity: 0`,
  *     so it is never reachable by tab or tap and excluded from SELECTOR
  *     below on that basis, not ignored; `Calendar`'s day cells are
@@ -126,7 +126,7 @@ import { demoRole } from "../../demo-frame";
 // is about the coarse-pointer media state and computed font-size, both of
 // which Chromium's mobile emulation reproduces faithfully, so run the
 // descriptor on Chromium here. A real WebKit/Mobile Safari project remains the
-// missing calibration (docs/backlog.md row 4).
+// missing calibration (dev-docs/backlog.md row 4).
 test.use({ ...devices["iPhone 13"], defaultBrowserType: "chromium" });
 
 const BASE = BASE_URL;
@@ -138,7 +138,7 @@ const BASE = BASE_URL;
 // are buttons; color/file open their own picker UI; hidden is invisible).
 // `[tabindex="-1"]` is excluded too, found by execution: `Select`'s hidden
 // native `<select data-slot="select-native">` (the "BubbleSelect" form-
-// participation pattern, docs/plan.md Phase 1.3) sets it alongside
+// participation pattern, dev-docs/plan.md Phase 1.3) sets it alongside
 // `pointer-events: none` and `opacity: 0`, so a real user can never tab or
 // tap into it -- the platform behaviour this file is about cannot trigger
 // on an element nothing can focus.
@@ -247,9 +247,9 @@ test.describe("overlay-gated elements (coarse pointer, desktop-width viewport)",
   // axe (static rules) -- no component spec reaches /dashboard/email-client
   // at all (it's a full dashboard demo, not a component gallery page), so
   // both its default and compose-open states are new coverage here, per
-  // docs/backlog.md row 34.
+  // dev-docs/backlog.md row 34.
   //
-  // Fixed 2026-09-04 (docs/backlog.md row 38): this page's own embedded
+  // Fixed 2026-09-04 (dev-docs/backlog.md row 38): this page's own embedded
   // sidebar (`EmailSidebar`, `dashboard/views/email_client/sidebar.rs`)
   // renders the themed `Sidebar` directly, not through the `/component/
   // block/` route -- but shared the same underlying defect the block route
@@ -260,7 +260,7 @@ test.describe("overlay-gated elements (coarse pointer, desktop-width viewport)",
   // now renders a `complementary` landmark (`preview/src/components/
   // sidebar/component.rs`) -- rather than duplicated per call site.
   //
-  // Fixed 2026-09-04 (docs/backlog.md row 37): each message row
+  // Fixed 2026-09-04 (dev-docs/backlog.md row 37): each message row
   // (`ListPane`'s `MessageRow`, `dashboard/views/email_client/list_pane.rs`)
   // used to render `role="button"` on a `div` that also contained its own
   // further-interactive controls (star/trash toggles) -- a button

@@ -1,7 +1,7 @@
 /**
  * ORACLE: tier 2 (HTML) — top layer (`popover` attribute).
  *
- * Source: docs/plan.md Phase 4.4, drawing on the WHATWG HTML Living
+ * Source: dev-docs/plan.md Phase 4.4, drawing on the WHATWG HTML Living
  * Standard's popover chapter:
  *   - The `popover` attribute, its `auto`/`manual` states, and the implied
  *     top-layer promotion:
@@ -23,12 +23,12 @@
  * shown by a `<button popovertarget>` — the browser's own implementation of
  * the identical WHATWG HTML feature, with zero Dioxus involvement.
  *
- * Calibration (docs/conformance-harness.md, "Calibration"): every rule below
+ * Calibration (dev-docs/conformance-harness.md, "Calibration"): every rule below
  * runs against the native reference first (prefixed CALIBRATION: in the
  * test name) and the library component second. A CALIBRATION failure means
  * the *test* is wrong, not the component.
  *
- * Per-component dismissal semantics (docs/plan.md Phase 4.4's own
+ * Per-component dismissal semantics (dev-docs/plan.md Phase 4.4's own
  * requirement to "document the choice per component"):
  *   - `Tooltip`/`HoverCard` render with `popover="manual"` on the web arm.
  *     Both already own their entire open/close lifecycle through
@@ -46,13 +46,13 @@
  *     (`toggle` event) still lands back in the Rust `open` signal, per
  *     primitives/src/top_layer.rs's `use_popover_sync` (the same defect
  *     class documented for `<dialog>`'s old one-way binding in
- *     docs/recommended-implementations.md Caveat 1).
+ *     dev-docs/reference/platform-rationale.md Caveat 1).
  *   - Rule 1 ("clipping escape") and rule 4 ("stacking") are top-layer
  *     properties every promoted element gets regardless of its
  *     `popover="auto"|"manual"` kind, so all three components (Tooltip,
  *     HoverCard, Popover) are checked for rule 1; rule 4 uses `Popover`
  *     (the click-triggered case is the easiest to drive deterministically).
- *   - Migration A slice 2/3 (`ContextMenu`/`Menubar`, `docs/plan.md` Phase
+ *   - Migration A slice 2/3 (`ContextMenu`/`Menubar`, `dev-docs/plan.md` Phase
  *     5.2's point-anchor case is explicitly out of scope for this file):
  *     `ContextMenu` also renders `popover="manual"` on the web arm, for a
  *     reason distinct from Tooltip/HoverCard's: it opens at a raw click
@@ -93,7 +93,7 @@
  *     does not, since a toast is not clipped by an ancestor the way a
  *     trigger-anchored popup is (it is viewport-region positioned, not
  *     positioned relative to any particular trigger element).
- *   - `NavigationMenu`'s panel (docs/backlog.md row 72 follow-up) also
+ *   - `NavigationMenu`'s panel (dev-docs/backlog.md row 72 follow-up) also
  *     renders `popover="manual"`, for the same reason as Tooltip/HoverCard/
  *     ContextMenu/Menubar above: it owns its entire open/close lifecycle
  *     (hover-intent timers, a focus-leave debounce, its own Escape handler
@@ -126,11 +126,11 @@
  *      renders above it.
  *   5. Near-viewport-edge flip — see "Rules 5-7" below.
  *
- * ## Rules 5-7 — CSS Anchor Positioning flip (docs/backlog.md row 10)
+ * ## Rules 5-7 — CSS Anchor Positioning flip (dev-docs/backlog.md row 10)
  *
  * Unlike every rule above, this trio's citation is the **W3C CSS Anchor
  * Positioning** spec, not WHATWG HTML — this tier's "standard" principle
- * (docs/conformance-harness.md) is satisfied by that spec instead:
+ * (dev-docs/conformance-harness.md) is satisfied by that spec instead:
  *   - `position-try-fallbacks` and the `flip-block`/`flip-inline` "existing
  *     tactics":
  *     <https://www.w3.org/TR/css-anchor-position-1/#fallback-var>
@@ -347,7 +347,7 @@ test.describe("Rule 1 — clipping escape (an ancestor with overflow:hidden + tr
     expect(result.escapes, JSON.stringify(result)).toBe(true);
   });
 
-  // docs/backlog.md item 2: DropdownMenu's web arm migrated to
+  // dev-docs/backlog.md item 2: DropdownMenu's web arm migrated to
   // `popover="auto"` (`DropdownMenuContentRendered`, `dropdown_menu.rs`).
   // Written RED first against the pre-migration plain-div `DropdownMenuContent`
   // (confirmed by execution: it clipped at the 60px ancestor exactly like
@@ -443,7 +443,7 @@ test.describe("Rule 1 — clipping escape (an ancestor with overflow:hidden + tr
     expect(result.escapes, JSON.stringify(result)).toBe(true);
   });
 
-  // docs/backlog.md row 72 follow-up: `NavigationMenuContent`'s web arm ->
+  // dev-docs/backlog.md row 72 follow-up: `NavigationMenuContent`'s web arm ->
   // `popover="manual"`, anchored to its own trigger
   // (`NavigationMenuContentRendered`, `navigation_menu.rs`) -- the same
   // top-layer engine `NavbarContent` uses (`dx-anchor-navigation-menu`,
@@ -467,7 +467,7 @@ test.describe("Rule 1 — clipping escape (an ancestor with overflow:hidden + tr
  * axe (static rules) — every anchored-overlay component on this fixture,
  * scanned with its content open. No component spec reaches this fixture
  * (each has its own, real-demo page instead); this is the state no other
- * spec covers, per docs/backlog.md row 34's own remit. Reuses exactly the
+ * spec covers, per dev-docs/backlog.md row 34's own remit. Reuses exactly the
  * open steps Rule 1 above already established for each component.
  */
 test.describe("axe: every overlay open (top-layer fixture)", () => {
@@ -513,7 +513,7 @@ test.describe("axe: every overlay open (top-layer fixture)", () => {
     await expectNoAxeViolations(page, "top-layer fixture: Menubar open", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 
-  // Previously KNOWN RED here (docs/backlog.md row 36): `SelectList`'s
+  // Previously KNOWN RED here (dev-docs/backlog.md row 36): `SelectList`'s
   // default `aria-labelledby` pointed at `ctx.selectable.trigger_id`'s
   // internally-generated value, which this fixture's
   // `SelectTrigger { id: "clip-select-trigger", ... }` diverged from --
@@ -547,7 +547,7 @@ test.describe("axe: every overlay open (top-layer fixture)", () => {
     await expectNoAxeViolations(page, "top-layer fixture: Navbar open", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 
-  // docs/backlog.md row 72 follow-up: added alongside the NavigationMenu
+  // dev-docs/backlog.md row 72 follow-up: added alongside the NavigationMenu
   // oracle coverage above.
   test("NavigationMenu content open has no automatically detectable a11y issues", async ({ page }) => {
     await gotoFixture(page);
@@ -635,7 +635,7 @@ test.describe("Rule 2 — light dismiss for popover=auto (click outside closes i
     // The browser's own light dismiss hides the element; the Rust signal
     // must independently learn about it (primitives/src/top_layer.rs
     // `use_popover_sync`'s `toggle` listener) -- assert both, since a
-    // stranded signal (the exact defect class recommended-implementations.md
+    // stranded signal (the exact defect class dev-docs/reference/platform-rationale.md
     // Caveat 1 documents for <dialog>) would leave data-state="open" even
     // though the content is gone.
     await expect(page.locator("#stack-popover-content")).toBeHidden();
@@ -798,7 +798,7 @@ test.describe("Rule 5 — block-axis flip: a bottom-edge trigger with side=\"bot
     await assertFlippedAbove(page, "#edge-bottom-navbar-trigger", "#edge-bottom-navbar-content");
   });
 
-  // docs/backlog.md row 72 follow-up. Like Navbar just above,
+  // dev-docs/backlog.md row 72 follow-up. Like Navbar just above,
   // `NavigationMenuContent` has no `side` prop (always below/start-aligned
   // -- see `primitives/src/navigation_menu.rs`'s
   // `NavigationMenuContentRendered`, hardcoded `ContentSide::Bottom`/
@@ -1183,7 +1183,7 @@ test.describe("Rule 9 — point-positioned vs. anchored scroll behavior", () => 
  *     *can* exercise is gap 2 above: does anything re-measure at all once
  *     an overlay is already open? That is what parts (b) and (c) below
  *     drive at. (Real `visualViewport`-only divergence needs a genuine iOS
- *     Safari; see `docs/backlog.md`'s new row for that follow-up.)
+ *     Safari; see `dev-docs/backlog.md`'s new row for that follow-up.)
  *
  * Part (c)'s second sub-case, "conforming at open, diverging later," is the
  * one gap 2 exists for and needs a component that genuinely lands on the
@@ -1194,7 +1194,7 @@ test.describe("Rule 9 — point-positioned vs. anchored scroll behavior", () => 
  * same way it does for `use_anchor_position_fallback`'s own pre-existing
  * cases), and DropdownMenu/Select/Combobox land on the fallback path even
  * on their own, unclipped gallery pages -- the same broad CSS-Anchor-
- * Positioning unevenness `docs/backlog.md` item 21 already documents for
+ * Positioning unevenness `dev-docs/backlog.md` item 21 already documents for
  * ColorPicker/DatePicker in this sandbox. `CONFORMING_CASES` below is the
  * (smaller, execution-verified) set of contexts on this same fixture, or a
  * component's own gallery page, that DO land on the CSS-anchor path at
@@ -1452,7 +1452,7 @@ const ANCHORED_OVERLAYS: AnchoredOverlay[] = [
     },
   },
   {
-    // docs/backlog.md row 72 follow-up: `NavigationMenuContent` also calls
+    // dev-docs/backlog.md row 72 follow-up: `NavigationMenuContent` also calls
     // `use_anchor_position_fallback` (see this module's own "Top layer"
     // doc), so the same iOS keyboard/self-overlap contract applies here
     // too, mirroring the Navbar entry above exactly (`.hover()`, not
@@ -1543,7 +1543,7 @@ test.describe("Rule 11 — anchored-overlay self-overlap contract (2026-09-02 iO
      * unsupported with the reason rather than faked:
      *   - DropdownMenu/Select/Combobox never land on the CSS-anchor path at
      *     all in this sandbox, on any page checked (their own gallery page
-     *     or this fixture) -- same broad unevenness `docs/backlog.md` item
+     *     or this fixture) -- same broad unevenness `dev-docs/backlog.md` item
      *     21 already documents.
      *   - Tooltip/HoverCard DO conform at open here (`edge-bottom-*`), but
      *     confirmed by execution: shrinking the viewport for the keyboard
@@ -1560,7 +1560,7 @@ test.describe("Rule 11 — anchored-overlay self-overlap contract (2026-09-02 iO
      *   - Menubar conforms at open on its own gallery page at desktop
      *     width, but confirmed by execution: not at `MOBILE_VIEWPORT`
      *     width (390px) -- the one precondition this case needs.
-     *   - Navbar (docs/backlog.md row 41; added to `ANCHORED_OVERLAYS`
+     *   - Navbar (dev-docs/backlog.md row 41; added to `ANCHORED_OVERLAYS`
      *     above for parts (a)/(b) by finding C, not previously carried
      *     into this `CONFORMING_CASES` table) opens the same way here as
      *     in `ANCHORED_OVERLAYS` above -- `.hover()` on its trigger, with
@@ -1575,7 +1575,7 @@ test.describe("Rule 11 — anchored-overlay self-overlap contract (2026-09-02 iO
      *     applies here on the same grounds. Marked unsupported on that
      *     basis, NOT independently re-confirmed by execution for Navbar
      *     in this environment (no Playwright browser available this
-     *     round, docs/backlog.md rows 36/41's own report) -- flagged so a
+     *     round, dev-docs/backlog.md rows 36/41's own report) -- flagged so a
      *     future execution pass can confirm or correct it, the same
      *     standard every other entry here was held to.
      *   - Popover is the sole survivor, and is enough: confirmed by
@@ -1678,7 +1678,7 @@ test.describe("Rule 11 — anchored-overlay self-overlap contract (2026-09-02 iO
           "iOS Safari verification is still needed for the exact 'conforming at open' shape.",
       },
       {
-        // docs/backlog.md row 41(b). See this section's header doc's own
+        // dev-docs/backlog.md row 41(b). See this section's header doc's own
         // "Navbar" bullet above for the full reasoning and its caveat: this
         // is a structural inference from `ANCHORED_OVERLAYS`' own hover +
         // `reengage` shape for Navbar (identical to Tooltip/HoverCard's,
@@ -1695,7 +1695,7 @@ test.describe("Rule 11 — anchored-overlay self-overlap contract (2026-09-02 iO
           "execution pass should confirm or correct this.",
       },
       {
-        // docs/backlog.md row 72 follow-up. Same structural inference as
+        // dev-docs/backlog.md row 72 follow-up. Same structural inference as
         // the Navbar entry above (added to `ANCHORED_OVERLAYS` for parts
         // (a)/(b), not previously carried into this `CONFORMING_CASES`
         // table): NavigationMenu opens the same way here as in
@@ -1804,7 +1804,7 @@ test.describe("Rule 11 — anchored-overlay self-overlap contract (2026-09-02 iO
  *     unrelated vertical scroll on this fixture regardless of this fix --
  *     not something this rule is about, and not new here (confirmed by
  *     execution against the pre-fix build too) -- tracked separately,
- *     `docs/backlog.md`.
+ *     `dev-docs/backlog.md`.
  *   - Two of this file's own `edge-bottom-*` fixture cases (`Tooltip`,
  *     non-modal `Popover`) -- confirmed by execution to land at
  *     `left: -192px`/`-194px` under the same simulation, a much larger
@@ -1895,7 +1895,7 @@ test.describe("Rule 12 — inline-axis shift: a center-aligned overlay wider tha
  * anchored_content_attributes` (`primitives/src/top_layer.rs`, added
  * 2026-09-03) exists to prevent: a duplicated `style` attribute on an
  * anchored-content leaf where SSR and the WASM client disagree about which
- * `style` wins (`docs/conformance-harness.md` hydration-parity Rule 4). If
+ * `style` wins (`dev-docs/conformance-harness.md` hydration-parity Rule 4). If
  * the client ever kept a caller/wrapper `style` in place of (rather than
  * folded with) this module's own `position-anchor`/`position: fixed`
  * declarations, the popover UA stylesheet's `[popover] { inset: 0; margin:
@@ -1974,7 +1974,7 @@ test.describe("Rule 13 — fit-content width (not full page width)", () => {
       open: (page) => page.locator("#clip-navbar-trigger").hover(),
     },
     {
-      // docs/backlog.md row 72 follow-up.
+      // dev-docs/backlog.md row 72 follow-up.
       name: "NavigationMenu",
       triggerId: "clip-navigation-menu-trigger",
       contentId: "clip-navigation-menu-content",
@@ -2009,7 +2009,7 @@ test.describe("Rule 13 — fit-content width (not full page width)", () => {
 /**
  * Rule 14 — trigger id resync: an overlay's `aria-labelledby` must resolve
  * to an element that actually exists, at the caller's own id where the
- * caller overrides one (docs/backlog.md rows 36/41).
+ * caller overrides one (dev-docs/backlog.md rows 36/41).
  *
  * Citation: WAI-ARIA's `aria-labelledby` is only well-formed when it refers
  * to an `id` present in the document -- the same normative property the
@@ -2060,7 +2060,7 @@ test.describe("Rule 13 — fit-content width (not full page width)", () => {
  * class cannot arise for them.
  *
  * NOT YET RUN in this environment (no Playwright browser available this
- * round -- docs/backlog.md rows 36/41's own report spells out exactly
+ * round -- dev-docs/backlog.md rows 36/41's own report spells out exactly
  * what is and isn't verified here): written red-first against the
  * pre-fix code per this repo's convention, and expected to fail pre-fix
  * for all five cases below (the labelledby value would resolve to nothing,
@@ -2105,7 +2105,7 @@ test.describe("Rule 14 — aria-labelledby resolves to the caller-overridden tri
       open: (page) => page.locator("#clip-navbar-trigger").hover(),
     },
     {
-      // docs/backlog.md row 72 follow-up: `NavigationMenuContent` labels
+      // dev-docs/backlog.md row 72 follow-up: `NavigationMenuContent` labels
       // itself from `item_ctx.trigger_id` (`navigation_menu.rs`) and
       // `NavigationMenuTrigger` already feeds a caller override into that
       // same signal via `use_id_or`, the identical construction row 36's
@@ -2160,7 +2160,7 @@ test.describe("Rule 14 — aria-labelledby resolves to the caller-overridden tri
 });
 
 /**
- * Rule 15 — vertical shift + size clamp (docs/backlog.md row 10 residual
+ * Rule 15 — vertical shift + size clamp (dev-docs/backlog.md row 10 residual
  * scope: "shift/size clamping", closed 2026-09-04).
  *
  * Citation: same as Rules 11/12 above -- this repo's own anchored-overlay
@@ -2315,7 +2315,7 @@ test.describe("Rule 15 — vertical shift + size clamp: an overlay taller than t
 });
 
 /**
- * Rule 16 — shift and size clamp on a CONFORMING engine (docs/backlog.md
+ * Rule 16 — shift and size clamp on a CONFORMING engine (dev-docs/backlog.md
  * row 10, the "JS-fallback shift" follow-up).
  *
  * Rules 12 and 15 prove the cross-axis shift and the size clamp only under

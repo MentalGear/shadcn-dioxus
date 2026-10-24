@@ -84,7 +84,7 @@ test('open content is fit-content width, not full page width, and sits near its 
   expect(Math.abs(box.x - triggerBox.x), debug).toBeLessThan(200);
 });
 
-// REGRESSION (docs/backlog.md row 85): a raw DOM `.focus()` call landing
+// REGRESSION (dev-docs/backlog.md row 85): a raw DOM `.focus()` call landing
 // directly on a menu item -- the exact thing a Playwright test driving
 // focus programmatically does, and an assistive-technology focus-
 // restoration path plausibly could -- used to close the whole menu and

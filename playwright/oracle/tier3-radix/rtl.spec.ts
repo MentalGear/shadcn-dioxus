@@ -1,6 +1,6 @@
 /**
  * ORACLE (tier 3 -- Radix-parity, labelled opinion; see
- * docs/conformance-harness.md "Tier 3 -- Radix-parity" and
+ * dev-docs/conformance-harness.md "Tier 3 -- Radix-parity" and
  * playwright/oracle/tier3-radix/README.md's rule-source policy).
  *
  * Rule: RTL support, wherever the original (Radix's primitives, beneath

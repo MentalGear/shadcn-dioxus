@@ -1,6 +1,6 @@
 /**
  * `bar_chart` gallery -- shadcn/ui `chart-bar-*` demo parity
- * (dev-docs/research/chart-2026-09-19.md §1.2, $S/stage2-common.md).
+ * (dev-docs/archive/research/chart-2026-09-19.md §1.2, $S/stage2-common.md).
  *
  * Every registered variant of a "Normal"-kind component (this one included)
  * renders on the SAME `/component/?name=bar_chart&` page load, all at once
@@ -287,11 +287,10 @@ test.describe("Axe automated scan", () => {
   // Title deliberately avoids the lowercase substring "mobile":
   // `playwright.config.ts`'s `grepInvert: /mobile/` (meant to skip
   // viewport-name tests) silently drops ANY test whose title contains that
-  // substring, case-sensitively, with no warning -- dev-docs/issues/
-  // chart-stage2-handoff.md §5's own documented trap, live in this exact
-  // file until now (confirmed via `npx playwright test --list
-  // bar_chart.spec.ts | wc -l` vs. `grep -c 'test(' bar_chart.spec.ts`
-  // before this rename).
+  // substring, case-sensitively, with no warning (the trap is documented
+  // in dev-docs/backlog/done/090-chart-stage-2-per-chart-type-galleries-shadcn.md).
+  // Check a title with `npx playwright test --list bar_chart.spec.ts | wc -l`
+  // against `grep -c 'test(' bar_chart.spec.ts`.
   test("interactive variant toggled to the second series has no automatically detectable a11y issues", async ({
     page,
   }) => {

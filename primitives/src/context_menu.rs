@@ -2,7 +2,7 @@
 //!
 //! Also defines [`ContextMenuSub`]/[`ContextMenuSubTrigger`]/
 //! [`ContextMenuSubContent`]/[`ContextMenuSubItem`], the nested-submenu
-//! half of the APG "Menu and Menubar" pattern (`docs/component-backlog.md`
+//! half of the APG "Menu and Menubar" pattern (`dev-docs/archive/rounds/component-backlog.md`
 //! row 68). See [`ContextMenuSub`]'s own doc for the shared,
 //! host-independent state machine (`crate::menu_sub`) both this file and
 //! `dropdown_menu.rs`'s equivalent build on.
@@ -71,7 +71,7 @@ struct ContextMenuCtx {
     disabled: ReadSignal<bool>,
 
     // Whether the open menu should lock page scrolling. See
-    // docs/plan.md Phase 3.2.
+    // dev-docs/plan.md Phase 3.2.
     modal: ReadSignal<bool>,
 
     // Position of the context menu
@@ -85,7 +85,7 @@ struct ContextMenuCtx {
     root_id: Signal<String>,
 
     // Id of the trigger element, for `use_refocus_on_close_unless` (lib.rs)
-    // to return focus to on close. See docs/plan.md Phase 3.1.
+    // to return focus to on close. See dev-docs/plan.md Phase 3.1.
     trigger_id: Signal<String>,
 
     // Set just before a close caused by interacting outside the menu (see
@@ -124,7 +124,7 @@ pub struct ContextMenuProps {
     pub disabled: ReadSignal<bool>,
 
     /// Whether the open menu should lock page scrolling, matching Radix's
-    /// default. See docs/plan.md Phase 3.2.
+    /// default. See dev-docs/plan.md Phase 3.2.
     #[props(default = ReadSignal::new(Signal::new(true)))]
     pub modal: ReadSignal<bool>,
 
@@ -239,7 +239,7 @@ pub fn ContextMenu(props: ContextMenuProps) -> Element {
         direction: direction_signal,
     });
 
-    // docs/backlog.md row 53 (the "open-index container" band): this effect
+    // dev-docs/backlog.md row 53 (the "open-index container" band): this effect
     // was byte-identical to `DropdownMenu`'s own root effect
     // (`dropdown_menu.rs`) -- see `menu_root::use_open_focus_sync`'s own doc
     // for the shared construction and for why `Menubar`'s analogous
@@ -290,7 +290,7 @@ pub fn ContextMenu(props: ContextMenuProps) -> Element {
     // a duplicate in the SSR'd HTML whenever a caller overrides it (the
     // top-layer oracle fixture's `id: "clip-context-menu-root"`/
     // `id: "scroll-context-menu-root"` do exactly that) --
-    // `docs/conformance-harness.md` hydration-parity Rule 4. `id` is
+    // `dev-docs/conformance-harness.md` hydration-parity Rule 4. `id` is
     // caller-wins here like everything else, matching this element's
     // existing client behavior exactly (`..props.attributes` already won
     // there via spread order) rather than protecting it the way `toast.rs`
@@ -326,7 +326,7 @@ pub struct ContextMenuTriggerProps {
     /// The ID of the trigger element. If not provided, an internally
     /// generated ID is used -- see `ContextMenuTrigger`'s use of
     /// `use_id_or` for why this is a typed field rather than left to
-    /// `GlobalAttributes` alone (docs/backlog.md row 36).
+    /// `GlobalAttributes` alone (dev-docs/backlog.md row 36).
     pub id: ReadSignal<Option<String>>,
 
     /// Additional attributes for the context menu trigger element.
@@ -383,7 +383,7 @@ pub struct ContextMenuTriggerProps {
 #[component]
 pub fn ContextMenuTrigger(props: ContextMenuTriggerProps) -> Element {
     let ctx: ContextMenuCtx = use_context();
-    // docs/backlog.md row 36: `ctx.trigger_id` is the same signal
+    // dev-docs/backlog.md row 36: `ctx.trigger_id` is the same signal
     // `ContextMenuContent`'s `aria-labelledby` (below) and
     // `use_refocus_on_close_unless` both read back -- a caller-supplied
     // `id` here must resolve into it, not just win the render. Feeding it
@@ -503,7 +503,7 @@ pub fn ContextMenuTrigger(props: ContextMenuTriggerProps) -> Element {
             // right-click/long-press, not Tab) -- but it must be
             // programmatically focusable so Escape/select can return focus
             // here per APG's menu-button-adjacent close-focus rule. See
-            // docs/plan.md Phase 3.1.
+            // dev-docs/plan.md Phase 3.1.
             id: id.cloned(),
             tabindex: "-1",
             role: "button",
@@ -599,14 +599,14 @@ pub fn ContextMenuContent(props: ContextMenuContentProps) -> Element {
     let ctx: ContextMenuCtx = use_context();
     let open = ctx.open;
 
-    // docs/backlog.md row 53 (the "content lifecycle/positioning pipeline"
+    // dev-docs/backlog.md row 53 (the "content lifecycle/positioning pipeline"
     // band): id resolution + `use_animated_open`'s render gate, identical
     // across all three menu-family hosts' `*Content` components -- see
     // `menu_root::use_menu_content_lifecycle`'s own doc.
     let (id, render) = crate::menu_root::use_menu_content_lifecycle(props.id, open);
 
     // Lock page scroll while the menu is open and modal, matching Radix's
-    // default. See docs/plan.md Phase 3.2. `ContextMenuContent` itself
+    // default. See dev-docs/plan.md Phase 3.2. `ContextMenuContent` itself
     // never unmounts (only the rendered content below does, via `render()`),
     // so the lock is held by `ScrollLockGuard` -- a child mounted inside
     // that same conditional -- rather than by this component directly; see
@@ -667,7 +667,7 @@ pub fn ContextMenuContent(props: ContextMenuContentProps) -> Element {
 /// dismissal path, unchanged from pre-migration -- exactly per this
 /// slice's instruction to keep them.
 ///
-/// ## Viewport clamping (`docs/backlog.md` row 10, item 5.2)
+/// ## Viewport clamping (`dev-docs/backlog.md` row 10, item 5.2)
 ///
 /// The click/long-press coordinates this content is positioned at
 /// (`ContextMenuCtx::position`, set by `ContextMenuTrigger`'s mouse and
@@ -676,7 +676,7 @@ pub fn ContextMenuContent(props: ContextMenuContentProps) -> Element {
 /// `left`/`top` off-screen with nothing to correct it. Every *other*
 /// overlay in this crate gets exactly this kind of correction from
 /// `top_layer::use_anchor_position_fallback`'s shift/size clamp
-/// (`docs/backlog.md` row 10's own residual scope), but that function is
+/// (`dev-docs/backlog.md` row 10's own residual scope), but that function is
 /// keyed on an anchor element -- it resolves a trigger via
 /// `document.querySelector('[style*="anchor-name: ..."]')` and every one of
 /// its flip/shift/size-clamp branches reasons in terms of that trigger's
@@ -685,7 +685,7 @@ pub fn ContextMenuContent(props: ContextMenuContentProps) -> Element {
 /// is structurally unreachable here -- not a gap in that function, a
 /// different shape of overlay entirely. `top_layer::use_point_anchor_clamp`
 /// (called below, right after `use_popover_sync`) is the "virtual-anchor"
-/// construction `docs/backlog.md` row 10 calls out for exactly this case:
+/// construction `dev-docs/backlog.md` row 10 calls out for exactly this case:
 /// it measures this content's own rendered size once it's promoted to the
 /// top layer and clamps the raw `(x, y)` point into the viewport with the
 /// same `EDGE_MARGIN`/max-height-clamp semantics, rather than an anchor
@@ -726,7 +726,7 @@ fn ContextMenuContentRendered(
         }),
     );
 
-    // docs/backlog.md row 10, item 5.2: this content has no anchor element
+    // dev-docs/backlog.md row 10, item 5.2: this content has no anchor element
     // for `use_anchor_position_fallback` to key off of (see this
     // component's own doc above) -- clamp the raw `(x, y)` click point into
     // the viewport instead, the "virtual-anchor" construction that row
@@ -747,7 +747,7 @@ fn ContextMenuContentRendered(
         ctx.set_open,
     );
 
-    // docs/backlog.md row 11 (Phase 6, typeahead): one buffer for this
+    // dev-docs/backlog.md row 11 (Phase 6, typeahead): one buffer for this
     // menu's own items -- see `DropdownMenu`'s identical call
     // (`dropdown_menu.rs`) for the general rationale.
     let mut typeahead = crate::typeahead::use_typeahead_state();
@@ -765,7 +765,7 @@ fn ContextMenuContentRendered(
             }
             Key::Home => ctx.focus.focus_first(),
             Key::End => ctx.focus.focus_last(),
-            // docs/backlog.md row 11 (Phase 6, typeahead) -- see
+            // dev-docs/backlog.md row 11 (Phase 6, typeahead) -- see
             // `DropdownMenu`'s identical arm (`dropdown_menu.rs`) for the
             // full APG citation. Only while genuinely open, matching this
             // handler's own `Key::ArrowUp` arm just above -- while closed
@@ -822,7 +822,7 @@ fn ContextMenuContentRendered(
         )
     });
 
-    // docs/backlog.md row 25: an APG menu requires an accessible name from
+    // dev-docs/backlog.md row 25: an APG menu requires an accessible name from
     // either aria-labelledby or aria-label (menu-and-menubar-pattern.html,
     // "WAI-ARIA Roles, States, and Properties") -- labelled by the trigger,
     // mirroring `DropdownMenuContent`'s identical pattern
@@ -837,7 +837,7 @@ fn ContextMenuContentRendered(
     // `aria-label` with an empty/`AttributeValue::None` value, and two
     // entries for one attribute name is exactly the duplicate-attribute
     // hazard `merge_attributes` exists to prevent
-    // (`docs/conformance-harness.md` hydration-parity Rule 4). docs/backlog.md
+    // (`dev-docs/conformance-harness.md` hydration-parity Rule 4). dev-docs/backlog.md
     // row 53 (the "trigger id-plumbing" band): this exact block is now
     // `menu_root::content_labelledby_attributes`, shared with
     // `DropdownMenu`/`Menubar`'s identical construction.
@@ -848,7 +848,7 @@ fn ContextMenuContentRendered(
         labelledby,
         // Owned by this component -- menu semantics, top-layer wiring and
         // roving focus must win over a caller's own attributes
-        // (`docs/backlog.md` row 93's duplicate-attribute hazard).
+        // (`dev-docs/backlog.md` row 93's duplicate-attribute hazard).
         attributes!(div {
             role: crate::menu_semantics::MENU_ROLE,
             aria_orientation: "vertical",
@@ -895,7 +895,7 @@ fn ContextMenuContentRendered(
     let open = ctx.open;
     let (x, y) = (ctx.position)();
 
-    // docs/backlog.md row 11 (Phase 6, typeahead): see the web arm's
+    // dev-docs/backlog.md row 11 (Phase 6, typeahead): see the web arm's
     // identical call above for the general rationale.
     let mut typeahead = crate::typeahead::use_typeahead_state();
 
@@ -912,7 +912,7 @@ fn ContextMenuContentRendered(
             }
             Key::Home => ctx.focus.focus_first(),
             Key::End => ctx.focus.focus_last(),
-            // docs/backlog.md row 11 (Phase 6, typeahead) -- see
+            // dev-docs/backlog.md row 11 (Phase 6, typeahead) -- see
             // `DropdownMenu`'s identical arm (`dropdown_menu.rs`) for the
             // full APG citation. Only while genuinely open, matching this
             // handler's own `Key::ArrowUp` arm just above -- while closed
@@ -969,7 +969,7 @@ fn ContextMenuContentRendered(
         )
     });
 
-    // See the web arm's identical construction above (docs/backlog.md row
+    // See the web arm's identical construction above (dev-docs/backlog.md row
     // 25/53) for why this is conditional and routed through
     // `menu_root::content_labelledby_attributes` rather than a bare literal
     // alongside `..attributes`.
@@ -979,7 +979,7 @@ fn ContextMenuContentRendered(
         attributes,
         labelledby,
         // Owned by this component -- see the web arm's identical
-        // construction above (`docs/backlog.md` row 93).
+        // construction above (`dev-docs/backlog.md` row 93).
         attributes!(div {
             role: crate::menu_semantics::MENU_ROLE,
             aria_orientation: "vertical",
@@ -1023,7 +1023,7 @@ pub struct ContextMenuItemProps {
     /// The index of the item in the menu
     pub index: ReadSignal<usize>,
 
-    /// Explicit label text used for typeahead search (`docs/backlog.md`
+    /// Explicit label text used for typeahead search (`dev-docs/backlog.md`
     /// row 11 -- APG's "Any key that corresponds to a printable character"
     /// rule). When not set, falls back to [`Self::value`].
     #[props(default)]
@@ -1143,7 +1143,7 @@ pub fn ContextMenuItem(props: ContextMenuItemProps) -> Element {
     };
 
     // Owned by this component -- see `ContextMenuContentRendered`'s
-    // identical construction above (`docs/backlog.md` row 93).
+    // identical construction above (`dev-docs/backlog.md` row 93).
     let attributes = merge_attributes(vec![
         props.attributes,
         attributes!(div {
@@ -1675,7 +1675,7 @@ pub struct ContextMenuSubTriggerProps {
     pub disabled: ReadSignal<bool>,
 
     /// Explicit label text used for root-menu typeahead search
-    /// (`docs/backlog.md` row 11) -- see
+    /// (`dev-docs/backlog.md` row 11) -- see
     /// [`crate::dropdown_menu::DropdownMenuSubTriggerProps::text_value`]'s
     /// identical doc for why there is no fallback beyond this prop.
     #[props(default)]
@@ -1792,7 +1792,7 @@ pub fn ContextMenuSubTrigger(props: ContextMenuSubTriggerProps) -> Element {
             event.stop_propagation();
         },
 
-        // `docs/backlog.md` row 85: see `DropdownMenuSubTrigger`'s
+        // `dev-docs/backlog.md` row 85: see `DropdownMenuSubTrigger`'s
         // identical removal (`dropdown_menu.rs`) for the full root-cause
         // writeup -- this handler used to close the submenu whenever
         // `focused() && !sub.focus.any_focused()`, a synchronous read of a
@@ -1901,7 +1901,7 @@ fn ContextMenuSubContentRendered(
     // `hover_enter_content`/`hover_leave_content`) so hovering *either* half
     // keeps the submenu open, and only leaving both (without re-entering
     // either) within the grace window actually closes it.
-    // docs/backlog.md row 11 (Phase 6, typeahead): this submenu's own
+    // dev-docs/backlog.md row 11 (Phase 6, typeahead): this submenu's own
     // buffer, independent of the enclosing menu's root-level one -- see
     // `DropdownMenu`'s identical call (`dropdown_menu.rs`) for the general
     // rationale.
@@ -1918,7 +1918,7 @@ fn ContextMenuSubContentRendered(
         }),
     );
 
-    // `docs/backlog.md` row 85: see `crate::menu_sub::use_sub_outside_
+    // `dev-docs/backlog.md` row 85: see `crate::menu_sub::use_sub_outside_
     // dismiss`'s own doc and `DropdownMenuSubContentRendered`'s identical
     // call (`dropdown_menu.rs`) for the full construction.
     crate::menu_sub::use_sub_outside_dismiss(sub.trigger_id, sub.content_id, move || {
@@ -1969,7 +1969,7 @@ fn ContextMenuSubContentRendered(
         labelledby,
         // Owned by this component -- menu semantics, top-layer wiring and
         // direction state must win over a caller's own attributes
-        // (`docs/backlog.md` row 93's duplicate-attribute hazard).
+        // (`dev-docs/backlog.md` row 93's duplicate-attribute hazard).
         attributes!(div {
             role: crate::menu_semantics::MENU_ROLE,
             popover: crate::top_layer::PopoverKind::Auto.as_str(),
@@ -2012,7 +2012,7 @@ fn ContextMenuSubContentRendered(
                 Key::ArrowUp => sub.focus.focus_prev(),
                 Key::Home => sub.focus.focus_first(),
                 Key::End => sub.focus.focus_last(),
-                // docs/backlog.md row 11 (Phase 6, typeahead) -- see
+                // dev-docs/backlog.md row 11 (Phase 6, typeahead) -- see
                 // `DropdownMenu`'s identical arm (`dropdown_menu.rs`) for
                 // the full APG citation. Scoped to `sub.focus`, this
                 // submenu's own items, never the enclosing menu's.
@@ -2087,7 +2087,7 @@ fn ContextMenuSubContentRendered(
     let mut sub: crate::menu_sub::SubMenuState = use_context();
     let open = sub.open;
 
-    // `docs/backlog.md` row 85 -- see the web arm's identical call above
+    // `dev-docs/backlog.md` row 85 -- see the web arm's identical call above
     // for the full construction.
     crate::menu_sub::use_sub_outside_dismiss(sub.trigger_id, sub.content_id, move || {
         sub.focus.clear_focus();
@@ -2105,7 +2105,7 @@ fn ContextMenuSubContentRendered(
         attributes,
         labelledby,
         // Owned by this component -- see the web arm's identical
-        // construction above (`docs/backlog.md` row 93).
+        // construction above (`dev-docs/backlog.md` row 93).
         attributes!(div {
             role: crate::menu_semantics::MENU_ROLE,
             dir: (ctx.direction)().as_str(),
@@ -2117,7 +2117,7 @@ fn ContextMenuSubContentRendered(
     // See `SubMenuState::hover_close`'s doc: this arm still gets the same
     // shared-timer fix as the web arm, for parity even though Blitz mouse
     // events are lower-priority here.
-    // docs/backlog.md row 11 (Phase 6, typeahead): see the web arm's
+    // dev-docs/backlog.md row 11 (Phase 6, typeahead): see the web arm's
     // identical call above for the general rationale.
     let mut typeahead = crate::typeahead::use_typeahead_state();
 
@@ -2143,7 +2143,7 @@ fn ContextMenuSubContentRendered(
                 Key::ArrowUp => sub.focus.focus_prev(),
                 Key::Home => sub.focus.focus_first(),
                 Key::End => sub.focus.focus_last(),
-                // docs/backlog.md row 11 (Phase 6, typeahead) -- see
+                // dev-docs/backlog.md row 11 (Phase 6, typeahead) -- see
                 // `DropdownMenu`'s identical arm (`dropdown_menu.rs`) for
                 // the full APG citation. Scoped to `sub.focus`, this
                 // submenu's own items, never the enclosing menu's.
@@ -2294,7 +2294,7 @@ pub fn ContextMenuSubItem(props: ContextMenuSubItemProps) -> Element {
     };
 
     // Owned by this component -- see `ContextMenuItem`'s identical
-    // construction above (`docs/backlog.md` row 93).
+    // construction above (`dev-docs/backlog.md` row 93).
     let attributes = merge_attributes(vec![
         props.attributes,
         attributes!(div {

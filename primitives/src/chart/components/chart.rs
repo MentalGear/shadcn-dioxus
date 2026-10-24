@@ -359,7 +359,7 @@ pub struct ChartProps {
 /// [`ChartProps::attributes`] merges onto it too. The `svg` itself stays
 /// non-focusable (`role="img"` only).
 ///
-/// ## A11y contract (`dev-docs/research/chart-2026-09-19.md` §2.5/§6.4)
+/// ## A11y contract (`dev-docs/archive/research/chart-2026-09-19.md` §2.5/§6.4)
 ///
 /// 1. `svg[role="img"][aria-label]` + `<title>`/`<desc>`.
 /// 2. A real `<table>` mirroring the chart's data -- the screen-reader

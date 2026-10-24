@@ -60,11 +60,11 @@
    * `overflow` and `border` resets of the UA popover stylesheet's `[popover] { border: solid;
    * overflow: auto; ... }` (WHATWG HTML's popover section), the stacking and the fade all come from
    * the theme's floating-surface recipe. This content carries the `popover` attribute on the web arm
-   * (Phase 4.4, docs/plan.md); the visual "point" is the `::after` arrow. The matching `margin`/
+   * (Phase 4.4, dev-docs/plan.md); the visual "point" is the `::after` arrow. The matching `margin`/
    * `inset` reset (undoing the same UA rule's `inset: 0; margin: auto`, which would otherwise invoke
    * the CSS auto-margin centering algorithm and land the tooltip far from its trigger) lives in the
    * shared, engine-injected stylesheet every `dx-anchor-*`-marked overlay gets for free -- see
-   * `primitives/src/top_layer.rs`'s `ensure_anchor_positioning_styles` doc (docs/backlog.md item 1).
+   * `primitives/src/top_layer.rs`'s `ensure_anchor_positioning_styles` doc (dev-docs/backlog.md item 1).
    */
   line-height: calc(1 / 0.75);
 }
@@ -197,15 +197,15 @@
 }
 
 /*
- * Phase 4.4 (docs/plan.md): on the web arm, TooltipContent renders with a
+ * Phase 4.4 (dev-docs/plan.md): on the web arm, TooltipContent renders with a
  * `popover` attribute so it escapes clipping/transformed ancestors
- * (docs/phase4-spike-findings.md experiment 7) -- but promoting an element
+ * (dev-docs/archive/research/phase4-spike-findings.md experiment 7) -- but promoting an element
  * to the top layer changes its containing block to the viewport regardless
  * of its own `position` value, which breaks every `[data-side]` rule above
  * (they assume "absolute, relative to the nearest positioned ancestor",
  * i.e. `.dx-tooltip`). CSS Anchor Positioning is the platform's own,
  * still-CSS fix for that (`anchor-name`/`position-anchor`/`anchor()`), with
- * `position-try-fallbacks: flip-block, flip-inline` (docs/backlog.md row 10)
+ * `position-try-fallbacks: flip-block, flip-inline` (dev-docs/backlog.md row 10)
  * as its own collision-avoidance primitive on top.
  *
  * The `@supports (anchor-name: --a)` block that used to live here (per-
@@ -213,11 +213,11 @@
  * `.dx-anchor-tooltip` marker class) now lives in a single, engine-injected
  * stylesheet shared by every `dx-anchor-*`-marked overlay in the app --
  * `primitives/src/top_layer.rs`'s `ensure_anchor_positioning_styles` doc has
- * the full rationale (docs/backlog.md item 1, 2026-09-01): hand-copying this
+ * the full rationale (dev-docs/backlog.md item 1, 2026-09-01): hand-copying this
  * block into every consuming page's own stylesheet is exactly the "forgot to
  * duplicate it" bug class that bit `color_picker`/`date_picker`, and
  * `#[css_module]` can't scope a class referenced only inside `@supports`
- * anyway (`docs/issues/css-module-supports-scoping.md`), so there was never
+ * anyway (`dev-docs/issues/css-module-supports-scoping.md`), so there was never
  * a reason for this to be per-page CSS rather than a single, engine-level
  * rule keyed on the shared marker class.
  */

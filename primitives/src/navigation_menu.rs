@@ -186,7 +186,7 @@ struct NavigationMenuContext {
     /// pointer leave, the "opened by hover, not yet claimed by a click" marker
     /// (a click on the trigger of such a panel keeps it open and claims it
     /// instead of toggling it shut -- the pointer path hover -> click must not
-    /// flash the panel open then closed, `docs/backlog.md` row 189), and the
+    /// flash the panel open then closed, `dev-docs/backlog.md` row 189), and the
     /// `open_on_hover` gate on every one of those. `set_open` above is its
     /// write path. Shared with `crate::navbar`; see `crate::hover_intent`.
     hover: HoverIntent,
@@ -318,7 +318,7 @@ pub fn NavigationMenu(props: NavigationMenuProps) -> Element {
     });
 
     // Owned by this component -- disabled state must win over a caller's
-    // own attributes (`docs/backlog.md` row 93's duplicate-attribute
+    // own attributes (`dev-docs/backlog.md` row 93's duplicate-attribute
     // hazard).
     let attributes = merge_attributes(vec![
         props.attributes,
@@ -542,7 +542,7 @@ pub fn NavigationMenuItem(props: NavigationMenuItemProps) -> Element {
     });
 
     // Owned by this component -- open/disabled state must win over a
-    // caller's own attributes (`docs/backlog.md` row 93's
+    // caller's own attributes (`dev-docs/backlog.md` row 93's
     // duplicate-attribute hazard).
     let attributes = merge_attributes(vec![
         props.attributes,
@@ -622,7 +622,7 @@ pub fn NavigationMenuTrigger(props: NavigationMenuTriggerProps) -> Element {
     // (inert off the web arm). Previously a bare `style: anchor_name_style(
     // ..)` literal directly on this element, beside `..attributes` below: a
     // caller supplying their own `style` then produced two `style`
-    // attributes on this same tag (`docs/conformance-harness.md`
+    // attributes on this same tag (`dev-docs/conformance-harness.md`
     // hydration-parity Rule 4; caught live by
     // `playwright/oracle/attr-synth`'s `navigation_menu:trigger:style`
     // case). Folding it into `attributes` here instead, via
@@ -636,7 +636,7 @@ pub fn NavigationMenuTrigger(props: NavigationMenuTriggerProps) -> Element {
         crate::top_layer::anchored_trigger_attributes(&item_ctx.content_id.cloned(), attributes);
     // Owned by this component -- disclosure semantics (`aria-expanded`/
     // `aria-controls`) and state must win over a caller's own attributes
-    // (`docs/backlog.md` row 93's duplicate-attribute hazard).
+    // (`dev-docs/backlog.md` row 93's duplicate-attribute hazard).
     let attributes = merge_attributes(vec![
         attributes,
         attributes!(button {
@@ -662,7 +662,7 @@ pub fn NavigationMenuTrigger(props: NavigationMenuTriggerProps) -> Element {
                 // click toggles it shut like any click-opened panel. Radix
                 // would toggle it shut here (its `wasClickCloseRef` only
                 // stops hover re-opening it); Base UI's `stickIfOpen` and
-                // this crate keep it open (`docs/backlog.md` row 189).
+                // this crate keep it open (`dev-docs/backlog.md` row 189).
                 if is_open.cloned() && ctx.hover.opened_by_hover() {
                     ctx.hover.claim();
                     return;
@@ -1011,7 +1011,7 @@ fn NavigationMenuContentRendered(
         }),
         labelledby,
         // Owned by this component -- top-layer wiring + state must win
-        // over a caller's own attributes (`docs/backlog.md` row 93's
+        // over a caller's own attributes (`dev-docs/backlog.md` row 93's
         // duplicate-attribute hazard).
         attributes!(div {
             popover: crate::top_layer::PopoverKind::Manual.as_str(),
@@ -1096,7 +1096,7 @@ fn NavigationMenuContentRendered(
         attributes,
         labelledby,
         // Owned by this component -- see the web arm's identical
-        // construction above (`docs/backlog.md` row 93).
+        // construction above (`dev-docs/backlog.md` row 93).
         attributes!(div {
             "data-state": if (item_ctx.is_open)() { "open" } else { "closed" },
         }),
@@ -1229,7 +1229,7 @@ pub fn NavigationMenuLink(props: NavigationMenuLinkProps) -> Element {
     let mut onmounted_item = item.onmounted();
 
     // Owned by this component -- active/disabled state must win over a
-    // caller's own attributes (`docs/backlog.md` row 93's
+    // caller's own attributes (`dev-docs/backlog.md` row 93's
     // duplicate-attribute hazard).
     let attributes = merge_attributes(vec![
         props.attributes,
@@ -1238,7 +1238,7 @@ pub fn NavigationMenuLink(props: NavigationMenuLinkProps) -> Element {
             // `<a>` has no native disabled semantics (unlike
             // `<button disabled>`), so `data-disabled` alone would look,
             // to assistive tech, like a perfectly normal active link --
-            // same fix as `NavbarItem`/`DropdownMenuItem` (docs/backlog.md
+            // same fix as `NavbarItem`/`DropdownMenuItem` (dev-docs/backlog.md
             // row 39).
             aria_disabled: disabled(),
             "data-active": props.active,

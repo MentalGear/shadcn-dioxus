@@ -17,7 +17,7 @@
 //! activating an item calls `on_select` and closes the menu -- action
 //! semantics, not selection semantics), so the listbox roles were simply
 //! wrong: assistive technology announced "list box / option N of M" and
-//! implied a selection that does not exist. See `docs/backlog.md` row 24 and
+//! implied a selection that does not exist. See `dev-docs/backlog.md` row 24 and
 //! `oracle/tier1-apg/menu-roles.spec.ts` for the oracle that caught this and
 //! the APG citations backing it.
 //!
@@ -28,7 +28,7 @@
 //! was exactly that fourth set, added after this module existed and still
 //! hand-writing its own `role="menubar"`/`role="menu"`/`role="menuitem"`
 //! literals instead of reading them from here -- found and fixed in the same
-//! stage-1 pass that added this doc paragraph (docs/backlog.md rows 24, 25,
+//! stage-1 pass that added this doc paragraph (dev-docs/backlog.md rows 24, 25,
 //! 41). `dropdown_menu.rs`, `context_menu.rs`, `menubar.rs`, and `navbar.rs`
 //! all read their menu/menuitem/haspopup literals from here now, so a role
 //! can only drift if this module itself is edited.

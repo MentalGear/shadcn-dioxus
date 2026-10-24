@@ -2,7 +2,7 @@ use dioxus::prelude::*;
 use dioxus_primitives::aspect_ratio::{self, AspectRatioProps};
 use dioxus_primitives::{dioxus_attributes::attributes, merge_attributes};
 
-// docs/backlog.md row 32: `#[css_module]` is gone from every themed wrapper's
+// dev-docs/backlog.md row 32: `#[css_module]` is gone from every themed wrapper's
 // classes -- see checkbox/component.rs's header comment (this crate's
 // original migration) for the full asset!()+document::Link rationale.
 //

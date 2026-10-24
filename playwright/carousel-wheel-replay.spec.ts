@@ -3,7 +3,7 @@
  *
  * Source data: `fixtures/carousel-wheel-recordings.json` -- wheel bursts the
  * owner recorded on a MacBook trackpad in Firefox 156 while tuning the
- * overscroll bench (dev-docs/research/carousel-overscroll-bench.html), plus
+ * overscroll bench (`fixtures/carousel-overscroll-bench-rev40.html`), plus
  * two clearly-marked SYNTHETIC ones (a notched mouse wheel and vertical page
  * scrolling) for which no real data exists. The JSON's top-level `timing`
  * note says how event spacing was reconstructed (the telemetry has no

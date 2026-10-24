@@ -11,12 +11,12 @@
 //!    call site (backlog row 375: two sibling dialogs share one count;
 //!    see `ScrollLockInner`) --
 //!    so "is this the outermost lock/unlock" is decided synchronously in
-//!    Rust *before* any `document::eval` runs, per docs/plan.md Phase 3.2.
+//!    Rust *before* any `document::eval` runs, per dev-docs/plan.md Phase 3.2.
 //!    That reproduces the guard sarendipitee/dx-components' `overlay.rs`
 //!    uses against the unlock-flash (@ ~L625-655: only unlock once the
 //!    shared count reaches zero) without adopting that fork's
 //!    `OverlayCtx`/`OverlayManager` architecture -- see
-//!    docs/recommended-implementations.md §5.
+//!    dev-docs/reference/platform-rationale.md §5.
 //! 2. That file's unmount cleanup guards on `*active.peek()` being true,
 //!    i.e. it only releases the lock if `active` is *still* true at drop
 //!    time. In dq's own tree that's fine, because their `DialogContent`
@@ -41,7 +41,7 @@
 //!
 //! **Generation 1 (the dq port): `overflow: hidden` on `<html>` and
 //! `<body>`.** Reliably blocks wheel/keyboard scroll (confirmed by
-//! execution, `docs/phase4-spike-findings.md` "Round 2"), but never
+//! execution, `dev-docs/archive/research/phase4-spike-findings.md` "Round 2"), but never
 //! compensates for a classic (non-overlay) scrollbar's width: removing the
 //! scrollbar without reserving its space shifts the whole page horizontally
 //! by that width the instant the lock engages. [`ensure_scrollbar_gutter_baseline`]
@@ -66,7 +66,7 @@
 //! **Generation 3 (tried, execution-falsified, not shipped): a compensated
 //! `<body>` freeze** -- `position: fixed; top: -{scrollY}px; left: 0;
 //! right: 0;` on `<body>`, `<html>`'s `overflow` left completely untouched.
-//! Ported by construction from `docs/phase4-spike-findings.md` "Round 2",
+//! Ported by construction from `dev-docs/archive/research/phase4-spike-findings.md` "Round 2",
 //! Construction A / `spike_native_dialog.rs`'s `use_compensated_scroll_lock`
 //! (spike branch `spike/native-dialog`, never merged), going further than
 //! that spike by never touching `overflow-y` at all (the spike's own version
@@ -131,7 +131,7 @@
 //! Dialog, Popover or menu had opened once, *every* wheel tick on the page paid
 //! that wait again (Chromium `DidHandleInputEventSentToMain` 40/40 ticks versus 0;
 //! wheel latency max 388 ms versus 143 ms with a busy main thread,
-//! `dev-docs/research/scroll-jank-2026-10-04.md` section 7.3).
+//! `dev-docs/archive/research/scroll-jank-2026-10-04.md` section 7.3).
 //! `DOMDebugger.getEventListeners(window)` after one open-and-close showed
 //! `wheel` and `touchmove` still there, non-passive.
 //!
@@ -205,11 +205,11 @@
 //!   open, so focus inside a locked surface is essentially never on `<body>`
 //!   -- meaning Space's only realistic default action while locked is
 //!   activation, which must never be suppressed. Confirmed as a real hazard
-//!   by reading `docs/phase4-spike-findings.md` (Round 1, experiment 4's
+//!   by reading `dev-docs/archive/research/phase4-spike-findings.md` (Round 1, experiment 4's
 //!   note on a dialog's own focused Close button), not by hitting it here.
 //!
 //! **What this generation does not attempt:** no `padding-right`
-//! compensation (falsified in `docs/phase4-spike-findings.md`, Round 2, for
+//! compensation (falsified in `dev-docs/archive/research/phase4-spike-findings.md`, Round 2, for
 //! exactly the `position: fixed` marker shape this crate's own overlays and
 //! a realistic right-aligned navbar action both have); no iOS
 //! momentum-scroll handling (see "Known limitation" below); touch is
@@ -220,7 +220,7 @@
 //! same limitation `react-remove-scroll` documents for itself.
 //!
 //! ## Permanent `scrollbar-gutter: stable` baseline (scrollbar-gap fix)
-//! Backported from `docs/phase4-spike-findings.md`, "Round 2 -- solved by
+//! Backported from `dev-docs/archive/research/phase4-spike-findings.md`, "Round 2 -- solved by
 //! construction", Construction A/C. The defect: naively removing scroll
 //! capability never compensates for a classic (non-overlay) scrollbar's
 //! width on its own, so doing so shifts everything horizontally by that
@@ -303,7 +303,7 @@
 //! scrolling on iOS Safari is a platform behavior no event listener reaches
 //! once the gesture has ended. Radix delegates this same case to
 //! `react-remove-scroll`, which this crate has no equivalent of. See
-//! docs/recommended-implementations.md §5.
+//! dev-docs/reference/platform-rationale.md §5.
 //!
 //! ## Scroll-position capture and restore, and `use_early_scroll_capture`
 //! This hook has always captured `window.scrollX`/`scrollY` before locking

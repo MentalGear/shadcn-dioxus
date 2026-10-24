@@ -46,7 +46,7 @@ correctly not reported.
 
 ## Headline numbers vs. the prototype
 
-| | prototype (`duplicate-attribute-guard-prototype.py`) | this gate's analyzer (`syn` + `dioxus-rsx`) |
+| | prototype (`dev-docs/archive/issues/duplicate-attribute-guard-prototype.py`) | this gate's analyzer (`syn` + `dioxus-rsx`) |
 |---|---|---|
 | Findings | 623 (as documented); **624** reproduced against this lane's own base commit `c133aa7` -- six carousel-feature commits landed between the investigation's base (`6b4bd27`) and this lane's, one of which added exactly one new site | **687** |
 | Files | 66 | 70 |

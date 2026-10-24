@@ -46,7 +46,7 @@ test("modal: opens a form of labelled fields, traps focus, Escape closes", async
   // completion): the modal `Popover` is a real `<dialog>` + `showModal()` on
   // the web arm, so this cycle goes through Chromium's own focus trap rather
   // than the vendored `FocusTrap` -- same documented shape as
-  // `dialog.spec.ts`'s identical comment (docs/phase4-spike-findings.md
+  // `dialog.spec.ts`'s identical comment (dev-docs/archive/research/phase4-spike-findings.md
   // experiment 4a): Chromium's native trap parks focus on `<body>` for
   // exactly one Tab stop after the last focusable element before wrapping to
   // the first (invisible to the user, does not let focus escape the dialog)

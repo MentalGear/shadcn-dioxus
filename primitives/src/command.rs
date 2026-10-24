@@ -3,7 +3,7 @@
 //!
 //! This module is **original composition against this repo's own house
 //! infrastructure**, not a port of either reference fork below. It builds
-//! on exactly the pieces `docs/component-backlog.md`'s "Command palette --
+//! on exactly the pieces `dev-docs/archive/rounds/component-backlog.md`'s "Command palette --
 //! plan (2026-09-03)" section names:
 //!
 //! - **`Dialog`** (`dialog.rs`) -- [`CommandDialog`] is a thin wrapper over
@@ -70,7 +70,7 @@
 //!
 //! ## References -- read-never-vendor
 //!
-//! Per `docs/lifting-from-forks.md` §1 and the plan doc's own "References"
+//! Per `dev-docs/guides/lifting-code.md` and the plan doc's own "References"
 //! section, both of the below were read for shape only. Nothing from either
 //! was copied; no provenance header applies.
 //!
@@ -325,7 +325,7 @@ pub fn Command<T: Clone + PartialEq + 'static>(props: CommandProps<T>) -> Elemen
     use_command_root(&props);
 
     // Owned by this component -- disabled state must win over a caller's
-    // own attributes (`docs/backlog.md` row 93's duplicate-attribute
+    // own attributes (`dev-docs/backlog.md` row 93's duplicate-attribute
     // hazard).
     let attributes = merge_attributes(vec![
         props.attributes,
@@ -447,7 +447,7 @@ pub fn CommandInput(props: CommandInputProps) -> Element {
     };
 
     // Owned by this component -- input semantics/aria wiring/state must
-    // win over a caller's own attributes (`docs/backlog.md` row 93's
+    // win over a caller's own attributes (`dev-docs/backlog.md` row 93's
     // duplicate-attribute hazard).
     let attributes = merge_attributes(vec![
         props.attributes,
@@ -530,7 +530,7 @@ pub fn CommandList(props: CommandListProps) -> Element {
     let id = use_listbox_id(props.id, ctx.selectable.list_id);
 
     // Owned by this component -- role must win over a caller's own
-    // attributes (`docs/backlog.md` row 93's duplicate-attribute hazard).
+    // attributes (`dev-docs/backlog.md` row 93's duplicate-attribute hazard).
     let attributes = merge_attributes(vec![props.attributes, attributes!(div { role: "listbox" })]);
 
     rsx! {
@@ -567,7 +567,7 @@ pub fn CommandEmpty(props: CommandEmptyProps) -> Element {
     }
 
     // Owned by this component -- role must win over a caller's own
-    // attributes (`docs/backlog.md` row 93's duplicate-attribute hazard).
+    // attributes (`dev-docs/backlog.md` row 93's duplicate-attribute hazard).
     let attributes = merge_attributes(vec![
         props.attributes,
         attributes!(div {
@@ -621,7 +621,7 @@ pub fn CommandGroup(props: CommandGroupProps) -> Element {
     use_context_provider(|| CommandGroupContext { labeled_by });
 
     // Owned by this component -- role/disabled/labelledby wiring must win
-    // over a caller's own attributes (`docs/backlog.md` row 93's
+    // over a caller's own attributes (`dev-docs/backlog.md` row 93's
     // duplicate-attribute hazard).
     let attributes = merge_attributes(vec![
         props.attributes,
@@ -755,7 +755,7 @@ pub fn CommandItem<T: PartialEq + Clone + 'static>(props: CommandItemProps<T>) -
     }
 
     // Owned by this component -- role/selection state must win over a
-    // caller's own attributes (`docs/backlog.md` row 93's
+    // caller's own attributes (`dev-docs/backlog.md` row 93's
     // duplicate-attribute hazard).
     let attributes = merge_attributes(vec![
         props.attributes,

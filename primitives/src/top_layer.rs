@@ -5,10 +5,10 @@
 //! (`use_top_layer`, `TopLayerKind`). Adapted: rewritten against this
 //! crate's `document::eval` house pattern (see `use_form_reset_listener`,
 //! `lib.rs`) instead of `wasm_bindgen`/`web_sys` — this crate has neither as
-//! a dependency, and `lifting-from-forks.md` §4 says not to take dependency
+//! a dependency, and `dev-docs/archive/fork-research/lifting-from-forks.md` §4 says not to take dependency
 //! edits when a lift can avoid them. Narrowed to the Popover API only; the
 //! fork's `TopLayerKind::DialogModal` arm is dropped, since native
-//! `<dialog>` + `showModal()` is Phase 4.2's job (docs/plan.md), not this
+//! `<dialog>` + `showModal()` is Phase 4.2's job (dev-docs/plan.md), not this
 //! slice's.
 //!
 //! Two WHATWG HTML spec sections define everything below:
@@ -61,7 +61,7 @@ thread_local! {
 /// hot-reload resetting Rust statics but leaving the already-injected tag in
 /// the live DOM).
 ///
-/// ## The bug class this closes (docs/backlog.md item 1, 2026-09-01)
+/// ## The bug class this closes (dev-docs/backlog.md item 1, 2026-09-01)
 ///
 /// Before this function existed, the `@supports (anchor-name: --a)` block
 /// (per-`[data-side]`/`[data-align]` `anchor()` rules, `position-try-
@@ -72,7 +72,7 @@ thread_local! {
 /// doc above) had to be hand-copied into *every* consuming page's own
 /// `#[css_module]` stylesheet, because `manganis-core`'s `css_module_parser`
 /// does not scope classes referenced only inside `@supports`
-/// (`docs/issues/css-module-supports-scoping.md`) -- so each copy had to be a
+/// (`dev-docs/issues/css-module-supports-scoping.md`) -- so each copy had to be a
 /// plain, unhashed `dx-anchor-*` marker class rather than a `Styles::`-routed
 /// one. Two consuming pages (`color_picker`, `date_picker`) shipped without
 /// their copy and silently fell back to un-anchored positioning until the
@@ -567,7 +567,7 @@ const ANCHOR_POSITIONING_CSS_JS_LITERAL: &str = r#"`
 /// set on an ancestor. `primitives/src/toast.rs`'s
 /// `ensure_toast_base_styles` already carries a narrower, single-selector
 /// instance of this exact fix (`:where(.dx-toast-base-region[popover]) {
-/// color: inherit; }`, docs/backlog.md row 44) for the raw toast fallback
+/// color: inherit; }`, dev-docs/backlog.md row 44) for the raw toast fallback
 /// only; this generalizes it to every `[popover]`/`<dialog>` element in the
 /// app, promoted or not, themed or not.
 ///
@@ -619,7 +619,7 @@ const ANCHOR_POSITIONING_CSS_JS_LITERAL: &str = r#"`
 /// all, so it never calls [`use_anchor_position_fallback`] -- putting this
 /// rule only there would leave every native-`<dialog>` consumer unfixed.
 ///
-/// ## First-paint window (docs/backlog.md row 50 residue, closed)
+/// ## First-paint window (dev-docs/backlog.md row 50 residue, closed)
 ///
 /// Calling this from a `use_effect` at each hook above is a **best-effort
 /// early install** only -- exactly the same relationship
@@ -639,7 +639,7 @@ const ANCHOR_POSITIONING_CSS_JS_LITERAL: &str = r#"`
 /// the dependent eval's own script, so both run as one synchronous JS
 /// program with no cross-eval ordering assumption left to make. This
 /// function's own three call sites had the same shape and, per
-/// docs/backlog.md row 50, the same residue in execution (a surface
+/// dev-docs/backlog.md row 50, the same residue in execution (a surface
 /// measured mid-window, twice across repeated runs of
 /// `top-layer-ink.spec.ts`) -- so [`TOP_LAYER_INK_STYLES_INJECT_JS`] is
 /// prepended the identical way, into the "signal -> browser" show scripts
@@ -749,7 +749,7 @@ pub(crate) enum PopoverKind {
     /// existing blur-driven dismissal as a backstop; see each's own doc for
     /// why `auto` is safe there specifically.
     ///
-    /// **Opening-gesture contract (docs/backlog.md row 40):** the browser's
+    /// **Opening-gesture contract (dev-docs/backlog.md row 40):** the browser's
     /// light dismiss reads only trusted `pointerdown`/`pointerup`, so an
     /// `auto` popover that becomes open *between* a gesture's `pointerdown`
     /// and `pointerup` is hidden by that same gesture's `pointerup`. An
@@ -787,7 +787,7 @@ impl PopoverKind {
 /// from `open`, and sync the browser's own `toggle` event — fired on
 /// light-dismiss (`auto`), Escape (`auto`), or any other script/UA-driven
 /// close — back into `set_open`, so the Rust signal never strands. This is
-/// the same defect class `docs/recommended-implementations.md` Caveat 1
+/// the same defect class `dev-docs/reference/platform-rationale.md` Caveat 1
 /// documents for `<dialog>`'s one-way `showModal()`/`close()` binding
 /// (the upstream regression that motivated PR #47); the eval-channel
 /// pattern that fixes it here is the same one already used by
@@ -795,7 +795,7 @@ impl PopoverKind {
 ///
 /// The show/hide effect checks `:popover-open` before calling either
 /// method, mirroring the native-`<dialog>` spike's `dialog.open` guard
-/// (`docs/phase4-spike-findings.md`, "An `.open` guard") — without it, a
+/// (`dev-docs/archive/research/phase4-spike-findings.md`, "An `.open` guard") — without it, a
 /// redundant call (the signal already agrees with the browser's state)
 /// throws `InvalidStateError`.
 ///
@@ -804,7 +804,7 @@ impl PopoverKind {
 /// Only a real browser or webview implements the Popover API. Blitz
 /// (`dioxus-native`) implements neither the `popover` attribute nor
 /// `document::eval` (the latter is a no-op there) —
-/// `docs/recommended-implementations.md` Caveat 2's capability table shows
+/// `dev-docs/reference/platform-rationale.md` Caveat 2's capability table shows
 /// both at zero. This hook must never run on that target: calling it there
 /// would be a silent no-op at best (`eval` swallowed) and, worse, its
 /// *caller* rendering the `popover` attribute unconditionally would be
@@ -821,10 +821,10 @@ impl PopoverKind {
 /// same web-style arm, not on the native/no-op one `target_family = "wasm"`
 /// would wrongly exclude it from. `target_family = "wasm"` was the original
 /// gate here; it was corrected to `feature = "web"` after a 2026-09-01
-/// production incident (`docs/recommended-implementations.md` Caveat 1)
+/// production incident (`dev-docs/reference/platform-rationale.md` Caveat 1)
 /// showed the fullstack SSG prerender — a host (non-wasm) binary built with
 /// this feature on — rendered the native-arm markup instead, because the
-/// old gate excluded it. See `docs/recommended-implementations.md` Caveat 1
+/// old gate excluded it. See `dev-docs/reference/platform-rationale.md` Caveat 1
 /// for the corrected rule: markup/attribute choice keys off this renderer
 /// feature; only genuinely wasm-only *execution* internals (none exist in
 /// this hook's body — `document::eval` itself compiles and runs inertly on
@@ -978,7 +978,7 @@ pub(crate) fn use_popover_shown_while_mounted(
     use_effect(ensure_top_layer_ink_styles);
 
     // Browser -> signal: forwards every native *close* `toggle` for this
-    // element's whole mounted lifetime -- and ONLY closes (docs/backlog.md
+    // element's whole mounted lifetime -- and ONLY closes (dev-docs/backlog.md
     // row 115). `toggle` is dispatched asynchronously (a queued task), so
     // the `toggle(newState: "open")` echo of this hook's own `showPopover()`
     // call can arrive AFTER the signal has already gone `false` again (a
@@ -1069,7 +1069,7 @@ pub(crate) fn use_popover_shown_while_mounted(
 /// touched -- no extra reflow, no risk of fighting a working anchor
 /// resolution.
 ///
-/// ## The flip contract (docs/backlog.md row 10)
+/// ## The flip contract (dev-docs/backlog.md row 10)
 ///
 /// The stylesheets this pairs with (`tooltip`/`hover_card`/`popover`
 /// `style.css`, `@supports` blocks) now declare
@@ -1101,7 +1101,7 @@ pub(crate) fn use_popover_shown_while_mounted(
 /// `getBoundingClientRect()`/`window.inner{Width,Height}` viewport math:
 /// if the primary placement would overflow the relevant viewport edge, it
 /// uses the flipped placement instead. This closes the "legacy engines get
-/// no flip at all" gap docs/backlog.md row 10 notes alongside the CSS
+/// no flip at all" gap dev-docs/backlog.md row 10 notes alongside the CSS
 /// addition. Resizing WIDTH to fit stays out of scope (a too-wide overlay
 /// is rare, and this crate's own themed listboxes/menus already cap their
 /// own width independently, e.g. `select/style.css`'s `max-width:
@@ -1164,7 +1164,7 @@ pub(crate) fn use_popover_shown_while_mounted(
 /// Rule 12 is the regression oracle, reusing Rule 11's own no-anchor-engine
 /// simulation.
 ///
-/// ## Vertical shift + size clamp (2026-09-04, `docs/backlog.md` row 10
+/// ## Vertical shift + size clamp (2026-09-04, `dev-docs/backlog.md` row 10
 /// residual scope: "shift/size clamping")
 ///
 /// The 2026-09-03 fix directly above closed the horizontal half of this gap
@@ -1236,7 +1236,7 @@ pub(crate) fn use_popover_shown_while_mounted(
 ///    any themed consumer that doesn't independently declare `border-box`
 ///    itself (or whose declaration doesn't reach the element), not an
 ///    artifact of that one fixture. Set as a plain inline style, unlike
-///    the width contract (`--dx-anchor-width`, `docs/backlog.md` row 47,
+///    the width contract (`--dx-anchor-width`, `dev-docs/backlog.md` row 47,
 ///    below) which publishes a custom property instead -- deliberately, not
 ///    an inconsistency: an inline style always wins the cascade over *any*
 ///    author-stylesheet declaration regardless of specificity (CSS
@@ -1269,12 +1269,12 @@ pub(crate) fn use_popover_shown_while_mounted(
 /// either (no W3C-shipped primitive shrinks an anchored box to fit the way
 /// Floating UI's `size()` middleware does in userland JS). That is a real,
 /// acknowledged residual on the conforming engine, not something this round
-/// closes: it stays scoped to the JS-fallback gap `docs/backlog.md` row 10
+/// closes: it stays scoped to the JS-fallback gap `dev-docs/backlog.md` row 10
 /// explicitly names, matching gap 1's own horizontal precedent rather than
 /// an unrequested rewrite of a working engine's untouched code path.
 /// Regression oracle: `top-layer.spec.ts` Rule 15.
 ///
-/// ## Exclusion zone (2026-10-14, `docs/backlog.md` row 210 -- supersedes the
+/// ## Exclusion zone (2026-10-14, `dev-docs/backlog.md` row 210 -- supersedes the
 /// main-axis parts of "Vertical shift + size clamp" above)
 ///
 /// User report (iPhone): the open Combobox list covered its own input. The class
@@ -1316,7 +1316,7 @@ pub(crate) fn use_popover_shown_while_mounted(
 /// Regression oracle: `playwright/combobox-placement.spec.ts` (geometry sweep over
 /// viewports, input positions, schemes, typing and the list's own scroll).
 ///
-/// ## Anchor width contract (2026-09-04, `docs/backlog.md` row 47)
+/// ## Anchor width contract (2026-09-04, `dev-docs/backlog.md` row 47)
 ///
 /// User report: the styled `Select` ("Choose a fruit"/"Select an option")
 /// on the home page gallery opens a listbox the full width of the
@@ -1333,7 +1333,7 @@ pub(crate) fn use_popover_shown_while_mounted(
 /// sizing on the CSS Anchor Positioning path, but is dead in the actually-
 /// served stylesheet: this crate's `#[css_module]` class-hashing does not
 /// scope selectors written only inside an `@supports` body
-/// (`docs/issues/css-module-supports-scoping.md`; the same gap
+/// (`dev-docs/issues/css-module-supports-scoping.md`; the same gap
 /// [`ensure_anchor_positioning_styles`]'s doc describes for the shared
 /// engine stylesheet -- this is a second instance of it, this time in a
 /// *component's own* stylesheet rather than a hand-copied engine snippet),
@@ -1382,7 +1382,7 @@ pub(crate) fn use_popover_shown_while_mounted(
 /// Originally a one-shot measurement taken when `open` becomes true, not a
 /// live-tracking listener -- reasoned at the time as static positioning
 /// parity with the pre-4.4 behavior, with scroll-following deliberately
-/// deferred to `docs/plan.md` Phase 5. The repository owner reported, from
+/// deferred to `dev-docs/plan.md` Phase 5. The repository owner reported, from
 /// live-site testing, an anchored overlay (`ColorPicker`'s popup) floating
 /// viewport-fixed while the page scrolled underneath it -- detached from its
 /// trigger -- and explicitly decided scroll-following is now in scope,
@@ -1650,7 +1650,7 @@ pub(crate) fn use_anchor_position_fallback(
             function reposition() {{
                 if (!content || !trigger) return;
                 const t = trigger.getBoundingClientRect();
-                // Engine contract (docs/backlog.md row 47, 2026-09-04):
+                // Engine contract (dev-docs/backlog.md row 47, 2026-09-04):
                 // every anchored content's trigger width is published as
                 // `--dx-anchor-width`, unconditionally -- not gated on
                 // `usingFallback` below -- since this write needs to reach
@@ -2344,7 +2344,7 @@ pub(crate) const MEASURE_AT_FULL_WIDTH_JS: &str = r#"
 
 /// Clamps a **point-anchored** overlay -- one positioned at a raw `(x, y)`
 /// coordinate with no anchor element at all -- into the viewport.
-/// `docs/backlog.md` row 10, item 5.2: the one piece of that row's
+/// `dev-docs/backlog.md` row 10, item 5.2: the one piece of that row's
 /// collision-detection scope [`use_anchor_position_fallback`] above cannot
 /// cover, because that function is keyed on an *anchor element*: it resolves
 /// a trigger via `document.querySelector('[style*="anchor-name: ..."]')` and
@@ -2443,7 +2443,7 @@ pub(crate) fn use_point_anchor_clamp(
                 const ch = full.height;
 
                 // Same EDGE_MARGIN convention as `use_anchor_position_fallback`'s
-                // own shift clamp (`docs/backlog.md` row 10) -- see this
+                // own shift clamp (`dev-docs/backlog.md` row 10) -- see this
                 // function's own doc for the full construction this mirrors.
                 // `x`/`y` re-expressed relative to `visualViewport`'s own
                 // origin so the point and the bounds it's clamped against
@@ -2531,7 +2531,7 @@ pub(crate) fn use_point_anchor_clamp(
 ///
 /// CSS Anchor Positioning is the platform's own, still-CSS answer (no
 /// `floating-ui`, no JS-computed geometry — that stays out of scope; see
-/// `docs/plan.md` Phase 5, "Collision detection", which this is not): an
+/// `dev-docs/plan.md` Phase 5, "Collision detection", which this is not): an
 /// `anchor-name` declared on the trigger and referenced from the content
 /// via `position-anchor` lets `top`/`left`/etc. in the *stylesheet* use
 /// `anchor()` to mean "relative to that named anchor" even from the top
@@ -2575,7 +2575,7 @@ pub(crate) fn position_anchor_style(id: &str) -> String {
 /// `style` (shorthand or plain, e.g. the `top_layer` preview fixture's
 /// `MenubarContent { style: "min-height: 100px;", .. }`) then produced two
 /// `style` attributes on one tag: the exact duplicate-attribute hazard
-/// `docs/conformance-harness.md` hydration-parity Rule 4 documents.
+/// `dev-docs/conformance-harness.md` hydration-parity Rule 4 documents.
 /// `dioxus-ssr` keeps the *first* `style` it renders (`position-anchor` for
 /// these components), while the WASM client's `set_attribute` overwrites
 /// with the *last* one it applies (the caller's) -- so SSR and CSR silently
@@ -2641,7 +2641,7 @@ pub(crate) fn anchor_name_style(_id: &str) -> String {
 /// [`anchor_name_style`]. Some of them used to set it as a bare literal
 /// directly alongside a raw `..attributes` spread on the same element --
 /// the exact duplicate-`style` hazard `anchored_content_attributes`'s own
-/// doc describes (`docs/conformance-harness.md` hydration-parity Rule 4;
+/// doc describes (`dev-docs/conformance-harness.md` hydration-parity Rule 4;
 /// `scripts/check-attr-spread-collision.sh` ratchets against it, and
 /// `playwright/oracle/attr-synth` synthesizes it directly). The rest
 /// already ran their own literal through `merge_attributes` before the

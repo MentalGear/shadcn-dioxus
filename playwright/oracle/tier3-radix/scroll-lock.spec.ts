@@ -1,6 +1,6 @@
 /**
  * ORACLE (tier 3 -- Radix-parity, labelled opinion; see
- * docs/conformance-harness.md "Tier 3 -- Radix-parity" and
+ * dev-docs/conformance-harness.md "Tier 3 -- Radix-parity" and
  * playwright/oracle/tier3-radix/README.md's rule-source policy).
  *
  * Rule: while a modal surface is open, the page behind it must not scroll.
@@ -18,23 +18,23 @@
  * Source for our own implementation:
  * `dignifiedquire/dx-components` (MIT OR Apache-2.0)
  * `primitives/src/scroll_lock.rs` @ 5af3cc292559a0e8d73c7b9a827c4ca08ef34d99,
- * adapted per docs/recommended-implementations.md §5 and implemented at
+ * adapted per dev-docs/reference/platform-rationale.md §5 and implemented at
  * `primitives/src/scroll_lock.rs` in this repo -- see that file's header for
  * the full adaptation note (a Rust-side nesting-aware counter in place of
  * the dq base's JS global, reproducing sarendipitee/dx-components'
  * `overlay.rs` unlock-flash guard).
  *
  * STATUS AT WRITE TIME: RED. No scroll lock exists anywhere in this tree
- * before docs/plan.md Phase 3.2 lands -- every test below is expected to
+ * before dev-docs/plan.md Phase 3.2 lands -- every test below is expected to
  * fail against current `main`, and the nested-dialog case has no fixture at
  * all until Phase 3.2 adds one (see the dialog demo's "Open Nested Dialog"
  * button, `preview/src/components/dialog/variants/main/mod.rs`).
  *
- * UPDATE 2026-09-18 (docs/backlog.md row 9): `Select`'s open listbox is now
+ * UPDATE 2026-09-18 (dev-docs/backlog.md row 9): `Select`'s open listbox is now
  * wired to this same scroll lock too -- see "Select locks and releases page
  * scroll" below. It was deliberately left out of the original Phase 3.2 pass
  * -- "Neither source fork covered it; noted in tier-3 oracle header"
- * (docs/backlog.md row 9's own "Why" column -- THIS file, the paragraph just
+ * (dev-docs/backlog.md row 9's own "Why" column -- THIS file, the paragraph just
  * replaced by this update, was that "tier-3 oracle header" note) -- and this
  * file's Select case is this repo's own construction, opt-out via a
  * `scroll_lock` prop (default `true`, matching Radix) on `Select`/
@@ -43,14 +43,14 @@
  * this on.
  * `Menubar` is correctly excluded throughout -- it is never modal.
  *
- * UPDATE 2026-09-18 (docs/backlog.md row 72, following up on row 9's own
+ * UPDATE 2026-09-18 (dev-docs/backlog.md row 72, following up on row 9's own
  * "NOT COVERED HERE" note): the `scroll_lock=false` opt-out itself now has a
  * fixture and a case too -- see "Select scroll_lock=false opt-out releases
  * page scroll" below, against a new labelled instance on the `top_layer`
  * fixture page (`preview/src/components/top_layer/component.rs`).
  *
  * KNOWN GAP, both in the dq base and here (see
- * docs/recommended-implementations.md §5): no iOS momentum-scroll handling.
+ * dev-docs/reference/platform-rationale.md §5): no iOS momentum-scroll handling.
  * Radix delegates that to `react-remove-scroll`, which this crate has no
  * equivalent of, and this file does not test for it -- only that
  * `window.scrollY` doesn't move while locked, on a desktop Chromium
@@ -61,7 +61,7 @@
  *
  * LAYOUT-SHIFT ASSERTIONS (below, `assertNoHorizontalShift`): scroll-gap
  * compensation is exercised too, per
- * `docs/phase4-spike-findings.md` "Round 2 -- solved by construction",
+ * `dev-docs/archive/research/phase4-spike-findings.md` "Round 2 -- solved by construction",
  * Construction A/C. Removing a classic (non-overlay) scrollbar's `overflow:
  * hidden` without reserving its space shifts everything horizontally by the
  * scrollbar's width the instant the lock engages -- confirmed 15px on this
@@ -172,7 +172,7 @@ async function assertScrollIsUnlocked(page: Page) {
  * platform is actually rendering right now -- unlike normal-flow content,
  * which a `padding-right` compensation recipe can reach but this can't (that
  * recipe was tried and falsified for exactly this element shape; see
- * `docs/phase4-spike-findings.md`, Round 2 Construction A). A stand-in for a
+ * `dev-docs/archive/research/phase4-spike-findings.md`, Round 2 Construction A). A stand-in for a
  * realistic right-aligned navbar action.
  */
 async function rightEdgeMarkerRight(page: Page): Promise<number> {
@@ -376,7 +376,7 @@ test.describe("ContextMenu locks and releases page scroll", () => {
 });
 
 /**
- * docs/backlog.md row 9: `Select`'s open listbox now locks page scroll too,
+ * dev-docs/backlog.md row 9: `Select`'s open listbox now locks page scroll too,
  * via the same `ScrollLockGuard`/`use_scroll_lock` mechanism as every other
  * `test.describe` block above -- see this file's header doc, "UPDATE
  * 2026-09-18", for why this was left out of the original pass and how it's
@@ -393,7 +393,7 @@ test.describe("Select locks and releases page scroll", () => {
     const rightBefore = await rightEdgeMarkerRight(page);
 
     // Same role/locator convention as select.spec.ts's `singleSelectTrigger`
-    // -- docs/backlog.md row 8 gave the trigger role="combobox".
+    // -- dev-docs/backlog.md row 8 gave the trigger role="combobox".
     const trigger = demoRole(page, "combobox");
     await trigger.click();
     const listbox = page.getByRole("listbox");
@@ -412,7 +412,7 @@ test.describe("Select locks and releases page scroll", () => {
   });
 
   /**
-   * docs/backlog.md rows 9/72: the `scroll_lock=false` opt-out itself had no
+   * dev-docs/backlog.md rows 9/72: the `scroll_lock=false` opt-out itself had no
    * fixture exercising it (see this file's own former "NOT COVERED HERE"
    * note, which this test replaces). `preview/src/components/top_layer/
    * component.rs`'s "Select scroll_lock opt-out" section adds a labelled,

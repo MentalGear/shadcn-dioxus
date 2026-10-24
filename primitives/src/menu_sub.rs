@@ -65,7 +65,7 @@
 //! `SubMenuState` levels enclose it before finding the true root, which
 //! this module's single `SubMenuState` type (identical at every depth,
 //! indistinguishable from its neighbours by type alone) cannot resolve on
-//! its own. `docs/component-backlog.md` row 68 budgets nested submenus as
+//! its own. `dev-docs/archive/rounds/component-backlog.md` row 68 budgets nested submenus as
 //! "L" effort against a `molikto` patch that is "shape only, not
 //! cherry-pickable" for exactly this one level -- recursive `Sub`-in-`Sub`
 //! is not part of that budget, and is left out here rather than half-built
@@ -96,7 +96,7 @@ use crate::use_unique_id;
 /// hover entirely -- opening on hover is a widely-implemented UX
 /// convention (Radix, native OS menus), not an APG normative requirement,
 /// so this delay is this crate's own choice, not a citation (see
-/// `docs/component-backlog.md` row 68's "budget as fresh design work
+/// `dev-docs/archive/rounds/component-backlog.md` row 68's "budget as fresh design work
 /// against Radix `Sub`/`Portal` semantics"). A short delay, not an instant
 /// open, keeps a pointer merely passing over the trigger on its way
 /// elsewhere from flashing open every submenu it crosses -- the exact
@@ -220,7 +220,7 @@ pub(crate) struct SubMenuState {
     pub(crate) initial_focus: Signal<Option<CollectionPlacement>>,
     /// This submenu's own trigger element id -- `*SubContent` labels
     /// itself `aria-labelledby` from it (APG menu accessible-name
-    /// requirement, `docs/backlog.md` row 25's construction, reused here
+    /// requirement, `dev-docs/backlog.md` row 25's construction, reused here
     /// rather than reintroduced ad hoc), and Escape/ArrowLeft return focus
     /// here.
     pub(crate) trigger_id: Signal<String>,
@@ -393,7 +393,7 @@ pub(crate) fn use_sub_menu_state(
     }
 }
 
-/// `docs/backlog.md` row 85's construction, generalized to a `Sub`'s own
+/// `dev-docs/backlog.md` row 85's construction, generalized to a `Sub`'s own
 /// shape. `crate::use_outside_dismiss` (`lib.rs`) already answers "did
 /// focus/a click leave the tracked subtree" by asking the DOM directly --
 /// a native `focusin` listener plus `element.contains(event.target)` --

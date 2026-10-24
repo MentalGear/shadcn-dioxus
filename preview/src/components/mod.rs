@@ -107,7 +107,7 @@ pub fn category_of(name: &str) -> ComponentCategory {
 }
 
 /// Where a component comes from, relative to the shadcn/ui catalog this
-/// library tracks (`dev-docs/component-backlog.md`'s scope rule).
+/// library tracks (`dev-docs/archive/rounds/component-backlog.md`'s scope rule).
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum Origin {
     /// A page of shadcn/ui's catalog.
@@ -136,7 +136,7 @@ pub enum Origin {
 /// shadcn/ui" for something nobody has classified.
 ///
 /// The catalog is `shadcn-ui/ui@295a1f1`, base flavour (64 pages), as audited
-/// in `dev-docs/research/shadcn-catalog-2026-10-04.md`, whose section 2
+/// in `dev-docs/archive/research/shadcn-catalog-2026-10-04.md`, whose section 2
 /// is the name-by-name comparison. Directory names are the shadcn page name
 /// with `-` as `_`. `scripts/check-component-catalog.sh` reads the
 /// `("name", Origin::...)` rows of this block, so keep one tuple per row

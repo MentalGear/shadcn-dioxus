@@ -26,7 +26,7 @@ test("current page is marked aria-current=\"page\"; Previous/Next have accessibl
   await expect(preview.getByRole("link", { name: "3", exact: true })).toBeVisible();
 });
 
-// docs/backlog.md row 89's own watch-list item: "pagination's own equivalent
+// dev-docs/backlog.md row 89's own watch-list item: "pagination's own equivalent
 // rule pair has a subtle token mismatch left on the watch list." The
 // mismatch is real -- `[data-active="true"]`'s own background
 // (`var(--light, var(--primary-color)) var(--dark, var(--primary-color-3))`)

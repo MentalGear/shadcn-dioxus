@@ -1,10 +1,10 @@
 ---
 id: 266
 title: "Repo cleanup: archive historical dev-docs, trim CLAUDE.md and the big dev docs, split backlog.md"
-status: "Extension part (a) LANDED 2026-10-23 (lane historyguards): the guards are in, before any file moves…"
+status: "Main cleanup LANDED in batch 15. Lane cleanup-claudemd: CLAUDE.md 47 KB to 8 KB with every rule…"
 size: "M-L"
 area: process
-updated: 2026-10-23
+updated: 2026-10-24
 ---
 
 # Row 266: Repo cleanup
@@ -16,6 +16,8 @@ make it easy to understand and streamline. huge (dev doc) files should also be r
 properly refactor them."
 
 ## Status / trigger
+
+**Main cleanup LANDED in batch 15.** Lane cleanup-claudemd: `CLAUDE.md` 47 KB to 8 KB with every rule moved to one home; `dev-docs/gates.md` generated from the gate headers by `scripts/gates-doc.py` and kept current by `check-gates-doc.sh`, so a new gate never edits `CLAUDE.md`; `check-rustdoc` (a shrink-only ratchet, row 382) replaces `main.yml`'s rustdoc step; the four dispatch-only workflows deleted (`mutants.yml` kept); `STATUS.md`, `dev-loop.md`, `dx-serve-hot-reload.md` and `agent-model-fit.md` trimmed (the evidence log archived and closed); new `dev-docs/decisions.md` (part b) and `dev-docs/guides/rust-conventions.md` (row 355 item 5). Lane cleanup-archive: living dev docs 2.4 MB in 99 files to 0.55 MB in 37; historical notes in `dev-docs/archive/`; `plan.md`, `conformance-harness.md` (+ inventory), `recommended-implementations.md` (now `reference/platform-rationale.md`) and `duplicate-attribute-root-cause.md` trimmed; the 31 largest done rows trimmed; the index split into `backlog.md` (open) and `backlog-done.md`; dead comment citations 254 to 17. Left: deleting the stale remote branches (needs the owner's go), part (c), and part (d), the final independent review.
 
 **Extension part (a) LANDED 2026-10-23 (lane historyguards): the guards are in, before any file moves** -- `scripts/check-history-comments.sh` (per-file ratchet, baseline 562 history lines in 229 files) and `scripts/check-comment-refs.sh` (every `row N` and cited repo path resolves; 254 dead references baselined, mostly the old `docs/` prefix), one extractor `scripts/comment-scan.py`, rule in [`history-in-comments.md`](../history-in-comments.md). The rest (the moves, trims, parts (b)-(d)) still waits for the Round 6 sweep: **APPROVED 2026-10-19 (owner: run it when safe, in the Round 6 sweep); starts once no feature lane, Round 4 or Round 1 work is unmerged; before row 267 and the 152b prune. Owner: the cleanup thread**
 

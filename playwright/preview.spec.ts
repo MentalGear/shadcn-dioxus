@@ -14,7 +14,7 @@ test.describe("homepage", () => {
     await heroSection.waitFor({ state: "visible" });
 
     // No color-contrast exclusion needed here: this round's theme-token fix
-    // (docs/backlog.md row 39) resolved it, and this route has no
+    // (dev-docs/backlog.md row 39) resolved it, and this route has no
     // `.dx-code-block` to need the one remaining, narrower exclusion for.
     await expectNoAxeViolations(page, "homepage");
   });

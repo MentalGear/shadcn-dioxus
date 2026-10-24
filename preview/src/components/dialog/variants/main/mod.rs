@@ -5,7 +5,7 @@ use super::super::component::{
 };
 use dioxus::prelude::*;
 
-// docs/backlog.md row 32: no `#[css_module]` of its own here, and no
+// dev-docs/backlog.md row 32: no `#[css_module]` of its own here, and no
 // `document::Link` needed either -- this `Demo` always renders the `Dialog`
 // themed wrapper below, which (as of this migration) now carries its own
 // `document::Link` for `style.css`. `document::Link` dedupes on `(href,
@@ -16,7 +16,7 @@ pub fn Demo() -> Element {
     // Nested dialog, additive to this demo so the tier-3 scroll-lock oracle
     // (playwright/oracle/tier3-radix/scroll-lock.spec.ts) has a fixture for
     // the refcounted-lock case: two modals open at once, closing the inner
-    // one must leave the page still locked. See docs/plan.md Phase 3.2.
+    // one must leave the page still locked. See dev-docs/plan.md Phase 3.2.
     let mut nested_open = use_signal(|| false);
 
     rsx! {
@@ -40,7 +40,7 @@ pub fn Demo() -> Element {
             }
             // Rendered as a child of the outer Dialog's content -- not a
             // sibling -- so a still-open outer dialog's scroll lock isn't
-            // released when this one closes. See docs/plan.md Phase 3.2.
+            // released when this one closes. See dev-docs/plan.md Phase 3.2.
             // No corner X: its dismissal is a footer `DialogClose`, labelled so the
             // oracles can address it apart from the outer dialog's "Close".
             Dialog {

@@ -110,7 +110,7 @@ fn SheetPanel(
 
 #[component]
 pub fn SheetContentClose(#[props(extends = GlobalAttributes)] attributes: Vec<Attribute>) -> Element {
-    // axe `button-name` (docs/backlog.md row 34's own round): this button's
+    // axe `button-name` (dev-docs/backlog.md row 34's own round): this button's
     // only content is the `X` icon, with no text and no accessible name --
     // mirrors the fix already applied per-call-site for `DialogClose`/
     // `AlertDialogClose` (`dialog/variants/main/mod.rs`'s `aria_label:

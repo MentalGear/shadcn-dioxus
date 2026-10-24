@@ -64,7 +64,7 @@
  *   top-level items..." paragraph) records exactly which parts of this
  *   table are and are not implemented, and why.
  *
- * Calibration shape (docs/conformance-harness.md, "Calibration";
+ * Calibration shape (dev-docs/conformance-harness.md, "Calibration";
  * mirrors `oracle/tier1-apg/focus-restore-reference.spec.ts`'s two-subject
  * layout): every rule below runs once against the pattern's own vendored
  * example page (`playwright/oracle/reference/7e4034b/`, loaded over

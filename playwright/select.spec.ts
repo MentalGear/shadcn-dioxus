@@ -8,7 +8,7 @@ import { BASE_URL } from "./base-url";
 import { gotoHydrated } from "./hydration";
 import { awaitAnimationsSettled, measureAtRest } from "./animations";
 
-// docs/backlog.md row 8: SelectTrigger's role is now "combobox" (APG
+// dev-docs/backlog.md row 8: SelectTrigger's role is now "combobox" (APG
 // select-only combobox pattern), not an implicit button -- see
 // `oracle/tier1-apg/select-only-combobox.spec.ts` for the conformance rules
 // this restores. The underlying element is still a <button>; only the
@@ -308,7 +308,7 @@ test("typeahead skips disabled options", async ({ page }) => {
 });
 
 /**
- * Listbox width (docs/backlog.md row 47, 2026-09-04) -- regression guard for
+ * Listbox width (dev-docs/backlog.md row 47, 2026-09-04) -- regression guard for
  * the reported symptom: opening the styled `Select` on the home page
  * gallery rendered its listbox the full width of the viewport (1265px on a
  * 1280px-wide viewport) instead of the width of its own trigger. Root

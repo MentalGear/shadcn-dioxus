@@ -77,7 +77,7 @@ pub fn EmailClient() -> Element {
                     }
 
                     // axe `landmark-main-is-top-level`/`landmark-no-
-                    // duplicate-main` (docs/backlog.md row 34's own round):
+                    // duplicate-main` (dev-docs/backlog.md row 34's own round):
                     // `SidebarInset` (above, `sidebar/component.rs`) already
                     // renders the page's one `<main>` landmark
                     // (`data-slot="sidebar-inset"`) -- this was a second,

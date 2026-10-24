@@ -16,7 +16,7 @@
 //! only care about the primary, ratcheted count should filter to `kind == "spread"`.
 //!
 //! Approach: real parsing, not text/indentation heuristics (this replaces
-//! `dev-docs/issues/duplicate-attribute-guard-prototype.py`, which was line/indentation
+//! `dev-docs/archive/issues/duplicate-attribute-guard-prototype.py`, which was line/indentation
 //! based and therefore blind to single-line element bodies -- see that file's own header
 //! for the full disclosed-limitations list this rewrite closes).
 //!   1. `syn::parse_file` every `.rs` file under the scan roots into a real AST.

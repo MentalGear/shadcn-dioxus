@@ -83,7 +83,7 @@ export interface GestureReport {
 }
 
 /**
- * dev-docs/recommended-implementations.md §11 (kciter, "The Browser's Main
+ * dev-docs/reference/platform-rationale.md §11 (kciter, "The Browser's Main
  * Thread Is Expensive"): "any single task over 50 ms is a 'long task'".
  * This is a reference value from that article, not a tuning knob -- never
  * lower it to make a test pass; see main-thread.spec.ts's header.

@@ -11,7 +11,7 @@ import type { StateCoverage } from "./computed-style-states";
  * snapshot of every themed component page (and a few chrome routes), in BOTH
  * colour schemes.
  *
- * Purpose (docs/backlog.md row 31b, row 111): a literal/ramp -> token
+ * Purpose (dev-docs/backlog.md row 31b, row 111): a literal/ramp -> token
  * migration is meant to be value-PRESERVING. The honest check is not "does it
  * still look plausible" but "did any computed value change at all". Capture
  * before, capture after, diff: an empty diff is the proof.

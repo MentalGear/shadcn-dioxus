@@ -60,7 +60,7 @@ test("keyboard navigation", async ({ page }) => {
   await expect(fileMenuContent).toHaveCount(0);
 });
 
-// REGRESSION (`docs/backlog.md` row 85). The most directly reproducible
+// REGRESSION (`dev-docs/backlog.md` row 85). The most directly reproducible
 // instance of the whole class this row reports: `MenubarItem`'s own
 // `onblur` used to close this menu unconditionally whenever `focused()`
 // (it still held `menu_ctx.focus`'s roving focus the instant it blurred).
@@ -261,7 +261,7 @@ test.describe("Checkable items", () => {
     await expect(pinned).toHaveAttribute("aria-checked", "true");
 
     // Pointer: closes, the (controlled) state survives the close, and -- as
-    // for the keyboard below (docs/backlog.md row 140) -- focus returns to
+    // for the keyboard below (dev-docs/backlog.md row 140) -- focus returns to
     // the menu's own trigger. Selection commits on pointerdown, so the
     // mousedown that follows must not focus the item being unmounted.
     await pinned.click();
@@ -314,7 +314,7 @@ test.describe("Axe automated scan", () => {
     await expectNoAxeViolations(page, "menubar: loaded", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 
-  // docs/backlog.md row 25: Menubar's role="menu" popups carry no
+  // dev-docs/backlog.md row 25: Menubar's role="menu" popups carry no
   // aria-labelledby/aria-label at all, so an open menu has no accessible
   // name (APG menu-and-menubar pattern requires one).
   // Checkable items: role="menuitemcheckbox"/"menuitemradio" need aria-checked

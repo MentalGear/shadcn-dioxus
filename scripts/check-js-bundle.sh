@@ -12,7 +12,7 @@
 # build script (it used to have `build.rs` + the `lazy-js-bundle` crate, which ran in every consumer's build;
 # dev-docs/backlog.md row 217). Committing a generated file makes one class possible: the source and the artifact
 # drifting apart -- a `.ts` edit without a rebuild (the next build ships the old behaviour), or a hand edit of the
-# `.js` (the next rebuild erases it; `dev-docs/lifting-from-forks.md` section 2 lists a fork fix that did exactly
+# `.js` (the next rebuild erases it; `dev-docs/guides/lifting-code.md` section 2 lists a fork fix that did exactly
 # that). This gate removes the class:
 #   - `primitives/src/js/bundle.manifest` (written only by `scripts/build-js-bundle.sh`) records the sha256 of every
 #     `src/ts/*.ts` and of the `src/js/*.js` built from it; any edit of either side without a rebuild is red;

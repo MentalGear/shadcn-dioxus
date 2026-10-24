@@ -30,7 +30,7 @@ test('test', async ({ page }) => {
 });
 
 /**
- * docs/backlog.md row 44 -- "top_layer fixture's 'Add toast' appears dead
+ * dev-docs/backlog.md row 44 -- "top_layer fixture's 'Add toast' appears dead
  * on iOS 18" (device report 2026-09-03), root-caused to an unstyled toast
  * getting whatever box the engine's own popover UA-stylesheet defaults
  * happened to produce, which differs enough between engines to matter
@@ -113,7 +113,7 @@ test.describe('Toast bounding box (docs/backlog.md row 44)', () => {
     await assertToastOnScreen(page);
   });
 
-  // Bug 2 (docs/backlog.md row 44), separate from the bounding-box checks
+  // Bug 2 (dev-docs/backlog.md row 44), separate from the bounding-box checks
   // above: the fixture's own `ToastProvider { style: "position: fixed;
   // ..." }` used to replace the primitive's own `style: "--toast-count:
   // {length}"` outright (`merge_attributes`'s plain-`style` rule is

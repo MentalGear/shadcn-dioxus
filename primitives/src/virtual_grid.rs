@@ -65,7 +65,7 @@
 //! tree holds only the window (the row and column indices say where it is), and the server
 //! renders only the active cell. For a grid of a few thousand cells, a plain CSS grid with
 //! `content-visibility: auto` on its rows is the cheaper answer (survey
-//! `dev-docs/research/virtualization-survey-2026-10-04.md`).
+//! `dev-docs/archive/research/virtualization-survey-2026-10-04.md`).
 
 use dioxus::prelude::*;
 use dioxus_attributes::attributes;

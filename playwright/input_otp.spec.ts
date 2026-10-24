@@ -413,7 +413,7 @@ test.describe("Click-then-type replace (2026-09-17 -- selection-vs-collapsed-car
 
 test.describe("Axe automated scan", () => {
   // Input OTP has no overlay/expand/select interaction -- like Input/Input
-  // Group, one state to scan (docs/conformance-harness.md).
+  // Group, one state to scan (dev-docs/conformance-harness.md).
   test("loaded has no automatically detectable a11y issues", async ({ page }) => {
     await gotoHydrated(page, URL, { timeout: 20 * 60 * 1000 });
     await expect(page.locator("#otp-main")).toBeVisible();

@@ -1,5 +1,5 @@
 /**
- * Rule sources (docs/conformance-harness.md tiers):
+ * Rule sources (dev-docs/conformance-harness.md tiers):
  *
  * - WHATWG `<dialog>` modal semantics (focus trap, `showModal()`/`close()`
  *   focus restore, inertness, top layer) are inherited unchanged from

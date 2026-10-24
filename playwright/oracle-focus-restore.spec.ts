@@ -79,7 +79,7 @@ test("DropdownMenu returns focus to its trigger on Escape", async ({ page }) => 
 test("Select returns focus to its trigger on Escape", async ({ page }) => {
   await open(page, "select");
 
-  // role=combobox, not button (docs/backlog.md row 8) -- SelectTrigger's
+  // role=combobox, not button (dev-docs/backlog.md row 8) -- SelectTrigger's
   // ARIA role since the APG select-only-combobox trigger contract landed
   // this round (primitives/src/select/components/trigger.rs); this locator
   // was missed when select.spec.ts's identical one was updated because it

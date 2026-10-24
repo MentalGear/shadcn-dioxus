@@ -2514,7 +2514,7 @@ mod tests {
     }
 
     // -----------------------------------------------------------------
-    // `date_segment_key_effects` and friends (docs/mutants-baseline.md fix #7)
+    // `date_segment_key_effects` and friends (dev-docs/reference/mutants-baseline.md fix #7)
     //
     // These exercise the pure decision logic extracted from `DateSegment`'s
     // `onkeydown` handler (mechanical, behavior-preserving extraction --
@@ -3191,7 +3191,7 @@ mod tests {
     }
 
     // -----------------------------------------------------------------
-    // Month/day segment min-max guards (docs/mutants-baseline.md fix #7)
+    // Month/day segment min-max guards (dev-docs/reference/mutants-baseline.md fix #7)
     // -----------------------------------------------------------------
 
     #[test]

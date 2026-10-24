@@ -4,7 +4,7 @@ use dioxus_primitives::checkbox::{self, CheckboxProps};
 use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::merge_attributes;
 
-// docs/backlog.md row 32: `#[css_module]` is gone -- this stylesheet is now
+// dev-docs/backlog.md row 32: `#[css_module]` is gone -- this stylesheet is now
 // plain, unhashed `dx-`-prefixed CSS (collision safety comes from
 // scripts/check-dx-class-prefix.sh instead of a hash), delivered the same
 // way `main.rs`'s `GlobalHead`/`LanguageSelect` already deliver theirs: an

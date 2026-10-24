@@ -2,7 +2,7 @@
  * ORACLE: tier 2 (HTML) -- a same-page section anchor lands where the page's own CSS says it must,
  * on a page whose cards are `content-visibility: auto`.
  *
- * Source: dev-docs/research/scroll-jank-2026-10-04.md section 7.4 ("Cost NOT fixed: first-visit
+ * Source: dev-docs/archive/research/scroll-jank-2026-10-04.md section 7.4 ("Cost NOT fixed: first-visit
  * programmatic jumps land off-target") and section 8 (the construction). Rule sources:
  *   - HTML Standard, "scroll to the fragment" (navigate to a fragment): the element whose id is the
  *     fragment is scrolled into view with block `start`, which honours the scroll container's

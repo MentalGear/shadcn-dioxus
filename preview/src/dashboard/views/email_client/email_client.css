@@ -175,7 +175,7 @@
     transform: none;
 }
 
-/* docs/backlog.md row 37: the message's subject/sender/snippet/tags used
+/* dev-docs/backlog.md row 37: the message's subject/sender/snippet/tags used
  * to live directly inside `[data-slot="item-content"]`, itself a direct
  * grid child of `.ec-row` (grid-column 2). It's now wrapped one level
  * deeper in `.ec-row-open`, the real `<button>` that replaced the row's

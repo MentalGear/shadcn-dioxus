@@ -7,7 +7,7 @@
 //! everything host-private (including anything this module's own doc below
 //! explicitly declines to generalize) stays exactly where it was.
 //!
-//! # Scope: `docs/backlog.md` row 53
+//! # Scope: `dev-docs/backlog.md` row 53
 //!
 //! Row 53's own assessment of whether `Navbar` and `Menubar` should go
 //! further and share one submenu primitive concluded **extract three narrow
@@ -50,7 +50,7 @@
 //!   function -- this module only factors the lifecycle gate that runs
 //!   *before* that host-private positioning call, never the call itself.
 //! - [`content_labelledby_attributes`] -- the "trigger id-plumbing": an APG
-//!   menu needs an accessible name (`docs/backlog.md` row 25), supplied by
+//!   menu needs an accessible name (`dev-docs/backlog.md` row 25), supplied by
 //!   `aria-labelledby` pointing at the menu's own trigger id unless the
 //!   caller already named the content some other way
 //!   (`has_own_accessible_name`). Before this extraction this exact
@@ -125,7 +125,7 @@ pub(crate) fn use_menu_content_lifecycle(
 
 /// The "trigger id-plumbing" band -- see this module's doc for exactly what
 /// it does and does not subsume. An APG menu needs an accessible name
-/// (`docs/backlog.md` row 25) -- labelled by its own trigger's id, unless
+/// (`dev-docs/backlog.md` row 25) -- labelled by its own trigger's id, unless
 /// the caller already named the content some other way. Returns the
 /// `aria-labelledby` attribute as its own `merge_attributes` input (present
 /// only when applicable, an empty `Vec` otherwise), never a bare literal
@@ -133,7 +133,7 @@ pub(crate) fn use_menu_content_lifecycle(
 /// `aria-labelledby`/`aria-label` with an empty/`AttributeValue::None`
 /// value, and two entries for one attribute name is exactly the
 /// duplicate-attribute hazard `merge_attributes` exists to prevent
-/// (`docs/conformance-harness.md` hydration-parity Rule 4; see
+/// (`dev-docs/conformance-harness.md` hydration-parity Rule 4; see
 /// `has_own_accessible_name`'s own doc).
 pub(crate) fn content_labelledby_attributes(
     attributes: &[Attribute],

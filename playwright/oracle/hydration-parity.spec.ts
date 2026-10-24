@@ -26,7 +26,7 @@
  * built by CI as fullstack SSG (`.github/workflows/web.yml`: `ssg: true,
  * features: fullstack`). The SSG prerender runs the *server* binary -- a
  * host (non-wasm) build, not the wasm client. Before the axis fix this
- * spec guards (`docs/recommended-implementations.md` Caveat 1), every
+ * spec guards (`dev-docs/reference/platform-rationale.md` Caveat 1), every
  * overlay component split its rendered markup on
  * `#[cfg(target_family = "wasm")]`, which is false on that host binary --
  * so the SSG server rendered the *native* arm (plain `div`s, no `popover`
@@ -790,7 +790,7 @@ test.describe("hydration parity — SSG server markup vs. wasm client", () => {
   // own default (`toast.rs`). That subject left `/` on 2026-09-03 when
   // `preview/src/main.rs`'s `ComponentGallery` stopped embedding the
   // `top_layer` fixture on the home page (it is an oracle probe surface,
-  // not an installable component -- see docs/backlog.md's landed row and
+  // not an installable component -- see dev-docs/backlog.md's landed row and
   // this file's own Rule 4 doc note above); `/component/?name=X&` cannot
   // serve as a replacement fixture for the reason Rule 4's doc already
   // gives (this app's SSG build does not prerender per query-string value).

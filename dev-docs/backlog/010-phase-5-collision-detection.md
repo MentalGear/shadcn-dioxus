@@ -23,4 +23,4 @@ S (flip, done) + S (JS-fallback shift, done) + S (vertical/size clamp, done) + S
 
 ## Detail
 
-Keep the CSS clamp (5.3) regardless — still pending, see `recommended-implementations.md` §6. Two adoptable ideas from the comparison, not yet taken: bits-ui's debounced nested-lock cleanup (~24ms, survives same-tick unmount/remount races), and Radix's right-click carve-out for backdrop dismiss
+Keep the CSS clamp (5.3) regardless — still pending, see `dev-docs/reference/platform-rationale.md` §6. Two adoptable ideas from the comparison, not yet taken: bits-ui's debounced nested-lock cleanup (~24ms, survives same-tick unmount/remount races), and Radix's right-click carve-out for backdrop dismiss

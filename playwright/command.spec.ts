@@ -1,7 +1,7 @@
 /**
  * `Command` (command palette) conformance spec.
  *
- * Oracle choice, per docs/plan.md's definition of done: primarily a
+ * Oracle choice, per dev-docs/plan.md's definition of done: primarily a
  * smoke + axe suite, the same shape row-27's nine styled-only components
  * use, rather than a bespoke tier-1 APG-cited file. Two reasons, both
  * checked before writing this file rather than assumed:

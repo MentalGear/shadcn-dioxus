@@ -75,12 +75,12 @@
  *     requirement either way -- the pattern is silent on looping), this
  *     is asserted as a LIBRARY-ONLY fact in its own describe block below,
  *     not compared against a reference that doesn't exhibit it. Per
- *     `docs/conformance-harness.md`'s own Calibration policy ("if the
+ *     `dev-docs/conformance-harness.md`'s own Calibration policy ("if the
  *     REFERENCE subject ever goes red, the rule itself is wrong"), a
  *     dual-subject rule that the reference cannot pass would be exactly
  *     that kind of wrong rule.
  *
- * Calibration shape (docs/conformance-harness.md, "Calibration"; mirrors
+ * Calibration shape (dev-docs/conformance-harness.md, "Calibration"; mirrors
  * `disclosure-navigation.spec.ts`'s own two-subject layout): every R1-R4
  * rule below runs once against the pattern's own vendored example page
  * (loaded over `file://`, no network, cannot drift) and once against this
@@ -91,7 +91,7 @@
  *
  * A note on exact wording: the reference's own accessible names are
  * Title Case ("Previous Slide", "Next Slide"); this library's (matching
- * shadcn's own convention, `dev-docs/research/carousel-2026-09-19.md`
+ * shadcn's own convention, `dev-docs/archive/research/carousel-2026-09-19.md`
  * §5.1) are sentence case ("Previous slide", "Next slide"). APG requires
  * *a* meaningful accessible name, never this exact string, so every rule
  * below matches case-insensitively rather than pinning one subject's
@@ -161,7 +161,7 @@ async function precedes(a: Locator, b: Locator): Promise<boolean> {
 test.describe("Reference: W3C's own Carousel example (carousel-1-prev-next.html)", () => {
   test("R1: the carousel region has an accessible name, aria-roledescription=carousel, and the name does not contain the word \"carousel\"", async ({ page }) => {
     // Forces the reference's own autoplay off at init (`carousel-prev-next.js`'s
-    // own `hasReducedMotion` check, dev-docs/research/carousel-2026-09-19.md
+    // own `hasReducedMotion` check, dev-docs/archive/research/carousel-2026-09-19.md
     // §1.3 point 4) -- without this, the reference silently rotates away
     // from slide 1 while these assertions run, since it autoplays by
     // default. Confirmed by execution: every test in this describe block
@@ -179,7 +179,7 @@ test.describe("Reference: W3C's own Carousel example (carousel-1-prev-next.html)
 
   test('R2: each slide has role=group, aria-roledescription=slide, and an "N of M" accessible name', async ({ page }) => {
     // Forces the reference's own autoplay off at init (`carousel-prev-next.js`'s
-    // own `hasReducedMotion` check, dev-docs/research/carousel-2026-09-19.md
+    // own `hasReducedMotion` check, dev-docs/archive/research/carousel-2026-09-19.md
     // §1.3 point 4) -- without this, the reference silently rotates away
     // from slide 1 while these assertions run, since it autoplays by
     // default. Confirmed by execution: every test in this describe block
@@ -190,7 +190,7 @@ test.describe("Reference: W3C's own Carousel example (carousel-1-prev-next.html)
     await page.goto(referenceUrl);
     // Six slides in this fixture -- 1 of 6 .. 6 of 6. The reference shows
     // one slide at a time (a show/hide `.active` toggle, not a scrolling
-    // strip -- dev-docs/research/carousel-2026-09-19.md §2.1's own
+    // strip -- dev-docs/archive/research/carousel-2026-09-19.md §2.1's own
     // finding), so the five non-active slides are not visible/ARIA-tree
     // -reachable via `getByRole` even with reduced motion holding the
     // *active* one at slide 1 -- confirmed by execution (R2 timed out
@@ -207,7 +207,7 @@ test.describe("Reference: W3C's own Carousel example (carousel-1-prev-next.html)
 
   test("R3: Previous/Next are native buttons with a real accessible name, Enter/Space page the carousel, and activating them never moves focus", async ({ page }) => {
     // Forces the reference's own autoplay off at init (`carousel-prev-next.js`'s
-    // own `hasReducedMotion` check, dev-docs/research/carousel-2026-09-19.md
+    // own `hasReducedMotion` check, dev-docs/archive/research/carousel-2026-09-19.md
     // §1.3 point 4) -- without this, the reference silently rotates away
     // from slide 1 while these assertions run, since it autoplays by
     // default. Confirmed by execution: every test in this describe block
@@ -235,7 +235,7 @@ test.describe("Reference: W3C's own Carousel example (carousel-1-prev-next.html)
 
   test("R4: Previous and Next both precede the slide content in the Tab (document) order", async ({ page }) => {
     // Forces the reference's own autoplay off at init (`carousel-prev-next.js`'s
-    // own `hasReducedMotion` check, dev-docs/research/carousel-2026-09-19.md
+    // own `hasReducedMotion` check, dev-docs/archive/research/carousel-2026-09-19.md
     // §1.3 point 4) -- without this, the reference silently rotates away
     // from slide 1 while these assertions run, since it autoplays by
     // default. Confirmed by execution: every test in this describe block
@@ -254,7 +254,7 @@ test.describe("Reference: W3C's own Carousel example (carousel-1-prev-next.html)
 
   test("axe: the reference example itself has no automatically detectable a11y issues", async ({ page }) => {
     // Forces the reference's own autoplay off at init (`carousel-prev-next.js`'s
-    // own `hasReducedMotion` check, dev-docs/research/carousel-2026-09-19.md
+    // own `hasReducedMotion` check, dev-docs/archive/research/carousel-2026-09-19.md
     // §1.3 point 4) -- without this, the reference silently rotates away
     // from slide 1 while these assertions run, since it autoplays by
     // default. Confirmed by execution: every test in this describe block
@@ -423,7 +423,7 @@ test.describe("Reference: W3C's own Carousel tabbed example (carousel-2-tablist.
     // The pattern page's own prose claims a tabpanel "does not have the
     // aria-roledescription property" -- the example's own markup
     // contradicts that (this file's header doc, and
-    // `dev-docs/research/carousel-2026-09-19.md` §1.3 point 1): asserted
+    // `dev-docs/archive/research/carousel-2026-09-19.md` §1.3 point 1): asserted
     // against the tested example, not the prose.
     await page.emulateMedia({ reducedMotion: "reduce" });
     // goto-ok: vendored W3C APG reference page, not the app: it never sets html[data-hydrated]

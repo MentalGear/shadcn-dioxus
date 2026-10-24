@@ -2,7 +2,7 @@
 //!
 //! Also defines [`DropdownMenuSub`]/[`DropdownMenuSubTrigger`]/
 //! [`DropdownMenuSubContent`]/[`DropdownMenuSubItem`], the nested-submenu
-//! half of the APG "Menu and Menubar" pattern (`docs/component-backlog.md`
+//! half of the APG "Menu and Menubar" pattern (`dev-docs/archive/rounds/component-backlog.md`
 //! row 68). See [`DropdownMenuSub`]'s own doc for the shared, host-
 //! independent state machine (`crate::menu_sub`) both this file and
 //! `context_menu.rs`'s equivalent build on.
@@ -38,7 +38,7 @@ struct DropdownMenuContext {
     // `DropdownMenu` itself renders, the one enclosing both
     // `DropdownMenuTrigger` and `DropdownMenuContent`) -- mirrors
     // `ContextMenuCtx::root_id` (`context_menu.rs`) exactly, added for the
-    // same reason: `docs/backlog.md` row 85's fix. See
+    // same reason: `dev-docs/backlog.md` row 85's fix. See
     // `DropdownMenuContentRendered`'s own `use_outside_dismiss` call for
     // why this id, not `trigger_id`/`content_id` individually, is what a
     // real "did focus/a click leave the whole widget" check needs to key
@@ -56,7 +56,7 @@ struct DropdownMenuContext {
     // `open_with_focus` below, which sets this *before* flipping `open` --
     // never the reverse -- so opening never depends on the content already
     // being mounted or on the open<->focus sync effect below. See
-    // docs/recommended-implementations.md's "keyboard open contract" note.
+    // dev-docs/reference/platform-rationale.md's "keyboard open contract" note.
     initial_focus: Signal<Option<CollectionPlacement>>,
 
     // Unique ID for the trigger button
@@ -73,13 +73,13 @@ struct DropdownMenuContext {
     content_id: Signal<String>,
 
     // Whether the open menu should lock page scrolling. See
-    // docs/plan.md Phase 3.2.
+    // dev-docs/plan.md Phase 3.2.
     modal: ReadSignal<bool>,
 
     // Set just before a close caused by something *outside* the menu
     // (trigger/item blur), so `use_refocus_on_close_unless` (lib.rs) knows
     // not to yank focus back to the trigger for those closes. Reset to
-    // `false` whenever the menu opens. See docs/plan.md Phase 3.1.
+    // `false` whenever the menu opens. See dev-docs/plan.md Phase 3.1.
     interacted_outside: Signal<bool>,
 
     // Count of currently-open descendant `DropdownMenuSub` submenus
@@ -98,7 +98,7 @@ struct DropdownMenuContext {
     // receives DOM focus -- as focus having left the entire widget, and
     // close the root out from under its own still-open submenu. Root cause
     // for `oracle/tier1-apg/menu-submenu.spec.ts`'s click/hover-open
-    // failures (`docs/component-backlog.md` row 68); see
+    // failures (`dev-docs/archive/rounds/component-backlog.md` row 68); see
     // `DropdownMenuSub`'s own comment for how this count is kept accurate
     // across open, close, and an ancestor unmounting a still-open submenu.
     submenu_open_count: Signal<usize>,
@@ -144,7 +144,7 @@ pub struct DropdownMenuProps {
     pub disabled: ReadSignal<bool>,
 
     /// Whether the open menu should lock page scrolling, matching Radix's
-    /// default. See docs/plan.md Phase 3.2.
+    /// default. See dev-docs/plan.md Phase 3.2.
     #[props(default = ReadSignal::new(Signal::new(true)))]
     pub modal: ReadSignal<bool>,
 
@@ -180,7 +180,7 @@ pub struct DropdownMenuProps {
 /// as [`crate::select`], a genuine listbox. `DropdownMenu` has no selection
 /// model (no `value`/`selected` state, no `aria-selected` on any item --
 /// activating an item is an action, via `on_select`, not a selection), so
-/// those roles were wrong for it; see `docs/backlog.md` row 24 and
+/// those roles were wrong for it; see `dev-docs/backlog.md` row 24 and
 /// `oracle/tier1-apg/menu-roles.spec.ts`. If your code queries
 /// `role="option"` (Playwright's `getByRole('option', ...)` or an
 /// accessibility-tree assertion) against this component's items, update it
@@ -262,7 +262,7 @@ pub fn DropdownMenu(props: DropdownMenuProps) -> Element {
         direction: direction_signal,
     });
 
-    // docs/backlog.md row 53 (the "open-index container" band): this effect
+    // dev-docs/backlog.md row 53 (the "open-index container" band): this effect
     // -- keep `open` in sync with whether `focus` currently holds DOM focus,
     // skipped while a descendant submenu is open -- is byte-identical to
     // `ContextMenu`'s own root effect (`context_menu.rs`), so both now share
@@ -271,7 +271,7 @@ pub fn DropdownMenu(props: DropdownMenuProps) -> Element {
     // effect stays out of this shared construction.
     crate::menu_root::use_open_focus_sync(focus, open, set_open, submenu_open_count);
 
-    // docs/backlog.md row 11 (Phase 6, typeahead): one buffer for this
+    // dev-docs/backlog.md row 11 (Phase 6, typeahead): one buffer for this
     // menu's own root-level items (including any `DropdownMenuSubTrigger`
     // rows, which register in this same `focus` collection -- see that
     // component's own `text_value` prop). A submenu's own open content gets
@@ -335,7 +335,7 @@ pub fn DropdownMenu(props: DropdownMenuProps) -> Element {
                 // browser's default action for the key outright -- the same
                 // "unconditional keydown-suppressor must never run on the
                 // web arm" lesson `PopoverContentRendered`'s doc documents
-                // for `use_global_escape_listener` (docs/plan.md Phase
+                // for `use_global_escape_listener` (dev-docs/plan.md Phase
                 // 4.4/4.2). This is a plain `cfg!()` compile-time branch on
                 // ordinary code, not a conditionally-called hook, so it
                 // carries none of that lesson's hook-order hazard -- no
@@ -447,7 +447,7 @@ pub struct DropdownMenuTriggerProps {
     /// The ID of the trigger button. If not provided, an internally
     /// generated ID is used -- see `DropdownMenuTrigger`'s use of
     /// `use_id_or` for why this is a typed field rather than left to
-    /// `GlobalAttributes` alone (docs/backlog.md row 36).
+    /// `GlobalAttributes` alone (dev-docs/backlog.md row 36).
     pub id: ReadSignal<Option<String>>,
 
     /// Additional attributes to apply to the trigger element.
@@ -513,7 +513,7 @@ pub fn DropdownMenuTrigger(props: DropdownMenuTriggerProps) -> Element {
     let disabled = ctx.disabled;
     let data_state = if open() { "open" } else { "closed" };
 
-    // docs/backlog.md row 36: `ctx.trigger_id` is the same signal
+    // dev-docs/backlog.md row 36: `ctx.trigger_id` is the same signal
     // `DropdownMenuContent`'s `aria-labelledby` (below) and
     // `use_refocus_on_close_unless` both read back -- a caller-supplied
     // `id` here must resolve into it, not just win the render. Feeding it
@@ -557,7 +557,7 @@ pub fn DropdownMenuTrigger(props: DropdownMenuTriggerProps) -> Element {
                 }
             }
         },
-        // `docs/backlog.md` row 85: this used to carry its own `onblur`,
+        // `dev-docs/backlog.md` row 85: this used to carry its own `onblur`,
         // closing the menu whenever `!ctx.focus.any_focused() &&
         // submenu_open_count() == 0` -- i.e. whenever this button lost
         // focus and neither a root-level item nor an open submenu had
@@ -680,7 +680,7 @@ pub struct DropdownMenuContentProps {
 pub fn DropdownMenuContent(props: DropdownMenuContentProps) -> Element {
     let mut ctx: DropdownMenuContext = use_context();
 
-    // docs/backlog.md row 53 (the "content lifecycle/positioning pipeline"
+    // dev-docs/backlog.md row 53 (the "content lifecycle/positioning pipeline"
     // band): id resolution + `use_animated_open`'s render gate, identical
     // across all three menu-family hosts' `*Content` components -- see
     // `menu_root::use_menu_content_lifecycle`'s own doc.
@@ -699,7 +699,7 @@ pub fn DropdownMenuContent(props: DropdownMenuContentProps) -> Element {
     use_deferred_collection_focus(ctx.focus, ctx.initial_focus, render);
 
     // Lock page scroll while the menu is open and modal, matching Radix's
-    // default. See docs/plan.md Phase 3.2. `DropdownMenuContent` itself
+    // default. See dev-docs/plan.md Phase 3.2. `DropdownMenuContent` itself
     // never unmounts (only the rendered content below does, via `render()`),
     // so the lock is held by `ScrollLockGuard` -- a child mounted inside
     // that same conditional -- rather than by this component directly; see
@@ -720,10 +720,10 @@ pub fn DropdownMenuContent(props: DropdownMenuContentProps) -> Element {
     }
 }
 
-/// Web arm (docs/backlog.md item 2, non-modal-overlay migration): promote
+/// Web arm (dev-docs/backlog.md item 2, non-modal-overlay migration): promote
 /// the menu to the top layer via `popover="auto"` so it escapes
 /// clipping/transformed ancestors, the same fix already shipped for
-/// `Tooltip`/`HoverCard`/non-modal `Popover` (docs/plan.md Phase 4.4). This
+/// `Tooltip`/`HoverCard`/non-modal `Popover` (dev-docs/plan.md Phase 4.4). This
 /// also gains native light dismiss (WHATWG HTML's light-dismiss algorithm --
 /// Escape and outside-pointerdown) for free from the platform.
 ///
@@ -745,7 +745,7 @@ pub fn DropdownMenuContent(props: DropdownMenuContentProps) -> Element {
 /// `hidePopover()` from `open` and mirrors the browser's own `toggle` event
 /// (fired on light dismiss, Escape, or any other close) back into
 /// `set_open`, so the Rust signal can never strand the way `docs/
-/// recommended-implementations.md` Caveat 1 documents for `<dialog>`'s old
+/// dev-docs/reference/platform-rationale.md` Caveat 1 documents for `<dialog>`'s old
 /// one-way `showModal()`/`close()` binding. It also clears the focus
 /// collection on that path -- see its callback's own comment.
 #[cfg(feature = "web")]
@@ -782,7 +782,7 @@ fn DropdownMenuContentRendered(
             ctx.set_open.call(is_open);
         }),
     );
-    // `docs/backlog.md` row 85: the DOM-truth-based dismiss check
+    // `dev-docs/backlog.md` row 85: the DOM-truth-based dismiss check
     // `ContextMenu` already has (`ContextMenuContentRendered`,
     // `context_menu.rs`) -- a native `focusin`/`pointerdown` listener
     // asking `ctx.root_id`'s own element (this menu's outer wrapping `div`,
@@ -831,16 +831,16 @@ fn DropdownMenuContentRendered(
     // engine-injected anchor-positioning stylesheet (`top_layer::
     // ensure_anchor_positioning_styles`) selects on, sidestepping
     // `manganis-core`'s `css_module_parser` not scoping classes inside
-    // `@supports` bodies (`docs/issues/css-module-supports-scoping.md`).
-    // docs/backlog.md row 25's own construction, applied here too (this
+    // `@supports` bodies (`dev-docs/issues/css-module-supports-scoping.md`).
+    // dev-docs/backlog.md row 25's own construction, applied here too (this
     // component already carried `aria-labelledby`, but as a bare literal
     // alongside `..attributes` -- the duplicate-attribute hazard
-    // `merge_attributes` exists to prevent, `docs/conformance-harness.md`
+    // `merge_attributes` exists to prevent, `dev-docs/conformance-harness.md`
     // hydration-parity Rule 4, if a caller's own attribute list ever
     // carried a same-named, empty-valued `aria-label`/`aria-labelledby`;
     // see `has_own_accessible_name`'s own doc). Only contributed when the
     // caller hasn't already named this content some other way, and as its
-    // own `merge_attributes` input rather than a literal. docs/backlog.md
+    // own `merge_attributes` input rather than a literal. dev-docs/backlog.md
     // row 53 (the "trigger id-plumbing" band): this exact block is now
     // `menu_root::content_labelledby_attributes`, shared with
     // `ContextMenu`/`Menubar`'s identical construction.
@@ -855,7 +855,7 @@ fn DropdownMenuContentRendered(
         // `role`/`popover`/`data-state` are owned by this component (menu
         // semantics + top-layer wiring), so they must win over a caller's
         // own attributes rather than sit as a literal beside `..attributes`
-        // (`docs/backlog.md` row 93's duplicate-attribute hazard).
+        // (`dev-docs/backlog.md` row 93's duplicate-attribute hazard).
         attributes!(div {
             role: crate::menu_semantics::MENU_ROLE,
             popover: crate::top_layer::PopoverKind::Auto.as_str(),
@@ -866,7 +866,7 @@ fn DropdownMenuContentRendered(
     // one `style` attribute -- see `top_layer::anchored_content_attributes`'s
     // doc for why a bare `style: position_anchor_style(&id)` literal
     // alongside `..attributes` is the duplicate-`style` hazard
-    // (`docs/conformance-harness.md` hydration-parity Rule 4).
+    // (`dev-docs/conformance-harness.md` hydration-parity Rule 4).
     let attributes = crate::top_layer::anchored_content_attributes(&id, attributes);
 
     rsx! {
@@ -886,7 +886,7 @@ fn DropdownMenuContentRendered(
 }
 
 /// Native (Blitz) arm: unchanged from before this slice -- Blitz has no
-/// popover-API support at all (`docs/recommended-implementations.md`
+/// popover-API support at all (`dev-docs/reference/platform-rationale.md`
 /// Caveat 2), so light dismiss / Escape still need this crate's own
 /// blur-driven dismissal, and this is the functional floor: a plain,
 /// always-in-flow `div`, visible exactly when `render()` (`DropdownMenuContent`)
@@ -901,7 +901,7 @@ fn DropdownMenuContentRendered(
 ) -> Element {
     let mut ctx: DropdownMenuContext = use_context();
 
-    // See the web arm's identical construction above (docs/backlog.md row
+    // See the web arm's identical construction above (dev-docs/backlog.md row
     // 25/53) for why this is conditional and routed through
     // `menu_root::content_labelledby_attributes` rather than a bare literal
     // alongside `..attributes`.
@@ -912,14 +912,14 @@ fn DropdownMenuContentRendered(
         attributes,
         labelledby,
         // Owned by this component -- see the web arm's identical
-        // construction above (`docs/backlog.md` row 93).
+        // construction above (`dev-docs/backlog.md` row 93).
         attributes!(div {
             role: crate::menu_semantics::MENU_ROLE,
             "data-state": if open() { "open" } else { "closed" },
         }),
     ]);
 
-    // `docs/backlog.md` row 85 -- see the web arm's identical call above
+    // `dev-docs/backlog.md` row 85 -- see the web arm's identical call above
     // for the full construction. This arm has no popover API to fall back
     // on at all (this file's own doc, above), so it depended on
     // `DropdownMenuTrigger`'s old `onblur` entirely for dismissal; this
@@ -959,7 +959,7 @@ pub struct DropdownMenuItemProps<T: Clone + PartialEq + 'static> {
     #[props(default)]
     pub disabled: ReadSignal<bool>,
 
-    /// Explicit label text used for typeahead search (`docs/backlog.md`
+    /// Explicit label text used for typeahead search (`dev-docs/backlog.md`
     /// row 11 -- APG's "Any key that corresponds to a printable character"
     /// rule). When not set, falls back to [`Self::value`]'s own `String`/
     /// `&str` representation if it has one, else this item is not
@@ -1062,13 +1062,13 @@ pub fn DropdownMenuItem<T: Clone + PartialEq + 'static>(
     // `data-disabled`/`tabindex` are all owned by this component (roving
     // focus + disabled-state semantics), so they must win over a caller's
     // `props.attributes` rather than risk the SSR duplicate-attribute
-    // hazard (`docs/backlog.md` row 93).
+    // hazard (`dev-docs/backlog.md` row 93).
     let attributes = merge_attributes(vec![
         props.attributes,
         attributes!(div {
             role: crate::menu_semantics::MENU_ITEM_ROLE,
             // Found investigating an axe `color-contrast` finding on this
-            // pattern class's disabled state (docs/backlog.md row 39): the
+            // pattern class's disabled state (dev-docs/backlog.md row 39): the
             // `data-disabled` styling hook alone leaves this `role=
             // "menuitem"` exposed to assistive tech as a perfectly normal,
             // active item -- no `aria-disabled`, so nothing here signals
@@ -1391,7 +1391,7 @@ fn dropdown_checkable_item(state: CheckableState, common: CheckableCommon) -> El
     };
 
     // Owned by this component, so they win over a caller's own attributes
-    // (`docs/backlog.md` row 93's duplicate-attribute hazard).
+    // (`dev-docs/backlog.md` row 93's duplicate-attribute hazard).
     let attributes = merge_attributes(vec![
         attributes,
         state.owned_attributes(disabled(), inset, if focused() { "0" } else { "-1" }),
@@ -1612,7 +1612,7 @@ pub struct DropdownMenuSubTriggerProps {
 
     /// The ID of the sub-trigger element. If not provided, an internally
     /// generated ID is used -- see `DropdownMenuTrigger`'s identical use of
-    /// `use_id_or` (`docs/backlog.md` row 36).
+    /// `use_id_or` (`dev-docs/backlog.md` row 36).
     pub id: ReadSignal<Option<String>>,
 
     /// Whether the sub-trigger (and its submenu) is disabled.
@@ -1620,7 +1620,7 @@ pub struct DropdownMenuSubTriggerProps {
     pub disabled: ReadSignal<bool>,
 
     /// Explicit label text used for root-menu typeahead search
-    /// (`docs/backlog.md` row 11): this sub-trigger's own row is a
+    /// (`dev-docs/backlog.md` row 11): this sub-trigger's own row is a
     /// registered item of the *enclosing* menu's collection (see this
     /// component's own doc), so it is just as searchable as any
     /// [`DropdownMenuItem`] when it has a label to search. Unlike an item,
@@ -1777,7 +1777,7 @@ pub fn DropdownMenuSubTrigger(props: DropdownMenuSubTriggerProps) -> Element {
             event.stop_propagation();
         },
 
-        // `docs/backlog.md` row 85: this used to carry its own `onblur`,
+        // `dev-docs/backlog.md` row 85: this used to carry its own `onblur`,
         // closing the submenu whenever `focused() && !sub.focus.any_focused()`
         // -- this trigger still held the *enclosing* menu's roving focus,
         // but its own submenu's collection had (apparently) caught nobody.
@@ -1878,7 +1878,7 @@ pub fn DropdownMenuSubContent(props: DropdownMenuSubContentProps) -> Element {
 /// for the top-level content (see that component's doc for the general
 /// `popover`/CSS-anchor wiring this mirrors) -- Phase 4.4's top-layer
 /// engine already supports stacking one `popover="auto"` element on top of
-/// another (`docs/plan.md` Phase 4.4; `docs/component-backlog.md` row 68
+/// another (`dev-docs/plan.md` Phase 4.4; `dev-docs/archive/rounds/component-backlog.md` row 68
 /// cites this landing as "removes the hardest part: nested stacking +
 /// light dismiss"), so no new stacking mechanism is needed here.
 ///
@@ -1906,7 +1906,7 @@ fn DropdownMenuSubContentRendered(
     // `hover_enter_content`/`hover_leave_content`) so hovering *either* half
     // keeps the submenu open, and only leaving both (without re-entering
     // either) within the grace window actually closes it.
-    // docs/backlog.md row 11 (Phase 6, typeahead): this submenu's own
+    // dev-docs/backlog.md row 11 (Phase 6, typeahead): this submenu's own
     // buffer, independent of the enclosing menu's root-level one -- see
     // `DropdownMenu`'s identical call for the general rationale.
     let mut typeahead = crate::typeahead::use_typeahead_state();
@@ -1922,7 +1922,7 @@ fn DropdownMenuSubContentRendered(
         }),
     );
 
-    // `docs/backlog.md` row 85: see `crate::menu_sub::use_sub_outside_
+    // `dev-docs/backlog.md` row 85: see `crate::menu_sub::use_sub_outside_
     // dismiss`'s own doc for the full construction and why a `Sub` needs
     // its own two-id variant of `DropdownMenuContentRendered`'s
     // `use_outside_dismiss(ctx.root_id, ...)` call rather than that same
@@ -1998,7 +1998,7 @@ fn DropdownMenuSubContentRendered(
         labelledby,
         // Owned by this component -- menu semantics, top-layer wiring and
         // direction state must win over a caller's own attributes
-        // (`docs/backlog.md` row 93's duplicate-attribute hazard).
+        // (`dev-docs/backlog.md` row 93's duplicate-attribute hazard).
         attributes!(div {
             role: crate::menu_semantics::MENU_ROLE,
             popover: crate::top_layer::PopoverKind::Auto.as_str(),
@@ -2056,7 +2056,7 @@ fn DropdownMenuSubContentRendered(
                 Key::ArrowUp => sub.focus.focus_prev(),
                 Key::Home => sub.focus.focus_first(),
                 Key::End => sub.focus.focus_last(),
-                // docs/backlog.md row 11 (Phase 6, typeahead) -- see
+                // dev-docs/backlog.md row 11 (Phase 6, typeahead) -- see
                 // `DropdownMenu`'s identical arm for the full APG citation.
                 // Scoped to `sub.focus`, this submenu's own items, never
                 // the enclosing menu's -- matches every other navigation
@@ -2100,7 +2100,7 @@ fn DropdownMenuSubContentRendered(
 }
 
 /// Native (Blitz) arm: Blitz has no popover-API support at all
-/// (`docs/recommended-implementations.md` Caveat 2), so this stays the
+/// (`dev-docs/reference/platform-rationale.md` Caveat 2), so this stays the
 /// functional floor -- a plain, always-in-flow `div`, visible exactly when
 /// `render()` (`DropdownMenuSubContent`) mounts it. Mirrors
 /// `DropdownMenuContentRendered`'s identical native arm.
@@ -2117,11 +2117,11 @@ fn DropdownMenuSubContentRendered(
     // See `SubMenuState::hover_close`'s doc: this arm still gets the same
     // shared-timer fix as the web arm, for parity even though Blitz mouse
     // events are lower-priority here.
-    // docs/backlog.md row 11 (Phase 6, typeahead): see the web arm's
+    // dev-docs/backlog.md row 11 (Phase 6, typeahead): see the web arm's
     // identical call above for the general rationale.
     let mut typeahead = crate::typeahead::use_typeahead_state();
 
-    // `docs/backlog.md` row 85 -- see the web arm's identical call above
+    // `dev-docs/backlog.md` row 85 -- see the web arm's identical call above
     // for the full construction.
     crate::menu_sub::use_sub_outside_dismiss(sub.trigger_id, sub.content_id, move || {
         sub.focus.clear_focus();
@@ -2139,7 +2139,7 @@ fn DropdownMenuSubContentRendered(
         attributes,
         labelledby,
         // Owned by this component -- see the web arm's identical
-        // construction above (`docs/backlog.md` row 93).
+        // construction above (`dev-docs/backlog.md` row 93).
         attributes!(div {
             role: crate::menu_semantics::MENU_ROLE,
             dir: (ctx.direction)().as_str(),
@@ -2170,7 +2170,7 @@ fn DropdownMenuSubContentRendered(
                 Key::ArrowUp => sub.focus.focus_prev(),
                 Key::Home => sub.focus.focus_first(),
                 Key::End => sub.focus.focus_last(),
-                // docs/backlog.md row 11 (Phase 6, typeahead) -- see
+                // dev-docs/backlog.md row 11 (Phase 6, typeahead) -- see
                 // `DropdownMenu`'s identical arm for the full APG citation.
                 // Scoped to `sub.focus`, this submenu's own items, never
                 // the enclosing menu's -- matches every other navigation
@@ -2291,7 +2291,7 @@ pub fn DropdownMenuSubItem<T: Clone + PartialEq + 'static>(
     let onmounted = item.onmounted();
 
     // Owned by this component -- see `DropdownMenuItem`'s identical
-    // construction above (`docs/backlog.md` row 93).
+    // construction above (`dev-docs/backlog.md` row 93).
     let attributes = merge_attributes(vec![
         props.attributes,
         attributes!(div {
@@ -2346,7 +2346,7 @@ pub fn DropdownMenuSubItem<T: Clone + PartialEq + 'static>(
     }
 }
 
-/// `docs/backlog.md` row 85 / hydration-parity Rule 4 regression coverage:
+/// `dev-docs/backlog.md` row 85 / hydration-parity Rule 4 regression coverage:
 /// proves `DropdownMenu`'s root `div` renders a caller-supplied `id`
 /// exactly once, with no second, internally-generated `dxc-N` id also
 /// present. Confirmed RED on the pre-fix tree (both `id="dxc-0"` and

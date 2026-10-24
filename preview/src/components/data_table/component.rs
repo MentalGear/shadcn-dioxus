@@ -1,5 +1,5 @@
 //! Themed Data Table composition pieces -- shadcn/ui catalog parity
-//! (dev-docs/component-backlog.md row 69).
+//! (dev-docs/archive/rounds/component-backlog.md row 69).
 //!
 //! Like `Table` (row 68), there is no `dioxus_primitives::data_table`
 //! primitive: shadcn/ui's own Data Table is a composition pattern built

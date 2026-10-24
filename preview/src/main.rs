@@ -2638,7 +2638,7 @@ fn ComponentBlockDemoPath(name: String, variant: String, dark_mode: Option<bool>
 
     let Comp = variant.component;
 
-    // axe `page-has-heading-one`/`region` (docs/backlog.md row 38): visited
+    // axe `page-has-heading-one`/`region` (dev-docs/backlog.md row 38): visited
     // directly -- rather than embedded in the main preview page's
     // `<iframe>`, where a separate document root makes the absence a
     // non-issue, see `sidebar.spec.ts`'s "preview page renders block" test
@@ -2920,7 +2920,7 @@ fn MasonryColumn(slot: MasonrySlot) -> Element {
 /// `BlockPlayer` that was a new, never-cleared 100 ms `setInterval` per
 /// re-render (one a second, since each fresh player re-renders when its label
 /// ticks), and the readout never got past 1:24 because every fresh signal
-/// restarted at 84 s (dev-docs/research/scroll-jank-2026-10-04.md, Cause 1).
+/// restarted at 84 s (dev-docs/archive/research/scroll-jank-2026-10-04.md, Cause 1).
 #[component]
 fn MasonryCard(#[props(default)] popout: bool, children: Element) -> Element {
     let class = if popout {
@@ -3026,7 +3026,7 @@ fn BlockStats() -> Element {
                 }
                 Badge {
                     variant: BadgeVariant::Secondary,
-                    // axe `color-contrast`, in BOTH themes (docs/backlog.md row 39, then the
+                    // axe `color-contrast`, in BOTH themes (dev-docs/backlog.md row 39, then the
                     // 2026-10-05 sweep): the first fix was a literal green pair measured on the light page
                     // only, and it was 2.3:1 in dark (#137337 on #173321). Tokens fix both: the
                     // `--dx-success-subtle` ground is pale in light and deep in dark; the ink is the
@@ -3588,8 +3588,8 @@ fn ComponentGallery() -> Element {
             // `/component/?name=top_layer&` (still listed under Overlays in
             // `DocsSidebar`, since `components::DEMOS` itself is unchanged
             // and this filter only narrows the *gallery grid's* iteration)
-            // -- see docs/backlog.md for the landed row and
-            // docs/conformance-harness.md's hydration-parity section for
+            // -- see dev-docs/backlog.md for the landed row and
+            // dev-docs/conformance-harness.md's hydration-parity section for
             // Rule 4b's replacement subject, now that its old one
             // (the fixture's toast region) no longer renders on `/`.
             for component in components::DEMOS.iter().filter(|c| c.name != "top_layer").cloned() {

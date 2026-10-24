@@ -36,7 +36,7 @@ test("test", async ({ page }) => {
   await expect(b_button).toBeFocused();
 });
 
-// HARDENING (docs/backlog.md row 89), not a reproduced defect -- see
+// HARDENING (dev-docs/backlog.md row 89), not a reproduced defect -- see
 // `toggle.spec.ts`'s identical test for the full writeup (same
 // `:where(:hover)` construction, same "already correct via source order,
 // now correct via specificity" story).

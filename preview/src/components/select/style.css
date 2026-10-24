@@ -19,7 +19,7 @@
    * fixture's library-select fields) previously shrank to fit whatever
    * text happened to be selected -- as little as 85px for "apple". Since
    * `SelectList`'s own width is tied 1:1 to this trigger's rendered width
-   * (`--dx-anchor-width`, docs/backlog.md row 47), that left the options
+   * (`--dx-anchor-width`, dev-docs/backlog.md row 47), that left the options
    * barely any room, so a short list read as cramped. A sensible floor here
    * fixes it at the source, for every Select trigger this stylesheet
    * themes, not just this one demo field. (The check-to-label spacing inside
@@ -145,7 +145,7 @@
 }
 
 /*
- * `min-width: var(--dx-anchor-width, 100%)` above (docs/backlog.md row 47,
+ * `min-width: var(--dx-anchor-width, 100%)` above (dev-docs/backlog.md row 47,
  * 2026-09-04 -- landed fix for the "Select listbox renders full viewport
  * width" device/gallery report):
  *
@@ -164,7 +164,7 @@
  * but was **dead in the actually-served stylesheet**: this component goes
  * through `#[css_module]` (`component.rs`), whose class-hashing does not
  * scope selectors written only inside an `@supports` body
- * (`docs/issues/css-module-supports-scoping.md`) -- the served CSS still
+ * (`dev-docs/issues/css-module-supports-scoping.md`) -- the served CSS still
  * targeted the unhashed `.dx-select-list` while the live element carries
  * `.dx-select-list-<hash>`, so the rule never matched anything. This is the
  * same scoping gap `primitives/src/top_layer.rs`'s

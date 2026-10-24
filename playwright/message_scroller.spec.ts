@@ -1,5 +1,5 @@
 /**
- * Rule sources (docs/conformance-harness.md tiers):
+ * Rule sources (dev-docs/conformance-harness.md tiers):
  *
  * - Tier 3 "opinion". No APG pattern covers a chat transcript; the references
  *   are the ARIA `log` role, WCAG 2.1.1 (the scroll region is keyboard

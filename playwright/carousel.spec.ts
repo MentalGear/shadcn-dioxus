@@ -1250,7 +1250,7 @@ test.describe("Carousel: the disabled-state opacity change actually fades", () =
 
 /**
  * Edge rubber-band, pointer half (mode B3), backlog row 102 -- port of the
- * closed design in `dev-docs/research/carousel-overscroll-2026-09-23.md`.
+ * closed design in `dev-docs/archive/research/carousel-overscroll-2026-09-23.md`.
  * See `primitives/src/carousel.rs`'s own `CarouselContent` doc, "Edge
  * rubber-band" section, for the construction these tests hold to: a
  * `transform` on `.dx-carousel-content` only, never a spacer child, and
@@ -2481,7 +2481,7 @@ test.describe("Carousel: autoplay + rotation control", () => {
     // deliberately does NOT port the vendored reference's own
     // "ignore hover/focus once explicitly started" quirk, the same class
     // of bug already flagged and left unported for the basic reference's
-    // own `hasUserActivatedPlay` latch, `dev-docs/research/carousel-2026-09-19.md`
+    // own `hasUserActivatedPlay` latch, `dev-docs/archive/research/carousel-2026-09-19.md`
     // §1.3 point 3) -- so the pointer must move away first to observe the
     // live region reflect `playing` again.
     await page.mouse.move(5, 5);
@@ -2968,9 +2968,9 @@ test.describe("Carousel: paging never scrolls the page (ancestor-scroll regressi
 
 /**
  * The seamless-loop research's own a11y contract
- * (`dev-docs/research/carousel-loop-2026-09-25/loop-a11y-guidance.md` §7,
+ * (`dev-docs/archive/research/carousel-loop-2026-09-25/loop-a11y-guidance.md` §7,
  * cross-checked against every a11y-layer-having carousel library's own
- * converged construction in that same round's `loop-libraries.md`): only
+ * converged construction in that same round's `dev-docs/archive/research/carousel-loop-2026-09-25/loop-libraries.md`): only
  * the current (or, for a multi-per-view layout, every slide actually
  * inside the viewport at rest) slide is reachable by Tab or exposed to the
  * accessibility tree -- everything else is `inert`
@@ -3144,8 +3144,8 @@ test.describe("Carousel: only visible slides are reachable (inert)", () => {
     await dragHold(page, content, -pitch * 0.7, 0);
 
     // Sample several times while still holding -- none of these may differ
-    // from the pre-drag baseline (freeze rule: `loop-a11y-guidance.md` §7 /
-    // `carousel-overscroll-2026-09-23.md` §3/§6, the same "never write mid-
+    // from the pre-drag baseline (freeze rule: `dev-docs/archive/research/carousel-loop-2026-09-25/loop-a11y-guidance.md` §7 /
+    // `dev-docs/archive/research/carousel-overscroll-2026-09-23.md` §3/§6, the same "never write mid-
     // gesture" discipline every other scroll-position write in this module
     // already follows).
     for (let i = 0; i < 4; i++) {

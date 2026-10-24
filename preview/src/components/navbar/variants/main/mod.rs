@@ -6,7 +6,7 @@ use dioxus::prelude::*;
 pub fn Demo() -> Element {
     rsx! {
         div {
-            // axe `landmark-unique` (docs/backlog.md row 34's own round):
+            // axe `landmark-unique` (dev-docs/backlog.md row 34's own round):
             // this demo's `nav` and the site's own top-level chrome
             // (`preview/src/main.rs`) were both `aria-label="Components"`,
             // a duplicate-landmark collision on this component's own demo

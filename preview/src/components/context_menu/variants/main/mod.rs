@@ -1,7 +1,7 @@
 use super::super::component::*;
 use dioxus::prelude::*;
 
-// Index layout (docs/component-backlog.md row 68 added the submenu):
+// Index layout (dev-docs/archive/rounds/component-backlog.md row 68 added the submenu):
 // Edit=0, Undo=1 (disabled), Duplicate=2, Delete=3, the submenu trigger=4.
 // `playwright/context-menu.spec.ts`'s "keyboard navigation" test
 // hard-depends on this demo's existing shape -- Edit first, Undo disabled
@@ -67,7 +67,7 @@ pub fn Demo() -> Element {
                     },
                     "Delete"
                 }
-                // Nested submenu (docs/component-backlog.md row 68): see
+                // Nested submenu (dev-docs/archive/rounds/component-backlog.md row 68): see
                 // this file's top-of-file comment for why this is appended
                 // at index 4 rather than interleaved with the items above.
                 ContextMenuSub {
