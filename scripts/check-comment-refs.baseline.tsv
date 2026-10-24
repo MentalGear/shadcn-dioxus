@@ -2,7 +2,6 @@
 # file<TAB>kind<TAB>ref. Fix the citation, then scripts/check-comment-refs.sh --update-baseline.
 playwright/carousel.spec.ts	path	dev-docs/research/shadcn-carousel-parity.md
 playwright/oracle/hydration-parity.spec.ts	path	.github/workflows/web.yml
-playwright/oracle/tier2-html/touch-focus-zoom.spec.ts	path	docs/plan.md-style
 preview/assets/dx-utilities.css	path	docs/demo
 preview/assets/main.css	path	docs/issues/asset-css-not-selector-list.md
 preview/src/components/carousel/variants/peek/mod.rs	path	dev-docs/research/shadcn-carousel-parity.md
@@ -12,8 +11,6 @@ preview/src/components/radar_chart/component.rs	path	docs/gallery
 preview/src/components/radial_chart/component.rs	path	docs/gallery
 primitives/src/activity.rs	path	dev-docs/research/scroll-profile-2026-10-10.md
 primitives/src/carousel.rs	path	dev-docs/research/shadcn-carousel-parity.md
-scripts/build-js-bundle.sh	path	primitives/build.rs
 scripts/check-direction-keys.sh	path	playwright/rtl-toggle.spec.ts
-scripts/check-js-listeners.sh	path	primitives/build.rs
 scripts/deploy-preview.sh	path	preview/gallery
 scripts/run-gates.sh	path	primitives/web
