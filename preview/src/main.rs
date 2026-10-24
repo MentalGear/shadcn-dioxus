@@ -614,10 +614,9 @@ fn NavigationLayout() -> Element {
 /// The site's persistent top nav. Rendered as a descendant of `DocsLayout`'s
 /// `SidebarProvider` on every route that has a sidebar (`Docs`, `Home`,
 /// `ComponentDemo`/`ComponentHighlight`) so its leading `SidebarTrigger` can
-/// sit inside this same row instead of a separate strip below it (the
-/// previous layout: `NavigationLayout` rendered `Navbar {}` as a sibling of,
-/// and before, `Outlet::<Route> {}`, so it was never a descendant of
-/// `DocsLayout`'s `SidebarProvider` -- `DocsLayout` instead rendered its own
+/// sit inside this same row instead of a separate strip below it (a `Navbar {}`
+/// rendered as a sibling of `Outlet::<Route> {}` would not be a descendant of
+/// `DocsLayout`'s `SidebarProvider`, and `DocsLayout` would need its own
 /// separate `header { class: "dx-docs-inset-topbar", SidebarTrigger {} }`
 /// strip). `Demos` has no sidebar and renders `Navbar {}` directly (as does
 /// `ComponentDemo`'s own "not found" branch, which also bypasses
@@ -861,7 +860,7 @@ fn PreviewCode(source: HighlightedSource) -> Element {
 ///
 /// In release/SSG builds this carries the text highlighted (and embedded)
 /// at compile time via `dioxus_code::code!()`, exactly like
-/// `HighlightedCode` -- unchanged from before this type existed. In debug
+/// `HighlightedCode`. In debug
 /// builds (`dx serve`'s own dev loop) `code!()` is deliberately NOT used:
 /// it expands to `include_str!(path)`, which makes rustc track the `.css`
 /// file as a source dependency of this crate. `dx serve`'s file watcher
@@ -872,8 +871,8 @@ fn PreviewCode(source: HighlightedSource) -> Element {
 /// instead of the sub-second asset hot-reload every *other* `style.css`
 /// edit already gets from its own separate `asset!()` stylesheet link
 /// (`hotreload_bundled_assets`, checked first, but overridden once
-/// `needs_full_rebuild` is also true for that same file). Measured
-/// before/after and the full mechanism: `dev-docs/dev-loop.md`'s CSS
+/// `needs_full_rebuild` is also true for that same file). The measurement
+/// and the full mechanism: `dev-docs/dev-loop.md`'s CSS
 /// section. Debug builds instead carry only the file's own bundled
 /// `asset!()` URL -- `asset!()` does not embed the file's text at compile
 /// time, so referencing it costs nothing extra; `CssCodeBlock` below
@@ -1348,10 +1347,9 @@ enum DocsNavActive {
     Overview,
     /// A `/component/?name=...` page, keyed by the component's raw name.
     Component(&'static str),
-    /// The homepage (`/`) -- part of this same nav now, but distinct from
-    /// `Overview`: before the homepage had a sidebar at all, `None` here
-    /// meant "on Docs", so a bare `Option<&'static str>` would have wrongly
-    /// lit up "Overview" while browsing the gallery too.
+    /// The homepage (`/`) -- part of this same nav, but distinct from
+    /// `Overview`: with a bare `Option<&'static str>` where `None` meant "on
+    /// Docs", the gallery page would wrongly light up "Overview".
     Home,
     /// The demo-apps index (`/demos`): "Start" > "Demos" (backlog row 303).
     Demos,
@@ -1395,7 +1393,7 @@ fn page_sections_submenu(sections: &'static [&'static str]) -> Element {
 /// `SidebarInset` whose own leading `header` holds just the `SidebarTrigger`
 /// (mirrors both that demo's `Demo()` and the email-client dashboard's
 /// `EmailClient()`, `dashboard/views/email_client/mod.rs`). `page` content
-/// renders as the inset's children -- callers no longer wrap it in a `<main>`
+/// renders as the inset's children -- callers do not wrap it in a `<main>`
 /// themselves, since `SidebarInset` already renders the page's one `<main>`
 /// landmark (see `EmailClient()`'s own comment on that same point).
 #[component]
@@ -1431,7 +1429,7 @@ fn DocsLayout(
     // separate prop -- or a separate `SidebarMenuSub` rendering block --
     // per page. `ComponentHighlight()` leaves this `None` and keeps
     // rendering both "Home" and "Overview" as plain, sub-item-less
-    // entries, same as before this page had sections of its own.
+    // entries.
     #[props(default)] page_sections: Option<&'static [&'static str]>,
     children: Element,
 ) -> Element {
@@ -2166,22 +2164,20 @@ fn ComponentVariantHighlight(
     // "Examples" section below loops over all of them, main included --
     // see `ComponentHighlight` above), so a literal `"component-preview-
     // frame"` id can't be shared across more than one of these `TabContent`s
-    // without producing duplicate ids -- confirmed by execution: adding
-    // `popover`'s `non_modal` variant (dev-docs/backlog.md rows 19/7) gave
-    // the popover page two, and `popover.spec.ts`'s basic test (`page.
-    // locator("#component-preview-frame")`, no `.first()`) failed with a
-    // strict-mode "2 elements" violation. Fixed by construction, not
-    // per-instance: `main_variant` (already the exact signal distinguishing
+    // without producing duplicate ids (dev-docs/backlog.md rows 19/7: a
+    // second `popover` variant would make `popover.spec.ts`'s basic test
+    // (`page.locator("#component-preview-frame")`, no `.first()`) fail with a
+    // strict-mode "2 elements" violation). Made unique by construction, not
+    // per-instance: `main_variant` (the exact signal distinguishing
     // the one call site above from every entry in the loop below) picks
-    // exactly `component-preview-frame` for `main` -- unchanged, so every
-    // existing single-variant component page and every spec that already
-    // targets that literal id keeps working untouched -- and
+    // exactly `component-preview-frame` for `main`, so every
+    // single-variant component page and every spec that targets that
+    // literal id works untouched, and
     // `component-preview-frame-<name>` for every other variant, unique per
-    // variant name so two additional variants on the same page (e.g.
+    // variant name so several additional variants on the same page (e.g.
     // `calendar[simple, internationalized, range, multi_month,
-    // unavailable_dates]`, already exposed to this same defect before this
-    // fix, silently tolerated via `.first()` in `calendar.spec.ts`) can
-    // never collide with each other either.
+    // unavailable_dates]`, which `calendar.spec.ts` tolerates via
+    // `.first()`) never collide with each other either.
     let frame_id = if main_variant {
         "component-preview-frame".to_string()
     } else {
@@ -2354,11 +2350,10 @@ fn BlockComponentVariantHighlight(
                         src: "{iframe_src}",
                         width: "100%",
                         // Block demos embed here at whatever width this
-                        // page's own layout leaves them -- since the site
-                        // nav itself became a real `Sidebar` (`DocsLayout`,
-                        // this file), that can now be under 768px on a
-                        // normal desktop viewport (e.g. ~684px measured on
-                        // the live `sidebar` demo). Any block component
+                        // page's own layout leaves them -- the site nav is a
+                        // real `Sidebar` (`DocsLayout`, this file), so that
+                        // can be under 768px on a normal desktop viewport
+                        // (e.g. ~684px on the live `sidebar` demo). Any block component
                         // that (like `Sidebar` itself, `components/sidebar/
                         // component.rs`'s `MOBILE_BREAKPOINT`) switches to
                         // a different, closed-by-default layout below that
@@ -2368,22 +2363,21 @@ fn BlockComponentVariantHighlight(
                         // it has no way to know it's being squeezed rather
                         // than genuinely viewed on a narrow screen.
                         //
-                        // A PREVIOUS fix forced a flat, always-on
-                        // `min-width: 820px` here to keep the preview
-                        // desktop-sized -- but that ALSO fired for a
-                        // genuinely narrow real device/window, forcing an
-                        // 820px-wide iframe into e.g. a 390px mobile
-                        // viewport (confirmed live + locally: the iframe's
-                        // own `getBoundingClientRect()` reported `width:
-                        // 822` inside a 390px viewport, clipped/garbled
-                        // rather than scrolled to, since `overflow-x: clip`
-                        // on `html`/`body` hides the escape without giving
-                        // a scrollbar). A real mobile visitor SHOULD see
+                        // A flat, always-on `min-width: 820px` here would
+                        // keep the preview desktop-sized -- but it ALSO
+                        // fires for a genuinely narrow real device/window,
+                        // forcing an 820px-wide iframe into e.g. a 390px
+                        // mobile viewport (the iframe's own
+                        // `getBoundingClientRect()` reports `width: 822`
+                        // inside a 390px viewport, clipped/garbled rather
+                        // than scrolled to, since `overflow-x: clip` on
+                        // `html`/`body` hides the escape without giving a
+                        // scrollbar). A real mobile visitor SHOULD see
                         // this block's own mobile rendering (e.g.
                         // `Sidebar`'s Sheet-trigger button) -- forcing
                         // desktop width there is wrong, not just ugly.
                         //
-                        // The fix is `.dx-block-demo-iframe` in
+                        // So the rule is `.dx-block-demo-iframe` in
                         // `assets/main.css`: the `min-width: 820px` rule
                         // lives behind `@media (min-width: 768px)` in THAT
                         // file, not this iframe's own document. A media
@@ -2543,12 +2537,12 @@ fn EmailClientDashboard(dark_mode: Option<bool>) -> Element {
 }
 
 // Visually-hidden clip-rect, for `ComponentBlockDemo`'s heading below. The
-// same construction already exists, duplicated per css_module, in this repo
-// (e.g. `preview/src/components/sidebar/style.css`'s `.dx-sr-only`, with its
-// own "TODO: abstract as Utility class" note) -- inlined here as a style
-// string instead of a shared class because `main.rs` has no css_module of
-// its own (it links `preview/assets/main.css` as a plain global stylesheet
-// instead), and this fix's own file lane does not include any stylesheet.
+// same construction exists, duplicated per component sheet, in this repo
+// (e.g. `preview/src/components/sidebar/style.css`'s `.dx-sidebar-sr-only`,
+// with its own TODO to abstract it as a utility class) -- inlined here as a
+// style string instead of a shared class because `main.rs` has no component
+// sheet of its own (it links `preview/assets/main.css` as a plain global
+// stylesheet instead).
 const SR_ONLY_STYLE: &str = "position: absolute; overflow: hidden; width: 1px; height: 1px; padding: 0; border: 0; margin: -1px; clip-path: inset(50%); white-space: nowrap;";
 
 /// Legacy query-string block-demo deep link (`/component/block/?name=<x>&

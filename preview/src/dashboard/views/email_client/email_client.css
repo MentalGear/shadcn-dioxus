@@ -206,8 +206,8 @@
 }
 
 /* Matches this repo's per-component focus-ring convention (see
- * `dx-components-theme.css`'s `[data-dx-interactive]` comment): css_module
- * hashing means a shared selector can't reach this class, so each
+ * `dx-components-theme.css`'s `[data-dx-interactive]` comment): a shared
+ * selector can't reach this class, so each
  * interactive root keeps its own `:focus-visible` rule, written against
  * the shared `--dx-ring` token. */
 .ec-row > .ec-row-open:focus-visible {
