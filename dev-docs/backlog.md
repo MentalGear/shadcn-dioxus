@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (24)
+## Open rows (25)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -68,5 +68,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [383](backlog/383-adversarial-review-board.md) | Adversarial review board: independent expert reviewers attack the finished library, last item of the backlog | BACKLOG. Runs last: after row 365's proposals are answered and every other engineering row has… | M | process |
 | [384](backlog/384-burn-down-ratchet-baselines.md) | Burn down the ratchet baselines and the leftover TODO comments (props docs, history comments, dead refs) | BACKLOG. The history-comment part overlaps row 267's extension (rewrite history comments while… | M | process |
 | [385](backlog/385-accent-focus-ring-clamped.md) | The focus ring follows the picked accent, clamped to 3:1 per mode | DECIDED 2026-10-24 (owner), BUILT on lane/accent-ring. With an accent picked the ring takes the… | S | theme |
+| [389](backlog/389-accent-active-selected-states.md) | Active and selected states take the picked accent (mark, ink, tint slots) | DECIDED 2026-10-24 (owner), BUILT on lane/accent-states (audit: 58 rows). Hard requirement kept by… | M | theme |
 
 <!-- END GENERATED -->

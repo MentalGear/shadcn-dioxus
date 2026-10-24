@@ -414,9 +414,9 @@
     border: none;
     border-radius: var(--dx-radius-full);
 
-    /* Muted foreground at half opacity (inactive) / `--dx-primary` at full
-       opacity (active): both are ink colours that read against the card in
-       either mode, so the ACTIVE dot never vanishes into the frame. */
+    /* Muted foreground at half opacity (inactive) / `--dx-primary-mark` at full opacity (active): the
+       mark is the accent clamped to 3:1 on the card in either mode (row 389), so the ACTIVE dot never
+       vanishes into the frame. */
     background: var(--dx-muted-foreground);
     opacity: 0.5;
 
@@ -435,7 +435,7 @@
 
 .dx-carousel-indicator[aria-selected="true"] {
     width: var(--dx-space-4);
-    background: var(--dx-primary);
+    background: var(--dx-primary-mark);
     opacity: 1;
 }
 
@@ -479,7 +479,7 @@
 }
 
 .dx-carousel-picker-dot[data-active="true"] {
-    background: var(--dx-primary);
+    background: var(--dx-primary-mark);
     opacity: 1;
 }
 

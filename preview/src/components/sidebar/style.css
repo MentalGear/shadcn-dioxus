@@ -628,8 +628,9 @@
   pointer-events: none;
 }
 
+/* The current row: the sidebar's hover surface, hued by a picked accent (`--dx-sidebar-accent-tint`, row 389). */
 .dx-sidebar-menu-button[data-sidebar="menu-button"][data-active="true"] {
-  background: var(--dx-sidebar-accent);
+  background: var(--dx-sidebar-accent-tint);
   color: var(--dx-sidebar-accent-foreground);
   font-weight: 500;
 }
@@ -958,7 +959,7 @@
 }
 
 .dx-sidebar-menu-sub-button[data-active="true"] {
-  background: var(--dx-sidebar-accent);
+  background: var(--dx-sidebar-accent-tint);
   color: var(--dx-sidebar-accent-foreground);
 }
 
