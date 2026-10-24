@@ -27,12 +27,12 @@ S
   - SVG `text`, the legend (its `role="graphics-symbol"` is not on row 229's list) and the tooltip are selectable.
   - The chart root is a `[tabindex]` container, which row 229 excludes on purpose.
 - **Target:** `user-select: none` plus `-webkit-touch-callout: none` on the chart SVG, legend, tooltip and arc labels.
-- Then sweep the leftovers I couldn't confirm statically: progress and slider track/range, badge, kbd, tab-list text and card headers. Use `dev-docs/research/user-select-inventory-2026-10-17.md` as the checklist.
+- Then sweep the leftovers I couldn't confirm statically: progress and slider track/range, badge, kbd, tab-list text and card headers. Use `dev-docs/archive/research/user-select-inventory-2026-10-17.md` as the checklist.
 - **Files:** `chart/style.css`, the theme baseline list and `check-theme-baseline.sh`.
 
 ## Leftover sweep landed (leftovers lane, 2026-10-21)
 
-Checked against `dev-docs/research/user-select-inventory-2026-10-17.md`, which recorded shadcn new-york-v4 `select-none` in `kbd`, `label` and `input-group` (the other vendored shadcn clone is not in this container, so the inventory is the evidence). None is a button, `summary` or widget role, so the theme's shared control rule does not reach them and the theme-baseline construction asks for a per-sheet declaration with a reasoned `USER_SELECT_ALLOW` entry:
+Checked against `dev-docs/archive/research/user-select-inventory-2026-10-17.md`, which recorded shadcn new-york-v4 `select-none` in `kbd`, `label` and `input-group` (the other vendored shadcn clone is not in this container, so the inventory is the evidence). None is a button, `summary` or widget role, so the theme's shared control rule does not reach them and the theme-baseline construction asks for a per-sheet declaration with a reasoned `USER_SELECT_ALLOW` entry:
 
 | element | sheet | selector | shadcn |
 |---|---|---|---|
