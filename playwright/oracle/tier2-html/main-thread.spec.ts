@@ -85,7 +85,11 @@
  * weaker one -- and the thresholds themselves (`LONG_TASK_THRESHOLD_MS`,
  * `INTERACTION_THRESHOLD_MS` in main-thread.ts) are never lowered to
  * compensate; only the number of chances a real pass gets to show up
- * changes. Every test records its measured maxima via
+ * changes. They are absolute on purpose (the Long Tasks definition is a
+ * platform number, not a cost relative to some other path), and every
+ * annotation carries the box's calibration time so a near-miss is read
+ * against its load (backlog row 402; the per-frame cost specs compare
+ * same-run measurements instead, `frame-cost.ts`). Every test records its measured maxima via
  * `test.info().annotations` regardless of outcome, so a green run's exact
  * numbers stay visible in the HTML report rather than disappearing into
  * "passed". This file also recommends running it with `PW_WORKERS=1` --

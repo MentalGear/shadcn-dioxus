@@ -147,6 +147,7 @@ gates=(
   "check-playwright-fixture-import|scripts/check-playwright-fixture-import.sh"
   "check-spec-viewport-bound|scripts/check-spec-viewport-bound.sh"
   "check-spec-at-rest|scripts/check-spec-at-rest.sh"
+  "check-timing-relative|scripts/check-timing-relative.sh"
   "check-spec-goto-hydrated|scripts/check-spec-goto-hydrated.sh"
   "check-demo-text-locators|scripts/check-demo-text-locators.sh"
   "check-slow-spec-budget|scripts/check-slow-spec-budget.sh"

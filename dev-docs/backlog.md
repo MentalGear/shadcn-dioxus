@@ -40,7 +40,7 @@ proposing one is closed as out of scope (row 337 is the first).
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Open rows (37)
+## Open rows (38)
 
 | # | Item | Status / trigger | Size | Area |
 |---|---|---|---|---|
@@ -81,5 +81,6 @@ proposing one is closed as out of scope (row 337 is the first).
 | [397](backlog/397-docs-review-bugs.md) | Bugs the docs review found: ToggleGroup arrows, dead ScrollArea prop, DataTable sort, Sidebar Ctrl+B | BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in… | S | components |
 | [398](backlog/398-docs-review-api-gaps.md) | API gaps the docs review found | BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in… | M | components |
 | [399](backlog/399-docs-review-demos.md) | Demo batch from the docs review | BACKLOG. Found by row 387's first docs-clarity review; the evidence (file:line per finding) is in… | S | docs |
+| [402](backlog/402-load-robust-timing-specs.md) | Release timing specs compare same-run measurements, not absolute milliseconds | Done on lane/timing-relative (numbers below). Trigger for reopening: a release timing spec that… | S | tests |
 
 <!-- END GENERATED -->

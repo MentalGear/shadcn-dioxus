@@ -13,11 +13,11 @@
  *   work stays bounded, and find-in-page, the accessibility tree and the live
  *   edge still behave as if every row were rendered.
  *
- * No assertion here is a millisecond threshold, except the one marked release-only
- * ("scrolling a 2,000-row transcript costs the main thread little per frame"), which is
- * skipped unless the build under test is a known release build (CLAUDE.md: timing specs
- * only on release; `PW_BUILD_PROFILE=release` or `SSG_SITE_DIR` names it). The bounds
- * everywhere else are pixel distances and row counts. Pixel bounds absorb one frame of
+ * No assertion here is a millisecond threshold. The one timing assertion, marked release-only
+ * ("scrolling a 2,000-row transcript costs the main thread less chunked than per row"), compares two
+ * same-run measurements as a ratio (`frame-cost.ts`, row 402) and is skipped unless the build under
+ * test is a known release build (CLAUDE.md: timing specs only on release; `PW_BUILD_PROFILE=release`
+ * or `SSG_SITE_DIR` names it). The bounds everywhere else are pixel distances and row counts. Pixel bounds absorb one frame of
  * lag between a row growing and the controller's rAF-coalesced follow.
  */
 import { test, expect } from "./fixtures";
@@ -25,6 +25,7 @@ import type { Locator, Page } from "@playwright/test";
 import { expectNoAxeViolations, EXCLUDE_VENDORED_CODE_HIGHLIGHT } from "./axe";
 import { BASE_URL, buildProfile } from "./base-url";
 import { gotoHydrated } from "./hydration";
+import { calibrationMs, frameCostMeter } from "./frame-cost";
 
 const GOTO_OPTS = { timeout: 20 * 60 * 1000 };
 // The demos' `MessageScrollerContent` start padding (`--dx-space-4`).
@@ -438,39 +439,74 @@ test.describe("virtualization: content-visibility", () => {
     ).toHaveAttribute("data-keep-rendered", "");
   });
 
-  test("scrolling a 2,000-row transcript costs the main thread little per frame (release only)", async ({ page }) => {
-    // A timing threshold: meaningful only on a release build (debug builds measure 5-10x slower).
+  test("scrolling a 2,000-row transcript costs the main thread less chunked than per row (release only)", async ({ page }) => {
+    // Wall time is not what is measured (main-thread task time per frame is), but a loaded box stretches the
+    // interleaved rounds past the default timeout.
+    test.setTimeout(5 * 60_000);
+    // A timing relation: meaningful only on a release build (debug builds measure 5-10x slower).
     test.skip(
       buildProfile() !== "release",
       "per-frame main-thread time is only measured on a release build (PW_BUILD_PROFILE=release)",
     );
     const vp = await open(page, "long");
     await expect.poll(() => dist(vp)).toBeLessThanOrEqual(1);
-    const cdp = await page.context().newCDPSession(page);
-    await cdp.send("Performance.enable");
-    const taskSeconds = async () => {
-      const { metrics } = await cdp.send("Performance.getMetrics");
-      return metrics.find((m) => m.name === "TaskDuration")!.value;
-    };
-    await page.waitForTimeout(500);
-    const before = await taskSeconds();
-    // From the live edge up through 10,000px of transcript, one 40px step per frame.
-    const frames = await vp.evaluate(async (el) => {
-      const start = el.scrollTop;
-      let frames = 0;
-      for (let y = 40; y <= 10_000; y += 40) {
-        el.scrollTop = start - y;
-        frames++;
-        await new Promise((resolve) => requestAnimationFrame(resolve));
-      }
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      return frames;
+    const meter = await frameCostMeter(page);
+    // The reference is the same page and the same rows with one skippable element per row instead of one per
+    // chunk of 20: a stylesheet turns the chunk's own skipping off and the row's on (the rule the component
+    // applies to rows written directly as children of the content), and is removed for the chunked rounds.
+    await page.evaluate(() => {
+      const style = document.createElement("style");
+      style.id = "per-row-skipping";
+      style.disabled = true;
+      style.textContent = `
+        .dx-message-scroller-content[data-virtualize="content-visibility"] > .dx-message-scroller-chunk { content-visibility: visible !important; }
+        .dx-message-scroller-content[data-virtualize="content-visibility"] > .dx-message-scroller-chunk > .dx-message-scroller-item:not([data-keep-rendered]) {
+          contain-intrinsic-size: auto var(--dx-message-scroller-row-estimate, 10rem);
+          content-visibility: auto !important;
+        }`;
+      document.head.appendChild(style);
     });
-    const msPerFrame = ((await taskSeconds()) - before) * 1000 / frames;
-    console.log(`message_scroller long: ${msPerFrame.toFixed(1)} ms of main-thread time per scroll frame`);
-    // One skippable element per row costs ~20 ms per frame at 2,000 rows (measured, release,
-    // headless Chromium on a 4-core VM); one per chunk of 20 rows ~1-2 ms. 8 ms is far from both.
-    expect(msPerFrame).toBeLessThan(8);
+    const perRowSkipping = (on: boolean) =>
+      page.evaluate((on) => {
+        (document.getElementById("per-row-skipping") as HTMLStyleElement).disabled = !on;
+      }, on);
+    // From the live edge up through 10,000px of transcript, one 40px step per frame, then back to the live edge.
+    const scrollRound = async (perRow: boolean) => {
+      await perRowSkipping(perRow);
+      const cost = await meter.perFrameCost(() =>
+        vp.evaluate(async (el) => {
+          const start = el.scrollTop;
+          let frames = 0;
+          for (let y = 40; y <= 10_000; y += 40) {
+            el.scrollTop = start - y;
+            frames++;
+            await new Promise((resolve) => requestAnimationFrame(resolve));
+          }
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          return frames;
+        }),
+      );
+      await vp.evaluate((el) => (el.scrollTop = el.scrollHeight));
+      await expect.poll(() => dist(vp)).toBeLessThanOrEqual(1);
+      return cost;
+    };
+    // Interleaved rounds: a change in the box's load between rounds lands on both paths; the least disturbed
+    // round of each is the one compared.
+    const chunked: number[] = [];
+    const perRow: number[] = [];
+    for (let round = 0; round < 2; round++) {
+      chunked.push(await scrollRound(false));
+      perRow.push(await scrollRound(true));
+    }
+    const best = { chunked: Math.min(...chunked), perRow: Math.min(...perRow) };
+    const ratio = best.chunked / best.perRow;
+    console.log(
+      `message_scroller long, scroll frame: chunked ${best.chunked.toFixed(1)} ms, per row ${best.perRow.toFixed(1)} ms ` +
+        `(ratio ${ratio.toFixed(2)}; box calibration ${(await calibrationMs(page)).toFixed(0)} ms)`,
+    );
+    // One skippable element per row costs the browser per-frame work proportional to the 2,000 rows; one per
+    // chunk of 20 rows is a twentieth of the elements. Measured ratio ~0.2-0.5; unchunked is ~1.0.
+    expect(ratio).toBeLessThan(0.7);
   });
 });
 

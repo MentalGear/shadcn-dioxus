@@ -2,6 +2,7 @@ import { test, expect } from "./fixtures";
 import type { Locator, Page } from "@playwright/test";
 import { BASE_URL, buildProfile } from "./base-url";
 import { gotoHydrated } from "./hydration";
+import { calibrationMs, frameCostMeter } from "./frame-cost";
 
 // Helper to run scrollHeight stability test with configurable tolerance
 async function testScrollHeightStability(
@@ -455,8 +456,11 @@ test.describe("content-visibility mode", () => {
 });
 
 test.describe("content-visibility mode: per-frame cost (release only)", () => {
-  test("a scroll costs the main thread about what a windowed list does, per frame", async ({ page, browserName }) => {
-    // A timing threshold: meaningful only on a release build, and CDP metrics are Chromium's.
+  test("a scroll costs the main thread less chunked than with one skippable element per row", async ({ page, browserName }) => {
+    // Wall time is not what is measured (main-thread task time per frame is), but a loaded box stretches the
+    // interleaved rounds past the default timeout.
+    test.setTimeout(5 * 60_000);
+    // A timing relation: meaningful only on a release build, and CDP metrics are Chromium's.
     test.skip(browserName !== "chromium", "CDP Performance.getMetrics");
     test.skip(
       buildProfile() !== "release",
@@ -465,21 +469,48 @@ test.describe("content-visibility mode: per-frame cost (release only)", () => {
     await gotoHydrated(page, CV_URL);
     const list = cvList(page);
     await expect(list.getByRole("listitem")).toHaveCount(1000);
-    const cdp = await page.context().newCDPSession(page);
-    await cdp.send("Performance.enable");
-    const taskSeconds = async () => {
-      const { metrics } = await cdp.send("Performance.getMetrics");
-      return metrics.find((m) => m.name === "TaskDuration")!.value;
+    const meter = await frameCostMeter(page);
+    // The reference is the same list and rows with the skipping on every row instead of every chunk of 20: a
+    // stylesheet turns the chunk's own `content-visibility` off and the row's on, with the row's share of the
+    // chunk's intrinsic height (the chunk's inline style is 20 x 96px), and is removed for the chunked rounds.
+    await list.evaluate((el) => {
+      const rowHeight = parseFloat(getComputedStyle(el.firstElementChild!).containIntrinsicBlockSize.replace("auto", "")) / 20;
+      const style = document.createElement("style");
+      style.id = "per-row-skipping";
+      style.disabled = true;
+      style.textContent = `
+        [data-vl-demo="content-visibility"] [role="list"] > div { content-visibility: visible !important; }
+        [data-vl-demo="content-visibility"] [role="list"] > div > [role="listitem"] {
+          contain-intrinsic-block-size: auto ${rowHeight}px;
+          content-visibility: auto;
+        }`;
+      document.head.appendChild(style);
+    });
+    const scrollRound = async (perRow: boolean) => {
+      await page.evaluate((on) => {
+        (document.getElementById("per-row-skipping") as HTMLStyleElement).disabled = !on;
+      }, perRow);
+      const cost = await meter.perFrameCost(async () => (await scrollAndCount(list, 10_000, 40)).scrollEvents);
+      await list.evaluate((el) => (el.scrollTop = 0));
+      return cost;
     };
-    await page.waitForTimeout(500);
-    const before = await taskSeconds();
-    const { scrollEvents } = await scrollAndCount(list, 10_000, 40);
-    const msPerFrame = (((await taskSeconds()) - before) * 1000) / scrollEvents;
-    console.log(`content-visibility 1000 rows: ${msPerFrame.toFixed(1)} ms of main-thread time per scroll frame`);
-    // One skippable element per row costs 7.7 ms per frame at these 1,000 rows (31 ms at 5,000;
-    // measured, release, headless Chromium, 4-core VM); one per chunk of 20 rows ~1.1 ms, and a
-    // windowed list ~1.4 ms. 4 ms separates the two with room for a slower machine.
-    expect(msPerFrame).toBeLessThan(4);
+    // Interleaved rounds: a change in the box's load between rounds lands on both paths; the least disturbed
+    // round of each is the one compared.
+    const chunked: number[] = [];
+    const perRow: number[] = [];
+    for (let round = 0; round < 2; round++) {
+      chunked.push(await scrollRound(false));
+      perRow.push(await scrollRound(true));
+    }
+    const best = { chunked: Math.min(...chunked), perRow: Math.min(...perRow) };
+    const ratio = best.chunked / best.perRow;
+    console.log(
+      `content-visibility 1000 rows, scroll frame: chunked ${best.chunked.toFixed(1)} ms, per row ${best.perRow.toFixed(1)} ms ` +
+        `(ratio ${ratio.toFixed(2)}; box calibration ${(await calibrationMs(page)).toFixed(0)} ms)`,
+    );
+    // One skippable element per row costs the browser per-frame work proportional to the 1,000 rows; one per
+    // chunk of 20 rows is a twentieth of the elements. Measured ratio ~0.2-0.3; unchunked is ~1.0.
+    expect(ratio).toBeLessThan(0.7);
   });
 });
 
