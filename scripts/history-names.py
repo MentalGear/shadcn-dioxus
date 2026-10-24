@@ -62,7 +62,10 @@ _SLUG = re.compile(r"[-_]+")
 #               wraps", "after prepending history the fade still follows" are guarantees under a condition) or a
 #               determiner stands right before it (`a still shape`, `the still matching item`
 #               are adjectives), or it continues a predicate (`... and still pages correctly`: a conjunction or comma
-#               right before it). `still` before an adjective, preposition or participle (`still popover-open`, `still in
+#               right before it), or it stands in a LATER clause (after " and ", " but ", ";" or ", ") whose earlier
+#               clause has an action verb (`... and a second open still does`, `survives a reload and the jump
+#               target still exists`); a `still` in the first clause (`a scroll still closes an open card`) flags.
+#               `still` before an adjective, preposition or participle (`still popover-open`, `still in
 #               flight`, `is still opaque`, `is still a click`) describes a state the test observes and stays
 #   unchanged   (a) `is|are unchanged:` -- the claim as a label for the cases after the colon; (b) the title LEADS with
 #               `unchanged` (after an optional short `label: `); (c) a parenthetical `(unchanged)`; (d) `is|are
@@ -77,6 +80,10 @@ _SLUG = re.compile(r"[-_]+")
 _COND = re.compile(r"\b(?:while|whilst|when|whenever|once|until|if|unless|as long as|so long as|provided)\b")
 _DETERMINER_BEFORE = re.compile(r"\b(?:a|an|the|its|their|this|that|any|each|every|no|one|my|our)\s+$")
 _CONJ_BEFORE = re.compile(r"(?:\b(?:and|but|or|yet|so|also)|,)\s+$")
+# a later clause starts after " and ", " but ", ";" or ", "; its `still` continues a guarantee when an earlier clause has a
+# verb of action or event (a verb of _STILL_VERBS in -s/-es/-ed, or renders/exists/survives/...; a bare noun such as `Escape`
+# in `Escape and Close still close it` is a compound subject, not a clause)
+_CLAUSE_BREAK = re.compile(r"\s(?:and|but)\s|;|,\s")
 _OPERATION = re.compile(
     r"\b(?:after|before|across|during|past|following|then|cancel\w*|escape|esc|leav\w+|reset|reload\w*|click\w*|press\w*|"
     r"typ(?:e|es|ed|ing)|hover\w*|scroll\w*|drag\w*|pick\w*|stag\w+|toggl\w+|clos\w+|open\w+|switch\w*|select\w*|"
@@ -89,6 +96,7 @@ _STILL_VERBS = ("be do have hold work apply drag drive glide close open fire run
                 "swap restore reorder paint center centre stay remain reach cover exist use get take make give let set sit "
                 "start stop fit land jump snap survive resume animate persist propagate respond behave update clear cancel "
                 "block fail fall flow grow pick point press reject reveal rest return sort split step switch trigger wrap")
+_ACTION_VERB = re.compile(r"\b(?:%s|focus|dismiss)(?:s|es|ed)?\b(?!-)|\b(?:renders?|exists?|survives?|produces?|draws?|lands?|glides?)\b" % "|".join(_STILL_VERBS.split()))
 # `still` + verb: a 3rd-person -s word (not an adverb or noun in -ss/-us/-ous) or a base verb for a plural subject
 _STILL = re.compile(r"\bstill\s+(?!(?:less|across|status|focus|process|always|thus|plus|various|previous|its|this|us|as)\b)"
                     r"(?:\w{2,}s|%s)\b(?!-)" % "|".join(_STILL_VERBS.split()))
@@ -101,11 +109,20 @@ _RESTORED_END = re.compile(r"\b(?:is|are|was|were|has been|have been|got) (?:now
 _AGAIN = re.compile(r"\b(?:works?|passes|is green|are green|green|recovers?) again\b|\bagain (?:works|passes|green)\b")
 
 
+def _continues_earlier_action(before):
+    breaks = list(_CLAUSE_BREAK.finditer(before))
+    if not breaks:
+        return False
+    earlier = before[:breaks[-1].start()]
+    return bool(_ACTION_VERB.search(earlier))
+
+
 def contrast_reason(text, slug=False):
     """A before/after contrast in a lower-cased title or slug (see the table above), or None."""
     for m in _STILL.finditer(text):
         before = text[:m.start()]
-        if _STILL_COND.search(text) or _DETERMINER_BEFORE.search(before) or _CONJ_BEFORE.search(before):
+        if _STILL_COND.search(text) or _DETERMINER_BEFORE.search(before) or _CONJ_BEFORE.search(before) \
+                or _continues_earlier_action(before):
             continue
         return "still (before/after)"
     if not slug:
@@ -325,6 +342,11 @@ MUST_FLAG = [
     ("title", "keyboard: ArrowDown still opens the menu and focuses its first item", "still (before/after)"),
     ("title", "the older ones still glide", "still (before/after)"),
     ("title", "Escape and Close still close it", "still (before/after)"),
+    ("title", "a scroll still closes an open card", "still (before/after)"),
+    ("title", "keyboard still opens and Escape closes", "still (before/after)"),
+    ("title", "scroll-up release and jump-to-latest still work on a long transcript", "still (before/after)"),
+    ("slug", "duplicate_protections_still_hold", "still (before/after)"),
+    ("title", "`.dark` among other classes still counts, a look-alike class does not", "still (before/after)"),
     ("slug", "caller_style_still_overrides_the_gap_prop", "still (before/after)"),
     ("title", "keyboard is unchanged: ArrowRight moves to the next item", "unchanged (before/after)"),
     ("title", "wcag, dark: unchanged, a bare ratio is still held", "unchanged (before/after)"),
@@ -369,6 +391,10 @@ MUST_NOT_FLAG = [
     ("title", "after prepending history the fade still follows the scroll position"),
     ("title", "light/dark toggle still flips with a preset active"),
     ("title", "a mid-range pointer drag produces no transform and still pages correctly"),
+    ("title", "first mouse-click open focuses the command input, and a second open still does"),
+    ("title", "no chart-swatch element renders, but the row's name and value still do"),
+    ("title", "expanded, close button on the newest: nothing below it exists, the older ones still glide"),
+    ("title", "the order chosen through the menu survives a reload and the jump target still exists"),
     ("title", "content fades out (opacity -> 0, still popover-open) before unmounting"),
     ("title", "a press on the close button is still a click, not a swipe"),
     ("title", "the scrollbar is still opaque"),
