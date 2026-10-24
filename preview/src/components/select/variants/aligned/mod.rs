@@ -31,8 +31,8 @@ pub fn Demo() -> Element {
                 placeholder: "Pick a zone",
                 position: SelectPosition::ItemAligned,
                 width: "12rem",
-                trigger_aria_label: "Unaligned zone select",
-                list_aria_label: "Unaligned zone options",
+                trigger_aria_label: "Placeholder zone select",
+                list_aria_label: "Placeholder zone options",
                 SelectGroup {
                     for (i , zone) in ZONES.iter().enumerate() {
                         SelectOption::<String> { index: i, value: zone.to_string(), text_value: zone.to_string(), "{zone}" }
