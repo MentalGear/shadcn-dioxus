@@ -35,7 +35,7 @@ pub fn Demo() -> Element {
                 virtualize: VirtualizeMode::Windowed,
                 row_height: |_| 36,
                 column_width: |column: usize| if column == 0 { 120 } else { 112 },
-                sticky_first_column: true,
+                pinned_columns_start: 1usize,
                 render_header: |column: usize| match column {
                     0 => rsx! { "Order" },
                     1 => rsx! { "City" },

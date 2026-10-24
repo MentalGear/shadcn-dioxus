@@ -1,4 +1,4 @@
-The VirtualGrid component keeps a very large grid cheap by mounting only the cells in view. It comes in three layouts: `VirtualGrid`, a data grid whose rows AND columns are windowed (with an optional sticky header row and sticky first column), `VirtualWrapGrid`, a gallery whose items wrap into rows of a fixed column count (only the rows are windowed), and `VirtualJustifiedGrid`, a photo wall of justified rows (every photo uncropped at its own aspect ratio, rows filling the width edge to edge).
+The VirtualGrid component keeps a very large grid cheap by mounting only the cells in view. It comes in three layouts: `VirtualGrid`, a data grid whose rows AND columns are windowed (with an optional header row and pinned columns at both inline edges), `VirtualWrapGrid`, a gallery whose items wrap into rows of a fixed column count (only the rows are windowed), and `VirtualJustifiedGrid`, a photo wall of justified rows (every photo uncropped at its own aspect ratio, rows filling the width edge to edge).
 
 ## Component Structure
 
@@ -10,9 +10,11 @@ VirtualGrid {
     // Optional: px per row / column (default 36 / 120).
     row_height: |_row: usize| 36,
     column_width: |column: usize| if column == 0 { 80 } else { 112 },
-    // Optional: a header row that sticks to the top, and a first column that sticks to the inline start.
+    // Optional: a header row, pinned to the top (`pin_header: false` lets it scroll away), and
+    // columns pinned at the inline start and end (see "Pinning rows and columns").
     render_header: |column: usize| rsx! { "Column {column}" },
-    sticky_first_column: true,
+    pinned_columns_start: 1usize,
+    pinned_columns_end: 1usize,
     render_cell: |(row, column): (usize, usize)| rsx! { "{row}, {column}" },
     "aria-label": "Readings",
     style: "height: 24rem;",
@@ -30,6 +32,41 @@ VirtualWrapGrid {
 ```
 
 Give the grid a height (or `max-height`): it is the scroll container. The grid owns its `id` and `role="grid"`; every other attribute is spread onto it. Name it with `aria-label` (or `aria-labelledby`).
+
+## Pinning rows and columns
+
+A data grid pins the header row and columns at both inline edges while the rest of the body scrolls under them. In TanStack Table's terms: `pin_header` is the pinned header row, `pinned_columns_start` is `columnPinning.left` (the inline start, so the right in RTL) and `pinned_columns_end` is `columnPinning.right`.
+
+```rust
+VirtualGrid {
+    row_count: 10_000usize,
+    column_count: 50usize,
+    column_width: |column: usize| if column < 2 { 80 } else { 112 },
+    render_header: |column: usize| rsx! { "Column {column}" },
+    render_cell: |(row, column): (usize, usize)| rsx! { "{row}, {column}" },
+    // The header stays at the top (the default), two columns stay at the start, one at the end.
+    pin_header: true,
+    pinned_columns_start: 2usize,
+    pinned_columns_end: 1usize,
+    "aria-label": "Readings",
+    style: "height: 24rem;",
+}
+```
+
+| Prop | Default | Pins |
+|---|---|---|
+| `pin_header: bool` | `true` | The header row (`render_header`) at the top. `false` lets it scroll away with the body. |
+| `pinned_columns_start: usize` | `0` | The first N columns at the inline start. They stack in column order, each at the cumulative width of the pinned columns before it. |
+| `pinned_columns_end: usize` | `0` | The last N columns at the inline end. They stack from the end edge inward. |
+
+What pinning means:
+
+- **Windowing.** Pinned columns are always mounted and are not part of the column window: the windowed body renders the scrolling columns between them, and a pinned cell is never rendered twice. The two counts are clamped to `column_count`, the start side first.
+- **Appearance.** A pinned cell is opaque, so the cells scrolling under it never show through, and takes the row's hover and selected fill over its own background. The pinned cell next to the scrolling columns (the last start column, the first end column) has the separating edge.
+- **Keyboard.** Every move scrolls the active cell into view clear of the pinned header and of the pinned columns on both sides, so `End`, `Home`, the arrows and `PageUp`/`PageDown` never leave it covered. A move to a pinned cell scrolls only vertically.
+- **Right to left.** The layout uses logical properties: the start columns sit at the right, the end columns at the left, and the arrows mirror as described under "Keyboard and focus".
+- **ARIA.** With `pinned_columns_start >= 1` the first column's cells are `role="rowheader"`; no other pinned column is a row header, and with no start column pinned the first column stays `gridcell`. Pinning changes no `aria-colindex`: every cell keeps its place in the whole grid.
+- **Styling.** Pinned cells carry `data-grid-pinned="start|end"` and the innermost one of each side `data-grid-pin-edge="true"`.
 
 ## Grid or Justified
 
@@ -68,7 +105,7 @@ Keyboard: one tab stop; `ArrowLeft`/`ArrowRight` move in reading order and conti
 | Shape | `row_count x column_count` cells | `count` items in rows of `columns` |
 | Windowed axes | rows and columns | rows |
 | Sizes | given: `row_height(row)`, `column_width(column)` | measured per row; `estimate_row_height` is the first guess |
-| Sticky edges | optional header row and first column | none |
+| Pinned edges | optional header row (`pin_header`), `pinned_columns_start` and `pinned_columns_end` columns | none |
 | Cell renderer | `render_cell((row, column))` | `render_item(index)` |
 
 Both use the shared engine of `VirtualList`'s windowed mode, one per axis (see "The shared windowing engine" below); `VirtualWrapGrid` measures its rows as they render.
@@ -86,25 +123,25 @@ The grid follows the WAI-ARIA grid pattern. Exactly one cell is in the tab order
 | `Ctrl+Home` / `Ctrl+End` | the first / last cell of the grid |
 | `PageUp` / `PageDown` | a viewport of rows up / down, same column |
 
-**The active cell is always rendered**, even when it is far outside the window (after `Ctrl+End`, or when you scroll away from it): a windowed grid that unmounted it would lose focus and its only tab stop (see "Focus stays mounted" below). Each move scrolls the cell into view just past the sticky header and column. `on_active_change` reports the active cell.
+**The active cell is always rendered**, even when it is far outside the window (after `Ctrl+End`, or when you scroll away from it): a windowed grid that unmounted it would lose focus and its only tab stop (see "Focus stays mounted" below). Each move scrolls the cell into view clear of the pinned header and the pinned columns on both sides. `on_active_change` reports the active cell.
 
-In right-to-left layouts the grid mirrors: the sticky column sits at the right, and `ArrowLeft` moves to the next cell (inline end). The direction comes from `dir`, else the nearest `DirectionProvider`; the layout itself follows the inherited `dir` attribute through logical CSS properties.
+In right-to-left layouts the grid mirrors: the start-pinned columns sit at the right, the end-pinned ones at the left, and `ArrowLeft` moves to the next cell (inline end). The direction comes from `dir`, else the nearest `DirectionProvider`; the layout itself follows the inherited `dir` attribute through logical CSS properties.
 
 ## Accessibility
 
-The container is `role="grid"` with `aria-rowcount` and `aria-colcount` of the whole grid, and every mounted row and cell carries `aria-rowindex` / `aria-colindex`, so a screen reader announces where a cell is even though only a window exists. Header cells are `role="columnheader"`; with `sticky_first_column` the first column's cells are `role="rowheader"`.
+The container is `role="grid"` with `aria-rowcount` and `aria-colcount` of the whole grid, and every mounted row and cell carries `aria-rowindex` / `aria-colindex`, so a screen reader announces where a cell is even though only a window exists. Header cells are `role="columnheader"`; with at least one start-pinned column (`pinned_columns_start >= 1`) the first column's cells are `role="rowheader"` (no other pinned column is).
 
 ## Sorting, selection and controls in cells
 
 Three hooks let the grid host a data table. All are optional.
 
 - `column_sort: Callback<usize, Option<SortDirection>>` sets `aria-sort` on a header: return `Some(Ascending|Descending)` for the sorted column and `None` for the rest (the APG sortable-table pattern puts it on that one header only). The grid owns the `columnheader`, so this is the only way to set it.
-- `row_selected: Callback<String, bool>` is asked, for every mounted row, whether the row with that `row_key` (the index as a string without one) is selected. Selected rows get `aria-selected="true"` and `data-state="selected"` (painted `--dx-muted` by the sheet, sticky column included); the others `aria-selected="false"`. It is keyed by identity, so the selection follows the row through a sort and a window move.
+- `row_selected: Callback<String, bool>` is asked, for every mounted row, whether the row with that `row_key` (the index as a string without one) is selected. Selected rows get `aria-selected="true"` and `data-state="selected"` (painted `--dx-muted` by the sheet, pinned columns included); the others `aria-selected="false"`. It is keyed by identity, so the selection follows the row through a sort and a window move.
 - **A cell may hold one control** (checkbox, switch, button, link): the APG grid's "focus the widget" model. The control, not its cell, is then the grid's single tab stop, the arrows still move between cells (focus lands on the next cell's control, or on the cell when it has none), and `Space` / `Enter` act on the control natively. A cell with a text field, a select or several controls needs the APG's `Enter`/`F2` interaction mode, which the grid does not provide: keep those out of the grid, or edit in a dialog.
 
 ## What windowing costs
 
-A `VirtualGrid` cell taller than its row overflows it (rows are not measured). A grid of up to `auto_threshold` cells (1,000) is not windowed at all under the default `Auto`: every cell stays in the DOM, columns in flow, and the browser skips the rows that are off-screen in chunks of 20 (`data-virtualize="content-visibility"`, the `content_visibility` variant); the keyboard model, the sticky header and column, sorting, selection and controls in cells are the same in both modes. Pass `virtualize: VirtualizeMode::Windowed` (or `ContentVisibility`) to choose. Find-in-page, the accessibility tree and the server are covered under "Find-in-page and the windowed DOM" below.
+A `VirtualGrid` cell taller than its row overflows it (rows are not measured). A grid of up to `auto_threshold` cells (1,000) is not windowed at all under the default `Auto`: every cell stays in the DOM, columns in flow, and the browser skips the rows that are off-screen in chunks of 20 (`data-virtualize="content-visibility"`, the `content_visibility` variant); the keyboard model, the pinned header and columns, sorting, selection and controls in cells are the same in both modes. Pass `virtualize: VirtualizeMode::Windowed` (or `ContentVisibility`) to choose. Find-in-page, the accessibility tree and the server are covered under "Find-in-page and the windowed DOM" below.
 
 <!-- shared:virtual-engine:modes -->
 ## The three modes and what they cost
@@ -168,13 +205,13 @@ VirtualGrid { row_count: 1_000usize, column_count: 30usize, fade: ScrollFade::Bo
 ```
 
 - It needs `dx-effects.css` linked once at the app root next to the theme (the `virtual_list` and `virtual_grid` `component.json` list it in `globalAssets`). Without it the prop is inert. See the `dx-scroll-fade` utility in the ScrollArea docs for the variables that tune depth and reveal distance.
-- The mask covers everything inside the container: a border or background on it fades with the content (put those on a wrapper and set `border: none` on the container), and so does a `VirtualGrid`'s sticky header, which a top fade dims once you scroll (prefer `ScrollFade::Bottom` or `End` with `render_header`).
+- The mask covers everything inside the container: a border or background on it fades with the content (put those on a wrapper and set `border: none` on the container), and so does a `VirtualGrid`'s pinned header, which a top fade dims once you scroll (prefer `ScrollFade::Bottom` or `End` with `render_header`).
 - Examples: the `fade` variants (a windowed list and a content-visibility list; a wrapping gallery and a two-axis data grid).
 <!-- /shared:virtual-engine:fade -->
 
 ## Styling
 
-Rows are `[role=row]`; cells carry `data-grid-cell="row:column"` (the header's is `"header:column"`), and the sticky header and column carry `data-grid-header` / `data-grid-sticky`. Positions and sizes are inline styles; this component's `style.css` paints borders, the header, the sticky column's background and the focus ring. In `VirtualWrapGrid` each row is a CSS grid of equal tracks: set `column-gap` and `padding-block-end` on `[role=row]` for the gaps (they are part of the measured row).
+Rows are `[role=row]`; cells carry `data-grid-cell="row:column"` (the header's is `"header:column"`), and the header row carries `data-grid-header` while pinned cells carry `data-grid-pinned="start|end"` (and the one beside the scrolling columns `data-grid-pin-edge="true"`). Positions and sizes are inline styles; this component's `style.css` paints borders, the header, the pinned columns' opaque background (with the row hover and selected fill layered over it) and the focus ring. In `VirtualWrapGrid` each row is a CSS grid of equal tracks: set `column-gap` and `padding-block-end` on `[role=row]` for the gaps (they are part of the measured row).
 
 ## Photo wall demo
 

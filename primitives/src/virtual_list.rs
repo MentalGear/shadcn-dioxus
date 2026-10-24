@@ -129,7 +129,7 @@ pub struct VirtualListProps {
     /// classes of `dx-effects.css`; see [`ScrollFade`]). Defaults to [`ScrollFade::None`]. It follows
     /// the container's own scroll offset, whatever rows or cells are mounted, and a container whose
     /// content fits has no fade. The fade is a mask, so it also fades a border or background on the
-    /// container (put those on a wrapper) and a `VirtualGrid`'s sticky header (prefer
+    /// container (put those on a wrapper) and a `VirtualGrid`'s pinned header (prefer
     /// [`ScrollFade::Bottom`] / [`ScrollFade::End`] with `render_header`); [`ScrollFade::Both`] masks
     /// all four edges of a two-axis scroller.
     #[props(default)]

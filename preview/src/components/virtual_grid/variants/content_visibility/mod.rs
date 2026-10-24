@@ -13,7 +13,7 @@ pub fn Demo() -> Element {
                 column_count: 12usize,
                 row_height: |_| 36,
                 column_width: |column: usize| if column == 0 { 80 } else { 96 },
-                sticky_first_column: true,
+                pinned_columns_start: 1usize,
                 render_header: |column: usize| if column == 0 { rsx! { "Row" } } else { rsx! { "Col {column}" } },
                 render_cell: |(row, column): (usize, usize)| if column == 0 {
                     rsx! { "{row + 1}" }

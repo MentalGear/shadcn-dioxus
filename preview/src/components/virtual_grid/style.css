@@ -1,5 +1,5 @@
 /* VirtualGrid / VirtualWrapGrid. The primitive places rows and cells with inline styles (absolute
- * positions, sticky header and first column); this sheet only paints them, in the Nova table's
+ * positions, pinned header and columns); this sheet only paints them, in the Nova table's
  * terms: the theme's `--dx-table-*` tokens, the same ones `table/style.css` reads (text size, row
  * border, cell padding, header weight, selected fill), so the two cannot drift. The
  * primitive renders no classes inside the grid, so every descendant rule selects the grid's own
@@ -32,9 +32,11 @@
   white-space: nowrap;
 }
 
-/* The sticky header and column cover the cells that scroll under them. */
+/* The pinned header and columns are opaque: they cover the cells that scroll under them. A pinned
+ * body cell's row fill (hover, selected) is an image layer over this base, never a replacement of
+ * it, so the cover stays opaque in every state (rules below, row 388). */
 .dx-virtual-grid [data-grid-header]:not(:where([popover], dialog) *),
-.dx-virtual-grid [data-grid-sticky]:not(:where([popover], dialog) *) {
+.dx-virtual-grid [data-grid-pinned]:not(:where([popover], dialog) *) {
   background-color: var(--dx-background);
 }
 
@@ -43,8 +45,17 @@
   font-weight: var(--dx-table-head-weight);
 }
 
-.dx-virtual-grid [data-grid-sticky]:not(:where([popover], dialog) *) {
+/* The separating edge: the pinned column next to the scrolling ones, on each side. Only the first
+ * column's cells are row headers (when a start column is pinned), and they read as labels. */
+.dx-virtual-grid [data-grid-pinned="start"][data-grid-pin-edge]:not(:where([popover], dialog) *) {
   border-inline-end: 1px solid var(--dx-border);
+}
+
+.dx-virtual-grid [data-grid-pinned="end"][data-grid-pin-edge]:not(:where([popover], dialog) *) {
+  border-inline-start: 1px solid var(--dx-border);
+}
+
+.dx-virtual-grid [role="rowheader"]:not(:where([popover], dialog) *) {
   color: var(--dx-muted-foreground);
 }
 
@@ -57,20 +68,34 @@
 
 /* The Nova table's row hover (`hover:bg-muted/50`), on a data grid's body rows only (the gallery
  * and the photo wall are not tables). The hover fill is translucent, so it must never land on
- * the sticky header row, whose opaque background is what covers the body cells scrolling under
+ * the pinned header row, whose opaque background is what covers the body cells scrolling under
  * it: the header row is excluded by structure (`data-grid-header`), not by source order
- * (row 386). Before the selected rule, which wins by source order. */
+ * (row 386). The row's own fill sits under its plain cells, but a pinned cell is opaque and
+ * covers it, so the pinned cell paints the same tint as an image layer over its opaque base (row
+ * 388); the layer goes through `--dx-press-under`, the slot the theme's press wash layers over. */
 @media (hover: hover) and (pointer: fine) {
   .dx-virtual-grid:not(.dx-virtual-grid-wrap, .dx-virtual-grid-justified) [role="row"]:not([data-grid-header]):hover:not(:where([popover], dialog) *) {
     background-color: var(--dx-table-hover-background);
   }
+
+  .dx-virtual-grid:not(.dx-virtual-grid-wrap, .dx-virtual-grid-justified) [role="row"]:not([data-grid-header]):hover [data-grid-pinned]:not(:where([popover], dialog) *) {
+    --dx-press-under: linear-gradient(var(--dx-table-hover-background), var(--dx-table-hover-background));
+
+    background-image: var(--dx-press-under);
+  }
 }
 
-/* A selected row (`row_selected`): the Nova table's `data-[state=selected]:bg-muted`. The sticky
- * column is opaque so scrolled cells never show through it, so it takes the same fill. */
-.dx-virtual-grid [role="row"][data-state="selected"]:not(:where([popover], dialog) *),
-.dx-virtual-grid [role="row"][data-state="selected"] [data-grid-sticky]:not(:where([popover], dialog) *) {
+/* A selected row (`row_selected`): the Nova table's `data-[state=selected]:bg-muted`. Its pinned
+ * cells show the selected fill as an image layer over their opaque base, so a row hover (which
+ * out-ranks this rule) and the selected fill read the same on pinned and scrolling cells. */
+.dx-virtual-grid [role="row"][data-state="selected"]:not(:where([popover], dialog) *) {
   background-color: var(--dx-table-selected-background);
+}
+
+.dx-virtual-grid [role="row"][data-state="selected"] [data-grid-pinned]:not(:where([popover], dialog) *) {
+  --dx-press-under: linear-gradient(var(--dx-table-selected-background), var(--dx-table-selected-background));
+
+  background-image: var(--dx-press-under);
 }
 
 /* A cell that holds a control: the control is the tab stop (the cell is `tabindex=-1`), so the
