@@ -111,7 +111,7 @@ Either way the first add creates a `components` folder in your project (if it do
 
 ## Motion
 
-Animation speed comes from `--dx-motion-duration-*` and `--dx-motion-ease*` tokens, `prefers-reduced-motion` is answered by the stylesheets, an infinite animation may only animate compositor properties, and motion nobody can see is not run: loops pause, timers stop and entrances wait to be seen (`use_motion`, `use_interval_while`, `use_entered_view_when`, `use_document_visible`). The tokens, the hooks, the gates, how to write your own animated component and a per-component table of what moves and what each does while unseen are in [`dev-docs/motion.md`](./dev-docs/motion.md), and on the site under [Docs, "Motion"](https://mentalgear.github.io/shadcn-dioxus/docs/#motion).
+Animation speed, reduced motion and motion nobody can see (loops pause, timers stop) are handled by the theme and a few hooks; the tokens, the hooks and how to write an animated component are in [`dev-docs/motion.md`](./dev-docs/motion.md), and on the site under [Docs, "Motion"](https://mentalgear.github.io/shadcn-dioxus/docs/#motion).
 
 ## Contributing
 
@@ -146,8 +146,8 @@ The fast loop, in the order you need it (the measured details are in
 (cd preview && dx serve --web --port 8080 > /tmp/dx-serve-8080.log 2>&1 &)
 scripts/dev-wait.sh 8080 --log /tmp/dx-serve-8080.log
 
-# 2. every gate before every commit: the static checks, fmt, stylelint, the three clippy arms, cargo test
-#    (green = "ALL GREEN" and exit 0; the target dir must be an absolute path)
+# 2. every gate before every commit: the static checks, fmt, stylelint, the three clippy arms, rustdoc, cargo test
+#    (green = "ALL GREEN" and exit 0; the target dir must be an absolute path; --fast skips the cargo gates)
 CARGO_TARGET_DIR=$PWD/target-gates scripts/run-gates.sh
 
 # 3. the Playwright specs that cover YOUR diff, on a prerendered build (what users get, hydration included)
@@ -164,8 +164,7 @@ The whole suite (about 3,600 tests) runs once per merge batch as duration-balanc
 Most specs also run an [axe-core](https://github.com/dequelabs/axe-core) static accessibility scan (valid ARIA, accessible names, unique landmarks, contrast, heading order, …) via the shared `playwright/axe.ts` helper — see [`dev-docs/conformance-harness.md`](./dev-docs/conformance-harness.md), "axe (static rules)", for what it covers versus the behaviour oracles and its exclusion policy.
 
 Local-only Playwright configs, for driving the suite against an
-already-running `dx serve`/`dx run` server instead of letting Playwright's
-own `webServer` block manage one: `baseline.local.config.ts` (full-suite
+already-running server instead of letting Playwright's own `webServer` block manage one: `baseline.local.config.ts` (full-suite
 runs), `xvfb.local.config.ts` (headed Chromium under a virtual X server, for
 tests that need a real, space-reserving scrollbar rather than headless
 Chromium's 0-width one), and `ssg.local.config.ts` (points at a plain static
@@ -177,60 +176,7 @@ these under `root` (as in a container), the touch/mobile-emulation oracle
 specs need Chromium launched with `--no-sandbox` — see
 `baseline.local.config.ts`'s `launchOptions` for the pattern.
 
-Several source-level guard scripts enforce conventions that would
-otherwise regress one component or change at a time. Some run in CI
-(`.github/workflows/main.yml`: `check-cfg-axis.sh`,
-`check-hooks-in-closures.sh`, `check-self-subscribing-effects.sh`,
-`check-css-logical-properties.sh`), and
-all of them are cheap enough to run on every relevant change locally,
-CI job or not:
-
-```sh
-# preview/ markup composes only themed wrappers (crate::components::*),
-# never a raw dioxus_primitives:: component directly -- see
-# dev-docs/preview-composition.md for why this matters.
-scripts/check-preview-composition.sh
-
-# rendered markup/component structure/attribute choice splits on the `web`
-# Cargo feature, never on `target_family = "wasm"` -- see
-# dev-docs/recommended-implementations.md, Caveat 1, for the production
-# incident this guards against.
-scripts/check-cfg-axis.sh
-
-# every themed component's shipped classes are namespaced
-# dx-<component>[-...], the collision-safety property #[css_module]
-# hashing used to provide -- see dev-docs/backlog.md row 32.
-scripts/check-dx-class-prefix.sh
-
-# a themed stylesheet may not hard-code a value that exactly matches a
-# design token -- see dev-docs/backlog.md row 31b.
-scripts/check-css-literals.sh
-
-# no Dioxus hook is called inside the closure passed to another hook
-# (use_context_provider, use_hook, use_memo, use_effect, use_callback,
-# use_signal, use_resource, use_future) -- that panics at runtime
-# ("hook list is already borrowed") with nothing at compile time to catch
-# it. See dev-docs/backlog.md row 74 for the Navigation Menu incident this
-# guards against.
-scripts/check-hooks-in-closures.sh
-
-# inside a use_effect closure, no signal is read with tracked syntax
-# (x() / x.read()) and also written (x.set(...) / x.write()) -- that
-# re-subscribes the effect to a value it just changed itself. See
-# dev-docs/backlog.md row 73 for the Drawer drag-hang incident this
-# guards against.
-scripts/check-self-subscribing-effects.sh
-
-# a themed stylesheet may not hard-code a physical inline-axis CSS value
-# (margin-left/right, left/right, border-*-left/right*, text-align: left/
-# right, a non-zero translateX(), ...) where a logical property would
-# express the same rule and mirror correctly under dir="rtl" -- see
-# dev-docs/backlog.md row 13. Two escape hatches: any rule selector
-# mentioning `data-side=` (a screen-geometry fact, not a reading-direction
-# one), or a `/* rtl-physical: <reason> */` comment -- see the script's own
-# header for the full allowlist.
-scripts/check-css-logical-properties.sh
-```
+Source-level guard scripts enforce conventions that would otherwise regress one component or change at a time. There is no CI: `scripts/run-gates.sh` runs all of them, and [`dev-docs/gates.md`](./dev-docs/gates.md) (generated from the scripts' headers) says what each one checks and why. For a quick pass without the cargo gates, `scripts/run-gates.sh --fast`.
 
 ### Running the preview
 

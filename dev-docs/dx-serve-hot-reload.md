@@ -1,158 +1,88 @@
 # Working with `dx serve`'s hot reload (agent notes)
 
-This is a practical guide for verifying a change against `dx serve`, written from
-mistakes actually made this session. `dx serve` **does** auto-rebuild on file
-change — there is no need to manually kill/restart it for a normal edit. The
-problems below are not about *whether* hot reload works; they are about
-*knowing when it has finished*, and about test methodology mistakes that look
-exactly like a stale build but aren't.
+`dx serve` **does** auto-rebuild on file change; a normal edit needs no kill or restart. The traps below are not about
+whether hot reload works but about *knowing when it has finished*, and about test mistakes that look exactly like a stale
+build. The scripted wait (`scripts/dev-wait.sh`), measured latencies and per-lane servers are in
+[`dev-loop.md`](./dev-loop.md); the lane brief is [`lane-rules.md`](./lane-rules.md) ("The fast loop").
 
-## The core problem: no clean "rebuild finished" signal
+## The traps
 
-`dx serve` watches the filesystem and kicks off a rebuild when a source file
-changes. A plain `curl -o /dev/null -w '%{http_code}' http://localhost:8080/`
-returning `200` tells you the HTTP server is up — it does **not** tell you the
-asset pipeline has finished reprocessing CSS/JS/wasm for your latest edit. A
-request can land while a rebuild is still in flight, or immediately before
-one has even started, and get served whatever was there before.
+**Trap 0: there is no clean "rebuild finished" signal, and HTTP 200 proves nothing.** A plain `curl -w '%{http_code}'`
+returning `200` says the process is alive, not that the asset pipeline has finished your edit. During a cold start the
+server answered 200 with the body `Err 404 - dioxus is not currently serving a web app`. Tail the server's own log for a
+completion line instead, and know which one you are waiting for: only a **cold start** logs
+`Build completed successfully in <N>s`; a **watch rebuild** logs `Build completed in <N>s` (no "successfully"), so
+grepping the cold-start string after an ordinary edit finds nothing even when the rebuild finished. Release and SSG
+builds log `Client build completed successfully!` and `Server build completed successfully!`. If the log shows no new
+completion line after a reasonable wait, the watcher may not have seen the change (a file outside its globs, or a
+`git stash`/`pop` inside its debounce window); force a real rebuild (see "When you are not sure").
 
-**What to check instead:** tail the server's own log for a completion line —
-`Build completed successfully in <N>s` (dev builds) or `Client build completed
-successfully! 🚀` / `Server build completed successfully! 🚀` (release/SSG
-builds via `scripts/deploy-preview.sh`). Don't treat a bare HTTP 200 as proof
-of anything past "the process is alive."
+**Trap 3: `Hotreloading:` with no rebuild.** A structural Rust logic change can make `dx serve` log only
+`Hotreloading: <file>`, with no `Build completed` line, and silently not take effect: hot patching covers simple edits,
+not every structural one, and there is no error, only a line that looks like progress. If the file changed and only
+`Hotreloading:` follows after a reasonable wait, do not keep polling: kill the server and start `dx serve` again, then
+re-check (found in the 2026-09-18 integration round: the old behaviour kept being served until a restart).
+`dev-wait.sh --expect rebuild` turns this shape into exit 3.
 
-```bash
-# after touching a source file, poll the log rather than just curl:
-grep -q "Build completed successfully" dx-serve.log
-```
+**Trap 4: a hot-reload-only patch is invisible to any fresh navigation.** RSX and template hot reload is applied over a
+websocket, in memory, to whatever tab is **already open and connected**; it does not update the wasm or js the server
+serves from disk. A page opened before an RSX text edit showed the new text; two fresh loads afterwards (one at once, one
+a minute later) still showed the old text, so a naive "reload and check with Playwright" reads as a false "the fix did not
+apply". After a `hotreload`-classified change either trust it (dx's template hot reload is well exercised for markup and
+CSS) or verify against a page that was open before the edit, unless you wait for or force a real rebuild. An edit to an
+already-wired asset file (CSS) does reach later loads, but not provably at the instant of the log line: re-check before
+concluding it failed.
 
-If you changed a file and the log shows no new "Build completed" line after a
-reasonable wait, the watcher may not have picked up the change at all (e.g. a
-file outside its watched globs, or a change made via `git stash`/`pop` landing
-in a window the watcher's debounce missed) — that's the moment to stop
-guessing and force a real rebuild (see "When in doubt" below).
+**Trap 5: rapid saves can give a "successful" but incomplete rebuild.** Several saves within milliseconds (a new file, a
+`mod` line, a call site) can split into two overlapping build cycles, and the first `Build completed` line does not
+guarantee every file is in that binary; a trailing rebuild can follow. `dev-wait.sh` reports the first match by design, so
+after a multi-file edit re-run it once with `--since-line` past the first match: a timeout means done, another `READY`
+was the real one.
 
-## A third trap: `Hotreloading:` with no rebuild
+**Trap 6: near-simultaneous saves of two different files can drop the rebuild entirely.** Two files saved a few seconds
+apart (found 2026-09-18/19, about 7 s apart): no `Hotreloading:` line, no `Build completed` line, the process alive and
+serving at about 2% CPU indefinitely. **Recovery is a trivial re-save of either file**: the next save rebuilds everything
+pending. Telling the siblings apart: trap 5 still logs a completion, only early; trap 6 logs none, at idle CPU (check
+`ps`); a wedged server also logs none but burns CPU or answers nothing.
 
-Beyond not knowing *when* a rebuild finished, a structural Rust **logic** change (not a
-markup/style tweak) can sometimes make `dx serve` log only `Hotreloading: <file>` — with no
-`Build completed` line at all — and silently not take effect. Hot patching handles simple edits
-well; it does not reliably cover every structural change, and when it silently doesn't, there is
-no error, just a log line that looks like progress. If you've confirmed the file actually changed
-and the log still shows only `Hotreloading:` with no follow-up `Build completed` line after a
-reasonable wait, don't keep polling — do a full server restart (kill the process, `dx serve`
-again) to force an unambiguous full rebuild, then re-check. Found this way during 2026-09-18's
-integration round: a structural fix was reasoned correct, the log showed only `Hotreloading:`,
-and the old behavior was still being served until the server was restarted.
+**The build.rs trap: a new component directory.** `preview/build.rs` generates the docs from every component's `*.md`
+and `component.json`, and the dx watcher reruns it only when its own bytes change: `touch` is the cargo-side remedy for a
+stale `OUT_DIR` (row 92) but was not enough for the dx watcher (two lanes hit it 2026-10-04). **Rewrite the file, not
+touch it** (change a comment's bytes) and confirm the new component's docs appear before trusting what the server shows.
 
-**Two different completion strings, and they mean different things:** only a **cold start** logs
-`Build completed successfully in <N>s`; a **watch rebuild** (the normal hot-reload path after a
-file change, once one actually runs) logs `Build completed in <N>s` — no "successfully". Grepping
-for the cold-start string after an ordinary edit will find nothing even when the rebuild genuinely
-finished — match `Build completed` (without "successfully") for a watch rebuild, and know which
-kind of start you're polling for before concluding the log shows no completion at all.
+## Test mistakes that look like a stale build
 
-## A sixth trap: a dropped rebuild on near-simultaneous saves (traps 4 and 5 are in `dev-loop.md`)
+1. **Grepping built CSS for un-minified text.** Source CSS has spaces (`.foo { flex-direction: column; }`); the built
+   output is minified (`.foo{flex-direction:column}`), so a grep for the spaced form finds nothing even when the rule is
+   present. Grep the minified form, or better, query `document.styleSheets` / `getComputedStyle` in a real browser.
+2. **`elementFromPoint` after `pointer-events: none`.** A fix that makes an overlay `pointer-events: none` also hides it
+   from `document.elementFromPoint`, so you only ever see what is underneath. To ask what covers a point, do a manual
+   point-in-rect check on each candidate's `getBoundingClientRect()`.
+3. **Reading `outline-color` alone.** The default computed `outline-color` is `rgb(0, 0, 0)` whether or not an outline
+   is drawn; read `outline-style` (or another property whose default is not a plausible "changed" value) with it.
 
-Beyond a rebuild that only *looks* incomplete (the previous trap) or is merely
-mistimed (`dev-loop.md`'s trap 5), saving two **different** files within a
-few seconds of each other can make the watcher drop the rebuild **entirely**:
-no `Hotreloading:` line, no `Build completed` line, the server process stays
-alive and keeps serving HTTP, but sits idle at ~2% CPU indefinitely — as if
-nothing had changed at all. Found during 2026-09-18/19 batch-2 integration:
-two files were edited roughly 7 seconds apart, and the server never rebuilt
-for either one. **Recovery is a trivial re-save of either file** — the
-watcher picks up the next save normally and rebuilds everything pending, not
-just the re-saved file. Likely mechanism: both saves landed inside the same
-debounce window and were coalesced into nothing, the more severe sibling of
-`dev-loop.md`'s trap 5 ("coalesced into an early, incomplete rebuild").
-Telling the three apart: trap 5 still produces a `Build completed` line,
-just prematurely; this trap produces no completion line at all; a wedged
-server (`dev-loop.md`'s "Trap 0") also shows no completion line, so check
-`ps`/CPU% too — idle at ~2% with no error is this trap, not a wedge.
+Both of the first two produced a false "the fix regressed something" alarm before the cause (the test, not the build) was
+found: when a regression appears right after a fix that should be unrelated, suspect the test before the build.
 
-## Testing methodology traps that *look* like a stale build
+## When you are not sure if what you see is real
 
-Two mistakes this session produced symptoms indistinguishable from "the dev
-server is serving old code," when the code was actually fine:
+From cheapest to most certain:
 
-1. **Grepping built CSS for un-minified text.** Source CSS has spaces
-   (`.foo { flex-direction: column; }`); the asset pipeline's *built* output
-   is minified (`.foo{flex-direction:column}`). A `grep "flex-direction: column"`
-   against the built file will silently find nothing even when the rule is
-   correctly present — this looks exactly like "the fix never made it into the
-   build." Grep the minified form (no spaces around `:`/`{`/`}`), or don't
-   grep raw text at all — query `document.styleSheets`/`getComputedStyle` in
-   a real browser instead, which doesn't care about formatting.
-
-2. **`elementFromPoint` after adding `pointer-events: none`.** If a fix makes
-   an overlay `pointer-events: none` (so clicks pass through to something
-   underneath), `document.elementFromPoint(x, y)` will *also* skip that
-   overlay — it respects `pointer-events` for hit-testing. You cannot use it
-   to ask "what's visually at this point" once you've done that; you'll only
-   ever see what's underneath. To find which visual element covers a point
-   after such a fix, query each candidate element's own
-   `getBoundingClientRect()` and do a manual point-in-rect check instead.
-
-Both of these produced a "the fix regressed something" false alarm this
-session before the real cause (test methodology, not a build problem) was
-found. When a fresh regression appears immediately after a fix that should be
-unrelated to the symptom, suspect the test before the build.
-
-## When you're not sure if what you're seeing is real
-
-Ordered from cheapest to most expensive/most certain:
-
-1. **Re-check after confirming a "Build completed" log line**, not just an
-   HTTP 200. Often this alone resolves it.
-2. **`git stash` the fix, wait for a confirmed rebuild, test again.** If the
-   symptom reproduces identically on the unmodified baseline, it's
-   pre-existing, not caused by your change — `git stash pop` and move on. This
-   is the fastest way to rule out "did I break this."
-3. **Wipe the dev build's own output directory and force a clean rebuild**
-   (`rm -rf target/dx/preview/debug/web/public` before restarting `dx serve`)
-   if you suspect the incremental build itself is confused, not just slow.
-4. **Build via the actual production recipe** (`bash scripts/deploy-preview.sh`,
-   or `dx build --platform web --release --ssg --features fullstack`) and
-   serve *that* output instead of the dev server. This is a fully
-   recompiled, non-incremental artifact — the closest thing to ground truth
-   available in this sandbox, and worth the extra build time (a few minutes)
-   whenever dev-server ambiguity has already cost you one confusing result.
-   `deploy-preview.sh` also runs its own hydration-bootstrap sanity check
-   (see its own comments) guarding against a known, separate `dx build --ssg`
-   cache-warm race — a different, already-documented issue from anything
-   above, but worth knowing about if a *production* build looks broken in a
-   way a dev build doesn't.
-
-Serving a production build locally at its real base path (`/dioxus-components`)
-needs a one-line symlink trick, since the built HTML references absolute
-paths under that prefix:
-
-```bash
-mkdir -p /tmp/docs-root && ln -sfn "$(pwd)/target/dx/preview/release/web/public" /tmp/docs-root/dioxus-components
-cd /tmp/docs-root && python3 -m http.server 8099
-# then browse http://localhost:8099/dioxus-components/
-```
+1. **Re-check after a confirmed `Build completed` line**, not an HTTP 200. Often this alone resolves it.
+2. **`git stash` the fix, wait for a confirmed rebuild, test again.** If the symptom reproduces on the baseline it is
+   pre-existing; `git stash pop` and move on.
+3. **Wipe the dev build's output** (`rm -rf` your own target's `dx/preview/debug/web/public`) and restart `dx serve` if the
+   incremental build itself may be confused.
+4. **Build the production recipe** (`scripts/build-ssg.sh release`, or `scripts/deploy-preview.sh`) and serve that output:
+   a fully recompiled, non-incremental artifact, the closest thing to ground truth here and worth a few minutes whenever a
+   dev-server result has already cost you one confusing answer. `deploy-preview.sh` runs its own hydration-bootstrap check
+   against a separate, documented `dx build --ssg` cache-warm race. To serve a build at its real base path, symlink the
+   `public` directory under that prefix in a scratch directory (`ln -sfn <public> <scratch>/shadcn-dioxus`) and run
+   `python3 -m http.server` from `<scratch>`.
 
 ## Summary
 
-- Hot reload works and should be relied on for normal edits — this doc is not
-  an argument against using it.
-- Don't trust "the server responds" as "my change is live." Trust a logged
-  build-completion line, or a `git stash`-based A/B comparison, or (when
-  genuinely unsure) a from-scratch production build.
-- Before concluding a fix caused a regression, rule out your own test
-  methodology first — minified-CSS text grepping and `elementFromPoint` after
-  a `pointer-events: none` fix are the two traps already caught here.
-- A structural Rust logic change can hot-reload silently without actually
-  rebuilding (`Hotreloading:` logged with no `Build completed` line) — if in
-  doubt, restart the server rather than trust the log. The two completion
-  strings mean different things: only a cold start says "successfully".
-
-**See also:** [`dev-loop.md`](./dev-loop.md) — measured rebuild latency per
-edit class, `dx serve --hot-patch` findings, a scripted trustworthy-signal
-wait (`scripts/dev-wait.sh`), a direct-inspection tool (`scripts/inspect.mjs`),
-and two more traps found while producing those (a hot-reload-only patch is
-invisible to any fresh page load/navigation, and rapid multi-file saves can
-produce a misleadingly-early "Build completed" line).
+- Rely on hot reload for normal edits; trust a logged completion line (or a stash A/B, or a production build), never "the
+  server responds".
+- Know what `READY hotreload` proves (trap 4) and that a lone `Hotreloading:` after Rust logic is not a rebuild (trap 3).
+- Rule out your own test method before concluding a fix caused a regression.
