@@ -2178,7 +2178,14 @@ fn ComponentVariantHighlight(
         format!("component-preview-frame-{name}")
     };
     rsx! {
-        if !main_variant {
+        // The page's first paint waits until the main demo frame has been parsed (a render-blocking `expect` link
+        // in the SSR head; Chromium 124+, ignored elsewhere). Painted earlier, the half-parsed top of the page is on
+        // screen and every later sibling re-lays it out: a centred demo row re-centres as its items arrive, a
+        // right-aligned control slides as its text does (backlog row 407, `layout-stability.spec.ts`). After a
+        // client-side navigation the link is inert: render-blocking only applies before the first paint.
+        if main_variant {
+            document::Link { rel: "expect", href: "#component-preview-frame", blocking: "render" }
+        } else {
             h3 { class: "dx-component-variant-title", "{variant_title(name)}" }
         }
         Tabs {
