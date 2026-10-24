@@ -9,6 +9,8 @@ import { readAtRest } from "./animations";
 // `PAYMENTS` (12 rows, id/status/email/amount) exactly -- single source of
 // truth for the sort/filter/page expectations below is that file's own
 // header comment, not re-derived here.
+// `PAYMENTS[0]`: the first row with no sort.
+const SOURCE_FIRST_EMAIL = "ken99@example.com";
 const goto = (page: Page) =>
   gotoHydrated(page, `${BASE_URL}/component/data_table/`, { timeout: 20 * 60 * 1000 });
 
@@ -129,7 +131,7 @@ const header = (page: Page, name: string) => table(page).locator("th", { hasText
 const sortButton = (page: Page, name: string) => header(page, name).getByRole("button");
 const firstRowText = (page: Page) => table(page).locator("tbody tr").first();
 
-test("the header sort button toggles direction and moves aria-sort to the one sorted column", async ({ page }) => {
+test("the header sort button cycles ascending, descending, none and moves aria-sort to the one sorted column", async ({ page }) => {
   await goto(page);
 
   await expect(header(page, "Email")).toHaveAttribute("aria-sort", "ascending");
@@ -147,6 +149,12 @@ test("the header sort button toggles direction and moves aria-sort to the one so
 
   await sortButton(page, "Amount").click();
   await expect(firstRowText(page)).toContainText("$999.00");
+
+  // A third activation clears the sort: every header reads none, the rows return to source order.
+  await sortButton(page, "Amount").click();
+  await expect(header(page, "Amount")).toHaveAttribute("aria-sort", "none");
+  await expect(header(page, "Email")).toHaveAttribute("aria-sort", "none");
+  await expect(firstRowText(page)).toContainText(SOURCE_FIRST_EMAIL);
 
   // ID and Status are not sortable: no button, no aria-sort.
   await expect(header(page, "Status").getByRole("button")).toHaveCount(0);

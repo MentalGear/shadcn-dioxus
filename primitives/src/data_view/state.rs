@@ -181,6 +181,20 @@ pub struct ViewState {
     pub order: Option<KeyOrder>,
 }
 
+/// Which reported parts of a [`ViewState`] a transition changed
+/// ([`ViewState::changes_since`]): what a view diffs once around each
+/// transition to fire its `on_sort_change`/`on_page_change`/`on_selection_change`
+/// callbacks, so every mutator reports without one of its own.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct ViewChanges {
+    /// The sorted field or its direction changed (including to or from no sort).
+    pub sort: bool,
+    /// The 0-based page changed.
+    pub page: bool,
+    /// The set of selected keys changed.
+    pub selection: bool,
+}
+
 /// The Data Table's name for [`ViewState`] (backlog row 340).
 pub type TableState = ViewState;
 
@@ -197,14 +211,35 @@ impl ViewState {
         }
     }
 
-    /// A header activation: the sorted column flips direction, any other column
-    /// becomes the sort, ascending. Returns to page 0.
+    /// A header activation, TanStack's default cycle: another column becomes the
+    /// sort, ascending; the sorted column goes ascending -> descending -> no sort
+    /// (source order, or the manual [`order`](Self::order)). Returns to page 0.
     pub fn toggle_sort(&mut self, column_id: &str) {
         self.sort = match self.sort.take() {
-            Some((id, direction)) if id == column_id => Some((id, direction.toggled())),
+            Some((id, SortDirection::Ascending)) if id == column_id => {
+                Some((id, SortDirection::Descending))
+            }
+            Some((id, SortDirection::Descending)) if id == column_id => None,
             _ => Some((column_id.to_string(), SortDirection::Ascending)),
         };
         self.page = 0;
+    }
+
+    /// Clears the sort (source order, or the manual [`order`](Self::order)) and
+    /// returns to page 0.
+    pub fn clear_sort(&mut self) {
+        self.sort = None;
+        self.page = 0;
+    }
+
+    /// What changed from `before` to `self` among the parts a view reports to
+    /// its owner (sort, page, selection); see [`ViewChanges`].
+    pub fn changes_since(&self, before: &ViewState) -> ViewChanges {
+        ViewChanges {
+            sort: self.sort != before.sort,
+            page: self.page != before.page,
+            selection: self.selected != before.selected,
+        }
     }
 
     /// Sets the filter text and returns to page 0.
@@ -370,6 +405,56 @@ mod tests {
         assert_eq!(state, before);
         assert_eq!(state.page, 1);
         assert!(state.selected.contains("c"));
+    }
+
+    #[test]
+    fn toggle_sort_cycles_ascending_descending_none_and_clear_sort_clears() {
+        let mut state = ViewState::new(2, None);
+        state.page = 1;
+        state.toggle_sort("n");
+        assert_eq!(state.sort, Some(("n".into(), SortDirection::Ascending)));
+        assert_eq!(state.page, 0);
+        state.toggle_sort("n");
+        assert_eq!(state.sort, Some(("n".into(), SortDirection::Descending)));
+        state.page = 1;
+        state.toggle_sort("n");
+        assert_eq!(state.sort, None);
+        assert_eq!(state.page, 0);
+        // A descending sort on another column restarts at ascending on the new one.
+        state.toggle_sort("a");
+        state.toggle_sort("a");
+        state.toggle_sort("n");
+        assert_eq!(state.sort, Some(("n".into(), SortDirection::Ascending)));
+        state.page = 1;
+        state.clear_sort();
+        assert_eq!((state.sort.clone(), state.page), (None, 0));
+    }
+
+    #[test]
+    fn changes_since_names_each_reported_part() {
+        let before = ViewState::new(2, None);
+        let mut after = before.clone();
+        assert_eq!(after.changes_since(&before), ViewChanges::default());
+        after.set_filter("x");
+        assert_eq!(after.changes_since(&before), ViewChanges::default());
+        after.page = 3;
+        after.toggle_sort("n");
+        let changed = after.changes_since(&before);
+        assert!(changed.sort && !changed.page && !changed.selection);
+        after.set_page(2, 5);
+        after.set_selected("a", true);
+        assert_eq!(
+            after.changes_since(&before),
+            ViewChanges {
+                sort: true,
+                page: true,
+                selection: true
+            }
+        );
+        // Selecting a selected key again changes nothing.
+        let settled = after.clone();
+        after.set_selected("a", true);
+        assert_eq!(after.changes_since(&settled), ViewChanges::default());
     }
 
     #[test]

@@ -35,7 +35,7 @@ use dioxus_primitives::use_controlled;
 const SIDEBAR_WIDTH: &str = "16rem";
 const SIDEBAR_WIDTH_MOBILE: &str = "18rem";
 const SIDEBAR_WIDTH_ICON: &str = "3rem";
-const SIDEBAR_KEYBOARD_SHORTCUT: &str = "b";
+const SIDEBAR_KEYBOARD_SHORTCUT: char = 'b';
 const MOBILE_BREAKPOINT: u32 = 768;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
@@ -174,6 +174,12 @@ pub fn SidebarProvider(
     #[props(default = true)] default_open: bool,
     #[props(default)] open: ReadSignal<Option<bool>>,
     #[props(default)] on_open_change: Callback<bool>,
+    /// The key that toggles the sidebar with Ctrl (Cmd on macOS), `'b'` like shadcn's
+    /// `SIDEBAR_KEYBOARD_SHORTCUT`; `None` turns the shortcut off. It is left alone while focus
+    /// is in a text field, a `select` or a contenteditable, and when a handler nearer the
+    /// target (an editor's own Ctrl+B) already called `preventDefault`.
+    #[props(default = ReadSignal::new(Signal::new(Some(SIDEBAR_KEYBOARD_SHORTCUT))))]
+    keyboard_shortcut: ReadSignal<Option<char>>,
     #[props(extends = GlobalAttributes)] attributes: Vec<Attribute>,
     children: Element,
 ) -> Element {
@@ -202,15 +208,20 @@ pub fn SidebarProvider(
 
     use_context_provider(|| ctx);
 
+    // Reads `keyboard_shortcut`, so a new key (or `None`) reinstalls (or removes) the listener.
+    // The key is inlined as a `\u{..}` escape, which no character can break out of.
     use_js_listeners(move || {
+        let key = keyboard_shortcut()?.escape_unicode();
         Some(
             JsListeners::install(&format!(
                 r#"
+                const editable = 'input, textarea, select, [contenteditable]:not([contenteditable="false"])';
                 listen(window, 'keydown', (event) => {{
-                    if (event.key === '{SIDEBAR_KEYBOARD_SHORTCUT}' && (event.metaKey || event.ctrlKey)) {{
-                        event.preventDefault();
-                        dioxus.send(true);
-                    }}
+                    if (event.key !== '{key}' || !(event.metaKey || event.ctrlKey)) return;
+                    if (event.defaultPrevented || event.isComposing) return;
+                    if (event.target instanceof Element && event.target.closest(editable)) return;
+                    event.preventDefault();
+                    dioxus.send(true);
                 }});
                 "#
             ))

@@ -62,6 +62,38 @@ test.describe("sidebar: block route", () => {
     await expect(sidebar).toHaveAttribute("data-state", "expanded");
   });
 
+  test("desktop: Ctrl+B is left to a text field, a contenteditable and a handler that prevented it (row 397)", async ({ page }) => {
+    await gotoSidebarBlock(page);
+    const sidebar = page.locator('[data-slot="sidebar"]:not([data-mobile="true"])');
+    await expect(sidebar).toHaveAttribute("data-state", "expanded");
+    await page.evaluate(() => {
+      const input = Object.assign(document.createElement("input"), { id: "probe-input", ariaLabel: "probe" });
+      const editor = Object.assign(document.createElement("div"), { id: "probe-editor", contentEditable: "true" });
+      const bold = Object.assign(document.createElement("button"), { id: "probe-bold", textContent: "probe" });
+      // An editor's own Ctrl+B: handled nearer the target, so the page-level shortcut stays out.
+      bold.addEventListener("keydown", (event) => event.preventDefault());
+      document.body.append(input, editor, bold);
+    });
+
+    for (const id of ["probe-input", "probe-editor", "probe-bold"]) {
+      await page.locator(`#${id}`).focus();
+      const prevented = await page.evaluate(() => {
+        const event = new KeyboardEvent("keydown", { key: "b", ctrlKey: true, bubbles: true, cancelable: true });
+        // Dispatched on the focused element, the way a real key press starts.
+        document.activeElement!.dispatchEvent(event);
+        return event.defaultPrevented;
+      });
+      if (id !== "probe-bold") expect(prevented, `${id}: the key is not swallowed`).toBe(false);
+      await page.keyboard.press("Control+b");
+      await expect(sidebar, `${id}: Ctrl+B does not toggle the sidebar`).toHaveAttribute("data-state", "expanded");
+    }
+
+    // Outside an editable target the shortcut still toggles.
+    await page.evaluate(() => (document.activeElement as HTMLElement).blur());
+    await page.keyboard.press("Control+b");
+    await expect(sidebar).toHaveAttribute("data-state", "collapsed");
+  });
+
   test("desktop: side switch updates data-side", async ({ page }) => {
     await gotoSidebarBlock(page);
 

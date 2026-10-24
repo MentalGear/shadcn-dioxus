@@ -8,6 +8,7 @@ use super::model::{TableState, TableView};
 use super::state::SortDirection;
 use dioxus::prelude::*;
 use dioxus_primitives::data_view::{derive, Field, RowAnchor, View};
+use std::collections::HashSet;
 use std::rc::Rc;
 
 /// The width in px of a column in the `Grid` layout when [`Column::grid_width`] is not set.
@@ -199,7 +200,17 @@ impl<T: 'static> PartialEq for Column<T> {
     }
 }
 
-/// The initial state of [`use_data_table`]. Read once, on the first render.
+/// The initial state of [`use_data_table`], read once on the first render, and the
+/// change callbacks, read on every render (so a callback always sees the caller's
+/// current captures).
+///
+/// A callback fires after a transition that changed what it reports, never on
+/// the first render: `on_sort_change` with the new sort (`None` once cleared),
+/// `on_page_change` with the new 0-based page (a sort, filter or page-size change
+/// returns to page 0, so it fires then too when the page was not 0), and
+/// `on_selection_change` with every selected key. TanStack's `onSortingChange`,
+/// `onPaginationChange` and `onRowSelectionChange`, reporting the value instead
+/// of an updater: the table keeps owning its state.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DataTableOptions {
     /// Rows per page; `usize::MAX` shows everything on one page.
@@ -212,6 +223,12 @@ pub struct DataTableOptions {
     /// created, so the server markup and the client's first frame agree
     /// (setting a selection from a hook after the first read would not).
     pub selected: Vec<String>,
+    /// Called with the new sort after a header activation or `clear_sort` changes it.
+    pub on_sort_change: Option<Callback<Option<(String, SortDirection)>>>,
+    /// Called with the new 0-based page whenever it changes.
+    pub on_page_change: Option<Callback<usize>>,
+    /// Called with the keys of every selected row whenever the selection changes.
+    pub on_selection_change: Option<Callback<HashSet<String>>>,
 }
 
 impl Default for DataTableOptions {
@@ -221,17 +238,30 @@ impl Default for DataTableOptions {
             sort: None,
             hidden_columns: Vec::new(),
             selected: Vec::new(),
+            on_sort_change: None,
+            on_page_change: None,
+            on_selection_change: None,
         }
     }
 }
 
+/// The callbacks of a [`DataTableOptions`], refreshed every render.
+#[derive(Clone, Copy, PartialEq, Default)]
+struct DataTableCallbacks {
+    on_sort_change: Option<Callback<Option<(String, SortDirection)>>>,
+    on_page_change: Option<Callback<usize>>,
+    on_selection_change: Option<Callback<HashSet<String>>>,
+}
+
 /// The mutating half of a data table: `Copy`, so event handlers capture it
-/// freely. Every method is a [`TableState`] transition.
+/// freely. Every method is a [`TableState`] transition, and every transition goes
+/// through one diff that fires the [`DataTableOptions`] callbacks.
 #[derive(Clone, Copy)]
 pub struct DataTableState {
     state: Signal<TableState>,
     layout: Signal<ColumnLayout>,
     all_keys: Callback<(), Vec<String>>,
+    callbacks: CopyValue<DataTableCallbacks>,
 }
 
 impl DataTableState {
@@ -240,35 +270,67 @@ impl DataTableState {
         self.state.read().clone()
     }
 
-    /// A header activation for `column_id`; see [`TableState::toggle_sort`].
-    pub fn toggle_sort(&self, column_id: &str) {
+    /// Runs one transition, then fires the callback of each reported part it
+    /// changed (after the write, so a callback may read the table).
+    fn update<R>(&self, transition: impl FnOnce(&mut TableState) -> R) -> R {
         let mut state = self.state;
-        state.with_mut(|s| s.toggle_sort(column_id));
+        let before = state.peek().clone();
+        let result = state.with_mut(transition);
+        let changes = state.peek().changes_since(&before);
+        let callbacks = *self.callbacks.peek();
+        if changes.sort {
+            if let Some(on_sort_change) = callbacks.on_sort_change {
+                on_sort_change.call(state.peek().sort.clone());
+            }
+        }
+        if changes.page {
+            if let Some(on_page_change) = callbacks.on_page_change {
+                on_page_change.call(state.peek().page);
+            }
+        }
+        if changes.selection {
+            if let Some(on_selection_change) = callbacks.on_selection_change {
+                on_selection_change.call(state.peek().selected.clone());
+            }
+        }
+        result
+    }
+
+    /// A header activation for `column_id`: ascending, descending, then no sort;
+    /// see [`TableState::toggle_sort`].
+    pub fn toggle_sort(&self, column_id: &str) {
+        self.update(|s| s.toggle_sort(column_id));
+    }
+
+    /// Clears the sort: source order, or the manual row order.
+    pub fn clear_sort(&self) {
+        self.update(TableState::clear_sort);
     }
 
     /// Sets the filter text.
     pub fn set_filter(&self, text: impl Into<String>) {
-        let mut state = self.state;
         let text = text.into();
-        state.with_mut(|s| s.set_filter(text));
+        self.update(|s| s.set_filter(text));
     }
 
     /// Sets rows per page.
     pub fn set_page_size(&self, page_size: usize) {
-        let mut state = self.state;
-        state.with_mut(|s| s.set_page_size(page_size));
+        self.update(|s| s.set_page_size(page_size));
+    }
+
+    /// Goes to `page`, clamped to the last of `page_count`.
+    pub fn set_page(&self, page: usize, page_count: usize) {
+        self.update(|s| s.set_page(page, page_count));
     }
 
     /// One page back.
     pub fn previous_page(&self) {
-        let mut state = self.state;
-        state.with_mut(TableState::previous_page);
+        self.update(TableState::previous_page);
     }
 
     /// One page forward, stopping at the last of `page_count`.
     pub fn next_page(&self, page_count: usize) {
-        let mut state = self.state;
-        state.with_mut(|s| s.next_page(page_count));
+        self.update(|s| s.next_page(page_count));
     }
 
     /// Whether the row with `key` is selected. Subscribes the caller to the state, so a render
@@ -279,8 +341,7 @@ impl DataTableState {
 
     /// Selects or deselects one row.
     pub fn set_selected(&self, key: &str, selected: bool) {
-        let mut state = self.state;
-        state.with_mut(|s| s.set_selected(key, selected));
+        self.update(|s| s.set_selected(key, selected));
     }
 
     /// The manual row move behind the drag handle: row `key` lands next to the
@@ -288,9 +349,8 @@ impl DataTableState {
     /// meaningful while no sort is active (a sort wins over a manual order).
     /// `false` when nothing moved.
     pub fn move_row(&self, key: &str, anchor: RowAnchor<'_>) -> bool {
-        let mut state = self.state;
         let keys = self.all_keys.call(());
-        state.with_mut(|s| s.move_row(keys.iter().map(String::as_str), key, anchor))
+        self.update(|s| s.move_row(keys.iter().map(String::as_str), key, anchor))
     }
 
     /// The current column layout (order and hidden columns).
@@ -321,8 +381,7 @@ impl DataTableState {
 
     /// Selects or deselects every key (the header checkbox).
     pub fn set_many_selected(&self, keys: &[String], selected: bool) {
-        let mut state = self.state;
-        state.with_mut(|s| s.set_many_selected(keys.iter().map(String::as_str), selected));
+        self.update(|s| s.set_many_selected(keys.iter().map(String::as_str), selected));
     }
 }
 
@@ -448,6 +507,16 @@ pub fn use_data_table_index<T: Clone + 'static>(
     });
     let layout =
         use_signal(|| ColumnLayout::with_hidden(options.hidden_columns.iter().map(String::as_str)));
+    // Not reactive: a transition reads the latest callbacks, nothing re-renders on a new one.
+    let latest = DataTableCallbacks {
+        on_sort_change: options.on_sort_change,
+        on_page_change: options.on_page_change,
+        on_selection_change: options.on_selection_change,
+    };
+    let mut callbacks = use_hook(|| CopyValue::new(latest));
+    if *callbacks.peek() != latest {
+        callbacks.set(latest);
+    }
     let fields: Vec<Field<T>> = columns.iter().map(|c| c.field.clone()).collect();
     let row_key_for_keys = row_key.clone();
     let row_key = row_key.clone();
@@ -475,11 +544,91 @@ pub fn use_data_table_index<T: Clone + 'static>(
             state,
             layout,
             all_keys,
+            callbacks,
         },
         view: derived,
         sort,
         filter,
         layout: layout_now,
         marker: std::marker::PhantomData,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::cell::RefCell;
+
+    thread_local! {
+        static LOG: RefCell<Vec<String>> = const { RefCell::new(Vec::new()) };
+    }
+
+    fn log(entry: String) {
+        LOG.with(|l| l.borrow_mut().push(entry));
+    }
+
+    /// Twelve numbered rows, five per page, every callback logging; one effect runs a fixed
+    /// sequence of transitions after the first render.
+    #[component]
+    fn Harness() -> Element {
+        let rows = use_signal(|| (0..12u32).collect::<Vec<u32>>());
+        let columns = vec![Column::new("n", "N", |n: &u32| rsx! { "{n}" }).sortable(|n: &u32| *n)];
+        let key = use_hook(|| RowFn::new(|n: &u32| n.to_string()));
+        let options = DataTableOptions {
+            page_size: 5,
+            on_sort_change: Some(Callback::new(|sort: Option<(String, SortDirection)>| {
+                log(format!("sort {sort:?}"))
+            })),
+            on_page_change: Some(Callback::new(|page: usize| log(format!("page {page}")))),
+            on_selection_change: Some(Callback::new(|keys: HashSet<String>| {
+                let mut keys: Vec<String> = keys.into_iter().collect();
+                keys.sort();
+                log(format!("selection {keys:?}"))
+            })),
+            ..Default::default()
+        };
+        let state = use_data_table(rows.into(), &columns, &key, options).state;
+        use_effect(move || {
+            log("effect".into());
+            state.next_page(3);
+            state.toggle_sort("n");
+            state.set_page(2, 3);
+            state.toggle_sort("n");
+            state.toggle_sort("n");
+            state.clear_sort();
+            state.set_selected("3", true);
+            state.set_selected("3", true);
+            state.set_many_selected(&["4".to_string(), "3".to_string()], true);
+            state.set_filter("1");
+        });
+        rsx! {}
+    }
+
+    #[test]
+    fn callbacks_fire_once_per_changed_part_and_never_on_the_first_render() {
+        LOG.with(|l| l.borrow_mut().clear());
+        let mut dom = VirtualDom::new(Harness);
+        dom.rebuild_in_place();
+        dom.render_immediate_to_vec();
+        let log = LOG.with(|l| l.borrow().clone());
+        assert_eq!(
+            log,
+            [
+                "effect",
+                "page 1",
+                // A sort returns to page 0.
+                r#"sort Some(("n", Ascending))"#,
+                "page 0",
+                "page 2",
+                r#"sort Some(("n", Descending))"#,
+                "page 0",
+                // The third activation clears the sort; clearing nothing reports nothing.
+                "sort None",
+                r#"selection ["3"]"#,
+                // Selecting "3" again is no change.
+                r#"selection ["3", "4"]"#,
+                // The filter changes neither the page (already 0) nor the selection.
+            ]
+        );
     }
 }

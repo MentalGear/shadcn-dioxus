@@ -25,6 +25,7 @@ use dioxus_primitives::merge_attributes;
 use reorder::{use_row_reorder, ReorderableRow, RowHandle};
 
 use dioxus_primitives::checkbox::CheckboxState;
+use std::collections::HashSet;
 
 // A consumer-facing surface: this crate's own demos use a subset of it.
 #[allow(dead_code)]
@@ -91,7 +92,7 @@ pub struct DataTableColumnHeaderProps {
     /// Fired when the header's sort button is activated (pointer or
     /// keyboard -- it's a real `button`, so both come for free from the
     /// browser). The caller owns which column is active and the
-    /// ascending/descending toggle (`SortDirection::toggled`); this
+    /// sort cycle (`DataTableState::toggle_sort`: ascending, descending, none); this
     /// component is purely presentational.
     pub onclick: EventHandler<MouseEvent>,
 
@@ -421,6 +422,21 @@ pub struct DataTableProps<T: Clone + PartialEq + 'static> {
     #[props(default = "No results.".to_string())]
     pub empty_message: String,
 
+    /// Called with the new sort (`None` once cleared) after a header activation
+    /// changes it (TanStack's `onSortingChange`). See [`DataTableOptions`].
+    #[props(default)]
+    pub on_sort_change: Option<Callback<Option<(String, SortDirection)>>>,
+
+    /// Called with the new 0-based page whenever it changes, including the return
+    /// to page 0 after a sort, filter or page-size change (`onPaginationChange`).
+    #[props(default)]
+    pub on_page_change: Option<Callback<usize>>,
+
+    /// Called with the keys of every selected row whenever the selection changes
+    /// (`onRowSelectionChange`).
+    #[props(default)]
+    pub on_selection_change: Option<Callback<HashSet<String>>>,
+
     #[props(extends = GlobalAttributes)]
     pub attributes: Vec<Attribute>,
 }
@@ -451,6 +467,9 @@ fn DataTableTable<T: Clone + PartialEq + 'static>(props: DataTableProps<T>) -> E
         sort: props.default_sort.clone(),
         hidden_columns: props.hidden_columns.clone(),
         selected: Vec::new(),
+        on_sort_change: props.on_sort_change,
+        on_page_change: props.on_page_change,
+        on_selection_change: props.on_selection_change,
     };
     let model = use_data_table(props.rows, &props.columns, &props.row_key, options);
     let state = model.state;
