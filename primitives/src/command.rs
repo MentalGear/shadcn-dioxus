@@ -96,9 +96,9 @@ use crate::{
     listbox::use_listbox_id,
     merge_attributes,
     selectable::{
-        pointer_select_cancel, pointer_select_commit, pointer_select_start, use_selectable_option,
-        use_selectable_root, use_single_selectable_value, OptionState, RcPartialEqValue,
-        SelectableContext, SelectableOptionConfig, SelectionMode,
+        pointer_select_cancel, pointer_select_click, pointer_select_commit, pointer_select_start,
+        use_selectable_option, use_selectable_root, use_single_selectable_value, OptionState,
+        RcPartialEqValue, SelectableContext, SelectableOptionConfig, SelectionMode,
     },
     use_controlled, use_id_or, use_unique_id, Controlled,
 };
@@ -781,6 +781,11 @@ pub fn CommandItem<T: PartialEq + Clone + 'static>(props: CommandItemProps<T>) -
             },
             onpointerup: move |event| {
                 if pointer_select_commit(&event, (option.disabled)(), option.down_pos) {
+                    ctx.selectable.select_value(RcPartialEqValue::new(option.value.cloned()));
+                }
+            },
+            onclick: move |_| {
+                if pointer_select_click((option.disabled)(), option.down_pos) {
                     ctx.selectable.select_value(RcPartialEqValue::new(option.value.cloned()));
                 }
             },

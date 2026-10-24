@@ -9,8 +9,8 @@ use crate::{
     listbox::{ListboxContext, ListboxItemIndicator},
     merge_attributes,
     selectable::{
-        pointer_select_cancel, pointer_select_commit, pointer_select_start, use_selectable_option,
-        RcPartialEqValue, SelectableOptionConfig,
+        pointer_select_cancel, pointer_select_click, pointer_select_commit, pointer_select_start,
+        use_selectable_option, RcPartialEqValue, SelectableOptionConfig,
     },
 };
 
@@ -152,6 +152,11 @@ pub fn ComboboxOption<T: PartialEq + Clone + 'static>(props: ComboboxOptionProps
                 },
                 onpointerup: move |event| {
                     if pointer_select_commit(&event, (option.disabled)(), option.down_pos) {
+                        ctx.select_value(RcPartialEqValue::new(option.value.cloned()));
+                    }
+                },
+                onclick: move |_| {
+                    if pointer_select_click((option.disabled)(), option.down_pos) {
                         ctx.select_value(RcPartialEqValue::new(option.value.cloned()));
                     }
                 },
