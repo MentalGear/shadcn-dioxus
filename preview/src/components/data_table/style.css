@@ -3,7 +3,7 @@
  * `.cn-*` recipes). This sheet is layout only (gaps and flex), so phase C leaves
  * it unchanged. */
 
-/* Data Table -- shadcn/ui catalog parity (dev-docs/component-backlog.md
+/* Data Table -- shadcn/ui catalog parity (dev-docs/archive/rounds/component-backlog.md
  * row 69). Classes namespaced `dx-data-table*`, scripts/check-dx-class-
  * prefix.sh's rule for the `data_table` component folder (`_` -> `-`).
  * Values drawn from preview/assets/dx-components-theme.css wherever a

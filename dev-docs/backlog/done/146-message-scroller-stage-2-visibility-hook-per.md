@@ -15,7 +15,7 @@ updated: 2026-10-19
 
 ## Status / trigger
 
-CLOSED 2026-10-19 (bookkeeping: status already said done). **FOLDED INTO ROW 213 (2026-10-14)** -- stage 1 built 2026-10-04 (own lane, `component-backlog.md`); **windowing deferred by the owner**
+CLOSED 2026-10-19 (bookkeeping: status already said done). **FOLDED INTO ROW 213 (2026-10-14)** -- stage 1 built 2026-10-04 (own lane, `dev-docs/archive/rounds/component-backlog.md`); **windowing deferred by the owner**
 
 ## Size
 

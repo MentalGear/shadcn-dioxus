@@ -1,6 +1,6 @@
 # Round 1 lane briefs (2026-10-19)
 
-Self-contained briefs for round 1 of [`backlog-order-2026-10-18.md`](./backlog-order-2026-10-18.md) plus the round-0
+Self-contained briefs for round 1 of [`backlog-order-2026-10-18.md`](../../research/backlog-order-2026-10-18.md) plus the round-0
 bookkeeping, kept in the repo because a container reset destroyed the first run of every one of them (backlog row
 250). A relaunched agent reads its section here; nothing depends on session scratch.
 

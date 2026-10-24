@@ -1,6 +1,6 @@
 /**
  * ORACLE: tier 1 (APG) — nested submenu contract
- * (`DropdownMenu.Sub`/`ContextMenu.Sub`, docs/component-backlog.md row 68).
+ * (`DropdownMenu.Sub`/`ContextMenu.Sub`, dev-docs/archive/rounds/component-backlog.md row 68).
  *
  * Rule source: APG Menu and Menubar pattern's "Keyboard Interaction" (h2)
  * and "WAI-ARIA Roles, States, and Properties" (h2) sections
@@ -86,7 +86,7 @@
  * locator below (`getByRole("menuitem", { name: "More tools" })` first and
  * foremost) resolved to zero elements and every assertion failed. This is
  * the fresh-design-work row 68's own recommendation names, budgeted
- * against a stale, shape-only patch (`docs/component-backlog.md` row 68,
+ * against a stale, shape-only patch (`dev-docs/archive/rounds/component-backlog.md` row 68,
  * finding 2) -- there was no prior implementation to regress test against.
  *
  * CORRECTED LOCATOR (not an APG rule change -- a query-precision fix, once

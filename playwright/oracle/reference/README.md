@@ -24,7 +24,7 @@ The table pattern's `sortable-table.html` (and its own CSS/JS/image dependencies
 
 ## Pages vendored, and why
 
-Per conformance-harness.md's reachability note (`patterns/menu-button/examples/menu-button-actions/`, `patterns/combobox/examples/combobox-select-only/`, `patterns/radio/`) plus the Table pattern added for `playwright/oracle/tier1-apg/sortable-table.spec.ts` (dev-docs/component-backlog.md row 68/69, Table/Data Table):
+Per conformance-harness.md's reachability note (`patterns/menu-button/examples/menu-button-actions/`, `patterns/combobox/examples/combobox-select-only/`, `patterns/radio/`) plus the Table pattern added for `playwright/oracle/tier1-apg/sortable-table.spec.ts` (dev-docs/archive/rounds/component-backlog.md row 68/69, Table/Data Table):
 
 | Pattern | Page | Path (under `7e4034b/content/patterns/`) |
 |---|---|---|

@@ -5,7 +5,7 @@
 //!
 //! `PopoverModalContent` is cfg-split the same way `dialog.rs`'s
 //! `DialogContentModal`/`alert_dialog.rs`'s `AlertDialogContent` are
-//! (`docs/phase4-spike-findings.md` Construction B):
+//! (`dev-docs/archive/research/phase4-spike-findings.md` Construction B):
 //! - `#[cfg(not(feature = "web"))]`: byte-for-byte the pre-existing
 //!   `div` + vendored `FocusTrap` path (unchanged).
 //! - `#[cfg(feature = "web")]`: a real `<dialog>` opened with

@@ -2,7 +2,7 @@ use super::super::component::{Column, DataTable, RowFn, SortDirection};
 use dioxus::prelude::*;
 
 // Fixture shaped like shadcn/ui's own Data Table demo (id/status/email/
-// amount, ~12 rows) per dev-docs/component-backlog.md row 69's demo brief.
+// amount, ~12 rows) per dev-docs/archive/rounds/component-backlog.md row 69's demo brief.
 // Values are this crate's own, chosen so the sort orders below are easy to
 // verify by inspection -- `playwright/data_table.spec.ts` and
 // `playwright/oracle/tier1-apg/sortable-table.spec.ts` assert the exact

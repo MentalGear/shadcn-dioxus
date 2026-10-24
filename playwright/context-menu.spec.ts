@@ -313,7 +313,7 @@ test('touch tap outside closes the open menu', async ({ page }) => {
   // edge can land in that strip and fail with "no element at outside
   // point" for a reason that has nothing to do with this test's actual
   // claim; the same false negative and the same fix are documented in
-  // `docs/phase4-spike-findings.md`'s spike spec.
+  // `dev-docs/archive/research/phase4-spike-findings.md`'s spike spec.
   const viewport = page.viewportSize();
   if (!viewport) throw new Error('no viewport');
   const farX = viewport.width - 30;

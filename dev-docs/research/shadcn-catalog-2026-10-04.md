@@ -27,7 +27,7 @@ The 8 missing are not 8 equal gaps:
 | Partial: the primitive exists, only the docs page/`component.json` is absent | direction | 1 |
 | Not a component (a prose-styles docs page) | typography | 1 |
 
-All six genuinely new components shipped in **June-August 2026** (chat kit 2026-06-26; questionnaire 2026-08-05), i.e. **after** `component-backlog.md`'s 2026-09-03 scope rule enumerated shadcn's catalog from the older list, so that enumeration is stale rather than the gap being a deliberate skip (see section 6). By the repo's own rule ("this repo tracks shadcn/ui parity") they are in scope.
+All six genuinely new components shipped in **June-August 2026** (chat kit 2026-06-26; questionnaire 2026-08-05), i.e. **after** `dev-docs/archive/rounds/component-backlog.md`'s 2026-09-03 scope rule enumerated shadcn's catalog from the older list, so that enumeration is stale rather than the gap being a deliberate skip (see section 6). By the repo's own rule ("this repo tracks shadcn/ui parity") they are in scope.
 
 ### Recommendation table (the missing items)
 
@@ -41,7 +41,7 @@ All six genuinely new components shipped in **June-August 2026** (chat kit 2026-
 | **scroll-fade + shimmer utilities** | Two CSS utilities the chat kit uses (scroll-aware edge mask; text shimmer) | No, theme CSS | **S** | **ADD NOW** (with the kit, they are prerequisites for visual parity) |
 | **questionnaire** | Multi-step question flow (single/multiple/freeform/skippable), native form, progress, shortcuts | Yes (a state machine: ~2.7k LOC headless TS) | **L** | **BACKLOG**: AI-agent-specific, no APG pattern, big; revisit after the chat kit proves out |
 | **direction** | `DirectionProvider` docs page | No, `primitives/src/direction.rs` + 11 RTL variants already exist | **S** | **BACKLOG** (docs page only, low value) |
-| **typography** | Prose styles (a docs page, no registry file) | No | n/a | **SKIP** (already `N/A` in `component-backlog.md`; not a component) |
+| **typography** | Prose styles (a docs page, no registry file) | No | n/a | **SKIP** (already `N/A` in `dev-docs/archive/rounds/component-backlog.md`; not a component) |
 
 **Does it make sense?** Yes for the chat kit, with one caveat. Four of the five new chat components plus the utilities are exactly the cheap styled-only class this repo already landed nine of in one round (`9c81d16`, `dev-docs/backlog.md` row 27), so they are low risk and should go together. `message-scroller` is the only one with real engineering; it is still L, not XL (Carousel's primitive is 7,053 lines; this would be roughly 1,000-1,400 including the embedded JS), because shadcn's own design is **DOM-driven** and keeps the scroll hot path out of the UI framework, which is the shape our `document::eval` bridges already use. It has no APG pattern or Radix reference to calibrate against, so the oracle is tier-3 (port shadcn's own 17 browser tests). The owner should confirm that trade (first JS-heavy controller with no standards oracle) before the lane starts.
 
@@ -139,7 +139,7 @@ Notes on the inventory:
 
 ### Naming differences worth knowing
 
-- shadcn `toast` (base) = our `toast`. shadcn `sonner` (radix/aria) is covered by the same component; `component-backlog.md` already marks Sonner `N/A`.
+- shadcn `toast` (base) = our `toast`. shadcn `sonner` (radix/aria) is covered by the same component; `dev-docs/archive/rounds/component-backlog.md` already marks Sonner `N/A`.
 - shadcn `data-table` / `date-picker` are doc-only patterns; we ship them as folders (`data_table`, `date_picker`), more than shadcn does.
 - `direction`: shadcn's registry file is a 6-line re-export of Base UI's `DirectionProvider`; ours is `primitives/src/direction.rs` (`Direction`, `DirectionProvider`, `use_direction`), used by 11 `variants/rtl` demos and allowlisted in `check-preview-composition.sh`. The only missing piece is a user-facing docs page.
 
@@ -147,7 +147,7 @@ Notes on the inventory:
 
 ## 3. Per-item detail (missing components)
 
-Effort key follows `component-backlog.md`: S = one styled-only component (precedent: `empty` 115 rs + 66 css lines; `item` 275 + 177; nine landed in one 58-file commit); M = a Drawer/Resizable-sized primitive (≈ 950-980 primitive lines + 150-560 css + 160-390 line spec); L = Command/Chart-sized; XL = Carousel.
+Effort key follows `dev-docs/archive/rounds/component-backlog.md`: S = one styled-only component (precedent: `empty` 115 rs + 66 css lines; `item` 275 + 177; nine landed in one 58-file commit); M = a Drawer/Resizable-sized primitive (≈ 950-980 primitive lines + 150-560 css + 160-390 line spec); L = Command/Chart-sized; XL = Carousel.
 
 ### 3.1 message-scroller — assessed in depth in section 4
 
@@ -199,7 +199,7 @@ Registry 139 lines (styled wrapper) over `@shadcn/react/message-scroller` (2,514
 
 ### 3.8 typography
 
-- A docs page of prose classes (`h1`...`blockquote`, lists, inline code), `component: true` in front matter but no registry file. Already `N/A` in `component-backlog.md`. **Rec:** SKIP.
+- A docs page of prose classes (`h1`...`blockquote`, lists, inline code), `component: true` in front matter but no registry file. Already `N/A` in `dev-docs/archive/rounds/component-backlog.md`. **Rec:** SKIP.
 
 ---
 
@@ -263,7 +263,7 @@ Verified by listing `registry/bases/base/ui/` and the docs tree for `prompt-inpu
 
 ---
 
-## 6. Corrections this audit implies for `component-backlog.md`
+## 6. Corrections this audit implies for `dev-docs/archive/rounds/component-backlog.md`
 
 (Listed for the owner; not applied, this lane owns only this file.)
 
@@ -288,7 +288,7 @@ Derived from the commits that added the closest precedents, not from memory:
 
 - **Styled-only (the class for message, bubble, marker, attachment):** `9c81d16` "feat(components): the nine styled-only shadcn components (row 27)", 58 files for nine components. One of them, `empty`, touched exactly:
   `preview/src/components/empty/{component.json, component.rs, docs.md, style.css, variants/main/mod.rs}`, `playwright/empty.spec.ts`, plus the shared files `component.json` (root) and `preview/src/components/mod.rs`.
-- **Primitive-backed (the class for message_scroller):** `cdb073b` "feat(drawer): add shadcn/ui Drawer primitive and themed component" (2026-09-18), 10 files: `primitives/src/drawer.rs`, `primitives/src/lib.rs` (`pub mod drawer;`), `preview/src/components/drawer/{component.json, component.rs, docs.md, style.css, variants/main/mod.rs}`, `playwright/drawer.spec.ts`, `component.json` (root), `preview/src/components/mod.rs`. The Input OTP commit `61b313c` is the same shape plus `dev-docs/backlog.md` and `dev-docs/component-backlog.md` edits (convention: the lane records itself in both docs); Resizable `0a849f2` additionally added `preview/src/components/resizable/mod.rs` and a tier-1 oracle `playwright/oracle/tier1-apg/window-splitter.spec.ts`.
+- **Primitive-backed (the class for message_scroller):** `cdb073b` "feat(drawer): add shadcn/ui Drawer primitive and themed component" (2026-09-18), 10 files: `primitives/src/drawer.rs`, `primitives/src/lib.rs` (`pub mod drawer;`), `preview/src/components/drawer/{component.json, component.rs, docs.md, style.css, variants/main/mod.rs}`, `playwright/drawer.spec.ts`, `component.json` (root), `preview/src/components/mod.rs`. The Input OTP commit `61b313c` is the same shape plus `dev-docs/backlog.md` and `dev-docs/archive/rounds/component-backlog.md` edits (convention: the lane records itself in both docs); Resizable `0a849f2` additionally added `preview/src/components/resizable/mod.rs` and a tier-1 oracle `playwright/oracle/tier1-apg/window-splitter.spec.ts`.
 
 ### The checklist (files per new component `<name>`; `_` in file names, `-` in CSS classes)
 
@@ -309,7 +309,7 @@ Shared files edited (one owner per batch, see "lane rules" below):
 10. `preview/src/components/mod.rs` `category_of()`: a hand-maintained `match`; an unlisted name **silently falls through to `DataDisplay`** (`carousel` is not in any arm today, so it already lands there by accident). Add each new name to the right arm (or add a `Chat` category: that is three more edits in the same file, `enum` + `ALL` + `label`).
 11. Root `component.json`: add `"preview/src/components/<name>"` to `members` (verified: 70 members vs 71 folders, the only exception is `top_layer`).
 12. `scripts/check-preview-composition.sh`: only if the new primitive exports non-markup items (hooks, plain enums) that the preview consumes directly (e.g. `use_message_scroller*`); add to `allowed_qualified`. Markup types must be reached through `crate::components::*`.
-13. `dev-docs/component-backlog.md` and `dev-docs/backlog.md`: the lane's record (convention from `61b313c`).
+13. `dev-docs/archive/rounds/component-backlog.md` and `dev-docs/backlog.md`: the lane's record (convention from `61b313c`).
 
 Not part of the surface (confirmed by grep): `docs/` at the repo root is generated Pages output; `playwright/dx-class-migration.spec.ts`'s `MIGRATED` list does not include recent components (drawer, command, carousel are absent), so it is not required; `preview/src/main.rs` is not edited.
 
@@ -334,7 +334,7 @@ Batch 1, dispatched together:
 
 Lane B's demo wants Message/Bubble/Marker; either it builds the first demo from plain elements and swaps in lane A's components after batch 1 merges, or B's demo variants land in a second batch (a real dependency on lane A's output, named so rather than hidden).
 
-Shared registration files, edited once by the main loop after the lanes return (a real single-holder constraint: two lanes would edit the same lines): `primitives/src/lib.rs`, `preview/src/components/mod.rs` (`examples!` + `category_of`), root `component.json`, `scripts/check-preview-composition.sh` (allowlist), `dev-docs/component-backlog.md`, `dev-docs/backlog.md`. The cargo lock and the dev-server port are the other single-holder resources: parallelize editing, serialize build/test at the end.
+Shared registration files, edited once by the main loop after the lanes return (a real single-holder constraint: two lanes would edit the same lines): `primitives/src/lib.rs`, `preview/src/components/mod.rs` (`examples!` + `category_of`), root `component.json`, `scripts/check-preview-composition.sh` (allowlist), `dev-docs/archive/rounds/component-backlog.md`, `dev-docs/backlog.md`. The cargo lock and the dev-server port are the other single-holder resources: parallelize editing, serialize build/test at the end.
 
 Baseline to capture before the batch (it cannot be recovered afterwards): the current Playwright pass/fail counts and the red/green state of the gate list on `main` (44a103e at the time of writing; the working tree already carries uncommitted edits from other lanes in `playwright/*.spec.ts` and `preview/assets/dx-components-theme.css`, which lane A's theme-CSS edit would collide with, so sequence that one edit after those land).
 
@@ -345,5 +345,5 @@ Baseline to capture before the batch (it cannot be recovered afterwards): the cu
 1. Approve the chat kit (message, bubble, marker, attachment + the two utilities) as one styled-only round? (Low risk, S–M, precedent row 27.)
 2. Approve `message_scroller` as its own L lane with a tier-3 oracle (no APG), staged as in 4.4? Alternatively hold it until the kit lands so its demos use the real components.
 3. Questionnaire stays BACKLOG unless you want AI-agent-flow parity; say so and it becomes the next L lane after the scroller.
-4. Do you want `component-backlog.md`'s catalog count and "nothing unbuilt" claim corrected as in section 6 (a docs-only edit)?
+4. Do you want `dev-docs/archive/rounds/component-backlog.md`'s catalog count and "nothing unbuilt" claim corrected as in section 6 (a docs-only edit)?
 5. Toast depth parity (action/promise/stack/swipe) is not a catalog gap; do you want it queued separately?

@@ -61,7 +61,7 @@
  *
  * LAYOUT-SHIFT ASSERTIONS (below, `assertNoHorizontalShift`): scroll-gap
  * compensation is exercised too, per
- * `docs/phase4-spike-findings.md` "Round 2 -- solved by construction",
+ * `dev-docs/archive/research/phase4-spike-findings.md` "Round 2 -- solved by construction",
  * Construction A/C. Removing a classic (non-overlay) scrollbar's `overflow:
  * hidden` without reserving its space shifts everything horizontally by the
  * scrollbar's width the instant the lock engages -- confirmed 15px on this
@@ -172,7 +172,7 @@ async function assertScrollIsUnlocked(page: Page) {
  * platform is actually rendering right now -- unlike normal-flow content,
  * which a `padding-right` compensation recipe can reach but this can't (that
  * recipe was tried and falsified for exactly this element shape; see
- * `docs/phase4-spike-findings.md`, Round 2 Construction A). A stand-in for a
+ * `dev-docs/archive/research/phase4-spike-findings.md`, Round 2 Construction A). A stand-in for a
  * realistic right-aligned navbar action.
  */
 async function rightEdgeMarkerRight(page: Page): Promise<number> {

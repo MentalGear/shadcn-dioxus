@@ -44,7 +44,7 @@ test('sheet basic interactions', async ({ page }) => {
   // now a native `<dialog>` on the web arm. Chromium's own focus trap parks
   // focus on `<body>` for exactly one Tab stop after the last focusable
   // element before wrapping to the first
-  // (docs/phase4-spike-findings.md experiment 4a) -- harness correction for
+  // (dev-docs/archive/research/phase4-spike-findings.md experiment 4a) -- harness correction for
   // the new trap's documented shape, same fix as dialog.spec.ts.
   await page.keyboard.press('Tab');
   await expect

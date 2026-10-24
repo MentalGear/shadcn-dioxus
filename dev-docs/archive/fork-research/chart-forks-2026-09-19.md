@@ -1,6 +1,6 @@
 # Chart — fork network & wider Dioxus chart landscape research (chart-forks lane, 2026-09-19)
 
-Copied verbatim from the chart-forks research lane's own report; committed by the integration lane as part of the Chart round's docs pass, per `dev-docs/backlog.md` row 88 and `component-backlog.md`'s Chart row.
+Copied verbatim from the chart-forks research lane's own report; committed by the integration lane as part of the Chart round's docs pass, per `dev-docs/backlog.md` row 88 and `dev-docs/archive/rounds/component-backlog.md`'s Chart row.
 
 # Chart -- fork network & wider Dioxus chart landscape research (lane: chart-forks)
 

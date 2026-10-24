@@ -25,7 +25,7 @@ test('test', async ({ page }) => {
   // Phase 4.2 (docs/plan.md): the modal `Dialog` is a native `<dialog>` on the web arm, so this
   // cycle goes through Chromium's own focus trap. Chromium's native trap parks focus on `<body>`
   // for exactly one Tab stop after the last focusable element before wrapping to the first
-  // (docs/phase4-spike-findings.md experiment 4a) -- invisible to the user and it does not let
+  // (dev-docs/archive/research/phase4-spike-findings.md experiment 4a) -- invisible to the user and it does not let
   // focus escape the dialog, so this is a harness correction for the new trap's documented shape.
   await page.keyboard.press('Tab');
   await expect(closeButton).toBeFocused();

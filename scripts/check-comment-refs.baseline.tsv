@@ -1,6 +1,5 @@
 # check-comment-refs baseline: dead `row N` / repo-path citations in code comments (shrink-only debt).
 # file<TAB>kind<TAB>ref. Fix the citation, then scripts/check-comment-refs.sh --update-baseline.
-playwright/alert-dialog.spec.ts	path	docs/phase4-spike-findings.md
 playwright/alert-dialog.spec.ts	path	docs/plan.md
 playwright/assert-fade-out.ts	path	docs/backlog.md
 playwright/axe.ts	path	docs/backlog.md
@@ -9,9 +8,7 @@ playwright/carousel.spec.ts	path	dev-docs/research/shadcn-carousel-parity.md
 playwright/command.spec.ts	path	docs/plan.md
 playwright/computed-style-snapshot.spec.ts	path	docs/backlog.md
 playwright/context-menu.spec.ts	path	docs/backlog.md
-playwright/context-menu.spec.ts	path	docs/phase4-spike-findings.md
 playwright/date-picker.spec.ts	path	docs/backlog.md
-playwright/dialog.spec.ts	path	docs/phase4-spike-findings.md
 playwright/dialog.spec.ts	path	docs/plan.md
 playwright/drag_and_drop_list.spec.ts	path	docs/backlog.md
 playwright/drawer.spec.ts	path	docs/conformance-harness.md
@@ -32,7 +29,6 @@ playwright/oracle/tier1-apg/keyboard-matrix.spec.ts	path	docs/backlog.md
 playwright/oracle/tier1-apg/keyboard-matrix.spec.ts	path	docs/conformance-harness.md
 playwright/oracle/tier1-apg/menu-roles.spec.ts	path	docs/backlog.md
 playwright/oracle/tier1-apg/menu-submenu.spec.ts	path	docs/backlog.md
-playwright/oracle/tier1-apg/menu-submenu.spec.ts	path	docs/component-backlog.md
 playwright/oracle/tier1-apg/select-only-combobox.spec.ts	path	docs/backlog.md
 playwright/oracle/tier2-html/form-label-association.spec.ts	path	docs/conformance-harness.md
 playwright/oracle/tier2-html/form-participation.spec.ts	path	docs/backlog.md
@@ -40,7 +36,6 @@ playwright/oracle/tier2-html/form-participation.spec.ts	path	docs/conformance-ha
 playwright/oracle/tier2-html/form-participation.spec.ts	path	docs/plan.md
 playwright/oracle/tier2-html/native-dialog.spec.ts	path	docs/backlog.md
 playwright/oracle/tier2-html/native-dialog.spec.ts	path	docs/conformance-harness.md
-playwright/oracle/tier2-html/native-dialog.spec.ts	path	docs/phase4-spike-findings.md
 playwright/oracle/tier2-html/native-dialog.spec.ts	path	docs/plan.md
 playwright/oracle/tier2-html/native-dialog.spec.ts	path	docs/recommended-implementations.md
 playwright/oracle/tier2-html/top-layer.spec.ts	path	docs/backlog.md
@@ -58,21 +53,17 @@ playwright/oracle/tier2-html/touch-focus-zoom.spec.ts	path	docs/preview-composit
 playwright/oracle/tier3-radix/rtl.spec.ts	path	docs/conformance-harness.md
 playwright/oracle/tier3-radix/scroll-lock.spec.ts	path	docs/backlog.md
 playwright/oracle/tier3-radix/scroll-lock.spec.ts	path	docs/conformance-harness.md
-playwright/oracle/tier3-radix/scroll-lock.spec.ts	path	docs/phase4-spike-findings.md
 playwright/oracle/tier3-radix/scroll-lock.spec.ts	path	docs/plan.md
 playwright/oracle/tier3-radix/scroll-lock.spec.ts	path	docs/recommended-implementations.md
 playwright/pagination.spec.ts	path	docs/backlog.md
-playwright/popover.spec.ts	path	docs/phase4-spike-findings.md
 playwright/preview.spec.ts	path	docs/backlog.md
 playwright/select.spec.ts	path	docs/backlog.md
-playwright/sheet.spec.ts	path	docs/phase4-spike-findings.md
 playwright/sheet.spec.ts	path	docs/plan.md
 playwright/sidebar.spec.ts	path	docs/backlog.md
 playwright/tag_group.spec.ts	path	docs/backlog.md
 playwright/toast.spec.ts	path	docs/backlog.md
 playwright/toggle.spec.ts	path	docs/backlog.md
 playwright/toggle_group.spec.ts	path	docs/backlog.md
-playwright/xvfb.local.config.ts	path	docs/phase4-spike-findings.md
 preview/assets/dx-components-theme.css	path	docs/backlog.md
 preview/assets/dx-components-theme.css	path	docs/issues/css-module-supports-scoping.md
 preview/assets/dx-utilities.css	path	docs/demo
@@ -95,18 +86,14 @@ preview/src/components/color_picker/style.css	path	docs/backlog.md
 preview/src/components/command/component.rs	path	docs/backlog.md
 preview/src/components/command/style.css	path	docs/backlog.md
 preview/src/components/command/variants/main/mod.rs	path	docs/backlog.md
-preview/src/components/context_menu/style.css	path	docs/component-backlog.md
-preview/src/components/context_menu/variants/main/mod.rs	path	docs/component-backlog.md
 preview/src/components/date_picker/component.rs	path	docs/backlog.md
 preview/src/components/date_picker/style.css	path	docs/backlog.md
 preview/src/components/dialog/variants/main/mod.rs	path	docs/backlog.md
 preview/src/components/dialog/variants/main/mod.rs	path	docs/plan.md
 preview/src/components/drag_and_drop_list/component.rs	path	docs/backlog.md
 preview/src/components/dropdown_menu/style.css	path	docs/backlog.md
-preview/src/components/dropdown_menu/style.css	path	docs/component-backlog.md
 preview/src/components/dropdown_menu/style.css	path	docs/issues/css-module-supports-scoping.md
 preview/src/components/dropdown_menu/variants/main/mod.rs	path	docs/backlog.md
-preview/src/components/dropdown_menu/variants/main/mod.rs	path	docs/component-backlog.md
 preview/src/components/field/component.rs	path	docs/preview-composition.md
 preview/src/components/field/style.css	path	docs/preview-composition.md
 preview/src/components/form/component.rs	path	docs/backlog.md
@@ -140,7 +127,6 @@ preview/src/components/toggle_group/component.rs	path	docs/backlog.md
 preview/src/components/toggle_group/style.css	path	docs/backlog.md
 preview/src/components/tooltip/style.css	path	docs/backlog.md
 preview/src/components/tooltip/style.css	path	docs/issues/css-module-supports-scoping.md
-preview/src/components/tooltip/style.css	path	docs/phase4-spike-findings.md
 preview/src/components/tooltip/style.css	path	docs/plan.md
 preview/src/components/tooltip/variants/main/mod.rs	path	docs/backlog.md
 preview/src/components/top_layer/component.rs	path	docs/backlog.md
@@ -156,7 +142,6 @@ preview/src/main.rs	path	docs/backlog.md
 preview/src/main.rs	path	docs/conformance-harness.md
 primitives/src/activity.rs	path	dev-docs/research/scroll-profile-2026-10-10.md
 primitives/src/alert_dialog.rs	path	docs/backlog.md
-primitives/src/alert_dialog.rs	path	docs/phase4-spike-findings.md
 primitives/src/alert_dialog.rs	path	docs/plan.md
 primitives/src/alert_dialog.rs	path	docs/recommended-implementations.md
 primitives/src/calendar.rs	path	docs/mutants-baseline.md
@@ -164,19 +149,15 @@ primitives/src/carousel.rs	path	dev-docs/research/shadcn-carousel-parity.md
 primitives/src/combobox/components/list.rs	path	docs/conformance-harness.md
 primitives/src/combobox/components/list.rs	path	docs/plan.md
 primitives/src/command.rs	path	docs/backlog.md
-primitives/src/command.rs	path	docs/component-backlog.md
 primitives/src/context_menu.rs	path	docs/backlog.md
-primitives/src/context_menu.rs	path	docs/component-backlog.md
 primitives/src/context_menu.rs	path	docs/conformance-harness.md
 primitives/src/context_menu.rs	path	docs/plan.md
 primitives/src/date_picker.rs	path	docs/mutants-baseline.md
 primitives/src/dialog.rs	path	docs/backlog.md
-primitives/src/dialog.rs	path	docs/phase4-spike-findings.md
 primitives/src/dialog.rs	path	docs/plan.md
 primitives/src/dialog.rs	path	docs/recommended-implementations.md
 primitives/src/direction.rs	path	docs/recommended-implementations.md
 primitives/src/dropdown_menu.rs	path	docs/backlog.md
-primitives/src/dropdown_menu.rs	path	docs/component-backlog.md
 primitives/src/dropdown_menu.rs	path	docs/conformance-harness.md
 primitives/src/dropdown_menu.rs	path	docs/issues/css-module-supports-scoping.md
 primitives/src/dropdown_menu.rs	path	docs/plan.md
@@ -187,7 +168,6 @@ primitives/src/hover_card.rs	path	docs/plan.md
 primitives/src/hover_card.rs	path	docs/recommended-implementations.md
 primitives/src/input_otp.rs	path	docs/conformance-harness.md
 primitives/src/lib.rs	path	docs/conformance-harness.md
-primitives/src/lib.rs	path	docs/phase4-spike-findings.md
 primitives/src/lib.rs	path	docs/plan.md
 primitives/src/lib.rs	path	docs/recommended-implementations.md
 primitives/src/menu_item.rs	path	docs/backlog.md
@@ -195,7 +175,6 @@ primitives/src/menu_root.rs	path	docs/backlog.md
 primitives/src/menu_root.rs	path	docs/conformance-harness.md
 primitives/src/menu_semantics.rs	path	docs/backlog.md
 primitives/src/menu_sub.rs	path	docs/backlog.md
-primitives/src/menu_sub.rs	path	docs/component-backlog.md
 primitives/src/menubar.rs	path	docs/backlog.md
 primitives/src/menubar.rs	path	docs/conformance-harness.md
 primitives/src/menubar.rs	path	docs/plan.md
@@ -206,13 +185,11 @@ primitives/src/navigation_menu.rs	path	docs/backlog.md
 primitives/src/navigation_menu.rs	path	docs/conformance-harness.md
 primitives/src/popover.rs	path	docs/backlog.md
 primitives/src/popover.rs	path	docs/conformance-harness.md
-primitives/src/popover.rs	path	docs/phase4-spike-findings.md
 primitives/src/popover.rs	path	docs/plan.md
 primitives/src/popover.rs	path	docs/recommended-implementations.md
 primitives/src/progress.rs	path	docs/conformance-harness.md
 primitives/src/radio_group.rs	path	docs/plan.md
 primitives/src/radio_group.rs	path	docs/recommended-implementations.md
-primitives/src/scroll_lock.rs	path	docs/phase4-spike-findings.md
 primitives/src/scroll_lock.rs	path	docs/plan.md
 primitives/src/scroll_lock.rs	path	docs/recommended-implementations.md
 primitives/src/select/components/list.rs	path	docs/backlog.md
@@ -232,13 +209,11 @@ primitives/src/toast.rs	path	docs/plan.md
 primitives/src/toast.rs	path	docs/preview-composition.md
 primitives/src/tooltip.rs	path	docs/backlog.md
 primitives/src/tooltip.rs	path	docs/conformance-harness.md
-primitives/src/tooltip.rs	path	docs/phase4-spike-findings.md
 primitives/src/tooltip.rs	path	docs/plan.md
 primitives/src/tooltip.rs	path	docs/recommended-implementations.md
 primitives/src/top_layer.rs	path	docs/backlog.md
 primitives/src/top_layer.rs	path	docs/conformance-harness.md
 primitives/src/top_layer.rs	path	docs/issues/css-module-supports-scoping.md
-primitives/src/top_layer.rs	path	docs/phase4-spike-findings.md
 primitives/src/top_layer.rs	path	docs/plan.md
 primitives/src/top_layer.rs	path	docs/recommended-implementations.md
 primitives/src/typeahead.rs	path	docs/backlog.md

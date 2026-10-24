@@ -199,7 +199,7 @@
 /*
  * Phase 4.4 (docs/plan.md): on the web arm, TooltipContent renders with a
  * `popover` attribute so it escapes clipping/transformed ancestors
- * (docs/phase4-spike-findings.md experiment 7) -- but promoting an element
+ * (dev-docs/archive/research/phase4-spike-findings.md experiment 7) -- but promoting an element
  * to the top layer changes its containing block to the viewport regardless
  * of its own `position` value, which breaks every `[data-side]` rule above
  * (they assume "absolute, relative to the nearest positioned ancestor",

@@ -107,7 +107,7 @@ pub fn category_of(name: &str) -> ComponentCategory {
 }
 
 /// Where a component comes from, relative to the shadcn/ui catalog this
-/// library tracks (`dev-docs/component-backlog.md`'s scope rule).
+/// library tracks (`dev-docs/archive/rounds/component-backlog.md`'s scope rule).
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum Origin {
     /// A page of shadcn/ui's catalog.

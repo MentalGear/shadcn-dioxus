@@ -2,7 +2,7 @@
 //!
 //! Also defines [`ContextMenuSub`]/[`ContextMenuSubTrigger`]/
 //! [`ContextMenuSubContent`]/[`ContextMenuSubItem`], the nested-submenu
-//! half of the APG "Menu and Menubar" pattern (`docs/component-backlog.md`
+//! half of the APG "Menu and Menubar" pattern (`dev-docs/archive/rounds/component-backlog.md`
 //! row 68). See [`ContextMenuSub`]'s own doc for the shared,
 //! host-independent state machine (`crate::menu_sub`) both this file and
 //! `dropdown_menu.rs`'s equivalent build on.

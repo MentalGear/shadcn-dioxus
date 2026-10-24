@@ -795,7 +795,7 @@ impl PopoverKind {
 ///
 /// The show/hide effect checks `:popover-open` before calling either
 /// method, mirroring the native-`<dialog>` spike's `dialog.open` guard
-/// (`docs/phase4-spike-findings.md`, "An `.open` guard") — without it, a
+/// (`dev-docs/archive/research/phase4-spike-findings.md`, "An `.open` guard") — without it, a
 /// redundant call (the signal already agrees with the browser's state)
 /// throws `InvalidStateError`.
 ///

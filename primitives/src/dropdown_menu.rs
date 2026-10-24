@@ -2,7 +2,7 @@
 //!
 //! Also defines [`DropdownMenuSub`]/[`DropdownMenuSubTrigger`]/
 //! [`DropdownMenuSubContent`]/[`DropdownMenuSubItem`], the nested-submenu
-//! half of the APG "Menu and Menubar" pattern (`docs/component-backlog.md`
+//! half of the APG "Menu and Menubar" pattern (`dev-docs/archive/rounds/component-backlog.md`
 //! row 68). See [`DropdownMenuSub`]'s own doc for the shared, host-
 //! independent state machine (`crate::menu_sub`) both this file and
 //! `context_menu.rs`'s equivalent build on.
@@ -98,7 +98,7 @@ struct DropdownMenuContext {
     // receives DOM focus -- as focus having left the entire widget, and
     // close the root out from under its own still-open submenu. Root cause
     // for `oracle/tier1-apg/menu-submenu.spec.ts`'s click/hover-open
-    // failures (`docs/component-backlog.md` row 68); see
+    // failures (`dev-docs/archive/rounds/component-backlog.md` row 68); see
     // `DropdownMenuSub`'s own comment for how this count is kept accurate
     // across open, close, and an ancestor unmounting a still-open submenu.
     submenu_open_count: Signal<usize>,
@@ -1878,7 +1878,7 @@ pub fn DropdownMenuSubContent(props: DropdownMenuSubContentProps) -> Element {
 /// for the top-level content (see that component's doc for the general
 /// `popover`/CSS-anchor wiring this mirrors) -- Phase 4.4's top-layer
 /// engine already supports stacking one `popover="auto"` element on top of
-/// another (`docs/plan.md` Phase 4.4; `docs/component-backlog.md` row 68
+/// another (`docs/plan.md` Phase 4.4; `dev-docs/archive/rounds/component-backlog.md` row 68
 /// cites this landing as "removes the hardest part: nested stacking +
 /// light dismiss"), so no new stacking mechanism is needed here.
 ///

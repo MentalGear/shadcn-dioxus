@@ -226,7 +226,7 @@ html[data-theme="light"] [class~="dxc-system"] {
    * `#f5f5f5` 5.9, 10% tint on white 5.4, 20% tint on white 4.51, 10% tint on `#f5f5f5` 5.0. The old 0.55 gave
    * only 4.395:1 on the 10% tint once `--dx-destructive` became the redder #e40014, so the bound
    * is re-derived from that list, not from the plain surfaces. Dark: 5.0 to 6.9:1 on background, card,
-   * popover, muted, accent (dev-docs/research/phase-c-plan-2026-10-13.md and
+   * popover, muted, accent (dev-docs/archive/rounds/phase-c-plan-2026-10-13.md and
    * playwright/dark-surface-contrast.spec.ts). Guards: playwright/menu-item-parts.spec.ts, bubble,
    * attachment, theme-preset-contrast. Text must read this, never `--dx-destructive`:
    * scripts/check-destructive-text.sh. Fills, borders and rings keep `--dx-destructive` (and

@@ -378,7 +378,7 @@ pub fn TooltipContent(props: TooltipContentProps) -> Element {
     // hook calls to *this* component's own scope, where `render()` toggling
     // on every open/close would change the hook count/order across renders
     // of the same mounted `TooltipContent` -- exactly the hazard
-    // `docs/phase4-spike-findings.md` Construction B's root-cause analysis
+    // `dev-docs/archive/research/phase4-spike-findings.md` Construction B's root-cause analysis
     // describes for a different case (binding `open` vs. calling
     // `showModal()` in the same render pass); see `popover.rs`'s
     // `PopoverContentRendered` for the same fix applied there.
@@ -399,7 +399,7 @@ pub fn TooltipContent(props: TooltipContentProps) -> Element {
 
 /// Web arm (Phase 4.4, docs/plan.md): promote the tooltip to the top layer
 /// via `popover="manual"` so it escapes clipping/transformed ancestors
-/// (docs/phase4-spike-findings.md experiment 7). `manual`, not `auto`: a
+/// (dev-docs/archive/research/phase4-spike-findings.md experiment 7). `manual`, not `auto`: a
 /// Tooltip already owns its entire open/close lifecycle through
 /// `TooltipTrigger`'s hover/focus/Escape handlers, and `auto`'s light
 /// dismiss (WHATWG HTML §popover-light-dismiss) would fight that — an

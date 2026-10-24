@@ -20,7 +20,7 @@
 //! `DialogContentNonModal` (`is_modal: false`) is unchanged from before this
 //! slice on both targets, per docs/plan.md Phase 4.2's scope.
 //! `DialogContentModal` (`is_modal: true`) is cfg-split
-//! (`docs/phase4-spike-findings.md` Construction B):
+//! (`dev-docs/archive/research/phase4-spike-findings.md` Construction B):
 //! - `#[cfg(not(feature = "web"))]`: byte-for-byte the pre-existing
 //!   `div` + vendored `FocusTrap` path.
 //! - `#[cfg(feature = "web")]`: a real `<dialog>` element, `open`
@@ -36,7 +36,7 @@
 //!   itself is not reusable here, because a `showModal()` backdrop click's
 //!   `event.target` *is* the `<dialog>` element (it contains itself), so
 //!   `use_outside_dismiss`'s `!root.contains(e.target)` check can never fire
-//!   for it (`docs/phase4-spike-findings.md` experiment 6's
+//!   for it (`dev-docs/archive/research/phase4-spike-findings.md` experiment 6's
 //!   `elementFromPoint` finding). No `use_global_escape_listener` and no
 //!   focus-trap eval on this arm: the browser's own `showModal()` supplies
 //!   the focus trap, focus restore, inertness, and top layer, and its

@@ -15,7 +15,7 @@ Use `dignifiedquire/dx-components` (`5af3cc2`, 2026-08-21, idle since; nothing u
 
 ## Status / trigger
 
-**SUPERSEDED 2026-09-26 (all six items landed)** -- was: when any of those items is picked up (component-backlog.md ranked queue)
+**SUPERSEDED 2026-09-26 (all six items landed)** -- was: when any of those items is picked up (dev-docs/archive/rounds/component-backlog.md ranked queue)
 
 ## Size
 

@@ -15,7 +15,7 @@ updated: 2026-09-19
 
 ## Status / trigger
 
-**LANDED 2026-09-19 (batch 3; first note below)** -- original trigger: A device report of a late tap or stalled animation that the existing frame samplers (`accordion-animation.spec.ts`) and position oracles do not explain; or the first component that does real work per interaction (Command palette filtering, [`component-backlog.md`](../../component-backlog.md))
+**LANDED 2026-09-19 (batch 3; first note below)** -- original trigger: A device report of a late tap or stalled animation that the existing frame samplers (`accordion-animation.spec.ts`) and position oracles do not explain; or the first component that does real work per interaction (Command palette filtering, [`component-backlog.md`](../../archive/rounds/component-backlog.md))
 
 ## Size
 

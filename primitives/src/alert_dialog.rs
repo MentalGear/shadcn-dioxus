@@ -5,7 +5,7 @@
 //! An alert dialog is always modal (APG alert-dialog pattern), so unlike
 //! `dialog.rs` there is no `is_modal` branch here -- [`AlertDialogContent`]
 //! is cfg-split directly, the same two arms as `dialog.rs`'s
-//! `DialogContentModal` (`docs/phase4-spike-findings.md` Construction B):
+//! `DialogContentModal` (`dev-docs/archive/research/phase4-spike-findings.md` Construction B):
 //! - `#[cfg(not(feature = "web"))]`: byte-for-byte the pre-existing
 //!   `div` + vendored `FocusTrap` path.
 //! - `#[cfg(feature = "web")]`: a real `<dialog role="alertdialog">`

@@ -65,7 +65,7 @@
 //! `SubMenuState` levels enclose it before finding the true root, which
 //! this module's single `SubMenuState` type (identical at every depth,
 //! indistinguishable from its neighbours by type alone) cannot resolve on
-//! its own. `docs/component-backlog.md` row 68 budgets nested submenus as
+//! its own. `dev-docs/archive/rounds/component-backlog.md` row 68 budgets nested submenus as
 //! "L" effort against a `molikto` patch that is "shape only, not
 //! cherry-pickable" for exactly this one level -- recursive `Sub`-in-`Sub`
 //! is not part of that budget, and is left out here rather than half-built
@@ -96,7 +96,7 @@ use crate::use_unique_id;
 /// hover entirely -- opening on hover is a widely-implemented UX
 /// convention (Radix, native OS menus), not an APG normative requirement,
 /// so this delay is this crate's own choice, not a citation (see
-/// `docs/component-backlog.md` row 68's "budget as fresh design work
+/// `dev-docs/archive/rounds/component-backlog.md` row 68's "budget as fresh design work
 /// against Radix `Sub`/`Portal` semantics"). A short delay, not an instant
 /// open, keeps a pointer merely passing over the trigger on its way
 /// elsewhere from flashing open every submenu it crosses -- the exact

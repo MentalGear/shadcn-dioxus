@@ -11,7 +11,7 @@ use dioxus::prelude::*;
 // migration) now carries its own `document::Link` for `style.css`.
 // `document::Link` dedupes on `(href, rel)`, so those links cover this page.
 //
-// Index layout (docs/component-backlog.md row 68 added the submenu):
+// Index layout (dev-docs/archive/rounds/component-backlog.md row 68 added the submenu):
 // Edit=0, Undo=1 (disabled), Duplicate=2, the submenu trigger=3, Delete=4.
 // Several existing Playwright specs hard-depend on this demo's *shape*,
 // not just its presence, so the nested submenu is slotted in without
@@ -41,7 +41,7 @@ impl std::fmt::Display for Operation {
     }
 }
 
-// The nested-submenu-only items (docs/component-backlog.md row 68), kept
+// The nested-submenu-only items (dev-docs/archive/rounds/component-backlog.md row 68), kept
 // as their own small enum so the submenu's own indices -- scoped to
 // `DropdownMenuSubContent`'s own roving-focus collection, never the root
 // menu's -- read as obviously independent of `Operation` above.
@@ -107,7 +107,7 @@ pub fn Demo() -> Element {
             DropdownMenuTrigger { class: "dx-dropdown-menu-trigger", "Open Menu" }
             DropdownMenuContent { class: "dx-dropdown-menu-content",
                 {operations}
-                // Nested submenu (docs/component-backlog.md row 68): see
+                // Nested submenu (dev-docs/archive/rounds/component-backlog.md row 68): see
                 // this file's top-of-file comment for why this sits at
                 // index 3, between Duplicate (2) and Delete (4).
                 DropdownMenuSub {

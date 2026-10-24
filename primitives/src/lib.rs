@@ -462,7 +462,7 @@ fn use_form_reset_listener(
 /// `id` from `open`, guarded by the element's own `.open` DOM property.
 ///
 /// Docs/plan.md Phase 4.2. Ported *by construction*, not by copying code,
-/// from `docs/phase4-spike-findings.md`'s `use_dialog_open_driver`
+/// from `dev-docs/archive/research/phase4-spike-findings.md`'s `use_dialog_open_driver`
 /// (experiment 2's fix for experiment 1's stranded-signal defect, see
 /// `docs/recommended-implementations.md` Caveat 1). The guard (checking
 /// `dialog.open` before calling either method) mirrors
@@ -477,7 +477,7 @@ fn use_form_reset_listener(
 /// runs, so the guard's own condition is already false by the time it
 /// checks). That is exactly why this hook only exists in the
 /// `#[cfg(feature = "web")]` leaf of `dialog.rs`/`alert_dialog.rs`'s
-/// component split (`docs/phase4-spike-findings.md` Construction B) -- the
+/// component split (`dev-docs/archive/research/phase4-spike-findings.md` Construction B) -- the
 /// `not(feature = "web")` arm never binds `open` as an attribute either,
 /// since that arm renders a plain `div`, not a `<dialog>`, at all.
 ///
@@ -681,7 +681,7 @@ const DIALOG_EXIT_TIMEOUT_MS: u32 = 1500;
 /// first `<dialog>` (`b3f6de53`): a one-way `showModal()`/`close()` binding
 /// with no listener on the browser's own `close` event, so a native Escape
 /// left the `open` signal stranded at `true` and the dialog could never
-/// reopen (reproduced by execution in `docs/phase4-spike-findings.md`
+/// reopen (reproduced by execution in `dev-docs/archive/research/phase4-spike-findings.md`
 /// experiment 1; fixed the same way here as experiment 2's
 /// `use_dialog_close_sync`). Same eval-channel shape as
 /// `use_form_reset_listener` above and
@@ -739,7 +739,7 @@ fn use_dialog_close_sync(
 ///
 /// `showModal()`'s `::backdrop` covers the entire viewport and owns
 /// hit-testing everywhere while the dialog is open
-/// (`docs/phase4-spike-findings.md` experiment 6: `elementFromPoint`
+/// (`dev-docs/archive/research/phase4-spike-findings.md` experiment 6: `elementFromPoint`
 /// resolves to the `<dialog>` element at every coordinate) -- and every
 /// pointer event over a `::backdrop` (or any other pseudo-element) is
 /// dispatched with its `target` set to the host element, i.e. the `<dialog>`

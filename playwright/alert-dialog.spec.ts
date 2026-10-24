@@ -23,7 +23,7 @@ test('test', async ({ page }) => {
   // Phase 4.2 (docs/plan.md): the always-modal AlertDialog is now a native
   // `<dialog>` on the web arm. Chromium's own focus trap parks focus on
   // `<body>` for exactly one Tab stop after the last focusable element
-  // before wrapping to the first (docs/phase4-spike-findings.md experiment
+  // before wrapping to the first (dev-docs/archive/research/phase4-spike-findings.md experiment
   // 4a) -- harness correction for the new trap's documented shape, same as
   // dialog.spec.ts's identical fix.
   await page.keyboard.press('Tab');

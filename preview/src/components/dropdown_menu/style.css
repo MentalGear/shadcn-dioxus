@@ -127,7 +127,7 @@
  * inline padding matches the theme's `inset`, so nothing is overridden). Guard:
  * playwright/menu-indicator-gap.spec.ts. */
 
-/* The reserved indicator slot. Nested submenu (docs/component-backlog.md row 68):
+/* The reserved indicator slot. Nested submenu (dev-docs/archive/rounds/component-backlog.md row 68):
    `.dx-dropdown-menu-sub-trigger` is layered on top of `.dx-dropdown-menu-item` (see `component.rs`
    -- both classes are always applied together), so it only needs to reserve the trailing chevron's
    slot; the "submenu is open" highlight, like every other item property (padding, hover/focus,

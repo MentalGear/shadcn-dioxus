@@ -57,7 +57,7 @@
    identical rule; see that file's comment for the full rationale (shadcn Nova's `pr-8` +
    `absolute right-2`; `visibility`, not `display`, so an unchecked item keeps its slot and labels
    never shift). `.dx-context-menu-sub-trigger` layers onto `.dx-context-menu-item` (always applied
-   together, see `component.rs`). Nested submenu: docs/component-backlog.md row 68. */
+   together, see `component.rs`). Nested submenu: dev-docs/archive/rounds/component-backlog.md row 68. */
 .dx-context-menu-sub-trigger,
 .dx-context-menu-checkable-item {
   padding-inline-end: calc(var(--dx-menu-item-indicator-inset) + var(--dx-menu-item-indicator-size) + var(--dx-menu-item-indicator-gap));

@@ -41,7 +41,7 @@
 //!
 //! **Generation 1 (the dq port): `overflow: hidden` on `<html>` and
 //! `<body>`.** Reliably blocks wheel/keyboard scroll (confirmed by
-//! execution, `docs/phase4-spike-findings.md` "Round 2"), but never
+//! execution, `dev-docs/archive/research/phase4-spike-findings.md` "Round 2"), but never
 //! compensates for a classic (non-overlay) scrollbar's width: removing the
 //! scrollbar without reserving its space shifts the whole page horizontally
 //! by that width the instant the lock engages. [`ensure_scrollbar_gutter_baseline`]
@@ -66,7 +66,7 @@
 //! **Generation 3 (tried, execution-falsified, not shipped): a compensated
 //! `<body>` freeze** -- `position: fixed; top: -{scrollY}px; left: 0;
 //! right: 0;` on `<body>`, `<html>`'s `overflow` left completely untouched.
-//! Ported by construction from `docs/phase4-spike-findings.md` "Round 2",
+//! Ported by construction from `dev-docs/archive/research/phase4-spike-findings.md` "Round 2",
 //! Construction A / `spike_native_dialog.rs`'s `use_compensated_scroll_lock`
 //! (spike branch `spike/native-dialog`, never merged), going further than
 //! that spike by never touching `overflow-y` at all (the spike's own version
@@ -205,11 +205,11 @@
 //!   open, so focus inside a locked surface is essentially never on `<body>`
 //!   -- meaning Space's only realistic default action while locked is
 //!   activation, which must never be suppressed. Confirmed as a real hazard
-//!   by reading `docs/phase4-spike-findings.md` (Round 1, experiment 4's
+//!   by reading `dev-docs/archive/research/phase4-spike-findings.md` (Round 1, experiment 4's
 //!   note on a dialog's own focused Close button), not by hitting it here.
 //!
 //! **What this generation does not attempt:** no `padding-right`
-//! compensation (falsified in `docs/phase4-spike-findings.md`, Round 2, for
+//! compensation (falsified in `dev-docs/archive/research/phase4-spike-findings.md`, Round 2, for
 //! exactly the `position: fixed` marker shape this crate's own overlays and
 //! a realistic right-aligned navbar action both have); no iOS
 //! momentum-scroll handling (see "Known limitation" below); touch is
@@ -220,7 +220,7 @@
 //! same limitation `react-remove-scroll` documents for itself.
 //!
 //! ## Permanent `scrollbar-gutter: stable` baseline (scrollbar-gap fix)
-//! Backported from `docs/phase4-spike-findings.md`, "Round 2 -- solved by
+//! Backported from `dev-docs/archive/research/phase4-spike-findings.md`, "Round 2 -- solved by
 //! construction", Construction A/C. The defect: naively removing scroll
 //! capability never compensates for a classic (non-overlay) scrollbar's
 //! width on its own, so doing so shifts everything horizontally by that

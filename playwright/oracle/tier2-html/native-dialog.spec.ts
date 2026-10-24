@@ -69,7 +69,7 @@
  *
  * Historical defect this whole file guards against
  * (docs/recommended-implementations.md Caveat 1,
- * docs/phase4-spike-findings.md experiment 1): upstream's first `<dialog>`
+ * dev-docs/archive/research/phase4-spike-findings.md experiment 1): upstream's first `<dialog>`
  * (`b3f6de53`) drove `showModal()`/`close()` one-way from the `open` signal
  * with no `close`/`cancel` sync, so a native Escape stranded the signal at
  * `true` and the dialog could never reopen. Rule 3's 5-cycle reopen loop is

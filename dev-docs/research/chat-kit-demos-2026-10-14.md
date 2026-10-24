@@ -21,7 +21,7 @@ Provenance inside this repo (what our components cite):
 - `preview/src/components/message_scroller/style.css` line 1 cites `shadcn-ui/ui@295a1f1 registry/bases/base/ui/message-scroller.tsx` and `registry/styles/style-nova.css`.
 - `primitives/src/message_scroller.rs` (module doc) cites `dev-docs/research/shadcn-catalog-2026-10-04.md` section 4 and `@shadcn/react` (MIT). `primitives/src/message_scroller.js` cites `use-message-scroller-controller.ts`, `use-message-scroller-commands.ts`, `geometry.ts`.
 - The other four `component.json` files cite only `https://github.com/MentalGear/shadcn-dioxus` (dependency git URLs). Their `docs.md` files say "styled composition", with no shadcn URL.
-- `dev-docs/research/shadcn-catalog-2026-10-04.md` sections 3.1-3.5 describe all five components. `dev-docs/component-backlog.md` rows 81-84 record Message, Bubble, Marker and Attachment as "built 2026-10-04 (chat kit)".
+- `dev-docs/research/shadcn-catalog-2026-10-04.md` sections 3.1-3.5 describe all five components. `dev-docs/archive/rounds/component-backlog.md` rows 81-84 record Message, Bubble, Marker and Attachment as "built 2026-10-04 (chat kit)".
 - **Correction to the record:** `dev-docs/research/shadcn-demo-parity-audit-2026-10-11.md` (line 45 and line 57) says "No original page: ... message, bubble, marker, attachment, message_scroller". That is wrong. All five have docs pages and examples in `main` today (and in the local clone at `30a58d4`). The owner's "far richer" remark is consistent with this.
 
 ## 1. Inventory

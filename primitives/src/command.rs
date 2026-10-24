@@ -3,7 +3,7 @@
 //!
 //! This module is **original composition against this repo's own house
 //! infrastructure**, not a port of either reference fork below. It builds
-//! on exactly the pieces `docs/component-backlog.md`'s "Command palette --
+//! on exactly the pieces `dev-docs/archive/rounds/component-backlog.md`'s "Command palette --
 //! plan (2026-09-03)" section names:
 //!
 //! - **`Dialog`** (`dialog.rs`) -- [`CommandDialog`] is a thin wrapper over
