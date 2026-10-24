@@ -639,3 +639,32 @@ test.describe("week numbers (showWeekNumber)", () => {
     await expectNoAxeViolations(page, "calendar: week numbers", { excludeRegions: [EXCLUDE_VENDORED_CODE_HIGHLIGHT] });
   });
 });
+
+// dev-docs/backlog.md row 380: the page is prerendered on the build day. A calendar that read the clock
+// while rendering kept the build day's "today" mark and the build year after hydration; both now come
+// from the visitor's clock, read after mount. The clock is pinned (`Date` only, timers keep running).
+test.describe("today is the visitor's date, not the build day", () => {
+  // The prerendered page itself (the `?name=` block form renders on the client and would hide the bug).
+  async function gotoFrozen(page: any, now: string) {
+    await page.clock.setFixedTime(new Date(now));
+    await gotoHydrated(page, `${BASE_URL}/component/calendar/`, { timeout: 20 * 60 * 1000 });
+    await page.waitForLoadState("networkidle");
+  }
+  const frame = (page: any, variant: string) => page.locator(`#component-preview-frame-${variant}`);
+
+  test("the today mark follows the visitor's day (cell_size, which shows October 2026)", async ({ page }) => {
+    await gotoFrozen(page, "2026-10-20T12:00:00Z");
+    const today = frame(page, "cell_size").locator('.dx-calendar-grid-cell[data-today="true"]');
+    await expect(today.first()).toHaveAttribute("aria-label", /October 20, 2026$/);
+    for (const label of await today.evaluateAll((els) => els.map((el) => el.getAttribute("aria-label")))) {
+      expect(label).toMatch(/October 20, 2026$/);
+    }
+  });
+
+  test("week_numbers opens on January of the visitor's year", async ({ page }) => {
+    await gotoFrozen(page, "2031-03-12T12:00:00Z");
+    const calendar = frame(page, "week_numbers");
+    await expect(calendar.locator(".dx-calendar-month-title").first()).toHaveText("January 2031");
+    await expect(calendar.locator('.dx-calendar-grid-cell[data-selected="true"]')).toHaveAttribute("aria-label", /January 12, 2031$/);
+  });
+});
