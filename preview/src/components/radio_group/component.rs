@@ -3,7 +3,7 @@ use dioxus_primitives::dioxus_attributes::attributes;
 use dioxus_primitives::merge_attributes;
 use dioxus_primitives::radio_group::{self, RadioGroupProps, RadioItemProps};
 
-// dev-docs/backlog.md row 32: `#[css_module]` is gone -- see checkbox/component.rs's
+// dev-docs/backlog.md row 32: see checkbox/component.rs's
 // header comment for the full delivery-mechanism rationale (asset!() +
 // document::Link, embedded in both exported entry points so a
 // `shadcn-dioxus add radio_group`-copied component needs no extra wiring).

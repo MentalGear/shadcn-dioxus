@@ -19,11 +19,9 @@
   min-height: 0;
 }
 
-/* shadcn: `bg-border relative flex w-px items-center justify-center`. `--primary-color-6`/`-7`
-   (light/dark) is this repo's own established "border" token pair -- the same one `.dx-card`,
-   `.dx-separator`, and `.dx-button[data-style="outline"]` already use for a divider/outline
-   color, as opposed to `--secondary-color-3/4`'s much higher-contrast foreground-ish gray this
-   rule used before (the likely source of the reported "looks different"). */
+/* shadcn: `bg-border relative flex w-px items-center justify-center`. `--dx-border` is the
+   "border" role the divider/outline color of `.dx-card`, `.dx-separator` and
+   `.dx-button[data-style="outline"]` also read, not a higher-contrast foreground-ish gray. */
 .dx-resizable-handle {
   /* The handle's pointer hit area, measured ACROSS the bar (the 1px line sits in its middle).
      12px matches the grip's own width, so line + grip are one contiguous drag target; fingers

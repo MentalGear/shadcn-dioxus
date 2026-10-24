@@ -187,8 +187,8 @@ mod tests {
         dioxus_ssr::render(&dom)
     }
 
-    /// The `class` forwarding regression: the themed wrapper passed `class: None`
-    /// to the primitive, so a caller's own class never reached the element.
+    /// The `class` forwarding contract: the themed wrapper must pass the caller's
+    /// `class` to the primitive, or it never reaches the element.
     #[test]
     fn caller_class_and_theme_class_both_render_on_the_drawer_content() {
         let html = render_open(DrawerWithCallerClass);

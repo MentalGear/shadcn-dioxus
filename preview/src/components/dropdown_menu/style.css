@@ -63,13 +63,9 @@
  * action, opts out of this recipe altogether with `data-style`, the `:not([data-style])` above.)
  *
  * :focus-visible ring: the shared --dx-ring token (dev-docs/backlog.md row 31a),
-   but the RULE stays here rather than in the shared interaction layer.
-   `#[css_module]` hashes this class in both the DOM and this stylesheet
-   (`.dx-x` -> `.dx-x-<hash>`, dev-docs/issues/css-module-supports-scoping.md), so
-   an unhashed selector in the global theme sheet can never match the rendered
-   element -- confirmed against the built artifact, where the wasm carries the
-   hashed name. Once row 32 drops css_module hashing, this can collapse into
-   the shared layer for real. */
+   but the RULE stays here rather than in the shared interaction layer
+   (which waits on `[data-dx-interactive]` being wired onto interactive roots,
+   see `dx-components-theme.css`). */
 .dx-dropdown-menu-trigger:not([data-style]):focus-visible {
   box-shadow: var(--dx-dropdown-menu-trigger-focus-ring, var(--dx-ring-field));
 }
@@ -150,13 +146,12 @@
    text (which risks becoming part of the trigger's own accessible name --
    see `component.rs`'s doc on this class for why that distinction
    mattered here). It carries no rule of its own: Nova draws it in the item's
-   ink (`.cn-dropdown-menu-sub-trigger` has no icon colour; the old 0.7 opacity
-   is gone), and the theme's indicator slot places and sizes it. */
+   ink (`.cn-dropdown-menu-sub-trigger` has no icon colour, no opacity), and the theme's indicator slot places and sizes it. */
 
-/* Cross-lane handoff (rtl-rust, $S/batch3/rtl-rust/css-needs.md): this is a
+/* RTL: this is a
    real SVG (`ChevronRight`, component.rs), not a plain unicode character
    that would mirror for free under `dir` -- and `*SubTrigger`/
-   `*SubContentRendered` now flip which side the submenu opens on in RTL
+   `*SubContentRendered` flip which side the submenu opens on in RTL
    (Rust-side), so the icon must flip too or it would point away from
    where the submenu actually opens. */
 [dir="rtl"] .dx-dropdown-menu-sub-trigger-icon {

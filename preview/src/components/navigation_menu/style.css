@@ -110,21 +110,20 @@
 
   /* Intrinsic sizing, by construction: this panel's box must never grow or
    * shrink over the course of its own open/close animation (that would
-   * reflow every link's text as the box resizes around it -- the reported
-   * bug this whole block guards against). `width: max-content` states that
+   * reflow every link's text as the box resizes around it -- the bug this
+   * whole block guards against). `width: max-content` states that
    * intent explicitly rather than leaving it to an absolutely/fixed-
    * positioned box's default shrink-to-fit `auto` sizing (which happens to
-   * land on the same value today, confirmed by execution across 14 sampled
-   * frames of a real open transition -- `rectWidth`/computed `width` never
-   * changed -- but is one accidental future layout change away from no
-   * longer being guaranteed). `max-width` below still clamps it (Nova has no `min-width`; the grid sets the width)
+   * land on the same value today (computed `width` never changes across a
+   * real open transition) but is one accidental future layout change away
+   * from not being guaranteed). `max-width` below still clamps it (Nova has no `min-width`; the grid sets the width)
    * either way; only `opacity`/`transform` are ever transitioned below --
    * never this, never `padding`.
    *
    * `max-content` is only safe when a child states its own width: it is the
-   * longest unwrapped line, so a panel whose grid had no width contract
-   * (the demo's `fr` tracks around one-line descriptions) sized itself to
-   * ~900px and ran off the right edge of the viewport. shadcn gives the
+   * longest unwrapped line, so a panel whose grid has no width contract
+   * (the demo's `fr` tracks around one-line descriptions) sizes itself to
+   * ~900px and runs off the right edge of the viewport. shadcn gives the
    * panel's `ul` an explicit width (`md:w-[400px] lg:w-[500px]`, see
    * `.dx-navigation-menu-grid` below) and keeps `p-1` of padding (Nova) here,
    * so a 500px grid is a ~508px panel. */
@@ -138,22 +137,20 @@
   will-change: transform, opacity;
 }
 
-/* `animation`+`@keyframes`, not `transition` -- deliberately mirroring
+/* `animation`+`@keyframes`, not `transition` -- mirroring
  * `../dropdown_menu/style.css`'s (and `../menubar/style.css`'s,
  * `../context_menu/style.css`'s) identical technique for their own content
- * panels, not a stylistic preference. Root-caused by execution, in two
- * layers:
+ * panels, not a stylistic preference. A `transition` loses in two layers:
  *
  * (1) A plain CSS tie: the shared, engine-injected anchor-positioning
  * stylesheet's `.dx-anchor-navigation-menu[popover] { ...; transform: none;
  * ... }` rule (primitives/src/top_layer.rs's `ANCHOR_POSITIONING_CSS_JS_
  * LITERAL`, appended to `<head>` well after this file's own `<link>`) ties
- * this file's own (then-`transition`-based) `[data-state]` rules at the
- * exact same specificity (one class + one attribute each) and, being
- * later-injected, was winning the cascade.
+ * `transition`-based `[data-state]` rules at the exact same specificity (one
+ * class + one attribute each) and, being later-injected, wins the cascade.
  *
  * (2) The deeper reason a plain CSS fix (even a higher-specificity one)
- * cannot actually win: that engine rule's `transform: none` is only the
+ * cannot win: that engine rule's `transform: none` is only the
  * *native*-anchor-positioning half of the contract. This component's
  * `NavigationMenuContentRendered` never sets a `data-side`/`data-align`
  * attribute (unlike `popover.rs`/`hover_card.rs`/`tooltip.rs`), so the
@@ -162,29 +159,25 @@
  * content anywhere, and `crate::top_layer::use_anchor_position_fallback`'s
  * own `matches()` self-check correctly concludes the native path failed and
  * takes over with a JS-computed *inline* `style.transform = 'none'`
- * (confirmed live: `el.getAttribute('style')` reading literally
- * `"...; transform: none;"` on a real, positioned, `:popover-open`
- * element). An inline style's specificity beats *any* selector, however
- * specific -- the `[popover]`-qualified, higher-specificity version of the
- * two rules below that an earlier pass of this fix tried is not enough,
- * confirmed by execution (still `none` after that change). CSS Animations,
+ * (`el.getAttribute('style')` reads literally `"...; transform: none;"` on
+ * the positioned, `:popover-open` element). An inline style's specificity
+ * beats *any* selector, however specific, so even a `[popover]`-qualified,
+ * higher-specificity `transition` rule stays `none`. CSS Animations,
  * though, sit in a cascade tier *above* normal author declarations --
  * inline styles included, per the CSS Cascade spec's origin/importance
  * ordering -- which is exactly why `dropdown_menu`/`menubar`/
  * `context_menu`'s own top-layer content, using this same `animation`
- * technique, was never vulnerable to this class at all. Switching here
- * closes it the same proven way, rather than chasing specificity further
- * or reaching for `!important`. (Wiring this component into the
- * `[data-side]` native-positioning contract instead -- the other available
- * fix, addressing the JS-fallback trigger itself -- was considered and set
- * aside: several of that contract's own `[data-side][data-align="start"]`
- * rules *also* set `transform: none` outright for that alignment, on the
- * assumption that a consumer's own content transform is only ever used for
- * anchor-centering -- true for tooltip/popover/hover-card, false for this
- * component's own entrance/exit motion -- so it would trade one
- * `transform: none` source for another rather than closing the class, and
- * risks changing this component's positioning behavior along the way,
- * which this fix does not need to touch.)
+ * technique, is not vulnerable to this class at all. It closes the class
+ * the same proven way, rather than chasing specificity further or reaching
+ * for `!important`. (Wiring this component into the `[data-side]`
+ * native-positioning contract instead -- addressing the JS-fallback trigger
+ * itself -- would trade one `transform: none` source for another: several of
+ * that contract's own `[data-side][data-align="start"]` rules *also* set
+ * `transform: none` outright for that alignment, on the assumption that a
+ * consumer's own content transform is only ever used for anchor-centering --
+ * true for tooltip/popover/hover-card, false for this component's own
+ * entrance/exit motion -- and it risks changing this component's
+ * positioning behavior along the way.)
  *
  * `getAnimations()` (`use_animated_open` in `primitives/src/lib.rs`) treats
  * a running `CSSAnimation` exactly like a `CSSTransition` -- both are
@@ -312,10 +305,9 @@
  * `in-data-[slot=navigation-menu-content]:rounded-md` inside a panel, and the panel switches the
  * focus ring off: `**:data-[slot=navigation-menu-link]:focus:ring-0`). `font-size` is set HERE, on the link, so a link whose child is
  * bare text ("Button") renders at exactly the size of one whose child is a
- * title + description: before this, only the `-link-title`/`-description`
- * wrappers set a size and a bare-text link inherited the page's 16px/400,
- * which is the "Button and Input are larger and lighter than Introduction"
- * bug. The link does not set `height: 100%` -- it is a direct grid child and
+ * title + description: otherwise only the `-link-title`/`-description`
+ * wrappers set a size and a bare-text link inherits the page's 16px/400
+ * ("Button and Input are larger and lighter than Introduction"). The link does not set `height: 100%` -- it is a direct grid child and
  * stretches to its row on its own. */
 .dx-navigation-menu-content .dx-navigation-menu-link {
   display: flex;
@@ -365,7 +357,7 @@
 /* The featured card -- shadcn's `row-span-3` link
  * (`flex h-full w-full flex-col justify-end rounded-md
  * bg-linear-to-b from-muted/50 to-muted p-4 md:p-6`), with two deliberate
- * owner-driven departures: its copy is top-aligned (`flex-start`, not
+ * departures: its copy is top-aligned (`flex-start`, not
  * `justify-end` -- the card is as tall as the three list rows beside it, and
  * bottom-pinned text left an empty block above it), and it keeps `p-4` at
  * every width (`md:p-6` leaves the 211px left track 163px of text width, too

@@ -10,20 +10,20 @@ use dioxus_icons::lucide::{ChevronLeft, ChevronRight};
 /// own drag describe block, which drives exactly this element.
 ///
 /// **Deliberately NOT composing `Card` here, unlike every other demo in
-/// this component** (the shadcn-parity lane's own "Per-demo parity" item):
+/// this component**:
 /// this file's own box-model comment below (the `font: inherit`/
-/// `box-sizing`/`calc(12rem + 2px)` derivation) is a cross-browser fix,
-/// already measured and shipped, that makes the button slide and the
+/// `box-sizing`/`calc(12rem + 2px)` derivation) is a cross-browser fix
+/// that makes the button slide and the
 /// plain-`div` slides land on byte-identical `getBoundingClientRect()`
 /// dimensions -- load-bearing for the pointer-drag describe block, which
 /// depends on dragging starting from a point that is simultaneously "any
 /// point on the track" and "this specific button." Swapping in `Card`
 /// (a themed component with its own border/padding/`box-shadow` box model,
-/// entirely unrelated to this fix) would need that whole derivation
+/// unrelated to that derivation) would need that whole derivation
 /// re-verified from scratch for a purely visual change with no shadcn-
 /// parity requirement of its own (this is the "Sizes" top-of-page demo,
-/// already whole-slide by default) -- not worth the regression risk this
-/// pass. Every other demo (`sizes`, `spacing`, `peek`, `align`, `api`,
+/// already whole-slide by default) -- not worth the regression risk.
+/// Every other demo (`sizes`, `spacing`, `peek`, `align`, `api`,
 /// `indicators`, `vertical`, `rtl`, `rewind`, `autoplay`, `virtual_loop`,
 /// `virtual_loop_rtl`, `virtual_many`) does compose `Card`.
 #[component]
@@ -36,8 +36,7 @@ pub fn Demo() -> Element {
         // border-box`), which comes out of this wrapper's width rather than
         // adding on top of it -- so the wrapper must be widened by exactly
         // the reservation's own size, or the visible card shrinks by it
-        // (measured: 320px -> 224px without this). See lane
-        // `carousel-wrapper-width`'s report for the full measurement table.
+        // (measured: 320px -> 224px without this).
         // Keep these two numbers paired: do not "tidy" 26rem back toward
         // 20rem without also revisiting the reservation in style.css.
         //
@@ -46,7 +45,7 @@ pub fn Demo() -> Element {
         // horizontal; this wrapper's own `margin: 0 auto` makes both cross-axis
         // margins `auto`, and per flexbox those win over `align-self: stretch`.
         // With cross-size left `auto` the wrapper shrink-wraps its content
-        // instead of reaching `max-width` -- measured at 176px against an
+        // instead of reaching `max-width` -- 176px against an
         // intended 320px, i.e. shadcn's own card width. An explicit `width`
         // resolves the cross size before auto margins apply, so the wrapper
         // fills the frame and `max-width` clamps it as intended. Setting
@@ -65,69 +64,50 @@ pub fn Demo() -> Element {
                                     r#type: "button",
                                     "data-testid": "carousel-slide-button",
                                     "data-clicked": slide_one_clicked(),
-                                    // `font: inherit` MUST precede `font-size: 2rem`, not follow
-                                    // it -- this is the root cause of the "slide 1's font-size is
-                                    // different" bug, not a UA-stylesheet mystery. `font` is a
-                                    // shorthand covering font-style/variant/weight/stretch/
-                                    // *font-size*/line-height/family; within one `style`
-                                    // attribute the later declaration always wins for an
-                                    // overlapping property, same specificity or not. The
-                                    // previous ordering put `font: inherit` LAST, so it silently
-                                    // clobbered the explicit `font-size: 2rem` back to
-                                    // `inherit` -- and a `<button>` doesn't already inherit
-                                    // font-size from its ancestors the way a `<div>` does (every
-                                    // mainstream UA stylesheet gives form controls their own
-                                    // non-inheriting font), so "inherit" resolved all the way up
-                                    // to the page's own base size (16px) instead of this slide's
-                                    // intended 32px. Measured live: slide 0 (button) computed
-                                    // 16px, slides 1-4 (plain divs, which never touch `font` at
-                                    // all and so keep ordinary CSS inheritance) computed 32px.
-                                    // With `font: inherit` first, family/weight/style/variant/
-                                    // line-height still resolve to inherit -- matching the divs,
-                                    // which get those the same way, by never setting them -- and
-                                    // the explicit `font-size: 2rem` that follows is the
-                                    // declaration that actually wins, matching the divs'
-                                    // explicit value instead of clobbering it.
+                                    // `font: inherit` MUST precede `font-size: 2rem`, not follow it. `font` is a
+                                    // shorthand covering font-style/variant/weight/stretch/*font-size*/
+                                    // line-height/family; within one `style` attribute the later declaration
+                                    // always wins for an overlapping property, same specificity or not. With
+                                    // `font: inherit` last it would clobber the explicit `font-size: 2rem` back
+                                    // to `inherit`, and a `<button>` doesn't already inherit font-size from its
+                                    // ancestors the way a `<div>` does (every mainstream UA stylesheet gives
+                                    // form controls their own non-inheriting font), so "inherit" would resolve
+                                    // all the way up to the page's own base size (16px) instead of this slide's
+                                    // intended 32px (slide 0, the button, would compute 16px while slides 1-4,
+                                    // plain divs that never touch `font`, compute 32px). With `font: inherit`
+                                    // first, family/weight/style/variant/line-height still resolve to inherit --
+                                    // matching the divs, which get those the same way, by never setting them --
+                                    // and the explicit `font-size: 2rem` that follows is the declaration that
+                                    // actually wins, matching the divs' explicit value.
                                     //
-                                    // `padding: 0` guards the box model the same way: browsers
-                                    // give `<button>` non-zero default padding (a `<div>` has
-                                    // none), which would otherwise make this element render
-                                    // taller than its sibling divs despite the identical explicit
-                                    // `height`/`border` below.
+                                    // `padding: 0` guards the box model the same way: browsers give `<button>`
+                                    // non-zero default padding (a `<div>` has none), which would otherwise make
+                                    // this element render taller than its sibling divs despite the identical
+                                    // explicit `height`/`border` below.
                                     //
-                                    // The remaining gap was in exactly how that identical `height`
-                                    // and `width: 100%` resolve, found only by comparing the two
-                                    // elements' own `getBoundingClientRect()` side by side after the
-                                    // fixes above: even with matching font/padding/border, the
-                                    // button still rendered 192x320 against the div's 194x320.
-                                    // Cause: Chromium's UA stylesheet defaults `<button>` (a form
-                                    // control) to `box-sizing: border-box` (confirmed via
-                                    // `getComputedStyle(el).boxSizing`), unlike a plain `<div>`,
-                                    // which defaults to `content-box` -- so the *same* declared
-                                    // `height: 12rem` means two different things: for the div
-                                    // (content-box) it is the content height, with the 1px+1px
-                                    // border added on top (192 + 2 = 194px total); for the button
-                                    // (border-box) it is already the *total* height, with the
-                                    // border carved out of it (192px total, unchanged). Two
-                                    // approaches were tried and measured before this one: forcing
-                                    // `box-sizing: content-box` on the button matches the height
-                                    // (194 = 194) but then reopens the identical gap on `width` --
-                                    // `width: 100%` under content-box is *also* the content size,
-                                    // so the border adds on top there too (322px against the div's
-                                    // 320px); removing `width: 100%` entirely does not help either
-                                    // -- a `<button>` does not take on a div's own "auto width fills
-                                    // the row" block-layout behavior just because `display: flex` is
-                                    // set on it, measured collapsing to its own shrink-to-fit content
-                                    // width (~14px) instead. Since `box-sizing` cannot be set
-                                    // per-axis, matching both at once means keeping the button's own
-                                    // native `border-box` (stated explicitly here, not left as an
-                                    // unstated UA default) and asking for the *total* height it
-                                    // should have directly: `calc(12rem + 2px)`, the same 194px the
-                                    // div's own content-box interpretation of `height: 12rem` plus
-                                    // its border already produces -- while `width: 100%` under
-                                    // border-box already means "the row's own full width" with no
-                                    // adjustment needed, matching the div exactly (both already
-                                    // measured 320px, before any box-sizing changes at all).
+                                    // The remaining difference is in how that identical `height` and
+                                    // `width: 100%` resolve (compare the two elements' `getBoundingClientRect()`
+                                    // side by side): Chromium's UA stylesheet defaults `<button>` (a form
+                                    // control) to `box-sizing: border-box` (`getComputedStyle(el).boxSizing`),
+                                    // unlike a plain `<div>`, which defaults to `content-box` -- so the *same*
+                                    // declared `height: 12rem` means two different things: for the div
+                                    // (content-box) it is the content height, with the 1px+1px border added on
+                                    // top (192 + 2 = 194px total); for the button (border-box) it is already the
+                                    // *total* height, with the border carved out of it (192px total). Forcing
+                                    // `box-sizing: content-box` on the button would match the height (194 = 194)
+                                    // but reopen the identical gap on `width` -- `width: 100%` under content-box
+                                    // is *also* the content size, so the border adds on top there too (322px
+                                    // against the div's 320px); and removing `width: 100%` entirely does not
+                                    // help either -- a `<button>` does not take on a div's "auto width fills the
+                                    // row" block-layout behavior just because `display: flex` is set on it, and
+                                    // collapses to its own shrink-to-fit content width (~14px). Since
+                                    // `box-sizing` cannot be set per-axis, matching both at once means keeping
+                                    // the button's own native `border-box` (stated explicitly here, not left as
+                                    // an unstated UA default) and asking for the *total* height it should have
+                                    // directly: `calc(12rem + 2px)`, the same 194px the div's own content-box
+                                    // interpretation of `height: 12rem` plus its border produces -- while
+                                    // `width: 100%` under border-box already means "the row's own full width"
+                                    // with no adjustment needed, matching the div exactly (both 320px).
                                     style: "display: flex; align-items: center; justify-content: center; width: 100%; height: calc(12rem + 2px); border: 1px solid var(--dx-border); border-radius: var(--dx-radius-lg); background: none; padding: 0; margin: 0; box-sizing: border-box; cursor: pointer; font: inherit; font-size: 2rem; color: inherit;",
                                     onclick: move |_| slide_one_clicked.set(true),
                                     if slide_one_clicked() { "Clicked!" } else { "{i + 1}" }

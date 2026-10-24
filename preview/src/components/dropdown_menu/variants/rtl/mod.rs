@@ -21,12 +21,10 @@ use dioxus_primitives::direction::{Direction, DirectionProvider};
 /// all query those words by name (no `exact`), and this variant renders
 /// alongside `main` on the same page (`preview/src/main.rs`'s
 /// `ComponentHighlight`), so reusing them -- even as a substring -- would
-/// make such a locator match both. Confirmed live: before this rename,
-/// every one of those files' `Open Menu`/`Edit`/`More tools`/`Rename`
-/// locators threw a strict-mode "resolved to 2 elements" error the moment
-/// this fixture was registered. Distinct words side-step it without
-/// touching any of those spec files, which this lane's brief puts out of
-/// scope.
+/// make such a locator match both: every one of those files' `Open Menu`/
+/// `Edit`/`More tools`/`Rename` locators would throw a strict-mode "resolved
+/// to 2 elements" error. Distinct words side-step it without touching any
+/// of those spec files.
 ///
 /// A checkbox item and a radio group ("Pinned"/"Ascending"/"Descending") are
 /// appended after "Erase" (indices 3-5) so the checkable indicator slot is

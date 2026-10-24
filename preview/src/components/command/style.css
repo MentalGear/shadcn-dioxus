@@ -8,7 +8,7 @@
  * `text-sm`; `.cn-command-group` = `p-1` with a `px-2 py-1.5 text-xs font-medium
  * muted-foreground` heading; `.cn-command-item` = `rounded-sm px-2 py-1.5 text-sm gap-2`,
  * `rounded-lg` inside a dialog, highlight `bg-muted text-foreground`. The panel fill is the one
- * modal fill (`--dx-popover`) shared with Dialog, AlertDialog, Sheet and Drawer (owner decision 6). */
+ * modal fill (`--dx-popover`) shared with Dialog, AlertDialog, Sheet and Drawer. */
 
 /* Visually-hidden accessible name for `CommandDialog`. A command palette
  * conventionally shows no visible heading above its search input (unlike
@@ -20,7 +20,7 @@
  * (`sidebar/style.css`'s `.dx-sidebar-sr-only`) already solves this exact
  * "needs a real title element, not a visible heading" shape for the same
  * reason -- this is that same rule, copied under this component's own
- * namespace rather than shared, for the same `#[css_module]`-hash-removed
+ * namespace rather than shared, for the same
  * reason `.dx-sidebar-sr-only`'s own header comment gives (dev-docs/backlog.md
  * row 32). TODO(row 31a): collapses into one shared `dx-sr-only` utility
  * once that lands. */

@@ -16,7 +16,7 @@ use time::{macros::date, Date, Duration, Month, UtcDateTime, Weekday};
 /// - ArrowDown in the field opens the calendar;
 /// - the calendar button is a ghost icon button in the field's trailing addon, labelled
 ///   "Select date"; its popover is end-aligned;
-/// - picking a day writes it into the field (`October 16, 2026`) and closes the popover.
+/// - picking a day writes it into the field (`July 16, 2026`) and closes the popover.
 ///
 /// shadcn parses with `chrono-node`; there is no Rust twin, so [`parse_phrase`] is a small
 /// hand-written subset (see its doc). `confirm` is not involved: this is a plain `Calendar` in a
@@ -132,7 +132,7 @@ fn utc_today() -> Date {
 }
 
 /// shadcn's `formatDate`: `toLocaleDateString("en-US", { day: "2-digit", month: "long", year:
-/// "numeric" })`, i.e. `October 16, 2026`.
+/// "numeric" })`, i.e. `July 16, 2026`.
 fn format_date(date: Date) -> String {
     format!("{} {:02}, {}", date.month(), date.day(), date.year())
 }
@@ -213,7 +213,7 @@ fn parse_iso(text: &str) -> Option<Date> {
     Date::from_calendar_date(year, Month::try_from(month).ok()?, day).ok()
 }
 
-/// `October 20` / `20 October` (either order of the two words).
+/// `July 20` / `20 July` (either order of the two words).
 fn explicit(year: i32, first: &str, second: &str) -> Option<Date> {
     let (month, day) = match (month_from_name(first), month_from_name(second)) {
         (Some(month), None) => (month, day_number(second)?),

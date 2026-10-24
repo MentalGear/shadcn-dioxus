@@ -6,13 +6,13 @@
 //! closures, not signals/hooks -- the caller (`component.rs`'s themed
 //! composition pieces, or a consumer's own demo like
 //! `variants/main/mod.rs`) owns the reactive state and calls these as
-//! ordinary Rust to derive what to render. Since row 360 the helpers themselves live in
-//! `dioxus_primitives::data_view` (one model for every view) and this file re-exports them under the
-//! names this component always had; kept as a sibling file of
+//! ordinary Rust to derive what to render. The helpers themselves live in
+//! `dioxus_primitives::data_view` (one model for every view, row 360) and this file re-exports them under
+//! this component's own names; kept as a sibling file of
 //! `component.rs` rather than folded into it so this logic can be unit
 //! tested in isolation (`#[cfg(test)] mod tests` below) -- the
 //! `dev-docs/plan.md` definition of done's "a conformance/regression test
-//! that ... would fail without the change" for this lane's pure-logic
+//! that ... would fail without the change" for the pure-logic
 //! half (the composition components themselves are covered by
 //! `playwright/data_table.spec.ts` and the tier-1 APG oracle instead).
 //!
@@ -44,9 +44,8 @@ pub use dioxus_primitives::data_view::{
 /// TanStack Table's default `includesString` filter function --
 /// `String(value).toLowerCase().includes(filterValue.toLowerCase())`, a
 /// case-insensitive substring match anywhere in the cell value, *not*
-/// restricted to the start of the string. (Answers the question this was
-/// written for: no, matching only the start of the string was never the
-/// intent here or in shadcn -- a mid-string fragment is expected to narrow
+/// restricted to the start of the string. (Matching only the start of the
+/// string is not the intent here or in shadcn -- a mid-string fragment narrows
 /// the rows exactly like a prefix would.)
 ///
 /// One deliberate addition beyond TanStack's own filter fn: `needle` is

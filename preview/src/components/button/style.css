@@ -277,8 +277,8 @@
  * is defined once, in `dx-components-theme.css`.
  *
  * Hover is the Secondary button's own move (`color-mix(fill, foreground 5%)`,
- * style-nova.css `.cn-button-variant-secondary`), not a lighter alpha: the old
- * `destructive 90% over transparent` lightened the fill and dropped the text
+ * style-nova.css `.cn-button-variant-secondary`), not a lighter alpha:
+ * `destructive 90% over transparent` would lighten the fill and drop the text
  * to 4.35:1 in light and 3.2:1 in dark under shadcn's palette. */
 .dx-button[data-style="destructive"] {
   background-color: var(--dx-destructive-fill);

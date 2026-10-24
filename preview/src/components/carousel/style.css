@@ -17,8 +17,7 @@
        track gets narrower) instead of adding on top of it (which would push
        this element past its own 100% allotment -- the same overflow this
        construction exists to remove, just moved from the buttons to the
-       root). See the orientation rules' own comment for the carousel-narrow
-       lane's full derivation. */
+       root). See the orientation rules' own comment for the full derivation. */
     box-sizing: border-box;
 
     /* Slot read by the Previous/Next icon (`none`; an RTL horizontal Carousel mirrors it below). */
@@ -80,11 +79,10 @@
 
     /* 28px -- shadcn/ui's own measured size (`ui.shadcn.com/docs/components/carousel`,
        live, JS running, 1280x800 @2x: both buttons' `getBoundingClientRect()`
-       report exactly 28x28), not the `size-9`/36px this rule used before.
-       `--dx-space-9` was an inferred guess (shadcn's `icon` Button variant
-       defaults to `size-9`); the live DOM shows their carousel Button
-       overrides that default down to an explicit `size-8`-ish 28px, so this
-       matches the measured element, not the un-overridden default class. */
+       report exactly 28x28), not the `size-9`/36px of shadcn's `icon` Button
+       variant default: the live DOM shows their carousel Button overrides
+       that default down to an explicit `size-8`-ish 28px, so this matches
+       the measured element, not the un-overridden default class. */
     width: var(--dx-space-7);
     height: var(--dx-space-7);
     align-items: center;
@@ -116,8 +114,7 @@
        style.css x2) rather than inventing a new shape. No
        prefers-reduced-motion override needed here -- these are native
        `<button>` elements, already covered by dx-components-theme.css's
-       shared reduced-motion layer's bare `button` selector (confirmed
-       live, see this lane's report) -- for the durations. The one thing that
+       shared reduced-motion layer's bare `button` selector -- for the durations. The one thing that
        layer does not touch is a transition DELAY, so the `:disabled` rule
        below carries its own reduced-motion override for the visibility
        delay.
@@ -146,8 +143,7 @@
    who reuses one icon component regardless of direction (as this
    package's own `rtl` demo variant does, deliberately, to prove this
    rule) ends up with a "<" chevron sitting on the physical right and a
-   ">" sitting on the physical left -- confirmed live, see
-   $S/round4/carousel/variant-rtl-light.png before this rule existed.
+   ">" sitting on the physical left without it.
    `scaleX(-1)` is a pure mirror (not a directional offset), so it needs
    no `rtl-physical` allowlist comment -- it is exactly as direction-safe
    as flipping is supposed to be. The root re-declares the slot variable
@@ -227,15 +223,13 @@
    edge, whichever physical side that resolves to).
    `padding-inline` below RESERVES the room these buttons sit in, rather
    than the buttons reaching for it with a negative `inset-inline-*` past
-   `.dx-carousel`'s own edge (this rule's previous construction). That
-   negative-outset version clipped on any real-world container with no
-   slack to spare beyond it -- reported live on the `rtl` demo, small
-   viewports, both buttons cut off -- because the space it depended on
+   `.dx-carousel`'s own edge. A negative-outset construction clips on any
+   real-world container with no slack to spare beyond it (the `rtl` demo on
+   small viewports, both buttons cut off) because the space it depends on
    lives *outside* this element's own box, and nothing in this stylesheet
    can see how much of it exists on a given page.
-   A `@container` query on `.dx-carousel`'s own `inline-size` (the initial,
-   preferred fix for this bug -- see the carousel-narrow lane's report for
-   the full writeup) cannot fix this either, and not for a subtle reason:
+   A `@container` query on `.dx-carousel`'s own `inline-size` cannot fix
+   this either, and not for a subtle reason:
    `.dx-carousel`'s own rendered width is frequently *decoupled* from how
    much room surrounds it, because any wrapper with a `max-width` (this
    package's own demo wrappers included -- `max-width: 20rem`) pins it to
@@ -259,12 +253,10 @@
    A 76px reservation would leave 28px of unexplained empty gutter past
    the button's own far edge; 48px is what the button's actual footprint
    (48px gutter, occupied from 20px to 48px past the track) needs and no
-   more -- confirmed by building this exact rule and measuring zero
-   overflow at every viewport in the lane's own verification table, not
-   assumed. On screen this is pixel-identical to the previous outside
-   placement (still 28x28, no shadow, 20px clear of the track) -- only
-   which element's own box the buttons now count as part of has changed,
-   so `z-index` above stays belt-and-braces (the buttons still share no
+   more (zero overflow at every viewport measured). On screen this is
+   pixel-identical to an outside placement (28x28, no shadow, 20px clear of
+   the track) -- only which element's own box the buttons count as part of
+   differs, so `z-index` above stays belt-and-braces (the buttons still share no
    pixels with `.dx-carousel-content`), never load-bearing. */
 .dx-carousel[data-orientation="horizontal"] {
     padding-inline: var(--dx-space-12);
@@ -286,27 +278,21 @@
    the identical `padding-block` reservation as horizontal's
    `padding-inline` above, just the other axis, applied for the identical
    reason (the buttons must never depend on external slack this stylesheet
-   cannot see), even though this repo's own `vertical` demo did not
-   reproduce a block-axis overflow in this lane's own verification table:
-   its wrapper already carries its own `padding-block: var(--dx-space-12)`
-   (`variants/vertical/mod.rs`, predating this lane), which alone was
-   already enough room at every viewport tested. Without this rule, that
-   safety would keep depending on a demo-specific (or any other consumer's
-   own hand-written) workaround rather than living in the component --
-   exactly the "demo problem, not a component problem" shape this lane
-   exists to avoid, just not one with an observed live symptom on this
-   particular page. A `@container` query cannot provide the equivalent
+   cannot see). This repo's own `vertical` demo shows no block-axis overflow
+   even without it, but without this rule that safety would depend on a
+   demo-specific (or any other consumer's own hand-written) workaround
+   rather than living in the component -- the "demo problem, not a
+   component problem" shape. A `@container` query cannot provide the equivalent
    conditional behavior on this axis even in principle: `container-type`
    has no block-only containment mode (only `inline-size` or the both-axes
    `size`), and `size` would additionally make this element's own
    currently-auto height stop following its content -- collapsing it to
    zero whenever no explicit height happens to be set, which nothing here
-   guarantees (confirmed by an isolated check -- see the lane report).
+   guarantees.
    Reserving the room unconditionally sidesteps that danger entirely, the
    same way it sidesteps the horizontal case's own external-slack problem.
-   This makes the `vertical` demo's own wrapper-level padding redundant --
-   left as-is (out of this stylesheet's scope, and a harmless belt-and-
-   braces margin now that the component reserves its own). */
+   This makes a wrapper-level padding in the `vertical` demo redundant
+   (harmless belt-and-braces margin, since the component reserves its own). */
 .dx-carousel[data-orientation="vertical"] {
     padding-block: var(--dx-space-12);
 
@@ -341,11 +327,10 @@
 
    Default placement: as a direct child of `.dx-carousel`, it overlays the
    slide track's own top-start corner (`--dx-space-2` in from both track
-   edges), where every other carousel's pause control lives. Before this
-   rule it was an ordinary in-flow `inline-flex` box, so it sat in a line
-   box of its own ABOVE the slides, hard against the card's top edge and
-   visually detached from it -- reported on the deployed `autoplay` demo as
-   "floating above the slide, outside its top-left corner". Logical
+   edges), where every other carousel's pause control lives. An ordinary
+   in-flow `inline-flex` box would sit in a line box of its own ABOVE the
+   slides, hard against the card's top edge and visually detached from it
+   ("floating above the slide, outside its top-left corner"). Logical
    `inset-*` so it mirrors under `dir="rtl"`; `.dx-carousel`'s own
    `padding-inline`/`-block` reservation (the orientation rules above) is
    added to the offset so it lands on the TRACK's corner, not the root's.
@@ -475,9 +460,9 @@
    `var()` (`border-radius: var(--dx-radius-full)`, `background:
    var(--secondary-color-1)`) reports empty longhands, so every such
    declaration is silently dropped the first time the string changes.
-   Measured on the deployed build: after one click the previously-active
-   and newly-active dots had `border-radius: 0` and no background (square,
-   one grey, one white) while the untouched dots stayed round. State in an
+   After one click the previously-active and newly-active dots would have
+   `border-radius: 0` and no background (square, one grey, one white) while
+   the untouched dots stayed round. State in an
    attribute + paint in a class cannot hit that: the attribute is a plain
    value, the declarations never pass through that code path. */
 .dx-carousel-picker {

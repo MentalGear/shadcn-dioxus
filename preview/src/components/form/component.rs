@@ -2,7 +2,7 @@
 // ONLY themed wrappers from `crate::components::*`, never a bare
 // `dioxus_primitives::` component directly. `preview/src/components/<name>/
 // component.rs` is the one place per component where the raw primitive is
-// imported and given its `css_module` theme class (e.g. `.dx-checkbox` in
+// imported and given its theme class (e.g. `.dx-checkbox` in
 // `../checkbox/style.css`, `.dx-switch` in `../switch/style.css`); every
 // *other* file, this one included, is expected to reach for that themed
 // wrapper the same way `components/slider/variants/dynamic_range/mod.rs`
@@ -65,7 +65,7 @@ use dioxus_primitives::js_listener::{use_js_listeners, JsListeners};
 
 /// The ONLY way a preview page renders a `<form>` (`scripts/check-demo-forms.sh` fails on any other).
 ///
-/// # The defect this exists for (owner report: "submit buttons in the demo / docs pages reload the page")
+/// # The defect this exists for (submit buttons in the demo / docs pages reloading the page)
 ///
 /// A bare `form { .. }` with no `onsubmit` is a real HTML form: clicking its submit button, or pressing
 /// Enter in one of its fields, runs the browser's form submission algorithm, which NAVIGATES to the form's
@@ -280,9 +280,8 @@ fn watch_invalid_js(form_id: &str, report_id: &str) -> String {
             // driven by `document::eval` setting `.checked`/`.value`
             // directly -- which, unlike a real user interacting with a
             // native control, never dispatches a `change`/`input` event
-            // (confirmed by execution: a plain `change` listener here never
-            // fired for any library control, only the native reference
-            // ones). So instead of reacting to a specific event, any
+            // (a plain `change` listener here never fires for any library
+            // control, only the native reference ones). So instead of reacting to a specific event, any
             // plausible interaction (click, key release, or a real
             // `change`/`input` from a native control) triggers a re-check
             // of every currently-marked control's *actual* validity --
@@ -301,7 +300,7 @@ fn watch_invalid_js(form_id: &str, report_id: &str) -> String {
             // that settle first, same as the `reset` listener below.
             //
             // Reads `.validity.valid`, never calls `.checkValidity()`:
-            // confirmed by execution, the latter is not the passive read it
+            // the latter is not the passive read it
             // looks like -- per spec it *fires `invalid` on the element
             // when the check fails*, which this file's own capturing
             // `invalid` listener above would immediately see and re-mark
@@ -337,9 +336,9 @@ fn watch_invalid_js(form_id: &str, report_id: &str) -> String {
             // the `invalid` batching above): each library control's own
             // `use_form_reset_listener` is *also* a `reset` listener on this
             // same form, resyncing its Dioxus-side state and re-rendering --
-            // confirmed by execution, clearing synchronously here raced that
-            // re-render and the marker came right back on every library
-            // control (only the native references' cleared for good), so
+            // clearing synchronously here races that
+            // re-render and the marker comes right back on every library
+            // control (only the native references' clear for good), so
             // this waits for that settle first.
             listen(form, 'reset', () => {{
                 setTimeout(() => {{
@@ -358,8 +357,7 @@ fn watch_invalid_js(form_id: &str, report_id: &str) -> String {
 /// `RadioGroup` and `Select` currently document `name` (and `RadioGroup`
 /// also documents `required`) without rendering a submittable element for
 /// either -- see `dev-docs/plan.md` Phase 1. This fixture sets those props per
-/// their documented API anyway, so it fails today and passes once Phase 1
-/// lands.
+/// their documented API anyway, so it is the oracle for that gap.
 #[component]
 pub fn FormFixture() -> Element {
     // The native reference inputs below that start checked render a plain `checked` (the server

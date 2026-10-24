@@ -1,5 +1,5 @@
 /*
- * `chart_tooltip` gallery -- page layout, plus a TEMPORARY scoped copy of
+ * `chart_tooltip` gallery -- page layout, plus a scoped copy of
  * the indicator/icon/total-row rules this gallery's `indicator_line`,
  * `dashed`-shaped rows, `icons`, and `advanced` demos need.
  *
@@ -8,17 +8,11 @@
  * bar, line, pie, radar, radial, and this one) shares the SAME
  * `ChartTooltip`/`ChartLegend` implementation, so a rule that styles
  * `[data-indicator="line"]` or `[data-slot="chart-icon"]` belongs there,
- * unscoped, not duplicated once per gallery. This lane does not own that
- * file (`$S/stage2-common.md`: `preview/src/components/chart/**` is
- * stage-1's and integration-owned now) -- the exact rules below were filed
- * verbatim as a request to `$S/stage2-lanes.md`'s "requests for the
- * refactor owner". Everything under `.dx-chart-tooltip-gallery` here is
- * that same request's rules, scoped to this component's own root
- * (`component.rs`'s `Gallery`) so THIS gallery's nine demos render
- * correctly right now, without waiting on that request to land.
- * Integration deletes this copy once `chart/style.css` carries the
- * unscoped version -- the two must never both apply at once outside this
- * page (they wouldn't conflict -- same rules -- but would be dead weight).
+ * unscoped, not duplicated once per gallery, and it carries the same rules
+ * unscoped. Everything under `.dx-chart-tooltip-gallery` here is that
+ * same set of rules, scoped to this component's own root
+ * (`component.rs`'s `Gallery`), so the two never conflict (same rules) but
+ * this copy is redundant with the unscoped one.
  *
  * `check-dx-class-prefix.sh`: the only real class defined below is
  * `dx-chart-tooltip-gallery` (`dx-<name>`, this component's folder name
@@ -51,7 +45,7 @@
 /* Stretch the row to the indicator's own height instead of centering a
  * small dot -- shadcn's own `items-stretch` row default, overridden back
  * to `items-center` only when `indicator === "dot"`
- * (`$S/refs/ui/apps/v4/registry/new-york-v4/ui/chart.tsx`). The tooltip
+ * (shadcn-ui/ui `apps/v4/registry/new-york-v4/ui/chart.tsx`). The tooltip
  * root's own `data-indicator` (not just the swatch's) is the hook here,
  * since it's what's present even when a row's `formatter` replaces the
  * swatch element itself. */

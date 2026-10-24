@@ -7,7 +7,7 @@
  * (`AlertDialogCancel` = `outline`, `AlertDialogAction` = the action variant, here the destructive
  * fill), so their rules below are `.cn-button` geometry (`../button/style.css`) with the outline and
  * destructive variants' fills. The panel fill is the one modal fill (`--dx-popover`) shared with
- * Dialog, Sheet, Drawer and Command (owner decision 6). */
+ * Dialog, Sheet, Drawer and Command. */
 
 /* Alert Dialog Backdrop -- the wrapper `div` `AlertDialogRoot` renders around the
  * content. On the web arm (`<dialog>` + `showModal()`) it paints nothing: the

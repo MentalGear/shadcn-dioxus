@@ -49,9 +49,9 @@ pub fn Input(
     let base = attributes!(input { class: "dx-input", "data-dx-root": "" });
     // `onwheel` is attached ONLY when the caller passed one. Dioxus registers every bubbling rsx
     // handler once on `#main` with no options (dioxus-interpreter-js `createListener`), so an
-    // `onwheel: move |e| _ = onwheel.map(..)` shim on every `<input>` -- the previous shape, set
-    // even when the prop was `None` -- made the whole page's wheel input non-passive: each wheel
-    // tick had to wait for the main thread before the compositor could scroll
+    // `onwheel: move |e| _ = onwheel.map(..)` shim on every `<input>`, set
+    // even when the prop is `None`, would make the whole page's wheel input non-passive: each wheel
+    // tick would have to wait for the main thread before the compositor could scroll
     // (dev-docs/archive/research/scroll-jank-2026-10-04.md, Cause 2b). An rsx event attribute cannot take
     // an `Option<EventHandler>`, so the optional listener is built as an `Attribute` and spread.
     let wheel: Vec<Attribute> = onwheel

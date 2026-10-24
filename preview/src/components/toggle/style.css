@@ -89,7 +89,7 @@
    `:where(:hover)` makes that unconditional (drops this branch's
    contribution to (0,1,0), below `[data-state="on"]`'s (0,2,0)) rather than
    order-dependent, so reordering these rules -- or `:hover` later picking up
-   an extra clause the way calendar/tabs's did -- can no longer silently flip
+   an extra clause the way calendar/tabs's can -- cannot silently flip
    the winner. `:focus-visible` is untouched (kept at its own (0,2,0), same as
    today): this row is about the hover/active tie only. */
 .dx-toggle:focus-visible {
@@ -113,8 +113,8 @@
 /* Pressed. Nova paints it `data-[state=on]:bg-muted` (and `aria-pressed:bg-muted`)
  * on top of a `hover:bg-muted` hover, so on and hover are the SAME colour there.
  * Here they must differ (a pressed toggle that looks hovered says nothing), and
- * the old ramp step `--primary-color-7` did not follow a preset at all: it
- * stayed grey under every base.
+ * a fixed ramp step such as `--primary-color-7` would not follow a preset at
+ * all: it stays grey under every base.
  *
  * So pressed is the hover surface (`--dx-accent`) pushed 15% toward the ink
  * (`--dx-foreground`): a role-derived colour, so a preset recolours it, and

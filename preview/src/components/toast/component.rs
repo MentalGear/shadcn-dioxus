@@ -125,19 +125,17 @@ pub fn ToastProvider(
     let merged = merge_attributes(vec![base, attributes]);
 
     rsx! {
-        // dev-docs/backlog.md row 32: unlike `#[css_module]`'s bundling, this
-        // `document::Link` merely appends a `<link rel="stylesheet">` to
-        // the document head -- it does not reorder anything already there.
+        // dev-docs/backlog.md row 32: this `document::Link` merely appends a
+        // `<link rel="stylesheet">` to the document head -- it does not
+        // reorder anything already there.
         // `primitives/src/toast.rs`'s own baseline stylesheet
         // (`ensure_toast_base_styles`) is injected by a `use_effect` in
         // `ToastProvider`'s *rendered* primitive, which only runs after
         // this wrapper's initial render commits its elements (including
-        // this `Link`) to the DOM. So this themed sheet's `<link>` still
-        // lands in the head before the primitive's `<style>` tag arrives,
-        // same relative order `#[css_module]`'s own head injection kept --
-        // `.dx-toast-container[popover]`/`.dx-toast` keep winning the
-        // cascade over the baseline's zero-specificity rules. CSS values
-        // themselves are untouched; only this delivery mechanism changed.
+        // this `Link`) to the DOM. So this themed sheet's `<link>` lands in
+        // the head before the primitive's `<style>` tag arrives, and
+        // `.dx-toast-container[popover]`/`.dx-toast` win the cascade over
+        // the baseline's zero-specificity rules.
         document::Link { rel: "stylesheet", href: asset!("/src/components/toast/style.css") }
         toast::ToastProvider {
             default_duration,

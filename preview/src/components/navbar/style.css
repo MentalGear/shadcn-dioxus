@@ -104,12 +104,9 @@
   margin-inline-start: calc(-1 * var(--dx-space-1));
 }
 
-/* `animation`+`@keyframes`, not `transition` -- deliberately mirroring
+/* `animation`+`@keyframes`, not `transition` -- mirroring
  * `../navigation_menu/style.css`'s identical technique for its own content
- * panel (`dev-docs/backlog.md` row 77's own flagged follow-up: "`navbar.rs`
- * pairs the identical `use_animated_open` + `use_popover_sync` combination,
- * so it likely carries the same dead exit-animation defect"). Root-caused
- * and confirmed by execution here, the same two-part class:
+ * panel (`dev-docs/backlog.md` row 77). Two causes make a `transition` dead here:
  *
  * (1) This content never sets a `data-side`/`data-align` attribute (unlike
  * `popover.rs`/`hover_card.rs`/`tooltip.rs`), so the shared, engine-injected
@@ -119,41 +116,33 @@
  * places this content anywhere -- so `use_anchor_position_fallback`'s own
  * `matches()` self-check always concludes the native path failed and takes
  * over with a JS-computed *inline* `style.transform = 'none'`. An inline
- * style's specificity beats any selector however specific, so the
- * `transition`-based `transform` rules below were silently dead.
+ * style's specificity beats any selector however specific, so a
+ * `transition`-based `transform` rule would be silently dead.
  *
- * (2) The web arm's `use_popover_sync` called `hidePopover()` synchronously
- * the instant `open` went `false` -- removing the content before any
- * transition frame could run at all. Confirmed live (an in-page rAF sample
- * of a real close): `opacity`/`transform` jumped straight from the open
- * resting value to the closed target between two consecutive animation
- * frames, with the content already disconnected from the DOM one frame
- * later -- not one transition frame ever ran, for either open or close.
+ * (2) The web arm's popover sync must not call `hidePopover()` synchronously
+ * the instant `open` goes `false` -- that removes the content before any
+ * transition frame can run at all (`opacity`/`transform` would jump straight
+ * from the open resting value to the closed target). `NavbarContentRendered`
+ * therefore uses `use_popover_shown_while_mounted` (`primitives/src/navbar.rs`),
+ * the same hook `NavigationMenuContentRendered` uses for this reason.
  *
  * CSS Animations sit in a cascade tier *above* normal author declarations --
- * inline styles included -- which is why switching to `animation`+
- * `@keyframes` here closes cause (1) outright; cause (2) is fixed on the
- * Rust side, by `NavbarContentRendered` switching from `use_popover_sync` to
- * `use_popover_shown_while_mounted` (`primitives/src/navbar.rs`), the same
- * hook `NavigationMenuContentRendered` already uses for this exact reason.
- * A `@keyframes` animation also sidesteps a second, navbar-specific gap a
+ * inline styles included -- which is why `animation`+`@keyframes` closes
+ * cause (1) outright. It also sidesteps a second, navbar-specific gap a
  * plain higher-specificity `transition` rule could not: this content mounts
  * with `data-state="open"` already set on its very first painted frame (no
  * separate "closed" frame precedes it), so a `transition` -- which requires
- * an actual prior computed-style value to interpolate *from* -- never had
- * anything to animate on open either; an `@keyframes` animation instead
- * always plays its full `0%` -> `100%` progression once applied, regardless
- * of whether the element was just inserted. `getAnimations()`
- * (`use_animated_open`, `primitives/src/lib.rs`) treats a running
- * `CSSAnimation` exactly like a `CSSTransition`, so this swap needs no
- * further Rust-side change beyond the hook switch above.
+ * an actual prior computed-style value to interpolate *from* -- has
+ * nothing to animate on open either; an `@keyframes` animation always plays
+ * its full `0%` -> `100%` progression once applied, regardless of whether
+ * the element was just inserted. `getAnimations()` (`use_animated_open`,
+ * `primitives/src/lib.rs`) treats a running `CSSAnimation` exactly like a
+ * `CSSTransition`, so no Rust-side change is needed beyond the hook above.
  *
  * One keyframe pair per `data-open-menu-direction` variant (three: this nav
  * closing on its own, and closing because a sibling to its start/end opened
- * instead) plus their `[dir="rtl"]` physical-sign counterparts -- mirrors
- * the exact set of `transform` values the previous `transition`-based rules
- * encoded per variant, just now as explicit keyframe endpoints instead of
- * an implicit before/after computed-style diff. */
+ * instead) plus their `[dir="rtl"]` physical-sign counterparts, as explicit
+ * keyframe endpoints instead of an implicit before/after computed-style diff. */
 .dx-navbar-content[data-state="closed"][data-open-menu-direction="start"] {
   animation: dx-navbar-content-animate-out-start var(--dx-floating-duration) var(--dx-floating-ease-exit) forwards;
 }

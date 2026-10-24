@@ -21,12 +21,12 @@ use dioxus_primitives::merge_attributes;
 // gallery instead of once, here, at the seam this file already is).
 //
 // `BarOptions`/`PieOptions`/`RadarOptions`/`RadialOptions` have no demo
-// using them yet (only `variants/line/mod.rs` sets `line: LineOptions { .. }`
-// today, plus `area_chart`'s own `AreaOptions`-using variants) -- reserved
-// stage-2 extension points, same as `ChartProps`' own
-// `bar`/`pie`/`radar`/`radial` fields, so each family's own gallery lane
-// (`s2-bar`/`s2-polar`/`s2-radar`) can write `<Family>Options { .. }` in its
-// demo the moment it lands, with no edit to this shared file needed first.
+// using them yet (only `variants/line/mod.rs` sets `line: LineOptions { .. }`,
+// plus `area_chart`'s own `AreaOptions`-using variants) -- reserved
+// extension points, same as `ChartProps`' own
+// `bar`/`pie`/`radar`/`radial` fields, so each family's own gallery
+// can write `<Family>Options { .. }` in a
+// demo with no edit to this shared file needed first.
 // `ChartSeries`/`ChartIcon`/`StackMode` join this list for `area_chart`'s
 // own `icons`/`stacked_expand` variants (setting a series' `icon` field
 // directly, and `AreaOptions.stack_mode`, respectively).
@@ -48,7 +48,7 @@ pub use dioxus_primitives::chart::{
 /// attributes to its already-rendered parent without a post-mount effect,
 /// which would make them absent from the first SSR render).
 ///
-/// Forwards via `..props` (§4(a)'s stage-2 chart-round construction, the
+/// Forwards via `..props` (the
 /// same shape as `Chart` below) rather than a hand-listed field-by-field
 /// call, so a newly added `ChartContainerProps` field forwards for free
 /// instead of silently compiling away.
@@ -89,14 +89,10 @@ pub fn ChartContainer(props: ChartContainerProps) -> Element {
 /// not a hand-listed field-by-field call: `props` here IS `chart::Chart`'s
 /// own `ChartProps` (imported directly, not a separate preview-defined
 /// props type), so every field forwards with no mapping needed. This is a
-/// stage-2 chart round fix-by-construction, not merely this round's own
-/// six new option fields: a hand-listed forward silently drops any field
-/// the list doesn't (yet) name, with no compile error -- which is exactly
-/// how this file's own pre-stage-2 list had already gone stale (API change
-/// #8's `x_label`/`max_x_ticks` were never added to it, so a demo setting
-/// either was silently ignored; fixed for free by this same spread, not
-/// tracked as its own change). `ChartTooltip`/`ChartLegend`/`ChartContainer`
-/// now use the identical shape (§4(a) of the stage-2 handoff).
+/// fix by construction: a hand-listed forward silently drops any field
+/// the list doesn't (yet) name, with no compile error (a demo setting
+/// `x_label`/`max_x_ticks` would be silently ignored). `ChartTooltip`/
+/// `ChartLegend`/`ChartContainer` use the identical shape.
 #[component]
 pub fn Chart(props: ChartProps) -> Element {
     rsx! {
@@ -110,7 +106,7 @@ pub fn Chart(props: ChartProps) -> Element {
 /// (`data-state="closed"`, hidden by CSS) so there is nothing to attach
 /// post-hydration. Optional -- omit it for a chart that doesn't need one.
 ///
-/// Forwards via `..props` (§4(a)): a plain struct-update spread rather than
+/// Forwards via `..props`: a plain struct-update spread rather than
 /// a hand-listed field-by-field call, so a newly added `ChartTooltipProps`
 /// field (e.g. `indicator`/`label_key`/`name_key`/`formatter`) reaches the
 /// real primitive without an edit here. This also folds `children` back
@@ -137,9 +133,9 @@ pub fn ChartTooltip(props: ChartTooltipProps) -> Element {
 /// series, in `config` order. Optional -- a single/dual-series chart
 /// usually doesn't need one.
 ///
-/// Forwards via `..props` (§4(a)), the same shape as `ChartTooltip` above --
-/// this is the fix that lets a newly added `ChartLegendProps` field (e.g.
-/// `hide_icon`) actually reach `chart::ChartLegend`.
+/// Forwards via `..props`, the same shape as `ChartTooltip` above --
+/// so a newly added `ChartLegendProps` field (e.g.
+/// `hide_icon`) reaches `chart::ChartLegend`.
 #[component]
 pub fn ChartLegend(props: ChartLegendProps) -> Element {
     let base = attributes!(ul {

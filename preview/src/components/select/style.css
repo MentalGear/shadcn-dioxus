@@ -124,7 +124,7 @@
    * and the pop-in/out all come from the theme's floating-surface recipe
    * (`data-dx-surface="floating"`, emitted by `SelectList`). Its `border`/`overflow`/`padding` undo
    * the UA popover stylesheet's `[popover] { border: solid; overflow: auto; ... }` (WHATWG HTML's
-   * popover section): on the web arm (Migration A slice 3/3) this listbox carries the `popover`
+   * popover section): on the web arm this listbox carries the `popover`
    * attribute. The matching `margin`/`inset` reset, and the `@supports (anchor-name: --a)`
    * anchor-positioning rules that keep this listbox anchored to its trigger once promoted to the top
    * layer, live in the shared, engine-injected stylesheet every `dx-anchor-*`-marked overlay gets

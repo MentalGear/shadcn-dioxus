@@ -10,8 +10,7 @@ use dioxus_primitives::resizable::{
 // allowlist covers this shape for other components, e.g. `ContentSide`, via a
 // module-root re-export from the themed wrapper; doing the same here keeps every
 // non-`component.rs` file in this crate free of raw `dioxus_primitives::` text at
-// all, which is simpler than adding an allowlist entry to a script this lane does
-// not own).
+// all, which is simpler than adding an allowlist entry to that script).
 pub use dioxus_primitives::resizable::ResizableDirection;
 
 #[component]

@@ -6,7 +6,7 @@ use std::time::Duration;
 
 pub use dioxus_primitives::select::{SelectGroup, SelectPosition};
 
-// dev-docs/backlog.md row 32: `#[css_module]` is gone -- see checkbox/component.rs's
+// dev-docs/backlog.md row 32: see checkbox/component.rs's
 // header comment for the full delivery-mechanism rationale (asset!() +
 // document::Link, embedded in the wrapper so a `shadcn-dioxus add
 // select`-copied component needs no extra wiring). This file has TWO

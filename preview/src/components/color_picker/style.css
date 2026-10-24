@@ -1,6 +1,6 @@
 /* Colour picker: not a shadcn component (Nova has no `.cn-color-picker`), so there is no block to
- * match. It follows Nova's tokens: the area track's corner is the theme's `--dx-radius-lg` (it
- * was the literal 10px, the same value at the default radius), and the swatch / slider track /
+ * match. It follows Nova's tokens: the area track's corner is the theme's `--dx-radius-lg` (10px at
+ * the default radius), and the swatch / slider track /
  * field chrome already read the role tokens. The thumbs' black ring layers are NOT theme colours
  * on purpose: the thumb sits on an arbitrary user colour, so its outline layers are fixed black
  * (around a `--dx-primary` ring) rather than theme colours. */
@@ -103,7 +103,7 @@
     text-transform: none;
 
     /* rtl-physical: this thumb's horizontal position is set inline by the
-       primitive (out of this lane's ownership, like slider/style.css's
+       primitive (like slider/style.css's
        identical note) -- `translate(-50%, -50%)` only self-centers the
        thumb on whatever point that inline style lands it at. */
     transform: translate(-50%, -50%) scale(1);
@@ -239,8 +239,8 @@
 
 .dx-color-picker-popover {
     /* Slots of the theme's floating-surface recipe (`data-dx-surface="floating"`, emitted by
-       `ColorPickerPopover`): the 4px drop, and the recipe's own 4px padding (the UA popover padding
-       this panel always had, now a token). The recipe also supplies the edge, radius, fill, shadow and
+       `ColorPickerPopover`): the 4px drop, and the recipe's own 4px padding (the UA popover padding,
+       as a token). The recipe also supplies the edge, radius, fill, shadow and
        stacking, and replaces the UA `dialog`'s 3px solid border. */
     --dx-floating-enter: dx-drop-in;
     --dx-floating-exit: dx-drop-out;

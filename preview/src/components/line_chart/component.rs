@@ -35,9 +35,9 @@ pub use crate::components::chart::*;
 /// re-exported straight from the primitive here rather than by editing
 /// `chart::component`'s own re-export line -- keeps this gallery's
 /// dependency on a value the `chart` package doesn't currently re-export
-/// entirely inside this lane's own files, with nothing for a sibling
-/// gallery lane (`area_chart`, `bar_chart`, ...) editing that same shared
-/// line at the same time to conflict with. This file is itself the
+/// entirely inside this gallery's own files, with nothing for a sibling
+/// gallery (`area_chart`, `bar_chart`, ...) editing that same shared
+/// line to conflict with. This file is itself the
 /// "themed wrapper" layer `check-preview-composition.sh` exempts, so this
 /// one raw `dioxus_primitives::chart::Curve` reference is not a violation.
 pub use dioxus_primitives::chart::Curve;
@@ -46,9 +46,9 @@ pub use dioxus_primitives::chart::Curve;
 /// (that package's own `component.rs`, added alongside the stage-2
 /// refactor's `Chart.line: LineOptions` field) -- reached here through
 /// the `pub use crate::components::chart::*;` above. Its own
-/// nested types (`LineLabels`, `DotRenderer`, `DotContext`) landed after
-/// that re-export line was written and are not in it yet; re-exported
+/// nested types (`LineLabels`, `DotRenderer`, `DotContext`) are not in that
+/// re-export line; re-exported
 /// straight from the primitive here for the same reason and with the same
 /// no-shared-file-edit benefit as `Curve` above, rather than adding a
-/// second lane's own names to `chart::component`'s shared list.
+/// second gallery's own names to `chart::component`'s shared list.
 pub use dioxus_primitives::chart::{DotContext, DotRenderer, LineLabels, TooltipIndicator};

@@ -12,7 +12,7 @@ use dioxus_primitives::js_listener::{use_js_listeners, JsListeners};
 use dioxus_primitives::merge_attributes;
 use dioxus_primitives::use_controlled;
 
-// dev-docs/backlog.md row 32: `#[css_module]` is gone -- see checkbox/component.rs's
+// dev-docs/backlog.md row 32: see checkbox/component.rs's
 // header comment for the full delivery-mechanism rationale (asset!() +
 // document::Link). Every exported entry point in this file gets its own
 // `document::Link` (dedup on (href, rel) makes that free), and
@@ -257,17 +257,15 @@ pub fn Sidebar(
     let open_mobile = ctx.open_mobile;
 
     if collapsible == SidebarCollapsible::None {
-        // axe `region` (dev-docs/backlog.md row 38): this was a plain `<div>`
-        // with no landmark role at all, so its content (menu items,
-        // footer) sat outside every landmark on the page -- surfaced both
-        // by the block-route direct-visit case (`ComponentBlockDemo`,
-        // `preview/src/main.rs`) and, independently, by the dashboard
-        // email client's own embedded sidebar (`dashboard/views/
-        // email_client/sidebar.rs`), which renders `Sidebar` directly and
-        // was never routed through the block preview at all. `role:
-        // "complementary"` (the `<aside>` landmark) fixes both call sites
-        // at their one shared source; labelled so it stays unambiguous if
-        // a future page ever has more than one.
+        // axe `region` (dev-docs/backlog.md row 38): a plain `<div>` with no
+        // landmark role would leave its content (menu items, footer) outside
+        // every landmark on the page. Both call sites render `Sidebar`
+        // directly: the block-route direct visit (`ComponentBlockDemo`,
+        // `preview/src/main.rs`) and the dashboard email client's embedded
+        // sidebar (`dashboard/views/email_client/sidebar.rs`). `role:
+        // "complementary"` (the `<aside>` landmark) covers both at their one
+        // shared source; the label keeps it unambiguous if a page has more
+        // than one.
         let base = attributes!(div {
             class: "dx-sidebar-static",
             "data-slot": "sidebar",
@@ -335,11 +333,9 @@ pub fn Sidebar(
             "data-slot": "sidebar",
             // axe `region` (dev-docs/backlog.md row 38) -- see the identical
             // comment on the `collapsible == SidebarCollapsible::None`
-            // branch above; this is the desktop-expanded/-collapsed
-            // branch actually rendered by both known affected call sites
-            // (the block route's `sidebar` demo and the dashboard email
-            // client's sidebar), so it's the one that mattered for the
-            // reported gap.
+            // branch above; this desktop-expanded/-collapsed branch is the
+            // one both call sites (the block route's `sidebar` demo and the
+            // dashboard email client's sidebar) actually render.
             role: "complementary",
             aria_label: "Sidebar",
             div { class: "dx-sidebar-gap", "data-slot": "sidebar-gap" }

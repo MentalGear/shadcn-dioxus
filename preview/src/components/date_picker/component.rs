@@ -20,7 +20,7 @@ use super::super::calendar::*;
 use super::super::popover::*;
 use crate::components::button::{Button, ButtonSize, ButtonVariant};
 
-// dev-docs/backlog.md row 32: `#[css_module]` is gone -- see checkbox/component.rs's
+// dev-docs/backlog.md row 32: see checkbox/component.rs's
 // header comment for the full delivery-mechanism rationale (asset!() +
 // document::Link, embedded in the two public entry points -- `DatePicker`
 // and `DateRangePicker` -- the same way `select/component.rs` links from

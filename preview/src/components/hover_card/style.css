@@ -28,8 +28,8 @@
   font-size: var(--dx-text-sm);
 
   /*
-   * This content carries the `popover` attribute on the web arm (Phase 4.4,
-   * dev-docs/plan.md), which comes with a UA stylesheet rule
+   * This content carries the `popover` attribute on the web arm
+   * (dev-docs/plan.md), which comes with a UA stylesheet rule
    * (`[popover] { inset: 0; margin: auto; overflow: auto; border: solid;
    * ... }`, WHATWG HTML's popover section) that would otherwise leak through
    * any property this rule leaves unset. The theme's floating-surface recipe
@@ -124,7 +124,7 @@
 }
 
 /*
- * Phase 4.4 (dev-docs/plan.md): HoverCardContent's web arm carries a `popover`
+ * HoverCardContent's web arm (dev-docs/plan.md) carries a `popover`
  * attribute (top-layer promotion for clipping escape), which changes its
  * containing block to the viewport, so the `[data-side]` rules above need
  * CSS Anchor Positioning to still resolve relative to the trigger.

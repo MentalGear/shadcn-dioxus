@@ -11,14 +11,11 @@ use dioxus_icons::lucide::{ChevronLeft, ChevronRight};
 /// this uses the same "demo-local `<style>` block" construction `button`'s
 /// own `size` variant already established for responsive demo layout.
 ///
-/// Replaces this component's own pre-shadcn-parity `multiple` variant,
-/// which used a bare `flex-basis: 40%` override -- not `1/n` for any small
-/// whole `n`, so it overflowed the track (`dev-docs/research/shadcn-carousel-parity.md`'s
-/// own "2½ slides" finding). `playwright/carousel.spec.ts` was updated to
-/// match (the old `multiple` variant name is retired; the "partially
-/// visible neighbour" drag test that specifically needed a fractional
-/// peek now targets the new `peek` variant instead, which exists
-/// precisely for that opt-in case).
+/// A bare `flex-basis: 40%` override would not be `1/n` for any small
+/// whole `n` and would overflow the track (`dev-docs/research/shadcn-carousel-parity.md`'s
+/// "2½ slides" finding). The "partially visible neighbour" drag test in
+/// `playwright/carousel.spec.ts` that needs a fractional peek targets the
+/// `peek` variant instead, which exists precisely for that opt-in case.
 #[component]
 pub fn Demo() -> Element {
     rsx! {

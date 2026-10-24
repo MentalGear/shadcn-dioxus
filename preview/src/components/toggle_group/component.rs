@@ -8,7 +8,7 @@ use dioxus_primitives::{
 };
 use std::collections::HashSet;
 
-// dev-docs/backlog.md row 32: `#[css_module]` is gone -- see checkbox/component.rs's
+// dev-docs/backlog.md row 32: see checkbox/component.rs's
 // header comment for the full delivery-mechanism rationale (asset!() +
 // document::Link, embedded in both exported entry points so a
 // `shadcn-dioxus add toggle_group`-copied component needs no extra wiring).

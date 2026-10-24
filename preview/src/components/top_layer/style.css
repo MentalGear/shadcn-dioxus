@@ -135,27 +135,27 @@
  * written -- see the `z-index` note below for the one thing that does need
  * to change here.
  *
- * `z-index: var(--dx-z-top, 9999)` on both rows (dev-docs/backlog.md, the
- * axe/fixture-hardening round): every route on this preview site now
+ * `z-index: var(--dx-z-top, 9999)` on both rows (axe/fixture hardening,
+ * dev-docs/backlog.md): every route on this preview site
  * permanently mounts `DocsLayout`'s `Sidebar`
  * (`preview/src/components/sidebar/style.css`'s `.dx-sidebar-container`,
  * `position: fixed; z-index: var(--dx-z-local-sm)` = 10), which occupies a
  * left-edge column (`left: 0`, `width: var(--dx-sidebar-width)` = 16rem).
  * `.dx-top-layer-edge-bottom-row` spans `left: 1rem` to `right: 1rem` --
  * i.e. almost the full viewport width -- so its leftmost children
- * (confirmed by execution: the Tooltip/HoverCard triggers, first in DOM
+ * (the Tooltip/HoverCard triggers, first in DOM
  * order) sit under that column; with no `z-index` of its own (`auto`) a
  * `position: fixed` box always loses hit-testing to a sibling stacking
  * context with an explicit positive `z-index`, regardless of DOM order, so
  * Playwright's real `.click()`/`.hover()` (unlike a same-origin
- * `.evaluate(el => el.click())`, which bypasses hit-testing) retried until
- * the outer test timeout killed it
+ * `.evaluate(el => el.click())`, which bypasses hit-testing) retries until
+ * the outer test timeout kills it
  * (`oracle/tier2-html/top-layer.spec.ts` Rule 5's Tooltip/HoverCard
  * flip cases). `.dx-top-layer-edge-right-col` sits at the opposite,
- * right-hand edge and was not observed failing at the current sidebar
+ * right-hand edge and does not fail at the current sidebar
  * width/viewport, but is the identical mechanism at a different edge, so
  * it gets the same clearance preventively rather than waiting for a
- * viewport size or a sidebar width change to make it visible too -- one
+ * viewport size or a sidebar width change to expose it -- one
  * root cause ("this fixture's fixed-position probes are not kept clear
  * of, or stacked above, the permanently-mounted chrome") subsuming both
  * rows by construction, not a per-trigger patch. `--dx-z-top` (9999,

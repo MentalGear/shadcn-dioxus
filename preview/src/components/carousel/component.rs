@@ -223,9 +223,7 @@ pub fn CarouselRotationControl(props: CarouselRotationControlProps) -> Element {
 }
 
 /// The APG tablist (dot-picker) style: `role="tablist"` of `role="tab"`
-/// dots, automatic activation on arrow/Home/End. Renamed from
-/// `CarouselTabList` (pre-1.0 fork rename, owner-approved -- no
-/// deprecated alias). See docs.md's own "Indicators" section for when to
+/// dots, automatic activation on arrow/Home/End. See docs.md's own "Indicators" section for when to
 /// reach for `Tabs` instead.
 #[component]
 pub fn CarouselIndicators(props: CarouselIndicatorsProps) -> Element {
