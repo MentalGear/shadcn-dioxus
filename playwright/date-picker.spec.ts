@@ -1994,7 +1994,7 @@ test.describe("Natural language picker (variant=natural_language)", () => {
     return frame(page, VARIANT).getByText("Your post will be published on", { exact: false });
   }
   function boldDate(page: Page) {
-    return sentence(page).locator("span");
+    return sentence(page).locator("span").first();
   }
 
   test("starts as 'In 2 days' with shadcn's label and placeholder, and the sentence shows that date", async ({ page }) => {
@@ -2004,6 +2004,21 @@ test.describe("Natural language picker (variant=natural_language)", () => {
     await expect(field(page)).toHaveAttribute("placeholder", "Tomorrow or next week");
     await expect(boldDate(page)).toHaveText(expectedDate(2));
     await expect(sentence(page)).toHaveText(/^Your post will be published on .+\.$/);
+  });
+
+  test("the sentence takes the same box for every month's date, so the layout never depends on the date", async ({ page }) => {
+    await gotoDatePicker(page);
+    const group = sentence(page);
+    await expect(boldDate(page)).toHaveText(expectedDate(2));
+    const box = () => readAtRest(group, (el) => ({ h: el.getBoundingClientRect().height, w: (el.querySelector("span") as HTMLElement).getBoundingClientRect().width }));
+    const first = await box();
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    for (const month of months) {
+      await field(page).fill(`${month} 28 2026`);
+      await expect(boldDate(page)).toHaveText(`${month} 28, 2026`);
+      const now = await box();
+      expect(now, `${month}: the reserved width is the widest date text, so the box does not move`).toEqual(first);
+    }
   });
 
   test("the calendar button sits INSIDE the input group, labelled 'Select date'", async ({ page }) => {

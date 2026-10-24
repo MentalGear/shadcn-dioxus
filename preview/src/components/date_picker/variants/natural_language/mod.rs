@@ -61,6 +61,12 @@ pub fn Demo() -> Element {
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/src/components/button/style.css") }
+        // The date shares one grid cell with a hidden copy of the widest date text, so its span is as wide as that text
+        // whatever the date is, and while the clock has not been read yet: the sentence wraps the same at first paint,
+        // hydrated and for every date (backlog row 377). `visibility: hidden` keeps the copy out of the accessibility tree.
+        style {
+            "[data-widest-date] {{ display: inline-grid; font-weight: 500; }} [data-widest-date]::before {{ content: attr(data-widest-date); grid-area: 1 / 1; visibility: hidden; }} [data-widest-date] > span {{ grid-area: 1 / 1; }}"
+        }
         Field { style: "width: 100%; max-width: 20rem;",
             FieldLabel { html_for: "date-picker-natural-language-input", "Schedule Date" }
             InputGroup {
@@ -107,14 +113,18 @@ pub fn Demo() -> Element {
             }
             div { style: "padding-inline: 0.25rem; font-size: 0.875rem; color: var(--dx-muted-foreground);",
                 "Your post will be published on "
-                span { style: "font-weight: 500;",
-                    {date().map(format_date).unwrap_or_default()}
+                span { "data-widest-date": WIDEST_DATE,
+                    span { {date().map(format_date).unwrap_or_default()} }
                 }
                 "."
             }
         }
     }
 }
+
+/// The widest text [`format_date`] produces in the page font: the longest month name, a two-digit day and a four-digit
+/// year (`date-picker.spec.ts` checks all twelve months against it).
+const WIDEST_DATE: &str = "September 30, 2026";
 
 /// The current UTC day, read when called (an effect or an event handler, see [`Demo`]).
 fn utc_today() -> Date {
