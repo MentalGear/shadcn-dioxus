@@ -47,7 +47,7 @@ playwright/navbar.spec.ts	2
 playwright/navigation_menu.spec.ts	4
 playwright/oracle-focus-restore.spec.ts	1
 playwright/oracle/attr-synth/src/main.rs	1
-playwright/oracle/hydration-parity.spec.ts	15
+playwright/oracle/hydration-parity.spec.ts	13
 playwright/oracle/tier1-apg/carousel.spec.ts	1
 playwright/oracle/tier1-apg/keyboard-matrix.spec.ts	3
 playwright/oracle/tier1-apg/menu-roles.spec.ts	2
