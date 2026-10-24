@@ -16,18 +16,19 @@
 # pending-substitution longhands that all read "", so the "put back" writes `setProperty(longhand, "")`, which
 # REMOVES them -- and the whole shorthand with them. The string you wrote is right and the markup the server
 # sent is right (the SSG page shows the border); the first time the string is re-set on the client the
-# declaration silently disappears. Seen twice: the carousel's active dot lost its colour and radius after the
-# first click (documented in carousel/docs.md), and the photo wall's minimap box lost its border and fill as
-# soon as the wall mounted its first tiles (`first-paint-styles` found it as "border 2px -> 0 on
-# /component/virtual_grid/": the JS-off page and the hydrated page computed different styles).
+# declaration silently disappears. Examples: the carousel's active dot loses its colour and radius after the
+# first click (documented in carousel/docs.md), and the photo wall's minimap box loses its border and fill as
+# soon as the wall mounts its first tiles (`first-paint-styles` reports "border 2px -> 0 on
+# /component/virtual_grid/": the JS-off page and the hydrated page compute different styles).
 #
 # The same re-set also makes the opposite swap wrong: a string swapped for another string or for "" leaves
 # the remembered longhands in place, because they were remembered before the swap and are only put back when
-# they read empty. The questionnaire `progress` demo painted its checkpoint segments with
+# they read empty. A checkpoint bar painted with
 # `style: if done { "...; background: var(--dx-primary);" } else { "...; background: var(--dx-muted);" }`: after
-# two steps the segments that had changed kept only `height` and `flex` (computed background transparent), so
-# the bar showed one bright segment, two invisible ones and one dark one; the collapsible `file_tree` and
-# bubble `collapsible` chevrons (`style: if open() { "rotate: ..." } else { "" }`) stayed rotated after closing.
+# two steps the segments that changed keep only `height` and `flex` (computed background transparent), so
+# the bar shows one bright segment, two invisible ones and one dark one; a chevron
+# (`style: if open() { "rotate: ..." } else { "" }`) stays rotated after closing (the questionnaire `progress`
+# demo and the `file_tree` / bubble `collapsible` chevrons were the instances).
 # Both are the one interpreter behaviour, so the gate has two arms.
 #
 # A static `style: "..."` is never re-set, so only a string with an interpolation, or a `style:` whose value is
@@ -82,8 +83,8 @@ ALLOW = [
 ]
 used = set()
 
-# ARM 2 exceptions: (file suffix, substring of the line, reason). Each is the same shape as the defect; checked on
-# the built site 2026-10-21 and none misrenders, because the choice is made once and never swapped live.
+# ARM 2 exceptions: (file suffix, substring of the line, reason). Each is the same shape as the defect, but none
+# misrenders on the built site, because the choice is made once and never swapped live.
 ALLOW_CHOICE = [
     ("preview/src/main.rs", "style: match member.2 {", "docs-site member status dot: the status is fixed per row and never changes after render, and every arm declares the same longhands (background-color is a longhand)"),
     ("primitives/src/chart/components/series/radar.rs", "style: if ring_fill {", "sets only a custom property, or nothing; ring_fill is fixed for a chart's lifetime, so the string is never swapped"),

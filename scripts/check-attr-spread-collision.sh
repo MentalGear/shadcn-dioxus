@@ -35,7 +35,7 @@
 # `attributes: Vec<Attribute>` -- there is only ever one `Attribute` for that name, so
 # there is nothing to collide, and that site is correctly not reported.
 #
-# WHAT THIS DOES NOT DETECT -- the `5fc1439`-shaped variant is reported separately, see
+# WHAT THIS DOES NOT DETECT -- the forwarded-`attributes` variant is reported separately, see
 # "The second, separate check" below; beyond that:
 #   - An `rsx! { .. }` invocation written lexically INSIDE another `rsx! { .. }`'s own
 #     token stream (as opposed to a plain nested element/component, which IS handled --
@@ -44,15 +44,14 @@
 #   - Anything that isn't literally "one element, one spread, one same-named literal" --
 #     e.g. two DIFFERENT elements each independently receiving half of a caller's intent.
 #
-# History: three reactive, one-incident-at-a-time sweeps already hit this exact class
-# (`b35d671`, `5fc1439`, `f2be1d7` -- dev-docs/backlog.md rows 85/93) before this gate
-# existed, each catching only the sites some demo page happened to exercise. This is the
-# fix-by-construction CLAUDE.md's "stop patching instances" principle calls for.
+# Why a gate: sweeping this class one incident at a time only ever caught the sites some demo
+# page happened to exercise (dev-docs/backlog.md rows 85/93). This is the fix-by-construction
+# CLAUDE.md's "stop patching instances" principle calls for.
 #
 # THE RATCHET, NOT A WALL (read this before touching the baseline file):
 # `scripts/check-attr-spread-collision.baseline.tsv` (this check) and
 # `scripts/check-attr-spread-collision.component-forward.baseline.tsv` (the second check,
-# below) each list the sites already known to exist when this gate was introduced --
+# below) each list the sites known to exist when the gate was adopted --
 # hundreds of them, across most of this codebase's themed wrapper components. This gate
 # does NOT fail on any of those: it fails only when a site appears that ISN'T already in
 # the relevant baseline file. Each baseline entry is `file<TAB>enclosing-fn<TAB>name`, one
@@ -68,9 +67,9 @@
 #
 # BASELINE ENTRIES ARE A DEBT REGISTER, NOT AN APPROVAL. Every line in either baseline
 # file is a real, live instance of the production defect described above, left unfixed
-# only because fixing ~700 call sites was explicitly out of scope for the lane that wrote
-# this gate (it added detection only) -- see dev-docs/issues/duplicate-attribute-findings.md
-# for the full, actionable breakdown. Do not add a NEW site to the baseline to make this
+# only because fixing ~700 call sites was out of scope when the gate was adopted (it
+# adds detection only) -- see dev-docs/issues/duplicate-attribute-findings.md for the
+# full, actionable breakdown. Do not add a NEW site to the baseline to make this
 # gate pass; the baseline exists only so this gate can ship without also requiring every
 # pre-existing site to be fixed in the same change.
 #
@@ -112,8 +111,7 @@ CHECKER_DIR="scripts/attr-spread-collision-checker"
 # /root/.cargo/config.toml points at the main checkout's own target/), while the
 # $BIN check below still looks at the relative default -- so the two agree in the
 # main checkout by coincidence and diverge in every git worktree, failing with a
-# spurious "built but not there". Found 2026-09-22 by an agent running this gate
-# from a worktree.
+# spurious "built but not there"; defaulting `CARGO_TARGET_DIR` here makes both agree.
 : "${CARGO_TARGET_DIR:=target}"
 export CARGO_TARGET_DIR
 
@@ -122,8 +120,8 @@ echo "check-attr-spread-collision: building analyzer..." >&2
 # `--offline` guarantees the gate never silently reaches the network. On a FRESH container
 # (empty registry cache) that offline build cannot resolve anything -- it fails with
 # `failed to get ... as a dependency` -- so retry online, which fetches exactly what the
-# checked-in Cargo.lock pins (no re-resolution, no lockfile change). Found 2026-09-25
-# (backlog row 107): the first fresh-container run of this gate failed here.
+# checked-in Cargo.lock pins (no re-resolution, no lockfile change); a fresh container is why
+# the online retry exists (backlog row 107).
 if ! cargo build --release --offline -p attr-spread-collision-checker >&2; then
   echo "check-attr-spread-collision: offline build failed -- the local cargo registry cache is" >&2
   echo "  probably empty (fresh container). Retrying with network access to fetch the" >&2
@@ -186,8 +184,8 @@ baseline_header() {
 # live "$label" instance of the duplicate-attribute defect this gate looks for (see
 # check-attr-spread-collision.sh's own header, and
 # dev-docs/issues/duplicate-attribute-findings.md for the full breakdown), listed here
-# only because fixing every pre-existing site was out of scope for the lane that added
-# this gate. Format: file<TAB>enclosing-fn<TAB>attribute-name, one line per finding
+# only because fixing every pre-existing site was out of scope when the gate was adopted.
+# Format: file<TAB>enclosing-fn<TAB>attribute-name, one line per finding
 # (duplicates meaningful -- a multiset, not a set; see the .sh header for why). Do not
 # hand-edit: adding a line here to silence a real new finding defeats the gate: fix the
 # site instead, or re-run with --update-baseline and explain why in the commit.
@@ -202,7 +200,7 @@ check_one() {
 
   if [[ "$update_mode" -eq 1 ]]; then
     # Body only when there ARE findings: `printf '%s\n' ""` for an empty set writes one
-    # blank line, which the old `grep -vc '^#'` count reported as "wrote 1 entries"
+    # blank line, which a `grep -vc '^#'` count reports as "wrote 1 entries"
     # (backlog row 107b). Count the same way the gate's own comparison does (`grep -c .`:
     # non-blank lines), so the reported number is the number of entries actually written.
     {
@@ -257,7 +255,7 @@ check_one "component-attributes-forward" "component-attributes-forward" "$COMPON
 # shows the markers, and hydration never binds the node (measured in
 # dev-docs/issues/raw-text-hydration-markers.md). It is a different defect from the two
 # above, and lives here only because this analyzer already parses every `rsx!` body. No
-# baseline: there were 0 sites when it was added, so any finding fails, and
+# baseline: the count is zero, so any finding fails, and
 # --update-baseline does not apply to it. It scans the whole preview crate (the shell and
 # docs pages too, not only components) plus the starter template, all inside
 # cargo-inputs-hash.sh's roots, so a reused PASS of this gate still covers them.

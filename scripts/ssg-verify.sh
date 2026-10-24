@@ -9,7 +9,7 @@
 # stderr ending in `ssg-verify: FAIL -- <reason>` and exits 1. If $SSG_VERIFY_REASON_FILE is set the
 # one-line reason is also written there (build-ssg.sh quotes it in its own FAIL line).
 #
-# THE CLASS (seen three times in one session, 2026-10-13): dx 0.7.9 logs a failed static-route render as
+# THE CLASS (backlog row 196): dx 0.7.9 logs a failed static-route render as
 #     ERROR ssg error: reqwest::Error { kind: Request, url: "http://127.0.0.1:9999/component/table/?", ... IncompleteMessage ... }
 # and then carries on: `SSG complete`, `Server build completed successfully!`, exit 0, with only some of the
 # pages written. Nothing downstream looked at the log or at the route list, so the first symptom was a

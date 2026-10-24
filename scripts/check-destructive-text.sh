@@ -22,7 +22,7 @@
 # the role is defined and is out of scope. Comments are stripped first, so prose that names the token is fine.
 #
 # EXCEPTIONS are in ALLOW below, each with its reason; an entry that no longer matches anything is itself
-# an error (a fixed site must leave the list). The list starts empty: every known site is a lane's edit.
+# an error (a fixed site must leave the list). The list is empty: a known site is fixed, not allowlisted.
 #
 # Usage: scripts/check-destructive-text.sh [FILE ...]   (default: every *.css and *.rs under the scopes;
 # explicit files are for self-tests, and skip the allowlist stale-entry check)

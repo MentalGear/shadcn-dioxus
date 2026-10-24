@@ -9,10 +9,9 @@
 # component's items is `crate::components::<name>::Item` (or `::*`). Inside
 # this repo `examples!` (preview/src/components/mod.rs) keeps `component`
 # private for the same reason, so such a path fails to compile here too -- but
-# it hit twice before that was true (the `pub use
-# crate::components::chart::component::*;` in every *_chart/component.rs, and
-# the `use crate::components::button::component::Button;` in six variants),
-# each compiling fine in the repo and failing in an installed tree.
+# a path like `pub use crate::components::chart::component::*;` or
+# `use crate::components::button::component::Button;` compiles fine in a tree
+# where `component` is public and fails in an installed one.
 #
 # Rule: no `components::<name>::component::` path anywhere in
 # preview/src/**/*.rs outside comments (the app shell in main.rs may name
@@ -44,9 +43,9 @@
 #     `cargoDependencies` entry of the component itself or of one in its `componentDependencies` closure. Both
 #     installers run `cargo add` for the whole closure (dx: `run`, "collect all required rust dependencies";
 #     `shadcn-dioxus`: `add.rs`, `to_install`), and nothing else puts the crate in the user's Cargo.toml: an
-#     app that was not made from `templates/starter` has no `dioxus-primitives`, and `kbd`, `area_chart`,
-#     `bubble`, `empty` and `message` (no `cargoDependencies`) failed there with E0433 while the starter
-#     template, the preview and the smoke script all pre-declared it.
+#     app that was not made from `templates/starter` has no `dioxus-primitives`, and a component with no
+#     `cargoDependencies` (`kbd`, `area_chart`, `bubble`, `empty`, `message` were the cases) fails there
+#     with E0433 while the starter template, the preview and the smoke script all pre-declare it.
 # `scripts/registry-install-smoke.sh` is the definitive (slow, pre-merge) check that this approximates.
 #
 # Usage: scripts/check-installed-paths.sh

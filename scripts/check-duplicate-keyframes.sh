@@ -8,12 +8,10 @@
 # with a reason. Invisible to cargo and clippy, and with CI frozen (dev-docs/backlog.md row 33) nothing else
 # would notice.
 #
-# THE CLASS (row 145, lane F): at the 2026-10-13 recount the preview had 72 `@keyframes`, 52 of them members
-# of 21 byte-identical clusters. A menu's pop-in was pasted into five sheets under five names (the select and
-# combobox copies even shared one name, with a comment asking the next editor to "keep the two in step"), the
-# pure opacity fade into eight, the colour picker's 4px drop into two, and one stylesheet carried two
-# directional slides that differed only in which one a `[dir="rtl"]` rule named. Each copy was right on the day
-# it was pasted and the set drifts from then on (a duration or an offset tuned in one place). The construction
+# THE CLASS (row 145): byte-identical `@keyframes` pasted into several sheets under different names (a menu's
+# pop-in in five, the pure opacity fade in eight, the colour picker's 4px drop in two, two directional slides
+# that differ only in which one a `[dir="rtl"]` rule names). Each copy is right on the day it is pasted and the
+# set drifts from then on (a duration or an offset tuned in one place). The construction
 # is one shared set in the theme -- `dx-fade-in/out`, `dx-pop-in/out`, `dx-drop-in/out`, selected through the
 # `--dx-floating-enter/-exit` slots of the floating-surface recipe in `dx-components-theme.css` -- and this
 # gate keeps a new component from pasting its own copy: use the shared name, or, for motion that really is

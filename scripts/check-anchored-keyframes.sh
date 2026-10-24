@@ -6,8 +6,8 @@
 # with a reason: animate `translate` / `scale` / `rotate` instead. Invisible to cargo and clippy, and with CI
 # frozen (dev-docs/backlog.md row 33) nothing else would notice.
 #
-# THE CLASS (found twice, 2026-10-05: the date picker's panel played its fade 144px off-centre, the colour
-# picker's 133px): an anchored overlay positions itself with `transform` -- `translateX(-50%)` for a centred
+# THE CLASS (the date picker's panel played its fade 144px off-centre, the colour picker's 133px;
+# dev-docs/research/round3-2026-10-05.md): an anchored overlay positions itself with `transform` -- `translateX(-50%)` for a centred
 # anchor, `-100%` for an end-aligned one, `translateY(-50%)` beside it -- in the engine stylesheet
 # `primitives/src/top_layer.rs` injects, keyed on `[data-side]`/`[data-align]`, and that stylesheet covers
 # EVERY `dx-anchor-*` overlay (tooltip, hover card, popover, dropdown menu, menubar, navbar, navigation menu,
@@ -18,10 +18,10 @@
 # obvious way (`transform: translateY()`) is the bug. Context menus, sub-menus and the menus above set no
 # `data-side` today, so they lose nothing yet -- the same shape, latent until one does.
 #
-# WHY INVERTED (a ban with an allowlist, not "which stylesheets are anchored"): the first version of this gate
-# DERIVED the anchored stylesheets from three primitives (popover, tooltip, hover_card) and so covered exactly
-# the consumers it had already been told about -- the menus, select and combobox sat outside it while sharing
-# the engine rule that makes `transform` dangerous. Any derivation of "which content is anchored" is a second
+# WHY INVERTED (a ban with an allowlist, not "which stylesheets are anchored"): deriving the anchored stylesheets
+# from three primitives (popover, tooltip, hover_card) would cover exactly the consumers already known about --
+# the menus, select and combobox would sit outside it while sharing the engine rule that makes `transform`
+# dangerous. Any derivation of "which content is anchored" is a second
 # list that goes stale the day a primitive is added (the engine selector list in top_layer.rs, the primitives'
 # `dx-anchor-*` markers and the preview wrappers are three places that would have to agree). The ban needs no
 # such list: every stylesheet is in scope the moment it exists, a new overlay is covered by default, and the

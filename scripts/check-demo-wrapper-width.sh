@@ -9,16 +9,15 @@
 # `max-width` -- unless the child sets its OWN `width` (`100%` is the
 # established fix; `fit-content` is also fine, since that is already what
 # the item would shrink-wrap to). A child that sets `max-width` but never
-# `width` renders narrower than its author intended: measured on row 94's
-# carousel/combobox instances, a demo wrapper written as `max-width: 20rem`
-# alone rendered at 200px against a 320px cap, and gained nothing until
-# `width: 100%` was added next to it.
+# `width` renders narrower than its author intended: a demo wrapper written as
+# `max-width: 20rem` alone renders at 200px against a 320px cap, and gains
+# nothing until `width: 100%` is added next to it (the carousel/combobox
+# instances of row 94).
 #
-# `align-items: stretch` on the frame was measured NOT to fix this (an
-# explicit `margin: 0 auto` on the wrapper wins over `align-self: stretch`
-# every time) and to be actively harmful (it widened ~80 other direct
-# children that carry no `max-width` at all, e.g. plain buttons). See row
-# 94's own measurement writeup. This script therefore does not touch the
+# `align-items: stretch` on the frame does NOT fix this (an explicit
+# `margin: 0 auto` on the wrapper wins over `align-self: stretch` every time)
+# and is actively harmful (it widens ~80 other direct children that carry no
+# `max-width` at all, e.g. plain buttons). See row 94's measurements. This script therefore does not touch the
 # frame's CSS at all -- it only checks each DEMO WRAPPER, the one place
 # row 94 says the fix belongs.
 #
@@ -281,7 +280,7 @@ for mod_path in sorted(glob.glob("preview/src/components/*/variants/*/mod.rs")):
     folder = os.path.dirname(os.path.dirname(os.path.dirname(mod_path)))
     name = folder.split("/")[-1]
     if name in ("carousel",):
-        continue  # row 94: already fixed, own mechanism documented in-file
+        continue  # row 94: carousel has its own mechanism, documented in-file
     src = open(mod_path, encoding="utf-8").read()
     root = extract_demo_root(src)
     if root is None:

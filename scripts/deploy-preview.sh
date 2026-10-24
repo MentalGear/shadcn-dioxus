@@ -157,23 +157,20 @@ public_dir="$target_dir/dx/preview/release/web/public"
 # refresh /docs from a build dx itself called a success while it dropped pages.
 "$repo_root/scripts/build-ssg.sh" release --base-path shadcn-dioxus
 
-# `dx build --ssg` has a known, pre-existing race (unrelated to any one
-# source change -- reproduced identically on an untouched checkout, see
-# session notes) where its SSG render pass fires all routes' requests at
+# `dx build --ssg` has a known race (independent of any source change --
+# it reproduces identically on an untouched checkout) where its SSG render pass fires all routes' requests at
 # the freshly-started fullstack server concurrently, and some of those
 # requests can land before something the server needs to inject the
 # hydration bootstrap `<script type="module">` is ready. The affected
 # route's static HTML then has no script tag at all -- not a visible
 # error, just a dead, never-hydrates page if it ships.
 #
-# Earlier note in this file claimed a cold cargo cache "reliably self-heals"
-# this -- that was wrong, disproved by direct testing (2026-09-18 docs
-# deploy session): two independent fully-cold rebuilds (all of
-# target/wasm-release, target/wasm32-unknown-unknown/wasm-release,
-# target/server-release, target/x86_64-*/server-release, and
-# target/dx/preview/release cleared first -- confirmed by mtime, not just
-# assumed) reproduced the *identical* 5-of-6 failure, at near-identical
-# internal timing both times. Compile-cache warmth was never the variable.
+# A cold cargo cache does NOT self-heal this (direct testing: two
+# independent fully-cold rebuilds -- target/wasm-release,
+# target/wasm32-unknown-unknown/wasm-release, target/server-release,
+# target/x86_64-*/server-release and target/dx/preview/release cleared
+# first -- reproduced the *identical* 5-of-6 failure at near-identical
+# internal timing), so compile-cache warmth is not the variable.
 # The actual cause: by default `dx build --fullstack` compiles the server
 # and client targets in parallel, and the client side's post-compile work
 # (wasm-bindgen, wasm-opt -- both CPU-heavy) is still competing for CPU
@@ -181,7 +178,7 @@ public_dir="$target_dir/dx/preview/release/web/public"
 # starving whatever it needs to finish before it can inject the script tag.
 # On this sandbox's 4 cores, `--force-sequential=true` above (server build,
 # then client build, so nothing competes with the server during its SSG
-# window) fixed it 2/2 clean runs after 2/2 failures without it -- dx's own
+# window) removes it (2/2 clean runs against 2/2 failures without it) -- dx's own
 # `--help` already default-enables this under `CI=1` for what's presumably
 # this same reason. The verification below stays as a safety net regardless
 # (belt-and-suspenders: don't ship a dead page even if this analysis is

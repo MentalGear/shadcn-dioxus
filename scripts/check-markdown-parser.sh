@@ -9,7 +9,7 @@
 # ENABLE_STRIKETHROUGH and ENABLE_TASKLISTS options, and no `dangerous_inner_html` appears, so model output has no
 # path to the DOM as raw HTML.
 #
-# The parser allowlist for the optional `markdown` component (owner decisions 2026-10-15, backlog row 213):
+# The parser allowlist for the optional `markdown` component (owner decisions, backlog row 213):
 # what the component may pull in and which parser features it may switch on. The OTHER half -- only an
 # allowlisted component may list a parser crate in its `component.json`, and every `component.json` version
 # equals `Cargo.lock` -- is `scripts/check-cargo-dep-versions.sh`; this gate covers what that one cannot see.

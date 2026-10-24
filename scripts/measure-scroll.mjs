@@ -68,7 +68,7 @@
 //     intervals   neutralise ALL setInterval (progress / player tickers)
 //     tick1hz     any setInterval faster than 1 s runs at 1 s (the player's slider has step 1.0)
 //     leak        allow only the FIRST setInterval per period -- simulates "the player/progress
-//                 effect creates its timer once and never again" (the leaked-interval fix)
+//                 effect creates its timer once and never again" (the fix for a leaked interval)
 //     ro          ResizeObserver/IntersectionObserver never fire
 //     virtual     hide the dx-virtual-list-container demo
 //     nested      overscroll-behavior: auto on nested scrollers

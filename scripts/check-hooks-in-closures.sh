@@ -13,18 +13,15 @@
 # first time the component renders -- `cargo check`, clippy, and
 # `cargo test` all stay green, since nothing about this is a type error.
 #
-# The 2026-09-18 incident this guards against (dev-docs/backlog.md row
-# 74): `NavigationMenu`'s root component called `use_delayed_action()` --
-# itself a hook wrapping `use_signal`, `menu_sub.rs` -- three times
-# *inside* the closure passed to `use_context_provider`. Because
-# `ComponentGallery` (the home page) renders every demo to build its
-# gallery, this one bad demo's first-render panic took down the entire
-# home page and every home-page-dependent test with it. Fixed (commit
-# c3dda45, cherry-picked from 963d630; the original defect shipped in
-# bb65cd6) by hoisting the three calls out of the closure into the
-# component body, matching every other call site in the file. Proven
-# below: this script fails against a scratch copy of bb65cd6's
-# navigation_menu.rs and passes against HEAD's.
+# The shape this guards against (dev-docs/backlog.md row 74): a component
+# that calls a hook (`use_delayed_action()`, itself a hook wrapping
+# `use_signal`) *inside* the closure passed to `use_context_provider`.
+# Because `ComponentGallery` (the home page) renders every demo to build
+# its gallery, one such demo's first-render panic takes down the entire
+# home page and every home-page-dependent test with it. The fix is always
+# to hoist the calls out of the closure into the component body. Row 74
+# names the before/after commits of the one real instance: this script
+# fails on the pre-fix `navigation_menu.rs` and passes on the fixed one.
 #
 # What this catches: a call shaped like a hook -- `use_[a-z0-9_]+(`,
 # called as a free function or path-qualified function, never as a
@@ -42,8 +39,8 @@
 # callee really is a hook. This was verified empirically against this
 # crate's own ~60 `fn use_*` definitions and ~300 call sites: every one of
 # them -- including less obviously-named ones like `use_controlled` -- is
-# in fact a hook, so a zero-false-positive run on HEAD needed no entries
-# in the NON_HOOK_NAMES exclusion below. `.method()`-style calls are
+# in fact a hook, so the tree runs clean with no entries in the
+# NON_HOOK_NAMES exclusion below. `.method()`-style calls are
 # excluded from matching (this crate defines no `.use_something()`
 # method today, but a future one would not be a free-function hook call
 # in the sense this check cares about); so are nested `fn use_*` *item*

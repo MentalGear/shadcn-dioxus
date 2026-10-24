@@ -193,9 +193,9 @@ case "${CARGO_TARGET_DIR:-}" in
 esac
 [ "${CARGO_TARGET_DIR%/}" != "$repo_root/target" ] || die "CARGO_TARGET_DIR must not be the shared repo-root target/ (backlog row 100): $CARGO_TARGET_DIR"
 export CARGO_TARGET_DIR
-# Gates are one-shot checks, so the incremental cache is mostly dead weight: on 2026-10-05
-# it regrew to 11-13 GB in about an hour of shared gate runs and filled the session's disk
-# allowance three times. Default it off; a caller can still opt back in with CARGO_INCREMENTAL=1.
+# Gates are one-shot checks, so the incremental cache is mostly dead weight: it regrows to
+# 11-13 GB in about an hour of shared gate runs and fills the session's disk (backlog row 168).
+# Default it off; a caller can still opt back in with CARGO_INCREMENTAL=1.
 export CARGO_INCREMENTAL="${CARGO_INCREMENTAL:-0}"
 log_dir="${log_dir:-$CARGO_TARGET_DIR/run-gates}"
 mkdir -p "$log_dir" || die "cannot create log dir $log_dir"

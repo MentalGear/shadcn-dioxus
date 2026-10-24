@@ -12,18 +12,15 @@
 //!
 //! `kind` is `spread` (the primary defect this gate ratchets against) or
 //! `component-attributes-forward` (the secondary, experimental check for the
-//! `5fc1439`-shaped variant -- see that finding kind's own doc below). Consumers that
+//! forwarded-`attributes` variant -- see that finding kind's own doc below). Consumers that
 //! only care about the primary, ratcheted count should filter to `kind == "spread"`.
 //!
-//! Approach: real parsing, not text/indentation heuristics (this replaces
-//! `dev-docs/archive/issues/duplicate-attribute-guard-prototype.py`, which was line/indentation
-//! based and therefore blind to single-line element bodies -- see that file's own header
-//! for the full disclosed-limitations list this rewrite closes).
+//! Approach: real parsing, not text/indentation heuristics, so single-line element
+//! bodies are seen like any other.
 //!   1. `syn::parse_file` every `.rs` file under the scan roots into a real AST.
 //!   2. Walk every file (via `syn::visit::Visit`) to build a GLOBAL map of
-//!      component-fn-name -> its typed field/parameter names, exactly as
-//!      the prototype's two authoring styles did (see `StructFieldCollector` and
-//!      `FnFieldCollector` below).
+//!      component-fn-name -> its typed field/parameter names, for both authoring
+//!      styles (see `StructFieldCollector` and `FnFieldCollector` below).
 //!   3. Walk every file again, tracking the lexically-nearest enclosing `fn`, and at each
 //!      `rsx! { .. }` macro invocation, hand its token stream to `dioxus_rsx::CallBody`
 //!      (the real grammar this repo's own `rsx!` invocations are written against -- the
@@ -123,9 +120,9 @@ fn main() -> ExitCode {
 
     // Phase 1: struct field names, keyed by struct name, GLOBALLY across every scanned
     // file (a Props struct and the component fn using it are always in the same file in
-    // this codebase, but the prototype resolved this globally too, and a stray
-    // resolution across files is strictly more permissive, never a new false positive --
-    // it can only turn an "unresolved" into a resolved one).
+    // this codebase, but resolving globally costs nothing: a stray resolution across
+    // files is strictly more permissive, never a new false positive -- it can only turn
+    // an "unresolved" into a resolved one).
     let mut struct_fields: HashMap<String, HashSet<String>> = HashMap::new();
     for (_, file) in &parsed {
         let mut collector = StructFieldCollector {
@@ -273,14 +270,14 @@ enum FindingKind {
     /// element, where the enclosing component's props have no typed field of that name.
     /// This is the count ratcheted against the checked-in baseline.
     Spread,
-    /// The `5fc1439`-shaped variant the prototype disclosed it could not detect: a
+    /// The forwarded-`attributes` variant, which a same-element check cannot see: a
     /// component invocation that both (a) sets an ad-hoc `#[props(extends =
     /// GlobalAttributes)]`-routed key directly (e.g. `class: "dx-label"`) and (b)
     /// separately forwards a whole `attributes: expr` field to the SAME child -- both
     /// funnel into the child's one `attributes: Vec<Attribute>` field, colliding there
     /// exactly as a same-element spread collides, just one call-site hop removed. See
     /// this tool's header and the `.sh` wrapper for why this is reported separately
-    /// (zero-baseline, not ratcheted against the 623/624 prototype-comparable count) and
+    /// (zero-baseline, not ratcheted together with the `spread` count) and
     /// for its disclosed conservatism (only fires when the OTHER field's name is a known
     /// `GlobalAttributes` ident, and only when the target component resolves).
     ComponentAttributesForward,
@@ -294,7 +291,7 @@ enum FindingKind {
     /// garbage leading qualified rule that swallows the real one (CDO/CDC tokens, then
     /// `node-idN` as a selector), a `<textarea>` shows the markers in its value, and
     /// hydration never finds the text node to bind. Fine in `dx serve --web` (pure CSR
-    /// emits no markers), broken in the SSG deployment. Backlog row 97, measured in
+    /// emits no markers), broken in the SSG deployment. Backlog row 97, evidence in
     /// `dev-docs/issues/raw-text-hydration-markers.md`. Zero baseline: any finding fails.
     /// Static text renders without markers; dynamic text goes through
     /// `dangerous_inner_html`, which SSR writes verbatim (a `textarea`'s `value` also
@@ -323,9 +320,7 @@ enum Reason {
     NoTypedField,
     /// `AttributeName::BuiltIn(ident)`, but this tool could not resolve a typed-field set
     /// for the enclosing fn at all (see `FnFieldCollector`'s doc) -- reported rather than
-    /// silently dropped, matching the prototype's own `unresolved enclosing fn` bucket;
-    /// expected to be rare-to-never on real code (it was 0/624 in the prototype's final,
-    /// bug-fixed run).
+    /// silently dropped; expected to be rare-to-never on real code.
     UnresolvedFn,
     /// The `component-attributes-forward` kind's only reason.
     AdHocGlobalAttrPlusForwardedAttributes,
@@ -361,9 +356,9 @@ struct Finding {
 /// Phase 1 visitor: `struct Name { field: T, .. }` -> `{"field", ..}`, for every
 /// `ItemStruct` reachable anywhere in the file (any module/fn nesting depth -- the
 /// default `syn::visit::Visit` traversal this impl falls through to already walks into
-/// `mod { .. }` blocks and fn bodies for us). Deliberately does not require `pub`: the
-/// prototype's own iteration history found and fixed exactly this as a false-positive
-/// source (`SliderImplProps` is not `pub`).
+/// `mod { .. }` blocks and fn bodies for us). Deliberately does not require `pub`: a
+/// private Props struct is a real typed-field source (`SliderImplProps` is not `pub`),
+/// and skipping it would report its fields as untyped.
 struct StructFieldCollector<'a> {
     out: &'a mut HashMap<String, HashSet<String>>,
 }
@@ -382,10 +377,10 @@ impl<'ast> Visit<'ast> for StructFieldCollector<'_> {
     }
 }
 
-/// Phase 2 visitor: every `fn`/method name (bare ident, matching the prototype's own
-/// global-by-bare-name keying -- validated in the root-cause investigation as sound for
-/// this codebase's two authoring styles; see this tool's module doc) -> its typed field
-/// set, `None` if unresolvable.
+/// Phase 2 visitor: every `fn`/method name (bare ident, keyed globally by bare name --
+/// sound for this codebase's two authoring styles, see
+/// `dev-docs/issues/duplicate-attribute-root-cause.md`) -> its typed field set, `None`
+/// if unresolvable.
 struct FnFieldCollector<'a> {
     struct_fields: &'a HashMap<String, HashSet<String>>,
     out: &'a mut HashMap<String, Option<HashSet<String>>>,
@@ -410,23 +405,15 @@ impl<'a> FnFieldCollector<'a> {
         // the parameter's own name must be exactly `props`, and its type must be a
         // single-segment path (optionally behind exactly one non-`mut` `&`).
         //
-        // The prototype's own `OLD_STYLE_PROPS_RE` was anchored with a trailing `$` right
-        // after the bare identifier, so it did NOT match a generic `props: FooProps<T>`
-        // and silently fell through to the `#[component]`-sugar branch below, resolving
-        // to the single literal param name `props` instead of `FooProps<T>`'s real
-        // fields. Caught empirically while validating this port (spot-checking
-        // `component-attributes-forward` findings surfaced a false positive on
-        // `ComboboxOption`'s real, typed `id` field -- `ComboboxOptionProps<T>`), and
-        // confirmed as a class, not a one-off: ~16 components across `primitives/src`
-        // and `preview/src/components` take a generic Props type this same way
-        // (`CommandItemProps<T>`, `SelectOptionProps<T>`, `TagOptionProps<T>`,
-        // `DropdownMenuItemProps<T>`, `DatePickerCalendarProps<CalendarProps>`, ...) --
-        // every one of them was silently mis-resolved by the prototype's regex (and by
-        // this tool's own first draft, before this fix). This is a deliberate,
-        // by-construction improvement over the prototype, not a faithful port of its
-        // bug: `syn` already hands us the real parsed type, so there is no reason to
-        // reproduce a regex anchoring accident. See this tool's header comment and the
-        // `.sh` wrapper's for how this shows up in the final count vs. the prototype's.
+        // A generic `props: FooProps<T>` must resolve to `FooProps`'s real fields, not to
+        // the single literal param name `props` (which is what the `#[component]`-sugar
+        // branch below would produce, and which makes `ComboboxOption`'s typed `id`
+        // field look untyped -- `ComboboxOptionProps<T>`). About 16 components across
+        // `primitives/src` and `preview/src/components` take a generic Props type this
+        // way (`CommandItemProps<T>`, `SelectOptionProps<T>`, `TagOptionProps<T>`,
+        // `DropdownMenuItemProps<T>`, `DatePickerCalendarProps<CalendarProps>`, ...).
+        // `syn` hands us the real parsed type, so the generic argument list is simply
+        // ignored and the path's last segment names the struct.
         if typed_params.len() == 1 {
             if let Pat::Ident(pat_ident) = &*typed_params[0].pat {
                 if pat_ident.ident == "props" {
@@ -459,7 +446,7 @@ impl<'a> FnFieldCollector<'a> {
 /// the segment's own ident, i.e. the struct name with its generics stripped; anything
 /// else (`&mut`, a multi-segment path, a qualified `<T as Trait>::X` path, ...) ->
 /// `None`. Generic arguments are intentionally ignored, not required-absent -- see the
-/// call site's doc for why (a real, empirically-found false-positive class this fixes).
+/// call site's doc for why (a generic Props type is a real, common shape).
 fn generic_reference_type_ident(ty: &Type) -> Option<String> {
     let inner = match ty {
         Type::Reference(r) if r.mutability.is_none() => &*r.elem,
@@ -529,8 +516,7 @@ impl<'ast> Visit<'ast> for RsxFinder<'_> {
             // for the OUTER call, but nothing does for a hypothetical doubly-nested one.
             // Not chased further: idiomatic `rsx!` nests via plain child elements, not a
             // second macro invocation, so this is believed to be at most a narrow,
-            // real-world-rare gap, not a systematic blind spot like the prototype's
-            // single-line one this tool was written to close.
+            // real-world-rare gap, not a systematic blind spot.
             if let Ok(call_body) = syn::parse2::<CallBody>(node.tokens.clone()) {
                 self.walk_template_body(&call_body.body);
             }
@@ -647,7 +633,7 @@ impl RsxFinder<'_> {
         }
     }
 
-    /// The `5fc1439`-shaped check -- see `FindingKind::ComponentAttributesForward`'s doc.
+    /// The forwarded-`attributes` check -- see `FindingKind::ComponentAttributesForward`'s doc.
     fn check_component_attributes_forward(&mut self, comp: &Component) {
         let has_forwarded_attributes = comp.fields.iter().any(|f| {
             matches!(&f.name, AttributeName::BuiltIn(ident) if ident == "attributes")

@@ -3,8 +3,8 @@
 #   scripts/lane-ssg.sh <worktree-abs-path> <lane-name> [port]   (LANE_TGT, default /home/user/tgt; see dev-docs/lane-rules.md)
 # The build runs inside scripts/lane-lock.sh (FIFO ticket queue, class `lane`, a slot of its own; row 221):
 # it copies the warm, known-good template to a fresh scratch target ($T/ssg-lane<slot suffix>), builds there,
-# copies public/ to $T/pub-<lane>, deletes the scratch target. (A target dir SHARED across worktrees failed 3/5
-# builds with "stylesheet ... not in dx's asset manifest", so every build now starts from the same clean tree.)
+# copies public/ to $T/pub-<lane>, deletes the scratch target. (A target dir SHARED across worktrees fails
+# builds with "stylesheet ... not in dx's asset manifest", so every build starts from the same clean tree.)
 # The server starts AFTER the lock is released, with every lock fd closed, and (re)starts on [port]
 # (kills only the PID it recorded itself). Prints PUBLIC=<dir> and URL=<url>.
 # `--locked-build <worktree> <lane>` is the inner mode lane-lock runs; do not call it by hand.

@@ -30,7 +30,7 @@
 #   `crate::components::*` instead. Composing the raw primitive directly
 #   skips the theme wrapper's `css_module` class, which is exactly the bug
 #   this script exists to catch (see dev-docs/preview-composition.md for the
-#   two real incidents that motivated it).
+#   real incidents).
 #
 # Usage: scripts/check-preview-composition.sh
 # Exit status: 0 if the tree is clean, 1 and a listing of every offending
@@ -61,8 +61,8 @@ fail=0
 #     there is no `dioxus_primitives::form` primitive. It is a fixture page
 #     (dev-docs/conformance-harness.md tier 2) whose job is to compose *other*
 #     components' THEMED wrappers, per its own header comment. This is the
-#     file the reported bug (collapsed library Switch/Select in the form
-#     fixture) lives in, so it is explicitly re-included in the scan below
+#     file the bug (collapsed library Switch/Select in the form
+#     fixture) shows up in, so it is explicitly re-included in the scan below
 #     rather than exempted by the general glob.
 #
 #   - preview/src/components/top_layer/component.rs is also not a themed
@@ -74,9 +74,8 @@ fail=0
 #     exercise native top-layer/promotion behaviour against native
 #     `<dialog>`/`popover` references -- see its own header comment and
 #     playwright/oracle/tier2-html/{top-layer,native-dialog}.spec.ts. That
-#     is a deliberate, pre-existing, already-independently-tested choice
-#     about interaction/positioning behaviour, not a theming bug, and
-#     nobody has asked for it to change. Flagging it here would be exactly
+#     is a deliberate, independently tested choice about
+#     interaction/positioning behaviour, not a theming bug. Flagging it here would be exactly
 #     the kind of false positive that gets a lint deleted rather than
 #     fixed, so it stays exempt like the ~45 ordinary wrappers. If it is
 #     ever migrated to compose themed wrappers, this exemption should be

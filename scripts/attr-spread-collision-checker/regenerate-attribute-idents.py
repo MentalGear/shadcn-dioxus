@@ -23,7 +23,7 @@
 # `#[props(extends = GlobalAttributes)]` struct's derived builder generates an ad-hoc
 # setter for. The checker's secondary, `component-attributes-forward` check (see
 # scripts/attr-spread-collision-checker/src/main.rs) uses this second list to recognize
-# the `5fc1439`-shaped collision shape without needing to hardcode or guess the set of
+# the forwarded-`attributes` collision shape without needing to hardcode or guess the set of
 # names that mechanism can carry.
 #
 # Usage: python3 scripts/attr-spread-collision-checker/regenerate-attribute-idents.py

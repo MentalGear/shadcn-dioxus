@@ -6,9 +6,9 @@
 # the web fonts, from arriving after first paint cannot be un-done by an innocent edit. Invisible to cargo and clippy, and
 # with CI frozen (dev-docs/backlog.md row 33) nothing else would notice.
 #
-# THE CLASS (measured 2026-10-05): a stylesheet discovered at RENDER time is inserted after first paint, and a late
+# THE CLASS (dev-docs/research/round3-2026-10-05.md section 2): a stylesheet discovered at RENDER time is inserted after first paint, and a late
 # `<link>` is not render-blocking (`blocking=render` measured as a no-op once <body> exists). A client-side navigation to
-# /component/field/ or a popover's first open therefore painted white UA inputs / UA buttons, then reflowed (5-10 late
+# /component/field/ or a popover's first open therefore paints white UA inputs / UA buttons, then reflows (measured: 5-10 late
 # sheets, 150-270 ms unstyled, CLS 0.02-0.08 on 8 of 8 pages sampled). The construction:
 #   1. scripts/ssg-css-bundle.mjs puts every component stylesheet in every page's <head> as ONE render-blocking bundle;
 #   2. scripts/build-ssg.sh runs it by default (guard 4b) and scripts/deploy-preview.sh never turns it off;

@@ -9,9 +9,8 @@
 # reports the rebuild half as skipped. No network.
 #
 # `primitives/src/js/*.js` is GENERATED from `primitives/src/ts/*.ts` and committed, so dioxus-primitives needs no
-# build script (it used to have `build.rs` + the `lazy-js-bundle` crate, which ran in every consumer's build;
-# dev-docs/backlog.md row 217). Committing a generated file makes one class possible: the source and the artifact
-# drifting apart -- a `.ts` edit without a rebuild (the next build ships the old behaviour), or a hand edit of the
+# build script (a `build.rs` would run in every consumer's build; dev-docs/backlog.md row 217). Committing a generated file makes one class possible: the source and the artifact
+# drifting apart -- a `.ts` edit without a rebuild (the next build ships the stale behaviour), or a hand edit of the
 # `.js` (the next rebuild erases it; `dev-docs/guides/lifting-code.md` section 2 lists a fork fix that did exactly
 # that). This gate removes the class:
 #   - `primitives/src/js/bundle.manifest` (written only by `scripts/build-js-bundle.sh`) records the sha256 of every

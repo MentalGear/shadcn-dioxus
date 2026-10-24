@@ -32,7 +32,6 @@
 #    `../../../assets/dx-components-theme.css` in its component.json
 #    `globalAssets`, else `dx components add <name>` ships `.dx-<name>` rules
 #    without the role tokens, the scoped box-sizing rule or the radius scale.
-#    navbar was the one component that lacked it.
 #
 # 2b. EVERY STYLED COMPONENT LINKS ITS OWN SHEET.
 #    A style.css with rules must be named by an `asset!("/src/components/<dir>/style.css")` in the
@@ -47,8 +46,8 @@
 #    `componentDependencies` of its component.json, and nothing else. A
 #    component's installed files (everything outside `variants/`, which is
 #    repo-only) that reach `crate::components::<other>` must therefore list
-#    `<other>`, else the installed tree does not compile (`form` missed four,
-#    `top_layer` one, until 2026-10-05). Comments and string literals are
+#    `<other>`, else the installed tree does not compile (`form` once missed four,
+#    `top_layer` one). Comments and string literals are
 #    ignored; `crate::components::{a, b::{X}}` groups are read. The reverse
 #    (a dependency declared but never imported) installs unused code but
 #    compiles, so it is only a note.

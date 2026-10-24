@@ -27,15 +27,14 @@
 # In `<textarea>`/`<noscript>` the marker is not even inert: it ships as
 # visible literal text (`<!--node-id7-->` in the box).
 #
-# Evidence (2026-10-03): `ChartContainer` rendered `style { "{style_rule}" }`,
-# so on every deployed SSG page `--color-<series>` was never defined, bar/
-# area marks fell back to black fill and line charts to no stroke. The same
-# class showed up a second time in the preview app --
-# `virtual_list/variants/random_heights` (`style { {INLINE_STYLE} }` shipped
-# `<style><!--node-id746-->.dx-virtual-list-container {`, first rule dead) --
-# and three more `style { {CONST} }` demos (carousel `sizes`, button `size`,
-# drag_and_drop_list `main`) had the same shape. Two or more occurrences is
-# a class, so this gate bans the shape, not the instances.
+# Evidence: `style { "{style_rule}" }` in `ChartContainer` leaves
+# `--color-<series>` undefined on every SSG page, so bar/area marks fall back
+# to black fill and line charts to no stroke. The same class is
+# `virtual_list/variants/random_heights` (`style { {INLINE_STYLE} }` ships
+# `<style><!--node-id746-->.dx-virtual-list-container {`, first rule dead) and
+# any `style { {CONST} }` demo (carousel `sizes`, button `size`,
+# drag_and_drop_list `main`). More than one occurrence is a class, so this
+# gate bans the shape, not the instances.
 #
 # What to do instead:
 #   * put dynamic CSS in an inline `style:` attribute on an element (an

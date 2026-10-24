@@ -13,8 +13,8 @@
 # What a user's `dx components add <name>` puts in their Cargo.toml is `cargo add <crate>[@<version>]
 # [--features ..]` for every `cargoDependencies` entry of the component and of its `componentDependencies`
 # closure (dioxus-cli 0.7.9 `add_rust_dependencies`; `shadcn-dioxus add` the same). Our `Cargo.lock` never reaches
-# a user, so the version text in `component.json` is the ONLY thing tying what we tested to what ships. Before this
-# gate `time` was declared `0.3.44` while the lock (and so every test) ran 0.3.47. dev-docs/backlog.md row 217,
+# a user, so the version text in `component.json` is the ONLY thing tying what we tested to what ships. Without this
+# gate a declared `time` `0.3.44` can sit beside a lock (and so every test) at 0.3.47. dev-docs/backlog.md row 217,
 # dev-docs/research/dependency-audit-2026-10-14.md section A4. Rules over
 # preview/src/components/*/component.json:
 #   1. VERSIONS MATCH THE LOCK. Every entry with a `version` is `x.y.z`, `^x.y.z`, `~x.y.z` or `=x.y.z` (a floor
@@ -60,7 +60,7 @@ EXACT_ONLY = {
 }
 # Markdown / HTML / syntax parser crates: a component may list one only if PARSER_ALLOW[crate] names it.
 PARSER_ALLOW = {
-    "pulldown-cmark": ["markdown"],   # round 3 (dev-docs/backlog.md row 213); absent until that component lands
+    "pulldown-cmark": ["markdown"],   # the markdown component (dev-docs/backlog.md row 213)
     "pulldown-cmark-escape": ["markdown"],
 }
 PARSERS = set(PARSER_ALLOW) | {

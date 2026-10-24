@@ -12,7 +12,8 @@
 #
 # That also matches the title of every default-size Card nested anywhere inside the small one: the inner
 # root carries no `data-size="sm"`, but its ancestor does. The docs page's DEMO/CODE `line` Tabs restyled
-# every Tabs demo inside it this way (fixed for Tabs by `lane/p5tabs`); check-popup-boundary.sh does not
+# every Tabs demo inside it this way (Tabs now re-declares its slot variable per variant, row 218);
+# check-popup-boundary.sh does not
 # see it, because its subjects are `dx-` classes. The same reach comes from a `:has()` that finds the
 # variant through a descendant combinator (`.dx-message:has([data-variant="ghost"]) ...` matches an outer
 # message whose NESTED message holds a ghost bubble) and from a bare `[data-variant="x"]` compound, which

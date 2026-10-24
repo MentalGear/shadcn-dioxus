@@ -148,10 +148,10 @@ if [ -n "$cli" ]; then
 else
   render_ref "$app" smoke_app
 fi
-# The template pre-declares `dioxus-primitives` (so its `web` feature can switch the browser-only code on), and so did
-# this script's app: every component whose `component.json` forgot `cargoDependencies` still compiled here and
-# failed with E0433 in an app made any other way (`kbd`, `area_chart`, `bubble`, `empty`, `message`, found on
-# GitHub after the merge). The app under test therefore starts with NO crate but `dioxus`: the install itself must
+# The template pre-declares `dioxus-primitives` (so its `web` feature can switch the browser-only code on), and a
+# smoke app that did too would let every component whose `component.json` lacks `cargoDependencies` compile
+# here and fail with E0433 in an app made any other way (`kbd`, `area_chart`, `bubble`, `empty`, `message`
+# were the cases). The app under test therefore starts with NO crate but `dioxus`: the install itself must
 # add every other crate a component uses. (`dx new` / `shadcn-dioxus new` is not the only way in: `init` on an
 # existing app, or a bare `cargo new`, gets no primitives.)
 python3 -I - "$app/Cargo.toml" <<'PY' || { echo "registry-install-smoke: could not strip dioxus-primitives from the app's Cargo.toml" >&2; exit 2; }

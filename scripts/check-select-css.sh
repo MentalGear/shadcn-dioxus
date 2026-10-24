@@ -2,10 +2,10 @@
 #
 # check-select-css.sh   (backlog row 323)
 #
-# `playwright/tools/select.mjs` (pnpm run test:changed) used to answer ANY edit of `preview/assets/*.css` with the whole
-# BROAD set (~1,450 tests, ~6,600 s of worker time). It now reads the changed CSS RULES (not the file), places the
-# classes / ids / custom properties they touch on the pages of the SSG build under test, and selects only the matrix
-# tests whose page is reached, falling back to the BROAD set for anything it cannot place. A selector that wrongly
+# `playwright/tools/select.mjs` (pnpm run test:changed) answers an edit of `preview/assets/*.css` by reading the changed
+# CSS RULES (not the file), placing the classes / ids / custom properties they touch on the pages of the SSG build
+# under test, and selecting only the matrix tests whose page is reached; anything it cannot place falls back to the
+# whole BROAD set (~1,450 tests, ~6,600 s of worker time). A selector that wrongly
 # says "this rule cannot reach that page" is a hole in the test run, so the logic keeps its promises in a deterministic
 # node test (`select.mjs --self-test`, playwright/tools/select-selftest.mjs): no browser, no build, no network.
 #
@@ -16,7 +16,7 @@
 #   4. the title shapes of the matrix specs against the real spec files (a spec whose titles stop naming pages fails
 #      here instead of silently keeping every test);
 #   5. the `--grep-invert` pattern drops exactly the dropped tests;
-#   6. `--no-css-narrow` restores the old behaviour.
+#   6. `--no-css-narrow` selects the whole BROAD set for any CSS edit.
 #
 # Then its own mutation proof: the same test is run against copies of the tools with one promise broken each time, and
 # every copy must come out RED (a test that cannot fail guards nothing).

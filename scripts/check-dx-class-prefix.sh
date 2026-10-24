@@ -3,8 +3,7 @@
 # check-dx-class-prefix.sh
 #
 # Every class selector in a component's own `preview/src/components/<name>/style.css` is spelled `dx-<name>` or
-# `dx-<name>-...` (the folder name with `_` written as `-`), so classes stay collision-safe now that nothing hashes
-# them. Selectors are read in selector position inside every at-rule; declaration bodies and comments are never
+# `dx-<name>-...` (the folder name with `_` written as `-`), so classes stay collision-safe without a hash suffix. Selectors are read in selector position inside every at-rule; declaration bodies and comments are never
 # scanned. Demo-only stylesheets under `variants/` are out of scope.
 #
 #   Every class selector defined in a themed component's own stylesheet
@@ -13,12 +12,11 @@
 #   folder name with `_` written as `-` (e.g. `dropdown_menu` ->
 #   `dx-dropdown-menu`).
 #
-# Why this exists: `#[css_module]` used to make every class globally
-# unique by appending a hash (`.dx-checkbox` -> `.dx-checkbox-a1b2c3`), so
-# two components could each write `.dx-foo` and never collide in the built
-# CSS. Row 32 drops that hashing in favor of plain, human-readable
-# `dx-`-prefixed classes -- which only stays collision-safe if every
-# component's classes are actually namespaced under its own name. This
+# Why this exists: classes are plain, human-readable `dx-`-prefixed names
+# (not `#[css_module]`'s hashed `.dx-checkbox-a1b2c3`, row 32), so two
+# components could each write `.dx-foo` and collide in the built CSS. They
+# cannot, as long as every component's classes are namespaced under its own
+# name. This
 # script is the mechanical check for that, the same way
 # check-preview-composition.sh is the mechanical check for the
 # themed-wrapper composition rule and check-cfg-axis.sh is the mechanical
@@ -29,10 +27,10 @@
 # i.e. text immediately preceding a `{` that itself doesn't start with `@`
 # (so `@media (...) { .dx-checkbox { ... } }`'s inner `.dx-checkbox` IS
 # checked -- unlike `#[css_module]`'s own `manganis-core::css_module_parser`,
-# which famously does NOT recurse into `@supports` bodies
+# which does NOT recurse into `@supports` bodies
 # (dev-docs/issues/css-module-supports-scoping.md), this lint recurses into
-# *every* at-rule uniformly, since there is no longer any hashing pass to
-# have that same blind spot). Declaration bodies (the `color: dx-red;`-shaped
+# *every* at-rule uniformly, since it has no hashing pass to share that
+# blind spot). Declaration bodies (the `color: dx-red;`-shaped
 # text between a `{` and its matching `}`) are never scanned, so a
 # `content: ".foo"` string or a `url(icon.dx-thing.svg)` value can't produce
 # a false positive. Comments (`/* ... */`) are stripped first -- several
@@ -147,8 +145,8 @@ PYEOF
 # is doing the job this lint is meant to take over. For those, a violation is
 # reported as a WARNING and does not fail the run.
 #
-# The moment a component's `#[css_module]` is removed (row 32's migration),
-# that protection is gone and the same violation becomes a hard ERROR. So the
+# Once a component's `#[css_module]` is removed (row 32's migration),
+# that protection is gone and the same violation is a hard ERROR. So the
 # exemption cannot be abused or left to rot: it expires automatically, per
 # component, exactly when it stops being true. That also enforces the correct
 # migration ORDER without anyone having to remember it -- namespace a
@@ -181,8 +179,8 @@ for dir in "$components_dir"/*/; do
     # Still hashed? Then this is a warning, not yet a failure.
     # Match the ATTRIBUTE in Rust source only -- several `style.css` files
     # mention `#[css_module]` in prose comments explaining this very
-    # migration, and matching those would keep a component exempt forever
-    # after it had actually been migrated.
+    # migration, and matching those would keep a component exempt forever,
+    # even once migrated.
     if grep -rqsE --include='*.rs' '^[[:space:]]*#\[css_module' "$dir"; then
         warned_components=$((warned_components + 1))
         echo "$output" | sed 's/^/warning: /'

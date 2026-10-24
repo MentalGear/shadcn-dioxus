@@ -6,12 +6,12 @@
 # ALLOW list below with a reason. Invisible to cargo and clippy, and with CI frozen (dev-docs/backlog.md row
 # 33) nothing else would notice.
 #
-# THE CLASS (row 205, the owner's touch finding): a touch browser emulates `:hover` on the element it just
+# THE CLASS (row 205): a touch browser emulates `:hover` on the element it just
 # tapped and keeps it there until the next tap elsewhere, so every hover fill, hover border and hover reveal
 # SITS on the last-tapped control (a "sticky hover"): the menu row you tapped stays grey, the card you tapped
 # stays lifted, the toast stack you tapped stays expanded. Browsers do not fix this (it is how the emulation
 # works); the standard construction is to offer hover styling only to a device that can actually hover, via the
-# `hover`/`pointer` media features. 114 rules in 39 sheets had it; the gate makes the next one impossible to add
+# `hover`/`pointer` media features. The gate makes a bare hover rule impossible to add
 # without the wrapper.
 #
 # HOW IT READS THE CSS: every `*.css` under `preview/src` and `preview/assets` (node_modules and build output

@@ -51,9 +51,9 @@
 #  4b. Every page's <head> carries ONE render-blocking bundle of every component stylesheet
 #     (scripts/ssg-css-bundle.mjs, run between guards 4 and 5 so guard 5 checks the final output). The
 #     per-component `document::Link`s only reach the head of the route that SSR-renders them; on a
-#     client-side navigation or a popover's first open they were inserted after first paint and are not
-#     render-blocking, so the new content painted with UA defaults (white inputs, no radius) and then
-#     reflowed. `--no-css-bundle` builds the old shape, for before/after measurements only -- never deploy it.
+#     client-side navigation or a popover's first open they are inserted after first paint and are not
+#     render-blocking, so the new content paints with UA defaults (white inputs, no radius) and then
+#     reflows. `--no-css-bundle` builds the unbundled shape, for before/after measurements only -- never deploy it.
 set -Eeuo pipefail
 
 failed_line=""
@@ -112,9 +112,9 @@ case "$target_dir" in
 esac
 export CARGO_TARGET_DIR="$target_dir"
 # The target root must EXIST before dx starts: the dx log is `tee`d into it, and tee opens its file at once,
-# racing dx/cargo, which create a cold root a moment later. Losing that race left no log, and guard 4 then
-# failed a complete cold build with "dx log .../build-ssg.dx.log not found" (row 216, round 4; reproduced with
-# a stub dx that creates the root after 0.5 s). Intermittent, hence "a warm rerun passed".
+# racing dx/cargo, which create a cold root a moment later. Losing that race leaves no log, and guard 4 then
+# fails a complete cold build with "dx log .../build-ssg.dx.log not found" (row 216; reproducible with
+# a stub dx that creates the root after 0.5 s). It is intermittent, so a warm rerun passes.
 mkdir -p "$target_dir"
 marker_file="$target_dir/.base-path-build"
 public_dir="$target_dir/dx/preview/$profile/web/public"

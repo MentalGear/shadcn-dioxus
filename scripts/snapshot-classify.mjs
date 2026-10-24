@@ -13,10 +13,9 @@
 // status is 1 when anything is unexplained, 2 on bad usage or a rejected rule. A rule that matched nothing is
 // listed as UNUSED (a stale intention: `--fail-unused` makes it an error).
 //
-// WHY element-level (backlog row 246). The first classifier (session scratch, dev-docs/archive/rounds/phase-c-plan-2026-10-13.md §4)
-// matched on class, page and property, with page-level buckets (`route:/`, avatar, attachment, button) and one
-// cascade rule that tolerated shifts up to 40 px, so a real regression of the same kind could hide inside them.
-// Here a bucket is one (mode, page, element, property) and a rule is only accepted if it names its target
+// WHY element-level (backlog row 246, dev-docs/archive/rounds/phase-c-plan-2026-10-13.md §4). Matching on class, page
+// and property, with page-level buckets (`route:/`, avatar, attachment, button) and a cascade rule that tolerates
+// shifts up to 40 px, lets a real regression of the same kind hide inside them. Here a bucket is one (mode, page, element, property) and a rule is only accepted if it names its target
 // narrowly, by construction (`checkRule`):
 //
 //   * a rule must name an ELEMENT: `cls` (a class of the element) and/or `page`; or else an exact VALUE
