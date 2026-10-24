@@ -5,7 +5,7 @@ the page as stale and check `git log` and the flag files named here.** What each
 backlog row files, not here: this page says only what is deployed, what runs, what is next and what waits for the owner.
 
 Last updated: **2026-10-24**. Several sessions work in parallel; who holds what is on the `claims` branch (`CLAIMS.md`).
-Preview site: https://mentalgear.github.io/shadcn-dioxus/ (deployed from main `206e7e4d`, merge queue batch 15).
+Preview site: https://mentalgear.github.io/shadcn-dioxus/ (deployed from main `3bb8927c`, PR #143, merge queue batch 16).
 
 ## Merge queue
 
@@ -17,20 +17,17 @@ deploy running the full Playwright suite on a release build. Procedure:
 
 ## Merged and deployed
 
-Merge queue batches 1-15 are on main (PRs #121-#142), batch 15 as `206e7e4d`.
+Merge queue batches 1-16 are on main (PRs #121-#143), batch 16 deployed as `3bb8927c`.
 
 ## In the queue
 
-Batch 16 (`queue/batch-16`): rows 385 (focus ring follows the accent), 386 (grid header hover), 387 (docs-clarity review), 388
-(grid pinning API, breaking: `sticky_first_column` -> `pinned_columns_start`), 389 (accent states), 390 (base and accent
-presets own disjoint variables), 400 (merge drivers), 401, 402 (timing specs as same-run ratios), 404, 405, 406 (find
-match settles on the real item), 408 (SelectMulti `name`), 409 (CSS vars declared), 410 (history cold read), row 170,
-the Scroll Area horizontal demo and the palette icon on phones. Waiting on row 407 (layout-stability flakes) before the
-release suite reruns.
+Batch 17 (`queue/batch-17`): row 407's first-paint gate on component pages (owner pick 2026-10-24: hold first paint
+until the top group is parsed), row 411 (test:changed maps primitive submodules), the optional rows 412-415.
 
 ## Running
 
-Row 407 (flake roots: layout-stability, popover-non-modal, carousel edge band, test:changed 404 routes).
+Row 407 follow-up (the first-paint gate for home, /docs/ and /demos/, a deterministic slow-parse sweep); rows 395, 396,
+397, 398 part A (owner approved 395, 396 and every item of 398 as proposed, 2026-10-24).
 
 ## Next
 

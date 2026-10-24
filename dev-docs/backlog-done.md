@@ -6,7 +6,7 @@ resolves here by id.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Done rows (343)
+## Done rows (344)
 
 | # | Item | Updated |
 |---|---|---|
@@ -353,5 +353,6 @@ resolves here by id.
 | [408](backlog/done/408-selectmulti-name-submits.md) | SelectMulti's name prop takes part in form submission | 2026-10-24 |
 | [409](backlog/done/409-css-vars-declared-with-fallbacks.md) | Every CSS custom property read is declared, fallbacks included | 2026-10-24 |
 | [410](backlog/done/410-history-comments-third-cold-read.md) | History comments: third fresh-seed cold read | 2026-10-24 |
+| [411](backlog/done/411-select-maps-primitive-submodules.md) | test:changed maps a primitive submodule to the components that reach it | 2026-10-24 |
 
 <!-- END GENERATED -->
