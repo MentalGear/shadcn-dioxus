@@ -1,7 +1,7 @@
 ---
 id: 376
 title: "Toast height follows its content: measured heights, an even collapsed pile, own heights expanded"
-status: "Owner bug report with a screenshot, 2026-10-23, plus the question \"how should dynamic height via…"
+status: "LANDED in batch 14 (branch claude/toastheight: cbbf3788, 2739277f, ef81f623; merge 1586ef02). Toast…"
 size: "M"
 area: overlays
 updated: 2026-10-24
@@ -15,7 +15,7 @@ A toast with a title and a two-line description (the loading demo, dark mode) sa
 
 ## Status / trigger
 
-Owner bug report with a screenshot, 2026-10-23, plus the question "how should dynamic height via multiline be handled?". Answered the way Sonner does it, adapted to this stack's in-flow layout (no absolute positioning).
+**LANDED in batch 14 (branch `claude/toastheight`: cbbf3788, 2739277f, ef81f623; merge 1586ef02).** Toast height is the content plus a constant 16px padding; `TOAST_SIZE_JS` (`primitives/src/toast.rs:389`) is the one writer of `--toast-height` / `--front-toast-height`; the collapsed pile is even, the expanded toasts keep their own heights. Spec `playwright/toast-height.spec.ts` (6/6 on the branch, 0/6 on the parent), the multiline demo `preview/src/components/toast/variants/multiline`.
 
 ## Size
 

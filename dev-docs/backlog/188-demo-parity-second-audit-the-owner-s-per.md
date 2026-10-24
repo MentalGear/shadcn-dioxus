@@ -1,10 +1,10 @@
 ---
 id: 188
 title: "Demo parity, second audit: the owner's per-example list against the original shadcn demos (51 components; row…"
-status: "DEMO-ONLY ITEMS DONE 2026-10-19 (batch 2: every section-5 demo exists; what remains needs component…"
+status: "Left: the combobox items of the 2026-10-11 audit that have no part or demo, and one decision.…"
 size: "M per batch"
 area: docs
-updated: 2026-10-23
+updated: 2026-10-24
 ---
 
 # Row 188: Demo parity, second audit: the owner's per-example list against the original shadcn demos (51 components; row…
@@ -15,9 +15,7 @@ updated: 2026-10-23
 
 ## Status / trigger
 
-**DEMO-ONLY ITEMS DONE 2026-10-19 (batch 2: every section-5 demo exists; what remains needs component parts, listed)** -- the 2026-10-19 re-audit (lanes demos-a/demos-b) found every demo-only item already built; it added tooltip sides, a scrollable drawer, a scrollable command and an indeterminate checkbox (plus the indeterminate glyph fix). What is left needs new parts: see the two 2026-10-19 updates below.
-
-**BATCHES 1 AND 2 LANDED (2026-10-11: 86 demos in 20 components; 2026-10-12: 43 demos in 30 components -- menus with icons and an account switcher, dialog/sheet/drawer variants, toast types, hover-card and popover placement, calendar presets and date+time, a natural-language date picker, disabled and grouped selects, combobox custom items, the small primitives, a subscription form, an OTP verify card, FAQ and multiple accordions, an inline command, a rich table; batch 2's library findings are row 191); the parts-blocked rest BACKLOG** -- owner item 2026-10-11. The diff against row 187, the HEAD check of the "main may hold more" caveat, and the demo-only vs needs-a-part classification of every remaining gap are in [`research/shadcn-demo-parity-audit-2026-10-11.md`](../research/shadcn-demo-parity-audit-2026-10-11.md) **2026-10-20 sync: PR #112 landed the typed parts (0894746c AlertDialog size/media/action, Card, Spinner, Button radius), `CommandShortcut` (6b61cbda), calendar `caption_layout`, `cell_size` and DOB demos (cda20026) and combobox multi-select (37175a3f). Still open: select scroll (row 268), textarea footer/custom control, toggle/tabs vertical, breadcrumb router link.**
+**Left: the combobox items of the 2026-10-11 audit that have no part or demo, and one decision.** Landed: batches 1-3, the typed parts, select scroll (row 268), combobox multi-select and clear, textarea footer, vertical tabs and toggle group, breadcrumb router link, `Field { disabled }`, `InputGroupButton`, nested Spinner and PopoverTrigger icon sizes (350026f1). Not in the tree: a `ComboboxGroup` part, auto-highlight, an invalid-state demo (the CSS exists) and an input-group addon demo for the combobox. Decision: the `FieldLabel` required marker (shadcn has none; the `input/required` demo draws it).
 
 ## Size
 

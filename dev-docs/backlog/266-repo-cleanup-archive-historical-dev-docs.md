@@ -1,7 +1,7 @@
 ---
 id: 266
 title: "Repo cleanup: archive historical dev-docs, trim CLAUDE.md and the big dev docs, split backlog.md"
-status: "Main cleanup LANDED in batch 15. Lane cleanup-claudemd: CLAUDE.md 47 KB to 8 KB with every rule…"
+status: "Left: deleting the stale remote branches (WAITING ON OWNER: his go), part (c) and part (d). (c) is…"
 size: "M-L"
 area: process
 updated: 2026-10-24
@@ -17,9 +17,7 @@ properly refactor them."
 
 ## Status / trigger
 
-**Main cleanup LANDED in batch 15.** Lane cleanup-claudemd: `CLAUDE.md` 47 KB to 8 KB with every rule moved to one home; `dev-docs/gates.md` generated from the gate headers by `scripts/gates-doc.py` and kept current by `check-gates-doc.sh`, so a new gate never edits `CLAUDE.md`; `check-rustdoc` (a shrink-only ratchet, row 382) replaces `main.yml`'s rustdoc step; the four dispatch-only workflows deleted (`mutants.yml` kept); `STATUS.md`, `dev-loop.md`, `dx-serve-hot-reload.md` and `agent-model-fit.md` trimmed (the evidence log archived and closed); new `dev-docs/decisions.md` (part b) and `dev-docs/guides/rust-conventions.md` (row 355 item 5). Lane cleanup-archive: living dev docs 2.4 MB in 99 files to 0.55 MB in 37; historical notes in `dev-docs/archive/`; `plan.md`, `conformance-harness.md` (+ inventory), `recommended-implementations.md` (now `reference/platform-rationale.md`) and `duplicate-attribute-root-cause.md` trimmed; the 31 largest done rows trimmed; the index split into `backlog.md` (open) and `backlog-done.md`; dead comment citations 254 to 17. Left: deleting the stale remote branches (needs the owner's go), part (c), and part (d), the final independent review.
-
-**Extension part (a) LANDED 2026-10-23 (lane historyguards): the guards are in, before any file moves** -- `scripts/check-history-comments.sh` (per-file ratchet, baseline 562 history lines in 229 files) and `scripts/check-comment-refs.sh` (every `row N` and cited repo path resolves; 254 dead references baselined, mostly the old `docs/` prefix), one extractor `scripts/comment-scan.py`, rule in [`history-in-comments.md`](../history-in-comments.md). The rest (the moves, trims, parts (b)-(d)) still waits for the Round 6 sweep: **APPROVED 2026-10-19 (owner: run it when safe, in the Round 6 sweep); starts once no feature lane, Round 4 or Round 1 work is unmerged; before row 267 and the 152b prune. Owner: the cleanup thread**
+**Left: deleting the stale remote branches (WAITING ON OWNER: his go), part (c) and part (d).** (c) is a `cargo public-api` report for `dioxus-primitives` with a diff gate (needs nightly, and runs after row 267's split); (d) is the final independent review by one Opus agent, which row 365 now carries. The main cleanup landed in batch 15: `CLAUDE.md` 47 KB to 8 KB, generated `dev-docs/gates.md` (`check-gates-doc.sh`), the `check-rustdoc` ratchet, the archive moves (living docs 2.4 MB to 0.55 MB), `decisions.md`, `guides/rust-conventions.md`, the index split into `backlog.md` and `backlog-done.md`, and the guards `check-history-comments.sh` and `check-comment-refs.sh`.
 
 ## Size
 

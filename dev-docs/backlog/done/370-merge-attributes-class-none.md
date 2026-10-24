@@ -1,10 +1,10 @@
 ---
 id: 370
 title: "merge_attributes: a class: None replaces the base class instead of being ignored"
-status: "Open. Found by the biggrid lane in batch 10."
+status: "LANDED in batch 13 (branch claude/exact-sizes-attr-merge, 76990567). merge_attributes ignores a…"
 size: "S"
 area: primitives
-updated: 2026-10-23
+updated: 2026-10-24
 ---
 
 # Row 370: `merge_attributes` and an absent class
@@ -15,7 +15,7 @@ updated: 2026-10-23
 
 ## Status / trigger
 
-Open. Found by the biggrid lane in batch 10.
+**LANDED in batch 13 (branch `claude/exact-sizes-attr-merge`, 76990567).** `merge_attributes` ignores a later `class: None` or empty class (`fold_class_into`, `primitives/src/lib.rs:1306`), with the unit test `class_merge_ignores_a_later_none_or_empty_and_adopts_a_later_value_over_none` (`lib.rs:1487`); the `""` workaround in `data_table` is gone (no `class: ""` left under `preview/src/components/data_table/`).
 
 ## Size
 

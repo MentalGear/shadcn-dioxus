@@ -1,10 +1,10 @@
 ---
 id: 369
 title: "VirtualGrid and TableRows: carry the exact measured size so a short body with fractional rows cannot overflow by 1px"
-status: "Open. Found in batch 10 (scroll-fade 199 vs 198)."
+status: "LANDED in batch 13 (branch claude/exact-sizes-attr-merge, 76990567, a06290c1, b5b32f64).…"
 size: "S"
 area: primitives
-updated: 2026-10-23
+updated: 2026-10-24
 ---
 
 # Row 369: fractional row heights in the grid and table renderers
@@ -15,7 +15,7 @@ Row 368 made every canvas the items' own extent instead of `max(items, viewport)
 
 ## Status / trigger
 
-Open. Found in batch 10 (scroll-fade 199 vs 198).
+**LANDED in batch 13 (branch `claude/exact-sizes-attr-merge`, 76990567, a06290c1, b5b32f64).** `VirtualGrid` (`primitives/src/virtual_grid.rs:1135`), `TableRows` (`table_rows.rs:255`) and `VirtualList` (`virtual_list.rs:356`) all report through `Bridge::measure_exact` (`virtual/bridge.rs:146`); the plain `measure` path is deleted, so no renderer can drop the remainder. Spec: `playwright/virtual-grid.spec.ts:271` (gallery rows with a fractional height end inside the canvas).
 
 ## Size
 

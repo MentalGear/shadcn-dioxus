@@ -29,7 +29,7 @@ Owner decision, 2026-10-23:
   lock. Measured 2026-10-23: the workspace lock has 972 packages (414 external crates, 73 with a `build.rs`, 42 proc-macros)
   while a Button-only wasm app compiles about 167 crates
   ([`research/dependency-scanners.md`](../research/dependency-scanners.md), "Facts about this repo today";
-  [`backlog/217`](../backlog/217-dependency-audit-follow-ups-what-users-pay-for.md)).
+  [`backlog/217`](../backlog/done/217-dependency-audit-follow-ups-what-users-pay-for.md)).
 
 ## Threat model
 

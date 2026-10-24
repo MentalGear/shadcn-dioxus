@@ -190,7 +190,7 @@ blocks in `top_layer.rs`), with `use_anchor_position_fallback` as the JS fallbac
 Safari at the time). The JS fallback also clamps `target.left` into the viewport for a `side="top"`/`"bottom"` placement
 (`top-layer.spec.ts` Rule 12) and publishes the trigger's live width as `--dx-anchor-width` (a themed stylesheet opts in
 with `min-width: var(--dx-anchor-width, 100%)`). `ContextMenu` is positioned at click coordinates, so it needs its own
-viewport clamp. Open remainder: [`../backlog/010-phase-5-collision-detection.md`](../backlog/010-phase-5-collision-detection.md).
+viewport clamp. History: [`../backlog/done/010-phase-5-collision-detection.md`](../backlog/done/010-phase-5-collision-detection.md).
 
 ### 7. `use_animated_open`
 

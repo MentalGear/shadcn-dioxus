@@ -6,7 +6,7 @@ resolves here by id.
 
 <!-- BEGIN GENERATED: scripts/backlog-index.sh rewrites everything up to END; edit the row files, not this block -->
 
-## Done rows (325)
+## Done rows (334)
 
 | # | Item | Updated |
 |---|---|---|
@@ -18,6 +18,7 @@ resolves here by id.
 | [7](backlog/done/007-wervice-tooltip-fade-out-a704c517-upstream-pr.md) | Wervice tooltip fade-out (a704c517, upstream PR #293) | 2026-09-18 |
 | [8](backlog/done/008-select-trigger-apg-select-only-combobox-role.md) | Select trigger → APG select-only-combobox role (role="combobox") | 2026-09-18 |
 | [9](backlog/done/009-select-listbox-scroll-lock.md) | Select listbox scroll lock | 2026-09-18 |
+| [10](backlog/done/010-phase-5-collision-detection.md) | Phase 5 — collision detection | 2026-10-24 |
 | [11](backlog/done/011-phase-6-typeahead-for-menus-dq-typeahead-rs-not.md) | Phase 6 — typeahead for menus (dq typeahead.rs, not select/) | 2026-09-18 |
 | [12](backlog/done/012-phase-6-pub-mod-portal-toggle-class-prop-public.md) | Phase 6 — pub mod portal, Toggle class prop, public CalendarDayState (upstream #199) | 2026-09-18 |
 | [13](backlog/done/013-phase-6-rtl-dq-direction-rs-key-flip-concept.md) | Phase 6 — RTL (dq direction.rs + key-flip concept) | 2026-10-05 |
@@ -156,6 +157,7 @@ resolves here by id.
 | [150](backlog/done/150-home-page-blocks-registered-their-hooks-on-the.md) | Home-page blocks registered their hooks on the parent scope: MasonryCard called component.call(()), so… | 2026-10-23 |
 | [151](backlog/done/151-a-document-link-stylesheet-can-be-recorded-as.md) | A document::Link stylesheet can be recorded as present and never inserted: a subtree torn down in the turn it… | 2026-10-04 |
 | [154](backlog/done/154-shared-virtualization-engine-one-engine-in.md) | Shared virtualization engine: ONE engine in primitives/src/virtual/ (core, strategy, DOM bridge) that every… | 2026-10-23 |
+| [155](backlog/done/155-shadcn-parity-wave-group-1-the-invalid-ring.md) | shadcn parity wave (group 1, the invalid ring, LANDED 2026-10-13 with row 145's state recipes): the 27 "Add… | 2026-10-24 |
 | [156](backlog/done/156-drawer-has-fallen-behind-shadcn-it-moved-from.md) | Drawer has fallen behind shadcn: it moved from Vaul to Base UI Drawer (snap points, nested drawers, non-modal… | 2026-10-19 |
 | [157](backlog/done/157-inputotp-hard-codes-a-numeric-keypad-inputmode.md) | InputOtp hard-codes a numeric keypad: inputmode="numeric" and pattern="[0-9]*" are fixed, so alphanumeric… | 2026-10-19 |
 | [158](backlog/done/158-theme-follow-ups-accept-shadcn-s-dark-class-as.md) | Theme follow-ups: accept shadcn's .dark class as an alias of data-theme="dark", and suppress transitions… | 2026-10-23 |
@@ -215,6 +217,7 @@ resolves here by id.
 | [214](backlog/done/214-home-masonry-column-assignment-depends-on-how.md) | Home masonry column assignment depends on how much of the ~580 KB prerendered page has been parsed | 2026-10-18 |
 | [215](backlog/done/215-charts-re-lays-out-at-hydration-at-every-width.md) | /charts/ re-lays out at hydration at every width | 2026-10-18 |
 | [216](backlog/done/216-infra-worktrees-sharing-or-copying-one-cargo.md) | Infra: worktrees sharing or copying one CARGO_TARGET_DIR build and lint another tree's code (re-confirms row… | 2026-10-19 |
+| [217](backlog/done/217-dependency-audit-follow-ups-what-users-pay-for.md) | Dependency audit follow-ups (what users pay for in compile time and supply chain) | 2026-10-24 |
 | [218](backlog/done/218-popup-style-isolation-top-layer-popups-stay-dom.md) | Popup style isolation: top-layer popups stay DOM descendants of their trigger, so free-content rules in an… | 2026-10-23 |
 | [219](backlog/done/219-preview-src-components-mod-rs-variant-registry.md) | preview/src/components/mod.rs variant registry is one shared macro list that every demo-adding lane edits | 2026-10-18 |
 | [220](backlog/done/220-shared-oracle-specs-locate-demo-controls-by.md) | Shared oracle specs locate demo controls by their visible demo text, so every demo that mirrors shadcn more… | 2026-10-18 |
@@ -247,6 +250,7 @@ resolves here by id.
 | [247](backlog/done/247-avatar-loading-spec-450ms-floor.md) | avatar-loading spec has a 450 ms floor too tight for this machine | 2026-10-21 |
 | [248](backlog/done/248-select-placeholder-until-mount-hydration-shift.md) | Select renders its placeholder until mount, so a Select with a default value shifts layout at hydration | 2026-10-21 |
 | [249](backlog/done/249-navigationmenu-indicator.md) | NavigationMenuIndicator (the leftover of closed row 72) | 2026-10-22 |
+| [250](backlog/done/250-container-reset-loses-unpushed-work.md) | A container reset to a fresh clone loses every unpushed lane commit and all session scratch | 2026-10-24 |
 | [251](backlog/done/251-native-checkbox-ssr-initial-checked.md) | Native checkbox in the prerendered /component/form/ ignores initial_checked until the page is client-created | 2026-10-21 |
 | [252](backlog/done/252-virtualgrid-ssr-height-off-by-one-row.md) | VirtualGrid: the prerendered inner wrapper is one row shorter than after hydration (175000 px -&gt; 175036 px) | 2026-10-22 |
 | [253](backlog/done/253-ssg-renders-initial-checked-as-a-literal-attribute.md) | SSG renders `initial_checked` as a literal `initial_checked=true` attribute, so a prerendered checkbox, switch or radio loads unchecked | 2026-10-20 |
@@ -279,9 +283,11 @@ resolves here by id.
 | [304](backlog/done/304-radial-chart-tooltips-share-the-gap-split-equally.md) | Radial chart tooltips share the gap, split equally per ring (lowest priority) | 2026-10-23 |
 | [306](backlog/done/306-select-and-combobox-show-no-selected-label-before.md) | Select and Combobox show no selected label before hydration | 2026-10-20 |
 | [308](backlog/done/308-virtualgrid-scroll-trap-at-the-edges.md) | VirtualGrid traps page scroll at its edges; should VirtualList and VirtualGrid be unified? | 2026-10-20 |
+| [309](backlog/done/309-virtuallist-and-virtualgrid-share-one-engine.md) | VirtualList and VirtualGrid share one engine: DOM bridge, pinned focus, fade (two components, one engine) | 2026-10-24 |
 | [310](backlog/done/310-questionnaire-height-transition.md) | Questionnaire: animate the height between items instead of snapping | 2026-10-20 |
 | [311](backlog/done/311-combobox-multiple-demo-higher-on-the-page.md) | Combobox multiple demo higher on the component page | 2026-10-20 |
 | [320](backlog/done/320-skip-the-cargo-gates-when-the-rust-tree.md) | Skip the cargo gates when the Rust tree is unchanged since the last green full gate | 2026-10-21 |
+| [321](backlog/done/321-one-merge-queue-owner-for-main-batch-one.md) | One merge-queue owner for main (batch, one full gate and one suite per batch, deploy) | 2026-10-24 |
 | [322](backlog/done/322-run-the-full-release-suite-per-deploy-not.md) | Run the full release suite per deploy, not per merge batch | 2026-10-23 |
 | [323](backlog/done/323-finer-spec-selection-map-changed-css-rules-to.md) | Finer spec selection: map changed CSS rules to the classes and routes that use them | 2026-10-21 |
 | [324](backlog/done/324-keep-warm-release-target-trees-for-validation-and.md) | Keep warm release target trees for validation and for deploy | 2026-10-21 |
@@ -327,9 +333,12 @@ resolves here by id.
 | [366](backlog/done/366-test-the-shipped-web-arm.md) | Gates: run cargo test on the shipped web arm too (ssr_parity differs between the plain and server feature sets) | 2026-10-22 |
 | [367](backlog/done/367-lane-build-disk-class.md) | Lane builds need 10.4 GB free because every lane-ssg copies 6.8 GB of template, 3.0 GB of it dead incremental state | 2026-10-23 |
 | [368](backlog/done/368-virtual-grid-row-axis-first-paint.md) | VirtualGrid: the row axis plans max(rows, viewport), so a short grid differs between server and first client frame | 2026-10-23 |
+| [369](backlog/done/369-virtual-fractional-rows-grid-table.md) | VirtualGrid and TableRows: carry the exact measured size so a short body with fractional rows cannot overflow by 1px | 2026-10-24 |
+| [370](backlog/done/370-merge-attributes-class-none.md) | merge_attributes: a class: None replaces the base class instead of being ignored | 2026-10-24 |
 | [373](backlog/done/373-theme-defaults-are-shadcn-neutral.md) | Theme default fallbacks are shadcn Neutral; the upstream colour ramp is deleted | 2026-10-23 |
 | [374](backlog/done/374-playwright-chromium-path-resolver.md) | One Chromium path resolver for every local Playwright config, spec and script | 2026-10-23 |
 | [375](backlog/done/375-one-page-wide-scroll-lock.md) | Scroll lock is one page-wide lock with a deferred final release, so a dialog-to-dialog handoff keeps the page still | 2026-10-24 |
+| [376](backlog/done/376-toast-height-follows-content.md) | Toast height follows its content: measured heights, an even collapsed pile, own heights expanded | 2026-10-24 |
 | [377](backlog/done/377-release-suite-reds-batch-13.md) | Release-suite reds of batch 13: the detector's meta-proof, the baked build day, the spinner slot leak, the hidden code block's box | 2026-10-24 |
 | [378](backlog/done/378-chromium-153-spec-reds.md) | Specs red on Chromium 153 (chromium-1243): two product bugs in the anchored-overlay path, three spec assumptions | 2026-10-24 |
 | [379](backlog/done/379-session-setup-fetches-detached-locks.md) | Session setup fetches every committed Cargo.lock, so check-cargo-locks resolves offline in a fresh container | 2026-10-24 |

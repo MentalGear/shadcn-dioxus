@@ -1,7 +1,7 @@
 ---
 id: 382
 title: "Rustdoc warnings to zero: shrink the check-rustdoc baseline (87 entries, mostly unclosed HTML tags)"
-status: "OPEN. Fix the doc comments (backticks around the generic or tag), then scripts/check-rustdoc.sh…"
+status: "OPEN, S, no browser: shrink scripts/check-rustdoc.baseline.tsv (87 entries, mostly unclosed HTML…"
 size: "S"
 area: primitives
 updated: 2026-10-24
@@ -15,7 +15,7 @@ updated: 2026-10-24
 
 ## Status / trigger
 
-OPEN. Fix the doc comments (backticks around the generic or tag), then `scripts/check-rustdoc.sh --update-baseline` until the baseline is empty; at zero the gate can become plain `-D warnings`.
+**OPEN, S, no browser:** shrink `scripts/check-rustdoc.baseline.tsv` (87 entries, mostly unclosed HTML tags) to empty by fixing the doc comments (backticks around the generic or tag), running `scripts/check-rustdoc.sh --update-baseline` as it shrinks; at zero the gate becomes plain `-D warnings`.
 
 ## Size
 

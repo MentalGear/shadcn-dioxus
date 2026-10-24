@@ -1,10 +1,10 @@
 ---
 id: 250
 title: "A container reset to a fresh clone loses every unpushed lane commit and all session scratch"
-status: "CONSTRUCTION LANDED 2026-10-19 (lane-rules: push lane/* after every commit); redo of the lost work…"
+status: "LANDED (construction). dev-docs/lane-rules.md \"Nothing lives only in the container\" (line 165)…"
 size: "S"
 area: infra
-updated: 2026-10-19
+updated: 2026-10-24
 ---
 
 # Row 250: A container reset to a fresh clone loses every unpushed lane commit and all session scratch
@@ -15,7 +15,7 @@ A container reset to a fresh clone loses every unpushed lane commit and all sess
 
 ## Status / trigger
 
-**CONSTRUCTION LANDED 2026-10-19 (lane-rules: push lane/* after every commit); redo of the lost work in progress**
+**LANDED (construction).** `dev-docs/lane-rules.md` "Nothing lives only in the container" (line 165) makes every lane push `lane/<name>` after every commit and keeps briefs in the repo; the lost lane lock is back (`scripts/lane-lock.sh`, `scripts/check-lane-lock.sh`) and the other lost work is tracked by its own rows (152a done, 242/115 fixes landed).
 
 ## Size
 

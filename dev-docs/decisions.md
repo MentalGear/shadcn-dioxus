@@ -9,9 +9,9 @@ the line here is the pointer, so when a row's text and this line disagree, the r
 - The library keeps to primitives and shadcn element parity, the chat kit included; a Markdown or rich-text editor, or
   any item that needs its own state management, is out of scope and closed as such. 2026-10-21 ([`backlog.md`](./backlog.md), row [337](./backlog/done/337-text-editor-component-rich-text-markdown-composer.md)).
 - Where shadcn has a pattern, follow shadcn: ToggleGroup gets `spacing` (default 2), Popover is non-modal by default.
-  2026-10-10, 2026-10-13 (rows [155](./backlog/155-shadcn-parity-wave-group-1-the-invalid-ring.md), [169](./backlog/done/169-open-owner-question-should-popover-be-non-modal.md)).
+  2026-10-10, 2026-10-13 (rows [155](./backlog/done/155-shadcn-parity-wave-group-1-the-invalid-ring.md), [169](./backlog/done/169-open-owner-question-should-popover-be-non-modal.md)).
 - `VirtualList` and `VirtualGrid` stay two components (list and grid ARIA semantics differ) on one shared engine;
-  `VirtualJustifiedGrid` packs variable-aspect items into gapless rows on it. 2026-10-20 (row [309](./backlog/309-virtuallist-and-virtualgrid-share-one-engine.md)).
+  `VirtualJustifiedGrid` packs variable-aspect items into gapless rows on it. 2026-10-20 (row [309](./backlog/done/309-virtuallist-and-virtualgrid-share-one-engine.md)).
 - The upstream Dioxus colour ramp is deleted; theme fallbacks are shadcn Neutral. 2026-10-23 (row [373](./backlog/done/373-theme-defaults-are-shadcn-neutral.md)).
 - The theme owns the baseline once: `--dx-root-line-height` defaults to `normal` and an app sets it (Tailwind apps set
   1.5); the interactive-element cursor is one theme option, `data-dx-interactive-element-cursor`. 2026-10-21 (row [328](./backlog/done/328-audit-2-declared-typography-every-text-or-icon.md)),
@@ -30,7 +30,7 @@ the line here is the pointer, so when a row's text and this line disagree, the r
 - pnpm in `playwright/` and `preview/`: every direct dependency pinned exactly, a minimum release age of 30 days, no
   dependency install script. 2026-10-22 (row [359](./backlog/done/359-js-tooling-pnpm-minimum-release-age.md)).
 - Supply-chain scope: SECURITY covers everything that builds or touches the project; performance budgets are measured on
-  the closure users compile. 2026-10-23 ([`supply-chain/README.md`](./supply-chain/README.md), row [217](./backlog/217-dependency-audit-follow-ups-what-users-pay-for.md)).
+  the closure users compile. 2026-10-23 ([`supply-chain/README.md`](./supply-chain/README.md), row [217](./backlog/done/217-dependency-audit-follow-ups-what-users-pay-for.md)).
 - The dependency evaluation (keep, lift, drop) is parked until the owner reopens it. 2026-10-23 (row [371](./backlog/371-dependency-evaluation-keep-lift-drop.md)).
 
 ## Process, gates and the merge queue
@@ -39,9 +39,9 @@ the line here is the pointer, so when a row's text and this line disagree, the r
   gate. 2026-08-30, workflows deleted 2026-10-24 (rows [33](./backlog/033-3-browser-playwright-on-every-push-pr-sharded.md), [4](./backlog/004-first-3-browser-ci-run-treat-as-calibration-not.md), [266](./backlog/266-repo-cleanup-archive-historical-dev-docs.md)).
 - Lanes run the fast gates; the main loop runs one full gate run per merge batch; the build lock is first-come,
   first-served with merge gates first; 4-5 lanes per batch. 2026-10-18 ([`lane-rules.md`](./lane-rules.md), row [221](./backlog/done/221-infra-session-process-lessons-from-the-2026-10.md)).
-- Nothing lives only in the container: lanes push after every commit, briefs live in the repo. 2026-10-19 (rows [250](./backlog/250-container-reset-loses-unpushed-work.md), [221](./backlog/done/221-infra-session-process-lessons-from-the-2026-10.md)).
+- Nothing lives only in the container: lanes push after every commit, briefs live in the repo. 2026-10-19 (rows [250](./backlog/done/250-container-reset-loses-unpushed-work.md), [221](./backlog/done/221-infra-session-process-lessons-from-the-2026-10.md)).
 - One session owns merges to main and deploys, in batches; the deploy runs the full Playwright suite on a release build
-  once. 2026-10-21 ([`lane-rules.md`](./lane-rules.md), rows [321](./backlog/321-one-merge-queue-owner-for-main-batch-one.md), [322](./backlog/done/322-run-the-full-release-suite-per-deploy-not.md)).
+  once. 2026-10-21 ([`lane-rules.md`](./lane-rules.md), rows [321](./backlog/done/321-one-merge-queue-owner-for-main-batch-one.md), [322](./backlog/done/322-run-the-full-release-suite-per-deploy-not.md)).
 - Cargo gates are reused when their inputs are byte-identical; only the warm release validation tree is kept.
   2026-10-21 (rows [320](./backlog/done/320-skip-the-cargo-gates-when-the-rust-tree.md), [324](./backlog/done/324-keep-warm-release-target-trees-for-validation-and.md)).
 - The fast loop: iterate on `dx serve`, verify with the diff-based `test:changed`, leave the full suite to the batch.

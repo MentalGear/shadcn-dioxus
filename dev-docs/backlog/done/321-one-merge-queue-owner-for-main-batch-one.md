@@ -1,10 +1,10 @@
 ---
 id: 321
 title: "One merge-queue owner for main (batch, one full gate and one suite per batch, deploy)"
-status: "OPEN, documented (owner approved 2026-10-21; the QUEUE format is in lane-rules.md \"Merge queue\"…"
+status: "LANDED. The QUEUE format is documented (dev-docs/lane-rules.md \"Merge queue\", line 254) and in use…"
 size: "S"
 area: process
-updated: 2026-10-21
+updated: 2026-10-24
 ---
 
 # Row 321: One merge-queue owner for main (batch, one full gate and one suite per batch, deploy)
@@ -15,7 +15,7 @@ One merge-queue owner for main (batch, one full gate and one suite per batch, de
 
 ## Status / trigger
 
-**OPEN, documented (owner approved 2026-10-21; the QUEUE format is in lane-rules.md "Merge queue"; closes when batch queue-1 is merged and deployed through it)**
+**LANDED.** The QUEUE format is documented (`dev-docs/lane-rules.md` "Merge queue", line 254) and in use: merge queue batches 1-13 are on main (PRs #121-#140, batch 13 as `b8357ca8`), each with one full gate and one suite run, and batches 14 and 15 follow the same path (`dev-docs/STATUS.md`, "Merge queue").
 
 ## Size
 
