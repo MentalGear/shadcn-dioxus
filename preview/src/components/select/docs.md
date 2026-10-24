@@ -54,6 +54,15 @@ A click or tap opens a single `Select` on its selected option, focused and scrol
 
 `size: SelectSize::Sm` makes the trigger 28px tall (`--dx-control-height-sm`) instead of the default 32px (`--dx-control-height-default`), shadcn's `size="sm" | "default"` on `SelectTrigger`. It sets `data-size` on the trigger of both `Select` and `SelectMulti`. See the `sizes` variant.
 
+## Forms
+
+With a `name`, both selects take part in their enclosing `<form>` through a hidden native mirror. `Select` renders a
+`<select>` and submits one `name=value` entry for its value (none while nothing is selected); `required` blocks the
+submit until a value is chosen. `SelectMulti` renders a `<select multiple>` and submits one `name=value` entry per
+selected value, in option order, and nothing for an empty selection. The submitted value is the option's
+`text_value` (for a `String` value, the value itself when unset), never its label. A form reset restores `default_value` /
+`default_values`. `SelectMulti` has no `required`.
+
 ## Direction / RTL
 
 `Select`/`SelectMulti` accept a `dir: Option<Direction>` prop, emitted as `dir`/`data-direction` on the trigger and the listbox. The trigger/listbox's own keyboard navigation is vertical-only (`ArrowUp`/`ArrowDown`/`Home`/`End`), so there is no arrow-key behavior to flip. See the `rtl` variant.

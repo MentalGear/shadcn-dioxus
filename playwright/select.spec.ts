@@ -378,7 +378,9 @@ test.describe("Listbox width tracks the trigger width (dev-docs/backlog.md row 4
         await gotoHydrated(page, `${BASE_URL}/`);
         const trigger = page.getByRole("combobox").filter({ hasText: /^(Select an option|Choose a fruit)$/ }).first();
         await trigger.click();
-        const listbox = page.getByRole("listbox");
+        // An explicit role only: the gallery's form card also renders a native
+        // <select multiple>, whose implicit role is listbox too.
+        const listbox = page.locator('[role="listbox"]');
         await expect(listbox).toHaveAttribute("data-state", "open");
         await assertListboxTracksTriggerWidth(page, trigger, listbox);
     });

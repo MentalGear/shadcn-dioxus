@@ -1,5 +1,5 @@
 The Form fixture assembles a real `<form>` around this library's form
-controls -- `Checkbox`, `Switch`, `RadioGroup`, and `Select` -- each set up
+controls -- `Checkbox`, `Switch`, `RadioGroup`, `Select`, and `SelectMulti` -- each set up
 with its documented `name` (and `required`, where it exists) exactly as an
 app would use it. Every row places the library control beside a native
 reference control sharing a parallel `name`, per the tier 2 (HTML)
