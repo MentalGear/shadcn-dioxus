@@ -20,6 +20,9 @@
     background-color: transparent;
     cursor: pointer;
     transition: rotate var(--dx-motion-duration-base) var(--dx-motion-ease-standard);
+
+    /* The chevron is 20px, through the popover trigger's icon slot. */
+    --dx-popover-trigger-icon-size: 1.25rem;
 }
 
 .dx-date-picker [data-state="open"] .dx-date-picker-trigger {
